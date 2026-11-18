@@ -62,6 +62,22 @@ describe('connecting to an agent', () => {
     await connection.close()
   })
 
+  test('a later turn’s request outlives a stopped earlier turn, and ends on its own stop', async () => {
+    const fake = fakeOneOffAgent()
+    const firstTurn = new AbortController()
+    const connection = await connectAgent(agent, {
+      launch: fake.startup.launch,
+      signal: firstTurn.signal
+    })
+    firstTurn.abort()
+    expect(await connection.forTurn(Promise.resolve('answer'))).toBe('answer')
+    const laterTurn = new AbortController()
+    const waiting = connection.forTurn(createDeferred<never>().promise, laterTurn.signal)
+    laterTurn.abort()
+    await expect(waiting).rejects.toThrow('The request was stopped.')
+    await connection.close()
+  })
+
   test('tells its owner the process, so the owner can stop an agent that is still starting', async () => {
     const fake = fakeOneOffAgent()
     let kill: (() => Promise<void>) | null = null

@@ -242,7 +242,7 @@ const FILE_OUTPUTS: Record<
 }
 
 const FILE_OUTPUT_HINTS: Partial<Record<string, string>> = {
-  get_jsx: 'Pass path to write the complete JSX to a file.'
+  get_jsx: 'Or pass path to write the complete JSX to a file.'
 }
 
 export function withoutOutputPath(

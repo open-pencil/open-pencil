@@ -287,6 +287,33 @@ export interface ProgressiveBlur {
   endOffset: Vector
 }
 
+/**
+ * A Noise effect's grain, in Figma's plugin terms: `MONOTONE` grains in the effect's colour,
+ * `DUOTONE` in it and `secondaryColor`, `MULTITONE` in many colours at `opacity`. `noiseSize` is a
+ * grain's size in px, which Figma keeps within 0 to 100, and `density` how much of the layer the
+ * grains cover, 0 to 1. `seed` picks the pattern; Figma's plugin API neither shows nor sets it.
+ */
+export interface NoiseEffectParams {
+  noiseType: NoiseType
+  noiseSize: Vector
+  density: number
+  secondaryColor?: Color
+  opacity?: number
+  seed?: number
+}
+
+/**
+ * A Texture effect's grain, which roughens the layer's edges: `noiseSize` is the grain's size in
+ * px, within 0 to 100 as Figma keeps it, and `clipToShape` keeps the roughened layer inside its
+ * own outline. The effect's `radius` is how far the grain moves the edges. `.fig` files name the
+ * effect `GRAIN`.
+ */
+export interface TextureEffectParams {
+  noiseSize: Vector
+  clipToShape: boolean
+  seed?: number
+}
+
 export interface Effect {
   type:
     | 'DROP_SHADOW'
@@ -295,6 +322,8 @@ export interface Effect {
     | 'BACKGROUND_BLUR'
     | 'FOREGROUND_BLUR'
     | 'GLASS'
+    | 'NOISE'
+    | 'TEXTURE'
   color: Color
   offset: Vector
   radius: number
@@ -306,6 +335,10 @@ export interface Effect {
   glass?: GlassEffectParams
   /** Set on a layer or background blur that is progressive, and only there. */
   progressive?: ProgressiveBlur
+  /** Set on a `NOISE` effect, and only there. */
+  noise?: NoiseEffectParams
+  /** Set on a `TEXTURE` effect, and only there. */
+  texture?: TextureEffectParams
 }
 
 export type ConstraintType = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'SCALE'
@@ -654,6 +687,8 @@ export interface CommentReply {
   author: string
   /** The author's collaboration color when they wrote it, for their avatar. */
   authorColor?: Color
+  /** The agent that wrote it, for `author` or as itself. */
+  agent?: string
   /** Markdown: bold, italic, strikethrough, links and lists. */
   text: string
   createdAt: string
@@ -678,6 +713,8 @@ export interface CommentThread {
   author: string
   /** The author's collaboration color when they wrote it, for their avatar. */
   authorColor?: Color
+  /** The agent that wrote it, for `author` or as itself. */
+  agent?: string
   /** Markdown: bold, italic, strikethrough, links and lists. */
   text: string
   createdAt: string
@@ -948,9 +985,10 @@ export interface SceneNode {
   textPicture: Uint8Array | null
   derivedTextGlyphs: DerivedTextGlyph[] | null
   /**
-   * How far a text's lines reach down from its top: measured at its width when its text or width
-   * changes, or read from the lines a file saved, and never saved itself. A fixed-size box does not
-   * clip them, as in Figma, so its visual bounds reach this far. Null when not known.
+   * How tall a text's lines are, from the top of the first to the bottom of the last: measured at
+   * its width when its text or width changes, or read from the lines a file saved, and never saved
+   * itself. A fixed-size box does not clip them, as in Figma, so its visual bounds reach past the
+   * box on the side away from its vertical alignment (`textLinesReach`). Null when not known.
    */
   derivedTextHeight: number | null
   /** Format-neutral layout path for text-on-path nodes. */
@@ -1146,6 +1184,12 @@ export type NumericNodeProperty = {
 export interface VariableCollectionMode {
   modeId: string
   name: string
+  /**
+   * The library mode this one came from, for a mode of a collection copied from a library. A
+   * library that renames its mode renames this one with it, so the layers and the document set
+   * to it keep following the library.
+   */
+  libraryModeId?: string
   /**
    * Where the mode applies in CSS: a selector (`[data-theme="dark"]`, `.compact`) or an
    * at-rule prelude (`@media (max-width: 640px)`). Absent means the default for its axis.

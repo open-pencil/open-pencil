@@ -16,6 +16,7 @@ import {
   parseCSSLineHeight,
   parseCSSNumber
 } from '@open-pencil/scene-graph/css'
+import { appendStyleRun } from '@open-pencil/scene-graph/text'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { colorToFillFromCSS, mergedStyle, pickStyle } from './css-values'
@@ -417,16 +418,7 @@ function styleRunsFrom(styles: readonly CharacterOfText[], base: CSSCharacterSty
       const own = key === 'hyperlink' ? undefined : base[key]
       if (!isEqual(style[key], own)) Object.assign(override, { [key]: style[key] })
     }
-    const previous = runs.at(-1)
-    if (
-      previous &&
-      previous.start + previous.length === index &&
-      isEqual(previous.style, override)
-    ) {
-      previous.length++
-    } else if (Object.keys(override).length > 0) {
-      runs.push({ start: index, length: 1, style: override })
-    }
+    appendStyleRun(runs, index, 1, override)
   }
   return runs
 }

@@ -18,6 +18,7 @@ import {
   fillsGainingGlass,
   parseFigmaEffects,
   toFigmaEffect,
+  firstTextureOnly,
   type FigmaEffect
 } from '#core/figma-api/effects'
 import { graphOf } from '#core/figma-api/graph'
@@ -35,7 +36,7 @@ import {
   setEffectBindings,
   setPaintBindings
 } from '#core/figma-api/variables/bindings'
-import { textStyleChanges } from '#core/text/character-style'
+import { textStyleChanges } from '#core/text/character/style'
 
 /**
  * `node`'s fills as Figma's plugin API reads them, each carrying the variable it is bound to. A
@@ -164,7 +165,7 @@ export function installVisualNodeProxyAccessors(
         const effects = parseFigmaEffects(value)
         const fills = fillsGainingGlass(node.effects, effects, node.fills)
         updateNode(this, internals, fills ? { effects, fills } : { effects })
-        setEffectBindings(graphOf(this), raw(this, internals), value)
+        setEffectBindings(graphOf(this), raw(this, internals), firstTextureOnly(value))
       }
     },
     // Applied shared styles, as Figma exposes them; an assignment inside an instance is an override.

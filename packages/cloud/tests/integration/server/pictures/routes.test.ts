@@ -4,7 +4,8 @@ import {
   accountAuthenticationConfig,
   accountAuthenticationRequest,
   createAccountAuthenticationFixture,
-  createVerifiedCredentialAccount
+  createVerifiedCredentialAccount,
+  withCookie
 } from '#cloud-tests/helpers/account-authentication'
 import { pngHeader } from '#cloud-tests/helpers/pictures'
 import { responseJSON } from '#cloud-tests/helpers/response'
@@ -23,20 +24,14 @@ const GOOGLE_PICTURE = 'https://lh3.googleusercontent.com/a/picture=s96-c'
 type Fixture = Awaited<ReturnType<typeof createAccountAuthenticationFixture>>
 
 async function profileImage(fixture: Fixture, cookie: string): Promise<string | null> {
-  const response = await fixture.app.fetch(
-    accountAuthenticationRequest('/api/account/profile', undefined, cookie)
-  )
+  const response = await fixture.client.api.account.profile.$get(undefined, withCookie(cookie))
   return (await responseJSON(response, cloudProfileResponseSchema)).profile.image
 }
 
 function upload(fixture: Fixture, bytes: Uint8Array, cookie?: string) {
-  return fixture.app.fetch(
-    accountAuthenticationRequest(
-      '/api/account/profile/picture',
-      { data: fromUint8Array(bytes) },
-      cookie,
-      { method: 'PUT' }
-    )
+  return fixture.client.api.account.profile.picture.$put(
+    { json: { data: fromUint8Array(bytes) } },
+    withCookie(cookie)
   )
 }
 
@@ -67,23 +62,17 @@ describe('account pictures', () => {
       expect(new Uint8Array(await served.arrayBuffer())).toEqual(picture)
 
       const elsewhere = [
-        `/api/pictures/${account.userId}/0000000000000000`,
-        `/api/pictures/not-an-account/${image.slice(-16)}`
+        { userId: account.userId, version: '0000000000000000' },
+        { userId: 'not-an-account', version: image.slice(-16) }
       ]
-      for (const path of elsewhere) {
-        const missing = await fixture.app.fetch(accountAuthenticationRequest(path))
+      for (const param of elsewhere) {
+        const missing = await fixture.client.api.pictures[':userId'][':version'].$get({ param })
         expect(missing.status).toBe(404)
       }
 
-      const removed = await fixture.app.fetch(
-        accountAuthenticationRequest(
-          '/api/account/profile/picture',
-          undefined,
-          account.sessionCookie,
-          {
-            method: 'DELETE'
-          }
-        )
+      const removed = await fixture.client.api.account.profile.picture.$delete(
+        undefined,
+        withCookie(account.sessionCookie)
       )
       expect(removed.status).toBe(200)
       expect(await profileImage(fixture, account.sessionCookie)).toBeNull()
@@ -201,8 +190,9 @@ describe('account pictures', () => {
         expect(updated.status).toBe(200)
         expect(await profileImage(fixture, account.sessionCookie)).toBeNull()
       }
-      const profile = await fixture.app.fetch(
-        accountAuthenticationRequest('/api/account/profile', undefined, account.sessionCookie)
+      const profile = await fixture.client.api.account.profile.$get(
+        undefined,
+        withCookie(account.sessionCookie)
       )
       const { name, image } = (await responseJSON(profile, cloudProfileResponseSchema)).profile
       expect({ name, image }).toEqual({ name: 'Renamed Person', image: null })

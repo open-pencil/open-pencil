@@ -1,17 +1,9 @@
-import { Command } from '@tauri-apps/plugin-shell'
-
-import { decodeTauriStderr } from '@/app/shell/ui'
-import { spawnAgentChild } from '@/app/tauri/children'
-import { platformCommandEnv, resolvePlatformCommand } from '@/app/tauri/command'
-
-export type TauriChild = {
-  write(data: number[]): Promise<void>
-  kill(): Promise<void>
-}
+import { spawnAgentProcess, type AgentChild } from '@/app/ai/agents/process'
+import { platformCommandEnv } from '@/app/tauri/command'
 
 /** A started agent: its process, and the pipes the ACP connection reads and writes. */
 export interface ACPProcess {
-  child: TauriChild
+  child: AgentChild
   input: WritableStream<Uint8Array>
   output: ReadableStream<Uint8Array>
 }
@@ -32,7 +24,7 @@ type ACPProcessOptions = {
 }
 
 export async function spawnACPProcess({
-  command: commandName,
+  command,
   args,
   logId,
   searchPath = null,
@@ -40,77 +32,18 @@ export async function spawnACPProcess({
   destroying,
   onUnexpectedClose
 }: ACPProcessOptions): Promise<ACPProcess> {
-  const resolved = resolvePlatformCommand(commandName, args)
-  const command = Command.create(resolved.command, resolved.args, {
-    encoding: 'raw',
+  const agent = await spawnAgentProcess({
+    command,
+    args,
     env: { ...platformCommandEnv(), ...(searchPath ? { PATH: searchPath } : {}) },
-    cwd
-  })
-
-  const stdoutChunks: Uint8Array[] = []
-  let stdoutResolver: ((chunk: Uint8Array | null) => void) | null = null
-  let stdoutClosed = false
-  let stdoutClosedError: Error | null = null
-
-  command.stdout.on('data', (raw: Uint8Array | number[]) => {
-    const chunk = raw instanceof Uint8Array ? raw : new Uint8Array(raw)
-    if (stdoutResolver) {
-      const resolve = stdoutResolver
-      stdoutResolver = null
-      resolve(chunk)
-    } else {
-      stdoutChunks.push(chunk)
+    cwd,
+    onStderr: (text) => console.error(`[ACP ${logId}]`, text),
+    // A connection still reading learns the agent is gone, unless it was stopped on purpose.
+    closeError: () => (destroying() ? null : new Error('Agent process exited unexpectedly.')),
+    onClose: () => {
+      if (!destroying()) onUnexpectedClose()
     }
   })
-
-  command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
-    console.error(`[ACP ${logId}]`, decodeTauriStderr(raw))
-  })
-
-  command.on('close', () => {
-    stdoutClosed = true
-    stdoutClosedError = destroying() ? null : new Error('Agent process exited unexpectedly.')
-    if (stdoutResolver) {
-      const resolve = stdoutResolver
-      stdoutResolver = null
-      resolve(null)
-    }
-    if (!destroying()) {
-      onUnexpectedClose()
-    }
-  })
-
-  const child = await spawnAgentChild(command)
-
-  const output = new ReadableStream<Uint8Array>({
-    async pull(controller) {
-      const buffered = stdoutChunks.shift()
-      if (buffered) {
-        controller.enqueue(buffered)
-        return
-      }
-      if (stdoutClosed) {
-        if (stdoutClosedError) controller.error(stdoutClosedError)
-        else controller.close()
-        return
-      }
-      const chunk = await new Promise<Uint8Array | null>((resolve) => {
-        stdoutResolver = resolve
-      })
-      if (chunk) {
-        controller.enqueue(chunk)
-        return
-      }
-      if (stdoutClosedError) controller.error(stdoutClosedError)
-      else controller.close()
-    }
-  })
-
-  const input = new WritableStream<Uint8Array>({
-    async write(chunk) {
-      await child.write(Array.from(chunk))
-    }
-  })
-
-  return { child, input, output }
+  const input = new WritableStream<Uint8Array>({ write: (chunk) => agent.write(chunk) })
+  return { child: agent.child, input, output: agent.stdout }
 }

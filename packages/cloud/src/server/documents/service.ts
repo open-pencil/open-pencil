@@ -26,7 +26,11 @@ import {
   listSharedDocuments,
   workspaceRole
 } from '#cloud/server/documents/repository'
-import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
+import {
+  documentSummary,
+  getDocumentSummaryRow,
+  getRetainedDocumentSummaryRow
+} from '#cloud/server/documents/summary'
 import {
   createDocumentTrash,
   DEFAULT_TRASH_OPTIONS,
@@ -71,8 +75,11 @@ export function createDocumentService(
     }
   }
 
-  async function createDownload(documentId: string): Promise<DocumentDownload> {
-    const row = await getDocumentSummaryRow(database, documentId)
+  async function createDownload(
+    documentId: string,
+    lookup: typeof getDocumentSummaryRow = getDocumentSummaryRow
+  ): Promise<DocumentDownload> {
+    const row = await lookup(database, documentId)
     if (!row?.currentRevisionId) throw new DocumentNotFoundError()
     const document: DocumentSummary = documentSummary(row)
     const revision = await database
@@ -156,6 +163,14 @@ export function createDocumentService(
 
     async downloadShared(documentId: string): Promise<DocumentDownload> {
       return createDownload(documentId)
+    },
+
+    /**
+     * A document as it is now for a deployment administrator, taken down or in Trash included,
+     * to look at what was reported or blocked; the caller checks the administrator.
+     */
+    async downloadRetained(documentId: string): Promise<DocumentDownload> {
+      return createDownload(documentId, getRetainedDocumentSummaryRow)
     },
 
     /** Links for images a live room names, for someone who may view the document. */

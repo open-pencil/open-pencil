@@ -30,7 +30,7 @@ export function createAppRouters(
   allowedOrigins: ReadonlySet<string>
 ) {
   const { config, database } = services
-  const { resolveIdentity, resolveSession } = resolvers
+  const { resolveIdentity, resolveSession, twoStepConfirmed } = resolvers
   const admin = createCloudAdminRoutes(
     {
       email: createAdminEmailService(database, services.transactionalEmail, {
@@ -39,6 +39,7 @@ export function createAppRouters(
       enrollment: app.enrollment,
       users: createAdminUserService(database, services.auth, {
         requireMFA: config.deploymentAdminMFARequired,
+        approval: config.enrollmentMode === 'approval',
         pictures: app.pictures,
         notify: services.transactionalEmail
           ? createAuthenticationEmailService(services.transactionalEmail, config.publicURL)
@@ -49,14 +50,18 @@ export function createAppRouters(
       documents: createAdminDocumentService(database, {
         closeRooms: services.onDocumentTakenDown,
         purgeGraceMs: config.documentPurgeGraceMs,
+        communityWorkspaceId: config.community?.workspaceId ?? null,
+        objects: services.objects,
+        documents: app.documents,
         email: services.transactionalEmail,
         publicURL: config.publicURL,
         contactEmail: config.legal?.abuseEmail
       }),
-      reports: createAdminReportService(database, {
-        email: services.transactionalEmail,
-        contactEmail: config.legal?.abuseEmail
-      })
+      reports: createAdminReportService(
+        database,
+        { email: services.transactionalEmail, contactEmail: config.legal?.abuseEmail },
+        { communityWorkspaceId: config.community?.workspaceId ?? null }
+      )
     },
     allowedOrigins,
     {
@@ -76,6 +81,7 @@ export function createAppRouters(
     deletion: createAccountDeletionService(database),
     resolveIdentity,
     resolveSession,
+    twoStepConfirmed,
     requireActiveSession: checks.requireActiveSession,
     requireAccountSession: checks.requireAccountSession,
     authenticatedMutationLimiter: limiters.authenticatedMutationLimiter
@@ -90,6 +96,7 @@ export function createAppRouters(
     collaboration: app.collaboration,
     documents: app.documents,
     versions: app.versions,
+    comments: app.comments,
     community: app.community,
     entitlements: app.entitlements,
     sharing: app.sharing,

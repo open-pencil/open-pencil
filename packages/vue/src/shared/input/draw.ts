@@ -6,7 +6,7 @@ import { generatedFrameText, SHAPE_WITH_TEXT_SIZE } from '@open-pencil/scene-gra
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { findDrawParent } from '#vue/shared/input/drop-target'
-import { gridRounding } from '#vue/shared/input/snap'
+import { gridRounding } from '#vue/shared/input/snap/resolve'
 import { TOOL_TO_NODE } from '#vue/shared/input/types'
 import type { DragDraw, DragState } from '#vue/shared/input/types'
 

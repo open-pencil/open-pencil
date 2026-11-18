@@ -1,0 +1,1 @@
+- The desktop app can follow nightly builds: Settings → Updates → Update channel switches between Stable and Nightly, and switching back to Stable installs the current stable release at the next check (#2154).

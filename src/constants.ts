@@ -94,6 +94,8 @@ export const IS_CLOUD_SITE =
   typeof __OPENPENCIL_CLOUD_SITE__ === 'boolean' && __OPENPENCIL_CLOUD_SITE__
 /** Where the desktop app's installers are published. */
 export const DESKTOP_DOWNLOAD_URL = 'https://github.com/open-pencil/open-pencil/releases/latest'
+/** The download page's beta section, with the newest desktop beta's installers. */
+export const DESKTOP_BETA_DOWNLOAD_URL = 'https://openpencil.dev/download#beta'
 export const NODE_DOWNLOAD_URL = 'https://nodejs.org/en/download'
 
 /**
@@ -109,6 +111,8 @@ export const MCP_CONNECTIONS_DOCS_URL = `${DOCS_ORIGIN}/programmable/ai-chat#ext
 /** The Help menu's links: the guides, the shortcut reference, the community, and the source. */
 export const DOCS_URL = `${DOCS_ORIGIN}/getting-started`
 export const KEYBOARD_SHORTCUTS_URL = `${DOCS_ORIGIN}/reference/keyboard-shortcuts`
+/** Where SF Symbols are offered and how to get them, for hosts that cannot draw them. */
+export const SF_SYMBOLS_DOCS_URL = `${DOCS_ORIGIN}/user-guide/icons#sf-symbols`
 export const COMMUNITY_URL = 'https://discord.gg/4wXc9fuZfm'
 export const REPOSITORY_URL = 'https://github.com/open-pencil/open-pencil'
 export const CODING_AGENTS_GUIDE_URL = `${DOCS_ORIGIN}/programmable/coding-agents`

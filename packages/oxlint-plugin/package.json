@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/oxlint-plugin",
-  "version": "0.17.0-beta.4",
+  "version": "0.17.0-beta.5",
   "description": "OpenPencil's code conventions as Oxlint rules: validated JSON, Valibot schema placement, no broad casts, no silent catches, no secrets in logs or URLs, and more.",
   "keywords": [
     "lint",
@@ -13,6 +13,7 @@
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/oxlint-plugin"
   },
+  "funding": "https://ko-fi.com/dannote",
   "files": [
     "dist",
     "src",

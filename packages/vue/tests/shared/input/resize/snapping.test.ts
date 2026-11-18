@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
+import { applyResize, commitResizePreview } from '#vue/shared/input/resize/apply'
 import type { DragResize } from '#vue/shared/input/types'
 
 function setup(

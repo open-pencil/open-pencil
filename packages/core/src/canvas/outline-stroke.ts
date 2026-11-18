@@ -1,7 +1,7 @@
 import { omit, pick } from 'es-toolkit/object'
 
 import type { Path } from '@open-pencil/canvaskit'
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix, localTransformFromWorld } from '@open-pencil/scene-graph/coordinate'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -16,7 +16,9 @@ import {
   strokeAreaPath
 } from './boolean'
 import { pathBounds, pathToNetwork } from './paths/network'
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from './renderer/skia'
+import { makeNodeEdgesPath } from './shapes'
+import { regionStrokeArea } from './strokes/regions'
 import { textGlyphPaths, textOutlinePieces, type PaintedPath } from './text/outlines/glyphs'
 
 /**
@@ -155,7 +157,34 @@ export function canOutlineStroke(node: SceneNode): boolean {
 /** Where a layer's stroke is drawn, one path per source; a line's shape is already its stroke. */
 function strokeOutlines(r: SkiaRenderer, node: SceneNode, sources: readonly Path[]): Path[] {
   if (node.type === 'LINE') return sources.map((path) => path.copy())
+  const regionStrokes = canvasRegionStrokes(r, node)
+  if (regionStrokes) {
+    const area = regionStrokeArea(r, node, regionStrokes.network, regionStrokes.paths)
+    return area ? [area] : []
+  }
+  if (strokesOwnEdges(node)) {
+    const edges = makeNodeEdgesPath(r, node)
+    const stroked = strokeAreaPath(r, edges, node)
+    edges.delete()
+    return stroked ? [stroked] : []
+  }
   return sources.flatMap((path) => strokeAreaPath(r, path, node) ?? [])
+}
+
+function canvasRegionStrokes(
+  r: SkiaRenderer,
+  node: SceneNode
+): { network: VectorNetwork; paths: Path[] } | null {
+  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
+  if (!network || network.regions.length < 2 || node.strokeGeometry.length > 0) {
+    return null
+  }
+  const paths = r.getVectorPaths(node)
+  return paths ? { network, paths } : null
+}
+
+function strokesOwnEdges(node: SceneNode): boolean {
+  return node.type !== 'TEXT' && node.type !== 'BOOLEAN_OPERATION'
 }
 
 /**

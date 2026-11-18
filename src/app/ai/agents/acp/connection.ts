@@ -16,6 +16,7 @@ import {
   type AgentAuthStatus
 } from '@/app/ai/agents/acp/auth/status'
 import { spawnACPProcess, type ACPProcess } from '@/app/ai/agents/acp/process'
+import type { AgentChild } from '@/app/ai/agents/process'
 import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { createDeferred } from '@/app/runtime/deferred'
 
@@ -73,7 +74,7 @@ export interface AgentConnectionOptions {
   /** Told when the agent exits without having been stopped. */
   onExit?: () => void
   /** Told the process once it runs, so its owner can stop an agent that is still starting. */
-  onProcess?: (child: ACPProcess['child']) => void
+  onProcess?: (child: AgentChild) => void
   /**
    * Answers the agent's permission requests. Left out, every request is refused, for a connection
    * in which nothing may run on its own.
@@ -91,7 +92,7 @@ export interface AgentConnectionOptions {
 export interface AgentConnection {
   /** Sends the agent requests and notifications. */
   agent: ClientContext
-  child: ACPProcess['child']
+  child: AgentChild
   /**
    * The request's answer, unless the agent exits or `signal` stops it first. The SDK leaves a
    * request pending when the agent's process exits, so every request waits through this.
@@ -99,6 +100,12 @@ export interface AgentConnection {
   untilStopped<T>(request: Promise<T>): Promise<T>
   /** As `untilStopped`, and the request must also answer within the deadline. */
   bounded<T>(request: Promise<T>, timeoutMs?: number): Promise<T>
+  /**
+   * A request of a later turn within the deadline: it ends when the agent exits or that turn's
+   * `signal` stops it. The start's `signal` stops only the start, so a turn stopped earlier does
+   * not reject the requests of the turns after it.
+   */
+  forTurn<T>(request: Promise<T>, signal?: AbortSignal, timeoutMs?: number): Promise<T>
   /** Stops the agent. */
   close(): Promise<void>
 }
@@ -185,6 +192,19 @@ export async function connectAgent(
     untilStopped: (request) => Promise.race([request, exited, stoppedByUser]),
     bounded: (request, within = timeoutMs) =>
       withinDeadline(request, within, timedOut, exited, stoppedByUser),
+    async forTurn(request, turnSignal, within = timeoutMs) {
+      const stopped = createDeferred<never>()
+      stopped.promise.catch(() => undefined)
+      // The start's stop message names the start; a later turn's stop is just a stop.
+      const onTurnAbort = () => stopped.reject(new Error('The request was stopped.'))
+      if (turnSignal?.aborted) onTurnAbort()
+      else turnSignal?.addEventListener('abort', onTurnAbort, { once: true })
+      try {
+        return await withinDeadline(request, within, timedOut, exited, stopped.promise)
+      } finally {
+        turnSignal?.removeEventListener('abort', onTurnAbort)
+      }
+    },
     async close() {
       closing = true
       await child.kill().catch(() => undefined)

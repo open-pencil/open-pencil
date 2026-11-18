@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/design-jsx",
-  "version": "0.17.0-beta.4",
+  "version": "0.17.0-beta.5",
   "license": "MIT",
   "type": "module",
   "imports": {
@@ -49,6 +49,7 @@
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/design-jsx"
   },
+  "funding": "https://ko-fi.com/dannote",
   "publishConfig": {
     "access": "public",
     "provenance": true

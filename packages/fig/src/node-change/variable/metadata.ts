@@ -11,6 +11,7 @@ import {
 
 import { extractPluginData, mergePluginData } from '../plugin-data'
 import {
+  libraryModesPluginData,
   modeAttributePluginData,
   modeConditionsPluginData,
   tokenPluginData,
@@ -90,10 +91,12 @@ export function collectionPluginDataNodeChange(
 ): NodeChange['pluginData'] {
   const conditions = modeConditionsPluginData(collection, modeKey)
   const attribute = modeAttributePluginData(collection)
+  const sources = libraryModesPluginData(collection, modeKey)
   return pluginDataNodeChange([
     ...withoutTokenPluginData(collection.pluginData ?? []),
     ...(conditions ? [conditions] : []),
-    ...(attribute ? [attribute] : [])
+    ...(attribute ? [attribute] : []),
+    ...(sources ? [sources] : [])
   ])
 }
 

@@ -6,6 +6,7 @@ Questions and ideas go to [GitHub Discussions](https://github.com/open-pencil/op
 
 - `CONTRIBUTING.md` (this file): setup, pull requests, validation, commits.
 - [`AGENTS.md`](./AGENTS.md): repository map, cross-cutting conventions, and a `Guide` column pointing to the `AGENTS.md` inside each package or app domain. Read the root file and every guide on the path to the folder you change; coding agents pick them up the same way.
+- [`MAINTAINING.md`](./MAINTAINING.md): work that needs write access to the repository, such as approving fork runs, the merge queue, stacked pull requests, and releases.
 - [`packages/docs/development/`](packages/docs/development/): public explanations such as [architecture](https://openpencil.dev/development/architecture), [testing](packages/docs/development/testing.md), and the [roadmap](packages/docs/development/roadmap.md).
 
 ## Setup
@@ -21,6 +22,8 @@ bun run tauri dev     # Desktop app (requires Rust)
 
 The first Portless run creates and trusts a local HTTPS certificate. Linked Git worktrees receive branch-prefixed URLs such as `https://fix-ui.open-pencil.localhost` and matching `https://fix-ui.mcp.open-pencil.localhost` MCP bridges with isolated ports and socket files, so concurrent servers do not compete for port 1420. Run `bunx portless doctor` if routing or certificate trust fails.
 
+The prefix comes from the branch the server starts on, without anything before a `/` (`fix/cloud-sync` serves `cloud-sync.open-pencil.localhost`), and the Cloud dev server trusts only that editor origin. To test other code at the same URL, start it from a throwaway branch of the same name, such as `git switch -c dev/<prefix> <commit>` (`-C` resets that branch if it exists, so use it only on a branch holding nothing of yours), with `bun install` and `bun run build:packages` run on that branch first, and do not switch branches under a running server.
+
 The repository also works in any [Dev Container](https://containers.dev/)-compatible tool: the container pins Bun, installs dependencies, and forwards port 1420; start with `bun run dev`. It covers the web editor, packages, CLI, and automated checks. Native Tauri development needs [Rust](https://rustup.rs/) and the [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) on the host.
 
 For macOS release builds with ad-hoc signing (no Apple Developer account, local testing only):
@@ -35,7 +38,7 @@ APPLE_SIGNING_IDENTITY=- bun run tauri build -c '{"bundle": { "createUpdaterArti
 - Keep package boundaries and public exports intact. Keep pull requests focused: no temporary scaffolding, unrelated refactors, or changelog claims not represented by the diff.
 - For user-facing changes add a changelog fragment under `changes/<PR>/` instead of editing `CHANGELOG.md`, following `changes/README.md` and the rules in `AGENTS.md` (Documentation and changelog).
 - Tests follow the [testing architecture](packages/docs/development/testing.md) and `tests/AGENTS.md`. Extend the owner's existing suite; do not create a duplicate home.
-- `.fig` fixtures in `tests/fixtures/` are Git LFS. Use `git push --no-verify` to skip the slow LFS pre-push hook unless you changed `.fig` files.
+- The `.fig` fixtures in `tests/fixtures/` and the fonts in `tests/fixtures/fonts/` are Git LFS (`.gitattributes`). Use `git push --no-verify` to skip the slow LFS pre-push hook only when the push changes none of those files.
 
 ## Quality checks
 
@@ -66,13 +69,10 @@ Pull requests must be reviewable without guessing the author's intent.
 - Complete the AI assistance section. If an LLM materially helped create or modify the PR, list the model names you know. Write `None` otherwise. This is review context, not authorship attribution; prompts and transcripts are not required.
 - Keep the body primarily in English. Code identifiers, file paths, logs, error messages, and short quoted examples may use their original language.
 
-### Stacked pull requests
+### Reviews
 
-A stack is a chain of pull requests: the bottom one targets `master`, each one above targets the branch below. CI and branch protection treat every layer as targeting `master`.
-
-- Manage stacks with [`gh stack`](https://github.com/github/gh-stack) (`init`, `add`, `submit`, `sync`; add `--remote origin` with several remotes); a stacked pull request's base cannot be edited.
-- Keep it linear: when `master` or a lower branch moves, rebase the layers (`gh stack rebase` or the pull request's Rebase button) and push with `--force-with-lease`. Merging `master` in blocks the stack from merging.
-- Merge from the top layer through the merge queue, in the UI or with `gh api -X PUT repos/{owner}/{repo}/pulls/<n>/merge-async -f merge_action=merge_queue`; it lands every layer below too. `gh pr merge` and auto-merge are unavailable for stacks.
+- CodeRabbit reviews each push to a pull request that is ready for review and skips drafts. It pauses after five reviewed commits, to save review quota, and does not come back to a pull request it skipped while rate limited; ask for a review with `@coderabbitai review` when one of those is ready for another look.
+- Answer each review thread, human or CodeRabbit, with the commit that fixes it or the reason you disagree, rather than resolving it silently; CodeRabbit resolves its own threads once it sees the fix.
 
 ### Reviewability
 

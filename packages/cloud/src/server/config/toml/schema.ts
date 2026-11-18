@@ -55,12 +55,16 @@ const providerSchema = v.strictObject({
   )
 })
 
+/** Where replies go, when someone reads the email and writes back; `from` otherwise. */
+const replyToSchema = v.optional(v.pipe(v.string(), v.email()))
+
 const emailSchema = v.optional(
   v.variant('transport', [
     v.strictObject({ transport: v.literal('none') }),
     v.strictObject({
       transport: v.literal('smtp'),
       from: textSchema,
+      reply_to: replyToSchema,
       smtp: v.strictObject({
         host: textSchema,
         port: positiveIntegerSchema,
@@ -73,7 +77,11 @@ const emailSchema = v.optional(
         })
       })
     }),
-    v.strictObject({ transport: v.literal('cloudflare'), from: textSchema })
+    v.strictObject({
+      transport: v.literal('cloudflare'),
+      from: textSchema,
+      reply_to: replyToSchema
+    })
   ]),
   { transport: 'none' }
 )

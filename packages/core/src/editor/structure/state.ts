@@ -26,7 +26,7 @@ export function createStructureStateActions(ctx: EditorContext) {
       ctx.graph.updateNode(id, { visible: shown })
       const parentId = ctx.graph.getNode(id)?.parentId
       if (!parentId) return
-      ctx.runLayoutForNode(parentId)
+      ctx.runLayoutForParents([parentId])
       refitGroupsAroundLayers(ctx, [id])
     }
     const forward = () => {

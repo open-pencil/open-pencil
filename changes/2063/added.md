@@ -1,1 +1,0 @@
-- The app tells each Cloud server its language when signing up and whenever the language changes, so the server's email reads in it (#2063).

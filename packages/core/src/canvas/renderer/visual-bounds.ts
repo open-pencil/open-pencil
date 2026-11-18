@@ -159,6 +159,11 @@ export class RenderedBoundsCache {
     if (graph.getNode(node.id) !== node) {
       return subtreeVisualBounds(graph, node, Matrix.identity(), preview)
     }
+    // Culling asks for every layer on every frame: answer a measured one without the closures.
+    if (!preview) {
+      const known = this.entryOf(graph).byNode.get(node.id)
+      if (known !== undefined) return known ?? NOTHING_DRAWN
+    }
     const measured = this.measuredIn(graph, preview)
     let own = measured.get(node)
     if (own === undefined) {

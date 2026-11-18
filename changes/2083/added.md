@@ -1,1 +1,0 @@
-- OpenPencil Cloud servers can set a minimum editor version: older desktop apps offer their update instead of connecting, and the server refuses their requests.

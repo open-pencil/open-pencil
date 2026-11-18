@@ -26,5 +26,9 @@
   "reload": "Recarregar",
   "settingsSection": "Atualizações",
   "checkOnStartup": "Verificar atualizações ao iniciar",
-  "checkOnStartupDescription": "Procura uma nova versão logo após o app para desktop abrir. “Verificar atualizações…” no menu continua funcionando quando esta opção está desativada."
+  "checkOnStartupDescription": "Procura uma nova versão logo após o app para desktop abrir. “Verificar atualizações…” no menu continua funcionando quando esta opção está desativada.",
+  "channel": "Canal de atualização",
+  "channelDescription": "As versões nightly são geradas toda noite a partir do código mais recente e podem apresentar falhas. Voltar para Estável instala a versão estável atual na próxima verificação.",
+  "channelStable": "Estável",
+  "channelNightly": "Nightly"
 }

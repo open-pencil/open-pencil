@@ -26,5 +26,9 @@
   "reload": "Recharger",
   "settingsSection": "Mises à jour",
   "checkOnStartup": "Rechercher des mises à jour au démarrage",
-  "checkOnStartupDescription": "Cherche une nouvelle version peu après l’ouverture de l’application de bureau. « Rechercher des mises à jour… » dans le menu fonctionne encore lorsque ceci est désactivé."
+  "checkOnStartupDescription": "Cherche une nouvelle version peu après l’ouverture de l’application de bureau. « Rechercher des mises à jour… » dans le menu fonctionne encore lorsque ceci est désactivé.",
+  "channel": "Canal de mise à jour",
+  "channelDescription": "Les versions nightly sont construites chaque nuit à partir du code le plus récent et peuvent comporter des erreurs. Revenir à Stable installe la version stable actuelle lors de la prochaine vérification.",
+  "channelStable": "Stable",
+  "channelNightly": "Nightly"
 }

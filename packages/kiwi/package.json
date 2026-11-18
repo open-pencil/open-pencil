@@ -1,12 +1,13 @@
 {
   "name": "@open-pencil/kiwi",
-  "version": "0.17.0-beta.4",
+  "version": "0.17.0-beta.5",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/kiwi"
   },
+  "funding": "https://ko-fi.com/dannote",
   "files": [
     "dist",
     "src",

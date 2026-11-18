@@ -32,10 +32,17 @@ export default {
     messageActions:
       'ms-auto flex shrink-0 opacity-0 group-focus-within/message:opacity-100 group-hover/message:opacity-100',
     messageText: 'col-start-2 min-w-0 text-xs break-words text-surface',
+    // New to this account since it read the thread: a dot on the pin's corner, or before the name.
+    unreadDot:
+      'pointer-events-none absolute -top-0.5 -inset-e-0.5 size-2.5 rounded-full bg-accent ring-2 ring-panel',
+    // Someone a comment names, in the accent, as Figma marks mentions.
+    mention: 'font-medium text-primary',
     composerSlot: 'border-t border-border p-2',
     // One line with the send button beside it, growing as the comment does, as in Figma.
+    // People offered for an `@`, just above the composer, as menus are drawn.
+    mentions: 'absolute bottom-full inset-s-0 z-10 mb-1 w-56',
     composer:
-      'flex items-end gap-1 rounded-lg border border-border bg-input py-1 pe-1 ps-3 focus-within:border-panel-focus focus-within:ring-1 focus-within:ring-accent/25',
+      'relative flex items-end gap-1 rounded-lg border border-border bg-input py-1 pe-1 ps-3 focus-within:border-panel-focus focus-within:ring-1 focus-within:ring-accent/25',
     composerInput:
       'max-h-40 min-w-0 flex-1 resize-none bg-transparent py-0.5 text-xs leading-5 text-surface outline-none placeholder:text-muted',
     panel: 'flex min-h-0 flex-1 flex-col',
@@ -54,6 +61,10 @@ export default {
     menuIndicator: 'absolute inset-s-2'
   },
   variants: {
+    /** A dot in line with the text it marks, rather than on a pin's corner. */
+    inline: {
+      true: { unreadDot: 'static size-1.5 shrink-0 self-center ring-0' }
+    },
     /** A composer that is its card's whole content and takes the card's edge. */
     bare: {
       true: {

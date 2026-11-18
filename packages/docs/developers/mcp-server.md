@@ -294,6 +294,8 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | `export_image` | Export nodes as PNG, JPG, or WEBP. Returns base64-encoded image data |
 | `export_svg`   | Export nodes as SVG markup                                           |
 
+`export_svg` returns `warnings` for effects SVG cannot draw, such as glass; the SVG leaves them out.
+
 ### Viewport
 
 | Tool           | Description                                                                  |
@@ -304,16 +306,18 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 
 ### Variables
 
-| Tool                | Description                                                                |
-| ------------------- | -------------------------------------------------------------------------- |
-| `get_variable`      | Get a variable by ID or name                                               |
-| `create_variable`   | Create a new variable in a collection                                      |
-| `set_variable`      | Set a variable value in a mode                                             |
-| `delete_variable`   | Delete a variable                                                          |
-| `bind_variable`     | Bind a variable to a node property, or unbind it with a null `variable_id` |
-| `get_collection`    | Get a variable collection by ID or name                                    |
-| `create_collection` | Create a new variable collection                                           |
-| `delete_collection` | Delete a variable collection                                               |
+| Tool                 | Description                                                                      |
+| -------------------- | -------------------------------------------------------------------------------- |
+| `get_variable`       | Get a variable by ID or name                                                     |
+| `create_variable`    | Create a new variable in a collection                                            |
+| `set_variable`       | Set a variable value in a mode                                                   |
+| `delete_variable`    | Delete a variable                                                                |
+| `bind_variable`      | Bind a variable to a node property, or unbind it with a null `variable_id`       |
+| `set_variable_mode`  | Show layers in a collection's mode, such as a frame in Dark; children inherit it |
+| `get_variable_modes` | Get the mode a layer shows for each collection, its own or inherited             |
+| `get_collection`     | Get a variable collection by ID or name                                          |
+| `create_collection`  | Create a new variable collection                                                 |
+| `delete_collection`  | Delete a variable collection                                                     |
 
 ### Analyze
 

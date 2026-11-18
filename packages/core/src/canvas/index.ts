@@ -24,7 +24,7 @@ export {
   type RenderOverlays,
   type RulerTheme,
   type SelectionTheme
-} from './renderer'
+} from './renderer/skia'
 export {
   hitTestIssueMarkers,
   issueMarkerLabel,

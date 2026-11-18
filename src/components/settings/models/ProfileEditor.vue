@@ -58,6 +58,9 @@ const {
   retryAgentModels,
   supportsCustomModel,
   supportsThinking,
+  agentOptionControls,
+  agentOptionValue,
+  setAgentOption,
   modelOptions,
   selectedModelValue,
   knownModel,
@@ -372,8 +375,11 @@ async function remove() {
           :capabilities="knownCapabilities"
           :output-tokens="outputTokenRecommendation"
           :thinking="supportsThinking"
+          :agent-options="agentOptionControls"
+          :agent-option-value="agentOptionValue"
           :acp="isACP"
           :harness="isHarness"
+          @agent-option="setAgentOption"
         />
 
         <SettingsSaveFeedback :error="saveError" :result="saveResult" />

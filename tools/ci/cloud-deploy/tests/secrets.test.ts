@@ -17,6 +17,12 @@ test('refuses missing or empty secrets instead of deploying them empty', () => {
   expect(() => workerSecrets([], {})).toThrow()
 })
 
+test('passes an optional secret on only where the environment sets it', () => {
+  expect(workerSecrets(['A', 'B?'], { A: 'one', B: 'two' })).toEqual({ A: 'one', B: 'two' })
+  expect(workerSecrets(['A', 'B?'], { A: 'one', B: '' })).toEqual({ A: 'one' })
+  expect(() => workerSecrets(['A', 'B?'], { B: 'two' })).toThrow('Missing secrets: A')
+})
+
 test('writes the file readable only by its owner', async () => {
   const root = await mkdtemp(join(tmpdir(), 'cloud-secrets-'))
   try {

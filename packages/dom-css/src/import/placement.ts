@@ -55,24 +55,26 @@ export function capturedBox(element: DesignElement): CapturedBox | undefined {
 }
 
 /**
- * The box of the text an element holds: its content box, inside its padding and borders, where
- * CSS stacks its line boxes. The words take less when they do not fill a line, as a layer that
- * fills its parent's width is wider than its words.
+ * The box of the text an element holds: across, its content box, inside its padding and
+ * borders, which its lines wrap to; down, the lines themselves, which start lower than the
+ * content box when the element aligns its content, as a table cell does by `vertical-align`.
+ * The words take less when they do not fill a line, as a layer that fills its parent's width
+ * is wider than its words.
  */
 export function capturedTextBox(element: DesignElement): CapturedBox | undefined {
   const layout = element.layout
   if (!layout?.lines || layout.lines.length === 0) return undefined
   const insets = contentInsets(mergedStyle(element))
-  const { x, y, width, height } = layout.box
+  const extent = computeBounds(layout.lines)
   return {
     box: {
-      x: x + insets.left,
-      y: y + insets.top,
-      width: width - insets.left - insets.right,
-      height: height - insets.top - insets.bottom
+      x: layout.box.x + insets.left,
+      y: extent.y,
+      width: layout.box.width - insets.left - insets.right,
+      height: extent.height
     },
     lines: layout.lines.length,
-    extent: computeBounds(layout.lines)
+    extent
   }
 }
 
@@ -135,8 +137,9 @@ function matches(node: SceneNode, captured: CapturedBox, origin: Rect): boolean 
   return near(node.x, rect.x) && sizeMatches(node, captured)
 }
 
-function hasAutoLayout(node: SceneNode): boolean {
-  return node.layoutMode !== 'NONE' && node.layoutMode !== 'GRID'
+/** Whether a layer lays its children out, as a stack or a grid, rather than holding them where they are. */
+function laysOutChildren(node: SceneNode): boolean {
+  return node.layoutMode !== 'NONE'
 }
 
 /** Gives a layer the size it was captured at, and returns whether that changed it. */
@@ -237,7 +240,7 @@ export function placeLayersFromLayout(graph: SceneGraph, boxes: CapturedBoxes): 
   if (changed + resized > 0) return changed + resized
   for (const node of layers) {
     const own = boxes.get(node.id)
-    if (!own || !hasAutoLayout(node)) continue
+    if (!own || !laysOutChildren(node)) continue
     const misplaced = graph.getChildren(node.id).some((child) => {
       const captured = boxes.get(child.id)
       return captured !== undefined && (imposed.has(child.id) || !matches(child, captured, own.box))

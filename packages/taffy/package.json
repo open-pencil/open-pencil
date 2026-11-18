@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/taffy",
-  "version": "0.17.0-beta.4",
+  "version": "0.17.0-beta.5",
   "description": "Taffy, the Rust flexbox and grid layout engine, in WebAssembly as OpenPencil builds it: a whole tree laid out in one call",
   "license": "MIT",
   "repository": {

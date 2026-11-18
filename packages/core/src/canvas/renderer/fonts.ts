@@ -7,7 +7,7 @@ import { FIGJAM_TYPEFACES } from '@open-pencil/scene-graph/figjam'
 import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import { STICKY_FONT_FAMILY, STICKY_FONT_WEIGHT } from '@open-pencil/scene-graph/generated'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import type { NodeFontReadiness } from '#core/canvas/text'
 import {
   COMPONENT_LABEL_FONT_SIZE,

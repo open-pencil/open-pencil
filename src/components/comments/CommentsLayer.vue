@@ -9,10 +9,12 @@ import {
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
 import type { ViewportTransform } from '@open-pencil/core/geometry'
+import type { CommentThread } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { toolCursor } from '@open-pencil/vue/editor/tool-cursor'
 import { useCommentMessages } from '@open-pencil/vue/i18n'
 
+import { commentPreview } from '@/app/comments/format'
 import { useComments } from '@/app/comments/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
@@ -44,6 +46,19 @@ const CARD_GAP = 8
 
 const store = useEditorStore()
 const comments = useComments()
+const { canComment } = comments
+
+/** Whether the open thread's reply may be deleted here. */
+function canDeleteReply(replyId: string): boolean {
+  const thread = activePin.value?.thread
+  return !!thread && comments.canDelete(thread.id, replyId)
+}
+
+/** What a pin says to assistive technology: who wrote what, and whether it is new to you. */
+function pinLabel(thread: CommentThread): string {
+  const label = `${author.name(thread.author)}: ${commentPreview(thread.text)}`
+  return comments.isUnread(thread.id) ? `${messages.value.unread}, ${label}` : label
+}
 const messages = useCommentMessages()
 const author = useCommentAuthor()
 const menuCls = useMenuUI({ content: 'min-w-40' })
@@ -193,8 +208,9 @@ function closeCard() {
             :active="activeThreadId === pin.thread.id"
             :resolved="pin.thread.resolved"
             :dragging="pin.dragging"
+            :unread="comments.isUnread(pin.thread.id)"
             :style="{ left: `${pin.left}px`, top: `${pin.top}px` }"
-            :aria-label="`${author.name(pin.thread.author)}: ${pin.thread.text}`"
+            :aria-label="pinLabel(pin.thread)"
             @pointerdown.stop="pinDrag.start($event, pin.thread.id, pin.at)"
             @pointermove="pinDrag.move"
             @pointerup="pinDrag.end"
@@ -242,6 +258,7 @@ function closeCard() {
             v-model="draftText"
             bare
             :label="messages.addComment"
+            :mentionable="comments.mentionable"
             @submit="postDraft"
             @cancel="closeCard"
           />
@@ -249,12 +266,15 @@ function closeCard() {
             v-else-if="activePin"
             ref="threadCard"
             :thread="activePin.thread"
+            :read-only="!canComment"
+            :mentionable="comments.mentionable"
+            :can-delete-reply="canDeleteReply"
             @close="closeCard"
             @resolve="comments.setResolved"
             @reply="comments.reply"
             @delete-reply="comments.deleteReply"
           >
-            <template #menu>
+            <template v-if="canComment" #menu>
               <CommentActionsMenu :thread="activePin.thread" kind="dropdown" />
             </template>
           </CommentThreadCard>

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import {
   aiModelSettings,
@@ -91,7 +91,8 @@ export const WelcomeTourFailed: Story = {
   args: { entry: 'welcome', tourFailed: true },
   play: async () => {
     // Behaviour, not copy: the alert shows and the tour can be tried again.
-    await expect(page().getByRole('alert')).toBeVisible()
+    // The dialog fades in, so the alert is visible once that ends.
+    await waitFor(() => expect(page().getByRole('alert')).toBeVisible())
     const tour = document.querySelector<HTMLElement>('[data-test-id="ai-setup-tour"]')
     await expect(tour && within(tour).getByRole('button')).toBeEnabled()
   }

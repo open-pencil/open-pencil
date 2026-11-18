@@ -11,7 +11,7 @@ import { appPreferences } from '@/app/settings/preferences/store'
 import { PEER_COLORS } from '@/constants'
 
 import { pickCallsign } from './callsigns'
-import { glideViewTo, showCursors, stopViewGlide, type TrackedCursor } from './cursor-motion'
+import { glideViewTo, showCursors, stopViewGlide, type TrackedCursor } from './motion/cursor'
 import { MAX_NAME_LENGTH } from './schema'
 import type { AgentKind, AgentPresence, FollowTarget, PersonPoint } from './types'
 

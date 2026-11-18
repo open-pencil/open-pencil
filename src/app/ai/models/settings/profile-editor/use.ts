@@ -15,17 +15,16 @@ import {
   saveModelProfileDraft,
   setModelConnectionAPIKey
 } from '@/app/ai/models'
-import type { ModelPickerLabels } from '@/app/ai/models/picker/options'
 import { settingsErrorMessage } from '@/app/settings/credentials/errors'
 import type { SettingsSaveResult } from '@/app/settings/save-result'
 
 import { useProfileConnection } from './connection'
-import { useProfileModelSelection } from './selection'
+import { useProfileModelSelection, type ProfileSelectionLabels } from './selection'
 
 interface ProfileEditorOptions {
   profileId?: string
   keyInput: Ref<string>
-  labels: Readonly<Ref<ModelPickerLabels & { customModel: string; agentDefaultModel: string }>>
+  labels: Readonly<Ref<ProfileSelectionLabels>>
 }
 
 export function useModelProfileEditor({ profileId, keyInput, labels: ai }: ProfileEditorOptions) {
@@ -176,6 +175,9 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
     agentModelState: selection.agentModelState,
     retryAgentModels: selection.retryAgentModels,
     supportsThinking,
+    agentOptionControls: selection.agentOptionControls,
+    agentOptionValue: selection.agentOptionValue,
+    setAgentOption: selection.setAgentOption,
     providerDisplayName,
     modelOptions,
     selectedModelValue,

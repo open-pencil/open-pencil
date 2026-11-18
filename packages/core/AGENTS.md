@@ -14,6 +14,7 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 - Copies of part of a document, such as previews, history snapshots, and exports, come from `extractPageContext` or `extractExportGraph` in `packages/core/src/io/subgraph.ts`, not another copier. Pass `componentSets` when instances must switch variant and `shareTables` for a read-only view rebuilt often (`packages/core/tests/io/subgraph.test.ts`).
 - An edit that records the document changes it makes, as AI and MCP calls do apart from atomic tools (Tools), runs through `recordEdit`, or `recordEditAsync` when it awaits, which keeps the edit open until its step is recorded so undoing it returns the document to saved, and rolls back an edit that throws; capturing a change by hand fails `@open-pencil/editor/no-document-change-capture` (`packages/core/tests/editor/history/edit.test.ts`).
 - A change someone else makes, such as a collaborator's arriving or an undo, is applied through `SceneGraph.runOutsideEdits`, so an edit open meanwhile, such as an agent's, does not record it as its own (`tests/app/collab/agent-edits.test.ts`).
+- An edit the local user makes while an `eval` script waits on its own `fetch` or timer joins the script's step, as the MCP and CLI guides say. The gap is deliberate: pausing at every `await` breaks concurrent writes and telling the two apart by event-loop timing is a guess, so it stays until an AsyncContext-style owner for writes exists (`SceneGraph.waitOutsideEdit`).
 - The recording copies only what an edit touches, each the first time `SceneGraph.observeNodeChanges` reports it about to change: a layer with its ancestors below the page, and a variable or collection, so code that writes into one directly calls `willChangeNode`, `willChangeVariable`, or `willChangeCollection` first. Copies share values rather than deep-copying, so values must be replaced rather than written into, apart from the child lists, source metadata, and override maps it copies; comments on the document node stay out of undo (`packages/core/tests/editor/history/document-change.test.ts`).
 
 ## Layout
@@ -31,6 +32,7 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 
 ## Vector conversion
 
+- Code that walks, writes, or converts paths reuses the shared pieces: it writes into a `PathSink`, writes SVG path data through `svgPathSink` and its number format (`@open-pencil/scene-graph/paths`), and replays a CanvasKit path with `tracePath`, `forEachVerb`, or `appendVerb` (`packages/core/src/canvas/paths/verbs.ts`). A different output format is a sink wrapper or a format option, never another verb walker (`packages/core/src/figma-api/geometry/format.ts`).
 - Bitmap-to-vector conversion lives in `packages/core/src/vector/vectorize/`; app provider clients, preferences, and credential resolution live under `src/app/editor/vectorize/` in the app. Bound request and response sizes and validate provider-owned download URLs before importing returned SVG.
 
 ## Tools (AI, MCP, CLI, WebMCP)
@@ -45,6 +47,7 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 - Shared scene-authoring guidance and tested examples live under `packages/design-jsx/src/reference/`; `reference/index.ts` combines them with renderer metadata. Prompts under `packages/core/src/tools/prompts/` and the app chat/ACP prompt compose that reference rather than copying it. Run `bun run generate:authoring-reference` after changes; `check:authoring-reference` (part of `check:docs`) verifies the committed skill/docs copies. Do not edit generated reference files.
 - A numeric layout argument is declared with `layoutPosition`, `layoutLength`, `layoutSpacing`, `layoutFactor`, `layoutAngle`, or `layoutFontSize` from `packages/core/src/tools/schema.ts`, which states in the description the same bound it enforces, so a call outside it fails and names the tool and the argument (`packages/core/tests/tools/schema.test.ts`).
 - The installable agent skill is maintained in `skills/open-pencil/`. Changes to agent-facing APIs, CLI/MCP behavior, or design authoring must update affected skill examples, prompts, and public documentation in the same change. Keep examples valid in their actual execution environment; do not advertise library exports as scripting globals unless exposed there. Prefer runtime discovery and canonical references over duplicated API/tool inventories.
+- A tool that refuses an argument names the corrected one in its error, so an agent can retry without guessing: saving to `x.pen` fails and names `x.fig`, since `.pen` is read-only and OpenPencil has no `.pen` writer (`documentPathFor` in `src/app/document/io/names.ts`).
 - MCP-only tools and transports: `packages/mcp/AGENTS.md`. WebMCP registration and app completion: `src/AGENTS.md`.
 
 ## Editor
@@ -79,6 +82,8 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 ## Renderer
 
 Canvas is CanvasKit (Skia WASM) on a WebGL surface, not DOM.
+
+- The bundled Inter is Inter 4 (`InterVariable.ttf`, with an `opsz` axis) on purpose. Large text set in it is narrower than in Inter 3, so lines can break differently in files made with Inter 3; that is expected, the bundled font is never swapped or downgraded for it, and text layout comparisons use a font both sides share (`packages/core/src/text/font/bundled.ts`).
 
 ### Invalidation
 

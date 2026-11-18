@@ -729,6 +729,11 @@
         "label": "Open the Tour"
       },
       {
+        "id": "check-updates",
+        "label": "Check for Updates…",
+        "feature": "self-update"
+      },
+      {
         "type": "separator"
       },
       {

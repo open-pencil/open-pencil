@@ -2,9 +2,9 @@ import { convertToModelMessages, generateText } from 'ai'
 import type { LanguageModel, ModelMessage, UIMessage } from 'ai'
 
 import { isContextLimitError } from '@/app/ai/chat/failure'
+import { renderPrompt } from '@/app/ai/prompts/engine'
 
 import { compactionOf, messagesSinceCompaction } from './marker'
-import prompt from './prompt.md?raw'
 
 /** How much of one tool's input or result the summary request keeps. */
 const TOOL_LIMIT = 4000
@@ -145,10 +145,12 @@ export async function summarizeModelMessages(
   const ask = instructions?.trim()
     ? `Summarize the conversation above. Also follow these instructions for the summary: ${instructions.trim()}`
     : 'Summarize the conversation above.'
+  // The person's own summary prompt in Settings, or the built-in one.
+  const system = await renderPrompt('summary', {})
   const request = (within: number) =>
     generateText({
       model,
-      system: prompt.trim(),
+      system,
       messages: [
         ...summarySource(messages, { summaryFirst, budget: within }),
         { role: 'user', content: ask }

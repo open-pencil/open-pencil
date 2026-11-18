@@ -5,7 +5,8 @@ import {
   accountAuthenticationRequest,
   authenticationCookie,
   createAccountAuthenticationFixture,
-  createVerifiedCredentialAccount
+  createVerifiedCredentialAccount,
+  withCookie
 } from '#cloud-tests/helpers/account-authentication'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
@@ -53,8 +54,9 @@ describe('account profile', () => {
       const read = async () =>
         (
           await responseJSON(
-            await fixture.app.fetch(
-              accountAuthenticationRequest('/api/account/profile', undefined, account.sessionCookie)
+            await fixture.client.api.account.profile.$get(
+              undefined,
+              withCookie(account.sessionCookie)
             ),
             cloudProfileResponseSchema
           )
@@ -66,22 +68,18 @@ describe('account profile', () => {
         emailChangeAvailable: true
       })
 
-      const renamed = await fixture.app.fetch(
-        accountAuthenticationRequest(
-          '/api/account/profile',
-          { name: '  Renamed Person  ' },
-          account.sessionCookie
-        )
+      const renamed = await fixture.client.api.account.profile.$post(
+        { json: { name: '  Renamed Person  ' } },
+        withCookie(account.sessionCookie)
       )
       expect(renamed.status).toBe(200)
       expect((await read()).name).toBe('Renamed Person')
-      const blank = await fixture.app.fetch(
-        accountAuthenticationRequest('/api/account/profile', { name: ' ' }, account.sessionCookie)
+      const blank = await fixture.client.api.account.profile.$post(
+        { json: { name: ' ' } },
+        withCookie(account.sessionCookie)
       )
       expect(blank.status).toBe(400)
-      const signedOut = await fixture.app.fetch(
-        accountAuthenticationRequest('/api/account/profile')
-      )
+      const signedOut = await fixture.client.api.account.profile.$get()
       expect(signedOut.status).toBe(401)
     } finally {
       await fixture.close()
@@ -98,11 +96,7 @@ describe('account profile', () => {
         approved: false
       })
       const setLocale = (locale: string, cookie?: string) =>
-        fixture.app.fetch(
-          accountAuthenticationRequest('/api/account/locale', { locale }, cookie, {
-            method: 'PUT'
-          })
-        )
+        fixture.client.api.account.locale.$put({ json: { locale } }, withCookie(cookie))
       const stored = async () =>
         (
           await fixture.database
@@ -143,24 +137,18 @@ describe('account profile', () => {
         password: PASSWORD,
         approved: true
       })
-      const unchanged = await fixture.app.fetch(
-        accountAuthenticationRequest(
-          '/api/account/profile/email',
-          { newEmail: 'OLD@example.com', callbackURL: `${config.publicURL}/account` },
-          account.sessionCookie
-        )
+      const unchanged = await fixture.client.api.account.profile.email.$post(
+        { json: { newEmail: 'OLD@example.com', callbackURL: `${config.publicURL}/account` } },
+        withCookie(account.sessionCookie)
       )
       expect(unchanged.status).toBe(400)
       expect((await responseJSON(unchanged, accountSecurityErrorResponseSchema)).error.code).toBe(
         'email_unchanged'
       )
 
-      const requested = await fixture.app.fetch(
-        accountAuthenticationRequest(
-          '/api/account/profile/email',
-          { newEmail: 'New@example.com', callbackURL: `${config.publicURL}/account` },
-          account.sessionCookie
-        )
+      const requested = await fixture.client.api.account.profile.email.$post(
+        { json: { newEmail: 'New@example.com', callbackURL: `${config.publicURL}/account` } },
+        withCookie(account.sessionCookie)
       )
       expect(requested.status).toBe(200)
       expect(notices).toEqual([
@@ -187,12 +175,9 @@ describe('account profile', () => {
         .executeTakeFirstOrThrow()
       expect(enrollment).toEqual({ emailNormalized: 'new@example.com', status: 'approved' })
       const status = await responseJSON(
-        await fixture.app.fetch(
-          accountAuthenticationRequest(
-            '/api/account/status',
-            undefined,
-            await signIn(fixture, 'new@example.com')
-          )
+        await fixture.client.api.account.status.$get(
+          undefined,
+          withCookie(await signIn(fixture, 'new@example.com'))
         ),
         cloudAccountStatusResponseSchema
       )
@@ -216,12 +201,9 @@ describe('account profile', () => {
         .set({ createdAt: new Date(Date.now() - 60 * 60_000) })
         .where('userId', '=', account.userId)
         .execute()
-      const response = await fixture.app.fetch(
-        accountAuthenticationRequest(
-          '/api/account/profile/email',
-          { newEmail: 'fresh@example.com', callbackURL: `${config.publicURL}/account` },
-          account.sessionCookie
-        )
+      const response = await fixture.client.api.account.profile.email.$post(
+        { json: { newEmail: 'fresh@example.com', callbackURL: `${config.publicURL}/account` } },
+        withCookie(account.sessionCookie)
       )
       expect(response.status).toBe(403)
       expect((await responseJSON(response, accountSecurityErrorResponseSchema)).error.code).toBe(
@@ -250,9 +232,7 @@ describe('account sessions and sign-ins', () => {
       const list = async (cookie: string) =>
         (
           await responseJSON(
-            await fixture.app.fetch(
-              accountAuthenticationRequest('/api/account/sessions', undefined, cookie)
-            ),
+            await fixture.client.api.account.sessions.$get(undefined, withCookie(cookie)),
             cloudAccountSessionsResponseSchema
           )
         ).sessions
@@ -268,40 +248,29 @@ describe('account sessions and sign-ins', () => {
         system: 'macOS'
       })
 
-      const ownSession = await fixture.app.fetch(
-        accountAuthenticationRequest(
-          '/api/account/sessions/revoke',
-          { sessionId: current?.id },
-          account.sessionCookie
-        )
+      const ownSession = await fixture.client.api.account.sessions.revoke.$post(
+        { json: { sessionId: current?.id ?? '' } },
+        withCookie(account.sessionCookie)
       )
       expect(ownSession.status).toBe(400)
       expect((await responseJSON(ownSession, accountSecurityErrorResponseSchema)).error.code).toBe(
         'current_session'
       )
 
-      const revoked = await fixture.app.fetch(
-        accountAuthenticationRequest(
-          '/api/account/sessions/revoke',
-          { sessionId: elsewhere?.id },
-          account.sessionCookie
-        )
+      const revoked = await fixture.client.api.account.sessions.revoke.$post(
+        { json: { sessionId: elsewhere?.id ?? '' } },
+        withCookie(account.sessionCookie)
       )
       expect(revoked.status).toBe(200)
       expect(await list(account.sessionCookie)).toHaveLength(1)
-      const ended = await fixture.app.fetch(
-        accountAuthenticationRequest('/api/account/sessions', undefined, other)
-      )
+      const ended = await fixture.client.api.account.sessions.$get(undefined, withCookie(other))
       expect(ended.status).toBe(401)
 
       await signIn(fixture, 'sessions@example.com')
       expect(await list(account.sessionCookie)).toHaveLength(2)
-      await fixture.app.fetch(
-        accountAuthenticationRequest(
-          '/api/account/sessions/revoke-others',
-          {},
-          account.sessionCookie
-        )
+      await fixture.client.api.account.sessions['revoke-others'].$post(
+        undefined,
+        withCookie(account.sessionCookie)
       )
       expect(await list(account.sessionCookie)).toEqual([
         expect.objectContaining({ current: true })
@@ -340,8 +309,9 @@ describe('account sessions and sign-ins', () => {
 
       const signIns = (
         await responseJSON(
-          await fixture.app.fetch(
-            accountAuthenticationRequest('/api/account/sign-ins', undefined, account.sessionCookie)
+          await fixture.client.api.account['sign-ins'].$get(
+            undefined,
+            withCookie(account.sessionCookie)
           ),
           cloudSignInsResponseSchema
         )
@@ -372,12 +342,9 @@ describe('account sessions and sign-ins', () => {
         approved: true
       })
       const setup = await responseJSON(
-        await fixture.app.fetch(
-          accountAuthenticationRequest(
-            '/api/account/mfa/totp/enable',
-            { password: PASSWORD },
-            account.sessionCookie
-          )
+        await fixture.client.api.account.mfa.totp.enable.$post(
+          { json: { password: PASSWORD } },
+          withCookie(account.sessionCookie)
         ),
         v.object({ totpURI: v.string() })
       )
@@ -385,12 +352,9 @@ describe('account sessions and sign-ins', () => {
         base32.decode(new URL(setup.totpURI).searchParams.get('secret') ?? '')
       )
       const otp = createOTP(secret)
-      await fixture.app.fetch(
-        accountAuthenticationRequest(
-          '/api/account/mfa/totp/verify',
-          { code: await otp.totp() },
-          account.sessionCookie
-        )
+      await fixture.client.api.account.mfa.totp.verify.$post(
+        { json: { code: await otp.totp() } },
+        withCookie(account.sessionCookie)
       )
       expect(changes).toEqual(['authenticator-on'])
       const recorded = async () =>

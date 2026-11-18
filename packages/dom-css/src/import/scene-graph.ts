@@ -30,14 +30,20 @@ import {
 import { hasBoxStyle } from './boxes'
 import { colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
 import {
+  alignBlocksInFlow,
+  type FlowBlock,
+  alignBlockLines,
   applyContainerLayout,
   applyFlowSizing,
   elementDisplay,
   flowOf,
   inheritedTextStyle,
+  isInlineLevel,
+  textAlignOf,
   type FlowKind,
   type ParentFlow
 } from './flow'
+import { alignGridItems, isGrid } from './grid'
 import {
   applyCapturedLines,
   capturedBox,
@@ -46,6 +52,17 @@ import {
   type CapturedBox,
   type CapturedBoxes
 } from './placement'
+import {
+  applyCollapsedBorders,
+  applyTableLayout,
+  collapsesBorders,
+  isTable,
+  isTableColumn,
+  isTableRow,
+  layOutRowSpans,
+  paintSharedBordersOnce,
+  wrapTableGrid
+} from './table'
 import {
   blockRichText,
   characterStyleFromCSS,
@@ -222,7 +239,7 @@ function applyTextStyle(node: SceneNode, style: DesignStyleDeclaration): void {
   const effects = cssShadows(pickStyle(style, 'text-shadow'))
   if (effects.length > 0) node.effects = effects
 
-  const textAlign = pickStyle(style, 'text-align')?.toUpperCase()
+  const textAlign = textAlignOf(style)?.toUpperCase()
   if (textAlign === 'CENTER' || textAlign === 'RIGHT' || textAlign === 'JUSTIFIED') {
     node.textAlignHorizontal = textAlign
   }
@@ -304,6 +321,8 @@ function hasContent(element: DesignElement): boolean {
 interface Recorded {
   boxes: CapturedBoxes
   transforms: CSSTransforms
+  /** Cells of tables with collapsed borders, until their table draws each shared border once. */
+  collapsedCells: SceneNode[]
 }
 
 /** Remembers where the layer's element was laid out, and how many lines its text took. */
@@ -340,7 +359,7 @@ function createElementNode(
 ): SceneNode | null {
   const style = mergedStyle(element)
   const display = elementDisplay(element, style)
-  if (display === 'none') return null
+  if (display === 'none' || isTableColumn(display)) return null
   if (
     isTextLikeElement(element) &&
     !hasBoxStyle(element, style, parentFlow) &&
@@ -362,22 +381,51 @@ function createElementNode(
     clipsContent: false
   })
   applyElementStyle(graph, node, element, style)
+  applyCollapsedBorders(node, element, style, display)
   recordElement(graph, recorded, node, element, style)
   // A box without content keeps its own size, as an image does, unless it declares a layout.
   const flow = hasContent(element) || flowOf(display) === 'flex' ? flowOf(display) : null
   if (flow) {
     applyContainerLayout(node, element, style, flow)
     if (flow === 'flex') applyFlexGap(node, style)
+    applyTableLayout(node, style, display)
   }
   applyFlowSizing(graph, node, style, display, parentFlow)
 
-  createChildLayers(graph, node, element, style, flow, recorded)
+  if (display === 'table-cell' && collapsesBorders(style)) recorded.collapsedCells.push(node)
+  const ownCells = recorded.collapsedCells.length
+  const parts = createChildLayers(graph, node, element, style, flow, recorded, isGrid(display))
+  layOutTablesAndGrids(graph, node, style, display, parts, recorded, ownCells)
   return node
 }
 
 /**
+ * What tables and grids add once their children are layers: a table draws each collapsed border
+ * once, its cells' from `cellsFrom` on, and boxes its captions; a row lays out cells that span
+ * rows; a grid aligns its items.
+ */
+function layOutTablesAndGrids(
+  graph: SceneGraph,
+  node: SceneNode,
+  style: DesignStyleDeclaration,
+  display: string,
+  parts: FlowBlock[],
+  recorded: Recorded,
+  cellsFrom: number
+): void {
+  if (isTable(display)) {
+    const cells = recorded.collapsedCells.splice(cellsFrom)
+    if (collapsesBorders(style)) paintSharedBordersOnce(cells, recorded.boxes)
+    wrapTableGrid(graph, node, parts, recorded.boxes)
+  }
+  if (isTableRow(display)) layOutRowSpans(node, parts, recorded.boxes)
+  if (isGrid(display)) alignGridItems(graph, node, parts, style, recorded.boxes)
+}
+
+/**
  * A box's children as layers: blocks of text in its own flow as one text, since a flex box's
- * children are items, or each child as a layer of its own.
+ * children are items, or each child as a layer of its own. Returns the layers of its child
+ * elements, with their styles.
  */
 function createChildLayers(
   graph: SceneGraph,
@@ -385,24 +433,44 @@ function createChildLayers(
   element: DesignElement,
   style: DesignStyleDeclaration,
   flow: FlowKind | null,
-  recorded: Recorded
-): void {
-  if (flow !== 'flex' && holdsRichText(element)) {
+  recorded: Recorded,
+  grid = false
+): FlowBlock[] {
+  // A flex container's and a grid's children are items, each a layer its container aligns.
+  if (flow !== 'flex' && !grid && holdsRichText(element)) {
     const textStyle = inheritedTextStyle(style)
     const textDisplay = flow === 'inline' ? 'inline' : 'block'
     const text = createRichTextNode(graph, node.id, element, textStyle, textDisplay, flow ?? 'none')
     record(graph, recorded, text, capturedTextBox(element))
-    return
+    if (flow === 'block') alignBlockLines(graph, node, style, true)
+    return []
   }
   // Text alone in a box takes the box its lines are in; text among elements has none of its own.
   const textBox = element.children.every((child) => child.type === 'text')
     ? capturedTextBox(element)
     : undefined
+  // Whether everything the element holds sits in its lines, which its `text-align` aligns.
+  let inlineContent = true
+  const blocks: FlowBlock[] = []
+  const parts: FlowBlock[] = []
   for (const child of element.children) {
     const inherited = inheritedTextStyle(style)
     const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
     if (layer?.type === 'TEXT') record(graph, recorded, layer, textBox)
+    if (child.type !== 'element' || !layer) continue
+    const childStyle = mergedStyle(child)
+    parts.push({ layer, element: child, style: childStyle })
+    // An absolutely positioned box is out of the flow, in no line and no block of its own.
+    if (layer.layoutPositioning === 'ABSOLUTE') continue
+    if (isInlineLevel(elementDisplay(child, childStyle))) continue
+    inlineContent = false
+    if (layer.type === 'FRAME') blocks.push({ layer, element: child, style: childStyle })
   }
+  if (flow === 'block') {
+    alignBlocksInFlow(graph, node, blocks, style)
+    alignBlockLines(graph, node, style, inlineContent)
+  }
+  return parts
 }
 
 function createDesignNode(
@@ -450,7 +518,7 @@ export function designDocumentToLayers(
 ): DesignLayers {
   const graph = new SceneGraph()
   const page = graph.getPages().find((node) => node.type === 'CANVAS') ?? graph.addPage('DesignDOM')
-  const recorded: Recorded = { boxes: new Map(), transforms: new Map() }
+  const recorded: Recorded = { boxes: new Map(), transforms: new Map(), collapsedCells: [] }
 
   page.name = options.pageName ?? 'DesignDOM'
 

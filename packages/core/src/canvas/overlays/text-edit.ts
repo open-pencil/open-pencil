@@ -2,8 +2,9 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { styleRunAt } from '@open-pencil/scene-graph/text'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { TEXT_CARET_COLOR, TEXT_CARET_WIDTH, TEXT_SELECTION_ALPHA } from '#core/constants'
 import type { TextEditor } from '#core/text/editor'
 import { previousGraphemeBoundary } from '#core/text/graphemes'
@@ -18,9 +19,7 @@ import { withScreenStroke } from './outline'
  */
 export function textCaretColor(node: SceneNode, index: number): Color {
   const character = index > 0 ? previousGraphemeBoundary(node.text, index) : 0
-  const run = node.styleRuns.find(
-    (item) => character >= item.start && character < item.start + item.length
-  )
+  const run = styleRunAt(node.styleRuns, character)
   const visible = (run?.style.fills ?? node.fills).filter((fill) => fill.visible)
   const [fill] = visible
   if (visible.length !== 1 || fill.type !== 'SOLID') return TEXT_CARET_COLOR

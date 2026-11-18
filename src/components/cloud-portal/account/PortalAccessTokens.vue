@@ -13,6 +13,7 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 import AppDataTable from '@/components/ui/table/AppDataTable.vue'
 
+import { portalColumnMeta } from '../table/columns'
 import PortalTextCell from '../table/PortalTextCell.vue'
 import type { PortalAccessToken } from '../types'
 
@@ -57,18 +58,18 @@ const table = usePortalRows(() => tokens, {
     }),
     column.accessor('created', {
       header: () => messages.value.columnCreated,
-      meta: { class: 'hidden w-32 whitespace-nowrap text-muted @2xl/table:table-cell' }
+      meta: { role: 'date' }
     }),
     column.display({
       id: 'lastUsed',
       header: () => messages.value.columnLastUsed,
-      meta: { class: 'hidden w-32 whitespace-nowrap text-muted @xl/table:table-cell' },
+      meta: { role: 'date' },
       cell: ({ row: { original: token } }) => token.lastUsed ?? messages.value.accessTokenNeverUsed
     }),
     column.display({
       id: 'expires',
       header: () => messages.value.columnExpires,
-      meta: { class: 'w-32 whitespace-nowrap text-muted' },
+      meta: { role: 'date', always: true },
       cell: ({ row: { original: token } }) =>
         token.expired
           ? h('span', { class: 'text-warning' }, messages.value.accessTokenExpired)
@@ -77,7 +78,7 @@ const table = usePortalRows(() => tokens, {
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px text-right', actions: true },
+      meta: { role: 'actions' },
       cell: ({ row: { original: token } }) =>
         h(
           AppButton,
@@ -128,6 +129,7 @@ function confirm() {
       </template>
       <AppDataTable
         :table="table"
+        :column-meta="portalColumnMeta"
         :label="messages.accessTokens"
         :loading="loading"
         :loading-label="messages.loading"

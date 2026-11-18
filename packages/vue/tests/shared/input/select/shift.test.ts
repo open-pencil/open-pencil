@@ -4,7 +4,7 @@ import type { Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { handleMoveMove, handleMoveUp } from '#vue/shared/input/move/drag'
-import { handleSelectDown, type HitTestFns } from '#vue/shared/input/select'
+import { handleSelectDown, type HitTestFns } from '#vue/shared/input/select/press'
 import type { DragState } from '#vue/shared/input/types'
 
 import { createMoveHarness } from '../move/harness'

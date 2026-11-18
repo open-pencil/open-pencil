@@ -13,7 +13,7 @@ import {
   tryStartScale,
   type ScaleModifiers
 } from '#vue/shared/input/scale'
-import { handleScaleDown, type HitTestFns } from '#vue/shared/input/select'
+import { handleScaleDown, type HitTestFns } from '#vue/shared/input/select/press'
 import type { DragState } from '#vue/shared/input/types'
 
 let editor: Editor

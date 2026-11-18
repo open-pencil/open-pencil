@@ -80,7 +80,9 @@ export function openDocumentRoom(
     holdsDocument: true,
     leavable: false,
     identity,
-    images
+    images,
+    // The document's server keeps its comments, and every tab fetches them from there.
+    commentsOnServer: true
   })
   addSession(session)
   return session

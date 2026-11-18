@@ -1,7 +1,7 @@
 import type { VectorNetwork } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-import type { NodeEditOverlayState } from '#core/canvas/node-edit-overlay'
+import type { NodeEditOverlayState } from '#core/canvas/overlays/node-edit'
 import type { UpdateNodeWithUndo } from '#core/editor/shapes/pen/draw'
 import type { ShownHandles, VectorHandleField } from '#core/vector/handle-selection'
 

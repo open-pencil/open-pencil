@@ -5,15 +5,20 @@ import { providerKind } from '@open-pencil/core/constants'
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { agentModeCategories } from '@/app/ai/agents/acp/options'
 import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { MAX_IMAGE_ATTACHMENTS } from '@/app/ai/attachment/image/types'
 import { takeBackMessages } from '@/app/ai/chat/queue'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
+import { chatAgentOptions } from '@/app/ai/chat/thinking'
 import { useAIChat } from '@/app/ai/chat/use'
 import { designModelProfile } from '@/app/ai/models'
 import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
 import ChatThinkingSelect from '@/components/chat/ChatThinkingSelect.vue'
 import { useComposerCompletions } from '@/components/chat/composer/useComposerCompletions'
+import ChatAgentAccess from '@/components/chat/input/ChatAgentAccess.vue'
+import ChatAgentModelMenu from '@/components/chat/input/ChatAgentModelMenu.vue'
+import ChatAgentModeSelect from '@/components/chat/input/ChatAgentModeSelect.vue'
 import { useAttachmentDrafts } from '@/components/chat/input/useAttachments'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
@@ -101,8 +106,12 @@ function dropFiles(files: File[]): void {
 
 defineExpose({ restoreDraft, dropFiles })
 
-/** A coding agent sets its own thinking effort, so the composer offers none for one. */
+/** A coding agent sets its own thinking effort, so the composer offers no direct-model levels. */
 const isAgentProvider = computed(() => providerKind(providerID.value) !== 'api')
+/** An ACP agent, whose mode, model, and thinking level the composer offers by its own names. */
+const isACPProvider = computed(() => providerKind(providerID.value) === 'acp')
+/** Which of the agent's options is its mode, and which is access it keeps apart from it. */
+const agentCategories = computed(() => agentModeCategories(chatAgentOptions.value ?? {}))
 const isCustomProvider = computed(
   () => providerID.value === 'openai-compatible' || providerID.value === 'anthropic-compatible'
 )
@@ -189,13 +198,21 @@ const selectedProfileName = computed(
       </IconButton>
     </template>
     <template #model>
-      <div class="@container flex min-w-0 items-center">
-        <ChatProfileSelect>
-          <template #value>
-            <span class="min-w-0 truncate">{{ selectedProfileName }}</span>
-          </template>
-        </ChatProfileSelect>
-        <ChatThinkingSelect v-if="!isAgentProvider" />
+      <div class="@container flex min-w-0 items-center gap-0.5">
+        <template v-if="isACPProvider">
+          <ChatAgentModeSelect v-if="agentCategories.mode" :category="agentCategories.mode" />
+          <ChatAgentAccess v-if="agentCategories.access" :category="agentCategories.access" />
+          <span class="flex-1" />
+          <ChatAgentModelMenu :access="agentCategories.access" />
+        </template>
+        <template v-else>
+          <ChatProfileSelect>
+            <template #value>
+              <span class="min-w-0 truncate">{{ selectedProfileName }}</span>
+            </template>
+          </ChatProfileSelect>
+          <ChatThinkingSelect v-if="!isAgentProvider" />
+        </template>
       </div>
     </template>
   </ChatComposer>

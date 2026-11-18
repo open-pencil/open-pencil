@@ -26,5 +26,9 @@
   "reload": "Odśwież",
   "settingsSection": "Aktualizacje",
   "checkOnStartup": "Sprawdzaj aktualizacje przy uruchomieniu",
-  "checkOnStartupDescription": "Szuka nowej wersji chwilę po otwarciu aplikacji na komputerze. Polecenie „Sprawdź aktualizacje…” w menu działa także, gdy to jest wyłączone."
+  "checkOnStartupDescription": "Szuka nowej wersji chwilę po otwarciu aplikacji na komputerze. Polecenie „Sprawdź aktualizacje…” w menu działa także, gdy to jest wyłączone.",
+  "channel": "Kanał aktualizacji",
+  "channelDescription": "Wersje nightly powstają co noc z najnowszego kodu i mogą zawierać błędy. Powrót do wersji stabilnej instaluje bieżące wydanie stabilne przy następnym sprawdzeniu.",
+  "channelStable": "Stabilna",
+  "channelNightly": "Nightly"
 }

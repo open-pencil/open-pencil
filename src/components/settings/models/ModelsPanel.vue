@@ -114,6 +114,8 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
             </AppButton>
           </template>
 
+          <!-- A campaign's note, such as an offer of Cloud's AI to someone without a key. -->
+          <slot name="campaign" />
           <div class="flex flex-col gap-1.5" data-test-id="settings-model-list">
             <AppActionRow
               v-for="profile in profiles"
