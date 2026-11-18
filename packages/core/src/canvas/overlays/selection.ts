@@ -111,6 +111,7 @@ function drawSingleSelection(
     drawSelectionLabels(r, canvas, graph, selectedIds, overlays)
   }
   r.selectionPaint.setColor(r.selColor())
+  r.selectionPaint.setStrokeWidth(1)
 }
 
 export function drawSelection(
