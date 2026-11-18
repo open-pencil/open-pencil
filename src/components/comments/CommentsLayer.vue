@@ -283,6 +283,7 @@ function closeCard() {
             @pointermove="pinDrag.move"
             @pointerup="pinDrag.end"
             @pointercancel="pinDrag.end"
+            @lostpointercapture="pinDrag.end"
             @click.stop="pinDrag.click(pin.thread.id)"
           />
         </ContextMenuTrigger>

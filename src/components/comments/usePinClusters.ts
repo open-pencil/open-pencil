@@ -1,4 +1,4 @@
-import { meanBy, partition } from 'es-toolkit'
+import { meanBy } from 'es-toolkit'
 import { computed, type ComputedRef } from 'vue'
 
 import { groupMarks } from '@open-pencil/core/canvas'
@@ -83,10 +83,12 @@ function groupPins<P extends PlacedPin>(pins: readonly P[]): PinGroup<P>[] {
 
 export function usePinClusters<P extends PlacedPin>(pins: ComputedRef<P[]>) {
   const placement = computed(() => {
-    const [standalone, crowdable] = partition(pins.value, (pin) => pin.standalone)
-    const [single, crowded] = partition(groupPins(crowdable), (group) => group.items.length === 1)
+    const crowdable = pins.value.filter((pin) => !pin.standalone)
+    const crowded = groupPins(crowdable).filter((group) => group.items.length > 1)
+    const clustered = new Set(crowded.flatMap((group) => group.items))
     return {
-      pins: [...standalone, ...single.flatMap((group) => group.items)],
+      // In their own order: moving a pressed pin's element in the page drops its pointer capture.
+      pins: pins.value.filter((pin) => !clustered.has(pin)),
       clusters: crowded.map(({ items, rect }): PinCluster<P> => ({
         key: items.map((pin) => pin.thread.id).join(' '),
         pins: items,
