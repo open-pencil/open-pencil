@@ -239,8 +239,26 @@ describe('useCloudCreditBalance', () => {
     ready = true
     const read = credits.refresh()
     home.answers[0]?.resolve(wallet(800))
-    expect(await read).toBe(true)
+    expect(await read).toBe('shown')
     expect(credits.balance.value).toBe(800)
+  })
+
+  test('says how a read ended: shown, replaced by a later one, or failed', async () => {
+    const home = homeCloud()
+    const credits = show(home.source)
+    home.answers[0]?.resolve(wallet(800))
+    await settle()
+
+    const replaced = credits.refresh()
+    const latest = credits.refresh()
+    home.answers[2]?.resolve(wallet(700))
+    home.answers[1]?.resolve(wallet(800))
+    expect(await latest).toBe('shown')
+    expect(await replaced).toBe('superseded')
+
+    const failed = credits.refresh()
+    home.answers[3]?.reject(new Error('offline'))
+    expect(await failed).toBe('failed')
   })
 
   test('keeps showing a view its balance while another view arrives and reads', async () => {

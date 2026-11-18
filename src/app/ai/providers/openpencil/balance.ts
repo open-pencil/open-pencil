@@ -20,6 +20,12 @@ interface CloudBalanceOptions {
   replying: () => boolean
 }
 
+/**
+ * How a wallet read ended: its answer is shown, a later read's answer is shown instead, or it
+ * could not be made or answered.
+ */
+export type WalletReadOutcome = 'shown' | 'superseded' | 'failed'
+
 /** A wallet's latest answer, and the read that gave it. */
 interface WalletRead {
   wallet: CreditWallet | null
@@ -67,25 +73,32 @@ export function useCloudCreditBalance(
    * Reads the wallet again, and says which read it is and whether its answer was kept, or `null`
    * with nothing to read.
    */
-  function startRead(): { at: string; read: number; done: Promise<boolean> } | null {
+  function startRead(): { at: string; read: number; done: Promise<WalletReadOutcome> } | null {
     const at = key.value
     const id = workspaceId()
     const client = id ? source.client(id) : null
     if (!at || !client) return null
     const read = ++reads
     latestReads.set(at, read)
-    const keep = (value: CreditWallet | null) => {
-      if (latestReads.get(at) !== read) return false
+    const keep = (value: CreditWallet | null, outcome: WalletReadOutcome): WalletReadOutcome => {
+      if (latestReads.get(at) !== read) return 'superseded'
       store(at, { wallet: value, read })
-      return true
+      return outcome
     }
-    return { at, read, done: client.wallet().then(keep, () => keep(null)) }
+    return {
+      at,
+      read,
+      done: client.wallet().then(
+        (value) => keep(value, 'shown'),
+        () => keep(null, 'failed')
+      )
+    }
   }
 
-  /** Reads the wallet again, and says whether this read's answer is the one shown. */
-  async function refresh(): Promise<boolean> {
+  /** Reads the wallet again, and says how the read ended. */
+  async function refresh(): Promise<WalletReadOutcome> {
     const started = startRead()
-    if (!started) return false
+    if (!started) return 'failed'
     // A view that could not read on arriving, with no client yet, shows this read once it can.
     if (since.value === Number.POSITIVE_INFINITY) since.value = started.read
     return started.done

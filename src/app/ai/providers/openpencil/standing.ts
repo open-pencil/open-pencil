@@ -49,22 +49,17 @@ export function useCloudCreditStanding() {
     replying: () => false
   })
   const allowance = shallowRef<number | null>(null)
+  // Until the allowance answers, the threshold is a guess, so nothing counts as recovered.
+  const allowanceKnown = shallowRef(false)
   let allowanceRead = 0
   async function readAllowance(): Promise<void> {
     const read = ++allowanceRead
     const id = workspaceId.value
     const next = id ? await cloudMonthlyAllowance(id) : null
-    if (read === allowanceRead) allowance.value = next
+    if (read !== allowanceRead) return
+    allowance.value = next
+    allowanceKnown.value = true
   }
-  // Another sign-in can change the plan behind the same workspace.
-  watch(
-    [workspaceId, cloudAIIdentity],
-    () => {
-      allowance.value = null
-      void readAllowance()
-    },
-    { immediate: true }
-  )
 
   const live = computed(() => creditStanding(balance.value, allowance.value))
   /** Whose credits these are: the account and workspace, or `null` while the chat isn't on Cloud. */
@@ -82,6 +77,19 @@ export function useCloudCreditStanding() {
     renewsAt: string | null
   } | null>(null)
   let refreshes = 0
+  // Another sign-in can change the plan behind the same workspace, and a hold from other credits
+  // never applies to these.
+  watch(
+    scope,
+    () => {
+      refreshes += 1
+      held.value = null
+      allowance.value = null
+      allowanceKnown.value = false
+      void readAllowance()
+    },
+    { immediate: true }
+  )
   async function refreshAll(id: string): Promise<void> {
     const run = ++refreshes
     held.value = { scope: scope.value, standing: live.value, renewsAt: renewsAt.value }
@@ -91,8 +99,9 @@ export function useCloudCreditStanding() {
       if (read !== allowanceRead || id !== workspaceId.value) return
       // The wallet counts the allowance its token was signed with, so a changed plan needs a new one.
       if (next !== allowance.value) renewCloudAIToken(id)
-      // The new allowance goes with the wallet read against it, or waits for the next refresh.
-      if ((await refresh()) && read === allowanceRead) allowance.value = next
+      // The new allowance goes with a wallet read under the new token: this one, or a later one
+      // that replaced it. A read that failed leaves both as they were.
+      if ((await refresh()) !== 'failed' && read === allowanceRead) allowance.value = next
     } finally {
       if (run === refreshes) held.value = null
     }
@@ -106,7 +115,7 @@ export function useCloudCreditStanding() {
     renewsAt: computed(() => (holding.value ? (held.value?.renewsAt ?? null) : renewsAt.value)),
     scope,
     /** Whether the wallet has answered with enough credits, as opposed to not answering at all. */
-    healthy: computed(() => balance.value !== null && live.value === null),
+    healthy: computed(() => allowanceKnown.value && balance.value !== null && live.value === null),
     /**
      * Whether the signed-in account pays for these credits, and so can buy more; `null` when the
      * server can't say.

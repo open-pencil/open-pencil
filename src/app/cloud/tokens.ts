@@ -13,27 +13,35 @@ export function createCloudTokenCache(
 ): CloudServicesTokenSource & { reset(): void } {
   let current: { token: string; expiresAt: number } | null = null
   let pending: Promise<string> | null = null
+  // A reset starts a new generation: a token signed before it answers its own caller but is
+  // never kept or handed to a later one.
+  let generation = 0
   return {
     token() {
       if (current && current.expiresAt - REFRESH_MARGIN_MS > now()) {
         return Promise.resolve(current.token)
       }
-      pending ??= request()
+      if (pending) return pending
+      const signing = generation
+      const next = request()
         .then(({ token, expiresAt }) => {
-          current = { token, expiresAt: Date.parse(expiresAt) }
+          if (signing === generation) current = { token, expiresAt: Date.parse(expiresAt) }
           return token
         })
         .finally(() => {
-          pending = null
+          if (pending === next) pending = null
         })
-      return pending
+      pending = next
+      return next
     },
     invalidate(token) {
       if (current?.token === token) current = null
     },
     /** Forgets the held token, so the next request signs a new one. */
     reset() {
+      generation += 1
       current = null
+      pending = null
     }
   }
 }
