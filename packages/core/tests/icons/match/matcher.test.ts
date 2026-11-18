@@ -2,11 +2,11 @@ import { afterEach, describe, expect, mock, spyOn, test } from 'bun:test'
 
 import { noop } from 'es-toolkit'
 import { DEFAULT_SIZE, dHashFromPixels, parseIndex } from 'whaticon/hash'
+import { coverageFromRGBA } from 'whaticon/match'
 
 import { getCanvasKit } from '#core/canvaskit'
 import type { IconProvider } from '#core/icons'
-import { coverageGrid } from '#core/icons/match/coverage'
-import { createIconMatcher, svgCoverage, type IconMatcherServices } from '#core/icons/match/matcher'
+import { createIconMatcher, drawSVG, type IconMatcherServices } from '#core/icons/match/matcher'
 import { headlessRenderNodes } from '#core/io/formats/raster'
 import { createCanvasKitRasterCodec } from '#core/io/formats/raster/pixels'
 
@@ -26,9 +26,9 @@ async function testIndex() {
   const names = Object.keys(ICONS)
   const hashes = await Promise.all(
     names.map(async (name) => {
-      const grid = await svgCoverage(draw, ICONS[name] ?? '', DEFAULT_SIZE + 1, DEFAULT_SIZE)
-      if (!grid) throw new Error(`${name} did not draw`)
-      return dHashFromPixels(grid)
+      const image = await drawSVG(draw, ICONS[name] ?? '', DEFAULT_SIZE + 1, DEFAULT_SIZE)
+      if (!image) throw new Error(`${name} did not draw`)
+      return dHashFromPixels(coverageFromRGBA(image, DEFAULT_SIZE + 1, DEFAULT_SIZE))
     })
   )
   const bytes = new Uint8Array(hashes.reduce((length, hash) => length + hash.length, 0))
@@ -50,6 +50,8 @@ afterEach(() => {
   mock.restore()
 })
 
+// whaticon's own tests cover how the matcher shortlists, compares, keeps, and retries; these
+// cover it drawing with OpenPencil's renderer and icons.
 describe('naming icons by how they draw', () => {
   test('names an icon a page draws at its own size, in its own color, with rounded numbers', async () => {
     const match = createIconMatcher({ index: testIndex, icons: testIcons(), draw })
@@ -67,49 +69,17 @@ describe('naming icons by how they draw', () => {
     expect(await match([lens])).toEqual([null])
   })
 
-  test("fetches a page's candidates at once, and compares an icon it repeats once", async () => {
+  test("fetches a page's candidates from the icon provider at once", async () => {
     const icons = testIcons()
     const match = createIconMatcher({ index: testIndex, icons, draw })
     const [house, search] = [ICONS['lucide:house'] ?? '', ICONS['lucide:search'] ?? '']
 
-    expect(await match([house, search, house])).toEqual([
-      'lucide:house',
-      'lucide:search',
-      'lucide:house'
-    ])
-    expect(await match([search])).toEqual(['lucide:search'])
+    expect(await match([house, search])).toEqual(['lucide:house', 'lucide:search'])
     expect(icons.previews).toHaveBeenCalledTimes(1)
   })
 
-  test('names nothing when the icons to compare with do not load, and asks again later', async () => {
+  test('warns once and names nothing without its index, then names again', async () => {
     const warn = spyOn(console, 'warn').mockImplementation(noop)
-    const icons = testIcons()
-    icons.previews.mockImplementationOnce(() => Promise.reject(new Error('timed out')))
-    const match = createIconMatcher({ index: testIndex, icons, draw })
-    const house = ICONS['lucide:house'] ?? ''
-
-    expect(await match([house])).toEqual([null])
-    expect(warn).toHaveBeenCalledTimes(1)
-    expect(await match([house])).toEqual(['lucide:house'])
-  })
-
-  test('names nothing without its index, and says so once', async () => {
-    const warn = spyOn(console, 'warn').mockImplementation(noop)
-    const match = createIconMatcher({
-      index: () => Promise.reject(new Error('offline')),
-      icons: testIcons(),
-      draw
-    })
-
-    expect(await match([ICONS['lucide:house'] ?? ''])).toEqual([null])
-    expect(await match([ICONS['lucide:search'] ?? ''])).toEqual([null])
-    expect(warn).toHaveBeenCalledTimes(1)
-  })
-})
-
-describe('naming icons after a failure', () => {
-  test('loads the index again on the next call after it failed', async () => {
-    spyOn(console, 'warn').mockImplementation(noop)
     const index = mock(testIndex)
     index.mockImplementationOnce(() => Promise.reject(new Error('offline')))
     const match = createIconMatcher({ index, icons: testIcons(), draw })
@@ -117,20 +87,7 @@ describe('naming icons after a failure', () => {
 
     expect(await match([house])).toEqual([null])
     expect(await match([house])).toEqual(['lucide:house'])
-  })
-
-  test('leaves an SVG unnamed when drawing it fails, and draws it again on the next call', async () => {
-    spyOn(console, 'warn').mockImplementation(noop)
-    let failing = true
-    const flaky: IconMatcherServices['draw'] = (...args) =>
-      failing ? Promise.reject(new Error('context lost')) : draw(...args)
-    const match = createIconMatcher({ index: testIndex, icons: testIcons(), draw: flaky })
-    const house = ICONS['lucide:house'] ?? ''
-
-    // The index is hashed with the working renderer; only the matcher's draws fail.
-    expect(await match([house])).toEqual([null])
-    failing = false
-    expect(await match([house])).toEqual(['lucide:house'])
+    expect(warn).toHaveBeenCalledTimes(1)
   })
 
   test('draws an SVG again on the next call when the renderer drew no image of it', async () => {
@@ -144,28 +101,5 @@ describe('naming icons after a failure', () => {
     expect(await match([house])).toEqual([null])
     drawing = true
     expect(await match([house])).toEqual(['lucide:house'])
-  })
-
-  test('does not keep a miss from comparing with only some of its icons', async () => {
-    const icons = testIcons()
-    icons.previews.mockImplementationOnce(async () => new Map())
-    const match = createIconMatcher({ index: testIndex, icons, draw })
-    const house = ICONS['lucide:house'] ?? ''
-
-    expect(await match([house])).toEqual([null])
-    expect(await match([house])).toEqual(['lucide:house'])
-  })
-})
-
-describe('coverage', () => {
-  test('centers an image in its box, as darkness on white', () => {
-    // One opaque pixel and one half covered, in a 2 by 1 image.
-    const image = { width: 2, height: 1, data: new Uint8Array([0, 0, 0, 255, 0, 0, 0, 128]) }
-
-    const grid = coverageGrid(image, 4, 3)
-
-    // The middle row of three, the image one pixel in from the left; the rest is white.
-    expect([...grid.subarray(4, 8)]).toEqual([255, 0, 127, 255])
-    expect(grid.filter((value) => value !== 255)).toHaveLength(2)
   })
 })

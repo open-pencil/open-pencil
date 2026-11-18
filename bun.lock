@@ -378,7 +378,7 @@
         "ufo": "^1.6.4",
         "unifont": "1.0.3",
         "valibot": "^1.5.0",
-        "whaticon": "^0.3.0",
+        "whaticon": "^0.4.0",
         "woff2-encoder": "2.0.0",
       },
       "devDependencies": {
@@ -5362,7 +5362,7 @@
 
     "webpack-virtual-modules": ["webpack-virtual-modules@0.6.2", "", {}, "sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ=="],
 
-    "whaticon": ["whaticon@0.3.0", "", { "dependencies": { "citty": "^0.2.2", "valibot": "^1.5.0" }, "peerDependencies": { "sharp": "^0.35.5" }, "optionalPeers": ["sharp"], "bin": { "whaticon": "dist/cli.js" } }, "sha512-xDckl2L2F5xu8TdHmKBqGU0SDIRCfwAHA1uN7AnAn2P3TmAHIWAiqF7oo0/k58Sg6P6g85vTnm8Oddpm8wDhwg=="],
+    "whaticon": ["whaticon@0.4.0", "", { "dependencies": { "citty": "^0.2.2", "valibot": "^1.5.0" }, "peerDependencies": { "sharp": "^0.35.5" }, "optionalPeers": ["sharp"], "bin": { "whaticon": "dist/cli.js" } }, "sha512-1LY+IJPfhEkLuz+3TZuANyQ+T5H3pLed+HCLj8nei0ppFrAd0+yZtpOZgE0GjoPzuETVXq5z6vdeTypey29E6A=="],
 
     "whatwg-encoding": ["whatwg-encoding@3.1.1", "", { "dependencies": { "iconv-lite": "0.6.3" } }, "sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ=="],
 

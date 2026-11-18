@@ -3,8 +3,7 @@ import { defaultIcons, type IconProvider } from '#core/icons'
 import { headlessRenderNodes } from '#core/io/formats/raster/headless'
 import { createCanvasKitRasterCodec } from '#core/io/formats/raster/pixels'
 
-import { createIconMatcher, type IconMatcher } from './matcher'
-import { fetchIconIndex } from './whaticon'
+import { createIconMatcher, fetchIconIndex, type IconMatcher } from './matcher'
 
 /**
  * Names icons with the headless renderer, as the CLI and the MCP server draw: CanvasKit loads when
