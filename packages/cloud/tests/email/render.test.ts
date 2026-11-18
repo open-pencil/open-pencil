@@ -73,26 +73,4 @@ describe('the storage-limit email', () => {
     expect(rendered.text).not.toContain('Get more storage')
     expect(rendered.text).toContain('empty the trash')
   })
-
-  test('the invitation letter links the bug form and the desktop beta, and is signed', async () => {
-    const rendered = await renderTransactionalEmail(
-      {
-        kind: 'enrollment-invited',
-        payload: { name: 'Ada', actionURL: 'https://cloud.example.com/' }
-      },
-      'en'
-    )
-    expect(rendered.subject).toBe('You can try OpenPencil Cloud now')
-    for (const url of [
-      'https://cloud.example.com/',
-      'https://openpencil.dev/download#beta',
-      'https://github.com/open-pencil/open-pencil/issues/new?template=bug_report.yml'
-    ]) {
-      expect(rendered.text).toContain(url)
-    }
-    expect(rendered.text).toContain('Hi Ada,')
-    expect(rendered.text).toContain('Danila')
-    expect(rendered.text).toContain('Founder of OpenPencil')
-    expect(rendered.text).not.toContain('{link}')
-  })
 })

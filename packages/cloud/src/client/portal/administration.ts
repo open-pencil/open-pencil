@@ -9,7 +9,6 @@ import {
   cloudAdminUserDetailSchema,
   cloudAdminUsersResponseSchema,
   documentDownloadSchema,
-  enrollmentInviteResponseSchema,
   enrollmentReviewResponseSchema,
   enrollmentsResponseSchema,
   type CloudAdminAuditFilter,
@@ -74,14 +73,6 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
         (options) =>
           admin.enrollments[':id'][action].$post({ param: { id }, json: { note } }, options),
         enrollmentReviewResponseSchema,
-        signal
-      )
-    },
-    /** Approves every waiting request and sends each the invitation letter (official only). */
-    inviteEnrollments(signal?: AbortSignal) {
-      return call(
-        (options) => admin.enrollments.invite.$post(undefined, options),
-        enrollmentInviteResponseSchema,
         signal
       )
     },
