@@ -355,10 +355,14 @@ export function recordInstanceOverride(
     (INSTANCE_OVERRIDE_FIELDS as readonly string[]).includes(field)
   )
 
-  if (relevant.length === 0) return
+  const added = relevant.filter(
+    (field) => !hasNodeInstanceOverride(instance.instanceOverrides, instance.id, nodeId, field)
+  )
+  if (added.length === 0) return
 
-  graph.willChangeNode(instance)
-  for (const field of relevant)
-    setInstanceOverride(instance.instanceOverrides, instance.id, nodeId, field)
-  graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
+  // A new state rather than an edit of the old one, so a preview that captured the old state
+  // puts it back on cancel.
+  const overrides = cloneInstanceOverrideState(instance.instanceOverrides)
+  for (const field of added) setInstanceOverride(overrides, instance.id, nodeId, field)
+  graph.updateNode(instance.id, { instanceOverrides: overrides })
 }
