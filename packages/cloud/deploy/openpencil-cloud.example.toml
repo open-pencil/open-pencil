@@ -80,7 +80,9 @@ addresses = []
 
 # Add this table to enable GitHub, from a GitHub App with Account permissions > Email addresses set
 # to read-only and the callback URL <public_url>/api/auth/callback/github. The client secret
-# defaults to GITHUB_CLIENT_SECRET; the client ID may instead use { from_env = "..." }.
+# defaults to GITHUB_CLIENT_SECRET; the client ID may instead use { from_env = "..." }. Set
+# deployment.minimum_editor_version to an editor release with GitHub sign-in at the same time:
+# older editors cannot read a server that offers it.
 # [authentication.providers.github]
 # client_id = "your-github-app-client-id"
 
