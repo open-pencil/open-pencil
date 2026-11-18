@@ -107,10 +107,41 @@ describe('usePortalPlan', () => {
     })
     await settle()
     const opening = page.openBilling()
+    expect(page.opening.busy.value).toBe(true)
     page.cancelBilling()
+    // Free again at once, not once the token it no longer wants arrives.
+    expect(page.opening.busy.value).toBe(false)
     token.resolve(undefined)
     await opening
     expect(opened).toEqual([])
+  })
+
+  test('a handoff started again before the left one settles is the one that counts', async () => {
+    const opened: number[] = []
+    const tokens = [Promise.withResolvers<undefined>(), Promise.withResolvers<undefined>()]
+    let calls = 0
+    const page = plan({
+      entitlements: async () => entitlements,
+      async openBilling(wanted) {
+        const call = calls++
+        await tokens[call]?.promise
+        if (call === 0) throw new Error('The first token failed')
+        if (wanted()) opened.push(call)
+      }
+    })
+    await settle()
+    const first = page.openBilling()
+    page.cancelBilling()
+    const second = page.openBilling()
+    tokens[0]?.resolve(undefined)
+    await first
+    // The left handoff's failure stays out of sight, and the new one is still under way.
+    expect(page.opening.error.value).toBeNull()
+    expect(page.opening.busy.value).toBe(true)
+    tokens[1]?.resolve(undefined)
+    await second
+    expect(opened).toEqual([1])
+    expect(page.opening.busy.value).toBe(false)
   })
 
   test('reports nothing of a handoff the person left behind', async () => {

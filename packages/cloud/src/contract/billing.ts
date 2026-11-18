@@ -32,7 +32,8 @@ export const CLOUD_ACCOUNT_BILLING_PATH = `${CLOUD_ACCOUNT_PLAN_PATH}?open=billi
 /**
  * The billing service's own pages, below the discovered `endpoint`: where Cloud's plan page sends
  * the signed-in person, posting a billing token as the form field `token` to `session`, and the
- * public pricing page.
+ * public pricing page. The service answers that post with `303 See Other`, never `307` or `308`,
+ * which a browser follows by posting the same body, the token, again to wherever they point.
  */
 export const CLOUD_BILLING_PAGE_PATHS = {
   session: '/session',

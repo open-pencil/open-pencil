@@ -111,13 +111,7 @@ export function usePortalPlan(services: PortalPlanServices = portalPlanServices(
   let handoffs = 0
   const opening = usePortalAction(async () => {
     const handoff = ++handoffs
-    const wanted = () => handoff === handoffs
-    try {
-      await services.openBilling?.(wanted)
-    } catch (error) {
-      // A handoff the person left behind reports nothing when they come back.
-      if (wanted()) throw error
-    }
+    await services.openBilling?.(() => handoff === handoffs)
   })
   return {
     entitlements,
@@ -126,9 +120,13 @@ export function usePortalPlan(services: PortalPlanServices = portalPlanServices(
     sells: services.openBilling !== null,
     opening,
     openBilling: () => opening.run(),
-    /** Drops a handoff still waiting for its token, as when the person leaves the page. */
+    /**
+     * Drops a handoff still waiting for its token, as when the person leaves the page: it opens
+     * nothing, the button is free again, and its failure is not reported.
+     */
     cancelBilling() {
       handoffs += 1
+      opening.abandon()
     }
   }
 }

@@ -35,15 +35,16 @@ export async function evaluateRuntime(
 /**
  * What checks a public specifier: importing a module, or for a stylesheet, which a bundler
  * imports but Node and Bun cannot, finding the file its export names, since resolving alone
- * succeeds for a file that was never shipped.
+ * succeeds for a file that was never shipped, or for a directory in its place.
  */
 export function publicImportCheck(specifier: string): string {
   const quoted = JSON.stringify(specifier)
   if (!specifier.endsWith('.css')) return `await import(${quoted})`
   return [
-    "const { existsSync } = await import('node:fs')",
+    "const { statSync } = await import('node:fs')",
     "const { fileURLToPath } = await import('node:url')",
-    `if (!existsSync(fileURLToPath(import.meta.resolve(${quoted})))) throw new Error(${JSON.stringify(`${specifier} is not shipped`)})`
+    `const target = statSync(fileURLToPath(import.meta.resolve(${quoted})), { throwIfNoEntry: false })`,
+    `if (!target?.isFile()) throw new Error(${JSON.stringify(`${specifier} is not shipped as a file`)})`
   ].join('; ')
 }
 

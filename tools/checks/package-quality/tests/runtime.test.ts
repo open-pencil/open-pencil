@@ -74,7 +74,7 @@ test('public imports retain separate bounded Node and Bun invocations and their 
 })
 
 test.each(['node', 'bun'] as const)(
-  'a stylesheet export fails in %s once its file is missing, and passes while it is shipped',
+  'a stylesheet export fails in %s while its file is missing or a directory, and passes once shipped',
   async (runtime) => {
     const consumer = await mkdtemp(join(tmpdir(), 'open-pencil-stylesheet-'))
     try {
@@ -86,6 +86,9 @@ test.each(['node', 'bun'] as const)(
       )
       const check = publicImportCheck('@fixture/library/theme.css')
       await expect(evaluateRuntime(runtime, check, consumer)).rejects.toThrow()
+      await mkdir(join(library, 'theme.css'))
+      await expect(evaluateRuntime(runtime, check, consumer)).rejects.toThrow()
+      await rm(join(library, 'theme.css'), { recursive: true })
       await writeFile(join(library, 'theme.css'), ':root {}')
       await evaluateRuntime(runtime, check, consumer)
     } finally {
