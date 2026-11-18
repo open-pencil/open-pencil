@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { MAX_TIMER_MS } from '@open-pencil/scene-graph/timing'
+
 import { resolveMCPRoot } from '#mcp/root'
 import { MCP_VERSION, startServer } from '#mcp/server'
 import { readToolPolicyFromEnv } from '#mcp/tool/policy'
@@ -66,17 +68,13 @@ const port = rawPort
 // the PORT value alone determines whether TCP is enabled (PORT=0 is the kill switch).
 const withTcp = port > 0
 
-const MAX_TIMEOUT_MS = 2_147_483_647
-
 /** Read a millisecond timeout from the environment, exiting on an invalid value. */
 function readTimeoutEnv(name: string): number | undefined {
   const text = process.env[name]?.trim()
   if (!text) return undefined
   const timeoutMs = Number(text)
-  if (!/^\d+$/.test(text) || timeoutMs > MAX_TIMEOUT_MS) {
-    process.stderr.write(
-      `Error: ${name} must be an integer in 0–${MAX_TIMEOUT_MS}, got "${text}"\n`
-    )
+  if (!/^\d+$/.test(text) || timeoutMs > MAX_TIMER_MS) {
+    process.stderr.write(`Error: ${name} must be an integer in 0–${MAX_TIMER_MS}, got "${text}"\n`)
     process.exit(1)
   }
   return timeoutMs

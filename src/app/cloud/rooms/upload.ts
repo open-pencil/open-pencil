@@ -1,13 +1,14 @@
 import * as v from 'valibot'
 
 import { CloudAPIError } from '@open-pencil/cloud/client'
+import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
 
 import type { CollabAction } from '@/app/collab/transport/types'
 import type { EditorStore } from '@/app/editor/session'
 import { followUpload, kickSyncEngine } from '@/app/storage/sync'
 
 /** How long a tab waits for the room's saver to say the document is on its server. */
-export const ROOM_UPLOAD_TIMEOUT_MS = 60_000
+export const ROOM_UPLOAD_TIMEOUT_MS = DEADLINE_MS.transfer
 
 const idSchema = v.pipe(v.string(), v.minLength(1), v.maxLength(64))
 const uploadMessageSchema = v.pipe(

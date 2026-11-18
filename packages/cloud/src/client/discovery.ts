@@ -7,7 +7,9 @@ import {
 } from '#cloud/contract'
 import * as v from 'valibot'
 
-const DISCOVERY_TIMEOUT_MS = 10_000
+import { anySignal, DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+
+const DISCOVERY_TIMEOUT_MS = DEADLINE_MS.request
 
 export type CloudFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 
@@ -105,7 +107,7 @@ export async function discoverCloud(
 ): Promise<CloudDiscovery> {
   const fetchImplementation = options.fetch ?? globalThis.fetch
   const timeoutSignal = AbortSignal.timeout(DISCOVERY_TIMEOUT_MS)
-  const signal = options.signal ? AbortSignal.any([options.signal, timeoutSignal]) : timeoutSignal
+  const signal = anySignal([options.signal, timeoutSignal])
 
   try {
     const response = await fetchImplementation(discoveryURL(serverURL), {

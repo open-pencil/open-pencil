@@ -1,5 +1,7 @@
 import * as v from 'valibot'
 
+import { DEADLINE_MS, untilAborted } from '@open-pencil/scene-graph/timing'
+
 import { imageStandIn, rasterImageSize } from './images'
 import { captureSchema, requestsSchema, type HTMLEngineCapture } from './schema'
 
@@ -58,7 +60,7 @@ export interface HTMLEngineLayoutOptions {
  * How long a request may take by default: as long as the browser runtime waits for an image, so
  * one request that never ends cannot hold this layout, or the ones queued behind it, forever.
  */
-const REQUEST_TIMEOUT_MS = 10_000
+const REQUEST_TIMEOUT_MS = DEADLINE_MS.request
 
 /** The largest viewport side the module takes, as a signed 32-bit length. */
 const MAX_VIEWPORT = 0x7fffffff
@@ -71,12 +73,9 @@ function checkViewport({ width, height }: HTMLEngineLayoutOptions['viewport']): 
   }
 }
 
-/** A fetch that gives up, answering null, once `signal` aborts. */
+/** A fetch that gives up, answering null, once it fails or `signal` aborts. */
 function withDeadline<T>(request: Promise<T>, signal: AbortSignal): Promise<T | null> {
-  const expired = new Promise<null>((resolve) => {
-    signal.addEventListener('abort', () => resolve(null), { once: true })
-  })
-  return Promise.race([request.catch(() => null), expired])
+  return untilAborted(request, signal).catch(() => null)
 }
 
 /** Blitz's wasm-bindgen imports, which no capture calls: they trap with their name instead. */

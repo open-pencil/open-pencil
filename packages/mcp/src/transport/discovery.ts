@@ -4,6 +4,7 @@ import { Socket } from 'node:net'
 import * as v from 'valibot'
 
 import { writeFileAtomic } from '@open-pencil/core/node/fs'
+import { DEADLINE_MS, SECOND_MS } from '@open-pencil/scene-graph/timing'
 
 import { MCP_TOOL_SCOPES, type MCPToolScope } from '#mcp/tool/scope'
 import { getDiscoveryPath, getSocketPath, platformHasUnixSockets } from '#mcp/transport/paths'
@@ -131,7 +132,7 @@ async function isSocketLiveViaTcp(socketPath: string): Promise<boolean> {
   }
 
   return fetch(`http://127.0.0.1:${info.httpPort}/health`, {
-    signal: AbortSignal.timeout(2000)
+    signal: AbortSignal.timeout(DEADLINE_MS.probe)
   })
     .then(() => true)
     .catch((e) => {
@@ -160,7 +161,8 @@ function probeSocketLive(socketPath: string): Promise<boolean> {
       // oxlint-disable-next-line no-multiple-resolved -- settled flag guarantees single resolution
       resolve(result)
     }
-    const timer = setTimeout(() => finish(true), 1000)
+    // A socket that neither connects nor refuses in this long has something behind it.
+    const timer = setTimeout(() => finish(true), SECOND_MS)
     socket.once('connect', () => finish(true))
     socket.once('error', (err) => {
       const code = (err as NodeJS.ErrnoException).code

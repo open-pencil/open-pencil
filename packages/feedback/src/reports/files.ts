@@ -2,9 +2,9 @@ import { REPORT_FILE_RETENTION_DAYS } from '#feedback/contract'
 import type { ReportsBucket } from '#feedback/env'
 
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
+import { DAY_MS } from '@open-pencil/scene-graph/timing'
 
 const PREFIX = 'reports/'
-const DAY_MS = 24 * 60 * 60 * 1000
 
 /** Where a report's attached file lives in the bucket. */
 export function reportFileKey(reportId: string, name: string): string {

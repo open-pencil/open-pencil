@@ -9,6 +9,7 @@ import {
 } from '@agentclientprotocol/sdk/unstable'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
+import { isDeadline, withDeadline } from '@open-pencil/scene-graph/timing'
 
 import {
   AUTH_STATUS_UPDATE_METHOD,
@@ -28,8 +29,8 @@ export const AGENT_START_TIMEOUT_MS = 60_000
 
 /**
  * The request's answer, unless one of `also` fails first or it takes longer than `timeoutMs`,
- * which rejects with `timedOut`. The timer is cleared once the race settles, so an answer that
- * comes in time leaves nothing pending.
+ * which rejects with `timedOut`. ACP requests take no signal, so a request past its deadline goes
+ * on in the agent; only the wait for it ends.
  */
 export async function withinDeadline<T>(
   request: Promise<T>,
@@ -37,12 +38,11 @@ export async function withinDeadline<T>(
   timedOut: string,
   ...also: Promise<never>[]
 ): Promise<T> {
-  const deadline = createDeferred<never>()
-  const timer = setTimeout(() => deadline.reject(new Error(timedOut)), timeoutMs)
   try {
-    return await Promise.race([request, ...also, deadline.promise])
-  } finally {
-    clearTimeout(timer)
+    return await withDeadline(timeoutMs, () => Promise.race([request, ...also]))
+  } catch (error) {
+    if (isDeadline(error)) throw new Error(timedOut, { cause: error })
+    throw error
   }
 }
 

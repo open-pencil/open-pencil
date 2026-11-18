@@ -1,6 +1,7 @@
 import { createMatcher, fetchIndex, type Matcher } from 'whaticon/match'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
 
 import { parseIconName, type IconProvider } from '#core/icons/provider'
 import type { RGBAImage } from '#core/io/formats/raster/pixels'
@@ -31,7 +32,7 @@ export interface IconMatcherServices {
  * How long the index may take to download, body included, before naming icons gives up and the
  * import keeps its SVG as artwork; the next import tries again.
  */
-const INDEX_TIMEOUT_MS = 30_000
+const INDEX_TIMEOUT_MS = DEADLINE_MS.transfer
 
 /**
  * whaticon's index of the popular Iconify sets, from the version Core depends on. Its downloads

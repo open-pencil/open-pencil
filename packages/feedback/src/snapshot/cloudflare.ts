@@ -2,8 +2,10 @@ import type { FeedbackServices } from '#feedback/env'
 import { type CalendarDate, parseDate } from '@internationalized/date'
 import * as v from 'valibot'
 
+import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+
 const GRAPHQL_URL = 'https://api.cloudflare.com/client/v4/graphql'
-const REQUEST_TIMEOUT_MS = 15_000
+const REQUEST_TIMEOUT_MS = DEADLINE_MS.slowRequest
 /** How many of the website's pages a day keeps; the long tail is one-off paths and scanners. */
 export const TOP_PAGES = 50
 /** More than there are countries, so a day keeps all of them. */

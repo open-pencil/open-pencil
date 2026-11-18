@@ -1,9 +1,9 @@
 import { Channel, invoke } from '@tauri-apps/api/core'
 
 import { randomHex } from '@open-pencil/scene-graph/random'
+import { abortReason, untilAborted } from '@open-pencil/scene-graph/timing'
 
 import type { FetchFunction } from '@/app/http/types'
-import { abortReason, withAbortSignal } from '@/app/runtime/abort'
 
 export interface ProxyHttpHeader {
   name: string
@@ -176,7 +176,7 @@ async function executeTauriFetch(
   }
   let head: ProxyHttpHead
   try {
-    head = await withAbortSignal(
+    head = await untilAborted(
       invoke<ProxyHttpHead>('proxy_http_request', { request: payload, onBody }).catch(
         (error: unknown) => {
           throw fetchError(error)

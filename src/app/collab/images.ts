@@ -1,6 +1,8 @@
 import { compact, partition } from 'es-toolkit'
 import type * as Y from 'yjs'
 
+import { BACKOFF, backoffDelay } from '@open-pencil/scene-graph/timing'
+
 import type { EditorStore } from '@/app/editor/active-store'
 
 /**
@@ -21,7 +23,7 @@ export interface RoomImageStore {
 
 /** How long a peer waits before asking again for an image it could not load, by attempt. */
 export function imageRetryDelayMs(attempt: number): number {
-  return Math.min(1000 * 2 ** attempt, 60_000)
+  return backoffDelay(attempt, BACKOFF.retry)
 }
 
 /**

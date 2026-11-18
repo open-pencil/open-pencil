@@ -3,6 +3,7 @@ import { useAsyncState, useNow } from '@vueuse/core'
 import { computed, ref, shallowRef, watch } from 'vue'
 
 import type { TrashedDocument } from '@open-pencil/cloud/contract'
+import { DAY_MS } from '@open-pencil/scene-graph/timing'
 import { useCloudMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { findCloudServer } from '@/app/cloud/servers/store'
@@ -13,8 +14,6 @@ import { AppConfirmationDialog } from '@/components/ui/dialog'
 
 import CloudTrashView from './CloudTrashView.vue'
 import type { CloudTrashRow } from './types'
-
-const DAY_MS = 24 * 60 * 60_000
 
 /** Trash of the server Home shows: what the person may restore, across their workspaces. */
 const { serverId, query = '' } = defineProps<{

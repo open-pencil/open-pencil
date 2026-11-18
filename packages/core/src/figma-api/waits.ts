@@ -1,3 +1,5 @@
+import { untilAborted } from '@open-pencil/scene-graph/timing'
+
 import { graphOf } from './graph'
 
 /** The signal that cancels the script each API object runs, from `FigmaAPIOptions.signal`. */
@@ -6,28 +8,6 @@ const scriptSignals = new WeakMap<object, AbortSignal>()
 /** Cancels waits started through `api` once `signal` aborts. */
 export function cancelScriptWaits(api: object, signal: AbortSignal): void {
   scriptSignals.set(api, signal)
-}
-
-/** `promise`, or a rejection with the abort reason once `signal` aborts. */
-async function untilAborted<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
-  let stop: () => void = () => undefined
-  const aborted = new Promise<never>((_resolve, reject) => {
-    stop = () => reject(abortReason(signal))
-    signal.addEventListener('abort', stop, { once: true })
-  })
-  try {
-    return await Promise.race([promise, aborted])
-  } finally {
-    signal.removeEventListener('abort', stop)
-    // The work goes on after an abort; its own failure then has no one to tell.
-    promise.catch(() => undefined)
-  }
-}
-
-function abortReason(signal: AbortSignal): Error {
-  return signal.reason instanceof Error
-    ? signal.reason
-    : new DOMException('The operation was aborted', 'AbortError')
 }
 
 /**

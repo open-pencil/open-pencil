@@ -8,6 +8,8 @@ import {
 import { logCloud, loggedError } from '#cloud/server/logging'
 import * as Y from 'yjs'
 
+import { DEADLINE_MS, SECOND_MS } from '@open-pencil/scene-graph/timing'
+
 import type { RelayAuthorization } from './authorize'
 import { stampAwareness } from './awareness'
 import {
@@ -32,6 +34,13 @@ import {
   type Room,
   type RoomContent
 } from './room'
+
+/** How long a room waits after an edit before saving, so a burst of edits saves once. */
+const PERSIST_DELAY_MS = 2 * SECOND_MS
+/** How long a room waits to save again after a save failed. */
+const PERSIST_RETRY_MS = 30 * SECOND_MS
+/** How long a new socket has to present its ticket before the room closes it. */
+const AUTH_TIMEOUT_MS = DEADLINE_MS.request
 
 export type { RelayConnection, RelaySocket } from './connection'
 
@@ -105,8 +114,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   const closing = new Map<string, Promise<void>>()
   /** Set by `close()`: a failed save then drops the room instead of retrying. */
   let shuttingDown = false
-  const persistDelayMs = options.persistDelayMs ?? 2_000
-  const persistRetryMs = options.persistRetryMs ?? 30_000
+  const persistDelayMs = options.persistDelayMs ?? PERSIST_DELAY_MS
+  const persistRetryMs = options.persistRetryMs ?? PERSIST_RETRY_MS
   const logLimits = {
     updates: options.compactAfterUpdates ?? 500,
     bytes: options.compactAfterBytes ?? 4 * 1024 * 1024
@@ -115,7 +124,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     options.maximumRoomBytes ?? MAX_COLLAB_MESSAGE_BYTES,
     MAX_COLLAB_MESSAGE_BYTES
   )
-  const authTimeoutMs = options.authTimeoutMs ?? 10_000
+  const authTimeoutMs = options.authTimeoutMs ?? AUTH_TIMEOUT_MS
   const report =
     options.onError ??
     ((message, error, ids) =>

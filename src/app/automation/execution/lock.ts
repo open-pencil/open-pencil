@@ -1,5 +1,6 @@
+import { untilAborted } from '@open-pencil/scene-graph/timing'
+
 import type { EditorStore } from '@/app/editor/active-store'
-import { withAbortSignal } from '@/app/runtime/abort'
 import { createDeferred } from '@/app/runtime/deferred'
 
 /**
@@ -19,7 +20,7 @@ function createMutex() {
       return release
     }
     try {
-      await withAbortSignal(previous, signal)
+      await untilAborted(previous, signal)
     } catch (error) {
       void previous.then(release)
       throw error

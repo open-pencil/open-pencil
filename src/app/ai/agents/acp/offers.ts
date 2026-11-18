@@ -2,6 +2,7 @@ import * as v from 'valibot'
 import { shallowRef } from 'vue'
 
 import type { ACPAgentDef, ACPAgentID } from '@open-pencil/core/constants'
+import { DAY_MS } from '@open-pencil/scene-graph/timing'
 
 import { readCacheJSON, writeCacheJSON } from '@/app/cache'
 
@@ -32,7 +33,7 @@ const offerSchema = v.object({
 }) satisfies v.GenericSchema<unknown, AgentOffer>
 
 /** How long a remembered offer stands in for starting the agent, as a provider's catalog does. */
-const AGENT_OFFER_MAX_AGE_MS = 24 * 60 * 60 * 1000
+const AGENT_OFFER_MAX_AGE_MS = DAY_MS
 
 function offerKey(agent: ACPAgentDef): string {
   return `agents/${agent.id}/offer`

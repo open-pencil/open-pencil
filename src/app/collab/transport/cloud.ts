@@ -10,7 +10,7 @@ import {
   relayClientMessages,
   type RelayClientFrame
 } from '@open-pencil/cloud/contract'
-import { randomIndex } from '@open-pencil/scene-graph/random'
+import { BACKOFF, backoffDelay } from '@open-pencil/scene-graph/timing'
 
 import { createActionRegistry } from './actions'
 import type { CollabRoomTransport, JoinCollabRoom } from './types'
@@ -20,7 +20,6 @@ const RELAY_DISCOVERY_MS = 1000
 /** How long before a ticket expires the transport presents a fresh one. */
 const TICKET_REFRESH_LEAD_MS = 60_000
 const MINIMUM_REFRESH_MS = 5_000
-const MAXIMUM_RECONNECT_MS = 30_000
 /**
  * How often the transport asks the relay whether it still hears this peer. A socket can lose its
  * way without closing; one that stays silent for an interval after being asked is given up.
@@ -68,9 +67,7 @@ const FINAL_CLOSE_CODES = new Set<number>([
  * which a random half is waited, so the peers a deploy dropped together do not return together.
  */
 export function relayReconnectDelay(attempt: number): number {
-  const step = Math.min(MAXIMUM_RECONNECT_MS, 1000 * 2 ** attempt)
-  const half = Math.floor(step / 2)
-  return step - half + randomIndex(half + 1)
+  return backoffDelay(attempt, BACKOFF.reconnect)
 }
 
 /**

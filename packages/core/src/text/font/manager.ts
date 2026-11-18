@@ -10,6 +10,7 @@ import {
   normalizeFontFamily,
   parseFontStyle
 } from '@open-pencil/scene-graph/font-style'
+import { DEADLINE_MS, withDeadline } from '@open-pencil/scene-graph/timing'
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import {
@@ -454,7 +455,12 @@ export class FontManager {
       )
       const normalized = normalizeFontFamily(family)
       const families = normalized === family ? [family] : [family, normalized]
-      const resolved = await this.webFonts.fetchFont(families, style, requestedCharacters, signal)
+      // A font is a real download, so it gets a transfer's time before it counts as failed.
+      const resolved = await withDeadline(
+        DEADLINE_MS.transfer,
+        (bounded) => this.webFonts.fetchFont(families, style, requestedCharacters, bounded),
+        signal
+      )
       if (!resolved || resolved.buffers.length === 0) return null
       const primary = resolved.buffers[0]
       // Providers serve faces by weight; a named face comes only from a variable file that has it.

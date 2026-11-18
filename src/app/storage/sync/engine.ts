@@ -1,5 +1,6 @@
 import { IS_BROWSER } from '@open-pencil/core/constants'
 import { minOf } from '@open-pencil/scene-graph/arrays'
+import { BACKOFF, backoffDelay } from '@open-pencil/scene-graph/timing'
 
 import {
   describeDiagnosticError,
@@ -22,8 +23,6 @@ import { PARKED_ATTEMPT_AT, type OutboxJob } from '@/app/storage/sync/types'
 import { emitStorageWorkspaceEvent } from '@/app/storage/workspace/events'
 
 const MAX_ATTEMPTS = 8
-const BASE_BACKOFF_MS = 1500
-const MAX_BACKOFF_MS = 60_000
 
 let pumping = false
 let wakeTimer: ReturnType<typeof setTimeout> | null = null
@@ -36,12 +35,9 @@ function isOnline(): boolean {
   return online !== false
 }
 
+/** How long after its `attempts`th failure a job is tried again. */
 function backoffMs(attempts: number): number {
-  const exp = Math.min(MAX_BACKOFF_MS, BASE_BACKOFF_MS * 2 ** Math.max(0, attempts - 1))
-  const jitter = Math.floor(
-    exp * 0.2 * ((crypto.getRandomValues(new Uint8Array(1)).at(0) ?? 0) / 255)
-  )
-  return exp + jitter
+  return backoffDelay(attempts - 1, BACKOFF.retry)
 }
 
 export function nextSyncWakeDelay(jobs: OutboxJob[], now = Date.now()): number | null {

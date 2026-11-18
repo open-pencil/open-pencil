@@ -18,6 +18,8 @@ import { jwtVerify, type JWTVerifyGetKey } from 'jose'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
+import { MINUTE_MS } from '@open-pencil/scene-graph/timing'
+
 import type { ServicesConfig } from './config'
 import type { ServicesDatabase } from './db'
 import { creditsFor, meteredUsage } from './metering'
@@ -74,7 +76,7 @@ const FORWARDED_FIELDS = [
 ] as const
 
 /** How long an upstream answer may take in all, streamed or not, so a stalled one cannot hold a request slot forever. */
-const DEFAULT_UPSTREAM_TIMEOUT_MS = 10 * 60_000
+const DEFAULT_UPSTREAM_TIMEOUT_MS = 10 * MINUTE_MS
 
 function aiError(
   context: Context,

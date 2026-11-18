@@ -6,6 +6,7 @@ import type {
   CampaignContent,
   CampaignPlacement
 } from '@open-pencil/feedback/contract'
+import { DAY_MS } from '@open-pencil/scene-graph/timing'
 
 import { officialCloudSignedIn } from '@/app/cloud/integration'
 import { DONATION_URL } from '@/app/donation/url'
@@ -25,8 +26,6 @@ import {
   type ScheduledCampaign
 } from './schedule'
 import { servedCampaigns } from './served'
-
-const DAY = 24 * 60 * 60 * 1000
 
 /** A campaign the app ships with, which speaks the app's own translations. */
 export type BuiltInCampaign = ScheduledCampaign & { id: BuiltInCampaignId }
@@ -89,12 +88,12 @@ function carryDonationClockOver(now: number): void {
   const { installedAt } = appPreferences.value.campaigns
   const records = toRaw(appPreferences.value.campaigns.records)
   updateCampaignPreferences({
-    installedAt: installedAt ?? now - DONATION.timing.afterInstallDays * DAY,
+    installedAt: installedAt ?? now - DONATION.timing.afterInstallDays * DAY_MS,
     records: Object.hasOwn(records, 'donation')
       ? records
       : {
           ...records,
-          donation: { dismissedAt: promptAfter - (DONATION.timing.repeatAfterDays ?? 0) * DAY }
+          donation: { dismissedAt: promptAfter - (DONATION.timing.repeatAfterDays ?? 0) * DAY_MS }
         }
   })
   updateDonationPreferences({ promptAfter: null })

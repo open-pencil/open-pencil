@@ -2,6 +2,7 @@ import { promiseTimeout } from '@vueuse/core'
 
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { parseToolDescriptor, type ToolDescriptor } from '@open-pencil/mcp/tools'
+import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
 
 import { APP_VERSION } from '@/app/runtime/version'
 
@@ -108,7 +109,7 @@ export async function probeAutomationHealth(
     const headers = authToken ? { Authorization: `Bearer ${authToken}` } : undefined
     const res = await fetch(`${AUTOMATION_HTTP_URL}/health`, {
       headers,
-      signal: AbortSignal.timeout(1000)
+      signal: AbortSignal.timeout(DEADLINE_MS.probe)
     })
     if (!res.ok) {
       // A running server that refuses our token needs a new token; any other

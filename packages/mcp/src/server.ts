@@ -69,6 +69,7 @@ export {
   type RegisterToolsOptions,
   type RPCSender
 } from '#mcp/tool/registration'
+import { MAX_TIMER_MS } from '@open-pencil/scene-graph/timing'
 
 export interface ServerOptions {
   /** TCP port for the HTTP + WebSocket server. Ignored when `withTcp` is false. When set to 0 with `withTcp: true`, binds to an ephemeral port. Defaults to 7600. */
@@ -543,8 +544,6 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
 
   return handle
 }
-
-const MAX_TIMER_MS = 2_147_483_647
 
 function validateTimeoutOption(name: string, timeoutMs: number | undefined): void {
   if (timeoutMs === undefined) return

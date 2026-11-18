@@ -2,6 +2,8 @@ import { invoke } from '@tauri-apps/api/core'
 import { useLocalStorage } from '@vueuse/core'
 import * as v from 'valibot'
 
+import { DEADLINE_MS, withDeadline } from '@open-pencil/scene-graph/timing'
+
 import { IS_TAURI } from '@/constants'
 
 /** Device state behind sharing, kept apart from preferences because people never edit it. */
@@ -34,15 +36,15 @@ export const sharingState = useLocalStorage<SharingState>(
 )
 
 /** How long the desktop app waits to learn whether its environment turns sharing off. */
-const ENVIRONMENT_CHECK_TIMEOUT_MS = 2_000
+const ENVIRONMENT_CHECK_TIMEOUT_MS = DEADLINE_MS.probe
 
 let disabledByEnvironment: Promise<boolean> | null = null
 
-async function readDesktopEnvironment(): Promise<boolean> {
-  const timeout = new Promise<boolean>((resolve) => {
-    setTimeout(() => resolve(true), ENVIRONMENT_CHECK_TIMEOUT_MS)
-  })
-  return Promise.race([invoke<boolean>('sharing_disabled_by_env'), timeout])
+/** Rejects when the check fails or does not answer in time, which the caller counts as off. */
+function readDesktopEnvironment(): Promise<boolean> {
+  return withDeadline(ENVIRONMENT_CHECK_TIMEOUT_MS, () =>
+    invoke<boolean>('sharing_disabled_by_env')
+  )
 }
 
 /**

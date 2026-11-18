@@ -1,3 +1,5 @@
+import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+
 import { HTMLEngine } from './engine'
 
 /**
@@ -16,7 +18,7 @@ let loading: Promise<HTMLEngine> | null = null
  * How long a remote module may take to arrive, so a request that never settles cannot hold every
  * later load waiting on it; a failed load is retried by the next caller.
  */
-const MODULE_LOAD_TIMEOUT_MS = 60_000
+const MODULE_LOAD_TIMEOUT_MS = DEADLINE_MS.transfer
 
 /** Points the engine at the host's copy of its module. Call before the first `loadHTMLEngine`. */
 export function setHTMLEngineLocator(locate: HTMLEngineLocator): void {

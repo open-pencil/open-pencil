@@ -12,6 +12,7 @@ import {
   MCP_DEFERS_TOOLS_HEADER,
   MCP_CHAT_HEADER
 } from '@open-pencil/core/constants'
+import { MINUTE_MS } from '@open-pencil/scene-graph/timing'
 
 import { MCP_SERVER_INSTRUCTIONS } from '#mcp/instructions'
 import { createPendingRequests } from '#mcp/server/pending-requests'
@@ -65,7 +66,7 @@ export function sessionOpener(header: (name: string) => string | undefined): MCP
   if (header(MCP_DEFERS_TOOLS_HEADER) === '1') opener.defersTools = true
   return opener
 }
-const MCP_SESSION_IDLE_TIMEOUT_MS = 15 * 60_000
+const MCP_SESSION_IDLE_TIMEOUT_MS = 15 * MINUTE_MS
 const MAX_SWEEP_INTERVAL_MS = 60_000
 // The MCP SDK's close() does not enforce a timeout internally.
 const SESSION_CLOSE_TIMEOUT_MS = 5_000

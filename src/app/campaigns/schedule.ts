@@ -8,16 +8,15 @@ import type {
   CampaignContent,
   CampaignPlacement
 } from '@open-pencil/feedback/contract'
+import { DAY_MS } from '@open-pencil/scene-graph/timing'
 
 import type { CampaignRecordPreferences } from '@/app/settings/preferences/store'
-
-const DAY = 24 * 60 * 60 * 1000
 
 /**
  * The least time between two prompts, whatever the campaigns ask: the app's own limit, so a
  * server that asked too often still could not turn the prompt into nagging.
  */
-export const PROMPT_GAP = 7 * DAY
+export const PROMPT_GAP = 7 * DAY_MS
 
 /**
  * What scheduling reads of a campaign: everything but what it says. The app's own campaigns,
@@ -57,17 +56,17 @@ function isDue(
   if (campaign.startsAt && now < Date.parse(campaign.startsAt)) return false
   if (campaign.endsAt && now >= Date.parse(campaign.endsAt)) return false
   const { afterInstallDays, repeatAfterDays, afterActionDays } = campaign.timing
-  if (now < installedAt + afterInstallDays * DAY) return false
+  if (now < installedAt + afterInstallDays * DAY_MS) return false
   const { dismissedAt, actedAt } = records[campaign.id] ?? {}
   if (
     actedAt !== undefined &&
-    (afterActionDays === null || now < actedAt + afterActionDays * DAY)
+    (afterActionDays === null || now < actedAt + afterActionDays * DAY_MS)
   ) {
     return false
   }
   if (
     dismissedAt !== undefined &&
-    (repeatAfterDays === null || now < dismissedAt + repeatAfterDays * DAY)
+    (repeatAfterDays === null || now < dismissedAt + repeatAfterDays * DAY_MS)
   ) {
     return false
   }

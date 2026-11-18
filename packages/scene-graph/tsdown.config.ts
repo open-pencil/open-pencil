@@ -66,6 +66,7 @@ export default defineConfig(
       'text/index': './src/text/index.ts',
       'text/direction': './src/text/direction.ts',
       'text/picture': './src/text/picture.ts',
+      timing: './src/timing.ts',
       'transfer/index': './src/transfer/index.ts',
       undo: './src/undo.ts',
       'variables/index': './src/variables/index.ts',

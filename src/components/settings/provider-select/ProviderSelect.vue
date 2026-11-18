@@ -11,6 +11,7 @@ import {
   type AIProviderID,
   providerKind
 } from '@open-pencil/core/constants'
+import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
 import { useAIMessages } from '@open-pencil/vue/i18n'
 
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
@@ -26,7 +27,7 @@ async function checkMCPHealth(retries = 3, delayMs = 1000) {
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(`http://127.0.0.1:${AUTOMATION_HTTP_PORT}/health`, {
-        signal: AbortSignal.timeout(2000)
+        signal: AbortSignal.timeout(DEADLINE_MS.probe)
       })
       if (res.ok) {
         mcpAvailable.value = true

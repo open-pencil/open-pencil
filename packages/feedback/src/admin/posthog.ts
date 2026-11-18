@@ -4,8 +4,9 @@ import { groupBy, orderBy } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
 
-const QUERY_TIMEOUT_MS = 20_000
+const QUERY_TIMEOUT_MS = DEADLINE_MS.slowRequest
 
 const usageRowSchema = v.tuple([v.string(), v.string(), v.number()])
 const retentionRowSchema = v.tuple([v.string(), v.number(), v.number()])

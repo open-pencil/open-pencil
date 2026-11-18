@@ -66,13 +66,28 @@ describe('cachedRemoteJSON', () => {
 
   test('loads through a passed fetcher without the cache or the shared request', async () => {
     const read = spyOn(cache, 'readCacheJSON')
-    spies.push(read)
-    const fetcher = fetchStub(async () => Response.json([]))
-    const load = mock(async (used: typeof fetch) => (used === fetcher ? ['stub'] : ['shared']))
+    spies.push(read, spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(['shared'])))
+    const fetcher = fetchStub(async () => Response.json(['stub']))
+    const load = mock(async (used: typeof fetch) =>
+      v.parse(namesSchema, await (await used('https://names.test')).json())
+    )
     const names = remoteNames(load)
 
     expect(await names.get(fetcher)).toEqual(['stub'])
     expect(await names.get()).toEqual(['shared'])
     expect(read).toHaveBeenCalledTimes(1)
+  })
+
+  test('bounds every request a load makes with a deadline', async () => {
+    let signal: AbortSignal | null | undefined
+    const fetcher = fetchStub(async (_input, init) => {
+      signal = init?.signal
+      return Response.json([])
+    })
+    await remoteNames(async (used) => {
+      await used('https://names.test')
+      return []
+    }).get(fetcher)
+    expect(signal).toBeInstanceOf(AbortSignal)
   })
 })

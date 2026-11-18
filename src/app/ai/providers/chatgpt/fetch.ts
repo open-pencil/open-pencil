@@ -2,6 +2,8 @@ import { uniq } from 'es-toolkit/array'
 import { omit } from 'es-toolkit/object'
 import * as v from 'valibot'
 
+import { TOKEN_REFRESH_MARGIN_MS } from '@open-pencil/scene-graph/timing'
+
 import type { FetchFunction } from '@/app/http/types'
 
 import type { ChatGPTCredential } from './credential'
@@ -9,8 +11,6 @@ import { CHATGPT_ORIGINATOR, ChatGPTTokenError, refreshChatGPTCredential } from 
 
 /** The Codex backend serves the Responses API to ChatGPT accounts. */
 export const CHATGPT_CODEX_BASE_URL = 'https://chatgpt.com/backend-api/codex'
-/** Refreshes this long before the access token expires, so a request never carries a stale one. */
-const REFRESH_MARGIN_MS = 60_000
 const LITE_HEADER = 'x-openai-internal-codex-responses-lite'
 
 export class ChatGPTSignInExpiredError extends Error {
@@ -63,7 +63,7 @@ function refusesSignIn(error: unknown): boolean {
 }
 
 function isFresh(credential: ChatGPTCredential): boolean {
-  return credential.expires - Date.now() >= REFRESH_MARGIN_MS
+  return credential.expires - Date.now() >= TOKEN_REFRESH_MARGIN_MS
 }
 
 async function refreshAndSave(

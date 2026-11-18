@@ -3,11 +3,12 @@ import type { FeedbackDatabase } from '#feedback/db'
 import type { Kysely } from 'kysely'
 
 import { randomHex } from '@open-pencil/scene-graph/random'
+import { DAY_MS } from '@open-pencil/scene-graph/timing'
 
 /** How long before a repeated sign-up sends another confirmation email. */
 const RESEND_AFTER_MS = 10 * 60 * 1000
 /** How long an unconfirmed sign-up is kept. */
-export const UNCONFIRMED_TTL_MS = 7 * 24 * 60 * 60 * 1000
+export const UNCONFIRMED_TTL_MS = 7 * DAY_MS
 
 /**
  * Records a sign-up and returns the token to email, or `null` when no email should go out: the

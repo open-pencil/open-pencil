@@ -10,6 +10,32 @@ async function count(rule: string, source: string, path?: string): Promise<numbe
   return ruleDiagnostics(await lint(source, on(rule), path), rule).length
 }
 
+describe('@open-pencil/runtime/no-inline-delay', () => {
+  const rule = '@open-pencil/runtime/no-inline-delay'
+
+  test('rejects a duration written in place', async () => {
+    for (const source of [
+      'setTimeout(run, 3000)',
+      'window.setTimeout(run, 30 * 1000)',
+      'setInterval(tick, 500)',
+      'fetch(url, { signal: AbortSignal.timeout(10_000) })'
+    ]) {
+      expect(await count(rule, source)).toBe(1)
+    }
+  })
+
+  test('accepts a named duration, and zero, which only yields', async () => {
+    for (const source of [
+      'const TICK_MS = 500\nsetInterval(tick, TICK_MS)',
+      'setTimeout(run, 0)',
+      'setTimeout(run)',
+      'AbortSignal.timeout(DEADLINE_MS.request)'
+    ]) {
+      expect(await count(rule, source)).toBe(0)
+    }
+  })
+})
+
 describe('@open-pencil/runtime/no-math-random', () => {
   test('rejects Math.random()', async () => {
     expect(

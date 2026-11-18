@@ -6,6 +6,9 @@ import type { useEditorCommands } from '#vue/editor/commands'
 
 type EditorCommands = ReturnType<typeof useEditorCommands>
 
+/** Digits typed within this long of each other set one opacity: 5 then 0 is 50%, not 0%. */
+const OPACITY_TYPING_WINDOW_MS = 800
+
 export interface EditorKeyActionsOptions {
   editor: Editor
   runCommand: EditorCommands['runCommand']
@@ -124,7 +127,7 @@ export function createEditorKeyActions({ editor, runCommand }: EditorKeyActionsO
     if (opacityBuffer.length > 3) opacityBuffer = opacityBuffer.slice(-3)
     editor.setOpacity(opacityFromBuffer(opacityBuffer), opacityCoalesceKey)
     clearTimeout(opacityResetTimer)
-    opacityResetTimer = setTimeout(resetOpacityBuffer, 800)
+    opacityResetTimer = setTimeout(resetOpacityBuffer, OPACITY_TYPING_WINDOW_MS)
   }
 
   return {

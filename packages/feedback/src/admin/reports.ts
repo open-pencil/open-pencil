@@ -15,10 +15,12 @@ import {
 import type { FeedbackBindings, FeedbackServices } from '#feedback/env'
 import * as v from 'valibot'
 
+import { DAY_MS, DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+
 import { queryPostHog } from './posthog'
 
 /** How long a triage save waits on PostHog before the inbox shows it as failed, to retry. */
-const CAPTURE_TIMEOUT_MS = 10_000
+const CAPTURE_TIMEOUT_MS = DEADLINE_MS.request
 
 /**
  * PostHog's capture answer. A project over its quota still answers 200, naming what it dropped in
@@ -124,8 +126,6 @@ function readList<T extends v.GenericSchema>(
   )
   return parsed.success ? parsed.output : null
 }
-
-const DAY_MS = 24 * 60 * 60 * 1000
 
 const exceptionSchema = v.looseObject({
   type: v.string(),

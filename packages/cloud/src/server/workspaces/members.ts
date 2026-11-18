@@ -12,7 +12,11 @@ import type { CloudActor } from '#cloud/server/auth'
 import { workspaceRoleCan, type AccessRequest } from '#cloud/server/auth/access-control'
 import { userIdText, type CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email/types'
-import { spendInvitationBudget } from '#cloud/server/invitations'
+import {
+  INVITATION_LIFETIME_MS,
+  INVITATION_SECRET_BYTES,
+  spendInvitationBudget
+} from '#cloud/server/invitations'
 import { lockStorageAllowance } from '#cloud/server/quota/storage'
 import {
   invitationMatchesActor,
@@ -26,9 +30,6 @@ import { compact, uniq } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 
 import { randomHex } from '@open-pencil/scene-graph/random'
-
-const INVITATION_SECRET_BYTES = 24
-const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60_000
 
 /** The workspace does not exist, or the person is not a member of it. */
 export class WorkspaceNotFoundError extends Error {

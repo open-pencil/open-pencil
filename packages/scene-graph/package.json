@@ -309,6 +309,12 @@
       "import": "./dist/random.js",
       "default": "./dist/random.js"
     },
+    "./timing": {
+      "types": "./dist/timing.d.ts",
+      "bun": "./src/timing.ts",
+      "import": "./dist/timing.js",
+      "default": "./dist/timing.js"
+    },
     "./resize": {
       "types": "./dist/resize.d.ts",
       "bun": "./src/resize.ts",

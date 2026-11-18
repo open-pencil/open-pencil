@@ -13,6 +13,8 @@ import type { CloudAPI, PublicCloudAPI } from '#cloud/server/api'
 import { hc } from 'hono/client'
 import * as v from 'valibot'
 
+import { anySignal, DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+
 import { createCommentRequests, createSharedCommentRequests } from './comments'
 import { createCommunityRequests } from './community'
 import { createDocumentRequests } from './documents'
@@ -43,17 +45,34 @@ function apiURL(baseURL: string): string {
   return url.href
 }
 
+/**
+ * How long one Cloud API request may take. Some do real work on the server, such as saving a
+ * revision or deleting an account, and bytes go to storage directly, so a JSON call past this has
+ * hung rather than run slowly.
+ */
+const API_DEADLINE_MS = DEADLINE_MS.slowRequest
+
+/** `fetch`, with each request bounded by its own deadline as well as the caller's signal. */
+function boundedFetch(fetch: CloudFetch = globalThis.fetch): CloudFetch {
+  return (input, init) =>
+    fetch(input, {
+      ...init,
+      signal: anySignal([init?.signal, AbortSignal.timeout(API_DEADLINE_MS)])
+    })
+}
+
 export function createCloudAPIClient(baseURL: string, options: CloudRequestOptions = {}) {
   const headers = {
     'Content-Type': 'application/json',
     ...(options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : {})
   }
+  const fetch = boundedFetch(options.fetch)
   const client = hc<CloudAPI>(apiURL(baseURL), {
-    fetch: options.fetch,
+    fetch,
     init: { credentials: 'include', signal: options.signal, headers }
   })
   const publicClient = hc<PublicCloudAPI>(apiURL(baseURL), {
-    fetch: options.fetch,
+    fetch,
     init: { credentials: 'include', signal: options.signal, headers }
   })
 
