@@ -1,5 +1,8 @@
 /** A pattern and what replaces each match, applied with `String.replace`. */
-type ScrubRule = readonly [pattern: RegExp, replacement: string | ((match: string) => string)]
+type ScrubRule = readonly [
+  pattern: RegExp,
+  replacement: string | ((match: string, offset: number, text: string) => string)
+]
 
 export const REDACTED = '[redacted]'
 
@@ -20,12 +23,23 @@ function looksLikeToken(segment: string): boolean {
   )
 }
 
+/**
+ * A built chunk's name before its extension, as `document-state-D5Yd3Le2` in a stack frame's
+ * `/assets/document-state-D5Yd3Le2.js`: the bundler's name and hash, which source maps and
+ * error reports find the chunk by.
+ */
+const CHUNK_NAME = /^[\w.-]+-[\w-]{8}$/
+const CODE_EXTENSION = /^\.(?:m?js|css|wasm)\b/
+
 /** A long run is a key or encoded content, unless it is a path such as a stack frame's. */
-function redactLongRun(run: string): string {
+function redactLongRun(run: string, offset: number, text: string): string {
   if (!run.includes('/')) return REDACTED
-  return run
-    .split('/')
-    .map((segment) => (looksLikeToken(segment) ? REDACTED : segment))
+  const segments = run.split('/')
+  const chunk = CODE_EXTENSION.test(text.slice(offset + run.length)) ? segments.length - 1 : -1
+  return segments
+    .map((segment, index) =>
+      looksLikeToken(segment) && !(index === chunk && CHUNK_NAME.test(segment)) ? REDACTED : segment
+    )
     .join('/')
 }
 

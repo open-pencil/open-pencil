@@ -100,4 +100,23 @@ describe('scrubDiagnosticText', () => {
     ].join('\n')
     expect(scrubDiagnosticText(stack)).toBe(stack)
   })
+
+  // Error reports find a frame's source map by the chunk's file name, hash included.
+  test('keeps built chunk names in stack frames', () => {
+    const stack = [
+      'Error: Cyclic component expansion at 124:3952',
+      'p@tauri://localhost/assets/document-state-D5Yd3Le2.js:5630:98039',
+      'map@[native code]',
+      '    at p (https://app.openpencil.dev/assets/reactivity.esm-bundler-CnwMsHUC.js:1:2)',
+      '    at q (https://app.openpencil.dev/assets/material-theme-palenight-B5W6OYN7.js:3:4)'
+    ].join('\n')
+    expect(scrubDiagnosticText(stack)).toBe(stack)
+  })
+
+  test('still removes a key shaped like a path before a script extension', () => {
+    const key = ['Zx9Yw8Vu7Ts6Rq5Po4Nm3', 'Lk2Ji1HgFeDcBa0aB3cD4eF5'].join('/')
+    expect(scrubDiagnosticText(`fetch https://cdn.example.com/${key}.js failed`)).toBe(
+      'fetch https://cdn.example.com/[redacted]/[redacted].js failed'
+    )
+  })
 })
