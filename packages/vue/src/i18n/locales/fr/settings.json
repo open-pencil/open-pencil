@@ -31,6 +31,7 @@
   "snappingDescription": "Contrôlez l’alignement lors de la modification des tracés et du déplacement ou redimensionnement des calques.",
   "temporaryDisableSnappingHint": "Maintenez la touche Contrôle pendant le déplacement pour désactiver temporairement l’alignement.",
   "importing": "Importation",
+  "importingDescription": "Définissez comment le HTML et les autres fichiers deviennent des calques.",
   "nameImportedIcons": "Nommer les icônes du HTML importé",
   "nameImportedIconsDescription": "Le SVG intégré qui dessine une icône Iconify devient cette icône, que vous pouvez remplacer et recolorer. Télécharge un index d’icônes et les icônes auxquelles il est comparé.",
   "navigation": "Navigation",

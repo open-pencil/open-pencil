@@ -65,6 +65,7 @@
   "snapToPixelGridDescription": "محاذاة نقاط المتجه والطبقات المنقولة والحواف المعدّلة الحجم إلى بكسلات كاملة.",
   "temporaryDisableSnappingHint": "اضغط باستمرار على Control أثناء السحب لتعطيل الالتقاط مؤقتًا.",
   "importing": "الاستيراد",
+  "importingDescription": "تحكّم في كيفية تحويل HTML والملفات الأخرى إلى طبقات.",
   "nameImportedIcons": "تسمية الأيقونات في HTML المستورد",
   "nameImportedIconsDescription": "يصبح SVG المضمّن الذي يرسم أيقونة من Iconify تلك الأيقونة، فيمكنك تبديلها وتغيير لونها. يُنزّل فهرسًا للأيقونات والأيقونات التي يُقارَن بها.",
   "navigation": "التنقل",

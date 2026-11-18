@@ -26,6 +26,7 @@ const defaultNameIcons = DEFAULT_APP_PREFERENCES.import.nameIcons
 <template>
   <SettingsSection>
     <template #title>{{ settings.importing }}</template>
+    <template #description>{{ settings.importingDescription }}</template>
 
     <SettingsGroup>
       <SettingsRow

@@ -31,6 +31,7 @@
   "snappingDescription": "Określ wyrównywanie podczas edycji ścieżek oraz przesuwania i zmiany rozmiaru warstw.",
   "temporaryDisableSnappingHint": "Przytrzymaj Control podczas przeciągania, aby tymczasowo wyłączyć przyciąganie.",
   "importing": "Import",
+  "importingDescription": "Określ, jak HTML i inne pliki stają się warstwami.",
   "nameImportedIcons": "Nazywaj ikony w importowanym HTML",
   "nameImportedIconsDescription": "Osadzony SVG, który rysuje ikonę z Iconify, staje się tą ikoną, którą możesz podmienić i przekolorować. Pobiera indeks ikon i ikony, z którymi jest porównywany.",
   "navigation": "Nawigacja",

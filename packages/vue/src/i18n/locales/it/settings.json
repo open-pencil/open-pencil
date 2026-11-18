@@ -31,6 +31,7 @@
   "snappingDescription": "Controlla l’allineamento durante la modifica dei tracciati e lo spostamento o ridimensionamento dei livelli.",
   "temporaryDisableSnappingHint": "Tieni premuto Control durante il trascinamento per disattivare temporaneamente l’aggancio.",
   "importing": "Importazione",
+  "importingDescription": "Controlla come l’HTML e gli altri file diventano livelli.",
   "nameImportedIcons": "Dai un nome alle icone nell’HTML importato",
   "nameImportedIconsDescription": "L’SVG inline che disegna un’icona di Iconify diventa quell’icona, che puoi sostituire e ricolorare. Scarica un indice di icone e le icone con cui viene confrontato.",
   "navigation": "Navigazione",

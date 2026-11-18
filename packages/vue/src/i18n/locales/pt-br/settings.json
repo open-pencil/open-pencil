@@ -65,6 +65,7 @@
   "snapToPixelGridDescription": "Alinha pontos vetoriais, camadas movidas e bordas redimensionadas a pixels inteiros.",
   "temporaryDisableSnappingHint": "Segure Control ao arrastar para desativar temporariamente o ajuste.",
   "importing": "Importação",
+  "importingDescription": "Controle como HTML e outros arquivos viram camadas.",
   "nameImportedIcons": "Nomear ícones em HTML importado",
   "nameImportedIconsDescription": "O SVG embutido que desenha um ícone do Iconify vira esse ícone, que você pode trocar e recolorir. Baixa um índice de ícones e os ícones com que ele é comparado.",
   "navigation": "Navegação",
