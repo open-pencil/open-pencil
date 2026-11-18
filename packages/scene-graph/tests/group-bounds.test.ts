@@ -155,3 +155,14 @@ test("a connector's free end stays put on the canvas as its group refits, and co
   if (fit) undoGroupFit(graph, fit)
   expect(graph.getNode(connector.id)?.connectorEnd?.position).toEqual({ x: 300, y: 300 })
 })
+
+test('a boolean with no operands does not pull its group to its corner', () => {
+  const graph = new SceneGraph()
+  const group = graph.createNode('GROUP', graph.getPages()[0].id, { width: 1, height: 1 })
+  graph.createNode('BOOLEAN_OPERATION', group.id, { x: 0, y: 0, width: 0, height: 0 })
+  graph.createNode('RECTANGLE', group.id, { x: 40, y: 30, width: 20, height: 10 })
+
+  fitEnclosingGroups(graph, [group.id])
+  const { x, y, width, height } = graph.getNode(group.id) ?? group
+  expect({ x, y, width, height }).toEqual({ x: 40, y: 30, width: 20, height: 10 })
+})

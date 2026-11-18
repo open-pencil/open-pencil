@@ -71,13 +71,18 @@ function fittedAncestors(graph: SceneGraph, parentIds: Iterable<string>): SceneN
   return [...found.values()].sort((a, b) => b.depth - a.depth).map(({ node }) => node)
 }
 
+function hasNoOperands(node: SceneNode): boolean {
+  return node.type === 'BOOLEAN_OPERATION' && node.childIds.length === 0
+}
+
 /**
- * The layers a group's box covers, bottom to top. Hidden layers do not count, as in Figma. A mask
- * hides the layers above it outside its shape, so they count only through the mask: the box is
- * the layers below it and the masks.
+ * The layers a group's box covers, bottom to top. Hidden layers do not count, as in Figma, nor do
+ * booleans with no operands, which Figma saves with no box. A mask hides the layers above it
+ * outside its shape, so they count only through the mask: the box is the layers below it and the
+ * masks.
  */
 function groupBoundingLayers(children: readonly SceneNode[]): SceneNode[] {
-  const shown = children.filter((child) => child.visible)
+  const shown = children.filter((child) => child.visible && !hasNoOperands(child))
   const runs = maskRuns(shown, isVisibleMask)
   if (runs.length === 0) return shown
   return [
