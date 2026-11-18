@@ -197,6 +197,11 @@ export const cloudMessageDefaults = {
   statusStorageFullDetail:
     'The owner of this file has used all their storage, so it’s view only until space is freed or their plan grows. It can still be opened, downloaded, and deleted.',
   statusManagePlan: 'Manage plan',
+  storageFullTitle: params('“{name}” is view only'),
+  notifyConflict: 'Cloud conflicts',
+  notifyConflictHint: 'An open Cloud file was changed in two places and needs you to choose.',
+  notifyStorageFull: 'Cloud storage full',
+  notifyStorageFullHint: 'An open Cloud file became view only because its owner’s storage is full.',
   // Keeping a file without an account
   draftHeading: 'Keep this file',
   draftDescription: params<{ host: string }>(

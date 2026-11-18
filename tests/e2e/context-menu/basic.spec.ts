@@ -220,7 +220,8 @@ test('create component via context menu', async () => {
   editor.canvas.assertNoErrors()
 })
 
-test('outline stroke is disabled for fill-only shapes', async () => {
+// Figma desktop 126 outlines a fill-only layer into a vector of its fill.
+test('outline stroke is offered for fill-only shapes, as in Figma', async () => {
   await editor.canvas.clearCanvas()
   await editor.canvas.drawRect(200, 200, 120, 80)
   await editor.canvas.waitForRender()
@@ -229,7 +230,7 @@ test('outline stroke is disabled for fill-only shapes', async () => {
 
   const item = contextItem('context-outline-stroke')
   await expect(item).toBeVisible()
-  await expect(item).toHaveAttribute('data-disabled', '')
+  await expect(item).not.toHaveAttribute('data-disabled')
   await closeMenu()
 })
 

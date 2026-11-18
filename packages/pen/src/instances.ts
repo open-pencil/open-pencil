@@ -235,11 +235,12 @@ function overrideLayer(build: Build, target: SceneNode, override: PenOverride): 
   if (fields.theme) merged.theme = mergeTheme(base.theme, fields.theme)
   const before = snapshotFields(target)
   inLayerThemes(build, target, merged.theme, () => {
-    applyPenProperties(target, merged, build)
+    // Children that replace the layer's own decide its size, as a fit_content(N) fallback holds
+    // only while the layer is empty, so the old ones go first.
+    if (children) for (const childId of target.childIds) graph.deleteNode(childId)
+    applyPenProperties(target, children ? { ...merged, children } : merged, build)
     recordChangedFields(graph, target, before, fields)
     if (children) {
-      const replaced = target.childIds
-      for (const childId of replaced) graph.deleteNode(childId)
       for (const child of children) createSceneNode(child, target.id, build)
       build.replaced.add(target.id)
     }
@@ -386,6 +387,9 @@ export function populateInstances(build: Build): void {
     recordOwnFields(graph, instance, ref)
     inheritCopyFields(build, instance, descendantThemes(build, instance, ref.descendants))
     applyDescendants(build, instance, ref.descendants, populate)
+    // pen.dev draws a ref's own children in place of its component's, whether or not the
+    // component declares a `slot`; like an override's children, they detach the instance.
+    if (ref.children) overrideLayer(build, instance, { children: ref.children })
     // Before anything copies this instance, so the copies are of what it became.
     detachReplacingInstances(build)
   }

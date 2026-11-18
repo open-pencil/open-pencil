@@ -1,0 +1,1 @@
+- Open Cloud files send a system notification while you are away when they were changed in two places and need you to choose a version, or became view only because their owner's storage is full; turn either off in Settings › Notifications (#2205).
