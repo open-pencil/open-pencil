@@ -2,16 +2,12 @@ import { compact } from 'es-toolkit'
 import { joinURL } from 'ufo'
 import { computed } from 'vue'
 
-import {
-  createCloudServicesClient,
-  type CloudServicesClient,
-  type CloudServicesTokenSource
-} from '@open-pencil/cloud/client'
+import { createCloudServicesClient, type CloudServicesClient } from '@open-pencil/cloud/client'
 import { CLOUD_ACCOUNT_PLAN_PATH, type WorkspaceSummary } from '@open-pencil/cloud/contract'
 
 import { homeCloudServer } from '../servers/store'
 import { cloudAPIClient, cloudConnection, cloudFetch } from '../sessions/connection'
-import { createCloudTokenCache } from '../tokens'
+import { createCloudTokenCache, type CloudTokenCache } from '../tokens'
 
 export type CloudAIWorkspace = Pick<WorkspaceSummary, 'id' | 'name'>
 
@@ -40,7 +36,7 @@ export const cloudBillingURL = computed(() => {
 })
 
 // Keyed by account too, so a token signed for one person is never sent for another.
-const tokenSources = new Map<string, CloudServicesTokenSource & { reset(): void }>()
+const tokenSources = new Map<string, CloudTokenCache>()
 
 /** The Home server's services on a workspace's behalf, or `null` while it is unavailable. */
 export function cloudAIClient(workspaceId: string): CloudServicesClient | null {

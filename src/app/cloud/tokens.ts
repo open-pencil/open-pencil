@@ -3,6 +3,12 @@ import type { CloudServicesTokenSource } from '@open-pencil/cloud/client'
 /** A token this close to expiring is replaced, so a long request does not outlive it. */
 const REFRESH_MARGIN_MS = 60_000
 
+/** A token source that can also forget its token, as when the plan the token carries changes. */
+export interface CloudTokenCache extends CloudServicesTokenSource {
+  /** Forgets the held token, so the next request signs a new one. */
+  reset(): void
+}
+
 /**
  * Keeps one short-lived token Cloud signs for a service, such as a workspace's AI or an account's
  * billing, signing a new one shortly before it expires.
@@ -10,7 +16,7 @@ const REFRESH_MARGIN_MS = 60_000
 export function createCloudTokenCache(
   request: () => Promise<{ token: string; expiresAt: string }>,
   now: () => number = Date.now
-): CloudServicesTokenSource & { reset(): void } {
+): CloudTokenCache {
   let current: { token: string; expiresAt: number } | null = null
   let pending: Promise<string> | null = null
   // A reset starts a new generation: a token signed before it answers its own caller but is
@@ -37,7 +43,6 @@ export function createCloudTokenCache(
     invalidate(token) {
       if (current?.token === token) current = null
     },
-    /** Forgets the held token, so the next request signs a new one. */
     reset() {
       generation += 1
       current = null
