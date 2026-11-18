@@ -152,7 +152,8 @@ describe('Deleting forever', () => {
       expect(reports[0]?.error).toBe(failure)
       expect(reports[0]?.context).toEqual({
         source: 'cleanup',
-        message: expect.stringMatching(/^Cleaning up document [0-9a-f-]{36} failed$/)
+        message: `Cleaning up document ${document} failed`,
+        resources: { documentId: document, workspaceId: context.workspaceId }
       })
       expect(context.objects.deletedKeys).toHaveLength(1)
       expect(await context.trash()).toEqual([])
@@ -301,7 +302,7 @@ describe('Deleting forever', () => {
 })
 
 describe('Cleanup failures', () => {
-  test('are reported once each, from cleanup, by document ID only', async () => {
+  test('are reported once each, from cleanup, by their document and workspace IDs only', async () => {
     const { reports, reporter } = recordingReporter()
     const context = await trashApp()
     try {
@@ -330,7 +331,8 @@ describe('Cleanup failures', () => {
           error: failure,
           context: {
             source: 'cleanup',
-            message: expect.stringMatching(/^Cleaning up document [0-9a-f-]{36} failed$/)
+            message: `Cleaning up document ${document} failed`,
+            resources: { documentId: document, workspaceId: context.workspaceId }
           }
         }
       ])

@@ -1,3 +1,4 @@
+import { accountSeats } from '#cloud/server/billing/seats'
 import type { CloudDatabase } from '#cloud/server/db'
 import { createAccountEntitlementRepository } from '#cloud/server/policy'
 import type { Kysely } from 'kysely'
@@ -31,6 +32,15 @@ export function createInternalService(database: Kysely<CloudDatabase>) {
       if (!account) return { found: false, applied: false }
       const { applied } = await entitlements.setVersioned(account, values, source, externalVersion)
       return { found: true, applied }
+    },
+
+    /**
+     * How many people can edit across the workspaces an account owns, which billing charges a
+     * seat for; `null` for an unknown account.
+     */
+    async accountSeats(userId: string): Promise<number | null> {
+      const account = await entitlements.account(userId)
+      return account ? accountSeats(database, userId) : null
     }
   }
 }

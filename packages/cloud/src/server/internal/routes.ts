@@ -31,4 +31,9 @@ export function createInternalRoutes(service: InternalService, serviceToken: str
         return context.json({ applied: result.applied })
       }
     )
+    .get('/accounts/:userId/seats', accountParams, async (context) => {
+      const seats = await service.accountSeats(context.req.valid('param').userId)
+      if (seats === null) return context.json({ error: { code: 'not_found' as const } }, 404)
+      return context.json({ seats })
+    })
 }

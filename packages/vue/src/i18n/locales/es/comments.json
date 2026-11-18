@@ -24,6 +24,7 @@
   "empty": "Aún no hay comentarios. Haz clic en el lienzo para dejar uno.",
   "noMatches": "Ningún comentario coincide.",
   "replyCount": "Respuestas: {count}",
+  "clusterCount": "Comentarios: {count}",
   "commentDeleted": "Comentario eliminado",
   "hideComments": "Ocultar comentarios",
   "mentionPeople": "Personas para mencionar",

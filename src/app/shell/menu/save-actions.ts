@@ -39,13 +39,15 @@ export function createSaveMenuActions() {
     save: onDocument((store) => {
       void saveWithFeedback(() => saveDocument(store), {
         key: store,
-        isOpen: () => getTabForStore(store) !== undefined
+        isOpen: () => getTabForStore(store) !== undefined,
+        hasUnsavedChanges: () => store.hasUnsavedChanges()
       })
     }),
     'save-as': onDocument((store) => {
       void saveWithFeedback(() => store.saveFigFileAs(), {
         key: store,
-        isOpen: () => getTabForStore(store) !== undefined
+        isOpen: () => getTabForStore(store) !== undefined,
+        hasUnsavedChanges: () => store.hasUnsavedChanges()
       })
     }),
     'save-to': onDocument((store) => void openSaveTo(store)),

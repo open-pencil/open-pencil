@@ -117,6 +117,12 @@ export interface NotificationPreferences {
   commentMention: boolean
   /** Someone replies in a Cloud comment thread the person wrote in. */
   commentReply: boolean
+  /** An automatic save of an open document failed. */
+  saveFailed: boolean
+  /** An open Cloud document was changed in two places and waits for a choice. */
+  cloudConflict: boolean
+  /** An open Cloud document became view only because its owner's storage is full. */
+  cloudStorageFull: boolean
 }
 
 /** How the person's Design instructions meet OpenPencil's: added after them, or in their place. */
@@ -162,6 +168,10 @@ export interface AppPreferences {
     tokenUsage: TokenUsageDisplay
   }
   files: { recentLimit: number }
+  import: {
+    /** Inline SVG in imported HTML that draws an Iconify icon becomes that icon. */
+    nameIcons: boolean
+  }
   version: 1
   recovery: {
     enabled: boolean
@@ -204,6 +214,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     tokenUsage: 'hover'
   },
   files: { recentLimit: DEFAULT_RECENT_FILES_LIMIT },
+  import: { nameIcons: true },
   version: 1,
   recovery: { enabled: true },
   editing: {
@@ -229,7 +240,10 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     agentFinished: false,
     agentFailed: false,
     commentMention: true,
-    commentReply: false
+    commentReply: false,
+    saveFailed: true,
+    cloudConflict: true,
+    cloudStorageFull: true
   },
   updates: { checkOnStartup: true, channel: 'build' },
   prompts: { review: null, title: null, summary: null, design: { mode: 'add', text: '' } }
@@ -273,6 +287,7 @@ const appPreferencesSchema = section({
   files: section({
     recentLimit: v.fallback(recentFilesLimitSchema, defaults.files.recentLimit)
   }),
+  import: section({ nameIcons: v.fallback(v.boolean(), defaults.import.nameIcons) }),
   version: v.fallback(v.literal(1), 1),
   recovery: section({ enabled: v.fallback(v.boolean(), defaults.recovery.enabled) }),
   editing: section({
@@ -348,7 +363,10 @@ const appPreferencesSchema = section({
     agentFinished: v.fallback(v.boolean(), defaults.notifications.agentFinished),
     agentFailed: v.fallback(v.boolean(), defaults.notifications.agentFailed),
     commentMention: v.fallback(v.boolean(), defaults.notifications.commentMention),
-    commentReply: v.fallback(v.boolean(), defaults.notifications.commentReply)
+    commentReply: v.fallback(v.boolean(), defaults.notifications.commentReply),
+    saveFailed: v.fallback(v.boolean(), defaults.notifications.saveFailed),
+    cloudConflict: v.fallback(v.boolean(), defaults.notifications.cloudConflict),
+    cloudStorageFull: v.fallback(v.boolean(), defaults.notifications.cloudStorageFull)
   }),
   updates: section({
     checkOnStartup: v.fallback(v.boolean(), defaults.updates.checkOnStartup),
@@ -439,6 +457,10 @@ export function updateNotificationPreferences(changes: Partial<NotificationPrefe
 
 export function updateZoomSpeed(zoomSpeed: ZoomSpeed): void {
   appPreferences.value = { ...stored(), navigation: { zoomSpeed } }
+}
+
+export function updateNameImportedIcons(nameIcons: boolean): void {
+  appPreferences.value = { ...stored(), import: { nameIcons } }
 }
 
 export function updateSnappingPreferences(changes: Partial<SnappingPreferences>): void {

@@ -4,6 +4,7 @@ import type {
   CloudAdminDocument,
   CloudAdminReportStatus,
   CloudSignInMethod,
+  CloudSocialProvider,
   DocumentReportReason,
   WorkspaceRole
 } from '@open-pencil/cloud/contract'
@@ -16,7 +17,7 @@ export type PortalSection = {
   count?: number
 }
 
-export type PortalSignInMethod = 'google' | 'apple'
+export type PortalSignInMethod = CloudSocialProvider
 
 export type AccessRequestStatus = 'pending' | 'approved' | 'rejected' | 'revoked'
 
@@ -47,6 +48,8 @@ export type PortalPerson = {
   /** When one of its sessions was last used, already worded; null when none is left. */
   lastActive: string | null
   workspaceCount: number
+  /** How it signs in: `credential` for a password, or a provider such as `google`. */
+  methods: string[]
   /** An account whose request to join is not approved: waiting, declined, or removed. */
   access?: 'waiting' | 'declined' | 'removed'
   you?: boolean
@@ -98,7 +101,8 @@ export type PortalSignIn = PortalDevice & {
 export type PortalPersonDetail = {
   person: PortalPerson
   emailVerified: boolean
-  methods: { provider: string; linkedOn: string }[]
+  /** `canRemove`: the server says the account keeps a working way in without it. */
+  methods: { id: string; provider: string; linkedOn: string; canRemove: boolean }[]
   authenticator: boolean
   passkeyCount: number
   workspaces: { id: string; name: string; role: WorkspaceRole; memberCount: number }[]

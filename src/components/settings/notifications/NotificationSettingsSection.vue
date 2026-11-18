@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { useCommentMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useCloudMessages, useCommentMessages, useI18n } from '@open-pencil/vue/i18n'
 
+import { CLOUD_INCLUDED } from '@/app/cloud/integration'
+import { useNotificationMessages } from '@/app/i18n/notifications'
 import { DEFAULT_APP_PREFERENCES } from '@/app/settings/preferences/store'
 import {
   browserNotificationPermission,
@@ -17,11 +19,16 @@ import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { ai, settings } = useI18n()
 const comments = useCommentMessages()
+const cloud = useCloudMessages()
+const notifications = useNotificationMessages()
 const needsInput = notificationPreference('agentNeedsInput')
 const finished = notificationPreference('agentFinished')
 const failed = notificationPreference('agentFailed')
 const mention = notificationPreference('commentMention')
 const reply = notificationPreference('commentReply')
+const saveFailed = notificationPreference('saveFailed')
+const cloudConflict = notificationPreference('cloudConflict')
+const cloudStorageFull = notificationPreference('cloudStorageFull')
 const defaults = DEFAULT_APP_PREFERENCES.notifications
 </script>
 
@@ -82,6 +89,32 @@ const defaults = DEFAULT_APP_PREFERENCES.notifications
       >
         <AppSwitch v-model="reply" :label="comments.notifyReply" />
       </SettingsRow>
+      <SettingsRow
+        :label="notifications.notifySaveFailed"
+        :description="notifications.notifySaveFailedHint"
+        :modified="saveFailed !== defaults.saveFailed"
+        @reset="saveFailed = defaults.saveFailed"
+      >
+        <AppSwitch v-model="saveFailed" :label="notifications.notifySaveFailed" />
+      </SettingsRow>
+      <template v-if="CLOUD_INCLUDED">
+        <SettingsRow
+          :label="cloud.notifyConflict"
+          :description="cloud.notifyConflictHint"
+          :modified="cloudConflict !== defaults.cloudConflict"
+          @reset="cloudConflict = defaults.cloudConflict"
+        >
+          <AppSwitch v-model="cloudConflict" :label="cloud.notifyConflict" />
+        </SettingsRow>
+        <SettingsRow
+          :label="cloud.notifyStorageFull"
+          :description="cloud.notifyStorageFullHint"
+          :modified="cloudStorageFull !== defaults.cloudStorageFull"
+          @reset="cloudStorageFull = defaults.cloudStorageFull"
+        >
+          <AppSwitch v-model="cloudStorageFull" :label="cloud.notifyStorageFull" />
+        </SettingsRow>
+      </template>
     </SettingsGroup>
     <AppAlert
       v-if="browserNotificationPermission === 'denied'"

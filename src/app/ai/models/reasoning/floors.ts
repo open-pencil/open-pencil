@@ -125,7 +125,16 @@ export async function resolveProviderModel(
   modelID: string,
   fetcher?: typeof fetch
 ): Promise<ModelOption | undefined> {
-  return (await listProviderModels(providerID, fetcher)).find((model) => model.id === modelID)
+  const listed = (await listProviderModels(providerID, fetcher)).find(
+    (model) => model.id === modelID
+  )
+  // A profile saved with a model the list has since dropped keeps what that model accepts.
+  return (
+    listed ??
+    AI_PROVIDERS.find((provider) => provider.id === providerID)?.retiredModels?.find(
+      (model) => model.id === modelID
+    )
+  )
 }
 
 export function resetOpenRouterModelsForTests(): void {

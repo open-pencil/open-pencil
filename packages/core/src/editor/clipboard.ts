@@ -30,6 +30,7 @@ import {
   resolvePasteTarget
 } from './clipboard/paste/target'
 import { createClipboardPlacementActions, type ClipboardPlacement } from './clipboard/placement'
+import type { ClipboardNodeTree } from './clipboard/snapshot'
 import { createClipboardWebActions } from './clipboard/web'
 import { acceptsChildren, prepareSlotEdits } from './components/slots'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './history/subtree'
@@ -242,11 +243,11 @@ export function createClipboardActions(ctx: EditorContext) {
   }
 
   function pasteOpenPencilNodes(
-    nodes: Array<SceneNode & { children?: SceneNode[] }>,
+    nodes: Array<ClipboardNodeTree>,
     placement: ClipboardPlacement,
     images: Map<string, Uint8Array>,
     applied: AppliedBoundPaints,
-    dependencies: Array<SceneNode & { children?: SceneNode[] }> = [],
+    dependencies: Array<ClipboardNodeTree> = [],
     cursorPos?: Vector,
     options: PasteOptions = {}
   ) {
@@ -256,7 +257,7 @@ export function createClipboardActions(ctx: EditorContext) {
 
     const created: string[] = []
     const copiedIds = new Map<string, string>()
-    const createNodeTree = (source: SceneNode & { children?: SceneNode[] }, parentId: string) => {
+    const createNodeTree = (source: ClipboardNodeTree, parentId: string) => {
       const { id: _id, childIds: _childIds, children = [], parentId: _parentId, ...rest } = source
       const node = ctx.graph.createNode(source.type, parentId, {
         ...structuredClone(rest),

@@ -17,6 +17,7 @@ export const FILE_MENU: AppMenuGroupSchema = {
     { id: 'new-tab', label: 'New Tab', shortcut: 'Mod+T' },
     { id: 'open', label: 'Open…', shortcut: 'Mod+O' },
     { id: 'open-recent', label: 'Open Recent', target: 'native' },
+    { id: 'place', feature: 'document', label: 'Place…' },
     { type: 'separator' },
     { id: 'save', feature: 'document', label: 'Save', shortcut: 'Mod+S' },
     { id: 'save-as', feature: 'document', label: 'Save As…', shortcut: 'Mod+Shift+S' },

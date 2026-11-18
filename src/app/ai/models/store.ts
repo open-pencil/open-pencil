@@ -36,7 +36,7 @@ import {
 
 const LEGACY_CONNECTION_ID = 'connection-default'
 const LEGACY_MODEL_ID: AIModelProfileId = 'model-default'
-const DEFAULT_MAX_OUTPUT_TOKENS = 16_384
+export const DEFAULT_MAX_OUTPUT_TOKENS = 16_384
 
 function isProviderID(value: unknown): value is AIProviderID {
   return (
@@ -142,7 +142,9 @@ function curatedModelCapabilities(
   providerID: AIProviderID,
   modelID: string
 ): AIModelCapability[] | null {
-  const model = AI_PROVIDERS.find((provider) => provider.id === providerID)?.models.find(
+  const provider = AI_PROVIDERS.find((candidate) => candidate.id === providerID)
+  // A model since retired keeps what it could do for the settings that still name it.
+  const model = [...(provider?.models ?? []), ...(provider?.retiredModels ?? [])].find(
     (candidate) => candidate.id === modelID
   )
   return model?.capabilities ? [...model.capabilities] : null
@@ -259,11 +261,11 @@ export const aiModelSettings = ref<AIModelSettings>(loadSettings())
 
 watch(aiModelSettings, (settings) => writeAIModelSettingsStorage(settings), { deep: true })
 
-function createConnectionId(): string {
+export function createConnectionId(): string {
   return `connection-${crypto.randomUUID()}`
 }
 
-function createModelId(): AIModelProfileId {
+export function createModelId(): AIModelProfileId {
   return `model-${crypto.randomUUID()}`
 }
 

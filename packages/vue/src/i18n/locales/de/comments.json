@@ -24,6 +24,7 @@
   "empty": "Noch keine Kommentare. Klicke auf die Arbeitsfläche, um einen zu hinterlassen.",
   "noMatches": "Keine passenden Kommentare.",
   "replyCount": "Antworten: {count}",
+  "clusterCount": "Kommentare: {count}",
   "commentDeleted": "Kommentar gelöscht",
   "hideComments": "Kommentare ausblenden",
   "mentionPeople": "Personen zum Erwähnen",

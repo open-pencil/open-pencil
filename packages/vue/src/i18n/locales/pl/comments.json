@@ -24,6 +24,7 @@
   "empty": "Brak komentarzy. Kliknij obszar roboczy, aby dodać komentarz.",
   "noMatches": "Brak pasujących komentarzy.",
   "replyCount": "Odpowiedzi: {count}",
+  "clusterCount": "Komentarze: {count}",
   "commentDeleted": "Usunięto komentarz",
   "hideComments": "Ukryj komentarze",
   "mentionPeople": "Osoby do wspomnienia",

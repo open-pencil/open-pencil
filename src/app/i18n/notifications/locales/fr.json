@@ -38,5 +38,9 @@
   "savingDocument": "Enregistrement du document…",
   "saveFailedRetry": "Réessayer l’enregistrement",
   "fileChangedOnDisk": "« {name} » a été modifié sur le disque. Vos modifications non enregistrées sont conservées ; l’enregistrement remplacera le fichier.",
-  "reloadDiscardingChanges": "Recharger"
+  "reloadDiscardingChanges": "Recharger",
+  "autosaveFailed": "Impossible d’enregistrer « {name} » : {error}",
+  "saveFailedTitle": "Impossible d’enregistrer « {name} »",
+  "notifySaveFailed": "Échecs d’enregistrement",
+  "notifySaveFailedHint": "Un document ouvert n’a pas pu être enregistré automatiquement."
 }

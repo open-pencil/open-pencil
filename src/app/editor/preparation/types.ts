@@ -15,6 +15,8 @@ export type EditorPreparationKind = (typeof EDITOR_PREPARATION_KINDS)[number]
 export const EDITOR_PREPARATION_PHASES = [
   'reading',
   'decoding',
+  'styling',
+  'naming-icons',
   'materializing',
   'populating-page',
   'resolving-fonts',

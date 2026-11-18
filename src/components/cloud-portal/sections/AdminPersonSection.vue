@@ -40,8 +40,10 @@ const detail = computed<PortalPersonDetail | null>(() => {
     person: portalPerson(value.user, portal.account.value?.user.userId, dates),
     emailVerified: value.user.emailVerified,
     methods: value.methods.map((method) => ({
+      id: method.id,
       provider: method.provider,
-      linkedOn: dates.format(method.createdAt, 'date')
+      linkedOn: dates.format(method.createdAt, 'date'),
+      canRemove: method.canRemove
     })),
     authenticator: value.authenticator,
     passkeyCount: value.passkeyCount,
@@ -51,15 +53,24 @@ const detail = computed<PortalPersonDetail | null>(() => {
   }
 })
 
+// A change can take effect and still fail after, as a removal whose email can't be sent does, so
+// the page reads the account again either way; the error still shows.
 const action = usePortalAction(async (change: () => Promise<unknown>) => {
-  await change()
-  await loaded.reload()
+  try {
+    await change()
+  } finally {
+    await loaded.reload()
+  }
 })
 const error = computed(() => action.error.value)
 
 function act(kind: PortalPersonAction, reason?: string) {
   const person = detail.value?.person
   if (person) void action.run(() => personAction(portal.api, person, kind, reason))
+}
+
+function removeMethod(methodId: string) {
+  void action.run(() => portal.api.removeSignInMethod(userId, methodId))
 }
 
 watch(
@@ -95,6 +106,7 @@ watch(
       :detail="detail"
       :busy="action.busy.value"
       @act="act"
+      @remove-method="removeMethod"
       @back="emit('back')"
     />
     <PortalPageSkeleton v-else-if="loaded.status.value === 'loading'" avatar :groups="[5, 2]" />
