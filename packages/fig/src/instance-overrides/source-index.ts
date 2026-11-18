@@ -152,6 +152,19 @@ export function resolvesInSourceComponent(
   return false
 }
 
+/** The nearest component holding a record, the record included. */
+export function definitionOf({ sources }: SourceIndex, id: string): string | undefined {
+  const seen = new Set<string>()
+  for (let current: string | undefined = id; current !== undefined && !seen.has(current);) {
+    seen.add(current)
+    const record = sources.get(current)
+    if (!record) return undefined
+    if (record.type === 'SYMBOL') return current
+    current = parentIdOf(record)
+  }
+  return undefined
+}
+
 /** Follow raw symbol references to the component definition an instance ultimately expands. */
 export function terminalComponent(index: SourceIndex, id: string): string {
   let current = id

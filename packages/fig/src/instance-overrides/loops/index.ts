@@ -1,4 +1,5 @@
 import {
+  definitionOf,
   idOf,
   parentIdOf,
   terminalComponent,
@@ -52,19 +53,6 @@ function roots({ sources }: SourceIndex): string[] {
   ].map((root) => root.id)
 }
 
-/** The nearest component holding a record, the record included. */
-function definitionOf({ sources }: SourceIndex, id: string): string | undefined {
-  const seen = new Set<string>()
-  for (let current: string | undefined = id; current !== undefined && !seen.has(current);) {
-    seen.add(current)
-    const record = sources.get(current)
-    if (!record) return undefined
-    if (record.type === 'SYMBOL') return current
-    current = parentIdOf(record)
-  }
-  return undefined
-}
-
 /**
  * Figma's repair: it walks component definitions depth first, in layer order across the
  * document, and leaves out an instance whose choice in a definition leads back into one still
@@ -84,16 +72,37 @@ function repair(sources: ComponentLoopSources): Set<string> {
       const id = idOf(record)
       if (id !== undefined) layer.set(id, layer.size)
     }
-    const choices = sources
-      .discover(index, componentId, dropped)
-      .filter(({ ownerId }) => definitionOf(sources.order, ownerId) === componentId)
-      .toSorted((a, b) => (layer.get(a.ownerId) ?? 0) - (layer.get(b.ownerId) ?? 0))
-    for (const { ownerId, componentId: chosen } of choices) {
-      if (dropped.has(ownerId)) continue
+    const discover = () =>
+      sources
+        .discover(index, componentId, dropped)
+        .filter(({ ownerId }) => definitionOf(sources.order, ownerId) === componentId)
+        .toSorted((a, b) => (layer.get(a.ownerId) ?? 0) - (layer.get(b.ownerId) ?? 0))
+    const handled = new Set<string>()
+    let choices = discover()
+    for (let next = 0; next < choices.length; next++) {
+      const { ownerId, componentId: chosen } = choices[next]
+      const key = `${ownerId} ${chosen}`
+      if (dropped.has(ownerId) || handled.has(key)) continue
+      handled.add(key)
       const target = terminalComponent(index, chosen)
       const reached = state.get(target)
       if (reached === 'walking') dropped.add(ownerId)
-      else if (reached === undefined && reaching.has(target)) walk(target)
+      // An instance chain that leads back into itself ends without a component: the read shows
+      // it empty, and there is no definition to walk.
+      else if (
+        reached === undefined &&
+        reaching.has(target) &&
+        index.sources.get(target)?.type === 'SYMBOL'
+      ) {
+        const before = dropped.size
+        walk(target)
+        // The deeper walk left instances out, so a later choice may have swapped through one:
+        // read the choices again, as the definition now expands.
+        if (dropped.size !== before) {
+          choices = discover()
+          next = -1
+        }
+      }
     }
     state.set(componentId, 'done')
   }

@@ -114,7 +114,11 @@ describe('scrubDiagnosticText', () => {
   })
 
   test('keeps built chunk names on the page origin of the web app', () => {
-    const stack = '    at p (https://app.openpencil.dev/assets/document-state-D5Yd3Le2.js:1:2)'
+    // The second name is long enough that it would read as a key anywhere else.
+    const stack = [
+      '    at p (https://app.openpencil.dev/assets/document-state-D5Yd3Le2.js:1:2)',
+      '    at q (https://app.openpencil.dev/assets/material-theme-palenight-B5W6OYN7.js:3:4)'
+    ].join('\n')
     const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'location')
     Object.defineProperty(globalThis, 'location', {
       value: { origin: 'https://app.openpencil.dev' },

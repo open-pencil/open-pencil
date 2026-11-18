@@ -2,8 +2,14 @@ import { describe, expect, test } from 'bun:test'
 
 import { figArchiveOf } from '#fig-tests/helpers/fig-fixtures'
 import { materializeFigArchive } from '#fig/document/materialize'
+import { inheritComponentPropertyDefinitions } from '#fig/document/property-inheritance'
 import { createOccurrenceInterpreter } from '#fig/instance-overrides/interpret'
+import {
+  createReferenceGraph,
+  recordsReachingLoops
+} from '#fig/instance-overrides/loops/references'
 import type { InstanceOccurrence } from '#fig/instance-overrides/occurrence/types'
+import { createSourceIndex, parentIdOf } from '#fig/instance-overrides/source-index'
 
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
@@ -186,6 +192,15 @@ describe('a component that would contain itself', () => {
     expect(reader.leftOut()).toEqual([id(NESTED)])
   })
 
+  test('shows an instance of itself inside a component as empty, and keeps the component', () => {
+    const reader = read(components({ nested: { symbolData: { symbolID: guid(NESTED) } } }))
+
+    expect(reader.component(OUTER)).toEqual({
+      id: id(OUTER),
+      children: [{ id: id(NESTED), children: [] }]
+    })
+  })
+
   test('keeps an instance whose swap property default breaks the loop', () => {
     const reader = read(
       components({
@@ -259,6 +274,44 @@ describe('a component that would contain itself', () => {
         symbolData: {
           symbolID: guid(OUTER),
           symbolOverrides: [{ guidPath: { guids: [guid(NESTED)] }, overriddenSymbolID: guid(50) }]
+        }
+      } as Partial<NodeChange>)
+    ])
+
+    expect(reader.component(50)).toEqual({ id: id(50), children: [] })
+    expect(reader.leftOut()).toEqual([id(51)])
+  })
+
+  test('loses an instance whose assignment to a nested instance leads back into its definition', () => {
+    // Inner shows its Icon swap property in a layer; an instance of Outer in another component
+    // sets the Icon of Outer's instance of Inner to that component.
+    const changes = components()
+    for (const change of changes)
+      if (change.guid?.localID === INNER)
+        change.componentPropDefs = [
+          {
+            id: guid(ICON),
+            name: 'Icon',
+            type: 'INSTANCE_SWAP',
+            initialValue: { guidValue: guid(60) }
+          }
+        ] as NodeChange['componentPropDefs']
+    const reader = read([
+      ...changes,
+      record(60, 'SYMBOL', PAGE, '%'),
+      instance(12, INNER, '!', 60, {
+        componentPropRefs: [{ defID: guid(ICON), componentPropNodeField: 'OVERRIDDEN_SYMBOL_ID' }]
+      } as Partial<NodeChange>),
+      record(50, 'SYMBOL', PAGE, '$'),
+      instance(51, 50, '!', OUTER, {
+        symbolData: {
+          symbolID: guid(OUTER),
+          symbolOverrides: [
+            {
+              guidPath: { guids: [guid(NESTED)] },
+              componentPropAssignments: [{ defID: guid(ICON), value: { guidValue: guid(50) } }]
+            }
+          ]
         }
       } as Partial<NodeChange>)
     ])
@@ -361,6 +414,22 @@ describe('a repair that matches the definitions, whatever a read expands', () =>
     })
   })
 
+  test('still rejects a path to an instance left out of another component', () => {
+    const reader = read([
+      ...components({ nested: { symbolData: { symbolID: guid(OUTER) } } as Partial<NodeChange> }),
+      instance(OUTER_INSTANCE, PAGE, '#', INNER, {
+        symbolData: {
+          symbolID: guid(INNER),
+          symbolOverrides: [{ guidPath: { guids: [guid(NESTED)] }, visible: false }]
+        }
+      } as Partial<NodeChange>)
+    ])
+    // Repairing Outer leaves its instance of itself out; Inner never held that instance.
+    reader.component(OUTER)
+
+    expect(() => reader.instance(OUTER_INSTANCE)).toThrow('1:21')
+  })
+
   test('does not count a swap whose layer is gone as a way back', () => {
     const reader = read([
       ...components({ nested: { symbolData: { symbolID: guid(OUTER) } } as Partial<NodeChange> }),
@@ -374,6 +443,39 @@ describe('a repair that matches the definitions, whatever a read expands', () =>
       children: [{ id: id(22), main: id(INNER), children: [] }]
     })
     expect(reader.leftOut()).toEqual([id(NESTED)])
+  })
+
+  test('reads later choices again once a deeper walk left out what they swapped through', () => {
+    // A holds two instances of B, and B holds an instance of A. The second instance swaps B's
+    // instance of A for C, then C's layer for A. Walking B from the first leaves B's instance of
+    // A out, so the second's swaps have no layer left and do not lead back.
+    const [A, X, Y, B, K, C, L, LEAF] = [50, 51, 52, 60, 61, 70, 71, 80]
+    const reader = read([
+      record(DOCUMENT, 'DOCUMENT', undefined, ''),
+      record(PAGE, 'CANVAS', DOCUMENT, '!'),
+      record(A, 'SYMBOL', PAGE, '!'),
+      instance(X, A, '!', B),
+      instance(Y, A, '"', B, {
+        symbolData: {
+          symbolID: guid(B),
+          symbolOverrides: [swapAt([K], C), swapAt([K, L], A)]
+        }
+      } as Partial<NodeChange>),
+      record(B, 'SYMBOL', PAGE, '"'),
+      instance(K, B, '!', A),
+      record(C, 'SYMBOL', PAGE, '#'),
+      instance(L, C, '!', LEAF),
+      record(LEAF, 'SYMBOL', PAGE, '$')
+    ])
+
+    expect(reader.component(A)).toEqual({
+      id: id(A),
+      children: [
+        { id: id(X), main: id(B), children: [] },
+        { id: id(Y), main: id(B), children: [] }
+      ]
+    })
+    expect(reader.leftOut()).toEqual([id(K)])
   })
 
   test('walks every root of a document without a document record', () => {
@@ -430,4 +532,45 @@ test('a page read loses the instance a read of the whole document loses', async 
   const loop = { leftOut: [id(22)], inner: [], outer: [`SYMBOL ${INNER}`] }
   expect(open(new Set([id(OTHER_PAGE)]))).toEqual({ ...loop, decider: false })
   expect(open()).toEqual({ ...loop, decider: true })
+})
+
+test("a document opened from headers finds the loop a variant's inherited swap default makes", () => {
+  // The set defines Icon with a default of its own variant; the variant's copy links to it, and
+  // a layer of the variant shows Icon.
+  const changes = () => [
+    record(DOCUMENT, 'DOCUMENT', undefined, ''),
+    record(PAGE, 'CANVAS', DOCUMENT, '!'),
+    record(ICON, 'SYMBOL', PAGE, '!'),
+    record(5, 'FRAME', PAGE, '"', {
+      isStateGroup: true,
+      componentPropDefs: [
+        {
+          id: guid(90),
+          name: 'Icon',
+          type: 'INSTANCE_SWAP',
+          initialValue: { guidValue: guid(INNER) }
+        }
+      ]
+    } as Partial<NodeChange>),
+    record(INNER, 'SYMBOL', 5, '!', {
+      componentPropDefs: [{ id: guid(91), parentPropDefId: guid(90) }]
+    } as Partial<NodeChange>),
+    instance(11, INNER, '!', ICON, {
+      componentPropRefs: [{ defID: guid(91), componentPropNodeField: 'OVERRIDDEN_SYMBOL_ID' }]
+    } as Partial<NodeChange>)
+  ]
+  // As the archive reader graphs them: each record as stored, before inheritance.
+  const stored = changes()
+  const { sources } = createSourceIndex(stored)
+  const graph = createReferenceGraph((recordId) => {
+    const found = sources.get(recordId)
+    return found && parentIdOf(found)
+  })
+  for (const change of stored) graph.add(change)
+  // As a read of the whole document graphs them: inheritance applied.
+  const whole = changes()
+  inheritComponentPropertyDefinitions(whole, createSourceIndex(whole).sources)
+
+  expect(graph.reaching()).toEqual(recordsReachingLoops(createSourceIndex(whole)))
+  expect(graph.reaching().has(id(INNER))).toBe(true)
 })

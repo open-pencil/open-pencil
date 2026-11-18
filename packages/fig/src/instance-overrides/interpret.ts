@@ -389,7 +389,8 @@ function interpretRoot(
     const rootLayers = groups
       .filter((group) => group.assignments.length)
       .map((group): StructuralLayer => ({
-        owner: { ...owner, rank: group.rank },
+        // The instance that declared the assignments chose what they swap in, not this one.
+        owner: { ...owner, id: group.ownerId ?? owner.id, rank: group.rank },
         declaredPath: [],
         path: [],
         assignments: group.assignments

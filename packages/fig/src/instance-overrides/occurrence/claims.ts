@@ -7,7 +7,12 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { declareVariableBindingUnits } from '../bindings/variables'
 import { applyDerivedEntry } from '../derived-symbol-data'
 import type { PropertyLayer } from '../layers'
-import { recordMatches, resolvesInSourceComponent, type InterpreterIndex } from '../source-index'
+import {
+  definitionOf,
+  recordMatches,
+  resolvesInSourceComponent,
+  type InterpreterIndex
+} from '../source-index'
 import { completeClearedStyleClaim } from '../style/cleared'
 import { yieldToInheritedTextStyle } from '../style/inherited-text'
 import { invalidateInheritedTextData } from '../text-provenance'
@@ -40,13 +45,25 @@ export function createClaimContext(
   }
 }
 
-/** Whether a path segment names an instance repaired out of its definition, as Figma deletes it. */
-function isDroppedSegment({ index, dropped }: ClaimContext, segment: GUID): boolean {
+/**
+ * Whether a path segment names an instance repaired out of the definition `searched` expands,
+ * as Figma deletes it. One left out of another definition does not make the path valid.
+ */
+function isDroppedSegment(
+  { index, dropped }: ClaimContext,
+  searched: InstanceOccurrence,
+  segment: GUID
+): boolean {
   const left = dropped()
-  if (left.size === 0) return false
+  if (left.size === 0 || !searched.mainComponentId) return false
   for (const id of left) {
     const record = index.sources.get(id)
-    if (record && recordMatches(record, segment)) return true
+    if (
+      record &&
+      recordMatches(record, segment) &&
+      definitionOf(index, id) === searched.mainComponentId
+    )
+      return true
   }
   return false
 }
@@ -114,7 +131,7 @@ function isRemovedTarget(
       if (!(error instanceof SegmentError)) {
         throw error
       }
-      return error.count === 0 && isDroppedSegment(context, segment)
+      return error.count === 0 && isDroppedSegment(context, current, segment)
     }
   }
   return false

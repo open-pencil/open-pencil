@@ -30,7 +30,8 @@ function looksLikeToken(segment: string): boolean {
  */
 const CHUNK_NAME = /^[\w.-]+-[\w-]{8}$/
 const CODE_EXTENSION = /^\.(?:m?js|css|wasm)\b/
-const SCHEME_BEFORE = /([a-z][\w+.-]*):$/i
+/** The URL whose path ends where the text does: its scheme and host. */
+const URL_ENDING = /([a-z][\w+.-]*):\/\/([^\s/'"()]+)\/[^\s'"()]*$/i
 
 /** Where this app's own chunks load from: the desktop app's scheme, or the page's origin. */
 function isAppOrigin(origin: string): boolean {
@@ -40,15 +41,17 @@ function isAppOrigin(origin: string): boolean {
 }
 
 /**
- * The run's last segment, when the run is the path of this app's own script or stylesheet:
- * it starts at an app origin, as `//localhost/assets/x` after `tauri:` does, and an extension
- * follows it. A chunk-shaped name on any other host may be a key and stays redacted.
+ * The run's last segment, when the run ends the path of this app's own script or stylesheet:
+ * the URL it ends is on an app origin and an extension follows it. The run may start inside
+ * the host, since a dot ends a run, as `dev/assets/x` in `https://app.openpencil.dev/assets/x`.
+ * A chunk-shaped name on any other host may be a key and stays redacted.
  */
 function appChunkSegment(run: string, offset: number, text: string): number {
-  if (!run.startsWith('//') || !CODE_EXTENSION.test(text.slice(offset + run.length))) return -1
-  const scheme = SCHEME_BEFORE.exec(text.slice(Math.max(0, offset - 32), offset))?.[1]
-  const host = run.slice(2).split('/')[0]
-  return scheme && isAppOrigin(`${scheme.toLowerCase()}://${host}`) ? run.split('/').length - 1 : -1
+  const end = offset + run.length
+  if (!CODE_EXTENSION.test(text.slice(end))) return -1
+  const url = URL_ENDING.exec(text.slice(Math.max(0, offset - 256), end))
+  if (!url) return -1
+  return isAppOrigin(`${url[1].toLowerCase()}://${url[2]}`) ? run.split('/').length - 1 : -1
 }
 
 /** A long run is a key or encoded content, unless it is a path such as a stack frame's. */
