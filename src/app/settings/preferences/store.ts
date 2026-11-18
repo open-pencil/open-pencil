@@ -119,6 +119,10 @@ export interface NotificationPreferences {
   commentReply: boolean
   /** An automatic save of an open document failed. */
   saveFailed: boolean
+  /** An open Cloud document was changed in two places and waits for a choice. */
+  cloudConflict: boolean
+  /** An open Cloud document became view only because its owner's storage is full. */
+  cloudStorageFull: boolean
 }
 
 /** How the person's Design instructions meet OpenPencil's: added after them, or in their place. */
@@ -232,7 +236,9 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     agentFailed: false,
     commentMention: true,
     commentReply: false,
-    saveFailed: true
+    saveFailed: true,
+    cloudConflict: true,
+    cloudStorageFull: true
   },
   updates: { checkOnStartup: true, channel: 'build' },
   prompts: { review: null, title: null, summary: null, design: { mode: 'add', text: '' } }
@@ -352,7 +358,9 @@ const appPreferencesSchema = section({
     agentFailed: v.fallback(v.boolean(), defaults.notifications.agentFailed),
     commentMention: v.fallback(v.boolean(), defaults.notifications.commentMention),
     commentReply: v.fallback(v.boolean(), defaults.notifications.commentReply),
-    saveFailed: v.fallback(v.boolean(), defaults.notifications.saveFailed)
+    saveFailed: v.fallback(v.boolean(), defaults.notifications.saveFailed),
+    cloudConflict: v.fallback(v.boolean(), defaults.notifications.cloudConflict),
+    cloudStorageFull: v.fallback(v.boolean(), defaults.notifications.cloudStorageFull)
   }),
   updates: section({
     checkOnStartup: v.fallback(v.boolean(), defaults.updates.checkOnStartup),
