@@ -133,7 +133,7 @@ describe('scrubDiagnosticText', () => {
   })
 
   test('removes a chunk-shaped key in the query of a page-origin URL', () => {
-    const token = 'Qw3rTy7uIo9pAs5dFg2hJkLz8xCv6bNm1Q-abcdefgh'
+    const token = ['Qw3rTy7uIo9pAs5dFg2hJk', 'Lz8xCv6bNm1Q', 'abcdefgh'].join('-')
     const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'location')
     Object.defineProperty(globalThis, 'location', {
       value: { origin: 'https://app.openpencil.dev' },

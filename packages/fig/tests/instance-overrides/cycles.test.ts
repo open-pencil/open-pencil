@@ -12,7 +12,8 @@ import {
   record,
   instance,
   components,
-  read
+  read,
+  type Shown
 } from '#fig-tests/helpers/component-loops'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
