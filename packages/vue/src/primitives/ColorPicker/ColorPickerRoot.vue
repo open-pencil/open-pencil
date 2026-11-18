@@ -24,13 +24,19 @@ const {
   color,
   label = 'Edit color',
   ui,
-  keepOpen
+  keepOpen,
+  escapeReverts = false
 } = defineProps<{
   color: Color
   label?: string
   ui?: ColorPickerUI
   /** Whether a press outside the picker should leave it open, such as one that samples the canvas. */
   keepOpen?: PickerKeepOpen
+  /**
+   * For a colour with no undo history, such as a preference: Escape closing the picker puts back
+   * the colour it opened with. Otherwise Escape keeps the edit, as Figma's picker does.
+   */
+  escapeReverts?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -41,7 +47,8 @@ const emit = defineEmits<{
   /**
    * Escape during a press that changed the colour, or the picker closing during one: the colour
    * from before the press has just come back through `update`, and a listener that batches the
-   * press can roll it back.
+   * press can roll it back. With `escapeReverts`, also Escape closing the picker, after the colour
+   * it opened with has come back.
    */
   cancel: []
 }>()
@@ -73,17 +80,26 @@ const trigger = useTemplateRef('trigger')
  * picker, so it sits beside it rather than over it, as Figma's does.
  */
 const enclosingPicker = shallowRef<Element>()
+let openColor: Color = { ...color }
 
 /** A press still held when the picker closes is put back, whichever way it closes. */
 function onOpenChange(open: boolean) {
-  if (open)
+  if (open) {
+    openColor = { ...color }
     enclosingPicker.value = unrefElement(trigger)?.closest('[data-picker-content]') ?? undefined
+  }
   if (!open) gesture.abort()
   emit('openChange', open)
 }
 
 function update(next: Color) {
   gesture.change(() => emit('update', next))
+}
+
+function onEscapeKeyDown() {
+  if (!escapeReverts) return
+  emit('update', openColor)
+  emit('cancel')
 }
 
 const outside = pickerOutsideHandlers(() => keepOpen)
@@ -110,6 +126,7 @@ const outside = pickerOutsideHandlers(() => keepOpen)
         :align="enclosingPicker ? 'start' : 'center'"
         :side="side"
         data-picker-content
+        @escape-key-down="onEscapeKeyDown"
         @pointer-down-outside="outside.onPointerDownOutside"
         @focus-outside="outside.onFocusOutside"
       >
