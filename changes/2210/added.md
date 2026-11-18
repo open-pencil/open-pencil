@@ -1,0 +1,1 @@
+- **File → Open from URL…** opens a web page as editable layers with the stylesheets and pictures it links, and an image, SVG, or design file as File → Open does; the desktop app opens any address, the browser sites that allow it. `openpencil import` accepts a web address (#2210).

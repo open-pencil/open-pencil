@@ -1,0 +1,1 @@
+- Pictures an imported HTML page links, such as `<img src="photo.png">`, become image fills instead of empty layers (#2210).
