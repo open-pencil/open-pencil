@@ -11,11 +11,15 @@ import { data } from './color-picker-root.data'
 
 `ColorPickerRoot` composes a color swatch trigger with a popover surface while leaving the editor UI
 to its slots. The trigger slot receives the current swatch style; the default slot receives the
-current scene-graph color.
+current scene-graph color and `update()`. Send the editor's changes through `update()` so the picker
+can group them into undo steps.
 
-`openChange` reports the complete picker interaction boundary. `cancel` fires before an Escape
-close, allowing BindableValue consumers to roll back a variable detach and paint update together.
-Opening or focusing the picker does not emit a color update.
+`openChange` reports when the picker opens and closes. `commit` ends one undo step: the release of a
+press inside the picker, or a change made with no press held, such as a typed value. Escape during a
+press puts the color from before it back through `update` and emits `cancel`, so a BindableValue
+consumer can roll back a variable detach and the paint change together; the picker stays open.
+Otherwise Escape closes the picker and keeps its changes. Opening or focusing the picker does not
+emit a color update.
 
 ```vue twoslash
 <script setup lang="ts">
@@ -31,12 +35,14 @@ const color = ref<Color>({ r: 0.2, g: 0.5, b: 0.9, a: 1 })
     :color="color"
     @update="color = $event"
     @open-change="open => console.log(open)"
+    @commit="console.log('commit')"
     @cancel="console.log('cancel')"
   >
     <template #trigger="{ style }">
       <button :style="style" aria-label="Edit color" />
     </template>
-    <template #default="{ color: currentColor }">
+    <template #default="{ color: currentColor, update }">
+      <button @click="update({ ...currentColor, r: 1 })">Full red</button>
       <output>{{ currentColor.r }}, {{ currentColor.g }}, {{ currentColor.b }}</output>
     </template>
   </ColorPickerRoot>
