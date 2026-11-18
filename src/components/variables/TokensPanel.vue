@@ -157,11 +157,13 @@ const cssCandidates = computed(() =>
   editedRow.value ? cssReferenceCandidates(editor.graph, editedRow.value.variable) : []
 )
 
-const collectionNames = computed(() => {
-  void messages.value
-  void ctx.collections.value
-  return collectionLabels(editor.graph)
-})
+const collectionNames = computed(() =>
+  collectionLabels(
+    editor.graph,
+    messages.value.numberedCollection,
+    ctx.collections.value.map((candidate) => candidate.id)
+  )
+)
 function collectionLabel(candidate: Pick<VariableCollection, 'id' | 'name'>): string {
   return collectionNames.value.get(candidate.id) ?? candidate.name
 }

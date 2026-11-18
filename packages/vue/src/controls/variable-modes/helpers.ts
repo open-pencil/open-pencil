@@ -11,7 +11,11 @@ import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { collectionsBoundIn } from '@open-pencil/scene-graph/variables'
 
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
-import { collectionLabels } from '#vue/controls/variable-modes/labels'
+import {
+  collectionLabels,
+  type NumberedCollectionFormat
+} from '#vue/controls/variable-modes/labels'
+import { variablesMessages } from '#vue/i18n/messages'
 
 /** A mode as the control lists it. */
 export type VariableModeOption = Pick<VariableCollectionMode, 'modeId' | 'name'>
@@ -20,7 +24,7 @@ export type VariableModeOption = Pick<VariableCollectionMode, 'modeId' | 'name'>
 export interface VariableModeChoice {
   collectionId: string
   name: string
-  /** The name to show, numbered in collection order when collections share one. */
+  /** The name to show, numbered in collection order where listed collections share one. */
   label: string
   /** Whether the collection is a library's copy rather than the file's own. */
   library: boolean
@@ -45,8 +49,13 @@ function shared<T>(values: readonly T[]): MixedValue<T> {
  * The collections a mode can be set for on `targets`: every collection with more than one mode for
  * pages and layers that hold others, such as a frame's theme for what goes in it before anything
  * binds its variables, and for other layers only those whose variables they use, as Figma does.
+ * `numbered` names same-named collections; reactive callers pass their locale's.
  */
-export function variableModeChoices(editor: Editor, targets: SceneNode[]): VariableModeChoice[] {
+export function variableModeChoices(
+  editor: Editor,
+  targets: SceneNode[],
+  numbered: NumberedCollectionFormat = variablesMessages.get().numberedCollection
+): VariableModeChoice[] {
   if (targets.length === 0) return []
   const { graph } = editor
   const holders = targets.every((target) => target.type === 'CANVAS' || isLayerContainer(target))
@@ -56,12 +65,18 @@ export function variableModeChoices(editor: Editor, targets: SceneNode[]): Varia
         graph,
         targets.map((target) => target.id)
       )
-  const labels = collectionLabels(graph)
-  const choices: VariableModeChoice[] = []
-  for (const collection of graph.variableCollections.values()) {
-    if (collection.modes.length < 2) continue
-    if (used && !used.has(collection.id)) continue
-    if (isUnusedLibraryCopy(collection, targets)) continue
+  const listed = [...graph.variableCollections.values()].filter(
+    (collection) =>
+      collection.modes.length > 1 &&
+      (!used || used.has(collection.id)) &&
+      !isUnusedLibraryCopy(collection, targets)
+  )
+  const labels = collectionLabels(
+    graph,
+    numbered,
+    listed.map((collection) => collection.id)
+  )
+  return listed.map((collection) => {
     const inherited = shared(
       targets.map((target) =>
         target.parentId
@@ -69,7 +84,7 @@ export function variableModeChoices(editor: Editor, targets: SceneNode[]): Varia
           : collection.defaultModeId
       )
     )
-    choices.push({
+    return {
       collectionId: collection.id,
       name: collection.name,
       label: labels.get(collection.id) ?? collection.name,
@@ -77,9 +92,8 @@ export function variableModeChoices(editor: Editor, targets: SceneNode[]): Varia
       modes: collection.modes.map((mode) => ({ modeId: mode.modeId, name: mode.name })),
       value: shared(targets.map((target) => target.variableModes[collection.id] ?? null)),
       inherited: inherited === MIXED ? null : modeOption(collection, inherited)
-    })
-  }
-  return choices
+    }
+  })
 }
 
 /** A library copy without variables, which a file keeps only for the modes layers set in it. */

@@ -28,7 +28,8 @@ test('library copies are told apart from local variables in the page panel and t
 
   const rows = editor.page.locator('[data-variable-mode-row]')
   await expect(rows).toHaveCount(1)
-  await expect(rows).toContainText('Theme (1)')
+  await expect(rows).toContainText('Theme')
+  await expect(rows).not.toContainText('Theme (')
 
   const variables = propertySection(editor.page, 'Variables')
   await expect(variables).toContainText('2 / 1')

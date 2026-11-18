@@ -5,4 +5,4 @@ export {
   type VariableModeChoice,
   type VariableModeOption
 } from './helpers'
-export { collectionLabels } from './labels'
+export { collectionLabels, type NumberedCollectionFormat } from './labels'

@@ -1,14 +1,22 @@
-import { describe, expect, test } from 'bun:test'
+import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { defineComponent, h, reactive } from 'vue'
+
+import { createDefaultEditorState, createEditor, type Editor } from '@open-pencil/core'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { collectionsBoundIn } from '@open-pencil/scene-graph/variables'
+import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 import { MIXED } from '@open-pencil/vue/controls/node-props'
 import {
   collectionLabels,
   setVariableMode,
+  useVariableModes,
   variableModeChoices
 } from '@open-pencil/vue/controls/variable-modes'
+
+import { provideEditor } from '#vue/editor/context'
+import { setLocale } from '#vue/i18n/locale'
+import { variablesMessages } from '#vue/i18n/messages'
 
 const RED = { r: 1, g: 0, b: 0, a: 1 }
 
@@ -93,13 +101,32 @@ describe('library copies in variable mode choices', () => {
     return { ...context, empty }
   }
 
+  const numbered = ({ name, number }: { name: string; number: string }) => `${name} #${number}`
+
   test('number same-named collections across the file, in collection order', () => {
     const { graph, theme, density, empty } = libraryCopies()
-    expect(collectionLabels(graph)).toEqual(
+    expect(collectionLabels(graph, numbered)).toEqual(
       new Map([
-        [theme.id, 'Theme (1)'],
+        [theme.id, 'Theme #1'],
         [density.id, 'Density'],
-        [empty.id, 'Theme (2)']
+        [empty.id, 'Theme #2']
+      ])
+    )
+  })
+
+  test('number only namesakes listed together, each by its place in the file', () => {
+    const { graph, density, empty } = libraryCopies()
+    const third = graph.createCollection('Theme')
+    expect(collectionLabels(graph, numbered, [empty.id, density.id])).toEqual(
+      new Map([
+        [density.id, 'Density'],
+        [empty.id, 'Theme']
+      ])
+    )
+    expect(collectionLabels(graph, numbered, [third.id, empty.id])).toEqual(
+      new Map([
+        [empty.id, 'Theme #2'],
+        [third.id, 'Theme #3']
       ])
     )
   })
@@ -107,7 +134,7 @@ describe('library copies in variable mode choices', () => {
   test('leave out a library copy without variables that no target sets a mode in', () => {
     const { editor, page, theme, node } = libraryCopies()
     expect(variableModeChoices(editor, [node(page)]).map((c) => [c.collectionId, c.label])).toEqual(
-      [[theme.id, 'Theme (1)']]
+      [[theme.id, 'Theme']]
     )
   })
 
@@ -130,6 +157,77 @@ describe('library copies in variable mode choices', () => {
       theme.id,
       local.id
     ])
+  })
+})
+
+describe('variable mode labels in a mounted control', () => {
+  let unmount: (() => void) | undefined
+
+  /** `@nanostores/vue` follows a store only where `window` exists, as in the app. */
+  beforeAll(() => {
+    Object.defineProperty(globalThis, 'window', { value: globalThis, configurable: true })
+  })
+
+  afterAll(() => {
+    Reflect.deleteProperty(globalThis, 'window')
+  })
+
+  afterEach(() => {
+    unmount?.()
+    setLocale('en')
+  })
+
+  function mountModes(editor: Editor) {
+    let modes: ReturnType<typeof useVariableModes> | undefined
+    const Control = defineComponent({
+      setup() {
+        modes = useVariableModes()
+        return () => h('div')
+      }
+    })
+    const app = createTestRenderer().createApp(
+      defineComponent({
+        setup() {
+          provideEditor(editor)
+          return () => h(Control)
+        }
+      })
+    )
+    app.mount(hostNode())
+    unmount = () => app.unmount()
+    if (!modes) throw new Error('Expected the variable modes')
+    return modes
+  }
+
+  async function switchLocale(code: 'ja') {
+    const before = variablesMessages.get()
+    setLocale(code)
+    await new Promise<void>((resolve) => {
+      const stop = variablesMessages.subscribe((messages) => {
+        if (messages === before) return
+        queueMicrotask(() => stop())
+        resolve()
+      })
+    })
+  }
+
+  test('follow the language and the file’s collections', async () => {
+    const { graph, page, theme } = setup()
+    const editor = createEditor({ graph, state: reactive(createDefaultEditorState(page)) })
+    const copy = graph.createCollection('Theme')
+    graph.createMode(copy.id, 'Dark')
+    const { choices } = mountModes(editor)
+    const labels = () => choices.value.map((choice) => choice.label)
+    expect(labels()).toEqual(['Theme (1)', 'Theme (2)'])
+
+    await switchLocale('ja')
+    expect(labels()).toEqual(['Theme（1）', 'Theme（2）'])
+
+    editor.renameCollection(copy.id, 'Brand')
+    expect(labels()).toEqual(['Theme', 'Brand'])
+
+    editor.renameCollection(theme.id, 'Brand')
+    expect(labels()).toEqual(['Brand（1）', 'Brand（2）'])
   })
 })
 

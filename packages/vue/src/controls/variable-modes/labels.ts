@@ -1,24 +1,36 @@
 import { groupBy } from 'es-toolkit'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph, VariableCollection } from '@open-pencil/scene-graph'
 
-import { variablesMessages } from '#vue/i18n/messages'
+/** Names a collection by its number among same-named ones, as `numberedCollection` does. */
+export type NumberedCollectionFormat = (params: { name: string; number: string }) => string
 
-/** Display names by collection id, numbered where names repeat, as a file keeps no library names. */
-export function collectionLabels(graph: SceneGraph): Map<string, string> {
+function sameName(collections: readonly VariableCollection[]) {
+  return groupBy(collections, (collection) => collection.name)
+}
+
+/**
+ * Display names of the `shown` collections, all of the file's by default. Where two or more shown
+ * collections share a name, each gets its number among the file's same-named collections, so a
+ * collection keeps one number in every list; a file keeps no library names to tell them apart.
+ */
+export function collectionLabels(
+  graph: SceneGraph,
+  numbered: NumberedCollectionFormat,
+  shown: readonly string[] = [...graph.variableCollections.keys()]
+): Map<string, string> {
+  const shownIds = new Set(shown)
   const collections = [...graph.variableCollections.values()]
-  const byName = groupBy(collections, (collection) => collection.name)
-  const messages = variablesMessages.get()
+  const listed = collections.filter((collection) => shownIds.has(collection.id))
+  const inFile = sameName(collections)
+  const inList = sameName(listed)
   return new Map(
-    collections.map((collection) => {
-      const namesakes = byName[collection.name] ?? []
+    listed.map((collection) => {
+      const { name } = collection
       const label =
-        namesakes.length > 1
-          ? messages.numberedCollection({
-              name: collection.name,
-              number: String(namesakes.indexOf(collection) + 1)
-            })
-          : collection.name
+        inList[name].length > 1
+          ? numbered({ name, number: String(inFile[name].indexOf(collection) + 1) })
+          : name
       return [collection.id, label]
     })
   )
