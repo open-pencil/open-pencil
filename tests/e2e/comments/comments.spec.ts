@@ -352,6 +352,8 @@ test('a pin dragged among others drops on release', async () => {
     if (!store) throw new Error('OpenPencil store not initialized')
     store.centerOn(9000, 9000, 1)
   })
+  // Pins follow the drawn frame, so measure after it.
+  await editor.canvas.waitForRender()
   const pin = pins().last()
   const start = expectDefined(await pin.boundingBox(), 'pin bounds')
   await editor.page.mouse.move(start.x + 8, start.y + start.height - 8)

@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverPortal
 } from 'reka-ui'
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 import type { CommentThread } from '@open-pencil/scene-graph'
@@ -140,15 +140,19 @@ function openCluster(event: MouseEvent, cluster: PinCluster<(typeof pins.value)[
  * Moves focus from a cluster to its first pin once the cluster is gone, which can be a drawn
  * frame later; focus the user moved elsewhere in the meantime stays where they put it.
  */
+let pendingHandoff: (() => void) | null = null
+onBeforeUnmount(() => pendingHandoff?.())
+
 function handFocusOnSplit(button: HTMLElement, cluster: PinCluster<{ thread: { id: string } }>) {
+  pendingHandoff?.()
   const stop = watch(
     clusters,
     (next) => {
       if (next.some((other) => other.key === cluster.key)) {
-        if (document.activeElement !== button) stop()
+        if (document.activeElement !== button) pendingHandoff?.()
         return
       }
-      stop()
+      pendingHandoff?.()
       // Removing the cluster drops focus to the page; focus anywhere else was the user's move.
       if (document.activeElement && document.activeElement !== document.body) return
       const id = CSS.escape(cluster.pins[0].thread.id)
@@ -158,6 +162,10 @@ function handFocusOnSplit(button: HTMLElement, cluster: PinCluster<{ thread: { i
     },
     { flush: 'post' }
   )
+  pendingHandoff = () => {
+    stop()
+    pendingHandoff = null
+  }
 }
 
 function clusterLabel(count: number) {
