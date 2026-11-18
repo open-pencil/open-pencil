@@ -18,7 +18,7 @@ export function createBillingTokenService(options: BillingTokenServiceOptions) {
      * Signs a token that lets the signed-in person buy or manage their own account's plan and
      * credits with billing; nobody else's, since an account is the person.
      */
-    async issue(actor: CloudActor): Promise<BillingToken> {
+    async issue(actor: Pick<CloudActor, 'userId' | 'email'>): Promise<BillingToken> {
       const issuedAt = Math.floor(Date.now() / 1000)
       const expiresAt = issuedAt + options.lifetimeSeconds
       const token = await new SignJWT({ email: actor.email })
