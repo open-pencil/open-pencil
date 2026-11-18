@@ -157,7 +157,6 @@ export function createDocumentSourceActions({
   })
 
   const autosaveFailed = createEventHook<unknown>()
-  const autosaved = createEventHook()
   const autosave = createAutosave({
     state,
     version: changes.revision,
@@ -166,8 +165,7 @@ export function createDocumentSourceActions({
     saveCurrentDocument: async (version) => {
       await saveAndTrack(async () => writeFile(await buildFigStream(), version))
     },
-    onFailed: (error) => void autosaveFailed.trigger(error),
-    onSaved: () => void autosaved.trigger()
+    onFailed: (error) => void autosaveFailed.trigger(error)
   })
 
   function markDocumentSaved() {
@@ -318,7 +316,6 @@ export function createDocumentSourceActions({
     renameDocument,
     onDocumentRenamed: renamed.on,
     onAutosaveFailed: autosaveFailed.on,
-    onAutosaved: autosaved.on,
     setDocumentSource,
     setStorageDocumentSource,
     setPlannedFilePath,

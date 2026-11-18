@@ -44,7 +44,14 @@ describe('save feedback', () => {
     expect(toast.toasts.value).toHaveLength(1)
 
     fail = false
-    await expect(saveWithFeedback(save, { key })).resolves.toBe(true)
+    // A save of an older revision leaves the newer edits, and their failure, in place.
+    let unsaved = true
+    const hasUnsavedChanges = () => unsaved
+    await expect(saveWithFeedback(save, { key, hasUnsavedChanges })).resolves.toBe(true)
+    expect(toast.toasts.value).toHaveLength(1)
+
+    unsaved = false
+    await expect(saveWithFeedback(save, { key, hasUnsavedChanges })).resolves.toBe(true)
     expect(toast.toasts.value).toHaveLength(0)
   })
 

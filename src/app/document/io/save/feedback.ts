@@ -11,6 +11,11 @@ export interface SaveFeedbackOptions {
   key?: object
   /** Whether the document is still open, checked before retrying. */
   isOpen?: () => boolean
+  /**
+   * Whether the document has edits no save has written: a save of an older revision then leaves
+   * the failure shown, which goes once a later save writes them.
+   */
+  hasUnsavedChanges?: () => boolean
 }
 
 const failureToasts = new WeakMap<object, number>()
@@ -97,8 +102,9 @@ export async function saveWithFeedback(
 ): Promise<boolean> {
   try {
     const saved = (await save()) !== false
-    // A save that did not happen, such as a dismissed file picker, leaves the failure shown.
-    if (saved && options.key) clearSaveFailure(options.key)
+    // A save that did not happen, such as a dismissed file picker, leaves the failure shown, and
+    // so does one that left newer edits unsaved.
+    if (saved && options.key && !options.hasUnsavedChanges?.()) clearSaveFailure(options.key)
     return saved
   } catch (error) {
     // A save that fails after its tab closed has nothing left to retry.

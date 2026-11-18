@@ -15,13 +15,23 @@ import { allTabs, getTabsSnapshot, switchTab, type Tab } from '@/app/tabs'
 
 /**
  * Reports the automatic saves of `tab`'s document that fail, which nobody waits on: a failure
- * stays shown until a save of the document succeeds, and Retry saves it as Save does. While the
- * person is away the first failure of a run also sends a system notification, whose click brings
- * the tab forward; a run ends once a save of the document or closing its tab clears the failure.
+ * stays shown until the document has no unsaved changes, however they were saved, and Retry saves
+ * it as Save does. While the person is away the first failure of a run also sends a system
+ * notification, whose click brings the tab forward; a run ends once the failure is cleared.
  */
 function reportAutosaves({ id, store }: Tab): () => void {
-  const options = { key: store, isOpen: () => getTabsSnapshot().some((tab) => tab.store === store) }
-  const saved = store.onAutosaved(() => clearSaveFailure(store))
+  const options = {
+    key: store,
+    isOpen: () => getTabsSnapshot().some((tab) => tab.store === store),
+    hasUnsavedChanges: () => store.hasUnsavedChanges()
+  }
+  // Save, Save to, a retry, or an autosave: whatever wrote the edits ends the failure.
+  const stopSaved = watch(
+    () => store.hasUnsavedChanges(),
+    (unsaved) => {
+      if (!unsaved) clearSaveFailure(store)
+    }
+  )
   const failed = store.onAutosaveFailed((error) => {
     const messages = notificationMessages.get()
     const name = store.state.documentName
@@ -41,7 +51,7 @@ function reportAutosaves({ id, store }: Tab): () => void {
     })
   })
   return () => {
-    saved.off()
+    stopSaved()
     failed.off()
     clearSaveFailure(store)
   }

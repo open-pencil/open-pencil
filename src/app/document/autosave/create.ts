@@ -18,8 +18,6 @@ type AutosaveOptions = {
   saveCurrentDocument: (version: number) => Promise<void>
   /** An automatic save failed; nobody is waiting on it to say so. */
   onFailed?: (error: unknown) => void
-  /** An automatic save finished. */
-  onSaved?: () => void
 }
 
 export function createAutosave({
@@ -28,8 +26,7 @@ export function createAutosave({
   getSavedVersion,
   hasWritableSource,
   saveCurrentDocument,
-  onFailed,
-  onSaved
+  onFailed
 }: AutosaveOptions) {
   let requestedVersion: number | null = null
   let saving: Promise<void> | null = null
@@ -46,7 +43,6 @@ export function createAutosave({
       requestedVersion = null
       if (!canSave(version)) continue
       await saveCurrentDocument(version)
-      onSaved?.()
     }
   }
 
