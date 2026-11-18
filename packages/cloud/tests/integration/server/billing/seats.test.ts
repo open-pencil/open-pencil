@@ -60,7 +60,7 @@ describe('seat notices to billing', () => {
       })
 
       status = 503
-      await expect(notifier.notify([accountId])).rejects.toThrow('503')
+      await expect(notifier.notify([accountId])).rejects.toThrow('Billing missed seat notices')
     } finally {
       await runtime.close()
     }

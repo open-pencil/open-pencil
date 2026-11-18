@@ -30,7 +30,9 @@ export function createSeatNotifier(options: SeatNotifierOptions) {
         .select((eb) => [userIdText(eb).as('userId'), 'email'])
         .where((eb) => eb(userIdText(eb), 'in', accountIds))
         .execute()
-      await Promise.all(
+      // Every notice is sent before any failure is reported, so one refusal never leaves
+      // another account's notice cut off.
+      const sent = await Promise.allSettled(
         accounts.map(async (account) => {
           const { token } = await options.tokens.issue(account)
           const response = await send(joinURL(options.endpoint, CLOUD_BILLING_API_PATHS.seats), {
@@ -42,6 +44,10 @@ export function createSeatNotifier(options: SeatNotifierOptions) {
           }
         })
       )
+      const failed: unknown[] = sent.flatMap((result): unknown[] =>
+        result.status === 'rejected' ? [result.reason] : []
+      )
+      if (failed.length > 0) throw new AggregateError(failed, 'Billing missed seat notices')
     }
   }
 }

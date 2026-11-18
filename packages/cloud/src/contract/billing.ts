@@ -112,10 +112,18 @@ const seatCountSchema = v.pipe(v.number(), v.integer(), v.minValue(1))
  */
 export const billingSeatPricingSchema = v.object({
   minimum: seatCountSchema,
-  /** From the fewest seats up: `fromSeats` of the first is 1. */
+  /** From the fewest seats up: the first from 1, each later one from more seats. */
   tiers: v.pipe(
     v.array(v.object({ fromSeats: seatCountSchema, unitPriceCents: centsSchema })),
-    v.minLength(1)
+    v.minLength(1),
+    v.check((tiers) => tiers[0]?.fromSeats === 1, 'The first seat tier starts at one seat'),
+    v.check(
+      (tiers) =>
+        tiers.every(
+          (tier, index) => index === 0 || tier.fromSeats > (tiers[index - 1]?.fromSeats ?? 0)
+        ),
+      'Seat tiers start at more seats each'
+    )
   ),
   storageBytesPerSeat: bytesSchema,
   monthlyCreditsPerSeat: creditsSchema

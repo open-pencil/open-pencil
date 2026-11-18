@@ -186,7 +186,8 @@ export function createWorkspaceMemberService(
   database: Kysely<CloudDatabase>,
   options: WorkspaceMemberServiceOptions
 ) {
-  async function ownerOf(workspaceId: string): Promise<string | null> {
+  /** The workspace's owner as `database` sees it, inside the change's transaction. */
+  async function ownerIn(database: WorkspaceDatabase, workspaceId: string): Promise<string | null> {
     const workspace = await database
       .selectFrom('workspace')
       .select('ownerId')
@@ -195,12 +196,13 @@ export function createWorkspaceMemberService(
     return workspace?.ownerId ?? null
   }
 
-  /** Reports the owners whose seats a committed change touched, before and after it. */
-  async function seatsChanged(workspaceId: string, ownerBefore: string | null): Promise<void> {
-    if (!options.onSeatsChanged) return
-    const ownerAfter = await ownerOf(workspaceId)
-    const owners = uniq(compact([ownerBefore, ownerAfter]))
-    if (owners.length > 0) options.onSeatsChanged(owners)
+  /**
+   * Reports the owners whose seats a committed change touched, read inside its transaction, so
+   * nothing after the commit can fail or see a later change.
+   */
+  function seatsChanged(owners: readonly (string | null)[]): void {
+    const accountIds = uniq(compact(owners))
+    if (accountIds.length > 0) options.onSeatsChanged?.(accountIds)
   }
 
   async function membership(userId: string, workspaceId: string): Promise<WorkspaceSummary> {
@@ -411,9 +413,9 @@ export function createWorkspaceMemberService(
       role: WorkspaceRole
     ): Promise<void> {
       await requireAccess(userId, workspaceId, { workspace: ['manage-members'] })
-      const ownerBefore = await ownerOf(workspaceId)
-      await database.transaction().execute(async (transaction) => {
+      const owners = await database.transaction().execute(async (transaction) => {
         const member = await lockedMember(transaction, workspaceId, memberId)
+        const before = await ownerIn(transaction, workspaceId)
         if (member.role === 'admin' && role !== 'admin') {
           if ((await adminCount(transaction, workspaceId)) <= 1) throw new WorkspaceLastAdminError()
         }
@@ -424,19 +426,19 @@ export function createWorkspaceMemberService(
           .where('userId', '=', memberId)
           .execute()
         if (role !== 'admin') await handOverOwnership(transaction, workspaceId, memberId)
+        return [before, await ownerIn(transaction, workspaceId)]
       })
-      await seatsChanged(workspaceId, ownerBefore)
+      seatsChanged(owners)
     },
 
     /** Deletes an empty workspace, with its members and invitations. */
     async delete(userId: string, workspaceId: string): Promise<void> {
       await requireAccess(userId, workspaceId, { workspace: ['delete'] })
-      const ownerBefore = await ownerOf(workspaceId)
-      await database.transaction().execute(async (transaction) => {
+      const owner = await database.transaction().execute(async (transaction) => {
         // Locked first, so a document created meanwhile waits and then finds no workspace.
-        await transaction
+        const workspace = await transaction
           .selectFrom('workspace')
-          .select('id')
+          .select('ownerId')
           .where('id', '=', workspaceId)
           .forUpdate()
           .executeTakeFirstOrThrow()
@@ -450,8 +452,9 @@ export function createWorkspaceMemberService(
         }
         if (documents.length > 0) throw new WorkspaceNotEmptyError('pending-cleanup')
         await transaction.deleteFrom('workspace').where('id', '=', workspaceId).execute()
+        return workspace.ownerId
       })
-      await seatsChanged(workspaceId, ownerBefore)
+      seatsChanged([owner])
     },
 
     /**
@@ -461,9 +464,9 @@ export function createWorkspaceMemberService(
     async remove(userId: string, workspaceId: string, memberId: string): Promise<void> {
       if (memberId === userId) await membership(userId, workspaceId)
       else await requireAccess(userId, workspaceId, { workspace: ['manage-members'] })
-      const ownerBefore = await ownerOf(workspaceId)
-      await database.transaction().execute(async (transaction) => {
+      const owners = await database.transaction().execute(async (transaction) => {
         const member = await lockedMember(transaction, workspaceId, memberId)
+        const before = await ownerIn(transaction, workspaceId)
         if (member.role === 'admin' && (await adminCount(transaction, workspaceId)) <= 1) {
           throw new WorkspaceLastAdminError()
         }
@@ -473,8 +476,9 @@ export function createWorkspaceMemberService(
           .where('userId', '=', memberId)
           .execute()
         await handOverOwnership(transaction, workspaceId, memberId)
+        return [before, await ownerIn(transaction, workspaceId)]
       })
-      await seatsChanged(workspaceId, ownerBefore)
+      seatsChanged(owners)
     },
 
     /** What a workspace invitation link offers, or null when the id is not one. */
@@ -562,10 +566,11 @@ export function createWorkspaceMemberService(
           .where('workspaceId', '=', invitation.workspaceId)
           .where('userId', '=', actor.userId)
           .executeTakeFirstOrThrow()
-        return { workspaceId: invitation.workspaceId, role: member.role }
+        const owner = await ownerIn(transaction, invitation.workspaceId)
+        return { joined: { workspaceId: invitation.workspaceId, role: member.role }, owner }
       })
-      await seatsChanged(invitation.workspaceId, null)
-      return joined
+      seatsChanged([joined.owner])
+      return joined.joined
     }
   }
 }
