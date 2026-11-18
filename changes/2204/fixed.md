@@ -1,0 +1,1 @@
+- `.pen` instances show the children their `ref` places in them, in place of the component's, and size to them (#2193).
