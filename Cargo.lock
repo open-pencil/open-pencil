@@ -3758,9 +3758,11 @@ dependencies = [
  "blitz-dom",
  "blitz-html",
  "blitz-traits",
+ "cssparser 0.38.0",
  "parley",
  "serde_json",
  "stylo",
+ "url",
 ]
 
 [[package]]

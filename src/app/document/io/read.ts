@@ -1,6 +1,6 @@
 import { filename } from 'pathe/utils'
 
-import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import { stopFigReaderWorker } from '@open-pencil/core/io/formats/fig'
 import { nextFrame } from '@open-pencil/vue/shared/frame'
 
@@ -10,34 +10,14 @@ import { readFigDocument } from '@/app/document/io/fig'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
 import { readReloadSource } from '@/app/document/io/reload-source'
 import { captureReloadState, restoreReloadState } from '@/app/document/io/reload-state'
+import type { NamedDocumentState, OpenFileOptions } from '@/app/document/io/state'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 
-type OpenDocumentState = EditorState & {
-  documentName: string
-  /** Whether the side panels show, which a document opens with as its kind starts it. */
-  showUI: boolean
-}
-
-type ReloadDocumentState = EditorState & { documentName: string }
-
-type OpenFigFileOptions = {
-  editor: Editor
-  state: OpenDocumentState
-  setDocumentSource: (
-    fileName: string,
-    sourceFormat: string,
-    handle?: FileSystemFileHandle,
-    path?: string
-  ) => void
-  fitCurrentPageToViewport: () => Promise<void>
-  preparationController: EditorPreparationController
-}
-
 type ReloadActionsOptions = {
   editor: Editor
-  state: ReloadDocumentState
+  state: NamedDocumentState
   getFilePath: () => string | null
   getFileHandle: () => FileSystemFileHandle | null
   hasUnsavedChanges: () => boolean
@@ -51,7 +31,7 @@ export function createOpenActions({
   setDocumentSource,
   fitCurrentPageToViewport,
   preparationController
-}: OpenFigFileOptions) {
+}: OpenFileOptions) {
   async function openFigFile(file: File, handle?: FileSystemFileHandle, path?: string) {
     const load = preparationController.begin({ kind: 'document-open', subject: file.name })
     let succeeded = false

@@ -9,7 +9,9 @@ import { searchResponseSchema, type SearchResult } from '@open-pencil/cloud/cont
 export type ChatMessagePart = UIMessagePart<UIDataTypes, UITools>
 export type ToolCallPart = Extract<ChatMessagePart, { toolCallId: string }>
 
-const MCP_PREFIX = /^mcp__[^_]+__/
+// `mcp__<server>__`. The server name may hold single underscores, as Pi writes `open-pencil` as
+// `open_pencil`, so the prefix ends at the first double one.
+const MCP_PREFIX = /^mcp__.+?__/
 const SUMMARY_LENGTH = 60
 const IMAGE_MEDIA_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
 

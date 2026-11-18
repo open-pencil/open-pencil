@@ -1,6 +1,6 @@
 import { uniqBy } from 'es-toolkit'
 
-import type { DesignDocument, DesignElement } from '@open-pencil/dom-css'
+import type { DesignDocument } from '@open-pencil/dom-css'
 import type { HTMLEngine, HTMLEngineFontFace } from '@open-pencil/html-engine'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { appendAll } from '@open-pencil/scene-graph/arrays'
@@ -14,6 +14,8 @@ import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { fontManager } from '#core/text/font/manager'
 import { faceStyleName } from '#core/text/font/names'
 import { collectGraphFontRequirements, collectNodeFontFaces } from '#core/text/requirements/collect'
+
+import { designElements } from './elements'
 
 interface EngineFonts {
   /** `family|style` of every face looked for, found or not. */
@@ -149,19 +151,6 @@ export async function registerFallbackFont(engine: HTMLEngine): Promise<void> {
   if (await registerFace(engine, fonts, face, '')) mapGenericFamilies(engine, fonts)
 }
 
-function styledElements(styled: DesignDocument): DesignElement[] {
-  const elements: DesignElement[] = []
-  const walk = (nodes: DesignDocument['children']) => {
-    for (const node of nodes) {
-      if (node.type !== 'element') continue
-      elements.push(node)
-      walk(node.children)
-    }
-  }
-  walk(styled.children)
-  return elements
-}
-
 function textOf(styled: DesignDocument): string {
   const parts: string[] = []
   const walk = (nodes: DesignDocument['children']) => {
@@ -233,7 +222,7 @@ export async function resolvePageFontFamilies(
   styled: DesignDocument,
   pageFamilies: PageFontFamilies = new Map()
 ): Promise<void> {
-  const elements = styledElements(styled).filter(
+  const elements = designElements(styled.children).filter(
     (element) => element.computedStyle?.['font-family'] !== undefined
   )
   const characters = textOf(styled)

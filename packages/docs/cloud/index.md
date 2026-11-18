@@ -26,10 +26,10 @@ There are two ways to use Cloud, and the editor works the same with both:
 
 Open **Settings → Cloud**. **Your team's server** asks for the address your team uses. OpenPencil checks that the address answers as an OpenPencil Cloud server before asking you to sign in, and says when nothing answers, when the address belongs to something else, or when the server runs a version this app doesn't support.
 
-The ways to sign in come from the server: Google, Apple, or email and password.
+The ways to sign in come from the server: Google, Apple, GitHub, or email and password.
 
 - Email and password work right in the dialog, in the desktop app and in the web app at the server's own editor address. **Create an account** asks for your name, email, and a password of at least 8 characters, twice. The server emails you a link; open it, come back to OpenPencil, and signing in finishes by itself.
-- Google and Apple, and accounts with two-step sign-in, finish in your browser: in the web app at the server's own editor address you come back to the same tab, and the desktop app shows a code to check against the browser's before you approve it.
+- Google, Apple, and GitHub, and accounts with two-step sign-in, finish in your browser: in the web app at the server's own editor address you come back to the same tab, and the desktop app shows a code to check against the browser's before you approve it.
 
 Servers that review new accounts say so before you sign up. Until an administrator approves you, Settings shows that your account is waiting.
 

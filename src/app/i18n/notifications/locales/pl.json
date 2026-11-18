@@ -38,5 +38,9 @@
   "savingDocument": "Zapisywanie dokumentu…",
   "saveFailedRetry": "Ponów zapis",
   "fileChangedOnDisk": "Plik „{name}” zmienił się na dysku. Niezapisane zmiany zostają zachowane; zapisanie zastąpi plik.",
-  "reloadDiscardingChanges": "Wczytaj ponownie"
+  "reloadDiscardingChanges": "Wczytaj ponownie",
+  "autosaveFailed": "Nie udało się zapisać „{name}”: {error}",
+  "saveFailedTitle": "Nie udało się zapisać „{name}”",
+  "notifySaveFailed": "Nieudane zapisy",
+  "notifySaveFailedHint": "Nie udało się automatycznie zapisać otwartego dokumentu."
 }

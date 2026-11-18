@@ -2,6 +2,7 @@ export * from './account'
 export * from './locale'
 export {
   SERVICE_ERROR_STATUS,
+  roleModelsSchema,
   serviceCatalogSchema,
   creditBucketSchema,
   serviceErrorCodeSchema,
@@ -28,6 +29,7 @@ export {
   parseUsageQuery,
   parseSearchRequest,
   parseCreateServicesToken,
+  type RoleModels,
   type ServiceCatalog,
   type CreditBucket,
   type ServiceError,
@@ -64,6 +66,7 @@ export {
   billingErrorSchema,
   billingFreePlanSchema,
   billingPlanSchema,
+  billingSeatPricingSchema,
   billingRedirectSchema,
   billingTokenClaimsSchema,
   billingTokenSchema,
@@ -76,6 +79,7 @@ export {
   type BillingErrorCode,
   type BillingFreePlan,
   type BillingPlan,
+  type BillingSeatPricing,
   type BillingRedirect,
   type BillingToken,
   type BillingTokenClaims,

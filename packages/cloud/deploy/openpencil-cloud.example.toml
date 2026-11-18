@@ -78,6 +78,14 @@ addresses = []
 # key_id = "KEY_ID"
 # app_bundle_identifier = "dev.openpencil"
 
+# Add this table to enable GitHub, from a GitHub App with Account permissions > Email addresses set
+# to read-only and the callback URL <public_url>/api/auth/callback/github. The client secret
+# defaults to GITHUB_CLIENT_SECRET; the client ID may instead use { from_env = "..." }. Set
+# deployment.minimum_editor_version to an editor release with GitHub sign-in at the same time:
+# older editors cannot read a server that offers it.
+# [authentication.providers.github]
+# client_id = "your-github-app-client-id"
+
 [object_storage]
 endpoint = "http://localhost:8333"
 region = "us-east-1"
@@ -150,10 +158,13 @@ transport = "none"
 # workspace = "0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b"
 
 # Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. The host
-# defaults to https://eu.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY.
+# defaults to https://eu.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY. Reports
+# name no account unless include_ids is set; then they carry the user's account ID and the IDs of
+# the documents and workspaces involved, so say so in your privacy notice.
 # [error_tracking]
 # provider = "posthog"
 # host = "https://us.i.posthog.com"
+# include_ids = false
 
 [workers.email]
 batch_size = 50

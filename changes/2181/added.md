@@ -1,0 +1,1 @@
+- Cloud administrators see how each person signs in, filter People by password, Google, or Apple, and can remove a sign-in method other than a person's last, which emails the person.

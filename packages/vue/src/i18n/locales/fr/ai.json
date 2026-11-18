@@ -259,6 +259,8 @@
   "aiSetupWelcomeDescription": "Créez et modifiez des designs sur un canevas ouvert. Importez des fichiers Figma et appropriez-vous-les.",
   "aiSetupWelcomeAITitle": "Concevez avec l’IA",
   "aiSetupWelcomeAIDescription": "Connectez l’IA que vous utilisez déjà pour modifier le canevas et relire vos designs. Vous pourrez la changer plus tard dans les réglages.",
+  "aiSetupWelcomeCloudReadyTitle": "L’IA est prête",
+  "aiSetupWelcomeCloudReadyDescription": "Votre forfait OpenPencil Cloud inclut l’IA : le chat fonctionne dès maintenant avec les modèles qu’il recommande. Vous pourrez les changer plus tard dans les réglages.",
   "aiSetupWelcomeTourTitle": "Faites la visite",
   "aiSetupWelcomeTourDescription": "Un court fichier qui présente les composants et les slots, des contrôles qui fonctionnent, les modes, les shaders, le code et le lint, avec une carte qui indique quoi essayer à chaque étape.",
   "aiSetupTakeTour": "Ouvrir la visite",

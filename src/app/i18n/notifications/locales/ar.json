@@ -34,5 +34,9 @@
   "designTokensLeftOut": "لم تُضمَّن في رموز التصميم: {names}.",
   "designTokensAmbiguous": "تشير هذه الأنماط إلى متغيّر يوجد مساره أيضًا في مجموعة أخرى، لذا قد تقرأ أدوات أخرى المتغيّر الخطأ: {names}.",
   "designTokensImported": "رموز التصميم المستوردة: {count}.",
-  "unsupportedVariableExpressions": "لا يستطيع OpenPencil حساب هذه المتغيّرات بعد، لذا تحتفظ الطبقات بالقيم المحفوظة في الملف: {names}."
+  "unsupportedVariableExpressions": "لا يستطيع OpenPencil حساب هذه المتغيّرات بعد، لذا تحتفظ الطبقات بالقيم المحفوظة في الملف: {names}.",
+  "autosaveFailed": "تعذّر حفظ «{name}»: {error}",
+  "saveFailedTitle": "تعذّر حفظ «{name}»",
+  "notifySaveFailed": "عمليات الحفظ الفاشلة",
+  "notifySaveFailedHint": "تعذّر حفظ مستند مفتوح تلقائيًا."
 }

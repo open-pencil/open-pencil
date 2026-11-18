@@ -148,7 +148,11 @@ const {
   getRenderState,
   onViewportResize
 })
-const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store, getOverlayRenderer)
+const { selectAtContextPoint, contextTarget } = createCanvasContextSelection(
+  canvasRef,
+  store,
+  getOverlayRenderer
+)
 const {
   drag,
   cursorOverride,
@@ -401,7 +405,7 @@ const cursor = computed(() =>
     </AppContextMenuTrigger>
 
     <ContextMenuPortal>
-      <CanvasMenu />
+      <CanvasMenu :target="contextTarget" />
     </ContextMenuPortal>
   </AppContextMenuRoot>
 </template>

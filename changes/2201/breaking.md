@@ -1,0 +1,1 @@
+- The Vue SDK's panel messages replace `linearGradient` and `radialGradient` with `gradient`, the label of the fill picker's gradient tab; a gradient's own type names come from the gradient editor's subtypes (#2201).

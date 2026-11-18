@@ -65,6 +65,11 @@ export interface MissingComponentDiagnostic {
   componentId: string
 }
 
+/** An instance left out because its component would contain itself, as Figma leaves it out. */
+export interface CyclicComponentDiagnostic {
+  instanceId: string
+}
+
 /** A slot assignment naming a content frame the archive no longer contains. */
 export interface MissingSlotContentDiagnostic {
   /** The slot frame being expanded, as the source record that declares it. */
@@ -84,6 +89,8 @@ export interface InterpretInstanceOptions {
    * saved reference, the way Figma does, instead of rejecting the document.
    */
   onMissingComponent?: (diagnostic: MissingComponentDiagnostic) => void
+  /** Told of each instance left out because its component would contain itself. */
+  onCyclicComponent?: (diagnostic: CyclicComponentDiagnostic) => void
   /** Keep the component's own slot content where the assigned content frame is gone. */
   onMissingSlotContent?: (diagnostic: MissingSlotContentDiagnostic) => void
   /** Called as each layer expands, so a caller can tell a long read from a stuck one. */

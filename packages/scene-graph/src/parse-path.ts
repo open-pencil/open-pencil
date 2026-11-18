@@ -1,5 +1,6 @@
 import svgpath from 'svgpath'
 
+import type { Rect } from './primitives'
 import type { VectorNetwork, VectorVertex, VectorSegment, VectorRegion, WindingRule } from './types'
 
 interface SubPath {
@@ -241,4 +242,17 @@ function parsePath(
   }
 
   return { ok: true, network: { vertices, segments, regions } }
+}
+
+/** A `viewBox` value as a rect, or null when it is malformed or does not establish a viewport. */
+export function parseSVGViewBoxValue(value: string | null | undefined): Rect | null {
+  if (!value) return null
+  const values = value
+    .trim()
+    .split(/[\s,]+/)
+    .map(Number)
+  if (values.length !== 4 || values.some((entry) => !Number.isFinite(entry))) return null
+  const [x = 0, y = 0, width = 0, height = 0] = values
+  if (width <= 0 || height <= 0) return null
+  return { x, y, width, height }
 }

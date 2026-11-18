@@ -24,6 +24,7 @@
   "empty": "Aucun commentaire pour l’instant. Cliquez sur le canevas pour en laisser un.",
   "noMatches": "Aucun commentaire ne correspond.",
   "replyCount": "Réponses : {count}",
+  "clusterCount": "Commentaires : {count}",
   "commentDeleted": "Commentaire supprimé",
   "hideComments": "Masquer les commentaires",
   "mentionPeople": "Personnes à mentionner",

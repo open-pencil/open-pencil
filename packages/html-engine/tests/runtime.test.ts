@@ -23,9 +23,9 @@ function elementById(document: DesignDocument, id: string): DesignElement {
   return element
 }
 
-async function styled(html: string) {
+async function styled(html: string, baseURL?: string) {
   return htmlToDesignDocument(html, {
-    runtime: createHTMLEngineRuntime({ engine: engineWithInter }),
+    runtime: createHTMLEngineRuntime({ engine: engineWithInter, baseURL }),
     compute: { layout: true, viewport: { width: 800, height: 600 } }
   })
 }
@@ -236,6 +236,52 @@ describe('the HTML engine runtime', () => {
 
     expect(lines('a', 'column')).toEqual(['span 2', 'auto'])
     expect(lines('b', 'row')).toEqual(['2', '4'])
+  })
+
+  test('reports the SVG paint a stylesheet gives a shape', async () => {
+    const document = await styled(
+      '<style>.icon path { fill: currentColor; stroke: rgb(0, 0, 255); stroke-width: 2 }</style><div style="color: rgb(204, 0, 0)"><svg class="icon"><path id="p" d="M0 0h1v1z"/></svg></div>'
+    )
+    const style = elementById(document, 'p').computedStyle ?? {}
+
+    expect([style.fill, style.stroke, style['stroke-width']]).toEqual([
+      'rgb(204, 0, 0)',
+      'rgb(0, 0, 255)',
+      '2px'
+    ])
+  })
+
+  test('reports a url() into the page as its fragment, as browsers do, and others resolved', async () => {
+    const html =
+      '<style>.a { fill: url(#fade); clip-path: url("#clip") } .b { fill: url(other.svg#fade) }</style><svg><path class="a" id="a" d="M0 0h1v1z"/><path class="b" id="b" d="M0 0h1v1z"/></svg>'
+    for (const baseURL of [undefined, 'https://example.test/page.html']) {
+      const document = await styled(html, baseURL)
+      const style = (id: string) => elementById(document, id).computedStyle ?? {}
+
+      expect([style('a').fill, style('a')['clip-path']]).toEqual(['url("#fade")', 'url("#clip")'])
+      if (baseURL) expect(style('b').fill).toBe('url("https://example.test/other.svg#fade")')
+    }
+  })
+
+  test("reports a linked stylesheet's url() into the page as its fragment", async () => {
+    const runtime = createHTMLEngineRuntime({
+      engine: engineWithInter,
+      baseURL: 'https://example.test/page.html',
+      fetch: async (url) =>
+        url.endsWith('/styles/icons.css')
+          ? {
+              url,
+              contentType: 'text/css',
+              bytes: new TextEncoder().encode('.a { fill: url(#fade) }')
+            }
+          : null
+    })
+    const document = await htmlToDesignDocument(
+      '<svg><path class="a" id="a" d="M0 0h1v1z"/></svg>',
+      { runtime, cssText: '@import url("/styles/icons.css");' }
+    )
+
+    expect(elementById(document, 'a').computedStyle?.fill).toBe('url("#fade")')
   })
 
   test("pairs a shader layer's children past the still frame the serializer writes", async () => {

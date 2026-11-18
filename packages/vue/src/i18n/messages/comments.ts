@@ -28,6 +28,7 @@ export const commentMessageDefaults = {
   empty: 'No comments yet. Click the canvas to leave one.',
   noMatches: 'No comments match.',
   replyCount: params('Replies: {count}'),
+  clusterCount: params('Comments: {count}'),
   commentDeleted: 'Comment deleted',
   hideComments: 'Hide comments',
   mentionPeople: 'People to mention',

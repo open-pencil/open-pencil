@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url'
 
 import { defineCommand } from 'citty'
 
+import { createHeadlessIconMatcher } from '@open-pencil/core/icons/match'
 import { readHTMLDocument, type ReadHTMLResult } from '@open-pencil/core/io/formats/html/import'
 
 import { requireFile } from '#cli/app/client'
@@ -22,6 +23,7 @@ interface ImportArgs {
   tailwindFile?: string
   pageName: string
   json?: boolean
+  'icon-names': boolean
 }
 
 function defaultOutput(input: string, format: string): string {
@@ -57,7 +59,8 @@ async function importHTML(args: ImportArgs): Promise<ReadHTMLResult> {
     baseURL: pathToFileURL(resolve(file)).href,
     cssText: await cssTextForArgs(args),
     tailwind: await tailwindCandidatesForArgs(args),
-    pageName: args.pageName
+    pageName: args.pageName,
+    matchIcon: args['icon-names'] ? createHeadlessIconMatcher() : undefined
   })
 }
 
@@ -124,6 +127,12 @@ export default defineCommand({
     json: {
       type: 'boolean',
       description: 'Print a machine-readable summary to stdout'
+    },
+    'icon-names': {
+      type: 'boolean',
+      description:
+        'Name inline SVG without data-icon after the Iconify icon it draws, downloading an icon index and the candidate icons; --no-icon-names turns this matching off, and SVG named by data-icon stays an icon (default: true)',
+      default: true
     }
   },
   async run({ args }) {
