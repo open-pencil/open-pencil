@@ -259,6 +259,8 @@
   "aiSetupWelcomeDescription": "オープンなキャンバスでデザインを作成・編集できます。Figma ファイルを読み込んで自由に使えます。",
   "aiSetupWelcomeAITitle": "AI でデザインする",
   "aiSetupWelcomeAIDescription": "普段使っている AI を接続して、キャンバスの編集やデザインのレビューに使えます。あとから設定で変更できます。",
+  "aiSetupWelcomeCloudReadyTitle": "AI の準備ができました",
+  "aiSetupWelcomeCloudReadyDescription": "OpenPencil Cloud のプランに AI が含まれているので、推奨モデルでチャットをすぐに使えます。あとから設定で変更できます。",
   "aiSetupWelcomeTourTitle": "ツアーを見る",
   "aiSetupWelcomeTourDescription": "コンポーネントとスロット、動くコントロール、モード、シェーダー、コード、チェックを順に紹介する短いファイルです。各パートのカードに試すことが書かれています。",
   "aiSetupTakeTour": "ツアーを開く",
