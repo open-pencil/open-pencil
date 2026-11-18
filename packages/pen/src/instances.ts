@@ -229,6 +229,17 @@ function inheritCopyFields(build: Build, root: SceneNode): void {
 }
 
 /**
+ * Puts the `ref` node's own children into an instance of a component that declares itself a slot
+ * (`"slot": [...]`), as pen.dev draws them inside the component's frame. They replace the copied
+ * layers, so the instance is detached like one whose override replaced its children.
+ */
+function fillSlot(build: Build, instance: SceneNode, ref: PenNode): void {
+  const component = ref.ref ? build.components.get(ref.ref) : undefined
+  if (!ref.children || !Array.isArray(component?.slot)) return
+  overrideLayer(build, instance, { children: ref.children })
+}
+
+/**
  * Fills each instance with copies of its component's layers, then applies its overrides. An
  * instance inside a component is filled first, so the copies made of it carry its layers and
  * overrides; a copy keeps its source's pen.dev fields and placement.
@@ -252,6 +263,7 @@ export function populateInstances(build: Build): void {
     recordOwnFields(graph, instance, ref)
     inheritCopyFields(build, instance)
     applyDescendants(build, instance, ref.descendants, populate)
+    fillSlot(build, instance, ref)
     // Before anything copies this instance, so the copies are of what it became.
     detachReplacingInstances(build)
   }

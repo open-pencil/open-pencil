@@ -232,6 +232,50 @@ describe('parsePenFile — instances', () => {
     expect(graph.getChildren('kept')[1]?.type).toBe('INSTANCE')
   })
 
+  test('draws the children a ref passes to a slot component inside its frame', () => {
+    const slotCard: PenNode = {
+      id: 'slotCard',
+      type: 'frame',
+      reusable: true,
+      slot: [],
+      width: 200,
+      height: 100,
+      fill: '#EEEEEE',
+      layout: 'vertical',
+      padding: 16
+    }
+    const graph = parseDocument([
+      slotCard,
+      {
+        id: 'filled',
+        type: 'ref',
+        ref: 'slotCard',
+        width: 260,
+        children: [{ id: 'box', type: 'frame', width: 80, height: 40, fill: '#FF0000' }]
+      },
+      { id: 'empty', type: 'ref', ref: 'slotCard' }
+    ])
+    expect(graph.getChildren('filled').map((node) => node.id)).toEqual(['box'])
+    expect(getNodeOrThrow(graph, 'box')).toMatchObject({ width: 80, height: 40 })
+    expect(getNodeOrThrow(graph, 'filled')).toMatchObject({ width: 260, paddingTop: 16 })
+    expect(getNodeOrThrow(graph, 'empty').type).toBe('INSTANCE')
+    expect(graph.getChildren('empty')).toEqual([])
+  })
+
+  test('ignores children on a ref to a component that is not a slot', () => {
+    const graph = parseDocument([
+      button,
+      {
+        id: 'notSlot',
+        type: 'ref',
+        ref: 'button',
+        children: [{ id: 'stray', type: 'text', content: 'Stray' }]
+      }
+    ])
+    expect(getNodeOrThrow(graph, 'notSlot').type).toBe('INSTANCE')
+    expect(graph.getNode('stray')).toBeUndefined()
+  })
+
   test('keeps a replacement that is an instance of another component', () => {
     const badge: PenNode = {
       id: 'badge',
