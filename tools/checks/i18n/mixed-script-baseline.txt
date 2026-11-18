@@ -47,6 +47,8 @@ ja:ai.aiSetupSavedTitle
 ja:ai.aiSetupStart
 ja:ai.aiSetupWelcomeAIDescription
 ja:ai.aiSetupWelcomeAITitle
+ja:ai.aiSetupWelcomeCloudReadyDescription
+ja:ai.aiSetupWelcomeCloudReadyTitle
 ja:ai.aiSetupWelcomeDescription
 ja:ai.aiSetupWelcomeTitle
 ja:ai.aiSetupPiDescription
@@ -281,6 +283,8 @@ zh-cn:ai.aiSetupSavedTitle
 zh-cn:ai.aiSetupStart
 zh-cn:ai.aiSetupWelcomeAIDescription
 zh-cn:ai.aiSetupWelcomeAITitle
+zh-cn:ai.aiSetupWelcomeCloudReadyDescription
+zh-cn:ai.aiSetupWelcomeCloudReadyTitle
 zh-cn:ai.aiSetupWelcomeDescription
 zh-cn:ai.aiSetupWelcomeTitle
 zh-cn:ai.aiSetupPiDescription

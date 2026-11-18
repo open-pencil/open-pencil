@@ -72,6 +72,26 @@ export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
 }
 
 /**
+ * The first of the Home server's workspaces, in the order it lists them, whose plan includes AI,
+ * or `null` with none. It checks them one at a time and stops at the first, so a later workspace
+ * that can't be checked never hides it; it rejects when one before it can't be.
+ */
+export async function firstCloudAIWorkspace(): Promise<CloudAIWorkspace | null> {
+  const home = homeAI.value
+  if (!home) return null
+  const api = cloudAPIClient(home.server, home.discovery)
+  // A sign-in or a connection refreshed meanwhile has a workspace list of its own, so stop
+  // working through this one.
+  const replaced = () => homeAI.value?.connection !== home.connection
+  for (const workspace of home.connection.workspaces) {
+    const entitlements = await api.getWorkspaceEntitlements(workspace.id)
+    if (replaced()) return null
+    if (entitlements.features.cloudServices) return { id: workspace.id, name: workspace.name }
+  }
+  return null
+}
+
+/**
  * Whether the signed-in account owns a workspace on the Home server, and so pays for its credits,
  * or `null` when unknown: a server too old to say, or a workspace it doesn't list.
  */

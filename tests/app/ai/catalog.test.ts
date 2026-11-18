@@ -47,8 +47,8 @@ describe('models.dev catalog', () => {
       catalogResponse({
         openai: {
           models: {
-            'gpt-6.1-sol': {
-              name: 'GPT-6.1 Sol from catalog',
+            'gpt-6.2-sol': {
+              name: 'GPT-6.2 Sol from catalog',
               tool_call: true,
               attachment: true,
               release_date: '2026-07-09',
@@ -82,8 +82,8 @@ describe('models.dev catalog', () => {
     )
 
     expect(models[0]).toMatchObject({
-      id: 'gpt-6.1-sol',
-      name: 'GPT-6.1 Sol',
+      id: 'gpt-6.2-sol',
+      name: 'GPT-6.2 Sol',
       tag: 'Best',
       capabilities: ['tools', 'vision'],
       releaseDate: '2026-07-09'
@@ -142,7 +142,7 @@ describe('models.dev catalog', () => {
   test('preserves vision support in offline curated models', async () => {
     const failingFetch = fetchStub(async () => new Response(null, { status: 503 }))
     const openai = await listCatalogModels('openai', failingFetch)
-    for (const id of ['gpt-6.1-sol', 'gpt-6-astra', 'gpt-6-luna']) {
+    for (const id of ['gpt-6.2-sol', 'gpt-6.2-astra', 'gpt-6.1-terra', 'gpt-6-luna']) {
       expect(openai.find((model) => model.id === id)?.capabilities).toContain('vision')
     }
     const zai = await listCatalogModels('zai', failingFetch)

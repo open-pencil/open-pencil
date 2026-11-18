@@ -15,6 +15,7 @@ export {
   cloudAIIdentity,
   cloudAIClient,
   cloudAIWorkspaces,
+  firstCloudAIWorkspace,
   cloudBillingURL,
   cloudMonthlyAllowance,
   cloudOwnsWorkspace,

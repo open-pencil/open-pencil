@@ -24,6 +24,7 @@
   "empty": "Ainda não há comentários. Clique na tela para deixar um.",
   "noMatches": "Nenhum comentário corresponde.",
   "replyCount": "Respostas: {count}",
+  "clusterCount": "Comentários: {count}",
   "commentDeleted": "Comentário excluído",
   "hideComments": "Ocultar comentários",
   "mentionPeople": "Pessoas para mencionar",

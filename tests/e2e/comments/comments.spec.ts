@@ -290,3 +290,81 @@ test('middle mouse pans the canvas while the Comment tool is selected', async ()
     .toBeGreaterThan(20)
   await expect(editor.page.getByRole('textbox', { name: 'Add a comment' })).toHaveCount(0)
 })
+
+// Zoomed out, pins that crowd each other show as one bubble with their count, as in Figma, and
+// clicking it zooms in until they part.
+test('crowded pins gather into a count bubble that zooms in when clicked', async () => {
+  const clusters = () => editor.page.locator('[data-slot="comment-cluster"]')
+  const view = (zoom: number) =>
+    editor.page.evaluate((zoom) => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      store.centerOn(9000, 9000, zoom)
+      return store.state.zoom
+    }, zoom)
+
+  await view(1)
+  await commentTool().click()
+  const box = expectDefined(await editor.canvas.canvas.boundingBox(), 'canvas bounds')
+  const cx = box.width / 2
+  const cy = box.height / 2
+  for (const [dx, dy] of [
+    [0, 0],
+    [30, 40],
+    [70, 10]
+  ] as const) {
+    await placeComment(cx + dx, cy + dy, `crowd ${dx}`)
+    await editor.page.keyboard.press('Escape')
+  }
+  const before = await pins().count()
+  await expect(clusters()).toHaveCount(0)
+
+  await view(0.25)
+  await expect(clusters()).toHaveCount(1)
+  await expect(clusters()).toHaveText('3')
+  await expect(clusters()).toHaveAccessibleName(/3/)
+  await expect(pins()).toHaveCount(before - 3)
+
+  await clusters().click()
+  await expect(clusters()).toHaveCount(0)
+  await expect(pins()).toHaveCount(before)
+  const zoom = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.zoom
+  })
+  expect(zoom).toBeGreaterThan(0.5)
+
+  // From the keyboard, focus moves on to a pin the cluster held.
+  await view(0.25)
+  await clusters().focus()
+  await editor.page.keyboard.press('Enter')
+  await expect(clusters()).toHaveCount(0)
+  await expect(editor.page.locator('[data-thread-id]:focus')).toHaveCount(1)
+  await editor.page.keyboard.press('Escape')
+})
+
+// A pin keeps its place among the others while pressed, so it keeps the pointer and the drag ends
+// on release instead of following the cursor.
+test('a pin dragged among others drops on release', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.centerOn(9000, 9000, 1)
+  })
+  // Pins follow the drawn frame, so measure after it.
+  await editor.canvas.waitForRender()
+  const pin = pins().last()
+  const start = expectDefined(await pin.boundingBox(), 'pin bounds')
+  await editor.page.mouse.move(start.x + 8, start.y + start.height - 8)
+  await editor.page.mouse.down()
+  await editor.page.mouse.move(start.x + 48, start.y + start.height + 32, { steps: 4 })
+  await editor.page.mouse.up()
+  const dropped = expectDefined(await pin.boundingBox(), 'dropped pin bounds')
+  expect(dropped.x - start.x).toBeGreaterThan(20)
+
+  await editor.page.mouse.move(start.x + 300, start.y + 200, { steps: 4 })
+  const after = expectDefined(await pin.boundingBox(), 'pin bounds after moving away')
+  expect(after.x).toBe(dropped.x)
+  await expect(editor.page.locator('[data-slot="comment-pin"][data-dragging]')).toHaveCount(0)
+})

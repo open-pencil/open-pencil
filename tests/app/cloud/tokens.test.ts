@@ -48,6 +48,22 @@ describe('Cloud token cache', () => {
     await expect(tokens.token()).rejects.toThrow('offline')
     expect(await tokens.token()).toBe('token')
   })
+  test('asks again after a signing request that never answers', async () => {
+    let attempts = 0
+    const tokens = createCloudTokenCache(
+      () => {
+        attempts++
+        return attempts === 1
+          ? createDeferred<{ token: string; expiresAt: string }>().promise
+          : Promise.resolve({ token: 'token', expiresAt: '2099-01-01T00:00:00.000Z' })
+      },
+      Date.now,
+      10
+    )
+    await expect(tokens.token()).rejects.toThrow()
+    expect(await tokens.token()).toBe('token')
+  })
+
   test('signs a new token after a reset, for every client that shares the cache', async () => {
     let signed = 0
     const tokens = createCloudTokenCache(async () => {
@@ -58,6 +74,7 @@ describe('Cloud token cache', () => {
     tokens.reset()
     expect(await tokens.token()).toBe('token-2')
   })
+
   test('never keeps a token signed before a reset', async () => {
     const answers: Deferred<{ token: string; expiresAt: string }>[] = []
     const tokens = createCloudTokenCache(() => {
