@@ -79,10 +79,16 @@ function sideStyle(style: DesignStyleDeclaration, side: BorderSide): string | un
   return sideValue(style, `border-${side}-style`, 'border-style', side)
 }
 
-/** Whether a side's border is drawn: its style is neither `none`, CSS's default, nor `hidden`. */
+/**
+ * Whether a side's border is drawn: its style is neither `none`, CSS's default, nor `hidden`,
+ * and it has a width, as a reset such as `* { border: 0 solid }` styles every side without
+ * drawing any. A side with no width given is drawn, as `border: solid` gives it `medium`.
+ */
 function paints(style: DesignStyleDeclaration, side: BorderSide): boolean {
   const value = sideStyle(style, side)
-  return value !== undefined && value !== 'none' && value !== 'hidden'
+  if (value === undefined || value === 'none' || value === 'hidden') return false
+  const width = parseCSSNumber(sideValue(style, `border-${side}-width`, 'border-width', side))
+  return width === null || width > 0
 }
 
 /** The sides whose borders are drawn, in CSS order. */

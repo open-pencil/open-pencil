@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { contentInsets, hasBorder } from '#dom-css/import/box'
+import { contentInsets, firstStrokeColor, hasBorder } from '#dom-css/import/box'
 
 describe('border sides', () => {
   test('a side that draws no border adds no inset, whatever its width', () => {
@@ -34,5 +34,21 @@ describe('border sides', () => {
     })
 
     expect(insets).toEqual({ top: 3, right: 9, bottom: 7, left: 9 })
+  })
+
+  test('a side styled but without a width draws nothing, so the drawn side gives the color', () => {
+    // A reset such as `* { border: 0 solid }`, then one side given a transparent border.
+    const style = {
+      'border-top-style': 'solid',
+      'border-top-width': '0px',
+      'border-top-color': 'rgb(60, 60, 67)',
+      'border-bottom-style': 'solid',
+      'border-bottom-width': '1px',
+      'border-bottom-color': 'rgba(0, 0, 0, 0)'
+    }
+
+    expect(hasBorder(style)).toBe(true)
+    expect(firstStrokeColor(style)).toBe('rgba(0, 0, 0, 0)')
+    expect(hasBorder({ 'border-style': 'solid', 'border-width': '0px' })).toBe(false)
   })
 })
