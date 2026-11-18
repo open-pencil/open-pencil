@@ -107,21 +107,28 @@ export const serviceCatalogSchema = v.pipe(
     defaultModelID: modelIDSchema,
     /**
      * Absent from a service that predates it, or whose default model can't run the chat. Editors
-     * then use `defaultModelID` for every role, except Vision when that model reads no images.
+     * then use `defaultModelID` for every role, except Vision when that model reads no images,
+     * and set nothing up when it calls no tools.
      */
     roleModels: v.optional(roleModelsSchema),
     search: v.optional(searchPricingSchema)
   }),
-  // Every recommendation names a model the catalog lists, so an editor never sets up a role
-  // with a model it can't describe.
-  v.check(
-    ({ models, roleModels }) =>
-      !roleModels ||
-      Object.values(roleModels).every(
-        (id) => id === null || models.some((model) => model.id === id)
-      ),
-    'A recommended model is not in the catalog'
-  )
+  // Every recommendation names a model the catalog lists and can do its role: Design and Fast
+  // call tools, and Vision reads images. An editor then never sets up a role it can't run.
+  v.check(({ models, roleModels }) => {
+    if (!roleModels) return true
+    const can = (id: string | null, capability: 'tools' | 'vision' | null) => {
+      if (id === null) return true
+      const model = models.find((candidate) => candidate.id === id)
+      return model !== undefined && (capability === null || model.capabilities[capability])
+    }
+    return (
+      can(roleModels.design, 'tools') &&
+      can(roleModels.review, null) &&
+      can(roleModels.fast, 'tools') &&
+      can(roleModels.vision, 'vision')
+    )
+  }, 'A recommended model is not in the catalog or cannot do its role')
 )
 export type ServiceCatalog = v.InferOutput<typeof serviceCatalogSchema>
 

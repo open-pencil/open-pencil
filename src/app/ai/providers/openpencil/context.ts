@@ -12,15 +12,20 @@ function workspaceCatalog(workspaceId: string): Promise<ServiceCatalog | null> {
   const cached = catalogs.get(key)
   if (cached && Date.now() - cached.at < CATALOG_TTL_MS) return cached.catalog
   const client = cloudAIClient(workspaceId)
-  const catalog = client
+  const entry: { at: number; catalog: Promise<ServiceCatalog | null> } = {
+    at: Date.now(),
+    catalog: Promise.resolve(null)
+  }
+  entry.catalog = client
     ? client.catalog().catch(() => {
-        // A failed read is asked for again next time rather than kept.
-        catalogs.delete(key)
+        // A failed read is asked for again next time rather than kept, unless a newer read
+        // already took its place.
+        if (catalogs.get(key) === entry) catalogs.delete(key)
         return null
       })
     : Promise.resolve(null)
-  catalogs.set(key, { at: Date.now(), catalog })
-  return catalog
+  catalogs.set(key, entry)
+  return entry.catalog
 }
 
 /**

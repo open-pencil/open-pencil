@@ -117,6 +117,16 @@ describe('setting Cloud AI up on sign-in', () => {
     expect(modelSettingsSnapshot()).toEqual(settings)
   })
 
+  test('keeps a connection preference saved before any model was', async () => {
+    const settings = freshInstall()
+    const [connection] = settings.connections
+    if (connection) connection.customAPIType = 'responses'
+    replaceAIModelSettings(settings)
+
+    expect(await setUpCloudAI(cloud().source)).toBe(false)
+    expect(modelSettingsSnapshot()).toEqual(settings)
+  })
+
   test('does nothing for an account whose plan includes no AI', async () => {
     expect(await setUpCloudAI(cloud(CATALOG, []).source)).toBe(false)
     expect(modelSettingsSnapshot()).toEqual(freshInstall())
@@ -178,8 +188,19 @@ describe('watching for sign-ins', () => {
   test('writes nothing for an answer that arrives after it stopped', async () => {
     const { source } = cloud()
     const answer = createDeferred<ServiceCatalog>()
-    const slow: CloudAISource = { ...source, client: () => ({ catalog: () => answer.promise }) }
+    const asked = createDeferred<true>()
+    const slow: CloudAISource = {
+      ...source,
+      client: () => ({
+        catalog: () => {
+          asked.resolve(true)
+          return answer.promise
+        }
+      })
+    }
     const stop = watchCloudAISetup(slow, [])
+    // Stopped while the catalog request is under way.
+    await asked.promise
     stop()
     answer.resolve(CATALOG)
     await answer.promise

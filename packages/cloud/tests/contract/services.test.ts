@@ -86,6 +86,15 @@ describe('Cloud services contract', () => {
         roleModels: { ...catalog.roleModels, review: 'missing' }
       })
     ).toBe(false)
+    // Fast tasks call tools, so a model without them can't be recommended for Fast.
+    const textOnly = { ...model, id: 'text', capabilities: { ...model.capabilities, tools: false } }
+    expect(
+      v.is(serviceCatalogSchema, {
+        ...catalog,
+        models: [model, textOnly],
+        roleModels: { ...catalog.roleModels, fast: 'text' }
+      })
+    ).toBe(false)
   })
 
   test('a search asks for a trimmed query and at most ten results, five by default', () => {

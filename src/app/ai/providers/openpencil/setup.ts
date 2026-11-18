@@ -27,6 +27,17 @@ function choice(catalog: ServiceCatalog, modelID: string | null): RoleModelChoic
   return { modelID: id, name, capabilities }
 }
 
+/** How long setup waits for the catalog before counting the try as failed and retrying. */
+const CATALOG_DEADLINE_MS = 30_000
+
+function withDeadline<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`No answer within ${ms} ms`)), ms)
+  })
+  return Promise.race([promise, deadline]).finally(() => clearTimeout(timer))
+}
+
 /**
  * Whether the models are as a fresh install leaves them: its unset Design model, and the other
  * roles as they start, so a role the person already changed, such as Fast tasks turned off, is
@@ -35,8 +46,10 @@ function choice(catalog: ServiceCatalog, modelID: string | null): RoleModelChoic
 function untouched(): boolean {
   const settings = aiModelSettings.value
   const { review, fast, vision } = settings.assignments
+  // A fresh install's connection also has its first API type, so a saved preference counts as set up.
   return (
     isUnconfiguredModelSettings(settings) &&
+    settings.connections.every((connection) => connection.customAPIType === 'completions') &&
     review === 'design' &&
     fast === 'design' &&
     vision === null
@@ -56,9 +69,10 @@ export async function setUpCloudAI(
   const identity = cloud.identity.value
   if (!identity || !untouched()) return false
   const workspace = await cloud.firstWorkspace()
+  if (!current() || cloud.identity.value !== identity || !untouched()) return false
   const client = workspace ? cloud.client(workspace.id) : null
   if (!workspace || !client) return false
-  const catalog = await client.catalog()
+  const catalog = await withDeadline(client.catalog(), CATALOG_DEADLINE_MS)
   // Another sign-in, or a model the person set up meanwhile, wins over this answer.
   if (!current() || cloud.identity.value !== identity || !untouched()) return false
   const roles = catalogRoleModels(catalog)

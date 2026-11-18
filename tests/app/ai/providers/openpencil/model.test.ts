@@ -37,23 +37,27 @@ describe('OpenPencil Cloud models', () => {
 
   test('lists the catalog with the capabilities and context window the picker records', () => {
     const capabilities = (tools: boolean, vision: boolean) => ({ reasoning: false, tools, vision })
-    const model = (id: string, tools: boolean, vision: boolean) => ({
+    const model = (id: string, tools: boolean, vision: boolean, contextTokens: number) => ({
       id,
       label: id.toUpperCase(),
       creditsPerMillionInputTokens: 1,
       creditsPerMillionOutputTokens: 1,
-      contextTokens: 200_000,
+      contextTokens,
       capabilities: capabilities(tools, vision)
     })
     expect(
       cloudCatalogModels({
         defaultModelID: 'a',
-        models: [model('a', true, true), model('b', true, false), model('c', false, false)]
+        models: [
+          model('a', true, true, 1_000_000),
+          model('b', true, false, 200_000),
+          model('c', false, false, 32_768)
+        ]
       })
     ).toEqual([
-      { id: 'a', name: 'A', contextWindow: 200_000, capabilities: ['tools', 'vision'] },
+      { id: 'a', name: 'A', contextWindow: 1_000_000, capabilities: ['tools', 'vision'] },
       { id: 'b', name: 'B', contextWindow: 200_000, capabilities: ['tools'] },
-      { id: 'c', name: 'C', contextWindow: 200_000, capabilities: [] }
+      { id: 'c', name: 'C', contextWindow: 32_768, capabilities: [] }
     ])
   })
 })

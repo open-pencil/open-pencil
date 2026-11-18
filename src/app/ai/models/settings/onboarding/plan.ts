@@ -312,7 +312,7 @@ function planReview(
 /**
  * Fast work uses the model the provider recommends for it, even when that is the design model,
  * since Fast tasks run only with a model of their own; otherwise a model tagged Fast, otherwise
- * the design model itself, or following an agent that designs.
+ * the design model itself; with an agent designing, Fast follows it and so stays off.
  */
 function planFast(
   design: PlannedModel | null,
@@ -326,8 +326,9 @@ function planFast(
   if (recommended?.capabilities.includes('tools')) return recommended
   const fast = base ? taggedFastModel(base.providerID) : null
   if (fast) return fast
-  // An agent chooses its own model for quick work, so Fast tasks follow it. An API model is
-  // given to Fast itself, since following Design would turn Fast tasks off.
+  // An agent designs with a model of its own choosing that Fast tasks can't call, so they stay
+  // off by following it, as before. An API model is given to Fast itself, since following
+  // Design would turn Fast tasks off.
   if (base === design && design && isOnboardingAgent(design.providerID)) return 'design'
   return base
 }
