@@ -341,7 +341,7 @@ endpoint = "https://billing.example.com"
       endpoint: 'https://billing.example.com',
       contractVersion: '1',
       // Without default entitlements, an account without a plan has no limit and no services.
-      freePlan: { storageBytes: null, monthlyCredits: 0 }
+      freePlan: { storageBytes: null, services: false, monthlyCredits: null }
     })
 
     expect(() => parseCloudDeploymentTOML(source, environment)).toThrow(
@@ -378,13 +378,21 @@ services = ${services}
     const freePlan = (services: string) =>
       cloudDiscoveryFromConfig(parseCloudDeploymentTOML(source(services), withSecrets)).billing
         ?.freePlan
-    expect(freePlan('{ enabled = false, monthly_credit_allowance = 100 }')).toEqual({
+    expect(freePlan('{ enabled = false }')).toEqual({
       storageBytes: 314572800,
-      monthlyCredits: 0
+      services: false,
+      monthlyCredits: null
     })
     expect(freePlan('{ enabled = true, monthly_credit_allowance = 100 }')).toEqual({
       storageBytes: 314572800,
+      services: true,
       monthlyCredits: 100
+    })
+    // Services without an allowance have no monthly limit, which is not the same as none.
+    expect(freePlan('{ enabled = true }')).toEqual({
+      storageBytes: 314572800,
+      services: true,
+      monthlyCredits: null
     })
   })
 

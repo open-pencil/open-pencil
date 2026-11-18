@@ -489,7 +489,9 @@ and monthly credits, and, when the server advertises billing, posts a fresh toke
 same published keys and keeps its own session from there: its pages sell the plans and credit packs
 of its catalog, send the person to its payment provider's checkout or portal, and set the account's
 plan through the internal API as it is paid. A service whose session ended sends the person to
-`CLOUD_ACCOUNT_BILLING_PATH`, the plan page, which opens billing again at once. Discovery's
+`CLOUD_ACCOUNT_BILLING_PATH`, the plan page, which opens billing again at once. Upgrade the
+billing service first: a Cloud from before the handoff called billing's JSON API, and this one
+posts to `/session`, so deploy and check the service's pages before the Cloud that links to them. Discovery's
 `billing.freePlan` is what an account without a plan has, from the default entitlements, so the
 service's pricing page compares its plans with it. The contract is `src/contract/billing.ts`. Editors
 link to the server's plan page, `CLOUD_ACCOUNT_PLAN_PATH`, whenever it advertises billing.

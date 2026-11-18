@@ -1,3 +1,4 @@
+import { joinURL } from 'ufo'
 import { computed } from 'vue'
 
 import { CLOUD_BILLING_PAGE_PATHS, type AccountEntitlements } from '@open-pencil/cloud/contract'
@@ -18,14 +19,18 @@ export type PortalPlan = {
  */
 export type PortalPlanServices = {
   entitlements(): Promise<AccountEntitlements>
-  /** Opens billing signed in as this account, or `null` when the server sells nothing. */
-  openBilling: (() => Promise<void>) | null
+  /**
+   * Opens billing signed in as this account, unless `wanted` says the person has moved on while
+   * the token was on its way; `null` when the server sells nothing.
+   */
+  openBilling: ((wanted: () => boolean) => Promise<void>) | null
 }
 
 /** Where and how a billing token reaches billing's session page. */
 export function billingSessionForm(endpoint: string, token: string) {
   return {
-    action: new URL(CLOUD_BILLING_PAGE_PATHS.session, endpoint).href,
+    // Below the endpoint, which may itself have a path.
+    action: joinURL(endpoint, CLOUD_BILLING_PAGE_PATHS.session),
     method: 'POST',
     fields: { token }
   } as const
@@ -49,7 +54,12 @@ function postBillingToken(endpoint: string, token: string) {
     form.append(field)
   }
   document.body.append(form)
-  form.submit()
+  try {
+    form.submit()
+  } finally {
+    // The browser has the post's fields once `submit` returns; the token leaves the page with it.
+    form.remove()
+  }
 }
 
 /** The services the server this page is served from offers. */
@@ -59,7 +69,10 @@ export function portalPlanServices(): PortalPlanServices {
   return {
     entitlements: async () => (await portal.api.entitlements()).entitlements,
     openBilling: endpoint
-      ? async () => postBillingToken(endpoint, (await portal.api.billingToken()).token)
+      ? async (wanted) => {
+          const { token } = await portal.api.billingToken()
+          if (wanted()) postBillingToken(endpoint, token)
+        }
       : null
   }
 }
@@ -85,8 +98,11 @@ export function usePortalPlan(services: PortalPlanServices = portalPlanServices(
   const plan = computed(() =>
     entitlements.data.value ? portalPlan(entitlements.data.value) : null
   )
+  /** Counts the handoffs started, so leaving the page drops one still waiting for its token. */
+  let handoffs = 0
   const opening = usePortalAction(async () => {
-    await services.openBilling?.()
+    const handoff = ++handoffs
+    await services.openBilling?.(() => handoff === handoffs)
   })
   return {
     entitlements,
@@ -94,7 +110,11 @@ export function usePortalPlan(services: PortalPlanServices = portalPlanServices(
     /** Whether the server sells plans; without billing the page shows only the limits. */
     sells: services.openBilling !== null,
     opening,
-    openBilling: () => opening.run()
+    openBilling: () => opening.run(),
+    /** Drops a handoff still waiting for its token, as when the person leaves the page. */
+    cancelBilling() {
+      handoffs += 1
+    }
   }
 }
 

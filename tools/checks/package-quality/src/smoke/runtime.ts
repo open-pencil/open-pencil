@@ -32,6 +32,15 @@ export async function evaluateRuntime(
   })
 }
 
+/**
+ * What checks a public specifier: importing a module, or for a stylesheet, which a bundler
+ * imports but Node and Bun cannot, resolving it, which fails when the file isn't shipped.
+ */
+function publicImportCheck(specifier: string): string {
+  const quoted = JSON.stringify(specifier)
+  return specifier.endsWith('.css') ? `import.meta.resolve(${quoted})` : `await import(${quoted})`
+}
+
 export async function verifyPublicImports(
   manifests: PackageManifest[],
   consumerDirectory: string,
@@ -54,7 +63,7 @@ export async function verifyPublicImports(
   const requests: CommandRequest[] = RUNTIMES.flatMap((runtime) =>
     specifiers.map((specifier) => ({
       command: runtime,
-      args: runtimeEvalArgs(runtime, `await import(${JSON.stringify(specifier)})`),
+      args: runtimeEvalArgs(runtime, publicImportCheck(specifier)),
       cwd: consumerDirectory,
       timeoutMs: RUNTIME_TIMEOUT_MS
     }))

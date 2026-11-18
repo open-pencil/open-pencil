@@ -75,9 +75,9 @@ describe('usePortalPlan', () => {
     let fails = false
     const page = plan({
       entitlements: async () => entitlements,
-      async openBilling() {
+      async openBilling(wanted) {
         if (fails) throw new Error('No token')
-        opened.push('billing')
+        if (wanted()) opened.push('billing')
       }
     })
     await settle()
@@ -87,6 +87,24 @@ describe('usePortalPlan', () => {
     fails = true
     await page.openBilling()
     expect(page.opening.error.value).not.toBeNull()
+  })
+
+  test('drops a handoff still waiting for its token once the person leaves the page', async () => {
+    const opened: string[] = []
+    const token = Promise.withResolvers<undefined>()
+    const page = plan({
+      entitlements: async () => entitlements,
+      async openBilling(wanted) {
+        await token.promise
+        if (wanted()) opened.push('billing')
+      }
+    })
+    await settle()
+    const opening = page.openBilling()
+    page.cancelBilling()
+    token.resolve(undefined)
+    await opening
+    expect(opened).toEqual([])
   })
 })
 

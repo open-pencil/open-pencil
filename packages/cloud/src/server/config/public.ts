@@ -19,13 +19,15 @@ export function configuredSocialProviders(config: CloudServerConfig): Array<'app
 
 /**
  * The free plan billing compares its plans with: what an account takes before billing stores its
- * own, as the deployment's default entitlements say. Without services it grants no credits.
+ * own, as the deployment's default entitlements say. Services without an allowance have no monthly
+ * limit, as the services token says of them too.
  */
 function freePlan(config: CloudServerConfig): BillingFreePlan {
   const { storage, services } = config.defaultEntitlements ?? {}
   return {
     storageBytes: storage?.maximumBytes ?? null,
-    monthlyCredits: services?.enabled ? (services.monthlyCreditAllowance ?? 0) : 0
+    services: services?.enabled ?? false,
+    monthlyCredits: services?.monthlyCreditAllowance ?? null
   }
 }
 

@@ -15,29 +15,34 @@ import AppProgress from '@/components/ui/feedback/AppProgress.vue'
 import type { PortalPlan } from '../types'
 
 /**
- * The account's plan: what it includes and the storage its workspaces use against it. Where the
- * server sells plans, the way to its billing pages, which buy, change, and pay for them.
+ * The account's plan: what it includes and the storage its workspaces use against it, when Cloud
+ * could say. Where the server sells plans, the way to its billing pages, which buy, change, and
+ * pay for them. The page names the section above, so the limits take no heading of their own.
  */
 const {
   plan,
   sells = false,
   busy = false
-} = defineProps<{ plan: PortalPlan; sells?: boolean; busy?: boolean }>()
+} = defineProps<{ plan: PortalPlan | null; sells?: boolean; busy?: boolean }>()
 const emit = defineEmits<{ openBilling: [] }>()
 
 const messages = useCloudPortalMessages()
 
 const storageLabel = computed(() => {
+  if (!plan) return ''
   const used = formatStorageBytes(plan.storage.usedBytes)
   return plan.storage.totalBytes === null
     ? messages.value.planStorageUsed({ used })
     : messages.value.planStorageOf({ used, total: formatStorageBytes(plan.storage.totalBytes) })
 })
 const full = computed(
-  () => plan.storage.totalBytes !== null && plan.storage.usedBytes >= plan.storage.totalBytes
+  () =>
+    plan !== null &&
+    plan.storage.totalBytes !== null &&
+    plan.storage.usedBytes >= plan.storage.totalBytes
 )
 const credits = computed(() =>
-  plan.monthlyCredits === null
+  plan?.monthlyCredits == null
     ? messages.value.planNoCredits
     : messages.value.planCredits({ credits: formatNumber(plan.monthlyCredits) })
 )
@@ -52,9 +57,7 @@ const credits = computed(() =>
       :description="messages.planStorageFullDescription"
     />
 
-    <SettingsSection>
-      <template #title>{{ messages.plan }}</template>
-      <template #description>{{ messages.planDescription }}</template>
+    <SettingsSection v-if="plan">
       <SettingsGroup>
         <SettingsRow :label="messages.planStorage" :description="storageLabel">
           <AppProgress

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onBeforeUnmount, onDeactivated, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
@@ -14,12 +14,15 @@ import PortalPageSkeleton from '../layout/PortalPageSkeleton.vue'
 /**
  * The signed-in account's plan, and the way to billing's own pages; `usePortalPlan` holds the
  * rest. Billing sends someone whose session there ended back here with `?open=billing`, which
- * opens billing again at once.
+ * opens billing again at once. Leaving the page drops a handoff still waiting for its token.
  */
-const { entitlements, plan, sells, opening, openBilling } = usePortalPlan()
+const { entitlements, plan, sells, opening, openBilling, cancelBilling } = usePortalPlan()
 const messages = useCloudPortalMessages()
 const route = useRoute()
 const router = useRouter()
+
+onDeactivated(cancelBilling)
+onBeforeUnmount(cancelBilling)
 
 onMounted(async () => {
   if (route.query.open !== 'billing') return
@@ -42,8 +45,9 @@ onMounted(async () => {
       :description="opening.error.value"
     />
     <PortalPageSkeleton v-if="entitlements.status.value === 'loading'" :groups="[2]" />
+    <!-- Billing stays reachable when the limits can't be read: its own pages show the plan. -->
     <PortalPlan
-      v-else-if="plan"
+      v-else
       :plan="plan"
       :sells="sells"
       :busy="opening.busy.value"

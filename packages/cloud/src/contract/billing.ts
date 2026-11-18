@@ -61,8 +61,10 @@ const creditsSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
 export const billingFreePlanSchema = v.object({
   /** The storage an account may use, or `null` for no limit. */
   storageBytes: v.nullable(bytesSchema),
-  /** Credits granted each month; 0 when the free plan includes no services. */
-  monthlyCredits: creditsSchema
+  /** Whether the free plan includes services, such as AI and search. */
+  services: v.boolean(),
+  /** Credits granted each month with services, or `null` for no monthly limit. */
+  monthlyCredits: v.nullable(creditsSchema)
 })
 export type BillingFreePlan = v.InferOutput<typeof billingFreePlanSchema>
 

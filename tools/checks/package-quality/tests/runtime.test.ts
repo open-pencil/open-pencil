@@ -14,7 +14,7 @@ test('public imports retain separate bounded Node and Bun invocations and their 
       {
         name: '@fixture/library',
         version: '1.0.0',
-        exports: { '.': './index.js', './extra': './extra.js' }
+        exports: { '.': './index.js', './extra': './extra.js', './theme.css': './theme.css' }
       },
       {
         name: '@open-pencil/mcp',
@@ -46,13 +46,15 @@ test('public imports retain separate bounded Node and Bun invocations and their 
     release.resolve(undefined)
     await verification
   }
-  expect(requests).toHaveLength(6)
+  expect(requests).toHaveLength(8)
   for (const runtime of ['node', 'bun']) {
     const calls = requests.filter(({ command }) => command === runtime)
-    expect(calls).toHaveLength(3)
+    expect(calls).toHaveLength(4)
     expect(calls.map(({ args }) => args?.at(-1))).toEqual([
       'await import("@fixture/library")',
       'await import("@fixture/library/extra")',
+      // A stylesheet is resolved, which needs the file, rather than imported.
+      'import.meta.resolve("@fixture/library/theme.css")',
       'await import("@open-pencil/mcp")'
     ])
     for (const request of calls) {
