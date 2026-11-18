@@ -152,6 +152,7 @@
   "planMonthlyCredits": "每月额度",
   "planCredits": "{credits} 额度",
   "planNoCredits": "不包含",
+  "planUnlimitedCredits": "无每月上限",
   "planBilling": "套餐与账单",
   "planBillingDescription": "更改套餐、购买更多额度并查看发票。",
   "planOpenBilling": "打开账单页面",

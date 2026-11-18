@@ -9,7 +9,9 @@ import { usePortalAction, usePortalLoad } from './state'
 /** The account's plan as the Plan section shows it: what Cloud enforces, and what it uses. */
 export type PortalPlan = {
   storage: { usedBytes: number; totalBytes: number | null }
-  /** Credits granted each month, or null when the plan includes no services. */
+  /** Whether the plan includes services, such as AI and search. */
+  services: boolean
+  /** Credits granted each month with services, or null for no monthly limit. */
   monthlyCredits: number | null
 }
 
@@ -26,11 +28,19 @@ export type PortalPlanServices = {
   openBilling: ((wanted: () => boolean) => Promise<void>) | null
 }
 
+/** Billing's session page, below the endpoint's path, without its query or fragment. */
+function sessionURL(endpoint: string): string {
+  const url = new URL(endpoint)
+  url.pathname = joinURL(url.pathname, CLOUD_BILLING_PAGE_PATHS.session)
+  url.search = ''
+  url.hash = ''
+  return url.href
+}
+
 /** Where and how a billing token reaches billing's session page. */
 export function billingSessionForm(endpoint: string, token: string) {
   return {
-    // Below the endpoint, which may itself have a path.
-    action: joinURL(endpoint, CLOUD_BILLING_PAGE_PATHS.session),
+    action: sessionURL(endpoint),
     method: 'POST',
     fields: { token }
   } as const
@@ -83,9 +93,8 @@ export function portalPlan(entitlements: AccountEntitlements): PortalPlan {
       usedBytes: entitlements.usage.committedStorageBytes,
       totalBytes: entitlements.limits.maximumStorageBytes
     },
-    monthlyCredits: entitlements.features.cloudServices
-      ? entitlements.limits.monthlyCreditAllowance
-      : null
+    services: entitlements.features.cloudServices,
+    monthlyCredits: entitlements.limits.monthlyCreditAllowance
   }
 }
 
@@ -102,7 +111,13 @@ export function usePortalPlan(services: PortalPlanServices = portalPlanServices(
   let handoffs = 0
   const opening = usePortalAction(async () => {
     const handoff = ++handoffs
-    await services.openBilling?.(() => handoff === handoffs)
+    const wanted = () => handoff === handoffs
+    try {
+      await services.openBilling?.(wanted)
+    } catch (error) {
+      // A handoff the person left behind reports nothing when they come back.
+      if (wanted()) throw error
+    }
   })
   return {
     entitlements,

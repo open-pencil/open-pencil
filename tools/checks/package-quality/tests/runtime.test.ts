@@ -1,7 +1,14 @@
 import { expect, test } from 'bun:test'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { setImmediate } from 'node:timers/promises'
 
-import { verifyPublicImports } from '#package-quality/smoke/runtime'
+import {
+  evaluateRuntime,
+  publicImportCheck,
+  verifyPublicImports
+} from '#package-quality/smoke/runtime'
 import { measurePhase } from '#package-quality/timing'
 
 import type { CommandRequest } from '@open-pencil/package-artifacts-tools'
@@ -53,8 +60,8 @@ test('public imports retain separate bounded Node and Bun invocations and their 
     expect(calls.map(({ args }) => args?.at(-1))).toEqual([
       'await import("@fixture/library")',
       'await import("@fixture/library/extra")',
-      // A stylesheet is resolved, which needs the file, rather than imported.
-      'import.meta.resolve("@fixture/library/theme.css")',
+      // A stylesheet is looked for where its export points, rather than imported.
+      publicImportCheck('@fixture/library/theme.css'),
       'await import("@open-pencil/mcp")'
     ])
     for (const request of calls) {
@@ -65,6 +72,27 @@ test('public imports retain separate bounded Node and Bun invocations and their 
     }
   }
 })
+
+test.each(['node', 'bun'] as const)(
+  'a stylesheet export fails in %s once its file is missing, and passes while it is shipped',
+  async (runtime) => {
+    const consumer = await mkdtemp(join(tmpdir(), 'open-pencil-stylesheet-'))
+    try {
+      const library = join(consumer, 'node_modules', '@fixture', 'library')
+      await mkdir(library, { recursive: true })
+      await writeFile(
+        join(library, 'package.json'),
+        JSON.stringify({ name: '@fixture/library', exports: { './theme.css': './theme.css' } })
+      )
+      const check = publicImportCheck('@fixture/library/theme.css')
+      await expect(evaluateRuntime(runtime, check, consumer)).rejects.toThrow()
+      await writeFile(join(library, 'theme.css'), ':root {}')
+      await evaluateRuntime(runtime, check, consumer)
+    } finally {
+      await rm(consumer, { recursive: true, force: true })
+    }
+  }
+)
 
 test('phase timing preserves successful results when reporting throws', async () => {
   const result = { verified: true }

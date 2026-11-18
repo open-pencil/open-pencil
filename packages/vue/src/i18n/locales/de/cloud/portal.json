@@ -152,6 +152,7 @@
   "planMonthlyCredits": "Guthaben pro Monat",
   "planCredits": "{credits} Guthaben",
   "planNoCredits": "Nicht enthalten",
+  "planUnlimitedCredits": "Kein monatliches Limit",
   "planBilling": "Tarife und Abrechnung",
   "planBillingDescription": "Wechsle deinen Tarif, kaufe weiteres Guthaben und sieh deine Rechnungen ein.",
   "planOpenBilling": "Abrechnung öffnen",

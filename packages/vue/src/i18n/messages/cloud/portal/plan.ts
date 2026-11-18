@@ -13,6 +13,7 @@ export const planPortalMessageDefaults = {
   planMonthlyCredits: 'Credits each month',
   planCredits: params('{credits} credits'),
   planNoCredits: 'Not included',
+  planUnlimitedCredits: 'No monthly limit',
   planBilling: 'Plans and billing',
   planBillingDescription: 'Change your plan, buy more credits, and see your invoices.',
   planOpenBilling: 'Open billing'

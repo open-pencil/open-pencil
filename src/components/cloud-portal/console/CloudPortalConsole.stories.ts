@@ -378,10 +378,12 @@ const person: PortalPersonDetail = {
 const MB = 1024 * 1024
 const freePlan: PortalPlanType = {
   storage: { usedBytes: 212 * MB, totalBytes: 300 * MB },
+  services: false,
   monthlyCredits: null
 }
 const paidPlan: PortalPlanType = {
   storage: { usedBytes: 3482 * MB, totalBytes: 10240 * MB },
+  services: true,
   monthlyCredits: 3000
 }
 const components = {

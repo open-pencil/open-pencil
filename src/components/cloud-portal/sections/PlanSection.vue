@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onDeactivated, onMounted } from 'vue'
+import { onActivated, onBeforeUnmount, onDeactivated, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
@@ -21,13 +21,22 @@ const messages = useCloudPortalMessages()
 const route = useRoute()
 const router = useRouter()
 
-onDeactivated(cancelBilling)
-onBeforeUnmount(cancelBilling)
+/** Whether the person is on this page, which the automatic handoff checks once it may start. */
+let shown = true
+function leave() {
+  shown = false
+  cancelBilling()
+}
+onActivated(() => {
+  shown = true
+})
+onDeactivated(leave)
+onBeforeUnmount(leave)
 
 onMounted(async () => {
   if (route.query.open !== 'billing') return
   await router.replace({ query: {} })
-  if (sells) await openBilling()
+  if (sells && shown) await openBilling()
 })
 </script>
 

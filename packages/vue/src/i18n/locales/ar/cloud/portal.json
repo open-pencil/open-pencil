@@ -161,6 +161,7 @@
   "planMonthlyCredits": "الرصيد الشهري",
   "planCredits": "{credits} رصيد",
   "planNoCredits": "غير متضمَّن",
+  "planUnlimitedCredits": "بلا حد شهري",
   "planBilling": "الخطط والفوترة",
   "planBillingDescription": "غيّر خطتك واشترِ المزيد من الرصيد واطّلع على فواتيرك.",
   "planOpenBilling": "فتح الفوترة",

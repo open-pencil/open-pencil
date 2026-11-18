@@ -41,11 +41,11 @@ const full = computed(
     plan.storage.totalBytes !== null &&
     plan.storage.usedBytes >= plan.storage.totalBytes
 )
-const credits = computed(() =>
-  plan?.monthlyCredits == null
-    ? messages.value.planNoCredits
-    : messages.value.planCredits({ credits: formatNumber(plan.monthlyCredits) })
-)
+const credits = computed(() => {
+  if (!plan?.services) return messages.value.planNoCredits
+  if (plan.monthlyCredits === null) return messages.value.planUnlimitedCredits
+  return messages.value.planCredits({ credits: formatNumber(plan.monthlyCredits) })
+})
 </script>
 
 <template>

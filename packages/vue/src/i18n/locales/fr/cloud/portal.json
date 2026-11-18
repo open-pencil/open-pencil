@@ -152,6 +152,7 @@
   "planMonthlyCredits": "Crédits chaque mois",
   "planCredits": "{credits} crédits",
   "planNoCredits": "Non inclus",
+  "planUnlimitedCredits": "Aucune limite mensuelle",
   "planBilling": "Offres et facturation",
   "planBillingDescription": "Changez d’offre, achetez plus de crédits et consultez vos factures.",
   "planOpenBilling": "Ouvrir la facturation",

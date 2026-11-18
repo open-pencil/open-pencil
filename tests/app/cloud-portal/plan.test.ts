@@ -49,16 +49,22 @@ describe('portalPlan', () => {
   test('shows the storage used against the limit, and the monthly credits', () => {
     expect(portalPlan(entitlements)).toEqual({
       storage: { usedBytes: 212 * MB, totalBytes: 10_240 * MB },
+      services: true,
       monthlyCredits: 3000
     })
   })
 
-  test('shows no monthly credits on a plan without services', () => {
+  test('tells a plan without services from one whose services have no monthly limit', () => {
     const withoutServices = {
       ...entitlements,
       features: { ...entitlements.features, cloudServices: false }
     }
-    expect(portalPlan(withoutServices).monthlyCredits).toBeNull()
+    expect(portalPlan(withoutServices).services).toBe(false)
+    const unlimited = {
+      ...entitlements,
+      limits: { ...entitlements.limits, monthlyCreditAllowance: null }
+    }
+    expect(portalPlan(unlimited)).toMatchObject({ services: true, monthlyCredits: null })
   })
 })
 
@@ -106,6 +112,23 @@ describe('usePortalPlan', () => {
     await opening
     expect(opened).toEqual([])
   })
+
+  test('reports nothing of a handoff the person left behind', async () => {
+    const token = Promise.withResolvers<undefined>()
+    const page = plan({
+      entitlements: async () => entitlements,
+      async openBilling() {
+        await token.promise
+        throw new Error('No token')
+      }
+    })
+    await settle()
+    const opening = page.openBilling()
+    page.cancelBilling()
+    token.resolve(undefined)
+    await opening
+    expect(page.opening.error.value).toBeNull()
+  })
 })
 
 describe('billingSessionForm', () => {
@@ -115,5 +138,11 @@ describe('billingSessionForm', () => {
       method: 'POST',
       fields: { token: 'signed-token' }
     })
+  })
+
+  test("keeps the endpoint's path and leaves its query and fragment out", () => {
+    expect(
+      billingSessionForm('https://billing.example.com/billing/?tenant=acme#top', 'token').action
+    ).toBe('https://billing.example.com/billing/session')
   })
 })

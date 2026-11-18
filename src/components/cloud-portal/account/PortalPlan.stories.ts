@@ -9,11 +9,13 @@ const GB = 1024 * MB
 
 const FREE: Plan = {
   storage: { usedBytes: 212 * MB, totalBytes: 300 * MB },
+  services: false,
   monthlyCredits: null
 }
 
 const PRO: Plan = {
   storage: { usedBytes: 3.4 * GB, totalBytes: 10 * GB },
+  services: true,
   monthlyCredits: 3000
 }
 
