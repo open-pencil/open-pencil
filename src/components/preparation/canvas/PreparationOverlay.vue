@@ -2,6 +2,8 @@
 import { ProgressIndicator, ProgressRoot } from 'reka-ui'
 import { computed } from 'vue'
 
+import { useFileMessages } from '@open-pencil/vue/i18n'
+
 import type { EditorPreparation } from '@/app/editor/preparation/types'
 import { resolvedAppTheme } from '@/app/shell/theme'
 import BrandMark from '@/components/brand/BrandMark.vue'
@@ -11,7 +13,8 @@ const { preparation } = defineProps<{
   preparation: EditorPreparation
 }>()
 
-const label = computed(() => preparationLabel(preparation))
+const files = useFileMessages()
+const label = computed(() => preparationLabel(preparation, files.value))
 const progressValue = computed(() => preparationPercent(preparation.progress))
 const progressSteps = computed(() => Math.round(progressValue.value ?? 0))
 </script>

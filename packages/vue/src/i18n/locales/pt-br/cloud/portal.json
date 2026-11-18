@@ -621,5 +621,12 @@
   "sitePoweredBy": "Feito com OpenPencil",
   "siteSourceCode": "Código-fonte",
   "communityNoDesigns": "Ainda não há designs aqui.",
-  "communityNoBoards": "Ainda não há quadros aqui."
+  "communityNoBoards": "Ainda não há quadros aqui.",
+  "pendingHiddenEmail": "Já tem uma conta aqui? Saia e entre nela como você costuma fazer: a Apple ocultou seu e-mail, então esta conta é nova.",
+  "columnSignIn": "Entrada",
+  "removeSignInMethod": "Remover",
+  "removeSignInMethodHeading": "Remover {provider} das formas de entrar de {name}?",
+  "removeSignInMethodDescription": "A pessoa não poderá mais entrar com essa forma até adicioná-la de novo e receberá um e-mail avisando. Os dispositivos já conectados continuam assim até você desconectá-la de todos os lugares.",
+  "activitySignInMethodRemoved": "removeu uma forma de entrar de",
+  "signInAny": "Qualquer forma de entrar"
 }

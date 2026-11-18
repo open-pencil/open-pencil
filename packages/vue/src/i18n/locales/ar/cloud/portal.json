@@ -661,5 +661,12 @@
   "sitePoweredBy": "مدعوم من OpenPencil",
   "siteSourceCode": "الشيفرة المصدرية",
   "communityNoDesigns": "لا توجد تصاميم هنا بعد.",
-  "communityNoBoards": "لا توجد لوحات هنا بعد."
+  "communityNoBoards": "لا توجد لوحات هنا بعد.",
+  "pendingHiddenEmail": "لديك حساب هنا بالفعل؟ سجّل الخروج ثم سجّل الدخول إليه كما تفعل عادةً: أخفت Apple بريدك الإلكتروني، لذا فهذا الحساب جديد.",
+  "columnSignIn": "تسجيل الدخول",
+  "removeSignInMethod": "إزالة",
+  "removeSignInMethodHeading": "إزالة {provider} من طرق تسجيل دخول {name}؟",
+  "removeSignInMethodDescription": "لن يتمكن من تسجيل الدخول بها مجددًا ما لم يُضفها من جديد، وسيصله بريد إلكتروني بذلك. تبقى الأجهزة المسجّل دخولها حاليًا متصلة حتى تسجّل خروجه من كل مكان.",
+  "activitySignInMethodRemoved": "أزال طريقة لتسجيل الدخول من",
+  "signInAny": "أي طريقة دخول"
 }

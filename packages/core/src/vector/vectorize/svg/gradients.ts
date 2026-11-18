@@ -1,3 +1,5 @@
+import type { Fill, GradientStop } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 /**
  * Parse SVG <linearGradient>/<radialGradient> defs and resolve `fill="url(#id)"`
  * references into scene-graph gradient fills.
@@ -9,8 +11,7 @@
  * normalize into each node's bounding box and build the transform in Figma's convention
  * (see geometry/gradient).
  */
-import type { Fill, GradientStop } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
+import { parseCSSURLReferences, parseFragmentReference } from '@open-pencil/scene-graph/css'
 import {
   ellipticalGradientTransform,
   linearGradientTransformFromAxes
@@ -81,7 +82,7 @@ export type SVGGradients = ReadonlyMap<string, ParsedGradient>
 /** The `id` a gradient's `href` or `xlink:href` names, or null. */
 function hrefId(element: SVGElementLike): string | null {
   const href = (element.getAttribute('href') ?? element.getAttribute('xlink:href'))?.trim()
-  return href?.startsWith('#') ? href.slice(1) : null
+  return parseFragmentReference(href)
 }
 
 /**
@@ -137,12 +138,7 @@ export function parseSVGGradients(svg: string | SVGQueryable): Map<string, Parse
 }
 
 function gradientIdFromFill(fill: string | null): string | null {
-  const value = fill?.trim()
-  if (!value?.startsWith('url(') || !value.endsWith(')')) return null
-  const reference = value.slice(4, -1).trim()
-  if (!reference.startsWith('#')) return null
-  const id = reference.slice(1).trim()
-  return id && !id.includes(' ') ? id : null
+  return parseCSSURLReferences(fill ?? undefined).at(0) ?? null
 }
 
 function gradientStops(stops: RawStop[]): GradientStop[] {

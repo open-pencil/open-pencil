@@ -132,7 +132,8 @@ function errorTrackingConfig(config: CloudDeploymentConfig, environment: CloudEn
   return {
     provider: tracking.provider,
     host: tracking.host,
-    projectAPIKey: configuredText(environment, tracking.project_api_key)
+    projectAPIKey: configuredText(environment, tracking.project_api_key),
+    includeIds: tracking.include_ids
   }
 }
 

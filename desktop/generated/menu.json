@@ -26,6 +26,11 @@
         "label": "Open Recent"
       },
       {
+        "id": "place",
+        "label": "Place…",
+        "feature": "document"
+      },
+      {
         "type": "separator"
       },
       {

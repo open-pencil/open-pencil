@@ -62,20 +62,23 @@ export function createCollaborationRoutes(
 }
 
 export function createPublicCollaborationRoutes(
-  service: CollaborationTicketService,
+  service: Pick<CollaborationTicketService, 'issueShareTicket'>,
   resolveSession?: CloudSessionResolver
 ) {
-  return new Hono().post(
+  return new Hono<CollaborationRouteEnvironment>().post(
     '/shares/:shareId/collaboration-ticket',
     shareParams,
     validatedJSON(resolveDocumentShareSchema),
     async (context) => {
       try {
+        const actor = resolveSession ? await resolveSession(context.req.raw) : null
+        // A signed-in caller is named in error reports, as on the routes that require one.
+        if (actor) context.set('actor', actor)
         return context.json({
           ticket: await service.issueShareTicket(
             context.req.valid('param').shareId,
             context.req.valid('json'),
-            resolveSession ? ((await resolveSession(context.req.raw)) ?? undefined) : undefined
+            actor ?? undefined
           )
         })
       } catch (error) {

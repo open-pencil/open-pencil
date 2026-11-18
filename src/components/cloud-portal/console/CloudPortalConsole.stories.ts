@@ -95,6 +95,7 @@ const people: PortalPerson[] = [
     joinedOn: 'Mar 3, 2026',
     lastActive: 'now',
     workspaceCount: 3,
+    methods: ['credential', 'google'],
     you: true
   },
   {
@@ -106,7 +107,8 @@ const people: PortalPerson[] = [
     twoStep: true,
     joinedOn: 'Mar 3, 2026',
     lastActive: '2 hr. ago',
-    workspaceCount: 2
+    workspaceCount: 2,
+    methods: ['google']
   },
   {
     id: 'user-mia',
@@ -117,7 +119,8 @@ const people: PortalPerson[] = [
     twoStep: false,
     joinedOn: 'Jun 12, 2026',
     lastActive: 'yesterday',
-    workspaceCount: 1
+    workspaceCount: 1,
+    methods: ['credential', 'google']
   },
   {
     id: 'user-tom',
@@ -129,7 +132,8 @@ const people: PortalPerson[] = [
     twoStep: false,
     joinedOn: 'Oct 2, 2026',
     lastActive: null,
-    workspaceCount: 0
+    workspaceCount: 0,
+    methods: ['credential']
   },
   {
     id: 'user-joon',
@@ -141,6 +145,7 @@ const people: PortalPerson[] = [
     joinedOn: 'Nov 16, 2026',
     lastActive: '1 hr. ago',
     workspaceCount: 0,
+    methods: ['apple'],
     access: 'waiting'
   }
 ]
@@ -363,8 +368,8 @@ const person: PortalPersonDetail = {
   person: people[2] ?? people[0],
   emailVerified: true,
   methods: [
-    { provider: 'credential', linkedOn: 'Jun 12, 2026' },
-    { provider: 'google', linkedOn: 'Jul 1, 2026' }
+    { id: 'method-password', provider: 'credential', linkedOn: 'Jun 12, 2026', canRemove: true },
+    { id: 'method-google', provider: 'google', linkedOn: 'Jul 1, 2026', canRemove: true }
   ],
   authenticator: false,
   passkeyCount: 0,

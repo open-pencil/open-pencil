@@ -31,6 +31,8 @@ export interface Toast {
   progressLabel?: string
   /** Keeps the toast until the person dismisses it, for a failure they must act on. */
   sticky?: boolean
+  /** Never merges with another toast, for one its owner removes or replaces by its ID. */
+  separate?: boolean
 }
 
 export interface ToastPatch {
@@ -64,16 +66,19 @@ function push(
   message: string,
   variant: ToastVariant,
   action?: ToastAction,
-  sticky = false
+  sticky = false,
+  separate = false
 ): number {
   // Dedupe: if the same message+variant is already visible, increment
   // its repeat count instead of stacking a duplicate. Prevents the
   // cascade-on-every-frame failure mode where a single unhealthy
   // event source floods the viewport. Toasts driven by a progress handle
   // are addressed by that handle and must never absorb or merge messages.
-  const existing = toasts.value.find(
-    (t) => t.message === message && t.variant === variant && !t.progress
-  )
+  const existing = separate
+    ? undefined
+    : toasts.value.find(
+        (t) => t.message === message && t.variant === variant && !t.progress && !t.separate
+      )
   if (existing) {
     existing.count += 1
     if (action || !existing.sticky) existing.action = action
@@ -81,16 +86,17 @@ function push(
     return existing.id
   }
   const id = ++nextId
-  toasts.value.push({ id, message, variant, count: 1, action, sticky })
+  toasts.value.push({ id, message, variant, count: 1, action, sticky, separate })
   trim()
   return id
 }
 
 function trim() {
   // A failure the person must act on stays until they dismiss it, even when newer messages
-  // arrive; ordinary messages give way first.
+  // arrive; ordinary messages give way first, oldest first, but the newest always shows.
   while (toasts.value.length > TOAST_STACK_LIMIT) {
-    const index = toasts.value.findIndex((entry) => !entry.sticky)
+    const newest = toasts.value.length - 1
+    const index = toasts.value.findIndex((entry, at) => !entry.sticky && at < newest)
     if (index === -1) return
     toasts.value.splice(index, 1)
   }
@@ -141,8 +147,12 @@ function warning(message: string, action?: ToastAction, options?: { sticky?: boo
   return push(message, 'warning', action, options?.sticky)
 }
 
-function error(message: string, action?: ToastAction, options?: { sticky?: boolean }): number {
-  return push(message, 'error', action, options?.sticky)
+function error(
+  message: string,
+  action?: ToastAction,
+  options?: { sticky?: boolean; separate?: boolean }
+): number {
+  return push(message, 'error', action, options?.sticky, options?.separate)
 }
 
 function remove(id: number) {

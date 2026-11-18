@@ -1,19 +1,22 @@
 <script setup lang="ts">
 import { createColumnHelper } from '@tanstack/vue-table'
 import { compact } from 'es-toolkit'
-import { computed, h } from 'vue'
+import { computed, h, onDeactivated, ref } from 'vue'
 import IconLayers from '~icons/lucide/layers'
 
 import type { WorkspaceRole } from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import { usePortalRows, type PortalTableFeatures } from '@/app/cloud-portal/list'
+import { usePortalSignInMethodLabel } from '@/app/cloud-portal/methods'
 import { portalTable } from '@/components/cloud-portal/table/ui'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
+import { useHeldContent } from '@/components/ui/overlay/held'
 import AppDataTable from '@/components/ui/table/AppDataTable.vue'
 
 import PortalSessions from '../account/PortalSessions.vue'
@@ -28,23 +31,29 @@ import PortalPersonActions from './PortalPersonActions.vue'
  * in, where it is signed in, and what the administrator can do about it.
  */
 const { detail, busy = false } = defineProps<{ detail: PortalPersonDetail; busy?: boolean }>()
-const emit = defineEmits<{ act: [action: PortalPersonAction, reason?: string]; back: [] }>()
+const emit = defineEmits<{
+  act: [action: PortalPersonAction, reason?: string]
+  removeMethod: [methodId: string]
+  back: []
+}>()
 
 const ui = portalTable()
 const messages = useCloudPortalMessages()
 const person = computed(() => detail.person)
 
-const providers = computed(() =>
-  detail.methods
-    .map((method) => {
-      const words = messages.value
-      if (method.provider === 'credential') return words.password
-      if (method.provider === 'google') return words.providerGoogle
-      if (method.provider === 'apple') return words.providerApple
-      return method.provider
-    })
-    .join(', ')
-)
+const methodLabel = usePortalSignInMethodLabel()
+const removing = ref<PortalPersonDetail['methods'][number] | null>(null)
+const removingShown = useHeldContent(removing)
+// The console keeps a page it leaves; a confirmation must not outlive the visit that opened it.
+onDeactivated(() => {
+  removing.value = null
+})
+
+function removeMethod() {
+  const method = removing.value
+  removing.value = null
+  if (method) emit('removeMethod', method.id)
+}
 const twoStep = computed(() => {
   const words = messages.value
   const parts = compact([
@@ -137,11 +146,31 @@ const workspaces = usePortalRows(() => detail.workspaces, {
           :label="messages.lastActiveRow"
           :description="person.lastActive ?? messages.notSignedIn"
         />
-        <SettingsRow
-          :label="messages.signInMethods"
-          :description="providers || messages.twoStepNone"
-        />
         <SettingsRow :label="messages.twoStepRow" :description="twoStep" />
+      </SettingsGroup>
+    </SettingsSection>
+
+    <SettingsSection>
+      <template #title>{{ messages.signInMethods }}</template>
+      <SettingsGroup>
+        <SettingsRow
+          v-for="method in detail.methods"
+          :key="method.id"
+          :label="methodLabel(method.provider)"
+          :description="messages.linkedOn({ date: method.linkedOn })"
+        >
+          <!-- Administrators change their own ways in on their security page. -->
+          <AppButton
+            v-if="method.canRemove && !person.you"
+            size="sm"
+            variant="outline"
+            :disabled="busy"
+            @click="removing = method"
+          >
+            {{ messages.removeSignInMethod }}
+          </AppButton>
+        </SettingsRow>
+        <SettingsRow v-if="!detail.methods.length" :description="messages.twoStepNone" />
       </SettingsGroup>
     </SettingsSection>
 
@@ -159,5 +188,22 @@ const workspaces = usePortalRows(() => detail.workspaces, {
     </SettingsSection>
 
     <PortalSessions :sessions="detail.sessions" :sign-ins="detail.signIns" />
+
+    <AppConfirmationDialog
+      :open="removing !== null"
+      tone="danger"
+      :heading="
+        removingShown
+          ? messages.removeSignInMethodHeading({
+              provider: methodLabel(removingShown.provider),
+              name: person.name
+            })
+          : ''
+      "
+      :description="messages.removeSignInMethodDescription"
+      :confirm-label="messages.removeSignInMethod"
+      @update:open="(open) => !open && (removing = null)"
+      @confirm="removeMethod"
+    />
   </div>
 </template>
