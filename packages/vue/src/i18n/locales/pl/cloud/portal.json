@@ -500,6 +500,7 @@
   "activityEmailRetried": "— ponowna wysyłka e-maila do:",
   "activityTwoStepReset": "— reset logowania dwuetapowego:",
   "activityPictureRemoved": "— usunięcie zdjęcia:",
+  "activityAccountDeleted": "usunął(-ęła) konto użytkownika",
   "activityReason": "Powód: {reason}",
   "activityChanged": "— zmiana:",
   "errorTitle": "Nie udało się",
@@ -508,6 +509,7 @@
   "errorLastAdmin": "Serwer potrzebuje co najmniej jednego administratora.",
   "errorAccountSoleAdmin": "Wciąż jesteś jedynym administratorem obszaru roboczego, z którego korzystają inni. Najpierw nadaj komuś innemu rolę administratora.",
   "errorSelfAction": "Nie możesz tego zrobić z własnym kontem.",
+  "errorAccountApproved": "To konto zostało zatwierdzone, więc może je usunąć tylko jego właściciel.",
   "errorTwoStepRequired": "Najpierw włącz logowanie dwuetapowe.",
   "errorTwoStepUnconfirmed": "Potwierdź swoją tożsamość drugim krokiem, a potem spróbuj ponownie.",
   "errorNotAllowed": "Nie masz uprawnień do wykonania tej czynności.",
@@ -627,6 +629,9 @@
   "removeSignInMethod": "Usuń",
   "removeSignInMethodHeading": "Usunąć metodę logowania {provider} (użytkownik: {name})?",
   "removeSignInMethodDescription": "Ta osoba nie zaloguje się już tą metodą, dopóki jej ponownie nie doda, i dostanie o tym e-mail. Zalogowane urządzenia pozostaną zalogowane, dopóki nie wylogujesz jej ze wszystkich urządzeń.",
+  "deletePersonAccount": "Usuń konto",
+  "deletePersonAccountHeading": "Usunąć konto użytkownika {name}?",
+  "deletePersonAccountDescription": "Prośba o dołączenie nigdy nie została zatwierdzona, więc nic nie zostaje: konto, sposoby logowania i prośba zostaną usunięte. Ta osoba może zarejestrować się ponownie.",
   "activitySignInMethodRemoved": "— usunięcie metody logowania:",
   "signInAny": "Dowolne logowanie"
 }

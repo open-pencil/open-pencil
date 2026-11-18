@@ -28,5 +28,9 @@ export const personPortalMessageDefaults = {
   removeSignInMethod: 'Remove',
   removeSignInMethodHeading: params('Remove {provider} from {name}’s ways to sign in?'),
   removeSignInMethodDescription:
-    'They can’t sign in with it again unless they add it back, and they get an email saying so. Devices already signed in stay signed in until you sign them out everywhere.'
+    'They can’t sign in with it again unless they add it back, and they get an email saying so. Devices already signed in stay signed in until you sign them out everywhere.',
+  deletePersonAccount: 'Delete account',
+  deletePersonAccountHeading: params('Delete {name}’s account?'),
+  deletePersonAccountDescription:
+    'Their request to join was never approved, so nothing of theirs stays: the account, its ways to sign in, and its request go. They can sign up again.'
 }

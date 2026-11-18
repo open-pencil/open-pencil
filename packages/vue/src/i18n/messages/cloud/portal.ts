@@ -484,6 +484,7 @@ export const cloudPortalMessageDefaults = {
   activityEmailRetried: 'retried an email to',
   activityTwoStepReset: 'reset two-step sign-in for',
   activityPictureRemoved: 'removed the picture of',
+  activityAccountDeleted: 'deleted the account of',
   activitySignInMethodRemoved: 'removed a way to sign in from',
   activityReason: params('Reason: {reason}'),
   activityChanged: 'changed',
@@ -566,6 +567,7 @@ export const cloudPortalMessageDefaults = {
   errorAccountSoleAdmin:
     'You’re still the only admin of a workspace other people use. Make someone else an admin first.',
   errorSelfAction: 'You can’t do that to your own account.',
+  errorAccountApproved: 'This account was approved, so only its owner can delete it.',
   errorTwoStepRequired: 'Turn on two-step sign-in first.',
   errorTwoStepUnconfirmed: 'Confirm it’s you with your second step, then try again.',
   errorNotAllowed: 'You don’t have permission to do that.',

@@ -490,6 +490,7 @@
   "activityEmailRetried": "ha ritentato l’invio di un’email a",
   "activityTwoStepReset": "ha reimpostato la verifica in due passaggi di",
   "activityPictureRemoved": "ha rimosso l’immagine di",
+  "activityAccountDeleted": "ha eliminato l’account di",
   "activityReason": "Motivo: {reason}",
   "activityChanged": "ha modificato",
   "errorTitle": "Operazione non riuscita",
@@ -498,6 +499,7 @@
   "errorLastAdmin": "Il server ha bisogno di almeno un amministratore.",
   "errorAccountSoleAdmin": "Sei ancora l’unico amministratore di uno spazio di lavoro usato da altri. Prima nomina un altro amministratore.",
   "errorSelfAction": "Non puoi farlo sul tuo account.",
+  "errorAccountApproved": "Questo account è stato approvato, quindi solo il titolare può eliminarlo.",
   "errorTwoStepRequired": "Prima attiva la verifica in due passaggi.",
   "errorTwoStepUnconfirmed": "Conferma che sei tu con il secondo passaggio, poi riprova.",
   "errorNotAllowed": "Non hai l’autorizzazione per farlo.",
@@ -617,6 +619,9 @@
   "removeSignInMethod": "Rimuovi",
   "removeSignInMethodHeading": "Rimuovere {provider} dai metodi di accesso di {name}?",
   "removeSignInMethodDescription": "Non potrà più accedere con questo metodo finché non lo aggiunge di nuovo e riceverà un’email che lo comunica. I dispositivi già connessi restano connessi finché non lo disconnetti ovunque.",
+  "deletePersonAccount": "Elimina account",
+  "deletePersonAccountHeading": "Eliminare l’account di {name}?",
+  "deletePersonAccountDescription": "La sua richiesta di accesso non è mai stata approvata, quindi non resta nulla: l’account, i suoi metodi di accesso e la richiesta vengono eliminati. Potrà registrarsi di nuovo.",
   "activitySignInMethodRemoved": "ha rimosso un metodo di accesso da",
   "signInAny": "Qualsiasi accesso"
 }

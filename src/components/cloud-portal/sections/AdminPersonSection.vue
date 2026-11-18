@@ -66,7 +66,12 @@ const error = computed(() => action.error.value)
 
 function act(kind: PortalPersonAction, reason?: string) {
   const person = detail.value?.person
-  if (person) void action.run(() => personAction(portal.api, person, kind, reason))
+  if (!person) return
+  void action.run(async () => {
+    await personAction(portal.api, person, kind, reason)
+    // A deleted account has no page left; the list of people is where the administrator goes.
+    if (kind === 'delete') emit('back')
+  })
 }
 
 function removeMethod(methodId: string) {

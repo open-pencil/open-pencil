@@ -43,6 +43,8 @@ export const adminErrorCodeSchema = v.picklist([
   'self_admin_action_forbidden',
   // The sign-in method is the account's last, so removing it would lock its owner out.
   'last_authentication_method',
+  // Only an account whose request was never approved can be deleted from the console.
+  'account_approved',
   'email_regeneration_unavailable',
   'mfa_required',
   // Two-step is on, but this session has not proved it lately; confirming it lets it back in.

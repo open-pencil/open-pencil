@@ -490,6 +490,7 @@
   "activityEmailRetried": "reintentó un correo a",
   "activityTwoStepReset": "restableció la verificación en dos pasos de",
   "activityPictureRemoved": "eliminó la foto de",
+  "activityAccountDeleted": "eliminó la cuenta de",
   "activityReason": "Motivo: {reason}",
   "activityChanged": "cambió",
   "errorTitle": "No ha funcionado",
@@ -498,6 +499,7 @@
   "errorLastAdmin": "El servidor necesita al menos un administrador.",
   "errorAccountSoleAdmin": "Sigues siendo el único administrador de un espacio de trabajo que usan otras personas. Primero nombra a otro administrador.",
   "errorSelfAction": "No puedes hacer eso con tu propia cuenta.",
+  "errorAccountApproved": "Esta cuenta se aprobó, así que solo su titular puede eliminarla.",
   "errorTwoStepRequired": "Primero activa la verificación en dos pasos.",
   "errorTwoStepUnconfirmed": "Confirma que eres tú con tu segundo paso y vuelve a intentarlo.",
   "errorNotAllowed": "No tienes permiso para hacer eso.",
@@ -617,6 +619,9 @@
   "removeSignInMethod": "Quitar",
   "removeSignInMethodHeading": "¿Quitar {provider} de las formas de iniciar sesión de {name}?",
   "removeSignInMethodDescription": "No podrá volver a iniciar sesión con este método salvo que lo añada de nuevo, y recibirá un correo avisándole. Los dispositivos con la sesión iniciada siguen así hasta que cierres todas sus sesiones.",
+  "deletePersonAccount": "Eliminar cuenta",
+  "deletePersonAccountHeading": "¿Eliminar la cuenta de {name}?",
+  "deletePersonAccountDescription": "Su solicitud para unirse nunca se aprobó, así que no queda nada suyo: se eliminan la cuenta, sus formas de iniciar sesión y su solicitud. Puede volver a registrarse.",
   "activitySignInMethodRemoved": "quitó una forma de iniciar sesión de",
   "signInAny": "Cualquier inicio de sesión"
 }

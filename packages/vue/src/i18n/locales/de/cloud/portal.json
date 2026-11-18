@@ -490,6 +490,7 @@
   "activityEmailRetried": "sendete eine E-Mail erneut an",
   "activityTwoStepReset": "setzte die zweistufige Anmeldung zurück für",
   "activityPictureRemoved": "entfernte das Bild von",
+  "activityAccountDeleted": "hat das Konto gelöscht von",
   "activityReason": "Grund: {reason}",
   "activityChanged": "änderte",
   "errorTitle": "Das hat nicht funktioniert",
@@ -498,6 +499,7 @@
   "errorLastAdmin": "Der Server braucht mindestens einen Administrator.",
   "errorAccountSoleAdmin": "Du bist noch der einzige Admin eines Arbeitsbereichs, den andere nutzen. Mach zuerst jemand anderen zum Admin.",
   "errorSelfAction": "Das kannst du nicht mit deinem eigenen Konto tun.",
+  "errorAccountApproved": "Dieses Konto wurde genehmigt, daher kann nur sein Inhaber es löschen.",
   "errorTwoStepRequired": "Aktiviere zuerst die zweistufige Anmeldung.",
   "errorTwoStepUnconfirmed": "Bestätige mit deinem zweiten Schritt, dass du es bist, und versuche es dann erneut.",
   "errorNotAllowed": "Dazu bist du nicht berechtigt.",
@@ -617,6 +619,9 @@
   "removeSignInMethod": "Entfernen",
   "removeSignInMethodHeading": "{provider} aus den Anmeldemethoden von {name} entfernen?",
   "removeSignInMethodDescription": "Die Person kann sich damit nicht mehr anmelden, bis sie es wieder hinzufügt, und erhält dazu eine E-Mail. Bereits angemeldete Geräte bleiben angemeldet, bis du sie überall abmeldest.",
+  "deletePersonAccount": "Konto löschen",
+  "deletePersonAccountHeading": "Konto von {name} löschen?",
+  "deletePersonAccountDescription": "Die Beitrittsanfrage wurde nie genehmigt, daher bleibt nichts davon: Das Konto, seine Anmeldemethoden und die Anfrage werden gelöscht. Die Person kann sich erneut registrieren.",
   "activitySignInMethodRemoved": "entfernte eine Anmeldemethode von",
   "signInAny": "Jede Anmeldung"
 }

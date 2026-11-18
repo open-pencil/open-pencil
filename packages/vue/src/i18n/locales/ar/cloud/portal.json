@@ -536,6 +536,7 @@
   "activityEmailRetried": "أعاد محاولة إرسال بريد إلى",
   "activityTwoStepReset": "أعاد تعيين تسجيل الدخول بخطوتين لـ",
   "activityPictureRemoved": "أزال صورة",
+  "activityAccountDeleted": "حذف حساب",
   "activityReason": "السبب: {reason}",
   "activityChanged": "غيّر",
   "reports": "البلاغات",
@@ -617,6 +618,7 @@
   "errorLastAdmin": "يحتاج الخادم إلى مسؤول واحد على الأقل.",
   "errorAccountSoleAdmin": "ما زلت المسؤول الوحيد عن مساحة عمل يستخدمها آخرون. اجعل شخصًا آخر مسؤولًا أولًا.",
   "errorSelfAction": "لا يمكنك فعل ذلك بحسابك الخاص.",
+  "errorAccountApproved": "تمت الموافقة على هذا الحساب، لذا لا يستطيع حذفه إلا صاحبه.",
   "errorTwoStepRequired": "فعّل تسجيل الدخول بخطوتين أولًا.",
   "errorTwoStepUnconfirmed": "أكّد هويتك بالخطوة الثانية، ثم حاول مرة أخرى.",
   "errorNotAllowed": "ليست لديك صلاحية للقيام بذلك.",
@@ -657,6 +659,9 @@
   "removeSignInMethod": "إزالة",
   "removeSignInMethodHeading": "إزالة {provider} من طرق تسجيل دخول {name}؟",
   "removeSignInMethodDescription": "لن يتمكن من تسجيل الدخول بها مجددًا ما لم يُضفها من جديد، وسيصله بريد إلكتروني بذلك. تبقى الأجهزة المسجّل دخولها حاليًا متصلة حتى تسجّل خروجه من كل مكان.",
+  "deletePersonAccount": "حذف الحساب",
+  "deletePersonAccountHeading": "حذف حساب {name}؟",
+  "deletePersonAccountDescription": "لم تتم الموافقة على طلب انضمامه مطلقًا، لذا لا يبقى منه شيء: يُحذف الحساب وطرق تسجيل الدخول إليه وطلبه. ويمكنه التسجيل مجددًا.",
   "activitySignInMethodRemoved": "أزال طريقة لتسجيل الدخول من",
   "signInAny": "أي طريقة دخول"
 }

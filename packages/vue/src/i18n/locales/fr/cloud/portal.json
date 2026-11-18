@@ -490,6 +490,7 @@
   "activityEmailRetried": "a renvoyé un e-mail à",
   "activityTwoStepReset": "a réinitialisé la connexion en deux étapes de",
   "activityPictureRemoved": "a supprimé la photo de",
+  "activityAccountDeleted": "a supprimé le compte de",
   "activityReason": "Motif : {reason}",
   "activityChanged": "a modifié",
   "errorTitle": "Cela n’a pas fonctionné",
@@ -498,6 +499,7 @@
   "errorLastAdmin": "Le serveur doit avoir au moins un administrateur.",
   "errorAccountSoleAdmin": "Vous êtes encore le seul administrateur d’un espace de travail que d’autres utilisent. Nommez d’abord un autre administrateur.",
   "errorSelfAction": "Vous ne pouvez pas faire cela sur votre propre compte.",
+  "errorAccountApproved": "Ce compte a été approuvé : seul son titulaire peut le supprimer.",
   "errorTwoStepRequired": "Activez d’abord la connexion en deux étapes.",
   "errorTwoStepUnconfirmed": "Confirmez votre identité avec votre deuxième étape, puis réessayez.",
   "errorNotAllowed": "Vous n’avez pas l’autorisation de faire cela.",
@@ -617,6 +619,9 @@
   "removeSignInMethod": "Retirer",
   "removeSignInMethodHeading": "Retirer {provider} des moyens de connexion de {name} ?",
   "removeSignInMethodDescription": "Cette personne ne pourra plus se connecter avec ce moyen tant qu’elle ne l’aura pas ajouté à nouveau, et elle recevra un e-mail à ce sujet. Les appareils déjà connectés le restent jusqu’à ce que vous la déconnectiez partout.",
+  "deletePersonAccount": "Supprimer le compte",
+  "deletePersonAccountHeading": "Supprimer le compte de {name} ?",
+  "deletePersonAccountDescription": "Sa demande d’accès n’a jamais été approuvée, donc rien ne reste : le compte, ses méthodes de connexion et sa demande sont supprimés. Cette personne peut se réinscrire.",
   "activitySignInMethodRemoved": "a retiré un moyen de connexion de",
   "signInAny": "Toute connexion"
 }
