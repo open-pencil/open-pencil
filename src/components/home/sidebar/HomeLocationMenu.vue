@@ -13,6 +13,7 @@ import { computed } from 'vue'
 
 import { useCloudMessages } from '@open-pencil/vue/i18n'
 
+import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menu } from '@/components/ui/menu/menu'
 import homeLocationMenuTheme from '@/theme/home/location-menu'
@@ -31,11 +32,14 @@ const {
   workspaces = [],
   sharedCount = 0,
   storage = null,
-  cloud = true
+  cloud = true,
+  checking = false
 } = defineProps<{
   active: HomeLocation
   /** The build has Cloud, so its sign-in and workspaces have a place. */
   cloud?: boolean
+  /** Cloud has yet to say whether this app is signed in, so neither its places nor sign-in show. */
+  checking?: boolean
   account?: HomeCloudAccount | null
   workspaces?: { id: string; name: string; documentCount?: number; attention?: boolean }[]
   sharedCount?: number
@@ -149,6 +153,16 @@ const isActive = (location: HomeLocation) =>
               <span :class="ui.itemLabel()">{{ t.homeNewWorkspace }}</span>
             </DropdownMenuItem>
           </template>
+          <DropdownMenuItem
+            v-else-if="checking"
+            disabled
+            :class="menuUI.item({ justify: 'start' })"
+            role="status"
+            :aria-label="t.checkingServer"
+          >
+            <AppSkeleton class="size-3.5 shrink-0" />
+            <AppSkeleton class="w-28" />
+          </DropdownMenuItem>
           <DropdownMenuItem
             v-else
             :class="menuUI.item({ justify: 'start' })"

@@ -40,10 +40,17 @@ export function useHomeLocations() {
   const workspaces = cloud.workspaces
 
   const defaultsToWorkspace = computed(() => !homeLocationChosen.value && !recentFilesAvailable())
+  // A Cloud place stays chosen while Cloud checks the session: it has no workspaces yet only
+  // because it has not answered, so Home waits rather than show Recent and then jump.
+  const waitsForCloud = computed(
+    () =>
+      cloud.checking.value && (defaultsToWorkspace.value || homeLocation.value.kind !== 'recent')
+  )
   const location = computed<HomeLocation>(() => {
     const first = workspaces.value.at(0)
     if (defaultsToWorkspace.value && first) return { kind: 'workspace', id: first.id }
     const chosen = homeLocation.value
+    if (waitsForCloud.value) return chosen
     if ((chosen.kind === 'shared' || chosen.kind === 'trash') && !cloud.signedIn.value) {
       return { kind: 'recent' }
     }
@@ -63,8 +70,10 @@ export function useHomeLocations() {
     account: cloud.account,
     workspaces,
     location,
-    /** Whether Home waits for Cloud to say which workspace it opens on, rather than show Recent. */
-    settling: computed(() => defaultsToWorkspace.value && cloud.checking.value),
+    /** Whether Home waits for Cloud to say which place it opens on, rather than show Recent. */
+    settling: waitsForCloud,
+    /** Whether Cloud has yet to say if this app is signed in. */
+    checking: cloud.checking,
     workspace,
     serverId: cloud.serverId,
     active: computed(() => toView(location.value)),
