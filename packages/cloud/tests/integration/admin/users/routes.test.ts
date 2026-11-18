@@ -4,15 +4,14 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
-  createAdminUserService,
-  createAuthenticationEmailService,
   createBetterAuthAdapter,
   createCloudApp,
   createTransactionalEmailService,
   parseCloudServerConfig,
-  type AuthenticationEmailService,
-  type CloudActor
+  type CloudActor,
+  type TransactionalEmailService
 } from '#cloud/server'
+import { decryptTransactionalEmailPayload } from '#cloud/server/email'
 import { testClient } from 'hono/testing'
 import * as v from 'valibot'
 
@@ -37,6 +36,7 @@ const answerSchema = v.union([
 ])
 
 const ADMIN_ID = 'aaaaaaaa-1111-4111-8111-111111111111'
+const EMAIL_SECRET = 'notice-test-secret-at-least-32-characters'
 const GRACE_ID = 'bbbbbbbb-2222-4222-8222-222222222222'
 const ada: CloudActor = {
   userId: ADMIN_ID,
@@ -52,11 +52,20 @@ afterEach(async () => {
 
 /**
  * Ada's server, which signs in with Google and not with passwords, and one person on it whose
- * Google account and password (set before passwords were turned off) are both on file.
+ * Google account and password (set before passwords were turned off) are both on file. `email`
+ * wraps the server's email queue, as a test that reads what it sends needs.
  */
-async function server(userId: string, name: string) {
+async function server(
+  userId: string,
+  name: string,
+  email: (queue: TransactionalEmailService) => TransactionalEmailService = (queue) => queue
+) {
   const runtime = await createCloudTestDatabase()
   opened.push(runtime)
+  const queue = createTransactionalEmailService(runtime.database, {
+    encryptionSecret: EMAIL_SECRET,
+    from: 'cloud@example.com'
+  })
   await runtime.database
     .insertInto('user')
     .values({ id: userId, name, email: `${name.toLowerCase()}@example.com`, emailVerified: true })
@@ -77,7 +86,8 @@ async function server(userId: string, name: string) {
       database: runtime.database,
       auth: createBetterAuthAdapter(config, runtime.database),
       objects: createMemoryObjectStore().store,
-      resolveSession: async () => ada
+      resolveSession: async () => ada,
+      transactionalEmail: email(queue)
     }),
     undefined,
     undefined,
@@ -101,7 +111,12 @@ async function server(userId: string, name: string) {
     )
     return detail.methods.map((method) => [method.provider, method.canRemove])
   }
-  return { password, google, remove, left, offered, database: runtime.database }
+  const queued = () =>
+    runtime.database
+      .selectFrom('transactionalEmail')
+      .select(['id', 'kind', 'recipientEmailNormalized as recipient', 'payloadEncrypted'])
+      .execute()
+  return { password, google, remove, left, offered, queued }
 }
 
 describe('admin people routes', () => {
@@ -139,30 +154,36 @@ describe('admin people routes', () => {
   })
 
   test('queue the removal’s notice in its transaction, so neither outlives the other', async () => {
-    const { password, left, database } = await server(GRACE_ID, 'Grace')
-    const queue = createTransactionalEmailService(database, {
-      encryptionSecret: 'notice-test-secret-at-least-32-characters',
-      from: 'cloud@example.com'
-    })
-    const notices = createAuthenticationEmailService(queue, config.publicURL)
-    const removing = (send: AuthenticationEmailService['sendTwoStepChanged']) =>
-      createAdminUserService(database, createBetterAuthAdapter(config, database), {
-        notify: { ...notices, sendTwoStepChanged: send }
-      }).removeSignInMethod(ADMIN_ID, GRACE_ID, password.id)
-    const queued = () => database.selectFrom('transactionalEmail').select('kind').execute()
-
-    // The real notice is queued, then something after it fails: both go.
-    await expect(
-      removing(async (input, transaction) => {
-        await notices.sendTwoStepChanged(input, transaction)
-        throw new Error('after the notice')
-      })
-    ).rejects.toThrow('after the notice')
+    // The queue takes the first notice, then fails: the removal must go with it.
+    let failing = true
+    const { password, remove, left, queued } = await server(GRACE_ID, 'Grace', (queue) => ({
+      ...queue,
+      async enqueue(input, transaction) {
+        const id = await queue.enqueue(input, transaction)
+        if (failing) throw new Error('after the notice')
+        return id
+      }
+    }))
+    expect((await remove(password.id)).status).toBe(500)
     expect(await queued()).toEqual([])
     expect(await left()).toHaveLength(2)
 
-    await removing(notices.sendTwoStepChanged)
-    expect(await queued()).toEqual([{ kind: 'two-step-changed' }])
+    failing = false
+    expect((await remove(password.id)).status).toBe(200)
     expect(await left()).toEqual(['google'])
+    const [notice] = await queued()
+    expect(notice).toMatchObject({ kind: 'two-step-changed', recipient: 'grace@example.com' })
+    if (!notice?.payloadEncrypted) throw new Error('The removal queued no notice')
+    // Read the sealed payload back as delivery would.
+    const content = await decryptTransactionalEmailPayload(
+      EMAIL_SECRET,
+      notice.id,
+      'two-step-changed',
+      notice.payloadEncrypted
+    )
+    expect(content.payload).toMatchObject({
+      change: 'sign-in-method-removed',
+      method: 'credential'
+    })
   })
 })
