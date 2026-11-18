@@ -62,6 +62,7 @@ export default defineConfig(
       snap: './src/snap.ts',
       'source-metadata': './src/source-metadata.ts',
       'statuses/index': './src/statuses/index.ts',
+      strokes: './src/strokes.ts',
       'text/index': './src/text/index.ts',
       'text/direction': './src/text/direction.ts',
       'text/picture': './src/text/picture.ts',

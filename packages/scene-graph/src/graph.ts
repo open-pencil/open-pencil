@@ -25,6 +25,7 @@ import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
 import type { Color, Rect, Vector } from './primitives'
 import { markSourceFieldsEdited } from './source-metadata'
+import { strokeLineChanges } from './strokes'
 import { textCacheInvalidationChanges } from './text/picture'
 import { remapCopiedReferences } from './transfer/copied'
 import type {
@@ -464,6 +465,7 @@ export class SceneGraph {
 
   createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
     const node = createDefaultNode(() => this.generateEntityId(), type, overrides)
+    Object.assign(node, strokeLineChanges(node, overrides))
     const parent = this.nodes.get(parentId)
     this.willChangeNode(parent)
     parent?.childIds.push(node.id)
@@ -586,7 +588,7 @@ export class SceneGraph {
   }
   updateNodePreview(id: string, changes: Partial<SceneNode>): void {
     const node = this.nodes.get(id)
-    if (node) changes = this.sizedChanges(node, changes)
+    if (node) changes = this.impliedChanges(node, changes)
     const appliedChanges = updateNodePreview(this, id, changes, (node, applied) => {
       for (const observer of this.changeObservers) observer.previewed?.(node)
       for (const observe of this.previewObservers) observe(node, applied)
@@ -606,12 +608,16 @@ export class SceneGraph {
 
     const node = this.nodes.get(id)
     if (!node) return
-    this.applyNodeChanges(node, this.sizedChanges(node, omitBy(changes, isUndefined)))
+    this.applyNodeChanges(node, this.impliedChanges(node, omitBy(changes, isUndefined)))
   }
 
-  /** A size set from outside layout, with what it also sets on a generated frame. */
-  private sizedChanges(node: SceneNode, changes: Partial<SceneNode>): Partial<SceneNode> {
-    return this.isApplyingLayout ? changes : withGeneratedFrameSize(node, changes)
+  /**
+   * `changes` with what they also set: a size from outside layout on a generated frame, and
+   * strokes and the layer's line fields kept in agreement (`strokeLineChanges`).
+   */
+  private impliedChanges(node: SceneNode, changes: Partial<SceneNode>): Partial<SceneNode> {
+    const sized = this.isApplyingLayout ? changes : withGeneratedFrameSize(node, changes)
+    return { ...sized, ...strokeLineChanges(node, sized) }
   }
 
   /** Replay captured properties without dropping explicit undefined values or absent keys. */

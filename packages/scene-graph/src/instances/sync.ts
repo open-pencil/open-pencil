@@ -8,7 +8,8 @@ import type { NodeCloneMode } from '../copy'
 import type { SceneGraph } from '../graph'
 import { scaleNodeChanges } from '../scaling/node'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
-import type { SceneNode } from '../types'
+import { STROKE_LINE_FIELDS, STROKE_LINE_KEYS, withStrokeLines } from '../strokes'
+import type { SceneNode, Stroke } from '../types'
 import { resolvedNumericBindings } from '../variables/bindings'
 import { isNumericVariableBindingField } from '../variables/fields'
 import {
@@ -150,6 +151,7 @@ export function updateSyncedProps(
   kept: (field: string) => boolean = () => false
 ): void {
   resolveBoundNumbersInPlace(graph, target, updates, kept)
+  if (updates.strokes) updates.strokes = keepOwnStrokeLines(target, updates.strokes, kept)
   if (updates.fills || updates.strokes || updates.boundVariables) {
     applySyncedModes(graph, target, updates)
     keepCopyBoundPaints(graph, target, updates)
@@ -170,6 +172,23 @@ export function updateSyncedProps(
     changed.fillStyleId = updates.fillStyleId
   }
   graph.updateNode(target.id, changed)
+}
+
+/**
+ * Strokes a component gives a copy that keeps its own weight, alignment, cap, join, or dash draw
+ * with the copy's, as Figma keeps a stroke weight override when the component's color changes.
+ */
+function keepOwnStrokeLines(
+  target: SceneNode,
+  strokes: Stroke[],
+  kept: (field: string) => boolean
+): Stroke[] {
+  const own = STROKE_LINE_KEYS.filter((key) => kept(STROKE_LINE_FIELDS[key]))
+  if (own.length === 0) return strokes
+  return withStrokeLines(
+    strokes,
+    Object.fromEntries(own.map((key) => [key, target[STROKE_LINE_FIELDS[key]]]))
+  )
 }
 
 /**

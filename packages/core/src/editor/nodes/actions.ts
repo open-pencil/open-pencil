@@ -5,6 +5,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
+import { strokeLineChanges } from '@open-pencil/scene-graph/strokes'
 import { regionFillChanges } from '@open-pencil/scene-graph/vector-network'
 
 import {
@@ -82,6 +83,7 @@ export function createNodeActions(ctx: EditorContext) {
     // (path text is textAutoResize NONE so they don't collide today).
     const nextChanges = styleDetachmentChanges(node, {
       ...changes,
+      ...strokeLineChanges(node, changes),
       ...regionFillChanges(node, changes),
       ...textAutoResizeChanges(node, changes),
       ...pathTextEditChanges(node, changes)
@@ -112,6 +114,7 @@ export function createNodeActions(ctx: EditorContext) {
     // Same ordering rationale as updateNode: reflowed path-text glyphs win.
     const nextChanges = styleDetachmentChanges(node, {
       ...changes,
+      ...strokeLineChanges(node, changes),
       ...regionFillChanges(node, changes),
       ...textAutoResizeChanges(node, changes),
       ...pathTextEditChanges(node, changes)

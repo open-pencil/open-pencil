@@ -134,8 +134,7 @@ describe('strokes with sides of their own weights, as in Figma', () => {
           rounded(graph, hostId)
           const frame = graph.getNode(expectDefined(graph.getNode(hostId)).childIds[0])
           if (!frame) return
-          frame.strokeCap = strokeCap
-          frame.strokes = frame.strokes.map((stroke) => ({ ...stroke, dashPattern: [20, 10] }))
+          graph.updateNode(frame.id, { strokeCap, dashPattern: [20, 10] })
         },
         70,
         160,
