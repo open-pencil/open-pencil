@@ -376,7 +376,9 @@ function interpretRoot(
     modes: ModeScope
   ): Subtree => {
     const componentId = guidToString(effective)
-    if (!sources.has(componentId)) {
+    // An instance standing in for a component that a repair left out reads as gone, as it is
+    // once the repair is saved.
+    if (!sources.has(componentId) || handling.dropped().has(componentId)) {
       // Layers addressed into the missing subtree have nothing to configure.
       if (!options.onMissingComponent) throw new Error(`Missing source node ${componentId}`)
       options.onMissingComponent({ ownerId: owner.id, componentId })

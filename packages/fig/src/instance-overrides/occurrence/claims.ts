@@ -8,7 +8,7 @@ import { declareVariableBindingUnits } from '../bindings/variables'
 import { applyDerivedEntry } from '../derived-symbol-data'
 import type { PropertyLayer } from '../layers'
 import {
-  definitionOf,
+  parentIdOf,
   recordMatches,
   resolvesInSourceComponent,
   type InterpreterIndex
@@ -45,9 +45,25 @@ export function createClaimContext(
   }
 }
 
+/** Whether `ancestorId` holds the record `id`, by the records' parents. */
+function holds(index: InterpreterIndex, ancestorId: string, id: string): boolean {
+  const parentOf = (child: string) => {
+    const record = index.sources.get(child)
+    return record && parentIdOf(record)
+  }
+  const seen = new Set<string>()
+  for (let current = parentOf(id); current !== undefined; current = parentOf(current)) {
+    if (current === ancestorId) return true
+    if (seen.has(current)) return false
+    seen.add(current)
+  }
+  return false
+}
+
 /**
- * Whether a path segment names an instance repaired out of the definition `searched` expands,
- * as Figma deletes it. One left out of another definition does not make the path valid.
+ * Whether a path segment names an instance repaired out of what `searched` shows, as Figma
+ * deletes it: the component an instance expands, or a container's own layers. One left out
+ * anywhere else does not make the path valid.
  */
 function isDroppedSegment(
   { index, dropped }: ClaimContext,
@@ -55,15 +71,11 @@ function isDroppedSegment(
   segment: GUID
 ): boolean {
   const left = dropped()
-  if (left.size === 0 || !searched.mainComponentId) return false
+  if (left.size === 0) return false
+  const scope = searched.mainComponentId ?? searched.sourceId
   for (const id of left) {
     const record = index.sources.get(id)
-    if (
-      record &&
-      recordMatches(record, segment) &&
-      definitionOf(index, id) === searched.mainComponentId
-    )
-      return true
+    if (record && recordMatches(record, segment) && holds(index, scope, id)) return true
   }
   return false
 }

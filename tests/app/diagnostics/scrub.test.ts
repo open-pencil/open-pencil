@@ -132,6 +132,24 @@ describe('scrubDiagnosticText', () => {
     }
   })
 
+  test('removes a chunk-shaped key in the query of a page-origin URL', () => {
+    const token = 'Qw3rTy7uIo9pAs5dFg2hJkLz8xCv6bNm1Q-abcdefgh'
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'location')
+    Object.defineProperty(globalThis, 'location', {
+      value: { origin: 'https://app.openpencil.dev' },
+      configurable: true
+    })
+    try {
+      const scrubbed = scrubDiagnosticText(
+        `fetch HTTPS://app.openpencil.dev/index.html?/${token}.js failed`
+      )
+      expect(scrubbed).not.toContain(token)
+    } finally {
+      if (descriptor) Object.defineProperty(globalThis, 'location', descriptor)
+      else Reflect.deleteProperty(globalThis, 'location')
+    }
+  })
+
   test('removes a chunk-shaped key from another host', () => {
     const url = 'https://cdn.example.com/static/assets/Qw3rTy7uIo9pAs5dFg2hJk-abcdefgh.js'
     expect(scrubDiagnosticText(`fetch ${url} failed`)).toBe(

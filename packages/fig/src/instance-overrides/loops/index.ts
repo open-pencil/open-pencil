@@ -72,11 +72,27 @@ function repair(sources: ComponentLoopSources): Set<string> {
       const id = idOf(record)
       if (id !== undefined) layer.set(id, layer.size)
     }
+    // A component defined inside this one is expanded with it, so it is walked where it lies.
+    const nested: ComponentChoice[] = []
+    for (const record of subtree(sources.order, componentId)) {
+      const id = idOf(record)
+      const parent = parentIdOf(record)
+      if (
+        id !== undefined &&
+        id !== componentId &&
+        record.type === 'SYMBOL' &&
+        parent !== undefined &&
+        definitionOf(sources.order, parent) === componentId
+      )
+        nested.push({ ownerId: id, componentId: id })
+    }
     const discover = () =>
-      sources
-        .discover(index, componentId, dropped)
-        .filter(({ ownerId }) => definitionOf(sources.order, ownerId) === componentId)
-        .toSorted((a, b) => (layer.get(a.ownerId) ?? 0) - (layer.get(b.ownerId) ?? 0))
+      [
+        ...sources
+          .discover(index, componentId, dropped)
+          .filter(({ ownerId }) => definitionOf(sources.order, ownerId) === componentId),
+        ...nested
+      ].toSorted((a, b) => (layer.get(a.ownerId) ?? 0) - (layer.get(b.ownerId) ?? 0))
     const handled = new Set<string>()
     let choices = discover()
     for (let next = 0; next < choices.length; next++) {

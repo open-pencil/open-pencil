@@ -149,15 +149,8 @@ function holderLookup(parentOf: ParentOf, named: ReadonlySet<string>) {
   }
 }
 
-/**
- * Each named record to the records it leads to. `components` are the document's component
- * definitions, which no other record holds.
- */
-function namedEdges(
-  parentOf: ParentOf,
-  naming: Naming,
-  components: ReadonlySet<string>
-): Map<string, string[]> {
+/** Each named record to the records it leads to. */
+function namedEdges(parentOf: ParentOf, naming: Naming): Map<string, string[]> {
   const named = new Set<string>()
   for (const [, targets] of naming) for (const target of targets) named.add(target)
   const holderOf = holderLookup(parentOf, named)
@@ -172,9 +165,9 @@ function namedEdges(
     if (holder !== null) link(holder, targets)
   }
   // A named record inside another is expanded with it, so the outer one leads to it too: a
-  // self-instance that some placement also uses as its base still closes its loop.
+  // self-instance that some placement also uses as its base still closes its loop, and so does
+  // a component defined inside the component it holds an instance of.
   for (const id of named) {
-    if (components.has(id)) continue
     const parent = parentOf(id)
     const holder = parent === undefined ? null : holderOf(parent)
     if (holder !== null) link(holder, [id])
@@ -218,12 +211,10 @@ export function createReferenceGraph(parentOf: ParentOf) {
   const defaults = new Map<string, string[]>()
   /** Records with a definition that takes its default from an ancestor's, as a variant's do. */
   const linking: string[] = []
-  const components = new Set<string>()
   return {
     add(record: NodeChange): void {
       const id = idOf(record)
       if (id === undefined) return
-      if (record.type === 'SYMBOL') components.add(id)
       const named = namedRecords(record)
       const definitions = record.componentPropDefs as ComponentPropDef[] | undefined
       if (!definitions) {
@@ -260,7 +251,7 @@ export function createReferenceGraph(parentOf: ParentOf) {
         const inherited = definedAbove(parentOf(id), new Set([id]))
         if (inherited.length > 0) entries.push([id, [...inherited]])
       }
-      const edges = namedEdges(parentOf, entries, components)
+      const edges = namedEdges(parentOf, entries)
       const looped = recordsInLoops(edges)
       if (looped.size === 0) return looped
       const reaching = reachingBack(edges, looped)

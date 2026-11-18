@@ -61,9 +61,15 @@ const loopedFile = () =>
     instanceOf(21, 20, 10)
   ])
 
-const savedIds = async (graph: Awaited<ReturnType<typeof parseFigFile>>) =>
-  parseFigBuffer((await exportFigFile(graph)).slice().buffer as ArrayBuffer).nodeChanges.flatMap(
-    (change) => (change.guid ? [`${change.guid.sessionID}:${change.guid.localID}`] : [])
+const idOf = (change: NodeChange) =>
+  change.guid ? `${change.guid.sessionID}:${change.guid.localID}` : ''
+
+/** The saved records, by id. */
+const saved = async (graph: Awaited<ReturnType<typeof parseFigFile>>) =>
+  new Map(
+    parseFigBuffer((await exportFigFile(graph)).slice().buffer as ArrayBuffer).nodeChanges.map(
+      (change) => [idOf(change), change]
+    )
   )
 
 test('a save drops the instance a component loop repair left out', async () => {
@@ -73,14 +79,15 @@ test('a save drops the instance a component loop repair left out', async () => {
   ).toEqual([{ instanceId: '1:21' }])
 
   // Unedited, the document still differs from its archive by the repair.
-  const unedited = await savedIds(graph)
-  expect(unedited).toContain('1:11')
-  expect(unedited).not.toContain('1:21')
+  const unedited = await saved(graph)
+  expect(unedited.has('1:11')).toBe(true)
+  expect(unedited.has('1:21')).toBe(false)
 
   graph.updateNode(graph.getPages()[0].id, { name: 'Edited page' })
-  const edited = await savedIds(graph)
-  expect(edited).toContain('1:11')
-  expect(edited).not.toContain('1:21')
+  const edited = await saved(graph)
+  expect(edited.get('1:1')?.name).toBe('Edited page')
+  expect(edited.has('1:11')).toBe(true)
+  expect(edited.has('1:21')).toBe(false)
 })
 
 test.each([false, true])(
@@ -96,8 +103,27 @@ test.each([false, true])(
       ]),
       { populate: 'all' }
     )
-    const saved = await savedIds(graph)
-    expect(saved).toContain('1:10')
-    expect(saved).not.toContain('1:11')
+    const records = await saved(graph)
+    expect(records.has('1:10')).toBe(true)
+    expect(records.has('1:11')).toBe(false)
+    // The placement keeps its record as written; its base is gone, as the first read showed it.
+    if (usedAsBase) expect(records.get('1:12')?.symbolData?.symbolID).toEqual(guid(11))
   }
 )
+
+test('a save drops the instance a component defined inside its own component holds', async () => {
+  const graph = await parseFigFile(
+    await archiveOf([
+      record(0, 'DOCUMENT', undefined),
+      record(1, 'CANVAS', 0),
+      record(10, 'SYMBOL', 1),
+      record(20, 'SYMBOL', 10),
+      instanceOf(21, 20, 10),
+      instanceOf(30, 1, 20)
+    ]),
+    { populate: 'all' }
+  )
+  const records = await saved(graph)
+  expect(records.has('1:20')).toBe(true)
+  expect(records.has('1:21')).toBe(false)
+})

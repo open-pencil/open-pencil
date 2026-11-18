@@ -30,8 +30,8 @@ function looksLikeToken(segment: string): boolean {
  */
 const CHUNK_NAME = /^[\w.-]+-[\w-]{8}$/
 const CODE_EXTENSION = /^\.(?:m?js|css|wasm)\b/
-/** The URL whose path ends where the text does: its scheme and host. */
-const URL_ENDING = /([a-z][\w+.-]*):\/\/([^\s/'"()]+)\/[^\s'"()]*$/i
+/** The URL whose path, before any query or fragment, ends where the text does: its scheme and host. */
+const URL_ENDING = /([a-z][\w+.-]*):\/\/([^\s/'"()?#]+)\/[^\s'"()?#]*$/i
 
 /** Where this app's own chunks load from: the desktop app's scheme, or the page's origin. */
 function isAppOrigin(origin: string): boolean {
