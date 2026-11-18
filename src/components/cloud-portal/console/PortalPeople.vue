@@ -160,7 +160,7 @@ defineExpose({ reload: people.reload })
         :label="messages.columnSignIn"
         :options="methods"
         size="md"
-        class="w-36"
+        :ui="{ trigger: 'w-36' }"
       />
     </template>
   </PortalTable>
