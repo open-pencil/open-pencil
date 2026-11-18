@@ -7,3 +7,4 @@
 - Text beside other items in a flex row or grid, such as a label next to an icon, wraps in the room they leave as a browser wraps it, instead of running past its container on one line (#2210).
 - Imported HTML draws a border only on the sides a page gives a width, in that side's color, so a reset such as `* { border: 0 solid }` no longer turns a transparent border into a visible line (#2210).
 - An SVG paint that refers to a `<pattern>` falls back to the color written after it, or paints nothing, instead of painting the shape black (#2210).
+- A corner radius given as a percentage, such as `border-radius: 50%` on a dot or an avatar, rounds the imported layer instead of being dropped (#2210).

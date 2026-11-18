@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { contentInsets, firstStrokeColor, hasBorder } from '#dom-css/import/box'
+import { applyCornerRadii, contentInsets, firstStrokeColor, hasBorder } from '#dom-css/import/box'
+
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 describe('border sides', () => {
   test('a side that draws no border adds no inset, whatever its width', () => {
@@ -50,5 +52,24 @@ describe('border sides', () => {
     expect(hasBorder(style)).toBe(true)
     expect(firstStrokeColor(style)).toBe('rgba(0, 0, 0, 0)')
     expect(hasBorder({ 'border-style': 'solid', 'border-width': '0px' })).toBe(false)
+  })
+
+  test('a percentage corner radius is of the box, so 50% rounds a square into a circle', () => {
+    const dot = createDefaultNode(() => 'layer', 'FRAME')
+    applyCornerRadii(
+      dot,
+      {
+        'border-top-left-radius': '50%',
+        'border-top-right-radius': '50%',
+        'border-bottom-right-radius': '50%',
+        'border-bottom-left-radius': '50%'
+      },
+      { width: 9, height: 9 }
+    )
+    const pill = createDefaultNode(() => 'layer', 'FRAME')
+    applyCornerRadii(pill, { 'border-radius': '50%' }, { width: 80, height: 20 })
+
+    expect(dot.cornerRadius).toBe(4.5)
+    expect(pill.cornerRadius).toBe(10)
   })
 })

@@ -198,7 +198,7 @@ function applyElementStyle(
   const opacity = parseCSSNumber(pickStyle(style, 'opacity'))
   if (opacity !== null) node.opacity = opacity
 
-  applyCornerRadii(node, style)
+  applyCornerRadii(node, style, element.layout?.box ?? node)
 
   const overflow = pickStyle(style, 'overflow')
   if (overflow === 'hidden' || overflow === 'clip') node.clipsContent = true
