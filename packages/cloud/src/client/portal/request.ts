@@ -12,6 +12,8 @@ import type { CloudAPI } from '#cloud/server/api'
 import { hc } from 'hono/client'
 import * as v from 'valibot'
 
+import { anySignal, DEADLINE_MS } from '@open-pencil/std/timing'
+
 export type CloudPortalAPIErrorKind =
   | 'authentication-required'
   | 'authorization-required'
@@ -57,10 +59,10 @@ export type CloudCall = <Output>(
  * body is checked against the contract.
  */
 export function createCloudCall(options: CloudPortalClientOptions = {}): CloudCall {
-  const timeoutMs = options.timeoutMs ?? 10_000
+  const timeoutMs = options.timeoutMs ?? DEADLINE_MS.request
   return async (send, schema, callerSignal) => {
     const timeout = AbortSignal.timeout(timeoutMs)
-    const signal = callerSignal ? AbortSignal.any([callerSignal, timeout]) : timeout
+    const signal = anySignal([callerSignal, timeout])
     let response: PortalResponse
     try {
       response = await send({ init: { signal } })

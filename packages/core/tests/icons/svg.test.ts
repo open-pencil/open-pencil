@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { Fill, VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { gradientPoint } from '@open-pencil/scene-graph/gradient'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { buildIconData, svgIconPaths } from '#core/icons/artwork'

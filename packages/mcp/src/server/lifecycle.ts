@@ -8,6 +8,8 @@ import { getRequestListener } from '@hono/node-server'
 import type { Hono } from 'hono'
 import type { WebSocketServer } from 'ws'
 
+import { SECOND_MS } from '@open-pencil/std/timing'
+
 import type { MCPToolScope } from '#mcp/tool/scope'
 import {
   parseDiscoveryInfo,
@@ -29,6 +31,13 @@ type TrackedHttpServer = HttpServer & {
 }
 
 /** Create an HTTP server bound to the Hono app. Each server can listen on one address. */
+/** How long checking whether a server still listens on the socket waits for it to connect. */
+const STALE_SOCKET_PROBE_MS = 500
+/** How long closing the HTTP server waits for its connections before destroying them. */
+const FORCE_CLOSE_AFTER_MS = 5 * SECOND_MS
+/** How long a WebSocket client has to close cleanly before it is terminated. */
+const SOCKET_CLOSE_GRACE_MS = 2 * SECOND_MS
+
 export function createAppServer(app: Hono): HttpServer {
   const listener = getRequestListener(app.fetch)
   const server: TrackedHttpServer = createServer((req, res) => {
@@ -203,7 +212,7 @@ export async function closeServer(srv: HttpServer | null): Promise<void> {
     for (const socket of connections ?? []) socket.destroy()
     srv.closeAllConnections()
     srv.close()
-  }, 5_000).unref()
+  }, FORCE_CLOSE_AFTER_MS).unref()
   try {
     await new Promise<void>((resolve) => {
       srv.close(() => resolve())
@@ -241,7 +250,7 @@ export async function cleanupSocket(socketPath: string | null): Promise<void> {
       // system restarts or high load, a timeout doesn't reliably indicate
       // nobody is listening. Being conservative prevents unlinking a live
       // replacement server's socket.
-      client.setTimeout(500, () => finish(true))
+      client.setTimeout(STALE_SOCKET_PROBE_MS, () => finish(true))
     })
     if (alive) return // Another server owns this socket — leave it alone.
   } catch {
@@ -337,7 +346,7 @@ export async function closeWssGracefully(wss: WebSocketServer): Promise<void> {
         }
       }
       done()
-    }, 2_000).unref()
+    }, SOCKET_CLOSE_GRACE_MS).unref()
     wss.close(() => {
       clearTimeout(graceTimer)
       done()

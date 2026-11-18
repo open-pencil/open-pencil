@@ -5,7 +5,7 @@ import { computed } from 'vue'
 
 import { figJamToolbarKind } from '@open-pencil/core'
 import type { ViewportTransform } from '@open-pencil/core/geometry'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { useCanvasVirtualReference } from '@open-pencil/vue/canvas/overlays'
 
 import { useEditorStore } from '@/app/editor/active-store'

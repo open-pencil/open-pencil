@@ -1,6 +1,6 @@
 import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { parseCSSAspectRatio, parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import type { DesignStyleDeclaration } from '../types'
 import { colorToFillFromCSS, pickStyle } from './css-values'

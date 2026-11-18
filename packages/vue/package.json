@@ -479,6 +479,7 @@
     "@nanostores/vue": "^1.1.0",
     "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
+    "@open-pencil/std": "workspace:*",
     "@tanstack/hotkeys": "^0.24.0",
     "@vueuse/core": "^14.4.0",
     "es-toolkit": "^1.52.0",

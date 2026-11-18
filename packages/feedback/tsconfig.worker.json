@@ -5,8 +5,7 @@
   "compilerOptions": {
     "paths": {
       "#feedback/*": ["./src/*"],
-      "@open-pencil/scene-graph/arrays": ["../scene-graph/src/arrays.ts"],
-      "@open-pencil/scene-graph/random": ["../scene-graph/src/random.ts"]
+      "@open-pencil/std/*": ["../std/src/*"]
     }
   }
 }

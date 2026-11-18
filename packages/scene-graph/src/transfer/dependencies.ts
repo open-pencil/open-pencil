@@ -1,4 +1,5 @@
-import { appendAll } from '../arrays'
+import { appendAll } from '@open-pencil/std/arrays'
+
 import type { SceneGraph } from '../graph'
 import { imagePaintHashes } from '../images'
 import { overriddenBindingField } from '../instances/overrides'

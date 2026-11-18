@@ -3,12 +3,12 @@ import { uniqBy } from 'es-toolkit'
 import type { DesignDocument } from '@open-pencil/dom-css'
 import type { HTMLEngine, HTMLEngineFontFace } from '@open-pencil/html-engine'
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   CSS_GENERIC_FONT_FAMILIES,
   cssFontFamilyName,
   parseCSSFontFamilies
 } from '@open-pencil/scene-graph/css'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { fontManager } from '#core/text/font/manager'

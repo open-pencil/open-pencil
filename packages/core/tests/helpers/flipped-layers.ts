@@ -1,7 +1,7 @@
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 export function solid(r: number, g: number, b: number) {

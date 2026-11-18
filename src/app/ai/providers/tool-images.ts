@@ -2,7 +2,7 @@ import type { LanguageModelMiddleware } from 'ai'
 import { partition } from 'es-toolkit'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 /**
  * Providers whose own documentation lists WebP image input, so tool images reach their models as

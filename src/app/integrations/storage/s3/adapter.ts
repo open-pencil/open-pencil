@@ -2,7 +2,7 @@ import { sumBy } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { isTauri } from '@/app/tauri/env'
 

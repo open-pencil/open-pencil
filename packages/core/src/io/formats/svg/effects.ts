@@ -1,8 +1,8 @@
 import type { Effect, SceneNode } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import { widestBlurRadius } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { subtreeRenderBounds } from '#core/geometry/render-bounds'
 import { shadowSpread } from '#core/geometry/shadows'

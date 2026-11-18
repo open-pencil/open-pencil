@@ -2,6 +2,7 @@ import { useLocalStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { markRaw, ref, shallowRef, watch, type Raw } from 'vue'
 
+import { DAY_MS } from '@open-pencil/std/timing'
 import { cloudMessages } from '@open-pencil/vue/i18n'
 
 import { recoverySessionId } from '@/app/document/recovery/session'
@@ -38,7 +39,7 @@ let saveToCloud: SaveToCloud | null = null
 const connecting = shallowRef<{ store: Raw<EditorStore>; serverId: string } | null>(null)
 
 /** How long a draft waits for its person to finish signing up, as a link from email may. */
-const PENDING_DRAFT_MS = 24 * 60 * 60 * 1000
+const PENDING_DRAFT_MS = DAY_MS
 
 const pendingDraftSchema = v.object({
   serverId: v.string(),

@@ -10,9 +10,9 @@ import {
 } from '@open-pencil/core/icons'
 import { createIconMatcher, fetchIconIndex, type IconMatcher } from '@open-pencil/core/icons/match'
 import { createCanvasKitRasterCodec, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { untilAborted } from '@open-pencil/std/timing'
 
 import { browserWebFontFetch } from '@/app/editor/fonts/browser-fetch'
-import { withAbortSignal } from '@/app/runtime/abort'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { tauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
@@ -71,7 +71,7 @@ export function appIconMatcher(renderer: SkiaRenderer, signal?: AbortSignal): Ic
       return png && codec.decode(png)
     }
   })
-  return signal ? (svgs) => withAbortSignal(matcher(svgs), signal) : matcher
+  return signal ? (svgs) => untilAborted(matcher(svgs), signal) : matcher
 }
 
 /**

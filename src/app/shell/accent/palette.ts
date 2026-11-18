@@ -2,7 +2,6 @@ import { maxBy } from 'es-toolkit'
 
 import type { SelectionTheme } from '@open-pencil/core/canvas'
 import { SELECTION_COLOR } from '@open-pencil/core/constants'
-import { minOf } from '@open-pencil/scene-graph/arrays'
 import {
   colorToHex,
   contrastRatio,
@@ -12,6 +11,7 @@ import {
 } from '@open-pencil/scene-graph/color'
 import { WHITE } from '@open-pencil/scene-graph/constants'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { minOf } from '@open-pencil/std/arrays'
 
 import type { AccentPreference, AccentPreset } from './schema'
 

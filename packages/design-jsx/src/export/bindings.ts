@@ -1,7 +1,7 @@
 import { isEqual } from 'es-toolkit'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { insertAll } from '@open-pencil/scene-graph/arrays'
+import { insertAll } from '@open-pencil/std/arrays'
 
 import {
   PADDING_FIELDS,

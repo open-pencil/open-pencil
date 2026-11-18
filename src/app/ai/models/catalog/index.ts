@@ -3,6 +3,7 @@ import * as v from 'valibot'
 
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { AIProviderID, ModelOption } from '@open-pencil/core/constants'
+import { DAY_MS } from '@open-pencil/std/timing'
 
 import { cachedRemoteJSON } from '@/app/cache/remote'
 
@@ -10,7 +11,7 @@ import { listChatGPTModels } from './chatgpt'
 
 const MODELS_DEV_URL = 'https://models.dev/api.json'
 const MODELS_DEV_CACHE_KEY = 'models-dev/catalog'
-const MODELS_DEV_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const MODELS_DEV_CACHE_TTL_MS = DAY_MS
 
 const PROVIDER_KEYS: Partial<Record<AIProviderID, readonly string[]>> = {
   openrouter: ['openrouter'],

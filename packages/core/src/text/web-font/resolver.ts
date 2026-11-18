@@ -1,8 +1,8 @@
 import { uniq } from 'es-toolkit'
 import type { FontFaceData, RemoteFontSource, ResolveFontResult } from 'unifont'
 
-import { minOf } from '@open-pencil/scene-graph/arrays'
 import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
+import { minOf } from '@open-pencil/std/arrays'
 
 import { IS_BROWSER } from '#core/constants'
 import {

@@ -21,7 +21,7 @@ import {
   type StorybookFile,
   type StorybookFramework
 } from '@open-pencil/dom-css'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { requireFile } from '#cli/app/client'
 import { requestedPage } from '#cli/app/target'
@@ -241,7 +241,7 @@ function watchDocuments(files: string[], onChange: (file: string) => Promise<voi
       clearTimeout(timers.get(file))
       timers.set(
         file,
-        setTimeout(() => enqueue(file), 200)
+        setTimeout(() => enqueue(file), SAVE_SETTLE_MS)
       )
     })
   }
@@ -281,6 +281,9 @@ function outputFor(args: StorybookArgs, file: string): string {
 function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
+
+/** An editor saves a file in a few writes; it is exported once they stop for this long. */
+const SAVE_SETTLE_MS = 200
 
 export async function exportStorybookFromFile(args: StorybookArgs): Promise<void> {
   if (args.node) {

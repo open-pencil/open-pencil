@@ -19,7 +19,6 @@ import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { PluginDataEntry, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   readBehaviour,
   renameBehaviourProperties,
@@ -28,6 +27,7 @@ import {
 import { orderKeyBetween, siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID, Rect, Size } from '@open-pencil/scene-graph/primitives'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'

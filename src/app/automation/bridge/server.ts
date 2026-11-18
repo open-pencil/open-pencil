@@ -6,7 +6,8 @@
  */
 import * as v from 'valibot'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
+import { SECOND_MS } from '@open-pencil/std/timing'
 
 import { endAgentSession, readAgentSession } from '@/app/automation/agents'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
@@ -45,6 +46,9 @@ const sessionSockets = new Map<string, Set<WebSocket>>()
  * writes the paths the file tools name. Each folder is one URL segment, so the URL ends in the
  * file's own name; a leading separator stays as an empty segment, as in a Windows share's `\\`.
  */
+/** How long the bridge waits before connecting again: the app restarts in about this long. */
+const RECONNECT_DELAY_MS = 2 * SECOND_MS
+
 export function automationFiles(automationURL: string, token: string): AutomationFiles {
   const base = new URL(automationURL.replace(/^ws/, 'http'))
   return {
@@ -173,7 +177,7 @@ export function connectAutomation(
 
   function scheduleReconnect() {
     clearTimeout(reconnectTimer)
-    reconnectTimer = setTimeout(connect, 2000)
+    reconnectTimer = setTimeout(connect, RECONNECT_DELAY_MS)
   }
 
   function disconnect() {

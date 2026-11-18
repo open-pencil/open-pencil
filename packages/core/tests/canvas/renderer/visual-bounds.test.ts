@@ -8,11 +8,11 @@ import {
   type SceneNode,
   type Stroke
 } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { blurReach, shadowReach } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'

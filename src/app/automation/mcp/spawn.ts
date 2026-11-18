@@ -6,7 +6,7 @@ import { compact } from 'es-toolkit/array'
 
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { serializeDisabledTools } from '@open-pencil/mcp/tools'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { canRunHostProcesses } from '@/app/tauri/capabilities'

@@ -8,12 +8,14 @@ import type { Kysely, Transaction } from 'kysely'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 import { toString } from 'mdast-util-to-string'
 
+import { DAY_MS } from '@open-pencil/std/timing'
+
 /**
  * How many comment emails one person's comments may send in a day, and how many one account may
  * receive. A comment's words are the author's, so without a budget mentions are a way to send spam.
  */
 export const COMMENT_EMAIL_BUDGET = {
-  windowMs: 24 * 60 * 60 * 1000,
+  windowMs: DAY_MS,
   perSender: 200,
   perRecipient: 50
 } as const

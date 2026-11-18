@@ -1,7 +1,7 @@
 import type { LayoutMode, SceneNode } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { wrapParentId } from '#core/editor/structure/container-wrap'
 import type { EditorContext } from '#core/editor/types'

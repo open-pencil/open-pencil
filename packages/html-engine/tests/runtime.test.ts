@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { htmlToDesignDocument, type DesignDocument, type DesignElement } from '@open-pencil/dom-css'
 import { createHTMLEngineRuntime, loadHTMLEngine } from '@open-pencil/html-engine'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { engineWithInter } from './helpers/engine'
