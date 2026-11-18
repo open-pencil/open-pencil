@@ -621,5 +621,12 @@
   "sitePoweredBy": "Funciona con OpenPencil",
   "siteSourceCode": "Código fuente",
   "communityNoDesigns": "Aún no hay diseños aquí.",
-  "communityNoBoards": "Aún no hay pizarras aquí."
+  "communityNoBoards": "Aún no hay pizarras aquí.",
+  "pendingHiddenEmail": "¿Ya tienes una cuenta aquí? Cierra sesión e inicia sesión en ella como siempre: Apple ocultó tu correo, así que esta cuenta es nueva.",
+  "columnSignIn": "Inicio de sesión",
+  "removeSignInMethod": "Quitar",
+  "removeSignInMethodHeading": "¿Quitar {provider} de las formas de iniciar sesión de {name}?",
+  "removeSignInMethodDescription": "No podrá volver a iniciar sesión con este método salvo que lo añada de nuevo, y recibirá un correo avisándole. Los dispositivos con la sesión iniciada siguen así hasta que cierres todas sus sesiones.",
+  "activitySignInMethodRemoved": "quitó una forma de iniciar sesión de",
+  "signInAny": "Cualquier inicio de sesión"
 }

@@ -631,5 +631,12 @@
   "sitePoweredBy": "Работает на OpenPencil",
   "siteSourceCode": "Исходный код",
   "communityNoDesigns": "Здесь пока нет дизайнов.",
-  "communityNoBoards": "Здесь пока нет досок."
+  "communityNoBoards": "Здесь пока нет досок.",
+  "pendingHiddenEmail": "Уже есть аккаунт здесь? Выйдите и войдите в него как обычно: Apple скрыла вашу почту, поэтому этот аккаунт новый.",
+  "columnSignIn": "Вход",
+  "removeSignInMethod": "Удалить",
+  "removeSignInMethodHeading": "Удалить способ входа {provider} у {name}?",
+  "removeSignInMethodDescription": "Войти этим способом больше не получится, пока его не добавят снова; человек получит об этом письмо. Устройства, на которых уже выполнен вход, остаются в системе, пока вы не завершите все сеансы.",
+  "activitySignInMethodRemoved": "— удаление способа входа:",
+  "signInAny": "Любой способ входа"
 }

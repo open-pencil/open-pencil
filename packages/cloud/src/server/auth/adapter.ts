@@ -39,6 +39,12 @@ export type CloudAuthenticationMethodRecord = {
   createdAt: Date
 }
 
+/**
+ * Where a link sends the browser, and the cookies that let the provider's callback match it to this
+ * request: the browser has to keep them, or the callback refuses the link.
+ */
+export type SocialLinkStart = { url: string; headers: Headers }
+
 export interface CloudAuthAdapter {
   handler(request: Request): Promise<Response>
   resolveIdentity(headers: Headers): Promise<CloudIdentity | null>
@@ -74,7 +80,7 @@ export interface CloudAuthAdapter {
   startSocialLink(
     headers: Headers,
     input: { provider: 'google' | 'apple'; callbackURL: string }
-  ): Promise<string>
+  ): Promise<SocialLinkStart>
   unlinkAuthenticationMethod(headers: Headers, methodId: string): Promise<void>
   banUser(headers: Headers, userId: string, reason?: string): Promise<void>
   unbanUser(headers: Headers, userId: string): Promise<void>

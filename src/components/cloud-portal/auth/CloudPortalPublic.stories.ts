@@ -97,6 +97,13 @@ export const WaitingForApproval = story(`
     <template #icon><IconClock class="size-5" /></template>
     <template #actions><AppButton variant="ghost">Sign out</AppButton></template>
   </PortalNotice>`)
+/** Apple's Hide My Email starts a new account, so the page says how to reach an existing one. */
+export const WaitingWithHiddenEmail = story(`
+  <PortalNotice :host="host" tone="waiting" heading="Your request is with an administrator" description="We email cg4k6dj97t@privaterelay.appleid.com when you can sign in. Nothing else to do for now.">
+    <template #icon><IconClock class="size-5" /></template>
+    <p class="text-center text-xs text-muted">Already have an account here? Sign out and sign in to it as you usually do: Apple hid your email, so this one is new.</p>
+    <template #actions><AppButton variant="ghost">Sign out</AppButton></template>
+  </PortalNotice>`)
 export const TwoStep = story(`<PortalTwoFactor :host="host" method="authenticator" passkeys />`)
 export const TwoStepRecoveryCode = story(
   `<PortalTwoFactor :host="host" method="recovery" error="This code was already used." />`

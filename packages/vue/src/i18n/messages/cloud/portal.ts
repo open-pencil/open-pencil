@@ -2,6 +2,7 @@ import { count, params } from '@nanostores/i18n'
 
 import { i18n } from '#vue/i18n/create'
 import { communityPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/community'
+import { personPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/person'
 import { planPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/plan'
 import { requestPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/requests'
 import { accessTokenPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/tokens'
@@ -79,6 +80,8 @@ export const cloudPortalMessageDefaults = {
 
   pendingTitle: 'Your request is with an administrator',
   pendingDescription: params('We email {email} when you can sign in. Nothing else to do for now.'),
+  pendingHiddenEmail:
+    'Already have an account here? Sign out and sign in to it as you usually do: Apple hid your email, so this one is new.',
   closedTitle: 'You can’t use this server',
   closedDescription:
     'An administrator declined or removed your access. Ask them if you think this is a mistake.',
@@ -166,6 +169,7 @@ export const cloudPortalMessageDefaults = {
   ...requestPortalMessageDefaults,
   ...communityPortalMessageDefaults,
   ...planPortalMessageDefaults,
+  ...personPortalMessageDefaults,
   overview: 'Overview',
   accessRequests: 'Access requests',
   accessRequestsDescription:
@@ -365,6 +369,8 @@ export const cloudPortalMessageDefaults = {
   columnPerson: 'Person',
   columnRole: 'Role',
   columnWorkspaces: 'Workspaces',
+  columnSignIn: 'Sign-in',
+  signInAny: 'Any sign-in',
   columnWorkspace: 'Workspace',
   columnMembers: 'Members',
   columnLastActive: 'Last active',
@@ -406,26 +412,6 @@ export const cloudPortalMessageDefaults = {
   removePersonPictureDescription:
     'Their initials show in its place. They can upload another picture.',
 
-  backToPeople: 'All people',
-  personAccount: 'Account',
-  emailVerified: 'Verified',
-  emailNotVerified: 'Not verified',
-  joinedRow: 'Joined',
-  lastActiveRow: 'Last active',
-  signInMethods: 'Ways to sign in',
-  twoStepRow: 'Two-step sign-in',
-  twoStepNone: 'Not set up',
-  passkeyCount: count({ one: '{count} passkey', many: '{count} passkeys' }),
-  personWorkspaces: 'Workspaces',
-  personWorkspacesEmpty: 'Not in any workspace.',
-  workspaceMembers: count({ one: '{count} member', many: '{count} members' }),
-  workspaceRoleAdmin: 'Admin',
-  workspaceRoleEditor: 'Editor',
-  workspaceRoleViewer: 'Viewer',
-  personSessions: 'Sessions',
-  noSessions: 'Not signed in anywhere.',
-  personNotFound: 'There’s no such account',
-  personNotFoundDescription: 'It may have been removed. Go back to the list of people.',
   you: '(you)',
   administrator: 'Administrator',
   suspended: 'Suspended',
@@ -500,6 +486,7 @@ export const cloudPortalMessageDefaults = {
   activityEmailRetried: 'retried an email to',
   activityTwoStepReset: 'reset two-step sign-in for',
   activityPictureRemoved: 'removed the picture of',
+  activitySignInMethodRemoved: 'removed a way to sign in from',
   activityReason: params('Reason: {reason}'),
   activityChanged: 'changed',
   reports: 'Reports',

@@ -631,5 +631,12 @@
   "sitePoweredBy": "Działa na OpenPencil",
   "siteSourceCode": "Kod źródłowy",
   "communityNoDesigns": "Nie ma tu jeszcze projektów.",
-  "communityNoBoards": "Nie ma tu jeszcze tablic."
+  "communityNoBoards": "Nie ma tu jeszcze tablic.",
+  "pendingHiddenEmail": "Masz już tu konto? Wyloguj się i zaloguj na nie tak jak zwykle: Apple ukrył Twój adres e-mail, więc to konto jest nowe.",
+  "columnSignIn": "Logowanie",
+  "removeSignInMethod": "Usuń",
+  "removeSignInMethodHeading": "Usunąć metodę logowania {provider} (użytkownik: {name})?",
+  "removeSignInMethodDescription": "Ta osoba nie zaloguje się już tą metodą, dopóki jej ponownie nie doda, i dostanie o tym e-mail. Zalogowane urządzenia pozostaną zalogowane, dopóki nie wylogujesz jej ze wszystkich urządzeń.",
+  "activitySignInMethodRemoved": "— usunięcie metody logowania:",
+  "signInAny": "Dowolne logowanie"
 }

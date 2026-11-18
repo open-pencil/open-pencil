@@ -792,3 +792,5 @@ zh-cn:email.invitationPreview
 zh-cn:email.invitationSignatureRole
 zh-cn:email.invitationSubject
 zh-cn:email.invitationThanks
+ja:cloudPortal.pendingHiddenEmail
+zh-cn:cloudPortal.pendingHiddenEmail

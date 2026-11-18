@@ -145,6 +145,11 @@ export const emailMessageDefaults = {
   twoStepResetHeading: 'Two-step sign-in was reset',
   twoStepReset:
     'An administrator removed your authenticator app, recovery codes, and passkeys, so you can set them up again.',
+  signInMethodRemovedHeading: 'Sign-in method removed',
+  signInMethodRemoved: params(
+    'An administrator removed {method} from the ways you sign in to your account.'
+  ),
+  signInMethodPassword: 'your password',
   twoStepNotYou: 'If this wasn’t you, change your password and contact your administrator.',
   reviewSecurity: 'Review security',
 
