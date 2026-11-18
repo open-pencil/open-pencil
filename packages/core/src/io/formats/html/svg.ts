@@ -9,7 +9,7 @@ import {
   parseCSSURLReferences,
   parseFragmentReference
 } from '@open-pencil/scene-graph/css'
-import { ICON_NAME } from '@open-pencil/scene-graph/icons'
+import { ICON_NAME, iconLayerName } from '@open-pencil/scene-graph/icons'
 import { parseSVGViewBoxValue } from '@open-pencil/scene-graph/parse-path'
 
 import { drawIcon, parseIconName } from '#core/icons'
@@ -202,6 +202,11 @@ function drawNamedIcon(
   if (paths.length === 0) return true
   const color = parseCSSColor(element.computedStyle?.color) ?? BLACK
   drawIcon(graph, frameId, { ...named, ...box, paths }, Math.max(box.width, box.height), color)
+  // A layer the page gave no id or class, named only by its tag, takes the icon's name, as an
+  // icon placed from the picker does, so swapping it renames it too.
+  if (graph.getNode(frameId)?.name === element.tagName) {
+    graph.updateNode(frameId, { name: iconLayerName(`${named.prefix}:${named.name}`) })
+  }
   return true
 }
 

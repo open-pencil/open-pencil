@@ -5,8 +5,8 @@ import SettingsResetButton from './SettingsResetButton.vue'
 
 /**
  * One line of a `SettingsGroup`: a label, an optional description, and its control on the right.
- * As a `label`, clicking the text works the control, as a switch row does. A `modified` row offers
- * Reset to default before its control, emitting `reset`.
+ * As a `label`, clicking the row works the control, as a switch row does. A `modified` row offers
+ * Reset to default beside its control, emitting `reset`.
  */
 const {
   label,
@@ -42,8 +42,15 @@ const emit = defineEmits<{ reset: [] }>()
       <slot name="description" />
     </span>
     <span class="flex shrink-0 items-center gap-1">
-      <SettingsResetButton v-if="modified" :disabled="resetDisabled" @reset="emit('reset')" />
       <slot />
+      <!-- After the control, so a label row's control is the setting's own, its first labelable
+           element, and Reset reads after the setting it resets; shown before the control. -->
+      <SettingsResetButton
+        v-if="modified"
+        class="order-first"
+        :disabled="resetDisabled"
+        @reset="emit('reset')"
+      />
     </span>
   </Primitive>
 </template>
