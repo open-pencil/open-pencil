@@ -79,6 +79,10 @@ export const enrollmentsResponseSchema = v.object({
   ...listTotals(enrollmentStatusSchema.options)
 })
 export const enrollmentReviewResponseSchema = v.object({ enrollment: enrollmentSchema })
+/** How many waiting requests were approved with the official deployment's invitation letter. */
+export const enrollmentInviteResponseSchema = v.object({
+  invited: v.pipe(v.number(), v.integer(), v.minValue(0))
+})
 
 export const cloudAdminSessionResponseSchema = v.object({ user: cloudIdentitySchema })
 

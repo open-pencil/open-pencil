@@ -20,7 +20,8 @@ export function enrollmentEmailOptions(
   return {
     publicURL: config.publicURL,
     adminRecipients: config.enrollmentAdminNotificationEmails,
-    email
+    email,
+    invitations: config.deployment === 'official'
   }
 }
 

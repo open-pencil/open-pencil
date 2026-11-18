@@ -188,10 +188,7 @@ describe('document reports', () => {
       // Read the sealed decisions back as delivery would.
       const decisions = await Promise.all(
         queued
-          .filter(
-            (row): row is typeof row & { kind: 'document-report-decided' } =>
-              row.kind === 'document-report-decided'
-          )
+          .filter((row) => row.kind === 'document-report-decided')
           .map(
             async (row) =>
               (

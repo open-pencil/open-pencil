@@ -508,6 +508,18 @@ export const AccessRequests = story(
   'People asking to join. Approving lets them sign in; each gets an email either way.',
   `<PortalAccessRequests :load="loadRequests" />`
 )
+export const AccessRequestsInvitation = story(
+  'requests',
+  'Access requests',
+  'People asking to join. Approving lets them sign in; each gets an email either way.',
+  `<PortalAccessRequests :load="loadRequests" invitation="offered" />`
+)
+export const AccessRequestsInvited = story(
+  'requests',
+  'Access requests',
+  'People asking to join. Approving lets them sign in; each gets an email either way.',
+  `<PortalAccessRequests :load="loadRequests" invitation="sent" />`
+)
 export const NoAccessRequests = story(
   'requests',
   'Access requests',

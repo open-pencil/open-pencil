@@ -122,23 +122,56 @@ describe('Cloud enrollment integration', () => {
     }
   })
 
-  test('refuses to decide a request another administrator decided meanwhile', async () => {
+  test('invites everyone waiting with the letter, once, only where invitations are offered', async () => {
     const runtime = await createCloudTestDatabase()
     try {
-      const service = createEnrollmentService(runtime.database, {
-        publicURL: 'https://cloud.example.com',
-        adminRecipients: []
+      const email = createTransactionalEmailService(runtime.database, {
+        encryptionSecret: 'enrollment-test-secret-at-least-32-characters',
+        from: 'cloud@example.com'
       })
-      await service.request({ email: 'linus@example.com', name: 'Linus' })
-      const [request] = (await service.list({ search: 'linus' })).enrollments
-      if (!request) throw new Error('Expected the request')
-      await service.review('admin-user', request.id, 'rejected', {})
+      const options = { publicURL: 'https://cloud.example.com', adminRecipients: [], email }
+      const selfHosted = createEnrollmentService(runtime.database, options)
+      const official = createEnrollmentService(runtime.database, { ...options, invitations: true })
+      await official.request({ email: 'ada@example.com', name: 'Ada' })
+      await official.request({ email: 'grace@example.com', name: 'Grace' })
+      await official.request({ email: 'linus@example.com', name: 'Linus' })
+      const [declined] = (await official.list({ search: 'linus' })).enrollments
+      if (!declined) throw new Error('Expected the request to decline')
+      await official.review('admin-user', declined.id, 'rejected', {})
 
-      // This reviewer still saw it waiting.
+      const withoutEmail = createEnrollmentService(runtime.database, {
+        ...options,
+        email: undefined,
+        invitations: true
+      })
+      for (const service of [selfHosted, withoutEmail]) {
+        await expect(service.invitePending('admin-user')).rejects.toMatchObject({
+          code: 'invitations_unavailable'
+        })
+      }
+      // Another administrator declined it after this reviewer saw it waiting.
       await expect(
-        service.review('admin-user', request.id, 'approved', { expectedStatus: 'pending' })
+        official.review('admin-user', declined.id, 'approved', {
+          invite: true,
+          expectedStatus: 'pending'
+        })
       ).rejects.toMatchObject({ code: 'invalid_enrollment_transition' })
-      expect(await service.statusForEmail('linus@example.com')).toBe('rejected')
+      expect(await official.invitePending('admin-user')).toEqual({ invited: 2 })
+      expect(await official.invitePending('admin-user')).toEqual({ invited: 0 })
+
+      expect(await official.isApproved('ada@example.com')).toBe(true)
+      expect(await official.isApproved('grace@example.com')).toBe(true)
+      expect(await official.statusForEmail('linus@example.com')).toBe('rejected')
+      const kinds = await runtime.database
+        .selectFrom('transactionalEmail')
+        .select(['kind', 'recipientEmailNormalized'])
+        .where('kind', 'in', ['enrollment-invited', 'enrollment-approved'])
+        .orderBy('recipientEmailNormalized')
+        .execute()
+      expect(kinds).toEqual([
+        { kind: 'enrollment-invited', recipientEmailNormalized: 'ada@example.com' },
+        { kind: 'enrollment-invited', recipientEmailNormalized: 'grace@example.com' }
+      ])
     } finally {
       await runtime.close()
     }

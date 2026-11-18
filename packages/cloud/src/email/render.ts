@@ -24,6 +24,7 @@ import DocumentRestored from './templates/DocumentRestored.vue'
 import EmailChangeRequested from './templates/EmailChangeRequested.vue'
 import EmailRoot from './templates/EmailRoot.vue'
 import EmailVerification from './templates/EmailVerification.vue'
+import EnrollmentInvitation from './templates/EnrollmentInvitation.vue'
 import EnrollmentNotification from './templates/EnrollmentNotification.vue'
 import EnrollmentUpdate from './templates/EnrollmentUpdate.vue'
 import NewSignIn from './templates/NewSignIn.vue'
@@ -80,6 +81,10 @@ const EMAILS: {
     component: EnrollmentUpdate,
     props: { kind: 'revoked' },
     subject: (_payload, t) => t.enrollmentRevokedSubject
+  },
+  'enrollment-invited': {
+    component: EnrollmentInvitation,
+    subject: (_payload, t) => t.invitationSubject
   },
   'admin-enrollment-notification': {
     component: EnrollmentNotification,

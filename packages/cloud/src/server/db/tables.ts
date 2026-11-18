@@ -437,24 +437,10 @@ export interface UploadStorageReservationTable {
 
 export type TransactionalEmailStatus = 'pending' | 'sending' | 'accepted' | 'failed' | 'suppressed'
 
-/**
- * Kinds that rows may still hold although nothing sends them now: the beta's invitation letter,
- * which approved the official deployment's waitlist. Delivered ones stay in the outbox as history.
- */
-export const RETIRED_TRANSACTIONAL_EMAIL_KINDS = ['enrollment-invited'] as const
-export type RetiredTransactionalEmailKind = (typeof RETIRED_TRANSACTIONAL_EMAIL_KINDS)[number]
-
-/** Whether a stored email is one Cloud still sends, rather than a retired kind kept as history. */
-export function isSendableEmailKind(
-  kind: TransactionalEmailKind | RetiredTransactionalEmailKind
-): kind is TransactionalEmailKind {
-  return !(RETIRED_TRANSACTIONAL_EMAIL_KINDS as readonly string[]).includes(kind)
-}
-
 export interface TransactionalEmailTable {
   id: string
   idempotencyKey: string
-  kind: TransactionalEmailKind | RetiredTransactionalEmailKind
+  kind: TransactionalEmailKind
   recipientEmailNormalized: string
   payloadEncrypted: string | null
   /** The language the email is written in. */

@@ -33,7 +33,8 @@ export const EMAIL_SAMPLES: TransactionalEmailContent[] = [
       'enrollment-requested',
       'enrollment-approved',
       'enrollment-rejected',
-      'enrollment-revoked'
+      'enrollment-revoked',
+      'enrollment-invited'
     ] as const
   ).map((kind): TransactionalEmailContent => ({
     kind,

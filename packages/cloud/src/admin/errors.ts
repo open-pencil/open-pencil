@@ -1,5 +1,6 @@
 export type AdminErrorCode =
   | 'invalid_enrollment_transition'
+  | 'invitations_unavailable'
   | 'last_admin_required'
   | 'self_admin_action_forbidden'
   | 'last_authentication_method'
