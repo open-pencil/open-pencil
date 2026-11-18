@@ -8,7 +8,9 @@ import { filterCanvasFiles } from '@open-pencil/vue/canvas/drop'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import { pastePoint } from '@/app/editor/clipboard/paste/content'
 import { pasteHTMLAsLayers } from '@/app/editor/clipboard/paste/web'
+import { notificationMessages } from '@/app/i18n/notifications'
 import { DOM_DOCUMENT_EXTENSIONS, isDOMDocumentFile } from '@/app/shell/menu/files'
+import { toast } from '@/app/shell/ui'
 import { showsDocument } from '@/app/tabs'
 
 /**
@@ -22,10 +24,25 @@ export async function placeFiles(
   point: Vector
 ): Promise<void> {
   const shown = filterCanvasFiles(files)
-  if (shown.length > 0) await editor.placeFiles(shown, point.x, point.y)
-  for (const page of files.filter((file) => isDOMDocumentFile(file.name))) {
-    await pasteHTMLAsLayers(editor, await page.text(), point)
+  if (shown.length > 0) {
+    await editor.placeFiles(shown, point.x, point.y).catch((error: unknown) => {
+      reportFailure(shown.map((file) => file.name).join(', '), error)
+    })
   }
+  // Each page on its own, so one that cannot be read is reported and the rest still land.
+  for (const page of files.filter((file) => isDOMDocumentFile(file.name))) {
+    try {
+      await pasteHTMLAsLayers(editor, await page.text(), point)
+    } catch (error) {
+      reportFailure(page.name, error)
+    }
+  }
+}
+
+function reportFailure(name: string, error: unknown): void {
+  console.error(`Failed to place ${name}:`, error)
+  const detail = error instanceof Error ? error.message : String(error)
+  toast.error(notificationMessages.get().openFileFailed({ name, error: detail }))
 }
 
 /** What File → Place… offers: the images and SVG the canvas places, and HTML pages. */
