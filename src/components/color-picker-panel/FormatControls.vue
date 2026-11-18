@@ -11,9 +11,9 @@ const ctx = useColorPickerPanelContext()
 
 <template>
   <!-- As in Figma, the format and its values share a row. -->
-  <div class="flex items-center gap-1">
+  <div class="flex items-center gap-0.5">
     <AppSelect
-      :ui="{ trigger: 'w-16 flex-none' }"
+      :ui="{ trigger: 'w-17 flex-none' }"
       data-test-id="color-format-select"
       :model-value="ctx.fieldFormat"
       :options="ctx.fieldOptions"

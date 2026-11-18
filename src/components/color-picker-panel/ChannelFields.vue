@@ -3,9 +3,9 @@ import { computed } from 'vue'
 
 import { fromPercent, toPercent } from '@open-pencil/vue/controls/color-model'
 import { useI18n } from '@open-pencil/vue/i18n'
-import { inputNumberValue } from '@open-pencil/vue/shared/dom-events'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
+import NumberField from '@/components/inputs/NumberField.vue'
 
 interface Channel {
   label: string
@@ -117,37 +117,36 @@ const alpha = computed(() => {
   return { value: ctx.color.a * 100, set: (v: number) => ctx.updateRGBAAlpha(v / 100) }
 })
 
-const cell =
-  'min-w-0 bg-input px-1 py-1 text-center text-xs text-surface outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none'
+/** One joined group, as Figma's: inner corners square, the shared field for limits and focus. */
+const field = {
+  root: 'min-w-0 flex-1 rounded-none first:rounded-s last:rounded-e',
+  leading: 'hidden',
+  field: 'px-0.5 text-center',
+  display: 'justify-center px-0.5 pe-0.5',
+  suffix: 'pe-1'
+}
 </script>
 
 <template>
-  <div
-    dir="ltr"
-    class="grid min-w-0 grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)] gap-px overflow-hidden rounded border border-border bg-border"
-  >
-    <input
+  <div dir="ltr" class="flex min-w-0 gap-px">
+    <NumberField
       v-for="channel in channels"
       :key="channel.label"
-      type="number"
       :aria-label="channel.label"
-      :class="cell"
-      :value="Math.round(channel.value)"
-      min="0"
+      :model-value="Math.round(channel.value)"
+      :min="0"
       :max="channel.max"
-      @change="channel.set(inputNumberValue($event))"
+      :ui="field"
+      @update:model-value="channel.set"
     />
-    <label class="flex min-w-0 items-center bg-input pe-1">
-      <input
-        type="number"
-        :aria-label="panels.alpha"
-        :class="[cell, 'w-full pe-0 text-end']"
-        :value="Math.round(alpha.value)"
-        min="0"
-        max="100"
-        @change="alpha.set(inputNumberValue($event))"
-      />
-      <span class="text-xs text-muted">%</span>
-    </label>
+    <NumberField
+      :aria-label="panels.alpha"
+      :model-value="Math.round(alpha.value)"
+      :min="0"
+      :max="100"
+      suffix="%"
+      :ui="{ ...field, root: `${field.root} flex-[1.6]` }"
+      @update:model-value="alpha.set"
+    />
   </div>
 </template>
