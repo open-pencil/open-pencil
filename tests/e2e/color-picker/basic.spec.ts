@@ -264,7 +264,12 @@ test('a press in the picker while a list in it is open closes only the list', as
   await canvas.waitForRender()
   await openFillPicker()
   await page.getByTestId('color-format-select').click()
-  await expect(page.getByRole('option')).not.toHaveCount(0)
+  const list = page.getByRole('listbox')
+  await expect(list).toBeVisible()
+  // Pressed once the list has finished opening, as a person would.
+  await list.evaluate((element) =>
+    Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished))
+  )
 
   // Over the canvas, which takes context-menu presses, the press must not reach it.
   const picker = page.locator('[data-picker-content]')
