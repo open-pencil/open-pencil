@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createCloudTokenCache } from '@/app/cloud/tokens'
+import { createDeferred } from '@/app/runtime/deferred'
 
 const MINUTE = 60_000
 
@@ -45,6 +46,21 @@ describe('Cloud token cache', () => {
       return { token: 'token', expiresAt: '2099-01-01T00:00:00.000Z' }
     })
     await expect(tokens.token()).rejects.toThrow('offline')
+    expect(await tokens.token()).toBe('token')
+  })
+  test('asks again after a signing request that never answers', async () => {
+    let attempts = 0
+    const tokens = createCloudTokenCache(
+      () => {
+        attempts++
+        return attempts === 1
+          ? createDeferred<{ token: string; expiresAt: string }>().promise
+          : Promise.resolve({ token: 'token', expiresAt: '2099-01-01T00:00:00.000Z' })
+      },
+      Date.now,
+      10
+    )
+    await expect(tokens.token()).rejects.toThrow()
     expect(await tokens.token()).toBe('token')
   })
 })

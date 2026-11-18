@@ -1,7 +1,11 @@
 import type { CloudServicesTokenSource } from '@open-pencil/cloud/client'
 
+import { withAbortSignal } from '@/app/runtime/abort'
+
 /** A token this close to expiring is replaced, so a long request does not outlive it. */
 const REFRESH_MARGIN_MS = 60_000
+/** A signing request that hasn't answered by now fails, so the next request asks again. */
+const SIGNING_DEADLINE_MS = 30_000
 
 /**
  * Keeps one short-lived token Cloud signs for a service, such as a workspace's AI or an account's
@@ -9,7 +13,8 @@ const REFRESH_MARGIN_MS = 60_000
  */
 export function createCloudTokenCache(
   request: () => Promise<{ token: string; expiresAt: string }>,
-  now: () => number = Date.now
+  now: () => number = Date.now,
+  deadlineMs = SIGNING_DEADLINE_MS
 ): CloudServicesTokenSource {
   let current: { token: string; expiresAt: number } | null = null
   let pending: Promise<string> | null = null
@@ -18,7 +23,7 @@ export function createCloudTokenCache(
       if (current && current.expiresAt - REFRESH_MARGIN_MS > now()) {
         return Promise.resolve(current.token)
       }
-      pending ??= request()
+      pending ??= withAbortSignal(request(), AbortSignal.timeout(deadlineMs))
         .then(({ token, expiresAt }) => {
           current = { token, expiresAt: Date.parse(expiresAt) }
           return token

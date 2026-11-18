@@ -127,6 +127,16 @@ describe('setting Cloud AI up on sign-in', () => {
     expect(modelSettingsSnapshot()).toEqual(settings)
   })
 
+  test('keeps a second saved connection, which a fresh install has not made', async () => {
+    const settings = freshInstall()
+    const [connection] = settings.connections
+    if (connection) settings.connections.push({ ...connection, id: 'connection-other' })
+    replaceAIModelSettings(settings)
+
+    expect(await setUpCloudAI(cloud().source)).toBe(false)
+    expect(modelSettingsSnapshot()).toEqual(settings)
+  })
+
   test('does nothing for an account whose plan includes no AI', async () => {
     expect(await setUpCloudAI(cloud(CATALOG, []).source)).toBe(false)
     expect(modelSettingsSnapshot()).toEqual(freshInstall())

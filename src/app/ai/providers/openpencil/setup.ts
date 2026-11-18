@@ -4,6 +4,7 @@ import type { RoleModels, ServiceCatalog } from '@open-pencil/cloud/contract'
 
 import { aiModelSettings, setUpRoleModels, type RoleModelChoice } from '@/app/ai/models'
 import { isUnconfiguredModelSettings } from '@/app/ai/models/settings/onboarding/apply'
+import { withAbortSignal } from '@/app/runtime/abort'
 
 import { cloudCatalogModel } from './catalog'
 import { OPENPENCIL_AI_PROVIDER } from './provider'
@@ -27,15 +28,11 @@ function choice(catalog: ServiceCatalog, modelID: string | null): RoleModelChoic
   return { modelID: id, name, capabilities }
 }
 
-/** How long setup waits for the catalog before counting the try as failed and retrying. */
-const CATALOG_DEADLINE_MS = 30_000
+/** How long setup waits for each request before counting the try as failed and retrying. */
+const REQUEST_DEADLINE_MS = 30_000
 
-function withDeadline<T>(promise: Promise<T>, ms: number): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined
-  const deadline = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`No answer within ${ms} ms`)), ms)
-  })
-  return Promise.race([promise, deadline]).finally(() => clearTimeout(timer))
+function withDeadline<T>(promise: Promise<T>): Promise<T> {
+  return withAbortSignal(promise, AbortSignal.timeout(REQUEST_DEADLINE_MS))
 }
 
 /**
@@ -46,10 +43,12 @@ function withDeadline<T>(promise: Promise<T>, ms: number): Promise<T> {
 function untouched(): boolean {
   const settings = aiModelSettings.value
   const { review, fast, vision } = settings.assignments
-  // A fresh install's connection also has its first API type, so a saved preference counts as set up.
+  // A fresh install has its one connection, with its first API type, so a saved preference or
+  // another connection counts as set up.
   return (
     isUnconfiguredModelSettings(settings) &&
-    settings.connections.every((connection) => connection.customAPIType === 'completions') &&
+    settings.connections.length === 1 &&
+    settings.connections[0]?.customAPIType === 'completions' &&
     review === 'design' &&
     fast === 'design' &&
     vision === null
@@ -68,11 +67,11 @@ export async function setUpCloudAI(
 ): Promise<boolean> {
   const identity = cloud.identity.value
   if (!identity || !untouched()) return false
-  const workspace = await cloud.firstWorkspace()
+  const workspace = await withDeadline(cloud.firstWorkspace())
   if (!current() || cloud.identity.value !== identity || !untouched()) return false
   const client = workspace ? cloud.client(workspace.id) : null
   if (!workspace || !client) return false
-  const catalog = await withDeadline(client.catalog(), CATALOG_DEADLINE_MS)
+  const catalog = await withDeadline(client.catalog())
   // Another sign-in, or a model the person set up meanwhile, wins over this answer.
   if (!current() || cloud.identity.value !== identity || !untouched()) return false
   const roles = catalogRoleModels(catalog)
