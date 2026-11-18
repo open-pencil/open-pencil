@@ -28,11 +28,13 @@ const testConfig = parseCloudServerConfig({
 async function migratedImage(): Promise<Blob> {
   const pglite = await PGlite.create({ dataDir: 'memory://' })
   const database = createCloudDatabase({ dialect: new PGliteDialect(pglite) })
-  const auth = createBetterAuthAdapter(testConfig, database)
-  await migrateCloudDatabase(database, { run: auth.migrate, schemaVersion: auth.schemaVersion })
-  const image = await pglite.dumpDataDir('none')
-  await database.destroy()
-  return image
+  try {
+    const auth = createBetterAuthAdapter(testConfig, database)
+    await migrateCloudDatabase(database, { run: auth.migrate, schemaVersion: auth.schemaVersion })
+    return await pglite.dumpDataDir('none')
+  } finally {
+    await database.destroy()
+  }
 }
 
 let image: Promise<Blob> | undefined
@@ -42,7 +44,11 @@ let image: Promise<Blob> | undefined
  * empty PGlite database costs several times what loading the image does, once per test.
  */
 export async function createCloudTestDatabase(): Promise<CloudTestDatabase> {
-  image ??= migratedImage()
+  // A failed attempt is forgotten, so the next test tries again rather than failing with it.
+  image ??= migratedImage().catch((error: unknown) => {
+    image = undefined
+    throw error
+  })
   const pglite = await PGlite.create({ loadDataDir: await image })
   const database = createCloudDatabase({ dialect: new PGliteDialect(pglite) })
   return {
