@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { unrefElement } from '@vueuse/core'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger, useDirection } from 'reka-ui'
-import { computed } from 'vue'
+import { computed, shallowRef, useTemplateRef } from 'vue'
 
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -66,8 +67,17 @@ const { open: popupOpen, portalActive } = useRetainedPopup(
   'picker'
 )
 
+const trigger = useTemplateRef('trigger')
+/**
+ * Opened from inside another picker, such as a gradient stop's colour, it is placed against that
+ * picker, so it sits beside it rather than over it, as Figma's does.
+ */
+const enclosingPicker = shallowRef<Element>()
+
 /** A press still held when the picker closes is put back, whichever way it closes. */
 function onOpenChange(open: boolean) {
+  if (open)
+    enclosingPicker.value = unrefElement(trigger)?.closest('[data-picker-content]') ?? undefined
   if (!open) gesture.abort()
   emit('openChange', open)
 }
@@ -81,7 +91,7 @@ const outside = pickerOutsideHandlers(() => keepOpen)
 
 <template>
   <PopoverRoot v-model:open="popupOpen" @update:open="onOpenChange">
-    <PopoverTrigger as-child>
+    <PopoverTrigger ref="trigger" as-child>
       <slot name="trigger" :style="{ background: swatchBg }">
         <button
           type="button"
@@ -96,6 +106,8 @@ const outside = pickerOutsideHandlers(() => keepOpen)
       <PopoverContent
         :class="ui?.content"
         :side-offset="4"
+        :reference="enclosingPicker"
+        :align="enclosingPicker ? 'start' : 'center'"
         :side="side"
         data-picker-content
         @pointer-down-outside="outside.onPointerDownOutside"
