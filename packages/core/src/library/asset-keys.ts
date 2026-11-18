@@ -65,10 +65,12 @@ function publishedRoots(graph: SceneGraph, assetIds?: string[]): SceneNode[] {
 
 /**
  * The asset key a component already publishes under: its own key, or else the library key, publish
- * ID or file ID it was read with — the identity a revision gives the asset.
+ * ID or file ID it was read with — the identity a revision gives the asset. A saved `.fig` record
+ * ID names a layer in one file, not an asset, so such a component takes a key from its name.
  */
 export function existingAssetKey(node: SceneNode): string | null {
-  return node.componentKey ?? node.sourceLibraryKey ?? node.publishId ?? node.source.id
+  const fileId = node.source.format === 'fig' ? null : node.source.id
+  return node.componentKey ?? node.sourceLibraryKey ?? node.publishId ?? fileId
 }
 
 /**
