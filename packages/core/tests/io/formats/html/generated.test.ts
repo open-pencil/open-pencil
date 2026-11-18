@@ -19,7 +19,7 @@ describe('generated content', () => {
       `<style>
         body { margin: 0; font-family: '${FAMILY}'; font-size: 14px }
         .link::after { content: " " attr(data-mark) }
-        .rule::before { content: ""; display: block; width: 1px; height: 24px; background: rgb(204, 204, 204) }
+        .rule::before { content: ""; display: block; width: 1px; height: 24px; background: #ccc }
       </style>
       <p><a class="link" data-mark="↗">GitHub</a></p>
       <div class="rule"></div>`

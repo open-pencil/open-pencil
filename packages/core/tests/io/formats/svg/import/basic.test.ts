@@ -106,7 +106,7 @@ describe('import_svg', () => {
 
   test('a paint server the import does not read falls back as SVG does, not to black', async () => {
     const result = (await importSVG.execute(figma, {
-      svg: `<svg viewBox="0 0 30 10"><defs><pattern id="p" width="2" height="2" patternUnits="userSpaceOnUse"><path d="M0 0h1v1H0z"/></pattern></defs><rect width="10" height="10" fill="url(#p)"/><rect x="10" width="10" height="10" fill="url(#p) rgb(255, 0, 0)"/><rect x="20" width="10" height="10" fill="#00f" stroke="url(#p)"/></svg>`
+      svg: `<svg viewBox="0 0 30 10"><defs><pattern id="p" width="2" height="2" patternUnits="userSpaceOnUse"><path d="M0 0h1v1H0z"/></pattern></defs><rect width="10" height="10" fill="url(#p)"/><rect x="10" width="10" height="10" fill="url(#p) #f00"/><rect x="20" width="10" height="10" fill="#00f" stroke="url(#p)"/></svg>`
     })) as { id: string }
     const [plain, fallback, stroked] = graph.getChildren(result.id)
 
