@@ -74,10 +74,12 @@ export function outlineStrokeSelected(
   for (const { node, parentId, outlined } of plan) {
     const index = ctx.graph.getNode(parentId)?.childIds.indexOf(node.id) ?? 0
     const fill = outlined.fill ? createPiece(ctx, outlined.fill, parentId, index) : null
-    const stroke = createPiece(ctx, outlined.stroke, parentId, index + (fill ? 1 : 0))
+    const stroke = outlined.stroke
+      ? createPiece(ctx, outlined.stroke, parentId, index + (fill ? 1 : 0))
+      : null
     ctx.graph.deleteNode(node.id)
     if (fill) madeIds.push(fill)
-    madeIds.push(stroke)
+    if (stroke) madeIds.push(stroke)
   }
   const made: Made[] = madeIds.flatMap((id) => {
     const parentId = ctx.graph.getNode(id)?.parentId
@@ -87,7 +89,7 @@ export function outlineStrokeSelected(
   })
   const parentIds = new Set(plan.map((entry) => entry.parentId))
   const prevSelection = new Set(ctx.state.selectedIds)
-  for (const parentId of parentIds) ctx.runLayoutForNode(parentId)
+  ctx.runLayoutForParents(parentIds)
   ctx.setSelectedIds(new Set(madeIds))
 
   // Groups around the outlines fit them, which can reach past the layers they replace, in the
@@ -121,7 +123,7 @@ function pushOutlineUndo(
     forward: () => {
       for (const { node } of plan) ctx.graph.deleteNode(node.id)
       restoreAt(ctx, made)
-      for (const parentId of parentIds) ctx.runLayoutForNode(parentId)
+      ctx.runLayoutForParents(parentIds)
       ctx.setSelectedIds(new Set(madeIds))
     },
     inverse: () => {
@@ -135,7 +137,7 @@ function pushOutlineUndo(
           snapshot
         }))
       )
-      for (const parentId of parentIds) ctx.runLayoutForNode(parentId)
+      ctx.runLayoutForParents(parentIds)
       ctx.setSelectedIds(new Set(prevSelection))
     }
   })

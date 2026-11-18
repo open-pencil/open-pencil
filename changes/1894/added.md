@@ -1,1 +1,0 @@
-- Undo steps through a pen path point by point while it is drawn, and after it ends brings it back to draw on, as in Figma. In vector edit mode each change is its own step of the document's history, and undo after leaving a path opens it again and takes its changes back one at a time (#1894).

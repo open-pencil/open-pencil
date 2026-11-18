@@ -3,10 +3,9 @@ import { expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { applyFixtureTransform, nestedGeometryFixture } from '@open-pencil/test-support/geometry'
 
 import { createSceneGeometry, nodeOrientationMatrix } from '#core/geometry'
-
-import { applyFixtureTransform, nestedGeometryFixture } from '@open-pencil/test-support/geometry'
 for (const flipX of [false, true]) {
   for (const flipY of [false, true]) {
     test(`nested world, screen and inverse transforms agree (flipX=${flipX}, flipY=${flipY})`, () => {

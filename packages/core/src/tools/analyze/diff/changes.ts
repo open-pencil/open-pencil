@@ -44,7 +44,7 @@ function nodeChanges(
 export const diffChanges = defineTool({
   name: 'diff_changes',
   description:
-    'Patch of what this run changed: a node, or the whole current page, compared with its page before the run first edited it. Same format as diff_create, matching nodes by ID, so diff_apply can replay it on the starting state. Use it before reporting to confirm that only the intended layers changed.',
+    'Patch of what this run changed: a node, or the whole current page, compared with its page before the run first edited it. Same format as diff_nodes, matching nodes by ID, so apply_patch can replay it on the starting state. Use it before reporting to confirm that only the intended layers changed.',
   execution: { kind: 'sync', mutation: 'none' },
   // Only an AI chat run records the state it started from.
   exposure: { mcp: false, webmcp: false },

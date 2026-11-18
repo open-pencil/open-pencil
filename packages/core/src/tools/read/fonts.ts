@@ -1,7 +1,6 @@
 import { uniq } from 'es-toolkit/array'
 import * as v from 'valibot'
 
-import { graphOf } from '#core/figma-api/graph'
 import { OpenPencilAPI } from '#core/openpencil-api'
 import { defineTool } from '#core/tools/schema'
 
@@ -13,41 +12,16 @@ export const getFontStatus = defineTool({
     'loaded, and affected nodes.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
-  input: v.strictObject({}),
-  execute: (figma) => new OpenPencilAPI(figma).getFontStatus()
-})
-
-export const listFonts = defineTool({
-  name: 'list_fonts',
-  description: 'List fonts used in the current page.',
-  execution: { kind: 'sync', mutation: 'none' },
-  exposure: { webmcp: false },
   input: v.strictObject({
     family: v.optional(v.pipe(v.string(), v.description('Filter by family name (substring)')))
   }),
-  execute: (figma, args) => {
-    const fonts = new Map<string, Set<number>>()
-    const page = figma.currentPage
-    page.findAll((node) => {
-      if (node.type === 'TEXT') {
-        const raw = graphOf(figma).getNode(node.id)
-        if (raw) {
-          const key = raw.fontFamily
-          if (!fonts.has(key)) fonts.set(key, new Set())
-          fonts.get(key)?.add(raw.fontWeight)
-        }
-      }
-      return false
-    })
-    let result = [...fonts.entries()].map(([family, weights]) => ({
-      family,
-      weights: [...weights].sort((a, b) => a - b)
-    }))
-    if (args.family) {
-      const q = args.family.toLowerCase()
-      result = result.filter((font) => font.family.toLowerCase().includes(q))
-    }
-    return { count: result.length, fonts: result }
+  execute: (figma, { family }) => {
+    const status = new OpenPencilAPI(figma).getFontStatus()
+    if (!family) return status
+    const query = family.toLowerCase()
+    const matches = (face: { family: string }) => face.family.toLowerCase().includes(query)
+    const issues = status.issues.filter(matches)
+    return { faithful: issues.length === 0, faces: status.faces.filter(matches), issues }
   }
 })
 
@@ -55,8 +29,8 @@ export const listAvailableFonts = defineTool({
   name: 'list_available_fonts',
   description:
     'List font families the host can render: installed, bundled, and online families. ' +
-    'Use this to discover what fonts are available to set on a text node — distinct from list_fonts ' +
-    'which only reports families currently used in the page.',
+    'Use this to discover what fonts are available to set on a text node — distinct from ' +
+    'get_font_status, which reports the faces used on the page.',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
   input: v.strictObject({

@@ -37,6 +37,24 @@ function authAdapter() {
     async resolveSession() {
       return null
     },
+    async resolveAccountSession() {
+      return null
+    },
+    async twoStepConfirmed() {
+      return true
+    },
+    async resolveAccessToken() {
+      return null
+    },
+    async listAccessTokens() {
+      return []
+    },
+    async createAccessToken() {
+      throw new Error('Access tokens are not used here')
+    },
+    async revokeAccessToken() {
+      throw new Error('Access tokens are not used here')
+    },
     async listAuthenticationMethods() {
       return []
     },
@@ -81,6 +99,7 @@ function authAdapter() {
       return null
     },
     updateProfile: complete,
+    setLocale: complete,
     changeEmail: complete,
     async sessions() {
       return null
@@ -258,6 +277,23 @@ describe('deployment admin user safety', () => {
       ])
       expect((await service.list({ limit: 1, offset: 1 })).users.map((user) => user.id)).toEqual([
         USER_ID
+      ])
+
+      // Where everyone may join, the list says nothing about requests.
+      expect(everyone.users.every((user) => user.request === undefined)).toBe(true)
+      // Where people are approved, an account that signed in but waits shows its request.
+      await runtime.database
+        .insertInto('enrollment')
+        .values([
+          { id: crypto.randomUUID(), emailNormalized: 'admin@example.com', status: 'approved' },
+          { id: crypto.randomUUID(), emailNormalized: 'grace@example.com', status: 'pending' }
+        ])
+        .execute()
+      const approving = createAdminUserService(runtime.database, authAdapter(), { approval: true })
+      expect((await approving.list()).users.map((user) => user.request)).toEqual([
+        'approved',
+        'pending',
+        null
       ])
 
       const detail = await service.detail(USER_ID)

@@ -14,6 +14,7 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     dropTargetId: null,
     layoutInsertIndicator: null,
     hoveredNodeId: null,
+    scaleAnchor: { x: 0.5, y: 0.5 },
     transforming: false,
     measurementMode: 'off',
     editingTextId: null,
@@ -56,6 +57,7 @@ export function copyEditorViewState(source: EditorViewState): EditorViewState {
     shapeHandleHover: structuredClone(source.shapeHandleHover),
     connectorTarget: structuredClone(source.connectorTarget),
     pageColor: { ...source.pageColor },
+    scaleAnchor: { ...source.scaleAnchor },
     navigation: { ...source.navigation },
     nodeEditState: structuredClone(source.nodeEditState),
     canvasView: { ...source.canvasView }

@@ -1,17 +1,15 @@
 <script setup lang="ts">
+import type { ComarkPlugin, MarkdownDocument } from 'comark'
 import { tv } from 'tailwind-variants'
-import { computed, type Component } from 'vue'
-import { Markdown } from 'vue-stream-markdown'
+import { computed, provide, shallowRef, watch, type Component } from 'vue'
 
-import { IS_BROWSER } from '@open-pencil/core/constants'
-
-import { createMarkdownHardenOptions, markdownExtensions } from '@/app/shell/markdown/config'
+import { animateWords } from '@/app/shell/markdown/animate'
+import { createMarkdownParser, type MarkdownParser } from '@/app/shell/markdown/config'
 import { animationsEnabled } from '@/app/shell/motion'
-import { resolvedAppTheme } from '@/app/shell/theme'
-import InlineCode from '@/components/markdown/InlineCode.vue'
-import MarkdownTooltip from '@/components/markdown/MarkdownTooltip.vue'
-import TaskCheckbox from '@/components/markdown/TaskCheckbox.vue'
 import theme, { type MarkdownDensity } from '@/theme/markdown'
+
+import { MARKDOWN_ANIMATING } from './context'
+import { AppMarkdownDocument } from './document'
 
 const markdownTheme = tv(theme)
 
@@ -21,6 +19,7 @@ const {
   density = 'compact',
   highlightCode = false,
   components,
+  plugins,
   class: className
 } = defineProps<{
   content: string
@@ -30,49 +29,66 @@ const {
   highlightCode?: boolean
   /** Inline components the content uses, written `:name[text]{attributes}`. */
   components?: Record<string, Component>
+  /** Comark plugins of this renderer's own, such as one making mentions their component. */
+  plugins?: readonly ComarkPlugin[]
   class?: string
 }>()
 
-const isDark = computed(() => resolvedAppTheme.value === 'dark')
 const ui = markdownTheme()
-const markdownComponents = computed(() => ({
-  code: InlineCode,
-  input: TaskCheckbox,
-  ...components
-}))
-// The renderer's own tooltip doubles up with ours and does not follow the app's style.
-const uiComponents = { Tooltip: MarkdownTooltip }
-// Copy is the one table action that fits a chat reply; images open in the attachment viewer.
-const controls = {
-  code: { download: false, fullscreen: false },
-  table: { copy: true, download: false, fullscreen: false },
-  image: false
-}
-// Favicons would request `/favicon.ico` from every site a reply links to.
-const linkOptions = { favicon: false }
-const extensions = computed(() => (highlightCode ? markdownExtensions : undefined))
-const hardenOptions = computed(() =>
-  createMarkdownHardenOptions(IS_BROWSER ? window.location.origin : 'http://localhost/')
+const streaming = computed(() => mode === 'streaming')
+const animating = computed(() => streaming.value && animationsEnabled.value)
+provide(MARKDOWN_ANIMATING, animating)
+
+const parsed = shallowRef<MarkdownDocument | null>(null)
+let parser: Promise<MarkdownParser> | undefined
+let parserHighlights = highlightCode
+let parserPlugins = plugins
+
+watch(
+  () => [content, streaming.value, highlightCode, plugins] as const,
+  async ([text, isStreaming, highlight, own], _previous, onCleanup) => {
+    // A parse that finishes after newer content arrived would show the older text.
+    let stale = false
+    onCleanup(() => {
+      stale = true
+    })
+    if (!parser || parserHighlights !== highlight || parserPlugins !== own) {
+      parser = createMarkdownParser(highlight, undefined, own)
+      parserHighlights = highlight
+      parserPlugins = own
+    }
+    const parse = await parser
+    const next = await parse(text, { streaming: isStreaming })
+    if (!stale) parsed.value = next
+  },
+  { immediate: true }
 )
+
+/**
+ * While a reply streams, each word is its own element, so only new words fade in. Comark draws
+ * a caret but no entry animation, and its plugins cannot tell a streaming parse from the final
+ * one, so the words are split here, on the parsed document, before it renders.
+ */
+const document = computed(() => {
+  const value = parsed.value
+  if (!value || !animating.value) return value
+  return { ...value, nodes: animateWords(value.nodes) }
+})
 </script>
 
 <template>
   <div data-slot="markdown" :class="ui.root({ class: className })">
-    <Markdown
-      :components="markdownComponents"
-      :content="content"
-      :is-dark="isDark"
-      :enable-animate="animationsEnabled"
-      :mode="mode"
-      :extensions="extensions"
-      :harden-options="hardenOptions"
-      :previewers="false"
-      :controls="controls"
-      :link-options="linkOptions"
-      :ui-components="uiComponents"
-      :data-markdown-mode="mode"
-      :data-markdown-density="density"
-      :class="ui.markdown()"
-    />
+    <!-- Comark's renderers are async components and render inside a Suspense. -->
+    <Suspense>
+      <AppMarkdownDocument
+        v-if="document"
+        :value="document"
+        :components="components"
+        :streaming="streaming"
+        :class="ui.markdown()"
+        :data-markdown-mode="mode"
+        :data-markdown-density="density"
+      />
+    </Suspense>
   </div>
 </template>

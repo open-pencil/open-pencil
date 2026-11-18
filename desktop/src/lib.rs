@@ -9,6 +9,7 @@ mod launch;
 mod menu;
 mod network;
 mod system;
+mod updates;
 
 use capabilities::DesktopCapabilities;
 use credentials::{
@@ -72,6 +73,12 @@ pub fn run() {
 
     builder = builder.plugin(tauri_plugin_deep_link::init());
 
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder
+            .on_web_content_process_terminate(system::window::reload_after_page_process_ended);
+    }
+
     builder
         .manage(capabilities)
         .manage(launch::PendingOpen::default())
@@ -119,6 +126,7 @@ pub fn run() {
             launch::take_pending_rooms,
             system::env::sharing_disabled_by_env,
             system::crash::take_last_panic,
+            updates::check_for_update,
             launch::take_pending_cloud_links,
             system::env::webview_version
         ])
@@ -154,12 +162,13 @@ pub fn run() {
                 .first()
                 .cloned()
                 .ok_or("the main window is not configured")?;
-            tauri::WebviewWindowBuilder::from_config(app.handle(), &main)?
+            let window = tauri::WebviewWindowBuilder::from_config(app.handle(), &main)?
                 .initialization_script(capabilities.init_script())
                 .on_new_window(system::opener::open_new_window_externally(
                     app.handle().clone(),
                 ))
                 .build()?;
+            fonts::watch::start(app.handle(), &window);
 
             launch::queue_open_paths(app.handle(), args::startup_open_paths());
 

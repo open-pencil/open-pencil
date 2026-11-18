@@ -24,7 +24,7 @@ describe('MCP Vite development server', () => {
       configuration: {
         authenticationEnabled: false,
         rootDirectory: '/designs',
-        disabledTools: ['eval', 'delete_node'],
+        disabledTools: ['eval', 'delete_nodes'],
         scope: 'selection'
       },
       corsOrigin: 'http://localhost:1420',
@@ -35,7 +35,7 @@ describe('MCP Vite development server', () => {
 
     expect(env.OPENPENCIL_MCP_AUTH_TOKEN).toBe('')
     expect(env.OPENPENCIL_MCP_ROOT).toBe('/designs')
-    expect(env.OPENPENCIL_MCP_DISABLED_TOOLS).toBe('eval,delete_node')
+    expect(env.OPENPENCIL_MCP_DISABLED_TOOLS).toBe('eval,delete_nodes')
     expect(env.OPENPENCIL_MCP_DISCOVERY_PATH).toBe('/tmp/mcp.json')
     expect(env.OPENPENCIL_MCP_SCOPE).toBe('selection')
   })
@@ -45,13 +45,13 @@ describe('MCP Vite development server', () => {
       parseDevMCPConfiguration({
         authenticationEnabled: true,
         rootDirectory: '/designs',
-        disabledTools: [' eval ', 'delete_node', 'eval'],
+        disabledTools: [' eval ', 'delete_nodes', 'eval'],
         scope: 'document'
       })
     ).toEqual({
       authenticationEnabled: true,
       rootDirectory: '/designs',
-      disabledTools: ['eval', 'delete_node'],
+      disabledTools: ['eval', 'delete_nodes'],
       scope: 'document'
     })
     expect(
@@ -88,12 +88,12 @@ describe('MCP Vite development server', () => {
     const configuration: DevMCPConfiguration = {
       authenticationEnabled: true,
       rootDirectory: '/designs',
-      disabledTools: ['eval', 'delete_node'],
+      disabledTools: ['eval', 'delete_nodes'],
       scope: 'document'
     }
     expect(configurationsMatch(configuration, structuredClone(configuration))).toBe(true)
     expect(
-      configurationsMatch(configuration, { ...configuration, disabledTools: ['delete_node'] })
+      configurationsMatch(configuration, { ...configuration, disabledTools: ['delete_nodes'] })
     ).toBe(false)
     expect(configurationsMatch(configuration, { ...configuration, scope: 'selection' })).toBe(false)
   })

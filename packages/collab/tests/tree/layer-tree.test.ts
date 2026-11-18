@@ -4,6 +4,8 @@ import type { ParentEntries } from '#collab/tree/entries'
 import { LayerTree } from '#collab/tree/layer-tree'
 import { create as createPRNG, oneOf, real53 } from 'lib0/prng'
 
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 const ROOT = 'root'
 const PAGE = 'page'
 
@@ -202,7 +204,7 @@ function moveOnPeer(peer: SimPeer, id: string, parentId: string) {
 function deleteOnPeer(peer: SimPeer, id: string) {
   const subtree = [id]
   // Iterating an array visits the elements pushed onto it during the loop.
-  for (const current of subtree) subtree.push(...peer.tree.childrenOf(current))
+  for (const current of subtree) appendAll(subtree, peer.tree.childrenOf(current))
   for (const removed of subtree) {
     peer.state.delete(removed)
     peer.deleted.add(removed)

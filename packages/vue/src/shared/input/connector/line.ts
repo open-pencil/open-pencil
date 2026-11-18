@@ -2,7 +2,8 @@ import type { Editor } from '@open-pencil/core'
 import {
   CONNECTOR_SEGMENT_HANDLE,
   connectorRouteHandles,
-  connectorScreenLabel
+  connectorScreenLabel,
+  worldToScreen
 } from '@open-pencil/core/geometry'
 
 import { MOVE_CURSOR, buildResizeCursor } from '#vue/shared/input/geometry'
@@ -56,8 +57,8 @@ function connectorLineAt(editor: Editor, sx: number, sy: number) {
  * an elbow segment, the way it slides, and the four-way arrow over a curve's handle.
  */
 export function connectorLineCursor(editor: Editor, cx: number, cy: number): string | null {
-  const { panX, panY, zoom } = editor.state
-  const hit = connectorLineAt(editor, cx * zoom + panX, cy * zoom + panY)
+  const screen = worldToScreen(editor.state, { x: cx, y: cy })
+  const hit = connectorLineAt(editor, screen.x, screen.y)
   if (!hit || hit.part.kind === 'label') return null
   if (hit.part.kind === 'curve') return MOVE_CURSOR
   return buildResizeCursor(hit.vertical ? 0 : 90)

@@ -149,6 +149,7 @@ function setSort(value: unknown) {
             :number="numbers.get(thread.id) ?? 0"
             :page-name="pageName(thread.pageId, thread.pageName)"
             :active="comments.activeThreadId.value === thread.id"
+            :unread="comments.isUnread(thread.id)"
             @select="comments.focusThread(thread.id)"
           >
             <template #actions>

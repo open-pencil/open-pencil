@@ -3,13 +3,13 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { requireBuiltWorkspacePackages } from '#cli-tests/helpers/paths'
+import { runCLI } from '#cli-tests/helpers/run'
+
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { heavy } from '@open-pencil/test-support/heavy'
 import { repoPath } from '@open-pencil/test-support/paths'
-
-import { requireBuiltWorkspacePackages } from '#cli-tests/helpers/paths'
-import { runCLI } from '#cli-tests/helpers/run'
 requireBuiltWorkspacePackages()
 
 setDefaultTimeout(30_000)

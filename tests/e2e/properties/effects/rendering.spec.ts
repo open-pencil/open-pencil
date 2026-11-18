@@ -538,3 +538,62 @@ test('invisible effect has no visual impact', async () => {
   await editor.canvas.waitForRender()
   await expectCanvas('invisible-effect')
 })
+
+test('glass over stripes', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const pageId = store.state.currentPageId
+    const frame = store.graph.createNode('FRAME', pageId, {
+      name: 'Stripes',
+      x: 48,
+      y: 48,
+      width: 352,
+      height: 208,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, visible: true, opacity: 1 }]
+    })
+    for (let x = 0; x < 352; x += 32) {
+      store.graph.createNode('RECTANGLE', frame.id, {
+        name: 'Stripe',
+        x,
+        width: 16,
+        height: 208,
+        fills: [
+          { type: 'SOLID', color: { r: 0.1, g: 0.2, b: 0.6, a: 1 }, visible: true, opacity: 1 }
+        ]
+      })
+    }
+    const glass = (params: { refraction: number; depth: number; dispersion: number }) => ({
+      type: 'GLASS' as const,
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      offset: { x: 0, y: 0 },
+      radius: 0,
+      spread: 0,
+      visible: true,
+      glass: { lightAngle: -45, lightIntensity: 0.6, ...params }
+    })
+    store.graph.createNode('RECTANGLE', frame.id, {
+      name: 'Glass Card',
+      x: 24,
+      y: 32,
+      width: 160,
+      height: 144,
+      cornerRadius: 28,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, visible: true, opacity: 0.1 }],
+      effects: [glass({ refraction: 0.8, depth: 32, dispersion: 0 })]
+    })
+    store.graph.createNode('ELLIPSE', frame.id, {
+      name: 'Glass Lens',
+      x: 208,
+      y: 40,
+      width: 128,
+      height: 128,
+      fills: [],
+      effects: [glass({ refraction: 1, depth: 40, dispersion: 0.5 })]
+    })
+    store.clearSelection()
+    store.requestRender()
+  })
+  await editor.canvas.waitForRender()
+  await expectCanvas('glass-over-stripes')
+})

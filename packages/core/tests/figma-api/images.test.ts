@@ -5,6 +5,7 @@ import { toUint8Array } from 'js-base64'
 
 import { FigmaAPI, MAX_IMAGE_FETCH_BYTES } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
 import { graphOf } from '#core/figma-api/graph'
 
 // Expected values were recorded by running the same scripts in Figma, except where noted.

@@ -16,6 +16,7 @@ import { exposeAutomationTestRequests } from '@/app/automation/bridge/test-hooks
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { startWebMCP } from '@/app/automation/webmcp/runtime'
 import { exposeCollaborationActions } from '@/app/browser-bridge'
+import { offerCampaignPrompt, startCampaignClock } from '@/app/campaigns'
 import { openingCloudLink, shownEditorStore, versionPreviewKey } from '@/app/cloud/integration'
 import { useJoinRoom } from '@/app/collab/join'
 import { bindDesktopRoomLinks } from '@/app/collab/room/links'
@@ -24,7 +25,6 @@ import { openDemoDocument } from '@/app/demo/document'
 import type { PendingOpenFile } from '@/app/document/io/pending-open'
 import { openPendingFiles } from '@/app/document/io/pending-open'
 import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io/web-link'
-import { offerDonationPrompt, startDonationClock } from '@/app/donation'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { focusNodesByName } from '@/app/editor/selection/focus'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -48,7 +48,12 @@ import { syncTabAddress } from '@/app/tabs/address'
 import { isTauri } from '@/app/tauri/env'
 import { offerUsageStatsPrompt, startSharing, usageStatsPrompt } from '@/app/telemetry'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
-import { CloudVersionDialog } from '@/components/cloud/integration'
+import {
+  CloudBetaBanner,
+  CloudCommunityBanner,
+  CloudEditorUpdateBanner,
+  CloudVersionDialog
+} from '@/components/cloud/integration'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
 import EditorWorkspace from '@/components/editor/EditorWorkspace.vue'
 import FileApiBanner from '@/components/FileApiBanner.vue'
@@ -140,12 +145,13 @@ const welcomeShown =
     ? offerAISetupOnFirstRun({ inTour: route.meta.demo === true })
     : false
 const sharingStarted = startSharing()
-// Release builds ask for donations; development and test runs would only be interrupted.
-const asksForDonations = import.meta.env.PROD && !appRuntimeConfig.test
+// Release builds show campaigns, such as the donation ask; development and test runs would only
+// be interrupted.
+const showsCampaigns = import.meta.env.PROD && !appRuntimeConfig.test
 // One question per launch: a first run is asked about usage stats once the welcome closes, and
-// a later launch about usage stats if still unanswered, otherwise about a donation once it is due.
+// a later launch about usage stats if still unanswered, otherwise shows a campaign that is due.
 if (welcomeShown) {
-  startDonationClock()
+  startCampaignClock()
   whenever(
     () => !aiSetupDialogOpen.value,
     async () => {
@@ -161,7 +167,7 @@ if (welcomeShown) {
     async () => {
       await sharingStarted
       offerUsageStatsPrompt('prompt')
-      if (asksForDonations && !usageStatsPrompt.value) offerDonationPrompt()
+      if (showsCampaigns && !usageStatsPrompt.value) void offerCampaignPrompt()
     },
     { once: true, immediate: true }
   )
@@ -304,6 +310,9 @@ onUnmounted(() => {
     <FileApiBanner />
     <ColorSpaceBanner />
     <FontStatusBanner />
+    <CloudBetaBanner />
+    <CloudEditorUpdateBanner />
+    <CloudCommunityBanner />
     <RenameSelectionDialog />
     <CommandPalette />
     <TabBar />

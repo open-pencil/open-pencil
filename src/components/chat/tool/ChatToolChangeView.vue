@@ -2,7 +2,7 @@
 import { useObjectUrl } from '@vueuse/core'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -11,10 +11,12 @@ import CodeViewer from '@/components/code-editor/LazyCodeViewer.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import splitterTheme from '@/theme/splitter'
 
+import { CHAT_CHANGE_REVIEW } from './context'
 import { chatToolChangeTheme } from './ui'
 
 const { change } = defineProps<{ change: ToolChange }>()
 const { ai } = useI18n()
+const changeReview = inject(CHAT_CHANGE_REVIEW, null)
 const ui = chatToolChangeTheme()
 const splitter = tv(splitterTheme)({ direction: 'horizontal' })
 
@@ -39,13 +41,24 @@ const aspectRatio = computed(() =>
 
 <template>
   <div class="space-y-2" data-slot="chat-tool-change">
-    <template v-if="hasImages">
-      <div class="flex items-center justify-between gap-2">
-        <span class="text-3xs text-muted">
+    <div v-if="hasImages || changeReview" class="flex items-center justify-between gap-2">
+      <span class="text-3xs text-muted">
+        <template v-if="hasImages">
           {{ visible ? ai.changedPixels({ percent: changedPercent }) : ai.noVisibleChange }}
-        </span>
+        </template>
+      </span>
+      <div class="flex items-center gap-0.5">
         <IconButton
-          v-if="highlightURL"
+          v-if="changeReview"
+          :label="ai.reviewChange"
+          :disabled="!changeReview.ready.value"
+          data-test-id="chat-review-change"
+          @click="changeReview.review(change.toolCallId)"
+        >
+          <icon-lucide-scan-eye class="size-3.5" />
+        </IconButton>
+        <IconButton
+          v-if="hasImages && highlightURL"
           :active="highlight"
           :aria-pressed="highlight"
           :label="ai.changeHighlight"
@@ -54,6 +67,8 @@ const aspectRatio = computed(() =>
           <icon-lucide-highlighter class="size-3.5" />
         </IconButton>
       </div>
+    </div>
+    <template v-if="hasImages">
       <div
         :class="ui.root()"
         :style="{ aspectRatio }"
@@ -67,14 +82,14 @@ const aspectRatio = computed(() =>
         <SplitterGroup v-else direction="horizontal" :class="ui.split()">
           <SplitterPanel :default-size="50" :class="ui.panel()">
             <img v-if="beforeURL" :src="beforeURL" :alt="ai.changeBefore" :class="ui.before()" />
-            <span :class="ui.label({ class: 'left-1' })">{{ ai.changeBefore }}</span>
+            <span :class="ui.label({ class: 'inset-s-1' })">{{ ai.changeBefore }}</span>
           </SplitterPanel>
           <SplitterResizeHandle :class="splitter.handle()" :aria-label="ai.changeSplit">
             <div :class="splitter.divider({ class: ui.divider() })" />
           </SplitterResizeHandle>
           <SplitterPanel :default-size="50" :class="ui.panel()">
             <img v-if="afterURL" :src="afterURL" :alt="ai.changeAfter" :class="ui.after()" />
-            <span :class="ui.label({ class: 'right-1' })">{{ ai.changeAfter }}</span>
+            <span :class="ui.label({ class: 'inset-e-1' })">{{ ai.changeAfter }}</span>
           </SplitterPanel>
         </SplitterGroup>
       </div>

@@ -13,7 +13,7 @@ export default {
     personName: 'truncate text-xs text-surface',
     personEmail: 'truncate text-2xs text-muted',
     personDetail: 'text-2xs text-pretty text-muted',
-    you: 'ml-1 text-2xs text-muted',
+    you: 'ms-1 text-2xs text-muted',
     role: 'shrink-0 text-2xs text-muted',
     roleSelect: 'w-28 shrink-0',
     /** A role in the invite menu, with what it lets someone do on a second line. */

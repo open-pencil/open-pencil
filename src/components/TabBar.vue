@@ -11,7 +11,7 @@ import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
 import PreparationIndicator from '@/components/preparation/tab/PreparationIndicator.vue'
 import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import tabBarTheme from '@/theme/tab-bar'
+import tabBarTheme from '@/theme/tabs/bar'
 
 const { files } = useI18n()
 
@@ -145,8 +145,12 @@ function onClose(e: MouseEvent, tabId: string) {
       :data-start="!overflowEnd || undefined"
       @click="scrollTowardHidden"
     >
-      <icon-lucide-chevron-right v-if="overflowEnd" :class="baseStyles.scrollIcon()" />
-      <icon-lucide-chevron-left v-else :class="baseStyles.scrollIcon()" />
+      <icon-lucide-chevron-right
+        v-if="overflowEnd"
+        data-direction="reading"
+        :class="baseStyles.scrollIcon()"
+      />
+      <icon-lucide-chevron-left v-else data-direction="reading" :class="baseStyles.scrollIcon()" />
     </button>
     <Tip :label="files.newFile" side="bottom">
       <button

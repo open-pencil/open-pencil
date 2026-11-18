@@ -3,7 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import {
   accountAuthenticationRequest,
   createAccountAuthenticationFixture,
-  createVerifiedCredentialAccount
+  createVerifiedCredentialAccount,
+  withCookie
 } from '#cloud-tests/helpers/account-authentication'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
@@ -56,15 +57,13 @@ async function document(
 const deletion = async (fixture: Fixture, cookie: string) =>
   (
     await responseJSON(
-      await fixture.app.fetch(
-        accountAuthenticationRequest('/api/account/deletion', undefined, cookie)
-      ),
+      await fixture.client.api.account.deletion.$get(undefined, withCookie(cookie)),
       cloudAccountDeletionResponseSchema
     )
   ).deletion
 
 const remove = (fixture: Fixture, cookie: string, body: { password?: string } = {}) =>
-  fixture.app.fetch(accountAuthenticationRequest('/api/account/delete', body, cookie))
+  fixture.client.api.account.delete.$post({ json: body }, withCookie(cookie))
 
 describe('account deletion', () => {
   test('waits for another admin, then takes the account’s own workspaces and leaves the rest', async () => {
@@ -103,6 +102,9 @@ describe('account deletion', () => {
       const soloDocument = await document(fixture, solo, 'Sketch', alice.userId)
       await document(fixture, solo, 'Old', alice.userId, new Date())
       const sharedDocument = await document(fixture, shared, 'Plan', alice.userId)
+      // In the workspace that blocks deleting until someone else administers it.
+      const teamDocument = await document(fixture, team, 'Roadmap', alice.userId)
+      await document(fixture, team, 'Backlog', bob.userId)
       const bobsDocument = await document(fixture, shared, 'Notes', bob.userId)
       await fixture.database
         .insertInto('documentGrant')
@@ -113,6 +115,30 @@ describe('account deletion', () => {
           permission: 'edit',
           createdBy: bob.userId
         })
+        .execute()
+      // A workspace Alice left, where a document she made is still hers through a grant.
+      const elsewhere = await workspace(fixture, 'Elsewhere', bob.userId, [[bob.userId, 'admin']])
+      const grantedDocument = await document(fixture, elsewhere, 'Brief', alice.userId)
+      const revokedDocument = await document(fixture, elsewhere, 'Draft', alice.userId)
+      await fixture.database
+        .insertInto('documentGrant')
+        .values([
+          {
+            id: crypto.randomUUID(),
+            documentId: grantedDocument,
+            userId: alice.userId,
+            permission: 'view',
+            createdBy: bob.userId
+          },
+          {
+            id: crypto.randomUUID(),
+            documentId: revokedDocument,
+            userId: alice.userId,
+            permission: 'view',
+            createdBy: bob.userId,
+            revokedAt: new Date()
+          }
+        ])
         .execute()
       const invitation = crypto.randomUUID()
       await fixture.database
@@ -141,8 +167,10 @@ describe('account deletion', () => {
         ],
         leaves: [{ id: shared, name: 'Shared' }],
         documents: [
+          { id: grantedDocument, name: 'Brief', workspaceName: 'Elsewhere' },
           { id: sharedDocument, name: 'Plan', workspaceName: 'Shared' },
-          { id: soloDocument, name: 'Sketch', workspaceName: 'Solo' }
+          { id: soloDocument, name: 'Sketch', workspaceName: 'Solo' },
+          { id: teamDocument, name: 'Roadmap', workspaceName: 'Team' }
         ]
       })
       const blocked = await remove(fixture, alice.sessionCookie)

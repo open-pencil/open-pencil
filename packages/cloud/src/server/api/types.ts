@@ -6,6 +6,8 @@ export type RateLimitUse = { limit: number; remaining: number; resetTime?: Date 
 export type CloudAPIEnvironment = {
   Variables: {
     actor: CloudActor
+    /** Set by `cloudRequestId`: what logs and error reports name the request by. */
+    requestId: string
     /** Set by `hono-rate-limiter` for the last budget it counted. */
     rateLimit?: RateLimitUse
     /** A resource budget's use, kept before the actor-wide budget records its own. */

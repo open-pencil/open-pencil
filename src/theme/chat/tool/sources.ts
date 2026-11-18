@@ -6,7 +6,7 @@ export default {
     source: 'min-w-0 space-y-0.5 px-2 py-1.5',
     // A button only spans its text, so it needs the row's width before it can truncate.
     title:
-      'block w-full cursor-pointer truncate text-left text-2xs font-medium text-primary hover:underline focus-visible:underline',
+      'block w-full cursor-pointer truncate text-start text-2xs font-medium text-primary hover:underline focus-visible:underline',
     meta: 'truncate text-muted',
     text: 'line-clamp-3 text-surface'
   }

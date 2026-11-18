@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { CanvasKit } from '@open-pencil/canvaskit'
-
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test'
 
-import { MCP_AGENT_HEADER } from '@open-pencil/core/constants'
+import { MCP_AGENT_HEADER, MCP_DEFERS_TOOLS_HEADER } from '@open-pencil/core/constants'
 
 import {
   buildACPMCPServers,
@@ -165,6 +165,14 @@ describe('MCP connections', () => {
     } finally {
       await setMCPConnectionCredential(connection.id, '')
     }
+  })
+
+  test('tells the server when the agent defers tools', async () => {
+    const header = { name: MCP_DEFERS_TOOLS_HEADER, value: '1' }
+    const [server] = await buildACPMCPServers({ authorizationToken: null, defersTools: true })
+    expect(server).toMatchObject({ headers: expect.arrayContaining([header]) })
+    const [plain] = await buildACPMCPServers({ authorizationToken: null })
+    expect(plain).toMatchObject({ headers: expect.not.arrayContaining([header]) })
   })
 
   test('keeps the connection when credential deletion fails', async () => {

@@ -1,12 +1,11 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
 import { join } from 'node:path'
 
+import { runCLI } from '#cli-tests/helpers/run'
 import * as v from 'valibot'
 
-import { FIXTURES } from '@open-pencil/test-support/paths'
-
-import { runCLI } from '#cli-tests/helpers/run'
 import { heavy } from '@open-pencil/test-support/heavy'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 setDefaultTimeout(30_000)
 
 const FIXTURE = join(FIXTURES, 'gold-preview.fig')

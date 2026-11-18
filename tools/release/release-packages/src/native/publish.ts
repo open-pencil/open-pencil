@@ -1,5 +1,4 @@
-import { mkdtemp, readdir, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { assertPublishedReleaseArtifacts } from '#release/resume'
@@ -11,7 +10,7 @@ import { isChromiumAsset } from '../chromium/catalog.ts'
 import { ARTIFACT_TRANSFER_TIMEOUT_MS, releaseCommands } from './commands.ts'
 import { createReleaseContext } from './context.ts'
 import { assertDraftReplacement, releaseChannelArgs, releaseSchema } from './draft.ts'
-import { digestFile } from './manifest.ts'
+import { verifyUploadedAssets } from './uploaded.ts'
 
 const { identity, repository, version, paths } = createReleaseContext()
 const { git, github } = releaseCommands(paths.root)
@@ -31,8 +30,8 @@ const names = (await readdir(paths.output)).sort()
 assertDraftReplacement(release, names, actualCommit, identity)
 
 if (process.argv[2] === 'check') {
-  // npm versions already on the registry must be this tag's own, by provenance, and carry the
-  // registry's bytes (`release-packages resume` before assembly); publication then skips them.
+  // npm versions already on the registry must carry the registry's bytes (`release-packages
+  // resume` before assembly keeps identical ones and adopts this tag's own); publication skips them.
   await assertPublishedReleaseArtifacts(paths.root, {
     repository,
     tag: identity.tag,
@@ -120,33 +119,12 @@ if (remote.isPrerelease !== isPrerelease(version)) {
   throw new Error(`Draft ${identity.tag} has the wrong pre-release flag`)
 }
 
-const temporary = await mkdtemp(join(tmpdir(), 'open-pencil-release-verify-'))
-
-try {
-  await github(
-    [
-      'release',
-      'download',
-      identity.tag,
-      '--repo',
-      repository,
-      '--dir',
-      temporary,
-      ...names.flatMap((name) => ['--pattern', name])
-    ],
-    ARTIFACT_TRANSFER_TIMEOUT_MS
-  )
-
-  for (const name of names) {
-    if (
-      (await digestFile(join(temporary, name))).sha256 !==
-      (await digestFile(join(paths.output, name))).sha256
-    ) {
-      throw new Error(`Uploaded digest mismatch: ${name}`)
-    }
-  }
-} finally {
-  await rm(temporary, { recursive: true, force: true })
-}
+await verifyUploadedAssets({
+  github,
+  repository,
+  tag: identity.tag,
+  names,
+  directory: paths.output
+})
 
 console.log(`Draft ${identity.tag} contains only the verified assets from this run`)

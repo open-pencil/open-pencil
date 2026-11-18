@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 
 import { desktopBuilds, desktopTargets } from '#release/native/catalog'
 import { ARTIFACT_TRANSFER_TIMEOUT_MS, releaseCommands } from '#release/native/commands'
-import { createReleaseContext, releaseVersion } from '#release/native/context'
+import { buildVersion, createReleaseContext, releaseVersion } from '#release/native/context'
 import { releasePaths } from '#release/workflow'
 
 import type { CommandRequest } from '@open-pencil/package-artifacts-tools'
@@ -50,6 +50,14 @@ test('matrix metadata and target validation share the same catalog', () => {
   }
 })
 
+test('a build that runs in an image pins it by digest, and only Linux needs one', () => {
+  for (const build of desktopBuilds) {
+    if (build.target.endsWith('linux-gnu')) {
+      expect(build.container).toMatch(/^ghcr\.io\/open-pencil\/[\w-]+@sha256:[0-9a-f]{64}$/)
+    } else expect(build.container).toBe('')
+  }
+})
+
 test('command adapters delegate argument arrays and deadlines to shared tooling', async () => {
   const requests: CommandRequest[] = []
   const cwd = resolve('fixture')
@@ -61,7 +69,6 @@ test('command adapters delegate argument arrays and deadlines to shared tooling'
   expect(await commands.git('rev-parse', 'HEAD')).toBe('output')
   expect(await commands.github(['release', 'view', 'v0.15.0'])).toBe('output\n')
   await commands.github(['release', 'download', 'v0.15.0'], ARTIFACT_TRANSFER_TIMEOUT_MS)
-  await commands.verifySignature('asset with spaces', 'key.pub', 'asset.sig')
 
   expect(requests).toEqual([
     { command: 'git', args: ['rev-parse', 'HEAD'], cwd, timeoutMs: 60_000 },
@@ -71,13 +78,21 @@ test('command adapters delegate argument arrays and deadlines to shared tooling'
       args: ['release', 'download', 'v0.15.0'],
       cwd,
       timeoutMs: ARTIFACT_TRANSFER_TIMEOUT_MS
-    },
-    {
-      command: 'minisign',
-      args: ['-Vm', 'asset with spaces', '-p', 'key.pub', '-x', 'asset.sig'],
-      cwd,
-      output: 'inherit',
-      timeoutMs: 60_000
     }
   ])
+})
+
+test('a nightly carries the version its plan computed, a release only its tag’s', () => {
+  expect(buildVersion('nightly', '0.17.0-nightly.20261116')).toBe('0.17.0-nightly.20261116')
+  expect(buildVersion('v0.17.0', undefined)).toBe('0.17.0')
+  expect(buildVersion('v0.17.0', '0.17.0')).toBe('0.17.0')
+  expect(() => buildVersion('nightly', undefined)).toThrow()
+  expect(() => buildVersion('nightly', '0.17.0')).toThrow()
+  expect(() => buildVersion('v0.17.0', '0.17.0-nightly.20261116')).toThrow()
+  const nightly = createReleaseContext(
+    { ...environment, RELEASE_TAG: 'nightly', RELEASE_VERSION: '0.17.0-nightly.20261116' },
+    resolve('fixture')
+  )
+  expect(nightly.version).toBe('0.17.0-nightly.20261116')
+  expect(nightly.identity.version).toBe('0.17.0-nightly.20261116')
 })

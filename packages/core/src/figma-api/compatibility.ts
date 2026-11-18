@@ -28,7 +28,8 @@ import type {
   Variable,
   VariableCollection,
   VariablesAPI,
-  VideoPaint
+  VideoPaint,
+  ViewportAPI
 } from '@figma/plugin-typings/plugin-api-standalone'
 
 import type { FigmaAPI } from './index'
@@ -52,6 +53,7 @@ import type {
   SERIALIZATION_MEMBERS
 } from './surface'
 import type { FigmaVariable, FigmaVariableCollection, FigmaVariablesAPI } from './variables'
+import type { FigmaViewport } from './viewport'
 
 type Expect<T extends true> = T
 
@@ -159,8 +161,11 @@ type SlotSurfaceMatch = Expect<
 >
 const _slotSurfaceMatch: SlotSurfaceMatch = true
 
-// `Effect` here is Figma's plugin-typings union; OpenPencil reads and writes a subset of it.
-type EffectShapeMatch = Expect<Extends<FigmaNodeProxy['effects'][number], Effect>>
+// `Effect` here is Figma's plugin-typings union; OpenPencil reads and writes a subset of it. A
+// noise reads back as live Figma returns it (desktop 126), without the blend mode its typings
+// declare and its plugin API refuses.
+type ReadEffect = Exclude<FigmaNodeProxy['effects'][number], { type: 'NOISE' }>
+type EffectShapeMatch = Expect<Extends<ReadEffect, Effect>>
 const _effectShapeMatch: EffectShapeMatch = true
 
 // `Paint` here is Figma's plugin-typings union. `fills`, `strokes`, and `backgrounds` share one
@@ -472,3 +477,10 @@ const _textStyleExtras: None<
 > = {}
 const _effectStyleExtras: None<Exclude<StringKeys<FigmaEffectStyle>, keyof EffectStyle>> = {}
 const _gridStyleExtras: None<Exclude<StringKeys<FigmaGridStyle>, keyof GridStyle>> = {}
+
+/** `figma.viewport` outside Figma Slides and Buzz, whose `slidesView` and `canvasView` it lacks. */
+type SupportedViewportKeys = 'center' | 'zoom' | 'bounds' | 'scrollAndZoomIntoView'
+type ViewportMatch = Expect<
+  Equal<Pick<FigmaViewport, SupportedViewportKeys>, Pick<ViewportAPI, SupportedViewportKeys>>
+>
+const _viewportMatch: ViewportMatch = true

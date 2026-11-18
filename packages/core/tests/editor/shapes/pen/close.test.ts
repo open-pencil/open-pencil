@@ -2,7 +2,6 @@ import { afterEach, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core'
 import type { VectorSegment } from '@open-pencil/scene-graph'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 let editor: Editor

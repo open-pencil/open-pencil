@@ -10,6 +10,6 @@ export default {
     trigger: 'flex shrink-0 items-center',
     /** Narrow composers show only the meter, leaving the width to the model name. */
     label: 'hidden truncate @[16rem]:inline',
-    option: 'ml-auto pl-3'
+    option: 'ms-auto ps-3'
   }
 } as const

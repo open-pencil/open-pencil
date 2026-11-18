@@ -3,8 +3,10 @@ import { expect, test } from 'bun:test'
 import { directedTranslations } from '#vue/i18n/direction'
 
 const RLM = String.fromCodePoint(0x200f)
+const FSI = String.fromCodePoint(0x2068)
+const PDI = String.fromCodePoint(0x2069)
 
-test('right-to-left messages and their plural forms keep their punctuation at their own ends', () => {
+test('right-to-left messages keep their punctuation at their own ends and isolate what goes into them', () => {
   const translations = {
     common: {
       saved: 'تم الحفظ.',
@@ -15,7 +17,7 @@ test('right-to-left messages and their plural forms keep their punctuation at th
   expect(directedTranslations('ar', translations)).toEqual({
     common: {
       saved: `${RLM}تم الحفظ.${RLM}`,
-      files: { one: `${RLM}ملف واحد${RLM}`, other: `${RLM}{count} ملف${RLM}` },
+      files: { one: `${RLM}ملف واحد${RLM}`, other: `${RLM}${FSI}{count}${PDI} ملف${RLM}` },
       empty: ''
     }
   })

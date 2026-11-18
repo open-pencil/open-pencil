@@ -1,3 +1,5 @@
+import { fromUint8Array } from 'js-base64'
+
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { vectorEditDriver } from '#tests/helpers/canvas/vector-edit/driver'
 
@@ -100,6 +102,63 @@ test('vector edit overlay follows nested transforms and live path fills', async 
   editor.canvas.assertNoErrors()
   const buffer = await editor.canvas.screenshotCanvasRegion()
   expect(buffer).toMatchSnapshot('vector-edit-mode-overlay.png')
+})
+
+// Figma desktop, live: a handle on a point is drawn above it, its line over its own point too, and
+// a press there takes the handle.
+test('vector edit mode draws handles above the points', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const stroke = {
+      type: 'SOLID' as const,
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      visible: true,
+      opacity: 1
+    }
+    const vector = store.graph.createNode('VECTOR', store.state.currentPageId, {
+      name: 'Handle on a point',
+      x: 200,
+      y: 160,
+      width: 200,
+      height: 100,
+      fills: [],
+      strokes: [{ ...stroke, weight: 1, align: 'CENTER' }],
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 100 },
+          { x: 200, y: 0 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: { x: 100, y: 100 }, tangentEnd: { x: 0, y: -60 } },
+          { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+        ],
+        regions: []
+      }
+    })
+    store.enterNodeEditMode(vector.id)
+    const editState = store.getNodeEditState()
+    if (editState) editState.selectedVertexIndices = new Set([0])
+    store.requestRender()
+  })
+  await editor.canvas.waitForRender()
+  editor.canvas.assertNoErrors()
+  const image = await editor.canvas.screenshotCanvasRegion()
+  // The snapshot comparison tolerates a few pixels, so read the selected point's centre: the grey
+  // of its handle line, not the point's blue.
+  const [red, green, blue] = await editor.page.evaluate(async (base64) => {
+    const bitmap = await createImageBitmap(
+      await (await fetch(`data:image/png;base64,${base64}`)).blob()
+    )
+    const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d')
+    if (!context) throw new Error('2D canvas unavailable')
+    context.drawImage(bitmap, 0, 0)
+    const at = (value: number) => value * devicePixelRatio
+    return Array.from(context.getImageData(at(200), at(160), 1, 1).data)
+  }, fromUint8Array(image))
+  expect(Math.abs(red - blue) + Math.abs(green - blue)).toBeLessThan(20)
+  expect(image).toMatchSnapshot('vector-edit-handle-on-point.png')
 })
 
 test('a Pen-created Bézier commits a vertex drag on mouseup', async () => {

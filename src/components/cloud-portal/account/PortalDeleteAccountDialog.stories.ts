@@ -3,7 +3,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import type { CloudAccountDeletion } from '@open-pencil/cloud/contract'
 
-import type { PortalAccountArchive } from '@/components/cloud-portal/types'
+import type { PortalAccountArchive } from '@/app/cloud-portal/archive'
 
 import PortalDeleteAccountDialog from './PortalDeleteAccountDialog.vue'
 
@@ -31,7 +31,7 @@ const deletion: CloudAccountDeletion = {
 }
 
 const meta = {
-  title: 'App/Cloud Portal/Delete Account',
+  title: 'App/Cloud/Portal/Delete Account',
   args: { deletion, archive: null, error: null, onConfirm: fn(), onDownloadAll: fn() },
   render: (args) => ({
     components: { PortalDeleteAccountDialog },
@@ -77,7 +77,8 @@ export const Blocked: Story = {
     const dialog = await within(document.body).findByRole('dialog')
     await expect(within(dialog).queryByRole('textbox')).toBeNull()
     await expect(dialog.querySelector('button[type="submit"]')).toBeDisabled()
-    await expect(within(dialog).getByRole('alert')).toBeVisible()
+    // The dialog fades in, so what it says is visible once that ends.
+    await waitFor(() => expect(within(dialog).getByRole('alert')).toBeVisible())
   }
 }
 
@@ -87,7 +88,9 @@ export const LastAdministrator: Story = {
   play: async () => {
     const dialog = await within(document.body).findByRole('dialog')
     await expect(dialog.querySelector('button[type="submit"]')).toBeDisabled()
-    await expect(within(dialog).getByText('Make someone else a server admin first')).toBeVisible()
+    await waitFor(() =>
+      expect(within(dialog).getByText('Make someone else a server admin first')).toBeVisible()
+    )
   }
 }
 

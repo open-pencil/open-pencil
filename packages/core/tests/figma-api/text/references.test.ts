@@ -1,9 +1,10 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+
 import { graphOf } from '#core/figma-api/graph'
 
 beforeAll(async () => {

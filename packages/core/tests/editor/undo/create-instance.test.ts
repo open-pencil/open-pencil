@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { createEditor } from '@open-pencil/core'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 describe('create instance undo/redo', () => {
   test('places a nested component beside its world bounds on the page', () => {

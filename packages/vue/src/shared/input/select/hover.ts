@@ -17,9 +17,9 @@ import {
   selectionResizeHandleAt,
   selectionTakes
 } from '#vue/shared/input/resize/selection'
-import type { HitTestFns } from '#vue/shared/input/select'
 import { hitTestLabel } from '#vue/shared/input/select/hit'
 import { pressSelects } from '#vue/shared/input/select/move'
+import type { HitTestFns } from '#vue/shared/input/select/press'
 import { scalesByHandles } from '#vue/shared/input/sticky/scale'
 
 function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): string | null {

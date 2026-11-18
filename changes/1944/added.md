@@ -1,1 +1,0 @@
-- OpenPencil is now available in Arabic (ar), selectable from the Language menu and picked automatically for Arabic browsers; the interface stays left to right, as in Figma.

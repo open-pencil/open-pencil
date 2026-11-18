@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 
 import { DrawCallCounter } from '@open-pencil/core/profiler'
-
 import { asDouble } from '@open-pencil/test-support/doubles'
 describe('DrawCallCounter', () => {
   it('handles null GL context', () => {

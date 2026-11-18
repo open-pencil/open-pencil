@@ -25,6 +25,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
+import { fillSwatchTrigger } from '@/components/ui/paint/swatch-trigger'
 import PanelItemRow from '@/components/ui/panel/PanelItemRow.vue'
 import AppCombobox from '@/components/ui/select/AppCombobox.vue'
 
@@ -36,6 +37,8 @@ import AppCombobox from '@/components/ui/select/AppCombobox.vue'
 const { preset } = defineProps<{ preset: ShaderPreset }>()
 const emit = defineEmits<{ update: [preset: ShaderPreset] }>()
 const { panels, common } = useI18n()
+// Each effect's preview toggles its settings, framed like an effect row's.
+const effectPreviewButton = fillSwatchTrigger({ size: 'md', framed: true }).root()
 
 const catalog = shallowRef<ShaderEffect[]>([])
 onMounted(async () => {
@@ -193,7 +196,7 @@ function applyJSON() {
                       ? panels.collapseEffectSettings
                       : panels.expandEffectSettings
                   "
-                  class="flex size-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded border border-border bg-input p-0"
+                  :class="effectPreviewButton"
                   @click="expanded = expanded === row.index ? null : row.index"
                 >
                   <icon-lucide-sparkles class="size-3 text-muted" />

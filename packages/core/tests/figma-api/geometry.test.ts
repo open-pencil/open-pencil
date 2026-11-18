@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
 import { attachTestRenderer, createAPI } from '#core-tests/helpers/figma-api'
-import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 // Figma's answers measured in Figma desktop 126.
 
@@ -320,6 +321,46 @@ describe('outlineStroke', () => {
     expect(outline?.name).toBe('T (Stroke)')
     expect(outline?.children.length).toBeGreaterThan(0)
     expect(outline?.children.every((glyph) => glyph.type === 'VECTOR')).toBe(true)
+  })
+})
+
+describe('outlineStroke of a vector network', () => {
+  test('strokes an edge two regions share as the canvas does', async () => {
+    const { figma, renderer } = await setup()
+    const vector = figma.createVector()
+    await vector.setVectorNetworkAsync({
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 40, y: 0 },
+        { x: 40, y: 40 },
+        { x: 0, y: 40 }
+      ],
+      segments: [
+        { start: 0, end: 1 },
+        { start: 1, end: 2 },
+        { start: 2, end: 3 },
+        { start: 3, end: 0 },
+        { start: 0, end: 2 }
+      ],
+      regions: [
+        { windingRule: 'NONZERO', loops: [[0, 1, 4]] },
+        { windingRule: 'NONZERO', loops: [[4, 2, 3]] }
+      ]
+    })
+    vector.fills = [...RED]
+    vector.strokes = [...BLUE]
+    vector.strokeWeight = 4
+    vector.strokeAlign = 'INSIDE'
+    const outline = vector.outlineStroke()
+    const data = outline?.vectorPaths.map((path) => path.data).join(' ') ?? ''
+    const path = renderer.ck.Path.MakeFromSVGString(data)
+    const offTheDiagonal = (distance: number) =>
+      path?.contains(
+        20 + distance / Math.SQRT2 - (outline?.x ?? 0),
+        20 - distance / Math.SQRT2 - (outline?.y ?? 0)
+      )
+    expect([offTheDiagonal(1), offTheDiagonal(3)]).toEqual([true, false])
+    path?.delete()
   })
 })
 

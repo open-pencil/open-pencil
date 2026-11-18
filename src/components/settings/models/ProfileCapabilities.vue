@@ -3,7 +3,9 @@ import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import type { AgentChoiceCategory } from '@/app/ai/agents/acp/options'
 import type { AIModelCapability, HarnessPermissionMode, ThinkingLevel } from '@/app/ai/models'
+import type { AgentOptionControl } from '@/app/ai/models/settings/profile-editor/selection'
 import { thinkingLevelOptions as buildThinkingLevelOptions } from '@/app/ai/models/thinking'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
@@ -21,6 +23,9 @@ const {
   capabilities,
   outputTokens,
   thinking = false,
+  agentOptions = [],
+  agentOptionValue = () => '',
+  acp = false,
   harness = false
 } = defineProps<{
   /** The catalog knows the model, so `capabilities` are its and not editable. */
@@ -29,13 +34,24 @@ const {
   outputTokens: number
   /** The provider takes a thinking level. */
   thinking?: boolean
-  /** The model runs through the Pi companion, which asks which tools it may use. */
+  /** The ACP agent's options for the model, such as its effort and mode; empty when it offers none. */
+  agentOptions?: AgentOptionControl[]
+  /** The value the profile names for one of the agent's options. */
+  agentOptionValue?: (category: AgentChoiceCategory) => string
+  /** The model runs through an ACP coding agent, which always has tools and sets its own limits. */
+  acp?: boolean
+  /**
+   * The model runs through the Pi companion, which asks which tools it may use. Its turn is text
+   * alone, so it has no image input to declare.
+   */
   harness?: boolean
 }>()
 const tools = defineModel<boolean>('tools', { required: true })
 const vision = defineModel<boolean>('vision', { required: true })
 const thinkingLevel = defineModel<ThinkingLevel>('thinkingLevel', { required: true })
 const permissionMode = defineModel<HarnessPermissionMode>('permissionMode', { required: true })
+
+const emit = defineEmits<{ agentOption: [category: AgentChoiceCategory, value: string] }>()
 
 const { ai, common } = useI18n()
 const thinkingLevelOptions = computed(() => buildThinkingLevelOptions(ai.value))
@@ -51,19 +67,31 @@ const support = (capability: AIModelCapability) =>
 <template>
   <SettingsSection>
     <template #title>{{ ai.modelCapabilities }}</template>
-    <template #description>{{
-      detected ? ai.modelCapabilitiesDetected : ai.modelCapabilitiesManual
+    <template v-if="!harness" #description>{{
+      acp
+        ? ai.agentImageInputHint
+        : detected
+          ? ai.modelCapabilitiesDetected
+          : ai.modelCapabilitiesManual
     }}</template>
     <SettingsGroup>
-      <SettingsRow :as="detected ? 'div' : 'label'" :label="ai.modelCapabilityTools">
+      <SettingsRow
+        v-if="!acp && !harness"
+        :as="detected ? 'div' : 'label'"
+        :label="ai.modelCapabilityTools"
+      >
         <span v-if="detected" class="text-xs text-surface">{{ support('tools') }}</span>
         <AppSwitch v-else v-model="tools" :label="ai.modelCapabilityTools" />
       </SettingsRow>
-      <SettingsRow :as="detected ? 'div' : 'label'" :label="ai.modelCapabilityVision">
+      <SettingsRow
+        v-if="!harness"
+        :as="detected ? 'div' : 'label'"
+        :label="ai.modelCapabilityVision"
+      >
         <span v-if="detected" class="text-xs text-surface">{{ support('vision') }}</span>
         <AppSwitch v-else v-model="vision" :label="ai.modelCapabilityVision" />
       </SettingsRow>
-      <SettingsRow :label="ai.outputLimit" :description="ai.outputLimitAutomatic">
+      <SettingsRow v-if="!acp" :label="ai.outputLimit" :description="ai.outputLimitAutomatic">
         <span class="text-xs text-surface tabular-nums"
           >{{ outputTokens.toLocaleString() }} {{ common.tokens }}</span
         >
@@ -80,6 +108,22 @@ const support = (capability: AIModelCapability) =>
         v-model="thinkingLevel"
         :label="ai.thinkingLevel"
         :options="thinkingLevelOptions"
+      />
+    </ProviderSettingsField>
+    <ProviderSettingsField
+      v-for="option in agentOptions"
+      :key="option.category"
+      v-slot="{ control }"
+      :label="option.label"
+      :hint="option.category === 'thought_level' ? ai.thinkingLevelDescription : undefined"
+    >
+      <AppSelect
+        v-bind="control"
+        :model-value="agentOptionValue(option.category)"
+        :label="option.label"
+        :options="option.options"
+        :data-test-id="`profile-agent-option-${option.category}`"
+        @update:model-value="emit('agentOption', option.category, $event)"
       />
     </ProviderSettingsField>
     <ProviderSettingsField v-if="harness" v-slot="{ control }" :label="ai.harnessToolPermissions">

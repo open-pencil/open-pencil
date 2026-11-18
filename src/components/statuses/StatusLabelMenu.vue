@@ -80,7 +80,7 @@ function clear() {
           @click="choose(state.id)"
         >
           <StatusDot :color="state.color" />
-          <span class="flex-1 text-left">{{ state.name }}</span>
+          <span class="flex-1 text-start">{{ state.name }}</span>
           <icon-lucide-check v-if="stateId === state.id" :class="styles.icon()" />
         </button>
         <div :class="styles.separator()" />

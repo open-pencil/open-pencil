@@ -8,8 +8,8 @@ import { createComponentInstanceActions } from './components/instances'
 import { createComponentPropertyActions } from './components/properties'
 import { createSlotActions } from './components/slots'
 import { createSlotAuthoringActions } from './components/slots/authoring'
-import { applyVariantProperties, variantSetProps } from './components/variant-set'
 import { createVariantActions } from './components/variants'
+import { applyVariantProperties, variantSetProps } from './components/variants/set'
 import type { EditorContext } from './types'
 
 export function createComponentActions(ctx: EditorContext) {

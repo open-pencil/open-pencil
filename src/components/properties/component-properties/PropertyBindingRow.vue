@@ -21,7 +21,7 @@ const panels = usePanelMessages()
       @click="$emit('select', binding.nodeId)"
     >
       <component :is="sceneNodeIcon(binding.node)" class="size-3.5 shrink-0" aria-hidden="true" />
-      <span class="min-w-0 truncate text-left"
+      <span class="min-w-0 truncate text-start"
         >{{ binding.variantName ? `${binding.variantName} / ` : '' }}{{ binding.name }}</span
       >
     </AppButton>

@@ -239,7 +239,10 @@ async function loadFontoxpath(): Promise<Fontoxpath> {
 
 export interface XPathQueryOptions {
   limit?: number
+  /** The name of the page to search; `pageId` takes precedence. */
   page?: string
+  /** The ID of the page to search. */
+  pageId?: string
 }
 
 export async function queryByXPath(
@@ -249,7 +252,9 @@ export async function queryByXPath(
 ): Promise<SceneNode[]> {
   const { limit = 1000 } = options
   const pages = graph.getPages()
-  const targetPages = options.page ? pages.filter((p) => p.name === options.page) : pages
+  let targetPages = pages
+  if (options.pageId) targetPages = pages.filter((p) => p.id === options.pageId)
+  else if (options.page) targetPages = pages.filter((p) => p.name === options.page)
 
   if (targetPages.length === 0) return []
 

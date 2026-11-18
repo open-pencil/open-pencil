@@ -7,6 +7,8 @@ import {
   PostgresRateLimitStore
 } from '#cloud/server'
 
+import { maxOf } from '@open-pencil/scene-graph/arrays'
+
 describe('Cloud enrollment integration', () => {
   test('deduplicates requests and applies audited reviews', async () => {
     const runtime = await createCloudTestDatabase()
@@ -105,7 +107,7 @@ describe('Cloud enrollment integration', () => {
       const results = await Promise.all(
         Array.from({ length: 20 }, () => store.increment('person@example.com'))
       )
-      expect(Math.max(...results.map((result) => result.totalHits))).toBe(20)
+      expect(maxOf(results.map((result) => result.totalHits))).toBe(20)
       expect(
         await runtime.database
           .selectFrom('apiRateLimit')
@@ -115,6 +117,61 @@ describe('Cloud enrollment integration', () => {
         requestCount: 20,
         keyHash: expect.not.stringContaining('person@example.com')
       })
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('invites everyone waiting with the letter, once, only where invitations are offered', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const email = createTransactionalEmailService(runtime.database, {
+        encryptionSecret: 'enrollment-test-secret-at-least-32-characters',
+        from: 'cloud@example.com'
+      })
+      const options = { publicURL: 'https://cloud.example.com', adminRecipients: [], email }
+      const selfHosted = createEnrollmentService(runtime.database, options)
+      const official = createEnrollmentService(runtime.database, { ...options, invitations: true })
+      await official.request({ email: 'ada@example.com', name: 'Ada' })
+      await official.request({ email: 'grace@example.com', name: 'Grace' })
+      await official.request({ email: 'linus@example.com', name: 'Linus' })
+      const [declined] = (await official.list({ search: 'linus' })).enrollments
+      if (!declined) throw new Error('Expected the request to decline')
+      await official.review('admin-user', declined.id, 'rejected', {})
+
+      const withoutEmail = createEnrollmentService(runtime.database, {
+        ...options,
+        email: undefined,
+        invitations: true
+      })
+      for (const service of [selfHosted, withoutEmail]) {
+        await expect(service.invitePending('admin-user')).rejects.toMatchObject({
+          code: 'invitations_unavailable'
+        })
+      }
+      // Another administrator declined it after this reviewer saw it waiting.
+      await expect(
+        official.review('admin-user', declined.id, 'approved', {
+          invite: true,
+          expectedStatus: 'pending'
+        })
+      ).rejects.toMatchObject({ code: 'invalid_enrollment_transition' })
+      expect(await official.invitePending('admin-user')).toEqual({ invited: 2 })
+      expect(await official.invitePending('admin-user')).toEqual({ invited: 0 })
+
+      expect(await official.isApproved('ada@example.com')).toBe(true)
+      expect(await official.isApproved('grace@example.com')).toBe(true)
+      expect(await official.statusForEmail('linus@example.com')).toBe('rejected')
+      const kinds = await runtime.database
+        .selectFrom('transactionalEmail')
+        .select(['kind', 'recipientEmailNormalized'])
+        .where('kind', 'in', ['enrollment-invited', 'enrollment-approved'])
+        .orderBy('recipientEmailNormalized')
+        .execute()
+      expect(kinds).toEqual([
+        { kind: 'enrollment-invited', recipientEmailNormalized: 'ada@example.com' },
+        { kind: 'enrollment-invited', recipientEmailNormalized: 'grace@example.com' }
+      ])
     } finally {
       await runtime.close()
     }

@@ -6,6 +6,6 @@ export default {
     prefix: 'shrink-0 self-start leading-5 text-muted',
     editor: 'flex min-w-0 flex-1 *:min-w-0 *:flex-1',
     /** Buttons over the field's top right corner, which the text's first line keeps clear. */
-    actions: 'absolute top-0.75 right-2 flex h-5 items-center'
+    actions: 'absolute top-0.75 inset-e-2 flex h-5 items-center'
   }
 } as const

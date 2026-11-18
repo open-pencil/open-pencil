@@ -17,7 +17,6 @@ function rawText(): Rolldown.Plugin {
   }
 }
 
-
 export default defineConfig(
   libraryConfig({
     entry: {

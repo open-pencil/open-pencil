@@ -1,1 +1,0 @@
-- Saving a large document on desktop hands its bytes to the native file writer as binary chunks, so the save no longer spends minutes encoding them as JSON.

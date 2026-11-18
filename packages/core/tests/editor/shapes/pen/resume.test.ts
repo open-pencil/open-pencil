@@ -2,7 +2,6 @@ import { afterEach, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
 const STRAIGHT = { tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
 

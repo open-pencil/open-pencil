@@ -1,3 +1,4 @@
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import type { IconOptions } from '@open-pencil/scene-graph/icons'
 
 import { parseIconName, type IconProvider } from '#core/icons/provider'
@@ -73,7 +74,7 @@ export function createIconSetsProvider({
       if (found.length === 0 && results[0]?.status === 'rejected') throw results[0].reason
       // The sources take turns, so one with many matches cannot crowd the others past the limit.
       const lists = found.map((result) => result.icons.filter(shown))
-      const longest = Math.max(0, ...lists.map((list) => list.length))
+      const longest = maxOf([0, ...lists.map((list) => list.length)])
       const icons = Array.from({ length: longest }, (_, index) =>
         lists.flatMap((list) => (index < list.length ? [list[index]] : []))
       )
@@ -105,7 +106,9 @@ export function createIconSetsProvider({
         )
       )
       const listed = lists.flatMap((list) => (list.status === 'fulfilled' ? list.value : []))
-      if (listed.length === 0 && lists[0]?.status === 'rejected') throw lists[0].reason
+      // Sets listed only as unavailable draw nothing, so they do not stand in for a failed fallback.
+      if (listed.every((info) => info.unavailable) && lists[0]?.status === 'rejected')
+        throw lists[0].reason
       return listed.filter((info) => !replaced.includes(info.prefix))
     },
 

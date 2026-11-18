@@ -1,2 +1,0 @@
-- A page's variable mode is saved in `.fig` files, and so is clearing it, where saving dropped it.
-- Saving an opened `.fig` after changing a page's or frame's variable mode, or moving layers into another mode, writes the values the bound layers below it now show, where their records kept the previous mode's.

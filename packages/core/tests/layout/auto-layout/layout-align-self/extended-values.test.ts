@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
+import { autoFrame, pageId, rect } from '#core-tests/helpers/layout'
+
 import { computeLayout } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { autoFrame, pageId, rect } from '#core-tests/helpers/layout'
 
 describe('layoutAlignSelf extended values', () => {
   test('layoutAlignSelf CENTER positions child at cross-axis center', () => {

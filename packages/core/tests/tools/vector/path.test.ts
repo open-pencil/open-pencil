@@ -4,8 +4,8 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-const pathSet = ALL_TOOLS.find((tool) => tool.name === 'path_set')
-if (!pathSet) throw new Error('path_set tool missing')
+const pathSet = ALL_TOOLS.find((tool) => tool.name === 'set_path')
+if (!pathSet) throw new Error('set_path tool missing')
 
 function setup() {
   const graph = new SceneGraph()
@@ -14,7 +14,7 @@ function setup() {
   return { graph, figma, id: node.id }
 }
 
-describe('path_set', () => {
+describe('set_path', () => {
   test('writes a normalized vector network', () => {
     const { graph, figma, id } = setup()
     const path = JSON.stringify({
@@ -58,6 +58,50 @@ describe('path_set', () => {
     const { graph, figma, id } = setup()
     const before = graph.getNode(id)?.vectorNetwork
     expect(pathSet.execute(figma, { id, path })).toEqual({ error })
+    expect(graph.getNode(id)?.vectorNetwork).toEqual(before)
+  })
+})
+
+describe('transform_path', () => {
+  const pathTransform = ALL_TOOLS.find((tool) => tool.name === 'transform_path')
+  if (!pathTransform) throw new Error('transform_path tool missing')
+
+  function line() {
+    const { graph, figma, id } = setup()
+    graph.updateNode(id, {
+      width: 10,
+      height: 10,
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 4, y: 2 }
+        ],
+        segments: [{ start: 0, end: 1, tangentStart: { x: 1, y: 1 }, tangentEnd: { x: -1, y: 0 } }],
+        regions: []
+      }
+    })
+    return { graph, figma, id }
+  }
+
+  test('scales about the centre, then flips, then moves', () => {
+    const { graph, figma, id } = line()
+    pathTransform.execute(figma, { id, scale: 2, flip: 'horizontal', move: { dx: 1, dy: -1 } })
+    const network = graph.getNode(id)?.vectorNetwork
+    // Scaled: (-5, -5), (3, -1); flipped across width 10: (15, -5), (7, -1); then moved.
+    expect(network?.vertices).toEqual([
+      { x: 16, y: -6 },
+      { x: 8, y: -2 }
+    ])
+    expect(network?.segments[0]).toMatchObject({
+      tangentStart: { x: -2, y: 2 },
+      tangentEnd: { x: 2, y: 0 }
+    })
+  })
+
+  test('asks for a transform when given none', () => {
+    const { graph, figma, id } = line()
+    const before = graph.getNode(id)?.vectorNetwork
+    expect(pathTransform.execute(figma, { id })).toEqual({ error: 'Pass scale, flip, or move' })
     expect(graph.getNode(id)?.vectorNetwork).toEqual(before)
   })
 })

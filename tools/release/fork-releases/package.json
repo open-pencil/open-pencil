@@ -1,0 +1,20 @@
+{
+  "name": "@open-pencil/fork-releases-tools",
+  "version": "0.0.0",
+  "private": true,
+  "bin": {
+    "fork-release": "./src/cli.ts"
+  },
+  "type": "module",
+  "imports": {
+    "#fork-releases/*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "citty": "^0.1.6",
+    "valibot": "^1.5.0"
+  }
+}

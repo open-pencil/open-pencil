@@ -12,6 +12,11 @@ export type EnrollmentEmailOptions = {
   publicURL: string
   adminRecipients: string[]
   email?: TransactionalEmailService
+  /**
+   * Whether an approval may carry the founder's letter (`enrollment-invited`) instead of the
+   * plain approval: only on the official deployment, whose letter it is.
+   */
+  invitations?: boolean
 }
 
 export async function enqueueEnrollmentRequested(
@@ -56,13 +61,19 @@ export async function enqueueEnrollmentReview(
     name: string
     status: Exclude<EnrollmentStatus, 'pending'>
     reviewedAt: Date
+    /** An approval that sends the letter instead of the plain approval. */
+    invite?: boolean
   }
 ): Promise<void> {
   if (!options.email) return
+  const kind =
+    input.status === 'approved' && input.invite
+      ? ('enrollment-invited' as const)
+      : (`enrollment-${input.status}` as const)
   await options.email.enqueue(
     {
-      idempotencyKey: `enrollment-${input.status}/${input.enrollmentId}/${input.reviewedAt.toISOString()}`,
-      kind: `enrollment-${input.status}`,
+      idempotencyKey: `${kind}/${input.enrollmentId}/${input.reviewedAt.toISOString()}`,
+      kind,
       recipientEmail: input.recipientEmail,
       payload: {
         name: input.name,

@@ -10,21 +10,20 @@ export default {
     /** One mode's value, under the mode's name when there are several. */
     value: 'flex flex-col gap-1',
     /** The fixed `--` in front of a CSS name the user types. */
-    prefix: 'font-mono text-xs text-muted',
+    prefix: 'font-mono text-xs text-muted [unicode-bidi:isolate] [direction:ltr]',
     /** A scope's checkbox and name, only as wide as they are, so a click beside them toggles nothing. */
     scope: 'flex w-fit items-center gap-2 text-xs text-surface',
-    /** A mode's value control beside the button that points it at a variable. */
+    /** A mode's value field, which holds the button that points it at a variable. */
     valueRow: 'flex items-center gap-1 [&>*:first-child]:min-w-0 [&>*:first-child]:flex-1',
-    valueControl: 'flex min-h-7 min-w-0 items-center gap-1.5',
     /** One mode in the collection inspector: its name, when it applies, and the CSS it writes. */
     mode: 'flex flex-col gap-1.5 border-b border-border pb-3 last:border-b-0 last:pb-0',
     /** The CSS a mode is written under, wrapped rather than cut so it reads in full. */
-    modeCSS: 'font-mono text-2xs break-all text-muted'
+    modeCSS: 'font-mono text-2xs break-all text-muted rtl:[direction:ltr] rtl:text-end'
   },
   variants: {
     /** Beside the token list on desktop; the whole panel, behind a back button, on mobile. */
     layout: {
-      side: { root: 'w-72 border-l border-border @6xl/tokens:w-80' },
+      side: { root: 'w-72 border-s border-border @6xl/tokens:w-80' },
       full: { root: 'min-h-0 w-full flex-1' }
     }
   },

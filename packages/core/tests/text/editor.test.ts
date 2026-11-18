@@ -1,15 +1,13 @@
 import { describe, test, expect } from 'bun:test'
 
 import type { CanvasKit, LineMetrics, Paragraph, RectWithDirection } from '@open-pencil/canvaskit'
-
 import { TextEditor } from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { TextLayout } from '#core/canvas/text/layout'
-
-import { asDouble } from '@open-pencil/test-support/doubles'
 const mockCk = asDouble<CanvasKit>({
   RectHeightStyle: { Max: 0 },
   RectWidthStyle: { Tight: 0 }
@@ -39,7 +37,7 @@ function editorState(editor: TextEditor) {
   return expectDefined(editor.state, 'text editor state')
 }
 
-function createParagraphEditor(textAlignVertical: SceneNode['textAlignVertical']) {
+function createParagraphEditor(textAlignVertical: SceneNode['textAlignVertical'], height = 100) {
   const hitTestYs: number[] = []
   const rects = [asDouble<RectWithDirection>({ rect: [4, 2, 14, 12] })]
   const lineMetrics = {
@@ -70,7 +68,7 @@ function createParagraphEditor(textAlignVertical: SceneNode['textAlignVertical']
   const editor = new TextEditor(mockCk)
   editor.setRenderer(renderer)
   const node = createDefaultNode(() => 'aligned-text', 'TEXT', {
-    height: 100,
+    height,
     text: 'Hello',
     textAlignVertical
   })
@@ -274,6 +272,17 @@ describe('TextEditor', () => {
     editorState(editor).cursor = 0
 
     expect(editor.getCaretRect()).toEqual({ x: 3, y0: 80, y1: 90 })
+  })
+
+  test('puts the caret of text taller than its box past the side away from its alignment', () => {
+    for (const [alignment, offset] of [
+      ['CENTER', -4],
+      ['BOTTOM', -8]
+    ] as const) {
+      const { editor } = createParagraphEditor(alignment, 12)
+
+      expect(editor.getCaretRect()).toEqual({ x: 14, y0: 2 + offset, y1: 12 + offset })
+    }
   })
 
   test('moveLeft', () => {

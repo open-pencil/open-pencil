@@ -1,6 +1,8 @@
 import { isEqual } from 'es-toolkit'
 import { computed, ref, watch } from 'vue'
 
+import { providerKind } from '@open-pencil/core/constants'
+
 import {
   designCustomAPIType,
   designCustomBaseURL,
@@ -41,8 +43,8 @@ export const providerDef = designProviderDefinition
 export const apiKeyStatus = ref<CredentialStatus>('missing')
 const credentialRevision = ref(0)
 
-export const isACPProvider = computed(() => providerID.value.startsWith('acp:'))
-export const isHarnessProvider = computed(() => providerID.value === 'harness:pi')
+export const isACPProvider = computed(() => providerKind(providerID.value) === 'acp')
+export const isHarnessProvider = computed(() => providerKind(providerID.value) === 'harness')
 export const isAgentProvider = computed(() => isACPProvider.value || isHarnessProvider.value)
 
 export const isConfigured = computed(() => {
@@ -69,7 +71,7 @@ async function refreshStatus(reference: CredentialRef): Promise<CredentialStatus
 
 function designCredentialReference(): CredentialRef | null {
   const connection = designModelConnection.value
-  if (!connection || connection.providerID.startsWith('acp:')) return null
+  if (!connection || providerKind(connection.providerID) === 'acp') return null
   return modelConnectionCredentialRef(connection)
 }
 
@@ -145,7 +147,7 @@ export function registerAIChatEffects(markTransportDirty: () => void) {
     void refreshAIProviderStatus()
     markTransportDirty()
   })
-  // `web_search` follows the saved Exa key and the Design model's Cloud workspace, for the chat
+  // `search_web` follows the saved Exa key and the Design model's Cloud workspace, for the chat
   // and for agents reaching OpenPencil's tools.
   watch(
     () =>

@@ -1,6 +1,8 @@
 import type { SyntaxNode } from '@lezer/common'
 import { decodeHTML } from 'entities'
 
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 import { DESIGN_JSX_ELEMENTS } from '../elements'
 import { FRAGMENT, type TreeNode } from '../tree'
 import { readLiteral } from './literals'
@@ -156,7 +158,7 @@ export function projectPreview(root: SyntaxNode, source: string): JSXPreviewSnap
       if (child.name === 'JSXElement') {
         const projected = element(child, depth + 1)
         // A nested fragment adds its children, as it does in rendered trees.
-        if (projected?.type === FRAGMENT) result.children.push(...projected.children)
+        if (projected?.type === FRAGMENT) appendAll(result.children, projected.children)
         else if (projected) result.children.push(projected)
       } else if (child.name === 'JSXText') {
         let value = raw(child)

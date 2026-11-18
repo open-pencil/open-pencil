@@ -6,6 +6,7 @@ import { readFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { type SceneNode, SceneGraph } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { heavy, HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
 import { repoPath } from '@open-pencil/test-support/paths'
@@ -18,7 +19,7 @@ heavy('gold-preview.fig clipboard roundtrip', () => {
     const res: SceneNode[] = []
     for (const c of g.getChildren(parentId)) {
       res.push(c)
-      res.push(...flatten(g, c.id))
+      appendAll(res, flatten(g, c.id))
     }
     return res
   }

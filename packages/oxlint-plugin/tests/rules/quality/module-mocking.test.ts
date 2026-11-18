@@ -2,10 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { lint, ruleDiagnostics } from '#oxlint-plugin-tests/helpers/lint'
 
-const rule = 'no-module-mocking'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rule = '@open-pencil/runtime/no-module-mocking'
+const rules = { [rule]: 'error' }
 
-describe('no-module-mocking', () => {
+describe('@open-pencil/runtime/no-module-mocking', () => {
   test.each([
     "vi.mock('./store')",
     "jest['doMock']('./store')",

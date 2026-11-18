@@ -8,7 +8,9 @@ export function readFontTables(bytes: Uint8Array): FontTables {
   const count = view.getUint16(4)
   for (let index = 0; index < count; index++) {
     const record = 12 + index * 16
-    const tag = String.fromCharCode(...bytes.subarray(record, record + 4))
+    const tag = Array.from(bytes.subarray(record, record + 4), (code) =>
+      String.fromCharCode(code)
+    ).join('')
     const offset = view.getUint32(record + 8)
     const length = view.getUint32(record + 12)
     tables.set(tag, bytes.subarray(offset, offset + length))

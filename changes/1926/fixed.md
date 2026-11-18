@@ -1,3 +1,0 @@
-- PDF exports draw what the canvas draws: Arabic and other shaped text keeps every letter, its order, and its spaces, in embedded fonts that stay searchable, and blurs, shadows, images, and shader fills come out as on the canvas instead of clipped or missing (#1862, #1926).
-- SVG exports place right-to-left words where the canvas draws them, so a line that mixes Arabic or Hebrew with Latin in one font no longer reads reversed (#1862, #1926).
-- Exports from the CLI and MCP server running at the same time no longer draw one document's shapes in another's, which happened to documents read from files whose layers share ids (#1926).

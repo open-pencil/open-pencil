@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
+
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 beforeAll(() => registerTestFont())
 
@@ -79,7 +80,7 @@ describe('setBoundVariableForEffect', () => {
       visible: true,
       blurType: 'NORMAL' as const
     }
-    expect(api.variables.setBoundVariableForEffect(blur, 'radius', radius)).toEqual({
+    expect<unknown>(api.variables.setBoundVariableForEffect(blur, 'radius', radius)).toEqual({
       ...blur,
       boundVariables: { radius: alias(radius.id) }
     })
@@ -198,7 +199,7 @@ describe('bound effects on a layer', () => {
 
     twin.setValueForMode(collection.defaultModeId, 20)
     radius.setValueForMode(collection.defaultModeId, 50)
-    expect(rect.effects[0].radius).toBe(20)
+    expect(rect.effects[0]).toMatchObject({ radius: 20 })
     expect(rect.boundVariables).toEqual({ effects: [alias(twin.id)] })
   })
 
@@ -224,7 +225,7 @@ describe('bound effects on a layer', () => {
     rect.effects = [shadow]
     rect.rescale(2)
     rect.setExplicitVariableModeForCollection(collection, dark)
-    expect(rect.effects[0].radius).toBe(24)
+    expect(rect.effects[0]).toMatchObject({ radius: 24 })
 
     const component = api.createComponent()
     const child = api.createRectangle()
@@ -232,13 +233,13 @@ describe('bound effects on a layer', () => {
     child.effects = [shadow]
     const instance = component.createInstance()
     instance.rescale(2)
-    expect(instance.children[0].effects[0].radius).toBe(16)
+    expect(instance.children[0].effects[0]).toMatchObject({ radius: 16 })
     instance.setExplicitVariableModeForCollection(collection, dark)
-    expect(instance.children[0].effects[0].radius).toBe(48)
+    expect(instance.children[0].effects[0]).toMatchObject({ radius: 48 })
 
     const scaled = component.createInstance()
     scaled.rescale(3)
     scaled.effects = [shadow]
-    expect(scaled.effects[0].radius).toBe(24)
+    expect(scaled.effects[0]).toMatchObject({ radius: 24 })
   })
 })

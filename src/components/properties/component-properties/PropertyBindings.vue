@@ -28,12 +28,13 @@ const panels = usePanelMessages()
       <CollapsibleTrigger as-child>
         <AppButton size="xs" variant="ghost" class="w-full justify-start gap-1">
           <icon-lucide-chevron-right
-            class="size-3.5 shrink-0 transition-transform data-[open]:rotate-90 motion-reduce:transition-none"
+            data-direction="reading"
+            class="size-3.5 shrink-0 transition-transform data-[open]:rotate-90 rtl:data-[open]:-rotate-90 motion-reduce:transition-none"
             :data-open="open || undefined"
           />
           <component :is="sceneNodeIcon(group.node)" class="size-3.5 shrink-0" aria-hidden="true" />
           <span class="min-w-0 truncate">{{ group.name }}</span>
-          <span class="ml-auto text-3xs text-muted">{{
+          <span class="ms-auto text-3xs text-muted">{{
             group.bindings.length === totalVariants
               ? panels.allVariants
               : panels.usedInVariants({ count: group.bindings.length, total: totalVariants })
@@ -41,7 +42,7 @@ const panels = usePanelMessages()
         </AppButton>
       </CollapsibleTrigger>
       <CollapsibleContent :class="collapsibleContentMotion">
-        <div class="flex flex-col gap-1 pl-3">
+        <div class="flex flex-col gap-1 ps-3">
           <PropertyBindingRow
             v-for="binding in group.bindings"
             :key="binding.nodeId"

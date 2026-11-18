@@ -2,10 +2,12 @@ import { afterEach, beforeEach, describe, expect, jest, test } from 'bun:test'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { createDeferred } from '@/app/runtime/deferred'
 import {
   appPreferences,
   DEFAULT_APP_PREFERENCES,
-  updateStartupUpdateCheck
+  updateStartupUpdateCheck,
+  updateUpdateChannel
 } from '@/app/settings/preferences/store'
 import { toast } from '@/app/shell/ui'
 import {
@@ -67,6 +69,21 @@ describe('checkForAppUpdate', () => {
     expect(toast.toasts.value).toEqual([])
   })
 
+  test('asks the channel the preference names, or the installed build’s', async () => {
+    const asked: unknown[] = []
+    await mockTauriIPC((cmd, args) => {
+      if (cmd === 'check_for_update') asked.push(args)
+      return null
+    })
+
+    await checkForAppUpdate({ silent: true, messages })
+    updateUpdateChannel('nightly')
+    await checkForAppUpdate({ silent: true, messages })
+
+    // Tests run as 0.0.0-test, a stable-channel build.
+    expect(asked).toEqual([{ channel: 'stable' }, { channel: 'nightly' }])
+  })
+
   test('returns quietly when no update is available', async () => {
     const calls: string[] = []
     await mockTauriIPC((cmd) => {
@@ -76,7 +93,7 @@ describe('checkForAppUpdate', () => {
 
     await checkForAppUpdate({ silent: true, messages })
 
-    expect(calls).toEqual(['plugin:updater|check'])
+    expect(calls).toEqual(['check_for_update'])
     expect(toast.toasts.value).toEqual([])
   })
 
@@ -88,11 +105,29 @@ describe('checkForAppUpdate', () => {
     expect(toast.toasts.value.map((entry) => entry.message)).toEqual([messages.value.upToDate])
   })
 
+  test('shows the answer to Check for Updates asked while the launch check runs', async () => {
+    const { promise: pending, resolve: answer } = createDeferred<null>()
+    let asked = 0
+    await mockTauriIPC((cmd) => {
+      if (cmd !== 'check_for_update') return null
+      asked += 1
+      return pending
+    })
+
+    const launch = checkForAppUpdate({ silent: true, messages })
+    const menu = checkForAppUpdate({ messages })
+    answer(null)
+    await Promise.all([launch, menu])
+
+    expect(asked).toBe(1)
+    expect(toast.toasts.value.map((entry) => entry.message)).toEqual([messages.value.upToDate])
+  })
+
   test('opens the Software Update window for an available update', async () => {
     const calls: Array<{ cmd: string; args: unknown }> = []
     await mockTauriIPC((cmd, args) => {
       calls.push({ cmd, args })
-      if (cmd === 'plugin:updater|check') return AVAILABLE_UPDATE
+      if (cmd === 'check_for_update') return AVAILABLE_UPDATE
       if (cmd === 'plugin:window|get_all_windows') return ['main']
       return null
     })
@@ -115,7 +150,7 @@ describe('checkForAppUpdate', () => {
     const calls: string[] = []
     await mockTauriIPC((cmd) => {
       calls.push(cmd)
-      if (cmd === 'plugin:updater|check') return AVAILABLE_UPDATE
+      if (cmd === 'check_for_update') return AVAILABLE_UPDATE
       if (cmd === 'plugin:window|get_all_windows') return ['main', UPDATER_WINDOW_LABEL]
       return null
     })
@@ -128,7 +163,7 @@ describe('checkForAppUpdate', () => {
 
   test('reports a failed check from the menu', async () => {
     await mockTauriIPC((cmd) => {
-      if (cmd === 'plugin:updater|check') throw new Error('offline')
+      if (cmd === 'check_for_update') throw new Error('offline')
       return null
     })
 
@@ -156,7 +191,7 @@ describe('scheduleStartupUpdateCheck', () => {
 
     jest.advanceTimersByTime(1)
     await pending
-    expect(calls).toEqual(['plugin:updater|check'])
+    expect(calls).toEqual(['check_for_update'])
     expect(toast.toasts.value).toEqual([])
   })
 
@@ -186,7 +221,7 @@ describe('scheduleStartupUpdateCheck', () => {
 
     await checkForAppUpdate({ messages })
 
-    expect(calls).toEqual(['plugin:updater|check'])
+    expect(calls).toEqual(['check_for_update'])
     expect(toast.toasts.value.map((entry) => entry.message)).toEqual([messages.value.upToDate])
   })
 })

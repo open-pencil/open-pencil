@@ -1,1 +1,0 @@
-- A paint bound to a color variable keeps a color or opacity written over it until the variable's color for that layer changes, the canvas and the Plugin API show it as stored, and instances keep their own bound paints, as in Figma.

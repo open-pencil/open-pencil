@@ -1,7 +1,10 @@
+import { mapValues } from 'es-toolkit'
+
 import type { IconOptions } from '@open-pencil/scene-graph/icons'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
 import { tintedIconPath } from '#core/icons/artwork'
+import { resolveIconOptions } from '#core/icons/options'
 import type { IconOption, IconPath } from '#core/icons/types'
 import {
   fontInstance,
@@ -52,12 +55,8 @@ const WOFF2_USER_AGENT =
 
 /** Every option set, each clamped to its axis and defaulted where `options` leaves it out. */
 export function materialSymbolsOptions(options: IconOptions = {}): Record<string, number> {
-  return Object.fromEntries(
-    MATERIAL_SYMBOLS_OPTIONS.map(({ key, min, max, default: fallback }) => {
-      const value = options[key]
-      return [key, typeof value === 'number' ? Math.min(max, Math.max(min, value)) : fallback]
-    })
-  )
+  // Every Material Symbols option is an axis, so each resolves to a number.
+  return mapValues(resolveIconOptions(MATERIAL_SYMBOLS_OPTIONS, options), Number)
 }
 
 /** A Material Symbols font holding just `names`, every axis variable, as Google cuts it. */

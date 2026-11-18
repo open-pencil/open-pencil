@@ -1,0 +1,1 @@
+- Cloud documents send a system notification when someone mentions you in a comment, and, if turned on in Settings › Notifications, when someone replies in a thread you wrote in; clicking it opens the thread (#2178).

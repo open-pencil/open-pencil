@@ -9,6 +9,8 @@ import {
 } from '@open-pencil/cloud/client'
 import type { CloudDiscovery } from '@open-pencil/cloud/contract'
 
+import { cloudLocale } from '@/app/cloud/sessions/locale'
+
 const done = <T>(value: T): CloudAuthResult<T> => ({ ok: true, value })
 
 /** Sign-in steps against the Cloud server the portal is served from. */
@@ -39,7 +41,7 @@ export function createPortalAuth(discovery: CloudDiscovery, options: { captcha?:
     },
 
     signUp: (input: { name: string; email: string; password: string; verifiedURL: string }) =>
-      signUpToCloudWithEmail(discovery, input, captcha),
+      signUpToCloudWithEmail(discovery, { ...input, locale: cloudLocale() }, captcha),
 
     resendVerification: (email: string, verifiedURL: string) =>
       resendCloudVerification(discovery, { email, verifiedURL }, captcha),
@@ -102,8 +104,10 @@ export function createPortalAuth(discovery: CloudDiscovery, options: { captcha?:
         : done(undefined)
     },
 
-    async signOut(): Promise<void> {
-      await auth.signOut()
+    /** Ends this browser's session; a failure leaves it signed in, to try again. */
+    async signOut(): Promise<CloudAuthResult> {
+      const result = await auth.signOut()
+      return result.error ? cloudAuthFailure(result.error) : done(undefined)
     }
   }
 }

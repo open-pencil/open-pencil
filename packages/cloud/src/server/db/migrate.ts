@@ -8,21 +8,49 @@ import * as documents from './migrations/004_documents'
 import * as sharing from './migrations/005_sharing'
 import * as operations from './migrations/006_operations'
 import * as trash from './migrations/007_trash'
+import * as terms from './migrations/008_terms'
+import * as accessTokens from './migrations/009_access_tokens'
+import * as storageLimitNotices from './migrations/010_storage_limit_notices'
+import * as accountIds from './migrations/011_account_ids'
+import * as emailLocales from './migrations/012_email_locales'
+import * as documentBlockEmails from './migrations/013_document_block_emails'
+import * as reportReplies from './migrations/014_report_replies'
+import * as comments from './migrations/015_comments'
+import * as commentNotifications from './migrations/016_comment_notifications'
+import * as invitationEmails from './migrations/017_invitation_emails'
 import type { CloudDatabase } from './tables'
 
-const migrations: Record<string, Migration> = {
+/**
+ * A migration runs before the code it ships with, while the previous release still serves, so it
+ * only adds (expand): no table or column dropped, renamed, retyped, or newly required. One that
+ * must (contract) names each table or `table.column` it changes in `contracts`, and ships a
+ * release after the last code that used them (`tests/integration/server/db/expand.test.ts`).
+ */
+export type CloudMigration = Migration & { contracts?: readonly string[] }
+
+const migrations: Record<string, CloudMigration> = {
   '001_accounts': accounts,
   '002_workspaces': workspaces,
   '003_storage': storage,
   '004_documents': documents,
   '005_sharing': sharing,
   '006_operations': operations,
-  '007_trash': trash
+  '007_trash': trash,
+  '008_terms': terms,
+  '009_access_tokens': accessTokens,
+  '010_storage_limit_notices': storageLimitNotices,
+  '011_account_ids': accountIds,
+  '012_email_locales': emailLocales,
+  '013_document_block_emails': documentBlockEmails,
+  '014_report_replies': reportReplies,
+  '015_comments': comments,
+  '016_comment_notifications': commentNotifications,
+  '017_invitation_emails': invitationEmails
 }
 
 /** Cloud's migrations, in order. */
 export class CloudMigrationProvider implements MigrationProvider {
-  async getMigrations(): Promise<Record<string, Migration>> {
+  async getMigrations(): Promise<Record<string, CloudMigration>> {
     return migrations
   }
 }
@@ -73,6 +101,18 @@ export async function migrateToLatest(migrator: Migrator, failure: string): Prom
       failure
     )
   }
+}
+
+/**
+ * Cloud's migrations this database has not run, in order: none once a deployment of this
+ * version has started. A tool that only reads or writes rows checks this instead of migrating,
+ * so running it never changes the schema under a server of another version.
+ */
+export async function pendingCloudMigrations(database: Kysely<CloudDatabase>): Promise<string[]> {
+  const migrator = new Migrator({ db: database, provider: new CloudMigrationProvider() })
+  return (await migrator.getMigrations())
+    .filter((migration) => migration.executedAt === undefined)
+    .map((migration) => migration.name)
 }
 
 export async function migrateCloudDatabase(

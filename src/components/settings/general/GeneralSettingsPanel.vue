@@ -5,6 +5,7 @@ import { computed } from 'vue'
 import { type Locale, useI18n } from '@open-pencil/vue/i18n'
 
 import { recoveryEnabled, setRecoveryEnabled } from '@/app/document/recovery/preferences'
+import { isRightToLeftLocale, mirrorInterfacePreference } from '@/app/i18n/direction'
 import { DEFAULT_RECENT_FILES_LIMIT } from '@/app/recent-files/limit'
 import { recentFilesAvailable, recentFilesLimit } from '@/app/recent-files/preferences'
 import { RECENT_FILES_LIMIT_MIN, RECENT_FILES_LIMIT_MAX } from '@/app/recent-files/schema'
@@ -30,6 +31,7 @@ import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import PresetNumberField from '@/components/ui/input/PresetNumberField.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
+import { settingsSelectUI } from '@/theme/settings/controls'
 
 const { availableLocales, locale, localeLabels, menu, recovery, setLocale, settings } = useI18n()
 
@@ -40,7 +42,6 @@ const recentFilesRangeMessage = computed(() =>
 )
 
 const { theme } = useAppTheme()
-const selectUI = { trigger: 'w-full sm:w-52' }
 
 const language = computed<Locale>({
   get: () => locale.value,
@@ -63,6 +64,7 @@ const preserveUnsavedWork = computed({
   set: setRecoveryEnabled
 })
 const defaultInterfaceScale = DEFAULT_APP_PREFERENCES.appearance.interfaceScale
+const defaultMirror = DEFAULT_APP_PREFERENCES.appearance.mirrorInterface
 const interfaceScaleOptions = computed(() => {
   const format = new Intl.NumberFormat(locale.value, { style: 'percent' })
   return INTERFACE_SCALES.map((value) => ({ value, label: format.format(value / 100) }))
@@ -80,8 +82,22 @@ const interfaceScaleOptions = computed(() => {
             v-model="language"
             :label="menu.language"
             :options="languageOptions"
-            :ui="selectUI"
+            :ui="settingsSelectUI"
             data-test-id="settings-language"
+          />
+        </SettingsRow>
+        <SettingsRow
+          v-if="isRightToLeftLocale(locale)"
+          as="label"
+          :label="settings.mirrorInterface"
+          :description="settings.mirrorInterfaceDescription"
+          :modified="mirrorInterfacePreference !== defaultMirror"
+          @reset="mirrorInterfacePreference = defaultMirror"
+        >
+          <AppSwitch
+            v-model="mirrorInterfacePreference"
+            :label="settings.mirrorInterface"
+            data-test-id="settings-mirror-interface"
           />
         </SettingsRow>
       </SettingsGroup>
@@ -101,7 +117,7 @@ const interfaceScaleOptions = computed(() => {
             v-model="interfaceScalePreference"
             :label="settings.interfaceScale"
             :options="interfaceScaleOptions"
-            :ui="selectUI"
+            :ui="settingsSelectUI"
             data-test-id="settings-interface-scale"
           />
         </SettingsRow>
@@ -119,7 +135,7 @@ const interfaceScaleOptions = computed(() => {
               { value: 'light', label: menu.themeLight },
               { value: 'dark', label: menu.themeDark }
             ]"
-            :ui="selectUI"
+            :ui="settingsSelectUI"
           />
         </SettingsRow>
         <SettingsRow
@@ -143,7 +159,7 @@ const interfaceScaleOptions = computed(() => {
               { value: 'system', label: settings.animationsSystem },
               { value: 'off', label: settings.animationsOff }
             ]"
-            :ui="selectUI"
+            :ui="settingsSelectUI"
           />
         </SettingsRow>
       </SettingsGroup>

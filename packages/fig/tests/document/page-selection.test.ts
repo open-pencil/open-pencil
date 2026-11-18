@@ -5,6 +5,7 @@ import { figArchiveOf } from '#fig-tests/helpers/fig-fixtures'
 import { createFigDocumentSession, materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('selected-page assembly excludes unrelated content but keeps cross-page components', () => {
@@ -126,7 +127,7 @@ async function enclosedComponentArchive(
     }
   ]
   if (!placed) records.pop()
-  records.push(...extra)
+  appendAll(records, extra)
   return figArchiveOf(records)
 }
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useId } from 'vue'
 
+import { useSettingsSectionHeading } from './heading'
 import SettingsResetButton from './SettingsResetButton.vue'
 
 /**
@@ -13,13 +14,16 @@ const { modified = false } = defineProps<{
 }>()
 const emit = defineEmits<{ reset: [] }>()
 const headingId = useId()
+const heading = useSettingsSectionHeading()
 </script>
 
 <template>
   <section class="flex flex-col gap-3" :aria-labelledby="headingId">
     <div class="flex items-start justify-between gap-4">
       <div class="min-w-0 flex-1">
-        <h3 :id="headingId" class="text-xs font-semibold text-surface"><slot name="title" /></h3>
+        <component :is="heading" :id="headingId" class="text-xs font-semibold text-surface">
+          <slot name="title" />
+        </component>
         <p v-if="$slots.description" class="mt-1 text-2xs text-muted">
           <slot name="description" />
         </p>

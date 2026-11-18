@@ -84,20 +84,31 @@ Current commands:
 | Storybook browser              | `bun run test:storybook`     |
 | Figma acceptance               | `bun run test:figma`         |
 | Native WebView                 | `bun run test:native`        |
+| Load every browser spec        | `bun run check:specs`        |
 
-During implementation, run the affected unit files or one representative browser scenario. Inspect discovery changes without executing the whole suite when reorganizing files. Use the final CI gate after integration; do not rerun full suites for each edit. Report commands actually run, and distinguish focused coverage from full acceptance.
+During implementation, run the affected unit files or one representative browser scenario. Inspect discovery changes without executing the whole suite when reorganizing files; `bun run check:specs` lists every spec and fails when one cannot load, such as on an import only a bundler reads. Use the final CI gate after integration; do not rerun full suites for each edit. Report commands actually run, and distinguish focused coverage from full acceptance.
 
 Visual changes require inspection and committed coverage. Update only a justified affected snapshot, then rerun that test without update mode. Never relax tolerances or regenerate unrelated baselines to turn a failed run green. Browser GPU parity and real glyph coverage complement CPU rendering tests; they are not redundant merely because both compare pixels.
 
 ### When a run disagrees with the code
 
-Two environment faults look exactly like a code regression, and both have cost real debugging time.
+These environment faults look exactly like a code regression, and each has cost real debugging time.
 
 Browser suites resolve `@open-pencil/*` through each package's built `dist`, which Vite then pre-bundles. Rebuilding a package does not invalidate that cache, so a Playwright run can execute code from before your change — including throwing on a field you just added. If a browser run contradicts the source you are reading, delete `node_modules/.vite` and run again before believing it.
 
 Heavy tests, the ones that parse the large fixtures or a populated `gold-preview.fig` more than once, run only with `BUN_HEAVY_TESTS=true`. The unit test runner sets it and gives each heavy file its own Bun process, because one such graph takes gigabytes and a process keeps every graph a test module holds until it exits: a bare `bun test` over `packages/core/tests/io/formats/fig` with heavy tests enabled has reached 37 GB. A bare `bun test` and `test:unit:quick` therefore skip them; `bun run test:unit` runs them, and `bun run test:unit:heavy` or `bun tools/dev/unit-tests/src/run.ts <group> --heavy-only` runs the heavy files alone.
 
 Heavier `.fig` suites are sensitive to machine load. A full run alongside other work has reported failures that vanish on a quiet re-run, with the same suite taking three times as long. Re-run a failing heavy test alone before concluding anything, and compare against the same test on `master` under the same load rather than against a remembered baseline. Raising its timeout is still never the fix.
+
+A unit group's quick files share one Bun process, and they run in directory-listing order, which differs between CI runs. A test can therefore fail in one run and pass in the next on the same commit, because an earlier file left global state behind. To reproduce it, take the `##[group]<file>:` lines from the failing job's log up to the failing file and run `BUN_HEAVY_TESTS=false bun test <those files, in that order>` from the repository root; then halve the list until the smallest set that still fails is left. When a replay never fails, look at process-wide state instead: font providers attached to the shared font manager, a registered font that makes a `.fig` export shape text, or an installed text measurer. A test that attaches a font provider goes through `attachFontProvider` in `packages/core/tests/canvas/helpers.ts`, which detaches it when the test finishes.
+
+A spec that loads app modules from the page with `import('/src/…')` gets a second module instance once Vite has reloaded those modules, or once the server's branch changed under it: the store it reads is then empty, or the app fails to boot with a duplicate declaration. Restart the server rather than debug the spec.
+
+A few local results need a second look before they count:
+
+- `bun run format:check` compares `git status` before and after formatting, so any uncommitted or untracked file fails it. Run it on a clean tree.
+- The root `bun run typecheck` does not reach packages with their own `tsconfig.json`; after moving or renaming exports, also run `bun run typecheck` in each package you touched.
+- WebKit, Safari included, can fail to load the app through a `dev:portless` URL with "Importing a module script failed", because the proxy answers some of its parallel module requests with 502. Load the direct Vite URL to check WebKit.
 
 ## Server ownership and worktrees
 

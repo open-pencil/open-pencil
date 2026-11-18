@@ -1,4 +1,4 @@
-import { appTargetOptions } from '#cli/app/target'
+import { pageOptions } from '#cli/app/target'
 
 /** The document and node pair every two-node diff command takes. */
 export const nodePairArgs = {
@@ -9,6 +9,6 @@ export const nodePairArgs = {
   },
   from: { type: 'string', description: 'Source node ID', required: true },
   to: { type: 'string', description: 'Target node ID', required: true },
-  ...appTargetOptions,
+  ...pageOptions('current page'),
   json: { type: 'boolean', description: 'Output as JSON' }
 } as const

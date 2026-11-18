@@ -1,1 +1,0 @@
-- The desktop app binary is about a third smaller on macOS arm64.

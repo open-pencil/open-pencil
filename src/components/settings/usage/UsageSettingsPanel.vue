@@ -38,6 +38,9 @@ const totals = computed(() => {
     <template #title>{{ settings.usage }}</template>
     <template #description>{{ diagnosticMessages.usageDescription }}</template>
 
+    <!-- A campaign's note, such as Cloud's AI credits, which come with their own usage. -->
+    <slot name="campaign" />
+
     <SettingsGroup>
       <SettingsRow
         as="label"

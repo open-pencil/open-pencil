@@ -3,7 +3,10 @@ import { join } from 'node:path'
 
 import { htmlToDesignDocument, type DesignDocument, type DesignElement } from '@open-pencil/dom-css'
 import { createHTMLEngineRuntime, loadHTMLEngine } from '@open-pencil/html-engine'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { FIXTURES } from '@open-pencil/test-support/paths'
+
+import { engineWithInter } from './helpers/engine'
 
 function elementById(document: DesignDocument, id: string): DesignElement {
   const walk = (nodes: DesignDocument['children']): DesignElement | undefined => {
@@ -18,14 +21,6 @@ function elementById(document: DesignDocument, id: string): DesignElement {
   const element = walk(document.children)
   if (!element) throw new Error(`No #${id}`)
   return element
-}
-
-/** The engine with the repository's Latin subset of Inter as its sans-serif font, so text has lines. */
-async function engineWithInter() {
-  const engine = await loadHTMLEngine()
-  engine.addFont(await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes())
-  engine.setGenericFamily('sans-serif', ['Inter Variable', 'Inter'])
-  return engine
 }
 
 async function styled(html: string) {
@@ -48,6 +43,57 @@ describe('the HTML engine runtime', () => {
     // The body's default 8px margin, as a browser lays it out.
     expect(row.layout?.box).toEqual({ x: 8, y: 8, width: 784, height: 50 })
     expect(a.layout?.box).toEqual({ x: 8, y: 8, width: 100, height: 50 })
+  })
+
+  test('gives sizes as the page set them, and the box layout gave them in layout', async () => {
+    const document = await styled(
+      `<style>.half { width: 50%; min-height: 20px; flex-basis: 30px }</style>
+      <div id="auto">Text</div><div id="half" class="half"></div><div id="fixed" style="width:120px;max-width:none"></div>`
+    )
+    const sizes = (id: string) => {
+      const style = elementById(document, id).computedStyle ?? {}
+      return [
+        style.width,
+        style.height,
+        style['min-height'],
+        style['max-width'],
+        style['flex-basis']
+      ]
+    }
+
+    expect(sizes('auto')).toEqual(['auto', 'auto', 'auto', 'none', 'auto'])
+    expect(sizes('half')).toEqual(['50%', 'auto', '20px', 'none', '30px'])
+    expect(sizes('fixed')).toEqual(['120px', 'auto', 'auto', 'none', 'auto'])
+    expect(elementById(document, 'half').layout?.box.width).toBe(392)
+  })
+
+  test('gives side margins as the page set them, so auto ones say where a block goes', async () => {
+    const document = await styled(
+      `<div id="centered" style="width:100px;margin:0 auto"></div><div id="end" style="width:100px;margin-left:auto;margin-right:4%"></div>`
+    )
+    const margins = (id: string) => {
+      const style = elementById(document, id).computedStyle ?? {}
+      return [style['margin-left'], style['margin-right']]
+    }
+
+    expect(margins('centered')).toEqual(['auto', 'auto'])
+    expect(margins('end')).toEqual(['auto', '4%'])
+    expect(elementById(document, 'centered').layout?.box.x).toBe(350)
+  })
+
+  test('gives an inline element the box around its fragments, as a browser does', async () => {
+    const document = await styled(
+      `<p style="width:120px">Some words before <span id="s">a span that wraps onto the next line</span></p>`
+    )
+    const layout = elementById(document, 's').layout
+    const fragments = layout?.fragments ?? []
+
+    expect(fragments.length).toBeGreaterThan(1)
+    const left = minOf(fragments.map((f) => f.x))
+    const right = maxOf(fragments.map((f) => f.x + f.width))
+    const top = minOf(fragments.map((f) => f.y))
+    const bottom = maxOf(fragments.map((f) => f.y + f.height))
+    expect(layout?.box).toEqual({ x: left, y: top, width: right - left, height: bottom - top })
   })
 
   test('applies media queries for the viewport it lays out in', async () => {
@@ -127,6 +173,69 @@ describe('the HTML engine runtime', () => {
     expect(elementById(document, 'b').layout?.box.x).toBe(
       (elementById(document, 'a').layout?.box.x ?? 0) + 40
     )
+  })
+
+  test('gives a cell of a collapsed table half of each border it shares, as a browser does', async () => {
+    const document = await styled(
+      `<table id="t" style="border-collapse:collapse;border-spacing:0">
+        <tr id="r"><td id="a" style="border:2px solid;padding:0;width:40px;height:20px"></td>
+        <td id="b" style="border:2px solid;padding:0;width:40px;height:20px"></td></tr></table>`
+    )
+    const box = (id: string) => elementById(document, id).layout?.box
+    const table = box('t')
+    const [a, b] = [box('a'), box('b')]
+
+    // The table holds the outer half of the outer borders, each cell the inner half of its own.
+    expect(a).toMatchObject({
+      x: (table?.x ?? 0) + 1,
+      y: (table?.y ?? 0) + 1,
+      width: 42,
+      height: 22
+    })
+    // Cells sharing a border touch, its line centered on their edge.
+    expect(b?.x).toBe((a?.x ?? 0) + 42)
+    expect(box('r')).toMatchObject({ x: a?.x, width: 84, height: 22 })
+  })
+
+  test('borders a table and its cells by its border attribute, as a browser does', async () => {
+    const document = await styled('<table id="t" border="2"><tr><td id="c">x</td></tr></table>')
+    const border = (id: string) => {
+      const style = elementById(document, id).computedStyle ?? {}
+      return [style['border-top-width'], style['border-top-style']]
+    }
+
+    expect(border('t')).toEqual(['2px', 'outset'])
+    expect(border('c')).toEqual(['1px', 'inset'])
+  })
+
+  test("reports a caption's side, which puts it above or below its table", async () => {
+    const document = await styled(
+      '<table><caption id="c" style="caption-side:bottom">x</caption><tr><td>a</td></tr></table>'
+    )
+
+    expect(elementById(document, 'c').computedStyle?.['caption-side']).toBe('bottom')
+  })
+
+  test("reports a grid item's alignment across, by its own or its grid's", async () => {
+    const document = await styled(
+      '<div style="display:grid;justify-items:center"><div id="a"></div><div id="b" style="justify-self:end"></div></div>'
+    )
+
+    expect(elementById(document, 'a').computedStyle?.['justify-self']).toBe('auto')
+    expect(elementById(document, 'b').computedStyle?.['justify-self']).toBe('end')
+  })
+
+  test('reports the grid lines an item declares', async () => {
+    const document = await styled(
+      '<div style="display:grid"><div id="a" style="grid-column:span 2"></div><div id="b" style="grid-row:2 / 4"></div></div>'
+    )
+    const lines = (id: string, axis: string) => {
+      const style = elementById(document, id).computedStyle ?? {}
+      return [style[`grid-${axis}-start`], style[`grid-${axis}-end`]]
+    }
+
+    expect(lines('a', 'column')).toEqual(['span 2', 'auto'])
+    expect(lines('b', 'row')).toEqual(['2', '4'])
   })
 
   test("pairs a shader layer's children past the still frame the serializer writes", async () => {

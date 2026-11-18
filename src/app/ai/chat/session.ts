@@ -6,16 +6,27 @@ import { ref } from 'vue'
 import { acpAgentFor, AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { AIProviderID } from '@open-pencil/core/constants'
 
+import { agentOwnChoices, type AgentChoices } from '@/app/ai/agents/acp/options'
 import { readPiAccount } from '@/app/ai/agents/pi/settings'
 import { agentWorkspace } from '@/app/ai/agents/setup/native'
 import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/setup/readiness'
 import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
 import { notifyReplyEnded } from '@/app/ai/chat/notifications'
 import { hasSteeringMessage } from '@/app/ai/chat/queue'
-import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
-import { chatThinkingLevel } from '@/app/ai/chat/thinking'
-import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
-import { resolveLanguageModelID } from '@/app/ai/models/language-model'
+import { systemPrompt } from '@/app/ai/chat/system-prompt'
+import {
+  agentSessionChoices,
+  chatAgentChoices,
+  chatThinkingLevel,
+  chooseAgentOptions
+} from '@/app/ai/chat/thinking'
+import {
+  createAIModelRuntime,
+  designModelProfile,
+  resolveModelConnectionAPIKey,
+  type AIModelProfileId
+} from '@/app/ai/models'
+import { profileModelID, resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { settleMessage } from '@/app/ai/reply/settle'
@@ -53,12 +64,21 @@ type ChatSessionOptions = {
   getActiveEditorStore: () => EditorStore
 }
 
+/** The effort and modes of the profile a chat's agent session starts from. */
+export interface AgentChoicesLink {
+  profileId: AIModelProfileId
+  /** The effort and modes the next prompt runs on; absent ones keep the agent's. */
+  wanted: () => AgentChoices
+}
+
 export async function createACPTransport(
   providerID: AIProviderID,
   store?: EditorStore,
   onUsage?: (usage: AgentTurnUsage) => void,
   agentSession?: AgentSessionLink,
-  onAgentError?: (error: unknown) => void
+  onAgentError?: (error: unknown) => void,
+  model?: string,
+  choices?: AgentChoicesLink
 ) {
   const agentDef = acpAgentFor(providerID)
   if (!agentDef) throw new Error(`Unknown ACP agent: ${providerID}`)
@@ -74,7 +94,32 @@ export async function createACPTransport(
     onSession:
       agentSession &&
       ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id })),
-    onAgentError
+    onAgentError,
+    model,
+    choices: choices?.wanted,
+    onChoices: (offered) => {
+      if (!choices || !offered) {
+        agentSessionChoices.value = null
+        return
+      }
+      const previous = agentSessionChoices.value
+      const modelID = model ?? ''
+      // The first report of a session: the options the chat left to the agent are its own values.
+      const defaults =
+        previous?.profileId === choices.profileId && previous.modelID === modelID
+          ? previous.defaults
+          : agentOwnChoices(offered, choices.wanted())
+      agentSessionChoices.value = {
+        profileId: choices.profileId,
+        modelID,
+        choices: offered,
+        defaults
+      }
+    },
+    // Approving a plan can move the agent off Plan mode; the chat follows while it runs that profile.
+    onAgentChoices: (moved) => {
+      if (choices && designModelProfile.value?.id === choices.profileId) chooseAgentOptions(moved)
+    }
   })
 }
 
@@ -182,8 +227,17 @@ export function createChatSessionManager({
     provider: AIProviderID,
     agentSession?: AgentSessionLink
   ) {
+    // Read before anything is awaited, so the model is the profile's the chat chose `provider`
+    // from; a profile change while the agent starts moves neither.
+    const starting = createAIModelRuntime('design')
+    // Awaited below; a teardown that fails first must not leave its rejection unhandled.
+    starting.catch(() => undefined)
     await destroyAgentTransports()
     await assertAgentReady('acp')
+    const runtime = await starting
+    const profileRuns = runtime?.kind === 'acp' && runtime.role.connection.providerID === provider
+    const profileModel = profileRuns ? runtime.model : ''
+    const profileId = profileRuns ? runtime.role.profile.id : null
     // An agent's turn counts as one step of the model it names, or of the agent itself.
     const transport = await createACPTransport(
       provider,
@@ -191,10 +245,23 @@ export function createChatSessionManager({
       ({ model, ...tokens }) =>
         recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context),
       agentSession,
-      captureAgentError
+      captureAgentError,
+      profileModel,
+      // The profile's effort and modes, or the composer's, while the chat still runs that profile
+      // on that model; another profile's or model's may not be ones this agent offers.
+      profileId === null
+        ? undefined
+        : {
+            profileId,
+            wanted: () => {
+              const profile = designModelProfile.value
+              const same = profile?.id === profileId && profileModelID(profile) === profileModel
+              return same ? chatAgentChoices.value : {}
+            }
+          }
     )
     acpTransportInstance = transport
-    return transport as ChatTransport<UIMessage>
+    return transport
   }
 
   async function createActiveHarnessTransport(sessionId: string, context: AIDiagnosticContext) {
@@ -205,11 +272,7 @@ export function createChatSessionManager({
     // A saved key is an AI Gateway key; without one, Pi uses the CLI's own sign-in.
     const apiKey = await resolveModelConnectionAPIKey(runtime.role.connection.id)
     const account = apiKey ? null : await readPiAccount()
-    const model =
-      runtime.role.profile.customModelID ||
-      runtime.role.profile.modelID ||
-      account?.defaultModel ||
-      ''
+    const model = runtime.model || account?.defaultModel || ''
     if (!apiKey && !account?.signedIn) throw new AgentSetupError('pi-sign-in')
     if (!model) throw new AgentSetupError('pi-model')
     const transport = new HarnessChatTransport(
@@ -224,7 +287,7 @@ export function createChatSessionManager({
           }),
           permissionMode: runtime.role.profile.harnessPermissionMode ?? 'allow-edits'
         },
-        instructions: SYSTEM_PROMPT,
+        instructions: systemPrompt(),
         mcpServers: await buildPiMCPServers(),
         skills: await harnessSkills()
       },
@@ -287,18 +350,23 @@ export function createChatSessionManager({
       // Failures belong to the provider this chat was created for, even if the profile changes.
       const chatProviderID = providerID.value
       let transport: ChatTransport<UIMessage>
-      // An ACP or Pi chat's tool calls show as an agent of that kind (`src/app/automation/agents.ts`).
-      let agentKind: 'acp' | 'harness' | null = null
+      // An ACP or Pi chat's tool calls show as an agent of that kind (`src/app/automation/agents.ts`);
+      // when a reply ends, that chat's agents rest, and an ACP chat's alone.
+      let restAgentsOnFinish: (() => void) | null = null
       if (isACPProvider.value) {
-        agentKind = 'acp'
-        transport = await createActiveACPTransport(
+        const acp = await createActiveACPTransport(
           store,
           diagnosticContext,
           chatProviderID,
           agentSession
         )
+        transport = acp
+        restAgentsOnFinish = () => {
+          const chatId = acp.agentChat
+          if (chatId) restAgents('acp', chatId)
+        }
       } else if (isHarnessProvider.value) {
-        agentKind = 'harness'
+        restAgentsOnFinish = () => restAgents('harness')
         transport = await createActiveHarnessTransport(sessionId, diagnosticContext)
       } else {
         transport = await createTransport(store, diagnosticContext)
@@ -336,7 +404,7 @@ export function createChatSessionManager({
         onFinish: (event) => {
           handleChatFinish(diagnosticContext, event)
           // The reply is over, however it ended; its agent rests instead of waiting it out.
-          if (agentKind) restAgents(agentKind)
+          restAgentsOnFinish?.()
           if (event.isAbort || event.isDisconnect || event.isError) {
             void settleEndedReply(created, store, event.message.id, event.isAbort)
           }

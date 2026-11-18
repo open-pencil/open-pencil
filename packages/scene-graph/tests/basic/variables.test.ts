@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { resolvedValueBindings } from '@open-pencil/scene-graph/variables'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { resolvedValueBindings } from '@open-pencil/scene-graph/variables'
 
 describe('Variables', () => {
   function pageId(graph: SceneGraph): string {
@@ -160,6 +160,59 @@ describe('Variables', () => {
       r: 1,
       g: 1,
       b: 1,
+      a: 1
+    })
+  })
+
+  test('an alias into another collection resolves in the mode the node inherits for it', () => {
+    const graph = new SceneGraph()
+    graph.addCollection({
+      id: 'theme',
+      name: 'Theme',
+      modes: [
+        { modeId: 'light', name: 'Light' },
+        { modeId: 'dark', name: 'Dark' }
+      ],
+      defaultModeId: 'light',
+      variableIds: []
+    })
+    graph.addCollection({
+      id: 'ink',
+      name: 'Ink',
+      modes: [{ modeId: 'ink-default', name: 'Default' }],
+      defaultModeId: 'ink-default',
+      variableIds: []
+    })
+    graph.addVariable({
+      id: 'fg',
+      name: 'fg',
+      type: 'COLOR',
+      collectionId: 'theme',
+      valuesByMode: {
+        light: { r: 1, g: 1, b: 1, a: 1 },
+        dark: { r: 0, g: 0, b: 0, a: 1 }
+      },
+      description: '',
+      hiddenFromPublishing: false
+    })
+    graph.addVariable({
+      id: 'ink-fg',
+      name: 'ink',
+      type: 'COLOR',
+      collectionId: 'ink',
+      valuesByMode: { 'ink-default': { aliasId: 'fg' } },
+      description: '',
+      hiddenFromPublishing: false
+    })
+
+    const page = graph.addPage('Page')
+    const frame = graph.createNode('FRAME', page.id, { variableModes: { theme: 'dark' } })
+    const child = graph.createNode('RECTANGLE', frame.id)
+
+    expect(graph.resolveColorVariableForNode(child.id, 'ink-fg')).toEqual({
+      r: 0,
+      g: 0,
+      b: 0,
       a: 1
     })
   })

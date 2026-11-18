@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+
 import { createIconifyAPIClient } from '#core/icons/api'
 import { createIconifyProvider } from '#core/icons/provider'
 import type { IconData } from '#core/icons/types'
@@ -43,7 +45,7 @@ function extent(icon: IconData | undefined) {
   const vertices = icon?.paths[0]?.vectorNetwork.vertices ?? []
   const xs = vertices.map((vertex) => vertex.x)
   const ys = vertices.map((vertex) => vertex.y)
-  return { x: [Math.min(...xs), Math.max(...xs)], y: [Math.min(...ys), Math.max(...ys)] }
+  return { x: [minOf(xs), maxOf(xs)], y: [minOf(ys), maxOf(ys)] }
 }
 
 const CATALOGUE = {
@@ -98,14 +100,14 @@ describe('Iconify provider', () => {
     expect(icons.get('test:wide')).toMatchObject({ name: 'wide', width: 48 })
   })
 
-  test('an icon from a set without a box fills the icon at Iconify\'s default 16', async () => {
+  test("an icon from a set without a box fills the icon at Iconify's default 16", async () => {
     const { provider } = setup()
     const icon = (await provider.icons(['bi:square'], 24)).get('bi:square')
 
     expect(extent(icon)).toEqual({ x: [0, 24], y: [0, 24] })
   })
 
-  test('a set\'s box offset moves its icons into the icon box', async () => {
+  test("a set's box offset moves its icons into the icon box", async () => {
     const { provider } = setup()
     const icon = (await provider.icons(['jam:square'], 24)).get('jam:square')
 

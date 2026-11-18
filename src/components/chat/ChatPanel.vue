@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
-import { computed, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, provide, shallowRef, useTemplateRef, watch } from 'vue'
 
+import { providerKind } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { isAttachableImageFile, revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
@@ -23,10 +24,18 @@ import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
 import { saveChatTrace } from '@/app/ai/chat/trace/export'
 import { useAIChat } from '@/app/ai/chat/use'
+import { ModelQuestionUnsupportedError } from '@/app/ai/models/ask'
 import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
+import { reviewOf } from '@/app/ai/review/message'
+import {
+  ReviewEmptyError,
+  ReviewImagesUnreadableError,
+  ReviewModelMissingError
+} from '@/app/ai/review/run'
+import { useChatReview } from '@/app/ai/review/use'
 import { didHitStepLimit } from '@/app/ai/tools'
 import { cloudBillingURL } from '@/app/cloud/integration'
-import { getActiveEditorStore } from '@/app/editor/active-store'
+import { getActiveEditorStore, getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 import { useDateFormat } from '@/app/i18n/date'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { openExternalLink, toast } from '@/app/shell/ui'
@@ -41,9 +50,14 @@ import ChatPermissionDialog from '@/components/chat/ChatPermissionDialog.vue'
 import ChatProviderSetup from '@/components/chat/ChatProviderSetup.vue'
 import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
+import ChatSubagentHeader from '@/components/chat/subagent/ChatSubagentHeader.vue'
+import ChatSubagentThread from '@/components/chat/subagent/ChatSubagentThread.vue'
+import { useSubagentThread } from '@/components/chat/subagent/useSubagentThread'
+import { CHAT_CHANGE_REVIEW } from '@/components/chat/tool/context'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { useImageDrop } from '@/components/ui/drop/useImageDrop'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 
 const {
   isConfigured,
@@ -60,6 +74,13 @@ const runLocation = useChatRunLocation()
 
 const chat = shallowRef<Chat<UIMessage> | null>(null)
 const compaction = useChatCompaction({ chat, ensureChat, flush: history.flush, compactAgent })
+const review = useChatReview({
+  chat,
+  ensureChat,
+  store: getActiveEditorStoreOrNull,
+  generation: () => viewGeneration,
+  flush: history.flush
+})
 const submission = useChatSubmission({
   chat,
   ensureChat,
@@ -106,6 +127,14 @@ let viewGeneration = 0
  */
 async function submitMessage(message: ChatSubmission) {
   const generation = viewGeneration
+  const reviewAsk = reviewCommand(message)
+  if (reviewAsk) {
+    const reviewed = await review.review({ focus: reviewAsk.rest, references: message.images })
+    if (!reviewed && generation === viewGeneration) chatInput.value?.restoreDraft(message)
+    else for (const image of message.images) revokeImagePreviewURL(image.previewURL)
+    if (reviewed && status.value === 'ready') sendNextQueued()
+    return
+  }
   const command = compactCommand(message)
   if (command) {
     const compacted = await compaction.compact({
@@ -126,6 +155,16 @@ void history.initialize().catch(() => {
 })
 
 const messages = computed(() => chat.value?.messages ?? history.messages.value)
+/**
+ * The field waits while attachments are prepared or the history switches conversations. A send
+ * opens the chat through the history itself, which must not lock the field for those moments:
+ * it would flash disabled and swap its placeholder on every message.
+ */
+const inputLocked = computed(
+  () => submission.busy.value || (history.busy.value && submission.sending.value === null)
+)
+const subagentThread = useSubagentThread(messages, () => history.current.value?.id)
+const subagentHeader = useTemplateRef<{ focus: () => void }>('subagentHeader')
 const context = useChatContext(messages)
 /** Past this share of its window, a bar over the message field offers to compact. */
 const CONTEXT_WARNING = 0.7
@@ -139,10 +178,64 @@ const contextPercent = computed(() =>
  * own `/compact` goes to it as written.
  */
 function compactCommand(message: ChatSubmission): LeadingCommand | null {
-  if (providerID.value.startsWith('acp:') || message.images.length > 0) return null
+  if (providerKind(providerID.value) === 'acp' || message.images.length > 0) return null
   const command = leadingCommand(message.displayText)
   return command?.name === 'compact' ? command : null
 }
+
+/**
+ * The command when `message` starts with `/review`, and what to focus on after it: the Review
+ * model reviews the design whatever holds the chat, so an agent's own `/review` is not offered.
+ * Attached images are references the design is compared against.
+ */
+function reviewCommand(message: ChatSubmission): LeadingCommand | null {
+  const command = leadingCommand(message.displayText)
+  return command?.name === 'review' ? command : null
+}
+
+/** Sends a review's findings to the Design model as the person's message. */
+function fixReview(messageId: string): void {
+  const found = messages.value.find((message) => message.id === messageId)
+  const findings = found ? reviewOf(found)?.findings : undefined
+  if (!findings) return
+  const text = ai.value.reviewFixRequest({ findings })
+  void submitMessage({ modelText: text, displayText: text, images: [], nodes: [] })
+}
+
+/** What a review that failed tells the person, by why it failed. */
+function reviewFailure(error: unknown): string {
+  if (error instanceof ReviewModelMissingError) return ai.value.reviewNoModel
+  if (error instanceof ReviewImagesUnreadableError) return ai.value.reviewImagesUnreadable
+  if (error instanceof ReviewEmptyError) return ai.value.reviewEmpty
+  if (error instanceof ModelQuestionUnsupportedError) return ai.value.reviewUnsupported
+  return ai.value.reviewFailed
+}
+
+/**
+ * Whether a review can start or send its findings on: the chat takes a message now. A reopened
+ * conversation has no live chat until one is sent, and sending makes it.
+ */
+const reviewReady = computed(
+  () =>
+    isConfigured.value &&
+    status.value === 'ready' &&
+    !submission.busy.value &&
+    !compaction.compacting.value &&
+    !review.reviewing.value &&
+    !history.readOnly.value
+)
+// A change preview asks the Review model about its edit while the chat is idle.
+provide(CHAT_CHANGE_REVIEW, {
+  review: (toolCallId) => void review.reviewToolChange(toolCallId),
+  ready: reviewReady
+})
+
+watch(
+  () => review.failed.value,
+  (failed) => {
+    if (failed) toast.error(reviewFailure(failed))
+  }
+)
 
 /** Compacts now, from the bar near the limit; a reply in progress finishes first. */
 function compactConversation(): void {
@@ -274,7 +367,10 @@ const status = computed(() => chat.value?.status ?? 'ready')
  * takes in once the current tool calls finish, and Alt+Enter waits until all work is done.
  */
 function sendOrQueue(message: ChatSubmission, afterWork: boolean) {
-  if (status.value === 'streaming' || status.value === 'submitted') {
+  // A send still opening its chat has no status yet; sending now would replace it, so this waits
+  // with the rest and goes after that reply. A send that fails first keeps it, as a failed reply does.
+  const pending = submission.sending.value !== null
+  if (pending || status.value === 'streaming' || status.value === 'submitted') {
     enqueueMessage(message, afterWork ? 'follow-up' : 'steer')
     return
   }
@@ -382,7 +478,15 @@ function handleStop() {
     data-test-id="chat-panel"
     class="flex min-w-0 flex-1 flex-col overflow-hidden select-text"
   >
+    <!-- An open subagent thread names itself in the header's place, with the way back. -->
+    <ChatSubagentHeader
+      v-if="subagentThread.open.value && subagentThread.transcript.value"
+      ref="subagentHeader"
+      :transcript="subagentThread.transcript.value"
+      @back="subagentThread.close"
+    />
     <ChatHistory
+      v-else
       :saved="history.conversations.value.some((row) => row.id === history.current.value?.id)"
       :conversations="historyOptions"
       :selected-id="history.current.value?.id"
@@ -412,37 +516,56 @@ function handleStop() {
     <ChatProviderSetup v-if="!isConfigured" />
 
     <template v-if="isConfigured || messages.length">
-      <p
-        v-if="history.current.value?.interrupted && status === 'ready'"
-        role="status"
-        class="px-3 py-2 text-xs text-muted"
-      >
-        {{ ai.chatInterrupted }}
-      </p>
-      <ChatTranscript
-        :messages="messages"
-        :status="status"
-        :show-continue="showContinue"
-        :queued="queuedMessages"
-        :steers="!providerID.startsWith('acp:') && providerID !== 'harness:pi'"
-        :sending="submission.sending.value?.displayText ?? null"
-        :compacting="compaction.compacting.value"
-        @remove-queued="removeQueuedMessage"
-        :nodes-live="!history.readOnly.value"
-        :interactive="chat !== null && !submission.busy.value && !compaction.compacting.value"
-        @regenerate="submission.regenerate()"
-        @revert="(messageId) => submission.revert(messageId)"
-        @restore="(messageId) => submission.restore(messageId)"
-        @edit="(messageId, text) => submission.resend(messageId, text)"
-        @continue="
-          submission.submit({
-            modelText: 'Continue where you left off',
-            displayText: 'Continue where you left off',
-            images: [],
-            nodes: []
-          })
+      <!-- The thread's way back is in the header, which takes focus as the thread opens. -->
+      <PanelDrillIn
+        :open="subagentThread.open.value"
+        @open-auto-focus="
+          (event) => {
+            event.preventDefault()
+            subagentHeader?.focus()
+          }
         "
-      />
+      >
+        <template #detail>
+          <ChatSubagentThread
+            v-if="subagentThread.transcript.value"
+            :transcript="subagentThread.transcript.value"
+          />
+        </template>
+        <ChatTranscript
+          :messages="messages"
+          :status="status"
+          :show-continue="showContinue"
+          :interrupted="Boolean(history.current.value?.interrupted) && status === 'ready'"
+          :queued="queuedMessages"
+          :steers="providerKind(providerID) === 'api'"
+          :sending="submission.sending.value?.displayText ?? null"
+          :compacting="compaction.compacting.value"
+          :reviewing="review.reviewing.value"
+          :reviews-actionable="reviewReady"
+          @remove-queued="removeQueuedMessage"
+          @fix-review="fixReview"
+          :nodes-live="!history.readOnly.value"
+          :interactive="
+            chat !== null &&
+            !submission.busy.value &&
+            !compaction.compacting.value &&
+            !review.reviewing.value
+          "
+          @regenerate="submission.regenerate()"
+          @revert="(messageId) => submission.revert(messageId)"
+          @restore="(messageId) => submission.restore(messageId)"
+          @edit="(messageId, text) => submission.resend(messageId, text)"
+          @continue="
+            submission.submit({
+              modelText: 'Continue where you left off',
+              displayText: 'Continue where you left off',
+              images: [],
+              nodes: []
+            })
+          "
+        />
+      </PanelDrillIn>
 
       <p v-if="agentHistoryReadOnly" role="status" class="px-3 py-2 text-xs text-muted">
         {{ ai.chatAgentReadOnly }}
@@ -484,7 +607,7 @@ function handleStop() {
         ref="chatInput"
         :status="status"
         :dragging="draggingImages"
-        :disabled="submission.busy.value || history.busy.value"
+        :disabled="inputLocked"
         @submit="sendOrQueue"
         @stop="handleStop"
         @interrupt="handleStop"

@@ -18,6 +18,7 @@ export const toolMessageDefaults = {
   hand: 'Hand',
   comment: 'Comment',
   eyedropper: 'Eyedropper',
+  scale: 'Scale',
   eyedropperSample: 'Pick a color from the canvas'
 } as const
 

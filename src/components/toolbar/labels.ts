@@ -26,7 +26,8 @@ export function useToolLabels() {
     CONNECTOR: tools.value.connector,
     HAND: tools.value.hand,
     COMMENT: tools.value.comment,
-    EYEDROPPER: tools.value.eyedropper
+    EYEDROPPER: tools.value.eyedropper,
+    SCALE: tools.value.scale
   }))
 }
 

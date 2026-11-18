@@ -1,1 +1,0 @@
-- Preview and HTML and Tailwind export keep each layer's constraints, so a layer set to Right, Center, Left and right, or Scale follows its frame as it resizes, such as a slider's range following the thumb.

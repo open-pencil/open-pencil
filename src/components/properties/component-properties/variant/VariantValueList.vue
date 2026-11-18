@@ -116,7 +116,7 @@ function replace(value: string, replacement: string) {
           <icon-lucide-minus class="size-3.5" />
         </IconButton>
       </div>
-      <div v-if="replacing === value" class="flex flex-col gap-1 pl-5">
+      <div v-if="replacing === value" class="flex flex-col gap-1 ps-5">
         <span class="text-2xs text-muted">{{ panels.moveVariantsTo({ value }) }}</span>
         <AppSelect
           :label="panels.moveVariantsTo({ value })"

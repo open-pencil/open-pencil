@@ -114,7 +114,7 @@ export function createDocumentCleanupService(
         // Only the document's ID: its name and the people on it stay out of error tracking.
         await reportCloudError(
           options.reportError,
-          `Cleaning up document ${document.id} failed:`,
+          `Cleaning up document ${document.id} failed`,
           error,
           { source: 'cleanup' }
         )

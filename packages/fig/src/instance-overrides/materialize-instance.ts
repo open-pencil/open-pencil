@@ -2,9 +2,9 @@ import { isEqual } from 'es-toolkit/predicate'
 
 import type { Effect as KiwiEffect, NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { assignmentOverrideField } from '@open-pencil/scene-graph/components'
 import { scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
 import {
+  assignmentOverrideField,
   bindingOverrideField,
   setInstanceOverride,
   variableModeOverrideField
@@ -13,6 +13,7 @@ import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defau
 import { EFFECT_BINDING_PROPERTIES, effectBindingField } from '@open-pencil/scene-graph/variables'
 
 import { nodeChangeToProps } from '../node-change'
+import { modeledEffectIndexes } from '../node-change/paint'
 import { numericVariableBindingScales } from '../node-change/variable/bindings'
 import { EFFECT_VARIABLE_FIELDS } from '../node-change/variable/effects'
 import { variableModeLayer } from '../node-change/variable/maps'
@@ -21,10 +22,10 @@ import {
   occurrenceAssignmentScales,
   occurrenceScale
 } from './bindings/variables'
-import { isClearedStyle } from './cleared-style'
 import { OVERRIDE_FIELDS, type OverrideField, type RawOverrideField } from './fields'
 import { resolveOccurrencePath } from './interpret'
 import type { InstanceOccurrence } from './occurrence/types'
+import { isClearedStyle } from './style/cleared'
 import { symbolDataOf } from './types'
 
 function occurrenceMetadata(
@@ -330,7 +331,10 @@ function recordVariableModeClaims(owner: SceneNode, target: SceneNode, claim: No
 function recordEffectBindingClaims(owner: SceneNode, target: SceneNode, effects: unknown): void {
   if (!Array.isArray(effects)) return
   let declared = false
-  for (const [index, effect] of (effects as KiwiEffect[]).entries()) {
+  const indexes = modeledEffectIndexes(effects as KiwiEffect[])
+  for (const [rawIndex, effect] of (effects as KiwiEffect[]).entries()) {
+    const index = indexes[rawIndex]
+    if (index === null) continue
     for (const property of EFFECT_BINDING_PROPERTIES) {
       if (!effect[EFFECT_VARIABLE_FIELDS[property]]?.value?.alias) continue
       const path = effectBindingField(index, property)

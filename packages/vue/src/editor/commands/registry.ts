@@ -132,10 +132,8 @@ export const EDITOR_COMMAND_METADATA = {
     shortcut: 'Alt+Shift+F',
     contextTestId: 'context-flatten'
   },
-  'selection.outlineText': { contextTestId: 'context-outline-text' },
   'selection.outlineStroke': { contextTestId: 'context-outline-stroke' },
   'selection.moveToPage': {},
-  'selection.setOpacity': {},
   'view.zoom100': { shortcut: 'Mod+0', aliases: ['Shift+0'] },
   'view.zoomFit': { shortcut: 'Shift+1', aliases: ['Mod+1'] },
   'view.zoomSelection': { shortcut: 'Shift+2', aliases: ['Mod+2'] },

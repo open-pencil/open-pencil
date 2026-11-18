@@ -62,10 +62,21 @@ describe('parseAppPreferences', () => {
       designCheck: { preset: 'strict', disabledRules: ['contrast', 7, 'contrast', 'spacing'] }
     })
     expect(designCheck).toEqual({
-      showOnCanvas: true,
+      showOnCanvas: false,
       preset: 'strict',
       disabledRules: ['contrast', 'spacing']
     })
+  })
+
+  test('keeps a stored canvas marker choice and leaves markers off when none is stored', () => {
+    expect(DEFAULT_APP_PREFERENCES.designCheck.showOnCanvas).toBe(false)
+    expect(parseAppPreferences({}).designCheck.showOnCanvas).toBe(false)
+    expect(
+      parseAppPreferences({ designCheck: { showOnCanvas: true } }).designCheck.showOnCanvas
+    ).toBe(true)
+    expect(
+      parseAppPreferences({ designCheck: { showOnCanvas: false, preset: 'strict' } }).designCheck
+    ).toEqual({ showOnCanvas: false, preset: 'strict', disabledRules: [] })
   })
 
   test('keeps a preset or a custom accent and falls back to blue for anything else', () => {
@@ -102,8 +113,16 @@ describe('parseAppPreferences', () => {
     }
   })
 
+  test('follows the installed build’s update channel unless one was chosen', () => {
+    expect(parseAppPreferences({ updates: { channel: 'nightly' } }).updates.channel).toBe('nightly')
+    expect(parseAppPreferences({ updates: { channel: 'stable' } }).updates.channel).toBe('stable')
+    for (const channel of [undefined, 'beta', 1]) {
+      expect(parseAppPreferences({ updates: { channel } }).updates.channel).toBe('build')
+    }
+  })
+
   test('checks for updates on startup unless that switch is stored off', () => {
-    expect(DEFAULT_APP_PREFERENCES.updates).toEqual({ checkOnStartup: true })
+    expect(DEFAULT_APP_PREFERENCES.updates).toEqual({ checkOnStartup: true, channel: 'build' })
     expect(parseAppPreferences({}).updates.checkOnStartup).toBe(true)
     const storedOff = parseAppPreferences({
       updates: { checkOnStartup: false },

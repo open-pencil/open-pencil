@@ -3,17 +3,19 @@ import { resolve } from 'node:path'
 
 import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { readFixture } from '@open-pencil/test-support/fig/fixtures'
-import { capturedFigRecordsSchema, nestedLayoutScaleFixtureSchema } from '@open-pencil/test-support/fig/schema'
-import { FIXTURES } from '@open-pencil/test-support/paths'
 import { inheritedNestedBindingRecords } from '@open-pencil/test-support/fig/nested-binding'
+import {
+  capturedFigRecordsSchema,
+  nestedLayoutScaleFixtureSchema
+} from '@open-pencil/test-support/fig/schema'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 const fixture = readFixture('nested-layout-scale.json', nestedLayoutScaleFixtureSchema)
 
 const declared = readFixture('nested-binding-ownership-records.json', capturedFigRecordsSchema)

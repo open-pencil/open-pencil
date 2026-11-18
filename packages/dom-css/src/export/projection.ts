@@ -1,3 +1,5 @@
+import { isEqual } from 'es-toolkit/predicate'
+
 import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
@@ -14,6 +16,7 @@ import {
   effectsToCSS,
   fillToCSS,
   gradientToCSS,
+  letterSpacingRoomCSS,
   letterSpacingToCSS,
   lineHeightToCSS,
   strokeColorToCSS,
@@ -21,7 +24,7 @@ import {
 } from './css'
 import { addGridContainer, addGridPlacement } from './grid'
 import { addPositioning, constraintSizes, placement } from './position'
-import { textCaseToCSS, textElementContent } from './text'
+import { textCaseToCSS, textElementContent, uniformLetterSpacing } from './text'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
 const IMAGE_SOURCE_URL_KEY = 'image-source-url'
@@ -205,14 +208,15 @@ function addPadding(style: DesignStyleDeclaration, node: SceneNode, css: FieldCS
 }
 
 function addFlexGap(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
-  if (node.itemSpacing <= 0 && node.counterAxisSpacing <= 0) return
+  const counterAxisSpacing = node.counterAxisSpacing ?? 0
+  if (node.itemSpacing <= 0 && counterAxisSpacing <= 0) return
   const item = css('itemSpacing', px(node.itemSpacing))
-  if (node.counterAxisSpacing <= 0) {
+  if (counterAxisSpacing <= 0) {
     style.gap = item
     return
   }
 
-  const counter = css('counterAxisSpacing', px(node.counterAxisSpacing))
+  const counter = css('counterAxisSpacing', px(counterAxisSpacing))
   if (node.layoutMode === 'HORIZONTAL') {
     if (node.itemSpacing > 0) style['column-gap'] = item
     style['row-gap'] = counter
@@ -386,8 +390,13 @@ function styleFromTextNode(
   if (node.lineHeight !== null) {
     style['line-height'] = css('lineHeight', lineHeightToCSS(node.lineHeight))
   }
-  if (node.letterSpacing.value !== 0) {
-    style['letter-spacing'] = css('letterSpacing', letterSpacingToCSS(node.letterSpacing))
+  const spacing = css('letterSpacing', letterSpacingToCSS(node.letterSpacing))
+  if (node.letterSpacing.value !== 0) style['letter-spacing'] = spacing
+  // The spacing after a line's last letter needs room only when one spacing ends every line.
+  const ending = uniformLetterSpacing(node)
+  if (ending && ending.value !== 0) {
+    const written = isEqual(ending, node.letterSpacing) ? spacing : letterSpacingToCSS(ending)
+    Object.assign(style, letterSpacingRoomCSS(ending, written, style.width))
   }
   if (node.textAlignHorizontal !== 'LEFT')
     style['text-align'] = node.textAlignHorizontal.toLowerCase()

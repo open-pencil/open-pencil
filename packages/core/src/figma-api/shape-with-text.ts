@@ -9,8 +9,8 @@ import {
 import type { InterfaceTheme } from '#core/constants'
 import { newLayerDefaults } from '#core/editor/shapes/defaults'
 
-import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
-import { prepareFollowedFieldEdit, raw, updateNode } from './accessor-utils'
+import type { NodeProxyInternals, ProxyThis } from './accessors/utils'
+import { prepareFollowedFieldEdit, raw, updateNode } from './accessors/utils'
 import { graphOf } from './graph'
 
 /** `value` as a kind for `node`, refused in the words Figma's plugin API refuses it with. */

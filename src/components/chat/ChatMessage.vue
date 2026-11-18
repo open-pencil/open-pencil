@@ -15,12 +15,14 @@ import {
   tokenUsageDisplay
 } from '@/app/ai/chat/preferences'
 import { visibleUserMessageText } from '@/app/ai/chat/presentation'
+import { SUBAGENT_PART } from '@/app/ai/chat/subagents'
 import { groupMessageParts, type MessagePartGroup } from '@/app/ai/chat/tool-calls/display'
 import type { ReasoningDisplay } from '@/app/settings/preferences/store'
 import ChatAttachmentList from '@/components/chat/attachment/ChatAttachmentList.vue'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
 import ChatReasoning from '@/components/chat/ChatReasoning.vue'
 import ChatReferenceText from '@/components/chat/reference/ChatReferenceText.vue'
+import ChatSubagentCard from '@/components/chat/subagent/ChatSubagentCard.vue'
 import ChatToolCallGroup from '@/components/chat/tool/ChatToolCallGroup.vue'
 import ChatCompactionDivider from '@/components/chat/turn/ChatCompactionDivider.vue'
 import ChatMessageEditor from '@/components/chat/turn/ChatMessageEditor.vue'
@@ -98,10 +100,11 @@ const undo = computed(() => undoOf(message))
 const usage = computed(() => usageOf(message))
 /** With usage shown on hover, the reply's last text shows it on hover, beside the copy button. */
 const usageOnHover = computed(() =>
-  usage.value && tokenUsageDisplay.value === 'hover'
-    ? usageParts(ai.value, usage.value).join(' · ')
-    : undefined
+  usage.value && tokenUsageDisplay.value === 'hover' ? usageParts(ai.value, usage.value) : undefined
 )
+/** Whether the text part at `index` shows the usage in its corner. */
+const showsUsage = (index: number) =>
+  usageOnHover.value !== undefined && index === lastAssistantTextPartIndex.value
 const undoneCalls = computed(() => new Set(undo.value?.undone))
 const reverted = computed(
   () =>
@@ -141,7 +144,7 @@ function groupKey(group: MessagePartGroup): string {
         <!-- A reverted reply's edits are gone; its content stays, dimmed, under its actions. Text
              dims to the muted color rather than through opacity, so it still reads at 4.5:1. -->
         <div
-          class="space-y-2 data-[reverted=true]:**:text-muted data-[reverted=true]:[&_img]:opacity-50"
+          class="@container/reply space-y-2 data-[reverted=true]:**:text-muted data-[reverted=true]:[&_img]:opacity-50"
           data-slot="chat-reply-content"
           :data-reverted="reverted"
         >
@@ -175,42 +178,42 @@ function groupKey(group: MessagePartGroup): string {
               :duration-label="(seconds) => ai.thoughtFor({ seconds })"
             />
 
+            <!-- A subagent the agent started -->
+            <ChatSubagentCard v-else-if="group.part.type === SUBAGENT_PART" :part="group.part" />
+
             <!-- Text -->
             <div
               v-else-if="isTextUIPart(group.part) && group.part.text"
               data-test-id="chat-text-bubble"
-              class="group/response relative rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
+              :class="ui.bubble()"
             >
               <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
-              <!-- With usage shown on hover, the usage and the copy button appear in the last
-                   text's corner over the bubble's own colour, fading the line's end out under
-                   them, so they take no room at rest; otherwise the button sits there alone. -->
-              <div
-                v-if="
-                  (usageOnHover && group.index === lastAssistantTextPartIndex) ||
-                  group.index === copyPartIndex
-                "
-                :class="
-                  ui.corner({
-                    usage: !!usageOnHover && group.index === lastAssistantTextPartIndex
-                  })
-                "
-              >
-                <span
-                  v-if="usageOnHover && group.index === lastAssistantTextPartIndex"
-                  class="px-1"
-                  data-slot="chat-reply-usage"
-                >
-                  {{ usageOnHover }}
+              <!-- With usage shown on hover, the usage appears in the last text's corner over the
+                   bubble's own colour, fading the line's end out under it, so it takes no room at
+                   rest. It shows the parts that fit whole, so a narrow reply drops its last. -->
+              <div v-if="usageOnHover && showsUsage(group.index)" :class="ui.corner()">
+                <span :class="ui.parts()" data-slot="chat-reply-usage">
+                  <span class="h-6" aria-hidden="true" />
+                  <span
+                    v-for="(part, index) in usageOnHover"
+                    :key="index"
+                    :class="ui.part({ lead: index === 0 })"
+                    data-slot="chat-reply-usage-part"
+                  >
+                    {{ index === 0 ? part : `· ${part}` }}
+                  </span>
                 </span>
-                <AppCopyButton
-                  v-if="group.index === copyPartIndex"
-                  icon
-                  :value="assistantText"
-                  :label="ai.copyResponse"
-                  :copied-label="ai.responseCopied"
-                />
               </div>
+              <!-- Beside the bubble's end, where a short reply leaves it room, as the edit button
+                   sits beside a request. -->
+              <AppCopyButton
+                v-if="group.index === copyPartIndex"
+                :class="ui.copy()"
+                icon
+                :value="assistantText"
+                :label="ai.copyResponse"
+                :copied-label="ai.responseCopied"
+              />
             </div>
           </template>
         </div>
@@ -242,7 +245,7 @@ function groupKey(group: MessagePartGroup): string {
         <div v-else class="group/request relative">
           <div
             data-test-id="chat-text-bubble"
-            class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
+            class="rounded-xl rounded-ee-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
           >
             <ChatReferenceText :text="userText" />
           </div>
@@ -250,7 +253,7 @@ function groupKey(group: MessagePartGroup): string {
             v-if="canEdit"
             :label="ai.editMessage"
             size="xs"
-            class="absolute top-1/2 -left-7 -translate-y-1/2 opacity-0 focus-visible:opacity-100 group-hover/request:opacity-100"
+            class="absolute top-1/2 -inset-s-7 -translate-y-1/2 opacity-0 focus-visible:opacity-100 group-hover/request:opacity-100"
             @click="editing = true"
           >
             <icon-lucide-pencil class="size-3" />

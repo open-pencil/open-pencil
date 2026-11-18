@@ -4,6 +4,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode, TextPathData, VectorNetwork } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { loadFigFixture } from '@open-pencil/test-support/fig/fixtures'
 
 import {
   calibratePathTextLayout,
@@ -15,8 +16,6 @@ import {
   sampleTextPath,
   textPathStartArc
 } from '#core/text/path'
-
-import { loadFigFixture } from '@open-pencil/test-support/fig/fixtures'
 /** Signed shortest angular difference a - b. */
 function angleDiff(a: number, b: number): number {
   return Math.atan2(Math.sin(a - b), Math.cos(a - b))

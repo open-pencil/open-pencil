@@ -1,7 +1,7 @@
-// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
+// eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { generate, parse, walk, type CssNode as CSSNode } from 'css-tree'
 
-import { parseCSSFontFamily } from '@open-pencil/scene-graph/css'
+import { parseCSSFontFamily, splitCSSValue } from '@open-pencil/scene-graph/css'
 
 /** A stylesheet's `@font-face` rule: the face it declares and the files it loads from. */
 export interface CSSFontFaceRule {
@@ -27,7 +27,7 @@ function weightValue(word: string): number | null {
  * weight when the range holds it, else the nearer end; 400 when it names none.
  */
 function weightOf(value: string | undefined): number {
-  const weights = (value?.trim().split(/\s+/) ?? []).map(weightValue)
+  const weights = splitCSSValue(value ?? '').map(weightValue)
   const low = weights.at(0) ?? null
   const high = weights.at(1) ?? null
   if (low === null) return 400

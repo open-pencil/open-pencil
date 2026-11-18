@@ -1,6 +1,25 @@
 import type { AIProviderID } from '@open-pencil/core/constants'
 
+import type { AgentChoices } from '@/app/ai/agents/acp/options'
+
 export const AI_MODEL_ROLES = ['design', 'review', 'fast', 'vision'] as const
+/**
+ * The roles something reads: Design runs the chat, Review writes the design reviews the person
+ * asks for, Fast tasks names conversations and writes their compaction summaries, and Vision
+ * reads images. A role not listed here shows as not used in Settings and guided setup and keeps
+ * its saved assignment.
+ */
+export const AI_MODEL_ROLES_IN_USE = [
+  'design',
+  'review',
+  'fast',
+  'vision'
+] as const satisfies readonly AIModelRole[]
+
+/** Whether assigning a model to the role changes anything. */
+export function isModelRoleInUse(role: AIModelRole): boolean {
+  return (AI_MODEL_ROLES_IN_USE as readonly AIModelRole[]).includes(role)
+}
 export const AI_MODEL_CAPABILITIES = ['tools', 'vision'] as const
 /** `default` leaves the effort to the provider; the rest follow the AI SDK reasoning levels. */
 export const THINKING_LEVELS = [
@@ -41,6 +60,11 @@ export type AIModelProfile = {
   customModelID: string
   maxOutputTokens: number
   thinkingLevel: ThinkingLevel
+  /**
+   * The effort and modes an ACP agent runs the model on, by the agent's own values, since each
+   * agent and model names its own; absent ones keep the agent's.
+   */
+  agentChoices?: AgentChoices
   harnessPermissionMode?: HarnessPermissionMode
   capabilities: AIModelCapability[]
 }
@@ -71,6 +95,8 @@ export type AIModelProfileDraft = {
   cloudWorkspaceId?: string
   maxOutputTokens: number
   thinkingLevel: ThinkingLevel
+  /** Absent ones keep the agent's own. */
+  agentChoices: AgentChoices
   harnessPermissionMode: HarnessPermissionMode
   capabilities: AIModelCapability[]
 }

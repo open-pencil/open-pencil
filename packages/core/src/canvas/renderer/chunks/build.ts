@@ -1,11 +1,17 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
+import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { isVisibleMask } from '@open-pencil/scene-graph/masks'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 
-import { computeContentBounds, worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
-import { nodeHasRadius, nodeHasSmoothCorners } from '#core/canvas/shapes'
+import {
+  backdropReach,
+  computeContentBounds,
+  worldNodeVisualBounds
+} from '#core/canvas/renderer/visual-bounds'
 
 export type RenderChunkKind = 'self' | 'subtree'
 
@@ -37,6 +43,11 @@ export interface RenderChunk {
   maxY: number
   nodeCount: number
   estimatedCost: number
+  /**
+   * How far past the chunk's bounds its glass or background blur reads the canvas, in page
+   * units, so a tile it draws into renders that much around itself; 0 for most chunks.
+   */
+  backdropReach: number
 }
 
 export interface RenderChunkBuildStats {
@@ -64,9 +75,17 @@ export function nodeRequiresAtomicChunk(graph: SceneGraph, node: SceneNode): boo
         effect.visible &&
         (effect.type === 'LAYER_BLUR' ||
           effect.type === 'FOREGROUND_BLUR' ||
-          effect.type === 'BACKGROUND_BLUR')
+          effect.type === 'BACKGROUND_BLUR' ||
+          effect.type === 'GLASS' ||
+          // A texture roughens what the layer and its children draw together, and noise grains
+          // only what they cover together.
+          effect.type === 'TEXTURE' ||
+          effect.type === 'NOISE')
     )
-  const hasMasks = node.childIds.some((childId) => graph.getNode(childId)?.isMask === true)
+  const hasMasks = node.childIds.some((childId) => {
+    const child = graph.getNode(childId)
+    return child !== undefined && isVisibleMask(child)
+  })
   return isolated || hasMasks
 }
 
@@ -101,7 +120,7 @@ export function chunkContext(graph: SceneGraph, node: SceneNode): RenderChunkCon
   for (let index = chain.length - 1; index >= 0; index--) {
     const ancestor = chain[index]
     matrix = Matrix.multiply(matrix, getNodeLocalMatrix(ancestor))
-    if (!ancestor.clipsContent) continue
+    if (!clipsChildren(ancestor)) continue
     const translated = matrix[0] === 1 && matrix[1] === 0 && matrix[3] === 0 && matrix[4] === 1
     if (translated && !nodeHasRadius(ancestor) && !nodeHasSmoothCorners(ancestor)) {
       const box = {
@@ -186,7 +205,8 @@ export function buildChunks(
         localOrder: position++,
         ...bounds,
         nodeCount,
-        estimatedCost: estimateCost(nodeCount, node)
+        estimatedCost: estimateCost(nodeCount, node),
+        backdropReach: backdropReach(graph, node, !split)
       })
     }
     if (!split) continue

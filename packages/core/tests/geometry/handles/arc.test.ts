@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph, type ArcData, type SceneNode } from '@open-pencil/scene-graph'
+
 import {
   arcAtPoint,
   arcChanges,
@@ -7,7 +9,6 @@ import {
   shapeHandleLayout,
   shapeHandleValue
 } from '#core/geometry'
-import { SceneGraph, type ArcData, type SceneNode } from '@open-pencil/scene-graph'
 
 // Values measured on ellipses in Figma desktop, 2026-10-21.
 
@@ -109,9 +110,10 @@ describe('arc handles', () => {
     expect(degrees(arcAtPoint(node, 'arcEnd', at(30, 75), false))).toEqual([0, -330, 0])
   })
 
-  test('treat a sweep within 0.01° of a full turn as a whole ellipse, as it is drawn', () => {
-    expect(layout({ arcData: arc(0, 359.995) })).toHaveLength(1)
-    expect(layout({ arcData: arc(0, 359.98) })).toHaveLength(3)
+  // Figma desktop (2026-11-14): less than 0.001 rad (about 0.057°) short of a turn draws whole.
+  test('treat a sweep within 0.001 rad of a full turn as a whole ellipse, as Figma draws it', () => {
+    expect(layout({ arcData: arc(0, 359.95) })).toHaveLength(1)
+    expect(layout({ arcData: arc(0, 359.9) })).toHaveLength(3)
   })
 
   test('drop the outline a .fig stored for the old arc', () => {

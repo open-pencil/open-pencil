@@ -1,6 +1,5 @@
 import type { CanvasKit, Path, PathBuilder } from '@open-pencil/canvaskit'
-
-import type { PathSink } from '#core/vector/path-helpers'
+import type { PathSink } from '@open-pencil/scene-graph/paths'
 
 /** Calls `visit` with each verb of `path` and its coordinates, a conic's weight last. */
 export function forEachVerb(

@@ -1,5 +1,6 @@
 import { onMounted } from 'vue'
 
+import { acpAgentFor } from '@open-pencil/core/constants'
 import { useAIMessages } from '@open-pencil/vue/i18n'
 
 import { agentCommands } from '@/app/ai/agents/acp/commands'
@@ -16,11 +17,6 @@ import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 
 import { commandCompletion, referenceCompletion, type ComposerSections } from './complete'
 
-/** The ACP agent a provider ID names, or null for the built-in chat and Pi. */
-function acpAgentId(providerID: string): string | null {
-  return providerID.startsWith('acp:') ? providerID.slice('acp:'.length) : null
-}
-
 /** What `/` and `@` offer in a message field. */
 export function useComposerCompletions() {
   const ai = useAIMessages()
@@ -36,12 +32,20 @@ export function useComposerCompletions() {
     command: ai.value.chatReferenceCommands
   })
 
-  /** An ACP agent's own commands, or else the chat's `/compact` and the user's skills. */
+  /**
+   * The chat's `/review`, then an ACP agent's own commands, or else the chat's `/compact` and the
+   * user's skills. `/review` asks the Review model whatever holds the chat, so it stands in for
+   * an agent's own command of that name.
+   */
   function commands(): CommandCandidate[] {
-    const agentId = acpAgentId(providerID.value)
-    if (agentId) return agentCommandCandidates(agentCommands.value[agentId] ?? [])
+    const review = { name: 'review', description: ai.value.reviewCommand, hint: null }
+    const agentId = acpAgentFor(providerID.value)?.id
+    if (agentId) {
+      const own = (agentCommands.value[agentId] ?? []).filter(({ name }) => name !== review.name)
+      return agentCommandCandidates([review, ...own])
+    }
     const compact = { name: 'compact', description: ai.value.compactCommand, hint: null }
-    return chatCommandCandidates([compact], enabledSkills.value)
+    return chatCommandCandidates([review, compact], enabledSkills.value)
   }
 
   /** The active document's layers and pages matching `query`, then the user's skills. */

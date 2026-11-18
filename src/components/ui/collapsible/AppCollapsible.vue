@@ -48,6 +48,7 @@ const styles = computed(() => collapsible())
         data-slot="trigger"
       >
         <icon-lucide-chevron-right
+          data-direction="reading"
           :class="styles.icon({ class: ui?.icon })"
           data-slot="icon"
           aria-hidden="true"

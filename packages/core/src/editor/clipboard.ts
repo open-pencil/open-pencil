@@ -9,6 +9,8 @@ import {
 } from '@open-pencil/scene-graph/coordinate'
 import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { layerImageHashes } from '@open-pencil/scene-graph/transfer'
+import { keepPastedBoundPaints, type AppliedBoundPaints } from '@open-pencil/scene-graph/variables'
 
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
 import { computeAllLayouts } from '#core/layout'
@@ -31,6 +33,7 @@ import { createClipboardPlacementActions, type ClipboardPlacement } from './clip
 import { createClipboardWebActions } from './clipboard/web'
 import { acceptsChildren, prepareSlotEdits } from './components/slots'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './history/subtree'
+import { fitEnclosingGroupsWithUndo } from './structure/group/bounds'
 import type { EditorContext } from './types'
 
 type PasteOptions = {
@@ -56,6 +59,11 @@ export function duplicateNode(
 
 export function createClipboardActions(ctx: EditorContext) {
   function duplicateSelected(selectedNodes: SceneNode[]) {
+    // One undo step for the copies and any slot they claim.
+    ctx.undo.runBatch('Duplicate', () => duplicateLayers(selectedNodes))
+  }
+
+  function duplicateLayers(selectedNodes: SceneNode[]) {
     const prevSelection = new Set(ctx.state.selectedIds)
     const selectedSet = new Set(selectedNodes.map((n) => n.id))
     const stackIndex = (node: SceneNode) =>
@@ -103,9 +111,13 @@ export function createClipboardActions(ctx: EditorContext) {
     const stack = () => {
       for (const { id, parentId, index } of stacking) ctx.graph.insertChildAt(id, parentId, index)
     }
+    // A copy joins its parent's flow and a hugging parent resizes, on undo and redo too, since
+    // neither stores the parent's layout.
+    const relayoutParents = () => ctx.runLayoutForParents(parents)
     stack()
 
     if (newRootIds.length > 0) {
+      relayoutParents()
       ctx.setSelectedIds(new Set(newRootIds))
       ctx.undo.push({
         label: 'Duplicate',
@@ -117,10 +129,12 @@ export function createClipboardActions(ctx: EditorContext) {
             restoreSubtree(ctx.graph, snapshot, parentId, allSnapshots)
           }
           stack()
+          relayoutParents()
           ctx.setSelectedIds(new Set(newRootIds))
         },
         inverse: () => {
           for (const id of newRootIds.slice().reverse()) ctx.graph.deleteNode(id)
+          relayoutParents()
           ctx.setSelectedIds(prevSelection)
         }
       })
@@ -167,6 +181,8 @@ export function createClipboardActions(ctx: EditorContext) {
         dependencies.nodes,
         snapshot.placement,
         snapshot.images,
+        // Records from another document name its variables and modes, not the pasted ones.
+        snapshot.sourceRootId === ctx.graph.rootId ? snapshot.appliedBoundPaints : new Map(),
         dependencies.componentDependencies,
         cursorPos,
         options
@@ -229,6 +245,7 @@ export function createClipboardActions(ctx: EditorContext) {
     nodes: Array<SceneNode & { children?: SceneNode[] }>,
     placement: ClipboardPlacement,
     images: Map<string, Uint8Array>,
+    applied: AppliedBoundPaints,
     dependencies: Array<SceneNode & { children?: SceneNode[] }> = [],
     cursorPos?: Vector,
     options: PasteOptions = {}
@@ -281,6 +298,7 @@ export function createClipboardActions(ctx: EditorContext) {
       }
       ctx.graph.updateNode(id, { componentId: componentId ?? node.componentId, instanceOverrides })
     }
+    keepPastedBoundPaints(ctx.graph, copiedIds, applied)
     if (dependencyRootIds.length > 0) {
       const snapshots = collectSubtrees(ctx.graph, dependencyRootIds)
       ctx.undo.push({
@@ -310,9 +328,9 @@ export function createClipboardActions(ctx: EditorContext) {
   function missingImageHashes(nodeIds: string[]) {
     const hashes = new Set<string>()
     for (const node of collectSubtrees(ctx.graph, nodeIds)) {
-      for (const fill of node.fills) {
-        if (fill.type === 'IMAGE' && fill.imageHash && !ctx.graph.images.has(fill.imageHash)) {
-          hashes.add(fill.imageHash)
+      for (const imageHash of layerImageHashes(node)) {
+        if (!ctx.graph.images.has(imageHash)) {
+          hashes.add(imageHash)
         }
       }
     }
@@ -392,11 +410,7 @@ export function createClipboardActions(ctx: EditorContext) {
     )
     for (const entry of entries) entry.subtree = snapshotSubtree(ctx.graph, entry.id)
 
-    const relayoutParents = () => {
-      for (const parentId of new Set(entries.map((entry) => entry.parentId))) {
-        ctx.runLayoutForNode(parentId)
-      }
-    }
+    const relayoutParents = () => ctx.runLayoutForParents(entries.map((entry) => entry.parentId))
 
     const prevSelection = new Set(ctx.state.selectedIds)
     for (const { id } of entries) ctx.graph.deleteNode(id)
@@ -417,6 +431,12 @@ export function createClipboardActions(ctx: EditorContext) {
         ctx.setSelectedIds(prevSelection)
       }
     })
+    // Groups shrink to the layers left in them, and one left empty goes, in the same undo step,
+    // which `deleteNodes` batches.
+    fitEnclosingGroupsWithUndo(
+      ctx,
+      entries.map((entry) => entry.parentId)
+    )
     ctx.setSelectedIds(new Set(selectionAfter))
   }
 

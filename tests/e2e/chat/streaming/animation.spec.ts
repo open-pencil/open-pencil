@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
-test('streaming lists and code lines fade in and respect reduced motion and settled state', async ({
+test('streaming words, lists, and code lines fade in and respect reduced motion and settled state', async ({
   page
 }) => {
   await page.goto('/?test')
@@ -36,16 +36,17 @@ test('streaming lists and code lines fade in and respect reduced motion and sett
   })
   try {
     const markdown = page.locator('[data-slot="streaming-animation-fixture"]')
-    const first = markdown.locator('[data-stream-markdown="li"]').first()
+    const first = markdown.locator('li').first()
     await expect(first).toHaveCSS('animation-name', 'enter')
+    await expect(markdown.locator('.markdown-word').first()).toHaveCSS('animation-name', 'enter')
     await fixture.evaluate((state) =>
       state.append('\n- Second item\n\n```typescript\nconst a = 1\n')
     )
-    await expect(markdown.locator('[data-stream-markdown="li"]')).toHaveCount(2)
-    const code = markdown.locator('[data-stream-markdown="code-block"]')
+    await expect(markdown.locator('li')).toHaveCount(2)
+    const code = markdown.locator('[data-markdown="code-block"]')
     await expect(code).toBeVisible()
     await expect(code).toHaveCSS('animation-name', 'enter')
-    const line = markdown.locator('[data-stream-markdown="code-line"]').first()
+    const line = markdown.locator('pre .line').first()
     await expect(line).toHaveCSS('animation-name', 'enter')
     await fixture.evaluate((state) => state.append('const b = 2\n```'))
     await expect(code).toContainText('const b = 2')
@@ -55,7 +56,9 @@ test('streaming lists and code lines fade in and respect reduced motion and sett
     await fixture.evaluate((state) => state.settle())
     await page.emulateMedia({ reducedMotion: 'no-preference' })
     await expect(first).toHaveCSS('animation-name', 'none')
-    await expect(markdown.locator('[data-stream-markdown="code-block"]')).toHaveCSS(
+    // The settled reply is plain text again, with no element per word.
+    await expect(markdown.locator('.markdown-word')).toHaveCount(0)
+    await expect(markdown.locator('[data-markdown="code-block"]')).toHaveCSS(
       'animation-name',
       'none'
     )

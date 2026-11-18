@@ -40,6 +40,8 @@ export type CollabRoomConnection = {
   onSynced: (handler: (peerId: string) => void) => () => void
   /** Follow the server saying the document's version history changed; returns the unsubscribe. */
   onVersionsChanged: (handler: () => void) => () => void
+  /** Follow the server saying one of the document's comment threads changed, by its ID. */
+  onCommentsChanged: (handler: (threadId: string) => void) => () => void
 }
 
 type AwarenessEntry = { clientId: number; removed: boolean }
@@ -100,10 +102,12 @@ export function connectCollabRoom({
   const agentPreview = room.makeAction(COLLAB_ACTIONS.agentPreview)
   const upload = room.makeAction(COLLAB_ACTIONS.upload)
   const [, getVersions] = room.makeAction(COLLAB_ACTIONS.versions)
+  const [, getComments] = room.makeAction(COLLAB_ACTIONS.comments)
   // A transport keeps one leave handler, so the connection shares it with its users.
   const leaveHandlers = new Set<(peerId: string) => void>()
   const syncedHandlers = new Set<(peerId: string) => void>()
   const versionsHandlers = new Set<() => void>()
+  const commentsHandlers = new Set<(threadId: string) => void>()
 
   const awarenessClientsByPeer = new Map<string, Set<number>>()
 
@@ -125,6 +129,11 @@ export function connectCollabRoom({
   getVersions((_data, peerId) => {
     if (peerId !== RELAY_SERVER_PEER) return
     for (const handler of versionsHandlers) handler()
+  })
+  getComments((data, peerId) => {
+    if (peerId !== RELAY_SERVER_PEER) return
+    const threadId = new TextDecoder().decode(data)
+    for (const handler of commentsHandlers) handler(threadId)
   })
 
   getSyncStep1((stateVector, peerId) => {
@@ -185,6 +194,10 @@ export function connectCollabRoom({
     onVersionsChanged(handler) {
       versionsHandlers.add(handler)
       return () => versionsHandlers.delete(handler)
+    },
+    onCommentsChanged(handler) {
+      commentsHandlers.add(handler)
+      return () => commentsHandlers.delete(handler)
     },
     peerForClient(clientId) {
       for (const [peerId, clients] of awarenessClientsByPeer) {

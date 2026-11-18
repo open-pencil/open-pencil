@@ -3,9 +3,9 @@ import { describe, test, expect } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { computeHandleVisibleVertices, regenerateFillGeometry } from '@open-pencil/core/vector'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
-
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 const NETWORK: VectorNetwork = {
   vertices: [
@@ -196,8 +196,8 @@ describe('vector edit with rotated ancestors', () => {
     const node = getNodeOrThrow(graph, vector.id)
     const network = expectDefined(node.vectorNetwork, 'vectorNetwork')
     expect(node.rotation).toBe(20)
-    expect(Math.min(...network.vertices.map((v) => v.x))).toBeCloseTo(0, 5)
-    expect(Math.min(...network.vertices.map((v) => v.y))).toBeCloseTo(0, 5)
+    expect(minOf(network.vertices.map((v) => v.x))).toBeCloseTo(0, 5)
+    expect(minOf(network.vertices.map((v) => v.y))).toBeCloseTo(0, 5)
     // committing goes through the undo-aware update so Cmd+Z works
     expect(undoLabels()).toEqual(['Enter path', 'Edit vector', 'Leave path'])
   })

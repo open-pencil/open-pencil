@@ -4,17 +4,10 @@ import { flushPendingLayout } from '@open-pencil/core/figma-api'
 import { compileScript } from '@open-pencil/core/tools'
 
 import { isAppMode, requireFile, rpc } from '#cli/app/client'
-import { appTargetOptions, appTargetRPCArgs } from '#cli/app/target'
+import { appPageTargetRPCArgs, pageOptions } from '#cli/app/target'
 import { printError } from '#cli/format'
-import {
-  documentWriteOptions,
-  editDocument,
-  loadDocument,
-  measureDocumentText,
-  populateWholeDocument,
-  writeFigDocument
-} from '#cli/headless'
-import { createHeadlessFigma } from '#cli/tool-data'
+import { documentWriteOptions, editDocument, writeFigDocument } from '#cli/headless'
+import { openHeadlessFigma } from '#cli/tool-data'
 
 function printResult(value: unknown, json: boolean) {
   if (json || !process.stdout.isTTY) {
@@ -44,7 +37,7 @@ export default defineCommand({
     code: { type: 'string', alias: 'c', description: 'JavaScript code to execute' },
     stdin: { type: 'boolean', description: 'Read code from stdin' },
     ...documentWriteOptions,
-    ...appTargetOptions,
+    ...pageOptions('current page'),
     json: { type: 'boolean', description: 'Output as JSON' },
     quiet: { type: 'boolean', alias: 'q', description: 'Suppress output' }
   },
@@ -63,7 +56,7 @@ export default defineCommand({
     }
 
     if (isAppMode(args.file)) {
-      const result = await rpc('eval', { code, ...appTargetRPCArgs(args) })
+      const result = await rpc('eval', { code, ...(await appPageTargetRPCArgs(args)) })
       if (!args.quiet && result !== undefined && result !== null) {
         printResult(result, !!args.json)
       }
@@ -71,10 +64,7 @@ export default defineCommand({
     }
 
     const file = requireFile(args.file)
-    const graph = await loadDocument(file)
-    populateWholeDocument(graph)
-    await measureDocumentText(graph)
-    const figma = await createHeadlessFigma(graph)
+    const { graph, figma } = await openHeadlessFigma(file, args)
 
     let result: unknown
     try {

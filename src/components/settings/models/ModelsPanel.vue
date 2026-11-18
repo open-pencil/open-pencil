@@ -114,6 +114,8 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
             </AppButton>
           </template>
 
+          <!-- A campaign's note, such as an offer of Cloud's AI to someone without a key. -->
+          <slot name="campaign" />
           <div class="flex flex-col gap-1.5" data-test-id="settings-model-list">
             <AppActionRow
               v-for="profile in profiles"
@@ -139,7 +141,7 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
               </template>
               <template #trailing>
                 <span
-                  class="mr-1 flex items-center gap-1 text-2xs text-muted"
+                  class="me-1 flex items-center gap-1 text-2xs text-muted"
                   data-test-id="settings-model-status"
                   :data-state="connectionState(profile.connectionId, profile.providerID)"
                 >
@@ -162,7 +164,10 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
                       : ai.modelCapabilityVisionShort
                   }}
                 </span>
-                <icon-lucide-chevron-right class="size-3.5 shrink-0 text-muted" />
+                <icon-lucide-chevron-right
+                  data-direction="reading"
+                  class="size-3.5 shrink-0 text-muted"
+                />
               </template>
             </AppActionRow>
           </div>

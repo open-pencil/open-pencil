@@ -2,6 +2,8 @@ import { isPlainObject } from 'es-toolkit/predicate'
 import { basename, dirname, join, normalize } from 'pathe'
 import * as v from 'valibot'
 
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 import { pathName } from './paths'
 import { OPENPENCIL_EXTENSION } from './types'
 
@@ -346,7 +348,7 @@ export function readDesignTokens(files: readonly DesignTokenSourceFile[]): Desig
   for (const [path, parsed] of reader.documents) {
     if (!isResolver(parsed)) continue
     reader.used.add(path)
-    collections.push(...readResolver(reader, path, parsed))
+    appendAll(collections, readResolver(reader, path, parsed))
   }
   for (const [path, parsed] of reader.documents) {
     const themes = v.safeParse(themesSchema, baseName(path) === '$themes' ? parsed : parsed.$themes)
@@ -359,9 +361,9 @@ export function readDesignTokens(files: readonly DesignTokenSourceFile[]): Desig
       reader.used.add(setPath)
       return reader.documents.get(setPath)
     }
-    collections.push(...readThemes(themes.output, setDocument))
+    appendAll(collections, readThemes(themes.output, setDocument))
   }
   const remaining = [...reader.documents.keys()].filter((path) => !reader.used.has(path))
-  collections.push(...readModeFiles(remaining, reader))
+  appendAll(collections, readModeFiles(remaining, reader))
   return { ...splitComposites(collections), issues: reader.issues }
 }

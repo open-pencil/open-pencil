@@ -9,7 +9,7 @@ export function subtreeNodes(graph: SceneGraph, roots: Iterable<string>): SceneN
     const node = graph.getNode(id)
     if (!node) continue
     nodes.push(node)
-    pending.push(...node.childIds)
+    for (const childId of node.childIds) pending.push(childId)
   }
   return nodes
 }

@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { lintFiles, ruleDiagnostics } from './helpers/lint.ts'
 
-describe('no-inline-tauri-imports', () => {
-  const rule = 'no-inline-tauri-imports'
-  const rules = { [`open-pencil/${rule}`]: 'error' }
+describe('@open-pencil/imports/no-inline-tauri', () => {
+  const rule = '@open-pencil/imports/no-inline-tauri'
+  const rules = { [rule]: 'error' }
 
   test('rejects an inline Tauri import in app code, and allows it only in the support gate files', async () => {
     const source =
@@ -37,14 +37,14 @@ describe('no-inline-tauri-imports', () => {
 
 describe('import boundary rules', () => {
   test('see inline imports as well as static ones', async () => {
-    const rule = 'no-core-framework-imports'
+    const rule = '@open-pencil/imports/no-core-framework'
     const diagnostics = ruleDiagnostics(
       await lintFiles(
         {
           'packages/core/src/io/export.ts':
             "export const load = () => import('@tauri-apps/api/core')"
         },
-        { [`open-pencil/${rule}`]: 'error' }
+        { [rule]: 'error' }
       ),
       rule
     )

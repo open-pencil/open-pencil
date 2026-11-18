@@ -12,6 +12,7 @@ import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
 import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
@@ -22,6 +23,7 @@ import IssueRow from './IssueRow.vue'
 import type { IssueGroupView, IssueRowView } from './types'
 import { designCheck } from './ui'
 
+const startSide = useInlineSide('start')
 const { group } = defineProps<{ group: IssueGroupView }>()
 const open = defineModel<boolean>('open', { default: true })
 const emit = defineEmits<{
@@ -58,7 +60,7 @@ const hiddenCount = computed(() => group.count - group.rows.length)
   >
     <template #label>
       <SeverityIcon :severity="group.severity" />
-      <Tip :label="group.help ?? undefined" side="left">
+      <Tip :label="group.help ?? undefined" :side="startSide">
         <span :class="styles.groupTitle()">{{ group.title }}</span>
       </Tip>
       <span :class="styles.groupCount()">{{ group.count }}</span>

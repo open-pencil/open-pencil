@@ -1,1 +1,0 @@
-- AI chat shows the Option key in the follow-up shortcut hint on macOS.

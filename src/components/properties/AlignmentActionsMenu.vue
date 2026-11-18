@@ -65,7 +65,7 @@ const testId = (id: EditorCommandId) => `alignment-action-${id.replace('selectio
               @select="runCommand(id)"
             >
               <span>{{ getCommand(id).label }}</span>
-              <span class="ml-6 text-2xs text-muted">{{
+              <span class="ms-6 text-2xs text-muted">{{
                 formatShortcut(editorCommandMetadata(id).shortcut)
               }}</span>
             </DropdownMenuItem>
@@ -78,7 +78,7 @@ const testId = (id: EditorCommandId) => `alignment-action-${id.replace('selectio
               :disabled="!getCommand('selection.arrangeSpread').enabled.value"
             >
               {{ menu.autoArrange }}
-              <icon-lucide-chevron-right :class="menuCls.icon" />
+              <icon-lucide-chevron-right data-direction="reading" :class="menuCls.icon" />
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent :side-offset="4" :class="menuCls.content">

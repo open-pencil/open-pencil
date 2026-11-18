@@ -55,6 +55,7 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'name',
   'key',
   'ref',
+  'keepChildren',
   'flex',
   'flow',
   'dir',
@@ -189,6 +190,8 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'fillRule',
   'paths',
   'label',
+  // How a set drawn from its own source draws an `<Icon>`, such as a Material Symbol's weight
+  'options',
   'style',
   'bind',
   'component',

@@ -6,7 +6,7 @@ const { rowHeight } = useLayerTreeGeometry()
 </script>
 
 <template>
-  <div :style="{ height: `${rowHeight}px`, paddingLeft: padLeft }">
+  <div :style="{ height: `${rowHeight}px`, paddingInlineStart: padLeft }">
     <slot />
   </div>
 </template>

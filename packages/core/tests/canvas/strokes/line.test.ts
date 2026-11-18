@@ -3,11 +3,10 @@ import { afterAll, describe, expect, test } from 'bun:test'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { silhouetteBounds } from '#core/canvas/shadows/silhouette'
 import { makeLineStrokeOutline } from '#core/canvas/strokes/line'
-
-import { expectDefined } from '@open-pencil/test-support/assert'
 const SIZE = 400
 
 const ck = await getCanvasKit()

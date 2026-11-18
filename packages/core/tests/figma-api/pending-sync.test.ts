@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
+
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 

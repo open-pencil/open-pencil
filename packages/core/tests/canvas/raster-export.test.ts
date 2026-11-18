@@ -1,10 +1,9 @@
 import { beforeAll, describe, expect, mock, test } from 'bun:test'
 
 import type { Canvas } from '@open-pencil/canvaskit'
-
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { pixelLength } from '@open-pencil/scene-graph/text'

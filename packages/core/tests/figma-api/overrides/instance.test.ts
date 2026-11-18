@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 beforeAll(() => registerTestFont())
 
@@ -83,6 +83,27 @@ describe('instance.overrides', () => {
       'Box: bottomLeftRadius,bottomRightRadius,cornerRadius,fills,strokeBottomWeight,strokeLeftWeight,strokeRightWeight,stokeTopWeight,strokeWeight,topLeftRadius,topRightRadius',
       'Row: itemSpacing,primaryAxisAlignItems'
     ])
+  })
+
+  // Setting one side apart keeps the other three at the stroke's weight, so the instance owns all
+  // four: a later component edit must not move the sides it kept.
+  test('records every side when the first side of an instance layer is set apart', () => {
+    const { card, find, overrides } = setup()
+    find('Box').strokes = [solid(0, 0, 1)]
+    find('Box').strokeWeight = 2
+    find('Box').strokeRightWeight = 20
+    const box = card.findOne((node: FigmaNodeProxy) => node.name === 'Box')
+    if (!box) throw new Error('Missing Box')
+    box.strokeWeight = 9
+    expect(overrides()).toEqual([
+      'Box: strokeBottomWeight,strokeLeftWeight,strokeRightWeight,strokes,stokeTopWeight,strokeWeight'
+    ])
+    expect([
+      find('Box').strokeTopWeight,
+      find('Box').strokeRightWeight,
+      find('Box').strokeBottomWeight,
+      find('Box').strokeLeftWeight
+    ]).toEqual([2, 20, 2, 2])
   })
 
   test('lists the instance’s own size once its layers grow it, and a nested instance’s layers', () => {

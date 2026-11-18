@@ -1,13 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { documentFontStatus, FontManager, fontTableView, sfntFont } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import {
-  documentFontStatus,
-  FontManager,
-  fontTableView,
-  sfntFont
-} from '@open-pencil/core/text'
 import { FONT_STAND_INS, standInFont } from '#core/text/font/stand-in'
 
 const FIGMA_HAND = FONT_STAND_INS['Figma Hand']
@@ -55,7 +50,11 @@ describe('stand-in fonts', () => {
     const pageId = graph.getPages()[0]?.id ?? graph.rootId
     graph.createNode('TEXT', pageId, { fontFamily: 'Figma Hand', fontWeight: 400, text: 'Hi' })
     const [face] = documentFontStatus(graph, pageId, manager).issues
-    expect(face).toMatchObject({ family: 'Figma Hand', status: 'substituted', substituteFamily: 'Caveat' })
+    expect(face).toMatchObject({
+      family: 'Figma Hand',
+      status: 'substituted',
+      substituteFamily: 'Caveat'
+    })
   })
 
   test('other missing families have no stand-in', async () => {
@@ -68,7 +67,9 @@ describe('stand-in fonts', () => {
     // Shorten the head table's directory record to 4 bytes, too short for the em it holds.
     for (let i = 0; i < view.getUint16(4); i++) {
       const record = 12 + i * 16
-      const tag = String.fromCharCode(...new Uint8Array(caveat, record, 4))
+      const tag = Array.from(new Uint8Array(caveat, record, 4), (code) =>
+        String.fromCharCode(code)
+      ).join('')
       if (tag === 'head') view.setUint32(record + 12, 4)
     }
     expect(standInFont(caveat, FIGMA_HAND)).toBeNull()
@@ -78,7 +79,9 @@ describe('stand-in fonts', () => {
     const manager = offlineManager()
     await manager.loadFont('Figma Hand', 'Regular')
     const installed = await bundledCaveat()
-    manager.setHostFontLoader((family) => Promise.resolve(family === 'Figma Hand' ? installed : null))
+    manager.setHostFontLoader((family) =>
+      Promise.resolve(family === 'Figma Hand' ? installed : null)
+    )
     await manager.loadFont('Figma Hand', 'Regular')
     expect(manager.loadedFontSource('Figma Hand', 'Regular')).toBe('local')
   })

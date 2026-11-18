@@ -30,7 +30,7 @@ function contextFits(graph: SceneGraph, rootId: string): boolean {
     if (++count > MAX_PREVIEW_CONTEXT_NODES) return false
     const id = pending.pop()
     const node = id ? graph.getNode(id) : undefined
-    if (node) pending.push(...node.childIds)
+    if (node) for (const childId of node.childIds) pending.push(childId)
   }
   return true
 }
@@ -58,9 +58,9 @@ export async function stageJSXPreview(
   graph.variableCollections = structuredClone(source.variableCollections)
   // One call, so components render before the roots that use them.
   if (tree.type === '' && !tree.children.some((child) => typeof child !== 'string')) return null
-  const results = await renderRoots(graph, tree, placement)
+  const rendered = await renderRoots(graph, tree, placement)
   signal?.throwIfAborted()
-  finishRenderPlacement(graph, results, placement)
+  const results = finishRenderPlacement(graph, rendered, placement)
   return {
     graph,
     pageId,

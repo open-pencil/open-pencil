@@ -25,5 +25,11 @@
   "noMatches": "一致するコメントはありません。",
   "replyCount": "返信: {count}",
   "commentDeleted": "コメントを削除しました",
-  "hideComments": "コメントを非表示"
+  "hideComments": "コメントを非表示",
+  "mentionPeople": "メンションする人",
+  "unread": "未読",
+  "notifyMention": "コメントでのメンション",
+  "notifyReply": "あなたのコメントへの返信",
+  "notifyReplyHint": "あなたが書き込んだコメントスレッドに誰かが返信したとき。",
+  "notifyTitle": "{author} · {document}"
 }

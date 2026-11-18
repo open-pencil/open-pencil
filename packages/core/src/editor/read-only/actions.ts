@@ -9,6 +9,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'acceptingParent',
   'acceptsChildren',
   'canDistributeNodes',
+  'canUngroupSelection',
   'canWrapSelectionInSection',
   'collectVariantOptions',
   'findVariantByValues',
@@ -60,6 +61,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'snapshotPage',
   'statusWorkflow',
   'validateComponentSet',
+  'variantsToLoad',
 
   // Selection and hover
   'clearSelection',
@@ -79,6 +81,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'setMarquee',
   'setMeasurementMode',
   'setTool',
+  'setScaleAnchor',
   'validateEnteredContainer',
 
   // Canvas overlays that show without changing anything
@@ -116,6 +119,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'preparePage',
   'preparePageNodes',
   'loadPageNodes',
+  'loadSavedVariants',
   'pageHoldingNode',
   'revealNodes',
   'setZoomAroundPoint',
@@ -163,6 +167,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'releaseGraphResources',
   'removeCanvasRenderer',
   'reportPresented',
+  'reportProgress',
   'replaceGraph',
   'requestRefresh',
   'requestRender',

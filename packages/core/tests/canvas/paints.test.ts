@@ -1,10 +1,10 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type Fill, type SceneNode } from '@open-pencil/scene-graph'
 import { DEFAULT_GRADIENT_TRANSFORM } from '@open-pencil/scene-graph/gradient'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 const WIDTH = 400
 const HEIGHT = 40

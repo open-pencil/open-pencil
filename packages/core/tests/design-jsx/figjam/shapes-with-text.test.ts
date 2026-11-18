@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX, selectionToJSXWithLayers } from '@open-pencil/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 const BOARD = `
   <Frame name="Board" w={900} h={400}>
@@ -67,10 +67,14 @@ describe('shapes with text in design JSX', () => {
     ])
     expect(shape.name).toBe('Idea and sketch')
     const jsx = sceneNodeToJSX(shape.id, graph)
-    expect(jsx).toBe('<Shape><Span weight="bold">Idea</Span> and <Span italic>sketch</Span></Shape>')
+    expect(jsx).toBe(
+      '<Shape><Span weight="bold">Idea</Span> and <Span italic>sketch</Span></Shape>'
+    )
     const again = new SceneGraph()
     const [reread] = await renderJSX(again, jsx)
-    expect(shapeWithTextLabel(again, getNodeOrThrow(again, reread.id))?.styleRuns).toEqual(label?.styleRuns)
+    expect(shapeWithTextLabel(again, getNodeOrThrow(again, reread.id))?.styleRuns).toEqual(
+      label?.styleRuns
+    )
   })
 
   test('a styled label’s elements belong to no layer, so later elements map to theirs', async () => {
@@ -85,9 +89,9 @@ describe('shapes with text in design JSX', () => {
 
   test('a label mixing <Paragraph> with other text fails before the shape is made', async () => {
     const graph = new SceneGraph()
-    await expect(
-      renderJSX(graph, '<Shape><Paragraph>a</Paragraph>b</Shape>')
-    ).rejects.toThrow('mixes <Paragraph> with other content')
+    await expect(renderJSX(graph, '<Shape><Paragraph>a</Paragraph>b</Shape>')).rejects.toThrow(
+      'mixes <Paragraph> with other content'
+    )
     expect([...graph.getAllNodes()].some((node) => node.type === 'SHAPE_WITH_TEXT')).toBe(false)
   })
 

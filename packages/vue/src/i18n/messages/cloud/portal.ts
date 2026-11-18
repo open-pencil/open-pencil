@@ -1,6 +1,10 @@
 import { count, params } from '@nanostores/i18n'
 
 import { i18n } from '#vue/i18n/create'
+import { communityPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/community'
+import { planPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/plan'
+import { requestPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/requests'
+import { accessTokenPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/tokens'
 
 /** Copy for the pages a Cloud server shows on its own address. */
 export const cloudPortalMessageDefaults = {
@@ -80,6 +84,25 @@ export const cloudPortalMessageDefaults = {
     'An administrator declined or removed your access. Ask them if you think this is a mistake.',
   signOut: 'Sign out',
 
+  termsTitle: 'Accept the terms to continue',
+  termsDescription: params('Read and accept the {terms} of {host} to continue.'),
+  termsOfService: 'Terms of Service',
+  privacyPolicy: 'Privacy Policy',
+  reportAbuse: 'Report abuse',
+  acceptTerms: 'Accept and continue',
+  declineTerms: 'Decline and sign out',
+  termsLeaveHint: 'Don’t want to accept?',
+  /** Opens deleting the account, whose dialog downloads every document first. */
+  termsLeave: 'Leave with your documents',
+  termsChanged:
+    'The terms changed while this page was open. Reload it to read the current version.',
+  consentTerms: params('By continuing, you agree to the {terms}.'),
+  consentTermsAndPrivacy: params(
+    'By continuing, you agree to the {terms} and acknowledge the {privacy}.'
+  ),
+  consentPrivacy: params('The {privacy} explains how this server handles your data.'),
+  minimumAge: params('You must be {age} or older.'),
+
   twoStepTitle: 'Confirm it’s you',
   twoStepAuthenticator: 'Enter the 6-digit code from your authenticator app.',
   twoStepRecovery: 'Enter one of the recovery codes you saved. Each works once.',
@@ -127,6 +150,22 @@ export const cloudPortalMessageDefaults = {
   securityDescription: params('How you sign in to {host}.'),
   sessions: 'Sessions',
   sessionsDescription: 'Where your account is signed in, and when it was.',
+  notifications: 'Notifications',
+  notificationsDescription: 'Which comments you hear about by email.',
+  commentEmails: 'Comment emails',
+  commentEmailsAll: 'All comments',
+  commentEmailsAllDescription:
+    'Comments that mention you, and replies in threads you started or replied to.',
+  commentEmailsMentions: 'Mentions only',
+  commentEmailsMentionsDescription: 'Comments that mention you.',
+  commentEmailsOff: 'None',
+  commentEmailsOffDescription:
+    'No email about comments. You still see them, and new ones, in the editor.',
+  notificationsSaved: 'Notification settings saved',
+  ...accessTokenPortalMessageDefaults,
+  ...requestPortalMessageDefaults,
+  ...communityPortalMessageDefaults,
+  ...planPortalMessageDefaults,
   overview: 'Overview',
   accessRequests: 'Access requests',
   accessRequestsDescription:
@@ -297,17 +336,6 @@ export const cloudPortalMessageDefaults = {
   statusRemoved: 'Access removed',
   asked: params('Asked {date}'),
   reviewedBy: params('{decision} by {name}'),
-  decline: 'Decline',
-  removeAccess: 'Remove access',
-  declineHeading: params('Decline {name}?'),
-  declineDescription: 'They get an email saying so, and can ask again later.',
-  removeAccessHeading: params('Remove access for {name}?'),
-  removeAccessDescription: 'They can’t sign in any more, and get an email saying so.',
-  reviewNote: 'Note for administrators (optional)',
-  noteDetail: params('Note: {note}'),
-  noOneWaiting: 'No one is waiting',
-  nothingHere: 'Nothing here yet',
-  requestsEmptyDescription: 'New requests appear here, and administrators get an email for each.',
   searchPeople: 'Search people…',
   filterEveryone: 'Everyone',
   filterAdministrators: 'Administrators',
@@ -491,6 +519,7 @@ export const cloudPortalMessageDefaults = {
   columnReported: 'Reported',
   columnOwner: 'Owner',
   columnUpdated: 'Last changed',
+  columnAccess: 'Access',
   reportReasonSpam: 'Spam or phishing',
   reportReasonIllegal: 'Illegal content',
   reportReasonCopyright: 'Copyright',
@@ -506,6 +535,13 @@ export const cloudPortalMessageDefaults = {
   deletedForever: 'Deleted forever',
   destroyedOn: params('Removed from the server on {date}'),
   openReports: count({ one: '{count} open report', many: '{count} open reports' }),
+  /** Who beyond its workspace can open a document, in the documents list. */
+  privateDocument: 'Private',
+  sharedByLink: 'Shared by link',
+  editableByLink: 'Editable by link',
+  inCommunity: 'In community',
+  documentPreview: params('Preview of {name}'),
+  downloadDocument: 'Download',
   takeDown: 'Take down',
   restoreDocument: 'Restore document',
   revokeLink: 'Revoke link',
@@ -533,6 +569,7 @@ export const cloudPortalMessageDefaults = {
   activityTookDown: 'took down',
   activityRestoredDocument: 'restored',
   activityUndeletedDocument: 'brought back',
+  activityDownloadedDocument: 'downloaded',
   activityRevokedLink: 'revoked a link:',
   activityDismissedReport: 'dismissed a report:',
   activityActionedReport: 'closed a report:',
@@ -545,6 +582,7 @@ export const cloudPortalMessageDefaults = {
     'You’re still the only admin of a workspace other people use. Make someone else an admin first.',
   errorSelfAction: 'You can’t do that to your own account.',
   errorTwoStepRequired: 'Turn on two-step sign-in first.',
+  errorTwoStepUnconfirmed: 'Confirm it’s you with your second step, then try again.',
   errorNotAllowed: 'You don’t have permission to do that.',
   errorNetwork: 'Couldn’t reach the server. Check your connection.',
   errorAlreadyDecided: 'Someone already decided this request. Refresh to see it.',

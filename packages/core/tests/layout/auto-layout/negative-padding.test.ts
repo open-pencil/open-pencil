@@ -233,7 +233,11 @@ describe('a wrapping frame wraps its rows in the box its negative padding grows'
   })
 
   test('every row starts past a negative left padding, next to a negative gap', () => {
-    const { children } = frameWith(fixedWrap({ itemSpacing: -10 }), { paddingLeft: -10 }, FOUR_SQUARES)
+    const { children } = frameWith(
+      fixedWrap({ itemSpacing: -10 }),
+      { paddingLeft: -10 },
+      FOUR_SQUARES
+    )
     expect(positions(children)).toEqual([
       [-10, 0],
       [20, 0],

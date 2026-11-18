@@ -1,13 +1,13 @@
 import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { FIXTURES } from '@open-pencil/test-support/paths'
+import { fakeGoogleFonts, withGoogleFonts } from '#core-tests/helpers/google-fonts'
+
 import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
+import { FontManager, facesFromStyles } from '@open-pencil/core/text'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { getCanvasKit } from '#core/canvaskit'
-import { FontManager, facesFromStyles } from '@open-pencil/core/text'
-
-import { fakeGoogleFonts, withGoogleFonts } from '#core-tests/helpers/google-fonts'
 
 /** A font manager that asks no web provider, so a family's faces come from its catalog. */
 function offlineManager() {
@@ -261,7 +261,9 @@ test('leaves installed faces to the page, which draws them by name', async () =>
   expect(registered).toEqual(['Inter Regular'])
 
   // A file that replaces the installed one, as a web font does a fallback, keeps that one off it.
-  const replacement = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  const replacement = await Bun.file(
+    join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')
+  ).arrayBuffer()
   await manager.markLoaded('Installed Sans', 'Regular', replacement)
   expect(registered).toEqual(['Inter Regular', 'Installed Sans Regular'])
 })
@@ -320,7 +322,9 @@ test('a variable font shared with another weight still fetches the characters it
       family,
       weights: [400, 700],
       axes: [{ tag: 'wght', min: 100, max: 900 }],
-      files: [{ url: 'https://fonts.gstatic.com/s/test/shared.ttf', data: variable, weight: '100 900' }]
+      files: [
+        { url: 'https://fonts.gstatic.com/s/test/shared.ttf', data: variable, weight: '100 900' }
+      ]
     }
   ])
   await withGoogleFonts(

@@ -50,7 +50,7 @@ function consumerDependencyRoots(graph: SceneGraph, component: SceneNode): Scene
     visited.add(id)
     const node = graph.getNode(id)
     if (!node) continue
-    pending.push(...node.childIds)
+    for (const childId of node.childIds) pending.push(childId)
     if (!node.componentId) continue
     const dependency = graph.getNode(node.componentId)
     if (!dependency) continue

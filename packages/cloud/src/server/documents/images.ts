@@ -6,6 +6,7 @@ import type {
   RequestImageUploadsInput
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
+import { logCloud, loggedError } from '#cloud/server/logging'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { StorageQuotaService } from '#cloud/server/quota'
 import { uniq, uniqBy } from 'es-toolkit'
@@ -53,7 +54,7 @@ export function createDocumentImages(
           .execute()
       } catch (error) {
         // Cleanup releases it once it expires.
-        console.warn('Giving up an image upload failed', error)
+        logCloud('warn', 'Giving up an image upload failed', { error: loggedError(error) })
       }
     }
   }

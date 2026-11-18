@@ -17,6 +17,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDataTable from '@/components/ui/table/AppDataTable.vue'
 
 import PortalSessions from '../account/PortalSessions.vue'
+import { portalColumnMeta } from '../table/columns'
 import PortalStatusCell from '../table/PortalStatusCell.vue'
 import PortalTextCell from '../table/PortalTextCell.vue'
 import type { PortalPersonAction, PortalPersonDetail } from '../types'
@@ -72,13 +73,13 @@ const workspaces = usePortalRows(() => detail.workspaces, {
     column.display({
       id: 'role',
       header: () => messages.value.columnRole,
-      meta: { class: 'w-32' },
+      meta: { role: 'tag', always: true },
       cell: ({ row: { original: workspace } }) =>
         h(PortalStatusCell, { statuses: [{ label: roleLabel(workspace.role), tone: 'neutral' }] })
     }),
     column.accessor('memberCount', {
       header: () => messages.value.columnMembers,
-      meta: { class: 'w-24 text-right tabular-nums' }
+      meta: { role: 'count', always: true }
     })
   ])
 })
@@ -87,7 +88,9 @@ const workspaces = usePortalRows(() => detail.workspaces, {
 <template>
   <div class="flex max-w-3xl flex-col gap-6">
     <AppButton class="self-start" size="sm" variant="ghost" @click="emit('back')">
-      <template #leading><icon-lucide-arrow-left class="size-3.5" /></template>
+      <template #leading
+        ><icon-lucide-arrow-left data-direction="reading" class="size-3.5"
+      /></template>
       {{ messages.backToPeople }}
     </AppButton>
 
@@ -144,7 +147,11 @@ const workspaces = usePortalRows(() => detail.workspaces, {
 
     <SettingsSection>
       <template #title>{{ messages.personWorkspaces }}</template>
-      <AppDataTable :table="workspaces" :label="messages.personWorkspaces">
+      <AppDataTable
+        :table="workspaces"
+        :column-meta="portalColumnMeta"
+        :label="messages.personWorkspaces"
+      >
         <template #empty>
           <p class="text-center text-xs text-muted">{{ messages.personWorkspacesEmpty }}</p>
         </template>

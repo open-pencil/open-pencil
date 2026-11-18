@@ -25,6 +25,11 @@ export const runtimeScenarios: RuntimeScenario[] = [
     code: "const { interpretInstance, materializeInstance } = await import('@open-pencil/fig/instance-overrides'); if (typeof interpretInstance !== 'function' || typeof materializeInstance !== 'function') throw new Error('Fig instance override subpath failed')"
   },
   {
+    // Cloud's emails are Vue components, so a consumer must get them compiled.
+    name: 'Cloud email',
+    code: "const { EMAIL_SAMPLES, renderTransactionalEmail } = await import('@open-pencil/cloud/email'); const email = await renderTransactionalEmail(EMAIL_SAMPLES[0], 'de'); if (!/lang=.de./.test(email.html) || !email.text.includes('Homepage')) throw new Error('Cloud email smoke failed')"
+  },
+  {
     name: 'SceneGraph package',
     code: "const { SceneGraph } = await import('@open-pencil/scene-graph'); const graph = new SceneGraph(); if (graph.getPages().length !== 1) throw new Error('SceneGraph package smoke failed')"
   },
@@ -58,7 +63,7 @@ export const runtimeScenarios: RuntimeScenario[] = [
   },
   {
     name: 'DOM/CSS conversion',
-    code: "const { htmlToSceneGraph } = await import('@open-pencil/dom-css'); const graph = await htmlToSceneGraph('<div class=card>OpenPencil</div>', { cssText: '.card { width: 320px; }' }); if (graph.getPages()[0].width !== 320) throw new Error('DOM/CSS scene graph failed')"
+    code: "const { htmlToSceneGraph } = await import('@open-pencil/dom-css'); const { createHTMLEngineRuntime } = await import('@open-pencil/html-engine'); const graph = await htmlToSceneGraph('<div class=card>OpenPencil</div>', { cssText: '.card { width: 320px; }', runtime: createHTMLEngineRuntime() }); if (graph.getPages()[0].width !== 320) throw new Error('DOM/CSS scene graph failed')"
   },
   {
     name: 'DOM/CSS browser API',
@@ -70,11 +75,11 @@ export const runtimeScenarios: RuntimeScenario[] = [
   },
   {
     name: 'Oxlint plugin',
-    code: "const { default: plugin } = await import('@open-pencil/oxlint-plugin'); if (plugin.meta.name !== 'open-pencil' || Object.keys(plugin.rules).length < 28 || !plugin.rules['no-unvalidated-json-parse']?.meta) throw new Error('Oxlint plugin smoke failed')"
+    code: "const domains = ['data', 'imports', 'runtime', 'security', 'structure', 'types']; const plugins = await Promise.all(domains.map(async (domain) => (await import('@open-pencil/oxlint-plugin/' + domain)).default)); if (plugins.some((plugin, index) => plugin.meta.name !== '@open-pencil/' + domains[index] || Object.keys(plugin.rules).length === 0) || plugins.reduce((count, plugin) => count + Object.keys(plugin.rules).length, 0) < 30 || !plugins[0].rules['no-unvalidated-json-parse']?.meta) throw new Error('Oxlint plugin smoke failed')"
   },
   {
     name: 'Oxlint recommended configuration',
-    code: "const { default: preset } = await import('@open-pencil/oxlint-plugin/recommended'); if (preset.rules['open-pencil/no-silent-catch'] !== 'error' || !preset.plugins.includes('typescript')) throw new Error('Oxlint recommended configuration smoke failed')"
+    code: "const { default: preset } = await import('@open-pencil/oxlint-plugin/recommended'); if (preset.rules['@open-pencil/runtime/no-silent-catch'] !== 'error' || !preset.plugins.includes('typescript')) throw new Error('Oxlint recommended configuration smoke failed')"
   },
   {
     name: 'Cloud contract',

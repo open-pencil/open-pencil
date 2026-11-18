@@ -30,14 +30,14 @@ test('color expressions survive fresh export, import, editing and patched export
   const archivedRecord = { ...record, sortPosition: 'preserved-order', isSoftDeleted: false }
   const annotated = await readStreamBytes(
     patchFigArchive(
-    Uint8Array.from(exported).buffer,
-    {
-      records: [archivedRecord],
-      blobs: [],
-      removed: [],
-      replaceVariables: false
-    },
-    { thumbnailPNG: new Uint8Array(), metaJSON: '{}', images: [] }
+      Uint8Array.from(exported).buffer,
+      {
+        records: [archivedRecord],
+        blobs: [],
+        removed: [],
+        replaceVariables: false
+      },
+      { thumbnailPNG: new Uint8Array(), metaJSON: '{}', images: [] }
     )
   )
   const imported = await parseFigFile(Uint8Array.from(annotated).buffer)

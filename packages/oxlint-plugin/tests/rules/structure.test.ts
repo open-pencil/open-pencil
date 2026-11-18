@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { lint, lintFiles, ruleDiagnostics } from '#oxlint-plugin-tests/helpers/lint'
 
-describe('no-sibling-domain-prefixed-files', () => {
-  const rule = 'no-sibling-domain-prefixed-files'
+describe('@open-pencil/structure/no-sibling-domain-prefixed-files', () => {
+  const rule = '@open-pencil/structure/no-sibling-domain-prefixed-files'
 
   test('reports a prefix that names a sibling folder, not a suffix that does', async () => {
     const found = ruleDiagnostics(
@@ -14,7 +14,7 @@ describe('no-sibling-domain-prefixed-files', () => {
           'list-actions.ts': 'export {}',
           'list-actions.test.ts': 'export {}'
         },
-        { [`open-pencil/${rule}`]: 'error' }
+        { [rule]: 'error' }
       ),
       rule
     )
@@ -26,10 +26,10 @@ describe('no-sibling-domain-prefixed-files', () => {
   })
 })
 
-describe('no-useless-pass-through-wrappers', () => {
-  const rule = 'no-useless-pass-through-wrappers'
+describe('@open-pencil/structure/no-useless-pass-through-wrappers', () => {
+  const rule = '@open-pencil/structure/no-useless-pass-through-wrappers'
   const count = async (source: string) =>
-    ruleDiagnostics(await lint(source, { [`open-pencil/${rule}`]: 'error' }), rule).length
+    ruleDiagnostics(await lint(source, { [rule]: 'error' }), rule).length
 
   test.each([
     'function save(document) { return write(document) }',

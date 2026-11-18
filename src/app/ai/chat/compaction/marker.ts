@@ -2,6 +2,7 @@ import { generateId, type UIMessage } from 'ai'
 import * as v from 'valibot'
 
 import { messageMetadata } from '@/app/ai/chat/metadata'
+import { reviewOf } from '@/app/ai/review/message'
 
 /**
  * A compaction: the summary that stands for the conversation before it, whether the person or
@@ -85,13 +86,14 @@ export function replyCompactions(message: UIMessage): StepCompaction[] {
 }
 
 /**
- * The messages a model reads: from the latest compaction on, its summary standing for everything
+ * The messages a model reads: none of the chat's design reviews, and from the latest compaction on, its summary standing for everything
  * before it, and for one that ran within a reply, the reply's steps after its latest. The person still
  * sees the whole conversation.
  */
 export function messagesSinceCompaction(messages: readonly UIMessage[]): UIMessage[] {
-  // An agent's own compaction holds nothing for a model to read.
-  const read = messages.filter((message) => !compactionOf(message)?.agent)
+  // An agent's own compaction holds nothing for a model to read, and a design review is the
+  // person's to send on.
+  const read = messages.filter((message) => !compactionOf(message)?.agent && !reviewOf(message))
   const at = read.findLastIndex(summarizes)
   if (at === -1) return read
   const message = read[at]

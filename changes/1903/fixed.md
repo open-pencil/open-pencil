@@ -1,2 +1,0 @@
-- Plugin API scripts see instances follow a component edit at once, as in Figma, and a CLI edit saves instances synced with the components it changed.
-- Overriding the fill of a layer inside a nested instance no longer stops its other paint and effect bindings from following the component.

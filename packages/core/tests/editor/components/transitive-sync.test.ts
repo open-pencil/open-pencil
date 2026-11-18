@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { createEditor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 test('component edits propagate across definition dependencies and undo/redo', async () => {
   const graph = new SceneGraph()

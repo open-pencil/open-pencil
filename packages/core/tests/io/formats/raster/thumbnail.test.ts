@@ -1,10 +1,14 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { createCanvasKitRasterCodec, headlessRenderThumbnail, thumbnailFrame } from '@open-pencil/core/io/formats/raster'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import {
+  createCanvasKitRasterCodec,
+  headlessRenderThumbnail,
+  thumbnailFrame
+} from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 setDefaultTimeout(60_000)
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 import {
   boundEndpoint,
   connectorRoute,
@@ -9,6 +9,7 @@ import {
   createConnector
 } from '@open-pencil/scene-graph/connectors'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { arrangeLayers } from '#core/layout/arrange/layers'
 
@@ -166,8 +167,8 @@ describe('arrangeLayers', () => {
     for (const [i, a] of placed.entries()) {
       for (const b of placed.slice(i + 1)) expect(overlap(a, b)).toBe(false)
     }
-    expect(Math.min(...placed.map((layer) => layer.x))).toBe(100)
-    expect(Math.min(...placed.map((layer) => layer.y))).toBe(100)
+    expect(minOf(placed.map((layer) => layer.x))).toBe(100)
+    expect(minOf(placed.map((layer) => layer.y))).toBe(100)
   })
 
   test('grid, row, and column place layers in order from the first, and connectors follow', async () => {

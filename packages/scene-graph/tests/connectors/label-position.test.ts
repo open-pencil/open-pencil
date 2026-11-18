@@ -34,7 +34,12 @@ function placed(
   const round = (n: number) => Math.round(n * 10) / 10
   return {
     plate: [round(layout.plate.x), round(layout.plate.y)],
-    line: layout.pieces.map(({ from, to }) => [round(from.x), round(from.y), round(to.x), round(to.y)])
+    line: layout.pieces.map(({ from, to }) => [
+      round(from.x),
+      round(from.y),
+      round(to.x),
+      round(to.y)
+    ])
   }
 }
 
@@ -48,8 +53,7 @@ describe('a dragged label sits where FigJam keeps it', () => {
     ])
     // Near the start the plate covers the line up to it.
     expect(
-      placed(level, DETOUR, { section: 'MIDDLE_TO_START', offset: 0.7893803, offAxis: 'NONE' })
-        .line
+      placed(level, DETOUR, { section: 'MIDDLE_TO_START', offset: 0.7893803, offAxis: 'NONE' }).line
     ).toEqual([[233.5, 80, 471.5, 80]])
   })
 
@@ -99,8 +103,10 @@ describe('dragging a label', () => {
     expect(at(380, 110)?.offAxis).toBe('NONE')
     expect(at(380, 114)?.offAxis).toBe('BELOW')
     expect(at(380, 20)?.offAxis).toBe('ABOVE')
-    expect(
-      connectorLabelPositionAt(elbow, DETOUR, { x: 380, y: 239.75 })
-    ).toMatchObject({ section: 'MIDDLE_TO_START', offset: 0, offAxis: 'ABOVE' })
+    expect(connectorLabelPositionAt(elbow, DETOUR, { x: 380, y: 239.75 })).toMatchObject({
+      section: 'MIDDLE_TO_START',
+      offset: 0,
+      offAxis: 'ABOVE'
+    })
   })
 })

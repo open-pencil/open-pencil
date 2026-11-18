@@ -1,6 +1,15 @@
 import type { EnrollmentStatus } from '#cloud/admin/enrollment/service'
-import type { CloudSignInMethod, DocumentPermission, WorkspaceRole } from '#cloud/contract'
-import type { TransactionalEmailKind, TransactionalEmailPayloadByKind } from '#cloud/email'
+import type {
+  CloudSignInMethod,
+  CommentEmailSetting,
+  DocumentPermission,
+  WorkspaceRole
+} from '#cloud/contract'
+import type {
+  EmailLocale,
+  TransactionalEmailKind,
+  TransactionalEmailPayloadByKind
+} from '#cloud/email'
 import type { Account, Session } from 'better-auth'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
 
@@ -108,6 +117,66 @@ export interface DocumentTable {
 }
 
 /** A report someone filed about a document shared with them by link; see migration 032. */
+/** A comment pin on a document: where it sits, and whether it is resolved. */
+export interface CommentThreadTable {
+  id: string
+  documentId: string
+  pageId: string
+  pageName: string | null
+  nodeId: string | null
+  nodeName: string | null
+  offsetX: number | null
+  offsetY: number | null
+  x: number
+  y: number
+  createdBy: string
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
+  resolvedAt: TimestampColumn | null
+  resolvedBy: string | null
+}
+
+/** A thread's first message or a reply to it. */
+export interface CommentTable {
+  id: string
+  threadId: string
+  /** Null only for a comment brought in from a file, which has `importedAuthorName` instead. */
+  authorId: string | null
+  importedAuthorName: string | null
+  agent: string | null
+  body: string
+  createdAt: TimestampColumn
+  editedAt: TimestampColumn | null
+}
+
+/** Someone a comment names, by account. */
+export interface CommentMentionTable {
+  commentId: string
+  userId: string
+  createdAt: TimestampColumn
+}
+
+/** How far an account has read a thread. */
+export interface CommentReadTable {
+  userId: string
+  threadId: string
+  readAt: TimestampColumn
+}
+
+/** An email sent about a comment, counted against each day's budget. */
+export interface CommentEmailTable {
+  id: string
+  senderId: string
+  recipientId: string
+  sentAt: TimestampColumn
+}
+
+export interface NotificationSettingTable {
+  userId: string
+  commentEmails: CommentEmailSetting
+  updatedAt: TimestampColumn
+}
+
 export interface DocumentReportTable {
   id: string
   documentId: string
@@ -115,6 +184,8 @@ export interface DocumentReportTable {
   reporterUserId: string | null
   reporterGuestId: string | null
   replyEmail: string | null
+  /** The language to reply in when the reporter has no account that chose one. */
+  replyLocale: Generated<EmailLocale | null>
   reason: 'spam-phishing' | 'illegal' | 'copyright' | 'harassment' | 'other'
   description: string
   status: Generated<'open' | 'dismissed' | 'actioned'>
@@ -206,8 +277,21 @@ export interface AuthUserTable {
   banExpires: TimestampColumn | null
   /** Unset on accounts that never turned two-step sign-in on. */
   twoFactorEnabled: Generated<boolean | null>
+  /** The language Cloud writes to the account in; unset is English. */
+  locale: Generated<EmailLocale | null>
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
+}
+
+/** Better Auth's API keys, which are Cloud's personal access tokens; the plugin owns the rest. */
+export interface AccessTokenTable {
+  id: string
+  referenceId: string
+  name: string | null
+  start: string | null
+  expiresAt: TimestampColumn | null
+  lastRequest: TimestampColumn | null
+  createdAt: TimestampColumn
 }
 
 export interface TwoFactorTable {
@@ -234,10 +318,16 @@ export interface PasskeyTable {
   aaguid: string | null
 }
 
+/**
+ * How a session proved its second step: a code, a recovery code, a passkey, or for a desktop app,
+ * a device sign-in that only a session which proved it could approve.
+ */
+export type MFAAssuranceMethod = 'totp' | 'recovery-code' | 'passkey' | 'device'
+
 export interface MFAAssuranceTable {
   sessionId: string
   userId: string
-  method: 'totp' | 'recovery-code' | 'passkey'
+  method: MFAAssuranceMethod
   verifiedAt: TimestampColumn
 }
 
@@ -295,6 +385,13 @@ export interface InvitationContinuationTable {
   createdAt: TimestampColumn
 }
 
+/** Which version of the server's terms an account accepted, and when; one row per version. */
+export interface TermsAcceptanceTable {
+  userId: string
+  version: string
+  acceptedAt: TimestampColumn
+}
+
 export interface AccountEntitlementTable {
   userId: string
   values: unknown
@@ -303,6 +400,12 @@ export interface AccountEntitlementTable {
   /** Set only by versioned writes; see `setVersioned`. */
   externalVersion: number | null
   updatedAt: TimestampColumn
+}
+
+/** An account told its storage is full; see `createStorageLimitNoticeService`. */
+export interface StorageLimitNoticeTable {
+  userId: string
+  notifiedAt: TimestampColumn
 }
 
 export interface WorkspaceStorageUsageTable {
@@ -330,6 +433,8 @@ export interface TransactionalEmailTable {
   kind: TransactionalEmailKind
   recipientEmailNormalized: string
   payloadEncrypted: string | null
+  /** The language the email is written in. */
+  locale: Generated<EmailLocale>
   status: TransactionalEmailStatus
   attemptCount: Generated<number>
   nextAttemptAt: TimestampColumn
@@ -399,6 +504,7 @@ export interface CloudDatabase {
   signIn: SignInTable
   userPicture: UserPictureTable
   user: AuthUserTable
+  apikey: AccessTokenTable
   authSchemaVersion: AuthSchemaVersionTable
   enrollment: EnrollmentTable
   apiRateLimit: APIRateLimitTable
@@ -419,12 +525,20 @@ export interface CloudDatabase {
   documentRoomUpdate: DocumentRoomUpdateTable
   invitationContinuation: InvitationContinuationTable
   accountEntitlement: AccountEntitlementTable
+  termsAcceptance: TermsAcceptanceTable
   workspaceStorageUsage: WorkspaceStorageUsageTable
+  storageLimitNotice: StorageLimitNoticeTable
   transactionalEmail: TransactionalEmailTable
   uploadStorageReservation: UploadStorageReservationTable
   upload: UploadTable
   invitationSend: InvitationSendTable
   documentReport: DocumentReportTable
+  commentThread: CommentThreadTable
+  comment: CommentTable
+  commentMention: CommentMentionTable
+  commentRead: CommentReadTable
+  commentEmail: CommentEmailTable
+  notificationSetting: NotificationSettingTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

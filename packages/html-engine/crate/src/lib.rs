@@ -7,6 +7,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use blitz_dom::node::SpecialElementData;
 use blitz_dom::{BaseDocument, DocumentConfig, Node, StyleThreading};
 use blitz_html::HtmlDocument;
 use blitz_traits::net::{Bytes, NetHandler, NetProvider, Request};
@@ -14,6 +15,10 @@ use blitz_traits::shell::{ColorScheme, Viewport};
 use parley::fontique::{Blob, FontInfoOverride, GenericFamily};
 use parley::{FontContext, PositionedLayoutItem};
 use serde_json::{Map, Value, json};
+use style::computed_values::border_collapse::T as BorderCollapse;
+use style::properties::{LonghandId, PropertyDeclarationId};
+use style::values::generics::font::LineHeight;
+use style::values::specified::box_::DisplayInside;
 
 /// Computed properties the importer reads. Everything else is left out to keep captures small.
 /// Those in `default_styles` are reported only when they differ from their initial value; the
@@ -52,6 +57,8 @@ const PROPERTIES: &[&str] = &[
     "flex-shrink",
     "flex-basis",
     "justify-content",
+    "justify-items",
+    "justify-self",
     "align-items",
     "align-self",
     "align-content",
@@ -59,6 +66,10 @@ const PROPERTIES: &[&str] = &[
     "column-gap",
     "grid-template-columns",
     "grid-template-rows",
+    "grid-column-start",
+    "grid-column-end",
+    "grid-row-start",
+    "grid-row-end",
     "background-color",
     "background-image",
     "background-size",
@@ -122,6 +133,27 @@ const PROPERTIES: &[&str] = &[
     "vertical-align",
     "list-style-type",
     "content",
+    "border-collapse",
+    "border-spacing",
+    "caption-side",
+];
+
+/// Properties reported as their computed values too, where the used values `style` reports lose
+/// what the page set: sizes before layout resolves `auto` and percentages to pixels, so the
+/// importer tells a fixed size from one that fills or hugs, and a unitless line height, which
+/// scales with each run's font size rather than standing for one pixel height.
+const COMPUTED_PROPERTIES: &[LonghandId] = &[
+    LonghandId::Width,
+    LonghandId::Height,
+    LonghandId::MinWidth,
+    LonghandId::MaxWidth,
+    LonghandId::MinHeight,
+    LonghandId::MaxHeight,
+    LonghandId::FlexBasis,
+    LonghandId::LineHeight,
+    // `auto` side margins center or end-align a block, which their used lengths don't say.
+    LonghandId::MarginLeft,
+    LonghandId::MarginRight,
 ];
 
 // ---------------------------------------------------------------------------------------------
@@ -288,6 +320,23 @@ fn rect(x: f32, y: f32, w: f32, h: f32) -> Value {
     json!([x, y, w, h])
 }
 
+/// The computed values of `COMPUTED_PROPERTIES`, such as `auto`, `50%`, `390px`, or `1.5`.
+fn computed(node: &Node) -> Option<Value> {
+    let styles = node.primary_styles()?;
+    let out: Map<String, Value> = COMPUTED_PROPERTIES
+        .iter()
+        .map(|id| {
+            let value = match (id, &styles.get_font().line_height) {
+                // Stylo's string is the resolved value, which multiplies a number by the font size.
+                (LonghandId::LineHeight, LineHeight::Number(number)) => number.0.to_string(),
+                _ => styles.computed_value_to_string(PropertyDeclarationId::Longhand(*id)),
+            };
+            (id.name().to_owned(), value.into())
+        })
+        .collect();
+    Some(Value::Object(out))
+}
+
 fn styles(doc: &BaseDocument, node: &Node) -> Value {
     let defaults = default_styles();
     let mut out = Map::new();
@@ -446,7 +495,52 @@ fn lines(node: &Node, origin: (f32, f32)) -> Option<Value> {
     Some(Value::Array(lines))
 }
 
-fn capture_node(doc: &BaseDocument, node: &Node, out: &mut Vec<Value>, parent: Option<usize>) {
+/// Half the gutter a table with collapsed borders lays its borders out in, across and down, when
+/// it lays them out between its cells, as Blitz does for cells with a border.
+fn collapsed_half_gutter(el: &blitz_dom::node::ElementData) -> Option<(f32, f32)> {
+    let SpecialElementData::TableRoot(table) = &el.special_data else {
+        return None;
+    };
+    let collapsed =
+        table.border_collapse == BorderCollapse::Collapse && table.border_style.is_some();
+    collapsed.then(|| {
+        (
+            table.collapsed_gutter.width / 2.0,
+            table.collapsed_gutter.height / 2.0,
+        )
+    })
+}
+
+fn display_inside(node: &Node) -> Option<DisplayInside> {
+    node.primary_styles()
+        .map(|styles| styles.get_box().display.inside())
+}
+
+/// Whether a box is one of a table's rows, row groups, or cells, which collapsed borders split.
+fn is_table_part(node: &Node) -> bool {
+    display_inside(node).is_some_and(|inside| {
+        matches!(
+            inside,
+            DisplayInside::TableRowGroup
+                | DisplayInside::TableHeaderGroup
+                | DisplayInside::TableFooterGroup
+                | DisplayInside::TableRow
+                | DisplayInside::TableCell
+        )
+    })
+}
+
+/// Captures a node and its subtree. `half_gutter` is half the collapsed-border gutter of the
+/// table a row, row group, or cell belongs to: Blitz lays collapsed borders out between the
+/// cells, where CSS gives each cell half of every border it shares (CSS 2.1 §17.6.2), so those
+/// boxes grow by it on each side to be the boxes a browser reports.
+fn capture_node(
+    doc: &BaseDocument,
+    node: &Node,
+    out: &mut Vec<Value>,
+    parent: Option<usize>,
+    half_gutter: Option<(f32, f32)>,
+) {
     let index = out.len();
     let mut entry = Map::new();
     entry.insert("id".into(), node.id.as_u64().into());
@@ -462,13 +556,18 @@ fn capture_node(doc: &BaseDocument, node: &Node, out: &mut Vec<Value>, parent: O
     let Some(el) = node.element_data() else {
         // Document, comment, or doctype: walk its children only.
         for &child in &node.children {
-            capture_node(doc, &doc.tree()[child], out, parent);
+            capture_node(doc, &doc.tree()[child], out, parent, None);
         }
         return;
     };
 
+    let part_gutter = half_gutter.filter(|_| is_table_part(node));
+    let (gx, gy) = part_gutter.unwrap_or((0.0, 0.0));
     let pos = node.absolute_position(0.0, 0.0);
     let size = node.final_layout().size;
+    // A table's rows and cells pass its gutter on; a cell's content belongs to no table.
+    let is_cell = display_inside(node) == Some(DisplayInside::TableCell);
+    let child_gutter = collapsed_half_gutter(el).or(part_gutter.filter(|_| !is_cell));
     entry.insert("tag".into(), el.name.local.to_string().into());
     let attrs: Map<String, Value> = el
         .attrs()
@@ -485,7 +584,15 @@ fn capture_node(doc: &BaseDocument, node: &Node, out: &mut Vec<Value>, parent: O
     if !attrs.is_empty() {
         entry.insert("attrs".into(), Value::Object(attrs));
     }
-    entry.insert("box".into(), rect(pos.x, pos.y, size.width, size.height));
+    entry.insert(
+        "box".into(),
+        rect(
+            pos.x - gx,
+            pos.y - gy,
+            size.width + 2.0 * gx,
+            size.height + 2.0 * gy,
+        ),
+    );
     if let Some(image) = el.image_data() {
         let kind = match image {
             blitz_dom::node::ImageData::Raster(r) => format!("raster {}x{}", r.width, r.height),
@@ -495,6 +602,9 @@ fn capture_node(doc: &BaseDocument, node: &Node, out: &mut Vec<Value>, parent: O
         entry.insert("image".into(), kind.into());
     }
     entry.insert("style".into(), styles(doc, node));
+    if let Some(computed) = computed(node) {
+        entry.insert("computed".into(), computed);
+    }
 
     if let Some(fragments) = node.inline_fragment_boxes() {
         let root = node
@@ -516,7 +626,7 @@ fn capture_node(doc: &BaseDocument, node: &Node, out: &mut Vec<Value>, parent: O
         capture_pseudo(doc, before, "::before", out, index);
     }
     for &child in &node.children {
-        capture_node(doc, &doc.tree()[child], out, Some(index));
+        capture_node(doc, &doc.tree()[child], out, Some(index), child_gutter);
     }
     if let Some(after) = pseudo(el.after) {
         capture_pseudo(doc, after, "::after", out, index);
@@ -525,7 +635,7 @@ fn capture_node(doc: &BaseDocument, node: &Node, out: &mut Vec<Value>, parent: O
 
 fn capture_pseudo(doc: &BaseDocument, node: &Node, tag: &str, out: &mut Vec<Value>, parent: usize) {
     let before = out.len();
-    capture_node(doc, node, out, Some(parent));
+    capture_node(doc, node, out, Some(parent), None);
     if let Some(Value::Object(entry)) = out.get_mut(before) {
         entry.insert("tag".into(), tag.into());
     }
@@ -537,7 +647,7 @@ pub fn capture() -> String {
         s.doc.resolve(0.0);
         let doc = &s.doc;
         let mut nodes = Vec::new();
-        capture_node(doc, doc.root_node(), &mut nodes, None);
+        capture_node(doc, doc.root_node(), &mut nodes, None, None);
         let (w, h) = doc.viewport().window_size;
         // Values the nodes leave out are these; the host fills them back in.
         let initial: Map<String, Value> = default_styles()

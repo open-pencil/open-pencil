@@ -5,6 +5,7 @@ import {
   parseCloudServerConfig,
   type AuthenticationEmailService
 } from '#cloud/server'
+import { testClient } from 'hono/testing'
 
 export const accountAuthenticationConfig = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -52,6 +53,11 @@ export function accountAuthenticationRequest(
   })
 }
 
+/** Request options that send a session cookie, or none for a signed-out request. */
+export function withCookie(cookie?: string): { headers: Record<string, string> } {
+  return { headers: cookie ? { Cookie: cookie } : {} }
+}
+
 export function authenticationCookie(response: Response): string {
   const value = response.headers.get('set-cookie')?.split(';', 1)[0]
   if (!value) throw new Error('Authentication response did not set a cookie')
@@ -81,6 +87,9 @@ export function accountAuthenticationObjects() {
     },
     async read() {
       return null
+    },
+    async readRange() {
+      return null
     }
   }
 }
@@ -106,15 +115,13 @@ export async function createAccountAuthenticationFixture(
       ...options.email
     }
   })
-  return {
-    ...runtime,
-    app: createCloudApp({
-      config,
-      database: runtime.database,
-      auth,
-      objects: accountAuthenticationObjects()
-    })
-  }
+  const app = createCloudApp({
+    config,
+    database: runtime.database,
+    auth,
+    objects: accountAuthenticationObjects()
+  })
+  return { ...runtime, app, client: testClient(app) }
 }
 
 export async function approveAccount(

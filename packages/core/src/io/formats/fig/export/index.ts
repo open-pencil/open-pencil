@@ -8,6 +8,8 @@ import {
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { readComments } from '@open-pencil/scene-graph/comments'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
@@ -26,11 +28,11 @@ import { withFigExportRuntime } from './runtime'
 import {
   exportSchema,
   figExportRecordOptions,
+  type FigExportSetup,
   figFileExtras,
   type FigFileExtrasOptions,
-  prepareFigExport,
-  type FigExportSetup,
-  type KiwiNodeChange
+  type KiwiNodeChange,
+  prepareFigExport
 } from './setup'
 import { appendVariableNodeChanges, sequentialPositions, assignSharedStyleGuids } from './variables'
 
@@ -62,8 +64,9 @@ function appendInternalResources(context: InternalResourceContext): void {
     context.assignedGuidValues
   )
   for (let index = 0; index < sharedStyleNodes.length; index++) {
-    nodeChanges.push(
-      ...sceneNodeToKiwi(
+    appendAll(
+      nodeChanges,
+      sceneNodeToKiwi(
         sharedStyleNodes[index],
         internalCanvasGuid,
         written + index,
@@ -112,7 +115,10 @@ export async function exportFigFileStream(
 ): Promise<ReadableStream<Uint8Array>> {
   // An archive whose images Figma cannot read is written whole rather than reused.
   const reuseArchive = await archiveImagesNamedForFigma(sourceGraph)
-  const originalArchive = reuseArchive ? await originalFigArchive(sourceGraph) : null
+  // The document's comments may be in the opened archive, and this write leaves them out.
+  const dropsComments = !!options.withoutComments && readComments(sourceGraph).length > 0
+  const originalArchive =
+    reuseArchive && !dropsComments ? await originalFigArchive(sourceGraph) : null
   if (originalArchive) {
     const reused = options.documentName
       ? renameFigArchive(originalArchive, options.documentName)
@@ -150,7 +156,9 @@ async function writeFigFile(
     graph = cloneSceneGraphForFigExport(sourceGraph)
     populateReaderExport(sourceGraph, graph)
   }
-  const setup = await prepareFigExport(graph, runtime)
+  const setup = await prepareFigExport(graph, runtime, {
+    withoutComments: options.withoutComments
+  })
   const { compiled, schemaDeflated } = exportSchema(graph)
   const { canvasEntries, internalCanvasGuid, localIdCounter, blobs } = setup
   const nodeChanges: KiwiNodeChange[] = [setup.documentNc]
@@ -170,8 +178,9 @@ async function writeFigFile(
       .filter((child) => !child.internalOnly && child.sharedStyleType === null)
     const base = countCanvasChildren(nodeChanges, canvasGuid)
     for (let i = 0; i < children.length; i++) {
-      nodeChanges.push(
-        ...sceneNodeToKiwi(
+      appendAll(
+        nodeChanges,
+        sceneNodeToKiwi(
           children[i],
           canvasGuid,
           base + i,
@@ -186,7 +195,7 @@ async function writeFigFile(
   if (internalCanvasGuid) {
     const first = countCanvasChildren(nodeChanges, internalCanvasGuid)
     placeSlotContent(slotContentRecords, internalCanvasGuid, first, fractionalPosition)
-    nodeChanges.push(...slotContentRecords)
+    appendAll(nodeChanges, slotContentRecords)
   }
 
   const msg: Record<string, unknown> = {

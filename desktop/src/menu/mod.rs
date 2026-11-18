@@ -120,14 +120,23 @@ fn is_separator(entry: &MenuEntry) -> bool {
     entry.r#type.as_deref() == Some("separator")
 }
 
-/// The entries a menu shows. Items whose feature is off are left out, as is the schema's
-/// Settings… on macOS, where the application menu holds it, along with the separators they
-/// would leave at either end of the menu or next to each other.
+/// The schema's items that the macOS application menu holds instead.
+const APP_MENU_IDS: [&str; 2] = ["settings", "check-updates"];
+
+/// The entries a menu shows. Items whose feature is off are left out, as are the schema's
+/// Settings… and Check for Updates… on macOS, where the application menu holds them, along
+/// with the separators they would leave at either end of the menu or next to each other.
 fn platform_entries<'a>(items: &'a [MenuEntry], features: &[String]) -> Vec<&'a MenuEntry> {
     let mut entries: Vec<&MenuEntry> = Vec::new();
     for entry in items
         .iter()
-        .filter(|entry| !(cfg!(target_os = "macos") && entry.id.as_deref() == Some("settings")))
+        .filter(|entry| {
+            !(cfg!(target_os = "macos")
+                && entry
+                    .id
+                    .as_deref()
+                    .is_some_and(|id| APP_MENU_IDS.contains(&id)))
+        })
         .filter(|entry| {
             entry
                 .feature
@@ -265,6 +274,11 @@ fn build_recent_files_submenu<R: tauri::Runtime>(
     }
     builder.build()
 }
+
+/// The schema's last menu (`APP_MENU_SCHEMA` in `src/app/shell/menu/schema`), which macOS
+/// gives its menu search.
+#[cfg(target_os = "macos")]
+const HELP_MENU_LABEL: &str = "Help";
 
 fn schema_groups() -> serde_json::Result<Vec<MenuGroup>> {
     serde_json::from_str(include_str!("../../generated/menu.json"))
@@ -470,7 +484,16 @@ pub fn install_app_menu<R: tauri::Runtime>(
     // On Windows and Linux an app-wide menu is attached to every window without its own,
     // including the Software Update window, so it goes on the editor window alone there.
     #[cfg(target_os = "macos")]
-    app.set_menu(menu)?;
+    {
+        app.set_menu(menu)?;
+        // macOS puts its search field, which finds any menu item, in the menu named as Help.
+        if let Some(help) = schema_menus
+            .iter()
+            .find(|menu| menu.text().is_ok_and(|text| text == HELP_MENU_LABEL))
+        {
+            help.set_as_help_menu_for_nsapp()?;
+        }
+    }
     #[cfg(not(target_os = "macos"))]
     if let Some(window) = tauri::Manager::get_webview_window(app, "main") {
         window.set_menu(menu)?;
@@ -625,6 +648,22 @@ mod tests {
                 group.label
             );
         }
+    }
+
+    // macOS keeps Check for Updates… in the application menu; elsewhere Help has it while the
+    // app updates itself.
+    #[test]
+    fn puts_check_for_updates_in_help_off_macos() {
+        let help = groups()
+            .into_iter()
+            .find(|group| group.label == "Help")
+            .expect("Help menu");
+        let check = "check-updates".to_string();
+        assert!(!shown(&help, &[]).contains(&check));
+        assert_eq!(
+            shown(&help, &["self-update".to_string()]).contains(&check),
+            !cfg!(target_os = "macos")
+        );
     }
 
     #[test]

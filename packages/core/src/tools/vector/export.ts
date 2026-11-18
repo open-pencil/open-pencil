@@ -4,6 +4,7 @@ import * as v from 'valibot'
 import { graphOf } from '#core/figma-api/graph'
 import { PDF_MODES, PDFPlanError, planPDFPages } from '#core/io/formats/pdf/plan'
 import type { RasterExportFormat } from '#core/io/formats/raster'
+import type { ExportEffectWarning } from '#core/io/formats/svg'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
 const exportInputs = {
@@ -67,7 +68,8 @@ export function boundedRasterScale(
 
 export const exportSVG = defineTool({
   name: 'export_svg',
-  description: 'Export nodes as SVG markup. Returns the SVG string.',
+  description:
+    'Export nodes as SVG markup. Returns the SVG string, and `warnings` naming each effect SVG cannot draw, such as glass, which the SVG leaves out.',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
   input: v.strictObject({ ...exportInputs }),
@@ -76,17 +78,19 @@ export const exportSVG = defineTool({
     const pageId = figma.currentPageId
     const ids =
       args.ids && args.ids.length > 0 ? args.ids : figma.currentPage.children.map((node) => node.id)
-    const svg = await renderNodesToLaidOutSVG(graphOf(figma), pageId, ids)
+    const warnings: ExportEffectWarning[] = []
+    const svg = await renderNodesToLaidOutSVG(graphOf(figma), pageId, ids, {
+      onWarning: (warning) => warnings.push(warning)
+    })
     if (!svg) return { error: 'No visible nodes to export' }
-    return { svg }
+    return { svg, ...(warnings.length > 0 ? { warnings } : {}) }
   }
 })
 
 export const exportPDF = defineTool({
   name: 'export_pdf',
   description:
-    'Export nodes as a vector PDF document. Text remains selectable and keeps its line breaks, paths stay sharp at any zoom. Returns base64-encoded PDF data and the size of each PDF page. ' +
-    'mode "single" (default) puts all ids on one PDF page; "frames" makes one PDF page per id (or per top-level frame of the current page); "pages" makes one PDF page per design page (all pages, or page_ids). ' +
+    'Export nodes as a vector PDF document, with selectable text and sharp paths. Returns base64-encoded PDF data and the size of each PDF page. ' +
     'Pages are drawn as the canvas draws them, with the fonts the text uses embedded; blurs, shadows, and shader fills are drawn as images.',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
@@ -96,7 +100,7 @@ export const exportPDF = defineTool({
       v.pipe(
         v.picklist(PDF_MODES),
         v.description(
-          '"single" (default): one PDF page for all ids. "frames": one PDF page per id or top-level frame. "pages": one PDF page per design page.'
+          'single: one PDF page for all ids. frames: one per id, or per top-level frame of the current page. pages: one per design page'
         )
       ),
       'single'

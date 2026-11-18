@@ -2,10 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { lint, ruleDiagnostics } from '#oxlint-plugin-tests/helpers/lint'
 
-const rule = 'no-unvalidated-json-parse'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rule = '@open-pencil/data/no-unvalidated-json-parse'
+const rules = { [rule]: 'error' }
 
-describe('no-unvalidated-json-parse', () => {
+describe('@open-pencil/data/no-unvalidated-json-parse', () => {
   test.each([
     'type Foo = { a: number }; JSON.parse(text) as Foo',
     'type Foo = { a: number }; <Foo>JSON.parse(text)',

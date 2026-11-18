@@ -1,5 +1,7 @@
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 
+import { maxOf } from '@open-pencil/scene-graph/arrays'
+
 import type { EditorStore } from '@/app/editor/session'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { createActiveStorageAdapter, storagePreferencesComplete } from '@/app/integrations/storage'
@@ -10,8 +12,8 @@ import {
   StorageLibraryCatalog,
   type LibraryService
 } from '@/app/libraries'
-import type { LibraryAssetUpdateGroup } from '@/app/libraries/update-groups'
-import { scopeLibraryUpdateGroups } from '@/app/libraries/update-groups'
+import type { LibraryAssetUpdateGroup } from '@/app/libraries/updates/groups'
+import { scopeLibraryUpdateGroups } from '@/app/libraries/updates/groups'
 import { toast } from '@/app/shell/ui'
 
 function errorDetail(cause: unknown): string {
@@ -108,10 +110,10 @@ export function useLibraryManager(
   }
 
   function preferLibrary(libraryId: string) {
-    const priority = Math.max(
+    const priority = maxOf([
       0,
       ...service.summaries.value.map((item) => readLibraryPriority(item.libraryId))
-    )
+    ])
     service.setPriority(libraryId, priority + 1)
   }
 

@@ -1,11 +1,10 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
-
-import { runCLI } from '#cli-tests/helpers/run'
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { figThumbnailSize } from '#cli-tests/helpers/fig'
+import { runCLI } from '#cli-tests/helpers/run'
 setDefaultTimeout(60_000)
 describe('lint CLI', () => {
   test('--fix --output saves a thumbnail of the fixed layers', async () => {

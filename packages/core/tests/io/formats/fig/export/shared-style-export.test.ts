@@ -134,7 +134,12 @@ test('reopen layers and ranges with the styles made in OpenPencil they use', asy
 test('reopen a vector region with the paint style made in OpenPencil it uses', async () => {
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
-  const red = { type: 'SOLID' as const, color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+  const red = {
+    type: 'SOLID' as const,
+    color: { r: 1, g: 0, b: 0, a: 1 },
+    opacity: 1,
+    visible: true
+  }
   const fill = graph.createNode('RECTANGLE', page.id, {
     name: 'Brand',
     sharedStyleType: 'FILL',
@@ -167,9 +172,9 @@ test('reopen a vector region with the paint style made in OpenPencil it uses', a
   const reopened = await parseFigFile((await exportFigFile(graph)).slice().buffer as ArrayBuffer)
   const styled = [...reopened.getAllNodes()].find((node) => node.name === 'Styled')
   const [region] = styled?.vectorNetwork?.regions ?? []
-  expect(getSharedStyles(reopened, 'fill').find((style) => style.id === region?.fillStyleId)?.name).toBe(
-    'Brand'
-  )
+  expect(
+    getSharedStyles(reopened, 'fill').find((style) => style.id === region?.fillStyleId)?.name
+  ).toBe('Brand')
   expect(region?.fills?.[0]?.color).toEqual(red.color)
 })
 

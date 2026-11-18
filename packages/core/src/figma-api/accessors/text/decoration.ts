@@ -7,11 +7,11 @@ import {
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
 import { assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
 import { getTextStyle, rangeHasUnderline } from '#core/figma-api/text/style'
 import { parseFigma } from '#core/figma-api/validation'
-import { textStyleChanges, type TextStylePatch } from '#core/text/character-style'
+import { textStyleChanges, type TextStylePatch } from '#core/text/character/style'
 
 import { DECORATION_STYLES, decorationColorFills, enumValue, lengthOrAuto, sized } from './values'
 

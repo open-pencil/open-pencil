@@ -109,7 +109,8 @@ This is load rollback, not an undo command. Existing user history remains intact
 
 ## Implementation and tests
 
-- [Session and assembly API](../src/document/materialize.ts)
+- [Session API](../src/document/session.ts)
+- [Assembly API](../src/document/materialize.ts)
 - [Page-load rollback](../src/document/load-transaction.ts)
 - [Compact component checkpoints](../src/document/component/checkpoint.ts)
 - [Buffered graph events](../../scene-graph/src/buffered-events.ts)

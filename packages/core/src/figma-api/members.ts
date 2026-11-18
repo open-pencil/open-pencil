@@ -92,7 +92,8 @@ export abstract class FigmaNodeMembers {
   declare primaryAxisAlignItems: string
   declare counterAxisAlignItems: string
   declare itemSpacing: number
-  declare counterAxisSpacing: number
+  /** Reads back the item spacing while set to null. */
+  declare counterAxisSpacing: number | null
   declare paddingTop: number
   declare paddingRight: number
   declare paddingBottom: number

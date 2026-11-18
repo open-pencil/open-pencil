@@ -1,10 +1,9 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
-
-import { runCLI } from '#cli-tests/helpers/run'
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { runCLI } from '#cli-tests/helpers/run'
 import * as v from 'valibot'
 
 import { FIXTURES } from '@open-pencil/test-support/paths'
@@ -32,7 +31,15 @@ describe('diff CLI', () => {
     expect(shown.stdout).toBe(`@@ /Logo #${LOGO}\n-name="Logo"\n+name="Brand"\n+opacity={0.5}`)
     await writeFile(patchPath, shown.stdout)
 
-    const applied = await runCLI(['diff', 'apply', patchPath, FIXTURE, '--output', outPath, '--json'])
+    const applied = await runCLI([
+      'diff',
+      'apply',
+      patchPath,
+      FIXTURE,
+      '--output',
+      outPath,
+      '--json'
+    ])
     expect(applied.exitCode).toBe(0)
     expect(JSON.parse(applied.stdout)).toMatchObject({ applied: 1, failed: 0 })
 

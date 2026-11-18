@@ -18,7 +18,7 @@ import {
   cancelResizePreview,
   commitResizePreview,
   scaledChanges
-} from '#vue/shared/input/resize'
+} from '#vue/shared/input/resize/apply'
 import {
   resizedRect,
   roundsToPixels,

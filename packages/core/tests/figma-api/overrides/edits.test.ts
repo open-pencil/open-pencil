@@ -1,15 +1,16 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
-import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
-import { graphOf } from '#core/figma-api/graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
+import { graphOf } from '#core/figma-api/graph'
 
 beforeAll(() => registerTestFont())
 

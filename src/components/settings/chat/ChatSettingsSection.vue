@@ -21,6 +21,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import PresetNumberField from '@/components/ui/input/PresetNumberField.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
+import { settingsSelectUI } from '@/theme/settings/controls'
 
 const { ai, automation, settings } = useI18n()
 const stepPresets = [25, 50, 100, 200]
@@ -61,7 +62,7 @@ const previewOptions = computed(() => [
           v-model="reasoningDisplay"
           :label="ai.reasoningDisplay"
           :options="options"
-          :ui="{ trigger: 'w-full sm:w-52' }"
+          :ui="settingsSelectUI"
         />
       </SettingsRow>
       <SettingsRow
@@ -75,7 +76,7 @@ const previewOptions = computed(() => [
           v-model="changePreviewSize"
           :label="ai.changePreview"
           :options="previewOptions"
-          :ui="{ trigger: 'w-full sm:w-52' }"
+          :ui="settingsSelectUI"
         />
       </SettingsRow>
       <SettingsRow :label="ai.compactAutomatically" :description="ai.compactAutomaticallyHint">
@@ -90,7 +91,7 @@ const previewOptions = computed(() => [
           v-model="tokenUsageDisplay"
           :label="ai.tokenUsage"
           :options="usageOptions"
-          :ui="{ trigger: 'w-full sm:w-52' }"
+          :ui="settingsSelectUI"
         />
       </SettingsRow>
       <SettingsRow

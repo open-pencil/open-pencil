@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger, useDirection } from 'reka-ui'
 import { computed } from 'vue'
 
 import { colorToCSS } from '@open-pencil/scene-graph/color'
@@ -8,6 +8,10 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 
 import { pickerOutsideHandlers, type PickerKeepOpen } from './outside'
+
+// Opens toward the start of the line, away from a panel at its end: left, or right when mirrored.
+const direction = useDirection()
+const side = computed(() => (direction.value === 'rtl' ? 'right' : 'left'))
 
 export interface ColorPickerUI {
   content?: string
@@ -63,7 +67,7 @@ const outside = pickerOutsideHandlers(() => keepOpen)
       <PopoverContent
         :class="ui?.content"
         :side-offset="4"
-        side="left"
+        :side="side"
         data-picker-content
         @escape-key-down="emit('cancel')"
         @pointer-down-outside="outside.onPointerDownOutside"

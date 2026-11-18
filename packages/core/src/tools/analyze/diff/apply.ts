@@ -11,6 +11,7 @@ import {
   type JSXAttributeSource
 } from '@open-pencil/design-jsx'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll, insertAll } from '@open-pencil/scene-graph/arrays'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
@@ -231,7 +232,7 @@ async function renderAdditions(figma: FigmaAPI, plans: Placed[]): Promise<boolea
       const results = await renderJSX(graphOf(figma), jsx, { parentId })
       plan.place.ids = results.map((result) => result.id)
       plan.result.id = results[0].id
-      rendered.push(...plan.place.ids)
+      appendAll(rendered, plan.place.ids)
     } catch (error) {
       plan.result.status = 'failed'
       plan.result.error = errorMessage(error)
@@ -251,7 +252,7 @@ function commitPlacements(graph: SceneGraph, parentId: string, plans: Placed[]):
   const placed = new Set(plans.flatMap((plan) => plan.place.ids ?? []))
   const order = (graph.getNode(parentId)?.childIds ?? []).filter((id) => !placed.has(id))
   for (const plan of plans.toSorted((a, b) => a.place.index - b.place.index)) {
-    order.splice(plan.place.index, 0, ...(plan.place.ids ?? []))
+    insertAll(order, plan.place.index, plan.place.ids ?? [])
   }
   for (const [index, id] of order.entries()) {
     if (graph.getNode(parentId)?.childIds[index] !== id) graph.insertChildAt(id, parentId, index)

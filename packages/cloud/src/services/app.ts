@@ -3,7 +3,7 @@ import {
   servicesTokenClaimsSchema,
   CLOUD_SERVICES_API_PATHS,
   CLOUD_SERVICES_TOKEN_AUDIENCE,
-  parseUsageQuery,
+  usageQuerySchema,
   type ServiceError,
   type ServiceErrorCode,
   type ServicesTokenClaims
@@ -11,6 +11,7 @@ import {
 import { validatedQuery } from '#cloud/server/validation'
 import { pick } from 'es-toolkit'
 import { Hono, type Context } from 'hono'
+import { bearerAuth } from 'hono/bearer-auth'
 import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'
 import { jwtVerify, type JWTVerifyGetKey } from 'jose'
@@ -124,22 +125,28 @@ export function createServicesApp(services: ServicesAppDependencies) {
     services.onBackgroundError ??
     ((error: unknown) => console.error('[Services] Metering failed:', error))
 
-  const requireToken = async (context: Context<ServicesEnvironment>, next: () => Promise<void>) => {
-    const header = context.req.header('Authorization')
-    const token = header?.startsWith('Bearer ') ? header.slice('Bearer '.length) : undefined
-    if (!token) return aiError(context, 'unauthorized')
-    try {
-      const { payload } = await jwtVerify(token, services.keys, {
-        issuer: config.cloudURL,
-        audience: CLOUD_SERVICES_TOKEN_AUDIENCE,
-        algorithms: ['ES256']
-      })
-      context.set('claims', v.parse(servicesTokenClaimsSchema, payload))
-    } catch {
-      return aiError(context, 'unauthorized')
-    }
-    return next()
-  }
+  const unauthorized = { error: { code: 'unauthorized' as const } }
+  const requireToken = bearerAuth<ServicesEnvironment>({
+    async verifyToken(token, context) {
+      try {
+        const { payload } = await jwtVerify(token, services.keys, {
+          issuer: config.cloudURL,
+          audience: CLOUD_SERVICES_TOKEN_AUDIENCE,
+          algorithms: ['ES256']
+        })
+        const claims = v.safeParse(servicesTokenClaimsSchema, payload)
+        if (!claims.success) return false
+        context.set('claims', claims.output)
+        return true
+      } catch {
+        return false
+      }
+    },
+    noAuthenticationHeader: { message: unauthorized },
+    // A header that is not a bearer token is malformed, not a wrong token.
+    invalidAuthenticationHeader: { message: { error: { code: 'invalid_request' as const } } },
+    invalidToken: { message: unauthorized }
+  })
 
   return new Hono<ServicesEnvironment>()
     .use(
@@ -157,7 +164,7 @@ export function createServicesApp(services: ServicesAppDependencies) {
       const claims = context.get('claims')
       return context.json(await usage.wallet(spender(claims), claims.monthlyCreditAllowance, now()))
     })
-    .get(CLOUD_SERVICES_API_PATHS.usage, validatedQuery(parseUsageQuery), async (context) => {
+    .get(CLOUD_SERVICES_API_PATHS.usage, validatedQuery(usageQuerySchema), async (context) => {
       try {
         return context.json(
           await usage.page(context.get('claims').workspaceId, context.req.valid('query').cursor)
@@ -232,9 +239,7 @@ export function createServicesApp(services: ServicesAppDependencies) {
           await usage.record({
             id: crypto.randomUUID(),
             workspaceId: claims.workspaceId,
-            // A token from a Cloud without accounts names none; the row then counts for its
-            // workspace, and once Cloud upgrades, for that workspace's owner as well.
-            accountId: claims.accountId ?? null,
+            accountId: claims.accountId,
             userId: claims.sub,
             modelId: model.id,
             inputTokens: tokens.inputTokens,

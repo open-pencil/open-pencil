@@ -3,7 +3,7 @@ import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/source-metadata'
 import { compact } from 'es-toolkit/array'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { Effect as KiwiEffect, NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReferenceField,
@@ -12,13 +12,19 @@ import type {
   SceneNode,
   VariantPropSpec
 } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { variantOptions } from '@open-pencil/scene-graph/components'
 import {
   DEFAULT_STROKE_MITER_LIMIT,
   DEFAULT_STROKE_WEIGHT
 } from '@open-pencil/scene-graph/constants'
 import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
-import { layoutGridCount } from '@open-pencil/scene-graph/layout'
+import {
+  layoutGridAlignment,
+  layoutGridColor,
+  layoutGridCount,
+  layoutGridPattern
+} from '@open-pencil/scene-graph/layout'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
@@ -27,6 +33,7 @@ import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 import { bytesToHex } from '../bytes'
 import { exportCanvasGuides } from '../canvas-guides'
 import { instanceExportAddress, snapshotInstanceGeometry } from '../instance/geometry'
+import { modeledEffectIndexes } from '../paint'
 import {
   applyExportSettingsPluginData,
   applyLibrarySourcePluginData,
@@ -413,12 +420,13 @@ function applyInstancePayload(
     const symbolData: Record<string, unknown> = { symbolID }
     const symbolOverrides: KiwiSymbolOverridePayload[] = []
     if (node.source.fig.symbolOverrides.length > 0) {
-      symbolOverrides.push(
-        ...(materializeFigmaPayload(node.source.fig.symbolOverrides, context.blobs, {
+      appendAll(
+        symbolOverrides,
+        materializeFigmaPayload(node.source.fig.symbolOverrides, context.blobs, {
           blobIndexByHex: context.blobIndexByHex,
           includePaintVariables: true,
           includeVariableMaps: true
-        }) as KiwiSymbolOverridePayload[])
+        }) as KiwiSymbolOverridePayload[]
       )
     }
     mergeOverrides(
@@ -797,7 +805,9 @@ const SUPPORTED_NORMALIZED_EFFECT_TYPES = new Set([
   'LAYER_BLUR',
   'BACKGROUND_BLUR',
   'FOREGROUND_BLUR',
-  'GLASS'
+  'GLASS',
+  'NOISE',
+  'GRAIN'
 ])
 
 function hasRawUnsupportedEffects(node: SceneNode): boolean {
@@ -812,6 +822,36 @@ function hasRawUnsupportedEffects(node: SceneNode): boolean {
         !SUPPORTED_NORMALIZED_EFFECT_TYPES.has(String(effect.type))
     )
   )
+}
+
+/**
+ * `effects` with the record's own effects the scene graph does not model, such as a repeat, put
+ * back where they sat among the modeled ones. Editing a layer's effects makes its raw list stale,
+ * but those entries were never part of the edit.
+ */
+function withUnmodeledRawEffects(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  effects: KiwiEffect[]
+): KiwiEffect[] {
+  const raw = node.source.fig.rawNodeFields.effects
+  if (!Array.isArray(raw)) return effects
+  const recorded = (
+    materializeFigmaPayload({ effects: raw }, context.blobs, {
+      blobIndexByHex: context.blobIndexByHex,
+      includePaintVariables: true
+    }) as Partial<KiwiNodeChange>
+  ).effects
+  if (!recorded) return effects
+  const indexes = modeledEffectIndexes(recorded)
+  if (!indexes.includes(null)) return effects
+  const merged: KiwiEffect[] = []
+  let next = 0
+  recorded.forEach((effect, index) => {
+    if (indexes[index] === null) merged.push(effect)
+    else if (next < effects.length) merged.push(effects[next++])
+  })
+  return merged.concat(effects.slice(next))
 }
 
 function nodeForGeometryExport(node: SceneNode): SceneNode {
@@ -829,18 +869,18 @@ function nodeForGeometryExport(node: SceneNode): SceneNode {
  * given in, Figma's plugin names (`COLUMNS`, `count`, `alignment`) or the archive's own.
  */
 function kiwiLayoutGrid(grid: LayoutGrid): LayoutGrid {
-  const rows = grid.pattern === 'ROWS' || (grid.pattern !== 'COLUMNS' && grid.axis === 'Y')
+  const pattern = layoutGridPattern(grid)
   return {
-    type: grid.type ?? grid.alignment ?? 'STRETCH',
-    axis: rows ? 'Y' : 'X',
+    type: layoutGridAlignment(grid),
+    axis: pattern === 'ROWS' ? 'Y' : 'X',
     visible: grid.visible ?? true,
     numSections: layoutGridCount(grid),
     offset: grid.offset ?? 0,
     // Figma's new grid is 10 px, the size the plugin API reports for one without a size.
     sectionSize: grid.sectionSize ?? (grid.pattern === 'GRID' ? 10 : 0),
     gutterSize: grid.gutterSize ?? 0,
-    color: grid.color ?? { r: 1, g: 0, b: 0, a: 0.1 },
-    pattern: grid.pattern === 'GRID' ? 'GRID' : 'STRIPES'
+    color: layoutGridColor(grid),
+    pattern: pattern === 'GRID' ? 'GRID' : 'STRIPES'
   }
 }
 
@@ -879,8 +919,13 @@ function applyNodeVisualProps(
   if (node.type === 'POLYGON' || node.type === 'STAR') nc.count = node.pointCount
   if (node.type === 'STAR') nc.starInnerScale = node.starInnerRadius
 
-  if (node.effects.length > 0 && !hasRawUnsupportedEffects(node)) {
-    nc.effects = createEffects(context, node)
+  if (!hasRawUnsupportedEffects(node)) {
+    const effects = withUnmodeledRawEffects(
+      context,
+      node,
+      node.effects.length > 0 ? createEffects(context, node) : []
+    )
+    if (effects.length > 0) nc.effects = effects
   }
 
   if (node.type === 'TEXT') serializeText(context, node, nc)
@@ -1062,7 +1107,9 @@ export function sceneNodeToKiwiWithContext(
   const result: KiwiNodeChange[] = [generatedFrameRecord(context, node, nc) ?? nc]
   const children = exportedChildren(node, context)
   for (let i = 0; i < children.length; i++) {
-    result.push(...context.sceneNodeToKiwi(children[i], guid, i, localIdCounter, context))
+    // A child's subtree can hold more records than an engine takes arguments.
+    for (const record of context.sceneNodeToKiwi(children[i], guid, i, localIdCounter, context))
+      result.push(record)
   }
   return result
 }

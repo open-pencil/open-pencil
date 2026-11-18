@@ -4,8 +4,8 @@ import { computed, watch } from 'vue'
 import { isCloudBinding } from '@/app/cloud/integration'
 import { DONATION_URL } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
-import { REPORTS_ENABLED } from '@/app/reports/state'
 import { showsDocument } from '@/app/tabs'
+import { canSelfUpdate } from '@/app/tauri/capabilities'
 import { isTauri } from '@/app/tauri/env'
 
 import type { AppMenuFeature } from './schema'
@@ -19,8 +19,9 @@ const available: Record<AppMenuFeature, () => boolean> = {
   'local-file': () => store.hasWritableSource() && !store.getStorageBinding(),
   // Version history lives on the Cloud server that keeps the document.
   'cloud-document': () => isCloudBinding(store.getStorageBinding()),
-  reports: () => REPORTS_ENABLED,
-  donation: () => DONATION_URL !== null
+  donation: () => DONATION_URL !== null,
+  // The browser and packages a store or package manager updates have no updater to open.
+  'self-update': () => canSelfUpdate()
 }
 
 /** Whether a menu item that waits for a feature shows; items without one always do. */

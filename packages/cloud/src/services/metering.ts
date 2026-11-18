@@ -1,4 +1,5 @@
 import type { ChatModel } from '#cloud/contract'
+import { EventSourceParserStream } from 'eventsource-parser/stream'
 import * as v from 'valibot'
 
 export type TokenUsage = { inputTokens: number; outputTokens: number }
@@ -9,6 +10,12 @@ const usageSchema = v.object({
 })
 
 const usageBodySchema = v.pipe(v.string(), v.parseJson(), usageSchema)
+
+/**
+ * The most an event may buffer before metering gives up, in characters. Stream events carry a
+ * small delta each, so only an upstream that never ends an event reaches it.
+ */
+const MAX_EVENT_CHARACTERS = 1024 * 1024
 
 function usageOf(text: string): TokenUsage | null {
   const parsed = v.safeParse(usageBodySchema, text)
@@ -33,36 +40,17 @@ export function creditsFor(model: ChatModel, usage: TokenUsage): number {
  * event that carries one, which upstreams send when asked with `stream_options.include_usage`.
  */
 export async function meteredUsage(
-  body: ReadableStream<Uint8Array>,
+  body: ReadableStream<Uint8Array<ArrayBuffer>>,
   streamed: boolean
 ): Promise<TokenUsage | null> {
-  const reader = body.getReader()
-  const decoder = new TextDecoder()
-  const chunks = async function* () {
-    for (let next = await reader.read(); !next.done; next = await reader.read()) {
-      yield decoder.decode(next.value, { stream: true })
-    }
-    yield decoder.decode()
-  }
-  if (!streamed) {
-    let text = ''
-    for await (const chunk of chunks()) text += chunk
-    return usageOf(text)
-  }
+  if (!streamed) return usageOf(await new Response(body).text())
+  // Server-sent events, as OpenAI-compatible APIs stream them; `[DONE]` ends the stream.
   let usage: TokenUsage | null = null
-  let pending = ''
-  const read = (line: string) => {
-    if (!line.startsWith('data:')) return
-    const data = line.slice('data:'.length).trim()
-    if (data === '[DONE]') return
-    usage = usageOf(data) ?? usage
+  const events = body
+    .pipeThrough(new TextDecoderStream())
+    .pipeThrough(new EventSourceParserStream({ maxBufferSize: MAX_EVENT_CHARACTERS }))
+  for await (const event of events) {
+    if (event.data !== '[DONE]') usage = usageOf(event.data) ?? usage
   }
-  for await (const chunk of chunks()) {
-    pending += chunk
-    const parts = pending.split(/\r?\n/)
-    pending = parts.pop() ?? ''
-    for (const line of parts) read(line)
-  }
-  read(pending)
   return usage
 }

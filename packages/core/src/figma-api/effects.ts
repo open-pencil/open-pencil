@@ -1,15 +1,19 @@
 import type {
   BlurEffectNormal,
+  BlurEffectProgressive,
   DropShadowEffect,
   Effect as PluginEffect,
   GlassEffect,
-  InnerShadowEffect
+  InnerShadowEffect,
+  NoiseEffect,
+  TextureEffect
 } from '@figma/plugin-typings/plugin-api-standalone'
 import * as v from 'valibot'
 
-import type { BlendMode, Effect, Fill } from '@open-pencil/scene-graph'
+import type { BlendMode, Effect, Fill, NoiseEffectParams } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
-import { BLACK, UNSET_GLASS } from '@open-pencil/scene-graph/constants'
+import { BLACK, UNSET_GLASS, UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 import type { EffectBindingProperty } from '@open-pencil/scene-graph/variables'
 
 import { TRANSPARENT } from '#core/constants'
@@ -42,7 +46,7 @@ const BLEND_MODE_KEYS = {
 export const BLEND_MODES = Object.keys(BLEND_MODE_KEYS) as BlendMode[]
 
 /** Effect kinds Figma's plugin API accepts that OpenPencil does not model yet. */
-const UNSUPPORTED_EFFECT_TYPES = new Set(['NOISE', 'TEXTURE', 'SHADER'])
+const UNSUPPORTED_EFFECT_TYPES = new Set(['SHADER'])
 
 // Figma rejects Infinity as well as NaN ("Number must be finite").
 const finiteSchema = v.pipe(v.number(), v.finite())
@@ -54,6 +58,21 @@ const glassDepthSchema = v.pipe(
   finiteSchema,
   v.transform((depth) => Math.min(Math.max(depth, GLASS_DEPTH.min), GLASS_DEPTH.max))
 )
+
+// Figma keeps a progressive blur's start radius above 100 at 100; its end radius has no limit.
+const MAX_START_RADIUS = 100
+const startRadiusSchema = v.pipe(
+  nonNegativeSchema,
+  v.transform((radius) => Math.min(radius, MAX_START_RADIUS))
+)
+
+// Figma keeps a grain size, and a texture's radius, above 100 at 100 rather than refusing it.
+const GRAIN_MAX = 100
+const grainSchema = v.pipe(
+  nonNegativeSchema,
+  v.transform((size) => Math.min(size, GRAIN_MAX))
+)
+const grainVectorSchema = v.optional(v.strictObject({ x: grainSchema, y: grainSchema }))
 
 const colorSchema = v.strictObject({ r: unitSchema, g: unitSchema, b: unitSchema, a: unitSchema })
 const vectorSchema = v.strictObject({ x: finiteSchema, y: finiteSchema })
@@ -79,6 +98,24 @@ const shadowEntries = {
   boundVariables: shadowBindingsSchema
 }
 
+const blurEntries = {
+  type: v.picklist(['LAYER_BLUR', 'BACKGROUND_BLUR']),
+  radius: nonNegativeSchema,
+  visible: v.boolean(),
+  boundVariables: blurBindingsSchema
+}
+
+// A noise has no visible radius, yet only its radius binds, as on a blur (Figma 126).
+const noiseEntries = {
+  type: v.literal('NOISE'),
+  visible: v.boolean(),
+  boundVariables: blurBindingsSchema,
+  noiseSize: grainSchema,
+  noiseSizeVector: grainVectorSchema,
+  color: colorSchema,
+  density: unitSchema
+}
+
 const effectSchema = v.variant('type', [
   v.strictObject({
     type: v.literal('DROP_SHADOW'),
@@ -86,12 +123,33 @@ const effectSchema = v.variant('type', [
     showShadowBehindNode: v.optional(v.boolean())
   }),
   v.strictObject({ type: v.literal('INNER_SHADOW'), ...shadowEntries }),
+  v.variant('blurType', [
+    v.strictObject({ ...blurEntries, blurType: v.optional(v.literal('NORMAL'), 'NORMAL') }),
+    v.strictObject({
+      ...blurEntries,
+      blurType: v.literal('PROGRESSIVE'),
+      startRadius: startRadiusSchema,
+      startOffset: vectorSchema,
+      endOffset: vectorSchema
+    })
+  ]),
+  v.variant('noiseType', [
+    v.strictObject({ ...noiseEntries, noiseType: v.literal('MONOTONE') }),
+    v.strictObject({
+      ...noiseEntries,
+      noiseType: v.literal('DUOTONE'),
+      secondaryColor: colorSchema
+    }),
+    v.strictObject({ ...noiseEntries, noiseType: v.literal('MULTITONE'), opacity: unitSchema })
+  ]),
   v.strictObject({
-    type: v.picklist(['LAYER_BLUR', 'BACKGROUND_BLUR']),
-    radius: nonNegativeSchema,
+    type: v.literal('TEXTURE'),
     visible: v.boolean(),
-    blurType: v.optional(v.literal('NORMAL'), 'NORMAL'),
-    boundVariables: blurBindingsSchema
+    radius: grainSchema,
+    boundVariables: blurBindingsSchema,
+    noiseSize: grainSchema,
+    noiseSizeVector: grainVectorSchema,
+    clipToShape: v.boolean()
   }),
   v.strictObject({
     type: v.literal('GLASS'),
@@ -117,9 +175,6 @@ function unsupportedEffectReason(effect: unknown): { message: string; field: str
   if (typeof type === 'string' && UNSUPPORTED_EFFECT_TYPES.has(type)) {
     return { message: `${type} effects are not supported`, field: 'type' }
   }
-  if (v.is(v.object({ blurType: v.literal('PROGRESSIVE') }), effect)) {
-    return { message: 'Progressive blur is not supported', field: 'blurType' }
-  }
   return null
 }
 
@@ -133,7 +188,16 @@ function unsupportedEffect(value: unknown): string | null {
 }
 
 /** The effects OpenPencil models, in the shapes Figma's plugin typings give them. */
-type ModelledPluginEffect = DropShadowEffect | InnerShadowEffect | BlurEffectNormal | GlassEffect
+type ModelledPluginEffect =
+  | DropShadowEffect
+  | InnerShadowEffect
+  | BlurEffectNormal
+  | BlurEffectProgressive
+  | GlassEffect
+  | NoiseEffect
+  | TextureEffect
+  // Figma reads noise and texture back without the blend mode its typings give them.
+  | Extract<FigmaEffect, { type: 'NOISE' | 'TEXTURE' }>
 
 function isPluginShadow(
   effect: ModelledPluginEffect
@@ -141,12 +205,20 @@ function isPluginShadow(
   return effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW'
 }
 
-function modelledPluginEffect(method: string, effect: PluginEffect): ModelledPluginEffect {
-  if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW' || effect.type === 'GLASS') {
+function modelledPluginEffect(
+  method: string,
+  effect: PluginEffect | FigmaEffect
+): ModelledPluginEffect {
+  if (
+    effect.type === 'DROP_SHADOW' ||
+    effect.type === 'INNER_SHADOW' ||
+    effect.type === 'GLASS' ||
+    effect.type === 'NOISE' ||
+    effect.type === 'TEXTURE' ||
+    effect.type === 'LAYER_BLUR' ||
+    effect.type === 'BACKGROUND_BLUR'
+  ) {
     return effect
-  }
-  if (effect.type === 'LAYER_BLUR' || effect.type === 'BACKGROUND_BLUR') {
-    if (effect.blurType !== 'PROGRESSIVE') return effect
   }
   const reason = unsupportedEffectReason(effect)
   throw new Error(`in ${method}: ${reason?.message ?? `${effect.type} effects are not supported`}`)
@@ -158,12 +230,18 @@ function modelledPluginEffect(method: string, effect: PluginEffect): ModelledPlu
  */
 export function boundEffectCopy(
   method: string,
-  effect: PluginEffect,
+  effect: PluginEffect | FigmaEffect,
   bindings: (effect: ModelledPluginEffect) => FigmaEffectBindings
 ): FigmaEffect {
   const modelled = modelledPluginEffect(method, effect)
   // The copy owns its aliases, so changing them leaves the effect it was made from alone.
   const boundVariables = structuredClone(bindings(modelled))
+  if (modelled.type === 'NOISE' || modelled.type === 'TEXTURE') {
+    // Checked as `effects` checks it, then written back in Figma's field order.
+    const { boundVariables: _previous, ...unbound } = modelled
+    const [effect] = parseFigmaEffects([unbound])
+    return toFigmaEffect(effect, boundVariables)
+  }
   const { visible, radius } = modelled
   if (modelled.type === 'GLASS') {
     const { refraction, depth, lightAngle, lightIntensity, dispersion } = modelled
@@ -180,6 +258,18 @@ export function boundEffectCopy(
     }
   }
   if (!isPluginShadow(modelled)) {
+    if (modelled.blurType === 'PROGRESSIVE') {
+      return {
+        type: modelled.type,
+        visible,
+        radius,
+        boundVariables,
+        blurType: 'PROGRESSIVE',
+        startRadius: modelled.startRadius,
+        startOffset: { ...modelled.startOffset },
+        endOffset: { ...modelled.endOffset }
+      }
+    }
     return { type: modelled.type, visible, radius, boundVariables, blurType: 'NORMAL' }
   }
   const shadow = {
@@ -206,7 +296,32 @@ export function parseFigmaEffects(value: unknown): Effect[] {
   if (effects.filter((effect) => effect.type === 'GLASS').length > 1) {
     throw invalid(method, 'Only one glass effect is allowed per node.', 'effects')
   }
-  return effects.map(toSceneEffect)
+  const mismatch = grainSizeMismatch(value)
+  if (mismatch) throw new Error(`in ${method}: ${mismatch}`)
+  return firstTextureOnly(effects).map(toSceneEffect)
+}
+
+/**
+ * Figma's complaint about an effect whose `noiseSize` is not its `noiseSizeVector.x`, read from
+ * the values it was given, or null. The vector's `y` may differ: that is how a grain is not square.
+ */
+function grainSizeMismatch(value: unknown): string | null {
+  const grain = v.object({ noiseSize: v.number(), noiseSizeVector: v.object({ x: v.number() }) })
+  if (!Array.isArray(value)) return null
+  for (const effect of value) {
+    if (!v.is(grain, effect) || effect.noiseSize === effect.noiseSizeVector.x) continue
+    return `Effect noiseSize (${effect.noiseSize}) does not match noiseSizeVector.x (${effect.noiseSizeVector.x}). Ensure these values are consistent.`
+  }
+  return null
+}
+
+/**
+ * `effects` with every texture after the first left out, as Figma silently keeps one. The effects
+ * setter reads bindings from the same list, so their indexes match the effects it keeps.
+ */
+export function firstTextureOnly<T extends { readonly type: string }>(effects: readonly T[]): T[] {
+  const first = effects.findIndex((effect) => effect.type === 'TEXTURE')
+  return effects.filter((effect, index) => effect.type !== 'TEXTURE' || index === first)
 }
 
 /** `value` as scene effects when it holds valid Figma effects, or null. */
@@ -215,7 +330,8 @@ export function tryParseFigmaEffects(value: unknown): Effect[] | null {
   const result = v.safeParse(effectsSchema, value)
   if (!result.success) return null
   if (result.output.filter((effect) => effect.type === 'GLASS').length > 1) return null
-  return result.output.map(toSceneEffect)
+  if (grainSizeMismatch(value)) return null
+  return firstTextureOnly(result.output).map(toSceneEffect)
 }
 
 /**
@@ -236,7 +352,45 @@ export function fillsGainingGlass(
   return [{ ...fill, opacity: white ? 0.1 : 0.2 }]
 }
 
+/** A grain size as both axes, from the vector when given, else the one number. */
+function grainSize(effect: { noiseSize: number; noiseSizeVector?: Vector }): Vector {
+  return effect.noiseSizeVector
+    ? { ...effect.noiseSizeVector }
+    : { x: effect.noiseSize, y: effect.noiseSize }
+}
+
 function toSceneEffect(effect: FigmaEffect): Effect {
+  if (effect.type === 'NOISE') {
+    const noise: NoiseEffectParams = {
+      noiseType: effect.noiseType,
+      noiseSize: grainSize(effect),
+      density: effect.density
+    }
+    if (effect.noiseType === 'DUOTONE') noise.secondaryColor = { ...effect.secondaryColor }
+    if (effect.noiseType === 'MULTITONE') noise.opacity = effect.opacity
+    // A `.fig` noise carries a radius of 4 that it does not use.
+    return {
+      type: 'NOISE',
+      color: { ...effect.color },
+      offset: { x: 0, y: 0 },
+      radius: 4,
+      spread: 0,
+      visible: effect.visible,
+      noise
+    }
+  }
+  if (effect.type === 'TEXTURE') {
+    return {
+      type: 'TEXTURE',
+      // A `.fig` texture carries an opaque black colour it does not use.
+      color: { ...BLACK },
+      offset: { x: 0, y: 0 },
+      radius: effect.radius,
+      spread: 0,
+      visible: effect.visible,
+      texture: { noiseSize: grainSize(effect), clipToShape: effect.clipToShape }
+    }
+  }
   if (effect.type === 'GLASS') {
     const { refraction, depth, lightAngle, lightIntensity, dispersion } = effect
     return {
@@ -271,7 +425,16 @@ function toSceneEffect(effect: FigmaEffect): Effect {
     offset: { x: 0, y: 0 },
     radius: effect.radius,
     spread: 0,
-    visible: effect.visible
+    visible: effect.visible,
+    ...(effect.blurType === 'PROGRESSIVE'
+      ? {
+          progressive: {
+            startRadius: effect.startRadius,
+            startOffset: { ...effect.startOffset },
+            endOffset: { ...effect.endOffset }
+          }
+        }
+      : {})
   }
 }
 
@@ -283,6 +446,9 @@ export type FigmaEffectBindings = Partial<Record<EffectBindingProperty, FigmaVar
  * are bound to.
  */
 export function toFigmaEffect(effect: Effect, bindings: FigmaEffectBindings = {}): FigmaEffect {
+  const radiusBinding = bindings.radius ? { radius: bindings.radius } : {}
+  if (effect.type === 'NOISE') return figmaNoiseEffect(effect, radiusBinding)
+  if (effect.type === 'TEXTURE') return figmaTextureEffect(effect, radiusBinding)
   if (effect.type === 'GLASS') {
     const glass = effect.glass ?? UNSET_GLASS
     return {
@@ -302,13 +468,22 @@ export function toFigmaEffect(effect: Effect, bindings: FigmaEffectBindings = {}
     effect.type === 'FOREGROUND_BLUR' ||
     effect.type === 'BACKGROUND_BLUR'
   ) {
-    return {
+    const blur = {
       // `.fig` files call a layer blur FOREGROUND_BLUR; the plugin API calls it LAYER_BLUR.
-      type: effect.type === 'BACKGROUND_BLUR' ? 'BACKGROUND_BLUR' : 'LAYER_BLUR',
+      type:
+        effect.type === 'BACKGROUND_BLUR' ? ('BACKGROUND_BLUR' as const) : ('LAYER_BLUR' as const),
       visible: effect.visible,
       radius: effect.radius,
-      boundVariables: bindings.radius ? { radius: bindings.radius } : {},
-      blurType: 'NORMAL'
+      boundVariables: bindings.radius ? { radius: bindings.radius } : {}
+    }
+    if (!effect.progressive) return { ...blur, blurType: 'NORMAL' }
+    const { startRadius, startOffset, endOffset } = effect.progressive
+    return {
+      ...blur,
+      blurType: 'PROGRESSIVE',
+      startRadius,
+      startOffset: { ...startOffset },
+      endOffset: { ...endOffset }
     }
   }
   const shadow = {
@@ -328,4 +503,40 @@ export function toFigmaEffect(effect: Effect, bindings: FigmaEffectBindings = {}
         showShadowBehindNode: effect.showShadowBehindNode ?? true
       }
     : { type: 'INNER_SHADOW', ...shadow }
+}
+
+/** A scene noise effect as Figma's `effects` getter returns it, each noise type with its field. */
+function figmaNoiseEffect(effect: Effect, boundVariables: FigmaEffectBindings): FigmaEffect {
+  const noise = effect.noise ?? UNSET_NOISE
+  const base = {
+    type: 'NOISE' as const,
+    visible: effect.visible,
+    boundVariables,
+    noiseSize: noise.noiseSize.x,
+    noiseSizeVector: { ...noise.noiseSize },
+    color: { ...effect.color },
+    density: noise.density
+  }
+  if (noise.noiseType === 'DUOTONE') {
+    const secondaryColor = { ...(noise.secondaryColor ?? effect.color) }
+    return { ...base, noiseType: 'DUOTONE', secondaryColor }
+  }
+  if (noise.noiseType === 'MULTITONE') {
+    return { ...base, noiseType: 'MULTITONE', opacity: noise.opacity ?? 1 }
+  }
+  return { ...base, noiseType: 'MONOTONE' }
+}
+
+/** A scene texture effect as Figma's `effects` getter returns it. */
+function figmaTextureEffect(effect: Effect, boundVariables: FigmaEffectBindings): FigmaEffect {
+  const texture = effect.texture ?? UNSET_TEXTURE
+  return {
+    type: 'TEXTURE',
+    visible: effect.visible,
+    radius: effect.radius,
+    boundVariables,
+    noiseSize: texture.noiseSize.x,
+    noiseSizeVector: { ...texture.noiseSize },
+    clipToShape: texture.clipToShape
+  }
 }

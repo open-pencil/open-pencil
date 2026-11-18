@@ -1,6 +1,7 @@
 import { isEqual } from 'es-toolkit'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { insertAll } from '@open-pencil/scene-graph/arrays'
 
 import {
   PADDING_FIELDS,
@@ -9,6 +10,7 @@ import {
   type BindingContext,
   type BoundProp
 } from '../variables/props'
+import { writtenEffectIndices } from './paints'
 import type { JSXProp, JSXValue } from './value'
 import type { VariableExport } from './variables'
 
@@ -113,7 +115,28 @@ function expandCorners(
   const index = props.findIndex(([prop]) => prop === 'rounded')
   if (!bound || index === -1) return
   const [, radius] = props[index]
-  props.splice(index, 1, ...CORNER_PROPS.map((prop): JSXProp => [prop, radius]))
+  props.splice(index, 1)
+  insertAll(
+    props,
+    index,
+    CORNER_PROPS.map((prop): JSXProp => [prop, radius])
+  )
+}
+
+const EFFECT_FIELD = /^effects\/(\d+)\/(.+)$/
+
+/**
+ * The layer's bindings by the fields JSX writes: an effect's renumbered as the effects JSX
+ * writes are, and those of effects it leaves out dropped.
+ */
+function writtenBindings(node: SceneNode): Array<[string, string]> {
+  const effects = writtenEffectIndices(node)
+  return Object.entries(node.boundVariables).flatMap(([field, variableId]): [string, string][] => {
+    const match = EFFECT_FIELD.exec(field)
+    if (!match) return [[field, variableId]]
+    const index = effects.get(Number(match[1]))
+    return index === undefined ? [] : [[`effects/${index}/${match[2]}`, variableId]]
+  })
 }
 
 /**
@@ -126,7 +149,7 @@ export function collectBindingProps(
   props: JSXProp[],
   variables: VariableExport
 ): void {
-  const remaining = new Map(Object.entries(node.boundVariables))
+  const remaining = new Map(writtenBindings(node))
   // A variable only `bind` can name, by its ID, is not written in a prop, which reads a string.
   const named = (variableId: string) => typeof variables.variable(variableId) !== 'string'
   const laidOut = node.layoutMode !== 'NONE'

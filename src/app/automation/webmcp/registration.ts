@@ -1,8 +1,6 @@
-// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
-import { toJsonSchema as toJSONSchema } from '@valibot/to-json-schema'
 import type { WebMCP } from 'webmcp-types'
 
-import { parseToolArgs, type ToolDef } from '@open-pencil/core/tools'
+import { parseToolArgs, toolInputFor, toolJSONSchema, type ToolDef } from '@open-pencil/core/tools'
 
 import { getWebMCPTools } from './policy'
 import { type WebMCPMode } from './schema'
@@ -31,12 +29,12 @@ export function registerWebMCPTools(
     try {
       for (const def of getWebMCPTools(mode)) {
         lifetime.signal.throwIfAborted()
-        const schema = def.input
+        const schema = toolInputFor(def, 'webmcp')
         await context.registerTool(
           {
             name: def.name,
             description: `${def.description} Targets the active OpenPencil document.`,
-            inputSchema: toJSONSchema(schema, { typeMode: 'input' }),
+            inputSchema: toolJSONSchema(schema, { typeMode: 'input' }),
             annotations: { readOnlyHint: !def.mutates, untrustedContentHint: true },
             execute: async (input, options?: WebMCP.ToolExecuteCallbackOptions) => {
               // Early document.modelContext implementations omit execution options.

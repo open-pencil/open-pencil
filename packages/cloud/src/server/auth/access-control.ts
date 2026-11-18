@@ -3,8 +3,11 @@ import { createAccessControl } from 'better-auth/plugins/access'
 
 export const accessStatements = {
   workspace: ['read', 'update', 'delete', 'invite', 'manage-members'],
-  /** `delete` moves a document to Trash and back; `purge` deletes it from Trash for good. */
-  document: ['create', 'read', 'edit', 'share', 'delete', 'purge']
+  /**
+   * `delete` moves a document to Trash and back; `purge` deletes it from Trash for good.
+   * `comment` writes comments, which everyone who can read may; `moderate` deletes anyone's.
+   */
+  document: ['create', 'read', 'comment', 'edit', 'moderate', 'share', 'delete', 'purge']
 } as const
 
 type AccessStatements = typeof accessStatements
@@ -23,15 +26,15 @@ export const accessControl = createAccessControl(accessStatements)
 export const workspaceRoles = {
   admin: accessControl.newRole({
     workspace: ['read', 'update', 'delete', 'invite', 'manage-members'],
-    document: ['create', 'read', 'edit', 'share', 'delete', 'purge']
+    document: ['create', 'read', 'comment', 'edit', 'moderate', 'share', 'delete', 'purge']
   }),
   editor: accessControl.newRole({
     workspace: ['read'],
-    document: ['create', 'read', 'edit', 'share', 'delete']
+    document: ['create', 'read', 'comment', 'edit', 'moderate', 'share', 'delete']
   }),
   viewer: accessControl.newRole({
     workspace: ['read'],
-    document: ['read']
+    document: ['read', 'comment']
   })
 } satisfies Record<WorkspaceRole, unknown>
 
@@ -41,9 +44,11 @@ export const workspaceRoles = {
  * owner's document. Deleting from Trash for good is for the owner and workspace administrators.
  */
 export const documentRoles = {
-  owner: accessControl.newRole({ document: ['read', 'edit', 'share', 'delete', 'purge'] }),
-  editor: accessControl.newRole({ document: ['read', 'edit', 'share'] }),
-  viewer: accessControl.newRole({ document: ['read'] })
+  owner: accessControl.newRole({
+    document: ['read', 'comment', 'edit', 'moderate', 'share', 'delete', 'purge']
+  }),
+  editor: accessControl.newRole({ document: ['read', 'comment', 'edit', 'moderate', 'share'] }),
+  viewer: accessControl.newRole({ document: ['read', 'comment'] })
 }
 
 export type DocumentRole = keyof typeof documentRoles

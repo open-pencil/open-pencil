@@ -284,8 +284,7 @@ describe('library definition updates', () => {
           .map((node) => node.id)
       const [icon] = icons()
       const drawn = () =>
-        doc.graph.getChildren(doc.componentId).find((node) => node.type === 'INSTANCE')
-          ?.componentId
+        doc.graph.getChildren(doc.componentId).find((node) => node.type === 'INSTANCE')?.componentId
 
       for (const assetKey of [first, then]) {
         updateLibraryDefinitions(doc.graph, revision, { assetKeys: new Set([assetKey]) })

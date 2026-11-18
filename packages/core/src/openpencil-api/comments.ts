@@ -43,8 +43,10 @@ export interface NewComment {
   author?: string
 }
 
+/** Scripts and agents comment as themselves, marked as an agent so Cloud names whom it wrote for. */
 function author(name: string | undefined): CommentAuthor {
-  return { name: name?.trim() || DEFAULT_COMMENT_AUTHOR }
+  const agent = name?.trim() || DEFAULT_COMMENT_AUTHOR
+  return { name: agent, agent }
 }
 
 function pageOf(graph: SceneGraph, nodeId: string): string {

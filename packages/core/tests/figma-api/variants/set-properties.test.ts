@@ -2,7 +2,6 @@ import { beforeAll, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 beforeAll(() => registerTestFont())
 

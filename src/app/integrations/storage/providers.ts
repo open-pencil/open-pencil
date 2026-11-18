@@ -23,3 +23,10 @@ export const storageProviderRegistry = new StorageProviderRegistry([
   S3_STORAGE_PROVIDER,
   ...CLOUD_STORAGE_PROVIDERS
 ])
+
+/** Whether documents stored with this provider leave their comments to it. */
+export function storageKeepsComments(providerId: string | undefined): boolean {
+  return storageProviderRegistry
+    .list()
+    .some((provider) => provider.id === providerId && provider.keepsComments === true)
+}

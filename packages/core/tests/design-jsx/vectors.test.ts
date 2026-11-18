@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { pick } from 'es-toolkit'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { vectorNetworkPaths } from '@open-pencil/scene-graph/vector-network'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 async function render(jsx: string) {
   const graph = new SceneGraph()
@@ -68,6 +68,20 @@ describe('<Vector> paths', () => {
     const node = getNodeOrThrow(graph, created.id)
     expect(node).toMatchObject({ x: 0, y: 0, width: 32, height: 32 })
     expect(node.vectorNetwork?.vertices[0]).toEqual({ x: 4, y: 4 })
+  })
+
+  test('bind only the paths that take an artwork’s variable color, keeping their own colors', async () => {
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Colors')
+    const brand = graph.createVariable('Brand', 'COLOR', collection.id, { r: 0, g: 0, b: 1, a: 1 })
+    const [created] = await renderJSX(
+      graph,
+      '<svg viewBox="0 0 24 24" w={24} h={24} color={designVar("Brand")}><path d="M2 2h10v10H2z" fill="currentColor" /><path d="M12 12h10v10H12z" fill="#ff0000" /></svg>'
+    )
+    const [tinted, own] = graph.getChildren(created.id)
+    expect(tinted?.boundVariables['fills/0/color']).toBe(brand.id)
+    expect(own?.boundVariables['fills/0/color']).toBeUndefined()
+    expect(own?.fills[0]?.color).toMatchObject({ r: 1, g: 0, b: 0 })
   })
 
   test('take their size from style as from w and h', async () => {

@@ -169,7 +169,7 @@ defineOptions({ inheritAttrs: false })
           @click="startCreate"
         >
           <template #leading><icon-lucide-plus class="size-3" /></template>
-          <span class="min-w-0 flex-1 truncate text-left">{{ createLabel }}</span>
+          <span class="min-w-0 flex-1 truncate text-start">{{ createLabel }}</span>
         </AppButton>
       </template>
     </AppPicker>

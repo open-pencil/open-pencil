@@ -1,5 +1,7 @@
 import { describe, expect, mock, test } from 'bun:test'
 
+import { asDouble } from '#core-tests/canvas/helpers'
+
 import type { Image as CKImage } from '@open-pencil/canvaskit'
 
 import {
@@ -9,8 +11,6 @@ import {
   type TileKey,
   type TilePlanOptions
 } from '#core/canvas/renderer/tiles'
-
-import { asDouble } from '#core-tests/canvas/helpers'
 
 function renderedTile(key: TileKey): RenderedTile {
   const image = asDouble<CKImage>({

@@ -26,3 +26,13 @@ export const workspaceEntitlementsSchema = v.object({
   })
 })
 export type WorkspaceEntitlements = v.InferOutput<typeof workspaceEntitlementsSchema>
+
+/**
+ * An account's own plan and the storage its workspaces hold together. A workspace reports the
+ * same for its owner, so the two read alike.
+ */
+export const accountEntitlementsSchema = workspaceEntitlementsSchema
+export type AccountEntitlements = WorkspaceEntitlements
+export const accountEntitlementsResponseSchema = v.object({
+  entitlements: accountEntitlementsSchema
+})

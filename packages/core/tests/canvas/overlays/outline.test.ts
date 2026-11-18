@@ -1,8 +1,8 @@
 import { afterAll, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { dashEffect, withScreenStroke } from '#core/canvas/overlays/outline'
 

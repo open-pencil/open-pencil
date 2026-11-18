@@ -1,4 +1,8 @@
-import { adminDocuments, auditContentAction } from '#cloud/admin/documents/service'
+import {
+  adminDocuments,
+  auditContentAction,
+  type AdminDocumentsOptions
+} from '#cloud/admin/documents/service'
 import {
   containsPattern,
   countEachFilter,
@@ -14,6 +18,7 @@ import {
   type CloudAdminReportFilter
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
+import { tellReporters, type ReportReplies } from '#cloud/server/reports'
 import { dateString } from '#cloud/server/sharing/contracts'
 import { uniq } from 'es-toolkit'
 import type { ExpressionBuilder, Kysely } from 'kysely'
@@ -44,7 +49,12 @@ function searchCondition(search: string) {
     ])
 }
 
-export function createAdminReportService(database: Kysely<CloudDatabase>) {
+/** Reports' administration, which tells each reporter who left an address what it decided. */
+export function createAdminReportService(
+  database: Kysely<CloudDatabase>,
+  replies: ReportReplies = {},
+  documentOptions: Pick<AdminDocumentsOptions, 'communityWorkspaceId'> = {}
+) {
   return {
     /** A page of reports, newest first, and how many match the search under each filter. */
     async list(query: AdminListQuery<CloudAdminReportFilter> = {}) {
@@ -69,7 +79,8 @@ export function createAdminReportService(database: Kysely<CloudDatabase>) {
       const [documents, shares, reporters] = await Promise.all([
         adminDocuments(
           database,
-          rows.map((row) => row.documentId)
+          rows.map((row) => row.documentId),
+          documentOptions
         ),
         shareIds.length
           ? database
@@ -139,6 +150,7 @@ export function createAdminReportService(database: Kysely<CloudDatabase>) {
           { type: 'document-report', id: reportId },
           { documentId: report.documentId }
         )
+        await tellReporters(transaction, replies, [reportId], status)
       })
     }
   }

@@ -1,6 +1,7 @@
 import { sumBy } from 'es-toolkit'
 
 import type { MetricsUsage } from '@open-pencil/feedback/contract'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 
 /** Installs first seen on `cohort`, then how many opened the app again each day after. */
 export type RetentionCohort = MetricsUsage['retention'][number]
@@ -18,7 +19,7 @@ export interface RetentionPoint {
  * only over first days at least N days old, so young cohorts don't pull the curve down.
  */
 export function pooledRetention(cohorts: RetentionCohort[]): RetentionPoint[] {
-  const longest = Math.max(0, ...cohorts.map((cohort) => cohort.values.length))
+  const longest = maxOf([0, ...cohorts.map((cohort) => cohort.values.length)])
   const points: RetentionPoint[] = []
   for (let day = 0; day < longest; day++) {
     const reached = cohorts.filter((cohort) => cohort.values.length > day)

@@ -1,1 +1,0 @@
-- Dragging a straight segment in vector edit mode bends it at a new point where it was pressed, as in Figma; a curved segment still moves whole (#1848).

@@ -11,9 +11,7 @@ const items = [
 describe('fuzzy search', () => {
   test('ranks the closest match first and forgives a typo', () => {
     expect(fuzzySearch(items, ['name'], 'zoom in').map((item) => item.name)[0]).toBe('Zoom in')
-    expect(fuzzySearch(items, ['name'], 'varibles').map((item) => item.name)).toEqual([
-      'Variables'
-    ])
+    expect(fuzzySearch(items, ['name'], 'varibles').map((item) => item.name)).toEqual(['Variables'])
   })
 
   test('searches every key it is given', () => {

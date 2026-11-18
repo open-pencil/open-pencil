@@ -1,10 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  CALC_FUNCTIONS,
-  CalcSyntaxError,
-  evaluateExpression
-} from '#core/tools/calc/expression'
+import { CALC_FUNCTIONS, CalcSyntaxError, evaluateExpression } from '#core/tools/calc/expression'
 
 describe('calc expression evaluator', () => {
   test.each([

@@ -1,11 +1,11 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
-
-import { runCLI } from '#cli-tests/helpers/run'
 import { mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { figThumbnailSize } from '#cli-tests/helpers/fig'
+import { runCLI } from '#cli-tests/helpers/run'
+
 import { getTextMeasurer } from '@open-pencil/core/layout'
 
 import { loadDocument, measureDocumentText } from '#cli/headless'

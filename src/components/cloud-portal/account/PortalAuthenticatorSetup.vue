@@ -27,6 +27,11 @@ const emit = defineEmits<{ verify: [code: string] }>()
 const ui = portalForm()
 const messages = useCloudPortalMessages()
 const code = ref('')
+// Nothing to check until a code is typed: an empty one would only come back as an error.
+const entered = computed(() => code.value.trim() !== '')
+function submit() {
+  if (entered.value) emit('verify', code.value.trim())
+}
 watch(open, (value) => {
   if (value) code.value = ''
 })
@@ -65,7 +70,7 @@ const image = computed(() => (rendered.value?.uri === uri ? rendered.value.data 
         />
       </AppFormField>
       <AppAlert v-if="error" tone="error" :heading="error" />
-      <form class="flex w-full flex-col gap-3" novalidate @submit.prevent="emit('verify', code)">
+      <form class="flex w-full flex-col gap-3" novalidate @submit.prevent="submit">
         <AppInput
           v-model="code"
           inputmode="numeric"
@@ -79,6 +84,7 @@ const image = computed(() => (rendered.value?.uri === uri ? rendered.value.data 
           color="primary"
           variant="solid"
           :loading="verifying"
+          :disabled="!entered"
           :ui="{ base: ui.submit() }"
         >
           {{ messages.continue }}

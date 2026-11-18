@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createEditor, type Editor } from '@open-pencil/core'
 import { colorToFill } from '@open-pencil/scene-graph/color'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { withResolvableLinks } from '#core/editor/clipboard/paste/properties'
 

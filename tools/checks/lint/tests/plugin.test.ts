@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import type lintPlugin from '#lint/plugin.ts'
+import { domains } from '#lint/domains.ts'
 import {
   noHardcodedTipLabelsInVue,
   noNativeTitleAttributesInVue,
@@ -10,10 +10,16 @@ import {
 import { normalizedFilename } from '#lint/support/context.ts'
 import type { RuleContext, RuleDefinition, RuleSourceCode } from '#lint/support/types.ts'
 import { AST_NODE_TYPES, type TSESTree } from '@typescript-eslint/utils'
+import * as v from 'valibot'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 
 import { lintFiles, ruleDiagnostics } from './helpers/lint.ts'
+
+const domainPluginSchema = v.object({
+  meta: v.object({ name: v.string() }),
+  rules: v.record(v.string(), v.unknown())
+})
 
 const unavailable = (member: string) => () => {
   throw new Error(`${member} is not available in the filename-only harness`)
@@ -44,9 +50,9 @@ function emptyProgram(): TSESTree.Program {
 
 /** Rules the filename-only harness below can drive without a parsed AST. */
 const harnessRules = {
-  'no-native-title-attributes-in-vue': noNativeTitleAttributesInVue,
-  'no-hardcoded-tip-labels-in-vue': noHardcodedTipLabelsInVue,
-  'no-raw-svg-in-app-vue-templates': noRawSvgInAppVueTemplates
+  '@open-pencil/vue/no-native-title-attributes': noNativeTitleAttributesInVue,
+  '@open-pencil/vue/no-hardcoded-tip-labels': noHardcodedTipLabelsInVue,
+  '@open-pencil/vue/no-raw-svg-in-templates': noRawSvgInAppVueTemplates
 } satisfies Record<string, RuleDefinition>
 
 async function runRule(
@@ -71,7 +77,7 @@ async function runRule(
 }
 
 test('storage rule permits data keys but rejects storage access', async () => {
-  const rule = 'no-direct-storage-access'
+  const rule = '@open-pencil/runtime/no-direct-storage-access'
   const cases = {
     'data-key.ts': ['const state = {localStorage: []}', 0],
     'clear.ts': ['localStorage.clear()', 1],
@@ -81,7 +87,7 @@ test('storage rule permits data keys but rejects storage access', async () => {
   const diagnostics = ruleDiagnostics(
     await lintFiles(
       Object.fromEntries(Object.entries(cases).map(([path, [source]]) => [path, source])),
-      { [`open-pencil/${rule}`]: 'error' }
+      { [rule]: 'error' }
     ),
     rule
   )
@@ -92,7 +98,7 @@ test('storage rule permits data keys but rejects storage access', async () => {
 })
 
 test('only the development reload module reads import.meta.hot', async () => {
-  const rule = 'no-vite-hot-outside-reload'
+  const rule = '@open-pencil/runtime/no-vite-hot-outside-reload'
   const cases = {
     'src/app/shell/reload/vite.ts': ["import.meta.hot?.on('vite:ws:disconnect', () => {})", 0],
     'src/app/ai/chat/use.ts': ["import.meta.hot?.on('vite:ws:disconnect', () => {})", 1],
@@ -101,7 +107,7 @@ test('only the development reload module reads import.meta.hot', async () => {
   const diagnostics = ruleDiagnostics(
     await lintFiles(
       Object.fromEntries(Object.entries(cases).map(([path, [source]]) => [path, source])),
-      { [`open-pencil/${rule}`]: 'error' }
+      { [rule]: 'error' }
     ),
     rule
   )
@@ -114,7 +120,7 @@ test('only the development reload module reads import.meta.hot', async () => {
 describe('Vue template rules', () => {
   test('recognizes native title attributes from the Vue template AST', async () => {
     const reports = await runRule(
-      'no-native-title-attributes-in-vue',
+      '@open-pencil/vue/no-native-title-attributes',
       '<template><button title="Save">Save</button></template>',
       '/repo/src/components/SaveButton.vue'
     )
@@ -123,7 +129,7 @@ describe('Vue template rules', () => {
 
   test('finds raw SVG elements with v-if directives', async () => {
     const reports = await runRule(
-      'no-raw-svg-in-app-vue-templates',
+      '@open-pencil/vue/no-raw-svg-in-templates',
       '<template><svg v-if="shown" /></template>',
       '/repo/src/components/ConditionalIcon.vue'
     )
@@ -132,7 +138,7 @@ describe('Vue template rules', () => {
 
   test('does not treat a Vue component title prop as a native title attribute', async () => {
     const reports = await runRule(
-      'no-native-title-attributes-in-vue',
+      '@open-pencil/vue/no-native-title-attributes',
       '<template><Dialog title="Settings" /></template>',
       '/repo/src/components/SettingsDialog.vue'
     )
@@ -141,7 +147,7 @@ describe('Vue template rules', () => {
 
   test('reports a hardcoded Vue tooltip label', async () => {
     const reports = await runRule(
-      'no-hardcoded-tip-labels-in-vue',
+      '@open-pencil/vue/no-hardcoded-tip-labels',
       '<template><Tip label="Save" /></template>',
       '/repo/src/components/SaveButton.vue'
     )
@@ -149,7 +155,7 @@ describe('Vue template rules', () => {
   })
 
   test('accepts a localized Vue tooltip binding', async () => {
-    const rule = 'no-hardcoded-tip-labels-in-vue'
+    const rule = '@open-pencil/vue/no-hardcoded-tip-labels'
     const reports = await runRule(
       rule,
       '<template><Tip :label="messages.save" /></template>',
@@ -169,13 +175,27 @@ describe('path support', () => {
   })
 })
 
-describe('plugin entrypoint', () => {
-  test("loads this repository's rules and the published plugin's as one plugin", async () => {
-    const pluginPath = join(await resolveWorkspaceRoot(import.meta.dir), 'lint/plugin.js')
-    const module = (await import(pluginPath)) as { default: typeof lintPlugin }
-    const rules = Object.keys(module.default.rules)
-    expect(module.default.meta.name).toBe('open-pencil')
-    expect(rules).toContain('no-conditional-object-spreads')
-    expect(rules).toContain('no-direct-storage-access')
+describe('domain plugins', () => {
+  test("loads a domain as `@open-pencil/<domain>` with the published plugin's rules beside this repository's", async () => {
+    const path = join(await resolveWorkspaceRoot(import.meta.dir), 'lint/runtime.js')
+    const plugin = v.parse(
+      domainPluginSchema,
+      ((await import(path)) as { default: unknown }).default
+    )
+    expect(plugin.meta.name).toBe('@open-pencil/runtime')
+    expect(Object.keys(plugin.rules)).toEqual(
+      expect.arrayContaining(['no-conditional-object-spreads', 'no-direct-storage-access'])
+    )
+  })
+
+  test('oxlint.json loads every domain', async () => {
+    const root = await resolveWorkspaceRoot(import.meta.dir)
+    const config = v.parse(
+      v.pipe(v.string(), v.parseJson(), v.looseObject({ jsPlugins: v.array(v.string()) })),
+      await Bun.file(join(root, 'oxlint.json')).text()
+    )
+    expect(config.jsPlugins).toEqual(
+      expect.arrayContaining(Object.keys(domains).map((domain) => `./lint/${domain}.js`))
+    )
   })
 })

@@ -2,8 +2,8 @@ import { expect, test } from 'bun:test'
 
 import { lint, ruleDiagnostics } from './helpers/lint.ts'
 
-const rule = 'no-module-mocking'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rule = '@open-pencil/runtime/no-module-mocking'
+const rules = { [rule]: 'error' }
 
 test('rejects parser failures instead of treating them as valid examples', async () => {
   await expect(lint('const = ;', rules)).rejects.toThrow('could not parse')

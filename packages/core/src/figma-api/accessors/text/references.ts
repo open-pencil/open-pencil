@@ -5,7 +5,7 @@ import {
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
 import { graphOf } from '#core/figma-api/graph'
 import { STYLE_NOT_FOUND } from '#core/figma-api/styles/apply'
 import { setRangeParagraphSpacing } from '#core/figma-api/text'
@@ -17,7 +17,7 @@ import {
 } from '#core/figma-api/text/bindings'
 import { assertTextRange } from '#core/figma-api/text/style'
 import { parseFigma } from '#core/figma-api/validation'
-import { styleRunsWithPatch } from '#core/text/character-style'
+import { styleRunsWithPatch } from '#core/text/character/style'
 
 /** Methods that give characters a text or fill style, deprecated and async alike. */
 const SHARED_STYLE_SETTERS = {

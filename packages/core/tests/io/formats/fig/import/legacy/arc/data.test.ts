@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { canvas, doc, node } from '#core-tests/io/formats/fig/import/legacy/helpers'
+
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
-import { canvas, doc, node } from '#core-tests/io/formats/fig/import/legacy/helpers'
 
 describe('fig-import: arc data', () => {
   test('partial ellipse', () => {

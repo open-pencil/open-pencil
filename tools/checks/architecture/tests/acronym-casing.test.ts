@@ -10,8 +10,8 @@ import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 const temporaryDirectories: string[] = []
 const repositoryRoot = await resolveWorkspaceRoot(import.meta.dir)
 const oxlint = join(repositoryRoot, 'node_modules/.bin/oxlint')
-const plugin = join(repositoryRoot, 'lint/plugin.js')
-const RULE = 'open-pencil/no-mixed-case-acronym-identifiers'
+const plugin = join(repositoryRoot, 'lint/structure.js')
+const RULE = '@open-pencil/structure/no-mixed-case-acronym-identifiers'
 /** The rule as oxlint.json configures it, with the upstream names this repository accepts. */
 const ruleConfig = v.parse(
   v.pipe(v.string(), v.parseJson(), v.object({ rules: v.object({ [RULE]: v.unknown() }) })),

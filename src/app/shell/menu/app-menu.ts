@@ -25,10 +25,7 @@ import type {
   CommandPaletteItem
 } from '@open-pencil/vue/primitives/CommandPalette'
 
-import { openTourFromMenu } from '@/app/demo/document'
-import { donate } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
-import { openReportDialog } from '@/app/reports/state'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
   setCommentsOnCanvas,
@@ -41,6 +38,7 @@ import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
 import { createTabMenuActions } from '@/app/shell/menu/actions/tabs'
 import { visibleMenuEntries } from '@/app/shell/menu/entry'
 import { menuFeatureAvailable } from '@/app/shell/menu/features'
+import { createHelpMenuActions } from '@/app/shell/menu/help'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import type {
   AppMenuActionItem,
@@ -92,7 +90,7 @@ export function useAppMenu() {
     otherPages,
     moveSelectionToPage
   } = useEditorCommands()
-  const { menu, locale, availableLocales, localeLabels, setLocale } = useI18n()
+  const { menu, updates, locale, availableLocales, localeLabels, setLocale } = useI18n()
   const { theme, setTheme } = useAppTheme()
   const { isMobile } = useViewportKind()
 
@@ -105,6 +103,12 @@ export function useAppMenu() {
     diagnostics: 'diagnostics',
     'report-problem': 'reportProblem',
     'support-openpencil': 'supportOpenPencil',
+    'help-docs': 'documentation',
+    'help-shortcuts': 'keyboardShortcuts',
+    'help-whats-new': 'whatsNew',
+    'check-updates': 'checkUpdates',
+    'help-community': 'community',
+    'help-github': 'github',
     save: 'save',
     'save-as': 'saveAs',
     'save-to': 'saveTo',
@@ -177,14 +181,11 @@ export function useAppMenu() {
 
   const actions: Partial<Record<string, () => void>> = {
     ...createTabMenuActions(),
-    'open-tour': openTourFromMenu,
     ...createSaveMenuActions(),
     'export-selection': () => exportSelection('png'),
     ...createSelectionMenuActions(store),
     settings: openSettingsDialog,
-    diagnostics: () => openSettingsDialog('diagnostics'),
-    'report-problem': () => openReportDialog(),
-    'support-openpencil': () => donate('menu'),
+    ...createHelpMenuActions(updates),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),

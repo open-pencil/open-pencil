@@ -9,14 +9,15 @@ import { panelFieldBase } from '../panel/field/base'
 export default {
   slots: {
     trigger: [panelFieldBase, 'flex items-center justify-between text-2xs'],
-    value: 'min-w-0 flex-1 truncate text-left',
-    chevron: 'ml-1 size-3 shrink-0 text-muted',
+    value: 'min-w-0 flex-1 truncate text-start',
+    chevron: 'ms-1 size-3 shrink-0 text-muted',
     content: ['z-[110] overflow-hidden text-2xs', floatingSurface, motionStyles.floating],
     viewport: '',
     scrollButton: 'flex h-5 cursor-default items-center justify-center text-muted',
-    item: 'relative flex h-6 cursor-pointer items-center gap-2 rounded-md pr-2 pl-6 text-surface outline-none select-none data-[disabled]:pointer-events-none data-[highlighted]:bg-hover data-[disabled]:opacity-50',
-    indicator: 'absolute inset-y-0 left-0 inline-flex w-6 items-center justify-center text-primary',
-    label: 'flex h-6 items-center pr-2 pl-6 text-3xs text-muted',
+    item: 'relative flex h-6 cursor-pointer items-center gap-2 rounded-md pe-2 ps-6 text-surface outline-none select-none data-[disabled]:pointer-events-none data-[highlighted]:bg-hover data-[disabled]:opacity-50',
+    indicator:
+      'absolute inset-y-0 inset-s-0 inline-flex w-6 items-center justify-center text-primary',
+    label: 'flex h-6 items-center pe-2 ps-6 text-3xs text-muted',
     separator: 'mx-1 my-1 h-px bg-border'
   },
   variants: {

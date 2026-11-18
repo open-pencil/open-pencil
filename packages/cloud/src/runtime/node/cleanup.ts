@@ -5,10 +5,13 @@ import {
   cleanupPassOptions,
   createCleanupServices,
   createConfiguredCloudPolicy,
-  runCleanup
+  createLoggingErrorReporter,
+  runCleanup,
+  writeJSONLine
 } from '#cloud/server'
 
 import { loadNodeCloudServerConfig } from './config'
+import { createNodeTransactionalEmailRuntime } from './email/runtime'
 
 const config = await loadNodeCloudServerConfig(process.env)
 // A sweep may take longer than a request should.
@@ -19,13 +22,16 @@ const database = createPostgresCloudDatabase({
 const objects = createS3ObjectStore(config)
 try {
   const policy = createConfiguredCloudPolicy(config, database)
+  // Queued here, sent by the server's email worker.
+  const { email, transport } = createNodeTransactionalEmailRuntime(config, database)
   const result = await runCleanup(
     createCleanupServices(
       config,
       database,
       objects,
       policy,
-      createCloudErrorReporter(config, 'node')
+      createLoggingErrorReporter(writeJSONLine, createCloudErrorReporter(config, 'node')),
+      transport ? email : undefined
     ),
     cleanupPassOptions(config)
   )

@@ -1,2 +1,0 @@
-- The rulers label a selection's edges to three decimals, as in Figma, instead of rounding them to whole numbers (#1923).
-- A size, padding, or gap field bound to a variable shows its value to two decimals, as unbound fields do, instead of the raw value a `.fig` file stores, such as 100.4000015258789 (#1923).

@@ -14,6 +14,7 @@ import type {
 } from '@/app/editor/preparation/types'
 import type { AppEditorState } from '@/app/editor/session/types'
 
+/** How long a scene may go without drawing any more of it before waiting for it fails. */
 const PRESENTATION_TIMEOUT_MS = 10_000
 
 /** Whether the browser shows the page, for every editor; a hidden tab draws no frames. */
@@ -46,6 +47,8 @@ export interface EditorPreparationController {
   begin(options: BeginEditorPreparation): EditorPreparationHandle
   /** A frame of these versions is fully shown; `render:presented` reports it from canvases. */
   acknowledgePresentation(versions: RenderVersions): void
+  /** A frame of these versions drew more; `render:progressed` reports it from canvases. */
+  acknowledgeProgress(versions: RenderVersions): void
   /**
    * Resolves once a frame at least as new as `versions` in both is fully drawn. The versions are
    * read when called, so an editor's live state can be passed.
@@ -121,10 +124,25 @@ export function createEditorPreparationController(
     }
   }
 
+  /**
+   * A frame of these versions drew more of the scene: a wait for it gets its whole time again,
+   * so a large page drawing tile by tile on a slow machine does not fail while it draws.
+   */
+  function acknowledgeProgress(versions: RenderVersions) {
+    for (const [id, waiter] of presentationWaiters) {
+      if (!covers(versions, waiter.versions)) continue
+      const running = waiter.timer !== null
+      pauseTimer(waiter)
+      waiter.remainingMs = presentationTimeoutMs
+      if (running) startTimer(id, waiter)
+    }
+  }
+
   const stopPresentations = options.editor?.onEditorEvent(
     'render:presented',
     acknowledgePresentation
   )
+  const stopProgress = options.editor?.onEditorEvent('render:progressed', acknowledgeProgress)
 
   return {
     begin(options) {
@@ -201,6 +219,7 @@ export function createEditorPreparationController(
       }
     },
     acknowledgePresentation,
+    acknowledgeProgress,
     waitForPresentation(id, versions) {
       if (!isActive(id) || covers(presented, versions)) return Promise.resolve()
       settle(id, null)
@@ -245,6 +264,7 @@ export function createEditorPreparationController(
     dispose() {
       stopVisibility()
       stopPresentations?.()
+      stopProgress?.()
       activeCancel?.('tab-closed')
       activeAbort?.abort()
       activeAbort = null

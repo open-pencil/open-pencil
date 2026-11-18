@@ -1,33 +1,20 @@
-import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
-import type { InitializeResponse, SessionUpdate } from '@agentclientprotocol/sdk'
-import { promiseTimeout } from '@vueuse/core'
+import {
+  methods,
+  PROTOCOL_VERSION,
+  type InitializeResponse,
+  type SessionUpdate
+} from '@agentclientprotocol/sdk/unstable'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
-import { spawnACPProcess } from '@/app/ai/agents/acp/process'
+import { connectAgent, type AgentLaunch } from '@/app/ai/agents/acp/connection'
 import type { OwnToolsLink, OwnToolsOutcome } from '@/app/ai/agents/acp/tools'
-import { resolveSpawnCommand } from '@/app/ai/agents/setup/discovery'
 import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
-import {
-  isSignedIn,
-  parseAuthMethods,
-  parseAuthStatusUpdate,
-  type AgentAuthMethod,
-  type AgentAuthStatus
-} from './status'
-
-/** An agent process's stdio and the way to stop it. */
-export interface AgentStreams {
-  input: WritableStream<Uint8Array>
-  output: ReadableStream<Uint8Array>
-  close(): Promise<void>
-}
-
-export type SpawnAgent = (agent: ACPAgentDef) => Promise<AgentStreams>
+import { isSignedIn, parseAuthMethods, type AgentAuthMethod, type AgentAuthStatus } from './status'
 
 export interface AuthSessionOptions {
-  spawn?: SpawnAgent
+  launch?: AgentLaunch
   /** How long to wait for a login report; adapters read their CLI's with a 5 s limit. */
   statusTimeoutMs?: number
   /** How long an agent may take to answer `initialize` before it counts as stuck. */
@@ -55,25 +42,6 @@ export interface AgentAuthCheck {
   adapter: { name: string; version: string } | null
   /** Whether a session reached OpenPencil's tools; null when not checked or not signed in. */
   tools: OwnToolsOutcome | null
-}
-
-export async function spawnAgentStreams(agent: ACPAgentDef): Promise<AgentStreams> {
-  let closing = false
-  const { child, input, output } = await spawnACPProcess({
-    command: await resolveSpawnCommand(agent),
-    args: agent.args,
-    logId: `${agent.id} sign-in`,
-    destroying: () => closing,
-    onUnexpectedClose: () => undefined
-  })
-  return {
-    input,
-    output,
-    async close() {
-      closing = true
-      await child.kill().catch(() => undefined)
-    }
-  }
 }
 
 /** Login reports in arrival order, so a caller can wait for one newer than it has seen. */
@@ -106,58 +74,41 @@ function createStatusLog() {
 
 async function openAuthSession(
   agent: ACPAgentDef,
-  { spawn = spawnAgentStreams, initializeTimeoutMs = INITIALIZE_TIMEOUT_MS }: AuthSessionOptions
+  { launch, initializeTimeoutMs = INITIALIZE_TIMEOUT_MS }: AuthSessionOptions
 ) {
-  const streams = await spawn(agent)
   const log = createStatusLog()
   let onUpdate: ((update: SessionUpdate) => void) | null = null
-  const connection = new ClientSideConnection(
-    () => ({
-      // Nothing runs in this connection, so nothing may ask for permission.
-      requestPermission: async () => ({ outcome: { outcome: 'cancelled' } }),
-      sessionUpdate: async ({ update }) => onUpdate?.(update),
-      extNotification: async (method, params) => {
-        const status = parseAuthStatusUpdate(method, params)
-        if (status) log.push(status)
-      }
-    }),
-    ndJsonStream(streams.input, streams.output)
-  )
-  // The SDK leaves requests pending when the agent exits, so each one races the connection.
-  const stopped = connection.closed.then(() => {
-    throw new Error('The agent stopped.')
+  // Nothing runs in this connection, so every permission request is refused.
+  const connection = await connectAgent(agent, {
+    logId: `${agent.id} sign-in`,
+    timeoutMs: initializeTimeoutMs,
+    launch,
+    onSessionUpdate: ({ update }) => onUpdate?.(update),
+    onAuthStatus: (status) => log.push(status)
   })
-  stopped.catch(() => undefined)
-  function untilStopped<T>(request: Promise<T>): Promise<T> {
-    return Promise.race([request, stopped])
-  }
   let init: InitializeResponse
   try {
-    init = await untilStopped(
-      Promise.race([
-        connection.initialize({
-          protocolVersion: PROTOCOL_VERSION,
-          // Without it, Claude's adapter offers no sign-in methods.
-          clientCapabilities: { _meta: { 'terminal-auth': true } }
-        }),
-        promiseTimeout(initializeTimeoutMs).then((): never => {
-          throw new Error('The agent did not start.')
-        })
-      ])
+    init = await connection.bounded(
+      connection.agent.request(methods.agent.initialize, {
+        protocolVersion: PROTOCOL_VERSION,
+        // Without it, Claude's adapter offers no sign-in methods.
+        clientCapabilities: { _meta: { 'terminal-auth': true } }
+      })
     )
   } catch (error) {
-    await streams.close()
+    await connection.close()
     throw error
   }
   return {
     connection,
     init,
     log,
-    untilStopped,
+    // A sign-in waits on the browser, so only the agent's exit ends these requests.
+    untilStopped: <T>(request: Promise<T>) => connection.untilStopped(request),
     set onUpdate(listener: ((update: SessionUpdate) => void) | null) {
       onUpdate = listener
     },
-    close: () => streams.close()
+    close: () => connection.close()
   }
 }
 
@@ -176,7 +127,7 @@ async function checkTools(session: AuthSession, probe: ToolsProbe): Promise<OwnT
     const linked = link
     session.onUpdate = (update) => linked.noteUpdate(update)
     await session.untilStopped(
-      session.connection.newSession({
+      session.connection.agent.request(methods.agent.session.new, {
         cwd: await probe.cwd(),
         mcpServers: link.mcpServers,
         _meta: link.meta
@@ -233,7 +184,9 @@ export async function signInWithAgent(
     await session.untilStopped(session.log.next(0, statusTimeoutMs))
     signal.throwIfAborted()
     const seen = session.log.count
-    await session.untilStopped(session.connection.authenticate({ methodId }))
+    await session.untilStopped(
+      session.connection.agent.request(methods.agent.authenticate, { methodId })
+    )
     return await session.log.next(seen, statusTimeoutMs)
   } finally {
     signal.removeEventListener('abort', stop)

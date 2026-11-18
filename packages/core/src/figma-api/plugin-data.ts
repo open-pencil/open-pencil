@@ -2,7 +2,12 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { graphOf } from '#core/figma-api/graph'
 
-import { assertProxyEditable, raw, type NodeProxyInternals, type ProxyThis } from './accessor-utils'
+import {
+  assertProxyEditable,
+  raw,
+  type NodeProxyInternals,
+  type ProxyThis
+} from './accessors/utils'
 
 export const OPEN_PENCIL_PLUGIN_DATA_NAMESPACE = 'open-pencil'
 

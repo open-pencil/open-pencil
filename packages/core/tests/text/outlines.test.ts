@@ -3,9 +3,9 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { fontManager } from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import { textNodeToOutlineLayout } from '#core/text/outlines'
-import { repoPath } from '@open-pencil/test-support/paths'
 
 const editor = createEditor()
 
@@ -13,7 +13,9 @@ beforeAll(async () => {
   const data = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
   await fontManager.markLoaded('Inter', 'Regular', data)
   await fontManager.markLoaded('Inter', 'Bold', data)
-  const italic = await Bun.file(repoPath('packages/core/assets/InterVariable-Italic.ttf')).arrayBuffer()
+  const italic = await Bun.file(
+    repoPath('packages/core/assets/InterVariable-Italic.ttf')
+  ).arrayBuffer()
   await fontManager.markLoaded('Inter', 'Regular Italic', italic)
   await fontManager.markLoaded('Inter', 'Bold Italic', italic)
 })
@@ -42,6 +44,17 @@ function oneLineWidth(props: Partial<SceneNode>): number {
 }
 
 describe('textNodeToOutlineLayout', () => {
+  test('gives each glyph the character it draws, across lines and style runs', () => {
+    const node = text({
+      text: 'Ab cd',
+      width: 60,
+      styleRuns: [{ start: 3, length: 2, style: { fontWeight: 700 } }]
+    })
+    const layout = textNodeToOutlineLayout(node)
+    const drawn = layout?.glyphs.map((glyph) => node.text[glyph.firstCharacter ?? -1])
+    expect(drawn?.filter((character) => character.trim())).toEqual(['A', 'b', 'c', 'd'])
+  })
+
   test('wraps text without style runs at its width', () => {
     const wrapped = text({ width: 100, textAutoResize: 'HEIGHT' })
     const unwrapped = text({ textAutoResize: 'WIDTH_AND_HEIGHT' })
@@ -55,7 +68,8 @@ describe('textNodeToOutlineLayout', () => {
   test('keeps a kerned line that fits on one line', () => {
     const kerned = { text: 'AVAVAVAV' }
     const width = oneLineWidth(kerned)
-    const unkerned = 'AVAVAVAV'.length * 0.5 * (oneLineWidth({ text: 'AA' }) + oneLineWidth({ text: 'VV' }))
+    const unkerned =
+      'AVAVAVAV'.length * 0.5 * (oneLineWidth({ text: 'AA' }) + oneLineWidth({ text: 'VV' }))
     expect(unkerned).toBeGreaterThan(width)
 
     expect(lineCount(text({ ...kerned, width, textAutoResize: 'HEIGHT' }))).toBe(1)
@@ -99,12 +113,55 @@ describe('textNodeToOutlineLayout', () => {
     const width = (regular + bold) / 2
 
     expect(
-      lineCount(text({ ...italic, fontWeight: 400, fontStyle: 'Italic', width, textAutoResize: 'HEIGHT' }))
+      lineCount(
+        text({ ...italic, fontWeight: 400, fontStyle: 'Italic', width, textAutoResize: 'HEIGHT' })
+      )
     ).toBe(1)
     expect(
       lineCount(
-        text({ ...italic, fontWeight: 700, fontStyle: 'Bold Italic', width, textAutoResize: 'HEIGHT' })
+        text({
+          ...italic,
+          fontWeight: 700,
+          fontStyle: 'Bold Italic',
+          width,
+          textAutoResize: 'HEIGHT'
+        })
       )
     ).toBe(2)
+  })
+
+  test('fits and sizes a spaced line by its glyphs, without the spacing after the last', () => {
+    const spaced = { text: 'Hold', letterSpacing: { value: 10, unit: 'PIXELS' as const } }
+    const glyphs = oneLineWidth(spaced)
+    expect(glyphs).toBeCloseTo(oneLineWidth({ text: 'Hold' }) + 30, 2)
+    expect(lineCount(text({ ...spaced, width: Math.ceil(glyphs), textAutoResize: 'HEIGHT' }))).toBe(
+      1
+    )
+  })
+
+  test('fits a spaced line ending in a glyph drawn for several characters by that glyph', () => {
+    const spaced = { text: 'ab->', letterSpacing: { value: 10, unit: 'PIXELS' as const } }
+    const glyphs = oneLineWidth(spaced)
+    expect(lineCount(text({ ...spaced, width: Math.ceil(glyphs), textAutoResize: 'HEIGHT' }))).toBe(
+      1
+    )
+  })
+
+  test('places a line taller than its box past the side away from its alignment', () => {
+    const baseline = (textAlignVertical: SceneNode['textAlignVertical']) =>
+      textNodeToOutlineLayout(
+        text({
+          text: 'H',
+          fontSize: 16,
+          height: 12,
+          lineHeight: { value: 20, unit: 'PIXELS' },
+          textAutoResize: 'NONE',
+          textAlignVertical
+        })
+      )?.glyphs[0]?.y
+
+    expect(baseline('TOP')).toBe(20)
+    expect(baseline('CENTER')).toBe(16)
+    expect(baseline('BOTTOM')).toBe(12)
   })
 })

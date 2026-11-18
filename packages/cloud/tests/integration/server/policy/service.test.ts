@@ -99,4 +99,61 @@ describe('workspace entitlements', () => {
       await runtime.close()
     }
   })
+
+  test('give an account its own plan, with the storage of every workspace it owns', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const [first, second, theirs] = [
+        crypto.randomUUID(),
+        crypto.randomUUID(),
+        crypto.randomUUID()
+      ]
+      await runtime.database
+        .insertInto('workspace')
+        .values(
+          [
+            { id: first, ownerId: 'owner' },
+            { id: second, ownerId: 'owner' },
+            { id: theirs, ownerId: 'someone-else' }
+          ].map(({ id, ownerId }) => ({
+            id,
+            name: 'W',
+            slug: `w-${id}`,
+            createdBy: ownerId,
+            ownerId
+          }))
+        )
+        .execute()
+      await runtime.database
+        .insertInto('workspaceStorageUsage')
+        .values([
+          { workspaceId: first, committedBytes: 40 },
+          { workspaceId: second, committedBytes: 2 },
+          { workspaceId: theirs, committedBytes: 500 }
+        ])
+        .execute()
+      await createAccountEntitlementRepository(runtime.database).set(
+        'owner',
+        { storage: { maximumBytes: 100 } },
+        'billing'
+      )
+      const service = createEntitlementService(
+        runtime.database,
+        createDefaultCloudPolicy(
+          new EntitlementOpenFeatureProvider(new DatabaseEntitlementSource(runtime.database))
+        ),
+        1_000_000
+      )
+      const entitlements = await service.account('owner')
+      expect(entitlements.limits.maximumStorageBytes).toBe(100)
+      expect(entitlements.usage).toEqual({ committedStorageBytes: 42, reservedStorageBytes: 0 })
+      // An account without workspaces has its deployment's defaults and holds nothing.
+      expect((await service.account('newcomer')).usage).toEqual({
+        committedStorageBytes: 0,
+        reservedStorageBytes: 0
+      })
+    } finally {
+      await runtime.close()
+    }
+  })
 })

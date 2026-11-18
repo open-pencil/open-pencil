@@ -1,6 +1,14 @@
-import { CLOUD_PORTAL_PAGE_ROOTS } from '#cloud/contract'
-import { cloudErrorHandler, withIndexingPolicy, type CloudErrorReporter } from '#cloud/server'
+import { CLOUD_PORTAL_COMMUNITY_PAGES, CLOUD_PORTAL_PAGE_ROOTS } from '#cloud/contract'
+import {
+  cloudErrorHandler,
+  cloudRequestId,
+  withIndexingPolicy,
+  type CloudErrorReporter,
+  type ForwardedRequestId
+} from '#cloud/server'
 import { Hono } from 'hono'
+
+import { communityPageMeta, withPageMeta } from './community'
 
 /** A file of the Cloud site (`bun run build:cloud`): the editor and the portal. */
 export type SiteFile = {
@@ -48,6 +56,8 @@ export type CloudServerOptions = {
   indexingPolicy: 'allow' | 'deny'
   /** Reports errors reading the site's files, when the deployment configures error tracking. */
   reportError?: CloudErrorReporter
+  /** The request ID the runtime trusts from what stands in front of it; see `cloudRequestId`. */
+  forwardedRequestId?: ForwardedRequestId
 }
 
 function cacheControl(path: string): string {
@@ -62,9 +72,11 @@ function cacheControl(path: string): string {
  */
 export function createCloudServer(
   api: { fetch(request: Request): Response | Promise<Response> },
-  { site, indexingPolicy, reportError }: CloudServerOptions
+  { site, indexingPolicy, reportError, forwardedRequestId }: CloudServerOptions
 ) {
-  const server = new Hono().onError(cloudErrorHandler(reportError))
+  const server = new Hono()
+    .onError(cloudErrorHandler(reportError))
+    .use(cloudRequestId(forwardedRequestId))
   server.use(async (c, next) => {
     await next()
     c.res = withIndexingPolicy(c.res, c.req.path, indexingPolicy)
@@ -74,6 +86,20 @@ export function createCloudServer(
     server.on(['GET', 'HEAD'], pages, async (c) => {
       const page = await site(PORTAL_PAGE, c.req.raw)
       return page ? c.body(page.body, 200, PAGE_HEADERS) : c.notFound()
+    })
+    // The gallery's pages say what they show to link previews and search engines, which read the
+    // page as served rather than as its script draws it.
+    server.on(['GET', 'HEAD'], [...CLOUD_PORTAL_COMMUNITY_PAGES], async (c) => {
+      const page = await site(PORTAL_PAGE, c.req.raw)
+      if (!page) return c.notFound()
+      const meta = await communityPageMeta(api, c.req.raw, c.req.param('documentId'))
+      const html = await new Response(page.body).text()
+      if ('title' in meta) return c.body(await withPageMeta(html, meta), 200, PAGE_HEADERS)
+      // The page still loads and says what went wrong; the status and retry advice stay the API's.
+      const headers = meta.retryAfter
+        ? { ...PAGE_HEADERS, 'Retry-After': meta.retryAfter }
+        : PAGE_HEADERS
+      return new Response(html, { status: meta.status, headers })
     })
     server.on(['GET', 'HEAD'], '*', async (c, next) => {
       await next()

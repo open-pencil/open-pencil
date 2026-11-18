@@ -19,6 +19,7 @@ import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { PluginDataEntry, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   readBehaviour,
   renameBehaviourProperties,
@@ -47,6 +48,7 @@ const THUMBNAIL_1X1 = toUint8Array(
 )
 
 export type KiwiNodeChange = NodeChange & Record<string, unknown>
+
 export type FigExportPage = ReturnType<SceneGraph['getPages']>[number]
 
 export interface CanvasExportEntry {
@@ -158,8 +160,8 @@ export function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly s
   const ids = [...propertyIds, ...savedPropertyCopyIds(graph)]
   for (const node of graph.nodes.values()) ids.push(node.source.id || node.id)
   for (const [collectionId, collection] of graph.variableCollections) {
-    ids.push(collectionId, ...collection.modes.map((mode) => mode.modeId))
-    ids.push(...collection.variableIds)
+    appendAll(ids, [collectionId, ...collection.modes.map((mode) => mode.modeId)])
+    appendAll(ids, collection.variableIds)
   }
   let last = 0
   for (const id of ids) {
@@ -410,6 +412,8 @@ export interface FigExportSetupOptions {
   recordOwners?: ReadonlyMap<string, string>
   /** Writing into an archive: the variables, collections and modes it holds keep their GUIDs. */
   archiveResourceIds?: ReadonlySet<string>
+  /** Leaves the document's comments out of its record. */
+  withoutComments?: boolean
 }
 
 /**
@@ -428,7 +432,7 @@ export async function prepareFigExport(
   const documentNc = makeDocumentNodeChange(docGuid, graph.documentColorSpace)
   const rootNode = graph.getNode(graph.rootId)
   if (rootNode) Object.assign(documentNc, rootNode.source.fig.rawNodeFields)
-  applyDocumentPluginData(documentNc, graph)
+  applyDocumentPluginData(documentNc, graph, { withoutComments: options.withoutComments })
 
   const pages = graph.getPages(true)
   const nodeIdToGuid = new Map<string, GUID>()
@@ -559,6 +563,11 @@ export interface FigFileExtrasOptions {
   renderHeadlessThumbnail?: boolean
   /** The name `meta.json` records for the file. */
   documentName?: string
+  /**
+   * Leaves the document's comments out of the file, for a server that keeps them itself, as
+   * Cloud does; the file is then never the opened archive as it was.
+   */
+  withoutComments?: boolean
 }
 
 /**

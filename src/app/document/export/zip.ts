@@ -19,15 +19,14 @@ function sanitizeZipEntryName(name: string): string {
   return flat.length > 0 ? flat : 'export'
 }
 
-// Bundle several exported files into a single zip, disambiguating any
-// duplicate file names (e.g. two layers both producing "Frame@1x.png").
-export function bundleExportFiles(
-  files: ReadonlyArray<{ bytes: Uint8Array; fileName: string }>
-): Uint8Array {
-  const entries: Zippable = {}
+/**
+ * Names zip entries as `bundleExportFiles` does: each a safe single segment, with ` (2)`, ` (3)`,
+ * and on added to names already taken, such as two layers both producing "Frame@1x.png".
+ */
+export function createZipEntryNamer(): (fileName: string) => string {
   const used = new Set<string>()
-  for (const file of files) {
-    let name = sanitizeZipEntryName(file.fileName)
+  return (fileName) => {
+    let name = sanitizeZipEntryName(fileName)
     if (used.has(name)) {
       const tail = extname(name)
       const stem = name.slice(0, name.length - tail.length)
@@ -36,7 +35,16 @@ export function bundleExportFiles(
       name = `${stem} (${i})${tail}`
     }
     used.add(name)
-    entries[name] = file.bytes
+    return name
   }
+}
+
+/** Bundles several exported files into a single zip, named by `createZipEntryNamer`. */
+export function bundleExportFiles(
+  files: ReadonlyArray<{ bytes: Uint8Array; fileName: string }>
+): Uint8Array {
+  const entries: Zippable = {}
+  const name = createZipEntryNamer()
+  for (const file of files) entries[name(file.fileName)] = file.bytes
   return zipSync(entries)
 }

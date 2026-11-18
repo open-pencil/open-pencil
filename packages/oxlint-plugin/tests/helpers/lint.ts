@@ -18,8 +18,11 @@ const resultSchema = v.pipe(
 )
 export type Diagnostic = v.InferOutput<typeof diagnosticSchema>
 
-/** The plugin's source entry, which Oxlint loads as it would the published build. */
-const PLUGIN = fileURLToPath(import.meta.resolve('#oxlint-plugin/index'))
+/** The domain plugins' source entries, which Oxlint loads as it would the published build. */
+export const DOMAINS = ['data', 'imports', 'runtime', 'security', 'structure', 'types'] as const
+const PLUGINS = DOMAINS.map((domain) =>
+  fileURLToPath(import.meta.resolve(`#oxlint-plugin/plugins/${domain}`))
+)
 const OXLINT = join(dirname(Bun.resolveSync('oxlint/package.json', import.meta.dir)), 'bin/oxlint')
 
 export async function lint(
@@ -64,7 +67,7 @@ export async function lintWithConfig(
   files: string[]
 ): Promise<Diagnostic[]> {
   const configPath = join(directory, 'oxlint.json')
-  await writeFile(configPath, JSON.stringify({ ...config, jsPlugins: [PLUGIN] }))
+  await writeFile(configPath, JSON.stringify({ ...config, jsPlugins: PLUGINS }))
   const child = Bun.spawn([OXLINT, '-c', configPath, '--format', 'json', ...files], {
     cwd: directory,
     stdout: 'pipe',
@@ -86,6 +89,9 @@ export async function lintWithConfig(
   return diagnostics
 }
 
+/** The diagnostics of one rule, by its full ID: Oxlint reports `@open-pencil/data/no-x` as `@open-pencil/data(no-x)`. */
 export function ruleDiagnostics(diagnostics: Diagnostic[], rule: string): Diagnostic[] {
-  return diagnostics.filter((diagnostic) => diagnostic.code === `open-pencil(${rule})`)
+  const at = rule.lastIndexOf('/')
+  const code = `${rule.slice(0, at)}(${rule.slice(at + 1)})`
+  return diagnostics.filter((diagnostic) => diagnostic.code === code)
 }

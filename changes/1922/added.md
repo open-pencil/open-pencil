@@ -1,2 +1,0 @@
-- Hosts follow and refuse the pen as it is used: `pen:pressed` and `pen:released` tell what each press does, in page coordinates, before it commits, and `editor.cancelGesture()` refuses it, or a drag on the canvas, with no undo step (#1922).
-- Hosts add points that the pen and vector edit mode snap to with `setSnapTargets({ points })` (#1922).

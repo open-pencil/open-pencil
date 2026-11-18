@@ -3,11 +3,11 @@ import { mkdir, mkdtemp, readdir, rm, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { CLI_ENTRY } from '#cli-tests/helpers/paths'
+import { runCLI } from '#cli-tests/helpers/run'
+
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { makeSceneGraph } from '@open-pencil/test-support/scene' /** A Storybook export without font files, which come from the network these tests leave out. */
-
-import { runCLI } from '#cli-tests/helpers/run'
-import { CLI_ENTRY } from '#cli-tests/helpers/paths'
 const STORYBOOK_EXPORT = ['--format', 'storybook', '--fonts', 'none']
 
 /** Static stories, whose files and design images most of these tests manage. */
@@ -71,19 +71,11 @@ test('export CLI replaces stale generated stories and keeps hand-written ones', 
   const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
   const output = join(dir, 'stories')
   const args = [...STORYBOOK, '--no-design-images', '--output', output]
-  const setup = await runCLI([
-    'export',
-    await writeComponentFixture(dir, ['Old']),
-    ...args
-  ])
+  const setup = await runCLI(['export', await writeComponentFixture(dir, ['Old']), ...args])
   expect(setup.exitCode).toBe(0)
   await Bun.write(join(output, 'Mine.stories.ts'), 'export default {}\n')
 
-  const { exitCode } = await runCLI([
-    'export',
-    await writeComponentFixture(dir, ['New']),
-    ...args
-  ])
+  const { exitCode } = await runCLI(['export', await writeComponentFixture(dir, ['New']), ...args])
 
   expect(exitCode).toBe(0)
   expect(await Bun.file(join(output, 'Old.stories.ts')).exists()).toBe(false)
@@ -104,11 +96,7 @@ test('export CLI re-exports generated components into the folder it wrote them t
     output
   ]
   for (const name of ['Old', 'New']) {
-    const { exitCode } = await runCLI([
-      'export',
-      await writeComponentFixture(dir, [name]),
-      ...args
-    ])
+    const { exitCode } = await runCLI(['export', await writeComponentFixture(dir, [name]), ...args])
     expect(exitCode).toBe(0)
   }
   // The component and its stylesheet are the export's own, replaced like its stories.
@@ -123,15 +111,7 @@ test('export CLI --css tailwind styles components with utilities instead of a st
   const output = join(dir, 'stories')
   const args = [...STORYBOOK_EXPORT, '--framework', 'react', '--no-design-images']
 
-  const invalid = await runCLI([
-    'export',
-    figPath,
-    ...args,
-    '--css',
-    'sass',
-    '--output',
-    output
-  ])
+  const invalid = await runCLI(['export', figPath, ...args, '--css', 'sass', '--output', output])
   expect(invalid.exitCode).toBe(1)
   expect(invalid.stderr).toContain('Use inline or tailwind')
 
@@ -426,14 +406,7 @@ test('export CLI needs an output choice and one document for --page', async () =
   expect(noOutput.exitCode).toBe(1)
   expect(noOutput.stderr).toContain('2 documents need --beside')
 
-  const page = await runCLI([
-    'export',
-    pattern,
-    ...storybook,
-    '--beside',
-    '--page',
-    'Library'
-  ])
+  const page = await runCLI(['export', pattern, ...storybook, '--beside', '--page', 'Library'])
   expect(page.exitCode).toBe(1)
   expect(page.stderr).toContain('--page names a page of one document')
 

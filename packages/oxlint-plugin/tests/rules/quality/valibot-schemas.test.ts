@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { lint, ruleDiagnostics } from '#oxlint-plugin-tests/helpers/lint'
 
-const rule = 'valibot-schema-conventions'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rule = '@open-pencil/data/valibot-schema-conventions'
+const rules = { [rule]: 'error' }
 const valibot = "import * as v from 'valibot'\n"
 
 describe(rule, () => {
@@ -29,7 +29,7 @@ describe(rule, () => {
 
   describe('schemaModules', () => {
     const withContract = {
-      [`open-pencil/${rule}`]: ['error', { schemaModules: ['/packages/cloud/src/contract/'] }]
+      [rule]: ['error', { schemaModules: ['/packages/cloud/src/contract/'] }]
     }
     const source = `${valibot}export const documentSchema = v.object({})`
 
@@ -45,7 +45,7 @@ describe(rule, () => {
 
     test('matches a named directory whole, not as a prefix of another', async () => {
       const prefixOnly = {
-        [`open-pencil/${rule}`]: ['error', { schemaModules: ['/packages/cloud/src/contract'] }]
+        [rule]: ['error', { schemaModules: ['/packages/cloud/src/contract'] }]
       }
       const inside = 'packages/cloud/src/contract/documents.ts'
       const beside = 'packages/cloud/src/contracts-extra/documents.ts'
@@ -73,7 +73,7 @@ describe(rule, () => {
   })
 
   test('checks names only when placement is off', async () => {
-    const off = { [`open-pencil/${rule}`]: ['error', { placement: false }] }
+    const off = { [rule]: ['error', { placement: false }] }
     const exported = `${valibot}export const pointSchema = v.object({})`
     const misnamed = `${valibot}export const Point = v.object({})`
     expect(ruleDiagnostics(await lint(exported, off, 'tools/point.ts'), rule)).toHaveLength(0)

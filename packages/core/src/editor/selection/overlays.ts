@@ -122,6 +122,12 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     ctx.requestRepaint()
   }
 
+  /** Sets the point of the box the Scale tool keeps in place, as fractions of its size. */
+  function setScaleAnchor(anchor: Vector) {
+    if (isEqual(ctx.state.scaleAnchor, anchor)) return
+    ctx.state.scaleAnchor = { x: anchor.x, y: anchor.y }
+  }
+
   function setShapeHandleHover(hover: ShapeHandleHover | null) {
     if (isEqual(ctx.state.shapeHandleHover, hover)) return
     ctx.state.shapeHandleHover = hover
@@ -146,6 +152,7 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     setRenamingLabel,
     setLayoutInsertIndicator,
     setAutoLayoutHover,
-    setShapeHandleHover
+    setShapeHandleHover,
+    setScaleAnchor
   }
 }

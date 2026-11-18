@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import noHardcodedColors from '#core/lint/rules/no-hardcoded-colors'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
+
+import noHardcodedColors from '#core/lint/rules/no-hardcoded-colors'
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
 }
@@ -96,12 +97,15 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
       boundVariables: { 'fills/0/color': 'v1' },
       fills: [{ type: 'SOLID', visible: true, opacity: 1, color: { r: 0.5, g: 0.5, b: 0.5 } }],
       strokes: [],
-      effects: []
+      effects: [],
+      textStyleId: null,
+      effectStyleId: null
     }
 
     const messages: Array<{ message: string }> = []
     const context = {
       variables: GRAY_VARIABLES,
+      isSharedStyle: () => false,
       report: (issue: { message: string }) => messages.push(issue),
       getConfig: () => ({}),
       getParent: () => null,
@@ -146,12 +150,15 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
       boundVariables: { fills: 'v1' }, // top-level — renderer-ignored
       fills: [{ type: 'SOLID', visible: true, opacity: 1, color: { r: 0.5, g: 0.5, b: 0.5 } }],
       strokes: [],
-      effects: []
+      effects: [],
+      textStyleId: null,
+      effectStyleId: null
     }
 
     const messages: Array<{ message: string }> = []
     const context = {
       variables: GRAY_VARIABLES,
+      isSharedStyle: () => false,
       report: (issue: { message: string }) => messages.push(issue),
       getConfig: () => ({}),
       getParent: () => null,

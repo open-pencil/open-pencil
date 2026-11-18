@@ -4,9 +4,11 @@ import {
   accountAuthenticationRequest,
   authenticationCookie,
   createAccountAuthenticationFixture,
-  createVerifiedCredentialAccount
+  createVerifiedCredentialAccount,
+  withCookie
 } from '#cloud-tests/helpers/account-authentication'
 import { responseJSON } from '#cloud-tests/helpers/response'
+import { accountSecurityErrorResponseSchema } from '#cloud/contract'
 import { parseCloudServerConfig } from '#cloud/server'
 import { base32 } from '@better-auth/utils/base32'
 import { createOTP } from '@better-auth/utils/otp'
@@ -58,27 +60,32 @@ describe('deployment administrator MFA assurance', () => {
       )
       const sessionCookie = authenticationCookie(signIn)
       expect(
-        (
-          await fixture.app.fetch(
-            accountAuthenticationRequest('/api/admin/operations', undefined, sessionCookie)
-          )
-        ).status
+        (await fixture.client.api.admin.operations.$get(undefined, withCookie(sessionCookie)))
+          .status
       ).toBe(403)
 
-      const enabled = await fixture.app.fetch(
-        accountAuthenticationRequest(
-          '/api/account/mfa/totp/enable',
-          { password: 'a sufficiently long password' },
-          sessionCookie
-        )
+      const enabled = await fixture.client.api.account.mfa.totp.enable.$post(
+        { json: { password: 'a sufficiently long password' } },
+        withCookie(sessionCookie)
       )
       const setup = await responseJSON(enabled, v.object({ totpURI: v.string() }))
       const secret = new URL(setup.totpURI).searchParams.get('secret')
       if (!secret) throw new Error('Expected a TOTP secret')
       const rawSecret = new TextDecoder().decode(base32.decode(secret))
       const code = await createOTP(rawSecret).totp()
-      const verificationResponse = await fixture.app.fetch(
-        accountAuthenticationRequest('/api/account/mfa/totp/verify', { code }, sessionCookie)
+      // A wrong code says so, rather than asking to sign in again as a 401 would. Letters never
+      // match a TOTP, whose window also takes the neighbouring time steps' codes.
+      const wrong = await fixture.client.api.account.mfa.totp.verify.$post(
+        { json: { code: 'abcdef' } },
+        withCookie(sessionCookie)
+      )
+      expect(wrong.status).toBe(400)
+      expect((await responseJSON(wrong, accountSecurityErrorResponseSchema)).error.code).toBe(
+        'code_invalid'
+      )
+      const verificationResponse = await fixture.client.api.account.mfa.totp.verify.$post(
+        { json: { code } },
+        withCookie(sessionCookie)
       )
       expect(verificationResponse.status).toBe(200)
       const setCookie = verificationResponse.headers.get('set-cookie')
@@ -87,21 +94,15 @@ describe('deployment administrator MFA assurance', () => {
       const verifiedCookie = cookieMatch?.[1]
       if (!verifiedCookie) throw new Error('Expected a verified MFA session cookie')
       expect(
-        (
-          await fixture.app.fetch(
-            accountAuthenticationRequest('/api/admin/operations', undefined, verifiedCookie)
-          )
-        ).status
+        (await fixture.client.api.admin.operations.$get(undefined, withCookie(verifiedCookie)))
+          .status
       ).toBe(200)
 
       expect(
         (
-          await fixture.app.fetch(
-            accountAuthenticationRequest(
-              '/api/account/mfa/totp/disable',
-              { password: 'a sufficiently long password' },
-              verifiedCookie
-            )
+          await fixture.client.api.account.mfa.totp.disable.$post(
+            { json: { password: 'a sufficiently long password' } },
+            withCookie(verifiedCookie)
           )
         ).status
       ).toBe(403)
@@ -144,15 +145,27 @@ describe('deployment administrator MFA assurance', () => {
         return id
       }
       const deletePasskey = (id: string) =>
-        fixture.app.fetch(
-          accountAuthenticationRequest(
-            '/api/account/mfa/passkeys/delete',
-            { id },
-            account.sessionCookie
-          )
+        fixture.client.api.account.mfa.passkeys.delete.$post(
+          { json: { id } },
+          withCookie(account.sessionCookie)
         )
 
       const only = await addPasskey('only')
+      // As registering it would, the passkey counts as proved for the session that added it.
+      const session = await fixture.database
+        .selectFrom('session')
+        .select('id')
+        .where('userId', '=', account.userId)
+        .executeTakeFirstOrThrow()
+      await fixture.database
+        .insertInto('mfaAssurance')
+        .values({
+          sessionId: session.id,
+          userId: account.userId,
+          method: 'passkey',
+          verifiedAt: new Date(Date.now() - 24 * 60 * 60_000)
+        })
+        .execute()
       const refused = await deletePasskey(only)
       expect(refused.status).toBe(403)
       expect(await refused.json()).toEqual({ error: { code: 'mfa_required' } })

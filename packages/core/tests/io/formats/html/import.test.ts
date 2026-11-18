@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
+import { layoutSizing } from '@open-pencil/scene-graph/layout'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { readHTMLDocument } from '#core/io/formats/html/import'
@@ -48,6 +49,25 @@ describe('reading HTML', () => {
     expect(Math.abs(label.x * 2 + label.width - 390)).toBeLessThanOrEqual(1)
   })
 
+  test('keeps sizes the page left to layout as fill and hug, and fixes those it set', async () => {
+    const { graph } = await readHTMLDocument(DEMO)
+    const node = (id: string | undefined) => {
+      const found = id === undefined ? undefined : graph.getNode(id)
+      if (!found) throw new Error(`Missing layer ${id}`)
+      return found
+    }
+    const sizing = (id: string | undefined) => {
+      const layer = node(id)
+      return [layoutSizing(graph, layer, 'HORIZONTAL'), layoutSizing(graph, layer, 'VERTICAL')]
+    }
+    const column = node(graph.getPages()[0]?.childIds[0])
+    const [, card] = column.childIds
+
+    // The column sets its width and height; the card stretches across and hugs its text.
+    expect(sizing(column.id)).toEqual(['FIXED', 'FIXED'])
+    expect(sizing(card)).toEqual(['FILL', 'HUG'])
+  })
+
   test('a border takes room inside the box, as in a browser', async () => {
     const { graph } = await readHTMLDocument(
       '<div style="display:inline-flex;padding:10px;border:4px solid #000"><div style="width:50px;height:50px;background:#f00"></div></div>'
@@ -57,6 +77,118 @@ describe('reading HTML', () => {
 
     expect(box).toMatchObject({ strokesIncludedInLayout: true, width: 78, height: 78 })
     expect(inner).toMatchObject({ x: 14, y: 14 })
+  })
+
+  test('keeps a table with collapsed borders in auto layout, drawing each shared border once', async () => {
+    const { graph } = await readHTMLDocument(
+      `<table style="border-collapse:collapse;width:300px;font-family:'${TEST_FAMILY}'">
+        <tr><td style="border:1px solid #000;padding:8px">Name</td><td style="border:1px solid #000;padding:8px">Value</td></tr>
+        <tr><td style="border:1px solid #000;padding:8px">Alpha</td><td style="border:1px solid #000;padding:8px">1</td></tr>
+      </table>`
+    )
+    const frames = graph
+      .flattenTree(graph.getPages()[0].id)
+      .map(({ node }) => node)
+      .filter((node) => node.type === 'FRAME')
+    const cells = frames.filter((node) => node.name === 'td')
+
+    // Rows and cells keep auto layout: the importer lays them out where the page did.
+    expect(frames.every((node) => node.layoutMode !== 'NONE')).toBe(true)
+    expect(cells.flatMap((cell) => cell.strokes.map((stroke) => stroke.align))).toEqual([
+      'CENTER',
+      'CENTER',
+      'CENTER',
+      'CENTER'
+    ])
+    // Neighbouring cells touch, so their centered strokes draw one line.
+    const [first, second] = graph.getChildren(cells[0].parentId ?? '')
+    expect(second.x).toBe(first.x + first.width)
+  })
+
+  test('keeps a table with a caption in auto layout, the caption outside its border spacing', async () => {
+    const { graph } = await readHTMLDocument(
+      `<table style="width:400px;border-spacing:2px;font-family:'${TEST_FAMILY}'"><caption>Totals</caption>
+        <tr><td style="padding:0"><div style="width:20px;height:20px"></div></td></tr></table>`
+    )
+    const [table] = graph.getChildren(graph.getPages()[0].id)
+    const [caption, box] = graph.getChildren(table.id)
+
+    expect(table.layoutMode).toBe('VERTICAL')
+    expect(caption).toMatchObject({ name: 'caption', x: 0, y: 0, width: 400 })
+    expect(box).toMatchObject({ name: 'table box', x: 0, y: caption.height, width: 400 })
+    expect(box).toMatchObject({ layoutMode: 'VERTICAL', paddingTop: 2, itemSpacing: 2 })
+  })
+
+  test('keeps the rows of a table with a cell spanning rows in auto layout', async () => {
+    const box = (size: number) => `<div style="width:${size}px;height:20px"></div>`
+    const { graph } = await readHTMLDocument(
+      `<table style="border-spacing:2px"><tr><td rowspan="2" style="padding:0">${box(40)}</td>
+        <td style="padding:0">${box(30)}</td></tr><tr><td style="padding:0">${box(30)}</td></tr></table>`
+    )
+    const [table] = graph.getChildren(graph.getPages()[0].id)
+    const [group] = graph.getChildren(table.id)
+    const [first, second] = graph.getChildren(group.id)
+    const [tall, a] = graph.getChildren(first.id)
+    const [b] = graph.getChildren(second.id)
+
+    expect([first.layoutMode, second.layoutMode]).toEqual(['HORIZONTAL', 'HORIZONTAL'])
+    expect(tall).toMatchObject({ layoutPositioning: 'ABSOLUTE', x: 0, height: 42 })
+    // The cells beside the tall one line up in its column's right, row after row.
+    expect([a.x, b.x]).toEqual([42, 42])
+  })
+
+  test('keeps a grid that centers its item by place-items in auto layout', async () => {
+    const { graph } = await readHTMLDocument(
+      `<div style="display:grid;place-items:center;width:400px;height:200px">` +
+        `<div style="width:100px;height:50px;background:red"></div></div>`
+    )
+    const [grid] = graph.getChildren(graph.getPages()[0].id)
+    const [item] = graph.getChildren(grid.id)
+
+    expect(grid.layoutMode).toBe('VERTICAL')
+    expect(item).toMatchObject({ x: 150, y: 75, width: 100, height: 50 })
+  })
+
+  test('keeps a grid of several columns a grid layer, with its items where the page put them', async () => {
+    const cellItem = (style = '') => `<div style="background:#ccc;${style}"></div>`
+    const { graph } = await readHTMLDocument(
+      `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:320px">` +
+        cellItem('height:40px') +
+        cellItem('width:60px;height:20px') +
+        cellItem() +
+        cellItem('grid-column:span 2;height:20px') +
+        cellItem('grid-column:span 2;width:60px;height:20px') +
+        `</div>`
+    )
+    const [grid] = graph.getChildren(graph.getPages()[0].id)
+    const boxes = graph
+      .getChildren(grid.id)
+      .map((item) => [item.x, item.y, item.width, item.height].map(Math.round))
+
+    expect(grid.layoutMode).toBe('GRID')
+    expect(boxes).toEqual([
+      [0, 0, 100, 40],
+      [110, 0, 60, 20],
+      [220, 0, 100, 40],
+      [0, 50, 210, 20],
+      [0, 80, 60, 20]
+    ])
+    // A start-aligned item still covers the two columns it spans.
+    expect(graph.getChildren(grid.id)[4].gridPosition).toMatchObject({ column: 1, columnSpan: 2 })
+  })
+
+  test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {
+    const { graph } = await readHTMLDocument(
+      `<div style="width:600px"><div style="max-width:300px;margin:0 auto">` +
+        `<div style="width:100px;height:10px"></div></div></div>`
+    )
+    const [page] = graph.getChildren(graph.getPages()[0].id)
+    const [main] = graph.getChildren(page.id)
+
+    expect(page.layoutMode).toBe('VERTICAL')
+    expect(main).toMatchObject({ x: 150, width: 300 })
+    // It fills up to its maximum, as the page's block does, rather than holding a fixed width.
+    expect(layoutSizing(graph, main, 'HORIZONTAL')).toBe('FILL')
   })
 
   test('a border without a style is not drawn and takes no room', async () => {
@@ -149,6 +281,17 @@ describe('reading HTML', () => {
     expect(box).toMatchObject({ width: 120, height: 40 })
   })
 
+  test('lays an image out at its size on a page without text', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const view = new DataView(png.buffer, png.byteOffset)
+    const { graph } = await readHTMLDocument('<img src="photo.png">', {
+      readAsset: async (path) => (path === 'photo.png' ? png : null)
+    })
+    const [image] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(image).toMatchObject({ width: view.getUint32(16), height: view.getUint32(20) })
+  })
+
   test('draws text in the font its page loads with @font-face', async () => {
     const family = 'OpenPencil Page Brand'
     const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
@@ -206,7 +349,9 @@ describe('reading HTML', () => {
           if (path !== 'once.css') return null
           reads++
           // A second read would lose the rule, as a network that fails the second time does.
-          return reads === 1 ? new TextEncoder().encode('.box { width: 300px; height: 10px }') : null
+          return reads === 1
+            ? new TextEncoder().encode('.box { width: 300px; height: 10px }')
+            : null
         }
       }
     )
@@ -251,4 +396,3 @@ describe('reading HTML', () => {
     expect(families).toEqual([TEST_FAMILY, 'Inter', 'Inter'])
   })
 })
-

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { SelectTrigger } from 'reka-ui'
-
 import { panelNumber } from '@open-pencil/core/geometry'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
@@ -11,6 +9,7 @@ import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
 import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
 import AppSelectRoot from '@/components/ui/select/AppSelectRoot.vue'
+import SelectFieldTrigger from '@/components/ui/select/SelectFieldTrigger.vue'
 
 const { item } = defineProps<SizeLimitFieldProps>()
 
@@ -37,20 +36,13 @@ function handleSelect(value: string) {
       @commit="(value: number, previous: number) => ctx.commitSizeLimit(item.prop, value, previous)"
       @cancel="ctx.cancelPreview"
     >
-      <template #after-variable>
+      <template #menu>
         <AppSelectRoot
           v-model:open="popupOpen"
           :model-value="'VALUE'"
           @update:model-value="handleSelect($event as string)"
         >
-          <SelectTrigger
-            data-slot="limit-trigger"
-            :aria-label="item.label"
-            class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-muted outline-none data-[state=open]:text-surface"
-            @pointerdown.stop
-          >
-            <icon-lucide-chevron-down class="size-3" />
-          </SelectTrigger>
+          <SelectFieldTrigger data-slot="limit-trigger" :label="item.label" />
           <AppSelectContent v-if="portalActive" align="end">
             <AppSelectItem value="CURRENT">{{ item.setLabel }}</AppSelectItem>
             <AppSelectItem value="REMOVE">{{ item.removeLabel }}</AppSelectItem>

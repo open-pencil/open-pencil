@@ -3,7 +3,7 @@ import { tv } from 'tailwind-variants'
 
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import pageListTheme from '@/theme/page-list'
-import tabBarTheme from '@/theme/tab-bar'
+import tabBarTheme from '@/theme/tabs/bar'
 
 const pageStyles = tv(pageListTheme)
 const tabStyles = tv(tabBarTheme)

@@ -1,6 +1,9 @@
 import { describe, expect, test, beforeEach, jest } from 'bun:test'
 
-import type { RequestPermissionRequest, RequestPermissionResponse } from '@agentclientprotocol/sdk'
+import type {
+  RequestPermissionRequest,
+  RequestPermissionResponse
+} from '@agentclientprotocol/sdk/unstable'
 
 import {
   permissionQueue,
@@ -48,6 +51,23 @@ describe('acp-permission', () => {
     expect(currentPermission.value).not.toBeNull()
     expect(currentPermission.value?.request.sessionId).toBe('session-1')
     respondToPermission('allow')
+  })
+
+  test('a stopped turn takes its request off the dialog and answers it cancelled', async () => {
+    const stop = new AbortController()
+    const promise = requestPermissionFromUser(makeRequest(), undefined, stop.signal)
+    expect(permissionQueue.value).toHaveLength(1)
+    stop.abort()
+    expect(permissionQueue.value).toHaveLength(0)
+    expect((await promise).outcome.outcome).toBe('cancelled')
+  })
+
+  test('a turn already stopped puts no request on the dialog', async () => {
+    const stop = new AbortController()
+    stop.abort()
+    const response = await requestPermissionFromUser(makeRequest(), undefined, stop.signal)
+    expect(response.outcome.outcome).toBe('cancelled')
+    expect(permissionQueue.value).toHaveLength(0)
   })
 
   test('respondToPermission resolves with selected optionId', async () => {
@@ -191,6 +211,19 @@ describe('permission for OpenPencil’s own tools', () => {
       title: 'use_tool',
       rawInput: { tool_name: 'open-pencil__get_node', tool_input: { id: '1:2' } },
       _meta: { 'x.ai/tool': { name: 'use_tool' } }
+    })
+    expect(approval.answer(makeRequest())).toEqual({
+      outcome: { outcome: 'selected', optionId: 'allow' }
+    })
+  })
+
+  test('Antigravity CLI’s calls to OpenPencil’s server are allowed once without asking', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call',
+      toolCallId: 'tc-1',
+      title: 'Run mcp_open-pencil_get_node',
+      rawInput: { id: '1:2', toolSummary: 'Inspect the node' }
     })
     expect(approval.answer(makeRequest())).toEqual({
       outcome: { outcome: 'selected', optionId: 'allow' }

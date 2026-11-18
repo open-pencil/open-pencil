@@ -2,10 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { lint, ruleDiagnostics } from '#oxlint-plugin-tests/helpers/lint'
 
-const rule = 'no-reduce-accumulator-copy'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rule = '@open-pencil/data/no-reduce-accumulator-copy'
+const rules = { [rule]: 'error' }
 
-describe('no-reduce-accumulator-copy', () => {
+describe('@open-pencil/data/no-reduce-accumulator-copy', () => {
   test.each([
     'items.reduce((acc, item) => acc.concat([item]), [])',
     'items.reduce((acc, item) => acc.slice(0, -1), [])',

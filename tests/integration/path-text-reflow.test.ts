@@ -16,7 +16,7 @@ import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/paths'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
 import { getTextPathData, layoutPathTextFromAdvances } from '#core/text/path'
-import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
+import { applyResize, commitResizePreview } from '#vue/shared/input/resize/apply'
 import type { DragResize } from '#vue/shared/input/types'
 const noopCommitResize: Editor['commitResize'] = () => undefined
 const noopCommitGroupResize: Editor['commitGroupResize'] = () => undefined

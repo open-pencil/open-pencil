@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { FIXTURES } from '@open-pencil/test-support/paths'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { getTextMeasurer } from '@open-pencil/core/layout'
 import { fontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { editDocument, measureTextHeadlessly } from '#cli/headless'
 

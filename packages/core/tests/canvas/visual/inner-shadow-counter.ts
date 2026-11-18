@@ -1,14 +1,14 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SkiaRenderer } from '#core/canvas'
 import { fontManager } from '#core/text'
-import { repoPath } from '@open-pencil/test-support/paths'
 async function main() {
   const ck = await getCanvasKit()
 

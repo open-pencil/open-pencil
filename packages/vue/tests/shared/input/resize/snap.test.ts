@@ -3,17 +3,11 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
+import { applyResize, commitResizePreview } from '#vue/shared/input/resize/apply'
 import { tryStartResize } from '#vue/shared/input/resize/start'
 
 // Shift-drags of the south-east corner recorded in live Figma, 2026-10-31.
-function shiftDrag(
-  kind: 'design' | 'board',
-  rect: Rect,
-  dx: number,
-  dy: number,
-  obstacle?: Rect
-) {
+function shiftDrag(kind: 'design' | 'board', rect: Rect, dx: number, dy: number, obstacle?: Rect) {
   const editor = createEditor()
   editor.setDocumentKind(kind)
   editor.state.snappingPreferences = { geometry: true, objects: true, pixelGrid: true }
@@ -33,7 +27,12 @@ function shiftDrag(
 
 describe('a resize that keeps the ratio snaps its driving edge', () => {
   test('on a board, the wider drag lands its right edge on the grid and the height follows', () => {
-    const { width, height } = shiftDrag('board', { x: 1264, y: 400, width: 160, height: 96 }, 37, 21)
+    const { width, height } = shiftDrag(
+      'board',
+      { x: 1264, y: 400, width: 160, height: 96 },
+      37,
+      21
+    )
     expect(width).toBe(192)
     expect(height).toBeCloseTo(115.2)
   })

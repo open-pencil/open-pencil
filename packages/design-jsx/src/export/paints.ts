@@ -1,9 +1,11 @@
 import type { Effect, Fill, GradientTransform, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { UNSET_GLASS, UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
 import {
   gradientTransformRows,
   isIdentityGradientTransform
 } from '@open-pencil/scene-graph/gradient'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 
 import { STROKE_ALIGN, STROKE_CAP, STROKE_JOIN } from '../enums'
@@ -202,7 +204,14 @@ const EFFECT_HELPERS: Record<Effect['type'], string> = {
   LAYER_BLUR: 'layerBlur',
   BACKGROUND_BLUR: 'backgroundBlur',
   FOREGROUND_BLUR: 'foregroundBlur',
-  GLASS: 'glass'
+  GLASS: 'glass',
+  NOISE: 'noise',
+  TEXTURE: 'texture'
+}
+
+/** A grain size as one number when both axes match, as Figma's plugin API writes it. */
+function noiseSizeValue(size: Vector): JSXValue {
+  return size.x === size.y ? size.x : { x: size.x, y: size.y }
 }
 
 function effectValue(effect: Effect): HelperCall {
@@ -237,6 +246,50 @@ function effectValue(effect: Effect): HelperCall {
       })
     )
   }
+  if (effect.type === 'NOISE') {
+    const grain = effect.noise ?? UNSET_NOISE
+    return helperCall(
+      EFFECT_HELPERS.NOISE,
+      options({
+        noiseType: grain.noiseType,
+        noiseSize: noiseSizeValue(grain.noiseSize),
+        density: grain.density,
+        color: formatColor(effect.color, effect.color.a),
+        secondaryColor: grain.secondaryColor
+          ? formatColor(grain.secondaryColor, grain.secondaryColor.a)
+          : undefined,
+        opacity: grain.opacity,
+        seed: grain.seed,
+        visible
+      })
+    )
+  }
+  if (effect.type === 'TEXTURE') {
+    const grain = effect.texture ?? UNSET_TEXTURE
+    return helperCall(
+      EFFECT_HELPERS.TEXTURE,
+      options({
+        noiseSize: noiseSizeValue(grain.noiseSize),
+        radius: effect.radius,
+        clipToShape: grain.clipToShape,
+        seed: grain.seed,
+        visible
+      })
+    )
+  }
+  if (effect.progressive) {
+    const { startRadius, startOffset, endOffset } = effect.progressive
+    return helperCall(
+      EFFECT_HELPERS[effect.type],
+      options({
+        radius: effect.radius,
+        startRadius,
+        startOffset: { x: startOffset.x, y: startOffset.y },
+        endOffset: { x: endOffset.x, y: endOffset.y },
+        visible
+      })
+    )
+  }
   return helperCall(
     EFFECT_HELPERS[effect.type],
     visible === undefined ? effect.radius : { radius: effect.radius, visible }
@@ -267,7 +320,24 @@ function effectShorthand(effects: Effect[]): JSXProp[] | null {
   return props
 }
 
+function hasJSXHelper(effect: Effect): boolean {
+  return Object.hasOwn(EFFECT_HELPERS, effect.type)
+}
+
+/**
+ * Each written effect's index in `node.effects` → its index among the effects JSX writes, which
+ * leaves out those it has no helper for; a binding numbered by the layer's list follows it.
+ */
+export function writtenEffectIndices(node: SceneNode): Map<number, number> {
+  const indices = new Map<number, number>()
+  for (const [index, effect] of node.effects.entries()) {
+    if (hasJSXHelper(effect)) indices.set(index, indices.size)
+  }
+  return indices
+}
+
 export function collectEffectProps(node: SceneNode, props: JSXProp[]): void {
-  if (node.effects.length === 0) return
-  props.push(...(effectShorthand(node.effects) ?? [['effects', node.effects.map(effectValue)]]))
+  const effects = node.effects.filter(hasJSXHelper)
+  if (effects.length === 0) return
+  appendAll(props, effectShorthand(effects) ?? [['effects', effects.map(effectValue)]])
 }

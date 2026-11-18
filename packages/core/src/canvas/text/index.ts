@@ -1,5 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { textLanguageAt, textVerticalOffset } from '@open-pencil/scene-graph/text'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters, shownText } from '#core/text/case'
@@ -14,8 +15,8 @@ import {
   missingGlyphsByScript
 } from '#core/text/resolver'
 
-import { drawTextLayout } from './decorations'
-import { textInkBounds } from './ink'
+import { drawTextLayout } from './draw/decorations'
+import { textInkBounds } from './ink-bounds'
 import { buildParagraph } from './layout/build'
 import { resolveParagraphLayoutWidth } from './paragraph'
 import { withPreparedText } from './preparation'
@@ -49,13 +50,6 @@ function requiredNodeFaces(node: SceneNode): Array<{ family: string; style: stri
     add(run.style.fontFamily ?? baseFamily, textFontFace(node, run.style).style)
   }
   return Array.from(faces.values())
-}
-
-function languageForCharacter(node: SceneNode, sourceIndex: number): string | null {
-  const run = node.styleRuns.find(
-    (item) => sourceIndex >= item.start && sourceIndex < item.start + item.length
-  )
-  return run?.style.textLanguage !== undefined ? run.style.textLanguage : node.textLanguage
 }
 
 function transformedSourceOffsets(node: SceneNode): number[] {
@@ -137,7 +131,7 @@ function observedGlyphReadiness(r: TextRenderer, node: SceneNode): NodeFontReadi
   }
 
   const charactersByScript = missingGlyphsByScript(missingOccurrences, (offset) =>
-    languageForCharacter(node, offset)
+    textLanguageAt(node, offset)
   )
 
   let pending = false
@@ -287,12 +281,4 @@ export function measureTextInkAsDrawn(
   return r.textPreparationCache
     ? r.textPreparationCache.ink(node, key, fontManager.generation(), r.fontProvider, compute)
     : compute()
-}
-
-/** Offset that places laid-out text of `contentHeight` in the node box by vertical alignment. */
-export function textVerticalOffset(node: SceneNode, contentHeight: number): number {
-  const available = Math.max(0, node.height - contentHeight)
-  if (node.textAlignVertical === 'CENTER') return available / 2
-  if (node.textAlignVertical === 'BOTTOM') return available
-  return 0
 }

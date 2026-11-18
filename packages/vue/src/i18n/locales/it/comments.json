@@ -25,5 +25,11 @@
   "noMatches": "Nessun commento corrisponde.",
   "replyCount": "Risposte: {count}",
   "commentDeleted": "Commento eliminato",
-  "hideComments": "Nascondi commenti"
+  "hideComments": "Nascondi commenti",
+  "mentionPeople": "Persone da menzionare",
+  "unread": "Non letto",
+  "notifyMention": "Menzioni nei commenti",
+  "notifyReply": "Risposte ai tuoi commenti",
+  "notifyReplyHint": "Qualcuno risponde in una discussione in cui hai scritto.",
+  "notifyTitle": "{author} · {document}"
 }

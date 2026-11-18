@@ -1,12 +1,14 @@
 export {
   adminErrorStatus,
   AdminDomainError,
+  approveEnrollmentByEmail,
   createAdminAuditService,
   createAdminEmailService,
   createAdminOperationsService,
   createAdminUserService,
   createCloudAdminRoutes,
   createEnrollmentService,
+  grantDeploymentAdminByEmail,
   normalizeEnrollmentEmail,
   type AdminAuditService,
   type AdminErrorCode,
@@ -19,6 +21,13 @@ export {
   type EnrollmentService,
   type EnrollmentStatus
 } from '#cloud/admin'
+export {
+  createBillingRoutes,
+  createBillingTokenService,
+  type BillingRouteEnvironment,
+  type BillingTokenService,
+  type BillingTokenServiceOptions
+} from '#cloud/server/billing'
 export {
   ServicesNotEntitledError,
   createServicesRoutes,
@@ -34,6 +43,7 @@ export {
   createAuthenticationEmailService,
   createAccountAuthenticationService,
   createCloudAuthenticationRuntime,
+  enrollmentEmailOptions,
   createBetterAuthAdapter,
   createCloudIdentityResolver,
   createCloudSessionResolver,
@@ -135,6 +145,7 @@ export {
 export {
   createCloudDatabase,
   migrateCloudDatabase,
+  pendingCloudMigrations,
   type CloudDatabase,
   type CloudDatabaseOptions,
   type Document,
@@ -174,6 +185,16 @@ export {
   type DocumentVersionService
 } from './documents/versions'
 export {
+  COMMENT_EMAIL_BUDGET,
+  CommentConflictError,
+  CommentLimitError,
+  createCommentRoutes,
+  createCommentService,
+  createSharedCommentRoutes,
+  type CommentActor,
+  type CommentService
+} from './comments'
+export {
   createInvitationOutbox,
   createTransactionalEmailService,
   startTransactionalEmailWorker,
@@ -193,15 +214,21 @@ export {
 export {
   CLOUD_ERROR_SOURCES,
   cloudErrorHandler,
+  createLoggingErrorReporter,
   reportCloudError,
   type CloudErrorContext,
   type CloudErrorReporter,
-  type CloudErrorSource,
-  createPostHogErrorReporter,
-  type ErrorReportContext,
-  type ErrorReporter,
-  type PostHogErrorReporterOptions
+  type CloudErrorSource
 } from './errors'
+export {
+  cloudRequestId,
+  logCloud,
+  loggedError,
+  writeJSONLine,
+  type CloudLogLine,
+  type CloudLogWriter,
+  type ForwardedRequestId
+} from './logging'
 export {
   createInternalRoutes,
   createInternalService,
@@ -272,9 +299,13 @@ export {
   type StaticEntitlementsInput
 } from './policy'
 export {
+  createStorageLimitNoticeService,
   createStorageQuotaService,
   createStorageReconciliationService,
   StorageQuotaExceededError,
+  type StorageLimitNoticeOptions,
+  type StorageLimitNoticeResult,
+  type StorageLimitNoticeService,
   type StorageQuotaService,
   type StorageQuotaSnapshot,
   type StorageReconciliation

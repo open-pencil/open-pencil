@@ -5,6 +5,7 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 import { deserializeSceneGraph, serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import {
@@ -13,8 +14,6 @@ import {
   installFigMutationJournal
 } from '#core/kiwi/fig/population/delta'
 import { populateFigPage } from '#core/kiwi/fig/session/document-state'
-
-import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 beforeAll(() => registerTestFont())
 
 function instanceNamed(graph: SceneGraph, name: string): SceneNode {
@@ -101,7 +100,10 @@ describe('reopened instance overrides in a live editor', () => {
       const journal = installFigMutationJournal(workerGraph)
       try {
         expect(populateFigPage(workerGraph, page.id)).toBe(true)
-        applyFigPopulationDelta(graph, buildFigPopulationDelta(workerGraph, journal, [page.id]))
+        applyFigPopulationDelta(
+          graph,
+          structuredClone(buildFigPopulationDelta(workerGraph, journal, [page.id]))
+        )
       } finally {
         journal.stop()
       }

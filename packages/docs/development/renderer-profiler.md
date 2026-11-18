@@ -63,7 +63,7 @@ App wiring lives in:
 
 ```txt
 src/app/editor/profiler/index.ts
-src/app/shell/menu/schema.ts
+src/app/shell/menu/schema/
 src/app/shell/menu/app-menu.ts
 ```
 

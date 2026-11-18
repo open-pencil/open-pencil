@@ -41,6 +41,8 @@ const vectorProvider = computed(() =>
     </template>
     <SettingsPage>
       <div class="flex flex-col gap-6">
+        <!-- A campaign's note, such as web search coming with Cloud. -->
+        <slot name="campaign" />
         <SettingsSection>
           <template #title>{{ media.stockPhotos }}</template>
           <AppActionRow
@@ -53,7 +55,8 @@ const vectorProvider = computed(() =>
               service.status === 'configured' ? settings.configured : settings.notConfigured
             }}</template>
             <template #trailing
-              >{{ settings.edit }}<icon-lucide-chevron-right class="size-3.5"
+              >{{ settings.edit
+              }}<icon-lucide-chevron-right data-direction="reading" class="size-3.5"
             /></template>
           </AppActionRow>
         </SettingsSection>
@@ -67,7 +70,8 @@ const vectorProvider = computed(() =>
               exaKeyStatus === 'configured' ? settings.configured : settings.notConfigured
             }}</template>
             <template #trailing
-              >{{ settings.edit }}<icon-lucide-chevron-right class="size-3.5"
+              >{{ settings.edit
+              }}<icon-lucide-chevron-right data-direction="reading" class="size-3.5"
             /></template>
           </AppActionRow>
         </SettingsSection>
@@ -77,7 +81,8 @@ const vectorProvider = computed(() =>
           <AppActionRow data-vectorize-settings @click="editing = 'vectorize'">
             {{ vectorProvider?.name }}
             <template #trailing
-              >{{ settings.edit }}<icon-lucide-chevron-right class="size-3.5"
+              >{{ settings.edit
+              }}<icon-lucide-chevron-right data-direction="reading" class="size-3.5"
             /></template>
           </AppActionRow>
         </SettingsSection>

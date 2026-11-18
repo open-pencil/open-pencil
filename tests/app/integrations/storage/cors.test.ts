@@ -55,6 +55,9 @@ describe('cloud S3 CORS helpers', () => {
   })
 
   test('collects static web and localhost origins', () => {
+    expect(collectCloudCORSOrigins(' https://files.example.com// ')).toContain(
+      'https://files.example.com'
+    )
     const origins = collectCloudCORSOrigins()
     expect(origins).toContain(WEB_APP_ORIGIN)
     expect(origins).toContain('https://*.openpencil.dev')
