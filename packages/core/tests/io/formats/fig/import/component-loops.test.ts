@@ -127,3 +127,47 @@ test('a save drops the instance a component defined inside its own component hol
   expect(records.has('1:20')).toBe(true)
   expect(records.has('1:21')).toBe(false)
 })
+
+test('a save drops the instance whose slot content leads back into its component', async () => {
+  const slotValue = (target: GUID) => ({
+    value: { slotContentIdValue: { guid: target } },
+    dataType: 'SLOT_CONTENT_ID',
+    resolvedDataType: 'SLOT_CONTENT_ID'
+  })
+  const graph = await parseFigFile(
+    await archiveOf([
+      record(0, 'DOCUMENT', undefined),
+      record(1, 'CANVAS', 0),
+      record(2, 'CANVAS', 0, { internalOnly: true }),
+      record(3, 'SYMBOL', 1, {
+        componentPropDefs: [{ id: guid(5), name: 'Content', type: 'SLOT' }]
+      }),
+      record(4, 'FRAME', 3, {
+        parameterConsumptionMap: {
+          entries: [
+            {
+              variableField: 'SLOT_CONTENT_ID',
+              variableData: {
+                value: { propRefValue: { defId: guid(5) } },
+                dataType: 'PROP_REF',
+                resolvedDataType: 'SLOT_CONTENT_ID'
+              }
+            }
+          ]
+        }
+      }),
+      record(10, 'SYMBOL', 1),
+      record(11, 'INSTANCE', 10, {
+        symbolData: { symbolID: guid(3) },
+        componentPropAssignments: [{ defID: guid(5), varValue: slotValue(guid(20)) }]
+      }),
+      record(20, 'FRAME', 2),
+      instanceOf(21, 20, 10)
+    ]),
+    { populate: 'all' }
+  )
+  const records = await saved(graph)
+  expect(records.has('1:10')).toBe(true)
+  expect(records.has('1:11')).toBe(false)
+  expect(records.has('1:21')).toBe(true)
+})

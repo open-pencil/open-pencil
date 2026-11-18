@@ -23,7 +23,7 @@ import {
   type ComponentLoopSources,
   type ComponentLoops
 } from './loops'
-import { recordsReachingLoops } from './loops/references'
+import { loopReferences } from './loops/references'
 import { applyDerivedBounds, applyPropertyClaims, createClaimContext } from './occurrence/claims'
 import { createOccurrence, type Subtree } from './occurrence/create'
 import { createModeScopes, type ModeScope } from './occurrence/modes'
@@ -85,7 +85,7 @@ export function createIndexedOccurrenceInterpreter(index: InterpreterIndex) {
     index.componentLoops ??
     createComponentLoops({
       order: index,
-      reaching: lazily(() => recordsReachingLoops(index)),
+      references: lazily(() => loopReferences(index)),
       whole: () => index,
       discover: discoverChoices
     })

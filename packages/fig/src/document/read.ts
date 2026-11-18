@@ -9,7 +9,11 @@ import {
   createIndexedOccurrenceInterpreter
 } from '../instance-overrides/interpret'
 import type { ComponentLoops } from '../instance-overrides/loops'
-import { createReferenceGraph, recordsReachingLoops } from '../instance-overrides/loops/references'
+import {
+  createReferenceGraph,
+  loopReferences,
+  type LoopReferences
+} from '../instance-overrides/loops/references'
 import type { InterpretInstanceOptions } from '../instance-overrides/occurrence/types'
 import {
   bySavedPosition,
@@ -104,8 +108,8 @@ interface ReaderRecords {
   scope(): WholeRecord
   /** Whole records kept for the document: components the interpreter reads, and styles. */
   shared: WholeRecord
-  /** Records from which a read could reach a component loop; none in most documents. */
-  reaching(): ReadonlySet<string>
+  /** Records from which a read could reach a component loop (none in most documents), and slot assigners. */
+  loopReferences(): LoopReferences
   /**
    * Indexes whole records, for the interpreter that reads components on demand: the shared ones,
    * or those `whole` decodes, as a component loop repair reads them without keeping them.
@@ -155,7 +159,7 @@ function wholeRecords(source: readonly NodeChange[]): ReaderRecords {
   const assets = assetIdsByKey(records)
   for (const node of records) resolveStyleFields(index.sources, node, assets)
   const same: WholeRecord = (record) => record
-  let reaching: ReadonlySet<string> | undefined
+  let references: LoopReferences | undefined
   const variables = createDocumentVariables(records)
   const textStyle = createTextStyleLookup(index.sources, assets)
   return {
@@ -164,7 +168,7 @@ function wholeRecords(source: readonly NodeChange[]): ReaderRecords {
     bindingDiagnostics,
     scope: () => same,
     shared: same,
-    reaching: () => (reaching ??= recordsReachingLoops(index)),
+    loopReferences: () => (references ??= loopReferences(index)),
     interpreterIndex: () => ({
       ...createSourceIndex(records.filter((record) => !isResource(record))),
       variables,
@@ -209,7 +213,10 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
     normalize(record, (diagnostic) => bindingDiagnostics.push(diagnostic))
     references.add(record)
   }
-  const reaching = references.reaching()
+  const found: LoopReferences = {
+    reaching: references.reaching(),
+    slotAssigners: references.slotAssigners()
+  }
 
   const kept = new Map<NodeChange, NodeChange>()
   /** Styles resolve against style records kept whole; other records only need their header. */
@@ -269,7 +276,7 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
     records,
     index,
     bindingDiagnostics,
-    reaching: () => reaching,
+    loopReferences: () => found,
     scope: () => {
       const decoded = new Map<NodeChange, NodeChange>()
       const whole: WholeRecord = (header) => {
@@ -319,7 +326,7 @@ function createSharedReaderState(records: ReaderRecords): SharedReaderState {
     // A repair decodes the definitions it walks for itself, so pages nobody opened stay unread.
     componentLoops ??= createDocumentComponentLoops({
       order: records.index,
-      reaching: () => records.reaching(),
+      references: () => records.loopReferences(),
       whole: () => records.interpreterIndex(records.scope())
     })
     return componentLoops

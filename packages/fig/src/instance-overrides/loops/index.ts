@@ -6,7 +6,7 @@ import {
   type InterpreterIndex,
   type SourceIndex
 } from '../source-index'
-import { subtree } from './references'
+import { subtree, type LoopReferences } from './references'
 
 /** A component an expansion entered, and the record whose layer or default chose it. */
 export interface ComponentChoice {
@@ -17,8 +17,8 @@ export interface ComponentChoice {
 export interface ComponentLoopSources {
   /** The document's records in layer order, as headers or whole; read for order and parents. */
   readonly order: SourceIndex
-  /** Records from which a read could reach a loop, found as the document opened. */
-  readonly reaching: () => ReadonlySet<string>
+  /** Records from which a read could reach a loop, and who assigns each slot's content. */
+  readonly references: () => LoopReferences
   /** Whole records for one repair, decoded for it and not kept once it is done. */
   readonly whole: () => InterpreterIndex
   /** The components a definition's expansion enters, with the record that chose each. */
@@ -80,7 +80,28 @@ function heldDefinitions(order: SourceIndex, componentId: string) {
  */
 function repair(sources: ComponentLoopSources): Set<string> {
   const index = sources.whole()
-  const reaching = sources.reaching()
+  const { reaching, slotAssigners } = sources.references()
+  /**
+   * Whose choice a choice is: one made inside a slot's assigned content is the assigning
+   * instance's, as Figma leaves out that instance when the content leads back.
+   */
+  const chooserOf = (ownerId: string): string => {
+    const seen = new Set<string>()
+    for (let current = ownerId; !seen.has(current);) {
+      seen.add(current)
+      // A layer of a definition is that definition's own choice; slot content lives outside them.
+      if (definitionOf(sources.order, current) !== undefined) return current
+      let assigner: string | undefined
+      for (let at: string | undefined = current; at !== undefined && assigner === undefined;) {
+        assigner = slotAssigners.get(at)
+        const record = sources.order.sources.get(at)
+        at = record && parentIdOf(record)
+      }
+      if (assigner === undefined) return current
+      current = assigner
+    }
+    return ownerId
+  }
   const dropped = new Set<string>()
   const state = new Map<string, 'walking' | 'done'>()
   /** The definitions being walked, outermost first, each with the instance whose choice entered it. */
@@ -107,6 +128,7 @@ function repair(sources: ComponentLoopSources): Set<string> {
       [
         ...sources
           .discover(index, componentId, dropped)
+          .map((choice) => ({ ...choice, ownerId: chooserOf(choice.ownerId) }))
           .filter(({ ownerId }) => definitionOf(sources.order, ownerId) === componentId),
         ...nested
       ].toSorted((a, b) => (layer.get(a.ownerId) ?? 0) - (layer.get(b.ownerId) ?? 0))
@@ -162,7 +184,7 @@ export function createComponentLoops(sources: ComponentLoopSources): ComponentLo
   let dropped: Set<string> | undefined
   return {
     ensure(id, report) {
-      if (dropped || !sources.reaching().has(id)) return
+      if (dropped || !sources.references().reaching.has(id)) return
       dropped = repair(sources)
       for (const instanceId of dropped) report?.(instanceId)
     },

@@ -14,13 +14,22 @@ import {
 
 function pushAssigned(
   named: GUID[],
+  slots: GUID[],
   assignments: readonly ComponentPropAssignment[] | undefined
 ): void {
   for (const assignment of assignments ?? []) {
-    const value = assignmentValue(assignment)?.guidValue
-    if (value) named.push(value)
+    const value = assignmentValue(assignment)
+    if (value?.guidValue) named.push(value.guidValue)
+    const content = value?.slotContentIdValue?.guid
+    if (content) {
+      named.push(content)
+      slots.push(content)
+    }
   }
 }
+
+/** Collects the slot content frames one record assigns; reused across records. */
+const assignedSlots: GUID[] = []
 
 /**
  * Every record a record could have a read expand in its place: the component it shows, the
@@ -28,15 +37,19 @@ function pushAssigned(
  * so these include every record a read could reach from here, and more. Every record of a
  * document passes through here as it opens, so nothing is allocated for one that names none.
  */
-function namedRecords(record: NodeChange): GUID[] {
+function namedRecords(record: NodeChange, slots: GUID[]): GUID[] {
   const named: GUID[] = []
   const symbolID = record.symbolData?.symbolID
   if (symbolID) named.push(symbolID)
   for (const override of symbolOverridesOf(record)) {
     if (override.overriddenSymbolID) named.push(override.overriddenSymbolID)
-    pushAssigned(named, override.componentPropAssignments)
+    pushAssigned(named, slots, override.componentPropAssignments)
   }
-  pushAssigned(named, record.componentPropAssignments as ComponentPropAssignment[] | undefined)
+  pushAssigned(
+    named,
+    slots,
+    record.componentPropAssignments as ComponentPropAssignment[] | undefined
+  )
   return named
 }
 
@@ -211,11 +224,15 @@ export function createReferenceGraph(parentOf: ParentOf) {
   const defaults = new Map<string, string[]>()
   /** Records with a definition that takes its default from an ancestor's, as a variant's do. */
   const linking: string[] = []
+  /** Each slot content frame to the record that assigned it. */
+  const slotAssigners = new Map<string, string>()
   return {
     add(record: NodeChange): void {
       const id = idOf(record)
       if (id === undefined) return
-      const named = namedRecords(record)
+      const named = namedRecords(record, assignedSlots)
+      for (const content of assignedSlots) slotAssigners.set(guidToString(content), id)
+      assignedSlots.length = 0
       const definitions = record.componentPropDefs as ComponentPropDef[] | undefined
       if (!definitions) {
         if (named.length > 0) naming.push([id, named.map(guidToString)])
@@ -227,6 +244,8 @@ export function createReferenceGraph(parentOf: ParentOf) {
       const targets = [...named.map(guidToString), ...own]
       if (targets.length > 0) naming.push([id, targets])
     },
+    /** Each slot content frame to the instance whose assignment shows it. */
+    slotAssigners: (): ReadonlyMap<string, string> => slotAssigners,
     reaching(): Set<string> {
       // A linked definition is completed from an ancestor's as a read prepares the record, so
       // the record can name any default its ancestors' definitions give.
@@ -265,12 +284,20 @@ export function createReferenceGraph(parentOf: ParentOf) {
   }
 }
 
-/** The records of `index` from which a read could reach a component loop. */
-export function recordsReachingLoops(index: SourceIndex): Set<string> {
+/** What a repair needs to know of a document's references, found once. */
+export interface LoopReferences {
+  /** Records from which a read could reach a component loop. */
+  readonly reaching: ReadonlySet<string>
+  /** Each slot content frame to the instance whose assignment shows it. */
+  readonly slotAssigners: ReadonlyMap<string, string>
+}
+
+/** The loop references of `index`, every record of which is whole. */
+export function loopReferences(index: SourceIndex): LoopReferences {
   const graph = createReferenceGraph((id) => {
     const record = index.sources.get(id)
     return record && parentIdOf(record)
   })
   for (const record of index.sources.values()) graph.add(record)
-  return graph.reaching()
+  return { reaching: graph.reaching(), slotAssigners: graph.slotAssigners() }
 }

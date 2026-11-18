@@ -20,10 +20,7 @@ import {
 import { figArchiveOf } from '#fig-tests/helpers/fig-fixtures'
 import { materializeFigArchive } from '#fig/document/materialize'
 import { inheritComponentPropertyDefinitions } from '#fig/document/property-inheritance'
-import {
-  createReferenceGraph,
-  recordsReachingLoops
-} from '#fig/instance-overrides/loops/references'
+import { createReferenceGraph, loopReferences } from '#fig/instance-overrides/loops/references'
 import { createSourceIndex, parentIdOf } from '#fig/instance-overrides/source-index'
 import { DEFAULT_SLOT_CONTENT } from '#fig/instance-overrides/types'
 
@@ -301,6 +298,62 @@ describe('a repair that matches the definitions, whatever a read expands', () =>
     expect(reader.leftOut()).toEqual([id(NESTED)])
   })
 
+  test('leaves out the instance whose slot content leads back into its component', () => {
+    // Measured in Figma: Outer holds a Card whose assigned slot content holds an instance of
+    // Outer. Figma deletes the Card instance, not the instance inside the content, and keeps an
+    // Outer instance in the slot of a Card placed outside Outer.
+    const [CARD, SLOT, SLOT_PROPERTY, INTERNAL, CONTENT, OUTSIDE, OUTSIDE_CONTENT] = [
+      3, 4, 5, 6, 60, 70, 71
+    ]
+    const slotValue = (target: GUID) => ({
+      value: { slotContentIdValue: { guid: target } },
+      dataType: 'SLOT_CONTENT_ID',
+      resolvedDataType: 'SLOT_CONTENT_ID'
+    })
+    const assignSlot = (content: number) =>
+      ({
+        componentPropAssignments: [
+          { defID: guid(SLOT_PROPERTY), varValue: slotValue(guid(content)) }
+        ]
+      }) as Partial<NodeChange>
+    const reader = read([
+      record(DOCUMENT, 'DOCUMENT', undefined, ''),
+      record(PAGE, 'CANVAS', DOCUMENT, '!'),
+      record(INTERNAL, 'CANVAS', DOCUMENT, '"'),
+      record(CARD, 'SYMBOL', PAGE, '!', {
+        componentPropDefs: [
+          {
+            id: guid(SLOT_PROPERTY),
+            name: 'Content',
+            type: 'SLOT',
+            varValue: slotValue(DEFAULT_SLOT_CONTENT)
+          }
+        ]
+      } as Partial<NodeChange>),
+      record(SLOT, 'FRAME', CARD, '!', {
+        componentPropRefs: [
+          { defID: guid(SLOT_PROPERTY), componentPropNodeField: 'SLOT_CONTENT_ID' }
+        ]
+      } as Partial<NodeChange>),
+      record(OUTER, 'SYMBOL', PAGE, '"'),
+      instance(NESTED, OUTER, '!', CARD, assignSlot(CONTENT)),
+      record(CONTENT, 'FRAME', INTERNAL, '!'),
+      record(61, 'ELLIPSE', CONTENT, '!'),
+      instance(62, CONTENT, '"', OUTER),
+      instance(OUTSIDE, PAGE, '#', CARD, assignSlot(OUTSIDE_CONTENT)),
+      record(OUTSIDE_CONTENT, 'FRAME', INTERNAL, '"'),
+      instance(72, OUTSIDE_CONTENT, '!', OUTER)
+    ])
+
+    expect(reader.component(OUTER)).toEqual({ id: id(OUTER), children: [] })
+    expect(reader.instance(OUTSIDE)).toEqual({
+      id: id(OUTSIDE),
+      main: id(CARD),
+      children: [{ id: id(SLOT), children: [{ id: id(72), main: id(OUTER), children: [] }] }]
+    })
+    expect(reader.leftOut()).toEqual([id(NESTED)])
+  })
+
   test('reads an instance whose base was left out as one whose base is gone', () => {
     // Outer holds an instance of itself, which a placement also uses as its base. Saving the
     // repair deletes that record, so the first read already treats it as missing.
@@ -407,6 +460,6 @@ test("a document opened from headers finds the loop a variant's inherited swap d
   const whole = changes()
   inheritComponentPropertyDefinitions(whole, createSourceIndex(whole).sources)
 
-  expect(graph.reaching()).toEqual(recordsReachingLoops(createSourceIndex(whole)))
+  expect(graph.reaching()).toEqual(new Set(loopReferences(createSourceIndex(whole)).reaching))
   expect(graph.reaching().has(id(INNER))).toBe(true)
 })
