@@ -345,7 +345,10 @@ function applySandboxHostStyle(element: HTMLElement, viewport: DesignViewport | 
     'border: 0',
     'visibility: hidden',
     'pointer-events: none',
-    'contain: layout style paint'
+    'contain: layout style paint',
+    // A page is styled as in a light browser whatever the app's theme: an iframe's
+    // `prefers-color-scheme` follows its element's color scheme, and the HTML engine is light too.
+    'color-scheme: light'
   ].join(';')
 }
 
