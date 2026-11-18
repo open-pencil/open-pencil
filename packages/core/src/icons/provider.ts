@@ -48,7 +48,7 @@ export function parseIconName(name: string): { prefix: string; iconName: string 
 }
 
 /** Names per request, so the query string of a long list stays well within URL limits. */
-const NAMES_PER_REQUEST = 100
+export const NAMES_PER_REQUEST = 100
 
 /**
  * Icons from the Iconify API, fetched one request per set and cached by name, so search

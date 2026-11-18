@@ -1,9 +1,10 @@
-import { groupBy } from 'es-toolkit'
+import { chunk, groupBy } from 'es-toolkit'
 import { createMatcher, fetchIndex, type Matcher } from 'whaticon/match'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { parseIconName, type IconProvider } from '#core/icons/provider'
+import { NAMES_PER_REQUEST, parseIconName, type IconProvider } from '#core/icons/provider'
+import { settledAnswers } from '#core/icons/settled'
 import type { RGBAImage } from '#core/io/formats/raster/pixels'
 import { createSVGNodes } from '#core/io/formats/svg/import'
 
@@ -51,8 +52,14 @@ export async function fetchIconIndex(
     apply: (target, self, [input, init]: Parameters<typeof globalThis.fetch>) =>
       target.call(self, input, { ...init, signal: controller.signal })
   })
+  // The deadline also rejects the attempt itself, should a fetcher not stop at the signal.
+  const expired = new Promise<never>((_, reject) => {
+    const stopped = () =>
+      reject(new Error("whaticon's index download stopped", { cause: controller.signal.reason }))
+    controller.signal.addEventListener('abort', stopped, { once: true })
+  })
   try {
-    return await fetchIndex(abortable)
+    return await Promise.race([fetchIndex(abortable), expired])
   } catch (error) {
     controller.abort(error)
     throw error
@@ -87,19 +94,16 @@ export async function drawSVG(
 }
 
 /**
- * The icons' SVG from `provider`, asked for set by set, so a set that fails to load leaves out
- * only its own icons, which the matcher compares with next time; throws only when every set fails.
+ * The icons' SVG from `provider`, asked for a set at a time in parts of one Iconify request, so a
+ * part that fails leaves out only its own icons, which the matcher compares with next time.
  */
-async function previewsBySet(
+function previewsByRequest(
   provider: IconProvider,
   names: readonly string[]
 ): Promise<Map<string, string>> {
   const sets = Object.values(groupBy(names, (name) => parseIconName(name)?.prefix ?? ''))
-  const results = await Promise.allSettled(sets.map((set) => provider.previews(set)))
-  const loaded = results.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []))
-  const failed = results.find((result) => result.status === 'rejected')
-  if (loaded.length === 0 && failed) throw failed.reason
-  return new Map(loaded.flatMap((previews) => [...previews]))
+  const parts = sets.flatMap((set) => chunk(set, NAMES_PER_REQUEST))
+  return settledAnswers(parts.map((part) => () => provider.previews(part)))
 }
 
 /**
@@ -111,7 +115,7 @@ export function createIconMatcher(services: IconMatcherServices): IconMatcher {
   return createMatcher({
     index: services.index,
     draw: (svg, width, height) => drawSVG(services.draw, svg, width, height),
-    icons: (names) => previewsBySet(services.icons, names),
+    icons: (names) => previewsByRequest(services.icons, names),
     onError: (reason, error) => console.warn(`Icons are not named: ${reason}`, error)
   })
 }

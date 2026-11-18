@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path'
 
 import { noop } from 'es-toolkit'
 import { loadIndex } from 'whaticon'
-import { DEFAULT_SIZE, dHashFromPixels, parseIndex } from 'whaticon/hash'
+import { DEFAULT_SIZE, HASH_BYTES, dHashFromPixels, parseIndex } from 'whaticon/hash'
 import { coverageFromRGBA } from 'whaticon/match'
 
 import { getCanvasKit } from '#core/canvaskit'
@@ -113,20 +113,25 @@ describe('naming icons by how they draw', () => {
 
   test("names an icon from the sets that loaded when another set's icons fail to load", async () => {
     const icons = testIcons()
-    icons.previews.mockImplementation(async (names: readonly string[]) => {
+    icons.previews.mockImplementation((names: readonly string[]) => {
+      // Thrown at once rather than rejected, which must still leave only this set out.
       if (names.some((name) => name.startsWith('other:'))) throw new Error('timed out')
-      return new Map(names.flatMap((name) => (ICONS[name] ? [[name, ICONS[name]] as const] : [])))
+      return Promise.resolve(
+        new Map(names.flatMap((name) => (ICONS[name] ? [[name, ICONS[name]] as const] : [])))
+      )
     })
     // Another set's copy of the house hashes as the house does, so it is shortlisted beside it.
     const index = async () => {
       const own = await testIndex()
-      const house = own.hashes.subarray(0, 128)
+      const at = own.names.indexOf('lucide:house') * HASH_BYTES
+      const house = own.hashes.subarray(at, at + HASH_BYTES)
       const bytes = new Uint8Array([...own.hashes, ...house])
       return parseIndex([...own.names, 'other:house'].join('\n'), bytes)
     }
     const match = createIconMatcher({ index, icons, draw })
 
     expect(await match([ICONS['lucide:house'] ?? ''])).toEqual(['lucide:house'])
+    expect(icons.previews).toHaveBeenCalledWith(['other:house'])
   })
 
   test("names an icon against whaticon's published index", async () => {
