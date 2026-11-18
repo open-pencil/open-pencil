@@ -12,6 +12,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { parseDocument } from './helpers/document'
+import { lightDark, SEMANTIC_THEMES } from './helpers/themes'
 
 /** Draws each glyph as one path tinted with the icon's colour, as the Iconify source does. */
 const icons = {
@@ -205,18 +206,7 @@ describe('parsePenFile — icons in components', () => {
           ]
         }
       ],
-      {
-        themes: { semantic: ['light', 'dark'] },
-        variables: {
-          glyph: {
-            type: 'string',
-            value: [
-              { value: 'sun', theme: { semantic: 'light' } },
-              { value: 'moon', theme: { semantic: 'dark' } }
-            ]
-          }
-        }
-      },
+      { themes: SEMANTIC_THEMES, variables: { glyph: lightDark('string', 'sun', 'moon') } },
       { icons }
     )
     const symbol = expectDefined(graph.getChildren('placed')[0], 'symbol')
@@ -266,18 +256,7 @@ describe('parsePenFile — icons in components', () => {
           ]
         }
       ],
-      {
-        themes: { semantic: ['light', 'dark'] },
-        variables: {
-          glyph: {
-            type: 'string',
-            value: [
-              { value: 'sun', theme: { semantic: 'light' } },
-              { value: 'moon', theme: { semantic: 'dark' } }
-            ]
-          }
-        }
-      },
+      { themes: SEMANTIC_THEMES, variables: { glyph: lightDark('string', 'sun', 'moon') } },
       { icons }
     )
     const card = expectDefined(graph.getChildren('RowInst')[0], 'nested card')
