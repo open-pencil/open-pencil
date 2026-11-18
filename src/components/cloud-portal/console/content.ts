@@ -13,8 +13,10 @@ export function contentActions(
   const items: { action: PortalContentAction; label: string; separated?: boolean }[] = []
   // Out of everyone's sight, one deleted forever can only come back.
   if (document.deletedForever) return [{ action: 'undelete', label: messages.undeleteDocument }]
+  // Looking at what is in it comes before deciding.
+  if (document.saved) items.push({ action: 'download', label: messages.downloadDocument })
   if (report?.status === 'open') {
-    items.push({ action: 'dismiss', label: messages.dismissReport })
+    items.push({ action: 'dismiss', label: messages.dismissReport, separated: items.length > 0 })
     items.push({ action: 'mark-handled', label: messages.markHandled })
   }
   const separated = items.length > 0
@@ -32,7 +34,7 @@ export function contentActions(
 
 /** Whether an action is asked once more before it is done. */
 export function needsConfirmation(action: PortalContentAction): boolean {
-  return action !== 'dismiss' && action !== 'mark-handled'
+  return action !== 'download' && action !== 'dismiss' && action !== 'mark-handled'
 }
 
 /** What the confirmation for an action says, and whether it takes a reason. */
@@ -91,4 +93,30 @@ export function contentConfirmation(
     reason: true,
     tone: 'danger'
   }
+}
+
+type Problem = { label: string; tone: 'warning' | 'error' }
+
+/**
+ * The most serious thing an administrator should know about a document, or null when nothing is
+ * wrong: deleted forever, then taken down, then reported.
+ */
+export function documentProblem(messages: Messages, document: PortalDocumentRow): Problem | null {
+  if (document.deletedForever) return { label: messages.deletedForever, tone: 'error' }
+  if (document.takenDown) return { label: messages.takenDown, tone: 'error' }
+  if (document.openReports) {
+    return { label: messages.openReports(document.openReports), tone: 'warning' }
+  }
+  return null
+}
+
+/** How far a document reaches, from the widest: anyone, through links, or its workspace alone. */
+export type DocumentAccess = 'community' | 'edit-link' | 'link' | 'private'
+
+/** The widest way beyond its workspace someone can open a document. */
+export function documentAccess(document: PortalDocumentRow): DocumentAccess {
+  const { community, links, editLinks } = document.exposure
+  if (community) return 'community'
+  if (editLinks) return 'edit-link'
+  return links ? 'link' : 'private'
 }

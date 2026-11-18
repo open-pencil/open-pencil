@@ -19,6 +19,7 @@ export {
   swapIcon,
   type PlaceIconOptions
 } from './render'
+export { iconOptionApplies, resolveIconOptions } from './options'
 export type { IconCollection, IconData, IconOption, IconPath, IconSearchResult } from './types'
 export { createMaterialSymbolsProvider } from './material-symbols/provider'
 export { MATERIAL_SYMBOLS_PREFIXES } from './material-symbols/font'

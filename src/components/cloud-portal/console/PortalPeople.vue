@@ -85,7 +85,7 @@ const people = usePortalList<CloudAdminUserFilter, PortalPerson>({
     column.display({
       id: 'role',
       header: () => messages.value.columnRole,
-      meta: { class: 'hidden max-w-56 @md/table:table-cell' },
+      meta: { role: 'tag' },
       // The badge says the account is suspended; the line under it says why.
       cell: ({ row: { original: person } }) =>
         h(PortalStatusCell, {
@@ -97,27 +97,27 @@ const people = usePortalList<CloudAdminUserFilter, PortalPerson>({
     column.display({
       id: 'methods',
       header: () => messages.value.columnSignIn,
-      meta: { class: 'hidden w-24 @lg/table:table-cell' },
+      meta: { role: 'tag' },
       cell: ({ row: { original: person } }) =>
         h(PortalSignInMethodsCell, { methods: person.methods })
     }),
     column.accessor('workspaceCount', {
       header: () => messages.value.columnWorkspaces,
-      meta: { class: 'hidden w-24 text-right tabular-nums @2xl/table:table-cell' }
+      meta: { role: 'count' }
     }),
     column.accessor((person) => person.lastActive ?? messages.value.notSignedIn, {
       id: 'lastActive',
       header: () => messages.value.columnLastActive,
-      meta: { class: 'hidden w-32 whitespace-nowrap text-muted @xl/table:table-cell' }
+      meta: { role: 'date' }
     }),
     column.accessor('joinedOn', {
       header: () => messages.value.columnJoined,
-      meta: { class: 'hidden w-28 whitespace-nowrap text-muted @3xl/table:table-cell' }
+      meta: { role: 'date' }
     }),
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px text-right', actions: true },
+      meta: { role: 'actions' },
       cell: ({ row: { original: person } }) =>
         h(PortalPersonActions, {
           person,

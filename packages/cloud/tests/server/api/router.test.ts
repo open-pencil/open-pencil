@@ -38,6 +38,9 @@ function services() {
       downloadShared: async () => {
         throw new Error('not used')
       },
+      downloadRetained: async () => {
+        throw new Error('not used')
+      },
       download: async () => {
         throw new Error('not used')
       },

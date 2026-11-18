@@ -50,14 +50,18 @@ export function createAppRouters(
       documents: createAdminDocumentService(database, {
         closeRooms: services.onDocumentTakenDown,
         purgeGraceMs: config.documentPurgeGraceMs,
+        communityWorkspaceId: config.community?.workspaceId ?? null,
+        objects: services.objects,
+        documents: app.documents,
         email: services.transactionalEmail,
         publicURL: config.publicURL,
         contactEmail: config.legal?.abuseEmail
       }),
-      reports: createAdminReportService(database, {
-        email: services.transactionalEmail,
-        contactEmail: config.legal?.abuseEmail
-      })
+      reports: createAdminReportService(
+        database,
+        { email: services.transactionalEmail, contactEmail: config.legal?.abuseEmail },
+        { communityWorkspaceId: config.community?.workspaceId ?? null }
+      )
     },
     allowedOrigins,
     {

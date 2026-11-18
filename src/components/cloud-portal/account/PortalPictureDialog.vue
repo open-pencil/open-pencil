@@ -175,13 +175,14 @@ async function save() {
         :max="PICTURE_MAX_ZOOM"
         :step="0.01"
         :disabled="!size"
-        :aria-label="messages.pictureZoom"
         class="relative flex w-60 touch-none items-center"
       >
         <SliderTrack class="relative h-1.5 grow overflow-hidden rounded-full bg-hover">
           <SliderRange class="absolute h-full bg-accent" />
         </SliderTrack>
+        <!-- The thumb is what assistive technology focuses and reads out as the slider. -->
         <SliderThumb
+          :aria-label="messages.pictureZoom"
           :class="[
             'block size-3.5 rounded-full border border-accent bg-panel shadow',
             focusStyles.ringStrong

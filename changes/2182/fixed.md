@@ -1,0 +1,1 @@
+- Cloud: signing out, or another account signing in on the same device, now clears the previous account's documents from Recent and removes its local copies that are already uploaded (#2182).

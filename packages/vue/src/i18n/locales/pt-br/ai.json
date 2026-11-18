@@ -171,6 +171,7 @@
   "modelSignedOut": "Sem login",
   "modelToolsUnreachable": "Ferramentas inacessíveis",
   "thinkingLevel": "Nível de raciocínio",
+  "agentAccess": "Acesso",
   "thinkingLevelDescription": "Quanto o modelo raciocina antes de responder. Você pode alterar isso a cada mensagem no chat.",
   "thinkingDefault": "Padrão",
   "thinkingOff": "Desativado",

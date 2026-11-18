@@ -2,6 +2,7 @@ import { count, params } from '@nanostores/i18n'
 
 import { i18n } from '#vue/i18n/create'
 import { communityPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/community'
+import { personPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/person'
 import { planPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/plan'
 import { requestPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/requests'
 import { accessTokenPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/tokens'
@@ -168,6 +169,7 @@ export const cloudPortalMessageDefaults = {
   ...requestPortalMessageDefaults,
   ...communityPortalMessageDefaults,
   ...planPortalMessageDefaults,
+  ...personPortalMessageDefaults,
   overview: 'Overview',
   accessRequests: 'Access requests',
   accessRequestsDescription:
@@ -405,35 +407,11 @@ export const cloudPortalMessageDefaults = {
   resetTwoStepHeading: params('Reset two-step sign-in for {name}?'),
   resetTwoStepDescription:
     'Their authenticator app, recovery codes, and passkeys are removed, so they can sign in with their password or a linked account and set them up again. They get an email saying so.',
-  removeSignInMethod: 'Remove',
-  removeSignInMethodHeading: params('Remove {provider} from {name}’s ways to sign in?'),
-  removeSignInMethodDescription:
-    'They can’t sign in with it again unless they add it back, and they get an email saying so. Devices already signed in stay signed in until you sign them out everywhere.',
   removePersonPicture: 'Remove picture',
   removePersonPictureHeading: params('Remove {name}’s picture?'),
   removePersonPictureDescription:
     'Their initials show in its place. They can upload another picture.',
 
-  backToPeople: 'All people',
-  personAccount: 'Account',
-  emailVerified: 'Verified',
-  emailNotVerified: 'Not verified',
-  joinedRow: 'Joined',
-  lastActiveRow: 'Last active',
-  signInMethods: 'Ways to sign in',
-  twoStepRow: 'Two-step sign-in',
-  twoStepNone: 'Not set up',
-  passkeyCount: count({ one: '{count} passkey', many: '{count} passkeys' }),
-  personWorkspaces: 'Workspaces',
-  personWorkspacesEmpty: 'Not in any workspace.',
-  workspaceMembers: count({ one: '{count} member', many: '{count} members' }),
-  workspaceRoleAdmin: 'Admin',
-  workspaceRoleEditor: 'Editor',
-  workspaceRoleViewer: 'Viewer',
-  personSessions: 'Sessions',
-  noSessions: 'Not signed in anywhere.',
-  personNotFound: 'There’s no such account',
-  personNotFoundDescription: 'It may have been removed. Go back to the list of people.',
   you: '(you)',
   administrator: 'Administrator',
   suspended: 'Suspended',
@@ -528,6 +506,7 @@ export const cloudPortalMessageDefaults = {
   columnReported: 'Reported',
   columnOwner: 'Owner',
   columnUpdated: 'Last changed',
+  columnAccess: 'Access',
   reportReasonSpam: 'Spam or phishing',
   reportReasonIllegal: 'Illegal content',
   reportReasonCopyright: 'Copyright',
@@ -543,6 +522,13 @@ export const cloudPortalMessageDefaults = {
   deletedForever: 'Deleted forever',
   destroyedOn: params('Removed from the server on {date}'),
   openReports: count({ one: '{count} open report', many: '{count} open reports' }),
+  /** Who beyond its workspace can open a document, in the documents list. */
+  privateDocument: 'Private',
+  sharedByLink: 'Shared by link',
+  editableByLink: 'Editable by link',
+  inCommunity: 'In community',
+  documentPreview: params('Preview of {name}'),
+  downloadDocument: 'Download',
   takeDown: 'Take down',
   restoreDocument: 'Restore document',
   revokeLink: 'Revoke link',
@@ -570,6 +556,7 @@ export const cloudPortalMessageDefaults = {
   activityTookDown: 'took down',
   activityRestoredDocument: 'restored',
   activityUndeletedDocument: 'brought back',
+  activityDownloadedDocument: 'downloaded',
   activityRevokedLink: 'revoked a link:',
   activityDismissedReport: 'dismissed a report:',
   activityActionedReport: 'closed a report:',

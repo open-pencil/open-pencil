@@ -14,11 +14,11 @@ import {
   type AgentLaunch
 } from '@/app/ai/agents/acp/connection'
 import {
+  agentModelChoices,
   chooseSessionOption,
   sessionChoice,
-  sessionEfforts,
   sessionOptionRequests,
-  type AgentEfforts,
+  type AgentModelChoices,
   type OfferedSessionOptions,
   type SessionOptionValue
 } from '@/app/ai/agents/acp/options'
@@ -86,11 +86,11 @@ export interface AgentOffer {
   models: SessionOptionValue[]
   imageInput: boolean
   /**
-   * The efforts of the models read so far, by model ID; `''` is the agent's own pick. Each model
-   * has its own, and reading them all would switch through dozens of models, so a model's efforts
-   * are read when a profile chooses it.
+   * The effort, mode, and other choices of the models read so far, by model ID; `''` is the
+   * agent's own pick. Each model has its own efforts, and reading them all would switch through
+   * dozens of models, so a model's choices are read when a profile chooses it.
    */
-  efforts: Record<string, AgentEfforts>
+  choices: Record<string, AgentModelChoices>
 }
 
 function takesImages(initialized: InitializeResponse): boolean {
@@ -113,11 +113,11 @@ export async function readAgentOffer(
         : connection.agent.request(methods.agent.session.new, { cwd, mcpServers: [] })
     )
     const model = sessionChoice(offered, 'model')
-    const efforts = sessionEfforts(offered)
+    const choices = agentModelChoices(offered)
     return {
       models: model?.values ?? [],
       imageInput: takesImages(initialized),
-      efforts: { '': efforts, ...(model && { [model.current]: efforts }) }
+      choices: { '': choices, ...(model && { [model.current]: choices }) }
     }
   } catch (e) {
     throw agentFailure(agentDef, e)
@@ -154,16 +154,16 @@ async function openOneOffSession(
   return { sessionId: opened.sessionId, offered: chosen }
 }
 
-/** Starts the agent once to read the efforts one of its models offers, then stops it. */
-export async function readAgentEfforts(
+/** Starts the agent once to read the choices one of its models offers, then stops it. */
+export async function readAgentChoices(
   agentDef: ACPAgentDef,
   model: string,
   options: OneOffAgentOptions = {}
-): Promise<AgentEfforts> {
+): Promise<AgentModelChoices> {
   const agent = await startOneOffAgent(agentDef, options)
   try {
     const { offered } = await openOneOffSession(agentDef, agent, model)
-    return sessionEfforts(offered)
+    return agentModelChoices(offered)
   } catch (e) {
     throw agentFailure(agentDef, e)
   } finally {

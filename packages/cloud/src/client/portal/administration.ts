@@ -8,6 +8,7 @@ import {
   cloudAdminSessionResponseSchema,
   cloudAdminUserDetailSchema,
   cloudAdminUsersResponseSchema,
+  documentDownloadSchema,
   enrollmentInviteResponseSchema,
   enrollmentReviewResponseSchema,
   enrollmentsResponseSchema,
@@ -171,6 +172,23 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
       return call(
         (options) => admin.documents.$get(listQuery(request), options),
         cloudAdminDocumentsResponseSchema,
+        signal
+      )
+    },
+    /**
+     * Where a document's thumbnail at `revisionId` is: an image the console shows on the server's
+     * own address, so the administrator's session goes with it.
+     */
+    documentThumbnailURL(documentId: string, revisionId: string): string {
+      return admin.documents[':documentId'].thumbnails[':revisionId']
+        .$url({ param: { documentId, revisionId } })
+        .toString()
+    },
+    /** Links to a document's file and images as it is now; the server records the download. */
+    downloadDocument(id: string, signal?: AbortSignal) {
+      return call(
+        (options) => admin.documents[':id'].download.$post({ param: { id } }, options),
+        documentDownloadSchema,
         signal
       )
     },

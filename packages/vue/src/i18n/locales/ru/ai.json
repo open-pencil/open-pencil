@@ -171,6 +171,7 @@
   "modelSignedOut": "Вход не выполнен",
   "modelToolsUnreachable": "Инструменты недоступны",
   "thinkingLevel": "Уровень рассуждений",
+  "agentAccess": "Доступ",
   "thinkingLevelDescription": "Насколько глубоко модель рассуждает перед ответом. В чате уровень можно менять для каждого сообщения.",
   "thinkingDefault": "По умолчанию",
   "thinkingOff": "Выключен",

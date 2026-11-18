@@ -185,6 +185,8 @@ export const aiMessageDefaults = {
   modelSignedOut: 'Signed out',
   modelToolsUnreachable: 'Tools unreachable',
   thinkingLevel: 'Thinking level',
+  /** What a coding agent may do outside OpenPencil without asking, such as Codex's Full access. */
+  agentAccess: 'Access',
   thinkingLevelDescription:
     'How much the model reasons before answering. You can change it for each message in the chat.',
   thinkingDefault: 'Default',

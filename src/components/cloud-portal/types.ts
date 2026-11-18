@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 
 import type {
+  CloudAdminDocument,
   CloudAdminReportStatus,
   CloudSignInMethod,
   DocumentReportReason,
@@ -154,7 +155,15 @@ export type PortalDocumentRow = {
   name: string
   workspace: string
   owner: { id: string; name: string; email: string } | null
-  updated: string
+  /** When it last changed, as an ISO timestamp the list shows relative to now. */
+  updatedAt: string
+  kind: CloudAdminDocument['kind']
+  /** Whether it has been saved, so it has a file to download. */
+  saved: boolean
+  /** Where its saved thumbnail is; null before its first save. */
+  thumbnail: string | null
+  /** Who beyond its workspace can open it. */
+  exposure: CloudAdminDocument['exposure']
   takenDown: boolean
   /** Why an administrator took it down, when they said. */
   takenDownReason: string | null
@@ -181,6 +190,7 @@ export type PortalReportRow = {
 
 /** What an administrator may do about a reported or listed document. */
 export type PortalContentAction =
+  | 'download'
   | 'take-down'
   | 'restore'
   | 'undelete'

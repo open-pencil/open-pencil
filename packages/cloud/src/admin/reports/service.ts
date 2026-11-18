@@ -1,4 +1,8 @@
-import { adminDocuments, auditContentAction } from '#cloud/admin/documents/service'
+import {
+  adminDocuments,
+  auditContentAction,
+  type AdminDocumentsOptions
+} from '#cloud/admin/documents/service'
 import {
   containsPattern,
   countEachFilter,
@@ -48,7 +52,8 @@ function searchCondition(search: string) {
 /** Reports' administration, which tells each reporter who left an address what it decided. */
 export function createAdminReportService(
   database: Kysely<CloudDatabase>,
-  replies: ReportReplies = {}
+  replies: ReportReplies = {},
+  documentOptions: Pick<AdminDocumentsOptions, 'communityWorkspaceId'> = {}
 ) {
   return {
     /** A page of reports, newest first, and how many match the search under each filter. */
@@ -74,7 +79,8 @@ export function createAdminReportService(
       const [documents, shares, reporters] = await Promise.all([
         adminDocuments(
           database,
-          rows.map((row) => row.documentId)
+          rows.map((row) => row.documentId),
+          documentOptions
         ),
         shareIds.length
           ? database

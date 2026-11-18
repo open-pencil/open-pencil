@@ -1,4 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, waitFor, within } from 'storybook/test'
+
+import { svgDataURL } from '@open-pencil/scene-graph/images'
 
 import PortalAccountSecurity from '../account/PortalAccountSecurity.vue'
 import PortalPlan from '../account/PortalPlan.vue'
@@ -12,6 +15,7 @@ import type {
   PortalEmail,
   PortalPerson,
   PortalCreditPack,
+  PortalDocumentRow,
   PortalPersonDetail,
   PortalPlan as PortalPlanType,
   PortalPlanOffer,
@@ -21,6 +25,7 @@ import type {
 } from '../types'
 import PortalAccessRequests from './PortalAccessRequests.vue'
 import PortalActivity from './PortalActivity.vue'
+import PortalDocuments from './PortalDocuments.vue'
 import PortalEmailDelivery from './PortalEmailDelivery.vue'
 import PortalPeople from './PortalPeople.vue'
 import PortalPersonPage from './PortalPerson.vue'
@@ -44,6 +49,12 @@ const sections: PortalSection[] = [
     label: 'Access requests',
     group: 'Server',
     count: 3
+  },
+  {
+    id: 'documents',
+    icon: PORTAL_SECTION_ICONS.documents,
+    label: 'Documents',
+    group: 'Server'
   },
   { id: 'people', icon: PORTAL_SECTION_ICONS.people, label: 'People', group: 'Server' },
   { id: 'email', icon: PORTAL_SECTION_ICONS.email, label: 'Email delivery', group: 'Server' },
@@ -158,6 +169,79 @@ const loadNoRequests = serve<AccessRequest['status'], AccessRequest>([], {
   rejected: 2,
   revoked: 1
 })
+/** A design's thumbnail as the editor saves one: a frame with a heading and a button. */
+function thumbnail(accent: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="320" height="200" fill="#f3f4f6"/><rect x="40" y="30" width="240" height="140" rx="10" fill="#fff"/><rect x="64" y="58" width="150" height="14" rx="4" fill="#1f2328"/><rect x="64" y="84" width="190" height="8" rx="4" fill="#9ca3af"/><rect x="64" y="122" width="80" height="26" rx="6" fill="${accent}"/></svg>`
+  return svgDataURL(svg)
+}
+const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString()
+const documentRows: PortalDocumentRow[] = [
+  {
+    id: 'd1',
+    name: 'Spring campaign',
+    kind: 'design',
+    saved: true,
+    workspace: 'Community',
+    owner: account,
+    updatedAt: hoursAgo(0.2),
+    thumbnail: thumbnail('#2563eb'),
+    exposure: { community: true, links: 0, editLinks: 0 },
+    takenDown: false,
+    takenDownReason: null,
+    openReports: 0,
+    deletedForever: false,
+    destroyed: null
+  },
+  {
+    id: 'd2',
+    name: 'Sprint retro',
+    kind: 'board',
+    saved: true,
+    workspace: 'Studio',
+    owner: { id: 'user-ben', name: 'Ben Ortiz', email: 'ben@studio.example' },
+    updatedAt: hoursAgo(5),
+    thumbnail: thumbnail('#db2777'),
+    exposure: { community: false, links: 2, editLinks: 1 },
+    takenDown: false,
+    takenDownReason: null,
+    openReports: 1,
+    deletedForever: false,
+    destroyed: null
+  },
+  {
+    id: 'd3',
+    name: 'Untitled',
+    kind: 'design',
+    saved: false,
+    workspace: 'Chloe’s workspace',
+    owner: { id: 'user-chloe', name: 'Chloe Martin', email: 'chloe@agency.example' },
+    updatedAt: hoursAgo(30),
+    thumbnail: null,
+    exposure: { community: false, links: 0, editLinks: 0 },
+    takenDown: false,
+    takenDownReason: null,
+    openReports: 0,
+    deletedForever: false,
+    destroyed: null
+  },
+  {
+    id: 'd4',
+    name: 'Giveaway',
+    kind: 'design',
+    saved: true,
+    workspace: 'Promo',
+    owner: null,
+    updatedAt: hoursAgo(24 * 12),
+    thumbnail: thumbnail('#ca8a04'),
+    exposure: { community: false, links: 1, editLinks: 0 },
+    takenDown: true,
+    takenDownReason: 'Phishing page',
+    openReports: 0,
+    deletedForever: false,
+    destroyed: null
+  }
+]
+const loadDocuments = serve(documentRows, { all: 4, reported: 1, disabled: 1, purged: 0 })
 const emails: PortalEmail[] = [
   {
     id: 'e1',
@@ -333,6 +417,7 @@ const components = {
   PortalPerson: PortalPersonPage,
   PortalAccessRequests,
   PortalActivity,
+  PortalDocuments,
   PortalEmailDelivery,
   PortalPeople,
   PortalStatus
@@ -367,6 +452,7 @@ const story = (
       loadNoRequests,
       loadEmails,
       loadActivity,
+      loadDocuments,
       freePlan,
       paidPlan,
       planOffers,
@@ -478,3 +564,26 @@ export const Activity = story(
   'What administrators did on this server.',
   `<PortalActivity :load="loadActivity" />`
 )
+export const Documents: Story = {
+  ...story(
+    'documents',
+    'Documents',
+    'Every document on this server, latest change first.',
+    `<PortalDocuments :load="loadDocuments" />`
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // Each document says who beyond its workspace can open it, private ones included.
+    await expect(await canvas.findByText('In community')).toBeVisible()
+    await expect(canvas.getByText('Editable by link')).toBeVisible()
+    await expect(canvas.getByText('Private')).toBeVisible()
+    const miniature = canvasElement.querySelector('[data-test-id="document-miniature"]')
+    if (!(miniature instanceof HTMLElement)) throw new Error('No document shows a miniature')
+    // The preview opens in a portal, outside the story's canvas.
+    const preview = () =>
+      canvasElement.ownerDocument.querySelector('[data-test-id="document-preview"] img')
+    // Focusing the miniature opens it, so the keyboard reaches it as hovering does.
+    miniature.focus()
+    await waitFor(() => expect(preview()).toHaveAttribute('alt', 'Preview of Spring campaign'))
+  }
+}
