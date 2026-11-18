@@ -67,31 +67,46 @@ export function useCloudCreditStanding() {
   )
 
   const live = computed(() => creditStanding(balance.value, allowance.value))
-  // While a refresh has the wallet and the allowance from different moments, the standing stays
-  // as it last was, so one half of a plan change never warns at the other half's threshold.
-  const held = shallowRef<CloudCreditStanding>(null)
-  const refreshing = shallowRef(false)
+  /** Whose credits these are: the account and workspace, or `null` while the chat isn't on Cloud. */
+  const scope = computed(() =>
+    cloudAIIdentity.value && workspaceId.value
+      ? `${cloudAIIdentity.value}\n${workspaceId.value}`
+      : null
+  )
+  // While a refresh has the wallet and the allowance from different moments, the warning stays
+  // as it last was, renewal date and all, so one half of a plan change never warns at the other
+  // half's threshold. Only for the credits it was refreshing: another workspace shows its own.
+  const held = shallowRef<{
+    scope: string | null
+    standing: CloudCreditStanding
+    renewsAt: string | null
+  } | null>(null)
+  let refreshes = 0
   async function refreshAll(id: string): Promise<void> {
-    held.value = live.value
-    refreshing.value = true
+    const run = ++refreshes
+    held.value = { scope: scope.value, standing: live.value, renewsAt: renewsAt.value }
     try {
       const read = ++allowanceRead
       const next = await cloudMonthlyAllowance(id)
       if (read !== allowanceRead || id !== workspaceId.value) return
       // The wallet counts the allowance its token was signed with, so a changed plan needs a new one.
       if (next !== allowance.value) renewCloudAIToken(id)
-      await refresh()
-      if (read === allowanceRead) allowance.value = next
+      // The new allowance goes with the wallet read against it, or waits for the next refresh.
+      if ((await refresh()) && read === allowanceRead) allowance.value = next
     } finally {
-      refreshing.value = false
+      if (run === refreshes) held.value = null
     }
   }
   useEventListener(window, 'focus', () => {
     if (workspaceId.value) void refreshAll(workspaceId.value)
   })
+  const holding = computed(() => held.value !== null && held.value.scope === scope.value)
   return {
-    standing: computed(() => (refreshing.value ? held.value : live.value)),
-    renewsAt,
+    standing: computed(() => (holding.value ? (held.value?.standing ?? null) : live.value)),
+    renewsAt: computed(() => (holding.value ? (held.value?.renewsAt ?? null) : renewsAt.value)),
+    scope,
+    /** Whether the wallet has answered with enough credits, as opposed to not answering at all. */
+    healthy: computed(() => balance.value !== null && live.value === null),
     /**
      * Whether the signed-in account pays for these credits, and so can buy more; `null` when the
      * server can't say.

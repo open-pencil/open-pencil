@@ -10,7 +10,7 @@ const REFRESH_MARGIN_MS = 60_000
 export function createCloudTokenCache(
   request: () => Promise<{ token: string; expiresAt: string }>,
   now: () => number = Date.now
-): CloudServicesTokenSource {
+): CloudServicesTokenSource & { reset(): void } {
   let current: { token: string; expiresAt: number } | null = null
   let pending: Promise<string> | null = null
   return {
@@ -30,6 +30,10 @@ export function createCloudTokenCache(
     },
     invalidate(token) {
       if (current?.token === token) current = null
+    },
+    /** Forgets the held token, so the next request signs a new one. */
+    reset() {
+      current = null
     }
   }
 }

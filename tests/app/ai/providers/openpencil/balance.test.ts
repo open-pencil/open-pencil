@@ -225,6 +225,24 @@ describe('useCloudCreditBalance', () => {
     expect(home.asked).toEqual(['team', 'other', 'team'])
   })
 
+  test('shows a later read for a view that could not read on arriving', async () => {
+    const home = homeCloud()
+    let ready = false
+    const source: CloudBalanceSource = {
+      identity: home.identity,
+      client: (id) => (ready ? home.source.client(id) : null)
+    }
+    const credits = show(source)
+    await settle()
+    expect(home.answers).toHaveLength(0)
+
+    ready = true
+    const read = credits.refresh()
+    home.answers[0]?.resolve(wallet(800))
+    expect(await read).toBe(true)
+    expect(credits.balance.value).toBe(800)
+  })
+
   test('keeps showing a view its balance while another view arrives and reads', async () => {
     const home = homeCloud()
     const banner = show(home.source)

@@ -40,7 +40,7 @@ export const cloudBillingURL = computed(() => {
 })
 
 // Keyed by account too, so a token signed for one person is never sent for another.
-const tokenSources = new Map<string, CloudServicesTokenSource>()
+const tokenSources = new Map<string, CloudServicesTokenSource & { reset(): void }>()
 
 /** The Home server's services on a workspace's behalf, or `null` while it is unavailable. */
 export function cloudAIClient(workspaceId: string): CloudServicesClient | null {
@@ -89,7 +89,8 @@ export function cloudOwnsWorkspace(workspaceId: string): boolean | null {
  * it is now: a token carries the allowance it was signed with.
  */
 export function renewCloudAIToken(workspaceId: string): void {
-  tokenSources.delete(`${cloudAIIdentity.value}:${workspaceId}`)
+  // Reset in place, since clients made earlier, such as a chat's, keep this same source.
+  tokenSources.get(`${cloudAIIdentity.value}:${workspaceId}`)?.reset()
 }
 
 /**

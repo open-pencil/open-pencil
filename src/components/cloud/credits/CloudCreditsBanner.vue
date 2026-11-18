@@ -21,7 +21,7 @@ import AppBanner from '@/components/ui/feedback/AppBanner.vue'
 const cloud = useCloudMessages()
 const { common } = useI18n()
 const dates = useDateFormat()
-const { standing, renewsAt, pays } = useCloudCreditStanding()
+const { standing, renewsAt, scope, healthy, pays } = useCloudCreditStanding()
 
 const message = computed(() => {
   if (standing.value === 'low') return cloud.value.creditsLowBanner
@@ -29,20 +29,23 @@ const message = computed(() => {
     ? cloud.value.creditsOutUntilBanner({ date: dates.format(renewsAt.value, 'date') })
     : cloud.value.creditsOutBanner
 })
-const UNDATED = 'no-allowance'
-const dismissalKey = (kind: 'low' | 'out', period: string) =>
-  `open-pencil:cloud-credits-${kind}:${period}`
-const dismissal = computed(() =>
-  standing.value ? dismissalKey(standing.value, renewsAt.value ?? UNDATED) : ''
+// Each account and workspace has dismissals of its own. An undated dismissal has no next month
+// to end it, so each recovery the wallet confirms starts a new period for it instead.
+const recoveries = useLocalStorage<Record<string, number>>(
+  'open-pencil:cloud-credits-recoveries',
+  {}
 )
-// An undated dismissal has no next month to end it, so credits that recover end it instead.
-const undatedDismissals = [
-  useLocalStorage(dismissalKey('low', UNDATED), false),
-  useLocalStorage(dismissalKey('out', UNDATED), false)
-]
-watch(standing, (now) => {
-  if (now) return
-  for (const dismissed of undatedDismissals) dismissed.value = false
+watch(healthy, (now, before) => {
+  if (!now || before || !scope.value) return
+  recoveries.value = {
+    ...recoveries.value,
+    [scope.value]: (recoveries.value[scope.value] ?? 0) + 1
+  }
+})
+const dismissal = computed(() => {
+  if (!standing.value || !scope.value) return ''
+  const period = renewsAt.value ?? `undated-${recoveries.value[scope.value] ?? 0}`
+  return `open-pencil:cloud-credits-${standing.value}:${scope.value}:${period}`
 })
 // The plan page opens billing at once, where credits are bought. Credits come from the owner's
 // account, so anyone else is asked to go to the owner instead of buying into their own, and

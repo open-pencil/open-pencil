@@ -47,4 +47,14 @@ describe('Cloud token cache', () => {
     await expect(tokens.token()).rejects.toThrow('offline')
     expect(await tokens.token()).toBe('token')
   })
+  test('signs a new token after a reset, for every client that shares the cache', async () => {
+    let signed = 0
+    const tokens = createCloudTokenCache(async () => {
+      signed++
+      return { token: `token-${signed}`, expiresAt: '2099-01-01T00:00:00.000Z' }
+    })
+    expect(await tokens.token()).toBe('token-1')
+    tokens.reset()
+    expect(await tokens.token()).toBe('token-2')
+  })
 })

@@ -63,8 +63,11 @@ export function useCloudCreditBalance(
     wallets.value = new Map(wallets.value).set(at, entry)
   }
 
-  /** Reads the wallet again, and says which read it is, or `null` with nothing to read. */
-  function startRead(): { at: string; read: number; done: Promise<void> } | null {
+  /**
+   * Reads the wallet again, and says which read it is and whether its answer was kept, or `null`
+   * with nothing to read.
+   */
+  function startRead(): { at: string; read: number; done: Promise<boolean> } | null {
     const at = key.value
     const id = workspaceId()
     const client = id ? source.client(id) : null
@@ -72,13 +75,20 @@ export function useCloudCreditBalance(
     const read = ++reads
     latestReads.set(at, read)
     const keep = (value: CreditWallet | null) => {
-      if (latestReads.get(at) === read) store(at, { wallet: value, read })
+      if (latestReads.get(at) !== read) return false
+      store(at, { wallet: value, read })
+      return true
     }
     return { at, read, done: client.wallet().then(keep, () => keep(null)) }
   }
 
-  async function refresh(): Promise<void> {
-    await startRead()?.done
+  /** Reads the wallet again, and says whether this read's answer is the one shown. */
+  async function refresh(): Promise<boolean> {
+    const started = startRead()
+    if (!started) return false
+    // A view that could not read on arriving, with no client yet, shows this read once it can.
+    if (since.value === Number.POSITIVE_INFINITY) since.value = started.read
+    return started.done
   }
 
   // Arriving at a workspace always reads it afresh, since a read already under way may predate
