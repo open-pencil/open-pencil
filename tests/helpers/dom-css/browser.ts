@@ -260,3 +260,47 @@ export async function browserImportedLayers(
     }
   )
 }
+
+/** A layer of imported HTML, as the probe below reports it. */
+export interface ImportedLayerSummary {
+  name: string
+  type: SceneNode['type']
+  text: string
+  width: number
+  height: number
+}
+
+/**
+ * Imports HTML as the app does and lists every layer, in tree order: its name, type, text, and
+ * size. For content no id names, such as generated `::before` and `::after` boxes.
+ */
+export async function browserImportedLayerSummaries(
+  page: Page,
+  html: string,
+  viewport: { width: number; height: number }
+): Promise<ImportedLayerSummary[]> {
+  await ensureAppPage(page)
+  return page.evaluate(
+    async ({ source, size, domModule, layersModule }) => {
+      const { browserHTMLToDesignDocument } = await import(domModule)
+      const { sceneGraphFromStyledHTML } = await import(layersModule)
+      const styled: DesignDocument = await browserHTMLToDesignDocument(source, {
+        compute: { layout: true, viewport: size }
+      })
+      const graph: SceneGraph = await sceneGraphFromStyledHTML(styled)
+      return graph.flattenTree(graph.getPages()[0].id).map(({ node }) => ({
+        name: node.name,
+        type: node.type,
+        text: node.text,
+        width: node.width,
+        height: node.height
+      }))
+    },
+    {
+      source: html,
+      size: viewport,
+      domModule: DOM_CSS_BROWSER_MODULE,
+      layersModule: CORE_HTML_LAYERS_MODULE
+    }
+  )
+}

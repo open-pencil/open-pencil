@@ -237,6 +237,59 @@ function documentHTML(body: string, cssText: string): string {
  * without one: computed styles and, when asked, the boxes, inline fragments, and text lines a
  * browser runtime records, before transforms. Documents are parsed and serialized by dom-css.
  */
+/** The `::before` and `::after` nodes of each captured element, by the element's index. */
+function generatedChildren(capture: HTMLEngineCapture): Map<number, number[]> {
+  const generated = new Map<number, number[]>()
+  for (const [index, node] of capture.nodes.entries()) {
+    if (node.parent === undefined || !node.tag?.startsWith('::')) continue
+    generated.set(node.parent, [...(generated.get(node.parent) ?? []), index])
+  }
+  return generated
+}
+
+/** The text a captured node holds directly, as a pseudo-element's generated content. */
+function ownText(capture: HTMLEngineCapture, index: number): string {
+  return capture.nodes
+    .filter((node) => node.parent === index && node.text !== undefined)
+    .map((node) => node.text)
+    .join('')
+}
+
+/**
+ * Shows each element's `::before` and `::after` as elements of their own, first and last among its
+ * children, with the style, box, and text the engine generated for them, so they are imported as
+ * any element is.
+ */
+function showGeneratedContent(
+  capture: HTMLEngineCapture,
+  pairs: readonly [DesignElement, HTMLEngineNode][],
+  layout: boolean
+): void {
+  const indexes = new Map(capture.nodes.map((node, index) => [node, index]))
+  const generated = generatedChildren(capture)
+  for (const [element, node] of pairs) {
+    const index = indexes.get(node)
+    for (const pseudo of (index === undefined ? undefined : generated.get(index)) ?? []) {
+      const captured = capture.nodes[pseudo]
+      const text = ownText(capture, pseudo)
+      const child: DesignElement = {
+        type: 'element',
+        tagName: captured.tag ?? '::before',
+        attrs: {},
+        children: text ? [{ type: 'text', text }] : [],
+        computedStyle: withShorthands({
+          ...capture.initial,
+          ...captured.style,
+          ...captured.computed
+        })
+      }
+      if (layout) child.layout = layoutOf(captured)
+      if (captured.tag === '::after') element.children.push(child)
+      else element.children.unshift(child)
+    }
+  }
+}
+
 /** A fetch that also keeps what it answered, by the URL asked for and the one it came from. */
 function keepingFetch(
   fetch: DesignResourceFetch | undefined,
@@ -281,7 +334,8 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
         fetch: fontFaceFetch(laidOut, cssText, { ...options, fetch })
       })
       const styled = structuredClone(document)
-      for (const [element, node] of pairElements(styled, capture)) {
+      const pairs = pairElements(styled, capture)
+      for (const [element, node] of pairs) {
         // Every captured property's computed value, so none falls back to a stale inline one, with
         // sizes and line heights as the page set them rather than as layout resolved them, so the
         // importer tells a size the page fixed from one that fills or hugs and keeps a line height
@@ -295,6 +349,7 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
         const image = imageOf(element, answered, options.baseURL)
         if (image) element.image = image
       }
+      showGeneratedContent(capture, pairs, compute.layout === true)
       return styled
     }
   }

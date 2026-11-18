@@ -11,6 +11,7 @@ import type {
   DesignResourceFetch,
   DesignViewport
 } from '../types'
+import { showGeneratedContent } from './generated'
 import { recordLayout } from './layout'
 
 export interface BrowserCSSRuntimeOptions {
@@ -374,7 +375,7 @@ async function computeStylesInShadowRoot(
 
   try {
     await settle(browserDocument, shadow)
-    return copyComputedStyles(designDocument, content, options, {
+    return await copyComputedStyles(designDocument, content, options, {
       origin: content,
       styleRoot: shadow
     })
@@ -435,7 +436,7 @@ async function computeStylesInIframe(
     content.innerHTML = serializeHTML(designDocument)
 
     await settle(iframeDocument, iframeDocument)
-    return copyComputedStyles(designDocument, content, options, {
+    return await copyComputedStyles(designDocument, content, options, {
       origin: iframeDocument.documentElement,
       styleRoot: iframeDocument.head
     })
@@ -451,12 +452,12 @@ interface LayoutFrame {
   styleRoot: Node & ParentNode
 }
 
-function copyComputedStyles(
+async function copyComputedStyles(
   designDocument: DesignDocument,
   content: Element,
   options: CSSComputeOptions,
   frame: LayoutFrame
-): CopiedStyles {
+): Promise<CopiedStyles> {
   const view = content.ownerDocument.defaultView
   if (!view) throw new TypeError('Browser CSS runtime requires getComputedStyle')
 
@@ -472,6 +473,12 @@ function copyComputedStyles(
   for (const [index, child] of elements.entries()) {
     const domChild = domElements.at(index)
     if (domChild) collectElementPairs(child, domChild, pairs)
+  }
+
+  // Generated content becomes elements, laid out before anything is read.
+  if (showGeneratedContent(pairs, view, frame.styleRoot) > 0) {
+    await requestFrame(content.ownerDocument)
+    await content.ownerDocument.fonts.ready
   }
 
   const images: [DesignElement, string][] = []

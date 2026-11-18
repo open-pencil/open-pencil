@@ -8,7 +8,11 @@ import {
   type DesignNode
 } from '@open-pencil/dom-css'
 
-import { browserImportedLayers, browserRuntimeComputeStyles } from '#tests/helpers/dom-css/browser'
+import {
+  browserImportedLayers,
+  browserImportedLayerSummaries,
+  browserRuntimeComputeStyles
+} from '#tests/helpers/dom-css/browser'
 import { testPath } from '#tests/helpers/paths'
 
 import { expect, test } from '../fixtures'
@@ -75,6 +79,27 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(at('first')).toMatchObject({ y: 0, height: 100 })
     expect(at('second')).toMatchObject({ y: 100, height: 100 })
     expect(at('last')).toMatchObject({ y: 200, width: 800, height: 40 })
+  })
+
+  test('lays out ::before and ::after as layers of their own', async ({ page }) => {
+    const layers = await browserImportedLayerSummaries(
+      page,
+      `<style>
+        body { margin: 0; font-size: 14px }
+        .link::after { content: " " attr(data-mark) }
+        .rule::before { content: ""; display: block; width: 1px; height: 24px; background: #ccc }
+      </style>
+      <p><a class="link" data-mark="↗">GitHub</a></p>
+      <div class="rule"></div>`,
+      VIEWPORT
+    )
+
+    // An inline ::after runs on in its element's text; a block ::before is a box of its own.
+    expect(layers.some((layer) => layer.type === 'TEXT' && layer.text === 'GitHub ↗')).toBe(true)
+    expect(layers.find((layer) => layer.name === '::before')).toMatchObject({
+      width: 1,
+      height: 24
+    })
   })
 
   test('keeps auto side margins, which center or end-align a block', async ({ page }) => {
