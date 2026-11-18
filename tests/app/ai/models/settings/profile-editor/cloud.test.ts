@@ -43,6 +43,8 @@ function homeCloud() {
       workspaceAnswers.push(next)
       return next.promise
     },
+    // The profile editor lists every workspace; only automatic setup asks for the first.
+    firstWorkspace: async () => null,
     client: () => ({
       catalog: () => {
         const next = createDeferred<ServiceCatalog>()

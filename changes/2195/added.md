@@ -1,1 +1,1 @@
-- AI on OpenPencil Cloud works as soon as you sign in to a plan that includes it: the app sets up the model the server recommends for each kind of work, with nothing to choose or paste (#2195).
+- AI on OpenPencil Cloud works as soon as you sign in on a fresh install with a plan that includes it: the app sets up the model the server recommends for each kind of work, with nothing to choose or paste. A model you already set up stays as it is (#2195).

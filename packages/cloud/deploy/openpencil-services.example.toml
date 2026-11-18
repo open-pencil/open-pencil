@@ -28,13 +28,12 @@ base_url = "https://openrouter.ai/api/v1"
 default_model = "anthropic/claude-sonnet-5-5"
 
 # Optional: the model for each of the editor's roles, which an editor signed in to Cloud sets
-# itself up with. A role left out uses default_model; vision is left out when that model reads no
-# images.
+# itself up with; each must be a model listed below. Design left out is default_model; Review and
+# Fast left out follow Design, and Vision left out does too when Design reads images. Design and
+# Fast need tools, and Vision images. To give Fast a cheaper model, list it below and name it here.
 # [catalog.roles]
 # design = "anthropic/claude-sonnet-5-5"
-# review = "anthropic/claude-sonnet-5-5"
-# fast = "anthropic/claude-haiku-5-5"
-# vision = "anthropic/claude-sonnet-5-5"
+# fast = "anthropic/claude-sonnet-5-5"
 
 [[catalog.models]]
 id = "anthropic/claude-sonnet-5-5"

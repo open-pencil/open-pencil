@@ -1,13 +1,12 @@
 import { uniq } from 'es-toolkit'
 
-import { DEFAULT_AI_PROVIDER, type AIProviderID } from '@open-pencil/core/constants'
+import type { AIProviderID } from '@open-pencil/core/constants'
 
 import {
   aiModelSettings,
   createConnectionId,
   createModelId,
-  DEFAULT_MAX_OUTPUT_TOKENS,
-  LEGACY_MODEL_ID
+  DEFAULT_MAX_OUTPUT_TOKENS
 } from './store'
 import type {
   AIModelAssignments,
@@ -17,25 +16,14 @@ import type {
   OptionalAIModelRole
 } from './types'
 
-/**
- * Whether the models are still a fresh install's: the one Design model on the default provider,
- * with no server address, which can't have worked. Setting models up over it loses nothing.
- */
-export function hasOnlyUnsetDefaultModel(): boolean {
-  const { models, connections } = aiModelSettings.value
-  const only = models.at(0)
-  if (models.length !== 1 || only?.id !== LEGACY_MODEL_ID) return false
-  const connection = connections.find((candidate) => candidate.id === only.connectionId)
-  return connection?.providerID === DEFAULT_AI_PROVIDER && !connection.customBaseURL
-}
-
 /** A model a role is set up with: its ID, the name it shows under, and what it can do. */
 export type RoleModelChoice = { modelID: string; name: string; capabilities: AIModelCapability[] }
 
 /**
  * Replaces the models with one connection to `providerID`, paid for by `cloudWorkspaceId` when it
- * is Cloud's, and a profile for each model the roles take, assigned to them. A role on the Design
- * model follows it; Vision is left unassigned without a model that reads images.
+ * is Cloud's, and a profile for each model the roles take, assigned to them. Review and Vision on
+ * the Design model follow it, while Fast takes the design profile itself, since Fast tasks run only
+ * with a model of their own; Vision is left unassigned without a model that reads images.
  */
 export function setUpRoleModels(
   providerID: AIProviderID,
@@ -70,7 +58,8 @@ export function setUpRoleModels(
   const assignments: AIModelAssignments = {
     design: design.id,
     review: assign(roles.review),
-    fast: assign(roles.fast),
+    // Fast tasks run only with a model of their own, so they take the design profile itself.
+    fast: roles.fast ? profileFor(roles.fast).id : null,
     vision: assign(vision)
   }
   aiModelSettings.value = {

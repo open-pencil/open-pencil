@@ -5,7 +5,7 @@ description: Use AI models through OpenPencil Cloud with your workspace plan's m
 
 # AI on Cloud
 
-When your workspace's plan includes AI and the server offers it, the AI assistant uses models through Cloud instead of a key of your own. Signing in sets it up: the app picks the model the server recommends for each kind of work (designing, reviewing, quick tasks such as naming chats, and reading images), so the chat works at once, with nothing to choose or paste. It does this only while no model of your own is set up, and never replaces one.
+When your workspace's plan includes AI and the server offers it, the AI assistant uses models through Cloud instead of a key of your own. On a fresh install, signing in sets it up: the app picks the model the server recommends for each kind of work (designing, reviewing, quick tasks such as naming chats, and reading images when the server offers a model for it), so the chat works at once, with nothing to choose or paste. If you have already set up a model of your own, signing in leaves it in place.
 
 To change the models or which workspace pays, open **Settings → Models**. **OpenPencil Cloud** is listed there while you are signed in to the server Home shows; the models and their prices come from the server.
 

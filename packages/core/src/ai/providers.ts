@@ -175,6 +175,11 @@ export interface AIProviderDef {
   defaultModel: string
   /** Absent for a provider whose models the person or the agent chooses. */
   roles?: ProviderRoleModels
+  /**
+   * Models the list no longer offers, never shown, so profiles saved with them still send what
+   * the model accepts, such as its lowest reasoning effort.
+   */
+  retiredModels?: ModelOption[]
   supportsCustomBaseURL?: boolean
   supportsCustomModel?: boolean
   /** The credential comes from signing in to an account; there is no key to paste. */
@@ -203,6 +208,11 @@ const OPENAI_MODELS: ModelOption[] = [
     capabilities: ['tools', 'vision']
   },
   { id: 'gpt-6-luna', name: 'GPT-6 Luna', tag: 'Fast', capabilities: ['tools', 'vision'] }
+]
+
+const RETIRED_OPENAI_MODELS: ModelOption[] = [
+  { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', minReasoningEffort: 'low' },
+  { id: 'gpt-6-astra', name: 'GPT-6 Astra', minReasoningEffort: 'low' }
 ]
 
 const OPENAI_ROLES: ProviderRoleModels = {
@@ -355,6 +365,7 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     keyURL: 'https://platform.openai.com/api-keys',
     defaultModel: 'gpt-6.2-sol',
     roles: OPENAI_ROLES,
+    retiredModels: RETIRED_OPENAI_MODELS,
     models: OPENAI_MODELS
   },
   {
@@ -364,6 +375,7 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     keyURL: '',
     defaultModel: 'gpt-6.2-sol',
     roles: OPENAI_ROLES,
+    retiredModels: RETIRED_OPENAI_MODELS,
     signInOnly: true,
     // The Codex backend rejects minimal effort on every model.
     models: OPENAI_MODELS.map((model) => ({ ...model, minReasoningEffort: 'low' }))
@@ -374,6 +386,9 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     keyPlaceholder: 'AIza…',
     keyURL: 'https://aistudio.google.com/apikey',
     defaultModel: 'gemini-4-argon',
+    retiredModels: [
+      { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', minReasoningEffort: 'low' }
+    ],
     roles: {
       design: 'gemini-4-argon',
       review: 'gemini-4-carbon',

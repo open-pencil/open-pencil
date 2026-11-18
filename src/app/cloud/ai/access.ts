@@ -74,3 +74,19 @@ export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
   if (failure) throw failure.reason
   return compact(checks.map((check) => (check.status === 'fulfilled' ? check.value : null)))
 }
+
+/**
+ * The first of the Home server's workspaces, in the order it lists them, whose plan includes AI,
+ * or `null` with none. It checks them one at a time and stops at the first, so a later workspace
+ * that can't be checked never hides it; it rejects when one before it can't be.
+ */
+export async function firstCloudAIWorkspace(): Promise<CloudAIWorkspace | null> {
+  const home = homeAI.value
+  if (!home) return null
+  const api = cloudAPIClient(home.server, home.discovery)
+  for (const workspace of home.connection.workspaces) {
+    const entitlements = await api.getWorkspaceEntitlements(workspace.id)
+    if (entitlements.features.cloudServices) return { id: workspace.id, name: workspace.name }
+  }
+  return null
+}

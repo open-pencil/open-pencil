@@ -201,10 +201,8 @@ function recommendedModel(
   return model ? fromCatalog(providerID, model) : null
 }
 
-/** The provider's model for quick work: the one it recommends, or else one tagged Fast. */
-function fastModel(providerID: AIProviderID): PlannedModel | null {
-  const recommended = recommendedModel(providerID, 'fast')
-  if (recommended?.capabilities.includes('tools')) return recommended
+/** The provider's catalog model tagged Fast that calls tools, for one that recommends none. */
+function taggedFastModel(providerID: AIProviderID): PlannedModel | null {
   const model = catalogModels(providerID).find(
     (candidate) => candidate.tag === 'Fast' && candidate.capabilities?.includes('tools')
   )
@@ -311,7 +309,11 @@ function planReview(
   return vision !== 'design' && vision?.capabilities.includes('tools') ? vision : null
 }
 
-/** Fast work uses the provider's fast model when it has one, otherwise the design model. */
+/**
+ * Fast work uses the model the provider recommends for it, even when that is the design model,
+ * since Fast tasks run only with a model of their own; otherwise a model tagged Fast, otherwise
+ * the design model.
+ */
 function planFast(
   design: PlannedModel | null,
   vision: PlannedRole,
@@ -320,7 +322,9 @@ function planFast(
   if (keepRole(current, 'fast', design)) return current.fast
   const apiVision = vision === 'design' ? null : vision
   const base = canFollowDesign('fast', design) ? design : apiVision
-  const fast = base ? fastModel(base.providerID) : null
+  const recommended = base ? recommendedModel(base.providerID, 'fast') : null
+  if (recommended?.capabilities.includes('tools')) return recommended
+  const fast = base ? taggedFastModel(base.providerID) : null
   if (fast && fast.modelID !== base?.modelID) return fast
   if (canFollowDesign('fast', design)) return 'design'
   return base

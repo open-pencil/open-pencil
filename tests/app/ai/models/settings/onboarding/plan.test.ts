@@ -6,11 +6,10 @@ import {
   roleChoiceKey,
   roleOptions,
   type OnboardingAnswers,
-  type OnboardingPlan,
   usableCurrentModels
 } from '@/app/ai/models/settings/onboarding/plan'
 
-import { defaultModel, isFastToolModel } from '#tests/helpers/ai/model-catalog'
+import { defaultModel, recommendedRoles } from '#tests/helpers/ai/model-catalog'
 
 const desktop = { agentsAvailable: true }
 const browser = { agentsAvailable: false }
@@ -19,10 +18,6 @@ const sandboxed = { agentsAvailable: false, subscriptionsAvailable: true }
 
 function answers(overrides: Partial<OnboardingAnswers>): OnboardingAnswers {
   return { goals: ['design'], access: [], spending: 'existing', ...overrides }
-}
-
-function plannedModelID(choice: OnboardingPlan['fast']): string {
-  return typeof choice === 'object' && choice !== null ? choice.modelID : ''
 }
 
 describe('planOnboarding', () => {
@@ -265,22 +260,22 @@ describe('planOnboarding with configured models', () => {
 describe('planOnboarding for review and fast work', () => {
   test('gives review and fast work the models the provider recommends for them', () => {
     const plan = planOnboarding(answers({ access: ['openrouter'] }), desktop)
-    expect(plan.review).toMatchObject({
-      providerID: 'openrouter',
-      modelID: 'anthropic/claude-opus-5.5'
-    })
-    expect(plan.fast).toMatchObject({ providerID: 'openrouter' })
-    expect(isFastToolModel('openrouter', plannedModelID(plan.fast))).toBe(true)
-    // A provider whose design model reads no images reviews with one of its models that does.
+    const roles = recommendedRoles('openrouter')
+    expect(plan.review).toMatchObject({ providerID: 'openrouter', modelID: roles.review })
+    expect(plan.fast).toMatchObject({ providerID: 'openrouter', modelID: roles.fast })
+    // A provider whose design model reads no images reviews with the one it recommends, which does.
     expect(planOnboarding(answers({ access: ['deepseek'] }), desktop).review).toMatchObject({
-      modelID: 'deepseek-flash'
+      modelID: recommendedRoles('deepseek').review
     })
   })
 
-  test('follows the design model when its provider recommends no other model', () => {
+  test('gives fast work its recommended model even when it is the design model', () => {
+    // Fast tasks run only with a model of their own, so following Design would turn them off.
     const plan = planOnboarding(answers({ access: ['minimax'] }), desktop)
+    const roles = recommendedRoles('minimax')
+    expect(roles.fast).toBe(roles.design)
     expect(plan.review).toBe('design')
-    expect(plan.fast).toBe('design')
+    expect(plan.fast).toMatchObject({ providerID: 'minimax', modelID: roles.fast })
   })
 
   test('lets review and fast work follow an agent design model', () => {

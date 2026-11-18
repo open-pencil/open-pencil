@@ -2,13 +2,10 @@ import { watch } from 'vue'
 
 import type { RoleModels, ServiceCatalog } from '@open-pencil/cloud/contract'
 
-import {
-  hasOnlyUnsetDefaultModel,
-  setUpRoleModels,
-  type AIModelCapability,
-  type RoleModelChoice
-} from '@/app/ai/models'
+import { aiModelSettings, setUpRoleModels, type RoleModelChoice } from '@/app/ai/models'
+import { isUnconfiguredModelSettings } from '@/app/ai/models/settings/onboarding/apply'
 
+import { cloudCatalogModel } from './catalog'
 import { OPENPENCIL_AI_PROVIDER } from './provider'
 import { HOME_CLOUD_AI, type CloudAISource } from './source'
 
@@ -26,10 +23,8 @@ export function catalogRoleModels(catalog: ServiceCatalog): RoleModels {
 function choice(catalog: ServiceCatalog, modelID: string | null): RoleModelChoice | null {
   const model = catalog.models.find((candidate) => candidate.id === modelID)
   if (!model) return null
-  const capabilities: AIModelCapability[] = []
-  if (model.capabilities.tools) capabilities.push('tools')
-  if (model.capabilities.vision) capabilities.push('vision')
-  return { modelID: model.id, name: model.label, capabilities }
+  const { id, name, capabilities } = cloudCatalogModel(model)
+  return { modelID: id, name, capabilities }
 }
 
 /**
@@ -39,13 +34,14 @@ function choice(catalog: ServiceCatalog, modelID: string | null): RoleModelChoic
  */
 export async function setUpCloudAI(cloud: CloudAISource = HOME_CLOUD_AI): Promise<boolean> {
   const identity = cloud.identity.value
-  if (!identity || !hasOnlyUnsetDefaultModel()) return false
-  const workspace = (await cloud.workspaces()).at(0)
+  if (!identity || !isUnconfiguredModelSettings(aiModelSettings.value)) return false
+  const workspace = await cloud.firstWorkspace()
   const client = workspace ? cloud.client(workspace.id) : null
   if (!workspace || !client) return false
   const catalog = await client.catalog()
   // Another sign-in, or a model the person set up meanwhile, wins over this answer.
-  if (cloud.identity.value !== identity || !hasOnlyUnsetDefaultModel()) return false
+  if (cloud.identity.value !== identity || !isUnconfiguredModelSettings(aiModelSettings.value))
+    return false
   const roles = catalogRoleModels(catalog)
   const design = choice(catalog, roles.design)
   if (!design?.capabilities.includes('tools')) return false
@@ -62,19 +58,45 @@ export async function setUpCloudAI(cloud: CloudAISource = HOME_CLOUD_AI): Promis
   return true
 }
 
+/** How long a setup that failed waits before each try again, while the same account is signed in. */
+export const SETUP_RETRY_DELAYS_MS = [5_000, 30_000, 120_000] as const
+
 /**
  * Sets AI up on Cloud whenever someone signs in to the Home server, so a Cloud plan's AI works
- * without choosing a model or entering a key. Returns what stops watching.
+ * without choosing a model or entering a key. A failure, such as the server being out of reach,
+ * is tried again a few times while the same account stays signed in. Returns what stops watching.
  */
-export function watchCloudAISetup(cloud: CloudAISource = HOME_CLOUD_AI): () => void {
-  return watch(
+export function watchCloudAISetup(
+  cloud: CloudAISource = HOME_CLOUD_AI,
+  retryDelaysMs: readonly number[] = SETUP_RETRY_DELAYS_MS
+): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const stopRetrying = () => {
+    clearTimeout(timer)
+    timer = undefined
+  }
+  const attempt = (identity: string, tries: number) => {
+    setUpCloudAI(cloud).catch((error: unknown) => {
+      const delay = retryDelaysMs.at(tries)
+      if (delay === undefined || cloud.identity.value !== identity) {
+        console.warn('[Cloud AI] Could not set up the models', error)
+        return
+      }
+      timer = setTimeout(() => {
+        if (cloud.identity.value === identity) attempt(identity, tries + 1)
+      }, delay)
+    })
+  }
+  const stopWatching = watch(
     cloud.identity,
     (identity) => {
-      if (!identity) return
-      setUpCloudAI(cloud).catch((error: unknown) => {
-        console.warn('[Cloud AI] Could not set up the models', error)
-      })
+      stopRetrying()
+      if (identity) attempt(identity, 0)
     },
     { immediate: true }
   )
+  return () => {
+    stopWatching()
+    stopRetrying()
+  }
 }

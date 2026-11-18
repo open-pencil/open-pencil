@@ -90,8 +90,8 @@ const modelIDSchema = v.pipe(v.string(), v.minLength(1))
 /**
  * The model the service recommends for each of the editor's roles: Design runs the chat, Review
  * critiques designs, Fast does quick tasks such as naming conversations, and Vision reads images.
- * An editor signed in to the service sets itself up with them, so nobody has to choose a model.
- * Vision is `null` when no model in the catalog reads images.
+ * An editor signed in to the service with no model of its own yet sets itself up with them, so
+ * nobody has to choose one. Vision is `null` when the service has no model for reading images.
  */
 export const roleModelsSchema = v.object({
   design: modelIDSchema,
@@ -104,7 +104,10 @@ export type RoleModels = v.InferOutput<typeof roleModelsSchema>
 export const serviceCatalogSchema = v.object({
   models: v.array(chatModelSchema),
   defaultModelID: modelIDSchema,
-  /** Absent from a service that predates it; editors then use `defaultModelID` for every role. */
+  /**
+   * Absent from a service that predates it, or whose default model can't run the chat. Editors
+   * then use `defaultModelID` for every role, except Vision when that model reads no images.
+   */
   roleModels: v.optional(roleModelsSchema),
   search: v.optional(searchPricingSchema)
 })

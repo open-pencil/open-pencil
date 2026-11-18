@@ -11,29 +11,38 @@ import {
 } from '@/app/ai/models/store'
 import type { AIModelSettings } from '@/app/ai/models/types'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
-import { catalogRoleModels, setUpCloudAI } from '@/app/ai/providers/openpencil/setup'
+import {
+  catalogRoleModels,
+  setUpCloudAI,
+  watchCloudAISetup
+} from '@/app/ai/providers/openpencil/setup'
 import type { CloudAISource } from '@/app/ai/providers/openpencil/source'
+
+import { freshInstallModelSettings } from '#tests/helpers/ai/settings'
 
 const WORKSPACE = '11111111-1111-4111-8111-111111111111'
 const SONNET = 'anthropic/claude-sonnet-5.5'
 const HAIKU = 'anthropic/claude-haiku-5.5'
 
+/** Prices and context sizes the setup never reads; any value does. */
+const UNUSED = {
+  creditsPerMillionInputTokens: 1,
+  creditsPerMillionOutputTokens: 1,
+  contextTokens: 1
+}
+
 const CATALOG: ServiceCatalog = {
   models: [
     {
+      ...UNUSED,
       id: SONNET,
       label: 'Claude Sonnet 5.5',
-      creditsPerMillionInputTokens: 2858,
-      creditsPerMillionOutputTokens: 14286,
-      contextTokens: 1_000_000,
       capabilities: { reasoning: true, vision: true, tools: true }
     },
     {
+      ...UNUSED,
       id: HAIKU,
       label: 'Claude Haiku 5.5',
-      creditsPerMillionInputTokens: 143,
-      creditsPerMillionOutputTokens: 715,
-      contextTokens: 1_000_000,
       capabilities: { reasoning: true, vision: true, tools: true }
     }
   ],
@@ -41,34 +50,7 @@ const CATALOG: ServiceCatalog = {
   roleModels: { design: SONNET, review: SONNET, fast: HAIKU, vision: SONNET }
 }
 
-/** A fresh install's settings: one Design model on a compatible server with no address. */
-function freshInstall(): AIModelSettings {
-  return {
-    version: 1,
-    connections: [
-      {
-        id: 'connection-default',
-        providerID: 'openai-compatible',
-        customBaseURL: '',
-        customAPIType: 'completions',
-        credentialProfileId: 'default'
-      }
-    ],
-    models: [
-      {
-        id: 'model-default',
-        name: 'Design model',
-        connectionId: 'connection-default',
-        modelID: '',
-        customModelID: '',
-        maxOutputTokens: 16_384,
-        thinkingLevel: 'default',
-        capabilities: ['tools']
-      }
-    ],
-    assignments: { design: 'model-default', review: 'design', fast: 'design', vision: null }
-  }
-}
+const freshInstall = freshInstallModelSettings
 
 function cloud(
   catalog: ServiceCatalog = CATALOG,
@@ -78,6 +60,7 @@ function cloud(
   const source: CloudAISource = {
     identity,
     workspaces: async () => workspaces,
+    firstWorkspace: async () => workspaces.at(0) ?? null,
     client: () => ({ catalog: async () => catalog })
   }
   return { identity, source }
@@ -142,6 +125,33 @@ describe('setting Cloud AI up on sign-in', () => {
     }
     expect(await setUpCloudAI(late)).toBe(false)
     expect(modelSettingsSnapshot()).toEqual(freshInstall())
+  })
+})
+
+describe('watching for sign-ins', () => {
+  test('tries a failed setup again while the same account stays signed in', async () => {
+    const { source } = cloud()
+    let failures = 1
+    const flaky: CloudAISource = {
+      ...source,
+      client: (id) => ({
+        catalog: async () => {
+          if (failures-- > 0) throw new Error('The server is out of reach')
+          const catalog = await source.client(id)?.catalog()
+          if (!catalog) throw new Error('No catalog')
+          return catalog
+        }
+      })
+    }
+    const stop = watchCloudAISetup(flaky, [0])
+    try {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 20)
+      })
+      expect(resolveAIModelRole('design')?.profile.modelID).toBe(SONNET)
+    } finally {
+      stop()
+    }
   })
 })
 

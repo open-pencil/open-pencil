@@ -32,6 +32,14 @@ vision = true
 `
 
 describe('Services server configuration', () => {
+  test('starts a catalog from before roles whose default model calls no tools, recommending none', () => {
+    const textOnly = parseServicesTOML(
+      source.replace('vision = true', 'vision = true\ntools = false'),
+      environment
+    )
+    expect(textOnly.catalog.roleModels).toBeUndefined()
+  })
+
   test('takes a model for each role, checked against what the role needs', () => {
     const haiku = `
 [[catalog.models]]

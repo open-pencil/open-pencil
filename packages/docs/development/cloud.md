@@ -491,7 +491,7 @@ it advertises billing.
 
 A service answers below its endpoint at the paths in `CLOUD_SERVICES_API_PATHS`: model requests
 follow the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
-catalog, wallet, and usage pages are the contract's own. The catalog's `roleModels` names the model the service recommends for each of the editor's roles; an editor signed in to the service with only a fresh install's unset model sets itself up with them (`src/app/ai/providers/openpencil/setup.ts`), and a service without them has its `defaultModelID` take every role. `CloudServicesSchema` types those routes as
+catalog, wallet, and usage pages are the contract's own. The catalog's `roleModels` names the model the service recommends for each of the editor's roles; an editor signed in to the service with only a fresh install's unset model sets itself up with them (`src/app/ai/providers/openpencil/setup.ts`), and a service without them has its `defaultModelID` take every role, except Vision, which stays unassigned when that model reads no images. A catalog from before roles whose default model calls no tools starts without `roleModels`, and editors then set nothing up. `CloudServicesSchema` types those routes as
 Hono does, so the client calls them through `hc` and still parses each answer, since a service is
 deployed apart from the editor; a service built with Hono can check its app against the same type.
 The reference service is the services server in `src/services`, run by `src/runtime/node/services`:

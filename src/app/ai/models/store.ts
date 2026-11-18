@@ -35,7 +35,7 @@ import {
 } from '@/app/ai/models/types'
 
 const LEGACY_CONNECTION_ID = 'connection-default'
-export const LEGACY_MODEL_ID: AIModelProfileId = 'model-default'
+const LEGACY_MODEL_ID: AIModelProfileId = 'model-default'
 export const DEFAULT_MAX_OUTPUT_TOKENS = 16_384
 
 function isProviderID(value: unknown): value is AIProviderID {
