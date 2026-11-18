@@ -80,7 +80,7 @@ Resizing the icon or changing its color doesn't count as an edit.
 
 ## Icons in Exports
 
-- **Design JSX** writes a placed icon as `<Icon name="lucide:heart" size={24} color="#…" />`. Material Symbols and SF Symbols export as the paths they draw, since their names alone don't say how they were drawn; to place one by name, give `<Icon>` its `options`, such as `options={{ wght: 600, FILL: 1 }}`.
+- **Design JSX** writes a placed icon as `<Icon name="lucide:heart" size={24} color="#…" />`. Material Symbols and SF Symbols export as the paths they draw, since their names alone don't say how they were drawn; to place one by name, give `<Icon>` its `options`, such as <code v-pre>options={{ wght: 600, FILL: 1 }}</code>.
 - **HTML** writes it as inline SVG marked with `data-icon`, with its paths painted in `currentColor` and the icon's color set on the `<svg>`, so changing that one `color` recolors it.
 - **SVG and images** draw it like any other vector.
 
