@@ -1,7 +1,9 @@
+import { fileTypeFromBuffer } from 'file-type'
 import { basename, extname } from 'pathe'
 import { decode } from 'ufo'
+import MIMEType from 'whatwg-mimetype'
 
-import { imageHeader } from '@open-pencil/scene-graph/images'
+import { IMPORTABLE_RASTER_TYPES } from '@open-pencil/scene-graph/images'
 
 import type { IORegistry } from '#core/io/registry'
 
@@ -52,55 +54,52 @@ export function remoteFileTitle(url: URL): string {
   return name ? basename(name, extname(name)) : url.hostname
 }
 
-function mediaType(contentType: string | null): string | undefined {
-  const type = contentType?.split(';')[0]?.trim().toLowerCase()
-  return type || undefined
+/** The essence of a `Content-Type` header, such as `text/html`; none for a missing or bad one. */
+function mediaType(header: string | null): string | undefined {
+  return (header && MIMEType.parse(header)?.essence) ?? undefined
 }
 
-const HTML_TYPES = new Set(['text/html', 'application/xhtml+xml'])
-
-/** How far into a file its markup is looked for, past a byte order mark, comments, and space. */
-const MARKUP_SNIFF_BYTES = 64 * 1024
-
-/**
- * The start of text bytes, without a byte order mark, comments, or leading space, in lowercase.
- * Comments are dropped whole within the first `MARKUP_SNIFF_BYTES`, so a long licence header
- * before an SVG's root does not hide it.
- */
-function leadingText(bytes: Uint8Array): string {
-  return new TextDecoder()
-    .decode(bytes.subarray(0, MARKUP_SNIFF_BYTES))
-    .replace(/^\uFEFF/, '')
-    .replace(/^(?:\s|<!--[\s\S]*?-->)+/, '')
-    .slice(0, 1024)
-    .toLowerCase()
+/** What a file is by its media type. */
+const KIND_BY_TYPE: Readonly<Partial<Record<string, RemoteFileKind>>> = {
+  'text/html': 'html',
+  'application/xhtml+xml': 'html',
+  'image/svg+xml': 'svg',
+  'application/pdf': 'pdf'
 }
 
-/** An SVG's start: an optional XML declaration and SVG document type, then its root. */
-const SVG_START =
-  /^(?:<\?xml[^>]*>\s*)?(?:<!--[\s\S]*?-->\s*)*(?:<!doctype svg[^>]*>\s*)?(?:<!--[\s\S]*?-->\s*)*<svg[\s>]/
+/**
+ * The media type a file is taken as by its extension, when its server sends one that says
+ * nothing about it, as a raw file host serves pages and SVG as `text/plain`.
+ */
+const TYPE_BY_EXTENSION: Readonly<Partial<Record<string, string>>> = {
+  '.html': 'text/html',
+  '.htm': 'text/html',
+  '.xhtml': 'application/xhtml+xml',
+  '.svg': 'image/svg+xml'
+}
+
+/** Media types that say nothing about what a file is. */
+const GENERIC_TYPES = new Set(['text/plain', 'application/octet-stream'])
 
 /**
- * What a fetched file is, from what it holds first: PDF and image bytes say so themselves, which a
- * server's media type may not, as a raw file host serves everything as `text/plain` or
- * `application/octet-stream`. Then a design document a reader opens by its name, then the media
- * type, and last the markup a page or an SVG starts with.
+ * What a fetched file is. A binary file says so in its first bytes, whatever the server called
+ * it, so PDF and raster images are read from those; a design document by the name a reader opens;
+ * and a page or an SVG by its media type, or by its extension when the type is generic or missing.
  */
-export function remoteFileKind(
+export async function remoteFileKind(
   file: { name: string; contentType?: string; bytes: Uint8Array },
   io: IORegistry
-): RemoteFileKind {
+): Promise<RemoteFileKind> {
   const { name, contentType, bytes } = file
-  if (new TextDecoder().decode(bytes.subarray(0, 5)) === '%PDF-') return 'pdf'
-  if (imageHeader(bytes)) return 'image'
-  if (contentType === 'application/pdf') return 'pdf'
+  const detected = (await fileTypeFromBuffer(bytes))?.mime
+  if (detected === 'application/pdf') return 'pdf'
+  if (detected && IMPORTABLE_RASTER_TYPES.has(detected)) return 'image'
   if (io.findReader(name)) return 'document'
-  if (contentType === 'image/svg+xml') return 'svg'
-  if (contentType && HTML_TYPES.has(contentType)) return 'html'
-  const text = leadingText(bytes)
-  if (SVG_START.test(text)) return 'svg'
-  if (/^<(?:!doctype html|html|head|body)[\s>]/.test(text)) return 'html'
-  return 'unsupported'
+  const type =
+    contentType && !GENERIC_TYPES.has(contentType)
+      ? contentType
+      : TYPE_BY_EXTENSION[extname(name).toLowerCase()]
+  return (type === undefined ? undefined : KIND_BY_TYPE[type]) ?? 'unsupported'
 }
 
 /**
@@ -132,6 +131,6 @@ export async function fetchRemoteFile(
     title,
     contentType,
     bytes,
-    kind: remoteFileKind({ name, contentType, bytes }, io)
+    kind: await remoteFileKind({ name, contentType, bytes }, io)
   }
 }

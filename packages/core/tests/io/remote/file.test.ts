@@ -17,30 +17,31 @@ function kindOf(name: string, bytes: Uint8Array, contentType?: string) {
 describe('remoteFileKind', () => {
   test('reads PDF and image bytes whatever the server calls them', async () => {
     const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
-    expect(kindOf('download', text('%PDF-1.7\n'), 'application/octet-stream')).toBe('pdf')
-    expect(kindOf('photo', png, 'text/plain')).toBe('image')
+    const pdf = text('%PDF-1.7\n1 0 obj\n<<>>\nendobj\n')
+    expect(await kindOf('download', pdf, 'application/octet-stream')).toBe('pdf')
+    expect(await kindOf('photo', png, 'text/plain')).toBe('image')
   })
 
-  test('opens a design document by its name', () => {
-    expect(kindOf('board.fig', text('fig-kiwi'), 'application/octet-stream')).toBe('document')
-    expect(kindOf('flow.mmd', text('flowchart TD\n  A --> B'), 'text/plain')).toBe('document')
+  test('opens a design document by its name', async () => {
+    expect(await kindOf('board.fig', text('fig-kiwi'), 'application/octet-stream')).toBe('document')
+    expect(await kindOf('flow.mmd', text('flowchart TD\n  A --> B'), 'text/plain')).toBe('document')
   })
 
-  test('tells pages from SVG by media type, then by the markup they start with', () => {
-    expect(kindOf('example.com', text('<p>Hi</p>'), 'text/html')).toBe('html')
-    expect(kindOf('logo', text('<svg/>'), 'image/svg+xml')).toBe('svg')
-    expect(kindOf('index', text('\uFEFF <!-- built --> <!DOCTYPE html><html>'))).toBe('html')
-    expect(kindOf('logo', text('<?xml version="1.0"?>\n<svg viewBox="0 0 1 1">'))).toBe('svg')
-    expect(
-      kindOf('logo', text('<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "svg11.dtd">\n<svg>'))
-    ).toBe('svg')
-    expect(kindOf('logo', text(`<!-- ${'licence '.repeat(200)} -->\n<svg>`), 'text/plain')).toBe(
-      'svg'
-    )
+  test('takes a page or an SVG by its media type', async () => {
+    expect(await kindOf('', text('<p>Hi</p>'), 'text/html')).toBe('html')
+    expect(await kindOf('page', text('<p>Hi</p>'), 'application/xhtml+xml')).toBe('html')
+    expect(await kindOf('logo', text('<svg/>'), 'image/svg+xml')).toBe('svg')
   })
 
-  test('leaves anything else unsupported', () => {
-    expect(kindOf('notes.txt', text('hello'), 'text/plain')).toBe('unsupported')
+  test('takes one served with a generic type, or none, by its extension', async () => {
+    expect(await kindOf('index.html', text('<p>Hi</p>'), 'text/plain')).toBe('html')
+    expect(await kindOf('logo.SVG', text('<svg/>'), 'application/octet-stream')).toBe('svg')
+    expect(await kindOf('logo.svg', text('<svg/>'))).toBe('svg')
+  })
+
+  test('leaves anything else unsupported', async () => {
+    expect(await kindOf('notes.txt', text('hello'), 'text/plain')).toBe('unsupported')
+    expect(await kindOf('', text('<p>Hi</p>'), 'text/plain')).toBe('unsupported')
   })
 })
 
