@@ -80,7 +80,7 @@ export function createDOMOpenActions({
     const nameIcons = renderer && appPreferences.value.import.nameIcons
     const graph = await sceneGraphFromStyledHTML(styled, {
       pageName,
-      matchIcon: nameIcons ? appIconMatcher(renderer) : undefined
+      matchIcon: nameIcons ? appIconMatcher(renderer, load.signal) : undefined
     })
     await nextFrame()
     await applyImportedDocument(editor, graph, load)

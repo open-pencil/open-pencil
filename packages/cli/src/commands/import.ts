@@ -131,7 +131,7 @@ export default defineCommand({
     'icon-names': {
       type: 'boolean',
       description:
-        'Name inline SVG after the Iconify icon it draws, downloading an icon index and the icons it is compared with; --no-icon-names keeps it as artwork (default: true)',
+        'Name inline SVG without data-icon after the Iconify icon it draws, downloading an icon index and the candidate icons; --no-icon-names turns this matching off, and SVG named by data-icon stays an icon (default: true)',
       default: true
     }
   },

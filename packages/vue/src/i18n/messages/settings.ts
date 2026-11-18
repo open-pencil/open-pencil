@@ -76,7 +76,7 @@ export const settingsMessageDefaults = {
   importingDescription: 'Control how HTML and other files become layers.',
   nameImportedIcons: 'Name icons in imported HTML',
   nameImportedIconsDescription:
-    'Inline SVG that draws an Iconify icon becomes that icon, which you can swap and recolor. Downloads an icon index and the icons it is compared with.',
+    'Inline SVG that draws an Iconify icon becomes that icon, which you can swap and recolor. Downloads an icon index and asks Iconify for the candidate icons by name; the SVG itself is never sent.',
   navigation: 'Navigation',
   navigationDescription: 'Control how the canvas moves when you scroll and zoom.',
   zoomSpeed: 'Zoom speed',

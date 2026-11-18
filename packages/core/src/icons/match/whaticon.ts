@@ -9,8 +9,16 @@ import { parseIndex, type IconIndex } from 'whaticon/hash'
  */
 const INDEX = 'https://cdn.jsdelivr.net/npm/whaticon@0.3.0/data'
 
+/**
+ * How long the index may take to download, body included, before naming icons gives up and the
+ * import keeps its SVG as artwork; the next import tries again.
+ */
+const INDEX_TIMEOUT_MS = 30_000
+
 async function fetchGzipped(fetcher: typeof globalThis.fetch, file: string): Promise<Uint8Array> {
-  const response = await fetcher(`${INDEX}/${file}`)
+  const response = await fetcher(`${INDEX}/${file}`, {
+    signal: AbortSignal.timeout(INDEX_TIMEOUT_MS)
+  })
   if (!response.ok) throw new Error(`whaticon's index answered ${response.status} for ${file}`)
   return gunzipSync(new Uint8Array(await response.arrayBuffer()))
 }

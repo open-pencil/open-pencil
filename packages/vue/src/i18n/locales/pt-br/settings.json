@@ -67,7 +67,7 @@
   "importing": "Importação",
   "importingDescription": "Controle como HTML e outros arquivos viram camadas.",
   "nameImportedIcons": "Nomear ícones em HTML importado",
-  "nameImportedIconsDescription": "O SVG embutido que desenha um ícone do Iconify vira esse ícone, que você pode trocar e recolorir. Baixa um índice de ícones e os ícones com que ele é comparado.",
+  "nameImportedIconsDescription": "O SVG embutido que desenha um ícone do Iconify vira esse ícone, que você pode trocar e recolorir. Baixa um índice de ícones e pede ao Iconify os ícones candidatos pelo nome; o SVG em si nunca é enviado.",
   "navigation": "Navegação",
   "navigationDescription": "Controle como a tela se move ao rolar e dar zoom.",
   "zoomSpeed": "Velocidade do zoom",

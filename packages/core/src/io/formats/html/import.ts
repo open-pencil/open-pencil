@@ -210,8 +210,9 @@ export async function readHTMLDocument(
 }
 
 /**
- * Reads HTML files where the HTML engine can load, as in the CLI and the MCP server. It names no
- * icons, so opening a page asks no icon service; `readHTMLDocument` with a matcher does, as
+ * Reads HTML files where the HTML engine can load, as in the CLI and the MCP server. It does not
+ * match inline SVG to icons by how it draws, so opening a page asks no icon service; SVG the page
+ * names with `data-icon` is still that icon. `readHTMLDocument` with a matcher matches, as
  * `openpencil import` passes one.
  */
 export const headlessHTMLReader: IOFormatAdapter<'html'> = {

@@ -11,6 +11,7 @@ import { createIconMatcher, fetchIconIndex, type IconMatcher } from '@open-penci
 import { createCanvasKitRasterCodec, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 
 import { browserWebFontFetch } from '@/app/editor/fonts/browser-fetch'
+import { withAbortSignal } from '@/app/runtime/abort'
 import { tauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
 
@@ -38,18 +39,27 @@ export const appIcons = createIconProvider(iconSetFetch, [
   { prefixes: [SF_SYMBOLS_PREFIX], provider: sfSymbols }
 ])
 
-const matchers = new WeakMap<SkiaRenderer, IconMatcher>()
+let loadedIndex: ReturnType<typeof fetchIconIndex> | undefined
+
+/** whaticon's index, downloaded once for every import; a failed download is tried again. */
+function iconIndex(): ReturnType<typeof fetchIconIndex> {
+  loadedIndex ??= fetchIconIndex(iconSetFetch).catch((error: unknown) => {
+    loadedIndex = undefined
+    throw error
+  })
+  return loadedIndex
+}
 
 /**
- * Names the icons imported HTML draws, drawn with the editor's renderer as library thumbnails are.
- * One matcher per renderer keeps the index and what it compared across imports.
+ * Names the icons one imported HTML page draws, drawn with the editor's renderer as library
+ * thumbnails are. Each import gets its own matcher, so what it compared goes with it; the index
+ * is shared. When `signal` aborts, as a newer import supersedes this one, the import stops
+ * waiting for its icons.
  */
-export function appIconMatcher(renderer: SkiaRenderer): IconMatcher {
-  const known = matchers.get(renderer)
-  if (known) return known
+export function appIconMatcher(renderer: SkiaRenderer, signal: AbortSignal): IconMatcher {
   const codec = createCanvasKitRasterCodec(renderer.ck)
   const matcher = createIconMatcher({
-    index: () => fetchIconIndex(iconSetFetch),
+    index: iconIndex,
     icons: appIcons,
     draw: async (graph, pageId, nodeId, scale) => {
       const png = renderNodesToImage(renderer.ck, renderer, graph, pageId, [nodeId], {
@@ -59,6 +69,5 @@ export function appIconMatcher(renderer: SkiaRenderer): IconMatcher {
       return png && codec.decode(png)
     }
   })
-  matchers.set(renderer, matcher)
-  return matcher
+  return (svgs) => withAbortSignal(matcher(svgs), signal)
 }

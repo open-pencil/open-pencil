@@ -33,7 +33,7 @@
   "importing": "Importation",
   "importingDescription": "Définissez comment le HTML et les autres fichiers deviennent des calques.",
   "nameImportedIcons": "Nommer les icônes du HTML importé",
-  "nameImportedIconsDescription": "Le SVG intégré qui dessine une icône Iconify devient cette icône, que vous pouvez remplacer et recolorer. Télécharge un index d’icônes et les icônes auxquelles il est comparé.",
+  "nameImportedIconsDescription": "Le SVG intégré qui dessine une icône Iconify devient cette icône, que vous pouvez remplacer et recolorer. Télécharge un index d’icônes et demande à Iconify les icônes candidates par leur nom ; le SVG lui-même n’est jamais envoyé.",
   "navigation": "Navigation",
   "navigationDescription": "Contrôlez le déplacement du canevas lors du défilement et du zoom.",
   "zoomSpeed": "Vitesse du zoom",

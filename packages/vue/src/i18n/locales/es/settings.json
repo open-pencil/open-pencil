@@ -33,7 +33,7 @@
   "importing": "Importación",
   "importingDescription": "Controla cómo el HTML y otros archivos se convierten en capas.",
   "nameImportedIcons": "Nombrar iconos en HTML importado",
-  "nameImportedIconsDescription": "El SVG en línea que dibuja un icono de Iconify se convierte en ese icono, que puedes cambiar y recolorear. Descarga un índice de iconos y los iconos con los que se compara.",
+  "nameImportedIconsDescription": "El SVG en línea que dibuja un icono de Iconify se convierte en ese icono, que puedes cambiar y recolorear. Descarga un índice de iconos y pide a Iconify los iconos candidatos por nombre; el SVG nunca se envía.",
   "navigation": "Navegación",
   "navigationDescription": "Controla cómo se mueve el lienzo al desplazarte y hacer zoom.",
   "zoomSpeed": "Velocidad de zoom",
