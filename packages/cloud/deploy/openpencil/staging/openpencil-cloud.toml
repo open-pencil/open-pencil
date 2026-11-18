@@ -115,3 +115,4 @@ minimum_age = 16
 [error_tracking]
 provider = "posthog"
 host = "https://eu.i.posthog.com"
+include_ids = true

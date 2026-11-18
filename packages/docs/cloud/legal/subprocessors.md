@@ -11,7 +11,7 @@ These companies process personal data on behalf of OpenPencil Cloud at `cloud.op
 | --- | --- | --- |
 | Cloudflare, Inc. | Hosting the server (Workers), collaboration rooms (Durable Objects), file storage (R2), database connections (Hyperdrive), email, and network security | EU for stored data; global network for requests |
 | Neon, Inc. (Databricks) | The database | EU (Frankfurt) |
-| PostHog, Inc. | Server error reports, with no account or IP address | EU |
+| PostHog, Inc. | Server error reports, with account and record IDs but no names, emails, or IP addresses | EU |
 | Google LLC | Signing in with Google, when you choose it | Global |
 | Stripe, Inc., and Stripe Payments Europe, Ltd. | Taking payments for plans and credits, tax, receipts, and invoices, when you buy something; for fraud prevention and its own legal duties, Stripe is a controller in its own right ([Payments](./privacy#payments)) | United States and Ireland |
 | OpenRouter, Inc., and the model provider it routes a request to | Answering requests to hosted services such as AI chat, when you use them | United States (OpenRouter); the provider's regions |

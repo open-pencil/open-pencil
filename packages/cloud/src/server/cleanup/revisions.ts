@@ -56,8 +56,8 @@ export function createRevisionCompactionService(
   } = {}
 ): RevisionCompactionService {
   const deploymentMode = options.deploymentMode ?? 'self-hosted'
-  const report = (message: string, error: unknown) =>
-    reportCloudError(options.reportError, message, error, { source: 'cleanup' })
+  const report = (message: string, error: unknown, resources?: Record<string, string>) =>
+    reportCloudError(options.reportError, message, error, { source: 'cleanup', resources })
   async function pruneVersions(now: Date, batchSize: number): Promise<number> {
     if (!options.policy) return 0
     const limitedBefore = new Date(now.getTime() - LIMITED_HISTORY_DAYS * 24 * 60 * 60_000)
@@ -225,7 +225,10 @@ export function createRevisionCompactionService(
           result.bytesReclaimed += compacted.bytes
         } catch (error) {
           result.failed++
-          await report(`Compacting document ${documentId} failed`, error)
+          await report(`Compacting document ${documentId} failed`, error, {
+            documentId,
+            workspaceId
+          })
         }
       }
       // Compaction just freed the images of the saves it deleted; the release lets their grace pass.

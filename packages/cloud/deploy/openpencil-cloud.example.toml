@@ -150,10 +150,13 @@ transport = "none"
 # workspace = "0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b"
 
 # Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. The host
-# defaults to https://eu.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY.
+# defaults to https://eu.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY. Reports
+# name no account unless include_ids is set; then they carry the user's account ID and the IDs of
+# the documents and workspaces involved, so say so in your privacy notice.
 # [error_tracking]
 # provider = "posthog"
 # host = "https://us.i.posthog.com"
+# include_ids = false
 
 [workers.email]
 batch_size = 50
