@@ -102,15 +102,37 @@ describe('scrubDiagnosticText', () => {
   })
 
   // Error reports find a frame's source map by the chunk's file name, hash included.
-  test('keeps built chunk names in stack frames', () => {
+  test('keeps built chunk names of the desktop app in stack frames', () => {
     const stack = [
       'Error: Cyclic component expansion at 124:3952',
       'p@tauri://localhost/assets/document-state-D5Yd3Le2.js:5630:98039',
       'map@[native code]',
-      '    at p (https://app.openpencil.dev/assets/reactivity.esm-bundler-CnwMsHUC.js:1:2)',
-      '    at q (https://app.openpencil.dev/assets/material-theme-palenight-B5W6OYN7.js:3:4)'
+      '    at p (tauri://localhost/assets/reactivity.esm-bundler-CnwMsHUC.js:1:2)',
+      '    at q (tauri://localhost/assets/material-theme-palenight-B5W6OYN7.js:3:4)'
     ].join('\n')
     expect(scrubDiagnosticText(stack)).toBe(stack)
+  })
+
+  test('keeps built chunk names on the page origin of the web app', () => {
+    const stack = '    at p (https://app.openpencil.dev/assets/document-state-D5Yd3Le2.js:1:2)'
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'location')
+    Object.defineProperty(globalThis, 'location', {
+      value: { origin: 'https://app.openpencil.dev' },
+      configurable: true
+    })
+    try {
+      expect(scrubDiagnosticText(stack)).toBe(stack)
+    } finally {
+      if (descriptor) Object.defineProperty(globalThis, 'location', descriptor)
+      else Reflect.deleteProperty(globalThis, 'location')
+    }
+  })
+
+  test('removes a chunk-shaped key from another host', () => {
+    const url = 'https://cdn.example.com/static/assets/Qw3rTy7uIo9pAs5dFg2hJk-abcdefgh.js'
+    expect(scrubDiagnosticText(`fetch ${url} failed`)).toBe(
+      'fetch https://cdn.example.com/static/assets/[redacted].js failed'
+    )
   })
 
   test('still removes a key shaped like a path before a script extension', () => {

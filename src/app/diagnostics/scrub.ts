@@ -30,13 +30,33 @@ function looksLikeToken(segment: string): boolean {
  */
 const CHUNK_NAME = /^[\w.-]+-[\w-]{8}$/
 const CODE_EXTENSION = /^\.(?:m?js|css|wasm)\b/
+const SCHEME_BEFORE = /([a-z][\w+.-]*):$/i
+
+/** Where this app's own chunks load from: the desktop app's scheme, or the page's origin. */
+function isAppOrigin(origin: string): boolean {
+  if (origin === 'tauri://localhost') return true
+  // A worker or test without a page has no origin of its own.
+  return 'location' in globalThis && origin === globalThis.location.origin
+}
+
+/**
+ * The run's last segment, when the run is the path of this app's own script or stylesheet:
+ * it starts at an app origin, as `//localhost/assets/x` after `tauri:` does, and an extension
+ * follows it. A chunk-shaped name on any other host may be a key and stays redacted.
+ */
+function appChunkSegment(run: string, offset: number, text: string): number {
+  if (!run.startsWith('//') || !CODE_EXTENSION.test(text.slice(offset + run.length))) return -1
+  const scheme = SCHEME_BEFORE.exec(text.slice(Math.max(0, offset - 32), offset))?.[1]
+  const host = run.slice(2).split('/')[0]
+  return scheme && isAppOrigin(`${scheme.toLowerCase()}://${host}`) ? run.split('/').length - 1 : -1
+}
 
 /** A long run is a key or encoded content, unless it is a path such as a stack frame's. */
 function redactLongRun(run: string, offset: number, text: string): string {
   if (!run.includes('/')) return REDACTED
-  const segments = run.split('/')
-  const chunk = CODE_EXTENSION.test(text.slice(offset + run.length)) ? segments.length - 1 : -1
-  return segments
+  const chunk = appChunkSegment(run, offset, text)
+  return run
+    .split('/')
     .map((segment, index) =>
       looksLikeToken(segment) && !(index === chunk && CHUNK_NAME.test(segment)) ? REDACTED : segment
     )
