@@ -131,13 +131,15 @@ test('a failed autosave stays shown, notifies once while away, and saves on retr
   })
   await setWindowFocus(page, false)
   await canvas.drawRect(400, 400, 60, 60)
-  const failure = page.getByText(/^Could not save “.+”: disk full$/)
+  // The failure names the document and the write's error.
+  const failure = page.locator('[data-slot="toast"][data-tone="error"]', { hasText: 'disk full' })
   await expect(failure).toBeVisible({ timeout: 10_000 })
+  await expect(failure).toContainText('Plan')
   await expect
     .poll(() => shownNotifications(page))
     .toEqual([
       {
-        title: expect.stringMatching(/^Could not save “.+”$/),
+        title: expect.stringContaining('Plan'),
         body: 'disk full',
         tag: expect.stringMatching(/^save:tab-/)
       }
@@ -152,7 +154,7 @@ test('a failed autosave stays shown, notifies once while away, and saves on retr
   await page.evaluate(() => {
     delete document.documentElement.dataset.failWrites
   })
-  await page.getByRole('button', { name: 'Retry save' }).click()
+  await failure.getByTestId('toast-action').click()
   await expect.poll(hasUnsavedChanges).toBe(false)
   await expect(failure).toHaveCount(0)
   expect(await writes()).toBe(4)

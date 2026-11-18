@@ -50,7 +50,8 @@ export function showSaveFailure(
         retry()
       }
     },
-    { sticky: true }
+    // Each document's failure is its own, so another document's save never clears it.
+    { sticky: true, separate: key !== undefined }
   )
   if (key) failureToasts.set(key, id)
   return shown
@@ -66,9 +67,10 @@ export async function saveWithFeedback(
   options: SaveFeedbackOptions = {}
 ): Promise<boolean> {
   try {
-    const result = await save()
-    if (options.key) clearSaveFailure(options.key)
-    return result !== false
+    const saved = (await save()) !== false
+    // A save that did not happen, such as a dismissed file picker, leaves the failure shown.
+    if (saved && options.key) clearSaveFailure(options.key)
+    return saved
   } catch (error) {
     showSaveFailure(
       notificationMessages.get().operationFailed({ error: saveErrorText(error) }),

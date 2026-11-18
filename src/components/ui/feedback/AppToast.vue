@@ -78,6 +78,7 @@ const styles = computed(() => {
     </div>
     <AppButton
       v-if="actionLabel"
+      data-test-id="toast-action"
       color="primary"
       variant="soft"
       :class="styles.action"

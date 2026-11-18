@@ -71,4 +71,20 @@ describe('save feedback', () => {
     expect(toast.toasts.value).toHaveLength(0)
     expect(showSaveFailure('third', retry, { key })).toBe(false)
   })
+
+  test('keeps each document’s failure apart, and a save that did not happen keeps it', async () => {
+    const first = {}
+    const second = {}
+    const retry = () => undefined
+    showSaveFailure('disk full', retry, { key: first })
+    showSaveFailure('disk full', retry, { key: second })
+    expect(toast.toasts.value).toHaveLength(2)
+
+    await expect(saveWithFeedback(async () => false, { key: first })).resolves.toBe(false)
+    expect(toast.toasts.value).toHaveLength(2)
+    await expect(saveWithFeedback(async () => true, { key: first })).resolves.toBe(true)
+    expect(toast.toasts.value).toHaveLength(1)
+    await expect(saveWithFeedback(async () => true, { key: second })).resolves.toBe(true)
+    expect(toast.toasts.value).toHaveLength(0)
+  })
 })
