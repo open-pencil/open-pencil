@@ -306,7 +306,8 @@ export function recordTilePictures(
   index: RenderChunkIndex,
   pictureCache: RenderChunkPictureCache,
   key: TileKey,
-  budget: { now: () => number; remainingMs: number }
+  budget: { now: () => number; remainingMs: number },
+  onRecorded: (chunk: RenderChunk) => void
 ): boolean {
   const deadline = budget.now() + budget.remainingMs
   let recorded = 0
@@ -319,6 +320,7 @@ export function recordTilePictures(
       if (pictureCache.has(renderer, chunk)) continue
       if (recorded > 0 && budget.now() >= deadline) return false
       pictureCache.get(renderer, graph, chunk)
+      onRecorded(chunk)
       recorded++
     }
   } finally {

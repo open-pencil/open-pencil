@@ -18,6 +18,7 @@ import {
 import { createImagePreviewDecoder } from '#vue/canvas/surface/image-preview'
 import { useCanvasKitLoader } from '#vue/canvas/surface/kit-loader'
 import { createCanvasOriginTracker } from '#vue/canvas/surface/origin'
+import { createPresentationReporter } from '#vue/canvas/surface/presented'
 import { createCanvasRenderLoop } from '#vue/canvas/surface/render-loop'
 import { useCanvasResizeObserver } from '#vue/canvas/surface/resize-observer'
 import { createShaderRasterizer } from '#vue/canvas/surface/shader/rasterizer'
@@ -172,40 +173,7 @@ export function createCanvasSurfaceManager({
     return true
   }
 
-  /** Visible tiles the renderer had drawn by the last frame; a new renderer counts from zero. */
-  let lastTilesRendered = 0
-  let progressRenderer: SkiaRenderer | null = null
-
-  /**
-   * Reports the frame as shown once the whole visible scene is on it. A scene frame with tiles
-   * still to draw is not: a loader waiting on it would give way to a canvas that then fills in.
-   * Only a canvas drawing the editor's own state reports, since the versions are the editor's:
-   * a split pane showing another view, perhaps another page, says nothing about this one.
-   */
-  function reportPresented(renderer: SkiaRenderer) {
-    const layer = options?.layer ?? 'full'
-    if (layer === 'overlays') return
-    const renderedState = options?.getRenderState?.() ?? editor.state
-    if (renderedState !== editor.state) return
-    const versions = {
-      renderVersion: renderedState.renderVersion,
-      sceneVersion: renderedState.sceneVersion
-    }
-    // A scene still filling in reports the tiles it drew, so a wait for it can tell a large page
-    // drawing slowly, as on a slow machine, from a canvas that stopped drawing.
-    if (renderer !== progressRenderer) {
-      progressRenderer = renderer
-      lastTilesRendered = 0
-    }
-    const tilesRendered = renderer.tiledScene.visibleTilesRendered
-    const drewTiles = tilesRendered > lastTilesRendered
-    lastTilesRendered = tilesRendered
-    if (layer === 'scene' && !renderer.tiledSceneCovered) {
-      if (drewTiles) editor.reportProgress(versions)
-      return
-    }
-    editor.reportPresented(versions)
-  }
+  const reportPresented = createPresentationReporter(editor, options)
 
   /** UI floating over the canvas this frame, which edge-pinned overlays avoid. */
   function overlayObstacles() {

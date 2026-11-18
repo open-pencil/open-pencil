@@ -60,11 +60,11 @@ test('preview decodes are deduplicated, run in parallel, preserve source bytes a
     source = new Uint8Array([1, 2, 3])
   graph.images.set('a', source)
   const pending: Array<(value: ImagePreview) => void> = []
-  let ready = 0,
-    stopped = 0,
+  const ready: string[][] = []
+  let stopped = 0,
     calls = 0
-  const cache = new ImagePreviewCache(() => {
-    ready++
+  const cache = new ImagePreviewCache((hash, key) => {
+    ready.push([hash, key])
   }, 10)
   expect(cache.enabled).toBe(false)
   cache.setDecoder({
@@ -92,13 +92,16 @@ test('preview decodes are deduplicated, run in parallel, preserve source bytes a
   expect(cache.bytes).toBe(7)
   expect(cache.get(graph, 'a', 256)?.key).toBe('a:preview:256')
   expect([...source]).toEqual([1, 2, 3])
-  expect(ready).toBe(2)
+  expect(ready).toEqual([
+    ['a', 'a:preview:128'],
+    ['a', 'a:preview:256']
+  ])
   cache.get(graph, 'a', 512)
   cache.destroy()
   expect(cache.enabled).toBe(false)
   pending.shift()?.(preview())
   await tick()
-  expect(ready).toBe(2)
+  expect(ready).toHaveLength(2)
   expect(stopped).toBe(1)
   expect(cache.bytes).toBe(0)
   expect(cache.get(graph, 'a', 128)).toBeUndefined()
