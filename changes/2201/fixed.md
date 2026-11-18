@@ -2,3 +2,4 @@
 - The fill picker's gradient tab is labelled Gradient instead of Linear and has its own icon instead of the blend mode one.
 - Switching a fill from Shader back to Solid or Gradient brings back the colour or gradient it had, instead of transparent black.
 - Switching paint types in the fill picker no longer moves the picker: it opens level with its swatch and moves only to stay in the window, as in Figma.
+- Leaving a shader for another paint type in the fill picker stops drawing the shader, and the Image tab then opens an empty image fill instead of the shader again.

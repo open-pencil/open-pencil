@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
+import { omit } from 'es-toolkit'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
@@ -89,8 +90,19 @@ function onOpenChange(open: boolean) {
   emit('openChange', open)
 }
 
+/**
+ * A shader paint is an image paint of the shader's frame. Leaving it for another paint type drops
+ * the frame, or the paint would still name it, and a later Image tab would find the shader again.
+ */
 function update(next: Fill) {
-  gesture.change(() => emit('update', next))
+  const left = shader ? omit(next, ['imageHash']) : next
+  gesture.change(() => emit('update', left))
+}
+
+/** From a shader, which is already an image paint, the Image tab starts an empty image fill. */
+function toImage(toImageFill: () => void) {
+  if (shader) update(fill)
+  else toImageFill()
 }
 
 /** An image arrives once its file is read, a step of its own even if a press is held by then. */
@@ -174,7 +186,7 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
                 :class="tabClass(root.category === 'IMAGE' && !shader)"
                 :aria-label="panels.image"
                 data-test-id="fill-picker-tab-image"
-                @click="root.actions.toImage"
+                @click="toImage(root.actions.toImage)"
               >
                 <icon-lucide-image class="size-3.5" />
               </button>

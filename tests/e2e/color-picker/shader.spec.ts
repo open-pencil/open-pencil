@@ -1,9 +1,11 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { fillDriver } from '#tests/helpers/canvas/fill-driver'
 
 // A shader's colour is edited in a picker opened from the fill picker; a drag there is one undo
 // step, as any other drag in a picker is.
 
 const editor = useEditorSetupWithClear()
+const fill = fillDriver(() => editor.page)
 
 async function expandSettings() {
   await editor.page
@@ -55,5 +57,29 @@ test('a drag in a shader colour’s picker is one undo step', async () => {
   await editor.canvas.undo()
   await reopen()
   await expect.poll(hex).toBe(before)
+  editor.canvas.assertNoErrors()
+})
+
+test('leaving a shader for Image or Solid stops drawing it', async () => {
+  await editor.canvas.drawRect(100, 100, 160, 120)
+  await editor.canvas.waitForRender()
+  const page = editor.page
+  const tab = (name: string) => page.getByTestId(`fill-picker-tab-${name}`)
+  const paint = () => fill.selectedPaint()
+  await page.getByTestId('fill-picker-swatch').first().click()
+
+  await tab('shader').click()
+  await expect(page.getByTestId('shader-fill-picker')).toBeVisible()
+  await tab('image').click()
+  await expect(page.getByTestId('fill-picker-image-well')).toBeVisible()
+  await expect(page.getByTestId('shader-fill-picker')).toHaveCount(0)
+  await expect.poll(async () => (await paint())?.imageHash).toBeUndefined()
+
+  await tab('shader').click()
+  await tab('solid').click()
+  await expect.poll(async () => (await paint())?.type).toBe('SOLID')
+  await tab('image').click()
+  await expect(page.getByTestId('fill-picker-image-well')).toBeVisible()
+  await expect(page.getByTestId('shader-fill-picker')).toHaveCount(0)
   editor.canvas.assertNoErrors()
 })
