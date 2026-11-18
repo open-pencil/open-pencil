@@ -11,7 +11,7 @@ import {
 import type { EditorStore } from '@/app/editor/session'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { notify } from '@/app/shell/notifications'
-import { allTabs, getTabsSnapshot, switchTab, type Tab } from '@/app/tabs'
+import { allTabs, getTabForStore, getTabsSnapshot, switchTab, type Tab } from '@/app/tabs'
 
 /**
  * Reports the automatic saves of `tab`'s document that fail, which nobody waits on: a failure
@@ -22,7 +22,7 @@ import { allTabs, getTabsSnapshot, switchTab, type Tab } from '@/app/tabs'
 function reportAutosaves({ id, store }: Tab): () => void {
   const options = {
     key: store,
-    isOpen: () => getTabsSnapshot().some((tab) => tab.store === store),
+    isOpen: () => getTabForStore(store) !== undefined,
     hasUnsavedChanges: () => store.hasUnsavedChanges()
   }
   // Save, Save to, a retry, or an autosave: whatever wrote the edits ends the failure.
@@ -33,6 +33,8 @@ function reportAutosaves({ id, store }: Tab): () => void {
     }
   )
   const failed = store.onAutosaveFailed((error) => {
+    // An undo back to the saved state while the write ran leaves nothing to save.
+    if (!store.hasUnsavedChanges()) return
     const messages = notificationMessages.get()
     const name = store.state.documentName
     showSaveFailure(

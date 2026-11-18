@@ -195,10 +195,12 @@ describe('document autosave', () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
     try {
       const events: string[] = []
+      const wrote = createDeferred<number>()
       let fail = true
       const { version, autosave } = setup(
         async (saved) => {
           if (fail) throw new Error(`write ${saved} failed`)
+          wrote.resolve(saved)
         },
         { onFailed: (error) => events.push(error instanceof Error ? error.message : 'unknown') }
       )
@@ -213,8 +215,7 @@ describe('document autosave', () => {
       version.value = 2
       await nextTick()
       jest.advanceTimersByTime(3_000)
-      await Promise.resolve()
-      await Promise.resolve()
+      expect(await wrote.promise).toBe(2)
       expect(events).toEqual(['write 1 failed'])
       autosave.disposeAutosave()
     } finally {
