@@ -669,8 +669,6 @@ zh-cn:diagnostics.reportProblemDescription
 zh-cn:diagnostics.reportUnexpectedError
 zh-cn:diagnostics.supportDescription
 zh-cn:diagnostics.supportTitle
-ja:cloudPortal.creditPacksDescription
-zh-cn:cloudPortal.creditPacksDescription
 ja:email.openCloud
 ja:email.footer
 ja:email.documentInvitationView
@@ -800,3 +798,5 @@ zh-cn:settings.nameImportedIcons
 zh-cn:settings.nameImportedIconsDescription
 ja:settings.importingDescription
 zh-cn:settings.importingDescription
+ja:cloudPortal.pendingHiddenEmail
+zh-cn:cloudPortal.pendingHiddenEmail

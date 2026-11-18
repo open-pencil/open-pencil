@@ -229,7 +229,12 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
               ),
             context
           )
-          return result instanceof Response ? result : context.json({ url: result })
+          if (result instanceof Response) return result
+          // The provider's callback checks the state cookie this sets.
+          for (const cookie of result.headers.getSetCookie()) {
+            context.header('Set-Cookie', cookie, { append: true })
+          }
+          return context.json({ url: result.url })
         }
       )
       .post(

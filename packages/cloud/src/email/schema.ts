@@ -151,12 +151,15 @@ export const twoStepChangeSchema = v.picklist([
   'authenticator-off',
   'passkey-added',
   'passkey-removed',
-  'reset-by-administrator'
+  'reset-by-administrator',
+  'sign-in-method-removed'
 ])
 
 const twoStepChangedPayloadSchema = v.object({
   name: v.string(),
   change: twoStepChangeSchema,
+  /** For a removed sign-in method, which: `credential` for a password, or a provider. */
+  method: v.optional(v.string()),
   actionURL: v.string()
 })
 

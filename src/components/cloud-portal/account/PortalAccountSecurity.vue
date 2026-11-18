@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
+import { usePortalSignInMethodLabel } from '@/app/cloud-portal/methods'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
@@ -49,8 +50,7 @@ const emit = defineEmits<{
 }>()
 
 const messages = useCloudPortalMessages()
-const providerLabel = (provider: PortalSignInMethod) =>
-  provider === 'google' ? messages.value.providerGoogle : messages.value.providerApple
+const providerLabel = usePortalSignInMethodLabel()
 const social = computed(() =>
   methods.flatMap((method) =>
     method.provider === 'credential' ? [] : [{ ...method, provider: method.provider }]

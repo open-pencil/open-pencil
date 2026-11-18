@@ -23,6 +23,23 @@ export const CLOUD_BILLING_TOKEN_AUDIENCE = 'openpencil-billing' as const
  */
 export const CLOUD_ACCOUNT_PLAN_PATH = '/account/plan' as const
 
+/**
+ * The plan page with billing's own pages opening at once: where billing sends someone whose
+ * session there ended, so Cloud signs them in to billing again.
+ */
+export const CLOUD_ACCOUNT_BILLING_PATH = `${CLOUD_ACCOUNT_PLAN_PATH}?open=billing` as const
+
+/**
+ * The billing service's own pages, below the discovered `endpoint`: where Cloud's plan page sends
+ * the signed-in person, posting a billing token as the form field `token` to `session`, and the
+ * public pricing page. The service answers that post with `303 See Other`, never `307` or `308`,
+ * which a browser follows by posting the same body, the token, again to wherever they point.
+ */
+export const CLOUD_BILLING_PAGE_PATHS = {
+  session: '/session',
+  pricing: '/pricing'
+} as const
+
 /** Where the billing service answers, below the discovered `endpoint`. */
 export const CLOUD_BILLING_API_PATHS = {
   base: '/v1',
@@ -38,9 +55,24 @@ const centsSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
 const bytesSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
 const creditsSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
 
+/**
+ * What an account without a plan has: the deployment's free plan, which a pricing page compares
+ * the plans with.
+ */
+export const billingFreePlanSchema = v.object({
+  /** The storage an account may use, or `null` for no limit. */
+  storageBytes: v.nullable(bytesSchema),
+  /** Whether the free plan includes services, such as AI and search. */
+  services: v.boolean(),
+  /** Credits granted each month with services, or `null` for no monthly limit. */
+  monthlyCredits: v.nullable(creditsSchema)
+})
+export type BillingFreePlan = v.InferOutput<typeof billingFreePlanSchema>
+
 export const cloudBillingDiscoverySchema = v.object({
   endpoint: urlSchema,
-  contractVersion: v.literal(CLOUD_BILLING_CONTRACT_VERSION)
+  contractVersion: v.literal(CLOUD_BILLING_CONTRACT_VERSION),
+  freePlan: v.optional(billingFreePlanSchema)
 })
 export type CloudBillingDiscovery = v.InferOutput<typeof cloudBillingDiscoverySchema>
 

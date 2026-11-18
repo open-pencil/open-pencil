@@ -1,0 +1,1 @@
+- On macOS 14 and later, agents can keep editing through MCP while the desktop app is hidden or the screen is locked, instead of every call timing out (#979, #2184).

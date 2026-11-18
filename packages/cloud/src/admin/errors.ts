@@ -3,6 +3,7 @@ export type AdminErrorCode =
   | 'invitations_unavailable'
   | 'last_admin_required'
   | 'self_admin_action_forbidden'
+  | 'last_authentication_method'
   | 'email_regeneration_unavailable'
   | 'mfa_required'
   | 'two_step_unconfirmed'

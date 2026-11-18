@@ -14,11 +14,9 @@ import type {
   PortalActivityEntry,
   PortalEmail,
   PortalPerson,
-  PortalCreditPack,
   PortalDocumentRow,
   PortalPersonDetail,
   PortalPlan as PortalPlanType,
-  PortalPlanOffer,
   PortalSection,
   PortalSession,
   PortalSignIn
@@ -97,6 +95,7 @@ const people: PortalPerson[] = [
     joinedOn: 'Mar 3, 2026',
     lastActive: 'now',
     workspaceCount: 3,
+    methods: ['credential', 'google'],
     you: true
   },
   {
@@ -108,7 +107,8 @@ const people: PortalPerson[] = [
     twoStep: true,
     joinedOn: 'Mar 3, 2026',
     lastActive: '2 hr. ago',
-    workspaceCount: 2
+    workspaceCount: 2,
+    methods: ['google']
   },
   {
     id: 'user-mia',
@@ -119,7 +119,8 @@ const people: PortalPerson[] = [
     twoStep: false,
     joinedOn: 'Jun 12, 2026',
     lastActive: 'yesterday',
-    workspaceCount: 1
+    workspaceCount: 1,
+    methods: ['credential', 'google']
   },
   {
     id: 'user-tom',
@@ -131,7 +132,8 @@ const people: PortalPerson[] = [
     twoStep: false,
     joinedOn: 'Oct 2, 2026',
     lastActive: null,
-    workspaceCount: 0
+    workspaceCount: 0,
+    methods: ['credential']
   },
   {
     id: 'user-joon',
@@ -143,6 +145,7 @@ const people: PortalPerson[] = [
     joinedOn: 'Nov 16, 2026',
     lastActive: '1 hr. ago',
     workspaceCount: 0,
+    methods: ['apple'],
     access: 'waiting'
   }
 ]
@@ -365,8 +368,8 @@ const person: PortalPersonDetail = {
   person: people[2] ?? people[0],
   emailVerified: true,
   methods: [
-    { provider: 'credential', linkedOn: 'Jun 12, 2026' },
-    { provider: 'google', linkedOn: 'Jul 1, 2026' }
+    { id: 'method-password', provider: 'credential', linkedOn: 'Jun 12, 2026', canRemove: true },
+    { id: 'method-google', provider: 'google', linkedOn: 'Jul 1, 2026', canRemove: true }
   ],
   authenticator: false,
   passkeyCount: 0,
@@ -379,30 +382,15 @@ const person: PortalPersonDetail = {
 }
 const MB = 1024 * 1024
 const freePlan: PortalPlanType = {
-  known: true,
-  name: null,
-  status: null,
-  periodEnd: null,
-  cancels: false,
   storage: { usedBytes: 212 * MB, totalBytes: 300 * MB },
+  services: false,
   monthlyCredits: null
 }
 const paidPlan: PortalPlanType = {
-  known: true,
-  name: 'Pro',
-  status: 'active',
-  periodEnd: 'Dec 12, 2026',
-  cancels: false,
   storage: { usedBytes: 3482 * MB, totalBytes: 10240 * MB },
+  services: true,
   monthlyCredits: 3000
 }
-const planOffers: PortalPlanOffer[] = [
-  { id: 'pro', name: 'Pro', price: '$10.00', storage: '10 GB', credits: '3,000' }
-]
-const creditPacks: PortalCreditPack[] = [
-  { id: 'credits-5k', credits: '5,000', price: '$5.00', validDays: 365 },
-  { id: 'credits-20k', credits: '20,000', price: '$20.00', validDays: 365 }
-]
 const components = {
   PortalConsoleLayout,
   PortalAccountSecurity,
@@ -450,8 +438,6 @@ const story = (
       loadDocuments,
       freePlan,
       paidPlan,
-      planOffers,
-      creditPacks,
       ...extra
     }),
     template: `
@@ -473,13 +459,13 @@ export const PlanFree = story(
   'plan',
   'Plan',
   'What your account includes, and what you pay for.',
-  `<PortalPlan :plan="freePlan" :offers="planOffers" />`
+  `<PortalPlan :plan="freePlan" sells />`
 )
 export const PlanPaid = story(
   'plan',
   'Plan',
   'What your account includes, and what you pay for.',
-  `<PortalPlan :plan="paidPlan" :offers="planOffers" :credit-packs="creditPacks" />`
+  `<PortalPlan :plan="paidPlan" sells />`
 )
 export const Sessions = story(
   'sessions',

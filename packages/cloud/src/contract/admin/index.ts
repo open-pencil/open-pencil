@@ -40,6 +40,8 @@ export const adminErrorCodeSchema = v.picklist([
   'invalid_enrollment_transition',
   'last_admin_required',
   'self_admin_action_forbidden',
+  // The sign-in method is the account's last, so removing it would lock its owner out.
+  'last_authentication_method',
   'email_regeneration_unavailable',
   'mfa_required',
   // Two-step is on, but this session has not proved it lately; confirming it lets it back in.
@@ -92,6 +94,8 @@ export const cloudAdminUserSchema = v.object({
   /** When one of the account's sessions was last used, or null when none is left. */
   lastActiveAt: nullableTimestampSchema,
   workspaceCount: countSchema,
+  /** How the account signs in: `credential` for a password, or a provider such as `google`. */
+  methods: v.array(v.string()),
   /**
    * On a server that approves people, where this account's request to join stands: an account
    * exists from its first sign-in, before anyone approved it. Absent where everyone may join.
@@ -106,6 +110,8 @@ export const cloudAdminUserFilterSchema = v.picklist([
   'suspended',
   'without-two-step'
 ])
+/** Narrows a list of people, under any filter, to those who sign in a given way. */
+export const cloudAdminUserMethodSchema = v.picklist(['password', 'google', 'apple'])
 export const cloudAdminUsersResponseSchema = v.object({
   users: v.array(cloudAdminUserSchema),
   ...listTotals(cloudAdminUserFilterSchema.options)
@@ -116,7 +122,15 @@ export const cloudAdminUserDetailSchema = v.object({
     ...cloudAdminUserSchema.entries,
     emailVerified: v.boolean()
   }),
-  methods: v.array(v.object({ provider: v.string(), createdAt: timestampSchema })),
+  /** `canRemove`: the account keeps a way in that still works without it. */
+  methods: v.array(
+    v.object({
+      id: v.string(),
+      provider: v.string(),
+      createdAt: timestampSchema,
+      canRemove: v.boolean()
+    })
+  ),
   authenticator: v.boolean(),
   passkeyCount: countSchema,
   sessions: v.array(cloudAccountSessionSchema),
@@ -263,6 +277,7 @@ export type Enrollment = v.InferOutput<typeof enrollmentSchema>
 export type CloudAdminSessionResponse = v.InferOutput<typeof cloudAdminSessionResponseSchema>
 export type CloudAdminUser = v.InferOutput<typeof cloudAdminUserSchema>
 export type CloudAdminUserFilter = v.InferOutput<typeof cloudAdminUserFilterSchema>
+export type CloudAdminUserMethod = v.InferOutput<typeof cloudAdminUserMethodSchema>
 export type CloudAdminEmailFilter = v.InferOutput<typeof cloudAdminEmailFilterSchema>
 export type CloudAdminAuditFilter = v.InferOutput<typeof cloudAdminAuditFilterSchema>
 export type EnrollmentStatus = v.InferOutput<typeof enrollmentStatusSchema>
