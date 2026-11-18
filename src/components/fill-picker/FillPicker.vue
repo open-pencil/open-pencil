@@ -94,8 +94,8 @@ function update(next: Fill) {
 }
 
 /** An image arrives once its file is read, a step of its own even if a press is held by then. */
-function updateImage(next: Fill) {
-  gesture.step(() => emit('update', next))
+function updateImage(withImage: () => Fill) {
+  gesture.step(() => emit('update', withImage()))
 }
 
 function updateShader(preset: ShaderPreset) {

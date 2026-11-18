@@ -82,6 +82,15 @@ function updatePickerFill(
   applyPaintMutation(binding, flush, () => update(nextFill))
 }
 
+/**
+ * A shader joins the picker's paint edit, so a drag in its colour is one step. It replaces the
+ * paint, so a binding that refuses the edit, such as an unresolved one, does not stop it: the
+ * shader is then written as a step of its own.
+ */
+function updateShader(binding: BindableValueActions<Color>, flush: () => void, write: () => void) {
+  if (!applyPaintMutation(binding, flush, write)) write()
+}
+
 function updateSolidColor(
   binding: BindableValueActions<Color>,
   flush: () => void,
@@ -174,7 +183,7 @@ function updateSolidColor(
                     )
                   "
                   @update-shader="
-                    applyPaintMutation(binding.actions, flush, () =>
+                    updateShader(binding.actions, flush, () =>
                       store.setShaderPaint(selectedNodeIds, 'fills', index, $event)
                     )
                   "

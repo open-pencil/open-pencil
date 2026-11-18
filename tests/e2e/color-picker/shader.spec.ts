@@ -5,14 +5,16 @@ import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 
 const editor = useEditorSetupWithClear()
 
-/** How many steps Undo can take back. */
-function undoSteps() {
-  return editor.page.evaluate(() => {
-    const undo = window.openPencil?.getStore?.().undo
-    let depth = 0
-    while (undo?.peekUndo(depth)) depth++
-    return depth
-  })
+async function expandSettings() {
+  await editor.page
+    .locator('[data-picker-content]')
+    .getByRole('button', { name: 'Expand effect settings' })
+    .click()
+}
+
+async function reopen() {
+  await editor.page.getByTestId('fill-picker-swatch').first().click()
+  await expandSettings()
 }
 
 test('a drag in a shader colour’s picker is one undo step', async () => {
@@ -20,16 +22,18 @@ test('a drag in a shader colour’s picker is one undo step', async () => {
   await editor.canvas.waitForRender()
   await editor.page.getByTestId('fill-picker-swatch').first().click()
   await editor.page.getByTestId('fill-picker-tab-shader').click()
-  await editor.page
-    .locator('[data-picker-content]')
-    .getByRole('button', { name: 'Expand effect settings' })
-    .click()
+  await expandSettings()
   await editor.canvas.clearHistory()
 
-  const colour = editor.page.locator('[data-picker-content] [data-property^="shader-"]').filter({
-    has: editor.page.getByRole('button', { name: 'Edit color' })
-  })
-  await colour.first().getByRole('button', { name: 'Edit color' }).click()
+  // The first colour setting of the shader's effect, read from its hex as the panel shows it.
+  const setting = editor.page
+    .locator('[data-picker-content] [data-property^="shader-"]')
+    .filter({ has: editor.page.getByTestId('color-hex-input') })
+    .first()
+  const hex = () => setting.getByTestId('color-hex-input').inputValue()
+  const before = await hex()
+
+  await setting.getByRole('button', { name: 'Edit color' }).click()
   const area = editor.page.locator('[data-picker-content] .cursor-crosshair').last()
   const box = await area.boundingBox()
   if (!box) throw new Error('Missing colour area')
@@ -37,7 +41,19 @@ test('a drag in a shader colour’s picker is one undo step', async () => {
   await editor.page.mouse.down()
   await editor.page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.5, { steps: 8 })
   await editor.page.mouse.up()
+  await expect.poll(hex).not.toBe(before)
+  const dragged = await hex()
 
-  expect(await undoSteps()).toBe(1)
+  // Escape closes the colour's picker, then the fill picker, keeping the colour.
+  await editor.page.keyboard.press('Escape')
+  await editor.page.keyboard.press('Escape')
+  await expect(editor.page.locator('[data-picker-content]')).toHaveCount(0)
+  await reopen()
+  await expect.poll(hex).toBe(dragged)
+  await editor.page.keyboard.press('Escape')
+
+  await editor.canvas.undo()
+  await reopen()
+  await expect.poll(hex).toBe(before)
   editor.canvas.assertNoErrors()
 })

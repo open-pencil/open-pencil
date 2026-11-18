@@ -1,4 +1,4 @@
-import { useEventListener } from '@vueuse/core'
+import { useEventListener, useTimeoutFn } from '@vueuse/core'
 
 export interface PickerGestureOptions {
   /** Whether the picker is open; only then does a press inside it start a step. */
@@ -7,8 +7,8 @@ export interface PickerGestureOptions {
   commit: () => void
   /** Puts back what the press being held has changed. */
   cancel: () => void
-  /** A press inside the picker has started a step, before anything it changes. */
-  start?: () => void
+  /** A held press is about to make its first change, such as the moment to note what it changes. */
+  beforeChange?: () => void
 }
 
 /** Every picker surface carries this, including one opened from inside another picker. */
@@ -23,25 +23,42 @@ const PICKER_CONTENT = '[data-picker-content]'
  * ends the drag: the control holding the pointer loses it, so it stops following until the
  * release, and anything it still reports is dropped.
  */
-export function usePickerGesture({ open, commit, cancel, start }: PickerGestureOptions) {
+export function usePickerGesture({ open, commit, cancel, beforeChange }: PickerGestureOptions) {
   let press: { target: Element; pointerId: number } | null = null
   let changed = false
   let cancelled = false
   /** The Escape that put a press back, whose key repeats must not close the picker. */
   let escapeHeld = false
+  /** Steps of their own that arrived while a press was held, applied once it ends. */
+  let waiting: Array<() => void> = []
 
-  function reset() {
+  function applyWaiting() {
+    const steps = waiting
+    waiting = []
+    for (const apply of steps) {
+      apply()
+      commit()
+    }
+  }
+
+  function end(): boolean {
+    const step = changed && !cancelled
     press = null
     changed = false
     cancelled = false
+    return step
   }
 
   function release() {
+    releaseLater.stop()
     if (!press) return
-    const step = changed && !cancelled
-    reset()
-    if (step) commit()
+    if (end()) commit()
+    applyWaiting()
   }
+
+  // A control that stops its release from bubbling still ends the press, once its own handler
+  // has made its last change.
+  const releaseLater = useTimeoutFn(release, 0, { immediate: false })
 
   /** Sliders, the colour area, and the gradient bar move only while they hold the pointer. */
   function endDrag(held: { target: Element; pointerId: number }) {
@@ -61,7 +78,13 @@ export function usePickerGesture({ open, commit, cancel, start }: PickerGestureO
       press = { target: event.target, pointerId: event.pointerId }
       changed = false
       cancelled = false
-      start?.()
+    },
+    { capture: true }
+  )
+  useEventListener(
+    ['pointerup', 'pointercancel'],
+    (event: PointerEvent) => {
+      if (press?.pointerId === event.pointerId) releaseLater.start()
     },
     { capture: true }
   )
@@ -70,7 +93,8 @@ export function usePickerGesture({ open, commit, cancel, start }: PickerGestureO
   })
   useEventListener('blur', release)
   // Ahead of the popover's own Escape, which would close the picker, as the canvas does for its
-  // drags (`useCanvasInput`).
+  // drags (`useCanvasInput`). Propagation stops, but a picker opened from this one still sees the
+  // key and puts back the same press.
   useEventListener(
     'keydown',
     (event: KeyboardEvent) => {
@@ -79,7 +103,7 @@ export function usePickerGesture({ open, commit, cancel, start }: PickerGestureO
       const putBack = held !== null && changed && !cancelled
       if (!putBack && !(escapeHeld && event.repeat)) return
       event.preventDefault()
-      event.stopImmediatePropagation()
+      event.stopPropagation()
       if (!held || !putBack) return
       cancelled = true
       escapeHeld = true
@@ -96,27 +120,31 @@ export function usePickerGesture({ open, commit, cancel, start }: PickerGestureO
     /** Applies a change, unless Escape put its press back; with no press held it is a step. */
     change(apply: () => void) {
       if (cancelled) return
+      if (press && !changed) beforeChange?.()
       apply()
       if (press) changed = true
       else commit()
     },
     /**
-     * Applies a change that is a step of its own whatever press is held, such as an image that
-     * arrives once its file is read. What a held press changed so far becomes its own step first.
+     * Applies a change that is a step of its own, such as an image that arrives once its file is
+     * read. While a press is held it waits for the press to end, so it neither splits that step
+     * nor survives being put back with it.
      */
     step(apply: () => void) {
-      if (press && changed && !cancelled) {
-        commit()
-        changed = false
+      if (press && !cancelled) {
+        waiting.push(apply)
+        return
       }
       apply()
       commit()
     },
     /** For the picker closing while a press is held, such as when it loses focus: drops it. */
     abort() {
+      releaseLater.stop()
       const putBack = press !== null && changed && !cancelled
-      reset()
+      end()
       if (putBack) cancel()
+      applyWaiting()
     }
   }
 }

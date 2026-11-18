@@ -339,7 +339,11 @@ test('each drag in a shadow’s colour picker is one undo step that Escape keeps
   const shadow = effectDriver(() => page)
   await shadow.build()
   await canvas.clearHistory()
-  const color = async () => (await shadow.effect())?.color
+  const color = async () => {
+    const effect = await shadow.effect()
+    if (!effect) throw new Error('The shadow is gone')
+    return effect.color
+  }
   const before = await color()
 
   const section = page.getByRole('region', { name: 'Effects', exact: true })

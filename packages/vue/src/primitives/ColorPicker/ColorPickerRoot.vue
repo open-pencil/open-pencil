@@ -49,7 +49,9 @@ const swatchBg = computed(() => colorToCSS(color))
 let pressColor: Color = { ...color }
 const gesture = usePickerGesture({
   open: () => popupOpen.value,
-  start: () => {
+  // The colour the press found when it first changed it, so a change from elsewhere since the
+  // press began is not put back.
+  beforeChange: () => {
     pressColor = { ...color }
   },
   commit: () => emit('commit'),
