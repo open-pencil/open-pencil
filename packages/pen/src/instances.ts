@@ -167,11 +167,12 @@ function overrideLayer(build: Build, target: SceneNode, override: PenOverride): 
   inAncestorThemes(build, target, () => {
     const leave = merged.theme ? ctx.enterTheme(merged.theme) : undefined
     try {
-      applyPenProperties(target, merged, build)
+      // Children that replace the layer's own decide its size, as a fit_content(N) fallback holds
+      // only while the layer is empty, so the old ones go first.
+      if (children) for (const childId of target.childIds) graph.deleteNode(childId)
+      applyPenProperties(target, children ? { ...merged, children } : merged, build)
       recordChangedFields(graph, target, before, fields)
       if (children) {
-        const replaced = target.childIds
-        for (const childId of replaced) graph.deleteNode(childId)
         for (const child of children) createSceneNode(child, target.id, build)
         build.replaced.add(target.id)
       }
@@ -229,17 +230,6 @@ function inheritCopyFields(build: Build, root: SceneNode): void {
 }
 
 /**
- * Puts the `ref` node's own children into an instance of a component that declares itself a slot
- * (`"slot": [...]`), as pen.dev draws them inside the component's frame. They replace the copied
- * layers, so the instance is detached like one whose override replaced its children.
- */
-function fillSlot(build: Build, instance: SceneNode, ref: PenNode): void {
-  const component = ref.ref ? build.components.get(ref.ref) : undefined
-  if (!ref.children || !Array.isArray(component?.slot)) return
-  overrideLayer(build, instance, { children: ref.children })
-}
-
-/**
  * Fills each instance with copies of its component's layers, then applies its overrides. An
  * instance inside a component is filled first, so the copies made of it carry its layers and
  * overrides; a copy keeps its source's pen.dev fields and placement.
@@ -263,7 +253,9 @@ export function populateInstances(build: Build): void {
     recordOwnFields(graph, instance, ref)
     inheritCopyFields(build, instance)
     applyDescendants(build, instance, ref.descendants, populate)
-    fillSlot(build, instance, ref)
+    // pen.dev draws a ref's own children in place of its component's, whether or not the
+    // component declares a `slot`; like an override's children, they detach the instance.
+    if (ref.children) overrideLayer(build, instance, { children: ref.children })
     // Before anything copies this instance, so the copies are of what it became.
     detachReplacingInstances(build)
   }

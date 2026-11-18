@@ -262,18 +262,42 @@ describe('parsePenFile — instances', () => {
     expect(graph.getChildren('empty')).toEqual([])
   })
 
-  test('ignores children on a ref to a component that is not a slot', () => {
+  // pen.dev 2.21 draws a ref's children in place of its component's, without a `slot` too (#2193).
+  test("draws a ref's children in place of its component's", () => {
     const graph = parseDocument([
       button,
       {
-        id: 'notSlot',
+        id: 'custom',
         type: 'ref',
         ref: 'button',
-        children: [{ id: 'stray', type: 'text', content: 'Stray' }]
+        children: [{ id: 'own', type: 'text', content: 'Own' }]
       }
     ])
-    expect(getNodeOrThrow(graph, 'notSlot').type).toBe('INSTANCE')
-    expect(graph.getNode('stray')).toBeUndefined()
+    expect(graph.getChildren('custom').map((node) => node.id)).toEqual(['own'])
+    expect(getNodeOrThrow(graph, 'custom').type).toBe('FRAME')
+  })
+
+  test("sizes a fit_content(N) slot to the ref's children, not its empty fallback", () => {
+    const graph = parseDocument([
+      {
+        id: 'slot',
+        type: 'frame',
+        reusable: true,
+        slot: [],
+        layout: 'vertical',
+        width: 'fit_content(200)',
+        height: 'fit_content(100)'
+      },
+      {
+        id: 'filled',
+        type: 'ref',
+        ref: 'slot',
+        children: [{ id: 'box', type: 'frame', width: 80, height: 40 }]
+      },
+      { id: 'empty', type: 'ref', ref: 'slot' }
+    ])
+    expect(getNodeOrThrow(graph, 'filled')).toMatchObject({ minWidth: null, minHeight: null })
+    expect(getNodeOrThrow(graph, 'empty')).toMatchObject({ minWidth: 200, minHeight: 100 })
   })
 
   test('keeps a replacement that is an instance of another component', () => {
