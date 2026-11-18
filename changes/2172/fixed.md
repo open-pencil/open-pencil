@@ -1,1 +1,1 @@
-- An instance nested inside another component uses the theme of the screen it is placed in, keeps a clip bound to that theme, and still applies a descendant override to an icon whose glyph the theme swaps (#2170).
+- `.pen` instances nested in another component take the theme of the screen they are placed in, including theme-bound clips and swapped icons (#2170).
