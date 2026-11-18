@@ -1,9 +1,9 @@
-import { XMLSerializer } from '@xmldom/xmldom'
+import { XMLSerializer, type Element as XMLElement } from '@xmldom/xmldom'
 import { compact, isEmptyObject, omit } from 'es-toolkit'
 
 import type { DesignDocument, DesignElement } from '@open-pencil/dom-css'
 import { serializeNode } from '@open-pencil/dom-css/export'
-import { imagePicture } from '@open-pencil/dom-css/scene-graph'
+import { elementSVG, type ElementSVG } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import {
@@ -218,11 +218,27 @@ function drawNamedIcon(
  * Draws artwork as SVG import draws a file, with its groups, clips, masks, and text, into its
  * frame: the import's own frame is dropped and its layers moved into this one.
  */
+/** Paints every shape an SVG draws in one color, as a CSS mask shows its background through them. */
+function paintShapes(root: XMLElement, paint: string): void {
+  // Shapes that name no fill take the root's, black by default.
+  root.setAttribute('fill', paint)
+  for (const element of Array.from(root.getElementsByTagName('*'))) {
+    for (const attribute of ['fill', 'stroke']) {
+      const value = element.getAttribute(attribute)
+      if (value && value !== 'none') element.setAttribute(attribute, paint)
+    }
+  }
+}
+
 /**
- * The SVG an image shows, at the size of the layer it became. An image scales its picture to its
- * box, so a picture that gives only a size scales from a `viewBox` of that size.
+ * The SVG an element draws, at the size of the layer it became: an image's picture, or a mask's
+ * shapes in `paint`. Both scale to the element's box, so an SVG that gives only a size scales from
+ * a `viewBox` of that size.
  */
-function imageSVGMarkup(markup: string, box: { width: number; height: number }): string | null {
+function elementSVGMarkup(
+  { markup, paint }: ElementSVG,
+  box: { width: number; height: number }
+): string | null {
   const root = parseSVGDocument(markup)?.documentElement
   if (!root) return null
   if (!root.hasAttribute('viewBox')) {
@@ -231,6 +247,7 @@ function imageSVGMarkup(markup: string, box: { width: number; height: number }):
   }
   root.setAttribute('width', String(box.width))
   root.setAttribute('height', String(box.height))
+  if (paint) paintShapes(root, paint)
   return new XMLSerializer().serializeToString(root)
 }
 
@@ -243,8 +260,8 @@ function drawArtwork(graph: SceneGraph, frameId: string, element: DesignElement,
 }
 
 /**
- * Draws each inline SVG, and each image showing an SVG, HTML import built a frame for into that
- * frame, at the size layout and
+ * Draws each inline SVG, image showing an SVG, and element an SVG masks, HTML import built a frame
+ * for into that frame, at the size layout and
  * placement gave it, with `currentColor` in the element's color, `<use>` and `url()` reaching
  * definitions elsewhere in the page, and the paint the page's CSS gives each shape. An SVG that
  * is an icon, because the page names it, as `data-icon="lucide:save"`, or because `matchIcon`
@@ -268,9 +285,8 @@ export async function drawInlineSVGs(
     const frame = graph.getNode(frameId)
     if (!frame || frame.width <= 0 || frame.height <= 0) return []
     const box = { width: frame.width, height: frame.height }
-    const picture = imagePicture(element)
-    const markup =
-      picture?.kind === 'svg' ? imageSVGMarkup(picture.markup, box) : svgMarkup(element, byId, box)
+    const drawn = elementSVG(element)
+    const markup = drawn ? elementSVGMarkup(drawn, box) : svgMarkup(element, byId, box)
     return markup ? [{ frameId, element, box, markup }] : []
   })
   const unnamed = drawn.filter(({ element }) => !iconName(element))

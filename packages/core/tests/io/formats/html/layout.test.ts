@@ -8,6 +8,7 @@ import type {
   DesignNode,
   DesignStyleDeclaration
 } from '@open-pencil/dom-css'
+import { svgDataURL } from '@open-pencil/scene-graph/images'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
@@ -222,5 +223,31 @@ describe('fonts of HTML styled in a browser', () => {
       .find(({ node }) => node.type === 'TEXT')?.node
 
     expect(text?.fontFamily).toBe(family)
+  })
+})
+
+describe('CSS mask icons', () => {
+  test('draws the SVG an element is masked with, its shapes in the element’s background', async () => {
+    const icon =
+      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M0 0h24v24H0z'/><path fill='none' stroke='black' d='M2 2h20'/></svg>"
+    const masked = element(
+      {
+        ...box(16, 16),
+        'background-color': 'rgb(255, 0, 0)',
+        'mask-image': `url("${svgDataURL(icon)}")`
+      },
+      { box: rect(0, 0, 16, 16) }
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [masked] })
+    const frame = graph.getChildren(graph.getPages()[0].id)[0]
+    const shapes = graph
+      .flattenTree(frame.id)
+      .flatMap(({ node }) => (node.id === frame.id ? [] : [node]))
+    const paints = shapes.flatMap((shape) => [...shape.fills, ...shape.strokes])
+
+    // The background shows through the shapes, not across the box.
+    expect(frame).toMatchObject({ width: 16, height: 16, fills: [] })
+    expect(paints.length).toBeGreaterThan(0)
+    expect(paints.every((paint) => paint.color?.r === 1 && paint.color.g === 0)).toBe(true)
   })
 })

@@ -1,3 +1,4 @@
+import { compact } from 'es-toolkit'
 import valueParser from 'postcss-value-parser'
 import { decode, parsePath } from 'ufo'
 
@@ -61,19 +62,38 @@ export function parseFragmentReference(reference: string | null | undefined): st
   return decode(hash.slice(1))
 }
 
+/** What each `url()` in a CSS value points at, quoted or not, such as an image's data URL. */
+export function parseCSSURLs(value: string | undefined): string[] {
+  const urls: string[] = []
+  if (!value) return urls
+  valueParser(value).walk((node) => {
+    if (node.type !== 'function' || node.value.toLowerCase() !== 'url') return true
+    const target = node.nodes.at(0)?.value
+    if (target) urls.push(target)
+    return false
+  })
+  return urls
+}
+
+/**
+ * What a paint written as `url(#id) fallback` falls back to when its reference cannot be used:
+ * the value without its `url()`, or undefined when nothing follows it, which paints nothing.
+ */
+export function parsePaintFallback(value: string): string | undefined {
+  const rest = valueParser
+    .stringify(
+      valueParser(value).nodes.filter(
+        (node) => node.type !== 'function' || node.value.toLowerCase() !== 'url'
+      )
+    )
+    .trim()
+  return rest || undefined
+}
+
 /**
  * The ids a CSS value points at with local `url(#id)` references, as `clip-path`, `mask`,
  * `filter`, and SVG paints do, quoted or not.
  */
 export function parseCSSURLReferences(value: string | undefined): string[] {
-  const ids: string[] = []
-  if (!value) return ids
-  valueParser(value).walk((node) => {
-    if (node.type !== 'function' || node.value.toLowerCase() !== 'url') return true
-    const id = parseFragmentReference(node.nodes.at(0)?.value)
-    if (id) ids.push(id)
-    // A url() holds no further references.
-    return false
-  })
-  return ids
+  return compact(parseCSSURLs(value).map(parseFragmentReference))
 }

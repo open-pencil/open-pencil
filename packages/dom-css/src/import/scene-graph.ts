@@ -44,7 +44,7 @@ import {
   type ParentFlow
 } from './flow'
 import { alignGridItems, isGrid } from './grid'
-import { imagePicture } from './pictures'
+import { elementSVG, imagePicture, maskSVG } from './pictures'
 import {
   applyCapturedLines,
   capturedBox,
@@ -361,8 +361,8 @@ function createElementNode(
   const style = mergedStyle(element)
   const display = elementDisplay(element, style)
   if (display === 'none' || isTableColumn(display)) return null
-  // An image showing an SVG becomes its artwork, as inline SVG does.
-  if (isInlineSVG(element) || imagePicture(element)?.kind === 'svg')
+  // An image showing an SVG, or an element an SVG masks, becomes its artwork, as inline SVG does.
+  if (isInlineSVG(element) || elementSVG(element))
     return createSVGFrame(graph, parentId, element, parentFlow, recorded)
   if (
     isTextLikeElement(element) &&
@@ -443,6 +443,8 @@ function createSVGFrame(
     clipsContent: false
   })
   applyElementStyle(graph, node, element, style)
+  // A mask's background shows through its shapes only, which the artwork paints.
+  if (maskSVG(element)) node.fills = []
   applySVGSize(node, element, style)
   recordElement(graph, recorded, node, element, style)
   recorded.svgs.set(node.id, element)
@@ -590,7 +592,7 @@ export function designDocumentToSceneGraph(
   return designDocumentToLayers(document, options).graph
 }
 
-export { imagePicture, type ImagePicture } from './pictures'
+export { elementSVG, imagePicture, type ElementSVG, type ImagePicture } from './pictures'
 export { placeLayersFromLayout, type CapturedBox, type CapturedBoxes } from './placement'
 export { applyCSSTransforms, type CSSTransform, type CSSTransforms } from './transform'
 

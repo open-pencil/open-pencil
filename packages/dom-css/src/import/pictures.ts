@@ -1,6 +1,8 @@
+import { parseCSSURLs } from '@open-pencil/scene-graph/css'
 import { imageHeader, parseDataURL } from '@open-pencil/scene-graph/images'
 
 import type { DesignElement } from '../types'
+import { mergedStyle, pickStyle } from './css-values'
 
 /** What an `<img>` shows: a raster image's bytes, or an SVG's markup. */
 export type ImagePicture = { kind: 'raster'; bytes: Uint8Array } | { kind: 'svg'; markup: string }
@@ -22,4 +24,33 @@ export function imagePicture(element: DesignElement): ImagePicture | null {
   if (imageHeader(bytes)) return { kind: 'raster', bytes }
   const type = loaded ? loaded.contentType : inline?.mimeType
   return type === SVG_TYPE ? { kind: 'svg', markup: new TextDecoder().decode(bytes) } : null
+}
+
+/** SVG an element draws, and for a mask, the color its shapes take. */
+export interface ElementSVG {
+  markup: string
+  /** The element's background, which shows through a mask's shapes and nowhere else. */
+  paint?: string
+}
+
+/**
+ * The SVG an element's `mask-image` holds as a data URL, as CSS icons such as Iconify's and
+ * VitePress's draw: the background shows through its shapes. Null for any other mask.
+ */
+export function maskSVG(element: DesignElement): ElementSVG | null {
+  const style = mergedStyle(element)
+  const url = parseCSSURLs(pickStyle(style, 'mask-image')).at(0)
+  const data = url ? parseDataURL(url) : null
+  if (data?.mimeType !== SVG_TYPE) return null
+  return {
+    markup: new TextDecoder().decode(data.bytes),
+    paint: pickStyle(style, 'background-color')
+  }
+}
+
+/** The SVG an element draws: the picture an `<img>` shows, or the mask its background shows through. */
+export function elementSVG(element: DesignElement): ElementSVG | null {
+  const picture = imagePicture(element)
+  if (picture?.kind === 'svg') return { markup: picture.markup }
+  return maskSVG(element)
 }

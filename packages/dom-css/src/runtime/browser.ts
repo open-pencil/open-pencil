@@ -111,6 +111,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'margin-left',
   'margin-right',
   'margin-top',
+  'mask-image',
   'max-height',
   'max-width',
   'min-height',
