@@ -259,6 +259,8 @@
   "aiSetupWelcomeDescription": "Erstelle und bearbeite Designs auf einer offenen Arbeitsfläche. Importiere Figma-Dateien und mach sie zu deinen eigenen.",
   "aiSetupWelcomeAITitle": "Mit KI gestalten",
   "aiSetupWelcomeAIDescription": "Verbinde die KI, die du bereits nutzt, um die Arbeitsfläche zu bearbeiten und Designs zu prüfen. Du kannst das später in den Einstellungen ändern.",
+  "aiSetupWelcomeCloudReadyTitle": "KI ist bereit",
+  "aiSetupWelcomeCloudReadyDescription": "Dein OpenPencil-Cloud-Tarif enthält KI, deshalb funktioniert der Chat jetzt mit den Modellen, die er empfiehlt. Du kannst sie später in den Einstellungen ändern.",
   "aiSetupWelcomeTourTitle": "Rundgang",
   "aiSetupWelcomeTourDescription": "Eine kurze Datei führt durch Komponenten und Slots, funktionierende Steuerelemente, Modi, Shader, Code und Lint – mit einer Karte, die jeweils sagt, was du ausprobieren kannst.",
   "aiSetupTakeTour": "Rundgang öffnen",

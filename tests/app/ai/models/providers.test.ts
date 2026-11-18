@@ -138,11 +138,18 @@ describe('model provider registry', () => {
       ],
       [
         'google',
-        'gemini-3.1-pro-preview',
+        'gemini-4-carbon',
         { generationConfig: { thinkingConfig: { thinkingLevel: 'low' } } }
       ],
+      ['openai', 'gpt-6.2-sol', { reasoning: { effort: 'low' } }],
+      ['openai', 'gpt-6.2-astra', { reasoning: { effort: 'low' } }],
+      // Saved before the list dropped them, they still send the lowest effort they accept.
       ['openai', 'gpt-6.1-sol', { reasoning: { effort: 'low' } }],
-      ['openai', 'gpt-6-astra', { reasoning: { effort: 'low' } }]
+      [
+        'google',
+        'gemini-3.1-pro-preview',
+        { generationConfig: { thinkingConfig: { thinkingLevel: 'low' } } }
+      ]
     ] as const)('%s %s sends the lowest thinking it accepts', async (providerID, modelID, sent) => {
       expect(await thinkingRequestBody(providerID, modelID, level)).toMatchObject(sent)
     })

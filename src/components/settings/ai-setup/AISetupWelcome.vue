@@ -11,7 +11,8 @@ import theme from '@/theme/settings/ai-setup/welcome'
 const {
   offersTour = true,
   tourOpening = false,
-  tourFailed = false
+  tourFailed = false,
+  cloudReady = false
 } = defineProps<{
   /** Offered over the demo, which is the tour, it does not point to it. */
   offersTour?: boolean
@@ -19,6 +20,8 @@ const {
   tourOpening?: boolean
   /** The tour could not be opened; the person can try again. */
   tourFailed?: boolean
+  /** Signing in to OpenPencil Cloud set AI up meanwhile, so there is nothing to connect. */
+  cloudReady?: boolean
 }>()
 const emit = defineEmits<{ tour: [] }>()
 const { ai } = useI18n()
@@ -27,8 +30,12 @@ const styles = tv(theme)()
 
 <template>
   <section :class="styles.intro()">
-    <h3 :class="styles.heading()">{{ ai.aiSetupWelcomeAITitle }}</h3>
-    <p :class="styles.text()">{{ ai.aiSetupWelcomeAIDescription }}</p>
+    <h3 :class="styles.heading()">
+      {{ cloudReady ? ai.aiSetupWelcomeCloudReadyTitle : ai.aiSetupWelcomeAITitle }}
+    </h3>
+    <p :class="styles.text()">
+      {{ cloudReady ? ai.aiSetupWelcomeCloudReadyDescription : ai.aiSetupWelcomeAIDescription }}
+    </p>
   </section>
   <section v-if="offersTour" :class="styles.tour()" data-test-id="ai-setup-tour">
     <div :class="styles.tourText()">

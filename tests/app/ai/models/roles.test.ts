@@ -353,6 +353,17 @@ describe('AI model profiles and role assignments', () => {
     expect(parsed?.models.map((profile) => profile.thinkingLevel)).toEqual(['high', 'off'])
   })
 
+  test('keeps what a model the list has since retired can do', () => {
+    const settings = settingsFixture()
+    const [design, fast] = settings.models
+    if (!fast) throw new Error('fixture has no fast model')
+    const parsed = parseAIModelSettings({
+      ...settings,
+      models: [design, { ...fast, modelID: 'gemini-3.1-pro-preview', capabilities: ['tools'] }]
+    })
+    expect(parsed?.models[1]?.capabilities).toEqual(['tools', 'vision'])
+  })
+
   test('repairs assignments when removing a model', () => {
     expect(canRemoveModelProfile('model-design')).toBe(true)
     removeModelProfile('model-design')

@@ -2,6 +2,7 @@ export * from './account'
 export * from './locale'
 export {
   SERVICE_ERROR_STATUS,
+  roleModelsSchema,
   serviceCatalogSchema,
   creditBucketSchema,
   serviceErrorCodeSchema,
@@ -28,6 +29,7 @@ export {
   parseUsageQuery,
   parseSearchRequest,
   parseCreateServicesToken,
+  type RoleModels,
   type ServiceCatalog,
   type CreditBucket,
   type ServiceError,

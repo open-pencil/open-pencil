@@ -85,11 +85,51 @@ export type ChatModel = v.InferOutput<typeof chatModelSchema>
 export const searchPricingSchema = v.object({ creditsPerRequest: creditsSchema })
 export type SearchPricing = v.InferOutput<typeof searchPricingSchema>
 
-export const serviceCatalogSchema = v.object({
-  models: v.array(chatModelSchema),
-  defaultModelID: v.pipe(v.string(), v.minLength(1)),
-  search: v.optional(searchPricingSchema)
+const modelIDSchema = v.pipe(v.string(), v.minLength(1))
+
+/**
+ * The model the service recommends for each of the editor's roles: Design runs the chat, Review
+ * critiques designs, Fast does quick tasks such as naming conversations, and Vision reads images.
+ * An editor signed in to the service with no model of its own yet sets itself up with them, so
+ * nobody has to choose one. Vision `null` recommends none, and the editor leaves it unassigned.
+ */
+export const roleModelsSchema = v.object({
+  design: modelIDSchema,
+  review: modelIDSchema,
+  fast: modelIDSchema,
+  vision: v.nullable(modelIDSchema)
 })
+export type RoleModels = v.InferOutput<typeof roleModelsSchema>
+
+export const serviceCatalogSchema = v.pipe(
+  v.object({
+    models: v.array(chatModelSchema),
+    defaultModelID: modelIDSchema,
+    /**
+     * Absent from a service that predates it, or whose default model can't run the chat. Editors
+     * then use `defaultModelID` for every role, except Vision when that model reads no images,
+     * and set nothing up when it calls no tools.
+     */
+    roleModels: v.optional(roleModelsSchema),
+    search: v.optional(searchPricingSchema)
+  }),
+  // Every recommendation names a model the catalog lists and can do its role: Design and Fast
+  // call tools, and Vision reads images. An editor then never sets up a role it can't run.
+  v.check(({ models, roleModels }) => {
+    if (!roleModels) return true
+    const can = (id: string | null, capability: 'tools' | 'vision' | null) => {
+      if (id === null) return true
+      const model = models.find((candidate) => candidate.id === id)
+      return model !== undefined && (capability === null || model.capabilities[capability])
+    }
+    return (
+      can(roleModels.design, 'tools') &&
+      can(roleModels.review, null) &&
+      can(roleModels.fast, 'tools') &&
+      can(roleModels.vision, 'vision')
+    )
+  }, 'A recommended model is not in the catalog or cannot do its role')
+)
 export type ServiceCatalog = v.InferOutput<typeof serviceCatalogSchema>
 
 export const creditBucketSchema = v.object({

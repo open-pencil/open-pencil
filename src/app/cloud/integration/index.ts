@@ -15,6 +15,7 @@ export {
   cloudAIIdentity,
   cloudAIClient,
   cloudAIWorkspaces,
+  firstCloudAIWorkspace,
   cloudBillingURL,
   type CloudAIWorkspace
 } from '../ai/access'
