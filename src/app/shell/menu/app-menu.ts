@@ -100,6 +100,7 @@ export function useAppMenu() {
     'new-board': 'newBoard',
     'new-tab': 'newTab',
     open: 'open',
+    'open-url': 'openURL',
     place: 'place',
     'open-tour': 'openTour',
     diagnostics: 'diagnostics',

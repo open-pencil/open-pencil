@@ -22,6 +22,19 @@ export const filesMessageDefaults = {
   preparationDrawingShaders: 'Drawing shaders',
   preparationPreparingRender: 'Preparing canvas',
   importToCanvas: 'Import to canvas',
+  openURLHeading: 'Open from URL',
+  openURLDescription:
+    'A web page opens as editable layers, with the stylesheets and pictures it links. An image, an SVG, or a design file opens as it would from your computer.',
+  openURLDescriptionBrowser:
+    'A web page opens as editable layers, with the stylesheets and pictures it links. An image, an SVG, or a design file opens as it would from your computer. In the browser, only sites that let other sites read them can be opened; the desktop app opens any address.',
+  openURLAddress: 'Address',
+  openURLSubmit: 'Open',
+  openURLInvalid: 'Enter a web address, such as https://example.com.',
+  openURLFailed: 'Could not open this address',
+  openURLBlocked:
+    'The site does not let other sites read it, so the browser cannot open it. The desktop app can.',
+  openURLPDF: 'This address holds a PDF, which OpenPencil cannot open yet.',
+  openURLUnsupported: 'This address holds a file OpenPencil cannot open.',
   newTab: 'New tab',
   home: 'Home',
   closeTab: params('Close {name}'),

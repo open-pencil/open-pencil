@@ -22,6 +22,10 @@
         "accelerator": "CmdOrCtrl+O"
       },
       {
+        "id": "open-url",
+        "label": "Open from URL…"
+      },
+      {
         "id": "open-recent",
         "label": "Open Recent"
       },

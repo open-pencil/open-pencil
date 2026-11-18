@@ -6,13 +6,10 @@ import { basename } from 'pathe'
 import { decode } from 'ufo'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import { readBoundedBody } from '@open-pencil/core/io/remote'
 
 import { setOpenPencilOpenFileHandler } from '@/app/browser-bridge'
-import {
-  resolveBrowserFileURL,
-  MAX_REMOTE_DOCUMENT_BYTES,
-  readBoundedBody
-} from '@/app/document/io/browser'
+import { resolveBrowserFileURL, MAX_REMOTE_DOCUMENT_BYTES } from '@/app/document/io/browser'
 import type { EditorStore } from '@/app/editor/active-store'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { rememberRecentFile } from '@/app/recent-files'

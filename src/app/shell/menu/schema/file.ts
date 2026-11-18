@@ -16,6 +16,7 @@ export const FILE_MENU: AppMenuGroupSchema = {
     { id: 'new-board', label: 'New Board' },
     { id: 'new-tab', label: 'New Tab', shortcut: 'Mod+T' },
     { id: 'open', label: 'Open…', shortcut: 'Mod+O' },
+    { id: 'open-url', label: 'Open from URL…' },
     { id: 'open-recent', label: 'Open Recent', target: 'native' },
     { id: 'place', feature: 'document', label: 'Place…' },
     { type: 'separator' },

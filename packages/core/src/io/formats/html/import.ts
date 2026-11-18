@@ -15,6 +15,7 @@ import {
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { IconMatcher } from '#core/icons/match'
+import { readBoundedBody } from '#core/io/remote'
 import type { IOFormatAdapter } from '#core/io/types'
 
 import {
@@ -23,6 +24,7 @@ import {
   registerPageFontFace,
   resolvePageFontFamilies
 } from './fonts'
+import { embedPageImages } from './images'
 import { HTML_IMPORT_VIEWPORT, sceneGraphFromStyledHTML } from './layers'
 
 export interface ReadHTMLOptions {
@@ -73,33 +75,6 @@ function resource(
 const MAX_RESOURCE_BYTES = 64 * 1024 * 1024
 const MAX_PAGE_BYTES = 256 * 1024 * 1024
 
-/** A response's body, or null once it runs past `MAX_RESOURCE_BYTES`. */
-async function boundedBody(response: Response): Promise<Uint8Array | null> {
-  if (!response.body) return new Uint8Array()
-  if (Number(response.headers.get('content-length')) > MAX_RESOURCE_BYTES) {
-    await response.body.cancel()
-    return null
-  }
-  const reader = response.body.getReader()
-  const chunks: Uint8Array[] = []
-  let length = 0
-  for (let read = await reader.read(); !read.done; read = await reader.read()) {
-    length += read.value.byteLength
-    if (length > MAX_RESOURCE_BYTES) {
-      await reader.cancel()
-      return null
-    }
-    chunks.push(read.value)
-  }
-  const body = new Uint8Array(length)
-  let at = 0
-  for (const chunk of chunks) {
-    body.set(chunk, at)
-    at += chunk.byteLength
-  }
-  return body
-}
-
 async function readAssetAt(
   url: string,
   readAsset: ReadHTMLOptions['readAsset']
@@ -132,7 +107,7 @@ function pageFetch(readAsset: ReadHTMLOptions['readAsset']): HTMLEngineFetch {
     if (url.startsWith('file:')) return readFileAt(url, signal)
     const response = await fetch(url, { signal }).catch(() => null)
     if (!response?.ok) return null
-    const body = await boundedBody(response).catch(() => null)
+    const body = await readBoundedBody(response, MAX_RESOURCE_BYTES).catch(() => null)
     const contentType = response.headers.get('content-type') ?? undefined
     return body ? resource(response.url || url, body, contentType) : null
   }
@@ -176,10 +151,12 @@ export async function readHTMLDocument(
   await registerFallbackFont(engine)
   // The page's own fonts, from its `@font-face` rules, which its text may name first.
   const pageFamilies = new Map<string, string>()
+  const baseURL = options.baseURL ?? (options.readAsset ? ASSET_BASE_URL : undefined)
+  const fetchResource = rememberingFetch(pageFetch(options.readAsset))
   const runtime = createHTMLEngineRuntime({
     engine: async () => engine,
-    baseURL: options.baseURL ?? (options.readAsset ? ASSET_BASE_URL : undefined),
-    fetch: rememberingFetch(pageFetch(options.readAsset)),
+    baseURL,
+    fetch: fetchResource,
     onFontFace: async (face) => {
       await registerPageFontFace(face)
       pageFamilies.set(face.family.toLowerCase(), face.family)
@@ -202,6 +179,11 @@ export async function readHTMLDocument(
   }
   let styled = await style()
   if (await registerLayerFonts(engine, designDocumentToLayers(styled).graph)) styled = await style()
+  const signal = new AbortController().signal
+  await embedPageImages(styled, {
+    baseURL,
+    fetch: async (url) => (await fetchResource(url, signal))?.bytes ?? null
+  })
   const graph = await sceneGraphFromStyledHTML(styled, {
     pageName: options.pageName,
     matchIcon: options.matchIcon

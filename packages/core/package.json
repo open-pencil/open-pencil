@@ -130,6 +130,11 @@
       "import": "./dist/io/formats/html/import.js",
       "default": "./dist/io/formats/html/import.js"
     },
+    "./io/formats/html/images": {
+      "types": "./dist/io/formats/html/images.d.ts",
+      "import": "./dist/io/formats/html/images.js",
+      "default": "./dist/io/formats/html/images.js"
+    },
     "./io/formats/html/layers": {
       "types": "./dist/io/formats/html/layers.d.ts",
       "import": "./dist/io/formats/html/layers.js",
@@ -144,6 +149,11 @@
       "types": "./dist/io/formats/design-tokens/index.d.ts",
       "import": "./dist/io/formats/design-tokens/index.js",
       "default": "./dist/io/formats/design-tokens/index.js"
+    },
+    "./io/remote": {
+      "types": "./dist/io/remote/index.d.ts",
+      "import": "./dist/io/remote/index.js",
+      "default": "./dist/io/remote/index.js"
     },
     "./io/formats/svg": {
       "types": "./dist/io/formats/svg/index.d.ts",

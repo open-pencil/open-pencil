@@ -28,6 +28,7 @@ import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
 import CampaignPromptHost from '@/components/campaigns/CampaignPromptHost.vue'
 import { CloudHosts } from '@/components/cloud/integration'
+import OpenURLDialog from '@/components/document/open-url/OpenURLDialog.vue'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
@@ -96,6 +97,7 @@ onMounted(() => {
         <SaveToHost />
         <CloudHosts />
         <UnsavedChangesDialog />
+        <OpenURLDialog />
         <PublishLibraryDialog />
         <LibraryUpdateReviewDialog />
         <UsageStatsPrompt />

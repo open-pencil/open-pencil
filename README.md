@@ -91,6 +91,7 @@ openpencil export design.fig -f tailwind-jsx  # Tailwind JSX
 openpencil export design.fig -f storybook     # Storybook stories per component
 openpencil convert design.pen design.fig      # Between document formats
 openpencil import card.html --css card.css    # HTML/CSS → editable .fig
+openpencil import https://example.com         # A web page → editable .fig
 ```
 
 ### Lint and analyze

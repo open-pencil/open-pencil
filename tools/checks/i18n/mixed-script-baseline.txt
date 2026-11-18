@@ -808,3 +808,17 @@ ja:settings.importingDescription
 zh-cn:settings.importingDescription
 ja:cloudPortal.pendingHiddenEmail
 zh-cn:cloudPortal.pendingHiddenEmail
+ja:files.openURLHeading
+ja:files.openURLDescription
+ja:files.openURLDescriptionBrowser
+ja:files.openURLInvalid
+ja:files.openURLPDF
+ja:files.openURLUnsupported
+ja:menu.openURL
+zh-cn:files.openURLHeading
+zh-cn:files.openURLDescription
+zh-cn:files.openURLDescriptionBrowser
+zh-cn:files.openURLInvalid
+zh-cn:files.openURLPDF
+zh-cn:files.openURLUnsupported
+zh-cn:menu.openURL

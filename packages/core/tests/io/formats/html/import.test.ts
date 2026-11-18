@@ -463,6 +463,30 @@ describe('reading HTML', () => {
     expect(image).toMatchObject({ width: view.getUint32(16), height: view.getUint32(20) })
   })
 
+  test('fills an image layer with the picture its page links', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const requested: string[] = []
+    const { graph } = await readHTMLDocument(
+      '<img src="photo.png"><img src="photo.png"><img src="missing.png">',
+      {
+        readAsset: async (path) => {
+          requested.push(path)
+          return path === 'photo.png' ? png : null
+        }
+      }
+    )
+    const [first, second, missing] = graph.getChildren(graph.getPages()[0].id)
+    const fill = first.fills[0]
+
+    expect(fill?.type).toBe('IMAGE')
+    expect(fill?.imageHash && graph.images.get(fill.imageHash)).toEqual(png)
+    expect(second.fills[0]?.imageHash).toBe(fill?.imageHash)
+    // A picture that cannot be read leaves its layer as the import made it.
+    expect(missing.fills.some((paint) => paint.type === 'IMAGE')).toBe(false)
+    // Each address is read once, however many images show it.
+    expect(requested.filter((path) => path === 'photo.png')).toHaveLength(1)
+  })
+
   test('draws text in the font its page loads with @font-face', async () => {
     const family = 'OpenPencil Page Brand'
     const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()

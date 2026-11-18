@@ -12,6 +12,11 @@ import { recordLayout } from './layout'
 export interface BrowserCSSRuntimeOptions {
   document?: Document
   sandbox?: 'shadow-root' | 'iframe'
+  /**
+   * The address the page came from, which its relative stylesheets, images, and fonts resolve
+   * against, as on the page itself. Only the iframe sandbox has a base of its own.
+   */
+  baseURL?: string
 }
 
 /**
@@ -359,11 +364,23 @@ async function computeStylesInShadowRoot(
   }
 }
 
+/**
+ * Resolves once a `<style>` element's imported sheets have loaded or failed, which its `load` and
+ * `error` events tell; a sheet that imports nothing fires `load` at once.
+ */
+function stylesheetLoaded(style: HTMLStyleElement): Promise<void> {
+  return new Promise((resolve) => {
+    style.addEventListener('load', () => resolve(), { once: true })
+    style.addEventListener('error', () => resolve(), { once: true })
+  })
+}
+
 async function computeStylesInIframe(
   browserDocument: Document,
   designDocument: DesignDocument,
   cssText: string,
-  options: CSSComputeOptions
+  options: CSSComputeOptions,
+  baseURL: string | undefined
 ): Promise<DesignDocument> {
   const iframe = browserDocument.createElement('iframe')
   applySandboxHostStyle(iframe, options.viewport)
@@ -375,10 +392,18 @@ async function computeStylesInIframe(
     iframeDocument.open()
     iframeDocument.write(`<!doctype html><html><head></head><body></body></html>`)
     iframeDocument.close()
+    if (baseURL) {
+      const base = iframeDocument.createElement('base')
+      base.href = baseURL
+      iframeDocument.head.append(base)
+    }
 
     const style = iframeDocument.createElement('style')
+    const loaded = stylesheetLoaded(style)
     style.textContent = cssText
     iframeDocument.head.append(style)
+    // The sheets it imports, such as a page's linked stylesheets, apply once they load.
+    await loaded
 
     // The document's top-level nodes go straight into the body, so `body` rules and selectors
     // such as `body > header` apply to them as they do on the page they came from.
@@ -440,7 +465,13 @@ export function createBrowserCSSRuntime(options: BrowserCSSRuntimeOptions = {}):
     serializeHTML,
     computeStyles: (designDocument, cssText = '', computeOptions = {}) =>
       sandbox === 'iframe'
-        ? computeStylesInIframe(browserDocument, designDocument, cssText, computeOptions)
+        ? computeStylesInIframe(
+            browserDocument,
+            designDocument,
+            cssText,
+            computeOptions,
+            options.baseURL
+          )
         : computeStylesInShadowRoot(browserDocument, designDocument, cssText, computeOptions)
   }
 }

@@ -1,4 +1,5 @@
 import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
+import { embedPageImages } from '@open-pencil/core/io/formats/html/images'
 import {
   HTML_IMPORT_VIEWPORT,
   sceneGraphFromStyledHTML
@@ -8,6 +9,7 @@ import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
+import { fetchRemoteBytes } from '@/app/document/io/url/fetch'
 import { importIconMatcher } from '@/app/editor/icons/provider'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
@@ -43,6 +45,13 @@ type DOMImportOptions = {
 type DOMTextImportOptions = {
   cssText?: string
   documentName?: string
+  /** The web address the page came from, which its stylesheets and images resolve against. */
+  baseURL?: string
+}
+
+/** The web address a document was opened from, when its path is one rather than a file's. */
+function webAddressOf(path: string | undefined): string | undefined {
+  return path && /^https?:\/\//i.test(path) ? path : undefined
 }
 
 function errorDetail(error: unknown): string {
@@ -69,12 +78,18 @@ export function createDOMOpenActions({
     const pageName = options.documentName ?? 'DOM Import'
     load.update({ phase: 'styling', detail: pageName })
     // Laid out as a browser would, so layers land where the page put its elements.
+    const { baseURL } = options
     const styled = await browserHTMLToDesignDocument(html, {
       cssText: options.cssText,
       signal: load.signal,
-      compute: { layout: true, viewport: HTML_IMPORT_VIEWPORT }
+      compute: { layout: true, viewport: HTML_IMPORT_VIEWPORT },
+      // A page from the web brings its stylesheets and pictures from where it lives.
+      baseURL,
+      importLinkedStylesheets: baseURL !== undefined
     })
     load.signal.throwIfAborted()
+    if (baseURL)
+      await embedPageImages(styled, { baseURL, fetch: fetchRemoteBytes, signal: load.signal })
     load.update({ phase: 'layout', detail: pageName })
     const matcher = importIconMatcher(editor, load.signal)
     const graph = await sceneGraphFromStyledHTML(styled, {
@@ -143,7 +158,8 @@ export function createDOMOpenActions({
         html,
         {
           cssText: options.cssText,
-          documentName: documentNameFor(file)
+          documentName: documentNameFor(file),
+          baseURL: webAddressOf(options.path)
         },
         load
       )
