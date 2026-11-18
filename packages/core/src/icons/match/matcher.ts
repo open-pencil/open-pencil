@@ -1,4 +1,3 @@
-import { groupBy } from 'es-toolkit'
 import { createMatcher, fetchIndex, type Matcher } from 'whaticon/match'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -102,7 +101,13 @@ async function previewsBySet(
   provider: IconProvider,
   names: readonly string[]
 ): Promise<Map<string, string>> {
-  const sets = Object.values(groupBy(names, (name) => parseIconName(name)?.prefix ?? ''))
+  // A Map, as createIconSetsProvider groups by provider, so no prefix is read as an object key.
+  const bySet = new Map<string, string[]>()
+  for (const name of names) {
+    const prefix = parseIconName(name)?.prefix ?? ''
+    bySet.set(prefix, [...(bySet.get(prefix) ?? []), name])
+  }
+  const sets = [...bySet.values()]
   // Each set is asked inside an async call, so a provider that throws at once fails that set only.
   const settled = await Promise.allSettled(sets.map(async (set) => provider.previews(set)))
   const failed = settled.find((result) => result.status === 'rejected')

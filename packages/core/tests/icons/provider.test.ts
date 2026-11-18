@@ -165,11 +165,13 @@ describe('Iconify provider', () => {
   })
 
   test('placing icons reports a failed request without waiting for the others', async () => {
-    const { provider, failing, stalling } = setup()
+    const { provider, requests, failing, stalling } = setup()
     failing.add('/bi.json')
     stalling.add('/test.json')
 
     expect(await provider.icons(['bi:square', 'test:square'], 24).catch(String)).toContain('500')
+    // Both requests were on their way, so the failure did not wait for the stalled one.
+    expect(requests.some((request) => request.startsWith('/test.json'))).toBe(true)
   })
 
   test('a name without a set is refused', async () => {
