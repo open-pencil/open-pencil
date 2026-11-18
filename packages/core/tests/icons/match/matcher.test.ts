@@ -1,12 +1,20 @@
 import { afterEach, describe, expect, mock, spyOn, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 
 import { noop } from 'es-toolkit'
+import { loadIndex } from 'whaticon'
 import { DEFAULT_SIZE, dHashFromPixels, parseIndex } from 'whaticon/hash'
 import { coverageFromRGBA } from 'whaticon/match'
 
 import { getCanvasKit } from '#core/canvaskit'
 import type { IconProvider } from '#core/icons'
-import { createIconMatcher, drawSVG, type IconMatcherServices } from '#core/icons/match/matcher'
+import {
+  createIconMatcher,
+  drawSVG,
+  fetchIconIndex,
+  type IconMatcherServices
+} from '#core/icons/match/matcher'
 import { headlessRenderNodes } from '#core/io/formats/raster'
 import { createCanvasKitRasterCodec } from '#core/io/formats/raster/pixels'
 
@@ -101,5 +109,58 @@ describe('naming icons by how they draw', () => {
     expect(await match([house])).toEqual([null])
     drawing = true
     expect(await match([house])).toEqual(['lucide:house'])
+  })
+
+  test("names an icon from the sets that loaded when another set's icons fail to load", async () => {
+    const icons = testIcons()
+    icons.previews.mockImplementation(async (names: readonly string[]) => {
+      if (names.some((name) => name.startsWith('other:'))) throw new Error('timed out')
+      return new Map(names.flatMap((name) => (ICONS[name] ? [[name, ICONS[name]] as const] : [])))
+    })
+    // Another set's copy of the house hashes as the house does, so it is shortlisted beside it.
+    const index = async () => {
+      const own = await testIndex()
+      const house = own.hashes.subarray(0, 128)
+      const bytes = new Uint8Array([...own.hashes, ...house])
+      return parseIndex([...own.names, 'other:house'].join('\n'), bytes)
+    }
+    const match = createIconMatcher({ index, icons, draw })
+
+    expect(await match([ICONS['lucide:house'] ?? ''])).toEqual(['lucide:house'])
+  })
+
+  test("names an icon against whaticon's published index", async () => {
+    // The index the package ships, which jsDelivr serves for its version, read offline.
+    const data = join(dirname(Bun.resolveSync('whaticon', import.meta.dir)), '..', 'data')
+    const published = loadIndex(
+      readFileSync(join(data, 'names.txt.gz')),
+      readFileSync(join(data, 'hashes.bin.gz'))
+    )
+    const match = createIconMatcher({ index: async () => published, icons: testIcons(), draw })
+    const pageCopy = (ICONS['lucide:house'] ?? '').replace(
+      'width="24" height="24"',
+      'width="20" height="20"'
+    )
+
+    expect(await match([pageCopy])).toEqual(['lucide:house'])
+  })
+})
+
+describe("whaticon's index", () => {
+  test('cancels the other download when one fails', async () => {
+    const signals: AbortSignal[] = []
+    const fetcher = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.signal) signals.push(init.signal)
+      if (String(input).endsWith('names.txt.gz')) return new Response('', { status: 503 })
+      // The hashes stall until they are cancelled.
+      return new Promise<Response>((_, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(new Error('aborted')))
+      })
+    })
+
+    const withPreconnect = Object.assign(fetcher, { preconnect: fetch.preconnect })
+    expect(await fetchIconIndex(withPreconnect).catch(String)).toContain('503')
+    expect(signals).toHaveLength(2)
+    expect(signals.every((signal) => signal.aborted)).toBe(true)
   })
 })

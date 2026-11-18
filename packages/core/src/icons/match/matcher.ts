@@ -1,8 +1,9 @@
+import { groupBy } from 'es-toolkit'
 import { createMatcher, fetchIndex, type Matcher } from 'whaticon/match'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import type { IconProvider } from '#core/icons/provider'
+import { parseIconName, type IconProvider } from '#core/icons/provider'
 import type { RGBAImage } from '#core/io/formats/raster/pixels'
 import { createSVGNodes } from '#core/io/formats/svg/import'
 
@@ -34,17 +35,30 @@ export interface IconMatcherServices {
 const INDEX_TIMEOUT_MS = 30_000
 
 /**
- * whaticon's index of the popular Iconify sets, from the version Core depends on, or a rejection
- * once `INDEX_TIMEOUT_MS` passes; a stalled download is left to end on its own.
+ * whaticon's index of the popular Iconify sets, from the version Core depends on. Its downloads
+ * share one signal, which `INDEX_TIMEOUT_MS` aborts, as a failed download does the other's, so
+ * none outlives the attempt.
  */
-export function fetchIconIndex(fetcher: typeof globalThis.fetch): ReturnType<typeof fetchIndex> {
-  const deadline = AbortSignal.timeout(INDEX_TIMEOUT_MS)
-  const expired = new Promise<never>((_, reject) => {
-    const timedOut = () =>
-      reject(new Error(`whaticon's index took longer than ${INDEX_TIMEOUT_MS} ms`))
-    deadline.addEventListener('abort', timedOut, { once: true })
+export async function fetchIconIndex(
+  fetcher: typeof globalThis.fetch
+): ReturnType<typeof fetchIndex> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => {
+    controller.abort(new Error(`whaticon's index took longer than ${INDEX_TIMEOUT_MS} ms`))
+  }, INDEX_TIMEOUT_MS)
+  // A proxy keeps the fetcher's own type while giving each request the shared signal.
+  const abortable = new Proxy(fetcher, {
+    apply: (target, self, [input, init]: Parameters<typeof globalThis.fetch>) =>
+      target.call(self, input, { ...init, signal: controller.signal })
   })
-  return Promise.race([fetchIndex(fetcher), expired])
+  try {
+    return await fetchIndex(abortable)
+  } catch (error) {
+    controller.abort(error)
+    throw error
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 /**
@@ -73,6 +87,22 @@ export async function drawSVG(
 }
 
 /**
+ * The icons' SVG from `provider`, asked for set by set, so a set that fails to load leaves out
+ * only its own icons, which the matcher compares with next time; throws only when every set fails.
+ */
+async function previewsBySet(
+  provider: IconProvider,
+  names: readonly string[]
+): Promise<Map<string, string>> {
+  const sets = Object.values(groupBy(names, (name) => parseIconName(name)?.prefix ?? ''))
+  const results = await Promise.allSettled(sets.map((set) => provider.previews(set)))
+  const loaded = results.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []))
+  const failed = results.find((result) => result.status === 'rejected')
+  if (loaded.length === 0 && failed) throw failed.reason
+  return new Map(loaded.flatMap((previews) => [...previews]))
+}
+
+/**
  * Names the icons SVG draws with whaticon's matcher, drawing each SVG and candidate icon as
  * OpenPencil draws it and taking candidates from `icons`. What could not be loaded or drawn, as
  * offline, leaves its SVG unnamed, is tried again by the next call, and is warned about once.
@@ -81,7 +111,7 @@ export function createIconMatcher(services: IconMatcherServices): IconMatcher {
   return createMatcher({
     index: services.index,
     draw: (svg, width, height) => drawSVG(services.draw, svg, width, height),
-    icons: (names) => services.icons.previews(names),
+    icons: (names) => previewsBySet(services.icons, names),
     onError: (reason, error) => console.warn(`Icons are not named: ${reason}`, error)
   })
 }
