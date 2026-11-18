@@ -31,6 +31,8 @@ type TrackedHttpServer = HttpServer & {
 }
 
 /** Create an HTTP server bound to the Hono app. Each server can listen on one address. */
+/** How long checking whether a server still listens on the socket waits for it to connect. */
+const STALE_SOCKET_PROBE_MS = 500
 /** How long closing the HTTP server waits for its connections before destroying them. */
 const FORCE_CLOSE_AFTER_MS = 5 * SECOND_MS
 /** How long a WebSocket client has to close cleanly before it is terminated. */
@@ -248,7 +250,7 @@ export async function cleanupSocket(socketPath: string | null): Promise<void> {
       // system restarts or high load, a timeout doesn't reliably indicate
       // nobody is listening. Being conservative prevents unlinking a live
       // replacement server's socket.
-      client.setTimeout(500, () => finish(true))
+      client.setTimeout(STALE_SOCKET_PROBE_MS, () => finish(true))
     })
     if (alive) return // Another server owns this socket — leave it alone.
   } catch {

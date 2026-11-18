@@ -41,7 +41,11 @@ export function cachedRemoteJSON<TValue>(
     (input, init) =>
       fetcher(input, {
         ...init,
-        signal: anySignal([init?.signal, AbortSignal.timeout(deadlineMs)])
+        // A `Request` brings its own signal, which `init.signal` would otherwise replace.
+        signal: anySignal([
+          init?.signal ?? (input instanceof Request ? input.signal : undefined),
+          AbortSignal.timeout(deadlineMs)
+        ])
       })
 
   async function loadAndCache(): Promise<TValue | null> {

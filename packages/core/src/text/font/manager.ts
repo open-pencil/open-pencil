@@ -455,10 +455,18 @@ export class FontManager {
       )
       const normalized = normalizeFontFamily(family)
       const families = normalized === family ? [family] : [family, normalized]
-      // A font is a real download, so it gets a transfer's time before it counts as failed.
+      // A font is a real download, so it gets a transfer's time before it counts as failed. The
+      // deadline's signal goes on only with the caller's: without one, concurrent loads of a face
+      // share one download, which a signal of its own would split.
       const resolved = await withDeadline(
         DEADLINE_MS.transfer,
-        (bounded) => this.webFonts.fetchFont(families, style, requestedCharacters, bounded),
+        (bounded) =>
+          this.webFonts.fetchFont(
+            families,
+            style,
+            requestedCharacters,
+            signal ? bounded : undefined
+          ),
         signal
       )
       if (!resolved || resolved.buffers.length === 0) return null

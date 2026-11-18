@@ -18,6 +18,8 @@ describe('@open-pencil/runtime/no-inline-delay', () => {
       'setTimeout(run, 3000)',
       'window.setTimeout(run, 30 * 1000)',
       'setInterval(tick, 500)',
+      'setTimeout(run, 60 * 60 * 1000)',
+      "import { setTimeout } from 'node:timers/promises'\nawait setTimeout(1000)",
       'fetch(url, { signal: AbortSignal.timeout(10_000) })'
     ]) {
       expect(await count(rule, source)).toBe(1)
@@ -29,6 +31,7 @@ describe('@open-pencil/runtime/no-inline-delay', () => {
       'const TICK_MS = 500\nsetInterval(tick, TICK_MS)',
       'setTimeout(run, 0)',
       'setTimeout(run)',
+      'const hex = byte.toString(16)',
       'AbortSignal.timeout(DEADLINE_MS.request)'
     ]) {
       expect(await count(rule, source)).toBe(0)

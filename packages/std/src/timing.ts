@@ -70,7 +70,8 @@ export function isDeadline(error: unknown): boolean {
  * where the runtime has it; the desktop app's WebKit, at Safari 16.4, does not.
  */
 export function anySignal(signals: readonly (AbortSignal | null | undefined)[]): AbortSignal {
-  const present = signals.filter((signal): signal is AbortSignal => signal instanceof AbortSignal)
+  // Not `instanceof`: a signal from another frame has another `AbortSignal`.
+  const present = signals.filter((signal): signal is AbortSignal => signal != null)
   if (present.length === 1 && present[0]) return present[0]
   if (present.length === 0) return new AbortController().signal
   if (typeof AbortSignal.any === 'function') return AbortSignal.any(present)

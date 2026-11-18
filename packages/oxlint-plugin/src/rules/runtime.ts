@@ -110,7 +110,10 @@ const noConditionalObjectSpreads = defineRule({
 })
 
 /** Timer calls whose delay is a duration: `setTimeout` and `setInterval` take it second. */
-const TIMER_DELAY_ARGUMENT: Readonly<Record<string, number>> = { setTimeout: 1, setInterval: 1 }
+const TIMER_DELAY_ARGUMENT: ReadonlyMap<string, number> = new Map([
+  ['setTimeout', 1],
+  ['setInterval', 1]
+])
 
 /** The name a timer call is made by: `setTimeout(...)`, `window.setTimeout(...)`, and the like. */
 function timerName(callee: ESTree.Expression | ESTree.Super): string | undefined {
@@ -121,15 +124,20 @@ function timerName(callee: ESTree.Expression | ESTree.Super): string | undefined
   return undefined
 }
 
-function isNumber(node: ESTree.Node): boolean {
-  return node.type === 'Literal' && typeof node.value === 'number'
+/** Numbers written out, alone or with arithmetic: `1000`, `60 * 60 * 1000`. */
+function isNumberExpression(node: ESTree.Node): boolean {
+  if (node.type === 'Literal') return typeof node.value === 'number'
+  if (node.type === 'BinaryExpression') {
+    return isNumberExpression(node.left) && isNumberExpression(node.right)
+  }
+  return false
 }
 
 /** A number written in place: `3000`, `30 * 1000`, `-1`. Zero only yields, so it may stay. */
 function isWrittenDuration(node: ESTree.Node): boolean {
   if (node.type === 'Literal') return typeof node.value === 'number' && node.value !== 0
   if (node.type === 'UnaryExpression') return isWrittenDuration(node.argument)
-  if (node.type === 'BinaryExpression') return isNumber(node.left) && isNumber(node.right)
+  if (node.type === 'BinaryExpression') return isNumberExpression(node)
   return false
 }
 
@@ -148,9 +156,12 @@ const noInlineDelay = defineRule({
         const { callee } = node
         let duration: (typeof node.arguments)[number] | undefined
         const name = timerName(callee)
-        const delayAt = name === undefined ? undefined : TIMER_DELAY_ARGUMENT[name]
-        if (delayAt !== undefined) duration = node.arguments[delayAt]
-        else if (
+        const delayAt = name === undefined ? undefined : TIMER_DELAY_ARGUMENT.get(name)
+        // `setTimeout(1000)` from `node:timers/promises` takes the delay first.
+        const first = node.arguments[0]
+        if (delayAt !== undefined) {
+          duration = first && isNumberExpression(first) ? first : node.arguments[delayAt]
+        } else if (
           callee.type === 'MemberExpression' &&
           callee.object.type === 'Identifier' &&
           callee.object.name === 'AbortSignal' &&
