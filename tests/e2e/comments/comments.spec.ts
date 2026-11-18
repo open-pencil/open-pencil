@@ -119,3 +119,45 @@ test('right-clicking a pin opens comment actions, not the layer menu', async () 
   await expect(pins()).toHaveCount(0)
   await expect(items()).toHaveCount(0)
 })
+
+// Zoomed out, pins that crowd each other show as one bubble with their count, as in Figma, and
+// clicking it zooms in until they part.
+test('crowded pins gather into a count bubble that zooms in when clicked', async () => {
+  const clusters = () => editor.page.locator('[data-slot="comment-cluster"]')
+  const view = (zoom: number) =>
+    editor.page.evaluate((zoom) => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      store.centerOn(9000, 9000, zoom)
+      return store.state.zoom
+    }, zoom)
+
+  await view(1)
+  await commentTool().click()
+  const box = expectDefined(await editor.canvas.canvas.boundingBox(), 'canvas bounds')
+  const cx = box.width / 2
+  const cy = box.height / 2
+  for (const [dx, dy] of [
+    [0, 0],
+    [30, 40],
+    [70, 10]
+  ] as const) {
+    await placeComment(cx + dx, cy + dy, `crowd ${dx}`)
+    await editor.page.keyboard.press('Escape')
+  }
+  const before = await pins().count()
+  await expect(clusters()).toHaveCount(0)
+
+  await view(0.25)
+  await expect(clusters()).toHaveCount(1)
+  await expect(clusters()).toHaveText('3')
+  await expect(clusters()).toHaveAttribute('aria-label', 'Comments: 3')
+  await expect(pins()).toHaveCount(before - 3)
+
+  await clusters().click()
+  await expect(clusters()).toHaveCount(0)
+  await expect(pins()).toHaveCount(before)
+  const zoom = await editor.page.evaluate(() => window.openPencil?.getStore?.()?.state.zoom ?? 0)
+  expect(zoom).toBeGreaterThan(0.5)
+  await editor.page.keyboard.press('Escape')
+})
