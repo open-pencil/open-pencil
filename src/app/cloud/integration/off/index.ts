@@ -39,8 +39,12 @@ export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
   return []
 }
 
-export function cloudOwnsWorkspace(): boolean {
-  return false
+export function cloudOwnsWorkspace(): boolean | null {
+  return null
+}
+
+export function renewCloudAIToken(): void {
+  // Without Cloud there is no token to drop.
 }
 
 export async function cloudMonthlyAllowance(): Promise<number | null> {

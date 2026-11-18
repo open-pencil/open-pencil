@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { useLocalStorage } from '@vueuse/core'
 import { withQuery } from 'ufo'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 
 import { useCloudMessages, useI18n } from '@open-pencil/vue/i18n'
 
@@ -12,8 +13,10 @@ import AppBanner from '@/components/ui/feedback/AppBanner.vue'
 
 /**
  * Warns while the AI credits the chat spends on Cloud run low, and once they run out, with the
- * way to buy more where the server bills, or to ask the owner in a workspace someone else pays for. Dismissing one lasts until the allowance renews, so the
- * next month warns again, and running out warns even after running low was dismissed.
+ * way to buy more where the server bills, or to ask the owner in a workspace someone else pays
+ * for. Dismissing one lasts until the allowance renews, so the next month warns again, and running
+ * out warns even after running low was dismissed. Without a renewal date, a dismissal lasts until
+ * the credits recover.
  */
 const cloud = useCloudMessages()
 const { common } = useI18n()
@@ -26,14 +29,30 @@ const message = computed(() => {
     ? cloud.value.creditsOutUntilBanner({ date: dates.format(renewsAt.value, 'date') })
     : cloud.value.creditsOutBanner
 })
-const dismissal = computed(
-  () => `open-pencil:cloud-credits-${standing.value}:${renewsAt.value ?? 'no-allowance'}`
+const UNDATED = 'no-allowance'
+const dismissalKey = (kind: 'low' | 'out', period: string) =>
+  `open-pencil:cloud-credits-${kind}:${period}`
+const dismissal = computed(() =>
+  standing.value ? dismissalKey(standing.value, renewsAt.value ?? UNDATED) : ''
 )
+// An undated dismissal has no next month to end it, so credits that recover end it instead.
+const undatedDismissals = [
+  useLocalStorage(dismissalKey('low', UNDATED), false),
+  useLocalStorage(dismissalKey('out', UNDATED), false)
+]
+watch(standing, (now) => {
+  if (now) return
+  for (const dismissed of undatedDismissals) dismissed.value = false
+})
 // The plan page opens billing at once, where credits are bought. Credits come from the owner's
-// account, so anyone else is asked to go to the owner instead of buying into their own.
+// account, so anyone else is asked to go to the owner instead of buying into their own, and
+// neither is offered when the server can't say who owns the workspace.
 const buyURL = computed(() =>
-  pays.value && cloudBillingURL.value ? withQuery(cloudBillingURL.value, { open: 'billing' }) : null
+  pays.value === true && cloudBillingURL.value
+    ? withQuery(cloudBillingURL.value, { open: 'billing' })
+    : null
 )
+const askOwner = computed(() => pays.value === false && cloudBillingURL.value !== null)
 </script>
 
 <template>
@@ -45,7 +64,7 @@ const buyURL = computed(() =>
     @action="buyURL && openExternalLink(buyURL)"
   >
     {{ message }}
-    <template v-if="!pays">{{ ` ${cloud.creditsAskOwner}` }}</template>
+    <template v-if="askOwner">{{ ` ${cloud.creditsAskOwner}` }}</template>
     <template v-if="buyURL" #action>{{ cloud.creditsBuy }}</template>
     <template #dismiss>{{ common.dismiss }}</template>
   </AppBanner>

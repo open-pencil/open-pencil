@@ -2,7 +2,12 @@ import { useEventListener } from '@vueuse/core'
 import { computed, shallowRef, watch } from 'vue'
 
 import { designModelConnection } from '@/app/ai/models'
-import { cloudAIIdentity, cloudMonthlyAllowance, cloudOwnsWorkspace } from '@/app/cloud/integration'
+import {
+  cloudAIIdentity,
+  cloudMonthlyAllowance,
+  cloudOwnsWorkspace,
+  renewCloudAIToken
+} from '@/app/cloud/integration'
 
 import { useCloudCreditBalance } from './balance'
 import { OPENPENCIL_AI_PROVIDER } from './provider'
@@ -60,15 +65,37 @@ export function useCloudCreditStanding() {
     },
     { immediate: true }
   )
+
+  const live = computed(() => creditStanding(balance.value, allowance.value))
+  // While a refresh has the wallet and the allowance from different moments, the standing stays
+  // as it last was, so one half of a plan change never warns at the other half's threshold.
+  const held = shallowRef<CloudCreditStanding>(null)
+  const refreshing = shallowRef(false)
+  async function refreshAll(id: string): Promise<void> {
+    held.value = live.value
+    refreshing.value = true
+    try {
+      const read = ++allowanceRead
+      const next = await cloudMonthlyAllowance(id)
+      if (read !== allowanceRead || id !== workspaceId.value) return
+      // The wallet counts the allowance its token was signed with, so a changed plan needs a new one.
+      if (next !== allowance.value) renewCloudAIToken(id)
+      await refresh()
+      if (read === allowanceRead) allowance.value = next
+    } finally {
+      refreshing.value = false
+    }
+  }
   useEventListener(window, 'focus', () => {
-    if (!workspaceId.value) return
-    void refresh()
-    void readAllowance()
+    if (workspaceId.value) void refreshAll(workspaceId.value)
   })
   return {
-    standing: computed(() => creditStanding(balance.value, allowance.value)),
+    standing: computed(() => (refreshing.value ? held.value : live.value)),
     renewsAt,
-    /** Whether the signed-in account pays for these credits, and so can buy more. */
-    pays: computed(() => (workspaceId.value ? cloudOwnsWorkspace(workspaceId.value) : false))
+    /**
+     * Whether the signed-in account pays for these credits, and so can buy more; `null` when the
+     * server can't say.
+     */
+    pays: computed(() => (workspaceId.value ? cloudOwnsWorkspace(workspaceId.value) : null))
   }
 }

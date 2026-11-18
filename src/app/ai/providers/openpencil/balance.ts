@@ -20,11 +20,17 @@ interface CloudBalanceOptions {
   replying: () => boolean
 }
 
+/** A wallet's latest answer, and the read that gave it. */
+interface WalletRead {
+  wallet: CreditWallet | null
+  read: number
+}
+
 /**
  * The wallets read so far, by account and workspace, so every view of one workspace's credits
  * shows the same answer: a reply that ends in the chat refreshes the banner's too.
  */
-const wallets = shallowRef<ReadonlyMap<string, CreditWallet | null>>(new Map())
+const wallets = shallowRef<ReadonlyMap<string, WalletRead>>(new Map())
 /**
  * The latest read of each wallet, shared by every view, so only its answer is kept: an earlier
  * read that answers last, from any view, never replaces a newer balance.
@@ -45,40 +51,43 @@ export function useCloudCreditBalance(
   source: CloudBalanceSource = HOME_CLOUD
 ) {
   const key = computed(() => walletKey(source.identity.value, workspaceId()))
-  const wallet = computed(() => (key.value ? (wallets.value.get(key.value) ?? null) : null))
+  // The first read this view may show: one it started on arriving at the workspace, or later.
+  // Views already there keep showing their answer meanwhile.
+  const since = shallowRef(Number.POSITIVE_INFINITY)
+  const wallet = computed(() => {
+    const entry = key.value ? wallets.value.get(key.value) : undefined
+    return entry && entry.read >= since.value ? entry.wallet : null
+  })
 
-  function store(at: string, value: CreditWallet | null): void {
-    wallets.value = new Map(wallets.value).set(at, value)
+  function store(at: string, entry: WalletRead): void {
+    wallets.value = new Map(wallets.value).set(at, entry)
   }
 
-  async function refresh(): Promise<void> {
+  /** Reads the wallet again, and says which read it is, or `null` with nothing to read. */
+  function startRead(): { at: string; read: number; done: Promise<void> } | null {
     const at = key.value
     const id = workspaceId()
     const client = id ? source.client(id) : null
-    if (!at || !client) return
+    if (!at || !client) return null
     const read = ++reads
     latestReads.set(at, read)
-    try {
-      const next = await client.wallet()
-      if (latestReads.get(at) === read) store(at, next)
-    } catch {
-      if (latestReads.get(at) === read) store(at, null)
+    const keep = (value: CreditWallet | null) => {
+      if (latestReads.get(at) === read) store(at, { wallet: value, read })
     }
+    return { at, read, done: client.wallet().then(keep, () => keep(null)) }
   }
 
-  // Coming back to a workspace reads its wallet again, and shows nothing until that answers
-  // rather than the balance from before, unless another view is already reading it.
+  async function refresh(): Promise<void> {
+    await startRead()?.done
+  }
+
+  // Arriving at a workspace always reads it afresh, since a read already under way may predate
+  // credits bought meanwhile, and shows nothing older than that read.
   watch(
     key,
-    (at) => {
-      if (!at) return
-      const reading = latestReads.has(at) && !wallets.value.has(at)
-      if (!reading) {
-        const fresh = new Map(wallets.value)
-        fresh.delete(at)
-        wallets.value = fresh
-        void refresh()
-      }
+    () => {
+      const started = startRead()
+      since.value = started ? started.read : Number.POSITIVE_INFINITY
     },
     { immediate: true }
   )

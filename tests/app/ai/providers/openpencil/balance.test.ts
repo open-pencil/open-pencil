@@ -27,20 +27,23 @@ function wallet(balance: number | null): CreditWallet {
 function homeCloud() {
   const identity = ref<string | null>(`home:${crypto.randomUUID()}`)
   const answers: Deferred<CreditWallet>[] = []
+  /** The workspace each read asked for, in order. */
+  const asked: string[] = []
   const source: CloudBalanceSource = {
     identity,
-    client: () =>
+    client: (workspaceId) =>
       identity.value
         ? {
             wallet: () => {
               const next = createDeferred<CreditWallet>()
               answers.push(next)
+              asked.push(workspaceId)
               return next.promise
             }
           }
         : null
   }
-  return { identity, source, answers }
+  return { identity, source, answers, asked }
 }
 
 const scopes: EffectScope[] = []
@@ -147,9 +150,8 @@ describe('useCloudCreditBalance', () => {
     const home = homeCloud()
     const chat = show(home.source)
     const banner = show(home.source)
-    // The banner waits for the chat's read rather than starting its own.
-    expect(home.answers).toHaveLength(1)
     home.answers[0]?.resolve(wallet(1200))
+    home.answers[1]?.resolve(wallet(1200))
     await settle()
     expect(banner.balance.value).toBe(1200)
 
@@ -158,7 +160,7 @@ describe('useCloudCreditBalance', () => {
     await settle()
     chat.replying.value = false
     await settle()
-    home.answers[1]?.resolve(wallet(900))
+    home.answers[2]?.resolve(wallet(900))
     await settle()
     expect(banner.balance.value).toBe(900)
   })
@@ -168,6 +170,7 @@ describe('useCloudCreditBalance', () => {
     const chat = show(home.source)
     const banner = show(home.source)
     home.answers[0]?.resolve(wallet(1200))
+    home.answers[1]?.resolve(wallet(1200))
     await settle()
 
     // The banner reads, then a reply ends in the chat and reads again; the chat answers first.
@@ -176,7 +179,7 @@ describe('useCloudCreditBalance', () => {
     await settle()
     chat.replying.value = false
     await settle()
-    const [, older, newer] = home.answers
+    const [, , older, newer] = home.answers
     newer?.resolve(wallet(0))
     await settle()
     older?.resolve(wallet(500))
@@ -202,5 +205,38 @@ describe('useCloudCreditBalance', () => {
     home.answers[2]?.resolve(wallet(5_000))
     await settle()
     expect(credits.balance.value).toBe(5_000)
+    expect(home.asked).toEqual(['team', 'other', 'team'])
+  })
+
+  test('reads afresh on returning, even while a read from before is still under way', async () => {
+    const home = homeCloud()
+    const credits = show(home.source)
+    credits.workspaceId.value = 'other'
+    await settle()
+    credits.workspaceId.value = 'team'
+    await settle()
+
+    // The first read of the team, from before credits were bought, answers last.
+    home.answers[2]?.resolve(wallet(5_000))
+    await settle()
+    home.answers[0]?.resolve(wallet(0))
+    await settle()
+    expect(credits.balance.value).toBe(5_000)
+    expect(home.asked).toEqual(['team', 'other', 'team'])
+  })
+
+  test('keeps showing a view its balance while another view arrives and reads', async () => {
+    const home = homeCloud()
+    const banner = show(home.source)
+    home.answers[0]?.resolve(wallet(0))
+    await settle()
+
+    const chat = show(home.source)
+    await settle()
+    expect(banner.balance.value).toBe(0)
+    expect(chat.balance.value).toBeNull()
+    home.answers[1]?.resolve(wallet(0))
+    await settle()
+    expect(chat.balance.value).toBe(0)
   })
 })

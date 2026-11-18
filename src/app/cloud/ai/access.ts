@@ -76,12 +76,20 @@ export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
 }
 
 /**
- * Whether the signed-in account owns a workspace on the Home server, and so pays for its credits.
- * A server too old to say counts as yes, as before it could.
+ * Whether the signed-in account owns a workspace on the Home server, and so pays for its credits,
+ * or `null` when unknown: a server too old to say, or a workspace it doesn't list.
  */
-export function cloudOwnsWorkspace(workspaceId: string): boolean {
+export function cloudOwnsWorkspace(workspaceId: string): boolean | null {
   const workspace = homeAI.value?.connection.workspaces.find(({ id }) => id === workspaceId)
-  return workspace?.owner !== false
+  return workspace?.owner ?? null
+}
+
+/**
+ * Drops the services token held for a workspace, so the next request signs one with the plan as
+ * it is now: a token carries the allowance it was signed with.
+ */
+export function renewCloudAIToken(workspaceId: string): void {
+  tokenSources.delete(`${cloudAIIdentity.value}:${workspaceId}`)
 }
 
 /**

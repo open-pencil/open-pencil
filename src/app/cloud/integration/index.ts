@@ -17,6 +17,7 @@ export {
   cloudBillingURL,
   cloudMonthlyAllowance,
   cloudOwnsWorkspace,
+  renewCloudAIToken,
   type CloudAIWorkspace
 } from '../ai/access'
 export { cloudDocumentAddress } from '../documents/link'
