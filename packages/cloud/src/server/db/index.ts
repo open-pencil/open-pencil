@@ -1,5 +1,6 @@
 export { createCloudDatabase, type CloudDatabaseOptions } from './database'
 export { migrateCloudDatabase, pendingCloudMigrations } from './migrate'
+export { isSendableEmailKind } from './tables'
 export { isBannedNow, userIdText } from './users'
 export type {
   CloudDatabase,

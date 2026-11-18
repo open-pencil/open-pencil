@@ -8,6 +8,7 @@ import {
   createTransactionalEmailService,
   decryptTransactionalEmailPayload
 } from '#cloud/server'
+import { isSendableEmailKind } from '#cloud/server/db'
 
 const opened: { close(): Promise<void> }[] = []
 afterEach(async () => {
@@ -91,6 +92,7 @@ async function seed() {
       .execute()
     return Promise.all(
       rows.map(async (row) => {
+        if (!isSendableEmailKind(row.kind)) throw new Error(`Unexpected ${row.kind}`)
         const content = await decryptTransactionalEmailPayload(
           SECRET,
           row.id,

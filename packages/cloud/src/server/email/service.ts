@@ -1,6 +1,10 @@
 import { renderTransactionalEmail } from '#cloud/email'
 import type { EmailLocale, TransactionalEmailKind } from '#cloud/email'
-import type { CloudDatabase, TransactionalEmailStatus } from '#cloud/server/db'
+import {
+  isSendableEmailKind,
+  type CloudDatabase,
+  type TransactionalEmailStatus
+} from '#cloud/server/db'
 import type { Kysely, Transaction } from 'kysely'
 
 import { backoffDelay, HOUR_MS, SECOND_MS, type Backoff } from '@open-pencil/std/timing'
@@ -198,7 +202,8 @@ export function createTransactionalEmailService(
           )
           .execute()
         return candidates.filter(
-          (candidate): candidate is ClaimedTransactionalEmail => candidate.payloadEncrypted !== null
+          (candidate): candidate is ClaimedTransactionalEmail =>
+            candidate.payloadEncrypted !== null && isSendableEmailKind(candidate.kind)
         )
       })
 
