@@ -41,6 +41,11 @@ export type { RelayConnection, RelaySocket } from './connection'
  */
 export type RelayErrorIds = { documentId?: string; userId?: string }
 
+/** A verified ticket's document, and its person when they signed in rather than came as a guest. */
+function ticketIds({ documentId, principal }: RelayAuthorization): RelayErrorIds {
+  return principal.kind === 'user' ? { documentId, userId: principal.userId } : { documentId }
+}
+
 export type CollaborationRelayOptions = {
   authSecret: string
   store: CollaborationStateStore
@@ -302,11 +307,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         return undefined
       },
       (error: unknown) => {
-        const { principal } = peer.authorization
-        report('Loading a collaboration room failed', error, {
-          documentId: room.identity.documentId,
-          ...(principal.kind === 'user' && { userId: principal.userId })
-        })
+        report('Loading a collaboration room failed', error, ticketIds(peer.authorization))
         peer.socket.close(RELAY_CLOSE.protocol, 'Could not open the collaboration room')
       }
     )
@@ -411,8 +412,11 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     refreshed: remember,
     deliver,
     depart,
-    report: (message, error) =>
-      report(message, error, options.documentId ? { documentId: options.documentId } : {})
+    report: (message, error, authorization) => {
+      // Before a ticket verified, only the document a per-document relay serves is known.
+      const configured = options.documentId === undefined ? {} : { documentId: options.documentId }
+      report(message, error, authorization ? ticketIds(authorization) : configured)
+    }
   }
 
   return {

@@ -83,6 +83,7 @@ const RECORD_PARAMETERS = [
   'threadId',
   'commentId',
   'versionId',
+  'revisionId',
   'shareId',
   'uploadId'
 ] as const

@@ -41,7 +41,7 @@ We don't sell your data, show ads, or use your documents to train models.
 ## Logs and error reports
 
 - Cloudflare keeps request logs, including IP addresses, for up to 7 days to run and secure the Service.
-- When the server hits an error, it sends a report to PostHog's EU Cloud with the error, where it happened, a request ID, your account ID if you were signed in, and the IDs of the documents, workspaces, and comments involved, so we can find and fix what failed for you. Reports carry no names, emails, or IP addresses, and no document contents, though an error message can quote a value the failing code handled. They create no profile of you in PostHog.
+- When the server hits an error, it sends a report to PostHog's EU Cloud with the error, where it happened, a request ID, your account ID if you were signed in, and the IDs of the records involved (documents, workspaces, comment threads, comments, versions, revisions, shares, and uploads), so we can find and fix what failed for you. Reports carry no names, emails, or IP addresses, and no document contents, though an error message can quote a value the failing code handled. They create no profile of you in PostHog.
 
 ## Email
 

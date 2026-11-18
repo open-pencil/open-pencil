@@ -52,7 +52,8 @@ export type ConnectionRelay = {
   /** Handles a peer's room message; a promise while it waits for the room's document. */
   deliver(peer: RelayPeer, frame: RelayRoomFrame): Promise<void> | undefined
   depart(peer: RelayPeer): void
-  report(message: string, error: unknown): void
+  /** Reports a failure, naming the ticket's document and person once the ticket verified. */
+  report(message: string, error: unknown, authorization?: RelayAuthorization): void
 }
 
 /**
@@ -66,6 +67,8 @@ export function openRelayConnection(
   relay: ConnectionRelay
 ): RelayConnection {
   let peer: RelayPeer | null = resumed
+  /** The newcomer's verified ticket while the relay admits it. */
+  let admitting: RelayAuthorization | undefined
   /** Read through an object, since it changes across awaits and between messages. */
   const state = { closed: false, busy: false }
   const isClosed = () => state.closed
@@ -112,6 +115,7 @@ export function openRelayConnection(
       return
     }
     clearTimeout(authTimer)
+    admitting = authorization
     const admitted = await relay.admit(socket, authorization)
     // The socket may have closed while the room loaded.
     if (admitted && isClosed()) relay.depart(admitted)
@@ -138,7 +142,7 @@ export function openRelayConnection(
       state.busy = true
       void authenticate(frame.token)
         .catch((error: unknown) => {
-          relay.report('Admitting a collaboration peer failed', error)
+          relay.report('Admitting a collaboration peer failed', error, admitting)
           socket.close(RELAY_CLOSE.protocol, 'Could not open the collaboration room')
         })
         .finally(() => {
