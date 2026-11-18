@@ -24,6 +24,7 @@
   "empty": "まだコメントはありません。キャンバスをクリックしてコメントを残せます。",
   "noMatches": "一致するコメントはありません。",
   "replyCount": "返信: {count}",
+  "clusterCount": "コメント: {count}",
   "commentDeleted": "コメントを削除しました",
   "hideComments": "コメントを非表示",
   "mentionPeople": "メンションする人",

@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverPortal
 } from 'reka-ui'
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 import type { CommentThread } from '@open-pencil/scene-graph'
@@ -30,6 +30,7 @@ import CommentComposer from './CommentComposer.vue'
 import CommentPin from './CommentPin.vue'
 import CommentThreadCard from './CommentThreadCard.vue'
 import { comments as commentsTheme } from './ui'
+import { clusterView, usePinClusters, type PinCluster } from './usePinClusters'
 import { usePinDrag } from './usePinDrag'
 
 const { canvasEl, drawn = null } = defineProps<{
@@ -109,9 +110,67 @@ const pins = computed(() => {
     .map((thread) => {
       const dragged = pinDrag.draggedTo(thread.id)
       const at = dragged ?? comments.pinPosition(thread)
-      return { thread, at, dragging: dragged !== null, ...toLayer(at) }
+      const dragging = dragged !== null
+      const standalone =
+        pinDrag.pressed(thread.id) || dragging || thread.id === activeThreadId.value
+      return { thread, at, dragging, standalone, ...toLayer(at) }
     })
 })
+
+const { pins: shownPins, clusters } = usePinClusters(pins)
+
+const pinsLayer = useTemplateRef<HTMLElement>('pinsLayer')
+
+/**
+ * A cluster's click zooms in on its pins until they part, as in Figma. Focus on the cluster,
+ * which the zoom removes, moves to its first pin, or to the cluster that pin is in now.
+ */
+function openCluster(event: MouseEvent, cluster: PinCluster<(typeof pins.value)[number]>) {
+  const button = event.currentTarget
+  if (button instanceof HTMLElement && document.activeElement === button) {
+    handFocusOnSplit(button, cluster)
+  }
+  const { bounds, maxZoom } = clusterView(cluster)
+  store.zoomToBounds(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height, {
+    maxZoom
+  })
+}
+
+/**
+ * Moves focus from a cluster to its first pin once the cluster is gone, which can be a drawn
+ * frame later; focus the user moved elsewhere in the meantime stays where they put it.
+ */
+let pendingHandoff: (() => void) | null = null
+onBeforeUnmount(() => pendingHandoff?.())
+
+function handFocusOnSplit(button: HTMLElement, cluster: PinCluster<{ thread: { id: string } }>) {
+  pendingHandoff?.()
+  const stop = watch(
+    clusters,
+    (next) => {
+      if (next.some((other) => other.key === cluster.key)) {
+        if (document.activeElement !== button) pendingHandoff?.()
+        return
+      }
+      pendingHandoff?.()
+      // Removing the cluster drops focus to the page; focus anywhere else was the user's move.
+      if (document.activeElement && document.activeElement !== document.body) return
+      const id = CSS.escape(cluster.pins[0].thread.id)
+      pinsLayer.value
+        ?.querySelector<HTMLElement>(`[data-thread-id="${id}"], [data-cluster~="${id}"]`)
+        ?.focus()
+    },
+    { flush: 'post' }
+  )
+  pendingHandoff = () => {
+    stop()
+    pendingHandoff = null
+  }
+}
+
+function clusterLabel(count: number) {
+  return messages.value.clusterCount({ count })
+}
 
 const activePin = computed(() => pins.value.find((pin) => pin.thread.id === activeThreadId.value))
 const draftAt = computed(() =>
@@ -190,10 +249,28 @@ function closeCard() {
        and zooming over pins or while placing comments still reach the canvas. -->
   <div :class="ui.layer()" data-canvas-overlay="comments" @contextmenu.stop @wheel="forwardWheel">
     <div
+      ref="pinsLayer"
       :class="ui.pins()"
       :style="{ transform: `translate(${placement.panX}px, ${placement.panY}px)` }"
     >
-      <AppContextMenuRoot v-for="pin in pins" :key="pin.thread.id" :modal="false">
+      <!-- Before the pins, so an open or dragged pin a cluster sits over stays on top. -->
+      <button
+        v-for="cluster in clusters"
+        :key="cluster.key"
+        type="button"
+        :class="ui.cluster()"
+        :style="{ left: `${cluster.left}px`, top: `${cluster.top}px` }"
+        :aria-label="clusterLabel(cluster.pins.length)"
+        :data-cluster="cluster.key"
+        data-slot="comment-cluster"
+        @pointerdown.stop
+        @mousedown.prevent
+        @click.stop="openCluster($event, cluster)"
+      >
+        {{ cluster.pins.length }}
+      </button>
+
+      <AppContextMenuRoot v-for="pin in shownPins" :key="pin.thread.id" :modal="false">
         <ContextMenuTrigger as-child>
           <CommentPin
             :author="author.name(pin.thread.author)"
@@ -206,10 +283,12 @@ function closeCard() {
             :unread="comments.isUnread(pin.thread.id)"
             :style="{ left: `${pin.left}px`, top: `${pin.top}px` }"
             :aria-label="pinLabel(pin.thread)"
+            :data-thread-id="pin.thread.id"
             @pointerdown.stop="pinDrag.start($event, pin.thread.id, pin.at)"
             @pointermove="pinDrag.move"
             @pointerup="pinDrag.end"
             @pointercancel="pinDrag.end"
+            @lostpointercapture="pinDrag.end"
             @click.stop="pinDrag.click(pin.thread.id)"
           />
         </ContextMenuTrigger>
