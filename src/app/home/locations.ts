@@ -6,6 +6,9 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 
 import { homeLocation, homeLocationChosen, type HomeLocation } from './location'
 
+/** The places only a Cloud session can show. */
+const CLOUD_PLACES: ReadonlySet<HomeLocation['kind']> = new Set(['workspace', 'shared', 'trash'])
+
 /** A Home location as the sidebar and the phone menu name it. */
 export type HomeLocationView =
   | { kind: 'recent'; id: 'recent' }
@@ -41,10 +44,12 @@ export function useHomeLocations() {
 
   const defaultsToWorkspace = computed(() => !homeLocationChosen.value && !recentFilesAvailable())
   // A Cloud place stays chosen while Cloud checks the session: it has no workspaces yet only
-  // because it has not answered, so Home waits rather than show Recent and then jump.
+  // because it has not answered, so Home waits rather than show Recent and then jump. Recent and
+  // storage do not depend on the session.
   const waitsForCloud = computed(
     () =>
-      cloud.checking.value && (defaultsToWorkspace.value || homeLocation.value.kind !== 'recent')
+      cloud.checking.value &&
+      (defaultsToWorkspace.value || CLOUD_PLACES.has(homeLocation.value.kind))
   )
   const location = computed<HomeLocation>(() => {
     const first = workspaces.value.at(0)

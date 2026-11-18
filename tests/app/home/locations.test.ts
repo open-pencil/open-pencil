@@ -36,13 +36,14 @@ describe('Home locations', () => {
     expect(places.location.value).toEqual({ kind: 'recent' })
   })
 
-  test('show Recent at once when that is the place chosen', async () => {
+  test('show Recent and storage at once, since neither needs the session', async () => {
     const server = await addCloudServer({ kind: 'self-hosted', url: 'design.acme.example' })
-    homeLocation.value = { kind: 'recent' }
     connect(server.id, 'checking')
     const places = useHomeLocations()
-
-    expect(places.settling.value).toBe(false)
-    expect(places.location.value).toEqual({ kind: 'recent' })
+    for (const chosen of [{ kind: 'recent' }, { kind: 'storage' }] as const) {
+      homeLocation.value = chosen
+      expect(places.settling.value).toBe(false)
+      expect(places.location.value).toEqual(chosen)
+    }
   })
 })

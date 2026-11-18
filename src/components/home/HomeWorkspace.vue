@@ -58,6 +58,8 @@ const places = useHomeLocations()
 
 /** A new document lands in the place Home shows: a Cloud workspace, the bucket, or a local file. */
 function newDocument(kind: DocumentKind) {
+  // Until Cloud answers, the chosen workspace is unknown, and a local file is not what was meant.
+  if (places.settling.value) return
   const target = newDesignTarget.value
   if (target) void createStoredDocument(target.location, kind)
   else emit('new-document', kind)
@@ -250,6 +252,7 @@ function formattedDate(updatedAt: string): string {
     <HomeSearchActions
       v-model="query"
       :destination="newDesignTarget?.label ?? null"
+      :creating-disabled="places.settling.value"
       @new-document="newDocument"
     />
 
