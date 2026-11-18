@@ -139,11 +139,38 @@ function coatUnder(
   return coats.reduceRight((bg, layer) => compositeOver(layer.color, bg, layer.alpha), coat.color)
 }
 
-/** The children of `parent` painted before `child`, topmost first. */
-function layersBelow(parent: LintNode, child: LintNode, context: RuleContext): LintNode[] {
-  const siblings = context.getChildren(parent)
-  const index = siblings.findIndex((sibling) => sibling.id === child.id)
-  return siblings.slice(0, Math.max(index, 0)).toReversed()
+interface SiblingBackdrops {
+  layers: LintNode[]
+  /** Number of candidate layers painted before each child. */
+  before: Map<string, number>
+}
+
+const NO_SIBLING_BACKDROPS: SiblingBackdrops = { layers: [], before: new Map() }
+
+// The linter creates a rule context per run and drops it when the run ends.
+const siblingBackdrops = new WeakMap<RuleContext, Map<LintNode, SiblingBackdrops>>()
+
+function backdropsIn(parent: LintNode, context: RuleContext): SiblingBackdrops {
+  if (parent.childIds.length < 2) return NO_SIBLING_BACKDROPS
+  let indexes = siblingBackdrops.get(context)
+  if (!indexes) {
+    indexes = new Map()
+    siblingBackdrops.set(context, indexes)
+  }
+  const cached = indexes.get(parent)
+  if (cached) return cached
+
+  const layers: LintNode[] = []
+  const before = new Map<string, number>()
+  for (const child of context.getChildren(parent)) {
+    if (!before.has(child.id)) before.set(child.id, layers.length)
+    if (!child.visible || child.opacity <= 0 || child.type === 'TEXT') continue
+    const paints = child.fills.some((paint) => paint.visible && paint.opacity > 0)
+    if (paints || child.childIds.length > 0) layers.push(child)
+  }
+  const backdrops = { layers, before }
+  indexes.set(parent, backdrops)
+  return backdrops
 }
 
 /**
@@ -159,11 +186,9 @@ function backdrop(node: LintNode, context: RuleContext): Color | undefined {
   let text = boxCorners(node)
   let branch = node
   for (let parent = context.getParent(node); parent; parent = context.getParent(parent)) {
-    for (const layer of layersBelow(parent, branch, context)) {
-      if (!layer.visible || layer.opacity <= 0 || layer.type === 'TEXT') continue
-      const paints = layer.fills.some((paint) => paint.visible && paint.opacity > 0)
-      // A layer that paints nothing itself and holds no layers leaves the text as it was.
-      if (!paints && layer.childIds.length === 0) continue
+    const { layers, before } = backdropsIn(parent, context)
+    for (let index = (before.get(branch.id) ?? 0) - 1; index >= 0; index--) {
+      const layer = layers[index]
       const covers = coverage(text, layer)
       if (covers === 'none') continue
       if (covers === 'part' || !BOX_TYPES.has(layer.type) || layer.childIds.length > 0)

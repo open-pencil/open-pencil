@@ -359,6 +359,22 @@ describe('color-contrast over layers under the text', () => {
 
     expect(lint(graph, 'color-contrast').map((message) => message.nodeId)).toEqual([text.id])
   })
+
+  test('uses each label’s paint order and refreshes it after a reorder', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const frame = graph.createNode('FRAME', pageId, { fills: solid(WHITE) })
+    const label = { text: 'Hello', width: 80, height: 20, fills: solid(DARK_GREEN) }
+    const first = graph.createNode('TEXT', frame.id, label)
+    const background = graph.createNode('RECTANGLE', frame.id, { fills: solid(DARK_GREEN) })
+    const second = graph.createNode('TEXT', frame.id, label)
+    const linter = createLinter({ config: { rules: { 'color-contrast': 'error' } } })
+    const findings = () => linter.lintGraph(graph, [pageId]).messages.map(({ nodeId }) => nodeId)
+
+    expect(findings()).toEqual([second.id])
+    graph.insertChildAt(background.id, frame.id, 0)
+    expect(findings()).toEqual([first.id, second.id])
+  })
 })
 
 describe('color-contrast over translucent fills', () => {
