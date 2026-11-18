@@ -25,7 +25,9 @@ import {
   recordsReachingLoops
 } from '#fig/instance-overrides/loops/references'
 import { createSourceIndex, parentIdOf } from '#fig/instance-overrides/source-index'
+import { DEFAULT_SLOT_CONTENT } from '#fig/instance-overrides/types'
 
+import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 // How the repair walks a document's definitions, which every read and save must agree with. The
@@ -203,6 +205,27 @@ describe('a repair that matches the definitions, whatever a read expands', () =>
     expect(reader.leftOut()).toEqual([id(NESTED)])
   })
 
+  test('leaves out the instance, not the component, when a walk reaches the nesting late', () => {
+    // A component placed first holds an instance of Inner, so the walk enters Inner before the
+    // Outer that defines it; Inner's instance of Outer still closes the loop.
+    const FIRST = 50
+    const reader = read([
+      record(DOCUMENT, 'DOCUMENT', undefined, ''),
+      record(PAGE, 'CANVAS', DOCUMENT, '!'),
+      record(FIRST, 'SYMBOL', PAGE, '!'),
+      instance(51, FIRST, '!', INNER),
+      record(OUTER, 'SYMBOL', PAGE, '"'),
+      record(INNER, 'SYMBOL', OUTER, '!'),
+      instance(NESTED, INNER, '!', OUTER)
+    ])
+
+    expect(reader.component(OUTER)).toEqual({
+      id: id(OUTER),
+      children: [{ id: id(INNER), children: [] }]
+    })
+    expect(reader.leftOut()).toEqual([id(NESTED)])
+  })
+
   test('ignores an override that reaches the left-out instance through a frame', () => {
     const FRAME = 60
     const reader = read([
@@ -224,6 +247,58 @@ describe('a repair that matches the definitions, whatever a read expands', () =>
       main: id(OUTER),
       children: [{ id: id(FRAME), children: [] }]
     })
+  })
+
+  test('ignores an override that reaches the left-out instance through slot content', () => {
+    // Outer holds a frame with an instance of Outer in it, and a placed card assigns that frame
+    // to its slot; an override on the card addresses the instance the repair leaves out. The
+    // slot's binding is written as a read prepares it, as a property reference.
+    const [CARD, SLOT, SLOT_PROPERTY, CONTENT] = [3, 4, 5, 60]
+    const slotValue = (target: GUID) => ({
+      value: { slotContentIdValue: { guid: target } },
+      dataType: 'SLOT_CONTENT_ID',
+      resolvedDataType: 'SLOT_CONTENT_ID'
+    })
+    const reader = read([
+      record(DOCUMENT, 'DOCUMENT', undefined, ''),
+      record(PAGE, 'CANVAS', DOCUMENT, '!'),
+      record(CARD, 'SYMBOL', PAGE, '!', {
+        componentPropDefs: [
+          {
+            id: guid(SLOT_PROPERTY),
+            name: 'Content',
+            type: 'SLOT',
+            varValue: slotValue(DEFAULT_SLOT_CONTENT)
+          }
+        ]
+      } as Partial<NodeChange>),
+      record(SLOT, 'FRAME', CARD, '!', {
+        componentPropRefs: [
+          { defID: guid(SLOT_PROPERTY), componentPropNodeField: 'SLOT_CONTENT_ID' }
+        ]
+      } as Partial<NodeChange>),
+      record(OUTER, 'SYMBOL', PAGE, '"'),
+      record(CONTENT, 'FRAME', OUTER, '!'),
+      instance(NESTED, CONTENT, '!', OUTER),
+      record(61, 'RECTANGLE', CONTENT, '"'),
+      instance(OUTER_INSTANCE, PAGE, '#', CARD, {
+        symbolData: {
+          symbolID: guid(CARD),
+          symbolOverrides: [{ guidPath: { guids: [guid(NESTED)] }, visible: false }]
+        },
+        componentPropAssignments: [
+          { defID: guid(SLOT_PROPERTY), varValue: slotValue(guid(CONTENT)) }
+        ]
+      } as Partial<NodeChange>)
+    ])
+    reader.component(OUTER)
+
+    expect(reader.instance(OUTER_INSTANCE)).toEqual({
+      id: id(OUTER_INSTANCE),
+      main: id(CARD),
+      children: [{ id: id(SLOT), children: [{ id: id(61), children: [] }] }]
+    })
+    expect(reader.leftOut()).toEqual([id(NESTED)])
   })
 
   test('reads an instance whose base was left out as one whose base is gone', () => {

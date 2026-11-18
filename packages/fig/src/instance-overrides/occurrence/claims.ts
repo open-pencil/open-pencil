@@ -17,7 +17,14 @@ import { completeClearedStyleClaim } from '../style/cleared'
 import { yieldToInheritedTextStyle } from '../style/inherited-text'
 import { invalidateInheritedTextData } from '../text-provenance'
 import type { DerivedSymbolOverride } from '../types'
-import { findSegment, isRootGuid, pathError, resolveOccurrencePath, SegmentError } from './path'
+import {
+  findSegment,
+  isRootGuid,
+  OCCURRENCE_TREE,
+  pathError,
+  resolveOccurrencePath,
+  SegmentError
+} from './path'
 import type { InstanceOccurrence, InterpretInstanceOptions } from './types'
 
 export interface ClaimContext {
@@ -61,9 +68,23 @@ function holds(index: InterpreterIndex, ancestorId: string, id: string): boolean
 }
 
 /**
+ * The records whose layers `searched` shows without crossing into another instance: the
+ * component it expands, or its own layers, and the content frames assigned to its slots.
+ */
+function shownRecords(searched: InstanceOccurrence): string[] {
+  const shown = [searched.mainComponentId ?? searched.sourceId]
+  const visit = (node: InstanceOccurrence): void => {
+    if (node.slotContentId !== undefined) shown.push(node.slotContentId)
+    if (OCCURRENCE_TREE.isInstance(node)) return
+    for (const child of node.children) visit(child)
+  }
+  for (const child of searched.children) visit(child)
+  return shown
+}
+
+/**
  * Whether a path segment names an instance repaired out of what `searched` shows, as Figma
- * deletes it: the component an instance expands, or a container's own layers. One left out
- * anywhere else does not make the path valid.
+ * deletes it. One left out anywhere else does not make the path valid.
  */
 function isDroppedSegment(
   { index, dropped }: ClaimContext,
@@ -72,10 +93,11 @@ function isDroppedSegment(
 ): boolean {
   const left = dropped()
   if (left.size === 0) return false
-  const scope = searched.mainComponentId ?? searched.sourceId
+  const shown = shownRecords(searched)
   for (const id of left) {
     const record = index.sources.get(id)
-    if (record && recordMatches(record, segment) && holds(index, scope, id)) return true
+    if (record && recordMatches(record, segment) && shown.some((scope) => holds(index, scope, id)))
+      return true
   }
   return false
 }

@@ -11,6 +11,7 @@ import {
   initCodec,
   type NodeChange
 } from '@open-pencil/kiwi/fig/codec'
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
 import { readerDiagnostics } from '#core/kiwi/fig/session/document-state'
 
@@ -61,8 +62,7 @@ const loopedFile = () =>
     instanceOf(21, 20, 10)
   ])
 
-const idOf = (change: NodeChange) =>
-  change.guid ? `${change.guid.sessionID}:${change.guid.localID}` : ''
+const idOf = (change: NodeChange) => (change.guid ? guidToString(change.guid) : '')
 
 /** The saved records, by id. */
 const saved = async (graph: Awaited<ReturnType<typeof parseFigFile>>) =>

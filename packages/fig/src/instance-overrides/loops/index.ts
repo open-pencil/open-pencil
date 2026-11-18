@@ -53,6 +53,24 @@ function roots({ sources }: SourceIndex): string[] {
   ].map((root) => root.id)
 }
 
+/** The components defined directly inside `componentId`'s definition, as choices it holds. */
+function heldDefinitions(order: SourceIndex, componentId: string) {
+  const held: (ComponentChoice & { held: true })[] = []
+  for (const record of subtree(order, componentId)) {
+    const id = idOf(record)
+    const parent = parentIdOf(record)
+    if (
+      id !== undefined &&
+      id !== componentId &&
+      record.type === 'SYMBOL' &&
+      parent !== undefined &&
+      definitionOf(order, parent) === componentId
+    )
+      held.push({ ownerId: id, componentId: id, held: true })
+  }
+  return held
+}
+
 /**
  * Figma's repair: it walks component definitions depth first, in layer order across the
  * document, and leaves out an instance whose choice in a definition leads back into one still
@@ -65,28 +83,27 @@ function repair(sources: ComponentLoopSources): Set<string> {
   const reaching = sources.reaching()
   const dropped = new Set<string>()
   const state = new Map<string, 'walking' | 'done'>()
-  const walk = (componentId: string): void => {
+  /** The definitions being walked, outermost first, each with the instance whose choice entered it. */
+  const stack: { componentId: string; enteredBy: string | null }[] = []
+  /**
+   * The instance to leave out when a definition leads back into `componentId` by holding it:
+   * the first one whose choice entered a definition after it. A component is never left out.
+   */
+  const enteringInstance = (componentId: string): string | undefined => {
+    const from = stack.findIndex((entry) => entry.componentId === componentId)
+    return stack.slice(from + 1).find((entry) => entry.enteredBy !== null)?.enteredBy ?? undefined
+  }
+  const walk = (componentId: string, enteredBy: string | null): void => {
     state.set(componentId, 'walking')
+    stack.push({ componentId, enteredBy })
     const layer = new Map<string, number>()
     for (const record of subtree(sources.order, componentId)) {
       const id = idOf(record)
       if (id !== undefined) layer.set(id, layer.size)
     }
     // A component defined inside this one is expanded with it, so it is walked where it lies.
-    const nested: ComponentChoice[] = []
-    for (const record of subtree(sources.order, componentId)) {
-      const id = idOf(record)
-      const parent = parentIdOf(record)
-      if (
-        id !== undefined &&
-        id !== componentId &&
-        record.type === 'SYMBOL' &&
-        parent !== undefined &&
-        definitionOf(sources.order, parent) === componentId
-      )
-        nested.push({ ownerId: id, componentId: id })
-    }
-    const discover = () =>
+    const nested = heldDefinitions(sources.order, componentId)
+    const discover = (): (ComponentChoice & { held?: true })[] =>
       [
         ...sources
           .discover(index, componentId, dropped)
@@ -96,13 +113,16 @@ function repair(sources: ComponentLoopSources): Set<string> {
     const handled = new Set<string>()
     let choices = discover()
     for (let next = 0; next < choices.length; next++) {
-      const { ownerId, componentId: chosen } = choices[next]
+      const { ownerId, componentId: chosen, held } = choices[next]
       const key = `${ownerId} ${chosen}`
       if (dropped.has(ownerId) || handled.has(key)) continue
       handled.add(key)
       const target = terminalComponent(index, chosen)
       const reached = state.get(target)
-      if (reached === 'walking') dropped.add(ownerId)
+      if (reached === 'walking') {
+        const instance = held ? enteringInstance(target) : ownerId
+        if (instance !== undefined) dropped.add(instance)
+      }
       // An instance chain that leads back into itself ends without a component: the read shows
       // it empty, and there is no definition to walk.
       else if (
@@ -111,7 +131,7 @@ function repair(sources: ComponentLoopSources): Set<string> {
         index.sources.get(target)?.type === 'SYMBOL'
       ) {
         const before = dropped.size
-        walk(target)
+        walk(target, held ? null : ownerId)
         // The deeper walk left instances out, so a later choice may have swapped through one:
         // read the choices again, as the definition now expands.
         if (dropped.size !== before) {
@@ -120,13 +140,14 @@ function repair(sources: ComponentLoopSources): Set<string> {
         }
       }
     }
+    stack.pop()
     state.set(componentId, 'done')
   }
   for (const root of roots(sources.order))
     for (const record of subtree(sources.order, root)) {
       const id = idOf(record)
       if (id !== undefined && record.type === 'SYMBOL' && reaching.has(id) && !state.has(id))
-        walk(id)
+        walk(id, null)
     }
   return dropped
 }
