@@ -1,7 +1,6 @@
 import { basename, extname } from 'pathe'
 
 import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
-import { embedPageImages } from '@open-pencil/core/io/formats/html/images'
 import {
   HTML_IMPORT_VIEWPORT,
   sceneGraphFromStyledHTML
@@ -11,7 +10,7 @@ import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
-import { fetchRemoteBytes } from '@/app/document/io/url/fetch'
+import { pageFetch } from '@/app/document/io/url/fetch'
 import { importIconMatcher } from '@/app/editor/icons/provider'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
@@ -86,12 +85,10 @@ export function createDOMOpenActions({
       compute: { layout: true, viewport: HTML_IMPORT_VIEWPORT },
       // A page from the web brings its stylesheets and pictures from where it lives.
       baseURL,
-      importLinkedStylesheets: baseURL !== undefined
+      importLinkedStylesheets: baseURL !== undefined,
+      fetch: pageFetch()
     })
     load.signal.throwIfAborted()
-    // Pictures by web address come with it; relative ones only for a page from the web, which
-    // has an address to resolve them against.
-    await embedPageImages(styled, { baseURL, fetch: fetchRemoteBytes, signal: load.signal })
     load.update({ phase: 'layout', detail: pageName })
     const matcher = importIconMatcher(editor, load.signal)
     const graph = await sceneGraphFromStyledHTML(styled, {

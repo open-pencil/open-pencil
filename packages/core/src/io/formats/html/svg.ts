@@ -1,7 +1,9 @@
+import { XMLSerializer } from '@xmldom/xmldom'
 import { compact, isEmptyObject, omit } from 'es-toolkit'
 
 import type { DesignDocument, DesignElement } from '@open-pencil/dom-css'
 import { serializeNode } from '@open-pencil/dom-css/export'
+import { imagePicture } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import {
@@ -16,7 +18,9 @@ import { drawIcon, parseIconName } from '#core/icons'
 import { svgIconPaths } from '#core/icons/artwork'
 import type { IconMatcher } from '#core/icons/match'
 import { extractSVGContent } from '#core/icons/svg'
+import { parseSVGDocument } from '#core/io/formats/svg/document'
 import { createSVGNodes } from '#core/io/formats/svg/import'
+import { parseSVGSize } from '#core/io/formats/svg/metadata'
 import { svgViewportAttributes } from '#core/vector/vectorize/svg/transform'
 
 import { designElements } from './elements'
@@ -214,6 +218,22 @@ function drawNamedIcon(
  * Draws artwork as SVG import draws a file, with its groups, clips, masks, and text, into its
  * frame: the import's own frame is dropped and its layers moved into this one.
  */
+/**
+ * The SVG an image shows, at the size of the layer it became. An image scales its picture to its
+ * box, so a picture that gives only a size scales from a `viewBox` of that size.
+ */
+function imageSVGMarkup(markup: string, box: { width: number; height: number }): string | null {
+  const root = parseSVGDocument(markup)?.documentElement
+  if (!root) return null
+  if (!root.hasAttribute('viewBox')) {
+    const { width, height } = parseSVGSize(markup, box)
+    root.setAttribute('viewBox', `0 0 ${width} ${height}`)
+  }
+  root.setAttribute('width', String(box.width))
+  root.setAttribute('height', String(box.height))
+  return new XMLSerializer().serializeToString(root)
+}
+
 function drawArtwork(graph: SceneGraph, frameId: string, element: DesignElement, markup: string) {
   const defaultColor = element.computedStyle?.color
   const imported = createSVGNodes(graph, frameId, markup, defaultColor ? { defaultColor } : {})
@@ -223,7 +243,8 @@ function drawArtwork(graph: SceneGraph, frameId: string, element: DesignElement,
 }
 
 /**
- * Draws each inline SVG HTML import built a frame for into that frame, at the size layout and
+ * Draws each inline SVG, and each image showing an SVG, HTML import built a frame for into that
+ * frame, at the size layout and
  * placement gave it, with `currentColor` in the element's color, `<use>` and `url()` reaching
  * definitions elsewhere in the page, and the paint the page's CSS gives each shape. An SVG that
  * is an icon, because the page names it, as `data-icon="lucide:save"`, or because `matchIcon`
@@ -247,7 +268,10 @@ export async function drawInlineSVGs(
     const frame = graph.getNode(frameId)
     if (!frame || frame.width <= 0 || frame.height <= 0) return []
     const box = { width: frame.width, height: frame.height }
-    return [{ frameId, element, box, markup: svgMarkup(element, byId, box) }]
+    const picture = imagePicture(element)
+    const markup =
+      picture?.kind === 'svg' ? imageSVGMarkup(picture.markup, box) : svgMarkup(element, byId, box)
+    return markup ? [{ frameId, element, box, markup }] : []
   })
   const unnamed = drawn.filter(({ element }) => !iconName(element))
   const matched = matchIcon ? await matchIcon(unnamed.map(({ markup }) => markup)) : []

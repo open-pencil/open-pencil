@@ -10,7 +10,7 @@ import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import { parseCSSAlignSelf, parseCSSNumber, parseCSSShadows } from '@open-pencil/scene-graph/css'
 import { blurRadiusForSigma } from '@open-pencil/scene-graph/geometry'
-import { computeImageHash, imageHeader, parseDataURL } from '@open-pencil/scene-graph/images'
+import { computeImageHash } from '@open-pencil/scene-graph/images'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import {
@@ -44,6 +44,7 @@ import {
   type ParentFlow
 } from './flow'
 import { alignGridItems, isGrid } from './grid'
+import { imagePicture } from './pictures'
 import {
   applyCapturedLines,
   capturedBox,
@@ -123,15 +124,6 @@ function imageScaleModeFromObjectFit(value: string | undefined): ImageScaleMode 
   return null
 }
 
-/**
- * The raster image a data URL carries. Anything else, such as an SVG or Base64 that does not
- * decode, stays the element's source URL rather than an image fill nothing could draw.
- */
-function imageFromDataURL(value: string | undefined): Uint8Array | null {
-  const bytes = value ? parseDataURL(value)?.bytes : undefined
-  return bytes && imageHeader(bytes) ? bytes : null
-}
-
 function applyImageFill(
   graph: SceneGraph,
   node: SceneNode,
@@ -140,8 +132,9 @@ function applyImageFill(
 ): void {
   if (element.tagName.toLowerCase() !== 'img') return
   const source = element.attrs.src
-  const bytes = imageFromDataURL(source)
-  if (!bytes) {
+  const picture = imagePicture(element)
+  // A picture nothing could draw keeps its address, which exporting the layer writes back.
+  if (picture?.kind !== 'raster') {
     if (source) {
       node.pluginData.push({
         pluginId: DOM_CSS_PLUGIN_ID,
@@ -152,6 +145,7 @@ function applyImageFill(
     return
   }
 
+  const { bytes } = picture
   const imageHash = computeImageHash(bytes)
   graph.images.set(imageHash, bytes)
   node.fills = [
@@ -322,7 +316,10 @@ function hasContent(element: DesignElement): boolean {
 interface Recorded {
   boxes: CapturedBoxes
   transforms: CSSTransforms
-  /** Inline SVG elements by the frame built for each, for the caller to draw once laid out. */
+  /**
+   * Inline SVG, and images showing SVG, by the frame built for each, for the caller to draw once
+   * laid out.
+   */
   svgs: Map<string, DesignElement>
   /** Cells of tables with collapsed borders, until their table draws each shared border once. */
   collapsedCells: SceneNode[]
@@ -363,7 +360,9 @@ function createElementNode(
   const style = mergedStyle(element)
   const display = elementDisplay(element, style)
   if (display === 'none' || isTableColumn(display)) return null
-  if (isInlineSVG(element)) return createSVGFrame(graph, parentId, element, parentFlow, recorded)
+  // An image showing an SVG becomes its artwork, as inline SVG does.
+  if (isInlineSVG(element) || imagePicture(element)?.kind === 'svg')
+    return createSVGFrame(graph, parentId, element, parentFlow, recorded)
   if (
     isTextLikeElement(element) &&
     !hasBoxStyle(element, style, parentFlow) &&
@@ -576,6 +575,7 @@ export function designDocumentToSceneGraph(
   return designDocumentToLayers(document, options).graph
 }
 
+export { imagePicture, type ImagePicture } from './pictures'
 export { placeLayersFromLayout, type CapturedBox, type CapturedBoxes } from './placement'
 export { applyCSSTransforms, type CSSTransform, type CSSTransforms } from './transform'
 

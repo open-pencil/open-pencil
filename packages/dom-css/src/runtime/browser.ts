@@ -7,6 +7,8 @@ import type {
   DesignDocument,
   DesignElement,
   DesignNode,
+  DesignResource,
+  DesignResourceFetch,
   DesignViewport
 } from '../types'
 import { recordLayout } from './layout'
@@ -19,6 +21,17 @@ export interface BrowserCSSRuntimeOptions {
    * against, as on the page itself. Only the iframe sandbox has a base of its own.
    */
   baseURL?: string
+  /**
+   * Reads the pictures the page's images show, which go with their elements. The sandbox has
+   * loaded them, but a picture from another site cannot be read back from it.
+   */
+  fetch?: DesignResourceFetch
+}
+
+/** Styled elements, and each `<img>` with the address the sandbox loaded its picture from. */
+interface CopiedStyles {
+  document: DesignDocument
+  images: [DesignElement, string][]
 }
 
 /**
@@ -341,7 +354,7 @@ async function computeStylesInShadowRoot(
   designDocument: DesignDocument,
   cssText: string,
   options: CSSComputeOptions
-): Promise<DesignDocument> {
+): Promise<CopiedStyles> {
   const host = browserDocument.createElement('div')
   applySandboxHostStyle(host, options.viewport)
 
@@ -388,7 +401,7 @@ async function computeStylesInIframe(
   cssText: string,
   options: CSSComputeOptions,
   baseURL: string | undefined
-): Promise<DesignDocument> {
+): Promise<CopiedStyles> {
   const iframe = browserDocument.createElement('iframe')
   applySandboxHostStyle(iframe, options.viewport)
   browserDocument.body.append(iframe)
@@ -439,7 +452,7 @@ function copyComputedStyles(
   content: Element,
   options: CSSComputeOptions,
   frame: LayoutFrame
-): DesignDocument {
+): CopiedStyles {
   const view = content.ownerDocument.defaultView
   if (!view) throw new TypeError('Browser CSS runtime requires getComputedStyle')
 
@@ -457,15 +470,42 @@ function copyComputedStyles(
     if (domChild) collectElementPairs(child, domChild, pairs)
   }
 
+  const images: [DesignElement, string][] = []
   for (const [designElement, domElement] of pairs) {
     const style = computedStyleToRecord(view.getComputedStyle(domElement), options)
     keepAutoSideMargins(domElement, style)
     designElement.computedStyle = style
+    // The address the picture loaded from, its `srcset` choice and the page's base applied.
+    if (domElement instanceof view.HTMLImageElement && domElement.currentSrc)
+      images.push([designElement, domElement.currentSrc])
   }
   // After the styles are copied: reading layout switches transforms off for a moment.
   if (options.layout) recordLayout(pairs, frame.origin, frame.styleRoot)
 
-  return nextDocument
+  return { document: nextDocument, images }
+}
+
+/**
+ * Reads each image's picture with `fetch` and puts it on its element, each address once. One that
+ * cannot be read leaves its element as it was.
+ */
+async function attachImages(
+  images: readonly [DesignElement, string][],
+  fetch: DesignResourceFetch | undefined
+): Promise<void> {
+  if (!fetch) return
+  const pictures = new Map<string, Promise<DesignResource | null>>()
+  await Promise.all(
+    images.map(async ([element, url]) => {
+      let picture = pictures.get(url)
+      if (!picture) {
+        picture = fetch(url, AbortSignal.timeout(IMAGE_LOAD_LIMIT_MS)).catch(() => null)
+        pictures.set(url, picture)
+      }
+      const resource = await picture
+      if (resource) element.image = resource
+    })
+  )
 }
 
 export function createBrowserCSSRuntime(options: BrowserCSSRuntimeOptions = {}): CSSRuntime {
@@ -476,15 +516,24 @@ export function createBrowserCSSRuntime(options: BrowserCSSRuntimeOptions = {}):
     kind: 'browser',
     parseHTML: (html) => parseHTMLWithDocument(browserDocument, html),
     serializeHTML,
-    computeStyles: (designDocument, cssText = '', computeOptions = {}) =>
-      sandbox === 'iframe'
-        ? computeStylesInIframe(
-            browserDocument,
-            designDocument,
-            cssText,
-            computeOptions,
-            options.baseURL
-          )
-        : computeStylesInShadowRoot(browserDocument, designDocument, cssText, computeOptions)
+    async computeStyles(designDocument, cssText = '', computeOptions = {}) {
+      const copied =
+        sandbox === 'iframe'
+          ? await computeStylesInIframe(
+              browserDocument,
+              designDocument,
+              cssText,
+              computeOptions,
+              options.baseURL
+            )
+          : await computeStylesInShadowRoot(
+              browserDocument,
+              designDocument,
+              cssText,
+              computeOptions
+            )
+      await attachImages(copied.images, options.fetch)
+      return copied.document
+    }
   }
 }

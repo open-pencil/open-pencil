@@ -6,6 +6,7 @@ import { browserHTMLHasBoxes, browserHTMLToDesignDocument } from '@open-pencil/d
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { filesMessages, menuMessages } from '@open-pencil/vue/i18n'
 
+import { pageFetch } from '@/app/document/io/url/fetch'
 import { importIconMatcher } from '@/app/editor/icons/provider'
 import { toast } from '@/app/shell/ui'
 
@@ -154,7 +155,9 @@ async function prepareLayers(editor: Editor, markup: string): Promise<ClipboardS
     const target = editor.htmlPasteTarget()
     const width = target.width ?? HTML_IMPORT_VIEWPORT.width
     const styled = await browserHTMLToDesignDocument(markup, {
-      compute: { layout: true, viewport: { width, height: HTML_IMPORT_VIEWPORT.height } }
+      compute: { layout: true, viewport: { width, height: HTML_IMPORT_VIEWPORT.height } },
+      // Pictures a copied page shows by web address come with its layers.
+      fetch: pageFetch()
     })
     const snapshot = await editor.prepareStyledHTML(styled, {
       matchIcon: importIconMatcher(editor)

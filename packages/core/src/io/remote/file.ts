@@ -55,7 +55,7 @@ export function remoteFileTitle(url: URL): string {
 }
 
 /** The essence of a `Content-Type` header, such as `text/html`; none for a missing or bad one. */
-function mediaType(header: string | null): string | undefined {
+export function mediaType(header: string | null): string | undefined {
   return (header && MIMEType.parse(header)?.essence) ?? undefined
 }
 
@@ -67,15 +67,22 @@ const KIND_BY_TYPE: Readonly<Partial<Record<string, RemoteFileKind>>> = {
   'application/pdf': 'pdf'
 }
 
-/**
- * The media type a file is taken as by its extension, when its server sends one that says
- * nothing about it, as a raw file host serves pages and SVG as `text/plain`.
- */
+/** Media types by extension, for files read without a server to name them. */
 const TYPE_BY_EXTENSION: Readonly<Partial<Record<string, string>>> = {
+  '.css': 'text/css',
   '.html': 'text/html',
   '.htm': 'text/html',
   '.xhtml': 'application/xhtml+xml',
   '.svg': 'image/svg+xml'
+}
+
+/**
+ * The media type a file of this name is served as by its extension, as a file read from disk, or
+ * one whose server sends a type that says nothing about it, such as a raw file host's
+ * `text/plain`. None for an extension the importer does not tell apart.
+ */
+export function mediaTypeOfName(name: string): string | undefined {
+  return TYPE_BY_EXTENSION[extname(name).toLowerCase()]
 }
 
 /** Media types that say nothing about what a file is. */
@@ -95,10 +102,7 @@ export async function remoteFileKind(
   if (detected === 'application/pdf') return 'pdf'
   if (detected && IMPORTABLE_RASTER_TYPES.has(detected)) return 'image'
   if (io.findReader(name)) return 'document'
-  const type =
-    contentType && !GENERIC_TYPES.has(contentType)
-      ? contentType
-      : TYPE_BY_EXTENSION[extname(name).toLowerCase()]
+  const type = contentType && !GENERIC_TYPES.has(contentType) ? contentType : mediaTypeOfName(name)
   return (type === undefined ? undefined : KIND_BY_TYPE[type]) ?? 'unsupported'
 }
 

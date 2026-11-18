@@ -130,11 +130,6 @@
       "import": "./dist/io/formats/html/import.js",
       "default": "./dist/io/formats/html/import.js"
     },
-    "./io/formats/html/images": {
-      "types": "./dist/io/formats/html/images.d.ts",
-      "import": "./dist/io/formats/html/images.js",
-      "default": "./dist/io/formats/html/images.js"
-    },
     "./io/formats/html/layers": {
       "types": "./dist/io/formats/html/layers.d.ts",
       "import": "./dist/io/formats/html/layers.js",

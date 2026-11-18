@@ -30,14 +30,14 @@ async function expectRefused(page: Page, dialog: Locator) {
   await expect(page.getByTestId('tabbar-tab')).toHaveCount(1)
 }
 
-test('a web page opens as layers with the stylesheet and picture it links', async ({ page }) => {
+test('a web page opens as layers with the stylesheet and pictures it links', async ({ page }) => {
   const png = await readFile(join(FIXTURES, 'absolute-constraint-figma.png'))
   await page.route(`${SITE}/**`, (route) => {
     const { pathname } = new URL(route.request().url())
     if (pathname === '/') {
       return route.fulfill({
         headers: { ...OPEN, 'content-type': 'text/html' },
-        body: '<link rel="stylesheet" href="/site.css"><div class="box"></div><img src="img/photo.png">'
+        body: '<link rel="stylesheet" href="/site.css"><div class="box"></div><img src="img/photo.png"><img src="img/logo.svg" style="display:block;width:40px;height:20px">'
       })
     }
     if (pathname === '/site.css') {
@@ -48,6 +48,12 @@ test('a web page opens as layers with the stylesheet and picture it links', asyn
     }
     if (pathname === '/img/photo.png') {
       return route.fulfill({ headers: { ...OPEN, 'content-type': 'image/png' }, body: png })
+    }
+    if (pathname === '/img/logo.svg') {
+      return route.fulfill({
+        headers: { ...OPEN, 'content-type': 'image/svg+xml' },
+        body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10"><rect width="20" height="10" fill="#0969da"/></svg>'
+      })
     }
     return route.fulfill({ status: 404, headers: OPEN })
   })
@@ -61,12 +67,18 @@ test('a web page opens as layers with the stylesheet and picture it links', asyn
   await expect(tabs.getByRole('tab').last()).toContainText('site.example.test')
   await expect
     .poll(async () =>
-      (await getPageChildren(page)).map(({ width, fillTypes }) => ({
+      (await getPageChildren(page)).map(({ width, fillTypes, childIds }) => ({
         width,
-        image: fillTypes.includes('IMAGE')
+        image: fillTypes.includes('IMAGE'),
+        artwork: childIds.length > 0
       }))
     )
-    .toEqual([{ width: 120, image: false }, expect.objectContaining({ image: true })])
+    .toEqual([
+      { width: 120, image: false, artwork: false },
+      expect.objectContaining({ image: true }),
+      // The SVG picture becomes the vector layers it draws, at the size the page shows it.
+      { width: 40, image: false, artwork: true }
+    ])
 })
 
 test('an address that holds a PDF says it cannot be opened yet', async ({ page }) => {

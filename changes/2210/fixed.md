@@ -1,4 +1,4 @@
-- Pictures an imported HTML page links appear instead of empty layers: PNG, JPEG, GIF, WebP, and AVIF as image fills and SVG as vector layers, by web address in the app, and relative to the page too in the CLI and for pages opened from a URL (#2210).
+- Pictures an imported HTML page links appear instead of empty layers: PNG, JPEG, GIF, WebP, and AVIF as image fills and SVG served as `image/svg+xml` as vector layers. HTML opened or pasted in the app brings pictures by web address, and the CLI and pages opened from a URL bring relative ones too (#2210).
 - Imported HTML keeps attributes written without a value, such as `hidden` or the `data-v-…` attributes of scoped styles, so the rules that select them still apply (#2210).
 - An imported HTML page with a `<script>` between its sections lays the sections after it out where the page put them, instead of stacking them over the top of the page (#2210).
 - A list whose items a page lays out as `inline-block`, such as a row of footer links, imports as a row of layers without bullets (#2210).

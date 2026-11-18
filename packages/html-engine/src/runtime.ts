@@ -8,6 +8,8 @@ import {
   type DesignDocument,
   type DesignElement,
   type DesignLayout,
+  type DesignResource,
+  type DesignResourceFetch,
   type DesignStyleDeclaration,
   type DesignViewport
 } from '@open-pencil/dom-css'
@@ -16,7 +18,7 @@ import { insertAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-import type { HTMLEngine, HTMLEngineFetch, HTMLEngineResource } from './engine'
+import type { HTMLEngine } from './engine'
 import { loadHTMLEngine } from './load'
 import type { HTMLEngineCapture, HTMLEngineLine, HTMLEngineNode } from './schema'
 
@@ -41,7 +43,7 @@ export interface HTMLEngineRuntimeOptions {
    * Answers the stylesheets, fonts, and images the document asks for. A stylesheet is read for
    * its `@font-face` rules when it comes with a CSS content type.
    */
-  fetch?: HTMLEngineFetch
+  fetch?: DesignResourceFetch
   /**
    * Receives each font the page's `@font-face` rules load, as the engine lays text out in it, so
    * a host can draw that text in the same font. The layout waits for it.
@@ -49,7 +51,7 @@ export interface HTMLEngineRuntimeOptions {
   onFontFace?: (face: HTMLEngineFontFace) => void | Promise<void>
 }
 
-function isStylesheet(resource: HTMLEngineResource): boolean {
+function isStylesheet(resource: DesignResource): boolean {
   return resource.contentType?.split(';')[0]?.trim().toLowerCase() === 'text/css'
 }
 
@@ -61,7 +63,7 @@ function fontFaceFetch(
   engine: HTMLEngine,
   cssText: string,
   options: HTMLEngineRuntimeOptions
-): HTMLEngineFetch | undefined {
+): DesignResourceFetch | undefined {
   const { fetch, onFontFace } = options
   if (!fetch || !onFontFace) return fetch
   const rules = new Map<string, CSSFontFaceRule[]>()
@@ -235,6 +237,32 @@ function documentHTML(body: string, cssText: string): string {
  * without one: computed styles and, when asked, the boxes, inline fragments, and text lines a
  * browser runtime records, before transforms. Documents are parsed and serialized by dom-css.
  */
+/** A fetch that also keeps what it answered, by the URL asked for and the one it came from. */
+function keepingFetch(
+  fetch: DesignResourceFetch | undefined,
+  answered: Map<string, DesignResource>
+): DesignResourceFetch | undefined {
+  if (!fetch) return undefined
+  return async (url, signal) => {
+    const resource = await fetch(url, signal)
+    if (resource) answered.set(url, resource).set(resource.url, resource)
+    return resource
+  }
+}
+
+/** What an `<img>` loaded, by its `src` resolved against the page's address. */
+function imageOf(
+  element: DesignElement,
+  answered: ReadonlyMap<string, DesignResource>,
+  baseURL: string | undefined
+): DesignResource | undefined {
+  const { src } = element.attrs
+  if (element.tagName.toLowerCase() !== 'img' || !src || !URL.canParse(src, baseURL)) {
+    return undefined
+  }
+  return answered.get(new URL(src, baseURL).href)
+}
+
 export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}): CSSRuntime {
   const engine = options.engine ?? loadHTMLEngine
   return {
@@ -243,10 +271,14 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
     serializeHTML,
     async computeStyles(document, cssText = '', compute: CSSComputeOptions = {}) {
       const laidOut = await engine()
+      // The pictures the engine loads to lay images out go with their elements, so the layers
+      // they become show them without fetching them again.
+      const answered = new Map<string, DesignResource>()
+      const fetch = keepingFetch(options.fetch, answered)
       const capture = await laidOut.layout(documentHTML(serializeHTML(document), cssText), {
         baseURL: options.baseURL,
         viewport: compute.viewport ?? DEFAULT_VIEWPORT,
-        fetch: fontFaceFetch(laidOut, cssText, options)
+        fetch: fontFaceFetch(laidOut, cssText, { ...options, fetch })
       })
       const styled = structuredClone(document)
       for (const [element, node] of pairElements(styled, capture)) {
@@ -260,6 +292,8 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
           ...node.computed
         })
         if (compute.layout) element.layout = layoutOf(node)
+        const image = imageOf(element, answered, options.baseURL)
+        if (image) element.image = image
       }
       return styled
     }
