@@ -17,7 +17,7 @@ export interface LayerRowMetrics {
 }
 
 export interface LayerRowDecorations {
-  modeNames: (row: LayerRow) => readonly string[]
+  modeCount: (row: LayerRow) => number
   /** Whether the row shows an issue mark; `expanded` is whether its children are listed. */
   showsIssue: (row: LayerRow, expanded: boolean) => boolean
 }
@@ -42,7 +42,7 @@ export function createTextMeasure() {
 
 /**
  * How far the layer rows reach past the list sideways, as in Figma's layers panel: far enough
- * for the widest row's indent, whole name, mode badges, and issue mark, so no name is ever cut
+ * for the widest row's indent, whole name, compact mode badge, and issue mark, so no name is ever cut
  * short, only scrolled out of view.
  */
 export function rowsOverflow(
@@ -56,8 +56,9 @@ export function rowsOverflow(
   for (const [index, row] of rows.entries()) {
     let width = (row.level - 1) * metrics.indent + metrics.nameStart
     width += measure(row.node.name, metrics.font)
-    for (const name of decorations.modeNames(row)) {
-      width += metrics.badge + measure(name, metrics.badgeFont)
+    const modeCount = decorations.modeCount(row)
+    if (modeCount > 0) {
+      width += metrics.badge + measure(String(modeCount), metrics.badgeFont)
     }
     const expanded = row.hasChildren && (rows[index + 1]?.level ?? 0) > row.level
     if (decorations.showsIssue(row, expanded)) width += metrics.issueMark

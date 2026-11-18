@@ -13,6 +13,12 @@ const layerTreeTheme = {
     disclosurePlaceholder: 'w-4 shrink-0',
     icon: 'size-3 shrink-0',
     label: 'flex min-w-0 flex-1 items-center gap-1.5',
+    name: 'min-w-0 truncate',
+    modeBadge:
+      'relative flex min-w-0 items-center overflow-hidden rounded-full border border-current/40 px-1.5 text-3xs leading-3.5',
+    modeFull: 'flex w-max shrink-0 items-center whitespace-nowrap',
+    moreModes: 'shrink-0 ps-1 opacity-70',
+    modeCount: 'tabular-nums',
     // The issue mark and buttons stay at the panel's edge however far the rows scroll sideways.
     // While they show, they sit on the row's own background so a long name runs under them.
     trailing: 'sticky inset-e-0 flex shrink-0 items-center gap-1 pe-1',
@@ -58,6 +64,10 @@ const layerTreeTheme = {
       true: { disclosure: 'rotate-90 rtl:-rotate-90' },
       false: { disclosure: 'rotate-0' }
     },
+    compactModes: {
+      true: { modeBadge: 'shrink-0', modeFull: 'invisible absolute inset-e-0 top-0' },
+      false: { modeBadge: 'shrink-[100]' }
+    },
     trailingShown: {
       true: { trailing: 'bg-inherit' },
       false: { trailing: 'group-focus-within/row:bg-inherit group-hover/row:bg-inherit' }
@@ -65,7 +75,8 @@ const layerTreeTheme = {
     actionsVisible: {
       true: {},
       false: {
-        actions: 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100'
+        actions:
+          'pointer-events-none absolute inset-e-1 opacity-0 group-hover/row:pointer-events-auto group-hover/row:static group-hover/row:opacity-100 group-focus-within/row:pointer-events-auto group-focus-within/row:static group-focus-within/row:opacity-100'
       }
     },
     actionActive: {
@@ -115,7 +126,8 @@ const layerTreeTheme = {
     actionsVisible: true,
     trailingShown: true,
     actionActive: false,
-    childDropTarget: false
+    childDropTarget: false,
+    compactModes: false
   }
 }
 

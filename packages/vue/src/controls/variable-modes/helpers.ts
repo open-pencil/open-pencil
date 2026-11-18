@@ -3,6 +3,7 @@ import { omit } from 'es-toolkit'
 import type { Editor } from '@open-pencil/core'
 import {
   isLibraryCollection,
+  type SceneGraph,
   type SceneNode,
   type VariableCollection,
   type VariableCollectionMode
@@ -33,6 +34,36 @@ export interface VariableModeChoice {
   value: MixedValue<string | null>
   /** The mode the targets show without one of their own, null when they would show different ones. */
   inherited: VariableModeOption | null
+}
+
+export interface AppliedVariableMode {
+  collectionId: string
+  collection: string
+  mode: string
+}
+
+/** Each mode is looked up in its own collection: library copies of one collection share mode ids. */
+export function appliedVariableModes(
+  graph: SceneGraph,
+  variableModes: Readonly<Record<string, string>>,
+  numbered: NumberedCollectionFormat
+): AppliedVariableMode[] {
+  const applied = [...graph.variableCollections.values()].flatMap((collection) => {
+    const mode = Object.hasOwn(variableModes, collection.id)
+      ? modeOption(collection, variableModes[collection.id])
+      : null
+    return mode ? [{ collection, mode }] : []
+  })
+  const labels = collectionLabels(
+    graph,
+    numbered,
+    applied.map(({ collection }) => collection.id)
+  )
+  return applied.map(({ collection, mode }) => ({
+    collectionId: collection.id,
+    collection: labels.get(collection.id) ?? collection.name,
+    mode: mode.name
+  }))
 }
 
 function modeOption(collection: VariableCollection, modeId: string): VariableModeOption | null {

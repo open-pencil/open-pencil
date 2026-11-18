@@ -5,6 +5,7 @@ import { tv } from 'tailwind-variants'
 import { computed, nextTick, useAttrs, useTemplateRef, watch } from 'vue'
 
 import { useInlineRename } from '@open-pencil/vue/editor/inline-rename'
+import { useVariableMessages } from '@open-pencil/vue/i18n'
 import {
   LayerTreeRoot,
   LayerTreeItem,
@@ -28,7 +29,7 @@ import { useLayerTreeGeometry } from './geometry'
 import LayerTreeNodeRow from './LayerTreeNodeRow.vue'
 import LayerTreeRenameRow from './LayerTreeRenameRow.vue'
 import LayerTreeStickyRow from './LayerTreeStickyRow.vue'
-import { layerModeNames } from './mode-names'
+import { layerAppliedModes } from './mode-names'
 import { provideLayerTreeUI } from './ui'
 import type { LayerTreeUI } from './ui'
 import { createTextMeasure, rowsOverflow } from './width'
@@ -58,6 +59,7 @@ const attrs = useAttrs()
 const styles = tv(layerTreeTheme)()
 provideLayerTreeUI(() => ui)
 const store = useEditorStore()
+const variables = useVariableMessages()
 const viewport = useTemplateRef<HTMLElement>('viewport')
 /** How far the rows are scrolled, for the pinned top-level row. */
 const { y: scrollTop } = useScroll(viewport)
@@ -204,7 +206,9 @@ const rowsWidth = computed(() => {
       viewportWidth: viewportWidth.value
     },
     {
-      modeNames: (row) => layerModeNames(store.graph, row.node.modeIds),
+      modeCount: (row) =>
+        layerAppliedModes(store.graph, row.node.variableModes, variables.value.numberedCollection)
+          .length,
       showsIssue: (row, expanded) => showsLayerIssueMark(marks?.get(row.node.id), expanded)
     },
     measureText

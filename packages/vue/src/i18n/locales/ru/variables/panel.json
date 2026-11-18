@@ -134,5 +134,6 @@
   "formulaText": "число как текст",
   "formulaTruthy": "значение как истина или ложь",
   "unsupportedExpression": "OpenPencil пока не умеет вычислять {name}. При сохранении оно остаётся как есть.",
-  "numberedCollection": "{name} ({number})"
+  "numberedCollection": "{name} ({number})",
+  "appliedMode": "{collection}: {mode}"
 }

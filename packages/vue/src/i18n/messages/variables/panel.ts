@@ -143,7 +143,8 @@ export const variablesMessageDefaults = {
   formulaText: 'number as text',
   formulaTruthy: 'value as true or false',
   unsupportedExpression: params('OpenPencil can’t evaluate {name} yet. Saving keeps it as it is.'),
-  numberedCollection: params('{name} ({number})')
+  numberedCollection: params('{name} ({number})'),
+  appliedMode: params('{collection}: {mode}')
 } as const
 
 export const variablesMessages = i18n('variables', variablesMessageDefaults)

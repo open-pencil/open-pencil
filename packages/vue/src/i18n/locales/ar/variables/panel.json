@@ -134,5 +134,6 @@
   "formulaText": "رقم كنص",
   "formulaTruthy": "قيمة كصواب أو خطأ",
   "unsupportedExpression": "لا يستطيع OpenPencil تقييم {name} بعد. يحتفظ الحفظ به كما هو.",
-  "numberedCollection": "{name} ({number})"
+  "numberedCollection": "{name} ({number})",
+  "appliedMode": "{collection}: {mode}"
 }

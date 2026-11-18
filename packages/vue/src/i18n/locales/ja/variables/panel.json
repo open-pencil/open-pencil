@@ -134,5 +134,6 @@
   "formulaText": "数値をテキストに",
   "formulaTruthy": "値を真偽値に",
   "unsupportedExpression": "OpenPencil はまだ {name} を評価できません。保存してもそのまま残ります。",
-  "numberedCollection": "{name}（{number}）"
+  "numberedCollection": "{name}（{number}）",
+  "appliedMode": "{collection}：{mode}"
 }

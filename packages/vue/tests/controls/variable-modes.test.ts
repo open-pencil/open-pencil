@@ -10,6 +10,7 @@ import { DEADLINE_MS, withDeadline } from '@open-pencil/std/timing'
 import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 import { MIXED } from '@open-pencil/vue/controls/node-props'
 import {
+  appliedVariableModes,
   collectionLabels,
   setVariableMode,
   useVariableModes,
@@ -165,6 +166,24 @@ describe('library copies in variable mode choices', () => {
     expect(variableModeChoices(editor, [node(rectangle.id)]).map((c) => c.collectionId)).toEqual([
       theme.id
     ])
+  })
+
+  test('name each applied mode from its own collection, numbering namesakes set together', () => {
+    const { graph, theme, light, dark, empty } = libraryCopies()
+    empty.modes = empty.modes.map((mode) => ({ ...mode, name: `${mode.name} copy` }))
+    expect(appliedVariableModes(graph, { [empty.id]: light, [theme.id]: dark }, numbered)).toEqual([
+      { collectionId: theme.id, collection: 'Theme #1', mode: 'Dark' },
+      { collectionId: empty.id, collection: 'Theme #2', mode: 'Light copy' }
+    ])
+    expect(appliedVariableModes(graph, { [empty.id]: dark }, numbered)).toEqual([
+      { collectionId: empty.id, collection: 'Theme', mode: 'Dark copy' }
+    ])
+  })
+
+  test('leave out applied modes whose collection or mode is gone', () => {
+    const { graph, theme, dark, density } = setup()
+    expect(appliedVariableModes(graph, { [theme.id]: 'missing', gone: dark }, numbered)).toEqual([])
+    expect(appliedVariableModes(graph, { [density.id]: dark }, numbered)).toEqual([])
   })
 
   test('keep a local collection without variables', () => {

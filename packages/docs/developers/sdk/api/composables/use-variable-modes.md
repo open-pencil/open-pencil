@@ -23,6 +23,8 @@ const { choices, applied, setMode } = useVariableModes()
 
 `collectionLabels(graph, numbered, shown?)` gives the display names of the `shown` collections, all by default. Where two or more of them share a name, each gets its number among the file's same-named collections, `Theme (1)` and `Theme (2)`, so a collection keeps one number in every list. `numbered` formats it; pass the `numberedCollection` message from `useVariableMessages()` so labels follow the language.
 
+`appliedVariableModes(graph, node.variableModes, numbered)` names the modes a layer sets itself, in collection order, each looked up in its own collection, since library copies of one collection share mode ids; collections are labelled as `collectionLabels` labels that list. Layer tree rows carry the same modes as `LayerNode.variableModes`, by collection id; `LayerNode.modeIds` still lists the bare mode ids but is deprecated.
+
 ## Related APIs
 
 - [useAppearance](./use-appearance)

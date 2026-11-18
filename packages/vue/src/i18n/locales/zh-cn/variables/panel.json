@@ -134,5 +134,6 @@
   "formulaText": "数字转为文本",
   "formulaTruthy": "值转为真或假",
   "unsupportedExpression": "OpenPencil 暂不能计算 {name}。保存时会原样保留。",
-  "numberedCollection": "{name}（{number}）"
+  "numberedCollection": "{name}（{number}）",
+  "appliedMode": "{collection}：{mode}"
 }

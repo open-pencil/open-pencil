@@ -134,5 +134,6 @@
   "formulaText": "número como texto",
   "formulaTruthy": "valor como verdadero o falso",
   "unsupportedExpression": "OpenPencil aún no puede evaluar {name}. Al guardar se conserva tal cual.",
-  "numberedCollection": "{name} ({number})"
+  "numberedCollection": "{name} ({number})",
+  "appliedMode": "{collection}: {mode}"
 }
