@@ -27,13 +27,16 @@ export function clearSaveFailure(key: object): void {
   failureToasts.delete(key)
 }
 
+/** Documents whose retry is still saving, so another click waits for it rather than racing it. */
+const retrying = new WeakSet<object>()
+
 /**
  * Shows that a save failed until it is retried or a later save of `key` succeeds; a newer failure
  * of the same document takes the place of the one shown. Returns whether one was shown already.
  */
 export function showSaveFailure(
   message: string,
-  retry: () => void,
+  retry: () => Promise<unknown>,
   options: SaveFeedbackOptions = {}
 ): boolean {
   const { key } = options
@@ -45,13 +48,17 @@ export function showSaveFailure(
       label: notificationMessages.get().saveFailedRetry,
       run: (toastId) => {
         const open = !options.isOpen || options.isOpen()
-        // A document's failure stays while its retry runs: a save clears it, a failure replaces
-        // it, and a save that does not happen, such as a dismissed file picker, leaves it.
         if (!key || !open) {
           toast.remove(toastId)
           if (key) failureToasts.delete(key)
+          if (open) void retry()
+          return
         }
-        if (open) retry()
+        // A document's failure stays while its retry runs: a save clears it, a failure replaces
+        // it, and a save that does not happen, such as a dismissed file picker, leaves it.
+        if (retrying.has(key)) return
+        retrying.add(key)
+        void retry().finally(() => retrying.delete(key))
       }
     },
     // Each document's failure is its own, so another document's save never clears it.
@@ -80,7 +87,7 @@ export async function saveWithFeedback(
     if (options.isOpen && !options.isOpen()) return false
     showSaveFailure(
       notificationMessages.get().operationFailed({ error: saveErrorText(error) }),
-      () => void saveWithFeedback(save, options),
+      () => saveWithFeedback(save, options),
       options
     )
     return false

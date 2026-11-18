@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import { saveWithFeedback, showSaveFailure } from '@/app/document/io/save/feedback'
+import { createDeferred } from '@/app/runtime/deferred'
 import { toast } from '@/app/shell/ui'
 
 afterEach(() => {
@@ -65,7 +66,7 @@ describe('save feedback', () => {
 
   test('shows one failure per document, the latest, and says when one was showing', async () => {
     const key = {}
-    const retry = () => undefined
+    const retry = async () => undefined
     expect(showSaveFailure('first', retry, { key })).toBe(false)
     expect(showSaveFailure('second', retry, { key })).toBe(true)
     expect(toast.toasts.value.map((entry) => entry.message)).toEqual(['second'])
@@ -79,8 +80,8 @@ describe('save feedback', () => {
     const first = {}
     const second = {}
     const retried: string[] = []
-    showSaveFailure('disk full', () => retried.push('first'), { key: first })
-    showSaveFailure('disk full', () => retried.push('second'), { key: second })
+    showSaveFailure('disk full', async () => retried.push('first'), { key: first })
+    showSaveFailure('disk full', async () => retried.push('second'), { key: second })
     expect(toast.toasts.value).toHaveLength(2)
 
     await expect(saveWithFeedback(async () => false, { key: first })).resolves.toBe(false)
@@ -106,5 +107,28 @@ describe('save feedback', () => {
     )
     await expect(failed).resolves.toBe(false)
     expect(toast.toasts.value).toHaveLength(0)
+  })
+
+  test('ignores Retry while that document’s retry is still saving', async () => {
+    const key = {}
+    let attempts = 0
+    const saving = createDeferred<undefined>()
+    showSaveFailure(
+      'disk full',
+      () => {
+        attempts += 1
+        return saving.promise
+      },
+      { key }
+    )
+    const entry = toast.toasts.value[0]
+    entry?.action?.run(entry.id)
+    entry?.action?.run(entry.id)
+    expect(attempts).toBe(1)
+
+    saving.resolve(undefined)
+    await Bun.sleep(0)
+    entry?.action?.run(entry.id)
+    expect(attempts).toBe(2)
   })
 })

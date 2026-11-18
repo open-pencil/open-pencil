@@ -89,13 +89,6 @@ export function createAutosave({
 
   return {
     requestSave,
-    /** Saves the document as it is now, as an edit would, reporting a failure the same way. */
-    retry() {
-      const version = currentVersion()
-      // Another save already wrote this version, so there is nothing left to retry.
-      if (version <= getSavedVersion()) onSaved?.()
-      else void requestSave(version).catch(reportFailure)
-    },
     disposeAutosave() {
       disposed = true
       requestedVersion = null

@@ -319,7 +319,6 @@ export function createDocumentSourceActions({
     onDocumentRenamed: renamed.on,
     onAutosaveFailed: autosaveFailed.on,
     onAutosaved: autosaved.on,
-    retryAutosave: () => autosave.retry(),
     setDocumentSource,
     setStorageDocumentSource,
     setPlannedFilePath,

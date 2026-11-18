@@ -197,7 +197,7 @@ describe('document autosave', () => {
     }
   })
 
-  test('reports an edit’s failed save, then the retry that saves it', async () => {
+  test('reports an edit’s failed save, then the next edit’s save', async () => {
     jest.useFakeTimers()
     try {
       const events: string[] = []
@@ -221,7 +221,8 @@ describe('document autosave', () => {
 
       fail = false
       version.value = 2
-      autosave.retry()
+      await nextTick()
+      jest.advanceTimersByTime(3_000)
       await Promise.resolve()
       await Promise.resolve()
       expect(events).toEqual(['write 1 failed', 'saved'])
@@ -233,35 +234,33 @@ describe('document autosave', () => {
   })
 
   test('reports nothing for a save its caller awaits, or after it is disposed', async () => {
-    const failed: unknown[] = []
-    const save = deferred()
-    const { version, autosave } = setup(
-      async () => {
-        await save.promise
-        throw new Error('write failed')
-      },
-      { onFailed: (error) => failed.push(error) }
-    )
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
-    version.value = 1
-    const awaited = autosave.requestSave(1)
-    save.resolve()
-    await expect(awaited).rejects.toThrow('write failed')
+    jest.useFakeTimers()
+    try {
+      const failed: unknown[] = []
+      const held = deferred()
+      const { version, autosave } = setup(
+        async (saved) => {
+          if (saved === 2) await held.promise
+          throw new Error('write failed')
+        },
+        { onFailed: (error) => failed.push(error) }
+      )
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+      version.value = 1
+      await expect(autosave.requestSave(1)).rejects.toThrow('write failed')
 
-    autosave.retry()
-    autosave.disposeAutosave()
-    // The retry's write fails once every pending callback has run.
-    await Bun.sleep(0)
-    expect(failed).toEqual([])
-    expect(warn).toHaveBeenCalledTimes(1)
-    warn.mockRestore()
-  })
-
-  test('a retry with nothing left to save reports it saved', async () => {
-    const saved: string[] = []
-    const { autosave } = setup(async () => undefined, { onSaved: () => saved.push('saved') })
-    autosave.retry()
-    expect(saved).toEqual(['saved'])
-    autosave.disposeAutosave()
+      // An edit's save that fails once the document closed.
+      version.value = 2
+      await nextTick()
+      jest.advanceTimersByTime(3_000)
+      autosave.disposeAutosave()
+      held.resolve()
+      for (let tick = 0; tick < 5; tick += 1) await Promise.resolve()
+      expect(failed).toEqual([])
+      expect(warn).toHaveBeenCalledTimes(1)
+      warn.mockRestore()
+    } finally {
+      jest.useRealTimers()
+    }
   })
 })

@@ -1,6 +1,12 @@
 import { onScopeDispose, watch } from 'vue'
 
-import { clearSaveFailure, saveErrorText, showSaveFailure } from '@/app/document/io/save/feedback'
+import { saveDocument } from '@/app/cloud/integration'
+import {
+  clearSaveFailure,
+  saveErrorText,
+  saveWithFeedback,
+  showSaveFailure
+} from '@/app/document/io/save/feedback'
 import type { EditorStore } from '@/app/editor/session'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { notify } from '@/app/shell/notifications'
@@ -8,21 +14,24 @@ import { allTabs, getTabsSnapshot, switchTab, type Tab } from '@/app/tabs'
 
 /**
  * Reports the automatic saves of `tab`'s document that fail, which nobody waits on: a failure
- * stays shown until a save of the document succeeds, and while the person is away it also sends
- * one system notification, whose click brings the tab forward. Returns what stops it.
+ * stays shown until a save of the document succeeds, and Retry saves it as Save does. While the
+ * person is away the first failure of a run also sends a system notification, whose click brings
+ * the tab forward; a run ends when no failure of the document is shown any more.
  */
 function reportAutosaves({ id, store }: Tab): () => void {
-  const isOpen = () => getTabsSnapshot().some((tab) => tab.store === store)
+  const options = { key: store, isOpen: () => getTabsSnapshot().some((tab) => tab.store === store) }
+  let notified = false
   const saved = store.onAutosaved(() => clearSaveFailure(store))
   const failed = store.onAutosaveFailed((error) => {
     const messages = notificationMessages.get()
     const name = store.state.documentName
-    const shown = showSaveFailure(
+    const continued = showSaveFailure(
       messages.autosaveFailed({ name, error: saveErrorText(error) }),
-      () => store.retryAutosave(),
-      { key: store, isOpen }
+      () => saveWithFeedback(() => saveDocument(store), options),
+      options
     )
-    if (shown) return
+    if (continued && notified) return
+    notified = true
     notify({
       event: 'saveFailed',
       title: messages.saveFailedTitle({ name }),

@@ -84,8 +84,6 @@ export function createEditorStoreModules(
     onAutosaveFailed: documentIO.onAutosaveFailed,
     /** Calls back after each automatic save. */
     onAutosaved: documentIO.onAutosaved,
-    /** Saves the document again where its automatic saves go. */
-    retryAutosave: documentIO.retryAutosave,
     /** Takes the document as it is now as its saved state, so closing it asks nothing. */
     markDocumentSaved: documentIO.markDocumentSaved,
     /** Counts the document changed by something outside its history, so it gets saved. */

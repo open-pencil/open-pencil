@@ -73,7 +73,6 @@ export function createDocumentIOActions(
     onDocumentRenamed: sourceActions.onDocumentRenamed,
     onAutosaveFailed: sourceActions.onAutosaveFailed,
     onAutosaved: sourceActions.onAutosaved,
-    retryAutosave: sourceActions.retryAutosave,
     downloadBlob,
     fitCurrentPageToViewport,
     getDocumentFilePath: sourceState.getFilePath,
