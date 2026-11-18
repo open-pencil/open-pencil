@@ -1,0 +1,1 @@
+- Escape closes a fill, stroke, or effect colour picker and keeps what was changed in it, putting back only a drag still held, and each drag in a picker is its own undo step; a drag of an effect colour or of an OkHCL value no longer records a step per movement (#1437).
