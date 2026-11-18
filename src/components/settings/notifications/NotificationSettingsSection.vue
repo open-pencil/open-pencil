@@ -2,6 +2,7 @@
 import { IS_TAURI } from '@open-pencil/core/constants'
 import { useCommentMessages, useI18n } from '@open-pencil/vue/i18n'
 
+import { useNotificationMessages } from '@/app/i18n/notifications'
 import { DEFAULT_APP_PREFERENCES } from '@/app/settings/preferences/store'
 import {
   browserNotificationPermission,
@@ -17,11 +18,13 @@ import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { ai, settings } = useI18n()
 const comments = useCommentMessages()
+const notifications = useNotificationMessages()
 const needsInput = notificationPreference('agentNeedsInput')
 const finished = notificationPreference('agentFinished')
 const failed = notificationPreference('agentFailed')
 const mention = notificationPreference('commentMention')
 const reply = notificationPreference('commentReply')
+const saveFailed = notificationPreference('saveFailed')
 const defaults = DEFAULT_APP_PREFERENCES.notifications
 </script>
 
@@ -81,6 +84,14 @@ const defaults = DEFAULT_APP_PREFERENCES.notifications
         @reset="reply = defaults.commentReply"
       >
         <AppSwitch v-model="reply" :label="comments.notifyReply" />
+      </SettingsRow>
+      <SettingsRow
+        :label="notifications.notifySaveFailed"
+        :description="notifications.notifySaveFailedHint"
+        :modified="saveFailed !== defaults.saveFailed"
+        @reset="saveFailed = defaults.saveFailed"
+      >
+        <AppSwitch v-model="saveFailed" :label="notifications.notifySaveFailed" />
       </SettingsRow>
     </SettingsGroup>
     <AppAlert
