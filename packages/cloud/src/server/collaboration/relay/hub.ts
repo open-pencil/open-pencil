@@ -35,6 +35,17 @@ import {
 
 export type { RelayConnection, RelaySocket } from './connection'
 
+/**
+ * What a relay failure names: the room's document, and the user whose message met it. A peer
+ * that failed to be admitted names only the document a single-document relay serves.
+ */
+export type RelayErrorIds = { documentId?: string; userId?: string }
+
+/** A verified ticket's document, and its person when they signed in rather than came as a guest. */
+function ticketIds({ documentId, principal }: RelayAuthorization): RelayErrorIds {
+  return principal.kind === 'user' ? { documentId, userId: principal.userId } : { documentId }
+}
+
 export type CollaborationRelayOptions = {
   authSecret: string
   store: CollaborationStateStore
@@ -73,7 +84,8 @@ export type CollaborationRelayOptions = {
   persistRetryMs?: number
   /** How long a socket may stay open without presenting a ticket. */
   authTimeoutMs?: number
-  onError?: (message: string, error: unknown) => void
+  /** Told of each failure, with the document and, when one asked, the signed-in user. */
+  onError?: (message: string, error: unknown, ids?: RelayErrorIds) => void
 }
 
 /** Messages a viewer may send; their document writes never leave the relay. */
@@ -106,7 +118,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   const authTimeoutMs = options.authTimeoutMs ?? 10_000
   const report =
     options.onError ??
-    ((message, error) => logCloud('error', message, { source: 'relay', error: loggedError(error) }))
+    ((message, error, ids) =>
+      logCloud('error', message, { source: 'relay', ...ids, error: loggedError(error) }))
 
   async function openRoom(authorization: RelayAuthorization): Promise<Room> {
     const existing = rooms.get(authorization.roomId)
@@ -168,7 +181,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
       await log.save({ closing })
       return true
     } catch (error) {
-      report('Saving a collaboration room failed', error)
+      report('Saving a collaboration room failed', error, { documentId: room.identity.documentId })
       // The room holds edits the store doesn't have; save again without waiting for another edit.
       // A closing room retries through `saveAndClose`.
       if (!closing && rooms.get(room.id) === room) {
@@ -294,7 +307,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         return undefined
       },
       (error: unknown) => {
-        report('Loading a collaboration room failed', error)
+        report('Loading a collaboration room failed', error, ticketIds(peer.authorization))
         peer.socket.close(RELAY_CLOSE.protocol, 'Could not open the collaboration room')
       }
     )
@@ -399,7 +412,11 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     refreshed: remember,
     deliver,
     depart,
-    report
+    report: (message, error, authorization) => {
+      // Before a ticket verified, only the document a per-document relay serves is known.
+      const configured = options.documentId === undefined ? {} : { documentId: options.documentId }
+      report(message, error, authorization ? ticketIds(authorization) : configured)
+    }
   }
 
   return {

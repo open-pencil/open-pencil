@@ -125,8 +125,12 @@ async function startConfiguredServer(
     store: createCollaborationStateStore(database, objects),
     maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
     maximumConnectionsPerRoom: config.technicalLimits.maximumConnectionsPerRoom,
-    onError: (message, error) =>
-      void reportCloudError(reportError, message, error, { source: 'relay' }),
+    onError: (message, error, { userId, ...resources } = {}) =>
+      void reportCloudError(reportError, message, error, {
+        source: 'relay',
+        resources,
+        ...(userId && { userId })
+      }),
     ...relayDocumentLookups(database, policy, config.deployment)
   })
   const app = createCloudApp({

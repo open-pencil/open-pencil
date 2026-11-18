@@ -7,7 +7,8 @@ import {
   createConfiguredCloudPolicy,
   relayDocumentLookups,
   reportCloudError,
-  type CollaborationRelay
+  type CollaborationRelay,
+  type CollaborationRelayOptions
 } from '#cloud/server'
 import { DurableObject } from 'cloudflare:workers'
 import type { Context } from 'hono'
@@ -77,7 +78,7 @@ export function relayRoute(jurisdiction?: DurableObjectJurisdiction) {
 function configuredRelay(
   { config }: PreparedCloudflareCloud,
   documentId: string,
-  onError: (message: string, error: unknown) => void
+  onError: NonNullable<CollaborationRelayOptions['onError']>
 ): CollaborationRelay {
   // Hyperdrive keeps no session settings and ends queries past its own limit.
   const database = createPostgresCloudDatabase({
@@ -124,10 +125,17 @@ export function createCloudflareRelayObject(
       sockets: () => this.ctx.getWebSockets(),
       createRelay: async (documentId) => {
         const prepared = await prepare(this.env)
-        return configuredRelay(prepared, documentId, (message, error) =>
-          this.ctx.waitUntil(
-            reportCloudError(prepared.reportError, message, error, { source: 'relay' })
-          )
+        return configuredRelay(
+          prepared,
+          documentId,
+          (message, error, { userId, ...resources } = {}) =>
+            this.ctx.waitUntil(
+              reportCloudError(prepared.reportError, message, error, {
+                source: 'relay',
+                resources,
+                ...(userId && { userId })
+              })
+            )
         )
       }
     })
