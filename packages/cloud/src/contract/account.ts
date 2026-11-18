@@ -31,14 +31,13 @@ export const cloudAccountStatusResponseSchema = v.object({
 /** Accepting the server's terms: the version the person read, which must be the current one. */
 export const cloudTermsAcceptanceSchema = v.object({ version: v.pipe(v.string(), v.minLength(1)) })
 
-/** The providers a person can sign in with besides a password. */
-export const cloudSocialProviderSchema = v.picklist(['google', 'apple', 'github'])
+/** The providers a person can sign in with besides a password, which this editor has buttons for. */
+export const CLOUD_SOCIAL_PROVIDERS = ['google', 'apple', 'github'] as const
+export const cloudSocialProviderSchema = v.picklist(CLOUD_SOCIAL_PROVIDERS)
 export type CloudSocialProvider = v.InferOutput<typeof cloudSocialProviderSchema>
 export const cloudAuthenticationProviderSchema = v.picklist([
   'credential',
-  'google',
-  'apple',
-  'github'
+  ...CLOUD_SOCIAL_PROVIDERS
 ])
 export const cloudAuthenticationMethodSchema = v.object({
   id: v.string(),
@@ -46,9 +45,29 @@ export const cloudAuthenticationMethodSchema = v.object({
   createdAt: v.string(),
   canUnlink: v.boolean()
 })
+
+/** Whether this editor knows `provider`, so a newer server's other providers can be left out. */
+export function isKnownSocialProvider(provider: string): provider is CloudSocialProvider {
+  return (CLOUD_SOCIAL_PROVIDERS as readonly string[]).includes(provider)
+}
+
+/**
+ * A newer server may list a provider this editor has no words or button for: those entries are
+ * left out rather than failing the whole response, and anything else malformed still fails.
+ */
 export const cloudAuthenticationMethodsResponseSchema = v.object({
-  methods: v.array(cloudAuthenticationMethodSchema),
-  availableSocialProviders: v.array(cloudSocialProviderSchema)
+  methods: v.pipe(
+    v.array(v.looseObject({ provider: v.string() })),
+    v.filterItems(
+      (method) => method.provider === 'credential' || isKnownSocialProvider(method.provider)
+    ),
+    v.array(cloudAuthenticationMethodSchema)
+  ),
+  availableSocialProviders: v.pipe(
+    v.array(v.string()),
+    v.filterItems(isKnownSocialProvider),
+    v.array(cloudSocialProviderSchema)
+  )
 })
 export const cloudPasswordChangeSchema = v.object({
   currentPassword: v.string(),
@@ -217,7 +236,7 @@ export const cloudEmailChangeSchema = v.object({
 })
 
 /** How a sign-in was made: the method it used, or the desktop app's approved code. */
-export const cloudSignInMethodSchema = v.picklist([
+const SIGN_IN_METHODS = [
   'password',
   'google',
   'apple',
@@ -227,12 +246,15 @@ export const cloudSignInMethodSchema = v.picklist([
   'email-link',
   'desktop',
   'other'
-])
+] as const
+export const cloudSignInMethodSchema = v.picklist(SIGN_IN_METHODS)
+/** A method a newer server names that this editor does not know reads as `other`. */
+const signInMethodResponseSchema = v.fallback(cloudSignInMethodSchema, 'other')
 export const cloudAccountSessionSchema = v.object({
   id: v.string(),
   /** The session this request was made with. */
   current: v.boolean(),
-  method: v.nullable(cloudSignInMethodSchema),
+  method: v.nullable(signInMethodResponseSchema),
   ipAddress: v.nullable(v.string()),
   /** The browser and system the server read from the client's user agent, such as `Chrome 141`. */
   browser: v.nullable(v.string()),
@@ -247,7 +269,7 @@ export const cloudAccountSessionsResponseSchema = v.object({
 export const cloudSessionRevokeSchema = v.object({ sessionId: v.pipe(v.string(), v.minLength(1)) })
 export const cloudSignInSchema = v.object({
   id: v.string(),
-  method: cloudSignInMethodSchema,
+  method: signInMethodResponseSchema,
   ipAddress: v.nullable(v.string()),
   /** The browser and system the server read from the client's user agent, such as `Chrome 141`. */
   browser: v.nullable(v.string()),
