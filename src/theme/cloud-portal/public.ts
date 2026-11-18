@@ -10,14 +10,14 @@ export default {
     header: 'flex flex-col items-center gap-4 text-center',
     icon: 'size-12 rounded-xl',
     headingGroup: 'flex flex-col gap-1.5',
-    title: 'text-xl font-semibold text-balance',
-    description: 'text-sm text-pretty text-muted',
+    title: 'text-xl font-semibold',
+    description: 'text-sm text-muted',
     body: 'flex flex-col gap-4',
     aside: 'flex flex-wrap items-center justify-center gap-1 text-sm text-muted',
     footer:
       'flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 pb-6 text-xs text-muted',
     footerLink: 'hover:text-surface hover:underline',
-    note: 'text-center text-xs text-pretty text-muted',
+    note: 'text-center text-xs text-muted',
     inlineLink: 'underline underline-offset-2 hover:text-surface',
     tile: 'flex size-12 items-center justify-center rounded-xl bg-panel-field text-muted',
     actions: 'flex flex-col gap-2'

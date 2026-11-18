@@ -84,7 +84,7 @@ useHead({ title: () => messages.value.communityTitle })
       <div class="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2">
         <div class="col-span-2 min-w-0 sm:col-span-1">
           <h1 class="text-base font-semibold">{{ messages.communityTitle }}</h1>
-          <p class="mt-0.5 text-pretty text-xs text-muted">{{ messages.communityDescription }}</p>
+          <p class="mt-0.5 text-xs text-muted">{{ messages.communityDescription }}</p>
         </div>
         <div class="col-span-2 flex items-center justify-end gap-1 sm:col-span-1">
           <AppSelect v-model="kind" :label="files.fileKind" :options="kindOptions" class="w-28" />
