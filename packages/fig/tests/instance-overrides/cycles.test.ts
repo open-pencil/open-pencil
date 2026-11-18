@@ -82,8 +82,10 @@ function shown(occurrence: InstanceOccurrence): Shown {
 function read(changes: NodeChange[]) {
   const leftOut: string[] = []
   const interpreter = createOccurrenceInterpreter(changes)
+  // As a file session reads: a swap whose layer is gone is reported, not fatal.
   const options = {
-    onCyclicComponent: ({ instanceId }: { instanceId: string }) => leftOut.push(instanceId)
+    onCyclicComponent: ({ instanceId }: { instanceId: string }) => leftOut.push(instanceId),
+    onUnresolvedAssignment: () => undefined
   }
   return {
     component: (localID: number) => shown(interpreter.component(id(localID), options)),
@@ -266,6 +268,131 @@ describe('a component that would contain itself', () => {
   })
 })
 
+const swapAt = (path: number[], to: number) => ({
+  guidPath: { guids: path.map(guid) },
+  overriddenSymbolID: guid(to)
+})
+
+describe('a repair that matches the definitions, whatever a read expands', () => {
+  test('keeps an instance whose own swap replaces the component it would repeat', () => {
+    const changes = [
+      ...components({
+        nested: {
+          symbolData: { symbolID: guid(OUTER), symbolOverrides: [swapAt([OUTER], INNER)] }
+        } as Partial<NodeChange>
+      }),
+      record(50, 'SYMBOL', PAGE, '#'),
+      instance(51, 50, '!', 50)
+    ]
+    const reader = read(changes)
+    reader.component(50)
+
+    expect(reader.component(OUTER)).toEqual({
+      id: id(OUTER),
+      children: [{ id: id(NESTED), main: id(INNER), children: [] }]
+    })
+    expect(reader.leftOut()).toEqual([id(51)])
+  })
+
+  test('expands a repeat that a swap from further out led into', () => {
+    const reader = read([
+      ...components(),
+      record(60, 'SYMBOL', PAGE, '#'),
+      instance(61, 60, '!', OUTER),
+      instance(OUTER_INSTANCE, PAGE, '$', OUTER, {
+        symbolData: { symbolID: guid(OUTER), symbolOverrides: [swapAt([NESTED], 60)] }
+      } as Partial<NodeChange>)
+    ])
+
+    expect(reader.instance(OUTER_INSTANCE)).toEqual({
+      id: id(OUTER_INSTANCE),
+      main: id(OUTER),
+      children: [
+        {
+          id: id(NESTED),
+          main: id(60),
+          children: [
+            {
+              id: id(61),
+              main: id(OUTER),
+              children: [{ id: id(NESTED), main: id(INNER), children: [] }]
+            }
+          ]
+        }
+      ]
+    })
+    expect(reader.leftOut()).toEqual([])
+  })
+
+  test('leaves the instance out wherever its component is used, swapped or not', () => {
+    const changes = [
+      ...components({ nested: { symbolData: { symbolID: guid(OUTER) } } as Partial<NodeChange> }),
+      record(50, 'SYMBOL', PAGE, '#'),
+      instance(51, 50, '!', OUTER, {
+        symbolData: { symbolID: guid(OUTER), symbolOverrides: [swapAt([NESTED], INNER)] }
+      } as Partial<NodeChange>)
+    ]
+    const expected = {
+      id: id(50),
+      children: [{ id: id(51), main: id(OUTER), children: [] }]
+    }
+
+    expect(read(changes).component(50)).toEqual(expected)
+    const reader = read(changes)
+    reader.component(OUTER)
+    expect(reader.component(50)).toEqual(expected)
+  })
+
+  test('ignores overrides addressed to the instance it left out', () => {
+    const reader = read([
+      ...components({ nested: { symbolData: { symbolID: guid(OUTER) } } as Partial<NodeChange> }),
+      instance(OUTER_INSTANCE, PAGE, '#', OUTER, {
+        symbolData: {
+          symbolID: guid(OUTER),
+          symbolOverrides: [{ guidPath: { guids: [guid(NESTED)] }, visible: false }]
+        }
+      } as Partial<NodeChange>)
+    ])
+
+    expect(reader.instance(OUTER_INSTANCE)).toEqual({
+      id: id(OUTER_INSTANCE),
+      main: id(OUTER),
+      children: []
+    })
+  })
+
+  test('does not count a swap whose layer is gone as a way back', () => {
+    const reader = read([
+      ...components({ nested: { symbolData: { symbolID: guid(OUTER) } } as Partial<NodeChange> }),
+      instance(22, OUTER, '"', INNER, {
+        symbolData: { symbolID: guid(INNER), symbolOverrides: [swapAt([999], OUTER)] }
+      } as Partial<NodeChange>)
+    ])
+
+    expect(reader.component(OUTER)).toEqual({
+      id: id(OUTER),
+      children: [{ id: id(22), main: id(INNER), children: [] }]
+    })
+    expect(reader.leftOut()).toEqual([id(NESTED)])
+  })
+
+  test('walks every root of a document without a document record', () => {
+    const changes = [
+      record(1, 'CANVAS', undefined, '!'),
+      record(2, 'CANVAS', undefined, '"'),
+      record(10, 'SYMBOL', 2, '!'),
+      instance(11, 10, '!', 20),
+      record(20, 'SYMBOL', 2, '"'),
+      instance(21, 20, '!', 10)
+    ]
+    for (const start of [10, 20]) {
+      const reader = read(changes)
+      reader.component(start)
+      expect(reader.leftOut()).toEqual([id(21)])
+    }
+  })
+})
+
 test('a page read loses the instance a read of the whole document loses', async () => {
   // The component that decides the loop is on another page, outside what the page read needs.
   const changes = components()
@@ -280,15 +407,27 @@ test('a page read loses the instance a read of the whole document loses', async 
     instance(OUTER_INSTANCE, OTHER_PAGE, '#', INNER)
   )
   const bytes = await figArchiveOf(changes)
-  const leftOut = (pageIds?: ReadonlySet<string>) => {
+  const open = (pageIds?: ReadonlySet<string>) => {
     const instances: string[] = []
-    materializeFigArchive(bytes.slice(0), {
+    const { graph, componentIds } = materializeFigArchive(bytes.slice(0), {
       pageIds,
       onCyclicComponent: ({ instanceId }) => instances.push(instanceId)
     })
-    return [...new Set(instances)]
+    const layers = (componentId: number) =>
+      graph.getNode(componentIds.get(id(componentId)) ?? '')?.childIds.map((child) => {
+        const main = graph.getNode(child)?.componentId
+        return main ? graph.getNode(main)?.name : undefined
+      })
+    return {
+      leftOut: [...new Set(instances)],
+      inner: layers(INNER),
+      outer: layers(OUTER),
+      decider: componentIds.has(id(50))
+    }
   }
 
-  expect(leftOut(new Set([id(OTHER_PAGE)]))).toEqual([id(22)])
-  expect(leftOut()).toEqual([id(22)])
+  // Inner loses its instance of Outer; Outer keeps its instance of Inner.
+  const loop = { leftOut: [id(22)], inner: [], outer: [`SYMBOL ${INNER}`] }
+  expect(open(new Set([id(OTHER_PAGE)]))).toEqual({ ...loop, decider: false })
+  expect(open()).toEqual({ ...loop, decider: true })
 })

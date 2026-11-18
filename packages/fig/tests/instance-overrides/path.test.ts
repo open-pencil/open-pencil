@@ -43,18 +43,20 @@ describe('instance-path interpretation', () => {
     )
   })
 
-  test('rejects an instance that is its own component', () => {
-    expect(() =>
-      interpretInstance(
-        [
-          {
-            guid: { sessionID: 1, localID: 1 },
-            type: 'INSTANCE',
-            symbolData: { symbolID: { sessionID: 1, localID: 1 } }
-          }
-        ],
-        '1:1'
-      )
-    ).toThrow('Instance 1:1 would contain its own component')
+  test('reads an instance that is its own component as showing nothing', () => {
+    const leftOut: string[] = []
+    const result = interpretInstance(
+      [
+        {
+          guid: { sessionID: 1, localID: 1 },
+          type: 'INSTANCE',
+          symbolData: { symbolID: { sessionID: 1, localID: 1 } }
+        }
+      ],
+      '1:1',
+      { onCyclicComponent: ({ instanceId }) => leftOut.push(instanceId) }
+    )
+    expect(result.children).toEqual([])
+    expect(leftOut).toEqual(['1:1'])
   })
 })

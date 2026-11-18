@@ -16,6 +16,8 @@ export interface PropertyBinding {
   origin: 'default' | 'assignment'
   /** Expansion depth of the owner that assigned the value; smaller is further out. */
   rank?: number
+  /** The record that assigned the value. */
+  ownerId?: string
   /** Values this binding replaced, innermost first; claims may still address them. */
   superseded?: ComponentPropValue[]
 }
@@ -44,7 +46,8 @@ export function assignmentValue(
 export function instanceBindings(
   defaults: readonly PropertyBinding[],
   assignments: readonly ComponentPropAssignment[],
-  rank?: number
+  rank?: number,
+  ownerId?: string
 ): PropertyBinding[] {
   const result = structuredClone([...defaults])
   for (const assignment of assignments) {
@@ -53,9 +56,10 @@ export function instanceBindings(
     const binding: PropertyBinding = {
       id: assignment.defID,
       value: structuredClone(value),
-      origin: 'assignment',
-      ...(rank === undefined ? {} : { rank })
+      origin: 'assignment'
     }
+    if (rank !== undefined) binding.rank = rank
+    if (ownerId !== undefined) binding.ownerId = ownerId
     const index = result.findIndex((entry) => sameGuid(entry.id, binding.id))
     if (index === -1) {
       result.push(binding)

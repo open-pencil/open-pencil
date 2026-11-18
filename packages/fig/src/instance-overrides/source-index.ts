@@ -10,6 +10,7 @@ import {
   createTextStyleLookup,
   type TextStyleLookup
 } from '../node-change/style/lookup'
+import type { ComponentLoops } from './loops'
 import { findWithinBoundary, type TreeShape } from './tree'
 
 /** Archive records indexed by GUID, with children in saved order. */
@@ -22,10 +23,10 @@ export interface InterpreterIndex extends SourceIndex {
   readonly variables: DocumentVariables
   readonly textStyle: TextStyleLookup
   /**
-   * The document's instances whose component would contain itself, for an index over part of a
-   * document: which instance a loop loses depends on the whole document's layer order.
+   * The document's component loops, for an index over part of a document: which instance a
+   * loop loses depends on the whole document's layer order.
    */
-  readonly cyclicInstances?: () => ReadonlySet<string>
+  readonly componentLoops?: ComponentLoops
 }
 
 /** A record's archive identity, or undefined for the rare record without a GUID. */
