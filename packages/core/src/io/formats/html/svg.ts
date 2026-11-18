@@ -21,15 +21,33 @@ import { svgViewportAttributes } from '#core/vector/vectorize/svg/transform'
 
 import { designElements } from './elements'
 
+/** The computed properties that can name a definition with `url(#id)`. */
+const REFERENCING_PROPERTIES = [
+  'fill',
+  'stroke',
+  'clip-path',
+  'mask',
+  'filter',
+  'marker-start',
+  'marker-mid',
+  'marker-end'
+]
+
 /**
  * The ids an element and what it holds refer to: by `href`, as `<use>` does, or by `url(#id)`
- * in any attribute or inline style, as clip paths, masks, filters, and paints do.
+ * in any attribute, inline style, or style a stylesheet gives it, as clip paths, masks,
+ * filters, and paints do.
  */
 function referencedIds(element: DesignElement): string[] {
   return designElements([element]).flatMap((child) => {
     const attrs: Partial<Record<string, string>> = child.attrs
     const href = attrs.href ?? attrs['xlink:href']
-    const values = [...Object.values(child.attrs), ...Object.values(child.inlineStyle ?? {})]
+    const computed = REFERENCING_PROPERTIES.map((property) => child.computedStyle?.[property])
+    const values = [
+      ...Object.values(child.attrs),
+      ...Object.values(child.inlineStyle ?? {}),
+      ...computed
+    ]
     return [...compact([parseFragmentReference(href)]), ...values.flatMap(parseCSSURLReferences)]
   })
 }
