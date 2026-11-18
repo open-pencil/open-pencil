@@ -1,3 +1,4 @@
+import { useDebounceFn } from '@vueuse/core'
 import { computed, shallowRef, watch, type Ref } from 'vue'
 
 import type { CloudServicesClient } from '@open-pencil/cloud/client'
@@ -46,6 +47,25 @@ let reads = 0
 
 function walletKey(identity: string | null, workspaceId: string | null): string | null {
   return identity && workspaceId ? `${identity}\n${workspaceId}` : null
+}
+
+/**
+ * How many Cloud model requests each wallet has seen finish, so every view of it reads it again
+ * afterwards, whatever made the request: the chat, a review, or naming a conversation.
+ */
+const settledRequests = shallowRef<ReadonlyMap<string, number>>(new Map())
+/** A reply's steps finish one after another, so the wallet is read once they pause. */
+const SETTLED_READ_DELAY_MS = 500
+
+/** Notes that a request to a workspace's Cloud models has finished, and so may have spent credits. */
+export function noteCloudRequestSettled(
+  workspaceId: string,
+  identity: string | null = cloudAIIdentity.value
+): void {
+  const at = walletKey(identity, workspaceId)
+  if (!at) return
+  const count = (settledRequests.value.get(at) ?? 0) + 1
+  settledRequests.value = new Map(settledRequests.value).set(at, count)
 }
 
 /**
@@ -112,6 +132,13 @@ export function useCloudCreditBalance(
   watch(replying, (now, before) => {
     if (before && !now) void refresh()
   })
+  const refreshAfterSettling = useDebounceFn(() => void refresh(), SETTLED_READ_DELAY_MS)
+  watch(
+    () => [key.value, key.value ? (settledRequests.value.get(key.value) ?? 0) : 0] as const,
+    ([at, count], [before, countBefore]) => {
+      if (at && at === before && count !== countBefore) void refreshAfterSettling()
+    }
+  )
 
   return {
     /** Credits left, or `null` when unknown or unlimited. */

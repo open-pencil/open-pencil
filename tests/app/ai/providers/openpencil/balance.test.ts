@@ -5,6 +5,7 @@ import { effectScope, nextTick, ref, type EffectScope } from 'vue'
 import type { CreditWallet } from '@open-pencil/cloud/contract'
 
 import {
+  noteCloudRequestSettled,
   useCloudCreditBalance,
   type CloudBalanceSource
 } from '@/app/ai/providers/openpencil/balance'
@@ -274,5 +275,22 @@ describe('useCloudCreditBalance', () => {
     home.answers[1]?.resolve(wallet(0))
     await settle()
     expect(chat.balance.value).toBe(0)
+  })
+
+  test('reads the balance again after a Cloud request settles, whatever made it', async () => {
+    const home = homeCloud()
+    const banner = show(home.source)
+    home.answers[0]?.resolve(wallet(1200))
+    await settle()
+
+    // Two steps of one reply finish close together, and the wallet is read once after them.
+    noteCloudRequestSettled('team', home.identity.value)
+    noteCloudRequestSettled('team', home.identity.value)
+    await settle()
+    await Bun.sleep(600)
+    expect(home.answers).toHaveLength(2)
+    home.answers[1]?.resolve(wallet(300))
+    await settle()
+    expect(banner.balance.value).toBe(300)
   })
 })

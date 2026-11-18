@@ -13,7 +13,7 @@ async function modelFailure(status: number, body: unknown): Promise<unknown> {
     tokens: { token: async () => 'cloud-token', invalidate: () => undefined },
     fetch: async () => Response.json(body, { status })
   })
-  const { config, runtime } = cloudModelConfig(client, 'test/model')
+  const { config, runtime } = cloudModelConfig(client, 'test/model', 'workspace-1')
   const model = await createLanguageModel(config, runtime)
   if (typeof model === 'string') throw new Error('Expected a model instance')
   try {
