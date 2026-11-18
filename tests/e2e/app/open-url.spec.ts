@@ -8,7 +8,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
-import { getPageChildren } from '#tests/helpers/store'
+import { getPageChildren, getPageTexts } from '#tests/helpers/store'
 
 const SITE = 'https://site.example.test'
 /** Lets the app's own origin read the fake site, as a site that allows other sites does. */
@@ -32,22 +32,26 @@ async function expectRefused(page: Page, dialog: Locator) {
 
 test('a web page opens as layers with the stylesheet and pictures it links', async ({ page }) => {
   const png = await readFile(join(FIXTURES, 'absolute-constraint-figma.png'))
+  const font = await readFile(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf'))
   await page.route(`${SITE}/**`, (route) => {
     const { pathname } = new URL(route.request().url())
     if (pathname === '/') {
       return route.fulfill({
         headers: { ...OPEN, 'content-type': 'text/html' },
-        body: '<link rel="stylesheet" href="/site.css"><div class="box"></div><img src="img/photo.png"><img src="img/logo.svg" style="display:block;width:40px;height:20px">'
+        body: '<link rel="stylesheet" href="/site.css"><div class="box"></div><img src="img/photo.png"><img src="img/logo.svg" style="display:block;width:40px;height:20px"><p>Set in the site font</p>'
       })
     }
     if (pathname === '/site.css') {
       return route.fulfill({
         headers: { ...OPEN, 'content-type': 'text/css' },
-        body: '.box { width: 120px; height: 40px; background: #2563eb }'
+        body: "@font-face { font-family: 'Site Sans'; src: url(fonts/site.ttf) format('truetype') } .box { width: 120px; height: 40px; background: #2563eb } p { font-family: 'Site Sans', sans-serif; margin: 0 }"
       })
     }
     if (pathname === '/img/photo.png') {
       return route.fulfill({ headers: { ...OPEN, 'content-type': 'image/png' }, body: png })
+    }
+    if (pathname === '/fonts/site.ttf') {
+      return route.fulfill({ headers: { ...OPEN, 'content-type': 'font/ttf' }, body: font })
     }
     if (pathname === '/img/logo.svg') {
       return route.fulfill({
@@ -77,8 +81,14 @@ test('a web page opens as layers with the stylesheet and pictures it links', asy
       { width: 120, image: false, artwork: false },
       expect.objectContaining({ image: true }),
       // The SVG picture becomes the vector layers it draws, at the size the page shows it.
-      { width: 40, image: false, artwork: true }
+      { width: 40, image: false, artwork: true },
+      expect.objectContaining({ artwork: true })
     ])
+  // Text in the page's own web font is set in it, loaded from the site.
+  expect(await getPageTexts(page)).toContainEqual({
+    text: 'Set in the site font',
+    fontFamily: 'Site Sans'
+  })
 })
 
 test('an address that holds a PDF says it cannot be opened yet', async ({ page }) => {

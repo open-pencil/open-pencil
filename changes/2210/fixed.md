@@ -8,3 +8,4 @@
 - Imported HTML draws a border only on the sides a page gives a width, in that side's color, so a reset such as `* { border: 0 solid }` no longer turns a transparent border into a visible line (#2210).
 - An SVG paint that refers to a `<pattern>` falls back to the color written after it, or paints nothing, instead of painting the shape black (#2210).
 - A corner radius given as a percentage, such as `border-radius: 50%` on a dot or an avatar, rounds the imported layer instead of being dropped (#2210).
+- HTML opened or pasted in the app is set in the fonts its page loads with `@font-face`, icon fonts among them, as the CLI already did (#2210).

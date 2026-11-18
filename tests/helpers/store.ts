@@ -27,6 +27,18 @@ export function getPageChildren(page: Page) {
   })
 }
 
+/** Every text layer on the current page, at any depth: its text and the family it is set in. */
+export function getPageTexts(page: Page) {
+  return page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.graph
+      .flattenTree(store.state.currentPageId)
+      .filter(({ node }) => node.type === 'TEXT')
+      .map(({ node }) => ({ text: node.text, fontFamily: node.fontFamily }))
+  })
+}
+
 export function getSelectedNode(page: Page) {
   return page.evaluate(() => {
     const store = window.openPencil?.getStore?.()

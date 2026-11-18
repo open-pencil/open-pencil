@@ -2,6 +2,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import type { ShaderPreset } from '@open-pencil/scene-graph/shaders'
 
+import type { CSSFontFaceRule } from './import/font-faces'
 import type { DesignTokens } from './tokens/references'
 
 export type DesignNode = DesignElement | DesignText
@@ -10,6 +11,11 @@ export interface DesignDocument {
   type: 'document'
   children: DesignNode[]
   stylesheets?: DesignStyleSheet[]
+  /**
+   * The `@font-face` rules of the page's stylesheets, linked and imported ones included, for a
+   * host to load the faces its text is set in.
+   */
+  fontFaces?: CSSFontFaceRule[]
   sourceGraph?: SceneGraph
   /** Variable references the projection wrote, for Tailwind names and the token stylesheet. */
   tokens?: DesignTokens

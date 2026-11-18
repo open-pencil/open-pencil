@@ -3,6 +3,7 @@ import { basename, extname } from 'pathe'
 import { resolveEditorProfile } from '@open-pencil/core'
 import {
   HTML_IMPORT_VIEWPORT,
+  loadPageFontFaces,
   sceneGraphFromStyledHTML
 } from '@open-pencil/core/io/formats/html/layers'
 import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
@@ -61,6 +62,7 @@ export function createDOMOpenActions({
     load.update({ phase: 'styling', detail: pageName })
     // Laid out as a browser would, so layers land where the page put its elements.
     const { baseURL } = options
+    const fetch = pageFetch()
     const styled = await browserHTMLToDesignDocument(html, {
       cssText: options.cssText,
       signal: load.signal,
@@ -68,13 +70,17 @@ export function createDOMOpenActions({
       // A page from the web brings its stylesheets and pictures from where it lives.
       baseURL,
       importLinkedStylesheets: baseURL !== undefined,
-      fetch: pageFetch()
+      fetch
     })
     load.signal.throwIfAborted()
     load.update({ phase: 'layout', detail: pageName })
     const matcher = importIconMatcher(editor, load.signal)
+    // The page's own fonts, icon fonts among them, before its text is set in them.
+    const pageFamilies = await loadPageFontFaces(styled, fetch)
+    load.signal.throwIfAborted()
     const graph = await sceneGraphFromStyledHTML(styled, {
       pageName,
+      pageFamilies,
       // Asked only when the page draws SVG it does not name, which the index may be loading for.
       matchIcon:
         matcher &&

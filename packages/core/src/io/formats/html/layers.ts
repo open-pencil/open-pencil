@@ -10,7 +10,7 @@ import type { IconMatcher } from '#core/icons/match'
 import { layoutAuthoredNodes } from '#core/layout'
 import { prepareGraphFonts } from '#core/text/prepare'
 
-import { resolvePageFontFamilies } from './fonts'
+import { resolvePageFontFamilies, type PageFontFamilies } from './fonts'
 import { drawInlineSVGs } from './svg'
 
 /**
@@ -34,12 +34,18 @@ export const HTML_IMPORT_VIEWPORT: DesignViewport = { width: 1440, height: 900 }
  */
 export async function sceneGraphFromStyledHTML(
   styled: DesignDocument,
-  options: { pageName?: string; matchIcon?: IconMatcher } = {}
+  options: {
+    pageName?: string
+    matchIcon?: IconMatcher
+    /** The families the page's own `@font-face` rules loaded, as `loadPageFontFaces` returns them. */
+    pageFamilies?: PageFontFamilies
+  } = {}
 ): Promise<SceneGraph> {
-  // Text is set in the first family of its `font-family` list there is a font for, as a browser
-  // sets it, rather than naming one the editor cannot draw, such as `Helvetica Neue` on a system
-  // without it. Families the HTML engine already resolved name a single font that loads.
-  await resolvePageFontFamilies(styled)
+  // Text is set in the first family of its `font-family` list there is a font for, the page's own
+  // first, as a browser sets it, rather than naming one the editor cannot draw, such as
+  // `Helvetica Neue` on a system without it. Families the HTML engine already resolved name a
+  // single font that loads.
+  await resolvePageFontFamilies(styled, options.pageFamilies)
   const { graph, boxes, transforms, svgs } = designDocumentToLayers(styled, {
     pageName: options.pageName
   })
@@ -54,3 +60,5 @@ export async function sceneGraphFromStyledHTML(
   applyCSSTransforms(graph, transforms)
   return graph
 }
+
+export { loadPageFontFaces } from './page-fonts'

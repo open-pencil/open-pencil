@@ -1,6 +1,13 @@
 import { delay } from 'es-toolkit'
 
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 import { serializeHTML } from '../export/html'
+import {
+  parseFontFaceRules,
+  parseStylesheetImports,
+  type CSSFontFaceRule
+} from '../import/font-faces'
 import type {
   CSSComputeOptions,
   CSSRuntime,
@@ -496,6 +503,34 @@ async function copyComputedStyles(
   return { document: nextDocument, images }
 }
 
+/** The most stylesheets read for a page's `@font-face` rules, through linked sheets and `@import`. */
+const MAX_FONT_STYLESHEETS = 32
+
+/**
+ * The `@font-face` rules of a page's CSS and every stylesheet it imports, read with `fetch`: the
+ * sandbox loaded those sheets, but one from another site cannot be read back from it.
+ */
+async function fontFaceRules(
+  cssText: string,
+  baseURL: string | undefined,
+  fetch: DesignResourceFetch
+): Promise<CSSFontFaceRule[]> {
+  const rules = parseFontFaceRules(cssText, baseURL)
+  const queue = parseStylesheetImports(cssText, baseURL)
+  const read = new Set<string>()
+  while (queue.length > 0 && read.size < MAX_FONT_STYLESHEETS) {
+    const url = queue.shift()
+    if (url === undefined || read.has(url)) continue
+    read.add(url)
+    const sheet = await fetch(url, AbortSignal.timeout(IMAGE_LOAD_LIMIT_MS)).catch(() => null)
+    if (!sheet) continue
+    const css = new TextDecoder().decode(sheet.bytes)
+    appendAll(rules, parseFontFaceRules(css, sheet.url))
+    appendAll(queue, parseStylesheetImports(css, sheet.url))
+  }
+  return rules
+}
+
 /**
  * Reads each image's picture with `fetch` and puts it on its element, each address once. One that
  * cannot be read leaves its element as it was.
@@ -544,6 +579,9 @@ export function createBrowserCSSRuntime(options: BrowserCSSRuntimeOptions = {}):
               computeOptions
             )
       await attachImages(copied.images, options.fetch)
+      if (options.fetch) {
+        copied.document.fontFaces = await fontFaceRules(cssText, options.baseURL, options.fetch)
+      }
       return copied.document
     }
   }
