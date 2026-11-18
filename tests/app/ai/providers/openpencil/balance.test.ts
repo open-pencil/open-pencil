@@ -147,17 +147,60 @@ describe('useCloudCreditBalance', () => {
     const home = homeCloud()
     const chat = show(home.source)
     const banner = show(home.source)
+    // The banner waits for the chat's read rather than starting its own.
+    expect(home.answers).toHaveLength(1)
     home.answers[0]?.resolve(wallet(1200))
-    home.answers[1]?.resolve(wallet(1200))
     await settle()
+    expect(banner.balance.value).toBe(1200)
 
     // A reply in the chat reads the balance again, and the banner shows what it found.
     chat.replying.value = true
     await settle()
     chat.replying.value = false
     await settle()
-    home.answers[2]?.resolve(wallet(900))
+    home.answers[1]?.resolve(wallet(900))
     await settle()
     expect(banner.balance.value).toBe(900)
+  })
+
+  test('keeps a newer balance when another view’s earlier read answers last', async () => {
+    const home = homeCloud()
+    const chat = show(home.source)
+    const banner = show(home.source)
+    home.answers[0]?.resolve(wallet(1200))
+    await settle()
+
+    // The banner reads, then a reply ends in the chat and reads again; the chat answers first.
+    void banner.refresh()
+    chat.replying.value = true
+    await settle()
+    chat.replying.value = false
+    await settle()
+    const [, older, newer] = home.answers
+    newer?.resolve(wallet(0))
+    await settle()
+    older?.resolve(wallet(500))
+    await settle()
+
+    expect(banner.balance.value).toBe(0)
+    expect(chat.balance.value).toBe(0)
+  })
+
+  test('shows nothing for a workspace it returns to until its wallet answers again', async () => {
+    const home = homeCloud()
+    const credits = show(home.source)
+    home.answers[0]?.resolve(wallet(0))
+    await settle()
+    credits.workspaceId.value = 'other'
+    await settle()
+    home.answers[1]?.resolve(wallet(50))
+    await settle()
+
+    credits.workspaceId.value = 'team'
+    await settle()
+    expect(credits.balance.value).toBeNull()
+    home.answers[2]?.resolve(wallet(5_000))
+    await settle()
+    expect(credits.balance.value).toBe(5_000)
   })
 })

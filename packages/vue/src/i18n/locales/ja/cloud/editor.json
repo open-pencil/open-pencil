@@ -266,6 +266,7 @@
   "creditsOutBanner": "AIクレジットを使い切りました。",
   "creditsOutUntilBanner": "{date}までAIクレジットを使い切りました。",
   "creditsBuy": "クレジットを購入",
+  "creditsAskOwner": "ワークスペースの所有者に追加購入を依頼してください。",
   "savePublicLabel": "公開",
   "savePublicHeading": "ここに保存したものは誰でも開けます",
   "savePublicDescription": "このワークスペースはサーバーのコミュニティギャラリーです。ここに保存するとドキュメントが公開されます。",

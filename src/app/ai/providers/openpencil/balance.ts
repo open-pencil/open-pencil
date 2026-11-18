@@ -25,6 +25,12 @@ interface CloudBalanceOptions {
  * shows the same answer: a reply that ends in the chat refreshes the banner's too.
  */
 const wallets = shallowRef<ReadonlyMap<string, CreditWallet | null>>(new Map())
+/**
+ * The latest read of each wallet, shared by every view, so only its answer is kept: an earlier
+ * read that answers last, from any view, never replaces a newer balance.
+ */
+const latestReads = new Map<string, number>()
+let reads = 0
 
 function walletKey(identity: string | null, workspaceId: string | null): string | null {
   return identity && workspaceId ? `${identity}\n${workspaceId}` : null
@@ -38,7 +44,6 @@ export function useCloudCreditBalance(
   { workspaceId, replying }: CloudBalanceOptions,
   source: CloudBalanceSource = HOME_CLOUD
 ) {
-  let request = 0
   const key = computed(() => walletKey(source.identity.value, workspaceId()))
   const wallet = computed(() => (key.value ? (wallets.value.get(key.value) ?? null) : null))
 
@@ -47,20 +52,36 @@ export function useCloudCreditBalance(
   }
 
   async function refresh(): Promise<void> {
-    const current = ++request
     const at = key.value
     const id = workspaceId()
     const client = id ? source.client(id) : null
     if (!at || !client) return
+    const read = ++reads
+    latestReads.set(at, read)
     try {
       const next = await client.wallet()
-      if (current === request) store(at, next)
+      if (latestReads.get(at) === read) store(at, next)
     } catch {
-      if (current === request) store(at, null)
+      if (latestReads.get(at) === read) store(at, null)
     }
   }
 
-  watch(key, () => void refresh(), { immediate: true })
+  // Coming back to a workspace reads its wallet again, and shows nothing until that answers
+  // rather than the balance from before, unless another view is already reading it.
+  watch(
+    key,
+    (at) => {
+      if (!at) return
+      const reading = latestReads.has(at) && !wallets.value.has(at)
+      if (!reading) {
+        const fresh = new Map(wallets.value)
+        fresh.delete(at)
+        wallets.value = fresh
+        void refresh()
+      }
+    },
+    { immediate: true }
+  )
   watch(replying, (now, before) => {
     if (before && !now) void refresh()
   })

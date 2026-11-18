@@ -12,13 +12,13 @@ import AppBanner from '@/components/ui/feedback/AppBanner.vue'
 
 /**
  * Warns while the AI credits the chat spends on Cloud run low, and once they run out, with the
- * way to buy more where the server bills. Dismissing one lasts until the allowance renews, so the
+ * way to buy more where the server bills, or to ask the owner in a workspace someone else pays for. Dismissing one lasts until the allowance renews, so the
  * next month warns again, and running out warns even after running low was dismissed.
  */
 const cloud = useCloudMessages()
 const { common } = useI18n()
 const dates = useDateFormat()
-const { standing, renewsAt } = useCloudCreditStanding()
+const { standing, renewsAt, pays } = useCloudCreditStanding()
 
 const message = computed(() => {
   if (standing.value === 'low') return cloud.value.creditsLowBanner
@@ -29,9 +29,10 @@ const message = computed(() => {
 const dismissal = computed(
   () => `open-pencil:cloud-credits-${standing.value}:${renewsAt.value ?? 'no-allowance'}`
 )
-// The plan page opens billing at once, where credits are bought.
+// The plan page opens billing at once, where credits are bought. Credits come from the owner's
+// account, so anyone else is asked to go to the owner instead of buying into their own.
 const buyURL = computed(() =>
-  cloudBillingURL.value ? withQuery(cloudBillingURL.value, { open: 'billing' }) : null
+  pays.value && cloudBillingURL.value ? withQuery(cloudBillingURL.value, { open: 'billing' }) : null
 )
 </script>
 
@@ -44,6 +45,7 @@ const buyURL = computed(() =>
     @action="buyURL && openExternalLink(buyURL)"
   >
     {{ message }}
+    <template v-if="!pays">{{ ` ${cloud.creditsAskOwner}` }}</template>
     <template v-if="buyURL" #action>{{ cloud.creditsBuy }}</template>
     <template #dismiss>{{ common.dismiss }}</template>
   </AppBanner>

@@ -358,6 +358,7 @@
   "creditsOutBanner": "نفدت أرصدة الذكاء الاصطناعي لديك.",
   "creditsOutUntilBanner": "نفدت أرصدة الذكاء الاصطناعي لديك حتى {date}.",
   "creditsBuy": "شراء أرصدة",
+  "creditsAskOwner": "اطلب من مالك مساحة العمل شراء المزيد.",
   "savePublicLabel": "عام",
   "savePublicHeading": "يمكن لأي شخص فتح ما تحفظه هنا",
   "savePublicDescription": "مساحة العمل هذه هي معرض المجتمع على الخادم، لذا فإن الحفظ فيها ينشر المستند.",

@@ -39,6 +39,10 @@ export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
   return []
 }
 
+export function cloudOwnsWorkspace(): boolean {
+  return false
+}
+
 export async function cloudMonthlyAllowance(): Promise<number | null> {
   return null
 }

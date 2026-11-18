@@ -270,6 +270,7 @@
   "creditsOutBanner": "Te has quedado sin créditos de IA.",
   "creditsOutUntilBanner": "Te has quedado sin créditos de IA hasta el {date}.",
   "creditsBuy": "Comprar créditos",
+  "creditsAskOwner": "Pide al propietario del espacio de trabajo que compre más.",
   "savePublicLabel": "Público",
   "savePublicHeading": "Cualquiera puede abrir lo que guardes aquí",
   "savePublicDescription": "Este espacio de trabajo es la galería de la comunidad del servidor, así que guardar aquí publica el documento.",

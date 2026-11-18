@@ -1,7 +1,8 @@
+import { useEventListener } from '@vueuse/core'
 import { computed, shallowRef, watch } from 'vue'
 
 import { designModelConnection } from '@/app/ai/models'
-import { cloudMonthlyAllowance } from '@/app/cloud/integration'
+import { cloudAIIdentity, cloudMonthlyAllowance, cloudOwnsWorkspace } from '@/app/cloud/integration'
 
 import { useCloudCreditBalance } from './balance'
 import { OPENPENCIL_AI_PROVIDER } from './provider'
@@ -21,13 +22,15 @@ export function creditStanding(
 ): CloudCreditStanding {
   if (balance === null) return null
   if (balance <= 0) return 'out'
-  const threshold = allowance ? allowance * LOW_CREDIT_SHARE : LOW_CREDIT_FLOOR
+  const threshold = allowance === null ? LOW_CREDIT_FLOOR : allowance * LOW_CREDIT_SHARE
   return balance < threshold ? 'low' : null
 }
 
 /**
- * The standing of the credits the Design model spends on Cloud, with when the allowance renews;
- * nothing while the chat uses another provider.
+ * The standing of the credits the Design model spends on Cloud, with when the allowance renews
+ * and whether the signed-in account pays for them; nothing while the chat uses another provider.
+ * Both are read again when the window regains focus, so credits or a plan bought in the browser
+ * show once the person comes back.
  */
 export function useCloudCreditStanding() {
   const workspaceId = computed(() => {
@@ -36,22 +39,36 @@ export function useCloudCreditStanding() {
       ? (connection.cloudWorkspaceId ?? null)
       : null
   })
-  const { balance, renewsAt } = useCloudCreditBalance({
+  const { balance, renewsAt, refresh } = useCloudCreditBalance({
     workspaceId: () => workspaceId.value,
     replying: () => false
   })
   const allowance = shallowRef<number | null>(null)
+  let allowanceRead = 0
+  async function readAllowance(): Promise<void> {
+    const read = ++allowanceRead
+    const id = workspaceId.value
+    const next = id ? await cloudMonthlyAllowance(id) : null
+    if (read === allowanceRead) allowance.value = next
+  }
+  // Another sign-in can change the plan behind the same workspace.
   watch(
-    workspaceId,
-    async (id) => {
+    [workspaceId, cloudAIIdentity],
+    () => {
       allowance.value = null
-      const read = id ? await cloudMonthlyAllowance(id) : null
-      if (id === workspaceId.value) allowance.value = read
+      void readAllowance()
     },
     { immediate: true }
   )
+  useEventListener(window, 'focus', () => {
+    if (!workspaceId.value) return
+    void refresh()
+    void readAllowance()
+  })
   return {
     standing: computed(() => creditStanding(balance.value, allowance.value)),
-    renewsAt
+    renewsAt,
+    /** Whether the signed-in account pays for these credits, and so can buy more. */
+    pays: computed(() => (workspaceId.value ? cloudOwnsWorkspace(workspaceId.value) : false))
   }
 }

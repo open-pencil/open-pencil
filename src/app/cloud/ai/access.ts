@@ -76,6 +76,15 @@ export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
 }
 
 /**
+ * Whether the signed-in account owns a workspace on the Home server, and so pays for its credits.
+ * A server too old to say counts as yes, as before it could.
+ */
+export function cloudOwnsWorkspace(workspaceId: string): boolean {
+  const workspace = homeAI.value?.connection.workspaces.find(({ id }) => id === workspaceId)
+  return workspace?.owner !== false
+}
+
+/**
  * The credits a workspace's plan grants each month, or `null` when it grants none, sets no limit,
  * or the server can't say.
  */

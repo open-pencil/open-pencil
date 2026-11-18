@@ -274,6 +274,7 @@
   "creditsOutBanner": "Wykorzystano wszystkie kredyty AI.",
   "creditsOutUntilBanner": "Wykorzystano wszystkie kredyty AI do {date}.",
   "creditsBuy": "Kup kredyty",
+  "creditsAskOwner": "Poproś właściciela obszaru roboczego o dokupienie kredytów.",
   "savePublicLabel": "Publiczny",
   "savePublicHeading": "Każdy może otworzyć to, co tu zapiszesz",
   "savePublicDescription": "Ten obszar roboczy to galeria społeczności serwera, więc zapisanie w nim publikuje dokument.",

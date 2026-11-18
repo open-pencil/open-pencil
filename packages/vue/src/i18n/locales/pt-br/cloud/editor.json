@@ -342,6 +342,7 @@
   "creditsOutBanner": "Seus créditos de IA acabaram.",
   "creditsOutUntilBanner": "Seus créditos de IA acabaram até {date}.",
   "creditsBuy": "Comprar créditos",
+  "creditsAskOwner": "Peça ao proprietário do espaço de trabalho para comprar mais.",
   "savePublicLabel": "Público",
   "savePublicHeading": "Qualquer pessoa pode abrir o que você salvar aqui",
   "savePublicDescription": "Este espaço de trabalho é a galeria da comunidade do servidor, então salvar nele publica o documento.",

@@ -407,6 +407,7 @@ export const cloudMessageDefaults = {
   creditsOutBanner: 'You’re out of AI credits.',
   creditsOutUntilBanner: params('You’re out of AI credits until {date}.'),
   creditsBuy: 'Buy credits',
+  creditsAskOwner: 'Ask the workspace owner to buy more.',
   savePublicLabel: 'Public',
   savePublicHeading: 'Anyone can open what you save here',
   savePublicDescription:
