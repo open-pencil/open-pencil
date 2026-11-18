@@ -151,14 +151,8 @@ function placeDraft(event: PointerEvent) {
   draftText.value = ''
 }
 
-function stopCanvasContextMenu(event: MouseEvent) {
-  if (!commenting.value) return
-  event.preventDefault()
-  event.stopPropagation()
-}
-
+// The canvas places drafts itself, so its other buttons keep panning and opening the layer menu.
 useEventListener(() => canvasEl, 'pointerdown', placeDraft)
-useEventListener(() => canvasEl, 'contextmenu', stopCanvasContextMenu)
 
 // Scrolling and zooming keep working over pins and while placing comments, as in Figma.
 function forwardWheel(event: WheelEvent) {

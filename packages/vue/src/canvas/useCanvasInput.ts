@@ -260,8 +260,10 @@ export function useCanvasInput(
     if (!editor.state.editingTextId) canvasRef.value?.focus()
     editor.setHoveredNode(null)
     const { sx, sy, cx, cy } = getCoords(e)
-    // Guides belong to the document, so a read-only one neither moves nor gains them.
-    const guidesEditable = e.button === 0 && editsLayers()
+    // Guides belong to the document, so a read-only one neither moves nor gains them. A press
+    // with the Comment tool places a comment instead, and leaves a selected guide selected.
+    const commenting = editor.state.activeTool === 'COMMENT'
+    const guidesEditable = e.button === 0 && editsLayers() && !commenting
     if (guidesEditable && guideInput.tryStartExisting(sx, sy, e.altKey)) {
       e.preventDefault()
       return
@@ -270,9 +272,7 @@ export function useCanvasInput(
       e.preventDefault()
       return
     }
-    if (e.button === 0 || editor.state.activeTool !== 'COMMENT') {
-      editor.setSelectedGuide(null)
-    }
+    if (!commenting) editor.setSelectedGuide(null)
 
     const clickCount = recordClick(sx, sy, e.detail)
     if (clickCount >= 2 && takesMultiClick(e)) {

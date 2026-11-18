@@ -19,10 +19,12 @@ import {
 } from '@open-pencil/vue/editor/commands'
 import { useMenuModel } from '@open-pencil/vue/editor/menu-model'
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useCommentMessages, useI18n } from '@open-pencil/vue/i18n'
 import { vTestId } from '@open-pencil/vue/testing'
 
+import { useComments } from '@/app/comments/use'
 import { useEditorStore } from '@/app/editor/active-store'
+import type { CanvasContextTarget } from '@/app/editor/canvas/context-selection'
 import { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'
 import { useCanvasContextMenu } from '@/app/editor/canvas/menu/context'
 import { canvasMenuItemClass, canvasMenuShortcutClass } from '@/app/editor/canvas/menu/model'
@@ -31,7 +33,24 @@ import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { menu, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
+const { target } = defineProps<{
+  /**
+   * What a right-click on the canvas landed on; the Comment tool's menu follows it, as in Figma.
+   * The layers panel's menu has none and stays the full layer menu.
+   */
+  target?: CanvasContextTarget
+}>()
+
+/** The layer commands the Comment tool's right-click offers on a layer, as in Figma. */
+const COMMENT_LAYER_COMMANDS = [
+  'selection.toggleVisibility',
+  'selection.toggleLock'
+] as const satisfies readonly EditorCommandId[]
+
 const store = useEditorStore()
+const comments = useComments()
+const commentMessages = useCommentMessages()
+const commenting = computed(() => store.state.activeTool === 'COMMENT')
 
 const { editor, selectedIds, hasSelection } = useSelectionState()
 const { getCommand } = useEditorCommands()
@@ -43,6 +62,10 @@ const { execCommand } = canvasMenuActions
 const contextMenu = useCanvasContextMenu(canvasMenu, hasSelection, editor, canvasMenuActions, t)
 
 const selectedGuide = computed(() => store.state.guides.selected)
+
+function toggleUI() {
+  store.state.showUI = !store.state.showUI
+}
 
 function removeSelectedGuide() {
   const guide = selectedGuide.value
@@ -75,7 +98,38 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
        must not close the new menu. Clicks outside and Escape still close it. -->
   <ContextMenuContent :class="cls.menu" :side-offset="2" align="start" @close-auto-focus.prevent>
     <MenuScrollArea>
-      <template v-if="selectedGuide">
+      <!-- The Comment tool keeps its menu short: what a layer shows and how the canvas looks. -->
+      <template v-if="commenting && target && target !== 'guide'">
+        <template v-if="target === 'layer'">
+          <ContextMenuItem
+            v-for="id in COMMENT_LAYER_COMMANDS"
+            :key="id"
+            v-test-id="contextCommandTestId(id)"
+            :class="cls.item"
+            :disabled="!getCommand(id).enabled.value"
+            @select="getCommand(id).run()"
+          >
+            <span>{{ getCommand(id).label }}</span
+            ><AppShortcutText>{{
+              formatShortcut(editorCommandMetadata(id).shortcut)
+            }}</AppShortcutText>
+          </ContextMenuItem>
+          <ContextMenuSeparator :class="cls.sep" />
+        </template>
+        <ContextMenuItem data-test-id="context-toggle-ui" :class="cls.item" @select="toggleUI">
+          <span>{{ t.toggleUI }}</span
+          ><AppShortcutText>{{ appMenuShortcutLabel('toggle-ui') }}</AppShortcutText>
+        </ContextMenuItem>
+        <ContextMenuItem
+          data-test-id="context-hide-comments"
+          :class="cls.item"
+          @select="comments.toggleOnCanvas"
+        >
+          <span>{{ commentMessages.hideComments }}</span
+          ><AppShortcutText>{{ appMenuShortcutLabel('view-comments') }}</AppShortcutText>
+        </ContextMenuItem>
+      </template>
+      <template v-else-if="selectedGuide">
         <ContextMenuItem data-property="guide" :class="cls.item" @select="removeSelectedGuide">
           <span>{{ t.removeGuide }}</span>
         </ContextMenuItem>

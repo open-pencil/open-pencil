@@ -1,1 +1,1 @@
-- Middle-button dragging pans the canvas while the Comment tool is selected.
+- The Comment tool pans with the middle mouse button, and its right-click selects the layer under the pointer and opens a short menu, as in Figma.
