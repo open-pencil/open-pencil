@@ -60,7 +60,7 @@ Without a paid plan, an account has the free plan. Paid plans and credits are so
 - **Failed payments.** If a renewal payment fails, Stripe tries again over about two weeks, and your plan stays meanwhile. If it still fails, the plan ends.
 - **When a plan ends,** your account goes back to the free plan. Your documents stay. While they use more storage than the free plan includes, they're read-only: you can still open, download, and delete them, or subscribe again.
 - **Monthly credits.** A plan's monthly credits renew at the start of each month, and unused ones don't carry over.
-- **Credits you buy** last 365 days from purchase and are used after your monthly credits. They can't be exchanged for money or moved to another account, and they expire if unused. Using credits needs a plan that includes services: credits you bought stay in your account until they expire, ready for when you have one.
+- **Credits you buy** last for the period shown when you buy them, counted from the purchase (365 days for the credits on sale now), and are used after your monthly credits. They can't be exchanged for money or moved to another account, and they expire if unused. Using credits needs a plan that includes services: credits you bought stay in your account until they expire, ready for when you have one.
 - **Right of withdrawal.** If you're a consumer in the EU, the UK, or another country with a similar law, you can usually withdraw from an online purchase within 14 days. When you buy, you ask for it to start right away:
   - Credits are added to your account as soon as you pay, so once they are, you can no longer withdraw from that purchase.
   - You can withdraw from a new plan within 14 days of buying it by writing to [support@openpencil.dev](mailto:support@openpencil.dev). We refund what you paid, less the part of the month you've already had.
@@ -76,7 +76,7 @@ To the extent the law allows, we aren't liable for indirect or consequential los
 
 ## Ending
 
-You can stop using the Service and delete your account at any time from your account settings. Deleting it cancels a paid plan without a refund for the rest of the month, and ends the credits you bought. We may suspend or end your access as described under [When we act](#when-we-act).
+You can stop using the Service and delete your account at any time from your account settings. Deleting it cancels a paid plan and ends the credits you bought, without a refund for the rest of the month, except as described under Right of withdrawal or where the law requires it. We may suspend or end your access as described under [When we act](#when-we-act).
 
 ## Changes to these terms
 

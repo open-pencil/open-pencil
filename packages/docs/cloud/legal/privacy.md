@@ -26,7 +26,7 @@ The Service's database, file storage, and live collaboration run in the European
 | Rate-limit counters, by IP address or account | To protect the Service | Up to a day |
 | Usage of services credits | To apply your monthly allowance | 12 months |
 | Billing: your Stripe customer ID, your plan and when it renews, and the credits you bought | To provide what you pay for | Until you delete your account |
-| Payment records: what you bought, when, and for how much | To meet tax and accounting law | 5 years, as Mexican tax law requires |
+| Payment records: what you bought, when, and for how much | To meet tax and accounting law | 5 years from the filing of the tax return they belong to, as Mexican tax law requires, or longer while a tax audit or claim needs them |
 
 We don't sell your data, show ads, or use your documents to train models.
 
@@ -53,7 +53,7 @@ When you use hosted services such as AI chat, what you send is forwarded to the 
 
 ## Payments
 
-When you buy a plan or credits, Stripe processes the payment: your card details, billing address, and email go to Stripe, never to us. Stripe uses them to take the payment, work out tax, prevent fraud, and send receipts and invoices, and keeps them under its own [privacy policy](https://stripe.com/privacy) for what the law requires of a payment provider. We keep only what's listed above.
+When you buy a plan or credits, Stripe processes the payment. We give Stripe your account email, for receipts and invoices; your card details and billing address go straight to Stripe and never reach us. Stripe processes them for us to take the payment, work out tax, and send receipts and invoices. For its own purposes, such as preventing fraud and meeting the law that applies to payment providers, Stripe is a controller in its own right, under its [privacy policy](https://stripe.com/privacy). We keep only what's listed above.
 
 ## Your rights
 
