@@ -1,0 +1,1 @@
+- A shader fill's swatch shows its new frame after a change to the shader.
