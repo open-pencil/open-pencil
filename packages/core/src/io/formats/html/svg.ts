@@ -110,19 +110,13 @@ function withComputedPaint(
 }
 
 /**
- * An element with `declarations` added to its style, where the serializer reads it: its parsed
- * inline style when it has one, which replaces the `style` attribute, else that attribute.
+ * An element with `declarations` added to its parsed inline style, which the serializer writes
+ * in place of its `style` attribute. Both runtimes parse a `style` attribute into `inlineStyle`,
+ * so an element without one had no style to keep.
  */
 function withStyle(element: DesignElement, declarations: Record<string, string>): DesignElement {
   if (isEmptyObject(declarations)) return element
-  if (element.inlineStyle && !isEmptyObject(element.inlineStyle)) {
-    return { ...element, inlineStyle: { ...element.inlineStyle, ...declarations } }
-  }
-  const css = Object.entries(declarations).map(([property, value]) => `${property}:${value}`)
-  return {
-    ...element,
-    attrs: { ...element.attrs, style: compact([element.attrs.style, ...css]).join(';') }
-  }
+  return { ...element, inlineStyle: { ...element.inlineStyle, ...declarations } }
 }
 
 /**
