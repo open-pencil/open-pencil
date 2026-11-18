@@ -1,0 +1,1 @@
+- The loading screen names what it is decoding instead of calling every document a Figma document.
