@@ -1,29 +1,31 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import { usePortalPlan } from '@/app/cloud-portal/plan'
-import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
 import PortalPlan from '../account/PortalPlan.vue'
 import PortalLoadAlert from '../layout/PortalLoadAlert.vue'
 import PortalPageSkeleton from '../layout/PortalPageSkeleton.vue'
 
-/** The signed-in account's plan, with where to buy or manage it; `usePortalPlan` holds the rest. */
-const {
-  entitlements,
-  plan,
-  offers,
-  creditPacks,
-  billingError,
-  billingLoading,
-  reloadBilling,
-  opening,
-  subscribe,
-  buy,
-  manage
-} = usePortalPlan()
+/**
+ * The signed-in account's plan, and the way to billing's own pages; `usePortalPlan` holds the
+ * rest. Billing sends someone whose session there ended back here with `?open=billing`, which
+ * opens billing again at once.
+ */
+const { entitlements, plan, sells, opening, openBilling } = usePortalPlan()
 const messages = useCloudPortalMessages()
+const route = useRoute()
+const router = useRouter()
+
+onMounted(async () => {
+  if (route.query.open !== 'billing') return
+  await router.replace({ query: {} })
+  if (sells) await openBilling()
+})
 </script>
 
 <template>
@@ -34,18 +36,6 @@ const messages = useCloudPortalMessages()
       @retry="entitlements.reload()"
     />
     <AppAlert
-      v-else-if="billingError"
-      tone="warning"
-      :heading="messages.billingUnavailable"
-      :description="messages.billingUnavailableDescription"
-    >
-      <template #actions>
-        <AppButton size="sm" variant="outline" :disabled="billingLoading" @click="reloadBilling()">
-          {{ messages.tryAgain }}
-        </AppButton>
-      </template>
-    </AppAlert>
-    <AppAlert
       v-if="opening.error.value"
       tone="error"
       :heading="messages.errorTitle"
@@ -55,12 +45,9 @@ const messages = useCloudPortalMessages()
     <PortalPlan
       v-else-if="plan"
       :plan="plan"
-      :offers="offers"
-      :credit-packs="creditPacks"
+      :sells="sells"
       :busy="opening.busy.value"
-      @subscribe="subscribe"
-      @buy="buy"
-      @manage="manage"
+      @open-billing="openBilling"
     />
   </div>
 </template>
