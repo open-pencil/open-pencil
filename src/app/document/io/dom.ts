@@ -1,3 +1,5 @@
+import { basename, extname } from 'pathe'
+
 import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
 import { embedPageImages } from '@open-pencil/core/io/formats/html/images'
 import {
@@ -15,6 +17,7 @@ import type { EditorPreparationController } from '@/app/editor/preparation/contr
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
+import type { OpenedWebPage } from '@/app/tabs/open/file'
 
 type OpenDOMDocumentState = EditorState & {
   documentName: string
@@ -39,6 +42,8 @@ type DOMImportOptions = {
   cssText?: string
   handle?: FileSystemFileHandle
   path?: string
+  /** The web page the file is, whose address its links resolve against and whose title it takes. */
+  webPage?: OpenedWebPage
   preparation?: EditorPreparationHandle
 }
 
@@ -49,17 +54,13 @@ type DOMTextImportOptions = {
   baseURL?: string
 }
 
-/** The web address a document was opened from, when its path is one rather than a file's. */
-function webAddressOf(path: string | undefined): string | undefined {
-  return path && /^https?:\/\//i.test(path) ? path : undefined
-}
-
 function errorDetail(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
+/** A page file's name without its extension, as `card.html` is the page `card`. */
 function documentNameFor(file: File): string {
-  return file.name.replace(/\.(html?|xhtml)$/i, '')
+  return basename(file.name, extname(file.name))
 }
 
 export function createDOMOpenActions({
@@ -159,12 +160,14 @@ export function createDOMOpenActions({
         html,
         {
           cssText: options.cssText,
-          documentName: documentNameFor(file),
-          baseURL: webAddressOf(options.path)
+          documentName: options.webPage?.title ?? documentNameFor(file),
+          baseURL: options.webPage?.url
         },
         load
       )
-      setDocumentSource(file.name, 'html', options.handle, options.path)
+      // A web page is the HTML file its title names, so a save downloads `<title>.fig`.
+      const sourceName = options.webPage ? `${options.webPage.title}.html` : file.name
+      setDocumentSource(sourceName, 'html', options.handle, options.path)
       succeeded = true
     } catch (e) {
       if (load.signal.aborted || !ownsLoad) throw e

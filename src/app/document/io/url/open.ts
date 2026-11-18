@@ -26,14 +26,6 @@ export function parseWebAddress(text: string): URL | null {
   return url.protocol === 'http:' || url.protocol === 'https:' ? url : null
 }
 
-/** A file named so the tab that opens it reads it as what it is, such as `example.com.html`. */
-function fileFor(remote: RemoteFile, extension: string, type = ''): File {
-  const name = remote.name.toLowerCase().endsWith(extension)
-    ? remote.name
-    : `${remote.name}${extension}`
-  return new File([remote.bytes], name, { type })
-}
-
 /** Opens an SVG or a picture in a new design, as dropping it on an empty canvas places it. */
 async function openImage(file: File): Promise<void> {
   const { store } = createDocumentTab('design')
@@ -66,18 +58,25 @@ export async function openWebAddress(url: URL, signal?: AbortSignal): Promise<vo
   signal?.throwIfAborted()
   switch (remote.kind) {
     case 'html':
-      await openFileInNewTab(fileFor(remote, '.html', 'text/html'), undefined, remote.url)
+      await openFileInNewTab(new File([remote.bytes], remote.name || remote.title), {
+        path: remote.url,
+        webPage: { url: remote.url, title: remote.title }
+      })
       return
     case 'document':
       // Opened as a picked file is: its address is no file path a save could write back to.
       await openFileInNewTab(new File([remote.bytes], remote.name))
       return
     case 'svg':
-      await openImage(fileFor(remote, '.svg', 'image/svg+xml'))
+      await openImage(
+        new File([remote.bytes], remote.name || remote.title, { type: 'image/svg+xml' })
+      )
       return
     case 'image':
       // A raw file host may serve a picture as anything, so its type comes from its bytes.
-      await openImage(new File([remote.bytes], remote.name, { type: imageMimeType(remote.bytes) }))
+      await openImage(
+        new File([remote.bytes], remote.name || remote.title, { type: imageMimeType(remote.bytes) })
+      )
       return
     case 'pdf':
       throw new Error(files.openURLPDF)

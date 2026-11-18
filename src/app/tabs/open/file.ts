@@ -28,15 +28,34 @@ const fileOpenCoordinator = createFileOpenCoordinator()
 function isDOMImportFile(file: File): boolean {
   return /\.(html?|xhtml)$/i.test(file.name)
 }
+
+/** A page fetched from the web: the address it came from and what its document is called. */
+export interface OpenedWebPage {
+  url: string
+  title: string
+}
+
+export interface OpenFileOptions {
+  /** The file the browser granted, which saving writes back to. */
+  handle?: FileSystemFileHandle
+  /** Where the file lives: a desktop path, or the address a browser document came from. */
+  path?: string
+  /**
+   * Opens the file as this web page: as HTML, whatever its name, its stylesheets and pictures
+   * read from where it lives, and its document called by the page's title.
+   */
+  webPage?: OpenedWebPage
+}
+
 /**
- * Opens a file in a tab, or shows the tab that already has it or is opening it. An HTML file is
- * imported as a DOM document; any other is read as the format its name says.
+ * Opens a file in a tab, or shows the tab that already has it or is opening it. An HTML file or
+ * a web page is imported as a DOM document; any other is read as the format its name says.
  */
 export async function openFileInNewTab(
   file: File,
-  handle?: FileSystemFileHandle,
-  path?: string
+  { handle, path, webPage }: OpenFileOptions = {}
 ): Promise<EditorStore> {
+  const domImport = webPage !== undefined || isDOMImportFile(file)
   const identity: DocumentSourceIdentity = {
     handle: handle ?? null,
     path: path ?? null
@@ -61,9 +80,9 @@ export async function openFileInNewTab(
 
     const opening = reusableTabStore()
     const { store } = opening
-    store.state.documentName = filename(file.name) ?? file.name
+    store.state.documentName = webPage?.title ?? filename(file.name) ?? file.name
     const load = store.preparationController.begin({
-      kind: isDOMImportFile(file) ? 'dom-import' : 'document-open',
+      kind: domImport ? 'dom-import' : 'document-open',
       subject: file.name
     })
 
@@ -83,8 +102,8 @@ export async function openFileInNewTab(
   const { completion, pendingOpen, store, opening, load } = decision
   let succeeded = false
   try {
-    if (isDOMImportFile(file)) {
-      await store.openDOMFile(file, { handle, path, preparation: load })
+    if (domImport) {
+      await store.openDOMFile(file, { handle, path, webPage, preparation: load })
       completion.resolve(undefined)
       succeeded = true
       return store

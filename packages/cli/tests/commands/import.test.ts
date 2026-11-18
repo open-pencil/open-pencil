@@ -91,6 +91,28 @@ describe('import CLI from a web address', () => {
     expect(image?.fills[0]?.type).toBe('IMAGE')
   })
 
+  test('names the output after the page, and a home page after its host', async () => {
+    using server = Bun.serve({
+      port: 0,
+      fetch: () => new Response('<p>Hi</p>', { headers: { 'content-type': 'text/html' } })
+    })
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-'))
+    const home = new URL(server.url)
+    home.hostname = 'localhost'
+
+    expect((await runCLI(['import', home.href, '--no-icon-names'], { cwd: dir })).exitCode).toBe(0)
+    expect(
+      (
+        await runCLI(['import', new URL('/docs/card.html', home).href, '--no-icon-names'], {
+          cwd: dir
+        })
+      ).exitCode
+    ).toBe(0)
+
+    expect(await Bun.file(join(dir, 'localhost.fig')).exists()).toBe(true)
+    expect(await Bun.file(join(dir, 'card.fig')).exists()).toBe(true)
+  })
+
   test('imports nothing from an address that holds no page', async () => {
     using server = Bun.serve({ port: 0, fetch: () => new Response('%PDF-1.7\n') })
 

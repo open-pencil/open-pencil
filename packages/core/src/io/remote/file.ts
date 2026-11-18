@@ -1,4 +1,4 @@
-import { basename } from 'pathe'
+import { basename, extname } from 'pathe'
 import { decode } from 'ufo'
 
 import { imageHeader } from '@open-pencil/scene-graph/images'
@@ -16,8 +16,13 @@ export type RemoteFileKind = 'html' | 'svg' | 'image' | 'document' | 'pdf' | 'un
 export interface RemoteFile {
   /** The address the file came from, after redirects, which a page's relative URLs resolve against. */
   url: string
-  /** The name its address ends in, decoded, or the host for an address that names no file. */
+  /** The file name its address ends in, decoded; empty for an address that names no file. */
   name: string
+  /**
+   * What the document it opens is called: the file name without its extension, or the host for
+   * an address that names no file, as `https://example.com/` is a page called `example.com`.
+   */
+  title: string
   /** The media type the server sent, without parameters, in lowercase. */
   contentType?: string
   bytes: Uint8Array<ArrayBuffer>
@@ -36,12 +41,15 @@ export interface FetchRemoteFileOptions {
   io: IORegistry
 }
 
-/**
- * The name an address ends in, decoded, so `my%20design.fig` reads as "my design.fig"; a page
- * address that names no file, such as `https://example.com/`, is named after its host.
- */
-export function remoteFileName(url: URL): string {
-  return decode(basename(url.pathname)) || url.hostname
+/** The decoded file name an address ends in; empty for one that names no file. */
+function remoteFileName(url: URL): string {
+  return decode(basename(url.pathname))
+}
+
+/** What a document fetched from an address is called; see `RemoteFile.title`. */
+export function remoteFileTitle(url: URL): string {
+  const name = remoteFileName(url)
+  return name ? basename(name, extname(name)) : url.hostname
 }
 
 function mediaType(contentType: string | null): string | undefined {
@@ -116,10 +124,12 @@ export async function fetchRemoteFile(
     throw new Error(`Failed to fetch ${url.href}: the response carried no body`)
   const finalURL = new URL(response.url || url.href)
   const name = remoteFileName(finalURL)
+  const title = remoteFileTitle(finalURL)
   const contentType = mediaType(response.headers.get('content-type'))
   return {
     url: finalURL.href,
     name,
+    title,
     contentType,
     bytes,
     kind: remoteFileKind({ name, contentType, bytes }, io)

@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { basename, dirname, resolve } from 'node:path'
+import { basename, dirname, extname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 import { defineCommand } from 'citty'
@@ -28,10 +28,14 @@ interface ImportArgs {
   'icon-names': boolean
 }
 
-/** `page.html` becomes `page.fig`; a page named after its host, such as `example.com`, keeps it. */
-function defaultOutput(input: string, format: string): string {
-  const base = basename(input).replace(/\.x?html?$/i, '')
-  return resolve(`${base}.${format}`)
+/** The HTML to import, where it came from, the address it resolves against, and its title. */
+interface ImportInput {
+  html: string
+  /** The file path or web address, as the summary reports it. */
+  source: string
+  baseURL: string
+  /** What the imported document is called, which names the output by default. */
+  title: string
 }
 
 async function readTextFile(path: string): Promise<string> {
@@ -69,27 +73,34 @@ const KIND_NAMES: Record<Exclude<RemoteFileKind, 'html'>, string> = {
   unsupported: 'not an HTML page'
 }
 
-/** The page at a web address, and the address its relative URLs resolve against. */
-async function fetchPage(url: URL): Promise<{ html: string; baseURL: string; name: string }> {
+/** The page at a web address, resolved against the address a redirect ends at. */
+async function fetchPage(url: URL): Promise<ImportInput> {
   const file = await fetchRemoteFile(url, { io: new IORegistry(BUILTIN_IO_FORMATS) })
   if (file.kind !== 'html') throw new Error(`${url.href} is ${KIND_NAMES[file.kind]}`)
-  return { html: new TextDecoder().decode(file.bytes), baseURL: file.url, name: file.name }
+  return {
+    html: new TextDecoder().decode(file.bytes),
+    source: url.href,
+    baseURL: file.url,
+    title: file.title
+  }
 }
 
-/** The HTML to import, the address it resolves against, and the name its output takes. */
-async function readInput(
-  args: ImportArgs
-): Promise<{ html: string; baseURL: string; name: string }> {
+async function readInput(args: ImportArgs): Promise<ImportInput> {
   const url = webAddress(args.file)
   if (url) return fetchPage(url)
   const file = requireFile(args.file)
-  // Relative stylesheets, fonts, and images resolve beside the file, as a browser opening it.
-  return { html: await readTextFile(file), baseURL: pathToFileURL(resolve(file)).href, name: file }
+  return {
+    html: await readTextFile(file),
+    source: file,
+    // Relative stylesheets, fonts, and images resolve beside the file, as a browser opening it.
+    baseURL: pathToFileURL(resolve(file)).href,
+    title: basename(file, extname(file))
+  }
 }
 
 async function importHTML(
   args: ImportArgs,
-  { html, baseURL }: { html: string; baseURL: string }
+  { html, baseURL }: ImportInput
 ): Promise<ReadHTMLResult> {
   return readHTMLDocument(html, {
     baseURL,
@@ -100,9 +111,9 @@ async function importHTML(
   })
 }
 
-async function writeOutput(args: ImportArgs, name: string, { styled, graph }: ReadHTMLResult) {
+async function writeOutput(args: ImportArgs, title: string, { styled, graph }: ReadHTMLResult) {
   const format = args.format.toLowerCase()
-  const output = args.output ? resolve(args.output) : defaultOutput(name, format)
+  const output = resolve(args.output ?? `${title}.${format}`)
 
   await mkdir(dirname(output), { recursive: true })
 
@@ -181,7 +192,7 @@ export default defineCommand({
       process.exit(1)
     }
 
-    let input: Awaited<ReturnType<typeof readInput>>
+    let input: ImportInput
     try {
       input = await readInput(args)
     } catch (error) {
@@ -189,10 +200,10 @@ export default defineCommand({
       process.exit(1)
     }
     const imported = await importHTML(args, input)
-    const output = await writeOutput(args, input.name, imported)
+    const output = await writeOutput(args, input.title, imported)
     const pages = imported.graph.getPages()
     const summary = {
-      input: webAddress(args.file)?.href ?? input.name,
+      input: input.source,
       output,
       format,
       pages: pages.length,

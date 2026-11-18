@@ -3,7 +3,7 @@ export {
   fetchRemoteFile,
   MAX_REMOTE_FILE_BYTES,
   remoteFileKind,
-  remoteFileName,
+  remoteFileTitle,
   type FetchRemoteFileOptions,
   type RemoteFile,
   type RemoteFileKind

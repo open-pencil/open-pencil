@@ -5,7 +5,7 @@ import { fetchStub } from '@open-pencil/test-support/fetch'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
-import { fetchRemoteFile, remoteFileKind, remoteFileName } from '#core/io/remote'
+import { fetchRemoteFile, remoteFileKind, remoteFileTitle } from '#core/io/remote'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const text = (value: string) => new TextEncoder().encode(value)
@@ -44,12 +44,11 @@ describe('remoteFileKind', () => {
   })
 })
 
-describe('remoteFileName', () => {
-  test('names a file by its decoded path, and a page without one by its host', () => {
-    expect(remoteFileName(new URL('https://cdn.example.com/a/my%20design.fig'))).toBe(
-      'my design.fig'
-    )
-    expect(remoteFileName(new URL('https://example.com/'))).toBe('example.com')
+describe('remoteFileTitle', () => {
+  test('calls a document by its file name without the extension, and a page without one by its host', () => {
+    expect(remoteFileTitle(new URL('https://cdn.example.com/a/my%20design.fig'))).toBe('my design')
+    expect(remoteFileTitle(new URL('https://example.com/docs/index.html'))).toBe('index')
+    expect(remoteFileTitle(new URL('https://example.com/'))).toBe('example.com')
   })
 })
 
@@ -68,6 +67,7 @@ describe('fetchRemoteFile', () => {
     expect(file).toMatchObject({
       url: 'https://www.example.com/docs/',
       name: 'docs',
+      title: 'docs',
       contentType: 'text/html',
       kind: 'html'
     })

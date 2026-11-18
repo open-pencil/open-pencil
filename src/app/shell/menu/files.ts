@@ -51,7 +51,7 @@ fileDialog.onChange((files) => {
  */
 export async function openDesignFile(file: File, handle?: FileSystemFileHandle): Promise<void> {
   assertSupportedDesignFile(file.name)
-  await openFileInNewTab(file, handle)
+  await openFileInNewTab(file, { handle })
 }
 
 if (IS_BROWSER && 'window' in globalThis) {
@@ -89,7 +89,7 @@ export async function openBrowserFileFromURL(url: URL, init?: RequestInit): Prom
   const name = fileNameFromURL(url)
   assertSupportedDesignFile(name)
   const file = new File([bytes], name, { type: 'application/octet-stream' })
-  return openFileInNewTab(file, undefined, url.href)
+  return openFileInNewTab(file, { path: url.href })
 }
 
 function isSupportedDesignFile(fileName: string): boolean {
@@ -144,7 +144,7 @@ export async function chooseTauriOpenPaths(): Promise<string[]> {
 export async function openFileFromPath(path: string): Promise<EditorStore | undefined> {
   if (!isTauri()) return undefined
   const file = await readTauriDesignFile(path)
-  const store = await openFileInNewTab(file, undefined, path)
+  const store = await openFileInNewTab(file, { path })
   rememberRecentFile(path, store.state.documentKind)
   return store
 }
@@ -193,7 +193,7 @@ export async function openFileDialog() {
         async (handle) => {
           const file = await handle.getFile()
           assertSupportedDesignFile(file.name)
-          await openFileInNewTab(file, handle)
+          await openFileInNewTab(file, { handle })
         }
       )
       return
