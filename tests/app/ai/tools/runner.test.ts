@@ -107,7 +107,7 @@ test('the next call edits while an earlier one still loads its fonts', async () 
   const figma = makeFigmaFromStore(store, pageId)
   const fontsLoaded = createDeferred<boolean>()
   const ensure = spyOn(fonts, 'ensureGraphFonts').mockReturnValueOnce(fontsLoaded.promise)
-  const shape = { type: 'RECTANGLE', x: 0, y: 0, width: 40, height: 20 }
+  const shape = { type: 'TEXT', x: 0, y: 0, width: 40, height: 20 }
   try {
     const first = runEditorTool({ store, figma, def: createShape, args: shape, source: 'MCP' })
     const second = runEditorTool({ store, figma, def: createShape, args: shape, source: 'MCP' })
@@ -190,7 +190,7 @@ test("an edit made while a call's fonts load stays out of the call's undo step",
     store,
     figma: makeFigmaFromStore(store, pageId),
     def: createShape,
-    args: { type: 'RECTANGLE', x: 200, y: 0, width: 40, height: 20 },
+    args: { type: 'TEXT', x: 200, y: 0, width: 40, height: 20 },
     source: 'MCP'
   })
   while (loadFonts.mock.calls.length === 0) await Promise.resolve()
