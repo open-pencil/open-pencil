@@ -1,4 +1,4 @@
-import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
+import { resolveEditorProfile } from '@open-pencil/core'
 import {
   HTML_IMPORT_VIEWPORT,
   sceneGraphFromStyledHTML
@@ -8,31 +8,13 @@ import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
+import type { OpenFileOptions } from '@/app/document/io/state'
 import { appIconMatcher } from '@/app/editor/icons/provider'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { toast } from '@/app/shell/ui'
-
-type OpenDOMDocumentState = EditorState & {
-  documentName: string
-  /** Whether the side panels show, which a document opens with as its kind starts it. */
-  showUI: boolean
-}
-
-type OpenDOMFileOptions = {
-  editor: Editor
-  state: OpenDOMDocumentState
-  setDocumentSource: (
-    fileName: string,
-    sourceFormat: string,
-    handle?: FileSystemFileHandle,
-    path?: string
-  ) => void
-  fitCurrentPageToViewport: (signal?: AbortSignal) => Promise<void>
-  preparationController: EditorPreparationController
-}
 
 type DOMImportOptions = {
   cssText?: string
@@ -60,7 +42,7 @@ export function createDOMOpenActions({
   setDocumentSource,
   fitCurrentPageToViewport,
   preparationController
-}: OpenDOMFileOptions) {
+}: OpenFileOptions) {
   async function applyDOMText(
     html: string,
     options: DOMTextImportOptions,

@@ -1,12 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
-import {
-  addStrokeRunToPath,
-  leavingDirection,
-  strokeRuns,
-  type PathSink
-} from '@open-pencil/scene-graph/paths'
+import { addStrokeRunToPath, leavingDirection, strokeRuns } from '@open-pencil/scene-graph/paths'
+
+import type { PathRecorder } from './recorder'
 
 const zero = { x: 0, y: 0 }
 
@@ -15,7 +12,7 @@ function line(start: number, end: number): VectorSegment {
 }
 
 /** Records path commands as strings. */
-function recorder(): PathSink & { commands: string[] } {
+function recorder(): PathRecorder {
   const commands: string[] = []
   return {
     commands,

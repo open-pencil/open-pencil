@@ -1,4 +1,3 @@
-import type { EditorState } from '@open-pencil/core'
 import { filesMessages } from '@open-pencil/vue/i18n'
 
 import { downloadBlob } from '@/app/document/io/browser'
@@ -6,15 +5,14 @@ import { isFileWriteRefused } from '@/app/document/io/capability'
 import { documentFileName, documentNameFromFigPath } from '@/app/document/io/names'
 import { startSaveProgress, type SaveProgress } from '@/app/document/io/save/feedback'
 import { chooseBrowserFigSaveHandle, chooseTauriFigSavePath } from '@/app/document/io/save/targets'
+import type { NamedDocumentState } from '@/app/document/io/state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
 import { createDocumentWriter } from '@/app/document/io/write'
 import { rememberRecentFile } from '@/app/recent-files'
 import { IS_TAURI } from '@/constants'
 
-type SaveDocumentState = EditorState & { documentName: string }
-
 type SaveActionsOptions = Omit<DocumentSourceAccess, 'getSavedVersion'> & {
-  state: SaveDocumentState
+  state: NamedDocumentState
   /** The document's content revision, recorded as the saved version. */
   version: () => number
   /** The `.fig`, encoded and compressed, streaming as its target writes it. */
