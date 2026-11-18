@@ -31,6 +31,17 @@ function parametersText(parameters: ts.NodeArray<ts.ParameterDeclaration>): stri
     .join(',')
 }
 
+/** A signature's type parameters by their constraints and defaults; their names don't matter. */
+function typeParametersText(
+  parameters: ts.NodeArray<ts.TypeParameterDeclaration> | undefined
+): string {
+  if (!parameters) return ''
+  const text = parameters
+    .map((parameter) => `${typeText(parameter.constraint)}=${typeText(parameter.default)}`)
+    .join(',')
+  return `<${text}>`
+}
+
 /** `node` without the parentheses around it, which change nothing about the type. */
 function unwrap(node: ts.TypeNode): ts.TypeNode {
   return ts.isParenthesizedTypeNode(node) ? unwrap(node.type) : node
@@ -39,7 +50,7 @@ function unwrap(node: ts.TypeNode): ts.TypeNode {
 function typeText(node: ts.TypeNode | undefined): string {
   if (!node) return 'unknown'
   if (ts.isFunctionTypeNode(node)) {
-    return `fn(${parametersText(node.parameters)}):${typeText(node.type)}`
+    return `fn${typeParametersText(node.typeParameters)}(${parametersText(node.parameters)}):${typeText(node.type)}`
   }
   if (ts.isTypeReferenceNode(node)) {
     return `ref:${entityNameText(node.typeName)}<${(node.typeArguments ?? []).map(typeText).join(',')}>`
@@ -70,7 +81,7 @@ function memberText(member: ts.TypeElement): string | null {
   if (ts.isMethodSignature(member)) {
     const key = keyText(member.name)
     if (!key) return null
-    return `method:${key}${member.questionToken ? '?' : ''}(${parametersText(member.parameters)}):${typeText(member.type)}`
+    return `method:${key}${member.questionToken ? '?' : ''}${typeParametersText(member.typeParameters)}(${parametersText(member.parameters)}):${typeText(member.type)}`
   }
   if (ts.isIndexSignatureDeclaration(member)) {
     return `index:${member.parameters.map((param) => typeText(param.type)).join(',')}:${typeText(member.type)}`

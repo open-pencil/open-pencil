@@ -84,6 +84,12 @@ describe('duplicate type shapes', () => {
         'let a: Node & { run(value: string): void }\nlet b: Node & { run(value?: string): void }'
       ])
     ).toEqual([])
+    expect(
+      duplicates([
+        'src/a.ts',
+        'let a: Node & { map<T extends string>(x: T): T }\nlet b: Node & { map<T extends number>(x: T): T }'
+      ])
+    ).toEqual([])
     // Parameter names don't change the contract.
     expect(
       duplicates([
