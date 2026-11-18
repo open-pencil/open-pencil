@@ -18,7 +18,9 @@ const io = new IORegistry(BUILTIN_IO_FORMATS)
 export function parseWebAddress(text: string): URL | null {
   const trimmed = text.trim()
   if (!trimmed) return null
-  const withScheme = /^[a-z][a-z\d+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`
+  // `example.com:8443/page` names a port, not a scheme, so it gets one too.
+  const hasScheme = /^[a-z][a-z\d+.-]*:(?!\d+(?:[/?#]|$))/i.test(trimmed)
+  const withScheme = hasScheme ? trimmed : `https://${trimmed}`
   if (!URL.canParse(withScheme)) return null
   const url = new URL(withScheme)
   return url.protocol === 'http:' || url.protocol === 'https:' ? url : null
@@ -60,12 +62,15 @@ export async function openWebAddress(url: URL, signal?: AbortSignal): Promise<vo
   } catch (error) {
     throw new Error(fetchFailure(error), { cause: error })
   }
+  // Closing the dialog while the address loaded leaves nothing opened.
+  signal?.throwIfAborted()
   switch (remote.kind) {
     case 'html':
       await openFileInNewTab(fileFor(remote, '.html', 'text/html'), undefined, remote.url)
       return
     case 'document':
-      await openFileInNewTab(new File([remote.bytes], remote.name), undefined, remote.url)
+      // Opened as a picked file is: its address is no file path a save could write back to.
+      await openFileInNewTab(new File([remote.bytes], remote.name))
       return
     case 'svg':
       await openImage(fileFor(remote, '.svg', 'image/svg+xml'))

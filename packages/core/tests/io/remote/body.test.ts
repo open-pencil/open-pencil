@@ -62,4 +62,14 @@ describe('readBoundedBody', () => {
       readBoundedBody(streamed([MIB, 1]), MIB, { sizeError: 'Vectorized SVG is too large' })
     ).rejects.toThrow('Vectorized SVG is too large')
   })
+
+  test('cancels a body whose declared length is over the cap without reading it', async () => {
+    const cancel = mock(() => undefined)
+    const response = new Response(new ReadableStream<Uint8Array>({ cancel }), {
+      headers: { 'Content-Length': String(2 * MIB) }
+    })
+
+    await expect(readBoundedBody(response, MIB)).rejects.toThrow('exceeds')
+    expect(cancel).toHaveBeenCalledTimes(1)
+  })
 })

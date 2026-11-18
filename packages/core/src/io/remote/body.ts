@@ -27,7 +27,11 @@ export async function readBoundedBody(
   }
 
   const declared = Number(response.headers.get('content-length'))
-  if (Number.isFinite(declared) && declared > maxBytes) fail()
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    // Cancelling the unread body releases the connection, whether or not the caller aborts.
+    await response.body?.cancel().catch(() => undefined)
+    fail()
+  }
 
   if (!response.body) {
     const bytes = new Uint8Array(await response.arrayBuffer())

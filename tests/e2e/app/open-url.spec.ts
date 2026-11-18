@@ -3,11 +3,12 @@ import { readFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { join } from 'node:path'
 
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { getPageChildren } from '#tests/helpers/store'
 
 const SITE = 'https://site.example.test'
 /** Lets the app's own origin read the fake site, as a site that allows other sites does. */
@@ -17,9 +18,16 @@ async function openFromURL(page: Page, address: string) {
   await page.getByTestId('menubar-file').click()
   await page.getByRole('menuitem', { name: 'Open from URL…' }).click()
   const dialog = page.getByRole('dialog', { name: 'Open from URL' })
-  await dialog.getByLabel('Address').fill(address)
+  await dialog.getByRole('textbox', { name: 'Address' }).fill(address)
   await dialog.getByRole('button', { name: 'Open', exact: true }).click()
   return dialog
+}
+
+/** The dialog stays open with an alert saying why, and no document was opened. */
+async function expectRefused(page: Page, dialog: Locator) {
+  await expect(dialog.getByRole('alert')).toBeVisible()
+  await expect(dialog.getByRole('textbox', { name: 'Address' })).toBeEditable()
+  await expect(page.getByTestId('tabbar-tab')).toHaveCount(1)
 }
 
 test('a web page opens as layers with the stylesheet and picture it links', async ({ page }) => {
@@ -52,16 +60,11 @@ test('a web page opens as layers with the stylesheet and picture it links', asyn
   await expect(dialog).toHaveCount(0)
   await expect(tabs.getByRole('tab').last()).toContainText('site.example.test')
   await expect
-    .poll(() =>
-      page.evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) return null
-        const layers = store.graph.getChildren(store.state.currentPageId)
-        return layers.map((layer) => ({
-          width: layer.width,
-          image: layer.fills.some((fill) => fill.type === 'IMAGE')
-        }))
-      })
+    .poll(async () =>
+      (await getPageChildren(page)).map(({ width, fillTypes }) => ({
+        width,
+        image: fillTypes.includes('IMAGE')
+      }))
     )
     .toEqual([{ width: 120, image: false }, expect.objectContaining({ image: true })])
 })
@@ -75,7 +78,7 @@ test('an address that holds a PDF says it cannot be opened yet', async ({ page }
 
   const dialog = await openFromURL(page, `${SITE}/report.pdf`)
 
-  await expect(dialog).toContainText('This address holds a PDF, which OpenPencil cannot open yet.')
+  await expectRefused(page, dialog)
 })
 
 test('a site that does not let other sites read it points to the desktop app', async ({ page }) => {
@@ -94,7 +97,7 @@ test('a site that does not let other sites read it points to the desktop app', a
 
     const dialog = await openFromURL(page, `http://127.0.0.1:${port}/`)
 
-    await expect(dialog).toContainText('The desktop app can.')
+    await expectRefused(page, dialog)
   } finally {
     server.close()
   }
@@ -106,5 +109,10 @@ test('the dialog asks for a web address', async ({ page }) => {
 
   const dialog = await openFromURL(page, 'mailto:someone@example.com')
 
-  await expect(dialog).toContainText('Enter a web address, such as https://example.com.')
+  // The field is marked for correction, and nothing was fetched or opened.
+  await expect(dialog.getByRole('textbox', { name: 'Address' })).toHaveAttribute(
+    'aria-invalid',
+    'true'
+  )
+  await expect(page.getByTestId('tabbar-tab')).toHaveCount(1)
 })

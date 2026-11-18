@@ -29,8 +29,14 @@ describe('remoteFileKind', () => {
   test('tells pages from SVG by media type, then by the markup they start with', () => {
     expect(kindOf('example.com', text('<p>Hi</p>'), 'text/html')).toBe('html')
     expect(kindOf('logo', text('<svg/>'), 'image/svg+xml')).toBe('svg')
-    expect(kindOf('index', text('﻿ <!-- built --> <!DOCTYPE html><html>'))).toBe('html')
+    expect(kindOf('index', text('\uFEFF <!-- built --> <!DOCTYPE html><html>'))).toBe('html')
     expect(kindOf('logo', text('<?xml version="1.0"?>\n<svg viewBox="0 0 1 1">'))).toBe('svg')
+    expect(
+      kindOf('logo', text('<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "svg11.dtd">\n<svg>'))
+    ).toBe('svg')
+    expect(kindOf('logo', text(`<!-- ${'licence '.repeat(200)} -->\n<svg>`), 'text/plain')).toBe(
+      'svg'
+    )
   })
 
   test('leaves anything else unsupported', () => {

@@ -1,3 +1,5 @@
+import { delay } from 'es-toolkit'
+
 import { serializeHTML } from '../export/html'
 import type {
   CSSComputeOptions,
@@ -364,15 +366,20 @@ async function computeStylesInShadowRoot(
   }
 }
 
+/** How long a page's linked stylesheets may take to load before it is laid out without the rest. */
+const STYLESHEET_WAIT_MS = 20_000
+
 /**
  * Resolves once a `<style>` element's imported sheets have loaded or failed, which its `load` and
- * `error` events tell; a sheet that imports nothing fires `load` at once.
+ * `error` events tell, or after `STYLESHEET_WAIT_MS`, so a server that never finishes sending a
+ * sheet does not hold the import open. A sheet that imports nothing fires `load` at once.
  */
 function stylesheetLoaded(style: HTMLStyleElement): Promise<void> {
-  return new Promise((resolve) => {
+  const settled = new Promise<void>((resolve) => {
     style.addEventListener('load', () => resolve(), { once: true })
     style.addEventListener('error', () => resolve(), { once: true })
   })
+  return Promise.race([settled, delay(STYLESHEET_WAIT_MS)])
 }
 
 async function computeStylesInIframe(

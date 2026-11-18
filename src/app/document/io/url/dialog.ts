@@ -10,17 +10,18 @@ export function showOpenURLDialog(): void {
 }
 
 /**
- * Opens the address the dialog was given and closes the dialog once it opened. Resolves with why
- * it could not, for the dialog to show, or null.
+ * Opens the address the dialog was given. Resolves with why it could not, for the dialog to show,
+ * or null once it opened. When `signal` aborts, as closing the dialog does, it stops before opening
+ * anything and resolves with null.
  */
-export async function submitOpenURL(text: string): Promise<string | null> {
+export async function submitOpenURL(text: string, signal: AbortSignal): Promise<string | null> {
   const url = parseWebAddress(text)
   if (!url) return null
   try {
-    await openWebAddress(url)
-    openURLDialogOpen.value = false
+    await openWebAddress(url, signal)
     return null
   } catch (error) {
+    if (signal.aborted) return null
     return error instanceof Error ? error.message : String(error)
   }
 }

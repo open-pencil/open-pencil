@@ -88,8 +88,9 @@ export function createDOMOpenActions({
       importLinkedStylesheets: baseURL !== undefined
     })
     load.signal.throwIfAborted()
-    if (baseURL)
-      await embedPageImages(styled, { baseURL, fetch: fetchRemoteBytes, signal: load.signal })
+    // Pictures by web address come with it; relative ones only for a page from the web, which
+    // has an address to resolve them against.
+    await embedPageImages(styled, { baseURL, fetch: fetchRemoteBytes, signal: load.signal })
     load.update({ phase: 'layout', detail: pageName })
     const matcher = importIconMatcher(editor, load.signal)
     const graph = await sceneGraphFromStyledHTML(styled, {

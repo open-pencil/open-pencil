@@ -1,1 +1,1 @@
-- Pictures an imported HTML page links, such as `<img src="photo.png">`, become image fills instead of empty layers (#2210).
+- Pictures an imported HTML page links become image fills instead of empty layers: by web address in the app, and relative to the page too in the CLI and for pages opened from a URL. Pictures in SVG files keep their address (#2210).

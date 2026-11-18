@@ -91,13 +91,21 @@ describe('import CLI from a web address', () => {
     expect(image?.fills[0]?.type).toBe('IMAGE')
   })
 
-  test('says what an address holds when it is not a page', async () => {
+  test('imports nothing from an address that holds no page', async () => {
     using server = Bun.serve({ port: 0, fetch: () => new Response('%PDF-1.7\n') })
 
-    const imported = await runCLI(['import', new URL('/report.pdf', server.url).href])
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-'))
+    const figPath = join(dir, 'report.fig')
+
+    const imported = await runCLI([
+      'import',
+      new URL('/report.pdf', server.url).href,
+      '-o',
+      figPath
+    ])
 
     expect(imported.exitCode).toBe(1)
-    expect(imported.stderr).toContain('is a PDF, which OpenPencil cannot read yet')
+    expect(await Bun.file(figPath).exists()).toBe(false)
   })
 })
 

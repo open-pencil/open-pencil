@@ -51,14 +51,26 @@ function mediaType(contentType: string | null): string | undefined {
 
 const HTML_TYPES = new Set(['text/html', 'application/xhtml+xml'])
 
-/** The start of text bytes, without a byte order mark, comments, or leading space, in lowercase. */
+/** How far into a file its markup is looked for, past a byte order mark, comments, and space. */
+const MARKUP_SNIFF_BYTES = 64 * 1024
+
+/**
+ * The start of text bytes, without a byte order mark, comments, or leading space, in lowercase.
+ * Comments are dropped whole within the first `MARKUP_SNIFF_BYTES`, so a long licence header
+ * before an SVG's root does not hide it.
+ */
 function leadingText(bytes: Uint8Array): string {
   return new TextDecoder()
-    .decode(bytes.subarray(0, 1024))
-    .replace(/^﻿/, '')
+    .decode(bytes.subarray(0, MARKUP_SNIFF_BYTES))
+    .replace(/^\uFEFF/, '')
     .replace(/^(?:\s|<!--[\s\S]*?-->)+/, '')
+    .slice(0, 1024)
     .toLowerCase()
 }
+
+/** An SVG's start: an optional XML declaration and SVG document type, then its root. */
+const SVG_START =
+  /^(?:<\?xml[^>]*>\s*)?(?:<!--[\s\S]*?-->\s*)*(?:<!doctype svg[^>]*>\s*)?(?:<!--[\s\S]*?-->\s*)*<svg[\s>]/
 
 /**
  * What a fetched file is, from what it holds first: PDF and image bytes say so themselves, which a
@@ -78,7 +90,7 @@ export function remoteFileKind(
   if (contentType === 'image/svg+xml') return 'svg'
   if (contentType && HTML_TYPES.has(contentType)) return 'html'
   const text = leadingText(bytes)
-  if (/^<\?xml[\s\S]*?<svg[\s>]/.test(text) || /^<svg[\s>]/.test(text)) return 'svg'
+  if (SVG_START.test(text)) return 'svg'
   if (/^<(?:!doctype html|html|head|body)[\s>]/.test(text)) return 'html'
   return 'unsupported'
 }

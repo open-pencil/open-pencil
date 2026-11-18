@@ -21,7 +21,8 @@ export function getPageChildren(page: Page) {
       height: n.height,
       layoutMode: n.layoutMode,
       childIds: n.childIds,
-      vectorNetwork: n.vectorNetwork
+      vectorNetwork: n.vectorNetwork,
+      fillTypes: n.fills.map((fill) => fill.type)
     }))
   })
 }

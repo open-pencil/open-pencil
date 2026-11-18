@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { readIcon } from '@open-pencil/scene-graph/icons'
@@ -461,6 +462,28 @@ describe('reading HTML', () => {
     const [image] = graph.getChildren(graph.getPages()[0].id)
 
     expect(image).toMatchObject({ width: view.getUint32(16), height: view.getUint32(20) })
+  })
+
+  test('a page from the web reads no file from the computer', async () => {
+    const png = join(FIXTURES, 'absolute-constraint-figma.png')
+    const fileURL = pathToFileURL(png).href
+    const { graph } = await readHTMLDocument(
+      `<link rel="stylesheet" href="${fileURL}"><img src="${fileURL}">`,
+      { baseURL: 'https://site.example.test/' }
+    )
+    const [image] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(image.fills.some((paint) => paint.type === 'IMAGE')).toBe(false)
+  })
+
+  test('a page on disk shows the pictures beside it', async () => {
+    const page = pathToFileURL(join(FIXTURES, 'page.html')).href
+    const { graph } = await readHTMLDocument('<img src="absolute-constraint-figma.png">', {
+      baseURL: page
+    })
+    const [image] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(image.fills[0]?.type).toBe('IMAGE')
   })
 
   test('fills an image layer with the picture its page links', async () => {

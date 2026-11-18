@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useStore } from '@nanostores/vue'
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 
 import { filesMessages } from '@open-pencil/vue/i18n'
 
@@ -21,28 +21,32 @@ const files = useStore(filesMessages)
 const address = ref('')
 const invalid = ref<string | null>(null)
 const error = ref<string | null>(null)
-const opening = ref(false)
+/** The open in progress; closing the dialog aborts it, and a newer one replaces it. */
+const pending = shallowRef<AbortController | null>(null)
 
 function updateOpen(open: boolean) {
   openURLDialogOpen.value = open
   if (open) return
+  pending.value?.abort()
+  pending.value = null
   address.value = ''
   invalid.value = null
   error.value = null
 }
 
 async function submit() {
-  if (opening.value) return
+  if (pending.value) return
   invalid.value = parseWebAddress(address.value) ? null : files.value.openURLInvalid
   error.value = null
   if (invalid.value) return
-  opening.value = true
-  try {
-    error.value = await submitOpenURL(address.value)
-    if (!error.value) updateOpen(false)
-  } finally {
-    opening.value = false
-  }
+  const controller = new AbortController()
+  pending.value = controller
+  const failure = await submitOpenURL(address.value, controller.signal)
+  // An open the dialog was closed on, or that a newer one replaced, no longer speaks for it.
+  if (pending.value !== controller) return
+  pending.value = null
+  if (failure) error.value = failure
+  else updateOpen(false)
 }
 </script>
 
@@ -74,7 +78,7 @@ async function submit() {
     </AppFormField>
     <template #footer>
       <AppDialogCancel />
-      <AppButton type="submit" color="primary" variant="solid" :loading="opening">
+      <AppButton type="submit" color="primary" variant="solid" :loading="pending !== null">
         {{ files.openURLSubmit }}
       </AppButton>
     </template>

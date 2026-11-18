@@ -97,12 +97,19 @@ async function readFileAt(url: string, signal: AbortSignal): Promise<HTMLEngineR
   return bytes ? resource(url, bytes) : null
 }
 
+/** Whether a page lives on the web rather than on disk, so it may not read the computer's files. */
+function isWebPage(baseURL: string | undefined): boolean {
+  return baseURL !== undefined && /^https?:/i.test(baseURL)
+}
+
 /**
  * Fetches what a page asks for: its own files through `readAsset`, `file:` URLs from disk, and
- * the rest, such as `https:` and `data:`, over the network, each up to `MAX_RESOURCE_BYTES`.
+ * the rest, such as `https:` and `data:`, over the network, each up to `MAX_RESOURCE_BYTES`. A
+ * page from the web reads nothing from disk, whatever its stylesheets and images name.
  */
-function pageFetch(readAsset: ReadHTMLOptions['readAsset']): HTMLEngineFetch {
+function pageFetch(readAsset: ReadHTMLOptions['readAsset'], fromWeb: boolean): HTMLEngineFetch {
   return async (url, signal) => {
+    if (fromWeb && (url.startsWith('file:') || url.startsWith(ASSET_BASE_URL))) return null
     if (url.startsWith(ASSET_BASE_URL)) return readAssetAt(url, readAsset)
     if (url.startsWith('file:')) return readFileAt(url, signal)
     const response = await fetch(url, { signal }).catch(() => null)
@@ -152,7 +159,7 @@ export async function readHTMLDocument(
   // The page's own fonts, from its `@font-face` rules, which its text may name first.
   const pageFamilies = new Map<string, string>()
   const baseURL = options.baseURL ?? (options.readAsset ? ASSET_BASE_URL : undefined)
-  const fetchResource = rememberingFetch(pageFetch(options.readAsset))
+  const fetchResource = rememberingFetch(pageFetch(options.readAsset, isWebPage(baseURL)))
   const runtime = createHTMLEngineRuntime({
     engine: async () => engine,
     baseURL,
