@@ -165,6 +165,53 @@ describe('parsePenFile — instance themes', () => {
     }
   })
 
+  // Two override paths can name the same copy; the layers under it take both themes.
+  test('merges the themes of two overrides that name the same nested copy', () => {
+    const graph = parseDocument(
+      [
+        {
+          id: 'Card',
+          type: 'frame',
+          reusable: true,
+          children: [{ id: 'dot', type: 'frame', width: 10, height: 10, fill: '$tone' }]
+        },
+        {
+          id: 'Row',
+          type: 'frame',
+          reusable: true,
+          children: [
+            { id: 'group', type: 'frame', children: [{ id: 'card', type: 'ref', ref: 'Card' }] }
+          ]
+        },
+        {
+          id: 'placed',
+          type: 'ref',
+          ref: 'Row',
+          descendants: {
+            'group/card': { theme: { density: 'cozy' } },
+            card: { theme: { mode: 'dark' } }
+          }
+        }
+      ],
+      {
+        themes: { mode: ['light', 'dark'], density: ['compact', 'cozy'] },
+        variables: {
+          tone: {
+            type: 'color',
+            value: [
+              { value: '#CC0000', theme: { mode: 'light' } },
+              { value: '#00CC00', theme: { mode: 'dark', density: 'compact' } },
+              { value: '#0000CC', theme: { mode: 'dark', density: 'cozy' } }
+            ]
+          }
+        }
+      }
+    )
+    const card = copyOf(graph, 'placed', 'card')
+
+    expect(copyOf(graph, card.id, 'dot').fills[0]?.color).toEqual({ r: 0, g: 0, b: 0.8, a: 1 })
+  })
+
   // A swap's theme reaches the component it swaps in, not the screen theme from before the swap.
   test('resolves a swapped nested instance in the theme the replacement sets', () => {
     const graph = parseDocument(

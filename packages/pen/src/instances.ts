@@ -323,7 +323,8 @@ function descendantThemes(
     const target = resolvePath(build.graph, instance, path)
     if (!target) continue
     themes ??= new Map()
-    themes.set(target.id, override.theme)
+    // Two paths can name one copy; their themes merge, as applying both overrides does.
+    themes.set(target.id, mergeTheme(themes.get(target.id), override.theme))
   }
   return themes
 }
