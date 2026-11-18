@@ -62,6 +62,7 @@ Before a PR run `bun run check`, `bun run format`, `bun run test:unit`, and `bun
 - Never drill with `../../`: one `../` to a sibling folder is fine, two or more means an alias. This holds in tests as much as in source — a test reaches its package's source through `#<pkg>/*` and its own helpers through `#<pkg>-tests/*`. `@open-pencil/imports/no-deep-parent-relative-imports` enforces it for imports and `@open-pencil/imports/no-deep-parent-relative-paths` for paths built from `import.meta`; a new test directory must be added to `lint:structure` so the rules reach it.
 - Verify a change SDK users consume through a bundler, such as a Vite plugin, a side-effect module, a `?url` asset, or an export map, from packed tarballs installed in an app outside the workspace, in a cold `vite dev` and in `vite build`. A workspace-linked app hides it, since Vite does not pre-bundle linked packages; Node and Bun import every public export in CI, so a Vite-only module joins the skip set (`tools/checks/package-quality/src/smoke/runtime.ts`).
 - Reuse named types from `@open-pencil/scene-graph`; do not respell `Color`, `Vector`, `SceneNode`, `Effect`, `Fill`, or `Stroke`.
+- Name a type you would write twice, including an intersection such as `SceneNode & { children?: SceneNode[] }`, beside the code that owns it; `test:type-shapes` reports a named shape repeated across the app and its main packages, and an inline intersection repeated within any package.
 
 ## Code conventions
 

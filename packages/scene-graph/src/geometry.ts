@@ -205,6 +205,9 @@ type SideStrokeNode = Pick<
   | 'borderLeftWeight'
 >
 
+/** What deciding on per-side strokes reads: the side weights, and the node's type when known. */
+type StrokeSidesInput = Partial<SideStrokeNode> & { type?: string }
+
 /** The layers the canvas strokes side by side when their sides have weights of their own. */
 const SIDE_STROKE_TYPES: ReadonlySet<string> = new Set<SceneNode['type']>([
   'FRAME',
@@ -220,7 +223,7 @@ const SIDE_STROKE_TYPES: ReadonlySet<string> = new Set<SceneNode['type']>([
  * Whether `node` strokes each side by its own weight. A line or vector keeps one weight whatever
  * the flag says, since its outline has no sides.
  */
-export function drawsStrokeSides(node: Partial<SideStrokeNode> & { type?: string }): boolean {
+export function drawsStrokeSides(node: StrokeSidesInput): boolean {
   return node.independentStrokeWeights === true && (!node.type || SIDE_STROKE_TYPES.has(node.type))
 }
 
@@ -251,10 +254,7 @@ export function strokeSideWeights(
 }
 
 /** A stroke's weight, or with sides of their own the widest side, for what is not drawn per side. */
-export function strokeWeightOf(
-  node: Partial<SideStrokeNode> & { type?: string },
-  stroke: Pick<Stroke, 'weight'>
-): number {
+export function strokeWeightOf(node: StrokeSidesInput, stroke: Pick<Stroke, 'weight'>): number {
   if (!drawsStrokeSides(node)) return stroke.weight
   return Math.max(
     node.borderTopWeight ?? 0,
