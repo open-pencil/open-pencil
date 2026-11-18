@@ -53,10 +53,11 @@ async function reopen(graph: SceneGraph) {
       `reopened ${name}`
     )
   const copy = named('INSTANCE', 'Copy')
+  const main = named('COMPONENT', 'Main')
   return {
     graph: reopened,
-    main: named('COMPONENT', 'Main'),
-    shape: named('VECTOR', 'Shape'),
+    main,
+    shape: getNodeOrThrow(reopened, expectDefined(main.childIds[0], 'reopened component layer')),
     layer: getNodeOrThrow(reopened, expectDefined(copy.childIds[0], 'reopened copy layer'))
   }
 }

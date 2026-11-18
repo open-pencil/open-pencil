@@ -109,11 +109,13 @@ export function changesMoreThanStrokeLines(node: SceneNode, changes: Partial<Sce
     const value = changes[STROKE_LINE_FIELDS[key]]
     if (value !== undefined) Reflect.set(lines, key, value)
   }
-  // Strokes written without a cap or join take the layer's, as `strokeLineChanges` gives them.
-  const projected = withStrokeLines(node.strokes, lines).map((stroke) => ({
+  // Strokes written without a cap or join take the layer's, as `strokeLineChanges` gives them,
+  // and a stroke without a dash draws as solid as one with an empty dash.
+  const drawn = (stroke: Stroke): Stroke => ({
     ...stroke,
     cap: stroke.cap ?? node.strokeCap,
-    join: stroke.join ?? node.strokeJoin
-  }))
-  return !isEqual(projected, next)
+    join: stroke.join ?? node.strokeJoin,
+    dashPattern: stroke.dashPattern ?? []
+  })
+  return !isEqual(withStrokeLines(node.strokes, lines).map(drawn), next.map(drawn))
 }

@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { omit } from 'es-toolkit'
+
 import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
 import { instanceOverrideFields, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
@@ -159,6 +161,12 @@ describe('which overrides a stroke edit records', () => {
     const { node } = layerWith([stroke({ weight: 1 }), stroke({ weight: 3 })])
     const changes = written(node, { dashPattern: [6, 4] })
     expect(instanceOverrideFields(node, changes)).not.toContain('strokes')
+  })
+
+  test('a stroke left without a dash clears the dash without overriding the strokes', () => {
+    const { node } = layerWith([stroke({ dashPattern: [6, 4] })])
+    const changes = written(node, { strokes: [omit(stroke(), ['dashPattern'])] })
+    expect(instanceOverrideFields(node, changes)).toEqual(['dashPattern'])
   })
 
   test('a line no layer field records, such as a later stroke’s dash, overrides the strokes', () => {
