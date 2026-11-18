@@ -24,7 +24,7 @@ import type { FigmaRectangleNode } from '#core/figma-api/node-types'
 type FigmaNodeEffect = FigmaRectangleNode['effects'][number]
 
 import { FIGMA_DEFAULT_VALUES, variableAlias, type FigmaVariableAlias } from './values'
-import { FigmaVariable, FigmaVariableCollection, assertVariableName } from './variable'
+import { FigmaVariable, FigmaVariableCollection, assertLocal, assertVariableName } from './variable'
 
 export { FigmaVariable, FigmaVariableCollection, writeVariableValue } from './variable'
 export type { FigmaComposedColor, FigmaVariableAlias, FigmaVariableValue } from './values'
@@ -120,9 +120,11 @@ export class FigmaVariablesAPI {
     if (!isModelledType(type))
       throw new Error(`in createVariable: OpenPencil does not support ${type} variables`)
     const collectionId = typeof collection === 'string' ? collection : collection.id
-    if (!this.#graph.variableCollections.has(collectionId)) {
+    const record = this.#graph.variableCollections.get(collectionId)
+    if (!record) {
       throw new Error('in createVariable: Could not find variable collection')
     }
+    assertLocal('createVariable', 'variable collection', isLibraryCollection(record))
     assertVariableName(this.#graph, 'createVariable', name, collectionId)
     const variable = this.#graph.createVariable(
       name,

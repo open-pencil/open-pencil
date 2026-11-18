@@ -242,7 +242,7 @@ The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil'
 ### Variables
 
 - `figma.variables.getLocalVariables(type?)`, `getVariableById(id)`, `getLocalVariableCollections()`, `getVariableCollectionById(id)`, and their `…Async` forms
-- Library variables and collections the file uses report `remote: true`. As in Figma, `getLocalVariables` and `getLocalVariableCollections` leave them out; `getVariableById`, `getVariableCollectionById`, and `node.boundVariables` still reach them. A library variable reports `hiddenFromPublishing: false`, and setting it throws
+- Library variables and collections the file uses report `remote: true`. As in Figma, `getLocalVariables` and `getLocalVariableCollections` leave them out; `getVariableById`, `getVariableCollectionById`, and `node.boundVariables` still reach them. A library variable reports `hiddenFromPublishing: false`. As in Figma, every edit to a library variable or collection throws: setting `name`, `description`, `scopes`, or `hiddenFromPublishing`, `setValueForMode`, the code syntax methods, `addMode`, `renameMode`, `removeMode`, `remove()`, and `createVariable` in a library collection
 - `figma.variables.createVariableCollection(name)` and `createVariable(name, collection, resolvedType)`, which starts every mode at Figma's default
 - `figma.variables.createVariableAlias(variable)`, `setBoundVariableForPaint(paint, 'color', variable)`, and `setBoundVariableForEffect(effect, field, variable)`, which binds a shadow's `color`, `radius`, `spread`, `offsetX`, or `offsetY`, or a blur's `radius`
 - `variable.setValueForMode(modeId, value)`, `valuesByMode`, `resolveForConsumer(node)`, `name`, `description`, `scopes`, `codeSyntax`, and `remove()`

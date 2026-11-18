@@ -95,6 +95,48 @@ describe('figma.variables', () => {
     expect(graphOf(api).variables.get(accent.id)?.hiddenFromPublishing).toBe(true)
   })
 
+  test('every edit to a library variable or collection throws and writes nothing', () => {
+    const { api, brand, accent } = withLibrary()
+    const graph = graphOf(api)
+    const before = structuredClone([
+      ...graph.variableCollections.values(),
+      ...graph.variables.values()
+    ])
+    const mode = brand.defaultModeId
+    const variableEdits: Array<[string, () => unknown]> = [
+      ['set_name', () => (accent.name = 'other')],
+      ['set_description', () => (accent.description = 'other')],
+      ['set_scopes', () => (accent.scopes = ['FRAME_FILL'])],
+      ['setVariableCodeSyntax', () => accent.setVariableCodeSyntax('WEB', 'x')],
+      ['removeVariableCodeSyntax', () => accent.removeVariableCodeSyntax('WEB')],
+      ['setValueForMode', () => accent.setValueForMode(mode, { r: 1, g: 0, b: 0, a: 1 })],
+      ['remove', () => accent.remove()]
+    ]
+    const collectionEdits: Array<[string, () => unknown]> = [
+      ['createVariable', () => api.variables.createVariable('new', brand, 'FLOAT')],
+      ['set_name', () => (brand.name = 'other')],
+      ['addMode', () => brand.addMode('Dark')],
+      ['renameMode', () => brand.renameMode(mode, 'Dark')],
+      ['removeMode', () => brand.removeMode(mode)],
+      ['remove', () => brand.remove()]
+    ]
+    for (const [method, edit] of variableEdits) {
+      expect(edit).toThrow(new RegExp(`^in ${method}: Cannot edit a remote variable$`))
+    }
+    for (const [method, edit] of collectionEdits) {
+      expect(edit).toThrow(new RegExp(`^in ${method}: Cannot edit a remote variable collection$`))
+    }
+    expect([...graph.variableCollections.values(), ...graph.variables.values()]).toEqual(before)
+  })
+
+  test('a removed variable or collection throws on reading remote, as in Figma', () => {
+    const { size, collection } = tokens()
+    size.remove()
+    expect(() => size.remote).toThrow(`Variable ${size.id} has been removed`)
+    collection.remove()
+    expect(() => collection.remote).toThrow(`Variable collection ${collection.id} has been removed`)
+  })
+
   test('async lookups return what the sync ones do', async () => {
     const { api, collection, size } = tokens()
     expect((await api.variables.getVariableByIdAsync(size.id))?.id).toBe(size.id)
