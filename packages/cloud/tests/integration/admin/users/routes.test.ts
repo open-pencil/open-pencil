@@ -156,22 +156,29 @@ describe('admin people routes', () => {
   test('queue the removal’s notice in its transaction, so neither outlives the other', async () => {
     // The queue takes the first notice, then fails: the removal must go with it.
     let failing = true
+    let failedAfterQueueing = false
     const { password, remove, left, queued } = await server(GRACE_ID, 'Grace', (queue) => ({
       ...queue,
       async enqueue(input, transaction) {
         const id = await queue.enqueue(input, transaction)
-        if (failing) throw new Error('after the notice')
+        if (failing) {
+          failedAfterQueueing = true
+          throw new Error('after the notice')
+        }
         return id
       }
     }))
     expect((await remove(password.id)).status).toBe(500)
+    expect(failedAfterQueueing).toBe(true)
     expect(await queued()).toEqual([])
     expect(await left()).toHaveLength(2)
 
     failing = false
     expect((await remove(password.id)).status).toBe(200)
     expect(await left()).toEqual(['google'])
-    const [notice] = await queued()
+    const notices = await queued()
+    expect(notices).toHaveLength(1)
+    const [notice] = notices
     expect(notice).toMatchObject({ kind: 'two-step-changed', recipient: 'grace@example.com' })
     if (!notice?.payloadEncrypted) throw new Error('The removal queued no notice')
     // Read the sealed payload back as delivery would.
@@ -182,6 +189,7 @@ describe('admin people routes', () => {
       notice.payloadEncrypted
     )
     expect(content.payload).toMatchObject({
+      name: 'Grace',
       change: 'sign-in-method-removed',
       method: 'credential'
     })
