@@ -1,2 +1,3 @@
 - Pictures an imported HTML page links become image fills instead of empty layers: by web address in the app, and relative to the page too in the CLI and for pages opened from a URL. Pictures in SVG files keep their address (#2210).
 - Imported HTML keeps attributes written without a value, such as `hidden` or the `data-v-…` attributes of scoped styles, so the rules that select them still apply (#2210).
+- An imported HTML page with a `<script>` between its sections lays the sections after it out where the page put them, instead of stacking them over the top of the page (#2210).

@@ -58,6 +58,25 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(byId(document, 'd').layout?.box).toEqual({ x: 438, y: 70, width: 30, height: 30 })
   })
 
+  test('places sections after a script where the page laid them out', async ({ page }) => {
+    // Text either side of a dropped <script> is two nodes in the parsed page and one in the
+    // sandbox, which must not shift the sections after it onto the wrong boxes.
+    const layers = await browserImportedLayers(
+      page,
+      `<style>body { margin: 0 } section { height: 100px }</style>
+       <section id="first"></section>
+       <script>void 0</script>
+       <section id="second"></section>
+       <footer id="last" style="height: 40px"></footer>`,
+      VIEWPORT
+    )
+    const at = (id: string) => layers.find((layer) => layer.id === id)?.layer
+
+    expect(at('first')).toMatchObject({ y: 0, height: 100 })
+    expect(at('second')).toMatchObject({ y: 100, height: 100 })
+    expect(at('last')).toMatchObject({ y: 200, width: 800, height: 40 })
+  })
+
   test('keeps auto side margins, which center or end-align a block', async ({ page }) => {
     const document = await captured(
       page,

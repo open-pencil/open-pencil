@@ -445,9 +445,15 @@ function copyComputedStyles(
 
   const nextDocument = structuredClone(designDocument)
   const pairs: [DesignElement, Element][] = []
-  const domChildren = Array.from(content.childNodes)
-  for (const [index, child] of nextDocument.children.entries()) {
-    const domChild = domChildren.at(index)
+  // Elements pair by their order among elements, as they do further down: text nodes do not
+  // line up, since text either side of a dropped element, such as a <script>, is two nodes here and
+  // one once written into the sandbox.
+  const elements = nextDocument.children.filter(
+    (child): child is DesignElement => child.type === 'element'
+  )
+  const domElements = Array.from(content.children)
+  for (const [index, child] of elements.entries()) {
+    const domChild = domElements.at(index)
     if (domChild) collectElementPairs(child, domChild, pairs)
   }
 
