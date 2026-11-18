@@ -1,7 +1,6 @@
 import type { Page, Locator } from '@playwright/test'
 
 import type { Vector } from '@open-pencil/scene-graph/primitives'
-import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { CanvasPointer } from './canvas/pointer'
 
@@ -103,22 +102,22 @@ export class CanvasHelper extends CanvasPointer {
   }
 
   async screenPositionOf(point: Vector): Promise<Vector> {
-    const box = expectDefined(
-      await this.page.getByTestId('scene-canvas-element').boundingBox(),
-      'scene canvas bounds'
-    )
-    const view = await this.page.evaluate(() => {
+    return this.page.evaluate((scenePoint) => {
       const store = window.openPencil?.getStore?.()
       if (!store) {
         throw new Error('OpenPencil store not initialized')
       }
+      const canvas = document.querySelector('[data-test-id="scene-canvas-element"]')
+      if (!canvas) {
+        throw new Error('scene canvas not found')
+      }
+      const box = canvas.getBoundingClientRect()
       const { panX, panY, zoom } = store.state
-      return { panX, panY, zoom }
-    })
-    return {
-      x: Math.round(box.x + view.panX + point.x * view.zoom),
-      y: Math.round(box.y + view.panY + point.y * view.zoom)
-    }
+      return {
+        x: Math.round(box.x + panX + scenePoint.x * zoom),
+        y: Math.round(box.y + panY + scenePoint.y * zoom)
+      }
+    }, point)
   }
 
   async screenshotCanvas() {
