@@ -1,7 +1,11 @@
 import { DOMImplementation, type Document as XMLDocument, type Element } from '@xmldom/xmldom'
 import { compact } from 'es-toolkit'
 
-import { dimension, parseCSSURLReferences } from '@open-pencil/scene-graph/css'
+import {
+  dimension,
+  parseCSSURLReferences,
+  parseFragmentReference
+} from '@open-pencil/scene-graph/css'
 import { parseSVGViewBoxValue } from '@open-pencil/scene-graph/parse-path'
 
 import { parseSVGFragment } from '#core/io/formats/svg/document'
@@ -192,7 +196,8 @@ function collectUsePaths(
   const x = num(element, 'x')
   const y = num(element, 'y')
   const href = element.getAttribute('href') ?? element.getAttribute('xlink:href')
-  const target = href?.startsWith('#') ? traversal.elementsById.get(href.slice(1)) : null
+  const id = parseFragmentReference(href)
+  const target = id ? traversal.elementsById.get(id) : null
   const moved = x !== 0 || y !== 0 ? `translate(${x} ${y})` : ''
   const placed = [scope.transform, moved, target ? symbolViewBox(element, target, traversal) : '']
   const transform = compact(placed).join(' ') || null

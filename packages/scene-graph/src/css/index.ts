@@ -31,5 +31,6 @@ export {
   parseCSSColor,
   parseCSSNumber,
   parseCSSURLReferences,
+  parseFragmentReference,
   splitCSSValue
 } from './values'

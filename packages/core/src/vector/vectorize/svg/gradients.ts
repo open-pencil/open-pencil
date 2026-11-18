@@ -11,7 +11,7 @@ import { parseColor } from '@open-pencil/scene-graph/color'
  * normalize into each node's bounding box and build the transform in Figma's convention
  * (see geometry/gradient).
  */
-import { parseCSSURLReferences } from '@open-pencil/scene-graph/css'
+import { parseCSSURLReferences, parseFragmentReference } from '@open-pencil/scene-graph/css'
 import {
   ellipticalGradientTransform,
   linearGradientTransformFromAxes
@@ -82,7 +82,7 @@ export type SVGGradients = ReadonlyMap<string, ParsedGradient>
 /** The `id` a gradient's `href` or `xlink:href` names, or null. */
 function hrefId(element: SVGElementLike): string | null {
   const href = (element.getAttribute('href') ?? element.getAttribute('xlink:href'))?.trim()
-  return href?.startsWith('#') ? href.slice(1) : null
+  return parseFragmentReference(href)
 }
 
 /**

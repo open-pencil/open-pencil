@@ -4,7 +4,11 @@ import type { DesignDocument, DesignElement } from '@open-pencil/dom-css'
 import { serializeNode } from '@open-pencil/dom-css/export'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
-import { parseCSSColor, parseCSSURLReferences } from '@open-pencil/scene-graph/css'
+import {
+  parseCSSColor,
+  parseCSSURLReferences,
+  parseFragmentReference
+} from '@open-pencil/scene-graph/css'
 import { ICON_NAME } from '@open-pencil/scene-graph/icons'
 import { parseSVGViewBoxValue } from '@open-pencil/scene-graph/parse-path'
 
@@ -26,10 +30,7 @@ function referencedIds(element: DesignElement): string[] {
     const attrs: Partial<Record<string, string>> = child.attrs
     const href = attrs.href ?? attrs['xlink:href']
     const values = [...Object.values(child.attrs), ...Object.values(child.inlineStyle ?? {})]
-    return [
-      ...(href?.startsWith('#') ? [href.slice(1)] : []),
-      ...values.flatMap(parseCSSURLReferences)
-    ]
+    return [...compact([parseFragmentReference(href)]), ...values.flatMap(parseCSSURLReferences)]
   })
 }
 

@@ -1,4 +1,5 @@
 import valueParser from 'postcss-value-parser'
+import { decode, parsePath } from 'ufo'
 
 import { tryParseColor } from '../color'
 import type { Color } from '../primitives'
@@ -50,6 +51,17 @@ export function splitCSSValue(value: string): string[] {
 }
 
 /**
+ * The id of the element a reference points to in its own document, as `href="#mark"` and
+ * `url(#clip)` point, decoded; null for a reference to another file or without a fragment.
+ */
+export function parseFragmentReference(reference: string | null | undefined): string | null {
+  if (!reference) return null
+  const { pathname, search, hash } = parsePath(reference.trim())
+  if (pathname || search || hash.length < 2) return null
+  return decode(hash.slice(1))
+}
+
+/**
  * The ids a CSS value points at with local `url(#id)` references, as `clip-path`, `mask`,
  * `filter`, and SVG paints do, quoted or not.
  */
@@ -58,8 +70,8 @@ export function parseCSSURLReferences(value: string | undefined): string[] {
   if (!value) return ids
   valueParser(value).walk((node) => {
     if (node.type !== 'function' || node.value.toLowerCase() !== 'url') return true
-    const target = node.nodes.at(0)?.value.trim() ?? ''
-    if (target.length > 1 && target.startsWith('#')) ids.push(target.slice(1))
+    const id = parseFragmentReference(node.nodes.at(0)?.value)
+    if (id) ids.push(id)
     // A url() holds no further references.
     return false
   })
