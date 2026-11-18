@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { compact } from 'es-toolkit'
-import { computed, ref } from 'vue'
+import { computed, onDeactivated, ref } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
@@ -33,6 +33,10 @@ const confirming = ref<PortalPersonAction | null>(null)
 const reason = ref('')
 
 const confirmingShown = useHeldContent(confirming)
+// The console keeps a page it leaves; a confirmation must not outlive the visit that opened it.
+onDeactivated(() => {
+  confirming.value = null
+})
 const confirmation = computed(() => {
   const action = confirmingShown.value
   if (!action) return null

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { createColumnHelper } from '@tanstack/vue-table'
 import { compact } from 'es-toolkit'
-import { computed, h, ref } from 'vue'
+import { computed, h, onDeactivated, ref } from 'vue'
 import IconLayers from '~icons/lucide/layers'
 
 import type { WorkspaceRole } from '@open-pencil/cloud/contract'
@@ -46,6 +46,10 @@ const methodLabel = usePortalSignInMethodLabel()
 const canRemoveMethod = computed(() => detail.methods.length > 1 && !person.value.you)
 const removing = ref<PortalPersonDetail['methods'][number] | null>(null)
 const removingShown = useHeldContent(removing)
+// The console keeps a page it leaves; a confirmation must not outlive the visit that opened it.
+onDeactivated(() => {
+  removing.value = null
+})
 
 function removeMethod() {
   const method = removing.value

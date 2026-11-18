@@ -90,7 +90,7 @@ function countOf(value: string) {
           </template>
         </SegmentedControl>
       </div>
-      <div class="ms-auto flex max-w-full items-center gap-2">
+      <div class="ms-auto flex max-w-full flex-wrap items-center justify-end gap-2">
         <slot name="toolbar" />
         <AppInput
           v-if="searchLabel"
@@ -129,7 +129,7 @@ function countOf(value: string) {
         <AppTablePagination
           :range="range"
           :can-previous="table.getCanPreviousPage()"
-          :can-next="table.getCanNextPage()"
+          :can-next="status !== 'refreshing' && table.getCanNextPage()"
           :previous-label="messages.previousPage"
           :next-label="messages.nextPage"
           @previous="table.previousPage()"
