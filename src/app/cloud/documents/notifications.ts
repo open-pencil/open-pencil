@@ -37,7 +37,7 @@ function notifyStorageFull(store: EditorStore): void {
   })
 }
 
-function notifyConflict(store: EditorStore): void {
+function notifyConflict(store: EditorStore, documentId: string): void {
   const tabId = getTabForStore(store)?.id
   if (!tabId) return
   const messages = cloudMessages.get()
@@ -48,7 +48,9 @@ function notifyConflict(store: EditorStore): void {
     tabId,
     tag: `conflict:${tabId}`,
     open: () => {
-      if (switchTab(tabId)) requestConflictChoice(store)
+      if (!switchTab(tabId)) return
+      // Keeping both moves the tab to the copy, which is not the document this was about.
+      if (store.getStorageBinding()?.documentId === documentId) requestConflictChoice(store)
     }
   })
 }
@@ -61,11 +63,13 @@ function tabWaitingOnConflict(documentId: string): EditorStore | null {
   const tab = getTabsSnapshot().find((candidate) => {
     const binding = candidate.store.getStorageBinding()
     return (
-      candidate.kind === 'document' && isCloudBinding(binding) && binding?.documentId === documentId
+      candidate.kind === 'document' &&
+      !cloudRoomPermissions.value.has(candidate.store) &&
+      isCloudBinding(binding) &&
+      binding?.documentId === documentId
     )
   })
-  if (!tab || cloudRoomPermissions.value.has(tab.store)) return null
-  return tab.store
+  return tab?.store ?? null
 }
 
 /**
@@ -84,8 +88,10 @@ export function watchCloudDocumentNotices(): () => void {
   })
 
   const conflicted = new Set<string>()
+  let stopped = false
   async function checkConflict(documentId: string) {
     const meta = await getLocalCanvasStore().getMeta(documentId)
+    if (stopped) return
     if (meta?.syncStatus !== 'conflict') {
       conflicted.delete(documentId)
       return
@@ -93,13 +99,14 @@ export function watchCloudDocumentNotices(): () => void {
     const store = tabWaitingOnConflict(documentId)
     if (!store || conflicted.has(documentId)) return
     conflicted.add(documentId)
-    notifyConflict(store)
+    notifyConflict(store, documentId)
   }
   const stopConflicts = onStorageWorkspaceEvent(({ documentId }) => {
     if (documentId) void checkConflict(documentId).catch(() => undefined)
   })
 
   return () => {
+    stopped = true
     stopAccess()
     stopConflicts()
   }

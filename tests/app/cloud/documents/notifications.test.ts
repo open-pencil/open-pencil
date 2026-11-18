@@ -4,6 +4,7 @@ import { nextTick } from 'vue'
 
 import { asDouble } from '@open-pencil/test-support/doubles'
 
+import { conflictChoiceRequested } from '@/app/cloud/documents/conflict'
 import { watchCloudDocumentNotices } from '@/app/cloud/documents/notifications'
 import { cloudRoomPermissions, cloudRoomsAtStorageLimit } from '@/app/cloud/rooms/live'
 import { CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/sessions/token'
@@ -20,16 +21,15 @@ const LOCATION = { providerId: CLOUD_STORAGE_PROVIDER_ID, profileId: 'server', c
 let notify: Mock<typeof notifications.notify>
 let status: LocalCanvasMeta['syncStatus'] = 'pending'
 let stop: () => void = () => undefined
-let openedId: string | null = null
+let openedIds: string[] = []
 
 function openCloudTab() {
   const tab = createTab()
-  spyOn(tab.store, 'getStorageBinding').mockReturnValue(
+  const binding = spyOn(tab.store, 'getStorageBinding').mockReturnValue(
     asDouble<StorageDocumentBinding>({ ...LOCATION, documentId: DOCUMENT })
   )
-  tab.store.state.documentName = 'Plan'
-  openedId = tab.id
-  return tab
+  openedIds.push(tab.id)
+  return { ...tab, binding }
 }
 
 /** The sync engine records the document's status and says it changed, as after an upload. */
@@ -39,7 +39,7 @@ async function syncs(next: LocalCanvasMeta['syncStatus']) {
   await Bun.sleep(0)
 }
 
-const shown = () => notify.mock.calls.map(([notice]) => [notice.event, notice.title])
+const shown = () => notify.mock.calls.map(([notice]) => [notice.event, notice.tabId])
 
 beforeEach(() => {
   status = 'pending'
@@ -57,20 +57,46 @@ afterEach(async () => {
   mock.restore()
   cloudRoomPermissions.value = new Map()
   cloudRoomsAtStorageLimit.value = new Set()
-  if (openedId) await closeTab(openedId, 'discard')
-  openedId = null
+  for (const id of openedIds) await closeTab(id, 'discard')
+  openedIds = []
+  conflictChoiceRequested.value = null
 })
 
 describe('Cloud document notifications', () => {
   test('tell once about a conflict in an open tab, and again after it was resolved', async () => {
-    openCloudTab()
+    const { id } = openCloudTab()
     await syncs('conflict')
     await syncs('conflict')
-    expect(shown()).toEqual([['cloudConflict', '“Plan” was changed in two places']])
+    expect(shown()).toEqual([['cloudConflict', id]])
 
     await syncs('synced')
     await syncs('conflict')
     expect(shown()).toHaveLength(2)
+  })
+
+  test('open the version choice on a click, unless the tab moved to a copy meanwhile', async () => {
+    const { binding } = openCloudTab()
+    await syncs('conflict')
+    const open = () => notify.mock.calls.at(-1)?.[0].open?.()
+    open()
+    expect(conflictChoiceRequested.value).not.toBeNull()
+
+    conflictChoiceRequested.value = null
+    // Keeping both versions moves the tab to the copy.
+    binding.mockReturnValue(
+      asDouble<StorageDocumentBinding>({ ...LOCATION, documentId: crypto.randomUUID() })
+    )
+    open()
+    expect(conflictChoiceRequested.value).toBeNull()
+  })
+
+  test('tell the tab outside a room when another tab of the document is in one', async () => {
+    const live = openCloudTab()
+    const waiting = openCloudTab()
+    cloudRoomPermissions.value = new Map([[live.store, 'edit']])
+    await nextTick()
+    await syncs('conflict')
+    expect(shown()).toEqual([['cloudConflict', waiting.id]])
   })
 
   test('leave out a conflict the room settles, and one of a document no tab shows', async () => {
@@ -84,7 +110,7 @@ describe('Cloud document notifications', () => {
   })
 
   test('tell when an editing tab becomes view only at the storage limit, not one opened so', async () => {
-    const { store } = openCloudTab()
+    const { id, store } = openCloudTab()
     cloudRoomPermissions.value = new Map([[store, 'view']])
     cloudRoomsAtStorageLimit.value = new Set([store])
     await nextTick()
@@ -100,6 +126,6 @@ describe('Cloud document notifications', () => {
     cloudRoomPermissions.value = new Map([[store, 'view']])
     cloudRoomsAtStorageLimit.value = new Set([store])
     await nextTick()
-    expect(shown()).toEqual([['cloudStorageFull', '“Plan” is view only']])
+    expect(shown()).toEqual([['cloudStorageFull', id]])
   })
 })
