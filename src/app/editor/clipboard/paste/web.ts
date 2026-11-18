@@ -6,6 +6,7 @@ import { browserHTMLHasBoxes, browserHTMLToDesignDocument } from '@open-pencil/d
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { filesMessages, menuMessages } from '@open-pencil/vue/i18n'
 
+import { importIconMatcher } from '@/app/editor/icons/provider'
 import { toast } from '@/app/shell/ui'
 
 import { isDesignClipboardHTML } from '../html'
@@ -155,7 +156,9 @@ async function prepareLayers(editor: Editor, markup: string): Promise<ClipboardS
     const styled = await browserHTMLToDesignDocument(markup, {
       compute: { layout: true, viewport: { width, height: HTML_IMPORT_VIEWPORT.height } }
     })
-    const snapshot = await editor.prepareStyledHTML(styled)
+    const snapshot = await editor.prepareStyledHTML(styled, {
+      matchIcon: importIconMatcher(editor)
+    })
     const now = editor.htmlPasteTarget()
     if (now.id === target.id && now.width === target.width) return snapshot
   }

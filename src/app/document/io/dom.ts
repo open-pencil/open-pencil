@@ -8,11 +8,10 @@ import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
-import { appIconMatcher } from '@/app/editor/icons/provider'
+import { importIconMatcher } from '@/app/editor/icons/provider'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
 import { notificationMessages } from '@/app/i18n/notifications'
-import { appPreferences } from '@/app/settings/preferences/store'
 import { toast } from '@/app/shell/ui'
 
 type OpenDOMDocumentState = EditorState & {
@@ -77,11 +76,7 @@ export function createDOMOpenActions({
     })
     load.signal.throwIfAborted()
     load.update({ phase: 'layout', detail: pageName })
-    const { renderer } = editor
-    const matcher =
-      renderer && appPreferences.value.import.nameIcons
-        ? appIconMatcher(renderer, load.signal)
-        : undefined
+    const matcher = importIconMatcher(editor, load.signal)
     const graph = await sceneGraphFromStyledHTML(styled, {
       pageName,
       // Asked only when the page draws SVG it does not name, which the index may be loading for.
