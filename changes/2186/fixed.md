@@ -1,1 +1,2 @@
-- A dashed stroke set in the properties panel keeps its dash pattern when a document is saved and reopened.
+- A dashed stroke set in the properties panel keeps its dash pattern when a document is saved and reopened, and so does a stroke weight or dash set on a layer inside an instance (#2186).
+- An instance layer that overrides its stroke weight, alignment, cap, join, or dash keeps it when its component's stroke color changes (#2186).
