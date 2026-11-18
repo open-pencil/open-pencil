@@ -9,6 +9,7 @@ export { default as CloudWorkspaceSection } from '@/components/home/cloud/CloudW
 export { default as CloudSettingsSection } from '@/components/settings/cloud/CloudSettingsSection.vue'
 export { default as CloudHosts } from '../CloudHosts.vue'
 export { default as CloudBetaBanner } from '../beta/CloudBetaBanner.vue'
+export { default as CloudCreditsBanner } from '../credits/CloudCreditsBanner.vue'
 export { default as CloudCommunityBanner } from '../community/CloudCommunityBanner.vue'
 export { default as CloudEditorUpdateBanner } from '../update/CloudEditorUpdateBanner.vue'
 export { default as CloudShareButton } from '../share/CloudShareButton.vue'

@@ -758,6 +758,9 @@ ja:cloud.errorEditorOutdatedDescription
 ja:cloud.betaBanner
 ja:cloud.editorOutdatedBanner
 ja:cloud.updateOpenPencil
+ja:cloud.creditsLowBanner
+ja:cloud.creditsOutBanner
+ja:cloud.creditsOutUntilBanner
 ja:cloud.notifyConflict
 ja:cloud.notifyConflictHint
 ja:cloud.notifyStorageFull
@@ -767,6 +770,9 @@ zh-cn:cloud.errorEditorOutdatedDescription
 zh-cn:cloud.betaBanner
 zh-cn:cloud.editorOutdatedBanner
 zh-cn:cloud.updateOpenPencil
+zh-cn:cloud.creditsLowBanner
+zh-cn:cloud.creditsOutBanner
+zh-cn:cloud.creditsOutUntilBanner
 zh-cn:cloud.notifyConflict
 zh-cn:cloud.notifyConflictHint
 zh-cn:cloud.notifyStorageFull

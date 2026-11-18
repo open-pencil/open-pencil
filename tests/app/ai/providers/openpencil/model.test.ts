@@ -6,7 +6,7 @@ import { createCloudServicesClient } from '@open-pencil/cloud/client'
 
 import { createLanguageModel } from '@/app/ai/models/language-model'
 import { cloudCatalogModels } from '@/app/ai/providers/openpencil/catalog'
-import { cloudModelConfig } from '@/app/ai/providers/openpencil/model'
+import { cloudModelConfig, settlingFetch } from '@/app/ai/providers/openpencil/model'
 
 function languageModelInstance(model: LanguageModel): Exclude<LanguageModel, string> {
   if (typeof model === 'string') throw new Error(`Expected a model instance, got ${model}`)
@@ -24,7 +24,11 @@ describe('OpenPencil Cloud models', () => {
         throw new Error('stop')
       }
     })
-    const { config, runtime } = cloudModelConfig(client, 'anthropic/claude-sonnet-5-5')
+    const { config, runtime } = cloudModelConfig(
+      client,
+      'anthropic/claude-sonnet-5-5',
+      'workspace-1'
+    )
     const model = languageModelInstance(await createLanguageModel(config, runtime))
     await Promise.resolve(
       model.doGenerate({ prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }] })
@@ -59,5 +63,36 @@ describe('OpenPencil Cloud models', () => {
       { id: 'b', name: 'B', contextWindow: 200_000, capabilities: ['tools'] },
       { id: 'c', name: 'C', contextWindow: 32_768, capabilities: [] }
     ])
+  })
+})
+
+describe('settlingFetch', () => {
+  test('reports a request settled once its answer has been read to the end', async () => {
+    let settled = 0
+    const fetch = settlingFetch(
+      async () => new Response('data: done\n\n'),
+      () => settled++
+    )
+    const response = await fetch('https://ai.example.com/v1/chat/completions')
+    expect(settled).toBe(0)
+    expect(await response.text()).toBe('data: done\n\n')
+    expect(settled).toBe(1)
+  })
+
+  test('reports a request settled when it fails or its answer is cancelled', async () => {
+    let settled = 0
+    const failing = settlingFetch(
+      () => Promise.reject(new Error('offline')),
+      () => settled++
+    )
+    await expect(failing('https://ai.example.com/v1/chat/completions')).rejects.toThrow('offline')
+    expect(settled).toBe(1)
+
+    const cancelled = await settlingFetch(
+      async () => new Response('partial'),
+      () => settled++
+    )('https://ai.example.com/v1/chat/completions')
+    await cancelled.body?.cancel()
+    expect(settled).toBe(2)
   })
 })
