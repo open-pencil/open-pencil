@@ -197,4 +197,4 @@ export type PortalContentAction =
   | 'dismiss'
   | 'mark-handled'
 
-export type { PortalCreditPack, PortalPlan, PortalPlanOffer } from '@/app/cloud-portal/plan'
+export type { PortalPlan } from '@/app/cloud-portal/plan'

@@ -1,6 +1,8 @@
 /*
  * Design tokens, custom variants, and utilities shared by every surface that renders app
- * components: the app itself and the docs site's landing page.
+ * components: the app itself and the docs site's landing page. Published as
+ * `@open-pencil/vue/theme/tokens.css` for pages built apart from the app, such as the official
+ * billing service's, to import into their own Tailwind stylesheet.
  */
 @custom-variant motion-safe {
   @media (prefers-reduced-motion: no-preference) {
