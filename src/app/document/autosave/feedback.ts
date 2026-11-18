@@ -23,7 +23,11 @@ function reportAutosaves({ id, store }: Tab): () => void {
   const options = {
     key: store,
     isOpen: () => getTabForStore(store) !== undefined,
-    hasUnsavedChanges: () => store.hasUnsavedChanges()
+    hasUnsavedChanges: () => store.hasUnsavedChanges(),
+    failureMessage: (error: unknown) =>
+      notificationMessages
+        .get()
+        .autosaveFailed({ name: store.state.documentName, error: saveErrorText(error) })
   }
   // Save, Save to, a retry, or an autosave: whatever wrote the edits ends the failure.
   const stopSaved = watch(
@@ -33,15 +37,15 @@ function reportAutosaves({ id, store }: Tab): () => void {
     }
   )
   const failed = store.onAutosaveFailed((error) => {
-    // An undo back to the saved state while the write ran leaves nothing to save.
-    if (!store.hasUnsavedChanges()) return
-    const messages = notificationMessages.get()
-    const name = store.state.documentName
+    // Shown even when an undo made the document clean meanwhile: a write that failed partway, such
+    // as through a symbolic link, may have changed the file, and Retry writes it again.
     showSaveFailure(
-      messages.autosaveFailed({ name, error: saveErrorText(error) }),
-      () => saveWithFeedback(() => saveDocument(store), { ...options, background: true }),
+      options.failureMessage(error),
+      () => saveWithFeedback(() => saveDocument(store), options),
       options
     )
+    const messages = notificationMessages.get()
+    const name = store.state.documentName
     if (!claimFailureNotice(store)) return
     notify({
       event: 'saveFailed',

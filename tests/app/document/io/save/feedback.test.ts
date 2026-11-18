@@ -120,16 +120,33 @@ describe('save feedback', () => {
     expect(toast.toasts.value).toHaveLength(0)
   })
 
-  test('shows nothing when a background save’s retry fails once the document is clean', async () => {
+  test('keeps a retry’s failure, with its own message, after the document went clean', async () => {
+    const key = {}
+    let unsaved = true
+    let held = createDeferred<undefined>()
     const save = async () => {
+      await held.promise
       throw new Error('disk full')
     }
-    const options = { key: {}, hasUnsavedChanges: () => false }
-    await expect(saveWithFeedback(save, { ...options, background: true })).resolves.toBe(false)
-    expect(toast.toasts.value).toHaveLength(0)
-    // A save the person asked for still says it failed.
-    await expect(saveWithFeedback(save, options)).resolves.toBe(false)
-    expect(toast.toasts.value).toHaveLength(1)
+    const options = {
+      key,
+      hasUnsavedChanges: () => unsaved,
+      failureMessage: (error: unknown) => `Plan: ${error instanceof Error ? error.message : ''}`
+    }
+    const first = saveWithFeedback(save, options)
+    held.resolve(undefined)
+    await expect(first).resolves.toBe(false)
+    expect(toast.toasts.value.map((entry) => entry.message)).toEqual(['Plan: disk full'])
+
+    // An undo makes the document clean while the retry writes, and then the write fails.
+    held = createDeferred<undefined>()
+    const entry = toast.toasts.value[0]
+    entry?.action?.run(entry.id)
+    unsaved = false
+    held.resolve(undefined)
+    await Bun.sleep(0)
+    expect(toast.toasts.value.map((shown) => shown.message)).toEqual(['Plan: disk full'])
+    expect(toast.toasts.value[0]?.id).not.toBe(entry?.id)
   })
 
   test('ignores Retry while that document’s retry is still saving', async () => {
