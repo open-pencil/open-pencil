@@ -9,7 +9,8 @@ export type CloudRuntimeName = 'node' | 'cloudflare'
 /**
  * Reports server errors to the PostHog project the deployment's `[error_tracking]` names, or
  * returns nothing when it names none. Reports carry the runtime, the deployment, and where the
- * error was caught, never who made the request or what it carried.
+ * error was caught, and the account and record IDs involved when `include_ids` is set; never a
+ * name, an email, an address, or what a request carried.
  */
 export function createCloudErrorReporter(
   config: CloudServerConfig,
@@ -27,6 +28,7 @@ export function createCloudErrorReporter(
       cloud_host: new URL(config.publicURL).host
     },
     sourceProperty: 'cloud_source',
+    includeIds: tracking.includeIds,
     logName: 'Cloud',
     fetch: options.fetch
   })

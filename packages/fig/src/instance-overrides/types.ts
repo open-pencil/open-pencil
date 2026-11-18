@@ -106,5 +106,7 @@ export interface ComponentPropDef {
   id?: GUID
   name?: string
   initialValue?: ComponentPropValue
+  /** The ancestor's definition this copies, whose fields fill in those it leaves out. */
+  parentPropDefId?: GUID
   type?: number
 }

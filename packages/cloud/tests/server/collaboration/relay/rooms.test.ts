@@ -8,6 +8,7 @@ import {
   textOfSyncReply,
   textUpdate,
   until,
+  user,
   type RelayTicketOptions
 } from '#cloud-tests/helpers/relay'
 import { COLLAB_ACTIONS, RELAY_CLOSE, RELAY_SERVER_PEER } from '#cloud/contract'
@@ -73,6 +74,22 @@ describe('collaboration relay rooms', () => {
     const current = await join(hub, { roomEpoch: 1 })
     expect(current.closed).toBeNull()
     expect(current.peerId()).toBeDefined()
+  })
+
+  test('names the ticket’s document and person when admitting a peer fails', async () => {
+    const reports: unknown[] = []
+    const { relay: hub } = startTestRelay({
+      currentRoomEpoch: async () => {
+        throw new Error('Database unavailable')
+      },
+      onError: (message, _error, ids) => reports.push({ message, ids })
+    })
+    const userId = crypto.randomUUID()
+    const peer = await join(hub, { principal: user(userId) })
+    expect(peer.closed?.code).toBe(RELAY_CLOSE.protocol)
+    expect(reports).toEqual([
+      { message: 'Checking a collaboration ticket failed', ids: { documentId, userId } }
+    ])
   })
 
   test('turns away a peer whose room was still opening when the document was restored', async () => {
