@@ -1,12 +1,12 @@
-import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
-
+import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import type { ShapedText, ShapedTextGlyph } from '@open-pencil/fig/node-change'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { textVerticalOffset } from '@open-pencil/scene-graph/text'
 
-import { buildParagraph, textVerticalOffset } from '#core/canvas/text'
+import { buildParagraph } from '#core/canvas/text'
 import { laidOutGlyphs, type LaidOutGlyph } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
-import { characterFamily } from '#core/text/character-face'
+import { characterFamily } from '#core/text/character/face'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import type { OutlineCommand } from '#core/text/font/glyphs'
 import { nextGraphemeBoundary } from '#core/text/graphemes'
@@ -136,15 +136,18 @@ export function shapeText(
     const outlined = glyphs.every((glyph) => glyph.commands)
     return {
       glyphs: outlined ? glyphs : glyphs.map((glyph) => ({ ...glyph, commands: null })),
-      baselines: metrics.map((line) => ({
-        firstCharacter: line.startIndex,
-        endCharacter: Math.min(line.endIncludingNewline, text.length),
-        position: { x: line.left, y: line.baseline + offsetY },
-        width: line.width,
-        lineY: line.baseline - line.ascent + offsetY,
-        lineHeight: line.height,
-        lineAscent: line.ascent
-      })),
+      // Figma saves no baseline for the empty line after a closing line break.
+      baselines: metrics
+        .filter((line, index) => index === 0 || line.startIndex < text.length)
+        .map((line) => ({
+          firstCharacter: line.startIndex,
+          endCharacter: Math.min(line.endIncludingNewline, text.length),
+          position: { x: line.left, y: line.baseline + offsetY },
+          width: line.width,
+          lineY: line.baseline - line.ascent + offsetY,
+          lineHeight: line.height,
+          lineAscent: line.ascent
+        })),
       logicalIndexToCharacterOffsetMap: completeCharacterOffsets(characterOffsets)
     }
   } finally {

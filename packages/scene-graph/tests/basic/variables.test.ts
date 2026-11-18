@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { resolvedValueBindings } from '@open-pencil/scene-graph/variables'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { resolvedValueBindings } from '@open-pencil/scene-graph/variables'
 
 describe('Variables', () => {
   function pageId(graph: SceneGraph): string {
@@ -84,7 +84,7 @@ describe('Variables', () => {
     expect(graph.resolveColorVariable('v2')).toEqual({ r: 0, g: 0, b: 1, a: 1 })
   })
 
-  test('mode switching changes resolved value', () => {
+  test('a page mode switches what its layers resolve to', () => {
     const graph = new SceneGraph()
     graph.addCollection({
       id: 'col1',
@@ -109,9 +109,13 @@ describe('Variables', () => {
       hiddenFromPublishing: false
     })
 
+    const page = graph.getPages()[0]
+    const rect = graph.createNode('RECTANGLE', page.id)
+    expect(graph.resolveColorVariableForNode(rect.id, 'v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+    graph.updateNode(page.id, { variableModes: { col1: 'dark' } })
+    expect(graph.resolveColorVariableForNode(rect.id, 'v1')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+    // Without a node, a variable resolves in its collection's default mode.
     expect(graph.resolveColorVariable('v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
-    graph.setActiveMode('col1', 'dark')
-    expect(graph.resolveColorVariable('v1')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
   })
 
   test('node variable modes inherit from the nearest ancestor', () => {
@@ -160,7 +164,60 @@ describe('Variables', () => {
     })
   })
 
-  test('missing active mode falls back to default value', () => {
+  test('an alias into another collection resolves in the mode the node inherits for it', () => {
+    const graph = new SceneGraph()
+    graph.addCollection({
+      id: 'theme',
+      name: 'Theme',
+      modes: [
+        { modeId: 'light', name: 'Light' },
+        { modeId: 'dark', name: 'Dark' }
+      ],
+      defaultModeId: 'light',
+      variableIds: []
+    })
+    graph.addCollection({
+      id: 'ink',
+      name: 'Ink',
+      modes: [{ modeId: 'ink-default', name: 'Default' }],
+      defaultModeId: 'ink-default',
+      variableIds: []
+    })
+    graph.addVariable({
+      id: 'fg',
+      name: 'fg',
+      type: 'COLOR',
+      collectionId: 'theme',
+      valuesByMode: {
+        light: { r: 1, g: 1, b: 1, a: 1 },
+        dark: { r: 0, g: 0, b: 0, a: 1 }
+      },
+      description: '',
+      hiddenFromPublishing: false
+    })
+    graph.addVariable({
+      id: 'ink-fg',
+      name: 'ink',
+      type: 'COLOR',
+      collectionId: 'ink',
+      valuesByMode: { 'ink-default': { aliasId: 'fg' } },
+      description: '',
+      hiddenFromPublishing: false
+    })
+
+    const page = graph.addPage('Page')
+    const frame = graph.createNode('FRAME', page.id, { variableModes: { theme: 'dark' } })
+    const child = graph.createNode('RECTANGLE', frame.id)
+
+    expect(graph.resolveColorVariableForNode(child.id, 'ink-fg')).toEqual({
+      r: 0,
+      g: 0,
+      b: 0,
+      a: 1
+    })
+  })
+
+  test('a mode without a value falls back to the default value', () => {
     const graph = new SceneGraph()
     graph.addCollection({
       id: 'col1',
@@ -182,8 +239,10 @@ describe('Variables', () => {
       hiddenFromPublishing: false
     })
 
-    graph.setActiveMode('col1', 'dark')
-    expect(graph.resolveColorVariable('v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      variableModes: { col1: 'dark' }
+    })
+    expect(graph.resolveColorVariableForNode(frame.id, 'v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
   })
 
   test('explicit alias resolution preserves source mode', () => {

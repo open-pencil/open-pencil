@@ -1,11 +1,10 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { needsImagePreviews } from '#core/canvas/images/previews'
 import { paintPageBackground } from '#core/canvas/page/background'
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
+import { warmUpEffectPrograms } from '#core/canvas/warm-up'
 import { playIslandRoots } from '#core/editor/play/islands'
 import type { EditorState } from '#core/editor/types'
 import { resolveEditorProfile } from '#core/editor/views/profile'
@@ -14,6 +13,7 @@ import { emitNavigationTrace } from '#core/profiler'
 
 import { drawChromePass, drawLabelPass, drawOverlayPass } from './overlay-pass'
 import { hasTransientPreviews, renderPageWithPreviews } from './transient-previews'
+import { computeContentBounds } from './visual-bounds'
 
 export function renderSceneToCanvas(
   r: Pick<
@@ -105,7 +105,8 @@ export function renderFromEditorState(
   const profile = resolveEditorProfile(state)
   const { editChrome, live, edits } = profile
   r.pageDotGrid = profile.dotGrid
-  r.editHandles = edits
+  r.sectionTitles = profile.sectionTitles
+  r.editHandles = edits && profile.layerEdits === 'all'
   render(
     r,
     graph,
@@ -115,10 +116,11 @@ export function renderFromEditorState(
       playIslands: live ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
       hoveredNodeId: editChrome ? state.hoveredNodeId : null,
       showPixelGrid: showsPixelGrid(profile, state),
+      showSizeLabels: state.showSizeLabels,
       gradientEdit: state.gradientEdit,
+      blurRampEdit: state.blurRampEdit,
       transforming: state.transforming,
       measurementMode: state.measurementMode,
-      enteredContainerId: state.enteredContainerId,
       editingTextId: state.editingTextId,
       renamingLabelId: state.renamingLabelId,
       textEditor: textEditor as RenderOverlays['textEditor'],
@@ -140,6 +142,7 @@ export function renderFromEditorState(
       presenceCursors: state.presenceCursors,
       designIssues: state.designIssues,
       codeFocusNodeId: state.codeFocusNodeId,
+      scaleTool: state.activeTool === 'SCALE',
       autoLayoutHover: state.autoLayoutHover,
       shapeHandleHover: state.shapeHandleHover,
       connectorTarget: state.connectorTarget
@@ -149,6 +152,7 @@ export function renderFromEditorState(
     layer,
     interactive
   )
+  warmUpEffectPrograms(r, graph, layer, state.sceneVersion, interactive)
 }
 
 function sceneContentDependsOnOverlay(overlays: RenderOverlays): boolean {
@@ -306,7 +310,11 @@ export function render(
   )
 
   if (layer !== 'overlays') {
-    if (requiresUncachedSceneRender) r.tiledScenePending = false
+    // Drawn directly, the whole scene is on screen this frame.
+    if (requiresUncachedSceneRender) {
+      r.tiledScenePending = false
+      r.tiledSceneCovered = true
+    }
     canvas.save()
     canvas.scale(r.dpr, r.dpr)
 
@@ -423,13 +431,7 @@ function recordScenePicture(
   const recorder = new r.ck.PictureRecorder()
   try {
     const pageNode = graph.getNode(r.pageId ?? graph.rootId)
-    const sceneContentBounds = pageNode
-      ? computeDescendantVisualBounds(
-          pageNode.childIds,
-          (id) => graph.getNode(id),
-          (id) => graph.getAbsolutePosition(id)
-        )
-      : null
+    const sceneContentBounds = pageNode ? computeContentBounds(graph, pageNode.childIds) : null
     const sceneBounds = sceneContentBounds
       ? {
           x: sceneContentBounds.minX,

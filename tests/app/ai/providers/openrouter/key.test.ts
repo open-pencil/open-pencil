@@ -1,13 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import {
   fetchOpenRouterKeyInfo,
   OPENROUTER_KEY_INFO_URL,
   OpenRouterKeyError
 } from '@/app/ai/providers/openrouter/key'
-
-import { fetchStub } from '#tests/helpers/fetch'
-
 describe('fetchOpenRouterKeyInfo', () => {
   test('reports the key label and free tier with the key as a bearer token', async () => {
     const requests: { url: string; authorization: string | null }[] = []

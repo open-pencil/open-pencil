@@ -6,11 +6,15 @@ export interface SVGNode {
   children: (SVGNode | string)[]
 }
 
-export function svg(
-  tag: string,
-  attrs: Record<string, string | number | undefined | null>,
-  ...children: (SVGNode | string | null | undefined | false)[]
-): SVGNode {
+type SVGAttrs = Record<string, string | number | undefined | null>
+type SVGChild = SVGNode | string | null | undefined | false
+
+export function svg(tag: string, attrs: SVGAttrs, ...children: SVGChild[]): SVGNode {
+  return svgElement(tag, attrs, children)
+}
+
+/** `svg` with its children as one list, which may be as long as a layer's children. */
+export function svgElement(tag: string, attrs: SVGAttrs, children: readonly SVGChild[]): SVGNode {
   const cleaned: Record<string, string | number> = {}
   for (const [k, v] of Object.entries(attrs)) {
     if (v != null) cleaned[k] = v
@@ -30,6 +34,13 @@ function renderAttrs(attrs: Record<string, string | number>): string {
   return parts.length > 0 ? ' ' + parts.join(' ') : ''
 }
 
+/**
+ * HTML elements, as a background blur's box in a `foreignObject`. An HTML page that inlines the SVG
+ * parses them as HTML, where `<div/>` opens an element it never closes, so they always get an end
+ * tag.
+ */
+const HTML_TAGS = new Set(['div'])
+
 /** Elements whose whitespace is text: indenting their children would draw it as spaces. */
 const TEXT_CONTENT_TAGS = new Set(['text', 'tspan', 'textPath'])
 
@@ -38,7 +49,9 @@ export function renderSVGNode(node: SVGNode, indent = 0): string {
   const attrsStr = renderAttrs(node.attrs)
 
   if (node.children.length === 0) {
-    return `${pad}<${node.tag}${attrsStr}/>`
+    return HTML_TAGS.has(node.tag)
+      ? `${pad}<${node.tag}${attrsStr}></${node.tag}>`
+      : `${pad}<${node.tag}${attrsStr}/>`
   }
 
   if (TEXT_CONTENT_TAGS.has(node.tag)) {

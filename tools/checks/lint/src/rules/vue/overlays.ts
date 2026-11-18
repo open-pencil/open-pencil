@@ -160,8 +160,16 @@ const INSTANT_CLOSE_ROOTS = new Set([
   'ComboboxRoot',
   'AppPicker',
   'AppSelect',
-  'AppCombobox'
+  'AppCombobox',
+  'AppPopoverRoot',
+  'AppDropdownMenuRoot',
+  'AppContextMenuRoot'
 ])
+
+/** A component tag as its PascalCase name, so `<app-popover-root>` matches `AppPopoverRoot`. */
+function pascalCaseTag(tag: string): string {
+  return tag.replace(/(^|-)([a-z])/g, (_match, _dash, letter: string) => letter.toUpperCase())
+}
 
 const noOverlayContentFromOpenState = {
   meta: {
@@ -179,7 +187,11 @@ const noOverlayContentFromOpenState = {
         const template = vueTemplateAst(context.sourceCode.getText(), file)
         if (!template) return
         walkVueTemplateAst(template, (element) => {
-          if (element.type !== VUE_ELEMENT_NODE || INSTANT_CLOSE_ROOTS.has(element.tag)) return
+          if (
+            element.type !== VUE_ELEMENT_NODE ||
+            INSTANT_CLOSE_ROOTS.has(pascalCaseTag(element.tag))
+          )
+            return
           const open = element.props.find((prop) => isVueBindDirective(prop, 'open'))
           if (!open || open.type !== VUE_DIRECTIVE_NODE) return
           if (open.exp?.type === VUE_SIMPLE_EXPRESSION_NODE && open.exp.content.trim() === 'true') {
@@ -205,4 +217,60 @@ const noOverlayContentFromOpenState = {
   }
 } satisfies RuleDefinition
 
-export { noOverlayContentFromOpenState }
+/** Reka's overlay roots and the shared wrapper that counts each as an open overlay. */
+const OVERLAY_ROOT_WRAPPERS: Record<string, string> = {
+  DialogRoot: 'AppDialogRoot',
+  AlertDialogRoot: 'AppAlertDialogRoot',
+  DropdownMenuRoot: 'AppDropdownMenuRoot',
+  ContextMenuRoot: 'AppContextMenuRoot',
+  MenubarRoot: 'AppMenubarRoot',
+  PopoverRoot: 'AppPopoverRoot',
+  SelectRoot: 'AppSelectRoot',
+  ComboboxRoot: 'AppCombobox'
+}
+
+/**
+ * App code opens dialogs, menus, popovers, and selects through the wrappers in
+ * `src/components/ui`, which register them as open overlays, so canvas shortcuts and nudging wait
+ * while one is open (`packages/vue/src/lifecycle/overlays/index.ts`).
+ */
+const noRawOverlayRootsInApp = {
+  meta: {
+    type: 'problem',
+    docs: { description: "Open Reka's overlay roots through the app's registering wrappers" },
+    schema: []
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!file.includes('/src/') || file.includes('/src/components/ui/')) return {}
+    if (file.includes('/packages/') || /\/(tests|tools)\//.test(file)) return {}
+    return {
+      ImportDeclaration(node) {
+        if (node.source.value !== 'reka-ui') return
+        for (const specifier of node.specifiers) {
+          if (specifier.type === 'ImportNamespaceSpecifier') {
+            context.report({
+              node: specifier,
+              message:
+                "Import Reka's parts by name, so overlay roots can be told apart from their wrappers."
+            })
+            continue
+          }
+          if (specifier.type !== 'ImportSpecifier') continue
+          const name =
+            specifier.imported.type === 'Identifier'
+              ? specifier.imported.name
+              : specifier.imported.value
+          const wrapper = OVERLAY_ROOT_WRAPPERS[name]
+          if (!wrapper) continue
+          context.report({
+            node: specifier,
+            message: `Use ${wrapper} from src/components/ui instead of Reka's ${name}, so it counts as an open overlay.`
+          })
+        }
+      }
+    }
+  }
+} satisfies RuleDefinition
+
+export { noOverlayContentFromOpenState, noRawOverlayRootsInApp }

@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, dirname, extname, resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 import { defineCommand } from 'citty'
 
@@ -50,7 +51,10 @@ async function tailwindCandidatesForArgs(args: ImportArgs): Promise<string[] | u
 }
 
 async function importHTML(args: ImportArgs): Promise<ReadHTMLResult> {
-  return readHTMLDocument(await readTextFile(requireFile(args.file)), {
+  const file = requireFile(args.file)
+  return readHTMLDocument(await readTextFile(file), {
+    // Relative stylesheets, fonts, and images resolve beside the file, as a browser opening it.
+    baseURL: pathToFileURL(resolve(file)).href,
     cssText: await cssTextForArgs(args),
     tailwind: await tailwindCandidatesForArgs(args),
     pageName: args.pageName

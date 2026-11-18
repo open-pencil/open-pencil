@@ -1,8 +1,8 @@
 import type { Fill, SceneGraph } from '@open-pencil/scene-graph'
 
-const WHITE: Fill[] = [
-  { type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }
-]
+import { solid } from '../paints'
+
+const WHITE: Fill[] = [solid(1, 1, 1)]
 
 /** The section Figma desktop 126 was clicked on: an empty frame and one holding a rectangle. */
 export function createSectionClickScene(graph: SceneGraph, pageId: string) {
@@ -31,12 +31,8 @@ export function createSectionClickScene(graph: SceneGraph, pageId: string) {
   graph.createNode('RECTANGLE', full.id, { name: 'Child', x: 10, y: 10, width: 40, height: 40 })
 }
 
-const SWATCH: Fill[] = [
-  { type: 'SOLID', color: { r: 0.3, g: 0.5, b: 0.8, a: 1 }, opacity: 1, visible: true }
-]
-const LABEL: Fill[] = [
-  { type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.5, a: 1 }, opacity: 1, visible: true }
-]
+const SWATCH: Fill[] = [solid(0.3, 0.5, 0.8)]
+const LABEL: Fill[] = [solid(0.5, 0.5, 0.5)]
 
 /**
  * Two sections of swatch rows, as the shadcn kit's Foundations page lays them out and Figma

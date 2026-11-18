@@ -3,6 +3,7 @@ import { omitBy, pick } from 'es-toolkit/object'
 import { materializeFigFragment } from '@open-pencil/fig'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import type { SceneGraph, SceneNode, StyleRun } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   AUTO_LAYOUT_FIELDS,
   CORNER_FIELDS,
@@ -10,9 +11,9 @@ import {
   STROKE_FIELDS,
   TEXT_STYLE_FIELDS
 } from '@open-pencil/scene-graph/fields'
+import { copyImages, imagePaintHashes } from '@open-pencil/scene-graph/images'
 import { STYLE_LINK_FIELDS, sharedStyleRefKey } from '@open-pencil/scene-graph/shared-styles'
 
-import { parseOpenPencilClipboard } from '#core/clipboard'
 import { importClipboardDependenciesWithUndo } from '#core/editor/clipboard/dependencies'
 import type { ClipboardSnapshot } from '#core/editor/clipboard/snapshot'
 import type { EditorContext } from '#core/editor/types'
@@ -75,9 +76,9 @@ function mixedFields(source: SceneNode): Set<string> {
 function pastedFields(source: SceneNode, target: SceneNode): PastedField[] {
   const fields: PastedField[] = [...APPEARANCE_FIELDS]
   // A text layer has no corners in Figma.
-  if (source.type !== 'TEXT' && target.type !== 'TEXT') fields.push(...CORNER_FIELDS)
-  if (FRAME_TYPES.has(source.type) && FRAME_TYPES.has(target.type)) fields.push(...FRAME_FIELDS)
-  if (source.type === 'TEXT' && target.type === 'TEXT') fields.push(...TEXT_FIELDS)
+  if (source.type !== 'TEXT' && target.type !== 'TEXT') appendAll(fields, CORNER_FIELDS)
+  if (FRAME_TYPES.has(source.type) && FRAME_TYPES.has(target.type)) appendAll(fields, FRAME_FIELDS)
+  if (source.type === 'TEXT' && target.type === 'TEXT') appendAll(fields, TEXT_FIELDS)
   const mixed = source.type === 'TEXT' ? mixedFields(source) : new Set<string>()
   return fields.filter((field) => !mixed.has(field))
 }
@@ -147,11 +148,6 @@ interface PastedSource {
 
 /** The one layer a clipboard payload from another app or tab holds, or null. */
 async function sourceFromHTML(html: string): Promise<PastedSource | null> {
-  const openPencil = parseOpenPencilClipboard(html)
-  if (openPencil) {
-    const { nodes, images } = openPencil
-    return nodes.length === 1 ? { node: nodes[0], images } : null
-  }
   const figma = await parseFigmaClipboard(html)
   if (!figma) return null
   const fragment = materializeFigFragment(figma.nodes, figma.blobs, {
@@ -182,11 +178,7 @@ export function createClipboardPropertiesActions(
     images: ReadonlyMap<string, Uint8Array>,
     nodes: SceneNode[]
   ): string[] {
-    for (const paint of [...source.fills, ...source.strokes]) {
-      const bytes = paint.imageHash ? images.get(paint.imageHash) : undefined
-      if (paint.imageHash && bytes && !ctx.graph.images.has(paint.imageHash))
-        ctx.graph.images.set(paint.imageHash, bytes)
-    }
+    copyImages(images, ctx.graph.images, imagePaintHashes([...source.fills, ...source.strokes]))
     return nodes.flatMap((target) => {
       const changes = pastedPropertyChanges(source, target)
       if (!changes) return []

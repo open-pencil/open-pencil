@@ -1,1 +1,0 @@
-- `clipPolygon` and `clipBoundsToPolygon` move from `@open-pencil/scene-graph/geometry` to `@open-pencil/scene-graph/clipping`.

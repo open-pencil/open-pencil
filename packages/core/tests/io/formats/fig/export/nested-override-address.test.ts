@@ -1,7 +1,5 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
@@ -9,9 +7,8 @@ import type { SymbolData } from '@open-pencil/fig/instance-overrides'
 import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 beforeAll(() => registerTestFont())
 
 /** The Kiwi codec types only `symbolID`; the rest of the symbol payload is read through here. */

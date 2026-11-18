@@ -32,7 +32,7 @@ Full Figma-compatible shortcut map. ✅ = implemented.
 | — | Sticky note (FigJam) | ✅ (toolbar, hidden by default) |
 | — | Connector (FigJam) | ✅ (toolbar, hidden by default) |
 | <kbd>C</kbd> | Comment | ✅ |
-| <kbd>I</kbd> | Eyedropper | 🔲 |
+| <kbd>I</kbd> | Eyedropper | ✅ |
 
 ## File
 

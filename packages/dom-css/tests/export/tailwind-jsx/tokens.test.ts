@@ -2,13 +2,13 @@ import { describe, expect, test } from 'bun:test'
 
 import { sceneNodesToTailwindJSX } from '#dom-css/export/tailwind-jsx'
 
-import { makeGraph, pageId } from './helpers'
+import { makeSceneGraph, firstPageId } from '@open-pencil/test-support/scene'
 
 const INK = { r: 0.07, g: 0.09, b: 0.15, a: 1 }
 
 describe('Tailwind JSX with tokens', () => {
   test('names theme tokens as utilities and other tokens as variables', () => {
-    const graph = makeGraph()
+    const graph = makeSceneGraph('Page 1')
     graph.addCollection({
       id: 'brand',
       name: 'Brand',
@@ -34,7 +34,7 @@ describe('Tailwind JSX with tokens', () => {
         hiddenFromPublishing: false
       })
     }
-    const card = graph.createNode('FRAME', pageId(graph), {
+    const card = graph.createNode('FRAME', firstPageId(graph), {
       width: 80,
       height: 40,
       layoutMode: 'HORIZONTAL',

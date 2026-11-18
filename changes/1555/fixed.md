@@ -1,1 +1,0 @@
-- CLI commands that save a `.fig`, such as `eval --write`, `convert`, and `import`, replace the file only once it is fully written, so a failed save keeps the previous file.

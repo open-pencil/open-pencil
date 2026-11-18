@@ -8,12 +8,11 @@ import { defineTool, toolFailure } from '#core/tools/schema'
 export const setBehaviour = defineTool({
   name: 'set_behaviour',
   description:
-    'Make a main component or component set behave as a Reka UI control in preview and code, ' +
-    'naming its own properties and slots: e.g. { kind: "switch", values: { value: "State" }, ' +
-    'parts: { thumb: "Thumb" }, states: "Interaction" }. Variant on/off values are guessed from ' +
-    'names like On and Off unless given as { property, on, off }. Pass null to remove it. ' +
-    'Returns the behaviour and the required values and parts still missing; get_behaviour lists ' +
-    'every kind with its values and parts.',
+    'Make a main component or set behave as a Reka UI control in preview and code, by its own ' +
+    'property and slot names: e.g. { kind: "switch", values: { value: "State" }, parts: { thumb: ' +
+    '"Thumb" }, states: "Interaction" }. On/off variant values are guessed from names like On and ' +
+    'Off unless given as { property, on, off }. null removes it. Returns the behaviour and what ' +
+    'it still misses; get_behaviour lists every kind.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     id: v.pipe(

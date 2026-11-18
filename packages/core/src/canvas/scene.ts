@@ -1,41 +1,49 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
+import { intersectVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { asMaskShape, isVisibleMask } from '@open-pencil/scene-graph/masks'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
-import { textLinesOverflow } from '@open-pencil/scene-graph/text'
+import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
 import { nodeOrientationMatrix, projectedNode } from '#core/geometry'
+import { drawnLayerBlurReach, mapVisualBounds } from '#core/geometry/render-bounds'
 import { fontManager } from '#core/text/font/manager'
 
-import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
+import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend/modes'
+import { blurredContent, layerBlurFilter } from './blur/layer'
 import { renderBooleanOperation } from './boolean'
-import { blurSigma } from './effects'
-import { drawVectorMultiStyleFills, paintFills } from './fills'
+import { renderLeafWithEffects } from './effects'
+import { drawVectorMultiStyleFills, paintFills } from './fills/paint'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
-import type { SkiaRenderer, RenderOverlays } from './renderer'
+import { withNoiseEffects } from './noise/render'
 import { drawShapeThroughNodePicture } from './renderer/node-pictures'
-import { mapVisualBounds, subtreeVisualBounds } from './renderer/visual-bounds'
-import { isolatesInnerShadows, renderLayerShadows } from './shadows'
+import type { SkiaRenderer, RenderOverlays } from './renderer/skia'
 import {
-  configureStrokePaint,
-  drawDashedRRectWithSolidCorners,
-  drawRRectStrokeWithAlign,
-  drawStyledRRectStroke,
-  forVisibleStrokes
-} from './strokes'
+  mapLayerBounds,
+  subtreeVisualRectInParent,
+  visibleLayerBlur
+} from './renderer/visual-bounds'
+import { isolatesInnerShadows, renderLayerShadows } from './shadows/render'
 import {
   drawFigmaDashes,
   isPathTextWithStrokeGeometry,
   paintNodeStrokes,
   vectorStrokePaths
 } from './strokes/dispatch'
+import {
+  configureStrokePaint,
+  drawDashedRRectWithSolidCorners,
+  drawRRectStrokeWithAlign,
+  drawStyledRRectStroke,
+  forVisibleStrokes
+} from './strokes/draw'
 import { drawReflowedPathTextSilhouettes, isReflowedPathText } from './text/derived'
+import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/draw/text'
 import { stickyPlaceholderNode } from './text/placeholder'
-import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/render'
+import { beginTexture, endTexture, visibleTexture } from './texture/render'
 
 function drawVisibleFills(
   r: SkiaRenderer,
@@ -82,43 +90,38 @@ function worldMatrixIn(
   )
 }
 
+/**
+ * Whether nothing a node and its subtree draw reaches the viewport: their rendered bounds
+ * (`RenderedBoundsCache`), strokes, shadows, and blurs included, placed where the node lands.
+ * Text set on a path draws its glyphs along the path, which those bounds do not follow.
+ */
 function isCulled(
   r: SkiaRenderer,
+  graph: SceneGraph,
   node: SceneNode,
   absX: number,
   absY: number,
   frame: Mat3 | null,
   preview?: RenderOverlays['rotationPreview']
 ): boolean {
-  const canCull =
-    node.childIds.length === 0 ||
-    ((node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') &&
-      node.clipsContent)
-  if (!canCull || hasOverflowPathTextPaint(node)) return false
-  // Text lines past a fixed-size box still draw, as in Figma.
-  const linesOverflow = textLinesOverflow(node)
-
+  if (hasOverflowPathTextPaint(node)) return false
+  const own = r.renderedBounds.ownAxes(graph, node, preview)
+  const bounds =
+    frame || hasNodeTransform(projectedNode(node, preview))
+      ? mapLayerBounds(worldMatrixIn(frame, node, absX - node.x, absY - node.y, preview), own)
+      : {
+          minX: absX + own.minX,
+          minY: absY + own.minY,
+          maxX: absX + own.maxX,
+          maxY: absY + own.maxY
+        }
   const vp = r.worldViewport
-  const bw = node.width
-  const bh = node.height + linesOverflow
-  if (frame || projectedNode(node, preview).rotation !== 0) {
-    const bounds = mapVisualBounds(
-      worldMatrixIn(frame, node, absX - node.x, absY - node.y, preview),
-      {
-        minX: 0,
-        minY: 0,
-        maxX: bw,
-        maxY: bh
-      }
-    )
-    return (
-      bounds.minX > vp.x + vp.w ||
-      bounds.minY > vp.y + vp.h ||
-      bounds.maxX < vp.x ||
-      bounds.maxY < vp.y
-    )
-  }
-  return absX > vp.x + vp.w || absY > vp.y + vp.h || absX + bw < vp.x || absY + bh < vp.y
+  return (
+    bounds.minX > vp.x + vp.w ||
+    bounds.minY > vp.y + vp.h ||
+    bounds.maxX < vp.x ||
+    bounds.maxY < vp.y
+  )
 }
 
 function applyNodeTransforms(canvas: Canvas, node: SceneNode, overlays: RenderOverlays): void {
@@ -155,27 +158,27 @@ function renderMaskNodeContent(
   absY: number,
   frame: Mat3 | null
 ): void {
+  // A mask whose fonts are still prepared masks nothing in yet, so what it masks stays hidden too.
+  if (fontManager.isNodeBlocked(graph, node.id)) return
   canvas.save()
   canvas.translate(node.x, node.y)
   // As in Figma, a mask's opacity and layer blur reach what it masks; its blend mode does not.
-  const blur = node.effects.find(
-    (effect) =>
-      effect.visible && (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
-  )
+  const blur = visibleLayerBlur(node)
   const layered = node.opacity < 1 || blur !== undefined
   if (layered) {
-    const padding = (blur?.radius ?? 0) * 2
+    const world = () => worldMatrixIn(frame, node, absX, absY, overlays.rotationPreview)
     r.opacityPaint.setAlphaf(node.opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-    r.opacityPaint.setImageFilter(blur ? r.getCachedBlur(blurSigma(blur.radius)) : null)
+    const content = blurredContent(graph, node, overlays)
+    r.opacityPaint.setImageFilter(blur ? layerBlurFilter(r, node, blur, overlays, content) : null)
     canvas.saveLayer(
       r.opacityPaint,
-      r.ck.LTRBRect(-padding, -padding, node.width + padding, node.height + padding)
+      nodeLayerBounds(r, graph, node, world, overlays.rotationPreview)
     )
     r.opacityPaint.setImageFilter(null)
   }
   applyNodeTransforms(canvas, node, overlays)
-  renderNodeContent(r, canvas, graph, node.maskType === 'VECTOR' ? opaqueFills(node) : node, {})
+  renderNodeContent(r, canvas, graph, asMaskShape(node), {})
   // A group or frame used as a mask masks with what its layers draw, as in Figma.
   renderChildren(
     r,
@@ -189,14 +192,6 @@ function renderMaskNodeContent(
   )
   if (layered) canvas.restore()
   canvas.restore()
-}
-
-/** An outline mask masks with its shape alone, so Figma ignores how opaque its fills are. */
-function opaqueFills(node: SceneNode): SceneNode {
-  return {
-    ...node,
-    fills: node.fills.map((fill) => ({ ...fill, opacity: 1, color: { ...fill.color, a: 1 } }))
-  }
 }
 
 function renderChildIds(
@@ -215,7 +210,7 @@ function renderChildIds(
     childIds,
     (childId) => {
       const child = graph.getNode(childId)
-      return child?.visible && child.isMask ? child.maskType : null
+      return child && isVisibleMask(child) ? child.maskType : null
     },
     (childId) => r.renderNode(canvas, graph, childId, overlays, absX, absY, frame),
     (childId) => {
@@ -224,8 +219,9 @@ function renderChildIds(
     },
     (childId) => {
       const child = graph.getNode(childId)
-      if (!child) return null
-      return { x: child.x, y: child.y, width: child.width, height: child.height }
+      return child
+        ? subtreeVisualRectInParent(r.renderedBounds, graph, child, overlays.rotationPreview)
+        : null
     }
   )
 }
@@ -241,9 +237,7 @@ function renderChildren(
   frame: Mat3 | null
 ): void {
   if (node.type === 'BOOLEAN_OPERATION') return
-  const isClippableContainer =
-    node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE'
-  if (isClippableContainer && node.clipsContent && node.childIds.length > 0) {
+  if (clipsChildren(node) && node.childIds.length > 0) {
     canvas.save()
     r.clipNodeShape(canvas, node)
     renderChildIds(r, canvas, graph, node.childIds, overlays, absX, absY, frame)
@@ -265,7 +259,7 @@ export function renderNodeSelf(
     node.internalOnly ||
     !node.visible ||
     node.isMask ||
-    fontManager.isNodeBlocked(nodeId)
+    fontManager.isNodeBlocked(graph, nodeId)
   ) {
     return
   }
@@ -277,9 +271,19 @@ export function renderNodeSelf(
   canvas.restore()
 }
 
-function viewportLayerBounds(r: SkiaRenderer, world: Mat3, padding: number): Float32Array | null {
-  if (!r.boundEffectLayersToViewport) return null
-  const inverse = Matrix.invert(world)
+/**
+ * The viewport in the axes a node's layers open in, `world` without its `orientation`, grown by
+ * `padding` so ink blurred in from past it stays.
+ */
+function viewportLayerBounds(
+  r: SkiaRenderer,
+  world: Mat3,
+  orientation: Mat3,
+  padding: number
+): VisualBounds | null {
+  const inverseOrientation = Matrix.invert(orientation)
+  const layerWorld = inverseOrientation ? Matrix.multiply(world, inverseOrientation) : world
+  const inverse = Matrix.invert(layerWorld)
   if (!inverse) return null
   const viewport = r.worldViewport
   const bounds = mapVisualBounds(inverse, {
@@ -288,28 +292,36 @@ function viewportLayerBounds(r: SkiaRenderer, world: Mat3, padding: number): Flo
     maxX: viewport.x + viewport.w,
     maxY: viewport.y + viewport.h
   })
-  return r.ck.LTRBRect(
-    bounds.minX - padding,
-    bounds.minY - padding,
-    bounds.maxX + padding,
-    bounds.maxY + padding
-  )
+  return {
+    minX: bounds.minX - padding,
+    minY: bounds.minY - padding,
+    maxX: bounds.maxX + padding,
+    maxY: bounds.maxY + padding
+  }
 }
 
+const NOTHING: VisualBounds = { minX: 0, minY: 0, maxX: 0, maxY: 0 }
+
 /**
- * The layer opens after the node's x/y translation and before its rotation and flips, so the
- * subtree is measured through its orientation matrix.
+ * The bounds every layer a node opens shares: what its subtree puts on screen, cut to the
+ * viewport when the renderer bounds layers to it. The layers open after the node's x/y
+ * translation and before its rotation and flips, so the subtree is measured through its
+ * orientation matrix, and the viewport through the world matrix without it.
  */
-function nodeIsolationLayerBounds(
+function nodeLayerBounds(
   r: SkiaRenderer,
   graph: SceneGraph,
   node: SceneNode,
-  world: Mat3,
-  preview?: RenderOverlays['rotationPreview']
+  world: () => Mat3,
+  preview: RenderOverlays['rotationPreview']
 ): Float32Array {
-  const viewportBounds = viewportLayerBounds(r, world, 0)
-  if (viewportBounds) return viewportBounds
-  const bounds = subtreeVisualBounds(graph, node, nodeOrientationMatrix(node, preview), preview)
+  const orientation = nodeOrientationMatrix(node, preview)
+  const subtree = mapLayerBounds(orientation, r.renderedBounds.ownAxes(graph, node, preview))
+  if (!r.boundEffectLayersToViewport) {
+    return r.ck.LTRBRect(subtree.minX, subtree.minY, subtree.maxX, subtree.maxY)
+  }
+  const viewport = viewportLayerBounds(r, world(), orientation, drawnLayerBlurReach(node))
+  const bounds = viewport ? (intersectVisualBounds(viewport, subtree) ?? NOTHING) : subtree
   return r.ck.LTRBRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY)
 }
 
@@ -317,8 +329,13 @@ function nodeIsolationLayerBounds(
  * Whether the canvas draws a node itself: not hidden, a mask, blocked on fonts, drawn live by
  * node-edit mode, or left to a live island while the canvas previews.
  */
-function drawsNode(node: SceneNode, overlays: RenderOverlays): boolean {
-  if (node.internalOnly || !node.visible || node.isMask || fontManager.isNodeBlocked(node.id))
+function drawsNode(graph: SceneGraph, node: SceneNode, overlays: RenderOverlays): boolean {
+  if (
+    node.internalOnly ||
+    !node.visible ||
+    node.isMask ||
+    fontManager.isNodeBlocked(graph, node.id)
+  )
     return false
   return overlays.nodeEditState?.nodeId !== node.id && !overlays.playIslands?.has(node.id)
 }
@@ -339,7 +356,7 @@ export function renderNode(
   frame: Mat3 | null = null
 ): void {
   const found = graph.getNode(nodeId)
-  if (!found || !drawsNode(found, overlays)) return
+  if (!found || !drawsNode(graph, found, overlays)) return
   const node = stickyPlaceholderNode(graph, found, r.stickyPlaceholder) ?? found
 
   r.drawCounts.nodes++
@@ -347,7 +364,7 @@ export function renderNode(
   const absX = parentAbsX + node.x
   const absY = parentAbsY + node.y
 
-  if (isCulled(r, node, absX, absY, frame, overlays.rotationPreview)) {
+  if (isCulled(r, graph, node, absX, absY, frame, overlays.rotationPreview)) {
     r.drawCounts.culled++
     return
   }
@@ -355,53 +372,63 @@ export function renderNode(
   canvas.save()
   canvas.translate(node.x, node.y)
 
-  const world = () => worldMatrixIn(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
   const needsNodeLayer = node.opacity < 1 || needsIsolatedBlendLayer(node.blendMode)
+  const layerBlur = visibleLayerBlur(node)
+  const layerBounds =
+    needsNodeLayer || layerBlur
+      ? nodeLayerBounds(
+          r,
+          graph,
+          node,
+          () => worldMatrixIn(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview),
+          overlays.rotationPreview
+        )
+      : null
   if (needsNodeLayer) {
-    const layerBounds = nodeIsolationLayerBounds(r, graph, node, world(), overlays.rotationPreview)
     r.opacityPaint.setAlphaf(node.opacity)
     setPaintBlendMode(r, r.opacityPaint, node.blendMode)
     canvas.saveLayer(r.opacityPaint, layerBounds)
   }
 
-  const layerBlur = node.effects.find(
-    (e) => e.visible && (e.type === 'LAYER_BLUR' || e.type === 'FOREGROUND_BLUR')
-  )
   if (layerBlur) {
     // Entry guard: reset shared paint to known state
     r.effectLayerPaint.setImageFilter(null)
     r.effectLayerPaint.setColorFilter(null)
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
-    r.effectLayerPaint.setImageFilter(r.getCachedBlur(blurSigma(layerBlur.radius)))
-    const blurPadding = layerBlur.radius * 2
-    canvas.saveLayer(
-      r.effectLayerPaint,
-      viewportLayerBounds(r, world(), blurPadding) ??
-        r.ck.LTRBRect(
-          -blurPadding,
-          -blurPadding,
-          node.width + blurPadding,
-          node.height + blurPadding
-        )
-    )
+    const content = blurredContent(graph, node, overlays)
+    r.effectLayerPaint.setImageFilter(layerBlurFilter(r, node, layerBlur, overlays, content))
+    canvas.saveLayer(r.effectLayerPaint, layerBounds)
   }
 
   applyNodeTransforms(canvas, node, overlays)
   renderLayerShadows(r, canvas, graph, node, 'behind')
-  renderNodeContent(r, canvas, graph, node, overlays)
-  drawLayoutGrids(r, canvas, node)
-  renderChildren(
-    r,
-    canvas,
-    graph,
-    node,
-    overlays,
-    absX,
-    absY,
-    childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
-  )
-  renderLayerShadows(r, canvas, graph, node, 'front')
+  // A frame or group's texture roughens what it and its children draw, not its shadows, and its
+  // noise grains the roughened result and its inner shadows, as in Figma. A shape does both itself.
+  const container = isLayerContainer(node)
+  const texture = container ? visibleTexture(node) : undefined
+  const drawContent = () => {
+    const textureSaves = texture ? beginTexture(r, canvas, node, texture) : 0
+    try {
+      renderNodeContent(r, canvas, graph, node, overlays)
+      drawLayoutGrids(r, canvas, node)
+      renderChildren(
+        r,
+        canvas,
+        graph,
+        node,
+        overlays,
+        absX,
+        absY,
+        childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
+      )
+    } finally {
+      endTexture(canvas, textureSaves)
+    }
+    renderLayerShadows(r, canvas, graph, node, 'front')
+  }
+  if (container) withNoiseEffects(r, canvas, node, graph, drawContent)
+  else drawContent()
 
   if (layerBlur) {
     canvas.restore()
@@ -515,9 +542,9 @@ export function renderShapeUncached(
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  r.renderEffects(canvas, node, graph, 'behind')
-  paintShapeContent(r, canvas, node, graph, () => r.renderEffects(canvas, node, graph, 'inner'))
-  r.renderEffects(canvas, node, graph, 'front')
+  renderLeafWithEffects(r, canvas, node, graph, (inner) =>
+    paintShapeContent(r, canvas, node, graph, inner)
+  )
 }
 
 /** Draws a shape's fills and strokes without its effects; `afterFills` runs between the two. */

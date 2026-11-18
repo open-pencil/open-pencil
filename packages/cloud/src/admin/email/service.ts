@@ -17,6 +17,7 @@ import type { Kysely } from 'kysely'
 const ENROLLMENT_MESSAGE_STATUS: Partial<Record<string, EnrollmentStatus>> = {
   'enrollment-requested': 'pending',
   'enrollment-approved': 'approved',
+  'enrollment-invited': 'approved',
   'enrollment-rejected': 'rejected',
   'enrollment-revoked': 'revoked'
 }
@@ -114,7 +115,7 @@ export function createAdminEmailService(
             payload: {
               name: enrollment.name ?? 'there',
               actionURL:
-                kind === 'enrollment-approved'
+                kind === 'enrollment-approved' || kind === 'enrollment-invited'
                   ? links.publicURL
                   : new URL('/auth/sign-in', links.publicURL).href
             }

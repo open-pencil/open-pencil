@@ -45,7 +45,7 @@ Since v0.15.1, the development branch adds:
 
 These changes are not part of v0.15.1; they ship with the next release.
 
-See [AI chat](../programmable/ai-chat), [exporting](../user-guide/exporting), and [components and libraries](../user-guide/components).
+See [AI chat](../user-guide/ai-chat), [exporting](../user-guide/exporting), and [components and libraries](../user-guide/components).
 
 ### In development
 
@@ -150,7 +150,7 @@ Work with open pull requests. It may change before it merges:
 - Motion: reusable code-authored animation presets, timelines, easing, and deterministic playback/export that compose with prototype interactions and shader inputs.
 - Tables and data grids: structured rows, columns, headers, resizing, merged cells, and normal scene nodes inside cells instead of drawing tables as unrelated rectangles.
 - Comments: pins, threads, resolution state, and collaboration-aware display.
-- Extend shared libraries beyond the existing component publish/consume/update workflow to broader style management and governance.
+- Extend shared libraries beyond the existing publish/consume/update workflow for components, styles, and variable collections to governance, usage analytics, and inserting styles and variables without a component.
 - Platform asset libraries: use licensed system-native and third-party icon sources, including SF Symbols where platform and redistribution rules allow, alongside the existing Iconify/Lucide workflow.
 - Figma Slides (`.deck`) interoperability: import/export, slide editing, presentation, speaker notes, and filmstrip workflows. This ranks below core Figma Design fidelity, reliability, Cloud/self-hosting, and international-text work.
 - Platform polish: Windows code signing, PWA support, packaged updater improvements, and desktop-side MCP bundling.
@@ -224,11 +224,12 @@ Figma's design documentation groups features into these areas:
 | Strokes                                              |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Weight, alignment, dashes, and side weights are supported.                                                                                                                                                                                         |
 | Stroke caps / joins / miter limit                    |     ✅ |     ✅ |       ✅ |                ✅ |      ✅ | Inspector controls support mixed cap/join/miter editing; CanvasKit rendering and `.fig` roundtrips preserve miter limits.                                                                                                                                                                                    |
 | Effects: shadows and blurs                           |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | `showShadowBehindNode` is rendered but not exposed in UI.                                                                                                                                                                                          |
+| Effects: noise and texture                           |     ✅ |      ◐ |      ✅ |                ✅ |      ✅ | Noise draws with Figma's measured statistics, as its generator is not public: exact at grain size 1, close at larger sizes, darker than Figma's for large grains at partial density. SVG export matches Figma's own SVG. |
 | Fill / stroke / effect styles                        |     ✅ |     ✅ |       ◐ |                ✅ |      ✅ | Imported local definitions are modeled and selectable with undo-safe detach; creating and publishing styles still needs a style manager.                                                                                                                                                                                                            |
 | Corner radius                                        |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Uniform and independent radii supported.                                                                                                                                                                                                           |
 | Corner smoothing                                     |     ✅ |     ✅ |       ✅ |                ✅ |      ✅ | The inspector supports mixed smoothing percentages with undo; uniform and independent-radius corners render, while exact Figma parity still needs broader fixture tuning.                                                                                                         |
 | Masks                                                |     ✅ |      ◐ |       — |                ✅ |      ✅ | Figma schema `mask`, `maskType`, and `maskIsOutline` fields import and export; common sibling alpha/vector/luminance mask stacks render, including consecutive mask layers. UI controls and deeper Figma edge cases remain incomplete.             |
-| Auto layout: vertical/horizontal                     |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Yoga-backed layout.                                                                                                                                                                                                                                |
+| Auto layout: vertical/horizontal                     |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Taffy-backed layout.                                                                                                                                                                                                                               |
 | Auto layout: wrap                                    |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | UI toggle exists.                                                                                                                                                                                                                                  |
 | Auto layout: grid                                    |     ✅ |      ◐ |       ◐ |                ✅ |      ✅ | CSS-grid-like support is partial; newer schema fields for grid child alignment and auto tracks are not fully exposed.                                                                                                                              |
 | Padding / gaps / alignment                           |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Common flex controls are exposed.                                                                                                                                                                                                                  |
@@ -309,7 +310,7 @@ These are parsed or visible in Figma docs and most likely to cause visible diffe
 | `.fig` metadata policy       | `packages/fig/src/source-metadata.ts`                                                                           |
 | Kiwi import mapping          | `packages/fig/src/node-change/convert.ts`                                                                       |
 | Kiwi export mapping          | `packages/fig/src/node-change/export/node.ts`, `packages/fig/src/node-change/serialize.ts`                    |
-| Kiwi schema                  | `packages/kiwi/src/fig/schema/fig.kiwi`, `tests/engine/io/fig/import/schema-coverage.test.ts`                   |
+| Kiwi schema                  | `packages/kiwi/src/fig/schema/fig.kiwi`, `packages/core/tests/io/formats/fig/import/schema-coverage.test.ts`                   |
 | Renderer dispatch            | `packages/core/src/canvas/scene.ts`                                                                            |
 | Fills / images / gradients   | `packages/core/src/canvas/fills.ts`                                                                            |
 | Strokes                      | `packages/core/src/canvas/strokes.ts`                                                                          |

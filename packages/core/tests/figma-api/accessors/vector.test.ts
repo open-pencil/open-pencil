@@ -6,13 +6,15 @@ import { type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { encodePathCommandsBlob } from '@open-pencil/fig/node-change'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { graphOf } from '#core/figma-api/graph'
+
 const CURVED_PATH = 'M10 20 C20 0 40 40 50 20 Z'
 
 describe('vector paths', () => {
   test('exposes imported geometry as Figma SVG paths', () => {
     const api = createAPI()
     const vector = api.createVector()
-    api.graph.updateNode(vector.id, {
+    graphOf(api).updateNode(vector.id, {
       fillGeometry: [
         {
           windingRule: 'EVENODD',
@@ -299,7 +301,12 @@ describe('fills of a vector with region fills', () => {
     const red = api.variables.createVariable('Red', collection, 'COLOR')
     red.setValueForMode(collection.modes[0].modeId, { r: 1, g: 0, b: 0, a: 1 })
     const blue = solidFill({ r: 0, g: 0, b: 1, a: 1 })
-    const { vector } = squares([RED], undefined, [api.variables.setBoundVariableForPaint(blue, 'color', red)], api)
+    const { vector } = squares(
+      [RED],
+      undefined,
+      [api.variables.setBoundVariableForPaint(blue, 'color', red)],
+      api
+    )
     expect(colors(vector.fills)).toEqual([{ r: 1, g: 0, b: 0 }])
   })
 

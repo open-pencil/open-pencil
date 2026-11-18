@@ -142,12 +142,12 @@ function confirm() {
       <template #title>{{ messages.twoStepSection }}</template>
       <template #description>{{ messages.twoStepSectionDescription }}</template>
       <SettingsGroup>
-        <SettingsRow :label="messages.authenticatorApp">
-          <template #description>
-            <p class="mt-1 flex items-center gap-1.5 text-xs text-muted">
+        <SettingsRow :description="messages.authenticatorOff">
+          <template #label>
+            <span class="flex items-center gap-1.5">
+              {{ messages.authenticatorApp }}
               <AppBadge v-if="authenticator.on">{{ messages.authenticatorOn }}</AppBadge>
-              <template v-else>{{ messages.authenticatorOff }}</template>
-            </p>
+            </span>
           </template>
           <div v-if="authenticator.on" class="flex items-center gap-1">
             <AppButton size="sm" variant="ghost" :disabled="busy" @click="emit('newRecoveryCodes')">
@@ -217,7 +217,6 @@ function confirm() {
       tone="danger"
       :heading="confirmation?.heading ?? ''"
       :description="confirmation?.description"
-      :cancel-label="messages.cancel"
       :confirm-label="confirmation?.confirm ?? ''"
       @update:open="(open) => !open && (confirming = null)"
       @confirm="confirm"

@@ -4,8 +4,10 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   applyComponentPropertyValue,
   componentPropertyDefinitions,
-  findComponentPropertyTargets
+  findComponentPropertyTargets,
+  recordAssignmentOverride
 } from '@open-pencil/scene-graph/components'
+import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 
 import type { EditorContext } from '#core/editor/types'
@@ -92,6 +94,8 @@ function setInstanceValue(ctx: EditorContext, node: SceneNode, propertyId: strin
     ? componentPropertyDefinitions(ctx.graph, instance).find((item) => item.id === propertyId)
     : undefined
   if (!instance || !definition) return
+  const owner = instance.parentId ? findInstanceAncestor(ctx.graph, instance.parentId) : undefined
+  const ownerBefore = owner && cloneInstanceOverrideState(owner.instanceOverrides)
   const before = {
     componentPropertyAssignments: { ...instance.componentPropertyAssignments },
     instanceOverrides: cloneInstanceOverrideState(instance.instanceOverrides)
@@ -101,21 +105,32 @@ function setInstanceValue(ctx: EditorContext, node: SceneNode, propertyId: strin
     target.node.id !== node.id && target.node.type === 'TEXT' ? [target.node] : []
   )
   const { before: othersBefore, after: othersAfter } = layerTextChanges(others, text)
-  const apply = (values: typeof before, layers: LayerChanges[]) => {
+  const apply = (
+    values: typeof before,
+    layers: LayerChanges[],
+    ownerOverrides: typeof ownerBefore
+  ) => {
     ctx.graph.updateNode(instance.id, structuredClone(values))
+    if (owner && ownerOverrides) {
+      ctx.graph.updateNode(owner.id, {
+        instanceOverrides: cloneInstanceOverrideState(ownerOverrides)
+      })
+    }
     for (const layer of layers) ctx.graph.updateNode(layer.id, structuredClone(layer.changes))
     ctx.runLayoutForNode(instance.id)
     ctx.requestRender()
   }
   applyComponentPropertyValue(ctx.graph, instance.id, definition, text)
+  recordAssignmentOverride(ctx.graph, instance.id, propertyId)
   const after = {
     componentPropertyAssignments: { ...instance.componentPropertyAssignments },
     instanceOverrides: cloneInstanceOverrideState(instance.instanceOverrides)
   }
-  apply(after, othersAfter)
+  const ownerAfter = owner && cloneInstanceOverrideState(owner.instanceOverrides)
+  apply(after, othersAfter, ownerAfter)
   ctx.undo.push({
     label: 'Edit text',
-    forward: () => apply(after, othersAfter),
-    inverse: () => apply(before, othersBefore)
+    forward: () => apply(after, othersAfter, ownerAfter),
+    inverse: () => apply(before, othersBefore, ownerBefore)
   })
 }

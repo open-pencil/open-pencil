@@ -1,0 +1,1 @@
+- The chat field no longer flashes its placeholder each time a message is sent (#2147).

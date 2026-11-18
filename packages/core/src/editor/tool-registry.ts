@@ -8,7 +8,7 @@ export interface EditorToolDef {
 }
 
 export const EDITOR_TOOLS: EditorToolDef[] = [
-  { key: 'SELECT', label: 'Move', shortcut: 'V' },
+  { key: 'SELECT', label: 'Move', shortcut: 'V', flyout: ['SELECT', 'SCALE'] },
   { key: 'FRAME', label: 'Frame', shortcut: 'F', flyout: ['FRAME', 'SECTION'] },
   {
     key: 'RECTANGLE',
@@ -29,18 +29,20 @@ export const EDITOR_TOOLS: EditorToolDef[] = [
 ]
 
 export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
-  KeyV: 'SELECT',
-  KeyF: 'FRAME',
-  KeyA: 'FRAME',
-  'Shift+KeyS': 'SECTION',
-  KeyR: 'RECTANGLE',
-  KeyO: 'ELLIPSE',
-  KeyL: 'LINE',
-  KeyT: 'TEXT',
-  KeyP: 'PEN',
-  'Shift+KeyP': 'PENCIL',
-  KeyH: 'HAND',
-  KeyC: 'COMMENT'
+  V: 'SELECT',
+  K: 'SCALE',
+  F: 'FRAME',
+  A: 'FRAME',
+  'Shift+S': 'SECTION',
+  R: 'RECTANGLE',
+  O: 'ELLIPSE',
+  L: 'LINE',
+  T: 'TEXT',
+  P: 'PEN',
+  'Shift+P': 'PENCIL',
+  H: 'HAND',
+  C: 'COMMENT',
+  I: 'EYEDROPPER'
 }
 
 /**
@@ -60,12 +62,12 @@ export const BOARD_TOOLS: ReadonlySet<Tool> = new Set<Tool>([
 
 /** A board's tool keys, as in FigJam: S places a sticky note, R a shape, and X a connector. */
 export const BOARD_TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
-  KeyV: 'SELECT',
-  KeyH: 'HAND',
-  KeyS: 'STICKY',
-  'Shift+KeyS': 'SECTION',
-  KeyR: 'SHAPE_WITH_TEXT',
-  KeyX: 'CONNECTOR',
-  KeyT: 'TEXT',
-  KeyC: 'COMMENT'
+  V: 'SELECT',
+  H: 'HAND',
+  S: 'STICKY',
+  'Shift+S': 'SECTION',
+  R: 'SHAPE_WITH_TEXT',
+  X: 'CONNECTOR',
+  T: 'TEXT',
+  C: 'COMMENT'
 }

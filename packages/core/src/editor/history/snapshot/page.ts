@@ -2,7 +2,7 @@ import { isEqual, uniq } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
 
-import { writeRecord } from '#core/editor/history/document-change'
+import { writeRecord } from '#core/editor/history/records'
 import type { EditorContext } from '#core/editor/types'
 import { computeAllLayouts } from '#core/layout'
 import { reconcileVariableLayouts } from '#core/layout/variables'

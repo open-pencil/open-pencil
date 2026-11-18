@@ -1,5 +1,4 @@
 {
-  "restoreToolDefaults": "恢复默认设置",
   "aiToolAccessDescription": "选择直接连接 AI 模型时可用的工具。ACP 和 Pi 智能体使用 MCP 访问权限。",
   "mcpToolAccessDescription": "选择本地服务器向已连接的智能体和客户端提供的工具。",
   "aiToolsNotice": "更改从下一条消息开始生效。工具开关不是沙箱：已启用的脚本工具仍可执行其他设计操作。",

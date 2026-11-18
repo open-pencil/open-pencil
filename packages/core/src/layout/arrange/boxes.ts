@@ -243,7 +243,43 @@ function layoutOptions(input: ArrangeInput): Record<string, string> {
   }
 }
 
+/**
+ * SPOrE's importer moves a box whose centre another box already has with an unseeded
+ * `Math.random()`, and SPOrE ignores `elk.randomSeed`, so a pile would spread differently on every
+ * run (ElkGraphImporter.java, eclipse-elk/elk b715fb1, lines 166-172). Doing that move here,
+ * deterministically, means ELK never reaches it. Remove once elkjs seeds it
+ * (https://github.com/eclipse-elk/elk/issues/1211). `NUDGE` is the first
+ * move's length in pixels.
+ */
+const NUDGE = 0.5
+/** Each further move turns by the golden angle, so the moved centres do not fall on one line. */
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
+
+/** Gives every box in each container, at every level, a centre of its own. */
+function separateCentres(container: ElkNode): void {
+  const repeats = new Map<string, number>()
+  for (const node of container.children ?? []) {
+    separateCentres(node)
+    const x = (node.x ?? 0) + (node.width ?? 0) / 2
+    const y = (node.y ?? 0) + (node.height ?? 0) / 2
+    const key = `${x},${y}`
+    const repeat = repeats.get(key) ?? 0
+    repeats.set(key, repeat + 1)
+    if (repeat === 0) continue
+    const distance = NUDGE * Math.sqrt(repeat)
+    node.x = (node.x ?? 0) + distance * Math.cos(repeat * GOLDEN_ANGLE)
+    node.y = (node.y ?? 0) + distance * Math.sin(repeat * GOLDEN_ANGLE)
+  }
+}
+
+/** The graph ELK lays `input` out from. */
 function elkGraph(input: ArrangeInput): ElkNode {
+  const root = elkHierarchy(input)
+  if (input.layout === 'spread' || input.layout === 'compact') separateCentres(root)
+  return root
+}
+
+function elkHierarchy(input: ArrangeInput): ElkNode {
   const flow = input.layout === 'flow'
   const [outSide, inSide] = FLOW_SIDES[input.direction ?? 'TB']
   const options = layoutOptions(input)

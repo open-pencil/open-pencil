@@ -1,14 +1,14 @@
 import type { CloudDatabase } from '#cloud/server/db'
-import { createWorkspaceEntitlementRepository } from '#cloud/server/policy'
+import { createAccountEntitlementRepository } from '#cloud/server/policy'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
-import { setWorkspaceEntitlementsSchema } from './schema'
+import { setAccountEntitlementsSchema } from './schema'
 
-export type SetWorkspaceEntitlementsInput = v.InferInput<typeof setWorkspaceEntitlementsSchema>
+export type SetAccountEntitlementsInput = v.InferInput<typeof setAccountEntitlementsSchema>
 
-export function parseSetWorkspaceEntitlements(input: unknown) {
-  return v.parse(setWorkspaceEntitlementsSchema, input)
+export function parseSetAccountEntitlements(input: unknown) {
+  return v.parse(setAccountEntitlementsSchema, input)
 }
 
 /**
@@ -16,26 +16,20 @@ export function parseSetWorkspaceEntitlements(input: unknown) {
  * their own transport: an authenticated HTTP route on Node, a service binding on Workers.
  */
 export function createInternalService(database: Kysely<CloudDatabase>) {
-  const entitlements = createWorkspaceEntitlementRepository(database)
+  const entitlements = createAccountEntitlementRepository(database)
   return {
-    /** `found` is false for an unknown workspace; `applied` is false for an outdated version. */
-    async setWorkspaceEntitlements(
-      workspaceId: string,
-      input: SetWorkspaceEntitlementsInput
+    /**
+     * Sets an account's plan, which every workspace it owns takes. `found` is false for an
+     * unknown account; `applied` is false for an outdated version.
+     */
+    async setAccountEntitlements(
+      userId: string,
+      input: SetAccountEntitlementsInput
     ): Promise<{ found: boolean; applied: boolean }> {
-      const { values, source, externalVersion } = parseSetWorkspaceEntitlements(input)
-      const workspace = await database
-        .selectFrom('workspace')
-        .select('id')
-        .where('id', '=', workspaceId)
-        .executeTakeFirst()
-      if (!workspace) return { found: false, applied: false }
-      const { applied } = await entitlements.setVersioned(
-        workspaceId,
-        values,
-        source,
-        externalVersion
-      )
+      const { values, source, externalVersion } = parseSetAccountEntitlements(input)
+      const account = await entitlements.account(userId)
+      if (!account) return { found: false, applied: false }
+      const { applied } = await entitlements.setVersioned(account, values, source, externalVersion)
       return { found: true, applied }
     }
   }

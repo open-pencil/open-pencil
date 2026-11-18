@@ -1,11 +1,12 @@
 import { fileURLToPath } from 'node:url'
 
 import { defineConfig } from 'tsdown'
+import vue from 'unplugin-vue/rolldown'
 
 export default defineConfig({
   entry: {
     server: './src/runtime/node/main.ts',
-    'ai-relay': './src/runtime/node/ai-relay/main.ts'
+    services: './src/runtime/node/services/main.ts'
   },
   platform: 'node',
   format: ['esm'],
@@ -15,6 +16,7 @@ export default defineConfig({
   outDir: './dist-standalone',
   target: 'node22',
   deps: { alwaysBundle: [/.*/], neverBundle: [/^node:/] },
+  plugins: [vue()],
   inputOptions: {
     resolve: {
       alias: {

@@ -1,16 +1,13 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { drawGuides } from '#core/canvas/guides/draw'
 import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
 import { placeIssueMarkers } from '#core/canvas/issues/layout'
 import { drawComponentLabels, drawFrameTitles, drawSectionTitles } from '#core/canvas/labels/draw'
-import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
-import { drawNodeEditOverlay } from '#core/canvas/node-edit-overlay'
+import { cachedGlyphWidth } from '#core/canvas/labels/paragraphs'
 import {
   drawAutoLayoutHover,
-  drawEnteredContainer,
   drawFlashes,
   drawHoverHighlight,
   drawLayoutInsertIndicator,
@@ -25,18 +22,21 @@ import { drawAIOverlays } from '#core/canvas/overlays/ai'
 import { drawComponentSetBorders } from '#core/canvas/overlays/component-sets'
 import { drawConnectorTarget } from '#core/canvas/overlays/connectors'
 import { drawDropTarget, drawEditingText } from '#core/canvas/overlays/feedback'
-import { drawGradientHandles } from '#core/canvas/overlays/gradient-handles'
+import { drawBlurRampHandles } from '#core/canvas/overlays/handles/blur-ramp'
+import { drawGradientHandles } from '#core/canvas/overlays/handles/gradient'
+import { drawShapeHandles } from '#core/canvas/overlays/handles/shape'
 import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
+import { drawNodeEditOverlay } from '#core/canvas/overlays/node-edit'
+import { drawPenOverlay, drawPencilOverlay } from '#core/canvas/overlays/pen'
 import { drawPixelGrid } from '#core/canvas/overlays/pixel-grid'
 import { drawCodeFocus } from '#core/canvas/overlays/selection'
-import { drawShapeHandles } from '#core/canvas/overlays/shape-handles'
 import { drawSlotOutlines } from '#core/canvas/overlays/slots'
-import { drawPenOverlay, drawPencilOverlay } from '#core/canvas/pen-overlay'
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import { drawRulers } from '#core/canvas/rulers'
 import { RULER_SIZE } from '#core/constants'
-import { editedGradient } from '#core/editor/gradient-edit'
+import { editedBlurRamp } from '#core/editor/handles/blur-ramp'
+import { editedGradient } from '#core/editor/handles/gradient'
 
 function measurementVisible(overlays: RenderOverlays): boolean {
   return (
@@ -72,6 +72,37 @@ function suppressedIssueIds(overlays: RenderOverlays): Set<string> {
   if (overlays.editingTextId) ids.add(overlays.editingTextId)
   if (overlays.nodeEditState) ids.add(overlays.nodeEditState.nodeId)
   return ids
+}
+
+/**
+ * The selection and its handles, or, while a gradient or a progressive blur is edited, that
+ * paint's or blur's handles in their place, as Figma shows them. A previewing canvas shows neither.
+ */
+function drawSelectionOrEditHandles(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  selectedIds: Set<string>,
+  overlays: RenderOverlays
+): void {
+  if (!overlays.playing && editedGradient(graph, overlays.gradientEdit)) {
+    drawGradientHandles(r, canvas, graph, overlays.gradientEdit, overlays.rotationPreview)
+    return
+  }
+  if (!overlays.playing && editedBlurRamp(graph, overlays.blurRampEdit)) {
+    drawBlurRampHandles(r, canvas, graph, overlays.blurRampEdit, overlays.rotationPreview)
+    return
+  }
+  drawSelection(r, canvas, graph, selectedIds, overlays)
+  if (!overlays.transforming && r.editHandles)
+    drawShapeHandles(
+      r,
+      canvas,
+      graph,
+      selectedIds,
+      overlays.shapeHandleHover,
+      overlays.rotationPreview
+    )
 }
 
 /**
@@ -142,27 +173,11 @@ export function drawOverlayPass(
   if (!measuring) drawLayoutOutlines(r, canvas, graph, selectedIds, hoveredNodeId, overlays)
   drawHoverHighlight(r, canvas, graph, hoveredNodeId, overlays.rotationPreview)
   drawIssueHighlight(r, canvas, graph, overlays.designIssues?.highlight, overlays.rotationPreview)
-  drawEnteredContainer(r, canvas, graph, overlays.enteredContainerId, overlays.rotationPreview)
   drawDropTarget(r, canvas, graph, overlays.dropTargetId, overlays.rotationPreview)
   drawConnectorTarget(r, canvas, graph, overlays.connectorTarget, overlays.rotationPreview)
   drawEditingText(r, canvas, graph, overlays)
   r.profiler.beginPhase('render:selection')
-  // While a gradient is edited, Figma shows its handles instead of the layer's selection; a
-  // previewing canvas shows neither.
-  if (!overlays.playing && editedGradient(graph, overlays.gradientEdit))
-    drawGradientHandles(r, canvas, graph, overlays.gradientEdit, overlays.rotationPreview)
-  else {
-    drawSelection(r, canvas, graph, selectedIds, overlays)
-    if (!overlays.transforming && r.editHandles)
-      drawShapeHandles(
-        r,
-        canvas,
-        graph,
-        selectedIds,
-        overlays.shapeHandleHover,
-        overlays.rotationPreview
-      )
-  }
+  drawSelectionOrEditHandles(r, canvas, graph, selectedIds, overlays)
   if (measuring) drawMeasurements(r, canvas, graph, selectedIds, overlays.hoveredNodeId)
   r.profiler.endPhase('render:selection')
 
@@ -174,7 +189,7 @@ export function drawOverlayPass(
   drawMarquee(r, canvas, overlays.marquee)
   drawLayoutInsertIndicator(r, canvas, overlays.layoutInsertIndicator)
   if (!measuring && !overlays.transforming && r.editHandles) {
-    drawAutoLayoutHover(r, canvas, graph, overlays.autoLayoutHover)
+    drawAutoLayoutHover(r, canvas, graph, overlays.autoLayoutHover, overlays.rotationPreview)
   }
   drawNodeEditOverlay(r, canvas, graph, overlays.nodeEditState)
   drawPenOverlay(r, canvas, overlays.penState)
@@ -193,7 +208,8 @@ export function drawChromePass(
   overlays: RenderOverlays
 ): void {
   r.profiler.beginPhase('render:rulers')
-  if (r.showRulers) drawRulers(r, canvas, graph, selectedIds, overlays.guides)
+  if (r.showRulers)
+    drawRulers(r, canvas, graph, selectedIds, overlays.guides, overlays.rotationPreview)
   r.profiler.endPhase('render:rulers')
   r.profiler.drawHUD(canvas, r.showRulers)
 }

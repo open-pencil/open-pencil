@@ -28,7 +28,7 @@ const DRAWN = {
 }
 
 /** A Mac that draws every symbol it lists, recording each request; or none, as elsewhere. */
-function setup(mac = true) {
+function setup(mac = true, drawn: { paths: Record<string, unknown>[] } = DRAWN) {
   const requests: Record<string, unknown>[] = []
   const host: SFSymbolsHost = {
     catalogue: async () => (mac ? CATALOGUE : null),
@@ -36,7 +36,7 @@ function setup(mac = true) {
       if (!mac) return null
       const parsed = v.parse(requestSchema, request)
       requests.push(parsed)
-      return JSON.stringify(Object.fromEntries(parsed.names.map((name) => [name, DRAWN])))
+      return JSON.stringify(Object.fromEntries(parsed.names.map((name) => [name, drawn])))
     }
   }
   return { provider: createSFSymbolsProvider(host), requests }
@@ -47,7 +47,14 @@ describe('SF Symbols', () => {
     const { provider } = setup()
     const [set] = await provider.collections()
     expect(set).toMatchObject({ prefix: 'sf-symbols', name: 'SF Symbols', total: 3 })
-    expect(set?.options?.map((option) => option.key)).toEqual(['weight', 'scale', 'rendering'])
+    expect(set?.options?.map((option) => option.key)).toEqual([
+      'weight',
+      'scale',
+      'rendering',
+      'variable',
+      'secondary',
+      'tertiary'
+    ])
     expect(await provider.browse('sf-symbols')).toHaveLength(3)
     expect((await provider.search('home')).icons).toEqual(['sf-symbols:house.fill'])
     expect((await provider.search('house fill')).icons).toEqual(['sf-symbols:house.fill'])
@@ -68,9 +75,15 @@ describe('SF Symbols', () => {
     expect(previews.get('sf-symbols:house')).toContain('<path')
   })
 
-  test('offers nothing where the host cannot draw them', async () => {
+  test('lists the set as unavailable, with no icons, where the host cannot draw them', async () => {
     const { provider } = setup(false)
-    expect(await provider.collections()).toEqual([])
+    expect(await provider.collections()).toMatchObject([
+      { prefix: 'sf-symbols', total: 0, unavailable: 'system' }
+    ])
+    expect(await createSFSymbolsProvider(null).collections()).toMatchObject([
+      { prefix: 'sf-symbols', total: 0, unavailable: 'host' }
+    ])
+    expect((await createSFSymbolsProvider(null).icons(['sf-symbols:house'], 24)).size).toBe(0)
     expect((await provider.search('house')).icons).toEqual([])
     expect((await provider.icons(['sf-symbols:house'], 24)).size).toBe(0)
   })
@@ -87,13 +100,19 @@ describe('SF Symbols', () => {
         size: 24,
         weight: 'bold',
         scale: 'medium',
-        rendering: 'monochrome'
+        rendering: 'monochrome',
+        variable: 1
       }
     ])
     const house = icons.get('sf-symbols:house')
-    expect(house?.options).toEqual({ weight: 'bold', scale: 'medium', rendering: 'monochrome' })
+    expect(house?.options).toEqual({
+      weight: 'bold',
+      scale: 'medium',
+      rendering: 'monochrome',
+      variable: 1
+    })
     expect(house?.width).toBe(24)
-    expect(house?.paths.map((path) => path.fillOpacity)).toEqual([1, 0.498])
+    expect(house?.paths.map((path) => path.fills[0]?.opacity)).toEqual([1, 0.498])
   })
 
   test('places each layer at its opacity, which recoloring keeps', async () => {
@@ -111,6 +130,72 @@ describe('SF Symbols', () => {
     ).toEqual([
       [1, 1],
       [0.498, 1]
+    ])
+  })
+
+  test('keeps palette colors only while the rendering is palette, and bounds the variable value', async () => {
+    const { provider } = setup()
+    const draw = async (options: Record<string, string | number>) =>
+      (await provider.icons(['sf-symbols:house'], 24, options)).get('sf-symbols:house')?.options
+    expect(await draw({ rendering: 'palette', secondary: 'red', tertiary: 'not a color' })).toEqual(
+      {
+        weight: 'regular',
+        scale: 'medium',
+        rendering: 'palette',
+        variable: 1,
+        secondary: '#FF0000',
+        tertiary: '#8E8E93'
+      }
+    )
+    expect(await draw({ rendering: 'hierarchical', secondary: '#ff0000', variable: 4 })).toEqual({
+      weight: 'regular',
+      scale: 'medium',
+      rendering: 'hierarchical',
+      variable: 1
+    })
+  })
+
+  test('paints palette layers past the primary in their own colors, which recoloring keeps', async () => {
+    const { provider } = setup(true, {
+      paths: [
+        { d: 'M0 0L30 0L30 30Z', opacity: 1, layer: 0 },
+        { d: 'M0 0L0 30L30 30Z', opacity: 1, layer: 1 },
+        { d: 'M0 0L10 0L10 10Z', opacity: 1, layer: 2 }
+      ]
+    })
+    const icon = (
+      await provider.icons(['sf-symbols:house'], 24, {
+        rendering: 'palette',
+        secondary: '#00ff00',
+        tertiary: '#0000ff'
+      })
+    ).get('sf-symbols:house')
+    if (!icon) throw new Error('no icon')
+    const graph = new SceneGraph()
+    const frame = placeIcon(graph, graph.getPages()[0].id, icon, {
+      size: 24,
+      color: parseColor('#000000')
+    })
+    recolorIcon(graph, frame.id, parseColor('#ff0000'))
+    const colors = graph.getChildren(frame.id).map((path) => path.fills[0]?.color)
+    expect(colors).toEqual([parseColor('#ff0000'), parseColor('#00ff00'), parseColor('#0000ff')])
+  })
+
+  test('keeps a multicolor symbol’s own colors and tints only its foreground', async () => {
+    const { provider } = setup(true, {
+      paths: [
+        { d: 'M0 0L30 0L30 30Z', opacity: 1, color: '#ffcc00' },
+        { d: 'M0 0L0 30L30 30Z', opacity: 0.5 }
+      ]
+    })
+    const icon = (await provider.icons(['sf-symbols:house'], 24, { rendering: 'multicolor' })).get(
+      'sf-symbols:house'
+    )
+    expect(
+      icon?.paths.map((path) => [path.tint, path.fills[0]?.color, path.fills[0]?.opacity])
+    ).toEqual([
+      [[], parseColor('#ffcc00'), 1],
+      [['fill'], parseColor('#000000'), 0.5]
     ])
   })
 

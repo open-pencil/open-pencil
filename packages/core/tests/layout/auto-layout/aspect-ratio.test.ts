@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '#core/figma-api'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+
+import { FigmaAPI } from '#core/figma-api'
 
 // Sizes recorded from Figma with locked layers in fixed auto layout frames, no padding or gap.
 function row(graph: SceneGraph, overrides: Partial<SceneNode> = {}) {
@@ -105,6 +106,59 @@ describe('locked aspect ratio in auto layout', () => {
     const fixed = locked(graph, frame.id, { width: 80 })
     computeAllLayouts(graph)
     expect(size(graph, fixed.id)).toEqual([80, 50])
+  })
+
+  // Live Figma, 2026-11-15: a 2:1 locked layer filling both ways in a 600×100 column.
+  test('a locked ratio sizing a fill across centers it in the room the fill takes', () => {
+    const CASES: [SceneNode['counterAxisAlign'], number | null, number][] = [
+      ['MIN', null, 200],
+      ['CENTER', null, 200],
+      ['MAX', null, 200],
+      ['MIN', 300, 50],
+      ['CENTER', 300, 200],
+      ['MAX', 300, 350]
+    ]
+    for (const [align, maxWidth, x] of CASES) {
+      const name = `${align}/${maxWidth}`
+      const graph = new SceneGraph()
+      const column = row(graph, { layoutMode: 'VERTICAL', counterAxisAlign: align, width: 600 })
+      const child = locked(graph, column.id, {
+        layoutGrow: 1,
+        layoutAlignSelf: 'STRETCH',
+        maxWidth
+      })
+      computeAllLayouts(graph)
+      expect([name, graph.getNode(child.id)?.x, ...size(graph, child.id)]).toEqual([
+        name,
+        x,
+        200,
+        100
+      ])
+    }
+  })
+
+  // Live Figma, 2026-11-16: between two 150×80 layers in a 200×600 wrapping row aligned to the top.
+  test('a locked ratio sizing a fill across a wrapped row centers it in its own line', () => {
+    for (const maxHeight of [null, 300]) {
+      const graph = new SceneGraph()
+      const wrapped = row(graph, { layoutWrap: 'WRAP', width: 200, height: 600 })
+      graph.createNode('FRAME', wrapped.id, { width: 150, height: 80 })
+      const child = locked(graph, wrapped.id, {
+        layoutGrow: 1,
+        layoutAlignSelf: 'STRETCH',
+        maxHeight
+      })
+      graph.createNode('FRAME', wrapped.id, { width: 150, height: 80 })
+      computeAllLayouts(graph)
+      const node = graph.getNode(child.id)
+      expect([maxHeight, node?.x, node?.y, ...size(graph, child.id)]).toEqual([
+        maxHeight,
+        150,
+        27.5,
+        50,
+        25
+      ])
+    }
   })
 })
 

@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import { toRef } from 'vue'
@@ -15,6 +14,7 @@ import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 import type { EditorStore } from '@/app/editor/session'
 import type { LibraryService } from '@/app/libraries'
 import { useInstanceUpdate } from '@/components/properties/component-properties/instance-update/use'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -36,7 +36,7 @@ const { available, updating, updateSelectedInstance } = useInstanceUpdate(
 </script>
 
 <template>
-  <DropdownMenuRoot v-if="available" v-model:open="popupOpen">
+  <AppDropdownMenuRoot v-if="available" v-model:open="popupOpen">
     <Tip :label="panels.updateSelectedInstance">
       <DropdownMenuTrigger as-child>
         <button
@@ -74,5 +74,5 @@ const { available, updating, updateSelectedInstance } = useInstanceUpdate(
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

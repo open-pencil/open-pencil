@@ -1,1 +1,0 @@
-- Splitting a corner radius bound to a variable, in the panel, on the canvas or from a script, keeps every corner bound to it.

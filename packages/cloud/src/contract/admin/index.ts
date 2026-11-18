@@ -7,6 +7,8 @@ import {
   cloudPersonSchema,
   cloudSignInSchema
 } from '../account'
+import { documentKindSchema } from '../documents'
+import { documentReportReasonSchema } from '../reports'
 import { workspaceRoleSchema } from '../workspaces'
 
 const timestampSchema = v.pipe(v.string(), v.isoTimestamp())
@@ -39,7 +41,11 @@ export const adminErrorCodeSchema = v.picklist([
   'last_admin_required',
   'self_admin_action_forbidden',
   'email_regeneration_unavailable',
-  'mfa_required'
+  'mfa_required',
+  // Two-step is on, but this session has not proved it lately; confirming it lets it back in.
+  'two_step_unconfirmed',
+  'document_not_restorable',
+  'workspace_gone'
 ])
 
 export const adminErrorResponseSchema = v.object({
@@ -68,6 +74,10 @@ export const enrollmentsResponseSchema = v.object({
   ...listTotals(enrollmentStatusSchema.options)
 })
 export const enrollmentReviewResponseSchema = v.object({ enrollment: enrollmentSchema })
+/** How many waiting requests were approved with the official deployment's invitation letter. */
+export const enrollmentInviteResponseSchema = v.object({
+  invited: v.pipe(v.number(), v.integer(), v.minValue(0))
+})
 
 export const cloudAdminSessionResponseSchema = v.object({ user: cloudIdentitySchema })
 
@@ -81,7 +91,12 @@ export const cloudAdminUserSchema = v.object({
   twoStep: v.boolean(),
   /** When one of the account's sessions was last used, or null when none is left. */
   lastActiveAt: nullableTimestampSchema,
-  workspaceCount: countSchema
+  workspaceCount: countSchema,
+  /**
+   * On a server that approves people, where this account's request to join stands: an account
+   * exists from its first sign-in, before anyone approved it. Absent where everyone may join.
+   */
+  request: v.optional(v.nullable(enrollmentStatusSchema))
 })
 
 /** Which accounts a list of people shows. */
@@ -147,16 +162,86 @@ export const adminAuditEventSchema = v.object({
   id: v.string(),
   actor: auditPartySchema,
   action: v.string(),
-  /** What the event is about: an account, an access request, or an email. */
+  /** What the event is about: an account, an access request, an email, or a document. */
   subject: v.object({ ...auditPartySchema.entries, type: v.string() }),
   metadata: v.unknown(),
   createdAt: timestampSchema
 })
 /** Which events a list of activity shows, by what they are about. */
-export const cloudAdminAuditFilterSchema = v.picklist(['all', 'accounts', 'requests', 'email'])
+export const cloudAdminAuditFilterSchema = v.picklist([
+  'all',
+  'accounts',
+  'requests',
+  'email',
+  'documents'
+])
 export const adminAuditResponseSchema = v.object({
   events: v.array(adminAuditEventSchema),
   ...listTotals(cloudAdminAuditFilterSchema.options)
+})
+
+/** A document as the console shows it: where it lives, who made it, and whether it is taken down. */
+export const cloudAdminDocumentSchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  /** A design or a board. Servers from before send none, and had only designs. */
+  kind: v.optional(documentKindSchema, 'design'),
+  workspace: v.object({ id: v.string(), name: v.string() }),
+  /** Who made it, while the server knows them. */
+  owner: v.nullable(v.object({ id: v.string(), name: v.string(), email: v.string() })),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema,
+  disabledAt: nullableTimestampSchema,
+  disabledReason: v.nullable(v.string()),
+  /** Reports about it still waiting for a decision. */
+  openReports: countSchema,
+  /**
+   * When someone deleted it forever, and when cleanup destroys it; until then an administrator
+   * can still restore it. Servers from before Trash send neither.
+   */
+  purgedAt: v.optional(nullableTimestampSchema, null),
+  destroyedAt: v.optional(nullableTimestampSchema, null),
+  /**
+   * The saved revision whose thumbnail previews it; null before its first save. Servers from
+   * before previews send none.
+   */
+  revisionId: v.optional(v.nullable(v.string()), null),
+  /**
+   * Who beyond its workspace can open it: anyone, in the community gallery, and whoever holds one
+   * of its live share links, `editLinks` of which let them edit. Servers from before send none.
+   */
+  exposure: v.optional(
+    v.object({ community: v.boolean(), links: countSchema, editLinks: countSchema }),
+    { community: false, links: 0, editLinks: 0 }
+  )
+})
+/** Which documents a list shows: live ones, or those deleted forever an administrator can restore. */
+export const cloudAdminDocumentFilterSchema = v.picklist(['all', 'reported', 'disabled', 'purged'])
+export const cloudAdminDocumentsResponseSchema = v.object({
+  documents: v.array(cloudAdminDocumentSchema),
+  ...listTotals(cloudAdminDocumentFilterSchema.options)
+})
+
+export const cloudAdminReportStatusSchema = v.picklist(['open', 'dismissed', 'actioned'])
+export const cloudAdminReportSchema = v.object({
+  id: v.string(),
+  reason: documentReportReasonSchema,
+  description: v.string(),
+  status: cloudAdminReportStatusSchema,
+  /** The account that filed it, or null for a guest. */
+  reporter: v.nullable(v.object({ id: v.string(), name: v.nullable(v.string()) })),
+  replyEmail: v.nullable(v.string()),
+  createdAt: timestampSchema,
+  resolvedAt: nullableTimestampSchema,
+  document: cloudAdminDocumentSchema,
+  /** The link it was opened from, and whether that link still works. */
+  share: v.nullable(v.object({ id: v.string(), revoked: v.boolean() }))
+})
+/** Which reports a list shows, by where they stand. */
+export const cloudAdminReportFilterSchema = v.picklist(['open', 'actioned', 'dismissed', 'all'])
+export const cloudAdminReportsResponseSchema = v.object({
+  reports: v.array(cloudAdminReportSchema),
+  ...listTotals(cloudAdminReportFilterSchema.options)
 })
 
 export const adminOperationsResponseSchema = v.object({
@@ -164,6 +249,7 @@ export const adminOperationsResponseSchema = v.object({
   enrollmentMode: v.picklist(['open', 'approval', 'closed']),
   emailTransport: v.picklist(['none', 'smtp', 'cloudflare']),
   pendingEnrollment: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  openReports: countSchema,
   pendingEmail: v.pipe(v.number(), v.integer(), v.minValue(0)),
   failedEmail: v.pipe(v.number(), v.integer(), v.minValue(0)),
   accounts: countSchema,
@@ -185,3 +271,8 @@ export type CloudAdminUserDetail = v.InferOutput<typeof cloudAdminUserDetailSche
 export type TransactionalEmailAdmin = v.InferOutput<typeof transactionalEmailAdminSchema>
 export type AdminAuditEvent = v.InferOutput<typeof adminAuditEventSchema>
 export type AdminOperations = v.InferOutput<typeof adminOperationsResponseSchema>
+export type CloudAdminDocument = v.InferOutput<typeof cloudAdminDocumentSchema>
+export type CloudAdminDocumentFilter = v.InferOutput<typeof cloudAdminDocumentFilterSchema>
+export type CloudAdminReport = v.InferOutput<typeof cloudAdminReportSchema>
+export type CloudAdminReportFilter = v.InferOutput<typeof cloudAdminReportFilterSchema>
+export type CloudAdminReportStatus = v.InferOutput<typeof cloudAdminReportStatusSchema>

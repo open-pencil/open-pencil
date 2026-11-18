@@ -7,6 +7,8 @@ export type LocalCloudEndpoints = {
   editorURL: string
   objectStorageURL: string
   smtpPort: number
+  /** The workspace the server shows as its community gallery, if any. */
+  communityWorkspace?: string
 }
 
 /** Deployment settings for one worktree's local Cloud, with open sign-up and captured mail. */
@@ -71,11 +73,14 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
       sharing: {
         links: true,
         guest_view: true,
-        guest_edit: true,
+        guest_edit: false,
         guest_presence: true
       },
       collaboration: { enabled: true, maximum_participants: 100 }
-    }
+    },
+    ...(endpoints.communityWorkspace
+      ? { community: { workspace: endpoints.communityWorkspace } }
+      : {})
   }
 }
 

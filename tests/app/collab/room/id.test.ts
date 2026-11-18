@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { generateRoomId } from '@/app/collab/awareness'
 import { parseRoomInput } from '@/app/collab/room/id'
 
 const ROOM = 'abcdefghijklmnopqrstuvwxyz012345'
@@ -31,4 +32,9 @@ describe('room links and IDs', () => {
       expect(parseRoomInput(input)).toBeNull()
     }
   })
+})
+
+test('new collaboration invitation credentials use 32 base36 characters', () => {
+  const roomId = generateRoomId()
+  expect(roomId).toMatch(/^[a-z0-9]{32}$/)
 })

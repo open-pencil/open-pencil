@@ -49,7 +49,7 @@ test('@ inserts a layer as a chip that the reply shows and that selects the laye
 
 test('/ starts a message with a skill', async ({ configuredChat: chat }) => {
   const { page } = chat
-  await page.getByTestId('provider-settings-trigger').click()
+  await chat.openModelSettings()
   await page.getByRole('tab', { name: 'Skills', exact: true }).click()
   const chooser = page.waitForEvent('filechooser')
   await page.getByRole('button', { name: 'Upload skill' }).click()
@@ -68,6 +68,20 @@ test('/ starts a message with a skill', async ({ configuredChat: chat }) => {
   await page.getByRole('option', { name: /skill:grid/ }).click()
   await page.keyboard.type('lay out the hero')
   await expect(chat.input).toHaveText('/skill:grid lay out the hero')
+  // The command is a chip, as a reference is, so the chat reads it from the link.
+  await expect(chat.input.locator('[data-reference-kind="command"]')).toHaveText('/skill:grid')
+})
+
+test('a command typed in full becomes a chip once a space follows it', async ({
+  configuredChat: chat
+}) => {
+  const { page } = chat
+  await chat.input.click()
+  await page.keyboard.type('/compact')
+  await expect(page.getByRole('option', { name: /\/compact/ })).toBeVisible()
+  await page.keyboard.type(' keep the colors')
+  await expect(chat.input.locator('[data-reference-kind="command"]')).toHaveText('/compact')
+  await expect(chat.input).toHaveText('/compact keep the colors')
 })
 
 test('editing a sent message keeps its chips and Escape cancels', async ({

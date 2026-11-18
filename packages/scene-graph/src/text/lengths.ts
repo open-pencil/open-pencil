@@ -13,6 +13,27 @@ export function lineHeightPixels(lineHeight: TextLength | null, fontSize: number
   return lineHeight ? textLengthPixels(lineHeight, fontSize) : null
 }
 
+/**
+ * How far apart a line height sets lines at `fontSize`, as Figma steps them: a height in pixels
+ * as it is, a percent one to whole pixels (Figma desktop 126); null when it is automatic.
+ */
+export function lineStepPixels(lineHeight: TextLength | null, fontSize: number): number | null {
+  if (!lineHeight) return null
+  const pixels = textLengthPixels(lineHeight, fontSize)
+  return lineHeight.unit === 'PIXELS' ? pixels : Math.round(pixels)
+}
+
+/** How far an automatic line height steps lines when no font metrics measure them. */
+const ESTIMATED_LINE_STEP = 1.2
+
+/**
+ * How far apart lines step where no font metrics measure them: as `lineStepPixels` steps them,
+ * and 1.2 times the font size when automatic.
+ */
+export function estimatedLineStep(lineHeight: TextLength | null, fontSize: number): number {
+  return lineStepPixels(lineHeight, fontSize) ?? fontSize * ESTIMATED_LINE_STEP
+}
+
 /** A length in pixels, as a bound number variable and most authored formats give one. */
 export function pixelLength(value: number): TextLength {
   return { value, unit: 'PIXELS' }

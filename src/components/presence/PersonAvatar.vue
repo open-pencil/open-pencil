@@ -7,6 +7,7 @@ import { useCollaborationMessages } from '@open-pencil/vue/i18n'
 
 import { initials } from '@/app/presence/initials'
 
+import { personFill } from './color'
 import type { PresenceVoice } from './rows'
 import { avatar, avatarStack } from './ui'
 
@@ -41,7 +42,7 @@ const voiceState = computed(() => {
   <span :class="ui.person()" :data-voice="voiceState === 'none' ? undefined : voiceState">
     <span
       :class="avatar({ size, bordered: true, following, interactive, voice: voiceState })"
-      :style="{ background: colorToCSS(color) }"
+      :style="{ background: personFill(color) }"
     >
       {{ initials(name) }}
     </span>

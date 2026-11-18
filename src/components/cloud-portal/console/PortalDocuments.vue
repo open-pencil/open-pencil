@@ -1,0 +1,148 @@
+<script setup lang="ts">
+import { createColumnHelper } from '@tanstack/vue-table'
+import { compact } from 'es-toolkit'
+import { computed, h, ref } from 'vue'
+
+import type { CloudAdminDocumentFilter } from '@open-pencil/cloud/contract'
+import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+
+import {
+  usePortalList,
+  type PortalListPage,
+  type PortalListRequest,
+  type PortalTableFeatures
+} from '@/app/cloud-portal/list'
+import RelativeTime from '@/components/date/RelativeTime.vue'
+
+import PortalAccessCell from '../table/PortalAccessCell.vue'
+import PortalDocumentCell from '../table/PortalDocumentCell.vue'
+import PortalIdentityCell from '../table/PortalIdentityCell.vue'
+import PortalRowMenu from '../table/PortalRowMenu.vue'
+import PortalStatusCell from '../table/PortalStatusCell.vue'
+import PortalTable from '../table/PortalTable.vue'
+import PortalTextCell from '../table/PortalTextCell.vue'
+import type { PortalContentAction, PortalDocumentRow } from '../types'
+import { contentActions, documentAccess, documentProblem, needsConfirmation } from './content'
+import PortalContentConfirm from './PortalContentConfirm.vue'
+
+/**
+ * Every document on the server, to find one by name, ID, or owner and take it down or back, and
+ * those deleted forever that cleanup hasn't destroyed yet, to restore.
+ */
+const { load, busy = null } = defineProps<{
+  load: (
+    request: PortalListRequest<CloudAdminDocumentFilter>
+  ) => Promise<PortalListPage<CloudAdminDocumentFilter, PortalDocumentRow>>
+  /** The document an action is being saved for. */
+  busy?: string | null
+}>()
+const emit = defineEmits<{
+  act: [action: PortalContentAction, document: PortalDocumentRow, reason?: string]
+}>()
+
+const messages = useCloudPortalMessages()
+const pending = ref<{ action: PortalContentAction; document: PortalDocumentRow } | null>(null)
+function confirm(reason?: string) {
+  const chosen = pending.value
+  pending.value = null
+  if (chosen) emit('act', chosen.action, chosen.document, reason)
+}
+/** Does what asks nothing at once, such as Download, and asks first about the rest. */
+function choose(action: PortalContentAction, document: PortalDocumentRow) {
+  if (needsConfirmation(action)) pending.value = { action, document }
+  else emit('act', action, document)
+}
+
+const column = createColumnHelper<PortalTableFeatures, PortalDocumentRow>()
+const documents = usePortalList<CloudAdminDocumentFilter, PortalDocumentRow>({
+  filter: 'all',
+  load: (request) => load(request),
+  rowId: (document) => document.id,
+  columns: column.columns([
+    column.display({
+      id: 'document',
+      header: () => messages.value.columnDocument,
+      cell: ({ row: { original: document } }) =>
+        h(PortalDocumentCell, {
+          name: document.name,
+          kind: document.kind,
+          workspace: document.workspace,
+          thumbnail: document.thumbnail
+        })
+    }),
+    column.display({
+      id: 'owner',
+      header: () => messages.value.columnOwner,
+      meta: { role: 'subject' },
+      cell: ({ row: { original: document } }) =>
+        document.owner
+          ? h(PortalIdentityCell, {
+              id: document.owner.id,
+              name: document.owner.name,
+              detail: document.owner.email,
+              size: 'sm'
+            })
+          : h(PortalTextCell, { text: messages.value.someoneElse })
+    }),
+    column.accessor('updatedAt', {
+      header: () => messages.value.columnUpdated,
+      meta: { role: 'date' },
+      cell: ({ getValue }) => h(RelativeTime, { at: getValue() })
+    }),
+    column.display({
+      id: 'access',
+      header: () => messages.value.columnAccess,
+      meta: { role: 'tag' },
+      // Who can open one deleted forever no longer matters: nobody can.
+      cell: ({ row: { original: document } }) =>
+        document.deletedForever ? null : h(PortalAccessCell, { access: documentAccess(document) })
+    }),
+    column.display({
+      id: 'status',
+      header: () => messages.value.columnStatus,
+      meta: { role: 'tag', always: true },
+      cell: ({ row: { original: document } }) =>
+        h(PortalStatusCell, {
+          statuses: compact([documentProblem(messages.value, document)]),
+          detail: document.destroyed
+            ? messages.value.destroyedOn({ date: document.destroyed })
+            : document.takenDownReason
+        })
+    }),
+    column.display({
+      id: 'actions',
+      header: () => messages.value.columnActions,
+      meta: { role: 'actions' },
+      cell: ({ row: { original: document } }) =>
+        h(PortalRowMenu<PortalContentAction>, {
+          label: messages.value.actionsFor({ name: document.name }),
+          items: contentActions(messages.value, document),
+          disabled: busy === document.id,
+          onSelect: (action: PortalContentAction) => choose(action, document)
+        })
+    })
+  ])
+})
+const filters = computed(() => [
+  { value: 'all' as const, label: messages.value.filterAll },
+  { value: 'reported' as const, label: messages.value.filterReported },
+  { value: 'disabled' as const, label: messages.value.filterTakenDown },
+  { value: 'purged' as const, label: messages.value.filterDeletedForever }
+])
+
+defineExpose({ reload: documents.reload })
+</script>
+
+<template>
+  <PortalTable
+    :list="documents"
+    :label="messages.documents"
+    :search-label="messages.searchDocuments"
+    :filters="filters"
+    :empty-label="messages.noDocumentsFound"
+    :empty-description="messages.noDocumentsFoundDescription"
+  >
+    <template #icon><icon-lucide-file-text class="size-5" /></template>
+  </PortalTable>
+  <PortalContentConfirm :pending="pending" @confirm="confirm" @cancel="pending = null" />
+</template>

@@ -1,15 +1,23 @@
 import * as v from 'valibot'
 
-import type { BlendMode, Fill, GradientTransform, ImageScaleMode } from '@open-pencil/scene-graph'
+import type {
+  BlendMode,
+  Fill,
+  GradientTransform,
+  ImageScaleMode,
+  SceneGraph
+} from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import {
   gradientTransformRows,
   IDENTITY_GRADIENT_TRANSFORM
 } from '@open-pencil/scene-graph/gradient'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
-import { invalid, received } from './accessors/text/messages'
-import { BLEND_MODES, issuePath } from './effects'
+import { invalid, parseFigma } from '#core/figma-api/validation'
+
+import { BLEND_MODES } from './effects'
 import type { FigmaTransform } from './types'
 import { variableAlias, type FigmaVariableAlias } from './variables/values'
 
@@ -57,10 +65,6 @@ const NO_FILTERS: ImageFilters = {
 const SHA1_HASH = /^[0-9a-f]{40}$/i
 
 /** Figma's message for a value that is none of `options`. */
-function invalidOption(options: readonly string[]): string {
-  return `Invalid option: expected one of ${options.map((option) => `"${option}"`).join('|')}`
-}
-
 const unitSchema = v.pipe(v.number(), v.minValue(0), v.maxValue(1))
 const aliasSchema = v.object({ type: v.literal('VARIABLE_ALIAS'), id: v.string() })
 const colorBindingSchema = v.optional(v.strictObject({ color: v.optional(aliasSchema) }))
@@ -68,7 +72,7 @@ const colorBindingSchema = v.optional(v.strictObject({ color: v.optional(aliasSc
 const paintEntries = {
   visible: v.optional(v.boolean()),
   opacity: v.optional(unitSchema),
-  blendMode: v.optional(v.picklist(BLEND_MODES, invalidOption(BLEND_MODES)))
+  blendMode: v.optional(v.picklist(BLEND_MODES))
 }
 
 // Figma checks a transform's rows itself, after the paint's other fields.
@@ -78,7 +82,7 @@ const transformSchema = v.optional(v.unknown())
 const filterSchema = v.optional(v.pipe(v.number(), v.minValue(-1), v.maxValue(1)))
 
 const mediaEntries = {
-  scaleMode: v.picklist(SCALE_MODES, invalidOption(SCALE_MODES)),
+  scaleMode: v.picklist(SCALE_MODES),
   scalingFactor: v.optional(v.number()),
   rotation: v.optional(v.number()),
   filters: v.optional(
@@ -199,54 +203,12 @@ export type FigmaPaint =
 
 type ReadBase = Required<PaintBase>
 
-/** What Figma calls the value each Valibot schema expects. */
-const EXPECTED: Partial<Record<string, string>> = {
-  strict_object: 'object',
-  object: 'object',
-  variant: 'object',
-  array: 'array',
-  number: 'number',
-  string: 'string',
-  boolean: 'boolean'
-}
-
-/** Where Figma reports an issue: a paint itself by its index, a field by its path. */
-function where(path: readonly v.IssuePathItem[]): string {
-  if (path.length === 0) return ''
-  const [first] = path
-  if (path.length === 1 && typeof first.key === 'number') return ` at index ${first.key}`
-  return ` at ${issuePath(path)}`
-}
-
-/** One of Figma's lines for a Valibot issue, as its paint validation words it. */
-function issueProblem(issue: v.BaseIssue<unknown>): string {
-  const path = issue.path ?? []
-  const last = path.at(-1)
-  if (last?.origin === 'key') {
-    if (issue.expected === 'never') {
-      return `Unrecognized key: "${String(last.key)}"${where(path.slice(0, -1))}`
-    }
-    // Figma checks a missing field as undefined, which a choice refuses as an option.
-    const problem = last.key === 'scaleMode' ? invalidOption(SCALE_MODES) : 'Required value missing'
-    return `${problem}${where(path)}`
-  }
-  if (issue.type === 'picklist') return `${issue.message}${where(path)}`
-  if (issue.type === 'max_value') {
-    return `Too big: expected number to be <=${String(issue.requirement)}${where(path)}`
-  }
-  if (issue.type === 'min_value') {
-    return `Too small: expected number to be >=${String(issue.requirement)}${where(path)}`
-  }
-  if (issue.input === undefined) return `Required value missing${where(path)}`
-  const expected = EXPECTED[issue.type] ?? issue.expected ?? issue.type
-  return `Expected ${expected}, received ${received(issue.input)}${where(path)}`
-}
-
 /** Figma's complaint about a paint type it does not take, or OpenPencil does not model. */
 function typeProblem(value: readonly unknown[]): string | null {
   for (const [index, paint] of value.entries()) {
-    if (!v.is(v.object({ type: v.unknown() }), paint)) continue
-    const { type } = paint
+    // A paint without a type is refused as one of an unknown type, as in Figma.
+    if (!paint || typeof paint !== 'object') continue
+    const { type } = paint as { type?: unknown }
     if (typeof type === 'string' && UNSUPPORTED_PAINT_TYPES.has(type)) {
       return `${type} paints are not supported at [${index}].type`
     }
@@ -325,7 +287,7 @@ function sceneFill(paint: ParsedPaint, site: PaintSite): Fill {
       ...base,
       color: { ...BLACK },
       imageScaleMode: paint.scaleMode,
-      ...(hash !== null && { imageHash: hash }),
+      ...(hash !== null && (paint.type === 'IMAGE' ? { imageHash: hash } : { videoHash: hash })),
       ...(imageTransform && { imageTransform }),
       ...(paint.rotation !== undefined && { imageRotation: paint.rotation }),
       ...(paint.scalingFactor !== undefined && { scale: paint.scalingFactor })
@@ -348,19 +310,15 @@ function sceneFill(paint: ParsedPaint, site: PaintSite): Fill {
  * message for `method` setting `property`, listing every problem on its own line.
  */
 export function parseFigmaPaints(value: unknown, method = 'set_fills', property = 'fills'): Fill[] {
-  if (!Array.isArray(value)) {
-    throw invalid(method, `Expected array, received ${received(value)}`, property)
-  }
-  const unsupported = typeProblem(value)
+  const unsupported = Array.isArray(value) ? typeProblem(value) : null
   if (unsupported) throw invalid(method, unsupported, property)
-  const result = v.safeParse(v.array(paintSchema), value)
-  if (!result.success) throw invalid(method, result.issues.map(issueProblem).join('\n'), property)
-  for (const paint of result.output) {
+  const paints = parseFigma(v.array(paintSchema), value, method, property)
+  for (const paint of paints) {
     if (paint.type === 'VIDEO' && paint.videoHash !== null && !SHA1_HASH.test(paint.videoHash)) {
       throw new Error(`in ${method}: Invalid SHA1 hash`)
     }
   }
-  return result.output.map((paint, index) => sceneFill(paint, { index, method, property }))
+  return paints.map((paint, index) => sceneFill(paint, { index, method, property }))
 }
 
 function rows(transform: GradientTransform | undefined): FigmaTransform {
@@ -383,10 +341,56 @@ function figmaMediaPaint(paint: Fill, type: 'IMAGE' | 'VIDEO', base: ReadBase): 
     filters: { ...NO_FILTERS }
   }
   const transform = rows(crop ? paint.imageTransform : undefined)
-  const hash = paint.imageHash ?? null
   return type === 'IMAGE'
-    ? { type, ...media, imageTransform: transform, imageHash: hash }
-    : { type, ...media, videoTransform: transform, videoHash: hash }
+    ? { type, ...media, imageTransform: transform, imageHash: paint.imageHash ?? null }
+    : { type, ...media, videoTransform: transform, videoHash: paint.videoHash ?? null }
+}
+
+function videoClip(paint: Fill): string | undefined {
+  return paint.type === 'VIDEO' ? paint.videoHash : undefined
+}
+
+function* knownPaints(nearby: readonly Fill[], sceneGraph: SceneGraph): Generator<Fill> {
+  yield* nearby
+  for (const node of sceneGraph.nodes.values()) {
+    yield* node.fills
+    yield* node.strokes
+    yield* regionFills(node.vectorNetwork)
+    for (const run of node.styleRuns) yield* run.style.fills ?? []
+  }
+}
+
+/** The poster of each of `clips`, from the first paint of that clip that has one. */
+function clipPosters(clips: Set<string>, paints: Iterable<Fill>): Map<string, string> {
+  const posters = new Map<string, string>()
+  for (const paint of paints) {
+    if (posters.size === clips.size) break
+    const clip = videoClip(paint)
+    if (clip && paint.imageHash && clips.has(clip) && !posters.has(clip)) {
+      posters.set(clip, paint.imageHash)
+    }
+  }
+  return posters
+}
+
+/**
+ * Figma's plugin API names only a video's clip, and Figma draws every paint of a clip with that
+ * clip's one poster frame, so each video paint written takes the poster its clip already has:
+ * found in `nearby` paints first (usually the ones being replaced), else anywhere in the document.
+ */
+export function withVideoPosters<T extends Fill>(
+  paints: T[],
+  sceneGraph: SceneGraph,
+  nearby: readonly Fill[] = []
+): T[] {
+  const clips = new Set(paints.flatMap((paint) => videoClip(paint) ?? []))
+  if (clips.size === 0) return paints
+  const posters = clipPosters(clips, knownPaints(nearby, sceneGraph))
+  return paints.map((paint) => {
+    const clip = videoClip(paint)
+    const poster = clip && posters.get(clip)
+    return poster ? { ...paint, imageHash: poster } : paint
+  })
 }
 
 function figmaPatternPaint(paint: Fill, base: ReadBase): FigmaPaint {

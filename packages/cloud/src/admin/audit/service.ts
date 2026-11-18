@@ -8,7 +8,7 @@ import {
 } from '#cloud/admin/list'
 import { isUUID } from '#cloud/admin/schema'
 import { cloudAdminAuditFilterSchema, type CloudAdminAuditFilter } from '#cloud/contract'
-import type { CloudDatabase } from '#cloud/server/db'
+import { userIdText, type CloudDatabase } from '#cloud/server/db'
 import { uniq } from 'es-toolkit'
 import type { ExpressionBuilder, Kysely } from 'kysely'
 
@@ -17,7 +17,13 @@ const FILTERS: ListFilters<CloudAdminAuditFilter, 'adminAuditEvent'> = {
   all: (expression) => expression.lit(true),
   accounts: (expression) => expression('adminAuditEvent.subjectType', '=', 'user'),
   requests: (expression) => expression('adminAuditEvent.subjectType', '=', 'enrollment'),
-  email: (expression) => expression('adminAuditEvent.subjectType', '=', 'transactional-email')
+  email: (expression) => expression('adminAuditEvent.subjectType', '=', 'transactional-email'),
+  documents: (expression) =>
+    expression('adminAuditEvent.subjectType', 'in', [
+      'document',
+      'document-share',
+      'document-report'
+    ])
 }
 
 type AuditExpression = ExpressionBuilder<CloudDatabase, 'adminAuditEvent'>
@@ -30,7 +36,7 @@ function searchCondition(pattern: string) {
         expression
           .selectFrom('user')
           .select('user.id')
-          .where((inner) => inner(inner.cast('user.id', 'text'), '=', inner.ref(column)))
+          .whereRef(userIdText, '=', column)
           .where((inner) =>
             inner.or([inner('user.name', 'ilike', pattern), inner('user.email', 'ilike', pattern)])
           )
@@ -96,7 +102,10 @@ export function createAdminAuditService(database: Kysely<CloudDatabase>) {
       const enrollmentIds = uniq(
         events.flatMap((event) => (event.subjectType === 'enrollment' ? [event.subjectId] : []))
       ).filter(isUUID)
-      const [users, enrollments] = await Promise.all([
+      const documentIds = uniq(
+        events.flatMap((event) => (event.subjectType === 'document' ? [event.subjectId] : []))
+      ).filter(isUUID)
+      const [users, enrollments, documents] = await Promise.all([
         userIds.length
           ? database.selectFrom('user').select(['id', 'name']).where('id', 'in', userIds).execute()
           : [],
@@ -106,8 +115,16 @@ export function createAdminAuditService(database: Kysely<CloudDatabase>) {
               .select(['id', 'name', 'emailNormalized'])
               .where('id', 'in', enrollmentIds)
               .execute()
+          : [],
+        documentIds.length
+          ? database
+              .selectFrom('document')
+              .select(['id', 'name'])
+              .where('id', 'in', documentIds)
+              .execute()
           : []
       ])
+      const documentNames = new Map(documents.map((document) => [document.id, document.name]))
       const names = new Map(users.map((user) => [user.id, user.name]))
       const requesters = new Map(
         enrollments.map((enrollment) => [
@@ -115,6 +132,11 @@ export function createAdminAuditService(database: Kysely<CloudDatabase>) {
           enrollment.name ?? enrollment.emailNormalized
         ])
       )
+      const subjectName = (type: string, id: string) => {
+        if (type === 'enrollment') return requesters.get(id)
+        if (type === 'document') return documentNames.get(id)
+        return names.get(id)
+      }
       const rows = events.map((event) => ({
         id: event.id,
         actor: { id: event.actorUserId, name: names.get(event.actorUserId) ?? null },
@@ -122,10 +144,7 @@ export function createAdminAuditService(database: Kysely<CloudDatabase>) {
         subject: {
           type: event.subjectType,
           id: event.subjectId,
-          name:
-            (event.subjectType === 'enrollment'
-              ? requesters.get(event.subjectId)
-              : names.get(event.subjectId)) ?? null
+          name: subjectName(event.subjectType, event.subjectId) ?? null
         },
         metadata: event.metadata,
         createdAt: event.createdAt

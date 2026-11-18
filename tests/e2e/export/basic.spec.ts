@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises'
+
 import { test, expect, type Page } from '@playwright/test'
 
 import type { ExportSetting } from '@open-pencil/scene-graph'
@@ -227,6 +229,18 @@ test('a PPTX export setting downloads a PowerPoint file', async () => {
   await expect(exportItems().first().getByRole('textbox', { name: 'Export scale' })).toHaveCount(0)
   const [download] = await Promise.all([page.waitForEvent('download'), exportButton().click()])
   expect(download.suggestedFilename()).toBe('Export rect 1.pptx')
+  canvas.assertNoErrors()
+})
+
+test('a PDF export setting downloads a PDF the canvas renderer drew', async () => {
+  await createExportableRect([{ scale: 1, format: 'pdf' }])
+  await forceBlobDownload()
+
+  const [download] = await Promise.all([page.waitForEvent('download'), exportButton().click()])
+  expect(download.suggestedFilename()).toBe('Export rect 1.pdf')
+  const pdf = new TextDecoder('latin1').decode(await readFile(await download.path()))
+  expect(pdf.startsWith('%PDF-')).toBe(true)
+  expect(pdf).toContain('/Creator (OpenPencil)')
   canvas.assertNoErrors()
 })
 

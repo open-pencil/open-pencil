@@ -1,6 +1,6 @@
 import { isEqual } from 'es-toolkit'
 
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuidePreview } from '#core/canvas/guides/types'
@@ -15,6 +15,16 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
 
   function setSnapGuides(guides: SnapGuide[]) {
     ctx.state.snapGuides = guides
+    ctx.requestRepaint()
+  }
+
+  /**
+   * Adds points the pen and vector edit mode snap to, alongside the path's own points, as a host
+   * guides a trace to where a shape starts and ends. Replaces the ones set before; replacing the
+   * document clears them.
+   */
+  function setSnapTargets(targets: { points: readonly Vector[] }) {
+    ctx.state.snapTargets = { points: targets.points.map(({ x, y }) => ({ x, y })) }
     ctx.requestRepaint()
   }
 
@@ -112,6 +122,12 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     ctx.requestRepaint()
   }
 
+  /** Sets the point of the box the Scale tool keeps in place, as fractions of its size. */
+  function setScaleAnchor(anchor: Vector) {
+    if (isEqual(ctx.state.scaleAnchor, anchor)) return
+    ctx.state.scaleAnchor = { x: anchor.x, y: anchor.y }
+  }
+
   function setShapeHandleHover(hover: ShapeHandleHover | null) {
     if (isEqual(ctx.state.shapeHandleHover, hover)) return
     ctx.state.shapeHandleHover = hover
@@ -122,6 +138,7 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     setConnectorTarget,
     setMarquee,
     setSnapGuides,
+    setSnapTargets,
     setGuidePreview,
     setHoveredGuide,
     setGuideRedline,
@@ -135,6 +152,7 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     setRenamingLabel,
     setLayoutInsertIndicator,
     setAutoLayoutHover,
-    setShapeHandleHover
+    setShapeHandleHover,
+    setScaleAnchor
   }
 }

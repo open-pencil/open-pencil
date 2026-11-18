@@ -1,7 +1,7 @@
 import { useElementSize } from '@vueuse/core'
-import type { CanvasKit } from 'canvaskit-wasm'
 import type { Ref } from 'vue'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { Editor } from '@open-pencil/core'
 
 import {
@@ -76,6 +76,7 @@ export function useCanvas(
   return {
     render: surface.markDirty,
     renderNow: surface.renderNow,
+    getRenderer: surface.getRenderer,
     hitTestSectionTitle,
     hitTestComponentLabel,
     hitTestFrameTitle,

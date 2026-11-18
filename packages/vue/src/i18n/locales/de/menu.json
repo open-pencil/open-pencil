@@ -5,6 +5,7 @@
   "object": "Objekt",
   "arrange": "Anordnen",
   "text": "Text",
+  "help": "Hilfe",
   "new": "Neues Design",
   "newTab": "Neuer Tab",
   "open": "Öffnen…",
@@ -42,6 +43,7 @@
   "pasteToReplace": "Zum Ersetzen einfügen",
   "copyProperties": "Eigenschaften kopieren",
   "pasteProperties": "Eigenschaften einfügen",
+  "pasteAsLayers": "Als Ebenen einfügen",
   "copyPasteAs": "Kopieren/Einfügen als",
   "copyAsText": "Als Text kopieren",
   "copyAsSVG": "Als SVG kopieren",
@@ -87,5 +89,14 @@
   "togglePreview": "Vorschau",
   "saveTo": "Speichern in…",
   "showVersionHistory": "Versionsverlauf anzeigen",
-  "saveToVersionHistory": "Im Versionsverlauf speichern…"
+  "saveToVersionHistory": "Im Versionsverlauf speichern…",
+  "reportProblem": "Problem melden…",
+  "supportOpenPencil": "OpenPencil unterstützen…",
+  "documentation": "OpenPencil-Dokumentation",
+  "keyboardShortcuts": "Tastenkürzel",
+  "whatsNew": "Neuigkeiten",
+  "community": "Community auf Discord",
+  "github": "OpenPencil auf GitHub",
+  "newBoard": "Neues Board",
+  "toggleAIChat": "KI-Chat umschalten"
 }

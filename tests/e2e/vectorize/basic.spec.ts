@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 const editor = useEditorSetupWithClear('/?test')
 const MOCK_SVG = readFileSync(
   join(process.cwd(), 'tests/fixtures/vectorize/euro_shield.recraft.svg'),

@@ -4,6 +4,11 @@ const RTL_CHAR_RE =
   /\p{Script=Arabic}|\p{Script=Hebrew}|\p{Script=Syriac}|\p{Script=Thaana}|\p{Script=Nko}|\p{Script=Adlam}/u
 const LTR_CHAR_RE = /\p{Script=Latin}|\p{Script=Cyrillic}|\p{Script=Greek}/u
 
+/** Whether the text has a letter of a right-to-left script, such as Arabic or Hebrew. */
+export function containsRTLText(text: string): boolean {
+  return RTL_CHAR_RE.test(text)
+}
+
 export function detectTextDirection(text: string): Exclude<TextDirection, 'AUTO'> {
   for (const char of text) {
     if (RTL_CHAR_RE.test(char)) return 'RTL'

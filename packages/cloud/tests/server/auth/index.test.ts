@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   configuredSocialProviders,
   createBetterAuthAdapter,
+  enrollmentEmailOptions,
   parseCloudServerConfig
 } from '#cloud/server'
 import type { CloudDatabase } from '#cloud/server'
@@ -42,6 +43,18 @@ function database(): Kysely<CloudDatabase> {
 }
 
 describe('Cloud authentication', () => {
+  test('offers the invitation letter only where the deployment is the official one', () => {
+    const selfHosted = parseCloudServerConfig(baseConfig)
+    const official = parseCloudServerConfig({
+      ...baseConfig,
+      deployment: 'official',
+      deploymentAdminMFARequired: true,
+      totpEnabled: true
+    })
+    expect(enrollmentEmailOptions(selfHosted, undefined).invitations).toBe(false)
+    expect(enrollmentEmailOptions(official, undefined).invitations).toBe(true)
+  })
+
   test('keeps social providers optional for self-hosting', () => {
     const config = parseCloudServerConfig(baseConfig)
     expect(configuredSocialProviders(config)).toEqual([])

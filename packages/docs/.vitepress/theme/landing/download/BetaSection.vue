@@ -19,7 +19,7 @@ const { lang } = useData()
 </script>
 
 <template>
-  <section class="landing-section">
+  <section id="beta" class="landing-section">
     <div class="beta">
       <div class="about">
         <span class="landing-badge">{{ messages.download.beta.badge }}</span>

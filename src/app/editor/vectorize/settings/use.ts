@@ -8,6 +8,7 @@ import {
   VECTORIZE_PROVIDER_DEFINITIONS,
   type VectorizeProviderID
 } from '@/app/editor/vectorize'
+import { settingsErrorMessage } from '@/app/settings/credentials/errors'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
 
 const vectorizeServices = { status: vectorizeCredentialStatus, set: setVectorizeCredential }
@@ -45,8 +46,7 @@ export function useVectorizeSettings(
       const status = await services.status(id)
       if (!isDisposed() && version === request) keyStatus.value = status
     } catch (cause) {
-      if (!isDisposed() && version === request)
-        error.value = cause instanceof Error ? cause.message : String(cause)
+      if (!isDisposed() && version === request) error.value = settingsErrorMessage(cause)
     }
   }
 
@@ -70,8 +70,7 @@ export function useVectorizeSettings(
       await refreshStatus()
       return !isDisposed()
     } catch (cause) {
-      if (!isDisposed() && version === request)
-        error.value = cause instanceof Error ? cause.message : String(cause)
+      if (!isDisposed() && version === request) error.value = settingsErrorMessage(cause)
       return false
     }
   }

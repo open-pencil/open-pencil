@@ -4,7 +4,7 @@ const progressTheme = {
     track: 'h-1 w-full overflow-hidden rounded-full',
     // Reka marks unmeasurable work `indeterminate`; the bar then pulses in place.
     fill: 'h-full rounded-full transition-[width] duration-150 ease-out motion-reduce:transition-none data-[state=indeterminate]:w-1/3 data-[state=indeterminate]:animate-pulse motion-reduce:data-[state=indeterminate]:animate-none',
-    label: 'text-[10px] leading-none tabular-nums'
+    label: 'text-3xs leading-none tabular-nums'
   },
   variants: {
     tone: {

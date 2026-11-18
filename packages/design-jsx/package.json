@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/design-jsx",
-  "version": "0.16.0",
+  "version": "0.17.0-beta.5",
   "license": "MIT",
   "type": "module",
   "imports": {
@@ -49,6 +49,7 @@
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/design-jsx"
   },
+  "funding": "https://ko-fi.com/dannote",
   "publishConfig": {
     "access": "public",
     "provenance": true
@@ -68,6 +69,7 @@
     "valibot": "^1.5.0"
   },
   "devDependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
     "@types/bun": "^1.3.14",
     "tsdown": "^0.22.14",
     "typescript": "npm:@typescript/typescript6@^6.0.2",

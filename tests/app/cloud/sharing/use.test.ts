@@ -3,13 +3,11 @@ import { describe, expect, test } from 'bun:test'
 import { shallowRef } from 'vue'
 
 import type { CloudAPIClient } from '@open-pencil/cloud/client'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 import type { cloudShareTarget } from '@/app/cloud/sharing/document'
 import { useCloudSharing } from '@/app/cloud/sharing/use'
 import { createDeferred } from '@/app/runtime/deferred'
-
-import { asDouble } from '#tests/helpers/doubles'
-
 type ShareTarget = NonNullable<ReturnType<typeof cloudShareTarget>>
 
 type Access = Awaited<ReturnType<CloudAPIClient['getDocumentAccess']>>

@@ -57,7 +57,10 @@ function routeEnd(
 }
 
 function controlPoint(position: [number, number], axis: [number, number]): ConnectorControlPoint {
-  return { position: { x: position[0], y: position[1] }, direction: axis[0] ? 'HORIZONTAL' : 'VERTICAL' }
+  return {
+    position: { x: position[0], y: position[1] },
+    direction: axis[0] ? 'HORIZONTAL' : 'VERTICAL'
+  }
 }
 
 const close = (actual: number, expected: number) => Math.abs(actual - expected) <= 0.01
@@ -73,10 +76,20 @@ describe('dragged connectors route as Figma does', () => {
         4,
         {
           points: c.controls.map(({ position, axis }) => controlPoint(position, axis)),
-          curve: first && second ? [{ x: first[0], y: first[1] }, { x: second[0], y: second[1] }] : null
+          curve:
+            first && second
+              ? [
+                  { x: first[0], y: first[1] },
+                  { x: second[0], y: second[1] }
+                ]
+              : null
         }
       )
-      const network = connectorNetwork(pieces, { x: 0, y: 0 }, { start: 'ROUND', end: 'ARROW_LINES' })
+      const network = connectorNetwork(
+        pieces,
+        { x: 0, y: 0 },
+        { start: 'ROUND', end: 'ARROW_LINES' }
+      )
       expect(network.vertices.map(({ x, y }) => [x, y])).toHaveLength(c.vertices.length)
       for (const [index, [x, y]] of c.vertices.entries()) {
         const vertex = network.vertices[index]
@@ -138,7 +151,12 @@ describe('dragging an elbow segment', () => {
     const level = routeEnd({ box: [480, 0, 160, 160], magnet: 'AUTO', outline: 2 }, 'ARROW_LINES')
     const straight = routeConnector('ELBOWED', start, level, 4)
     expect(straight).toHaveLength(1)
-    const controls = dragElbowSegment(straight, elbowJoints(start, level, ['RIGHT', 'LEFT']), 0, 176)
+    const controls = dragElbowSegment(
+      straight,
+      elbowJoints(start, level, ['RIGHT', 'LEFT']),
+      0,
+      176
+    )
     const routed = routeConnector('ELBOWED', start, level, 4, { points: controls, curve: null })
     expect(points(elbowControlPoints(routed))).toEqual([
       ['VERTICAL', 208, 128],
@@ -157,8 +175,10 @@ test('dragging a curve moves both control points by 4/3 of the drag', () => {
     ],
     { x: 80, y: -80 }
   )
-  expect(handles.map(({ x, y }) => [Math.round(x * 100) / 100, Math.round(y * 100) / 100])).toEqual([
-    [459.76, -26.67],
-    [393.58, 293.33]
-  ])
+  expect(handles.map(({ x, y }) => [Math.round(x * 100) / 100, Math.round(y * 100) / 100])).toEqual(
+    [
+      [459.76, -26.67],
+      [393.58, 293.33]
+    ]
+  )
 })

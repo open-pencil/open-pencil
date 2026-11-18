@@ -1,8 +1,8 @@
 import { isCanvasTextInput } from '@open-pencil/vue/canvas/text-edit'
 import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
+import { isInputElement } from '@open-pencil/vue/editor/keyboard'
 
 import type { EditorStore } from '@/app/editor/active-store'
-import { isInputElement } from '@/app/shell/keyboard/focus'
 
 /**
  * Commands a focused text field carries out itself. As in VS Code's
@@ -13,6 +13,28 @@ const TEXT_FIELD_EDITS: Partial<Record<EditorCommandId, 'selectAll' | 'undo' | '
   'selection.selectAll': 'selectAll',
   'edit.undo': 'undo',
   'edit.redo': 'redo'
+}
+
+/** The `beforeinput` types a field's own history answers, as CodeMirror's `history()` does. */
+const HISTORY_INPUT_TYPES = { undo: 'historyUndo', redo: 'historyRedo' } as const
+
+/**
+ * Carries out `edit` in the focused field. Undo and redo go first as the `beforeinput` event the
+ * browser sends for them, which an editor with its own history, such as CodeMirror, takes; the
+ * browser's own undo stack only knows what was typed, not the edits such an editor's commands
+ * make. Fields that leave the event alone get `execCommand`.
+ */
+function runFieldEdit(edit: 'selectAll' | 'undo' | 'redo'): void {
+  const field = document.activeElement
+  if (field && edit !== 'selectAll') {
+    const event = new InputEvent('beforeinput', {
+      inputType: HISTORY_INPUT_TYPES[edit],
+      bubbles: true,
+      cancelable: true
+    })
+    if (!field.dispatchEvent(event)) return
+  }
+  document.execCommand(edit)
 }
 
 /** A text field in the page has focus; the canvas text editor types through its own textarea. */
@@ -41,7 +63,7 @@ export function runFocusedCommand(
   }
   if (textFieldFocused()) {
     const edit = TEXT_FIELD_EDITS[id]
-    if (edit) document.execCommand(edit)
+    if (edit) runFieldEdit(edit)
     else if (id.startsWith('view.')) runCommand(id)
     return
   }

@@ -15,7 +15,7 @@ import {
 import { figJamColor, type FigJamColorName } from '@open-pencil/scene-graph/figjam'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
-import type { NodeActions } from '#core/editor/nodes'
+import type { NodeActions } from '#core/editor/nodes/actions'
 import type { EditorContext } from '#core/editor/types'
 
 /** A straight connector attaches by its layers' centres, as Figma moves its magnets. */

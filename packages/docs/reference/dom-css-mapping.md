@@ -17,6 +17,8 @@ OpenPencil maps browser-computed DOM/CSS styles into SceneGraph fields through `
 | `overflow: hidden/clip` | `clipsContent` | Other overflow values are ignored. |
 | `width`, `height`, min/max sizes | node size constraints | Browser-computed pixel values are preferred. |
 | `aspect-ratio` | fallback width/height sizing | Used when one axis is available and the other is `auto`/missing. |
+| `margin-left`/`margin-right: auto`, `<center>` | `layoutAlignSelf` | In block flow, both auto margins or a `-webkit-center` container center a block, `margin-left: auto` alone puts it at the end. A block that fills its container stays filling; one narrowed by `max-width` hugs up to it. |
+| `display: table`, rows, cells | vertical and horizontal auto layout | Rows stack, a row's cells sit side by side and stretch to its height, `border-spacing` is the gap, and `vertical-align` places a cell's content. Spanning cells and collapsed borders keep the positions layout gave them. |
 
 ## Paint, stroke, and effects
 
@@ -44,7 +46,7 @@ OpenPencil maps browser-computed DOM/CSS styles into SceneGraph fields through `
 | `font-style: italic` | `italic` | Other styles ignored. |
 | `line-height` | `lineHeight` | Pixels stay pixels; a unitless multiple or a percent becomes a percent of the font size, which export writes back as a unitless multiple. |
 | `letter-spacing` | `letterSpacing` | Pixels stay pixels; `em` becomes a percent of the font size, which export writes back in `em`. |
-| `text-align` | horizontal text alignment | Supports center, right, justified; defaults left. |
+| `text-align` | horizontal text alignment | Supports center, right, justified, and the `-webkit-center` family `<center>` computes to; defaults left. A block holding only lines aligns them across it. |
 | `text-decoration-line` | underline / strikethrough | Decoration style/thickness are not mapped yet. |
 | `text-transform` | `textCase` | Uppercase, lowercase, and capitalize map to SceneGraph text case. |
 | `white-space: nowrap` | `maxLines = 1` | Other white-space values are not mapped yet. |
@@ -61,8 +63,8 @@ HTML export, Tailwind HTML, and Tailwind JSX (`sceneNodesToTailwindJSX`) share o
 | grid child position | `grid-column`, `grid-row`, `*-start` | Spans are written before starts. |
 | `layoutGrow` in auto layout | `flex-grow: 1` | |
 | rotation | `transform: rotate()` | Rotates around the element center. |
-| drop and inner shadows | `box-shadow` | Every visible shadow, in order; inner shadows use `inset`. |
-| layer / background blur | `filter` / `backdrop-filter: blur()` | |
+| drop and inner shadows | `box-shadow` | Every visible shadow, in order; inner shadows use `inset`. A field bound to a variable is written as its `var()` where it draws the variable's value. |
+| layer / background blur | `filter` / `backdrop-filter: blur()` | A radius bound to a variable is written as its `var()` where it draws the variable's value; a negative radius keeps the literal, since CSS has no negative blur. |
 | right-to-left layout or text | `direction: rtl` | |
 | section | `<section>` | |
 | colors | hex, or `rgba()` when translucent | Hex lets Tailwind match its palette. |
@@ -76,7 +78,3 @@ These values are collected or covered by browser oracle tests but do not yet hav
 - multi-shadow lists
 - media-query-specific provenance
 - pseudo-elements
-
-## Headless limitations
-
-The headless runtime uses maintained parsers for HTML (`parse5`) and stylesheets/inline declarations (`@acemir/cssom`), but still has limited approximations for selector matching, shorthand expansion, `calc()`, and simple shadows. Do not expand those with ad hoc parsers; prefer browser `getComputedStyle()` oracle coverage or maintained parser dependencies for new CSS behavior.

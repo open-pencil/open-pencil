@@ -1,22 +1,22 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 
+import { signAccessToken, trustAccessKey } from '#feedback-tests/access'
 import { createTestService, type TestService } from '#feedback-tests/harness'
 import { metricsSnapshotSchema, type MetricsSnapshot } from '#feedback/contract'
 import { createFeedbackDatabase } from '#feedback/db'
-import { exportJWK, generateKeyPair, SignJWT, type CryptoKey } from 'jose'
+import type { CryptoKey } from 'jose'
 import * as v from 'valibot'
 
 let service: TestService
 let signingKey: CryptoKey
 let strangerKey: CryptoKey
 
-const TEAM = 'https://openpencil.cloudflareaccess.com'
-const AUDIENCE = 'admin-audience'
 const POSTHOG_QUERY = 'https://eu.posthog.com/api/projects/267806/query/'
 const NOW = new Date('2026-10-20T12:00:00.000Z')
 const TABLES = [
   'usagePings',
   'pingNetworks',
+  'pingSteps',
   'waitlist',
   'githubStars',
   'releaseDownloads',
@@ -28,20 +28,8 @@ const TABLES = [
   'repoItems'
 ] as const
 
-/** An Access token as Cloudflare would issue it, signed with `key`; `expiresIn` null leaves `exp` out. */
-function accessToken(
-  key: CryptoKey,
-  claims: { aud?: string; iss?: string; expiresIn?: number | null } = {}
-) {
-  const seconds = Math.floor(NOW.getTime() / 1000)
-  const token = new SignJWT({ email: 'dan@example.com' })
-    .setProtectedHeader({ alg: 'RS256', kid: 'current' })
-    .setIssuer(claims.iss ?? TEAM)
-    .setAudience(claims.aud ?? AUDIENCE)
-    .setIssuedAt(seconds - 7200)
-  const expiresIn = claims.expiresIn === undefined ? 3600 : claims.expiresIn
-  return (expiresIn === null ? token : token.setExpirationTime(seconds + expiresIn)).sign(key)
-}
+const accessToken = (key: CryptoKey, claims?: Parameters<typeof signAccessToken>[2]) =>
+  signAccessToken(key, NOW, claims)
 
 async function getSnapshot(query: string, token?: string) {
   return service.request(`/admin/api/snapshot?${query}`, {
@@ -112,11 +100,9 @@ function answerPostHog() {
 
 beforeAll(async () => {
   service = await createTestService()
-  const current = await generateKeyPair('RS256')
-  signingKey = current.privateKey
-  strangerKey = (await generateKeyPair('RS256')).privateKey
-  const publicKey = { ...(await exportJWK(current.publicKey)), kid: 'current', alg: 'RS256' }
-  service.respond(`${TEAM}/cdn-cgi/access/certs`, () => Response.json({ keys: [publicKey] }))
+  const keys = await trustAccessKey(service)
+  signingKey = keys.signingKey
+  strangerKey = keys.strangerKey
 })
 
 beforeEach(async () => {
@@ -215,6 +201,23 @@ describe('metrics snapshot API', () => {
       { day: '2026-10-14', desktop: 0, web: 0 },
       { day: '2026-10-15', desktop: 400, web: 300 },
       { day: '2026-10-16', desktop: 0, web: 0 }
+    ])
+  })
+
+  test('installs follow the steps from their first day, padding the range with empty days', async () => {
+    await database()
+      .insertInto('pingSteps')
+      .values([
+        { day: '2026-10-12', app: 'desktop', step: '1', entered: 1, count: 4 },
+        { day: '2026-10-15', app: 'desktop', step: '2', entered: 1, count: 9 }
+      ])
+      .execute()
+
+    // The steps before the range still bound it: four installs started on Oct 12.
+    const { installs } = await snapshot('2026-10-15', '2026-10-16')
+    expect(installs).toEqual([
+      { day: '2026-10-15', new: 0, returning: 4, replayed: 5 },
+      { day: '2026-10-16', new: 0, returning: 0, replayed: 0 }
     ])
   })
 

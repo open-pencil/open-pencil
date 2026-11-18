@@ -1,13 +1,14 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
-import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
-
-import { expectDefined } from '#core-tests/helpers/assert'
 import { expectFigmaRow, renderRow } from '#core-tests/helpers/figma-rows'
 
-const ck = await initCanvasKit()
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
+const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
 afterAll(() => renderer.destroy())
 
@@ -16,35 +17,35 @@ const FIGMA = {
   roundCaps: [
     0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 239, 255, 255, 255, 255, 255, 255, 255,
     255, 255, 255, 255, 255, 255, 0, 239, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 0, 239, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 239,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 239, 255, 255, 255, 255,
-    255, 255, 255, 255, 0, 0, 0, 0
+    255, 255, 0, 239, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 239, 255,
+    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 239, 255, 255, 255, 255, 255,
+    255, 255, 255, 0, 0, 0, 0
   ],
   squareCaps: [
     0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255,
     255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 0, 0, 0, 0
+    255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255,
+    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 255,
+    255, 255, 255, 0, 0, 0, 0
   ],
   insideRoundCaps: [
-    0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 144, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 144, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 144, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 144, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 144, 255, 255, 255, 255, 255,
-    255, 255, 0, 0, 0, 0, 0, 0
+    0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 144, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+    255, 255, 255, 255, 255, 144, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+    255, 144, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 144, 255, 255,
+    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 144, 255, 255, 255, 255, 255, 255,
+    255, 0, 0, 0, 0, 0, 0
   ],
   roundJoin: [
     0, 0, 0, 32, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255,
     255, 255, 255, 0
   ],
   bevelJoin: [
-    0, 0, 0, 0, 127, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 0
+    0, 0, 0, 0, 127, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255,
+    255, 255, 0
   ],
   smoothed: [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 96, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 96, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255,
+    255, 255, 0
   ]
 }
 
@@ -75,8 +76,13 @@ function dashedRect(props: Partial<SceneNode> = {}, align: Stroke['align'] = 'CE
   }
 }
 
-const row = (props: Partial<SceneNode>, y: number, x0: number, x1: number, align?: Stroke['align']) =>
-  renderRow(ck, renderer, dashedRect(props, align), y, x0, x1)
+const row = (
+  props: Partial<SceneNode>,
+  y: number,
+  x0: number,
+  x1: number,
+  align?: Stroke['align']
+) => renderRow(ck, renderer, dashedRect(props, align), y, x0, x1)
 
 describe('dashes with caps, joins, and smoothed corners, as in Figma', () => {
   test('cap each dash end but where dashes meet at a corner', () => {

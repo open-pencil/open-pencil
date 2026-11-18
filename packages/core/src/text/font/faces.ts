@@ -1,10 +1,13 @@
-import { uniqBy } from 'es-toolkit'
+import { partition, uniqBy } from 'es-toolkit'
 
 import {
+  namesWidth,
   parseFontStyle,
   standardStyleName,
   type ParsedFontStyle
 } from '@open-pencil/scene-graph/font-style'
+
+import { fontAxes } from './variation'
 
 /** A weight, upright or italic. */
 export interface FaceWeight {
@@ -19,13 +22,16 @@ export interface FamilyFace extends FaceWeight {
 
 /**
  * The faces named by a family's style names, such as "Bold Italic" or "Semi Bold", each keeping
- * its name. Of two names for one weight and slant, the first listed is the face's.
+ * its name, in the order listed. Of two names for one weight and slant, the first listed is the
+ * face's, and a normal-width name ("Medium") goes before a width name ("Compressed Medium").
  */
 export function facesFromStyles(styles: readonly string[]): FamilyFace[] {
-  return uniqBy(
-    styles.map((style) => ({ ...parseFontStyle(style), style })),
-    (face) => `${face.weight}${face.italic ? 'i' : ''}`
+  const faces = styles.map((style) => ({ ...parseFontStyle(style), style }))
+  const [normalWidth, otherWidth] = partition(faces, (face) => !namesWidth(face.style))
+  const slotFaces = new Set(
+    uniqBy([...normalWidth, ...otherWidth], (face) => `${face.weight}${face.italic ? 'i' : ''}`)
   )
+  return faces.filter((face) => slotFaces.has(face))
 }
 
 /** A face named as Google Fonts names it, for a source that gives weights but no names. */
@@ -87,4 +93,24 @@ export function fontFaceFromFigmaFontName(fontName: {
 
 export function fontFaceRenderFamily(family: string, style: string): string {
   return `__op_font__${family.replace(/[^a-z0-9_-]+/giu, '_')}__${style.replace(/[^a-z0-9_-]+/giu, '_')}`
+}
+
+/** What a font file is registered with in the page's `document.fonts`. */
+export interface BrowserFaceDescriptors {
+  weight: string
+  style: 'normal' | 'italic'
+}
+
+/**
+ * The page face for a font file loaded as `style`. A variable font covers its whole `wght` range,
+ * so text at any weight draws from the font's own instance; registered at the one weight `style`
+ * names, every other weight would fall back to that instance, synthesized bold or not at all.
+ */
+export function browserFaceDescriptors(style: string, data: ArrayBuffer): BrowserFaceDescriptors {
+  const { weight, italic } = parseFontStyle(style)
+  const wght = fontAxes(data)?.find((axis) => axis.tag === 'wght')
+  return {
+    weight: wght ? `${wght.min} ${wght.max}` : String(weight),
+    style: italic ? 'italic' : 'normal'
+  }
 }

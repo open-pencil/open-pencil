@@ -59,3 +59,15 @@ export function sourceWithEffectiveFill(
     )
   }
 }
+
+/** Nearest INSTANCE at or above `nodeId` — self, parent, grandparent, etc. */
+export function findInstanceAncestor(graph: SceneGraph, nodeId: string): SceneNode | undefined {
+  let current = graph.nodes.get(nodeId)
+  while (current) {
+    if (current.type === 'INSTANCE') {
+      return current
+    }
+    current = current.parentId ? graph.nodes.get(current.parentId) : undefined
+  }
+  return undefined
+}

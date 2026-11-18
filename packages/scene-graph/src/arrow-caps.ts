@@ -1,3 +1,4 @@
+import { cubicPoint } from './cubic'
 import type { Vector } from './primitives'
 import type { Stroke, StrokeCap, VectorNetwork } from './types'
 
@@ -256,11 +257,7 @@ export function trimArrowShafts(
 type Cubic = [Vector, Vector, Vector, Vector]
 
 function cubicAt([a, b, c, d]: Cubic, t: number): Vector {
-  const u = 1 - t
-  return {
-    x: u * u * u * a.x + 3 * u * u * t * b.x + 3 * u * t * t * c.x + t * t * t * d.x,
-    y: u * u * u * a.y + 3 * u * u * t * b.y + 3 * u * t * t * c.y + t * t * t * d.y
-  }
+  return cubicPoint(a, b, c, d, t)
 }
 
 function lerp(a: Vector, b: Vector, t: number): Vector {

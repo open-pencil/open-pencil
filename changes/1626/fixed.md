@@ -1,1 +1,0 @@
-- Text saved to `.fig` files keeps its letters when its glyphs were drawn from another file of the same family, such as a static face beside the variable font, instead of reopening with other letters.

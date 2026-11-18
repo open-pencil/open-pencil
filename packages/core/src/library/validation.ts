@@ -1,4 +1,6 @@
-import { contentHash } from './hash'
+import type { SceneNode, VariableCollection } from '@open-pencil/scene-graph'
+
+import { libraryRevisionId } from './revision'
 import { encodeStoredLibraryRevision } from './serialization'
 import { describeSnapshotAssets } from './snapshot'
 import type { ComponentLibraryRevision } from './types'
@@ -44,33 +46,33 @@ export async function validateLibraryRevision(revision: ComponentLibraryRevision
     integrityError('Component library exceeds serialized revision byte limit')
 
   const assetKeys = new Set<string>()
+  const roots: SceneNode[] = []
+  const collections: VariableCollection[] = []
   for (const asset of manifest.assets) {
     if (assetKeys.has(asset.key))
       integrityError(`Duplicate component library asset key: ${asset.key}`)
     assetKeys.add(asset.key)
-    const source = graph.getNode(asset.sourceNodeId)
-    if (source && source.type !== asset.type)
+    if (asset.type === 'VARIABLE_COLLECTION') {
+      const collection = graph.variableCollections.get(asset.sourceId)
+      if (!collection) integrityError(`Component library asset source is missing: ${asset.key}`)
+      collections.push(collection)
+      continue
+    }
+    const node = graph.getNode(asset.sourceId)
+    if (!node) integrityError(`Component library asset source is missing: ${asset.key}`)
+    const style = node.sharedStyleType !== null
+    if (asset.type === 'STYLE' ? !style : style || node.type !== asset.type)
       integrityError(`Component library asset type mismatch: ${asset.key}`)
+    roots.push(node)
   }
 
-  const roots = manifest.assets.flatMap((asset) => {
-    const node = graph.getNode(asset.sourceNodeId)
-    return node ? [node] : []
-  })
-  if (roots.length !== manifest.assets.length)
-    integrityError('Component library asset source is missing')
-  const described = await describeSnapshotAssets({ graph, assetRoots: roots })
+  const described = await describeSnapshotAssets({ graph, assetRoots: roots, collections })
   const hashes = new Map(described.map((asset) => [asset.key, asset.contentHash]))
   for (const asset of manifest.assets) {
     if (hashes.get(asset.key) !== asset.contentHash) {
       integrityError(`Component library content hash mismatch: ${asset.key}`)
     }
   }
-  const revisionId = await contentHash({
-    schemaVersion: manifest.schemaVersion,
-    libraryId: manifest.libraryId,
-    previousRevisionId: manifest.previousRevisionId,
-    assets: manifest.assets.map(({ thumbnail: _, sourceNodeId: __, ...asset }) => asset)
-  })
-  if (revisionId !== manifest.revisionId) integrityError('Component library revision hash mismatch')
+  if ((await libraryRevisionId(manifest)) !== manifest.revisionId)
+    integrityError('Component library revision hash mismatch')
 }

@@ -1,13 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { createEditor } from '@open-pencil/core'
 import {
   createSticky,
   shapeWithTextLabel,
   stickySublayers
 } from '@open-pencil/scene-graph/generated'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 function setup() {
   const editor = createEditor({ loadFont: () => Promise.resolve(null) })
@@ -64,7 +63,9 @@ describe('FigJam typefaces and sizes', () => {
     const sticky = createSticky(editor.graph, pageId, {})
     editor.setFigJamTextSize([text, sticky.id], 'huge')
     const body = expectDefined(stickySublayers(editor.graph, sticky)).body
-    expect([editor.graph.getNode(text)?.fontSize, editor.graph.getNode(body.id)?.fontSize]).toEqual([96, 96])
+    expect([editor.graph.getNode(text)?.fontSize, editor.graph.getNode(body.id)?.fontSize]).toEqual(
+      [96, 96]
+    )
     editor.undo.undo()
     expect(editor.graph.getNode(text)?.fontSize).not.toBe(96)
     expect(editor.graph.getNode(body.id)?.fontSize).not.toBe(96)

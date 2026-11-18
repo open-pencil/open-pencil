@@ -1,1 +1,0 @@
-- Self-hosted OpenPencil Cloud installs from npm: `npm install -g @open-pencil/cloud` provides the `openpencil-cloud` server and the `openpencil-ai-relay` AI relay commands.

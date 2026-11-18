@@ -57,7 +57,7 @@ export function useLayerDrag(
         draggable({
           element,
           // A read-only document's layers keep their order.
-          canDrag: () => acceptsSiblings && resolveEditorProfile(editor.state).edits,
+          canDrag: () => acceptsSiblings && resolveEditorProfile(editor.state).layerEdits === 'all',
           getInitialData: () => ({ id: data.id }),
           onDragStart: () => {
             draggingId.value = data.id

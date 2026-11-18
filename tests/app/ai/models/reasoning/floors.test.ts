@@ -1,13 +1,12 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import {
   normalizeOpenRouterModel,
   resetOpenRouterModelsForTests,
   resolveProviderModel
 } from '@/app/ai/models/reasoning/floors'
-
-import { fetchStub } from '#tests/helpers/fetch'
-
 afterEach(() => resetOpenRouterModelsForTests())
 
 describe('normalizeOpenRouterModel', () => {

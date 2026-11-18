@@ -14,6 +14,7 @@ import { boundNumberValue, isNumericVariableBindingField } from '@open-pencil/sc
 
 import { cloneRecord } from '../clone'
 import { linearVariableExpression } from './expression'
+import { mergeVariableModeMaps } from './maps'
 
 export const VARIABLE_BINDING_FIELDS: Record<string, string> = {
   cornerRadius: 'CORNER_RADIUS',
@@ -107,6 +108,13 @@ export function mergeVariableConsumptionMaps(
   }
   // VariableDataMap carries nothing but its entries, so the merged list is the whole map.
   return { parameterConsumptionMap: { entries } }
+}
+
+export function claimedVariableMaps(
+  layer: VariableConsumptionSource,
+  claim: VariableConsumptionSource
+): Record<string, unknown> {
+  return { ...mergeVariableConsumptionMaps(layer, claim), ...mergeVariableModeMaps(layer, claim) }
 }
 
 export function variableBindingEntry(

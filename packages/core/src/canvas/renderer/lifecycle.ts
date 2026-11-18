@@ -1,5 +1,5 @@
-import { disposeNodeEditPaints } from '#core/canvas/node-edit-overlay'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import { disposeNodeEditPaints } from '#core/canvas/overlays/node-edit'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { fontManager } from '#core/text/font/manager'
 
 import { releaseCompiledShaders } from './shaders'
@@ -25,11 +25,8 @@ function releaseFonts(r: SkiaRenderer): void {
   const fontProvider = r.fontProvider
   r.fontProvider = null
   r.fontsLoaded = false
-  // Only its own provider: a renderer that never loaded fonts leaves the others' attached.
-  if (fontProvider) {
-    fontManager.detachProvider(fontProvider)
-    fontProvider.delete()
-  }
+  // Only its own share: a renderer that never loaded fonts leaves the others' provider alone.
+  if (fontProvider) fontManager.releaseProvider(fontProvider)
 }
 
 export function destroyRenderer(r: SkiaRenderer): void {
@@ -42,6 +39,7 @@ export function destroyRenderer(r: SkiaRenderer): void {
   r.images.cache.clear()
   releaseLiveImages(r)
   disposePathCaches(r)
+  r.renderedBounds.dispose()
   r.fillPaint.delete()
   releaseCompiledShaders(r.shaders)
   r.strokePaint.delete()
@@ -64,6 +62,7 @@ export function destroyRenderer(r: SkiaRenderer): void {
   r.penVertexFill.delete()
   r.penVertexStroke.delete()
   r.effectLayerPaint.delete()
+  r.glassMaps.clear()
   r.imageFilterCache.clear()
   r.maskFilterCache.clear()
   r.dashEffects.clear()

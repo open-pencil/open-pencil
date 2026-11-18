@@ -1,0 +1,1 @@
+- Figma's noise and texture effects open from `.fig` files, render on the canvas and in exports, export to SVG and Design JSX, work through the plugin API, and can be added and edited in the effects panel. Noise matches Figma's grain statistics rather than its exact pattern (#2137).

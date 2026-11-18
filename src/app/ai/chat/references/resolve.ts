@@ -29,6 +29,9 @@ export function resolveReference(
     const present = skillNames.has(reference.id)
     return { ...reference, name: reference.id, present, node: null }
   }
+  // A command names nothing to show; it reads as written.
+  if (reference.kind === 'command')
+    return { ...reference, name: reference.label, present: true, node: null }
   const node = store?.graph.getNode(reference.id)
   const fits = reference.kind === 'page' ? node?.type === 'CANVAS' : node && node.type !== 'CANVAS'
   if (!node || !fits) return { ...reference, name: reference.label, present: false, node: null }
@@ -42,6 +45,7 @@ export function resolveReference(
 
 /** Shows what a reference names: a layer on its page, a page, or a skill in Settings. */
 export async function openReference(store: EditorStore, reference: ChatReference): Promise<void> {
+  if (reference.kind === 'command') return
   if (reference.kind === 'skill') requestSkillSettings(reference.id)
   else if (reference.kind === 'page') await store.switchPage(reference.id)
   else await focusNodesOnTheirPage(store, [reference.id])

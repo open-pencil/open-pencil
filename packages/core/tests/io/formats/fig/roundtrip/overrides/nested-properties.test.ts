@@ -1,17 +1,16 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { createEditor } from '@open-pencil/core/editor'
-import { parseFigBuffer } from '@open-pencil/fig'
 import {
   componentPropertyDefinitions,
   createComponentPropertyId
 } from '@open-pencil/scene-graph/components'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { createEditor } from '#core/editor'
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 
 interface OverrideRecord {
@@ -98,8 +97,16 @@ describe('a copy of a component that holds an instance with properties', () => {
 
   test('keeps the text and boolean values the copy gives its Action after reopening', async () => {
     const graph = authored((editor, action) => {
-      editor.setInstanceComponentProperty(action.id, propertyId(editor.graph, action, 'Label'), 'Save')
-      editor.setInstanceComponentProperty(action.id, propertyId(editor.graph, action, 'Shown'), 'false')
+      editor.setInstanceComponentProperty(
+        action.id,
+        propertyId(editor.graph, action, 'Label'),
+        'Save'
+      )
+      editor.setInstanceComponentProperty(
+        action.id,
+        propertyId(editor.graph, action, 'Shown'),
+        'false'
+      )
     })
     const { reopened } = await reopen(graph)
     const copy = find(reopened, firstPage(reopened), 'Copy')

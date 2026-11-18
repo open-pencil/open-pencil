@@ -19,6 +19,7 @@ export function createAdminOperationsService(
     async summary() {
       const [
         pendingEnrollment,
+        openReports,
         pendingEmail,
         failedEmail,
         accounts,
@@ -30,6 +31,11 @@ export function createAdminOperationsService(
           .selectFrom('enrollment')
           .select(({ fn }) => fn.countAll<number>().as('count'))
           .where('status', '=', 'pending')
+          .executeTakeFirstOrThrow(),
+        database
+          .selectFrom('documentReport')
+          .select(({ fn }) => fn.countAll<number>().as('count'))
+          .where('status', '=', 'open')
           .executeTakeFirstOrThrow(),
         emailCount('pending'),
         emailCount('failed'),
@@ -56,6 +62,7 @@ export function createAdminOperationsService(
         enrollmentMode: config.enrollmentMode,
         emailTransport: config.emailTransport,
         pendingEnrollment: Number(pendingEnrollment.count),
+        openReports: Number(openReports.count),
         pendingEmail,
         failedEmail,
         accounts: Number(accounts.count),

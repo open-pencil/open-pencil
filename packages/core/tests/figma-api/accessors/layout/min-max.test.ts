@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-
 describe('min/max dimensions', () => {
   test('defaults to null', () => {
     const api = createAPI()

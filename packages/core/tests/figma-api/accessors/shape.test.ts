@@ -110,3 +110,36 @@ describe('shape members on other layers', () => {
     expect('innerRadius' in figma.createPolygon()).toBe(false)
   })
 })
+
+describe('a boolean operation', () => {
+  test('reads and switches its operation', () => {
+    const { graph, figma } = api()
+    const boolean = figma.union([figma.createRectangle(), figma.createEllipse()], figma.currentPage)
+    expect(boolean.booleanOperation).toBe('UNION')
+    boolean.booleanOperation = 'SUBTRACT'
+    expect(boolean.booleanOperation).toBe('SUBTRACT')
+    expect(graph.getNode(boolean.id)?.booleanOperation).toBe('SUBTRACT')
+    expect(() => (boolean.booleanOperation = 'XOR' as never)).toThrow(
+      'in set_booleanOperation: Property "booleanOperation" failed validation: Invalid option: expected one of "UNION"|"INTERSECT"|"SUBTRACT"|"EXCLUDE"'
+    )
+  })
+
+  test('is a boolean’s alone', () => {
+    expect('booleanOperation' in api().figma.createRectangle()).toBe(false)
+  })
+})
+
+describe('shape values Figma refuses', () => {
+  test('a point count reports its minimum before whole numbers, and arc data takes no other keys', () => {
+    const { figma } = api()
+    const polygon = figma.createPolygon()
+    expect(() => (polygon.pointCount = 2.5)).toThrow(
+      'in set_pointCount: Property "pointCount" failed validation: Too small: expected number to be >=3\nExpected int, received number'
+    )
+    const ellipse = figma.createEllipse()
+    expect(
+      () =>
+        (ellipse.arcData = { startingAngle: 0, endingAngle: 1, innerRadius: 0, foo: 1 } as never)
+    ).toThrow('in set_arcData: Property "arcData" failed validation: Unrecognized key: "foo"')
+  })
+})

@@ -47,14 +47,16 @@ test('a binding edit recomputes the saved Hug size of a placed instance root', (
   expect(child.x).toBe(2.5)
 })
 
-test('active and inherited explicit modes use the same numeric conversion', () => {
+test('modes inherited from the page and set on the layer use the same numeric conversion', () => {
   const { graph, editor, collection, variable, frame, child } = setup()
   graph.addMode(collection.id, 'alternate', 'Alternate')
   editor.updateVariableValue(variable.id, 'alternate', 40)
   expect(frame.paddingLeft).toBe(2.5)
-  editor.setActiveMode(collection.id, 'alternate')
-  expect(frame.paddingLeft).toBe(10)
   editor.updateNodeWithUndo(graph.getPages()[0].id, {
+    variableModes: { [collection.id]: 'alternate' }
+  })
+  expect(frame.paddingLeft).toBe(10)
+  editor.updateNodeWithUndo(frame.id, {
     variableModes: { [collection.id]: collection.defaultModeId }
   })
   expect(frame.paddingLeft).toBe(2.5)

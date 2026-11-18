@@ -144,6 +144,24 @@ export function toolbarItems(
   })
 }
 
+/** The commands among the toolbar's items. */
+export function shownToolbarActions(items: readonly ToolbarItem[]): ToolbarAction[] {
+  return items.flatMap((item) => (item.kind === 'action' ? [item.action] : []))
+}
+
+/**
+ * The commands the toolbar leaves out, whose pickers stay mounted for the menu and the palette to
+ * open; a document that cannot be edited leaves them out as well, as it does their buttons.
+ */
+export function hiddenToolbarActions(
+  items: readonly ToolbarItem[],
+  edits: boolean
+): ToolbarAction[] {
+  if (!edits) return []
+  const shown = shownToolbarActions(items)
+  return TOOLBAR_ACTIONS.filter((action) => !shown.includes(action))
+}
+
 /** One entry as Settings lists it, with how it relates to the row above. */
 export interface ToolbarRow {
   entry: ToolbarEntry

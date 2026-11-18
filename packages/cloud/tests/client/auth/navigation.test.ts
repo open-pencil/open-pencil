@@ -23,6 +23,14 @@ test('email-only instance owns sign-in and preserves an opaque invitation contin
   expect(cloudEditorReturnURL(discovery, callback.searchParams.get('editor') ?? '')).toBe(target)
 })
 
+test('the sign-up page comes back to the editor as sign-in does', () => {
+  const signUp = new URL(cloudSignInURL(discovery, 'https://cloud.example/', undefined, 'sign-up'))
+  expect(signUp.pathname).toBe('/auth/sign-up')
+  const callback = new URL(signUp.searchParams.get('redirect') ?? '', signUp.origin)
+  expect(callback.pathname).toBe('/auth/return')
+  expect(callback.searchParams.get('editor')).toBe('https://cloud.example/')
+})
+
 test('return navigation rejects foreign origins and userinfo and strips fragment secrets', () => {
   for (const value of [
     'https://evil.example',

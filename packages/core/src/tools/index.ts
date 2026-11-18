@@ -21,11 +21,19 @@ export type { ToolDef, ToolExecution, ToolCapability } from './schema'
 export {
   isAtomicTool,
   isToolExposed,
+  toolInputFor,
   parseToolArgs,
   type ToolInterface,
   type ToolExposure
 } from './schema'
-export { toolNumber } from './schema'
+export {
+  jsonSchemaTarget,
+  toolJSONSchema,
+  toolNumber,
+  toolNumberSchema,
+  toolStandardJSONSchema
+} from './schema'
+export type { JSONSchemaTarget } from './schema'
 export { toolsToAI, buildDebugLog } from './ai-adapter'
 export type {
   ToolLogEntry,
@@ -51,6 +59,14 @@ export {
   parseOverlapSeverity
 } from './analyze/overlaps/params'
 export { setPexelsAPIKey, setUnsplashAccessKey } from './stock-photo'
+export {
+  MAX_WEB_SEARCH_QUERY_LENGTH,
+  MAX_WEB_SEARCH_RESULTS,
+  setWebSearchProvider,
+  WebSearchRefusedError,
+  type WebSearchProvider,
+  type WebSearchResult
+} from './web-search'
 export { importMermaid, importSVG } from './create'
 export { arrangeNodes } from './structure'
 export {

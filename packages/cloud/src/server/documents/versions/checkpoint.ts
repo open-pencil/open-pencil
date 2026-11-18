@@ -1,4 +1,5 @@
 import type { CloudDatabase } from '#cloud/server/db'
+import { logCloud, loggedError } from '#cloud/server/logging'
 import type { Transaction } from 'kysely'
 
 /** How long the newest version may be old before a save keeps the state it replaces. */
@@ -93,6 +94,6 @@ export function announceVersions(
   try {
     onVersionsChanged?.(documentId)
   } catch (error) {
-    console.error('[Cloud] Announcing a version history change failed:', error)
+    logCloud('error', 'Announcing a version history change failed', { error: loggedError(error) })
   }
 }

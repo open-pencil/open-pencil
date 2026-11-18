@@ -17,6 +17,12 @@ Workflow tooling is checked out separately in `.pipeline` and installed from its
 
 A `vX.Y.Z-beta.N` tag runs the same workflow. npm packages publish under the `next` dist-tag, so `latest` stays on the last stable release, and the draft is marked pre-release and never latest. The desktop updater and download links follow GitHub's latest release, and the Homebrew cask only matches stable tags, so neither picks up a beta. The app and docs deploy workflows skip pre-release tags. The changelog section is headed `## X.Y.Z-beta.N — YYYY-MM-DD` like any release.
 
+## Nightlies
+
+Every night `build.yml` builds master as a nightly, and a dispatch with **nightly** builds one at once; a night when master is the commit the last complete nightly built, which its release manifest names, builds nothing (`src/nightly/plan.ts`). The version is `X.Y.Z-nightly.YYYYMMDD`, `.N` for a day's second build on, where `X.Y.Z` is the release master heads for: its version while a beta, else the next minor. SemVer puts it after that release's betas and before the release. Master keeps its version; the frontend and native jobs write the nightly's into the checkout's root manifest and Tauri config (`src/nightly/stamp.ts`).
+
+A nightly builds, signs, notarizes, verifies, and attests exactly as a release does, with three differences. It publishes no npm packages. Windows bundles NSIS only, which also answers the platform's own updater key, since an MSI version must be numbers only (`NIGHTLY_BUNDLES`). Its notes name the commit it builds (`src/nightly/notes.ts`). It goes to one rolling pre-release, published at once, whose `nightly` tag moves to each nightly's commit and whose files this run's replace, the updater feed after them and the release manifest last, once every byte is checked, so a nightly that fails partway is built again the next night (`src/nightly/publish.ts`). Desktop apps on the Nightly update channel read that release's `latest.json` (`desktop/src/updates.rs`); the download page leaves it out. A release that the workflow token publishes starts no other workflow, so a nightly deploys neither the docs nor a Cloud image.
+
 ## Draft publication
 
 The workflow leaves the GitHub Release **draft**. After successful verification, publish it with the exact tagged changelog body and publish any accompanying security advisory separately. Never move a release tag to repair CI.
@@ -52,10 +58,22 @@ After each release:
 
 The old `HOMEBREW_TAP_TOKEN` workflow secret is no longer used and can be removed after the obsolete workflow is retired. Revoking the underlying token is a separate credential-owner action if it is shared elsewhere.
 
+## New npm packages
+
+`build.yml` publishes to npm only through trusted publishing, which a package that has never been published cannot have yet. Shortly before the tag build, a maintainer creates each new package by hand, with npm 11.15.0 or later and Node.js 22.14.0 or later, which `npm stage` needs:
+
+1. On `master`, before the release changes the version, run `bun run build:packages`, then, with [`cargo-about`](https://github.com/EmbarkStudios/cargo-about) installed at the version `build.yml` pins, `bun tools/release/release-packages/src/cli.ts notices`, `prepare`, and `pack`. The tarballs land in `.npm-packages/` and carry `master`'s version, which is never the one being released.
+2. Stage the package with `npm stage publish ./<tarball> --access public`, adding `--tag <name>` when that version is a pre-release, such as `--tag beta`. The registry creates the package with a `0.0.0-stage` placeholder; wait until `npm stage list <package>` shows the stage as `staged`.
+3. Add `open-pencil/open-pencil`'s `.github/workflows/build.yml` as the package's trusted publisher and turn on **Allow npm publish**: a new trusted publisher may only stage, and `build.yml` publishes directly. A trusted publisher that has not published within two days expires and has to be deleted and created again, so add it no earlier than two days before the tag build.
+4. Approve the stage with `npm stage approve <id>`, or reject it with `npm stage reject <id>`; both need 2FA. A stage left pending holds its version, and a publish of that version fails with `409 Cannot publish over previously staged version`.
+
+Never publish the version being released by hand: `release-packages resume` stops on a published version without `build.yml` provenance.
+
 ## Failure and recovery
 
 - There are explicit job/build/startup/command deadlines. Native builds do not silently retry or upload partial release outputs.
 - Missing or mixed matrix identities stop publication. Rerun **all jobs**, not only failed jobs, to obtain a single new run-attempt identity.
-- Existing published GitHub releases, moved tags, unexpected draft assets, or already-published npm versions stop preflight. Already-published npm versions require an explicit provenance/recovery review; they are never silently mixed with this run.
+- Existing published GitHub releases, moved tags, or unexpected draft assets stop preflight.
+- A run that stopped partway through npm publication resumes through a `workflow_dispatch` of `build.yml` for the same tag; a rerun of the stopped run uses the tag's own tooling. `release-packages resume` keeps an already-published version whose registry tarball is byte for byte the one the run built, whoever published it; a manual run signs its provenance from the default branch, so this is how a recovery that published some versions before stopping resumes. Any other published version is accepted only when its npm provenance is signed by this repository's `build.yml` at the tag (Sigstore certificate identity and transparency log) and names this repository, `.github/workflows/build.yml`, the tag's ref and commit, and the tarball the registry serves; it then replaces the rebuilt tarball with the registry's bytes. Either way the manifest attests what npm serves and `publish` skips it; any other published version stops the run (`src/resume.ts`).
 - npm publication and GitHub multi-asset uploads are not atomic. A mid-publication failure requires review; the draft is not automatically published or deleted. A failed upload can leave a partial draft, not a successful canonical release.
-- Caches improve repeat installs/builds but do not establish provenance. Their scope and writer limits are documented in `.github/actions/setup-bun/README.md`.
+- Caches improve repeat installs/builds but do not establish provenance. Their scope and writer limits are documented in `.github/actions/setup/workspace/README.md`.

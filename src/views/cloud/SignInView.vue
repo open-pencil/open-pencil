@@ -115,6 +115,7 @@ function switchMode() {
     :error="error"
     :submitting="submitting"
     :returns-to="returnsTo"
+    :legal="portal.discovery.legal"
     @provider="withProvider"
     @submit="submit"
     @forgot-password="router.push({ name: 'forgot-password', query: { redirect } })"

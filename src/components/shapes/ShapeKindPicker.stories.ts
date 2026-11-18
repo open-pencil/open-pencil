@@ -26,7 +26,7 @@ const meta = {
       return { kind, icons: SHAPE_KIND_ICONS }
     },
     template: `
-      <div class="flex h-[520px] items-end justify-center bg-canvas p-4">
+      <div class="flex h-130 items-end justify-center bg-canvas p-4">
         <ShapeKindPicker heading="Shape" tooltip="Shape" :selected="kind" @select="kind = $event">
           <template #trigger>
             <button type="button" aria-label="Shape" class="flex items-center gap-2 rounded-md bg-panel px-2 py-1 text-surface">

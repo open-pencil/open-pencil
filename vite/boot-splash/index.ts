@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { readdirSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 
@@ -47,15 +48,22 @@ async function compile(config: ResolvedConfig, entry: string): Promise<Compiled>
     throw new Error(`The boot splash (${entry}) must build to one script and one stylesheet`)
   }
   const script = chunk.code.trim()
-  // Inlined as is, the script must not close its own tag.
+  // Inlined as is in development, the script must not close its own tag.
   if (script.includes('</script')) throw new Error('The boot splash script cannot be inlined')
   return { script, style: String(style.source).trim(), sources: chunk.moduleIds }
 }
 
+/** Where a build puts the script, named by its content so a deploy never serves a stale one. */
+function scriptFileName(script: string): string {
+  return `assets/boot-splash-${createHash('sha256').update(script).digest('hex').slice(0, 8)}.js`
+}
+
 /**
  * Draws one boot splash on each of the app's pages, with its stylesheet and the script that starts
- * the page in its theme, all inlined so they show before anything loads. The stylesheet and script
- * are built by Vite from `entry`, minified and lowered to the app's browser targets.
+ * the page in its theme, both in the page's head so they run before anything loads. The stylesheet
+ * is inlined; a build loads the script from its own file, blocking as an inline one would, so the
+ * pages carry no inline script and a content security policy can allow only the site's own files.
+ * Both are built by Vite from `entry`, minified and lowered to the app's browser targets.
  */
 export function bootSplashPlugin({ entry, pages }: BootSplashOptions): Plugin {
   let config: ResolvedConfig | undefined
@@ -100,6 +108,10 @@ export function bootSplashPlugin({ entry, pages }: BootSplashOptions): Plugin {
     watchChange(id) {
       changed(id)
     },
+    async generateBundle() {
+      const { script } = await current()
+      this.emitFile({ type: 'asset', fileName: scriptFileName(script), source: script })
+    },
     // The dev server reloads the page instead, since the splash only draws on a fresh load.
     configureServer(server) {
       server.watcher.add(watched())
@@ -114,9 +126,13 @@ export function bootSplashPlugin({ entry, pages }: BootSplashOptions): Plugin {
       async handler(html, { filename }) {
         if (!pages.includes(basename(filename))) return html
         const { script, style } = await current()
+        const scriptTag =
+          config?.command === 'build'
+            ? { tag: 'script', attrs: { src: `${config.base}${scriptFileName(script)}` } }
+            : { tag: 'script', children: script }
         return [
           { tag: 'style', children: style, injectTo: 'head' },
-          { tag: 'script', children: script, injectTo: 'head' },
+          { ...scriptTag, injectTo: 'head' },
           // After the page's mount element, so the stylesheet hides it once the app draws there.
           {
             tag: 'div',

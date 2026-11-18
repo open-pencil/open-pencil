@@ -1,7 +1,8 @@
 import type { Page } from '@playwright/test'
 
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { expect, test } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 async function setup(page: Page) {

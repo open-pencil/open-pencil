@@ -2,8 +2,8 @@ import { uniq } from 'es-toolkit'
 import { createFetch } from 'ofetch'
 import * as v from 'valibot'
 
-import { collectionListSchema, collectionsSchema } from './schema'
-import type { IconCollection, IconifyResponse, IconSearchResult } from './types'
+import { collectionListSchema, collectionsSchema, iconSetSchema, type IconSet } from './schema'
+import type { IconCollection, IconSearchResult } from './types'
 
 const ICONIFY_API = 'https://api.iconify.design'
 const FETCH_TIMEOUT_MS = 10_000
@@ -30,15 +30,13 @@ export function createIconifyAPIClient(
   }
 
   return {
-    async fetchCollection(prefix: string, iconNames: string[]): Promise<IconifyResponse> {
-      const response = await iconifyAPI.raw<IconifyResponse>(`/${prefix}.json`, {
-        ignoreResponseError: true,
-        query: { icons: iconNames.join(',') }
-      })
-      if (!response.ok) {
-        throw new Error(`Iconify API error: ${response.status} for prefix "${prefix}"`)
-      }
-      return response._data as IconifyResponse
+    async fetchCollection(prefix: string, iconNames: string[]): Promise<IconSet> {
+      const parsed = v.safeParse(
+        iconSetSchema,
+        await text(`/${prefix}.json`, { icons: iconNames.join(',') })
+      )
+      if (!parsed.success) throw new Error(`Iconify API returned unexpected icons for "${prefix}"`)
+      return parsed.output
     },
 
     /** Every icon set the API serves, retired ones left out. */

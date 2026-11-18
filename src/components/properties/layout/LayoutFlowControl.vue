@@ -31,7 +31,7 @@ const mode = computed(() => {
 
 <template>
   <div>
-    <label class="mb-1 block text-[11px] text-muted">{{ panels.flow }}</label>
+    <label class="mb-1 block text-2xs text-muted">{{ panels.flow }}</label>
     <div class="flex items-center gap-1.5">
       <SegmentedControl
         :model-value="mode"

@@ -1,3 +1,5 @@
+import { svgDataURL } from '@open-pencil/scene-graph/images'
+
 import type { CloudDocumentRow } from './types'
 
 /** A stand-in canvas preview: a few frames on a page in one hue. */
@@ -13,7 +15,7 @@ function preview(hue: number): string {
 <rect x="172" y="94" width="58" height="58" rx="6" fill="hsl(${(hue + 40) % 360} 45% 60%)"/>
 <rect x="238" y="94" width="58" height="58" rx="6" fill="hsl(${hue} 25% 85%)"/>
 </svg>`
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+  return svgDataURL(svg)
 }
 
 export const previewDocuments: CloudDocumentRow[] = [

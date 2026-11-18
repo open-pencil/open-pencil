@@ -26,6 +26,17 @@ const dailyActive = [
   { day: '2026-10-18', desktop: 401, web: 298 },
   { day: '2026-10-19', desktop: 330, web: 257 }
 ]
+// Illustrative: a release that counts its days ships on Oct 16, so upgrading installs start over as
+// new, and a saved state restored over and over replays its second day.
+const installs = [
+  { day: '2026-10-13', new: 0, returning: 0, replayed: 0 },
+  { day: '2026-10-14', new: 0, returning: 0, replayed: 0 },
+  { day: '2026-10-15', new: 0, returning: 0, replayed: 0 },
+  { day: '2026-10-16', new: 212, returning: 0, replayed: 0 },
+  { day: '2026-10-17', new: 141, returning: 118, replayed: 240 },
+  { day: '2026-10-18', new: 96, returning: 187, replayed: 310 },
+  { day: '2026-10-19', new: 74, returning: 203, replayed: 250 }
+]
 const visits = [
   { day: '2026-10-13', site: 2342, app: 1107 },
   { day: '2026-10-14', site: 3884, app: 729 },
@@ -232,6 +243,7 @@ function scope(range: MetricsRange, withUsage: boolean, withActivity: boolean): 
     start: range.start,
     end: range.end,
     dailyActive: inRange(dailyActive),
+    installs: inRange(installs),
     platforms: [
       { os: 'macos', desktop: 428, web: 356 },
       { os: 'windows', desktop: 386, web: 327 },
@@ -342,13 +354,13 @@ const story = (frame: string, withUsage = true, withActivity = true): Story => (
   })
 })
 
-export const Overview = story('h-[3950px]')
+export const Overview = story('h-987.5')
 
 /** PostHog did not answer: retention and usage give way to a notice, the rest stays. */
-export const WithoutUsage = story('h-[3550px]', false)
+export const WithoutUsage = story('h-887.5', false)
 
 /** Before the first nightly sync, issues and pull requests give way to a notice. */
-export const BeforeIssueSync = story('h-[3400px]', true, false)
+export const BeforeIssueSync = story('h-850', true, false)
 
 /** The dashboard in a phone-width window. */
-export const Narrow = story('h-[6450px] w-[390px]')
+export const Narrow = story('h-1612.5 w-97.5')

@@ -13,11 +13,20 @@ import { previewButton } from './chrome'
 import { renderTree } from './icons'
 import type { Theme } from './theme'
 
+/**
+ * Shortcuts as both platforms press them: the tour is built once and opened everywhere, so a tip
+ * cannot show only the macOS keys.
+ */
+export const TOUR_KEYS = {
+  preview: '⌥ ⌘ ↩ · Ctrl Alt Enter',
+  save: '⌘ S · Ctrl S'
+} as const
+
 export const TIP_PROPERTIES = {
   step: property('Step', '1'),
   title: property('Title', 'Try this'),
   body: property('Body', 'Select something on the canvas and look at the panel on the right.'),
-  keys: property('Shortcut', '⌥ ⌘ ↩'),
+  keys: property('Shortcut', TOUR_KEYS.preview),
   showKeys: property('Show shortcut', true)
 }
 

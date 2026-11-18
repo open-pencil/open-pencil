@@ -1,11 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { Fill } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 const cleanups: (() => void)[] = []
 
@@ -22,7 +21,7 @@ const RED: Fill = {
 
 /** An editor editing "Hello world" with "world" selected. */
 async function editingWorld() {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = expectDefined(ck.MakeSurface(200, 200), 'surface')
   const renderer = new SkiaRenderer(ck, surface)
   const editor = createEditor()

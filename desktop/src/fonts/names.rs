@@ -21,9 +21,12 @@ pub struct NamedInstance {
     pub weight: Option<f32>,
 }
 
-/// A face's style name and, for a variable font, its named instances.
+/// A face's family and style names and, for a variable font, its named instances.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct FaceNames {
+    /// The family the font names: its typographic family (name ID 16), which keeps every
+    /// weight, width, and optical size in one family, as Figma names it, else its legacy one.
+    pub family: Option<String>,
     pub style: Option<String>,
     pub instances: Vec<NamedInstance>,
 }
@@ -61,6 +64,7 @@ pub fn face_names(data: &[u8], index: u32) -> FaceNames {
     let Ok(name) = font.name() else {
         return FaceNames::default();
     };
+    let family = family_name(&name);
     let style = name_string(&name, NameId::TYPOGRAPHIC_SUBFAMILY_NAME)
         .or_else(|| name_string(&name, NameId::SUBFAMILY_NAME));
     let instances = font
@@ -89,7 +93,16 @@ pub fn face_names(data: &[u8], index: u32) -> FaceNames {
             )
         })
         .unwrap_or_default();
-    FaceNames { style, instances }
+    FaceNames {
+        family,
+        style,
+        instances,
+    }
+}
+
+fn family_name(name: &Name) -> Option<String> {
+    name_string(name, NameId::TYPOGRAPHIC_FAMILY_NAME)
+        .or_else(|| name_string(name, NameId::FAMILY_NAME))
 }
 
 /// A name compared without case or spaces, so "Semi Bold" and "SemiBold" name one face.

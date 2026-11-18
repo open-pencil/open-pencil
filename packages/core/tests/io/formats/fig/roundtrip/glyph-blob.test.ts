@@ -2,10 +2,7 @@ import { beforeAll, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { FIXTURES } from '#core-tests/helpers/fig/fixtures'
 import { corePackagePath } from '#core-tests/helpers/paths'
-import { heavy, HEAVY_TEST_TIMEOUT_MS } from '#core-tests/helpers/test-utils'
 
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { fontManager } from '@open-pencil/core/text'
@@ -13,6 +10,9 @@ import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { heavy, HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 const INTER_ASSETS = corePackagePath('assets')
 

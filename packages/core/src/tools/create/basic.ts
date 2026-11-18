@@ -1,7 +1,9 @@
 import * as v from 'valibot'
 
 import type { FigmaNodeProxy } from '#core/figma-api'
-import { toolNumber, positionInputs, defineTool, nodeSummary } from '#core/tools/schema'
+import { graphOf } from '#core/figma-api/graph'
+import { prepareSlotInsertion } from '#core/figma-api/slots'
+import { layoutLength, positionInputs, defineTool, nodeSummary } from '#core/tools/schema'
 
 export const createShape = defineTool({
   name: 'create_shape',
@@ -15,14 +17,16 @@ export const createShape = defineTool({
       v.description('Node type')
     ),
     ...positionInputs,
-    width: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Width in pixels'))),
-    height: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Height in pixels'))),
+    width: layoutLength('Width in pixels', 1),
+    height: layoutLength('Height in pixels', 1),
     name: v.optional(v.pipe(v.string(), v.description('Node name shown in layers panel'))),
     parent_id: v.optional(v.pipe(v.string(), v.description('Parent node ID to nest inside')))
   }),
   execute: (figma, args) => {
     const parentId = args.parent_id
     const parent = parentId ? figma.getNodeById(parentId) : null
+    // Refuse before creating, so a refused parent leaves no layer behind on the page.
+    if (parent) prepareSlotInsertion(graphOf(figma), parent.id, 'create_shape')
     const createMap: Record<string, () => FigmaNodeProxy> = {
       FRAME: () => figma.createFrame(),
       RECTANGLE: () => figma.createRectangle(),
@@ -65,22 +69,21 @@ export const createSlice = defineTool({
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     ...positionInputs,
-    width: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Width'))),
-    height: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Height'))),
+    width: layoutLength('Width', 1),
+    height: layoutLength('Height', 1),
     name: v.optional(v.pipe(v.string(), v.description('Slice name'))),
     parent_id: v.optional(v.pipe(v.string(), v.description('Parent node ID')))
   }),
   execute: (figma, args) => {
+    const parent = args.parent_id ? figma.getNodeById(args.parent_id) : null
+    if (parent) prepareSlotInsertion(graphOf(figma), parent.id, 'create_slice')
     const node = figma.createFrame()
     node.x = args.x
     node.y = args.y
     node.resize(args.width, args.height)
     node.name = args.name ?? 'Slice'
     node.fills = []
-    if (args.parent_id) {
-      const parent = figma.getNodeById(args.parent_id)
-      if (parent) parent.appendChild(node)
-    }
+    if (parent) parent.appendChild(node)
     return nodeSummary(node)
   }
 })

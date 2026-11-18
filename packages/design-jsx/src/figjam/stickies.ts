@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import {
   createSticky,
@@ -67,7 +68,7 @@ export function stickyProps(graph: SceneGraph, node: SceneNode): Array<[string, 
   if (layers?.author.text) props.push(['author', layers.author.text])
   if (layers?.author.text && !layers.author.visible) props.push(['authorVisible', false])
   if (isWideSticky(graph, node)) props.push(['wide', true])
-  if (layers) props.push(...figJamTextProps(layers.body))
+  if (layers) appendAll(props, figJamTextProps(layers.body))
   const scale = layers ? stickyScale(layers.author) : 1
   if (scale !== 1) props.push(['scale', scale])
   return props

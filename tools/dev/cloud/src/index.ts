@@ -112,7 +112,9 @@ async function start(project: string): Promise<void> {
       editorURL,
       // Browsers upload straight to object storage, and Safari blocks plain HTTP from HTTPS pages.
       objectStorageURL,
-      smtpPort
+      smtpPort,
+      // A workspace of this local server to show as its community gallery.
+      communityWorkspace: process.env.OPENPENCIL_CLOUD_DEV_COMMUNITY_WORKSPACE || undefined
     }),
     { mode: 0o600 }
   )
@@ -139,6 +141,8 @@ async function start(project: string): Promise<void> {
   console.warn('Stop the services with `bun run cloud:dev:down`; their data is kept.')
 
   try {
+    // The Cloud package's own `dev` script, which loads its Vue email templates; plain `bun` reads
+    // a `.vue` import as its file path, and every email went out empty.
     process.exitCode = await execute(
       [
         'bunx',
@@ -147,8 +151,10 @@ async function start(project: string): Promise<void> {
         '--name',
         'cloud.open-pencil',
         'bun',
-        '--watch',
-        'packages/cloud/src/runtime/node/main.ts'
+        'run',
+        '--cwd',
+        'packages/cloud',
+        'dev'
       ],
       {
         allowFailure: true,

@@ -1,15 +1,19 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppInput from '@/components/ui/input/AppInput.vue'
 
 import PortalPublicLayout from '../layout/PortalPublicLayout.vue'
 
 /**
- * Approving a sign-in started in the desktop app: the person checks that the code matches the
- * one the app shows, then lets the app use their account.
+ * Approving a sign-in started in the desktop app: the person types the code the app shows, and
+ * only a match lets them approve. The page never shows the code it was opened with, so a link
+ * someone else sent cannot be approved with one click.
  */
 const {
   host,
@@ -29,6 +33,9 @@ const {
 const emit = defineEmits<{ approve: []; deny: [] }>()
 const messages = useCloudPortalMessages()
 const ui = portalForm({ size: 'lg' })
+const entered = ref('')
+const normalized = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, '')
+const matches = computed(() => normalized(entered.value) === normalized(code))
 </script>
 
 <template>
@@ -37,10 +44,16 @@ const ui = portalForm({ size: 'lg' })
     :heading="messages.deviceTitle"
     :description="messages.deviceDescription({ email })"
   >
-    <div class="flex flex-col items-center gap-2 rounded-lg border border-border px-4 py-4">
-      <span class="text-xs text-muted">{{ messages.deviceCheckCode }}</span>
-      <span class="font-mono text-xl tracking-[0.3em] text-surface">{{ code }}</span>
-    </div>
+    <AppInput
+      v-model="entered"
+      size="lg"
+      autocomplete="off"
+      autocapitalize="characters"
+      spellcheck="false"
+      :aria-label="messages.deviceEnterCode"
+      :placeholder="messages.deviceEnterCode"
+      :ui="{ input: ui.code() }"
+    />
     <AppAlert v-if="error" tone="error" :heading="messages.errorTitle" :description="error" />
     <AppAlert
       tone="warning"
@@ -54,6 +67,7 @@ const ui = portalForm({ size: 'lg' })
         variant="solid"
         :class="ui.submit()"
         :loading="deciding"
+        :disabled="!matches"
         @click="emit('approve')"
       >
         {{ messages.approve }}

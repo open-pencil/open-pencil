@@ -129,6 +129,37 @@ describe('library update preview', () => {
     expect([...consumer.enabledLibraries]).toEqual(beforeBindings)
   })
 
+  test('compares a component of a library that publishes variables too', async () => {
+    const withTokens = (label: string) => {
+      const graph = source(label)
+      graph.createVariable('accent', 'COLOR', graph.createCollection('Brand').id, {
+        r: 0,
+        g: 0,
+        b: 1,
+        a: 1
+      })
+      return graph
+    }
+    const first = await createLibraryRevision({
+      libraryId: 'library',
+      name: 'Library',
+      graph: withTokens('Old')
+    })
+    const latest = await createLibraryRevision({
+      libraryId: 'library',
+      name: 'Library',
+      graph: withTokens('New'),
+      previousRevisionId: first.manifest.revisionId
+    })
+    const consumer = new SceneGraph()
+    const definition = materializeLibraryAsset(consumer, first, 'button')
+    const instance = consumer.createInstance(definition.componentId, consumer.getPages()[0].id)
+
+    const preview = createLibraryUpdatePreview(consumer, instance?.id ?? '', latest)
+
+    expect(preview.graph.getNode(preview.updatedNodeId)?.type).toBe('INSTANCE')
+  })
+
   test('reapplies boolean visibility properties to both previews', async () => {
     const { latest, consumer, definition } = await revisions(
       propertySource('VISIBLE', 'true'),

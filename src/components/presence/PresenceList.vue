@@ -10,6 +10,7 @@ import type { FollowTarget } from '@/app/presence/types'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import presenceListTheme from '@/theme/collaboration/presence-list'
 
+import { personFill } from './color'
 import { isFollowing, type PresenceAgentRow, type PresencePersonRow } from './rows'
 import { avatar } from './ui'
 
@@ -60,7 +61,7 @@ function followLabel(name: string, target: FollowTarget): string {
   <ul data-test-id="collab-presence-list" :class="ui.root()">
     <li v-for="person in rows" :key="person.clientId ?? 'self'">
       <div data-slot="person" :class="ui.person()">
-        <div :class="avatar()" :style="{ background: colorToCSS(person.color) }">
+        <div :class="avatar()" :style="{ background: personFill(person.color) }">
           {{ initials(person.name || common.you) }}
         </div>
         <span :class="ui.name()">

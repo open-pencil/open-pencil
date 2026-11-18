@@ -40,11 +40,13 @@ export function redirectToCloudSignIn(
     method?: CloudSignInMethod
     /** Leaves this page out of history, as one that showed nothing yet. */
     replace?: boolean
+    /** Opens the sign-up page instead, for someone without an account yet. */
+    page?: 'sign-in' | 'sign-up'
   } = {}
 ): void {
   pendingSignIn.value = serverId
   const provider = options.method === 'email' ? undefined : options.method
-  const url = cloudSignInURL(discovery, returnURL(), provider)
+  const url = cloudSignInURL(discovery, returnURL(), provider, options.page)
   if (options.replace) globalThis.location.replace(url)
   else globalThis.location.assign(url)
 }

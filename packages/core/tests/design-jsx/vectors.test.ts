@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
 import { pick } from 'es-toolkit'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { vectorNetworkPaths } from '@open-pencil/scene-graph/vector-network'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 async function render(jsx: string) {
   const graph = new SceneGraph()
@@ -70,6 +70,20 @@ describe('<Vector> paths', () => {
     expect(node.vectorNetwork?.vertices[0]).toEqual({ x: 4, y: 4 })
   })
 
+  test('bind only the paths that take an artwork’s variable color, keeping their own colors', async () => {
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Colors')
+    const brand = graph.createVariable('Brand', 'COLOR', collection.id, { r: 0, g: 0, b: 1, a: 1 })
+    const [created] = await renderJSX(
+      graph,
+      '<svg viewBox="0 0 24 24" w={24} h={24} color={designVar("Brand")}><path d="M2 2h10v10H2z" fill="currentColor" /><path d="M12 12h10v10H12z" fill="#ff0000" /></svg>'
+    )
+    const [tinted, own] = graph.getChildren(created.id)
+    expect(tinted?.boundVariables['fills/0/color']).toBe(brand.id)
+    expect(own?.boundVariables['fills/0/color']).toBeUndefined()
+    expect(own?.fills[0]?.color).toMatchObject({ r: 1, g: 0, b: 0 })
+  })
+
   test('take their size from style as from w and h', async () => {
     const node = await render(
       '<Vector style={{ width: 24, height: 24 }} d="M4 4 L20 4 L20 20 Z" />'
@@ -130,8 +144,10 @@ describe('<Vector> export', () => {
     const vectors = (id: string) => graph.getChildren(id).filter((child) => child.type === 'VECTOR')
     expect(vectors(result.id).map(pathsOf)).toEqual(vectors(source.id).map(pathsOf))
     expect(vectors(result.id)).toHaveLength(1)
+    // The vector sits at the triangle's bounds, as pasted SVG places it.
+    expect(vectors(result.id)[0]).toMatchObject({ x: 2, y: 2, width: 20, height: 20 })
     expect(pathsOf(vectors(result.id)[0])).toEqual([
-      { windingRule: 'NONZERO', data: 'M12 2L22 22L2 22L12 2Z' }
+      { windingRule: 'NONZERO', data: 'M10 0L20 20L0 20L10 0Z' }
     ])
   })
 })

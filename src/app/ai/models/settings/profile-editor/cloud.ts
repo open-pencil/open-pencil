@@ -1,6 +1,6 @@
 import { computed, ref, watch, type Ref } from 'vue'
 
-import type { CloudAIClient } from '@open-pencil/cloud/client'
+import type { CloudServicesClient } from '@open-pencil/cloud/client'
 import type { ModelOption } from '@open-pencil/core/constants'
 
 import type { AIModelProfileDraft } from '@/app/ai/models'
@@ -32,7 +32,7 @@ type WorkspaceListState = Exclude<CloudModelSelectionState, 'ready' | 'catalog-f
 export interface CloudModelSource {
   identity: Readonly<Ref<string | null>>
   workspaces: () => Promise<CloudAIWorkspace[]>
-  client: (workspaceId: string) => Pick<CloudAIClient, 'catalog'> | null
+  client: (workspaceId: string) => Pick<CloudServicesClient, 'catalog'> | null
 }
 
 const HOME_CLOUD: CloudModelSource = {

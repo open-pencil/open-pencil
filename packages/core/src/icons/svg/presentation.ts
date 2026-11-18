@@ -2,6 +2,8 @@ import type { Element, Node } from '@xmldom/xmldom'
 
 /** SVG presentation attributes as an element inherits them, still as source strings. */
 export interface PresentationAttributes {
+  /** The CSS `color` that `currentColor` paints take; empty when no element sets one. */
+  color: string
   fill: string
   stroke: string
   strokeWidth: string
@@ -22,7 +24,9 @@ export interface PresentationAttributes {
 }
 
 export const DEFAULT_PRESENTATION: PresentationAttributes = {
-  fill: 'currentColor',
+  color: '',
+  // No fill set: the host's color, as an icon's, never the `color` an ancestor sets.
+  fill: '',
   stroke: 'none',
   strokeWidth: '1',
   strokeCap: 'butt',
@@ -76,7 +80,10 @@ export function presentationFor(
   const styles = inlineStyles(element)
   const attribute = (name: string, value: string) =>
     inheritedAttribute(element, styles, name, value)
+  const color = attribute('color', inherited.color).trim()
   return {
+    // `inherit` and `currentColor` as a color both mean the parent's.
+    color: isCurrentColor(color) || color.toLowerCase() === 'inherit' ? inherited.color : color,
     fill: attribute('fill', inherited.fill),
     stroke: attribute('stroke', inherited.stroke),
     strokeWidth: attribute('stroke-width', inherited.strokeWidth),
@@ -121,8 +128,25 @@ export function num(element: Element, attr: string, fallback = 0): number {
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
-export function normalizeSVGPaint(value: string | null): string | null {
-  return value?.trim().toLowerCase() === 'none' ? null : value
+const CURRENT_COLOR = 'currentColor'
+
+/** CSS keywords match in any case, so `currentcolor` is `currentColor`. */
+function isCurrentColor(value: string): boolean {
+  return value.trim().toLowerCase() === CURRENT_COLOR.toLowerCase()
+}
+
+/**
+ * A paint as drawn: null for `none`, and `currentColor`, in any case, as the element's `color`
+ * when one is set. Without one, and for a fill no element sets, it is `currentColor`, which the
+ * host's color fills, as an icon's color does.
+ */
+export function normalizeSVGPaint(value: string | null, color = ''): string | null {
+  if (value === null) return null
+  const paint = value.trim()
+  if (paint === '') return CURRENT_COLOR
+  if (paint.toLowerCase() === 'none') return null
+  if (!isCurrentColor(paint)) return value
+  return color || CURRENT_COLOR
 }
 
 export function combinedTransform(parent: string | null, element: Element): string | null {

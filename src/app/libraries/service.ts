@@ -1,11 +1,14 @@
 import { markRaw, shallowRef } from 'vue'
 
-import { reapplyInstanceComponentProperties } from '@open-pencil/core'
+import { fittedLayerRenderer, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import {
   materializeLibraryAsset,
   ensureLibraryAssetKeys,
+  isLibraryComponentAsset,
+  LIBRARY_THUMBNAIL_SIZE,
   libraryUpdateImpact,
-  libraryAssetKeyForComponent,
+  publishableLibraryAssets,
+  libraryIdentityForComponent,
   planOutdatedLibraryInstances,
   planLibraryInstanceUpdates,
   summarizeLibraryUpdate,
@@ -19,14 +22,17 @@ import {
   type LibraryUpdateImpact,
   type LibraryUpdateSummary,
   type PublishLibraryInput,
-  type LibraryAssetChange
+  type LibraryAssetChange,
+  type LibraryThumbnailRenderer
 } from '@open-pencil/core/library'
 import type {
   ComponentCatalog,
   ComponentCatalogInsertInput,
   ComponentCatalogLibraryAsset
 } from '@open-pencil/core/tools'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
+import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/session'
 import { LocalLibraryCatalog } from '@/app/libraries/catalog/local'
 import { RoutedLibraryCatalog, type LibraryCatalogSource } from '@/app/libraries/catalog/routed'
@@ -35,9 +41,28 @@ import {
   writeLibraryCatalogSource,
   writeLibraryPriority
 } from '@/app/libraries/preferences'
-import type { LibraryAssetUpdateGroup } from '@/app/libraries/update-groups'
+import {
+  applyLibraryInstancePlans,
+  updateLibraryDefinitionsInPlace
+} from '@/app/libraries/updates/apply'
+import {
+  collectLibraryUpdateGroups,
+  type LibraryAssetUpdateGroup,
+  type LibraryRevisionReader
+} from '@/app/libraries/updates/groups'
 
 export type EnabledLibraryAsset = ComponentCatalogLibraryAsset
+
+/** Draws published components with the editor's canvas renderer, once it has one. */
+function libraryThumbnailRenderer(editor: EditorStore): LibraryThumbnailRenderer | undefined {
+  const { renderer } = editor
+  if (!renderer) return undefined
+  return fittedLayerRenderer(
+    (graph, pageId, nodeIds, { scale }) =>
+      renderNodesToImage(renderer.ck, renderer, graph, pageId, nodeIds, { scale, format: 'PNG' }),
+    LIBRARY_THUMBNAIL_SIZE
+  )
+}
 
 export class LibraryService implements ComponentCatalog {
   readonly #catalog: LibraryCatalog
@@ -45,6 +70,9 @@ export class LibraryService implements ComponentCatalog {
   readonly #summaries = shallowRef<LibrarySummary[]>([])
   readonly #enabledAssets = shallowRef<EnabledLibraryAsset[]>([])
   readonly #updates = shallowRef<LibraryUpdateSummary[]>([])
+  readonly #watched = new WeakSet<EditorStore>()
+  /** Counts reads of a document's libraries, so one finishing after a newer one is dropped. */
+  #reads = 0
   readonly #updateImpacts = shallowRef(new Map<string, LibraryUpdateImpact>())
   readonly #revisionCache = new Map<string, ComponentLibraryRevision>()
   #activeEditor: EditorStore | null = null
@@ -108,8 +136,10 @@ export class LibraryService implements ComponentCatalog {
       const revision = await this.#getRevision(summary.libraryId, summary.latestRevisionId)
       const binding = this.#activeEditor?.graph.enabledLibraries.get(summary.libraryId)
       if (input.enabledOnly && !binding?.enabled) continue
-      assets.push(
-        ...revision.manifest.assets
+      appendAll(
+        assets,
+        revision.manifest.assets
+          .filter(isLibraryComponentAsset)
           .filter((asset) => !normalizedName || asset.name.toLowerCase().includes(normalizedName))
           .map((asset) => ({
             libraryId: summary.libraryId,
@@ -155,13 +185,18 @@ export class LibraryService implements ComponentCatalog {
 
   async refresh(editor: EditorStore): Promise<void> {
     this.#activeEditor = editor
-    this.#summaries.value = await this.#catalog.listLibraries()
+    this.#watch(editor)
+    const read = ++this.#reads
+    const summaries = await this.#catalog.listLibraries()
+    if (read !== this.#reads) return
+    this.#summaries.value = summaries
     const assets: EnabledLibraryAsset[] = []
     for (const binding of editor.graph.enabledLibraries.values()) {
       if (!binding.enabled) continue
       const revision = await this.#getRevision(binding.libraryId, binding.revisionId)
-      assets.push(
-        ...revision.manifest.assets.map((asset) => ({
+      appendAll(
+        assets,
+        revision.manifest.assets.filter(isLibraryComponentAsset).map((asset) => ({
           libraryId: binding.libraryId,
           libraryName: revision.manifest.name,
           revisionId: binding.revisionId,
@@ -171,11 +206,28 @@ export class LibraryService implements ComponentCatalog {
         }))
       )
     }
+    if (read !== this.#reads) return
     this.#enabledAssets.value = assets
     await this.refreshUpdates(editor)
   }
 
+  /**
+   * Keeps what the service holds of `editor`'s libraries current when they change outside it, as
+   * undo and redo of an update change them; an insert would otherwise take the revision undone.
+   * The service shows one document, so a tab in the background does not replace it.
+   */
+  #watch(editor: EditorStore): void {
+    if (this.#watched.has(editor)) return
+    this.#watched.add(editor)
+    editor.onEditorEvent('document:libraries-changed', () => {
+      if (editor !== getActiveEditorStoreOrNull()) return
+      // A read that fails here is reported by the next one the manager makes.
+      this.refresh(editor).catch(() => undefined)
+    })
+  }
+
   async refreshUpdates(editor: EditorStore): Promise<void> {
+    const read = ++this.#reads
     const summariesById = new Map(
       this.#summaries.value.map((summary) => [summary.libraryId, summary])
     )
@@ -203,69 +255,14 @@ export class LibraryService implements ComponentCatalog {
         impacts.set(binding.libraryId, libraryUpdateImpact(plans))
       }
     }
+    if (read !== this.#reads) return
     this.#updates.value = updates
     this.#updateImpacts.value = impacts
   }
 
   async applyUpdate(editor: EditorStore, libraryId: string): Promise<void> {
-    const update = this.#updates.value.find((item) => item.libraryId === libraryId)
-    if (!update) return
-    const current = await this.#getRevision(libraryId, update.currentRevisionId)
-    const latest = await this.#getRevision(libraryId, update.latestRevisionId)
-    const previousAssetKeys = new Set(current.manifest.assets.map((asset) => asset.key))
-    const updatable = latest.manifest.assets.filter((asset) => previousAssetKeys.has(asset.key))
-    const previousBinding = editor.graph.enabledLibraries.get(libraryId)
-
-    let appliedPlans: ReturnType<typeof planLibraryInstanceUpdates> = []
-    let createdRootIds: string[] = []
-    const applyRevision = () => {
-      const existingNodeIds = new Set(editor.graph.nodes.keys())
-      for (const asset of updatable) this.#materializeAsset(editor, latest, asset.key)
-      createdRootIds = [...editor.graph.getAllNodes()]
-        .filter((node) => {
-          if (existingNodeIds.has(node.id)) return false
-          const parent = node.parentId ? editor.graph.getNode(node.parentId) : undefined
-          return !parent || existingNodeIds.has(parent.id)
-        })
-        .map((node) => node.id)
-      appliedPlans = planLibraryInstanceUpdates(
-        editor.graph,
-        libraryId,
-        update.currentRevisionId,
-        update.latestRevisionId,
-        updatable
-      )
-      for (const plan of appliedPlans) {
-        editor.graph.swapInstanceComponent(plan.instanceId, plan.componentId)
-        reapplyInstanceComponentProperties(editor, plan.instanceId)
-      }
-      editor.updateEnabledLibraries((bindings) =>
-        bindings.set(libraryId, { libraryId, revisionId: update.latestRevisionId, enabled: true })
-      )
-      editor.requestRender()
-    }
-    const restorePrevious = () => {
-      for (const plan of appliedPlans) {
-        editor.graph.swapInstanceComponent(plan.instanceId, plan.previousComponentId)
-        reapplyInstanceComponentProperties(editor, plan.instanceId)
-      }
-      for (const rootId of createdRootIds) {
-        if (editor.graph.getNode(rootId)) editor.graph.deleteNode(rootId)
-      }
-      editor.updateEnabledLibraries((bindings) => {
-        if (previousBinding) bindings.set(libraryId, previousBinding)
-        else bindings.delete(libraryId)
-      })
-      editor.requestRender()
-    }
-
-    applyRevision()
-    editor.pushUndoEntry({
-      label: 'Update library',
-      forward: applyRevision,
-      inverse: restorePrevious
-    })
-    await this.refresh(editor)
+    if (!this.#updates.value.some((update) => update.libraryId === libraryId)) return
+    await this.#updateInPlace(editor, new Map([[libraryId, undefined]]), 'Update library')
   }
 
   async applyInstanceUpdate(editor: EditorStore, instanceId: string): Promise<void> {
@@ -274,21 +271,18 @@ export class LibraryService implements ComponentCatalog {
       instance?.type === 'INSTANCE' && instance.componentId
         ? editor.graph.getNode(instance.componentId)
         : null
-    const identity = component?.librarySource?.identity
-    if (!identity) return
+    const identity = component ? libraryIdentityForComponent(editor.graph, component.id) : null
+    if (!component || !identity) return
     const summary = this.#summaries.value.find((item) => item.libraryId === identity.libraryId)
     if (!summary || summary.latestRevisionId === identity.revisionId) return
     const latest = await this.#getRevision(identity.libraryId, summary.latestRevisionId)
-    this.#materializeAsset(editor, latest, identity.assetKey)
-    const plans = planOutdatedLibraryInstances(
-      editor.graph,
+    await this.#applyOutdated(
+      editor,
       latest,
-      new Set([identity.assetKey]),
-      new Set([instanceId])
+      identity.assetKey,
+      new Set([instanceId]),
+      `Update ${component.name}`
     )
-    if (plans.length === 0) return
-    this.#applyPlans(editor, plans, `Update ${component.name}`)
-    await this.refresh(editor)
   }
 
   async getRevision(libraryId: string, revisionId?: string): Promise<ComponentLibraryRevision> {
@@ -296,76 +290,12 @@ export class LibraryService implements ComponentCatalog {
   }
 
   async getUpdateGroups(editor: EditorStore): Promise<LibraryAssetUpdateGroup[]> {
-    const groups: LibraryAssetUpdateGroup[] = []
-    for (const summary of this.#summaries.value) {
-      const latest = await this.#getRevision(summary.libraryId, summary.latestRevisionId)
-      const assets = new Map(latest.manifest.assets.map((asset) => [asset.key, asset]))
-      const previousAssetsByRevision = new Map<string, Map<string, string>>()
-      const instancesByAsset = new Map<string, string[]>()
-      for (const node of editor.graph.getAllNodes()) {
-        if (node.type !== 'INSTANCE' || !node.componentId) continue
-        const component = editor.graph.getNode(node.componentId)
-        const identity = component?.librarySource?.identity
-        if (!component || identity?.libraryId !== summary.libraryId) continue
-        if (identity.revisionId === summary.latestRevisionId) continue
-        const assetKey = libraryAssetKeyForComponent(editor.graph, component.id)
-        const latestAsset = assetKey ? assets.get(assetKey) : undefined
-        if (!assetKey || !latestAsset) continue
-        let previousAssets = previousAssetsByRevision.get(identity.revisionId)
-        if (!previousAssets) {
-          const previous = await this.#getRevision(summary.libraryId, identity.revisionId)
-          previousAssets = new Map(
-            previous.manifest.assets.map((asset) => [asset.key, asset.contentHash])
-          )
-          previousAssetsByRevision.set(identity.revisionId, previousAssets)
-        }
-        if (previousAssets.get(assetKey) === latestAsset.contentHash) continue
-        const ids = instancesByAsset.get(assetKey) ?? []
-        ids.push(node.id)
-        instancesByAsset.set(assetKey, ids)
-      }
-      for (const [assetKey, instanceIds] of instancesByAsset) {
-        const asset = assets.get(assetKey)
-        if (!asset) continue
-        groups.push({
-          libraryId: summary.libraryId,
-          assetKey,
-          name: asset.name,
-          instanceIds,
-          currentPageCount: instanceIds.length,
-          allPagesCount: instanceIds.length
-        })
-      }
-    }
-    return groups
-  }
-
-  async #plansForGroups(
-    editor: EditorStore,
-    groups: LibraryAssetUpdateGroup[]
-  ): Promise<ReturnType<typeof planOutdatedLibraryInstances>> {
-    const plans: ReturnType<typeof planOutdatedLibraryInstances> = []
-    for (const group of groups) {
-      const latest = await this.#getRevision(group.libraryId)
-      this.#materializeAsset(editor, latest, group.assetKey)
-      plans.push(
-        ...planOutdatedLibraryInstances(
-          editor.graph,
-          latest,
-          new Set([group.assetKey]),
-          new Set(group.instanceIds)
-        )
-      )
-    }
-    return plans
+    return collectLibraryUpdateGroups(editor, this.#summaries.value, this.#readRevision)
   }
 
   async applyAllUpdates(editor: EditorStore): Promise<void> {
-    const groups = await this.getUpdateGroups(editor)
-    const plans = await this.#plansForGroups(editor, groups)
-    if (plans.length === 0) return
-    this.#applyPlans(editor, plans, 'Update all library assets')
-    await this.refresh(editor)
+    const libraries = this.#updates.value.map((update) => [update.libraryId, undefined] as const)
+    await this.#updateInPlace(editor, new Map(libraries), 'Update all library assets')
   }
 
   async applyUpdateGroups(
@@ -373,10 +303,13 @@ export class LibraryService implements ComponentCatalog {
     groups: LibraryAssetUpdateGroup[],
     label = 'Update library assets'
   ): Promise<void> {
-    const plans = await this.#plansForGroups(editor, groups)
-    if (plans.length === 0) return
-    this.#applyPlans(editor, plans, label)
-    await this.refresh(editor)
+    // A group holds every instance of its asset, so its definitions are redrawn in place.
+    const assetKeys = new Map<string, Set<string>>()
+    for (const group of groups) {
+      const keys = assetKeys.get(group.libraryId) ?? new Set<string>()
+      assetKeys.set(group.libraryId, keys.add(group.assetKey))
+    }
+    await this.#updateInPlace(editor, assetKeys, label)
   }
 
   async applyInstanceIdsUpdate(
@@ -387,50 +320,48 @@ export class LibraryService implements ComponentCatalog {
     label = 'Update library instances'
   ): Promise<void> {
     const latest = await this.#getRevision(libraryId)
-    this.#materializeAsset(editor, latest, assetKey)
-    const plans = planOutdatedLibraryInstances(
-      editor.graph,
-      latest,
-      new Set([assetKey]),
-      new Set(instanceIds)
-    )
-    if (plans.length === 0) return
-    this.#applyPlans(editor, plans, label)
-    await this.refresh(editor)
+    await this.#applyOutdated(editor, latest, assetKey, new Set(instanceIds), label)
   }
 
   async applyAssetUpdate(editor: EditorStore, libraryId: string, assetKey: string): Promise<void> {
     const summary = this.#summaries.value.find((item) => item.libraryId === libraryId)
     if (!summary) return
     const latest = await this.#getRevision(libraryId, summary.latestRevisionId)
-    this.#materializeAsset(editor, latest, assetKey)
-    const plans = planOutdatedLibraryInstances(editor.graph, latest, new Set([assetKey]))
-    if (plans.length === 0) return
-    this.#applyPlans(editor, plans, 'Update library asset')
-    await this.refresh(editor)
+    await this.#applyOutdated(editor, latest, assetKey, undefined, 'Update library asset')
   }
 
-  #applyPlans(
+  /** Redraws library definitions in place (see `updateLibraryDefinitionsInPlace`). */
+  async #updateInPlace(
     editor: EditorStore,
-    plans: ReturnType<typeof planOutdatedLibraryInstances>,
+    libraries: ReadonlyMap<string, ReadonlySet<string> | undefined>,
     label: string
-  ): void {
-    const apply = () => {
-      for (const plan of plans) {
-        editor.graph.swapInstanceComponent(plan.instanceId, plan.componentId)
-        reapplyInstanceComponentProperties(editor, plan.instanceId)
-      }
-      editor.requestRender()
+  ): Promise<void> {
+    if (await updateLibraryDefinitionsInPlace(editor, libraries, label, this.#readRevision)) {
+      await this.refresh(editor)
     }
-    const restore = () => {
-      for (const plan of plans) {
-        editor.graph.swapInstanceComponent(plan.instanceId, plan.previousComponentId)
-        reapplyInstanceComponentProperties(editor, plan.instanceId)
-      }
-      editor.requestRender()
-    }
-    apply()
-    editor.pushUndoEntry({ label, forward: apply, inverse: restore })
+  }
+
+  /**
+   * Copies `assetKey` from `latest` into the document and swaps its outdated instances, or only
+   * `instanceIds` among them, to it as one undoable step.
+   */
+  async #applyOutdated(
+    editor: EditorStore,
+    latest: ComponentLibraryRevision,
+    assetKey: string,
+    instanceIds: ReadonlySet<string> | undefined,
+    label: string
+  ): Promise<void> {
+    this.#materializeAsset(editor, latest, assetKey)
+    const plans = planOutdatedLibraryInstances(
+      editor.graph,
+      latest,
+      new Set([assetKey]),
+      instanceIds
+    )
+    if (plans.length === 0) return
+    applyLibraryInstancePlans(editor, plans, label)
+    await this.refresh(editor)
   }
 
   async discoverPublicationChanges(editor: EditorStore): Promise<{
@@ -468,10 +399,12 @@ export class LibraryService implements ComponentCatalog {
         libraryId: revision.manifest.libraryId,
         name: revision.manifest.name,
         graph: revision.graph,
-        assetNodeIds: revision.manifest.assets.map((asset) => asset.sourceNodeId),
+        assetIds: revision.manifest.assets.map((asset) => asset.sourceId),
+        keepLayerIdentities: true,
         previousRevisionId: revision.manifest.previousRevisionId,
         description: revision.manifest.description,
-        publishedAt: revision.manifest.publishedAt
+        publishedAt: revision.manifest.publishedAt,
+        renderThumbnail: libraryThumbnailRenderer(editor)
       })
     } else {
       revision = await this.publish({
@@ -479,13 +412,10 @@ export class LibraryService implements ComponentCatalog {
         name: input.name,
         graph: editor.graph,
         description: input.description,
-        assetNodeIds: [...editor.graph.getAllNodes()]
-          .filter(
-            (node) =>
-              input.selectedAssetKeys.has(node.id) ||
-              input.selectedAssetKeys.has(node.componentKey ?? '')
-          )
-          .map((node) => node.id)
+        assetIds: publishableLibraryAssets(editor.graph)
+          .filter((asset) => input.selectedAssetKeys.has(asset.key))
+          .map((asset) => asset.sourceId),
+        renderThumbnail: libraryThumbnailRenderer(editor)
       })
     }
     writeSourceLibraryPublication(editor.graph, {
@@ -494,21 +424,15 @@ export class LibraryService implements ComponentCatalog {
       name: revision.manifest.name,
       catalogSource: this.catalogSource
     })
-    this.#revisionCache.set(
-      this.#revisionCacheKey(revision.manifest.libraryId, revision.manifest.revisionId),
-      revision
-    )
+    this.#cacheRevision(revision)
     this.#summaries.value = await this.#catalog.listLibraries()
     return revision
   }
 
   async publish(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
-    ensureLibraryAssetKeys(input.graph, input.assetNodeIds)
+    ensureLibraryAssetKeys(input.graph, input.assetIds)
     const revision = await this.#catalog.publishRevision(input)
-    this.#revisionCache.set(
-      this.#revisionCacheKey(input.libraryId, revision.manifest.revisionId),
-      revision
-    )
+    this.#cacheRevision(revision)
     this.#summaries.value = await this.#catalog.listLibraries()
     return revision
   }
@@ -561,12 +485,20 @@ export class LibraryService implements ComponentCatalog {
       if (cached) return cached
     }
     const revision = await this.#catalog.getRevision(libraryId, revisionId)
-    this.#revisionCache.set(
-      this.#revisionCacheKey(libraryId, revision.manifest.revisionId),
-      revision
-    )
+    this.#cacheRevision(revision)
     return revision
   }
+
+  #cacheRevision(revision: ComponentLibraryRevision): void {
+    this.#revisionCache.set(
+      this.#revisionCacheKey(revision.manifest.libraryId, revision.manifest.revisionId),
+      revision
+    )
+  }
+
+  /** `#getRevision` bound to this service, for the update modules that read revisions. */
+  readonly #readRevision: LibraryRevisionReader = (libraryId, revisionId) =>
+    this.#getRevision(libraryId, revisionId)
 }
 
 let service: LibraryService | undefined

@@ -1,3 +1,5 @@
+import { insertAll } from '@open-pencil/scene-graph/arrays'
+
 import { rendererNow } from '#core/canvas/renderer/clock'
 
 import type { TileKey } from './geometry'
@@ -184,7 +186,7 @@ export class TileScheduler {
       jobsExecuted++
     }
     if (deferred.length > 0) {
-      this.jobs.unshift(...deferred)
+      insertAll(this.jobs, 0, deferred)
       this.jobs.sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
     }
     metrics.remaining = this.jobs.length

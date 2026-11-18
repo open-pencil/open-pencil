@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectFills } from '#core-tests/helpers/assert'
 import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
 
+import { expectFills } from '@open-pencil/test-support/assert'
 describe('clone', () => {
   test('clone creates a deep copy', () => {
     const api = createAPI()

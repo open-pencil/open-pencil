@@ -1,15 +1,14 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
+import { parseFigBuffer } from '@open-pencil/fig'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { createEditor } from '#core/editor/create'
 import { FigmaAPI } from '#core/figma-api'
 import { exportFigFile, parseFigFile } from '#core/io/formats/fig'
 import { populateFigPage, readerDiagnostics } from '#core/kiwi/fig/session/document-state'
 import { getComponents } from '#core/tools/read/components'
-
-import { parseFigBuffer } from '@open-pencil/fig'
-import { SceneGraph } from '@open-pencil/scene-graph'
 
 /**
  * A component whose icon shows by a boolean variable and whose badge shows by a text variable,
@@ -67,7 +66,10 @@ test('visibility bound to a boolean or text variable is written as IS_TRUTHY, as
   expect(
     visibility.map(({ data }) => {
       const expression = data?.value?.expressionValue
-      return [expression?.expressionFunction, expression?.expressionArguments?.[0]?.resolvedDataType]
+      return [
+        expression?.expressionFunction,
+        expression?.expressionArguments?.[0]?.resolvedDataType
+      ]
     })
   ).toEqual([
     ['IS_TRUTHY', 'BOOLEAN'],
@@ -89,9 +91,9 @@ test('an IS_TRUTHY binding survives lazy page loading and repeated component dis
   expect(readerDiagnostics(graph)).toEqual([])
   const shown = variable(graph, 'visible_1').variable
   const state = variable(graph, 'state').variable
-  expect(layers(graph, 'Icon_2').map((node) => [node.boundVariables.visible, node.visible])).toEqual(
-    Array.from({ length: 3 }, () => [shown.id, false])
-  )
+  expect(
+    layers(graph, 'Icon_2').map((node) => [node.boundVariables.visible, node.visible])
+  ).toEqual(Array.from({ length: 3 }, () => [shown.id, false]))
   expect(layers(graph, 'Badge').map((node) => [node.boundVariables.visible, node.visible])).toEqual(
     Array.from({ length: 3 }, () => [state.id, false])
   )
@@ -154,7 +156,9 @@ test('an instance-specific mode survives save/reopen independently of its defini
     const { variable: shown, collection } = variable(graph, 'visible_1')
     graph.addMode(collection.id, 'shown', 'Shown')
     editor.updateVariableValue(shown.id, 'shown', true)
-    const instance = expectDefined([...graph.getAllNodes()].find((node) => node.type === 'INSTANCE'))
+    const instance = expectDefined(
+      [...graph.getAllNodes()].find((node) => node.type === 'INSTANCE')
+    )
     editor.updateNodeWithUndo(instance.id, { variableModes: { [collection.id]: 'shown' } })
     const visibility = (target: SceneGraph) =>
       layers(target, 'Icon_2')

@@ -137,16 +137,12 @@ defineExpose({ focusInvalid: () => focusInvalidField(formElement.value) })
         </fieldset>
         <SettingsSaveFeedback :error="error" :result="saveResult" />
       </div>
+      <template v-if="draft.id" #footer-start>
+        <AppButton color="error" variant="link" :disabled="busy" @click="$emit('remove')">{{
+          automation.deleteConnection
+        }}</AppButton>
+      </template>
       <template #footer>
-        <AppButton
-          v-if="draft.id"
-          class="mr-auto"
-          color="error"
-          variant="link"
-          :disabled="busy"
-          @click="$emit('remove')"
-          >{{ automation.deleteConnection }}</AppButton
-        >
         <AppButton :disabled="busy" @click="$emit('cancel')">{{ common.cancel }}</AppButton>
         <AppButton type="submit" color="primary" variant="solid" :loading="busy">{{
           common.save

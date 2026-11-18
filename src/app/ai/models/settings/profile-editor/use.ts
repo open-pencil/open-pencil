@@ -15,16 +15,16 @@ import {
   saveModelProfileDraft,
   setModelConnectionAPIKey
 } from '@/app/ai/models'
-import type { ModelPickerLabels } from '@/app/ai/models/picker/options'
+import { settingsErrorMessage } from '@/app/settings/credentials/errors'
 import type { SettingsSaveResult } from '@/app/settings/save-result'
 
 import { useProfileConnection } from './connection'
-import { useProfileModelSelection } from './selection'
+import { useProfileModelSelection, type ProfileSelectionLabels } from './selection'
 
 interface ProfileEditorOptions {
   profileId?: string
   keyInput: Ref<string>
-  labels: Readonly<Ref<ModelPickerLabels & { customModel: string }>>
+  labels: Readonly<Ref<ProfileSelectionLabels>>
 }
 
 export function useModelProfileEditor({ profileId, keyInput, labels: ai }: ProfileEditorOptions) {
@@ -120,7 +120,7 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
       saveResult.value = 'saved'
       return 'saved'
     } catch (reason) {
-      saveError.value = reason instanceof Error ? reason.message : String(reason)
+      saveError.value = settingsErrorMessage(reason)
       saveResult.value = persisted ? 'partial' : 'failed'
       return saveResult.value
     } finally {
@@ -141,7 +141,7 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
       await refreshAIProviderStatus()
       return modelProfile(profileId) === null
     } catch (reason) {
-      saveError.value = reason instanceof Error ? reason.message : String(reason)
+      saveError.value = settingsErrorMessage(reason)
       return false
     } finally {
       busy.value = false
@@ -172,11 +172,17 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
     cloudWorkspaces,
     cloudState,
     retryCloud,
+    agentModelState: selection.agentModelState,
+    retryAgentModels: selection.retryAgentModels,
     supportsThinking,
+    agentOptionControls: selection.agentOptionControls,
+    agentOptionValue: selection.agentOptionValue,
+    setAgentOption: selection.setAgentOption,
     providerDisplayName,
     modelOptions,
     selectedModelValue,
     customModelSelected: selection.customModelSelected,
+    supportsCustomModel: selection.supportsCustomModel,
     knownModel,
     knownCapabilities,
     outputTokenRecommendation,

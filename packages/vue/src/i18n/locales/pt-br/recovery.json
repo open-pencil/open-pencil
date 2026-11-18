@@ -1,0 +1,12 @@
+{
+  "sectionTitle": "Trabalho não salvo",
+  "sectionDescription": "Alterações não salvas mantidas de documentos fechados sem salvar ou abertos quando o OpenPencil foi encerrado. Abra um deles para continuar trabalhando.",
+  "crashNote": "Mantido após uma falha",
+  "restoreFailed": "Não foi possível restaurar este documento.",
+  "discardFailed": "Não foi possível descartar esta cópia.",
+  "settingsTitle": "Recuperação",
+  "settingsDescription": "Controle as cópias locais de recuperação após falhas para documentos não salvos.",
+  "preserveUnsavedWork": "Preservar automaticamente o trabalho não salvo",
+  "preserveUnsavedWorkDescription": "Armazene cópias locais de recuperação para que os documentos possam ser restaurados após um encerramento inesperado.",
+  "discard": "Descartar"
+}

@@ -5,11 +5,11 @@ import type { ToolAccessEntry } from '@/app/automation/tool-access/types'
 /** Preserve the compact shipped tool set as defaults, not as an availability restriction. */
 const defaultNames = new Set([
   ...CORE_TOOLS.map((tool) => tool.name),
-  'get_components',
+  'list_components',
   'list_libraries',
   'insert_library_component',
   // Scripts cannot discover comments, so without these the model fakes them with layers.
-  'get_comments',
+  'list_comments',
   'add_comment',
   'reply_to_comment',
   'resolve_comment',
@@ -19,6 +19,9 @@ const defaultNames = new Set([
   'create_variable',
   'set_variable',
   'bind_variable',
+  // Switches a layer that already exists to a theme; design JSX sets one only on new layers.
+  'set_variable_mode',
+  'get_variable_modes',
   'lint',
   'lint_fix',
   // Lets the model look at what it built.

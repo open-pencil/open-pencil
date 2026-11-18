@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { captureDocumentChange } from '#core/editor/history/document-change'
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { createEditor, graphFromDocumentChange, isEmptyDocumentChange } from '@open-pencil/core'
 import type { CommentThread } from '@open-pencil/scene-graph'
 import { readComments, writeComments } from '@open-pencil/scene-graph/comments'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
+import { captureDocumentChange } from '#core/editor/history/document-change'
 
 function setup() {
   const editor = createEditor()
@@ -94,6 +94,20 @@ describe('document changes', () => {
       editor.graph.reparentNode(card.id, wrapper.id)
       editor.graph.reparentNode(other.id, wrapper.id)
     })
+  })
+
+  test('keeps only the fields a deleted layer does not start with, and restores it whole', () => {
+    const { editor, card, title } = setup()
+    const change = roundTrip(editor, () => editor.graph.deleteNode(card.id))
+
+    const stored = expectDefined(
+      change.deleted.find((layer) => layer.id === title.id),
+      'stored title'
+    )
+    expect(stored).toMatchObject({ name: 'Title', text: 'Hello', type: 'TEXT' })
+    // Defaults such as opacity and an empty effect list come back from `createNode`.
+    expect(stored).not.toHaveProperty('opacity')
+    expect(stored).not.toHaveProperty('effects')
   })
 
   test('keeps copies of only the layers the edit touched', () => {
@@ -221,6 +235,7 @@ describe('document changes', () => {
     })
     roundTrip(editor, () => {
       const faded = editor.graph.createVariable('Faded', 'FLOAT', collection.id, 0.5)
+      editor.graph.willChangeVariable(brand.id)
       brand.name = 'Primary'
       editor.graph.bindVariable(title.id, 'opacity', faded.id)
     })
@@ -238,6 +253,20 @@ describe('document changes', () => {
     })
     expect(change.created.map((node) => node.name)).toEqual(['Renamed'])
     expect(change.updated).toEqual([])
+  })
+
+  test('a layer deleted and created again with its id is undone as updated', () => {
+    const { editor, pageId, card, title, badge } = setup()
+    const finish = captureDocumentChange(editor.graph, pageId)
+    editor.graph.deleteNode(badge.id)
+    editor.graph.createNodeWithId(badge.id, 'RECTANGLE', pageId, { opacity: 0.5 })
+    const change = finish()
+    expect(change.created).toEqual([])
+    expect(change.updated.map((update) => update.id)).toContain(badge.id)
+    editor.restoreDocumentChange(change, 'before')
+    expect(editor.graph.getNode(badge.id)?.opacity).toBe(1)
+    expect(editor.graph.getNode(badge.id)?.parentId).toBe(card.id)
+    expect(editor.graph.getNode(card.id)?.childIds).toEqual([title.id, badge.id])
   })
 
   test('comments are never part of a change, and undo leaves them as they are', () => {

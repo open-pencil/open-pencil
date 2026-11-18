@@ -1,21 +1,11 @@
 import type { Page } from '@playwright/test'
 
 import type * as BlendScenes from '#tests/helpers/canvas/blend/scene'
+import { pageScene } from '#tests/helpers/canvas/page-scene'
 
 export function linearBlendDriver(page: () => Page) {
+  const scenes = pageScene<typeof BlendScenes>(page, '/tests/helpers/canvas/blend/scene.ts')
   return {
-    show() {
-      return page().evaluate(async () => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) {
-          throw new Error('OpenPencil store not initialized')
-        }
-        const sceneURL = '/tests/helpers/canvas/blend/scene.ts'
-        const scenes: typeof BlendScenes = await import(sceneURL)
-        scenes.createLinearBlendScene(store.graph, store.state.currentPageId)
-        store.clearSelection()
-        store.requestRender()
-      })
-    }
+    show: () => scenes.build('createLinearBlendScene')
   }
 }

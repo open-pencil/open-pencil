@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { ref } from 'vue'
 
 import { useCollaborationMessages } from '@open-pencil/vue/i18n'
@@ -7,6 +7,7 @@ import { useCollaborationMessages } from '@open-pencil/vue/i18n'
 import { useJoinRoom } from '@/app/collab/join'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 
 /** "Join room…" on Home: paste a room link or ID to open someone's shared file in a new tab. */
@@ -32,7 +33,7 @@ function join() {
 </script>
 
 <template>
-  <PopoverRoot v-model:open="open">
+  <AppPopoverRoot v-model:open="open">
     <PopoverTrigger as-child>
       <AppButton :size="size" variant="outline" data-test-id="home-join-room">
         <template #leading><icon-lucide-users class="size-3.5" /></template>
@@ -76,5 +77,5 @@ function join() {
         </p>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

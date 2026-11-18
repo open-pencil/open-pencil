@@ -4,6 +4,7 @@ import { isNavigationFailure, NavigationFailureType } from 'vue-router'
 
 import '@/app.css'
 import { loadPortalContext, PORTAL_CONTEXT } from '@/app/cloud-portal/context'
+import { PORTAL_LEGAL } from '@/components/cloud-portal/layout/legal'
 import CloudPortalApp from '@/views/cloud/CloudPortalApp.vue'
 import CloudPortalUnavailableView from '@/views/cloud/CloudPortalUnavailableView.vue'
 
@@ -27,6 +28,8 @@ async function start(): Promise<void> {
     console.error(error)
   }
   app.provide(PORTAL_CONTEXT, context)
+  // Every public page's footer links the server's own terms, privacy policy, and abuse address.
+  app.provide(PORTAL_LEGAL, context.discovery.legal)
   const router = createCloudPortalRouter(context)
   app.use(router).use(head)
   // The splash stays until the first page can show, rather than a blank page between. A first

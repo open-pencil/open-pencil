@@ -1,12 +1,13 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { graphOf } from '#core/figma-api/graph'
+
 import {
   assertProxyEditable,
-  graph,
   raw,
   type NodeProxyInternals,
   type ProxyThis
-} from './accessor-utils'
+} from './accessors/utils'
 
 export const OPEN_PENCIL_PLUGIN_DATA_NAMESPACE = 'open-pencil'
 
@@ -118,7 +119,7 @@ export function installPluginDataMethods(prototype: object, internals: NodeProxy
     },
     setPluginData(key, value) {
       assertProxyEditable(this, internals)
-      setPluginData(graph(this, internals), raw(this, internals), key, value)
+      setPluginData(graphOf(this), raw(this, internals), key, value)
     },
     getPluginDataKeys() {
       return getPluginDataKeys(raw(this, internals))
@@ -128,7 +129,7 @@ export function installPluginDataMethods(prototype: object, internals: NodeProxy
     },
     setSharedPluginData(namespace, key, value) {
       assertProxyEditable(this, internals)
-      setSharedPluginData(graph(this, internals), raw(this, internals), namespace, key, value)
+      setSharedPluginData(graphOf(this), raw(this, internals), namespace, key, value)
     },
     getSharedPluginDataKeys(namespace) {
       return getSharedPluginDataKeys(raw(this, internals), namespace)

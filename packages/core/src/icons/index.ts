@@ -3,6 +3,7 @@ import { createMaterialSymbolsProvider } from './material-symbols/provider'
 import { createIconifyProvider, type IconProvider } from './provider'
 import { createIconSetsProvider, type IconSetSource } from './sets'
 
+export { tintedIconPath } from './artwork'
 export {
   createIconifyProvider,
   parseIconName,
@@ -18,6 +19,7 @@ export {
   swapIcon,
   type PlaceIconOptions
 } from './render'
+export { iconOptionApplies, resolveIconOptions } from './options'
 export type { IconCollection, IconData, IconOption, IconPath, IconSearchResult } from './types'
 export { createMaterialSymbolsProvider } from './material-symbols/provider'
 export { MATERIAL_SYMBOLS_PREFIXES } from './material-symbols/font'

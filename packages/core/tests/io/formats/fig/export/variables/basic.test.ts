@@ -1,0 +1,74 @@
+import { describe, test, expect, beforeAll } from 'bun:test'
+
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
+beforeAll(async () => {
+  await initCodec()
+})
+
+describe('COLOR variable alpha handling', () => {
+  test('COLOR variable without alpha exports successfully', async () => {
+    const graph = new SceneGraph()
+    const col = graph.createCollection('Colors')
+    // Simulate a COLOR variable value missing the alpha field
+    graph.createVariable('brand', 'COLOR', col.id, { r: 0.2, g: 0.4, b: 0.8 } as Color)
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    const vars = [...reimported.variables.values()]
+    const colorVar = expectDefined(
+      vars.find((v) => v.name === 'brand'),
+      'brand variable'
+    )
+    expect(colorVar.type).toBe('COLOR')
+    const val = Object.values(colorVar.valuesByMode)[0] as Color
+    expect(val.r).toBeCloseTo(0.2, 1)
+    expect(val.g).toBeCloseTo(0.4, 1)
+    expect(val.b).toBeCloseTo(0.8, 1)
+    expect(val.a).toBe(1)
+  })
+
+  test('COLOR variable with explicit alpha preserves it', async () => {
+    const graph = new SceneGraph()
+    const col = graph.createCollection('Colors')
+    graph.createVariable('overlay', 'COLOR', col.id, { r: 0, g: 0, b: 0, a: 0.5 })
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    const vars = [...reimported.variables.values()]
+    const colorVar = expectDefined(
+      vars.find((v) => v.name === 'overlay'),
+      'overlay variable'
+    )
+    const val = Object.values(colorVar.valuesByMode)[0] as Color
+    expect(val.a).toBeCloseTo(0.5, 1)
+  })
+
+  test('alias variables export with generated target GUIDs', async () => {
+    const graph = new SceneGraph()
+    const col = graph.createCollection('Colors')
+    const target = graph.createVariable('base', 'COLOR', col.id, { r: 0.1, g: 0.2, b: 0.3, a: 1 })
+    graph.createVariable('alias', 'COLOR', col.id, { aliasId: target.id })
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    const alias = expectDefined(
+      [...reimported.variables.values()].find((v) => v.name === 'alias'),
+      'alias variable'
+    )
+    const resolved = expectDefined(
+      reimported.resolveColorVariable(alias.id),
+      'resolved alias color'
+    )
+    expect(resolved.r).toBeCloseTo(0.1)
+    expect(resolved.g).toBeCloseTo(0.2)
+    expect(resolved.b).toBeCloseTo(0.3)
+    expect(resolved.a).toBe(1)
+  })
+})

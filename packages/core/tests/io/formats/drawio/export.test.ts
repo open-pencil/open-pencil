@@ -1,10 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { parseDrawIOFile } from '@open-pencil/drawio'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
 import {
   boundEndpoint,
   connectorSublayers,
@@ -14,11 +12,25 @@ import {
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { createShapeWithText } from '@open-pencil/scene-graph/generated'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 import type { ExportTarget } from '#core/io'
+import { sceneGraphToDrawIO } from '#core/io/formats/drawio'
+import type { ExportEffectWarning } from '#core/io/formats/svg'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
+
+function effect(type: Effect['type'], visible = true): Effect {
+  return {
+    type,
+    radius: 12,
+    visible,
+    color: { r: 0, g: 0, b: 0, a: 0.25 },
+    offset: { x: 0, y: 0 },
+    spread: 0
+  }
+}
 
 /** A flowchart as draw.io saves it: shapes, text, elbowed, dashed, bent, and curved edges. */
 const ORDER_FLOW = readFileSync(new URL('order-flow.drawio', import.meta.url), 'utf8')
@@ -134,6 +146,92 @@ describe('saving a draw.io file', () => {
       sourcePoint: { x: 100, y: 100 },
       targetPoint: { x: 300, y: 100 }
     })
+  })
+
+  test('a layer drawn as an SVG picture reports its background blur and what SVG cannot draw', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const star = graph.createNode('STAR', page.id, {
+      width: 40,
+      height: 40,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
+      effects: [effect('BACKGROUND_BLUR'), effect('GLASS'), effect('DROP_SHADOW')]
+    })
+
+    const result = await io.exportContent('drawio', {
+      graph,
+      target: { scope: 'page', pageId: page.id }
+    })
+
+    // The picture sees only itself behind it, so the blur has nothing to blur.
+    expect(result.warnings).toEqual([
+      expect.objectContaining({ effect: 'BACKGROUND_BLUR', nodeId: star.id }),
+      expect.objectContaining({ effect: 'GLASS', nodeId: star.id })
+    ])
+  })
+
+  test('a cell reports the effects of the sublayers it folds in', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const shape = createShapeWithText(graph, page.id, { width: 60, height: 40 }, { text: 'Hi' })
+    const label = expectDefined(graph.getChildren(shape.id).find((child) => child.type === 'TEXT'))
+    graph.updateNode(label.id, { effects: [effect('DROP_SHADOW')] })
+
+    const warnings: ExportEffectWarning[] = []
+    sceneGraphToDrawIO(graph, { pageIds: [page.id] }, { onWarning: (w) => warnings.push(w) })
+
+    expect(warnings).toEqual([expect.objectContaining({ effect: 'DROP_SHADOW', nodeId: label.id })])
+  })
+
+  test('a layer drawn as a draw.io cell reports each effect the cell leaves out', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const rectangle = graph.createNode('RECTANGLE', page.id, {
+      width: 40,
+      height: 40,
+      effects: [effect('BACKGROUND_BLUR'), effect('DROP_SHADOW'), effect('GLASS', false)]
+    })
+
+    const result = await io.exportContent('drawio', {
+      graph,
+      target: { scope: 'page', pageId: page.id }
+    })
+
+    expect(result.warnings).toEqual([
+      expect.objectContaining({ effect: 'BACKGROUND_BLUR', nodeId: rectangle.id }),
+      expect.objectContaining({ effect: 'DROP_SHADOW', nodeId: rectangle.id })
+    ])
+  })
+
+  test('hidden layers keep their cells and report nothing', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const hiddenGroup = graph.createNode('GROUP', page.id, { visible: false })
+    graph.createNode('RECTANGLE', hiddenGroup.id, {
+      width: 40,
+      height: 40,
+      effects: [effect('BACKGROUND_BLUR')]
+    })
+    graph.createNode('RECTANGLE', page.id, {
+      visible: false,
+      width: 40,
+      height: 40,
+      effects: [effect('BACKGROUND_BLUR')]
+    })
+
+    const warnings: ExportEffectWarning[] = []
+    const result = sceneGraphToDrawIO(
+      graph,
+      { pageIds: [page.id] },
+      { onWarning: (warning) => warnings.push(warning) }
+    )
+
+    expect(result.pages[0]?.cells.map((cell) => [cell.id, cell.visible])).toEqual([
+      ['2', false],
+      ['3', true],
+      ['4', false]
+    ])
+    expect(warnings).toEqual([])
   })
 
   test('turned rectangles, ellipses, and text keep their turn', async () => {

@@ -1,5 +1,6 @@
 export {
   figmaRotation,
+  panelNumber,
   panelPosition,
   panelPositionChange,
   panelRotation,
@@ -22,7 +23,7 @@ export {
   hitTestShapeHandles
 } from './handles/shape'
 export type { RadiusCorner, ShapeHandle, ShapeHandleKind } from './handles/shape'
-export { ARC_HANDLE, arcAtPoint, arcChanges, arcOf, isWholeArc } from './handles/arc'
+export { ARC_HANDLE, arcAtPoint, arcChanges, arcOf } from './handles/arc'
 export type { ArcHandleKind } from './handles/arc'
 export {
   GRADIENT_HANDLE,
@@ -57,7 +58,12 @@ export {
 } from './line-ends'
 export { createSceneGeometry, nodeOrientationMatrix, projectedNode, viewportMatrix } from './scene'
 export type { SceneGeometry } from './scene'
-export { selectionPath, selectionHandleRect, rotationHandleLayout } from './selection'
+export {
+  selectionBounds,
+  selectionPath,
+  selectionHandleRect,
+  rotationHandleLayout
+} from './selection'
 export {
   TRANSFORM_ZONE,
   hasTransformHandles,
@@ -67,3 +73,13 @@ export {
 export type { CornerPosition, HandlePosition, TransformZone } from './transform-zones'
 export type { RotationHandleLayout } from './selection'
 export type { RotationPreview, ViewportTransform } from './types'
+export {
+  screenCenterInWorld,
+  screenToWorld,
+  screenXToWorld,
+  screenYToWorld,
+  worldRectToScreen,
+  worldToScreen,
+  worldXToScreen,
+  worldYToScreen
+} from './viewport'

@@ -7,6 +7,10 @@ import IconButton from '@/components/ui/button/IconButton.vue'
  * Puts one setting back to its default. A row shows it only while its value differs from the
  * default, as VS Code's settings do, so an unchanged page shows none.
  */
+const { disabled = false } = defineProps<{
+  /** The setting can't change right now, as when its control is disabled. */
+  disabled?: boolean
+}>()
 const emit = defineEmits<{ reset: [] }>()
 const settings = useSettingsMessages()
 </script>
@@ -15,6 +19,7 @@ const settings = useSettingsMessages()
   <IconButton
     :label="settings.resetToDefault"
     size="sm"
+    :disabled="disabled"
     data-settings-reset
     @click.prevent="emit('reset')"
   >

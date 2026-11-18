@@ -1,15 +1,13 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { makeBooleanOperationPath, makeBooleanSourcePath } from '#core/canvas/boolean'
 import { NodePathCaches } from '#core/canvas/paths/cache'
-
-import { expectDefined } from '#core-tests/helpers/assert'
-
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 
 const SIZE = 160
 const RED = { r: 1, g: 0, b: 0, a: 1 }

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { refAutoReset, useClipboard } from '@vueuse/core'
 import { isReasoningUIPart, isTextUIPart } from 'ai'
 import type { UIMessage } from 'ai'
 import { computed, ref } from 'vue'
@@ -9,20 +8,31 @@ import { vTestId } from '@open-pencil/vue/testing'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
-import { undoOf, wasStopped } from '@/app/ai/chat/metadata'
-import { reasoningDisplay as preferredReasoningDisplay } from '@/app/ai/chat/preferences'
+import { replyCompactions } from '@/app/ai/chat/compaction/marker'
+import { undoOf, usageOf, wasStopped } from '@/app/ai/chat/metadata'
+import {
+  reasoningDisplay as preferredReasoningDisplay,
+  tokenUsageDisplay
+} from '@/app/ai/chat/preferences'
 import { visibleUserMessageText } from '@/app/ai/chat/presentation'
+import { SUBAGENT_PART } from '@/app/ai/chat/subagents'
 import { groupMessageParts, type MessagePartGroup } from '@/app/ai/chat/tool-calls/display'
 import type { ReasoningDisplay } from '@/app/settings/preferences/store'
 import ChatAttachmentList from '@/components/chat/attachment/ChatAttachmentList.vue'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
 import ChatReasoning from '@/components/chat/ChatReasoning.vue'
 import ChatReferenceText from '@/components/chat/reference/ChatReferenceText.vue'
+import ChatSubagentCard from '@/components/chat/subagent/ChatSubagentCard.vue'
 import ChatToolCallGroup from '@/components/chat/tool/ChatToolCallGroup.vue'
+import ChatCompactionDivider from '@/components/chat/turn/ChatCompactionDivider.vue'
 import ChatMessageEditor from '@/components/chat/turn/ChatMessageEditor.vue'
 import ChatTurnActions from '@/components/chat/turn/ChatTurnActions.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+
+import { usageParts } from './turn/usage'
+import { chatReplyTheme } from './ui'
 
 const {
   message,
@@ -77,18 +87,24 @@ function saveEdit(text: string): void {
 const firstAssistantTextPartIndex = computed(() =>
   message.parts.findIndex((part) => isTextUIPart(part) && part.text.length > 0)
 )
-const copied = refAutoReset(false, 1500)
-const { copy, isSupported: clipboardSupported } = useClipboard()
-
-async function copyResponse(): Promise<void> {
-  if (!assistantText.value || !clipboardSupported.value) return
-  await copy(assistantText.value)
-  copied.value = true
-}
+const lastAssistantTextPartIndex = computed(() =>
+  message.parts.findLastIndex((part) => isTextUIPart(part) && part.text.length > 0)
+)
+const ui = chatReplyTheme()
+/** The text the copy button sits on: the reply's first, when there is text to copy. */
+const copyPartIndex = computed(() => (assistantText.value ? firstAssistantTextPartIndex.value : -1))
 
 // The AI SDK updates parts in place and replaces only the message, so copy each part for
 // the cards' computed state to see the new values.
 const undo = computed(() => undoOf(message))
+const usage = computed(() => usageOf(message))
+/** With usage shown on hover, the reply's last text shows it on hover, beside the copy button. */
+const usageOnHover = computed(() =>
+  usage.value && tokenUsageDisplay.value === 'hover' ? usageParts(ai.value, usage.value) : undefined
+)
+/** Whether the text part at `index` shows the usage in its corner. */
+const showsUsage = (index: number) =>
+  usageOnHover.value !== undefined && index === lastAssistantTextPartIndex.value
 const undoneCalls = computed(() => new Set(undo.value?.undone))
 const reverted = computed(
   () =>
@@ -99,16 +115,25 @@ const reverted = computed(
 const stopped = computed(() => wasStopped(message))
 // A request that failed once its reply had started leaves the reply without content.
 const empty = computed(() => message.parts.every((part) => part.type === 'step-start'))
-const groups = computed(() => groupMessageParts(message.parts.map((part) => ({ ...part }))))
+/** Compactions between the reply's steps, which the reply draws where they ran. */
+const compactions = computed(() => replyCompactions(message))
+const groups = computed(() =>
+  groupMessageParts(
+    message.parts.map((part) => ({ ...part })),
+    compactions.value.map((compaction) => compaction.step)
+  )
+)
 
 function groupKey(group: MessagePartGroup): string {
-  return group.kind === 'tools' ? `tools-${group.parts[0]?.index}` : `part-${group.index}`
+  if (group.kind === 'tools') return `tools-${group.parts[0]?.index}`
+  return `${group.kind}-${group.index}`
 }
 </script>
 
 <template>
   <div
     v-test-id="`chat-message-${message.role}`"
+    class="group/reply"
     :class="message.role === 'user' ? 'flex justify-end' : ''"
   >
     <div
@@ -119,13 +144,25 @@ function groupKey(group: MessagePartGroup): string {
         <!-- A reverted reply's edits are gone; its content stays, dimmed, under its actions. Text
              dims to the muted color rather than through opacity, so it still reads at 4.5:1. -->
         <div
-          class="space-y-2 data-[reverted=true]:**:text-muted data-[reverted=true]:[&_img]:opacity-50"
+          class="@container/reply space-y-2 data-[reverted=true]:**:text-muted data-[reverted=true]:[&_img]:opacity-50"
           data-slot="chat-reply-content"
           :data-reverted="reverted"
         >
           <template v-for="group in groups" :key="groupKey(group)">
+            <template v-if="group.kind === 'compaction'">
+              <!-- Only the latest compaction's request is the one the reply's usage ends on. -->
+              <ChatCompactionDivider
+                v-if="compactions[group.compaction]"
+                :compaction="compactions[group.compaction]"
+                :tokens-after="
+                  streaming || group.compaction < compactions.length - 1
+                    ? null
+                    : (usage?.contextTokens ?? null)
+                "
+              />
+            </template>
             <ChatToolCallGroup
-              v-if="group.kind === 'tools'"
+              v-else-if="group.kind === 'tools'"
               :parts="group.parts.map(({ part }) => part)"
               :undone="undoneCalls"
             />
@@ -141,26 +178,42 @@ function groupKey(group: MessagePartGroup): string {
               :duration-label="(seconds) => ai.thoughtFor({ seconds })"
             />
 
+            <!-- A subagent the agent started -->
+            <ChatSubagentCard v-else-if="group.part.type === SUBAGENT_PART" :part="group.part" />
+
             <!-- Text -->
             <div
               v-else-if="isTextUIPart(group.part) && group.part.text"
               data-test-id="chat-text-bubble"
-              class="group/response relative rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
+              :class="ui.bubble()"
             >
               <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
-              <IconButton
-                v-if="
-                  group.index === firstAssistantTextPartIndex && assistantText && clipboardSupported
-                "
-                :label="copied ? ai.responseCopied : ai.copyResponse"
-                size="xs"
-                data-slot="chat-copy-response"
-                class="absolute right-1 bottom-1 opacity-0 focus-visible:opacity-100 group-hover/response:opacity-100"
-                @click="copyResponse"
-              >
-                <icon-lucide-check v-if="copied" class="size-3 text-success" />
-                <icon-lucide-copy v-else class="size-3" />
-              </IconButton>
+              <!-- With usage shown on hover, the usage appears in the last text's corner over the
+                   bubble's own colour, fading the line's end out under it, so it takes no room at
+                   rest. It shows the parts that fit whole, so a narrow reply drops its last. -->
+              <div v-if="usageOnHover && showsUsage(group.index)" :class="ui.corner()">
+                <span :class="ui.parts()" data-slot="chat-reply-usage">
+                  <span class="h-6" aria-hidden="true" />
+                  <span
+                    v-for="(part, index) in usageOnHover"
+                    :key="index"
+                    :class="ui.part({ lead: index === 0 })"
+                    data-slot="chat-reply-usage-part"
+                  >
+                    {{ index === 0 ? part : `· ${part}` }}
+                  </span>
+                </span>
+              </div>
+              <!-- Beside the bubble's end, where a short reply leaves it room, as the edit button
+                   sits beside a request. -->
+              <AppCopyButton
+                v-if="group.index === copyPartIndex"
+                :class="ui.copy()"
+                icon
+                :value="assistantText"
+                :label="ai.copyResponse"
+                :copied-label="ai.responseCopied"
+              />
             </div>
           </template>
         </div>
@@ -173,6 +226,7 @@ function groupKey(group: MessagePartGroup): string {
           :stopped="stopped"
           :undone="undoneCalls.size"
           :edits="undo?.edits.length ?? 0"
+          :usage="usage"
           @regenerate="emit('regenerate')"
           @revert="emit('revert')"
           @restore="emit('restore')"
@@ -191,7 +245,7 @@ function groupKey(group: MessagePartGroup): string {
         <div v-else class="group/request relative">
           <div
             data-test-id="chat-text-bubble"
-            class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
+            class="rounded-xl rounded-ee-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
           >
             <ChatReferenceText :text="userText" />
           </div>
@@ -199,8 +253,7 @@ function groupKey(group: MessagePartGroup): string {
             v-if="canEdit"
             :label="ai.editMessage"
             size="xs"
-            data-slot="chat-edit-message"
-            class="absolute top-1/2 -left-7 -translate-y-1/2 opacity-0 focus-visible:opacity-100 group-hover/request:opacity-100"
+            class="absolute top-1/2 -inset-s-7 -translate-y-1/2 opacity-0 focus-visible:opacity-100 group-hover/request:opacity-100"
             @click="editing = true"
           >
             <icon-lucide-pencil class="size-3" />

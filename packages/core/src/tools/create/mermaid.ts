@@ -3,6 +3,8 @@ import * as v from 'valibot'
 import { detectMermaidDiagram, parseFlowchart } from '@open-pencil/mermaid'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 
+import { graphOf } from '#core/figma-api/graph'
+import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { addFlowchart } from '#core/io/formats/mermaid'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
@@ -13,7 +15,7 @@ export const importMermaid = defineTool({
   name: 'import_mermaid',
 
   description:
-    'Import a Mermaid flowchart (`flowchart` or `graph`) as editable FigJam layers, laid out automatically so nothing overlaps: each node a shape with text in its Mermaid shape, each subgraph a section, and each edge an elbowed connector joined to the layers it links, with its arrowheads, dotted or thick line, and label. classDef, class, and style fills, strokes, and text colours carry over. Without x and y the diagram goes to the right of what the parent already holds. Returns the layer id of every node and subgraph and the connector id of every edge, by Mermaid id.',
+    'Import a Mermaid flowchart (`flowchart` or `graph`) as FigJam layers laid out without overlaps: nodes as shapes with text, subgraphs as sections, edges as elbowed connectors with their arrowheads, line style, and label. classDef, class, and style colours carry over. Without x and y it goes to the right of what the parent holds. Returns the layer id of every node, subgraph, and edge by Mermaid id.',
   execution: { kind: 'async', mutation: 'document' },
   input: v.strictObject({
     mermaid: v.pipe(
@@ -36,9 +38,10 @@ export const importMermaid = defineTool({
     } catch (error) {
       return { error: error instanceof Error ? error.message : String(error) }
     }
-    const { graph } = figma
+    const graph = graphOf(figma)
     const parentId = args.parent_id ?? figma.currentPage.id
     if (!graph.getNode(parentId)) return { error: `Parent ${parentId} not found` }
+    prepareSlotInsertion(graph, parentId, 'import_mermaid')
     const content = graph.getNode(parentId)?.childIds ?? []
     const bounds =
       content.length > 0

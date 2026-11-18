@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { ref, watch } from 'vue'
 
 import { useCollaborationMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 
 import { roomScreen } from './ui'
@@ -36,7 +37,7 @@ function save() {
   <p :class="ui.footnote()" data-test-id="room-name-line">
     <span>{{ messages.appearsAs({ name }) }}</span>
     <span aria-hidden="true">·</span>
-    <PopoverRoot v-model:open="open">
+    <AppPopoverRoot v-model:open="open">
       <PopoverTrigger as-child>
         <button type="button" :class="ui.link()" data-test-id="room-name-change">
           {{ messages.changeName }}
@@ -60,6 +61,6 @@ function save() {
           </div>
         </PopoverContent>
       </PopoverPortal>
-    </PopoverRoot>
+    </AppPopoverRoot>
   </p>
 </template>

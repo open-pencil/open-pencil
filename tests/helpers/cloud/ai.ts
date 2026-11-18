@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto'
 
+import { CLOUD_SERVICES_CONTRACT_VERSION, CLOUD_SERVICES_TOKEN_AUDIENCE } from '#cloud/contract'
 import {
-  createAIRelayApp,
-  createAIRelayDatabase,
-  migrateAIRelayDatabase,
-  parseAIRelayConfig
-} from '#cloud/ai-relay'
-import { CLOUD_AI_CONTRACT_VERSION, CLOUD_AI_TOKEN_AUDIENCE } from '#cloud/contract'
+  createServicesApp,
+  createServicesDatabase,
+  migrateServicesDatabase,
+  parseServicesConfig
+} from '#cloud/services'
 import { PGlite } from '@electric-sql/pglite'
 import type { Page, Route } from '@playwright/test'
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose'
@@ -49,11 +49,11 @@ function upstreamReply(): Response {
 /** The reference relay, with an in-memory database, Cloud's key, and the fake upstream. */
 async function startRelay(appOrigin: string) {
   const pglite = await PGlite.create({ dataDir: 'memory://' })
-  const database = createAIRelayDatabase(new PGliteDialect(pglite))
-  await migrateAIRelayDatabase(database)
+  const database = createServicesDatabase(new PGliteDialect(pglite))
+  await migrateServicesDatabase(database)
   const { privateKey, publicKey } = await generateKeyPair('ES256')
-  const app = createAIRelayApp({
-    config: parseAIRelayConfig(
+  const app = createServicesApp({
+    config: parseServicesConfig(
       {
         schema_version: 1,
         relay: { cloud_url: CLOUD, allowed_origins: [appOrigin] },
@@ -72,7 +72,7 @@ async function startRelay(appOrigin: string) {
           ]
         }
       },
-      { DATABASE_URL: 'postgresql://unused', OPENPENCIL_AI_RELAY_UPSTREAM_KEY: 'upstream-key' }
+      { DATABASE_URL: 'postgresql://unused', OPENPENCIL_SERVICES_UPSTREAM_KEY: 'upstream-key' }
     ),
     database,
     keys: createLocalJWKSet({ keys: [{ ...(await exportJWK(publicKey)), kid: 'cloud' }] }),
@@ -138,7 +138,7 @@ export async function routeCloudAI(page: Page, appOrigin: string, options: Cloud
   const now = new Date().toISOString()
   const discovery = {
     ...cloudDiscoveryFixture(CLOUD),
-    ai: { endpoint: AI, contractVersion: CLOUD_AI_CONTRACT_VERSION },
+    services: { endpoint: AI, contractVersion: CLOUD_SERVICES_CONTRACT_VERSION },
     ...(options.billingURL ? { billing: { portalURL: options.billingURL } } : {})
   }
   const cloud: Record<string, () => unknown | Promise<unknown>> = {
@@ -169,7 +169,7 @@ export async function routeCloudAI(page: Page, appOrigin: string, options: Cloud
           guestPresence: true,
           collaboration: true,
           revisionHistory: true,
-          cloudAI: true
+          cloudServices: true
         },
         limits: {
           maximumFileBytes: 100_000_000,
@@ -180,7 +180,7 @@ export async function routeCloudAI(page: Page, appOrigin: string, options: Cloud
         usage: { committedStorageBytes: 0, reservedStorageBytes: 0 }
       }
     }),
-    'POST /api/ai/token': async () => {
+    'POST /api/services/token': async () => {
       const expiresAt = new Date(Date.now() + 10 * 60_000)
       const token = await new SignJWT({
         workspaceId: WORKSPACE_ID,
@@ -188,7 +188,7 @@ export async function routeCloudAI(page: Page, appOrigin: string, options: Cloud
       })
         .setProtectedHeader({ alg: 'ES256', kid: 'cloud' })
         .setIssuer(CLOUD)
-        .setAudience(CLOUD_AI_TOKEN_AUDIENCE)
+        .setAudience(CLOUD_SERVICES_TOKEN_AUDIENCE)
         .setSubject(ACCOUNT.id)
         .setIssuedAt()
         .setExpirationTime(expiresAt)

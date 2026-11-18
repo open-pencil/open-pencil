@@ -21,19 +21,6 @@ export const completionListStyles = {
     // for it from the start.
     scrollbarGutter: 'stable'
   },
-  // The app's thin scrollbar (`scrollbar-thin`), which takes its own width: macOS's overlay
-  // scrollbar would cover the ends of the rows.
-  '.cm-tooltip.cm-tooltip-autocomplete > ul::-webkit-scrollbar': { width: '6px' },
-  '.cm-tooltip.cm-tooltip-autocomplete > ul::-webkit-scrollbar-track': {
-    background: 'transparent'
-  },
-  '.cm-tooltip.cm-tooltip-autocomplete > ul::-webkit-scrollbar-thumb': {
-    background: 'var(--color-border)',
-    borderRadius: '3px'
-  },
-  '.cm-tooltip.cm-tooltip-autocomplete > ul::-webkit-scrollbar-thumb:hover': {
-    background: 'var(--color-muted)'
-  },
   '.cm-tooltip.cm-tooltip-autocomplete > ul > li': {
     display: 'flex',
     alignItems: 'center',
@@ -58,14 +45,22 @@ export const completionListStyles = {
     color: 'var(--color-muted)',
     opacity: '1'
   },
+  // The label keeps its width; a long detail, such as a command's description, gives way first.
   '.cm-completionLabel': {
-    flex: '1',
+    flex: 'none',
+    maxWidth: '75%',
     minWidth: '0',
     overflow: 'hidden',
     textOverflow: 'ellipsis'
   },
   '.cm-completionMatchedText': { textDecoration: 'none', fontWeight: '600' },
   '.cm-completionDetail': {
+    flex: '0 1 auto',
+    minWidth: '0',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    paddingLeft: '12px',
     marginLeft: 'auto',
     fontStyle: 'normal',
     fontVariantNumeric: 'tabular-nums',

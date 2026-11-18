@@ -3,6 +3,7 @@ import { Channel, invoke } from '@tauri-apps/api/core'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
 import type { FetchFunction } from '@/app/http/types'
+import { abortReason, withAbortSignal } from '@/app/runtime/abort'
 
 export interface ProxyHttpHeader {
   name: string
@@ -62,42 +63,6 @@ function fetchError(error: unknown): Error {
 
 function headersToProxyHeaders(headers: Headers): ProxyHttpHeader[] {
   return [...headers.entries()].map(([name, value]) => ({ name, value }))
-}
-
-function abortReason(signal: AbortSignal): Error {
-  return signal.reason instanceof Error
-    ? signal.reason
-    : new DOMException('The operation was aborted', 'AbortError')
-}
-
-export function withAbortSignal<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
-  if (signal.aborted) {
-    void promise.catch(() => undefined)
-    return Promise.reject(abortReason(signal))
-  }
-
-  return new Promise<T>((resolve, reject) => {
-    const cleanup = () => signal.removeEventListener('abort', onAbort)
-    const onAbort = () => {
-      cleanup()
-      reject(abortReason(signal))
-    }
-    signal.addEventListener('abort', onAbort, { once: true })
-    void (async () => {
-      try {
-        const value = await promise
-        cleanup()
-        resolve(value)
-      } catch (error) {
-        cleanup()
-        reject(
-          error instanceof Error
-            ? error
-            : new Error('Desktop HTTP request failed', { cause: error })
-        )
-      }
-    })()
-  })
 }
 
 export interface TauriFetchOptions {

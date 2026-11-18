@@ -5,19 +5,23 @@ import type { StockPhotoKeyCheck } from '@open-pencil/core/tools'
 
 import { vectorizeProviderID } from '@/app/editor/vectorize'
 import { useVectorizeSettings } from '@/app/editor/vectorize/settings/use'
+import { settingsErrorMessage } from '@/app/settings/credentials/errors'
 import {
   checkMediaKey,
+  exaKeyStatus,
   pexelsKeyStatus,
+  setExaKey,
   setPexelsKey,
   unsplashKeyStatus,
   setUnsplashKey
 } from '@/app/settings/credentials/media'
 
-export type MediaSettingsService = 'pexels' | 'unsplash' | 'vectorize'
+export type MediaSettingsService = 'pexels' | 'unsplash' | 'exa' | 'vectorize'
 
 const stockServices = {
   pexels: { status: pexelsKeyStatus, set: setPexelsKey },
-  unsplash: { status: unsplashKeyStatus, set: setUnsplashKey }
+  unsplash: { status: unsplashKeyStatus, set: setUnsplashKey },
+  exa: { status: exaKeyStatus, set: setExaKey }
 }
 
 export function useMediaSettingsEditor(service: MediaSettingsService, services = stockServices) {
@@ -64,7 +68,7 @@ export function useMediaSettingsEditor(service: MediaSettingsService, services =
     keyCheck.value = null
   }
 
-  /** Tries the key typed, or the saved one, against the service; stock photo services only. */
+  /** Tries the key typed, or the saved one, against the service; keyed services only. */
   async function checkKey() {
     if (service === 'vectorize' || keyCheck.value === 'checking') return
     keyCheck.value = 'checking'
@@ -93,7 +97,7 @@ export function useMediaSettingsEditor(service: MediaSettingsService, services =
       }
       return !isDisposed()
     } catch (cause) {
-      if (!isDisposed()) saveError.value = cause instanceof Error ? cause.message : String(cause)
+      if (!isDisposed()) saveError.value = settingsErrorMessage(cause)
       return false
     } finally {
       busy.value = false

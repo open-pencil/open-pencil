@@ -1,11 +1,10 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
-
+import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { TextLayout } from '#core/canvas/text/layout'
 import { laidOutGlyphs } from '#core/canvas/text/placed'
@@ -132,9 +131,17 @@ describe('the font saved glyphs are outlined from', () => {
     const source = variableSource()
     const text = 'a->b a->b'
     // The second arrow keeps its characters: the run drawn from one font has both arrows.
-    const glyphs = placed(text, variableProvider, [], {
-      styleRuns: [{ start: 5, length: 4, style: { fontFeatures: [{ tag: 'CALT', enabled: false }] } }]
-    }, { from: 5, features: [{ name: 'calt', value: 0 }] })
+    const glyphs = placed(
+      text,
+      variableProvider,
+      [],
+      {
+        styleRuns: [
+          { start: 5, length: 4, style: { fontFeatures: [{ tag: 'CALT', enabled: false }] } }
+        ]
+      },
+      { from: 5, features: [{ name: 'calt', value: 0 }] }
+    )
 
     expect(glyphs.map((glyph) => glyph.firstCharacter)).toEqual([0, 1, 3, 4, 5, 6, 7, 8])
     expect(glyphs.slice(4).map((glyph) => glyph.id)).toEqual(

@@ -51,6 +51,7 @@ export async function listDocuments(
     ])
     .where('workspaceId', '=', workspaceId)
     .where('deletedAt', 'is', null)
+    .where('disabledAt', 'is', null)
     .orderBy('updatedAt', 'desc')
     .execute()
   return rows.map(documentSummary)
@@ -82,6 +83,7 @@ export async function listSharedDocuments(
     .where('documentGrant.userId', '=', userId)
     .where('documentGrant.revokedAt', 'is', null)
     .where('document.deletedAt', 'is', null)
+    .where('document.disabledAt', 'is', null)
     .where((expression) =>
       expression.not(
         expression.exists(

@@ -11,6 +11,8 @@ import {
 
 export interface Traversal {
   root: Element
+  /** The outermost `<svg>`, whose own transform the viewport mapping applies, not its shapes. */
+  viewport: Element | null
   elementsById: ReadonlyMap<string, Element>
   nextKey: number
   /** `<text>` elements in drawing order; each records how many paths precede it. */

@@ -15,13 +15,12 @@ import {
 } from '@/app/ai/models/settings/onboarding/plan'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { cloudAIAvailable } from '@/app/cloud/integration'
-import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
+import AgentsUnavailableNotice from '@/components/settings/ai-setup/AgentsUnavailableNotice.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import ProviderLogo from '@/components/settings/provider/ProviderLogo.vue'
-import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
-import { DESKTOP_DOWNLOAD_URL } from '@/constants'
 
 /**
  * What a new model runs on, chosen before its form, in guided setup's groups: coding agents and
@@ -29,6 +28,7 @@ import { DESKTOP_DOWNLOAD_URL } from '@/constants'
  */
 const emit = defineEmits<{ choose: [providerID: AIProviderID] }>()
 const ai = useAIMessages()
+const agentsAvailable = canRunHostProcesses()
 
 /** Providers a model in the list already runs on; choosing one again adds another model. */
 const setUp = computed(
@@ -47,24 +47,25 @@ interface Choice {
 
 const groups = computed(() => {
   const groups: { key: string; title: string; description?: string; choices: Choice[] }[] = []
-  // Agents run, and subscriptions sign in, on this computer.
+  // Agents run on this computer, which a sandboxed package cannot do.
+  if (agentsAvailable) {
+    groups.push({
+      key: 'agents',
+      title: ai.value.aiSetupAccessAgents,
+      description: ai.value.aiSetupAccessAgentsDescription,
+      choices: ONBOARDING_AGENTS.map((id) => ({ id }))
+    })
+  }
+  // Subscriptions sign in through a local port, which any desktop install can open.
   if (IS_TAURI) {
-    groups.push(
-      {
-        key: 'agents',
-        title: ai.value.aiSetupAccessAgents,
-        description: ai.value.aiSetupAccessAgentsDescription,
-        choices: ONBOARDING_AGENTS.map((id) => ({ id }))
-      },
-      {
-        key: 'subscriptions',
-        title: ai.value.aiSetupAccessSubscriptions,
-        choices: ONBOARDING_SUBSCRIPTIONS.map((id) => ({
-          id,
-          description: ai.value.aiSetupAccessChatGPT
-        }))
-      }
-    )
+    groups.push({
+      key: 'subscriptions',
+      title: ai.value.aiSetupAccessSubscriptions,
+      choices: ONBOARDING_SUBSCRIPTIONS.map((id) => ({
+        id,
+        description: ai.value.aiSetupAccessChatGPT
+      }))
+    })
   }
   groups.push(
     {
@@ -94,14 +95,10 @@ const groups = computed(() => {
 
 <template>
   <div class="flex flex-col gap-6" data-test-id="settings-model-provider-chooser">
-    <!-- As guided setup says it: agents and subscriptions come with the desktop app. -->
-    <SettingsSection v-if="!IS_TAURI">
+    <!-- As guided setup says it: agents need a desktop install that may start them. -->
+    <SettingsSection v-if="!agentsAvailable">
       <template #title>{{ ai.aiSetupAccessAgents }}</template>
-      <AppAlert :heading="ai.aiSetupAccessAgentsDesktop">
-        <template #actions>
-          <SettingsLink :href="DESKTOP_DOWNLOAD_URL">{{ ai.aiSetupGetDesktop }}</SettingsLink>
-        </template>
-      </AppAlert>
+      <AgentsUnavailableNotice :sandboxed="IS_TAURI" />
     </SettingsSection>
     <SettingsSection v-for="group in groups" :key="group.key">
       <template #title>{{ group.title }}</template>
@@ -121,7 +118,7 @@ const groups = computed(() => {
             <AppBadge v-if="setUp.has(choice.id)" :ui="{ base: 'bg-hover text-surface' }">{{
               ai.modelProviderSetUp
             }}</AppBadge>
-            <icon-lucide-chevron-right class="size-3.5" />
+            <icon-lucide-chevron-right data-direction="reading" class="size-3.5" />
           </template>
         </AppActionRow>
       </div>

@@ -19,9 +19,12 @@ export function useExternalLinks() {
     document,
     'click',
     (event: MouseEvent) => {
-      if (!(event.target instanceof Element)) return
-      const anchor = event.target.closest('a[href]')
-      if (!(anchor instanceof HTMLAnchorElement) || anchor.target !== '_blank') return
+      // The event's path, not its target, reaches a link inside a shadow root, such as one in a
+      // preview island, which the document sees only as the island's host.
+      const anchor = event
+        .composedPath()
+        .find((item): item is HTMLAnchorElement => item instanceof HTMLAnchorElement && !!item.href)
+      if (anchor?.target !== '_blank') return
       // Added while the click is captured, it runs after the link's own handlers in this click.
       anchor.addEventListener(
         'click',

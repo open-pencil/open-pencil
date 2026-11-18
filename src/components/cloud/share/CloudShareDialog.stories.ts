@@ -47,7 +47,7 @@ const meta = {
     components: { CloudShareDialog },
     setup: () => ({ args }),
     template: `
-      <div class="h-[640px]">
+      <div class="h-160">
         <CloudShareDialog
           :open="true"
           document-name="Homepage redesign"

@@ -1,4 +1,4 @@
-import type { VariableLiteral } from '@open-pencil/scene-graph'
+import type { SceneGraph, VariableLiteral } from '@open-pencil/scene-graph'
 import {
   BEHAVIOUR_CONTRACTS,
   BEHAVIOUR_KINDS,
@@ -9,6 +9,7 @@ import type { OkHCLColor, OkHCLPayload } from '@open-pencil/scene-graph/color'
 import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
 
 import { exposeInstanceSwap } from '#core/figma-api/components'
+import { graphOf } from '#core/figma-api/graph'
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api/index'
 import { writeVariableValue } from '#core/figma-api/variables'
 import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/status'
@@ -59,7 +60,13 @@ export {
  * `figma` it is made for.
  */
 export class OpenPencilAPI {
-  constructor(private readonly figma: FigmaAPI) {}
+  readonly #figma: FigmaAPI
+  readonly #graph: SceneGraph
+
+  constructor(figma: FigmaAPI) {
+    this.#figma = figma
+    this.#graph = graphOf(figma)
+  }
 
   /**
    * Set a token formula by collection, variable and optional mode names. References use
@@ -74,7 +81,7 @@ export class OpenPencilAPI {
     source: string,
     modeName?: string
   ): VariableLiteral {
-    const graph = this.figma.graph
+    const graph = this.#graph
     const collections = [...graph.variableCollections.values()].filter(
       (item) => item.name === collectionName
     )
@@ -104,12 +111,12 @@ export class OpenPencilAPI {
    * boolean, or text that shows the layer unless it is empty or reads false, no or off.
    */
   bindVariable(node: NodeRef, field: string, variable: VariableRef): void {
-    bindVariable(this.figma.graph, node, field, variable)
+    bindVariable(this.#graph, node, field, variable)
   }
 
   /** Let a layer field go of its variable, keeping the value the variable last gave it. */
   unbindVariable(node: NodeRef, field: string): void {
-    unbindVariable(this.figma.graph, node, field)
+    unbindVariable(this.#graph, node, field)
   }
 
   /** The behaviour kinds, after Reka UI's primitives, with the values and parts each binds. */
@@ -119,7 +126,7 @@ export class OpenPencilAPI {
 
   /** The behaviour a node's main component keeps, or null; a variant reads its set's. */
   getBehaviour(node: NodeRef): BehaviourHandle | null {
-    return getBehaviour(this.figma.graph, node)
+    return getBehaviour(this.#graph, node)
   }
 
   /**
@@ -128,12 +135,12 @@ export class OpenPencilAPI {
    * `{ kind: 'switch', values: { value: 'State' }, parts: { thumb: 'Thumb' }, states: 'Interaction' }`.
    */
   setBehaviour(node: NodeRef, spec: BehaviourKind | BehaviourSpec): BehaviourHandle {
-    return setBehaviour(this.figma.graph, node, spec)
+    return setBehaviour(this.#graph, node, spec)
   }
 
   /** Make a frame of a main component a slot, as Create slot does; returns the slot's name. */
   createSlot(frame: NodeRef): string {
-    return makeSlot(this.figma.graph, frame)
+    return makeSlot(this.#graph, frame)
   }
 
   /**
@@ -141,11 +148,11 @@ export class OpenPencilAPI {
    * one page's, or those a person started or replied to, such as `{ resolved: false }`.
    */
   getComments(filter?: CommentFilter): CommentHandle[] {
-    return getComments(this.figma.graph, filter)
+    return getComments(this.#graph, filter)
   }
 
   getComment(id: string): CommentHandle | null {
-    return getComment(this.figma.graph, id)
+    return getComment(this.#graph, id)
   }
 
   /**
@@ -153,7 +160,7 @@ export class OpenPencilAPI {
    * page, `{ page, x, y }`; the current page by default. `author` names who wrote it.
    */
   addComment(text: string, options?: NewComment): CommentHandle {
-    return addComment(this.figma.graph, this.figma.currentPageId, text, options)
+    return addComment(this.#graph, this.#figma.currentPageId, text, options)
   }
 
   /**
@@ -161,12 +168,12 @@ export class OpenPencilAPI {
    * color and the status Figma shows for it, if any.
    */
   get statuses(): StatusInfo[] {
-    return listStatuses(this.figma.graph)
+    return listStatuses(this.#graph)
   }
 
   /** The name of the status a section, frame, component, set or instance shows, or null. */
   getStatus(node: NodeRef): string | null {
-    return getStatus(this.figma.graph, node)
+    return getStatus(this.#graph, node)
   }
 
   /**
@@ -174,7 +181,7 @@ export class OpenPencilAPI {
    * frames, components, sets and instances directly on a page or in a section take one.
    */
   setStatus(node: NodeRef, status: string | null): void {
-    setStatus(this.figma.graph, node, status)
+    setStatus(this.#graph, node, status)
   }
 
   /**
@@ -187,14 +194,14 @@ export class OpenPencilAPI {
     propertyName = 'Instance'
   ): FigmaNodeProxy {
     const proxies = (refs: readonly NodeRef[]) =>
-      refs.map((ref) => this.figma.wrapNode(nodeOf(this.figma.graph, ref).id))
+      refs.map((ref) => this.#figma.wrapNode(nodeOf(this.#graph, ref).id))
     const host = exposeInstanceSwap(
-      this.figma.graph,
+      this.#graph,
       proxies(instances),
       proxies(candidates),
       propertyName
     )
-    return this.figma.wrapNode(host.id)
+    return this.#figma.wrapNode(host.id)
   }
 
   /**
@@ -202,43 +209,43 @@ export class OpenPencilAPI {
    * loaded from, substitutions, why an installed face could not load, and the layers affected.
    */
   getFontStatus(): DocumentFontStatus {
-    return documentFontStatus(this.figma.graph, this.figma.currentPageId)
+    return documentFontStatus(this.#graph, this.#figma.currentPageId)
   }
 
   /** A fill's OkHCL color, which the color picker keeps beside its RGB, or null. */
   getFillOkHCL(node: NodeRef, index = 0): OkHCLPayload | null {
-    return readFillOkHCL(this.figma.graph, node, index)
+    return readFillOkHCL(this.#graph, node, index)
   }
 
   /** Set a fill's color in OkHCL; its RGB follows in the document's color space. */
   setFillOkHCL(node: NodeRef, color: OkHCLColor, index = 0): void {
-    writeFillOkHCL(this.figma.graph, node, color, index)
+    writeFillOkHCL(this.#graph, node, color, index)
   }
 
   getStrokeOkHCL(node: NodeRef, index = 0): OkHCLPayload | null {
-    return readStrokeOkHCL(this.figma.graph, node, index)
+    return readStrokeOkHCL(this.#graph, node, index)
   }
 
   setStrokeOkHCL(node: NodeRef, color: OkHCLColor, index = 0): void {
-    writeStrokeOkHCL(this.figma.graph, node, color, index)
+    writeStrokeOkHCL(this.#graph, node, color, index)
   }
 
   /** Which way a frame's auto layout runs: `AUTO`, `LTR` or `RTL`. */
   getLayoutDirection(node: NodeRef): string {
-    return readLayoutDirection(this.figma.graph, node)
+    return readLayoutDirection(this.#graph, node)
   }
 
   setLayoutDirection(node: NodeRef, direction: string): void {
-    writeLayoutDirection(this.figma.graph, node, direction)
+    writeLayoutDirection(this.#graph, node, direction)
   }
 
   /** Which way a text runs: `AUTO`, `LTR` or `RTL`. */
   getTextDirection(node: NodeRef): string {
-    return readTextDirection(this.figma.graph, node)
+    return readTextDirection(this.#graph, node)
   }
 
   setTextDirection(node: NodeRef, direction: string): void {
-    writeTextDirection(this.figma.graph, node, direction)
+    writeTextDirection(this.#graph, node, direction)
   }
 
   /**
@@ -248,6 +255,6 @@ export class OpenPencilAPI {
    * Load the fonts it uses first, as for `characters`.
    */
   setTextMarkdown(node: NodeRef, markdown: string): void {
-    writeTextMarkdown(this.figma.graph, node, markdown)
+    writeTextMarkdown(this.#graph, node, markdown)
   }
 }

@@ -12,13 +12,16 @@ const {
   label,
   description,
   as = 'div',
-  modified = false
+  modified = false,
+  resetDisabled = false
 } = defineProps<{
   label?: string
   description?: string
   as?: 'div' | 'label'
   /** The setting differs from its default. */
   modified?: boolean
+  /** The setting can't change right now; pass what disables its control. */
+  resetDisabled?: boolean
 }>()
 const emit = defineEmits<{ reset: [] }>()
 </script>
@@ -33,13 +36,13 @@ const emit = defineEmits<{ reset: [] }>()
       <span class="block text-xs font-medium text-surface"
         ><slot name="label">{{ label }}</slot></span
       >
-      <span v-if="description" class="mt-1 block text-[11px] leading-relaxed text-muted">{{
+      <span v-if="description" class="mt-1 block text-2xs leading-relaxed text-muted">{{
         description
       }}</span>
       <slot name="description" />
     </span>
     <span class="flex shrink-0 items-center gap-1">
-      <SettingsResetButton v-if="modified" @reset="emit('reset')" />
+      <SettingsResetButton v-if="modified" :disabled="resetDisabled" @reset="emit('reset')" />
       <slot />
     </span>
   </Primitive>

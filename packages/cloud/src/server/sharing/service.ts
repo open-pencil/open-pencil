@@ -1,4 +1,4 @@
-import type { CloudUserProfile, LookupCloudUserInput } from '#cloud/contract'
+import type { CloudUserProfile } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
@@ -35,22 +35,6 @@ export function createDocumentSharingService(
   const invitations = createInvitationService(database, options)
 
   return {
-    async lookupUser(
-      userId: string,
-      documentId: string,
-      input: LookupCloudUserInput
-    ): Promise<CloudUserProfile | null> {
-      await requireSharingAccess(database, userId, documentId)
-      const user = await database
-        .selectFrom('user')
-        .select(['id', 'name', 'email', 'image'])
-        .where((expression) =>
-          expression(expression.fn('lower', [expression.ref('email')]), '=', input.email)
-        )
-        .executeTakeFirst()
-      return user ?? null
-    },
-
     async userProfile(
       userId: string,
       documentId: string,

@@ -5,6 +5,7 @@
   "object": "Объект",
   "arrange": "Порядок",
   "text": "Текст",
+  "help": "Справка",
   "new": "Новый дизайн",
   "newTab": "Новая вкладка",
   "open": "Открыть…",
@@ -42,6 +43,7 @@
   "pasteToReplace": "Вставить для замены",
   "copyProperties": "Копировать свойства",
   "pasteProperties": "Вставить свойства",
+  "pasteAsLayers": "Вставить как слои",
   "copyPasteAs": "Копировать/Вставить как",
   "copyAsText": "Копировать как текст",
   "copyAsSVG": "Копировать как SVG",
@@ -87,5 +89,14 @@
   "togglePreview": "Просмотр",
   "saveTo": "Сохранить в…",
   "showVersionHistory": "Показать историю версий",
-  "saveToVersionHistory": "Сохранить в историю версий…"
+  "saveToVersionHistory": "Сохранить в историю версий…",
+  "reportProblem": "Сообщить о проблеме…",
+  "supportOpenPencil": "Поддержать OpenPencil…",
+  "documentation": "Документация OpenPencil",
+  "keyboardShortcuts": "Сочетания клавиш",
+  "whatsNew": "Что нового",
+  "community": "Сообщество в Discord",
+  "github": "OpenPencil на GitHub",
+  "newBoard": "Новая доска",
+  "toggleAIChat": "Переключить чат AI"
 }

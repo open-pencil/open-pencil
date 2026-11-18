@@ -13,6 +13,7 @@ import AppDataTable from '@/components/ui/table/AppDataTable.vue'
 import AppTablePagination from '@/components/ui/table/AppTablePagination.vue'
 
 import PortalLoadAlert from '../layout/PortalLoadAlert.vue'
+import { portalColumnMeta } from './columns'
 import { portalTable } from './ui'
 
 /**
@@ -91,13 +92,14 @@ function countOf(value: string) {
         type="search"
         :placeholder="searchLabel"
         :aria-label="searchLabel"
-        class="ml-auto w-64 max-w-full"
+        class="ms-auto w-64 max-w-full"
       >
         <template #leading><icon-lucide-search class="size-3.5" /></template>
       </AppInput>
     </div>
     <AppDataTable
       :table="table"
+      :column-meta="portalColumnMeta"
       :label="label"
       :hidden="hidden"
       :loading="loading"

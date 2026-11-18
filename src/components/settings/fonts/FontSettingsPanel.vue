@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 
-import { WEB_FONT_PROVIDER_IDS, WEB_FONT_PROVIDER_LABELS } from '@open-pencil/core/text'
+import {
+  DEFAULT_WEB_FONT_PROVIDER_SETTINGS,
+  WEB_FONT_PROVIDER_IDS,
+  WEB_FONT_PROVIDER_LABELS
+} from '@open-pencil/core/text'
 import type { WebFontProviderId } from '@open-pencil/core/text'
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { DEFAULT_ONLINE_FONTS } from '@/app/editor/fonts'
 import { useFontSettings } from '@/app/settings/fonts/use'
 import { isTauri } from '@/app/tauri/env'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
@@ -82,7 +87,13 @@ onMounted(() => {
         <template #title>{{ fonts.onlineFontProviders }}</template>
         <template #description>{{ fonts.downloadMissingWebFonts }}</template>
         <SettingsGroup>
-          <SettingsRow as="label" :label="fonts.onlineFonts">
+          <SettingsRow
+            as="label"
+            :label="fonts.onlineFonts"
+            :modified="online !== DEFAULT_ONLINE_FONTS"
+            :reset-disabled="busyAction !== null"
+            @reset="setOnlineFontsEnabled(DEFAULT_ONLINE_FONTS)"
+          >
             <AppSwitch
               :model-value="online"
               :label="fonts.onlineFonts"
@@ -95,6 +106,9 @@ onMounted(() => {
             :key="provider"
             as="label"
             :label="WEB_FONT_PROVIDER_LABELS[provider]"
+            :modified="providerEnabled(provider) !== DEFAULT_WEB_FONT_PROVIDER_SETTINGS[provider]"
+            :reset-disabled="busyAction !== null || !online"
+            @reset="setFontProviderEnabled(provider, DEFAULT_WEB_FONT_PROVIDER_SETTINGS[provider])"
           >
             <AppSwitch
               :model-value="providerEnabled(provider)"
@@ -150,7 +164,7 @@ onMounted(() => {
         </SettingsGroup>
       </SettingsSection>
 
-      <p v-if="status" role="status" class="text-[11px] leading-relaxed text-muted">
+      <p v-if="status" role="status" class="text-2xs leading-relaxed text-muted">
         {{ status }}
       </p>
     </div>

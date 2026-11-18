@@ -2,11 +2,11 @@ import { expect, test } from 'bun:test'
 
 import { lintFiles, ruleDiagnostics } from './helpers/lint.ts'
 
-const RULE = 'no-overlay-content-from-open-state'
+const RULE = '@open-pencil/vue/no-overlay-content-from-open-state'
 const SCRIPT = '<script setup lang="ts">\nconst removing = null\nconst shown = null\n</script>\n'
 
 async function flagged(files: Record<string, string>): Promise<string[]> {
-  const diagnostics = await lintFiles(files, { [`open-pencil/${RULE}`]: 'error' })
+  const diagnostics = await lintFiles(files, { [RULE]: 'error' })
   return ruleDiagnostics(diagnostics, RULE)
     .map((item) => item.filename?.split('/').pop() ?? '')
     .sort()
@@ -28,7 +28,10 @@ test('leaves overlays whose open is not a presence test', async () => {
       'src/components/List.vue': `${SCRIPT}<template><Disclosure v-for="group in groups" :open="expanded.includes(group.id)">{{ group.name }}</Disclosure></template>\n`,
       'src/components/Context.vue': `${SCRIPT}<template><ComboboxRoot :open="ctx.open">{{ ctx.label }}</ComboboxRoot></template>\n`,
       // Popovers close at once, so nothing draws after their state clears.
-      'src/components/Popover.vue': `${SCRIPT}<template><PopoverRoot :open="!!removing">{{ removing.name }}</PopoverRoot></template>\n`
+      'src/components/Popover.vue': `${SCRIPT}<template><PopoverRoot :open="!!removing">{{ removing.name }}</PopoverRoot></template>\n`,
+      // The app's wrappers close at once too, written either way.
+      'src/components/Wrapped.vue': `${SCRIPT}<template><AppPopoverRoot :open="!!removing">{{ removing.name }}</AppPopoverRoot></template>\n`,
+      'src/components/Kebab.vue': `${SCRIPT}<template><app-popover-root :open="!!removing">{{ removing.name }}</app-popover-root></template>\n`
     })
   ).toEqual([])
 })

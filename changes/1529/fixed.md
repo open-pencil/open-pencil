@@ -1,1 +1,0 @@
-- The image drop overlay in AI chat no longer stays on screen after a drag from apps such as Yoink.

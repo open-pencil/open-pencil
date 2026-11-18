@@ -1,4 +1,5 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { textDecorationDriver } from '#tests/helpers/canvas/text-decoration/driver'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
@@ -165,6 +166,14 @@ test('text decoration styles and OpenType features', async () => {
   })
   await editor.canvas.waitForRender()
   await expectCanvas('text-decoration-styles-and-opentype-features')
+})
+
+test('decoration pieces take the colour of the character that ends them', async () => {
+  // Recorded in Figma desktop 126 (scratch/pr-oracle/grouping/underline-canvas.png): an underline
+  // breaks only around descenders, a strikethrough never, and a piece takes the colour of the
+  // character whose descender ends it, or of the line's last character, wherever fills change.
+  await textDecorationDriver(() => editor.page).showColours()
+  await expectCanvas('text-decoration-colours')
 })
 
 test('text case by character range', async () => {

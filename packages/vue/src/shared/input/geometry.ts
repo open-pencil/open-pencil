@@ -1,5 +1,9 @@
 import { resolveEditorProfile, type Editor } from '@open-pencil/core'
-import { HANDLE_HIT_RADIUS, LAYER_HIT_PAD } from '@open-pencil/core/constants'
+import {
+  HANDLE_HIT_RADIUS,
+  LAYER_HIT_PAD,
+  ROTATION_HANDLE_DISTANCE
+} from '@open-pencil/core/constants'
 import {
   createSceneGeometry,
   isLineLike,
@@ -11,17 +15,19 @@ import {
   type HandlePosition,
   type SceneGeometry,
   type RotationPreview,
-  type TransformZone
+  type TransformZone,
+  worldRectToScreen
 } from '@open-pencil/core/geometry'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { svgDataURL } from '@open-pencil/scene-graph/images'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import moveCursorSVG from '#vue/shared/assets/cursors/move.svg?raw'
 import resizeCursorSVG from '#vue/shared/assets/cursors/resize.svg?raw'
 import rotateCursorSVG from '#vue/shared/assets/cursors/rotate.svg?raw'
 
 /** Figma's four-way cursor over a handle that moves a point, such as a line's end. */
-export const MOVE_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(moveCursorSVG)}") 12 12, auto`
+export const MOVE_CURSOR = `url("${svgDataURL(moveCursorSVG)}") 12 12, auto`
 
 export function getPointerCoords(e: MouseEvent, canvas: HTMLCanvasElement | null, editor: Editor) {
   if (!canvas) return { sx: 0, sy: 0, cx: 0, cy: 0 }
@@ -84,12 +90,8 @@ export function getScreenRect(
   panX: number,
   panY: number
 ) {
-  return {
-    x1: absX * zoom + panX,
-    y1: absY * zoom + panY,
-    x2: (absX + w) * zoom + panX,
-    y2: (absY + h) * zoom + panY
-  }
+  const screen = worldRectToScreen({ zoom, panX, panY }, { x: absX, y: absY, width: w, height: h })
+  return { x1: screen.x, y1: screen.y, x2: screen.x + screen.width, y2: screen.y + screen.height }
 }
 
 export function getHandlePositions(
@@ -136,29 +138,36 @@ export function unrotate(
   }
 }
 
+const HANDLE_CURSOR_DIRECTIONS: Record<HandlePosition, [number, number]> = {
+  nw: [1, 1],
+  ne: [-1, 1],
+  se: [-1, -1],
+  sw: [1, -1],
+
+  n: [0, 1],
+  e: [1, 0],
+  s: [0, -1],
+  w: [-1, 0]
+}
+
+function cursorAngle(direction: Vector): number {
+  const angle = (Math.atan2(direction.y, direction.x) * 180) / Math.PI
+  return (angle + 360) % 360
+}
+
 function getCursorAngleFromHandle(
   handle: HandlePosition,
   node: SceneNode,
   geometry: SceneGeometry
 ): number {
-  const map: Record<HandlePosition, [number, number]> = {
-    nw: [1, 1],
-    ne: [-1, 1],
-    se: [-1, -1],
-    sw: [1, -1],
+  const [bx, by] = HANDLE_CURSOR_DIRECTIONS[handle]
+  return cursorAngle(geometry.direction(node, { x: bx, y: by }))
+}
 
-    n: [0, 1],
-    e: [1, 0],
-    s: [0, -1],
-    w: [-1, 0]
-  }
-
-  const [bx, by] = map[handle]
-
-  const direction = geometry.direction(node, { x: bx, y: by })
-  const angle = (Math.atan2(direction.y, direction.x) * 180) / Math.PI
-
-  return (angle + 360) % 360
+/** The resize cursor's angle for a handle of an axis-aligned box, such as a multi-selection's. */
+export function axisAlignedCursorAngle(handle: HandlePosition): number {
+  const [bx, by] = HANDLE_CURSOR_DIRECTIONS[handle]
+  return cursorAngle({ x: bx, y: by })
 }
 
 /** The resize or rotation zone of a selected layer under a canvas point, in its own frame. */
@@ -239,7 +248,7 @@ export function buildRotationCursor(angleDeg: number): string {
       )
       .replace('</svg>', '</g></svg>')
   }
-  cached = `url("data:image/svg+xml,${encodeURIComponent(svg)}") 12 12, auto`
+  cached = `url("${svgDataURL(svg)}") 12 12, auto`
   rotationCursorCache.set(key, cached)
   return cached
 }
@@ -266,5 +275,27 @@ export function buildResizeCursor(angleDeg: number): string {
       `<g transform='translate(512 512) rotate(${normalized}) translate(-512 -512)'><path`
     )
     .replace('</svg>', '</g></svg>')
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 12 12, auto`
+  return `url("${svgDataURL(svg)}") 12 12, auto`
+}
+
+/**
+ * Whether a canvas point takes the rotation of a multi-selection's box: its top handle, drawn
+ * `ROTATION_HANDLE_DISTANCE` screen pixels beyond the top edge, or the zone just outside a corner.
+ */
+export function hitTestBoxRotation(cx: number, cy: number, box: Rect, zoom: number): boolean {
+  if (!hasTransformHandles(box.width * zoom, box.height * zoom)) return false
+  const dx = cx - (box.x + box.width / 2)
+  const dy = cy - (box.y - ROTATION_HANDLE_DISTANCE / zoom)
+  const radius = HANDLE_HIT_RADIUS / zoom
+  if (dx * dx + dy * dy <= radius * radius) return true
+  return transformZoneAt({ x: cx, y: cy }, box, zoom)?.kind === 'rotate'
+}
+
+/** The rotation cursor outside a corner of a multi-selection's box, or null elsewhere. */
+export function boxRotationCursor(cx: number, cy: number, box: Rect, zoom: number): string | null {
+  const zone = transformZoneAt({ x: cx, y: cy }, box, zoom)
+  if (zone?.kind !== 'rotate') return null
+  const x = zone.corner === 'nw' || zone.corner === 'sw' ? -1 : 1
+  const y = zone.corner === 'nw' || zone.corner === 'ne' ? -1 : 1
+  return buildRotationCursor((Math.atan2(y, x) * 180) / Math.PI + 135)
 }

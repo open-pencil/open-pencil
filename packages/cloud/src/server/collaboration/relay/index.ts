@@ -11,5 +11,7 @@ export {
 export {
   createCollaborationStateStore,
   type CollaborationRoomIdentity,
-  type CollaborationStateStore
+  type CollaborationStateStore,
+  type SavedRoom
 } from './persistence'
+export { readRelayPeerState, type RelayPeerState } from './resume'

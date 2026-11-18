@@ -231,8 +231,11 @@ export const DESIGN_JSX_ELEMENTS: DesignJSXElementDefinition[] = [
   ...rekaElementDefinitions()
 ]
 
-/** Props an inline `<svg>` takes besides a layer's: its markup's view box and body. */
-const SVG_PROPERTY_NAMES = ['viewBox', 'body'] as const
+/**
+ * Props an inline `<svg>` takes besides a layer's: its markup's view box, how the view box fits,
+ * its own transform, and body.
+ */
+const SVG_PROPERTY_NAMES = ['viewBox', 'preserveAspectRatio', 'transform', 'body'] as const
 
 /**
  * Lowercase tags JSX also accepts, as HTML names them, with the layer each makes; they are
@@ -314,6 +317,12 @@ export function elementPropsByName(name: string): ReadonlySet<string> | null {
   const element = BY_NAME.get(name)
   if (!element) return Object.hasOwn(INTRINSIC_ELEMENTS, name) ? elementProps(name) : null
   return element.runtimeType === 'instance' ? null : elementProps(element.runtimeType)
+}
+
+/** The layer an element written `<name>` makes, as `elementNodeType` finds it. */
+export function elementNodeTypeByName(name: string): NodeType | undefined {
+  const element = BY_NAME.get(name)
+  return element ? elementNodeType(element.runtimeType) : undefined
 }
 
 /** The schema an element of `runtimeType` reads its props by, if it has one. */

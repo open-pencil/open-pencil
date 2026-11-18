@@ -1,28 +1,37 @@
-import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
+import { compact } from 'es-toolkit'
 
-import { normalizeDashPattern } from '#core/canvas/strokes'
+import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
+import {
+  getNodeRotationOrigin,
+  getWorldMatrix,
+  localTransformFromWorld
+} from '@open-pencil/scene-graph/coordinate'
+import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
+import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
+import Matrix from '@open-pencil/scene-graph/matrix'
+
+import { normalizeDashPattern } from '#core/canvas/strokes/draw'
 import { lineStrokePath } from '#core/canvas/strokes/line'
 import { fittedDashPattern } from '#core/canvas/strokes/sides'
-import { computeContentBounds } from '#core/io/formats/raster'
+import { exportBounds } from '#core/io/formats/raster'
 
 import {
   nextDefId,
   formatSolidColor,
-  createFilterDef,
   drawnFills,
   resolveFill,
   solidFillOpacity,
   SVG_STROKE_CAP,
   SVG_STROKE_JOIN,
-  SVG_BLEND_MODE
+  type SVGExportContext
 } from './defs'
+import { layerEffects, withLayerEffects, type ExportEffectWarning } from './effects'
 import {
   round,
   geometryBlobToSVGPath,
   makePolygonPoints,
   roundedPolygonPath,
-  hasRadius,
-  roundedRectPath,
+  boxOutlinePath,
   arcPath,
   shapeWithTextOutlinePath
 } from './paths'
@@ -30,6 +39,8 @@ import {
 export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
 import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import {
   hasRegionFills,
   looseSegments,
@@ -37,8 +48,7 @@ import {
 } from '@open-pencil/scene-graph/vector-network'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
-import type { SVGExportContext, SVGFontAlias } from './defs'
-import { svg, renderSVGNode } from './node'
+import { svg, svgElement, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
 import { alignedStroke, alignedStrokeElement, shapeWithTextDetailElements } from './strokes'
@@ -72,13 +82,17 @@ function vectorShapeElements(
 ): SVGNode[] {
   const elements: SVGNode[] = []
   const filled = fillOutlines(node)
-  elements.push(...outlineElements(node, filled?.outlines ?? [], common, ctx, fallbackFills))
+  // Saved stroke geometry draws the stroke below, filled; stroking the fill too would paint it twice.
+  const stroked =
+    node.strokeGeometry.length > 0 && !!strokeAttrs.stroke && strokeAttrs.stroke !== 'none'
+  const outline = stroked ? { ...common, stroke: 'none' } : common
+  appendAll(elements, outlineElements(node, filled?.outlines ?? [], outline, ctx, fallbackFills))
   const network = node.vectorNetwork
-  if (network && !filled) elements.push(...networkElements(node, network, common))
+  if (network && !filled) appendAll(elements, networkElements(node, network, common))
   // Traced regions leave the open segments, which the canvas strokes, to add here.
   else if (network && filled?.traced && looseSegments(network).length > 0)
-    elements.push(...openPathElements(node, network, common, looseSegments))
-  if (node.strokeGeometry.length > 0 && strokeAttrs.stroke && strokeAttrs.stroke !== 'none') {
+    appendAll(elements, openPathElements(node, network, common, looseSegments))
+  if (stroked) {
     for (const geo of node.strokeGeometry) {
       const d = geometryBlobToSVGPath(geo.commandsBlob)
       if (d) {
@@ -93,7 +107,8 @@ function vectorShapeElements(
       }
     }
   }
-  if (node.vectorNetwork) elements.push(...vectorArrowHeads(node, node.vectorNetwork, strokeAttrs))
+  if (node.vectorNetwork)
+    appendAll(elements, vectorArrowHeads(node, node.vectorNetwork, strokeAttrs))
   return elements.length > 0
     ? elements
     : [svg('rect', { width: round(node.width), height: round(node.height), ...common })]
@@ -124,6 +139,8 @@ function nodeShapeElements(
 
   switch (node.type) {
     case 'ELLIPSE': {
+      // Saved geometry first, as the canvas and hit testing draw an ellipse.
+      if (node.fillGeometry.length > 0) return vectorShapeElements(node, common, strokeAttrs, ctx)
       if (node.arcData) {
         return [svg('path', { d: arcPath(node), ...common })]
       }
@@ -172,24 +189,28 @@ function nodeShapeElements(
     case 'SHAPE_WITH_TEXT':
       return shapeWithTextElements(node, common, strokeAttrs, ctx)
 
-    default: {
-      if (hasRadius(node)) {
-        if (node.independentCorners) {
-          return [svg('path', { d: roundedRectPath(node), ...common })]
-        }
-        return [
-          svg('rect', {
-            width: round(node.width),
-            height: round(node.height),
-            rx: round(node.cornerRadius),
-            ry: round(node.cornerRadius),
-            ...common
-          })
-        ]
-      }
-      return [svg('rect', { width: round(node.width), height: round(node.height), ...common })]
-    }
+    default:
+      return [boxOutlineElement(node, common)]
   }
+}
+
+/**
+ * A box layer's outline as one element: a rect, a rect with `rx`/`ry` for one radius, or the
+ * shared box path for independent or smoothed corners, so fills and clips follow the same edge.
+ */
+function boxOutlineElement(
+  node: SceneNode,
+  attrs: Record<string, string | number | undefined>
+): SVGNode {
+  const width = round(node.width)
+  const height = round(node.height)
+  if (!nodeHasRadius(node)) return svg('rect', { width, height, ...attrs })
+  if (node.independentCorners || nodeHasSmoothCorners(node)) {
+    return svg('path', { d: boxOutlinePath(node), ...attrs })
+  }
+  // SVG clamps rx and ry to their own sides; the canvas keeps a too-large radius circular.
+  const radius = round(Math.min(node.cornerRadius, node.width / 2, node.height / 2))
+  return svg('rect', { width, height, rx: radius, ry: radius, ...attrs })
 }
 
 /**
@@ -213,17 +234,16 @@ function shapeWithTextElements(
 function buildTransformAttr(node: SceneNode): string | undefined {
   const transforms: string[] = []
   if (node.x !== 0 || node.y !== 0) transforms.push(`translate(${round(node.x)}, ${round(node.y)})`)
-  if (node.rotation !== 0) {
-    transforms.push(
-      `rotate(${round(node.rotation)}, ${round(node.width / 2)}, ${round(node.height / 2)})`
-    )
-  }
   if (node.flipX || node.flipY) {
     const tx = node.flipX ? node.width : 0
     const ty = node.flipY ? node.height : 0
     const sx = node.flipX ? -1 : 1
     const sy = node.flipY ? -1 : 1
     transforms.push(`translate(${round(tx)}, ${round(ty)}) scale(${sx}, ${sy})`)
+  }
+  if (node.rotation !== 0) {
+    const pivot = getNodeRotationOrigin(node)
+    transforms.push(`rotate(${round(node.rotation)}, ${round(pivot.x)}, ${round(pivot.y)})`)
   }
   return transforms.length > 0 ? transforms.join(' ') : undefined
 }
@@ -239,27 +259,15 @@ function buildGroupAttrs(
 
   if (node.opacity < 1) attrs.opacity = round(node.opacity)
 
-  const blend = SVG_BLEND_MODE[node.blendMode]
+  const blend = CSS_BLEND_MODE[node.blendMode]
   if (blend && blend !== 'normal' && node.blendMode !== 'PASS_THROUGH') {
     attrs.style = `mix-blend-mode: ${blend}`
   }
 
-  const filterDef = createFilterDef(node.effects, ctx)
-  if (filterDef) {
-    ctx.defs.push(filterDef.node)
-    attrs.filter = `url(#${filterDef.id})`
-  }
-
   let clipId: string | undefined
-  if (node.clipsContent && node.childIds.length > 0) {
+  if (clipsChildren(node) && node.childIds.length > 0) {
     clipId = nextDefId(ctx, 'clip')
-    ctx.defs.push(
-      svg(
-        'clipPath',
-        { id: clipId },
-        svg('rect', { width: round(node.width), height: round(node.height) })
-      )
-    )
+    ctx.defs.push(svg('clipPath', { id: clipId }, boxOutlineElement(node, {})))
   }
 
   return { attrs, clipId }
@@ -382,7 +390,35 @@ function exportedFill(
 
 function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   if (!node.visible) return null
+  // A layer without a name has nothing to be found by.
+  if (!ctx.layerIds || !node.name) return drawNode(node, ctx)
+  // Parents take their names before their children, so a repeated name counts in layer order.
+  const id = layerId(node.name, ctx.layerIds)
+  const drawn = drawNode(node, ctx)
+  if (!drawn) return null
+  // A layer drawn as its only child's element keeps that child's id and gets its own group.
+  if ('id' in drawn.attrs) return svg('g', { id }, drawn)
+  return { ...drawn, attrs: { id, ...drawn.attrs } }
+}
 
+/**
+ * A layer's name as an element id, numbered from `_2` when an earlier layer has it, as Figma does,
+ * and past any id already given out.
+ */
+function layerId(name: string, ids: NonNullable<SVGExportContext['layerIds']>): string {
+  let count = ids.names.get(name) ?? 0
+  let id: string
+  do {
+    count += 1
+    id = count === 1 ? name : `${name}_${count}`
+  } while (ids.taken.has(id))
+  ids.names.set(name, count)
+  ids.taken.add(id)
+  return id
+}
+
+function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
+  const effects = layerEffects(node, ctx)
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
   if (node.type === 'TEXT') {
@@ -391,7 +427,8 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
       node,
       ctx
     )
-    return svg('g', groupAttrs, renderTextNode(node, fill.color, ctx, fill.opacity))
+    const text = renderTextNode(node, fill.color, ctx, fill.opacity)
+    return svgElement('g', groupAttrs, withLayerEffects([text], effects, groupAttrs))
   }
 
   const visibleFills = node.fills.filter((f) => f.visible)
@@ -428,12 +465,12 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   }
 
   if (clipId && childContent.length > 0) {
-    children.push(svg('g', { 'clip-path': `url(#${clipId})` }, ...childContent))
+    children.push(svgElement('g', { 'clip-path': `url(#${clipId})` }, childContent))
   } else {
-    children.push(...childContent)
+    appendAll(children, childContent)
   }
 
-  const validChildren = children.filter((c): c is SVGNode => c !== null)
+  const validChildren = withLayerEffects(compact(children), effects, groupAttrs)
 
   if (validChildren.length === 0 && Object.keys(groupAttrs).length === 0) {
     return null
@@ -443,7 +480,7 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     return validChildren[0]
   }
 
-  return svg('g', groupAttrs, ...validChildren)
+  return svgElement('g', groupAttrs, validChildren)
 }
 
 function isGroupLike(node: SceneNode): boolean {
@@ -457,16 +494,17 @@ export interface SVGExportOptions {
   xmlDeclaration?: boolean
   /** Target export color space (default: srgb) */
   colorSpace?: 'srgb' | 'display-p3'
+  /** Receives each effect the export leaves out because SVG cannot draw it, such as glass. */
+  onWarning?: (warning: ExportEffectWarning) => void
   /**
    * Line breaks of text nodes as the editor laid them out, wraps included. Without them, only
    * explicit newlines start a new baseline, which renderers that do not wrap SVG text keep.
    */
   textLayout?: SVGTextLayout
-  /**
-   * A family to name a font face by instead of its own, such as the one a PDF embeds the face's
-   * file under. Text in an aliased face is written in that family at normal weight and style.
-   */
-  fontAlias?: SVGFontAlias
+  /** Each layer's name as its element's `id`, as Figma's "Include id attribute" writes it. */
+  layerIds?: boolean
+  /** Size the drawing to the layers' boxes rather than to everything they draw. */
+  useAbsoluteBounds?: boolean
 }
 
 export function renderNodesToSVG(
@@ -475,7 +513,7 @@ export function renderNodesToSVG(
   nodeIds: string[],
   options: SVGExportOptions = {}
 ): string | null {
-  const bounds = computeContentBounds(graph, nodeIds)
+  const bounds = exportBounds(graph, nodeIds, options.useAbsoluteBounds)
   if (!bounds) return null
 
   const { minX, minY, maxX, maxY } = bounds
@@ -487,24 +525,23 @@ export function renderNodesToSVG(
     defIdCounter: 0,
     graph,
     colorSpace: options.colorSpace ?? 'srgb',
+    onWarning: options.onWarning,
     textLayout: options.textLayout,
-    fontAlias: options.fontAlias
+    layerIds: options.layerIds ? { names: new Map(), taken: new Set() } : undefined
   }
 
   const contentNodes: SVGNode[] = []
+  const drawingOrigin = Matrix.translated(minX, minY)
 
   for (const id of nodeIds) {
     const node = graph.getNode(id)
     if (!node?.visible) continue
 
-    const abs = graph.getAbsolutePosition(id)
-    const offsetX = abs.x - minX
-    const offsetY = abs.y - minY
-
-    const needsOffset = offsetX !== node.x || offsetY !== node.y
-    const clone = needsOffset ? { ...node, x: round(offsetX), y: round(offsetY) } : node
-
-    const rendered = renderNode(clone, ctx)
+    const placed = {
+      ...node,
+      ...localTransformFromWorld(node, getWorldMatrix(node, graph), drawingOrigin)
+    }
+    const rendered = renderNode(placed, ctx)
     if (rendered) contentNodes.push(rendered)
   }
 
@@ -512,11 +549,11 @@ export function renderNodesToSVG(
 
   const rootChildren: (SVGNode | string)[] = []
   if (ctx.defs.length > 0) {
-    rootChildren.push(svg('defs', {}, ...ctx.defs))
+    rootChildren.push(svgElement('defs', {}, ctx.defs))
   }
-  rootChildren.push(...contentNodes)
+  appendAll(rootChildren, contentNodes)
 
-  const root = svg(
+  const root = svgElement(
     'svg',
     {
       xmlns: 'http://www.w3.org/2000/svg',
@@ -525,7 +562,7 @@ export function renderNodesToSVG(
       height,
       viewBox: `0 0 ${width} ${height}`
     },
-    ...(rootChildren as SVGNode[])
+    rootChildren
   )
 
   const svgStr = renderSVGNode(root)
@@ -556,7 +593,7 @@ export function renderNodeSVGElement(
   return svg(
     'svg',
     { width, height, viewBox: `0 0 ${width} ${height}` },
-    ctx.defs.length > 0 ? svg('defs', {}, ...ctx.defs) : null,
+    ctx.defs.length > 0 ? svgElement('defs', {}, ctx.defs) : null,
     drawn
   )
 }

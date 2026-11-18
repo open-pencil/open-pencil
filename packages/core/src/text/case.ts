@@ -1,4 +1,5 @@
 import type { SceneNode, TextCase } from '@open-pencil/scene-graph'
+import { styleRunPieces } from '@open-pencil/scene-graph/text'
 
 type CasedText = Pick<SceneNode, 'text' | 'textCase' | 'styleRuns'>
 
@@ -48,15 +49,9 @@ export function textCaseSegments(node: CasedText): TextCaseSegment[] {
     if (previous?.end === start && previous.textCase === textCase) previous.end = end
     else segments.push({ start, end, textCase })
   }
-  let at = 0
-  for (const run of node.styleRuns.toSorted((a, b) => a.start - b.start)) {
-    const start = Math.max(at, run.start)
-    const end = Math.min(node.text.length, run.start + run.length)
-    add(at, start, node.textCase)
-    add(start, end, run.style.textCase ?? node.textCase)
-    at = Math.max(at, end)
+  for (const { start, end, style } of styleRunPieces(node.styleRuns, node.text.length)) {
+    add(start, end, style?.textCase ?? node.textCase)
   }
-  add(at, node.text.length, node.textCase)
   return segments
 }
 
@@ -123,4 +118,11 @@ export function shownCharacters(
     }
   }
   return result
+}
+
+/** The index of the character of `text` each UTF-16 unit of the shown text comes from. */
+export function shownSourceIndices(node: CasedText): number[] {
+  return shownCharacters(node).flatMap(({ character, sourceIndex }) =>
+    Array.from({ length: character.length }, () => sourceIndex)
+  )
 }

@@ -16,6 +16,8 @@ export interface HostFontFamily {
 export interface FamilyFaceSources {
   /** The browser's installed fonts, once listed. */
   localFonts(): FontInfo[] | null
+  /** The faces of a family the browser's fonts read so far name themselves, listed as others. */
+  ownLocalFaces(family: string): FamilyFace[] | null
   /** A web provider's faces for a family; none when no provider has it. */
   webFaces(family: string): Promise<FamilyFace[]>
   /** The style keys of a family's bundled faces. */
@@ -53,6 +55,16 @@ export class FamilyFaceCatalog {
       this.lookups.set(family, lookup)
     }
     return lookup
+  }
+
+  /** The families the host's catalog lists. */
+  hostFamilies(): string[] {
+    return [...this.hostFaces.keys()]
+  }
+
+  /** The families `faces` has found faces for so far. */
+  foundFamilies(): string[] {
+    return [...this.found].filter(([, faces]) => faces?.length).map(([family]) => family)
   }
 
   /** The faces `faces` found for a family, once it has; `undefined` before. */
@@ -104,7 +116,8 @@ export class FamilyFaceCatalog {
     const host = this.hostFaces.get(family)
     if (host && host.length > 0) return [...host]
     const local = this.sources.localFonts()?.filter((font) => font.family === family) ?? []
-    return local.length > 0 ? facesFromStyles(local.map((font) => font.style)) : null
+    if (local.length > 0) return facesFromStyles(local.map((font) => font.style))
+    return this.sources.ownLocalFaces(family)
   }
 
   /** The bundled fonts name their faces as Google Fonts does; their keys are style keys. */

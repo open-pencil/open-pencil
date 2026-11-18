@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { fontManager } from '@open-pencil/core/text'
 import { vectorNetworkToPath } from '@open-pencil/core/vector'
 import type { Effect, SceneNode, Stroke } from '@open-pencil/scene-graph'
@@ -18,13 +18,15 @@ afterEach(() => {
   for (const cleanup of cleanups.splice(0)) cleanup()
 })
 
-async function createEditorWithRenderer() {
-  const ck = await initCanvasKit()
+/** `fonts` loads the renderer's fonts, which shaping needs to tell each glyph's character. */
+async function createEditorWithRenderer({ fonts = false } = {}) {
+  const ck = await getCanvasKit()
   const surface = ck.MakeSurface(200, 200)
   if (!surface) throw new Error('Could not create CanvasKit surface')
   const renderer = new SkiaRenderer(ck, surface)
   const editor = createEditor()
   editor.setCanvasKit(ck, renderer)
+  if (fonts) await renderer.loadFonts()
   cleanups.push(() => {
     editor.dispose()
     renderer.destroy()
@@ -120,7 +122,7 @@ describe('outlineStrokeSelected', () => {
     const outline = editor.graph.getNode([...editor.state.selectedIds][0] ?? '')
     const network = outline?.vectorNetwork
     if (!outline || !network) throw new Error('Expected an outline')
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const [path] = vectorNetworkToPath(ck, network)
     // The ellipse's centre and a point on the ring, in the outline's own box.
     expect(path?.contains(60 - outline.x, 35 - outline.y)).toBe(false)
@@ -234,6 +236,58 @@ describe('outlineStrokeSelected', () => {
     ])
   })
 
+  test('turns text without a stroke into its glyphs, each in its character’s fill', async () => {
+    // Recorded in Figma desktop 126: "Hey" in red then blue, underlined, with no stroke outlines
+    // to a group "Hey" of one vector per glyph and the underline.
+    const inter = await fontManager.fetchBundledFont('/InterVariable.ttf')
+    if (!inter) throw new Error('Expected the bundled Inter')
+    await fontManager.markLoaded('Inter', 'Regular', inter)
+    const editor = await createEditorWithRenderer({ fonts: true })
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      name: 'Hey',
+      text: 'Hey',
+      fontFamily: 'Inter',
+      fontSize: 40,
+      width: 120,
+      height: 50,
+      textDecoration: 'UNDERLINE',
+      styleRuns: [
+        { start: 0, length: 1, style: { fills: [solid(RED)] } },
+        { start: 1, length: 2, style: { fills: [solid(BLUE)] } }
+      ]
+    })
+    editor.select([text.id])
+    editor.outlineStrokeSelected()
+
+    const [group] = [...editor.state.selectedIds].map((id) => editor.graph.getNode(id))
+    expect([group?.type, group?.name]).toEqual(['GROUP', 'Hey'])
+    const colors = editor.graph.getChildren(group?.id ?? '').map((glyph) => glyph.fills[0]?.color)
+    // The glyphs, then the underline in the colours it is drawn in.
+    expect(colors.slice(0, 3)).toEqual([RED, BLUE, BLUE])
+    expect(colors.length).toBeGreaterThan(3)
+  })
+
+  test('leaves text without a layer fill, which the canvas does not draw, alone', async () => {
+    const inter = await fontManager.fetchBundledFont('/InterVariable.ttf')
+    if (!inter) throw new Error('Expected the bundled Inter')
+    await fontManager.markLoaded('Inter', 'Regular', inter)
+    const editor = await createEditorWithRenderer({ fonts: true })
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      name: 'Hi',
+      text: 'Hi',
+      fontFamily: 'Inter',
+      fontSize: 40,
+      width: 60,
+      height: 50,
+      fills: [],
+      styleRuns: [{ start: 0, length: 2, style: { fills: [solid(RED)] } }]
+    })
+    editor.select([text.id])
+    editor.outlineStrokeSelected()
+
+    expect(editor.graph.getNode(text.id)?.type).toBe('TEXT')
+  })
+
   test('outlines a boolean’s combined shape, not its box', async () => {
     const editor = await createEditorWithRenderer()
     const pageId = editor.state.currentPageId
@@ -292,15 +346,109 @@ describe('outlineStrokeSelected', () => {
     expect(box()).toEqual([46, 46, 108, 108])
   })
 
-  test('leaves fill-only shapes alone', async () => {
+  test('turns a fill-only shape into a vector of its fill, keeping its name and look', async () => {
+    // Recorded in Figma desktop 126 (scratch/pr-oracle/grouping): a rectangle with a fill and no
+    // stroke becomes a vector "R" of its fill, keeping its opacity and effects.
     const editor = await createEditorWithRenderer()
     const rect = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      name: 'R',
+      x: 20,
+      y: 20,
+      width: 100,
+      height: 60,
       fills: [solid(BLUE)],
-      strokes: []
+      strokes: [],
+      opacity: 0.5
     })
     editor.select([rect.id])
+    editor.outlineStrokeSelected()
+
+    expect(selected(editor)).toEqual([
+      { name: 'R', type: 'VECTOR', parent: 'CANVAS', box: [20, 20, 100, 60], fills: [BLUE] }
+    ])
+    const [vector] = [...editor.state.selectedIds].map((id) => editor.graph.getNode(id))
+    expect(vector?.opacity).toBe(0.5)
+  })
+
+  test('outlines the fill-only layers of a group and the children of a frame', async () => {
+    const editor = await createEditorWithRenderer()
+    const pageId = editor.state.currentPageId
+    const group = editor.graph.createNode('GROUP', pageId, { name: 'G' })
+    editor.graph.createNode('RECTANGLE', group.id, {
+      name: 'A',
+      width: 40,
+      height: 30,
+      fills: [solid(RED)]
+    })
+    const frame = editor.graph.createNode('FRAME', pageId, {
+      name: 'F',
+      x: 100,
+      width: 200,
+      height: 100,
+      fills: [solid(BLUE)]
+    })
+    editor.graph.createNode('RECTANGLE', frame.id, {
+      name: 'B',
+      width: 40,
+      height: 30,
+      fills: [solid(RED)]
+    })
+    editor.select([group.id, frame.id])
+    editor.outlineStrokeSelected()
+
+    expect(selected(editor).map(({ name, type, parent }) => [name, type, parent])).toEqual([
+      ['A', 'VECTOR', 'GROUP'],
+      ['B', 'VECTOR', 'FRAME']
+    ])
+    // The frame keeps its own fill rather than becoming a vector.
+    expect(editor.graph.getNode(frame.id)?.type).toBe('FRAME')
+  })
+
+  test('keeps Fill sizing in auto layout on each outline, but not on text’s group', async () => {
+    // Recorded in Figma desktop 126 (scratch/pr-oracle/grouping/layout-sizing.ts): a layer that
+    // fills its row on both axes leaves outlines that fill it too; text's glyph group is fixed.
+    const editor = await createEditorWithRenderer({ fonts: true })
+    const row = editor.graph.createNode('FRAME', editor.state.currentPageId, {
+      layoutMode: 'HORIZONTAL',
+      width: 400,
+      height: 120
+    })
+    const fill = { layoutGrow: 1, layoutAlignSelf: 'STRETCH' } as const
+    const shape = editor.graph.createNode('RECTANGLE', row.id, {
+      name: 'R',
+      fills: [solid(BLUE)],
+      strokes: [stroke('CENTER')],
+      ...fill
+    })
+    const text = editor.graph.createNode('TEXT', row.id, {
+      name: 'T',
+      text: 'Hey',
+      fontSize: 32,
+      fills: [solid(BLUE)],
+      ...fill
+    })
+    editor.select([shape.id, text.id])
+    editor.outlineStrokeSelected()
+
+    const sizing = editor.graph
+      .getChildren(row.id)
+      .map((node) => [node.name, node.type, node.layoutGrow, node.layoutAlignSelf])
+    expect(sizing).toEqual([
+      ['R', 'VECTOR', 1, 'STRETCH'],
+      ['R (Stroke)', 'VECTOR', 1, 'STRETCH'],
+      ['T', 'GROUP', 0, 'AUTO']
+    ])
+  })
+
+  test('leaves a shape with neither fill nor stroke, and a frame on its own, alone', async () => {
+    const editor = await createEditorWithRenderer()
+    const pageId = editor.state.currentPageId
+    const bare = editor.graph.createNode('RECTANGLE', pageId, { fills: [], strokes: [] })
+    const frame = editor.graph.createNode('FRAME', pageId, { fills: [solid(BLUE)] })
+    editor.select([bare.id, frame.id])
     expect(editor.outlineStrokeSelected()).toBeNull()
-    expect(editor.graph.getNode(rect.id)?.type).toBe('RECTANGLE')
+    expect(editor.graph.getNode(bare.id)?.type).toBe('RECTANGLE')
+    expect(editor.graph.getNode(frame.id)?.type).toBe('FRAME')
   })
 
   test('undo puts the layers back and redo outlines them again', async () => {

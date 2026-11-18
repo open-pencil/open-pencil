@@ -1,1 +1,0 @@
-- Exporting a layer that blends or blurs its background leaves out the layers around and above it, as in Figma.

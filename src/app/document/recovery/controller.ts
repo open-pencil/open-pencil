@@ -1,6 +1,7 @@
 import { watchDebounced } from '@vueuse/core'
 import { watch, type WatchHandle } from 'vue'
 
+import { recoverySessionId } from '@/app/document/recovery/session'
 import { getRecoveryStore } from '@/app/document/recovery/store'
 import type { RecoveryStore } from '@/app/document/recovery/types'
 import { createCanvasId } from '@/app/storage/id'
@@ -10,7 +11,13 @@ interface DocumentRecoveryOptions {
   /** The document's content revision; rendering and layout do not advance it. */
   version: () => number
   buildFigFile: () => Promise<Uint8Array> | Uint8Array
-  hasWritableSource: () => boolean
+  /** The copy's Home card cover, drawn with the document as `buildFigFile` writes it. */
+  buildCover?: () => Uint8Array | null
+  /**
+   * Whether autosave writes the document's edits to its own source, which then keeps them; a file
+   * saved only by hand still needs a recovery copy of what is unsaved.
+   */
+  autosaves: () => boolean
   isEnabled?: () => boolean
   store?: RecoveryStore
   recoveryId?: string
@@ -29,7 +36,8 @@ export function createDocumentRecovery({
   state,
   version: currentVersion,
   buildFigFile,
-  hasWritableSource,
+  buildCover,
+  autosaves,
   isEnabled = () => true,
   store = getRecoveryStore(),
   recoveryId = createCanvasId()
@@ -43,16 +51,29 @@ export function createDocumentRecovery({
   let cleanup: Promise<void> = Promise.resolve()
   let disposed = false
 
+  /** A copy without a cover still keeps the work, so a failed drawing never stops the write. */
+  function drawCover(): Uint8Array | null {
+    try {
+      return buildCover?.() ?? null
+    } catch (error) {
+      console.warn('[Recovery] Could not draw the cover:', error)
+      return null
+    }
+  }
+
   async function runWrites(generation: number): Promise<void> {
     if (disposed || generation !== lifecycleGeneration || !isEnabled()) return
-    if (hasWritableSource() || requestedVersion === protectedVersion) return
+    if (autosaves() || requestedVersion === protectedVersion) return
     const version = requestedVersion
+    const cover = drawCover()
     const bytes = await buildFigFile()
-    if (generation !== lifecycleGeneration || hasWritableSource() || !isEnabled()) return
+    if (generation !== lifecycleGeneration || autosaves() || !isEnabled()) return
     await store.write({
       id,
+      sessionId: recoverySessionId,
       documentName: state.documentName,
-      figBytes: bytes
+      figBytes: bytes,
+      cover
     })
     persistedVersion = version
     if (generation !== lifecycleGeneration) return
@@ -62,7 +83,7 @@ export function createDocumentRecovery({
 
   async function persistNow(): Promise<void> {
     await cleanup
-    if (disposed || hasWritableSource() || !isEnabled()) return
+    if (disposed || autosaves() || !isEnabled()) return
     requestedVersion = currentVersion()
     if (requestedVersion === protectedVersion) return
     if (!writing) {
@@ -81,6 +102,13 @@ export function createDocumentRecovery({
     },
     { debounce: 3000, maxWait: 10000 }
   )
+
+  // Edits autosave had not written yet stay unsaved once it stops, so they get a copy now rather
+  // than at the next edit.
+  const stopAutosaveWatch: WatchHandle = watch(autosaves, (autosaving) => {
+    if (autosaving) return
+    void persistNow().catch((error) => console.warn('[Recovery] Snapshot failed:', error))
+  })
 
   const stopEnabledWatch: WatchHandle = watch(
     isEnabled,
@@ -149,6 +177,7 @@ export function createDocumentRecovery({
       lifecycleGeneration++
       stopVersionWatch()
       stopEnabledWatch()
+      stopAutosaveWatch()
     }
   }
 }

@@ -1,1 +1,0 @@
-- Vectors whose regions have their own colors keep them in Figma's vector edit mode after a `.fig` export.

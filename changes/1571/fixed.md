@@ -1,1 +1,0 @@
-- Cloud document renames persist across reopening and synchronize with collaborators.

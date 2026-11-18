@@ -1,1 +1,0 @@
-- SVG export places each explicit line of multiline text on its own baseline.

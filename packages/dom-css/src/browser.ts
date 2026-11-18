@@ -1,5 +1,6 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { laysOutBoxes } from './import/boxes'
 import { mergeCSSText } from './import/css-text'
 import { jsxToDesignDocumentCore, type JSXChild } from './import/jsx/core'
 import { designDocumentToSceneGraph, type ToSceneGraphOptions } from './import/scene-graph'
@@ -64,6 +65,17 @@ function extractEmbeddedCSSText(html: string, browserDocument: Document): string
     .map((style) => (style.textContent ? style.textContent.trim() : ''))
     .filter((css): css is string => !!css)
   return styles.length > 0 ? styles.join('\n') : undefined
+}
+
+/**
+ * Whether HTML lays something out rather than only styling text: it brings a stylesheet, or an
+ * element's own style draws or sizes a box. Text copied from inside one block of a page carries
+ * text styling only; a copy spanning a card or a toolbar carries its boxes.
+ */
+export function browserHTMLHasBoxes(html: string, options: { document?: Document } = {}): boolean {
+  const browserDocument = resolveBrowserDocument(options.document)
+  if (extractEmbeddedCSSText(html, browserDocument)) return true
+  return laysOutBoxes(createRuntime({ document: browserDocument }).parseHTML(html))
 }
 
 export async function browserHTMLToDesignDocument(

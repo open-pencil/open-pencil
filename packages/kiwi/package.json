@@ -1,12 +1,13 @@
 {
   "name": "@open-pencil/kiwi",
-  "version": "0.16.0",
+  "version": "0.17.0-beta.5",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/kiwi"
   },
+  "funding": "https://ko-fi.com/dannote",
   "files": [
     "dist",
     "src",
@@ -69,6 +70,7 @@
     "fflate": "^0.8.3"
   },
   "devDependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
     "@types/bun": "^1.3.14",
     "tsdown": "^0.22.14",
     "typescript": "npm:@typescript/typescript6@^6.0.2"

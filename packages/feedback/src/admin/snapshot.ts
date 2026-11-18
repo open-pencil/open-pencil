@@ -6,6 +6,7 @@ import { minDate, parseDate, toZoned } from '@internationalized/date'
 import { countBy, groupBy, maxBy, omit, partition, sumBy } from 'es-toolkit'
 import type { Kysely } from 'kysely'
 
+import { installs } from './installs'
 import { fetchUsage } from './posthog'
 
 /** How many entries a ranking keeps. */
@@ -420,24 +421,27 @@ export async function buildSnapshot(
   // Visits and the issue mirror are recorded once a day has ended, so today never has any.
   const finished = days.filter((day) => parseDate(day).compare(today) < 0)
   const db = createFeedbackDatabase(env.DB)
-  const [earliest, pinged, byNetwork, visited, repository, signups, usage] = await Promise.all([
-    firstDay(db),
-    pings(db, range, days),
-    networks(db, range),
-    site(db, env, range, finished),
-    github(db, range, days, finished),
-    waitlist(db, range),
-    fetchUsage(env, services, range).catch((error: unknown) => {
-      console.warn('PostHog usage unavailable', { error: String(error) })
-      return null
-    })
-  ])
+  const [earliest, pinged, byStep, byNetwork, visited, repository, signups, usage] =
+    await Promise.all([
+      firstDay(db),
+      pings(db, range, days),
+      installs(db, end, days),
+      networks(db, range),
+      site(db, env, range, finished),
+      github(db, range, days, finished),
+      waitlist(db, range),
+      fetchUsage(env, services, range).catch((error: unknown) => {
+        console.warn('PostHog usage unavailable', { error: String(error) })
+        return null
+      })
+    ])
   return {
     asOf: now.toISOString(),
     today: today.toString(),
     earliest,
     ...range,
     ...pinged,
+    installs: byStep,
     networks: byNetwork,
     ...visited,
     github: repository,

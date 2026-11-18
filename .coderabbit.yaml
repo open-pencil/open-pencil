@@ -27,6 +27,14 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+  path_instructions:
+    - path: "**"
+      instructions: >-
+        Flag a helper, parser, path walker, format conversion, or test utility that duplicates an existing dependency or a module the repository already has, and name the one to reuse.
+        Flag code placed outside the package or domain folder that owns it, and tests outside the folder that mirrors their source.
+        Flag numeric or size constants with no stated source or reason, such as an unexplained zoom limit or viewport size.
+        Flag a fix deferred as predating the change when it sits in the code the change touches.
+        Do not repeat a finding the author already answered in its thread unless the code still has the problem.
   pre_merge_checks:
     docstrings:
       mode: "off"

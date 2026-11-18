@@ -6,6 +6,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
 import { AppDialogBody, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
+import { focusStyles } from '@/theme/focus/styles'
 
 const { attachment } = defineProps<{ attachment: AttachmentPresentation }>()
 const { ai } = useI18n()
@@ -28,7 +29,10 @@ const dimensions = computed(
   <button
     type="button"
     :aria-label="ai.viewAttachment({ name: attachment.name })"
-    class="block overflow-hidden rounded-lg border border-border bg-panel-field text-left shadow-xs transition-colors hover:border-muted focus-visible:outline-2 focus-visible:outline-panel-focus"
+    :class="[
+      'block overflow-hidden rounded-lg border border-border bg-panel-field text-start shadow-xs transition-colors hover:border-muted',
+      focusStyles.ring
+    ]"
     @click="viewerOpen = true"
   >
     <!-- The button names the attachment; its thumbnail and caption need no second name. -->
@@ -38,7 +42,7 @@ const dimensions = computed(
       alt=""
       class="h-20 w-28 border-b border-border bg-canvas object-contain"
     />
-    <span class="block max-w-28 truncate px-1.5 py-1 text-[9px] leading-tight text-surface">
+    <span class="block max-w-28 truncate px-1.5 py-1 text-4xs leading-tight text-surface">
       {{ attachment.name }}
     </span>
   </button>

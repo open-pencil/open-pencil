@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { asPageNode, createAPI } from '#core-tests/helpers/figma-api'
-
 describe('FigmaAPI grouping compatibility', () => {
   test('group accepts parent and index and returns a group node', () => {
     const api = createAPI()

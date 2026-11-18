@@ -10,6 +10,7 @@ import {
   parseCloudServerConfig,
   type CloudActor
 } from '#cloud/server'
+import { testClient } from 'hono/testing'
 import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
@@ -42,10 +43,9 @@ async function testApp(initialActor: CloudActor = actor) {
     objects: objects.store,
     resolveSession: async () => currentActor
   })
-  const workspaceResponse = await app.request('/api/workspaces', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'Documents', slug: 'documents-team' })
+  const client = testClient(app)
+  const workspaceResponse = await client.api.workspaces.$post({
+    json: { name: 'Documents', slug: 'documents-team' }
   })
   const workspace = await responseJSON(
     workspaceResponse,
@@ -54,7 +54,7 @@ async function testApp(initialActor: CloudActor = actor) {
   return {
     runtime,
     objects,
-    app,
+    client,
     workspaceId: workspace.workspace.id,
     setActor: (value: CloudActor) => {
       currentActor = value
@@ -62,14 +62,25 @@ async function testApp(initialActor: CloudActor = actor) {
   }
 }
 
+/** What accepting an invitation leaves: the grant the API then changes. */
+async function invitationGrant(
+  context: Awaited<ReturnType<typeof testApp>>,
+  documentId: string,
+  userId: string
+) {
+  await context.runtime.database
+    .insertInto('documentGrant')
+    .values({ id: crypto.randomUUID(), documentId, userId, permission: 'view', createdBy: 'alice' })
+    .execute()
+}
+
 describe('Cloud document routes', () => {
   test('creates and lists document metadata', async () => {
     const context = await testApp()
     try {
-      const create = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Homepage' })
+      const create = await context.client.api.workspaces[':workspaceId'].documents.$post({
+        param: { workspaceId: context.workspaceId },
+        json: { name: 'Homepage' }
       })
       expect(create.status).toBe(201)
       const created = await responseJSON(
@@ -78,7 +89,9 @@ describe('Cloud document routes', () => {
       )
       expect(created.document.version).toBe(0)
 
-      const list = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`)
+      const list = await context.client.api.workspaces[':workspaceId'].documents.$get({
+        param: { workspaceId: context.workspaceId }
+      })
       expect(list.status).toBe(200)
       expect(await list.json()).toMatchObject({
         documents: [
@@ -86,10 +99,9 @@ describe('Cloud document routes', () => {
         ]
       })
 
-      const board = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Retro', kind: 'board' })
+      const board = await context.client.api.workspaces[':workspaceId'].documents.$post({
+        param: { workspaceId: context.workspaceId },
+        json: { name: 'Retro', kind: 'board' }
       })
       expect(await board.json()).toMatchObject({ document: { name: 'Retro', kind: 'board' } })
     } finally {
@@ -102,47 +114,36 @@ describe('Cloud document routes', () => {
     async (directGrant) => {
       const context = await testApp()
       try {
-        const create = await context.app.request(
-          `/api/workspaces/${context.workspaceId}/documents`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: 'Homepage' })
-          }
-        )
+        const create = await context.client.api.workspaces[':workspaceId'].documents.$post({
+          param: { workspaceId: context.workspaceId },
+          json: { name: 'Homepage' }
+        })
         const document = await responseJSON(
           create,
           v.object({ document: v.object({ id: v.string() }) })
         )
         if (directGrant) {
-          const grant = await context.app.request(
-            `/api/documents/${document.document.id}/grants/bob`,
-            {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ permission: 'edit' })
-            }
-          )
+          await invitationGrant(context, document.document.id, 'bob')
+          const grant = await context.client.api.documents[':documentId'].grants[':userId'].$put({
+            param: { documentId: document.document.id, userId: 'bob' },
+            json: { permission: 'edit' }
+          })
           expect(grant.status).toBe(200)
           context.setActor({ userId: 'bob', email: 'bob@example.com', name: 'Bob' })
-          const listing = await context.app.request(
-            `/api/workspaces/${context.workspaceId}/documents`
-          )
+          const listing = await context.client.api.workspaces[':workspaceId'].documents.$get({
+            param: { workspaceId: context.workspaceId }
+          })
           expect(listing.status).toBe(404)
         }
-        const uploadResponse = await context.app.request(
-          `/api/documents/${document.document.id}/uploads`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              baseRevisionId: null,
-              byteSize: 128,
-              checksum,
-              contentType: 'application/octet-stream'
-            })
+        const uploadResponse = await context.client.api.documents[':documentId'].uploads.$post({
+          param: { documentId: document.document.id },
+          json: {
+            baseRevisionId: null,
+            byteSize: 128,
+            checksum,
+            contentType: 'application/octet-stream'
           }
-        )
+        })
         expect(uploadResponse.status).toBe(201)
 
         const upload = await responseJSON(
@@ -168,10 +169,9 @@ describe('Cloud document routes', () => {
           contentType: 'application/octet-stream'
         })
 
-        const commit = await context.app.request(`/api/uploads/${upload.id}/commit`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ checksum, name: 'Updated homepage', kind: 'board' })
+        const commit = await context.client.api.uploads[':uploadId'].commit.$post({
+          param: { uploadId: upload.id },
+          json: { checksum, name: 'Updated homepage', kind: 'board' }
         })
         expect(commit.status).toBe(200)
         const committed = await responseJSON(
@@ -190,10 +190,9 @@ describe('Cloud document routes', () => {
         expect(committed.document.name).toBe('Updated homepage')
         expect(committed.document.kind).toBe('board')
 
-        const repeatedCommit = await context.app.request(`/api/uploads/${upload.id}/commit`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ checksum, name: 'Stale retry' })
+        const repeatedCommit = await context.client.api.uploads[':uploadId'].commit.$post({
+          param: { uploadId: upload.id },
+          json: { checksum, name: 'Stale retry' }
         })
         expect(repeatedCommit.status).toBe(200)
         expect(await repeatedCommit.json()).toMatchObject({
@@ -205,15 +204,17 @@ describe('Cloud document routes', () => {
         })
 
         context.setActor(actor)
-        const usageResponse = await context.app.request(
-          `/api/workspaces/${context.workspaceId}/usage`
-        )
+        const usageResponse = await context.client.api.workspaces[':workspaceId'].usage.$get({
+          param: { workspaceId: context.workspaceId }
+        })
         expect(usageResponse.status).toBe(200)
         expect(await usageResponse.json()).toEqual({
           usage: { bytesUsed: 128, objectCount: 1, documentCount: 1 }
         })
 
-        const downloadResponse = await context.app.request(`/api/documents/${document.document.id}`)
+        const downloadResponse = await context.client.api.documents[':documentId'].$get({
+          param: { documentId: document.document.id }
+        })
         expect(downloadResponse.status).toBe(200)
         expect(await downloadResponse.json()).toMatchObject({
           document: {
@@ -239,28 +240,23 @@ describe('Cloud document routes', () => {
   test('abandons and deletes expired pending uploads', async () => {
     const context = await testApp()
     try {
-      const create = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Homepage' })
+      const create = await context.client.api.workspaces[':workspaceId'].documents.$post({
+        param: { workspaceId: context.workspaceId },
+        json: { name: 'Homepage' }
       })
       const document = await responseJSON(
         create,
         v.object({ document: v.object({ id: v.string() }) })
       )
-      const uploadResponse = await context.app.request(
-        `/api/documents/${document.document.id}/uploads`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            baseRevisionId: null,
-            byteSize: 128,
-            checksum,
-            contentType: 'application/octet-stream'
-          })
+      const uploadResponse = await context.client.api.documents[':documentId'].uploads.$post({
+        param: { documentId: document.document.id },
+        json: {
+          baseRevisionId: null,
+          byteSize: 128,
+          checksum,
+          contentType: 'application/octet-stream'
         }
-      )
+      })
       const upload = await responseJSON(uploadResponse, v.object({ id: v.string() }))
       const row = await context.runtime.database
         .selectFrom('upload')
@@ -285,42 +281,38 @@ describe('Cloud document routes', () => {
   test('rejects stale base revisions and unverified uploads', async () => {
     const context = await testApp()
     try {
-      const create = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Homepage' })
+      const create = await context.client.api.workspaces[':workspaceId'].documents.$post({
+        param: { workspaceId: context.workspaceId },
+        json: { name: 'Homepage' }
       })
       const document = await responseJSON(
         create,
         v.object({ document: v.object({ id: v.string() }) })
       )
-      const stale = await context.app.request(`/api/documents/${document.document.id}/uploads`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const stale = await context.client.api.documents[':documentId'].uploads.$post({
+        param: { documentId: document.document.id },
+        json: {
           baseRevisionId: crypto.randomUUID(),
           byteSize: 128,
           checksum,
           contentType: 'application/octet-stream'
-        })
+        }
       })
       expect(stale.status).toBe(409)
 
-      const pending = await context.app.request(`/api/documents/${document.document.id}/uploads`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const pending = await context.client.api.documents[':documentId'].uploads.$post({
+        param: { documentId: document.document.id },
+        json: {
           baseRevisionId: null,
           byteSize: 128,
           checksum,
           contentType: 'application/octet-stream'
-        })
+        }
       })
       const upload = await responseJSON(pending, v.object({ id: v.string() }))
-      const commit = await context.app.request(`/api/uploads/${upload.id}/commit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checksum })
+      const commit = await context.client.api.uploads[':uploadId'].commit.$post({
+        param: { uploadId: upload.id },
+        json: { checksum }
       })
       expect(commit.status).toBe(422)
       expect(await commit.json()).toEqual({ error: { code: 'invalid_upload' } })
@@ -370,26 +362,25 @@ describe('documents shared with a person', () => {
           updatedAt: now
         })
         .execute()
-      const create = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Brief', kind: 'board' })
+      const create = await context.client.api.workspaces[':workspaceId'].documents.$post({
+        param: { workspaceId: context.workspaceId },
+        json: { name: 'Brief', kind: 'board' }
       })
       const created = await responseJSON(
         create,
         v.object({ document: v.object({ id: v.string() }) })
       )
       const documentId = created.document.id
-      const grant = await context.app.request(`/api/documents/${documentId}/grants/bob`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ permission: 'view' })
+      await invitationGrant(context, documentId, 'bob')
+      const grant = await context.client.api.documents[':documentId'].grants[':userId'].$put({
+        param: { documentId: documentId, userId: 'bob' },
+        json: { permission: 'view' }
       })
       expect(grant.status).toBe(200)
 
       context.setActor(bob)
       const shared = await responseJSON(
-        await context.app.request('/api/shared-documents'),
+        await context.client.api['shared-documents'].$get(),
         SharedDocuments
       )
       expect(shared.documents).toEqual([
@@ -408,7 +399,7 @@ describe('documents shared with a person', () => {
         .values({ workspaceId: context.workspaceId, userId: 'bob', role: 'viewer' })
         .execute()
       const asMember = await responseJSON(
-        await context.app.request('/api/shared-documents'),
+        await context.client.api['shared-documents'].$get(),
         SharedDocuments
       )
       expect(asMember.documents).toEqual([])
@@ -418,13 +409,13 @@ describe('documents shared with a person', () => {
         .where('userId', '=', 'bob')
         .execute()
       context.setActor({ ...actor, userId: aliceAccount })
-      const revoke = await context.app.request(`/api/documents/${documentId}/grants/bob`, {
-        method: 'DELETE'
+      const revoke = await context.client.api.documents[':documentId'].grants[':userId'].$delete({
+        param: { documentId, userId: 'bob' }
       })
       expect(revoke.status).toBeLessThan(300)
       context.setActor(bob)
       const afterRevoke = await responseJSON(
-        await context.app.request('/api/shared-documents'),
+        await context.client.api['shared-documents'].$get(),
         SharedDocuments
       )
       expect(afterRevoke.documents).toEqual([])

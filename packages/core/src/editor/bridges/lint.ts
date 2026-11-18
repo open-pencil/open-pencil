@@ -1,5 +1,5 @@
 import type { createClipboardActions } from '#core/editor/clipboard'
-import type { createNodeActions } from '#core/editor/nodes'
+import type { createNodeActions } from '#core/editor/nodes/actions'
 import type { createStructureActions } from '#core/editor/structure'
 import type { EditorContext } from '#core/editor/types'
 import { applyLintFixes as applyFixes, type LintFixRequest } from '#core/lint/fixes'

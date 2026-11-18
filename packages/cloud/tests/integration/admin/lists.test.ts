@@ -118,12 +118,12 @@ describe('admin lists', () => {
 
       const lovelace = await audit.list({ search: 'lovelace' })
       expect(lovelace.events.map((row) => row.action)).toEqual(['user.unbanned', 'user.banned'])
-      expect(lovelace.counts).toEqual({ all: 2, accounts: 2, requests: 0, email: 0 })
+      expect(lovelace.counts).toEqual({ all: 2, accounts: 2, requests: 0, email: 0, documents: 0 })
 
       // Everything here was done by Admin, so searching for them finds every event.
       const admin = await audit.list({ search: 'admin@example', filter: 'email' })
       expect(admin.events.map((row) => row.action)).toEqual(['email.regenerated'])
-      expect(admin.counts).toEqual({ all: 3, accounts: 2, requests: 0, email: 1 })
+      expect(admin.counts).toEqual({ all: 3, accounts: 2, requests: 0, email: 1, documents: 0 })
 
       const page = await audit.list({ limit: 1, offset: 1 })
       expect(page.events.map((row) => row.action)).toEqual(['email.regenerated'])

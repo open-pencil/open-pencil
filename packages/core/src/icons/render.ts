@@ -1,7 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import {
+  centerGlyph,
   iconGlyph,
   iconLayerName,
   isPlacedIconName,
@@ -14,19 +14,11 @@ import {
 } from '@open-pencil/scene-graph/icons'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import {
-  createResizeSnapshot,
-  scaledChildRect,
-  scaledGeometryChanges
-} from '@open-pencil/scene-graph/resize'
 import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
-import { createPathStroke, pathStrokeLineStyle } from '#core/icons/path-style'
+import { createPlacedVector, vectorizedPathPaints } from '#core/vector/vectorize/placement'
 
 import type { IconData, IconPath } from './types'
-
-/** The paint an SVG uses for the icon's own color. */
-const CURRENT_COLOR = 'currentColor'
 
 export interface PlaceIconOptions {
   size: number
@@ -41,43 +33,26 @@ export interface PlaceIconOptions {
   identity?: boolean
 }
 
-function solid(color: Color, opacity = 1) {
-  return [{ type: 'SOLID' as const, color, opacity, visible: true }]
-}
-
-/** One path of an icon as a vector filling the icon's box, marked where the icon's color paints. */
-function addPath(graph: SceneGraph, frameId: string, path: IconPath, size: number, color: Color) {
-  const tint: IconPaint[] = []
-  const paint = (value: string, kind: IconPaint) => {
-    if (value !== CURRENT_COLOR) return parseColor(value)
-    tint.push(kind)
-    return color
-  }
-  const vector = graph.createNode('VECTOR', frameId, {
+/**
+ * One path of an icon as a vector at its own bounds, as SVG import places it, scaling with the
+ * frame. Its tinted paints take the icon's `color`, and the vector records which they are.
+ */
+function addPath(graph: SceneGraph, frameId: string, path: IconPath, color: Color) {
+  const tinted = (kind: IconPaint) => path.tint.includes(kind)
+  const vector = createPlacedVector(graph, frameId, path.vectorNetwork, {
     name: 'path',
-    x: 0,
-    y: 0,
-    width: size,
-    height: size,
-    vectorNetwork: path.vectorNetwork,
     // Resizing the icon resizes its glyph, as the frame is the icon.
     horizontalConstraint: 'SCALE',
     verticalConstraint: 'SCALE',
-    fills: path.fill ? solid(paint(path.fill, 'fill'), path.fillOpacity) : []
-  })
-  if (path.stroke) {
-    const stroke = createPathStroke(
-      paint(path.stroke, 'stroke'),
-      path.strokeWidth,
-      path.strokeCap,
-      path.strokeJoin
-    )
-    graph.updateNode(vector.id, { strokes: [stroke], ...pathStrokeLineStyle(stroke) })
-  }
-  if (tint.length > 0)
-    graph.updateNode(vector.id, {
-      pluginData: withIconTint(graph.getNode(vector.id) ?? vector, tint)
+    ...vectorizedPathPaints({
+      fills: tinted('fill') ? path.fills.map((fill) => ({ ...fill, color })) : path.fills,
+      strokes: tinted('stroke')
+        ? path.strokes.map((stroke) => ({ ...stroke, color }))
+        : path.strokes
     })
+  })
+  if (vector && path.tint.length > 0)
+    graph.updateNode(vector.id, { pluginData: withIconTint(vector, path.tint) })
 }
 
 /**
@@ -98,7 +73,7 @@ export function placeIcon(
     fills: [],
     ...overrides
   })
-  for (const path of icon.paths) addPath(graph, frame.id, path, size, color)
+  for (const path of icon.paths) addPath(graph, frame.id, path, color)
   if (identity) recordIcon(graph, frame.id, name, icon.options)
   return graph.getNode(frame.id) ?? frame
 }
@@ -110,7 +85,7 @@ function scaledPaths(icon: IconData, size: number): IconPath[] {
   return icon.paths.map((path) => ({
     ...path,
     vectorNetwork: transformVectorNetwork(Matrix.scaled(scale, scale), path.vectorNetwork),
-    strokeWidth: path.strokeWidth * scale
+    strokes: path.strokes.map((stroke) => ({ ...stroke, weight: stroke.weight * scale }))
   }))
 }
 
@@ -125,7 +100,7 @@ export function drawIcon(
   size: number,
   color: Color
 ): void {
-  for (const path of scaledPaths(icon, size)) addPath(graph, frameId, path, size, color)
+  for (const path of scaledPaths(icon, size)) addPath(graph, frameId, path, color)
   recordIcon(graph, frameId, `${icon.prefix}:${icon.name}`, icon.options)
 }
 
@@ -177,15 +152,14 @@ export function recolorIcon(graph: SceneGraph, frameId: string, color: Color): v
 
 /**
  * Draws another icon in an icon's frame, keeping its position and color, so the swap reads as
- * a change of glyph. `icon` is built square, at the frame's shorter side, and stretched to the
- * frame. Does nothing to a frame that is not an icon.
+ * a change of glyph. The glyph is drawn square at the frame's shorter side, whatever size `icon`
+ * was built at, and centered in the frame, as one placed in a frame of that shape is. Does
+ * nothing to a frame that is not an icon.
  */
 export function swapIcon(graph: SceneGraph, frameId: string, icon: IconData): void {
   const frame = graph.getNode(frameId)
   if (!frame || !readIcon(frame)) return
   const color = iconColor(graph, frame) ?? BLACK
-  // The paths are scaled to the size the icon was built at; their boxes must match it.
-  const size = icon.width
   for (const child of graph.getChildren(frameId)) graph.deleteNode(child.id)
   const name = `${icon.prefix}:${icon.name}`
   const previous = readIcon(frame)
@@ -193,30 +167,8 @@ export function swapIcon(graph: SceneGraph, frameId: string, icon: IconData): vo
     // A layer still named after its icon takes the new icon's name; a name someone gave stays.
     name: previous && isPlacedIconName(frame.name, previous.name) ? iconLayerName(name) : frame.name
   })
-  for (const path of icon.paths) addPath(graph, frameId, path, size, color)
-  fitPaths(graph, frameId, size)
+  const size = Math.min(frame.width, frame.height)
+  for (const path of scaledPaths(icon, size)) addPath(graph, frameId, path, color)
+  centerGlyph(graph, frameId, size)
   recordIcon(graph, frameId, name, icon.options)
-}
-
-/**
- * Stretches paths drawn in a `size` square to their frame, as a resize would, so an icon that
- * was resized unevenly is swapped or reset at the shape it has rather than as a square.
- */
-function fitPaths(graph: SceneGraph, frameId: string, size: number): void {
-  const frame = graph.getNode(frameId)
-  if (!frame || (frame.width === size && frame.height === size)) return
-  const square = { width: size, height: size }
-  for (const path of graph.getChildren(frameId)) {
-    const rect = scaledChildRect(path, square, frame)
-    graph.updateNode(path.id, {
-      ...rect,
-      ...scaledGeometryChanges(
-        createResizeSnapshot(path),
-        path.width,
-        path.height,
-        rect.width,
-        rect.height
-      )
-    })
-  }
 }

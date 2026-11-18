@@ -1,8 +1,8 @@
 import * as v from 'valibot'
 
-import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 const editor = useEditorSetup()
 
 const observedShortcutSchema = v.pipe(
@@ -275,6 +275,24 @@ test.describe('UI toggles', () => {
     await editor.canvas.waitForRender()
     expect(await getUIVisible()).toBe(before)
   })
+
+  test('with the UI hidden, the selection toolbar leaves shortcuts to the canvas', async () => {
+    await editor.canvas.clearCanvas()
+    await editor.canvas.drawRect(100, 100, 60, 60)
+    await editor.canvas.drawRect(200, 100, 60, 60)
+    expect(await getSelectedCount()).toBe(1)
+
+    await editor.page.keyboard.press('Meta+\\')
+    await expect(editor.page.getByTestId('selection-toolbar')).toBeVisible()
+
+    await editor.page.keyboard.press('Backspace')
+    await editor.canvas.waitForRender()
+    expect(await getPageChildren()).toHaveLength(1)
+
+    await editor.page.keyboard.press('Meta+\\')
+    await editor.canvas.waitForRender()
+    expect(await getUIVisible()).toBe(true)
+  })
 })
 
 test.describe('duplicate', () => {
@@ -415,25 +433,30 @@ test.describe('zoom shortcuts', () => {
     if (!activeBounds || !inactiveBounds) throw new Error('Expected canvas pane bounds')
     expect(activeBounds.width).toBeLessThan(inactiveBounds.width)
 
-    const centerBefore = await editor.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
-      const center = store.viewportCanvasCenter()
-      return { center, canvasPoint: store.screenToCanvas(center.x, center.y) }
-    })
-
-    expect(centerBefore.center.x).toBeCloseTo(activeBounds.width / 2)
-    expect(centerBefore.center.y).toBeCloseTo(activeBounds.height / 2)
+    const readCenter = () =>
+      editor.page.evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const center = store.viewportCanvasCenter()
+        return { center, canvasPoint: store.screenToCanvas(center.x, center.y) }
+      })
+    // The pane reports its new size to the store once its resize observer runs, in whole CSS
+    // pixels, as the canvas is sized.
+    await expect
+      .poll(async () => {
+        const { center } = await readCenter()
+        return Math.max(
+          Math.abs(center.x - activeBounds.width / 2),
+          Math.abs(center.y - activeBounds.height / 2)
+        )
+      })
+      .toBeLessThan(1)
+    const centerBefore = await readCenter()
 
     await editor.page.keyboard.press('Shift+Equal')
     await editor.canvas.waitForRender()
     const zoomedIn = await getZoom()
-    const centerAfter = await editor.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
-      const center = store.viewportCanvasCenter()
-      return { center, canvasPoint: store.screenToCanvas(center.x, center.y) }
-    })
+    const centerAfter = await readCenter()
 
     await editor.page.keyboard.press('Minus')
     await editor.canvas.waitForRender()
@@ -473,45 +496,59 @@ test.describe('zoom shortcuts', () => {
     expect(zoomAfter).toBe(1)
   })
 
-  test('⌘1 zooms to fit', async () => {
-    await editor.page.keyboard.press('Meta+1')
-    await editor.canvas.waitForRender()
+  /** Each page layer's box on screen, and whether it lies wholly inside the canvas. */
+  async function screenBoxes() {
+    return editor.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      const { x: halfWidth, y: halfHeight } = store.viewportCanvasCenter()
+      const { zoom, panX, panY } = store.state
+      return store.graph.getChildren(store.state.currentPageId).map((node) => {
+        const box = store.graph.getAbsoluteBounds(node.id)
+        const [left, top] = [box.x * zoom + panX, box.y * zoom + panY]
+        const [right, bottom] = [left + box.width * zoom, top + box.height * zoom]
+        const shown = left >= 0 && top >= 0 && right <= halfWidth * 2 && bottom <= halfHeight * 2
+        return { left, top, right, bottom, shown, side: Math.min(halfWidth, halfHeight) * 2 }
+      })
+    })
+  }
 
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
-  })
+  for (const [label, keys, selection] of [
+    ['⌘1 zooms to fit', 'Meta+1', false],
+    ['⌘2 zooms to selection', 'Meta+2', true],
+    ['⇧1 zooms to fit (same as ⌘1)', 'Shift+1', false],
+    ['⇧2 zooms to selection (same as ⌘2)', 'Shift+2', true]
+  ] as const) {
+    test(label, async () => {
+      await editor.canvas.clearCanvas()
+      // Two 60 × 60 rectangles 200 px apart, drawn in screen pixels at 100%.
+      await editor.page.evaluate(() => window.openPencil?.getStore?.()?.zoomTo100())
+      await editor.canvas.drawRect(100, 100, 60, 60)
+      await editor.canvas.drawRect(300, 250, 60, 60)
+      await editor.page.evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const [first] = store.graph.getChildren(store.state.currentPageId)
+        if (!first) throw new Error('Expected a layer on the page')
+        store.select([first.id])
+        store.state.zoom = 0.25
+      })
 
-  test('⌘2 zooms to selection', async () => {
-    await editor.canvas.selectAll()
+      await editor.page.keyboard.press(keys)
+      await editor.canvas.waitForRender()
 
-    await editor.page.keyboard.press('Meta+2')
-    await editor.canvas.waitForRender()
-
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
-  })
-
-  test('⇧1 zooms to fit (same as ⌘1)', async () => {
-    await editor.page.keyboard.press('Shift+1')
-    await editor.canvas.waitForRender()
-
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
-  })
-
-  test('⇧2 zooms to selection (same as ⌘2)', async () => {
-    await editor.canvas.selectAll()
-
-    await editor.page.keyboard.press('Shift+2')
-    await editor.canvas.waitForRender()
-
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
-  })
+      const [first, second] = await screenBoxes()
+      if (!first || !second) throw new Error('Expected two layers on the page')
+      expect(first.shown).toBe(true)
+      // Zoom to selection fills the canvas with the selected one alone; fit spreads both across it.
+      expect(second.shown).toBe(!selection)
+      const span = selection
+        ? first.bottom - first.top
+        : Math.max(second.right - first.left, second.bottom - first.top)
+      expect(span).toBeGreaterThan(first.side * (selection ? 0.5 : 0.75))
+      expect(await getZoom()).toBeGreaterThan(1) // Both span 260 px at 100%, as Figma zooms past it.
+    })
+  }
 })
 
 test.describe('auto-layout shortcut', () => {

@@ -3,8 +3,10 @@ import * as v from 'valibot'
 
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { gradientTransformRows, linearGradientTransform } from '@open-pencil/scene-graph/gradient'
+import { parseDataURL } from '@open-pencil/scene-graph/images'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import { graphOf } from '#core/figma-api/graph'
 import { storeImage } from '#core/figma-api/images'
 import { defineTool, nodeIdInputSchema, toolNumber } from '#core/tools/schema'
 
@@ -103,16 +105,22 @@ export const setStroke = defineTool({
   }
 })
 
+/** The bytes `image_data` carries, as Base64 or a data URL; null when it is neither. */
+function imageDataBytes(imageData: string): Uint8Array | null {
+  // A data URL is never valid Base64, since its scheme ends in a colon.
+  return parseDataURL(imageData)?.bytes ?? (isValid(imageData) ? toUint8Array(imageData) : null)
+}
+
 export const setImageFill = defineTool({
   name: 'set_image_fill',
 
-  description: 'Set an image fill on a node from base64-encoded image data.',
+  description: 'Set an image fill on a node from Base64-encoded image data or a data URL.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     id: nodeIdInputSchema,
     image_data: v.pipe(
       v.string(),
-      v.description('Base64-encoded image bytes (PNG, JPEG, or WEBP)')
+      v.description('Image bytes (PNG, JPEG, or WEBP) as Base64 or a data URL')
     ),
     scale_mode: v.optional(
       v.pipe(v.picklist(['FILL', 'FIT', 'CROP', 'TILE']), v.description('Image scale mode')),
@@ -122,9 +130,9 @@ export const setImageFill = defineTool({
   execute: (figma, { id, image_data, scale_mode }) => {
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
-    if (!isValid(image_data)) return { error: 'image_data is not valid Base64' }
-    const bytes = toUint8Array(image_data)
-    const imageHash = storeImage(figma.graph, bytes)
+    const bytes = imageDataBytes(image_data)
+    if (!bytes) return { error: 'image_data is neither valid Base64 nor a data URL' }
+    const imageHash = storeImage(graphOf(figma), bytes)
     const mode = scale_mode
     node.fills = [{ type: 'IMAGE', imageHash, scaleMode: mode }]
     return { id, imageHash, scaleMode: mode }

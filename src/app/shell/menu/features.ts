@@ -2,7 +2,10 @@ import { invoke } from '@tauri-apps/api/core'
 import { computed, watch } from 'vue'
 
 import { isCloudBinding } from '@/app/cloud/integration'
+import { DONATION_URL } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
+import { showsDocument } from '@/app/tabs'
+import { canSelfUpdate } from '@/app/tauri/capabilities'
 import { isTauri } from '@/app/tauri/env'
 
 import type { AppMenuFeature } from './schema'
@@ -10,10 +13,15 @@ import type { AppMenuFeature } from './schema'
 const store = useEditorStore()
 
 const available: Record<AppMenuFeature, () => boolean> = {
+  // Home and a New file tab hold no document, so they leave out what edits or shows one.
+  document: () => showsDocument(),
   // Cloud and storage documents always save; auto-save is a choice only for a file on disk.
   'local-file': () => store.hasWritableSource() && !store.getStorageBinding(),
   // Version history lives on the Cloud server that keeps the document.
-  'cloud-document': () => isCloudBinding(store.getStorageBinding())
+  'cloud-document': () => isCloudBinding(store.getStorageBinding()),
+  donation: () => DONATION_URL !== null,
+  // The browser and packages a store or package manager updates have no updater to open.
+  'self-update': () => canSelfUpdate()
 }
 
 /** Whether a menu item that waits for a feature shows; items without one always do. */

@@ -1,4 +1,4 @@
-import { uniq } from 'es-toolkit/array'
+import { partition, uniq } from 'es-toolkit/array'
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 
 import type {
@@ -29,7 +29,9 @@ function isTokenFile(path: string): boolean {
 }
 
 function issueName(issue: DesignTokenIssue): string {
-  return issue.kind === 'unsupported-effect' ? issue.style : issue.token
+  if (issue.kind === 'unsupported-effect' || issue.kind === 'ambiguous-reference')
+    return issue.style
+  return issue.token
 }
 
 /** The W3C token reader and writer load with the first import or export. */
@@ -53,9 +55,12 @@ export async function exportDesignTokenArchive(store: EditorStore): Promise<void
     'application/zip',
     downloadBlob
   )
-  if (issues.length === 0) return
-  const names = uniq(issues.map(issueName)).join(', ')
-  toast.warning(notificationMessages.get().designTokensLeftOut({ names }))
+  const [ambiguous, leftOut] = partition(issues, (issue) => issue.kind === 'ambiguous-reference')
+  const names = (list: DesignTokenIssue[]) => uniq(list.map(issueName)).join(', ')
+  if (leftOut.length > 0)
+    toast.warning(notificationMessages.get().designTokensLeftOut({ names: names(leftOut) }))
+  if (ambiguous.length > 0)
+    toast.warning(notificationMessages.get().designTokensAmbiguous({ names: names(ambiguous) }))
 }
 
 /**

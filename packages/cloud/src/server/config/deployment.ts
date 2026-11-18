@@ -2,13 +2,12 @@ import { staticEntitlementsFromTOML } from '#cloud/server/policy/static'
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
 
+import { parseCloudServerConfig, type CloudServerConfig } from './schema'
 import {
   cloudDeploymentConfigSchema,
-  parseCloudServerConfig,
   type CloudDeploymentConfig,
-  type CloudSecretReference,
-  type CloudServerConfig
-} from './schema'
+  type CloudSecretReference
+} from './toml/schema'
 
 export type CloudEnvironment = Readonly<Record<string, string | undefined>>
 
@@ -41,14 +40,24 @@ function staticEntitlements(config: CloudDeploymentConfig) {
   return staticEntitlementsFromTOML(config.entitlements)
 }
 
+function defaultEntitlements(config: CloudDeploymentConfig) {
+  if (config.entitlements?.source !== 'database') return undefined
+  return staticEntitlementsFromTOML(config.entitlements)
+}
+
 function emailConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
   if (config.email.transport === 'none') return { emailTransport: 'none' as const }
   if (config.email.transport === 'cloudflare') {
-    return { emailTransport: 'cloudflare' as const, emailFrom: config.email.from }
+    return {
+      emailTransport: 'cloudflare' as const,
+      emailFrom: config.email.from,
+      emailReplyTo: config.email.reply_to
+    }
   }
   return {
     emailTransport: 'smtp' as const,
     emailFrom: config.email.from,
+    emailReplyTo: config.email.reply_to,
     smtpHost: config.email.smtp.host,
     smtpPort: config.email.smtp.port,
     smtpSecure: config.email.smtp.secure,
@@ -83,19 +92,47 @@ function workerConfig(config: CloudDeploymentConfig) {
     cleanupBatchSize: cleanup?.batch_size,
     cleanupIntervalMs: cleanup?.interval_ms,
     cleanupLeaseDurationMs: cleanup?.lease_ms,
-    documentRetentionMs: config.documents.retention_days * 86_400_000
+    documentRetentionMs: config.documents.retention_days * 86_400_000,
+    documentPurgeGraceMs: config.documents.purge_grace_days * 86_400_000
   }
 }
 
 function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
   return {
-    aiEndpoint: config.ai?.endpoint,
-    aiSigningKey: config.ai ? requiredSecret(environment, config.ai.signing_key) : undefined,
-    aiTokenLifetimeSeconds: config.ai ? config.ai.token_lifetime_minutes * 60 : undefined,
-    billingPortalURL: config.billing?.portal_url,
+    servicesEndpoint: config.services?.endpoint,
+    servicesSigningKey: config.services
+      ? requiredSecret(environment, config.services.signing_key)
+      : undefined,
+    servicesTokenLifetimeSeconds: config.services
+      ? config.services.token_lifetime_minutes * 60
+      : undefined,
+    billingEndpoint: config.billing?.endpoint,
     internalServiceToken: config.internal_api
       ? requiredSecret(environment, config.internal_api.service_token)
       : undefined
+  }
+}
+
+function legalConfig(config: CloudDeploymentConfig) {
+  const legal = config.legal
+  if (!legal) return undefined
+  return {
+    termsURL: legal.terms_url,
+    privacyURL: legal.privacy_url,
+    termsVersion: legal.terms_version,
+    requireAcceptance: legal.require_acceptance,
+    abuseEmail: legal.abuse_email,
+    minimumAge: legal.minimum_age
+  }
+}
+
+function errorTrackingConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
+  const tracking = config.error_tracking
+  if (!tracking) return undefined
+  return {
+    provider: tracking.provider,
+    host: tracking.host,
+    projectAPIKey: configuredText(environment, tracking.project_api_key)
   }
 }
 
@@ -120,6 +157,7 @@ export function parseCloudDeploymentConfig(
     trustedOrigins: config.deployment.trusted_origins,
     localEditor: config.deployment.local_editor,
     listingMinimumEditorVersion: config.deployment.listing?.minimum_editor_version,
+    minimumEditorVersion: config.deployment.minimum_editor_version,
     databaseURL: requiredSecret(environment, config.database.url),
     authSecret: requiredSecret(environment, config.authentication.secret),
     enrollmentMode: config.authentication.enrollment.mode,
@@ -161,11 +199,21 @@ export function parseCloudDeploymentConfig(
     s3ChecksumVerification: config.object_storage.checksum_verification,
     s3ServerSideEncryption: config.object_storage.server_side_encryption,
     s3KmsKeyId: config.object_storage.kms_key_id,
+    s3DeletedPrefix: config.object_storage.deleted_prefix,
     relayURL: config.collaboration.relay_url,
     staticEntitlements: staticEntitlements(config),
+    defaultEntitlements: defaultEntitlements(config),
     ...emailConfig(config, environment),
     ...workerConfig(config),
     ...serviceConfig(config, environment),
+    legal: legalConfig(config),
+    community: config.community ? { workspaceId: config.community.workspace } : undefined,
+    branding: config.deployment.branding && {
+      name: config.deployment.branding.name,
+      logoURL: config.deployment.branding.logo_url,
+      helpURL: config.deployment.branding.help_url
+    },
+    errorTracking: errorTrackingConfig(config, environment),
     technicalLimits: technicalLimits(config)
   })
 }

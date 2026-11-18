@@ -35,6 +35,7 @@ class MemoryStore implements ResumeStateStore {
 class FakeSession implements BackendSession {
   readonly isResume: boolean
   destroyed = false
+  compacted: (string | undefined)[] = []
 
   constructor(
     readonly sessionId: string,
@@ -46,6 +47,10 @@ class FakeSession implements BackendSession {
   async *runTurn(prompt: string): AsyncIterable<BackendEvent> {
     yield { type: 'text-delta', text: `reply:${prompt}` }
     yield { type: 'finish', finishReason: 'stop' }
+  }
+
+  async compact(instructions?: string): Promise<void> {
+    this.compacted.push(instructions)
   }
 
   async stop(): Promise<HarnessResumeState> {
@@ -119,6 +124,16 @@ describe('HarnessSessionService', () => {
     await service.stopSession('session-1')
     expect(store.states.get('session-1')?.data).toEqual({ sessionId: 'session-1' })
     expect(await service.createSession('session-1', configuration)).toEqual({ isResume: true })
+  })
+
+  test('asks the session to compact, with the instructions given', async () => {
+    const backend = new FakeBackend()
+    const service = new HarnessSessionService(new Map([[backend.id, backend]]), new MemoryStore())
+    await service.createSession('session', configuration)
+    await service.compactSession('session', 'keep the colors')
+    await service.compactSession('session')
+    expect(backend.sessions[0]?.compacted).toEqual(['keep the colors', undefined])
+    await expect(service.compactSession('missing')).rejects.toThrow('not active')
   })
 
   test('says whether a turn ended because it was cancelled', async () => {

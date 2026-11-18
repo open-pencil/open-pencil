@@ -1,9 +1,14 @@
-import type { Image, Surface } from 'canvaskit-wasm'
-
+import type { Image, Surface } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import { createImageCache } from './cache'
 import { ImagePreviewCache } from './previews'
+
+/** A raster export drawn finer than its pixels, and where world space lands on those pixels. */
+export interface SupersampledOutput {
+  readonly outputFromWorld: Mat3
+}
 
 /** The images a renderer holds decoded, live, or as previews, and what they were drawn for. */
 export interface RendererImages {
@@ -12,7 +17,7 @@ export interface RendererImages {
    * Images drawn in place of stored ones while they play, such as a shader's live frames, each
    * with the surface whose GL context holds its texture.
    */
-  readonly live: Map<string, { image: Image; surface: Surface }>
+  readonly live: Map<string, { readonly image: Image; surface: Surface }>
   /** The document and page whose images the cache and previews hold. */
   memoryGraph: SceneGraph | null
   memoryPage: string | null
@@ -30,6 +35,7 @@ export interface RendererImages {
   readonly fillUsers: Map<string, Set<string>>
   /** Images whose sharper preview has decoded since the last frame. */
   readonly decodedPreviewHashes: Set<string>
+  supersampledOutput: SupersampledOutput | null
 }
 
 export function createRendererImages(): RendererImages {
@@ -46,7 +52,8 @@ export function createRendererImages(): RendererImages {
     detailScale: 1,
     previewsDrawn: false,
     fillUsers: new Map(),
-    decodedPreviewHashes: new Set()
+    decodedPreviewHashes: new Set(),
+    supersampledOutput: null
   }
   return images
 }

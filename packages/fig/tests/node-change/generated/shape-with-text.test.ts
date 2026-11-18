@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#fig-tests/helpers/assert'
 import { normalizeFigFragment } from '#fig/document/fragment'
 import { generationOverridesOf } from '#fig/node-change/generated/records'
 import { nodeChangeToProps, sceneNodeToKiwi } from '#fig/node-change/index'
@@ -12,6 +11,7 @@ import { createShapeWithText, shapeWithTextLabel } from '@open-pencil/scene-grap
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { shapeWithTextLabelBox } from '@open-pencil/scene-graph/shape-with-text'
 import { percentLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 const guid = (localID: number) => ({ sessionID: 0, localID })
 const slot = (localID: number) => ({ guids: [{ sessionID: 40_000_000, localID }] })

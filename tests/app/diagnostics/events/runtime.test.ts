@@ -3,6 +3,8 @@ import { beforeEach, expect, test } from 'bun:test'
 
 import { diagnostics } from '@/app/diagnostics'
 import { recordRuntimeError } from '@/app/diagnostics/events/runtime'
+import { recoverySessionId } from '@/app/document/recovery/session'
+import { APP_VERSION } from '@/app/runtime/version'
 
 beforeEach(async () => {
   await diagnostics.clear()
@@ -21,7 +23,9 @@ test('records an uncaught error with its details', async () => {
       source: 'vue',
       errorName: 'TypeError',
       message: 'Attempting to define property on object that is not extensible.',
-      info: 'render function'
+      info: 'render function',
+      appSession: recoverySessionId,
+      appVersion: APP_VERSION
     }
   })
   expect(event.attributes.stack).toContain('TypeError')

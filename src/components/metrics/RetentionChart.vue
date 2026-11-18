@@ -55,7 +55,7 @@ const tooltipValue = (value: unknown, _name: unknown, item: { payload?: unknown 
       :height="180"
       :margin="{ top: 8, right: 8, bottom: 0, left: 0 }"
       :is-animation-active="false"
-      class="text-[11px]"
+      class="text-2xs"
       title="Share of installs that came back, by days since first seen"
     >
       <CartesianGrid :vertical="false" />

@@ -1,6 +1,6 @@
-import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 const editor = useEditorSetup('/?test')
 
 test('layers panel resize increases width', async () => {
@@ -47,19 +47,42 @@ test('panel width persists after page reload', async () => {
   editor.canvas.assertNoErrors()
 })
 
-test('Cmd+Backslash hides panels', async () => {
+/** Marks the canvases on screen, so a later check can tell whether they are the same elements. */
+async function markCanvases() {
+  return editor.page.evaluate(() => {
+    const canvases = [...document.querySelectorAll('canvas[data-ready="1"]')]
+    for (const canvas of canvases) canvas.setAttribute('data-test-kept', '')
+    return canvases.length
+  })
+}
+
+/** The canvases on screen now, and how many of them are the ones marked earlier. */
+async function keptCanvases() {
+  return editor.page.evaluate(() => ({
+    total: document.querySelectorAll('canvas[data-ready="1"]').length,
+    kept: document.querySelectorAll('canvas[data-ready="1"][data-test-kept]').length
+  }))
+}
+
+// Hiding and showing the panels keeps the canvas, with its drawing surfaces, rather than
+// starting a new one, which costs every WebGL context it holds.
+test('Cmd+Backslash hides panels and keeps the canvas', async () => {
+  const shown = await markCanvases()
   await editor.page.keyboard.press('Meta+\\')
   await editor.canvas.waitForRender()
 
   await expect(editor.page.getByTestId('layers-panel')).not.toBeVisible()
+  expect(await keptCanvases()).toEqual({ total: shown, kept: shown })
   editor.canvas.assertNoErrors()
 })
 
-test('Cmd+Backslash shows panels again', async () => {
+test('Cmd+Backslash shows panels again and keeps the canvas', async () => {
+  const hidden = await markCanvases()
   await editor.page.keyboard.press('Meta+\\')
   await editor.canvas.waitForRender()
 
   await expect(editor.page.getByTestId('layers-panel')).toBeVisible()
+  expect(await keptCanvases()).toEqual({ total: hidden, kept: hidden })
   editor.canvas.assertNoErrors()
 })
 

@@ -20,6 +20,7 @@ import type { MetricsRange } from '@/app/metrics/range'
 import BrandMark from '@/components/brand/BrandMark.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
+import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { metricsDashboardTheme } from '@/theme/metrics/dashboard'
 
 import DailyChart from './DailyChart.vue'
@@ -31,7 +32,14 @@ import MetricsTile from './MetricsTile.vue'
 import NetworksTable from './NetworksTable.vue'
 import PlatformsChart from './PlatformsChart.vue'
 import RetentionChart from './RetentionChart.vue'
-import type { DailyActiveDay, DailyPulls, DailyTraffic, DailyVersions, DailyVisits } from './types'
+import type {
+  DailyActiveDay,
+  DailyInstalls,
+  DailyPulls,
+  DailyTraffic,
+  DailyVersions,
+  DailyVisits
+} from './types'
 import WaitlistList from './WaitlistList.vue'
 
 const metricsDashboard = tv(metricsDashboardTheme)
@@ -44,16 +52,37 @@ const metricsDashboard = tv(metricsDashboardTheme)
 const {
   host,
   snapshot,
-  loading = false
+  loading = false,
+  openReports
 } = defineProps<{
   host: string
   snapshot: MetricsSnapshot
   /** Newer numbers are on their way; the current ones stay, dimmed. */
   loading?: boolean
+  /** How many reports in the range are open, once the inbox has loaded. */
+  openReports?: number
 }>()
 const range = defineModel<MetricsRange>('range', { required: true })
+/** The numbers, or the report inbox, which the `reports` slot holds. */
+const tab = defineModel<'metrics' | 'reports'>('tab', { default: 'metrics' })
 const emit = defineEmits<{ refresh: [] }>()
-defineSlots<{ /** A notice above the numbers, such as a failed refresh. */ alert?(): unknown }>()
+defineSlots<{
+  /** A notice above the numbers, such as a failed refresh. */
+  alert?(): unknown
+  /** The report inbox, shown on its tab. */
+  reports?(): unknown
+}>()
+
+const tabs = computed(() => [
+  { value: 'metrics', label: 'Metrics' },
+  { value: 'reports', label: openReports ? `Reports (${formatCount(openReports)})` : 'Reports' }
+])
+const tabValue = computed({
+  get: () => tab.value,
+  set: (value: string) => {
+    if (value === 'metrics' || value === 'reports') tab.value = value
+  }
+})
 
 const ui = metricsDashboard()
 const phrase = computed(() => rangePhrase(range.value))
@@ -66,22 +95,46 @@ const totals = computed(() =>
 )
 const fullDays = computed(() => totals.value.filter(isFull))
 const peak = computed(() => maxBy(fullDays.value, (day) => day.installs))
-const active = computed(() =>
-  fullDays.value.length
-    ? {
-        value: Math.round(meanBy(fullDays.value, (day) => day.installs)),
-        label: 'Daily active installs, average',
-        detail: peak.value
-          ? `peak ${formatCount(peak.value.installs)} on ${formatDay(peak.value.day)}`
-          : undefined,
-        trend: fullDays.value.map((day) => day.installs)
-      }
-    : {
-        value: totals.value.at(-1)?.installs ?? 0,
-        label: 'Daily active installs',
-        detail: 'so far today',
-        trend: undefined
-      }
+// Once versions that count their days report, the headline is the returning installs: a restored
+// copy of a saved state can't raise it past what earlier steps supplied.
+const stepPings = (day: DailyInstalls) => day.new + day.returning + day.replayed
+const hasSteps = computed(() => snapshot.installs.some((day) => stepPings(day) > 0))
+// Every full day from the first with step pings, quiet ones included.
+const steppedDays = computed(() => {
+  const first = snapshot.installs.findIndex((day) => stepPings(day) > 0)
+  return first === -1 ? [] : snapshot.installs.slice(first).filter(isFull)
+})
+const returning = computed(() => {
+  const days = steppedDays.value
+  if (!days.length) return undefined
+  const peakDay = maxBy(days, (day) => day.returning)
+  return {
+    value: Math.round(meanBy(days, (day) => day.returning)),
+    label: 'Returning installs, average',
+    detail: `${formatCount(Math.round(meanBy(days, (day) => day.new)))} new a day${
+      peakDay ? ` · peak ${formatCount(peakDay.returning)} on ${formatDay(peakDay.day)}` : ''
+    }`,
+    trend: days.map((day) => day.returning)
+  }
+})
+const active = computed(
+  () =>
+    returning.value ??
+    (fullDays.value.length
+      ? {
+          value: Math.round(meanBy(fullDays.value, (day) => day.installs)),
+          label: 'Daily active installs, average',
+          detail: peak.value
+            ? `peak ${formatCount(peak.value.installs)} on ${formatDay(peak.value.day)}`
+            : undefined,
+          trend: fullDays.value.map((day) => day.installs)
+        }
+      : {
+          value: totals.value.at(-1)?.installs ?? 0,
+          label: 'Daily active installs',
+          detail: 'so far today',
+          trend: undefined
+        })
 )
 type Growth = MetricsSnapshot['github']['stars']['daily']
 // Growth needs two recorded days; until then the tile says so rather than showing a zero.
@@ -95,6 +148,11 @@ const signupTrend = computed(() => {
   return fullDays.value.map((day) => perDay[day.day] ?? 0)
 })
 
+const STEP_SERIES: DailySeries<Exclude<keyof DailyInstalls, 'day'>>[] = [
+  { key: 'returning', name: 'Returning', color: 'var(--color-chart-1)' },
+  { key: 'new', name: 'New', color: 'var(--color-chart-3)' },
+  { key: 'replayed', name: 'Replayed', color: 'var(--color-muted)' }
+]
 const INSTALL_SERIES: DailySeries<keyof DailyActiveDay & string>[] = [
   { key: 'desktop', name: 'Desktop', color: 'var(--color-chart-1)' },
   { key: 'web', name: 'Web', color: 'var(--color-chart-2)' }
@@ -146,6 +204,19 @@ const latestShare = computed(() => {
 
 // Pings and visits count different things, so this is a rough share, over full days only.
 const fullDaySet = computed(() => new Set(fullDays.value.map((day) => day.day)))
+// Pings from versions before the steps are in the daily active installs only.
+const olderPings = computed(() => {
+  const days = fullDaySet.value
+  const all = sumBy(
+    snapshot.dailyActive.filter((day) => days.has(day.day)),
+    (day) => day.desktop + day.web
+  )
+  const stepped = sumBy(
+    snapshot.installs.filter((day) => days.has(day.day)),
+    stepPings
+  )
+  return all ? (all - stepped) / all : undefined
+})
 const reachedEditor = computed(() => {
   const visits = sumBy(
     snapshot.visits.filter((day) => fullDaySet.value.has(day.day)),
@@ -177,22 +248,28 @@ const sharingNote = computed(() => {
   <div :class="ui.page()">
     <header :class="ui.bar()">
       <BrandMark variant="micro" decorative />
-      <span :class="ui.barTitle()">Metrics</span>
+      <SegmentedControl v-model="tabValue" :options="tabs" label="Dashboard" />
       <span :class="ui.barHost()">{{ host }}</span>
       <div :class="ui.barEnd()">
-        <span :class="ui.barMeta()">Updated {{ formatTime(snapshot.asOf) }}</span>
-        <MetricsRangePicker
-          v-model="range"
-          :today="snapshot.today"
-          :earliest="snapshot.earliest ?? snapshot.start"
-        />
+        <!-- The inbox spans everything PostHog keeps, so the range belongs to the numbers alone. -->
+        <template v-if="tab === 'metrics'">
+          <span :class="ui.barMeta()">Updated {{ formatTime(snapshot.asOf) }}</span>
+          <MetricsRangePicker
+            v-model="range"
+            :today="snapshot.today"
+            :earliest="snapshot.earliest ?? snapshot.start"
+          />
+        </template>
         <IconButton label="Refresh" :disabled="loading" @click="emit('refresh')">
           <icon-lucide-refresh-cw class="size-3.5" />
         </IconButton>
       </div>
     </header>
     <main :class="ui.main()">
-      <div :class="ui.inner()" :data-loading="loading" :aria-busy="loading">
+      <div v-if="tab === 'reports'" :class="ui.inner()">
+        <slot name="reports" />
+      </div>
+      <div v-else :class="ui.inner()" :data-loading="loading" :aria-busy="loading">
         <slot name="alert" />
         <div :class="ui.tiles()">
           <MetricsTile
@@ -238,6 +315,24 @@ const sharingNote = computed(() => {
               :releases="snapshot.releases"
               stacked
             />
+          </MetricsCard>
+          <MetricsCard
+            heading="Returning installs"
+            note="Each install moves through its days with a ping one step at a time: 1, 2, 3–4, 5–8, and so on. A step can't hold more installs than reached the step before, so pings beyond that replay a saved state and are set aside. New installs have nothing before them to check."
+          >
+            <template v-if="olderPings" #aside>
+              {{ formatShare(olderPings) }} of pings from versions without steps
+            </template>
+            <DailyChart
+              v-if="hasSteps"
+              label="Returning, new, and replayed installs"
+              :days="snapshot.installs"
+              :series="STEP_SERIES"
+              :today="snapshot.today"
+              :releases="snapshot.releases"
+              stacked
+            />
+            <p v-else :class="ui.sectionLabel()">No version in this range counts its days yet</p>
           </MetricsCard>
           <MetricsCard
             heading="Visits"

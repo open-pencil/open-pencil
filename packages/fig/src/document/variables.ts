@@ -9,6 +9,7 @@ import type {
   VariableValue,
   VariableColorExpression
 } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   variableFormulaSchema,
   variableColorExpressionSchema,
@@ -17,9 +18,11 @@ import {
 } from '@open-pencil/scene-graph/variables'
 
 import { extractPluginData } from '../node-change/plugin-data'
+import { visitVariableReferences } from '../node-change/variable/expression'
 import { formulaOperatorOfFigmaFunction } from '../node-change/variable/formula'
 import { readVariableMetadata } from '../node-change/variable/metadata'
 import {
+  readLibraryModeIds,
   readModeAttribute,
   readModeConditions,
   readVariableToken,
@@ -199,6 +202,116 @@ function modesInListedOrder(resource: NodeChange): SavedMode[] {
   ])
 }
 
+export function defaultModesByCollection(records: readonly NodeChange[]): Map<string, string> {
+  const defaults = new Map<string, string>()
+  for (const record of records) {
+    if (record.type !== 'VARIABLE_SET' || !record.guid) {
+      continue
+    }
+    const first = modesInListedOrder(record).at(0)
+    if (first) {
+      defaults.set(guidToString(record.guid), guidToString(first.id))
+    }
+  }
+  return defaults
+}
+
+export interface DocumentVariables {
+  readonly defaultModes: ReadonlyMap<string, string>
+  readonly variableIdOf: (reference: NodeChange['variableSetID']) => string | undefined
+  collectionsReachedFrom(variableId: string): ReadonlySet<string>
+}
+
+interface VariableLinks {
+  readonly collection: string | undefined
+  readonly aliases: readonly string[]
+}
+
+function isVariableResource(record: NodeChange): boolean {
+  return record.type === 'VARIABLE' || record.type === 'VARIABLE_SET'
+}
+
+export function createDocumentVariables(
+  records: readonly NodeChange[],
+  whole: (record: NodeChange) => NodeChange = (record) => record
+): DocumentVariables {
+  const resources = records.filter(isVariableResource)
+  const resolve = createResourceResolver(resources)
+  const variables = new Map<string, NodeChange>()
+  for (const resource of resources) {
+    if (resource.type === 'VARIABLE' && resource.guid) {
+      variables.set(guidToString(resource.guid), resource)
+    }
+  }
+  const links = new Map<string, VariableLinks | undefined>()
+  const linksOf = (id: string): VariableLinks | undefined => {
+    if (!links.has(id)) {
+      const header = variables.get(id)
+      links.set(id, header ? variableLinks(whole(header), resolve) : undefined)
+    }
+    return links.get(id)
+  }
+  const reached = new Map<string, ReadonlySet<string>>()
+  let defaultModes: ReadonlyMap<string, string> | undefined
+  return {
+    get defaultModes() {
+      defaultModes ??= defaultModesByCollection(
+        resources.filter((resource) => resource.type === 'VARIABLE_SET').map(whole)
+      )
+      return defaultModes
+    },
+    variableIdOf: resolve,
+    collectionsReachedFrom(variableId) {
+      let collections = reached.get(variableId)
+      if (!collections) {
+        collections = collectionsThrough(variableId, linksOf)
+        reached.set(variableId, collections)
+      }
+      return collections
+    }
+  }
+}
+
+function variableLinks(
+  variable: NodeChange,
+  resolve: ReturnType<typeof createResourceResolver>
+): VariableLinks {
+  const collection = variable.variableSetID
+    ? resolve(variable.variableSetID)
+    : variable.parentIndex?.guid && guidToString(variable.parentIndex.guid)
+  const aliases: string[] = []
+  for (const entry of variable.variableDataValues?.entries ?? []) {
+    visitVariableReferences(entry.variableData, (reference) => {
+      const alias = resolve(reference)
+      if (alias) {
+        aliases.push(alias)
+      }
+    })
+  }
+  return { collection: collection || undefined, aliases }
+}
+
+function collectionsThrough(
+  variableId: string,
+  linksOf: (id: string) => VariableLinks | undefined
+): ReadonlySet<string> {
+  const collections = new Set<string>()
+  const seen = new Set<string>()
+  const pending = [variableId]
+  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
+    if (seen.has(id)) {
+      continue
+    }
+    seen.add(id)
+    const links = linksOf(id)
+    if (links?.collection) {
+      collections.add(links.collection)
+    }
+    appendAll(pending, links?.aliases ?? [])
+  }
+  return collections
+}
+
 /** No invented values or fallback collections: unsupported resources remain explicit. */
 export function materializeVariableResources(
   graph: SceneGraph,
@@ -219,6 +332,7 @@ export function materializeVariableResources(
     }
     const pluginData = withoutTokenPluginData(extractPluginData(resource))
     const conditions = readModeConditions(resource)
+    const sources = readLibraryModeIds(resource)
     graph.addCollection({
       id: guidToString(resource.guid),
       name: resource.name ?? 'Variables',
@@ -228,6 +342,7 @@ export function materializeVariableResources(
           modeId,
           name: mode.name,
           condition: conditions[modeId],
+          libraryModeId: sources[modeId],
           ...(mode.sortPosition ? { sortPosition: mode.sortPosition } : {})
         }
       }),

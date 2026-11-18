@@ -55,7 +55,10 @@ const oracleSchema = v.array(
     vertices: v.array(pairSchema),
     segments: v.optional(v.array(v.tuple([v.number(), v.number(), pairSchema, pairSchema]))),
     label: v.optional(
-      v.object({ text: pairSchema, plate: v.tuple([v.number(), v.number(), v.number(), v.number()]) })
+      v.object({
+        text: pairSchema,
+        plate: v.tuple([v.number(), v.number(), v.number(), v.number()])
+      })
     )
   })
 )

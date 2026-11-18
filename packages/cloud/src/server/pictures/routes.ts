@@ -1,3 +1,4 @@
+import { pictureParams } from '#cloud/server/validation'
 import { Hono } from 'hono'
 
 import { PICTURE_PATH, type UserPictureService } from './service'
@@ -7,8 +8,9 @@ import { PICTURE_PATH, type UserPictureService } from './service'
  * documents and workspaces with, and the desktop app shows them from another origin.
  */
 export function createPictureRoutes(pictures: UserPictureService) {
-  return new Hono().get(`${PICTURE_PATH}/:userId/:version`, async (context) => {
-    const picture = await pictures.read(context.req.param('userId'), context.req.param('version'))
+  return new Hono().get(`${PICTURE_PATH}/:userId/:version`, pictureParams, async (context) => {
+    const { userId, version } = context.req.valid('param')
+    const picture = await pictures.read(userId, version)
     if (!picture) return context.json({ error: { code: 'not_found' as const } }, 404)
     // The address changes with the picture, but a removed one must stop showing within a day.
     context.header('Cache-Control', 'public, max-age=86400')

@@ -14,10 +14,9 @@ const room = useRoomActions()
     :sender="room.sender.value"
     :others-waiting="room.othersWaiting.value"
     :name="room.state.value.localName"
-    :copied="room.copied.value"
+    :link="room.shareLink.value"
     :desktop-link="room.desktopLink.value"
     :downloadURL="room.downloadURL.value"
-    @copy-link="room.copyLink"
     @leave="room.leave"
     @rename="room.rename"
   />

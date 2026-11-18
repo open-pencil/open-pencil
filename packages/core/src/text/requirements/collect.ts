@@ -3,6 +3,7 @@ import { uniqBy } from 'es-toolkit/array'
 import type { CharacterStyleOverride, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
+import { textLanguageAt } from '@open-pencil/scene-graph/text'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters } from '#core/text/case'
@@ -27,13 +28,15 @@ export function textFontFace(
   }
 }
 
-export function collectNodeFontFaces(node: SceneNode): Array<{ family: string; style: string }> {
+/** The faces a text and its style runs draw in, each once, with the weight and slant they ask. */
+export function collectNodeFontFaceRefs(node: SceneNode): FontFaceRef[] {
   if (node.type !== 'TEXT') return []
   const faces = [textFontFace(node), ...node.styleRuns.map((run) => textFontFace(node, run.style))]
-  return uniqBy(faces, (face) => `${face.family}\0${face.style}`).map(({ family, style }) => ({
-    family,
-    style
-  }))
+  return uniqBy(faces, (face) => `${face.family}\0${face.style}`)
+}
+
+export function collectNodeFontFaces(node: SceneNode): Array<{ family: string; style: string }> {
+  return collectNodeFontFaceRefs(node).map(({ family, style }) => ({ family, style }))
 }
 
 export function collectGraphFontKeys(
@@ -55,37 +58,43 @@ export function collectGraphFontKeys(
   return Array.from(fontKeys, (key) => key.split('\0') as [string, string])
 }
 
-function textLanguageAt(node: SceneNode, index: number): string | null {
-  const run = node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
-  return run?.style.textLanguage !== undefined ? run.style.textLanguage : node.textLanguage
-}
-
 export interface GraphFontRequirements {
   characters: string
   nodes: SceneNode[]
   scripts: FontFallbackScript[]
 }
 
+/** What the text of `nodes` needs to measure and draw: its characters and the scripts among them. */
+export function collectFontRequirements(nodes: readonly SceneNode[]): GraphFontRequirements {
+  const characters = new Set<string>()
+  const scripts = new Set<FontFallbackScript>()
+  for (const node of nodes) {
+    if (node.type !== 'TEXT') continue
+    for (const { character, sourceIndex } of shownCharacters(node)) {
+      characters.add(character)
+      const script = fontFallbackScriptForCharacter(character, textLanguageAt(node, sourceIndex))
+      if (script) scripts.add(script)
+    }
+  }
+  return {
+    characters: Array.from(characters).join(''),
+    nodes: [...nodes],
+    scripts: Array.from(scripts)
+  }
+}
+
+/** What the text of `nodeIds` and the layers inside them needs. */
 export function collectGraphFontRequirements(
   graph: SceneGraph,
   nodeIds: readonly string[]
 ): GraphFontRequirements {
-  const characters = new Set<string>()
   const nodes: SceneNode[] = []
-  const scripts = new Set<FontFallbackScript>()
   const collect = (nodeId: string) => {
     const node = graph.getNode(nodeId)
     if (!node) return
     nodes.push(node)
-    if (node.type === 'TEXT') {
-      for (const { character, sourceIndex } of shownCharacters(node)) {
-        characters.add(character)
-        const script = fontFallbackScriptForCharacter(character, textLanguageAt(node, sourceIndex))
-        if (script) scripts.add(script)
-      }
-    }
     for (const childId of node.childIds) collect(childId)
   }
   for (const nodeId of nodeIds) collect(nodeId)
-  return { characters: Array.from(characters).join(''), nodes, scripts: Array.from(scripts) }
+  return collectFontRequirements(nodes)
 }

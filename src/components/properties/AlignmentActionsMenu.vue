@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -22,6 +21,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
@@ -41,7 +41,7 @@ const testId = (id: EditorCommandId) => `alignment-action-${id.replace('selectio
 </script>
 
 <template>
-  <DropdownMenuRoot v-model:open="popupOpen">
+  <AppDropdownMenuRoot v-model:open="popupOpen">
     <DropdownMenuTrigger as-child>
       <IconButton
         :label="panels.moreAlignmentActions"
@@ -65,7 +65,7 @@ const testId = (id: EditorCommandId) => `alignment-action-${id.replace('selectio
               @select="runCommand(id)"
             >
               <span>{{ getCommand(id).label }}</span>
-              <span class="ml-6 text-[11px] text-muted">{{
+              <span class="ms-6 text-2xs text-muted">{{
                 formatShortcut(editorCommandMetadata(id).shortcut)
               }}</span>
             </DropdownMenuItem>
@@ -78,7 +78,7 @@ const testId = (id: EditorCommandId) => `alignment-action-${id.replace('selectio
               :disabled="!getCommand('selection.arrangeSpread').enabled.value"
             >
               {{ menu.autoArrange }}
-              <icon-lucide-chevron-right :class="menuCls.icon" />
+              <icon-lucide-chevron-right data-direction="reading" :class="menuCls.icon" />
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent :side-offset="4" :class="menuCls.content">
@@ -102,5 +102,5 @@ const testId = (id: EditorCommandId) => `alignment-action-${id.replace('selectio
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

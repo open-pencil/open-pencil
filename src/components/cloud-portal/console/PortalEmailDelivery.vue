@@ -54,7 +54,8 @@ const kindLabels = computed<Record<string, string>>(() => ({
   'password-changed': messages.value.emailKindPasswordChanged,
   'email-change-requested': messages.value.emailKindEmailChangeRequested,
   'new-sign-in': messages.value.emailKindNewSignIn,
-  'two-step-changed': messages.value.emailKindTwoStepChanged
+  'two-step-changed': messages.value.emailKindTwoStepChanged,
+  'document-report': messages.value.emailKindDocumentReport
 }))
 /** What went wrong, or how many tries it took. */
 function delivery(email: PortalEmail) {
@@ -81,12 +82,12 @@ const emails = usePortalList<CloudAdminEmailFilter, PortalEmail>({
     }),
     column.accessor('recipient', {
       header: () => messages.value.columnRecipient,
-      meta: { class: 'hidden text-muted @xl/table:table-cell' }
+      meta: { role: 'text' }
     }),
     column.display({
       id: 'status',
       header: () => messages.value.columnStatus,
-      meta: { class: 'w-32' },
+      meta: { role: 'tag', always: true },
       cell: ({ row: { original: email } }) =>
         h(PortalStatusCell, {
           statuses: [{ label: statusLabels.value[email.status], tone: tones[email.status] }],
@@ -95,12 +96,12 @@ const emails = usePortalList<CloudAdminEmailFilter, PortalEmail>({
     }),
     column.accessor('when', {
       header: () => messages.value.columnWhen,
-      meta: { class: 'hidden w-44 whitespace-nowrap text-muted @2xl/table:table-cell' }
+      meta: { role: 'date' }
     }),
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px text-right', actions: true },
+      meta: { role: 'actions' },
       cell: ({ row: { original: email } }) =>
         email.status === 'failed'
           ? h(

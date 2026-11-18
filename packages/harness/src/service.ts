@@ -69,6 +69,10 @@ export class HarnessSessionService {
     return this.cancelled.has(sessionId)
   }
 
+  async compactSession(sessionId: string, instructions?: string): Promise<void> {
+    await this.requireSession(sessionId).compact(instructions)
+  }
+
   cancelTurn(sessionId: string): void {
     this.requireSession(sessionId)
     this.turns.get(sessionId)?.abort()

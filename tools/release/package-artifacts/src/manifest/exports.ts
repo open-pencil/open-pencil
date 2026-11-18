@@ -116,7 +116,7 @@ export function validateManifest(manifest: PackageManifest): PackageDiagnostic[]
   // file. A target naming another package resolves through that package's exports instead.
   for (const entry of collectExportTargets(manifest.imports, ['imports'])) {
     const local = entry.target.startsWith('./')
-    if (local && entry.target.includes('*') && !/\.[a-z]+$/i.test(entry.target)) {
+    if (local && entry.target.includes('*') && !/\.[a-z0-9]+$/i.test(entry.target)) {
       report(entry.field, `wildcard target names no extension (${entry.target})`)
     }
   }

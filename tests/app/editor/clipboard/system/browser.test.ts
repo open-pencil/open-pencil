@@ -28,7 +28,7 @@ describe('browser clipboard paste', () => {
       write: async () => true,
       read: async () => ({
         available: true,
-        html: '<!--(openpencil)layers(/openpencil)-->',
+        html: '<!--(figma)layers(/figma)-->',
         text: SVG
       })
     })

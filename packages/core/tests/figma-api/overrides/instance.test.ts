@@ -2,8 +2,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { registerTestFont } from '#core-tests/helpers/figma-api'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 beforeAll(() => registerTestFont())
 
@@ -86,6 +85,27 @@ describe('instance.overrides', () => {
     ])
   })
 
+  // Setting one side apart keeps the other three at the stroke's weight, so the instance owns all
+  // four: a later component edit must not move the sides it kept.
+  test('records every side when the first side of an instance layer is set apart', () => {
+    const { card, find, overrides } = setup()
+    find('Box').strokes = [solid(0, 0, 1)]
+    find('Box').strokeWeight = 2
+    find('Box').strokeRightWeight = 20
+    const box = card.findOne((node: FigmaNodeProxy) => node.name === 'Box')
+    if (!box) throw new Error('Missing Box')
+    box.strokeWeight = 9
+    expect(overrides()).toEqual([
+      'Box: strokeBottomWeight,strokeLeftWeight,strokeRightWeight,strokes,stokeTopWeight,strokeWeight'
+    ])
+    expect([
+      find('Box').strokeTopWeight,
+      find('Box').strokeRightWeight,
+      find('Box').strokeBottomWeight,
+      find('Box').strokeLeftWeight
+    ]).toEqual([2, 20, 2, 2])
+  })
+
   test('lists the instance’s own size once its layers grow it, and a nested instance’s layers', () => {
     const { find, overrides } = setup()
     find('Label').fontSize = 30
@@ -148,6 +168,38 @@ describe('instance.resetOverrides', () => {
 
   test('is an instance’s alone', () => {
     const { card } = setup()
-    expect(() => card.resetOverrides()).toThrow('resetOverrides() can only be called on instances')
+    expect('resetOverrides' in card).toBe(false)
+  })
+})
+
+describe('a detached instance', () => {
+  test('is a frame without the instance’s override members', () => {
+    const { instance } = setup()
+    const frame = instance.detachInstance()
+    expect(['overrides', 'removeOverrides', 'resetOverrides'].map((name) => name in frame)).toEqual(
+      [false, false, false]
+    )
+    // A reference kept from before refuses them.
+    expect(instance.overrides).toBeUndefined()
+    expect(() => instance.removeOverrides()).toThrow(
+      'removeOverrides() can only be called on instances'
+    )
+  })
+})
+
+describe('instance.removeOverrides', () => {
+  test('does what resetOverrides does, under the name Figma gives it now', () => {
+    const { card, instance, find, overrides, show } = setup()
+    instance.setProperties({ [show]: false })
+    find('Label').fontSize = 30
+    find('Nested').opacity = 0.5
+    instance.removeOverrides()
+    expect([find('Box').visible, find('Label').fontSize, find('Nested').opacity]).toEqual([
+      false,
+      12,
+      1
+    ])
+    expect(overrides()).toEqual(['SELF: height,width'])
+    expect('removeOverrides' in card).toBe(false)
   })
 })

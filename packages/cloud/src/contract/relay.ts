@@ -31,7 +31,9 @@ export const COLLAB_ACTIONS = {
   agentPreview: 'agent-preview',
   upload: 'upload',
   /** From the server only: the document's version history changed, so open lists load it again. */
-  versions: 'versions'
+  versions: 'versions',
+  /** From the server only: a comment thread changed; the payload is its ID as UTF-8. */
+  comments: 'comments'
 } as const
 
 /**
@@ -108,6 +110,12 @@ export const RELAY_CLOSE = {
   /** The document was restored to a version, so its room started over under a new ID. */
   restored: 4410
 } as const
+
+/**
+ * The text a peer sends to learn whether the relay still hears it, and the relay's answer. Relay
+ * frames are binary, so neither is taken for one, and a Durable Object answers without waking.
+ */
+export const RELAY_HEARTBEAT = { ping: 'ping', pong: 'pong' } as const
 
 const CLIENT_AUTH = 0
 const CLIENT_MESSAGE = 1

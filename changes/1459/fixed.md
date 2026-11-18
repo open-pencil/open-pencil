@@ -1,1 +1,0 @@
-- Text in some variable fonts keeps its glyph shapes at non-default axes in `.fig` exports, copies pasted into Figma, and PDF exports, instead of drawing misplaced or collapsed contours.

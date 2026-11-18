@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { PenNode } from '@open-pencil/pen'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { expectDefined, getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'
 
 function effectsOf(effect: PenNode['effect']) {

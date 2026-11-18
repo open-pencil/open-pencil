@@ -49,10 +49,13 @@ const REKA_PARTS = {
     Thumb: part('thumb')
   },
   Progress: { Root: root('progress'), Track: part('track'), Indicator: part('indicator') },
+  // `Trigger` is a plain trigger; `Tab` is a trigger with states of its own, written alone as
+  // its component and in a list as an instance of it, as a group's `Item` is.
   Tabs: {
     Root: root('tabs'),
     List: part('list'),
     Trigger: repeat('list'),
+    Tab: root('tab'),
     Content: repeat('panels')
   },
   Collapsible: { Root: root('collapsible'), Trigger: part('trigger'), Content: part('content') },
@@ -109,8 +112,10 @@ const GROUPS = new Set<BehaviourKind>(['radioGroup', 'toggleGroup', 'accordion']
 function containerOf(child: TreeNode, kind: BehaviourKind): string | undefined {
   const role = rekaRole(child.type)
   if (role?.role === 'repeat') return role.container
-  if (GROUPS.has(kind) && role?.role === 'root' && namesComponent(child.props)) return 'items'
-  return undefined
+  if (role?.role !== 'root' || !namesComponent(child.props)) return undefined
+  if (GROUPS.has(kind)) return 'items'
+  // A tab written directly under its Tabs.Root goes in the list, as a plain trigger does.
+  return kind === 'tabs' ? 'list' : undefined
 }
 
 /**
@@ -196,6 +201,7 @@ export const BEHAVIOUR_PROPS = [
   'modelValue',
   'open',
   'disabled',
+  'invalid',
   'filled',
   'states',
   'min',
@@ -222,8 +228,10 @@ function rootSpec(kind: BehaviourKind, props: Record<string, unknown>): Behaviou
   const values: NonNullable<BehaviourSpec['values']> = {}
   const main = kind === 'collapsible' ? props.open : props.modelValue
   if (isBinding(main)) values[kind === 'collapsible' ? 'open' : 'value'] = main
-  if (isBinding(props.disabled)) values.disabled = props.disabled
-  if (isBinding(props.filled)) values.filled = props.filled
+  for (const flag of ['disabled', 'invalid', 'filled'] as const) {
+    const binding = props[flag]
+    if (isBinding(binding)) values[flag] = binding
+  }
   const range: Record<string, number> = {}
   for (const key of ['min', 'max', 'step'] as const) {
     const value = props[key]

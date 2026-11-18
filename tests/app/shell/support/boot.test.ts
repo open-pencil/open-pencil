@@ -2,10 +2,9 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import { ErrorCodes, defineComponent, h, nextTick, onMounted } from 'vue'
 
+import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
+
 import { isFatalBootErrorInfo, observeBootErrors } from '@/app/shell/support/boot'
-
-import { createTestRenderer, hostNode } from '#tests/helpers/vue/renderer'
-
 function mountApp(root: ReturnType<typeof defineComponent>) {
   const app = createTestRenderer().createApp(root)
   const observer = observeBootErrors(app)

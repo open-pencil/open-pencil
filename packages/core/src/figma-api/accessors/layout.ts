@@ -1,6 +1,9 @@
+import * as v from 'valibot'
+
 import type { LayoutGrid, LayoutMode, LayoutSizing, SceneNode } from '@open-pencil/scene-graph'
 import {
   aspectRatioLockEditable,
+  counterAxisSpacingOf,
   layoutSizing,
   layoutSizingError,
   layoutSizingUpdates,
@@ -8,30 +11,42 @@ import {
   type LayoutSizingAxis,
   AUTO_LAYOUT_GRID_COUNT,
   isAutoGridCount,
-  layoutGridCount
+  layoutGridAlignment,
+  layoutGridColor,
+  layoutGridCount,
+  layoutGridPattern
 } from '@open-pencil/scene-graph/layout'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
   prepareFollowedFieldEdit,
   assertProxyEditable,
-  graph,
+  fieldAccessor,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
+import { graphOf } from '#core/figma-api/graph'
+import { atLeast, finiteNumberSchema } from '#core/figma-api/schema'
+import { parseFigma } from '#core/figma-api/validation'
 
 /** A guide in Figma's plugin shape, whether it was set that way or read from a file. */
 function figmaLayoutGrid(grid: LayoutGrid): Readonly<LayoutGrid> {
   const visible = grid.visible ?? true
-  const color = { ...(grid.color ?? { r: 1, g: 0, b: 0, a: 0.1 }) }
-  if (grid.pattern === 'GRID')
-    return Object.freeze({ pattern: 'GRID', sectionSize: grid.sectionSize ?? 10, visible, color })
-  const rows = grid.pattern === 'ROWS' || (grid.pattern !== 'COLUMNS' && grid.axis === 'Y')
-  const alignment = grid.alignment ?? grid.type ?? 'STRETCH'
+  const color = layoutGridColor(grid)
+  const pattern = layoutGridPattern(grid)
+  if (pattern === 'GRID')
+    return Object.freeze({
+      pattern: 'GRID',
+      sectionSize: grid.sectionSize ?? 10,
+      visible,
+      color,
+      boundVariables: {}
+    })
+  const alignment = layoutGridAlignment(grid)
   return Object.freeze({
-    pattern: rows ? 'ROWS' : 'COLUMNS',
+    pattern,
     alignment,
     gutterSize: grid.gutterSize ?? 0,
     count: layoutGridCount(grid) === AUTO_LAYOUT_GRID_COUNT ? null : layoutGridCount(grid),
@@ -39,7 +54,8 @@ function figmaLayoutGrid(grid: LayoutGrid): Readonly<LayoutGrid> {
     ...(alignment === 'STRETCH' ? {} : { sectionSize: grid.sectionSize ?? 0 }),
     offset: grid.offset ?? 0,
     visible,
-    color
+    color,
+    boundVariables: {}
   })
 }
 
@@ -67,7 +83,7 @@ export function installLayoutNodeProxyAccessors(
         return Object.freeze(raw(this, internals).layoutGrids.map(figmaLayoutGrid))
       },
       set(this: ProxyThis, value: readonly LayoutGrid[]) {
-        if (!Array.isArray(value)) throw new TypeError('layoutGrids must be an array')
+        parseFigma(v.array(v.unknown()), value, 'set_layoutGrids', 'layoutGrids')
         // An Auto count is stored as the archive stores it, so it survives copies and saves.
         const grids = structuredClone([...value]).map((grid) =>
           isAutoGridCount(grid.count) ? { ...grid, count: AUTO_LAYOUT_GRID_COUNT } : grid
@@ -75,43 +91,80 @@ export function installLayoutNodeProxyAccessors(
         updateNode(this, internals, { layoutGrids: grids })
       }
     },
-    primaryAxisAlignItems: mappedAccessor(internals, 'primaryAxisAlign'),
-    counterAxisAlignItems: mappedAccessor(internals, 'counterAxisAlign'),
-    itemSpacing: simpleAccessor(internals, 'itemSpacing'),
-    counterAxisSpacing: simpleAccessor(internals, 'counterAxisSpacing'),
-    paddingTop: simpleAccessor(internals, 'paddingTop'),
-    paddingRight: simpleAccessor(internals, 'paddingRight'),
-    paddingBottom: simpleAccessor(internals, 'paddingBottom'),
-    paddingLeft: simpleAccessor(internals, 'paddingLeft'),
-    layoutWrap: mappedAccessor(internals, 'layoutWrap'),
+    primaryAxisAlignItems: fieldAccessor(
+      internals,
+      'primaryAxisAlign',
+      primaryAxisAlignSchema,
+      'primaryAxisAlignItems'
+    ),
+    counterAxisAlignItems: fieldAccessor(
+      internals,
+      'counterAxisAlign',
+      counterAxisAlignSchema,
+      'counterAxisAlignItems'
+    ),
+    itemSpacing: fieldAccessor(internals, 'itemSpacing', finiteNumberSchema),
+    // null follows the item spacing, and reads back as it (Figma desktop 126).
+    counterAxisSpacing: {
+      get(this: ProxyThis): number {
+        return counterAxisSpacingOf(raw(this, internals))
+      },
+      set(this: ProxyThis, value: unknown) {
+        const counterAxisSpacing = parseFigma(
+          v.nullable(finiteNumberSchema),
+          value,
+          'set_counterAxisSpacing',
+          'counterAxisSpacing'
+        )
+        updateNode(this, internals, { counterAxisSpacing })
+      }
+    },
+    paddingTop: padding(internals, 'paddingTop', ['paddingTop']),
+    paddingRight: padding(internals, 'paddingRight', ['paddingRight']),
+    paddingBottom: padding(internals, 'paddingBottom', ['paddingBottom']),
+    paddingLeft: padding(internals, 'paddingLeft', ['paddingLeft']),
+    // Figma's deprecated pairs read their first side and set both (Figma desktop 126).
+    horizontalPadding: padding(internals, 'horizontalPadding', ['paddingLeft', 'paddingRight']),
+    verticalPadding: padding(internals, 'verticalPadding', ['paddingTop', 'paddingBottom']),
+    layoutWrap: fieldAccessor(internals, 'layoutWrap', v.picklist(['NO_WRAP', 'WRAP'])),
     primaryAxisSizingMode: axisSizingModeAccessor(internals, 'primaryAxisSizing'),
     counterAxisSizingMode: axisSizingModeAccessor(internals, 'counterAxisSizing'),
     counterAxisAlignContent: {
       get(this: ProxyThis): SceneNode['counterAxisAlignContent'] {
         return raw(this, internals).counterAxisAlignContent
       },
-      set(this: ProxyThis, value: SceneNode['counterAxisAlignContent']) {
+      set(this: ProxyThis, value: unknown) {
+        const counterAxisAlignContent = parseFigma(
+          v.picklist(['AUTO', 'SPACE_BETWEEN']),
+          value,
+          'set_counterAxisAlignContent',
+          'counterAxisAlignContent'
+        )
         prepareFollowedFieldEdit(
-          graph(this, internals),
+          graphOf(this),
           raw(this, internals),
           'counterAxisAlignContent',
           'stack-counter-align-content'
         )
-        updateNode(this, internals, { counterAxisAlignContent: value })
+        updateNode(this, internals, { counterAxisAlignContent })
       }
     },
-    itemReverseZIndex: simpleAccessor(internals, 'itemReverseZIndex'),
-    strokesIncludedInLayout: simpleAccessor(internals, 'strokesIncludedInLayout'),
-    layoutPositioning: mappedAccessor(internals, 'layoutPositioning'),
-    layoutGrow: simpleAccessor(internals, 'layoutGrow'),
+    itemReverseZIndex: fieldAccessor(internals, 'itemReverseZIndex', v.boolean()),
+    strokesIncludedInLayout: fieldAccessor(internals, 'strokesIncludedInLayout', v.boolean()),
+    layoutPositioning: fieldAccessor(
+      internals,
+      'layoutPositioning',
+      v.picklist(['AUTO', 'ABSOLUTE'])
+    ),
+    layoutGrow: fieldAccessor(internals, 'layoutGrow', layoutGrowSchema),
     layoutAlign: {
       get(this: ProxyThis): string {
         const node = raw(this, internals)
         return node.layoutAlignSelf === 'AUTO' ? 'INHERIT' : node.layoutAlignSelf
       },
-      set(this: ProxyThis, value: string) {
-        const mapped = value === 'INHERIT' ? 'AUTO' : value
-        updateNode(this, internals, { layoutAlignSelf: mapped as SceneNode['layoutAlignSelf'] })
+      set(this: ProxyThis, value: unknown) {
+        const align = parseFigma(layoutAlignSchema, value, 'set_layoutAlign', 'layoutAlign')
+        updateNode(this, internals, { layoutAlignSelf: align === 'INHERIT' ? 'AUTO' : align })
       }
     },
     layoutSizingHorizontal: layoutSizingAccessor(internals, 'HORIZONTAL'),
@@ -121,23 +174,24 @@ export function installLayoutNodeProxyAccessors(
         const node = raw(this, internals)
         return { horizontal: node.horizontalConstraint, vertical: node.verticalConstraint }
       },
-      set(this: ProxyThis, value: { horizontal: string; vertical: string }) {
+      set(this: ProxyThis, value: unknown) {
+        const constraints = parseFigma(constraintsSchema, value, 'set_constraints', 'constraints')
         prepareFollowedFieldEdit(
-          graph(this, internals),
+          graphOf(this),
           raw(this, internals),
           'constraints',
           'vertical-constraint'
         )
         updateNode(this, internals, {
-          horizontalConstraint: value.horizontal as SceneNode['horizontalConstraint'],
-          verticalConstraint: value.vertical as SceneNode['verticalConstraint']
+          horizontalConstraint: constraints.horizontal,
+          verticalConstraint: constraints.vertical
         })
       }
     },
-    minWidth: simpleAccessor(internals, 'minWidth'),
-    maxWidth: simpleAccessor(internals, 'maxWidth'),
-    minHeight: simpleAccessor(internals, 'minHeight'),
-    maxHeight: simpleAccessor(internals, 'maxHeight'),
+    minWidth: fieldAccessor(internals, 'minWidth', sizeLimitSchema),
+    maxWidth: fieldAccessor(internals, 'maxWidth', sizeLimitSchema),
+    minHeight: fieldAccessor(internals, 'minHeight', sizeLimitSchema),
+    maxHeight: fieldAccessor(internals, 'maxHeight', sizeLimitSchema),
     targetAspectRatio: {
       get(this: ProxyThis): Vector | null {
         const target = raw(this, internals).targetAspectRatio
@@ -148,8 +202,14 @@ export function installLayoutNodeProxyAccessors(
       get(this: ProxyThis): boolean {
         return raw(this, internals).targetAspectRatio !== null
       },
-      set(this: ProxyThis, value: boolean) {
-        setAspectRatioLock(this, internals, value)
+      set(this: ProxyThis, value: unknown) {
+        const locked = parseFigma(
+          v.boolean(),
+          value,
+          'set_constrainProportions',
+          'constrainProportions'
+        )
+        setAspectRatioLock(this, internals, locked)
       }
     }
   })
@@ -168,7 +228,7 @@ export function installLayoutNodeProxyAccessors(
 function setAspectRatioLock(target: ProxyThis, internals: NodeProxyInternals, locked: boolean) {
   assertProxyEditable(target, internals)
   const node = raw(target, internals)
-  if (!aspectRatioLockEditable(graph(target, internals), node)) return
+  if (!aspectRatioLockEditable(graphOf(target), node)) return
   updateNode(target, internals, {
     targetAspectRatio: locked ? lockedAspectRatioTarget(node.width, node.height) : null
   })
@@ -205,11 +265,11 @@ function layoutSizingAccessor(
   const property = axis === 'HORIZONTAL' ? 'layoutSizingHorizontal' : 'layoutSizingVertical'
   return {
     get(this: ProxyThis): LayoutSizing {
-      return layoutSizing(graph(this, internals), raw(this, internals), axis)
+      return layoutSizing(graphOf(this), raw(this, internals), axis)
     },
     set(this: ProxyThis, value: unknown) {
       if (!isLayoutSizing(value)) throw new TypeError(`Invalid ${property}: ${String(value)}`)
-      const sceneGraph = graph(this, internals)
+      const sceneGraph = graphOf(this)
       const node = raw(this, internals)
       const error = layoutSizingError(sceneGraph, node, value)
       if (error) throw new Error(`in set_${property}: ${error}`)
@@ -218,26 +278,44 @@ function layoutSizingAccessor(
   }
 }
 
-function simpleAccessor(internals: NodeProxyInternals, field: keyof SceneNode): PropertyDescriptor {
+type PaddingSide = 'paddingTop' | 'paddingRight' | 'paddingBottom' | 'paddingLeft'
+
+/** A padding that reads its first side and sets each of `sides` to a finite number of 0 or more. */
+function padding(
+  internals: NodeProxyInternals,
+  property: string,
+  sides: readonly [PaddingSide, ...PaddingSide[]]
+): PropertyDescriptor {
   return {
-    get(this: ProxyThis): unknown {
-      return raw(this, internals)[field]
+    get(this: ProxyThis): number {
+      return raw(this, internals)[sides[0]]
     },
     set(this: ProxyThis, value: unknown) {
-      updateNode(this, internals, { [field]: value })
+      const amount = parseFigma(atLeast(0), value, `set_${property}`, property)
+      updateNode(this, internals, Object.fromEntries(sides.map((side) => [side, amount])))
     }
   }
 }
 
-function mappedAccessor(internals: NodeProxyInternals, field: keyof SceneNode): PropertyDescriptor {
-  return {
-    get(this: ProxyThis): unknown {
-      return raw(this, internals)[field]
-    },
-    set(this: ProxyThis, value: string) {
-      updateNode(this, internals, { [field]: value })
-    }
-  }
-}
+/**
+ * How auto layout places children along its direction, as Figma's schema lists the options. Figma
+ * also takes `SPACE_AROUND` and `SPACE_EVENLY`, which OpenPencil's layout does not draw yet.
+ */
+const primaryAxisAlignSchema = v.picklist(['MIN', 'MAX', 'CENTER', 'SPACE_BETWEEN'])
+
+/** How auto layout places children across its direction; Figma refuses `STRETCH` here. */
+const counterAxisAlignSchema = v.picklist(['MIN', 'MAX', 'CENTER', 'BASELINE'])
+
+/** How a child of auto layout is placed across it, `INHERIT` following its parent. */
+const layoutAlignSchema = v.picklist(['MIN', 'CENTER', 'MAX', 'STRETCH', 'INHERIT'])
+
+const constraintSchema = v.picklist(['MIN', 'CENTER', 'MAX', 'STRETCH', 'SCALE'])
+const constraintsSchema = v.object({ horizontal: constraintSchema, vertical: constraintSchema })
+
+/** Figma grows a layer to fill its auto layout with 1, and keeps its size with 0. */
+const layoutGrowSchema = v.union([v.literal(0), v.literal(1)])
+
+/** A minimum or maximum size, or none. */
+const sizeLimitSchema = v.nullable(finiteNumberSchema)
 
 export type { LayoutMode }

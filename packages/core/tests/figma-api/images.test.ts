@@ -6,6 +6,8 @@ import { toUint8Array } from 'js-base64'
 import { FigmaAPI, MAX_IMAGE_FETCH_BYTES } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { graphOf } from '#core/figma-api/graph'
+
 // Expected values were recorded by running the same scripts in Figma, except where noted.
 
 /** A 1 × 1 PNG, which Figma stores under the hash below. */
@@ -215,7 +217,7 @@ describe('figma.createImageAsync', () => {
       'https://example.com/offline.png',
       'https://example.com/page'
     ])
-    expect(figma.graph.images.size).toBe(0)
+    expect(graphOf(figma).images.size).toBe(0)
   })
 
   test('stops reading a body that runs past the limit, whatever length it declares', async () => {

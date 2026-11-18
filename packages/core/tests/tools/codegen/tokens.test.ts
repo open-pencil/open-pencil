@@ -34,7 +34,7 @@ function themeTokens() {
   return figma
 }
 
-describe('design_to_tokens', () => {
+describe('export_design_tokens', () => {
   test('writes defaults, mode scopes, and aliases as references', async () => {
     const result = await run(themeTokens(), { format: 'css' })
     expect(result.output).toContain('--color-primary: var(--color-blue-500);')

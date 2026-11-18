@@ -9,6 +9,7 @@ local-first and works without it.
 - `@open-pencil/cloud/contract` — Valibot network contracts and public types.
 - `@open-pencil/cloud/client` — discovery, authentication, device authorization, and the typed client.
 - `@open-pencil/cloud/email` — Vue Email rendering.
+- `@open-pencil/cloud/errors` — the PostHog error reporter Cloud uses, for services beside it; depends only on `posthog-node`.
 - `@open-pencil/cloud/server` — runtime-neutral Hono routes and services with injected dependencies.
 - `@open-pencil/cloud/runtime/node` — PostgreSQL, S3, SMTP, the HTTP listener, and workers.
 
@@ -20,12 +21,12 @@ secrets from the environment. Start from
 the server on Node 22 or later, installed from npm or built from a checkout:
 
 ```sh
-npx -p @open-pencil/cloud openpencil-cloud   # openpencil-ai-relay runs the AI relay
+npx -p @open-pencil/cloud openpencil-cloud   # openpencil-services runs the services server
 bun --filter @open-pencil/cloud build:standalone && bun --filter @open-pencil/cloud start
 ```
 
 The server migrates the database before it accepts requests. The
-[self-hosting guide](https://openpencil.dev/reference/self-hosting-cloud) covers building with the
+[self-hosting guide](https://openpencil.dev/cloud/self-hosting/) covers building with the
 portal, configuration, the editor address, operator commands, and upgrades;
 [`deploy/README.md`](./deploy/README.md) covers local development and end-to-end tests, and
 [`deploy/security.md`](./deploy/security.md) covers hardening. The design is described in

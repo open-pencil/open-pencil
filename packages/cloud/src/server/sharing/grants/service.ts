@@ -20,6 +20,10 @@ export function createGrantService(database: Kysely<CloudDatabase>) {
       return rows.map(grantContract)
     },
 
+    /**
+     * Changes the permission of someone who already has access. Access itself is only given by an
+     * invitation the person accepts, so nobody can put a document in a stranger's files.
+     */
     async putGrant(
       userId: string,
       documentId: string,
@@ -28,23 +32,11 @@ export function createGrantService(database: Kysely<CloudDatabase>) {
     ): Promise<DocumentGrant> {
       await requireSharingAccess(database, userId, documentId)
       const row = await database
-        .insertInto('documentGrant')
-        .values({
-          id: crypto.randomUUID(),
-          documentId,
-          userId: targetUserId,
-          permission: input.permission,
-          createdBy: userId,
-          revokedAt: null
-        })
-        .onConflict((conflict) =>
-          conflict.columns(['documentId', 'userId']).doUpdateSet({
-            permission: input.permission,
-            createdBy: userId,
-            revokedAt: null,
-            updatedAt: new Date()
-          })
-        )
+        .updateTable('documentGrant')
+        .set({ permission: input.permission, createdBy: userId, updatedAt: new Date() })
+        .where('documentId', '=', documentId)
+        .where('userId', '=', targetUserId)
+        .where('revokedAt', 'is', null)
         .returning([
           'id',
           'documentId',
@@ -54,7 +46,8 @@ export function createGrantService(database: Kysely<CloudDatabase>) {
           'createdAt',
           'updatedAt'
         ])
-        .executeTakeFirstOrThrow()
+        .executeTakeFirst()
+      if (!row) throw new DocumentNotFoundError()
       return grantContract(row)
     },
 

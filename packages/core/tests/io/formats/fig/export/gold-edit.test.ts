@@ -1,12 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
-
 import { createEditor } from '@open-pencil/core'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 
 test('Gold document exposes effective Boolean assignments and supports editor undo/redo', async () => {
   const parsed = parseFigBuffer(readFixtureArrayBuffer('gold-preview.fig'))

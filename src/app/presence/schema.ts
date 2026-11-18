@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import { MAX_PRESENCE_NAME_LENGTH } from '@open-pencil/cloud/contract'
+import { ZOOM_MAX, ZOOM_MIN } from '@open-pencil/core/constants'
 
 import type { RemotePeer } from '@/app/collab/types'
 import { PEER_COLORS } from '@/constants'
@@ -31,7 +32,7 @@ const colorSchema = v.object({
 const pointSchema = v.object({ x: finiteSchema, y: finiteSchema, pageId: idSchema })
 const personPointSchema = v.object({
   ...pointSchema.entries,
-  zoom: lenient(v.pipe(finiteSchema, v.minValue(0.02), v.maxValue(256)))
+  zoom: lenient(v.pipe(finiteSchema, v.minValue(ZOOM_MIN), v.maxValue(ZOOM_MAX)))
 })
 const selectionSchema = v.pipe(v.array(idSchema), v.maxLength(MAX_SELECTION))
 const extentSchema = v.pipe(finiteSchema, v.minValue(0))

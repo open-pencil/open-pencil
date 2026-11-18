@@ -10,8 +10,16 @@ import {
   type VariableType
 } from '@open-pencil/scene-graph'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
-import { independentCornerChanges, paintBindingTarget } from '@open-pencil/scene-graph/variables'
+import {
+  effectBindableProperties,
+  effectBindingField,
+  effectBindingTarget,
+  effectBindingVariableType,
+  independentCornerChanges,
+  paintBindingTarget
+} from '@open-pencil/scene-graph/variables'
 
+import type { FigmaEffect, FigmaEffectBindings } from '#core/figma-api/effects'
 import type { FigmaPaint } from '#core/figma-api/paints'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
@@ -239,11 +247,62 @@ export function setPaintBindings(
   if (current.size > 0 || wanted.size > 0) reconcileVariableLayouts(graph, { subtrees: [node.id] })
 }
 
+/** The variables each effect's properties are bound to, by effect index. */
+export function effectBindings(node: SceneNode): Map<number, FigmaEffectBindings> {
+  const bindings = new Map<number, FigmaEffectBindings>()
+  for (const [field, id] of Object.entries(node.boundVariables)) {
+    const target = effectBindingTarget(field)
+    if (!target) continue
+    const effect = bindings.get(target.index) ?? {}
+    effect[target.property] = variableAlias(id)
+    bindings.set(target.index, effect)
+  }
+  return bindings
+}
+
+/**
+ * Binds each effect's properties to the variables its `boundVariables` names, as Figma does when
+ * effects are set, and drops bindings the effects no longer carry. A reference to a missing
+ * variable, one of the wrong type, or a property the effect lacks binds nothing.
+ */
+export function setEffectBindings(
+  graph: SceneGraph,
+  node: SceneNode,
+  effects: readonly FigmaEffect[]
+): void {
+  const current = new Map(
+    Object.entries(node.boundVariables).filter(([field]) => effectBindingTarget(field))
+  )
+  const wanted = new Map<string, string>()
+  effects.forEach((effect, index) => {
+    const bound: FigmaEffectBindings = effect.boundVariables ?? {}
+    for (const property of effectBindableProperties(effect.type)) {
+      const id = bound[property]?.id
+      if (id && graph.variables.get(id)?.type === effectBindingVariableType(property))
+        wanted.set(effectBindingField(index, property), id)
+    }
+  })
+  for (const field of current.keys()) {
+    if (!wanted.has(field)) graph.unbindVariable(node.id, field)
+  }
+  for (const [field, id] of wanted) {
+    if (current.get(field) !== id) graph.bindVariable(node.id, field, id)
+  }
+  if (current.size > 0 || wanted.size > 0) reconcileVariableLayouts(graph, { subtrees: [node.id] })
+}
+
+/** Figma's order for a list of variables: by ID, each once. */
+function byVariableId(ids: readonly string[]): FigmaVariableAlias[] {
+  return uniq(ids)
+    .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
+    .map(variableAlias)
+}
+
 type FigmaBoundVariables = Record<string, FigmaVariableAlias | FigmaVariableAlias[]>
 
 /**
  * A layer's bindings as Figma's `boundVariables` reads them: a reference per node field, a list
- * per text style field and per bound paint.
+ * per text style field and per bound paint, and one list of every variable its effects use.
  */
 export function figmaBoundVariables(node: SceneNode): FigmaBoundVariables {
   const result: FigmaBoundVariables = {}
@@ -273,5 +332,9 @@ export function figmaBoundVariables(node: SceneNode): FigmaBoundVariables {
       .sort(([a], [b]) => a - b)
       .map(([, id]) => variableAlias(id))
   }
+  const effectIds = Object.entries(node.boundVariables)
+    .filter(([field]) => effectBindingTarget(field))
+    .map(([, id]) => id)
+  if (effectIds.length > 0) result.effects = byVariableId(effectIds)
   return result
 }

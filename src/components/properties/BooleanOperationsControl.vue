@@ -3,10 +3,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
-import IconChevronDown from '~icons/lucide/chevron-down'
 import IconCombine from '~icons/lucide/combine'
 import IconCopyMinus from '~icons/lucide/copy-minus'
 import IconCopyX from '~icons/lucide/copy-x'
@@ -22,9 +20,10 @@ import {
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
+import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
-import Tip from '@/components/ui/overlay/Tip.vue'
 
 const { getCommand, runCommand } = useEditorCommands()
 const { commands } = useI18n()
@@ -43,18 +42,17 @@ const itemCls = menuItem({ justify: 'between' })
 </script>
 
 <template>
-  <DropdownMenuRoot v-model:open="popupOpen">
-    <Tip :label="commands.booleanOperations">
-      <DropdownMenuTrigger as-child>
-        <button
-          data-test-id="boolean-operations-trigger"
-          class="flex h-7 items-center gap-1 rounded-md px-1.5 text-muted hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state=open]:text-surface"
-        >
-          <IconCombine class="size-4" />
-          <IconChevronDown class="size-3" />
-        </button>
-      </DropdownMenuTrigger>
-    </Tip>
+  <AppDropdownMenuRoot v-model:open="popupOpen">
+    <DropdownMenuTrigger as-child>
+      <IconButton
+        :label="commands.booleanOperations"
+        menu
+        size="xs"
+        data-test-id="boolean-operations-trigger"
+      >
+        <IconCombine class="size-3.5" />
+      </IconButton>
+    </DropdownMenuTrigger>
     <DropdownMenuPortal v-if="portalActive">
       <DropdownMenuContent align="end" side="bottom" :side-offset="4" :class="menuCls.content">
         <MenuScrollArea>
@@ -70,12 +68,12 @@ const itemCls = menuItem({ justify: 'between' })
               <component :is="operation.icon" class="size-3.5 shrink-0 text-muted" />
               <span>{{ getCommand(operation.id).label }}</span>
             </div>
-            <span class="ml-6 text-[11px] text-muted">{{
+            <span class="ms-6 text-2xs text-muted">{{
               formatShortcut(editorCommandMetadata(operation.id).shortcut)
             }}</span>
           </DropdownMenuItem>
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

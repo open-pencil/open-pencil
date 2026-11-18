@@ -1,4 +1,4 @@
-import { basename } from 'pathe'
+import { basename, dirname, join } from 'pathe'
 import { filename } from 'pathe/utils'
 
 import { DOCUMENT_EXTENSIONS } from '@open-pencil/core/io'
@@ -13,6 +13,11 @@ export function isFigArchiveName(name: string): boolean {
 /** The file name a document of this kind saves under: `.fig` for a design, `.jam` for a board. */
 export function documentFileName(name: string, kind: DocumentKind): string {
   return `${name}.${DOCUMENT_EXTENSIONS[kind]}`
+}
+
+/** The same path with the extension a document of this kind saves under, for `notes.pen` → `notes.fig`. */
+export function documentPathFor(path: string, kind: DocumentKind): string {
+  return join(dirname(path), documentFileName(filename(path) || 'Untitled', kind))
 }
 
 export function documentNameFromFigPath(path: string): string {

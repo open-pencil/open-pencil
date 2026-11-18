@@ -2,6 +2,9 @@ import { orderBy, sortBy } from 'es-toolkit/array'
 import { meanBy } from 'es-toolkit/math'
 import * as v from 'valibot'
 
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+
+import { graphOf } from '#core/figma-api/graph'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
 interface SizedItem {
@@ -63,14 +66,14 @@ export const analyzeClusters = defineTool({
 
     page.findAll((node) => {
       totalNodes++
-      const raw = figma.graph.getNode(node.id)
+      const raw = graphOf(figma).getNode(node.id)
       if (!raw) return false
       if (raw.width < minSize || raw.height < minSize) return false
       if (raw.type === 'CANVAS' || raw.type === 'INSTANCE') return false
 
       const childTypes = new Map<string, number>()
       for (const childId of raw.childIds) {
-        const child = figma.graph.getNode(childId)
+        const child = graphOf(figma).getNode(childId)
         if (child) childTypes.set(child.type, (childTypes.get(child.type) ?? 0) + 1)
       }
 
@@ -102,8 +105,8 @@ export const analyzeClusters = defineTool({
           const avgHeight = meanBy(nodes, (node) => node.height)
           const widths = nodes.map((node) => node.width)
           const heights = nodes.map((node) => node.height)
-          const widthRange = Math.max(...widths) - Math.min(...widths)
-          const heightRange = Math.max(...heights) - Math.min(...heights)
+          const widthRange = maxOf(widths) - minOf(widths)
+          const heightRange = maxOf(heights) - minOf(heights)
           const confidence = calcClusterConfidence(nodes)
 
           return {

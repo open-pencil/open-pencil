@@ -109,6 +109,32 @@ export function cloneInstanceOverrideState(state: InstanceOverrideState): Instan
 export interface InstanceOverrideReferenceMapper {
   node: (id: string) => string
   variable: (id: string) => string
+  collection?: (id: string) => string | undefined
+  property?: (id: string) => string | undefined
+}
+
+const ASSIGNMENT_OVERRIDE_PREFIX = 'componentPropertyAssignments/'
+
+export function assignmentOverrideField(propertyId: string): string {
+  return `${ASSIGNMENT_OVERRIDE_PREFIX}${propertyId}`
+}
+
+export function overriddenAssignmentId(field: string): string | undefined {
+  return field.startsWith(ASSIGNMENT_OVERRIDE_PREFIX)
+    ? field.slice(ASSIGNMENT_OVERRIDE_PREFIX.length)
+    : undefined
+}
+
+const VARIABLE_MODE_FIELD_PREFIX = 'variableModes/'
+
+export function variableModeOverrideField(collectionId: string): InstanceOverrideField {
+  return `${VARIABLE_MODE_FIELD_PREFIX}${collectionId}`
+}
+
+export function variableModeOverrideCollection(field: InstanceOverrideField): string | undefined {
+  return field.startsWith(VARIABLE_MODE_FIELD_PREFIX)
+    ? field.slice(VARIABLE_MODE_FIELD_PREFIX.length)
+    : undefined
 }
 
 /** Remap runtime identities only; ordinary strings and source-format payloads stay opaque. */
@@ -122,8 +148,26 @@ export function remapInstanceOverrideState(
     if (overriddenBindingField(field) !== null) return references.variable(value)
     return value
   }
+  const remapField = (field: string): string | undefined => {
+    const property = overriddenAssignmentId(field)
+    if (property !== undefined && references.property) {
+      const mapped = references.property(property)
+      return mapped === undefined ? undefined : assignmentOverrideField(mapped)
+    }
+    const collection = variableModeOverrideCollection(field)
+    if (collection === undefined || !references.collection) {
+      return field
+    }
+    const mapped = references.collection(collection)
+    return mapped === undefined ? undefined : variableModeOverrideField(mapped)
+  }
   const fields = (entries: ReadonlyMap<string, unknown>) =>
-    new Map([...entries].map(([field, value]) => [field, remapValue(field, value)]))
+    new Map(
+      [...entries].flatMap(([field, value]) => {
+        const mapped = remapField(field)
+        return mapped === undefined ? [] : [[mapped, remapValue(field, value)] as const]
+      })
+    )
   const descendants = new Map<string, Map<string, unknown>>()
   for (const [id, entries] of state.descendants) {
     const mapped = references.node(id)

@@ -1,1 +1,0 @@
-- Documents opened from disk in the Windows desktop app are named by their file, not by their whole path.

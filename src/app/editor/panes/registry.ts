@@ -1,6 +1,11 @@
 import { computed, ref, shallowRef, triggerRef } from 'vue'
 
-import { type EditorState, copyEditorViewState, pickEditorViewState } from '@open-pencil/core'
+import {
+  type EditorState,
+  type EditorViewState,
+  copyEditorViewState,
+  pickEditorViewState
+} from '@open-pencil/core'
 
 import {
   closePaneNode,
@@ -40,6 +45,14 @@ export function createCanvasPaneRegistry(state: EditorState) {
     const pane = getPane(paneId)
     if (!pane || paneId === activePaneId.value) return state
     return { ...state, ...pane } satisfies EditorState
+  }
+
+  /**
+   * What a pane shows now. The active pane is drawn from the editor state and copies it only when
+   * another pane becomes active, so its own record is stale until then.
+   */
+  function getPaneView(paneId: string): EditorViewState | undefined {
+    return paneId === activePaneId.value ? state : getPane(paneId)
   }
 
   function getActivePane(): CanvasPaneState {
@@ -111,6 +124,7 @@ export function createCanvasPaneRegistry(state: EditorState) {
     visiblePaneCount,
     getPane,
     getPaneRenderState,
+    getPaneView,
     getActivePane,
     setActivePane,
     splitPane,

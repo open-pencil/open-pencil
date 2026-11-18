@@ -1,13 +1,12 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { CONNECTOR_LABEL_PADDING, labelledConnector } from '@open-pencil/scene-graph/connectors'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
-import { paintFills } from '#core/canvas/fills'
-import { drawNodeHighlightRect } from '#core/canvas/highlight-rect'
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import { paintFills } from '#core/canvas/fills/paint'
+import { drawNodeHighlightRect } from '#core/canvas/overlays/highlight'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import { connectorLabelPlaceholderNode } from '#core/canvas/text/placeholder'
 import {
   DROP_HIGHLIGHT_ALPHA,
@@ -23,6 +22,7 @@ import {
   VERTEX_SNAP_MARK_RADIUS
 } from '#core/constants'
 import { createSceneGeometry, type RotationPreview } from '#core/geometry'
+import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 
 import { inNodeSpace, outlineNode } from './outline'
 import { drawTextEditOverlay } from './text-edit'
@@ -33,14 +33,14 @@ export function drawSnapGuides(r: SkiaRenderer, canvas: Canvas, guides?: SnapGui
   for (const guide of guides) {
     const paint = guide.marks ? vertexSnapPaint(r, VERTEX_SNAP_GUIDE_ALPHA) : r.snapPaint
     if (guide.axis === 'x') {
-      const x = guide.position * r.zoom + r.panX
-      const y1 = guide.from * r.zoom + r.panY
-      const y2 = guide.to * r.zoom + r.panY
+      const x = worldXToScreen(r, guide.position)
+      const y1 = worldYToScreen(r, guide.from)
+      const y2 = worldYToScreen(r, guide.to)
       canvas.drawLine(x, y1, x, y2, paint)
     } else {
-      const y = guide.position * r.zoom + r.panY
-      const x1 = guide.from * r.zoom + r.panX
-      const x2 = guide.to * r.zoom + r.panX
+      const y = worldYToScreen(r, guide.position)
+      const x1 = worldXToScreen(r, guide.from)
+      const x2 = worldXToScreen(r, guide.to)
       canvas.drawLine(x1, y, x2, y, paint)
     }
   }
@@ -58,8 +58,8 @@ export function drawSnapMarks(r: SkiaRenderer, canvas: Canvas, guides?: SnapGuid
     for (const mark of guide.marks ?? []) {
       const along = guide.axis === 'x' ? guide.position : mark
       const across = guide.axis === 'x' ? mark : guide.position
-      const x = along * r.zoom + r.panX
-      const y = across * r.zoom + r.panY
+      const x = worldXToScreen(r, along)
+      const y = worldYToScreen(r, across)
       canvas.drawLine(x - arm, y - arm, x + arm, y + arm, paint)
       canvas.drawLine(x - arm, y + arm, x + arm, y - arm, paint)
     }
@@ -76,10 +76,10 @@ function vertexSnapPaint(r: SkiaRenderer, alpha: number) {
 export function drawMarquee(r: SkiaRenderer, canvas: Canvas, marquee?: Rect | null): void {
   if (!marquee || marquee.width <= 0 || marquee.height <= 0) return
 
-  const x1 = marquee.x * r.zoom + r.panX
-  const y1 = marquee.y * r.zoom + r.panY
-  const x2 = (marquee.x + marquee.width) * r.zoom + r.panX
-  const y2 = (marquee.y + marquee.height) * r.zoom + r.panY
+  const x1 = worldXToScreen(r, marquee.x)
+  const y1 = worldYToScreen(r, marquee.y)
+  const x2 = worldXToScreen(r, marquee.x + marquee.width)
+  const y2 = worldYToScreen(r, marquee.y + marquee.height)
   const rect = r.ck.LTRBRect(x1, y1, x2, y2)
 
   r.auxFill.setColor(r.selColor(MARQUEE_FILL_ALPHA))
@@ -146,14 +146,14 @@ export function drawLayoutInsertIndicator(
   r.auxStroke.setPathEffect(null)
 
   if (indicator.direction === 'HORIZONTAL') {
-    const y = indicator.y * r.zoom + r.panY
-    const x1 = indicator.x * r.zoom + r.panX
-    const x2 = (indicator.x + indicator.length) * r.zoom + r.panX
+    const y = worldYToScreen(r, indicator.y)
+    const x1 = worldXToScreen(r, indicator.x)
+    const x2 = worldXToScreen(r, indicator.x + indicator.length)
     canvas.drawLine(x1, y, x2, y, r.auxStroke)
   } else {
-    const x = indicator.x * r.zoom + r.panX
-    const y1 = indicator.y * r.zoom + r.panY
-    const y2 = (indicator.y + indicator.length) * r.zoom + r.panY
+    const x = worldXToScreen(r, indicator.x)
+    const y1 = worldYToScreen(r, indicator.y)
+    const y2 = worldYToScreen(r, indicator.y + indicator.length)
     canvas.drawLine(x, y1, x, y2, r.auxStroke)
   }
 }

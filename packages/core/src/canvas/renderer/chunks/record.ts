@@ -1,11 +1,10 @@
-import type { Canvas, SkPicture } from 'canvaskit-wasm'
-
+import type { Canvas, SkPicture } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
 import { recordWorldPicture, withWorldViewport } from '#core/canvas/renderer/picture'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { clipNodeShape, withNodeOutline } from '#core/canvas/shapes'
 
 import type { RenderChunk } from './index'

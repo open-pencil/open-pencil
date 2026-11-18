@@ -26,7 +26,7 @@ const { common, settings } = useI18n()
       :copied-label="common.copiedExclamation"
       :close-label="common.close"
       @close="toast.remove(t.id)"
-      @action="t.action?.run()"
+      @action="t.action?.run(t.id)"
     />
     <ToastViewport
       :label="`${settings.notifications} (F8)`"

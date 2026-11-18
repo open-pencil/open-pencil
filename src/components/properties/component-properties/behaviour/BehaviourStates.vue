@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { INTERACTION_STATES, type InteractionState } from '@open-pencil/scene-graph/behaviours'
+import type { InteractionState } from '@open-pencil/scene-graph/behaviours'
 import type { BehaviourStatesControl } from '@open-pencil/vue/controls/behaviour'
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -47,9 +47,9 @@ function map(state: InteractionState, value: string | number) {
 
 <template>
   <div class="flex flex-col gap-1.5" data-property="behaviour-states">
-    <div class="text-[11px] text-muted">{{ panels.behaviourStates }}</div>
+    <div class="text-2xs text-muted">{{ panels.behaviourStates }}</div>
     <template v-if="!states.options.length">
-      <p class="text-[11px] leading-4 text-muted">{{ panels.behaviourStatesHint }}</p>
+      <p class="text-2xs leading-4 text-muted">{{ panels.behaviourStatesHint }}</p>
       <BehaviourBindingField
         :label="panels.behaviourStates"
         :property-id="null"
@@ -75,11 +75,7 @@ function map(state: InteractionState, value: string | number) {
       @update:model-value="emit('bind', $event)"
     />
     <div v-if="states.propertyId" class="grid grid-cols-2 gap-x-1 gap-y-1.5">
-      <PanelFieldGroup
-        v-for="state in INTERACTION_STATES"
-        :key="state"
-        :label="labels.state(state)"
-      >
+      <PanelFieldGroup v-for="state in states.available" :key="state" :label="labels.state(state)">
         <AppSelect
           :label="panels.behaviourStateField({ state: labels.state(state) })"
           :model-value="states.values[state] ?? UNSET"

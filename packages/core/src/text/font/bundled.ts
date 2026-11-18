@@ -1,4 +1,5 @@
 import { IS_BROWSER } from '#core/constants'
+import { servesRuntimeAsset, unservedRuntimeAssetMessage } from '#core/runtime-assets/served'
 
 /** Inter's weights, each drawn from Inter's variable files at its named instance. */
 const INTER_WEIGHTS = [
@@ -68,9 +69,17 @@ export class BundledFonts {
 
   private async read(url: string): Promise<ArrayBuffer | null> {
     if (IS_BROWSER) {
-      const response = await fetch(this.locate(url.replace(/^\//, '')))
-      // A missing file answers with an error page, which must not be read as a font.
-      return response.ok ? response.arrayBuffer() : null
+      const file = url.replace(/^\//, '')
+      const located = this.locate(file)
+      const response = await fetch(located)
+      // A missing file answers with an error or fallback page, which must not be read as a font.
+      if (!servesRuntimeAsset(response)) {
+        void response.body?.cancel()
+        throw new Error(
+          unservedRuntimeAssetMessage(file, located, response, 'fontManager.setBundledFontLocator')
+        )
+      }
+      return response.arrayBuffer()
     }
     const { readFile } = await import(/* @vite-ignore */ 'node:fs/promises')
     const packageJSONURL = import.meta.resolve('@open-pencil/core/package.json')

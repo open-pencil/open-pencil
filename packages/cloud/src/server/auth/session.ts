@@ -5,6 +5,8 @@ export type CloudActor = {
   email: string
   name: string
   deploymentRole?: 'user' | 'admin'
+  /** How the request proved who it is: a signed-in session, or a personal access token. */
+  credential?: 'session' | 'token'
 }
 
 export type CloudIdentityResolver = (request: Request) => Promise<CloudIdentity | null>

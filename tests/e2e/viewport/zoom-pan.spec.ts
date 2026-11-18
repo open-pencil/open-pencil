@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 const NODE_COUNT = 200

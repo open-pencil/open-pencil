@@ -1,8 +1,17 @@
-import type { GradientTransform, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type {
+  Effect,
+  GradientTransform,
+  SceneGraph,
+  SceneNode,
+  Stroke,
+  VectorNetwork
+} from '@open-pencil/scene-graph'
 import {
   DEFAULT_GRADIENT_TRANSFORM,
   IDENTITY_GRADIENT_TRANSFORM
 } from '@open-pencil/scene-graph/gradient'
+
+import { solid } from '../paints'
 
 const ALIGNS = ['INSIDE', 'CENTER', 'OUTSIDE'] as const
 const CORNERS = [
@@ -156,7 +165,7 @@ export function createGradientLinesScene(graph: SceneGraph, pageId: string): voi
     y: 60,
     width: 120,
     height: 80,
-    fills: [{ type: 'SOLID', color: { r: 0.2, g: 0.7, b: 0.4, a: 1 }, opacity: 1, visible: true }]
+    fills: [solid(0.2, 0.7, 0.4)]
   })
   const lines: Array<[string, Partial<SceneNode>, GradientTransform]> = [
     ['horizontal', { x: 60, y: 200, width: 300, height: 0 }, IDENTITY_GRADIENT_TRANSFORM],
@@ -203,9 +212,7 @@ export function createVectorStrokeAlignScene(graph: SceneGraph, pageId: string):
         })),
         regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] }]
       },
-      fills: [
-        { type: 'SOLID', color: { r: 0.86, g: 0.91, b: 0.98, a: 1 }, opacity: 1, visible: true }
-      ],
+      fills: [solid(0.86, 0.91, 0.98)],
       strokes: [
         {
           type: 'SOLID',
@@ -219,6 +226,157 @@ export function createVectorStrokeAlignScene(graph: SceneGraph, pageId: string):
           dashPattern: []
         }
       ]
+    })
+  }
+}
+
+const REGION_SIDE = 80
+
+function squareSegments(corners: number[]): VectorNetwork['segments'] {
+  const corner = { x: 0, y: 0 }
+  return corners.map((start, index) => ({
+    start,
+    end: corners[(index + 1) % corners.length],
+    tangentStart: corner,
+    tangentEnd: corner
+  }))
+}
+
+/** Three regions on the same square's four segments. */
+function stackedRegions(): VectorNetwork {
+  const s = REGION_SIDE
+  const loop = [0, 1, 2, 3]
+  return {
+    vertices: [
+      { x: 0, y: 0 },
+      { x: s, y: 0 },
+      { x: s, y: s },
+      { x: 0, y: s }
+    ],
+    segments: squareSegments(loop),
+    regions: [0, 1, 2].map(() => ({ windingRule: 'NONZERO' as const, loops: [loop] }))
+  }
+}
+
+/** Three 60px squares, 20px apart, each its own region. */
+function overlappingSquares(): VectorNetwork {
+  const vertices = [0, 20, 40].flatMap((offset) => [
+    { x: offset, y: offset },
+    { x: offset + 60, y: offset },
+    { x: offset + 60, y: offset + 60 },
+    { x: offset, y: offset + 60 }
+  ])
+  const segments = [0, 4, 8].flatMap((first) =>
+    squareSegments([first, first + 1, first + 2, first + 3])
+  )
+  return {
+    vertices,
+    segments,
+    regions: [0, 4, 8].map((first) => ({
+      windingRule: 'NONZERO' as const,
+      loops: [[first, first + 1, first + 2, first + 3]]
+    }))
+  }
+}
+
+/** A square cut by its diagonal into two regions that share it. */
+function splitSquare(): VectorNetwork {
+  const s = REGION_SIDE
+  const corner = { x: 0, y: 0 }
+  return {
+    vertices: [
+      { x: 0, y: 0 },
+      { x: s, y: 0 },
+      { x: s, y: s },
+      { x: 0, y: s }
+    ],
+    segments: [
+      ...squareSegments([0, 1, 2, 3]),
+      { start: 0, end: 2, tangentStart: corner, tangentEnd: corner }
+    ],
+    regions: [
+      { windingRule: 'NONZERO', loops: [[0, 1, 4]] },
+      { windingRule: 'NONZERO', loops: [[4, 2, 3]] }
+    ]
+  }
+}
+
+/** Two squares overlapping by half, wound opposite ways, each its own region. */
+function oppositeSquares(): VectorNetwork {
+  const vertices = [0, 30].flatMap((offset) => [
+    { x: offset, y: offset },
+    { x: offset + 50, y: offset },
+    { x: offset + 50, y: offset + 50 },
+    { x: offset, y: offset + 50 }
+  ])
+  return {
+    vertices,
+    segments: [...squareSegments([0, 1, 2, 3]), ...squareSegments([7, 6, 5, 4])],
+    regions: [
+      { windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] },
+      { windingRule: 'NONZERO', loops: [[4, 5, 6, 7]] }
+    ]
+  }
+}
+
+function regionStroke(align: Stroke['align']): Stroke {
+  return {
+    type: 'SOLID',
+    color: { r: 0.1, g: 0.1, b: 0.2, a: 1 },
+    weight: 8,
+    opacity: 0.5,
+    visible: true,
+    align,
+    cap: 'NONE',
+    join: 'MITER',
+    dashPattern: []
+  }
+}
+
+function regionShadow(): Effect {
+  return {
+    type: 'DROP_SHADOW',
+    radius: 0,
+    spread: 0,
+    offset: { x: 10, y: 10 },
+    color: { r: 0, g: 0, b: 0, a: 0.5 },
+    visible: true,
+    blendMode: 'NORMAL',
+    showShadowBehindNode: false
+  }
+}
+
+/**
+ * Vectors made of several fill regions, drawn as one shape as Figma draws them: three regions on
+ * one square with an inside stroke and a drop shadow, three overlapping squares with a centred
+ * stroke, a square split by its diagonal with an outside and an inside stroke, and two squares
+ * wound opposite ways with a drop shadow; the pixels are checked in
+ * packages/core/tests/canvas/strokes/regions.test.ts and shadows/shape.test.ts.
+ */
+export function createVectorRegionsScene(graph: SceneGraph, pageId: string): void {
+  const layers: {
+    name: string
+    network: VectorNetwork
+    stroke?: Stroke['align']
+    shadow?: boolean
+  }[] = [
+    { name: 'Stacked regions', network: stackedRegions(), stroke: 'INSIDE', shadow: true },
+    { name: 'Overlapping squares', network: overlappingSquares(), stroke: 'CENTER' },
+    { name: 'Split square outside', network: splitSquare(), stroke: 'OUTSIDE' },
+    { name: 'Split square inside', network: splitSquare(), stroke: 'INSIDE' },
+    { name: 'Opposite squares', network: oppositeSquares(), shadow: true }
+  ]
+  for (const [index, { name, network, stroke, shadow }] of layers.entries()) {
+    graph.createNode('VECTOR', pageId, {
+      name,
+      x: 60 + (index % 3) * 160,
+      y: 60 + Math.floor(index / 3) * 160,
+      width: REGION_SIDE,
+      height: REGION_SIDE,
+      vectorNetwork: network,
+      fills: [solid(0.96, 0.35, 0.35)],
+      strokes: stroke ? [regionStroke(stroke)] : [],
+      effects: shadow ? [regionShadow()] : []
     })
   }
 }

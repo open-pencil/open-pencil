@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
 
+import { graphOf } from '#core/figma-api/graph'
 describe('stroke details', () => {
   test('strokeWeight and strokeAlign', () => {
     const api = createAPI()
@@ -27,7 +28,7 @@ describe('stroke details', () => {
     line.strokeJoin = 'BEVEL'
     expect(line.strokeCap).toBe('ROUND')
     expect(line.strokeJoin).toBe('BEVEL')
-    expect(api.graph.getNode(line.id)?.strokes[0]).toMatchObject({ cap: 'ROUND', join: 'BEVEL' })
+    expect(graphOf(api).getNode(line.id)?.strokes[0]).toMatchObject({ cap: 'ROUND', join: 'BEVEL' })
   })
 
   test('strokeMiterLimit', () => {

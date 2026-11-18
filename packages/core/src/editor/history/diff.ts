@@ -19,16 +19,28 @@ export function diffFields<T extends object>(
   const before: Partial<T> = {}
   const after: Partial<T> = {}
   const absent: FieldChanges<T>['absent'] = { before: [], after: [] }
-  const keys = new Set([...Object.keys(previous), ...Object.keys(current)] as (keyof T)[])
-  for (const key of keys) {
-    if (skip.has(key)) continue
+  const compare = (key: keyof T) => {
+    if (skip.has(key)) {
+      return
+    }
     const existed = Object.hasOwn(previous, key)
     const exists = Object.hasOwn(current, key)
-    if (existed === exists && isEqual(previous[key], current[key])) continue
+    const same = previous[key] === current[key] || isEqual(previous[key], current[key])
+    if (existed === exists && same) {
+      return
+    }
     before[key] = structuredClone(previous[key])
     after[key] = structuredClone(current[key])
     if (!existed) absent.before.push(key)
     if (!exists) absent.after.push(key)
+  }
+  for (const key of Object.keys(previous) as (keyof T)[]) {
+    compare(key)
+  }
+  for (const key of Object.keys(current) as (keyof T)[]) {
+    if (!Object.hasOwn(previous, key)) {
+      compare(key)
+    }
   }
   return Object.keys(after).length ? { id, before, after, absent } : null
 }

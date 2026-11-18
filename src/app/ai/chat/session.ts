@@ -3,19 +3,30 @@ import type { ChatTransport, FinishReason, UIMessage } from 'ai'
 import type { ComputedRef, Ref } from 'vue'
 import { ref } from 'vue'
 
-import { ACP_AGENTS, AI_PROVIDERS } from '@open-pencil/core/constants'
-import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
+import { acpAgentFor, AI_PROVIDERS } from '@open-pencil/core/constants'
+import type { AIProviderID } from '@open-pencil/core/constants'
 
+import { agentOwnChoices, type AgentChoices } from '@/app/ai/agents/acp/options'
 import { readPiAccount } from '@/app/ai/agents/pi/settings'
 import { agentWorkspace } from '@/app/ai/agents/setup/native'
 import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/setup/readiness'
 import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
 import { notifyReplyEnded } from '@/app/ai/chat/notifications'
 import { hasSteeringMessage } from '@/app/ai/chat/queue'
-import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
-import { chatThinkingLevel } from '@/app/ai/chat/thinking'
-import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
-import { resolveLanguageModelID } from '@/app/ai/models/language-model'
+import { systemPrompt } from '@/app/ai/chat/system-prompt'
+import {
+  agentSessionChoices,
+  chatAgentChoices,
+  chatThinkingLevel,
+  chooseAgentOptions
+} from '@/app/ai/chat/thinking'
+import {
+  createAIModelRuntime,
+  designModelProfile,
+  resolveModelConnectionAPIKey,
+  type AIModelProfileId
+} from '@/app/ai/models'
+import { profileModelID, resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { settleMessage } from '@/app/ai/reply/settle'
@@ -38,6 +49,7 @@ import { buildPiMCPServers } from '@/app/integrations/mcp'
 import { trackUsage } from '@/app/telemetry'
 
 import { createTraceStore } from './history/idb'
+import type { AgentSessionLink } from './history/types'
 import { updateMessage } from './metadata'
 import { createRunRecorder } from './trace/recorder'
 
@@ -52,17 +64,63 @@ type ChatSessionOptions = {
   getActiveEditorStore: () => EditorStore
 }
 
+/** The effort and modes of the profile a chat's agent session starts from. */
+export interface AgentChoicesLink {
+  profileId: AIModelProfileId
+  /** The effort and modes the next prompt runs on; absent ones keep the agent's. */
+  wanted: () => AgentChoices
+}
+
 export async function createACPTransport(
   providerID: AIProviderID,
   store?: EditorStore,
-  onUsage?: (usage: AgentTurnUsage) => void
+  onUsage?: (usage: AgentTurnUsage) => void,
+  agentSession?: AgentSessionLink,
+  onAgentError?: (error: unknown) => void,
+  model?: string,
+  choices?: AgentChoicesLink
 ) {
-  const agentId = providerID.replace('acp:', '') as ACPAgentID
-  const agentDef = ACP_AGENTS.find((a) => a.id === agentId)
-  if (!agentDef) throw new Error(`Unknown ACP agent: ${agentId}`)
+  const agentDef = acpAgentFor(providerID)
+  if (!agentDef) throw new Error(`Unknown ACP agent: ${providerID}`)
 
   // A folder of its own, not the home folder, whose project settings the agent would read.
-  return new ACPChatTransport({ agentDef, cwd: await agentWorkspace(), store, onUsage })
+  // Claude keeps its sessions per folder, so resuming one needs the same folder every time.
+  return new ACPChatTransport({
+    agentDef,
+    cwd: await agentWorkspace(),
+    store,
+    onUsage,
+    resume: agentSession?.resume ?? null,
+    onSession:
+      agentSession &&
+      ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id })),
+    onAgentError,
+    model,
+    choices: choices?.wanted,
+    onChoices: (offered) => {
+      if (!choices || !offered) {
+        agentSessionChoices.value = null
+        return
+      }
+      const previous = agentSessionChoices.value
+      const modelID = model ?? ''
+      // The first report of a session: the options the chat left to the agent are its own values.
+      const defaults =
+        previous?.profileId === choices.profileId && previous.modelID === modelID
+          ? previous.defaults
+          : agentOwnChoices(offered, choices.wanted())
+      agentSessionChoices.value = {
+        profileId: choices.profileId,
+        modelID,
+        choices: offered,
+        defaults
+      }
+    },
+    // Approving a plan can move the agent off Plan mode; the chat follows while it runs that profile.
+    onAgentChoices: (moved) => {
+      if (choices && designModelProfile.value?.id === choices.profileId) chooseAgentOptions(moved)
+    }
+  })
 }
 
 /**
@@ -84,8 +142,7 @@ async function settleEndedReply(
 
 /** The agent or provider a chat runs on, as the composer names it. */
 function providerName(id: AIProviderID): string {
-  const agent = ACP_AGENTS.find((candidate) => `acp:${candidate.id}` === id)
-  return agent?.name ?? AI_PROVIDERS.find((provider) => provider.id === id)?.name ?? id
+  return acpAgentFor(id)?.name ?? AI_PROVIDERS.find((provider) => provider.id === id)?.name ?? id
 }
 
 export function createChatSessionManager({
@@ -97,18 +154,27 @@ export function createChatSessionManager({
   getActiveEditorStore
 }: ChatSessionOptions) {
   const failure = ref<AIChatFailure | null>(null)
-  let transportDirty = false
+  // Bumped by anything that changes the transport; a chat keeps the revision it was built from.
+  let transportRevision = 0
+  let chatTransportRevision = 0
   let currentChatStore: EditorStore | null = null
   const currentChatMessages = new WeakMap<EditorStore, UIMessage[]>()
   let chat: Chat<UIMessage> | null = null
   let acpTransportInstance: { destroy(): Promise<void> } | null = null
-  let harnessTransportInstance: { stop(): Promise<void> } | null = null
+  let harnessTransportInstance: Pick<HarnessChatTransport, 'stop' | 'compact'> | null = null
   let overrideTransport: (() => ChatTransport<UIMessage>) | null = null
   let activeProviderError: unknown = null
   const runRecorder = createRunRecorder(createTraceStore())
 
   function captureProviderError(error: unknown): void {
     activeProviderError ??= error
+  }
+
+  // What an agent answered, for diagnostics only: the chat shows the agent's text, which can
+  // quote the conversation, while a raw agent error keeps just its code.
+  let activeAgentError: unknown = null
+  function captureAgentError(error: unknown): void {
+    activeAgentError ??= error
   }
 
   function handleChatFinish(
@@ -134,11 +200,12 @@ export function createChatSessionManager({
 
   function clearFailure(): void {
     activeProviderError = null
+    activeAgentError = null
     failure.value = null
   }
 
   function markTransportDirty() {
-    transportDirty = true
+    transportRevision++
   }
 
   async function destroyAgentTransports(): Promise<void> {
@@ -153,16 +220,48 @@ export function createChatSessionManager({
     if (errors.length) throw new AggregateError(errors, 'Agent transport teardown failed')
   }
 
-  async function createActiveACPTransport(store: EditorStore, context: AIDiagnosticContext) {
+  /** `provider` is the one the chat chose, which a profile change while the agent starts keeps. */
+  async function createActiveACPTransport(
+    store: EditorStore,
+    context: AIDiagnosticContext,
+    provider: AIProviderID,
+    agentSession?: AgentSessionLink
+  ) {
+    // Read before anything is awaited, so the model is the profile's the chat chose `provider`
+    // from; a profile change while the agent starts moves neither.
+    const starting = createAIModelRuntime('design')
+    // Awaited below; a teardown that fails first must not leave its rejection unhandled.
+    starting.catch(() => undefined)
     await destroyAgentTransports()
     await assertAgentReady('acp')
-    const provider = providerID.value
+    const runtime = await starting
+    const profileRuns = runtime?.kind === 'acp' && runtime.role.connection.providerID === provider
+    const profileModel = profileRuns ? runtime.model : ''
+    const profileId = profileRuns ? runtime.role.profile.id : null
     // An agent's turn counts as one step of the model it names, or of the agent itself.
-    const transport = await createACPTransport(provider, store, ({ model, ...tokens }) =>
-      recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context)
+    const transport = await createACPTransport(
+      provider,
+      store,
+      ({ model, ...tokens }) =>
+        recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context),
+      agentSession,
+      captureAgentError,
+      profileModel,
+      // The profile's effort and modes, or the composer's, while the chat still runs that profile
+      // on that model; another profile's or model's may not be ones this agent offers.
+      profileId === null
+        ? undefined
+        : {
+            profileId,
+            wanted: () => {
+              const profile = designModelProfile.value
+              const same = profile?.id === profileId && profileModelID(profile) === profileModel
+              return same ? chatAgentChoices.value : {}
+            }
+          }
     )
     acpTransportInstance = transport
-    return transport as ChatTransport<UIMessage>
+    return transport
   }
 
   async function createActiveHarnessTransport(sessionId: string, context: AIDiagnosticContext) {
@@ -173,11 +272,7 @@ export function createChatSessionManager({
     // A saved key is an AI Gateway key; without one, Pi uses the CLI's own sign-in.
     const apiKey = await resolveModelConnectionAPIKey(runtime.role.connection.id)
     const account = apiKey ? null : await readPiAccount()
-    const model =
-      runtime.role.profile.customModelID ||
-      runtime.role.profile.modelID ||
-      account?.defaultModel ||
-      ''
+    const model = runtime.model || account?.defaultModel || ''
     if (!apiKey && !account?.signedIn) throw new AgentSetupError('pi-sign-in')
     if (!model) throw new AgentSetupError('pi-model')
     const transport = new HarnessChatTransport(
@@ -192,7 +287,7 @@ export function createChatSessionManager({
           }),
           permissionMode: runtime.role.profile.harnessPermissionMode ?? 'allow-edits'
         },
-        instructions: SYSTEM_PROMPT,
+        instructions: systemPrompt(),
         mcpServers: await buildPiMCPServers(),
         skills: await harnessSkills()
       },
@@ -236,7 +331,8 @@ export function createChatSessionManager({
 
   async function ensureChat(
     initialMessages?: UIMessage[],
-    sessionId = crypto.randomUUID()
+    sessionId = crypto.randomUUID(),
+    agentSession?: AgentSessionLink
   ): Promise<Chat<UIMessage> | null> {
     await credentialsReady
     if (!isConfigured.value) return null
@@ -246,19 +342,31 @@ export function createChatSessionManager({
       currentChatMessages.set(currentChatStore, chat.messages)
     }
 
-    if (!chat || transportDirty || currentChatStore !== store) {
+    if (!chat || chatTransportRevision !== transportRevision || currentChatStore !== store) {
+      // Read before building: a change while the transport loads leaves this chat out of date.
+      const revision = transportRevision
       const messages = initialMessages ?? currentChatMessages.get(store)
       const diagnosticContext: AIDiagnosticContext = { sessionId, runId: crypto.randomUUID() }
       // Failures belong to the provider this chat was created for, even if the profile changes.
       const chatProviderID = providerID.value
       let transport: ChatTransport<UIMessage>
-      // An ACP or Pi chat's tool calls show as an agent of that kind (`src/app/automation/agents.ts`).
-      let agentKind: 'acp' | 'harness' | null = null
+      // An ACP or Pi chat's tool calls show as an agent of that kind (`src/app/automation/agents.ts`);
+      // when a reply ends, that chat's agents rest, and an ACP chat's alone.
+      let restAgentsOnFinish: (() => void) | null = null
       if (isACPProvider.value) {
-        agentKind = 'acp'
-        transport = await createActiveACPTransport(store, diagnosticContext)
+        const acp = await createActiveACPTransport(
+          store,
+          diagnosticContext,
+          chatProviderID,
+          agentSession
+        )
+        transport = acp
+        restAgentsOnFinish = () => {
+          const chatId = acp.agentChat
+          if (chatId) restAgents('acp', chatId)
+        }
       } else if (isHarnessProvider.value) {
-        agentKind = 'harness'
+        restAgentsOnFinish = () => restAgents('harness')
         transport = await createActiveHarnessTransport(sessionId, diagnosticContext)
       } else {
         transport = await createTransport(store, diagnosticContext)
@@ -274,7 +382,9 @@ export function createChatSessionManager({
         messages,
         onError: (error) => {
           const reportedError = activeProviderError ?? error
+          const diagnosedError = activeAgentError ?? reportedError
           activeProviderError = null
+          activeAgentError = null
           const signInOnly = AI_PROVIDERS.some(
             (provider) => provider.id === chatProviderID && provider.signInOnly
           )
@@ -288,13 +398,13 @@ export function createChatSessionManager({
                 resetsAt: refusal.resetsAt ?? undefined
               }
             : classified
-          const { errorName, errorCode, message, stack } = diagnosticErrorDetails(reportedError)
+          const { errorName, errorCode, message, stack } = diagnosticErrorDetails(diagnosedError)
           recordChatFailed({ errorName, errorCode, message, stack }, diagnosticContext)
         },
         onFinish: (event) => {
           handleChatFinish(diagnosticContext, event)
           // The reply is over, however it ended; its agent rests instead of waiting it out.
-          if (agentKind) restAgents(agentKind)
+          restAgentsOnFinish?.()
           if (event.isAbort || event.isDisconnect || event.isError) {
             void settleEndedReply(created, store, event.message.id, event.isAbort)
           }
@@ -309,7 +419,7 @@ export function createChatSessionManager({
       })
       chat = created
       currentChatStore = store
-      transportDirty = false
+      chatTransportRevision = revision
     }
     return chat
   }
@@ -320,7 +430,7 @@ export function createChatSessionManager({
     failure.value = null
     chat = null
     currentChatStore = null
-    transportDirty = false
+    chatTransportRevision = transportRevision
   }
 
   function setOverrideTransport(factory: (() => ChatTransport<UIMessage>) | null) {
@@ -328,5 +438,18 @@ export function createChatSessionManager({
     markTransportDirty()
   }
 
-  return { ensureChat, resetChat, markTransportDirty, setOverrideTransport, failure, clearFailure }
+  /** Asks the chat's agent to compact its own context; false when it has none to compact yet. */
+  async function compactAgent(instructions?: string): Promise<boolean> {
+    return (await harnessTransportInstance?.compact(instructions)) ?? false
+  }
+
+  return {
+    ensureChat,
+    resetChat,
+    markTransportDirty,
+    setOverrideTransport,
+    compactAgent,
+    failure,
+    clearFailure
+  }
 }

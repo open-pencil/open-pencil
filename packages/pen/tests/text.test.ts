@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import type { PenDocument, PenNode } from '@open-pencil/pen'
 import { percentLength } from '@open-pencil/scene-graph/text'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'
 
 function textOf(fields: Partial<PenNode>, variables?: PenDocument['variables']) {

@@ -122,9 +122,7 @@ test('a nested component that defines the id keeps an outer assignment out', () 
   graph.syncInstances(inner.id)
   graph.syncInstances(outer.id)
 
-  const innerInstance = graph
-    .getChildren(placed.id)
-    .find((child) => child.type === 'INSTANCE')
+  const innerInstance = graph.getChildren(placed.id).find((child) => child.type === 'INSTANCE')
   const label = innerInstance
     ? graph.getChildren(innerInstance.id).find((child) => child.name === 'Inner label')
     : undefined

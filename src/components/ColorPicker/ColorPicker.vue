@@ -7,10 +7,22 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { ColorPickerRoot } from '@open-pencil/vue/primitives/ColorPicker'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
+import { useEyedropperKeepOpen } from '@/components/color-picker-panel/eyedropper'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
+import FillSwatchTrigger from '@/components/ui/paint/FillSwatchTrigger.vue'
+import { solidFill } from '@/components/ui/paint/swatch-trigger'
 
 const { panels } = useI18n()
-const { color, okhcl = null } = defineProps<{ color: Color; okhcl?: OkHCLControls | null }>()
+const {
+  color,
+  okhcl = null,
+  eyedropper = true
+} = defineProps<{
+  color: Color
+  okhcl?: OkHCLControls | null
+  /** Offers sampling the canvas; off where no document color is edited, as in Settings. */
+  eyedropper?: boolean
+}>()
 defineSlots<{
   trigger?(props: { style: { background: string } }): VNode[]
 }>()
@@ -20,25 +32,33 @@ const emit = defineEmits<{
   cancel: []
 }>()
 const cls = usePopoverUI({ content: 'w-56 p-2' })
+// Settings has no document behind it to sample, nor always an editor to sample with.
+const keepOpen = eyedropper ? useEyedropperKeepOpen() : undefined
 </script>
 
 <template>
   <ColorPickerRoot
     :color="color"
     :label="panels.editColor"
-    :ui="{
-      content: cls.content,
-      swatch: 'size-5 shrink-0 cursor-pointer rounded border border-border p-0'
-    }"
+    :keep-open="keepOpen"
+    :ui="{ content: cls.content }"
     @update="emit('update', $event)"
     @open-change="emit('openChange', $event)"
     @cancel="emit('cancel')"
   >
-    <template v-if="$slots.trigger" #trigger="trigger">
-      <slot name="trigger" v-bind="trigger" />
+    <!-- The same swatch a fill row shows, so a colour's preview reads alike in every field. -->
+    <template #trigger="trigger">
+      <slot name="trigger" v-bind="trigger">
+        <FillSwatchTrigger :fill="solidFill(color)" :label="panels.editColor" />
+      </slot>
     </template>
     <template #default="{ color: currentColor }">
-      <ColorPickerPanel :color="currentColor" :okhcl="okhcl" @update="emit('update', $event)" />
+      <ColorPickerPanel
+        :color="currentColor"
+        :okhcl="okhcl"
+        :eyedropper="eyedropper"
+        @update="emit('update', $event)"
+      />
     </template>
   </ColorPickerRoot>
 </template>

@@ -9,8 +9,8 @@ import {
   syncInstance
 } from '@open-pencil/scene-graph/instances'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { expectDefined, getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'
 
 /** Draws each glyph as one path tinted with the icon's colour, as the Iconify source does. */
@@ -87,7 +87,7 @@ describe('parsePenFile — icons in components', () => {
     const queue = [...graph.getChildren('swapped')]
     for (const node of queue) {
       expect(node.componentId).not.toBeNull()
-      queue.push(...graph.getChildren(node.id))
+      for (const child of graph.getChildren(node.id)) queue.push(child)
     }
   })
 

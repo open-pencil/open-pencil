@@ -2,6 +2,7 @@ import { findKey } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
+  behaviourOwner,
   behaviourToSpec,
   readBehaviour,
   textBinding,
@@ -27,6 +28,7 @@ const ROOTS: Record<BehaviourKind, [namespace: string, element: string]> = {
   slider: ['Slider', 'Root'],
   progress: ['Progress', 'Root'],
   tabs: ['Tabs', 'Root'],
+  tab: ['Tabs', 'Tab'],
   collapsible: ['Collapsible', 'Root'],
   accordion: ['Accordion', 'Root'],
   numberField: ['NumberField', 'Root'],
@@ -49,6 +51,15 @@ function elementFor(namespace: string, match: (role: ReturnType<typeof rekaRole>
   const parts = REKA_ELEMENTS[namespace] ?? {}
   const found = Object.keys(parts).find((element) => match(rekaRole(`${namespace}.${element}`)))
   return found ? `${namespace}.${found}` : undefined
+}
+
+/** The element in a namespace whose root is the kind an item's component behaves as, if any. */
+function itemElement(graph: SceneGraph, namespace: string, component: SceneNode) {
+  const owner = behaviourOwner(graph, component)
+  const kind = owner && readBehaviour(owner)?.kind
+  return kind
+    ? elementFor(namespace, (role) => role?.role === 'root' && role.kind === kind)
+    : undefined
 }
 
 function rootProps(graph: SceneGraph, owner: SceneNode): JSXProp[] {
@@ -95,12 +106,14 @@ function exportPart(
   for (const child of graph.getChildren(layer.id)) {
     if (repeated) result.tags.set(child.id, repeated)
     const item = child.type === 'INSTANCE' ? instanceMainComponent(graph, child) : undefined
-    if (partId !== 'items' || !item) continue
-    // A group's items are written as the group's Item, naming their component and variant, and
+    const tag = item && itemElement(graph, namespace, item)
+    if (!item || !tag) continue
+    // A group's items and a tab list's tabs are written as the namespace's element of their
+    // component's kind, `RadioGroup.Item` or `Tabs.Tab`, naming their component and variant, and
     // what the item changes in it; an item whose changes cannot be written is written as a layer.
     const props = itemProps(graph, child, item, componentRef)
     if (!props) continue
-    result.tags.set(child.id, `${namespace}.Item`)
+    result.tags.set(child.id, tag)
     result.props.set(child.id, props)
   }
 }

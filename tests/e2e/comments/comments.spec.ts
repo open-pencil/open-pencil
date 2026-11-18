@@ -1,5 +1,6 @@
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
 import { CanvasGuideDriver } from '#tests/helpers/canvas/guides'
 import { toolbarToolTestId } from '#tests/helpers/test-ids'
 

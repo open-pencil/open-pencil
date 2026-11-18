@@ -3,7 +3,7 @@ import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   createCloudAuthenticationRuntime,
   createCloudApp,
-  loadAISigningKey,
+  loadServicesSigningKey,
   type CloudApp,
   type CloudEnvironment,
   type CloudServerConfig,
@@ -12,6 +12,7 @@ import {
 
 import { loadNodeCloudServerConfig } from './config'
 import { createNodeTransactionalEmailRuntime } from './email/runtime'
+import { proxyRequestId } from './request-id'
 
 export type NodeCloudApplicationOptions = {
   environment?: CloudEnvironment
@@ -29,7 +30,7 @@ export async function createNodeCloudApplication(
 }> {
   const environment = options.environment ?? process.env
   const config = await loadNodeCloudServerConfig(environment)
-  const aiSigningKey = await loadAISigningKey(config)
+  const servicesSigningKey = await loadServicesSigningKey(config)
   const database = createPostgresCloudDatabase({
     connectionString: options.databaseURL ?? config.databaseURL
   })
@@ -44,7 +45,8 @@ export async function createNodeCloudApplication(
     invitationOutbox,
     transactionalEmail: email,
     enrollment,
-    aiSigningKey
+    servicesSigningKey,
+    forwardedRequestId: proxyRequestId
   })
   return { app, config, database, objects, email }
 }

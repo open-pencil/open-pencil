@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { figArchiveOf, readFixtureArrayBuffer } from '#fig-tests/helpers/fig-fixtures'
-import { parseFigBuffer } from '#fig/archive'
+import { figArchiveOf } from '#fig-tests/helpers/fig-fixtures'
+import { parseFigBuffer } from '#fig/archive/index'
 import { materializeDocument, materializeFigArchive } from '#fig/document/materialize'
 import {
   createArchiveDocumentReader,
@@ -13,6 +13,7 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { deduplicateNodeChangePluginData } from '@open-pencil/kiwi/fig/parse'
 import { decodeWhole } from '@open-pencil/kiwi/schema-runtime'
 import { setIdSession, type SceneGraph } from '@open-pencil/scene-graph'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 
 const FIXTURE = 'gold-preview.fig'
 

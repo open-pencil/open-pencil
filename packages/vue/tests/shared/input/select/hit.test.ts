@@ -3,8 +3,8 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { handleSelectDown, type HitTestFns } from '#vue/shared/input/select'
 import { resolveHit } from '#vue/shared/input/select/hit'
+import { handleSelectDown, type HitTestFns } from '#vue/shared/input/select/press'
 import type { DragState } from '#vue/shared/input/types'
 
 let editor: Editor
@@ -72,7 +72,8 @@ function swatchRows() {
     const swatch = editor.graph.createNode('RECTANGLE', frame.id, {
       name: `${frame.name} swatch`,
       width: 120,
-      height: 60
+      height: 60,
+      fills: [{ type: 'SOLID', color: { r: 0.8, g: 0.8, b: 0.8, a: 1 }, opacity: 1, visible: true }]
     })
     return { frame, swatch }
   }
@@ -101,9 +102,20 @@ function swatchRows() {
   }
   const pressAt = (x: number, y: number) => {
     let drag: DragState | null = null
-    handleSelectDown(press, x, y, x, y, editor, fns, () => false, () => false, (next) => {
-      drag = next
-    })
+    handleSelectDown(
+      press,
+      x,
+      y,
+      x,
+      y,
+      editor,
+      fns,
+      () => false,
+      () => false,
+      (next) => {
+        drag = next
+      }
+    )
     return drag as DragState | null
   }
   const selected = () => [...editor.state.selectedIds].map((id) => editor.graph.getNode(id)?.name)

@@ -5,28 +5,33 @@ import { computed } from 'vue'
 import { type Locale, useI18n } from '@open-pencil/vue/i18n'
 
 import { recoveryEnabled, setRecoveryEnabled } from '@/app/document/recovery/preferences'
+import { isRightToLeftLocale, mirrorInterfacePreference } from '@/app/i18n/direction'
 import { DEFAULT_RECENT_FILES_LIMIT } from '@/app/recent-files/limit'
 import { recentFilesAvailable, recentFilesLimit } from '@/app/recent-files/preferences'
 import { RECENT_FILES_LIMIT_MIN, RECENT_FILES_LIMIT_MAX } from '@/app/recent-files/schema'
 import {
   appPreferences,
   DEFAULT_APP_PREFERENCES,
+  INTERFACE_SCALES,
   updateAccentPreference
 } from '@/app/settings/preferences/store'
 import { DEFAULT_THEME } from '@/app/settings/theme'
 import { DEFAULT_ACCENT } from '@/app/shell/accent/palette'
+import { interfaceScalePreference } from '@/app/shell/interface-scale'
 import { animationPreference } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import CredentialSettingsSection from '@/components/settings/credentials/CredentialSettingsSection.vue'
 import AccentColorPicker from '@/components/settings/general/AccentColorPicker.vue'
 import CollaborationNameSection from '@/components/settings/general/CollaborationNameSection.vue'
+import SupportSettingsSection from '@/components/settings/general/SupportSettingsSection.vue'
+import UpdatesSettingsSection from '@/components/settings/general/UpdatesSettingsSection.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
-import SettingsResetButton from '@/components/settings/layout/SettingsResetButton.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import PresetNumberField from '@/components/ui/input/PresetNumberField.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
+import { settingsSelectUI } from '@/theme/settings/controls'
 
 const { availableLocales, locale, localeLabels, menu, recovery, setLocale, settings } = useI18n()
 
@@ -37,7 +42,6 @@ const recentFilesRangeMessage = computed(() =>
 )
 
 const { theme } = useAppTheme()
-const selectUI = { trigger: 'w-full sm:w-52' }
 
 const language = computed<Locale>({
   get: () => locale.value,
@@ -59,6 +63,12 @@ const preserveUnsavedWork = computed({
   get: () => recoveryEnabled.value,
   set: setRecoveryEnabled
 })
+const defaultInterfaceScale = DEFAULT_APP_PREFERENCES.appearance.interfaceScale
+const defaultMirror = DEFAULT_APP_PREFERENCES.appearance.mirrorInterface
+const interfaceScaleOptions = computed(() => {
+  const format = new Intl.NumberFormat(locale.value, { style: 'percent' })
+  return INTERFACE_SCALES.map((value) => ({ value, label: format.format(value / 100) }))
+})
 </script>
 
 <template>
@@ -72,8 +82,22 @@ const preserveUnsavedWork = computed({
             v-model="language"
             :label="menu.language"
             :options="languageOptions"
-            :ui="selectUI"
+            :ui="settingsSelectUI"
             data-test-id="settings-language"
+          />
+        </SettingsRow>
+        <SettingsRow
+          v-if="isRightToLeftLocale(locale)"
+          as="label"
+          :label="settings.mirrorInterface"
+          :description="settings.mirrorInterfaceDescription"
+          :modified="mirrorInterfacePreference !== defaultMirror"
+          @reset="mirrorInterfacePreference = defaultMirror"
+        >
+          <AppSwitch
+            v-model="mirrorInterfacePreference"
+            :label="settings.mirrorInterface"
+            data-test-id="settings-mirror-interface"
           />
         </SettingsRow>
       </SettingsGroup>
@@ -82,6 +106,21 @@ const preserveUnsavedWork = computed({
     <SettingsSection>
       <template #title>{{ settings.appearance }}</template>
       <SettingsGroup>
+        <SettingsRow
+          :label="settings.interfaceScale"
+          :description="settings.interfaceScaleDescription"
+          :modified="interfaceScalePreference !== defaultInterfaceScale"
+          class="flex-wrap"
+          @reset="interfaceScalePreference = defaultInterfaceScale"
+        >
+          <AppSelect
+            v-model="interfaceScalePreference"
+            :label="settings.interfaceScale"
+            :options="interfaceScaleOptions"
+            :ui="settingsSelectUI"
+            data-test-id="settings-interface-scale"
+          />
+        </SettingsRow>
         <SettingsRow
           as="label"
           :label="menu.theme"
@@ -96,19 +135,17 @@ const preserveUnsavedWork = computed({
               { value: 'light', label: menu.themeLight },
               { value: 'dark', label: menu.themeDark }
             ]"
-            :ui="selectUI"
+            :ui="settingsSelectUI"
           />
         </SettingsRow>
-        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-2.5">
-          <span class="text-xs font-medium text-surface">{{ settings.accentColor }}</span>
-          <span class="flex items-center gap-1">
-            <SettingsResetButton
-              v-if="accentModified"
-              @reset="updateAccentPreference({ ...DEFAULT_ACCENT })"
-            />
-            <AccentColorPicker />
-          </span>
-        </div>
+        <SettingsRow
+          :label="settings.accentColor"
+          :modified="accentModified"
+          class="flex-wrap gap-y-2"
+          @reset="updateAccentPreference({ ...DEFAULT_ACCENT })"
+        >
+          <AccentColorPicker />
+        </SettingsRow>
         <SettingsRow
           as="label"
           :label="settings.animations"
@@ -122,7 +159,7 @@ const preserveUnsavedWork = computed({
               { value: 'system', label: settings.animationsSystem },
               { value: 'off', label: settings.animationsOff }
             ]"
-            :ui="selectUI"
+            :ui="settingsSelectUI"
           />
         </SettingsRow>
       </SettingsGroup>
@@ -173,6 +210,10 @@ const preserveUnsavedWork = computed({
       </SettingsGroup>
     </SettingsSection>
 
+    <UpdatesSettingsSection />
+
     <CredentialSettingsSection />
+
+    <SupportSettingsSection />
   </section>
 </template>

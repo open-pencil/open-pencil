@@ -1,0 +1,16 @@
+{
+  "name": "@open-pencil/dockerfiles-tools",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#dockerfiles/*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "dockerfile-ast": "0.7.1",
+    "es-toolkit": "^1.52.0"
+  }
+}

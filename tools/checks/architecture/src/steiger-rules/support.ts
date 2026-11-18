@@ -22,10 +22,7 @@ type TextRuleCheck = (
   content: string
 ) => Array<{ message: string; line?: number; column?: number }>
 
-export const FILE_PREFIX_GROUP_ALLOWLIST = new Set([
-  'packages/core/src/lint/rules::no',
-  'tests/engine::visual'
-])
+export const FILE_PREFIX_GROUP_ALLOWLIST = new Set(['packages/core/src/lint/rules::no'])
 
 type ImportRef = {
   specifier: string
@@ -38,6 +35,7 @@ export const ROOT_MARKDOWN_ALLOWLIST = new Set([
   'AGENTS.md',
   'CHANGELOG.md',
   'CONTRIBUTING.md',
+  'MAINTAINING.md',
   'README.md',
   'SECURITY.md'
 ])

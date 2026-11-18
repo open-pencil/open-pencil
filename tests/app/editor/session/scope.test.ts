@@ -19,6 +19,19 @@ describe('scopedStoreFactory', () => {
     expect(scope?.active).toBe(false)
   })
 
+  test('runs a later effect in the store scope until the store disposes', () => {
+    const create = scopedStoreFactory(() => ({ dispose: () => undefined }))
+    const store = create()
+    let ran: EffectScope | undefined
+
+    expect(store.runInScope(() => (ran = getCurrentScope()))).toBe(ran)
+    expect(ran?.active).toBe(true)
+
+    store.dispose()
+    expect(ran?.active).toBe(false)
+    expect(store.runInScope(() => 'late')).toBeUndefined()
+  })
+
   test('stops the store scope when building the store throws', () => {
     let scope: EffectScope | undefined
     const create = scopedStoreFactory((): { dispose(): void } => {

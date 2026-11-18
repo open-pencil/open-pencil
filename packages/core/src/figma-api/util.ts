@@ -1,36 +1,13 @@
-/// <reference types="@figma/plugin-typings" />
-
+import type { RGB, RGBA, SolidPaint, UtilAPI } from '@figma/plugin-typings/plugin-api-standalone'
 import { clampRgb as clampRGB, converter, parse, type Color as CuloriColor } from 'culori'
 
-import { invalid, received } from './accessors/text/messages'
+import { BLEND_MODES } from '#core/figma-api/effects'
+import { invalid, received } from '#core/figma-api/validation'
 
 const toRGB = converter('rgb')
 
 /** The CSS color spaces Figma's `figma.util` reads; it refuses `lch()`, `hwb()`, and the rest. */
 const READABLE_MODES = new Set(['rgb', 'hsl', 'lab', 'oklab', 'oklch', 'p3'])
-
-/** The order Figma lists blend modes in when it refuses one. */
-const BLEND_MODES = [
-  'PASS_THROUGH',
-  'NORMAL',
-  'DARKEN',
-  'MULTIPLY',
-  'LINEAR_BURN',
-  'COLOR_BURN',
-  'LIGHTEN',
-  'SCREEN',
-  'LINEAR_DODGE',
-  'COLOR_DODGE',
-  'OVERLAY',
-  'SOFT_LIGHT',
-  'HARD_LIGHT',
-  'DIFFERENCE',
-  'EXCLUSION',
-  'HUE',
-  'SATURATION',
-  'COLOR',
-  'LUMINOSITY'
-] as const satisfies readonly BlendMode[]
 
 const SOLID_PAINT_KEYS = new Set([
   'type',

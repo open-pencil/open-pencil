@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import type { FigmaAPI } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 import {
   allRules,
   applyLintFixes,
@@ -44,7 +45,7 @@ type LintScope = v.InferOutput<v.ObjectSchema<typeof lintScopeInput, undefined>>
 
 function runLint(figma: FigmaAPI, scope: LintScope): LintResult {
   const roots = scope.ids?.length ? scope.ids : [figma.currentPage.id]
-  return createLinter({ preset: scope.preset, rules: scope.rules }).lintGraph(figma.graph, roots)
+  return createLinter({ preset: scope.preset, rules: scope.rules }).lintGraph(graphOf(figma), roots)
 }
 
 function summarize(result: LintResult) {
@@ -106,7 +107,7 @@ export const lintFix = defineTool({
       const fix = message.fix ?? (args.suggestions ? message.suggestions?.[0] : undefined)
       return fix ? [{ nodeId: message.nodeId, fix }] : []
     })
-    const applied = applyLintFixes(graphFixTarget(figma.graph), requests)
+    const applied = applyLintFixes(graphFixTarget(graphOf(figma)), requests)
     return { applied, remaining: summarize(runLint(figma, args)) }
   }
 })

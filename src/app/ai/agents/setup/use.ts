@@ -1,6 +1,11 @@
 import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
 
-import { ACP_AGENTS, type ACPAgentDef, type ACPAgentID } from '@open-pencil/core/constants'
+import {
+  acpAgentFor,
+  type ACPAgentDef,
+  type ACPAgentID,
+  providerKind
+} from '@open-pencil/core/constants'
 
 import { readPiAccount } from '@/app/ai/agents/pi/settings'
 
@@ -22,7 +27,7 @@ export function useAgentSetup(
   const readingPi = ref(false)
 
   function agentID(providerID: string): ACPAgentID | null {
-    return ACP_AGENTS.find((agent) => `acp:${agent.id}` === providerID)?.id ?? null
+    return acpAgentFor(providerID)?.id ?? null
   }
 
   function agentSetup(providerID: string): AgentSetupState {
@@ -56,7 +61,7 @@ export function useAgentSetup(
   }
 
   function piSetup(providerID: string): PiSetupState | undefined {
-    if (providerID !== 'harness:pi') return undefined
+    if (providerKind(providerID) !== 'harness') return undefined
     return {
       ...mcpServerSetup(),
       scanning: discovery.scanning.value || readingPi.value,
@@ -87,7 +92,7 @@ export function useAgentSetup(
   }
 
   async function installAgent(providerID: string): Promise<void> {
-    if (providerID === 'harness:pi') return discovery.setupHarness()
+    if (providerKind(providerID) === 'harness') return discovery.setupHarness()
     const detected = agentSetup(providerID).detected
     if (!detected) return
     await discovery.install(detected.definition.id)
@@ -174,9 +179,7 @@ export function useAgentSetup(
  * outside the desktop app, where agents cannot run.
  */
 export function useCodingAgentSetup(providerID: MaybeRefOrGetter<string>, setup = useAgentSetup()) {
-  const agent = computed(() =>
-    ACP_AGENTS.find((definition) => `acp:${definition.id}` === toValue(providerID))
-  )
+  const agent = computed(() => acpAgentFor(toValue(providerID)))
   const state = computed(() => {
     if (!agent.value) return undefined
     const current = setup.agentSetup(toValue(providerID))

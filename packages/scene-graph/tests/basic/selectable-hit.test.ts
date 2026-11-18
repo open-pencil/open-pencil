@@ -309,7 +309,13 @@ describe('a click just outside a shape', () => {
       height: 300,
       fills: FILL
     })
-    const group = graph.createNode('GROUP', page, { name: 'Dots', x: 150, y: 150, width: 300, height: 200 })
+    const group = graph.createNode('GROUP', page, {
+      name: 'Dots',
+      x: 150,
+      y: 150,
+      width: 300,
+      height: 200
+    })
     graph.createNode('ELLIPSE', group.id, { name: 'Dot', width: 20, height: 20, fills: FILL })
     expect(graph.hitTestSelectable(160, 160, page, new Set())?.name).toBe('Dots')
     expect(graph.hitTestSelectable(300, 250, page, new Set())?.id).toBe(line.id)
@@ -351,7 +357,9 @@ describe('a click just outside a shape', () => {
     // Selected, it stays closed: another click inside keeps the frame.
     const top = [...graph.nodes.values()].find((node) => node.name === 'Top')
     if (!top) throw new Error('Missing Top')
-    expect(graph.hitTestSelectable(170, 170, page, new Set([top.id]), { framesOpen: false })?.name).toBe('Top')
+    expect(
+      graph.hitTestSelectable(170, 170, page, new Set([top.id]), { framesOpen: false })?.name
+    ).toBe('Top')
     // Entered by a double-click, it is open from the page: the click reaches the frame inside.
     const entered = { framesOpen: false, enteredId: top.id }
     expect(graph.hitTestSelectable(170, 170, page, new Set(), entered)?.name).toBe('Nested')

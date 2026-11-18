@@ -1,6 +1,7 @@
-FROM oven/bun@sha256:9114c058aeae42162ee16dd5084b95fe9473970bb6bcb5b232ab1630f0546895
-
-# Bun 1.4.2, the packageManager version CI installs, pinned to the multi-platform image digest.
+# syntax=docker/dockerfile:1
+# The Dev Container: Bun 1.4.4, the packageManager version CI installs, with Git, Git LFS, and SSH.
+# Each developer builds it from this file, so its apt packages are pinned too.
+FROM oven/bun:1.4.4@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d
 
 ARG CA_CERTIFICATES_VERSION=20250419
 ARG GIT_VERSION=1:2.47.3-0+deb13u1
@@ -21,6 +22,7 @@ RUN apt-get update \
         /workspace/open-pencil/node_modules \
         /workspace/open-pencil/packages/scene-graph/node_modules \
         /workspace/open-pencil/packages/pen/node_modules \
+        /workspace/open-pencil/packages/collab/node_modules \
         /workspace/open-pencil/packages/kiwi/node_modules \
         /workspace/open-pencil/packages/fig/node_modules \
         /workspace/open-pencil/packages/core/node_modules \

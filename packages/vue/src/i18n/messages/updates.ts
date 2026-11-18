@@ -25,7 +25,18 @@ export const updatesMessageDefaults = {
   installFailed: params('Could not install the update: {error}'),
   restartFailed: params('Could not restart OpenPencil: {error}'),
   unavailable: 'Updates are not available yet. Publish a signed release with latest.json first.',
-  checkFailed: params('Could not check for updates: {error}')
+  checkFailed: params('Could not check for updates: {error}'),
+  webUpdateReady: 'A new version of OpenPencil is ready',
+  reload: 'Reload',
+  settingsSection: 'Updates',
+  checkOnStartup: 'Check for updates on startup',
+  checkOnStartupDescription:
+    'Looks for a new version shortly after the desktop app opens. Check for Updates in the menu still runs when this is off.',
+  channel: 'Update channel',
+  channelDescription:
+    'Nightly builds come from the newest code every night and can break. Switching back to Stable installs the current stable release at the next check.',
+  channelStable: 'Stable',
+  channelNightly: 'Nightly'
 } as const
 
 export const updatesMessages = i18n('updates', updatesMessageDefaults)

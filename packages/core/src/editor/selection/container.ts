@@ -27,19 +27,6 @@ export function createSelectionContainerActions(ctx: EditorContext) {
     ctx.state.enteredContainerId = entered ? parentId : null
   }
 
-  function exitContainer() {
-    const entered = ctx.state.enteredContainerId
-    if (!entered) return
-    const node = ctx.graph.getNode(entered)
-    const parentId = node?.parentId
-    if (parentId && parentId !== ctx.state.currentPageId) {
-      ctx.state.enteredContainerId = parentId
-    } else {
-      ctx.state.enteredContainerId = null
-    }
-    ctx.setSelectedIds(new Set(entered ? [entered] : []))
-  }
-
   /** Leaves every entered container; a press on nothing lands on the page, as in Figma. */
   function exitContainers() {
     ctx.state.enteredContainerId = null
@@ -49,7 +36,6 @@ export function createSelectionContainerActions(ctx: EditorContext) {
     validateEnteredContainer,
     enterContainer,
     enterContainerOf,
-    exitContainer,
     exitContainers
   }
 }

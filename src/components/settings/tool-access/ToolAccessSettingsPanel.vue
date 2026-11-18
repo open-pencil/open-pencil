@@ -12,6 +12,7 @@ import CapabilityList from '@/components/settings/capability/CapabilityList.vue'
 import CapabilityPage from '@/components/settings/capability/CapabilityPage.vue'
 import { filterCapabilities } from '@/components/settings/capability/filter'
 import type { CapabilityFilter, CapabilityGroup } from '@/components/settings/capability/types'
+import SettingsResetButton from '@/components/settings/layout/SettingsResetButton.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 
@@ -22,7 +23,7 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 const { target } = defineProps<{ target: ToolAccessTarget }>()
 
 const automation = useAutomationMessages()
-const { tools, disabled, reset } = useToolAccessSettings(target)
+const { tools, disabled, modified, reset } = useToolAccessSettings(target)
 const { search, groups, expanded, setGroupEnabled, isEnabled, setToolEnabled } = useToolAccess(
   tools,
   disabled
@@ -69,10 +70,8 @@ function setExpanded(key: string, open: boolean) {
     <template #description>{{
       target === 'ai' ? automation.aiToolAccessDescription : automation.mcpToolAccessDescription
     }}</template>
-    <template #tools>
-      <AppButton size="sm" variant="outline" @click="reset">{{
-        automation.restoreToolDefaults
-      }}</AppButton>
+    <template v-if="modified" #tools>
+      <SettingsResetButton @reset="reset" />
     </template>
     <AppPlaceholder
       v-if="!hasMatches"
@@ -89,7 +88,7 @@ function setExpanded(key: string, open: boolean) {
       @set-item="(_group, name, enabled) => setToolEnabled(name, enabled)"
     />
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <p class="max-w-prose text-[11px] leading-relaxed text-muted">
+      <p class="max-w-prose text-2xs leading-relaxed text-muted">
         {{
           target === 'ai'
             ? automation.aiToolsNotice

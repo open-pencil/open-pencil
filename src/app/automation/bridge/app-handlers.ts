@@ -18,11 +18,15 @@ export async function handleActivateDocument(
 type HistoryDirection = 'undo' | 'redo'
 
 // The history is shared with the person in the editor, so automation steps back only
-// through its own changes, and only while they are on top.
+// through its own changes, and only while they are on top. A path being edited or drawn records
+// its last change when undo runs, which would put the person's change on top, so it waits.
 function stepHistory(target: AutomationTarget, direction: HistoryDirection) {
   const store = target.store
   if (store.state.nodeEditState) {
     throw new Error('The document is in vector edit mode; finish editing in the app first')
+  }
+  if (store.state.penState) {
+    throw new Error('A path is being drawn with the pen; finish it in the app first')
   }
   const available = direction === 'undo' ? store.undo.canUndo : store.undo.canRedo
   if (!available) return { applied: false, label: null }

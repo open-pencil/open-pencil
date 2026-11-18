@@ -1,5 +1,7 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { solid } from '../paints'
+
 const STROKE_VARIANTS = [
   { align: 'INSIDE', cornerRadius: 0 },
   { align: 'CENTER', cornerRadius: 0 },
@@ -17,9 +19,7 @@ export function createBooleanStrokeAlignmentScene(graph: SceneGraph, pageId: str
       height: 104,
       booleanOperation: 'UNION',
       cornerRadius,
-      fills: [
-        { type: 'SOLID', color: { r: 0.23, g: 0.51, b: 0.96, a: 1 }, visible: true, opacity: 1 }
-      ],
+      fills: [solid(0.23, 0.51, 0.96)],
       strokes: [
         {
           type: 'SOLID',

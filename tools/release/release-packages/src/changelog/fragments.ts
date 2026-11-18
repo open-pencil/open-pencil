@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import type { List, ListItem, Root, RootContent } from 'mdast'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 import { ALLOWED_CATEGORIES, headingText, sectionEnd } from './validate'
 
 type Category = (typeof ALLOWED_CATEGORIES)[number]
@@ -85,7 +87,7 @@ export async function readFragments(directory: string): Promise<FragmentReadResu
         await readFile(join(directory, entry.name, file.name), 'utf8'),
         path
       )
-      errors.push(...parsed.errors)
+      appendAll(errors, parsed.errors)
       if (parsed.bullets.length > 0)
         fragments.push({ pullRequest, category, bullets: parsed.bullets })
     }
@@ -115,7 +117,12 @@ function unreleasedBullets(changelog: string, nodes: RootContent[]): Map<Categor
         throw new Error(`${at}: "${text}" is not an Unreleased category.`)
       }
     } else if (node.type === 'list' && !node.ordered && current) {
-      bullets.get(current)?.push(...node.children.map((item) => listItemMarkdown(changelog, item)))
+      const list = bullets.get(current)
+      if (list)
+        appendAll(
+          list,
+          node.children.map((item) => listItemMarkdown(changelog, item))
+        )
     } else {
       throw new Error(`${at}: Unreleased holds content outside a category bullet list.`)
     }
@@ -145,7 +152,8 @@ export function assembleUnreleased(changelog: string, fragments: ChangeFragment[
 
   const bullets = unreleasedBullets(changelog, tree.children.slice(headingIndex + 1, end))
   for (const fragment of fragments) {
-    bullets.get(FRAGMENT_CATEGORIES[fragment.category])?.push(...fragment.bullets)
+    const list = bullets.get(FRAGMENT_CATEGORIES[fragment.category])
+    if (list) appendAll(list, fragment.bullets)
   }
 
   const sectionStart = tree.children[headingIndex].position?.start.offset ?? 0

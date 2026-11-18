@@ -101,4 +101,42 @@ describe('remapCopiedReferences', () => {
 
     expect(graph.getNode(instance.id)?.componentPropertyAssignments).toEqual({ icon: starCopy.id })
   })
+
+  test('keeps text links on their layers unless asked to follow the copy', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const frame = graph.createNode('FRAME', page, { name: 'Card' })
+    const target = graph.createNode('RECTANGLE', frame.id, { name: 'Target' })
+    graph.createNode('TEXT', frame.id, {
+      name: 'Label',
+      styleRuns: [{ start: 0, length: 5, style: { hyperlink: { type: 'NODE', value: target.id } } }]
+    })
+    const linkOf = (frameId: string) => {
+      const label = graph.getChildren(frameId).find((node) => node.name === 'Label')
+      const link = label?.styleRuns[0]?.style.hyperlink
+      return link?.type === 'NODE' ? link.value : null
+    }
+
+    // Figma's duplicate keeps the link on the original layer (desktop 126).
+    const duplicate = graph.cloneTree(frame.id, page)
+    expect(duplicate && linkOf(duplicate.id)).toBe(target.id)
+
+    const copy = graph.createNode('FRAME', page, { name: 'Card' })
+    const copiedTarget = graph.createNode('RECTANGLE', copy.id, { name: 'Target' })
+    const label = graph.getChildren(frame.id).find((node) => node.name === 'Label')
+    const copiedLabel = graph.createNode('TEXT', copy.id, {
+      name: 'Label',
+      styleRuns: structuredClone(label?.styleRuns ?? [])
+    })
+    remapCopiedReferences(
+      graph,
+      new Map([
+        [target.id, copiedTarget.id],
+        [label?.id ?? '', copiedLabel.id]
+      ]),
+      { followTextLinks: true }
+    )
+    expect(linkOf(copy.id)).toBe(copiedTarget.id)
+    expect(linkOf(frame.id)).toBe(target.id)
+  })
 })

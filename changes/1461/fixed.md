@@ -1,1 +1,0 @@
-- Auto-width text in an auto layout frame narrower than the text keeps each line whole, as in Figma, instead of wrapping inside the frame.

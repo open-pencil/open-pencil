@@ -1,0 +1,202 @@
+import { describe, expect, test } from 'bun:test'
+
+import { effectScope } from 'vue'
+
+import { createEditor } from '@open-pencil/core'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+
+import { createLayoutActions } from '#vue/controls/layout/helpers'
+import { createSelectedNodeState } from '#vue/editor/selection-state/nodes'
+
+/** Layout actions fed as the panel feeds them: copies of the selection, not graph nodes. */
+function panelActions(editor: ReturnType<typeof createEditor>, id: string) {
+  editor.select([id])
+  const scope = effectScope()
+  const actions = scope.run(() => {
+    const selected = createSelectedNodeState(editor)
+    return createLayoutActions({ editor, node: selected.node })
+  })
+  if (!actions) throw new Error('Expected layout actions')
+  return { actions, scope }
+}
+
+// Figma (desktop, 2026-11-07): typing W into the panel places the layers inside by their
+// constraints, as a handle drag or resize() does.
+describe('a typed width or height', () => {
+  function setup() {
+    const editor = createEditor()
+    const page = editor.state.currentPageId
+    const frame = editor.graph.createNode('FRAME', page, { width: 100, height: 100 })
+    const stretched = editor.graph.createNode('RECTANGLE', frame.id, {
+      x: 0.7,
+      y: 3.75,
+      width: 22.6,
+      height: 16.5,
+      horizontalConstraint: 'STRETCH'
+    })
+    const scaled = editor.graph.createNode('RECTANGLE', frame.id, {
+      x: 60,
+      y: 50,
+      width: 20,
+      height: 10,
+      horizontalConstraint: 'SCALE'
+    })
+    const { actions, scope } = panelActions(editor, frame.id)
+    const box = (node: SceneNode) => [node.x, node.y, node.width, node.height]
+    return { editor, frame, stretched, scaled, actions, box, scope }
+  }
+
+  test('places the layers inside by their constraints, from where the edit began', () => {
+    const { editor, frame, stretched, scaled, actions, box, scope } = setup()
+    try {
+      // Scrubbing passes through other widths; each step places from the start, not the last step.
+      actions.updateAxisSize('width', 300)
+      actions.updateAxisSize('width', 120.4)
+      expect(box(frame)).toEqual([0, 0, 120.4, 100])
+      expect(box(stretched)).toEqual([0.7, 3.75, 42.6, 16.5])
+      expect(scaled.x).toBeCloseTo(72.24, 6)
+      expect(scaled.width).toBeCloseTo(24.08, 6)
+      actions.commitAxisSize('width', 120.4, 100)
+
+      editor.undoAction()
+      expect([box(frame), box(stretched), box(scaled)]).toEqual([
+        [0, 0, 100, 100],
+        [0.7, 3.75, 22.6, 16.5],
+        [60, 50, 20, 10]
+      ])
+      expect(editor.undo.canUndo).toBe(false)
+    } finally {
+      scope.stop()
+      editor.dispose()
+    }
+  })
+
+  test('cancelling puts the layers inside back', () => {
+    const { editor, frame, stretched, actions, box, scope } = setup()
+    try {
+      actions.updateAxisSize('width', 70)
+      expect(stretched.x).toBeCloseTo(-6.7, 6)
+      expect(stretched.width).toBeCloseTo(7.4, 6)
+      expect(stretched.flipX).toBe(true)
+      actions.cancelPreview()
+      expect([box(frame), box(stretched), stretched.flipX]).toEqual([
+        [0, 0, 100, 100],
+        [0.7, 3.75, 22.6, 16.5],
+        false
+      ])
+      expect(editor.undo.canUndo).toBe(false)
+    } finally {
+      scope.stop()
+      editor.dispose()
+    }
+  })
+
+  test('a selection change puts an unfinished size back, as other previews do', () => {
+    const { editor, frame, stretched, actions, box, scope } = setup()
+    try {
+      actions.updateAxisSize('width', 150)
+      expect(stretched.width).toBe(72.6)
+      editor.select([stretched.id])
+      expect([box(frame), box(stretched)]).toEqual([
+        [0, 0, 100, 100],
+        [0.7, 3.75, 22.6, 16.5]
+      ])
+      // The rest of that scrub reaches the newly selected layer, and leaves it be.
+      actions.updateAxisSize('width', 160)
+      expect(box(stretched)).toEqual([0.7, 3.75, 22.6, 16.5])
+      actions.commitAxisSize('width', 160, 100)
+      expect(box(stretched)).toEqual([0.7, 3.75, 22.6, 16.5])
+      expect(frame.width).toBe(100)
+      expect(editor.undo.canUndo).toBe(false)
+    } finally {
+      scope.stop()
+      editor.dispose()
+    }
+  })
+
+  test('a document loaded mid-edit is left as it loaded', () => {
+    const { editor, frame, stretched, actions, scope } = setup()
+    try {
+      actions.updateAxisSize('width', 150)
+      // The same ids in the new document, as reopening a saved copy gives.
+      const copy = new SceneGraph()
+      for (const node of editor.graph.getAllNodes()) copy.nodes.set(node.id, structuredClone(node))
+      const loadedFrame = copy.getNode(frame.id)
+      if (!loadedFrame) throw new Error('Expected the frame in the copy')
+      editor.replaceGraph(copy)
+      expect(loadedFrame.width).toBe(150)
+      // The panel still holds the old frame and sends it once more before it lets go.
+      const loadedChild = copy.getNode(stretched.id)
+      actions.updateAxisSize('width', 90)
+      expect([loadedFrame.width, loadedChild?.width]).toEqual([150, 72.6])
+      actions.cancelPreview()
+      actions.commitAxisSize('width', 90, 100)
+      expect([loadedFrame.width, loadedChild?.width]).toEqual([150, 72.6])
+      expect(editor.undo.canUndo).toBe(false)
+    } finally {
+      scope.stop()
+      editor.dispose()
+    }
+  })
+
+  test('a read-only library layer refuses the size before anything moves', () => {
+    const editor = createEditor()
+    let scope: ReturnType<typeof effectScope> | undefined
+    try {
+      const page = editor.state.currentPageId
+      const remote = editor.graph.createNode('COMPONENT', page, {
+        width: 100,
+        height: 50,
+        librarySource: {
+          identity: { libraryId: 'design-system', assetKey: 'card', revisionId: 'r1' },
+          sourceNodeId: 'source',
+          readOnly: true
+        }
+      })
+      const inner = editor.graph.createNode('RECTANGLE', remote.id, {
+        x: 10,
+        width: 20,
+        height: 10,
+        horizontalConstraint: 'STRETCH'
+      })
+      const panel = panelActions(editor, remote.id)
+      scope = panel.scope
+      panel.actions.updateAxisSize('width', 150)
+      panel.actions.updateAxisSize('width', 160)
+      expect([remote.width, inner.width]).toEqual([100, 20])
+      panel.actions.commitAxisSize('width', 160, 100)
+      expect([remote.width, inner.width]).toEqual([100, 20])
+      expect(editor.undo.canUndo).toBe(false)
+    } finally {
+      scope?.stop()
+      editor.dispose()
+    }
+  })
+
+  test('an instance turns its Left & right layer over past zero, as in Figma', () => {
+    const editor = createEditor()
+    let scope: ReturnType<typeof effectScope> | undefined
+    try {
+      const page = editor.state.currentPageId
+      const card = editor.graph.createNode('COMPONENT', page, { width: 100, height: 50 })
+      editor.graph.createNode('RECTANGLE', card.id, {
+        x: 10,
+        y: 30,
+        width: 20,
+        height: 10,
+        horizontalConstraint: 'STRETCH'
+      })
+      const instance = editor.graph.createInstance(card.id, page)
+      if (!instance) throw new Error('Expected an instance')
+      const panel = panelActions(editor, instance.id)
+      scope = panel.scope
+      panel.actions.updateAxisSize('width', 70)
+      panel.actions.commitAxisSize('width', 70, 100)
+      const bar = editor.graph.getChildren(instance.id)[0]
+      expect(bar).toMatchObject({ x: 0, width: 10, flipX: true })
+    } finally {
+      scope?.stop()
+      editor.dispose()
+    }
+  })
+})

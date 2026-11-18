@@ -110,7 +110,7 @@ export function createPlacedVector(
 
 /** The paints and stroke line style a vectorized SVG path draws with. */
 export function vectorizedPathPaints(
-  path: VectorizedPath
+  path: Pick<VectorizedPath, 'fills' | 'strokes'>
 ): Pick<SceneNode, 'fillGeometry' | 'fills' | 'strokes'> &
   Partial<Pick<SceneNode, 'strokeCap' | 'strokeJoin'>> {
   const stroke = path.strokes.at(0)

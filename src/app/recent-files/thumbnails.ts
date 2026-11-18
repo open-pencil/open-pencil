@@ -78,6 +78,17 @@ export async function cacheRecentFileThumbnail(path: string, bytes: Uint8Array):
  */
 const RECENT_FILE_COVER = { width: 800, height: 450 }
 
+/** Draws `graph`'s cover page as a Home card shows it; null when there is no page to draw. */
+export function drawHomeCardCover(
+  graph: SceneGraph,
+  renderer: NonNullable<Editor['renderer']>
+): Uint8Array | null {
+  const pageId = figThumbnailPageId(graph.getPages())
+  if (!pageId) return null
+  const { width, height } = RECENT_FILE_COVER
+  return renderThumbnail(renderer.ck, renderer, graph, pageId, width, height, 'letterbox')
+}
+
 /** Cover writes still running, by file, so each file's covers are cached in the order drawn. */
 const coverWrites = new Map<string, Promise<void>>()
 
@@ -93,10 +104,7 @@ export async function cacheRecentFileCover(
   renderer: NonNullable<Editor['renderer']>
 ): Promise<boolean> {
   if (!isTauri()) return false
-  const pageId = figThumbnailPageId(graph.getPages())
-  if (!pageId) return false
-  const { width, height } = RECENT_FILE_COVER
-  const bytes = renderThumbnail(renderer.ck, renderer, graph, pageId, width, height, 'letterbox')
+  const bytes = drawHomeCardCover(graph, renderer)
   if (!bytes) return false
   // Read now, for the file this cover was drawn from, but queued at once, so covers keep the
   // order they were drawn in however their reads finish.

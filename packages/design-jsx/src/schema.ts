@@ -3,6 +3,12 @@ import * as v from 'valibot'
 
 import { tryParseColor } from '@open-pencil/scene-graph/color'
 import { STICKY_COLORS } from '@open-pencil/scene-graph/generated'
+import {
+  clampLayoutLength,
+  MAX_GRID_LINE,
+  MAX_GRID_SPAN,
+  MAX_GRID_TRACKS
+} from '@open-pencil/scene-graph/layout'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import {
@@ -54,6 +60,102 @@ export const placedOwnLayerPropsSchema = v.object({
   position: v.optional(v.picklist(['absolute']))
 })
 
+export const gridLineValueSchema = v.pipe(
+  v.number(),
+  v.integer('expected a whole number'),
+  v.minValue(0),
+  v.maxValue(MAX_GRID_LINE)
+)
+
+export const gridSpanValueSchema = v.pipe(
+  v.number(),
+  v.integer('expected a whole number'),
+  v.minValue(1),
+  v.maxValue(MAX_GRID_SPAN)
+)
+
+export const gridTrackCountValueSchema = v.pipe(
+  v.number(),
+  v.integer('expected a whole number'),
+  v.minValue(1),
+  v.maxValue(MAX_GRID_TRACKS)
+)
+
+const gridTracksOrCountSchema = v.union(
+  [v.string(), gridTrackCountValueSchema],
+  'expected a track list or a whole number of tracks'
+)
+
+/**
+ * The grid props any layer reads inside a grid. A placement or track count that does not fit is
+ * reported and left out: layout can place neither, and a track count allocates one entry per
+ * track, so a huge one exhausts memory before the layer is drawn.
+ */
+export const gridPropsSchema = v.object({
+  columns: v.optional(gridTracksOrCountSchema),
+  rows: v.optional(gridTracksOrCountSchema),
+  colStart: v.optional(gridLineValueSchema),
+  rowStart: v.optional(gridLineValueSchema),
+  // `col` and `row` are the short names `designJSXProp` reads for the starts.
+  col: v.optional(gridLineValueSchema),
+  row: v.optional(gridLineValueSchema),
+  colSpan: v.optional(gridSpanValueSchema),
+  rowSpan: v.optional(gridSpanValueSchema)
+})
+
+const finiteNumberSchema = v.pipe(v.number(), v.finite())
+
+/** A size, radius, or stroke weight: never negative, and bounded as layout bounds a layer's size. */
+const layoutLengthSchema = v.pipe(
+  finiteNumberSchema,
+  v.transform((length) => clampLayoutLength(length))
+)
+
+/** A share from none to all, such as how much a corner is smoothed. */
+const shareSchema = v.pipe(
+  finiteNumberSchema,
+  v.transform((share) => Math.min(1, Math.max(0, share)))
+)
+
+/**
+ * The layer props every element reads by the same reader, under each name it is written by. A
+ * value of the wrong kind is reported and left out, so it never reaches a layer's fields; one out
+ * of range is bounded, as a bound variable's value is.
+ */
+export const layerPropsSchema = v.object({
+  name: v.optional(v.string()),
+  // An artwork's layer name, since its `name` names the icon.
+  label: v.optional(v.string()),
+  opacity: v.optional(finiteNumberSchema),
+  rotate: v.optional(finiteNumberSchema),
+  rotation: v.optional(finiteNumberSchema),
+  rounded: v.optional(layoutLengthSchema),
+  cornerRadius: v.optional(layoutLengthSchema),
+  borderRadius: v.optional(layoutLengthSchema),
+  roundedTL: v.optional(layoutLengthSchema),
+  roundedTR: v.optional(layoutLengthSchema),
+  roundedBL: v.optional(layoutLengthSchema),
+  roundedBR: v.optional(layoutLengthSchema),
+  cornerSmoothing: v.optional(shareSchema),
+  strokeWidth: v.optional(layoutLengthSchema),
+  borderWidth: v.optional(layoutLengthSchema),
+  maxLines: v.optional(v.pipe(v.number(), v.integer('expected a whole number'), v.minValue(1)))
+})
+
+/** An element's props with the layer props read by `layerPropsSchema`. */
+export type LayerProps = Record<string, unknown> & v.InferOutput<typeof layerPropsSchema>
+
+/**
+ * The layer props an inline `<svg>` reads itself. Its other props, such as `strokeWidth="2"`,
+ * are attributes of its markup's root, which the SVG service reads as SVG does.
+ */
+export const svgLayerPropsSchema = v.pick(layerPropsSchema, ['label'])
+
+/** `props` with its layer props read by `layerPropsSchema`, as every element reads them. */
+export function readLayerProps(props: Readonly<Record<string, unknown>>): LayerProps {
+  return readKnownProps(layerPropsSchema, props)
+}
+
 /** A colour as a string, or as the colour a `designVar()` resolves to. */
 export const colorPropSchema = v.union(
   [
@@ -88,6 +190,25 @@ export function readElementProps<S extends ElementPropsSchema>(
   return v.parse(schema, fitting)
 }
 
+/**
+ * `props` with each prop `schema` takes read by it, and every other prop as it is: one that does
+ * not fit is left out as if it were not set, since the renderer reports it
+ * (`elementPropWarnings`) and goes on, and one that fits comes out as the schema reads it, such
+ * as a radius bounded.
+ */
+export function readKnownProps<S extends ElementPropsSchema>(
+  schema: S,
+  props: Readonly<Record<string, unknown>>
+): Record<string, unknown> & v.InferOutput<S> {
+  const read: Record<string, unknown> = { ...props }
+  for (const [key, entry] of Object.entries(schema.entries)) {
+    if (props[key] === undefined) continue
+    const parsed = v.safeParse(entry, props[key])
+    read[key] = parsed.success ? parsed.output : undefined
+  }
+  return read
+}
+
 /** A value as a warning quotes it; one JSON cannot write, such as a BigInt inside it, by its brackets. */
 function quoted(value: unknown): string {
   if (typeof value === 'string') return `"${value}"`
@@ -118,14 +239,24 @@ export function elementPropWarnings(
     // A choice of kinds names them; a single type or bound is Valibot's to name.
     if (issue.type === 'union' || issue.type === 'custom')
       return [`Invalid ${source}; ${issue.message}.`]
+    // A check that names no expected value, such as a whole number, carries its own wording.
+    if (!issue.expected) return [`Invalid ${source}; ${issue.message}.`]
     return [`Invalid ${source}; expected ${issue.expected}.`]
   })
 }
 
-/** A layer of the same JSX by name or `ref()`, or a point in the connector's parent. */
+/**
+ * A layer of the same JSX by name or `ref()`, a layer already in the document by `{ id }`, as an
+ * outline writes an end whose layer it leaves out, or a point in the connector's parent.
+ */
 const connectorEndSchema = v.union(
-  [v.string(), v.custom<LayerRef>(isLayerRef), v.object({ x: v.number(), y: v.number() })],
-  'expected a layer name, a ref(), or { x, y }'
+  [
+    v.string(),
+    v.custom<LayerRef>(isLayerRef),
+    v.strictObject({ id: v.string() }),
+    v.object({ x: v.number(), y: v.number() })
+  ],
+  'expected a layer name, a ref(), { id }, or { x, y }'
 )
 
 /** The props `<Connector>` takes: its own, and the layer props that style its line. */

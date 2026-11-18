@@ -6,6 +6,7 @@ import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppPasswordInput from '@/components/ui/input/AppPasswordInput.vue'
 
@@ -44,30 +45,33 @@ const value = ref('')
       novalidate
       @submit.prevent="step === 'request' ? emit('request', value) : emit('choose', value)"
     >
-      <div :class="ui.field()">
-        <label for="portal-reset" :class="ui.label()">
-          {{ step === 'request' ? messages.email : messages.newPassword }}
-        </label>
-        <AppInput
-          v-if="step === 'request'"
-          id="portal-reset"
-          v-model="value"
-          size="lg"
-          type="email"
-          inputmode="email"
-          autocomplete="email"
-        />
-        <AppPasswordInput
-          v-else
-          id="portal-reset"
-          v-model="value"
-          size="lg"
-          autocomplete="new-password"
-        />
-        <p v-if="step === 'choose'" :class="ui.hint()">
-          {{ messages.passwordHint({ count: minimumPasswordLength }) }}
-        </p>
-      </div>
+      <AppFormField
+        size="lg"
+        :label="step === 'request' ? messages.email : messages.newPassword"
+        :hint="
+          step === 'choose' ? messages.passwordHint({ count: minimumPasswordLength }) : undefined
+        "
+      >
+        <template #default="{ id, describedBy }">
+          <AppInput
+            v-if="step === 'request'"
+            :id="id"
+            v-model="value"
+            size="lg"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+          />
+          <AppPasswordInput
+            v-else
+            :id="id"
+            v-model="value"
+            size="lg"
+            autocomplete="new-password"
+            :aria-describedby="describedBy"
+          />
+        </template>
+      </AppFormField>
       <AppButton
         type="submit"
         size="lg"

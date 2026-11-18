@@ -1,8 +1,9 @@
 import { isEqual, omitBy, pick } from 'es-toolkit'
 
 import type { ArcData, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { DEFAULT_FONT_FAMILY } from '@open-pencil/scene-graph/constants'
-import { layoutSizing } from '@open-pencil/scene-graph/layout'
+import { counterAxisSpacingOf, layoutSizing } from '@open-pencil/scene-graph/layout'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 import { vectorNetworkPaths } from '@open-pencil/scene-graph/vector-network'
@@ -68,7 +69,8 @@ function collectFlexAlignmentProps(node: SceneNode, props: JSXProp[]): void {
 
   if (node.layoutWrap === 'WRAP') {
     props.push(['wrap', true])
-    if (node.counterAxisSpacing > 0) props.push(['rowGap', node.counterAxisSpacing])
+    const rowGap = counterAxisSpacingOf(node)
+    if (rowGap > 0) props.push(['rowGap', rowGap])
   }
 
   if (node.primaryAxisAlign === 'CENTER') props.push(['justify', 'center'])
@@ -84,8 +86,9 @@ function collectFlexAlignmentProps(node: SceneNode, props: JSXProp[]): void {
 function collectAutoLayoutPaddingProps(node: SceneNode, props: JSXProp[]): void {
   const pad = collectPadding(node)
   if (!pad) return
-  props.push(
-    ...emitPadding(
+  appendAll(
+    props,
+    emitPadding(
       pad,
       (v) => ['p', v] as JSXProp,
       (y, x) =>
@@ -202,8 +205,7 @@ function collectSizingProps(
 }
 
 function collectTextSizingProps(node: SceneNode, graph: SceneGraph, props: JSXProp[]): void {
-  const autoResize = node.textAutoResize
-  const emitH = autoResize === 'NONE' || autoResize === 'TRUNCATE'
+  const emitH = node.textAutoResize === 'NONE'
   // Don't emit fixed w when text stretches to fill parent — the layoutAlignSelf
   // check below will emit w="fill" instead. Without this guard, w={computedPx}
   // gets emitted first and blocks the fill detection.
@@ -219,7 +221,7 @@ function collectTextSizingProps(node: SceneNode, graph: SceneGraph, props: JSXPr
       const parent = node.parentId ? graph.getNode(node.parentId) : null
       return parent?.layoutMode === 'HORIZONTAL'
     })()
-  const emitW = autoResize !== 'WIDTH_AND_HEIGHT' && !isFillWidth && !isGrowWidth
+  const emitW = node.textAutoResize !== 'WIDTH_AND_HEIGHT' && !isFillWidth && !isGrowWidth
   if (emitW && node.width > 0) props.push(['w', node.width])
   if (emitH && node.height > 0) props.push(['h', node.height])
 }
@@ -292,8 +294,7 @@ function collectTextNodeProps(node: SceneNode, props: JSXProp[]): void {
 const TEXT_AUTO_RESIZE: Record<SceneNode['textAutoResize'], string> = {
   NONE: 'none',
   WIDTH_AND_HEIGHT: 'width',
-  HEIGHT: 'height',
-  TRUNCATE: 'truncate'
+  HEIGHT: 'height'
 }
 
 /** The renderer infers auto-resize from the width props; say so only when it differs. */

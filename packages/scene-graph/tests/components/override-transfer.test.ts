@@ -1,8 +1,10 @@
 import { expect, test } from 'bun:test'
 
 import {
+  assignmentOverrideField,
   createInstanceOverrideState,
-  remapInstanceOverrideState
+  remapInstanceOverrideState,
+  variableModeOverrideField
 } from '@open-pencil/scene-graph/instances/overrides'
 
 test('override transfer remaps typed identities without rewriting equal text', () => {
@@ -22,7 +24,8 @@ test('override transfer remaps typed identities without rewriting equal text', (
   const before = structuredClone(state)
   const result = remapInstanceOverrideState(state, {
     node: (id) => `node/${id}`,
-    variable: (id) => `variable/${id}`
+    variable: (id) => `variable/${id}`,
+    collection: (id) => `collection/${id}`
   })
   expect(result.self.get('componentId')).toBe('node/source')
   expect(result.self.get('text')).toBe('source')
@@ -43,6 +46,73 @@ test('override transfer rejects colliding target mappings', () => {
   state.descendants.set('a', new Map())
   state.descendants.set('b', new Map())
   expect(() =>
-    remapInstanceOverrideState(state, { node: () => 'same', variable: (id) => id })
+    remapInstanceOverrideState(state, {
+      node: () => 'same',
+      variable: (id) => id,
+      collection: (id) => id
+    })
   ).toThrow('Duplicate remapped override target')
+})
+
+test('override transfer remaps the collection a mode override is keyed by', () => {
+  const state = createInstanceOverrideState()
+  state.descendants.set(
+    'child',
+    new Map<string, unknown>([
+      [variableModeOverrideField('sizes'), true],
+      [variableModeOverrideField('gone'), true]
+    ])
+  )
+  const result = remapInstanceOverrideState(state, {
+    node: (id) => id,
+    variable: (id) => id,
+    collection: (id) => (id === 'sizes' ? 'pasted-sizes' : undefined)
+  })
+  expect(result.descendants.get('child')).toEqual(
+    new Map<string, unknown>([[variableModeOverrideField('pasted-sizes'), true]])
+  )
+})
+
+test('override transfer remaps the property an assignment override is keyed by', () => {
+  const state = createInstanceOverrideState()
+  state.descendants.set(
+    'badge',
+    new Map<string, unknown>([
+      [assignmentOverrideField('label'), 'Bonus'],
+      [assignmentOverrideField('gone'), 'x']
+    ])
+  )
+  const result = remapInstanceOverrideState(state, {
+    node: (id) => id,
+    variable: (id) => id,
+    property: (id) => (id === 'label' ? 'pasted-label' : undefined)
+  })
+  expect(result.descendants.get('badge')).toEqual(
+    new Map<string, unknown>([[assignmentOverrideField('pasted-label'), 'Bonus']])
+  )
+})
+
+test('override transfer remaps the collection of a self mode override', () => {
+  const state = createInstanceOverrideState()
+  state.self.set(variableModeOverrideField('sizes'), true)
+  const result = remapInstanceOverrideState(state, {
+    node: (id) => id,
+    variable: (id) => id,
+    collection: (id) => (id === 'sizes' ? 'pasted-sizes' : undefined)
+  })
+  expect(result.self).toEqual(
+    new Map<string, unknown>([[variableModeOverrideField('pasted-sizes'), true]])
+  )
+})
+
+test('override transfer without a collection mapper keeps mode override keys', () => {
+  const state = createInstanceOverrideState()
+  state.descendants.set(
+    'child',
+    new Map<string, unknown>([[variableModeOverrideField('sizes'), true]])
+  )
+  const result = remapInstanceOverrideState(state, { node: (id) => id, variable: (id) => id })
+  expect(result.descendants.get('child')).toEqual(
+    new Map<string, unknown>([[variableModeOverrideField('sizes'), true]])
+  )
 })

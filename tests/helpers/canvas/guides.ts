@@ -1,8 +1,7 @@
 import type { Page } from '@playwright/test'
 
 import { RULER_SIZE } from '@open-pencil/core/constants'
-
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 export class CanvasGuideDriver {
   constructor(private readonly page: Page) {}

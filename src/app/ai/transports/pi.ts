@@ -8,6 +8,7 @@ import type {
 } from '@open-pencil/harness'
 
 import { spawnHarnessProcess, type HarnessProcess } from '@/app/ai/agents/pi/process'
+import { compactionOf, type StepCompaction } from '@/app/ai/chat/compaction/marker'
 import { createReplyStream, type ReplyStream } from '@/app/ai/reply/stream'
 
 interface PendingRequest {
@@ -15,6 +16,10 @@ interface PendingRequest {
   resolve: (message: HarnessSidecarMessage) => void
   reject: (error: Error) => void
   stream: ReplyStream
+  /** The reply's steps so far; a compaction starts the next one. */
+  steps: number
+  /** The reply's compactions so far; its metadata carries the whole list. */
+  compactions: StepCompaction[]
 }
 
 function requestID(): string {
@@ -47,8 +52,29 @@ function close(pending: PendingRequest): void {
   controller?.close()
 }
 
-function mapEvent(event: HarnessTurnEvent, { stream }: PendingRequest): UIMessageChunk[] {
+function mapEvent(event: HarnessTurnEvent, pending: PendingRequest): UIMessageChunk[] {
+  const { stream } = pending
   switch (event.type) {
+    case 'compaction': {
+      // A manual compaction ran between turns, and the chat drew its divider when Pi confirmed it.
+      if (event.trigger === 'manual') return []
+      // The reply draws the compaction where it ran, as the built-in chat's between steps.
+      pending.compactions = [
+        ...pending.compactions,
+        {
+          summary: event.summary,
+          trigger: event.trigger,
+          tokensBefore: event.tokensBefore,
+          step: pending.steps++
+        }
+      ]
+      return [
+        ...stream.end(),
+        { type: 'finish-step' },
+        { type: 'start-step' },
+        { type: 'message-metadata', messageMetadata: { compactions: pending.compactions } }
+      ]
+    }
     case 'text-delta':
       return stream.text(event.text)
     case 'reasoning-delta':
@@ -93,7 +119,10 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
       })
       this.sessionCreated = true
     }
-    const lastUserMessage = [...messages].reverse().find((message) => message.role === 'user')
+    // A compaction's divider is not something the person said.
+    const lastUserMessage = messages.findLast(
+      (message) => message.role === 'user' && compactionOf(message) === null
+    )
     const text =
       lastUserMessage?.parts
         .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
@@ -149,6 +178,19 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
     })
   }
 
+  /**
+   * Asks Pi to compact its context, steered by `instructions`. Pi writes the summary itself and
+   * reports it on the next turn. False when no session has started, so there is nothing to compact.
+   */
+  async compact(instructions?: string): Promise<boolean> {
+    if (!this.sessionCreated || this.destroyed) return false
+    await this.request({
+      method: 'session.compact',
+      params: { sessionId: this.sessionId, ...(instructions && { instructions }) }
+    })
+    return true
+  }
+
   async reconnectToStream(): Promise<ReadableStream<UIMessageChunk> | null> {
     return null
   }
@@ -193,7 +235,9 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
     return {
       resolve: () => undefined,
       reject: () => undefined,
-      stream: createReplyStream(`turn-${id}`)
+      stream: createReplyStream(`turn-${id}`),
+      steps: 1,
+      compactions: []
     }
   }
 
@@ -207,7 +251,9 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
       this.pending.set(id, {
         resolve,
         reject,
-        stream: createReplyStream(`turn-${id}`)
+        stream: createReplyStream(`turn-${id}`),
+        steps: 1,
+        compactions: []
       })
       void process.send({ id, ...request }).catch(reject)
     })

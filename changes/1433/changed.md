@@ -1,1 +1,0 @@
-- Settings → Models shows whether Codex, Claude Code, and Pi are connected, signed out, not installed, or unable to reach OpenPencil's tools, and an agent's settings can sign in and check the connection again.

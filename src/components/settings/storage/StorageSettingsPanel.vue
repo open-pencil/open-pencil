@@ -225,7 +225,8 @@ async function testConnection() {
               configured ? settings.configured : settings.notConfigured
             }}</template>
             <template #trailing
-              >{{ settings.edit }}<icon-lucide-chevron-right class="size-3.5"
+              >{{ settings.edit
+              }}<icon-lucide-chevron-right data-direction="reading" class="size-3.5"
             /></template>
           </AppActionRow>
           <AppButton
@@ -236,7 +237,7 @@ async function testConnection() {
             @click="openWorkspace"
             >{{ storage.openWorkspace }}</AppButton
           >
-          <p v-if="!configured" class="text-[11px] text-muted">
+          <p v-if="!configured" class="text-2xs text-muted">
             {{ settings.configureStorageHint }}
           </p>
         </SettingsSection>

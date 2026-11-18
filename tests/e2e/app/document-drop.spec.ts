@@ -2,6 +2,8 @@ import { readFile } from 'node:fs/promises'
 
 import { expect, test, type Page } from '@playwright/test'
 
+import { repoPath } from '@open-pencil/test-support/paths'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 /** Drops files on the canvas the way a drag from the desktop delivers them. */
@@ -28,7 +30,7 @@ test('a document dropped on the canvas opens in a new tab', async ({ page }) => 
   await new CanvasHelper(page).waitForInit()
   const tabs = page.getByRole('tablist').filter({ has: page.getByTestId('tabbar-tab') })
 
-  const bytes = [...(await readFile('tests/fixtures/circle-text.fig'))]
+  const bytes = [...(await readFile(repoPath('tests/fixtures/circle-text.fig')))]
   await dropOnCanvas(page, [{ name: 'circle-text.fig', bytes }])
 
   await expect(tabs.getByRole('tab').last()).toContainText('circle-text')

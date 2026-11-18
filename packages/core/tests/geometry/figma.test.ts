@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import {
+  panelNumber,
   panelPosition,
   panelPositionChange,
   panelRotation,
@@ -101,5 +102,17 @@ describe('properties panel position and rotation', () => {
     expect(shown(id)).toEqual([0, 0, 30])
     apply(panelRotationChange(raw(id), graph, -45))
     expect(shown(id)).toEqual([2.768, -6.382, -45])
+  })
+})
+
+describe('panel numbers', () => {
+  // The values Figma desktop showed for these (2026-11-08). Figma stores 32-bit floats, so its
+  // 120.005 is 120.00499… and shows 120; a layer here keeps 120.005 and shows 120.01.
+  test('shows a panel value to two decimals, as Figma does', () => {
+    const shown = [151.25, 100.4, 33.333333, 0.126, 1234.5678, 99.996, 6000.375, -30.126, 0.004]
+    expect(shown.map(panelNumber)).toEqual([
+      151.25, 100.4, 33.33, 0.13, 1234.57, 100, 6000.38, -30.13, 0
+    ])
+    expect(Object.is(panelNumber(-0.004), 0)).toBe(true)
   })
 })

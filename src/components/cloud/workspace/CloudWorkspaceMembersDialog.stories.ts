@@ -59,7 +59,7 @@ const meta = {
     components: { CloudWorkspaceMembersDialog },
     setup: () => ({ args }),
     template: `
-      <div class="h-[640px]">
+      <div class="h-160">
         <CloudWorkspaceMembersDialog
           :open="true"
           workspace-name="Spring campaign"

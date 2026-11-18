@@ -16,6 +16,7 @@ import { exposeAutomationTestRequests } from '@/app/automation/bridge/test-hooks
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { startWebMCP } from '@/app/automation/webmcp/runtime'
 import { exposeCollaborationActions } from '@/app/browser-bridge'
+import { offerCampaignPrompt, startCampaignClock } from '@/app/campaigns'
 import { openingCloudLink, shownEditorStore, versionPreviewKey } from '@/app/cloud/integration'
 import { useJoinRoom } from '@/app/collab/join'
 import { bindDesktopRoomLinks } from '@/app/collab/room/links'
@@ -45,9 +46,14 @@ import {
 } from '@/app/tabs'
 import { syncTabAddress } from '@/app/tabs/address'
 import { isTauri } from '@/app/tauri/env'
-import { offerUsageStatsPrompt, startSharing } from '@/app/telemetry'
+import { offerUsageStatsPrompt, startSharing, usageStatsPrompt } from '@/app/telemetry'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
-import { CloudVersionDialog } from '@/components/cloud/integration'
+import {
+  CloudBetaBanner,
+  CloudCommunityBanner,
+  CloudEditorUpdateBanner,
+  CloudVersionDialog
+} from '@/components/cloud/integration'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
 import EditorWorkspace from '@/components/editor/EditorWorkspace.vue'
 import FileApiBanner from '@/components/FileApiBanner.vue'
@@ -139,8 +145,13 @@ const welcomeShown =
     ? offerAISetupOnFirstRun({ inTour: route.meta.demo === true })
     : false
 const sharingStarted = startSharing()
-// One question per surface: a first run is asked about usage stats once the welcome closes.
+// Release builds show campaigns, such as the donation ask; development and test runs would only
+// be interrupted.
+const showsCampaigns = import.meta.env.PROD && !appRuntimeConfig.test
+// One question per launch: a first run is asked about usage stats once the welcome closes, and
+// a later launch about usage stats if still unanswered, otherwise shows a campaign that is due.
 if (welcomeShown) {
+  startCampaignClock()
   whenever(
     () => !aiSetupDialogOpen.value,
     async () => {
@@ -156,6 +167,7 @@ if (welcomeShown) {
     async () => {
       await sharingStarted
       offerUsageStatsPrompt('prompt')
+      if (showsCampaigns && !usageStatsPrompt.value) void offerCampaignPrompt()
     },
     { once: true, immediate: true }
   )
@@ -298,6 +310,9 @@ onUnmounted(() => {
     <FileApiBanner />
     <ColorSpaceBanner />
     <FontStatusBanner />
+    <CloudBetaBanner />
+    <CloudEditorUpdateBanner />
+    <CloudCommunityBanner />
     <RenameSelectionDialog />
     <CommandPalette />
     <TabBar />

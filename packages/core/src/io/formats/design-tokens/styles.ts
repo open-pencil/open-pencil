@@ -1,7 +1,13 @@
+import { countBy } from 'es-toolkit/array'
 import { isEmptyObject, isPlainObject } from 'es-toolkit/predicate'
 
 import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
+import {
+  effectBindingField,
+  effectBindingTarget,
+  type EffectBindingProperty
+} from '@open-pencil/scene-graph/variables'
 
 import { toFigmaEffect } from '#core/figma-api/effects'
 
@@ -11,6 +17,40 @@ import { colorTokenValue, dimensionTokenValue, trimNumber } from './values'
 
 /** Where a variable's token sits, for references to it. */
 export type TokenReferences = ReadonlyMap<string, readonly string[]>
+
+/**
+ * The variable a bound style field points at, by collection and name, as Figma's
+ * `com.figma.aliasData` names an alias target, since a path alone can be in several collections.
+ */
+export interface BindingTarget {
+  targetVariableSetName: string
+  targetVariableName: string
+}
+
+/** The variables a style's bound fields point at, by field, for those a reference was written for. */
+function bindingTargets(
+  graph: SceneGraph,
+  node: SceneNode,
+  fields: Iterable<string>
+): Record<string, BindingTarget> {
+  const targets: Record<string, BindingTarget> = {}
+  for (const field of fields) {
+    const variable = graph.variables.get(node.boundVariables[field] ?? '')
+    const collection = variable && graph.variableCollections.get(variable.collectionId)
+    if (variable && collection)
+      targets[field] = { targetVariableSetName: collection.name, targetVariableName: variable.name }
+  }
+  return targets
+}
+
+/** The fields a style binds and how a file read back finds each: its reference and its target. */
+function ownBindings(graph: SceneGraph, node: SceneNode, bindings: ShadowReferences) {
+  const own: Record<string, unknown> = {}
+  if (isEmptyObject(bindings)) return own
+  own.bindings = bindings
+  own.aliasData = bindingTargets(graph, node, Object.keys(bindings))
+  return own
+}
 
 /** Figma's auto line height, written as the multiplier browsers use for `normal`. */
 const AUTO_LINE_HEIGHT = 1.2
@@ -57,7 +97,11 @@ export function typographyValue(
 }
 
 /** A text style as a typography token; its own fields ride along so OpenPencil reads it back exactly. */
-function typographyToken(node: SceneNode, references: TokenReferences): DesignToken {
+function typographyToken(
+  graph: SceneGraph,
+  node: SceneNode,
+  references: TokenReferences
+): DesignToken {
   const bound = bindingReferences(node, references)
   return {
     $type: 'typography',
@@ -74,7 +118,7 @@ function typographyToken(node: SceneNode, references: TokenReferences): DesignTo
           textDecoration: node.textDecoration,
           textCase: node.textCase
         },
-        ...(isEmptyObject(bound) ? {} : { bindings: bound })
+        ...ownBindings(graph, node, bound)
       }
     }
   }
@@ -84,22 +128,50 @@ export function isShadow(effect: Effect): boolean {
   return effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW'
 }
 
-function shadowValue(effect: Effect) {
+/** A shadow token's field for each effect property a variable binds. */
+export const SHADOW_TOKEN_FIELDS = {
+  color: 'color',
+  offsetX: 'offsetX',
+  offsetY: 'offsetY',
+  radius: 'blur',
+  spread: 'spread'
+} as const satisfies Record<EffectBindingProperty, string>
+
+/** A bound effect field's token reference, such as `{shadow.blur}` for `effects/0/radius`. */
+export type ShadowReferences = Readonly<Partial<Record<string, string>>>
+
+function shadowValue(effect: Effect, index: number, references: ShadowReferences) {
+  const field = (property: EffectBindingProperty) => references[effectBindingField(index, property)]
   return {
-    color: colorTokenValue(effect.color),
-    offsetX: dimensionTokenValue(effect.offset.x),
-    offsetY: dimensionTokenValue(effect.offset.y),
-    blur: dimensionTokenValue(effect.radius),
-    spread: dimensionTokenValue(effect.spread),
+    color: field('color') ?? colorTokenValue(effect.color),
+    offsetX: field('offsetX') ?? dimensionTokenValue(effect.offset.x),
+    offsetY: field('offsetY') ?? dimensionTokenValue(effect.offset.y),
+    blur: field('radius') ?? dimensionTokenValue(effect.radius),
+    spread: field('spread') ?? dimensionTokenValue(effect.spread),
     ...(effect.type === 'INNER_SHADOW' ? { inset: true } : {})
   }
 }
 
-/** A shadow token's `$value`: the visible shadows of `effects`, or undefined when there are none. */
-export function shadowTokenValue(effects: readonly Effect[]) {
-  const values = effects.filter((effect) => isShadow(effect) && effect.visible).map(shadowValue)
+/**
+ * A shadow token's `$value`: the visible shadows of `effects`, bound fields as references to their
+ * variables' tokens, or undefined when there are none.
+ */
+export function shadowTokenValue(effects: readonly Effect[], references: ShadowReferences = {}) {
+  const values = [...effects.entries()]
+    .filter(([, effect]) => isShadow(effect) && effect.visible)
+    .map(([index, effect]) => shadowValue(effect, index, references))
   if (values.length === 0) return undefined
   return values.length === 1 ? values[0] : values
+}
+
+/** The token references of a layer's bound effect fields, by binding field. */
+function effectReferences(node: SceneNode, references: TokenReferences): ShadowReferences {
+  return Object.fromEntries(
+    Object.entries(node.boundVariables).flatMap(([field, variableId]) => {
+      const path = effectBindingTarget(field) ? references.get(variableId) : undefined
+      return path ? [[field, tokenReference(path)]] : []
+    })
+  )
 }
 
 /**
@@ -107,8 +179,13 @@ export function shadowTokenValue(effects: readonly Effect[]) {
  * blurs or hidden shadows, ride along whole in OpenPencil's extension, in the plugin API's shape;
  * a style with no visible shadow has no token.
  */
-function shadowToken(node: SceneNode): DesignToken | undefined {
-  const $value = shadowTokenValue(node.effects)
+function shadowToken(
+  graph: SceneGraph,
+  node: SceneNode,
+  references: TokenReferences
+): DesignToken | undefined {
+  const bindings = effectReferences(node, references)
+  const $value = shadowTokenValue(node.effects, bindings)
   if ($value === undefined) return undefined
   const exact = node.effects.every(
     (effect) =>
@@ -117,13 +194,17 @@ function shadowToken(node: SceneNode): DesignToken | undefined {
       (effect.blendMode ?? 'NORMAL') === 'NORMAL' &&
       effect.showShadowBehindNode !== true
   )
-  return {
-    $type: 'shadow',
-    $value,
-    ...(exact
-      ? {}
-      : { $extensions: { [OPENPENCIL_EXTENSION]: { effects: node.effects.map(toFigmaEffect) } } })
-  }
+  // Bindings ride along so a file read back binds them where `$value` has no place for them.
+  const own: Record<string, unknown> = ownBindings(graph, node, bindings)
+  if (!exact) own.effects = node.effects.map((effect) => toFigmaEffect(effect))
+  if (isEmptyObject(own)) return { $type: 'shadow', $value }
+  return { $type: 'shadow', $value, $extensions: { [OPENPENCIL_EXTENSION]: own } }
+}
+
+/** Whether a style's token writes a reference for this bound field. */
+function writesBinding(node: SceneNode, field: string): boolean {
+  if (node.sharedStyleType === 'TEXT') return TEXT_BINDING_FIELDS.some((bound) => bound === field)
+  return effectBindingTarget(field) !== null
 }
 
 /** Text and effect styles as typography and shadow tokens, nested by their names. */
@@ -137,9 +218,17 @@ export function styleTokens(
       (node.sharedStyleType === 'TEXT' || node.sharedStyleType === 'EFFECT') &&
       node.source.id !== null
   )
+  // Another tool reads a reference to a path several collections hold as whichever comes last.
+  const shared = new Set(
+    Object.entries(countBy([...references.values()], (path) => tokenReference(path)))
+      .filter(([, count]) => count > 1)
+      .map(([reference]) => reference)
+  )
   const candidates = styles.flatMap((node) => {
     const token =
-      node.sharedStyleType === 'TEXT' ? typographyToken(node, references) : shadowToken(node)
+      node.sharedStyleType === 'TEXT'
+        ? typographyToken(graph, node, references)
+        : shadowToken(graph, node, references)
     if (!token) {
       issues.push({ kind: 'unsupported-effect', style: node.name })
       return []
@@ -149,6 +238,13 @@ export function styleTokens(
   const { placed, duplicates } = placeTokens(candidates)
   for (const { node } of duplicates)
     issues.push({ kind: 'duplicate-path', collection: 'Styles', token: node.name })
+  for (const [{ node }] of placed) {
+    for (const [field, variableId] of Object.entries(node.boundVariables)) {
+      const path = writesBinding(node, field) ? references.get(variableId) : undefined
+      if (path && shared.has(tokenReference(path)))
+        issues.push({ kind: 'ambiguous-reference', style: node.name, field, token: pathName(path) })
+    }
+  }
   const tokens = [...placed].map(([{ node, token }, path]) => ({
     path,
     token: withOriginalName(token, node.name, path)

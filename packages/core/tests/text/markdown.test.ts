@@ -85,7 +85,9 @@ describe('Markdown as text, styled as FigJam styles typed Markdown', () => {
   test('HTML shows what a browser shows: blocks on lines of their own, no script, a pre’s spaces', () => {
     expect(markdownText('first<br>second', BASE).text).toBe('first\nsecond')
     expect(markdownText('<div>one</div><div>two</div>', BASE).text).toBe('one\ntwo')
-    expect(markdownText('<div>a<script>secret()</script><style>p{}</style></div>', BASE).text).toBe('a')
+    expect(markdownText('<div>a<script>secret()</script><style>p{}</style></div>', BASE).text).toBe(
+      'a'
+    )
     expect(markdownText('<pre>  indented</pre>', BASE).text).toBe('  indented')
   })
 

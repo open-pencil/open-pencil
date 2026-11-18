@@ -10,8 +10,10 @@ import {
   type PortalListRequest,
   type PortalTableFeatures
 } from '@/app/cloud-portal/list'
-import { portalForm } from '@/components/cloud-portal/ui'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
+import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 
@@ -21,21 +23,37 @@ import PortalTable from '../table/PortalTable.vue'
 import PortalTextCell from '../table/PortalTextCell.vue'
 import type { AccessRequest, AccessRequestStatus } from '../types'
 
-/** People asking to join a server that reviews new accounts, and the decisions made so far. */
-const { load, busy = null } = defineProps<{
+/**
+ * People asking to join a server that reviews new accounts, and the decisions made so far. The
+ * official server also offers to approve everyone waiting at once, each with the founder's letter.
+ */
+const {
+  load,
+  busy = null,
+  invitation = null,
+  inviting = false
+} = defineProps<{
   load: (
     request: PortalListRequest<AccessRequestStatus>
   ) => Promise<PortalListPage<AccessRequestStatus, AccessRequest>>
   /** The request a decision is being saved for. */
   busy?: string | null
+  /** Whether inviting everyone waiting is offered, or was just done. */
+  invitation?: 'offered' | 'sent' | null
+  inviting?: boolean
 }>()
 const emit = defineEmits<{
   approve: [id: string]
   reject: [id: string, note?: string]
   revoke: [id: string, note?: string]
+  invite: []
 }>()
+const confirmingInvite = ref(false)
+function invite() {
+  confirmingInvite.value = false
+  emit('invite')
+}
 
-const form = portalForm()
 const messages = useCloudPortalMessages()
 const name = (request: AccessRequest) => request.name ?? request.email
 const labels = computed(() => ({
@@ -64,17 +82,17 @@ const requests = usePortalList<AccessRequestStatus, AccessRequest>({
     column.display({
       id: 'reason',
       header: () => messages.value.columnReason,
-      meta: { class: 'hidden w-2/5 @2xl/table:table-cell' },
+      meta: { role: 'text' },
       cell: ({ row: { original: request } }) => h(PortalTextCell, { quote: request.reason })
     }),
     column.accessor('requestedOn', {
       header: () => messages.value.columnRequested,
-      meta: { class: 'hidden w-28 whitespace-nowrap text-muted @xl/table:table-cell' }
+      meta: { role: 'date' }
     }),
     column.display({
       id: 'decision',
       header: () => messages.value.columnDecision,
-      meta: { class: 'hidden @3xl/table:table-cell' },
+      meta: { role: 'tag' },
       cell: ({ row: { original: request } }) =>
         h(PortalTextCell, {
           text: request.reviewedBy
@@ -89,7 +107,7 @@ const requests = usePortalList<AccessRequestStatus, AccessRequest>({
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px whitespace-nowrap text-right', actions: true },
+      meta: { role: 'actions' },
       cell: ({ row: { original: request } }) =>
         h(PortalRequestActions, {
           request,
@@ -145,6 +163,18 @@ defineExpose({ reload: requests.reload })
 </script>
 
 <template>
+  <AppAlert v-if="invitation === 'sent'" tone="success" :heading="messages.invitationsSent" />
+  <AppAlert
+    v-else-if="invitation === 'offered'"
+    :heading="messages.inviteWaitingHeading"
+    :description="messages.inviteWaitingDescription"
+  >
+    <template #actions>
+      <AppButton size="sm" variant="outline" :loading="inviting" @click="confirmingInvite = true">
+        {{ messages.inviteWaiting }}
+      </AppButton>
+    </template>
+  </AppAlert>
   <PortalTable
     :list="requests"
     :label="messages.accessRequests"
@@ -163,14 +193,22 @@ defineExpose({ reload: requests.reload })
     tone="danger"
     :heading="confirmation?.heading ?? ''"
     :description="confirmation?.description"
-    :cancel-label="messages.cancel"
     :confirm-label="confirmation?.confirm ?? ''"
     @update:open="(open) => !open && (confirming = null)"
     @confirm="confirm"
   >
-    <div :class="[form.field(), 'mt-3']">
-      <label for="portal-review-note" :class="form.label()">{{ messages.reviewNote }}</label>
-      <AppTextarea id="portal-review-note" v-model="note" :rows="2" maxlength="1000" />
-    </div>
+    <AppFormField :label="messages.reviewNote">
+      <template #default="{ id }">
+        <AppTextarea :id="id" v-model="note" :rows="2" maxlength="1000" />
+      </template>
+    </AppFormField>
   </AppConfirmationDialog>
+  <AppConfirmationDialog
+    :open="confirmingInvite"
+    :heading="messages.inviteWaitingConfirmHeading"
+    :description="messages.inviteWaitingConfirmDescription"
+    :confirm-label="messages.inviteWaiting"
+    @update:open="(open) => (confirmingInvite = open)"
+    @confirm="invite"
+  />
 </template>

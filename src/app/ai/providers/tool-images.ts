@@ -1,6 +1,24 @@
 import type { LanguageModelMiddleware } from 'ai'
 import { partition } from 'es-toolkit'
 
+import type { AIProviderID } from '@open-pencil/core/constants'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
+/**
+ * Providers whose own documentation lists WebP image input, so tool images reach their models as
+ * WebP; see `development/ai-chat.md`.
+ */
+const WEBP_IMAGE_PROVIDERS: ReadonlySet<AIProviderID> = new Set([
+  'anthropic', // https://platform.claude.com/docs/en/build-with-claude/vision#supported-formats
+  'openai', // https://developers.openai.com/api/docs/guides/images-vision
+  'google', // https://ai.google.dev/gemini-api/docs/image-understanding
+  'deepseek' // https://api-docs.deepseek.com/guides/vision
+])
+
+export function providerTakesWebPImages(providerID: AIProviderID): boolean {
+  return WEBP_IMAGE_PROVIDERS.has(providerID)
+}
+
 type Prompt = Parameters<
   NonNullable<LanguageModelMiddleware['transformParams']>
 >[0]['params']['prompt']
@@ -35,7 +53,7 @@ export const toolImagesInUserMessage: LanguageModelMiddleware = {
         if (part.type !== 'tool-result' || part.output.type !== 'content') return part
         const [moved, rest] = partition(part.output.value, isImagePart)
         if (moved.length === 0) return part
-        images.push(
+        appendAll(images, [
           { type: 'text', text: `Images from the ${part.toolName} call ${part.toolCallId}:` },
           ...moved.map(({ data, mediaType, filename }) => ({
             type: 'file' as const,
@@ -43,7 +61,7 @@ export const toolImagesInUserMessage: LanguageModelMiddleware = {
             mediaType,
             filename
           }))
-        )
+        ])
         // Text alone goes as text; a content list would be sent as its JSON.
         const text = rest.flatMap((item) => (item.type === 'text' ? [item.text] : []))
         text.push('The images follow in the next user message.')

@@ -4,24 +4,38 @@ import type {
   CSSRuntime,
   DesignDocument,
   DesignElement,
-  DesignNode
+  DesignNode,
+  DesignViewport
 } from '../types'
+import { recordLayout } from './layout'
 
 export interface BrowserCSSRuntimeOptions {
   document?: Document
   sandbox?: 'shadow-root' | 'iframe'
 }
 
+/**
+ * The computed properties the importer reads, the same the HTML engine reports, so a page imports
+ * alike whichever runtime styles it.
+ */
 const DEFAULT_COMPUTED_PROPERTIES = [
+  'align-content',
   'align-items',
+  'align-self',
   'aspect-ratio',
+  'backdrop-filter',
+  'background-clip',
   'background-color',
   'background-image',
+  'background-position',
+  'background-repeat',
+  'background-size',
   'border-bottom-color',
-  'border-bottom-style',
   'border-bottom-left-radius',
   'border-bottom-right-radius',
+  'border-bottom-style',
   'border-bottom-width',
+  'border-collapse',
   'border-left-color',
   'border-left-style',
   'border-left-width',
@@ -29,51 +43,96 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'border-right-color',
   'border-right-style',
   'border-right-width',
+  'border-spacing',
   'border-top-color',
-  'border-top-style',
   'border-top-left-radius',
   'border-top-right-radius',
+  'border-top-style',
   'border-top-width',
+  'bottom',
   'box-shadow',
   'box-sizing',
+  'caption-side',
+  'clip-path',
   'color',
   'column-gap',
+  'content',
   'display',
-  'align-self',
-  'bottom',
+  'filter',
+  'flex-basis',
   'flex-direction',
+  'flex-grow',
+  'flex-shrink',
   'flex-wrap',
   'font-family',
   'font-size',
+  'font-stretch',
   'font-style',
   'font-weight',
   'gap',
+  'grid-column-end',
+  'grid-column-start',
+  'grid-row-end',
+  'grid-row-start',
+  'grid-template-columns',
+  'grid-template-rows',
   'height',
   'justify-content',
-  'letter-spacing',
+  'justify-items',
+  'justify-self',
   'left',
+  'letter-spacing',
   'line-height',
+  'list-style-type',
+  'margin-bottom',
+  'margin-left',
+  'margin-right',
+  'margin-top',
   'max-height',
   'max-width',
   'min-height',
   'min-width',
+  'mix-blend-mode',
   'object-fit',
+  'object-position',
   'opacity',
+  'outline-color',
+  'outline-offset',
+  'outline-style',
+  'outline-width',
   'overflow',
+  'overflow-x',
+  'overflow-y',
   'padding-bottom',
   'padding-left',
   'padding-right',
   'padding-top',
   'position',
   'right',
+  'rotate',
   'row-gap',
+  'scale',
   'text-align',
+  'text-decoration-color',
   'text-decoration-line',
+  'text-decoration-style',
+  'text-decoration-thickness',
+  'text-indent',
+  'text-overflow',
   'text-shadow',
   'text-transform',
+  'text-underline-offset',
+  'text-wrap-mode',
   'top',
+  'transform',
+  'transform-origin',
+  'translate',
+  'vertical-align',
+  'visibility',
   'white-space',
-  'width'
+  'width',
+  'word-spacing',
+  'z-index'
 ] as const
 
 function resolveBrowserDocument(documentOverride: Document | undefined): Document {
@@ -178,6 +237,64 @@ function computedStyleToRecord(
   return entries
 }
 
+const SIDE_MARGINS = ['margin-left', 'margin-right'] as const
+
+/**
+ * Gives `auto` side margins as `auto`: `getComputedStyle` reports the length layout resolved them
+ * to, which loses that they center or end-align the block. Their computed value says so where the
+ * browser has CSS Typed OM; elsewhere the lengths stay.
+ */
+function keepAutoSideMargins(element: Element, style: Record<string, string>): void {
+  if (!('computedStyleMap' in element)) return
+  const computed = element.computedStyleMap()
+  for (const side of SIDE_MARGINS) {
+    if (computed.get(side)?.toString() === 'auto') style[side] = 'auto'
+  }
+}
+
+/**
+ * How long layout waits for an image to load. An image without a size takes its own once loaded,
+ * moving what follows it, but a request that never ends must not hold an import forever.
+ */
+const IMAGE_LOAD_LIMIT_MS = 10_000
+
+/** Resolves once every image under `root` has loaded or failed, or the time limit passes. */
+function imagesLoaded(root: ParentNode, view: Window): Promise<void> {
+  const images = Array.from(root.querySelectorAll('img'))
+  // A lazy image outside the sandbox's view would never load, so every image loads now.
+  for (const image of images) {
+    if (image.getAttribute('loading') === 'lazy') image.setAttribute('loading', 'eager')
+  }
+  const pending = images.filter((image) => !image.complete)
+  if (pending.length === 0) return Promise.resolve()
+  const loaded = Promise.all(
+    pending.map(
+      (image) =>
+        new Promise<void>((resolve) => {
+          image.addEventListener('load', () => resolve(), { once: true })
+          image.addEventListener('error', () => resolve(), { once: true })
+        })
+    )
+  ).then(() => undefined)
+  const limit = new Promise<void>((resolve) => {
+    view.setTimeout(resolve, IMAGE_LOAD_LIMIT_MS)
+  })
+  return Promise.race([loaded, limit])
+}
+
+/**
+ * Waits until the document's web fonts and the content's images have loaded and a frame has laid
+ * it out with them, so lines break and boxes size as the page shows them, not in a fallback font
+ * or around an image that has not arrived.
+ */
+async function settle(browserDocument: Document, content: ParentNode): Promise<void> {
+  await requestFrame(browserDocument)
+  await browserDocument.fonts.ready
+  const view = browserDocument.defaultView
+  if (view) await imagesLoaded(content, view)
+  await requestFrame(browserDocument)
+}
+
 function requestFrame(browserDocument: Document): Promise<void> {
   const requestAnimationFrame = browserDocument.defaultView?.requestAnimationFrame
   if (!requestAnimationFrame) return Promise.resolve()
@@ -186,13 +303,16 @@ function requestFrame(browserDocument: Document): Promise<void> {
   })
 }
 
-function applySandboxHostStyle(element: HTMLElement): void {
+const DEFAULT_SANDBOX_WIDTH = 1000
+
+function applySandboxHostStyle(element: HTMLElement, viewport: DesignViewport | undefined): void {
   element.style.cssText = [
     'position: fixed',
     'left: -100000px',
     'top: 0',
-    'width: 1000px',
-    'height: auto',
+    `width: ${viewport?.width ?? DEFAULT_SANDBOX_WIDTH}px`,
+    viewport ? `height: ${viewport.height}px` : 'height: auto',
+    'border: 0',
     'visibility: hidden',
     'pointer-events: none',
     'contain: layout style paint'
@@ -206,7 +326,7 @@ async function computeStylesInShadowRoot(
   options: CSSComputeOptions
 ): Promise<DesignDocument> {
   const host = browserDocument.createElement('div')
-  applySandboxHostStyle(host)
+  applySandboxHostStyle(host, options.viewport)
 
   const shadow = host.attachShadow({ mode: 'open' })
   const style = browserDocument.createElement('style')
@@ -219,8 +339,11 @@ async function computeStylesInShadowRoot(
   browserDocument.body.append(host)
 
   try {
-    await requestFrame(browserDocument)
-    return copyComputedStyles(designDocument, content, options)
+    await settle(browserDocument, shadow)
+    return copyComputedStyles(designDocument, content, options, {
+      origin: content,
+      styleRoot: shadow
+    })
   } finally {
     host.remove()
   }
@@ -233,7 +356,7 @@ async function computeStylesInIframe(
   options: CSSComputeOptions
 ): Promise<DesignDocument> {
   const iframe = browserDocument.createElement('iframe')
-  applySandboxHostStyle(iframe)
+  applySandboxHostStyle(iframe, options.viewport)
   browserDocument.body.append(iframe)
 
   try {
@@ -247,21 +370,33 @@ async function computeStylesInIframe(
     style.textContent = cssText
     iframeDocument.head.append(style)
 
-    const content = iframeDocument.createElement('div')
+    // The document's top-level nodes go straight into the body, so `body` rules and selectors
+    // such as `body > header` apply to them as they do on the page they came from.
+    const content = iframeDocument.body
     content.innerHTML = serializeHTML(designDocument)
-    iframeDocument.body.append(content)
 
-    await requestFrame(iframeDocument)
-    return copyComputedStyles(designDocument, content, options)
+    await settle(iframeDocument, iframeDocument)
+    return copyComputedStyles(designDocument, content, options, {
+      origin: iframeDocument.documentElement,
+      styleRoot: iframeDocument.head
+    })
   } finally {
     iframe.remove()
   }
 }
 
+interface LayoutFrame {
+  /** The element whose top-left the recorded boxes are relative to. */
+  origin: Element
+  /** Where the stylesheet that switches transforms off goes while boxes are read. */
+  styleRoot: Node & ParentNode
+}
+
 function copyComputedStyles(
   designDocument: DesignDocument,
   content: Element,
-  options: CSSComputeOptions
+  options: CSSComputeOptions,
+  frame: LayoutFrame
 ): DesignDocument {
   const view = content.ownerDocument.defaultView
   if (!view) throw new TypeError('Browser CSS runtime requires getComputedStyle')
@@ -275,8 +410,12 @@ function copyComputedStyles(
   }
 
   for (const [designElement, domElement] of pairs) {
-    designElement.computedStyle = computedStyleToRecord(view.getComputedStyle(domElement), options)
+    const style = computedStyleToRecord(view.getComputedStyle(domElement), options)
+    keepAutoSideMargins(domElement, style)
+    designElement.computedStyle = style
   }
+  // After the styles are copied: reading layout switches transforms off for a moment.
+  if (options.layout) recordLayout(pairs, frame.origin, frame.styleRoot)
 
   return nextDocument
 }

@@ -2,7 +2,7 @@
 import { useElementSize } from '@vueuse/core'
 import { onScopeDispose, useTemplateRef, watch } from 'vue'
 
-import { shaderFrames } from '#vue/canvas/surface/shader/frames'
+import { useShaderFrames } from '#vue/canvas/surface/shader/frames'
 import { useEditor } from '#vue/editor/context'
 
 /**
@@ -20,7 +20,8 @@ const { image, frame } = defineProps<{
 const host = useTemplateRef<HTMLElement>('host')
 const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
 const { width, height } = useElementSize(host)
-const frames = shaderFrames(useEditor())
+// The frames of the canvas this island is drawn over, or of its editor outside any canvas.
+const frames = useShaderFrames(useEditor())
 
 function draw(source: CanvasImageSource) {
   const target = canvas.value

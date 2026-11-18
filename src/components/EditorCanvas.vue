@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import {
-  ContextMenuPortal,
-  ContextMenuRoot,
-  ContextMenuTrigger,
-  PopoverContent,
-  PopoverPortal,
-  PopoverRoot
-} from 'reka-ui'
+import { ContextMenuPortal, ContextMenuTrigger, PopoverContent, PopoverPortal } from 'reka-ui'
 import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watch, type Component } from 'vue'
 import IconLucideAlignHorizontalSpaceBetween from '~icons/lucide/align-horizontal-space-between'
 import IconLucideAlignVerticalSpaceBetween from '~icons/lucide/align-vertical-space-between'
@@ -25,9 +18,10 @@ import {
   SECTION_TITLE_GAP,
   SECTION_TITLE_HEIGHT
 } from '@open-pencil/core/constants'
-import type { ViewportTransform } from '@open-pencil/core/geometry'
+import { screenToWorld, worldToScreen, type ViewportTransform } from '@open-pencil/core/geometry'
 import { PlayIslands, useCanvasInput } from '@open-pencil/vue/canvas'
 import { useCanvasDrop } from '@open-pencil/vue/canvas/drop'
+import { useEyedropperLoupe } from '@open-pencil/vue/canvas/eyedropper'
 import { useCanvasIssueMarkers } from '@open-pencil/vue/canvas/issues'
 import { useCanvasVirtualReference } from '@open-pencil/vue/canvas/overlays'
 import { useCanvasStatusLabels } from '@open-pencil/vue/canvas/statuses'
@@ -44,6 +38,7 @@ import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { appPreferences } from '@/app/settings/preferences/store'
+import CanvasEyedropperLoupe from '@/components/canvas/CanvasEyedropperLoupe.vue'
 import CommentsLayer from '@/components/comments/CommentsLayer.vue'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
 import SelectionToolbar from '@/components/figjam/SelectionToolbar.vue'
@@ -51,6 +46,8 @@ import PreparationOverlay from '@/components/preparation/canvas/PreparationOverl
 import FollowFrame from '@/components/presence/FollowFrame.vue'
 import StatusLabelMenu from '@/components/statuses/StatusLabelMenu.vue'
 import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
 
@@ -88,7 +85,6 @@ const onViewportResize = (width: number, height: number) => {
 }
 
 const { updateCursor } = useCanvasCollaborationAwareness(store)
-const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
 
 const shouldSuspendRender = () =>
   store.state.preparation !== null &&
@@ -123,13 +119,12 @@ useCanvas(sceneCanvasRef, store, {
   showRulers: false,
   getRenderState,
   onViewportResize,
-  onPresented: ({ sceneVersion }) =>
-    store.preparationController.acknowledgePresentation(sceneVersion),
   onPresentation: (colorSpace) => {
     store.state.canvasPresentation = colorSpace
   }
 })
 const {
+  getRenderer: getOverlayRenderer,
   hitTestSectionTitle,
   hitTestComponentLabel,
   hitTestFrameTitle,
@@ -152,6 +147,7 @@ const {
   getRenderState,
   onViewportResize
 })
+const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store, getOverlayRenderer)
 const {
   drag,
   cursorOverride,
@@ -227,13 +223,12 @@ const canvasLabelEditAnchor = computed(() => {
   if (!node) return null
   const origin = store.graph.getAbsolutePosition(node.id)
   // The view the reference projects through, so screen-sized offsets match the drawn frame.
-  const { zoom, panX, panY } = overlayView.value
+  const view = overlayView.value
+  const { zoom } = view
   const kind = canvasLabelEdit.value?.kind
   // The canvas starts an upright label on a whole screen pixel; the field starts on the same one.
-  const abs = {
-    x: (Math.round(origin.x * zoom + panX) - panX) / zoom,
-    y: (Math.round(origin.y * zoom + panY) - panY) / zoom
-  }
+  const screen = worldToScreen(view, origin)
+  const abs = screenToWorld(view, { x: Math.round(screen.x), y: Math.round(screen.y) })
   // A component's name starts after its diamond, which keeps its screen size at any zoom.
   if (kind === 'component-label')
     return { x: abs.x + (COMPONENT_LABEL_ICON_SIZE + COMPONENT_LABEL_ICON_GAP) / zoom, y: abs.y }
@@ -288,19 +283,25 @@ const valueEditorIcon = computed(() => {
     : IconLucideAlignHorizontalSpaceBetween
 })
 
+const eyedropperLoupe = useEyedropperLoupe(store, canvasRef, () => isActivePane.value)
+
+// The eyedropper's loupe stands in for the cursor while it shows.
 const cursor = computed(() =>
-  toolCursor(
-    store.state.activeTool,
-    issueMarkerCursor.value ?? statusLabelCursor.value ?? cursorOverride.value
-  )
+  eyedropperLoupe.visible.value
+    ? 'none'
+    : toolCursor(
+        store.state.activeTool,
+        issueMarkerCursor.value ?? statusLabelCursor.value ?? cursorOverride.value
+      )
 )
 </script>
 
 <template>
-  <ContextMenuRoot :modal="false">
+  <AppContextMenuRoot :modal="false">
     <ContextMenuTrigger as-child @contextmenu.capture="selectAtContextPoint">
       <div
         ref="area"
+        dir="ltr"
         data-test-id="canvas-area"
         :data-pane-id="paneId"
         :data-active-pane="isActivePane ? 'true' : 'false'"
@@ -328,6 +329,7 @@ const cursor = computed(() =>
         <PlayIslands :view="paneView" :drawn="drawnView" :canvas="canvasRef" />
         <AppDropOverlay :visible="isDraggingOver" />
         <IssueMarkerTooltip :marker="hoveredIssueMarker" :canvas="canvasRef" />
+        <CanvasEyedropperLoupe :loupe="eyedropperLoupe" />
         <StatusLabelMenu
           :label="openStatusLabel"
           :canvas="canvasRef"
@@ -348,7 +350,7 @@ const cursor = computed(() =>
           :hidden="!!drag || !!canvasLabelEdit"
           @rename-section="renameSelectedSection"
         />
-        <PopoverRoot :open="!!autoLayoutValueEdit">
+        <AppPopoverRoot :open="!!autoLayoutValueEdit">
           <PopoverPortal>
             <PopoverContent
               v-if="autoLayoutValueEdit && valueEditorReference"
@@ -383,7 +385,7 @@ const cursor = computed(() =>
               </NumberField>
             </PopoverContent>
           </PopoverPortal>
-        </PopoverRoot>
+        </AppPopoverRoot>
         <FollowFrame
           v-if="isActivePane && followView.label.value"
           :followed="followView.label.value"
@@ -400,5 +402,5 @@ const cursor = computed(() =>
     <ContextMenuPortal>
       <CanvasMenu />
     </ContextMenuPortal>
-  </ContextMenuRoot>
+  </AppContextMenuRoot>
 </template>

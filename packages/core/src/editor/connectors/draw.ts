@@ -7,7 +7,7 @@ import {
   type AttachModifiers,
   type ConnectorTarget
 } from '#core/editor/connectors/attach'
-import type { NodePreview } from '#core/editor/node-preview'
+import type { NodePreview } from '#core/editor/nodes/preview'
 import type { EditorContext } from '#core/editor/types'
 import { pushCreatedSubtreesUndo } from '#core/editor/undo'
 

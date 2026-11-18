@@ -3,6 +3,14 @@ import valueParser from 'postcss-value-parser'
 import { tryParseColor } from '../color'
 import type { Color } from '../primitives'
 
+/** A CSS dimension's number and lowercase unit, or null. */
+export function dimension(value: string): { number: number; unit: string } | null {
+  const parsed = valueParser.unit(value)
+  if (!parsed) return null
+  const number = Number(parsed.number)
+  return Number.isFinite(number) ? { number, unit: parsed.unit.toLowerCase() } : null
+}
+
 /** Pixels in a rem, as browsers use by default. */
 const ROOT_FONT_SIZE = 16
 

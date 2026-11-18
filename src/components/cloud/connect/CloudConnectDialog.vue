@@ -107,9 +107,13 @@ const errors = computed<Record<CloudConnectError, { heading: string; description
       heading: t.value.errorNotCloudHeading,
       description: t.value.errorNotCloudDescription
     },
-    outdated: {
-      heading: t.value.errorOutdatedHeading,
-      description: t.value.errorOutdatedDescription
+    'server-outdated': {
+      heading: t.value.errorServerOutdatedHeading,
+      description: t.value.errorServerOutdatedDescription
+    },
+    'editor-outdated': {
+      heading: t.value.errorEditorOutdatedHeading,
+      description: t.value.errorEditorOutdatedDescription
     },
     denied: { heading: t.value.errorDeniedHeading, description: t.value.errorDeniedDescription },
     expired: { heading: t.value.errorExpiredHeading, description: t.value.errorExpiredDescription },
@@ -170,7 +174,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
 
 <template>
   <AppDialogRoot v-model:open="open" size="sm">
-    <AppDialogHeader :heading="heading" :description="description" :close-label="common.close" />
+    <AppDialogHeader :heading="heading" :description="description" />
 
     <AppDialogBody v-if="step === 'server' || step === 'checking'">
       <RadioGroupRoot v-if="choosing" v-model="kind" :aria-label="t.server" :class="ui.choices()">
@@ -257,7 +261,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
             {{ methodLabels[method] }}
             <template #trailing>
               <icon-lucide-arrow-up-right v-if="desktop" class="size-3.5" />
-              <icon-lucide-chevron-right v-else class="size-3.5" />
+              <icon-lucide-chevron-right data-direction="reading" v-else class="size-3.5" />
             </template>
           </AppActionRow>
         </div>
@@ -322,7 +326,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
           :copy-label="t.copyCode"
           :copied-label="common.copied"
           look="command"
-          :ui="{ root: 'w-full py-3 pl-4', value: 'flex-1 text-center text-lg tracking-[0.3em]' }"
+          :ui="{ root: 'w-full py-3 ps-4', value: 'flex-1 text-center text-lg tracking-[0.3em]' }"
         />
         <p :class="ui.deviceStatus()" role="status">
           <icon-lucide-loader-circle :class="ui.spinner()" aria-hidden="true" />
@@ -331,7 +335,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
       </div>
     </AppDialogBody>
 
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
+    <AppDialogFooter>
       <AppButton v-if="canGoBack" :disabled="busy" @click="emit('back')">
         {{ common.back }}
       </AppButton>

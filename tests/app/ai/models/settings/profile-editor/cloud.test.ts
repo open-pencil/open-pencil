@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { effectScope, nextTick, reactive, ref, type EffectScope } from 'vue'
 
-import type { AICatalog } from '@open-pencil/cloud/contract'
+import type { ServiceCatalog } from '@open-pencil/cloud/contract'
 
 import {
   useCloudModelSelection,
@@ -17,7 +17,7 @@ import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 const ALICE = 'home:alice'
 const BOB = 'home:bob'
 
-function catalog(modelID: string): AICatalog {
+function catalog(modelID: string): ServiceCatalog {
   return {
     defaultModelID: modelID,
     models: [
@@ -37,7 +37,7 @@ function catalog(modelID: string): AICatalog {
 function homeCloud() {
   const identity = ref<string | null>(ALICE)
   const workspaceAnswers: Deferred<CloudAIWorkspace[]>[] = []
-  const catalogAnswers: Deferred<AICatalog>[] = []
+  const catalogAnswers: Deferred<ServiceCatalog>[] = []
   const source: CloudModelSource = {
     identity,
     workspaces: () => {
@@ -47,7 +47,7 @@ function homeCloud() {
     },
     client: () => ({
       catalog: () => {
-        const next = createDeferred<AICatalog>()
+        const next = createDeferred<ServiceCatalog>()
         catalogAnswers.push(next)
         return next.promise
       }

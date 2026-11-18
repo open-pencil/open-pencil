@@ -7,7 +7,7 @@ import type {
   PreparedImageAttachment
 } from '@/app/ai/attachment/image/types'
 import { IMAGE_ATTACHMENT_MEDIA_TYPES } from '@/app/ai/attachment/image/types'
-import { boundedImageScale } from '@/app/ai/tools/vision/inspect'
+import { boundedImageScale } from '@/app/ai/tools/vision/render'
 
 const MAX_IMAGE_FILE_BYTES = 20 * 1024 * 1024
 const MAX_IMAGE_PIXELS = 40_000_000

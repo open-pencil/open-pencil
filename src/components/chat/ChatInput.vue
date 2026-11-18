@@ -1,21 +1,24 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { providerKind } from '@open-pencil/core/constants'
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { agentModeCategories } from '@/app/ai/agents/acp/options'
 import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { MAX_IMAGE_ATTACHMENTS } from '@/app/ai/attachment/image/types'
 import { takeBackMessages } from '@/app/ai/chat/queue'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
+import { chatAgentOptions } from '@/app/ai/chat/thinking'
 import { useAIChat } from '@/app/ai/chat/use'
 import { designModelProfile } from '@/app/ai/models'
-import { openSettingsDialog } from '@/app/settings/dialog'
-import ChatCreditBalance from '@/components/chat/ChatCreditBalance.vue'
 import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
 import ChatThinkingSelect from '@/components/chat/ChatThinkingSelect.vue'
 import { useComposerCompletions } from '@/components/chat/composer/useComposerCompletions'
+import ChatAgentAccess from '@/components/chat/input/ChatAgentAccess.vue'
+import ChatAgentModelMenu from '@/components/chat/input/ChatAgentModelMenu.vue'
+import ChatAgentModeSelect from '@/components/chat/input/ChatAgentModeSelect.vue'
 import { useAttachmentDrafts } from '@/components/chat/input/useAttachments'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
@@ -83,8 +86,6 @@ function restoreDraft(submission: ChatSubmission): void {
   else for (const image of submission.images) revokeImagePreviewURL(image.previewURL)
 }
 
-/** A reply is on its way, so the credit balance waits to update until it ends. */
-const replying = computed(() => status === 'streaming' || status === 'submitted')
 /** Why images dropped now would not be attached, or null when they would. */
 const dropRefusal = computed(() => {
   if (disabled) return ai.value.dropImagesAfterReply
@@ -105,14 +106,12 @@ function dropFiles(files: File[]): void {
 
 defineExpose({ restoreDraft, dropFiles })
 
-const isAgentProvider = computed(
-  () => providerID.value.startsWith('acp:') || providerID.value === 'harness:pi'
-)
-const agentName = computed(() => {
-  if (providerID.value === 'harness:pi') return 'Pi'
-  const agentId = providerID.value.replace('acp:', '')
-  return ACP_AGENTS.find((a) => a.id === agentId)?.name ?? agentId
-})
+/** A coding agent sets its own thinking effort, so the composer offers no direct-model levels. */
+const isAgentProvider = computed(() => providerKind(providerID.value) !== 'api')
+/** An ACP agent, whose mode, model, and thinking level the composer offers by its own names. */
+const isACPProvider = computed(() => providerKind(providerID.value) === 'acp')
+/** Which of the agent's options is its mode, and which is access it keeps apart from it. */
+const agentCategories = computed(() => agentModeCategories(chatAgentOptions.value ?? {}))
 const isCustomProvider = computed(
   () => providerID.value === 'openai-compatible' || providerID.value === 'anthropic-compatible'
 )
@@ -144,7 +143,6 @@ const selectedProfileName = computed(
     @stop="emit('stop')"
     @interrupt="emit('interrupt')"
     @paste="handlePaste"
-    @settings="openSettingsDialog('ai')"
   >
     <template v-if="images.length" #attachment>
       <div class="flex flex-wrap gap-1.5">
@@ -160,7 +158,7 @@ const selectedProfileName = computed(
             height="40"
             class="size-10 shrink-0 rounded-md border border-border object-cover"
           />
-          <span class="min-w-0 flex-1 truncate text-[10px] text-surface">
+          <span class="min-w-0 flex-1 truncate text-3xs text-surface">
             {{ image.file.name }}
           </span>
           <IconButton
@@ -186,7 +184,6 @@ const selectedProfileName = computed(
         :label="ai.mentionSelection"
         size="sm"
         :disabled="disabled || !canMentionSelection"
-        data-slot="chat-mention-selection"
         @click="composer?.insert(selectionMentions())"
       >
         <icon-lucide-mouse-pointer-2 class="size-4" />
@@ -201,12 +198,12 @@ const selectedProfileName = computed(
       </IconButton>
     </template>
     <template #model>
-      <div class="@container flex min-w-0 items-center">
-        <template v-if="isAgentProvider">
-          <div class="flex min-w-0 items-center gap-1 px-1.5 text-[10px] text-muted">
-            <icon-lucide-bot class="size-3 shrink-0" />
-            <span class="truncate">{{ agentName }}</span>
-          </div>
+      <div class="@container flex min-w-0 items-center gap-0.5">
+        <template v-if="isACPProvider">
+          <ChatAgentModeSelect v-if="agentCategories.mode" :category="agentCategories.mode" />
+          <ChatAgentAccess v-if="agentCategories.access" :category="agentCategories.access" />
+          <span class="flex-1" />
+          <ChatAgentModelMenu :access="agentCategories.access" />
         </template>
         <template v-else>
           <ChatProfileSelect>
@@ -214,8 +211,7 @@ const selectedProfileName = computed(
               <span class="min-w-0 truncate">{{ selectedProfileName }}</span>
             </template>
           </ChatProfileSelect>
-          <ChatThinkingSelect />
-          <ChatCreditBalance :replying="replying" />
+          <ChatThinkingSelect v-if="!isAgentProvider" />
         </template>
       </div>
     </template>

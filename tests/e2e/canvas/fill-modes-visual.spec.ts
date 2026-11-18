@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import type * as FigNodeChange from '@open-pencil/fig/node-change'
 import type { Fill } from '@open-pencil/scene-graph'
 import { shaderPresetKey } from '@open-pencil/scene-graph/shaders'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { readScenePixels } from '#tests/helpers/canvas/pixels'
@@ -16,7 +17,7 @@ async function expectCanvas(name: string) {
 }
 
 test('FIT avatar preserves the full clipboard fixture image', async () => {
-  const bytes = await readFile('tests/fixtures/vectorize/pilot_avatar.png')
+  const bytes = await readFile(repoPath('tests/fixtures/vectorize/pilot_avatar.png'))
   await editor.page.evaluate(
     (data) => {
       const store = window.openPencil?.getStore?.()

@@ -1,9 +1,10 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { compositeOver } from '@open-pencil/scene-graph/color'
+import { figJamSectionTitleColors } from '@open-pencil/scene-graph/figjam'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import type { RotationPreview, SceneGeometry } from '#core/geometry'
 
 import { canvasLabelForeground } from './color'
@@ -11,7 +12,22 @@ import type { LabelHitOptions } from './hit-test'
 import type { LabelLayout, LabelTextMetrics } from './layout'
 import { frameLabelPlacement } from './transform'
 
+/** FigJam's title pill takes a darker edge of its own colour. */
+const FIGJAM_TITLE_EDGE = 0.2
+
 export function sectionLabelColors(r: SkiaRenderer, graph: SceneGraph, node: SceneNode) {
+  const figJam = r.sectionTitles === 'outline' ? figJamSectionTitleColors(node) : null
+  if (figJam) {
+    const text = figJam.lightText ? 1 : 0
+    const outline = node.strokes[figJam.strokeIndex]
+    return {
+      // The outline's colour as drawn, in the canvas's colour space; the pill itself is opaque.
+      background: { ...r.resolveStrokeColor(outline, figJam.strokeIndex, node, graph), a: 1 },
+      border: r.ck.Color4f(0, 0, 0, FIGJAM_TITLE_EDGE),
+      hover: r.ck.Color4f(text, text, text, 0.08),
+      foreground: r.ck.Color4f(text, text, text, 1)
+    }
+  }
   const background: Color =
     node.fills.length > 0 && node.fills[0].visible
       ? r.resolveFillColor(node.fills[0], 0, node, graph)

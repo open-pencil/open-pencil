@@ -5,6 +5,7 @@ import { useId } from 'vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
+import { focusStyles } from '@/theme/focus/styles'
 
 import type { CapabilityGroup, CapabilityItem } from './types'
 
@@ -67,24 +68,28 @@ function isOpen(group: CapabilityGroup) {
             />
           </span>
           <CollapsibleTrigger
-            class="group flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+            :class="[
+              'group flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-start',
+              focusStyles.ring
+            ]"
           >
             <icon-lucide-chevron-right
-              class="size-3 shrink-0 text-muted transition-transform group-data-[state=open]:rotate-90 motion-reduce:transition-none"
+              data-direction="reading"
+              class="size-3 shrink-0 text-muted transition-transform group-data-[state=open]:rotate-90 rtl:group-data-[state=open]:-rotate-90 motion-reduce:transition-none"
               aria-hidden="true"
             />
             <span class="shrink-0 font-semibold text-surface">{{ group.label }}</span>
-            <code v-if="group.detail" class="min-w-0 truncate text-[11px] text-muted">{{
+            <code v-if="group.detail" class="min-w-0 truncate text-2xs text-muted">{{
               group.detail
             }}</code>
           </CollapsibleTrigger>
-          <span v-if="group.count" class="shrink-0 text-[11px] text-muted">{{ group.count }}</span>
+          <span v-if="group.count" class="shrink-0 text-2xs text-muted">{{ group.count }}</span>
           <slot name="group-actions" :group="group" />
         </div>
         <CollapsibleContent :class="collapsibleContentMotion">
           <p
             v-if="!group.items.length"
-            class="border-t border-border py-2 pr-3 pl-13 text-[11px] text-muted"
+            class="border-t border-border py-2 pe-3 ps-13 text-2xs text-muted"
           >
             {{ group.empty }}
           </p>
@@ -95,7 +100,7 @@ function isOpen(group: CapabilityGroup) {
               class="flex min-h-8 items-stretch border-t border-border transition-colors hover:bg-hover"
               :data-item="item.name"
             >
-              <span class="flex shrink-0 items-center py-1 pr-3 pl-3">
+              <span class="flex shrink-0 items-center py-1 pe-3 ps-3">
                 <AppSwitch
                   :id="`${baseId}-${group.key}-${index}`"
                   :model-value="item.enabled"
@@ -112,25 +117,26 @@ function isOpen(group: CapabilityGroup) {
                     ? { type: 'button', 'aria-label': openLabel(item) }
                     : { for: `${baseId}-${group.key}-${index}` }
                 "
-                class="flex min-w-0 flex-1 items-center gap-3 py-1 pr-3 text-left @max-md/capabilities:flex-wrap"
+                class="flex min-w-0 flex-1 items-center gap-3 py-1 pe-3 text-start @max-md/capabilities:flex-wrap"
                 :class="item.locked && !openLabel ? 'cursor-default' : 'cursor-pointer'"
                 @click="openLabel && emit('open', group.key, item.key)"
               >
                 <code
+                  dir="ltr"
                   class="w-40 shrink-0 truncate font-medium text-surface @max-md/capabilities:flex-1"
                   >{{ item.name }}</code
                 >
                 <!-- One line each, so text cut off is a hover away. -->
                 <Tip :label="item.description" as-child truncated>
                   <span
+                    dir="auto"
                     class="min-w-0 flex-1 truncate text-muted @max-md/capabilities:order-last @max-md/capabilities:basis-full"
                     >{{ item.description }}</span
                   >
                 </Tip>
-                <span v-if="item.note" class="shrink-0 text-[11px] text-warning">{{
-                  item.note
-                }}</span>
+                <span v-if="item.note" class="shrink-0 text-2xs text-warning">{{ item.note }}</span>
                 <icon-lucide-chevron-right
+                  data-direction="reading"
                   v-if="openLabel"
                   class="size-3.5 shrink-0 text-muted"
                   aria-hidden="true"

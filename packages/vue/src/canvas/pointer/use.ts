@@ -4,7 +4,7 @@ import type { Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { canvasToLocalPoint, getPointerCoords, hitTestLayerAt } from '#vue/shared/input/geometry'
-import type { HitTestFns } from '#vue/shared/input/select'
+import type { HitTestFns } from '#vue/shared/input/select/press'
 
 export function createCanvasPointer(
   canvasRef: Ref<HTMLCanvasElement | null>,

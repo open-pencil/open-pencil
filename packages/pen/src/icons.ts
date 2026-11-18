@@ -135,6 +135,15 @@ function showsReplacedGlyph(graph: SceneGraph, copy: SceneNode, sourceId: string
     .some((glyph) => !glyph.componentId || !sourceChildIds.includes(glyph.componentId))
 }
 
+function removeGlyphs(graph: SceneGraph, icon: SceneNode): void {
+  for (const childId of icon.childIds) {
+    graph.deleteNode(childId)
+  }
+  graph.updateNode(icon.id, {
+    instanceOverrides: { self: icon.instanceOverrides.self, descendants: new Map() }
+  })
+}
+
 /**
  * Makes the icon instance `node` show its icon: the icon component for its glyph and size,
  * swapped in when an override changed either, with the glyph in the icon's fill colour.
@@ -149,6 +158,7 @@ export function useIconComponent(node: SceneNode, pen: PenNode, build: Build): v
     graph.updateNode(node.id, { componentId })
     populateInstanceChildren(graph, node.id, componentId)
   } else if (instanceMainComponent(graph, node)?.id !== componentId) {
+    removeGlyphs(graph, node)
     swapInstanceComponent(graph, node.id, componentId, { keepName: true })
     // The layer keeps its own name rather than the icon's, which a saved file keeps as an override.
     recordInstanceOverride(graph, node.id, ['name'])

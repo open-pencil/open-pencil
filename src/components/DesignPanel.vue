@@ -45,6 +45,7 @@ import MaskSection from './properties/MaskSection.vue'
 import PageSection from './properties/PageSection.vue'
 import RetainedPanel from './properties/panel/RetainedPanel.vue'
 import PositionSection from './properties/PositionSection.vue'
+import ScaleSection from './properties/ScaleSection.vue'
 import SelectionColorsSection from './properties/selection/SelectionColorsSection.vue'
 import SelectionLayoutSection from './properties/selection/SelectionLayoutSection.vue'
 import SelectionActionsControl from './properties/SelectionActionsControl.vue'
@@ -104,10 +105,7 @@ const { panels } = useI18n()
 
 <template>
   <!-- Frame tool presets replace selection properties, matching Figma. -->
-  <div
-    v-if="activeTool === 'FRAME'"
-    class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
-  >
+  <div v-if="activeTool === 'FRAME'" class="flex-1 overflow-x-hidden overflow-y-auto pb-4">
     <FramePresetsSection />
   </div>
 
@@ -115,7 +113,7 @@ const { panels } = useI18n()
   <div
     v-else-if="multiCount > 1"
     data-test-id="design-panel-multi"
-    class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
+    class="flex-1 overflow-x-hidden overflow-y-auto pb-4"
   >
     <PanelHeader>
       <template #icon>
@@ -133,6 +131,7 @@ const { panels } = useI18n()
     <PositionSection />
     <ConstraintsSection />
     <SelectionLayoutSection />
+    <ScaleSection v-if="activeTool === 'SCALE'" />
     <template v-if="freeStyle">
       <AppearanceSection />
       <TypographySection />
@@ -150,7 +149,7 @@ const { panels } = useI18n()
     <div
       v-if="node"
       data-test-id="design-panel-single"
-      class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
+      class="flex-1 overflow-x-hidden overflow-y-auto pb-4"
     >
       <PanelHeader :component="isComponentType">
         <template #icon>
@@ -239,6 +238,7 @@ const { panels } = useI18n()
         <!-- A sticky note's size follows its text and its scale; Figma leaves W and H read-only. -->
         <LayoutSection v-if="layerResizes(node)" />
       </template>
+      <ScaleSection v-if="activeTool === 'SCALE'" />
       <template v-if="freeStyle">
         <AppearanceSection />
         <MaskSection />
@@ -257,7 +257,7 @@ const { panels } = useI18n()
   <div
     v-if="activeTool !== 'FRAME' && multiCount <= 1 && !node"
     data-test-id="design-panel-empty"
-    class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
+    class="flex-1 overflow-x-hidden overflow-y-auto pb-4"
   >
     <PageSection />
     <VariablesSection @open-dialog="openVariablesDialog(store)" />

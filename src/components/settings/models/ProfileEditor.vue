@@ -54,7 +54,13 @@ const {
   cloudWorkspaces,
   cloudState,
   retryCloud,
+  agentModelState,
+  retryAgentModels,
+  supportsCustomModel,
   supportsThinking,
+  agentOptionControls,
+  agentOptionValue,
+  setAgentOption,
   modelOptions,
   selectedModelValue,
   knownModel,
@@ -75,9 +81,11 @@ const {
 const pi = usePiSetup(isHarness)
 const codingAgent = useCodingAgentSetup(() => draft.providerID)
 const signIn = useProfileSignIn(keyInput)
-const customModelPlaceholder = computed(() =>
-  isHarness.value ? (pi.state.value?.defaultModel ?? 'provider/model') : 'e.g. llama-3.3-70b'
-)
+const customModelPlaceholder = computed(() => {
+  if (isACP.value) return undefined
+  if (isHarness.value) return pi.state.value?.defaultModel ?? 'provider/model'
+  return 'e.g. llama-3.3-70b'
+})
 const feedback = useModelProfileFeedback(profile, keyInput, settings)
 const { errors: fieldErrors } = feedback
 const busy = computed(() => saving.value || connectionTestStatus.value === 'testing')
@@ -90,6 +98,10 @@ const cloudNotice = computed(() => {
   if (cloudState.value === 'no-workspace') return ai.value.cloudAINoWorkspace
   if (cloudState.value === 'catalog-failed') return ai.value.cloudAICatalogFailed
   return null
+})
+const agentModelHint = computed(() => {
+  if (agentModelState.value === 'loading') return ai.value.agentModelsLoading
+  return agentModelState.value === 'failed' ? ai.value.agentModelsFailed : undefined
 })
 useSettingsFormGuard({
   dirty,
@@ -235,14 +247,14 @@ async function remove() {
             />
           </ProviderSettingsField>
 
-          <template v-if="!isACP">
-            <ProviderSettingsField
-              v-if="modelOptions.length && !isHarness"
-              v-slot="{ control }"
-              :label="ai.modelID"
-              :error="fieldErrors.modelID"
-              @blur="feedback.blur('modelID')"
-            >
+          <ProviderSettingsField
+            v-if="modelOptions.length && !isHarness"
+            :label="ai.modelID"
+            :hint="agentModelHint"
+            :error="fieldErrors.modelID"
+            @blur="feedback.blur('modelID')"
+          >
+            <template #default="{ control }">
               <AppCombobox
                 v-bind="control"
                 :model-value="selectedModelValue"
@@ -253,25 +265,30 @@ async function remove() {
                 :empty-label="common.noResults"
                 @update:model-value="profile.updateModel(String($event))"
               />
-            </ProviderSettingsField>
+            </template>
+            <template v-if="agentModelState === 'failed'" #hint>
+              <AppButton variant="outline" size="xs" class="self-start" @click="retryAgentModels">
+                {{ ai.retryRequest }}
+              </AppButton>
+            </template>
+          </ProviderSettingsField>
 
-            <ProviderSettingsField
-              v-if="providerDef.supportsCustomModel && selectedModelValue === CUSTOM_MODEL_VALUE"
-              v-slot="{ control }"
-              :label="ai.customModelID"
-              :hint="isHarness ? ai.piModelHint : settings.modelIDHint"
-              :error="fieldErrors.customModelID"
-              @blur="feedback.blur('customModelID')"
-            >
-              <ProviderSettingsInput
-                v-bind="control"
-                v-model="draft.customModelID"
-                :aria-label="ai.customModelID"
-                data-test-id="provider-settings-custom-model"
-                :placeholder="customModelPlaceholder"
-              />
-            </ProviderSettingsField>
-          </template>
+          <ProviderSettingsField
+            v-if="supportsCustomModel && selectedModelValue === CUSTOM_MODEL_VALUE"
+            v-slot="{ control }"
+            :label="ai.customModelID"
+            :hint="isHarness ? ai.piModelHint : settings.modelIDHint"
+            :error="fieldErrors.customModelID"
+            @blur="feedback.blur('customModelID')"
+          >
+            <ProviderSettingsInput
+              v-bind="control"
+              v-model="draft.customModelID"
+              :aria-label="ai.customModelID"
+              data-test-id="provider-settings-custom-model"
+              :placeholder="customModelPlaceholder"
+            />
+          </ProviderSettingsField>
         </SettingsSection>
 
         <template v-if="!isACP">
@@ -347,28 +364,34 @@ async function remove() {
               @test="testConnection"
             />
           </SettingsSection>
-
-          <ProfileCapabilities
-            v-model:tools="toolsEnabled"
-            v-model:vision="visionEnabled"
-            v-model:thinking-level="draft.thinkingLevel"
-            v-model:permission-mode="draft.harnessPermissionMode"
-            :detected="knownModel !== null"
-            :capabilities="knownCapabilities"
-            :output-tokens="outputTokenRecommendation"
-            :thinking="supportsThinking"
-            :harness="isHarness"
-          />
         </template>
+
+        <ProfileCapabilities
+          v-model:tools="toolsEnabled"
+          v-model:vision="visionEnabled"
+          v-model:thinking-level="draft.thinkingLevel"
+          v-model:permission-mode="draft.harnessPermissionMode"
+          :detected="knownModel !== null"
+          :capabilities="knownCapabilities"
+          :output-tokens="outputTokenRecommendation"
+          :thinking="supportsThinking"
+          :agent-options="agentOptionControls"
+          :agent-option-value="agentOptionValue"
+          :acp="isACP"
+          :harness="isHarness"
+          @agent-option="setAgentOption"
+        />
 
         <SettingsSaveFeedback :error="saveError" :result="saveResult" />
       </fieldset>
 
-      <template #footer>
-        <AppButton v-if="canDelete" color="error" :disabled="busy" @click="deleteOpen = true">
+      <template v-if="canDelete" #footer-start>
+        <AppButton color="error" :disabled="busy" @click="deleteOpen = true">
           {{ ai.deleteModel }}
         </AppButton>
-        <AppButton class="ml-auto" :disabled="busy" @click="emit('done')">
+      </template>
+      <template #footer>
+        <AppButton :disabled="busy" @click="emit('done')">
           {{ common.cancel }}
         </AppButton>
         <AppButton v-if="!choosing" type="submit" color="primary" variant="solid" :loading="busy">
@@ -383,7 +406,6 @@ async function remove() {
     data-test-id="delete-model-dialog"
     :heading="ai.deleteModel"
     :description="ai.deleteModelDescription"
-    :cancel-label="common.cancel"
     :confirm-label="ai.deleteModel"
     tone="danger"
     @confirm="remove"

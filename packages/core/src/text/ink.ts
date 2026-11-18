@@ -1,4 +1,10 @@
-import { geometryCommandCoordCount } from '@open-pencil/scene-graph/geometry'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import {
+  cubicPoint,
+  GeometryCommand,
+  readGeometryBlob,
+  type VisualBounds
+} from '@open-pencil/scene-graph/geometry'
 
 import type { OutlineCommand } from '#core/text/font/glyphs'
 
@@ -50,15 +56,13 @@ class BandInk {
   }
 
   cubicTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number): void {
-    const { x: x0, y: y0 } = this
+    const start = { x: this.x, y: this.y }
+    const c1 = { x: x1, y: y1 }
+    const c2 = { x: x2, y: y2 }
+    const end = { x, y }
     for (let step = 1; step <= CURVE_STEPS; step++) {
-      const t = step / CURVE_STEPS
-      const u = 1 - t
-      const a = u * u * u
-      const b = 3 * u * u * t
-      const c = 3 * u * t * t
-      const d = t * t * t
-      this.lineTo(a * x0 + b * x1 + c * x2 + d * x, a * y0 + b * y1 + c * y2 + d * y)
+      const point = cubicPoint(start, c1, c2, end, step / CURVE_STEPS)
+      this.lineTo(point.x, point.y)
     }
   }
 
@@ -120,31 +124,61 @@ export function savedGlyphInk(
   bottom: number
 ): InkSpan | null {
   const ink = new BandInk(top, bottom)
-  const view = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
   const sx = glyph.fontSize * (glyph.scaleX ?? 1)
   const sy = glyph.fontSize * (glyph.scaleY ?? 1)
   const points: number[] = []
   let startX = 0
   let startY = 0
-  let offset = 0
-  while (offset < blob.length) {
-    const command = blob[offset++]
-    const count = geometryCommandCoordCount(command)
-    if (count === null || offset + count * 8 > blob.length) break
+  readGeometryBlob(blob, (command, coords) => {
     points.length = 0
-    for (let index = 0; index < count; index++) {
-      points.push(glyph.x + view.getFloat32(offset, true) * sx)
-      points.push(glyph.y - view.getFloat32(offset + 4, true) * sy)
-      offset += 8
+    for (let index = 0; index < coords.length; index += 2) {
+      points.push(glyph.x + coords[index] * sx, glyph.y - coords[index + 1] * sy)
     }
-    if (command === 0) ink.lineTo(startX, startY)
-    else if (command === 1) {
+    if (command === GeometryCommand.CLOSE) ink.lineTo(startX, startY)
+    else if (command === GeometryCommand.MOVE) {
       ink.moveTo(points[0], points[1])
       startX = points[0]
       startY = points[1]
-    } else if (command === 2) ink.lineTo(points[0], points[1])
-    else if (command === 3) ink.quadTo(points[0], points[1], points[2], points[3])
+    } else if (command === GeometryCommand.LINE) ink.lineTo(points[0], points[1])
+    else if (command === GeometryCommand.QUAD)
+      ink.quadTo(points[0], points[1], points[2], points[3])
     else ink.cubicTo(points[0], points[1], points[2], points[3], points[4], points[5])
-  }
+  })
   return ink.span()
+}
+
+/**
+ * Where a text node's glyphs draw ink, in its own axes: `null` when it draws none, `undefined`
+ * when its fonts are not ready, so its box stands in.
+ */
+export type TextInkMeasurer = (node: SceneNode) => VisualBounds | null | undefined
+
+const installed: TextInkMeasurer[] = []
+
+/**
+ * Lets bounds take a text by its ink, as Figma's render bounds do, while a renderer with its fonts
+ * is installed: the editor's and headless export's. Returns a function that uninstalls it.
+ */
+export function installTextInkMeasurer(measurer: TextInkMeasurer): () => void {
+  installed.push(measurer)
+  return () => {
+    const index = installed.lastIndexOf(measurer)
+    if (index !== -1) installed.splice(index, 1)
+  }
+}
+
+/** Run `fn` with `measurer` installed: bounds it reads take text by its ink. */
+export function withTextInkMeasurer<T>(measurer: TextInkMeasurer, fn: () => T): T {
+  const uninstall = installTextInkMeasurer(measurer)
+  try {
+    return fn()
+  } finally {
+    uninstall()
+  }
+}
+
+/** Where `node`'s glyphs draw ink, by the last installed measurer (`TextInkMeasurer`). */
+export function measureTextInk(node: SceneNode): VisualBounds | null | undefined {
+  if (node.type !== 'TEXT') return undefined
+  return installed.at(-1)?.(node)
 }

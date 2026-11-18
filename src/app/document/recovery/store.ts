@@ -16,6 +16,16 @@ function warnMemoryFallback(error?: unknown): void {
   memoryFallback = true
 }
 
+/** A cover is only a preview: one that cannot be read is left out, and the copy still counts. */
+async function readCoverOrNone(store: RecoveryStore, id: string): Promise<Uint8Array | null> {
+  try {
+    return await store.readCover(id)
+  } catch (error) {
+    console.warn('[Recovery] Could not read the cover:', error)
+    return null
+  }
+}
+
 function createResilientRecoveryStore(primary: RecoveryStore): RecoveryStore {
   let current = primary
   let queue = Promise.resolve()
@@ -37,7 +47,8 @@ function createResilientRecoveryStore(primary: RecoveryStore): RecoveryStore {
       const snapshots = await primary.list()
       for (const metadata of snapshots) {
         const snapshot = await primary.read(metadata.id)
-        if (snapshot) await memory.write(snapshot)
+        if (snapshot)
+          await memory.write({ ...snapshot, cover: await readCoverOrNone(primary, metadata.id) })
       }
     } catch (migrationError) {
       console.warn('[Recovery] Failed to migrate IndexedDB snapshots to memory:', migrationError)
@@ -64,6 +75,20 @@ function createResilientRecoveryStore(primary: RecoveryStore): RecoveryStore {
     })
   }
 
+  /**
+   * Claims the durable copy, so other windows stop listing it. A failed claim fails the restore
+   * rather than falling back, but once IndexedDB has failed the durable claim is only attempted.
+   */
+  function claimInAll(id: string, sessionId: string): Promise<void> {
+    return serialized(async () => {
+      if (current === primary) return primary.claim(id, sessionId)
+      await current.claim(id, sessionId)
+      await primary.claim(id, sessionId).catch((error: unknown) => {
+        console.warn('[Recovery] Failed to claim the IndexedDB snapshot:', error)
+      })
+    })
+  }
+
   function clearAll(): Promise<void> {
     return serialized(async () => {
       await primary.clear()
@@ -74,9 +99,12 @@ function createResilientRecoveryStore(primary: RecoveryStore): RecoveryStore {
   return {
     list: () => run((store) => store.list()),
     read: (id: string): Promise<RecoverySnapshot | null> => run((store) => store.read(id)),
+    // A failed preview never moves the copies to memory.
+    readCover: (id: string) => serialized(() => readCoverOrNone(current, id)),
     write: (input: RecoverySnapshotInput): Promise<RecoverySnapshotMeta> =>
       run((store) => store.write(input)),
     remove: removeFromAll,
+    claim: claimInAll,
     clear: clearAll
   }
 }

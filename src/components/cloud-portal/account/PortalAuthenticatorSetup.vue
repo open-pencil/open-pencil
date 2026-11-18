@@ -12,6 +12,7 @@ import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppCopyField from '@/components/ui/input/AppCopyField.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 
 /** Pairing an authenticator app: scan the code or type the key, then prove it works. */
@@ -26,6 +27,11 @@ const emit = defineEmits<{ verify: [code: string] }>()
 const ui = portalForm()
 const messages = useCloudPortalMessages()
 const code = ref('')
+// Nothing to check until a code is typed: an empty one would only come back as an error.
+const entered = computed(() => code.value.trim() !== '')
+function submit() {
+  if (entered.value) emit('verify', code.value.trim())
+}
 watch(open, (value) => {
   if (value) code.value = ''
 })
@@ -49,24 +55,22 @@ const image = computed(() => (rendered.value?.uri === uri ? rendered.value.data 
     <AppDialogHeader
       :heading="messages.authenticatorSetupTitle"
       :description="messages.authenticatorSetupScan"
-      :close-label="messages.cancel"
     />
     <AppDialogBody :ui="{ body: 'flex flex-col items-center gap-4' }">
       <!-- The box keeps its size while the code renders, so the dialog does not jump. -->
       <div class="size-44 rounded-lg bg-white p-2">
         <img v-if="image" :src="image" alt="" class="size-full" />
       </div>
-      <div class="flex w-full flex-col gap-1.5">
-        <span :class="ui.label()">{{ messages.authenticatorSetupKey }}</span>
+      <AppFormField class="w-full" :label="messages.authenticatorSetupKey" :label-for="false">
         <AppCopyField
           :value="secret"
           :copy-label="messages.copyKey"
           :copied-label="messages.copied"
           look="command"
         />
-      </div>
+      </AppFormField>
       <AppAlert v-if="error" tone="error" :heading="error" />
-      <form class="flex w-full flex-col gap-3" novalidate @submit.prevent="emit('verify', code)">
+      <form class="flex w-full flex-col gap-3" novalidate @submit.prevent="submit">
         <AppInput
           v-model="code"
           inputmode="numeric"
@@ -80,6 +84,7 @@ const image = computed(() => (rendered.value?.uri === uri ? rendered.value.data 
           color="primary"
           variant="solid"
           :loading="verifying"
+          :disabled="!entered"
           :ui="{ base: ui.submit() }"
         >
           {{ messages.continue }}

@@ -1,5 +1,4 @@
-import type { Canvas, Path } from 'canvaskit-wasm'
-
+import type { Canvas, Path } from '@open-pencil/canvaskit'
 import type { SceneNode, Stroke, StrokeCap, VectorNetwork } from '@open-pencil/scene-graph'
 import {
   collectArrowEndpoints,
@@ -9,14 +8,14 @@ import {
 } from '@open-pencil/scene-graph/arrow-caps'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   arrowHeadPath,
   configureStrokePaint,
   drawArrowHeads,
   getStrokeCapEntity,
   normalizeDashPattern
-} from '#core/canvas/strokes'
+} from '#core/canvas/strokes/draw'
 
 import { sideDashSpans } from './sides'
 

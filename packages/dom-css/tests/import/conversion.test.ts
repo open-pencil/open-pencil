@@ -1,25 +1,16 @@
 import { describe, expect, it } from 'bun:test'
 
 import { browserHTMLToSceneGraph } from '#dom-css/browser'
-import { serializeHTML } from '#dom-css/export/html'
 import { sceneGraphToDesignDocument } from '#dom-css/export/projection'
 import { designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
 import type { DesignElement, DesignNode } from '#dom-css/index'
-import { createHeadlessCSSRuntime, htmlToDesignDocument, htmlToSceneGraph } from '#dom-css/index'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
-
-import { TEST_COLORS, cardCSS, cardHTML, fixtureCSS, fixtureHTML } from '../helpers'
+import { DOM_CSS_COLORS, expectFrame } from '@open-pencil/test-support/dom-css'
 
 const TRANSPARENT_PIXEL_DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADElEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
-
-function expectFrame(node: SceneNode | undefined) {
-  expect(node?.type).toBe('FRAME')
-  if (node?.type !== 'FRAME') throw new Error('Expected frame node')
-  return node
-}
 
 function expectText(node: SceneNode | undefined) {
   expect(node?.type).toBe('TEXT')
@@ -52,14 +43,14 @@ function createStyleRoundTripGraph() {
           height: '120px',
           'padding-block': '8px',
           'padding-inline': '12px',
-          'border-color': TEST_COLORS.slate200,
+          'border-color': DOM_CSS_COLORS.slate200,
           'border-style': 'dashed',
           'border-top-width': '0px',
           'border-right-width': '2px',
           'border-bottom-width': '0px',
           'border-left-width': '4px',
           opacity: '0.75',
-          'box-shadow': `0px 8px 24px 0px ${TEST_COLORS.slateShadow}, 0 0 2px ${TEST_COLORS.slate200}`
+          'box-shadow': `0px 8px 24px 0px ${DOM_CSS_COLORS.dialogShadow}, 0 0 2px ${DOM_CSS_COLORS.slate200}`
         },
         children: [
           {
@@ -67,7 +58,7 @@ function createStyleRoundTripGraph() {
             tagName: 'h1',
             attrs: {},
             computedStyle: {
-              color: TEST_COLORS.slate950,
+              color: DOM_CSS_COLORS.slate950,
               'font-family': 'Inter, sans-serif',
               'font-size': '18px',
               'font-weight': '700',
@@ -77,7 +68,7 @@ function createStyleRoundTripGraph() {
               'text-transform': 'uppercase',
               'white-space': 'nowrap',
               opacity: '0.5',
-              'text-shadow': `0px 1px 2px 0px ${TEST_COLORS.slateShadow}`
+              'text-shadow': `0px 1px 2px 0px ${DOM_CSS_COLORS.dialogShadow}`
             },
             children: [{ type: 'text', text: 'Round trip' }]
           }
@@ -165,104 +156,6 @@ describe('@open-pencil/dom-css conversion', () => {
     ).rejects.toHaveProperty('name', 'AbortError')
   })
 
-  it('converts HTML and CSS to DesignDOM with one API call', async () => {
-    const document = await htmlToDesignDocument(cardHTML, {
-      cssText: cardCSS,
-      runtime: createHeadlessCSSRuntime()
-    })
-    const card = document.children[0]
-
-    expect(card?.type).toBe('element')
-    if (card?.type !== 'element') return
-    expect(card.computedStyle?.width).toBe('320px')
-    expect(card.computedStyle?.['border-radius']).toBe('16px')
-  })
-
-  it('converts HTML and CSS to a scene graph with one API call', async () => {
-    const graph = await htmlToSceneGraph(cardHTML, {
-      cssText: cardCSS,
-      runtime: createHeadlessCSSRuntime()
-    })
-    const page = graph.getPages()[0]
-    const card = page ? graph.getChildren(page.id)[0] : undefined
-
-    expect(card?.type).toBe('FRAME')
-    if (card?.type !== 'FRAME') return
-    // CSS sizes the content box: padding and borders come on top.
-    expect(card.width).toBe(320 + 2 * 24 + 2 * 1)
-    expect(card.height).toBe(180 + 2 * 24 + 2 * 1)
-    expect(card.layoutMode).toBe('VERTICAL')
-    expect(card.itemSpacing).toBe(12)
-    expect(card.paddingLeft).toBe(24)
-    expect(card.cornerRadius).toBe(16)
-    expect(card.effects[0]?.type).toBe('DROP_SHADOW')
-  })
-
-  it('applies embedded HTML style blocks without creating style layers', async () => {
-    const graph = await htmlToSceneGraph(
-      `<!doctype html>
-      <html>
-        <head>
-          <style>
-            .card { display: flex; flex-direction: column; gap: 10px; width: 280px; height: 140px; padding: 20px; }
-          </style>
-        </head>
-        <body><article class="card"><h1>Embedded CSS</h1></article></body>
-      </html>`,
-      { runtime: createHeadlessCSSRuntime() }
-    )
-    const page = graph.getPages()[0]
-    expect(page).toBeDefined()
-    if (!page) return
-    const card = graph.getChildren(page.id)[0]
-
-    expect(card?.type).toBe('FRAME')
-    if (card?.type !== 'FRAME') return
-    expect(card.name).toBe('card')
-    expect(card.width).toBe(280 + 2 * 20)
-    expect(card.height).toBe(140 + 2 * 20)
-    expect(card.itemSpacing).toBe(10)
-    expect(card.paddingLeft).toBe(20)
-    expect(graph.getChildren(page.id)).toHaveLength(1)
-  })
-
-  it('keeps box-like inline controls as editable frames', async () => {
-    const graph = await htmlToSceneGraph(fixtureHTML, {
-      cssText: fixtureCSS,
-      runtime: createHeadlessCSSRuntime()
-    })
-    const page = graph.getPages()[0]
-    const shell = page ? graph.getChildren(page.id)[0] : undefined
-    expect(shell?.type).toBe('FRAME')
-    if (shell?.type !== 'FRAME') return
-
-    const [navbar, input] = graph.getChildren(shell.id)
-    expect(navbar?.type).toBe('FRAME')
-    expect(input?.type).toBe('FRAME')
-    if (navbar?.type !== 'FRAME' || input?.type !== 'FRAME') return
-    expect(navbar.primaryAxisAlign).toBe('SPACE_BETWEEN')
-    expect(input.width).toBe(312 + 2 * 12 + 2 * 1)
-    expect(input.paddingLeft).toBe(12)
-
-    const badge = graph.getChildren(navbar.id)[1]
-    expect(badge?.type).toBe('FRAME')
-    if (badge?.type !== 'FRAME') return
-    expect(badge.cornerRadius).toBe(9999)
-    expect(graph.getChildren(badge.id)[0]?.type).toBe('TEXT')
-  })
-
-  it('projects scene graph output back into DesignDOM HTML', async () => {
-    const graph = await htmlToSceneGraph(cardHTML, {
-      cssText: cardCSS,
-      runtime: createHeadlessCSSRuntime()
-    })
-    const document = sceneGraphToDesignDocument(graph)
-    const html = serializeHTML(document)
-
-    expect(html).toContain('OpenPencil')
-    expect(html).toContain('box-shadow')
-  })
-
   it('exports multiline text with preserved whitespace', () => {
     const graph = designDocumentToSceneGraph({
       type: 'document',
@@ -280,19 +173,6 @@ describe('@open-pencil/dom-css conversion', () => {
     const text = findTextElement(document.children)
 
     expect(text?.inlineStyle?.['white-space']).toBe('pre-wrap')
-  })
-
-  it('projects a manually built DesignDOM document into a scene graph', async () => {
-    const runtime = createHeadlessCSSRuntime()
-    const document = await runtime.computeStyles(runtime.parseHTML(cardHTML), cardCSS)
-    const graph = designDocumentToSceneGraph(document)
-    const page = graph.getPages()[0]
-    const card = page ? graph.getChildren(page.id)[0] : undefined
-
-    expect(card?.type).toBe('FRAME')
-    if (card?.type !== 'FRAME') return
-    expect(card.fills[0]?.type).toBe('SOLID')
-    expect(card.strokes[0]?.weight).toBe(1)
   })
 
   it('preserves external image URLs without fetching bytes', () => {
@@ -328,6 +208,113 @@ describe('@open-pencil/dom-css conversion', () => {
     if (roundTripImage?.type !== 'element') throw new Error('Expected image element')
     expect(roundTripImage.tagName).toBe('img')
     expect(roundTripImage.attrs.src).toBe('https://example.com/hero.png')
+  })
+
+  it('keeps an SVG data URL as the source rather than an image fill', () => {
+    for (const src of [
+      'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%2F%3E',
+      'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4='
+    ]) {
+      const graph = designDocumentToSceneGraph({
+        type: 'document',
+        children: [
+          {
+            type: 'element',
+            tagName: 'img',
+            attrs: { src },
+            computedStyle: { width: '32px', height: '32px' },
+            children: []
+          }
+        ]
+      })
+      const page = graph.getPages()[0]
+      const image = expectFrame(page ? graph.getChildren(page.id)[0] : undefined)
+      expect(image.fills[0]).toBeUndefined()
+      expect(image.pluginData).toContainEqual({
+        pluginId: 'open-pencil-dom-css',
+        key: 'image-source-url',
+        value: src
+      })
+      expect(graph.images.size).toBe(0)
+    }
+  })
+
+  it('sizes a box by the ratio of a computed aspect ratio that keeps its auto', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: {},
+          computedStyle: { 'aspect-ratio': 'auto 16 / 9', width: '320px' },
+          children: []
+        }
+      ]
+    })
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+
+    expect([box.width, box.height]).toEqual([320, 180])
+  })
+
+  it('sizes the content box by an aspect ratio beside auto, whatever the box sizing', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: {},
+          computedStyle: {
+            'aspect-ratio': 'auto 16 / 9',
+            'box-sizing': 'border-box',
+            width: '320px',
+            padding: '10px'
+          },
+          children: []
+        }
+      ]
+    })
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+
+    // A 300 px content box is 168.75 tall, inside 10 px of padding each way.
+    expect([box.width, box.height]).toEqual([320, 188.75])
+  })
+
+  it('leaves an empty content box when padding is wider than a box sized by its ratio', () => {
+    const sized = (computedStyle: Record<string, string>) => {
+      const graph = designDocumentToSceneGraph({
+        type: 'document',
+        children: [{ type: 'element', tagName: 'div', attrs: {}, computedStyle, children: [] }]
+      })
+      const [box] = graph.getChildren(graph.getPages()[0].id)
+      return [box.width, box.height]
+    }
+    const style = { 'aspect-ratio': 'auto 1', 'box-sizing': 'border-box' }
+
+    // The box grows to hold its padding around the empty content box.
+    expect(sized({ ...style, width: '10px', padding: '0px 20px' })).toEqual([40, 0])
+    expect(sized({ ...style, height: '10px', padding: '20px 0px' })).toEqual([0, 40])
+  })
+
+  it('gives each side of a box its value in a padding shorthand of several values', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: {},
+          computedStyle: { padding: '1px 3px 5px', 'background-color': 'rgb(255, 0, 0)' },
+          children: []
+        }
+      ]
+    })
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+
+    expect([box.paddingTop, box.paddingRight, box.paddingBottom, box.paddingLeft]).toEqual([
+      1, 3, 5, 3
+    ])
   })
 
   it('maps data URL images, object fit, and aspect ratio', () => {

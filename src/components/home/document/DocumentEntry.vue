@@ -3,12 +3,10 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuPortal,
-  ContextMenuRoot,
   ContextMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
@@ -17,7 +15,9 @@ import { computed, normalizeClass, type HTMLAttributes } from 'vue'
 import type { DocumentKind } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue/i18n'
 
-import { DOCUMENT_KIND_ICONS } from '@/components/home/document/kinds'
+import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import iconButtonTheme from '@/theme/button/icon-button'
@@ -43,8 +43,11 @@ const {
   previewURL?: string | null
   view?: 'grid' | 'list'
   disabled?: boolean
-  /** Labels of the entry's menu, opened from its ⋯ button or by right-clicking; none without them. */
-  menu?: { actions: string; delete: string }
+  /**
+   * Labels of the entry's menu, opened from its ⋯ button or by right-clicking; none without them.
+   * `destructive: false` marks an item that only takes the entry off a list, such as Recents.
+   */
+  menu?: { actions: string; delete: string; destructive?: boolean }
   class?: HTMLAttributes['class']
 }>()
 const emit = defineEmits<{ open: []; delete: [] }>()
@@ -53,7 +56,12 @@ const { files } = useI18n()
 const kindLabel = computed(() =>
   kind ? { design: files.value.createDesign, board: files.value.createBoard }[kind] : null
 )
-const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-error' })
+const menuUI = computed(() =>
+  useMenuUI({
+    content: 'min-w-40',
+    item: menu?.destructive === false ? 'justify-start gap-2' : 'justify-start gap-2 text-error'
+  })
+)
 </script>
 
 <template>
@@ -66,7 +74,7 @@ const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-
     :data-kind="kind"
     :class="styles.root({ class: normalizeClass(className) })"
   >
-    <ContextMenuRoot :disabled="!menu">
+    <AppContextMenuRoot :disabled="!menu">
       <ContextMenuTrigger as="div" data-slot="surface" :class="styles.surface()">
         <button
           type="button"
@@ -107,7 +115,7 @@ const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-
         <div v-if="$slots.actions" data-slot="actions" :class="styles.actions()">
           <slot name="actions" />
         </div>
-        <DropdownMenuRoot v-if="menu">
+        <AppDropdownMenuRoot v-if="menu">
           <DropdownMenuTrigger
             :aria-label="menu.actions"
             data-test-id="home-document-actions"
@@ -123,24 +131,26 @@ const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-
                   data-test-id="home-document-delete"
                   @select="emit('delete')"
                 >
-                  <icon-lucide-trash-2 :class="menuUI.icon" />
+                  <icon-lucide-trash-2 v-if="menu.destructive !== false" :class="menuUI.icon" />
+                  <icon-lucide-x v-else :class="menuUI.icon" />
                   {{ menu.delete }}
                 </DropdownMenuItem>
               </MenuScrollArea>
             </DropdownMenuContent>
           </DropdownMenuPortal>
-        </DropdownMenuRoot>
+        </AppDropdownMenuRoot>
       </ContextMenuTrigger>
       <ContextMenuPortal v-if="menu">
         <ContextMenuContent :class="menuUI.content">
           <MenuScrollArea>
             <ContextMenuItem :class="menuUI.item" @select="emit('delete')">
-              <icon-lucide-trash-2 :class="menuUI.icon" />
+              <icon-lucide-trash-2 v-if="menu.destructive !== false" :class="menuUI.icon" />
+              <icon-lucide-x v-else :class="menuUI.icon" />
               {{ menu.delete }}
             </ContextMenuItem>
           </MenuScrollArea>
         </ContextMenuContent>
       </ContextMenuPortal>
-    </ContextMenuRoot>
+    </AppContextMenuRoot>
   </div>
 </template>

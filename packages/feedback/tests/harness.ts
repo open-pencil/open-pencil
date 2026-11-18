@@ -53,10 +53,26 @@ export async function createTestService() {
   const responses = new Map<string, (call: FetchCall) => Response>()
   const sentEmails: EmailMessageBuilder[] = []
   let now = new Date('2026-10-12T09:00:00.000Z')
-  const limiters = { ping: testLimiter(), ingest: testLimiter(), waitlist: testLimiter() }
+  const limiters = {
+    ping: testLimiter(),
+    ingest: testLimiter(),
+    waitlist: testLimiter(),
+    report: testLimiter()
+  }
 
+  const bucket = proxy.env.REPORTS
   const env: Env = {
     ...proxy.env,
+    // Workers stream a request body of declared length straight into R2; under Bun the body is a
+    // plain stream, which Miniflare's proxy refuses, so it is read first.
+    REPORTS: Object.assign(Object.create(bucket) as R2Bucket, {
+      put: async (...[key, value, options]: Parameters<R2Bucket['put']>) =>
+        bucket.put(
+          key,
+          value instanceof ReadableStream ? await new Response(value).arrayBuffer() : value,
+          options
+        )
+    }),
     POSTHOG_HOST: 'https://eu.i.posthog.com',
     POSTHOG_KEY: 'phc_test',
     TURNSTILE_SECRET: 'turnstile-secret',
@@ -84,6 +100,8 @@ export async function createTestService() {
     PING_LIMITER: limiters.ping,
     INGEST_LIMITER: limiters.ingest,
     WAITLIST_LIMITER: limiters.waitlist,
+    REPORT_LIMITER: limiters.report,
+    REPORT_UPLOAD_SECRET: 'report-upload-secret',
     EMAIL: {
       async send(message: EmailMessageBuilder | EmailMessage) {
         if (!('subject' in message)) throw new Error('Tests send composed emails only')

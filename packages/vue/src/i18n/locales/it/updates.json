@@ -21,5 +21,14 @@
   "installFailed": "Impossibile installare l’aggiornamento: {error}",
   "restartFailed": "Impossibile riavviare OpenPencil: {error}",
   "unavailable": "Gli aggiornamenti non sono ancora disponibili. Pubblica prima una release firmata con latest.json.",
-  "checkFailed": "Impossibile controllare gli aggiornamenti: {error}"
+  "checkFailed": "Impossibile controllare gli aggiornamenti: {error}",
+  "webUpdateReady": "È pronta una nuova versione di OpenPencil",
+  "reload": "Ricarica",
+  "settingsSection": "Aggiornamenti",
+  "checkOnStartup": "Controlla gli aggiornamenti all’avvio",
+  "checkOnStartupDescription": "Cerca una nuova versione poco dopo l’apertura dell’app desktop. «Controlla aggiornamenti…» nel menu funziona anche quando questo è disattivato.",
+  "channel": "Canale di aggiornamento",
+  "channelDescription": "Le build nightly vengono create ogni notte dal codice più recente e possono avere problemi. Tornando a Stabile, al controllo successivo viene installata la versione stabile attuale.",
+  "channelStable": "Stabile",
+  "channelNightly": "Nightly"
 }

@@ -6,13 +6,16 @@ import {
   roleChoiceKey,
   roleOptions,
   type OnboardingAnswers,
-  type OnboardingPlan
+  type OnboardingPlan,
+  usableCurrentModels
 } from '@/app/ai/models/settings/onboarding/plan'
 
 import { defaultModel, isFastToolModel } from '#tests/helpers/ai/model-catalog'
 
 const desktop = { agentsAvailable: true }
 const browser = { agentsAvailable: false }
+/** A sandboxed desktop package: no host processes, but subscription sign-in still works. */
+const sandboxed = { agentsAvailable: false, subscriptionsAvailable: true }
 
 function answers(overrides: Partial<OnboardingAnswers>): OnboardingAnswers {
   return { goals: ['design'], access: [], spending: 'existing', ...overrides }
@@ -23,20 +26,26 @@ function plannedModelID(choice: OnboardingPlan['fast']): string {
 }
 
 describe('planOnboarding', () => {
+  test('a sandboxed package keeps the ChatGPT subscription but not agents', () => {
+    const plan = planOnboarding(answers({ access: ['acp:codex', 'chatgpt'] }), sandboxed)
+    expect(plan.design).toMatchObject({ providerID: 'chatgpt', modelID: defaultModel('chatgpt') })
+    expect(plan.connections).toEqual(['chatgpt'])
+  })
+
   test('uses an agent the person already has for design', () => {
     const plan = planOnboarding(answers({ access: ['acp:codex'] }), desktop)
     expect(plan.design).toMatchObject({ providerID: 'acp:codex', modelID: '' })
     expect(plan.connections).toEqual(['acp:codex'])
   })
 
-  test('runs design on Pi and takes the other roles from an API account', () => {
+  test('runs design and review on Pi and takes vision from an API account', () => {
     const plan = planOnboarding(
       answers({ goals: ['design', 'vision'], access: ['harness:pi', 'openai'] }),
       desktop
     )
     expect(plan.design).toMatchObject({ providerID: 'harness:pi', modelID: '' })
     expect(plan.vision).toMatchObject({ providerID: 'openai' })
-    expect(plan.review).not.toBe('design')
+    expect(plan.review).toBe('design')
     expect(plan.connections).toEqual(['harness:pi', 'openai'])
   })
 
@@ -158,6 +167,45 @@ describe('planOnboarding with configured models', () => {
     profileId: 'model-glm' as const
   }
 
+  const codex = {
+    providerID: 'acp:codex' as const,
+    modelID: '',
+    name: 'Codex',
+    capabilities: [],
+    profileId: 'model-codex' as const
+  }
+
+  test('does not keep a configured agent design model where agents cannot run', () => {
+    const current = { configured: true, design: codex, vision: null, review: null, fast: null }
+    // Not asked about design: the agent is still dropped, so setup cannot finish on it.
+    const kept = planOnboarding(answers({ goals: ['vision'], access: [] }), { ...browser, current })
+    expect(kept.design).toBeNull()
+    // Asked about design with another account: that account takes the role.
+    const replaced = planOnboarding(answers({ access: ['openai'] }), { ...browser, current })
+    expect(replaced.design).toMatchObject({ providerID: 'openai' })
+  })
+
+  test('drops configured models this app cannot run, and only those', () => {
+    const current = { configured: true, design: codex, vision: opus, review: null, fast: null }
+    expect(usableCurrentModels(current, browser)).toEqual({ ...current, design: null })
+    expect(usableCurrentModels(current, desktop)).toEqual(current)
+  })
+
+  test('plans review and fast again for a subscription the browser cannot use', () => {
+    const chatgpt = {
+      providerID: 'chatgpt' as const,
+      modelID: defaultModel('chatgpt'),
+      name: 'ChatGPT',
+      capabilities: ['tools' as const],
+      profileId: 'model-chatgpt' as const
+    }
+    // A configured none stays none; an unusable model is planned like an unconfigured role.
+    const current = { configured: true, design: opus, vision: null, review: chatgpt, fast: null }
+    const plan = planOnboarding(answers({ access: ['anthropic'] }), { ...browser, current })
+    expect(plan.review).toBe('design')
+    expect(plan.fast).toBeNull()
+  })
+
   test('keeps a configured design model while its access is still selected', () => {
     const plan = planOnboarding(answers({ access: ['anthropic'] }), {
       ...desktop,
@@ -226,19 +274,34 @@ describe('planOnboarding for review and fast work', () => {
     expect(planOnboarding(answers({ access: ['google'] }), desktop).fast).toBe('design')
   })
 
-  test('uses the API vision model for review and fast work behind an agent', () => {
+  test('lets review and fast work follow an agent design model', () => {
     const plan = planOnboarding(
       answers({ goals: ['design', 'vision'], access: ['acp:codex', 'openai'] }),
       desktop
     )
     expect(plan.vision).toMatchObject({ providerID: 'openai', modelID: defaultModel('openai') })
-    expect(plan.review).toMatchObject({ providerID: 'openai', modelID: defaultModel('openai') })
-    expect(plan.fast).toMatchObject({ providerID: 'openai' })
-    expect(isFastToolModel('openai', plannedModelID(plan.fast))).toBe(true)
+    expect(plan.review).toBe('design')
+    expect(plan.fast).toBe('design')
     expect(planOnboarding(answers({ access: ['acp:codex'] }), desktop)).toMatchObject({
-      review: null,
-      fast: null
+      review: 'design',
+      fast: 'design'
     })
+  })
+
+  test('keeps a configured agent for review and fast work', () => {
+    const claude = {
+      providerID: 'acp:claude-code' as const,
+      modelID: '',
+      name: 'Claude Code',
+      capabilities: ['tools' as const],
+      profileId: 'model-claude' as const
+    }
+    const plan = planOnboarding(answers({ access: ['openrouter'] }), {
+      ...desktop,
+      current: { configured: true, design: null, vision: null, review: claude, fast: claude }
+    })
+    expect(plan.review).toBe(claude)
+    expect(plan.fast).toBe(claude)
   })
 
   test('keeps configured review and fast choices, including none', () => {
@@ -257,9 +320,11 @@ describe('roleOptions', () => {
     desktop
   )
 
-  test('offers an agent only for the design role', () => {
-    expect(roleOptions('design', plan, []).map(roleChoiceKey)).toContain('acp:claude-code::')
-    expect(roleOptions('review', plan, []).map(roleChoiceKey)).not.toContain('acp:claude-code::')
+  test('offers an agent for every role that does not need image input', () => {
+    for (const role of ['design', 'review', 'fast'] as const) {
+      expect(roleOptions(role, plan, []).map(roleChoiceKey)).toContain('acp:claude-code::')
+    }
+    expect(roleOptions('vision', plan, []).map(roleChoiceKey)).not.toContain('acp:claude-code::')
   })
 
   test('offers only image-capable models for vision and none instead of an agent design', () => {

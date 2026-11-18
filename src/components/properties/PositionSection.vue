@@ -53,7 +53,12 @@ function handleAlign(
           <icon-lucide-scan class="size-3.5" />
         </IconButton>
       </template>
-      <div role="toolbar" :aria-label="panels.position" class="mb-1.5 flex justify-between">
+      <div
+        role="toolbar"
+        dir="ltr"
+        :aria-label="panels.position"
+        class="mb-1.5 flex justify-between"
+      >
         <div class="flex gap-0.5">
           <IconButton
             :label="panels.alignLeft"

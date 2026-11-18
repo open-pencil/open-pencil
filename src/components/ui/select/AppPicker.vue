@@ -25,6 +25,8 @@ export interface AppPickerProps {
   selected?: string
   /** Tooltip on the trigger; wraps the popover trigger so both reach the same element. */
   tooltip?: string
+  /** Where the trigger's tooltip opens; the list's own `side` does not move it. */
+  tooltipSide?: 'left' | 'right' | 'top' | 'bottom'
   density?: 'compact' | 'comfortable'
   /**
    * `grid` shows each item's thumbnail alone, eight to a row, with the highlighted item's label
@@ -64,6 +66,8 @@ export interface AppPickerSlots {
   /** A control at the end of the search field that narrows the list, such as a category. */
   'search-trailing'?(): VNode[]
   trailing?(props: { item: AppPickerItem }): VNode[]
+  /** What the list says when it has nothing to show, such as a link; `emptyLabel` by default. */
+  empty?(): VNode[]
   /**
    * Shown instead of the search and list while the picker needs something before it can list
    * anything, such as a service's key.
@@ -109,6 +113,7 @@ const {
   closeLabel,
   selected,
   tooltip,
+  tooltipSide = 'top',
   density = 'comfortable',
   layout = 'list',
   hasMore = false,
@@ -207,7 +212,7 @@ function select(value: AcceptableValue) {
 
 <template>
   <PopoverRoot v-model:open="open">
-    <Tip v-if="slots.trigger" as-child :label="tooltip" :disabled="!tooltip">
+    <Tip v-if="slots.trigger" as-child :side="tooltipSide" :label="tooltip" :disabled="!tooltip">
       <PopoverTrigger as-child>
         <slot name="trigger" />
       </PopoverTrigger>
@@ -274,7 +279,7 @@ function select(value: AcceptableValue) {
               />
             </div>
             <p v-else-if="groups.length === 0" :class="styles.empty({ class: ui?.empty })">
-              {{ emptyLabel }}
+              <slot name="empty">{{ emptyLabel }}</slot>
             </p>
             <ListboxGroup
               v-for="[group, entries] in groups"

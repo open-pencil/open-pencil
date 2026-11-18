@@ -42,13 +42,13 @@ test('each operand follows its collection mode, including inherited node modes',
   graph.addMode(opacity.id, 'strong', 'Strong')
   base.valuesByMode.night = { r: 0, g: 0, b: 1, a: 1 }
   amount.valuesByMode.strong = 80
-  graph.setActiveMode(opacity.id, 'strong')
-  expect(graph.resolveVariable(derived.id, 'night')).toEqual({ r: 0, g: 0, b: 1, a: 0.8 })
+  // A mode given for the colors leaves the opacity collection in its default.
+  expect(graph.resolveVariable(derived.id, 'night')).toEqual({ r: 0, g: 0, b: 1, a: 0.2 })
   const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
     variableModes: { [colors.id]: 'night', [opacity.id]: 'strong' }
   })
   const node = graph.createNode('RECTANGLE', frame.id)
-  expect(graph.resolveColorVariableForNode(node.id, derived.id, 'default')).toEqual({
+  expect(graph.resolveColorVariableForNode(node.id, derived.id)).toEqual({
     r: 0,
     g: 0,
     b: 1,

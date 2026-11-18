@@ -4,6 +4,7 @@ import { wrapLanguageModel } from 'ai'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
 
+import { profileModelID } from '@/app/ai/models/language-model'
 import { toolImagesInUserMessage } from '@/app/ai/providers/tool-images'
 import type { ModelConfig, ModelProviderAdapter } from '@/app/ai/providers/types'
 
@@ -16,12 +17,10 @@ export type CompatibleEndpoint = string | ((config: ModelConfig) => string)
 type OpenAICompatibleOptions = {
   baseURL?: CompatibleEndpoint
   mode?: 'default' | 'chat' | 'configurable'
-  webpImages?: boolean
 }
 
 type AnthropicCompatibleOptions = {
   baseURL?: CompatibleEndpoint
-  webpImages?: boolean
 }
 
 function resolveEndpoint(endpoint: CompatibleEndpoint | undefined, config: ModelConfig) {
@@ -38,7 +37,7 @@ export function createOpenAICompatibleAdapter(
         baseURL: resolveEndpoint(options.baseURL, config),
         fetch: runtime.fetch
       })
-      const modelID = config.customModelID.trim() || config.modelID
+      const modelID = profileModelID(config)
       const chat = () =>
         wrapLanguageModel({ model: provider.chat(modelID), middleware: toolImagesInUserMessage })
       if (options.mode === 'chat') return chat()
@@ -46,8 +45,7 @@ export function createOpenAICompatibleAdapter(
         return config.customAPIType === 'responses' ? provider.responses(modelID) : chat()
       }
       return provider(modelID)
-    },
-    webpImages: options.webpImages
+    }
   }
 }
 
@@ -62,8 +60,7 @@ export function createAnthropicCompatibleAdapter(
         fetch: runtime.fetch,
         headers: IS_TAURI ? undefined : BROWSER_ACCESS_HEADERS
       })
-      return provider(config.customModelID.trim() || config.modelID)
-    },
-    webpImages: options.webpImages
+      return provider(profileModelID(config))
+    }
   }
 }

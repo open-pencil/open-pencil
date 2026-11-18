@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 
 import { expectPathError } from '#fig-tests/helpers/errors'
-import { guid } from '#fig-tests/helpers/guid'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 import type { InstancePathDiagnostic } from '#fig/instance-overrides/occurrence/types'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 import fixture from './fixtures/stale-chevron-override.json'
 

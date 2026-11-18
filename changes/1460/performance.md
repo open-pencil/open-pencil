@@ -1,1 +1,0 @@
-- The canvas engine starts loading as the app starts, so a document opened on a slow connection shows sooner.

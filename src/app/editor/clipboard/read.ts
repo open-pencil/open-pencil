@@ -1,5 +1,6 @@
 import { isDesignClipboardHTML } from '@/app/editor/clipboard/html'
-import { getInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
+import { getInMemoryClipboardHTML, rememberedWebHTML } from '@/app/editor/clipboard/memory'
+import type { WebClipboard } from '@/app/editor/clipboard/paste/web'
 import { readTauriClipboardText } from '@/app/tauri/clipboard'
 import { isTauri } from '@/app/tauri/env'
 
@@ -44,4 +45,30 @@ export async function readClipboardHTML(
 
   const memory = getInMemoryClipboardHTML()
   return memory && isDesignClipboardHTML(memory) ? memory : null
+}
+
+/**
+ * What the clipboard holds for Paste as layers: its HTML and text. On the desktop the plugin
+ * reads text only, so the HTML is the one last pasted here while the text still matches.
+ */
+export async function readWebClipboard(
+  clipboard: Pick<Clipboard, 'read'> | undefined = browserClipboard()
+): Promise<WebClipboard> {
+  if (isTauri()) {
+    const text = (await readTauriClipboardText().catch(() => null)) ?? ''
+    return { html: rememberedWebHTML(text), text }
+  }
+  if (!clipboard) return { html: '', text: '' }
+  const read = async (item: ClipboardItem, type: string) =>
+    item.types.includes(type) ? (await item.getType(type)).text() : ''
+  try {
+    for (const item of await clipboard.read()) {
+      const html = await read(item, 'text/html')
+      const text = await read(item, 'text/plain')
+      if (html || text) return { html, text }
+    }
+  } catch (error) {
+    console.warn('System clipboard read failed', error)
+  }
+  return { html: '', text: '' }
 }

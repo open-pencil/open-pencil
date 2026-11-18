@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#fig-tests/helpers/assert'
 import { normalizeFigFragment } from '#fig/document/fragment'
 import { derivedFrameEntriesOf, generationOverridesOf } from '#fig/node-change/generated/records'
 import { sceneNodeToKiwi } from '#fig/node-change/index'
@@ -10,6 +9,7 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { createSticky, stickySublayers, STICKY_COLORS } from '@open-pencil/scene-graph/generated'
 import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 const guid = (localID: number) => ({ sessionID: 0, localID })
 const slot = (localID: number) => ({ guids: [{ sessionID: 40_000_000, localID }] })

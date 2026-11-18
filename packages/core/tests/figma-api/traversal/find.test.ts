@@ -1,9 +1,9 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { createAPI, registerTestFont } from '#core-tests/helpers/figma-api'
+import { createAPI } from '#core-tests/helpers/figma-api'
 
-
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 beforeAll(() => registerTestFont())
 
 describe('traversal', () => {

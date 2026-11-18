@@ -56,4 +56,31 @@ describe('references between copied library layers', () => {
     expect(named(consumer, definition?.defaultValue)).toBe('Star')
     expect(named(consumer, inserted?.componentPropertyAssignments.icon)).toBe('Heart')
   })
+
+  test('point text links at the copied layers', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const card = graph.createNode('COMPONENT', page.id, { name: 'Card', componentKey: 'card' })
+    const target = graph.createNode('RECTANGLE', card.id, { name: 'Target' })
+    graph.createNode('TEXT', card.id, {
+      name: 'Label',
+      text: 'Go to target',
+      styleRuns: [{ start: 0, length: 5, style: { hyperlink: { type: 'NODE', value: target.id } } }]
+    })
+    const revision = await createLibraryRevision({ libraryId: 'design-system', name: 'DS', graph })
+    const linked = (layers: SceneGraph) => {
+      const label = [...layers.getAllNodes()].find((node) => node.name === 'Label')
+      const link = label?.styleRuns[0]?.style.hyperlink
+      const layer = link?.type === 'NODE' ? layers.getNode(link.value) : undefined
+      return {
+        name: layer?.name,
+        inCard: layer ? layers.isDescendant(layer.id, label?.parentId ?? '') : false
+      }
+    }
+    expect(linked(revision.graph)).toEqual({ name: 'Target', inCard: true })
+
+    const consumer = new SceneGraph()
+    materializeLibraryAsset(consumer, revision, 'card')
+    expect(linked(consumer)).toEqual({ name: 'Target', inCard: true })
+  })
 })

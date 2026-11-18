@@ -27,7 +27,8 @@ const {
   nodeIds,
   bindingPath,
   bindingPaths,
-  units
+  units,
+  round
 } = defineProps<{
   modelValue: number | symbol
   min?: number
@@ -45,6 +46,8 @@ const {
   bindingPaths?: readonly NumberBindingPath[]
   /** Units a typed value may end with; the commit reports the one typed. */
   units?: readonly string[]
+  /** How a bound value is shown and edited from, as the unbound value the caller passes is. */
+  round?: (value: number) => number
 }>()
 
 const emit = defineEmits<{
@@ -66,11 +69,6 @@ const accessibleLabel = computed(() => {
   return typeof ariaLabel === 'string' ? ariaLabel : (label ?? bindingPath)
 })
 const bindingStyles = useBindingFieldUI()
-
-function bindingTooltip(name: string, resolvedValue: unknown) {
-  if (typeof resolvedValue !== 'number') return name
-  return `${name} · ${resolvedValue}${suffix ?? ''}`
-}
 
 defineOptions({ inheritAttrs: false })
 </script>
@@ -94,6 +92,7 @@ defineOptions({ inheritAttrs: false })
       :max="max"
       :step="step"
       :units="units"
+      :round="round"
       :ui="{ root: bindingStyles.root }"
       :data-property="bindingPath"
       :aria-label="accessibleLabel"
@@ -109,34 +108,32 @@ defineOptions({ inheritAttrs: false })
       <template v-if="$slots.display" #display="display">
         <slot name="display" v-bind="display" />
       </template>
-      <template v-if="binding.variable || binding.state === 'unresolved'" #bound>
+      <!-- A bound number reads like any other, its variable named by the variable button's
+           tooltip; with no value to show, an unresolved binding names its variable. -->
+      <template v-if="binding.state === 'unresolved'" #bound>
         <BindingPill
-          :unresolved="binding.state === 'unresolved'"
+          unresolved
           :label="binding.variable?.name ?? binding.bindingId ?? panels.unresolvedVariable"
-          :tooltip="
-            binding.state === 'unresolved'
-              ? panels.unresolvedVariable
-              : bindingTooltip(binding.variable?.name ?? '', binding.resolvedValue)
-          "
+          :tooltip="panels.unresolvedVariable"
         />
       </template>
       <template #suffix>
-        <span :class="$slots['after-variable'] ? '' : 'pr-1'" class="flex items-center">
-          <VariableBindingPicker
-            :trigger-label="panels.applyVariable"
-            :search-placeholder="common.search"
-            :empty-label="panels.noVariablesFound"
-            :detach-label="panels.detachVariable"
-            :create-label="
-              panels.createNumberVariable({
-                value: typeof modelValue === 'number' ? Math.round(modelValue) : 0
-              })
-            "
-            :create-name-placeholder="panels.variableName"
-            :create-submit-label="panels.create"
-          />
-        </span>
-        <slot name="after-variable" />
+        <!-- A field's own control, such as Hug or a mode menu, sits beside its value; the variable
+             button ends every field, so it lines up down the panel. -->
+        <slot name="menu" />
+        <VariableBindingPicker
+          :trigger-label="panels.applyVariable"
+          :search-placeholder="common.search"
+          :empty-label="panels.noVariablesFound"
+          :detach-label="panels.detachVariable"
+          :create-label="
+            panels.createNumberVariable({
+              value: typeof modelValue === 'number' ? modelValue : 0
+            })
+          "
+          :create-name-placeholder="panels.variableName"
+          :create-submit-label="panels.create"
+        />
       </template>
     </NumberField>
   </BindableValueRoot>

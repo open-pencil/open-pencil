@@ -1,1 +1,0 @@
-- `useCanvasVirtualReference` from `@open-pencil/vue/canvas/overlays` takes the view to project through (`{ zoom, panX, panY }`, as a ref or getter) instead of the editor; pass `() => editor.state` for the previous behaviour.

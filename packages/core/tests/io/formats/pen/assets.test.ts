@@ -1,12 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { fromUint8Array, toUint8Array } from 'js-base64'
 
 import type { IconData, IconProvider } from '@open-pencil/core/icons'
 import { IORegistry, penFormat } from '@open-pencil/core/io'
 import { readIcon, type IconOptions } from '@open-pencil/scene-graph/icons'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
+
+import { tintedIconPath } from '#core/icons/artwork'
 
 // A 2 × 1 PNG.
 const PNG = toUint8Array(
@@ -26,16 +28,7 @@ function iconProvider(available: string[], requested: IconRequest[]): IconProvid
       name: iconName,
       width: size,
       height: size,
-      paths: [
-        {
-          vectorNetwork: parseSVGPath(`M0 0H${size}V${size}Z`),
-          fill: 'currentColor',
-          stroke: null,
-          strokeWidth: 0,
-          strokeCap: 'butt',
-          strokeJoin: 'miter'
-        }
-      ],
+      paths: [tintedIconPath(parseSVGPath(`M0 0H${size}V${size}Z`))],
       ...(options ? { options } : {})
     }
   }
@@ -132,6 +125,8 @@ describe('penFormat.readDocument — assets', () => {
 
   test('decodes data URLs as URLs, without the host', async () => {
     const encoded = fromUint8Array(PNG)
+    // Escapes that are bytes, not UTF-8 text, as a binary image's percent-encoded body is.
+    const escaped = Array.from(PNG, (byte) => `%${byte.toString(16).padStart(2, '0')}`).join('')
     const { graph } = await io.readDocument(
       {
         name: 'inline.pen',
@@ -147,6 +142,11 @@ describe('penFormat.readDocument — assets', () => {
             fill: { type: 'image', url: `DATA:image/png;name=a.png;base64,${encoded}` }
           },
           {
+            id: 'escaped',
+            type: 'rectangle',
+            fill: { type: 'image', url: `data:image/png,${escaped}` }
+          },
+          {
             id: 'broken',
             type: 'rectangle',
             fill: { type: 'image', url: 'data:image/png;base64,!!!' }
@@ -156,7 +156,135 @@ describe('penFormat.readDocument — assets', () => {
       { icons: iconProvider([], []) }
     )
     expect(graph.getNode('plain')?.fills[0]?.type).toBe('IMAGE')
+    const escapedHash = graph.getNode('escaped')?.fills[0]?.imageHash
+    expect(escapedHash ? graph.images.get(escapedHash) : undefined).toEqual(PNG)
     expect(graph.getNode('named')?.fills[0]?.type).toBe('IMAGE')
     expect(graph.getNode('broken')?.fills).toEqual([])
+  })
+
+  test('reads a percent-encoded image path from the file it names', async () => {
+    // Pencil writes a folder named `My Design-assets` as `My%20Design-assets`.
+    const asked: string[] = []
+    const { graph } = await io.readDocument(
+      {
+        name: 'My Design.pen',
+        data: penBytes([
+          {
+            id: 'encoded',
+            type: 'rectangle',
+            width: 50,
+            height: 50,
+            fill: { type: 'image', url: 'My%20Design-assets/red.png' }
+          }
+        ]),
+        readAsset: async (path) => {
+          asked.push(path)
+          return path === 'My Design-assets/red.png' ? PNG : null
+        }
+      },
+      { icons: iconProvider([], []) }
+    )
+    expect(asked).toEqual(['My Design-assets/red.png'])
+    expect(graph.getNode('encoded')?.fills[0]?.type).toBe('IMAGE')
+  })
+
+  test('reads an image path that is already the file name', async () => {
+    const asked: string[] = []
+    const { graph } = await io.readDocument(
+      {
+        name: 'My Design.pen',
+        data: penBytes([
+          {
+            id: 'plain',
+            type: 'rectangle',
+            width: 50,
+            height: 50,
+            fill: { type: 'image', url: 'My Design-assets/red.png' }
+          }
+        ]),
+        readAsset: async (path) => {
+          asked.push(path)
+          return path === 'My Design-assets/red.png' ? PNG : null
+        }
+      },
+      { icons: iconProvider([], []) }
+    )
+    expect(asked).toEqual(['My Design-assets/red.png'])
+    expect(graph.getNode('plain')?.fills[0]?.type).toBe('IMAGE')
+  })
+
+  test('reads an image path with a malformed percent escape as written', async () => {
+    const asked: string[] = []
+    const { graph } = await io.readDocument(
+      {
+        name: 'broken.pen',
+        data: penBytes([
+          {
+            id: 'malformed',
+            type: 'rectangle',
+            width: 50,
+            height: 50,
+            fill: { type: 'image', url: '%E0%A4%A' }
+          }
+        ]),
+        readAsset: async (path) => {
+          asked.push(path)
+          return path === '%E0%A4%A' ? PNG : null
+        }
+      },
+      { icons: iconProvider([], []) }
+    )
+    expect(asked).toEqual(['%E0%A4%A'])
+    expect(graph.getNode('malformed')?.fills[0]?.type).toBe('IMAGE')
+  })
+
+  test('reads a file whose name contains a percent sign from its escape', async () => {
+    // A URL names `file%20name.png` as `file%2520name.png`; `file%20name.png` is `file name.png`.
+    const asked: string[] = []
+    const { graph } = await io.readDocument(
+      {
+        name: 'literal.pen',
+        data: penBytes([
+          {
+            id: 'literal',
+            type: 'rectangle',
+            width: 50,
+            height: 50,
+            fill: { type: 'image', url: 'file%2520name.png' }
+          }
+        ]),
+        readAsset: async (path) => {
+          asked.push(path)
+          return path === 'file%20name.png' ? PNG : null
+        }
+      },
+      { icons: iconProvider([], []) }
+    )
+    expect(asked).toEqual(['file%20name.png'])
+    expect(graph.getNode('literal')?.fills[0]?.type).toBe('IMAGE')
+  })
+
+  test('keeps an encoded slash inside the file name', async () => {
+    const asked: string[] = []
+    await io.readDocument(
+      {
+        name: 'slash.pen',
+        data: penBytes([
+          {
+            id: 'slash',
+            type: 'rectangle',
+            width: 50,
+            height: 50,
+            fill: { type: 'image', url: 'assets/a%2Fb%20c.png' }
+          }
+        ]),
+        readAsset: async (path) => {
+          asked.push(path)
+          return PNG
+        }
+      },
+      { icons: iconProvider([], []) }
+    )
+    expect(asked).toEqual(['assets/a%2Fb c.png'])
   })
 })

@@ -68,6 +68,21 @@ async function serveStillPage() {
   })
 }
 
+/** How long one frame may take; SwiftShader is slow, but a stall must not hang the build. */
+const STILL_TIMEOUT_MS = 60_000
+
+/**
+ * Settle with `work`, or reject once `ms` pass: `page.evaluate` has no timeout of its own, so a
+ * stalled renderer would otherwise never reach the fallback below.
+ */
+function withDeadline<T>(work: Promise<T>, ms: number, what: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${what} took longer than ${ms / 1000}s`)), ms)
+  })
+  return Promise.race([work, deadline]).finally(() => clearTimeout(timer))
+}
+
 /**
  * Draw the first frame of every shader paint in `graph` whose frame is missing or stale, as
  * the editor would on opening the document, and store it as the paint's image. Needs the
@@ -85,20 +100,26 @@ export async function drawShaderStills(graph: SceneGraph): Promise<number> {
     browser = await chromium.launch({ headless: true, args: BROWSER_ARGS })
     const page = await browser.newPage()
     await page.goto(`http://127.0.0.1:${server.port}/`)
-    await page.waitForFunction(() => Reflect.has(window, 'shaderStill'))
+    await page.waitForFunction(() => Reflect.has(window, 'shaderStill'), undefined, {
+      timeout: STILL_TIMEOUT_MS
+    })
     for (const { node, shader } of jobs) {
       const pixels = shaderFramePixels(node)
       // Runs in the page, so the check is written out here rather than shared.
-      const dataURL = await page.evaluate(
-        ({ preset, width, height }) => {
-          const api: unknown = Reflect.get(window, 'shaderStill')
-          if (typeof api !== 'object' || api === null || !('renderStill' in api)) {
-            throw new Error('The still page did not load')
-          }
-          const render = api.renderStill as ShaderStillPage['renderStill']
-          return render(preset, width, height)
-        },
-        { preset: shader.preset, ...pixels }
+      const dataURL = await withDeadline(
+        page.evaluate(
+          ({ preset, width, height }) => {
+            const api: unknown = Reflect.get(window, 'shaderStill')
+            if (typeof api !== 'object' || api === null || !('renderStill' in api)) {
+              throw new Error('The still page did not load')
+            }
+            const render = api.renderStill as ShaderStillPage['renderStill']
+            return render(preset, width, height)
+          },
+          { preset: shader.preset, ...pixels }
+        ),
+        STILL_TIMEOUT_MS,
+        'Drawing a shader frame'
       )
       const [, encoded = ''] = dataURL.split(',')
       graph.images.set(shader.image, toUint8Array(encoded))

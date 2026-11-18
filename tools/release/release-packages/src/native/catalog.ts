@@ -1,35 +1,50 @@
-import { releaseVersion } from './context.ts'
+import { isNightlyVersion, releaseVersionSchema } from '#release/version'
+import * as v from 'valibot'
 
+/**
+ * The Linux build's environment: Ubuntu 22.04 with the libraries the bundles link and the Rust
+ * toolchain, pinned to the digest `image-native-release.yml` built and bundled the app in, so a
+ * release downloads none of them (`tools/ci/images/native-release`).
+ */
+export const LINUX_RELEASE_IMAGE =
+  'ghcr.io/open-pencil/native-release-ci@sha256:f5a3796ee3242d7b3a0ad39002011dedd95366175e8bbc4bc69b84c966ada2e6'
+
+/** Each desktop build; `container` is the image it runs in, or empty to run on the runner itself. */
 export const desktopBuilds = [
   {
     target: 'aarch64-apple-darwin',
     platform: 'macos-latest',
     label: 'macos-arm64',
-    saveBunCache: true
+    saveBunCache: true,
+    container: ''
   },
   {
     target: 'x86_64-apple-darwin',
     platform: 'macos-latest',
     label: 'macos-x64',
-    saveBunCache: false
+    saveBunCache: false,
+    container: ''
   },
   {
     target: 'x86_64-pc-windows-msvc',
     platform: 'windows-latest',
     label: 'windows-x64',
-    saveBunCache: true
+    saveBunCache: true,
+    container: ''
   },
   {
     target: 'aarch64-pc-windows-msvc',
     platform: 'windows-latest',
     label: 'windows-arm64',
-    saveBunCache: false
+    saveBunCache: false,
+    container: ''
   },
   {
     target: 'x86_64-unknown-linux-gnu',
     platform: 'ubuntu-22.04',
     label: 'linux-x64',
-    saveBunCache: true
+    saveBunCache: true,
+    container: LINUX_RELEASE_IMAGE
   }
 ] as const
 
@@ -44,9 +59,16 @@ export interface DesktopAsset {
   signed: boolean
 }
 
+/**
+ * What a nightly bundles: every format but the MSI, whose version must be numbers only, so
+ * Windows nightlies install and update through NSIS. Tauri drops the formats a platform lacks.
+ */
+export const NIGHTLY_BUNDLES = ['app', 'dmg', 'nsis', 'appimage', 'deb', 'rpm'] as const
+
 /** Required OpenPencil release outputs, not a discovery or packaging implementation. */
 export function desktopAssets(target: DesktopTarget, version: string): DesktopAsset[] {
-  releaseVersion(`v${version}`)
+  const nightly = isNightlyVersion(version)
+  if (!nightly) v.parse(releaseVersionSchema, version)
 
   if (target.endsWith('apple-darwin')) {
     const arch = target.startsWith('aarch64') ? 'aarch64' : 'x64'
@@ -69,13 +91,16 @@ export function desktopAssets(target: DesktopTarget, version: string): DesktopAs
   if (target.endsWith('windows-msvc')) {
     const arch = target.startsWith('aarch64') ? 'arm64' : 'x64'
     const platform = target.startsWith('aarch64') ? 'windows-aarch64' : 'windows-x86_64'
+    const nsis = {
+      source: `OpenPencil_${version}_${arch}-setup.exe`,
+      name: `OpenPencil_${version}_${arch}-setup.exe`,
+      // Without an MSI, a nightly's NSIS installer also answers the platform's own updater key.
+      updaterKeys: nightly ? [platform, `${platform}-nsis`] : [`${platform}-nsis`],
+      signed: true
+    }
+    if (nightly) return [nsis]
     return [
-      {
-        source: `OpenPencil_${version}_${arch}-setup.exe`,
-        name: `OpenPencil_${version}_${arch}-setup.exe`,
-        updaterKeys: [`${platform}-nsis`],
-        signed: true
-      },
+      nsis,
       {
         source: `OpenPencil_${version}_${arch}_en-US.msi`,
         name: `OpenPencil_${version}_${arch}_en-US.msi`,

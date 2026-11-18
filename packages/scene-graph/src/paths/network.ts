@@ -1,0 +1,411 @@
+import type { Vector } from '../primitives'
+import type { VectorNetwork, VectorRegion, VectorSegment, VectorVertex } from '../types'
+import type { PathSink } from './sink'
+
+export function addSegmentDirected(
+  path: PathSink,
+  seg: VectorSegment,
+  vertices: VectorVertex[],
+  forward: boolean
+): void {
+  const p0 = forward ? vertices[seg.start] : vertices[seg.end]
+  const p3 = forward ? vertices[seg.end] : vertices[seg.start]
+  const ts = seg.tangentStart
+  const te = seg.tangentEnd
+
+  const isLine = ts.x === 0 && ts.y === 0 && te.x === 0 && te.y === 0
+  if (isLine) {
+    path.lineTo(p3.x, p3.y)
+  } else if (forward) {
+    path.cubicTo(p0.x + ts.x, p0.y + ts.y, p3.x + te.x, p3.y + te.y, p3.x, p3.y)
+  } else {
+    path.cubicTo(p0.x + te.x, p0.y + te.y, p3.x + ts.x, p3.y + ts.y, p3.x, p3.y)
+  }
+}
+
+/**
+ * Draws one region loop. It starts at the end of its first segment away from the second, as a
+ * loop's stored order runs; a segment that does not continue from the last starts a new subpath,
+ * and the loop closes only when it runs unbroken back to where it started.
+ */
+export function addLoopToPath(
+  path: PathSink,
+  loop: number[],
+  segments: VectorSegment[],
+  vertices: VectorVertex[]
+): void {
+  if (loop.length === 0) return
+  const first = segments[loop[0]]
+  const second = loop.length > 1 ? segments[loop[1]] : null
+  const secondMeetsStart = second?.start === first.start || second?.end === first.start
+  const secondMeetsEnd = second?.start === first.end || second?.end === first.end
+  const start = !second || secondMeetsEnd || !secondMeetsStart ? first.start : first.end
+  let current = start
+  let broken = false
+  path.moveTo(vertices[start].x, vertices[start].y)
+  for (const index of loop) {
+    const segment = segments[index]
+    const connected = segment.start === current || segment.end === current
+    const forward = segment.start === current || !connected
+    if (!connected) {
+      broken = true
+      const from = vertices[segment.start]
+      path.moveTo(from.x, from.y)
+    }
+    addSegmentDirected(path, segment, vertices, forward)
+    current = forward ? segment.end : segment.start
+  }
+  if (!broken && current === start) path.close()
+}
+
+/** A region's loops, one after another: the outline its fill rule fills. */
+export function addRegionToPath(
+  path: PathSink,
+  region: Pick<VectorRegion, 'loops'>,
+  segments: VectorSegment[],
+  vertices: VectorVertex[]
+): void {
+  for (const loop of region.loops) addLoopToPath(path, loop, segments, vertices)
+}
+
+function isStraight(seg: VectorSegment): boolean {
+  const { tangentStart: ts, tangentEnd: te } = seg
+  return ts.x === 0 && ts.y === 0 && te.x === 0 && te.y === 0
+}
+
+/** Cubic handle length, as a fraction of the radius, of a circular arc turning by `angle`. */
+function arcHandle(angle: number): number {
+  return (4 / 3) * Math.tan(angle / 4)
+}
+
+interface RoundedCorner {
+  /** Where the arc leaves the incoming segment and joins the outgoing one. */
+  start: Vector
+  end: Vector
+  handleIn: Vector
+  handleOut: Vector
+}
+
+/**
+ * The arc rounding `corner` between straight runs from `from` and to `after`, or null when the
+ * runs do not turn or have no length. A radius never takes more than half of either run.
+ */
+function roundedCorner(
+  from: Vector,
+  corner: Vector,
+  after: Vector,
+  radius: number
+): RoundedCorner | null {
+  const inLength = Math.hypot(corner.x - from.x, corner.y - from.y)
+  const outLength = Math.hypot(after.x - corner.x, after.y - corner.y)
+  if (radius <= 0 || inLength === 0 || outLength === 0) return null
+  const inDir = { x: (corner.x - from.x) / inLength, y: (corner.y - from.y) / inLength }
+  const outDir = { x: (after.x - corner.x) / outLength, y: (after.y - corner.y) / outLength }
+  const turn = Math.acos(Math.max(-1, Math.min(1, inDir.x * outDir.x + inDir.y * outDir.y)))
+  if (turn <= 1e-6) return null
+  const reach = Math.min(radius * Math.tan(turn / 2), inLength / 2, outLength / 2)
+  const handle = arcHandle(turn) * (reach / Math.tan(turn / 2))
+  const start = { x: corner.x - inDir.x * reach, y: corner.y - inDir.y * reach }
+  const end = { x: corner.x + outDir.x * reach, y: corner.y + outDir.y * reach }
+  return {
+    start,
+    end,
+    handleIn: { x: start.x + inDir.x * handle, y: start.y + inDir.y * handle },
+    handleOut: { x: end.x - outDir.x * handle, y: end.y - outDir.y * handle }
+  }
+}
+
+function drawCorner(path: PathSink, corner: RoundedCorner) {
+  path.lineTo(corner.start.x, corner.start.y)
+  path.cubicTo(
+    corner.handleIn.x,
+    corner.handleIn.y,
+    corner.handleOut.x,
+    corner.handleOut.y,
+    corner.end.x,
+    corner.end.y
+  )
+}
+
+/**
+ * Draws one chain, rounding each vertex where two straight segments meet by its corner radius, or
+ * `cornerRadius` when it has none, as Figma rounds a vector's corners. A chain that comes back to
+ * where it started is closed, its last corner rounded too.
+ */
+function addChainToPath(
+  path: PathSink,
+  { start: first, segments: chain }: Chain,
+  segments: VectorSegment[],
+  vertices: VectorVertex[],
+  cornerRadius: number
+): void {
+  // The chain's vertices in drawing order; a closed chain ends where it started.
+  const order = [first]
+  for (const segIdx of chain) {
+    const seg = segments[segIdx]
+    order.push(seg.start === order[order.length - 1] ? seg.end : seg.start)
+  }
+  const closed = chain.length > 2 && order[order.length - 1] === first
+  const cornerAt = (index: number): RoundedCorner | null => {
+    const incoming = segments[chain[index - 1]]
+    const outgoing = segments[chain[index % chain.length]]
+    if (!isStraight(incoming) || !isStraight(outgoing)) return null
+    const corner = vertices[order[index]]
+    return roundedCorner(
+      vertices[order[index - 1]],
+      corner,
+      vertices[order[(index % chain.length) + 1]],
+      corner.cornerRadius ?? cornerRadius
+    )
+  }
+  const wrap = closed ? cornerAt(chain.length) : null
+  const begin = wrap?.end ?? vertices[first]
+  path.moveTo(begin.x, begin.y)
+  for (let index = 0; index < chain.length; index++) {
+    const last = index === chain.length - 1
+    const corner = last ? wrap : cornerAt(index + 1)
+    if (corner) {
+      drawCorner(path, corner)
+      continue
+    }
+    const seg = segments[chain[index]]
+    addSegmentDirected(path, seg, vertices, seg.start === order[index])
+  }
+  if (closed) path.close()
+}
+
+export function addOpenSegmentsToPath(
+  path: PathSink,
+  segments: VectorSegment[],
+  vertices: VectorVertex[],
+  cornerRadius = 0
+): void {
+  const visited = new Set<number>()
+  const chains = buildChains(segments)
+
+  for (const chain of chains) {
+    for (const segIdx of chain.segments) visited.add(segIdx)
+    addChainToPath(path, chain, segments, vertices, cornerRadius)
+  }
+
+  for (let i = 0; i < segments.length; i++) {
+    if (visited.has(i)) continue
+    const seg = segments[i]
+    path.moveTo(vertices[seg.start].x, vertices[seg.start].y)
+    addSegmentDirected(path, seg, vertices, true)
+  }
+}
+
+/**
+ * A run of connected segments in the order a walk took them, from the vertex it started at, or a
+ * lone segment's own start. The start is kept rather than worked out again from the first two
+ * segments, which two segments between the same vertices leave ambiguous.
+ */
+export interface Chain {
+  start: number
+  segments: number[]
+}
+
+export function buildChains(segments: VectorSegment[]): Chain[] {
+  if (segments.length === 0) return []
+
+  const adj = new Map<number, number[]>()
+  for (let i = 0; i < segments.length; i++) {
+    const s = segments[i]
+    const startList = adj.get(s.start) ?? []
+    startList.push(i)
+    adj.set(s.start, startList)
+
+    const endList = adj.get(s.end) ?? []
+    endList.push(i)
+    adj.set(s.end, endList)
+  }
+
+  const visited = new Set<number>()
+  const chains: Chain[] = []
+  // Open runs start at their ends; closed loops left over start wherever their first segment does,
+  // so every loop is one contour, not one per segment.
+  const degree1 = [...adj.entries()].filter(([, segs]) => segs.length === 1).map(([v]) => v)
+  const startVertices = [...degree1, ...segments.map((segment) => segment.start)]
+
+  for (const startVertex of startVertices) {
+    let current = startVertex
+    const chain: number[] = []
+
+    for (;;) {
+      const segs = adj.get(current)
+      if (!segs) break
+
+      const nextSeg = segs.find((s) => !visited.has(s))
+      if (nextSeg === undefined) break
+
+      visited.add(nextSeg)
+      chain.push(nextSeg)
+
+      const seg = segments[nextSeg]
+      current = seg.start === current ? seg.end : seg.start
+    }
+
+    // A lone segment keeps its stored direction, as a dash pattern runs from its start.
+    const start = chain.length === 1 ? segments[chain[0]].start : startVertex
+    if (chain.length > 0) chains.push({ start, segments: chain })
+  }
+
+  return chains
+}
+
+/** A stretch of a network's segments stroked as one contour, so its corners join. */
+export interface StrokeRun {
+  /** The vertex the run starts at. */
+  start: number
+  /** Segment indices in drawing order. */
+  segments: number[]
+  /** Whether the run comes back to its start, joining there instead of taking caps. */
+  closed: boolean
+}
+
+export type RunContinuation = (vertex: number, from: number) => number | undefined
+
+/**
+ * The indices of the segments meeting at each vertex, in segment order; a segment from a vertex to
+ * itself is listed there once. `include` leaves out the segments it returns false for.
+ */
+export function segmentsByVertex(
+  segments: readonly VectorSegment[],
+  include?: (index: number) => boolean
+): Map<number, number[]> {
+  const byVertex = new Map<number, number[]>()
+  const meet = (vertex: number, index: number) => {
+    const list = byVertex.get(vertex)
+    if (list) list.push(index)
+    else byVertex.set(vertex, [index])
+  }
+  for (const [index, segment] of segments.entries()) {
+    if (include && !include(index)) continue
+    meet(segment.start, index)
+    if (segment.end !== segment.start) meet(segment.end, index)
+  }
+  return byVertex
+}
+
+/**
+ * The direction segment `index` leaves `vertex` in: along its handle there, or with that handle
+ * collapsed, toward the far end's control point, as a cubic leaves toward its next distinct
+ * control point; a straight segment leaves along its chord.
+ */
+export function leavingDirection(
+  network: Pick<VectorNetwork, 'vertices' | 'segments'>,
+  index: number,
+  vertex: number
+): Vector {
+  const segment = network.segments[index]
+  const atStart = segment.start === vertex
+  const handle = atStart ? segment.tangentStart : segment.tangentEnd
+  if (handle.x !== 0 || handle.y !== 0) return handle
+  const from = network.vertices[vertex]
+  const to = network.vertices[atStart ? segment.end : segment.start]
+  const farHandle = atStart ? segment.tangentEnd : segment.tangentStart
+  const control = { x: to.x + farHandle.x - from.x, y: to.y + farHandle.y - from.y }
+  if (control.x !== 0 || control.y !== 0) return control
+  return { x: to.x - from.x, y: to.y - from.y }
+}
+
+/**
+ * The pairs of segments a stroke may join at each vertex: the two at a vertex exactly two meet at,
+ * and with several regions, also each two region edges next to each other around a vertex,
+ * which region strokes join where the gap between them is unfilled, open segments aside.
+ */
+export function joinedSegmentPairs(
+  network: VectorNetwork
+): [vertex: number, a: number, b: number][] {
+  const pairs: [number, number, number][] = []
+  for (const [vertex, indices] of segmentsByVertex(network.segments)) {
+    if (indices.length === 2) pairs.push([vertex, indices[0], indices[1]])
+  }
+  if (network.regions.length < 2) return pairs
+  const bounding = new Set(network.regions.flatMap((region) => region.loops.flat()))
+  const edges = segmentsByVertex(
+    network.segments,
+    (index) => bounding.has(index) && network.segments[index].start !== network.segments[index].end
+  )
+  for (const [vertex, indices] of edges) {
+    if (indices.length < 2) continue
+    const angle = (index: number) => {
+      const direction = leavingDirection(network, index, vertex)
+      return Math.atan2(direction.y, direction.x)
+    }
+    const around = indices.toSorted((a, b) => angle(a) - angle(b))
+    for (const [position, index] of around.entries()) {
+      pairs.push([vertex, index, around[(position + 1) % around.length]])
+    }
+  }
+  return pairs
+}
+
+/**
+ * Segments chained into runs as Figma strokes a network: by default a run passes through every
+ * vertex exactly two segments meet at, so its corners take the stroke's join and only its open
+ * ends take caps. Runs stop at open ends and at junctions where three or more segments meet, unless
+ * `continuation` names a segment to go on with there.
+ */
+export function strokeRuns(segments: VectorSegment[], continuation?: RunContinuation): StrokeRun[] {
+  const incident = segmentsByVertex(segments)
+  const used = new Set<number>()
+  const across = (index: number, vertex: number) =>
+    segments[index].start === vertex ? segments[index].end : segments[index].start
+  const throughPairs: RunContinuation = (vertex, from) => {
+    const meeting = incident.get(vertex)
+    if (meeting?.length !== 2) {
+      return undefined
+    }
+    return meeting[0] === from ? meeting[1] : meeting[0]
+  }
+  const continueAt = continuation ?? throughPairs
+  const extend = (vertex: number, from: number, add: (index: number) => void) => {
+    for (;;) {
+      const next = continueAt(vertex, from)
+      if (next === undefined || used.has(next)) {
+        return vertex
+      }
+      used.add(next)
+      add(next)
+      vertex = across(next, vertex)
+      from = next
+    }
+  }
+
+  const runs: StrokeRun[] = []
+  for (const [first, segment] of segments.entries()) {
+    if (used.has(first)) continue
+    used.add(first)
+    const run = [first]
+    const end = extend(segment.end, first, (index) => run.push(index))
+    if (end === segment.start) {
+      runs.push({ start: segment.start, segments: run, closed: true })
+      continue
+    }
+    const start = extend(segment.start, first, (index) => run.unshift(index))
+    // A loop through a junction stops at it from both sides; it still closes there, whichever
+    // of its segments is stored first.
+    runs.push({ start, segments: run, closed: start === end })
+  }
+  return runs
+}
+
+/** Emits a stroke run as one contour, closed when the run comes back to its start. */
+export function addStrokeRunToPath(
+  path: PathSink,
+  run: StrokeRun,
+  segments: VectorSegment[],
+  vertices: VectorVertex[]
+): void {
+  let current = run.start
+  path.moveTo(vertices[current].x, vertices[current].y)
+  for (const index of run.segments) {
+    const segment = segments[index]
+    const forward = segment.start === current
+    addSegmentDirected(path, segment, vertices, forward)
+    current = forward ? segment.end : segment.start
+  }
+  if (run.closed) path.close()
+}

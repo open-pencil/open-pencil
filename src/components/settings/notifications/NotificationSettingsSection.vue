@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useCommentMessages, useI18n } from '@open-pencil/vue/i18n'
 
+import { DEFAULT_APP_PREFERENCES } from '@/app/settings/preferences/store'
 import {
   browserNotificationPermission,
   requestBrowserNotificationPermission
@@ -15,9 +16,13 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { ai, settings } = useI18n()
+const comments = useCommentMessages()
 const needsInput = notificationPreference('agentNeedsInput')
 const finished = notificationPreference('agentFinished')
 const failed = notificationPreference('agentFailed')
+const mention = notificationPreference('commentMention')
+const reply = notificationPreference('commentReply')
+const defaults = DEFAULT_APP_PREFERENCES.notifications
 </script>
 
 <template>
@@ -40,14 +45,42 @@ const failed = notificationPreference('agentFailed')
           >{{ ai.notificationsAllow }}</AppButton
         >
       </SettingsRow>
-      <SettingsRow :label="ai.notifyNeedsInput" :description="ai.notifyNeedsInputHint">
+      <SettingsRow
+        :label="ai.notifyNeedsInput"
+        :description="ai.notifyNeedsInputHint"
+        :modified="needsInput !== defaults.agentNeedsInput"
+        @reset="needsInput = defaults.agentNeedsInput"
+      >
         <AppSwitch v-model="needsInput" :label="ai.notifyNeedsInput" />
       </SettingsRow>
-      <SettingsRow :label="ai.notifyFinished">
+      <SettingsRow
+        :label="ai.notifyFinished"
+        :modified="finished !== defaults.agentFinished"
+        @reset="finished = defaults.agentFinished"
+      >
         <AppSwitch v-model="finished" :label="ai.notifyFinished" />
       </SettingsRow>
-      <SettingsRow :label="ai.notifyFailed">
+      <SettingsRow
+        :label="ai.notifyFailed"
+        :modified="failed !== defaults.agentFailed"
+        @reset="failed = defaults.agentFailed"
+      >
         <AppSwitch v-model="failed" :label="ai.notifyFailed" />
+      </SettingsRow>
+      <SettingsRow
+        :label="comments.notifyMention"
+        :modified="mention !== defaults.commentMention"
+        @reset="mention = defaults.commentMention"
+      >
+        <AppSwitch v-model="mention" :label="comments.notifyMention" />
+      </SettingsRow>
+      <SettingsRow
+        :label="comments.notifyReply"
+        :description="comments.notifyReplyHint"
+        :modified="reply !== defaults.commentReply"
+        @reset="reply = defaults.commentReply"
+      >
+        <AppSwitch v-model="reply" :label="comments.notifyReply" />
       </SettingsRow>
     </SettingsGroup>
     <AppAlert

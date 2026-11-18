@@ -1,4 +1,4 @@
-import type { CloudAIClient } from '@open-pencil/cloud/client'
+import type { CloudServicesClient } from '@open-pencil/cloud/client'
 
 import type { ModelConfig, ModelProviderRuntime } from '@/app/ai/providers/types'
 
@@ -9,7 +9,7 @@ import { OPENPENCIL_AI_PROVIDER } from './provider'
  * fetch adds to every request, so the key is only a placeholder the SDK requires.
  */
 export function cloudModelConfig(
-  client: CloudAIClient,
+  client: CloudServicesClient,
   modelID: string
 ): { config: ModelConfig; runtime: ModelProviderRuntime } {
   return {

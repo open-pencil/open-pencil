@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { createEditor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import {
@@ -10,6 +8,7 @@ import {
   connectorSublayers,
   layoutConnector
 } from '@open-pencil/scene-graph/connectors'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 type Editor = ReturnType<typeof createEditor>
 
@@ -213,7 +212,9 @@ describe('dragging a connector label', () => {
         connectorStart: boundEndpoint(from.id),
         connectorEnd: boundEndpoint(to.id)
       })
-      buildConnectorSublayers(graph, connector, { label: { text: 'detour', width: 50, height: 24 } })
+      buildConnectorSublayers(graph, connector, {
+        label: { text: 'detour', width: 50, height: 24 }
+      })
       layoutConnector(graph, connector)
       await drag(editor, connector, { kind: 'label' }, [320, 80], [420, 80])
       const position = () => editor.graph.getNode(connector.id)?.connectorLabelPosition

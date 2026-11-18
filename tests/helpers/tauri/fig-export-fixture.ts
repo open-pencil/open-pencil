@@ -1,37 +1,35 @@
-import { mockIPC } from '@tauri-apps/api/mocks'
+import { unzipSync } from 'fflate'
 
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { installNativeFigArchives } from '@/app/document/io/native-fig'
 
-import { installTauriMockWindow } from './mocks'
+import { mockTauriIPC } from './mocks'
 
-installTauriMockWindow()
+const CANVAS = new Uint8Array([7, 8, 9])
 
-mockIPC((cmd, args) => {
-  if (cmd !== 'build_fig_file') throw new Error(`Unexpected command: ${cmd}`)
-  const { file: payload } = args as {
-    file: {
-      schemaDeflated: number[]
-      kiwiData: number[]
-      thumbnailPng: number[]
-      metaJson: string
-      images: Array<{ name: string; data: number[] }>
-      board: boolean
-    }
+await mockTauriIPC((cmd, body, options) => {
+  if (cmd !== 'compress_fig_canvas') throw new Error(`Unexpected command: ${cmd}`)
+  if (!(body instanceof Uint8Array)) throw new Error('the document data is not a raw body')
+  const headers = new Headers(
+    (options as { headers?: Record<string, string> } | undefined)?.headers
+  )
+  const schemaLength = Number(headers.get('x-fig-schema-length'))
+  if (!(schemaLength > 0 && schemaLength < body.byteLength)) {
+    throw new Error(
+      `x-fig-schema-length ${schemaLength} does not split a ${body.byteLength} byte body`
+    )
   }
-  if (payload.board) throw new Error('a new design is no board')
-  if (payload.schemaDeflated.length === 0) throw new Error('schemaDeflated is empty')
-  if (payload.kiwiData.length === 0) throw new Error('kiwiData is empty')
-  if (payload.thumbnailPng.length === 0) throw new Error('thumbnailPng is empty')
-  if (payload.images.length !== 0) throw new Error('images should be empty')
-  JSON.parse(payload.metaJson)
-  return new Uint8Array([7, 8, 9]).buffer
+  if (headers.get('x-fig-board') !== 'false') throw new Error('a new design is no board')
+  return CANVAS.buffer
 })
 
 installNativeFigArchives()
-const bytes = await exportFigFile(new SceneGraph())
-if (bytes.length !== 3 || bytes[0] !== 7 || bytes[1] !== 8 || bytes[2] !== 9) {
-  throw new Error(`Unexpected export bytes: ${Array.from(bytes).join(',')}`)
+const entries = unzipSync(await exportFigFile(new SceneGraph()))
+if (entries['canvas.fig']?.join(',') !== CANVAS.join(',')) {
+  throw new Error(`canvas.fig is not what the host compressed: ${entries['canvas.fig']?.join(',')}`)
+}
+if (!entries['thumbnail.png']?.length || !entries['meta.json']?.length) {
+  throw new Error('the archive around the host-compressed document is incomplete')
 }

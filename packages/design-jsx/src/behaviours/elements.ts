@@ -6,8 +6,13 @@ export interface RekaProps extends BaseProps {
   modelValue?: BindingProp
   open?: BindingProp
   disabled?: BindingProp
+  /** For a form control: the property that draws its value failing validation. */
+  invalid?: BindingProp
   filled?: BindingProp
-  /** The variant property whose values draw rest, hover, pressed, focus, and disabled. */
+  /**
+   * The variant property whose values draw rest, hover, pressed, focus, disabled, and, for a
+   * form control, invalid.
+   */
   states?: string
   min?: number
   max?: number

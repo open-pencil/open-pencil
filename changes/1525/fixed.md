@@ -1,1 +1,0 @@
-- Saving an opened `.fig` after an edit that re-lays out auto layout, such as changing a gap or adding a layer, keeps where layout moved the other layers and the new size of the hugging frames around them.

@@ -1,9 +1,9 @@
 import { APICallError } from 'ai'
 import * as v from 'valibot'
 
-import { aiErrorSchema } from '@open-pencil/cloud/contract'
+import { serviceErrorSchema } from '@open-pencil/cloud/contract'
 
-const errorBodySchema = v.pipe(v.string(), v.parseJson(), aiErrorSchema)
+const errorBodySchema = v.pipe(v.string(), v.parseJson(), serviceErrorSchema)
 
 /**
  * Cloud's AI service refusing a request because the workspace has no credits left, with when its

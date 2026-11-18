@@ -38,7 +38,8 @@ const {
   disabled: disabledProp = false,
   bound: boundProp = false,
   editPolicy = 'editable',
-  units = []
+  units = [],
+  round
 } = defineProps<NumberFieldRootProps>()
 const emit = defineEmits<NumberFieldRootEmits>()
 defineSlots<NumberFieldRootSlots>()
@@ -56,7 +57,9 @@ const workingValue = ref(0)
 const isMixed = computed(() => binding?.state.value === 'mixed' || typeof modelValue === 'symbol')
 const numericValue = computed(() => {
   const resolved = binding?.resolvedValue.value
-  if (binding?.state.value === 'bound' && typeof resolved === 'number') return resolved
+  if (binding?.state.value === 'bound' && typeof resolved === 'number') {
+    return round ? round(resolved) : resolved
+  }
   return typeof modelValue === 'number' ? modelValue : 0
 })
 const displayValue = computed(() => {
@@ -136,7 +139,11 @@ function restoreInteractionValue() {
 }
 
 function finishCommit(value: number, unit?: string) {
-  updateValue(value, unit)
+  // A field left as it began sends nothing: a bound field begins from the variable's value, which
+  // can differ from the value it was given (a scaled binding, a fractional size shown rounded).
+  const untouched =
+    !mutationRequested && !interactionStartedMixed && !unit && value === interactionStartValue
+  if (!untouched) updateValue(value, unit)
   editing.value = false
   if (
     mutationRequested ||

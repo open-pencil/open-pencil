@@ -7,6 +7,7 @@
   "copiedProperties": "Eigenschaften kopiert.",
   "pngClipboardUnavailable": "Der PNG-Export in die Zwischenablage ist in diesem Browser nicht verfügbar.",
   "openFileFailed": "„{name}“ konnte nicht geöffnet werden: {error}",
+  "openTourFailed": "Die Tour konnte nicht geöffnet werden: {error}",
   "viewDiagnostics": "Diagnose anzeigen",
   "importedDOMCSS": "DOM/CSS-Dokument importiert.",
   "importDOMCSSFailed": "DOM/CSS konnte nicht importiert werden: {error}",
@@ -31,6 +32,11 @@
   "openQueuedFilesFailed": "Die an OpenPencil übergebenen Dateien konnten nicht geöffnet werden: {error}",
   "tokensLeftOut": "Nicht im Stylesheet enthalten: {names}.",
   "designTokensLeftOut": "Nicht in den Design-Tokens enthalten: {names}.",
+  "designTokensAmbiguous": "Diese Stile verweisen auf eine Variable, deren Pfad auch eine andere Sammlung hat, daher lesen andere Tools womöglich die falsche: {names}.",
   "designTokensImported": "{count} Design-Tokens importiert.",
-  "unsupportedVariableExpressions": "OpenPencil kann diese Variablen noch nicht auswerten, daher behalten Ebenen die in der Datei gespeicherten Werte: {names}."
+  "unsupportedVariableExpressions": "OpenPencil kann diese Variablen noch nicht auswerten, daher behalten Ebenen die in der Datei gespeicherten Werte: {names}.",
+  "savingDocument": "Dokument wird gespeichert…",
+  "saveFailedRetry": "Erneut speichern",
+  "fileChangedOnDisk": "„{name}“ wurde auf dem Datenträger geändert. Deine nicht gespeicherten Änderungen bleiben erhalten; Speichern ersetzt die Datei.",
+  "reloadDiscardingChanges": "Neu laden"
 }

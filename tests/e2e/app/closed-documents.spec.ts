@@ -4,7 +4,6 @@ import type * as AppTabs from '@/app/tabs'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { testPath } from '#tests/helpers/paths'
-
 const FIXTURE = 'gold-preview.fig'
 
 async function openFixtureInNewTab(page: Page) {

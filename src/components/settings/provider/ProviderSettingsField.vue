@@ -50,7 +50,7 @@ const emit = defineEmits<{ clear: []; blur: [] }>()
     <p v-if="error" :id="`${inputID}-error`" class="text-xs text-error" role="alert">
       {{ error }}
     </p>
-    <p v-if="hint" :id="`${inputID}-hint`" class="text-[11px] leading-relaxed text-muted">
+    <p v-if="hint" :id="`${inputID}-hint`" class="text-2xs leading-relaxed text-muted">
       {{ hint }}
     </p>
     <slot name="hint" />

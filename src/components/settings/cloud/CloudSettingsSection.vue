@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { joinURL } from 'ufo'
 import { computed, ref } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import { cloudOfficialListed } from '@/app/cloud/availability'
 import { openCloudConnect } from '@/app/cloud/connect/flow'
@@ -18,6 +19,7 @@ import { cloudConnection, forgetCloudConnection } from '@/app/cloud/sessions/con
 import { signOutOfCloud } from '@/app/cloud/sessions/sign-out'
 import { clearCloudSessionToken } from '@/app/cloud/sessions/token'
 import { openExternalLink, toast } from '@/app/shell/ui'
+import CampaignNoteHost from '@/components/campaigns/CampaignNoteHost.vue'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 
@@ -27,7 +29,6 @@ import type { CloudServerEntry } from './types'
 
 /** The Cloud section of Settings: the saved servers with their live sessions, and their actions. */
 const t = useCloudMessages()
-const common = useCommonMessages()
 const entries = computed<CloudServerEntry[]>(() =>
   cloudServers.value.map((server) => {
     const connection = cloudConnection(server.id)
@@ -36,6 +37,8 @@ const entries = computed<CloudServerEntry[]>(() =>
     if (
       connection.state === 'pending' ||
       connection.state === 'closed' ||
+      connection.state === 'two-step' ||
+      connection.state === 'terms' ||
       connection.state === 'expired' ||
       connection.state === 'signed-out'
     ) {
@@ -65,7 +68,19 @@ async function askToRemove(id: string) {
 
 function manageAccount(id: string) {
   const server = findCloudServer(id)
-  if (server) void openExternalLink(new URL('/account', server.url).href)
+  if (server) void openExternalLink(joinURL(server.url, '/account'))
+}
+
+/** Opens the server's page where this browser's session proves its second step. */
+function confirmTwoStep(id: string) {
+  const server = findCloudServer(id)
+  if (server) void openExternalLink(new URL('/account/confirm', server.url).href)
+}
+
+/** Opens the server's terms page, where accepting the current version lets the account back in. */
+function reviewTerms(id: string) {
+  const server = findCloudServer(id)
+  if (server) void openExternalLink(new URL('/account/terms', server.url).href)
 }
 
 async function signOut(id: string) {
@@ -99,10 +114,13 @@ async function remove() {
       @connect="(kind) => openCloudConnect({ kind })"
       @sign-in="(id) => openCloudConnect({ serverId: id })"
       @manage-account="manageAccount"
+      @review-terms="reviewTerms"
+      @confirm-two-step="confirmTwoStep"
       @show-on-home="showCloudServerOnHome"
       @sign-out="signOut"
       @remove="askToRemove"
     >
+      <template #campaign><CampaignNoteHost placement="settings-cloud" /></template>
       <template #hosted><CloudWaitlist /></template>
     </CloudSettingsPanel>
     <AppConfirmationDialog
@@ -114,7 +132,6 @@ async function remove() {
           ? t.settingsDisconnectUnsavedDescription(removingShown.unsaved)
           : t.settingsDisconnectDescription
       "
-      :cancel-label="common.cancel"
       :confirm-label="
         removingShown?.unsaved ? t.settingsDisconnectAndDiscard : t.settingsDisconnect
       "

@@ -1,4 +1,5 @@
-/// <reference types="@figma/plugin-typings" />
+import type { Image } from '@figma/plugin-typings/plugin-api-standalone'
+import * as v from 'valibot'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import {
@@ -8,7 +9,9 @@ import {
   type ImageMimeType
 } from '@open-pencil/scene-graph/images'
 
-import { invalid, received } from './accessors/text/messages'
+import { graphOf } from '#core/figma-api/graph'
+import { invalid, parseFigma, received } from '#core/figma-api/validation'
+import { waitOutsideScript } from '#core/figma-api/waits'
 
 /** How a host fetches the URLs `figma.createImageAsync` loads. */
 export type ImageFetch = (input: string, init?: RequestInit) => Promise<Response>
@@ -84,12 +87,8 @@ export function createImage(graph: SceneGraph, data: unknown): Image {
 
 /** The document's image under `hash`, as `figma.getImageByHash` gives it, or null. */
 export function imageByHash(graph: SceneGraph, hash: unknown): Image | null {
-  if (typeof hash !== 'string') {
-    const problem =
-      hash === undefined ? 'Required value missing' : `Expected string, received ${received(hash)}`
-    throw invalid('getImageByHash', problem, 'getImageByHash')
-  }
-  return graph.images.has(hash) ? figmaImage(graph, hash) : null
+  const key = parseFigma(v.string(), hash, 'getImageByHash', 'getImageByHash')
+  return graph.images.has(key) ? figmaImage(graph, key) : null
 }
 
 /** The protocol of `src` when it is an absolute URL, or null. */
@@ -139,28 +138,24 @@ async function readBounded(response: Response): Promise<Uint8Array> {
  * proxy takes only HTTP(S). Figma's own server fetches the rest, so its messages name only the
  * status.
  */
-export async function fetchImage(
-  graph: SceneGraph,
-  src: unknown,
-  fetch: ImageFetch
-): Promise<Image> {
-  if (typeof src !== 'string') {
-    const problem =
-      src === undefined ? 'Required value missing' : `Expected string, received ${received(src)}`
-    throw invalid('createImageAsync', problem, 'createImageAsync')
-  }
+export async function fetchImage(api: object, value: unknown, fetch: ImageFetch): Promise<Image> {
+  const src = parseFigma(v.string(), value, 'createImageAsync', 'createImageAsync')
   const scheme = protocol(src)
   if (scheme !== 'http:' && scheme !== 'https:' && scheme !== 'data:') {
     throw new Error('createImageAsync requires an absolute URL (http:// or https://) or a data URI')
   }
   const load = scheme === 'data:' ? globalThis.fetch : fetch
-  const response = await load(src).catch((error: unknown) => {
-    const reason = error instanceof Error ? error.message : String(error)
-    throw new Error(`Unable to fetch image: ${reason}`)
-  })
-  if (!response.ok) throw new Error(`Unable to fetch image. Response status: ${response.status}`)
-  const data = await readBounded(response)
+  const download = async () => {
+    const response = await load(src).catch((error: unknown) => {
+      const reason = error instanceof Error ? error.message : String(error)
+      throw new Error(`Unable to fetch image: ${reason}`)
+    })
+    if (!response.ok) throw new Error(`Unable to fetch image. Response status: ${response.status}`)
+    return readBounded(response)
+  }
+  const data = await waitOutsideScript(api, download)
   const problem = imageProblem(data)
   if (problem) throw new Error(problem)
+  const graph = graphOf(api)
   return figmaImage(graph, storeImage(graph, data))
 }

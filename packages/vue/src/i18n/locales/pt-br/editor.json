@@ -1,0 +1,20 @@
+{
+  "wideGamutUnavailable": "Esta tela ou este navegador não consegue exibir cores Display-P3, então a tela mostra uma prévia delas em sRGB. O documento mantém o espaço de cor.",
+  "toolOptions": "Opções de {tool}",
+  "removeGradientStop": "Remover ponto do gradiente",
+  "cornerRadius": "Raio",
+  "pointCount": "Quantidade",
+  "starRatio": "Proporção",
+  "arcStart": "Início",
+  "arcSweep": "Varredura",
+  "arcRatio": "Proporção",
+  "stickyPlaceholder": "Digite qualquer coisa, @mencione qualquer pessoa",
+  "connectorLabelPlaceholder": "Adicionar texto",
+  "showUI": "Mostrar interface ({shortcut})",
+  "openChat": "Abrir chat de IA",
+  "closeChat": "Fechar chat de IA",
+  "previewing": "Pré-visualizando",
+  "startPreview": "Pré-visualizar ({shortcut})",
+  "resetPreview": "Redefinir",
+  "leavePreview": "Sair da pré-visualização ({shortcut})"
+}

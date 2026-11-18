@@ -260,7 +260,7 @@ export async function addFlowchart(
     created = added
     // Shapes grow to their labels, and connector labels take their size, before the layout reads
     // them, measured in the fonts they are drawn in.
-    await prepareGraphFonts(graph, added)
+    await graph.waitOutsideEdit(prepareGraphFonts(graph, added))
     for (const node of chart.nodes) builder.fitWidth(node)
     layoutAuthoredNodes(graph, added)
     const enclosing = enclosingSubgraphs(chart)
@@ -292,7 +292,7 @@ export async function addFlowchart(
         label: labelSize(edge.id)
       }))
     }
-    const arrangement = await arrangeBoxes(input)
+    const arrangement = await graph.waitOutsideEdit(arrangeBoxes(input))
     applyArrangement(
       graph,
       input,

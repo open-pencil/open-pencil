@@ -1,3 +1,5 @@
+import type { FontVariationSettings } from '@figma/plugin-typings/plugin-api-standalone'
+
 import type { FontVariation } from '@open-pencil/scene-graph'
 import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
 
@@ -9,7 +11,8 @@ import {
 } from '#core/text/font/variation'
 
 /** Variable font axis values by axis tag, as `FontName.variationSettings` holds them. */
-export type FigmaVariationSettings = Record<string, number>
+/** Figma's `FontVariationSettings`: a value by axis tag. */
+export type FigmaVariationSettings = FontVariationSettings
 
 /** Figma lists axis tags in code unit order, so `GRAD` comes before `opsz`. */
 function byCodeUnit(a: string, b: string): number {

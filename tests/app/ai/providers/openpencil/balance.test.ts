@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { effectScope, nextTick, ref, type EffectScope } from 'vue'
 
-import type { AIWallet } from '@open-pencil/cloud/contract'
+import type { CreditWallet } from '@open-pencil/cloud/contract'
 
 import {
   useCloudCreditBalance,
@@ -10,7 +10,7 @@ import {
 } from '@/app/ai/providers/openpencil/balance'
 import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
-function wallet(balance: number | null): AIWallet {
+function wallet(balance: number | null): CreditWallet {
   return {
     balance,
     buckets:
@@ -23,14 +23,14 @@ function wallet(balance: number | null): AIWallet {
 /** A Home server whose wallets answer when the test says so. */
 function homeCloud() {
   const identity = ref<string | null>('home:alice')
-  const answers: Deferred<AIWallet>[] = []
+  const answers: Deferred<CreditWallet>[] = []
   const source: CloudBalanceSource = {
     identity,
     client: () =>
       identity.value
         ? {
             wallet: () => {
-              const next = createDeferred<AIWallet>()
+              const next = createDeferred<CreditWallet>()
               answers.push(next)
               return next.promise
             }

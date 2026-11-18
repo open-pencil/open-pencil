@@ -1,5 +1,6 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
@@ -20,6 +21,7 @@ import {
   type SceneGeometry,
   type ViewportTransform
 } from '#core/geometry'
+import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 
 import type { DesignIssueMarker, DesignIssueSeverity, PlacedIssueMarker } from './types'
 
@@ -121,8 +123,8 @@ function worldBounds(node: SceneNode, geometry: SceneGeometry): Rect {
 /** A world box on the screen; the viewport pans and scales, so boxes stay axis-aligned. */
 function toScreen(rect: Rect, view: ViewportTransform): Rect {
   return {
-    x: rect.x * view.zoom + view.panX,
-    y: rect.y * view.zoom + view.panY,
+    x: worldXToScreen(view, rect.x),
+    y: worldYToScreen(view, rect.y),
     width: rect.width * view.zoom,
     height: rect.height * view.zoom
   }
@@ -160,7 +162,7 @@ function stageTargets(
     const bounds = worldBounds(layer, geometry)
     const clipped: Rect | null = clip ? intersect(bounds, clip) : bounds
     visible[index] = clipped
-    if (!layer.clipsContent) continue
+    if (!clipsChildren(layer)) continue
     if (!clipped) return null
     clip = clipped
   }

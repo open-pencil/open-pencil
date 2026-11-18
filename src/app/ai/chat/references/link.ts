@@ -1,13 +1,14 @@
 /**
  * References to things in OpenPencil, written in chat text as Markdown links with the
  * `openpencil:` scheme: `[Hero](openpencil://node/12:34)`. People insert them from the
- * composer and the model cites what it touched with them; the chat shows them as chips.
+ * composer and the model cites what it touched with them; the chat shows them as chips. A
+ * command chosen from `/` is one too, named by the command (`./command.ts`).
  */
-export type ChatReferenceKind = 'node' | 'page' | 'skill'
+export type ChatReferenceKind = 'node' | 'page' | 'skill' | 'command'
 
 export interface ChatReference {
   kind: ChatReferenceKind
-  /** A node or page ID, or a skill's name. */
+  /** A node or page ID, a skill's name, or a command's name without its `/`. */
   id: string
   /** The name when the reference was written, shown when the target is gone. */
   label: string
@@ -20,7 +21,7 @@ export interface ChatReferenceMatch {
 }
 
 const SCHEME = 'openpencil://'
-const KINDS: ReadonlySet<string> = new Set<ChatReferenceKind>(['node', 'page', 'skill'])
+const KINDS: ReadonlySet<string> = new Set<ChatReferenceKind>(['node', 'page', 'skill', 'command'])
 
 /** A link whose label holds no unescaped `]` or line break and whose URL has no space. */
 const LINK = /\[((?:\\.|[^\]\\\n])*)\]\(openpencil:\/\/([a-z]+)\/([^)\s]+)\)/g

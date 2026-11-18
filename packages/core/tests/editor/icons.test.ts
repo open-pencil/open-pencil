@@ -3,13 +3,11 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { parseIconName, type IconProvider } from '@open-pencil/core/icons'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { isIconModified, readIcon } from '@open-pencil/scene-graph/icons'
+import { isIconModified, readIcon, type IconOptions } from '@open-pencil/scene-graph/icons'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { buildIconData } from '#core/icons/svg'
-
-import { getNodeOrThrow } from '../helpers/assert'
-
+import { buildIconData } from '#core/icons/artwork'
 const RED: Color = { r: 1, g: 0, b: 0, a: 1 }
 
 const BODIES: Record<string, string> = {
@@ -17,20 +15,29 @@ const BODIES: Record<string, string> = {
   'test:lines': '<path fill="none" stroke="currentColor" d="M4 4h16M4 12h16"/>'
 }
 
-/** Icons drawn from fixed bodies, so the commands run without the network. */
+/**
+ * Icons drawn from fixed bodies, so the commands run without the network; they record the options
+ * asked for, as a set drawn from its own source does.
+ */
 const provider: IconProvider = {
   search: async () => ({ icons: Object.keys(BODIES), total: 2, collections: {} }),
   collections: async () => [],
   browse: async () => Object.keys(BODIES),
   previews: async (names) =>
     new Map(names.flatMap((name) => (BODIES[name] ? [[name, `<svg>${BODIES[name]}</svg>`]] : []))),
-  async icons(names, size) {
+  async icons(names, size, options) {
     const found = new Map()
     for (const name of names) {
       const parsed = parseIconName(name)
       const body = BODIES[name]
       if (parsed && body)
-        found.set(name, buildIconData({ body }, parsed.prefix, parsed.iconName, 24, 24, size))
+        found.set(
+          name,
+          Object.assign(
+            buildIconData({ body, width: 24, height: 24 }, parsed.prefix, parsed.iconName, size),
+            options && { options: { ...options } }
+          )
+        )
     }
     return found
   }
@@ -140,9 +147,9 @@ describe('icon commands across a document change', () => {
     })
     const slow: IconProvider = {
       ...provider,
-      async icons(names, size) {
+      async icons(names, size, options) {
         await loaded
-        return provider.icons(names, size)
+        return provider.icons(names, size, options)
       }
     }
     const editor = createEditor({
@@ -156,6 +163,102 @@ describe('icon commands across a document change', () => {
 
     expect(await inserting).toBeNull()
     expect([...replacement.getAllNodes()].some((node) => readIcon(node))).toBe(false)
+  })
+})
+
+/**
+ * An editor whose icons draw at once, except those `holds` names, which wait for `release`;
+ * `started` settles once such an icon has begun loading.
+ */
+function setupHeld(holds: (names: readonly string[], options?: IconOptions) => boolean) {
+  let release: () => void = () => undefined
+  let begin: () => void = () => undefined
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const started = new Promise<void>((resolve) => {
+    begin = resolve
+  })
+  const editor = createEditor({
+    getViewportSize: () => ({ width: 1000, height: 800 }),
+    icons: {
+      ...provider,
+      async icons(names, size, options) {
+        if (holds(names, options)) {
+          begin()
+          await held
+        }
+        return provider.icons(names, size, options)
+      }
+    }
+  })
+  return { editor, started, release: () => release() }
+}
+
+describe('icon redraws that finish late', () => {
+  test('an option change and a swap made after it both apply, in order', async () => {
+    const { editor, started, release } = setupHeld((_, options) => options?.weight === 'bold')
+    const id = await insert(editor, 'test:square')
+    const changing = editor.setIconOptions(id, { weight: 'bold' })
+    const swapping = editor.swapIconGlyph(id, 'test:lines')
+    await started
+    release()
+    await Promise.all([changing, swapping])
+    expect(readIcon(getNodeOrThrow(editor.graph, id))).toMatchObject({
+      name: 'test:lines',
+      options: { weight: 'bold' }
+    })
+  })
+
+  test('a swap and an option change made after it both apply, in order', async () => {
+    const { editor, started, release } = setupHeld((names) => names.includes('test:lines'))
+    const id = await insert(editor, 'test:square')
+    const swapping = editor.swapIconGlyph(id, 'test:lines')
+    const changing = editor.setIconOptions(id, { weight: 'bold' })
+    await started
+    release()
+    await Promise.all([swapping, changing])
+    expect(readIcon(getNodeOrThrow(editor.graph, id))).toMatchObject({
+      name: 'test:lines',
+      options: { weight: 'bold' }
+    })
+  })
+
+  test('a redraw gives way to path edits made while its icon loads', async () => {
+    const { editor, started, release } = setupHeld((_, options) => options?.weight === 'bold')
+    const id = await insert(editor, 'test:square')
+    const changing = editor.setIconOptions(id, { weight: 'bold' })
+    // The edit lands while the redraw's icon loads, past the check made before loading.
+    await started
+    editor.graph.createNode('RECTANGLE', id, { width: 4, height: 4 })
+    release()
+    await changing
+    expect(editor.graph.getChildren(id)).toHaveLength(2)
+    expect(readIcon(getNodeOrThrow(editor.graph, id))?.options).toBeUndefined()
+  })
+
+  test('a redraw queued when the document is replaced is not applied to the new one', async () => {
+    const { editor, started, release } = setupHeld((_, options) => options?.weight === 'bold')
+    const id = await insert(editor, 'test:square')
+    const frame = getNodeOrThrow(editor.graph, id)
+    const first = editor.setIconOptions(id, { weight: 'bold' })
+    const queued = editor.setIconOptions(id, { scale: 'large' })
+    await started
+    // A copy of the same file, whose icon keeps its ID and its paths, unedited.
+    const replacement = new SceneGraph()
+    replacement.createNodeWithId(id, 'FRAME', replacement.getPages()[0].id, {
+      name: frame.name,
+      width: frame.width,
+      height: frame.height,
+      pluginData: frame.pluginData
+    })
+    for (const path of editor.graph.getChildren(id))
+      replacement.createNodeWithId(path.id, path.type, id, { ...path, childIds: [] })
+    expect(isIconModified(replacement, getNodeOrThrow(replacement, id))).toBe(false)
+    editor.replaceGraph(replacement)
+    release()
+    await Promise.all([first, queued])
+    expect(readIcon(getNodeOrThrow(replacement, id))?.options).toBeUndefined()
   })
 })
 
@@ -190,6 +293,43 @@ describe('editing an icon', () => {
 
     editor.undo.undo()
     expect(editor.graph.getChildren(id)).toHaveLength(2)
+  })
+
+  test('options draw the icon again with them, keeping its others and its color, in one undo step', async () => {
+    const editor = setup()
+    const id = await insert(editor, 'test:square', RED)
+    await editor.setIconOptions(id, { weight: 'bold' })
+    await editor.setIconOptions(id, { scale: 'large' })
+    expect(readIcon(getNodeOrThrow(editor.graph, id))?.options).toEqual({
+      weight: 'bold',
+      scale: 'large'
+    })
+    expect(editor.graph.getChildren(id)[0]?.fills[0]?.color).toEqual(RED)
+
+    editor.undo.undo()
+    expect(readIcon(getNodeOrThrow(editor.graph, id))?.options).toEqual({ weight: 'bold' })
+  })
+
+  test('options the icon is already drawn with draw nothing and add no undo step', async () => {
+    const editor = setup()
+    const id = await insert(editor, 'test:square')
+    await editor.setIconOptions(id, { weight: 'bold' })
+    await editor.setIconOptions(id, { weight: 'bold' })
+    editor.undo.undo()
+    expect(readIcon(getNodeOrThrow(editor.graph, id))?.options).toBeUndefined()
+  })
+
+  test('options changed while the icon is still drawing both apply', async () => {
+    const editor = setup()
+    const id = await insert(editor, 'test:square')
+    await Promise.all([
+      editor.setIconOptions(id, { weight: 'bold' }),
+      editor.setIconOptions(id, { scale: 'large' })
+    ])
+    expect(readIcon(getNodeOrThrow(editor.graph, id))?.options).toEqual({
+      weight: 'bold',
+      scale: 'large'
+    })
   })
 
   test('detach makes the icon artwork, in one undo step', async () => {

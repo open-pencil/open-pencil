@@ -11,7 +11,7 @@ const record = (entry: string) => {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="relative h-20 w-[520px] rounded-lg bg-canvas">
+    <div class="relative h-20 w-130 rounded-lg bg-canvas">
       <WorkspacePill
         mode="preview"
         document-name="Settings screen"
@@ -20,7 +20,7 @@ const record = (entry: string) => {
         @leave="record('leave')"
       />
     </div>
-    <div class="relative h-20 w-[520px] rounded-lg bg-canvas">
+    <div class="relative h-20 w-130 rounded-lg bg-canvas">
       <WorkspacePill
         mode="collapsed"
         document-name="Settings screen"

@@ -1,12 +1,12 @@
 import { expect, test } from 'bun:test'
 
 import { componentPropDefsOf } from '#fig-tests/helpers/component-props'
-import { guid } from '#fig-tests/helpers/guid'
 import { materializeComponentClosure } from '#fig/instance-overrides/component-closure'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 function records(defaultId = 2): NodeChange[] {
   return [

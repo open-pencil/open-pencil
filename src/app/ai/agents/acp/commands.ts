@@ -1,4 +1,4 @@
-import type { AvailableCommand } from '@agentclientprotocol/sdk'
+import type { AvailableCommand } from '@agentclientprotocol/sdk/unstable'
 import { shallowRef } from 'vue'
 
 /** A slash command an ACP agent offers, such as Claude Code's skills and commands. */

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The store text every Linux package reads: the .deb and .rpm install it, and packaging/ reads it from there. -->
+<component type="desktop-application">
+  <id>net.dannote.open-pencil</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>OpenPencil</name>
+  <summary>Open-source design editor that opens and saves Figma files</summary>
+  <developer id="net.dannote">
+    <name>Danila Poyarkov</name>
+  </developer>
+  <!-- One line per paragraph: stores keep line breaks inside a paragraph. -->
+  <description>
+    <p>OpenPencil is an open-source design editor for interfaces. It opens and saves Figma .fig files, lays out with auto layout and grids, and works with components, variables, and prototypes.</p>
+    <p>AI can edit the canvas and review designs with your own API keys or a ChatGPT subscription. Files stay on your computer unless you share them.</p>
+  </description>
+  <launchable type="desktop-id">OpenPencil.desktop</launchable>
+  <icon type="stock">OpenPencil</icon>
+  <url type="homepage">https://openpencil.dev</url>
+  <url type="bugtracker">https://github.com/open-pencil/open-pencil/issues</url>
+  <url type="vcs-browser">https://github.com/open-pencil/open-pencil</url>
+  <!-- The Snap Store shows this as the snap's contact. -->
+  <update_contact>https://github.com/open-pencil/open-pencil/issues</update_contact>
+  <categories>
+    <category>Graphics</category>
+  </categories>
+  <keywords>
+    <keyword>design</keyword>
+    <keyword>figma</keyword>
+    <keyword>interface</keyword>
+    <keyword>prototype</keyword>
+  </keywords>
+  <provides>
+    <mediatype>application/x-figma</mediatype>
+    <mediatype>application/x-pencil-pen</mediatype>
+  </provides>
+  <!-- People in a shared file can talk in an unmoderated voice call. -->
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-audio">intense</content_attribute>
+  </content_rating>
+</component>

@@ -3,6 +3,7 @@ import {
   createWorkspace,
   newWorkspaceBusy,
   newWorkspaceFailure,
+  newWorkspaceName,
   newWorkspaceOpen
 } from '@/app/cloud/workspaces/manage'
 
@@ -14,9 +15,9 @@ import CloudNewWorkspaceDialog from './CloudNewWorkspaceDialog.vue'
 <template>
   <CloudNewWorkspaceDialog
     v-model:open="newWorkspaceOpen"
+    v-model:name="newWorkspaceName"
     :busy="newWorkspaceBusy"
     :failed="newWorkspaceFailure !== null"
     @create="createWorkspace"
-    @cancel="newWorkspaceOpen = false"
   />
 </template>

@@ -54,10 +54,12 @@ describe('measureTextForLayout', () => {
     expect(measureTextForLayout(node, 100)).toEqual({ width: 42, height: 10 })
   })
 
-  test('estimates what the measurer cannot measure, or without one', () => {
-    const estimate = estimateTextSize(node, 100)
-    expect(measureTextForLayout(node, 100)).toEqual(estimate)
+  test('estimates without a measurer, as a host without fonts has none', () => {
+    expect(measureTextForLayout(node, 100)).toEqual(estimateTextSize(node, 100))
+  })
+
+  test('keeps the size of text whose fonts are not prepared', () => {
     setTextMeasurer(() => null)
-    expect(measureTextForLayout(node, 100)).toEqual(estimate)
+    expect(measureTextForLayout(node, 100)).toEqual({ width: node.width, height: node.height })
   })
 })

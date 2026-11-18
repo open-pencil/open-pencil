@@ -29,6 +29,89 @@ function textElement(svg: string): string {
 }
 
 describe('SVG text with laid-out lines', () => {
+  test('mixed Arabic and Latin in one face is placed word by word where the canvas draws it', () => {
+    // A right-to-left paragraph: the Arabic words read from the right, then "font" at the left.
+    const text = 'خط font'
+    const edges = new Map([
+      [0, { left: 70, right: 80 }],
+      [1, { left: 60, right: 70 }],
+      [2, { left: 55, right: 60 }],
+      [3, { left: 0, right: 12 }],
+      [4, { left: 12, right: 24 }],
+      [5, { left: 24, right: 36 }],
+      [6, { left: 36, right: 48 }]
+    ])
+    const svg = exportText({ text }, [
+      { start: 0, end: text.length, x: 0, y: 18, width: 80, characters: edges }
+    ])
+    expect(svg).toContain('<tspan x="60" y="18">خط</tspan>')
+    expect(svg).toContain('<tspan x="55" y="18"> </tspan>')
+    expect(svg).toContain('<tspan x="0" y="18">font</tspan>')
+  })
+
+  test('a period at the end of an Arabic word is placed where the canvas draws it, on the left', () => {
+    const text = 'خط.'
+    const edges = new Map([
+      [0, { left: 20, right: 30 }],
+      [1, { left: 10, right: 20 }],
+      [2, { left: 5, right: 10 }]
+    ])
+    const svg = exportText({ text }, [
+      { start: 0, end: text.length, x: 0, y: 18, width: 30, characters: edges }
+    ])
+    expect(svg).toContain('<tspan x="10" y="18">خط</tspan>')
+    expect(svg).toContain('<tspan x="5" y="18">.</tspan>')
+  })
+
+  test('brackets the canvas draws right-to-left are marked for a renderer to mirror', () => {
+    // "(خط)" in a right-to-left paragraph: "(" stands at the right, drawn as ")".
+    const text = '(خط) font'
+    const edges = new Map([
+      [0, { left: 75, right: 80 }],
+      [1, { left: 65, right: 75 }],
+      [2, { left: 55, right: 65 }],
+      [3, { left: 50, right: 55 }],
+      [4, { left: 45, right: 50 }],
+      [5, { left: 0, right: 10 }],
+      [6, { left: 10, right: 20 }],
+      [7, { left: 20, right: 30 }],
+      [8, { left: 30, right: 40 }]
+    ])
+    const svg = exportText({ text }, [
+      { start: 0, end: text.length, x: 0, y: 18, width: 80, characters: edges }
+    ])
+    expect(svg).toContain('<tspan x="75" y="18">‏(‏</tspan>')
+    expect(svg).toContain('<tspan x="50" y="18">‏)‏</tspan>')
+    expect(svg).toContain('<tspan x="0" y="18">font</tspan>')
+  })
+
+  test('a bracket between right-to-left letters outside the 16-bit range is marked too', () => {
+    // Adlam letters take two UTF-16 units each; the bracket between them is right-to-left.
+    const text = 'a 𞤀(𞤀'
+    const edges = new Map([
+      [0, { left: 0, right: 10 }],
+      [1, { left: 10, right: 15 }],
+      [2, { left: 35, right: 45 }],
+      [4, { left: 30, right: 35 }],
+      [5, { left: 20, right: 30 }]
+    ])
+    const svg = exportText({ text }, [
+      { start: 0, end: text.length, x: 0, y: 18, width: 45, characters: edges }
+    ])
+    expect(svg).toContain('<tspan x="30" y="18">‏(‏</tspan>')
+  })
+
+  test('left-to-right text stays one span per style and face', () => {
+    const text = 'two words'
+    const edges = new Map(
+      [...text].map((_, index) => [index, { left: index * 10, right: index * 10 + 10 }])
+    )
+    const svg = exportText({ text }, [
+      { start: 0, end: text.length, x: 0, y: 18, width: 90, characters: edges }
+    ])
+    expect(svg).toContain('<tspan x="0" y="18">two words</tspan>')
+  })
+
   test('without a measured layout, each explicit newline keeps its own baseline', () => {
     for (const lines of [undefined, null, []]) {
       const svg = exportText(

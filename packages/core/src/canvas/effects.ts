@@ -1,13 +1,15 @@
-import type { Canvas, ImageFilter, MaskFilter, Path } from 'canvaskit-wasm'
-
-import { readEffectiveFigmaRawField } from '@open-pencil/fig'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Canvas, ImageFilter, MaskFilter, Path } from '@open-pencil/canvaskit'
+import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { blurSigma, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { ResourceCache } from '#core/cache/resource'
-import { BLACK } from '#core/constants'
 
-import type { SkiaRenderer } from './renderer'
+import { isPlainRamp, makeProgressiveBlur, progressiveBlurRamp } from './blur/progressive'
+import { withNoiseEffects } from './noise/render'
+import type { SkiaRenderer } from './renderer/skia'
+import { withLeafTexture } from './texture/render'
 
 /**
  * Filters a renderer keeps between frames, by their parameters: shadows and blurs reuse one across
@@ -25,15 +27,6 @@ export function createImageFilterCache(): ImageFilterCache {
 
 export function createMaskFilterCache(): MaskFilterCache {
   return new ResourceCache({ maxEntries: MAX_CACHED_FILTERS, dispose: (filter) => filter.delete() })
-}
-
-/**
- * The Gaussian sigma that draws a Figma blur radius as Figma does. Measured on Figma 126 exports,
- * layer blur, both shadows, and background blur fall off as a Gaussian of 0.43 × radius; Figma's
- * SVG export writes radius / 2, which is wider (`packages/core/tests/canvas/blur.test.ts`).
- */
-export function blurSigma(radius: number): number {
-  return radius * 0.43
 }
 
 export function getCachedDropShadow(
@@ -59,6 +52,34 @@ export function getCachedDecalBlur(r: SkiaRenderer, sigma: number): ImageFilter 
   return cachedImageFilter(r, `dblur:${sigma}`, () =>
     r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Decal, null)
   )
+}
+
+/**
+ * The filter a layer or background blur draws with over a `width` × `height` layer: a plain blur,
+ * or Figma's progressive one with its points mapped by `toFilter` into the filter's coordinates.
+ * `bounds` holds what it blurs, in those coordinates, so each level blurs only its share.
+ */
+export function getCachedLayerBlur(
+  r: SkiaRenderer,
+  effect: Pick<Effect, 'radius' | 'progressive'>,
+  width: number,
+  height: number,
+  bounds: VisualBounds | null,
+  toFilter?: (point: Vector) => Vector
+): ImageFilter | null {
+  if (!effect.progressive) return r.getCachedBlur(blurSigma(effect.radius))
+  const ramp = progressiveBlurRamp(
+    effect.progressive,
+    effect.radius,
+    width,
+    height,
+    bounds,
+    toFilter
+  )
+  if (isPlainRamp(ramp)) return r.getCachedBlur(ramp.endSigma)
+  const box = bounds ? `${bounds.minX},${bounds.minY},${bounds.maxX},${bounds.maxY}` : 'unbounded'
+  const key = `pblur:${ramp.start.x},${ramp.start.y},${ramp.end.x},${ramp.end.y},${ramp.startSigma},${ramp.endSigma}:${box}`
+  return cachedImageFilter(r, key, () => makeProgressiveBlur(r.ck, ramp, r.ck.TileMode.Clamp))
 }
 
 /** CanvasKit makes no filter for a blur too small to draw; a paint takes null as none. */
@@ -91,7 +112,7 @@ export function applyClippedBlur(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  sigma: number,
+  effect: Pick<Effect, 'radius' | 'progressive'>,
   shape: Path | null = null
 ): void {
   const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
@@ -103,7 +124,13 @@ export function applyClippedBlur(
   canvas.save()
   if (shape) canvas.clipPath(shape, r.ck.ClipOp.Intersect, true)
   else r.clipNodeShape(canvas, node)
-  canvas.saveLayer(undefined, rect, r.getCachedBlur(sigma), undefined, r.ck.TileMode.Clamp)
+  const filter = r.getCachedLayerBlur(effect, node.width, node.height, {
+    minX: 0,
+    minY: 0,
+    maxX: node.width,
+    maxY: node.height
+  })
+  canvas.saveLayer(undefined, rect, filter, undefined, r.ck.TileMode.Clamp)
   canvas.restore()
   // Exit guard: ensure shared paint is in clean state
   r.effectLayerPaint.setImageFilter(null)
@@ -112,76 +139,22 @@ export function applyClippedBlur(
   canvas.restore()
 }
 
-const MAX_RAW_NOISE_CELLS = 12_000
-
-interface RawNoiseEffect {
-  type: 'NOISE'
-  visible?: boolean
-  color?: Color
-  secondaryColor?: Color
-  opacity?: number
-  density?: number
-  noiseSize?: Vector
-  noiseType?: 'MONOTONE' | 'DUOTONE' | 'MULTITONE'
-}
-
-function rawNoiseEffects(node: SceneNode): RawNoiseEffect[] {
-  const source = (node as Partial<SceneNode>).source
-  const effects = source ? readEffectiveFigmaRawField(node, 'effects') : undefined
-  if (!Array.isArray(effects)) return []
-  return effects.filter(
-    (effect): effect is RawNoiseEffect =>
-      effect !== null &&
-      typeof effect === 'object' &&
-      'type' in effect &&
-      effect.type === 'NOISE' &&
-      ('visible' in effect ? effect.visible !== false : true)
-  )
-}
-
-function seededNoise(seed: number): number {
-  const x = Math.sin(seed * 12.9898) * 43758.5453
-  return x - Math.floor(x)
-}
-
-function renderNoiseEffect(
+/**
+ * Draws a shape or boolean with its own effects, as Figma layers them: shadows and background
+ * blur behind, inner shadows over the fills and under the strokes (`paint` calls `inner` between
+ * them), the texture roughening that content, and noise grains over it.
+ */
+export function renderLeafWithEffects(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  effect: RawNoiseEffect
+  graph: SceneGraph,
+  paint: (inner: () => void) => void
 ): void {
-  const density = Math.max(0, Math.min(1, effect.density ?? 0.3))
-  const requestedStep = Math.max(2, Math.round((effect.noiseSize?.x ?? 0.5) * 8))
-  const boundedStep = Math.ceil(Math.sqrt((node.width * node.height) / MAX_RAW_NOISE_CELLS))
-  const step = Math.max(requestedStep, boundedStep)
-  const color = effect.color ?? BLACK
-  const opacity = effect.opacity ?? color.a
-  const paint = new r.ck.Paint()
-  try {
-    paint.setAntiAlias(false)
-    canvas.save()
-    r.clipNodeShape(canvas, node)
-    for (let y = 0; y < node.height; y += step) {
-      for (let x = 0; x < node.width; x += step) {
-        const value = seededNoise((x + 1) * 73856093 + (y + 1) * 19349663)
-        if (value > density) continue
-        const alpha = Math.max(0, Math.min(1, opacity * (0.35 + value * 0.65)))
-        paint.setColorComponents(color.r, color.g, color.b, alpha)
-        canvas.drawRect(
-          r.ck.LTRBRect(x, y, Math.min(node.width, x + 1), Math.min(node.height, y + 1)),
-          paint
-        )
-      }
-    }
-    canvas.restore()
-  } finally {
-    paint.delete()
-  }
-}
-
-/** Draws the raw Figma noise effects a node carries, which the scene graph does not model. */
-export function renderNoiseEffects(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
-  for (const effect of rawNoiseEffects(node)) {
-    renderNoiseEffect(r, canvas, node, effect)
-  }
+  r.renderEffects(canvas, node, graph, 'behind')
+  const content = () => paint(() => r.renderEffects(canvas, node, graph, 'inner'))
+  const textured = () => withLeafTexture(r, canvas, node, content)
+  // A frame or group grains its fill with its children, around both, in `renderNode`.
+  if (isLayerContainer(node)) textured()
+  else withNoiseEffects(r, canvas, node, graph, textured)
 }

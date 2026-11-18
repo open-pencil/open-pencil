@@ -1,6 +1,7 @@
 import { toRaw, type FunctionalComponent } from 'vue'
 
 import { nodeOutlinePath } from '@open-pencil/core/io/formats/svg'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { validateVectorNetwork } from '@open-pencil/scene-graph/vector-network'
@@ -42,10 +43,10 @@ export function outlineIconSVG(outline: LayerOutline): string | null {
   const corners = Matrix.mapPoints(placement, [0, 0, width, 0, width, height, 0, height])
   const xs = corners.filter((_, index) => index % 2 === 0)
   const ys = corners.filter((_, index) => index % 2 === 1)
-  const minX = Math.min(...xs)
-  const minY = Math.min(...ys)
-  const boxWidth = Math.max(...xs) - minX
-  const boxHeight = Math.max(...ys) - minY
+  const minX = minOf(xs)
+  const minY = minOf(ys)
+  const boxWidth = maxOf(xs) - minX
+  const boxHeight = maxOf(ys) - minY
   const extent = Math.max(boxWidth, boxHeight)
   if (!(extent > 0)) return null
 

@@ -143,7 +143,7 @@ function pick(id: string) {
       />
     </template>
     <template v-if="hasKey" #footer="{ highlighted }">
-      <p class="flex h-5 items-center gap-1 truncate px-1 text-[11px] text-muted">
+      <p class="flex h-5 items-center gap-1 truncate px-1 text-2xs text-muted">
         <SettingsLink v-if="highlighted" :href="photographerURL(highlighted.value)">{{
           highlighted.label
         }}</SettingsLink>

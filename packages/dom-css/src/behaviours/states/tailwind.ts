@@ -23,15 +23,18 @@ function variant(condition: StateCondition, group: string | null): string {
   const on = (name: string) => (group ? `group-${name}/${group}:` : `${name}:`)
   if (condition.type === 'state') return on(`data-[state=${variantValue(condition.value)}]`)
   if (condition.type === 'disabled') return on('data-disabled')
+  if (condition.type === 'invalid')
+    return `${condition.enabled ? on('not-data-disabled') : ''}${on('data-invalid')}`
   if (condition.type === 'filled') return on('has-[:is(input,textarea):not(:placeholder-shown)]')
   if (condition.type === 'prop') {
     const attribute = propAttribute(condition.name).slice('data-'.length)
     return on(`data-[${attribute}=${variantValue(condition.value)}]`)
   }
-  if (condition.state === 'focus') return on(condition.within ? 'focus-within' : 'focus-visible')
+  const valid = condition.valid ? on('not-data-invalid') : ''
+  if (condition.state === 'focus')
+    return `${valid}${on(condition.within ? 'focus-within' : 'focus-visible')}`
   // A disabled control keeps its disabled look under the pointer.
-  const enabled = group ? `group-not-data-disabled/${group}:` : 'not-data-disabled:'
-  return `${enabled}${on(condition.state === 'hover' ? 'hover' : 'active')}`
+  return `${on('not-data-disabled')}${valid}${on(condition.state === 'hover' ? 'hover' : 'active')}`
 }
 
 function utilities(style: DesignStyleDeclaration, options: StateTailwindOptions): string[] {

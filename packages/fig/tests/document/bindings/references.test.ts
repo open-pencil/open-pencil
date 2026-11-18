@@ -1,6 +1,5 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#fig-tests/helpers/guid'
 import {
   createBindingNormalizer,
   resolveDocumentBindingReferences
@@ -8,6 +7,7 @@ import {
 
 import { nodeChangeToProps } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('shadowed legacy resource references are not treated as required bindings', () => {
   const diagnostics: unknown[] = []

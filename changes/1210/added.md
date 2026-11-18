@@ -1,1 +1,0 @@
-- A first visit to the `/demo` link offers the welcome and guided AI setup, as a first visit to the app does.

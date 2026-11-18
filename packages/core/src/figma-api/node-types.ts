@@ -1,4 +1,23 @@
-/// <reference types="@figma/plugin-typings" />
+import type {
+  BooleanOperationNode,
+  ComponentNode,
+  ComponentSetNode,
+  ConnectorNode,
+  EllipseNode,
+  FrameNode,
+  GroupNode,
+  InstanceNode,
+  LineNode,
+  PolygonNode,
+  RectangleNode,
+  SectionNode,
+  ShapeWithTextNode,
+  SlotNode,
+  StarNode,
+  StickyNode,
+  TextNode,
+  VectorNode
+} from '@figma/plugin-typings/plugin-api-standalone'
 
 import type { FigmaNodeProxy } from './proxy'
 

@@ -4,26 +4,25 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 import {
   dismissWideGamutBanner,
   emulateWideGamutDisplay,
-  focusPaintEffects,
+  focusWideGamutScene,
   sceneBufferState,
-  waitForSettledScene,
+  showWideGamutScene,
   wideGamutBanner
-} from '#tests/helpers/canvas/color-space'
+} from '#tests/helpers/canvas/color-space/driver'
+import { waitForSettledScene } from '#tests/helpers/canvas/page-scene'
 
 test.use({ viewport: { width: 1200, height: 900 } })
 
 test('P3 paint blends and masks survive pan, zoom, and surface resize', async ({ page }) => {
   await emulateWideGamutDisplay(page)
-  await page.goto('/demo?no-chrome&no-rulers')
+  await page.goto('/?test&no-chrome&no-rulers')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
-  await focusPaintEffects(page)
+  const frameId = await showWideGamutScene(page)
   // The notice appears once the document is Display P3, and dismissing it keeps the canvas
-  // at a fixed offset for the snapshot. The canvas grows when it goes, so focus again to fit
-  // the paint page to the final size.
+  // at a fixed offset for the snapshot. The canvas grows when it goes, so focus after it.
   await dismissWideGamutBanner(page)
-  await focusPaintEffects(page)
-  await waitForSettledScene(page)
+  await focusWideGamutScene(page, frameId)
 
   async function expectEffects() {
     const buffer = await sceneBufferState(page)
@@ -48,13 +47,12 @@ test('P3 paint blends and masks survive pan, zoom, and surface resize', async ({
   await waitForSettledScene(page)
   expect((await sceneBufferState(page)).error).toBe(0)
   await page.setViewportSize({ width: 1200, height: 900 })
-  await focusPaintEffects(page)
-  await waitForSettledScene(page)
+  await focusWideGamutScene(page, frameId)
   await expectEffects()
 })
 
 test('warns when a Display-P3 document cannot be presented in wide gamut', async ({ page }) => {
-  await page.goto('/demo?no-chrome&no-rulers')
+  await page.goto('/?test&no-chrome&no-rulers')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 

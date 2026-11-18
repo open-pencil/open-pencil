@@ -8,7 +8,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { openFileDialog } from '@/app/shell/menu/use'
 import { activeTab } from '@/app/tabs'
-import { DOCUMENT_KIND_ICONS } from '@/components/home/document/kinds'
+import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'

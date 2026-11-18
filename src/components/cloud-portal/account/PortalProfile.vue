@@ -12,7 +12,7 @@ import AppCopyField from '@/components/ui/input/AppCopyField.vue'
 
 /**
  * How a person appears on a Cloud server: their picture, changed beside it, their name and email,
- * each changed in a dialog, and the account ID an administrator asks for.
+ * each changed in a dialog, the account ID an administrator asks for, and deleting the account.
  */
 const {
   profile,
@@ -35,6 +35,7 @@ const emit = defineEmits<{
   changeEmail: []
   choosePicture: [file: File]
   removePicture: []
+  deleteAccount: []
 }>()
 
 const messages = useCloudPortalMessages()
@@ -56,7 +57,7 @@ onPicture((files) => {
       <div class="min-w-0 flex-1">
         <p class="truncate text-sm font-semibold text-surface">{{ profile.name }}</p>
         <p class="truncate text-xs text-muted">{{ profile.email }}</p>
-        <p class="mt-0.5 text-[11px] text-muted">
+        <p class="mt-0.5 text-2xs text-muted">
           {{ messages.memberSince({ date: profile.memberSince }) }}
         </p>
       </div>
@@ -110,6 +111,22 @@ onPicture((files) => {
         :copy-label="messages.copy"
         :copied-label="messages.copied"
       />
+    </SettingsSection>
+
+    <SettingsSection>
+      <template #title>{{ messages.deleteAccount }}</template>
+      <template #description>{{ messages.deleteAccountDescription }}</template>
+      <div>
+        <AppButton
+          size="sm"
+          color="error"
+          variant="outline"
+          :disabled="busy"
+          @click="emit('deleteAccount')"
+        >
+          {{ messages.deleteAccountOpen }}
+        </AppButton>
+      </div>
     </SettingsSection>
   </div>
 </template>
