@@ -40,10 +40,15 @@ export const CLOUD_BILLING_PAGE_PATHS = {
   pricing: '/pricing'
 } as const
 
-/** Where the billing service answers, below the discovered `endpoint`. */
+/**
+ * Where the billing service answers, below the discovered `endpoint`. Cloud posts to `seats`,
+ * with a billing token for the account as its bearer, whenever the people who can edit in that
+ * account's workspaces change; the service reads the count from Cloud's internal API.
+ */
 export const CLOUD_BILLING_API_PATHS = {
   base: '/v1',
   catalog: '/v1/catalog',
+  seats: '/v1/seats',
   account: '/v1/account',
   checkout: '/v1/checkout',
   portal: '/v1/portal'
@@ -98,13 +103,37 @@ export const billingTokenClaimsSchema = v.object({
 })
 export type BillingTokenClaims = v.InferOutput<typeof billingTokenClaimsSchema>
 
-/** A plan an account subscribes to, billed every month in US dollars before tax. */
+const seatCountSchema = v.pipe(v.number(), v.integer(), v.minValue(1))
+
+/**
+ * A plan priced by the seat: everyone who can edit in the account's workspaces takes one, and the
+ * account pays for at least `minimum`. Every seat costs the price of the tier its count reaches,
+ * and adds its storage and credits to what the account shares.
+ */
+export const billingSeatPricingSchema = v.object({
+  minimum: seatCountSchema,
+  /** From the fewest seats up: `fromSeats` of the first is 1. */
+  tiers: v.pipe(
+    v.array(v.object({ fromSeats: seatCountSchema, unitPriceCents: centsSchema })),
+    v.minLength(1)
+  ),
+  storageBytesPerSeat: bytesSchema,
+  monthlyCreditsPerSeat: creditsSchema
+})
+export type BillingSeatPricing = v.InferOutput<typeof billingSeatPricingSchema>
+
+/**
+ * A plan an account subscribes to, billed every month in US dollars before tax. A plan priced by
+ * the seat states its price, storage, and credits at its minimum, so an editor that reads no
+ * `seats` still shows what it starts at.
+ */
 export const billingPlanSchema = v.object({
   id: idSchema,
   name: v.pipe(v.string(), v.minLength(1)),
   monthlyPriceCents: centsSchema,
   storageBytes: bytesSchema,
-  monthlyCredits: creditsSchema
+  monthlyCredits: creditsSchema,
+  seats: v.optional(billingSeatPricingSchema)
 })
 export type BillingPlan = v.InferOutput<typeof billingPlanSchema>
 
