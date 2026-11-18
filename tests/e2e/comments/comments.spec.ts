@@ -1,3 +1,4 @@
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
@@ -156,7 +157,7 @@ async function addRect(x: number, y: number) {
 }
 
 /** Where a canvas point is on the page, with the view centered on `center` first. */
-async function pagePoints(center: { x: number; y: number }, points: { x: number; y: number }[]) {
+async function pagePoints(center: Vector, points: Vector[]) {
   const view = await editor.page.evaluate((center) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
