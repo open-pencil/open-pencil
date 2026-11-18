@@ -50,18 +50,23 @@ function centerOf(pins: readonly PlacedPin[]): Rect {
   }
 }
 
+/** The box around pins' bubble centers, which a pin within the gap of joins their cluster. */
+function spanOf(pins: readonly PlacedPin[]): Rect {
+  return computeBounds(pins.map((pin) => ({ ...bubbleCenter(pin), width: 0, height: 0 })))
+}
+
 /**
  * Gathers pins that crowd each other on the screen into count bubbles, as Figma does when
- * zoomed out: pins whose bubbles come within `COMMENT_CLUSTER_GAP` join, and a cluster centers
- * on its members, so a pin near the middle of a crowd joins it too.
+ * zoomed out: a pin within `COMMENT_CLUSTER_GAP` of a cluster's members joins it, and the
+ * bubble centers among them.
  */
 function groupPins<P extends PlacedPin>(pins: readonly P[]): PinGroup<P>[] {
   let groups: PinGroup<P>[] = groupMarks(
-    pins.map((pin) => ({ item: pin, rect: centerOf([pin]) })),
+    pins.map((pin) => ({ item: pin, rect: spanOf([pin]) })),
     COMMENT_CLUSTER_GAP,
-    centerOf
-  )
-  // A cluster that drifts toward its members can land on another one; merge until none do.
+    spanOf
+  ).map(({ items }) => ({ items, rect: centerOf(items) }))
+  // Bubbles center among their members, so two can land on each other; merge until none do.
   for (;;) {
     const merged = groupMarks(
       groups.map((group) => ({ item: group, rect: group.rect })),

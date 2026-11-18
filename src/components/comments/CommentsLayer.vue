@@ -126,19 +126,29 @@ const pinsLayer = useTemplateRef<HTMLElement>('pinsLayer')
  * which the zoom removes, moves to its first pin, or to the cluster that pin is in now.
  */
 function openCluster(event: MouseEvent, cluster: PinCluster<(typeof pins.value)[number]>) {
-  const hadFocus =
-    event.currentTarget instanceof HTMLElement && document.activeElement === event.currentTarget
+  const button = event.currentTarget
+  if (button instanceof HTMLElement && document.activeElement === button) {
+    handFocusOnSplit(button, cluster)
+  }
   const { bounds, maxZoom } = clusterView(cluster)
   store.zoomToBounds(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height, {
     maxZoom
   })
-  if (!hadFocus) return
-  // Pins move with the next drawn frame, so wait for the clusters to change.
+}
+
+/**
+ * Moves focus from a cluster to its first pin once the cluster is gone, which can be a drawn
+ * frame later; leaving the cluster's focus first cancels it.
+ */
+function handFocusOnSplit(button: HTMLElement, cluster: PinCluster<{ thread: { id: string } }>) {
   const stop = watch(
     clusters,
     (next) => {
+      if (next.some((other) => other.key === cluster.key)) {
+        if (document.activeElement !== button) stop()
+        return
+      }
       stop()
-      if (next.some((other) => other.key === cluster.key)) return
       const id = CSS.escape(cluster.pins[0].thread.id)
       pinsLayer.value
         ?.querySelector<HTMLElement>(`[data-thread-id="${id}"], [data-cluster~="${id}"]`)
