@@ -3,18 +3,18 @@ import RBush from 'rbush'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { appendAll, maxOf, minOf } from '@open-pencil/std/arrays'
 
-import { backdropReach, worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
+import { backdropReach } from '#core/canvas/renderer/visual-bounds'
 
 import {
   buildChunks,
   chunkContext,
+  indexableChunkBounds,
   countDescendants,
   MAX_CHUNK_NODES,
   PAINTER_ORDER_SPAN,
   painterOrderOf,
   type RenderChunk,
-  type RenderChunkBuildStats,
-  subtreeBounds
+  type RenderChunkBuildStats
 } from './build'
 
 export { nodeRequiresAtomicChunk } from './build'
@@ -434,8 +434,7 @@ export class RenderChunkIndex {
       const chunk = this.chunks.get(id)
       if (!chunk) continue
       this.tree.remove(chunk)
-      const bounds =
-        chunk.kind === 'self' ? worldNodeVisualBounds(graph, node) : subtreeBounds(graph, nodeId)
+      const bounds = indexableChunkBounds(graph, node, chunk.kind)
       if (!bounds) {
         this.tree.insert(chunk)
         continue

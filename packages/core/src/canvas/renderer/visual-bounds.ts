@@ -12,6 +12,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { glassSampleRadius } from '#core/canvas/glass/shader'
 import { projectedNode, type RotationPreview } from '#core/geometry'
 import {
+  isFiniteVisualBounds,
   localRenderBounds,
   mapVisualBounds,
   subtreeRenderBounds,
@@ -55,10 +56,10 @@ export function computeContentBounds(
   for (const nodeId of nodeIds) {
     const node = graph.getNode(nodeId)
     if (!node?.visible) continue
-    bounds = unionVisualBounds(
-      bounds,
-      subtreeVisualBounds(graph, node, getWorldMatrix(node, graph))
-    )
+    const drawn = subtreeVisualBounds(graph, node, getWorldMatrix(node, graph))
+    if (isFiniteVisualBounds(drawn)) {
+      bounds = unionVisualBounds(bounds, drawn)
+    }
   }
   return bounds
 }

@@ -12,6 +12,7 @@ import {
   computeContentBounds,
   worldNodeVisualBounds
 } from '#core/canvas/renderer/visual-bounds'
+import { isFiniteVisualBounds } from '#core/geometry/render-bounds'
 
 export type RenderChunkKind = 'self' | 'subtree'
 
@@ -102,8 +103,16 @@ export function estimateCost(nodeCount: number, node: SceneNode): number {
   return nodeCount + visibleEffects * 8
 }
 
-export function subtreeBounds(graph: SceneGraph, nodeId: string) {
-  return computeContentBounds(graph, [nodeId])
+export function indexableChunkBounds(
+  graph: SceneGraph,
+  node: SceneNode,
+  kind: RenderChunkKind
+): VisualBounds | null {
+  if (kind === 'subtree') {
+    return computeContentBounds(graph, [node.id])
+  }
+  const bounds = worldNodeVisualBounds(graph, node)
+  return isFiniteVisualBounds(bounds) ? bounds : null
 }
 
 /** One walk from the root composes the parent's transform and gathers the clips on the way. */
@@ -191,7 +200,7 @@ export function buildChunks(
     const descendantCount = counts.get(nodeId) ?? 1
     const split = shouldSplit(graph, node, descendantCount)
     const kind: RenderChunkKind = split ? 'self' : 'subtree'
-    const bounds = split ? worldNodeVisualBounds(graph, node) : subtreeBounds(graph, nodeId)
+    const bounds = indexableChunkBounds(graph, node, kind)
     if (bounds) {
       const nodeCount = split ? 1 : descendantCount
       chunks.push({

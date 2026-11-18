@@ -207,6 +207,13 @@ describe('render bounds as Figma measures them', () => {
     })
   }
 
+  test('a frame whose own size is NaN still counts its children', () => {
+    const [container] = frame(false)
+    graph.updateNode(container.id, { width: Number.NaN })
+    const render = figma.getNodeById(container.id)?.absoluteRenderBounds
+    expect(render && [render.x, render.y, render.width, render.height]).toEqual([40, 40, 30, 30])
+  })
+
   test('a turned layer takes the box around it', () => {
     const turned = rectangle((rect) => (rect.rotation = 30))
     const render = turned.absoluteRenderBounds
