@@ -47,12 +47,10 @@ de:panels.framePresetCategoryTablet
 de:panels.glassDispersion
 de:panels.kerning
 de:panels.layout
-de:panels.linearGradient
 de:panels.maskTypeAlpha
 de:panels.maxHeightShort
 de:panels.minHeightShort
 de:panels.position
-de:panels.radialGradient
 de:panels.radius
 de:panels.stickyColorOrange
 de:panels.textCaseOriginal
@@ -110,7 +108,6 @@ es:panels.colorFormatRgb
 es:panels.framePresetCategoryFigmaCommunity
 es:panels.kerning
 es:panels.localLibraries
-es:panels.radialGradient
 es:panels.stickyColor
 es:panels.textCaseOriginal
 es:panels.variables
@@ -182,7 +179,6 @@ fr:panels.nestedInstance
 fr:panels.page
 fr:panels.pages
 fr:panels.position
-fr:panels.radialGradient
 fr:panels.rotation
 fr:panels.saturation
 fr:panels.stickyColorOrange
@@ -634,9 +630,7 @@ pt-br:panels.framePresetCategoryTablet
 pt-br:panels.gridSummaryFixed
 pt-br:panels.kerning
 pt-br:panels.layout
-pt-br:panels.linearGradient
 pt-br:panels.localLibraries
-pt-br:panels.radialGradient
 pt-br:panels.shader
 pt-br:panels.slots
 pt-br:panels.textCaseOriginal
@@ -745,3 +739,4 @@ pt-br:panels.iconSetNeedsNewerMacOS
 ru:panels.iconSetNeedsNewerMacOS
 zh-cn:panels.iconSetNeedsNewerMacOS
 pt-br:email.invitationSignatureName
+pl:panels.gradient

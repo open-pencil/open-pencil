@@ -403,8 +403,7 @@ export const panelMessageDefaults = {
   gap: 'Gap',
 
   solid: 'Solid',
-  linearGradient: 'Linear',
-  radialGradient: 'Radial',
+  gradient: 'Gradient',
   image: 'Image',
   shader: 'Shader',
   addShaderEffect: 'Add effect',

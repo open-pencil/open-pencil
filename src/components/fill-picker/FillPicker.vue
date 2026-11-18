@@ -154,15 +154,15 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
                 <icon-lucide-square class="size-3.5" />
               </button>
             </Tip>
-            <Tip :label="panels.linearGradient">
+            <Tip :label="panels.gradient">
               <button
                 :data-active="root.category === 'GRADIENT' || undefined"
                 :class="tabClass(root.category === 'GRADIENT')"
-                :aria-label="panels.linearGradient"
+                :aria-label="panels.gradient"
                 data-test-id="fill-picker-tab-gradient"
                 @click="root.actions.toGradient"
               >
-                <icon-lucide-blend class="size-3.5" />
+                <icon-lucide-opacity class="size-3.5" />
               </button>
             </Tip>
             <Tip :label="panels.image">

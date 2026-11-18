@@ -1,1 +1,2 @@
 - Escape closes a fill, stroke, or effect colour picker and keeps what was changed in it; during a drag it puts back only that drag and leaves the picker open. Each drag in a picker is its own undo step, and dragging an effect colour, an OkHCL value, or a shader colour no longer records a step per movement (#1437).
+- The fill picker's gradient tab is labelled Gradient instead of Linear and has its own icon instead of the blend mode one.
