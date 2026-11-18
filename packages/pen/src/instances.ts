@@ -4,11 +4,14 @@ import { isEqual } from 'es-toolkit/predicate'
 import { generateId, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import {
   detachInstance,
+  findInstanceAncestor,
   INSTANCE_OVERRIDE_FIELDS,
   populateInstanceChildren,
   recordInstanceOverride,
   swapInstanceComponent
 } from '@open-pencil/scene-graph/instances'
+import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { isNumericVariableBindingField } from '@open-pencil/scene-graph/variables'
 
 import { applyPenProperties, createSceneNode, fieldsSetBy, type Build } from './nodes'
 import type { PenNode, PenOverride } from './schema'
@@ -16,16 +19,37 @@ import type { PenNode, PenOverride } from './schema'
 /** Fills an instance read from `.pen`, after the instances inside its component. */
 type Populate = (id: string) => void
 
+/** Adds `start` and the layers it was copied from, nearest first. */
+function addSourceChain(graph: SceneGraph, found: Set<string>, start: string | null): void {
+  let id = start
+  while (id && !found.has(id)) {
+    found.add(id)
+    id = graph.getNode(id)?.componentId ?? null
+  }
+}
+
+/**
+ * The layer a swapped copy was made from, recorded on the instance that holds it. A theme re-read
+ * swaps an icon onto the glyph component for that theme and replaces `componentId`, so a path that
+ * names the original layer has to follow this link, including through copies of copies.
+ */
+function swappedSource(graph: SceneGraph, node: SceneNode): string | null {
+  const owner = node.parentId ? findInstanceAncestor(graph, node.parentId) : undefined
+  if (!owner) return null
+  const recorded = getInstanceOverride(
+    owner.instanceOverrides,
+    owner.id,
+    node.id,
+    'sourceComponentId'
+  )
+  return typeof recorded === 'string' ? recorded : null
+}
+
 /** The layers a copy was made from, nearest first, through copies of copies. */
 function sources(graph: SceneGraph, node: SceneNode): Set<string> {
   const found = new Set<string>()
-  for (
-    let id = node.componentId;
-    id && !found.has(id);
-    id = graph.getNode(id)?.componentId ?? null
-  ) {
-    found.add(id)
-  }
+  addSourceChain(graph, found, node.componentId)
+  addSourceChain(graph, found, swappedSource(graph, node))
   return found
 }
 
@@ -227,6 +251,36 @@ function detachReplacingInstances(build: Build): void {
   build.replaced.clear()
 }
 
+/**
+ * Whether a sync resolves `field` again from its binding in the copy's mode. A number and a paint
+ * colour do; a clip does not, so a theme that changed it has to be kept as an override.
+ */
+function syncResolvesBinding(node: SceneNode, field: string): boolean {
+  if (
+    (field === 'fills' || field === 'strokes') &&
+    Object.keys(node.boundVariables).some((key) => key.startsWith(`${field}/`))
+  ) {
+    return true
+  }
+  return isNumericVariableBindingField(field) && Object.hasOwn(node.boundVariables, field)
+}
+
+/**
+ * Records what a theme re-read changed on `copy` and a sync would not resolve again. The re-read
+ * runs before an override snapshots the copy, so the snapshot already holds the new clip and would
+ * record only the theme axes.
+ */
+function recordThemeResolvedFields(
+  graph: SceneGraph,
+  copy: SceneNode,
+  before: Partial<SceneNode>
+): void {
+  const changed = INSTANCE_OVERRIDE_FIELDS.filter(
+    (field) => !isEqual(before[field], copy[field]) && !syncResolvesBinding(copy, field)
+  )
+  recordInstanceOverride(graph, copy.id, changed)
+}
+
 /** Gives an instance's copies their overrides; a key with a `type` replaces the layer. */
 function applyDescendants(
   build: Build,
@@ -290,6 +344,7 @@ function inheritCopyFields(
     if (source && build.groupIds.has(source)) build.groupIds.add(copy.id)
     if (source && build.aroundIds.has(source)) build.aroundIds.add(copy.id)
     if (pen && source && !isEqual(themesThrough(build, copy.id), themesThrough(build, source))) {
+      const before = structuredClone(pick(copy, INSTANCE_OVERRIDE_FIELDS))
       inAncestorThemes(build, copy, () => {
         const leave = pen.theme ? ctx.enterTheme(pen.theme) : undefined
         try {
@@ -298,6 +353,7 @@ function inheritCopyFields(
           leave?.()
         }
       })
+      recordThemeResolvedFields(graph, copy, before)
     }
     for (const child of graph.getChildren(copy.id)) copies.push(child)
   }
