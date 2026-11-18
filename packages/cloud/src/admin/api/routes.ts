@@ -73,7 +73,8 @@ async function accountMutation(
   if (!v.is(accountIdSchema, userId)) {
     return context.json({ error: { code: 'not_found' as const } }, 404)
   }
-  await mutate(context.get('actor').userId, userId)
+  // A UUID matches in any case; the lowercase spelling is the one the actor's own ID uses.
+  await mutate(context.get('actor').userId, userId.toLowerCase())
   return context.json({ ok: true as const })
 }
 

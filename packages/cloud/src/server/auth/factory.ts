@@ -29,7 +29,7 @@ import type { AuthenticationEmailService } from './email'
 import { AUTH_BASE_PATH, CORE_AUTH_PATHS, authRequestPath } from './endpoints'
 import { enrollmentOptions } from './enrollment'
 import { betterAuthLogger } from './logger'
-import { removeSignInMethod, signInMethodHooks } from './methods'
+import { removeSignInMethod, signInMethodHooks, signInProviders } from './methods'
 import { createMFAAssuranceService, createProofRecorder, verifySecondFactor } from './mfa-assurance'
 import { passwordOptions } from './passwords'
 import { APPLE_AUDIENCE, socialProviders } from './social-providers'
@@ -63,6 +63,7 @@ export function createBetterAuthAdapter(
   const activity = createSignInActivity(database, authenticationEmail)
   // A new address is confirmed through a link sent to it, so changing one needs email delivery.
   const emailChangeAvailable = Boolean(config.emailPasswordEnabled && authenticationEmail)
+  const providers = signInProviders(config)
   // The plugins are built first, so the options below name their endpoints by the paths they declare.
   const twoStep = twoFactor({
     issuer: 'OpenPencil Cloud',
@@ -107,9 +108,8 @@ export function createBetterAuthAdapter(
     logger: betterAuthLogger,
     baseURL: config.publicURL,
     basePath: AUTH_BASE_PATH,
-    // Clients never reach Better Auth's own administration, which `/api/admin` replaces with MFA,
-    // origin, last-administrator, and audit checks, nor the endpoints Cloud's policy manages
-    // through its account routes; the server still calls them itself.
+    // Clients never reach Better Auth's administration, which `/api/admin` replaces with its own
+    // checks, nor the endpoints Cloud's account routes manage; the server still calls them itself.
     disabledPaths: [
       ...Object.values(administration.endpoints).map((endpoint) => endpoint.path),
       // Tokens are made, listed, and revoked through `/api/account/tokens`, with a fresh session.
@@ -428,7 +428,7 @@ export function createBetterAuthAdapter(
     },
     async unlinkAuthenticationMethod(headers, methodId) {
       const session = await freshSession(headers)
-      await removeSignInMethod(database, { userId: session.user.id, methodId })
+      await removeSignInMethod(database, { userId: session.user.id, methodId, providers })
     },
     async deleteAccount(headers, password) {
       const { headers: answer } = await auth.api.deleteUser({

@@ -1,3 +1,4 @@
+import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { APIError, type BetterAuthOptions } from 'better-auth'
 import { getOAuthState } from 'better-auth/api'
@@ -18,6 +19,18 @@ export type SignInMethodBlockStore = {
   deleteVerificationByIdentifier(identifier: string): Promise<void>
 }
 
+/**
+ * The providers this server signs in with now, `credential` for a password. A method linked before
+ * its provider was turned off stays on the account but no longer lets anyone in.
+ */
+export function signInProviders(config: CloudServerConfig): ReadonlySet<string> {
+  const providers = new Set<string>()
+  if (config.emailPasswordEnabled) providers.add('credential')
+  if (config.googleClientId && config.googleClientSecret) providers.add('google')
+  if (config.appleClientId) providers.add('apple')
+  return providers
+}
+
 /** The sign-in method a removal took away: its provider (`credential` for a password). */
 export type RemovedSignInMethod = { provider: string }
 
@@ -26,12 +39,14 @@ export type RemovedSignInMethod = { provider: string }
  * its owner unlinking one while an administrator removes another cannot leave it with none. An
  * administrator's removal (`block`) also keeps that Google or Apple identity from linking itself
  * back by the account's email; `also` runs in the same transaction, as their audit entry does.
+ * With `providers`, only methods whose provider is turned on count as a way still in.
  */
 export async function removeSignInMethod(
   database: Kysely<CloudDatabase>,
   input: {
     userId: string
     methodId: string
+    providers?: ReadonlySet<string>
     block?: boolean
     also?: (transaction: Transaction<CloudDatabase>, provider: string) => Promise<void>
   }
@@ -52,7 +67,13 @@ export async function removeSignInMethod(
     if (!method) {
       throw APIError.from('NOT_FOUND', { code: 'ACCOUNT_NOT_FOUND', message: 'No such method' })
     }
-    if (methods.length <= 1) {
+    const counts = (provider: string) => !input.providers || input.providers.has(provider)
+    const others = methods.filter((candidate) => candidate.id !== method.id)
+    // Taking away a provider that is off changes nothing; the last working one has to stay.
+    if (
+      others.length === 0 ||
+      (counts(method.providerId) && !others.some((other) => counts(other.providerId)))
+    ) {
       // Better Auth's own word, which the account routes already answer for.
       throw APIError.from('BAD_REQUEST', {
         code: 'FAILED_TO_UNLINK_LAST_ACCOUNT',

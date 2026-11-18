@@ -107,6 +107,8 @@ export function createAdminUserService(
     pictures?: UserPictureService
     /** People join only once approved, so the list says where each account's request stands. */
     approval?: boolean
+    /** The providers the server signs in with now; without it, every linked method is a way in. */
+    signInProviders?: ReadonlySet<string>
   } = {}
 ) {
   const activity = createSignInActivity(database)
@@ -413,6 +415,7 @@ export function createAdminUserService(
       const removed = await removeSignInMethod(database, {
         userId,
         methodId,
+        providers: options.signInProviders,
         block: true,
         also: (transaction, removed) =>
           transaction
