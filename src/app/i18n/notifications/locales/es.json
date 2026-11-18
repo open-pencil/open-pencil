@@ -38,5 +38,9 @@
   "savingDocument": "Guardando el documento…",
   "saveFailedRetry": "Reintentar guardado",
   "fileChangedOnDisk": "«{name}» cambió en el disco. Tus cambios sin guardar se conservan; al guardar se reemplaza el archivo.",
-  "reloadDiscardingChanges": "Volver a cargar"
+  "reloadDiscardingChanges": "Volver a cargar",
+  "autosaveFailed": "No se pudo guardar «{name}»: {error}",
+  "saveFailedTitle": "No se pudo guardar «{name}»",
+  "notifySaveFailed": "Guardados fallidos",
+  "notifySaveFailedHint": "No se pudo guardar automáticamente un documento abierto."
 }

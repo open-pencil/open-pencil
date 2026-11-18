@@ -157,9 +157,15 @@ async function clearCloudSessionTokenIfStill(serverId: string, token: string | n
   }
 }
 
+/**
+ * Where this app stands with a server. The account it answers with is remembered only while
+ * `current` says no newer check started, so a check that finishes late cannot put back an account
+ * another signed in over.
+ */
 async function signedInConnection(
   server: CloudServer,
-  discovery: CloudDiscovery
+  discovery: CloudDiscovery,
+  current: () => boolean
 ): Promise<CloudConnection> {
   const portal = cloudPortalClient(server, discovery)
   // The token the answer is about: a newer sign-in may store another while the check runs.
@@ -186,7 +192,7 @@ async function signedInConnection(
     email: status.user.email,
     image: status.user.image ?? null
   }
-  rememberCloudAccount(server.id, account)
+  if (current()) rememberCloudAccount(server.id, account)
   if (status.state === 'two-step' && token) {
     // A desktop app's own session counts as proved once a browser that proved it approved the
     // sign-in; one from before that never will, so the app signs in again.
@@ -261,7 +267,11 @@ async function askServer(server: CloudServer, generation: number): Promise<Cloud
   let next: CloudConnection
   try {
     const discovery = await discoverCloudServer(server.url)
-    next = await signedInConnection(server, discovery)
+    next = await signedInConnection(
+      server,
+      discovery,
+      () => generations.get(server.id) === generation
+    )
   } catch (error) {
     next = {
       ...previous,

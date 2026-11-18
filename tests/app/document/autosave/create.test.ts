@@ -3,16 +3,12 @@ import { describe, expect, jest, test } from 'bun:test'
 import { nextTick, reactive, ref } from 'vue'
 
 import { createAutosave } from '@/app/document/autosave/create'
+import { createDeferred } from '@/app/runtime/deferred'
 
-function deferred() {
-  let resolve: (() => void) | null = null
-  const promise = new Promise<void>((done) => {
-    resolve = done
-  })
-  return { promise, resolve: () => resolve?.() }
-}
-
-function setup(saveCurrentDocument: (version: number) => Promise<void>) {
+function setup(
+  saveCurrentDocument: (version: number) => Promise<void>,
+  report: { onFailed?: (error: unknown) => void } = {}
+) {
   const state = reactive({ autosaveEnabled: true, roomKeepsEdits: false })
   const version = ref(0)
   let savedVersion = 0
@@ -25,7 +21,8 @@ function setup(saveCurrentDocument: (version: number) => Promise<void>) {
     saveCurrentDocument: async (version) => {
       await saveCurrentDocument(version)
       savedVersion = version
-    }
+    },
+    ...report
   })
   return {
     state,
@@ -60,7 +57,7 @@ describe('document autosave', () => {
   })
 
   test('coalesces 100 edits during an in-flight save into the latest version', async () => {
-    const firstSave = deferred()
+    const firstSave = createDeferred<undefined>()
     const started: number[] = []
     const { version, autosave } = setup(async (saved) => {
       started.push(saved)
@@ -74,7 +71,7 @@ describe('document autosave', () => {
       version.value = next
       void autosave.requestSave(next)
     }
-    firstSave.resolve()
+    firstSave.resolve(undefined)
     await pending
 
     expect(started).toEqual([1, 101])
@@ -97,7 +94,7 @@ describe('document autosave', () => {
   })
 
   test('preserves a newer requested version when the active save fails', async () => {
-    const firstSave = deferred()
+    const firstSave = createDeferred<undefined>()
     const started: number[] = []
     const { version, autosave } = setup(async (saved) => {
       started.push(saved)
@@ -112,7 +109,7 @@ describe('document autosave', () => {
     await Promise.resolve()
     version.value = 2
     void autosave.requestSave(2)
-    firstSave.resolve()
+    firstSave.resolve(undefined)
     await expect(failed).rejects.toThrow('write failed')
     await Promise.resolve()
 
@@ -189,6 +186,119 @@ describe('document autosave', () => {
       expect(versions).toEqual([1])
       autosave.disposeAutosave()
     } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('reports an edit’s failed save once, and not the next edit’s save', async () => {
+    jest.useFakeTimers()
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    try {
+      const events: string[] = []
+      const wrote = createDeferred<number>()
+      let fail = true
+      const { version, autosave } = setup(
+        async (saved) => {
+          if (fail) throw new Error(`write ${saved} failed`)
+          wrote.resolve(saved)
+        },
+        { onFailed: (error) => events.push(error instanceof Error ? error.message : 'unknown') }
+      )
+      version.value = 1
+      await nextTick()
+      jest.advanceTimersByTime(3_000)
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(events).toEqual(['write 1 failed'])
+
+      fail = false
+      version.value = 2
+      await nextTick()
+      jest.advanceTimersByTime(3_000)
+      expect(await wrote.promise).toBe(2)
+      expect(events).toEqual(['write 1 failed'])
+      autosave.disposeAutosave()
+    } finally {
+      warn.mockRestore()
+      jest.useRealTimers()
+    }
+  })
+
+  test('reports a failed write once when a later edit joined it', async () => {
+    jest.useFakeTimers()
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    try {
+      const failed: unknown[] = []
+      const reported = createDeferred<undefined>()
+      const held = createDeferred<undefined>()
+      const wrote = createDeferred<number>()
+      const { version, autosave } = setup(
+        async (saved) => {
+          if (saved === 1) {
+            await held.promise
+            throw new Error('write 1 failed')
+          }
+          wrote.resolve(saved)
+        },
+        {
+          onFailed: (error) => {
+            failed.push(error)
+            reported.resolve(undefined)
+          }
+        }
+      )
+      version.value = 1
+      await nextTick()
+      jest.advanceTimersByTime(3_000)
+      // Revision 2 is due while revision 1 is still writing.
+      version.value = 2
+      await nextTick()
+      jest.advanceTimersByTime(3_000)
+      held.resolve(undefined)
+      // Every caller that joined the write hears its rejection before this resumes.
+      await reported.promise
+      expect(await wrote.promise).toBe(2)
+      expect(failed).toHaveLength(1)
+      autosave.disposeAutosave()
+    } finally {
+      warn.mockRestore()
+      jest.useRealTimers()
+    }
+  })
+
+  test('reports nothing for a save its caller awaits, or after it is disposed', async () => {
+    jest.useFakeTimers()
+    const warned = createDeferred<undefined>()
+    let warnings = 0
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {
+      warnings += 1
+      warned.resolve(undefined)
+    })
+    try {
+      const failed: unknown[] = []
+      const held = createDeferred<undefined>()
+      const { version, autosave } = setup(
+        async (saved) => {
+          if (saved === 2) await held.promise
+          throw new Error('write failed')
+        },
+        { onFailed: (error) => failed.push(error) }
+      )
+      version.value = 1
+      await expect(autosave.requestSave(1)).rejects.toThrow('write failed')
+
+      // An edit's save that fails once the document closed.
+      version.value = 2
+      await nextTick()
+      jest.advanceTimersByTime(3_000)
+      autosave.disposeAutosave()
+      held.resolve(undefined)
+      // The write's failure is logged even after disposal, so this waits for it to be reported.
+      await warned.promise
+      expect(failed).toEqual([])
+      expect(warnings).toBe(1)
+    } finally {
+      warn.mockRestore()
       jest.useRealTimers()
     }
   })

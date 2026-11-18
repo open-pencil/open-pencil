@@ -13,6 +13,7 @@ import AppDataTable from '@/components/ui/table/AppDataTable.vue'
 import AppTablePagination from '@/components/ui/table/AppTablePagination.vue'
 
 import PortalLoadAlert from '../layout/PortalLoadAlert.vue'
+import { portalColumnMeta } from './columns'
 import { portalTable } from './ui'
 
 /**
@@ -36,7 +37,11 @@ const {
   emptyLabel: string
   emptyDescription?: string
 }>()
-defineSlots<{ icon?: () => unknown }>()
+defineSlots<{
+  icon?: () => unknown
+  /** More controls beside the search box, as tall as it (`md`), such as a narrowing. */
+  toolbar?: () => unknown
+}>()
 
 const ui = portalTable()
 const messages = useCloudPortalMessages()
@@ -64,7 +69,7 @@ function countOf(value: string) {
 <template>
   <div class="flex flex-col gap-3">
     <PortalLoadAlert v-if="error" :error="error" @retry="reload()" />
-    <div v-if="searchLabel || filters.length" :class="ui.toolbar()">
+    <div v-if="searchLabel || filters.length || $slots.toolbar" :class="ui.toolbar()">
       <!-- On a narrow page the filters scroll sideways rather than leave it. -->
       <div v-if="filters.length" class="max-w-full overflow-x-auto">
         <!-- As tall as the search field beside it, in the same type. -->
@@ -85,19 +90,24 @@ function countOf(value: string) {
           </template>
         </SegmentedControl>
       </div>
-      <AppInput
-        v-if="searchLabel"
-        v-model="query"
-        type="search"
-        :placeholder="searchLabel"
-        :aria-label="searchLabel"
-        class="ms-auto w-64 max-w-full"
-      >
-        <template #leading><icon-lucide-search class="size-3.5" /></template>
-      </AppInput>
+      <div class="ms-auto flex max-w-full flex-wrap items-center justify-end gap-2">
+        <slot name="toolbar" />
+        <AppInput
+          v-if="searchLabel"
+          v-model="query"
+          type="search"
+          size="md"
+          :placeholder="searchLabel"
+          :aria-label="searchLabel"
+          class="w-64 max-w-full"
+        >
+          <template #leading><icon-lucide-search class="size-3.5" /></template>
+        </AppInput>
+      </div>
     </div>
     <AppDataTable
       :table="table"
+      :column-meta="portalColumnMeta"
       :label="label"
       :hidden="hidden"
       :loading="loading"
@@ -119,7 +129,7 @@ function countOf(value: string) {
         <AppTablePagination
           :range="range"
           :can-previous="table.getCanPreviousPage()"
-          :can-next="table.getCanNextPage()"
+          :can-next="status !== 'refreshing' && table.getCanNextPage()"
           :previous-label="messages.previousPage"
           :next-label="messages.nextPage"
           @previous="table.previousPage()"

@@ -1,9 +1,12 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { readIcon } from '@open-pencil/scene-graph/icons'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
+import { iconColor } from '#core/icons'
 import { readHTMLDocument } from '#core/io/formats/html/import'
 import { fontManager } from '#core/text/font/manager'
 
@@ -175,6 +178,171 @@ describe('reading HTML', () => {
     ])
     // A start-aligned item still covers the two columns it spans.
     expect(graph.getChildren(grid.id)[4].gridPosition).toMatchObject({ column: 1, columnSpan: 2 })
+  })
+
+  test('draws inline SVG as vectors in its color, and keeps an icon a page names as that icon', async () => {
+    const { graph } = await readHTMLDocument(
+      `<svg style="display:none"><symbol id="mark" viewBox="0 0 10 10"><rect width="10" height="10"/></symbol></svg>
+      <div style="display:flex;gap:8px;color:#cc0000">
+        <svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 2h20v20H2z" fill="currentColor"/></svg>
+        <svg data-icon="lucide:square" height="20" viewBox="0 0 40 20" fill="none" stroke="currentColor"><rect x="1" y="1" width="38" height="18"/></svg>
+        <svg width="16" height="16"><use href="#mark"/></svg>
+      </div>`
+    )
+    const [row] = graph.getChildren(graph.getPages()[0].id)
+    const [plain, named, sprite] = graph.getChildren(row.id)
+    const path = (svg: SceneNode) => {
+      const [vector] = graph.getChildren(svg.id)
+      return {
+        type: vector.type,
+        size: [vector.width, vector.height],
+        paint: [...vector.fills, ...vector.strokes][0]?.color
+      }
+    }
+    const red = { r: 0.8, g: 0, b: 0, a: 1 }
+
+    expect(row.layoutMode).toBe('HORIZONTAL')
+    expect(path(plain)).toEqual({ type: 'VECTOR', size: [20, 20], paint: red })
+    // A height and a viewBox give the width, as a browser sizes the SVG.
+    expect([named.width, named.height]).toEqual([40, 20])
+    expect(readIcon(named)?.name).toBe('lucide:square')
+    expect(readIcon(plain)).toBeNull()
+    // A symbol from a sprite elsewhere in the page, fitted to the SVG drawing it.
+    expect(path(sprite)).toEqual({
+      type: 'VECTOR',
+      size: [16, 16],
+      paint: { r: 0, g: 0, b: 0, a: 1 }
+    })
+  })
+
+  test('keeps an icon the matcher finds an SVG draws as that icon, in its own paths', async () => {
+    const { graph } = await readHTMLDocument(
+      `<div style="display:flex;gap:8px;color:#cc0000">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16v16H4z"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>
+      </div>`,
+      {
+        matchIcon: async (svgs) =>
+          svgs.map((svg) => (svg.includes('<path') ? 'lucide:square' : null))
+      }
+    )
+    const [row] = graph.getChildren(graph.getPages()[0].id)
+    const [matched, artwork] = graph.getChildren(row.id)
+
+    expect(readIcon(matched)?.name).toBe('lucide:square')
+    expect(iconColor(graph, matched)).toEqual({ r: 0.8, g: 0, b: 0, a: 1 })
+    expect(graph.getChildren(matched.id)).toHaveLength(1)
+    expect(readIcon(artwork)).toBeNull()
+  })
+
+  test('keeps an icon that clips its shapes as artwork, with its clip', async () => {
+    const { graph } = await readHTMLDocument(
+      `<svg data-icon="lucide:square" width="24" height="24" viewBox="0 0 24 24">
+        <defs><clipPath id="half"><rect width="12" height="24"/></clipPath></defs>
+        <rect width="24" height="24" clip-path="url(#half)"/>
+      </svg>`,
+      { matchIcon: async (svgs) => svgs.map(() => 'lucide:square') }
+    )
+    const [svg] = graph.getChildren(graph.getPages()[0].id)
+    const masks = [...graph.getAllNodes()].filter((node) => node.isMask)
+
+    expect(readIcon(svg)).toBeNull()
+    expect(masks).toHaveLength(1)
+  })
+
+  test('reaches a definition elsewhere on the page that a stylesheet paints with', async () => {
+    const { graph } = await readHTMLDocument(
+      `<style>.shape { fill: url(#fade) }</style>
+      <svg style="display:none"><defs><linearGradient id="fade">
+        <stop offset="0" stop-color="#ff0000"/><stop offset="1" stop-color="#0000ff"/>
+      </linearGradient></defs></svg>
+      <svg width="20" height="20" viewBox="0 0 20 20"><rect class="shape" width="20" height="20"/></svg>`
+    )
+    const fills = [...graph.getAllNodes()].flatMap((node) =>
+      node.type === 'VECTOR' || node.type === 'RECTANGLE' ? node.fills.map((fill) => fill.type) : []
+    )
+
+    expect(fills).toContain('GRADIENT_LINEAR')
+  })
+
+  test("paints inline SVG shapes as the page's CSS does, keeping their own attributes", async () => {
+    const { graph } = await readHTMLDocument(
+      `<style>.icon path { fill: currentColor } .outlined { stroke: #0000ff; stroke-width: 3 }</style>
+      <div style="color: #cc0000"><svg class="icon" width="30" height="10" viewBox="0 0 30 10">
+        <path d="M0 0h10v10H0z"/>
+        <rect class="outlined" x="12" width="6" height="6" fill="none"/>
+        <circle cx="25" cy="5" r="5" fill="#008000"/>
+      </svg></div>`
+    )
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+    const [svg] = graph.getChildren(box.id)
+    const [path, rect, circle] = graph.getChildren(svg.id)
+
+    // A CSS rule's currentColor takes the text color.
+    expect(path.fills[0]?.color).toEqual({ r: 0.8, g: 0, b: 0, a: 1 })
+    expect(rect.fills).toEqual([])
+    expect(rect.strokes[0]).toMatchObject({ color: { r: 0, g: 0, b: 1, a: 1 }, weight: 3 })
+    expect(circle.fills[0]?.color).toMatchObject({ r: 0, g: 128 / 255, b: 0 })
+  })
+
+  test('keeps a stack whose children margins space evenly, spaced as the page did', async () => {
+    const block = (margin: string) =>
+      `<div style="height:20px;margin:${margin};background:#cccccc"></div>`
+    const { graph } = await readHTMLDocument(
+      `<div style="width:200px;display:flow-root">${block('16px 0')}${block('16px 0')}${block('16px 0')}</div>
+      <div style="width:200px;display:flow-root">${block('0')}${block('-6px 0 0')}${block('-6px 0 0')}</div>`
+    )
+    const [spaced, overlapping] = graph.getChildren(graph.getPages()[0].id)
+
+    // Collapsed margins leave 16 px between each two, and 16 px inside the edges.
+    expect(spaced).toMatchObject({ layoutMode: 'VERTICAL', itemSpacing: 16, paddingTop: 16 })
+    expect(graph.getChildren(spaced.id).map((child) => child.y)).toEqual([16, 52, 88])
+    expect(overlapping).toMatchObject({ layoutMode: 'VERTICAL', itemSpacing: -6 })
+    expect(graph.getChildren(overlapping.id).map((child) => child.y)).toEqual([0, 14, 28])
+  })
+
+  test('draws inline SVG with definitions, colors, and a size the page gave it elsewhere', async () => {
+    const { graph } = await readHTMLDocument(
+      `<style>.blue { color: #0000ff; fill: currentColor } .red { fill: #ff0000; stroke: #0000ff }</style>
+      <svg style="display:none"><defs><clipPath id="half"><rect width="5" height="10"/></clipPath></defs>
+        <symbol id="mark" viewBox="0 0 10 10"><rect width="10" height="10"/></symbol></svg>
+      <div style="color:#cc0000">
+        <svg width="10" height="10"><rect width="10" height="10" clip-path="url(#half)"/></svg>
+        <svg width="10" height="10"><rect class="blue" width="10" height="10"/></svg>
+        <svg width="10" height="10"><rect class="red" style="stroke-width:2" width="10" height="10"/></svg>
+        <svg style="width:16px;height:16px"><use href="#mark"/></svg>
+      </div>`
+    )
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+    const [clipped, blue, red, sized] = graph
+      .getChildren(box.id)
+      .map((svg) => graph.flattenTree(svg.id).map(({ node }) => node))
+    const vectors = (nodes: SceneNode[]) => nodes.filter((node) => node.type === 'VECTOR')
+
+    // A clip path defined in another SVG on the page still clips, as a mask 5 px wide.
+    expect(clipped.filter((node) => node.isMask).map((mask) => mask.width)).toEqual([5])
+    // A shape with a color of its own keeps its paint in it, rather than the SVG's.
+    expect(vectors(blue)[0]?.fills[0]?.color).toEqual({ r: 0, g: 0, b: 1, a: 1 })
+    // Stylesheet paint joins an inline style rather than replacing it.
+    expect(vectors(red)[0]?.fills[0]?.color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
+    expect(vectors(red)[0]?.strokes[0]?.weight).toBe(2)
+    // A symbol fits an SVG sized by CSS alone.
+    expect(vectors(sized).map((vector) => [vector.width, vector.height])).toEqual([[16, 16]])
+  })
+
+  test("applies an SVG's opacity once, and draws its text in the type the page's CSS gives it", async () => {
+    const { graph } = await readHTMLDocument(
+      `<style>text { font-size: 32px; font-family: '${TEST_FAMILY}' }</style>
+      <div><svg width="100" height="50" style="opacity:0.5"><rect width="10" height="10"/></svg>
+      <svg width="100" height="50"><text x="0" y="40">Hi</text></svg></div>`
+    )
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+    const [faded, titled] = graph.getChildren(box.id)
+    const inside = (svg: SceneNode) => graph.flattenTree(svg.id).map(({ node }) => node)
+
+    expect(faded.opacity).toBe(0.5)
+    expect(inside(faded).map((node) => node.opacity)).toEqual([1])
+    expect(inside(titled).find((node) => node.type === 'TEXT')?.fontSize).toBe(32)
   })
 
   test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {

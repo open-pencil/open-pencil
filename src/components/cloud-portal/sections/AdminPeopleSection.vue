@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 
-import type { CloudAdminUserFilter } from '@open-pencil/cloud/contract'
+import type { CloudAdminUserFilter, CloudAdminUserMethod } from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
@@ -20,10 +20,13 @@ const messages = useCloudPortalMessages()
 const dates = useDateFormat()
 const people = useTemplateRef('people')
 
-async function load(request: PortalListRequest<CloudAdminUserFilter>) {
-  const { users, total, counts } = await portal.api.users(request)
-  // The page's own count is of every account, not of those a search finds.
-  if (!request.search) emit('total', counts.all)
+async function load(
+  request: PortalListRequest<CloudAdminUserFilter>,
+  method?: CloudAdminUserMethod
+) {
+  const { users, total, counts } = await portal.api.users({ ...request, method })
+  // The page's own count is of every account, not of those a search or a sign-in method finds.
+  if (!request.search && !method) emit('total', counts.all)
   const you = portal.account.value?.user.userId
   return { rows: users.map((user) => portalPerson(user, you, dates)), total, counts }
 }

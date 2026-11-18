@@ -483,11 +483,19 @@ contract and the same credits.
 A `[billing]` table advertises a billing service by its `endpoint`, which needs the services'
 signing key and the internal API. `POST /api/billing/token` signs a short-lived token for the
 signed-in person's own account, with the services' key but the `openpencil-billing` audience, so it
-spends no credits. The billing service verifies it against the same published keys, sells the plans
-and credit packs of its catalog, sends the person to its payment provider's checkout or portal, and
-sets the account's plan through the internal API as it is paid. The contract is
-`src/contract/billing.ts`. Editors link to the server's plan page, `CLOUD_ACCOUNT_PLAN_PATH`, whenever
-it advertises billing.
+spends no credits. Cloud has no billing pages of its own: its plan page shows the account's storage
+and monthly credits, and, when the server advertises billing, posts a fresh token as the form field
+`token` to the service's `CLOUD_BILLING_PAGE_PATHS.session`. The service verifies it against the
+same published keys and keeps its own session from there: its pages sell the plans and credit packs
+of its catalog, send the person to its payment provider's checkout or portal, and set the account's
+plan through the internal API as it is paid. A service whose session ended sends the person to
+`CLOUD_ACCOUNT_BILLING_PATH`, the plan page, which opens billing again at once. A Cloud from
+before the handoff called the service's JSON account, checkout, and portal routes, which a service
+with its own pages need not keep, and this one posts to `/session`. Upgrade the service first,
+then Cloud straight after, in the same window: between the two, the old plan page cannot buy. Discovery's
+`billing.freePlan` is what an account without a plan has, from the default entitlements, so the
+service's pricing page compares its plans with it. The contract is `src/contract/billing.ts`. Editors
+link to the server's plan page, `CLOUD_ACCOUNT_PLAN_PATH`, whenever it advertises billing.
 
 A service answers below its endpoint at the paths in `CLOUD_SERVICES_API_PATHS`: model requests
 follow the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the

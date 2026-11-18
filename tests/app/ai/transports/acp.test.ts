@@ -1,10 +1,13 @@
 import { expect, test } from 'bun:test'
 
 import type { SessionConfigOption, SessionUpdate } from '@agentclientprotocol/sdk/unstable'
+import { until } from '@vueuse/core'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
+import type { AgentChoices } from '@/app/ai/agents/acp/options'
+import { permissionQueue } from '@/app/ai/agents/acp/permission'
 import { SUBAGENT_PART, subagentTranscript } from '@/app/ai/chat/subagents'
 import { systemPrompt } from '@/app/ai/chat/system-prompt'
 import { restAgents, withSubagent } from '@/app/automation/agents'
@@ -344,14 +347,43 @@ const EFFORT_OPTION: SessionConfigOption = {
   options: ['medium', 'ultra'].map((value) => ({ value, name: value.toUpperCase() }))
 }
 
+/** Codex's collaboration mode, which holds its Plan mode, on `current`. */
+function collaborationOption(current: string): SessionConfigOption {
+  return {
+    id: 'collaboration_mode',
+    name: 'Collaboration mode',
+    type: 'select',
+    category: 'collaboration_mode',
+    currentValue: current,
+    options: ['default', 'plan'].map((value) => ({ value, name: value }))
+  }
+}
+
+/** Codex's sandbox presets. */
+const SANDBOX_OPTION: SessionConfigOption = {
+  id: 'mode',
+  name: 'Mode',
+  type: 'select',
+  category: 'mode',
+  currentValue: 'agent',
+  options: ['read-only', 'agent'].map((value) => ({ value, name: value }))
+}
+
+/** Codex's modes: its sandbox presets, and Plan in an option of its own. */
+const MODE_OPTIONS = [SANDBOX_OPTION, collaborationOption('default')]
+
+const later = [message('user', 'first'), message('assistant', 'done')]
+
 test('a session opens on the chat’s effort, and a later choice applies before the next prompt', async () => {
   const agents = fakeAgents({ configOptions: [EFFORT_OPTION] })
   let effort = 'ultra'
-  const { transport: chat, efforts } = transport(agents, { effort: () => effort })
+  const { transport: chat, offered } = transport(agents, {
+    choices: () => ({ thought_level: effort })
+  })
   await send(chat, 'first')
   effort = 'medium'
-  await send(chat, 'second', [message('user', 'first'), message('assistant', 'done')])
-  await send(chat, 'third', [message('user', 'second'), message('assistant', 'done')])
+  await send(chat, 'second', later)
+  await send(chat, 'third', later)
   expect(agents.calls).toEqual([
     'reasoning_effort ultra',
     'prompt',
@@ -359,52 +391,109 @@ test('a session opens on the chat’s effort, and a later choice applies before 
     'prompt',
     'prompt'
   ])
-  expect(efforts.map((reported) => reported?.current)).toEqual(['ultra', 'medium'])
-  expect(efforts[0]?.values.map((value) => value.name)).toEqual(['MEDIUM', 'ULTRA'])
+  expect(offered.map((reported) => reported?.thought_level?.current)).toEqual(['ultra', 'medium'])
+  expect(offered[0]?.thought_level?.values.map((value) => value.name)).toEqual(['MEDIUM', 'ULTRA'])
   await chat.destroy()
-  expect(efforts.at(-1)).toBeNull()
+  expect(offered.at(-1)).toBeNull()
 })
 
 test('a session keeps the agent’s effort while the chat names none', async () => {
   const agents = fakeAgents({ configOptions: [EFFORT_OPTION] })
-  const { transport: chat, efforts } = transport(agents)
+  const { transport: chat, offered } = transport(agents)
   await send(chat, 'first')
   expect(agents.calls).toEqual(['prompt'])
-  expect(efforts[0]?.current).toBe('medium')
+  expect(offered[0]?.thought_level?.current).toBe('medium')
   await chat.destroy()
 })
 
-test('an effort change the reply stopped waiting for is asked again once the chat names another', async () => {
+test('a session opens on the chat’s modes, and Plan applies before the next prompt', async () => {
+  const agents = fakeAgents({ configOptions: [EFFORT_OPTION, ...MODE_OPTIONS] })
+  let choices: AgentChoices = { mode: 'read-only' }
+  const { transport: chat, offered } = transport(agents, { choices: () => choices })
+  await send(chat, 'first')
+  choices = { mode: 'read-only', collaboration_mode: 'plan' }
+  await send(chat, 'second', later)
+  expect(agents.calls).toEqual(['mode read-only', 'prompt', 'collaboration_mode plan', 'prompt'])
+  const last = offered.at(-1)
+  expect([last?.mode?.current, last?.collaboration_mode?.current]).toEqual(['read-only', 'plan'])
+  expect(last?.mode?.name).toBe('Mode')
+  await chat.destroy()
+})
+
+test('the chat hears of a mode the agent left on its own, but not of one it asked for', async () => {
+  // Approving the plan moves Codex back to its default collaboration mode during the turn.
+  const left = [SANDBOX_OPTION, collaborationOption('default')]
+  const agents = fakeAgents({
+    configOptions: MODE_OPTIONS,
+    updates: [{ update: { sessionUpdate: 'config_option_update', configOptions: left } }]
+  })
+  let choices: AgentChoices = {}
+  const { transport: chat, agentChose } = transport(agents, { choices: () => choices })
+  await send(chat, 'first')
+  choices = { collaboration_mode: 'plan' }
+  await send(chat, 'second', later)
+  expect(agentChose).toEqual([{ collaboration_mode: 'default' }])
+  await chat.destroy()
+})
+
+test('stopping a reply takes the agent’s waiting permission request off the dialog', async () => {
+  const agents = fakeAgents({ asksPermission: true })
+  const { transport: chat } = transport(agents)
+  const stop = new AbortController()
+  const reply = send(chat, 'first', [], stop.signal)
+  await until(permissionQueue).toMatch((queue) => queue.length === 1)
+  stop.abort()
+  await reply
+  expect(permissionQueue.value).toEqual([])
+  expect(await agents.permissionAnswer).toBe('cancelled')
+  await chat.destroy()
+})
+
+test('an option change the reply stopped waiting for is asked again once the chat names another', async () => {
   const agents = fakeAgents({ configOptions: [EFFORT_OPTION], choicesWait: true })
   let effort = ''
-  const { transport: chat, efforts } = transport(agents, { effort: () => effort })
-  const history = [message('user', 'first'), message('assistant', 'done')]
+  const { transport: chat, offered } = transport(agents, {
+    choices: () => ({ thought_level: effort })
+  })
   await send(chat, 'first')
   effort = 'ultra'
   const stop = new AbortController()
-  const stopped = send(chat, 'second', history, stop.signal)
+  const stopped = send(chat, 'second', later, stop.signal)
   stop.abort()
   expect(stopped).rejects.toThrow('The request was stopped.')
   await stopped.catch(() => undefined)
   // The agent takes the change after all, then the chat goes back to the effort it ran on.
   agents.answerChoices()
   effort = 'medium'
-  await send(chat, 'third', history)
+  await send(chat, 'third', later)
   expect(agents.calls).toEqual([
     'prompt',
     'reasoning_effort ultra',
     'reasoning_effort medium',
     'prompt'
   ])
-  expect(efforts.at(-1)?.current).toBe('medium')
+  expect(offered.at(-1)?.thought_level?.current).toBe('medium')
   await chat.destroy()
 })
 
-test('a session reports the efforts its agent changed while OpenPencil’s tools connected', async () => {
+test('the chat hears of a mode the agent left while OpenPencil’s tools connected', async () => {
+  const agents = fakeAgents({
+    configOptions: MODE_OPTIONS,
+    startupOptions: [SANDBOX_OPTION, collaborationOption('default')]
+  })
+  const { transport: chat, agentChose } = transport(agents, {
+    choices: () => ({ collaboration_mode: 'plan' })
+  })
+  await send(chat, 'first')
+  expect(agentChose).toEqual([{ collaboration_mode: 'default' }])
+  await chat.destroy()
+})
+
+test('a session reports the options its agent changed while OpenPencil’s tools connected', async () => {
   const startupOptions = [{ ...EFFORT_OPTION, currentValue: 'ultra' }]
   const agents = fakeAgents({ configOptions: [EFFORT_OPTION], startupOptions })
-  const { transport: chat, efforts } = transport(agents)
+  const { transport: chat, offered } = transport(agents)
   await send(chat, 'first')
-  expect(efforts.map((reported) => reported?.current)).toEqual(['ultra'])
+  expect(offered.map((reported) => reported?.thought_level?.current)).toEqual(['ultra'])
   await chat.destroy()
 })

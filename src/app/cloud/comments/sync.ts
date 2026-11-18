@@ -25,6 +25,7 @@ import { cloudConnections } from '../sessions/connection'
 import { cloudShareTarget } from '../sharing/document'
 import { shareLinkClient } from '../sharing/link'
 import { followers, type CloudCommentFollower } from './followers'
+import { commentNotice, notifyComment, type CommentNotice } from './notifications'
 import {
   acknowledged,
   changedThreadId,
@@ -54,6 +55,8 @@ export type CloudCommentTarget = {
    * yet; null for any other.
    */
   importer?: () => Promise<ImportThreads | null>
+  /** Tells the person about someone else's new comment; guests through a link hear nothing. */
+  notify?: (threadId: string, notice: CommentNotice) => void
 }
 
 function commentTarget(store: EditorStore): CloudCommentTarget | null {
@@ -67,6 +70,7 @@ function commentTarget(store: EditorStore): CloudCommentTarget | null {
       requests: async () => client.documentComments(documentId),
       people: () => client.commentPeople(documentId),
       onServer: (request) => onceOnServer(documentId, request),
+      notify: (threadId, notice) => notifyComment(store, threadId, notice),
       importer: async () => {
         const meta = await getLocalCanvasStore().getMeta(documentId)
         if (!meta || meta.remoteRevision) return null
@@ -186,6 +190,8 @@ export function followCloudComments(
   let people: Promise<readonly MentionPerson[]> | null = null
   /** Requests saying a thread was read, which `idle` waits for too. */
   const reading = new Set<Promise<void>>()
+  /** Whether the follower still runs, read after an await, where `stopped` may have changed. */
+  const following = () => !stopped
 
   /** Tells the comment UI what this tab may do and which threads are new to it. */
   function publish() {
@@ -254,6 +260,28 @@ export function followCloudComments(
     else server.delete(threadId)
   }
 
+  /**
+   * Every comment the tab has heard of, by ID, kept apart from the threads: an answer that is
+   * older than the one kept still never brings a comment back as new.
+   */
+  const heardComments = new Set<string>()
+
+  function noteHeard(thread: CloudCommentThread) {
+    for (const comment of thread.comments) heardComments.add(comment.id)
+  }
+
+  /**
+   * Keeps the server's answer about one thread, first telling the person about anyone else's
+   * comment in it the tab had not heard of, whether a fetch, a reload, or the answer to the
+   * tab's own write brought it.
+   */
+  function heard(thread: CloudCommentThread | null, threadId: string) {
+    const notice = commentNotice(thread, accountId, heardComments)
+    remember(thread, threadId)
+    if (thread) noteHeard(thread)
+    if (notice && following()) target.notify?.(threadId, notice)
+  }
+
   /** Sends one change, and answers the thread as the server holds it after; null once gone. */
   async function request(change: CloudCommentChange): Promise<CloudCommentThread | null> {
     const cloud = await api()
@@ -297,7 +325,7 @@ export function followCloudComments(
     const threadId = changedThreadId(change)
     const before = shown.get(threadId)
     const after = await request(change)
-    remember(after, threadId)
+    heard(after, threadId)
     const next = acknowledged(before, change, after)
     if (next) shown.set(threadId, next)
     else shown.delete(threadId)
@@ -307,10 +335,10 @@ export function followCloudComments(
   async function reload() {
     const listed = await (await api()).list()
     server.clear()
-    for (const thread of listed.threads) server.set(thread.id, thread)
     canComment = listed.access.canComment
     accountId = listed.access.accountId
     canModerate = listed.access.canModerate
+    for (const thread of listed.threads) heard(thread, thread.id)
   }
 
   /**
@@ -400,6 +428,8 @@ export function followCloudComments(
         plan.batches.shift()
       }
     }
+    // What the document held when it opened is no news.
+    for (const thread of server.values()) noteHeard(thread)
     loaded = true
     show()
   }
@@ -435,7 +465,10 @@ export function followCloudComments(
     async changed(threadId) {
       if (!loaded || stopped) return
       try {
-        remember(await (await api()).get(threadId), threadId)
+        const after = await (await api()).get(threadId)
+        // Compared once the fetch is back: of two fetches for one thread, the later compares
+        // with the earlier's answer.
+        heard(after, threadId)
       } catch (error) {
         if (!(error instanceof CloudAPIError && error.status === 404)) throw error
         server.delete(threadId)

@@ -171,6 +171,7 @@
   "modelSignedOut": "Wylogowano",
   "modelToolsUnreachable": "Narzędzia niedostępne",
   "thinkingLevel": "Poziom rozumowania",
+  "agentAccess": "Dostęp",
   "thinkingLevelDescription": "Ile model rozumuje przed odpowiedzią. Możesz to zmienić dla każdej wiadomości na czacie.",
   "thinkingDefault": "Domyślny",
   "thinkingOff": "Wyłączony",

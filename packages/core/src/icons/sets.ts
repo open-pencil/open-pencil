@@ -50,8 +50,9 @@ export function createIconSetsProvider({
     names: readonly string[],
     ask: (provider: IconProvider, names: string[]) => Promise<Map<string, T>>
   ): Promise<Map<string, T>> {
+    // Each ask runs inside an async call, so one that throws at once fails like one that rejects.
     const parts = await Promise.allSettled(
-      [...byProvider(names)].map(([provider, part]) => ask(provider, part))
+      [...byProvider(names)].map(async ([provider, part]) => ask(provider, part))
     )
     const failed = parts.find((part) => part.status === 'rejected')
     if (failed && parts.every((part) => part.status === 'rejected')) throw failed.reason
@@ -106,7 +107,9 @@ export function createIconSetsProvider({
         )
       )
       const listed = lists.flatMap((list) => (list.status === 'fulfilled' ? list.value : []))
-      if (listed.length === 0 && lists[0]?.status === 'rejected') throw lists[0].reason
+      // Sets listed only as unavailable draw nothing, so they do not stand in for a failed fallback.
+      if (listed.every((info) => info.unavailable) && lists[0]?.status === 'rejected')
+        throw lists[0].reason
       return listed.filter((info) => !replaced.includes(info.prefix))
     },
 

@@ -4,7 +4,8 @@ import type {
 } from '#cloud/contract/account'
 import { configuredSocialProviders, type CloudServerConfig } from '#cloud/server/config'
 
-import type { CloudAuthAdapter } from './adapter'
+import type { CloudAuthAdapter, SocialLinkStart } from './adapter'
+import { canRemoveSignInMethod, signInProviders } from './methods'
 
 const supportedProvider = (provider: string): provider is CloudAuthenticationProvider =>
   provider === 'credential' || provider === 'google' || provider === 'apple'
@@ -13,6 +14,7 @@ export function createAccountAuthenticationService(
   auth: CloudAuthAdapter,
   config: CloudServerConfig
 ) {
+  const providers = signInProviders(config)
   return {
     async methods(headers: Headers) {
       const accounts = await auth.listAuthenticationMethods(headers)
@@ -23,7 +25,7 @@ export function createAccountAuthenticationService(
             id: account.id,
             provider: account.providerId,
             createdAt: account.createdAt.toISOString(),
-            canUnlink: accounts.length > 1
+            canUnlink: canRemoveSignInMethod(account, accounts, providers)
           }
         ]
       })
@@ -43,7 +45,7 @@ export function createAccountAuthenticationService(
     async startSocialLink(
       headers: Headers,
       input: { provider: 'google' | 'apple'; callbackURL: string }
-    ): Promise<string> {
+    ): Promise<SocialLinkStart> {
       if (!configuredSocialProviders(config).includes(input.provider)) {
         throw new Error('Authentication provider is unavailable')
       }

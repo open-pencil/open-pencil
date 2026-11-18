@@ -4,17 +4,31 @@ import BrandEmail from './BrandEmail.vue'
 import EmailText from './EmailText.vue'
 import { greeting, useEmailLocalization } from './localization'
 
-/** How the account proves it's its owner's changed: an authenticator app or a passkey. */
+/**
+ * How the account proves it's its owner's changed: an authenticator app, a passkey, or a way to
+ * sign in an administrator removed.
+ */
 const { payload } = defineProps<{ payload: TwoStepChangedPayload }>()
 
 const localization = useEmailLocalization()
 const { t } = localization
+// Provider names stay as their owners write them; a password is named in the reader's words.
+const methods: Record<string, string> = {
+  credential: t.signInMethodPassword,
+  google: 'Google',
+  apple: 'Apple'
+}
+const method = payload.method ? (methods[payload.method] ?? payload.method) : ''
 const changes: Record<TwoStepChange, { heading: string; message: string }> = {
   'authenticator-on': { heading: t.authenticatorOnHeading, message: t.authenticatorOn },
   'authenticator-off': { heading: t.authenticatorOffHeading, message: t.authenticatorOff },
   'passkey-added': { heading: t.passkeyAddedHeading, message: t.passkeyAdded },
   'passkey-removed': { heading: t.passkeyRemovedHeading, message: t.passkeyRemoved },
-  'reset-by-administrator': { heading: t.twoStepResetHeading, message: t.twoStepReset }
+  'reset-by-administrator': { heading: t.twoStepResetHeading, message: t.twoStepReset },
+  'sign-in-method-removed': {
+    heading: t.signInMethodRemovedHeading,
+    message: t.signInMethodRemoved({ method })
+  }
 }
 const change = changes[payload.change]
 </script>

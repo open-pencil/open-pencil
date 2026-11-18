@@ -18,7 +18,8 @@ import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
 import {
   hasPendingReaderPages,
   populateFigInternalPages,
-  populateReaderExport
+  populateReaderExport,
+  readerCheckpoint
 } from '#core/kiwi/fig/session/document-state'
 import { originalFigArchive } from '#core/kiwi/fig/session/original-archive'
 
@@ -117,8 +118,11 @@ export async function exportFigFileStream(
   const reuseArchive = await archiveImagesNamedForFigma(sourceGraph)
   // The document's comments may be in the opened archive, and this write leaves them out.
   const dropsComments = !!options.withoutComments && readComments(sourceGraph).length > 0
+  // A read that left out an instance whose component would contain itself changed the document,
+  // and the archive still holds that instance.
+  const repairedLoops = (readerCheckpoint(sourceGraph)?.droppedRecordIds?.length ?? 0) > 0
   const originalArchive =
-    reuseArchive && !dropsComments ? await originalFigArchive(sourceGraph) : null
+    reuseArchive && !dropsComments && !repairedLoops ? await originalFigArchive(sourceGraph) : null
   if (originalArchive) {
     const reused = options.documentName
       ? renameFigArchive(originalArchive, options.documentName)

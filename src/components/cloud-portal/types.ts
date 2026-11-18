@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 
 import type {
+  CloudAdminDocument,
   CloudAdminReportStatus,
   CloudSignInMethod,
   DocumentReportReason,
@@ -46,6 +47,8 @@ export type PortalPerson = {
   /** When one of its sessions was last used, already worded; null when none is left. */
   lastActive: string | null
   workspaceCount: number
+  /** How it signs in: `credential` for a password, or a provider such as `google`. */
+  methods: string[]
   /** An account whose request to join is not approved: waiting, declined, or removed. */
   access?: 'waiting' | 'declined' | 'removed'
   you?: boolean
@@ -97,7 +100,8 @@ export type PortalSignIn = PortalDevice & {
 export type PortalPersonDetail = {
   person: PortalPerson
   emailVerified: boolean
-  methods: { provider: string; linkedOn: string }[]
+  /** `canRemove`: the server says the account keeps a working way in without it. */
+  methods: { id: string; provider: string; linkedOn: string; canRemove: boolean }[]
   authenticator: boolean
   passkeyCount: number
   workspaces: { id: string; name: string; role: WorkspaceRole; memberCount: number }[]
@@ -152,7 +156,15 @@ export type PortalDocumentRow = {
   name: string
   workspace: string
   owner: { id: string; name: string; email: string } | null
-  updated: string
+  /** When it last changed, as an ISO timestamp the list shows relative to now. */
+  updatedAt: string
+  kind: CloudAdminDocument['kind']
+  /** Whether it has been saved, so it has a file to download. */
+  saved: boolean
+  /** Where its saved thumbnail is; null before its first save. */
+  thumbnail: string | null
+  /** Who beyond its workspace can open it. */
+  exposure: CloudAdminDocument['exposure']
   takenDown: boolean
   /** Why an administrator took it down, when they said. */
   takenDownReason: string | null
@@ -179,6 +191,7 @@ export type PortalReportRow = {
 
 /** What an administrator may do about a reported or listed document. */
 export type PortalContentAction =
+  | 'download'
   | 'take-down'
   | 'restore'
   | 'undelete'
@@ -187,4 +200,4 @@ export type PortalContentAction =
   | 'dismiss'
   | 'mark-handled'
 
-export type { PortalCreditPack, PortalPlan, PortalPlanOffer } from '@/app/cloud-portal/plan'
+export type { PortalPlan } from '@/app/cloud-portal/plan'

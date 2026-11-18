@@ -6,8 +6,10 @@ import {
   type CloudErrorContext
 } from '#cloud/server/errors'
 import { cloudRequestId, type CloudLogLine } from '#cloud/server/logging'
+import { validatedParams } from '#cloud/server/validation'
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
+import * as v from 'valibot'
 
 type Reported = { error: unknown; context: CloudErrorContext }
 
@@ -49,6 +51,58 @@ describe('Cloud error handler', () => {
     } finally {
       logged.mockRestore()
     }
+  })
+
+  test('names the signed-in user and the records its validated path names, never an invitation', async () => {
+    const workspaceId = '2b1f4f0c-6d7e-4c55-9a0b-1f2e3d4c5b6a'
+    const documentId = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
+    const invitationId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+    const uuid = v.pipe(v.string(), v.uuid())
+    const reported: Reported[] = []
+    const app = new Hono<{ Variables: { actor: { userId: string; email: string } } }>()
+      .onError(
+        cloudErrorHandler(async (error, context) => {
+          reported.push({ error, context })
+        })
+      )
+      .use('*', async (context, next) => {
+        context.set('actor', { userId: 'user-1', email: 'jane@example.com' })
+        await next()
+      })
+      .get(
+        '/api/workspaces/:workspaceId/documents/:documentId',
+        validatedParams(v.object({ workspaceId: uuid, documentId: uuid })),
+        () => {
+          throw failure
+        }
+      )
+      .post(
+        '/api/invitations/:invitationId/accept',
+        validatedParams(v.object({ invitationId: uuid })),
+        () => {
+          throw failure
+        }
+      )
+      // A path no validator checked: what the caller typed stays out of the report.
+      .get('/api/unchecked/:documentId', () => {
+        throw failure
+      })
+
+    await app.request(`/api/workspaces/${workspaceId}/documents/${documentId}`)
+    await app.request(`/api/invitations/${invitationId}/accept`, { method: 'POST' })
+    await app.request('/api/unchecked/jane@example.com')
+
+    const request = { source: 'request', userId: 'user-1', message: 'Request failed' } as const
+    expect(reported.map(({ context }) => context)).toEqual([
+      {
+        ...request,
+        method: 'GET',
+        route: '/api/workspaces/:workspaceId/documents/:documentId',
+        resources: { workspaceId, documentId }
+      },
+      { ...request, method: 'POST', route: '/api/invitations/:invitationId/accept' },
+      { ...request, method: 'GET', route: '/api/unchecked/:documentId' }
+    ])
   })
 
   test('logs with the runtime’s writer, naming the request in its line, report, and response', async () => {

@@ -8,9 +8,11 @@ import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
+import { appIconMatcher } from '@/app/editor/icons/provider'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
 import { notificationMessages } from '@/app/i18n/notifications'
+import { appPreferences } from '@/app/settings/preferences/store'
 import { toast } from '@/app/shell/ui'
 
 type OpenDOMDocumentState = EditorState & {
@@ -74,7 +76,12 @@ export function createDOMOpenActions({
       compute: { layout: true, viewport: HTML_IMPORT_VIEWPORT }
     })
     load.signal.throwIfAborted()
-    const graph = await sceneGraphFromStyledHTML(styled, { pageName })
+    const { renderer } = editor
+    const nameIcons = renderer && appPreferences.value.import.nameIcons
+    const graph = await sceneGraphFromStyledHTML(styled, {
+      pageName,
+      matchIcon: nameIcons ? appIconMatcher(renderer, load.signal) : undefined
+    })
     await nextFrame()
     await applyImportedDocument(editor, graph, load)
     // Into a reused tab too, the document opens with the panels its kind starts with.

@@ -74,7 +74,8 @@ function createMobileHudContext() {
       action: () =>
         void saveWithFeedback(() => saveDocument(store), {
           key: store,
-          isOpen: () => getTabForStore(store) !== undefined
+          isOpen: () => getTabForStore(store) !== undefined,
+          hasUnsavedChanges: () => store.hasUnsavedChanges()
         })
     },
     { icon: IconImageDown, label: 'Export…', action: () => void store.exportSelection(1, 'png') },

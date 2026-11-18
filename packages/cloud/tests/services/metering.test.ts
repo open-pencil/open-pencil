@@ -63,4 +63,11 @@ describe('Services server metering', () => {
     )
     expect(usage).toEqual({ inputTokens: 5, outputTokens: 7 })
   })
+
+  test('gives up on an event that never ends rather than buffering it', async () => {
+    const line = `data: ${'x'.repeat(1023)}\n`
+    await expect(
+      meteredUsage(stream(...Array.from({ length: 1100 }, () => line)), true)
+    ).rejects.toThrow()
+  })
 })

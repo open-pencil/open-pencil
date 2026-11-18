@@ -7,6 +7,7 @@
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/core"
   },
+  "funding": "https://ko-fi.com/dannote",
   "files": [
     "dist",
     "src",
@@ -67,6 +68,11 @@
       "types": "./dist/icons/index.d.ts",
       "import": "./dist/icons/index.js",
       "default": "./dist/icons/index.js"
+    },
+    "./icons/match": {
+      "types": "./dist/icons/match/index.d.ts",
+      "import": "./dist/icons/match/index.js",
+      "default": "./dist/icons/match/index.js"
     },
     "./canvas": {
       "types": "./dist/canvas/index.d.ts",
@@ -246,6 +252,7 @@
     "ufo": "^1.6.4",
     "unifont": "1.0.3",
     "valibot": "^1.5.0",
+    "whaticon": "^0.4.0",
     "woff2-encoder": "2.0.0"
   },
   "devDependencies": {

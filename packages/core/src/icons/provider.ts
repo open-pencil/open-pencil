@@ -83,7 +83,11 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
     }
   }
 
-  async function load(names: readonly string[]): Promise<void> {
+  /**
+   * Starts or joins the requests for the names not yet loaded, so overlapping calls share them,
+   * and returns them to wait on.
+   */
+  function load(names: readonly string[]): Promise<void>[] {
     const waiting = new Set<Promise<void>>()
     const needed = new Map<string, string[]>()
     for (const name of names) {
@@ -113,14 +117,15 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
         waiting.add(pending)
       }
     }
-    await Promise.all(waiting)
+    return [...waiting]
   }
 
   return {
     search: (query, options) => client.search(query, options),
 
     async icons(names, size) {
-      await load(names)
+      // Placing an icon reports the first failed request at once rather than placing fewer.
+      await Promise.all(load(names))
       const found = new Map<string, IconData>()
       for (const name of names) {
         const entry = entries.get(name)
@@ -150,7 +155,8 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
     },
 
     async previews(names) {
-      await load(names)
+      const settled = await Promise.allSettled(load(names))
+      const failed = settled.find((result) => result.status === 'rejected')
       const found = new Map<string, string>()
       for (const name of names) {
         const entry = entries.get(name)
@@ -158,6 +164,8 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
         const { attributes, body } = iconToSVG(entry)
         found.set(name, iconToHTML(body, attributes))
       }
+      // What loaded is shown even when another request failed; with nothing loaded, the failure.
+      if (failed && found.size === 0) throw failed.reason
       return found
     }
   }

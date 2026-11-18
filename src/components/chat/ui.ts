@@ -1,5 +1,6 @@
 import { tv } from 'tailwind-variants'
 
+import agentTheme from '@/theme/chat/agent'
 import compactionTheme from '@/theme/chat/compaction'
 import contextTheme from '@/theme/chat/context'
 import profileTheme from '@/theme/chat/profile'
@@ -9,6 +10,7 @@ import reviewTheme from '@/theme/chat/review'
 import subagentTheme from '@/theme/chat/subagent'
 import thinkingTheme from '@/theme/chat/thinking'
 
+export const chatAgentTheme = tv(agentTheme)
 export const chatCompactionTheme = tv(compactionTheme)
 export const chatContextTheme = tv(contextTheme)
 export const chatProfileTheme = tv(profileTheme)

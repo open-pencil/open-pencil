@@ -93,4 +93,46 @@ describe('captured layout in the projection', () => {
     expect(gridLayer.layoutMode).toBe('NONE')
     expect(graph.getChildren(gridLayer.id).map((item) => item.x)).toEqual([0, 110])
   })
+  it('spaces a stack as the page did when its children sit an even gap apart', () => {
+    const block = (y: number) =>
+      element(
+        'div',
+        { height: '20px', 'background-color': 'rgb(200, 200, 200)' },
+        { box: rect(0, y, 100, 20) }
+      )
+    // 16 px between the first two, while a negative margin pulls the last over the second.
+    const stack = element('div', { width: '100px' }, { box: rect(0, 0, 100, 76) }, [
+      block(8),
+      block(44),
+      block(56)
+    ])
+    const { graph, boxes } = designDocumentToLayers({ type: 'document', children: [stack] })
+    const [stackLayer] = graph.getChildren(graph.getPages()[0].id)
+    expect(stackLayer.layoutMode).toBe('VERTICAL')
+    for (let pass = 0; pass < 4; pass++) {
+      if (placeLayersFromLayout(graph, boxes) === 0) break
+    }
+
+    // The gaps are 16 and -8, uneven, so the children are placed.
+    expect(stackLayer.layoutMode).toBe('NONE')
+  })
+
+  it('keeps a stack whose children margins space evenly, with that spacing and padding', () => {
+    const block = (y: number) =>
+      element(
+        'div',
+        { height: '20px', 'background-color': 'rgb(200, 200, 200)' },
+        { box: rect(0, y, 100, 20) }
+      )
+    const stack = element('div', { width: '100px' }, { box: rect(0, 0, 100, 96) }, [
+      block(8),
+      block(44),
+      block(80)
+    ])
+    const { graph, boxes } = designDocumentToLayers({ type: 'document', children: [stack] })
+    const [stackLayer] = graph.getChildren(graph.getPages()[0].id)
+    placeLayersFromLayout(graph, boxes)
+
+    expect(stackLayer).toMatchObject({ layoutMode: 'VERTICAL', itemSpacing: 16, paddingTop: 8 })
+  })
 })

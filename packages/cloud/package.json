@@ -8,6 +8,7 @@
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/cloud"
   },
+  "funding": "https://ko-fi.com/dannote",
   "bin": {
     "openpencil-services": "./dist/bin/services.mjs",
     "openpencil-cloud": "./dist/bin/server.mjs"
@@ -139,6 +140,7 @@
     "@openfeature/server-sdk": "^1.23.0",
     "@vue-email/components": "^0.0.21",
     "@vue-email/render": "^0.0.9",
+    "@xmldom/xmldom": "^0.9.12",
     "better-auth": "1.7.7",
     "bowser": "^2.14.1",
     "dedent": "^1.7.2",

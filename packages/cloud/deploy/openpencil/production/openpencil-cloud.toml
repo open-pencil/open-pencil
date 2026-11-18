@@ -1,6 +1,7 @@
 # cloud.openpencil.dev, the official deployment. Secrets come from the Worker's secrets:
-# BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY,
-# OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY, and POSTHOG_PROJECT_API_KEY; DATABASE_URL is Hyperdrive's.
+# BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, APPLE_PRIVATE_KEY, S3_ACCESS_KEY_ID,
+# S3_SECRET_ACCESS_KEY, OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY, and POSTHOG_PROJECT_API_KEY;
+# DATABASE_URL is Hyperdrive's.
 # Its database and bucket are in the EU.
 schema_version = 2
 
@@ -33,6 +34,13 @@ addresses = []
 
 [authentication.providers.google]
 client_id = { from_env = "GOOGLE_CLIENT_ID" }
+
+# Sign in with Apple through the Services ID of team N7D7M3Q3CD, grouped with the desktop app's App
+# ID. The server signs Apple's client secret from APPLE_PRIVATE_KEY, the .p8 key with this key ID.
+[authentication.providers.apple]
+client_id = "dev.openpencil.cloud"
+team_id = "N7D7M3Q3CD"
+key_id = "CA37HQZJQ5"
 
 # An R2 bucket in Cloudflare's EU jurisdiction, reached through its EU endpoint. Its CORS rules
 # allow GET, PUT, and HEAD from public_url; S3_* are an R2 API token's keys for this bucket alone.
@@ -91,11 +99,13 @@ monthly_credit_allowance = 0
 [legal]
 terms_url = "https://openpencil.dev/cloud/legal/terms"
 privacy_url = "https://openpencil.dev/cloud/legal/privacy"
-terms_version = "2026-11-15"
+terms_version = "2026-11-18"
 require_acceptance = true
 abuse_email = "abuse@openpencil.dev"
 minimum_age = 16
 
-# Server errors go to the OpenPencil PostHog project, on its EU Cloud.
+# Server errors go to the OpenPencil PostHog project, on its EU Cloud, with the account and record
+# IDs involved, as the Cloud privacy policy says.
 [error_tracking]
 provider = "posthog"
+include_ids = true

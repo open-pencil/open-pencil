@@ -438,7 +438,8 @@
       "types": "./dist/variables/index.d.ts",
       "import": "./dist/variables/index.js",
       "default": "./dist/variables/index.js"
-    }
+    },
+    "./theme/tokens.css": "./dist/theme/tokens.css"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -456,6 +457,7 @@
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/vue"
   },
+  "funding": "https://ko-fi.com/dannote",
   "publishConfig": {
     "access": "public",
     "provenance": true
