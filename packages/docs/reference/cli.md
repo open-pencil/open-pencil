@@ -151,6 +151,9 @@ openpencil import page.html [options]
 | `--tailwind-file` | | File containing Tailwind utility candidates |
 | `--page-name` | | Scene graph page name (default: `DOM/CSS`) |
 | `--json` | | Print a machine-readable summary |
+| `--no-icon-names` | | Keep inline SVG as artwork instead of naming the Iconify icons it draws |
+
+Inline SVG that draws an Iconify icon from a popular set becomes that icon, as in the app. Naming icons downloads an icon index from jsDelivr and the icons it is compared with from the Iconify API; `--no-icon-names` imports without them.
 
 Examples:
 

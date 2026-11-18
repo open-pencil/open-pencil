@@ -72,6 +72,10 @@ export const settingsMessageDefaults = {
   snapToPixelGridDescription:
     'Align vector points, moved layers, and resized edges to whole pixels.',
   temporaryDisableSnappingHint: 'Hold Control while dragging to temporarily disable snapping.',
+  importing: 'Import',
+  nameImportedIcons: 'Name icons in imported HTML',
+  nameImportedIconsDescription:
+    'Inline SVG that draws an Iconify icon becomes that icon, which you can swap and recolor. Downloads an icon index and the icons it is compared with.',
   navigation: 'Navigation',
   navigationDescription: 'Control how the canvas moves when you scroll and zoom.',
   zoomSpeed: 'Zoom speed',

@@ -12,6 +12,7 @@ import { appIconMatcher } from '@/app/editor/icons/provider'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
 import { notificationMessages } from '@/app/i18n/notifications'
+import { appPreferences } from '@/app/settings/preferences/store'
 import { toast } from '@/app/shell/ui'
 
 type OpenDOMDocumentState = EditorState & {
@@ -76,9 +77,10 @@ export function createDOMOpenActions({
     })
     load.signal.throwIfAborted()
     const { renderer } = editor
+    const nameIcons = renderer && appPreferences.value.import.nameIcons
     const graph = await sceneGraphFromStyledHTML(styled, {
       pageName,
-      matchIcon: renderer ? appIconMatcher(renderer) : undefined
+      matchIcon: nameIcons ? appIconMatcher(renderer) : undefined
     })
     await nextFrame()
     await applyImportedDocument(editor, graph, load)

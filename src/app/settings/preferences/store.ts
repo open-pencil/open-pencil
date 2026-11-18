@@ -162,6 +162,10 @@ export interface AppPreferences {
     tokenUsage: TokenUsageDisplay
   }
   files: { recentLimit: number }
+  import: {
+    /** Inline SVG in imported HTML that draws an Iconify icon becomes that icon. */
+    nameIcons: boolean
+  }
   version: 1
   recovery: {
     enabled: boolean
@@ -204,6 +208,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     tokenUsage: 'hover'
   },
   files: { recentLimit: DEFAULT_RECENT_FILES_LIMIT },
+  import: { nameIcons: true },
   version: 1,
   recovery: { enabled: true },
   editing: {
@@ -273,6 +278,7 @@ const appPreferencesSchema = section({
   files: section({
     recentLimit: v.fallback(recentFilesLimitSchema, defaults.files.recentLimit)
   }),
+  import: section({ nameIcons: v.fallback(v.boolean(), defaults.import.nameIcons) }),
   version: v.fallback(v.literal(1), 1),
   recovery: section({ enabled: v.fallback(v.boolean(), defaults.recovery.enabled) }),
   editing: section({
@@ -439,6 +445,10 @@ export function updateNotificationPreferences(changes: Partial<NotificationPrefe
 
 export function updateZoomSpeed(zoomSpeed: ZoomSpeed): void {
   appPreferences.value = { ...stored(), navigation: { zoomSpeed } }
+}
+
+export function updateNameImportedIcons(nameIcons: boolean): void {
+  appPreferences.value = { ...stored(), import: { nameIcons } }
 }
 
 export function updateSnappingPreferences(changes: Partial<SnappingPreferences>): void {

@@ -23,6 +23,7 @@ interface ImportArgs {
   tailwindFile?: string
   pageName: string
   json?: boolean
+  'icon-names': boolean
 }
 
 function defaultOutput(input: string, format: string): string {
@@ -59,7 +60,7 @@ async function importHTML(args: ImportArgs): Promise<ReadHTMLResult> {
     cssText: await cssTextForArgs(args),
     tailwind: await tailwindCandidatesForArgs(args),
     pageName: args.pageName,
-    matchIcon: createHeadlessIconMatcher()
+    matchIcon: args['icon-names'] ? createHeadlessIconMatcher() : undefined
   })
 }
 
@@ -126,6 +127,12 @@ export default defineCommand({
     json: {
       type: 'boolean',
       description: 'Print a machine-readable summary to stdout'
+    },
+    'icon-names': {
+      type: 'boolean',
+      description:
+        'Name inline SVG after the Iconify icon it draws, downloading an icon index and the icons it is compared with; --no-icon-names keeps it as artwork (default: true)',
+      default: true
     }
   },
   async run({ args }) {

@@ -794,3 +794,7 @@ zh-cn:email.invitationPreview
 zh-cn:email.invitationSignatureRole
 zh-cn:email.invitationSubject
 zh-cn:email.invitationThanks
+ja:settings.nameImportedIcons
+ja:settings.nameImportedIconsDescription
+zh-cn:settings.nameImportedIcons
+zh-cn:settings.nameImportedIconsDescription

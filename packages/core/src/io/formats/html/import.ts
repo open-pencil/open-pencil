@@ -14,7 +14,7 @@ import {
 } from '@open-pencil/html-engine'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { createHeadlessIconMatcher, type IconMatcher } from '#core/icons/match'
+import type { IconMatcher } from '#core/icons/match'
 import type { IOFormatAdapter } from '#core/io/types'
 
 import {
@@ -209,7 +209,11 @@ export async function readHTMLDocument(
   return { styled, graph }
 }
 
-/** Reads HTML files where the HTML engine can load, as in the CLI and the MCP server. */
+/**
+ * Reads HTML files where the HTML engine can load, as in the CLI and the MCP server. It names no
+ * icons, so opening a page asks no icon service; `readHTMLDocument` with a matcher does, as
+ * `openpencil import` passes one.
+ */
 export const headlessHTMLReader: IOFormatAdapter<'html'> = {
   id: 'html',
   label: 'HTML',
@@ -222,8 +226,7 @@ export const headlessHTMLReader: IOFormatAdapter<'html'> = {
     const { graph } = await readHTMLDocument(new TextDecoder().decode(input.data), {
       readAsset: input.readAsset
         ? async (path) => (await input.readAsset?.(path)) ?? null
-        : undefined,
-      matchIcon: createHeadlessIconMatcher()
+        : undefined
     })
     return { graph, sourceFormat: 'html' }
   }
