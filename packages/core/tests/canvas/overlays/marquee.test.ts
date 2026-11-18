@@ -1,72 +1,78 @@
-import { expect, test } from 'bun:test'
+import { afterAll, describe, expect, test } from 'bun:test'
 
+import { expectRgbaPixels } from '#core-tests/canvas/helpers'
+
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { SkiaRenderer } from '#core/canvas'
-import { getCanvasKit } from '#core/canvaskit'
-import { drawMarquee } from '#core/canvas/overlays/feedback'
+
+import { renderFromEditorState } from '#core/canvas/renderer/pipeline'
+import { createDefaultEditorState } from '#core/editor'
+
+const SIZE = 64
+const ZOOM = 0.05
+// Half a pixel in, so the marquee's left edge falls on one whole pixel column.
+const PAN = 0.5
+// A screen row that crosses the marquee's left edge above the caught layers, and how far along
+// it to look: past the left edge, short of the layers and the right edge.
+const ROW = 12
+const SPAN = 20
 
 const ck = await getCanvasKit()
-
-const SURFACE = 600
+const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(SIZE, SIZE), 'surface'))
+afterAll(() => renderer.destroy())
 
 /**
- * The width of the marquee's border in screen pixels: the opaque selection blue at the edge of
- * the translucent fill.
- *
- * The marquee is drawn in screen pixels, so its border is a screen width — like Figma's. It must
- * not depend on what the selection overlay left on the shared selection paint: the single
- * selection path leaves `1/zoom` there, a world width meant for the scaled canvas, which would
- * draw the border that many pixels wide (20px at 5% zoom) and would change with the selection,
- * since the multi selection path leaves 1 behind.
+ * The marquee's border width in screen pixels, measured along `ROW` on a black page while
+ * `layers` layers are selected, at 5% zoom: the opaque selection blue, against the marquee's
+ * faint fill on one side and the page on the other.
  */
-function marqueeBorderWidth(zoom: number, leftoverStrokeWidth?: number): number {
-  const surface = expectDefined(ck.MakeSurface(SURFACE, SURFACE), 'surface')
-  const renderer = new SkiaRenderer(ck, surface)
+function marqueeBorderWidth(layers: number): number {
+  const graph = new SceneGraph()
+  const page = expectDefined(graph.getPages()[0], 'page')
+  const ids = Array.from(
+    { length: layers },
+    (_, i) =>
+      graph.createNode('RECTANGLE', page.id, {
+        x: 500 + i * 200,
+        y: 500,
+        width: 100,
+        height: 100,
+        fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+      }).id
+  )
+  const state = createDefaultEditorState(page.id)
+  state.pageColor = { r: 0, g: 0, b: 0, a: 1 }
+  state.zoom = ZOOM
+  state.panX = PAN
+  state.panY = PAN
+  state.selectedIds = new Set(ids)
+  state.marquee = { x: 200, y: 100, width: 800, height: 800 }
+  renderFromEditorState(renderer, state, graph, null, SIZE, SIZE, false)
+  renderer.surface.flush()
+  const image = renderer.surface.makeImageSnapshot()
   try {
-    renderer.zoom = zoom
-    // Half a pixel off, so the border falls on whole pixels instead of straddling two.
-    renderer.panX = 0.5
-    renderer.panY = 0.5
-    if (leftoverStrokeWidth !== undefined) {
-      renderer.selectionPaint.setStrokeWidth(leftoverStrokeWidth)
-    }
-    const canvas = surface.getCanvas()
-    canvas.clear(ck.TRANSPARENT)
-    // A world box whose drawn box keeps an interior even at a low zoom.
-    drawMarquee(renderer, canvas, { x: 0, y: 0, width: 10000, height: 10000 })
-    const image = surface.makeImageSnapshot()
-    try {
-      const pixels = image.readPixels(0, 0, {
-        alphaType: ck.AlphaType.Unpremul,
+    const pixels = expectRgbaPixels(
+      image.readPixels(0, ROW, {
+        width: SPAN,
+        height: 1,
         colorType: ck.ColorType.RGBA_8888,
-        colorSpace: ck.ColorSpace.SRGB,
-        width: SURFACE,
-        height: SURFACE
+        alphaType: ck.AlphaType.Unpremul,
+        colorSpace: ck.ColorSpace.SRGB
       })
-      if (!(pixels instanceof Uint8Array)) throw new Error('画布像素读不出来')
-      const alphaAt = (x: number, y: number) => pixels[(y * SURFACE + x) * 4 + 3]
-      // The middle row crosses the left border and then the fill.
-      const row = SURFACE / 2
-      let x = 0
-      while (x < SURFACE && alphaAt(x, row) < 128) x++
-      const start = x
-      while (x < SURFACE && alphaAt(x, row) >= 128) x++
-      return x - start
-    } finally {
-      image.delete()
-    }
+    )
+    return Array.from({ length: SPAN }, (_, x) => pixels[x * 4 + 2]).filter((blue) => blue > 128)
+      .length
   } finally {
-    renderer.destroy()
+    image.delete()
   }
 }
 
-test('the marquee border is one screen pixel at any zoom', () => {
-  // What the single selection path leaves on the shared paint: 1/zoom.
-  expect(marqueeBorderWidth(1, 1)).toBeLessThanOrEqual(2)
-  expect(marqueeBorderWidth(0.05, 1 / 0.05)).toBeLessThanOrEqual(2)
-})
-
-test('the marquee border is the same whatever the selection left behind', () => {
-  // One layer selected leaves 1/zoom, several leave 1: the border must not follow.
-  expect(marqueeBorderWidth(0.05, 1 / 0.05)).toBe(marqueeBorderWidth(0.05, 1))
+// Figma strokes the marquee one screen pixel wide at every zoom. A single selection draws its
+// outline in world units, 1/zoom wide; that width must not reach the marquee drawn after it.
+describe.each([1, 2])('with %i layer(s) selected', (layers) => {
+  test('the marquee border is one screen pixel at 5% zoom', () => {
+    expect(marqueeBorderWidth(layers)).toBe(1)
+  })
 })
