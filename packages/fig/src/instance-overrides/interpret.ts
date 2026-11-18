@@ -10,6 +10,7 @@ import {
   type PropertyBinding
 } from './bindings/properties'
 import { declareSourceVariableBindingUnits } from './bindings/variables'
+import { findCyclicInstances } from './cycles'
 import {
   ownLayers,
   type AssignmentGroup,
@@ -74,13 +75,37 @@ export function createOccurrenceInterpreter(changes: readonly NodeChange[]) {
 
 /** An interpreter over an index built elsewhere, such as one that decodes records as read. */
 export function createIndexedOccurrenceInterpreter(index: InterpreterIndex) {
+  // Walking every definition is only needed once a read meets a loop, and then only once.
+  let cyclic: ReadonlySet<string> | undefined
+  const cyclicInstances = (): ReadonlySet<string> =>
+    (cyclic ??= index.cyclicInstances?.() ?? findCyclicInstances(index))
+  const read =
+    (expectedType: 'INSTANCE' | 'SYMBOL' | 'CANVAS') =>
+    (id: string, options: InterpretInstanceOptions = {}) =>
+      interpretRoot(index, id, expectedType, options, {
+        known: () => cyclic,
+        find: cyclicInstances
+      })
   return {
-    instance: (id: string, options: InterpretInstanceOptions = {}) =>
-      interpretRoot(index, id, 'INSTANCE', options),
-    component: (id: string, options: InterpretInstanceOptions = {}) =>
-      interpretRoot(index, id, 'SYMBOL', options),
-    page: (id: string, options: InterpretInstanceOptions = {}) =>
-      interpretRoot(index, id, 'CANVAS', options)
+    instance: read('INSTANCE'),
+    component: read('SYMBOL'),
+    page: read('CANVAS'),
+    cyclicInstances
+  }
+}
+
+/** The document's instances whose component would contain itself, found once a read needs them. */
+interface CyclicInstances {
+  /** The instances, if a read has already looked for them. */
+  known: () => ReadonlySet<string> | undefined
+  find: () => ReadonlySet<string>
+}
+
+/** Unwinds a read to the instance a loop loses, which an outer layer of the read may be. */
+class LeftOutInstanceError extends Error {
+  constructor(readonly instanceId: string) {
+    super(`Instance ${instanceId} would contain its own component`)
+    this.name = 'LeftOutInstanceError'
   }
 }
 
@@ -88,10 +113,14 @@ function interpretRoot(
   index: InterpreterIndex,
   rootId: string,
   expectedType: 'INSTANCE' | 'SYMBOL' | 'CANVAS',
-  options: InterpretInstanceOptions
+  options: InterpretInstanceOptions,
+  cyclic: CyclicInstances
 ): InstanceOccurrence {
   const { sources, children } = index
-  const expanding = new Set<string>()
+  /** The records being expanded, outermost first; a record recurs where a swap repeats it. */
+  const path: string[] = []
+  /** Each record being expanded, by the rank its innermost expansion started at. */
+  const entered = new Map<string, number>()
   const modeScopes = createModeScopes(index)
   const claimContext = createClaimContext(index, options)
 
@@ -178,8 +207,39 @@ function interpretRoot(
   }
 
   /**
+   * A component expanding inside its own expansion is a loop when the expansion's own layers
+   * chose it: its definition would then hold it at every depth. A swap or swap property value
+   * from an owner outside that expansion is applied at one path only, so Figma expands the
+   * component once more with its defaults, and so does this read.
+   */
+  const closesLoop = (
+    { effective, swappedBy }: RootResolution,
+    bound: ReadonlyMap<string, number>,
+    rank: number
+  ): boolean => {
+    if (!effective) return false
+    const start = entered.get(guidToString(effective))
+    const chosenBy = swappedBy ?? bound.get('symbolData') ?? rank
+    return start !== undefined && chosenBy >= start
+  }
+
+  /**
+   * Leave out the instance the document's loop loses. It is on this read's path, though perhaps
+   * further out than the instance that closed the loop here, and a definition is the same on
+   * every page only if the same one goes; a loop the document walk did not see loses this one.
+   */
+  const leaveOut = (id: string): null => {
+    const lost = cyclic.find()
+    const outermost = path.find((entry) => lost.has(entry))
+    if (outermost !== undefined && outermost !== id) throw new LeftOutInstanceError(outermost)
+    options.onCyclicComponent?.({ instanceId: id })
+    return null
+  }
+
+  /**
    * Expand one source record. `layers` are structural layers addressed relative to this
    * expansion: an empty path configures this record itself, a longer path a descendant.
+   * Returns null for an instance left out because its component would contain itself.
    */
   const expand = (
     id: string,
@@ -187,19 +247,22 @@ function interpretRoot(
     layers: readonly StructuralLayer[],
     rank: number,
     inherited: ModeScope
-  ): InstanceOccurrence => {
-    if (expanding.has(id)) throw new Error(`Cyclic component expansion at ${id}`)
+  ): InstanceOccurrence | null => {
     options.onProgress?.()
     const raw = sources.get(id)
     if (!raw) throw new Error(`Missing source node ${id}`)
     const record = bindRecord(raw, bindings)
     const { source } = record
-    expanding.add(id)
+    const depth = path.length
+    path.push(id)
+    const outer = entered.get(id)
+    entered.set(id, rank)
     try {
       const owner: Owner = { id, rank, mainComponentId: null, unresolved: [] }
       const own = ownLayers(source, owner)
       const structural = [...own.structural, ...layers].sort((a, b) => b.owner.rank - a.owner.rank)
       const root = resolveRoot(sources, raw, source, record.superseded, structural, rank)
+      if (closesLoop(root, record.bound, rank)) return leaveOut(id)
       const modes = modeScopes.enter(inherited, raw, root.effective, own.claims)
       let subtree: Subtree
       if (root.effective) {
@@ -226,8 +289,15 @@ function interpretRoot(
           mainComponentId: occurrence.mainComponentId
         })
       return occurrence
+    } catch (error) {
+      if (!(error instanceof LeftOutInstanceError) || error.instanceId !== id) throw error
+      if (path.indexOf(id) !== depth) throw error
+      options.onCyclicComponent?.({ instanceId: id })
+      return null
     } finally {
-      expanding.delete(id)
+      path.pop()
+      if (outer === undefined) entered.delete(id)
+      else entered.set(id, outer)
     }
   }
 
@@ -261,6 +331,8 @@ function interpretRoot(
         assignments: group.assignments
       }))
     const base = expand(componentId, [], [...rootLayers, ...crossing], rank + 1, modes)
+    // Only instances are left out, and the component is the one being entered here.
+    if (!base) throw new Error(`Component ${componentId} was left out of its own instance`)
     return { base, children: base.children }
   }
 
@@ -304,10 +376,14 @@ function interpretRoot(
     modes: ModeScope
   ): Subtree => {
     const routed = routeToChildren(parentId, descendant)
-    const expanded = (children.get(parentId) ?? []).map((child) => {
+    const expanded = (children.get(parentId) ?? []).flatMap((child) => {
       if (!child.guid) throw new Error('Indexed child has no GUID')
       const childId = guidToString(child.guid)
-      return expand(childId, bindings, routed.get(childId) ?? [], rank + 1, modes)
+      if (cyclic.known()?.has(childId)) {
+        options.onCyclicComponent?.({ instanceId: childId })
+        return []
+      }
+      return expand(childId, bindings, routed.get(childId) ?? [], rank + 1, modes) ?? []
     })
     return { base: null, children: expanded }
   }
@@ -335,5 +411,7 @@ function interpretRoot(
     const kind = { INSTANCE: 'an instance', SYMBOL: 'a component', CANVAS: 'a page' }[expectedType]
     throw new Error(`Expected ${kind} source`)
   }
-  return expand(rootId, [], [], 0, modeScopes.atParentOf(rootId))
+  const occurrence = expand(rootId, [], [], 0, modeScopes.atParentOf(rootId))
+  if (!occurrence) throw new Error(`Instance ${rootId} would contain its own component`)
+  return occurrence
 }

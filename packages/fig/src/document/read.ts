@@ -329,7 +329,9 @@ function createScopedReader(
   const interpreter = createIndexedOccurrenceInterpreter({
     ...createSourceIndex(sceneChanges),
     variables: shared.records.variables,
-    textStyle: shared.records.textStyle
+    textStyle: shared.records.textStyle,
+    // The page's records lack the definitions elsewhere that decide which instance a loop loses.
+    cyclicInstances: () => sourceInterpreter.cyclicInstances()
   })
   const pages = changes
     .filter((change) => change.type === 'CANVAS')

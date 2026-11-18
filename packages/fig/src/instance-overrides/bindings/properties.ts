@@ -20,7 +20,9 @@ export interface PropertyBinding {
   superseded?: ComponentPropValue[]
 }
 
-function assignmentValue(assignment: ComponentPropAssignment): ComponentPropValue | undefined {
+export function assignmentValue(
+  assignment: ComponentPropAssignment
+): ComponentPropValue | undefined {
   const value = assignment.value
   if (
     value &&

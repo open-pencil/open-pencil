@@ -43,7 +43,7 @@ describe('instance-path interpretation', () => {
     )
   })
 
-  test('rejects cyclic component expansion', () => {
+  test('rejects an instance that is its own component', () => {
     expect(() =>
       interpretInstance(
         [
@@ -55,6 +55,6 @@ describe('instance-path interpretation', () => {
         ],
         '1:1'
       )
-    ).toThrow('Cyclic component expansion')
+    ).toThrow('Instance 1:1 would contain its own component')
   })
 })

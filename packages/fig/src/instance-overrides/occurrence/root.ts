@@ -19,6 +19,8 @@ export interface RootResolution {
   effective: GUID | undefined
   /** Components superseded on the way to `effective`, innermost decision first. */
   replaced: GUID[]
+  /** The rank of the owner whose swap chose `effective`, when a swap chose it. */
+  swappedBy: number | undefined
   groups: AssignmentGroup[]
   descendant: StructuralLayer[]
 }
@@ -59,10 +61,12 @@ export function resolveRoot(
     { assignments: (source.componentPropAssignments ?? []) as ComponentPropAssignment[], rank }
   ]
   const descendant: StructuralLayer[] = []
-  const swapRoot = (swap: GUID): void => {
+  let swappedBy: number | undefined
+  const swapRoot = (swap: GUID, ownerRank: number): void => {
     if (!effective) throw new Error('Swap target is not an instance')
     if (!sameGuid(effective, swap)) replaced.push(effective)
     effective = swap
+    swappedBy = ownerRank
     // Later layers may address the root through the replacement's identity.
     for (const key of componentKeys(sources, effective)) if (!isKey(key)) keys.push(key)
   }
@@ -72,9 +76,9 @@ export function resolveRoot(
       descendant.push(addressesRoot ? { ...layer, path: layer.path.slice(1) } : layer)
       continue
     }
-    if (layer.swap) swapRoot(layer.swap)
+    if (layer.swap) swapRoot(layer.swap, layer.owner.rank)
     if (layer.assignments.length)
       groups.push({ assignments: layer.assignments, rank: layer.owner.rank })
   }
-  return { effective, replaced, groups, descendant }
+  return { effective, replaced, swappedBy, groups, descendant }
 }

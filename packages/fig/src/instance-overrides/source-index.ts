@@ -21,6 +21,11 @@ export interface SourceIndex {
 export interface InterpreterIndex extends SourceIndex {
   readonly variables: DocumentVariables
   readonly textStyle: TextStyleLookup
+  /**
+   * The document's instances whose component would contain itself, for an index over part of a
+   * document: which instance a loop loses depends on the whole document's layer order.
+   */
+  readonly cyclicInstances?: () => ReadonlySet<string>
 }
 
 /** A record's archive identity, or undefined for the rare record without a GUID. */
