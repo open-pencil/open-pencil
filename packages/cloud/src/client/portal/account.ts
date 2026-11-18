@@ -19,6 +19,7 @@ import {
   cloudSocialLinkResponseSchema,
   notificationSettingsSchema,
   type CloudAccessTokenCreate,
+  type CloudSocialProvider,
   type NotificationSettings
 } from '#cloud/contract'
 
@@ -146,7 +147,7 @@ export function createAccountAPI(call: CloudCall, { account, tokens, api }: Port
         signal
       )
     },
-    linkSocial(provider: 'google' | 'apple', callbackURL: string, signal?: AbortSignal) {
+    linkSocial(provider: CloudSocialProvider, callbackURL: string, signal?: AbortSignal) {
       return call(
         (options) =>
           account.authentication['link-social'].$post({ json: { provider, callbackURL } }, options),

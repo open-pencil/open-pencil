@@ -69,9 +69,11 @@ describe('Cloud authentication', () => {
       appleClientId: 'apple-client',
       appleTeamId: 'apple-team',
       appleKeyId: 'apple-key',
-      applePrivateKey: 'private-key-loaded-lazily'
+      applePrivateKey: 'private-key-loaded-lazily',
+      githubClientId: 'github-client',
+      githubClientSecret: 'github-secret'
     })
-    expect(configuredSocialProviders(config)).toEqual(['apple', 'google'])
+    expect(configuredSocialProviders(config)).toEqual(['apple', 'google', 'github'])
   })
 
   test('retains explicit trusted client IP configuration', () => {

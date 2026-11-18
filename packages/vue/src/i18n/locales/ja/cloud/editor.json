@@ -44,6 +44,7 @@
   "errorSignInFailedDescription": "サーバーでサインインが完了しませんでした。しばらくしてからもう一度お試しください。",
   "continueWithGoogle": "Google で続行",
   "continueWithApple": "Apple で続行",
+  "continueWithGithub": "GitHub で続行",
   "continueWithEmail": "メールアドレスで続行",
   "signInNoteDesktop": "ブラウザが開くのでサインインを完了し、その後ここに戻ってください。",
   "signInNoteBrowser": "サインイン後、このタブに戻ります。",

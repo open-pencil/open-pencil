@@ -44,6 +44,7 @@
   "errorSignInFailedDescription": "Serwer nie dokończył logowania. Spróbuj ponownie za chwilę.",
   "continueWithGoogle": "Kontynuuj z Google",
   "continueWithApple": "Kontynuuj z Apple",
+  "continueWithGithub": "Kontynuuj z GitHubem",
   "continueWithEmail": "Kontynuuj przez e-mail",
   "signInNoteDesktop": "Aby dokończyć logowanie, otworzy się przeglądarka, a potem wrócisz tutaj.",
   "signInNoteBrowser": "Po zalogowaniu wrócisz do tej karty.",

@@ -122,7 +122,7 @@ const people: PortalPerson[] = [
     joinedOn: 'Jun 12, 2026',
     lastActive: 'yesterday',
     workspaceCount: 1,
-    methods: ['credential', 'google']
+    methods: ['credential', 'github']
   },
   {
     id: 'user-tom',
@@ -498,7 +498,7 @@ export const SignInAndSecurity = story(
   'How you sign in to cloud.studio.example.',
   `<PortalAccountSecurity
     :methods="[{ id: 'm1', provider: 'google', linkedOn: 'in March', canUnlink: true }, { id: 'm2', provider: 'credential', linkedOn: 'in March', canUnlink: true }]"
-    :linkable="['apple']"
+    :linkable="['apple', 'github']"
     :authenticator="{ available: true, on: true }"
     :passkeys="[{ id: 'p1', name: 'MacBook Pro', addedOn: 'in July' }]"
   />`

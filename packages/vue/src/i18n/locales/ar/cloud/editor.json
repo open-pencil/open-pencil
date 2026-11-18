@@ -53,6 +53,7 @@
   "errorSignInFailedDescription": "لم يُكمل الخادم تسجيل دخولك. أعد المحاولة بعد قليل.",
   "continueWithGoogle": "المتابعة باستخدام Google",
   "continueWithApple": "المتابعة باستخدام Apple",
+  "continueWithGithub": "المتابعة باستخدام GitHub",
   "continueWithEmail": "المتابعة باستخدام البريد الإلكتروني",
   "signInNoteDesktop": "سيفتح متصفحك لإكمال تسجيل الدخول، ثم تعود إلى هنا.",
   "signInNoteBrowser": "ستعود إلى علامة التبويب هذه بعد تسجيل الدخول.",

@@ -10,6 +10,7 @@ export function usePortalDeviceLabels() {
       password: words.methodPassword,
       google: words.methodGoogle,
       apple: words.methodApple,
+      github: words.methodGithub,
       passkey: words.methodPasskey,
       'two-step': words.methodTwoStep,
       'email-link': words.methodEmailLink,

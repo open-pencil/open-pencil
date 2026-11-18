@@ -78,7 +78,8 @@ const FILTERS: ListFilters<CloudAdminUserFilter, 'user'> = {
 const METHOD_PROVIDERS: Record<CloudAdminUserMethod, string> = {
   password: 'credential',
   google: 'google',
-  apple: 'apple'
+  apple: 'apple',
+  github: 'github'
 }
 
 export type AdminUserQuery = AdminListQuery<CloudAdminUserFilter> & {

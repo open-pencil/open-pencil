@@ -47,7 +47,9 @@ export function signInMethod(
 ): CloudSignInMethod | null {
   if (isAuthEndpoint(endpoint.path, CORE_AUTH_PATHS.callbackOAuth)) {
     const provider = endpoint.params?.id
-    return provider === 'google' || provider === 'apple' ? provider : 'other'
+    return provider === 'google' || provider === 'apple' || provider === 'github'
+      ? provider
+      : 'other'
   }
   return methods.find(([path]) => isAuthEndpoint(endpoint.path, path))?.[1] ?? null
 }

@@ -51,5 +51,11 @@ export function socialProviders(config: CloudServerConfig): BetterAuthOptions['s
       return provider
     }
   }
+  if (config.githubClientId && config.githubClientSecret) {
+    providers.github = {
+      clientId: config.githubClientId,
+      clientSecret: config.githubClientSecret
+    }
+  }
   return providers
 }

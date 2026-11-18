@@ -16,7 +16,8 @@ const { t } = localization
 const methods: Record<string, string> = {
   credential: t.signInMethodPassword,
   google: 'Google',
-  apple: 'Apple'
+  apple: 'Apple',
+  github: 'GitHub'
 }
 const method = payload.method ? (methods[payload.method] ?? payload.method) : ''
 const changes: Record<TwoStepChange, { heading: string; message: string }> = {

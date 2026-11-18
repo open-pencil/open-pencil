@@ -13,6 +13,7 @@ const label = usePortalSignInMethodLabel()
       <span role="img" :aria-label="label(method)" class="flex size-4 items-center justify-center">
         <icon-ai-google v-if="method === 'google'" class="size-3.5" />
         <icon-ai-apple v-else-if="method === 'apple'" class="size-3.5" />
+        <icon-ai-github v-else-if="method === 'github'" class="size-3.5" />
         <icon-lucide-key-round v-else class="size-3.5" />
       </span>
     </Tip>

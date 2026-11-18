@@ -44,6 +44,7 @@
   "errorSignInFailedDescription": "Il server non ha completato l’accesso. Riprova tra un momento.",
   "continueWithGoogle": "Continua con Google",
   "continueWithApple": "Continua con Apple",
+  "continueWithGithub": "Continua con GitHub",
   "continueWithEmail": "Continua con email",
   "signInNoteDesktop": "Il browser si apre per completare l’accesso, poi torni qui.",
   "signInNoteBrowser": "Dopo l’accesso tornerai a questa scheda.",

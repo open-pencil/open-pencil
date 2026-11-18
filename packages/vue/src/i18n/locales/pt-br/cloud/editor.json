@@ -53,6 +53,7 @@
   "errorSignInFailedDescription": "O servidor não concluiu a sua entrada. Tente novamente em instantes.",
   "continueWithGoogle": "Continuar com o Google",
   "continueWithApple": "Continuar com a Apple",
+  "continueWithGithub": "Continuar com o GitHub",
   "continueWithEmail": "Continuar com e-mail",
   "signInNoteDesktop": "O navegador abre para concluir a entrada e depois você volta para cá.",
   "signInNoteBrowser": "Você volta para esta aba depois de entrar.",

@@ -796,3 +796,7 @@ zh-cn:email.invitationSubject
 zh-cn:email.invitationThanks
 ja:cloudPortal.pendingHiddenEmail
 zh-cn:cloudPortal.pendingHiddenEmail
+ja:cloud.continueWithGithub
+ja:cloudPortal.continueWithGithub
+zh-cn:cloud.continueWithGithub
+zh-cn:cloudPortal.continueWithGithub

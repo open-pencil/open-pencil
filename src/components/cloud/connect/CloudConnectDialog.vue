@@ -126,6 +126,7 @@ const errors = computed<Record<CloudConnectError, { heading: string; description
 const methodLabels = computed<Record<CloudSignInMethod, string>>(() => ({
   google: t.value.continueWithGoogle,
   apple: t.value.continueWithApple,
+  github: t.value.continueWithGithub,
   email: t.value.continueWithEmail
 }))
 const heading = computed(() => {
@@ -256,6 +257,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
             <template #leading>
               <icon-ai-google v-if="method === 'google'" class="size-4 text-surface" />
               <icon-ai-apple v-else-if="method === 'apple'" class="size-4 text-surface" />
+              <icon-ai-github v-else-if="method === 'github'" class="size-4 text-surface" />
               <icon-lucide-mail v-else class="size-4 text-surface" />
             </template>
             {{ methodLabels[method] }}

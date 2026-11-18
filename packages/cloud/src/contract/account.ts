@@ -31,7 +31,15 @@ export const cloudAccountStatusResponseSchema = v.object({
 /** Accepting the server's terms: the version the person read, which must be the current one. */
 export const cloudTermsAcceptanceSchema = v.object({ version: v.pipe(v.string(), v.minLength(1)) })
 
-export const cloudAuthenticationProviderSchema = v.picklist(['credential', 'google', 'apple'])
+/** The providers a person can sign in with besides a password. */
+export const cloudSocialProviderSchema = v.picklist(['google', 'apple', 'github'])
+export type CloudSocialProvider = v.InferOutput<typeof cloudSocialProviderSchema>
+export const cloudAuthenticationProviderSchema = v.picklist([
+  'credential',
+  'google',
+  'apple',
+  'github'
+])
 export const cloudAuthenticationMethodSchema = v.object({
   id: v.string(),
   provider: cloudAuthenticationProviderSchema,
@@ -40,14 +48,14 @@ export const cloudAuthenticationMethodSchema = v.object({
 })
 export const cloudAuthenticationMethodsResponseSchema = v.object({
   methods: v.array(cloudAuthenticationMethodSchema),
-  availableSocialProviders: v.array(v.picklist(['google', 'apple']))
+  availableSocialProviders: v.array(cloudSocialProviderSchema)
 })
 export const cloudPasswordChangeSchema = v.object({
   currentPassword: v.string(),
   newPassword: v.string()
 })
 export const cloudSocialLinkSchema = v.object({
-  provider: v.picklist(['google', 'apple']),
+  provider: cloudSocialProviderSchema,
   callbackURL: v.pipe(v.string(), v.url())
 })
 export const cloudSocialLinkResponseSchema = v.object({ url: v.pipe(v.string(), v.url()) })
@@ -213,6 +221,7 @@ export const cloudSignInMethodSchema = v.picklist([
   'password',
   'google',
   'apple',
+  'github',
   'passkey',
   'two-step',
   'email-link',

@@ -66,6 +66,7 @@ export const cloudMessageDefaults = {
   errorSignInFailedDescription: 'The server didn’t finish signing you in. Try again in a moment.',
   continueWithGoogle: 'Continue with Google',
   continueWithApple: 'Continue with Apple',
+  continueWithGithub: 'Continue with GitHub',
   continueWithEmail: 'Continue with email',
   signInNoteDesktop: 'Your browser opens to finish signing in, then you come back here.',
   signInNoteBrowser: 'You come back to this tab after signing in.',

@@ -134,7 +134,7 @@ export function createBetterAuthAdapter(
       accountLinking: {
         enabled: true,
         disableImplicitLinking: false,
-        trustedProviders: ['google', 'apple'],
+        trustedProviders: ['google', 'apple', 'github'],
         allowDifferentEmails: false,
         allowUnlinkingAll: false,
         requireLocalEmailVerified: true

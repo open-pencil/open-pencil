@@ -111,7 +111,7 @@ export const cloudAdminUserFilterSchema = v.picklist([
   'without-two-step'
 ])
 /** Narrows a list of people, under any filter, to those who sign in a given way. */
-export const cloudAdminUserMethodSchema = v.picklist(['password', 'google', 'apple'])
+export const cloudAdminUserMethodSchema = v.picklist(['password', 'google', 'apple', 'github'])
 export const cloudAdminUsersResponseSchema = v.object({
   users: v.array(cloudAdminUserSchema),
   ...listTotals(cloudAdminUserFilterSchema.options)

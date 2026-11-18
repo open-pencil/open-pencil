@@ -9,10 +9,13 @@ import { withoutTrailingSlash } from 'ufo'
 
 import type { CloudServerConfig } from './schema'
 
-export function configuredSocialProviders(config: CloudServerConfig): Array<'apple' | 'google'> {
+export function configuredSocialProviders(
+  config: CloudServerConfig
+): Array<'apple' | 'google' | 'github'> {
   return [
     ...(config.appleClientId ? (['apple'] as const) : []),
-    ...(config.googleClientId ? (['google'] as const) : [])
+    ...(config.googleClientId ? (['google'] as const) : []),
+    ...(config.githubClientId ? (['github'] as const) : [])
   ]
 }
 

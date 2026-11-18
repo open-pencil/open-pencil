@@ -44,6 +44,7 @@
   "errorSignInFailedDescription": "Сервер не завершил вход. Попробуйте чуть позже.",
   "continueWithGoogle": "Продолжить с Google",
   "continueWithApple": "Продолжить с Apple",
+  "continueWithGithub": "Продолжить с GitHub",
   "continueWithEmail": "Войти по почте",
   "signInNoteDesktop": "Чтобы завершить вход, откроется браузер, а затем вы вернётесь сюда.",
   "signInNoteBrowser": "После входа вы вернётесь в эту вкладку.",

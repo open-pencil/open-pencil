@@ -44,6 +44,7 @@
   "errorSignInFailedDescription": "Le serveur n’a pas terminé votre connexion. Réessayez dans un instant.",
   "continueWithGoogle": "Continuer avec Google",
   "continueWithApple": "Continuer avec Apple",
+  "continueWithGithub": "Continuer avec GitHub",
   "continueWithEmail": "Continuer avec un e-mail",
   "signInNoteDesktop": "Votre navigateur s’ouvre pour terminer la connexion, puis vous revenez ici.",
   "signInNoteBrowser": "Vous reviendrez à cet onglet après la connexion.",

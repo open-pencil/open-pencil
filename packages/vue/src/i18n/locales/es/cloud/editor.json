@@ -44,6 +44,7 @@
   "errorSignInFailedDescription": "El servidor no terminó de iniciar tu sesión. Inténtalo de nuevo en un momento.",
   "continueWithGoogle": "Continuar con Google",
   "continueWithApple": "Continuar con Apple",
+  "continueWithGithub": "Continuar con GitHub",
   "continueWithEmail": "Continuar con correo",
   "signInNoteDesktop": "Se abrirá tu navegador para terminar de iniciar sesión y después volverás aquí.",
   "signInNoteBrowser": "Volverás a esta pestaña después de iniciar sesión.",

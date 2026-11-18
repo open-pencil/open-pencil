@@ -11,7 +11,8 @@ export function usePortalSignInMethodLabel() {
     const labels: Record<string, string> = {
       credential: words.password,
       google: words.providerGoogle,
-      apple: words.providerApple
+      apple: words.providerApple,
+      github: words.providerGithub
     }
     return labels[provider] ?? provider
   }

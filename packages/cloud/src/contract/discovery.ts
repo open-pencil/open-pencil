@@ -12,7 +12,7 @@ export const cloudDeploymentSchema = v.picklist(['official', 'self-hosted'])
 export type CloudDeployment = v.InferOutput<typeof cloudDeploymentSchema>
 
 /** The sign-in providers this editor offers buttons for. */
-const SOCIAL_PROVIDERS = ['apple', 'google'] as const
+const SOCIAL_PROVIDERS = ['apple', 'google', 'github'] as const
 
 function isKnownSocialProvider(value: string): value is (typeof SOCIAL_PROVIDERS)[number] {
   return (SOCIAL_PROVIDERS as readonly string[]).includes(value)

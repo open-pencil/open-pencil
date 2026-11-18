@@ -54,7 +54,8 @@ const messages = useCloudPortalMessages()
 const signUp = computed(() => mode === 'sign-up')
 const labels = computed<Record<PortalSignInMethod, string>>(() => ({
   google: messages.value.continueWithGoogle,
-  apple: messages.value.continueWithApple
+  apple: messages.value.continueWithApple,
+  github: messages.value.continueWithGithub
 }))
 const description = computed(() => {
   if (!returnsTo) return undefined
@@ -128,7 +129,8 @@ const showForm = computed(() => !!emailPassword && (!signUp.value || emailPasswo
         <!-- Brand marks read at 16px; the button's own 14px slot would push them below the label. -->
         <template #leading>
           <icon-ai-google v-if="method === 'google'" class="size-full" />
-          <icon-ai-apple v-else class="size-full" />
+          <icon-ai-apple v-else-if="method === 'apple'" class="size-full" />
+          <icon-ai-github v-else class="size-full" />
         </template>
         {{ labels[method] }}
       </AppButton>
