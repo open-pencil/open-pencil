@@ -33,7 +33,11 @@ import { useBlurRampEditing } from '@/components/properties/effects/blur-ramp'
 import NoiseSettings from '@/components/properties/effects/NoiseSettings.vue'
 import TextureSettings from '@/components/properties/effects/TextureSettings.vue'
 import PropertyItemRow from '@/components/properties/item-list/PropertyItemRow.vue'
-import { applyPaintMutation, commitPaintMutation } from '@/components/properties/paint/binding'
+import {
+  applyPaintMutation,
+  cancelPaintMutation,
+  commitPaintMutation
+} from '@/components/properties/paint/binding'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
 import PropertyListRoot from '@/components/properties/PropertyListRoot.vue'
 import { useSharedStylePicker } from '@/components/properties/shared-style/useSharedStylePicker'
@@ -78,13 +82,29 @@ function effectTargets(
   return nodeIds.map((nodeId) => ({ nodeId, path: `effects/${index}/${property}` }))
 }
 
-/** A bound colour edits its variable in the layer's mode; an unbound one edits the effect. */
+/**
+ * A bound colour edits its variable in the layer's mode; an unbound one edits the effect. The
+ * picker's `commit` ends the step, so a drag is one.
+ */
 function updateEffectColor(
   binding: BindableValueActions<Color>,
   flush: () => void,
   update: () => void
 ) {
+  applyPaintMutation(binding, flush, update)
+}
+
+/** A typed colour is a step of its own. */
+function setEffectColor(
+  binding: BindableValueActions<Color>,
+  flush: () => void,
+  update: () => void
+) {
   if (applyPaintMutation(binding, flush, update)) commitPaintMutation(binding)
+}
+
+function onEffectPickerOpenChange(open: boolean, binding: BindableValueActions<Color>) {
+  if (!open) commitPaintMutation(binding)
 }
 
 /** One glass value changed on each selected layer, the rest of each layer's kept. */
@@ -340,6 +360,9 @@ function effectPreview(effect: Effect): Fill {
                           effectsCtx.updateColor(actions.patch, index, $event)
                         )
                       "
+                      @commit="commitPaintMutation(binding.actions)"
+                      @cancel="cancelPaintMutation(binding.actions)"
+                      @open-change="onEffectPickerOpenChange($event, binding.actions)"
                     />
                   </template>
                   <template #value>
@@ -352,7 +375,7 @@ function effectPreview(effect: Effect): Fill {
                       "
                       :label="panels.effectColor"
                       @update="
-                        updateEffectColor(binding.actions, flush, () =>
+                        setEffectColor(binding.actions, flush, () =>
                           effectsCtx.updateColor(actions.patch, index, $event)
                         )
                       "

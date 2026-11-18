@@ -174,7 +174,11 @@ function onToggleSides(nodes: readonly SceneNode[]) {
               <FillPicker
                 :label="panels.stroke"
                 :fill="displayStroke(stroke, binding.resolvedValue)"
-                :okhcl="createStrokeOkhclAdapter(okhcl, activeNode, index)"
+                :okhcl="
+                  createStrokeOkhclAdapter(okhcl, activeNode, index, (update) =>
+                    applyPaintMutation(binding.actions, flush, update)
+                  )
+                "
                 :layer-size="selectedNodeIds.length === 1 ? activeNode : null"
                 :keep-open="gradients.pressesHandle"
                 :active-stop="gradients.stop(gradients.target(selectedNodeIds, 'strokes', index))"

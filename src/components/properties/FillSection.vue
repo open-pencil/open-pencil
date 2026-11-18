@@ -156,7 +156,11 @@ function updateSolidColor(
               <template #preview>
                 <FillPicker
                   :fill="displayFill(fill, binding.resolvedValue)"
-                  :okhcl="createFillOkhclAdapter(okhcl, activeNode, index)"
+                  :okhcl="
+                    createFillOkhclAdapter(okhcl, activeNode, index, (update) =>
+                      applyPaintMutation(binding.actions, flush, update)
+                    )
+                  "
                   :shader="fillShader(activeNode, fill)"
                   :layer-size="selectedNodeIds.length === 1 ? activeNode : null"
                   :keep-open="gradients.pressesHandle"

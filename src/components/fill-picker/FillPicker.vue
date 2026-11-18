@@ -9,7 +9,11 @@ import { applySolidFillColor, type OkHCLControls } from '@open-pencil/vue/contro
 import { DEFAULT_SHADER_PRESET } from '@open-pencil/vue/controls/shader'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
-import { pickerOutsideHandlers, type PickerKeepOpen } from '@open-pencil/vue/primitives/ColorPicker'
+import {
+  pickerOutsideHandlers,
+  usePickerGesture,
+  type PickerKeepOpen
+} from '@open-pencil/vue/primitives/ColorPicker'
 import { FillRoot } from '@open-pencil/vue/primitives/Fill'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
@@ -63,18 +67,28 @@ const emit = defineEmits<{
   update: [fill: Fill]
   updateShader: [preset: ShaderPreset]
   openChange: [open: boolean]
-  /** Ends the edit so far as one step, which a later Escape no longer takes back. */
+  /** Ends the edit made so far as one undo step: a press's release, or a change with none held. */
   commit: []
+  /** Puts back what the press being held has changed, on Escape or when the picker is put away. */
   cancel: []
 }>()
+const gesture = usePickerGesture({ commit: () => emit('commit'), cancel: () => emit('cancel') })
 const { open: popupOpen, portalActive } = useRetainedPopup(
   undefined,
   () => {
-    emit('cancel')
+    gesture.abort()
     emit('openChange', false)
   },
   'picker'
 )
+
+function update(next: Fill) {
+  gesture.change(() => emit('update', next))
+}
+
+function updateShader(preset: ShaderPreset) {
+  gesture.change(() => emit('updateShader', preset))
+}
 const cls = usePopoverUI({
   content: 'max-h-(--reka-popover-content-available-height) w-60 overflow-y-auto p-2'
 })
@@ -86,7 +100,7 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
 </script>
 
 <template>
-  <FillRoot :fill="fill" @update="emit('update', $event)" v-slot="root">
+  <FillRoot :fill="fill" @update="update" v-slot="root">
     <AppPopoverRoot
       v-model:open="popupOpen"
       overlay-kind="picker"
@@ -107,7 +121,7 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
           :side-offset="4"
           :side="startSide"
           data-picker-content
-          @escape-key-down="emit('cancel')"
+          @pointerdown.capture="gesture.onPointerDown"
           @pointer-down-outside="outside.onPointerDownOutside"
           @focus-outside="outside.onFocusOutside"
         >
@@ -151,7 +165,7 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
                 :class="tabClass(shader !== null)"
                 :aria-label="panels.shader"
                 data-test-id="fill-picker-tab-shader"
-                @click="shader || emit('updateShader', DEFAULT_SHADER_PRESET)"
+                @click="shader || updateShader(DEFAULT_SHADER_PRESET)"
               >
                 <icon-lucide-sparkles class="size-3.5" />
               </button>
@@ -163,28 +177,23 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
             :color="root.fill.color"
             :okhcl="okhcl"
             eyedropper
-            @update="emit('update', applySolidFillColor(root.fill, $event))"
+            @update="update(applySolidFillColor(root.fill, $event))"
           />
 
           <GradientEditor
             v-if="root.category === 'GRADIENT'"
             v-model:active-stop="activeStop"
             :fill="root.fill"
-            @update="emit('update', $event)"
+            @update="update"
           />
 
-          <ShaderFillPicker
-            v-if="shader"
-            :preset="shader.preset"
-            @update="emit('updateShader', $event)"
-          />
+          <ShaderFillPicker v-if="shader" :preset="shader.preset" @update="updateShader" />
 
           <ImageFillPicker
             v-else-if="root.category === 'IMAGE'"
             :fill="root.fill"
             :layer-size="layerSize"
-            @update="emit('update', $event)"
-            @commit="emit('commit')"
+            @update="update"
           />
         </PopoverContent>
       </PopoverPortal>

@@ -7,6 +7,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 
+import { usePickerGesture } from './gesture'
 import { pickerOutsideHandlers, type PickerKeepOpen } from './outside'
 
 // Opens toward the start of the line, away from a panel at its end: left, or right when mirrored.
@@ -34,18 +35,41 @@ const {
 const emit = defineEmits<{
   update: [color: Color]
   openChange: [open: boolean]
+  /** Ends the edit made so far as one undo step: a press's release, or a change with none held. */
+  commit: []
+  /**
+   * Escape during a press, or the picker put away during one: the colour from before the press
+   * has just come back through `update`, and a listener that batches the press can roll it back.
+   */
   cancel: []
 }>()
 
 const swatchBg = computed(() => colorToCSS(color))
+let pressColor: Color = { ...color }
+const gesture = usePickerGesture({
+  commit: () => emit('commit'),
+  cancel: () => {
+    emit('update', pressColor)
+    emit('cancel')
+  }
+})
 const { open: popupOpen, portalActive } = useRetainedPopup(
   undefined,
   () => {
-    emit('cancel')
+    gesture.abort()
     emit('openChange', false)
   },
   'picker'
 )
+
+function onPointerDown(event: PointerEvent) {
+  pressColor = { ...color }
+  gesture.onPointerDown(event)
+}
+
+function update(next: Color) {
+  gesture.change(() => emit('update', next))
+}
 
 const outside = pickerOutsideHandlers(() => keepOpen)
 </script>
@@ -69,11 +93,11 @@ const outside = pickerOutsideHandlers(() => keepOpen)
         :side-offset="4"
         :side="side"
         data-picker-content
-        @escape-key-down="emit('cancel')"
+        @pointerdown.capture="onPointerDown"
         @pointer-down-outside="outside.onPointerDownOutside"
         @focus-outside="outside.onFocusOutside"
       >
-        <slot :color="color" />
+        <slot :color="color" :update="update" />
       </PopoverContent>
     </PopoverPortal>
   </PopoverRoot>

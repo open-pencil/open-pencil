@@ -29,6 +29,9 @@ defineSlots<{
 const emit = defineEmits<{
   update: [color: Color]
   openChange: [open: boolean]
+  /** Ends the edit made so far as one undo step, as `ColorPickerRoot` reports it. */
+  commit: []
+  /** Escape during a press: the colour from before it has just come back through `update`. */
   cancel: []
 }>()
 const cls = usePopoverUI({ content: 'w-56 p-2' })
@@ -44,6 +47,7 @@ const keepOpen = eyedropper ? useEyedropperKeepOpen() : undefined
     :ui="{ content: cls.content }"
     @update="emit('update', $event)"
     @open-change="emit('openChange', $event)"
+    @commit="emit('commit')"
     @cancel="emit('cancel')"
   >
     <!-- The same swatch a fill row shows, so a colour's preview reads alike in every field. -->
@@ -52,12 +56,12 @@ const keepOpen = eyedropper ? useEyedropperKeepOpen() : undefined
         <FillSwatchTrigger :fill="solidFill(color)" :label="panels.editColor" />
       </slot>
     </template>
-    <template #default="{ color: currentColor }">
+    <template #default="{ color: currentColor, update }">
       <ColorPickerPanel
         :color="currentColor"
         :okhcl="okhcl"
         :eyedropper="eyedropper"
-        @update="emit('update', $event)"
+        @update="update"
       />
     </template>
   </ColorPickerRoot>

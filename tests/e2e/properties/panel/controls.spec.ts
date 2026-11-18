@@ -329,7 +329,9 @@ test('fill color can bind an existing variable', async () => {
   editor.canvas.assertNoErrors()
 })
 
-test('bound fill picker opens non-destructively and Escape rolls back color edits', async () => {
+// Figma desktop 126: a colour picked for a bound fill detaches it, Escape closes the picker and keeps
+// the colour, and one undo puts the binding back.
+test('bound fill picker opens non-destructively, and Escape keeps a detaching color edit', async () => {
   await editor.canvas.clearCanvas()
   await editor.canvas.drawRect(200, 200, 80, 80)
 
@@ -369,16 +371,24 @@ test('bound fill picker opens non-destructively and Escape rolls back color edit
   const box = expectDefined(await area.boundingBox(), 'color area bounds')
   await editor.page.mouse.click(box.x + box.width - 8, box.y + 8)
   await editor.page.keyboard.press('Escape')
+  await expect(editor.page.locator('[data-picker-content]')).toBeHidden()
   await editor.canvas.waitForRender()
 
-  const after = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const id = [...store.state.selectedIds][0]
-    const node = id ? store.getNode(id) : null
-    return { color: node?.fills[0]?.color, binding: node?.boundVariables['fills/0/color'] }
-  })
-  expect(after).toEqual(before)
+  const boundFill = () =>
+    editor.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      const id = [...store.state.selectedIds][0]
+      const node = id ? store.getNode(id) : null
+      return { color: node?.fills[0]?.color, binding: node?.boundVariables['fills/0/color'] }
+    })
+  const after = await boundFill()
+  expect(after.binding).toBeUndefined()
+  expect(after.color).not.toEqual(before.color)
+
+  await editor.canvas.undo()
+  await editor.canvas.waitForRender()
+  expect(await boundFill()).toEqual(before)
   await expect(fillItem.getByText('rollback-brand')).toBeVisible()
   editor.canvas.assertNoErrors()
 })

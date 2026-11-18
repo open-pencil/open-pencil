@@ -140,7 +140,7 @@ test('stroke picker hsb saturation and brightness sliders update stroke color on
   ).toBe(true)
 })
 
-test('bound stroke picker is non-destructive, rolls back Escape, and detaches in one undo step', async ({
+test('bound stroke picker is non-destructive, keeps a detaching edit on Escape, and undoes it in one step', async ({
   page
 }) => {
   const canvas = new CanvasHelper(page)
@@ -181,6 +181,7 @@ test('bound stroke picker is non-destructive, rolls back Escape, and detaches in
 
   await dragSlider(page, canvas, 'color-slider-hue', 0.55)
   await page.keyboard.press('Escape')
+  await expect(page.locator('[data-picker-content]')).toBeHidden()
   await canvas.waitForRender()
   const afterEscape = await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
@@ -189,16 +190,8 @@ test('bound stroke picker is non-destructive, rolls back Escape, and detaches in
     const node = id ? store.getNode(id) : null
     return { color: node?.strokes[0]?.color, binding: node?.boundVariables['strokes/0/color'] }
   })
-  expect(afterEscape).toEqual(before)
-
-  await openStrokePicker(page)
-  await dragSlider(page, canvas, 'color-slider-hue', 0.75)
-  await propertyItems(page, 'strokes')
-    .first()
-    .getByRole('button', { name: 'Stroke', exact: true })
-    .click()
-  await canvas.waitForRender()
-  expect((await getSelectedStroke(page))?.color).not.toEqual(before.color)
+  expect(afterEscape.binding).toBeUndefined()
+  expect(afterEscape.color).not.toEqual(before.color)
 
   await canvas.undo()
   await canvas.waitForRender()

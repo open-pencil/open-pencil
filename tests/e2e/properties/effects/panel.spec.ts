@@ -325,3 +325,37 @@ test('turn a layer blur progressive and drag where it ends', async ({ page }) =>
   await section.getByRole('button', { name: 'Uniform', exact: true }).click()
   await expect.poll(async () => (await blur())?.progressive).toBeUndefined()
 })
+
+// Figma desktop 126: a drag in a colour picker is one undo step, and Escape closes the picker keeping it.
+test('a drag in a shadow’s colour picker is one undo step that Escape keeps', async ({ page }) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  const shadow = effectDriver(() => page)
+  await shadow.build()
+  await page.evaluate(() => window.openPencil?.getStore?.().undo.clear())
+  const before = (await shadow.effect())?.color
+
+  const section = page.getByRole('region', { name: 'Effects', exact: true })
+  await section.getByRole('button', { name: 'Expand effect settings' }).click()
+  await section
+    .locator('[data-property="effect-color"]')
+    .getByRole('button', { name: 'Edit color' })
+    .click()
+  const area = page.locator('[data-picker-content] .cursor-crosshair').first()
+  const box = await area.boundingBox()
+  if (!box) throw new Error('Missing colour area')
+  await page.mouse.move(box.x + box.width * 0.9, box.y + box.height * 0.1)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.4, { steps: 8 })
+  await page.mouse.up()
+  const dragged = (await shadow.effect())?.color
+  expect(dragged).not.toEqual(before)
+
+  await page.keyboard.press('Escape')
+  await expect(page.locator('[data-picker-content]')).toBeHidden()
+  expect((await shadow.effect())?.color).toEqual(dragged)
+  await canvas.undo()
+  await expect.poll(async () => (await shadow.effect())?.color).toEqual(before)
+  canvas.assertNoErrors()
+})
