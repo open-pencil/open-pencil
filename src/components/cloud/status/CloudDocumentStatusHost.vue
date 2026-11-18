@@ -2,14 +2,18 @@
 import { useObjectUrl } from '@vueuse/core'
 import { isEqual } from 'es-toolkit'
 import { joinURL } from 'ufo'
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { CLOUD_ACCOUNT_PLAN_PATH } from '@open-pencil/cloud/contract'
 import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import { openCloudConnect } from '@/app/cloud/connect/flow'
-import { resolveCloudConflict, type CloudConflictChoice } from '@/app/cloud/documents/conflict'
+import {
+  conflictChoiceRequested,
+  resolveCloudConflict,
+  type CloudConflictChoice
+} from '@/app/cloud/documents/conflict'
 import { useCloudDocumentStatus } from '@/app/cloud/documents/status'
 import { signInToEditCloudShare } from '@/app/cloud/links'
 import {
@@ -96,6 +100,19 @@ async function openConflict() {
   // Opened once both copies are read, so it never shows the last conflict's preview or time.
   resolving.value = true
 }
+
+// A notification about this tab's conflict opens the choice once the status knows of it.
+watch(
+  [conflictChoiceRequested, state],
+  ([requested, current]) => {
+    const documentId = store.getStorageBinding()?.documentId
+    if (!requested || current !== 'conflict') return
+    if (requested.getStorageBinding()?.documentId !== documentId) return
+    conflictChoiceRequested.value = null
+    void openConflict()
+  },
+  { immediate: true }
+)
 
 async function confirm(picked: CloudConflictChoice) {
   resolving.value = false
