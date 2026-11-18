@@ -127,11 +127,11 @@ export function usePickerGesture({ open, commit, cancel, beforeChange }: PickerG
     },
     /**
      * Applies a change that is a step of its own, such as an image that arrives once its file is
-     * read. While a press is held it waits for the press to end, so it neither splits that step
-     * nor survives being put back with it.
+     * read. While a press is held, even one Escape put back, it waits for the press to end, so it
+     * neither splits that step nor survives being put back with it, and steps keep their order.
      */
     step(apply: () => void) {
-      if (press && !cancelled) {
+      if (press) {
         waiting.push(apply)
         return
       }

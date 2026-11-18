@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import type { Vector } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { effectDriver } from '#tests/helpers/properties/effect-driver'
