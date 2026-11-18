@@ -256,4 +256,12 @@ describe('document autosave', () => {
     expect(warn).toHaveBeenCalledTimes(1)
     warn.mockRestore()
   })
+
+  test('a retry with nothing left to save reports it saved', async () => {
+    const saved: string[] = []
+    const { autosave } = setup(async () => undefined, { onSaved: () => saved.push('saved') })
+    autosave.retry()
+    expect(saved).toEqual(['saved'])
+    autosave.disposeAutosave()
+  })
 })

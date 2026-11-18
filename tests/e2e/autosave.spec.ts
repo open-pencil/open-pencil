@@ -154,7 +154,7 @@ test('a failed autosave stays shown, notifies once while away, and saves on retr
   await page.evaluate(() => {
     delete document.documentElement.dataset.failWrites
   })
-  await failure.getByTestId('toast-action').click()
+  await failure.getByRole('button', { name: 'Retry save' }).click()
   await expect.poll(hasUnsavedChanges).toBe(false)
   await expect(failure).toHaveCount(0)
   expect(await writes()).toBe(4)

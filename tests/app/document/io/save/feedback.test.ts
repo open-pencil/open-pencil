@@ -51,7 +51,10 @@ describe('save feedback', () => {
       throw new Error('disk full')
     }
 
-    await expect(saveWithFeedback(save, { key, isOpen: () => false })).resolves.toBe(false)
+    let open = true
+    await expect(saveWithFeedback(save, { key, isOpen: () => open })).resolves.toBe(false)
+    expect(toast.toasts.value).toHaveLength(1)
+    open = false
     const entry = toast.toasts.value[0]
     entry?.action?.run(entry.id)
     await Bun.sleep(0)
@@ -75,16 +78,33 @@ describe('save feedback', () => {
   test('keeps each document’s failure apart, and a save that did not happen keeps it', async () => {
     const first = {}
     const second = {}
-    const retry = () => undefined
-    showSaveFailure('disk full', retry, { key: first })
-    showSaveFailure('disk full', retry, { key: second })
+    const retried: string[] = []
+    showSaveFailure('disk full', () => retried.push('first'), { key: first })
+    showSaveFailure('disk full', () => retried.push('second'), { key: second })
     expect(toast.toasts.value).toHaveLength(2)
 
     await expect(saveWithFeedback(async () => false, { key: first })).resolves.toBe(false)
     expect(toast.toasts.value).toHaveLength(2)
     await expect(saveWithFeedback(async () => true, { key: first })).resolves.toBe(true)
+    const left = toast.toasts.value[0]
+    expect(toast.toasts.value).toHaveLength(1)
+    left?.action?.run(left.id)
+    expect(retried).toEqual(['second'])
+
+    // A retry keeps the failure until it saves.
     expect(toast.toasts.value).toHaveLength(1)
     await expect(saveWithFeedback(async () => true, { key: second })).resolves.toBe(true)
+    expect(toast.toasts.value).toHaveLength(0)
+  })
+
+  test('shows nothing for a save that fails after its document closed', async () => {
+    const failed = saveWithFeedback(
+      async () => {
+        throw new Error('disk full')
+      },
+      { key: {}, isOpen: () => false }
+    )
+    await expect(failed).resolves.toBe(false)
     expect(toast.toasts.value).toHaveLength(0)
   })
 })

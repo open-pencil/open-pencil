@@ -44,10 +44,14 @@ export function showSaveFailure(
     {
       label: notificationMessages.get().saveFailedRetry,
       run: (toastId) => {
-        toast.remove(toastId)
-        if (key) failureToasts.delete(key)
-        if (options.isOpen && !options.isOpen()) return
-        retry()
+        const open = !options.isOpen || options.isOpen()
+        // A document's failure stays while its retry runs: a save clears it, a failure replaces
+        // it, and a save that does not happen, such as a dismissed file picker, leaves it.
+        if (!key || !open) {
+          toast.remove(toastId)
+          if (key) failureToasts.delete(key)
+        }
+        if (open) retry()
       }
     },
     // Each document's failure is its own, so another document's save never clears it.
@@ -72,6 +76,8 @@ export async function saveWithFeedback(
     if (saved && options.key) clearSaveFailure(options.key)
     return saved
   } catch (error) {
+    // A save that fails after its tab closed has nothing left to retry.
+    if (options.isOpen && !options.isOpen()) return false
     showSaveFailure(
       notificationMessages.get().operationFailed({ error: saveErrorText(error) }),
       () => void saveWithFeedback(save, options),

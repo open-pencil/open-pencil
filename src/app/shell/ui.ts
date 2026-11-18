@@ -93,9 +93,10 @@ function push(
 
 function trim() {
   // A failure the person must act on stays until they dismiss it, even when newer messages
-  // arrive; ordinary messages give way first.
+  // arrive; ordinary messages give way first, oldest first, but the newest always shows.
   while (toasts.value.length > TOAST_STACK_LIMIT) {
-    const index = toasts.value.findIndex((entry) => !entry.sticky)
+    const newest = toasts.value.length - 1
+    const index = toasts.value.findIndex((entry, at) => !entry.sticky && at < newest)
     if (index === -1) return
     toasts.value.splice(index, 1)
   }
