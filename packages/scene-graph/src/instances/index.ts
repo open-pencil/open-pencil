@@ -155,12 +155,12 @@ export function swapInstanceComponent(
   const source = sourceInTargetCoordinates(component, instance.componentScale)
   const own = ownSyncedProps(graph, instance, source)
   const updates: Partial<SceneNode> = { componentId, ...own.updates }
-  applySyncedStrokeLines(instance, updates, own.kept)
 
   if (!keepName && (!previousComponent || instance.name === previousComponent.name))
     updates.name = component.name
 
   keepCopyBoundPaints(graph, instance, updates)
+  applySyncedStrokeLines(instance, updates, own.kept)
   const slotContent = detachOwnedSlotContent(graph, instance)
   graph.updateNode(instanceId, updates)
   followComponentLayers(graph, instance, component, parkedContent(slotContent))
@@ -339,7 +339,7 @@ export function hasInstanceOverride(graph: SceneGraph, nodeId: string, field: st
  */
 export function instanceOverrideFields(node: SceneNode, changes: Partial<SceneNode>): string[] {
   const fields = Object.keys(changes)
-  if (!changes.strokes || changesMoreThanStrokeLines(node.strokes, changes.strokes)) return fields
+  if (!changes.strokes || changesMoreThanStrokeLines(node, changes)) return fields
   return fields.filter((field) => field !== 'strokes')
 }
 

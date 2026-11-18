@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
 import { instanceOverrideFields, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 import { changesMoreThanStrokeLines, strokeLineChanges } from '@open-pencil/scene-graph/strokes'
@@ -140,22 +140,40 @@ describe('instances keep stroke line overrides apart from paint overrides', () =
 })
 
 describe('which overrides a stroke edit records', () => {
+  /** An edit's write with what it also sets, as the editor records it. */
+  function written(node: SceneNode, changes: Partial<SceneNode>): Partial<SceneNode> {
+    return { ...changes, ...strokeLineChanges(node, changes) }
+  }
+
   test('a weight or dash on every stroke overrides that field, not the paints', () => {
     const { node } = layerWith([stroke()])
-    const next = [stroke({ weight: 5, dashPattern: [6, 4] })]
-    expect(changesMoreThanStrokeLines(node.strokes, next)).toBe(false)
-    const changes = { strokes: next, ...strokeLineChanges(node, { strokes: next }) }
+    const changes = written(node, { strokes: [stroke({ weight: 5, dashPattern: [6, 4] })] })
+    expect(changesMoreThanStrokeLines(node, changes)).toBe(false)
     expect(instanceOverrideFields(node, changes).toSorted()).toEqual([
       'dashPattern',
       'strokeWeight'
     ])
   })
 
-  test('a new paint, or one stroke weighted apart from the first, overrides the strokes', () => {
+  test('a dash over strokes of different weights overrides the dash alone', () => {
+    const { node } = layerWith([stroke({ weight: 1 }), stroke({ weight: 3 })])
+    const changes = written(node, { dashPattern: [6, 4] })
+    expect(instanceOverrideFields(node, changes)).not.toContain('strokes')
+  })
+
+  test('a line no layer field records, such as a later stroke’s dash, overrides the strokes', () => {
+    const { node } = layerWith([stroke(), stroke({ dashPattern: [6, 4] })])
+    const changes = written(node, { strokes: [stroke(), stroke({ dashPattern: [] })] })
+    expect(instanceOverrideFields(node, changes)).toContain('strokes')
+  })
+
+  test('a new paint, a stroke weighted apart, or a removed stroke overrides the strokes', () => {
     const { node } = layerWith([stroke(), stroke()])
-    expect(changesMoreThanStrokeLines(node.strokes, [stroke({ color: RED }), stroke()])).toBe(true)
-    expect(changesMoreThanStrokeLines(node.strokes, [stroke(), stroke({ weight: 3 })])).toBe(true)
-    expect(changesMoreThanStrokeLines(node.strokes, [stroke()])).toBe(true)
+    const records = (next: Stroke[]) =>
+      changesMoreThanStrokeLines(node, written(node, { strokes: next }))
+    expect(records([stroke({ color: RED }), stroke()])).toBe(true)
+    expect(records([stroke(), stroke({ weight: 3 })])).toBe(true)
+    expect(records([stroke()])).toBe(true)
   })
 })
 
@@ -181,6 +199,29 @@ describe('copies keep their own stroke lines through swaps and modes', () => {
 
     expect(instance.strokes[0]).toMatchObject({ weight: 5, color: RED })
     expect(instance.strokeWeight).toBe(5)
+  })
+
+  test('a swapped instance gives its own weight to every stroke of the new component', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const plain = graph.createNode('COMPONENT', page.id, {
+      width: 40,
+      height: 40,
+      strokes: [stroke({ weight: 1 })]
+    })
+    const doubled = graph.createNode('COMPONENT', page.id, {
+      width: 40,
+      height: 40,
+      strokes: [stroke({ weight: 5 }), stroke({ weight: 2, color: RED })]
+    })
+    const instance = graph.createInstance(plain.id, page.id)
+    if (!instance) throw new Error('instance not created')
+    graph.updateNode(instance.id, { strokeWeight: 5 })
+    recordInstanceOverride(graph, instance.id, ['strokeWeight'])
+
+    graph.swapInstanceComponent(instance.id, doubled.id)
+
+    expect(instance.strokes.map((s) => s.weight)).toEqual([5, 5])
   })
 
   test('a copy keeps a bound weight in its own mode when the component’s color changes', () => {

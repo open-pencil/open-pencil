@@ -95,17 +95,25 @@ export function strokeLineChanges(
 }
 
 /**
- * Whether `next` changes more than the line fields the layer keeps: a paint, a stroke added or
- * removed, or a later stroke's line apart from the first's. Figma overrides a weight or dash set
- * on an instance layer alone, so a component's later paint change still reaches the copy (live).
+ * Whether the strokes `changes` sets differ from `node`'s by more than the layer fields the same
+ * write sets: a paint, a stroke added or removed, or a stroke's line that no layer field records.
+ * Figma overrides a weight or dash set on an instance layer alone, so a component's later paint
+ * change still reaches the copy (live).
  */
-export function changesMoreThanStrokeLines(
-  current: readonly Stroke[],
-  next: readonly Stroke[]
-): boolean {
-  const first = next.at(0)
-  if (!first || current.length !== next.length) return !isEqual(current, next)
+export function changesMoreThanStrokeLines(node: SceneNode, changes: Partial<SceneNode>): boolean {
+  const next = changes.strokes
+  if (!next) return false
+  if (next.length !== node.strokes.length) return true
   const lines: StrokeLines = {}
-  for (const key of STROKE_LINE_KEYS) Reflect.set(lines, key, first[key])
-  return !isEqual(withStrokeLines(current, lines), next)
+  for (const key of STROKE_LINE_KEYS) {
+    const value = changes[STROKE_LINE_FIELDS[key]]
+    if (value !== undefined) Reflect.set(lines, key, value)
+  }
+  // Strokes written without a cap or join take the layer's, as `strokeLineChanges` gives them.
+  const projected = withStrokeLines(node.strokes, lines).map((stroke) => ({
+    ...stroke,
+    cap: stroke.cap ?? node.strokeCap,
+    join: stroke.join ?? node.strokeJoin
+  }))
+  return !isEqual(projected, next)
 }

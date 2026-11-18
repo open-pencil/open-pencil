@@ -44,14 +44,25 @@ function instanceLayer() {
   return { editor, graph, main, shape, layer }
 }
 
-async function reopenedCopyLayer(graph: SceneGraph) {
+async function reopen(graph: SceneGraph) {
   const bytes = await exportFigFile(graph)
   const reopened = await parseFigFile(bytes.buffer as ArrayBuffer)
-  const copy = expectDefined(
-    collectAllNodes(reopened).find((node) => node.type === 'INSTANCE' && node.name === 'Copy'),
-    'reopened copy'
-  )
-  return getNodeOrThrow(reopened, expectDefined(copy.childIds[0], 'reopened copy layer'))
+  const named = (type: string, name: string) =>
+    expectDefined(
+      collectAllNodes(reopened).find((node) => node.type === type && node.name === name),
+      `reopened ${name}`
+    )
+  const copy = named('INSTANCE', 'Copy')
+  return {
+    graph: reopened,
+    main: named('COMPONENT', 'Main'),
+    shape: named('VECTOR', 'Shape'),
+    layer: getNodeOrThrow(reopened, expectDefined(copy.childIds[0], 'reopened copy layer'))
+  }
+}
+
+async function reopenedCopyLayer(graph: SceneGraph) {
+  return (await reopen(graph)).layer
 }
 
 const EDITS: [string, Partial<Stroke>][] = [
@@ -90,7 +101,15 @@ describe('roundtrip: stroke settings an instance overrides', () => {
     graph.syncInstances(main.id)
 
     expect(layer.strokes[0]).toMatchObject({ weight: 5, color: RED })
-    expect((await reopenedCopyLayer(graph)).strokes[0]).toMatchObject({ weight: 5, color: RED })
+
+    // Reopened, the copy still takes a color the component changes to, keeping its weight.
+    const reopened = await reopen(graph)
+    expect(reopened.layer.strokes[0]).toMatchObject({ weight: 5, color: RED })
+    reopened.graph.updateNode(reopened.shape.id, {
+      strokes: reopened.shape.strokes.map((stroke) => ({ ...stroke, color: BLUE }))
+    })
+    reopened.graph.syncInstances(reopened.main.id)
+    expect(reopened.layer.strokes[0]).toMatchObject({ weight: 5, color: BLUE })
   })
 
   test('undo takes a stroke weight back from the stroke and the layer', () => {
