@@ -34,7 +34,7 @@ const emit = defineEmits<{
   /** Escape during a press: the colour from before it has just come back through `update`. */
   cancel: []
 }>()
-const cls = usePopoverUI({ content: 'w-56 p-2' })
+const cls = usePopoverUI({ content: 'w-60 p-4' })
 // Settings has no document behind it to sample, nor always an editor to sample with.
 const keepOpen = eyedropper ? useEyedropperKeepOpen() : undefined
 </script>
