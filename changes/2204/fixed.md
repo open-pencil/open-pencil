@@ -1,0 +1,1 @@
+- `.pen` instances of a slot component show the children placed in them, as pen.dev draws them.
