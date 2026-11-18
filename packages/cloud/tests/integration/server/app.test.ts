@@ -400,6 +400,7 @@ describe('createCloudApp', () => {
     const discovery = await cloud['.well-known'].openpencil.$get(undefined, {
       headers: { Origin: 'https://editor.example.org' }
     })
+    expect(discovery.status).toBe(200)
     expect(discovery.headers.get('access-control-allow-origin')).toBe('*')
     expect(discovery.headers.get('access-control-allow-credentials')).toBeNull()
   })
