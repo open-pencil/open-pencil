@@ -68,11 +68,12 @@ describe('Cloud token cache', () => {
     const before = tokens.token()
     tokens.reset()
     const after = tokens.token()
-    answers[0]?.resolve({ token: 'old-plan', expiresAt: '2099-01-01T00:00:00.000Z' })
+    expect(answers).toHaveLength(2)
+    // The token signed after the reset answers first, and the earlier one last.
     answers[1]?.resolve({ token: 'new-plan', expiresAt: '2099-01-01T00:00:00.000Z' })
-
-    expect(await before).toBe('old-plan')
     expect(await after).toBe('new-plan')
+    answers[0]?.resolve({ token: 'old-plan', expiresAt: '2099-01-01T00:00:00.000Z' })
+    expect(await before).toBe('old-plan')
     expect(await tokens.token()).toBe('new-plan')
   })
 })

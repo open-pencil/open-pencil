@@ -80,19 +80,14 @@ export function useCloudCreditBalance(
     if (!at || !client) return null
     const read = ++reads
     latestReads.set(at, read)
-    const keep = (value: CreditWallet | null, outcome: WalletReadOutcome): WalletReadOutcome => {
+    const keep = (value: CreditWallet | null): WalletReadOutcome => {
       if (latestReads.get(at) !== read) return 'superseded'
       store(at, { wallet: value, read })
-      return outcome
+      return 'shown'
     }
-    return {
-      at,
-      read,
-      done: client.wallet().then(
-        (value) => keep(value, 'shown'),
-        () => keep(null, 'failed')
-      )
-    }
+    // A failed read keeps the last balance that was confirmed; a view still waiting for its first
+    // read of this visit shows nothing either way.
+    return { at, read, done: client.wallet().then(keep, () => 'failed' as const) }
   }
 
   /** Reads the wallet again, and says how the read ended. */
