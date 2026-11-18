@@ -16,12 +16,15 @@ const { panels } = useI18n()
 const {
   color,
   okhcl = null,
-  eyedropper = true
+  eyedropper = true,
+  escapeReverts = false
 } = defineProps<{
   color: Color
   okhcl?: OkHCLControls | null
   /** Offers sampling the canvas; off where no document color is edited, as in Settings. */
   eyedropper?: boolean
+  /** Escape puts back the colour the picker opened with, for a colour with no undo history. */
+  escapeReverts?: boolean
 }>()
 defineSlots<{
   trigger?(props: { style: { background: string } }): VNode[]
@@ -44,6 +47,7 @@ const keepOpen = eyedropper ? useEyedropperKeepOpen() : undefined
     :color="color"
     :label="panels.editColor"
     :keep-open="keepOpen"
+    :escape-reverts="escapeReverts"
     :ui="{ content: cls.content }"
     @update="emit('update', $event)"
     @open-change="emit('openChange', $event)"

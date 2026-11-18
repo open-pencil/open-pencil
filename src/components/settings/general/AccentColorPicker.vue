@@ -83,6 +83,7 @@ function onCancel(): void {
       <ColorPicker
         :color="customColor"
         :eyedropper="false"
+        escape-reverts
         @update="onCustomColor"
         @open-change="onPickerOpenChange"
         @cancel="onCancel"
