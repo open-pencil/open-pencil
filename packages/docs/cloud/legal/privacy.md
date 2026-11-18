@@ -5,7 +5,7 @@ description: What OpenPencil Cloud at cloud.openpencil.dev stores about you, whe
 
 # OpenPencil Cloud Privacy Policy
 
-Version: 2026-11-15
+Version: 2026-11-18
 
 This policy covers OpenPencil Cloud at `cloud.openpencil.dev` (the "Service"), run by Alena Poyarkova, a sole trader registered in Mexico (RFC POAL920708M63), the controller of your personal data. What the OpenPencil app itself sends, with or without the Service, is described in [Privacy and Usage Stats](/overview/privacy). A Cloud server someone else runs has its own operator and policy.
 
@@ -25,6 +25,8 @@ The Service's database, file storage, and live collaboration run in the European
 | Reports about shared documents, and what administrators did about them | To handle abuse | 1 year after the report is closed |
 | Rate-limit counters, by IP address or account | To protect the Service | Up to a day |
 | Usage of services credits | To apply your monthly allowance | 12 months |
+| Billing: your Stripe customer ID, your plan and when it renews, and the credits you bought | To provide what you pay for | Until you delete your account |
+| Payment records: what you bought, when, and for how much | To meet tax and accounting law | 5 years, as Mexican tax law requires |
 
 We don't sell your data, show ads, or use your documents to train models.
 
@@ -48,6 +50,10 @@ The Service sends sign-in, security, invitation, and account emails through Clou
 ## Services
 
 When you use hosted services such as AI chat, what you send is forwarded to the model provider to produce a response, as listed under [Subprocessors](./subprocessors). The Service stores how many credits each request used, not its content.
+
+## Payments
+
+When you buy a plan or credits, Stripe processes the payment: your card details, billing address, and email go to Stripe, never to us. Stripe uses them to take the payment, work out tax, prevent fraud, and send receipts and invoices, and keeps them under its own [privacy policy](https://stripe.com/privacy) for what the law requires of a payment provider. We keep only what's listed above.
 
 ## Your rights
 
