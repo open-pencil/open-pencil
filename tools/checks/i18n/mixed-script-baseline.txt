@@ -509,8 +509,6 @@ ja:cloudPortal.columnAddress
 ja:cloudPortal.signInTitle
 ja:cloudPortal.newHere
 ja:cloudPortal.returnsToDesktop
-ja:cloudPortal.continueWithGoogle
-ja:cloudPortal.continueWithApple
 ja:cloudPortal.deviceTitle
 ja:cloudPortal.deviceDescription
 ja:cloudPortal.deviceWarningDescription
@@ -521,8 +519,6 @@ zh-cn:cloudPortal.columnAddress
 zh-cn:cloudPortal.signInTitle
 zh-cn:cloudPortal.newHere
 zh-cn:cloudPortal.returnsToDesktop
-zh-cn:cloudPortal.continueWithGoogle
-zh-cn:cloudPortal.continueWithApple
 zh-cn:cloudPortal.deviceTitle
 zh-cn:cloudPortal.deviceDescription
 zh-cn:cloudPortal.deviceWarningDescription
@@ -537,8 +533,6 @@ ja:cloud.errorInvalidAddressDescription
 ja:cloud.errorNotCloudHeading
 ja:cloud.errorNotCloudDescription
 ja:cloud.errorServerOutdatedDescription
-ja:cloud.continueWithGoogle
-ja:cloud.continueWithApple
 ja:cloud.shareDescriptionInWorkspace
 ja:cloud.shareDescription
 ja:cloud.settingsOfficialDescription
@@ -561,8 +555,6 @@ zh-cn:cloud.errorInvalidAddressDescription
 zh-cn:cloud.errorNotCloudHeading
 zh-cn:cloud.errorNotCloudDescription
 zh-cn:cloud.errorServerOutdatedDescription
-zh-cn:cloud.continueWithGoogle
-zh-cn:cloud.continueWithApple
 zh-cn:cloud.shareDescriptionInWorkspace
 zh-cn:cloud.shareDescription
 zh-cn:cloud.settingsOfficialDescription

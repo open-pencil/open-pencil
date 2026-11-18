@@ -74,12 +74,9 @@ const FILTERS: ListFilters<CloudAdminUserFilter, 'user'> = {
     ])
 }
 
-/** The provider each sign-in method a list is narrowed to is stored as. */
-const METHOD_PROVIDERS: Record<CloudAdminUserMethod, string> = {
-  password: 'credential',
-  google: 'google',
-  apple: 'apple'
-}
+/** The provider a sign-in method a list is narrowed to is stored as: a password is `credential`. */
+const methodProvider = (method: CloudAdminUserMethod) =>
+  method === 'password' ? 'credential' : method
 
 export type AdminUserQuery = AdminListQuery<CloudAdminUserFilter> & {
   method?: CloudAdminUserMethod
@@ -246,7 +243,7 @@ export function createAdminUserService(
       const { limit, offset } = listWindow(query)
       let searched = database.selectFrom('user')
       if (search) searched = searched.where(searchCondition(search))
-      if (query.method) searched = searched.where(signsInWith(METHOD_PROVIDERS[query.method]))
+      if (query.method) searched = searched.where(signsInWith(methodProvider(query.method)))
       const counts = await countEachFilter(searched, cloudAdminUserFilterSchema.options, FILTERS)
       const rows = await searched
         .where(FILTERS[filter])

@@ -114,6 +114,8 @@ const rawCloudServerConfigSchema = v.object({
   appleTeamId: optionalTextSchema,
   appleKeyId: optionalTextSchema,
   applePrivateKey: optionalTextSchema,
+  githubClientId: optionalTextSchema,
+  githubClientSecret: optionalTextSchema,
   appleAppBundleIdentifier: optionalTextSchema,
   s3Endpoint: httpURLSchema,
   s3Region: v.pipe(v.string(), v.trim(), v.minLength(1)),
@@ -269,6 +271,7 @@ function validateAuthenticationConfig(config: CloudServerConfig): void {
     'appleKeyId',
     'applePrivateKey'
   ])
+  requireTogether(config, 'GitHub', ['githubClientId', 'githubClientSecret'])
 }
 
 function validateEmailConfig(config: CloudServerConfig): void {

@@ -1,4 +1,9 @@
-import type { CloudSignInMethod } from '@open-pencil/cloud/contract'
+import {
+  CLOUD_SOCIAL_PROVIDER_NAMES,
+  isKnownSocialProvider,
+  type CloudSignInMethod,
+  type CloudSocialProvider
+} from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 /** Words for where a session or sign-in came from, and for how it signed in. */
@@ -6,10 +11,11 @@ export function usePortalDeviceLabels() {
   const messages = useCloudPortalMessages()
   function method(value: CloudSignInMethod): string {
     const words = messages.value
-    const labels: Record<CloudSignInMethod, string> = {
+    if (isKnownSocialProvider(value)) {
+      return words.methodProvider({ provider: CLOUD_SOCIAL_PROVIDER_NAMES[value] })
+    }
+    const labels: Record<Exclude<CloudSignInMethod, CloudSocialProvider>, string> = {
       password: words.methodPassword,
-      google: words.methodGoogle,
-      apple: words.methodApple,
       passkey: words.methodPasskey,
       'two-step': words.methodTwoStep,
       'email-link': words.methodEmailLink,
