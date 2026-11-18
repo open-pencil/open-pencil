@@ -109,8 +109,7 @@ lease_ms = 180000
 `
 
 describe('Cloud TOML deployment configuration', () => {
-  test('reads GitHub’s client secret from OAUTH_GITHUB_CLIENT_SECRET', () => {
-    // GitHub refuses Actions secrets named GITHUB_*, so the default name is not GITHUB_CLIENT_SECRET.
+  test('reads GitHub’s client secret from GITHUB_CLIENT_SECRET', () => {
     const source = minimalSource.replace(
       '[authentication.providers.google]',
       '[authentication.providers.google]\n\n[authentication.providers.github]\nclient_id = "Iv-client"'
@@ -118,7 +117,7 @@ describe('Cloud TOML deployment configuration', () => {
     expect(
       parseCloudDeploymentTOML(source, {
         ...environment,
-        OAUTH_GITHUB_CLIENT_SECRET: 'github-secret'
+        GITHUB_CLIENT_SECRET: 'github-secret'
       })
     ).toMatchObject({ githubClientId: 'Iv-client', githubClientSecret: 'github-secret' })
     expect(() => parseCloudDeploymentTOML(source, environment)).toThrow()

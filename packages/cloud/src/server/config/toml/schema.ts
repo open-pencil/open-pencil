@@ -17,8 +17,7 @@ const DEFAULT_SECRET_NAMES = {
   googleClientId: 'GOOGLE_CLIENT_ID',
   googleClientSecret: 'GOOGLE_CLIENT_SECRET',
   applePrivateKey: 'APPLE_PRIVATE_KEY',
-  // GitHub refuses Actions secrets whose names start with GITHUB_.
-  githubClientSecret: 'OAUTH_GITHUB_CLIENT_SECRET',
+  githubClientSecret: 'GITHUB_CLIENT_SECRET',
   s3AccessKeyId: 'S3_ACCESS_KEY_ID',
   s3SecretAccessKey: 'S3_SECRET_ACCESS_KEY',
   s3SessionToken: 'S3_SESSION_TOKEN',

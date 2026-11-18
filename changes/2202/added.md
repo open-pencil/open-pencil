@@ -1,1 +1,1 @@
-- Self-hosted Cloud can offer GitHub sign-in through a GitHub App configured under `[authentication.providers.github]`, with its client secret in `OAUTH_GITHUB_CLIENT_SECRET`; a GitHub account whose verified email matches an existing account links to it (#2202).
+- Self-hosted Cloud can offer GitHub sign-in through a GitHub App configured under `[authentication.providers.github]`, with its client secret in `GITHUB_CLIENT_SECRET`; a GitHub account whose verified email matches an existing account links to it (#2202).

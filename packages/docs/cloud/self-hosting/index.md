@@ -61,7 +61,7 @@ Settings live in a TOML file; environment variables supply secrets and tell the 
 2. Copy [`.env.example`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/.env.example) and set:
    - `OPENPENCIL_CLOUD_CONFIG`: the path to the TOML file;
    - `OPENPENCIL_CLOUD_SITE_DIR`: the path to `dist-cloud/`. Without it the server still runs its API, but the editor and the sign-in, account, and administration pages answer 404, and it warns at startup;
-   - the secrets the TOML names, by default `DATABASE_URL`, `BETTER_AUTH_SECRET`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY`, plus `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_PRIVATE_KEY`, `OAUTH_GITHUB_CLIENT_SECRET`, `S3_SESSION_TOKEN`, `OPENPENCIL_CLOUD_SMTP_USER`, and `OPENPENCIL_CLOUD_SMTP_PASSWORD` when their sections are enabled.
+   - the secrets the TOML names, by default `DATABASE_URL`, `BETTER_AUTH_SECRET`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY`, plus `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_PRIVATE_KEY`, `GITHUB_CLIENT_SECRET`, `S3_SESSION_TOKEN`, `OPENPENCIL_CLOUD_SMTP_USER`, and `OPENPENCIL_CLOUD_SMTP_PASSWORD` when their sections are enabled.
 3. Start the server with the environment loaded, for example `node --env-file=.env dist-standalone/server.mjs`, or, installed from npm, `node --env-file=.env "$(command -v openpencil-cloud)"`.
 
 Use `{ from_env = "CUSTOM_NAME" }` in the TOML to read a secret from a different variable. A missing required secret stops startup and names the variable without printing a value.

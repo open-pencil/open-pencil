@@ -1,6 +1,6 @@
 # cloud-staging.openpencil.dev, the official staging deployment. Secrets come from the Worker's
 # secrets: BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, APPLE_PRIVATE_KEY,
-# OAUTH_GITHUB_CLIENT_SECRET,
+# GITHUB_CLIENT_SECRET,
 # S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, and OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY; DATABASE_URL is
 # Hyperdrive's.
 schema_version = 2
@@ -42,7 +42,7 @@ team_id = "N7D7M3Q3CD"
 key_id = "CA37HQZJQ5"
 
 # Sign in with GitHub through the open-pencil organization's "OpenPencil Cloud" GitHub App, which
-# both deployments share; its client secret is OAUTH_GITHUB_CLIENT_SECRET. Production adds this
+# both deployments share; its client secret is GITHUB_CLIENT_SECRET. Production adds this
 # table only together with minimum_editor_version set to a release with #2202, which turns older
 # editors away: those before #2153 cannot read discovery once it lists GitHub, and those before
 # #2202 cannot read the account pages of someone who has a GitHub method or sign-in.
