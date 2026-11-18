@@ -82,6 +82,17 @@ export function capturedTextBox(element: DesignElement): CapturedBox | undefined
   }
 }
 
+/**
+ * The box a run of text that is a flex or grid item of its own was laid out in: the extent of its
+ * container's lines, which are that run's alone.
+ */
+export function capturedLinesBox(element: DesignElement): CapturedBox | undefined {
+  const lines = element.layout?.lines
+  if (!lines || lines.length === 0) return undefined
+  const extent = computeBounds(lines)
+  return { box: extent, lines: lines.length, extent }
+}
+
 /** Text the page set on one line, which keeps to one line and measures its own width. */
 function isSingleLine(node: SceneNode, captured: CapturedBox): boolean {
   return node.type === 'TEXT' && captured.lines === 1

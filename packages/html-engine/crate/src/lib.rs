@@ -720,8 +720,24 @@ fn capture_node(
             .collect();
         entry.insert("fragments".into(), Value::Array(rects));
     }
-    if let Some(lines) = lines(node, (pos.x, pos.y)) {
-        entry.insert("lines".into(), lines);
+    // Text a flex container or a grid holds among its items is laid out in anonymous blocks, which
+    // live outside the DOM; their lines are the element's own text's, as a browser reports them.
+    let mut own_lines = match lines(node, (pos.x, pos.y)) {
+        Some(Value::Array(own)) => own,
+        _ => Vec::new(),
+    };
+    for anonymous in node
+        .anonymous_blocks
+        .iter()
+        .filter_map(|&id| doc.get_node(id))
+    {
+        let at = anonymous.absolute_position(0.0, 0.0);
+        if let Some(Value::Array(block)) = lines(anonymous, (at.x, at.y)) {
+            own_lines.extend(block);
+        }
+    }
+    if !own_lines.is_empty() {
+        entry.insert("lines".into(), Value::Array(own_lines));
     }
     out.push(Value::Object(entry));
 

@@ -48,6 +48,7 @@ import { imagePicture } from './pictures'
 import {
   applyCapturedLines,
   capturedBox,
+  capturedLinesBox,
   capturedTextBox,
   placeTopLevelLayers,
   type CapturedBox,
@@ -454,6 +455,23 @@ function createSVGFrame(
  * children are items, or each child as a layer of its own. Returns the layers of its child
  * elements, with their styles.
  */
+/** How many runs of text that show something an element holds among its children. */
+function textRuns(element: DesignElement): number {
+  return element.children.filter((child) => child.type === 'text' && child.text.trim() !== '')
+    .length
+}
+
+/**
+ * The box an element's own text was laid out in. Text alone in a box takes the box its lines are
+ * in. Text among the items of a flex container or a grid is an item of its own, its lines the
+ * container's only ones, as the items around it lay out as blocks; text among other elements has
+ * no box of its own.
+ */
+function ownTextBox(element: DesignElement, holdsItems: boolean): CapturedBox | undefined {
+  if (element.children.every((child) => child.type === 'text')) return capturedTextBox(element)
+  return holdsItems && textRuns(element) === 1 ? capturedLinesBox(element) : undefined
+}
+
 function createChildLayers(
   graph: SceneGraph,
   node: SceneNode,
@@ -472,10 +490,7 @@ function createChildLayers(
     if (flow === 'block') alignBlockLines(graph, node, style, true)
     return []
   }
-  // Text alone in a box takes the box its lines are in; text among elements has none of its own.
-  const textBox = element.children.every((child) => child.type === 'text')
-    ? capturedTextBox(element)
-    : undefined
+  const textBox = ownTextBox(element, flow === 'flex' || grid)
   // Whether everything the element holds sits in its lines, which its `text-align` aligns.
   let inlineContent = true
   const blocks: FlowBlock[] = []
