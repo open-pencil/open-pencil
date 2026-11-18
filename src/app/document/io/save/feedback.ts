@@ -19,12 +19,30 @@ const failureToasts = new WeakMap<object, number>()
 export const saveErrorText = (error: unknown) =>
   error instanceof Error ? error.message : String(error)
 
-/** Removes the failure shown for `key`, as a later successful save of it does. */
-export function clearSaveFailure(key: object): void {
+/** Documents whose current run of failures already sent its system notification. */
+const noticedFailures = new WeakSet<object>()
+
+function removeFailureToast(key: object): void {
   const failure = failureToasts.get(key)
   if (failure === undefined) return
   toast.remove(failure)
   failureToasts.delete(key)
+}
+
+/** Removes the failure shown for `key`, as a later successful save of it does, ending its run. */
+export function clearSaveFailure(key: object): void {
+  removeFailureToast(key)
+  noticedFailures.delete(key)
+}
+
+/**
+ * Whether this failure of `key` is the first of its run to claim a system notification. A run
+ * goes on while newer failures replace the one shown, and ends once a save or closing clears it.
+ */
+export function claimFailureNotice(key: object): boolean {
+  if (noticedFailures.has(key)) return false
+  noticedFailures.add(key)
+  return true
 }
 
 /** Documents whose retry is still saving, so another click waits for it rather than racing it. */
@@ -41,7 +59,7 @@ export function showSaveFailure(
 ): boolean {
   const { key } = options
   const shown = key !== undefined && failureToasts.has(key)
-  if (key) clearSaveFailure(key)
+  if (key) removeFailureToast(key)
   const id = toast.error(
     message,
     {
@@ -50,7 +68,7 @@ export function showSaveFailure(
         const open = !options.isOpen || options.isOpen()
         if (!key || !open) {
           toast.remove(toastId)
-          if (key) failureToasts.delete(key)
+          if (key) clearSaveFailure(key)
           if (open) void retry()
           return
         }

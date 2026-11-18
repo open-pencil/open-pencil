@@ -2,6 +2,7 @@ import { onScopeDispose, watch } from 'vue'
 
 import { saveDocument } from '@/app/cloud/integration'
 import {
+  claimFailureNotice,
   clearSaveFailure,
   saveErrorText,
   saveWithFeedback,
@@ -16,22 +17,20 @@ import { allTabs, getTabsSnapshot, switchTab, type Tab } from '@/app/tabs'
  * Reports the automatic saves of `tab`'s document that fail, which nobody waits on: a failure
  * stays shown until a save of the document succeeds, and Retry saves it as Save does. While the
  * person is away the first failure of a run also sends a system notification, whose click brings
- * the tab forward; a run ends when no failure of the document is shown any more.
+ * the tab forward; a run ends once a save of the document or closing its tab clears the failure.
  */
 function reportAutosaves({ id, store }: Tab): () => void {
   const options = { key: store, isOpen: () => getTabsSnapshot().some((tab) => tab.store === store) }
-  let notified = false
   const saved = store.onAutosaved(() => clearSaveFailure(store))
   const failed = store.onAutosaveFailed((error) => {
     const messages = notificationMessages.get()
     const name = store.state.documentName
-    const continued = showSaveFailure(
+    showSaveFailure(
       messages.autosaveFailed({ name, error: saveErrorText(error) }),
       () => saveWithFeedback(() => saveDocument(store), options),
       options
     )
-    if (continued && notified) return
-    notified = true
+    if (!claimFailureNotice(store)) return
     notify({
       event: 'saveFailed',
       title: messages.saveFailedTitle({ name }),

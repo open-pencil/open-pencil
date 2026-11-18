@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { saveWithFeedback, showSaveFailure } from '@/app/document/io/save/feedback'
+import {
+  claimFailureNotice,
+  saveWithFeedback,
+  showSaveFailure
+} from '@/app/document/io/save/feedback'
 import { createDeferred } from '@/app/runtime/deferred'
 import { toast } from '@/app/shell/ui'
 
@@ -130,5 +134,26 @@ describe('save feedback', () => {
     await Bun.sleep(0)
     entry?.action?.run(entry.id)
     expect(attempts).toBe(2)
+  })
+
+  test('claims one notice per run of failures, which a save or another failure’s save ends', async () => {
+    const key = {}
+    const retry = async () => undefined
+    showSaveFailure('disk full', retry, { key })
+    expect(claimFailureNotice(key)).toBe(true)
+    showSaveFailure('disk full', retry, { key })
+    expect(claimFailureNotice(key)).toBe(false)
+
+    await expect(saveWithFeedback(async () => true, { key })).resolves.toBe(true)
+    // A manual save's failure starts a new run, which the next autosave failure still notifies.
+    await expect(
+      saveWithFeedback(
+        async () => {
+          throw new Error('disk full')
+        },
+        { key }
+      )
+    ).resolves.toBe(false)
+    expect(claimFailureNotice(key)).toBe(true)
   })
 })
