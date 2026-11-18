@@ -24,13 +24,27 @@ const testConfig = parseCloudServerConfig({
   s3SecretAccessKey: 'openpencil-secret'
 })
 
-export async function createCloudTestDatabase(): Promise<CloudTestDatabase> {
+/** A database with every migration applied, saved as an image once per test process. */
+async function migratedImage(): Promise<Blob> {
   const pglite = await PGlite.create({ dataDir: 'memory://' })
-  const database = createCloudDatabase({
-    dialect: new PGliteDialect(pglite)
-  })
+  const database = createCloudDatabase({ dialect: new PGliteDialect(pglite) })
   const auth = createBetterAuthAdapter(testConfig, database)
   await migrateCloudDatabase(database, { run: auth.migrate, schemaVersion: auth.schemaVersion })
+  const image = await pglite.dumpDataDir('none')
+  await database.destroy()
+  return image
+}
+
+let image: Promise<Blob> | undefined
+
+/**
+ * A migrated database of the test's own. Each one starts from the same saved image: creating an
+ * empty PGlite database costs several times what loading the image does, once per test.
+ */
+export async function createCloudTestDatabase(): Promise<CloudTestDatabase> {
+  image ??= migratedImage()
+  const pglite = await PGlite.create({ loadDataDir: await image })
+  const database = createCloudDatabase({ dialect: new PGliteDialect(pglite) })
   return {
     database,
     async close() {
