@@ -220,6 +220,7 @@ describe('reading HTML', () => {
       `<div style="display:flex;gap:8px;color:#cc0000">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16v16H4z"/></svg>
         <svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>
+        <svg id="brand" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16v16H4z"/></svg>
       </div>`,
       {
         matchIcon: async (svgs) =>
@@ -227,9 +228,11 @@ describe('reading HTML', () => {
       }
     )
     const [row] = graph.getChildren(graph.getPages()[0].id)
-    const [matched, artwork] = graph.getChildren(row.id)
+    const [matched, artwork, brand] = graph.getChildren(row.id)
 
     expect(readIcon(matched)?.name).toBe('lucide:square')
+    // Named as an icon placed from the picker is, unless the page named it.
+    expect([matched.name, brand.name]).toEqual(['square', 'brand'])
     expect(iconColor(graph, matched)).toEqual({ r: 0.8, g: 0, b: 0, a: 1 })
     expect(graph.getChildren(matched.id)).toHaveLength(1)
     expect(readIcon(artwork)).toBeNull()
