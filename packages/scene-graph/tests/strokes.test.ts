@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
-import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
-import { strokeLineChanges } from '@open-pencil/scene-graph/strokes'
+import { instanceOverrideFields, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { changesMoreThanStrokeLines, strokeLineChanges } from '@open-pencil/scene-graph/strokes'
+import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
 
 const BLUE = { r: 0, g: 0, b: 1, a: 1 }
 const RED = { r: 1, g: 0, b: 0, a: 1 }
@@ -134,5 +136,81 @@ describe('instances keep stroke line overrides apart from paint overrides', () =
 
     expect(copy.strokes[0]).toMatchObject({ weight: 5, color: RED })
     expect(copy.strokeWeight).toBe(5)
+  })
+})
+
+describe('which overrides a stroke edit records', () => {
+  test('a weight or dash on every stroke overrides that field, not the paints', () => {
+    const { node } = layerWith([stroke()])
+    const next = [stroke({ weight: 5, dashPattern: [6, 4] })]
+    expect(changesMoreThanStrokeLines(node.strokes, next)).toBe(false)
+    const changes = { strokes: next, ...strokeLineChanges(node, { strokes: next }) }
+    expect(instanceOverrideFields(node, changes).toSorted()).toEqual([
+      'dashPattern',
+      'strokeWeight'
+    ])
+  })
+
+  test('a new paint, or one stroke weighted apart from the first, overrides the strokes', () => {
+    const { node } = layerWith([stroke(), stroke()])
+    expect(changesMoreThanStrokeLines(node.strokes, [stroke({ color: RED }), stroke()])).toBe(true)
+    expect(changesMoreThanStrokeLines(node.strokes, [stroke(), stroke({ weight: 3 })])).toBe(true)
+    expect(changesMoreThanStrokeLines(node.strokes, [stroke()])).toBe(true)
+  })
+})
+
+describe('copies keep their own stroke lines through swaps and modes', () => {
+  test('an instance that overrides its weight keeps it when swapped to another component', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const outlined = (name: string, color: typeof BLUE) =>
+      graph.createNode('COMPONENT', page.id, {
+        name,
+        width: 40,
+        height: 40,
+        strokes: [stroke({ color })]
+      })
+    const blue = outlined('Blue', BLUE)
+    const red = outlined('Red', RED)
+    const instance = graph.createInstance(blue.id, page.id)
+    if (!instance) throw new Error('instance not created')
+    graph.updateNode(instance.id, { strokeWeight: 5 })
+    recordInstanceOverride(graph, instance.id, ['strokeWeight'])
+
+    graph.swapInstanceComponent(instance.id, red.id)
+
+    expect(instance.strokes[0]).toMatchObject({ weight: 5, color: RED })
+    expect(instance.strokeWeight).toBe(5)
+  })
+
+  test('a copy keeps a bound weight in its own mode when the component’s color changes', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const collection = graph.createCollection('Size')
+    const large = graph.createMode(collection.id, 'L')
+    if (!large) throw new Error('mode not created')
+    const weight = graph.createVariable('Stroke', 'FLOAT', collection.id, 2)
+    weight.valuesByMode[large] = 6
+    const main = graph.createNode('COMPONENT', page.id, { width: 100, height: 100 })
+    const shape = graph.createNode('RECTANGLE', main.id, {
+      width: 50,
+      height: 50,
+      strokes: [stroke({ weight: 2 })]
+    })
+    graph.bindVariable(shape.id, 'strokeWeight', weight.id)
+    const instance = graph.createInstance(main.id, page.id)
+    if (!instance) throw new Error('instance not created')
+    setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'variableModes')
+    graph.updateNode(instance.id, { variableModes: { [collection.id]: large } })
+    reconcileVariableBindings(graph)
+    const copy = graph.getNode(instance.childIds[0])
+    if (!copy) throw new Error('instance child not created')
+    expect(copy.strokes[0]?.weight).toBe(6)
+
+    graph.updateNode(shape.id, { strokes: [stroke({ weight: 2, color: RED })] })
+    graph.syncInstances(main.id)
+
+    expect(copy.strokes[0]).toMatchObject({ weight: 6, color: RED })
+    expect(copy.strokeWeight).toBe(6)
   })
 })

@@ -8,13 +8,13 @@ import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
  */
 export function setStrokeWeight(graph: SceneGraph, node: SceneNode, weight: number): void {
   graph.updateNode(node.id, { strokeWeight: weight })
-  recordInstanceOverride(graph, node.id, ['strokes', 'strokeWeight'])
+  recordInstanceOverride(graph, node.id, ['strokeWeight'])
 }
 
 /** Sets the alignment of all of a node's strokes and the one it keeps with none. */
 export function setStrokeAlign(graph: SceneGraph, node: SceneNode, align: Stroke['align']): void {
   graph.updateNode(node.id, { strokeAlign: align })
-  recordInstanceOverride(graph, node.id, ['strokes', 'strokeAlign'])
+  recordInstanceOverride(graph, node.id, ['strokeAlign'])
 }
 
 /** Dashes the layer and every stroke on it. */
@@ -24,7 +24,7 @@ export function setDashPattern(
   pattern: readonly number[]
 ): void {
   graph.updateNode(node.id, { dashPattern: [...pattern] })
-  recordInstanceOverride(graph, node.id, ['strokes', 'dashPattern'])
+  recordInstanceOverride(graph, node.id, ['dashPattern'])
 }
 
 export function setIndependentStrokeWeight(

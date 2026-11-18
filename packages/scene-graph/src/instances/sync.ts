@@ -8,8 +8,14 @@ import type { NodeCloneMode } from '../copy'
 import type { SceneGraph } from '../graph'
 import { scaleNodeChanges } from '../scaling/node'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
-import { STROKE_LINE_FIELDS, STROKE_LINE_KEYS, withStrokeLines } from '../strokes'
-import type { SceneNode, Stroke } from '../types'
+import {
+  STROKE_LINE_FIELDS,
+  STROKE_LINE_KEYS,
+  strokeLine,
+  type StrokeLines,
+  withStrokeLines
+} from '../strokes'
+import type { SceneNode } from '../types'
 import { resolvedNumericBindings } from '../variables/bindings'
 import { isNumericVariableBindingField } from '../variables/fields'
 import {
@@ -151,7 +157,7 @@ export function updateSyncedProps(
   kept: (field: string) => boolean = () => false
 ): void {
   resolveBoundNumbersInPlace(graph, target, updates, kept)
-  if (updates.strokes) updates.strokes = keepOwnStrokeLines(target, updates.strokes, kept)
+  applySyncedStrokeLines(target, updates, kept)
   if (updates.fills || updates.strokes || updates.boundVariables) {
     applySyncedModes(graph, target, updates)
     keepCopyBoundPaints(graph, target, updates)
@@ -175,20 +181,27 @@ export function updateSyncedProps(
 }
 
 /**
- * Strokes a component gives a copy that keeps its own weight, alignment, cap, join, or dash draw
- * with the copy's, as Figma keeps a stroke weight override when the component's color changes.
+ * Strokes a sync or swap gives a copy draw with the copy's own line fields: the weight,
+ * alignment, cap, join, or dash it overrides, and a bound weight resolved in its modes. Figma
+ * keeps a stroke weight override when the component's color changes (live).
  */
-function keepOwnStrokeLines(
+export function applySyncedStrokeLines(
   target: SceneNode,
-  strokes: Stroke[],
+  updates: Partial<SceneNode>,
   kept: (field: string) => boolean
-): Stroke[] {
-  const own = STROKE_LINE_KEYS.filter((key) => kept(STROKE_LINE_FIELDS[key]))
-  if (own.length === 0) return strokes
-  return withStrokeLines(
-    strokes,
-    Object.fromEntries(own.map((key) => [key, target[STROKE_LINE_FIELDS[key]]]))
-  )
+): void {
+  const first = updates.strokes?.at(0)
+  if (!updates.strokes || !first) return
+  const lines: StrokeLines = {}
+  let set = false
+  for (const key of STROKE_LINE_KEYS) {
+    const field = STROKE_LINE_FIELDS[key]
+    const value = kept(field) ? target[field] : updates[field]
+    if (value === undefined || isEqual(value, strokeLine(first, key))) continue
+    Reflect.set(lines, key, value)
+    set = true
+  }
+  if (set) updates.strokes = withStrokeLines(updates.strokes, lines)
 }
 
 /**

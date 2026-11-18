@@ -5,6 +5,7 @@ import {
   restoreOwnedSlotContent,
   type ParkedSlotContent
 } from '../slots/frames'
+import { changesMoreThanStrokeLines } from '../strokes'
 import type { SceneNode } from '../types'
 import { applyBoundPaintColorsIn, keepCopyBoundPaints } from '../variables/paints'
 import { keepOwnContentSize } from './content-size'
@@ -28,6 +29,7 @@ import {
 import { walkInstanceSources } from './source-walk'
 import { followComponentLayers } from './swap'
 import {
+  applySyncedStrokeLines,
   cloneChildrenWithMapping,
   copyProp,
   sourceInTargetCoordinates,
@@ -151,10 +153,9 @@ export function swapInstanceComponent(
   const previousComponent = namedAfter(graph, instance, component)
   recordNestedSwap(graph, instance, componentId)
   const source = sourceInTargetCoordinates(component, instance.componentScale)
-  const updates: Partial<SceneNode> = {
-    componentId,
-    ...ownSyncedProps(graph, instance, source).updates
-  }
+  const own = ownSyncedProps(graph, instance, source)
+  const updates: Partial<SceneNode> = { componentId, ...own.updates }
+  applySyncedStrokeLines(instance, updates, own.kept)
 
   if (!keepName && (!previousComponent || instance.name === previousComponent.name))
     updates.name = component.name
@@ -330,6 +331,16 @@ export function hasInstanceOverride(graph: SceneGraph, nodeId: string, field: st
   const instance = findInstanceAncestor(graph, nodeId)
   if (!instance) return false
   return hasNodeInstanceOverride(instance.instanceOverrides, instance.id, nodeId, field)
+}
+
+/**
+ * The fields `changes` overrides on an instance layer. New strokes that change only what the
+ * layer's line fields say override those fields, not the paints (`changesMoreThanStrokeLines`).
+ */
+export function instanceOverrideFields(node: SceneNode, changes: Partial<SceneNode>): string[] {
+  const fields = Object.keys(changes)
+  if (!changes.strokes || changesMoreThanStrokeLines(node.strokes, changes.strokes)) return fields
+  return fields.filter((field) => field !== 'strokes')
 }
 
 export function recordInstanceOverride(

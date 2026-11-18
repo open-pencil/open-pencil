@@ -68,13 +68,12 @@ describe('roundtrip: stroke dash', () => {
     expect(node.strokes).toEqual([])
   })
 
-  test('a dash cleared from the stroke is not written by a node pattern left behind', async () => {
+  test('a dash cleared from the stroke is not written by a layer pattern left behind', async () => {
     const graph = new SceneGraph()
     const node = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
       name: 'Cleared',
       width: 100,
       height: 100,
-      dashPattern: [6, 4],
       strokes: [
         {
           type: 'SOLID',
@@ -83,14 +82,12 @@ describe('roundtrip: stroke dash', () => {
           visible: true,
           weight: 2,
           align: 'INSIDE',
-          dashPattern: [6, 4]
+          dashPattern: []
         }
       ]
     })
-    // Toggling the stroke panel's dash off clears the stroke's pattern, which draws solid.
-    graph.updateNode(node.id, {
-      strokes: node.strokes.map((stroke) => ({ ...stroke, dashPattern: [] }))
-    })
+    // A document saved before the layer followed its strokes can still hold the old pattern.
+    node.dashPattern = [6, 4]
 
     const reimported = nodeNamed(await reImport(graph), 'Cleared')
 

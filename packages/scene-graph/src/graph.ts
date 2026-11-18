@@ -1,6 +1,6 @@
 /* eslint-disable max-lines -- SceneGraph is the facade over the domain modules */
 import { omitBy, pick } from 'es-toolkit/object'
-import { isUndefined } from 'es-toolkit/predicate'
+import { isEmptyObject, isUndefined } from 'es-toolkit/predicate'
 
 import { removeStaleBindings } from './bindings'
 import { BufferedSceneEmitter } from './buffered-events'
@@ -617,7 +617,8 @@ export class SceneGraph {
    */
   private impliedChanges(node: SceneNode, changes: Partial<SceneNode>): Partial<SceneNode> {
     const sized = this.isApplyingLayout ? changes : withGeneratedFrameSize(node, changes)
-    return { ...sized, ...strokeLineChanges(node, sized) }
+    const lines = strokeLineChanges(node, sized)
+    return isEmptyObject(lines) ? sized : { ...sized, ...lines }
   }
 
   /** Replay captured properties without dropping explicit undefined values or absent keys. */

@@ -26,16 +26,15 @@ export const STROKE_LINE_FIELDS = {
   dashPattern: 'dashPattern'
 } as const satisfies Record<StrokeLineKey, keyof SceneNode>
 
+export type StrokeLines = Partial<Pick<Stroke, StrokeLineKey>>
+
 /** The value a stroke draws with; a stroke without a dash draws solid. */
-function strokeLine(stroke: Stroke, key: StrokeLineKey): Stroke[StrokeLineKey] {
+export function strokeLine(stroke: Stroke, key: StrokeLineKey): Stroke[StrokeLineKey] {
   return key === 'dashPattern' ? (stroke.dashPattern ?? []) : stroke[key]
 }
 
 /** `strokes` with each line field `values` names, as a layer field set alone gives every stroke. */
-export function withStrokeLines(
-  strokes: readonly Stroke[],
-  values: Partial<Pick<Stroke, StrokeLineKey>>
-): Stroke[] {
+export function withStrokeLines(strokes: readonly Stroke[], values: StrokeLines): Stroke[] {
   return strokes.map((stroke) => {
     const next = copyStroke(stroke)
     for (const key of STROKE_LINE_KEYS) {
@@ -81,11 +80,32 @@ export function strokeLineChanges(
     return derived
   }
   if (node.strokes.length === 0) return {}
-  const values: Partial<Pick<Stroke, StrokeLineKey>> = {}
+  const values: StrokeLines = {}
+  let set = false
   for (const key of STROKE_LINE_KEYS) {
     const value = changes[STROKE_LINE_FIELDS[key]]
-    if (value !== undefined) Reflect.set(values, key, value)
+    if (value === undefined) continue
+    Reflect.set(values, key, value)
+    set = true
   }
+  // Most writes, such as a move or a layout pass, set no line field.
+  if (!set) return {}
   const strokes = withStrokeLines(node.strokes, values)
   return isEqual(strokes, node.strokes) ? {} : { strokes }
+}
+
+/**
+ * Whether `next` changes more than the line fields the layer keeps: a paint, a stroke added or
+ * removed, or a later stroke's line apart from the first's. Figma overrides a weight or dash set
+ * on an instance layer alone, so a component's later paint change still reaches the copy (live).
+ */
+export function changesMoreThanStrokeLines(
+  current: readonly Stroke[],
+  next: readonly Stroke[]
+): boolean {
+  const first = next.at(0)
+  if (!first || current.length !== next.length) return !isEqual(current, next)
+  const lines: StrokeLines = {}
+  for (const key of STROKE_LINE_KEYS) Reflect.set(lines, key, first[key])
+  return !isEqual(withStrokeLines(current, lines), next)
 }

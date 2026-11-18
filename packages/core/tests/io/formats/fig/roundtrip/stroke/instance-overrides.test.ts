@@ -1,6 +1,6 @@
-import { beforeAll, describe, expect, test } from 'bun:test'
+import { afterEach, beforeAll, describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor, type Editor } from '@open-pencil/core'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, Stroke } from '@open-pencil/scene-graph'
@@ -8,13 +8,20 @@ import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { collectAllNodes } from '@open-pencil/test-support/fig/traversal'
 
 const BLUE = { r: 0, g: 0, b: 1, a: 1 }
+const RED = { r: 1, g: 0, b: 0, a: 1 }
+
+const editors: Editor[] = []
+afterEach(() => {
+  for (const editor of editors.splice(0)) editor.dispose()
+})
 
 function instanceLayer() {
   const editor = createEditor()
+  editors.push(editor)
   const graph = editor.graph
   const page = graph.getPages()[0]
   const main = graph.createNode('COMPONENT', page.id, { name: 'Main', width: 100, height: 100 })
-  graph.createNode('VECTOR', main.id, {
+  const shape = graph.createNode('VECTOR', main.id, {
     name: 'Shape',
     width: 50,
     height: 50,
@@ -34,7 +41,7 @@ function instanceLayer() {
   })
   const instance = expectDefined(graph.createInstance(main.id, page.id, { name: 'Copy' }), 'copy')
   const layer = getNodeOrThrow(graph, expectDefined(instance.childIds[0], 'copy layer'))
-  return { editor, graph, layer }
+  return { editor, graph, main, shape, layer }
 }
 
 async function reopenedCopyLayer(graph: SceneGraph) {
@@ -70,6 +77,20 @@ describe('roundtrip: stroke settings an instance overrides', () => {
     const reopened = await reopenedCopyLayer(graph)
 
     expect(reopened.strokes[0]).toMatchObject(edit)
+  })
+
+  test('a copy that takes a weight keeps taking the component’s stroke color, saved and reopened', async () => {
+    const { editor, graph, main, shape, layer } = instanceLayer()
+    editor.updateNodeWithUndo(layer.id, {
+      strokes: layer.strokes.map((stroke) => ({ ...stroke, weight: 5 }))
+    })
+    graph.updateNode(shape.id, {
+      strokes: shape.strokes.map((stroke) => ({ ...stroke, color: RED }))
+    })
+    graph.syncInstances(main.id)
+
+    expect(layer.strokes[0]).toMatchObject({ weight: 5, color: RED })
+    expect((await reopenedCopyLayer(graph)).strokes[0]).toMatchObject({ weight: 5, color: RED })
   })
 
   test('undo takes a stroke weight back from the stroke and the layer', () => {
