@@ -1,1 +1,1 @@
-- `.pen` instances of a slot component show the children placed in them, as pen.dev draws them.
+- `.pen` instances show the children their `ref` places in them, in place of the component's, and size to them (#2193).
