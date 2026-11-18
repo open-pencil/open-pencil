@@ -371,7 +371,7 @@ export function createAdminUserService(
      */
     async resetTwoStep(actorId: string, userId: string): Promise<void> {
       refuseSelf(actorId, userId, 'reset two-step sign-in for')
-      const user = await database.transaction().execute(async (transaction) => {
+      await database.transaction().execute(async (transaction) => {
         const target = await transaction
           .selectFrom('user')
           .select(['id', 'email', 'name'])
@@ -397,13 +397,10 @@ export function createAdminUserService(
             metadata: {}
           })
           .execute()
-        return target
-      })
-      await options.notify?.sendTwoStepChanged({
-        email: user.email,
-        name: user.name,
-        userId: user.id,
-        change: 'reset-by-administrator'
+        await options.notify?.sendTwoStepChanged(
+          { email: target.email, name: target.name, userId, change: 'reset-by-administrator' },
+          transaction
+        )
       })
     },
 
@@ -413,13 +410,14 @@ export function createAdminUserService(
      */
     async removeSignInMethod(actorId: string, userId: string, methodId: string): Promise<void> {
       refuseSelf(actorId, userId, 'remove a sign-in method from')
-      const removed = await removeSignInMethod(database, {
+      await removeSignInMethod(database, {
         userId,
         methodId,
         providers: options.signInProviders,
         block: true,
-        also: (transaction, removed) =>
-          transaction
+        // The audit entry and the notice commit with the removal, or not at all.
+        async also(transaction, removed) {
+          await transaction
             .insertInto('adminAuditEvent')
             .values({
               id: crypto.randomUUID(),
@@ -430,7 +428,16 @@ export function createAdminUserService(
               metadata: { provider: removed }
             })
             .execute()
-            .then(() => undefined)
+          const user = await transaction
+            .selectFrom('user')
+            .select(['email', 'name'])
+            .where('id', '=', userId)
+            .executeTakeFirstOrThrow()
+          await options.notify?.sendTwoStepChanged(
+            { ...user, userId, change: 'sign-in-method-removed', method: removed },
+            transaction
+          )
+        }
       }).catch((error: unknown) => {
         if (!(error instanceof APIError)) throw error
         if (error.body?.code === 'FAILED_TO_UNLINK_LAST_ACCOUNT') {
@@ -441,18 +448,6 @@ export function createAdminUserService(
         }
         // A method of another account, or none, names nothing here, as an unknown person does.
         throw new NoResultError(database.selectFrom('account').toOperationNode())
-      })
-      const user = await database
-        .selectFrom('user')
-        .select(['id', 'email', 'name'])
-        .where('id', '=', userId)
-        .executeTakeFirstOrThrow()
-      await options.notify?.sendTwoStepChanged({
-        email: user.email,
-        name: user.name,
-        userId: user.id,
-        change: 'sign-in-method-removed',
-        method: removed.provider
       })
     },
 
