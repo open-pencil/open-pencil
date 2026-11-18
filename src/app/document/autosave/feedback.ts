@@ -39,7 +39,7 @@ function reportAutosaves({ id, store }: Tab): () => void {
     const name = store.state.documentName
     showSaveFailure(
       messages.autosaveFailed({ name, error: saveErrorText(error) }),
-      () => saveWithFeedback(() => saveDocument(store), options),
+      () => saveWithFeedback(() => saveDocument(store), { ...options, background: true }),
       options
     )
     if (!claimFailureNotice(store)) return

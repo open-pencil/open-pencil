@@ -16,6 +16,11 @@ export interface SaveFeedbackOptions {
    * the failure shown, which goes once a later save writes them.
    */
   hasUnsavedChanges?: () => boolean
+  /**
+   * The save retries one nobody waited on, such as an autosave: once the document has no unsaved
+   * changes, its failure leaves nothing to tell.
+   */
+  background?: boolean
 }
 
 const failureToasts = new WeakMap<object, number>()
@@ -109,6 +114,7 @@ export async function saveWithFeedback(
   } catch (error) {
     // A save that fails after its tab closed has nothing left to retry.
     if (options.isOpen && !options.isOpen()) return false
+    if (options.background && !options.hasUnsavedChanges?.()) return false
     showSaveFailure(
       notificationMessages.get().operationFailed({ error: saveErrorText(error) }),
       () => saveWithFeedback(save, options),

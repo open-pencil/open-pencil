@@ -120,6 +120,18 @@ describe('save feedback', () => {
     expect(toast.toasts.value).toHaveLength(0)
   })
 
+  test('shows nothing when a background save’s retry fails once the document is clean', async () => {
+    const save = async () => {
+      throw new Error('disk full')
+    }
+    const options = { key: {}, hasUnsavedChanges: () => false }
+    await expect(saveWithFeedback(save, { ...options, background: true })).resolves.toBe(false)
+    expect(toast.toasts.value).toHaveLength(0)
+    // A save the person asked for still says it failed.
+    await expect(saveWithFeedback(save, options)).resolves.toBe(false)
+    expect(toast.toasts.value).toHaveLength(1)
+  })
+
   test('ignores Retry while that document’s retry is still saving', async () => {
     const key = {}
     let attempts = 0

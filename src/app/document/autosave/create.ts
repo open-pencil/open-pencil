@@ -31,6 +31,8 @@ export function createAutosave({
   let requestedVersion: number | null = null
   let saving: Promise<void> | null = null
   let disposed = false
+  // The writes whose failure is already reported: edits that join a running write share it.
+  const reported = new WeakSet<Promise<void>>()
 
   function canSave(version: number) {
     return version > getSavedVersion() && state.autosaveEnabled && hasWritableSource()
@@ -51,6 +53,14 @@ export function createAutosave({
     if (!disposed) onFailed?.(error)
   }
 
+  /** Saves `version` with nobody waiting on it, so a failure is reported once per write. */
+  function saveInBackground(version: number) {
+    const write = requestSave(version)
+    if (reported.has(write)) return
+    reported.add(write)
+    void write.catch(reportFailure)
+  }
+
   function requestSave(version: number): Promise<void> {
     if (disposed || !canSave(version)) return Promise.resolve()
     requestedVersion = Math.max(requestedVersion ?? version, version)
@@ -58,7 +68,7 @@ export function createAutosave({
       saving = runSaves().finally(() => {
         saving = null
         if (!disposed && requestedVersion !== null) {
-          void requestSave(requestedVersion).catch(reportFailure)
+          saveInBackground(requestedVersion)
         }
       })
     }
@@ -68,7 +78,7 @@ export function createAutosave({
   const stop = watchDebounced(
     currentVersion,
     (version) => {
-      void requestSave(version).catch(reportFailure)
+      saveInBackground(version)
     },
     {
       debounce: () => (state.roomKeepsEdits ? CHECKPOINT_INTERVAL_MS : EDIT_SAVE_DELAY_MS),
@@ -79,7 +89,7 @@ export function createAutosave({
   const stopKept = watch(
     () => state.roomKeepsEdits,
     (kept) => {
-      if (!kept) void requestSave(currentVersion()).catch(reportFailure)
+      if (!kept) saveInBackground(currentVersion())
     }
   )
 

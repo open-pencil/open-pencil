@@ -224,6 +224,48 @@ describe('document autosave', () => {
     }
   })
 
+  test('reports a failed write once when a later edit joined it', async () => {
+    jest.useFakeTimers()
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    try {
+      const failed: unknown[] = []
+      const reported = createDeferred<undefined>()
+      const held = createDeferred<undefined>()
+      const wrote = createDeferred<number>()
+      const { version, autosave } = setup(
+        async (saved) => {
+          if (saved === 1) {
+            await held.promise
+            throw new Error('write 1 failed')
+          }
+          wrote.resolve(saved)
+        },
+        {
+          onFailed: (error) => {
+            failed.push(error)
+            reported.resolve(undefined)
+          }
+        }
+      )
+      version.value = 1
+      await nextTick()
+      jest.advanceTimersByTime(3_000)
+      // Revision 2 is due while revision 1 is still writing.
+      version.value = 2
+      await nextTick()
+      jest.advanceTimersByTime(3_000)
+      held.resolve(undefined)
+      // Every caller that joined the write hears its rejection before this resumes.
+      await reported.promise
+      expect(await wrote.promise).toBe(2)
+      expect(failed).toHaveLength(1)
+      autosave.disposeAutosave()
+    } finally {
+      warn.mockRestore()
+      jest.useRealTimers()
+    }
+  })
+
   test('reports nothing for a save its caller awaits, or after it is disposed', async () => {
     jest.useFakeTimers()
     const warned = createDeferred<undefined>()
