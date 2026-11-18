@@ -20,7 +20,14 @@
     "SITE_HOSTS": "openpencil.dev,app.openpencil.dev",
     // The PostHog project the metrics dashboard's usage numbers come from.
     "POSTHOG_APP_HOST": "https://eu.posthog.com",
-    "POSTHOG_PROJECT_ID": "267806"
+    "POSTHOG_PROJECT_ID": "267806",
+    // The monitor (`src/monitor/`): what it watches, and where it posts.
+    "MONITOR_CHAT_ID": "-1003998830069",
+    "MONITOR_URLS": "https://cloud.openpencil.dev/health",
+    "MONITOR_WORKERS": "openpencil-cloud,openpencil-services",
+    "CLOUDFLARE_ACCOUNT_ID": "ca633c52af8f8351ed72fb5d12b423f0",
+    "OPENROUTER_WARNING_USD": "25",
+    "OPENROUTER_CRITICAL_USD": "5"
   },
   // Created with `wrangler d1 create feedback --jurisdiction eu`, so rows stay in the EU.
   "d1_databases": [
@@ -54,7 +61,8 @@
     "run_worker_first": ["/admin", "/admin/*"]
   },
   // Just after midnight UTC the metrics snapshot records the day that ended; later, retention runs.
-  "triggers": { "crons": ["5 0 * * *", "17 3 * * *"] },
+  // The monitor runs every minute.
+  "triggers": { "crons": ["5 0 * * *", "17 3 * * *", "* * * * *"] },
   // Set with `wrangler secret put`; locally from `.dev.vars` (see `.dev.vars.example`).
   "secrets": {
     "required": [
@@ -67,7 +75,10 @@
       "ACCESS_TEAM_DOMAIN",
       "ACCESS_AUD",
       // Any long random string; rotating it only invalidates uploads in flight.
-      "REPORT_UPLOAD_SECRET"
+      "REPORT_UPLOAD_SECRET",
+      "TELEGRAM_BOT_TOKEN",
+      "CLOUDFLARE_WEBHOOK_SECRET",
+      "OPENROUTER_API_KEY"
     ]
   }
 }

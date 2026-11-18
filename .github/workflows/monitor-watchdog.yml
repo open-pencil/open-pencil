@@ -1,0 +1,36 @@
+name: Monitor watchdog
+
+# The feedback Worker's monitor watches the official deployments from Cloudflare every minute;
+# this checks from GitHub that the monitor itself still runs, and posts to the monitoring channel
+# when that changes (tools/ci/cloud-deploy/src/watchdog.ts).
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: monitor-watchdog
+  cancel-in-progress: false
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # The watchdog reads its own previous run, so it posts only when the outcome changes.
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup/workspace
+        with:
+          cache-scope: monitor-watchdog
+
+      - name: Check that the monitor runs
+        run: bun tools/ci/cloud-deploy/src/watchdog.ts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

@@ -118,6 +118,15 @@ code can use because migrations only expand.
 
 A release whose migration is itself wrong is fixed forward with a new migration and release.
 
+## Monitoring
+
+The feedback Worker's monitor posts to the team's Telegram channel when production's `/health`
+stops answering, when Cloud's or the services Worker's failures spike, and when the OpenRouter key
+nears its spending cap or the account's credits run low; PostHog's error tracking alerts post there
+too, for new and reopened production errors. The watchdog workflow checks every fifteen minutes,
+from GitHub, that the monitor itself runs. What each check watches and how to set it up is in
+`packages/feedback/README.md`.
+
 ## Finding what failed
 
 Each HTTP response carries its request's ID as `X-Request-Id`: Cloudflare's ray ID, the same as

@@ -96,6 +96,17 @@ export interface RepoItemTable {
   updatedAt: string
 }
 
+export interface MonitorStateTable {
+  checkName: string
+  status: 'ok' | 'warning' | 'critical'
+  runs: number
+  since: string
+  notifiedStatus: 'ok' | 'warning' | 'critical'
+  notifiedAt: string
+  problemSince: string | null
+  checkedAt: string
+}
+
 /** The D1 tables `migrations/` creates, in Kysely's camelCase. */
 export interface FeedbackDatabase {
   usagePings: UsagePingTable
@@ -110,4 +121,5 @@ export interface FeedbackDatabase {
   sitePages: SitePagesTable
   siteCountries: SiteCountriesTable
   repoItems: RepoItemTable
+  monitorState: MonitorStateTable
 }

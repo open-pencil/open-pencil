@@ -61,6 +61,26 @@ export interface FeedbackBindings {
   POSTHOG_PROJECT_ID: string
   /** A PostHog personal API key limited to reading queries in that project. */
   POSTHOG_PERSONAL_KEY: string
+  /** The bot that posts monitor alerts, an administrator of `MONITOR_CHAT_ID` that can post. */
+  TELEGRAM_BOT_TOKEN: string
+  /** The Telegram channel monitor alerts go to. */
+  MONITOR_CHAT_ID: string
+  /** Health URLs that must answer 200, separated by commas. */
+  MONITOR_URLS: string
+  /** Workers whose failures are watched for spikes, separated by commas. */
+  MONITOR_WORKERS: string
+  /** The Cloudflare account those Workers run in; `CLOUDFLARE_ANALYTICS_TOKEN` reads its analytics. */
+  CLOUDFLARE_ACCOUNT_ID: string
+  /** Signs Cloudflare's notification webhook (`cf-webhook-auth`). */
+  CLOUDFLARE_WEBHOOK_SECRET: string
+  /** An OpenRouter key, read only for its spending cap; it is not used for model requests. */
+  OPENROUTER_API_KEY: string
+  /** An OpenRouter management key, for the account's balance; without one, the balance is not checked. */
+  OPENROUTER_MANAGEMENT_KEY?: string
+  /** US dollars left, on the key's cap or the balance, below which the channel is warned. */
+  OPENROUTER_WARNING_USD: string
+  /** US dollars left below which the warning becomes urgent. */
+  OPENROUTER_CRITICAL_USD: string
 }
 
 export type FeedbackEnv = {

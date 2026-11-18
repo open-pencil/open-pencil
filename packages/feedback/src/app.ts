@@ -5,6 +5,7 @@ import { adminRoutes } from './admin/route'
 import type { FeedbackEnv, FeedbackServices } from './env'
 import { allowOpenPencilOrigins } from './http/cors'
 import { ingestRoutes } from './ingest/route'
+import { monitorRoutes } from './monitor/route'
 import { pingRoutes } from './ping/route'
 import { reportRoutes } from './reports/route'
 import { waitlistRoutes } from './waitlist/route'
@@ -31,6 +32,7 @@ export function createFeedbackApp(services: FeedbackServices = defaultServices) 
       .route('/', ingestRoutes(services))
       .route('/', waitlistRoutes(services))
       .route('/', adminRoutes(services))
+      .route('/', monitorRoutes(services))
   )
 }
 

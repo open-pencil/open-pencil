@@ -83,6 +83,9 @@ export async function createTestService() {
     ACCESS_TEAM_DOMAIN: 'https://openpencil.cloudflareaccess.com',
     ACCESS_AUD: 'admin-audience',
     POSTHOG_PERSONAL_KEY: 'phx_test',
+    TELEGRAM_BOT_TOKEN: 'telegram-token',
+    CLOUDFLARE_WEBHOOK_SECRET: 'webhook-secret',
+    OPENROUTER_API_KEY: 'openrouter-key',
     // The built dashboard page as the asset binding serves it, at its file path only.
     ASSETS: {
       async fetch(input: RequestInfo | URL) {
