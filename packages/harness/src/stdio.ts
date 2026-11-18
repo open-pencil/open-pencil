@@ -11,7 +11,6 @@ import type { HarnessRequest, HarnessSidecarMessage } from '#harness/protocol'
 import { parseHarnessRequest } from '#harness/protocol'
 import { HarnessSessionService } from '#harness/service'
 import { FileResumeStateStore } from '#harness/session-store'
-import { loadTypeScriptDependencies } from '#harness/typescript-dependencies'
 
 import packageJSON from '../package.json' with { type: 'json' }
 
@@ -22,7 +21,6 @@ if (process.argv.includes('--version')) {
 }
 
 const writeProtocol = reserveProtocolOutput()
-loadTypeScriptDependencies()
 
 const stateRoot =
   process.env.OPENPENCIL_HARNESS_STATE_DIR ?? join(homedir(), '.open-pencil', 'harness-sessions')
