@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { CloudLegalDiscovery } from '@open-pencil/cloud/contract'
+import { CLOUD_SOCIAL_PROVIDER_NAMES, type CloudLegalDiscovery } from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import { portalForm } from '@/components/cloud-portal/ui'
 import CloudAccountForm from '@/components/cloud/account/CloudAccountForm.vue'
+import CloudProviderLogo from '@/components/cloud/account/CloudProviderLogo.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
@@ -52,10 +53,8 @@ const emit = defineEmits<{
 const ui = portalForm({ size: 'lg' })
 const messages = useCloudPortalMessages()
 const signUp = computed(() => mode === 'sign-up')
-const labels = computed<Record<PortalSignInMethod, string>>(() => ({
-  google: messages.value.continueWithGoogle,
-  apple: messages.value.continueWithApple
-}))
+const label = (method: PortalSignInMethod) =>
+  messages.value.continueWith({ provider: CLOUD_SOCIAL_PROVIDER_NAMES[method] })
 const description = computed(() => {
   if (!returnsTo) return undefined
   return messages.value.returnsTo({
@@ -127,10 +126,9 @@ const showForm = computed(() => !!emailPassword && (!signUp.value || emailPasswo
       >
         <!-- Brand marks read at 16px; the button's own 14px slot would push them below the label. -->
         <template #leading>
-          <icon-ai-google v-if="method === 'google'" class="size-full" />
-          <icon-ai-apple v-else class="size-full" />
+          <CloudProviderLogo :provider="method" class="size-full" />
         </template>
-        {{ labels[method] }}
+        {{ label(method) }}
       </AppButton>
     </div>
 

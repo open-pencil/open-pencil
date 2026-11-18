@@ -1,3 +1,4 @@
+import { CLOUD_SOCIAL_PROVIDER_NAMES, isKnownSocialProvider } from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 /**
@@ -7,12 +8,7 @@ import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 export function usePortalSignInMethodLabel() {
   const messages = useCloudPortalMessages()
   return (provider: string): string => {
-    const words = messages.value
-    const labels: Record<string, string> = {
-      credential: words.password,
-      google: words.providerGoogle,
-      apple: words.providerApple
-    }
-    return labels[provider] ?? provider
+    if (provider === 'credential') return messages.value.password
+    return isKnownSocialProvider(provider) ? CLOUD_SOCIAL_PROVIDER_NAMES[provider] : provider
   }
 }

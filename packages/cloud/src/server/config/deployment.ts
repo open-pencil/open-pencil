@@ -69,6 +69,7 @@ function emailConfig(config: CloudDeploymentConfig, environment: CloudEnvironmen
 function authenticationConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
   const google = config.authentication.providers.google
   const apple = config.authentication.providers.apple
+  const github = config.authentication.providers.github
   return {
     googleClientId: google ? configuredText(environment, google.client_id) : undefined,
     googleClientSecret: google ? requiredSecret(environment, google.client_secret) : undefined,
@@ -76,7 +77,9 @@ function authenticationConfig(config: CloudDeploymentConfig, environment: CloudE
     appleTeamId: apple?.team_id,
     appleKeyId: apple?.key_id,
     applePrivateKey: apple ? requiredSecret(environment, apple.private_key) : undefined,
-    appleAppBundleIdentifier: apple?.app_bundle_identifier
+    appleAppBundleIdentifier: apple?.app_bundle_identifier,
+    githubClientId: github ? configuredText(environment, github.client_id) : undefined,
+    githubClientSecret: github ? requiredSecret(environment, github.client_secret) : undefined
   }
 }
 

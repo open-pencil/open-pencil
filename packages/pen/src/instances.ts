@@ -4,27 +4,46 @@ import { isEqual } from 'es-toolkit/predicate'
 import { generateId, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import {
   detachInstance,
+  findInstanceAncestor,
   INSTANCE_OVERRIDE_FIELDS,
   populateInstanceChildren,
   recordInstanceOverride,
   swapInstanceComponent
 } from '@open-pencil/scene-graph/instances'
+import { copiedComponentLayerId } from '@open-pencil/scene-graph/instances/overrides'
+import { isNumericVariableBindingField } from '@open-pencil/scene-graph/variables'
 
 import { applyPenProperties, createSceneNode, fieldsSetBy, type Build } from './nodes'
 import type { PenNode, PenOverride } from './schema'
+import type { Theme } from './variables'
 
 /** Fills an instance read from `.pen`, after the instances inside its component. */
 type Populate = (id: string) => void
 
-/** The layers a copy was made from, nearest first, through copies of copies. */
+/** Adds `start` and the layers it was copied from, nearest first. */
+function addSourceChain(graph: SceneGraph, found: Set<string>, start: string | null): void {
+  let id = start
+  while (id && !found.has(id)) {
+    found.add(id)
+    id = graph.getNode(id)?.componentId ?? null
+  }
+}
+
+/**
+ * The layers a copy was made from, nearest first, through copies of copies. A swap replaces a
+ * copy's `componentId`, as a theme re-read does when it swaps an icon onto the glyph component for
+ * that theme, so the layer its instance recorded it copies is followed too.
+ */
 function sources(graph: SceneGraph, node: SceneNode): Set<string> {
   const found = new Set<string>()
-  for (
-    let id = node.componentId;
-    id && !found.has(id);
-    id = graph.getNode(id)?.componentId ?? null
-  ) {
-    found.add(id)
+  addSourceChain(graph, found, node.componentId)
+  const owner = node.parentId ? findInstanceAncestor(graph, node.parentId) : undefined
+  if (owner) {
+    addSourceChain(
+      graph,
+      found,
+      copiedComponentLayerId(owner.instanceOverrides, owner.id, node) ?? null
+    )
   }
   return found
 }
@@ -51,19 +70,52 @@ function resolvePath(graph: SceneGraph, instance: SceneNode, path: string): Scen
   return current
 }
 
-/** Runs `apply` in the merged theme of a layer's ancestors, as the layer was read in. */
-export function inAncestorThemes<T>(build: Build, node: SceneNode, apply: () => T): T {
-  const chain: Record<string, string>[] = []
-  for (let id = node.parentId; id; id = build.graph.getNode(id)?.parentId ?? null) {
-    const theme = build.effective.get(id)?.theme
+/** A theme laid over another, axis by axis. The one on top wins where both set an axis. */
+function mergeTheme(base: Theme | undefined, overlay: Theme): Theme {
+  return { ...base, ...overlay }
+}
+
+/** The themes from the page down through `id`, as each layer was read. */
+function themesThrough(build: Build, id: string): Theme[] {
+  const chain: Theme[] = []
+  for (
+    let current: string | null = id;
+    current;
+    current = build.graph.getNode(current)?.parentId ?? null
+  ) {
+    const theme = build.effective.get(current)?.theme
     if (theme) chain.unshift(theme)
   }
-  const leave = chain.map((theme) => build.ctx.enterTheme(theme))
+  return chain
+}
+
+/** Runs `apply` in the merged theme of a layer's ancestors, as the layer was read in. */
+export function inAncestorThemes<T>(build: Build, node: SceneNode, apply: () => T): T {
+  const leave = (node.parentId ? themesThrough(build, node.parentId) : []).map((theme) =>
+    build.ctx.enterTheme(theme)
+  )
   try {
     return apply()
   } finally {
     for (const exit of leave.toReversed()) exit()
   }
+}
+
+/** Runs `apply` in the themes a layer is read in: its ancestors', then `theme`, its own. */
+export function inLayerThemes<T>(
+  build: Build,
+  node: SceneNode,
+  theme: Theme | undefined,
+  apply: () => T
+): T {
+  return inAncestorThemes(build, node, () => {
+    const leave = theme ? build.ctx.enterTheme(theme) : undefined
+    try {
+      return apply()
+    } finally {
+      leave?.()
+    }
+  })
 }
 
 function replaceLayer(
@@ -119,12 +171,26 @@ function swapLayer(
     descendants: _descendants,
     ...fields
   } = component
-  effective.set(target.id, { ...fields, id: target.id })
-  inheritCopyFields(build, target)
   const { ref: _ref, type: _type, id: _id, descendants, ...own } = replacement
+  // The replacement's theme is part of the theme its copies are read in, as a ref's theme is.
+  const theme = own.theme ? mergeTheme(fields.theme, own.theme) : fields.theme
+  effective.set(
+    target.id,
+    theme ? { ...fields, id: target.id, theme } : { ...fields, id: target.id }
+  )
+  inheritCopyFields(build, target, descendantThemes(build, target, descendants))
   overrideLayer(build, target, own)
   applyDescendants(build, target, descendants, populate)
   return true
+}
+
+/** The override fields of `target` that differ from `before`, a snapshot taken by `snapshotFields`. */
+function changedFields(target: SceneNode, before: Partial<SceneNode>) {
+  return INSTANCE_OVERRIDE_FIELDS.filter((field) => !isEqual(before[field], target[field]))
+}
+
+function snapshotFields(node: SceneNode): Partial<SceneNode> {
+  return structuredClone(pick(node, INSTANCE_OVERRIDE_FIELDS))
 }
 
 /**
@@ -137,8 +203,10 @@ function recordChangedFields(
   before: Partial<SceneNode>,
   override: PenOverride
 ): void {
-  const changed = INSTANCE_OVERRIDE_FIELDS.filter((field) => !isEqual(before[field], target[field]))
-  recordInstanceOverride(graph, target.id, [...changed, ...fieldsSetBy(override)])
+  recordInstanceOverride(graph, target.id, [
+    ...changedFields(target, before),
+    ...fieldsSetBy(override)
+  ])
 }
 
 /**
@@ -159,24 +227,22 @@ function recordOwnFields(graph: SceneGraph, instance: SceneNode, ref: PenNode): 
 }
 
 function overrideLayer(build: Build, target: SceneNode, override: PenOverride): void {
-  const { graph, ctx, effective } = build
+  const { graph, effective } = build
   const base = effective.get(target.id) ?? { type: 'frame', id: target.id }
   const { descendants: _descendants, children, ...fields } = override
   const merged: PenNode = { ...base, ...fields, type: base.type, id: base.id }
-  const before = structuredClone(pick(target, INSTANCE_OVERRIDE_FIELDS))
-  inAncestorThemes(build, target, () => {
-    const leave = merged.theme ? ctx.enterTheme(merged.theme) : undefined
-    try {
-      applyPenProperties(target, merged, build)
-      recordChangedFields(graph, target, before, fields)
-      if (children) {
-        const replaced = target.childIds
-        for (const childId of replaced) graph.deleteNode(childId)
-        for (const child of children) createSceneNode(child, target.id, build)
-        build.replaced.add(target.id)
-      }
-    } finally {
-      leave?.()
+  // A theme names axes. It merges over the layer's own, as a ref's theme does.
+  if (fields.theme) merged.theme = mergeTheme(base.theme, fields.theme)
+  const before = snapshotFields(target)
+  inLayerThemes(build, target, merged.theme, () => {
+    // Children that replace the layer's own decide its size, as a fit_content(N) fallback holds
+    // only while the layer is empty, so the old ones go first.
+    if (children) for (const childId of target.childIds) graph.deleteNode(childId)
+    applyPenProperties(target, children ? { ...merged, children } : merged, build)
+    recordChangedFields(graph, target, before, fields)
+    if (children) {
+      for (const child of children) createSceneNode(child, target.id, build)
+      build.replaced.add(target.id)
     }
   })
 }
@@ -197,6 +263,34 @@ function detachReplacingInstances(build: Build): void {
   build.replaced.clear()
 }
 
+/**
+ * Whether a sync resolves `field` again from its binding in the copy's mode. A number and a paint
+ * colour do; a clip does not, so a theme that changed it has to be kept as an override.
+ */
+function syncResolvesBinding(node: SceneNode, field: string): boolean {
+  if (
+    (field === 'fills' || field === 'strokes') &&
+    Object.keys(node.boundVariables).some((key) => key.startsWith(`${field}/`))
+  ) {
+    return true
+  }
+  return isNumericVariableBindingField(field) && Object.hasOwn(node.boundVariables, field)
+}
+
+/**
+ * Records what a theme re-read changed on `copy` and a sync would not resolve again. The re-read
+ * runs before an override snapshots the copy, so the snapshot already holds the new clip and would
+ * record only the theme axes.
+ */
+function recordThemeResolvedFields(
+  graph: SceneGraph,
+  copy: SceneNode,
+  before: Partial<SceneNode>
+): void {
+  const changed = changedFields(copy, before).filter((field) => !syncResolvesBinding(copy, field))
+  recordInstanceOverride(graph, copy.id, changed)
+}
+
 /** Gives an instance's copies their overrides; a key with a `type` replaces the layer. */
 function applyDescendants(
   build: Build,
@@ -212,18 +306,59 @@ function applyDescendants(
   }
 }
 
-/** Gives each copy inside `root` the pen.dev fields and placement of the layer it copies. */
-function inheritCopyFields(build: Build, root: SceneNode): void {
+/**
+ * Themes descendant overrides set on copies inside `instance`, by that copy. A copy is read
+ * before those overrides apply, so a theme one of them sets has to be on the copy already or the
+ * layers under it are read in the theme from before the override.
+ */
+function descendantThemes(
+  build: Build,
+  instance: SceneNode,
+  descendants: PenNode['descendants']
+): Map<string, Theme> | undefined {
+  if (!descendants) return undefined
+  let themes: Map<string, Theme> | undefined
+  for (const [path, override] of Object.entries(descendants)) {
+    // A replacement is built in the override's theme; only an existing subtree needs it early.
+    if (!override.theme || override.type || override.children) continue
+    const target = resolvePath(build.graph, instance, path)
+    if (!target) continue
+    themes ??= new Map()
+    // Two paths can name one copy; their themes merge, as applying both overrides does.
+    themes.set(target.id, mergeTheme(themes.get(target.id), override.theme))
+  }
+  return themes
+}
+
+/**
+ * Gives each copy inside `root` the pen.dev fields and placement of the layer it copies.
+ * A copy is cloned from its source as that source was read, which may be outside the theme of
+ * the screen this instance is placed in, so a copy in another theme is read again there.
+ * `themes` merges a descendant override's theme over the copy it names, so the layers under that
+ * copy are read in the theme the override leaves.
+ */
+function inheritCopyFields(
+  build: Build,
+  root: SceneNode,
+  themes?: ReadonlyMap<string, Theme>
+): void {
   const { graph, effective, placements } = build
   const copies = graph.getChildren(root.id)
   for (const copy of copies) {
     const source = copy.componentId
     const fields = source ? effective.get(source) : undefined
-    if (fields) effective.set(copy.id, fields)
+    const theme = themes?.get(copy.id)
+    const pen = fields && theme ? { ...fields, theme: mergeTheme(fields.theme, theme) } : fields
+    if (pen) effective.set(copy.id, pen)
     const placement = source ? placements.get(source) : undefined
     if (placement) placements.set(copy.id, placement)
     if (source && build.groupIds.has(source)) build.groupIds.add(copy.id)
     if (source && build.aroundIds.has(source)) build.aroundIds.add(copy.id)
+    if (pen && source && !isEqual(themesThrough(build, copy.id), themesThrough(build, source))) {
+      const before = snapshotFields(copy)
+      inLayerThemes(build, copy, pen.theme, () => applyPenProperties(copy, pen, build))
+      recordThemeResolvedFields(graph, copy, before)
+    }
     for (const child of graph.getChildren(copy.id)) copies.push(child)
   }
 }
@@ -250,8 +385,11 @@ export function populateInstances(build: Build): void {
     }
     populateInstanceChildren(graph, instance.id, component.id)
     recordOwnFields(graph, instance, ref)
-    inheritCopyFields(build, instance)
+    inheritCopyFields(build, instance, descendantThemes(build, instance, ref.descendants))
     applyDescendants(build, instance, ref.descendants, populate)
+    // pen.dev draws a ref's own children in place of its component's, whether or not the
+    // component declares a `slot`; like an override's children, they detach the instance.
+    if (ref.children) overrideLayer(build, instance, { children: ref.children })
     // Before anything copies this instance, so the copies are of what it became.
     detachReplacingInstances(build)
   }

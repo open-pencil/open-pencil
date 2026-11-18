@@ -2,6 +2,7 @@ import { zipObject } from 'es-toolkit'
 import * as v from 'valibot'
 
 import {
+  CLOUD_SOCIAL_PROVIDERS,
   cloudIdentitySchema,
   cloudAccountSessionSchema,
   cloudPersonSchema,
@@ -111,7 +112,7 @@ export const cloudAdminUserFilterSchema = v.picklist([
   'without-two-step'
 ])
 /** Narrows a list of people, under any filter, to those who sign in a given way. */
-export const cloudAdminUserMethodSchema = v.picklist(['password', 'google', 'apple'])
+export const cloudAdminUserMethodSchema = v.picklist(['password', ...CLOUD_SOCIAL_PROVIDERS])
 export const cloudAdminUsersResponseSchema = v.object({
   users: v.array(cloudAdminUserSchema),
   ...listTotals(cloudAdminUserFilterSchema.options)

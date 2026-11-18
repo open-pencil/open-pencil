@@ -61,7 +61,7 @@ Settings live in a TOML file; environment variables supply secrets and tell the 
 2. Copy [`.env.example`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/.env.example) and set:
    - `OPENPENCIL_CLOUD_CONFIG`: the path to the TOML file;
    - `OPENPENCIL_CLOUD_SITE_DIR`: the path to `dist-cloud/`. Without it the server still runs its API, but the editor and the sign-in, account, and administration pages answer 404, and it warns at startup;
-   - the secrets the TOML names, by default `DATABASE_URL`, `BETTER_AUTH_SECRET`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY`, plus `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_PRIVATE_KEY`, `S3_SESSION_TOKEN`, `OPENPENCIL_CLOUD_SMTP_USER`, and `OPENPENCIL_CLOUD_SMTP_PASSWORD` when their sections are enabled.
+   - the secrets the TOML names, by default `DATABASE_URL`, `BETTER_AUTH_SECRET`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY`, plus `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_PRIVATE_KEY`, `GITHUB_CLIENT_SECRET`, `S3_SESSION_TOKEN`, `OPENPENCIL_CLOUD_SMTP_USER`, and `OPENPENCIL_CLOUD_SMTP_PASSWORD` when their sections are enabled.
 3. Start the server with the environment loaded, for example `node --env-file=.env dist-standalone/server.mjs`, or, installed from npm, `node --env-file=.env "$(command -v openpencil-cloud)"`.
 
 Use `{ from_env = "CUSTOM_NAME" }` in the TOML to read a secret from a different variable. A missing required secret stops startup and names the variable without printing a value.
@@ -92,6 +92,8 @@ Without `help_url`, help goes to the OpenPencil documentation. The addresses mus
 ## Editor versions
 
 When a server update needs a newer editor, set `deployment.minimum_editor_version`, such as `"0.17.0"`. An older desktop app then shows a banner offering its update instead of connecting, and the server answers its requests with `426 Upgrade Required`; a browser tab on an older editor offers a reload. Requests that name no editor version, from the CLI or MCP, are served as before.
+
+Turning on GitHub sign-in (`[authentication.providers.github]`) needs a minimum too. Editors from before GitHub sign-in cannot read the server once it offers GitHub: the oldest fail to connect, and the rest fail to open the account pages of anyone who signed in with GitHub. Set `minimum_editor_version` to an editor release that offers GitHub sign-in in the same change.
 
 Versions compare in SemVer order, where a pre-release comes before its release: `"0.18.0"` turns away `0.18.0-beta.2`. To let a release's betas and nightlies in, name the earliest one you accept, such as `"0.18.0-beta.1"`; nightlies come after their release's betas, so `"0.18.0-nightly.20261116"` admits nightlies from that day on but no betas. Editors before 0.18.0 cannot read a pre-release minimum and stop connecting, so name one only when the minimum is already 0.18.0 or later.
 

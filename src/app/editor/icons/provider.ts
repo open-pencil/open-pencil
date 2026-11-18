@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import { platform } from '@tauri-apps/plugin-os'
 
+import type { Editor } from '@open-pencil/core'
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import {
   createIconProvider,
@@ -12,6 +13,7 @@ import { createCanvasKitRasterCodec, renderNodesToImage } from '@open-pencil/cor
 
 import { browserWebFontFetch } from '@/app/editor/fonts/browser-fetch'
 import { withAbortSignal } from '@/app/runtime/abort'
+import { appPreferences } from '@/app/settings/preferences/store'
 import { tauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
 
@@ -56,7 +58,7 @@ function iconIndex(): ReturnType<typeof fetchIconIndex> {
  * is shared. When `signal` aborts, as a newer import supersedes this one, the import stops
  * waiting for its icons.
  */
-export function appIconMatcher(renderer: SkiaRenderer, signal: AbortSignal): IconMatcher {
+export function appIconMatcher(renderer: SkiaRenderer, signal?: AbortSignal): IconMatcher {
   const codec = createCanvasKitRasterCodec(renderer.ck)
   const matcher = createIconMatcher({
     index: iconIndex,
@@ -69,5 +71,16 @@ export function appIconMatcher(renderer: SkiaRenderer, signal: AbortSignal): Ico
       return png && codec.decode(png)
     }
   })
-  return (svgs) => withAbortSignal(matcher(svgs), signal)
+  return signal ? (svgs) => withAbortSignal(matcher(svgs), signal) : matcher
+}
+
+/**
+ * The matcher HTML brought into `editor` names its icons with, by import, paste, or Place; none
+ * when the setting is off or the editor has no renderer yet.
+ */
+export function importIconMatcher(editor: Editor, signal?: AbortSignal): IconMatcher | undefined {
+  const { renderer } = editor
+  return renderer && appPreferences.value.import.nameIcons
+    ? appIconMatcher(renderer, signal)
+    : undefined
 }

@@ -66,7 +66,7 @@ const legalStory = (template: string): Story => ({
 })
 
 export const SignIn = story(
-  `<PortalSignIn :host="host" mode="sign-in" :providers="['google', 'apple']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" />`
+  `<PortalSignIn :host="host" mode="sign-in" :providers="['google', 'apple', 'github']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" />`
 )
 export const SignInForTheDesktopApp = story(
   `<PortalSignIn :host="host" mode="sign-in" :providers="['google']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" returns-to="desktop" />`

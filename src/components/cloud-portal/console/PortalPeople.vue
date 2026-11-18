@@ -3,7 +3,12 @@ import { createColumnHelper } from '@tanstack/vue-table'
 import { compact } from 'es-toolkit'
 import { computed, h, ref } from 'vue'
 
-import type { CloudAdminUserFilter, CloudAdminUserMethod } from '@open-pencil/cloud/contract'
+import {
+  CLOUD_SOCIAL_PROVIDER_NAMES,
+  CLOUD_SOCIAL_PROVIDERS,
+  type CloudAdminUserFilter,
+  type CloudAdminUserMethod
+} from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import {
@@ -137,8 +142,10 @@ const filters = computed(() => [
 const methods = computed(() => [
   { value: 'any' as const, label: messages.value.signInAny },
   { value: 'password' as const, label: messages.value.password },
-  { value: 'google' as const, label: messages.value.providerGoogle },
-  { value: 'apple' as const, label: messages.value.providerApple }
+  ...CLOUD_SOCIAL_PROVIDERS.map((provider) => ({
+    value: provider,
+    label: CLOUD_SOCIAL_PROVIDER_NAMES[provider]
+  }))
 ])
 
 defineExpose({ reload: people.reload })

@@ -6,16 +6,10 @@ import {
   parseCloudDiscovery,
   type CloudDiscovery
 } from '#cloud/contract'
+import { configuredSocialProviders } from '#cloud/server/auth/social-providers'
 import { withoutTrailingSlash } from 'ufo'
 
 import type { CloudServerConfig } from './schema'
-
-export function configuredSocialProviders(config: CloudServerConfig): Array<'apple' | 'google'> {
-  return [
-    ...(config.appleClientId ? (['apple'] as const) : []),
-    ...(config.googleClientId ? (['google'] as const) : [])
-  ]
-}
 
 /**
  * The free plan billing compares its plans with: what an account takes before billing stores its

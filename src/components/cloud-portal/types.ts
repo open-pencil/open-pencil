@@ -4,6 +4,7 @@ import type {
   CloudAdminDocument,
   CloudAdminReportStatus,
   CloudSignInMethod,
+  CloudSocialProvider,
   DocumentReportReason,
   WorkspaceRole
 } from '@open-pencil/cloud/contract'
@@ -16,7 +17,7 @@ export type PortalSection = {
   count?: number
 }
 
-export type PortalSignInMethod = 'google' | 'apple'
+export type PortalSignInMethod = CloudSocialProvider
 
 export type AccessRequestStatus = 'pending' | 'approved' | 'rejected' | 'revoked'
 
