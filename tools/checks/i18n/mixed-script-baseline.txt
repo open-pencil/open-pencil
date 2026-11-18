@@ -762,11 +762,17 @@ ja:cloud.errorEditorOutdatedDescription
 ja:cloud.betaBanner
 ja:cloud.editorOutdatedBanner
 ja:cloud.updateOpenPencil
+ja:cloud.creditsLowBanner
+ja:cloud.creditsOutBanner
+ja:cloud.creditsOutUntilBanner
 zh-cn:cloud.errorEditorOutdatedHeading
 zh-cn:cloud.errorEditorOutdatedDescription
 zh-cn:cloud.betaBanner
 zh-cn:cloud.editorOutdatedBanner
 zh-cn:cloud.updateOpenPencil
+zh-cn:cloud.creditsLowBanner
+zh-cn:cloud.creditsOutBanner
+zh-cn:cloud.creditsOutUntilBanner
 ja:email.documentBlocked
 ja:email.invitationAction
 ja:email.invitationDesktop

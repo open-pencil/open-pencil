@@ -50,6 +50,7 @@ import { offerUsageStatsPrompt, startSharing, usageStatsPrompt } from '@/app/tel
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
 import {
   CloudBetaBanner,
+  CloudCreditsBanner,
   CloudCommunityBanner,
   CloudEditorUpdateBanner,
   CloudVersionDialog
@@ -311,6 +312,7 @@ onUnmounted(() => {
     <ColorSpaceBanner />
     <FontStatusBanner />
     <CloudBetaBanner />
+    <CloudCreditsBanner />
     <CloudEditorUpdateBanner />
     <CloudCommunityBanner />
     <RenameSelectionDialog />

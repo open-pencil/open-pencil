@@ -15,6 +15,7 @@ export {
   cloudAIClient,
   cloudAIWorkspaces,
   cloudBillingURL,
+  cloudMonthlyAllowance,
   type CloudAIWorkspace
 } from '../ai/access'
 export { cloudDocumentAddress } from '../documents/link'

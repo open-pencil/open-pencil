@@ -39,6 +39,10 @@ export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
   return []
 }
 
+export async function cloudMonthlyAllowance(): Promise<number | null> {
+  return null
+}
+
 export function startCloud(): () => void {
   return noop
 }

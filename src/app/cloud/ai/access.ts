@@ -74,3 +74,16 @@ export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
   if (failure) throw failure.reason
   return compact(checks.map((check) => (check.status === 'fulfilled' ? check.value : null)))
 }
+
+/**
+ * The credits a workspace's plan grants each month, or `null` when it grants none, sets no limit,
+ * or the server can't say.
+ */
+export async function cloudMonthlyAllowance(workspaceId: string): Promise<number | null> {
+  const home = homeAI.value
+  if (!home || !workspaceId) return null
+  const entitlements = await cloudAPIClient(home.server, home.discovery)
+    .getWorkspaceEntitlements(workspaceId)
+    .catch(() => null)
+  return entitlements?.features.cloudServices ? entitlements.limits.monthlyCreditAllowance : null
+}

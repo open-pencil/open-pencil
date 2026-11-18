@@ -20,9 +20,12 @@ function wallet(balance: number | null): CreditWallet {
   }
 }
 
-/** A Home server whose wallets answer when the test says so. */
+/**
+ * A Home server whose wallets answer when the test says so, for an account of its own, since
+ * views share what they read.
+ */
 function homeCloud() {
-  const identity = ref<string | null>('home:alice')
+  const identity = ref<string | null>(`home:${crypto.randomUUID()}`)
   const answers: Deferred<CreditWallet>[] = []
   const source: CloudBalanceSource = {
     identity,
@@ -138,5 +141,23 @@ describe('useCloudCreditBalance', () => {
 
     expect(home.answers).toHaveLength(0)
     expect(credits.balance.value).toBeNull()
+  })
+
+  test('shows every view of a workspace the balance the last read found', async () => {
+    const home = homeCloud()
+    const chat = show(home.source)
+    const banner = show(home.source)
+    home.answers[0]?.resolve(wallet(1200))
+    home.answers[1]?.resolve(wallet(1200))
+    await settle()
+
+    // A reply in the chat reads the balance again, and the banner shows what it found.
+    chat.replying.value = true
+    await settle()
+    chat.replying.value = false
+    await settle()
+    home.answers[2]?.resolve(wallet(900))
+    await settle()
+    expect(banner.balance.value).toBe(900)
   })
 })
