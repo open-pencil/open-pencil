@@ -1,22 +1,29 @@
-import type { Vector } from '@open-pencil/kiwi/fig'
+import type { Matrix, Vector } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 import type { InstanceOccurrence } from './occurrence/types'
 import { growInheritedOutlineScale } from './scale/outline'
 import { uniformScaleOf } from './types'
 
+export type PreConstraintTransforms = Map<InstanceOccurrence, Matrix>
+
 export function applyPlacedConstraints(
   root: InstanceOccurrence,
   base: InstanceOccurrence | null,
   source: NodeChange
-): void {
-  if (!base?.properties.size || !source.size) return
+): PreConstraintTransforms {
+  const preConstraint: PreConstraintTransforms = new Map()
+  if (!base?.properties.size || !source.size) {
+    return preConstraint
+  }
   const scale = uniformScaleOf(source)
   resizeFreeformOccurrence(
     root,
     { x: base.properties.size.x * scale, y: base.properties.size.y * scale },
-    source.size
+    source.size,
+    preConstraint
   )
+  return preConstraint
 }
 
 function constrainedAxis(
@@ -41,7 +48,8 @@ function constrainedAxis(
 export function resizeFreeformOccurrence(
   root: InstanceOccurrence,
   before: Vector,
-  after: Vector
+  after: Vector,
+  preConstraint: PreConstraintTransforms
 ): void {
   if (before.x === after.x && before.y === after.y) return
   const autoLayout = root.properties.stackMode && root.properties.stackMode !== 'NONE'
@@ -65,10 +73,11 @@ export function resizeFreeformOccurrence(
       props.verticalConstraint
     )
     const size = { x: x.size, y: y.size }
-    resizeFreeformOccurrence(child, props.size, size)
+    resizeFreeformOccurrence(child, props.size, size, preConstraint)
     if (props.type === 'VECTOR' && props.size.x > 0 && props.size.y > 0)
       growInheritedOutlineScale(child, size.x / props.size.x, size.y / props.size.y)
     props.size = size
+    preConstraint.set(child, transform)
     props.transform = { ...transform, m02: x.position, m12: y.position }
   }
 }
