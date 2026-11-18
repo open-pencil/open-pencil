@@ -248,8 +248,12 @@ const SIGN_IN_METHODS = [
   'other'
 ] as const
 export const cloudSignInMethodSchema = v.picklist(SIGN_IN_METHODS)
-/** A method a newer server names that this editor does not know reads as `other`. */
-const signInMethodResponseSchema = v.fallback(cloudSignInMethodSchema, 'other')
+/** A method a newer server names that this editor does not know reads as `other`; a value that is
+ * not a method name at all still fails. */
+const signInMethodResponseSchema = v.pipe(
+  v.string(),
+  v.transform((method) => (v.is(cloudSignInMethodSchema, method) ? method : ('other' as const)))
+)
 export const cloudAccountSessionSchema = v.object({
   id: v.string(),
   /** The session this request was made with. */

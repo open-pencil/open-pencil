@@ -42,9 +42,10 @@ team_id = "N7D7M3Q3CD"
 key_id = "CA37HQZJQ5"
 
 # Sign in with GitHub through the open-pencil organization's "OpenPencil Cloud" GitHub App, which
-# both deployments share; its client secret is OAUTH_GITHUB_CLIENT_SECRET. Production turns it on
-# once most editors come from a release with #2202: older ones fail discovery, or their account
-# pages, on a provider they do not know.
+# both deployments share; its client secret is OAUTH_GITHUB_CLIENT_SECRET. Production adds this
+# table only together with minimum_editor_version set to a release with #2202, which turns older
+# editors away: those before #2153 cannot read discovery once it lists GitHub, and those before
+# #2202 cannot read the account pages of someone who has a GitHub method or sign-in.
 [authentication.providers.github]
 client_id = "Iv23li8PkDEmgHf69oUW"
 

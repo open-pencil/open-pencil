@@ -50,5 +50,11 @@ describe('account contract', () => {
     expect(v.parse(cloudSignInsResponseSchema, { signIns: [signIn] }).signIns[0]?.method).toBe(
       'other'
     )
+    // A value that is not a method name still fails.
+    for (const method of [42, undefined]) {
+      expect(() =>
+        v.parse(cloudSignInsResponseSchema, { signIns: [{ ...signIn, method }] })
+      ).toThrow()
+    }
   })
 })
