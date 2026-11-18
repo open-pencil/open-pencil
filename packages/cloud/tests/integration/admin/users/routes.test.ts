@@ -71,7 +71,7 @@ async function server(userId: string, name: string) {
     undefined,
     { headers: { Origin: config.publicURL } }
   ).api.admin
-  const remove = async (methodId: string, spelling = userId) =>
+  const remove = async (methodId: string, spelling = userId): Promise<unknown> =>
     (
       await admin.users['remove-sign-in-method'].$post({ json: { userId: spelling, methodId } })
     ).json()
