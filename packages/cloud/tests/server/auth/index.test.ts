@@ -7,6 +7,7 @@ import {
   parseCloudServerConfig
 } from '#cloud/server'
 import type { CloudDatabase } from '#cloud/server'
+import { TRUSTED_SOCIAL_PROVIDERS } from '#cloud/server/auth/social-providers'
 import type { BetterAuthOptions } from 'better-auth'
 import {
   DummyDriver,
@@ -75,6 +76,12 @@ describe('Cloud authentication', () => {
     })
     // In the order the editor shows them.
     expect(configuredSocialProviders(config)).toEqual(['google', 'apple', 'github'])
+  })
+
+  test('links GitHub to an existing account only by an address GitHub verified', () => {
+    // A trusted provider links whatever it says of the address; GitHub can give one it has not
+    // verified, so Better Auth must check it.
+    expect(TRUSTED_SOCIAL_PROVIDERS).toEqual(['google', 'apple'])
   })
 
   test('retains explicit trusted client IP configuration', () => {
