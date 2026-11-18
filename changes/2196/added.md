@@ -1,0 +1,1 @@
+- Self-hosted Cloud error reports can name the signed-in account and the documents and workspaces involved, with `include_ids` in `[error_tracking]`; reports stay anonymous by default (#2196).
