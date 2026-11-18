@@ -20,7 +20,7 @@ import { portalSession, portalSignIn } from './sessions'
 
 /** One account's page in the console, and what administrators do about it from there. */
 const { userId } = defineProps<{ userId: string }>()
-const emit = defineEmits<{ back: [] }>()
+const emit = defineEmits<{ back: []; deleted: [userId: string] }>()
 const portal = usePortal()
 const messages = useCloudPortalMessages()
 const dates = useDateFormat()
@@ -69,8 +69,8 @@ function act(kind: PortalPersonAction, reason?: string) {
   if (!person) return
   void action.run(async () => {
     await personAction(portal.api, person, kind, reason)
-    // A deleted account has no page left; the list of people is where the administrator goes.
-    if (kind === 'delete') emit('back')
+    // A deleted account has no page left; the parent leaves it if it is still the one shown.
+    if (kind === 'delete') emit('deleted', person.id)
   })
 }
 

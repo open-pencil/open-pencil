@@ -637,7 +637,7 @@
   "removeSignInMethodDescription": "Ta osoba nie zaloguje się już tą metodą, dopóki jej ponownie nie doda, i dostanie o tym e-mail. Zalogowane urządzenia pozostaną zalogowane, dopóki nie wylogujesz jej ze wszystkich urządzeń.",
   "deletePersonAccount": "Usuń konto",
   "deletePersonAccountHeading": "Usunąć konto użytkownika {name}?",
-  "deletePersonAccountDescription": "Prośba o dołączenie nigdy nie została zatwierdzona, więc nic nie zostaje: konto, sposoby logowania i prośba zostaną usunięte. Ta osoba może zarejestrować się ponownie.",
+  "deletePersonAccountDescription": "Prośba o dołączenie nigdy nie została zatwierdzona, więc konto, sposoby logowania i prośba zostaną usunięte. Dziennik aktywności zachowa imię i adres e-mail. Ta osoba może zarejestrować się ponownie.",
   "activitySignInMethodRemoved": "— usunięcie metody logowania:",
   "signInAny": "Dowolne logowanie"
 }

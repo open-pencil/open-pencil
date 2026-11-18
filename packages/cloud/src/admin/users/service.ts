@@ -461,20 +461,40 @@ export function createAdminUserService(
       refuseSelf(actorId, userId, 'delete')
       const user = await database
         .selectFrom('user')
-        .select(['id', 'email', 'name', 'role'])
+        .select(['id', 'email', 'name'])
         .where('id', '=', userId)
         .executeTakeFirstOrThrow()
       await deletion.remove(user, {
-        // Under the request's lock, so an approval cannot land between the check and the delete.
+        // Under the account's and the request's locks, so neither a promotion nor an approval can
+        // land between the check and the delete.
         async before(transaction) {
+          const current = await transaction
+            .selectFrom('user')
+            .select('role')
+            .where('id', '=', userId)
+            .forUpdate()
+            .executeTakeFirstOrThrow()
           const request = await transaction
             .selectFrom('enrollment')
-            .select('status')
+            .select(['id', 'status', 'approvedUserId'])
             .where('emailNormalized', '=', normalizeEnrollmentEmail(user.email))
             .forUpdate()
             .executeTakeFirst()
+          // A request that is waiting again may have been approved before and removed: that account
+          // got in, and leaves only by its owner's hand.
+          const approvedBefore =
+            request !== undefined &&
+            (request.approvedUserId !== null ||
+              (await transaction
+                .selectFrom('adminAuditEvent')
+                .select('id')
+                .where('action', '=', 'enrollment.approved')
+                .where('subjectType', '=', 'enrollment')
+                .where('subjectId', '=', request.id)
+                .executeTakeFirst()) !== undefined)
           if (
-            user.role === 'admin' ||
+            current.role === 'admin' ||
+            approvedBefore ||
             (request?.status !== 'pending' && request?.status !== 'rejected')
           ) {
             throw new AdminDomainError(

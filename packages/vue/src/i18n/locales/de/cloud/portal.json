@@ -627,7 +627,7 @@
   "removeSignInMethodDescription": "Die Person kann sich damit nicht mehr anmelden, bis sie es wieder hinzufügt, und erhält dazu eine E-Mail. Bereits angemeldete Geräte bleiben angemeldet, bis du sie überall abmeldest.",
   "deletePersonAccount": "Konto löschen",
   "deletePersonAccountHeading": "Konto von {name} löschen?",
-  "deletePersonAccountDescription": "Die Beitrittsanfrage wurde nie genehmigt, daher bleibt nichts davon: Das Konto, seine Anmeldemethoden und die Anfrage werden gelöscht. Die Person kann sich erneut registrieren.",
+  "deletePersonAccountDescription": "Die Beitrittsanfrage wurde nie genehmigt, daher werden das Konto, seine Anmeldemethoden und die Anfrage gelöscht. Das Aktivitätsprotokoll behält Name und E-Mail-Adresse. Die Person kann sich erneut registrieren.",
   "activitySignInMethodRemoved": "entfernte eine Anmeldemethode von",
   "signInAny": "Jede Anmeldung"
 }

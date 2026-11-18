@@ -627,7 +627,7 @@
   "removeSignInMethodDescription": "No podrá volver a iniciar sesión con este método salvo que lo añada de nuevo, y recibirá un correo avisándole. Los dispositivos con la sesión iniciada siguen así hasta que cierres todas sus sesiones.",
   "deletePersonAccount": "Eliminar cuenta",
   "deletePersonAccountHeading": "¿Eliminar la cuenta de {name}?",
-  "deletePersonAccountDescription": "Su solicitud para unirse nunca se aprobó, así que no queda nada suyo: se eliminan la cuenta, sus formas de iniciar sesión y su solicitud. Puede volver a registrarse.",
+  "deletePersonAccountDescription": "Su solicitud para unirse nunca se aprobó, así que se eliminan la cuenta, sus formas de iniciar sesión y su solicitud. El registro de actividad conserva su nombre y correo. Puede volver a registrarse.",
   "activitySignInMethodRemoved": "quitó una forma de iniciar sesión de",
   "signInAny": "Cualquier inicio de sesión"
 }

@@ -263,4 +263,17 @@ describe('admin people routes', () => {
     ).toHaveLength(1)
     expect(await database.selectFrom('adminAuditEvent').select('id').execute()).toEqual([])
   })
+
+  test('refuse to delete an account that was approved once, even while it waits again', async () => {
+    const { admin, request, database } = await server(GRACE_ID, 'Grace')
+    // Approved and bound to the account, then removed, and asked again: pending, not new.
+    await request('pending')
+    await database.updateTable('enrollment').set({ approvedUserId: GRACE_ID }).execute()
+
+    const refused = await admin.users.delete.$post({ json: { userId: GRACE_ID } })
+    expect(refused.status).toBe(409)
+    expect(
+      await database.selectFrom('user').select('id').where('id', '=', GRACE_ID).execute()
+    ).toHaveLength(1)
+  })
 })

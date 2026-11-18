@@ -617,7 +617,7 @@
   "removeSignInMethodDescription": "再度追加されるまで、この方法ではサインインできなくなります。本人にはメールでお知らせします。サインイン済みのデバイスは、すべての場所からサインアウトさせるまでそのままです。",
   "deletePersonAccount": "アカウントを削除",
   "deletePersonAccountHeading": "{name} のアカウントを削除しますか？",
-  "deletePersonAccountDescription": "参加リクエストは一度も承認されていないため、何も残りません。アカウント、サインイン方法、リクエストが削除されます。再登録は可能です。",
+  "deletePersonAccountDescription": "参加リクエストは一度も承認されていないため、アカウント、サインイン方法、リクエストが削除されます。アクティビティログには名前とメールアドレスが残ります。再登録は可能です。",
   "activitySignInMethodRemoved": "がサインイン方法を削除:",
   "signInAny": "すべてのサインイン"
 }

@@ -32,5 +32,5 @@ export const personPortalMessageDefaults = {
   deletePersonAccount: 'Delete account',
   deletePersonAccountHeading: params('Delete {name}’s account?'),
   deletePersonAccountDescription:
-    'Their request to join was never approved, so nothing of theirs stays: the account, its ways to sign in, and its request go. They can sign up again.'
+    'Their request to join was never approved, so their account, its ways to sign in, and its request are deleted. The activity log keeps their name and email. They can sign up again.'
 }
