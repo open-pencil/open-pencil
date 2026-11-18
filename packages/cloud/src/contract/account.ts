@@ -31,10 +31,19 @@ export const cloudAccountStatusResponseSchema = v.object({
 /** Accepting the server's terms: the version the person read, which must be the current one. */
 export const cloudTermsAcceptanceSchema = v.object({ version: v.pipe(v.string(), v.minLength(1)) })
 
-/** The providers a person can sign in with besides a password, which this editor has buttons for. */
+/**
+ * The providers a person can sign in with besides a password, which this editor has buttons for,
+ * in the order it shows them. Every list of providers in Cloud derives from this one.
+ */
 export const CLOUD_SOCIAL_PROVIDERS = ['google', 'apple', 'github'] as const
 export const cloudSocialProviderSchema = v.picklist(CLOUD_SOCIAL_PROVIDERS)
 export type CloudSocialProvider = v.InferOutput<typeof cloudSocialProviderSchema>
+/** Each provider's name, as its owner writes it in every language. */
+export const CLOUD_SOCIAL_PROVIDER_NAMES: Record<CloudSocialProvider, string> = {
+  google: 'Google',
+  apple: 'Apple',
+  github: 'GitHub'
+}
 export const cloudAuthenticationProviderSchema = v.picklist([
   'credential',
   ...CLOUD_SOCIAL_PROVIDERS
@@ -51,6 +60,13 @@ export function isKnownSocialProvider(provider: string): provider is CloudSocial
   return (CLOUD_SOCIAL_PROVIDERS as readonly string[]).includes(provider)
 }
 
+/** Whether `provider` is a way to sign in this editor knows: a password or a known provider. */
+export function isKnownAuthenticationProvider(
+  provider: string
+): provider is CloudAuthenticationProvider {
+  return provider === 'credential' || isKnownSocialProvider(provider)
+}
+
 /**
  * A newer server may list a provider this editor has no words or button for: those entries are
  * left out rather than failing the whole response, and anything else malformed still fails.
@@ -58,9 +74,7 @@ export function isKnownSocialProvider(provider: string): provider is CloudSocial
 export const cloudAuthenticationMethodsResponseSchema = v.object({
   methods: v.pipe(
     v.array(v.looseObject({ provider: v.string() })),
-    v.filterItems(
-      (method) => method.provider === 'credential' || isKnownSocialProvider(method.provider)
-    ),
+    v.filterItems((method) => isKnownAuthenticationProvider(method.provider)),
     v.array(cloudAuthenticationMethodSchema)
   ),
   availableSocialProviders: v.pipe(
@@ -238,9 +252,7 @@ export const cloudEmailChangeSchema = v.object({
 /** How a sign-in was made: the method it used, or the desktop app's approved code. */
 const SIGN_IN_METHODS = [
   'password',
-  'google',
-  'apple',
-  'github',
+  ...CLOUD_SOCIAL_PROVIDERS,
   'passkey',
   'two-step',
   'email-link',

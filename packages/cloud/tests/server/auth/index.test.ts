@@ -73,7 +73,8 @@ describe('Cloud authentication', () => {
       githubClientId: 'github-client',
       githubClientSecret: 'github-secret'
     })
-    expect(configuredSocialProviders(config)).toEqual(['apple', 'google', 'github'])
+    // In the order the editor shows them.
+    expect(configuredSocialProviders(config)).toEqual(['google', 'apple', 'github'])
   })
 
   test('retains explicit trusted client IP configuration', () => {

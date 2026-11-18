@@ -1,3 +1,4 @@
+import { CLOUD_SOCIAL_PROVIDERS, type CloudSocialProvider } from '#cloud/contract/account'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { BetterAuthOptions } from 'better-auth'
 import { importPKCS8, SignJWT } from 'jose'
@@ -26,36 +27,50 @@ async function generateAppleClientSecret(config: CloudServerConfig): Promise<str
     .sign(privateKey)
 }
 
-/** The sign-in providers the deployment configures; Apple's secret is signed when it is needed. */
+type ProviderOptions = NonNullable<BetterAuthOptions['socialProviders']>
+
+/**
+ * How each provider is set up from the deployment's config, or `undefined` where it is not: the
+ * one place a new provider's server side goes, beside its config fields.
+ */
+const PROVIDERS: {
+  [Provider in CloudSocialProvider]: (config: CloudServerConfig) => ProviderOptions[Provider]
+} = {
+  google: (config) =>
+    config.googleClientId && config.googleClientSecret
+      ? { clientId: config.googleClientId, clientSecret: config.googleClientSecret }
+      : undefined,
+  // Apple's client secret is a token the server signs, so it is made when Better Auth asks.
+  apple: (config) =>
+    config.appleClientId
+      ? async () => ({
+          clientId: config.appleClientId ?? '',
+          clientSecret: await generateAppleClientSecret(config),
+          ...(config.appleAppBundleIdentifier && {
+            appBundleIdentifier: config.appleAppBundleIdentifier
+          })
+        })
+      : undefined,
+  github: (config) =>
+    config.githubClientId && config.githubClientSecret
+      ? { clientId: config.githubClientId, clientSecret: config.githubClientSecret }
+      : undefined
+}
+
+/**
+ * Providers whose verified email links a sign-in to the account with that email: each of these
+ * reports whether it verified the address it gives.
+ */
+export const TRUSTED_SOCIAL_PROVIDERS: CloudSocialProvider[] = [...CLOUD_SOCIAL_PROVIDERS]
+
+/** The providers the deployment configures, in the order the editor shows them. */
+export function configuredSocialProviders(config: CloudServerConfig): CloudSocialProvider[] {
+  return CLOUD_SOCIAL_PROVIDERS.filter((provider) => PROVIDERS[provider](config) !== undefined)
+}
+
+/** Better Auth's options for the providers the deployment configures. */
 export function socialProviders(config: CloudServerConfig): BetterAuthOptions['socialProviders'] {
-  const providers: BetterAuthOptions['socialProviders'] = {}
-  if (config.googleClientId && config.googleClientSecret) {
-    providers.google = {
-      clientId: config.googleClientId,
-      clientSecret: config.googleClientSecret
-    }
-  }
-  if (config.appleClientId) {
-    providers.apple = async () => {
-      const provider: {
-        clientId: string
-        clientSecret: string
-        appBundleIdentifier?: string
-      } = {
-        clientId: config.appleClientId ?? '',
-        clientSecret: await generateAppleClientSecret(config)
-      }
-      if (config.appleAppBundleIdentifier) {
-        provider.appBundleIdentifier = config.appleAppBundleIdentifier
-      }
-      return provider
-    }
-  }
-  if (config.githubClientId && config.githubClientSecret) {
-    providers.github = {
-      clientId: config.githubClientId,
-      clientSecret: config.githubClientSecret
-    }
-  }
-  return providers
+  return Object.fromEntries(
+    configuredSocialProviders(config).map((provider) => [provider, PROVIDERS[provider](config)])
+  )
 }

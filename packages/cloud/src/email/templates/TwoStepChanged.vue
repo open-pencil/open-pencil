@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { CLOUD_SOCIAL_PROVIDER_NAMES, isKnownSocialProvider } from '#cloud/contract'
+
 import type { TwoStepChange, TwoStepChangedPayload } from '../schema'
 import BrandEmail from './BrandEmail.vue'
 import EmailText from './EmailText.vue'
@@ -13,13 +15,11 @@ const { payload } = defineProps<{ payload: TwoStepChangedPayload }>()
 const localization = useEmailLocalization()
 const { t } = localization
 // Provider names stay as their owners write them; a password is named in the reader's words.
-const methods: Record<string, string> = {
-  credential: t.signInMethodPassword,
-  google: 'Google',
-  apple: 'Apple',
-  github: 'GitHub'
+function methodName(provider: string): string {
+  if (provider === 'credential') return t.signInMethodPassword
+  return isKnownSocialProvider(provider) ? CLOUD_SOCIAL_PROVIDER_NAMES[provider] : provider
 }
-const method = payload.method ? (methods[payload.method] ?? payload.method) : ''
+const method = payload.method ? methodName(payload.method) : ''
 const changes: Record<TwoStepChange, { heading: string; message: string }> = {
   'authenticator-on': { heading: t.authenticatorOnHeading, message: t.authenticatorOn },
   'authenticator-off': { heading: t.authenticatorOffHeading, message: t.authenticatorOff },

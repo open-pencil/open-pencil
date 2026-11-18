@@ -32,7 +32,7 @@ import { betterAuthLogger } from './logger'
 import { removeSignInMethod, signInMethodHooks, signInProviders } from './methods'
 import { createMFAAssuranceService, createProofRecorder, verifySecondFactor } from './mfa-assurance'
 import { passwordOptions } from './passwords'
-import { APPLE_AUDIENCE, socialProviders } from './social-providers'
+import { APPLE_AUDIENCE, socialProviders, TRUSTED_SOCIAL_PROVIDERS } from './social-providers'
 
 const BETTER_AUTH_SCHEMA_VERSION = '1.7.7+mfa.1'
 const DAY_SECONDS = 24 * 60 * 60
@@ -134,7 +134,7 @@ export function createBetterAuthAdapter(
       accountLinking: {
         enabled: true,
         disableImplicitLinking: false,
-        trustedProviders: ['google', 'apple', 'github'],
+        trustedProviders: TRUSTED_SOCIAL_PROVIDERS,
         allowDifferentEmails: false,
         allowUnlinkingAll: false,
         requireLocalEmailVerified: true

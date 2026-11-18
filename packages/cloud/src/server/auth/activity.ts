@@ -1,4 +1,9 @@
-import type { CloudAccountSession, CloudSignIn, CloudSignInMethod } from '#cloud/contract'
+import {
+  isKnownSocialProvider,
+  type CloudAccountSession,
+  type CloudSignIn,
+  type CloudSignInMethod
+} from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
 import { dateString } from '#cloud/server/sharing/contracts'
 import type { BetterAuthPlugin } from 'better-auth'
@@ -47,9 +52,7 @@ export function signInMethod(
 ): CloudSignInMethod | null {
   if (isAuthEndpoint(endpoint.path, CORE_AUTH_PATHS.callbackOAuth)) {
     const provider = endpoint.params?.id
-    return provider === 'google' || provider === 'apple' || provider === 'github'
-      ? provider
-      : 'other'
+    return provider && isKnownSocialProvider(provider) ? provider : 'other'
   }
   return methods.find(([path]) => isAuthEndpoint(endpoint.path, path))?.[1] ?? null
 }

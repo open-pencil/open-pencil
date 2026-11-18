@@ -64,9 +64,8 @@ export const cloudMessageDefaults = {
   errorExpiredDescription: 'It wasn’t approved in time. Start again to get a new one.',
   errorSignInFailedHeading: 'Couldn’t sign in',
   errorSignInFailedDescription: 'The server didn’t finish signing you in. Try again in a moment.',
-  continueWithGoogle: 'Continue with Google',
-  continueWithApple: 'Continue with Apple',
-  continueWithGithub: 'Continue with GitHub',
+  /** A sign-in provider's button; `provider` is its name, such as Google. */
+  continueWith: params('Continue with {provider}'),
   continueWithEmail: 'Continue with email',
   signInNoteDesktop: 'Your browser opens to finish signing in, then you come back here.',
   signInNoteBrowser: 'You come back to this tab after signing in.',
