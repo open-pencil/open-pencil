@@ -208,7 +208,9 @@ const rawCloudServerConfigSchema = v.object({
     v.object({
       provider: v.literal('posthog'),
       host: httpURLSchema,
-      projectAPIKey: v.pipe(v.string(), v.trim(), v.minLength(1))
+      projectAPIKey: v.pipe(v.string(), v.trim(), v.minLength(1)),
+      /** Error reports name the account and records involved; off unless a deployment sets it. */
+      includeIds: v.optional(v.boolean(), false)
     })
   )
 })

@@ -305,7 +305,12 @@ provider = "posthog"
     expect(
       parseCloudDeploymentTOML(tracked, { ...environment, POSTHOG_PROJECT_API_KEY: 'phc_test' })
         .errorTracking
-    ).toEqual({ provider: 'posthog', host: 'https://eu.i.posthog.com', projectAPIKey: 'phc_test' })
+    ).toEqual({
+      provider: 'posthog',
+      host: 'https://eu.i.posthog.com',
+      projectAPIKey: 'phc_test',
+      includeIds: false
+    })
 
     const inline = tracked.replace(
       'provider = "posthog"',
@@ -314,8 +319,15 @@ provider = "posthog"
     expect(parseCloudDeploymentTOML(inline, environment).errorTracking).toEqual({
       provider: 'posthog',
       host: 'https://eu.i.posthog.com',
-      projectAPIKey: 'phc_inline'
+      projectAPIKey: 'phc_inline',
+      includeIds: false
     })
+    expect(
+      parseCloudDeploymentTOML(
+        inline.replace('provider = "posthog"', 'provider = "posthog"\ninclude_ids = true'),
+        environment
+      ).errorTracking?.includeIds
+    ).toBe(true)
   })
 
   test('advertises services and billing only when configured', () => {

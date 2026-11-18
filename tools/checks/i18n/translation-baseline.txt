@@ -716,3 +716,5 @@ pl:cloudPortal.methodProvider
 pt-br:cloudPortal.methodProvider
 ru:cloudPortal.methodProvider
 zh-cn:cloudPortal.methodProvider
+de:settings.importing
+pl:settings.importing

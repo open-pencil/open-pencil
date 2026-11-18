@@ -3,6 +3,7 @@ import { loggedError, writeJSONLine, type CloudLogWriter } from '#cloud/server/l
 import type { Context, ErrorHandler } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { routePath } from 'hono/route'
+import * as v from 'valibot'
 
 /** Where the server caught an error. */
 export const CLOUD_ERROR_SOURCES = [
@@ -17,8 +18,10 @@ export const CLOUD_ERROR_SOURCES = [
 export type CloudErrorSource = (typeof CLOUD_ERROR_SOURCES)[number]
 
 /**
- * What the server knows about a caught error; never who made the request or what it carried. For a
- * request: its method, the route pattern it matched (not the path with its IDs), and its ID.
+ * What the server knows about a caught error. For a request: its method, the route pattern it
+ * matched, its ID, the signed-in user's account ID, and the IDs of the records its path names;
+ * never what it carried. Error tracking sends the account and record IDs only where the
+ * deployment's `[error_tracking]` sets `include_ids`; the server's own log always has them.
  */
 export type CloudErrorContext = ErrorReportContext<CloudErrorSource>
 
@@ -45,6 +48,8 @@ export function createLoggingErrorReporter(
         method: context.method,
         route: context.route,
         requestId: context.requestId,
+        userId: context.userId,
+        ...context.resources,
         error: loggedError(error)
       })
     } catch (failure) {
@@ -68,13 +73,53 @@ export function reportCloudError(
   return (reporter ?? logOnly)(error, { ...context, message })
 }
 
+/**
+ * Path parameters that name a record by its ID. Others are left out: an invitation's or a
+ * continuation's ID is the link that grants it, and an OAuth callback's names a provider.
+ */
+const RECORD_PARAMETERS = [
+  'documentId',
+  'workspaceId',
+  'threadId',
+  'commentId',
+  'versionId',
+  'revisionId',
+  'shareId',
+  'uploadId'
+] as const
+
+const validatedParametersSchema = v.record(v.string(), v.unknown())
+
+/**
+ * The record IDs the request's path named, as its route's parameter validator accepted them: a
+ * path no validator checked names none, so what a caller typed never reaches a report.
+ */
+function requestResources(context: Context): Record<string, string> {
+  const validated = v.safeParse(validatedParametersSchema, context.req.valid('param' as never))
+  if (!validated.success) return {}
+  return Object.fromEntries(
+    RECORD_PARAMETERS.flatMap((name) => {
+      const id = validated.output[name]
+      return typeof id === 'string' ? [[name, id]] : []
+    })
+  )
+}
+
 function requestContext(context: Context): CloudErrorContext {
   const requestId: unknown = context.get('requestId')
+  const actor: unknown = context.get('actor')
+  const resources = requestResources(context)
+  const userId =
+    actor && typeof actor === 'object' && 'userId' in actor && typeof actor.userId === 'string'
+      ? actor.userId
+      : undefined
   return {
     source: 'request',
     method: context.req.method,
     route: routePath(context),
-    ...(typeof requestId === 'string' && { requestId })
+    ...(Object.keys(resources).length > 0 && { resources }),
+    ...(typeof requestId === 'string' && { requestId }),
+    ...(userId && { userId })
   }
 }
 

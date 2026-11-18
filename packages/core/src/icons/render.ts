@@ -91,17 +91,19 @@ function scaledPaths(icon: IconData, size: number): IconPath[] {
 
 /**
  * Draws an icon into a frame that already exists, `size` square at its origin, and records the
- * icon on it, as for one placed with {@link placeIcon}. The icon may have been built at any size.
+ * icon on it, as for one placed with {@link placeIcon}, unless `identity` is off, as for artwork
+ * with no name in a set. The icon may have been built at any size.
  */
 export function drawIcon(
   graph: SceneGraph,
   frameId: string,
   icon: IconData,
   size: number,
-  color: Color
+  color: Color,
+  { identity = true }: { identity?: boolean } = {}
 ): void {
   for (const path of scaledPaths(icon, size)) addPath(graph, frameId, path, color)
-  recordIcon(graph, frameId, `${icon.prefix}:${icon.name}`, icon.options)
+  if (identity) recordIcon(graph, frameId, `${icon.prefix}:${icon.name}`, icon.options)
 }
 
 /**

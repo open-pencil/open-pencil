@@ -5,10 +5,11 @@ import { settingsDialogAnchor, type SettingsAnchor } from '@/app/settings/dialog
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import ToolbarSettingsPanel from '@/components/settings/toolbar/ToolbarSettingsPanel.vue'
 
+import ImportSettingsSection from './ImportSettingsSection.vue'
 import NavigationSettingsSection from './NavigationSettingsSection.vue'
 import SnappingSettingsSection from './SnappingSettingsSection.vue'
 
-/** How the canvas and its tools behave: snapping, navigation, and the toolbar. */
+/** How the canvas and its tools behave: snapping, navigation, importing, and the toolbar. */
 const toolbar = useTemplateRef<HTMLElement>('toolbar')
 
 // Customize toolbar opens this page on the toolbar.
@@ -29,6 +30,7 @@ watch(
     <div class="flex flex-col gap-6">
       <SnappingSettingsSection />
       <NavigationSettingsSection />
+      <ImportSettingsSection />
       <div ref="toolbar" class="scroll-mt-4">
         <ToolbarSettingsPanel />
       </div>

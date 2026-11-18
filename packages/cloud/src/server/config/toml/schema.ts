@@ -311,7 +311,9 @@ export const cloudDeploymentConfigSchema = v.strictObject({
       host: v.optional(urlSchema, POSTHOG_DEFAULT_HOST),
       project_api_key: v.optional(configurableTextSchema, {
         from_env: DEFAULT_SECRET_NAMES.posthogProjectAPIKey
-      })
+      }),
+      /** Send the account and record IDs an error involved; off, reports name neither. */
+      include_ids: v.optional(v.boolean(), false)
     })
   )
 })

@@ -111,12 +111,15 @@ export function createDocumentCleanupService(
       } catch (error) {
         result.failed++
         result.failures.push(error)
-        // Only the document's ID: its name and the people on it stay out of error tracking.
+        // Only the document's and its workspace's IDs: its name and the people on it stay out.
         await reportCloudError(
           options.reportError,
           `Cleaning up document ${document.id} failed`,
           error,
-          { source: 'cleanup' }
+          {
+            source: 'cleanup',
+            resources: { documentId: document.id, workspaceId: document.workspaceId }
+          }
         )
         // Out of Trash already, a document whose files are partly gone is never restorable; the
         // next pass tries again.

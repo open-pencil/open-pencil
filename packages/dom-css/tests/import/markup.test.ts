@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
 import { parseHTMLDocument } from '#dom-css/import/markup'
+import type { DesignNode } from '#dom-css/types'
 
 describe('parseHTMLDocument', () => {
   it('parses HTML with inline styles', () => {
@@ -46,5 +47,15 @@ describe('parseHTMLDocument', () => {
         ? second.children.map((c) => (c.type === 'text' ? c.text : c.tagName))
         : []
     ).toEqual(['B ', 'b'])
+  })
+  it('keeps the case of SVG names, which SVG needs, and lowercases HTML ones', () => {
+    const document = parseHTMLDocument(
+      '<DIV><svg viewBox="0 0 1 1"><clipPath id="c"><rect/></clipPath><linearGradient id="g"/></svg></DIV>'
+    )
+    const [div] = document.children
+    const tags = (node: DesignNode): string[] =>
+      node.type === 'element' ? [node.tagName, ...node.children.flatMap(tags)] : []
+
+    expect(tags(div)).toEqual(['div', 'svg', 'clipPath', 'rect', 'linearGradient'])
   })
 })

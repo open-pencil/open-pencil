@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { noop } from 'es-toolkit'
+
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 
 import { createIconifyAPIClient } from '#core/icons/api'
@@ -61,15 +63,17 @@ const LIST = {
 
 /**
  * A provider over a fake API that serves `SET`, `CATALOGUE`, and `LIST`, counting its requests.
- * `failing` lists paths that answer 500 until removed.
+ * `failing` lists paths that answer 500 until removed, and `stalling` paths that never answer.
  */
 function setup() {
   const requests: string[] = []
   const failing = new Set<string>()
+  const stalling = new Set<string>()
   const fetcher = async (input: RequestInfo | URL) => {
     const url = new URL(input instanceof Request ? input.url : input)
     requests.push(url.pathname + url.search)
     if (failing.has(url.pathname)) return new Response('', { status: 500 })
+    if (stalling.has(url.pathname)) return new Promise<Response>(noop)
     if (url.pathname === '/collections') return Response.json(CATALOGUE)
     if (url.pathname === '/collection') return Response.json(LIST)
     return Response.json(DRAWN_SETS[url.pathname] ?? SET)
@@ -77,7 +81,7 @@ function setup() {
   const provider = createIconifyProvider(
     createIconifyAPIClient(fetcher as typeof fetch, 'https://icons.test')
   )
-  return { provider, requests, failing }
+  return { provider, requests, failing, stalling }
 }
 
 describe('Iconify provider', () => {
@@ -149,6 +153,25 @@ describe('Iconify provider', () => {
     failing.clear()
     expect((await provider.previews(['test:square'])).has('test:square')).toBe(true)
     expect(requests).toHaveLength(2)
+  })
+
+  test('previews show the icons that loaded when another request fails; placing reports it', async () => {
+    const { provider, failing } = setup()
+    failing.add('/bi.json')
+
+    const previews = await provider.previews(['test:square', 'bi:square'])
+    expect([...previews.keys()]).toEqual(['test:square'])
+    expect(await provider.icons(['test:square', 'bi:square'], 24).catch(String)).toContain('500')
+  })
+
+  test('placing icons reports a failed request without waiting for the others', async () => {
+    const { provider, requests, failing, stalling } = setup()
+    failing.add('/bi.json')
+    stalling.add('/test.json')
+
+    expect(await provider.icons(['bi:square', 'test:square'], 24).catch(String)).toContain('500')
+    // Both requests were on their way, so the failure did not wait for the stalled one.
+    expect(requests.some((request) => request.startsWith('/test.json'))).toBe(true)
   })
 
   test('a name without a set is refused', async () => {

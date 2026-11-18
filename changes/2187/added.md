@@ -1,0 +1,1 @@
+- A failed autosave stays shown with Retry save until the document saves, and sends a system notification while you are away; turn it off in Settings › Notifications (#2187).
