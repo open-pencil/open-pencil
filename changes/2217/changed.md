@@ -1,1 +1,0 @@
-- `@open-pencil/std`, OpenPencil's own standard library beside es-toolkit: deadlines, backoff, and lengths of time, secure randomness, array helpers safe for large inputs, and JSON types, with no dependencies. `@open-pencil/scene-graph` no longer exports `random` and `arrays`, or the `JSON*` types from `primitives`; import them from `@open-pencil/std` (#2217).
