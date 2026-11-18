@@ -27,5 +27,9 @@
   "commentDeleted": "Комментарий удалён",
   "hideComments": "Скрыть комментарии",
   "mentionPeople": "Кого упомянуть",
-  "unread": "Не прочитано"
+  "unread": "Не прочитано",
+  "notifyMention": "Упоминания в комментариях",
+  "notifyReply": "Ответы на ваши комментарии",
+  "notifyReplyHint": "Кто-то отвечает в ветке комментариев, где вы писали.",
+  "notifyTitle": "{author} · {document}"
 }

@@ -2,10 +2,10 @@
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { commentPreview } from '@/app/comments/format'
+import RelativeTime from '@/components/date/RelativeTime.vue'
 import PersonAvatar from '@/components/presence/PersonAvatar.vue'
 
 import { useCommentAuthor } from './author'
-import CommentTime from './CommentTime.vue'
 import { comments } from './ui'
 
 /**
@@ -60,7 +60,7 @@ const ui = comments()
           <span :class="ui.pinPreviewBody()">
             <span :class="ui.messageMeta()">
               <span :class="ui.messageAuthor()">{{ author }}</span>
-              <CommentTime v-if="at" :at="at" :class="ui.messageTime()" />
+              <RelativeTime v-if="at" :at="at" :class="ui.messageTime()" />
             </span>
             <span :class="ui.pinText()">{{ commentPreview(text) }}</span>
           </span>

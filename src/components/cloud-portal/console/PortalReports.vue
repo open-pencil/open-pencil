@@ -13,6 +13,7 @@ import {
   type PortalTableFeatures
 } from '@/app/cloud-portal/list'
 
+import PortalDocumentCell from '../table/PortalDocumentCell.vue'
 import PortalRowMenu from '../table/PortalRowMenu.vue'
 import PortalStatusCell from '../table/PortalStatusCell.vue'
 import PortalTable from '../table/PortalTable.vue'
@@ -71,13 +72,14 @@ const reports = usePortalList<CloudAdminReportFilter, PortalReportRow>({
     column.display({
       id: 'document',
       header: () => messages.value.columnDocument,
-      meta: { class: 'w-1/4' },
+      meta: { role: 'subject', always: true },
       cell: ({ row: { original: report } }) =>
-        h(PortalTextCell, {
-          text: report.document.name,
-          strong: true,
-          badge: report.document.takenDown ? messages.value.takenDown : null,
-          detail: report.document.workspace
+        h(PortalDocumentCell, {
+          name: report.document.name,
+          kind: report.document.kind,
+          workspace: report.document.workspace,
+          thumbnail: report.document.thumbnail,
+          badge: report.document.takenDown ? messages.value.takenDown : null
         })
     }),
     column.display({
@@ -97,12 +99,12 @@ const reports = usePortalList<CloudAdminReportFilter, PortalReportRow>({
     }),
     column.accessor('reportedOn', {
       header: () => messages.value.columnReported,
-      meta: { class: 'hidden w-28 whitespace-nowrap text-muted @xl/table:table-cell' }
+      meta: { role: 'date' }
     }),
     column.display({
       id: 'status',
       header: () => messages.value.columnStatus,
-      meta: { class: 'hidden w-32 @2xl/table:table-cell' },
+      meta: { role: 'tag' },
       cell: ({ row: { original: report } }) =>
         h(PortalStatusCell, {
           statuses: [statuses.value[report.status]],
@@ -112,7 +114,7 @@ const reports = usePortalList<CloudAdminReportFilter, PortalReportRow>({
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px whitespace-nowrap text-right', actions: true },
+      meta: { role: 'actions' },
       cell: ({ row: { original: report } }) =>
         h(PortalRowMenu<PortalContentAction>, {
           label: messages.value.actionsFor({ name: report.document.name }),

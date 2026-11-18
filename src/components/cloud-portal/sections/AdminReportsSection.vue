@@ -29,7 +29,7 @@ async function load(request: PortalListRequest<CloudAdminReportFilter>) {
     reporter: report.reporter ? (report.reporter.name ?? messages.value.someoneElse) : null,
     replyEmail: report.replyEmail,
     reportedOn: formatDate(report.createdAt, 'date', locale.value),
-    document: documentRow(report.document, locale.value),
+    document: documentRow(report.document, locale.value, portal.api.documentThumbnailURL),
     share: report.share
   }))
   return { rows, total, counts }

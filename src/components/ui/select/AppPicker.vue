@@ -66,6 +66,8 @@ export interface AppPickerSlots {
   /** A control at the end of the search field that narrows the list, such as a category. */
   'search-trailing'?(): VNode[]
   trailing?(props: { item: AppPickerItem }): VNode[]
+  /** What the list says when it has nothing to show, such as a link; `emptyLabel` by default. */
+  empty?(): VNode[]
   /**
    * Shown instead of the search and list while the picker needs something before it can list
    * anything, such as a service's key.
@@ -277,7 +279,7 @@ function select(value: AcceptableValue) {
               />
             </div>
             <p v-else-if="groups.length === 0" :class="styles.empty({ class: ui?.empty })">
-              {{ emptyLabel }}
+              <slot name="empty">{{ emptyLabel }}</slot>
             </p>
             <ListboxGroup
               v-for="[group, entries] in groups"

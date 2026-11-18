@@ -30,6 +30,7 @@ import { cloudflareRayId } from './logging'
 import { inMaintenance, maintenanceResponse } from './maintenance'
 import { createCloudflareRelayObject, relayFor, relayRoute } from './relay'
 import { assetSiteFiles } from './site'
+import { provideXMLParser } from './xml'
 
 function emailTransport({ config }: PreparedCloudflareCloud, env: CloudflareCloudEnvironment) {
   if (config.emailTransport !== 'cloudflare') return undefined
@@ -165,6 +166,7 @@ export function createCloudflareCloud(
   configSource: string,
   { relayJurisdiction }: CloudflareCloudOptions = {}
 ) {
+  provideXMLParser()
   const { prepare, reporter } = cloudflareCloudSetup(configSource)
   const relay = (env: CloudflareCloudEnvironment, documentId: string) =>
     relayFor(env, documentId, relayJurisdiction)

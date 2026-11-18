@@ -106,7 +106,9 @@ export function createIconSetsProvider({
         )
       )
       const listed = lists.flatMap((list) => (list.status === 'fulfilled' ? list.value : []))
-      if (listed.length === 0 && lists[0]?.status === 'rejected') throw lists[0].reason
+      // Sets listed only as unavailable draw nothing, so they do not stand in for a failed fallback.
+      if (listed.every((info) => info.unavailable) && lists[0]?.status === 'rejected')
+        throw lists[0].reason
       return listed.filter((info) => !replaced.includes(info.prefix))
     },
 

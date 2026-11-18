@@ -779,6 +779,13 @@ ja:email.invitationSignatureRole
 ja:email.invitationSubject
 ja:email.invitationThanks
 zh-cn:email.documentBlocked
+ja:panels.iconSetMacAppOnly
+ja:panels.iconSetNeedsNewerMacOS
+ja:panels.sfSymbolsNeedMacApp
+ja:panels.sfSymbolsNeedNewerMacOS
+zh-cn:panels.iconSetMacAppOnly
+zh-cn:panels.sfSymbolsNeedMacApp
+zh-cn:panels.sfSymbolsNeedNewerMacOS
 zh-cn:email.invitationAction
 zh-cn:email.invitationDesktop
 zh-cn:email.invitationHeading

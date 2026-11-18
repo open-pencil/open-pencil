@@ -6,6 +6,7 @@ import { watchCloudComments } from '../comments/sync'
  */
 import type { SaveToCloud } from '../drafts/save'
 import { watchCloudRooms } from '../rooms/live'
+import { watchCloudAccountSwitches } from '../sessions/forget'
 import { startCloudSessions } from '../sessions/startup'
 
 export {
@@ -36,16 +37,21 @@ export {
 /** This build has Cloud; whether it shows depends on the server's listing or a preview. */
 export const CLOUD_INCLUDED: boolean = true
 
-/** Starts Cloud sign-ins, links, live rooms, and comments; returns what stops their watchers. */
+/**
+ * Starts Cloud sign-ins, links, live rooms, comments, and forgetting an account another replaced;
+ * returns what stops their watchers.
+ */
 export function startCloud(options: {
   leaveLinkAddress(): Promise<unknown>
   saveTo: SaveToCloud
 }): () => void {
   const stopRooms = watchCloudRooms()
   const stopComments = watchCloudComments()
+  const stopAccountSwitches = watchCloudAccountSwitches()
   void startCloudSessions(options)
   return () => {
     stopRooms()
     stopComments()
+    stopAccountSwitches()
   }
 }
