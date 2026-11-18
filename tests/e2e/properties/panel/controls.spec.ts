@@ -208,7 +208,7 @@ test('a picker focusing its first control on open shows no tooltip until keyboar
   await editor.page.keyboard.press('Tab')
   await expect(editor.page.getByTestId('fill-picker-tab-gradient')).toBeFocused()
   await editor.page.clock.runFor(1_000)
-  await expect(editor.page.getByRole('tooltip')).toHaveText('Linear')
+  await expect(editor.page.getByRole('tooltip')).toHaveText('Gradient')
   await editor.page.keyboard.press('Escape')
   await editor.page.clock.resume()
 })
