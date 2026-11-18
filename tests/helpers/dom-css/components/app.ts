@@ -46,7 +46,7 @@ const APPS: Record<
     entry: 'main.ts',
     main: (component, stories) =>
       [
-        "import { createApp, h } from 'vue'",
+        "import { createApp, h, nextTick } from 'vue'",
         `import Control from './${component}'`,
         `import * as stories from './${stories}'`,
         "import { playDefault } from './play'",
@@ -54,6 +54,8 @@ const APPS: Record<
         "const story = document.getElementById('story')",
         'if (story) {',
         '  createApp({ render: () => h(Control, { ...stories.default.args, ...stories.Default.args }) }).mount(story)',
+        '  // Flush mounted hooks and Reka collection registration before story play queries controls.',
+        '  await nextTick()',
         '  void playDefault(story, stories.Default.play)',
         '}'
       ].join('\n'),
@@ -110,6 +112,9 @@ export async function serveComponent(
   )
   const server = await createServer({
     root: folder,
+    // These fixtures share the repository's package root with the running app.
+    // Each server must retain its own optimized dependencies instead of replacing the app's.
+    cacheDir: join(folder, '.vite'),
     configFile: false,
     logLevel: 'silent',
     plugins: [app.plugin()],

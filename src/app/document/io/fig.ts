@@ -2,6 +2,7 @@ import { readFigFile } from '@open-pencil/core/io/formats/fig'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { isUnsupportedVariableValue } from '@open-pencil/scene-graph/variables'
 
+import { rememberLoadedRevision } from '@/app/document/io/revision'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 
@@ -14,6 +15,7 @@ export async function readFigDocument(file: File, signal?: AbortSignal) {
     populate: 'none',
     signal
   })
+  rememberLoadedRevision(graph, file)
   warnUnsupportedVariableExpressions(graph)
   return graph
 }

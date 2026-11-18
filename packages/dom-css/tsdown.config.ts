@@ -8,6 +8,7 @@ export default defineConfig(
       index: './src/index.ts',
       browser: './src/browser.ts',
       export: './src/export/index.ts',
+      'export/storybook/mapping/index': './src/export/storybook/mapping/index.ts',
       'scene-graph': './src/import/scene-graph.ts',
       'jsx-runtime': './src/import/jsx/runtime.ts',
       'jsx-dev-runtime': './src/import/jsx/dev-runtime.ts'

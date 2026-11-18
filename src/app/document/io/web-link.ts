@@ -5,18 +5,22 @@
 // redirect. Nothing else is reachable: no `http:`, no `file:`, no other extension.
 import { omit } from 'es-toolkit'
 
-import { clamp, searchLinkedNode } from '@/app/document/io/deep-link'
+import { clamp, linkedIdentityNotice, searchLinkedNode } from '@/app/document/io/deep-link'
+import type { DeepLinkActions } from '@/app/document/io/deep-link'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { openBrowserFileFromURL } from '@/app/shell/menu/files'
 
 export interface WebOpenParams {
   file: URL
   node?: string
+  nodeId?: string
+  revision?: string
 }
 
 export interface WebLinkActions {
   /** Selects the node and zooms to it. False when no node carries that name. */
   selectByName: (name: string) => boolean | Promise<boolean>
+  selectById?: DeepLinkActions['selectById']
   notify: (message: string, level: 'info' | 'error') => void
 }
 
@@ -45,7 +49,19 @@ export function parseWebOpenParams(search: string): WebOpenParams | null {
   // the same document; keeping it would make the tab identity (an exact `href` compare)
   // see two documents and open a duplicate tab for each fragment.
   url.hash = ''
-  return { file: url, node: params.getAll('node').at(-1) || undefined }
+  const nodeId = params.getAll('node-id').at(-1)
+  const revision = params.getAll('revision').at(-1)
+  if (
+    (nodeId !== undefined && (!/\.fig$/i.test(url.pathname) || !/^\d+:\d+$/.test(nodeId))) ||
+    (revision !== undefined && (!nodeId || !/^[a-f0-9]{64}$/.test(revision)))
+  ) {
+    console.warn('[Web link] refused invalid persisted identity or revision')
+    return null
+  }
+  const target: WebOpenParams = { file: url, node: params.getAll('node').at(-1) || undefined }
+  if (nodeId) target.nodeId = nodeId
+  if (revision) target.revision = revision
+  return target
 }
 
 /** Fetch entry point, injected so tests can drive the failure branch. */
@@ -76,6 +92,15 @@ export async function openWebLink(
     )
     return
   }
+  if (target.nodeId) {
+    const error = await linkedIdentityNotice(actions.selectById, {
+      id: target.nodeId,
+      file: target.file.href,
+      revision: target.revision
+    })
+    if (error) actions.notify(error, 'error')
+    return
+  }
   if (!target.node) return
   const search = await searchLinkedNode(actions.selectByName, target.node)
   if ('error' in search) actions.notify(messages.operationFailed(search), 'error')
@@ -91,7 +116,7 @@ export async function openWebLink(
  * Router-free on purpose: the router types live in the view, this is just the filter.
  */
 export function withoutWebLinkParams<T>(query: Record<string, T>): Record<string, T> {
-  return omit(query, ['file', 'node'])
+  return omit(query, ['file', 'node', 'node-id', 'revision'])
 }
 
 /**
@@ -110,7 +135,7 @@ export async function openWebLinkFromLocation(
   io: WebLinkIo = browserIo
 ): Promise<void> {
   const params = new URLSearchParams(search)
-  if (!params.has('file') && !params.has('node')) return
+  if (!['file', 'node', 'node-id', 'revision'].some((key) => params.has(key))) return
   const target = parseWebOpenParams(search)
   strip()
   if (target) await openWebLink(target, actions, io)
