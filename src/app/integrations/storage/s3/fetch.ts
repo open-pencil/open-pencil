@@ -1,4 +1,4 @@
-import { anySignal } from '@open-pencil/scene-graph/timing'
+import { anySignal } from '@open-pencil/std/timing'
 
 import { isTauri } from '@/app/tauri/env'
 import { tauriFetch } from '@/app/tauri/http'

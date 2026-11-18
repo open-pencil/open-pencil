@@ -1,4 +1,4 @@
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { serializeHTML } from '../export/html'
 import type {

@@ -3,7 +3,7 @@ import * as v from 'valibot'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
-import { DEADLINE_MS, MINUTE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS, MINUTE_MS } from '@open-pencil/std/timing'
 
 import { readBoundedBody } from '@/app/document/io/browser'
 import { tauriFetch } from '@/app/tauri/http'

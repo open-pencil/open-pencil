@@ -1,4 +1,4 @@
-import { untilAborted } from '@open-pencil/scene-graph/timing'
+import { untilAborted } from '@open-pencil/std/timing'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { createDeferred } from '@/app/runtime/deferred'

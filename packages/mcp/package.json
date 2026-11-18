@@ -68,6 +68,7 @@
     "@modelcontextprotocol/server": "^2.0.0",
     "@open-pencil/core": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
+    "@open-pencil/std": "workspace:*",
     "es-toolkit": "^1.52.0",
     "hono": "^4.13.13",
     "js-base64": "^3.9.3",

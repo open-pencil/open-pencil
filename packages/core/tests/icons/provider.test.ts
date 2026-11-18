@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { noop } from 'es-toolkit'
 
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import { createIconifyAPIClient } from '#core/icons/api'
 import { createIconifyProvider } from '#core/icons/provider'

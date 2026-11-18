@@ -1,4 +1,4 @@
-import { SECOND_MS } from '@open-pencil/scene-graph/timing'
+import { SECOND_MS } from '@open-pencil/std/timing'
 
 /**
  * How long each layer of a tool call waits. Each caller waits a little longer than what it calls,

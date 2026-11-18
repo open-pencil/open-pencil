@@ -11,8 +11,8 @@ import {
   type JSXAttributeSource
 } from '@open-pencil/design-jsx'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll, insertAll } from '@open-pencil/scene-graph/arrays'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { appendAll, insertAll } from '@open-pencil/std/arrays'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaAPI } from '#core/figma-api'

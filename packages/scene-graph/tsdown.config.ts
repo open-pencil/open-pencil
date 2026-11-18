@@ -6,7 +6,6 @@ export default defineConfig(
   libraryConfig({
     entry: {
       index: './src/index.ts',
-      arrays: './src/arrays.ts',
       'arrow-caps': './src/arrow-caps.ts',
       'asset-keys': './src/asset-keys.ts',
       'behaviours/index': './src/behaviours/index.ts',
@@ -52,7 +51,6 @@ export default defineConfig(
       polygon: './src/polygon.ts',
       preview: './src/preview.ts',
       'primitives/index': './src/primitives/index.ts',
-      random: './src/random.ts',
       resize: './src/resize.ts',
       'scaling/index': './src/scaling/index.ts',
       'shaders/index': './src/shaders/index.ts',
@@ -66,7 +64,6 @@ export default defineConfig(
       'text/index': './src/text/index.ts',
       'text/direction': './src/text/direction.ts',
       'text/picture': './src/text/picture.ts',
-      timing: './src/timing.ts',
       'transfer/index': './src/transfer/index.ts',
       undo: './src/undo.ts',
       'variables/index': './src/variables/index.ts',

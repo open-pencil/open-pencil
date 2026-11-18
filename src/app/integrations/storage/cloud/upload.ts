@@ -2,7 +2,7 @@ import { limitAsync, retry } from 'es-toolkit'
 
 import type { CloudAPIClient } from '@open-pencil/cloud/client'
 import type { ObjectUploadTarget } from '@open-pencil/cloud/contract'
-import { backoffDelay, SECOND_MS, type Backoff } from '@open-pencil/scene-graph/timing'
+import { backoffDelay, SECOND_MS, type Backoff } from '@open-pencil/std/timing'
 
 import type { StorageTransferProgress } from '../types'
 

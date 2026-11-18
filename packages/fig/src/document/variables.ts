@@ -9,13 +9,13 @@ import type {
   VariableValue,
   VariableColorExpression
 } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   variableFormulaSchema,
   variableColorExpressionSchema,
   inferFormulaType,
   MAX_FORMULA_DEPTH
 } from '@open-pencil/scene-graph/variables'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { extractPluginData } from '../node-change/plugin-data'
 import { visitVariableReferences } from '../node-change/variable/expression'

@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { useLocalStorage } from '@vueuse/core'
 import * as v from 'valibot'
 
-import { DEADLINE_MS, withDeadline } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS, withDeadline } from '@open-pencil/std/timing'
 
 import { IS_TAURI } from '@/constants'
 

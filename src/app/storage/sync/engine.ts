@@ -1,6 +1,6 @@
 import { IS_BROWSER } from '@open-pencil/core/constants'
-import { minOf } from '@open-pencil/scene-graph/arrays'
-import { BACKOFF, backoffDelay } from '@open-pencil/scene-graph/timing'
+import { minOf } from '@open-pencil/std/arrays'
+import { BACKOFF, backoffDelay } from '@open-pencil/std/timing'
 
 import {
   describeDiagnosticError,

@@ -21,7 +21,7 @@ import {
 } from '#cloud/server/invitations'
 import type { Kysely } from 'kysely'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { requireSharingAccess } from '../access'
 import {

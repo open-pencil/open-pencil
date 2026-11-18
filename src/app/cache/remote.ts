@@ -1,6 +1,6 @@
 import type * as v from 'valibot'
 
-import { anySignal, DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { anySignal, DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { readCacheJSON, writeCacheJSON } from './index'
 

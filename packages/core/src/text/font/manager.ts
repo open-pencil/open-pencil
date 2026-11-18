@@ -10,7 +10,7 @@ import {
   normalizeFontFamily,
   parseFontStyle
 } from '@open-pencil/scene-graph/font-style'
-import { DEADLINE_MS, withDeadline } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS, withDeadline } from '@open-pencil/std/timing'
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import {

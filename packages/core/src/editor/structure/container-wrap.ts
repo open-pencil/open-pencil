@@ -1,9 +1,9 @@
 import { groupBy } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import { groupBounds } from '@open-pencil/scene-graph/group-bounds'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
 import { recordEdit } from '#core/editor/history/edit'

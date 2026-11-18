@@ -2,7 +2,7 @@ import { REPORT_FILE_RETENTION_DAYS } from '#feedback/contract'
 import type { ReportsBucket } from '#feedback/env'
 
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
-import { DAY_MS } from '@open-pencil/scene-graph/timing'
+import { DAY_MS } from '@open-pencil/std/timing'
 
 const PREFIX = 'reports/'
 

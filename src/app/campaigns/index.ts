@@ -6,7 +6,7 @@ import type {
   CampaignContent,
   CampaignPlacement
 } from '@open-pencil/feedback/contract'
-import { DAY_MS } from '@open-pencil/scene-graph/timing'
+import { DAY_MS } from '@open-pencil/std/timing'
 
 import { officialCloudSignedIn } from '@/app/cloud/integration'
 import { DONATION_URL } from '@/app/donation/url'

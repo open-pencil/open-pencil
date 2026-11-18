@@ -10,7 +10,7 @@ import type { Plugin } from 'vite'
 
 import { serializeDisabledTools } from '@open-pencil/mcp/tools'
 import { platformHasUnixSockets } from '@open-pencil/mcp/transport'
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import {
   DEV_MCP_RESTART_PATH,

@@ -11,7 +11,7 @@ import {
   type VectorNetwork,
   type VectorSegment
 } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { isolatesInnerShadows } from '#core/canvas/shadows/render'

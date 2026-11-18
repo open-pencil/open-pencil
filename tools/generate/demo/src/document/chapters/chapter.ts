@@ -8,7 +8,7 @@ import { computeAllLayouts } from '@open-pencil/core/layout'
 import { Frame, Section, Text } from '@open-pencil/design-jsx'
 import type { TreeNode } from '@open-pencil/design-jsx'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { tipInstance, type Tip } from '../callout'
 import { renderTree } from '../icons'

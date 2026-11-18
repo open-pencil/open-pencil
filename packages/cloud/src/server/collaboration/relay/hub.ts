@@ -8,7 +8,7 @@ import {
 import { logCloud, loggedError } from '#cloud/server/logging'
 import * as Y from 'yjs'
 
-import { DEADLINE_MS, SECOND_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS, SECOND_MS } from '@open-pencil/std/timing'
 
 import type { RelayAuthorization } from './authorize'
 import { stampAwareness } from './awareness'

@@ -8,7 +8,7 @@ import { getRequestListener } from '@hono/node-server'
 import type { Hono } from 'hono'
 import type { WebSocketServer } from 'ws'
 
-import { SECOND_MS } from '@open-pencil/scene-graph/timing'
+import { SECOND_MS } from '@open-pencil/std/timing'
 
 import type { MCPToolScope } from '#mcp/tool/scope'
 import {

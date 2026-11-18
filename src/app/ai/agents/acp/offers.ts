@@ -2,7 +2,7 @@ import * as v from 'valibot'
 import { shallowRef } from 'vue'
 
 import type { ACPAgentDef, ACPAgentID } from '@open-pencil/core/constants'
-import { DAY_MS } from '@open-pencil/scene-graph/timing'
+import { DAY_MS } from '@open-pencil/std/timing'
 
 import { readCacheJSON, writeCacheJSON } from '@/app/cache'
 

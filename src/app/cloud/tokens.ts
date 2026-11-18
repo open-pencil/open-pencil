@@ -1,5 +1,5 @@
 import type { CloudServicesTokenSource } from '@open-pencil/cloud/client'
-import { DEADLINE_MS, TOKEN_REFRESH_MARGIN_MS, untilAborted } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS, TOKEN_REFRESH_MARGIN_MS, untilAborted } from '@open-pencil/std/timing'
 
 /** A signing request that hasn't answered by now fails, so the next request asks again. */
 const SIGNING_DEADLINE_MS = DEADLINE_MS.slowRequest

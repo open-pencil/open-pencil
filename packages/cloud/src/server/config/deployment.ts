@@ -2,7 +2,7 @@ import { staticEntitlementsFromTOML } from '#cloud/server/policy/static'
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
 
-import { DAY_MS } from '@open-pencil/scene-graph/timing'
+import { DAY_MS } from '@open-pencil/std/timing'
 
 import { parseCloudServerConfig, type CloudServerConfig } from './schema'
 import {

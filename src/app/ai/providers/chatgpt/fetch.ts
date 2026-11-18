@@ -2,7 +2,7 @@ import { uniq } from 'es-toolkit/array'
 import { omit } from 'es-toolkit/object'
 import * as v from 'valibot'
 
-import { TOKEN_REFRESH_MARGIN_MS } from '@open-pencil/scene-graph/timing'
+import { TOKEN_REFRESH_MARGIN_MS } from '@open-pencil/std/timing'
 
 import type { FetchFunction } from '@/app/http/types'
 

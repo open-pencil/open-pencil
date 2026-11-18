@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {

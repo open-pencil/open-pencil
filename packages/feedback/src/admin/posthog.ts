@@ -3,8 +3,8 @@ import type { FeedbackBindings, FeedbackServices } from '#feedback/env'
 import { groupBy, orderBy } from 'es-toolkit'
 import * as v from 'valibot'
 
-import { maxOf } from '@open-pencil/scene-graph/arrays'
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { maxOf } from '@open-pencil/std/arrays'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 const QUERY_TIMEOUT_MS = DEADLINE_MS.slowRequest
 

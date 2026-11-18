@@ -2,7 +2,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { ref, shallowRef, watch } from 'vue'
 
 import { CloudAPIError, createCloudAPIClient } from '@open-pencil/cloud/client'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { useCollabIdentity } from '@/app/collab/identity'
 import type { EditorStore } from '@/app/editor/session'

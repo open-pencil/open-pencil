@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { DEADLINE_MS, untilAborted } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS, untilAborted } from '@open-pencil/std/timing'
 
 import { imageStandIn, rasterImageSize } from './images'
 import { captureSchema, requestsSchema, type HTMLEngineCapture } from './schema'

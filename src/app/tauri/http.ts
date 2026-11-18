@@ -1,7 +1,7 @@
 import { Channel, invoke } from '@tauri-apps/api/core'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
-import { abortReason, untilAborted } from '@open-pencil/scene-graph/timing'
+import { randomHex } from '@open-pencil/std/random'
+import { abortReason, untilAborted } from '@open-pencil/std/timing'
 
 import type { FetchFunction } from '@/app/http/types'
 

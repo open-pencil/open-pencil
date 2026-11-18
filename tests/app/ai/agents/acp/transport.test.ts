@@ -4,7 +4,7 @@ import type { SessionUpdate, ToolCallUpdate } from '@agentclientprotocol/sdk/uns
 import { readUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'

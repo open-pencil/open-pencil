@@ -7,7 +7,6 @@ import type {
   StyleRun,
   TextParagraphStyle
 } from '@open-pencil/scene-graph'
-import { minOf } from '@open-pencil/scene-graph/arrays'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import {
   MAX_LIST_INDENTATION,
@@ -16,6 +15,7 @@ import {
   trimParagraphStyles,
   appendStyleRun
 } from '@open-pencil/scene-graph/text'
+import { minOf } from '@open-pencil/std/arrays'
 
 import { parseScriptInput } from './schema'
 import type { MarkdownService } from './services'

@@ -4,7 +4,7 @@ import { Socket } from 'node:net'
 import * as v from 'valibot'
 
 import { writeFileAtomic } from '@open-pencil/core/node/fs'
-import { DEADLINE_MS, SECOND_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS, SECOND_MS } from '@open-pencil/std/timing'
 
 import { MCP_TOOL_SCOPES, type MCPToolScope } from '#mcp/tool/scope'
 import { getDiscoveryPath, getSocketPath, platformHasUnixSockets } from '#mcp/transport/paths'

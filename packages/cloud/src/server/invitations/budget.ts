@@ -2,7 +2,7 @@ import type { CloudDatabase } from '#cloud/server/db'
 import { lockForTransaction } from '#cloud/server/db/expressions'
 import type { Transaction } from 'kysely'
 
-import { DAY_MS } from '@open-pencil/scene-graph/timing'
+import { DAY_MS } from '@open-pencil/std/timing'
 
 /**
  * How many invitations, to documents and workspaces alike, one person may send in a day, and how

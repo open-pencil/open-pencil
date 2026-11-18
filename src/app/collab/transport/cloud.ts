@@ -10,7 +10,7 @@ import {
   relayClientMessages,
   type RelayClientFrame
 } from '@open-pencil/cloud/contract'
-import { BACKOFF, backoffDelay } from '@open-pencil/scene-graph/timing'
+import { BACKOFF, backoffDelay } from '@open-pencil/std/timing'
 
 import { createActionRegistry } from './actions'
 import type { CollabRoomTransport, JoinCollabRoom } from './types'

@@ -1,7 +1,7 @@
 import type { WebMCP } from 'webmcp-types'
 
 import { parseToolArgs, toolInputFor, toolJSONSchema, type ToolDef } from '@open-pencil/core/tools'
-import { anySignal } from '@open-pencil/scene-graph/timing'
+import { anySignal } from '@open-pencil/std/timing'
 
 import { getWebMCPTools } from './policy'
 import { type WebMCPMode } from './schema'

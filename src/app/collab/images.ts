@@ -1,7 +1,7 @@
 import { compact, partition } from 'es-toolkit'
 import type * as Y from 'yjs'
 
-import { BACKOFF, backoffDelay } from '@open-pencil/scene-graph/timing'
+import { BACKOFF, backoffDelay } from '@open-pencil/std/timing'
 
 import type { EditorStore } from '@/app/editor/active-store'
 

@@ -1,6 +1,7 @@
 import { omit } from 'es-toolkit'
 
-import { maxOf, minOf } from '../arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
+
 import type { Fill, SceneNode, Stroke, VectorNetwork } from '../types'
 import { readIcon, readIconTint } from './model'
 

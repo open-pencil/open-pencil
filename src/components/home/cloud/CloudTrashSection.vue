@@ -3,7 +3,7 @@ import { useAsyncState, useNow } from '@vueuse/core'
 import { computed, ref, shallowRef, watch } from 'vue'
 
 import type { TrashedDocument } from '@open-pencil/cloud/contract'
-import { DAY_MS } from '@open-pencil/scene-graph/timing'
+import { DAY_MS } from '@open-pencil/std/timing'
 import { useCloudMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { findCloudServer } from '@/app/cloud/servers/store'

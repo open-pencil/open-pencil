@@ -1,6 +1,6 @@
 import { opacityFromBuffer, type Editor } from '@open-pencil/core'
 import { generatedFrameText } from '@open-pencil/scene-graph/generated'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import type { useEditorCommands } from '#vue/editor/commands'
 

@@ -1,10 +1,10 @@
 import { groupBy, partition, pick } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
 import { autoLayoutSizingFields, layoutSizingUpdates } from '@open-pencil/scene-graph/layout'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import type { DesignElement, DesignStyleDeclaration } from '../types'
 import { borderWidths } from './box'

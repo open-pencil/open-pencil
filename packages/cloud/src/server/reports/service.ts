@@ -6,7 +6,7 @@ import type { TransactionalEmailService } from '#cloud/server/email'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import type { Kysely } from 'kysely'
 
-import { DAY_MS } from '@open-pencil/scene-graph/timing'
+import { DAY_MS } from '@open-pencil/std/timing'
 
 /**
  * How many reports one person, or guest, may file about one link in a day, and how many a link

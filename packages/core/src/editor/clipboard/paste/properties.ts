@@ -3,7 +3,6 @@ import { omitBy, pick } from 'es-toolkit/object'
 import { materializeFigFragment } from '@open-pencil/fig'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import type { SceneGraph, SceneNode, StyleRun } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   AUTO_LAYOUT_FIELDS,
   CORNER_FIELDS,
@@ -13,6 +12,7 @@ import {
 } from '@open-pencil/scene-graph/fields'
 import { copyImages, imagePaintHashes } from '@open-pencil/scene-graph/images'
 import { STYLE_LINK_FIELDS, sharedStyleRefKey } from '@open-pencil/scene-graph/shared-styles'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { importClipboardDependenciesWithUndo } from '#core/editor/clipboard/dependencies'
 import type { ClipboardSnapshot } from '#core/editor/clipboard/snapshot'

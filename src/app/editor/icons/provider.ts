@@ -10,7 +10,7 @@ import {
 } from '@open-pencil/core/icons'
 import { createIconMatcher, fetchIconIndex, type IconMatcher } from '@open-pencil/core/icons/match'
 import { createCanvasKitRasterCodec, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
-import { untilAborted } from '@open-pencil/scene-graph/timing'
+import { untilAborted } from '@open-pencil/std/timing'
 
 import { browserWebFontFetch } from '@/app/editor/fonts/browser-fetch'
 import { appPreferences } from '@/app/settings/preferences/store'

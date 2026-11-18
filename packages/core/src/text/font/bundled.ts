@@ -1,4 +1,4 @@
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { IS_BROWSER } from '#core/constants'
 import { servesRuntimeAsset, unservedRuntimeAssetMessage } from '#core/runtime-assets/served'

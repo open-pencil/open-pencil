@@ -2,7 +2,7 @@ import { uniq } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { computeImageHash } from '@open-pencil/scene-graph/images'
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { tauriFetch } from '@/app/tauri/http'
 

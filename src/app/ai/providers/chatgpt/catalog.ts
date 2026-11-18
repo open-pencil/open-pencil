@@ -3,7 +3,7 @@ import * as v from 'valibot'
 
 import { REASONING_EFFORTS } from '@open-pencil/core/constants'
 import type { ModelOption, ReasoningEffort } from '@open-pencil/core/constants'
-import { DAY_MS, DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DAY_MS, DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { modelOptionsSchema } from '@/app/ai/models/catalog/schema'
 import { readCacheJSON, writeCacheJSON } from '@/app/cache'

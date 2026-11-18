@@ -12,7 +12,7 @@ import type { StorageQuotaService } from '#cloud/server/quota'
 import { uniq, uniqBy } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 
-import { DAY_MS, MINUTE_MS } from '@open-pencil/scene-graph/timing'
+import { DAY_MS, MINUTE_MS } from '@open-pencil/std/timing'
 
 /** Images are stored as the bytes their file holds, whatever format those are. */
 export const IMAGE_CONTENT_TYPE = 'application/octet-stream'

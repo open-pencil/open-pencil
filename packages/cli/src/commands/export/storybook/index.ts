@@ -21,7 +21,7 @@ import {
   type StorybookFile,
   type StorybookFramework
 } from '@open-pencil/dom-css'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { requireFile } from '#cli/app/client'
 import { requestedPage } from '#cli/app/target'

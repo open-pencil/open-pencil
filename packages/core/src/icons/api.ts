@@ -2,7 +2,7 @@ import { uniq } from 'es-toolkit'
 import { createFetch } from 'ofetch'
 import * as v from 'valibot'
 
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { collectionListSchema, collectionsSchema, iconSetSchema, type IconSet } from './schema'
 import type { IconCollection, IconSearchResult } from './types'

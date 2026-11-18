@@ -27,12 +27,6 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./arrays": {
-      "types": "./dist/arrays.d.ts",
-      "bun": "./src/arrays.ts",
-      "import": "./dist/arrays.js",
-      "default": "./dist/arrays.js"
-    },
     "./arrow-caps": {
       "types": "./dist/arrow-caps.d.ts",
       "bun": "./src/arrow-caps.ts",
@@ -303,18 +297,6 @@
       "import": "./dist/primitives/index.js",
       "default": "./dist/primitives/index.js"
     },
-    "./random": {
-      "types": "./dist/random.d.ts",
-      "bun": "./src/random.ts",
-      "import": "./dist/random.js",
-      "default": "./dist/random.js"
-    },
-    "./timing": {
-      "types": "./dist/timing.d.ts",
-      "bun": "./src/timing.ts",
-      "import": "./dist/timing.js",
-      "default": "./dist/timing.js"
-    },
     "./resize": {
       "types": "./dist/resize.d.ts",
       "bun": "./src/resize.ts",
@@ -443,6 +425,7 @@
   },
   "dependencies": {
     "@noble/hashes": "^2.4.0",
+    "@open-pencil/std": "workspace:*",
     "culori": "^4.0.2",
     "es-toolkit": "^1.52.0",
     "image-size": "^2.0.4",

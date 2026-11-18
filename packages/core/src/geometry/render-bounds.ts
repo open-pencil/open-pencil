@@ -1,7 +1,6 @@
 import { compact } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import {
   blurReach,
@@ -24,6 +23,7 @@ import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import { paintShows } from '@open-pencil/scene-graph/paints'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { textLinesReach } from '@open-pencil/scene-graph/text'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import { mayHoldEmoji } from '#core/text/emoji'
 import { measureTextInk } from '#core/text/ink'

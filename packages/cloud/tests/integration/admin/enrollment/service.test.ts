@@ -7,7 +7,7 @@ import {
   PostgresRateLimitStore
 } from '#cloud/server'
 
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 
 describe('Cloud enrollment integration', () => {
   test('deduplicates requests and applies audited reviews', async () => {

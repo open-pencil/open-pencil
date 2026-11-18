@@ -11,7 +11,7 @@ import {
   type Props
 } from '#core-tests/helpers/text/letter-spacing'
 
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import type { TextLayout } from '#core/canvas/text/layout'

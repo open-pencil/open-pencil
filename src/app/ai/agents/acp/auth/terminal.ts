@@ -1,7 +1,7 @@
 import { Command } from '@tauri-apps/plugin-shell'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
-import { MINUTE_MS } from '@open-pencil/scene-graph/timing'
+import { MINUTE_MS } from '@open-pencil/std/timing'
 
 import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { createDeferred } from '@/app/runtime/deferred'

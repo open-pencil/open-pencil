@@ -1,6 +1,6 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import type { Size } from '@open-pencil/scene-graph/primitives'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { getTextMeasurer } from './text-measurement'
 

@@ -1,5 +1,5 @@
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import type { OutlineCommand } from './font/glyphs'
 import { KEYCAP_FRAME } from './font/keycap'

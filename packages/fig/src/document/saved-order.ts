@@ -1,6 +1,6 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { compareOrderKeys } from '@open-pencil/scene-graph/order-keys'
+import { appendAll } from '@open-pencil/std/arrays'
 
 function pushTo(groups: Map<string, string[]>, key: string, id: string): void {
   const group = groups.get(key)

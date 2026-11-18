@@ -6,7 +6,7 @@ import { basename } from 'pathe'
 import { decode } from 'ufo'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { anySignal } from '@open-pencil/scene-graph/timing'
+import { anySignal } from '@open-pencil/std/timing'
 
 import { setOpenPencilOpenFileHandler } from '@/app/browser-bridge'
 import {

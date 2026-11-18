@@ -39,6 +39,7 @@
     "@open-pencil/design-jsx": "workspace:*",
     "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
+    "@open-pencil/std": "workspace:*",
     "@tanstack/hotkeys": "^0.24.0",
     "@vueuse/core": "^14.4.0",
     "ai": "^7.0.176",

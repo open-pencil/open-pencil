@@ -69,7 +69,7 @@ export {
   type RegisterToolsOptions,
   type RPCSender
 } from '#mcp/tool/registration'
-import { MAX_TIMER_MS } from '@open-pencil/scene-graph/timing'
+import { MAX_TIMER_MS } from '@open-pencil/std/timing'
 
 export interface ServerOptions {
   /** TCP port for the HTTP + WebSocket server. Ignored when `withTcp` is false. When set to 0 with `withTcp: true`, binds to an ephemeral port. Defaults to 7600. */

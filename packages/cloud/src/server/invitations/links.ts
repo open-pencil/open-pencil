@@ -1,4 +1,4 @@
-import { DAY_MS } from '@open-pencil/scene-graph/timing'
+import { DAY_MS } from '@open-pencil/std/timing'
 
 /** How many random bytes an invitation link's secret has. */
 export const INVITATION_SECRET_BYTES = 24

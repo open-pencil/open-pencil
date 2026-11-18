@@ -13,7 +13,7 @@ import type { CloudAPI, PublicCloudAPI } from '#cloud/server/api'
 import { hc } from 'hono/client'
 import * as v from 'valibot'
 
-import { anySignal, DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { anySignal, DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { createCommentRequests, createSharedCommentRequests } from './comments'
 import { createCommunityRequests } from './community'

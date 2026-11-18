@@ -1,5 +1,4 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import {
   createSticky,
@@ -9,6 +8,7 @@ import {
   stickySublayers
 } from '@open-pencil/scene-graph/generated'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { readElementProps, stickyPropsSchema } from '../schema'
 import { textContentText } from '../text-content'

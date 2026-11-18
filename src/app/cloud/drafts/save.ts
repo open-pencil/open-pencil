@@ -2,7 +2,7 @@ import { useLocalStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { markRaw, ref, shallowRef, watch, type Raw } from 'vue'
 
-import { DAY_MS } from '@open-pencil/scene-graph/timing'
+import { DAY_MS } from '@open-pencil/std/timing'
 import { cloudMessages } from '@open-pencil/vue/i18n'
 
 import { recoverySessionId } from '@/app/document/recovery/session'

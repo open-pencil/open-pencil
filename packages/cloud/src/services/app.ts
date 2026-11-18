@@ -18,7 +18,7 @@ import { jwtVerify, type JWTVerifyGetKey } from 'jose'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
-import { MINUTE_MS } from '@open-pencil/scene-graph/timing'
+import { MINUTE_MS } from '@open-pencil/std/timing'
 
 import type { ServicesConfig } from './config'
 import type { ServicesDatabase } from './db'

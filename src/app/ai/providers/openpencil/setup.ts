@@ -1,7 +1,7 @@
 import { watch } from 'vue'
 
 import type { RoleModels, ServiceCatalog } from '@open-pencil/cloud/contract'
-import { DEADLINE_MS, withDeadline } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS, withDeadline } from '@open-pencil/std/timing'
 
 import { aiModelSettings, setUpRoleModels, type RoleModelChoice } from '@/app/ai/models'
 import { isUnconfiguredModelSettings } from '@/app/ai/models/settings/onboarding/apply'

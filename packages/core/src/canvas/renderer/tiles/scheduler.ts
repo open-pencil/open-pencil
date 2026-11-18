@@ -1,4 +1,4 @@
-import { insertAll } from '@open-pencil/scene-graph/arrays'
+import { insertAll } from '@open-pencil/std/arrays'
 
 import { rendererNow } from '#core/canvas/renderer/clock'
 

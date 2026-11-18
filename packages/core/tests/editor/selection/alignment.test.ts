@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createRect, firstPageId } from '@open-pencil/test-support/scene'
 

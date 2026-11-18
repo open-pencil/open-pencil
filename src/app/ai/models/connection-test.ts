@@ -1,7 +1,7 @@
 import { generateText } from 'ai'
 
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { isInsufficientCreditError, providerErrorStatus } from '@/app/ai/chat/failure'
 import {

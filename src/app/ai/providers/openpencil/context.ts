@@ -1,5 +1,5 @@
 import type { ServiceCatalog } from '@open-pencil/cloud/contract'
-import { MINUTE_MS, SECOND_MS, withDeadline } from '@open-pencil/scene-graph/timing'
+import { MINUTE_MS, SECOND_MS, withDeadline } from '@open-pencil/std/timing'
 
 import { cloudAIClient, cloudAIIdentity } from '@/app/cloud/integration'
 

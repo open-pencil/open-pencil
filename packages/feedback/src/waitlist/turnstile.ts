@@ -1,7 +1,7 @@
 import type { FeedbackServices } from '#feedback/env'
 import * as v from 'valibot'
 
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 const SITEVERIFY_TIMEOUT_MS = DEADLINE_MS.request

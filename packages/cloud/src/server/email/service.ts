@@ -3,7 +3,7 @@ import type { EmailLocale, TransactionalEmailKind } from '#cloud/email'
 import type { CloudDatabase, TransactionalEmailStatus } from '#cloud/server/db'
 import type { Kysely, Transaction } from 'kysely'
 
-import { backoffDelay, HOUR_MS, SECOND_MS, type Backoff } from '@open-pencil/scene-graph/timing'
+import { backoffDelay, HOUR_MS, SECOND_MS, type Backoff } from '@open-pencil/std/timing'
 
 import { decryptTransactionalEmailPayload, encryptTransactionalEmailPayload } from './crypto'
 import type {

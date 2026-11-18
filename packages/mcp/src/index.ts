@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { MAX_TIMER_MS } from '@open-pencil/scene-graph/timing'
+import { MAX_TIMER_MS } from '@open-pencil/std/timing'
 
 import { resolveMCPRoot } from '#mcp/root'
 import { MCP_VERSION, startServer } from '#mcp/server'

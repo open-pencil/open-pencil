@@ -95,6 +95,7 @@ export default defineConfig({
               '@open-pencil/vue': ['packages/vue/src/index.ts'],
               '@open-pencil/vue/*': ['packages/vue/src/*'],
               '#vue/*': ['packages/vue/src/*'],
+              '@open-pencil/std/*': ['packages/std/src/*'],
               '@open-pencil/scene-graph': ['packages/scene-graph/src/index.ts'],
               '@open-pencil/scene-graph/*': ['packages/scene-graph/src/*'],
               '#scene-graph/*': ['packages/scene-graph/src/*']

@@ -11,7 +11,7 @@ import {
   type AIProviderID,
   providerKind
 } from '@open-pencil/core/constants'
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 import { useAIMessages } from '@open-pencil/vue/i18n'
 
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'

@@ -9,7 +9,7 @@ import {
 } from '@agentclientprotocol/sdk/unstable'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
-import { isDeadline, withDeadline } from '@open-pencil/scene-graph/timing'
+import { isDeadline, withDeadline } from '@open-pencil/std/timing'
 
 import {
   AUTH_STATUS_UPDATE_METHOD,

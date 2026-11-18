@@ -12,7 +12,7 @@ import {
   MCP_DEFERS_TOOLS_HEADER,
   MCP_CHAT_HEADER
 } from '@open-pencil/core/constants'
-import { MINUTE_MS } from '@open-pencil/scene-graph/timing'
+import { MINUTE_MS } from '@open-pencil/std/timing'
 
 import { MCP_SERVER_INSTRUCTIONS } from '#mcp/instructions'
 import { createPendingRequests } from '#mcp/server/pending-requests'

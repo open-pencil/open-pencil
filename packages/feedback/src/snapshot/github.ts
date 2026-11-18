@@ -4,8 +4,8 @@ import type { CalendarDate } from '@internationalized/date'
 import { groupBy, sumBy } from 'es-toolkit'
 import * as v from 'valibot'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { appendAll } from '@open-pencil/std/arrays'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { releaseFileKind } from './assets'
 

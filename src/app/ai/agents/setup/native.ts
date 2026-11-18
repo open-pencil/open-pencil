@@ -3,7 +3,7 @@ import { Command } from '@tauri-apps/plugin-shell'
 import * as v from 'valibot'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
-import { MINUTE_MS } from '@open-pencil/scene-graph/timing'
+import { MINUTE_MS } from '@open-pencil/std/timing'
 
 import { HARNESS_INSTALL_TARGET } from '@/app/ai/agents/pi/companion'
 import { MCP_INSTALL_TARGET } from '@/app/automation/mcp/failure'

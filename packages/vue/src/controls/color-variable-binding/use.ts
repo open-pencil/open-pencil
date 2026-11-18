@@ -1,4 +1,4 @@
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { useVariableBinding } from '#vue/controls/variable-binding/use'
 

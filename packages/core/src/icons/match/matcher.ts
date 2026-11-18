@@ -1,7 +1,7 @@
 import { createMatcher, fetchIndex, type Matcher } from 'whaticon/match'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { parseIconName, type IconProvider } from '#core/icons/provider'
 import type { RGBAImage } from '#core/io/formats/raster/pixels'

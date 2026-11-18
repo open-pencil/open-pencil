@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SELECTION_COLOR } from '@open-pencil/core/constants'
-import { minOf } from '@open-pencil/scene-graph/arrays'
+import { minOf } from '@open-pencil/std/arrays'
 import { contrastRatio, parseColor, rgbaToOkHCL } from '@open-pencil/scene-graph/color'
 
 import {

@@ -6,8 +6,8 @@
  */
 import * as v from 'valibot'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
-import { SECOND_MS } from '@open-pencil/scene-graph/timing'
+import { randomHex } from '@open-pencil/std/random'
+import { SECOND_MS } from '@open-pencil/std/timing'
 
 import { endAgentSession, readAgentSession } from '@/app/automation/agents'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'

@@ -100,6 +100,7 @@
   "dependencies": {
     "@acemir/cssom": "^0.9.31",
     "@open-pencil/emit": "workspace:*",
+    "@open-pencil/std": "workspace:*",
     "css-tree": "^3.2.1",
     "cssesc": "^3.0.0",
     "dedent": "^1.7.2",

@@ -7,7 +7,7 @@ import {
   sleep,
   untilAborted,
   withDeadline
-} from '@open-pencil/scene-graph/timing'
+} from '@open-pencil/std/timing'
 
 describe('withDeadline', () => {
   test('answers with the work when it finishes in time', async () => {

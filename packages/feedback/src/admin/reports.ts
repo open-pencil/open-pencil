@@ -15,7 +15,7 @@ import {
 import type { FeedbackBindings, FeedbackServices } from '#feedback/env'
 import * as v from 'valibot'
 
-import { DAY_MS, DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DAY_MS, DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { queryPostHog } from './posthog'
 

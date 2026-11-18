@@ -7,7 +7,7 @@ import { imageSize } from 'image-size'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 /** Where pictures are served; a picture's address ends in its checksum, so a new one is new. */
 export const PICTURE_PATH = '/api/pictures'

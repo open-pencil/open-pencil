@@ -1,7 +1,7 @@
 import { ofetch } from 'ofetch'
 import * as v from 'valibot'
 
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 export interface StockPhotoResult {
   /** The image at the size asked for, to place in the document. */

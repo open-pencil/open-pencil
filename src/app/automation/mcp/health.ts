@@ -2,7 +2,7 @@ import { promiseTimeout } from '@vueuse/core'
 
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { parseToolDescriptor, type ToolDescriptor } from '@open-pencil/mcp/tools'
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { APP_VERSION } from '@/app/runtime/version'
 

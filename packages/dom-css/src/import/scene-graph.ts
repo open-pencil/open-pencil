@@ -6,11 +6,11 @@ import {
   type ImageScaleMode,
   type SceneNode
 } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import { parseCSSAlignSelf, parseCSSNumber, parseCSSShadows } from '@open-pencil/scene-graph/css'
 import { blurRadiusForSigma } from '@open-pencil/scene-graph/geometry'
 import { computeImageHash, imageHeader, parseDataURL } from '@open-pencil/scene-graph/images'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import {

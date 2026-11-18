@@ -217,6 +217,7 @@
     "@open-pencil/mermaid": "workspace:*",
     "@open-pencil/pen": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
+    "@open-pencil/std": "workspace:*",
     "@open-pencil/taffy": "workspace:*",
     "@tauri-apps/api": "^2.12.1",
     "@valibot/to-json-schema": "^1.8.0",

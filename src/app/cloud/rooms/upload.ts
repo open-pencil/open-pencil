@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
 import { CloudAPIError } from '@open-pencil/cloud/client'
-import { DEADLINE_MS } from '@open-pencil/scene-graph/timing'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import type { CollabAction } from '@/app/collab/transport/types'
 import type { EditorStore } from '@/app/editor/session'

@@ -29,7 +29,7 @@ import { findWorkspace, type WorkspaceDatabase } from '#cloud/server/workspaces/
 import { compact, uniq } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 /** The workspace does not exist, or the person is not a member of it. */
 export class WorkspaceNotFoundError extends Error {
