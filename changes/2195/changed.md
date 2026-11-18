@@ -1,0 +1,1 @@
+- Guided AI setup assigns each provider's recommended model to every role, such as a stronger model for design reviews and a fast one for quick tasks, and providers whose main model reads no images review and read them with one that does. The model lists now include Claude Fable 5.2, GPT-6.2 Sol and Astra, GPT-6.1 Terra, and Gemini 4 Carbon and Argon (#2195).
