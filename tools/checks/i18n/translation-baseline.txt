@@ -745,3 +745,5 @@ pt-br:panels.iconSetNeedsNewerMacOS
 ru:panels.iconSetNeedsNewerMacOS
 zh-cn:panels.iconSetNeedsNewerMacOS
 pt-br:email.invitationSignatureName
+de:settings.importing
+pl:settings.importing
