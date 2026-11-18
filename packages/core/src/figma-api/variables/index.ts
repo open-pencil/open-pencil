@@ -3,7 +3,13 @@ import type {
   VariableBindableEffectField
 } from '@figma/plugin-typings/plugin-api-standalone'
 
-import type { Effect, SceneGraph, VariableType } from '@open-pencil/scene-graph'
+import {
+  isLibraryCollection,
+  isLibraryVariable,
+  type Effect,
+  type SceneGraph,
+  type VariableType
+} from '@open-pencil/scene-graph'
 import {
   EFFECT_BINDING_PROPERTIES,
   effectBindableProperties,
@@ -85,6 +91,7 @@ export class FigmaVariablesAPI {
   getLocalVariables(type?: FigmaVariableResolvedType): FigmaVariable[] {
     const wanted = type === undefined ? undefined : assertType('getLocalVariables', type)
     return [...this.#graph.variables.values()]
+      .filter((variable) => !isLibraryVariable(variable))
       .filter((variable) => wanted === undefined || variable.type === wanted)
       .map((variable) => new FigmaVariable(this.#graph, variable.id))
   }
@@ -94,9 +101,9 @@ export class FigmaVariablesAPI {
   }
 
   getLocalVariableCollections(): FigmaVariableCollection[] {
-    return [...this.#graph.variableCollections.keys()].map(
-      (id) => new FigmaVariableCollection(this.#graph, id)
-    )
+    return [...this.#graph.variableCollections.values()]
+      .filter((collection) => !isLibraryCollection(collection))
+      .map((collection) => new FigmaVariableCollection(this.#graph, collection.id))
   }
 
   async getLocalVariableCollectionsAsync(): Promise<FigmaVariableCollection[]> {

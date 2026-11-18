@@ -22,6 +22,21 @@ function tokens() {
   return { api, collection, mode, size, label, flag, color }
 }
 
+/** The tokens, plus a library's Brand collection as a file keeps its copy: keyed, unpublishable. */
+function withLibrary() {
+  const context = tokens()
+  const graph = graphOf(context.api)
+  const brandRecord = graph.createCollection('Brand')
+  Object.assign(brandRecord, { key: 'brand-collection', version: '1:1' })
+  const blue = { r: 0, g: 0, b: 1, a: 1 }
+  const accentRecord = graph.createVariable('accent', 'COLOR', brandRecord.id, blue)
+  Object.assign(accentRecord, { key: 'brand-accent', version: '1:1', hiddenFromPublishing: true })
+  const { variables } = context.api
+  const brand = expectDefined(variables.getVariableCollectionById(brandRecord.id), 'brand')
+  const accent = expectDefined(variables.getVariableById(accentRecord.id), 'accent')
+  return { ...context, brand, accent }
+}
+
 describe('figma.variables', () => {
   test('creates collections and variables with Figma’s shapes and defaults', () => {
     const { api, collection, mode, size, label, flag, color } = tokens()
@@ -52,6 +67,32 @@ describe('figma.variables', () => {
     expect(api.variables.createVariable('by-id', collection.id, 'STRING').resolvedType).toBe(
       'STRING'
     )
+  })
+
+  test('leave library copies out of the local lists and report them as remote', async () => {
+    const { api, collection, size, brand, accent } = withLibrary()
+    expect(api.variables.getLocalVariableCollections().map(({ id }) => id)).toEqual([collection.id])
+    expect((await api.variables.getLocalVariableCollectionsAsync()).map(({ id }) => id)).toEqual([
+      collection.id
+    ])
+    expect(api.variables.getLocalVariables('COLOR').map(({ name }) => name)).toEqual(['color'])
+    expect((await api.variables.getLocalVariablesAsync()).map(({ name }) => name)).not.toContain(
+      'accent'
+    )
+    expect([collection.remote, size.remote]).toEqual([false, false])
+    expect([brand.remote, accent.remote]).toEqual([true, true])
+  })
+
+  test('a library variable is never hidden from publishing and refuses the flag', () => {
+    const { api, size, accent } = withLibrary()
+    size.hiddenFromPublishing = true
+    expect(size.hiddenFromPublishing).toBe(true)
+
+    expect(accent.hiddenFromPublishing).toBe(false)
+    expect(() => {
+      accent.hiddenFromPublishing = false
+    }).toThrow('in set_hiddenFromPublishing: Cannot edit a remote variable')
+    expect(graphOf(api).variables.get(accent.id)?.hiddenFromPublishing).toBe(true)
   })
 
   test('async lookups return what the sync ones do', async () => {

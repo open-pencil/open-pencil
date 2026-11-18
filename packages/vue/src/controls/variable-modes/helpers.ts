@@ -11,6 +11,7 @@ import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { collectionsBoundIn } from '@open-pencil/scene-graph/variables'
 
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
+import { collectionLabels } from '#vue/controls/variable-modes/labels'
 
 /** A mode as the control lists it. */
 export type VariableModeOption = Pick<VariableCollectionMode, 'modeId' | 'name'>
@@ -19,6 +20,8 @@ export type VariableModeOption = Pick<VariableCollectionMode, 'modeId' | 'name'>
 export interface VariableModeChoice {
   collectionId: string
   name: string
+  /** The name to show, numbered in collection order when collections share one. */
+  label: string
   /** Whether the collection is a library's copy rather than the file's own. */
   library: boolean
   modes: VariableModeOption[]
@@ -53,10 +56,12 @@ export function variableModeChoices(editor: Editor, targets: SceneNode[]): Varia
         graph,
         targets.map((target) => target.id)
       )
+  const labels = collectionLabels(graph)
   const choices: VariableModeChoice[] = []
   for (const collection of graph.variableCollections.values()) {
     if (collection.modes.length < 2) continue
     if (used && !used.has(collection.id)) continue
+    if (isUnusedLibraryCopy(collection, targets)) continue
     const inherited = shared(
       targets.map((target) =>
         target.parentId
@@ -67,6 +72,7 @@ export function variableModeChoices(editor: Editor, targets: SceneNode[]): Varia
     choices.push({
       collectionId: collection.id,
       name: collection.name,
+      label: labels.get(collection.id) ?? collection.name,
       library: isLibraryCollection(collection),
       modes: collection.modes.map((mode) => ({ modeId: mode.modeId, name: mode.name })),
       value: shared(targets.map((target) => target.variableModes[collection.id] ?? null)),
@@ -74,6 +80,15 @@ export function variableModeChoices(editor: Editor, targets: SceneNode[]): Varia
     })
   }
   return choices
+}
+
+/** A library copy without variables, which a file keeps only for the modes layers set in it. */
+function isUnusedLibraryCopy(collection: VariableCollection, targets: SceneNode[]): boolean {
+  return (
+    isLibraryCollection(collection) &&
+    collection.variableIds.length === 0 &&
+    !targets.some((target) => collection.id in target.variableModes)
+  )
 }
 
 /**

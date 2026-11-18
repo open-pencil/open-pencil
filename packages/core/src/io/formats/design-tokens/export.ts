@@ -2,11 +2,12 @@ import { compact } from 'es-toolkit/array'
 import { omitBy } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
-import type {
-  SceneGraph,
-  Variable,
-  VariableCollection,
-  VariableCollectionMode
+import {
+  isHiddenFromPublishing,
+  type SceneGraph,
+  type Variable,
+  type VariableCollection,
+  type VariableCollectionMode
 } from '@open-pencil/scene-graph'
 import { printFormula, variableValueReferences } from '@open-pencil/scene-graph/variables'
 import { appendAll } from '@open-pencil/std/arrays'
@@ -67,7 +68,7 @@ function openPencilFields(variable: Variable, modeId: string, formula?: string) 
       formula,
       scopes: variable.scopes,
       codeSyntax: variable.codeSyntax,
-      hiddenFromPublishing: variable.hiddenFromPublishing || undefined
+      hiddenFromPublishing: isHiddenFromPublishing(variable) || undefined
     },
     (value) => value === undefined
   )

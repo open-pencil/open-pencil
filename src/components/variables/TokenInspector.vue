@@ -13,6 +13,7 @@ import {
   variableUnit
 } from '@open-pencil/dom-css/export'
 import {
+  isLibraryVariable,
   TOKEN_UNITS,
   type TokenExpression,
   type Variable,
@@ -539,7 +540,7 @@ function cssNameDone(event: KeyboardEvent) {
       <AppTextarea v-model="draft.description" :rows="2" @change="commitDescription" />
     </section>
 
-    <section :class="ui.section()">
+    <section v-if="!isLibraryVariable(variable)" :class="ui.section()">
       <label class="flex items-center gap-2 text-xs text-surface">
         <AppCheckbox
           :model-value="variable.hiddenFromPublishing"

@@ -133,5 +133,6 @@
   "formulaIf": "condición, entonces, si no",
   "formulaText": "número como texto",
   "formulaTruthy": "valor como verdadero o falso",
-  "unsupportedExpression": "OpenPencil aún no puede evaluar {name}. Al guardar se conserva tal cual."
+  "unsupportedExpression": "OpenPencil aún no puede evaluar {name}. Al guardar se conserva tal cual.",
+  "numberedCollection": "{name} ({number})"
 }

@@ -4,7 +4,11 @@ import { createEditor } from '@open-pencil/core'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { collectionsBoundIn } from '@open-pencil/scene-graph/variables'
 import { MIXED } from '@open-pencil/vue/controls/node-props'
-import { setVariableMode, variableModeChoices } from '@open-pencil/vue/controls/variable-modes'
+import {
+  collectionLabels,
+  setVariableMode,
+  variableModeChoices
+} from '@open-pencil/vue/controls/variable-modes'
 
 const RED = { r: 1, g: 0, b: 0, a: 1 }
 
@@ -76,6 +80,56 @@ describe('variable mode choices', () => {
     expect(inherited?.inherited).toEqual({ modeId: dark, name: 'Dark' })
     expect(variableModeChoices(editor, [node(outer.id)])[0]?.value).toBe(dark)
     expect(variableModeChoices(editor, [node(outer.id), node(inner.id)])[0]?.value).toBe(MIXED)
+  })
+})
+
+describe('library copies in variable mode choices', () => {
+  function libraryCopies() {
+    const context = setup()
+    const { graph, theme } = context
+    Object.assign(theme, { key: 'theme-a', version: '1:1' })
+    const empty = { ...structuredClone(theme), id: 'theme-b', key: 'theme-b', variableIds: [] }
+    graph.addCollection(empty)
+    return { ...context, empty }
+  }
+
+  test('number same-named collections across the file, in collection order', () => {
+    const { graph, theme, density, empty } = libraryCopies()
+    expect(collectionLabels(graph)).toEqual(
+      new Map([
+        [theme.id, 'Theme (1)'],
+        [density.id, 'Density'],
+        [empty.id, 'Theme (2)']
+      ])
+    )
+  })
+
+  test('leave out a library copy without variables that no target sets a mode in', () => {
+    const { editor, page, theme, node } = libraryCopies()
+    expect(variableModeChoices(editor, [node(page)]).map((c) => [c.collectionId, c.label])).toEqual(
+      [[theme.id, 'Theme (1)']]
+    )
+  })
+
+  test('list it, numbered apart from its namesake, where a target sets a mode in it', () => {
+    const { editor, graph, theme, empty, dark, plain, node } = libraryCopies()
+    graph.updateNode(plain.id, { variableModes: { [empty.id]: dark } })
+    expect(
+      variableModeChoices(editor, [node(plain.id)]).map((c) => [c.collectionId, c.label, c.name])
+    ).toEqual([
+      [theme.id, 'Theme (1)', 'Theme'],
+      [empty.id, 'Theme (2)', 'Theme']
+    ])
+  })
+
+  test('keep a local collection without variables', () => {
+    const { editor, graph, page, theme, node } = setup()
+    const local = graph.createCollection('Spacing')
+    graph.createMode(local.id, 'Wide')
+    expect(variableModeChoices(editor, [node(page)]).map((c) => c.collectionId)).toEqual([
+      theme.id,
+      local.id
+    ])
   })
 })
 

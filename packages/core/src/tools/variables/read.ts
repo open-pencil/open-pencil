@@ -1,17 +1,20 @@
 import * as v from 'valibot'
 
-import type { VariableType } from '@open-pencil/scene-graph'
+import { isHiddenFromPublishing, type Variable, type VariableType } from '@open-pencil/scene-graph'
 
 import type { FigmaAPI } from '#core/figma-api'
 import { graphOf } from '#core/figma-api/graph'
 import { defineTool } from '#core/tools/schema'
 
-/** The document's variables as tools report them, of one type or all. */
+function reportedVariable(variable: Variable): Variable {
+  return { ...variable, hiddenFromPublishing: isHiddenFromPublishing(variable) }
+}
+
+/** The document's variables, library copies included, of one type or all. */
 function documentVariables(figma: FigmaAPI, type?: VariableType) {
-  return figma.variables.getLocalVariables(type).flatMap((variable) => {
-    const record = graphOf(figma).variables.get(variable.id)
-    return record ? [record] : []
-  })
+  return [...graphOf(figma).variables.values()]
+    .filter((variable) => type === undefined || variable.type === type)
+    .map(reportedVariable)
 }
 
 export const listVariables = defineTool({
@@ -46,6 +49,6 @@ export const getVariable = defineTool({
   execute: (figma, { id }) => {
     const variable = graphOf(figma).variables.get(id)
     if (!variable) return { error: `Variable "${id}" not found` }
-    return variable
+    return reportedVariable(variable)
   }
 })

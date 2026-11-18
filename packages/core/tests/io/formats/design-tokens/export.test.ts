@@ -210,3 +210,21 @@ describe('design token export', () => {
     })
   })
 })
+
+describe('design token publishing flag', () => {
+  test('marks a local variable hidden from publishing, never a library copy', () => {
+    const graph = new SceneGraph()
+    const local = graph.createCollection('Local')
+    const draft = graph.createVariable('Draft', 'COLOR', local.id, blue)
+    draft.hiddenFromPublishing = true
+    const library = graph.createCollection('Library')
+    Object.assign(library, { key: 'library-collection', version: '1:1' })
+    const shared = graph.createVariable('Shared', 'COLOR', library.id, white)
+    Object.assign(shared, { key: 'library-shared', version: '1:1', hiddenFromPublishing: true })
+
+    expect(file(graph, 'Local/Mode 1.tokens.json').Draft).toMatchObject({
+      $extensions: { 'dev.openpencil': { hiddenFromPublishing: true } }
+    })
+    expect(file(graph, 'Library/Mode 1.tokens.json').Shared).not.toHaveProperty('$extensions')
+  })
+})

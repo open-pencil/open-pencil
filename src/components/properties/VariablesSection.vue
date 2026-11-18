@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { sumBy } from 'es-toolkit'
 import { computed } from 'vue'
 
+import { isLibraryCollection } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
@@ -11,14 +13,14 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 const emit = defineEmits<{ openDialog: [] }>()
 
 const editor = useEditorStore()
-const collectionCount = useSceneComputed(() => {
+const localCollections = useSceneComputed(() => {
   void editor.state.sceneVersion
-  return editor.getCollectionCount()
+  return editor.getCollections().filter((collection) => !isLibraryCollection(collection))
 })
-const variableCount = useSceneComputed(() => {
-  void editor.state.sceneVersion
-  return editor.getVariableCount()
-})
+const collectionCount = computed(() => localCollections.value.length)
+const variableCount = computed(() =>
+  sumBy(localCollections.value, (collection) => collection.variableIds.length)
+)
 const hasVariables = computed(() => variableCount.value > 0)
 const { panels } = useI18n()
 </script>

@@ -1,6 +1,9 @@
 import { uniq } from 'es-toolkit/array'
 
 import {
+  isHiddenFromPublishing,
+  isLibraryCollection,
+  isLibraryVariable,
   VARIABLE_SCOPES,
   type CodeSyntaxPlatform,
   type SceneGraph,
@@ -71,12 +74,15 @@ export function writeVariableValue(
 /** A variable as Figma's plugin API hands it out, reading and writing the document's. */
 export class FigmaVariable {
   readonly id: string
-  readonly remote = false
   readonly #graph: SceneGraph
 
   constructor(graph: SceneGraph, id: string) {
     this.#graph = graph
     this.id = id
+  }
+
+  get remote(): boolean {
+    return isLibraryVariable(this.#variable)
   }
 
   get #variable(): Variable {
@@ -111,10 +117,13 @@ export class FigmaVariable {
   }
 
   get hiddenFromPublishing(): boolean {
-    return this.#variable.hiddenFromPublishing
+    return isHiddenFromPublishing(this.#variable)
   }
 
   set hiddenFromPublishing(hidden: boolean) {
+    if (this.remote) {
+      throw new Error('in set_hiddenFromPublishing: Cannot edit a remote variable')
+    }
     this.#changing.hiddenFromPublishing = hidden
   }
 
@@ -212,7 +221,6 @@ export class FigmaVariable {
 /** A variable collection as Figma's plugin API hands it out. */
 export class FigmaVariableCollection {
   readonly id: string
-  readonly remote = false
   readonly isExtension = false
   readonly #graph: SceneGraph
 
@@ -225,6 +233,10 @@ export class FigmaVariableCollection {
     const collection = this.#graph.variableCollections.get(this.id)
     if (!collection) throw new Error(`Variable collection ${this.id} has been removed`)
     return collection
+  }
+
+  get remote(): boolean {
+    return isLibraryCollection(this.#collection)
   }
 
   get name(): string {

@@ -1239,6 +1239,17 @@ export function isLibraryCollection(collection: Pick<VariableCollection, 'key'>)
   return !!collection.key
 }
 
+export function isLibraryVariable(variable: Pick<Variable, 'key'>): boolean {
+  return !!variable.key
+}
+
+/** Figma saves library copies as unpublishable, so only a file's own variables can be hidden. */
+export function isHiddenFromPublishing(
+  variable: Pick<Variable, 'key' | 'hiddenFromPublishing'>
+): boolean {
+  return !isLibraryVariable(variable) && variable.hiddenFromPublishing
+}
+
 /** An HTML attribute name a stylesheet can select on unescaped: `data-theme`, `theme`. */
 export const MODE_ATTRIBUTE_PATTERN = /^[A-Za-z_][\w-]*$/
 
