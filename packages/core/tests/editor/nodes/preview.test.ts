@@ -4,6 +4,7 @@ import { createEditor } from '@open-pencil/core'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 function layerNamed(graph: SceneGraph, name: string) {
   const found = [...graph.getAllNodes()].find((node) => node.name === name)
@@ -219,6 +220,29 @@ describe('owned node previews', () => {
       const node = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, { opacity: 1 })
       editor.commitNodeUpdate(node.id, { opacity: 1 })
       expect(editor.undo.canUndo).toBe(false)
+    } finally {
+      editor.dispose()
+    }
+  })
+
+  test('a cancelled preview on an instance layer leaves no override behind', () => {
+    const editor = createEditor()
+    try {
+      const graph = editor.graph
+      const page = graph.getPages()[0]
+      const main = graph.createNode('COMPONENT', page.id, { width: 100, height: 100 })
+      graph.createNode('RECTANGLE', main.id, { width: 50, height: 50 })
+      const instance = graph.createInstance(main.id, page.id)
+      if (!instance) throw new Error('instance not created')
+      const layerId = instance.childIds[0]
+
+      const preview = editor.beginNodePreview('Opacity')
+      preview.update(layerId, { opacity: 0.5 })
+      expect(hasInstanceOverride(graph, layerId, 'opacity')).toBe(true)
+      preview.cancel()
+
+      expect(graph.getNode(layerId)?.opacity).toBe(1)
+      expect(hasInstanceOverride(graph, layerId, 'opacity')).toBe(false)
     } finally {
       editor.dispose()
     }

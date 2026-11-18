@@ -66,7 +66,7 @@ const legalStory = (template: string): Story => ({
 })
 
 export const SignIn = story(
-  `<PortalSignIn :host="host" mode="sign-in" :providers="['google', 'apple']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" />`
+  `<PortalSignIn :host="host" mode="sign-in" :providers="['google', 'apple', 'github']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" />`
 )
 export const SignInForTheDesktopApp = story(
   `<PortalSignIn :host="host" mode="sign-in" :providers="['google']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" returns-to="desktop" />`
@@ -95,6 +95,13 @@ export const CheckYourEmail = story(`
 export const WaitingForApproval = story(`
   <PortalNotice :host="host" tone="waiting" heading="Your request is with an administrator" description="We email ana@studio.example when you can sign in. Nothing else to do for now.">
     <template #icon><IconClock class="size-5" /></template>
+    <template #actions><AppButton variant="ghost">Sign out</AppButton></template>
+  </PortalNotice>`)
+/** Apple's Hide My Email starts a new account, so the page says how to reach an existing one. */
+export const WaitingWithHiddenEmail = story(`
+  <PortalNotice :host="host" tone="waiting" heading="Your request is with an administrator" description="We email cg4k6dj97t@privaterelay.appleid.com when you can sign in. Nothing else to do for now.">
+    <template #icon><IconClock class="size-5" /></template>
+    <p class="text-center text-xs text-muted">Already have an account here? Sign out and sign in to it as you usually do: Apple hid your email, so this one is new.</p>
     <template #actions><AppButton variant="ghost">Sign out</AppButton></template>
   </PortalNotice>`)
 export const TwoStep = story(`<PortalTwoFactor :host="host" method="authenticator" passkeys />`)

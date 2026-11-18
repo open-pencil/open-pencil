@@ -1,0 +1,1 @@
+- `serializeNode` is exported from `@open-pencil/dom-css/export` only, no longer from the package root (#2164).

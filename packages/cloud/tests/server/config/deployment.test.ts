@@ -109,6 +109,20 @@ lease_ms = 180000
 `
 
 describe('Cloud TOML deployment configuration', () => {
+  test('reads GitHub’s client secret from GITHUB_CLIENT_SECRET', () => {
+    const source = minimalSource.replace(
+      '[authentication.providers.google]',
+      '[authentication.providers.google]\n\n[authentication.providers.github]\nclient_id = "Iv-client"'
+    )
+    expect(
+      parseCloudDeploymentTOML(source, {
+        ...environment,
+        GITHUB_CLIENT_SECRET: 'github-secret'
+      })
+    ).toMatchObject({ githubClientId: 'Iv-client', githubClientSecret: 'github-secret' })
+    expect(() => parseCloudDeploymentTOML(source, environment)).toThrow()
+  })
+
   test('uses conventional secret references without TOML boilerplate', () => {
     expect(parseCloudDeploymentTOML(minimalSource, environment)).toMatchObject({
       deployment: 'self-hosted',
@@ -291,7 +305,12 @@ provider = "posthog"
     expect(
       parseCloudDeploymentTOML(tracked, { ...environment, POSTHOG_PROJECT_API_KEY: 'phc_test' })
         .errorTracking
-    ).toEqual({ provider: 'posthog', host: 'https://eu.i.posthog.com', projectAPIKey: 'phc_test' })
+    ).toEqual({
+      provider: 'posthog',
+      host: 'https://eu.i.posthog.com',
+      projectAPIKey: 'phc_test',
+      includeIds: false
+    })
 
     const inline = tracked.replace(
       'provider = "posthog"',
@@ -300,8 +319,15 @@ provider = "posthog"
     expect(parseCloudDeploymentTOML(inline, environment).errorTracking).toEqual({
       provider: 'posthog',
       host: 'https://eu.i.posthog.com',
-      projectAPIKey: 'phc_inline'
+      projectAPIKey: 'phc_inline',
+      includeIds: false
     })
+    expect(
+      parseCloudDeploymentTOML(
+        inline.replace('provider = "posthog"', 'provider = "posthog"\ninclude_ids = true'),
+        environment
+      ).errorTracking?.includeIds
+    ).toBe(true)
   })
 
   test('advertises services and billing only when configured', () => {

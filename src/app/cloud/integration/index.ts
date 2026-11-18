@@ -1,4 +1,5 @@
 import { watchCloudComments } from '../comments/sync'
+import { watchCloudDocumentNotices } from '../documents/notifications'
 /**
  * Everything the rest of the app uses from Cloud. A build with `VITE_OPENPENCIL_CLOUD=off`
  * resolves this module to `./off`, which offers the same names and does nothing, so Cloud's code
@@ -41,7 +42,8 @@ export {
 export const CLOUD_INCLUDED: boolean = true
 
 /**
- * Starts Cloud sign-ins, links, live rooms, comments, and forgetting an account another replaced;
+ * Starts Cloud sign-ins, links, live rooms, comments, document notifications, and forgetting an
+ * account another replaced;
  * returns what stops their watchers.
  */
 export function startCloud(options: {
@@ -51,10 +53,12 @@ export function startCloud(options: {
   const stopRooms = watchCloudRooms()
   const stopComments = watchCloudComments()
   const stopAccountSwitches = watchCloudAccountSwitches()
+  const stopNotices = watchCloudDocumentNotices()
   void startCloudSessions(options)
   return () => {
     stopRooms()
     stopComments()
     stopAccountSwitches()
+    stopNotices()
   }
 }

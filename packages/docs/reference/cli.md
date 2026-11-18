@@ -151,6 +151,9 @@ openpencil import page.html [options]
 | `--tailwind-file` | | File containing Tailwind utility candidates |
 | `--page-name` | | Scene graph page name (default: `DOM/CSS`) |
 | `--json` | | Print a machine-readable summary |
+| `--no-icon-names` | | Don't match inline SVG to the Iconify icons it draws |
+
+Inline SVG marked with `data-icon` becomes that icon, and other inline SVG that draws an Iconify icon from a popular set becomes that icon, as in the app. Matching downloads an icon index from jsDelivr and asks the Iconify API for the candidate icons by name, never sending the SVG; `--no-icon-names` turns matching off, and SVG named by `data-icon` still becomes its icon.
 
 Examples:
 

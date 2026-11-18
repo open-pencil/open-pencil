@@ -2,6 +2,7 @@ import { count, params } from '@nanostores/i18n'
 
 import { i18n } from '#vue/i18n/create'
 import { communityPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/community'
+import { personPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/person'
 import { planPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/plan'
 import { requestPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/requests'
 import { accessTokenPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/tokens'
@@ -26,8 +27,8 @@ export const cloudPortalMessageDefaults = {
   returnsTo: params('Then you go back to {destination}.'),
   returnsToDesktop: 'the OpenPencil app',
   returnsToEditor: 'the editor',
-  continueWithGoogle: 'Continue with Google',
-  continueWithApple: 'Continue with Apple',
+  /** A sign-in provider's button; `provider` is its name, such as Google. */
+  continueWith: params('Continue with {provider}'),
   or: 'or',
   name: 'Name',
   email: 'Email',
@@ -79,6 +80,8 @@ export const cloudPortalMessageDefaults = {
 
   pendingTitle: 'Your request is with an administrator',
   pendingDescription: params('We email {email} when you can sign in. Nothing else to do for now.'),
+  pendingHiddenEmail:
+    'Already have an account here? Sign out and sign in to it as you usually do: Apple hid your email, so this one is new.',
   closedTitle: 'You can’t use this server',
   closedDescription:
     'An administrator declined or removed your access. Ask them if you think this is a mistake.',
@@ -166,6 +169,7 @@ export const cloudPortalMessageDefaults = {
   ...requestPortalMessageDefaults,
   ...communityPortalMessageDefaults,
   ...planPortalMessageDefaults,
+  ...personPortalMessageDefaults,
   overview: 'Overview',
   accessRequests: 'Access requests',
   accessRequestsDescription:
@@ -265,8 +269,8 @@ export const cloudPortalMessageDefaults = {
   noSignIns: 'No sign-ins recorded yet.',
   signedInWith: params('With {method}'),
   methodPassword: 'password',
-  methodGoogle: 'Google',
-  methodApple: 'Apple',
+  /** A sign-in provider, as `signedInWith` names it; `provider` is its name, such as Google. */
+  methodProvider: params('{provider}'),
   methodPasskey: 'a passkey',
   methodTwoStep: 'two-step sign-in',
   methodEmailLink: 'an email link',
@@ -275,8 +279,6 @@ export const cloudPortalMessageDefaults = {
 
   waysToSignIn: 'Ways to sign in',
   waysToSignInDescription: 'Keep at least one, so you can always get back in.',
-  providerGoogle: 'Google',
-  providerApple: 'Apple',
   linkedOn: params('Linked {date}'),
   notLinked: 'Not linked',
   link: 'Link',
@@ -365,6 +367,8 @@ export const cloudPortalMessageDefaults = {
   columnPerson: 'Person',
   columnRole: 'Role',
   columnWorkspaces: 'Workspaces',
+  columnSignIn: 'Sign-in',
+  signInAny: 'Any sign-in',
   columnWorkspace: 'Workspace',
   columnMembers: 'Members',
   columnLastActive: 'Last active',
@@ -406,26 +410,6 @@ export const cloudPortalMessageDefaults = {
   removePersonPictureDescription:
     'Their initials show in its place. They can upload another picture.',
 
-  backToPeople: 'All people',
-  personAccount: 'Account',
-  emailVerified: 'Verified',
-  emailNotVerified: 'Not verified',
-  joinedRow: 'Joined',
-  lastActiveRow: 'Last active',
-  signInMethods: 'Ways to sign in',
-  twoStepRow: 'Two-step sign-in',
-  twoStepNone: 'Not set up',
-  passkeyCount: count({ one: '{count} passkey', many: '{count} passkeys' }),
-  personWorkspaces: 'Workspaces',
-  personWorkspacesEmpty: 'Not in any workspace.',
-  workspaceMembers: count({ one: '{count} member', many: '{count} members' }),
-  workspaceRoleAdmin: 'Admin',
-  workspaceRoleEditor: 'Editor',
-  workspaceRoleViewer: 'Viewer',
-  personSessions: 'Sessions',
-  noSessions: 'Not signed in anywhere.',
-  personNotFound: 'There’s no such account',
-  personNotFoundDescription: 'It may have been removed. Go back to the list of people.',
   you: '(you)',
   administrator: 'Administrator',
   suspended: 'Suspended',
@@ -500,6 +484,7 @@ export const cloudPortalMessageDefaults = {
   activityEmailRetried: 'retried an email to',
   activityTwoStepReset: 'reset two-step sign-in for',
   activityPictureRemoved: 'removed the picture of',
+  activitySignInMethodRemoved: 'removed a way to sign in from',
   activityReason: params('Reason: {reason}'),
   activityChanged: 'changed',
   reports: 'Reports',

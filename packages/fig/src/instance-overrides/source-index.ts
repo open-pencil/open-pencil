@@ -10,6 +10,7 @@ import {
   createTextStyleLookup,
   type TextStyleLookup
 } from '../node-change/style/lookup'
+import type { ComponentLoops } from './loops'
 import { findWithinBoundary, type TreeShape } from './tree'
 
 /** Archive records indexed by GUID, with children in saved order. */
@@ -21,6 +22,11 @@ export interface SourceIndex {
 export interface InterpreterIndex extends SourceIndex {
   readonly variables: DocumentVariables
   readonly textStyle: TextStyleLookup
+  /**
+   * The document's component loops, for an index over part of a document: which instance a
+   * loop loses depends on the whole document's layer order.
+   */
+  readonly componentLoops?: ComponentLoops
 }
 
 /** A record's archive identity, or undefined for the rare record without a GUID. */
@@ -144,6 +150,19 @@ export function resolvesInSourceComponent(
     sourceId = guidToString(record.symbolData.symbolID)
   }
   return false
+}
+
+/** The nearest component holding a record, the record included. */
+export function definitionOf({ sources }: SourceIndex, id: string): string | undefined {
+  const seen = new Set<string>()
+  for (let current: string | undefined = id; current !== undefined && !seen.has(current);) {
+    seen.add(current)
+    const record = sources.get(current)
+    if (!record) return undefined
+    if (record.type === 'SYMBOL') return current
+    current = parentIdOf(record)
+  }
+  return undefined
 }
 
 /** Follow raw symbol references to the component definition an instance ultimately expands. */

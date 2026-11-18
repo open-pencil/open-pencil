@@ -10,6 +10,7 @@ import {
   enrollmentStatusSchema,
   documentTakedownSchema,
   enrollmentReviewSchema,
+  signInMethodMutationSchema,
   userMutationSchema,
   userRoleMutationSchema
 } from '#cloud/admin/schema'
@@ -19,7 +20,8 @@ import {
   cloudAdminDocumentFilterSchema,
   cloudAdminEmailFilterSchema,
   cloudAdminReportFilterSchema,
-  cloudAdminUserFilterSchema
+  cloudAdminUserFilterSchema,
+  cloudAdminUserMethodSchema
 } from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
 import type { CloudAuthAdapter } from '#cloud/server/auth'
@@ -51,7 +53,10 @@ function listQuery<const Filter extends string>(filters: v.PicklistSchema<Filter
   })
 }
 const enrollmentQuerySchema = listQuery(enrollmentStatusSchema)
-const userQuerySchema = listQuery(cloudAdminUserFilterSchema)
+const userQuerySchema = v.object({
+  ...listQuery(cloudAdminUserFilterSchema).entries,
+  method: v.optional(cloudAdminUserMethodSchema)
+})
 const emailQuerySchema = listQuery(cloudAdminEmailFilterSchema)
 const auditQuerySchema = listQuery(cloudAdminAuditFilterSchema)
 const documentQuerySchema = listQuery(cloudAdminDocumentFilterSchema)
@@ -68,7 +73,8 @@ async function accountMutation(
   if (!v.is(accountIdSchema, userId)) {
     return context.json({ error: { code: 'not_found' as const } }, 404)
   }
-  await mutate(context.get('actor').userId, userId)
+  // A UUID matches in any case; the lowercase spelling is the one the actor's own ID uses.
+  await mutate(context.get('actor').userId, userId.toLowerCase())
   return context.json({ ok: true as const })
 }
 
@@ -197,6 +203,16 @@ export function createCloudAdminRoutes(
         accountMutation(context, context.req.valid('json').userId, (actorId, userId) =>
           services.users.resetTwoStep(actorId, userId)
         )
+      )
+      .post(
+        '/users/remove-sign-in-method',
+        validatedJSON(signInMethodMutationSchema),
+        (context) => {
+          const { userId, methodId } = context.req.valid('json')
+          return accountMutation(context, userId, (actorId, id) =>
+            services.users.removeSignInMethod(actorId, id, methodId)
+          )
+        }
       )
       .post('/users/remove-picture', validatedJSON(userMutationSchema), (context) =>
         accountMutation(context, context.req.valid('json').userId, (actorId, userId) =>

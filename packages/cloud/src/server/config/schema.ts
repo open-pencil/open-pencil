@@ -114,6 +114,8 @@ const rawCloudServerConfigSchema = v.object({
   appleTeamId: optionalTextSchema,
   appleKeyId: optionalTextSchema,
   applePrivateKey: optionalTextSchema,
+  githubClientId: optionalTextSchema,
+  githubClientSecret: optionalTextSchema,
   appleAppBundleIdentifier: optionalTextSchema,
   s3Endpoint: httpURLSchema,
   s3Region: v.pipe(v.string(), v.trim(), v.minLength(1)),
@@ -206,7 +208,9 @@ const rawCloudServerConfigSchema = v.object({
     v.object({
       provider: v.literal('posthog'),
       host: httpURLSchema,
-      projectAPIKey: v.pipe(v.string(), v.trim(), v.minLength(1))
+      projectAPIKey: v.pipe(v.string(), v.trim(), v.minLength(1)),
+      /** Error reports name the account and records involved; off unless a deployment sets it. */
+      includeIds: v.optional(v.boolean(), false)
     })
   )
 })
@@ -267,6 +271,7 @@ function validateAuthenticationConfig(config: CloudServerConfig): void {
     'appleKeyId',
     'applePrivateKey'
   ])
+  requireTogether(config, 'GitHub', ['githubClientId', 'githubClientSecret'])
 }
 
 function validateEmailConfig(config: CloudServerConfig): void {

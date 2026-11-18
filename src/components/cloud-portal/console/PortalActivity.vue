@@ -37,6 +37,7 @@ const actions = computed<Record<string, string>>(() => ({
   'email.regenerated': messages.value.activityEmailRetried,
   'user.two-step-reset': messages.value.activityTwoStepReset,
   'user.picture-removed': messages.value.activityPictureRemoved,
+  'user.sign-in-method-removed': messages.value.activitySignInMethodRemoved,
   'document.disabled': messages.value.activityTookDown,
   'document.enabled': messages.value.activityRestoredDocument,
   'document.undeleted': messages.value.activityUndeletedDocument,

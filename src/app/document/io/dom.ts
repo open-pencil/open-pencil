@@ -8,6 +8,7 @@ import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
+import { importIconMatcher } from '@/app/editor/icons/provider'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -66,7 +67,7 @@ export function createDOMOpenActions({
   ) {
     await nextFrame()
     const pageName = options.documentName ?? 'DOM Import'
-    load.update({ phase: 'decoding', detail: pageName })
+    load.update({ phase: 'styling', detail: pageName })
     // Laid out as a browser would, so layers land where the page put its elements.
     const styled = await browserHTMLToDesignDocument(html, {
       cssText: options.cssText,
@@ -74,7 +75,18 @@ export function createDOMOpenActions({
       compute: { layout: true, viewport: HTML_IMPORT_VIEWPORT }
     })
     load.signal.throwIfAborted()
-    const graph = await sceneGraphFromStyledHTML(styled, { pageName })
+    load.update({ phase: 'layout', detail: pageName })
+    const matcher = importIconMatcher(editor, load.signal)
+    const graph = await sceneGraphFromStyledHTML(styled, {
+      pageName,
+      // Asked only when the page draws SVG it does not name, which the index may be loading for.
+      matchIcon:
+        matcher &&
+        ((svgs) => {
+          load.update({ phase: 'naming-icons', detail: pageName })
+          return matcher(svgs)
+        })
+    })
     await nextFrame()
     await applyImportedDocument(editor, graph, load)
     // Into a reused tab too, the document opens with the panels its kind starts with.

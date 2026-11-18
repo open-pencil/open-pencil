@@ -363,6 +363,12 @@
       "import": "./dist/statuses/index.js",
       "default": "./dist/statuses/index.js"
     },
+    "./strokes": {
+      "types": "./dist/strokes.d.ts",
+      "bun": "./src/strokes.ts",
+      "import": "./dist/strokes.js",
+      "default": "./dist/strokes.js"
+    },
     "./text": {
       "types": "./dist/text/index.d.ts",
       "bun": "./src/text/index.ts",
@@ -438,6 +444,7 @@
     "nanoevents": "^9.1.0",
     "postcss-value-parser": "^4.2.0",
     "svgpath": "^2.6.0",
+    "ufo": "^1.6.4",
     "valibot": "^1.5.0"
   },
   "devDependencies": {

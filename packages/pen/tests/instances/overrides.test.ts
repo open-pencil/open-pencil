@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { PenNode } from '@open-pencil/pen'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { hasInstanceOverride, syncInstance } from '@open-pencil/scene-graph/instances'
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { parseDocument } from './helpers/document'
+import { parseDocument } from '../helpers/document'
+import { copyOf } from '../helpers/instances'
 
 const button: PenNode = {
   id: 'button',
@@ -31,27 +31,6 @@ const card: PenNode = {
     { id: 'title', type: 'text', content: 'Card title', fill: '#111111' },
     { id: 'cardButton', type: 'ref', ref: 'button' }
   ]
-}
-
-function layers(graph: SceneGraph, id: string): SceneNode[] {
-  const found: SceneNode[] = []
-  const queue = [...graph.getChildren(id)]
-  for (const node of queue) {
-    found.push(node)
-    for (const child of graph.getChildren(node.id)) queue.push(child)
-  }
-  return found
-}
-
-/** The copy in an instance made, through copies of copies, from the pen.dev layer `sourceId`. */
-function copyOf(graph: SceneGraph, instanceId: string, sourceId: string): SceneNode {
-  const madeFrom = (node: SceneNode): boolean => {
-    for (let id = node.componentId; id; id = graph.getNode(id)?.componentId ?? null) {
-      if (id === sourceId) return true
-    }
-    return false
-  }
-  return expectDefined(layers(graph, instanceId).find(madeFrom), `${sourceId} in ${instanceId}`)
 }
 
 describe('parsePenFile — instances', () => {
@@ -230,6 +209,74 @@ describe('parsePenFile — instances', () => {
     expect(graph.getChildren(nested.id).map((node) => node.text)).toEqual(['Note'])
     expect(getNodeOrThrow(graph, 'kept').type).toBe('INSTANCE')
     expect(graph.getChildren('kept')[1]?.type).toBe('INSTANCE')
+  })
+
+  test('draws the children a ref passes to a slot component inside its frame', () => {
+    const slotCard: PenNode = {
+      id: 'slotCard',
+      type: 'frame',
+      reusable: true,
+      slot: [],
+      width: 200,
+      height: 100,
+      fill: '#EEEEEE',
+      layout: 'vertical',
+      padding: 16
+    }
+    const graph = parseDocument([
+      slotCard,
+      {
+        id: 'filled',
+        type: 'ref',
+        ref: 'slotCard',
+        width: 260,
+        children: [{ id: 'box', type: 'frame', width: 80, height: 40, fill: '#FF0000' }]
+      },
+      { id: 'empty', type: 'ref', ref: 'slotCard' }
+    ])
+    expect(graph.getChildren('filled').map((node) => node.id)).toEqual(['box'])
+    expect(getNodeOrThrow(graph, 'box')).toMatchObject({ width: 80, height: 40 })
+    expect(getNodeOrThrow(graph, 'filled')).toMatchObject({ width: 260, paddingTop: 16 })
+    expect(getNodeOrThrow(graph, 'empty').type).toBe('INSTANCE')
+    expect(graph.getChildren('empty')).toEqual([])
+  })
+
+  // pen.dev 2.21 draws a ref's children in place of its component's, without a `slot` too (#2193).
+  test("draws a ref's children in place of its component's", () => {
+    const graph = parseDocument([
+      button,
+      {
+        id: 'custom',
+        type: 'ref',
+        ref: 'button',
+        children: [{ id: 'own', type: 'text', content: 'Own' }]
+      }
+    ])
+    expect(graph.getChildren('custom').map((node) => node.id)).toEqual(['own'])
+    expect(getNodeOrThrow(graph, 'custom').type).toBe('FRAME')
+  })
+
+  test("sizes a fit_content(N) slot to the ref's children, not its empty fallback", () => {
+    const graph = parseDocument([
+      {
+        id: 'slot',
+        type: 'frame',
+        reusable: true,
+        slot: [],
+        layout: 'vertical',
+        width: 'fit_content(200)',
+        height: 'fit_content(100)'
+      },
+      {
+        id: 'filled',
+        type: 'ref',
+        ref: 'slot',
+        children: [{ id: 'box', type: 'frame', width: 80, height: 40 }]
+      },
+      { id: 'empty', type: 'ref', ref: 'slot' }
+    ])
+    expect(getNodeOrThrow(graph, 'filled')).toMatchObject({ minWidth: null, minHeight: null })
+    expect(getNodeOrThrow(graph, 'empty')).toMatchObject({ minWidth: 200, minHeight: 100 })
   })
 
   test('keeps a replacement that is an instance of another component', () => {

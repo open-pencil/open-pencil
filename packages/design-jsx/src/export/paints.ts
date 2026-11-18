@@ -184,7 +184,9 @@ export function collectStrokeProps(node: SceneNode, props: JSXProp[]): void {
   if (node.strokeJoin !== DEFAULT_STROKE_JOIN) {
     props.push(['strokeJoin', STROKE_JOIN.print(node.strokeJoin)])
   }
-  if (node.dashPattern.length > 0) props.push(['dashPattern', [...node.dashPattern]])
+  // With strokes, each stroke's own dash says it; the layer's follows the first.
+  if (node.strokes.length === 0 && node.dashPattern.length > 0)
+    props.push(['dashPattern', [...node.dashPattern]])
   if (node.independentStrokeWeights) {
     props.push([
       'strokeWeights',

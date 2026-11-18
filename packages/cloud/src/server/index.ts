@@ -64,6 +64,7 @@ export {
   type AccessRequest,
   type DocumentRole
 } from './auth'
+export { configuredSocialProviders } from './auth/social-providers'
 export {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
@@ -128,7 +129,6 @@ export {
   CloudConfigError,
   cloudDeploymentConfigSchema,
   cloudDiscoveryFromConfig,
-  configuredSocialProviders,
   parseCloudDeploymentConfig,
   parseCloudDeploymentSource,
   parseCloudDeploymentTOML,

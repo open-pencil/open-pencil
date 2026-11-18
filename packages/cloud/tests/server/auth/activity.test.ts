@@ -23,7 +23,10 @@ describe('sign-in activity', () => {
       'google'
     )
     expect(signInMethod({ path: '/callback/:id', params: { id: 'apple' } }, methods)).toBe('apple')
-    expect(signInMethod({ path: '/callback/:id', params: { id: 'github' } }, methods)).toBe('other')
+    expect(signInMethod({ path: '/callback/:id', params: { id: 'github' } }, methods)).toBe(
+      'github'
+    )
+    expect(signInMethod({ path: '/callback/:id', params: { id: 'gitlab' } }, methods)).toBe('other')
     expect(signInMethod({ path: '/passkey/verify-authentication' }, methods)).toBe('passkey')
     expect(signInMethod({ path: '/two-factor/verify-totp' }, methods)).toBe('two-step')
     expect(signInMethod({ path: '/verify-email' }, methods)).toBe('email-link')

@@ -38,5 +38,9 @@
   "savingDocument": "正在保存文档…",
   "saveFailedRetry": "重试保存",
   "fileChangedOnDisk": "“{name}”已在磁盘上更改。未保存的更改会保留；保存将替换该文件。",
-  "reloadDiscardingChanges": "重新加载"
+  "reloadDiscardingChanges": "重新加载",
+  "autosaveFailed": "无法保存“{name}”：{error}",
+  "saveFailedTitle": "无法保存“{name}”",
+  "notifySaveFailed": "保存失败",
+  "notifySaveFailedHint": "无法自动保存已打开的文档。"
 }

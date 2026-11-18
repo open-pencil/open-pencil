@@ -64,8 +64,8 @@ export const cloudMessageDefaults = {
   errorExpiredDescription: 'It wasn’t approved in time. Start again to get a new one.',
   errorSignInFailedHeading: 'Couldn’t sign in',
   errorSignInFailedDescription: 'The server didn’t finish signing you in. Try again in a moment.',
-  continueWithGoogle: 'Continue with Google',
-  continueWithApple: 'Continue with Apple',
+  /** A sign-in provider's button; `provider` is its name, such as Google. */
+  continueWith: params('Continue with {provider}'),
   continueWithEmail: 'Continue with email',
   signInNoteDesktop: 'Your browser opens to finish signing in, then you come back here.',
   signInNoteBrowser: 'You come back to this tab after signing in.',
@@ -197,6 +197,11 @@ export const cloudMessageDefaults = {
   statusStorageFullDetail:
     'The owner of this file has used all their storage, so it’s view only until space is freed or their plan grows. It can still be opened, downloaded, and deleted.',
   statusManagePlan: 'Manage plan',
+  storageFullTitle: params('“{name}” is view only'),
+  notifyConflict: 'Cloud conflicts',
+  notifyConflictHint: 'An open Cloud file was changed in two places and needs you to choose.',
+  notifyStorageFull: 'Cloud storage full',
+  notifyStorageFullHint: 'An open Cloud file became view only because its owner’s storage is full.',
   // Keeping a file without an account
   draftHeading: 'Keep this file',
   draftDescription: params<{ host: string }>(

@@ -52,6 +52,7 @@ import {
   type CapturedBox,
   type CapturedBoxes
 } from './placement'
+import { applySVGSize, isInlineSVG } from './svg'
 import {
   applyCollapsedBorders,
   applyTableLayout,
@@ -321,6 +322,8 @@ function hasContent(element: DesignElement): boolean {
 interface Recorded {
   boxes: CapturedBoxes
   transforms: CSSTransforms
+  /** Inline SVG elements by the frame built for each, for the caller to draw once laid out. */
+  svgs: Map<string, DesignElement>
   /** Cells of tables with collapsed borders, until their table draws each shared border once. */
   collapsedCells: SceneNode[]
 }
@@ -360,6 +363,7 @@ function createElementNode(
   const style = mergedStyle(element)
   const display = elementDisplay(element, style)
   if (display === 'none' || isTableColumn(display)) return null
+  if (isInlineSVG(element)) return createSVGFrame(graph, parentId, element, parentFlow, recorded)
   if (
     isTextLikeElement(element) &&
     !hasBoxStyle(element, style, parentFlow) &&
@@ -420,6 +424,30 @@ function layOutTablesAndGrids(
   }
   if (isTableRow(display)) layOutRowSpans(node, parts, recorded.boxes)
   if (isGrid(display)) alignGridItems(graph, node, parts, style, recorded.boxes)
+}
+
+/**
+ * Inline SVG as a frame with the element's box and style and none of its shapes, recorded for
+ * the caller to draw into once layout has sized it.
+ */
+function createSVGFrame(
+  graph: SceneGraph,
+  parentId: string,
+  element: DesignElement,
+  parentFlow: ParentFlow,
+  recorded: Recorded
+): SceneNode {
+  const style = mergedStyle(element)
+  const node = graph.createNode('FRAME', parentId, {
+    name: element.attrs.id || element.attrs.class || element.tagName,
+    clipsContent: false
+  })
+  applyElementStyle(graph, node, element, style)
+  applySVGSize(node, element, style)
+  recordElement(graph, recorded, node, element, style)
+  recorded.svgs.set(node.id, element)
+  applyFlowSizing(graph, node, style, elementDisplay(element, style), parentFlow)
+  return node
 }
 
 /**
@@ -505,6 +533,11 @@ export interface DesignLayers {
   boxes: CapturedBoxes
   /** The elements' transforms, for `applyCSSTransforms` once the layers are laid out. */
   transforms: CSSTransforms
+  /**
+   * Inline SVG elements by the frame built for each. The frame takes the element's box and
+   * style but none of its shapes, which the caller draws into it at the size layout gives it.
+   */
+  svgs: Map<string, DesignElement>
 }
 
 /**
@@ -518,7 +551,12 @@ export function designDocumentToLayers(
 ): DesignLayers {
   const graph = new SceneGraph()
   const page = graph.getPages().find((node) => node.type === 'CANVAS') ?? graph.addPage('DesignDOM')
-  const recorded: Recorded = { boxes: new Map(), transforms: new Map(), collapsedCells: [] }
+  const recorded: Recorded = {
+    boxes: new Map(),
+    transforms: new Map(),
+    svgs: new Map(),
+    collapsedCells: []
+  }
 
   page.name = options.pageName ?? 'DesignDOM'
 
