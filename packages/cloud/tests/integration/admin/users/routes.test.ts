@@ -4,9 +4,13 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
+  createAdminUserService,
+  createAuthenticationEmailService,
   createBetterAuthAdapter,
   createCloudApp,
+  createTransactionalEmailService,
   parseCloudServerConfig,
+  type AuthenticationEmailService,
   type CloudActor
 } from '#cloud/server'
 import { testClient } from 'hono/testing'
@@ -97,7 +101,7 @@ async function server(userId: string, name: string) {
     )
     return detail.methods.map((method) => [method.provider, method.canRemove])
   }
-  return { password, google, remove, left, offered }
+  return { password, google, remove, left, offered, database: runtime.database }
 }
 
 describe('admin people routes', () => {
@@ -131,6 +135,34 @@ describe('admin people routes', () => {
     const removed = await remove(password.id)
     expect(removed.status).toBe(200)
     expect(await responseJSON(removed, answerSchema)).toEqual({ ok: true })
+    expect(await left()).toEqual(['google'])
+  })
+
+  test('queue the removal’s notice in its transaction, so neither outlives the other', async () => {
+    const { password, left, database } = await server(GRACE_ID, 'Grace')
+    const queue = createTransactionalEmailService(database, {
+      encryptionSecret: 'notice-test-secret-at-least-32-characters',
+      from: 'cloud@example.com'
+    })
+    const notices = createAuthenticationEmailService(queue, config.publicURL)
+    const removing = (send: AuthenticationEmailService['sendTwoStepChanged']) =>
+      createAdminUserService(database, createBetterAuthAdapter(config, database), {
+        notify: { ...notices, sendTwoStepChanged: send }
+      }).removeSignInMethod(ADMIN_ID, GRACE_ID, password.id)
+    const queued = () => database.selectFrom('transactionalEmail').select('kind').execute()
+
+    // The real notice is queued, then something after it fails: both go.
+    await expect(
+      removing(async (input, transaction) => {
+        await notices.sendTwoStepChanged(input, transaction)
+        throw new Error('after the notice')
+      })
+    ).rejects.toThrow('after the notice')
+    expect(await queued()).toEqual([])
+    expect(await left()).toHaveLength(2)
+
+    await removing(notices.sendTwoStepChanged)
+    expect(await queued()).toEqual([{ kind: 'two-step-changed' }])
     expect(await left()).toEqual(['google'])
   })
 })
