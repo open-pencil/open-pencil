@@ -30,7 +30,7 @@ import CommentComposer from './CommentComposer.vue'
 import CommentPin from './CommentPin.vue'
 import CommentThreadCard from './CommentThreadCard.vue'
 import { comments as commentsTheme } from './ui'
-import { clusterZoomTarget, usePinClusters, type PinCluster } from './usePinClusters'
+import { clusterView, usePinClusters, type PinCluster } from './usePinClusters'
 import { usePinDrag } from './usePinDrag'
 
 const { canvasEl, drawn = null } = defineProps<{
@@ -111,17 +111,41 @@ const pins = computed(() => {
       const dragged = pinDrag.draggedTo(thread.id)
       const at = dragged ?? comments.pinPosition(thread)
       const dragging = dragged !== null
-      const standalone = dragging || thread.id === activeThreadId.value
+      const standalone =
+        pinDrag.pressed(thread.id) || dragging || thread.id === activeThreadId.value
       return { thread, at, dragging, standalone, ...toLayer(at) }
     })
 })
 
 const { pins: shownPins, clusters } = usePinClusters(pins)
 
-/** A cluster's click zooms in on its pins until they part, as in Figma. */
-function openCluster(cluster: PinCluster<(typeof pins.value)[number]>) {
-  const target = clusterZoomTarget(cluster, store.state.zoom)
-  store.centerOn(target.x, target.y, target.zoom)
+const pinsLayer = useTemplateRef<HTMLElement>('pinsLayer')
+
+/**
+ * A cluster's click zooms in on its pins until they part, as in Figma. Focus on the cluster,
+ * which the zoom removes, moves to its first pin, or to the cluster that pin is in now.
+ */
+function openCluster(event: MouseEvent, cluster: PinCluster<(typeof pins.value)[number]>) {
+  const hadFocus =
+    event.currentTarget instanceof HTMLElement && document.activeElement === event.currentTarget
+  const { bounds, maxZoom } = clusterView(cluster)
+  store.zoomToBounds(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height, {
+    maxZoom
+  })
+  if (!hadFocus) return
+  // Pins move with the next drawn frame, so wait for the clusters to change.
+  const stop = watch(
+    clusters,
+    (next) => {
+      stop()
+      if (next.some((other) => other.key === cluster.key)) return
+      const id = CSS.escape(cluster.pins[0].thread.id)
+      pinsLayer.value
+        ?.querySelector<HTMLElement>(`[data-thread-id="${id}"], [data-cluster~="${id}"]`)
+        ?.focus()
+    },
+    { flush: 'post' }
+  )
 }
 
 function clusterLabel(count: number) {
@@ -210,9 +234,27 @@ function closeCard() {
     />
 
     <div
+      ref="pinsLayer"
       :class="ui.pins()"
       :style="{ transform: `translate(${placement.panX}px, ${placement.panY}px)` }"
     >
+      <!-- Before the pins, so an open or dragged pin a cluster sits over stays on top. -->
+      <button
+        v-for="cluster in clusters"
+        :key="cluster.key"
+        type="button"
+        :class="ui.cluster()"
+        :style="{ left: `${cluster.left}px`, top: `${cluster.top}px` }"
+        :aria-label="clusterLabel(cluster.pins.length)"
+        :data-cluster="cluster.key"
+        data-slot="comment-cluster"
+        @pointerdown.stop
+        @mousedown.prevent
+        @click.stop="openCluster($event, cluster)"
+      >
+        {{ cluster.pins.length }}
+      </button>
+
       <AppContextMenuRoot v-for="pin in shownPins" :key="pin.thread.id" :modal="false">
         <ContextMenuTrigger as-child>
           <CommentPin
@@ -226,6 +268,7 @@ function closeCard() {
             :unread="comments.isUnread(pin.thread.id)"
             :style="{ left: `${pin.left}px`, top: `${pin.top}px` }"
             :aria-label="pinLabel(pin.thread)"
+            :data-thread-id="pin.thread.id"
             @pointerdown.stop="pinDrag.start($event, pin.thread.id, pin.at)"
             @pointermove="pinDrag.move"
             @pointerup="pinDrag.end"
@@ -241,20 +284,6 @@ function closeCard() {
           </ContextMenuContent>
         </ContextMenuPortal>
       </AppContextMenuRoot>
-
-      <button
-        v-for="cluster in clusters"
-        :key="cluster.key"
-        type="button"
-        :class="ui.cluster()"
-        :style="{ left: `${cluster.left}px`, top: `${cluster.top}px` }"
-        :aria-label="clusterLabel(cluster.pins.length)"
-        data-slot="comment-cluster"
-        @pointerdown.stop
-        @click.stop="openCluster(cluster)"
-      >
-        {{ cluster.pins.length }}
-      </button>
 
       <CommentPin
         v-if="draftPlace"

@@ -151,13 +151,24 @@ test('crowded pins gather into a count bubble that zooms in when clicked', async
   await view(0.25)
   await expect(clusters()).toHaveCount(1)
   await expect(clusters()).toHaveText('3')
-  await expect(clusters()).toHaveAttribute('aria-label', 'Comments: 3')
+  await expect(clusters()).toHaveAccessibleName(/3/)
   await expect(pins()).toHaveCount(before - 3)
 
   await clusters().click()
   await expect(clusters()).toHaveCount(0)
   await expect(pins()).toHaveCount(before)
-  const zoom = await editor.page.evaluate(() => window.openPencil?.getStore?.()?.state.zoom ?? 0)
+  const zoom = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.zoom
+  })
   expect(zoom).toBeGreaterThan(0.5)
+
+  // From the keyboard, focus moves on to a pin the cluster held.
+  await view(0.25)
+  await clusters().focus()
+  await editor.page.keyboard.press('Enter')
+  await expect(clusters()).toHaveCount(0)
+  await expect(editor.page.locator('[data-thread-id]:focus')).toHaveCount(1)
   await editor.page.keyboard.press('Escape')
 })

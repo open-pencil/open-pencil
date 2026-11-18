@@ -1,3 +1,5 @@
+import { focusStyles } from '@/theme/focus/styles'
+
 /** A pin's bubble is this many pixels square: `p-1` around a 24px avatar, or `size-8`. */
 export const COMMENT_PIN_SIZE = 32
 
@@ -23,8 +25,10 @@ export default {
     pinPreview:
       'grid grid-cols-[0fr] grid-rows-[0fr] opacity-0 transition-[grid-template-columns,grid-template-rows,opacity] duration-150 ease-out group-hover/pin:grid-cols-[1fr] group-hover/pin:grid-rows-[1fr] group-hover/pin:opacity-100 group-focus-visible/pin:grid-cols-[1fr] group-focus-visible/pin:grid-rows-[1fr] group-focus-visible/pin:opacity-100 motion-reduce:transition-none',
     // Pins crowded together when zoomed out, as one round bubble with their count, as in Figma.
-    cluster:
-      'pointer-events-auto absolute flex size-16 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel text-sm font-medium text-surface shadow-md ring-1 ring-black/10 outline-none select-none hover:shadow-lg focus-visible:ring-2 focus-visible:ring-accent',
+    cluster: [
+      'pointer-events-auto absolute flex size-16 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-panel text-sm font-medium text-surface shadow-md ring-1 ring-black/10 select-none hover:shadow-lg',
+      focusStyles.ringStrong
+    ],
     pinPreviewClip: 'min-h-0 min-w-0 overflow-hidden',
     pinPreviewBody: 'flex w-max max-w-56 flex-col py-0.5 pe-2 ps-2 text-xs',
     pinText: 'line-clamp-2 break-words text-surface',
