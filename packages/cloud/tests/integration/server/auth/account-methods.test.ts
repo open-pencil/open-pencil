@@ -7,8 +7,8 @@ import {
   createVerifiedCredentialAccount,
   withCookie
 } from '#cloud-tests/helpers/account-authentication'
+import { responseJSON } from '#cloud-tests/helpers/response'
 import { cloudAuthenticationMethodsResponseSchema } from '#cloud/contract'
-import * as v from 'valibot'
 
 describe('account authentication methods', () => {
   test('lists and unlinks methods while preserving another sign-in method', async () => {
@@ -42,7 +42,7 @@ describe('account authentication methods', () => {
         undefined,
         withCookie(account.sessionCookie)
       )
-      const body = v.parse(cloudAuthenticationMethodsResponseSchema, await response.json())
+      const body = await responseJSON(response, cloudAuthenticationMethodsResponseSchema)
       expect(body.methods).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ provider: 'credential', canUnlink: true }),
@@ -90,7 +90,7 @@ describe('account authentication methods', () => {
         undefined,
         withCookie(account.sessionCookie)
       )
-      const body = v.parse(cloudAuthenticationMethodsResponseSchema, await response.json())
+      const body = await responseJSON(response, cloudAuthenticationMethodsResponseSchema)
       expect(body.methods.map((method) => [method.provider, method.canUnlink])).toEqual(
         expect.arrayContaining([
           ['credential', false],
@@ -149,10 +149,7 @@ describe('account authentication methods', () => {
         undefined,
         withCookie(account.sessionCookie)
       )
-      const methods = v.parse(
-        cloudAuthenticationMethodsResponseSchema,
-        await methodsResponse.json()
-      )
+      const methods = await responseJSON(methodsResponse, cloudAuthenticationMethodsResponseSchema)
       expect(methods.methods).toHaveLength(1)
       expect(methods.methods[0]).toMatchObject({ provider: 'credential', canUnlink: false })
       const method = methods.methods[0]
