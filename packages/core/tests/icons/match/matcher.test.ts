@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path'
 
 import { noop } from 'es-toolkit'
 import { loadIndex } from 'whaticon'
-import { DEFAULT_SIZE, HASH_BYTES, dHashFromPixels, parseIndex } from 'whaticon/hash'
+import { DEFAULT_SIZE, dHashFromPixels, parseIndex } from 'whaticon/hash'
 import { coverageFromRGBA } from 'whaticon/match'
 
 import { getCanvasKit } from '#core/canvaskit'
@@ -111,29 +111,6 @@ describe('naming icons by how they draw', () => {
     expect(await match([house])).toEqual(['lucide:house'])
   })
 
-  test("names an icon from the sets that loaded when another set's icons fail to load", async () => {
-    const icons = testIcons()
-    icons.previews.mockImplementation((names: readonly string[]) => {
-      // Thrown at once rather than rejected, which must still leave only this set out.
-      if (names.some((name) => name.startsWith('other:'))) throw new Error('timed out')
-      return Promise.resolve(
-        new Map(names.flatMap((name) => (ICONS[name] ? [[name, ICONS[name]] as const] : [])))
-      )
-    })
-    // Another set's copy of the house hashes as the house does, so it is shortlisted beside it.
-    const index = async () => {
-      const own = await testIndex()
-      const at = own.names.indexOf('lucide:house') * HASH_BYTES
-      const house = own.hashes.subarray(at, at + HASH_BYTES)
-      const bytes = new Uint8Array([...own.hashes, ...house])
-      return parseIndex([...own.names, 'other:house'].join('\n'), bytes)
-    }
-    const match = createIconMatcher({ index, icons, draw })
-
-    expect(await match([ICONS['lucide:house'] ?? ''])).toEqual(['lucide:house'])
-    expect(icons.previews).toHaveBeenCalledWith(['other:house'])
-  })
-
   test("names an icon against whaticon's published index", async () => {
     // The index the package ships, which jsDelivr serves for its version, read offline.
     const data = join(dirname(Bun.resolveSync('whaticon', import.meta.dir)), '..', 'data')
@@ -152,6 +129,18 @@ describe('naming icons by how they draw', () => {
 })
 
 describe("whaticon's index", () => {
+  test('gives up at its deadline even when the fetcher ignores the signal', async () => {
+    const signals: AbortSignal[] = []
+    const fetcher = mock(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.signal) signals.push(init.signal)
+      return new Promise<Response>(noop)
+    })
+    const withPreconnect = Object.assign(fetcher, { preconnect: fetch.preconnect })
+
+    expect(await fetchIconIndex(withPreconnect, 20).catch(String)).toContain('stopped')
+    expect(signals.every((signal) => signal.aborted)).toBe(true)
+  })
+
   test('cancels the other download when one fails', async () => {
     const signals: AbortSignal[] = []
     const fetcher = mock(async (input: RequestInfo | URL, init?: RequestInit) => {

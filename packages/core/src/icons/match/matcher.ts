@@ -1,10 +1,8 @@
-import { chunk, groupBy } from 'es-toolkit'
 import { createMatcher, fetchIndex, type Matcher } from 'whaticon/match'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { NAMES_PER_REQUEST, parseIconName, type IconProvider } from '#core/icons/provider'
-import { settledAnswers } from '#core/icons/settled'
+import type { IconProvider } from '#core/icons/provider'
 import type { RGBAImage } from '#core/io/formats/raster/pixels'
 import { createSVGNodes } from '#core/io/formats/svg/import'
 
@@ -37,16 +35,17 @@ const INDEX_TIMEOUT_MS = 30_000
 
 /**
  * whaticon's index of the popular Iconify sets, from the version Core depends on. Its downloads
- * share one signal, which `INDEX_TIMEOUT_MS` aborts, as a failed download does the other's, so
- * none outlives the attempt.
+ * share one signal, which `timeoutMs` aborts, as a failed download does the other's, so none
+ * outlives the attempt; the deadline also rejects the attempt itself.
  */
 export async function fetchIconIndex(
-  fetcher: typeof globalThis.fetch
+  fetcher: typeof globalThis.fetch,
+  timeoutMs = INDEX_TIMEOUT_MS
 ): ReturnType<typeof fetchIndex> {
   const controller = new AbortController()
   const timer = setTimeout(() => {
-    controller.abort(new Error(`whaticon's index took longer than ${INDEX_TIMEOUT_MS} ms`))
-  }, INDEX_TIMEOUT_MS)
+    controller.abort(new Error(`whaticon's index took longer than ${timeoutMs} ms`))
+  }, timeoutMs)
   // A proxy keeps the fetcher's own type while giving each request the shared signal.
   const abortable = new Proxy(fetcher, {
     apply: (target, self, [input, init]: Parameters<typeof globalThis.fetch>) =>
@@ -94,19 +93,6 @@ export async function drawSVG(
 }
 
 /**
- * The icons' SVG from `provider`, asked for a set at a time in parts of one Iconify request, so a
- * part that fails leaves out only its own icons, which the matcher compares with next time.
- */
-function previewsByRequest(
-  provider: IconProvider,
-  names: readonly string[]
-): Promise<Map<string, string>> {
-  const sets = Object.values(groupBy(names, (name) => parseIconName(name)?.prefix ?? ''))
-  const parts = sets.flatMap((set) => chunk(set, NAMES_PER_REQUEST))
-  return settledAnswers(parts.map((part) => () => provider.previews(part)))
-}
-
-/**
  * Names the icons SVG draws with whaticon's matcher, drawing each SVG and candidate icon as
  * OpenPencil draws it and taking candidates from `icons`. What could not be loaded or drawn, as
  * offline, leaves its SVG unnamed, is tried again by the next call, and is warned about once.
@@ -115,7 +101,8 @@ export function createIconMatcher(services: IconMatcherServices): IconMatcher {
   return createMatcher({
     index: services.index,
     draw: (svg, width, height) => drawSVG(services.draw, svg, width, height),
-    icons: (names) => previewsByRequest(services.icons, names),
+    // Previews leave out icons whose request failed, which the matcher compares with next time.
+    icons: (names) => services.icons.previews(names),
     onError: (reason, error) => console.warn(`Icons are not named: ${reason}`, error)
   })
 }

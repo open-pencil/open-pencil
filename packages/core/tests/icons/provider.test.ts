@@ -151,6 +151,15 @@ describe('Iconify provider', () => {
     expect(requests).toHaveLength(2)
   })
 
+  test('previews show the icons that loaded when another request fails; placing reports it', async () => {
+    const { provider, failing } = setup()
+    failing.add('/bi.json')
+
+    const previews = await provider.previews(['test:square', 'bi:square'])
+    expect([...previews.keys()]).toEqual(['test:square'])
+    expect(await provider.icons(['test:square', 'bi:square'], 24).catch(String)).toContain('500')
+  })
+
   test('a name without a set is refused', async () => {
     const { provider } = setup()
     await expect(provider.previews(['square'])).rejects.toThrow('prefix:name')

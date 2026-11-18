@@ -2,7 +2,6 @@ import { maxOf } from '@open-pencil/scene-graph/arrays'
 import type { IconOptions } from '@open-pencil/scene-graph/icons'
 
 import { parseIconName, type IconProvider } from '#core/icons/provider'
-import { settledAnswers } from '#core/icons/settled'
 import type { IconCollection, IconData, IconSearchResult } from '#core/icons/types'
 
 /** A provider of its own for some sets, such as fonts we draw icons from ourselves. */
@@ -47,17 +46,17 @@ export function createIconSetsProvider({
   }
 
   /** What every provider answers for its names; one that fails leaves only its own out. */
-  function answered<T>(
+  async function answered<T>(
     names: readonly string[],
     ask: (provider: IconProvider, names: string[]) => Promise<Map<string, T>>
   ): Promise<Map<string, T>> {
-    return settledAnswers(
-      [...byProvider(names)].map(
-        ([provider, part]) =>
-          () =>
-            ask(provider, part)
-      )
+    // Each ask runs inside an async call, so one that throws at once fails like one that rejects.
+    const parts = await Promise.allSettled(
+      [...byProvider(names)].map(async ([provider, part]) => ask(provider, part))
     )
+    const failed = parts.find((part) => part.status === 'rejected')
+    if (failed && parts.every((part) => part.status === 'rejected')) throw failed.reason
+    return new Map(parts.flatMap((part) => (part.status === 'fulfilled' ? [...part.value] : [])))
   }
 
   return {

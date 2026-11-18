@@ -48,7 +48,7 @@ export function parseIconName(name: string): { prefix: string; iconName: string 
 }
 
 /** Names per request, so the query string of a long list stays well within URL limits. */
-export const NAMES_PER_REQUEST = 100
+const NAMES_PER_REQUEST = 100
 
 /**
  * Icons from the Iconify API, fetched one request per set and cached by name, so search
@@ -83,7 +83,11 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
     }
   }
 
-  async function load(names: readonly string[]): Promise<void> {
+  /**
+   * Loads the names not yet loaded, joining requests already on their way, and returns the
+   * requests that failed, so a caller decides whether what did load is enough.
+   */
+  async function load(names: readonly string[]): Promise<PromiseRejectedResult[]> {
     const waiting = new Set<Promise<void>>()
     const needed = new Map<string, string[]>()
     for (const name of names) {
@@ -113,14 +117,17 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
         waiting.add(pending)
       }
     }
-    await Promise.all(waiting)
+    const settled = await Promise.allSettled(waiting)
+    return settled.filter((result) => result.status === 'rejected')
   }
 
   return {
     search: (query, options) => client.search(query, options),
 
     async icons(names, size) {
-      await load(names)
+      // Placing an icon reports a failed request rather than placing fewer icons.
+      const failed = (await load(names)).at(0)
+      if (failed) throw failed.reason
       const found = new Map<string, IconData>()
       for (const name of names) {
         const entry = entries.get(name)
@@ -150,7 +157,7 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
     },
 
     async previews(names) {
-      await load(names)
+      const failed = (await load(names)).at(0)
       const found = new Map<string, string>()
       for (const name of names) {
         const entry = entries.get(name)
@@ -158,6 +165,8 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
         const { attributes, body } = iconToSVG(entry)
         found.set(name, iconToHTML(body, attributes))
       }
+      // What loaded is shown even when another request failed; with nothing loaded, the failure.
+      if (failed && found.size === 0) throw failed.reason
       return found
     }
   }
