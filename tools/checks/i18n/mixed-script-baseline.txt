@@ -47,6 +47,8 @@ ja:ai.aiSetupSavedTitle
 ja:ai.aiSetupStart
 ja:ai.aiSetupWelcomeAIDescription
 ja:ai.aiSetupWelcomeAITitle
+ja:ai.aiSetupWelcomeCloudReadyDescription
+ja:ai.aiSetupWelcomeCloudReadyTitle
 ja:ai.aiSetupWelcomeDescription
 ja:ai.aiSetupWelcomeTitle
 ja:ai.aiSetupPiDescription
@@ -281,6 +283,8 @@ zh-cn:ai.aiSetupSavedTitle
 zh-cn:ai.aiSetupStart
 zh-cn:ai.aiSetupWelcomeAIDescription
 zh-cn:ai.aiSetupWelcomeAITitle
+zh-cn:ai.aiSetupWelcomeCloudReadyDescription
+zh-cn:ai.aiSetupWelcomeCloudReadyTitle
 zh-cn:ai.aiSetupWelcomeDescription
 zh-cn:ai.aiSetupWelcomeTitle
 zh-cn:ai.aiSetupPiDescription
@@ -509,8 +513,6 @@ ja:cloudPortal.columnAddress
 ja:cloudPortal.signInTitle
 ja:cloudPortal.newHere
 ja:cloudPortal.returnsToDesktop
-ja:cloudPortal.continueWithGoogle
-ja:cloudPortal.continueWithApple
 ja:cloudPortal.deviceTitle
 ja:cloudPortal.deviceDescription
 ja:cloudPortal.deviceWarningDescription
@@ -521,8 +523,6 @@ zh-cn:cloudPortal.columnAddress
 zh-cn:cloudPortal.signInTitle
 zh-cn:cloudPortal.newHere
 zh-cn:cloudPortal.returnsToDesktop
-zh-cn:cloudPortal.continueWithGoogle
-zh-cn:cloudPortal.continueWithApple
 zh-cn:cloudPortal.deviceTitle
 zh-cn:cloudPortal.deviceDescription
 zh-cn:cloudPortal.deviceWarningDescription
@@ -537,8 +537,6 @@ ja:cloud.errorInvalidAddressDescription
 ja:cloud.errorNotCloudHeading
 ja:cloud.errorNotCloudDescription
 ja:cloud.errorServerOutdatedDescription
-ja:cloud.continueWithGoogle
-ja:cloud.continueWithApple
 ja:cloud.shareDescriptionInWorkspace
 ja:cloud.shareDescription
 ja:cloud.settingsOfficialDescription
@@ -561,8 +559,6 @@ zh-cn:cloud.errorInvalidAddressDescription
 zh-cn:cloud.errorNotCloudHeading
 zh-cn:cloud.errorNotCloudDescription
 zh-cn:cloud.errorServerOutdatedDescription
-zh-cn:cloud.continueWithGoogle
-zh-cn:cloud.continueWithApple
 zh-cn:cloud.shareDescriptionInWorkspace
 zh-cn:cloud.shareDescription
 zh-cn:cloud.settingsOfficialDescription
@@ -762,6 +758,9 @@ ja:cloud.errorEditorOutdatedDescription
 ja:cloud.betaBanner
 ja:cloud.editorOutdatedBanner
 ja:cloud.updateOpenPencil
+ja:cloud.creditsLowBanner
+ja:cloud.creditsOutBanner
+ja:cloud.creditsOutUntilBanner
 ja:cloud.notifyConflict
 ja:cloud.notifyConflictHint
 ja:cloud.notifyStorageFull
@@ -771,6 +770,9 @@ zh-cn:cloud.errorEditorOutdatedDescription
 zh-cn:cloud.betaBanner
 zh-cn:cloud.editorOutdatedBanner
 zh-cn:cloud.updateOpenPencil
+zh-cn:cloud.creditsLowBanner
+zh-cn:cloud.creditsOutBanner
+zh-cn:cloud.creditsOutUntilBanner
 zh-cn:cloud.notifyConflict
 zh-cn:cloud.notifyConflictHint
 zh-cn:cloud.notifyStorageFull

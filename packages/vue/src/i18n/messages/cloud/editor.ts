@@ -64,8 +64,8 @@ export const cloudMessageDefaults = {
   errorExpiredDescription: 'It wasn’t approved in time. Start again to get a new one.',
   errorSignInFailedHeading: 'Couldn’t sign in',
   errorSignInFailedDescription: 'The server didn’t finish signing you in. Try again in a moment.',
-  continueWithGoogle: 'Continue with Google',
-  continueWithApple: 'Continue with Apple',
+  /** A sign-in provider's button; `provider` is its name, such as Google. */
+  continueWith: params('Continue with {provider}'),
   continueWithEmail: 'Continue with email',
   signInNoteDesktop: 'Your browser opens to finish signing in, then you come back here.',
   signInNoteBrowser: 'You come back to this tab after signing in.',
@@ -408,6 +408,11 @@ export const cloudMessageDefaults = {
   betaBanner:
     'OpenPencil Cloud is in beta, so some things may not work yet. To use it in the desktop app, install the beta.',
   betaDownload: 'Download the beta',
+  creditsLowBanner: 'Your AI credits are running low.',
+  creditsOutBanner: 'You’re out of AI credits.',
+  creditsOutUntilBanner: params('You’re out of AI credits until {date}.'),
+  creditsBuy: 'Buy credits',
+  creditsAskOwner: 'Ask the workspace owner to buy more.',
   savePublicLabel: 'Public',
   savePublicHeading: 'Anyone can open what you save here',
   savePublicDescription:

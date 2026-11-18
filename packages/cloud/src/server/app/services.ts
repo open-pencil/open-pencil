@@ -5,7 +5,7 @@ import type {
   CloudSessionResolver
 } from '#cloud/server/auth'
 import { enrollmentEmailOptions } from '#cloud/server/auth'
-import { createBillingTokenService } from '#cloud/server/billing'
+import { createBillingTokenService, createSeatNotifier } from '#cloud/server/billing'
 import { createCollaborationTicketService } from '#cloud/server/collaboration'
 import { createCommentService } from '#cloud/server/comments'
 import { createCommunityService } from '#cloud/server/community'
@@ -14,7 +14,7 @@ import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
 import { createDocumentVersionService } from '#cloud/server/documents/versions'
 import type { TransactionalEmailService } from '#cloud/server/email'
-import type { CloudErrorReporter } from '#cloud/server/errors'
+import { reportCloudError, type CloudErrorReporter } from '#cloud/server/errors'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
 import type { ForwardedRequestId } from '#cloud/server/logging'
 import type { ObjectStore } from '#cloud/server/objects'
@@ -71,6 +71,11 @@ export type CloudServices = {
   onDocumentVersionsChanged?: (documentId: string) => void
   /** Tells a document's live rooms one of its comment threads changed, on this runtime's relay. */
   onDocumentCommentsChanged?: (documentId: string, threadId: string) => void
+  /**
+   * Keeps work a request started running after its answer, as Workers' `waitUntil` does; without
+   * it the work runs on its own, as Node lets it.
+   */
+  runInBackground?: (task: Promise<unknown>) => void
   /** Logs errors no route handled, and reports them when the deployment configures error tracking. */
   reportError?: CloudErrorReporter
   /** The request ID this runtime trusts from what stands in front of it, such as `cf-ray`. */
@@ -82,9 +87,33 @@ export function createAppServices(services: CloudServices) {
   const { config, database, objects } = services
   const workspaces = createWorkspaceService(database)
   const pictures = createUserPictures(database, { publicURL: config.publicURL })
+  const billingTokens =
+    services.servicesSigningKey && config.billingEndpoint
+      ? createBillingTokenService({
+          issuer: new URL(config.publicURL).origin,
+          signingKey: services.servicesSigningKey,
+          lifetimeSeconds: config.servicesTokenLifetimeSeconds
+        })
+      : undefined
+  // Billing charges for the people who can edit, so it hears when they change.
+  const seatNotifier =
+    billingTokens && config.billingEndpoint
+      ? createSeatNotifier({ database, endpoint: config.billingEndpoint, tokens: billingTokens })
+      : undefined
+  const onSeatsChanged = seatNotifier
+    ? (accountIds: readonly string[]) => {
+        const task = seatNotifier.notify(accountIds).catch((error: unknown) => {
+          void reportCloudError(services.reportError, 'Telling billing about seats failed', error, {
+            source: 'background'
+          })
+        })
+        if (services.runInBackground) services.runInBackground(task)
+      }
+    : undefined
   const workspaceMembers = createWorkspaceMemberService(database, {
     email: services.transactionalEmail,
-    publicURL: config.publicURL
+    publicURL: config.publicURL,
+    onSeatsChanged
   })
   const enrollment =
     services.enrollment ??
@@ -155,14 +184,6 @@ export function createAppServices(services: CloudServices) {
         lifetimeSeconds: config.servicesTokenLifetimeSeconds
       })
     : undefined
-  const billingTokens =
-    services.servicesSigningKey && config.billingEndpoint
-      ? createBillingTokenService({
-          issuer: new URL(config.publicURL).origin,
-          signingKey: services.servicesSigningKey,
-          lifetimeSeconds: config.servicesTokenLifetimeSeconds
-        })
-      : undefined
   const comments = createCommentService(database, {
     sharing,
     onCommentsChanged: services.onDocumentCommentsChanged,

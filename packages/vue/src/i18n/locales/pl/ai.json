@@ -259,6 +259,8 @@
   "aiSetupWelcomeDescription": "Twórz i edytuj projekty na otwartym płótnie. Importuj pliki Figma i dostosuj je do siebie.",
   "aiSetupWelcomeAITitle": "Projektuj z AI",
   "aiSetupWelcomeAIDescription": "Połącz AI, z którego już korzystasz, aby edytować płótno i przeglądać projekty. Możesz to później zmienić w ustawieniach.",
+  "aiSetupWelcomeCloudReadyTitle": "AI jest gotowe",
+  "aiSetupWelcomeCloudReadyDescription": "Twój plan OpenPencil Cloud obejmuje AI, więc czat działa już z polecanymi przez niego modelami. Możesz je później zmienić w ustawieniach.",
   "aiSetupWelcomeTourTitle": "Zobacz przewodnik",
   "aiSetupWelcomeTourDescription": "Krótki plik, który pokazuje komponenty i sloty, działające kontrolki, tryby, shadery, kod i lint, z kartą przy każdej części mówiącą, co wypróbować.",
   "aiSetupTakeTour": "Otwórz przewodnik",

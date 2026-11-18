@@ -188,7 +188,21 @@ function plannedModel(providerID: OnboardingAccess, serverVision = false): Plann
 }
 
 /** The provider's model tagged as fast, for low-cost background work. */
-function fastModel(providerID: AIProviderID): PlannedModel | null {
+/**
+ * The model the provider recommends for `role` (`ProviderRoleModels` in Core), if it names one
+ * its catalog lists.
+ */
+function recommendedModel(
+  providerID: AIProviderID,
+  role: Exclude<AIModelRole, 'design'>
+): PlannedModel | null {
+  const id = AI_PROVIDERS.find((definition) => definition.id === providerID)?.roles?.[role]
+  const model = id ? catalogModels(providerID).find((candidate) => candidate.id === id) : null
+  return model ? fromCatalog(providerID, model) : null
+}
+
+/** The provider's catalog model tagged Fast that calls tools, for one that recommends none. */
+function taggedFastModel(providerID: AIProviderID): PlannedModel | null {
   const model = catalogModels(providerID).find(
     (candidate) => candidate.tag === 'Fast' && candidate.capabilities?.includes('tools')
   )
@@ -240,6 +254,13 @@ function planVision(
   current: PlannedRole
 ): PlannedRole {
   if (current !== null && current !== 'design' && keepable(current, access)) return current
+  // Images already going to a design model that reads them keep going there.
+  if (current === 'design' && canFollowDesign('vision', design)) return 'design'
+  // The design model's provider may recommend another of its models for images.
+  const recommended = design ? recommendedModel(design.providerID, 'vision') : null
+  if (recommended && hasVision(recommended) && recommended.modelID !== design?.modelID) {
+    return recommended
+  }
   if (canFollowDesign('vision', design)) return 'design'
   // A local server that reads images is preferred over a paid account, and a subscription
   // already paid for over one billed by use.
@@ -281,11 +302,18 @@ function planReview(
   current: CurrentOnboardingModels
 ): PlannedRole {
   if (keepRole(current, 'review', design)) return current.review
+  // A provider may recommend a stronger, or image-reading, model for reviews.
+  const recommended = design ? recommendedModel(design.providerID, 'review') : null
+  if (recommended && recommended.modelID !== design?.modelID) return recommended
   if (canFollowDesign('review', design)) return 'design'
   return vision !== 'design' && vision?.capabilities.includes('tools') ? vision : null
 }
 
-/** Fast work uses the provider's fast model when it has one, otherwise the design model. */
+/**
+ * Fast work uses the model the provider recommends for it, even when that is the design model,
+ * since Fast tasks run only with a model of their own; otherwise a model tagged Fast, otherwise
+ * the design model itself; with an agent designing, Fast follows it and so stays off.
+ */
 function planFast(
   design: PlannedModel | null,
   vision: PlannedRole,
@@ -294,9 +322,14 @@ function planFast(
   if (keepRole(current, 'fast', design)) return current.fast
   const apiVision = vision === 'design' ? null : vision
   const base = canFollowDesign('fast', design) ? design : apiVision
-  const fast = base ? fastModel(base.providerID) : null
-  if (fast && fast.modelID !== base?.modelID) return fast
-  if (canFollowDesign('fast', design)) return 'design'
+  const recommended = base ? recommendedModel(base.providerID, 'fast') : null
+  if (recommended?.capabilities.includes('tools')) return recommended
+  const fast = base ? taggedFastModel(base.providerID) : null
+  if (fast) return fast
+  // An agent designs with a model of its own choosing that Fast tasks can't call, so they stay
+  // off by following it, as before. An API model is given to Fast itself, since following
+  // Design would turn Fast tasks off.
+  if (base === design && design && isOnboardingAgent(design.providerID)) return 'design'
   return base
 }
 

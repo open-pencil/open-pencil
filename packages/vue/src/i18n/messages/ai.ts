@@ -292,6 +292,9 @@ export const aiMessageDefaults = {
   aiSetupWelcomeAITitle: 'Design with AI',
   aiSetupWelcomeAIDescription:
     'Connect the AI you already use to edit the canvas and review designs. You can change it later in Settings.',
+  aiSetupWelcomeCloudReadyTitle: 'AI is ready',
+  aiSetupWelcomeCloudReadyDescription:
+    'Your OpenPencil Cloud plan includes AI, so the chat works now with the models it recommends. You can change them later in Settings.',
   aiSetupWelcomeTourTitle: 'Take the tour',
   aiSetupWelcomeTourDescription:
     'A short file that walks through components and slots, working controls, modes, shaders, code, and lint, with a card on each that says what to try.',

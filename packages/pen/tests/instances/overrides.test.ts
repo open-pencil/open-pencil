@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { PenNode } from '@open-pencil/pen'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { hasInstanceOverride, syncInstance } from '@open-pencil/scene-graph/instances'
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { parseDocument } from './helpers/document'
+import { parseDocument } from '../helpers/document'
+import { copyOf } from '../helpers/instances'
 
 const button: PenNode = {
   id: 'button',
@@ -31,27 +31,6 @@ const card: PenNode = {
     { id: 'title', type: 'text', content: 'Card title', fill: '#111111' },
     { id: 'cardButton', type: 'ref', ref: 'button' }
   ]
-}
-
-function layers(graph: SceneGraph, id: string): SceneNode[] {
-  const found: SceneNode[] = []
-  const queue = [...graph.getChildren(id)]
-  for (const node of queue) {
-    found.push(node)
-    for (const child of graph.getChildren(node.id)) queue.push(child)
-  }
-  return found
-}
-
-/** The copy in an instance made, through copies of copies, from the pen.dev layer `sourceId`. */
-function copyOf(graph: SceneGraph, instanceId: string, sourceId: string): SceneNode {
-  const madeFrom = (node: SceneNode): boolean => {
-    for (let id = node.componentId; id; id = graph.getNode(id)?.componentId ?? null) {
-      if (id === sourceId) return true
-    }
-    return false
-  }
-  return expectDefined(layers(graph, instanceId).find(madeFrom), `${sourceId} in ${instanceId}`)
 }
 
 describe('parsePenFile — instances', () => {

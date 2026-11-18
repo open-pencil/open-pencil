@@ -105,9 +105,10 @@ export class CloudAIUnavailableError extends Error {
 }
 
 async function openPencilLanguageModel(resolved: ResolvedAIModelRole): Promise<LanguageModel> {
-  const client = cloudAIClient(resolved.connection.cloudWorkspaceId ?? '')
+  const workspaceId = resolved.connection.cloudWorkspaceId ?? ''
+  const client = cloudAIClient(workspaceId)
   if (!client) throw new CloudAIUnavailableError()
-  const { config, runtime } = cloudModelConfig(client, resolved.profile.modelID)
+  const { config, runtime } = cloudModelConfig(client, resolved.profile.modelID, workspaceId)
   return createLanguageModel(config, runtime)
 }
 

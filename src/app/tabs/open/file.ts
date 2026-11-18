@@ -35,7 +35,7 @@ export interface OpenedWebPage {
   title: string
 }
 
-export interface OpenFileOptions {
+export interface OpenInTabOptions {
   /** The file the browser granted, which saving writes back to. */
   handle?: FileSystemFileHandle
   /** Where the file lives: a desktop path, or the address a browser document came from. */
@@ -53,7 +53,7 @@ export interface OpenFileOptions {
  */
 export async function openFileInNewTab(
   file: File,
-  { handle, path, webPage }: OpenFileOptions = {}
+  { handle, path, webPage }: OpenInTabOptions = {}
 ): Promise<EditorStore> {
   const domImport = webPage !== undefined || isDOMImportFile(file)
   const identity: DocumentSourceIdentity = {

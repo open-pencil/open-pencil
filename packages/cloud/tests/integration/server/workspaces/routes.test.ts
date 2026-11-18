@@ -136,7 +136,7 @@ describe('Cloud workspace routes', () => {
       const listResponse = await client.api.workspaces.$get()
       expect(listResponse.status).toBe(200)
       expect(await listResponse.json()).toMatchObject({
-        workspaces: [{ id: created.workspace.id, role: 'admin' }]
+        workspaces: [{ id: created.workspace.id, role: 'admin', owner: true }]
       })
 
       const getResponse = await client.api.workspaces[':workspaceId'].$get({

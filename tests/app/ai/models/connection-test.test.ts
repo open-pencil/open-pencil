@@ -12,7 +12,7 @@ function testCloudModel(status: number, body: unknown) {
     tokens: { token: async () => 'cloud-token', invalidate: () => undefined },
     fetch: async () => Response.json(body, { status })
   })
-  const { config, runtime } = cloudModelConfig(client, 'test/model')
+  const { config, runtime } = cloudModelConfig(client, 'test/model', 'workspace-1')
   return testProviderConnection(config, runtime)
 }
 

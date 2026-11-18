@@ -2,7 +2,8 @@ import type {
   CloudAccessToken,
   CloudAccessTokenCreate,
   CloudAccountSession,
-  CloudSignIn
+  CloudSignIn,
+  CloudSocialProvider
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth/session'
 
@@ -79,7 +80,7 @@ export interface CloudAuthAdapter {
   ): Promise<void>
   startSocialLink(
     headers: Headers,
-    input: { provider: 'google' | 'apple'; callbackURL: string }
+    input: { provider: CloudSocialProvider; callbackURL: string }
   ): Promise<SocialLinkStart>
   unlinkAuthenticationMethod(headers: Headers, methodId: string): Promise<void>
   banUser(headers: Headers, userId: string, reason?: string): Promise<void>

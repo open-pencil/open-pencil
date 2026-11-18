@@ -74,5 +74,10 @@ export function usePinDrag(options: {
     return current?.id === threadId && current.moved ? current.at : null
   }
 
-  return { start, move, end, click, draggedTo }
+  /** Whether a press on this pin is under way, moved or not yet. */
+  function pressed(threadId: string): boolean {
+    return drag.value?.id === threadId
+  }
+
+  return { start, move, end, click, draggedTo, pressed }
 }

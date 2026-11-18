@@ -40,5 +40,6 @@ export type {
   DesignIssueSeverity,
   PlacedIssueMarker
 } from './issues/types'
+export { groupMarks, marksOverlap, type MarkGroup, type ScreenMark } from './marks/group'
 export { hitTestStatusLabels, type PlacedStatusLabel } from './labels/status'
 export { LabelCache, type CachedComponent, type CachedSection } from './labels/cache'

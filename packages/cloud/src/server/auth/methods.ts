@@ -1,8 +1,10 @@
-import { configuredSocialProviders, type CloudServerConfig } from '#cloud/server/config'
+import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { APIError, type BetterAuthOptions } from 'better-auth'
 import { getOAuthState } from 'better-auth/api'
 import type { Kysely, Transaction } from 'kysely'
+
+import { configuredSocialProviders } from './social-providers'
 
 /**
  * An administrator's removal of a Google or Apple identity is kept as one of Better Auth's

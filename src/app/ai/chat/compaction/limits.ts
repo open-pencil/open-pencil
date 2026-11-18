@@ -2,7 +2,7 @@ import { computedAsync } from '@vueuse/core'
 import type { UIMessage } from 'ai'
 import { computed, type Ref } from 'vue'
 
-import { providerKind } from '@open-pencil/core/constants'
+import { providerKind, type AIProviderID } from '@open-pencil/core/constants'
 
 import { contextTokensOf, usageOf } from '@/app/ai/chat/metadata'
 import { resolveModelsDevModel } from '@/app/ai/models/catalog'
@@ -10,6 +10,8 @@ import { resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
 import { designModelConnection, designModelProfile } from '@/app/ai/models/store'
 import type { ResolvedAIModelRole } from '@/app/ai/models/types'
+import { cloudContextWindow } from '@/app/ai/providers/openpencil/context'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 
 import { compactionOf, messagesSinceCompaction } from './marker'
 
@@ -17,6 +19,19 @@ import { compactionOf, messagesSinceCompaction } from './marker'
 export interface ContextLimits {
   contextWindow: number
   maxOutputTokens: number
+}
+
+/** A model's context window from its catalog: Cloud's for its own service, else the provider's. */
+async function contextWindowOf(
+  providerID: AIProviderID,
+  modelID: string,
+  cloudWorkspaceId: string | undefined
+): Promise<number | undefined> {
+  if (providerID === OPENPENCIL_AI_PROVIDER) {
+    return cloudWorkspaceId ? cloudContextWindow(cloudWorkspaceId, modelID) : undefined
+  }
+  const listed = await resolveProviderModel(providerID, modelID)
+  return listed?.contextWindow ?? (await resolveModelsDevModel(providerID, modelID))?.contextWindow
 }
 
 /**
@@ -34,9 +49,7 @@ export async function contextLimitsOf({
     modelID: profile.modelID,
     customModelID: profile.customModelID
   })
-  const listed = await resolveProviderModel(providerID, modelID)
-  const contextWindow =
-    listed?.contextWindow ?? (await resolveModelsDevModel(providerID, modelID))?.contextWindow
+  const contextWindow = await contextWindowOf(providerID, modelID, connection.cloudWorkspaceId)
   return contextWindow ? { contextWindow, maxOutputTokens: profile.maxOutputTokens } : null
 }
 

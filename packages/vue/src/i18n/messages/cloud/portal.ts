@@ -27,8 +27,8 @@ export const cloudPortalMessageDefaults = {
   returnsTo: params('Then you go back to {destination}.'),
   returnsToDesktop: 'the OpenPencil app',
   returnsToEditor: 'the editor',
-  continueWithGoogle: 'Continue with Google',
-  continueWithApple: 'Continue with Apple',
+  /** A sign-in provider's button; `provider` is its name, such as Google. */
+  continueWith: params('Continue with {provider}'),
   or: 'or',
   name: 'Name',
   email: 'Email',
@@ -269,8 +269,8 @@ export const cloudPortalMessageDefaults = {
   noSignIns: 'No sign-ins recorded yet.',
   signedInWith: params('With {method}'),
   methodPassword: 'password',
-  methodGoogle: 'Google',
-  methodApple: 'Apple',
+  /** A sign-in provider, as `signedInWith` names it; `provider` is its name, such as Google. */
+  methodProvider: params('{provider}'),
   methodPasskey: 'a passkey',
   methodTwoStep: 'two-step sign-in',
   methodEmailLink: 'an email link',
@@ -279,8 +279,6 @@ export const cloudPortalMessageDefaults = {
 
   waysToSignIn: 'Ways to sign in',
   waysToSignInDescription: 'Keep at least one, so you can always get back in.',
-  providerGoogle: 'Google',
-  providerApple: 'Apple',
   linkedOn: params('Linked {date}'),
   notLinked: 'Not linked',
   link: 'Link',

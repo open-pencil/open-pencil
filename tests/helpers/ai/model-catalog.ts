@@ -1,14 +1,13 @@
-import { AI_PROVIDERS } from '@open-pencil/core/constants'
+import { AI_PROVIDERS, type ProviderRoleModels } from '@open-pencil/core/constants'
 
 /** The catalog's default model, so onboarding tests follow catalog updates. */
 export function defaultModel(providerID: string): string {
   return AI_PROVIDERS.find((provider) => provider.id === providerID)?.defaultModel ?? ''
 }
 
-/** Whether the catalog offers `modelID` as a fast model that can call tools. */
-export function isFastToolModel(providerID: string, modelID: string): boolean {
-  const model = AI_PROVIDERS.find((provider) => provider.id === providerID)?.models.find(
-    (candidate) => candidate.id === modelID
-  )
-  return model?.tag === 'Fast' && model.capabilities?.includes('tools') === true
+/** What the provider recommends for each role, so onboarding tests follow catalog updates. */
+export function recommendedRoles(providerID: string): ProviderRoleModels {
+  const roles = AI_PROVIDERS.find((provider) => provider.id === providerID)?.roles
+  if (!roles) throw new Error(`${providerID} recommends no models`)
+  return roles
 }
