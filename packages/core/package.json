@@ -262,7 +262,7 @@
     "vite": "8.1.4"
   },
   "peerDependencies": {
-    "ai": "^7.0.127",
+    "ai": "^7.0.176",
     "vite": ">=6"
   },
   "peerDependenciesMeta": {
