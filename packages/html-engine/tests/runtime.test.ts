@@ -259,8 +259,29 @@ describe('the HTML engine runtime', () => {
       const style = (id: string) => elementById(document, id).computedStyle ?? {}
 
       expect([style('a').fill, style('a')['clip-path']]).toEqual(['url("#fade")', 'url("#clip")'])
-      expect(style('b').fill).not.toBe('url("#fade")')
+      if (baseURL) expect(style('b').fill).toBe('url("https://example.test/other.svg#fade")')
     }
+  })
+
+  test("reports a linked stylesheet's url() into the page as its fragment", async () => {
+    const runtime = createHTMLEngineRuntime({
+      engine: engineWithInter,
+      baseURL: 'https://example.test/page.html',
+      fetch: async (url) =>
+        url.endsWith('/styles/icons.css')
+          ? {
+              url,
+              contentType: 'text/css',
+              bytes: new TextEncoder().encode('.a { fill: url(#fade) }')
+            }
+          : null
+    })
+    const document = await htmlToDesignDocument(
+      '<svg><path class="a" id="a" d="M0 0h1v1z"/></svg>',
+      { runtime, cssText: '@import url("/styles/icons.css");' }
+    )
+
+    expect(elementById(document, 'a').computedStyle?.fill).toBe('url("#fade")')
   })
 
   test("pairs a shader layer's children past the still frame the serializer writes", async () => {
