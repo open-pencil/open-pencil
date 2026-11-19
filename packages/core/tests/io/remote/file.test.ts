@@ -20,6 +20,8 @@ describe('remoteFileKind', () => {
     const pdf = text('%PDF-1.7\n1 0 obj\n<<>>\nendobj\n')
     expect(await kindOf('download', pdf, 'application/octet-stream')).toBe('pdf')
     expect(await kindOf('photo', png, 'text/plain')).toBe('image')
+    // A picture a reader opens as a document, as draw.io's PNG export carries its diagram.
+    expect(await kindOf('flow.drawio.png', png, 'image/png')).toBe('document')
   })
 
   test('opens a design document by its name', async () => {
@@ -105,5 +107,26 @@ describe('fetchRemoteFile', () => {
 
     await expect(fetchRemoteFile(url, { fetch: missing, io })).rejects.toThrow('404 Not Found')
     await expect(fetchRemoteFile(url, { fetch: empty, io })).rejects.toThrow('carried no body')
+  })
+
+  test('ends the body of a response it refuses', async () => {
+    let cancelled = false
+    const fetch = fetchStub(async (_input, init) => {
+      // A server that sends an error and keeps sending, until the request is aborted.
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new Uint8Array([1]))
+          init?.signal?.addEventListener('abort', () => {
+            cancelled = true
+          })
+        }
+      })
+      return new Response(body, { status: 500, statusText: 'Server Error' })
+    })
+
+    await expect(
+      fetchRemoteFile(new URL('https://example.com/page'), { fetch, io })
+    ).rejects.toThrow('500')
+    expect(cancelled).toBe(true)
   })
 })

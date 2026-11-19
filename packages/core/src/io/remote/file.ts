@@ -108,8 +108,10 @@ export async function remoteFileKind(
   const { name, contentType, bytes } = file
   const detected = (await fileTypeFromBuffer(bytes))?.mime
   if (detected === 'application/pdf') return 'pdf'
-  if (detected && IMPORTABLE_RASTER_TYPES.has(detected)) return 'image'
+  // Before the picture check: a reader may open a picture that carries a document, as a draw.io
+  // PNG export such as `flow.drawio.png` carries its diagram.
   if (io.findReader(name)) return 'document'
+  if (detected && IMPORTABLE_RASTER_TYPES.has(detected)) return 'image'
   const type = contentType && !GENERIC_TYPES.has(contentType) ? contentType : mediaTypeOfName(name)
   return (type === undefined ? undefined : KIND_BY_TYPE[type]) ?? 'unsupported'
 }
@@ -152,8 +154,11 @@ async function fetchOnce(
   const { response, bytes } = await (async () => {
     try {
       const response = await fetch(url, { signal: controller.signal })
-      if (!response.ok)
+      if (!response.ok) {
+        // Ends the body the server may still be sending; on desktop that ends the native request.
+        controller.abort()
         throw new Error(`Failed to fetch ${url.href}: ${response.status} ${response.statusText}`)
+      }
       const bytes = await readBoundedBody(response, maxBytes, {
         onExceeded: () => controller.abort()
       })

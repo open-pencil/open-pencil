@@ -272,6 +272,27 @@ describe('CSS mask icons', () => {
     expect(shapes.flatMap((shape) => shape.fills)).toEqual([])
   })
 
+  test('paints a mask’s root stroke and inline paints in the element’s background', async () => {
+    const icon =
+      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black'><path d='M2 2h20'/><rect x='4' y='4' width='8' height='8' style='fill: black'/></svg>"
+    const masked = element(
+      {
+        ...box(16, 16),
+        'background-color': 'rgb(255, 0, 0)',
+        'mask-image': `url("${svgDataURL(icon)}")`
+      },
+      { box: rect(0, 0, 16, 16) }
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [masked] })
+    const frame = graph.getChildren(graph.getPages()[0].id)[0]
+    const paints = graph
+      .flattenTree(frame.id)
+      .flatMap(({ node }) => (node.id === frame.id ? [] : [...node.fills, ...node.strokes]))
+
+    expect(paints.length).toBeGreaterThan(0)
+    expect(paints.every((paint) => paint.color?.r === 1 && paint.color.g === 0)).toBe(true)
+  })
+
   test('keeps the content of an element masked over it', async () => {
     const icon =
       "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 4'><rect width='4' height='4'/></svg>"

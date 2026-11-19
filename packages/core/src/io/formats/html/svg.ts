@@ -17,6 +17,7 @@ import { drawIcon, parseIconName } from '#core/icons'
 import { svgIconPaths } from '#core/icons/artwork'
 import type { IconMatcher } from '#core/icons/match'
 import { extractSVGContent } from '#core/icons/svg'
+import { inlineStyles } from '#core/icons/svg/presentation'
 import { parseSVGDocument } from '#core/io/formats/svg/document'
 import { createSVGNodes } from '#core/io/formats/svg/import'
 import { parseSVGSize, parseSVGViewBox } from '#core/io/formats/svg/metadata'
@@ -214,16 +215,35 @@ function drawNamedIcon(
   return true
 }
 
+const PAINT_PROPERTIES = ['fill', 'stroke'] as const
+
+/** Repaints an element's visible fill and stroke, written as attributes or inline, in `paint`. */
+function repaint(element: XMLElement, paint: string): void {
+  for (const property of PAINT_PROPERTIES) {
+    const value = element.getAttribute(property)
+    if (value && value !== 'none') element.setAttribute(property, paint)
+  }
+  // Inline declarations win over attributes, so they take the paint too, read as the SVG reader
+  // reads them.
+  const styles = new Map(inlineStyles(element))
+  if (!PAINT_PROPERTIES.some((property) => styles.has(property))) return
+  for (const property of PAINT_PROPERTIES) {
+    const value = styles.get(property)
+    if (value && value !== 'none') styles.set(property, paint)
+  }
+  element.setAttribute(
+    'style',
+    Array.from(styles, ([name, value]) => `${name}: ${value}`).join('; ')
+  )
+}
+
 /** Paints every shape an SVG draws in one color, as a CSS mask shows its background through them. */
 function paintShapes(root: XMLElement, paint: string): void {
   // Shapes that name no fill take the root's, black by default; a root that fills nothing keeps
   // its `none`, so a stroked icon stays a line.
   if (root.getAttribute('fill') !== 'none') root.setAttribute('fill', paint)
-  for (const element of Array.from(root.getElementsByTagName('*'))) {
-    for (const attribute of ['fill', 'stroke']) {
-      const value = element.getAttribute(attribute)
-      if (value && value !== 'none') element.setAttribute(attribute, paint)
-    }
+  for (const element of [root, ...Array.from(root.getElementsByTagName('*'))]) {
+    repaint(element, paint)
   }
 }
 

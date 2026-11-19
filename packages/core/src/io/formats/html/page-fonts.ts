@@ -42,11 +42,12 @@ async function readableFont(bytes: Uint8Array): Promise<ArrayBuffer | null> {
  * bundled, installed, or from Google Fonts, keeps the editor's complete copy rather than a page's
  * subset of it, which would leave its other glyphs and faces out. A rule's sources are tried in
  * order until one is in a format the font manager reads. Returns the families the page's text can
- * be set in.
+ * be set in; once `signal` aborts, it stops and rejects without registering another face.
  */
 export async function loadPageFontFaces(
   styled: DesignDocument,
-  fetch: DesignResourceFetch
+  fetch: DesignResourceFetch,
+  signal?: AbortSignal
 ): Promise<PageFontFamilies> {
   const used = familiesUsed(styled)
   const loaded = new Map<string, string>()
@@ -65,12 +66,16 @@ export async function loadPageFontFaces(
       continue
     }
     for (const source of rule.sources) {
+      signal?.throwIfAborted()
       const resource = await fetch(source, AbortSignal.timeout(FONT_LOAD_TIMEOUT_MS)).catch(
         () => null
       )
       // A source that does not decode is passed over for the next, as an unreadable one is.
       const data = resource ? await readableFont(resource.bytes).catch(() => null) : null
       if (!data) continue
+      // An import cancelled meanwhile registers nothing: the font manager is shared, and a face it
+      // took now could replace one a later import loaded.
+      signal?.throwIfAborted()
       await fontManager.markLoaded(rule.family, style, data)
       loaded.set(rule.family.toLowerCase(), rule.family)
       break

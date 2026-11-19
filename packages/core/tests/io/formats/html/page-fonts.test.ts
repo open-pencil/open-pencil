@@ -112,4 +112,22 @@ describe('a page’s own fonts', () => {
 
     expect([...families.values()]).toEqual(['Page Fallback Sans'])
   })
+
+  test('registers nothing once its import is cancelled', async () => {
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+    const cancel = new AbortController()
+
+    const loading = loadPageFontFaces(
+      page('Page Cancelled Sans', [FONT_URL]),
+      async (url) => {
+        // The import is cancelled while the font is on its way.
+        cancel.abort()
+        return { url, bytes: font }
+      },
+      cancel.signal
+    )
+
+    await expect(loading).rejects.toThrow()
+    expect(await fontManager.loadFont('Page Cancelled Sans', 'Regular')).toBeNull()
+  })
 })
