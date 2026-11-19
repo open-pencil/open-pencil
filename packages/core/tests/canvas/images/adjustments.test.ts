@@ -361,6 +361,95 @@ const FIGMA: [ImageFilters, number[][]][] = [
   ]
 ]
 
+/**
+ * Bright colours with one channel near 0, whose low channel under highlights comes from cancelling
+ * terms, so a small error in how much strength reaches them shows up as several levels.
+ */
+const SATURATED: number[][] = [
+  [10, 149, 85],
+  [255, 6, 92],
+  [227, 11, 239],
+  [214, 94, 9],
+  [6, 146, 119],
+  [238, 5, 192],
+  [217, 90, 7],
+  [216, 4, 254],
+  [15, 154, 3],
+  [231, 76, 6],
+  [9, 145, 153],
+  [10, 145, 141]
+]
+const FIGMA_SATURATED: [ImageFilters, number[][]][] = [
+  [
+    { highlights: -1 },
+    [
+      [0, 148, 84],
+      [254, 0, 92],
+      [225, 0, 237],
+      [213, 93, 0],
+      [0, 145, 118],
+      [237, 0, 191],
+      [216, 89, 1],
+      [216, 0, 254],
+      [0, 151, 0],
+      [230, 76, 0],
+      [0, 143, 151],
+      [0, 144, 140]
+    ]
+  ],
+  [
+    { highlights: -0.5 },
+    [
+      [7, 148, 84],
+      [255, 4, 92],
+      [226, 8, 238],
+      [213, 94, 7],
+      [0, 146, 119],
+      [238, 0, 192],
+      [217, 90, 5],
+      [216, 2, 254],
+      [11, 152, 0],
+      [231, 76, 4],
+      [0, 144, 152],
+      [7, 144, 140]
+    ]
+  ],
+  [
+    { highlights: 0.5 },
+    [
+      [13, 150, 86],
+      [255, 8, 92],
+      [228, 14, 240],
+      [215, 94, 11],
+      [9, 146, 119],
+      [238, 7, 192],
+      [217, 90, 9],
+      [216, 5, 254],
+      [19, 156, 13],
+      [231, 76, 8],
+      [13, 146, 154],
+      [13, 146, 142]
+    ]
+  ],
+  [
+    { highlights: 1 },
+    [
+      [15, 150, 86],
+      [255, 9, 92],
+      [229, 17, 241],
+      [215, 95, 13],
+      [11, 147, 120],
+      [239, 9, 193],
+      [218, 91, 10],
+      [216, 6, 254],
+      [23, 157, 18],
+      [232, 76, 9],
+      [17, 147, 155],
+      [15, 146, 142]
+    ]
+  ]
+]
+
 function rgba(colors: number[][], alpha = 255) {
   return {
     info: {
@@ -412,14 +501,24 @@ function exported(colors: number[][], filters: ImageFilters, alpha = 255): numbe
   return colors.map((_, index) => Array.from(read.slice(index * 4, index * 4 + 4)))
 }
 
+function worstLevel(colors: number[][], filters: ImageFilters, figma: number[][]): number {
+  const pixels = exported(colors, filters)
+  return maxOf(
+    pixels.flatMap((pixel, index) => figma[index].map((value, c) => Math.abs(pixel[c] - value)))
+  )
+}
+
 describe('image adjustments', () => {
   test.each(FIGMA)('match Figma within one level: %o', (filters, figma) => {
-    const pixels = exported(COLORS, filters)
-    const worst = maxOf(
-      pixels.flatMap((pixel, index) => figma[index].map((value, c) => Math.abs(pixel[c] - value)))
-    )
-    expect(worst).toBeLessThanOrEqual(1)
+    expect(worstLevel(COLORS, filters, figma)).toBeLessThanOrEqual(1)
   })
+
+  test.each(FIGMA_SATURATED)(
+    'match Figma within one level on saturated colours: %o',
+    (filters, figma) => {
+      expect(worstLevel(SATURATED, filters, figma)).toBeLessThanOrEqual(1)
+    }
+  )
 
   test('leave an image as it is when every adjustment is 0', () => {
     const zero = { exposure: 0, contrast: 0, saturation: 0, temperature: 0, tint: 0 }

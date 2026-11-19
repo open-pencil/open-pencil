@@ -79,11 +79,12 @@ float3 expose(float3 l, float luminance, float w) {
   return clamp(curvedLuminance + resaturation * (curved - curvedLuminance), 0.0, 1.0);
 }
 
-// How much of highlights' strength reaches a pixel, from its encoded luminance above one half.
+// How much of highlights' strength reaches a pixel, from how far its luminance is from the pivot
+// to white: about 0.59 of that just above the pivot, easing to 0.31 at white.
 float highlightWeight(float luminance) {
   if (luminance <= PIVOT) return 0.0;
-  float u = 2.0 * pow(luminance, 1.0 / GAMMA) - 1.0;
-  return 0.4097 * u * u / (u + 0.0063) - 0.2488 * pow(max(u - 0.3891, 0.0), 2.0);
+  float y = (luminance - PIVOT) / (1.0 - PIVOT);
+  return y * (0.58594 + y * (0.02724 + y * (-0.98021 + y * (1.04097 - 0.35904 * y))));
 }
 
 // How much of shadows' strength reaches a pixel, from its luminance below the pivot.
