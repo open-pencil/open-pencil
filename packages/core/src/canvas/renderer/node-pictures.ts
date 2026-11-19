@@ -35,7 +35,7 @@ function samplesImagesForExport(r: SkiaRenderer, node: SceneNode): boolean {
 }
 
 function drawsBakedImagesForExport(r: SkiaRenderer, node: SceneNode): boolean {
-  return r.images.adjustedForExport !== null && drawsAdjustedImage(node)
+  return r.images.exporting !== null && drawsAdjustedImage(node)
 }
 
 /**

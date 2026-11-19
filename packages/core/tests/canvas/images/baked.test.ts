@@ -1,4 +1,23 @@
-import { afterAll, describe, expect, spyOn, test } from 'bun:test'
+import { afterAll, describe, expect, test } from 'bun:test'
+
+import {
+  ALL_SEVEN,
+  OPAQUE,
+  callsDuring,
+  distinctPixels,
+  encode,
+  imageFill,
+  isOpaque,
+  isTranslucent,
+  isTransparent,
+  largestDifference,
+  pixelInfo,
+  readEncoded,
+  readImage,
+  shaderPixels,
+  withDecoded,
+  type AlphaType
+} from '#core-tests/helpers/adjusted-images'
 
 import type { Image } from '@open-pencil/canvaskit'
 import { SceneGraph, type ImageFilters } from '@open-pencil/scene-graph'
@@ -6,13 +25,9 @@ import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import * as adjustments from '#core/canvas/images/adjustments'
-import {
-  PALETTE_ROW,
-  adjustedImageForExport,
-  bakeAdjustedImage,
-  drawingExport
-} from '#core/canvas/images/baked'
+import { PALETTE_ROW, bakeAdjustedImage } from '#core/canvas/images/baked'
 import { createImageCache } from '#core/canvas/images/cache'
+import { adjustedImageForExport, drawingExport } from '#core/canvas/images/exporting'
 import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { getCanvasKit } from '#core/canvaskit'
 import { renderPagesToPDF } from '#core/io/formats/pdf/export'
@@ -24,17 +39,7 @@ afterAll(() => renderer.destroy())
 
 const WIDTH = 96
 const HEIGHT = 64
-const OPAQUE = 255
 const TRANSLUCENT_ALPHAS = [1, 64, 128, 200]
-const ALL_SEVEN: ImageFilters = {
-  exposure: 0.25,
-  contrast: 0.3,
-  saturation: 0.4,
-  temperature: -0.3,
-  tint: 0.2,
-  highlights: -0.4,
-  shadows: 0.35
-}
 const SLIDERS = [
   'exposure',
   'contrast',
@@ -48,20 +53,6 @@ const FILTER_SETS: ImageFilters[] = [
   ...SLIDERS.flatMap((slider) => [{ [slider]: -1 }, { [slider]: 1 }]),
   ALL_SEVEN
 ]
-const ODD_STRIDE = 7919
-const COLOR_BITS = 0xffffff
-
-type AlphaType = 'premultiplied' | 'unpremultiplied'
-
-function pixelInfo(width: number, height: number, alpha: AlphaType = 'unpremultiplied') {
-  return {
-    width,
-    height,
-    alphaType: alpha === 'premultiplied' ? ck.AlphaType.Premul : ck.AlphaType.Unpremul,
-    colorType: ck.ColorType.RGBA_8888,
-    colorSpace: ck.ColorSpace.SRGB
-  }
-}
 
 function alphaAt(index: number): number {
   const row = Math.floor(index / WIDTH)
@@ -84,45 +75,8 @@ function randomPixels(): Uint8Array {
   return pixels
 }
 
-function distinctPixels(count: number): Uint8Array {
-  const pixels = new Uint8Array(count * 4)
-  for (let index = 0; index < count; index++) {
-    const color = (index * ODD_STRIDE) & COLOR_BITS
-    pixels.set([color & 0xff, (color >>> 8) & 0xff, color >>> 16, OPAQUE], index * 4)
-  }
-  return pixels
-}
-
-function encode(pixels: Uint8Array, width: number, height: number): Uint8Array {
-  const source = expectDefined(
-    ck.MakeImage(pixelInfo(width, height), pixels, width * 4),
-    'source image'
-  )
-  try {
-    return expectDefined(source.encodeToBytes(ck.ImageFormat.PNG, 100), 'source PNG')
-  } finally {
-    source.delete()
-  }
-}
-
-function decode(png: Uint8Array): Image {
-  return expectDefined(ck.MakeImageFromEncoded(png), 'decoded image')
-}
-
 const PNG = encode(randomPixels(), WIDTH, HEIGHT)
 const HASH = computeImageHash(PNG)
-
-function imageFill(filters: ImageFilters) {
-  return {
-    type: 'IMAGE' as const,
-    color: { r: 0, g: 0, b: 0, a: 1 },
-    opacity: 1,
-    visible: true,
-    imageHash: HASH,
-    imageScaleMode: 'FILL' as const,
-    filters
-  }
-}
 
 const DROP_SHADOW = {
   type: 'DROP_SHADOW' as const,
@@ -146,32 +100,12 @@ function graphWithLayers(layers: { page: number; filters: ImageFilters; shadow?:
       x: index * (WIDTH + 10),
       width: WIDTH,
       height: HEIGHT,
-      fills: [imageFill(filters)],
+      fills: [imageFill(HASH, filters)],
       effects: shadow ? [DROP_SHADOW] : []
     })
     return { pageId: pages[page], nodeIds: [layer.id] }
   })
   return { graph, specs }
-}
-
-function eightBit(pixels: Uint8Array | Float32Array | null): Uint8Array {
-  if (!(pixels instanceof Uint8Array)) {
-    throw new TypeError('expected 8-bit pixels')
-  }
-  return pixels
-}
-
-function readImage(image: Image, alpha: AlphaType): Uint8Array {
-  return eightBit(image.readPixels(0, 0, pixelInfo(image.width(), image.height(), alpha)))
-}
-
-function withDecoded<T>(png: Uint8Array, use: (image: Image) => T): T {
-  const image = decode(png)
-  try {
-    return use(image)
-  } finally {
-    image.delete()
-  }
 }
 
 function exportedPixels(filters: ImageFilters, alpha: AlphaType): Uint8Array {
@@ -181,37 +115,7 @@ function exportedPixels(filters: ImageFilters, alpha: AlphaType): Uint8Array {
     renderNodesToImage(ck, renderer, graph, pageId, nodeIds, { scale: 1, format: 'PNG' }),
     'export'
   )
-  return withDecoded(png, (exported) => readImage(exported, alpha))
-}
-
-function shaderPixels(image: Image, filters: ImageFilters, alpha: AlphaType): Uint8Array {
-  const width = image.width()
-  const height = image.height()
-  const memory = ck.Malloc(Uint8Array, width * height * 4)
-  const surface = expectDefined(
-    ck.MakeRasterDirectSurface(pixelInfo(width, height, 'premultiplied'), memory, width * 4),
-    'surface'
-  )
-  const sampled = image.makeShaderOptions(
-    ck.TileMode.Clamp,
-    ck.TileMode.Clamp,
-    ck.FilterMode.Nearest,
-    ck.MipmapMode.None
-  )
-  const shader = adjustments.makeAdjustedImageShader(renderer, sampled, filters)
-  const paint = new ck.Paint()
-  try {
-    paint.setShader(shader)
-    surface.getCanvas().clear(ck.TRANSPARENT)
-    surface.getCanvas().drawPaint(paint)
-    return eightBit(surface.getCanvas().readPixels(0, 0, pixelInfo(width, height, alpha)))
-  } finally {
-    paint.delete()
-    shader.delete()
-    sampled.delete()
-    surface.dispose()
-    ck.Free(memory)
-  }
+  return readEncoded(png, alpha)
 }
 
 function bakedPixels(
@@ -228,35 +132,15 @@ function bakedPixels(
   }
 }
 
-function largestDifference(
-  actual: Uint8Array,
-  expected: Uint8Array,
-  counts: (alpha: number) => boolean
-): number {
-  let largest = 0
-  for (let at = 0; at < expected.length; at += 4) {
-    if (counts(expected[at + 3])) {
-      for (let channel = 0; channel < 4; channel++) {
-        largest = Math.max(largest, Math.abs(actual[at + channel] - expected[at + channel]))
-      }
-    }
-  }
-  return largest
-}
-
-const isOpaque = (alpha: number) => alpha === OPAQUE
-const isTranslucent = (alpha: number) => alpha > 0 && alpha < OPAQUE
-const isTransparent = (alpha: number) => alpha === 0
-
 function expectShaderMatch(
   pixels: (filters: ImageFilters, alpha: AlphaType) => Uint8Array,
   image: Image,
   filters: ImageFilters
 ): void {
   const unpremultiplied = pixels(filters, 'unpremultiplied')
-  const shadedUnpremultiplied = shaderPixels(image, filters, 'unpremultiplied')
+  const shadedUnpremultiplied = shaderPixels(renderer, image, filters, 'unpremultiplied')
   const premultiplied = pixels(filters, 'premultiplied')
-  const shadedPremultiplied = shaderPixels(image, filters, 'premultiplied')
+  const shadedPremultiplied = shaderPixels(renderer, image, filters, 'premultiplied')
   expect(largestDifference(unpremultiplied, shadedUnpremultiplied, isOpaque)).toBe(0)
   expect(largestDifference(premultiplied, shadedPremultiplied, isTranslucent)).toBeLessThanOrEqual(
     1
@@ -265,18 +149,12 @@ function expectShaderMatch(
 }
 
 function adjustmentShadersMade(job: () => void): number {
-  const made = spyOn(adjustments, 'makeAdjustedImageShader')
-  try {
-    job()
-    return made.mock.calls.length
-  } finally {
-    made.mockRestore()
-  }
+  return callsDuring(adjustments, 'makeAdjustedImageShader', job)
 }
 
 function expectBakeMatchesShader(r: SkiaRenderer, image: Image, filters: ImageFilters): void {
   const baked = bakedPixels(r, image, filters, 'unpremultiplied')
-  const shaded = shaderPixels(image, filters, 'unpremultiplied')
+  const shaded = shaderPixels(renderer, image, filters, 'unpremultiplied')
   expect(largestDifference(baked, shaded, isOpaque)).toBe(0)
 }
 
@@ -348,7 +226,7 @@ describe('adjusted images in exports', () => {
     const filters = { exposure: Number.NaN, contrast: 0.5 }
     withDecoded(PNG, (image) => {
       const exported = exportedPixels(filters, 'unpremultiplied')
-      const shaded = shaderPixels(image, filters, 'unpremultiplied')
+      const shaded = shaderPixels(renderer, image, filters, 'unpremultiplied')
       expect(largestDifference(exported, shaded, isOpaque)).toBe(0)
     })
   })
@@ -414,7 +292,7 @@ describe('adjusted images in exports', () => {
         expectDefined(renderPagesToPDF(own, graph, specs), 'PDF')
       })
       expect(made).toBe(1)
-      expect(own.images.adjustedForExport).toBeNull()
+      expect(own.images.exporting).toBeNull()
       expect(own.images.cache.get(HASH)).toBeUndefined()
     } finally {
       own.destroy()
@@ -440,30 +318,31 @@ describe('adjusted images in exports', () => {
 })
 
 describe('the export scope', () => {
-  const { graph } = graphWithLayers([])
+  const { graph, specs } = graphWithLayers([{ page: 0, filters: ALL_SEVEN }])
+  const layer = expectDefined(graph.getNode(specs[0].nodeIds[0]), 'layer')
 
   test('bakes nothing outside an export', () => {
-    expect(adjustedImageForExport(renderer, graph, HASH, ALL_SEVEN)).toBeNull()
+    expect(adjustedImageForExport(renderer, graph, HASH, ALL_SEVEN, layer)).toBeNull()
   })
 
   test('frees what it baked when the drawing throws', () => {
     const kept: { image: Image | null } = { image: null }
     expect(() =>
-      drawingExport(renderer.images, () => {
-        kept.image = adjustedImageForExport(renderer, graph, HASH, ALL_SEVEN)
+      drawingExport(renderer.images, null, () => {
+        kept.image = adjustedImageForExport(renderer, graph, HASH, ALL_SEVEN, layer)
         throw new Error('drawing failed')
       })
     ).toThrow('drawing failed')
     expect(expectDefined(kept.image, 'baked image').isDeleted()).toBe(true)
-    expect(renderer.images.adjustedForExport).toBeNull()
+    expect(renderer.images.exporting).toBeNull()
   })
 
   test('shares one bake across nested exports and frees it when the outer one ends', () => {
     const made = adjustmentShadersMade(() => {
-      const baked = drawingExport(renderer.images, () => {
-        const outer = adjustedImageForExport(renderer, graph, HASH, ALL_SEVEN)
-        const nested = drawingExport(renderer.images, () =>
-          adjustedImageForExport(renderer, graph, HASH, ALL_SEVEN)
+      const baked = drawingExport(renderer.images, null, () => {
+        const outer = adjustedImageForExport(renderer, graph, HASH, ALL_SEVEN, layer)
+        const nested = drawingExport(renderer.images, null, () =>
+          adjustedImageForExport(renderer, graph, HASH, ALL_SEVEN, layer)
         )
         expect(nested).toBe(outer)
         expect(expectDefined(nested, 'baked image').isDeleted()).toBe(false)

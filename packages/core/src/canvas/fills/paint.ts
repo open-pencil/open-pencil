@@ -8,7 +8,7 @@ import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-g
 
 import { setPaintBlendMode } from '#core/canvas/blend/modes'
 import { hasImageAdjustments, makeAdjustedImageShader } from '#core/canvas/images/adjustments'
-import { adjustedImageForExport } from '#core/canvas/images/baked'
+import { adjustedImageForExport } from '#core/canvas/images/exporting'
 import { previewEdge } from '#core/canvas/images/previews'
 import {
   drawOffOutputGrid,
@@ -396,7 +396,7 @@ export function applyImageFill(
     return setImageShader(r, fill, node, graph, live.image, paint)
   }
   const baked =
-    hasImageAdjustments(fill.filters) && adjustedImageForExport(r, graph, hash, fill.filters)
+    hasImageAdjustments(fill.filters) && adjustedImageForExport(r, graph, hash, fill.filters, node)
   if (baked) {
     return setBakedImageShader(r, fill, node, graph, baked, paint)
   }

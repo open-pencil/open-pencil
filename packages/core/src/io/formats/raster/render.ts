@@ -10,7 +10,7 @@ import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 
 import type { SkiaRenderer } from '#core/canvas'
-import { drawingExport } from '#core/canvas/images/baked'
+import { drawingExport } from '#core/canvas/images/exporting'
 import type { SupersampledOutput } from '#core/canvas/images/state'
 import { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
@@ -212,7 +212,9 @@ function renderToSurface(
     setup(canvas)
     renderer.images.supersampledOutput =
       renderScale > 1 ? supersampledOutput(canvas, renderScale) : null
-    drawingExport(renderer.images, () => renderer.renderSceneToCanvas(canvas, graph, pageId))
+    drawingExport(renderer.images, { canvas, rasterPixelsPerDeviceUnit: 1 }, () =>
+      renderer.renderSceneToCanvas(canvas, graph, pageId)
+    )
     surface.flush()
 
     const highResImage = surface.makeImageSnapshot()

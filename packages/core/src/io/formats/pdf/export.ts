@@ -2,7 +2,7 @@ import type { PDFDocument } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas'
-import { drawingExport } from '#core/canvas/images/baked'
+import { drawingExport } from '#core/canvas/images/exporting'
 import { exportBounds, prepareSelectionRenderGraph } from '#core/io/formats/raster/render'
 import { extractExportGraph } from '#core/io/subgraph'
 
@@ -13,6 +13,8 @@ import type { PDFPageSpec } from './plan'
  * an image: blurs, shadows, noise, and shader fills. Twice the page's own 72 points per inch.
  */
 export const PDF_RASTER_DPI = 144
+const POINTS_PER_INCH = 72
+const PDF_RASTER_PIXELS_PER_POINT = PDF_RASTER_DPI / POINTS_PER_INCH
 
 export interface PDFExportOptions {
   title?: string
@@ -38,7 +40,7 @@ export function renderPagesToPDF(
 ): PDFExportResult | null {
   const doc = new renderer.ck.PDFDocument(options.title ?? '', 'OpenPencil', PDF_RASTER_DPI)
   try {
-    const pages = drawingExport(renderer.images, () =>
+    const pages = drawingExport(renderer.images, null, () =>
       specs.flatMap((spec) => drawPage(doc, renderer, graph, spec) ?? [])
     )
     if (pages.length === 0) {
@@ -69,13 +71,17 @@ function drawPage(
 
   // Layers draw by themselves, without the page behind them, clipped by the frames around them.
   const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds: spec.nodeIds })
-  if (!extracted.pageId) return null
-  prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, spec.nodeIds)
+  const { pageId } = extracted
+  if (!pageId) return null
+  prepareSelectionRenderGraph(graph, extracted.graph, pageId, spec.nodeIds)
 
   const canvas = doc.beginPage(width, height)
   if (!canvas) throw new Error('The PDF document was closed before its pages were drawn')
   canvas.translate(-bounds.minX, -bounds.minY)
-  renderer.renderSceneToCanvas(canvas, extracted.graph, extracted.pageId)
+  const target = { canvas, rasterPixelsPerDeviceUnit: PDF_RASTER_PIXELS_PER_POINT }
+  drawingExport(renderer.images, target, () =>
+    renderer.renderSceneToCanvas(canvas, extracted.graph, pageId)
+  )
   doc.endPage()
   return { label: spec.label, width, height }
 }
