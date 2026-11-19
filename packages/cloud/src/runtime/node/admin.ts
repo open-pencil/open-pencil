@@ -36,12 +36,19 @@ try {
     )
   }
   if (operation === 'request') {
-    await createEnrollmentService(database).request({
+    const outcome = await createEnrollmentService(database).request({
       email,
       name: nameWords.join(' '),
       ...(waitlist && { source: 'waitlist' as const })
     })
-    console.log(JSON.stringify({ requested: email, ...(waitlist && { waitlist }) }))
+    // An address already waiting or approved keeps its request, so it is not marked as waitlist.
+    console.log(
+      JSON.stringify(
+        outcome === 'recorded'
+          ? { requested: email, ...(waitlist && { waitlist }) }
+          : { unchanged: email }
+      )
+    )
   } else {
     console.log(
       JSON.stringify(

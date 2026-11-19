@@ -136,6 +136,10 @@ describe('Cloud enrollment integration', () => {
       await official.request({ email: 'ada@example.com', name: 'Ada' })
       // Grace joined openpencil.dev's waitlist; an administrator recorded her here.
       await official.request({ email: 'grace@example.com', source: 'waitlist' })
+      // Ada asked here already: the waitlist doesn't take her request, or the letter for asking.
+      expect(await official.request({ email: 'ada@example.com', source: 'waitlist' })).toBe(
+        'unchanged'
+      )
       await official.request({ email: 'linus@example.com', name: 'Linus' })
       const [declined] = (await official.list({ search: 'linus' })).enrollments
       if (!declined) throw new Error('Expected the request to decline')
