@@ -1,7 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import { dimension, splitCSSValue } from '@open-pencil/scene-graph/css'
-import type { Matrix, Rect, Size } from '@open-pencil/scene-graph/primitives'
+import type { Matrix, Rect, Size, Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { BackgroundPicture } from './image-fills'
 
@@ -46,7 +46,7 @@ const POSITION_KEYWORDS: Partial<Record<string, string>> = {
 }
 
 /** Where `background-position` puts a picture of `size` in `box`: a percentage of the room left. */
-function pictureOffset(position: string, box: Size, size: Size): { x: number; y: number } {
+function pictureOffset(position: string, box: Size, size: Size): Vector {
   const [across = '50%', down = '50%'] = splitCSSValue(position.trim().toLowerCase()).map(
     (value) => POSITION_KEYWORDS[value] ?? value
   )
