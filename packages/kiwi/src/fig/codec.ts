@@ -10,7 +10,7 @@ import { compileSchema, encodeBinarySchema } from '../schema-runtime'
 import { decompressFigKiwiData, loadFigDataDecompressor } from './container'
 import { isZstdCompressed, getKiwiMessageType } from './protocol'
 import figmaSchema from './schema'
-import type { Color, GUID, Matrix, Vector } from './types'
+import type { Color, GUID, Matrix, PaintFilter, Vector } from './types'
 
 interface CompiledSchema {
   encodeMessage(message: unknown): Uint8Array
@@ -138,6 +138,8 @@ export interface Paint {
   imageScaleMode?: string
   /** Degrees an image turns in Fill, Fit, and Tile; a crop's transform holds its own turn. */
   rotation?: number
+  /** An image's adjustments; the schema has no `saturation`, and `vibrance` holds Figma's. */
+  paintFilter?: PaintFilter
   sourceNodeId?: GUID
   scale?: number
   spacing?: number
