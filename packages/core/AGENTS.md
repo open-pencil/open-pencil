@@ -89,6 +89,7 @@ Canvas is CanvasKit (Skia WASM) on a WebGL surface, not DOM.
 
 - `renderVersion` is a canvas repaint (pan, zoom, hover); `sceneVersion` is a scene-graph mutation. `requestRender()` bumps both; `requestRepaint()` bumps only `renderVersion`. UI that only cares about graph data must not watch repaint-only state.
 - `renderNow()` is only for surface recreation and font loading, where an immediate draw is required.
+- A renderer that only draws into pictures or images of its own, such as an export's or a preview's, comes from `createOffscreenRenderer` or `withOffscreenRenderer`, never a hand-made surface (`packages/core/tests/canvas/renderer/offscreen.test.ts`).
 - The resize observer uses a rAF throttle, not a debounce; debounce causes canvas skew.
 - Viewport culling skips off-screen nodes; unclipped parents are not culled because children may extend beyond bounds.
 - Overscan images accelerate navigation; a settled scene is the exact visible tiles at the live viewport's device scale. Pixel-grid alignment alone does not guarantee Skia anti-aliasing parity. Keep settlement pending until the viewport pass completes; do not add a second viewport image cache.
