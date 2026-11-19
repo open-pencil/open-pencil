@@ -15,7 +15,7 @@ export default {
       code: {
         root: 'relative w-full justify-center rounded-lg border border-border bg-input px-10 py-3',
         value: 'text-center font-mono text-lg tracking-[0.3em]',
-        copy: 'absolute end-2 top-1/2 -translate-y-1/2'
+        copy: 'absolute inset-e-2 top-1/2 -translate-y-1/2'
       }
     }
   },
