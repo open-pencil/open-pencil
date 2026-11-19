@@ -1,12 +1,13 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type ImageFilters } from '@open-pencil/scene-graph'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { maxOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
+
+import { SkiaRenderer } from '#core/canvas/renderer/skia'
+import { getCanvasKit } from '#core/canvaskit'
+import { renderNodesToImage } from '#core/io/formats/raster/render'
 
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
