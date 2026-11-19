@@ -1,6 +1,7 @@
 import type { DesignDocument, DesignViewport } from '@open-pencil/dom-css'
 import {
   applyCSSTransforms,
+  applyStacking,
   designDocumentToLayers,
   placeLayersFromLayout
 } from '@open-pencil/dom-css/scene-graph'
@@ -49,7 +50,7 @@ export async function sceneGraphFromStyledHTML(
   // `Helvetica Neue` on a system without it. Families the HTML engine already resolved name a
   // single font that loads.
   await resolvePageFontFamilies(styled, options.pageFamilies)
-  const { graph, boxes, transforms, svgs } = designDocumentToLayers(styled, {
+  const { graph, boxes, transforms, svgs, stackings } = designDocumentToLayers(styled, {
     pageName: options.pageName
   })
   // The page shows what a browser paints behind the page: its own background, or white.
@@ -66,6 +67,8 @@ export async function sceneGraphFromStyledHTML(
     if (placeLayersFromLayout(graph, boxes) === 0) break
     layoutAuthoredNodes(graph, pageIds)
   }
+  // Once laid out, so a background lifted under a container's own fills takes its final size.
+  applyStacking(graph, stackings)
   await drawInlineSVGs(graph, svgs, styled, options.matchIcon)
   applyCSSTransforms(graph, transforms)
   return graph
