@@ -114,6 +114,7 @@ function concurrencyLimiter(maximum: number) {
  * OpenAI-compatible upstream with one key, and holds each workspace to its monthly allowance.
  * A request is admitted while the workspace has credits left and charged once its usage is known,
  * so concurrent requests can overdraw the allowance by what they cost.
+ * `/health` answers without a token, for uptime checks; it says nothing about the upstream.
  */
 export function createServicesApp(services: ServicesAppDependencies) {
   const { config } = services
@@ -160,6 +161,7 @@ export function createServicesApp(services: ServicesAppDependencies) {
         maxAge: 600
       })
     )
+    .get('/health', (context) => context.json({ status: 'ok' as const }))
     .use(`${CLOUD_SERVICES_API_PATHS.base}/*`, requireToken)
     .get(CLOUD_SERVICES_API_PATHS.catalog, (context) => context.json(config.catalog))
     .get(CLOUD_SERVICES_API_PATHS.wallet, async (context) => {
