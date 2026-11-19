@@ -5,9 +5,10 @@ import type { WebSocket } from 'ws'
 
 import { errorMessage, toError } from '@open-pencil/std/errors'
 
-import { isAuthorized } from '#mcp/auth'
+import type { MCPAccess } from '#mcp/auth'
 import type { RPCJSONObject } from '#mcp/json'
 import type { PendingRequest } from '#mcp/rpc-types'
+import { scopeRPC, type MCPToolScope } from '#mcp/tool/scope'
 import { APP_RPC_DEADLINE_MS, APP_WAIT_DEADLINE_MS } from '#mcp/transport/deadlines'
 
 const RPC_TIMEOUT = APP_RPC_DEADLINE_MS
@@ -17,7 +18,10 @@ const APP_NOT_CONNECTED_MESSAGE =
   'OpenPencil app is not connected. STOP and tell the user: "The OpenPencil desktop app is not running, no document is open, or the desktop app is connected to a different MCP server. Please start OpenPencil, open a document, and try again." Do NOT attempt to start the app yourself or retry automatically.'
 
 type BrowserRPCBridgeOptions = {
-  authToken: string | null
+  /** Who may register as the app (`app`) and send it requests over the socket (`rpc`). */
+  access: MCPAccess
+  /** What callers can reach in the app; see `MCPToolScope`. Defaults to the whole document. */
+  scope?: MCPToolScope
   onConnectionChange: () => void
   /** How long an RPC waits for the app to register before failing with APP_NOT_CONNECTED. Defaults to 10 s. */
   appWaitTimeoutMs?: number
@@ -91,7 +95,8 @@ function createSettler<T>(resolve: (value: T) => void, reject: (error: Error) =>
 }
 
 export function createBrowserRPCBridge({
-  authToken,
+  access,
+  scope = 'document',
   onConnectionChange,
   appWaitTimeoutMs = APP_WAIT_TIMEOUT,
   rpcTimeoutMs = RPC_TIMEOUT
@@ -189,7 +194,7 @@ export function createBrowserRPCBridge({
     // app already knows the token (from the discovery file or Vite env)
     // and sends it proactively in its ws.onopen handler. The token field
     // is set to null to signal that auth is required without revealing
-    // the secret. When auth is disabled (authToken === null), null is
+    // the secret. When auth is disabled, null is
     // still correct — it means "no token needed."
     sendJSON(ws, { type: 'register', token: null })
   }
@@ -198,7 +203,8 @@ export function createBrowserRPCBridge({
     for (const client of clients) sendRegisterPrompt(client)
   }
 
-  function sendRPC(body: Record<string, unknown>): Promise<unknown> {
+  /** Writes a request to the app as given. Nothing outside the bridge calls it: see `sendRPC`. */
+  function sendUnscopedRPC(body: Record<string, unknown>): Promise<unknown> {
     if (bridgeClosed) return Promise.reject(new Error('Server shutting down'))
     return new Promise((resolve, reject) => {
       const doSend = () => {
@@ -235,13 +241,20 @@ export function createBrowserRPCBridge({
     })
   }
 
+  /**
+   * Sends a request to the app within the scope. This is the only way in: MCP sessions, `/rpc`,
+   * and requests an authenticated socket sends all pass through it, so none reaches further.
+   */
+  const sendRPC = scopeRPC(sendUnscopedRPC, scope)
+
   async function handleClientRequest(
     ws: WebSocket,
     msg: v.InferOutput<typeof requestMessageSchema>
   ) {
     try {
       const result = await sendRPC(stripEnvelope(msg))
-      sendJSON(ws, { ...responsePayload(result), type: 'response', id: msg.id, ok: true })
+      // A call the scope refuses comes back as a result that says so, and keeps saying so here.
+      sendJSON(ws, { ok: true, ...responsePayload(result), type: 'response', id: msg.id })
     } catch (e) {
       sendJSON(ws, {
         type: 'response',
@@ -254,7 +267,7 @@ export function createBrowserRPCBridge({
 
   function registerBrowser(ws: WebSocket, token: string | null) {
     if (bridgeClosed) return
-    if (!isAuthorized(token, authToken)) {
+    if (!access.scopes(token).includes('app')) {
       ws.close()
       return
     }
@@ -307,9 +320,8 @@ export function createBrowserRPCBridge({
     if (msg.type === 'auth' || msg.type === 'register') {
       // `auth` authenticates a stdio bridge client without registering it as
       // the browser app, so it can send request/response messages without
-      // becoming the RPC target. The token is validated the same way as
-      // registerBrowser — when auth is disabled (authToken === null), any
-      // token is accepted. A message without a token is ignored; a token of
+      // becoming the RPC target, so it needs the `rpc` scope where
+      // registering needs `app`. When auth is disabled, any token is accepted. A message without a token is ignored; a token of
       // any other type closes the socket.
       const handshake = v.safeParse(handshakeMessageSchema, msg)
       if (!handshake.success) {
@@ -320,7 +332,7 @@ export function createBrowserRPCBridge({
       if (token === undefined) return
       if (msg.type === 'register') {
         registerBrowser(ws, token)
-      } else if (isAuthorized(token, authToken)) {
+      } else if (access.scopes(token).includes('rpc')) {
         authenticatedClients.add(ws)
       } else {
         ws.close()

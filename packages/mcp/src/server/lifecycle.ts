@@ -11,6 +11,7 @@ import type { WebSocketServer } from 'ws'
 import { errorMessage } from '@open-pencil/std/errors'
 import { SECOND_MS } from '@open-pencil/std/timing'
 
+import { mcpClientToken } from '#mcp/tool/client-token'
 import type { MCPToolScope } from '#mcp/tool/scope'
 import {
   parseDiscoveryInfo,
@@ -189,6 +190,7 @@ export async function writeDiscovery(
     httpPort: actualHttpPort,
     authRequired: authToken !== null,
     authToken,
+    clientToken: authToken === null ? null : await mcpClientToken(authToken),
     version,
     startedAt,
     disabledTools,

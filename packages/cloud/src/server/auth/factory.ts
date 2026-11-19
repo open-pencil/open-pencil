@@ -32,6 +32,7 @@ import { betterAuthLogger } from './logger'
 import { removeSignInMethod, signInMethodHooks, signInProviders } from './methods'
 import { createMFAAssuranceService, createProofRecorder, verifySecondFactor } from './mfa-assurance'
 import { passwordOptions } from './passwords'
+import { authRateLimit } from './rate-limit'
 import { APPLE_AUDIENCE, socialProviders, TRUSTED_SOCIAL_PROVIDERS } from './social-providers'
 
 const BETTER_AUTH_SCHEMA_VERSION = '1.7.7+mfa.1'
@@ -149,22 +150,7 @@ export function createBetterAuthAdapter(
       },
       ...(runtime.runInBackground ? { backgroundTasks: { handler: runtime.runInBackground } } : {})
     },
-    rateLimit: {
-      enabled: true,
-      storage: 'database',
-      window: 60,
-      max: 100,
-      customRules: {
-        [devices.endpoints.deviceCode.path]: { window: 60, max: 10 },
-        [devices.endpoints.deviceToken.path]: { window: 60, max: 60 },
-        [devices.endpoints.deviceApprove.path]: { window: 60, max: 10 },
-        [devices.endpoints.deviceDeny.path]: { window: 60, max: 10 },
-        [CORE_AUTH_PATHS.signInEmail]: { window: 10, max: 3 },
-        [CORE_AUTH_PATHS.signUpEmail]: { window: 10, max: 3 },
-        [CORE_AUTH_PATHS.requestPasswordReset]: { window: 60, max: 3 },
-        [CORE_AUTH_PATHS.sendVerificationEmail]: { window: 60, max: 3 }
-      }
-    },
+    rateLimit: authRateLimit(devices.endpoints),
     emailAndPassword: passwordOptions(config, authenticationEmail),
     ...joining,
     plugins: [

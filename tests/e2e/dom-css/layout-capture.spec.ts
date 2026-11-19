@@ -33,7 +33,7 @@ function captured(
   css: string
 ) {
   const document = parseHTMLDocument(html)
-  return browserRuntimeComputeStyles(page, document, css, 'iframe', {
+  return browserRuntimeComputeStyles(page, document, css, {
     layout: true,
     viewport: VIEWPORT
   })
@@ -247,7 +247,7 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
 
   test('leaves layout out unless asked', async ({ page }) => {
     const document = parseHTMLDocument('<div id="plain"></div>')
-    const computed = await browserRuntimeComputeStyles(page, document, '', 'iframe')
+    const computed = await browserRuntimeComputeStyles(page, document, '')
 
     expect(byId(computed, 'plain').layout).toBeUndefined()
   })

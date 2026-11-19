@@ -13,7 +13,6 @@ import { recordLayout } from './layout'
 
 export interface BrowserCSSRuntimeOptions {
   document?: Document
-  sandbox?: 'shadow-root' | 'iframe'
 }
 
 /**
@@ -265,54 +264,46 @@ function keepAutoSideMargins(element: Element, style: Record<string, string>): v
 }
 
 /**
- * How long layout waits for an image to load. An image without a size takes its own once loaded,
- * moving what follows it, but a request that never ends must not hold an import forever.
+ * How long layout waits for fonts and images to load. An image without a size takes its own once
+ * loaded, moving what follows it, but a request that never ends must not hold an import forever.
  */
-const IMAGE_LOAD_LIMIT_MS = DEADLINE_MS.request
+const LOAD_LIMIT_MS = DEADLINE_MS.request
 
-/** Resolves once every image under `root` has loaded or failed, or the time limit passes. */
-function imagesLoaded(root: ParentNode, view: Window): Promise<void> {
-  const images = Array.from(root.querySelectorAll('img'))
-  // A lazy image outside the sandbox's view would never load, so every image loads now.
-  for (const image of images) {
-    if (image.getAttribute('loading') === 'lazy') image.setAttribute('loading', 'eager')
-  }
-  const pending = images.filter((image) => !image.complete)
-  if (pending.length === 0) return Promise.resolve()
-  const loaded = Promise.all(
-    pending.map(
-      (image) =>
-        new Promise<void>((resolve) => {
-          image.addEventListener('load', () => resolve(), { once: true })
-          image.addEventListener('error', () => resolve(), { once: true })
-        })
-    )
-  ).then(() => undefined)
-  const limit = new Promise<void>((resolve) => {
-    view.setTimeout(resolve, IMAGE_LOAD_LIMIT_MS)
+function nextFrame(view: Window): Promise<void> {
+  return new Promise((resolve) => {
+    view.requestAnimationFrame(() => resolve())
   })
-  return Promise.race([loaded, limit])
+}
+
+/** Resolves once `loaded()` holds, looked at each frame of `view`, or the time limit passes. */
+async function untilLoaded(view: Window, loaded: () => boolean): Promise<void> {
+  const deadline = view.performance.now() + LOAD_LIMIT_MS
+  while (!loaded() && view.performance.now() < deadline) await nextFrame(view)
+}
+
+/** Whether no font is still loading. Laying text out is what starts its fonts loading. */
+function fontsLoaded(frame: Document): boolean {
+  frame.documentElement.getBoundingClientRect()
+  return frame.fonts.status !== 'loading'
 }
 
 /**
- * Waits until the document's web fonts and the content's images have loaded and a frame has laid
- * it out with them, so lines break and boxes size as the page shows them, not in a fallback font
- * or around an image that has not arrived.
+ * Waits until the frame's web fonts and images have loaded and a frame has laid it out with
+ * them, so lines break and boxes size as the page shows them, not in a fallback font or around
+ * an image that has not arrived. The frame runs no script, and WebKit then fires no timer,
+ * animation frame, or listener in it, whoever set them: `host`, the window of the document that
+ * owns the frame, keeps the time and reads the frame's state instead.
  */
-async function settle(browserDocument: Document, content: ParentNode): Promise<void> {
-  await requestFrame(browserDocument)
-  await browserDocument.fonts.ready
-  const view = browserDocument.defaultView
-  if (view) await imagesLoaded(content, view)
-  await requestFrame(browserDocument)
-}
-
-function requestFrame(browserDocument: Document): Promise<void> {
-  const requestAnimationFrame = browserDocument.defaultView?.requestAnimationFrame
-  if (!requestAnimationFrame) return Promise.resolve()
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => resolve())
-  })
+async function settle(host: Window, frame: Document): Promise<void> {
+  await nextFrame(host)
+  await untilLoaded(host, () => fontsLoaded(frame))
+  const images = Array.from(frame.querySelectorAll('img'))
+  // A lazy image outside the frame's view would never load, so every image loads now.
+  for (const image of images) {
+    if (image.getAttribute('loading') === 'lazy') image.setAttribute('loading', 'eager')
+  }
+  await untilLoaded(host, () => images.every((image) => image.complete))
+  await nextFrame(host)
 }
 
 const DEFAULT_SANDBOX_WIDTH = 1000
@@ -331,43 +322,34 @@ function applySandboxHostStyle(element: HTMLElement, viewport: DesignViewport | 
   ].join(';')
 }
 
-async function computeStylesInShadowRoot(
+/**
+ * What the measuring frame may do. Its content is markup and CSS from a file, the clipboard, or a
+ * code editor, laid out only to be measured: without `allow-scripts` the browser runs no script
+ * element, event handler attribute, or `javascript:` URL in the frame or in a frame nested in it.
+ * `allow-same-origin` keeps its document readable from this one, and gives the content nothing
+ * while it cannot run.
+ */
+const MEASURING_FRAME_SANDBOX = 'allow-same-origin'
+
+/**
+ * The frame's own policy says the same a second way, and keeps nested frames and plugins from
+ * loading documents nothing measures. Images, fonts, and stylesheets still load: layout needs them.
+ */
+const MEASURING_FRAME_POLICY = "script-src 'none'; frame-src 'none'; object-src 'none'"
+
+const MEASURING_FRAME_DOCUMENT = `<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="${MEASURING_FRAME_POLICY}"></head><body></body></html>`
+
+async function computeStylesInFrame(
   browserDocument: Document,
   designDocument: DesignDocument,
   cssText: string,
   options: CSSComputeOptions
 ): Promise<DesignDocument> {
-  const host = browserDocument.createElement('div')
-  applySandboxHostStyle(host, options.viewport)
-
-  const shadow = host.attachShadow({ mode: 'open' })
-  const style = browserDocument.createElement('style')
-  style.textContent = cssText
-  shadow.append(style)
-
-  const content = browserDocument.createElement('div')
-  content.innerHTML = serializeHTML(designDocument)
-  shadow.append(content)
-  browserDocument.body.append(host)
-
-  try {
-    await settle(browserDocument, shadow)
-    return copyComputedStyles(designDocument, content, options, {
-      origin: content,
-      styleRoot: shadow
-    })
-  } finally {
-    host.remove()
-  }
-}
-
-async function computeStylesInIframe(
-  browserDocument: Document,
-  designDocument: DesignDocument,
-  cssText: string,
-  options: CSSComputeOptions
-): Promise<DesignDocument> {
+  const host = browserDocument.defaultView
+  if (!host) throw new TypeError('Browser CSS runtime requires a document shown in a window')
   const iframe = browserDocument.createElement('iframe')
+  // Before the frame joins the document, since its sandbox is fixed once its document exists.
+  iframe.setAttribute('sandbox', MEASURING_FRAME_SANDBOX)
   applySandboxHostStyle(iframe, options.viewport)
   browserDocument.body.append(iframe)
 
@@ -375,7 +357,7 @@ async function computeStylesInIframe(
     const iframeDocument = iframe.contentDocument
     if (!iframeDocument) throw new TypeError('Browser CSS runtime could not create iframe document')
     iframeDocument.open()
-    iframeDocument.write(`<!doctype html><html><head></head><body></body></html>`)
+    iframeDocument.write(MEASURING_FRAME_DOCUMENT)
     iframeDocument.close()
 
     const style = iframeDocument.createElement('style')
@@ -387,7 +369,7 @@ async function computeStylesInIframe(
     const content = iframeDocument.body
     content.innerHTML = serializeHTML(designDocument)
 
-    await settle(iframeDocument, iframeDocument)
+    await settle(host, iframeDocument)
     return copyComputedStyles(designDocument, content, options, {
       origin: iframeDocument.documentElement,
       styleRoot: iframeDocument.head
@@ -432,17 +414,19 @@ function copyComputedStyles(
   return nextDocument
 }
 
+/**
+ * Parses and styles markup with the browser's own engine. The markup is untrusted: it is parsed
+ * in a document that runs nothing and laid out in a frame that runs no script, so opening,
+ * pasting, or previewing HTML never executes it.
+ */
 export function createBrowserCSSRuntime(options: BrowserCSSRuntimeOptions = {}): CSSRuntime {
   const browserDocument = resolveBrowserDocument(options.document)
-  const sandbox = options.sandbox ?? 'shadow-root'
 
   return {
     kind: 'browser',
     parseHTML: (html) => parseHTMLWithDocument(browserDocument, html),
     serializeHTML,
     computeStyles: (designDocument, cssText = '', computeOptions = {}) =>
-      sandbox === 'iframe'
-        ? computeStylesInIframe(browserDocument, designDocument, cssText, computeOptions)
-        : computeStylesInShadowRoot(browserDocument, designDocument, cssText, computeOptions)
+      computeStylesInFrame(browserDocument, designDocument, cssText, computeOptions)
   }
 }

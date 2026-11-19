@@ -21,7 +21,7 @@ test.describe('@open-pencil/dom-css browser runtime properties', () => {
       #grid { display: grid; grid-template-columns: 40px 60px; justify-items: center }
       #item { flex-grow: 2; margin-top: 6px; text-decoration-style: dashed; justify-self: end; grid-column: span 2 }
     `
-    const computed = await browserRuntimeComputeStyles(page, document, css, 'iframe')
+    const computed = await browserRuntimeComputeStyles(page, document, css)
     const style = (id: string) => {
       const walk = (nodes: readonly DesignNode[]): DesignNode | undefined =>
         nodes.find((node) => node.type === 'element' && node.attrs.id === id) ??

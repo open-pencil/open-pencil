@@ -442,19 +442,15 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
       }
     `
 
-    const iframeDocument = await browserRuntimeComputeStyles(page, document, css, 'iframe')
-    const shadowDocument = await browserRuntimeComputeStyles(page, document, css, 'shadow-root')
-    const iframeCard = iframeDocument.children[0]
-    const shadowCard = shadowDocument.children[0]
+    const styledDocument = await browserRuntimeComputeStyles(page, document, css)
+    const card = styledDocument.children[0]
 
-    expect(iframeCard?.type).toBe('element')
-    expect(shadowCard?.type).toBe('element')
-    if (iframeCard?.type !== 'element' || shadowCard?.type !== 'element') return
-    expect(iframeCard.computedStyle?.width).toBe('176px')
-    expect(shadowCard.computedStyle?.width).toBe('176px')
-    expect(iframeCard.computedStyle?.gap).toBe('12px')
-    expect(iframeCard.computedStyle?.['padding-top']).toBe('24px')
-    expect(iframeCard.computedStyle?.['box-shadow']).toContain('rgba(15, 23, 42, 0.16)')
+    expect(card?.type).toBe('element')
+    if (card?.type !== 'element') return
+    expect(card.computedStyle?.width).toBe('176px')
+    expect(card.computedStyle?.gap).toBe('12px')
+    expect(card.computedStyle?.['padding-top']).toBe('24px')
+    expect(card.computedStyle?.['box-shadow']).toContain('rgba(15, 23, 42, 0.16)')
 
     const hostWidth = await page
       .locator('article.card')
@@ -533,7 +529,7 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
       })
     )
     const css = await compileTailwindCSS(classes)
-    const computedDocument = await browserRuntimeComputeStyles(page, document, css, 'iframe')
+    const computedDocument = await browserRuntimeComputeStyles(page, document, css)
     const graph = designDocumentToSceneGraph(computedDocument)
     const designCard = computedDocument.children[0]
     const pageNode = graph.getPages()[0]
