@@ -3,6 +3,7 @@ import { clamp } from 'es-toolkit/math'
 import { invert, mapValues, pickBy } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
+import type { PaintFilter } from '@open-pencil/kiwi/fig'
 import type { Effect as KiwiEffect, Paint, VariableAliasValue } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
@@ -22,8 +23,6 @@ import type {
 } from '@open-pencil/scene-graph'
 import { BLACK, UNSET_GLASS, UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
 import type { Color, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
-
-type PaintFilter = NonNullable<Paint['paintFilter']>
 
 /**
  * Figma's image adjustments by the archive's names. The schema has no `saturation`; `vibrance` is

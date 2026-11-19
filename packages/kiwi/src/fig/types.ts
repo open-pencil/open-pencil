@@ -23,3 +23,17 @@ export interface Matrix {
   m11: number
   m12: number
 }
+
+/** An image paint's adjustments, as the schema's `PaintFilterMessage` names them. */
+export interface PaintFilter {
+  tint?: number
+  shadows?: number
+  highlights?: number
+  detail?: number
+  exposure?: number
+  vignette?: number
+  temperature?: number
+  vibrance?: number
+  contrast?: number
+  brightness?: number
+}
