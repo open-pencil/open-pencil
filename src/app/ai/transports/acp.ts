@@ -49,19 +49,20 @@ import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
 import { systemPrompt } from '@/app/ai/chat/system-prompt'
 import { endRun, forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
 import { subagentAgent } from '@/app/automation/agents'
-import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
+import { getMCPClientToken } from '@/app/automation/mcp/client-token'
 import { describeDiagnosticError, recordACPTransportFailure } from '@/app/diagnostics'
 import type { EditorStore } from '@/app/editor/active-store'
 
 /** What starting an agent reaches outside the transport, which tests replace. */
 export interface ACPStartup extends AgentLaunch {
-  authToken: typeof getAutomationAuthToken
+  /** The token the agent reaches OpenPencil's MCP server with. */
+  toolsToken: typeof getMCPClientToken
   linkTools: typeof linkOwnTools
 }
 
 const DEFAULT_STARTUP: ACPStartup = {
   ...HOST_AGENT_LAUNCH,
-  authToken: getAutomationAuthToken,
+  toolsToken: getMCPClientToken,
   linkTools: linkOwnTools
 }
 
@@ -529,7 +530,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       }
     }
 
-    const automationAuthToken = await step(this.startup.authToken())
+    const toolsToken = await step(this.startup.toolsToken())
     const initialized = await step(
       connection.agent.request(methods.agent.initialize, {
         protocolVersion: PROTOCOL_VERSION,
@@ -540,7 +541,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
     // The agent must reach OpenPencil's tools before it gets a prompt. An outside MCP connection
     // whose credential cannot be read fails here.
-    const linking = this.startup.linkTools(automationAuthToken, {
+    const linking = this.startup.linkTools(toolsToken, {
       defersTools: this.agentDef.defersMCPTools === true
     })
     release = () => stopWhenLinked(linking)

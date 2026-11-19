@@ -200,7 +200,7 @@ export function fakeAgents({
       return { command: agent.command, searchPath: '/lookup/bin' }
     },
     spawn,
-    authToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
+    toolsToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
     linkTools: async (_token, linkOptions) => {
       defersTools.push(linkOptions?.defersTools ?? false)
       return {

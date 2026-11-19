@@ -25,6 +25,11 @@ export interface DiscoveryInfo {
   httpPort: number
   authRequired: boolean
   authToken: string | null
+  /**
+   * The token to give an MCP client: it opens `/mcp` and nothing `authToken` opens besides. Null
+   * without auth, and absent from a file an older server wrote.
+   */
+  clientToken?: string | null
   version: string
   startedAt: string
   disabledTools?: string[]
@@ -43,6 +48,7 @@ const discoveryInfoSchema = v.pipe(
     startedAt: v.string(),
     socketPath: v.nullable(v.pipe(v.string(), v.nonEmpty())),
     authToken: v.nullable(v.string()),
+    clientToken: v.optional(v.nullable(v.string())),
     disabledTools: v.optional(v.array(v.string()), () => []),
     scope: v.optional(v.picklist(MCP_TOOL_SCOPES), 'document')
   })

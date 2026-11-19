@@ -26,4 +26,6 @@ Please give us a reasonable opportunity to investigate and release a fix before 
 
 The MCP HTTP transport (`openpencil-mcp-http`) binds to `127.0.0.1` by default with `eval` disabled, CORS disabled, and file access restricted to the working directory. See [MCP docs](https://openpencil.dev/reference/mcp-tools) for configuration.
 
+These restrictions bind a client that connects to `/mcp` with the client token (`clientToken` in the discovery file). The server's own token (`authToken`) belongs to the app, the CLI, and the stdio transport: it also opens `/rpc` and `/files`, which they do not limit.
+
 The stdio transport (`openpencil-mcp`) is intended for local use only and does not apply these restrictions.

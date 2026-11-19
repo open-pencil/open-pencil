@@ -1,0 +1,1 @@
+- A coding agent the app starts, or any MCP client, gets a token that opens only MCP sessions, where the server's tool switches, file root, and "Share only the selection" apply, instead of the server's own token, which also opened `/rpc`, `/files`, and the app's socket; requests sent over the socket now keep to the selection too (GHSA-6r2v-cq7x-fvh6).
