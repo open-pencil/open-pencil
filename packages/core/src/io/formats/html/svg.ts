@@ -12,7 +12,6 @@ import {
   parseFragmentReference
 } from '@open-pencil/scene-graph/css'
 import { ICON_NAME, iconLayerName } from '@open-pencil/scene-graph/icons'
-import { parseSVGViewBoxValue } from '@open-pencil/scene-graph/parse-path'
 
 import { drawIcon, parseIconName } from '#core/icons'
 import { svgIconPaths } from '#core/icons/artwork'
@@ -20,7 +19,7 @@ import type { IconMatcher } from '#core/icons/match'
 import { extractSVGContent } from '#core/icons/svg'
 import { parseSVGDocument } from '#core/io/formats/svg/document'
 import { createSVGNodes } from '#core/io/formats/svg/import'
-import { parseSVGSize } from '#core/io/formats/svg/metadata'
+import { parseSVGSize, parseSVGViewBox } from '#core/io/formats/svg/metadata'
 import { svgViewportAttributes } from '#core/vector/vectorize/svg/transform'
 
 import { designElements } from './elements'
@@ -195,16 +194,17 @@ function drawNamedIcon(
   element: DesignElement,
   named: { prefix: string; name: string },
   markup: string,
-  box: { width: number; height: number }
+  box: { width: number; height: number },
+  paint: string | undefined
 ): boolean {
   const content = extractSVGContent(markup)
   if (content.texts.length > 0 || content.paths.some((path) => path.clipPaths?.length)) return false
-  const attrs: Partial<Record<string, string>> = element.attrs
-  const viewBox = attrs.viewBox ?? attrs.viewbox
-  const space = parseSVGViewBoxValue(viewBox) ?? { x: 0, y: 0, ...box }
+  // The markup's own viewBox: an image's or a mask's SVG is not the element's attributes.
+  const space = parseSVGViewBox(markup) ?? { x: 0, y: 0, ...box }
   const paths = svgIconPaths(content, space, box, svgViewportAttributes(markup))
   if (paths.length === 0) return true
-  const color = parseCSSColor(element.computedStyle?.color) ?? BLACK
+  // A mask icon takes the background that shows through it; other SVG, the text color.
+  const color = parseCSSColor(paint ?? element.computedStyle?.color) ?? BLACK
   drawIcon(graph, frameId, { ...named, ...box, paths }, Math.max(box.width, box.height), color)
   // A layer the page gave no id or class, named only by its tag, takes the icon's name, as an
   // icon placed from the picker does, so swapping it renames it too.
@@ -214,10 +214,6 @@ function drawNamedIcon(
   return true
 }
 
-/**
- * Draws artwork as SVG import draws a file, with its groups, clips, masks, and text, into its
- * frame: the import's own frame is dropped and its layers moved into this one.
- */
 /** Paints every shape an SVG draws in one color, as a CSS mask shows its background through them. */
 function paintShapes(root: XMLElement, paint: string): void {
   // Shapes that name no fill take the root's, black by default.
@@ -251,6 +247,10 @@ function elementSVGMarkup(
   return new XMLSerializer().serializeToString(root)
 }
 
+/**
+ * Draws artwork as SVG import draws a file, with its groups, clips, masks, and text, into its
+ * frame: the import's own frame is dropped and its layers moved into this one.
+ */
 function drawArtwork(graph: SceneGraph, frameId: string, element: DesignElement, markup: string) {
   const defaultColor = element.computedStyle?.color
   const imported = createSVGNodes(graph, frameId, markup, defaultColor ? { defaultColor } : {})
@@ -285,18 +285,18 @@ export async function drawInlineSVGs(
     const frame = graph.getNode(frameId)
     if (!frame || frame.width <= 0 || frame.height <= 0) return []
     const box = { width: frame.width, height: frame.height }
-    const drawn = elementSVG(element)
-    const markup = drawn ? elementSVGMarkup(drawn, box) : svgMarkup(element, byId, box)
-    return markup ? [{ frameId, element, box, markup }] : []
+    const own = elementSVG(element)
+    const markup = own ? elementSVGMarkup(own, box) : svgMarkup(element, byId, box)
+    return markup ? [{ frameId, element, box, markup, paint: own?.paint }] : []
   })
   const unnamed = drawn.filter(({ element }) => !iconName(element))
   const matched = matchIcon ? await matchIcon(unnamed.map(({ markup }) => markup)) : []
   const found = new Map(unnamed.map(({ frameId }, i) => [frameId, matched[i] ?? null]))
-  for (const { frameId, element, box, markup } of drawn) {
+  for (const { frameId, element, box, markup, paint } of drawn) {
     const name = found.get(frameId)
     const parsed = name ? parseIconName(name) : null
     const icon = iconName(element) ?? (parsed && { prefix: parsed.prefix, name: parsed.iconName })
-    if (!icon || !drawNamedIcon(graph, frameId, element, icon, markup, box)) {
+    if (!icon || !drawNamedIcon(graph, frameId, element, icon, markup, box, paint)) {
       drawArtwork(graph, frameId, element, markup)
     }
   }

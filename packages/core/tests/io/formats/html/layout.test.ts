@@ -250,4 +250,36 @@ describe('CSS mask icons', () => {
     expect(paints.length).toBeGreaterThan(0)
     expect(paints.every((paint) => paint.color?.r === 1 && paint.color.g === 0)).toBe(true)
   })
+
+  test('draws a mask icon its matcher names at its box size, in the element’s background', async () => {
+    const icon =
+      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='none' stroke='black' stroke-width='2' d='M2 2h20v20H2z'/></svg>"
+    const masked = element(
+      {
+        ...box(16, 16),
+        'background-color': 'rgb(255, 0, 0)',
+        color: 'rgb(0, 0, 255)',
+        'mask-image': `url("${svgDataURL(icon)}")`
+      },
+      { box: rect(0, 0, 16, 16) }
+    )
+    const graph = await sceneGraphFromStyledHTML(
+      { type: 'document', children: [masked] },
+      { matchIcon: async (svgs) => svgs.map(() => 'lucide:square') }
+    )
+    const frame = graph.getChildren(graph.getPages()[0].id)[0]
+    const vectors = graph
+      .flattenTree(frame.id)
+      .flatMap(({ node }) => (node.type === 'VECTOR' ? [node] : []))
+    const bounds = vectors.map((vector) => {
+      const at = graph.getAbsolutePosition(vector.id)
+      return { left: at.x, right: at.x + vector.width }
+    })
+    const paints = vectors.flatMap((vector) => [...vector.fills, ...vector.strokes])
+
+    // The 24-unit icon scales into the 16px box, in red, the background, not the blue text.
+    expect(vectors.length).toBeGreaterThan(0)
+    expect(bounds.every(({ left, right }) => left >= -1 && right <= 17)).toBe(true)
+    expect(paints.every((paint) => paint.color?.r === 1 && paint.color.b === 0)).toBe(true)
+  })
 })
