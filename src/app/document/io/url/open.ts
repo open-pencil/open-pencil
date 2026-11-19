@@ -9,6 +9,7 @@ import { closeTab, createDocumentTab, openFileInNewTab } from '@/app/tabs'
 import { IS_TAURI } from '@/constants'
 
 import { remoteFetch } from './fetch'
+import { renderWebPage } from './render/page'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
@@ -69,13 +70,20 @@ export async function openWebAddress(url: URL, signal?: AbortSignal): Promise<vo
   // Closing the dialog while the address loaded leaves nothing opened.
   signal?.throwIfAborted()
   switch (remote.kind) {
-    case 'html':
-      await openFileInNewTab(new File([remote.bytes], remote.name || remote.title), {
-        path: remote.url,
-        webPage: { url: remote.url, title: remote.title },
+    case 'html': {
+      // The desktop app renders the page, so a page its scripts build opens as it shows; the
+      // HTML its server sent stands in when it cannot be rendered, and in the browser.
+      const rendered = IS_TAURI ? await renderWebPage(remote.url).catch(() => null) : null
+      signal?.throwIfAborted()
+      const html = rendered ? new TextEncoder().encode(rendered.html) : remote.bytes
+      const pageURL = rendered?.url ?? remote.url
+      await openFileInNewTab(new File([html], remote.name || remote.title), {
+        path: pageURL,
+        webPage: { url: pageURL, title: remote.title },
         signal
       })
       return
+    }
     case 'document':
       // Opened as a picked file is: its address is no file path a save could write back to.
       await openFileInNewTab(new File([remote.bytes], remote.name), { signal })
