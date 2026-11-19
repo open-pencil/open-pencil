@@ -73,4 +73,43 @@ describe('a page’s own fonts', () => {
     expect([...families.values()]).toEqual(['Editor Sans'])
     expect(requested).toEqual([])
   })
+
+  test('loads every subset a page splits one face into', async () => {
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+    const subsets = [
+      'https://site.example.test/fonts/latin.ttf',
+      'https://site.example.test/fonts/greek.ttf'
+    ]
+    const requested: string[] = []
+    const styled = page('Page Subset Sans', [subsets[0]])
+    styled.fontFaces = subsets.map((url) => ({
+      family: 'Page Subset Sans',
+      weight: 400,
+      italic: false,
+      sources: [url]
+    }))
+
+    await loadPageFontFaces(styled, async (url) => {
+      requested.push(url)
+      return { url, bytes: font }
+    })
+
+    expect(requested).toEqual(subsets)
+  })
+
+  test('passes over a source that does not decode for the next one', async () => {
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+    const broken = 'https://site.example.test/fonts/broken.woff2'
+    // A WOFF2 header over bytes that do not decompress.
+    const bytes = new Uint8Array(64)
+    bytes.set(new TextEncoder().encode('wOF2'))
+    bytes.set([0, 1, 0, 0], 4)
+
+    const families = await loadPageFontFaces(
+      page('Page Fallback Sans', [broken, FONT_URL]),
+      async (url) => (url === broken ? { url, bytes } : { url, bytes: font })
+    )
+
+    expect([...families.values()]).toEqual(['Page Fallback Sans'])
+  })
 })

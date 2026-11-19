@@ -251,6 +251,43 @@ describe('CSS mask icons', () => {
     expect(paints.every((paint) => paint.color?.r === 1 && paint.color.g === 0)).toBe(true)
   })
 
+  test('keeps a stroked mask icon a line, its root filling nothing', async () => {
+    const icon =
+      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><path stroke='black' d='M2 2h20v20H2z'/></svg>"
+    const masked = element(
+      {
+        ...box(16, 16),
+        'background-color': 'rgb(255, 0, 0)',
+        'mask-image': `url("${svgDataURL(icon)}")`
+      },
+      { box: rect(0, 0, 16, 16) }
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [masked] })
+    const frame = graph.getChildren(graph.getPages()[0].id)[0]
+    const shapes = graph
+      .flattenTree(frame.id)
+      .flatMap(({ node }) => (node.id === frame.id ? [] : [node]))
+
+    expect(shapes.some((shape) => shape.strokes.length > 0)).toBe(true)
+    expect(shapes.flatMap((shape) => shape.fills)).toEqual([])
+  })
+
+  test('keeps the content of an element masked over it', async () => {
+    const icon =
+      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 4'><rect width='4' height='4'/></svg>"
+    const masked = element(
+      { ...box(80, 20), 'mask-image': `url("${svgDataURL(icon)}")` },
+      { box: rect(0, 0, 80, 20) },
+      [{ type: 'text', text: 'Masked label' }]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [masked] })
+    const texts = graph
+      .flattenTree(graph.getPages()[0].id)
+      .flatMap(({ node }) => (node.type === 'TEXT' ? [node.text] : []))
+
+    expect(texts).toEqual(['Masked label'])
+  })
+
   test('draws a mask icon its matcher names at its box size, in the element’s background', async () => {
     const icon =
       "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='none' stroke='black' stroke-width='2' d='M2 2h20v20H2z'/></svg>"

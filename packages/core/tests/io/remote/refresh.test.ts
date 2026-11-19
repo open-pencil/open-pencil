@@ -19,6 +19,13 @@ describe('immediateRefresh', () => {
     )
   })
 
+  test('resolves the target against the page’s own base address', () => {
+    const html = `<head><base href="/docs/"><meta http-equiv="refresh" content="0;url=next.html"></head>`
+    expect(immediateRefresh(html, 'https://pages.example.test/start')?.href).toBe(
+      'https://pages.example.test/docs/next.html'
+    )
+  })
+
   test('leaves a page that refreshes later, reloads itself, or has no refresh', () => {
     expect(immediateRefresh(page('5; url=/later'), BASE)).toBeNull()
     expect(immediateRefresh(page('0'), BASE)).toBeNull()

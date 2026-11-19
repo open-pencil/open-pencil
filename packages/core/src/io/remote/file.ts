@@ -4,6 +4,7 @@ import { decode } from 'ufo'
 import MIMEType from 'whatwg-mimetype'
 
 import { IMPORTABLE_RASTER_TYPES } from '@open-pencil/scene-graph/images'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import type { IORegistry } from '#core/io/registry'
 
@@ -34,6 +35,12 @@ export interface RemoteFile {
 
 /** The most a file fetched from an address may hold. Well past any real page or design file. */
 export const MAX_REMOTE_FILE_BYTES = 64 * 1024 * 1024
+
+/**
+ * How long one remote file may take to arrive, headers and body: a server that sends a byte now
+ * and then never reaches the size cap, and must not hold an import open forever.
+ */
+export const REMOTE_FILE_DEADLINE_MS = DEADLINE_MS.transfer
 
 export interface FetchRemoteFileOptions {
   /** The fetch to use, such as one that reaches sites a browser's cross-origin rules block. */
@@ -138,10 +145,23 @@ async function fetchOnce(
   const controller = new AbortController()
   signal?.throwIfAborted()
   signal?.addEventListener('abort', () => controller.abort(signal.reason), { once: true })
-  const response = await fetch(url, { signal: controller.signal })
-  if (!response.ok)
-    throw new Error(`Failed to fetch ${url.href}: ${response.status} ${response.statusText}`)
-  const bytes = await readBoundedBody(response, maxBytes, { onExceeded: () => controller.abort() })
+  const deadline = setTimeout(
+    () => controller.abort(new DOMException('The file took too long to arrive', 'TimeoutError')),
+    REMOTE_FILE_DEADLINE_MS
+  )
+  const { response, bytes } = await (async () => {
+    try {
+      const response = await fetch(url, { signal: controller.signal })
+      if (!response.ok)
+        throw new Error(`Failed to fetch ${url.href}: ${response.status} ${response.statusText}`)
+      const bytes = await readBoundedBody(response, maxBytes, {
+        onExceeded: () => controller.abort()
+      })
+      return { response, bytes }
+    } finally {
+      clearTimeout(deadline)
+    }
+  })()
   if (bytes.byteLength === 0)
     throw new Error(`Failed to fetch ${url.href}: the response carried no body`)
   const finalURL = new URL(response.url || url.href)

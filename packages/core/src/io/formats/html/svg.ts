@@ -216,8 +216,9 @@ function drawNamedIcon(
 
 /** Paints every shape an SVG draws in one color, as a CSS mask shows its background through them. */
 function paintShapes(root: XMLElement, paint: string): void {
-  // Shapes that name no fill take the root's, black by default.
-  root.setAttribute('fill', paint)
+  // Shapes that name no fill take the root's, black by default; a root that fills nothing keeps
+  // its `none`, so a stroked icon stays a line.
+  if (root.getAttribute('fill') !== 'none') root.setAttribute('fill', paint)
   for (const element of Array.from(root.getElementsByTagName('*'))) {
     for (const attribute of ['fill', 'stroke']) {
       const value = element.getAttribute(attribute)

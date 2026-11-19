@@ -50,10 +50,17 @@ export async function loadPageFontFaces(
 ): Promise<PageFontFamilies> {
   const used = familiesUsed(styled)
   const loaded = new Map<string, string>()
-  for (const rule of styled.fontFaces ?? []) {
-    if (!used.has(rule.family.toLowerCase())) continue
+  const rules = (styled.fontFaces ?? []).filter((rule) => used.has(rule.family.toLowerCase()))
+  // Which faces the editor has is settled before any of the page's are registered, so a page
+  // that splits a face into subsets by unicode-range loads every subset, not just the first.
+  const editorHas = await Promise.all(
+    rules.map((rule) =>
+      fontManager.loadFont(rule.family, faceStyleName(rule.family, rule.weight, rule.italic))
+    )
+  )
+  for (const [index, rule] of rules.entries()) {
     const style = faceStyleName(rule.family, rule.weight, rule.italic)
-    if (await fontManager.loadFont(rule.family, style)) {
+    if (editorHas[index]) {
       loaded.set(rule.family.toLowerCase(), rule.family)
       continue
     }
@@ -61,7 +68,8 @@ export async function loadPageFontFaces(
       const resource = await fetch(source, AbortSignal.timeout(FONT_LOAD_TIMEOUT_MS)).catch(
         () => null
       )
-      const data = resource ? await readableFont(resource.bytes) : null
+      // A source that does not decode is passed over for the next, as an unreadable one is.
+      const data = resource ? await readableFont(resource.bytes).catch(() => null) : null
       if (!data) continue
       await fontManager.markLoaded(rule.family, style, data)
       loaded.set(rule.family.toLowerCase(), rule.family)

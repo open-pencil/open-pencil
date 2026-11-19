@@ -74,7 +74,8 @@ interface PathPaints {
  * paints nothing for a reference it cannot use.
  */
 function solidPaint(paint: string): string | undefined {
-  return parseCSSURLs(paint).length > 0 ? parsePaintFallback(paint) : paint
+  const solid = parseCSSURLs(paint).length > 0 ? parsePaintFallback(paint) : paint
+  return solid === 'none' ? undefined : solid
 }
 
 function pathPaints(
@@ -87,9 +88,10 @@ function pathPaints(
   const fills: Fill[] = []
   const strokes: Stroke[] = []
   if (path.fill) {
-    const solid = solidPaint(path.fill)
+    const fillGradient = gradient(path.fill)
+    const solid = fillGradient ? undefined : solidPaint(path.fill)
     const fill =
-      gradient(path.fill) ??
+      fillGradient ??
       (solid && {
         type: 'SOLID' as const,
         color: paintColor(solid, defaultColor),
@@ -97,7 +99,8 @@ function pathPaints(
         visible: true
       })
     if (fill) fills.push({ ...fill, opacity: path.fillOpacity })
-    if (path.fill === CURRENT_COLOR) tint.push('fill')
+    // A fallback in the host's color, as `url(#p) currentColor`, follows it as a plain one does.
+    if (solid === CURRENT_COLOR) tint.push('fill')
   }
   const strokeGradient = path.stroke ? gradient(path.stroke) : null
   const strokeColor = path.stroke ? solidPaint(path.stroke) : undefined
@@ -110,7 +113,7 @@ function pathPaints(
     )
     // A gradient stroke keeps the line's weight, alignment, cap, and join.
     strokes.push({ ...line, ...strokeGradient, opacity: path.strokeOpacity })
-    if (path.stroke === CURRENT_COLOR) tint.push('stroke')
+    if (!strokeGradient && strokeColor === CURRENT_COLOR) tint.push('stroke')
   }
   return { fills, strokes, tint }
 }

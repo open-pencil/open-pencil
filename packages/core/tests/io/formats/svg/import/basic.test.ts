@@ -116,6 +116,16 @@ describe('import_svg', () => {
     expect(stroked?.strokes ?? []).toEqual([])
   })
 
+  test('a paint server falling back to none paints nothing', async () => {
+    const result = (await importSVG.execute(figma, {
+      svg: `<svg viewBox="0 0 10 10"><rect width="10" height="10" fill="url(#missing) none" stroke="url(#missing) none"/></svg>`
+    })) as { id: string }
+    const [shape] = graph.getChildren(result.id)
+
+    expect(shape?.fills ?? []).toEqual([])
+    expect(shape?.strokes ?? []).toEqual([])
+  })
+
   // Gradients export in Figma's convention with an exact gradientTransform, so a turned gradient on
   // a stretched layer comes back with the transform it left with.
   test('a turned linear gradient survives an SVG round trip', async () => {

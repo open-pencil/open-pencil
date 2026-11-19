@@ -27,4 +27,20 @@ describe('text among the items of a flex container', () => {
     expect(text?.width).toBeLessThanOrEqual(196)
     expect(text?.height).toBeGreaterThan(21 * 2)
   })
+
+  test('leaves an item that became text in its own box, beside the run of text', async () => {
+    const { graph } = await readHTMLDocument(
+      `<p style="display:flex;width:300px;margin:0;font:14px '${FAMILY}'">Label <span>Value</span></p>`
+    )
+    const texts = graph
+      .flattenTree(graph.getPages()[0].id)
+      .flatMap(({ node }) => (node.type === 'TEXT' ? [node] : []))
+    const label = texts.find((text) => text.text.trim() === 'Label')
+    const value = texts.find((text) => text.text === 'Value')
+    const labelAt = graph.getAbsolutePosition(label?.id ?? '')
+    const valueAt = graph.getAbsolutePosition(value?.id ?? '')
+
+    // The span follows the label, which ends in a space the row drops, rather than lying over it.
+    expect(valueAt.x).toBeGreaterThan(labelAt.x + (label?.width ?? 0) / 2)
+  })
 })
