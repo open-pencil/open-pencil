@@ -10,8 +10,8 @@ const copyField = tv(theme)
 type CopyFieldVariants = VariantProps<typeof copyField>
 
 /**
- * Read-only text with a button that copies it and briefly confirms; without `copyLabel`, only the
- * text, for a code shown to compare rather than to paste.
+ * Read-only text with an icon button that copies it and briefly confirms, its label the button's
+ * tooltip; without `copyLabel`, only the text, for a code shown to compare rather than to paste.
  */
 const {
   value,
@@ -38,8 +38,7 @@ const cls = computed(() => copyField({ look }))
       :value="value"
       :label="copyLabel"
       :copied-label="copiedLabel"
-      size="xs"
-      :variant="look === 'plain' ? 'link' : 'ghost'"
+      icon
     />
   </div>
 </template>
