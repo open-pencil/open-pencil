@@ -13,5 +13,7 @@ export {
   saturationBrightnessArea,
   sliderTrackBackground,
   useColorCSS,
-  useColorSpace
+  useColorSpace,
+  useColorSpaces,
+  type ColorSpaces
 } from '#vue/primitives/ColorPicker/color-space'

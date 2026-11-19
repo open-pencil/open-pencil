@@ -4,7 +4,7 @@ import { useMessages } from '@open-pencil/vue/i18n'
 import {
   linearGradientCSS,
   useColorCSS,
-  useColorSpace
+  useColorSpaces
 } from '@open-pencil/vue/primitives/ColorPicker'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
@@ -13,11 +13,11 @@ import OkhclChannelSlider from '@/components/color-picker-panel/OkhclChannelSlid
 
 const ctx = useColorPickerPanelContext()
 const colorToCSS = useColorCSS()
-const space = useColorSpace()
+const spaces = useColorSpaces()
 const alphaGradient = () => {
   const color = { ...ctx.color, a: 1 }
   const stops = [{ color: { ...color, a: 0 } }, { color }]
-  return `background: ${linearGradientCSS('to right', stops, space.value)}`
+  return `background: ${linearGradientCSS('to right', stops, spaces.value)}`
 }
 const pickerMessages = useMessages('panels/pickers')
 const percentText = (value: number) => `${Math.round(toPercent(value))}%`

@@ -48,11 +48,15 @@ export function provideTabEditorStore(store: EditorStore) {
 
 /**
  * Hands `store` to the SDK's `useEditor`, and has swatches and pickers show its document's colors
- * in the document's profile, as the canvas draws them.
+ * as its canvas presents them: in Display P3 where the canvas can, clipped to sRGB where it falls
+ * back, as on WebKit.
  */
 export function provideEditorStore(store: EditorStore) {
   provideEditor(store)
-  provideColorSpace(() => store.state.documentColorSpace)
+  provideColorSpace(
+    () => store.state.documentColorSpace,
+    () => store.state.canvasPresentation ?? store.state.documentColorSpace
+  )
 }
 
 /**
