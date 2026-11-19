@@ -1,3 +1,4 @@
+import { isEqual } from 'es-toolkit'
 import { shallowRef } from 'vue'
 
 import {
@@ -224,11 +225,27 @@ export function tellCloudConnectionLocale(server: CloudServer): void {
   }
 }
 
+export type CloudConnectionRefresh = {
+  /**
+   * Keeps the last answer shown while the server is asked, and keeps it if the server cannot be
+   * reached, as a list kept current in the background does. A check already under way answers
+   * instead of a new one.
+   */
+  background?: boolean
+}
+
 /** Asks the server where this app stands and publishes the answer. */
-export function refreshCloudConnection(server: CloudServer): Promise<CloudConnection> {
+export function refreshCloudConnection(
+  server: CloudServer,
+  options: CloudConnectionRefresh = {}
+): Promise<CloudConnection> {
+  if (options.background) {
+    const running = checks.get(server.id)
+    if (running) return running
+  }
   const generation = (generations.get(server.id) ?? 0) + 1
   generations.set(server.id, generation)
-  const check = askServer(server, generation)
+  const check = askServer(server, generation, options.background ?? false)
   checks.set(server.id, check)
   void check.finally(() => {
     if (checks.get(server.id) === check) checks.delete(server.id)
@@ -261,9 +278,13 @@ export function recheckedCloudConnection(server: CloudServer): Promise<CloudConn
   return checks.get(server.id) ?? refreshCloudConnection(server)
 }
 
-async function askServer(server: CloudServer, generation: number): Promise<CloudConnection> {
+async function askServer(
+  server: CloudServer,
+  generation: number,
+  background: boolean
+): Promise<CloudConnection> {
   const previous = cloudConnection(server.id)
-  publish(server.id, { ...previous, state: 'checking', failure: null })
+  if (!background) publish(server.id, { ...previous, state: 'checking', failure: null })
   let next: CloudConnection
   try {
     const discovery = await discoverCloudServer(server.url)
@@ -273,6 +294,7 @@ async function askServer(server: CloudServer, generation: number): Promise<Cloud
       () => generations.get(server.id) === generation
     )
   } catch (error) {
+    if (background) return previous
     next = {
       ...previous,
       state: 'unreachable',
@@ -280,7 +302,9 @@ async function askServer(server: CloudServer, generation: number): Promise<Cloud
       failure: error instanceof CloudClientError ? error.reason : 'unreachable'
     }
   }
-  if (generations.get(server.id) === generation) {
+  // A background check that found nothing new leaves the connection as it is, so nothing that
+  // shows it re-renders.
+  if (generations.get(server.id) === generation && !(background && isEqual(previous, next))) {
     publish(server.id, next)
     // Once the answer is out, so a language picked while the check ran is the one it reports.
     tellCloudConnectionLocale(server)
