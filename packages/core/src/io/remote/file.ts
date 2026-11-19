@@ -8,6 +8,7 @@ import { IMPORTABLE_RASTER_TYPES } from '@open-pencil/scene-graph/images'
 import type { IORegistry } from '#core/io/registry'
 
 import { readBoundedBody } from './body'
+import { immediateRefresh } from './refresh'
 
 /**
  * What a file fetched from an address is, as importing it needs to know: an HTML page, an SVG or
@@ -106,20 +107,38 @@ export async function remoteFileKind(
   return (type === undefined ? undefined : KIND_BY_TYPE[type]) ?? 'unsupported'
 }
 
+/** The most `<meta http-equiv="refresh">` redirects followed for one address, as a loop guard. */
+const MAX_REFRESHES = 5
+
 /**
- * Fetches the file at an address, following redirects, and says what it is. A response that is
+ * Fetches the file at an address, following redirects, and says what it is. A page that sends a
+ * browser elsewhere at once with `<meta http-equiv="refresh" content="0; url=…">` is followed
+ * too, as a browser follows it, so the page opened is the one a visitor sees. A response that is
  * not OK, has no body, or runs past `maxBytes` fails with a message that says which.
  */
 export async function fetchRemoteFile(
   url: URL,
+  options: FetchRemoteFileOptions
+): Promise<RemoteFile> {
+  let file = await fetchOnce(url, options)
+  for (let hops = 0; file.kind === 'html' && hops < MAX_REFRESHES; hops++) {
+    const target = immediateRefresh(new TextDecoder().decode(file.bytes), file.url)
+    if (!target || target.href === file.url) break
+    file = await fetchOnce(target, options)
+  }
+  return file
+}
+
+async function fetchOnce(
+  url: URL,
   { fetch = globalThis.fetch, signal, maxBytes = MAX_REMOTE_FILE_BYTES, io }: FetchRemoteFileOptions
 ): Promise<RemoteFile> {
-  // The cap needs a controller of its own, so a caller's signal is combined with it rather than
-  // replaced: dropping it would leave the caller unable to cancel.
+  // The cap needs a controller of its own; a caller's signal aborts it too, so the caller can
+  // still cancel.
   const controller = new AbortController()
-  const response = await fetch(url, {
-    signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal
-  })
+  signal?.throwIfAborted()
+  signal?.addEventListener('abort', () => controller.abort(signal.reason), { once: true })
+  const response = await fetch(url, { signal: controller.signal })
   if (!response.ok)
     throw new Error(`Failed to fetch ${url.href}: ${response.status} ${response.statusText}`)
   const bytes = await readBoundedBody(response, maxBytes, { onExceeded: () => controller.abort() })

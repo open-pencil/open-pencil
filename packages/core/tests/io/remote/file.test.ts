@@ -74,6 +74,28 @@ describe('fetchRemoteFile', () => {
     })
   })
 
+  test('follows a page that sends a browser elsewhere at once, as a browser does', async () => {
+    const pages: Record<string, string> = {
+      'https://pages.example.test/':
+        '<meta http-equiv="refresh" content="0; url=https://docs.example.test/pages">',
+      'https://docs.example.test/pages': '<!doctype html><p>Docs</p>',
+      'https://loop.example.test/':
+        '<meta http-equiv="refresh" content="0; url=https://loop.example.test/">'
+    }
+    const fetch = fetchStub(async (input) => {
+      const url = input instanceof Request ? input.url : input.toString()
+      const response = new Response(pages[url] ?? '', { headers: { 'content-type': 'text/html' } })
+      Object.defineProperty(response, 'url', { value: url })
+      return response
+    })
+
+    const followed = await fetchRemoteFile(new URL('https://pages.example.test/'), { fetch, io })
+    const looping = await fetchRemoteFile(new URL('https://loop.example.test/'), { fetch, io })
+
+    expect(followed).toMatchObject({ url: 'https://docs.example.test/pages', kind: 'html' })
+    expect(looping.url).toBe('https://loop.example.test/')
+  })
+
   test('says why a response cannot be imported', async () => {
     const missing = fetchStub(
       async () => new Response('gone', { status: 404, statusText: 'Not Found' })
