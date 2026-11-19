@@ -6,6 +6,7 @@ import { computed, shallowRef } from 'vue'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { useSettingsMessages } from '@open-pencil/vue/i18n'
+import type { PickerCancelCause } from '@open-pencil/vue/primitives/ColorPicker'
 
 import { accentPreference } from '@/app/shell/accent'
 import { ACCENT_PRESET_COLORS, accentBaseColor } from '@/app/shell/accent/palette'
@@ -54,8 +55,12 @@ function onCustomColor(color: Color): void {
   accentPreference.value = { kind: 'custom', color: colorToHex(color) }
 }
 
-function onCancel(): void {
-  if (beforeEdit.value) accentPreference.value = beforeEdit.value
+/**
+ * Only Escape closing the picker restores the accent it opened with; a press put back has already
+ * come back through `update`, keeping what earlier presses changed.
+ */
+function onCancel(cause: PickerCancelCause): void {
+  if (cause === 'escape' && beforeEdit.value) accentPreference.value = beforeEdit.value
 }
 </script>
 

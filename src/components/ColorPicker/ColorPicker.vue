@@ -4,7 +4,7 @@ import type { VNode } from 'vue'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import type { OkHCLControls } from '@open-pencil/vue/controls/color-model'
 import { useI18n } from '@open-pencil/vue/i18n'
-import { ColorPickerRoot } from '@open-pencil/vue/primitives/ColorPicker'
+import { ColorPickerRoot, type PickerCancelCause } from '@open-pencil/vue/primitives/ColorPicker'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import { useEyedropperKeepOpen } from '@/components/color-picker-panel/eyedropper'
@@ -34,8 +34,8 @@ const emit = defineEmits<{
   openChange: [open: boolean]
   /** Ends the edit made so far as one undo step, as `ColorPickerRoot` reports it. */
   commit: []
-  /** Escape during a press: the colour from before it has just come back through `update`. */
-  cancel: []
+  /** As `ColorPickerRoot` reports it: a press put back, or Escape with `escapeReverts`. */
+  cancel: [cause: PickerCancelCause]
 }>()
 const cls = usePopoverUI({ content: 'w-56 p-2' })
 // Settings has no document behind it to sample, nor always an editor to sample with.
@@ -52,7 +52,7 @@ const keepOpen = eyedropper ? useEyedropperKeepOpen() : undefined
     @update="emit('update', $event)"
     @open-change="emit('openChange', $event)"
     @commit="emit('commit')"
-    @cancel="emit('cancel')"
+    @cancel="emit('cancel', $event)"
   >
     <!-- The same swatch a fill row shows, so a colour's preview reads alike in every field. -->
     <template #trigger="trigger">
