@@ -30,8 +30,12 @@ export function parseWebAddress(text: string): URL | null {
 /** Opens an SVG or a picture in a new design, as dropping it on an empty canvas places it. */
 async function openImage(file: File): Promise<void> {
   const { store } = createDocumentTab('design')
+  // A picture's size is read with the renderer, which a new tab has once its canvas is ready.
+  await store.canvasReady
   const point = pastePoint(store)
-  await store.placeFiles([file], point.x, point.y)
+  if (!(await store.placeFiles([file], point.x, point.y))) {
+    throw new Error(filesMessages.get().openURLUnsupported)
+  }
 }
 
 /** Why an address could not be read, in words the dialog shows. */

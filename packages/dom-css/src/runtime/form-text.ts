@@ -1,3 +1,4 @@
+import { contentInsets } from '../import/box'
 import { inheritedTextStyle } from '../import/flow'
 import type { DesignElement, DesignLayout, DesignStyleDeclaration } from '../types'
 
@@ -12,11 +13,7 @@ function shownText(field: HTMLInputElement | HTMLTextAreaElement) {
 
 /** The box inside a field's border and padding, where its text sits. */
 function contentBox(layout: DesignLayout, style: DesignStyleDeclaration): DesignLayout {
-  const px = (property: string) => Number.parseFloat(style[property] ?? '') || 0
-  const left = px('border-left-width') + px('padding-left')
-  const top = px('border-top-width') + px('padding-top')
-  const right = px('border-right-width') + px('padding-right')
-  const bottom = px('border-bottom-width') + px('padding-bottom')
+  const { top, right, bottom, left } = contentInsets(style)
   const { x, y, width, height } = layout.box
   return {
     box: {

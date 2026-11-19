@@ -87,15 +87,19 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
       `<style>
         body { margin: 0; font-size: 14px }
         .link::after { content: " " attr(data-mark) }
+        .done::before { content: "✓ " / "Complete" }
         .rule::before { content: ""; display: block; width: 1px; height: 24px; background: #ccc }
       </style>
       <p><a class="link" data-mark="↗">GitHub</a></p>
+      <p class="done">Shipped</p>
       <div class="rule"></div>`,
       VIEWPORT
     )
 
     // An inline ::after runs on in its element's text; a block ::before is a box of its own.
     expect(layers.some((layer) => layer.type === 'TEXT' && layer.text === 'GitHub ↗')).toBe(true)
+    // Text after the slash is alternative text for assistive technology, which is not shown.
+    expect(layers.some((layer) => layer.type === 'TEXT' && layer.text === '✓ Shipped')).toBe(true)
     expect(layers.find((layer) => layer.name === '::before')).toMatchObject({
       width: 1,
       height: 24

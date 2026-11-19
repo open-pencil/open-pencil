@@ -25,8 +25,9 @@ const REPLACED_TAGS = new Set([
 
 /**
  * The text a computed `content` value shows: its strings, the attributes it names, and its
- * counters as they stand, in order. Null for `none` and `normal`, which generate no box; quotes and
- * images add no text.
+ * counters as they stand, in order. What follows a `/` is the content's alternative text for
+ * assistive technology, which is not shown. Null for `none` and `normal`, which generate no box;
+ * quotes and images add no text.
  */
 export function generatedText(
   content: string,
@@ -36,6 +37,7 @@ export function generatedText(
   if (content === 'none' || content === 'normal') return null
   let text = ''
   for (const node of valueParser(content).nodes) {
+    if (node.type === 'div' && node.value === '/') break
     if (node.type === 'string') text += node.value
     else if (node.type === 'function') {
       const name = node.value.toLowerCase()

@@ -93,6 +93,22 @@ test('a web page opens as layers with the stylesheet and pictures it links', asy
   })
 })
 
+test('an address that holds a picture opens it in a new design', async ({ page }) => {
+  const png = await readFile(join(FIXTURES, 'absolute-constraint-figma.png'))
+  await page.route(`${SITE}/**`, (route) =>
+    route.fulfill({ headers: { ...OPEN, 'content-type': 'image/png' }, body: png })
+  )
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+
+  const dialog = await openFromURL(page, `${SITE}/photo.png`)
+
+  await expect(dialog).toHaveCount(0)
+  await expect
+    .poll(async () => (await getPageChildren(page)).map(({ fillTypes }) => fillTypes))
+    .toEqual([['IMAGE']])
+})
+
 test('closing the dialog while a page imports opens nothing', async ({ page }) => {
   let releasePicture: () => void = () => undefined
   const released = new Promise<void>((resolve) => {

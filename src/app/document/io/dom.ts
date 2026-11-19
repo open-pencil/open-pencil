@@ -74,7 +74,7 @@ export function createDOMOpenActions({
     load.update({ phase: 'layout', detail: pageName })
     const matcher = importIconMatcher(editor, load.signal)
     // The page's own fonts, icon fonts among them, before its text is set in them.
-    const pageFamilies = await loadPageFontFaces(styled, fetch)
+    const pageFamilies = await loadPageFontFaces(styled, fetch, load.signal)
     load.signal.throwIfAborted()
     const graph = await sceneGraphFromStyledHTML(styled, {
       pageName,
