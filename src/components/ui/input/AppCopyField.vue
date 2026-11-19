@@ -39,6 +39,7 @@ const cls = computed(() => copyField({ look }))
       :label="copyLabel"
       :copied-label="copiedLabel"
       icon
+      :class="cls.copy({ class: ui?.copy })"
     />
   </div>
 </template>
