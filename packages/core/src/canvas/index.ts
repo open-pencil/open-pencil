@@ -25,6 +25,7 @@ export {
   type RulerTheme,
   type SelectionTheme
 } from './renderer/skia'
+export { createOffscreenRenderer, withOffscreenRenderer } from './renderer/offscreen'
 export {
   hitTestIssueMarkers,
   issueMarkerLabel,

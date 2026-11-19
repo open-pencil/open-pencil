@@ -1,4 +1,4 @@
-import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { createOffscreenRenderer, type SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { setPageBackgrounds } from '@open-pencil/core/figma-api'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
@@ -28,10 +28,8 @@ export const PAGE_NAME = 'Tour'
 /** A renderer on a 1×1 surface, for measuring text while laying the document out. */
 export async function measuringRenderer() {
   const ck = await getCanvasKit()
-  const surface = ck.MakeSurface(1, 1)
-  if (!surface) throw new Error('CanvasKit could not create a surface')
-  const renderer = new SkiaRenderer(ck, surface)
-  await renderer.loadFonts()
+  const renderer = await createOffscreenRenderer(ck)
+  if (!renderer) throw new Error('CanvasKit could not create a surface')
   return { ck, renderer }
 }
 
