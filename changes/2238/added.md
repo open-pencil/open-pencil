@@ -1,0 +1,1 @@
+- Opening a URL on desktop renders the page first, with its scripts, in a hidden private window, so a page that builds itself with JavaScript, such as a single-page app, opens with its content instead of empty (#2238).
