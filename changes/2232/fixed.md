@@ -1,1 +1,1 @@
-- Renderer teardown releases CanvasKit surfaces and the chrome typeface instead of retaining them.
+- Exports, previews, the eyedropper, and closing a canvas free the image memory and fonts they used instead of keeping them.
