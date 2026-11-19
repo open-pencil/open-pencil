@@ -304,10 +304,12 @@ async function askServer(
       () => generations.get(server.id) === generation
     )
   } catch (error) {
-    // Kept only while it is still the account the server last named: a check that met another
-    // account before failing must not leave the old one shown as signed in.
+    // Kept only when there is an answer to keep, one the server gave and Home shows, and while it
+    // is still the account the server last named: a check that met another account before failing
+    // must not leave the old one shown as signed in.
     const remembered = findCloudServer(server.id)?.account ?? null
-    if (background && isEqual(remembered, previous.account)) return previous
+    const answered = previous.state !== 'checking'
+    if (background && answered && isEqual(remembered, previous.account)) return previous
     next = {
       ...previous,
       state: 'unreachable',

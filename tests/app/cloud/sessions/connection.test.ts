@@ -12,6 +12,7 @@ import {
   checkedCloudConnection,
   cloudConnection,
   cloudConnections,
+  forgetCloudConnection,
   recheckedCloudConnection,
   refreshCloudConnection
 } from '@/app/cloud/sessions/connection'
@@ -310,5 +311,14 @@ describe('Cloud connections', () => {
     await running
     expect(statusRequests - before).toBe(2)
     expect(clicked.workspaces.map((entry) => entry.name)).toEqual(['Design', 'Community'])
+  })
+
+  test('publish a failed background check when there was no answer to keep', async () => {
+    answers['/api/account/status'] = { status: 503, body: { error: { code: 'unavailable' } } }
+    const target = await server()
+    // No answer to keep, as after signing out drops it.
+    forgetCloudConnection(target.id)
+    await refreshCloudConnection(target, { background: true })
+    expect(cloudConnection(target.id).state).toBe('unreachable')
   })
 })
