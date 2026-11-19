@@ -53,49 +53,75 @@ export function applyImageFill(
   ]
 }
 
-/**
- * How a background layer's picture fills the box, as its `background-size` and `background-repeat`
- * say: `cover` fills it, `contain` fits in it, and a picture repeated at its own size tiles it.
- */
-function scaleMode(size: string | undefined, repeat: string | undefined): ImageScaleMode {
+/** Whether a background layer repeats its picture at the picture's own size, as a tile does. */
+function tiles(size: string | undefined, repeat: string | undefined): boolean {
   const sizing = size?.trim().toLowerCase() ?? 'auto'
-  if (sizing === 'cover') return 'FILL'
-  if (sizing === 'contain') return 'FIT'
   const repeats = repeat !== undefined && !repeat.includes('no-repeat')
-  return repeats && (sizing === 'auto' || sizing === 'auto auto') ? 'TILE' : 'FILL'
+  return repeats && (sizing === 'auto' || sizing === 'auto auto')
+}
+
+/**
+ * A background picture to place once its layer has its final size, where its `background-size`
+ * and `background-position` put it: see `placeBackgroundPictures`.
+ */
+export interface BackgroundPicture {
+  nodeId: string
+  imageHash: string
+  /** The picture's own size, in pixels. */
+  width: number
+  height: number
+  size: string
+  position: string
 }
 
 /**
  * The image fills an element's `background-image` layers paint, bottom to top as fills stack,
- * where CSS lists the top layer first: each a picture the runtime that styled the page loaded.
- * Gradients and pictures it did not load add none.
+ * where CSS lists the top layer first: each a picture the runtime that styled the page loaded. A
+ * picture repeated at its own size tiles the layer now; any other is added to `pictures`, to be
+ * placed once the layer has its size. Gradients and pictures the runtime did not load add none.
  */
 export function backgroundImageFills(
   graph: SceneGraph,
+  node: SceneNode,
   element: DesignElement,
-  style: DesignStyleDeclaration
+  style: DesignStyleDeclaration,
+  pictures: BackgroundPicture[]
 ): Fill[] {
   const loaded = element.backgroundImages
   if (!loaded || loaded.length === 0) return []
   const layers = splitCSSLayers(pickStyle(style, 'background-image') ?? '')
   const sizes = splitCSSLayers(pickStyle(style, 'background-size') ?? '')
+  const positions = splitCSSLayers(pickStyle(style, 'background-position') ?? '')
   const repeats = splitCSSLayers(pickStyle(style, 'background-repeat') ?? '')
   const fills: Fill[] = []
-  for (const [index, layer] of layers.entries()) {
+  // Bottom layer first, as fills stack and as the placed pictures are added.
+  for (const [index, layer] of [...layers.entries()].toReversed()) {
     const [url] = parseCSSURLs(layer)
     const bytes = url ? loaded.find((picture) => picture.url === url)?.bytes : undefined
-    if (!bytes || !imageHeader(bytes)) continue
+    const header = bytes && imageHeader(bytes)
+    if (!bytes || !header) continue
     const imageHash = computeImageHash(bytes)
     graph.images.set(imageHash, bytes)
     // A layer list shorter than the images repeats, as CSS repeats it.
     const at = (list: string[]) => (list.length > 0 ? list[index % list.length] : undefined)
-    fills.unshift({
-      type: 'IMAGE',
+    if (tiles(at(sizes), at(repeats))) {
+      fills.push({
+        type: 'IMAGE',
+        imageHash,
+        imageScaleMode: 'TILE',
+        color: TRANSPARENT,
+        opacity: 1,
+        visible: true
+      })
+      continue
+    }
+    pictures.push({
+      nodeId: node.id,
       imageHash,
-      imageScaleMode: scaleMode(at(sizes), at(repeats)),
-      color: TRANSPARENT,
-      opacity: 1,
-      visible: true
+      width: header.width,
+      height: header.height,
+      size: at(sizes) ?? 'auto',
+      position: at(positions) ?? '0% 0%'
     })
   }
   return fills

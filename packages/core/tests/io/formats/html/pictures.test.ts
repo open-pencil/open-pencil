@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 import { svgDataURL } from '@open-pencil/scene-graph/images'
+import { imageHeader } from '@open-pencil/scene-graph/images'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { readHTMLDocument } from '#core/io/formats/html/import'
@@ -71,24 +72,36 @@ describe('pictures in imported HTML', () => {
     expect(requested.filter((path) => path === 'photo.png')).toHaveLength(1)
   })
 
-  test('fills a box with the pictures its background layers show, under the top layer', async () => {
+  test('fills a box with the pictures its background layers show, where CSS places them', async () => {
     const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const natural = imageHeader(png) ?? { width: 1, height: 1 }
     const { graph } = await readHTMLDocument(
-      `<div class="cover"></div><div class="tile"></div>
+      `<div class="cover"></div><div class="tile"></div><div class="icon"></div><div class="hero"></div>
       <style>
+        body { margin: 0 }
         div { width: 200px; height: 100px }
         .cover { background: url(photo.png) center / cover, #2563eb }
         .tile { background-image: url(photo.png); background-repeat: repeat }
+        .icon { width: 50px; height: 50px; background: url(photo.png) center / 50% auto no-repeat }
+        .hero { width: 400px; background: url(photo.png) 100% 50% / auto 100% no-repeat }
       </style>`,
       { readAsset: async (path) => (path === 'photo.png' ? png : null) }
     )
-    const [cover, tile] = graph.getChildren(graph.getPages()[0].id)
+    const [cover, tile, icon, hero] = graph.getChildren(graph.getPages()[0].id)
 
-    // The color stays the bottom fill and the picture paints over it, filling the box.
+    // A picture covering its box crops into it over the color; a repeated one tiles it.
     expect(cover.fills.map((fill) => fill.type)).toEqual(['SOLID', 'IMAGE'])
-    expect(cover.fills[1]).toMatchObject({ imageScaleMode: 'FILL' })
+    expect(cover.fills[1]).toMatchObject({ imageScaleMode: 'CROP' })
     expect(cover.fills[1]?.imageHash && graph.images.get(cover.fills[1].imageHash)).toEqual(png)
-    // A picture repeated at its own size tiles the box.
     expect(tile.fills).toEqual([expect.objectContaining({ type: 'IMAGE', imageScaleMode: 'TILE' })])
+    // One covering part of its box is a layer of its own, as large and where CSS draws it.
+    const [iconPicture] = graph.getChildren(icon.id)
+    const iconHeight = (25 * natural.height) / natural.width
+    expect(iconPicture).toMatchObject({ name: 'background image', width: 25, x: 12.5 })
+    expect(iconPicture?.height).toBeCloseTo(Math.min(50, iconHeight))
+    const [heroPicture] = graph.getChildren(hero.id)
+    const heroWidth = (100 * natural.width) / natural.height
+    expect(heroPicture?.height).toBeCloseTo(100)
+    expect(heroPicture?.x).toBeCloseTo(Math.max(0, 400 - heroWidth))
   })
 })

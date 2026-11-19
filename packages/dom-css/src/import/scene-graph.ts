@@ -38,7 +38,7 @@ import {
   type ParentFlow
 } from './flow'
 import { alignGridItems, isGrid } from './grid'
-import { applyImageFill, backgroundImageFills } from './image-fills'
+import { applyImageFill, backgroundImageFills, type BackgroundPicture } from './image-fills'
 import { isSVGArtwork, maskSVG } from './pictures'
 import {
   applyCapturedLines,
@@ -116,7 +116,8 @@ function applyElementStyle(
   graph: SceneGraph,
   node: SceneNode,
   element: DesignElement,
-  style: DesignStyleDeclaration
+  style: DesignStyleDeclaration,
+  pictures: BackgroundPicture[]
 ): void {
   setNodeBox(node, style)
   applyBoxSizing(node, style)
@@ -125,7 +126,7 @@ function applyElementStyle(
 
   const fills = [
     ...fillsFromStyle(style, 'background-color'),
-    ...backgroundImageFills(graph, element, style)
+    ...backgroundImageFills(graph, node, element, style, pictures)
   ]
   if (fills.length > 0) node.fills = fills
   applyImageFill(graph, node, element, style)
@@ -282,6 +283,8 @@ interface Recorded {
   collapsedCells: SceneNode[]
   /** Containers whose children paint in `z-index` order, for `applyStacking` once laid out. */
   stackings: Stackings
+  /** Background pictures to place once laid out, by `placeBackgroundPictures`. */
+  backgroundPictures: BackgroundPicture[]
 }
 
 /** Remembers where the layer's element was laid out, and how many lines its text took. */
@@ -341,7 +344,7 @@ function createElementNode(
     name: element.attrs.id || element.attrs.class || element.tagName,
     clipsContent: false
   })
-  applyElementStyle(graph, node, element, style)
+  applyElementStyle(graph, node, element, style, recorded.backgroundPictures)
   applyCollapsedBorders(node, element, style, display)
   recordElement(graph, recorded, node, element, style)
   // A box without content keeps its own size, as an image does, unless it declares a layout.
@@ -401,7 +404,7 @@ function createSVGFrame(
     name: element.attrs.id || element.attrs.class || element.tagName,
     clipsContent: false
   })
-  applyElementStyle(graph, node, element, style)
+  applyElementStyle(graph, node, element, style, recorded.backgroundPictures)
   // A mask's background shows through its shapes only, which the artwork paints.
   if (maskSVG(element)) node.fills = []
   applySVGSize(node, element, style)
@@ -521,6 +524,8 @@ export interface DesignLayers {
   svgs: Map<string, DesignElement>
   /** Containers whose children paint in `z-index` order, for `applyStacking` once laid out. */
   stackings: Stackings
+  /** Background pictures to place once laid out, by `placeBackgroundPictures`. */
+  backgroundPictures: BackgroundPicture[]
 }
 
 /**
@@ -539,7 +544,8 @@ export function designDocumentToLayers(
     transforms: new Map(),
     svgs: new Map(),
     collapsedCells: [],
-    stackings: []
+    stackings: [],
+    backgroundPictures: []
   }
 
   page.name = options.pageName ?? 'DesignDOM'
@@ -550,8 +556,8 @@ export function designDocumentToLayers(
   placeTopLevelLayers(graph, page.id, recorded.boxes)
 
   fitPageToChildren(page, graph)
-  const { boxes, transforms, svgs, stackings } = recorded
-  return { graph, boxes, transforms, svgs, stackings }
+  const { boxes, transforms, svgs, stackings, backgroundPictures } = recorded
+  return { graph, boxes, transforms, svgs, stackings, backgroundPictures }
 }
 
 export function designDocumentToSceneGraph(
@@ -565,5 +571,7 @@ export { elementSVG, imagePicture, type ElementSVG, type ImagePicture } from './
 export { placeLayersFromLayout, type CapturedBox, type CapturedBoxes } from './placement'
 export { applyCSSTransforms, type CSSTransform, type CSSTransforms } from './transform'
 export { applyStacking, type Stacking, type Stackings } from './stacking'
+export { placeBackgroundPictures } from './background-placement'
+export type { BackgroundPicture } from './image-fills'
 
 export type { DesignDocumentToSceneGraphOptions as ToSceneGraphOptions }
