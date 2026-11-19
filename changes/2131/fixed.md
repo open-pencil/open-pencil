@@ -1,2 +1,0 @@
-- Text set in a font Windows lists under families of its own, such as Segoe UI Variable's optical sizes or Sitka's, loads that font in the browser, and choosing such a font in the browser saves the family and style Figma and the desktop app use; Segoe UI Variable no longer loads Segoe UI (#2131).
-- The desktop app lists each font family once, under the family its font names, and fonts installed or removed while the app runs show in the font picker and load without a restart (#2131).

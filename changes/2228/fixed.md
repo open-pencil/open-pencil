@@ -1,1 +1,0 @@
-- A document whose page stops drawing before it is first shown stays open in its tab and reports the failure, instead of its tab closing with no message (#2070).

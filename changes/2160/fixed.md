@@ -1,1 +1,0 @@
-- Stopping a coding agent's reply while it waits for permission closes the permission dialog instead of leaving it asking about a turn that is over (#2160).

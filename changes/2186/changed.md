@@ -1,1 +1,0 @@
-- Design JSX `dashPattern` dashes every stroke without a dash of its own, as `strokeCap` and `strokeJoin` reach strokes without their own, instead of setting a layer pattern the canvas did not draw (#2186).

@@ -1,1 +1,0 @@
-- `get_jsx` returns JSX too long to show whole as an outline, with deep layers written with `keepChildren` and the id to read them by, instead of cutting it mid-text; rendering the outline with `replace_id` keeps the children it left out (#2118).

@@ -1,3 +1,0 @@
-- A dashed stroke set in the properties panel keeps its dash pattern when a document is saved and reopened, and so does a stroke weight or dash set on a layer inside an instance (#2186).
-- An instance layer that overrides its stroke weight, alignment, cap, join, or dash keeps it when the component's stroke color changes or the instance is swapped, and still takes the component's later color changes (#2186).
-- Cancelling a change previewed on a layer inside an instance, such as scrubbing its opacity, no longer leaves that property overridden (#2186).

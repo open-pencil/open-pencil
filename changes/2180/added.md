@@ -1,2 +1,0 @@
-- Cloud: the admin console shows each document's thumbnail with a larger preview on hover, its kind, when it last changed as a relative time, and who beyond its workspace can open it, and lets deployment administrators download a document, which Activity records (#2180).
-- Comments and version history show the exact date and time when you hover a relative time (#2180).

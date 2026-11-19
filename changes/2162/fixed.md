@@ -1,1 +1,0 @@
-- Relative times count calendar days, so something from late the day before yesterday reads "2 days ago" instead of "yesterday" (#2162).

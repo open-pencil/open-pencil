@@ -1,1 +1,0 @@
-- The web editor learns whether OpenPencil Cloud is open to it, instead of failing on a blocked request each time it starts.

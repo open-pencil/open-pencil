@@ -1,1 +1,0 @@
-- Cloud console pages no longer skip a heading level for screen readers, the profile picture's zoom slider has a name screen readers read out, and green "Sent" and other success badges read at WCAG AA contrast in the light theme (#2180).

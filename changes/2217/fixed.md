@@ -1,2 +1,0 @@
-- Requests to OpenPencil Cloud, the model catalog, and font downloads no longer wait forever on a server that doesn't answer (#2217).
-- The desktop app on older macOS no longer fails opening a design from a link, syncing with S3 storage, or reaching a Cloud server, where its WebKit lacked a browser feature the app relied on (#2217).

@@ -1,1 +1,0 @@
-- Cloud: a billing plan can be priced by the seat. Billing reads how many people can edit across an account's workspaces from the internal API, and Cloud tells it when that changes (#2211).

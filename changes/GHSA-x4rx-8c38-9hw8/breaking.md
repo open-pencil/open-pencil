@@ -1,1 +1,0 @@
-- `createBrowserCSSRuntime()` no longer takes `sandbox`: it always lays markup out in a frame that runs no script, and the shadow-root mode, which ran markup in the host page, is gone (GHSA-x4rx-8c38-9hw8).
