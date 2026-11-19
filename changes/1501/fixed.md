@@ -1,0 +1,1 @@
+- Closing a loading tab no longer removes the existing file from Recents or reports the cancelled open as an error.

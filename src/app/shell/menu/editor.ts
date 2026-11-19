@@ -11,6 +11,7 @@ import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { createPlaceMenuActions } from '@/app/document/io/place'
 import { useEditorStore } from '@/app/editor/active-store'
 import { clearRecentFiles, forgetRecentFile, recentLocalFileAt } from '@/app/recent-files'
+import { isRecentFileOpenCancellation } from '@/app/recent-files/open-errors'
 import { runFocusedCommand } from '@/app/shell/commands/focused'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
@@ -111,6 +112,7 @@ export function useEditorMenu() {
       const path = Number.isInteger(index) ? recentLocalFileAt(index) : null
       if (path) {
         void openFileFromPath(path).catch((error) => {
+          if (isRecentFileOpenCancellation(error)) return
           forgetRecentFile(path)
           console.warn('[Recent files] Failed to open file', error)
         })
