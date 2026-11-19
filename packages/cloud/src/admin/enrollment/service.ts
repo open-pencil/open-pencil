@@ -124,7 +124,7 @@ export function createEnrollmentService(
      */
     async request(input: EnrollmentRequestInput): Promise<'recorded' | 'unchanged'> {
       const emailNormalized = normalizeEnrollmentEmail(input.email)
-      return await database.transaction().execute(async (transaction) => {
+      return database.transaction().execute(async (transaction) => {
         const existing = await transaction
           .selectFrom('enrollment')
           .selectAll()
