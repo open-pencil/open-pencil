@@ -4,6 +4,8 @@ import { createEditor, type Editor } from '@open-pencil/core'
 import { toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { getPageBackgrounds, pageSourceWithBackgrounds } from '#core/figma-api/page-backgrounds'
+
 let editor: Editor
 
 afterEach(() => editor.dispose())
@@ -95,6 +97,43 @@ describe('document color profile', () => {
     expectColor(node?.strokes[0].gradientStops?.[0].color, blue)
     expect(node?.strokes[0].weight).toBe(2)
     expectColor(node?.textDecorationFills[0].color, blue)
+  })
+
+  test('converting covers a composed color variable and any page background', () => {
+    editor = createEditor()
+    editor.graph.documentColorSpace = 'display-p3'
+    const collection = editor.graph.createCollection('Theme')
+    const mode = collection.modes[0].modeId
+    const composed = editor.graph.createVariable('Tint', 'COLOR', collection.id, {
+      expression: 'COMPOSE_COLOR',
+      color: BLUE,
+      opacity: 0.5
+    })
+    const page = editor.graph.getPages()[0]
+    const solid = { type: 'SOLID' as const, color: BLUE, opacity: 1, visible: true }
+    const gradient = {
+      ...solid,
+      type: 'GRADIENT_LINEAR' as const,
+      gradientStops: [
+        { color: BLUE, position: 0 },
+        { color: BLUE, position: 1 }
+      ]
+    }
+    // Two paints, one a gradient: more than the plugin API's page backgrounds take.
+    editor.graph.updateNode(page.id, { source: pageSourceWithBackgrounds(page, [solid, gradient]) })
+    const before = structuredClone(editor.graph.getNode(page.id)?.source)
+
+    editor.setDocumentColorSpace('srgb', 'convert')
+    const blue = toExtendedSRGB(BLUE, 'display-p3')
+    const value = editor.graph.variables.get(composed.id)?.valuesByMode[mode]
+    expect(value).toMatchObject({ expression: 'COMPOSE_COLOR', opacity: 0.5 })
+    expectColor((value as { color: Color }).color, blue)
+    const backgrounds = getPageBackgrounds(editor.graph.getNode(page.id) ?? page)
+    expectColor(backgrounds[0].color, blue)
+    expectColor(backgrounds[1].gradientStops?.[1].color, blue)
+
+    editor.undo.undo()
+    expect(editor.graph.getNode(page.id)?.source).toEqual(before)
   })
 
   test('undoing a conversion puts back every value and the profile in one step', () => {

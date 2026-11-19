@@ -4,13 +4,14 @@ import type {
   SceneGraph,
   SceneNode,
   Variable,
+  VariableAlias,
   VariableValue
 } from '@open-pencil/scene-graph'
 import { convertColor } from '@open-pencil/scene-graph/color'
 import { copyEffects, copyFill, copyStyleRuns, copyStroke } from '@open-pencil/scene-graph/copy'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { getPageBackgrounds, setPageBackgrounds } from '#core/figma-api/page-backgrounds'
+import { getPageBackgrounds, pageSourceWithBackgrounds } from '#core/figma-api/page-backgrounds'
 
 import type { EditorContext } from './types'
 
@@ -30,7 +31,7 @@ type PaintFields = Pick<
 /** What converting changes, before and after, so one undo step can put it back. */
 interface ColorChanges {
   layers: Map<string, { before: PaintFields; after: PaintFields }>
-  pages: Map<string, { before: readonly Fill[]; after: Fill[] }>
+  pages: Map<string, { before: SceneNode['source']; after: SceneNode['source'] }>
   variables: Map<string, { before: Variable['valuesByMode']; after: Variable['valuesByMode'] }>
 }
 
@@ -87,8 +88,20 @@ function convertedPaintFields(node: SceneNode, convert: (color: Color) => Color)
   }
 }
 
-function isColorValue(value: VariableValue | undefined): value is Color {
+function isColorValue(value: VariableValue | Color | VariableAlias): value is Color {
   return typeof value === 'object' && 'r' in value
+}
+
+/** A color variable's value with its literal colors converted, an expression's operand included. */
+function convertVariableValue(
+  value: VariableValue,
+  convert: (color: Color) => Color
+): VariableValue {
+  if (isColorValue(value)) return convert(value)
+  if (typeof value === 'object' && 'expression' in value && value.expression === 'COMPOSE_COLOR') {
+    return isColorValue(value.color) ? { ...value, color: convert(value.color) } : value
+  }
+  return value
 }
 
 /** Every stored color in `graph` converted from `from` to `to`, before and after. */
@@ -101,10 +114,10 @@ function convertedColors(
   const changes: ColorChanges = { layers: new Map(), pages: new Map(), variables: new Map() }
   for (const node of graph.getAllNodes()) {
     if (node.type === 'CANVAS') {
-      const before = getPageBackgrounds(node)
+      const backgrounds = getPageBackgrounds(node).map((fill) => convertFill(fill, convert))
       changes.pages.set(node.id, {
-        before,
-        after: before.map((fill) => convertFill(fill, convert))
+        before: structuredClone(node.source),
+        after: pageSourceWithBackgrounds(node, backgrounds)
       })
       continue
     }
@@ -120,10 +133,7 @@ function convertedColors(
     if (variable.type !== 'COLOR') continue
     const before = structuredClone(variable.valuesByMode)
     const after = Object.fromEntries(
-      Object.entries(before).map(([mode, value]) => [
-        mode,
-        isColorValue(value) ? convert(value) : value
-      ])
+      Object.entries(before).map(([mode, value]) => [mode, convertVariableValue(value, convert)])
     )
     changes.variables.set(variable.id, { before, after })
   }
@@ -135,8 +145,7 @@ function applyColorChanges(graph: SceneGraph, changes: ColorChanges, side: 'befo
     if (graph.getNode(id)) graph.updateNode(id, structuredClone(change[side]))
   }
   for (const [id, change] of changes.pages) {
-    const page = graph.getNode(id)
-    if (page) setPageBackgrounds(graph, page, change[side])
+    if (graph.getNode(id)) graph.updateNode(id, { source: structuredClone(change[side]) })
   }
   for (const [id, change] of changes.variables) {
     const variable = graph.variables.get(id)
