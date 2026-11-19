@@ -32,6 +32,7 @@ import {
   flowOf,
   inheritedTextStyle,
   isInlineLevel,
+  hiddenPart,
   splitOutOfFlow,
   textAlignOf,
   type FlowKind,
@@ -500,7 +501,13 @@ function createDesignNode(
     return createTextNode(graph, parentId, node.text, inheritedStyle, display, parentFlow)
   }
 
-  return createElementNode(graph, parentId, node, parentFlow, recorded)
+  const layer = createElementNode(graph, parentId, node, parentFlow, recorded)
+  // A box CSS hides keeps its room and its layers, hidden, as a layer is hidden; one a child
+  // shows inside paints nothing of its own.
+  const hidden = layer ? hiddenPart(node) : 'none'
+  if (layer && hidden === 'all') layer.visible = false
+  if (layer && hidden === 'own') Object.assign(layer, { fills: [], strokes: [], effects: [] })
+  return layer
 }
 
 function fitPageToChildren(page: SceneNode, graph: SceneGraph): void {

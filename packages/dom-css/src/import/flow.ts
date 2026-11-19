@@ -413,3 +413,22 @@ export function splitOutOfFlow(element: DesignElement): {
   })
   return { inFlow: keep(element), outOfFlow }
 }
+
+function hidesByVisibility(node: DesignElement): boolean {
+  const visibility = pickStyle(mergedStyle(node), 'visibility')?.trim()
+  return visibility === 'hidden' || visibility === 'collapse'
+}
+
+/**
+ * How much of a box CSS hides with `visibility`: `all` of it, `own` paint only when a descendant
+ * sets `visibility: visible` and shows inside it, which a hidden layer would hide with it, or
+ * `none`.
+ */
+export function hiddenPart(element: DesignElement): 'all' | 'own' | 'none' {
+  if (!hidesByVisibility(element)) return 'none'
+  const showsAgain = (node: DesignElement): boolean =>
+    node.children.some(
+      (child) => child.type === 'element' && (!hidesByVisibility(child) || showsAgain(child))
+    )
+  return showsAgain(element) ? 'own' : 'all'
+}
