@@ -16,8 +16,8 @@ import {
   textAutoResizeFor
 } from '@open-pencil/scene-graph/layout'
 
-import type { DesignElement, DesignStyleDeclaration } from '../types'
-import { pickStyle } from './css-values'
+import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
+import { mergedStyle, pickStyle } from './css-values'
 import { isTableRow } from './table'
 
 /**
@@ -382,4 +382,34 @@ export function applyFlowSizing(
   }
   applyParentFill(graph, node, style, display, parentFlow, size)
   if (node.type === 'TEXT') applyTextSizing(graph, node, style, size)
+}
+
+/** Whether a box is out of the flow, placed by its own position rather than in the lines. */
+function isOutOfFlow(node: DesignNode): boolean {
+  if (node.type !== 'element') return false
+  const position = pickStyle(mergedStyle(node), 'position')?.trim()
+  return position === 'absolute' || position === 'fixed'
+}
+
+/**
+ * An element's content as its lines lay it out, and the boxes out of the flow inside it, such as a
+ * link's `::before` stretched over the card it is in, which take no part in the lines.
+ */
+export function splitOutOfFlow(element: DesignElement): {
+  inFlow: DesignElement
+  outOfFlow: DesignElement[]
+} {
+  const outOfFlow: DesignElement[] = []
+  const keep = (node: DesignElement): DesignElement => ({
+    ...node,
+    children: node.children.flatMap((child): DesignNode[] => {
+      if (child.type !== 'element') return [child]
+      if (isOutOfFlow(child)) {
+        outOfFlow.push(child)
+        return []
+      }
+      return [keep(child)]
+    })
+  })
+  return { inFlow: keep(element), outOfFlow }
 }

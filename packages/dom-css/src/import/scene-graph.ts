@@ -32,6 +32,7 @@ import {
   flowOf,
   inheritedTextStyle,
   isInlineLevel,
+  splitOutOfFlow,
   textAlignOf,
   type FlowKind,
   type ParentFlow
@@ -441,14 +442,19 @@ function createChildLayers(
   recorded: Recorded,
   grid = false
 ): FlowBlock[] {
-  // A flex container's and a grid's children are items, each a layer its container aligns.
-  if (flow !== 'flex' && !grid && holdsRichText(element)) {
+  // A flex container's and a grid's children are items, each a layer its container aligns. Text
+  // is one layer even with boxes out of the flow inside it, which become layers of their own.
+  const { inFlow, outOfFlow } = splitOutOfFlow(element)
+  if (flow !== 'flex' && !grid && holdsRichText(inFlow)) {
     const textStyle = inheritedTextStyle(style)
     const textDisplay = flow === 'inline' ? 'inline' : 'block'
-    const text = createRichTextNode(graph, node.id, element, textStyle, textDisplay, flow ?? 'none')
+    const text = createRichTextNode(graph, node.id, inFlow, textStyle, textDisplay, flow ?? 'none')
     record(graph, recorded, text, capturedTextBox(element))
     if (flow === 'block') alignBlockLines(graph, node, style, true)
-    return []
+    return outOfFlow.flatMap((box) => {
+      const layer = createDesignNode(graph, node.id, box, flow ?? 'none', recorded)
+      return layer ? [{ layer, element: box, style: mergedStyle(box) }] : []
+    })
   }
   const textBox = ownTextBox(element, flow === 'flex' || grid)
   // Whether everything the element holds sits in its lines, which its `text-align` aligns.
