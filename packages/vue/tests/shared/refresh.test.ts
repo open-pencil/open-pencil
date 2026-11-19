@@ -2,8 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { defineComponent, h } from 'vue'
 
+import { createDeferred } from '@open-pencil/std/async'
 import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
-import { useAutoRefresh } from '@open-pencil/vue/shared/refresh'
+
+import { useAutoRefresh } from '#vue/shared/refresh'
 
 const renderer = createTestRenderer()
 
@@ -25,26 +27,20 @@ function mountRefresh(run: () => Promise<unknown>) {
 
 describe('useAutoRefresh', () => {
   test('runs once more after the refresh under way when asked again meanwhile', async () => {
-    let release: (() => void) | null = null
+    const held = createDeferred<undefined>()
     let runs = 0
     const mounted = mountRefresh(() => {
       runs += 1
-      return runs === 1
-        ? new Promise<void>((resolve) => {
-            release = resolve
-          })
-        : Promise.resolve()
+      return runs === 1 ? held.promise : Promise.resolve()
     })
 
     const first = mounted.refresh.refresh()
     expect(mounted.refresh.refresh()).toBe(first)
     void mounted.refresh.invalidate()
     void mounted.refresh.invalidate()
-    release?.()
+    held.resolve(undefined)
+    // The queued run starts as the first one settles, once, however often it was asked for.
     await first
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 0)
-    })
     expect(runs).toBe(2)
     mounted.unmount()
   })

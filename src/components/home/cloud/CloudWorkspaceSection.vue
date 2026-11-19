@@ -156,7 +156,7 @@ function open(row: CloudDocumentRow) {
 
 /** The workspace's files, and the server's workspaces, which may have changed elsewhere too. */
 function refresh() {
-  void refreshHomeCloud()
+  void refreshHomeCloud({ fresh: true })
   void files.refresh()
 }
 </script>

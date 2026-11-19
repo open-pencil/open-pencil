@@ -112,7 +112,6 @@ export function useHomeCloud() {
     connect: noop,
     openAccount: noop,
     newWorkspace: noop,
-    signOut: () => Promise.resolve(),
-    refresh: () => Promise.resolve()
+    signOut: () => Promise.resolve()
   }
 }

@@ -193,7 +193,9 @@ async function signedInConnection(
     email: status.user.email,
     image: status.user.image ?? null
   }
-  if (current()) rememberCloudAccount(server.id, account)
+  // Written only when it changed, so a check that finds the same account replaces nothing.
+  const remembered = findCloudServer(server.id)?.account ?? null
+  if (current() && !isEqual(remembered, account)) rememberCloudAccount(server.id, account)
   if (status.state === 'two-step' && token) {
     // A desktop app's own session counts as proved once a browser that proved it approved the
     // sign-in; one from before that never will, so the app signs in again.
@@ -232,6 +234,11 @@ export type CloudConnectionRefresh = {
    * instead of a new one.
    */
   background?: boolean
+  /**
+   * With `background`, waits for a check already under way and then asks again, so the answer
+   * comes from a check that started after the call, as a refresh button promises.
+   */
+  fresh?: boolean
 }
 
 /** Asks the server where this app stands and publishes the answer. */
@@ -241,6 +248,9 @@ export function refreshCloudConnection(
 ): Promise<CloudConnection> {
   if (options.background) {
     const running = checks.get(server.id)
+    if (running && options.fresh) {
+      return running.then(() => refreshCloudConnection(server, { background: true }))
+    }
     if (running) return running
   }
   const generation = (generations.get(server.id) ?? 0) + 1
@@ -294,7 +304,10 @@ async function askServer(
       () => generations.get(server.id) === generation
     )
   } catch (error) {
-    if (background) return previous
+    // Kept only while it is still the account the server last named: a check that met another
+    // account before failing must not leave the old one shown as signed in.
+    const remembered = findCloudServer(server.id)?.account ?? null
+    if (background && isEqual(remembered, previous.account)) return previous
     next = {
       ...previous,
       state: 'unreachable',

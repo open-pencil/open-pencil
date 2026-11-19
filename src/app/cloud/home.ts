@@ -22,11 +22,12 @@ const HOME_CLOUD_REFRESH_MS = 60_000
 
 /**
  * Asks the server Home shows again, keeping what Home shows until it answers: a workspace made or
- * left elsewhere, on the server's pages or another device, then appears or goes.
+ * left elsewhere, on the server's pages or another device, then appears or goes. `fresh`, as a
+ * refresh button asks, takes no answer from a check that started before the call.
  */
-export async function refreshHomeCloud(): Promise<void> {
+export async function refreshHomeCloud(options: { fresh?: boolean } = {}): Promise<void> {
   const server = homeCloudServer.value
-  if (server) await refreshCloudConnection(server, { background: true })
+  if (server) await refreshCloudConnection(server, { background: true, fresh: options.fresh })
 }
 
 /**
@@ -34,7 +35,7 @@ export async function refreshHomeCloud(): Promise<void> {
  * regains focus, when the browser comes back online, and every minute while Home is visible.
  */
 export function useHomeCloud() {
-  const { refresh } = useAutoRefresh(refreshHomeCloud, { interval: HOME_CLOUD_REFRESH_MS })
+  useAutoRefresh(() => refreshHomeCloud(), { interval: HOME_CLOUD_REFRESH_MS })
   const connection = computed(() => {
     const server = homeCloudServer.value
     return server ? { server, ...cloudConnection(server.id) } : null
@@ -76,8 +77,6 @@ export function useHomeCloud() {
     signOut: async () => {
       const current = signedIn.value
       if (current?.discovery) await signOutOfCloud(current.server.id, current.discovery)
-    },
-    /** Asks the server again now, as the refresh buttons do. */
-    refresh
+    }
   }
 }
