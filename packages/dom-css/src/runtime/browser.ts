@@ -50,6 +50,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'aspect-ratio',
   'backdrop-filter',
   'background-clip',
+  'background-origin',
   'background-color',
   'background-image',
   'background-position',

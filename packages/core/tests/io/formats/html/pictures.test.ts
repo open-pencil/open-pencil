@@ -103,4 +103,22 @@ describe('pictures in imported HTML', () => {
     expect(heroPicture?.height).toBeCloseTo(100)
     expect(heroPicture?.x).toBeCloseTo(Math.max(0, 400 - heroWidth))
   })
+
+  test('positions a background picture in its origin box, inside the border by default', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const { graph } = await readHTMLDocument(
+      `<div class="padding"></div><div class="content"></div>
+      <style>
+        body { margin: 0 }
+        div { box-sizing: border-box; width: 100px; height: 100px; border: 10px solid #000; padding: 10px }
+        .padding { background: url(photo.png) 0 0 / 20px 20px no-repeat }
+        .content { background: url(photo.png) 0 0 / 20px 20px no-repeat content-box }
+      </style>`,
+      { readAsset: async (path) => (path === 'photo.png' ? png : null) }
+    )
+    const [padding, content] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(graph.getChildren(padding.id)[0]).toMatchObject({ x: 10, y: 10, width: 20, height: 20 })
+    expect(graph.getChildren(content.id)[0]).toMatchObject({ x: 20, y: 20, width: 20, height: 20 })
+  })
 })

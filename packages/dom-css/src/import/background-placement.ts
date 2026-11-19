@@ -3,6 +3,7 @@ import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import { dimension, splitCSSValue } from '@open-pencil/scene-graph/css'
 import type { Matrix, Rect, Size, Vector } from '@open-pencil/scene-graph/primitives'
 
+import type { ContentInsets } from './box'
 import type { BackgroundPicture } from './image-fills'
 
 /** A length or percentage of `total`, as one value of `background-size` or `-position` gives. */
@@ -85,41 +86,48 @@ function cropFill(imageHash: string, imageTransform: Matrix) {
   }
 }
 
+/** A layer's area inside `insets` from its edges, in its own coordinates. */
+function insetArea(node: Size, insets: ContentInsets): Rect {
+  return {
+    x: insets.left,
+    y: insets.top,
+    width: Math.max(0, node.width - insets.left - insets.right),
+    height: Math.max(0, node.height - insets.top - insets.bottom)
+  }
+}
+
 /**
  * Places background pictures where their `background-size` and `background-position` put them,
- * once their layers have their final size. A picture that covers its layer is a fill cropped to
- * it. One that covers part of it, such as an icon or an illustration at one side, is a layer of
- * its own behind the layer's children, as large as the part the layer shows: a fill cannot leave
- * the rest of the layer empty.
+ * once their layers have their final size: in the box `background-origin` names, painted within
+ * the one `background-clip` names. A picture that covers the whole layer is a fill cropped to it.
+ * One that covers part of it, such as an icon or an illustration at one side, is a layer of its
+ * own behind the layer's children, as large as the part that shows: a fill cannot leave the rest
+ * of the layer empty.
  */
 export function placeBackgroundPictures(graph: SceneGraph, pictures: readonly BackgroundPicture[]) {
   const placed = new Map<string, number>()
   for (const picture of pictures) {
     const node = graph.getNode(picture.nodeId)
     if (!node || node.width <= 0 || node.height <= 0) continue
-    const size = pictureSize(picture.size, node, picture)
+    const origin = insetArea(node, picture.origin)
+    const size = pictureSize(picture.size, origin, picture)
     if (size.width <= 0 || size.height <= 0) continue
-    const rect = { ...pictureOffset(picture.position, node, size), ...size }
-    const covers =
-      rect.x <= 0 &&
-      rect.y <= 0 &&
-      rect.x + rect.width >= node.width &&
-      rect.y + rect.height >= node.height
-    if (covers) {
-      const area = { x: 0, y: 0, width: node.width, height: node.height }
-      graph.updateNode(node.id, {
-        fills: [...node.fills, cropFill(picture.imageHash, cropTransform(area, rect))]
-      })
-      continue
-    }
-    const left = Math.max(0, rect.x)
-    const top = Math.max(0, rect.y)
-    const right = Math.min(node.width, rect.x + rect.width)
-    const bottom = Math.min(node.height, rect.y + rect.height)
+    const offset = pictureOffset(picture.position, origin, size)
+    const rect = { x: origin.x + offset.x, y: origin.y + offset.y, ...size }
+    const clip = insetArea(node, picture.clip)
+    const left = Math.max(clip.x, rect.x)
+    const top = Math.max(clip.y, rect.y)
+    const right = Math.min(clip.x + clip.width, rect.x + rect.width)
+    const bottom = Math.min(clip.y + clip.height, rect.y + rect.height)
     if (right <= left || bottom <= top) continue
     const area = { x: left, y: top, width: right - left, height: bottom - top }
+    const fill = cropFill(picture.imageHash, cropTransform(area, rect))
+    if (area.x <= 0 && area.y <= 0 && area.width >= node.width && area.height >= node.height) {
+      graph.updateNode(node.id, { fills: [...node.fills, fill] })
+      continue
+    }
     const index = placed.get(node.id) ?? 0
-    placeLayer(graph, node, area, cropFill(picture.imageHash, cropTransform(area, rect)), index)
+    placeLayer(graph, node, area, fill, index)
     placed.set(node.id, index + 1)
   }
 }

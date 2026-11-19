@@ -4,6 +4,7 @@ import { parseCSSURLs, splitCSSLayers } from '@open-pencil/scene-graph/css'
 import { computeImageHash, imageHeader } from '@open-pencil/scene-graph/images'
 
 import type { DesignElement, DesignStyleDeclaration } from '../types'
+import { borderWidths, contentInsets, type ContentInsets } from './box'
 import { pickStyle } from './css-values'
 import { imagePicture } from './pictures'
 
@@ -72,6 +73,19 @@ export interface BackgroundPicture {
   height: number
   size: string
   position: string
+  /** How far inside the layer's edges the box `background-origin` positions the picture in is. */
+  origin: ContentInsets
+  /** How far inside the layer's edges the box `background-clip` paints the picture in is. */
+  clip: ContentInsets
+}
+
+const NO_INSETS: ContentInsets = { top: 0, right: 0, bottom: 0, left: 0 }
+
+/** How far inside a box's edges its border box, padding box, or content box is. */
+function boxInsets(box: string | undefined, style: DesignStyleDeclaration): ContentInsets {
+  if (box === 'padding-box') return borderWidths(style)
+  if (box === 'content-box') return contentInsets(style)
+  return NO_INSETS
 }
 
 /**
@@ -90,9 +104,7 @@ export function backgroundImageFills(
   const loaded = element.backgroundImages
   if (!loaded || loaded.length === 0) return []
   const layers = splitCSSLayers(pickStyle(style, 'background-image') ?? '')
-  const sizes = splitCSSLayers(pickStyle(style, 'background-size') ?? '')
-  const positions = splitCSSLayers(pickStyle(style, 'background-position') ?? '')
-  const repeats = splitCSSLayers(pickStyle(style, 'background-repeat') ?? '')
+  const layerStyle = backgroundLayerStyles(style)
   const fills: Fill[] = []
   // Bottom layer first, as fills stack and as the placed pictures are added.
   for (const [index, layer] of [...layers.entries()].toReversed()) {
@@ -102,9 +114,8 @@ export function backgroundImageFills(
     if (!bytes || !header) continue
     const imageHash = computeImageHash(bytes)
     graph.images.set(imageHash, bytes)
-    // A layer list shorter than the images repeats, as CSS repeats it.
-    const at = (list: string[]) => (list.length > 0 ? list[index % list.length] : undefined)
-    if (tiles(at(sizes), at(repeats))) {
+    const { size, position, repeat, origin, clip } = layerStyle(index)
+    if (tiles(size, repeat)) {
       fills.push({
         type: 'IMAGE',
         imageHash,
@@ -120,9 +131,35 @@ export function backgroundImageFills(
       imageHash,
       width: header.width,
       height: header.height,
-      size: at(sizes) ?? 'auto',
-      position: at(positions) ?? '0% 0%'
+      size: size ?? 'auto',
+      position: position ?? '0% 0%',
+      origin: boxInsets(origin ?? 'padding-box', style),
+      clip: boxInsets(clip ?? 'border-box', style)
     })
   }
   return fills
+}
+
+/**
+ * The background properties of each layer by its index, as CSS pairs them: a list shorter than
+ * the layers repeats.
+ */
+function backgroundLayerStyles(style: DesignStyleDeclaration) {
+  const list = (property: string) => splitCSSLayers(pickStyle(style, property) ?? '')
+  const lists = {
+    size: list('background-size'),
+    position: list('background-position'),
+    repeat: list('background-repeat'),
+    origin: list('background-origin'),
+    clip: list('background-clip')
+  }
+  const at = (values: string[], index: number) =>
+    values.length > 0 ? values[index % values.length]?.trim() : undefined
+  return (index: number) => ({
+    size: at(lists.size, index),
+    position: at(lists.position, index),
+    repeat: at(lists.repeat, index),
+    origin: at(lists.origin, index),
+    clip: at(lists.clip, index)
+  })
 }
