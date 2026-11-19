@@ -6,10 +6,11 @@ import {
 } from '@agentclientprotocol/sdk/unstable'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
+import { createDeferred, type Deferred } from '@open-pencil/std/async'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { connectAgent, type AgentLaunch } from '@/app/ai/agents/acp/connection'
 import type { OwnToolsLink, OwnToolsOutcome } from '@/app/ai/agents/acp/tools'
-import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
 import { isSignedIn, parseAuthMethods, type AgentAuthMethod, type AgentAuthStatus } from './status'
 
@@ -136,7 +137,7 @@ async function checkTools(session: AuthSession, probe: ToolsProbe): Promise<OwnT
     return await session.untilStopped(link.outcome())
   } catch (error) {
     link?.stop()
-    return { connected: false, reason: error instanceof Error ? error.message : String(error) }
+    return { connected: false, reason: errorMessage(error) }
   } finally {
     session.onUpdate = null
   }

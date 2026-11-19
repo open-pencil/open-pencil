@@ -131,6 +131,7 @@
     "@open-pencil/data/no-hand-rolled-color": "error",
     "@open-pencil/data/no-raw-runtime-effect": "error",
     "@open-pencil/data/no-hand-rolled-data-url": "error",
+    "@open-pencil/data/no-hand-rolled-std-helpers": "error",
     "@open-pencil/data/no-provider-id-checks": "error",
     "@open-pencil/runtime/no-raw-console-format": "off",
     "@open-pencil/runtime/no-typeof-window-check": "error",

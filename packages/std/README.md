@@ -8,3 +8,6 @@ OpenPencil's own standard library, beside [es-toolkit](https://es-toolkit.dev): 
 | `@open-pencil/std/random` | `randomHex`, `randomInt`, and `randomIndex`, from `crypto.getRandomValues`. |
 | `@open-pencil/std/arrays` | `appendAll`, `insertAll`, `minOf`, and `maxOf`, which never spread an array into arguments, so large inputs don't overflow the stack. |
 | `@open-pencil/std/json` | The `JSONValue`, `JSONObject`, `JSONArray`, and `JSONPrimitive` types. |
+| `@open-pencil/std/errors` | `errorMessage`, `toError`, and `isAbortError`, for whatever was thrown. |
+| `@open-pencil/std/records` | `isRecord` and the `UnknownRecord` type, for reading objects before validating them. |
+| `@open-pencil/std/async` | `createDeferred`, and `createMutex`, whose holders take turns and stop waiting when their signal aborts. |

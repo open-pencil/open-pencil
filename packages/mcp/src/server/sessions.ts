@@ -12,6 +12,7 @@ import {
   MCP_DEFERS_TOOLS_HEADER,
   MCP_CHAT_HEADER
 } from '@open-pencil/core/constants'
+import { errorMessage } from '@open-pencil/std/errors'
 import { MINUTE_MS } from '@open-pencil/std/timing'
 
 import { MCP_SERVER_INSTRUCTIONS } from '#mcp/instructions'
@@ -71,22 +72,18 @@ const MAX_SWEEP_INTERVAL_MS = 60_000
 // The MCP SDK's close() does not enforce a timeout internally.
 const SESSION_CLOSE_TIMEOUT_MS = 5_000
 
-function describeError(e: unknown): string {
-  return e instanceof Error ? e.message : String(e)
-}
-
 async function closeSession(session: Pick<MCPSession, 'transport' | 'server'>): Promise<void> {
   try {
     await withTimeout(() => session.transport.close(), SESSION_CLOSE_TIMEOUT_MS)
   } catch (e) {
     // Best-effort: the transport may already be closed or in a bad state
-    process.stderr.write(`  MCP session: transport close warning (${describeError(e)})\n`)
+    process.stderr.write(`  MCP session: transport close warning (${errorMessage(e)})\n`)
   }
   try {
     await withTimeout(() => session.server.close(), SESSION_CLOSE_TIMEOUT_MS)
   } catch (e) {
     // Best-effort
-    process.stderr.write(`  MCP session: server close warning (${describeError(e)})\n`)
+    process.stderr.write(`  MCP session: server close warning (${errorMessage(e)})\n`)
   }
 }
 
@@ -118,7 +115,7 @@ export function createMCPSessionManager({
       if (session.initialized) onSessionClosed?.(id)
     } catch (e) {
       // Application notification must not prevent resource cleanup.
-      process.stderr.write(`  MCP session: close notification warning (${describeError(e)})\n`)
+      process.stderr.write(`  MCP session: close notification warning (${errorMessage(e)})\n`)
     }
     const task = closeSession(session).finally(() => closing.delete(id))
     closing.set(id, task)
@@ -130,7 +127,7 @@ export function createMCPSessionManager({
       onSessionOpened?.(agent)
     } catch (e) {
       // Application notification must not fail the client's initialize.
-      process.stderr.write(`  MCP session: open notification warning (${describeError(e)})\n`)
+      process.stderr.write(`  MCP session: open notification warning (${errorMessage(e)})\n`)
     }
   }
 

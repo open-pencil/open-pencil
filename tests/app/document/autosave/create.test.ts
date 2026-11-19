@@ -2,8 +2,9 @@ import { describe, expect, jest, test } from 'bun:test'
 
 import { nextTick, reactive, ref } from 'vue'
 
+import { createDeferred } from '@open-pencil/std/async'
+
 import { createAutosave } from '@/app/document/autosave/create'
-import { createDeferred } from '@/app/runtime/deferred'
 
 function setup(
   saveCurrentDocument: (version: number) => Promise<void>,

@@ -1,6 +1,8 @@
 import { promiseTimeout } from '@vueuse/core'
 import type { Ref } from 'vue'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { appPreferences } from '@/app/settings/preferences/store'
 import { toast } from '@/app/shell/ui'
 import { canSelfUpdate } from '@/app/tauri/capabilities'
@@ -68,7 +70,7 @@ async function runUpdateCheck(messages: Ref<UpdaterMessages>) {
     await openUpdaterWindow(messages.value.windowTitle)
   } catch (error) {
     if (reportInFlight) {
-      const message = error instanceof Error ? error.message : String(error)
+      const message = errorMessage(error)
       toast.warning(updateFailureText(messages.value, 'check', message))
     }
   }

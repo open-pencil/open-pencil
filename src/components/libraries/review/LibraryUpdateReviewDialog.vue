@@ -3,6 +3,7 @@ import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { computed, ref, shallowRef, watch } from 'vue'
 
 import { createLibraryUpdatePreview, type LibraryUpdatePreview } from '@open-pencil/core/library'
+import { errorMessage } from '@open-pencil/std/errors'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -46,7 +47,7 @@ let requestId = 0
 let focusing: Promise<void> | null = null
 const operationFailed = (cause: unknown) =>
   notificationMessages.get().operationFailed({
-    error: cause instanceof Error ? cause.message : String(cause)
+    error: errorMessage(cause)
   })
 const open = computed({
   get: () => libraryReviewRequest.value !== null,

@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import { parseJSXAttributes, sceneNodeAttributes, sceneNodeToJSX } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { graphOf } from '#core/figma-api/graph'
 import {
@@ -15,10 +16,6 @@ import { applyOperations, planOperations, type ApplyStatus } from './apply'
 import { formatOperations, parseOperations } from './format'
 import { deltaOperations, type DiffOperation } from './operations'
 import { DEFAULT_DIFF_DEPTH, diffProjections, projectTree, type ProjectOptions } from './projection'
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
-}
 
 /** Operations that turn the `from` tree into the `to` tree, matching children by name path. */
 function treeOperations(

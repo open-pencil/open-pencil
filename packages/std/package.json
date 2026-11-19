@@ -1,7 +1,7 @@
 {
   "name": "@open-pencil/std",
   "version": "0.17.0-beta.5",
-  "description": "OpenPencil's own standard library beside es-toolkit: deadlines and backoff, secure randomness, array helpers safe for large inputs, and JSON types. No dependencies, for browsers, Node, Bun, and Workers alike.",
+  "description": "OpenPencil's own standard library beside es-toolkit: deadlines and backoff, secure randomness, error and record guards, deferreds and a mutex, array helpers safe for large inputs, and JSON types. No dependencies, for browsers, Node, Bun, and Workers alike.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -47,6 +47,24 @@
       "bun": "./src/json.ts",
       "import": "./dist/json.js",
       "default": "./dist/json.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "bun": "./src/errors.ts",
+      "import": "./dist/errors.js",
+      "default": "./dist/errors.js"
+    },
+    "./records": {
+      "types": "./dist/records.d.ts",
+      "bun": "./src/records.ts",
+      "import": "./dist/records.js",
+      "default": "./dist/records.js"
+    },
+    "./async": {
+      "types": "./dist/async.d.ts",
+      "bun": "./src/async.ts",
+      "import": "./dist/async.js",
+      "default": "./dist/async.js"
     }
   },
   "publishConfig": {

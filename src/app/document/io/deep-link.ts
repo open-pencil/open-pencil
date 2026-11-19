@@ -11,6 +11,8 @@
 // else is ever read from disk.
 import { invoke } from '@tauri-apps/api/core'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { notificationMessages } from '@/app/i18n/notifications'
 import { activateTabForPath, chooseTauriOpenPaths, openFileFromPath } from '@/app/shell/menu/files'
 
@@ -43,7 +45,7 @@ export async function searchLinkedNode(
   try {
     return { found: await selectByName(name) }
   } catch (error) {
-    return { error: clamp(error instanceof Error ? error.message : String(error)) }
+    return { error: clamp(errorMessage(error)) }
   }
 }
 

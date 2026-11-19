@@ -3,6 +3,7 @@ import { useFileDialog } from '@vueuse/core'
 import type { Editor } from '@open-pencil/core'
 import { IMPORTABLE_RASTER_TYPES } from '@open-pencil/scene-graph/images'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { errorMessage } from '@open-pencil/std/errors'
 import { filterCanvasFiles } from '@open-pencil/vue/canvas/drop'
 
 import { getActiveEditorStore } from '@/app/editor/active-store'
@@ -41,7 +42,7 @@ export async function placeFiles(
 
 function reportFailure(name: string, error: unknown): void {
   console.error(`Failed to place ${name}:`, error)
-  const detail = error instanceof Error ? error.message : String(error)
+  const detail = errorMessage(error)
   toast.error(notificationMessages.get().openFileFailed({ name, error: detail }))
 }
 

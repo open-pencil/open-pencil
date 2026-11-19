@@ -14,6 +14,7 @@ import {
   renderNodesToImage
 } from '@open-pencil/core/io/formats/raster'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { isAbortError } from '@open-pencil/std/errors'
 
 import type { ExportOptions } from '@/app/document/export/types'
 import { pickBrowserSaveFile, supportsFileSystemAccess } from '@/app/document/io/capability'
@@ -145,7 +146,7 @@ export async function saveExportedFile(
       await writable.close()
       return true
     } catch (e) {
-      if ((e as Error).name === 'AbortError') return false
+      if (isAbortError(e)) return false
     }
   }
 

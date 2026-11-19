@@ -1,3 +1,5 @@
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast, type ToastHandle } from '@/app/shell/ui'
 import { formatBytes } from '@/components/ui/feedback/progress'
@@ -21,10 +23,6 @@ export interface SaveFeedbackOptions {
 }
 
 const failureToasts = new WeakMap<object, number>()
-
-/** What a failed save says went wrong. */
-export const saveErrorText = (error: unknown) =>
-  error instanceof Error ? error.message : String(error)
 
 /** Documents whose current run of failures already sent its system notification. */
 const noticedFailures = new WeakSet<object>()
@@ -114,7 +112,7 @@ export async function saveWithFeedback(
     // A clean document still shows it: a write that failed partway may have changed the file.
     showSaveFailure(
       options.failureMessage?.(error) ??
-        notificationMessages.get().operationFailed({ error: saveErrorText(error) }),
+        notificationMessages.get().operationFailed({ error: errorMessage(error) }),
       () => saveWithFeedback(save, options),
       options
     )

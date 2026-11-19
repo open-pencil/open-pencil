@@ -1,6 +1,7 @@
 import { isUndefined, mapValues, omitBy } from 'es-toolkit'
 
 import { es, jsx, type SyntaxNode } from '@open-pencil/emit'
+import { isRecord } from '@open-pencil/std/records'
 
 /** A paint, effect, or variable helper call inside a prop value, such as `solid("#FF0000")`. */
 export class HelperCall {
@@ -42,10 +43,6 @@ export function helperCall(helper: string, ...args: (JSXValue | undefined)[]): H
     helper,
     args.slice(0, last + 1).map((arg) => arg ?? null)
   )
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 /**

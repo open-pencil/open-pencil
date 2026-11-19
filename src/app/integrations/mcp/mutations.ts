@@ -1,22 +1,18 @@
+import { createMutex, type Mutex } from '@open-pencil/std/async'
+
 import type { MCPConnectionID } from './types'
 
 // Domain-owned: pending operations survive disposal of a Settings editor.
-const pendingByConnection = new Map<MCPConnectionID, Promise<unknown>>()
+const mutexByConnection = new Map<MCPConnectionID, Mutex>()
 
 export function enqueueMCPConnectionMutation<T>(
   id: MCPConnectionID,
   operation: () => Promise<T>
 ): Promise<T> {
-  const previous = pendingByConnection.get(id) ?? Promise.resolve()
-  const pending = previous.then(operation, operation)
-  const settled = pending.then(
-    () => undefined,
-    () => undefined
-  )
-  pendingByConnection.set(id, settled)
-  void settled.then(() => {
-    if (pendingByConnection.get(id) === settled) pendingByConnection.delete(id)
-    return undefined
-  })
-  return pending
+  let mutex = mutexByConnection.get(id)
+  if (!mutex) {
+    mutex = createMutex()
+    mutexByConnection.set(id, mutex)
+  }
+  return mutex.run(operation)
 }

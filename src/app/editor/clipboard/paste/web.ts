@@ -4,6 +4,7 @@ import type { ClipboardSnapshot, Editor, PastedTextLink } from '@open-pencil/cor
 import { HTML_IMPORT_VIEWPORT } from '@open-pencil/core/io/formats/html/layers'
 import { browserHTMLHasBoxes, browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { errorMessage } from '@open-pencil/std/errors'
 import { filesMessages, menuMessages } from '@open-pencil/vue/i18n'
 
 import { importIconMatcher } from '@/app/editor/icons/provider'
@@ -179,7 +180,7 @@ export async function pasteHTMLAsLayers(
   try {
     snapshot = await prepareLayers(editor, markup)
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error)
+    const reason = errorMessage(error)
     toast.error(filesMessages.get().htmlPasteFailed({ error: reason }))
     return true
   }

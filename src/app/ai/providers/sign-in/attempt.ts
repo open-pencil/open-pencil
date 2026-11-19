@@ -1,6 +1,6 @@
 import { noop, once } from 'es-toolkit'
 
-import { createDeferred } from '@/app/runtime/deferred'
+import { createDeferred } from '@open-pencil/std/async'
 
 import { pkceChallenge, pkceSecrets, type PKCE } from './pkce'
 

@@ -3,6 +3,7 @@ import * as v from 'valibot'
 
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
 import { appendAll } from '@open-pencil/std/arrays'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { isTauri } from '@/app/tauri/env'
 
@@ -98,7 +99,7 @@ function parseMetadata(
 
 function connectionErrorMessage(error: unknown, isCORS: boolean): string {
   if (isCORS) return formatBrowserCORSHelpMessage()
-  return error instanceof Error ? error.message : String(error)
+  return errorMessage(error)
 }
 
 async function ensureNamespace(config: S3CompatibleConfig): Promise<void> {

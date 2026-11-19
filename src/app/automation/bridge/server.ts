@@ -1,19 +1,20 @@
+import * as v from 'valibot'
+
+import { errorMessage } from '@open-pencil/std/errors'
+import { randomHex } from '@open-pencil/std/random'
 /**
  * Browser-side automation handler.
  *
  * Connects to the bridge via WebSocket, receives RPC requests,
  * executes them against the live EditorStore, and sends results back.
  */
-import * as v from 'valibot'
-
-import { randomHex } from '@open-pencil/std/random'
+import { isRecord } from '@open-pencil/std/records'
 import { SECOND_MS } from '@open-pencil/std/timing'
 
 import { endAgentSession, readAgentSession } from '@/app/automation/agents'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import type { AutomationFiles } from '@/app/automation/bridge/file-handlers'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
-import { isUnknownRecord } from '@/app/automation/bridge/target'
 import type { EditorStore } from '@/app/editor/active-store'
 
 /**
@@ -114,7 +115,7 @@ export function connectAutomation(
           }
           return
         }
-        const session = isUnknownRecord(msg.args) ? readAgentSession(msg.args.agent) : null
+        const session = isRecord(msg.args) ? readAgentSession(msg.args.agent) : null
         if (session) {
           const sockets = sessionSockets.get(session.session) ?? new Set<WebSocket>()
           sockets.add(socket)
@@ -139,7 +140,7 @@ export function connectAutomation(
               type: 'response',
               id: msg.id,
               ok: false,
-              error: e instanceof Error ? e.message : String(e)
+              error: errorMessage(e)
             })
           )
         } finally {

@@ -4,6 +4,7 @@ import {
   sceneGraphFromStyledHTML
 } from '@open-pencil/core/io/formats/html/layers'
 import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
+import { errorMessage } from '@open-pencil/std/errors'
 import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
@@ -25,10 +26,6 @@ type DOMImportOptions = {
 type DOMTextImportOptions = {
   cssText?: string
   documentName?: string
-}
-
-function errorDetail(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
 }
 
 function documentNameFor(file: File): string {
@@ -97,7 +94,7 @@ export function createDOMOpenActions({
       const diagnostic = describeDiagnosticError(e)
       load.fail({
         code: 'decode-failed',
-        message: errorDetail(e),
+        message: errorMessage(e),
         retryable: diagnostic.retryable ?? true
       })
       recordDocumentFailure({
@@ -107,7 +104,7 @@ export function createDOMOpenActions({
         retryable: diagnostic.retryable
       })
       console.error('Failed to import DOM/CSS:', e)
-      toast.error(notificationMessages.get().importDOMCSSFailed({ error: errorDetail(e) }))
+      toast.error(notificationMessages.get().importDOMCSSFailed({ error: errorMessage(e) }))
       throw e
     } finally {
       if (succeeded) load.complete()
@@ -136,7 +133,7 @@ export function createDOMOpenActions({
       const diagnostic = describeDiagnosticError(e)
       load.fail({
         code: 'decode-failed',
-        message: errorDetail(e),
+        message: errorMessage(e),
         retryable: diagnostic.retryable ?? true
       })
       recordDocumentFailure({
@@ -146,7 +143,7 @@ export function createDOMOpenActions({
         retryable: diagnostic.retryable
       })
       console.error('Failed to open DOM/CSS file:', e)
-      toast.error(notificationMessages.get().openDOMCSSFailed({ error: errorDetail(e) }))
+      toast.error(notificationMessages.get().openDOMCSSFailed({ error: errorMessage(e) }))
     } finally {
       if (ownsLoad && succeeded) load.complete()
     }

@@ -2,6 +2,8 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { effectScope, nextTick, reactive, type EffectScope } from 'vue'
 
+import { createDeferred, type Deferred } from '@open-pencil/std/async'
+
 import type { AgentOffer } from '@/app/ai/agents/acp/oneoff'
 import type { AIModelProfileDraft } from '@/app/ai/models'
 import {
@@ -9,7 +11,6 @@ import {
   type AgentModelSource
 } from '@/app/ai/models/settings/profile-editor/agent'
 import { createModelProfileDraft } from '@/app/ai/models/store'
-import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
 const CLAUDE = 'acp:claude-code'
 const CODEX = 'acp:codex'

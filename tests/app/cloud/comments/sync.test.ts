@@ -16,12 +16,12 @@ import {
   readComments,
   writeComments
 } from '@open-pencil/scene-graph/comments'
+import { createDeferred } from '@open-pencil/std/async'
 
 import { followCloudComments, type CloudCommentTarget } from '@/app/cloud/comments/sync'
 import { commentsKeptElsewhere } from '@/app/comments/document'
 import type { EditorStore } from '@/app/editor/session'
 import { createEditorStore } from '@/app/editor/session/create'
-import { createDeferred } from '@/app/runtime/deferred'
 
 import { COMMENT_TIME as NOW, commentServer } from '#tests/helpers/cloud/comments'
 

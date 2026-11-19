@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { shallowRef, watch } from 'vue'
 
 import type { ServiceCatalog } from '@open-pencil/cloud/contract'
+import { createDeferred } from '@open-pencil/std/async'
 
 import {
   modelSettingsSnapshot,
@@ -17,7 +18,6 @@ import {
   watchCloudAISetup
 } from '@/app/ai/providers/openpencil/setup'
 import type { CloudAISource } from '@/app/ai/providers/openpencil/source'
-import { createDeferred } from '@/app/runtime/deferred'
 
 import { freshInstallModelSettings } from '#tests/helpers/ai/settings'
 

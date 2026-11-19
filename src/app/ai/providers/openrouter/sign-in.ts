@@ -2,8 +2,8 @@ import { listen } from '@tauri-apps/api/event'
 import * as v from 'valibot'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
+import { createDeferred } from '@open-pencil/std/async'
 
-import { createDeferred } from '@/app/runtime/deferred'
 import { openExternalLink } from '@/app/shell/ui'
 import { WEB_APP_ORIGIN } from '@/constants'
 

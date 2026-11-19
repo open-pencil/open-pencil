@@ -5,13 +5,13 @@ import type { ChatStatus, UIMessage } from 'ai'
 import { nextTick, reactive } from 'vue'
 
 import type { ACPAgentID } from '@open-pencil/core/constants'
+import { createDeferred } from '@open-pencil/std/async'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { createConversationHistory } from '@/app/ai/chat/history/controller'
 import type { ChatDocumentEditor } from '@/app/ai/chat/history/document'
 import { createConversationStore } from '@/app/ai/chat/history/idb'
 import type { AgentSessionLink, ConversationStore } from '@/app/ai/chat/history/types'
-import { createDeferred } from '@/app/runtime/deferred'
 function editor(): ChatDocumentEditor {
   const id = crypto.randomUUID()
   return {

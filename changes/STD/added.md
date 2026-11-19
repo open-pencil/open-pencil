@@ -1,0 +1,1 @@
+- `@open-pencil/std` adds `errors` (`errorMessage`, `toError`, `isAbortError`), `records` (`isRecord`, `UnknownRecord`), and `async` (`createDeferred`, and `createMutex`, whose holders take turns and stop waiting when their signal aborts).
