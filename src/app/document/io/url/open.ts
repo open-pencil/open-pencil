@@ -1,5 +1,5 @@
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { fetchRemoteFile, type RemoteFile } from '@open-pencil/core/io/remote'
+import { fetchRemoteFile, remoteFileTitle, type RemoteFile } from '@open-pencil/core/io/remote'
 import { imageMimeType } from '@open-pencil/scene-graph/images'
 import { errorMessage } from '@open-pencil/std/errors'
 import { filesMessages } from '@open-pencil/vue/i18n'
@@ -55,12 +55,17 @@ function fetchFailure(error: unknown): string {
 }
 
 /**
- * The page as its scripts build it, rendered by the desktop app, or null when it cannot be. The
- * renderer and the scripts it runs in the page are loaded only on desktop, where they are used.
+ * The page as its scripts build it, rendered by the desktop app, or null when it cannot be,
+ * including when the renderer itself fails to load. The renderer and the scripts it runs in the
+ * page are loaded only on desktop, where they are used.
  */
 async function renderOnDesktop(url: string): Promise<RenderedWebPage | null> {
-  const { renderWebPage } = await import('./render/page')
-  return renderWebPage(url).catch(() => null)
+  try {
+    const { renderWebPage } = await import('./render/page')
+    return await renderWebPage(url)
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -86,9 +91,11 @@ export async function openWebAddress(url: URL, signal?: AbortSignal): Promise<vo
       signal?.throwIfAborted()
       const html = rendered ? new TextEncoder().encode(rendered.html) : remote.bytes
       const pageURL = rendered?.url ?? remote.url
-      await openFileInNewTab(new File([html], remote.name || remote.title), {
+      // A page its scripts sent elsewhere is named after where it ended up.
+      const title = rendered ? remoteFileTitle(new URL(rendered.url)) : remote.title
+      await openFileInNewTab(new File([html], remote.name || title), {
         path: pageURL,
-        webPage: { url: pageURL, title: remote.title },
+        webPage: { url: pageURL, title },
         signal
       })
       return
