@@ -16,7 +16,7 @@ import type {
   SliderGradientModel,
   SliderPreviewModel
 } from '#vue/controls/color-model/types'
-import { linearGradientCSS } from '#vue/primitives/ColorPicker/color-space'
+import { linearGradientCSS, type ColorSpaces } from '#vue/primitives/ColorPicker/color-space'
 
 export interface ColorModelValue {
   rekaColor: RekaColor
@@ -152,7 +152,7 @@ export function createOkHCLSliderPreviewModel(
 
 export function createSliderGradientModel(
   model: ColorModelValue,
-  space: RenderColorSpace = 'srgb'
+  spaces: ColorSpaces = { stored: 'srgb', shown: 'srgb' }
 ): SliderGradientModel {
   const hslGray = rekaToSceneColor({ ...model.hsl, s: 0 })
   const hslColor = rekaToSceneColor({ ...model.hsl, s: 100 })
@@ -165,25 +165,26 @@ export function createSliderGradientModel(
   const hsbBright = rekaToSceneColor({ ...model.hsb, b: 100 })
 
   return {
-    hslSaturation: gradient(space, hslGray, hslColor),
-    hslLightness: gradient(space, hslBlack, hslMid, hslWhite),
-    hsbSaturation: gradient(space, hsbGray, hsbColor),
-    hsbBrightness: gradient(space, hsbBlack, hsbBright)
+    hslSaturation: gradient(spaces, hslGray, hslColor),
+    hslLightness: gradient(spaces, hslBlack, hslMid, hslWhite),
+    hsbSaturation: gradient(spaces, hsbGray, hsbColor),
+    hsbBrightness: gradient(spaces, hsbBlack, hsbBright)
   }
 }
 
 export function createOkHCLSliderGradientModel(
   color: OkHCLColor,
-  space: RenderColorSpace = 'srgb'
+  spaces: ColorSpaces = { stored: 'srgb', shown: 'srgb' }
 ): OkHCLSliderGradientModel {
+  const space = spaces.stored
   return {
     okhclChroma: gradient(
-      space,
+      spaces,
       okhclToRGBA({ ...color, c: 0 }, space),
       okhclToRGBA({ ...color, c: OKHCL_CHROMA_MAX }, space)
     ),
     okhclLightness: gradient(
-      space,
+      spaces,
       okhclToRGBA({ ...color, l: 0 }, space),
       okhclToRGBA({ ...color, l: OKHCL_LIGHTNESS_MID }, space),
       okhclToRGBA({ ...color, l: 1 }, space)
@@ -227,9 +228,9 @@ export function fromPercent(value: number): number {
   return clampUnit(value / 100)
 }
 
-function gradient(space: RenderColorSpace, ...colors: Color[]): string {
+function gradient(spaces: ColorSpaces, ...colors: Color[]): string {
   const stops = colors.map((color) => ({ color }))
-  return `background: ${linearGradientCSS('to right', stops, space)};`
+  return `background: ${linearGradientCSS('to right', stops, spaces)};`
 }
 
 function clampUnit(value: number): number {

@@ -19,8 +19,8 @@ import { useFill } from '#vue/primitives/Fill/useFill'
 const P3_RED: Color = { r: 1, g: 0, b: 0, a: 1 }
 const solid = (color: Color): Fill => ({ type: 'SOLID', color, opacity: 1, visible: true })
 
-/** What a component under `provideColorSpace(space)`, or under none, shows `P3_RED` and its fill as. */
-function shown(space?: Ref<RenderColorSpace>) {
+/** What a component under `provideColorSpace(stored, shown)`, or under none, shows `P3_RED` as. */
+function shown(stored?: Ref<RenderColorSpace>, presented?: Ref<RenderColorSpace>) {
   let colorCSS: ((color: Color) => string) | undefined
   let swatch: Ref<string> | undefined
   const Child = defineComponent({
@@ -33,7 +33,7 @@ function shown(space?: Ref<RenderColorSpace>) {
   const app = createTestRenderer().createApp(
     defineComponent({
       setup() {
-        if (space) provideColorSpace(space)
+        if (stored) provideColorSpace(stored, presented ?? stored)
         return () => h(Child)
       }
     })
@@ -64,15 +64,25 @@ describe('color space of shown colors', () => {
     unmount()
   })
 
+  test('on a canvas that falls back to sRGB, swatches clip as the canvas does', () => {
+    const { color, swatch, unmount } = shown(ref('display-p3'), ref('srgb'))
+    // P3 red lies outside sRGB; the canvas clamps it to sRGB red, and so does the swatch.
+    expect(color()).toBe('rgb(255, 0, 0)')
+    expect(swatch()).toBe('rgb(255, 0, 0)')
+    unmount()
+  })
+
   test('slider tracks are left to Reka in sRGB and drawn in P3 components otherwise', () => {
     const red = { space: 'rgb', r: 255, g: 0, b: 0, alpha: 1 } as const
-    expect(sliderTrackBackground(red, 'hue', 'hsb', 'srgb')).toBeUndefined()
-    expect(sliderTrackBackground(red, 'hue', 'hsb', 'display-p3')).toBe(
+    const srgb = { stored: 'srgb', shown: 'srgb' } as const
+    const p3 = { stored: 'display-p3', shown: 'display-p3' } as const
+    expect(sliderTrackBackground(red, 'hue', 'hsb', srgb)).toBeUndefined()
+    expect(sliderTrackBackground(red, 'hue', 'hsb', p3)).toBe(
       'linear-gradient(to right in display-p3, color(display-p3 1 0 0), color(display-p3 1 1 0), ' +
         'color(display-p3 0 1 0), color(display-p3 0 1 1), color(display-p3 0 0 1), ' +
         'color(display-p3 1 0 1), color(display-p3 1 0 0))'
     )
-    expect(sliderTrackBackground(red, 'alpha', 'hsb', 'display-p3')).toStartWith(
+    expect(sliderTrackBackground(red, 'alpha', 'hsb', p3)).toStartWith(
       'linear-gradient(to right in display-p3, color(display-p3 1 0 0 / 0), color(display-p3 1 0 0)), '
     )
   })

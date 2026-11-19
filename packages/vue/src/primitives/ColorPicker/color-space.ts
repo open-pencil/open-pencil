@@ -6,36 +6,55 @@ import type { ComputedRef, InjectionKey, MaybeRefOrGetter } from 'vue'
 import { colorToDisplayCSS, type RenderColorSpace } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-const COLOR_SPACE_KEY: InjectionKey<() => RenderColorSpace> = Symbol('open-pencil-color-space')
+/** The profile colors are stored in, and the one the canvas beside them presents them in. */
+export interface ColorSpaces {
+  stored: RenderColorSpace
+  shown: RenderColorSpace
+}
+
+const SRGB: ColorSpaces = { stored: 'srgb', shown: 'srgb' }
+
+const COLOR_SPACES_KEY: InjectionKey<() => ColorSpaces> = Symbol('open-pencil-color-spaces')
 
 /**
- * Declares the profile the colors in this subtree are stored in, so swatches, picker tracks, and
- * gradient stops show them as the canvas draws them: a Display P3 document's components as P3
- * colors. Unprovided, colors are sRGB, as a preference's are.
+ * Declares the profile the colors in this subtree are stored in, and the one to show them in:
+ * what the canvas presents, so swatches, picker tracks, and gradient stops match it. A Display P3
+ * document on a canvas that can present P3 shows its colors as P3; on one that falls back to
+ * sRGB, they clip as the canvas clips them. `shown` defaults to `stored`. Unprovided, colors are
+ * sRGB, as a preference's are.
  */
-export function provideColorSpace(space: MaybeRefOrGetter<RenderColorSpace>): void {
-  provide(COLOR_SPACE_KEY, () => toValue(space))
+export function provideColorSpace(
+  stored: MaybeRefOrGetter<RenderColorSpace>,
+  shown: MaybeRefOrGetter<RenderColorSpace> = stored
+): void {
+  provide(COLOR_SPACES_KEY, () => ({ stored: toValue(stored), shown: toValue(shown) }))
 }
 
 /**
- * The profile {@link provideColorSpace} declared for this subtree, sRGB when none did or when
+ * The profiles {@link provideColorSpace} declared for this subtree, sRGB when none did or when
  * called outside a component.
  */
+export function useColorSpaces(): ComputedRef<ColorSpaces> {
+  const srgb = () => SRGB
+  const spaces = hasInjectionContext() ? inject(COLOR_SPACES_KEY, srgb) : srgb
+  return computed(() => spaces())
+}
+
+/** The profile colors in this subtree are stored in, which their values are read and made in. */
 export function useColorSpace(): ComputedRef<RenderColorSpace> {
-  const srgb = (): RenderColorSpace => 'srgb'
-  const space = hasInjectionContext() ? inject(COLOR_SPACE_KEY, srgb) : srgb
-  return computed(() => space())
+  const spaces = useColorSpaces()
+  return computed(() => spaces.value.stored)
 }
 
-/** `color`, whose components are in `space`, as CSS that shows that color. */
-export function colorCSS(color: Color, space: RenderColorSpace): string {
-  return colorToDisplayCSS(color, { documentColorSpace: space })
+/** `color`, whose components are in `spaces.stored`, as CSS showing it in `spaces.shown`. */
+export function colorCSS(color: Color, spaces: ColorSpaces): string {
+  return colorToDisplayCSS(color, { documentColorSpace: spaces.stored, colorSpace: spaces.shown })
 }
 
-/** {@link colorCSS} in the profile of this subtree. */
+/** {@link colorCSS} in the profiles of this subtree. */
 export function useColorCSS(): (color: Color) => string {
-  const space = useColorSpace()
-  return (color) => colorCSS(color, space.value)
+  const spaces = useColorSpaces()
+  return (color) => colorCSS(color, spaces.value)
 }
 
 function sceneColor(color: RekaColor): Color {
@@ -50,22 +69,28 @@ function sceneColor(color: RekaColor): Color {
 export function linearGradientCSS(
   direction: string,
   stops: ReadonlyArray<{ color: Color; position?: number }>,
-  space: RenderColorSpace
+  spaces: ColorSpaces
 ): string {
   const css = stops.map(({ color, position }) =>
-    position === undefined ? colorCSS(color, space) : `${colorCSS(color, space)} ${position * 100}%`
+    position === undefined
+      ? colorCSS(color, spaces)
+      : `${colorCSS(color, spaces)} ${position * 100}%`
   )
   // sRGB is what CSS blends legacy colors in already.
-  const interpolation = space === 'srgb' ? '' : ` in ${space}`
+  const interpolation = spaces.stored === 'srgb' ? '' : ` in ${spaces.stored}`
   return `linear-gradient(${direction}${interpolation}, ${css.join(', ')})`
 }
 
-function gradient(direction: string, colors: Color[], space: RenderColorSpace): string {
+function gradient(direction: string, colors: Color[], spaces: ColorSpaces): string {
   return linearGradientCSS(
     direction,
     colors.map((color) => ({ color })),
-    space
+    spaces
   )
+}
+
+function isSRGB(spaces: ColorSpaces): boolean {
+  return spaces.stored === 'srgb' && spaces.shown === 'srgb'
 }
 
 const HUES = [0, 60, 120, 180, 240, 300, 360]
@@ -103,33 +128,34 @@ const CHECKERBOARD = [
 ].join(', ')
 
 /**
- * The background of a color slider's track in a profile other than sRGB, whose colors Reka can
- * only write as sRGB; `undefined` in sRGB, where Reka's own track is right.
+ * The background of a color slider's track for colors stored or shown in a profile other than
+ * sRGB, which Reka cannot write; `undefined` in sRGB, where Reka's own track is right.
  */
 export function sliderTrackBackground(
   color: RekaColor,
   channel: ColorChannel,
   model: RekaColorSpace,
-  space: RenderColorSpace
+  spaces: ColorSpaces
 ): string | undefined {
-  if (space === 'srgb') return undefined
-  const track = gradient('to right', trackColors(color, channel, model).map(sceneColor), space)
+  if (isSRGB(spaces)) return undefined
+  const track = gradient('to right', trackColors(color, channel, model).map(sceneColor), spaces)
   return channel === 'alpha' ? `${track}, ${CHECKERBOARD}` : track
 }
 
 /**
- * The style of a saturation-by-brightness area of hue `h` in a profile other than sRGB: white to
- * the full hue across, darkened toward black downward. `undefined` in sRGB, where Reka's own style is right.
+ * The style of a saturation-by-brightness area of hue `h` for colors stored or shown in a profile
+ * other than sRGB: white to the full hue across, darkened toward black downward. `undefined` in
+ * sRGB, where Reka's own style is right.
  */
 export function saturationBrightnessArea(
   h: number,
-  space: RenderColorSpace
+  spaces: ColorSpaces
 ): Record<string, string> | undefined {
-  if (space === 'srgb') return undefined
+  if (isSRGB(spaces)) return undefined
   const hue = sceneColor({ space: 'hsb', h, s: 100, b: 100, alpha: 1 })
   const white = { r: 1, g: 1, b: 1, a: 1 }
   return {
     backgroundColor: 'transparent',
-    backgroundImage: `linear-gradient(to top, #000000, transparent), ${gradient('to right', [white, hue], space)}`
+    backgroundImage: `linear-gradient(to top, #000000, transparent), ${gradient('to right', [white, hue], spaces)}`
   }
 }

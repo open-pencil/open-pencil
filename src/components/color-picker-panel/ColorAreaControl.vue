@@ -2,13 +2,13 @@
 import { ColorAreaArea, ColorAreaRoot, ColorAreaThumb } from 'reka-ui'
 import { computed } from 'vue'
 
-import { saturationBrightnessArea, useColorSpace } from '@open-pencil/vue/primitives/ColorPicker'
+import { saturationBrightnessArea, useColorSpaces } from '@open-pencil/vue/primitives/ColorPicker'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import LeftToRight from '@/components/ui/direction/LeftToRight.vue'
 
 const ctx = useColorPickerPanelContext()
-const space = useColorSpace()
+const spaces = useColorSpaces()
 // A gray has no hue of its own, so the area keeps showing the last one, as Reka's does.
 let lastHue = 0
 const hue = computed(() => {
@@ -17,7 +17,7 @@ const hue = computed(() => {
   return lastHue
 })
 // Reka writes its area in sRGB; in another profile the area shows the colors the canvas draws.
-const areaStyle = computed(() => saturationBrightnessArea(hue.value, space.value))
+const areaStyle = computed(() => saturationBrightnessArea(hue.value, spaces.value))
 </script>
 
 <template>

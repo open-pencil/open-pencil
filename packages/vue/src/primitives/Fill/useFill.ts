@@ -2,11 +2,15 @@ import { computed } from 'vue'
 import type { Ref } from 'vue'
 
 import type { Fill, GradientStop } from '@open-pencil/scene-graph'
-import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 import { DEFAULT_GRADIENT_TRANSFORM, defaultGradientStops } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { colorCSS, linearGradientCSS, useColorSpace } from '#vue/primitives/ColorPicker/color-space'
+import {
+  colorCSS,
+  linearGradientCSS,
+  useColorSpaces,
+  type ColorSpaces
+} from '#vue/primitives/ColorPicker/color-space'
 
 import type { FillCategory } from './types'
 
@@ -23,11 +27,11 @@ function effectiveColor(color: Color, opacity: number): Color {
   return { ...color, a: color.a * opacity }
 }
 
-function gradientCSS(stops: GradientStop[], opacity: number, space: RenderColorSpace): string {
+function gradientCSS(stops: GradientStop[], opacity: number, spaces: ColorSpaces): string {
   return linearGradientCSS(
     'to right',
     stops.map((stop) => ({ color: effectiveColor(stop.color, opacity), position: stop.position })),
-    space
+    spaces
   )
 }
 
@@ -42,19 +46,22 @@ export function fillIsTransparent(fill: Fill): boolean {
   return fill.color.a < 1
 }
 
-/** A swatch's CSS background for `fill`, whose colors are stored in `space`. */
-export function fillSwatchBackground(fill: Fill, space: RenderColorSpace = 'srgb'): string {
+/** A swatch's CSS background for `fill`, whose colors are stored and shown in `spaces`. */
+export function fillSwatchBackground(
+  fill: Fill,
+  spaces: ColorSpaces = { stored: 'srgb', shown: 'srgb' }
+): string {
   if (fillCategory(fill) === 'GRADIENT' && fill.gradientStops?.length) {
-    return gradientCSS(fill.gradientStops, fill.opacity, space)
+    return gradientCSS(fill.gradientStops, fill.opacity, spaces)
   }
-  return colorCSS(effectiveColor(fill.color, fill.opacity), space)
+  return colorCSS(effectiveColor(fill.color, fill.opacity), spaces)
 }
 
 /** Fill category state and immutable conversion actions without picker or popover behavior. */
 export function useFill(fill: Ref<Fill>, onUpdate: (fill: Fill) => void) {
   const category = computed(() => fillCategory(fill.value))
-  const space = useColorSpace()
-  const swatchBackground = computed(() => fillSwatchBackground(fill.value, space.value))
+  const spaces = useColorSpaces()
+  const swatchBackground = computed(() => fillSwatchBackground(fill.value, spaces.value))
   const transparent = computed(() => fillIsTransparent(fill.value))
 
   function toSolid() {

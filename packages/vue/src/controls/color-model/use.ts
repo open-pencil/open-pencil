@@ -29,7 +29,7 @@ import type {
   RekaColorValue,
   UseColorModelOptions
 } from '#vue/controls/color-model/types'
-import { useColorSpace } from '#vue/primitives/ColorPicker/color-space'
+import { useColorSpaces, type ColorSpaces } from '#vue/primitives/ColorPicker/color-space'
 
 /** Built-in presentation formats understood by the color model. */
 export const BUILT_IN_COLOR_FORMATS = ['hex', 'rgb', 'hsl', 'hsb', 'okhcl'] as const
@@ -42,18 +42,22 @@ export function useColorModel(options: UseColorModelOptions) {
   const localFormat = ref<ColorFieldFormat>(options.defaultFormat ?? 'rgb')
   const color = computed(() => toValue(options.color))
   const sourceOkHCL = computed(() => toValue(options.okhcl))
-  const provided = useColorSpace()
-  const space = computed(() => toValue(options.colorSpace) ?? provided.value)
+  const provided = useColorSpaces()
+  const spaces = computed((): ColorSpaces => {
+    const stored = toValue(options.colorSpace)
+    return stored ? { stored, shown: stored } : provided.value
+  })
+  const space = computed(() => spaces.value.stored)
   const value = computed(() => createColorModelValue(color.value, sourceOkHCL.value, space.value))
   const format = computed(() => toValue(options.format) ?? localFormat.value)
   const hex = computed(() => colorToHexRaw(color.value))
   const sliderPreview = computed(() => createSliderPreviewModel(value.value))
-  const sliderGradient = computed(() => createSliderGradientModel(value.value, space.value))
+  const sliderGradient = computed(() => createSliderGradientModel(value.value, spaces.value))
   const okhclSliderPreview = computed(() =>
     createOkHCLSliderPreviewModel(value.value.okhcl, space.value)
   )
   const okhclSliderGradient = computed(() =>
-    createOkHCLSliderGradientModel(value.value.okhcl, space.value)
+    createOkHCLSliderGradientModel(value.value.okhcl, spaces.value)
   )
 
   function emitColor(nextColor: Color): Color {
