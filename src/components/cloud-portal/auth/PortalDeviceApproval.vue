@@ -39,7 +39,7 @@ const ui = portalForm({ size: 'lg' })
     :description="messages.deviceDescription({ email })"
   >
     <div :class="ui.shownCode()">
-      <span :class="ui.shownCodeLabel()">{{ messages.deviceCheckCode }}</span>
+      {{ messages.deviceCheckCode }}
       <span :class="ui.shownCodeValue()">{{ code }}</span>
     </div>
     <AppAlert v-if="error" tone="error" :heading="messages.errorTitle" :description="error" />

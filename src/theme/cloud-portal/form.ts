@@ -8,9 +8,9 @@ export default {
     submit: 'w-full justify-center',
     inlineLink: '',
     code: 'w-full text-center font-mono text-base tracking-[0.4em]',
-    /** A code the page shows for the person to compare with the one on their screen. */
-    shownCode: 'flex flex-col items-center gap-2 rounded-lg border border-border px-4 py-4',
-    shownCodeLabel: 'text-xs text-muted',
+    /** A code the page shows, under its label, to compare with the one on the person's screen. */
+    shownCode:
+      'flex flex-col items-center gap-2 rounded-lg border border-border p-4 text-xs text-muted',
     shownCodeValue: 'font-mono text-xl tracking-[0.3em] text-surface'
   },
   variants: {
