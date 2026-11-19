@@ -7,6 +7,7 @@ import { patternTileLayout, type PatternTileLayout } from '@open-pencil/scene-gr
 import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { setPaintBlendMode } from '#core/canvas/blend/modes'
+import { hasImageAdjustments, makeAdjustedImageShader } from '#core/canvas/images/adjustments'
 import { previewEdge } from '#core/canvas/images/previews'
 import {
   drawOffOutputGrid,
@@ -335,18 +336,22 @@ function setImageShader(
     imgH,
     preview && { width: preview.originalWidth, height: preview.originalHeight }
   )
-  const shader = makeImageShader(
+  const image = makeImageShader(
     r,
     img,
     scaleMode,
     localMatrix,
     landsOnOutputPixels(r, node, graph, localMatrix)
   )
+  const shader = hasImageAdjustments(fill.filters)
+    ? makeAdjustedImageShader(r, image, fill.filters)
+    : image
   try {
     paint.setShader(shader)
     markShaded(r, paint)
   } finally {
-    shader.delete()
+    if (shader !== image) shader.delete()
+    image.delete()
   }
   return true
 }
