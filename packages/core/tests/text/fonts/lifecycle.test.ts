@@ -4,7 +4,7 @@ import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import { FontManager, fontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { isTextPictureCurrent } from '#core/canvas/renderer/fonts'
+import { createTextFontState, isTextPictureCurrent } from '#core/canvas/renderer/fonts'
 import { nodeFontReadiness } from '#core/canvas/text'
 import { fontFaceDemand, fontResolver } from '#core/text/resolver'
 
@@ -116,9 +116,8 @@ describe('font lifecycle', () => {
     })
     const renderer = {
       fontGeneration: 1,
-      textFonts: {
-        pictureGenerations: new Map<string, { data: Uint8Array; generation: number }>()
-      }
+      documentColorSpace: 'srgb' as const,
+      textFonts: createTextFontState()
     }
 
     expect(isTextPictureCurrent(renderer, node)).toBe(true)

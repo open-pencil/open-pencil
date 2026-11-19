@@ -16,13 +16,33 @@ test('forgetting a layer drops the fonts it was waiting for and its text picture
   const page = expectDefined(graph.getPages()[0], 'page')
   const node = graph.createNode('TEXT', page.id, { text: 'hello' })
   renderer.trackFontDemand(node, 'Inter|400')
-  renderer.textFonts.pictureGenerations.set(node.id, { data: new Uint8Array(1), generation: 0 })
+  renderer.textFonts.pictureGenerations.set(node.id, {
+    data: new Uint8Array(1),
+    generation: 0,
+    space: 'srgb'
+  })
   expect(renderer.textFonts.pending.has(node.id)).toBe(true)
 
   renderer.forgetNode(node.id)
 
   expect(renderer.textFonts.pending.has(node.id)).toBe(false)
   expect(renderer.textFonts.pictureGenerations.has(node.id)).toBe(false)
+})
+
+test("a text's saved picture goes stale when the document color space changes", () => {
+  // The picture holds its colors as they were drawn, in the space the document had then.
+  const graph = new SceneGraph()
+  const page = expectDefined(graph.getPages()[0], 'page')
+  const node = graph.createNode('TEXT', page.id, { text: 'hello' })
+  node.textPicture = new Uint8Array(1)
+  expect(renderer.isTextPictureCurrent(node)).toBe(true)
+  renderer.useDocumentColorSpace('display-p3')
+  try {
+    expect(renderer.isTextPictureCurrent(node)).toBe(false)
+  } finally {
+    renderer.useDocumentColorSpace('srgb')
+  }
+  expect(renderer.isTextPictureCurrent(node)).toBe(true)
 })
 
 test("a text's font readiness is found once per layer until the layer or the fonts change", async () => {

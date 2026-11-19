@@ -131,6 +131,15 @@ export function styleRunColor(
   return ck.Color4f(color.r, color.g, color.b, color.a * visibleFill.opacity)
 }
 
+/**
+ * A text style's color. CanvasKit keeps `color` in 8-bit sRGB, which clips a wide-gamut color, and
+ * draws `foregroundColor` with float components, so both carry it; a pushed foreground paint, as
+ * a gradient fill draws with, still takes their place.
+ */
+function textColor(color: Float32Array) {
+  return { color, foregroundColor: color }
+}
+
 function styleRunLanguage(
   style: SceneNode['styleRuns'][number]['style'],
   node: Pick<ParagraphNode, 'textLanguage'>
@@ -167,8 +176,9 @@ function pushStyleRun(
   const runKey = faceStyleKey(runFace)
   const runLoaded = loadedFace(runFamily, runWeight, runItalic, runKey)
 
+  const runColor = styleRunColor(ck, style, baseColor, r.documentColorSpace ?? 'srgb')
   const textStyle = new ck.TextStyle({
-    color: styleRunColor(ck, style, baseColor, r.documentColorSpace ?? 'srgb'),
+    ...textColor(runColor),
     fontFamilies: fontFamilies(runFamily, runFace),
     fontSize: runFontSize,
     locale: styleRunLanguage(style, node),
@@ -302,7 +312,7 @@ export function buildSkParagraph(
   const nodeLoaded = loadedFace(nodeFamily, node.fontWeight, node.italic, nodeKey)
 
   const baseTextStyle = {
-    color: baseColor,
+    ...textColor(baseColor),
     fontFamilies: fontFamilies(nodeFamily, node),
     fontSize: baseFontSize,
     locale: node.textLanguage ?? undefined,
