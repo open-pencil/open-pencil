@@ -2,7 +2,12 @@ import { compact } from 'es-toolkit'
 import { joinURL } from 'ufo'
 import { computed } from 'vue'
 
-import { createCloudServicesClient, type CloudServicesClient } from '@open-pencil/cloud/client'
+import {
+  CloudAPIError,
+  createCloudServicesClient,
+  type CloudAPIClient,
+  type CloudServicesClient
+} from '@open-pencil/cloud/client'
 import { CLOUD_ACCOUNT_PLAN_PATH, type WorkspaceSummary } from '@open-pencil/cloud/contract'
 
 import { homeCloudServer } from '../servers/store'
@@ -53,6 +58,19 @@ export function cloudAIClient(workspaceId: string): CloudServicesClient | null {
 }
 
 /**
+ * Whether a workspace's plan includes AI. A workspace the server no longer finds, one the account
+ * left or that was deleted since the workspace list was read, has none.
+ */
+async function includesAI(api: CloudAPIClient, workspaceId: string): Promise<boolean> {
+  try {
+    return (await api.getWorkspaceEntitlements(workspaceId)).features.cloudServices
+  } catch (error) {
+    if (error instanceof CloudAPIError && error.status === 404) return false
+    throw error
+  }
+}
+
+/**
  * The Home server's workspaces whose plan includes AI, in the order the server lists them. Rejects
  * when any check fails, since the failed workspace may be the one a profile already uses.
  */
@@ -61,10 +79,9 @@ export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
   if (!home) return []
   const api = cloudAPIClient(home.server, home.discovery)
   const checks = await Promise.allSettled(
-    home.connection.workspaces.map(async (workspace) => {
-      const entitlements = await api.getWorkspaceEntitlements(workspace.id)
-      return entitlements.features.cloudServices ? { id: workspace.id, name: workspace.name } : null
-    })
+    home.connection.workspaces.map(async (workspace) =>
+      (await includesAI(api, workspace.id)) ? { id: workspace.id, name: workspace.name } : null
+    )
   )
   const failure = checks.find((check) => check.status === 'rejected')
   if (failure) throw failure.reason
@@ -84,9 +101,9 @@ export async function firstCloudAIWorkspace(): Promise<CloudAIWorkspace | null> 
   // working through this one.
   const replaced = () => homeAI.value?.connection !== home.connection
   for (const workspace of home.connection.workspaces) {
-    const entitlements = await api.getWorkspaceEntitlements(workspace.id)
+    const included = await includesAI(api, workspace.id)
     if (replaced()) return null
-    if (entitlements.features.cloudServices) return { id: workspace.id, name: workspace.name }
+    if (included) return { id: workspace.id, name: workspace.name }
   }
   return null
 }
