@@ -1,3 +1,4 @@
+export { mcpClientToken } from './client-token'
 export * from './metadata'
 export { createToolDescriptors } from './manifest'
 export { isToolEnabled, serializeDisabledTools } from './policy'

@@ -14,14 +14,16 @@ export function createSelectionNavigationActions(ctx: EditorContext, select: Sel
   }
 
   /**
-   * Selects the children of every selected layer that has any; a selection without any stays.
-   * A generated frame, such as a sticky note, has none to offer: its template owns its layers.
+   * Replaces each selected layer that has children with its children, as Figma's Enter does, and
+   * keeps the others selected; a selection where none has children stays. A generated frame, such
+   * as a sticky note, has none to offer: its template owns its layers.
    */
   function selectChildren() {
-    const children = selectedNodes().flatMap((node) =>
-      isGeneratedFrame(node) ? [] : node.childIds
-    )
-    if (children.length > 0) select(children)
+    const nodes = selectedNodes()
+    const opens = (node: (typeof nodes)[number]) =>
+      !isGeneratedFrame(node) && node.childIds.length > 0
+    if (!nodes.some(opens)) return
+    select(nodes.flatMap((node) => (opens(node) ? node.childIds : [node.id])))
   }
 
   /** Selects the parents of the selected layers; layers directly on the page stay selected. */

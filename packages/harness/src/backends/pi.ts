@@ -5,6 +5,8 @@ import type { HarnessAgentResumeSessionState, HarnessAgentSession } from '@ai-sd
 import { createJustBashSandbox } from '@ai-sdk/sandbox-just-bash'
 import type { TextStreamPart, ToolSet } from 'ai'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import type { HarnessSessionConfiguration, JSONValue } from '../protocol'
 import type { BackendEvent, BackendSession, HarnessBackend, HarnessResumeState } from './types'
 
@@ -32,7 +34,28 @@ function asJSONValue(value: unknown): JSONValue {
   }
 }
 
+/** The harness reports a compaction as a call and result of its own `compaction` tool. */
+function isCompaction(part: { toolName: string; toolCallId: string }): boolean {
+  return part.toolName === 'compaction' && part.toolCallId.startsWith('harness-compaction-')
+}
+
+function compactionEvent(output: unknown): BackendEvent | undefined {
+  if (typeof output !== 'object' || output === null) return undefined
+  if (!('summary' in output) || typeof output.summary !== 'string') return undefined
+  if (!('trigger' in output) || (output.trigger !== 'manual' && output.trigger !== 'auto'))
+    return undefined
+  const tokensBefore = 'tokensBefore' in output ? output.tokensBefore : undefined
+  return {
+    type: 'compaction',
+    trigger: output.trigger,
+    summary: output.summary,
+    tokensBefore: typeof tokensBefore === 'number' ? tokensBefore : null
+  }
+}
+
 function mapPart(part: TextStreamPart<ToolSet>): BackendEvent | undefined {
+  if ((part.type === 'tool-call' || part.type === 'tool-result') && isCompaction(part))
+    return part.type === 'tool-result' ? compactionEvent(part.output) : undefined
   if (part.type === 'text-delta') return { type: 'text-delta', text: part.text }
   if (part.type === 'reasoning-delta') return { type: 'reasoning-delta', text: part.text }
   if (part.type === 'tool-call') {
@@ -67,7 +90,7 @@ function mapPart(part: TextStreamPart<ToolSet>): BackendEvent | undefined {
   if (part.type === 'error') {
     return {
       type: 'error',
-      message: part.error instanceof Error ? part.error.message : String(part.error)
+      message: errorMessage(part.error)
     }
   }
   return undefined
@@ -91,6 +114,10 @@ class PiBackendSession implements BackendSession {
       const event = mapPart(part)
       if (event) yield event
     }
+  }
+
+  async compact(instructions?: string): Promise<void> {
+    await this.session.compact(instructions)
   }
 
   async stop(): Promise<HarnessResumeState> {
@@ -147,6 +174,7 @@ export class PiHarnessBackend implements HarnessBackend {
       sandbox: createJustBashSandbox({ cwd: '/workspace' }),
       sandboxConfig: { workDir: 'workspace' },
       instructions: configuration.instructions ?? this.defaults.instructions,
+      skills: configuration.skills ?? [],
       permissionMode: permissionMode ?? this.defaults.permissionMode ?? 'allow-edits'
     })
     const sessionOptions: {

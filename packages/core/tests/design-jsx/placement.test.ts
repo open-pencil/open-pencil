@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 
 import {
+  finishRenderPlacement,
   renderJSX,
   renderTree,
+  resolveRenderPlacement,
   stageJSXPreview,
   type RenderPlacementInput
 } from '@open-pencil/core/design-jsx'
@@ -10,9 +12,7 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { createStreamingJSXParser } from '@open-pencil/design-jsx'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-
-import { expectDefined, getNodeOrThrow } from '../helpers/assert'
-
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 function setupToolTest() {
   const graph = new SceneGraph()
   return { graph, figma: new FigmaAPI(graph) }
@@ -123,9 +123,123 @@ describe('shared render/preview placement', () => {
     await compareToFinal(setup, '<Rect name="New" w="fill" h="fill"/>', {
       replace_id: setup.leftId
     })
-    expect(setup.graph.getNode(setup.leftId)).toBeUndefined()
+    // The replaced layer is updated in place, so it keeps its id.
+    expect(getNodeOrThrow(setup.graph, setup.leftId).name).toBe('New')
     const row = getNodeOrThrow(setup.graph, setup.rowId)
     expect(row.childIds.map((id) => setup.graph.getNode(id)?.name)).toEqual(['New', 'Right'])
+  })
+
+  it('replaces a layer where it is once rendered, after edits made while it rendered', async () => {
+    const setup = await fixture()
+    const { graph, figma, rowId, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(graph, '<Rect name="New" w={20} h={20}/>', placement)
+    // Another edit lands while the render waits for fonts.
+    graph.createNode('RECTANGLE', rowId, { name: 'Early', width: 10, height: 10 })
+    graph.insertChildAt(graph.getChildren(rowId).at(-1)?.id ?? '', rowId, 0)
+
+    finishRenderPlacement(graph, results, placement)
+
+    const row = getNodeOrThrow(graph, rowId)
+    expect(row.childIds.map((id) => graph.getNode(id)?.name)).toEqual(['Early', 'New', 'Right'])
+  })
+
+  it('undoes a render whose layer to replace was deleted while it rendered', async () => {
+    const setup = await fixture()
+    const { graph, figma, rowId, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(graph, '<Rect name="New" w={20} h={20}/>', placement)
+    graph.deleteNode(leftId)
+
+    expect(() => finishRenderPlacement(graph, results, placement)).toThrow('was deleted')
+    const row = getNodeOrThrow(graph, rowId)
+    expect(row.childIds.map((id) => graph.getNode(id)?.name)).toEqual(['Right'])
+  })
+
+  it('keeps several replacement roots together when edits put them before the target', async () => {
+    const setup = await fixture()
+    const { graph, figma, rowId, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(
+      graph,
+      '<><Rect name="N1" w={10} h={10}/><Rect name="N2" w={10} h={10}/></>',
+      placement
+    )
+    for (const [index, result] of results.entries()) graph.insertChildAt(result.id, rowId, index)
+
+    finishRenderPlacement(graph, results, placement)
+
+    const row = getNodeOrThrow(graph, rowId)
+    expect(row.childIds.map((id) => graph.getNode(id)?.name)).toEqual(['N1', 'N2', 'Right'])
+  })
+
+  it('keeps the layer to replace when it moved to another parent while the JSX rendered', async () => {
+    const setup = await fixture()
+    const { graph, figma, boardId, rowId, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(graph, '<Rect name="New" w={20} h={20}/>', placement)
+    graph.insertChildAt(leftId, boardId, 0)
+
+    expect(() => finishRenderPlacement(graph, results, placement)).toThrow('moved')
+    expect(getNodeOrThrow(graph, leftId).parentId).toBe(boardId)
+    expect(getNodeOrThrow(graph, rowId).childIds.map((id) => graph.getNode(id)?.name)).toEqual([
+      'Right'
+    ])
+  })
+
+  it('keeps the layer to replace when an edit moved it into its replacement', async () => {
+    const setup = await fixture()
+    const { graph, figma, rowId, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(graph, '<Frame name="New" w={40} h={40}/>', placement)
+    graph.insertChildAt(leftId, results[0].id, 0)
+
+    expect(() => finishRenderPlacement(graph, results, placement)).toThrow('moved')
+    expect(getNodeOrThrow(graph, leftId).parentId).toBe(rowId)
+    expect(graph.getNode(results[0].id)).toBeUndefined()
+  })
+
+  it('keeps the layer to replace when an edit moved it into its replacement and deleted its parent', async () => {
+    const setup = await fixture()
+    const { graph, figma, rowId, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(graph, '<Frame name="New" w={40} h={40}/>', placement)
+    graph.insertChildAt(leftId, results[0].id, 0)
+    graph.insertChildAt(results[0].id, figma.currentPageId, 0)
+    graph.deleteNode(rowId)
+
+    expect(() => finishRenderPlacement(graph, results, placement)).toThrow('moved')
+    expect(getNodeOrThrow(graph, leftId).parentId).toBe(figma.currentPageId)
+    expect(getNodeOrThrow(graph, figma.currentPageId).childIds[0]).toBe(leftId)
+    expect(graph.getNode(results[0].id)).toBeUndefined()
+  })
+
+  it('keeps the parent of the layer to replace, and its layers, when an edit moved it into the replacement', async () => {
+    const setup = await fixture()
+    const { graph, figma, boardId, rowId, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(graph, '<Frame name="New" w={40} h={40}/>', placement)
+    graph.insertChildAt(results[0].id, boardId, 0)
+    graph.insertChildAt(rowId, results[0].id, 0)
+
+    expect(() => finishRenderPlacement(graph, results, placement)).toThrow('moved')
+    expect(getNodeOrThrow(graph, boardId).childIds).toEqual([rowId])
+    expect(getNodeOrThrow(graph, rowId).childIds.map((id) => graph.getNode(id)?.name)).toEqual([
+      'Left',
+      'Right'
+    ])
+    expect(graph.getNode(results[0].id)).toBeUndefined()
+  })
+
+  it('keeps the layer to replace when its replacement was deleted while it rendered', async () => {
+    const setup = await fixture()
+    const { graph, figma, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(graph, '<Rect name="New" w={20} h={20}/>', placement)
+    for (const result of results) graph.deleteNode(result.id)
+
+    expect(() => finishRenderPlacement(graph, results, placement)).toThrow('lost its replacement')
+    expect(graph.getNode(leftId)).toBeDefined()
   })
 
   it('recomputes Hug ancestors rather than positioning a detached child', async () => {
@@ -168,6 +282,18 @@ describe('shared render/preview placement', () => {
     expect(staged.insertIndex).toBe(0)
     const page = getNodeOrThrow(setup.graph, setup.figma.currentPageId)
     expect(page.childIds.map((id) => setup.graph.getNode(id)?.name)).toEqual(['A', 'B', 'Board'])
+  })
+
+  it('stages an instance written before its component', async () => {
+    const setup = await fixture()
+    const staged = await compareToFinal(
+      setup,
+      '<><Instance name="Copy" of="Tile"/><Component name="Tile" w={40} h={40}/></>',
+      { insert_index: 0 }
+    )
+    const [copy, tile] = staged.renderedIds.map((id) => getNodeOrThrow(staged.graph, id))
+    expect(copy?.type).toBe('INSTANCE')
+    expect(copy?.componentId).toBe(tile?.id)
   })
 
   it('rejects nonexistent targets before mutating the document', async () => {

@@ -33,6 +33,10 @@
   "save": "Сохранить",
   "done": "Готово",
   "task": "Задача",
+  "copyCode": "Копировать код",
+  "copyTable": "Копировать таблицу",
+  "openLinkHeading": "Открыть эту ссылку?",
+  "openLink": "Открыть ссылку",
   "back": "Назад",
   "supported": "Поддерживается",
   "unsupported": "Не поддерживается",
@@ -41,5 +45,6 @@
   "dismiss": "Закрыть",
   "browserSupport": "Проверить поддержку в браузерах",
   "showPassword": "Показать пароль",
-  "hidePassword": "Скрыть пароль"
+  "hidePassword": "Скрыть пароль",
+  "typeToConfirm": "Для подтверждения введите «{text}»."
 }

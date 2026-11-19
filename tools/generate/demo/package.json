@@ -13,11 +13,13 @@
     "test": "bun test tests"
   },
   "dependencies": {
-    "@iconify-json/lucide": "^1.2.139",
+    "@iconify-json/lucide": "^1.2.156",
+    "@iconify/utils": "^3.1.4",
     "@open-pencil/core": "workspace:*",
     "@open-pencil/design-jsx": "workspace:*",
     "@open-pencil/package-artifacts-tools": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
+    "@open-pencil/std": "workspace:*",
     "@playwright/test": "^1.63.0",
     "js-base64": "^3.9.3",
     "proper-lockfile": "4.1.2",
@@ -27,6 +29,6 @@
     "@types/bun": "^1.3.14",
     "@types/node": "^25.9.9",
     "@types/proper-lockfile": "4.1.4",
-    "typescript": "~5.8.3"
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
   }
 }

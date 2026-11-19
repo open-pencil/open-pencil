@@ -1,0 +1,1 @@
+- Colour and fill pickers are laid out as Figma's: a square colour area, the eyedropper beside hue and alpha, and the format with all its values in one row. A gradient stop's colour opens in a picker of its own beside the fill picker, the Image tab shows its framing above a square preview, and the Shader tab shows the shader.

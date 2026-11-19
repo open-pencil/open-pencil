@@ -2,6 +2,8 @@ import { sumBy } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
+import { appendAll } from '@open-pencil/std/arrays'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { isTauri } from '@/app/tauri/env'
 
@@ -12,8 +14,7 @@ import {
   STORAGE_NAMESPACE_MARKER,
   documentFigKey,
   documentIdFromFigKey,
-  documentMetaKey,
-  documentThumbnailKey
+  documentMetaKey
 } from '../namespace'
 import type {
   StorageAdapter,
@@ -98,7 +99,7 @@ function parseMetadata(
 
 function connectionErrorMessage(error: unknown, isCORS: boolean): string {
   if (isCORS) return formatBrowserCORSHelpMessage()
-  return error instanceof Error ? error.message : String(error)
+  return errorMessage(error)
 }
 
 async function ensureNamespace(config: S3CompatibleConfig): Promise<void> {
@@ -159,8 +160,9 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
       // Bound sidecar reads so large buckets do not open hundreds of requests at once.
       for (let offset = 0; offset < entries.length; offset += 12) {
         const batch = entries.slice(offset, offset + 12)
-        documents.push(
-          ...(await Promise.all(
+        appendAll(
+          documents,
+          await Promise.all(
             batch.map(async ({ id, lastModified }) => {
               const fallback = {
                 name: id,
@@ -179,7 +181,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
                 metadataAuthoritative: authoritative
               } satisfies StorageDocument
             })
-          ))
+          )
         )
       }
       return documents.sort((first, second) => second.updatedAt.localeCompare(first.updatedAt))
@@ -248,8 +250,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
       const config = await resolveConfig(runtime)
       const results = await Promise.allSettled([
         deleteObject(config, documentFigKey(id)),
-        deleteObject(config, documentMetaKey(id)),
-        deleteObject(config, documentThumbnailKey(id))
+        deleteObject(config, documentMetaKey(id))
       ])
       const failure = results.find(
         (result): result is PromiseRejectedResult => result.status === 'rejected'
@@ -265,11 +266,6 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
         objectCount: objects.length,
         documentCount: objects.filter((object) => documentIdFromFigKey(object.key)).length
       }
-    },
-
-    async putThumbnail(id, bytes) {
-      const config = await resolveConfig(runtime)
-      await putObject(config, documentThumbnailKey(id), bytes, 'image/jpeg')
     },
 
     async getThumbnail(id) {

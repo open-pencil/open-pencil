@@ -3,4 +3,5 @@ Copyright 2026 Danila Poyarkov and OpenPencil contributors
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE),
 except src/contract and src/client, the protocol the editor and other clients
-speak, which are under the MIT License (see ../../LICENSE).
+speak, which are under the MIT License (see LICENSE-MIT in the published package, or
+LICENSE at the repository root).

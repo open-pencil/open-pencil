@@ -1,3 +1,7 @@
+import { memoize } from 'es-toolkit/function'
+import TS_CHARACTERS from 'opencc-js/dict/TSCharacters'
+
+import { ResourceCache } from '#core/cache/resource'
 import {
   CJK_FALLBACK_FAMILIES_LINUX,
   CJK_FALLBACK_FAMILIES_MACOS,
@@ -7,21 +11,100 @@ import {
 
 export type FontFallbackScript = 'cjk' | 'cjk-sc' | 'cjk-tc' | 'cjk-jp' | 'cjk-kr' | 'arabic'
 
+/** Characters of the writing systems that need a fallback font, by their Unicode script. */
+export const ARABIC_CHARACTER = /\p{Script=Arabic}/u
+export const HANGUL_CHARACTER = /\p{Script=Hangul}/u
+export const KANA_CHARACTER = /[\p{Script=Hiragana}\p{Script=Katakana}]/u
+export const HAN_CHARACTER = /\p{Script=Han}/u
+export const CJK_CHARACTER =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
+/**
+ * What CJK text draws from its fallback: every character Unicode lists as used with a CJK script
+ * (its letters, punctuation, strokes, and Bopomofo), and the East Asian presentation forms, which
+ * it lists with none: vertical, compatibility, halfwidth and fullwidth forms.
+ */
+export const CJK_FALLBACK_CHARACTER =
+  /[\p{scx=Han}\p{scx=Hiragana}\p{scx=Katakana}\p{scx=Hangul}\p{scx=Bopomofo}\u3000\ufe10-\ufe1f\ufe30-\ufe4f\uff00-\uffef]/u
+
+/**
+ * Whether `script`'s fallback is loaded to draw `character`: the text's characters of its
+ * writing system, and the Han, punctuation, and forms the CJK languages share, but not another
+ * language's letters, which that language's fallback loads for.
+ */
+export function fallbackDrawsCharacter(script: FontFallbackScript, character: string): boolean {
+  if (script === 'arabic') return ARABIC_CHARACTER.test(character)
+  if (!CJK_FALLBACK_CHARACTER.test(character)) return false
+  if (script === 'cjk') return true
+  if (HANGUL_CHARACTER.test(character)) return script === 'cjk-kr'
+  if (KANA_CHARACTER.test(character)) return script === 'cjk-jp'
+  return true
+}
+
+/**
+ * Han characters written only in Traditional Chinese: those OpenCC's Traditional-to-Simplified
+ * character table changes. A guide to which fallback to load first, not language identification.
+ */
+const TRADITIONAL_ONLY_HAN = new Set(
+  TS_CHARACTERS.split('|').flatMap((entry) => {
+    const [traditional, ...simplified] = entry.split(' ')
+    return simplified.includes(traditional) ? [] : [traditional]
+  })
+)
+
+export function isTraditionalOnlyHan(character: string): boolean {
+  return TRADITIONAL_ONLY_HAN.has(character)
+}
+
+/** The fallback a character needs, if any; a language picks among the Chinese and Japanese ones. */
+export function fontFallbackScriptForCharacter(
+  char: string,
+  language?: string | null
+): FontFallbackScript | null {
+  if (ARABIC_CHARACTER.test(char)) return 'arabic'
+  if (HANGUL_CHARACTER.test(char)) return 'cjk-kr'
+  if (KANA_CHARACTER.test(char)) return 'cjk-jp'
+  const languageScript = cjkFallbackScriptForLanguage(language)
+  if (languageScript && HAN_CHARACTER.test(char)) return languageScript
+  if (isTraditionalOnlyHan(char)) return 'cjk-tc'
+  if (HAN_CHARACTER.test(char)) return 'cjk-sc'
+  return null
+}
+
+/**
+ * The CJK fallback a BCP 47 language tag's script asks for, as Unicode's likely subtags fill it in.
+ * Text asks once per character, so each tag is read once.
+ */
 export function cjkFallbackScriptForLanguage(
   language: string | null | undefined
 ): Extract<FontFallbackScript, 'cjk-sc' | 'cjk-tc' | 'cjk-jp' | 'cjk-kr'> | null {
-  if (!language) return null
-  const normalized = language.toLowerCase().replaceAll('_', '-')
-  const [primary] = normalized.split('-')
-  if (primary === 'ja') return 'cjk-jp'
-  if (primary === 'ko') return 'cjk-kr'
-  if (primary !== 'zh') return null
-  const subtags = new Set(normalized.split('-').slice(1))
-  if (subtags.has('hant') || subtags.has('tw') || subtags.has('hk') || subtags.has('mo')) {
-    return 'cjk-tc'
-  }
-  return 'cjk-sc'
+  return language ? languageFallback(language) : null
 }
+
+/** How many language tags keep their answer; a document names a handful. */
+const CACHED_LANGUAGE_TAGS = 64
+
+const languageFallback = memoize(
+  (
+    language: string
+  ): Extract<FontFallbackScript, 'cjk-sc' | 'cjk-tc' | 'cjk-jp' | 'cjk-kr'> | null => {
+    let locale: Intl.Locale
+    try {
+      locale = new Intl.Locale(language.replaceAll('_', '-'))
+    } catch {
+      return null
+    }
+    // `Hani` names Han without telling Simplified from Traditional, so the region does.
+    if (locale.script === 'Hani')
+      locale = new Intl.Locale(locale.language, { region: locale.region })
+    const { script } = locale.maximize()
+    return script ? (LANGUAGE_SCRIPT_FALLBACKS[script] ?? null) : null
+  },
+  { cache: new ResourceCache({ maxEntries: CACHED_LANGUAGE_TAGS }) }
+)
+
+const LANGUAGE_SCRIPT_FALLBACKS: Partial<
+  Record<string, Extract<FontFallbackScript, 'cjk-sc' | 'cjk-tc' | 'cjk-jp' | 'cjk-kr'>>
+> = { Hans: 'cjk-sc', Hant: 'cjk-tc', Jpan: 'cjk-jp', Kore: 'cjk-kr' }
 
 export interface FontFallbackManifestEntry {
   script: FontFallbackScript

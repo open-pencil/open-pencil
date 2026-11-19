@@ -110,7 +110,7 @@ export const StateMatrix: Story = {
     },
     template: `
       <TooltipProvider>
-        <div class="w-[320px] overflow-hidden rounded-lg border border-border bg-panel shadow-xl">
+        <div class="w-80 overflow-hidden rounded-lg border border-border bg-panel shadow-xl">
           <PanelHeader>
             <template #icon><SquareIcon class="size-3.5" /></template>
             <span role="heading" aria-level="2">Rectangle</span>

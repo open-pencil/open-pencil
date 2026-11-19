@@ -36,9 +36,4 @@ export interface Rect {
   height: number
 }
 
-export type JSONPrimitive = string | number | boolean | null
-export type JSONValue = JSONPrimitive | JSONObject | JSONArray
-export type JSONObject = { [key: string]: unknown }
-export type JSONArray = unknown[]
-
 export * from './schema'

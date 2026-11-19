@@ -1,14 +1,14 @@
-import type { CanvasKit } from 'canvaskit-wasm'
-
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { textVerticalOffset } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { TextLayout } from '#core/canvas/text/layout'
+import { fontVerticalMetricsSync } from '#core/text/font/glyphs'
 import { nextGraphemeBoundary, previousGraphemeBoundary } from '#core/text/graphemes'
-import { fontVerticalMetricsSync } from '#core/text/opentype'
 import {
   pathTextCaret,
   pathTextIndexAt,
@@ -16,6 +16,16 @@ import {
   type PathTextCaret,
   type PathTextLineMetrics
 } from '#core/text/path/caret'
+
+/**
+ * The line a caret at `pos` is on. The layout finds no line past the text, but the caret after
+ * the last character stands on the last line: after a closing line break, the empty line it opens.
+ */
+function caretLine(paragraph: TextLayout, pos: number, textLength: number): number {
+  const line = paragraph.getLineNumberAt(pos)
+  if (line >= 0 || pos !== textLength) return line
+  return paragraph.getLineMetrics().length - 1
+}
 
 export interface TextCaret {
   x: number
@@ -50,10 +60,7 @@ export class TextEditor {
     const s = this.current()
     const node = this.paragraphNode
     if (!s?.paragraph || !node) return 0
-    const available = Math.max(0, node.height - s.paragraph.getHeight())
-    if (node.textAlignVertical === 'CENTER') return available / 2
-    if (node.textAlignVertical === 'BOTTOM') return available
-    return 0
+    return textVerticalOffset(node, s.paragraph.getHeight())
   }
 
   private paragraphY(y: number): number {
@@ -67,10 +74,7 @@ export class TextEditor {
   private pathText(): { glyphs: DerivedTextGlyph[]; metrics: PathTextLineMetrics } | null {
     const node = this.paragraphNode
     if (!node?.textPathData || !node.derivedTextGlyphs?.length) return null
-    const metrics = fontVerticalMetricsSync(
-      node.fontFamily,
-      weightToStyle(node.fontWeight, node.italic)
-    )
+    const metrics = fontVerticalMetricsSync(node.fontFamily, faceStyleKey(node))
     return metrics ? { glyphs: node.derivedTextGlyphs, metrics } : null
   }
 
@@ -101,7 +105,7 @@ export class TextEditor {
   private currentLineMetrics() {
     const s = this.current()
     if (!s?.paragraph) return null
-    const lineNum = s.paragraph.getLineNumberAt(s.cursor)
+    const lineNum = caretLine(s.paragraph, s.cursor, s.text.length)
     return lineNum < 0 ? null : s.paragraph.getLineMetricsAt(lineNum)
   }
 
@@ -258,7 +262,7 @@ export class TextEditor {
   selectLine(pos: number): void {
     const s = this.current()
     if (!s?.paragraph) return
-    const lineNum = s.paragraph.getLineNumberAt(pos)
+    const lineNum = caretLine(s.paragraph, pos, s.text.length)
     if (lineNum < 0) return
     const metrics = s.paragraph.getLineMetricsAt(lineNum)
     if (!metrics) return
@@ -419,10 +423,7 @@ export class TextEditor {
     const probe = this.renderer.buildParagraph({ ...node, text: ' ' })
     const height = probe.getLineMetrics()[0]?.height ?? probe.getHeight()
     probe.delete()
-    const available = Math.max(0, node.height - height)
-    let offsetY = 0
-    if (node.textAlignVertical === 'CENTER') offsetY = available / 2
-    if (node.textAlignVertical === 'BOTTOM') offsetY = available
+    const offsetY = textVerticalOffset(node, height)
     let x = 0
     if (node.textAlignHorizontal === 'CENTER') x = node.width / 2
     if (node.textAlignHorizontal === 'RIGHT') x = node.width

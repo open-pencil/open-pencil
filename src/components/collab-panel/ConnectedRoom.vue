@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { selectTarget } from '@open-pencil/vue/shared/dom-events'
@@ -7,8 +8,11 @@ import { useCollabPanelContext } from '@/components/collab-panel/context'
 import { roomStatusText } from '@/components/collab-room/statusText'
 import { useRoomActions } from '@/components/collab-room/useRoomActions'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
-import { roomStatus } from '@/theme/collaboration/room-status'
+import roomStatusTheme from '@/theme/collaboration/room-status'
+
+const roomStatus = tv(roomStatusTheme)
 
 const collab = useCollabPanelContext()
 const room = useRoomActions()
@@ -35,18 +39,14 @@ const statusText = computed(() =>
       class="min-w-0 flex-1"
       @focus="selectTarget($event)"
     />
-    <AppButton
+    <AppCopyButton
+      :value="collab.shareURL"
+      :label="collab.messages.copyLink"
+      :copied-label="collab.messages.linkCopied"
       color="primary"
       variant="solid"
       data-test-id="collab-copy-link"
-      @click="collab.copyLink"
-    >
-      <template #leading>
-        <icon-lucide-check v-if="collab.copied" class="size-3" />
-        <icon-lucide-copy v-else class="size-3" />
-      </template>
-      {{ collab.copied ? collab.messages.linkCopied : collab.messages.copyLink }}
-    </AppButton>
+    />
   </div>
 
   <label for="collab-room-name-input" class="mb-1 block text-xs text-muted">
@@ -64,7 +64,7 @@ const statusText = computed(() =>
   <div class="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
     <p
       v-if="room.desktopLink.value"
-      class="flex shrink-0 items-center gap-1.5 text-[11px] whitespace-nowrap text-muted"
+      class="flex shrink-0 items-center gap-1.5 text-2xs whitespace-nowrap text-muted"
     >
       <a
         :href="room.desktopLink.value"

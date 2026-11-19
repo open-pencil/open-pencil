@@ -2,8 +2,8 @@ import * as v from 'valibot'
 
 import type { HarnessSidecarMessage, JSONValue } from '@open-pencil/harness'
 
+import { spawnAgentProcess, type AgentChild } from '@/app/ai/agents/process'
 import { tokenUsageSchema } from '@/app/diagnostics/events/schema'
-import { resolvePlatformCommand } from '@/app/tauri/command'
 
 /** Any value `JSON.parse` produced is a JSONValue; only presence needs checking. */
 const jsonValueSchema = v.custom<JSONValue>((value) => value !== undefined)
@@ -29,6 +29,12 @@ const harnessTurnEventSchema = v.variant('type', [
     // Companions before usage reporting send none.
     usage: v.optional(tokenUsageSchema)
   }),
+  v.object({
+    type: v.literal('compaction'),
+    trigger: v.picklist(['manual', 'auto']),
+    summary: v.string(),
+    tokensBefore: v.nullable(v.number())
+  }),
   v.object({ type: v.literal('error'), message: v.string() })
 ])
 
@@ -46,68 +52,56 @@ const harnessSidecarMessageSchema = v.pipe(
   ])
 ) satisfies v.GenericSchema<string, HarnessSidecarMessage>
 
-export type HarnessChild = {
-  write(data: number[]): Promise<void>
-  kill(): Promise<void>
-}
-
 export type HarnessProcess = {
-  child: HarnessChild
+  child: AgentChild
   messages: ReadableStream<HarnessSidecarMessage>
   send(request: object): Promise<void>
+}
+
+/**
+ * The companion's messages, one JSON object to a line. A line that is not one is reported and
+ * skipped, so one bad write does not end the session.
+ */
+function sidecarMessages(): TransformStream<Uint8Array, HarnessSidecarMessage> {
+  const decoder = new TextDecoder()
+  let buffer = ''
+  const parse = (
+    line: string,
+    controller: TransformStreamDefaultController<HarnessSidecarMessage>
+  ) => {
+    if (!line.trim()) return
+    const message = v.safeParse(harnessSidecarMessageSchema, line)
+    if (message.success) controller.enqueue(message.output)
+    else console.warn('[Harness] Ignoring malformed sidecar output:', v.summarize(message.issues))
+  }
+  return new TransformStream({
+    transform(chunk, controller) {
+      buffer += decoder.decode(chunk, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+      for (const line of lines) parse(line, controller)
+    },
+    flush(controller) {
+      parse(buffer + decoder.decode(), controller)
+    }
+  })
 }
 
 export async function spawnHarnessProcess(options: {
   environment: Record<string, string>
   onUnexpectedClose: () => void
 }): Promise<HarnessProcess> {
-  const { Command } = await import('@tauri-apps/plugin-shell')
-  const resolved = resolvePlatformCommand('openpencil-harness')
-  const command = Command.create(resolved.command, resolved.args, {
-    encoding: 'raw',
-    env: options.environment
-  })
-  let buffer = ''
-  let controller: ReadableStreamDefaultController<HarnessSidecarMessage> | undefined
-  const decoder = new TextDecoder()
-
-  const messages = new ReadableStream<HarnessSidecarMessage>({
-    start(streamController) {
-      controller = streamController
-    }
-  })
-
-  function flush(chunk: Uint8Array): void {
-    buffer += decoder.decode(chunk, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop() ?? ''
-    for (const line of lines) {
-      if (!line.trim()) continue
-      const message = v.safeParse(harnessSidecarMessageSchema, line)
-      if (message.success) controller?.enqueue(message.output)
-      else console.warn('[Harness] Ignoring malformed sidecar output:', v.summarize(message.issues))
-    }
-  }
-
-  command.stdout.on('data', (raw: Uint8Array | number[]) => {
-    flush(raw instanceof Uint8Array ? raw : new Uint8Array(raw))
-  })
-  command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
-    const text = typeof raw === 'string' ? raw : decoder.decode(new Uint8Array(raw))
+  const companion = await spawnAgentProcess({
+    command: 'openpencil-harness',
+    env: options.environment,
     // Diagnostics only: the companion reports failures as protocol errors.
-    console.warn('[Harness]', text)
+    onStderr: (text) => console.warn('[Harness]', text),
+    onClose: options.onUnexpectedClose
   })
-  command.on('close', () => {
-    controller?.close()
-    options.onUnexpectedClose()
-  })
-
-  const child = await command.spawn()
+  const encoder = new TextEncoder()
   return {
-    child,
-    messages,
-    async send(request) {
-      await child.write(Array.from(new TextEncoder().encode(`${JSON.stringify(request)}\n`)))
-    }
+    child: companion.child,
+    messages: companion.stdout.pipeThrough(sidecarMessages()),
+    send: (request) => companion.write(encoder.encode(`${JSON.stringify(request)}\n`))
   }
 }

@@ -1,5 +1,8 @@
 import { isPlainObject } from 'es-toolkit/predicate'
+import { basename, dirname, join, normalize } from 'pathe'
 import * as v from 'valibot'
+
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { pathName } from './paths'
 import { OPENPENCIL_EXTENSION } from './types'
@@ -131,24 +134,29 @@ export function documentTokens(parsed: Record<string, unknown>): ReadToken[] {
 
 /** `a/b/c.tokens.json` is `c`; `.tokens`, `.tokens.json`, and `.json` all go. */
 function baseName(path: string): string {
-  const file = path.split('/').at(-1) ?? path
-  return file.replace(/\.tokens(\.json)?$|\.json$/i, '')
+  return basename(path).replace(/\.tokens(\.json)?$|\.json$/i, '')
 }
 
+/** The folder a picked file sits in, or `''` for a file picked on its own. */
 function folderOf(path: string): string {
-  return path.split('/').slice(0, -1).join('/')
+  const folder = dirname(path)
+  return folder === '.' ? '' : folder
 }
 
-/** A `$ref` as a path among the picked files, relative to the file it appears in. */
+/**
+ * `path` as the picked files spell theirs: forward slashes, and nothing above their top, since
+ * nothing was picked from outside them.
+ */
+function pickedPath(path: string): string {
+  return normalize(path).replace(/^(?:\.\.\/|\/)+/, '')
+}
+
+/**
+ * A `$ref` as a path among the picked files: from the top of the picked folders when it starts
+ * with `/`, otherwise relative to the file it appears in.
+ */
 function resolveRef(from: string, ref: string): string {
-  const segments = [...folderOf(from).split('/'), ...ref.split('/')]
-  const resolved: string[] = []
-  for (const segment of segments) {
-    if (segment === '' || segment === '.') continue
-    if (segment === '..') resolved.pop()
-    else resolved.push(segment)
-  }
-  return resolved.join('/')
+  return pickedPath(ref.startsWith('/') ? ref : join(folderOf(from), ref))
 }
 
 /**
@@ -158,8 +166,8 @@ function resolveRef(from: string, ref: string): string {
 function findRef(reader: Reader, from: string, ref: string): string {
   const path = resolveRef(from, ref)
   if (reader.documents.has(path)) return path
-  const name = path.split('/').at(-1)
-  const matches = [...reader.documents.keys()].filter((key) => key.split('/').at(-1) === name)
+  const name = basename(path)
+  const matches = [...reader.documents.keys()].filter((key) => basename(key) === name)
   return matches.length === 1 ? matches[0] : path
 }
 
@@ -291,7 +299,7 @@ function readModeFiles(paths: readonly string[], reader: Reader): ReadCollection
     // collection they name, or into one.
     const folder = folderOf(path)
     const key = folder || info.collection || ''
-    const name = info.collection ?? (folder.split('/').at(-1) || 'Tokens')
+    const name = info.collection ?? (basename(folder) || 'Tokens')
     const collection = collections.get(key) ?? { name, modes: [], modeAttribute: undefined }
     collection.modeAttribute ??= info.modeAttribute
     collection.modes.push({
@@ -333,14 +341,14 @@ export function readDesignTokens(files: readonly DesignTokenSourceFile[]): Desig
   const reader: Reader = { documents: new Map(), used: new Set(), issues: [] }
   for (const file of files) {
     const result = v.safeParse(documentSchema, file.text)
-    if (result.success) reader.documents.set(file.path, result.output)
+    if (result.success) reader.documents.set(pickedPath(file.path), result.output)
     else reader.issues.push({ kind: 'invalid-file', file: file.path })
   }
   const collections: ReadCollection[] = []
   for (const [path, parsed] of reader.documents) {
     if (!isResolver(parsed)) continue
     reader.used.add(path)
-    collections.push(...readResolver(reader, path, parsed))
+    appendAll(collections, readResolver(reader, path, parsed))
   }
   for (const [path, parsed] of reader.documents) {
     const themes = v.safeParse(themesSchema, baseName(path) === '$themes' ? parsed : parsed.$themes)
@@ -353,9 +361,9 @@ export function readDesignTokens(files: readonly DesignTokenSourceFile[]): Desig
       reader.used.add(setPath)
       return reader.documents.get(setPath)
     }
-    collections.push(...readThemes(themes.output, setDocument))
+    appendAll(collections, readThemes(themes.output, setDocument))
   }
   const remaining = [...reader.documents.keys()].filter((path) => !reader.used.has(path))
-  collections.push(...readModeFiles(remaining, reader))
+  appendAll(collections, readModeFiles(remaining, reader))
   return { ...splitComposites(collections), issues: reader.issues }
 }

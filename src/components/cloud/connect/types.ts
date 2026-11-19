@@ -1,15 +1,17 @@
 import type { CloudAuthFailure } from '@open-pencil/cloud/client'
+import type { CloudSocialProvider } from '@open-pencil/cloud/contract'
 
 export type CloudServerKind = 'official' | 'self-hosted'
 
-export type CloudSignInMethod = 'google' | 'apple' | 'email'
+export type CloudSignInMethod = CloudSocialProvider | 'email'
 
 export type CloudConnectStep = 'server' | 'checking' | 'sign-in' | 'sign-up' | 'verify' | 'device'
 
 export type CloudConnectError =
   | 'unreachable'
   | 'not-cloud'
-  | 'outdated'
+  | 'server-outdated'
+  | 'editor-outdated'
   | 'invalid-address'
   | 'denied'
   | 'expired'

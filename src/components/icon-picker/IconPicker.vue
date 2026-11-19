@@ -2,17 +2,20 @@
 import { compact } from 'es-toolkit'
 import { computed, ref, watch } from 'vue'
 
+import type { IconCollection } from '@open-pencil/core/icons'
 import { iconNames } from '@open-pencil/scene-graph/icons'
 import { useIconSearch } from '@open-pencil/vue/controls/icon'
 import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { lastIconSet, recentIcons, rememberIcon } from '@/app/editor/icon-picker/history'
+import { lastIconSet, recentIcons, rememberIcon } from '@/app/editor/icons/history'
 import { formatNumber } from '@/app/i18n/number'
+import ExternalLink from '@/components/links/ExternalLink.vue'
 import AppCombobox from '@/components/ui/select/AppCombobox.vue'
 import type { AppComboboxOption } from '@/components/ui/select/AppCombobox.vue'
 import AppPicker from '@/components/ui/select/AppPicker.vue'
 import type { AppPickerItem } from '@/components/ui/select/AppPicker.vue'
+import { SF_SYMBOLS_DOCS_URL } from '@/constants'
 
 import IconPreview from './IconPreview.vue'
 
@@ -21,6 +24,7 @@ const {
   selected,
   set: initialSet,
   tooltip,
+  tooltipSide = 'top',
   side = 'left',
   align = 'start'
 } = defineProps<{
@@ -30,6 +34,8 @@ const {
   /** The set to open on, by prefix, such as the swapped icon's own; the last one chosen if unset. */
   set?: string
   tooltip?: string
+  /** Where the trigger's tooltip opens. */
+  tooltipSide?: 'left' | 'right' | 'top' | 'bottom'
   side?: 'left' | 'right' | 'top' | 'bottom'
   align?: 'start' | 'center' | 'end'
 }>()
@@ -69,15 +75,26 @@ watch(open, (isOpen) => {
 
 /** Sets by prefix, for their names and licenses in the footer. */
 const setsByPrefix = computed(() => new Map(search.sets.value.map((info) => [info.prefix, info])))
+/** Why the chosen set shows nothing, when this host cannot draw it. */
+const unavailableSet = computed(() =>
+  search.set.value ? (setsByPrefix.value.get(search.set.value)?.unavailable ?? null) : null
+)
+
 const setOptions = computed<AppComboboxOption[]>(() => [
   { value: ALL_SETS, label: panels.value.allIconSets },
   ...search.sets.value.map((info) => ({
     value: info.prefix,
     label: info.name,
-    meta: formatNumber(info.total),
+    meta: info.unavailable ? unavailableLabel(info.unavailable) : formatNumber(info.total),
+    // A set this host cannot draw says where it is offered; choosing it says why in full.
     group: info.category ?? panels.value.otherIconSets
   }))
 ])
+
+/** Where a set this host cannot draw is offered, short enough for the set menu. */
+function unavailableLabel(reason: NonNullable<IconCollection['unavailable']>) {
+  return reason === 'host' ? panels.value.iconSetMacAppOnly : panels.value.iconSetNeedsNewerMacOS
+}
 const chosenSet = computed({
   get: () => search.set.value ?? ALL_SETS,
   set: (value: string) => {
@@ -103,9 +120,15 @@ function item(name: string, group?: string): AppPickerItem {
  * only when there are several.
  */
 const items = computed<AppPickerItem[]>(() => {
+  // A set this host cannot draw lists nothing, not even its icons in the file, so the picker says
+  // where it is offered instead.
+  if (unavailableSet.value) return []
   if (query.value.trim()) return visible.value.map((name) => item(name))
   const prefix = search.set.value
-  const inSet = (name: string) => !prefix || name.startsWith(`${prefix}:`)
+  // Icons from a set this host cannot draw, such as SF Symbols in the browser, are left out.
+  const inSet = (name: string) =>
+    (!prefix || name.startsWith(`${prefix}:`)) &&
+    !setsByPrefix.value.get(name.slice(0, name.indexOf(':')))?.unavailable
   const inFile = placed.value.filter(inSet)
   const recent = recentIcons.value.filter((name) => inSet(name) && !inFile.includes(name))
   const shown = new Set([...inFile, ...recent])
@@ -140,6 +163,9 @@ function details(name: string) {
 
 const emptyLabel = computed(() => {
   if (failed.value) return panels.value.iconSearchFailed
+  // A set opened for an icon from it, such as one being swapped, says why it shows nothing.
+  if (unavailableSet.value === 'host') return panels.value.sfSymbolsNeedMacApp
+  if (unavailableSet.value === 'system') return panels.value.sfSymbolsNeedNewerMacOS
   // Typing searches; choosing a set loads it.
   if (loading.value)
     return query.value.trim() ? panels.value.searchingIcons : panels.value.loadingIcons
@@ -166,6 +192,7 @@ function pick(name: string) {
     :items="items"
     :selected="selected"
     :tooltip="tooltip"
+    :tooltip-side="tooltipSide"
     :side="side"
     :align="align"
     :search-placeholder="panels.searchIcons"
@@ -174,8 +201,11 @@ function pick(name: string) {
     @select="pick"
     @load-more="loadMore"
   >
-    <template #trigger>
+    <template v-if="$slots.trigger" #trigger>
       <slot name="trigger" />
+    </template>
+    <template v-else #anchor>
+      <slot name="anchor" />
     </template>
     <template #search-trailing>
       <AppCombobox
@@ -188,7 +218,7 @@ function pick(name: string) {
         align="end"
         :ui="{
           trigger:
-            'mr-1 h-5 w-auto max-w-32 shrink-0 border-0 bg-transparent px-1.5 hover:bg-hover',
+            'me-1 h-5 w-auto max-w-32 shrink-0 border-0 bg-transparent px-1.5 hover:bg-hover',
           value: 'text-muted',
           content: 'w-64'
         }"
@@ -199,11 +229,15 @@ function pick(name: string) {
         </template>
       </AppCombobox>
     </template>
+    <template v-if="unavailableSet && !failed" #empty>
+      {{ emptyLabel }}
+      <ExternalLink :href="SF_SYMBOLS_DOCS_URL">{{ common.learnMore }}</ExternalLink>
+    </template>
     <template #leading="{ item: entry }">
       <IconPreview :svg="previews.get(entry.value)" class="size-5 text-surface" />
     </template>
     <template v-if="items.length > 0" #footer="{ highlighted }">
-      <p class="flex h-5 items-center gap-1.5 truncate px-1 text-[11px] text-muted">
+      <p class="flex h-5 items-center gap-1.5 truncate px-1 text-2xs text-muted">
         <template v-if="highlighted">
           <span class="truncate text-surface">{{ highlighted.label }}</span>
           <span class="truncate">{{ details(highlighted.value) }}</span>

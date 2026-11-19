@@ -36,6 +36,10 @@ pub fn candidate_dirs() -> Vec<PathBuf> {
         if let Some(appdata) = std::env::var_os("APPDATA").map(PathBuf::from) {
             dirs.push(appdata.join("npm"));
         }
+        // Antigravity CLI's installer puts `agy.exe` here.
+        if let Some(local) = std::env::var_os("LOCALAPPDATA").map(PathBuf::from) {
+            dirs.push(local.join("agy").join("bin"));
+        }
     }
     dirs
 }
@@ -118,5 +122,59 @@ mod tests {
         let current = std::env::var("PATH").unwrap_or_default();
         let augmented = augment_path(&current, &[]);
         assert_eq!(augmented, current);
+    }
+
+    /// The folders the webview may not write to, from its capability, with `$HOME`, `$DATA`, and
+    /// `$LOCALDATA` expanded as Tauri expands them on this platform.
+    fn denied_folders() -> Vec<PathBuf> {
+        let capability: serde_json::Value =
+            serde_json::from_str(crate::capabilities::DEFAULT_CAPABILITY)
+                .expect("read the default capability");
+        let scope = capability["permissions"]
+            .as_array()
+            .expect("permissions")
+            .iter()
+            .find(|permission| permission["identifier"] == "fs:scope")
+            .expect("a global fs:scope");
+        let home = std::env::home_dir();
+        let variable = |name: &str| match name {
+            "$HOME" => home.clone(),
+            "$DATA" => std::env::var_os("APPDATA").map(PathBuf::from),
+            "$LOCALDATA" => std::env::var_os("LOCALAPPDATA").map(PathBuf::from),
+            _ => None,
+        };
+        scope["deny"]
+            .as_array()
+            .expect("deny list")
+            .iter()
+            .filter_map(|entry| entry["path"].as_str())
+            .filter(|path| !path.ends_with("/**"))
+            .filter_map(|path| match path.split_once('/') {
+                Some((name, rest)) if name.starts_with('$') => {
+                    variable(name).map(|base| base.join(rest))
+                }
+                _ => Some(PathBuf::from(path)),
+            })
+            .collect()
+    }
+
+    /// The lookup runs what it finds in these folders, so a page script that could write one
+    /// could plant a program the app then starts. Each must be out of the webview's reach: under
+    /// a denied folder, or below a dot folder, which the fs plugin's `requireLiteralLeadingDot`
+    /// keeps `**` from matching.
+    #[test]
+    fn the_webview_cannot_write_a_folder_the_lookup_runs_programs_from() {
+        let denied = denied_folders();
+        for dir in candidate_dirs() {
+            let hidden = dir
+                .components()
+                .any(|component| component.as_os_str().to_string_lossy().starts_with('.'));
+            let protected = denied.iter().any(|folder| dir.starts_with(folder));
+            assert!(
+                hidden || protected,
+                "{} is searched for programs but the webview may write to it",
+                dir.display()
+            );
+        }
     }
 }

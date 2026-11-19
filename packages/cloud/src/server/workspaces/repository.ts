@@ -8,6 +8,25 @@ function toISOString(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : value
 }
 
+function summary(
+  {
+    ownerId,
+    ...row
+  }: Omit<WorkspaceSummary, 'owner' | 'createdAt' | 'updatedAt'> & {
+    ownerId: string
+    createdAt: Date | string
+    updatedAt: Date | string
+  },
+  userId: string
+): WorkspaceSummary {
+  return {
+    ...row,
+    owner: ownerId === userId,
+    createdAt: toISOString(row.createdAt),
+    updatedAt: toISOString(row.updatedAt)
+  }
+}
+
 export async function listWorkspaces(
   database: WorkspaceDatabase,
   userId: string
@@ -21,17 +40,14 @@ export async function listWorkspaces(
       'workspace.slug',
       'workspace.createdAt',
       'workspace.updatedAt',
+      'workspace.ownerId',
       'workspaceMember.role'
     ])
     .where('workspaceMember.userId', '=', userId)
     .orderBy('workspace.updatedAt', 'desc')
     .execute()
 
-  return rows.map((row) => ({
-    ...row,
-    createdAt: toISOString(row.createdAt),
-    updatedAt: toISOString(row.updatedAt)
-  }))
+  return rows.map((row) => summary(row, userId))
 }
 
 export async function findWorkspace(
@@ -48,18 +64,13 @@ export async function findWorkspace(
       'workspace.slug',
       'workspace.createdAt',
       'workspace.updatedAt',
+      'workspace.ownerId',
       'workspaceMember.role'
     ])
     .where('workspace.id', '=', workspaceId)
     .where('workspaceMember.userId', '=', userId)
     .executeTakeFirst()
-  return row
-    ? {
-        ...row,
-        createdAt: toISOString(row.createdAt),
-        updatedAt: toISOString(row.updatedAt)
-      }
-    : undefined
+  return row ? summary(row, userId) : undefined
 }
 
 export async function insertWorkspace(
@@ -73,7 +84,8 @@ export async function insertWorkspace(
       id: input.id,
       name: input.name,
       slug: input.slug,
-      createdBy: actorId
+      createdBy: actorId,
+      ownerId: actorId
     })
     .onConflict((conflict) => conflict.column('slug').doNothing())
     .returning('id')

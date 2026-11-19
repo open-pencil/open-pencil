@@ -1,10 +1,14 @@
-import type { ACPAgentDef } from '@open-pencil/core/constants'
+import { Command } from '@tauri-apps/plugin-shell'
 
-import { createDeferred } from '@/app/runtime/deferred'
-import { resolveScopedCommand } from '@/app/tauri/command'
+import type { ACPAgentDef } from '@open-pencil/core/constants'
+import { createDeferred } from '@open-pencil/std/async'
+import { MINUTE_MS } from '@open-pencil/std/timing'
+
+import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
+import { platformCommandEnv, resolveScopedCommand } from '@/app/tauri/command'
 
 /** Long enough to sign in from a fresh browser, short enough not to leave a login waiting. */
-const SIGN_IN_TIMEOUT_MS = 5 * 60_000
+const SIGN_IN_TIMEOUT_MS = 5 * MINUTE_MS
 
 /**
  * Terminal hyperlinks (OSC 8) and colour or cursor codes, which the login prints for a
@@ -45,9 +49,11 @@ export async function startTerminalSignIn(
   args: string[],
   onURL: (url: string) => void
 ): Promise<TerminalSignIn> {
-  const { Command } = await import('@tauri-apps/plugin-shell')
+  const { searchPath } = await resolveSpawnTarget(agent)
   const resolved = resolveScopedCommand(signInScope(agent), agent.command, args)
-  const command = Command.create(resolved.command, resolved.args)
+  const command = Command.create(resolved.command, resolved.args, {
+    env: { ...platformCommandEnv(), ...(searchPath ? { PATH: searchPath } : {}) }
+  })
   const finished = createDeferred<undefined>()
   let closed = false
   let urlSeen = false

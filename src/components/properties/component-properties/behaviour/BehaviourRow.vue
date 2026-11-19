@@ -50,6 +50,11 @@ function variantValues(boolean: BehaviourBooleanControl) {
   return (option?.values ?? []).map((name) => ({ value: name, label: name }))
 }
 
+const MAPPING_SIDES = ['on', 'off'] as const
+
+const mappingLabel = (side: 'on' | 'off') =>
+  side === 'on' ? panels.value.behaviourOnValue : panels.value.behaviourOffValue
+
 function setMapping(boolean: BehaviourBooleanControl, side: 'on' | 'off', choice: string) {
   emit('mapValue', {
     on: side === 'on' ? choice : (boolean.on ?? ''),
@@ -123,22 +128,20 @@ function numberLabel(field: NumberSetting) {
         @bind="emit('bind', $event)"
         @create="emit('create', label)"
       />
+      <!-- Which variant value draws the control on and which off, labelled as the states are. -->
       <div
         v-if="value.propertyId && variantValues(value).length"
-        class="mt-1 grid grid-cols-2 gap-1"
+        class="mt-1.5 grid grid-cols-2 gap-x-1 gap-y-1.5"
       >
-        <AppSelect
-          :label="panels.behaviourOnValue"
-          :model-value="value.on ?? ''"
-          :options="variantValues(value)"
-          @update:model-value="setMapping(value, 'on', $event)"
-        />
-        <AppSelect
-          :label="panels.behaviourOffValue"
-          :model-value="value.off ?? ''"
-          :options="variantValues(value)"
-          @update:model-value="setMapping(value, 'off', $event)"
-        />
+        <PanelFieldGroup v-for="side in MAPPING_SIDES" :key="side" :label="mappingLabel(side)">
+          <AppSelect
+            :label="panels.behaviourValueField({ value: label, side: mappingLabel(side) })"
+            :model-value="value[side] ?? ''"
+            :options="variantValues(value)"
+            :data-property="`behaviour-value-${id}-${side}`"
+            @update:model-value="setMapping(value, side, $event)"
+          />
+        </PanelFieldGroup>
       </div>
     </template>
     <BehaviourBindingField

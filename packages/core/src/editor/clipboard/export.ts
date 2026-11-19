@@ -1,17 +1,17 @@
 import { selectionToJSX } from '@open-pencil/design-jsx'
 
 import type { EditorContext } from '#core/editor/types'
-import { renderNodesToSVG } from '#core/io/formats/svg'
+import { renderNodesToLaidOutSVG } from '#core/io/formats/svg/text/layout'
 
 export function createClipboardExportActions(ctx: EditorContext) {
   function copySelectionAsText(ids: string[]): string {
     return ids.map((id) => ctx.graph.getNode(id)?.name ?? id).join('\n')
   }
 
-  function copySelectionAsSVG(ids: string[]): string | null {
+  function copySelectionAsSVG(ids: string[]): Promise<string | null> {
     const nodeIds =
       ids.length > 0 ? ids : ctx.graph.getChildren(ctx.state.currentPageId).map((n) => n.id)
-    return renderNodesToSVG(ctx.graph, ctx.state.currentPageId, nodeIds)
+    return renderNodesToLaidOutSVG(ctx.graph, ctx.state.currentPageId, nodeIds)
   }
 
   function copySelectionAsJSX(ids: string[]): string | null {

@@ -6,7 +6,7 @@ import { sharingState } from '@/app/telemetry/state'
 
 beforeEach(() => {
   appPreferences.value = structuredClone(DEFAULT_APP_PREFERENCES)
-  sharingState.value = { installId: null, lastPingDay: null }
+  sharingState.value = { installId: null, lastPingDay: null, pingDays: 0 }
 })
 
 describe('usage stats consent', () => {

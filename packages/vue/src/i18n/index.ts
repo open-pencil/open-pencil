@@ -19,7 +19,6 @@ export {
   usePageMessages,
   usePanelMessages,
   useRecoveryMessages,
-  useRenderingMessages,
   useRenameMessages,
   useSettingsMessages,
   useStatusMessages,
@@ -43,5 +42,6 @@ export {
   LOCALE_DIR_NAMES,
   LOCALE_LABELS
 } from '#vue/i18n/locale'
+export { RIGHT_TO_LEFT_LOCALES, directedTranslations } from '#vue/i18n/direction'
 export type { Locale, TranslatedLocale } from '#vue/i18n/locale'
 export * from '#vue/i18n/messages'

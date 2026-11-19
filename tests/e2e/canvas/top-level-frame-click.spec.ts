@@ -59,17 +59,41 @@ test('the empty area of a plain top-level frame stays background', async () => {
   editor.canvas.assertNoErrors()
 })
 
-test('repeated clicks at one point reach deeper layers, one level at a time', async () => {
+test('clicks keep the selected layer and double-clicks go one level deeper each', async () => {
   const ids = await scene.nestedBoard()
   await editor.canvas.waitForRender()
   const point = await scene.at(ids.label, 20, 20)
 
-  for (const expected of [ids.grid, ids.cell, ids.label]) {
+  // The board is top-level, so its child is one click away; a selected frame keeps its children
+  // a double-click away, as in Figma.
+  for (let i = 0; i < 2; i++) {
     await editor.canvas.click(point.x, point.y)
-    await expect.poll(async () => (await scene.state()).selected).toEqual([expected])
-    // Apart enough not to count as a double-click, which goes one level deeper by itself.
+    await expect.poll(async () => (await scene.state()).selected).toEqual([ids.grid])
     await editor.page.waitForTimeout(600)
   }
+  for (const expected of [ids.cell, ids.label]) {
+    await editor.canvas.dblclick(point.x, point.y)
+    await expect.poll(async () => (await scene.state()).selected).toEqual([expected])
+    await editor.page.waitForTimeout(600)
+  }
+  editor.canvas.assertNoErrors()
+})
+
+test('a run of quick clicks goes one level deeper on each click after the first', async () => {
+  const ids = await scene.nestedBoard()
+  await editor.canvas.waitForRender()
+  const point = await scene.at(ids.label, 20, 20)
+  // Click, double-click, and a third click of the same run, each within the multi-click window.
+  const box = await editor.page.getByTestId('canvas-element').boundingBox()
+  if (!box) throw new Error('canvas bounds')
+  await editor.page.mouse.move(box.x + point.x, box.y + point.y)
+  await editor.page.mouse.down({ clickCount: 1 })
+  await editor.page.mouse.up({ clickCount: 1 })
+  await editor.page.mouse.down({ clickCount: 2 })
+  await editor.page.mouse.up({ clickCount: 2 })
+  await editor.page.mouse.down({ clickCount: 3 })
+  await editor.page.mouse.up({ clickCount: 3 })
+  await expect.poll(async () => (await scene.state()).selected).toEqual([ids.label])
   editor.canvas.assertNoErrors()
 })
 

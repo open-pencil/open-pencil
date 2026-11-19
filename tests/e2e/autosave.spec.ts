@@ -1,19 +1,23 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
+import {
+  recordNotifications,
+  setWindowFocus,
+  shownNotifications
+} from '#tests/helpers/notifications'
 
 const editor = useEditorSetup()
 
 test('autosave triggers after scene changes with a file handle', async () => {
   const writeCount = await editor.page.evaluate(() => {
     let writes = 0
-    const mockWritable: Pick<FileSystemWritableFileStream, 'write' | 'close'> = {
-      write: async () => {
-        writes++
-      },
-      close: async () => undefined
-    }
     const mockHandle = {
-      createWritable: async () => mockWritable
+      createWritable: async () =>
+        new WritableStream<Uint8Array>({
+          write: () => {
+            writes++
+          }
+        })
     } as FileSystemFileHandle
 
     window.openPencil ??= {}
@@ -30,14 +34,10 @@ test('autosave triggers after scene changes with a file handle', async () => {
     // Directly set the fileHandle via a test hook
     // Since fileHandle is a closure variable, we need to trigger the save path
     // The cleanest way: mock showSaveFilePicker to return our handle
-    const mockWritable: Pick<FileSystemWritableFileStream, 'write' | 'close'> = {
-      write: async () => undefined,
-      close: async () => undefined
-    }
     const mockHandle = {
-      createWritable: async () => mockWritable
-    }
-    window.showSaveFilePicker = async () => mockHandle as FileSystemFileHandle
+      createWritable: async () => new WritableStream<Uint8Array>()
+    } as FileSystemFileHandle
+    window.showSaveFilePicker = async () => mockHandle
   })
 
   // Trigger Save As to establish the file handle
@@ -74,7 +74,7 @@ test('no autosave without file handle', async ({ browser, baseURL }) => {
     deviceScaleFactor: 2
   })
   const freshPage = await context.newPage()
-  await freshPage.goto('/')
+  await freshPage.goto('/?test')
   const freshCanvas = new CanvasHelper(freshPage)
   await freshCanvas.waitForInit()
 
@@ -88,5 +88,77 @@ test('no autosave without file handle', async ({ browser, baseURL }) => {
   freshCanvas.assertNoErrors()
 
   await freshPage.close()
+  await context.close()
+})
+
+test('a failed autosave stays shown, notifies once while away, and saves on retry', async ({
+  browser,
+  baseURL
+}) => {
+  const context = await browser.newContext({ baseURL, viewport: { width: 1280, height: 800 } })
+  const page = await context.newPage()
+  await recordNotifications(page)
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+
+  // A file whose writes fail while `failWrites` is set, as a full disk would; each attempt counts.
+  await page.evaluate(() => {
+    const root = document.documentElement
+    const handle = {
+      name: 'Plan.fig',
+      createWritable: async () => {
+        root.dataset.writes = String(Number(root.dataset.writes ?? 0) + 1)
+        if (root.dataset.failWrites) throw new Error('disk full')
+        return new WritableStream<Uint8Array>()
+      }
+    } as FileSystemFileHandle
+    window.showSaveFilePicker = async () => handle
+  })
+  const writes = () => page.evaluate(() => Number(document.documentElement.dataset.writes ?? 0))
+  const hasUnsavedChanges = () =>
+    page.evaluate(() => window.openPencil?.getStore?.().hasUnsavedChanges())
+
+  await page.keyboard.press('ControlOrMeta+Shift+s')
+  await expect.poll(writes).toBe(1)
+  await expect.poll(hasUnsavedChanges).toBe(false)
+
+  // Files save automatically once the person turns it on in the File menu.
+  await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (store) store.state.autosaveEnabled = true
+    document.documentElement.dataset.failWrites = 'yes'
+  })
+  await setWindowFocus(page, false)
+  await canvas.drawRect(400, 400, 60, 60)
+  // The failure names the document and the write's error.
+  const failure = page.locator('[data-slot="toast"][data-tone="error"]', { hasText: 'disk full' })
+  await expect(failure).toBeVisible({ timeout: 10_000 })
+  await expect(failure).toContainText('Plan')
+  await expect
+    .poll(() => shownNotifications(page))
+    .toEqual([
+      {
+        title: expect.stringContaining('Plan'),
+        body: 'disk full',
+        tag: expect.stringMatching(/^save:tab-/)
+      }
+    ])
+
+  // Failing again keeps one failure on screen and sends no second notification.
+  await canvas.drawRect(200, 200, 40, 40)
+  await expect.poll(writes, { timeout: 10_000 }).toBe(3)
+  await expect(failure).toHaveCount(1)
+  expect(await shownNotifications(page)).toHaveLength(1)
+
+  await page.evaluate(() => {
+    delete document.documentElement.dataset.failWrites
+  })
+  await failure.getByRole('button', { name: 'Retry save' }).click()
+  await expect.poll(hasUnsavedChanges).toBe(false)
+  await expect(failure).toHaveCount(0)
+  expect(await writes()).toBe(4)
+
+  await page.close()
   await context.close()
 })

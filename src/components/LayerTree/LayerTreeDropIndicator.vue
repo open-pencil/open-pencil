@@ -21,9 +21,10 @@ const position = computed(() => {
   return instruction.type === 'reorder-above' ? ('above' as const) : ('below' as const)
 })
 const indicatorStyle = computed(() => {
-  if (position.value === 'child') return { left: `${level * indent}px`, right: '4px' }
+  if (position.value === 'child')
+    return { insetInlineStart: `${level * indent}px`, insetInlineEnd: '4px' }
   const offset = (level - 1) * indent
-  return { left: `${offset}px`, width: `calc(100% - ${offset}px)` }
+  return { insetInlineStart: `${offset}px`, width: `calc(100% - ${offset}px)` }
 })
 const ui = useLayerTreeUI()
 const layerTree = tv(layerTreeTheme)

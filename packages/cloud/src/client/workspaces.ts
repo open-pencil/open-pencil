@@ -77,6 +77,19 @@ export function createWorkspaceRequests(
         onDiagnostic
       )
     },
+    /** Sends a waiting invitation again; its earlier link stops working. */
+    async resendWorkspaceInvitation(
+      workspaceId: string,
+      invitationId: string
+    ): Promise<CreatedWorkspaceInvitation> {
+      return parseResponse(
+        client.workspaces[':workspaceId'].invitations[':invitationId'].resend.$post({
+          param: { workspaceId, invitationId }
+        }),
+        createdWorkspaceInvitationSchema,
+        onDiagnostic
+      )
+    },
     async revokeWorkspaceInvitation(workspaceId: string, invitationId: string): Promise<void> {
       await responseBody(
         await client.workspaces[':workspaceId'].invitations[':invitationId'].$delete({

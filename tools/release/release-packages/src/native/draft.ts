@@ -1,6 +1,7 @@
 import { isPrerelease } from '#release/version'
 import * as v from 'valibot'
 
+import { isChromiumAsset } from '../chromium/catalog.ts'
 import type { ReleaseIdentity } from './context.ts'
 
 export const releaseSchema = v.object({
@@ -24,7 +25,11 @@ export function assertDraftReplacement(
     throw new Error('Missing release manifest')
   }
 
-  const unexpected = release?.assets.filter((asset) => !names.includes(asset.name)) ?? []
+  // OpenPencil Chromium's files arrive from their own workflow and stay when the stable set is replaced.
+  const unexpected =
+    release?.assets.filter(
+      (asset) => !names.includes(asset.name) && !isChromiumAsset(asset.name)
+    ) ?? []
   if (unexpected.length > 0) {
     throw new Error(
       `Refusing to remove unexpected draft assets: ${unexpected.map((asset) => asset.name).join(', ')}`

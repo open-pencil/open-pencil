@@ -1,6 +1,7 @@
 import { sumBy } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { ELLIPSIS } from '#core/text/ellipsis'
 import type { DocumentFontStatus } from '#core/text/font/status'
@@ -18,6 +19,28 @@ function walkNodes(graph: SceneGraph, rootId: string, fn: (node: SceneNode) => b
     if (!walkNodes(graph, childId, fn)) return false
   }
   return true
+}
+
+/** A page picked by its ID, `page_id`, or by its name, `page`; the ID wins when both are given. */
+export interface PageArgs {
+  page?: string
+  page_id?: string
+}
+
+/** The pages `args` picks: the one it names, none when it names a missing page, else `fallback`. */
+function pickedPages(graph: SceneGraph, args: PageArgs, fallback: SceneNode[]): SceneNode[] {
+  const pages = graph.getPages()
+  if (args.page_id) return pages.filter((page) => page.id === args.page_id)
+  if (args.page) return pages.filter((page) => page.name === args.page).slice(0, 1)
+  return fallback
+}
+
+function missingPageError(graph: SceneGraph, args: PageArgs): string {
+  const pages = graph.getPages()
+  const [label, available] = args.page_id
+    ? [args.page_id, pages.map((page) => page.id)]
+    : [args.page ?? '', pages.map((page) => page.name)]
+  return `Page "${label}" not found. Available: ${available.join(', ')}`
 }
 
 function countDescendants(graph: SceneGraph, rootId: string): number {
@@ -106,8 +129,7 @@ export const pagesCommand: RPCCommand<void, PageItem[]> = {
 
 // ── tree ──
 
-export interface TreeArgs {
-  page?: string
+export interface TreeArgs extends PageArgs {
   depth?: number
 }
 
@@ -152,13 +174,9 @@ export interface TreeResult {
 export const treeCommand: RPCCommand<TreeArgs, TreeResult | { error: string }> = {
   name: 'tree',
   execute: (graph, args) => {
-    const pages = graph.getPages()
     const maxDepth = args.depth ?? Infinity
-    const page = args.page ? pages.find((p) => p.name === args.page) : pages[0]
-    if (!page)
-      return {
-        error: `Page "${args.page}" not found. Available: ${pages.map((p) => p.name).join(', ')}`
-      }
+    const page = pickedPages(graph, args, graph.getPages().slice(0, 1)).at(0)
+    if (!page) return { error: missingPageError(graph, args) }
 
     return {
       page: { id: page.id, name: page.name, type: page.type },
@@ -171,10 +189,9 @@ export const treeCommand: RPCCommand<TreeArgs, TreeResult | { error: string }> =
 
 // ── find ──
 
-export interface FindArgs {
+export interface FindArgs extends PageArgs {
   name?: string
   type?: string
-  page?: string
   limit?: number
 }
 
@@ -189,7 +206,6 @@ export interface FindNodeResult {
 export const findCommand: RPCCommand<FindArgs, FindNodeResult[]> = {
   name: 'find',
   execute: (graph, args) => {
-    const pages = graph.getPages()
     const max = args.limit ?? 100
     const namePattern = args.name?.toLowerCase()
     const typeFilter = args.type?.toUpperCase()
@@ -216,12 +232,7 @@ export const findCommand: RPCCommand<FindArgs, FindNodeResult[]> = {
       }
     }
 
-    if (args.page) {
-      const page = pages.find((p) => p.name === args.page)
-      if (page) searchPage(page)
-    } else {
-      for (const page of pages) searchPage(page)
-    }
+    for (const page of pickedPages(graph, args, graph.getPages())) searchPage(page)
 
     return results
   }
@@ -229,9 +240,8 @@ export const findCommand: RPCCommand<FindArgs, FindNodeResult[]> = {
 
 // ── query (xpath) ──
 
-export interface QueryArgs {
+export interface QueryArgs extends PageArgs {
   selector: string
-  page?: string
   limit?: number
 }
 
@@ -251,6 +261,7 @@ export const queryCommand: RPCCommand<QueryArgs, QueryNodeResult[] | { error: st
     try {
       const nodes = await queryByXPath(graph, args.selector, {
         page: args.page,
+        pageId: args.page_id,
         limit: args.limit
       })
       return nodes.map((n) => ({
@@ -263,7 +274,7 @@ export const queryCommand: RPCCommand<QueryArgs, QueryNodeResult[] | { error: st
         height: Math.round(n.height)
       }))
     } catch (err) {
-      return { error: `XPath error: ${err instanceof Error ? err.message : String(err)}` }
+      return { error: `XPath error: ${errorMessage(err)}` }
     }
   }
 }

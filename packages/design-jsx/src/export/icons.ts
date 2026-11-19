@@ -3,6 +3,7 @@ import { colorToHex } from '@open-pencil/scene-graph/color'
 import {
   isIconModified,
   isPlacedIconName,
+  isNamedIcon,
   readIcon,
   readIconTint
 } from '@open-pencil/scene-graph/icons'
@@ -28,8 +29,9 @@ function tintColor(graph: SceneGraph, frame: SceneNode): string | null {
  */
 export function iconProps(node: SceneNode, graph: SceneGraph): JSXProp[] | null {
   const icon = readIcon(node)
-  // An icon whose paths were edited exports as the paths it draws, which <Icon> would lose.
-  if (!icon || isIconModified(graph, node)) return null
+  // An icon whose paths were edited exports as the paths it draws, which <Icon> would lose, as
+  // does one drawn from a set of our own, which its name alone does not draw.
+  if (!icon || !isNamedIcon(icon) || isIconModified(graph, node)) return null
   const color = tintColor(graph, node)
   return [
     ['name', icon.name],

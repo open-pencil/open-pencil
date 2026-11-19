@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, within } from 'storybook/test'
+import { provide } from 'vue'
 import IconCheck from '~icons/lucide/check'
 import IconClock from '~icons/lucide/clock'
 import IconMailCheck from '~icons/lucide/mail-check'
@@ -6,19 +8,22 @@ import IconMonitorX from '~icons/lucide/monitor-x'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 
+import { PORTAL_LEGAL } from '../layout/legal'
 import PortalDeviceApproval from './PortalDeviceApproval.vue'
 import PortalNotice from './PortalNotice.vue'
 import PortalResetPassword from './PortalResetPassword.vue'
 import PortalSignIn from './PortalSignIn.vue'
+import PortalTerms from './PortalTerms.vue'
 import PortalTwoFactor from './PortalTwoFactor.vue'
 
 const host = 'cloud.studio.example'
-const frame = (inner: string) => `<div class="h-[720px]">${inner}</div>`
+const frame = (inner: string) => `<div class="h-180">${inner}</div>`
 const components = {
   PortalDeviceApproval,
   PortalNotice,
   PortalResetPassword,
   PortalSignIn,
+  PortalTerms,
   PortalTwoFactor,
   AppButton,
   IconCheck,
@@ -28,7 +33,7 @@ const components = {
 }
 
 const meta = {
-  title: 'App/Cloud Portal/Public Pages',
+  title: 'App/Cloud/Portal/Public Pages',
   tags: ['autodocs'],
   parameters: { layout: 'fullscreen' }
 } satisfies Meta
@@ -40,8 +45,28 @@ const story = (template: string): Story => ({
   render: () => ({ components, setup: () => ({ host }), template: frame(template) })
 })
 
+/** A server with its own terms, privacy policy, abuse address, and minimum age, as `[legal]` sets. */
+const legal = {
+  termsURL: 'https://studio.example/terms',
+  privacyURL: 'https://studio.example/privacy',
+  termsVersion: '2026-11-15',
+  requireAcceptance: true,
+  abuseEmail: 'abuse@studio.example',
+  minimumAge: 16
+}
+const legalStory = (template: string): Story => ({
+  render: () => ({
+    components,
+    setup: () => {
+      provide(PORTAL_LEGAL, legal)
+      return { host, legal }
+    },
+    template: frame(template)
+  })
+})
+
 export const SignIn = story(
-  `<PortalSignIn :host="host" mode="sign-in" :providers="['google', 'apple']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" />`
+  `<PortalSignIn :host="host" mode="sign-in" :providers="['google', 'apple', 'github']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" />`
 )
 export const SignInForTheDesktopApp = story(
   `<PortalSignIn :host="host" mode="sign-in" :providers="['google']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" returns-to="desktop" />`
@@ -51,6 +76,13 @@ export const SignInWithAnError = story(
 )
 export const SignUpWithApproval = story(
   `<PortalSignIn :host="host" mode="sign-up" :providers="['google']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" approval-required />`
+)
+export const SignUpWithTerms = legalStory(
+  `<PortalSignIn :host="host" mode="sign-up" :providers="['google']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" :legal="legal" />`
+)
+export const AcceptTerms = legalStory(`<PortalTerms :host="host" :legal="legal" />`)
+export const TermsChangedWhileReading = legalStory(
+  `<PortalTerms :host="host" :legal="legal" error="The terms changed while this page was open. Reload it to read the current version." />`
 )
 export const CheckYourEmail = story(`
   <PortalNotice :host="host" heading="Check your email" description="We sent a link to ana@studio.example. Open it on this device to finish creating your account.">
@@ -65,15 +97,29 @@ export const WaitingForApproval = story(`
     <template #icon><IconClock class="size-5" /></template>
     <template #actions><AppButton variant="ghost">Sign out</AppButton></template>
   </PortalNotice>`)
+/** Apple's Hide My Email starts a new account, so the page says how to reach an existing one. */
+export const WaitingWithHiddenEmail = story(`
+  <PortalNotice :host="host" tone="waiting" heading="Your request is with an administrator" description="We email cg4k6dj97t@privaterelay.appleid.com when you can sign in. Nothing else to do for now.">
+    <template #icon><IconClock class="size-5" /></template>
+    <p class="text-center text-xs text-muted">Already have an account here? Sign out and sign in to it as you usually do: Apple hid your email, so this one is new.</p>
+    <template #actions><AppButton variant="ghost">Sign out</AppButton></template>
+  </PortalNotice>`)
 export const TwoStep = story(`<PortalTwoFactor :host="host" method="authenticator" passkeys />`)
 export const TwoStepRecoveryCode = story(
   `<PortalTwoFactor :host="host" method="recovery" error="This code was already used." />`
 )
 export const ForgotPassword = story(`<PortalResetPassword :host="host" step="request" />`)
 export const ChooseNewPassword = story(`<PortalResetPassword :host="host" step="choose" />`)
-export const ApproveDesktopSignIn = story(
-  `<PortalDeviceApproval :host="host" code="WDJB-MJHT" email="ana@studio.example" />`
-)
+export const ApproveDesktopSignIn: Story = {
+  ...story(`<PortalDeviceApproval :host="host" code="WDJB-MJHT" email="ana@studio.example" />`),
+  /** The page shows the code from its link to compare with the app's; Approve is one click. */
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('WDJB-MJHT')).toBeVisible()
+    await expect(canvas.getByText('Check that the app shows this code')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Approve' })).toBeEnabled()
+  }
+}
 export const DesktopSignInApproved = story(`
   <PortalNotice :host="host" tone="success" heading="You’re signed in" description="Go back to the OpenPencil app; it has already picked this up. You can close this tab.">
     <template #icon><IconCheck class="size-5" /></template>

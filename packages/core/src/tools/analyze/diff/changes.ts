@@ -3,6 +3,7 @@ import * as v from 'valibot'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { graphOf } from '#core/figma-api/graph'
 import { findPageId } from '#core/io/subgraph'
 import { defineTool } from '#core/tools/schema'
 
@@ -43,7 +44,7 @@ function nodeChanges(
 export const diffChanges = defineTool({
   name: 'diff_changes',
   description:
-    'Patch of what this run changed: a node, or the whole current page, compared with its page before the run first edited it. Same format as diff_create, matching nodes by ID, so diff_apply can replay it on the starting state. Use it before reporting to confirm that only the intended layers changed.',
+    'Patch of what this run changed: a node, or the whole current page, compared with its page before the run first edited it. Same format as diff_nodes, matching nodes by ID, so apply_patch can replay it on the starting state. Use it before reporting to confirm that only the intended layers changed.',
   execution: { kind: 'sync', mutation: 'none' },
   // Only an AI chat run records the state it started from.
   exposure: { mcp: false, webmcp: false },
@@ -55,17 +56,17 @@ export const diffChanges = defineTool({
     const targetId = args.id ?? figma.currentPage.id
     // A node is compared with its own page's baseline; a removed one is looked up on this page.
     const pageId = args.id
-      ? (findPageId(figma.graph, args.id) ?? figma.currentPage.id)
+      ? (findPageId(graphOf(figma), args.id) ?? figma.currentPage.id)
       : figma.currentPage.id
     const baseline = figma.changeBaseline(pageId)
     if (!baseline) return { diff: null, message: 'This run has not changed that page' }
-    if (!baseline.getNode(targetId) && !figma.graph.getNode(targetId)) {
+    if (!baseline.getNode(targetId) && !graphOf(figma).getNode(targetId)) {
       return { error: `Node "${targetId}" not found` }
     }
     const operations =
       targetId === pageId
-        ? treeChanges(baseline, figma.graph, pageId)
-        : nodeChanges(baseline, figma.graph, targetId, pageId)
+        ? treeChanges(baseline, graphOf(figma), pageId)
+        : nodeChanges(baseline, graphOf(figma), targetId, pageId)
     return operations.length === 0
       ? { diff: null, message: 'No differences found' }
       : { diff: formatOperations(operations) }

@@ -11,14 +11,16 @@ import {
   MAX_LIST_INDENTATION,
   paragraphStyleAt,
   textParagraphRanges,
-  withParagraphSpacing
+  withParagraphSpacing,
+  characterOverrides
 } from '@open-pencil/scene-graph/text'
 
 import { TEXT_CASE, TEXT_DECORATION } from '../enums'
-import { AUTO } from '../overrides/text'
+import { AUTO, textLengthJSX } from '../overrides/text'
 import { SPAN_STYLE_FIELDS, type SpanStyle } from '../text-content'
 import { collectDecorationProps } from './decoration'
-import { collectFillProps } from './paint'
+import { collectFontSettingProps } from './font'
+import { collectFillProps } from './paints'
 import { fontWeightValue } from './props'
 import { propAttribute, type JSXProp } from './value'
 
@@ -33,19 +35,14 @@ export interface TextChildren {
  * URL it links to; a span cannot write a link to a node.
  */
 function characterStyles(node: SceneNode): SpanStyle[] {
-  const styles = Array.from({ length: node.text.length }, (): SpanStyle => ({}))
-  for (const run of node.styleRuns) {
-    const style: SpanStyle = pick(run.style, SPAN_STYLE_FIELDS)
-    if (run.style.hyperlink?.type === 'URL') style.hyperlink = run.style.hyperlink
-    const end = Math.min(run.start + run.length, styles.length)
-    for (let index = run.start; index < end; index++) styles[index] = { ...styles[index], ...style }
-  }
-  return styles.map((style) =>
-    omitBy(
+  return characterOverrides(node.styleRuns, node.text.length).map((override) => {
+    const style: SpanStyle = pick(override, SPAN_STYLE_FIELDS)
+    if (override.hyperlink?.type === 'URL') style.hyperlink = override.hyperlink
+    return omitBy(
       style,
       (value, key) => value === undefined || (key !== 'hyperlink' && isEqual(value, node[key]))
     )
-  )
+  })
 }
 
 function spanProps(style: SpanStyle, node: SceneNode): JSXProp[] {
@@ -55,11 +52,16 @@ function spanProps(style: SpanStyle, node: SceneNode): JSXProp[] {
   if (style.fontWeight !== undefined) props.push(['weight', fontWeightValue(style.fontWeight)])
   if (style.italic !== undefined) props.push(['italic', style.italic])
   if (style.fills) collectFillProps({ ...node, fills: style.fills }, props)
-  if (style.lineHeight !== undefined) props.push(['lineHeight', style.lineHeight ?? AUTO])
-  if (style.letterSpacing !== undefined) props.push(['letterSpacing', style.letterSpacing])
+  if (style.lineHeight !== undefined) {
+    props.push(['lineHeight', style.lineHeight ? textLengthJSX(style.lineHeight) : AUTO])
+  }
+  if (style.letterSpacing !== undefined) {
+    props.push(['letterSpacing', textLengthJSX(style.letterSpacing)])
+  }
   if (style.textDecoration !== undefined)
     props.push(['textDecoration', TEXT_DECORATION.print(style.textDecoration)])
   collectDecorationProps(style, node, props)
+  collectFontSettingProps(style, props)
   if (style.textCase !== undefined) props.push(['textCase', TEXT_CASE.print(style.textCase)])
   if (style.hyperlink) props.push(['href', style.hyperlink.value])
   return props

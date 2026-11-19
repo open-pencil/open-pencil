@@ -22,7 +22,6 @@ import pages from './pages.json'
 import panels from './panels.json'
 import recovery from './recovery.json'
 import rename from './rename.json'
-import rendering from './rendering.json'
 import settings from './settings.json'
 import shapes from './shapes.json'
 import statuses from './statuses.json'
@@ -54,7 +53,6 @@ export default {
   pages,
   panels,
   recovery,
-  rendering,
   rename,
   settings,
   shapes,

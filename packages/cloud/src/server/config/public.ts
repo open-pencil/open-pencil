@@ -1,18 +1,28 @@
 import {
-  CLOUD_AI_CONTRACT_VERSION,
+  CLOUD_BILLING_CONTRACT_VERSION,
+  type BillingFreePlan,
+  CLOUD_SERVICES_CONTRACT_VERSION,
   CLOUD_PROTOCOL_VERSION,
   parseCloudDiscovery,
   type CloudDiscovery
 } from '#cloud/contract'
+import { configuredSocialProviders } from '#cloud/server/auth/social-providers'
 import { withoutTrailingSlash } from 'ufo'
 
 import type { CloudServerConfig } from './schema'
 
-export function configuredSocialProviders(config: CloudServerConfig): Array<'apple' | 'google'> {
-  return [
-    ...(config.appleClientId ? (['apple'] as const) : []),
-    ...(config.googleClientId ? (['google'] as const) : [])
-  ]
+/**
+ * The free plan billing compares its plans with: what an account takes before billing stores its
+ * own, as the deployment's default entitlements say. Services without an allowance have no monthly
+ * limit, as the services token says of them too.
+ */
+function freePlan(config: CloudServerConfig): BillingFreePlan {
+  const { storage, services } = config.defaultEntitlements ?? {}
+  return {
+    storageBytes: storage?.maximumBytes ?? null,
+    services: services?.enabled ?? false,
+    monthlyCredits: services?.monthlyCreditAllowance ?? null
+  }
 }
 
 export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscovery {
@@ -48,7 +58,6 @@ export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscov
     deployment: config.deployment,
     apiURL: withoutTrailingSlash(new URL('/api', config.publicURL).href),
     authURL: withoutTrailingSlash(new URL('/api/auth', config.publicURL).href),
-    appURL: config.appURL ?? config.publicURL,
     localEditor: config.localEditor,
     authentication,
     capabilities: {
@@ -59,9 +68,19 @@ export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscov
     listing: config.listingMinimumEditorVersion
       ? { minimumEditorVersion: config.listingMinimumEditorVersion }
       : undefined,
-    ai: config.aiEndpoint
-      ? { endpoint: config.aiEndpoint, contractVersion: CLOUD_AI_CONTRACT_VERSION }
+    minimumEditorVersion: config.minimumEditorVersion,
+    services: config.servicesEndpoint
+      ? { endpoint: config.servicesEndpoint, contractVersion: CLOUD_SERVICES_CONTRACT_VERSION }
       : undefined,
-    billing: config.billingPortalURL ? { portalURL: config.billingPortalURL } : undefined
+    billing: config.billingEndpoint
+      ? {
+          endpoint: config.billingEndpoint,
+          contractVersion: CLOUD_BILLING_CONTRACT_VERSION,
+          freePlan: freePlan(config)
+        }
+      : undefined,
+    community: config.community,
+    branding: config.branding,
+    legal: config.legal
   })
 }

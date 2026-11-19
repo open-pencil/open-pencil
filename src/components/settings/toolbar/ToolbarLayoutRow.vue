@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -13,6 +12,7 @@ import { useTemplateRef, watchPostEffect, type Component } from 'vue'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -103,7 +103,7 @@ function onGripKey(event: KeyboardEvent) {
     <component :is="icon" :class="styles({ hidden }).icon()" aria-hidden="true" />
     <span :class="styles({ hidden }).label()">{{ label }}</span>
     <AppShortcutText :ui="{ base: styles().shortcut() }">{{ shortcut }}</AppShortcutText>
-    <DropdownMenuRoot :modal="false">
+    <AppDropdownMenuRoot :modal="false">
       <DropdownMenuTrigger as-child>
         <IconButton
           ref="options"
@@ -152,7 +152,7 @@ function onGripKey(event: KeyboardEvent) {
           </MenuScrollArea>
         </DropdownMenuContent>
       </DropdownMenuPortal>
-    </DropdownMenuRoot>
+    </AppDropdownMenuRoot>
     <AppSwitch
       :model-value="!hidden"
       :disabled="pinned"

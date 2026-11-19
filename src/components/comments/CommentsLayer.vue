@@ -1,32 +1,31 @@
 <script setup lang="ts">
-import {
-  ContextMenuContent,
-  ContextMenuPortal,
-  ContextMenuRoot,
-  ContextMenuTrigger,
-  PopoverContent,
-  PopoverPortal,
-  PopoverRoot
-} from 'reka-ui'
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { useEventListener } from '@vueuse/core'
+import { ContextMenuContent, ContextMenuPortal, PopoverContent, PopoverPortal } from 'reka-ui'
+import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 
 import type { ViewportTransform } from '@open-pencil/core/geometry'
+import type { CommentThread } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
-import { toolCursor } from '@open-pencil/vue/editor/tool-cursor'
 import { useCommentMessages } from '@open-pencil/vue/i18n'
 
+import { commentPreview } from '@/app/comments/format'
 import { useComments } from '@/app/comments/use'
 import { useEditorStore } from '@/app/editor/active-store'
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppContextMenuTrigger from '@/components/ui/menu/AppContextMenuTrigger.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
-import { COMMENT_PIN_SIZE, comments as commentsTheme } from '@/theme/comments'
+import { COMMENT_PIN_SIZE } from '@/theme/comments'
 
 import { useCommentAuthor } from './author'
 import CommentActionsMenu from './CommentActionsMenu.vue'
 import CommentComposer from './CommentComposer.vue'
 import CommentPin from './CommentPin.vue'
 import CommentThreadCard from './CommentThreadCard.vue'
+import { comments as commentsTheme } from './ui'
+import { clusterView, usePinClusters, type PinCluster } from './usePinClusters'
 import { usePinDrag } from './usePinDrag'
 
 const { canvasEl, drawn = null } = defineProps<{
@@ -43,6 +42,19 @@ const CARD_GAP = 8
 
 const store = useEditorStore()
 const comments = useComments()
+const { canComment } = comments
+
+/** Whether the open thread's reply may be deleted here. */
+function canDeleteReply(replyId: string): boolean {
+  const thread = activePin.value?.thread
+  return !!thread && comments.canDelete(thread.id, replyId)
+}
+
+/** What a pin says to assistive technology: who wrote what, and whether it is new to you. */
+function pinLabel(thread: CommentThread): string {
+  const label = `${author.name(thread.author)}: ${commentPreview(thread.text)}`
+  return comments.isUnread(thread.id) ? `${messages.value.unread}, ${label}` : label
+}
 const messages = useCommentMessages()
 const author = useCommentAuthor()
 const menuCls = useMenuUI({ content: 'min-w-40' })
@@ -93,9 +105,67 @@ const pins = computed(() => {
     .map((thread) => {
       const dragged = pinDrag.draggedTo(thread.id)
       const at = dragged ?? comments.pinPosition(thread)
-      return { thread, at, dragging: dragged !== null, ...toLayer(at) }
+      const dragging = dragged !== null
+      const standalone =
+        pinDrag.pressed(thread.id) || dragging || thread.id === activeThreadId.value
+      return { thread, at, dragging, standalone, ...toLayer(at) }
     })
 })
+
+const { pins: shownPins, clusters } = usePinClusters(pins)
+
+const pinsLayer = useTemplateRef<HTMLElement>('pinsLayer')
+
+/**
+ * A cluster's click zooms in on its pins until they part, as in Figma. Focus on the cluster,
+ * which the zoom removes, moves to its first pin, or to the cluster that pin is in now.
+ */
+function openCluster(event: MouseEvent, cluster: PinCluster<(typeof pins.value)[number]>) {
+  const button = event.currentTarget
+  if (button instanceof HTMLElement && document.activeElement === button) {
+    handFocusOnSplit(button, cluster)
+  }
+  const { bounds, maxZoom } = clusterView(cluster)
+  store.zoomToBounds(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height, {
+    maxZoom
+  })
+}
+
+/**
+ * Moves focus from a cluster to its first pin once the cluster is gone, which can be a drawn
+ * frame later; focus the user moved elsewhere in the meantime stays where they put it.
+ */
+let pendingHandoff: (() => void) | null = null
+onBeforeUnmount(() => pendingHandoff?.())
+
+function handFocusOnSplit(button: HTMLElement, cluster: PinCluster<{ thread: { id: string } }>) {
+  pendingHandoff?.()
+  const stop = watch(
+    clusters,
+    (next) => {
+      if (next.some((other) => other.key === cluster.key)) {
+        if (document.activeElement !== button) pendingHandoff?.()
+        return
+      }
+      pendingHandoff?.()
+      // Removing the cluster drops focus to the page; focus anywhere else was the user's move.
+      if (document.activeElement && document.activeElement !== document.body) return
+      const id = CSS.escape(cluster.pins[0].thread.id)
+      pinsLayer.value
+        ?.querySelector<HTMLElement>(`[data-thread-id="${id}"], [data-cluster~="${id}"]`)
+        ?.focus()
+    },
+    { flush: 'post' }
+  )
+  pendingHandoff = () => {
+    stop()
+    pendingHandoff = null
+  }
+}
+
+function clusterLabel(count: number) {
+  return messages.value.clusterCount({ count })
+}
 
 const activePin = computed(() => pins.value.find((pin) => pin.thread.id === activeThreadId.value))
 const draftAt = computed(() =>
@@ -125,14 +195,18 @@ const cardReference = computed(() => {
 })
 
 function placeDraft(event: PointerEvent) {
-  if (event.button !== 0 || !(event.currentTarget instanceof HTMLElement)) return
+  if (!commenting.value || event.button !== 0 || !canvasEl) return
+  event.preventDefault()
   // With a card open, a click on the canvas only closes it, as in Figma.
   if (comments.closeCard()) return
-  const rect = event.currentTarget.getBoundingClientRect()
+  const rect = canvasEl.getBoundingClientRect()
   const at = store.screenToCanvas(event.clientX - rect.left, event.clientY - rect.top)
   comments.startDraft({ pageId: store.state.currentPageId, ...at })
   draftText.value = ''
 }
+
+// The canvas places drafts itself, so its other buttons keep panning and opening the layer menu.
+useEventListener(() => canvasEl, 'pointerdown', placeDraft)
 
 // Scrolling and zooming keep working over pins and while placing comments, as in Figma.
 function forwardWheel(event: WheelEvent) {
@@ -160,11 +234,6 @@ function onCardOpen(event: Event) {
 const cardKey = computed(() => (draftAt.value ? 'draft' : (activePin.value?.thread.id ?? null)))
 watch(cardKey, (key) => key && focusCard(), { flush: 'post' })
 
-// Escape closes the card only; the editor's Escape would leave the Comment tool as well.
-function onCardEscape(event: KeyboardEvent) {
-  event.stopPropagation()
-}
-
 function closeCard() {
   comments.closeCard()
 }
@@ -175,20 +244,29 @@ function closeCard() {
        and zooming over pins or while placing comments still reach the canvas. -->
   <div :class="ui.layer()" data-canvas-overlay="comments" @contextmenu.stop @wheel="forwardWheel">
     <div
-      v-if="commenting"
-      :class="ui.capture()"
-      :style="{ cursor: toolCursor('COMMENT') }"
-      data-slot="comments-capture"
-      @pointerdown.prevent="placeDraft"
-      @contextmenu.prevent
-    />
-
-    <div
+      ref="pinsLayer"
       :class="ui.pins()"
       :style="{ transform: `translate(${placement.panX}px, ${placement.panY}px)` }"
     >
-      <ContextMenuRoot v-for="pin in pins" :key="pin.thread.id" :modal="false">
-        <ContextMenuTrigger as-child>
+      <!-- Before the pins, so an open or dragged pin a cluster sits over stays on top. -->
+      <button
+        v-for="cluster in clusters"
+        :key="cluster.key"
+        type="button"
+        :class="ui.cluster()"
+        :style="{ left: `${cluster.left}px`, top: `${cluster.top}px` }"
+        :aria-label="clusterLabel(cluster.pins.length)"
+        :data-cluster="cluster.key"
+        data-slot="comment-cluster"
+        @pointerdown.stop
+        @mousedown.prevent
+        @click.stop="openCluster($event, cluster)"
+      >
+        {{ cluster.pins.length }}
+      </button>
+
+      <AppContextMenuRoot v-for="pin in shownPins" :key="pin.thread.id" :modal="false">
+        <AppContextMenuTrigger as-child>
           <CommentPin
             :author="author.name(pin.thread.author)"
             :color="pin.thread.authorColor"
@@ -197,15 +275,18 @@ function closeCard() {
             :active="activeThreadId === pin.thread.id"
             :resolved="pin.thread.resolved"
             :dragging="pin.dragging"
+            :unread="comments.isUnread(pin.thread.id)"
             :style="{ left: `${pin.left}px`, top: `${pin.top}px` }"
-            :aria-label="`${author.name(pin.thread.author)}: ${pin.thread.text}`"
+            :aria-label="pinLabel(pin.thread)"
+            :data-thread-id="pin.thread.id"
             @pointerdown.stop="pinDrag.start($event, pin.thread.id, pin.at)"
             @pointermove="pinDrag.move"
             @pointerup="pinDrag.end"
             @pointercancel="pinDrag.end"
+            @lostpointercapture="pinDrag.end"
             @click.stop="pinDrag.click(pin.thread.id)"
           />
-        </ContextMenuTrigger>
+        </AppContextMenuTrigger>
         <ContextMenuPortal>
           <ContextMenuContent :class="menuCls.content">
             <MenuScrollArea>
@@ -213,7 +294,7 @@ function closeCard() {
             </MenuScrollArea>
           </ContextMenuContent>
         </ContextMenuPortal>
-      </ContextMenuRoot>
+      </AppContextMenuRoot>
 
       <CommentPin
         v-if="draftPlace"
@@ -224,7 +305,7 @@ function closeCard() {
       />
     </div>
 
-    <PopoverRoot
+    <AppPopoverRoot
       :open="!!cardReference && (!!activePin || !!draftAt)"
       @update:open="(open: boolean) => !open && closeCard()"
     >
@@ -239,7 +320,6 @@ function closeCard() {
           :class="draftAt ? draftCls.content : threadCls.content"
           data-canvas-obstacle
           @open-auto-focus="onCardOpen"
-          @escape-key-down="onCardEscape"
         >
           <CommentComposer
             v-if="draftAt"
@@ -247,6 +327,7 @@ function closeCard() {
             v-model="draftText"
             bare
             :label="messages.addComment"
+            :mentionable="comments.mentionable"
             @submit="postDraft"
             @cancel="closeCard"
           />
@@ -254,17 +335,20 @@ function closeCard() {
             v-else-if="activePin"
             ref="threadCard"
             :thread="activePin.thread"
+            :read-only="!canComment"
+            :mentionable="comments.mentionable"
+            :can-delete-reply="canDeleteReply"
             @close="closeCard"
             @resolve="comments.setResolved"
             @reply="comments.reply"
             @delete-reply="comments.deleteReply"
           >
-            <template #menu>
+            <template v-if="canComment" #menu>
               <CommentActionsMenu :thread="activePin.thread" kind="dropdown" />
             </template>
           </CommentThreadCard>
         </PopoverContent>
       </PopoverPortal>
-    </PopoverRoot>
+    </AppPopoverRoot>
   </div>
 </template>

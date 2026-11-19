@@ -42,7 +42,7 @@ const meta = {
     template: `
       <TooltipProvider>
         <div class="max-w-full space-y-3">
-          <fieldset class="max-w-[420px] space-y-2 rounded border border-border p-3 text-xs">
+          <fieldset class="max-w-105 space-y-2 rounded border border-border p-3 text-xs">
             <legend class="px-1 text-muted">Story controls — not saved</legend>
             <AppSelect v-model="selectedId" label="Test conversation" :options="options" />
             <div class="flex gap-2">
@@ -53,7 +53,7 @@ const meta = {
               <input v-model="selected.title" class="min-w-0 flex-1 rounded border border-border bg-input p-1" />
             </label>
           </fieldset>
-          <section aria-label="Chat preview" :data-narrow="args.narrow" class="flex h-[620px] w-[420px] max-w-full flex-col overflow-hidden rounded-xl border border-border bg-panel data-[narrow=true]:w-[300px]">
+          <section aria-label="Chat preview" :data-narrow="args.narrow" class="flex h-155 w-105 max-w-full flex-col overflow-hidden rounded-xl border border-border bg-panel data-[narrow=true]:w-75">
             <ChatHistory
               :saved="hasSavedConversation"
               :conversations="conversationOptions"
@@ -80,7 +80,6 @@ const meta = {
               :status="selected?.status ?? 'ready'"
               @submit="submit"
               @stop="stop"
-              @settings="showProfileNotice"
             >
               <template #model>
                 <div class="@container flex min-w-0 items-center">

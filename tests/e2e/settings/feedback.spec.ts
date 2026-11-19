@@ -13,6 +13,7 @@ test('model Save and Test explain missing fields and focus the first error', asy
   await openSettings(page)
   await page.getByTestId('settings-section-ai').click()
   await page.getByTestId('settings-add-model').click()
+  await page.locator('[data-provider="openrouter"]').click()
   const editor = page.getByTestId('settings-model-editor')
   const name = editor.getByRole('textbox', { name: 'Name', exact: true })
   const save = page.getByRole('button', { name: 'Save model', exact: true })
@@ -91,7 +92,7 @@ async function failCredentialWrites(page: Page) {
 
 test('media explains optional keys and preserves input after a failed save', async ({ page }) => {
   await openSettings(page)
-  await page.getByTestId('settings-section-media').click()
+  await page.getByTestId('settings-section-services').click()
   await page.getByRole('button', { name: /Pexels/ }).click()
   const key = page.getByRole('textbox', { name: 'API key', exact: true })
   await expect(page.getByRole('link', { name: 'Get API key' })).toHaveAttribute(
@@ -119,6 +120,34 @@ test('media explains optional keys and preserves input after a failed save', asy
   }
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByRole('button', { name: /Pexels/ })).toBeVisible()
+})
+
+test('Test connection tries the photo key typed against the service and says what it answered', async ({
+  page
+}) => {
+  await page.route('https://api.unsplash.com/photos?**', (route) =>
+    route.request().headers().authorization === 'Client-ID working-key'
+      ? route.fulfill({ json: [] })
+      : route.fulfill({ status: 401, body: 'OAuth error: The access token is invalid' })
+  )
+  await openSettings(page)
+  await page.getByTestId('settings-section-services').click()
+  await page.getByRole('button', { name: /Unsplash/ }).click()
+  const test = page.getByRole('button', { name: 'Test connection' })
+  const result = page.getByTestId('provider-test-connection-result')
+
+  await test.click()
+  await expect(result).toHaveText('Enter an API key before testing.')
+  await page.getByLabel('Access key').fill('secret-key')
+  await expect(result).toHaveCount(0)
+  await test.click()
+  await expect(result).toHaveText(
+    'Unsplash refused this key. Paste your app’s Access Key, not its Secret key.'
+  )
+  await page.getByLabel('Access key').fill('working-key')
+  await test.click()
+  await expect(result).toHaveText('Unsplash accepted this key.')
+  await expect(result).toHaveAttribute('data-tone', 'success')
 })
 
 test('MCP requires a token only for enabled bearer connections and preserves failed saves', async ({
@@ -164,9 +193,8 @@ test('a partial model save is explained and retry does not duplicate the profile
   await openSettings(page)
   await page.getByTestId('settings-section-ai').click()
   await page.getByTestId('settings-add-model').click()
+  await page.locator('[data-provider="google"]').click()
   await page.getByLabel('Name', { exact: true }).fill('Partial model')
-  await page.getByTestId('settings-model-provider').click()
-  await page.getByRole('option', { name: 'Google AI', exact: true }).click()
   await page.getByLabel('Model ID', { exact: true }).click()
   await page.getByRole('option').first().click()
   await page.getByTestId('provider-settings-api-key').fill('test-only-key')

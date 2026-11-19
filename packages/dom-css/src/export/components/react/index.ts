@@ -3,18 +3,17 @@ import { stateStylesToCSS } from '#dom-css/behaviours/states/css'
 import dedent from 'dedent'
 import { compact } from 'es-toolkit/array'
 import { omit } from 'es-toolkit/object'
-import { camelCase, upperFirst } from 'es-toolkit/string'
+import { camelCase } from 'es-toolkit/string'
 
 import { es, jsx } from '@open-pencil/emit'
 import type { ShaderComponent } from '@open-pencil/scene-graph/shaders'
 
-import type {
-  ComponentElement,
-  ComponentGenerator,
-  GeneratedComponent,
-  ComponentModel,
-  ComponentNode,
-  GeneratedKind
+import {
+  FIELD_KINDS,
+  type ComponentElement,
+  type ComponentGenerator,
+  type ComponentNode,
+  type GeneratedKind
 } from '../model'
 import type { ComponentReference } from '../references'
 import {
@@ -28,64 +27,18 @@ import {
 } from '../shaders'
 import { componentClasses } from '../styling'
 import {
+  ariaInvalid,
   INPUT_PROPS,
+  INVALID_FLAG,
   inputElement,
-  kindParameters,
   NUMBER_STATE,
   partAttributes,
   prepend,
-  STEPPERS,
-  type Parameter
+  STEPPERS
 } from './fields'
+import { PRIMITIVE, RADIX, radixImport, ROOT_ATTRIBUTES, SINGLE_PROPS } from './radix'
 import { classValue, drawing, elementLayers, moduleClass, numeric, type MarkupUses } from './shared'
-
-/**
- * The Radix primitive a kind renders, from the unified `radix-ui` package, and the component
- * of it each part uses. Its root takes the value two ways (`checked` and `onCheckedChange`,
- * `pressed`, `open`) and `disabled` itself, so the generated props extend the root's.
- */
-const RADIX: Record<GeneratedKind, { namespace: string; parts: Record<string, string> } | null> = {
-  button: null,
-  switch: { namespace: 'Switch', parts: { root: 'Root', thumb: 'Thumb' } },
-  checkbox: { namespace: 'Checkbox', parts: { root: 'Root', indicator: 'Indicator' } },
-  toggle: { namespace: 'Toggle', parts: { root: 'Root' } },
-  collapsible: {
-    namespace: 'Collapsible',
-    parts: { root: 'Root', trigger: 'Trigger', content: 'Content' }
-  },
-  tabs: {
-    namespace: 'Tabs',
-    parts: { root: 'Root', list: 'List', trigger: 'Trigger', content: 'Content' }
-  },
-  radioGroup: { namespace: 'RadioGroup', parts: { root: 'Root' } },
-  toggleGroup: { namespace: 'ToggleGroup', parts: { root: 'Root' } },
-  accordion: { namespace: 'Accordion', parts: { root: 'Root' } },
-  radioGroupItem: { namespace: 'RadioGroup', parts: { root: 'Item', indicator: 'Indicator' } },
-  toggleGroupItem: { namespace: 'ToggleGroup', parts: { root: 'Item' } },
-  accordionItem: {
-    namespace: 'Accordion',
-    parts: { root: 'Item', trigger: 'Trigger', content: 'Content' }
-  },
-  slider: {
-    namespace: 'Slider',
-    parts: { root: 'Root', track: 'Track', range: 'Range', thumb: 'Thumb' }
-  },
-  progress: { namespace: 'Progress', parts: { root: 'Root', indicator: 'Indicator' } },
-  // Radix has no number or text field; these are native inputs in the design's own elements.
-  numberField: null,
-  textField: null,
-  textarea: null,
-  // A component without a behaviour is the design's own elements.
-  plain: null
-}
-
-/** What a group's root fixes: one item chosen at a time, and an accordion that can all close. */
-const ROOT_ATTRIBUTES: Partial<Record<GeneratedKind, es.SyntaxNode[]>> = {
-  toggleGroup: [jsx.attribute('type', jsx.stringValue('single'))],
-  accordion: [jsx.attribute('type', jsx.stringValue('single')), jsx.attribute('collapsible', null)]
-}
-
-const PRIMITIVE = (namespace: string) => `${namespace}Primitive`
+import { defaultOf, parameters, propsType, reactImport, valueArg } from './signature'
 
 const HEADING_STYLE = jsx.container(
   es.object(
@@ -119,9 +72,6 @@ const disabledFlag = (kind: GeneratedKind) =>
 
 /** The Iconify component, named apart from any component the design calls `Icon`. */
 const ICONIFY = 'IconifyIcon'
-
-/** `defaultChecked`: Radix's uncontrolled value, which a nested control starts from. */
-const defaultOf = (model: string) => `default${upperFirst(model)}`
 
 /** A reference's prop value: a bare name for true, `{false}`, or a string. */
 function referenceValue(value: string | boolean): es.SyntaxNode | null {
@@ -233,6 +183,12 @@ function bindingAttributes(
   return node.bindings.flatMap((binding) => {
     if (binding.type === 'prop')
       return [jsx.attribute(binding.attribute, jsx.container(es.identifier(binding.prop.name)))]
+    if (binding.type === 'invalid')
+      return [
+        // The root takes the caller's props before its bindings (`designElement`).
+        ...(FIELD_KINDS.has(kind) ? [] : [ariaInvalid(true)]),
+        jsx.attribute('data-invalid', jsx.container(INVALID_FLAG()))
+      ]
     // Radix sets `data-disabled` on its own roots; a native root needs it for the styles.
     if (binding.type === 'disabled' && native)
       return [jsx.attribute('data-disabled', jsx.container(disabledFlag(kind)))]
@@ -282,6 +238,7 @@ function designElement(node: ComponentElement, uses: MarkupUses, depth: number):
     // takes them.
     ...(root && !INPUT_PROPS[kind] ? [jsx.spread(es.identifier('props'))] : []),
     ...(node.value === undefined ? [] : [jsx.attribute('value', jsx.stringValue(node.value))]),
+    ...(node.disabled ? [jsx.attribute('disabled', null)] : []),
     ...Object.entries(omit(node.attrs, ['class'])).map(([name, value]) =>
       jsx.attribute(name, jsx.stringValue(value))
     ),
@@ -346,151 +303,8 @@ const MODULE = es.parseModule(dedent`
   }
 `)
 
-const RADIX_IMPORT = es.parseModule(`import { $Namespace as $Primitive } from 'radix-ui'`)
 const ICONIFY_IMPORT = es.parseModule(`import { Icon as ${ICONIFY} } from '@iconify/react'`).body
 const IMPORT_COMPONENT = es.parseModule(`import { $Component } from '$path'`)
-
-/**
- * The props of a group that fixes one choice at a time, without the `type` it fixes. The
- * root's own props join the single and multiple choice, which a single value can't satisfy.
- */
-const SINGLE_PROPS: Partial<Record<GeneratedKind, string>> = {
-  toggleGroup: 'ToggleGroupSingleProps',
-  accordion: 'AccordionSingleProps'
-}
-
-const qualified = (namespace: string, name: string) => ({
-  type: 'TSQualifiedName',
-  left: es.identifier(PRIMITIVE(namespace)),
-  right: es.identifier(name)
-})
-
-/** Props a kind declares itself, where no Radix root has them. */
-const OWN_PROPS: Partial<Record<GeneratedKind, string>> = {
-  progress: "Omit<ComponentProps<typeof ProgressPrimitive.Root>, 'value'> & { value?: number }",
-  numberField:
-    "Omit<ComponentProps<'div'>, 'defaultValue' | 'onChange'> & { defaultValue?: number; onValueChange?: (value: number) => void; disabled?: boolean }",
-  textField: "ComponentProps<'input'>",
-  textarea: "ComponentProps<'textarea'>"
-}
-
-/** The root's own props, or a single choice group's. */
-function rootPropsType(kind: GeneratedKind, tag: string): es.SyntaxNode {
-  const own = OWN_PROPS[kind]
-  if (own) return es.parseType(own)
-  // A component without a behaviour takes its root element's props.
-  if (kind === 'plain') return es.parseType(`ComponentProps<'${tag}'>`)
-  const radix = RADIX[kind]
-  if (!radix) return es.parseType("ComponentProps<'button'>")
-  const single = SINGLE_PROPS[kind]
-  if (single)
-    return es.fill(es.parseType("Omit<$Props, 'type'>"), {
-      $Props: qualified(radix.namespace, single)
-    })
-  return es.fill(es.parseType('ComponentProps<typeof $Root>'), {
-    $Root: qualified(radix.namespace, radix.parts.root)
-  })
-}
-
-/** The root's own props, extended with the component's variant props when it has any. */
-function propsType(component: ComponentModel): es.SyntaxNode {
-  const base = rootPropsType(component.kind, component.tree.tag)
-  const own = [component.props, component.texts, component.booleans, component.slots]
-  if (own.every((list) => list.length === 0)) return base
-  return {
-    type: 'TSIntersectionType',
-    types: [
-      base,
-      es.objectType([
-        ...component.props.map((prop): [string, es.SyntaxNode, boolean] => [
-          prop.name,
-          es.stringUnionType(prop.options),
-          true
-        ]),
-        ...component.texts.map((text): [string, es.SyntaxNode, boolean] => [
-          text.name,
-          es.parseType('string'),
-          true
-        ]),
-        ...component.booleans.map((prop): [string, es.SyntaxNode, boolean] => [
-          prop.name,
-          es.parseType('boolean'),
-          true
-        ]),
-        ...component.slots.map((slot): [string, es.SyntaxNode, boolean] => [
-          slot.name,
-          es.parseType('ReactNode'),
-          true
-        ])
-      ])
-    ]
-  }
-}
-
-/**
- * `{ size = 'Small', label = 'Save', ...props }`: variant and text props with their defaults,
- * kept off the root, and the rest passed on.
- */
-function parameters(component: ComponentModel): es.SyntaxNode {
-  const own: Parameter[] = [
-    ...kindParameters(component),
-    ...[...component.props, ...component.texts].map((prop) => ({
-      name: prop.name,
-      default: es.string(prop.default)
-    })),
-    ...component.booleans.map((prop) => ({
-      name: prop.name,
-      default: es.parseExpression(String(prop.default))
-    })),
-    // Slots are kept off the root too, which would otherwise get them as attributes.
-    ...component.slots.map((slot) => ({ name: slot.name }))
-  ]
-  if (own.length === 0) return es.identifier('props')
-  return {
-    type: 'ObjectPattern',
-    properties: [
-      ...own.map((prop) => ({
-        type: 'Property',
-        kind: 'init',
-        key: es.identifier(prop.name),
-        value: prop.default
-          ? { type: 'AssignmentPattern', left: es.identifier(prop.name), right: prop.default }
-          : es.identifier(prop.name),
-        computed: false,
-        method: false,
-        shorthand: true
-      })),
-      { type: 'RestElement', argument: es.identifier('props') }
-    ]
-  }
-}
-
-/**
- * `import { useState, type ComponentProps, type ReactNode } from 'react'` with only what the
- * component uses: a number field's state, its root's props, and its slots' content.
- */
-function reactImport(uses: { state: boolean; props: boolean; slots: boolean }): es.SyntaxNode[] {
-  const types = [...(uses.props ? ['ComponentProps'] : []), ...(uses.slots ? ['ReactNode'] : [])]
-  if (!uses.state && types.length === 0) return []
-  const specifiers = uses.state
-    ? ['useState', ...types.map((name) => `type ${name}`)].join(', ')
-    : types.join(', ')
-  return es.parseModule(`import ${uses.state ? '' : 'type '}{ ${specifiers} } from 'react'`).body
-}
-
-/**
- * The prop a story sets the value with: Radix's uncontrolled value, so a story's control and
- * its play function can both change it, which a slider takes as a list; a progress bar's own
- * value, which nothing else changes.
- */
-function valueArg(
-  kind: GeneratedKind,
-  model: string | null
-): Pick<GeneratedComponent, 'valueArg' | 'valueList'> {
-  if (!model) return { valueArg: null }
-  if (kind === 'progress') return { valueArg: 'value' }
-  return { valueArg: defaultOf(model), ...(kind === 'slider' ? { valueList: true } : {}) }
-}
 
 /**
  * A component as a React component on Radix UI: its parts as Radix primitives from the
@@ -499,7 +313,6 @@ function valueArg(
  */
 export const reactComponent: ComponentGenerator = async (component, options = {}) => {
   const styling = options.styling ?? 'css'
-  const radix = RADIX[component.kind]
   const stylesPath = `${component.name}.module.css`
   const classOf = componentClasses(component, styling)
   const uses: MarkupUses = {
@@ -518,12 +331,7 @@ export const reactComponent: ComponentGenerator = async (component, options = {}
   const imports = [
     ...(uses.icons ? ICONIFY_IMPORT : []),
     ...(uses.shaders.size > 0 ? [shaderImport('shaders/react', uses.shaders)] : []),
-    ...(radix
-      ? es.fill(RADIX_IMPORT, {
-          $Namespace: es.identifier(radix.namespace),
-          $Primitive: es.identifier(PRIMITIVE(radix.namespace))
-        }).body
-      : []),
+    ...radixImport(component.kind),
     ...[...uses.components].sort().flatMap(
       (name) =>
         es.fill(IMPORT_COMPONENT, {

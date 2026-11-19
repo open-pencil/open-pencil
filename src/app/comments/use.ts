@@ -1,5 +1,5 @@
 import { createEventHook, createGlobalState } from '@vueuse/core'
-import { computed, ref, type WritableComputedRef } from 'vue'
+import { computed, ref, watch, type WritableComputedRef } from 'vue'
 
 import {
   commentAnchor,
@@ -24,7 +24,8 @@ import {
   type CommentPreferences
 } from '@/app/settings/preferences/store'
 
-import { followDocumentComments } from './document'
+import { commentsKeptElsewhere, followDocumentComments } from './document'
+import type { MentionPerson } from './mentions/links'
 
 /** A comment preference the list and menus read and change in place. */
 function preference<K extends keyof CommentPreferences>(
@@ -42,7 +43,7 @@ function preference<K extends keyof CommentPreferences>(
  * Changes are document changes but never undo steps, as in Figma.
  *
  * Escape closes things in order: the composer and the card's popover close themselves, and the
- * editor's Escape asks `closeCard` before it leaves the Comment tool.
+ * app's Escape shortcut asks `closeCard` before the editor's Escape leaves the Comment tool.
  */
 export const useComments = createGlobalState(() => {
   const identity = useCollabIdentity()
@@ -76,7 +77,41 @@ export const useComments = createGlobalState(() => {
     return { name: own?.name.value ?? identity.name.value, color: own?.color ?? identity.color }
   })
 
+  /**
+   * Whether this tab may write comments: anywhere the document keeps them, and where a server
+   * keeps them, as it allows, which a guest on a link never is.
+   */
+  const kept = computed(() => {
+    const store = storeRef.value
+    return store ? commentsKeptElsewhere.value.get(store) : undefined
+  })
+  const canComment = computed(() => kept.value?.canComment ?? true)
+
+  /** Whether someone else wrote in the thread since this account read it, where a server keeps. */
+  function isUnread(threadId: string): boolean {
+    return kept.value?.unread.has(threadId) ?? false
+  }
+
+  /** Whether this tab may delete the thread, or a reply of it; anything where the file keeps them. */
+  function canDelete(threadId: string, replyId?: string): boolean {
+    return kept.value ? kept.value.canDelete(threadId, replyId) : true
+  }
+
+  /** Whom a comment may name: the people the server lets see the document; nobody elsewhere. */
+  function mentionable(): Promise<readonly MentionPerson[]> {
+    return kept.value?.people() ?? Promise.resolve([])
+  }
+
+  // An open thread is read, including what arrives while it is open.
+  watch(
+    () => [activeThreadId.value, kept.value] as const,
+    ([threadId, current]) => {
+      if (threadId && current?.unread.has(threadId)) current.markRead(threadId)
+    }
+  )
+
   function startDraft(at: PagePoint) {
+    if (!canComment.value) return
     activeThreadId.value = null
     draft.value = at
   }
@@ -98,7 +133,7 @@ export const useComments = createGlobalState(() => {
     const place = draft.value
     const body = text.trim()
     const store = documentComments.store()
-    if (!store || !place || !body) return
+    if (!store || !place || !body || !canComment.value) return
     const thread = createCommentThread(store.graph, {
       pageId: place.pageId,
       at: place,
@@ -114,18 +149,19 @@ export const useComments = createGlobalState(() => {
   /** A dragged pin lands on whatever is under it now, as in Figma. */
   function movePin(threadId: string, at: Vector) {
     const store = documentComments.store()
-    if (!store) return
+    if (!store || !canComment.value) return
     update(threadId, (thread) => ({ ...thread, ...commentAnchor(store.graph, thread.pageId, at) }))
   }
 
   function reply(threadId: string, text: string) {
     const body = text.trim()
-    if (!body) return
+    if (!body || !canComment.value) return
     const entry = createCommentReply(me.value, body, now())
     update(threadId, (thread) => replyToCommentThread(thread, entry))
   }
 
   function setResolved(threadId: string, resolved: boolean) {
+    if (!canComment.value) return
     update(threadId, (thread) => resolveCommentThread(thread, resolved, now()))
     // A resolved thread leaves the canvas unless resolved comments are shown.
     if (resolved && !listShowResolved.value && activeThreadId.value === threadId) {
@@ -139,11 +175,13 @@ export const useComments = createGlobalState(() => {
   }
 
   function confirmDelete(threadId: string) {
+    if (!canComment.value) return
     update(threadId, deleteCommentThread)
     if (activeThreadId.value === threadId) activeThreadId.value = null
   }
 
   function deleteReply(threadId: string, replyId: string) {
+    if (!canComment.value) return
     update(threadId, (thread) => deleteCommentReply(thread, replyId))
   }
 
@@ -171,6 +209,10 @@ export const useComments = createGlobalState(() => {
     draft,
     onDeleteRequested: deleteRequested.on,
     author: computed(() => me.value.name),
+    canComment,
+    isUnread,
+    canDelete,
+    mentionable,
     showOnCanvas,
     listQuery,
     listShowResolved,

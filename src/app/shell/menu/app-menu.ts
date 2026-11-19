@@ -1,6 +1,5 @@
 import type { Component } from 'vue'
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import IconDownload from '~icons/lucide/download'
 import IconEye from '~icons/lucide/eye'
 import IconFile from '~icons/lucide/file'
@@ -17,17 +16,17 @@ import IconZoomIn from '~icons/lucide/zoom-in'
 import IconZoomOut from '~icons/lucide/zoom-out'
 
 import type { BuiltinIOFormatId } from '@open-pencil/core/io'
-import { shortcutPlatform, useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { formatShortcutKeys, useEditorCommands } from '@open-pencil/vue/editor/commands'
 import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
+import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
 import type {
   CommandPaletteGroup,
   CommandPaletteItem
 } from '@open-pencil/vue/primitives/CommandPalette'
 
-import { openTour } from '@/app/demo/document'
+import { createPlaceMenuActions } from '@/app/document/io/place'
 import { useEditorStore } from '@/app/editor/active-store'
-import { openVariablesDialog } from '@/app/editor/tokens/dialog'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
   setCommentsOnCanvas,
@@ -37,8 +36,10 @@ import {
 import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
+import { createTabMenuActions } from '@/app/shell/menu/actions/tabs'
+import { visibleMenuEntries } from '@/app/shell/menu/entry'
 import { menuFeatureAvailable } from '@/app/shell/menu/features'
-import { browseFiles } from '@/app/shell/menu/navigation'
+import { createHelpMenuActions } from '@/app/shell/menu/help'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import type {
   AppMenuActionItem,
@@ -48,10 +49,8 @@ import type {
   AppMenuIcon
 } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
-import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
-import { openFileDialog } from '@/app/shell/menu/use'
+import { appMenuShortcut, appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { useAppTheme } from '@/app/shell/theme'
-import { closeTab, activeTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
   label: string
@@ -76,17 +75,6 @@ const APP_MENU_ICONS: Record<AppMenuIcon, Component> = {
   'zoom-out': IconZoomOut
 }
 
-function shortcutKeys(shortcut: string | undefined): string[] | undefined {
-  if (!shortcut) return undefined
-  const platform = shortcutPlatform()
-  return shortcut.split('+').map((key) => {
-    if (key === 'MOD') return platform === 'mac' ? '⌘' : 'Ctrl'
-    if (key === 'SHIFT') return platform === 'mac' ? '⇧' : 'Shift'
-    if (key === 'ALT') return platform === 'mac' ? '⌥' : 'Alt'
-    return key
-  })
-}
-
 function isVisible(entry: { target?: string; feature?: AppMenuFeature }): boolean {
   return entry.target !== 'native' && menuFeatureAvailable(entry.feature)
 }
@@ -97,21 +85,32 @@ function isSeparator(entry: AppMenuEntry): entry is Extract<AppMenuEntry, { type
 
 export function useAppMenu() {
   const store = useEditorStore()
-  const router = useRouter()
   const {
     commands,
     menuItem: commandMenuItem,
     otherPages,
     moveSelectionToPage
   } = useEditorCommands()
-  const { menu, locale, availableLocales, localeLabels, setLocale } = useI18n()
+  const { menu, updates, locale, availableLocales, localeLabels, setLocale } = useI18n()
   const { theme, setTheme } = useAppTheme()
+  const { isMobile } = useViewportKind()
 
   const translatedMenuItemLabels: Partial<Record<string, keyof typeof menu.value>> = {
     new: 'new',
+    'new-board': 'newBoard',
+    'new-tab': 'newTab',
     open: 'open',
-    'browse-files': 'browseFiles',
+    place: 'place',
     'open-tour': 'openTour',
+    diagnostics: 'diagnostics',
+    'report-problem': 'reportProblem',
+    'support-openpencil': 'supportOpenPencil',
+    'help-docs': 'documentation',
+    'help-shortcuts': 'keyboardShortcuts',
+    'help-whats-new': 'whatsNew',
+    'check-updates': 'checkUpdates',
+    'help-community': 'community',
+    'help-github': 'github',
     save: 'save',
     'save-as': 'saveAs',
     'save-to': 'saveTo',
@@ -120,12 +119,18 @@ export function useAppMenu() {
     'export-selection': 'exportSelection',
     autosave: 'autosave',
     close: 'closeTab',
+    'previous-tab': 'selectPreviousTab',
+    'next-tab': 'selectNextTab',
     copy: 'copy',
     cut: 'cut',
     paste: 'paste',
     'paste-to-replace': 'pasteToReplace',
+    'paste-as-layers': 'pasteAsLayers',
+    'copy-properties': 'copyProperties',
+    'paste-properties': 'pasteProperties',
     'selection.rename': 'renameSelection',
     'selection.moveToPage': 'moveToPage',
+    'arrange-layout': 'autoArrange',
     language: 'language',
     preferences: 'preferences',
     settings: 'settings',
@@ -142,6 +147,7 @@ export function useAppMenu() {
     profiler: 'profiler',
     'toggle-ui': 'toggleUI',
     'toggle-preview': 'togglePreview',
+    'toggle-ai': 'toggleAIChat',
     theme: 'theme',
     'theme-light': 'themeLight',
     'theme-dark': 'themeDark',
@@ -176,30 +182,19 @@ export function useAppMenu() {
   }
 
   const actions: Partial<Record<string, () => void>> = {
-    new: () => {
-      void import('@/app/tabs').then((m) => m.createTab())
-    },
-    open: () => void openFileDialog(),
-    'browse-files': () => browseFiles(router),
-    'open-tour': () => {
-      openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))
-    },
-    ...createSaveMenuActions(store),
+    ...createTabMenuActions(),
+    ...createSaveMenuActions(),
+    ...createPlaceMenuActions(),
     'export-selection': () => exportSelection('png'),
     ...createSelectionMenuActions(store),
-    close: () => {
-      if (activeTab.value) void closeTab(activeTab.value.id)
-    },
     settings: openSettingsDialog,
-    variables: () => openVariablesDialog(store),
-    'insert-icon': () => {
-      store.state.iconPickerOpen = true
-    },
+    ...createHelpMenuActions(updates),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),
+    'export-drawio': () => exportSelection('drawio'),
     'export-fig': () => exportSelection('fig'),
-    ...createSharedEditorMenuActions(setTheme)
+    ...createSharedEditorMenuActions(setTheme, isMobile)
   }
 
   function itemAction(item: AppMenuActionItem): (() => void) | undefined {
@@ -285,6 +280,9 @@ export function useAppMenu() {
       case 'view-split-right':
       case 'view-split-down':
         return store.visiblePaneCount.value >= store.panes.maxVisiblePanes
+      case 'copy-properties':
+      case 'paste-properties':
+        return store.state.selectedIds.size === 0
       default:
         return undefined
     }
@@ -329,10 +327,10 @@ export function useAppMenu() {
 
     if (entry.command) {
       return {
-        ...commandMenuItem(entry.command, appMenuShortcutLabel(entry.id)),
+        ...commandMenuItem(entry.command, appMenuShortcut(entry.id)),
         menuId: entry.id,
         palette: resolvePalette(entry),
-        paletteShortcut: entry.shortcut
+        paletteShortcut: appMenuShortcut(entry.id)
       }
     }
 
@@ -346,13 +344,13 @@ export function useAppMenu() {
       disabled: disabled(entry),
       checked: checked(entry),
       onCheckedChange: onCheckedChange(entry),
-      sub: entry.sub?.map(buildEntry).filter((item): item is MenuEntry => item !== null)
+      sub: entry.sub ? visibleMenuEntries(entry.sub.map(buildEntry)) : undefined
     }
   }
 
   function groupLabel(group: AppMenuGroupSchema): string {
-    const key = group.label.toLowerCase() as keyof typeof menu.value
-    return menu.value[key] ?? group.label
+    const key = group.label.toLowerCase()
+    return key in menu.value ? menu.value[key as keyof typeof menu.value] : group.label
   }
 
   function buildGroup(group: AppMenuGroupSchema): AppMenuGroup | null {
@@ -360,7 +358,7 @@ export function useAppMenu() {
     return {
       label: groupLabel(group),
       paletteIcon: group.paletteIcon ? APP_MENU_ICONS[group.paletteIcon] : undefined,
-      items: group.items.map(buildEntry).filter((item): item is MenuEntry => item !== null)
+      items: visibleMenuEntries(group.items.map(buildEntry))
     }
   }
 
@@ -378,7 +376,7 @@ export function useAppMenu() {
       label: entry.palette?.label ?? entry.label,
       icon: entry.palette?.icon ?? fallbackIcon,
       shortcut: entry.paletteShortcut
-        ? { keys: shortcutKeys(entry.paletteShortcut) ?? [] }
+        ? { keys: formatShortcutKeys(entry.paletteShortcut) }
         : undefined,
       description: entry.palette?.description,
       keywords: entry.palette?.keywords,

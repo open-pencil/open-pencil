@@ -1,0 +1,1 @@
+- `@open-pencil/std`, OpenPencil's own standard library beside es-toolkit: deadlines, backoff, and lengths of time, secure randomness, array helpers safe for large inputs, and JSON types, with no dependencies (#2217).

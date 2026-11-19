@@ -1,0 +1,148 @@
+import { computedAsync } from '@vueuse/core'
+import type { UIMessage } from 'ai'
+import { computed, type Ref } from 'vue'
+
+import { providerKind, type AIProviderID } from '@open-pencil/core/constants'
+
+import { contextTokensOf, usageOf } from '@/app/ai/chat/metadata'
+import { resolveModelsDevModel } from '@/app/ai/models/catalog'
+import { resolveLanguageModelID } from '@/app/ai/models/language-model'
+import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
+import { designModelConnection, designModelProfile } from '@/app/ai/models/store'
+import type { ResolvedAIModelRole } from '@/app/ai/models/types'
+import { cloudContextWindow } from '@/app/ai/providers/openpencil/context'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+
+import { compactionOf, messagesSinceCompaction } from './marker'
+
+/** What a model can hold, prompt and reply together, and how much of it a reply may take. */
+export interface ContextLimits {
+  contextWindow: number
+  maxOutputTokens: number
+}
+
+/** A model's context window from its catalog: Cloud's for its own service, else the provider's. */
+async function contextWindowOf(
+  providerID: AIProviderID,
+  modelID: string,
+  cloudWorkspaceId: string | undefined
+): Promise<number | undefined> {
+  if (providerID === OPENPENCIL_AI_PROVIDER) {
+    return cloudWorkspaceId ? cloudContextWindow(cloudWorkspaceId, modelID) : undefined
+  }
+  const listed = await resolveProviderModel(providerID, modelID)
+  return listed?.contextWindow ?? (await resolveModelsDevModel(providerID, modelID))?.contextWindow
+}
+
+/**
+ * A model's limits, when the chat calls it itself and its catalog gives a window. Agents keep
+ * their own context.
+ */
+export async function contextLimitsOf({
+  connection,
+  profile
+}: Pick<ResolvedAIModelRole, 'connection' | 'profile'>): Promise<ContextLimits | null> {
+  const providerID = connection.providerID
+  if (providerKind(providerID) !== 'api') return null
+  const modelID = resolveLanguageModelID({
+    providerID,
+    modelID: profile.modelID,
+    customModelID: profile.customModelID
+  })
+  const contextWindow = await contextWindowOf(providerID, modelID, connection.cloudWorkspaceId)
+  return contextWindow ? { contextWindow, maxOutputTokens: profile.maxOutputTokens } : null
+}
+
+/** The Design model's limits, which the conversation's requests fill. */
+export async function designContextLimits(): Promise<ContextLimits | null> {
+  const profile = designModelProfile.value
+  const connection = designModelConnection.value
+  return profile && connection ? contextLimitsOf({ connection, profile }) : null
+}
+
+/**
+ * Where automatic compaction starts: the window less the whole reply allowance, which providers
+ * reserve from the window, and a tenth of the rest for the next message. A reply allowance past
+ * half the window counts as half, so some conversation still fits.
+ */
+export function autoCompactAt({ contextWindow, maxOutputTokens }: ContextLimits): number {
+  const reply = Math.min(maxOutputTokens, contextWindow / 2)
+  return Math.floor((contextWindow - reply) * 0.9)
+}
+
+/** About four characters to a token, for text no request has counted yet. */
+const CHARACTERS_PER_TOKEN = 4
+
+/**
+ * How many characters of the conversation a summary request may carry: what fits below the
+ * automatic threshold, which leaves the summary its reply allowance.
+ */
+export function summaryBudget(limits: ContextLimits): number {
+  return autoCompactAt(limits) * CHARACTERS_PER_TOKEN
+}
+
+/** An estimate of the tokens `text` takes, before a request has counted it. */
+export function estimatedTokens(text: string): number {
+  return Math.ceil(text.length / CHARACTERS_PER_TOKEN)
+}
+
+/** The text a message holds, for estimating its tokens. */
+function messageText(message: UIMessage): string {
+  return message.parts.map((part) => (part.type === 'text' ? part.text : '')).join('')
+}
+
+/**
+ * What every request carries before any history, its instructions and tools: from the latest
+ * reply that opened a context, the conversation's first or the first after a compaction, its
+ * first request less the summary and the request it answered.
+ */
+function requestBaseline(messages: readonly UIMessage[]): number {
+  for (let index = messages.length - 1; index >= 1; index--) {
+    const first = usageOf(messages[index])?.firstRequestTokens
+    const request = messages[index - 1]
+    if (first === undefined || request.role !== 'user') continue
+    const before = index >= 2 ? messages[index - 2] : undefined
+    const summary = before ? compactionOf(before)?.summary : undefined
+    if (index > 1 && summary === undefined) continue
+    return Math.max(
+      0,
+      first - estimatedTokens(messageText(request)) - estimatedTokens(summary ?? '')
+    )
+  }
+  return 0
+}
+
+/**
+ * The tokens the next request starts from: what the last reply since the latest compaction
+ * reported, or, right after a compaction, an estimate of its summary with what every request
+ * carries.
+ */
+export function contextTokensSinceCompaction(messages: readonly UIMessage[]): number | null {
+  const since = messagesSinceCompaction(messages)
+  const reported = contextTokensOf(since)
+  if (reported !== null) return reported
+  const compaction = since.at(0) ? compactionOf(since[0]) : null
+  if (!compaction) return null
+  return requestBaseline(messages) + estimatedTokens(compaction.summary)
+}
+
+/** How full the Design model's context is for `messages`, for the chat's context meter. */
+export function useChatContext(messages: Ref<readonly UIMessage[]>) {
+  const limits = computedAsync(
+    () => {
+      // Read before the await, so the meter follows a change of model.
+      void designModelProfile.value?.modelID
+      void designModelProfile.value?.customModelID
+      void designModelConnection.value?.providerID
+      return designContextLimits()
+    },
+    null,
+    { onError: () => undefined }
+  )
+  const used = computed(() => contextTokensSinceCompaction(messages.value))
+  const ratio = computed(() =>
+    limits.value && used.value !== null ? used.value / limits.value.contextWindow : null
+  )
+  const compactsAt = computed(() => (limits.value ? autoCompactAt(limits.value) : null))
+  return { limits, used, ratio, compactsAt }
+}

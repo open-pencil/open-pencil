@@ -31,6 +31,18 @@ export function inheritFromAncestors(node: NodeChange, ancestors: readonly NodeC
   })
 }
 
+/**
+ * A record's copies of its parent's property definitions, each by its own id to the id of the
+ * definition it copies, as a variant copies its set's boolean, text, swap, and slot properties.
+ */
+export function linkedPropertyCopies(node: NodeChange): Map<string, string> {
+  const copies = new Map<string, string>()
+  for (const definition of (node.componentPropDefs as LinkedPropertyDefinition[] | undefined) ?? [])
+    if (definition.id && definition.parentPropDefId)
+      copies.set(guidToString(definition.id), guidToString(definition.parentPropDefId))
+  return copies
+}
+
 /** Resolve definition inheritance only within the source node's ancestry. */
 export function inheritComponentPropertyDefinitions(
   changes: readonly NodeChange[],

@@ -55,7 +55,7 @@ describe('openpencil scripting API', () => {
       openpencil.getBehaviour(set).remove()
       return [kind, openpencil.getBehaviour(set), openpencil.behaviourKinds.length]
     `)
-    expect(result).toEqual(['switch', null, 15])
+    expect(result).toEqual(['switch', null, 16])
     expect(graph.getNode(set.id)?.componentPropertyDefinitions.map((item) => item.name)).toContain(
       'State'
     )

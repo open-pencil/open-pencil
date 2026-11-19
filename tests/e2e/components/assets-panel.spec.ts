@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 async function selectedNodeSnapshot(page: Page) {

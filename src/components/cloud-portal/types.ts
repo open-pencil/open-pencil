@@ -1,11 +1,23 @@
+import type { Component } from 'vue'
+
+import type {
+  CloudAdminDocument,
+  CloudAdminReportStatus,
+  CloudSignInMethod,
+  CloudSocialProvider,
+  DocumentReportReason,
+  WorkspaceRole
+} from '@open-pencil/cloud/contract'
+
 export type PortalSection = {
   id: string
   label: string
+  icon: Component
   group: string
   count?: number
 }
 
-export type PortalSignInMethod = 'google' | 'apple'
+export type PortalSignInMethod = CloudSocialProvider
 
 export type AccessRequestStatus = 'pending' | 'approved' | 'rejected' | 'revoked'
 
@@ -17,16 +29,86 @@ export type AccessRequest = {
   requestedOn: string
   status: AccessRequestStatus
   reviewedBy?: string | null
+  /** What the administrator who decided wrote down for the others. */
+  note?: string | null
 }
 
 export type PortalPerson = {
   id: string
   name: string
   email: string
+  image?: string | null
   admin: boolean
   suspended: boolean
+  /** Why an administrator suspended the account, when they said. */
+  suspendedReason?: string | null
+  /** An authenticator app or a passkey confirms the account's sign-ins. */
+  twoStep: boolean
   joinedOn: string
+  /** When one of its sessions was last used, already worded; null when none is left. */
+  lastActive: string | null
+  workspaceCount: number
+  /** How it signs in: `credential` for a password, or a provider such as `google`. */
+  methods: string[]
+  /** An account whose request to join is not approved: waiting, declined, or removed. */
+  access?: 'waiting' | 'declined' | 'removed'
   you?: boolean
+}
+
+/** Something an administrator does to an account, each asked once more before it happens. */
+export type PortalPersonAction =
+  | 'make-admin'
+  | 'remove-admin'
+  | 'sign-out'
+  | 'reset-two-step'
+  | 'remove-picture'
+  | 'suspend'
+  | 'restore'
+  | 'delete'
+
+/** What the server read about the browser or app a session or sign-in came from. */
+export type PortalDevice = {
+  method: CloudSignInMethod | null
+  browser: string | null
+  system: string | null
+  ipAddress: string | null
+}
+
+export type PortalSession = PortalDevice & {
+  id: string
+  current: boolean
+  lastActive: string
+  signedInOn: string
+}
+
+/** A personal access token as the portal lists it, with its dates in words. */
+export type PortalAccessToken = {
+  id: string
+  name: string
+  /** Its first characters, prefix included. */
+  start: string | null
+  created: string
+  /** When it was last used, or null when never. */
+  lastUsed: string | null
+  expires: string
+  expired: boolean
+}
+
+export type PortalSignIn = PortalDevice & {
+  id: string
+  when: string
+}
+
+export type PortalPersonDetail = {
+  person: PortalPerson
+  emailVerified: boolean
+  /** `canRemove`: the server says the account keeps a working way in without it. */
+  methods: { id: string; provider: string; linkedOn: string; canRemove: boolean }[]
+  authenticator: boolean
+  passkeyCount: number
+  workspaces: { id: string; name: string; role: WorkspaceRole; memberCount: number }[]
+  sessions: PortalSession[]
+  signIns: PortalSignIn[]
 }
 
 export type PortalEmail = {
@@ -45,6 +127,8 @@ export type PortalActivityEntry = {
   /** The server's action code, such as `enrollment.approved`. */
   action: string
   target: string
+  /** Why the administrator did it, when they said. */
+  reason?: string | null
   when: string
 }
 
@@ -62,4 +146,60 @@ export type PortalServerStatus = {
   pendingEnrollment: number
   pendingEmail: number
   failedEmail: number
+  accounts: number
+  workspaces: number
+  documents: number
+  storedBytes: number
 }
+
+/** A document as the console lists it. */
+export type PortalDocumentRow = {
+  id: string
+  name: string
+  workspace: string
+  owner: { id: string; name: string; email: string } | null
+  /** When it last changed, as an ISO timestamp the list shows relative to now. */
+  updatedAt: string
+  kind: CloudAdminDocument['kind']
+  /** Whether it has been saved, so it has a file to download. */
+  saved: boolean
+  /** Where its saved thumbnail is; null before its first save. */
+  thumbnail: string | null
+  /** Who beyond its workspace can open it. */
+  exposure: CloudAdminDocument['exposure']
+  takenDown: boolean
+  /** Why an administrator took it down, when they said. */
+  takenDownReason: string | null
+  openReports: number
+  /** Someone deleted it forever; it is out of everyone's sight until cleanup destroys it. */
+  deletedForever: boolean
+  /** When cleanup destroys it, while an administrator can still restore it. */
+  destroyed: string | null
+}
+
+/** A report about a shared document, with the document it is about. */
+export type PortalReportRow = {
+  id: string
+  reason: DocumentReportReason
+  description: string
+  status: CloudAdminReportStatus
+  /** Who sent it: an account's name, or null for a guest. */
+  reporter: string | null
+  replyEmail: string | null
+  reportedOn: string
+  document: PortalDocumentRow
+  share: { id: string; revoked: boolean } | null
+}
+
+/** What an administrator may do about a reported or listed document. */
+export type PortalContentAction =
+  | 'download'
+  | 'take-down'
+  | 'restore'
+  | 'undelete'
+  | 'revoke-link'
+  | 'suspend-owner'
+  | 'dismiss'
+  | 'mark-handled'
+
+export type { PortalPlan } from '@/app/cloud-portal/plan'

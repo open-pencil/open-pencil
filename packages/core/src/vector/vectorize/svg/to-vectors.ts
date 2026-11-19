@@ -7,25 +7,36 @@
  */
 import svgpath from 'svgpath'
 
-import type { Fill, Stroke, VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
+import type { Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
+import type { IconPaint } from '@open-pencil/scene-graph/icons'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
-import type { Rect, Size, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Color, Rect, Size, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { createPathStroke } from '#core/icons/path-style'
-import { extractSVGContent } from '#core/icons/svg'
-import type { IconPathInfo, SVGElementLayer, SVGTextPiece, SVGTextRun } from '#core/icons/types'
+import { extractSVGContent, isSVGPathShown, type SVGContent } from '#core/icons/svg'
+import type {
+  IconPathInfo,
+  SVGClipPathInfo,
+  SVGClipPathRegion,
+  SVGElementLayer,
+  SVGTextPiece,
+  SVGTextRun
+} from '#core/icons/types'
 import { parseSVGSize, parseSVGViewBox } from '#core/io/formats/svg/metadata'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
-import { parseSVGGradients, resolveGradientFill } from './gradients'
+import { resolveGradientFill } from './gradients'
 import {
   type SVGViewportMapping,
   applySVGTransformToPath,
   mapSVGPathToViewport,
-  resolveSVGViewportMapping
+  placeSVGPath,
+  resolveSVGViewportMapping,
+  svgStrokeScale,
+  svgViewportAttributes
 } from './transform'
 
 function parseSVGCoordinateSpace(svg: string): Rect {
@@ -42,40 +53,68 @@ function unionPathBounds(paths: VectorizedPath[]): Rect {
   return computeBounds(rects)
 }
 
-function resolveFill(path: IconPathInfo, defaultColor: string): Fill[] {
-  if (path.fill && path.fill !== 'none') {
-    const color = path.fill === 'currentColor' ? parseColor(defaultColor) : parseColor(path.fill)
-    return [{ type: 'SOLID', color, opacity: path.fillOpacity, visible: true }]
-  }
-  if (path.fill === null && !path.stroke) {
-    return [{ type: 'SOLID', color: parseColor(defaultColor), opacity: 1, visible: true }]
-  }
-  return []
+const CURRENT_COLOR = 'currentColor'
+
+/** A paint string as a color: `currentColor` takes the host's color, which `tint` records. */
+function paintColor(paint: string, defaultColor: string): Color {
+  return parseColor(paint === CURRENT_COLOR ? defaultColor : paint)
 }
 
-function resolveStrokes(path: IconPathInfo, defaultColor: string, strokeScale = 1): Stroke[] {
-  if (!path.stroke || path.stroke === 'none') return []
-  const color = path.stroke === 'currentColor' ? parseColor(defaultColor) : parseColor(path.stroke)
-  const stroke = createPathStroke(
-    color,
-    path.strokeWidth * strokeScale,
-    path.strokeCap,
-    path.strokeJoin
-  )
-  return [{ ...stroke, opacity: path.strokeOpacity }]
+/** The paints a path draws with and which of them are the host's color. */
+interface PathPaints {
+  fills: Fill[]
+  strokes: Stroke[]
+  tint: IconPaint[]
+}
+
+function pathPaints(
+  path: IconPathInfo,
+  defaultColor: string,
+  strokeScale: number,
+  gradient: (paint: string) => Fill | null
+): PathPaints {
+  const tint: IconPaint[] = []
+  const fills: Fill[] = []
+  const strokes: Stroke[] = []
+  if (path.fill) {
+    const fill = gradient(path.fill) ?? {
+      type: 'SOLID' as const,
+      color: paintColor(path.fill, defaultColor),
+      opacity: 1,
+      visible: true
+    }
+    fills.push({ ...fill, opacity: path.fillOpacity })
+    if (path.fill === CURRENT_COLOR) tint.push('fill')
+  }
+  if (path.stroke) {
+    const line = createPathStroke(
+      paintColor(path.stroke, defaultColor),
+      path.strokeWidth * strokeScale,
+      path.strokeCap,
+      path.strokeJoin
+    )
+    // A gradient stroke keeps the line's weight, alignment, cap, and join.
+    strokes.push({ ...line, ...gradient(path.stroke), opacity: path.strokeOpacity })
+    if (path.stroke === CURRENT_COLOR) tint.push('stroke')
+  }
+  return { fills, strokes, tint }
 }
 
 export interface VectorizedClip {
   /** The `<clipPath>` element's `id`. */
   id: string
-  /** One network per clip shape. */
-  shapes: VectorNetwork[]
+  /** False when the `<clipPath>` itself is hidden, so it clips nothing. */
+  visible: boolean
+  /** One network per clip shape, hidden ones included, as Figma keeps them. */
+  shapes: Array<{ network: VectorNetwork; visible: boolean }>
 }
 
 export interface VectorizedPath {
   vectorNetwork: VectorNetwork
   fills: Fill[]
   strokes: Stroke[]
+  /** The paints drawn in `currentColor`, which an icon's color fills. */
+  tint: IconPaint[]
   /** The clip regions around the path, ordered like `IconPathInfo.clipPaths`. */
   clips?: VectorizedClip[]
   elements: SVGElementLayer[]
@@ -98,63 +137,47 @@ export interface VectorizedText {
 export interface SVGVectorizeResult {
   paths: VectorizedPath[]
   texts: VectorizedText[]
-  /** Tight bounds of path geometry in the target coordinate space. */
+  /** Tight bounds of the shown paths' geometry in the target coordinate space. */
   contentBounds: Rect
 }
 
-export function svgToVectorPaths(
-  svgText: string,
-  bounds: Size,
-  options?: { defaultColor?: string; preserveAspectRatio?: boolean }
-): SVGVectorizeResult | null {
-  const { paths, texts } = extractSVGContent(svgText)
-  if (paths.length === 0 && texts.length === 0) return null
+/** SVG content, extracted with the gradients it paints with, for {@link vectorizeSVGContent}. */
+export type SVGVectorizeSource = Pick<SVGContent, 'paths' | 'texts' | 'gradients'>
 
-  const space = parseSVGCoordinateSpace(svgText)
-  if (space.width <= 0 || space.height <= 0) return null
-
-  const defaultColor = options?.defaultColor ?? '#000000'
-  const gradients = parseSVGGradients(svgText)
-  const viewport = resolveSVGViewportMapping(
-    svgText,
-    space,
-    bounds,
-    options?.preserveAspectRatio ?? false
-  )
-  const strokeScale = Math.min(viewport.scaleX, viewport.scaleY)
-
+/**
+ * SVG content as vector networks and paints placed through `viewport`, the one way pasted and
+ * imported SVG, icons, and design JSX `<svg>` turn SVG shapes into layers. `currentColor` paints
+ * take `defaultColor`, and each path's `tint` says which of its paints they were.
+ */
+export function vectorizeSVGContent(
+  { paths, texts, gradients }: SVGVectorizeSource,
+  viewport: SVGViewportMapping,
+  defaultColor = '#000000'
+): SVGVectorizeResult {
   const vectorized: VectorizedPath[] = []
   const clipCache: ClipCache = new WeakMap()
   for (const path of paths) {
-    const fillRule: WindingRule = path.fillRule
     const transform = path.transform ?? null
-    const pathData = applySVGTransformToPath(path.d, transform)
-    const scaledD = mapSVGPathToViewport(pathData, viewport)
-    const solidFills = resolveFill(path, defaultColor)
-    const strokes = resolveStrokes(path, defaultColor, strokeScale)
+    // Arcs become curves before rounding, as the path parser would turn them anyway: rounding an
+    // arc's own end can put it on its start, and a degenerate arc draws nothing.
+    const placedD = placeSVGPath(applySVGTransformToPath(path.d, transform), null, viewport)
+      .abs()
+      .unshort()
+      .unarc()
+      .round(2)
+      .toString()
     // A stroke would also trace the closing edge of an open subpath in the fill region.
-    const network = parseSVGPath(scaledD, fillRule, {
-      includeOpenRegions: solidFills.length > 0 && strokes.length === 0
+    const network = parseSVGPath(placedD, path.fillRule, {
+      includeOpenRegions: path.fill !== null && path.stroke === null
     })
     const pathBounds = computeAccurateBounds(network)
-    const gradientFill =
+    const paints = pathPaints(path, defaultColor, svgStrokeScale(transform, viewport), (paint) =>
       gradients.size > 0
-        ? resolveGradientFill(
-            path.fill,
-            gradients,
-            transform,
-            viewport,
-            computeAccurateBounds(network)
-          )
+        ? resolveGradientFill(paint, gradients, transform, viewport, pathBounds)
         : null
+    )
     const clips = path.clipPaths && vectorizeClips(path.clipPaths, viewport, pathBounds, clipCache)
-    vectorized.push({
-      vectorNetwork: network,
-      fills: gradientFill ? [{ ...gradientFill, opacity: path.fillOpacity }] : solidFills,
-      strokes,
-      clips,
-      elements: path.elements
-    })
+    vectorized.push({ vectorNetwork: network, ...paints, clips, elements: path.elements })
   }
 
   return {
@@ -169,8 +192,30 @@ export function svgToVectorPaths(
       elements: text.elements,
       pathIndex: text.pathIndex
     })),
-    contentBounds: unionPathBounds(vectorized)
+    contentBounds: unionPathBounds(vectorized.filter(isSVGPathShown))
   }
+}
+
+/** SVG markup as vectors in `bounds`, its viewBox mapped as the outermost `<svg>` says. */
+export function svgToVectorPaths(
+  svgText: string,
+  bounds: Size,
+  options?: { defaultColor?: string; preserveAspectRatio?: boolean }
+): SVGVectorizeResult | null {
+  const content = extractSVGContent(svgText)
+  if (content.paths.length === 0 && content.texts.length === 0) return null
+
+  const space = parseSVGCoordinateSpace(svgText)
+  if (space.width <= 0 || space.height <= 0) return null
+
+  const attributes = svgViewportAttributes(svgText)
+  // Vectorizer output is stretched over the image it replaces, whatever its own aspect ratio.
+  const viewport = resolveSVGViewportMapping(
+    space,
+    bounds,
+    options?.preserveAspectRatio ? attributes : { ...attributes, preserveAspectRatio: 'none' }
+  )
+  return vectorizeSVGContent(content, viewport, options?.defaultColor)
 }
 
 type ClipCache = WeakMap<NonNullable<IconPathInfo['clipPaths']>, VectorizedClip[]>
@@ -190,25 +235,36 @@ function vectorizeClips(
   if (cached) return cached
   const clips = clipPaths.map((clipRegion) => ({
     id: clipRegion.id,
+    visible: clipRegion.visible,
     shapes:
       clipRegion.units === 'objectBoundingBox' && !objectBounds
         ? []
-        : clipRegion.paths.map((clipPath) => {
-            let clipData = applySVGTransformToPath(clipPath.d, clipPath.transform ?? null)
-            if (clipRegion.units === 'objectBoundingBox' && objectBounds) {
-              clipData = svgpath(clipData)
-                .scale(objectBounds.width, objectBounds.height)
-                .translate(objectBounds.x, objectBounds.y)
-                .toString()
-              return parseSVGPath(clipData, clipPath.fillRule, { includeOpenRegions: true })
-            }
-            return parseSVGPath(mapSVGPathToViewport(clipData, viewport), clipPath.fillRule, {
-              includeOpenRegions: true
-            })
-          })
+        : clipRegion.paths.map((clipPath) => ({
+            network: clipNetwork(clipPath, clipRegion.units, viewport, objectBounds),
+            visible: clipPath.visible
+          }))
   }))
   if (!hasObjectBoundingBoxClip) cache.set(clipPaths, clips)
   return clips
+}
+
+function clipNetwork(
+  clipPath: SVGClipPathInfo,
+  units: SVGClipPathRegion['units'],
+  viewport: SVGViewportMapping,
+  objectBounds: Rect | null
+): VectorNetwork {
+  let clipData = applySVGTransformToPath(clipPath.d, clipPath.transform ?? null)
+  if (units === 'objectBoundingBox' && objectBounds) {
+    clipData = svgpath(clipData)
+      .scale(objectBounds.width, objectBounds.height)
+      .translate(objectBounds.x, objectBounds.y)
+      .toString()
+    return parseSVGPath(clipData, clipPath.fillRule, { includeOpenRegions: true })
+  }
+  return parseSVGPath(mapSVGPathToViewport(clipData, viewport), clipPath.fillRule, {
+    includeOpenRegions: true
+  })
 }
 
 /** The matrix taking an element's own coordinates, under `transform`, into the target space. */

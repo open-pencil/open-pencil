@@ -25,6 +25,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
+import { fillSwatchTrigger } from '@/components/ui/paint/swatch-trigger'
 import PanelItemRow from '@/components/ui/panel/PanelItemRow.vue'
 import AppCombobox from '@/components/ui/select/AppCombobox.vue'
 
@@ -33,9 +34,15 @@ import AppCombobox from '@/components/ui/select/AppCombobox.vue'
  * effects, top first, each with its type and settings, reordered by dragging; and the preset as
  * JSON, which also takes a preset copied from shaders.com.
  */
-const { preset } = defineProps<{ preset: ShaderPreset }>()
+const { preset, preview = null } = defineProps<{
+  preset: ShaderPreset
+  /** The shader's saved frame, shown above its effects as an image fill shows its image. */
+  preview?: string | null
+}>()
 const emit = defineEmits<{ update: [preset: ShaderPreset] }>()
 const { panels, common } = useI18n()
+// Each effect's preview toggles its settings, framed like an effect row's.
+const effectPreviewButton = fillSwatchTrigger({ size: 'md', framed: true }).root()
 
 const catalog = shallowRef<ShaderEffect[]>([])
 onMounted(async () => {
@@ -124,6 +131,13 @@ function applyJSON() {
 
 <template>
   <div class="flex flex-col gap-2" data-test-id="shader-fill-picker">
+    <div
+      class="flex aspect-square items-center justify-center overflow-hidden rounded border border-border bg-panel-secondary"
+      data-test-id="shader-preview"
+    >
+      <img v-if="preview" :src="preview" alt="" class="max-h-full max-w-full object-contain" />
+    </div>
+
     <AppAlert
       v-if="!canDrawShaders()"
       tone="warning"
@@ -133,7 +147,7 @@ function applyJSON() {
 
     <div>
       <div class="mb-1 flex items-center justify-between">
-        <span class="text-[11px] text-muted">{{ panels.effects }}</span>
+        <span class="text-2xs text-muted">{{ panels.effects }}</span>
         <div class="flex items-center">
           <IconButton
             :label="panels.shaderPreset"
@@ -150,7 +164,7 @@ function applyJSON() {
       </div>
 
       <div v-if="editingJSON" class="flex flex-col gap-1.5">
-        <AppTextarea v-model="json" :rows="8" class="font-mono text-[11px]" />
+        <AppTextarea v-model="json" :rows="8" class="font-mono text-2xs" />
         <AppAlert v-if="invalid" tone="error" :heading="panels.invalidShaderPreset" />
         <div class="flex justify-end gap-1.5">
           <AppButton variant="ghost" size="sm" @click="editingJSON = false">
@@ -193,7 +207,7 @@ function applyJSON() {
                       ? panels.collapseEffectSettings
                       : panels.expandEffectSettings
                   "
-                  class="flex size-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded border border-border bg-input p-0"
+                  :class="effectPreviewButton"
                   @click="expanded = expanded === row.index ? null : row.index"
                 >
                   <icon-lucide-sparkles class="size-3 text-muted" />

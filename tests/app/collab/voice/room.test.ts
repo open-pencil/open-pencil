@@ -1,14 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { openRoomSession, type RoomSession } from '@/app/collab/session'
 import type { Microphone } from '@/app/collab/voice/room'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
 
 import { createMemoryRooms, type MemorySend } from '#tests/helpers/collab/memory-transport'
-import { asDouble } from '#tests/helpers/doubles'
-
 const ROOM = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 
 const noSavedCopy = () => ({ whenSynced: Promise.resolve(), destroy: () => undefined })

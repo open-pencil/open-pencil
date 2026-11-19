@@ -1,3 +1,6 @@
+import { detectPlatform, matchesKeyboardEvent, type HotkeyChord } from '@tanstack/hotkeys'
+import { findKey } from 'es-toolkit'
+
 /**
  * Figma's comment formatting, written as Markdown into the plain text a comment stores: bold,
  * italic and strikethrough wrap the selection, a link wraps it as the link text, and the list
@@ -19,24 +22,26 @@ const WRAPS = {
 
 const LIST_ITEM = /^(\s*)(?:(\d+)\.|[-*])\s/u
 
-/** The format a key press asks for, with Figma's shortcuts; `mod` is Cmd on a Mac, Ctrl elsewhere. */
-export function commentFormatForKey(event: {
-  code: string
-  shiftKey: boolean
-  altKey: boolean
-  mod: boolean
-}): CommentFormat | null {
-  if (!event.mod || event.altKey) return null
-  if (event.shiftKey) {
-    if (event.code === 'KeyX') return 'strikethrough'
-    if (event.code === 'Digit7') return 'numbered'
-    if (event.code === 'Digit8') return 'bulleted'
-    return null
-  }
-  if (event.code === 'KeyB') return 'bold'
-  if (event.code === 'KeyI') return 'italic'
-  if (event.code === 'KeyK') return 'link'
-  return null
+/** Figma's comment formatting shortcuts. */
+export const COMMENT_FORMAT_SHORTCUTS = {
+  bold: 'Mod+B',
+  italic: 'Mod+I',
+  link: 'Mod+K',
+  strikethrough: 'Mod+Shift+X',
+  numbered: 'Mod+Shift+7',
+  bulleted: 'Mod+Shift+8'
+} as const satisfies Record<CommentFormat, HotkeyChord>
+
+/** The format a key press asks for, if any. */
+export function commentFormatForKey(
+  event: KeyboardEvent,
+  platform = detectPlatform()
+): CommentFormat | null {
+  return (
+    findKey(COMMENT_FORMAT_SHORTCUTS, (shortcut) =>
+      matchesKeyboardEvent(event, shortcut, platform)
+    ) ?? null
+  )
 }
 
 function lineStart(value: string, at: number) {

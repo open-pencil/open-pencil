@@ -21,3 +21,11 @@ export function progressPercent(amount?: ProgressAmount | null): number | null {
   if (amount.max <= 0) return null
   return Math.min(100, Math.max(0, Math.round((amount.value / amount.max) * 100)))
 }
+
+/** A byte count for a progress label, in binary units. */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  const kib = bytes / 1024
+  if (kib < 1024) return `${kib.toFixed(1)} KiB`
+  return `${(kib / 1024).toFixed(1)} MiB`
+}

@@ -211,7 +211,8 @@ try {
   ).cleanupDeletedDocuments({
     batchSize: 1,
     leaseDurationMs: 5 * 60 * 1000,
-    retentionMs: 0
+    retentionMs: 0,
+    purgeGraceMs: 0
   })
   if (
     documentCleanup.cleaned !== 1 ||

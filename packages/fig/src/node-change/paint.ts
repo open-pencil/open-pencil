@@ -1,13 +1,18 @@
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
+import { clamp } from 'es-toolkit/math'
 import { invert, mapValues, pickBy } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
-import type { Paint, Effect as KiwiEffect } from '@open-pencil/kiwi/fig/codec'
+import type { Effect as KiwiEffect, Paint, VariableAliasValue } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   Fill,
-  FillType,
   Stroke,
   Effect,
+  GlassEffectParams,
+  NoiseEffectParams,
+  ProgressiveBlur,
+  TextureEffectParams,
   BlendMode,
   ImageFilters,
   ImageScaleMode,
@@ -15,10 +20,8 @@ import type {
   StrokeCap,
   StrokeJoin
 } from '@open-pencil/scene-graph'
-import { BLACK } from '@open-pencil/scene-graph/constants'
-import type { Color, Matrix } from '@open-pencil/scene-graph/primitives'
-
-import { hexToBytes } from './bytes'
+import { BLACK, UNSET_GLASS, UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
+import type { Color, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 type PaintFilter = NonNullable<Paint['paintFilter']>
 
@@ -56,13 +59,22 @@ export function safeColor(color: Color | Omit<Color, 'a'>): Color {
   return { r: color.r, g: color.g, b: color.b, a: 'a' in color ? color.a : 1 }
 }
 
-/** An image paint's own fields, as the archive keeps them. */
-function applyImageKiwiFields(paint: Paint, fill: Fill): void {
-  if (fill.imageHash) paint.image = { hash: hexToBytes(fill.imageHash) }
-  if (fill.imageScaleMode)
+function writeMediaPaintFields(paint: Paint, fill: Fill): void {
+  if (fill.imageHash) {
+    paint.image = { hash: hexToBytes(fill.imageHash) }
+  }
+  if (fill.videoHash) {
+    paint.video = { hash: hexToBytes(fill.videoHash) }
+  }
+  if (fill.imageScaleMode) {
     paint.imageScaleMode = fill.imageScaleMode === 'CROP' ? 'STRETCH' : fill.imageScaleMode
-  if (fill.imageTransform) paint.transform = fill.imageTransform
-  if (fill.imageRotation) paint.rotation = fill.imageRotation
+  }
+  if (fill.imageTransform) {
+    paint.transform = fill.imageTransform
+  }
+  if (fill.imageRotation) {
+    paint.rotation = fill.imageRotation
+  }
   const paintFilter = renameAdjustments(IMAGE_FILTER_FIELDS, fill.filters)
   if (paintFilter) paint.paintFilter = paintFilter
 }
@@ -82,7 +94,7 @@ export function fillToKiwiPaint(fill: Fill): Paint {
     }))
   }
   if (fill.gradientTransform) paint.transform = fill.gradientTransform
-  applyImageKiwiFields(paint, fill)
+  writeMediaPaintFields(paint, fill)
   if (fill.sourceNodeId) paint.sourceNodeId = stringToGuid(fill.sourceNodeId)
   if (fill.scale) paint.scale = fill.scale
   if (fill.spacing) paint.spacing = fill.spacing
@@ -102,11 +114,18 @@ function convertColor(color?: Partial<Color>): Color {
   return { r: color.r ?? 0, g: color.g ?? 0, b: color.b ?? 0, a: color.a ?? 1 }
 }
 
-function imageHashToString(hash: Record<string, number>): string {
-  const bytes = Object.keys(hash)
-    .sort((a, b) => Number(a) - Number(b))
-    .map((k) => hash[Number(k)])
-  return bytes.map((b) => b.toString(16).padStart(2, '0')).join('')
+type MediaHash = string | Uint8Array | Record<string, number>
+
+function bytesHashToString(hash: Exclude<MediaHash, string>): string {
+  return bytesToHex(hash instanceof Uint8Array ? hash : Uint8Array.from(Object.values(hash)))
+}
+
+function mediaHash(source: { hash?: MediaHash } | undefined): string | undefined {
+  const hash = source?.hash
+  if (hash === undefined) {
+    return undefined
+  }
+  return typeof hash === 'string' ? hash : bytesHashToString(hash)
 }
 
 function convertGradientTransform(t?: Matrix): GradientTransform | undefined {
@@ -114,12 +133,10 @@ function convertGradientTransform(t?: Matrix): GradientTransform | undefined {
   return { m00: t.m00, m01: t.m01, m02: t.m02, m10: t.m10, m11: t.m11, m12: t.m12 }
 }
 
-type VariableAliasRef = NonNullable<NonNullable<NonNullable<Paint['colorVar']>['value']>['alias']>
-
-let variableColorResolver: ((alias: VariableAliasRef) => Color | null) | null = null
+let variableColorResolver: ((alias: VariableAliasValue) => Color | null) | null = null
 
 export function setVariableColorResolver(
-  resolver: ((alias: VariableAliasRef) => Color | null) | null
+  resolver: ((alias: VariableAliasValue) => Color | null) | null
 ): void {
   variableColorResolver = resolver
 }
@@ -142,7 +159,7 @@ function resolvedPaintColor(paint: Paint): { color: Color; opacity: number } {
 function convertBaseFill(p: Paint): Fill {
   const { color, opacity } = resolvedPaintColor(p)
   return {
-    type: p.type as FillType,
+    type: p.type,
     color,
     opacity,
     visible: p.visible ?? true,
@@ -160,14 +177,16 @@ function applyGradientPaintFields(fill: Fill, p: Paint): void {
 }
 
 function applyImagePaintFields(fill: Fill, p: Paint): void {
-  if (p.type !== 'IMAGE') return
-  if (p.image && typeof p.image === 'object') {
-    const img = p.image as { hash: string | Record<string, number> }
-    if (typeof img.hash === 'object') {
-      fill.imageHash = imageHashToString(img.hash)
-    } else if (typeof img.hash === 'string') {
-      fill.imageHash = img.hash
-    }
+  if (p.type !== 'IMAGE' && p.type !== 'VIDEO') {
+    return
+  }
+  const imageHash = mediaHash(p.image)
+  if (imageHash) {
+    fill.imageHash = imageHash
+  }
+  const videoHash = p.type === 'VIDEO' ? mediaHash(p.video) : undefined
+  if (videoHash) {
+    fill.videoHash = videoHash
   }
   fill.imageScaleMode = (
     p.imageScaleMode === 'STRETCH' ? 'CROP' : (p.imageScaleMode ?? 'FILL')
@@ -236,16 +255,123 @@ export function convertStrokes(
   }))
 }
 
+/** The scene graph's name for each `.fig` effect type it models; it leaves the others out. */
+const MODELED_EFFECT_TYPES: Partial<Record<KiwiEffect['type'], Effect['type']>> = {
+  DROP_SHADOW: 'DROP_SHADOW',
+  INNER_SHADOW: 'INNER_SHADOW',
+  LAYER_BLUR: 'LAYER_BLUR',
+  BACKGROUND_BLUR: 'BACKGROUND_BLUR',
+  FOREGROUND_BLUR: 'FOREGROUND_BLUR',
+  GLASS: 'GLASS',
+  NOISE: 'NOISE',
+  GRAIN: 'TEXTURE'
+}
+
+/** The scene graph's type for a `.fig` effect type, or null for one it does not model. */
+export function modeledEffectType(type: KiwiEffect['type']): Effect['type'] | null {
+  return MODELED_EFFECT_TYPES[type] ?? null
+}
+
+/**
+ * Each `.fig` effect's index among the effects the scene graph keeps, and null for one it leaves
+ * out, such as a repeat. Variable bindings name effects by this index, so every reader of a
+ * record's effects must count the same way.
+ */
+export function modeledEffectIndexes(effects: readonly KiwiEffect[]): (number | null)[] {
+  let next = 0
+  return effects.map((effect) => (modeledEffectType(effect.type) ? next++ : null))
+}
+
+/**
+ * A record's effects as the scene graph models them. Types it does not model stay out of
+ * `effects`; the record's raw payload keeps them for `.fig` export.
+ */
 export function convertEffects(effects?: KiwiEffect[]): Effect[] {
   if (!effects) return []
-  return effects.map((e) => ({
-    type: e.type,
-    color: convertColor(e.color),
-    offset: e.offset ?? { x: 0, y: 0 },
-    radius: e.radius ?? 0,
-    spread: e.spread ?? 0,
-    visible: e.visible ?? true,
-    blendMode: (e.blendMode ?? 'NORMAL') as BlendMode,
-    showShadowBehindNode: e.showShadowBehindNode ?? true
-  }))
+  return effects.flatMap((e) => {
+    const type = modeledEffectType(e.type)
+    if (!type) return []
+    const effect: Effect = {
+      type,
+      color: convertColor(e.color),
+      offset: e.offset ?? { x: 0, y: 0 },
+      radius: e.radius ?? 0,
+      spread: e.spread ?? 0,
+      visible: e.visible ?? true,
+      blendMode: (e.blendMode ?? 'NORMAL') as BlendMode,
+      showShadowBehindNode: e.showShadowBehindNode ?? true
+    }
+    if (e.type === 'GLASS') effect.glass = convertGlass(e)
+    if (e.type === 'NOISE') effect.noise = convertNoise(e)
+    if (e.type === 'GRAIN') effect.texture = convertTexture(e)
+    if (e.blurOpType === 'PROGRESSIVE' && isBlur(e.type)) effect.progressive = convertProgressive(e)
+    return [effect]
+  })
+}
+
+/** A noise effect's grain; only a duotone keeps a second colour, only a multitone an opacity. */
+function convertNoise(e: KiwiEffect): NoiseEffectParams {
+  const noise: NoiseEffectParams = {
+    noiseType: e.noiseType ?? UNSET_NOISE.noiseType,
+    noiseSize: grainSize(e.noiseSize, UNSET_NOISE.noiseSize),
+    density: finiteWithin(e.density, UNSET_NOISE.density, 0, 1)
+  }
+  // A duotone without a second colour draws both tones in its first, as the renderer does.
+  if (noise.noiseType === 'DUOTONE')
+    noise.secondaryColor = convertColor(e.secondaryColor ?? e.color)
+  if (noise.noiseType === 'MULTITONE') noise.opacity = finiteWithin(e.opacity, 1, 0, 1)
+  if (e.seed !== undefined && Number.isFinite(e.seed)) noise.seed = e.seed
+  return noise
+}
+
+/** A grain effect's texture; its `radius` stays the effect's own. */
+function convertTexture(e: KiwiEffect): TextureEffectParams {
+  const texture: TextureEffectParams = {
+    noiseSize: grainSize(e.noiseSize, UNSET_TEXTURE.noiseSize),
+    clipToShape: e.clipToShape ?? UNSET_TEXTURE.clipToShape
+  }
+  if (e.seed !== undefined && Number.isFinite(e.seed)) texture.seed = e.seed
+  return texture
+}
+
+/** The most Figma lets a grain size be on either axis. */
+const MAX_GRAIN_SIZE = 100
+
+/**
+ * `value` held within Figma's range for it, or `fallback` where a file stores no number there:
+ * a damaged or hand-made record must not reach the renderer as NaN.
+ */
+function finiteWithin(value: number | undefined, fallback: number, min: number, max: number) {
+  return value !== undefined && Number.isFinite(value) ? clamp(value, min, max) : fallback
+}
+
+function grainSize(size: Vector | undefined, fallback: Vector): Vector {
+  return {
+    x: finiteWithin(size?.x, fallback.x, 0, MAX_GRAIN_SIZE),
+    y: finiteWithin(size?.y, fallback.y, 0, MAX_GRAIN_SIZE)
+  }
+}
+
+function isBlur(type: KiwiEffect['type']): boolean {
+  return type === 'FOREGROUND_BLUR' || type === 'LAYER_BLUR' || type === 'BACKGROUND_BLUR'
+}
+
+/** A progressive blur's ramp, top centre to bottom centre where the archive leaves it out. */
+function convertProgressive(e: KiwiEffect): ProgressiveBlur {
+  return {
+    startRadius: e.startRadius ?? 0,
+    startOffset: { ...(e.startOffset ?? { x: 0.5, y: 0 }) },
+    endOffset: { ...(e.endOffset ?? { x: 0.5, y: 1 }) }
+  }
+}
+
+/** A glass effect's lens from the archive's names for its fields (`refractionRadius` is depth). */
+function convertGlass(e: KiwiEffect): GlassEffectParams {
+  return {
+    refraction: e.refractionIntensity ?? UNSET_GLASS.refraction,
+    depth: e.refractionRadius ?? UNSET_GLASS.depth,
+    lightAngle: e.specularAngle ?? UNSET_GLASS.lightAngle,
+    lightIntensity: e.specularIntensity ?? UNSET_GLASS.lightIntensity,
+    dispersion: e.chromaticAberration ?? UNSET_GLASS.dispersion
+  }
 }

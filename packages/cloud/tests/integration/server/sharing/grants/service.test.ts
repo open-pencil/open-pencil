@@ -1,18 +1,26 @@
 import { describe, expect, test } from 'bun:test'
 
-import { seedSharing } from '#cloud-tests/helpers/sharing'
-import { DocumentShareInvalidError } from '#cloud/server'
+import { grantByInvitation, seedSharing } from '#cloud-tests/helpers/sharing'
+import { DocumentNotFoundError, DocumentShareInvalidError } from '#cloud/server'
 
 describe('document sharing grants integration', () => {
   test('manages direct grants', async () => {
     const context = await seedSharing()
     try {
+      await grantByInvitation(context, { userId: 'outside-user', email: 'outside@example.com' })
       const grant = await context.sharing.putGrant('owner', context.documentId, 'outside-user', {
-        permission: 'view'
+        permission: 'edit'
       })
-      expect(grant).toMatchObject({ userId: 'outside-user', permission: 'view' })
+      expect(grant).toMatchObject({ userId: 'outside-user', permission: 'edit' })
       expect(await context.sharing.listGrants('owner', context.documentId)).toHaveLength(1)
       await context.sharing.revokeGrant('owner', context.documentId, 'outside-user')
+      expect(await context.sharing.listGrants('owner', context.documentId)).toEqual([])
+      // A revoked grant stays revoked: changing it gives nothing back.
+      await expect(
+        context.sharing.putGrant('owner', context.documentId, 'outside-user', {
+          permission: 'view'
+        })
+      ).rejects.toBeInstanceOf(DocumentNotFoundError)
       expect(await context.sharing.listGrants('owner', context.documentId)).toEqual([])
       // Revoking access advances the epoch, so tickets and room keys issued before stop working.
       expect(
@@ -22,6 +30,20 @@ describe('document sharing grants integration', () => {
           .where('id', '=', context.documentId)
           .executeTakeFirstOrThrow()
       ).toEqual({ collaborationEpoch: 1 })
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('changes access only for someone who has it', async () => {
+    const context = await seedSharing()
+    try {
+      // Access comes from an accepted invitation, so a document never appears in a stranger's
+      // files unasked.
+      await expect(
+        context.sharing.putGrant('owner', context.documentId, 'stranger', { permission: 'view' })
+      ).rejects.toBeInstanceOf(DocumentNotFoundError)
+      expect(await context.sharing.listGrants('owner', context.documentId)).toEqual([])
     } finally {
       await context.runtime.close()
     }

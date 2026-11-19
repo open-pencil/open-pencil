@@ -1,6 +1,9 @@
+import { invoke } from '@tauri-apps/api/core'
+import { Command } from '@tauri-apps/plugin-shell'
 import * as v from 'valibot'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
+import { MINUTE_MS } from '@open-pencil/std/timing'
 
 import { HARNESS_INSTALL_TARGET } from '@/app/ai/agents/pi/companion'
 import { MCP_INSTALL_TARGET } from '@/app/automation/mcp/failure'
@@ -20,17 +23,15 @@ const lookupSchema = v.object({
 export type AgentLookup = v.InferOutput<typeof lookupSchema>
 
 export async function lookupAgents(): Promise<AgentLookup> {
-  const { invoke } = await import('@tauri-apps/api/core')
   return v.parse(lookupSchema, await invoke<unknown>('agent_lookup'))
 }
 
 /** The folder coding agents start in, which the desktop shell creates in the app's data. */
 export async function agentWorkspace(): Promise<string> {
-  const { invoke } = await import('@tauri-apps/api/core')
   return v.parse(v.string(), await invoke<unknown>('agent_workspace'))
 }
 
-const INSTALL_TIMEOUT_MS = 120_000
+const INSTALL_TIMEOUT_MS = 2 * MINUTE_MS
 
 export async function installAgentAdapter(agent: ACPAgentDef, searchPath: string): Promise<void> {
   if (!agent.adapterPackage) throw new Error('This agent does not need an adapter.')
@@ -69,7 +70,6 @@ async function installPackage(
   searchPath: string,
   manager: PackageManager = 'npm'
 ): Promise<void> {
-  const { Command } = await import('@tauri-apps/plugin-shell')
   const resolved = resolvePlatformCommand(
     manager,
     manager === 'bun' ? bunInstallArgs(packageName) : npmInstallArgs(packageName)

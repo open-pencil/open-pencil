@@ -14,7 +14,7 @@ export interface VariablesArgs {
 }
 
 function formatVariableValue(variable: Variable, graph: SceneGraph): string {
-  const modeId = graph.getActiveModeId(variable.collectionId)
+  const modeId = graph.variableCollections.get(variable.collectionId)?.defaultModeId ?? ''
   const raw = variable.valuesByMode[modeId]
 
   if (typeof raw === 'object' && 'aliasId' in raw) {

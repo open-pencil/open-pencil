@@ -1,7 +1,16 @@
 import valueParser from 'postcss-value-parser'
+import { decode, parsePath } from 'ufo'
 
 import { tryParseColor } from '../color'
 import type { Color } from '../primitives'
+
+/** A CSS dimension's number and lowercase unit, or null. */
+export function dimension(value: string): { number: number; unit: string } | null {
+  const parsed = valueParser.unit(value)
+  if (!parsed) return null
+  const number = Number(parsed.number)
+  return Number.isFinite(number) ? { number, unit: parsed.unit.toLowerCase() } : null
+}
 
 /** Pixels in a rem, as browsers use by default. */
 const ROOT_FONT_SIZE = 16
@@ -39,4 +48,32 @@ export function splitCSSValue(value: string): string[] {
   return valueParser(value)
     .nodes.filter((node) => node.type !== 'space' && node.type !== 'comment')
     .map((node) => valueParser.stringify(node))
+}
+
+/**
+ * The id of the element a reference points to in its own document, as `href="#mark"` and
+ * `url(#clip)` point, decoded; null for a reference to another file or without a fragment.
+ */
+export function parseFragmentReference(reference: string | null | undefined): string | null {
+  if (!reference) return null
+  const { pathname, search, hash } = parsePath(reference.trim())
+  if (pathname || search || hash.length < 2) return null
+  return decode(hash.slice(1))
+}
+
+/**
+ * The ids a CSS value points at with local `url(#id)` references, as `clip-path`, `mask`,
+ * `filter`, and SVG paints do, quoted or not.
+ */
+export function parseCSSURLReferences(value: string | undefined): string[] {
+  const ids: string[] = []
+  if (!value) return ids
+  valueParser(value).walk((node) => {
+    if (node.type !== 'function' || node.value.toLowerCase() !== 'url') return true
+    const id = parseFragmentReference(node.nodes.at(0)?.value)
+    if (id) ids.push(id)
+    // A url() holds no further references.
+    return false
+  })
+  return ids
 }

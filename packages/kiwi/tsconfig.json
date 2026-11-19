@@ -11,5 +11,5 @@
     "types": ["bun"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["dist", "tests", "scripts"]
+  "exclude": ["dist", "tests"]
 }

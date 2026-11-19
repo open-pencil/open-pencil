@@ -47,7 +47,8 @@ export function commitPositionChange(
 
 function applyPositions(ctx: EditorContext, positions: Map<string, Vector>): void {
   for (const [id, pos] of positions) {
-    ctx.graph.updateNode(id, pos)
+    // Positions only, whatever else a caller's map carries.
+    ctx.graph.updateNode(id, { x: pos.x, y: pos.y })
     ctx.runLayoutForNode(id)
   }
 }

@@ -1,27 +1,37 @@
 <script setup lang="ts">
-import {
-  DropdownMenuContent,
-  DropdownMenuPortal,
-  DropdownMenuRoot,
-  DropdownMenuTrigger
-} from 'reka-ui'
+import { DropdownMenuContent, DropdownMenuPortal, DropdownMenuTrigger } from 'reka-ui'
 import { computed, ref, useTemplateRef } from 'vue'
 
 import type { CommentThread } from '@open-pencil/scene-graph'
 import { liveReplies } from '@open-pencil/scene-graph/comments'
 import { useCommentMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
+import type { MentionPerson } from '@/app/comments/mentions/links'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
-import { comments } from '@/theme/comments'
 
 import CommentComposer from './CommentComposer.vue'
 import CommentMessage from './CommentMessage.vue'
+import { comments } from './ui'
 
 /** An open thread: the comment, its replies, and a reply box, as in Figma's comment card. */
-const { thread } = defineProps<{ thread: CommentThread }>()
+const {
+  thread,
+  readOnly = false,
+  mentionable,
+  canDeleteReply
+} = defineProps<{
+  thread: CommentThread
+  /** Reading only, as a guest on a link does: no resolving, deleting, or replying. */
+  readOnly?: boolean
+  /** Whom a reply may name. */
+  mentionable?: () => Promise<readonly MentionPerson[]>
+  /** Whether a reply may be deleted here; every one where the document keeps its comments. */
+  canDeleteReply?: (replyId: string) => boolean
+}>()
 
 const emit = defineEmits<{
   close: []
@@ -39,6 +49,7 @@ const ui = comments()
 const replyText = ref('')
 const composer = useTemplateRef<{ focus: () => void }>('composer')
 const replies = computed(() => liveReplies(thread))
+const deletable = (replyId: string) => canDeleteReply?.(replyId) ?? true
 
 function sendReply(text: string) {
   emit('reply', thread.id, text)
@@ -59,7 +70,7 @@ defineExpose({ focus: () => composer.value?.focus() })
       <template #icon><icon-lucide-message-circle class="size-3.5" /></template>
       {{ messages.comment }}
       <template #actions>
-        <DropdownMenuRoot v-if="$slots.menu" :modal="false">
+        <AppDropdownMenuRoot v-if="$slots.menu" :modal="false">
           <DropdownMenuTrigger as-child>
             <IconButton :label="messages.moreActions">
               <icon-lucide-ellipsis class="size-3.5" />
@@ -72,8 +83,9 @@ defineExpose({ focus: () => composer.value?.focus() })
               </MenuScrollArea>
             </DropdownMenuContent>
           </DropdownMenuPortal>
-        </DropdownMenuRoot>
+        </AppDropdownMenuRoot>
         <IconButton
+          v-if="!readOnly"
           :label="thread.resolved ? messages.reopen : messages.resolve"
           :active="thread.resolved"
           data-command="comment-resolve"
@@ -103,7 +115,7 @@ defineExpose({ focus: () => composer.value?.focus() })
         :at="entry.createdAt"
         :text="entry.text"
       >
-        <template #actions>
+        <template v-if="!readOnly && deletable(entry.id)" #actions>
           <IconButton
             :label="messages.deleteReply"
             @click="emit('deleteReply', thread.id, entry.id)"
@@ -114,11 +126,12 @@ defineExpose({ focus: () => composer.value?.focus() })
       </CommentMessage>
     </div>
 
-    <div :class="ui.composerSlot()">
+    <div v-if="!readOnly" :class="ui.composerSlot()">
       <CommentComposer
         ref="composer"
         v-model="replyText"
         :label="messages.reply"
+        :mentionable="mentionable"
         @submit="sendReply"
         @cancel="emit('close')"
       />

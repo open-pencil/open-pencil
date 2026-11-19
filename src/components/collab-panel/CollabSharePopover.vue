@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
 import { showsRoomDocument } from '@/app/collab/room/status'
+import CampaignNoteHost from '@/components/campaigns/CampaignNoteHost.vue'
 import ConnectedRoom from '@/components/collab-panel/ConnectedRoom.vue'
 import { useCollabPanelContext } from '@/components/collab-panel/context'
 import ShareOrJoinRoom from '@/components/collab-panel/ShareOrJoinRoom.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
-import { shareButton } from '@/theme/collaboration/share-button'
+
+import { shareButton } from './ui'
 
 const collab = useCollabPanelContext()
 const cls = usePopoverUI({ content: 'z-50 w-72 p-3' })
@@ -19,7 +22,7 @@ const connection = computed(() => {
 </script>
 
 <template>
-  <PopoverRoot v-model:open="collab.popoverOpen">
+  <AppPopoverRoot v-model:open="collab.popoverOpen">
     <PopoverTrigger as-child>
       <button
         data-test-id="collab-share-button"
@@ -41,8 +44,11 @@ const connection = computed(() => {
         @open-auto-focus.prevent
       >
         <ConnectedRoom v-if="collab.state.inRoom" />
-        <ShareOrJoinRoom v-else />
+        <template v-else>
+          <CampaignNoteHost placement="share" class="mb-3" />
+          <ShareOrJoinRoom />
+        </template>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

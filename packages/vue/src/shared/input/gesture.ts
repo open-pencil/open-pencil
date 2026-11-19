@@ -12,7 +12,11 @@ import { PINCH_SCALE_EXPONENT } from '#vue/shared/input/wheel'
  * Preview's live controls and comment pins, zoom it too; they can forward wheel events, but not
  * gestures.
  */
-export function setupSafariGestureZoom(canvasRef: Ref<HTMLCanvasElement | null>, editor: Editor) {
+export function setupSafariGestureZoom(
+  canvasRef: Ref<HTMLCanvasElement | null>,
+  editor: Editor,
+  zoomSpeed: () => number = () => 1
+) {
   const surface = computed(() => canvasRef.value?.parentElement ?? null)
   let gestureStartZoom = 1
   let pendingGesture: { scale: number; sx: number; sy: number } | null = null
@@ -22,7 +26,11 @@ export function setupSafariGestureZoom(canvasRef: Ref<HTMLCanvasElement | null>,
     editor.setHoveredNode(null)
     const { scale, sx, sy } = pendingGesture
     pendingGesture = null
-    editor.setZoomAroundPoint(gestureStartZoom * scale ** PINCH_SCALE_EXPONENT, sx, sy)
+    editor.setZoomAroundPoint(
+      gestureStartZoom * scale ** (PINCH_SCALE_EXPONENT * zoomSpeed()),
+      sx,
+      sy
+    )
   }
 
   const gestureScheduler = createRafScheduler(flushGesture)

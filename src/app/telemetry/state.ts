@@ -1,5 +1,8 @@
+import { invoke } from '@tauri-apps/api/core'
 import { useLocalStorage } from '@vueuse/core'
 import * as v from 'valibot'
+
+import { DEADLINE_MS, withDeadline } from '@open-pencil/std/timing'
 
 import { IS_TAURI } from '@/constants'
 
@@ -9,16 +12,20 @@ export interface SharingState {
   installId: string | null
   /** UTC day of the last delivered ping, so an install pings once a day. */
   lastPingDay: string | null
+  /** How many days a ping was delivered on; only its step ever leaves the device. */
+  pingDays: number
 }
 
 const sharingStateSchema = v.object({
   installId: v.fallback(v.nullable(v.pipe(v.string(), v.regex(/^[0-9a-f]{32}$/))), null),
-  lastPingDay: v.fallback(v.nullable(v.pipe(v.string(), v.isoDate())), null)
+  lastPingDay: v.fallback(v.nullable(v.pipe(v.string(), v.isoDate())), null),
+  // Installs from before the count start at zero, as if their first ping were the next one.
+  pingDays: v.fallback(v.pipe(v.number(), v.integer(), v.minValue(0)), 0)
 })
 
 export const sharingState = useLocalStorage<SharingState>(
   'open-pencil:sharing:v1',
-  { installId: null, lastPingDay: null },
+  { installId: null, lastPingDay: null, pingDays: 0 },
   {
     mergeDefaults: (stored) =>
       v.parse(
@@ -29,16 +36,15 @@ export const sharingState = useLocalStorage<SharingState>(
 )
 
 /** How long the desktop app waits to learn whether its environment turns sharing off. */
-const ENVIRONMENT_CHECK_TIMEOUT_MS = 2_000
+const ENVIRONMENT_CHECK_TIMEOUT_MS = DEADLINE_MS.probe
 
 let disabledByEnvironment: Promise<boolean> | null = null
 
-async function readDesktopEnvironment(): Promise<boolean> {
-  const { invoke } = await import('@tauri-apps/api/core')
-  const timeout = new Promise<boolean>((resolve) => {
-    setTimeout(() => resolve(true), ENVIRONMENT_CHECK_TIMEOUT_MS)
-  })
-  return Promise.race([invoke<boolean>('sharing_disabled_by_env'), timeout])
+/** Rejects when the check fails or does not answer in time, which the caller counts as off. */
+function readDesktopEnvironment(): Promise<boolean> {
+  return withDeadline(ENVIRONMENT_CHECK_TIMEOUT_MS, () =>
+    invoke<boolean>('sharing_disabled_by_env')
+  )
 }
 
 /**

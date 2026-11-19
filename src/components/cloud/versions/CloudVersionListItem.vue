@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import CommentTime from '@/components/comments/CommentTime.vue'
-import { cloudVersions } from '@/theme/cloud/versions'
+import RelativeTime from '@/components/date/RelativeTime.vue'
+
+import { cloudVersions } from './ui'
 
 /**
  * An entry on the history's timeline. A named version shows a ring, an autosave a dot, as in
@@ -47,10 +48,10 @@ const ui = cloudVersions()
         <span :class="named || current ? ui.ring() : ui.dot()" />
       </span>
       <span :class="ui.body()">
-        <span :class="current ? ui.current() : ui.title()">{{ label }}</span>
+        <span :class="ui.title()">{{ label }}</span>
         <span v-if="description" :class="ui.description()">{{ description }}</span>
         <span v-if="author" :class="ui.author()">{{ author }}</span>
-        <CommentTime v-if="at && named" :at="at" :class="ui.time()" />
+        <RelativeTime v-if="at && named" :at="at" :class="ui.time()" />
       </span>
     </button>
     <span v-if="$slots.actions" :class="ui.actions()"><slot name="actions" /></span>

@@ -1,24 +1,10 @@
 import * as v from 'valibot'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import type { FigmaComponentNode, FigmaNodeProxy } from '#core/figma-api'
 import { OpenPencilAPI } from '#core/openpencil-api'
 import { toolNumber, defineTool, nodeSummary, requireNodes } from '#core/tools/schema'
-
-export const createComponent = defineTool({
-  name: 'create_component',
-
-  description: 'Convert a frame/group into a component.',
-  execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({
-    id: v.pipe(v.string(), v.description('Node ID to convert'))
-  }),
-  execute: (figma, { id }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    const component = figma.createComponentFromNode(node)
-    return nodeSummary(component)
-  }
-})
 
 export const createInstance = defineTool({
   name: 'create_instance',
@@ -66,7 +52,7 @@ export const combineAsVariants = defineTool({
       const componentSet = figma.combineAsVariants(nodes, parent)
       return nodeSummary(componentSet)
     } catch (error) {
-      return { error: error instanceof Error ? error.message : String(error) }
+      return { error: errorMessage(error) }
     }
   }
 })
@@ -101,7 +87,7 @@ export const exposeInstanceSwap = defineTool({
         new OpenPencilAPI(figma).exposeInstanceSwap(slots, candidates, property_name)
       )
     } catch (error) {
-      return { error: error instanceof Error ? error.message : String(error) }
+      return { error: errorMessage(error) }
     }
   }
 })

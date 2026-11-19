@@ -1,5 +1,7 @@
 import * as v from 'valibot'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { CALC_FUNCTIONS, evaluateExpression } from './calc/expression'
 import { defineTool } from './schema'
 
@@ -13,7 +15,7 @@ function evalExpr(
     }
     return { expr, result }
   } catch (e) {
-    return { expr, error: e instanceof Error ? e.message : String(e) }
+    return { expr, error: errorMessage(e) }
   }
 }
 
@@ -28,7 +30,8 @@ export const calc = defineTool({
     `Supports: + - * / % ** ( ) ${CALC_FUNCTIONS.join(' ')}. ` +
     'Examples: "844 - 56 - 96 - 82", \'["1440 * 8 / 12", "(952 - 16) / 2", "floor(390 * 0.6)"]\'',
   execution: { kind: 'sync', mutation: 'none' },
-  exposure: { webmcp: false },
+  // Coding agents connected over MCP do arithmetic in their own shell.
+  exposure: { mcp: false, webmcp: false },
   input: v.strictObject({
     expr: v.pipe(v.string(), v.description('Single expression or JSON array of expressions'))
   }),

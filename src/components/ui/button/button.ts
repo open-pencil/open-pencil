@@ -1,6 +1,8 @@
 import { twMerge } from 'tailwind-merge'
 import { tv } from 'tailwind-variants'
 
+import appButtonTheme from '@/theme/button/button'
+
 const button = tv({
   base: 'inline-flex items-center justify-center transition-colors select-none',
   variants: {
@@ -54,5 +56,26 @@ export function useButtonUI(options?: {
 }) {
   return {
     base: twMerge(button(options), options?.ui?.base)
+  }
+}
+
+const appButton = tv(appButtonTheme)
+
+export type AppButtonColor = 'neutral' | 'primary' | 'error'
+export type AppButtonVariant = 'solid' | 'outline' | 'soft' | 'subtle' | 'ghost' | 'link'
+export type AppButtonSize = 'xs' | 'sm' | 'md' | 'lg'
+export type AppButtonShape = 'square' | 'rounded' | 'pill'
+
+export function useAppButtonUI(options?: {
+  color?: AppButtonColor
+  variant?: AppButtonVariant
+  size?: AppButtonSize
+  shape?: AppButtonShape
+  ui?: { base?: string; icon?: string }
+}) {
+  const styles = appButton(options)
+  return {
+    base: styles.base({ class: options?.ui?.base }),
+    icon: styles.icon({ class: options?.ui?.icon })
   }
 }

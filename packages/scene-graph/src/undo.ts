@@ -5,10 +5,29 @@ export interface UndoEntry {
   coalesceKey?: string
 }
 
+/**
+ * Why committed history changed: a new step, a change joining the newest step, undo, redo, or
+ * clearing it.
+ */
+export type HistoryChange = 'record' | 'join' | 'undo' | 'redo' | 'clear'
+
 export interface UndoManagerOptions {
   limit?: number
-  /** Called after recording, undoing, redoing, or clearing committed history. */
-  onChange?: () => void
+  /**
+   * Called after recording, joining, undoing, redoing, or clearing committed history, with which,
+   * and with the step recorded or joined for `'record'` and `'join'`.
+   */
+  onChange?: (change: HistoryChange, step?: UndoEntry) => void
+  /**
+   * Called when an edit ends without a step, its changes undone or amounting to nothing: a batch
+   * rolled back, or an edit reported with `discardEdit`. History is unchanged, so `onChange` is not.
+   */
+  onDiscard?: () => void
+  /**
+   * Runs an undo or a redo, which the editor runs outside edits in progress
+   * (`SceneGraph.runOutsideEdits`), so an agent's edit open meanwhile does not record it.
+   */
+  runReplay?: (replay: () => void) => void
 }
 
 interface UndoBatch {
@@ -25,13 +44,18 @@ export class UndoManager {
   private redoStack: UndoEntry[] = []
   private batches: UndoBatch[] = []
   private replaying = 0
+  private openEdits = 0
   private readonly settlers = new Set<() => void>()
   private readonly limit: number
-  private readonly onChange: (() => void) | undefined
+  private readonly onChange: ((change: HistoryChange, step?: UndoEntry) => void) | undefined
+  private readonly onDiscard: (() => void) | undefined
+  private readonly runReplay: (replay: () => void) => void
 
   constructor(options: UndoManagerOptions = {}) {
     this.limit = options.limit ?? DEFAULT_HISTORY_LIMIT
     this.onChange = options.onChange
+    this.onDiscard = options.onDiscard
+    this.runReplay = options.runReplay ?? ((replay) => replay())
   }
 
   apply(entry: UndoEntry): void {
@@ -85,7 +109,7 @@ export class UndoManager {
     if (!entry) return null
     this.replay(() => entry.inverse())
     this.redoStack.push(entry)
-    this.onChange?.()
+    this.onChange?.('undo')
     return entry.label
   }
 
@@ -95,7 +119,7 @@ export class UndoManager {
     if (!entry) return null
     this.replay(() => entry.forward())
     this.undoStack.push(entry)
-    this.onChange?.()
+    this.onChange?.('redo')
     return entry.label
   }
 
@@ -126,9 +150,23 @@ export class UndoManager {
   }
 
   rollbackBatch(): void {
-    const batch = this.batches.pop()
+    const batch = this.batches.at(-1)
     if (!batch) return
-    for (const entry of batch.entries.toReversed()) entry.inverse()
+    // Still open while it rolls back, so what the rollback changes belongs to the batch.
+    try {
+      for (const entry of batch.entries.toReversed()) entry.inverse()
+    } finally {
+      this.batches.pop()
+    }
+    this.onDiscard?.()
+  }
+
+  /**
+   * Reports an edit that ended without a step, rolled back or changing nothing, as a rolled-back
+   * batch does. Called once the edit has closed, so `isRecording` tells whether another is open.
+   */
+  discardEdit(): void {
+    this.onDiscard?.()
   }
 
   /** Abandon provisional history without replaying it or changing committed undo/redo entries. */
@@ -140,7 +178,7 @@ export class UndoManager {
     this.undoStack = []
     this.redoStack = []
     this.discardBatches()
-    this.onChange?.()
+    this.onChange?.('clear')
   }
 
   /** Whether undo or redo is replaying a step, whose changes are history rather than new edits. */
@@ -169,13 +207,14 @@ export class UndoManager {
       entry.inverse()
       inverse()
     }
+    this.onChange?.('join', last)
     return true
   }
 
   private replay(step: () => void) {
     this.replaying++
     try {
-      step()
+      this.runReplay(step)
     } finally {
       this.replaying--
     }
@@ -183,6 +222,28 @@ export class UndoManager {
 
   get isBatching(): boolean {
     return this.batches.length > 0
+  }
+
+  /**
+   * Marks an edit whose step is recorded when it ends, such as an agent's call that awaits fonts
+   * or a layout before it finishes. Returns the function that ends it; ending it twice is a no-op.
+   */
+  openEdit(): () => void {
+    this.openEdits++
+    let open = true
+    return () => {
+      if (!open) return
+      open = false
+      this.openEdits--
+    }
+  }
+
+  /**
+   * Whether a batch or an edit opened with `openEdit` will record a step for the changes made now,
+   * so they are not edits outside the history.
+   */
+  get isRecording(): boolean {
+    return this.isBatching || this.openEdits > 0
   }
 
   /** Committed history, or changes in an open batch that a settling hook commits first. */
@@ -251,7 +312,7 @@ export class UndoManager {
     }
     this.redoStack = []
     this.trimUndoStack()
-    this.onChange?.()
+    this.onChange?.('record', this.undoStack.at(-1))
   }
 
   private trimUndoStack(): void {

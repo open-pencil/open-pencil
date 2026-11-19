@@ -49,7 +49,8 @@ describe('Cloud database', () => {
           id: workspaceId,
           name: 'Test workspace',
           slug: `test-${workspaceId}`,
-          createdBy: 'user-1'
+          createdBy: 'user-1',
+          ownerId: 'user-1'
         })
         .execute()
       await runtime.database

@@ -3,9 +3,9 @@ export {
   type SVGExportOptions,
   geometryBlobToSVGPath,
   nodeOutlinePath,
-  vectorNetworkToSVGPaths,
   type OutlineNode
 } from './export'
+export type { ExportEffectWarning } from './effects'
 export {
   createSVGNodes,
   createSVGNodesFromImport,
@@ -14,7 +14,6 @@ export {
   type SVGImportOptions
 } from './import'
 export { isSVGMarkup } from './metadata'
-export type { SVGFontAlias } from './defs'
-export type { SVGCharacterEdges, SVGTextLayout, SVGTextLine } from './text/lines'
+export type { SVGCharacterEdges, SVGFallbackFace, SVGTextLayout, SVGTextLine } from './text/lines'
 export { svgImportFonts } from './text/import'
 export { renderSVGNode, svg, type SVGNode } from './node'

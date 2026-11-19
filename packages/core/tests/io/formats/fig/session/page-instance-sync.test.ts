@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { createEditor } from '@open-pencil/core'
+import { exportFigFile, parseFigFile, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { createFigDocumentSession } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -149,4 +150,51 @@ test('a page load into a graph only loads and derived layout wrote syncs no inst
   expect(wholeComponents).toEqual([])
   for (const instance of instances)
     expect(session.graph.getChildren(instance.id)[0].text).toBe('Badge')
+})
+
+async function openBadgeWithPlacedInstance() {
+  await initCodec()
+  const source = new SceneGraph()
+  const component = source.createNode('COMPONENT', source.getPages()[0].id, {
+    name: 'Badge',
+    width: 100
+  })
+  source.createInstance(component.id, source.addPage('Placed').id)
+  const bytes = await exportFigFile(source)
+  const graph = await parseFigFile(bytes.slice().buffer as ArrayBuffer, { populate: 'first-page' })
+  const [libraryPage, placedPage] = graph.getPages()
+  return {
+    graph,
+    editor: createEditor({ graph }),
+    badge: graph.getChildren(libraryPage.id)[0],
+    placedPage
+  }
+}
+
+test('a page load while a node preview runs takes no values from the preview', async () => {
+  const { graph, editor, badge, placedPage } = await openBadgeWithPlacedInstance()
+  try {
+    const preview = editor.beginNodePreview('Resize')
+    preview.update(badge.id, { width: 300 })
+    expect(populateFigPage(graph, placedPage.id)).toBe(true)
+    preview.cancel()
+
+    expect(graph.getChildren(placedPage.id)[0].width).toBe(100)
+  } finally {
+    editor.dispose()
+  }
+})
+
+test('a page load after a node preview commits gives its instances the committed value', async () => {
+  const { graph, editor, badge, placedPage } = await openBadgeWithPlacedInstance()
+  try {
+    const preview = editor.beginNodePreview('Resize')
+    preview.update(badge.id, { width: 300 })
+    preview.commit()
+    expect(populateFigPage(graph, placedPage.id)).toBe(true)
+
+    expect(graph.getChildren(placedPage.id)[0].width).toBe(300)
+  } finally {
+    editor.dispose()
+  }
 })

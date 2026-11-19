@@ -109,6 +109,10 @@ export interface ImageSource {
   dataBlob?: number
 }
 
+export interface VideoSource {
+  hash: string | Uint8Array
+}
+
 export interface Paint {
   type:
     | 'SOLID'
@@ -130,6 +134,7 @@ export interface Paint {
   image?: ImageSource
   imageThumbnail?: ImageSource
   animatedImage?: ImageSource
+  video?: VideoSource
   imageScaleMode?: string
   /** Degrees an image turns in Fill, Fit, and Tile; a crop's transform holds its own turn. */
   rotation?: number
@@ -159,20 +164,26 @@ export interface Paint {
   density?: number
   noiseSize?: Vector
   customEffectId?: { guid?: GUID }
-  colorVar?: {
-    value?: {
-      alias?: {
-        guid?: GUID
-        assetRef?: { key: string; version?: string }
-      }
-    }
-    dataType?: string
-    resolvedDataType?: string
-  }
+  colorVar?: VariableDataEntry
 }
 
 export interface Effect {
-  type: 'DROP_SHADOW' | 'INNER_SHADOW' | 'LAYER_BLUR' | 'BACKGROUND_BLUR' | 'FOREGROUND_BLUR'
+  /**
+   * Every type the schema's `EffectType` has. `LAYER_BLUR` is the plugin API's name for
+   * `FOREGROUND_BLUR`, and `GRAIN` its `TEXTURE`.
+   */
+  type:
+    | 'DROP_SHADOW'
+    | 'INNER_SHADOW'
+    | 'LAYER_BLUR'
+    | 'BACKGROUND_BLUR'
+    | 'FOREGROUND_BLUR'
+    | 'GLASS'
+    | 'NOISE'
+    | 'GRAIN'
+    | 'REPEAT'
+    | 'SYMMETRY'
+    | 'CUSTOM'
   color?: Color
   offset?: Vector
   radius?: number
@@ -180,6 +191,50 @@ export interface Effect {
   spread?: number
   blendMode?: string
   showShadowBehindNode?: boolean
+  /** A glass effect's depth, which Figma's plugin API calls `depth`. */
+  refractionRadius?: number
+  /** A glass effect's `refraction`. */
+  refractionIntensity?: number
+  /** A glass effect's `lightAngle`, in degrees. */
+  specularAngle?: number
+  /** A glass effect's `lightIntensity`. */
+  specularIntensity?: number
+  /** A glass effect's `dispersion`. */
+  chromaticAberration?: number
+  /** Figma writes 1 on every glass effect and has no control for it. */
+  bevelSize?: number
+  /** `PROGRESSIVE` on a progressive blur; a normal blur leaves it out. */
+  blurOpType?: 'NORMAL' | 'PROGRESSIVE'
+  /** Where a progressive blur starts and ends, as fractions of the layer's size. */
+  startOffset?: Vector
+  endOffset?: Vector
+  /** A progressive blur's radius at its start; `radius` is the radius at its end. */
+  startRadius?: number
+  /** A noise effect's `MONOTONE`, `DUOTONE`, or `MULTITONE`. */
+  noiseType?: 'MONOTONE' | 'DUOTONE' | 'MULTITONE'
+  /** A noise or grain effect's grain size, the same on both axes as Figma writes it. */
+  noiseSize?: Vector
+  /** A noise effect's coverage, 0 to 1. */
+  density?: number
+  /** A duotone noise effect's second colour. */
+  secondaryColor?: Color
+  /** A multitone noise effect's opacity. */
+  opacity?: number
+  /** Whether a grain effect keeps the roughened layer inside its outline. */
+  clipToShape?: boolean
+  /** Picks a noise or grain effect's pattern; Figma leaves it out for the default pattern. */
+  seed?: number
+  colorVar?: VariableDataEntry
+  radiusVar?: VariableDataEntry
+  spreadVar?: VariableDataEntry
+  xVar?: VariableDataEntry
+  yVar?: VariableDataEntry
+}
+
+/** A reference to a variable: by GUID in the file, or by key in a library. */
+export interface VariableAliasValue {
+  guid?: GUID
+  assetRef?: { key: string; version?: string }
 }
 
 export interface VariableAnyValue {
@@ -187,7 +242,7 @@ export interface VariableAnyValue {
   textValue?: string
   floatValue?: number
   colorValue?: Color
-  alias?: { guid?: GUID; assetRef?: { key: string; version?: string } }
+  alias?: VariableAliasValue
   symbolIdValue?: { guid?: GUID }
   // fig.kiwi PropRefValue: the component property a parameter entry points at.
   propRefValue?: { defId?: GUID }

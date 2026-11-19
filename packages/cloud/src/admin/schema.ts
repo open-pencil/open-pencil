@@ -1,5 +1,9 @@
 import * as v from 'valibot'
 
+const uuidSchema = v.pipe(v.string(), v.uuid())
+/** Accounts and access requests are named by UUID; anything else names no row. */
+export const isUUID = (value: string) => v.is(uuidSchema, value)
+
 /** The most rows one admin list request returns. */
 export const ADMIN_LIST_MAXIMUM = 500
 
@@ -17,8 +21,15 @@ export const userMutationSchema = v.object({
   reason: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(500)))
 })
 
-export type EnrollmentReview = v.InferOutput<typeof enrollmentReviewSchema>
+/** One of an account's sign-in methods, as the person's page lists them. */
+export const signInMethodMutationSchema = v.object({
+  userId: v.pipe(v.string(), v.trim(), v.minLength(1)),
+  methodId: v.pipe(v.string(), v.trim(), v.minLength(1))
+})
 
-export const parseEnrollmentReview = (input: unknown) => v.parse(enrollmentReviewSchema, input)
-export const parseUserMutation = (input: unknown) => v.parse(userMutationSchema, input)
-export const parseUserRoleMutation = (input: unknown) => v.parse(userRoleMutationSchema, input)
+/** Why an administrator takes a document down, which the audit log keeps. */
+export const documentTakedownSchema = v.object({
+  reason: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(500)))
+})
+
+export type EnrollmentReview = v.InferOutput<typeof enrollmentReviewSchema>

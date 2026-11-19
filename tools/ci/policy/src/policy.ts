@@ -1,4 +1,11 @@
-const ROOT_DOCS = new Set(['README.md', 'CONTRIBUTING.md', 'AGENTS.md', 'CHANGELOG.md', 'LICENSE'])
+const ROOT_DOCS = new Set([
+  'README.md',
+  'CONTRIBUTING.md',
+  'MAINTAINING.md',
+  'AGENTS.md',
+  'CHANGELOG.md',
+  'LICENSE'
+])
 const DOC_ASSET = /\.(?:md|png|jpe?g|gif|webp|svg|ico|pdf|woff2?|ttf)$/i
 
 /**
@@ -48,6 +55,7 @@ export const CODE_JOBS = [
   'repository-quality',
   'storybook',
   'native-test-contracts',
+  'html-engine',
   'unit-tests',
   'feedback-tests'
 ] as const

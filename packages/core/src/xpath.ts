@@ -1,6 +1,7 @@
 import type * as FontoxpathModule from 'fontoxpath'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
 const NODE_TYPES = {
   ELEMENT_NODE: 1,
@@ -98,6 +99,13 @@ function createDocument(graph: SceneGraph, rootNode: SceneNode): XPathDocument {
   return doc
 }
 
+/** An attribute's value; text lengths compare in pixels, as `fontSize` does. */
+function attrValue(node: SceneNode, name: string): unknown {
+  if (name === 'lineHeight') return lineHeightPixels(node.lineHeight, node.fontSize)
+  if (name === 'letterSpacing') return textLengthPixels(node.letterSpacing, node.fontSize)
+  return Reflect.get(node, name)
+}
+
 function getAttrs(wrapped: XPathNode): XPathAttr[] {
   if (wrapped._attrs) return wrapped._attrs
 
@@ -106,12 +114,15 @@ function getAttrs(wrapped: XPathNode): XPathAttr[] {
 
   for (const attrName of QUERYABLE_ATTRS) {
     if (attrName in node) {
-      const value = Reflect.get(node, attrName)
+      const value = attrValue(node, attrName)
       if (value === undefined || value === null || typeof value === 'symbol') continue
       const stringValue =
-        typeof value === 'object'
-          ? JSON.stringify(value)
-          : String(value as string | number | boolean)
+        typeof value === 'string' ||
+        typeof value === 'number' ||
+        typeof value === 'boolean' ||
+        typeof value === 'bigint'
+          ? String(value)
+          : JSON.stringify(value)
       attrs.push({
         nodeType: NODE_TYPES.ATTRIBUTE_NODE,
         nodeName: attrName,
@@ -228,7 +239,10 @@ async function loadFontoxpath(): Promise<Fontoxpath> {
 
 export interface XPathQueryOptions {
   limit?: number
+  /** The name of the page to search; `pageId` takes precedence. */
   page?: string
+  /** The ID of the page to search. */
+  pageId?: string
 }
 
 export async function queryByXPath(
@@ -238,7 +252,9 @@ export async function queryByXPath(
 ): Promise<SceneNode[]> {
   const { limit = 1000 } = options
   const pages = graph.getPages()
-  const targetPages = options.page ? pages.filter((p) => p.name === options.page) : pages
+  let targetPages = pages
+  if (options.pageId) targetPages = pages.filter((p) => p.id === options.pageId)
+  else if (options.page) targetPages = pages.filter((p) => p.name === options.page)
 
   if (targetPages.length === 0) return []
 
@@ -300,7 +316,7 @@ function buildSegment(graph: SceneGraph, node: SceneNode, parent: SceneNode | un
 
   const siblings = parent.childIds
     .map((id) => graph.getNode(id))
-    .filter((n): n is SceneNode => n !== undefined && n.type === tag)
+    .filter((n): n is SceneNode => n?.type === tag)
 
   const sameNameCount = siblings.filter((s) => s.name === node.name).length
   if (sameNameCount <= 1) return `${tag}[@name=${escaped}]`

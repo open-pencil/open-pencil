@@ -18,16 +18,11 @@ import {
   RU_PROG
 } from '#docs-config/labels'
 import type { ProgrammableLabels, SidebarLabels } from '#docs-config/labels'
-import { sdkSidebar } from '#docs-config/sdk-sidebar'
-import {
-  developmentSidebar,
-  guideSidebar,
-  programmableSidebar,
-  referenceSidebar,
-  userGuideSidebar
-} from '#docs-config/sidebars'
+import { sdkSidebar } from '#docs-config/sdk/sidebar'
+import { developersSidebar, docsSidebar } from '#docs-config/sidebars'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import { checkGuideMap } from './guides'
 import { checkDocsIntegrity } from './integrity'
@@ -61,14 +56,15 @@ function sidebarLinks(items: SidebarItem[]): string[] {
 }
 
 function localeSidebarLinks({ labels, prefix, programmable }: LocaleConfig): string[] {
-  const developmentPrefix = prefix ? '' : prefix
   return sidebarLinks([
-    ...guideSidebar(prefix, labels),
-    ...userGuideSidebar(prefix, labels),
-    ...programmableSidebar(prefix, programmable),
-    ...sdkSidebar(prefix),
-    ...referenceSidebar(prefix, 'Reference', labels),
-    ...developmentSidebar(developmentPrefix, 'Development', labels)
+    ...docsSidebar(prefix, 'Reference', labels, programmable),
+    ...developersSidebar(
+      prefix,
+      { reference: 'Reference', development: 'Development' },
+      labels,
+      programmable
+    ),
+    ...sdkSidebar(prefix)
   ])
 }
 
@@ -84,7 +80,7 @@ const result = checkDocsIntegrity({
 const missingCounts = Object.values(result.localeMissingPages).map((pages) => pages.length)
 const translationCounts = missingCounts.map((missing) => result.canonicalPageCount - missing)
 console.log(
-  `Localized page presence: ${Math.min(...translationCounts)}–${Math.max(...translationCounts)} of ${result.canonicalPageCount} canonical routes per locale; content quality is audited separately.`
+  `Localized page presence: ${minOf(translationCounts)}–${maxOf(translationCounts)} of ${result.canonicalPageCount} canonical routes per locale; content quality is audited separately.`
 )
 
 const guides = checkGuideMap({ repoRoot })

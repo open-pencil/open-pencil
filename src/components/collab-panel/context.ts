@@ -18,7 +18,7 @@ import { getShareURL } from '@/constants'
 function createCollabPanelContext() {
   const collab = useCollabInjected()
   const joinRoomFromInput = useJoinRoom()
-  const { copy, copied } = useClipboard({ copiedDuring: 2000 })
+  const { copy } = useClipboard()
   const { common, collaboration } = useI18n()
   const notifications = useNotificationMessages()
 
@@ -63,12 +63,6 @@ function createCollabPanelContext() {
   /** Everyone in the room's voice call, ourselves first. */
   const callRows = computed(() => presenceRows.value.filter((row) => row.voice))
   const shareURL = computed(() => (state.value.roomId ? getShareURL(state.value.roomId) : ''))
-
-  function copyLink() {
-    if (!shareURL.value) return
-    void copy(shareURL.value)
-    toast.info(notifications.value.linkCopied)
-  }
 
   function saveName() {
     const name = nameDraft.value.trim()
@@ -116,7 +110,6 @@ function createCollabPanelContext() {
   return {
     common,
     messages: collaboration,
-    copied,
     joinInput,
     joinError,
     nameDraft,
@@ -126,7 +119,6 @@ function createCollabPanelContext() {
     presenceRows,
     callRows,
     shareURL,
-    copyLink,
     saveName,
     share,
     join,

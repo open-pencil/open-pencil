@@ -1,5 +1,9 @@
 import type { FontVariation } from '@open-pencil/scene-graph'
-import { styleToWeight } from '@open-pencil/scene-graph/font-style'
+import {
+  styleSpelling,
+  styleToWeight,
+  type FontFamilyStyle
+} from '@open-pencil/scene-graph/font-style'
 
 interface TableRange {
   offset: number
@@ -9,6 +13,10 @@ interface TableRange {
 const WINDOWS_PLATFORM = 3
 const MAC_PLATFORM = 1
 const ENGLISH_US = 0x409
+/** Windows names are UTF-16; Mac names are read in the Roman script, the one with a decoder. */
+const WINDOWS_NAMES = new TextDecoder('utf-16be')
+const MAC_ROMAN_NAMES = new TextDecoder('macintosh')
+const MAC_ROMAN = 0
 const NAME_HEADER_SIZE = 6
 const NAME_RECORD_SIZE = 12
 const FVAR_HEADER_SIZE = 16
@@ -30,6 +38,12 @@ function sfntTable(view: DataView, tag: string): TableRange | null {
   return null
 }
 
+/** One of the font's tables, or `null` when it has none. */
+export function fontTableView(data: ArrayBuffer, tag: string): DataView | null {
+  const table = sfntTable(new DataView(data), tag)
+  return table ? new DataView(data, table.offset, table.length) : null
+}
+
 export function isVariableFont(data: ArrayBuffer): boolean {
   return sfntTable(new DataView(data), 'fvar') !== null
 }
@@ -44,10 +58,6 @@ export function hasTrueTypeOutlines(data: ArrayBuffer): boolean {
 
 function fixed(view: DataView, offset: number): number {
   return view.getInt32(offset) / 65536
-}
-
-function normalizeStyleName(style: string): string {
-  return style.toLowerCase().replace(/\s+/g, '')
 }
 
 function fontName(view: DataView, name: TableRange, nameId: number): string | null {
@@ -67,24 +77,53 @@ function fontName(view: DataView, name: TableRange, nameId: number): string | nu
     if (start + length > end) continue
     const bytes = new Uint8Array(view.buffer, view.byteOffset + start, length)
     if (platform === WINDOWS_PLATFORM) {
-      let value = ''
-      for (let c = 0; c + 1 < length; c += 2)
-        value += String.fromCharCode((bytes[c] << 8) | bytes[c + 1])
+      const value = WINDOWS_NAMES.decode(bytes)
       if (language === ENGLISH_US) return value
       fallback ??= value
-    } else if (platform === MAC_PLATFORM) {
-      fallback ??= String.fromCharCode(...bytes)
+    } else if (platform === MAC_PLATFORM && view.getUint16(record + 2) === MAC_ROMAN) {
+      fallback ??= MAC_ROMAN_NAMES.decode(bytes)
     }
   }
   return fallback
 }
 
+const FAMILY_NAME = 1
+const SUBFAMILY_NAME = 2
+const TYPOGRAPHIC_FAMILY_NAME = 16
+const TYPOGRAPHIC_SUBFAMILY_NAME = 17
+
 /**
- * Returns the axis coordinates a variable font needs to render `style`, preferring the named
- * instance with that name (for example SF Pro `Medium` is `wght` 510) and otherwise clamping the
- * style's weight to the `wght` axis. Returns `null` for static fonts.
+ * The family and style a font file names itself with: its typographic names, which keep every
+ * weight in one family, else the legacy ones, which group at most four styles per family.
  */
-export function namedInstanceVariations(data: ArrayBuffer, style: string): FontVariation[] | null {
+export function fontFaceName(data: ArrayBuffer): FontFamilyStyle | null {
+  const view = new DataView(data)
+  const name = sfntTable(view, 'name')
+  if (!name) return null
+  const family = fontName(view, name, TYPOGRAPHIC_FAMILY_NAME) ?? fontName(view, name, FAMILY_NAME)
+  const style =
+    fontName(view, name, TYPOGRAPHIC_SUBFAMILY_NAME) ?? fontName(view, name, SUBFAMILY_NAME)
+  return family ? { family, style: style ?? 'Regular' } : null
+}
+
+/** A variation axis of a font: its tag, its range and default, and the name the font gives it. */
+export interface FontAxis {
+  tag: string
+  min: number
+  default: number
+  max: number
+  name: string
+}
+
+interface VariationTable {
+  view: DataView
+  axes: FontAxis[]
+  /** Where each named instance's record starts. */
+  instances: number[]
+  name: TableRange | null
+}
+
+function variationTable(data: ArrayBuffer): VariationTable | null {
   const view = new DataView(data)
   const fvar = sfntTable(view, 'fvar')
   if (!fvar || fvar.length < FVAR_HEADER_SIZE) return null
@@ -102,23 +141,75 @@ export function namedInstanceVariations(data: ArrayBuffer, style: string): FontV
     return null
   }
 
+  const name = sfntTable(view, 'name')
   const axes = Array.from({ length: axisCount }, (_, index) => {
     const axis = axesOffset + index * axisSize
     let tag = ''
     for (let c = 0; c < 4; c++) tag += String.fromCharCode(view.getUint8(axis + c))
-    return { tag, min: fixed(view, axis + 4), max: fixed(view, axis + 12) }
+    return {
+      tag,
+      min: fixed(view, axis + 4),
+      default: fixed(view, axis + 8),
+      max: fixed(view, axis + 12),
+      name: (name && fontName(view, name, view.getUint16(axis + 18))) ?? tag
+    }
   })
-
-  const name = sfntTable(view, 'name')
-  const requested = normalizeStyleName(style)
   const instancesOffset = axesOffset + axisCount * axisSize
+  const instances = Array.from(
+    { length: instanceCount },
+    (_, index) => instancesOffset + index * instanceSize
+  )
+  return { view, axes, instances, name }
+}
+
+/** The variation axes of a font, in its order, or `null` for a static font. */
+export function fontAxes(data: ArrayBuffer): FontAxis[] | null {
+  return variationTable(data)?.axes ?? null
+}
+
+/** A named instance of a variable font, such as Inter's `SemiBold`, with every axis' value. */
+export interface NamedInstance {
+  name: string
+  variations: FontVariation[]
+}
+
+/** Whether a variable font has a named instance of this name, spelled alike but for case and spaces. */
+export function hasNamedInstance(data: ArrayBuffer, style: string): boolean {
+  return namedInstances(data).some(
+    (instance) => styleSpelling(instance.name) === styleSpelling(style)
+  )
+}
+
+/** A variable font's named instances, in its order. */
+export function namedInstances(data: ArrayBuffer): NamedInstance[] {
+  const table = variationTable(data)
+  if (!table?.name) return []
+  const { view, axes, instances, name } = table
+  return instances.flatMap((offset) => {
+    const instanceName = fontName(view, name, view.getUint16(offset))
+    if (instanceName === null) return []
+    const variations = axes.map((axis, axisIndex) => ({
+      axis: axis.tag,
+      value: fixed(view, offset + 4 + axisIndex * 4)
+    }))
+    return [{ name: instanceName, variations }]
+  })
+}
+
+/**
+ * Returns the axis coordinates a variable font needs to render `style`, preferring the named
+ * instance with that name (for example SF Pro `Medium` is `wght` 510) and otherwise clamping the
+ * style's weight to the `wght` axis. Returns `null` for static fonts.
+ */
+export function namedInstanceVariations(data: ArrayBuffer, style: string): FontVariation[] | null {
+  const table = variationTable(data)
+  if (!table) return null
+  const { view, axes, instances, name } = table
+  const requested = styleSpelling(style)
   const instance = name
-    ? Array.from(
-        { length: instanceCount },
-        (_, index) => instancesOffset + index * instanceSize
-      ).find((offset) => {
+    ? instances.find((offset) => {
         const instanceName = fontName(view, name, view.getUint16(offset))
-        return instanceName !== null && normalizeStyleName(instanceName) === requested
+        return instanceName !== null && styleSpelling(instanceName) === requested
       })
     : undefined
   if (instance !== undefined) {
@@ -131,4 +222,148 @@ export function namedInstanceVariations(data: ArrayBuffer, style: string): FontV
   const weight = axes.find((axis) => axis.tag === 'wght')
   if (!weight) return []
   return [{ axis: 'wght', value: Math.min(weight.max, Math.max(weight.min, styleToWeight(style))) }]
+}
+
+/** An axis value the font's STAT table names: the axes it covers, each with its range. */
+interface StatAxisValue {
+  axes: Array<{ tag: string; min: number; max: number }>
+  name: string
+  /** Left out of a name, as "Regular" is left out of "Bold" for a regular-width roman. */
+  elidable: boolean
+}
+
+const STAT_HEADER_SIZE = 18
+const ELIDABLE_AXIS_VALUE = 0x0002
+
+/** The bytes each axis value format takes; format 4 adds 6 per axis it names. */
+const STAT_VALUE_SIZES = new Map([
+  [1, 12],
+  [2, 20],
+  [3, 16],
+  [4, 8]
+])
+const STAT_AXIS_RECORD_SIZE = 8
+
+function statAxisValue(
+  view: DataView,
+  offset: number,
+  end: number,
+  tags: readonly string[],
+  name: TableRange
+): StatAxisValue | null {
+  if (offset + 2 > end) return null
+  const format = view.getUint16(offset)
+  const size = STAT_VALUE_SIZES.get(format)
+  if (size === undefined || offset + size > end) return null
+  if (format === 4 && offset + size + view.getUint16(offset + 2) * 6 > end) return null
+  const range = (axisIndex: number, min: number, max = min) => {
+    const tag = tags.at(axisIndex)
+    return tag === undefined ? null : { tag, min, max }
+  }
+  let axes: Array<{ tag: string; min: number; max: number } | null>
+  let flags: number
+  let nameId: number
+  if (format === 1 || format === 3) {
+    flags = view.getUint16(offset + 4)
+    nameId = view.getUint16(offset + 6)
+    axes = [range(view.getUint16(offset + 2), fixed(view, offset + 8))]
+  } else if (format === 2) {
+    flags = view.getUint16(offset + 4)
+    nameId = view.getUint16(offset + 6)
+    axes = [range(view.getUint16(offset + 2), fixed(view, offset + 12), fixed(view, offset + 16))]
+  } else if (format === 4) {
+    const count = view.getUint16(offset + 2)
+    flags = view.getUint16(offset + 4)
+    nameId = view.getUint16(offset + 6)
+    axes = Array.from({ length: count }, (_, index) => {
+      const record = offset + 8 + index * 6
+      return range(view.getUint16(record), fixed(view, record + 2))
+    })
+  } else {
+    return null
+  }
+  const valueName = fontName(view, name, nameId)
+  if (valueName === null || axes.some((axis) => axis === null)) return null
+  return {
+    axes: axes.filter((axis) => axis !== null),
+    name: valueName,
+    elidable: (flags & ELIDABLE_AXIS_VALUE) !== 0
+  }
+}
+
+/**
+ * Names a point in the font's design space as its STAT table names it, the way Windows names a
+ * variable font's instances: each design axis's value name in the table's axis order, leaving
+ * out the elidable ones, so Segoe UI Variable's instance the font calls "Bold Display" is
+ * "Display Bold", and its regular Display instance just "Display". An axis the point does not
+ * set takes the one value the table gives it, as an italic file's "Italic". `null` for a font
+ * without a STAT table.
+ */
+export function statNamer(data: ArrayBuffer): ((variations: FontVariation[]) => string) | null {
+  const view = new DataView(data)
+  const stat = sfntTable(view, 'STAT')
+  const name = sfntTable(view, 'name')
+  if (!stat || !name || stat.length < STAT_HEADER_SIZE) return null
+  const minor = view.getUint16(stat.offset + 2)
+  const axisSize = view.getUint16(stat.offset + 4)
+  const axisCount = view.getUint16(stat.offset + 6)
+  const axesOffset = stat.offset + view.getUint32(stat.offset + 8)
+  const valueCount = view.getUint16(stat.offset + 12)
+  const valuesOffset = stat.offset + view.getUint32(stat.offset + 14)
+  const end = stat.offset + stat.length
+  if (axisSize < STAT_AXIS_RECORD_SIZE) return null
+  if (axesOffset + axisCount * axisSize > end || valuesOffset + valueCount * 2 > end) return null
+
+  const designAxes = Array.from({ length: axisCount }, (_, index) => {
+    const record = axesOffset + index * axisSize
+    let tag = ''
+    for (let c = 0; c < 4; c++) tag += String.fromCharCode(view.getUint8(record + c))
+    return { tag, ordering: view.getUint16(record + 6) }
+  })
+  const tags = designAxes.map((axis) => axis.tag)
+  const values = Array.from({ length: valueCount }, (_, index) => {
+    const offset = valuesOffset + view.getUint16(valuesOffset + index * 2)
+    return statAxisValue(view, offset, end, tags, name)
+  }).filter((value) => value !== null)
+  const fallback =
+    (minor >= 1 && stat.length >= 20 && fontName(view, name, view.getUint16(stat.offset + 18))) ||
+    'Regular'
+  const ordering = new Map(designAxes.map((axis) => [axis.tag, axis.ordering]))
+
+  return (variations) => {
+    const at = new Map(variations.map(({ axis, value }) => [axis, value]))
+    const holds = (axis: StatAxisValue['axes'][number]) => {
+      const value = at.get(axis.tag)
+      if (value !== undefined) return value >= axis.min && value <= axis.max
+      // An axis the point leaves unset is named by the font's one value for it.
+      return values.filter((other) => other.axes.some(({ tag }) => tag === axis.tag)).length === 1
+    }
+    const named = new Set<string>()
+    const parts: Array<{ ordering: number; name: string }> = []
+    const take = (value: StatAxisValue) => {
+      for (const { tag } of value.axes) named.add(tag)
+      if (value.elidable) return
+      const first = value.axes.reduce(
+        (lowest, { tag }) => Math.min(lowest, ordering.get(tag) ?? 0),
+        Number.POSITIVE_INFINITY
+      )
+      parts.push({ ordering: first, name: value.name })
+    }
+    // A value naming several axes at once names them before any single-axis value does.
+    for (const value of values) {
+      if (value.axes.length > 1 && value.axes.every(holds)) take(value)
+    }
+    for (const axis of designAxes) {
+      if (named.has(axis.tag)) continue
+      const value = values.find(
+        (candidate) =>
+          candidate.axes.length === 1 &&
+          candidate.axes[0]?.tag === axis.tag &&
+          holds(candidate.axes[0])
+      )
+      if (value) take(value)
+    }
+    const words = parts.toSorted((a, b) => a.ordering - b.ordering).map((part) => part.name)
+    return words.length > 0 ? words.join(' ') : fallback
+  }
 }

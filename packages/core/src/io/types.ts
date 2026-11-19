@@ -1,5 +1,4 @@
-import type { CanvasKit } from 'canvaskit-wasm'
-
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 
@@ -7,6 +6,7 @@ import type { SkiaRenderer } from '#core/canvas'
 import type { IconProvider } from '#core/icons'
 
 import type { RasterExportFormat } from './formats/raster'
+import type { ExportEffectWarning } from './formats/svg/effects'
 
 export type IOFormatRole = 'native-document' | 'interchange-document' | 'derived-export'
 
@@ -26,7 +26,13 @@ export interface ReadDocumentInput {
    * Reads a file a document names relative to itself, such as a `.pen` document's images; null
    * when it cannot. Hosts that know where the document lives pass it.
    */
-  readAsset?(path: string): Promise<Uint8Array | null>
+  readAsset?: (path: string) => Promise<Uint8Array | null>
+  /**
+   * Reads a document a document imports, such as a `.pen` library, or a file an imported document
+   * names, by its path relative to the document being read, which may lead out of its folder;
+   * null when it cannot. Without it, imports are left unresolved.
+   */
+  readImport?: (path: string) => Promise<Uint8Array | null>
 }
 
 export interface ReadDocumentResult {
@@ -89,6 +95,8 @@ export interface RasterExportOptions {
 export interface SVGExportOptions {
   xmlDeclaration?: boolean
   colorSpace?: RenderColorSpace
+  /** Receives each effect the export leaves out because SVG cannot draw it. */
+  onWarning?: (warning: ExportEffectWarning) => void
 }
 
 /** A file written next to an export's main file, at a path relative to it. */
@@ -103,6 +111,8 @@ export interface ExportResult {
   extension: string
   data: IOData
   encoding?: IOTextEncoding
+  /** Effects the format cannot draw, which the export left out. */
+  warnings?: ExportEffectWarning[]
   /** Extra files the main file refers to, such as external images and fonts. */
   assets?: ExportAsset[]
 }
@@ -139,6 +149,11 @@ export interface IOFormatAdapter<Id extends string = string> {
   mimeTypes: string[]
   support: IOFormatSupport
   exportOptions?: IOFormatExportOptions
+  /**
+   * The format stores layout intent rather than the sizes it implies, so reading lays the layers
+   * out, measuring text with whatever measurer is installed.
+   */
+  laysOutOnRead?: boolean
 
   matchesFile?(fileName: string, mimeType?: string): boolean
 

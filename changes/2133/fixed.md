@@ -1,0 +1,1 @@
+- Vectors with overlapping fill regions, common in imported icons, cast one drop shadow and stroke each edge once instead of once per region (#2133).

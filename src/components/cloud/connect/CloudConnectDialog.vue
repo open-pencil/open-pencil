@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
+import { CLOUD_SOCIAL_PROVIDER_NAMES } from '@open-pencil/cloud/contract'
 import { useCloudMessages, useCloudPortalMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
 import {
@@ -9,6 +11,7 @@ import {
   type CloudAccountCredentials
 } from '@/app/cloud/sessions/account-form'
 import CloudAccountForm from '@/components/cloud/account/CloudAccountForm.vue'
+import CloudProviderLogo from '@/components/cloud/account/CloudProviderLogo.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
 import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
@@ -18,7 +21,7 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppCopyField from '@/components/ui/input/AppCopyField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
-import { cloudConnect } from '@/theme/cloud/connect'
+import cloudConnectTheme from '@/theme/cloud/connect'
 
 import type {
   CloudAuthFailure,
@@ -28,6 +31,8 @@ import type {
   CloudServerKind,
   CloudSignInMethod
 } from './types'
+
+const cloudConnect = tv(cloudConnectTheme)
 
 /**
  * Connecting the editor to an OpenPencil Cloud server and signing in: the server's address when
@@ -104,9 +109,13 @@ const errors = computed<Record<CloudConnectError, { heading: string; description
       heading: t.value.errorNotCloudHeading,
       description: t.value.errorNotCloudDescription
     },
-    outdated: {
-      heading: t.value.errorOutdatedHeading,
-      description: t.value.errorOutdatedDescription
+    'server-outdated': {
+      heading: t.value.errorServerOutdatedHeading,
+      description: t.value.errorServerOutdatedDescription
+    },
+    'editor-outdated': {
+      heading: t.value.errorEditorOutdatedHeading,
+      description: t.value.errorEditorOutdatedDescription
     },
     denied: { heading: t.value.errorDeniedHeading, description: t.value.errorDeniedDescription },
     expired: { heading: t.value.errorExpiredHeading, description: t.value.errorExpiredDescription },
@@ -116,11 +125,10 @@ const errors = computed<Record<CloudConnectError, { heading: string; description
     }
   })
 )
-const methodLabels = computed<Record<CloudSignInMethod, string>>(() => ({
-  google: t.value.continueWithGoogle,
-  apple: t.value.continueWithApple,
-  email: t.value.continueWithEmail
-}))
+const methodLabel = (method: CloudSignInMethod) =>
+  method === 'email'
+    ? t.value.continueWithEmail
+    : t.value.continueWith({ provider: CLOUD_SOCIAL_PROVIDER_NAMES[method] })
 const heading = computed(() => {
   switch (step) {
     case 'device':
@@ -167,7 +175,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
 
 <template>
   <AppDialogRoot v-model:open="open" size="sm">
-    <AppDialogHeader :heading="heading" :description="description" :close-label="common.close" />
+    <AppDialogHeader :heading="heading" :description="description" />
 
     <AppDialogBody v-if="step === 'server' || step === 'checking'">
       <RadioGroupRoot v-if="choosing" v-model="kind" :aria-label="t.server" :class="ui.choices()">
@@ -247,14 +255,13 @@ function submitAccount(credentials: CloudAccountCredentials) {
             @click="emit('signIn', method)"
           >
             <template #leading>
-              <icon-ai-google v-if="method === 'google'" class="size-4 text-surface" />
-              <icon-ai-apple v-else-if="method === 'apple'" class="size-4 text-surface" />
-              <icon-lucide-mail v-else class="size-4 text-surface" />
+              <icon-lucide-mail v-if="method === 'email'" class="size-4 text-surface" />
+              <CloudProviderLogo v-else :provider="method" class="size-4 text-surface" />
             </template>
-            {{ methodLabels[method] }}
+            {{ methodLabel(method) }}
             <template #trailing>
               <icon-lucide-arrow-up-right v-if="desktop" class="size-3.5" />
-              <icon-lucide-chevron-right v-else class="size-3.5" />
+              <icon-lucide-chevron-right data-direction="reading" v-else class="size-3.5" />
             </template>
           </AppActionRow>
         </div>
@@ -318,8 +325,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
           :value="device.code"
           :copy-label="t.copyCode"
           :copied-label="common.copied"
-          look="command"
-          :ui="{ root: 'w-full py-3 pl-4', value: 'flex-1 text-center text-lg tracking-[0.3em]' }"
+          look="code"
         />
         <p :class="ui.deviceStatus()" role="status">
           <icon-lucide-loader-circle :class="ui.spinner()" aria-hidden="true" />
@@ -328,7 +334,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
       </div>
     </AppDialogBody>
 
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
+    <AppDialogFooter>
       <AppButton v-if="canGoBack" :disabled="busy" @click="emit('back')">
         {{ common.back }}
       </AppButton>

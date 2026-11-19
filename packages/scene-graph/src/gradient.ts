@@ -1,4 +1,5 @@
-import type { Color, Vector } from './primitives'
+import Matrix from './matrix'
+import type { Color, Rect, Vector } from './primitives'
 import type { Fill, GradientStop, GradientTransform } from './types'
 
 /**
@@ -44,6 +45,20 @@ export const DEFAULT_GRADIENT_TRANSFORM: GradientTransform = {
   m10: -1,
   m11: 0,
   m12: 1
+}
+
+/**
+ * A paint transform as Figma's plugin API gives and takes it, and as authors write it: two rows of
+ * three, `[[m00, m01, m02], [m10, m11, m12]]`.
+ */
+export type GradientTransformRows = [[number, number, number], [number, number, number]]
+
+/** `t` as Figma's plugin API gives a paint transform: two rows of three. */
+export function gradientTransformRows(t: GradientTransform): GradientTransformRows {
+  return [
+    [t.m00, t.m01, t.m02],
+    [t.m10, t.m11, t.m12]
+  ]
 }
 
 /** How dark a new gradient's second stop is next to the fill colour, as in Figma. */
@@ -163,4 +178,25 @@ export function ellipticalGradientTransform(
     m11: yAxis.y,
     m12: center.y - (xAxis.y + yAxis.y) / 2
   })
+}
+
+/**
+ * The transform that keeps a gradient where it was on the canvas when its layer's box becomes
+ * `box`, given in the old box's units, as Figma rewrites it when editing a path resizes the layer
+ * (Figma desktop 126: a 200 × 120 box grown to 380 × 160 and moved up 40 gives
+ * `[[1.9, 0, 0], [0, 1.333, -0.333]]` from the identity).
+ */
+export function gradientTransformInBox(t: GradientTransform, box: Rect): GradientTransform {
+  const [m00, m01, m02, m10, m11, m12] = Matrix.multiply(Matrix.fromAffine(t), [
+    box.width,
+    0,
+    box.x,
+    0,
+    box.height,
+    box.y,
+    0,
+    0,
+    1
+  ])
+  return { m00, m01, m02, m10, m11, m12 }
 }

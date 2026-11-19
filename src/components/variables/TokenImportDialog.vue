@@ -22,6 +22,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import { AppDialog } from '@/components/ui/dialog'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import { useHeldContent } from '@/components/ui/overlay/held'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
@@ -56,11 +57,12 @@ function isStale(choices: TokenImportOptions): boolean {
 }
 
 // The plan reads the document, so it follows every change to it, and choices that went stale
-// start over from the defaults.
+// start over from the defaults. The import itself changes the document as the dialog closes,
+// so a closed dialog keeps its choices and the plan it showed.
 watch(
   () => store.state.sceneVersion,
   () => {
-    if (bundle && options.value && isStale(options.value))
+    if (open.value && bundle && options.value && isStale(options.value))
       options.value = defaultTokenImportOptions(store.graph, bundle)
   }
 )
@@ -69,16 +71,18 @@ function currentPlan() {
   return bundle && options.value ? planTokenImport(store.graph, bundle, options.value) : null
 }
 
-const plan = computed(() => {
+const livePlan = computed(() => {
   void store.state.sceneVersion
   return currentPlan()
 })
-const existingCollections = computed(() => {
+const plan = useHeldContent(livePlan, open)
+const liveCollections = computed(() => {
   void store.state.sceneVersion
   return [...store.graph.variableCollections.values()].filter(
     (collection) => !isLibraryCollection(collection)
   )
 })
+const existingCollections = useHeldContent(liveCollections, open)
 const styleCount = computed(
   () =>
     bundle?.composites.filter((token) => token.type === 'typography' || token.type === 'shadow')
@@ -188,8 +192,6 @@ function importTokens() {
     size="md"
     :heading="variables.importDesignTokens"
     :description="variables.importTokensDescription"
-    :close-label="common.close"
-    :ui="{ footer: 'justify-between' }"
     data-test-id="variables-import-dialog"
   >
     <div class="flex flex-col gap-3 text-xs">
@@ -214,7 +216,11 @@ function importTokens() {
         >
           <div class="grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-2 px-3 py-1">
             <span class="truncate font-medium text-surface">{{ collection.name }}</span>
-            <icon-lucide-arrow-right class="size-3 text-muted" aria-hidden="true" />
+            <icon-lucide-arrow-right
+              data-direction="reading"
+              class="size-3 text-muted"
+              aria-hidden="true"
+            />
             <AppSelect
               :model-value="targetValue(options.collections[index].target)"
               :options="collectionOptions()"
@@ -226,10 +232,14 @@ function importTokens() {
             <div
               v-for="(mode, modeIndex) in collection.modes"
               :key="`${modeIndex}:${mode.name}`"
-              class="grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-2 py-1 pr-3 pl-6"
+              class="grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-2 py-1 pe-3 ps-6"
             >
               <span class="truncate text-muted">{{ mode.name }}</span>
-              <icon-lucide-arrow-right class="size-3 text-muted" aria-hidden="true" />
+              <icon-lucide-arrow-right
+                data-direction="reading"
+                class="size-3 text-muted"
+                aria-hidden="true"
+              />
               <AppSelect
                 :model-value="targetValue(options.collections[index].modes[modeIndex])"
                 :options="modeOptions(index)"
@@ -273,24 +283,24 @@ function importTokens() {
       </AppCollapsible>
     </div>
 
-    <template #footer>
+    <template #footer-start>
       <span class="text-xs text-muted" data-test-id="variables-import-summary">
         {{ plan && !empty ? variables.importSummary(plan.counts) : '' }}
       </span>
-      <div class="flex gap-2">
-        <AppButton color="neutral" variant="ghost" @click="open = false">
-          {{ common.cancel }}
-        </AppButton>
-        <AppButton
-          color="primary"
-          variant="solid"
-          :disabled="changes === 0"
-          data-test-id="variables-import-confirm"
-          @click="importTokens"
-        >
-          {{ variables.importAction }}
-        </AppButton>
-      </div>
+    </template>
+    <template #footer>
+      <AppButton color="neutral" variant="ghost" @click="open = false">
+        {{ common.cancel }}
+      </AppButton>
+      <AppButton
+        color="primary"
+        variant="solid"
+        :disabled="changes === 0"
+        data-test-id="variables-import-confirm"
+        @click="importTokens"
+      >
+        {{ variables.importAction }}
+      </AppButton>
     </template>
   </AppDialog>
 </template>

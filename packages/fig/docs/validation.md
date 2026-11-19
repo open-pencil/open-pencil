@@ -87,7 +87,7 @@ application server and MCP endpoint; reusing another worktree's server invalidat
 
 ```sh
 bun run check
-bun test packages/fig/tests tests/engine/io/fig/session
+bun test packages/fig/tests packages/core/tests/io/formats/fig/session
 ```
 
 The complete repository test requirements remain in [AGENTS.md](../../../AGENTS.md).

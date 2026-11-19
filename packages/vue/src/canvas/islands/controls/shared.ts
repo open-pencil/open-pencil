@@ -44,11 +44,15 @@ export function interaction(state: ControlState, focusOnPress = false): Record<s
   }
 }
 
-/** Turn a group's items on and off so that only the chosen one is on. */
+/**
+ * Turn a group's items on and off so that only the chosen one is on. Tabs choose by trigger,
+ * so a tab's place is among its list's triggers, plain ones included.
+ */
 export function chooseItem(island: IslandRenderContext, group: ControlModel, choice: string): void {
   stateOf(island, group).choice = choice
   for (const [index, item] of group.items.entries()) {
     const valueId = item.kind === 'collapsible' ? 'open' : 'value'
-    stateOf(island, item).booleans[valueId] = String(index) === choice
+    const place = group.kind === 'tabs' ? group.triggers.indexOf(item.path) : index
+    stateOf(island, item).booleans[valueId] = String(place) === choice
   }
 }

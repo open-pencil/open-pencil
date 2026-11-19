@@ -21,5 +21,3 @@ export type DocumentSourceAccess = {
   setSavedVersion: (version: number) => void
   setLastWriteTime: (time: number) => void
 }
-
-export type ViewportSize = { width: number; height: number }

@@ -3,9 +3,11 @@ import { useClipboard } from '@vueuse/core'
 import { ToastClose, ToastDescription, ToastRoot } from 'reka-ui'
 import { computed } from 'vue'
 
-import Tip from '@/components/ui/overlay/Tip.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 
 import AppProgress from './AppProgress.vue'
+import SeverityIcon from './SeverityIcon.vue'
 import { toast as toastTheme, toastProgressState, type ToastProps } from './toast'
 
 const {
@@ -17,9 +19,9 @@ const {
   actionLabel,
   duration,
   copyable = false,
-  copyLabel,
-  copiedLabel,
-  closeLabel,
+  copyLabel = '',
+  copiedLabel = '',
+  closeLabel = '',
   ui
 } = defineProps<ToastProps>()
 
@@ -28,7 +30,7 @@ const emit = defineEmits<{ close: []; action: [] }>()
 const { copy, copied } = useClipboard({ copiedDuring: 1500 })
 const state = computed(() => toastProgressState(progress))
 const styles = computed(() => {
-  const theme = toastTheme({ tone: variant, progress: state.value })
+  const theme = toastTheme({ trailing: Boolean(actionLabel) || copyable, progress: state.value })
   return {
     root: theme.root({ class: ui?.root }),
     icon: theme.icon({ class: ui?.icon }),
@@ -37,7 +39,7 @@ const styles = computed(() => {
     count: theme.count({ class: ui?.count }),
     progress: theme.progress({ class: ui?.progress }),
     action: theme.action({ class: ui?.action }),
-    control: theme.control({ class: ui?.control })
+    controls: theme.controls({ class: ui?.controls })
   }
 })
 </script>
@@ -58,9 +60,9 @@ const styles = computed(() => {
       }
     "
   >
+    <!-- A plain notice needs no icon; work in progress and problems do. -->
     <icon-lucide-loader-2 v-if="state !== 'none'" :class="styles.icon" aria-hidden="true" />
-    <icon-lucide-check v-else-if="variant === 'default'" :class="styles.icon" aria-hidden="true" />
-    <icon-lucide-triangle-alert v-else :class="styles.icon" aria-hidden="true" />
+    <SeverityIcon v-else-if="variant !== 'default'" :severity="variant" :class="styles.icon" />
     <div :class="styles.content" data-slot="toast-content">
       <ToastDescription :class="styles.message">
         {{ message }}<span v-if="count > 1" :class="styles.count">×{{ count }}</span>
@@ -70,30 +72,29 @@ const styles = computed(() => {
         :amount="progress"
         :label="progressLabel"
         :aria-label="progressLabel ?? message"
-        tone="current"
         :class="styles.progress"
       />
       <slot />
     </div>
-    <button v-if="actionLabel" type="button" :class="styles.action" @click="emit('action')">
+    <AppButton
+      v-if="actionLabel"
+      color="primary"
+      variant="soft"
+      :class="styles.action"
+      @click="emit('action')"
+    >
       {{ actionLabel }}
-    </button>
-    <template v-if="copyable">
-      <Tip :label="copied ? copiedLabel : copyLabel">
-        <button
-          type="button"
-          data-slot="toast-copy"
-          :class="styles.control"
-          :aria-label="copied ? copiedLabel : copyLabel"
-          @click="copy(message)"
-        >
-          <icon-lucide-check v-if="copied" class="size-3" aria-hidden="true" />
-          <icon-lucide-copy v-else class="size-3" aria-hidden="true" />
-        </button>
-      </Tip>
-      <ToastClose data-slot="toast-close" :class="styles.control" :aria-label="closeLabel">
-        <icon-lucide-x class="size-3" aria-hidden="true" />
+    </AppButton>
+    <div v-if="copyable" :class="styles.controls">
+      <IconButton size="sm" :label="copied ? copiedLabel : copyLabel" @click="copy(message)">
+        <icon-lucide-check v-if="copied" class="size-3.5" aria-hidden="true" />
+        <icon-lucide-copy v-else class="size-3.5" aria-hidden="true" />
+      </IconButton>
+      <ToastClose as-child>
+        <IconButton size="sm" :label="closeLabel">
+          <icon-lucide-x class="size-3.5" aria-hidden="true" />
+        </IconButton>
       </ToastClose>
-    </template>
+    </div>
   </ToastRoot>
 </template>

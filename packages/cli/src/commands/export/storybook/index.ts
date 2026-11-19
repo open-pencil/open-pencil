@@ -21,8 +21,11 @@ import {
   type StorybookFile,
   type StorybookFramework
 } from '@open-pencil/dom-css'
+import { appendAll } from '@open-pencil/std/arrays'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { requireFile } from '#cli/app/client'
+import { requestedPage } from '#cli/app/target'
 import { applyExportFontPolicy } from '#cli/commands/export/font-policy'
 import { ok, printError } from '#cli/format'
 import { loadDocument, populateWholeDocument, requirePage } from '#cli/headless'
@@ -38,6 +41,7 @@ interface StorybookArgs {
   output?: string
   beside?: boolean
   page?: string
+  'page-id'?: string
   node?: string
   framework: string
   /** `tailwind` styles Vue and React components with utilities rather than a stylesheet. */
@@ -154,7 +158,9 @@ async function writeStories(
   outputDir: string
 ): Promise<number> {
   const graph = await loadDocument(file)
-  const pageId = args.page ? requirePage(graph, args.page).id : undefined
+  const requested = requestedPage(args)
+  const page = requested ? requirePage(graph, requested) : undefined
+  const pageId = page?.id
   populateWholeDocument(graph)
   if (args['design-images']) {
     const pageIds = pageId ? [pageId] : graph.getPages().map((page) => page.id)
@@ -170,7 +176,7 @@ async function writeStories(
     pageId,
     plan: rules ? storyPlan(rules) : undefined,
     fonts: args.fonts === 'none' ? undefined : storyFonts,
-    folder: documentFolder(source, args.page),
+    folder: documentFolder(source, page?.name),
     // Titled by the document, so stories of documents exported together stay apart.
     document: basename(file, extname(file)),
     linkPath: linkPath(file),
@@ -188,10 +194,10 @@ async function writeStories(
       : undefined
   })
   if (files.length === 0)
-    throw new Error(`No components found in ${args.page ? `page "${args.page}"` : 'the document'}.`)
+    throw new Error(`No components found in ${page ? `page "${page.name}"` : 'the document'}.`)
 
   // Relative to the output, the document's path is the same on every machine and cwd.
-  const scope = { source, page: args.page }
+  const scope = { source, page: page?.name }
   await mkdir(outputDir, { recursive: true })
   // Staged next to the output so a failed write leaves the previous export in place,
   // and in a dot folder, which Storybook's story globs skip.
@@ -236,7 +242,7 @@ function watchDocuments(files: string[], onChange: (file: string) => Promise<voi
       clearTimeout(timers.get(file))
       timers.set(
         file,
-        setTimeout(() => enqueue(file), 200)
+        setTimeout(() => enqueue(file), SAVE_SETTLE_MS)
       )
     })
   }
@@ -263,7 +269,7 @@ async function resolveDocuments(args: StorybookArgs): Promise<string[]> {
     const matches: string[] = []
     for await (const match of glob(pattern)) matches.push(match)
     if (matches.length === 0) throw new Error(`No documents match ${pattern}.`)
-    documents.push(...matches.sort())
+    appendAll(documents, matches.sort())
   }
   return uniq(documents)
 }
@@ -273,13 +279,14 @@ function outputFor(args: StorybookArgs, file: string): string {
   return resolve(args.output ?? `${basename(file, extname(file))}-stories`)
 }
 
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
-}
+/** An editor saves a file in a few writes; it is exported once they stop for this long. */
+const SAVE_SETTLE_MS = 200
 
 export async function exportStorybookFromFile(args: StorybookArgs): Promise<void> {
   if (args.node) {
-    printError('--node is not supported for Storybook export. Use --page to limit it to one page.')
+    printError(
+      '--node is not supported for Storybook export. Use --page or --page-id to limit it to one page.'
+    )
     process.exit(1)
   }
   if (args.beside && args.output) {
@@ -301,7 +308,7 @@ export async function exportStorybookFromFile(args: StorybookArgs): Promise<void
   try {
     documents = await resolveDocuments(args)
   } catch (error) {
-    printError(message(error))
+    printError(errorMessage(error))
     process.exit(1)
   }
   if (documents.length > 1 && !args.beside && !args.output) {
@@ -310,8 +317,9 @@ export async function exportStorybookFromFile(args: StorybookArgs): Promise<void
     )
     process.exit(1)
   }
-  if (documents.length > 1 && args.page) {
-    printError('--page names a page of one document; export a single document with it.')
+  if (documents.length > 1 && requestedPage(args)) {
+    const option = args.page ? '--page' : '--page-id'
+    printError(`${option} names a page of one document; export a single document with it.`)
     process.exit(1)
   }
 
@@ -327,7 +335,7 @@ export async function exportStorybookFromFile(args: StorybookArgs): Promise<void
     try {
       await run(file)
     } catch (error) {
-      printError(`${file}: ${message(error)}`)
+      printError(`${file}: ${errorMessage(error)}`)
       failed.push(file)
     }
   }
@@ -338,7 +346,7 @@ export async function exportStorybookFromFile(args: StorybookArgs): Promise<void
 
   // A save can land mid-write or break the document; report it and keep watching.
   watchDocuments(documents, (file) =>
-    run(file).catch((error: unknown) => printError(`${file}: ${message(error)}`))
+    run(file).catch((error: unknown) => printError(`${file}: ${errorMessage(error)}`))
   )
   console.log(
     ok(

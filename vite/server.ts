@@ -21,18 +21,31 @@ export const WATCH_IGNORED = [
   ignoreMarkdownOutsideSource
 ]
 
-export function createDevServerOptions(host: string | undefined, rootDir: string): ServerOptions {
+function hmrOptions(host: string | undefined, hmrURL: string | undefined): ServerOptions['hmr'] {
+  if (!hmrURL) return host ? { protocol: 'ws', host, port: 1421 } : undefined
+  const url = new URL(hmrURL)
+  const secure = url.protocol === 'https:'
+  return {
+    protocol: secure ? 'wss' : 'ws',
+    host: url.hostname,
+    clientPort: Number(url.port || (secure ? 443 : 80))
+  }
+}
+
+/**
+ * `hmrURL` is the server's own public address, for pages another server serves: the Cloud server
+ * forwards their files here in `cloud:dev` but not WebSockets, so updates connect here directly.
+ */
+export function createDevServerOptions(
+  host: string | undefined,
+  rootDir: string,
+  hmrURL?: string
+): ServerOptions {
   return {
     port: 1420,
     strictPort: true,
     host: host || false,
-    hmr: host
-      ? {
-          protocol: 'ws',
-          host,
-          port: 1421
-        }
-      : undefined,
+    hmr: hmrOptions(host, hmrURL),
     // Vite forwards browser logs to the terminal when an agent starts it. Vue warnings carry the
     // component's props, and serializing the editor state behind them freezes the tab, so only
     // errors are forwarded.

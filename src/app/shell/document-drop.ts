@@ -2,10 +2,11 @@ import { useEventListener } from '@vueuse/core'
 
 import { filterCanvasFiles } from '@open-pencil/vue/canvas/drop'
 
+import { placeFiles } from '@/app/document/io/place'
 import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 import { isDesignTokenFileName } from '@/app/editor/tokens/design-tokens'
 import { importTokenFiles } from '@/app/editor/tokens/dialog'
-import { openDesignFile, openDesignFileBatch } from '@/app/shell/menu/files'
+import { isDOMDocumentFile, openDesignFile, openDesignFileBatch } from '@/app/shell/menu/files'
 
 interface DroppedFile {
   file: File
@@ -41,11 +42,20 @@ function droppedFiles(transfer: DataTransfer): DroppedFile[] {
   return dropped
 }
 
+/** The canvas a drop landed on, when it landed on one. */
+function canvasUnder(event: DragEvent): HTMLCanvasElement | null {
+  const target = event.target
+  return target instanceof HTMLCanvasElement && target.dataset.testId === 'canvas-element'
+    ? target
+    : null
+}
+
 /**
  * Opens documents dropped anywhere on the window in new tabs, as File → Open does. Images and
- * SVG files stay with the canvas, which places them; design token files open the variables
- * import of the document in view; any other file reports that it cannot be opened instead of
- * being ignored.
+ * SVG files stay with the canvas, which places them; HTML pages dropped on the canvas of an open
+ * document are placed there as layers too, as pasting them is; design token files open the
+ * variables import of the document in view; any other file reports that it cannot be opened
+ * instead of being ignored.
  */
 export function useDocumentDrop() {
   useEventListener(window, 'dragover', (event: DragEvent) => {
@@ -70,7 +80,21 @@ export function useDocumentDrop() {
         store,
         tokens.map(({ file }) => file)
       )
-    const documents = dropped.filter((entry) => !store || !tokens.includes(entry))
+    // HTML dropped on an open document's canvas joins it, as images and SVG do.
+    const canvas = canvasUnder(event)
+    const pages = store && canvas ? dropped.filter(({ file }) => isDOMDocumentFile(file.name)) : []
+    if (store && canvas && pages.length > 0) {
+      const bounds = canvas.getBoundingClientRect()
+      const point = store.screenToCanvas(event.clientX - bounds.left, event.clientY - bounds.top)
+      void placeFiles(
+        store,
+        pages.map(({ file }) => file),
+        point
+      )
+    }
+    const documents = dropped.filter(
+      (entry) => (!store || !tokens.includes(entry)) && !pages.includes(entry)
+    )
     if (documents.length === 0) return
     void openDesignFileBatch(
       documents,

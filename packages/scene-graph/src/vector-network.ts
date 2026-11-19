@@ -1,8 +1,14 @@
 import { isEqual } from 'es-toolkit/predicate'
 
+import { isRecord } from '@open-pencil/std/records'
+
+import { cloneVectorNetwork, copyVectorRegion } from './copy'
 import type { Mat3 } from './matrix'
+import type { VectorPathWindingRule } from './parse-path'
+import { addOpenSegmentsToPath, addRegionToPath } from './paths/network'
+import { svgPathSink } from './paths/sink'
 import type { Vector } from './primitives'
-import type { VectorNetwork, VectorSegment } from './types'
+import type { Fill, GeometryPath, SceneNode, VectorNetwork, VectorSegment } from './types'
 
 /** Concatenate vector networks while preserving independent geometry. */
 export function mergeVectorNetworks(networks: readonly VectorNetwork[]): VectorNetwork {
@@ -30,7 +36,7 @@ export function mergeVectorNetworks(networks: readonly VectorNetwork[]): VectorN
         for (const segmentIndex of loop) shifted.push(segmentIndex + segmentOffset)
         loops.push(shifted)
       }
-      regions.push({ windingRule: region.windingRule, loops })
+      regions.push(copyVectorRegion(region, loops))
     }
     vertexOffset += network.vertices.length
     segmentOffset += network.segments.length
@@ -60,11 +66,64 @@ export function transformVectorNetwork(m: Mat3, vn: VectorNetwork): VectorNetwor
       tangentStart: mapVector(s.tangentStart),
       tangentEnd: mapVector(s.tangentEnd)
     })),
-    regions: vn.regions.map((r) => ({
-      windingRule: r.windingRule,
-      loops: r.loops.map((l) => [...l])
-    }))
+    regions: vn.regions.map((r) => copyVectorRegion(r))
   }
+}
+
+/** Whether any region has paints of its own, which it draws instead of the layer's fills. */
+export function hasRegionFills(network: VectorNetwork | null): boolean {
+  return network?.regions.some((region) => region.fills !== undefined) ?? false
+}
+
+/**
+ * Whether fill geometry is the regions' outlines, one each, as a file or an edit writes it. A
+ * pasted vector has none, and an import skips empty outlines; their regions draw traced.
+ */
+export function fillGeometryMatchesRegions(
+  fillGeometry: readonly GeometryPath[],
+  network: VectorNetwork
+): boolean {
+  return fillGeometry.length === network.regions.length
+}
+
+/**
+ * Whether a vector's regions draw different fills, each its own or else the layer's, which Figma
+ * reads as mixed (live-verified: regions with equal fills of their own read the layer's).
+ */
+export function regionFillsDiffer(
+  network: VectorNetwork | null,
+  layerFills: readonly Fill[]
+): boolean {
+  const [first, ...rest] = (network?.regions ?? []).map((region) => region.fills ?? layerFills)
+  return rest.some((fills) => !isEqual(fills, first))
+}
+
+/** The network with every region drawing the layer's fills. */
+function withoutRegionFills(network: VectorNetwork): VectorNetwork {
+  const copy = cloneVectorNetwork(network)
+  return {
+    ...copy,
+    regions: copy.regions.map(({ windingRule, loops }) => ({ windingRule, loops }))
+  }
+}
+
+/**
+ * What else an edit that sets a vector's fills changes: every region draws them, its own paints
+ * and style dropped, as setting fills does in Figma (live-verified). Edit entry points apply it.
+ */
+export function regionFillChanges(
+  node: SceneNode,
+  changes: Partial<SceneNode>
+): Pick<Partial<SceneNode>, 'vectorNetwork'> {
+  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
+  if (!('fills' in changes) || 'vectorNetwork' in changes || !network) return {}
+  const ownFills = network.regions.some((region) => region.fills || region.fillStyleId)
+  return ownFills ? { vectorNetwork: withoutRegionFills(network) } : {}
+}
+
+/** The paints regions carry of their own. */
+export function regionFills(network: VectorNetwork | null): Fill[] {
+  return network?.regions.flatMap((region) => region.fills ?? []) ?? []
 }
 
 /** Structural equality of two VectorNetworks (order-sensitive, exact values). */
@@ -74,22 +133,6 @@ export function vectorNetworksEqual(a: VectorNetwork, b: VectorNetwork): boolean
     isEqual(a.segments, b.segments) &&
     isEqual(a.regions, b.regions)
   )
-}
-
-/** Deep-copy a VectorNetwork, stripping any Vue Proxy wrappers. */
-export function cloneVectorNetwork(vn: VectorNetwork): VectorNetwork {
-  return {
-    vertices: vn.vertices.map((v) => ({ ...v })),
-    segments: vn.segments.map((s) => ({
-      ...s,
-      tangentStart: { ...s.tangentStart },
-      tangentEnd: { ...s.tangentEnd }
-    })),
-    regions: vn.regions.map((r) => ({
-      windingRule: r.windingRule,
-      loops: r.loops.map((l) => [...l])
-    }))
-  }
 }
 
 /**
@@ -265,10 +308,6 @@ function isInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value)
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
 export type NormalizableVectorNetwork = Omit<VectorNetwork, 'regions'> & {
   regions?: VectorNetwork['regions']
 }
@@ -290,4 +329,85 @@ export function normalizeVectorNetwork(vn: NormalizableVectorNetwork): VectorNet
     })),
     regions: vn.regions ?? []
   }
+}
+
+function coordinate(value: number, decimals: number | null): number {
+  if (decimals === null) return value
+  const factor = 10 ** decimals
+  return Math.round(value * factor) / factor
+}
+
+/** Coordinates written at `decimals`, or as they are for `null`. */
+function coordinateFormat(decimals: number | null): (value: number) => number {
+  return (value) => coordinate(value, decimals)
+}
+
+/** A network's segments as one open path, chained as the canvas draws them. */
+function unfilledSegmentsToPath(network: VectorNetwork, decimals: number | null): string {
+  const parts: string[] = []
+  addOpenSegmentsToPath(
+    svgPathSink(parts, coordinateFormat(decimals)),
+    network.segments,
+    network.vertices
+  )
+  return parts.join('')
+}
+
+export function vectorNetworkToSVGPaths(
+  network: VectorNetwork,
+  decimals: number | null = 2
+): string[] {
+  const { vertices, regions } = network
+
+  if (regions.length === 0) {
+    const path = unfilledSegmentsToPath(network, decimals)
+    return path ? [path] : []
+  }
+  const paths = regionSVGPaths(network, decimals)
+  // Segments no region encloses, such as an icon's open strokes beside its filled shapes,
+  // draw as open paths after the regions.
+  const open = looseSegments(network)
+  const loose =
+    open.length > 0 && unfilledSegmentsToPath({ vertices, segments: open, regions: [] }, decimals)
+  return loose ? [...paths, loose] : paths
+}
+
+/** Each region of a vector network as path data, its loops traced in turn. */
+export function regionSVGPaths(network: VectorNetwork, decimals: number | null = 2): string[] {
+  const { vertices, segments, regions } = network
+  return regions.map((region) => {
+    const parts: string[] = []
+    addRegionToPath(svgPathSink(parts, coordinateFormat(decimals)), region, segments, vertices)
+    return parts.join('')
+  })
+}
+
+/** The segments of a vector network that no region encloses. */
+export function looseSegments({ segments, regions }: VectorNetwork): VectorNetwork['segments'] {
+  const enclosed = new Set(regions.flatMap((region) => region.loops.flat()))
+  return segments.filter((_, index) => !enclosed.has(index))
+}
+
+/** A path of a vector network as Figma's `vectorPaths` gives it. */
+export interface VectorPath {
+  windingRule: VectorPathWindingRule
+  data: string
+}
+
+/**
+ * A vector network as Figma's `vectorPaths`: each region as a path with its winding rule, then
+ * the segments no region encloses as one open path, at full precision.
+ */
+export function vectorNetworkPaths(network: VectorNetwork): VectorPath[] {
+  if (network.segments.length === 0) return []
+  const paths: VectorPath[] = regionSVGPaths(network, null).flatMap((data, index) =>
+    data ? [{ windingRule: network.regions[index].windingRule, data }] : []
+  )
+  const open = looseSegments(network)
+  if (open.length === 0) return paths
+  const data = vectorNetworkToSVGPaths(
+    { vertices: network.vertices, segments: open, regions: [] },
+    null
+  ).join('')
+  return data ? [...paths, { windingRule: 'NONE', data }] : paths
 }

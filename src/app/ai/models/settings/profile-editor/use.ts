@@ -15,16 +15,16 @@ import {
   saveModelProfileDraft,
   setModelConnectionAPIKey
 } from '@/app/ai/models'
-import type { ModelPickerLabels } from '@/app/ai/models/picker/options'
+import { settingsErrorMessage } from '@/app/settings/credentials/errors'
 import type { SettingsSaveResult } from '@/app/settings/save-result'
 
 import { useProfileConnection } from './connection'
-import { useProfileModelSelection } from './selection'
+import { useProfileModelSelection, type ProfileSelectionLabels } from './selection'
 
 interface ProfileEditorOptions {
   profileId?: string
   keyInput: Ref<string>
-  labels: Readonly<Ref<ModelPickerLabels & { customModel: string }>>
+  labels: Readonly<Ref<ProfileSelectionLabels>>
 }
 
 export function useModelProfileEditor({ profileId, keyInput, labels: ai }: ProfileEditorOptions) {
@@ -35,6 +35,10 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
     providerDef,
     isACP,
     isHarness,
+    isCloud,
+    cloudWorkspaces,
+    cloudState,
+    retryCloud,
     supportsThinking,
     providerDisplayName,
     modelOptions,
@@ -51,7 +55,8 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
   const saveError = ref<string | null>(null)
   const saveResult = ref<SettingsSaveResult | null>(null)
   const busy = ref(false)
-  const initialDraft = structuredClone(toRaw(draft))
+  /** What the draft was when the editor opened, which unsaved changes are measured against. */
+  const baseline = structuredClone(toRaw(draft))
   tryOnScopeDispose(() => {
     keyInput.value = ''
   })
@@ -68,7 +73,7 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
   } = useProfileConnection({ draft, keyInput })
 
   const dirty = computed(
-    () => !isEqual(draft, initialDraft) || keyInput.value.length > 0 || keyCleared.value
+    () => !isEqual(draft, baseline) || keyInput.value.length > 0 || keyCleared.value
   )
 
   const canDelete = computed(() => (profileId ? canRemoveModelProfile(profileId) : false))
@@ -115,7 +120,7 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
       saveResult.value = 'saved'
       return 'saved'
     } catch (reason) {
-      saveError.value = reason instanceof Error ? reason.message : String(reason)
+      saveError.value = settingsErrorMessage(reason)
       saveResult.value = persisted ? 'partial' : 'failed'
       return saveResult.value
     } finally {
@@ -136,7 +141,7 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
       await refreshAIProviderStatus()
       return modelProfile(profileId) === null
     } catch (reason) {
-      saveError.value = reason instanceof Error ? reason.message : String(reason)
+      saveError.value = settingsErrorMessage(reason)
       return false
     } finally {
       busy.value = false
@@ -144,7 +149,13 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
   }
 
   watch(
-    () => [draft.customBaseURL, draft.customModelID, draft.customAPIType, draft.modelID],
+    () => [
+      draft.customBaseURL,
+      draft.customModelID,
+      draft.customAPIType,
+      draft.modelID,
+      draft.cloudWorkspaceId
+    ],
     resetConnectionTest
   )
 
@@ -157,11 +168,21 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
     providerDef,
     isACP,
     isHarness,
+    isCloud,
+    cloudWorkspaces,
+    cloudState,
+    retryCloud,
+    agentModelState: selection.agentModelState,
+    retryAgentModels: selection.retryAgentModels,
     supportsThinking,
+    agentOptionControls: selection.agentOptionControls,
+    agentOptionValue: selection.agentOptionValue,
+    setAgentOption: selection.setAgentOption,
     providerDisplayName,
     modelOptions,
     selectedModelValue,
     customModelSelected: selection.customModelSelected,
+    supportsCustomModel: selection.supportsCustomModel,
     knownModel,
     knownCapabilities,
     outputTokenRecommendation,

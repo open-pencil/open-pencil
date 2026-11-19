@@ -1,10 +1,13 @@
-import type { ViewportSize } from '@/app/document/io/types'
+import { nextShownFrame } from '@open-pencil/vue/shared/frame'
 
 /**
  * Ceiling on a document fetched from a URL. Both the browser link and the automation
  * bridge accept an unbounded, caller-supplied URL, and buffering whatever the host
  * sends would let one response exhaust the tab. Well past any real design file.
  */
+/** How long a download's link stays after its click: long enough for the browser to start it. */
+const DOWNLOAD_LINK_LIFETIME_MS = 100
+
 export const MAX_REMOTE_DOCUMENT_BYTES = 64 * 1024 * 1024
 
 interface BoundedBodyOptions {
@@ -77,37 +80,19 @@ export function resolveBrowserFileURL(path: string): URL {
   return url
 }
 
-export function yieldToUI(): Promise<void> {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => resolve())
-  })
-}
-
 type ViewportEditor = {
   zoomToFit: () => void
 }
 
-export function createDocumentViewportActions(editor: ViewportEditor, viewportSize: ViewportSize) {
-  function setViewportSize(width: number, height: number) {
-    viewportSize.width = width
-    viewportSize.height = height
-  }
-
-  /** The canvas size in screen pixels, as the canvas last reported it. */
-  function getViewportSize(): ViewportSize {
-    return { ...viewportSize }
-  }
-
-  async function fitCurrentPageToViewport() {
-    await yieldToUI()
-    editor.zoomToFit()
-  }
-
-  return { setViewportSize, getViewportSize, fitCurrentPageToViewport }
+/** Fits the page once the canvas has its size; `signal` stops waiting for it. */
+export async function fitPageToViewport(editor: ViewportEditor, signal?: AbortSignal) {
+  await nextShownFrame({ signal })
+  editor.zoomToFit()
 }
 
-export function downloadBlob(data: Uint8Array, filename: string, mime: string) {
-  const blob = new Blob([data.buffer as ArrayBuffer], { type: mime })
+export function downloadBlob(data: Uint8Array | Blob, filename: string, mime: string) {
+  // A copy, not `data.buffer`: a view would download the whole buffer it looks into.
+  const blob = data instanceof Blob ? data : new Blob([data.slice()], { type: mime })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -118,5 +103,5 @@ export function downloadBlob(data: Uint8Array, filename: string, mime: string) {
   setTimeout(() => {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-  }, 100)
+  }, DOWNLOAD_LINK_LIFETIME_MS)
 }

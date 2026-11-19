@@ -116,8 +116,8 @@ export async function createSlotsChapter(
           Instance({
             of: component.id,
             properties: {
-              [PLAYER_PROPERTIES.title.id]: title,
-              [PLAYER_PROPERTIES.artist.id]: artist
+              [PLAYER_PROPERTIES.title.name]: title,
+              [PLAYER_PROPERTIES.artist.name]: artist
             }
           }),
           { parentId: row.id }

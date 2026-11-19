@@ -1,3 +1,6 @@
+import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
@@ -14,14 +17,7 @@ const CLIPPED_SVG = `<svg viewBox="0 0 200 120" width="200" height="120">
 </svg>`
 
 test('pasted SVG clip paths draw through their mask groups', async () => {
-  const pasted = await editor.page.evaluate(async (markup) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const done = await store.pasteSVG(markup, 220, 160)
-    store.clearSelection()
-    store.requestRender()
-    return done
-  }, CLIPPED_SVG)
+  const pasted = await editor.canvas.pasteSVG(CLIPPED_SVG, 220, 160)
   expect(pasted).toBe(true)
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
@@ -36,16 +32,14 @@ const TEXT_SVG = `<svg viewBox="0 0 200 130" width="200" height="130">
 </svg>`
 
 test('pasted SVG text measures and draws as Figma lays it out', async () => {
-  const layers = await editor.page.evaluate(async (markup) => {
+  await editor.canvas.pasteSVG(TEXT_SVG, 220, 160)
+  const layers = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
-    await store.pasteSVG(markup, 220, 160)
-    store.clearSelection()
-    store.requestRender()
     return [...store.graph.getAllNodes()]
       .filter((node) => node.type === 'TEXT')
       .map(({ text, x, width, height }) => ({ text, x, width, height }))
-  }, TEXT_SVG)
+  })
   const expected = [
     { text: 'Hello', width: 48, height: 24 },
     { text: 'Bold', width: 44, height: 24 },
@@ -61,4 +55,115 @@ test('pasted SVG text measures and draws as Figma lays it out', async () => {
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
   expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('svg-text-layers.png')
+})
+
+function exportedStyledText(): string {
+  const graph = new SceneGraph()
+  const pageId = graph.getPages()[0].id
+  const node = graph.createNode('TEXT', pageId, {
+    width: 200,
+    height: 60,
+    text: 'Hello bold world',
+    fontFamily: 'Inter',
+    fontSize: 24,
+    styleRuns: [{ start: 6, length: 4, style: { fontWeight: 700 } }]
+  })
+  const svg = renderNodesToSVG(graph, pageId, [node.id], { xmlDeclaration: false })
+  if (!svg) throw new Error('nothing exported')
+  return svg
+}
+
+test('exported SVG text keeps characters outside the style run', async () => {
+  const pasted = await editor.canvas.pasteSVG(exportedStyledText(), 220, 160)
+  expect(pasted).toBe(true)
+  await editor.canvas.waitForRender()
+  editor.canvas.assertNoErrors()
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('svg-export-style-runs.png')
+})
+
+/** Stripes under a translucent rounded panel with a background blur, as exported SVG. */
+function exportedSVGWithBackdropBlur(panelFillOpacity = 1): string {
+  const graph = new SceneGraph()
+  const pageId = graph.getPages()[0].id
+  const background = graph.createNode('RECTANGLE', pageId, {
+    width: 200,
+    height: 120,
+    fills: [
+      { type: 'SOLID', color: { r: 0.29, g: 0.12, b: 0.65, a: 1 }, opacity: 1, visible: true }
+    ]
+  })
+  const left = graph.createNode('RECTANGLE', pageId, {
+    x: 0,
+    width: 54,
+    height: 120,
+    fills: [
+      { type: 'SOLID', color: { r: 0.98, g: 0.62, b: 0.18, a: 1 }, opacity: 1, visible: true }
+    ]
+  })
+  const right = graph.createNode('RECTANGLE', pageId, {
+    x: 146,
+    width: 54,
+    height: 120,
+    fills: [
+      { type: 'SOLID', color: { r: 0.16, g: 0.72, b: 0.67, a: 1 }, opacity: 1, visible: true }
+    ]
+  })
+  const panel = graph.createNode('RECTANGLE', pageId, {
+    x: 48,
+    y: 24,
+    width: 104,
+    height: 72,
+    opacity: 0.72,
+    cornerRadius: 12,
+    fills: [
+      { type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: panelFillOpacity, visible: true }
+    ],
+    effects: [
+      {
+        type: 'BACKGROUND_BLUR',
+        radius: 12,
+        visible: true,
+        color: { r: 0, g: 0, b: 0, a: 0 },
+        offset: { x: 0, y: 0 },
+        spread: 0
+      }
+    ]
+  })
+  const svg = renderNodesToSVG(graph, pageId, [background.id, left.id, right.id, panel.id], {
+    xmlDeclaration: false
+  })
+  if (!svg) throw new Error('nothing exported')
+  return svg
+}
+
+test('exported SVG with a background blur pastes its layers', async () => {
+  const pasted = await editor.canvas.pasteSVG(exportedSVGWithBackdropBlur(), 220, 160)
+  expect(pasted).toBe(true)
+  await editor.canvas.waitForRender()
+  editor.canvas.assertNoErrors()
+  const canvasBounds = await editor.canvas.canvas.boundingBox()
+  if (!canvasBounds) throw new Error('Canvas has no bounding box')
+  const screenshot = await editor.page.screenshot({
+    clip: {
+      x: canvasBounds.x + 110,
+      y: canvasBounds.y + 100,
+      width: 220,
+      height: 144
+    }
+  })
+  expect(screenshot).toMatchSnapshot('svg-background-blur.png')
+})
+
+// Pasting turns the SVG into layers; a browser drawing the SVG itself shows the backdrop-filter.
+test('exported SVG draws its background blur in the browser', async ({ browser }) => {
+  const context = await browser.newContext()
+  const page = await context.newPage()
+  try {
+    await page.setContent(`<body style="margin:0">${exportedSVGWithBackdropBlur(0.3)}</body>`)
+    expect(await page.locator('svg').screenshot()).toMatchSnapshot(
+      'svg-background-blur-browser.png'
+    )
+  } finally {
+    await context.close()
+  }
 })

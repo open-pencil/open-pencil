@@ -1,0 +1,53 @@
+uniform float refraction;
+uniform float dispersion;
+
+float edgeRamp(float s) { return max(0.19, clamp(1.12 * (s - 0.12), 0.0, 1.0)); }
+
+float roundedProfile(float s) {
+  float u = max(0.0, 1.0 - 2.0 * (abs(s) + 0.5) / depth);
+  return depth * pow(u, 1.4);
+}
+
+float displacement(float s) {
+  if (isBox > 0.5) {
+    float t = clamp(1.0 - (s - 1.0) / depth, 0.0, 1.0);
+    return depth * pow(t, 3.5) * edgeRamp(s);
+  }
+  float sum = 0.0;
+  float weights = 0.0;
+  for (int k = -4; k <= 4; k++) {
+    float t = float(k) * 1.75;
+    float w = exp(-t * t / 24.5);
+    sum += w * roundedProfile(s + t);
+    weights += w;
+  }
+  return sum / weights * edgeRamp(s);
+}
+
+half4 refracted(float2 p, float2 dir, float d) {
+  if (dispersion <= 0.0) return backdrop.eval(p + d * dir);
+  half4 red = backdrop.eval(p + d * (1.0 + 0.1 * dispersion) * dir);
+  half4 green = backdrop.eval(p + d * dir);
+  half4 blue = backdrop.eval(p + d * (1.0 - 0.1 * dispersion) * dir);
+  return half4(red.r, green.g, blue.b, green.a);
+}
+
+// Near the outline the displacement ramps steeply, so a pixel there averages eight points
+// spread over half a layer pixel along the normal: one device pixel at 2×, which is how
+// exports and high-density screens draw. Points outside the outline are left to the clip's
+// antialiasing.
+half4 main(float2 p) {
+  float3 g = shape(p, depth);
+  float2 dir = g.yz;
+  if (g.x >= 1.5) return refracted(p, dir, refraction * displacement(g.x));
+  half4 sum = half4(0.0);
+  float count = 0.0;
+  for (int i = 0; i < 8; i++) {
+    float t = (float(i) + 0.5) / 16.0 - 0.25;
+    float s = g.x + t;
+    if (s < 0.0) continue;
+    sum += refracted(p + t * dir, dir, refraction * displacement(s));
+    count += 1.0;
+  }
+  return count > 0.0 ? sum / count : refracted(p, dir, refraction * displacement(g.x));
+}

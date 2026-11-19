@@ -23,7 +23,9 @@ const control = computed(() => ({
   'aria-describedby':
     compact([error && `${inputID.value}-error`, hint && `${inputID.value}-hint`]).join(' ') ||
     undefined,
-  state: error ? ('invalid' as const) : ('idle' as const)
+  state: error ? ('invalid' as const) : ('idle' as const),
+  // Inputs, selects, and comboboxes in a Settings form share one height.
+  size: 'sm' as const
 }))
 
 const emit = defineEmits<{ clear: []; blur: [] }>()
@@ -48,7 +50,7 @@ const emit = defineEmits<{ clear: []; blur: [] }>()
     <p v-if="error" :id="`${inputID}-error`" class="text-xs text-error" role="alert">
       {{ error }}
     </p>
-    <p v-if="hint" :id="`${inputID}-hint`" class="text-[11px] leading-relaxed text-muted">
+    <p v-if="hint" :id="`${inputID}-hint`" class="text-2xs leading-relaxed text-muted">
       {{ hint }}
     </p>
     <slot name="hint" />

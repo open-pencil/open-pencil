@@ -1,7 +1,14 @@
 import * as v from 'valibot'
 
+import { graphOf } from '#core/figma-api/graph'
 import { OpenPencilAPI } from '#core/openpencil-api'
-import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
+import {
+  layoutFactor,
+  layoutSpacing,
+  nodeIdInputSchema,
+  defineTool,
+  nodeNotFound
+} from '#core/tools/schema'
 
 export const setLayout = defineTool({
   name: 'set_layout',
@@ -16,30 +23,10 @@ export const setLayout = defineTool({
         v.description('Layout direction (keeps current if omitted)')
       )
     ),
-    spacing: v.optional(
-      toolNumber(
-        v.pipe(
-          v.number(),
-          v.minValue(0),
-          v.description('Gap between items (only changes if provided)')
-        )
-      )
-    ),
-    padding: v.optional(
-      toolNumber(
-        v.pipe(
-          v.number(),
-          v.minValue(0),
-          v.description('Equal padding on all sides (only changes if provided)')
-        )
-      )
-    ),
-    padding_horizontal: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Horizontal padding')))
-    ),
-    padding_vertical: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Vertical padding')))
-    ),
+    spacing: v.optional(layoutSpacing('Gap between items (only changes if provided)')),
+    padding: v.optional(layoutSpacing('Equal padding on all sides (only changes if provided)')),
+    padding_horizontal: v.optional(layoutSpacing('Horizontal padding')),
+    padding_vertical: v.optional(layoutSpacing('Vertical padding')),
     align: v.optional(
       v.pipe(
         v.picklist(['MIN', 'CENTER', 'MAX', 'SPACE_BETWEEN']),
@@ -63,7 +50,7 @@ export const setLayout = defineTool({
     const node = figma.getNodeById(args.id)
     if (!node) return nodeNotFound(args.id)
 
-    const raw = figma.graph.getNode(args.id)
+    const raw = graphOf(figma).getNode(args.id)
     if (!args.direction && raw?.layoutMode === 'NONE') {
       return {
         error: 'Frame has no auto-layout. Pass direction ("HORIZONTAL" or "VERTICAL") to enable it.'
@@ -148,11 +135,7 @@ export const setLayoutChild = defineTool({
     sizing_vertical: v.optional(
       v.pipe(v.picklist(['FIXED', 'HUG', 'FILL']), v.description('Vertical sizing mode'))
     ),
-    grow: v.optional(
-      toolNumber(
-        v.pipe(v.number(), v.minValue(0), v.description('Flex grow factor (0 = fixed, 1 = grow)'))
-      )
-    ),
+    grow: v.optional(layoutFactor('Flex grow factor (0 = fixed, 1 = grow)')),
     align_self: v.optional(
       v.pipe(
         v.picklist(['INHERIT', 'MIN', 'CENTER', 'MAX', 'STRETCH', 'BASELINE']),

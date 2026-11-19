@@ -58,7 +58,7 @@ const meta = {
     components: { CloudConnectDialog },
     setup: () => ({ args, kind: ref(args.kind), address: ref(args.address) }),
     template: `
-      <div class="h-[640px]">
+      <div class="h-160">
         <CloudConnectDialog
           :open="true"
           v-model:kind="kind"
@@ -103,7 +103,7 @@ export const SignIn: Story = {
     choosing: false,
     server: {
       host: 'cloud.openpencil.dev',
-      methods: ['google', 'apple'],
+      methods: ['google', 'apple', 'github'],
       emailPassword: EMAIL_PASSWORD,
       approvalRequired: false
     }

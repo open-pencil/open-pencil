@@ -8,7 +8,7 @@ import {
   type AppButtonShape,
   type AppButtonSize,
   type AppButtonVariant
-} from '@/theme/button/button'
+} from '@/components/ui/button/button'
 import { motionStyles } from '@/theme/motion/styles'
 
 const {
@@ -58,7 +58,8 @@ const isDisabled = computed(() => disabled || loading)
     :class="styles.base"
   >
     <span v-if="loading" data-slot="loading-icon" :class="styles.icon">
-      <icon-lucide-loader-2 :class="motionStyles.spinner" />
+      <!-- Fills the slot: at its own 1.2em it overflows larger buttons and sits off center. -->
+      <icon-lucide-loader-2 :class="['block size-full', motionStyles.spinner]" />
     </span>
     <span v-else-if="$slots.leading" data-slot="leading-icon" :class="styles.icon">
       <slot name="leading" />

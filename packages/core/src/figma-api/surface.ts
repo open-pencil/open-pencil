@@ -6,11 +6,11 @@
 
 /** Members a host or tool wires up on `figma`, which scripts do not write against. */
 export const FIGMA_API_HOST_MEMBERS = [
-  'graph',
   'wrapNode',
   'currentPageId',
   'groupFitOptions',
   'setRenderer',
+  'renderer',
   'theme',
   'exportImage',
   'icons',
@@ -24,11 +24,24 @@ export const FIGMA_API_HOST_MEMBERS = [
  */
 export const FIGMA_API_INCOMPLETE_MEMBERS = [
   'createComponentFromNode',
-  'createImage',
+  'createEffectStyle',
+  'createGridStyle',
   'createPage',
+  'createPaintStyle',
+  'createTextStyle',
   'currentPage',
+  'getLocalEffectStyles',
+  'getLocalEffectStylesAsync',
+  'getLocalGridStyles',
+  'getLocalGridStylesAsync',
+  'getLocalPaintStyles',
+  'getLocalPaintStylesAsync',
+  'getLocalTextStyles',
+  'getLocalTextStylesAsync',
   'getNodeById',
   'getNodeByIdAsync',
+  'getStyleById',
+  'getStyleByIdAsync',
   'mixed',
   'root',
   'variables',

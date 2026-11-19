@@ -1,4 +1,8 @@
-import type { LibraryAssetDescriptor, LibrarySummary } from '#core/library'
+import type {
+  LibraryAssetDescriptor,
+  LibraryComponentAssetType,
+  LibrarySummary
+} from '#core/library'
 
 export type ComponentCatalogSource = 'document' | 'libraries' | 'all'
 
@@ -8,7 +12,8 @@ export interface ComponentCatalogLibraryAsset {
   revisionId: string
   enabled: boolean
   priority: number
-  asset: LibraryAssetDescriptor
+  /** A component or set: the assets a document inserts. */
+  asset: LibraryAssetDescriptor & { type: LibraryComponentAssetType }
 }
 
 export interface ComponentCatalogInsertInput {

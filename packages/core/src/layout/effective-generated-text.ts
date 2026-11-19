@@ -1,5 +1,6 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { Size } from '@open-pencil/scene-graph/primitives'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { getTextMeasurer } from './text-measurement'
 
@@ -105,13 +106,11 @@ function intrinsicSize(
         node.paddingLeft +
         node.paddingRight +
         childSizes.reduce((sum, child) => sum + child.width, gap),
-      height:
-        node.paddingTop + node.paddingBottom + Math.max(...childSizes.map((child) => child.height))
+      height: node.paddingTop + node.paddingBottom + maxOf(childSizes.map((child) => child.height))
     }
   }
   return {
-    width:
-      node.paddingLeft + node.paddingRight + Math.max(...childSizes.map((child) => child.width)),
+    width: node.paddingLeft + node.paddingRight + maxOf(childSizes.map((child) => child.width)),
     height:
       node.paddingTop +
       node.paddingBottom +
@@ -140,7 +139,7 @@ function intrinsicSizeWithEffectiveStretch(
     width:
       node.paddingLeft +
       node.paddingRight +
-      Math.max(...widthCandidates.map((child) => (sizes.get(child.id) ?? child).width))
+      maxOf(widthCandidates.map((child) => (sizes.get(child.id) ?? child).width))
   }
 }
 

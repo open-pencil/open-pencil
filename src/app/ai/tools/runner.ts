@@ -1,6 +1,12 @@
-import { isEmptyDocumentChange } from '@open-pencil/core'
+import { executeAtomicTool, isEmptyDocumentChange, type DocumentChange } from '@open-pencil/core'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
-import { isAtomicTool, toolChangesDocument, type ToolDef } from '@open-pencil/core/tools'
+import { graphOf } from '@open-pencil/core/figma-api'
+import {
+  isAtomicTool,
+  toolChangesDocument,
+  toolFailure,
+  type ToolDef
+} from '@open-pencil/core/tools'
 
 import {
   AI_UNDO_PREFIX,
@@ -10,12 +16,27 @@ import {
   recordRunUndoEntry,
   type Run
 } from '@/app/ai/reply/run'
-import { AUTOMATION_UNDO_LABEL, executeAtomicEditorTool } from '@/app/automation/execution/editor'
+import {
+  AUTOMATION_UNDO_LABEL,
+  loadAtomicToolFonts,
+  recordAgentEdit
+} from '@/app/automation/execution/editor'
+import { acquireDocumentEdit } from '@/app/automation/execution/lock'
 import type { EditorStore } from '@/app/editor/active-store'
-import { ensureGraphFonts } from '@/app/editor/fonts'
 
 import { recordToolChange } from './changes/capture'
-import { createMutex } from './mutex'
+
+/** Ends a recorded edit whose tool answered with an error, so the edit is rolled back. */
+class ToolAnsweredError extends Error {
+  constructor() {
+    super('The tool answered with an error')
+    this.name = 'ToolAnsweredError'
+  }
+}
+
+function isToolError(result: unknown): boolean {
+  return typeof result === 'object' && result !== null && 'error' in result
+}
 
 /** The reply a call belongs to: its run, and the call's id in the reply's transcript. */
 export interface ReplyCall {
@@ -40,18 +61,6 @@ export interface EditorToolCall {
 
 export const STOPPED_BEFORE_CALL = 'Stopped before this call ran; nothing was changed.'
 
-/** Each document's edits run one at a time, since whole-page snapshots must not interleave. */
-const editLocks = new WeakMap<EditorStore, () => Promise<() => void>>()
-
-function editLock(store: EditorStore): () => Promise<() => void> {
-  let lock = editLocks.get(store)
-  if (!lock) {
-    lock = createMutex()
-    editLocks.set(store, lock)
-  }
-  return lock
-}
-
 /**
  * The page a call writes to: a parent or a replaced layer on another page puts the new layers
  * there, so that page lays out, loads their fonts, and records the change.
@@ -61,35 +70,16 @@ function writtenPageId(figma: FigmaAPI, args: Record<string, unknown>): string {
   const nodeId = args.replace_id ?? args.parent_id
   const page =
     typeof nodeId === 'string'
-      ? figma.graph.closest(nodeId, (node) => node.type === 'CANVAS')
+      ? graphOf(figma).closest(nodeId, (node) => node.type === 'CANVAS')
       : undefined
   return page?.id ?? figma.currentPageId
-}
-
-async function execute(call: EditorToolCall, pageId: string, prefix: string): Promise<unknown> {
-  const { store, figma, def, args } = call
-  if (isAtomicTool(def)) {
-    return executeAtomicEditorTool(store, figma, def, args, {
-      label: prefix,
-      signal: call.signal,
-      isLive: call.isLive
-    })
-  }
-  return store.runMutationWithLayout(
-    () => def.execute(figma, args),
-    pageId,
-    async () => {
-      const page = store.graph.getNode(pageId)
-      if (page) await ensureGraphFonts(store.graph, page.childIds, store.renderer)
-    }
-  )
 }
 
 /** Records a reply's call once it ran: its undo entry, its change, and where its agent worked. */
 async function recordReplyCall(
   call: EditorToolCall,
   reply: ReplyCall,
-  change: ReturnType<ReturnType<EditorStore['captureDocumentChange']>>,
+  change: DocumentChange,
   undoBefore: ReturnType<EditorStore['undo']['peekUndo']>,
   viewPageId: string
 ): Promise<void> {
@@ -113,8 +103,15 @@ async function recordReplyCall(
   if (figma.currentPageId !== viewPageId) await moveRunToPage(store, run, figma.currentPageId)
 }
 
-/** Runs an edit while its document's lock is held, and records it. */
-async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Promise<unknown> {
+/**
+ * Runs an edit while its document's lock is held, and records it. The lock is released once the
+ * step and the reply's record of it are in, before the edit's fonts load.
+ */
+async function editAndRecord(
+  call: EditorToolCall,
+  reply: ReplyCall | null,
+  release: () => void
+): Promise<unknown> {
   const { store, figma, def, args } = call
   const viewPageId = figma.currentPageId
   const pageId = writtenPageId(figma, args)
@@ -124,20 +121,60 @@ async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Pro
   }
   const prefix = reply ? AI_UNDO_PREFIX : (call.source ?? AUTOMATION_UNDO_LABEL)
   const undoBefore = store.undo.peekUndo()
-  const finishChange = store.captureDocumentChange(pageId)
-  try {
-    return await execute(call, pageId, prefix)
-  } finally {
-    const change = finishChange()
-    // Atomic tools record their own entry; an edit that changed nothing records none.
-    if (!isAtomicTool(def) && !isEmptyDocumentChange(change)) {
-      store.pushUndoStep({
-        label: `${prefix}: ${def.name}`,
-        forward: () => store.restoreDocumentChange(change, 'after'),
-        inverse: () => store.restoreDocumentChange(change, 'before')
-      })
+  const recorded: { change?: DocumentChange } = {}
+  const options = {
+    label: `${prefix}: ${def.name}`,
+    pageId,
+    onRecorded: (change: DocumentChange) => {
+      recorded.change = change
     }
-    if (reply) await recordReplyCall(call, reply, change, undoBefore, viewPageId)
+  }
+  let settled = false
+  const settle = async () => {
+    if (settled) return
+    settled = true
+    try {
+      if (reply && recorded.change) {
+        await recordReplyCall(call, reply, recorded.change, undoBefore, viewPageId)
+      }
+    } finally {
+      release()
+    }
+  }
+  try {
+    if (isAtomicTool(def)) {
+      // An atomic tool records and commits its own step at once, from the layers it touched;
+      // loading its fonts after is not part of it.
+      const result = executeAtomicTool(store, figma, def, args, {
+        label: prefix,
+        signal: call.signal,
+        isLive: call.isLive,
+        onRecorded: options.onRecorded
+      })
+      await settle()
+      await loadAtomicToolFonts(store, figma, args, { isLive: call.isLive })
+      return result
+    }
+    // A tool that answers with an error, as atomic tools' failures do, is rolled back too.
+    const failure: { result?: unknown } = {}
+    try {
+      return await recordAgentEdit(
+        store,
+        options,
+        async () => {
+          const result = await def.execute(figma, args)
+          if (!isToolError(result)) return result
+          failure.result = result
+          throw new ToolAnsweredError()
+        },
+        { isLive: call.isLive, signal: call.signal, afterStep: settle }
+      )
+    } catch (error) {
+      if (error instanceof ToolAnsweredError) return failure.result
+      throw error
+    }
+  } finally {
+    await settle()
   }
 }
 
@@ -149,12 +186,18 @@ async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Pro
 export async function runEditorTool(call: EditorToolCall): Promise<unknown> {
   const { store, figma, def, args } = call
   if (!def.mutates) return def.execute(figma, args)
+  // Fonts load before the edit takes its turn, so an edit never waits on the network.
+  try {
+    await def.loadFonts(figma, args)
+  } catch (error) {
+    return toolFailure(error)
+  }
   const reply = call.reply ?? null
-  const release = await editLock(store)()
+  // Cancelled while waiting for its turn, as a WebMCP or MCP call can be: nothing is edited.
+  const release = await acquireDocumentEdit(store, call.signal)
   // Whatever fails from here, the lock and the reply's count of running tools are released.
   let began = false
   try {
-    // Cancelled while waiting for its turn, as a WebMCP call can be: nothing is edited.
     call.signal?.throwIfAborted()
     // Stopped while waiting for its turn: the reply is over, so nothing more is edited.
     if (reply && !reply.run.active) return { error: STOPPED_BEFORE_CALL }
@@ -162,7 +205,7 @@ export async function runEditorTool(call: EditorToolCall): Promise<unknown> {
       reply.run.beginTool()
       began = true
     }
-    return await editAndRecord(call, reply)
+    return await editAndRecord(call, reply, release)
   } finally {
     release()
     if (began) reply?.run.endTool()

@@ -124,7 +124,7 @@ const nextStep = computed(() => {
         <span class="min-w-0 flex-1 truncate font-medium">{{ kind.label }}</span>
         <span
           v-if="!behaviour.missing.length"
-          class="flex h-5 shrink-0 items-center gap-1 rounded bg-panel-field px-1.5 text-[10px] text-muted"
+          class="flex h-5 shrink-0 items-center gap-1 rounded bg-panel-field px-1.5 text-3xs text-muted"
         >
           <icon-lucide-check class="size-3 text-success" />
           {{ panels.behaviourComplete }}
@@ -134,7 +134,7 @@ const nextStep = computed(() => {
       <p
         v-if="behaviour.missing.length"
         role="status"
-        class="flex items-start gap-1.5 rounded bg-warning/10 px-1.5 py-1 text-[11px] leading-4 text-warning"
+        class="flex items-start gap-1.5 rounded bg-warning/10 px-1.5 py-1 text-2xs leading-4 text-warning"
         data-property="behaviour-missing"
       >
         <SeverityIcon severity="warning" class="mt-0.5 shrink-0" />
@@ -163,7 +163,7 @@ const nextStep = computed(() => {
         v-if="moreRows.length || !statesFirst"
         v-model:open="moreOpen"
         :label="panels.behaviourMoreOptions"
-        :ui="{ trigger: 'text-[11px] text-muted hover:text-surface', icon: 'size-3' }"
+        :ui="{ trigger: 'text-2xs text-muted hover:text-surface', icon: 'size-3' }"
         data-property="behaviour-more"
       >
         <div class="flex flex-col gap-2 pt-2">

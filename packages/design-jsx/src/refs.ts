@@ -1,3 +1,6 @@
+import { camelCase, compact } from 'es-toolkit'
+
+import { es } from '@open-pencil/emit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 const REF_SYMBOL = Symbol.for('open-pencil.layer-ref')
@@ -45,4 +48,22 @@ export class LayerRefs {
   layerOf(ref: LayerRef): string | undefined {
     return this.layers.get(ref)?.id
   }
+}
+
+/** `card1` for a layer named "Card": a name a declaration can take, numbered to stay unique. */
+export function refName(layerName: string, taken: Set<string>): string {
+  const camel = camelCase(layerName)
+  const base = es.isIdentifierName(camel) ? camel : 'layer'
+  let count = 1
+  while (taken.has(`${base}${count}`)) count++
+  const name = `${base}${count}`
+  taken.add(name)
+  return name
+}
+
+/** `const card1 = ref()` for each ref an export declares, one per line. */
+export function refDeclarations(refs: ReadonlyMap<string, string | null>): string {
+  return compact([...refs.values()])
+    .map((name) => `const ${name} = ref()`)
+    .join('\n')
 }

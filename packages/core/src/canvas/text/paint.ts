@@ -1,4 +1,4 @@
-import type { Paint, ParagraphBuilder, TextStyle } from 'canvaskit-wasm'
+import type { Paint, ParagraphBuilder, TextStyle } from '@open-pencil/canvaskit'
 
 export interface ParagraphBuildOptions {
   halfLeading?: boolean

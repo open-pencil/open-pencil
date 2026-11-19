@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, toRef, watch } from 'vue'
+import { computed, toRef, useTemplateRef, watch } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
@@ -8,10 +8,12 @@ import {
   type CloudAccountCredentials,
   type CloudAccountFormMode
 } from '@/app/cloud/sessions/account-form'
+import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppPasswordInput from '@/components/ui/input/AppPasswordInput.vue'
-import { portalForm } from '@/theme/cloud-portal/form'
+import { focusFirstInvalid } from '@/components/ui/input/form-field'
 
 /**
  * The email and password form for a Cloud server, in the editor's connect dialog and, larger, on
@@ -43,58 +45,65 @@ const form = useCloudAccountForm(
 )
 const { name, email, password, repeat } = form.fields
 const { errors } = form
-const submit = form.submit((credentials) => emit('submit', credentials))
+const root = useTemplateRef<HTMLFormElement>('root')
+const submit = form.submit(
+  (credentials) => emit('submit', credentials),
+  () => void focusFirstInvalid(root.value)
+)
 watch(() => mode, form.switchMode)
-
-function describedBy(field: 'name' | 'email' | 'password' | 'repeat', hint = false) {
-  if (errors.value[field]) return `${id}-${field}-error`
-  return hint ? `${id}-${field}-hint` : undefined
-}
 </script>
 
 <template>
-  <form :id="id" :class="ui.form()" novalidate @submit.prevent="submit">
+  <form ref="root" :id="id" :class="ui.form()" novalidate @submit.prevent="submit">
     <fieldset :disabled="disabled" class="contents">
-      <div v-if="mode === 'sign-up'" :class="ui.field()">
-        <label :for="`${id}-name`" :class="ui.label()">{{ messages.name }}</label>
-        <AppInput
-          :size="size"
-          :id="`${id}-name`"
-          v-model="name"
-          autocomplete="name"
-          :state="errors.name ? 'invalid' : 'idle'"
-          :aria-invalid="errors.name ? true : undefined"
-          :aria-describedby="describedBy('name')"
-          @blur="form.blur('name')"
-        />
-        <p v-if="errors.name" :id="`${id}-name-error`" :class="ui.error()">
-          {{ errors.name }}
-        </p>
-      </div>
-      <div :class="ui.field()">
-        <label :for="`${id}-email`" :class="ui.label()">{{ messages.email }}</label>
-        <AppInput
-          :size="size"
-          :id="`${id}-email`"
-          v-model="email"
-          type="email"
-          inputmode="email"
-          autocomplete="email"
-          :placeholder="messages.emailPlaceholder"
-          :state="errors.email ? 'invalid' : 'idle'"
-          :aria-invalid="errors.email ? true : undefined"
-          :aria-describedby="describedBy('email')"
-          @blur="form.blur('email')"
-        />
-        <p v-if="errors.email" :id="`${id}-email-error`" :class="ui.error()">
-          {{ errors.email }}
-        </p>
-      </div>
-      <div :class="ui.field()">
-        <div :class="ui.labelRow()">
-          <label :for="`${id}-password`" :class="ui.label()">{{ messages.password }}</label>
+      <AppFormField
+        v-if="mode === 'sign-up'"
+        :id="`${id}-name`"
+        :size="size"
+        :label="messages.name"
+        :error="errors.name"
+      >
+        <template #default="{ id: fieldId, invalid, describedBy }">
+          <AppInput
+            :id="fieldId"
+            v-model="name"
+            :size="size"
+            autocomplete="name"
+            :state="invalid ? 'invalid' : 'idle'"
+            :aria-invalid="invalid || undefined"
+            :aria-describedby="describedBy"
+            @blur="form.blur('name')"
+          />
+        </template>
+      </AppFormField>
+      <AppFormField :id="`${id}-email`" :size="size" :label="messages.email" :error="errors.email">
+        <template #default="{ id: fieldId, invalid, describedBy }">
+          <AppInput
+            :id="fieldId"
+            v-model="email"
+            :size="size"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+            :placeholder="messages.emailPlaceholder"
+            :state="invalid ? 'invalid' : 'idle'"
+            :aria-invalid="invalid || undefined"
+            :aria-describedby="describedBy"
+            @blur="form.blur('email')"
+          />
+        </template>
+      </AppFormField>
+      <AppFormField
+        :id="`${id}-password`"
+        :size="size"
+        :label="messages.password"
+        :error="errors.password"
+        :hint="
+          mode === 'sign-up' ? messages.passwordHint({ count: minimumPasswordLength }) : undefined
+        "
+      >
+        <template v-if="mode === 'sign-in'" #label-actions>
           <AppButton
-            v-if="mode === 'sign-in'"
             :size="size === 'lg' ? 'lg' : 'xs'"
             :class="ui.inlineLink()"
             variant="link"
@@ -103,40 +112,40 @@ function describedBy(field: 'name' | 'email' | 'password' | 'repeat', hint = fal
           >
             {{ messages.forgotPassword }}
           </AppButton>
-        </div>
-        <AppPasswordInput
-          :size="size"
-          :id="`${id}-password`"
-          v-model="password"
-          :autocomplete="mode === 'sign-up' ? 'new-password' : 'current-password'"
-          :state="errors.password ? 'invalid' : 'idle'"
-          :aria-invalid="errors.password ? true : undefined"
-          :aria-describedby="describedBy('password', mode === 'sign-up')"
-          @blur="form.blur('password')"
-        />
-        <p v-if="errors.password" :id="`${id}-password-error`" :class="ui.error()">
-          {{ errors.password }}
-        </p>
-        <p v-else-if="mode === 'sign-up'" :id="`${id}-password-hint`" :class="ui.hint()">
-          {{ messages.passwordHint({ count: minimumPasswordLength }) }}
-        </p>
-      </div>
-      <div v-if="mode === 'sign-up'" :class="ui.field()">
-        <label :for="`${id}-repeat`" :class="ui.label()">{{ messages.repeatPassword }}</label>
-        <AppPasswordInput
-          :size="size"
-          :id="`${id}-repeat`"
-          v-model="repeat"
-          autocomplete="new-password"
-          :state="errors.repeat ? 'invalid' : 'idle'"
-          :aria-invalid="errors.repeat ? true : undefined"
-          :aria-describedby="describedBy('repeat')"
-          @blur="form.blur('repeat')"
-        />
-        <p v-if="errors.repeat" :id="`${id}-repeat-error`" :class="ui.error()">
-          {{ errors.repeat }}
-        </p>
-      </div>
+        </template>
+        <template #default="{ id: fieldId, invalid, describedBy }">
+          <AppPasswordInput
+            :id="fieldId"
+            v-model="password"
+            :size="size"
+            :autocomplete="mode === 'sign-up' ? 'new-password' : 'current-password'"
+            :state="invalid ? 'invalid' : 'idle'"
+            :aria-invalid="invalid || undefined"
+            :aria-describedby="describedBy"
+            @blur="form.blur('password')"
+          />
+        </template>
+      </AppFormField>
+      <AppFormField
+        v-if="mode === 'sign-up'"
+        :id="`${id}-repeat`"
+        :size="size"
+        :label="messages.repeatPassword"
+        :error="errors.repeat"
+      >
+        <template #default="{ id: fieldId, invalid, describedBy }">
+          <AppPasswordInput
+            :id="fieldId"
+            v-model="repeat"
+            :size="size"
+            autocomplete="new-password"
+            :state="invalid ? 'invalid' : 'idle'"
+            :aria-invalid="invalid || undefined"
+            :aria-describedby="describedBy"
+            @blur="form.blur('repeat')"
+          />
+        </template>
+      </AppFormField>
     </fieldset>
   </form>
 </template>

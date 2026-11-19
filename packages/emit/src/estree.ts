@@ -117,8 +117,10 @@ export function number(value: number): SyntaxNode {
     : literal
 }
 
-const propertyKey = (key: string) =>
-  /^[A-Za-z_$][\w$]*$/.test(key) ? identifier(key) : string(key)
+/** Whether `name` can be written as it is, as a JavaScript identifier, rather than quoted. */
+export const isIdentifierName = (name: string): boolean => /^[A-Za-z_$][\w$]*$/.test(name)
+
+const propertyKey = (key: string) => (isIdentifierName(key) ? identifier(key) : string(key))
 
 export function object(entries: (readonly [string, SyntaxNode])[]): SyntaxNode {
   return {
@@ -136,6 +138,18 @@ export function object(entries: (readonly [string, SyntaxNode])[]): SyntaxNode {
 }
 
 export const array = (elements: SyntaxNode[]): SyntaxNode => ({ type: 'ArrayExpression', elements })
+
+/** `object.key`, or `object['key']` for a key that is not an identifier. */
+export function member(object: SyntaxNode, key: string): SyntaxNode {
+  const computed = !/^[A-Za-z_$][\w$]*$/.test(key)
+  return {
+    type: 'MemberExpression',
+    object,
+    property: computed ? string(key) : identifier(key),
+    computed,
+    optional: false
+  }
+}
 
 /**
  * A value read from JSON written as source: strings, finite numbers, booleans, null, and lists

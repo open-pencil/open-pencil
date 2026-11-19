@@ -13,6 +13,7 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppStatus from '@/components/ui/feedback/AppStatus.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import { WEBMCP_DOCS_URL } from '@/constants'
+import { settingsSelectUI } from '@/theme/settings/controls'
 
 const mode = defineModel<WebMCPMode>({ required: true })
 const { state } = defineProps<{ state: WebMCPRuntimeState }>()
@@ -31,13 +32,13 @@ const descriptions = computed(() => ({
 const tone = computed(
   () =>
     (
-      ({
+      {
         off: 'info',
         starting: 'info',
         ready: 'success',
         unsupported: 'warning',
         error: 'error'
-      }) as const
+      } as const
     )[state.status]
 )
 const detail = computed(() => {
@@ -48,13 +49,13 @@ const detail = computed(() => {
 const statusTone = computed(
   () =>
     (
-      ({
+      {
         off: 'neutral',
         starting: 'pending',
         ready: 'success',
         unsupported: 'neutral',
         error: 'neutral'
-      }) as const
+      } as const
     )[state.status]
 )
 /** Unsupported or failed WebMCP is a problem to fix, not a status to read. */
@@ -80,7 +81,12 @@ const status = computed(
     </template>
     <SettingsGroup>
       <SettingsRow :label="automation.browserAccess" :description="descriptions[mode]">
-        <AppSelect v-model="mode" :options="options" :label="automation.browserAccess" />
+        <AppSelect
+          v-model="mode"
+          :options="options"
+          :label="automation.browserAccess"
+          :ui="settingsSelectUI"
+        />
       </SettingsRow>
       <SettingsRow
         v-if="!problem && state.status !== 'off'"

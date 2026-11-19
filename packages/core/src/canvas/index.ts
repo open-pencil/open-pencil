@@ -1,14 +1,12 @@
+export { canMakeBooleanSourceNode, canMakeBooleanSourcePath, nodeHasVisibleStroke } from './boolean'
+export { flattenNodesToVectorProps, type VectorFlattenProps } from './flatten'
 export {
-  canMakeBooleanSourceNode,
-  canMakeBooleanSourcePath,
-  hasVisibleStrokeSourceNode,
-  nodeHasVisibleStroke
-} from './boolean'
-export {
-  flattenNodesToVectorProps,
-  outlineStrokeNodesToVectorProps,
-  type VectorFlattenProps
-} from './flatten'
+  canOutlineStroke,
+  layersToOutline,
+  outlineStrokeLayer,
+  type OutlinedLayer,
+  type OutlinePiece
+} from './outline-stroke'
 export {
   distanceToGuideSegment,
   getGuideScreenSegment,
@@ -26,7 +24,7 @@ export {
   type RenderOverlays,
   type RulerTheme,
   type SelectionTheme
-} from './renderer'
+} from './renderer/skia'
 export {
   hitTestIssueMarkers,
   issueMarkerLabel,
@@ -42,6 +40,6 @@ export type {
   DesignIssueSeverity,
   PlacedIssueMarker
 } from './issues/types'
+export { groupMarks, marksOverlap, type MarkGroup, type ScreenMark } from './marks/group'
 export { hitTestStatusLabels, type PlacedStatusLabel } from './labels/status'
 export { LabelCache, type CachedComponent, type CachedSection } from './labels/cache'
-export { withFigExportRuntime } from './text/shape'

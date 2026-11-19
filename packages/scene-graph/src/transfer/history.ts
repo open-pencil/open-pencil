@@ -33,12 +33,6 @@ export function captureTransferredState(
         requireValue(graph.variableCollections.get(collection.id), 'collection', collection.id)
       )
     ),
-    activeModes: new Map(
-      original.collections.map((collection) => [
-        collection.id,
-        requireValue(graph.activeMode.get(collection.id), 'active mode', collection.id)
-      ])
-    ),
     images: new Map(
       [...original.images.keys()].map((hash) => [
         hash,

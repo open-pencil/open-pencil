@@ -4,6 +4,7 @@ import { designJSXElement, sceneNodeToJSX } from '#design-jsx/index'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { colorToFill } from '@open-pencil/scene-graph/color'
+import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
 function exportText(fields: Partial<SceneNode>): string {
   const graph = new SceneGraph()
@@ -56,8 +57,8 @@ describe('rich text export', () => {
             fontFamily: 'Roboto',
             fontWeight: 500,
             italic: true,
-            lineHeight: 30,
-            letterSpacing: 1,
+            lineHeight: pixelLength(30),
+            letterSpacing: pixelLength(1),
             textDecoration: 'STRIKETHROUGH'
           }
         },
@@ -113,10 +114,56 @@ describe('rich text export', () => {
     )
   })
 
+  test('writes font settings on the text and on spans', () => {
+    const code = exportText({
+      text: 'ab',
+      fontFeatures: [{ tag: 'LIGA', enabled: false }],
+      fontVariations: [{ axis: 'wght', value: 450 }],
+      textLanguage: 'en',
+      styleRuns: [
+        {
+          start: 1,
+          length: 1,
+          style: {
+            fontFeatures: [{ tag: 'TNUM', enabled: true }],
+            fontVariations: [{ axis: 'wght', value: 650 }],
+            textLanguage: 'de'
+          }
+        }
+      ]
+    })
+    expect(code).toBe(
+      '<Text name="Note" color="#000000" fontFeatures={{ liga: false }} fontVariations={{ wght: 450 }} lang="en">a<Span fontFeatures={{ tnum: true }} fontVariations={{ wght: 650 }} lang="de">b</Span></Text>'
+    )
+  })
+
+  test('writes an optical size that does not follow the font size', () => {
+    const code = exportText({
+      text: 'a',
+      fontVariations: [{ axis: 'opsz', value: 14 }],
+      opticalSizeFromFontSize: false
+    })
+    expect(code).toBe(
+      '<Text name="Note" color="#000000" fontVariations={{ opsz: 14 }} fontOpticalSizing="none">a</Text>'
+    )
+  })
+
+  test('writes a percent of the font size as a percent string', () => {
+    const code = exportText({
+      text: 'ab',
+      lineHeight: percentLength(150),
+      letterSpacing: percentLength(5),
+      styleRuns: [{ start: 1, length: 1, style: { letterSpacing: percentLength(-2) } }]
+    })
+    expect(code).toBe(
+      '<Text name="Note" color="#000000" lineHeight="150%" letterSpacing="5%">a<Span letterSpacing="-2%">b</Span></Text>'
+    )
+  })
+
   test('writes auto line height and no fills in a span', () => {
     const code = exportText({
       text: 'ab',
-      lineHeight: 20,
+      lineHeight: pixelLength(20),
       styleRuns: [{ start: 1, length: 1, style: { lineHeight: null, fills: [] } }]
     })
     expect(code).toBe(

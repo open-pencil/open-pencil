@@ -1,9 +1,11 @@
+import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import { createFileSystemTypesCache } from '@shikijs/vitepress-twoslash/cache-fs'
 import tailwindcss from '@tailwindcss/vite'
+import ts from 'typescript'
 import { defineConfig } from 'vitepress'
 import llmstxt from 'vitepress-plugin-llms'
 
@@ -13,8 +15,9 @@ import { landingPosterFingerprint } from '@open-pencil/landing-posters-tools/fin
 import { appSourceConfig } from '@open-pencil/vite-config/app-source'
 
 import { landingPreloads } from './landing-head.ts'
-import { docsLocales } from './locales.ts'
+import { docsLocales } from './locales/docs.ts'
 import { rootThemeConfig } from './root-theme.ts'
+import { securityTxt } from './security-txt.ts'
 import { BASE, LOCALE_PREFIXES, applyPageSeo, siteHead, withAlternateSitemapLinks } from './seo.ts'
 
 await Promise.all([ensureBrandAssets(['docs']), ensureDemoDocument()])
@@ -70,6 +73,12 @@ export default defineConfig({
   },
   transformHead: landingPreloads,
 
+  // Security reports go to GitHub Security Advisories; the file's expiry moves with each build.
+  async buildEnd({ outDir }) {
+    await mkdir(resolve(outDir, '.well-known'), { recursive: true })
+    await writeFile(resolve(outDir, '.well-known/security.txt'), securityTxt(BASE, new Date()))
+  },
+
   markdown: {
     codeTransformers: [
       transformerTwoslash({
@@ -77,12 +86,19 @@ export default defineConfig({
           dir: resolve(configDir, 'cache/twoslash')
         }),
         twoslashOptions: {
+          // `typescript` resolves to a wrapper package without lib files, which is where
+          // Twoslash looks unless told; ask the compiler where its own libs are.
+          tsLibDirectory: dirname(ts.getDefaultLibFilePath({})),
           compilerOptions: {
             baseUrl: repoRoot,
             paths: {
               '@open-pencil/vue': ['packages/vue/src/index.ts'],
               '@open-pencil/vue/*': ['packages/vue/src/*'],
-              '#vue/*': ['packages/vue/src/*']
+              '#vue/*': ['packages/vue/src/*'],
+              '@open-pencil/std/*': ['packages/std/src/*'],
+              '@open-pencil/scene-graph': ['packages/scene-graph/src/index.ts'],
+              '@open-pencil/scene-graph/*': ['packages/scene-graph/src/*'],
+              '#scene-graph/*': ['packages/scene-graph/src/*']
             }
           }
         }
@@ -93,7 +109,7 @@ export default defineConfig({
   vite: {
     resolve: {
       alias: [
-        { find: '#docs-api', replacement: resolve(docsRoot, 'programmable/sdk/api') },
+        { find: '#docs-api', replacement: resolve(docsRoot, 'developers/sdk/api') },
         { find: '#docs', replacement: configDir },
         ...appSource.alias
       ]

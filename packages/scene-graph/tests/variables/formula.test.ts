@@ -175,7 +175,7 @@ test('references with duplicate or reserved names retain editable ID fallbacks',
   expect(() => parse(`{#${base.id}}`)).toThrow('Non-finite')
 })
 
-test('references follow explicit, active, and inherited modes across collections', () => {
+test('references follow explicit, default, and inherited modes across collections', () => {
   const { graph, collection, base, derived, mode, set } = setup()
   graph.addMode(collection.id, 'large', 'Large')
   base.valuesByMode.large = 10
@@ -191,9 +191,12 @@ test('references follow explicit, active, and inherited modes across collections
   const scalar = graph.createVariable('factor', 'FLOAT', other.id, 3)
   graph.addMode(other.id, 'double', 'Double')
   scalar.valuesByMode.double = 5
-  graph.setActiveMode(other.id, 'double')
   set('{base} * {Other::factor}')
-  expect(graph.resolveVariable(derived.id)).toBe(20)
+  expect(graph.resolveVariable(derived.id)).toBe(12)
+  const doubled = graph.createNode('FRAME', graph.getPages()[0].id, {
+    variableModes: { [other.id]: 'double' }
+  })
+  expect(graph.resolveNumberVariableForNode(doubled.id, derived.id)).toBe(20)
 })
 
 test('qualified names, missing dependencies, reference remapping and runtime validation', () => {

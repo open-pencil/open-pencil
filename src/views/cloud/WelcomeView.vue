@@ -6,8 +6,8 @@ import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 import { usePortal } from '@/app/cloud-portal/context'
 import { openLocalEditor } from '@/app/cloud-portal/site'
 import PortalPublicLayout from '@/components/cloud-portal/layout/PortalPublicLayout.vue'
+import { portalPublic } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import { portalPublic } from '@/theme/cloud-portal/public'
 
 /**
  * The server's root for visitors who are not signed in: sign in, or use the editor without an

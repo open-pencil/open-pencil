@@ -9,6 +9,7 @@ import Components from 'unplugin-vue-components/vite'
 import { defineConfig, loadEnv } from 'vite'
 
 import { ensureBrandAssets } from '@open-pencil/brand-tools'
+import { openPencil } from '@open-pencil/core/node/vite'
 import { ensureDemoDocument } from '@open-pencil/demo-tools'
 
 import packageJson from './package.json'
@@ -19,12 +20,16 @@ import {
   localAutomationToken,
   openPencilAutomationPlugin
 } from './vite/automation'
+import { bootSplashPlugin } from './vite/boot-splash'
 import { cloudSitePlugin } from './vite/cloud-site'
+import { donationDefine } from './vite/funding'
 import { aiIconCollection } from './vite/icons'
+import { inlineScriptPlugin } from './vite/inline-script'
 import { metricsBrandPlugin } from './vite/metrics'
-import { openPencilPwaPlugin } from './vite/pwa'
+import { chunkFileNames, openPencilPwaPlugin } from './vite/pwa'
 import { rawMarkdownPlugin } from './vite/raw-markdown'
 import { createDevServerOptions } from './vite/server'
+import { thirdPartyNoticesPlugin } from './vite/third-party-notices'
 
 const host = process.env.TAURI_DEV_HOST
 const automationRoute = localAutomationRoute(host)
@@ -39,7 +44,10 @@ export default defineConfig(async ({ command, mode }) => {
   const env = loadEnv(mode, __dirname, 'VITE_')
   // `VITE_OPENPENCIL_CLOUD=off` builds the editor without OpenPencil Cloud.
   const cloud = env.VITE_OPENPENCIL_CLOUD !== 'off'
+  // Agents automate the editor's own development server; a Cloud site, built or served, has none.
+  const automation = !metrics && !cloudSite
   await Promise.all([ensureBrandAssets(['web']), metrics ? undefined : ensureDemoDocument()])
+  const outDir = metrics ? 'dist-metrics/admin' : cloudSite ? 'dist-cloud' : 'dist'
   return {
     resolve: {
       alias: createOpenPencilAliases(__dirname, { cloud })
@@ -47,35 +55,58 @@ export default defineConfig(async ({ command, mode }) => {
     define: {
       __OPENPENCIL_APP_VERSION__: JSON.stringify(packageJson.version),
       __OPENPENCIL_CLOUD_SITE__: JSON.stringify(cloudSite),
+      ...donationDefine(__dirname),
       __OPENPENCIL_OFFICIAL_CLOUD_URL__: JSON.stringify(
         env.VITE_OPENPENCIL_OFFICIAL_CLOUD_URL ?? null
       ),
-      __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__: JSON.stringify(localAutomationToken(command)),
+      __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__: JSON.stringify(
+        automation ? localAutomationToken(command) : null
+      ),
       __OPENPENCIL_LOCAL_AUTOMATION_URL__: JSON.stringify(automationRoute.browserURL),
       __OPENPENCIL_LOCAL_AUTOMATION_HTTP_URL__: JSON.stringify(
         automationRoute.browserURL.replace(/^ws/, 'http')
       )
     },
-    // Dynamic browser fixtures must not trigger a dependency-optimizer reload mid-test.
-    optimizeDeps: { include: ['ai/test'] },
+    // Dependencies found only after the page loads, such as dynamic browser fixtures and semver
+    // behind the campaigns, would make the optimizer reload the page mid-test or mid-story.
+    optimizeDeps: { include: ['ai/test', 'semver'] },
     plugins: [
       rawMarkdownPlugin(),
+      inlineScriptPlugin(),
+      bootSplashPlugin({
+        entry: resolve(__dirname, 'src/splash/theme.ts'),
+        pages: ['index.html', 'cloud.html', 'metrics.html']
+      }),
       tailwindcss(),
+      // Not added to the page: Core loads behind the support gate, so the app's canvas module,
+      // which `boot.ts` loads, imports @open-pencil/core/runtime-assets/install itself.
+      openPencil({ inject: false }),
       Icons({ compiler: 'vue3', customCollections: { ai: aiIconCollection() } }),
       Components({ resolvers: [IconsResolver({ prefix: 'icon', customCollections: ['ai'] })] }),
-      metrics ? undefined : openPencilAutomationPlugin(command, host),
+      automation ? openPencilAutomationPlugin(command, host) : undefined,
       vue(),
       metrics ? metricsBrandPlugin((outDir) => resolve(outDir, '..')) : openPencilPwaPlugin(),
-      cloudSite ? cloudSitePlugin() : undefined
+      cloudSite ? cloudSitePlugin() : undefined,
+      thirdPartyNoticesPlugin(__dirname, resolve(__dirname, outDir))
     ],
     clearScreen: false,
+    // A Cloud server routes its own pages and falls back to the editor itself, so a development
+    // server it takes files from answers only the files it has. Its dependency cache is its own,
+    // so it runs beside the editor's development server in the same checkout.
+    appType: cloudSite ? 'mpa' : 'spa',
+    cacheDir: cloudSite ? 'node_modules/.vite-cloud' : undefined,
     publicDir: metrics ? false : 'public',
     base: metrics ? '/admin/' : '/',
     build: {
       // Syntax is lowered to the supported browser baseline; APIs are not polyfilled.
       target: viteBuildTarget(),
       chunkSizeWarningLimit: 2500,
-      outDir: metrics ? 'dist-metrics/admin' : cloudSite ? 'dist-cloud' : 'dist',
+      // `check:bundle` reads the chunk graph from it.
+      manifest: true,
+      // Official releases upload their maps to PostHog for error reports, then remove them
+      // (`tools/release/release-packages/src/sourcemaps/publish.ts`); no chunk links one.
+      sourcemap: !metrics && env.VITE_OPENPENCIL_FEEDBACK === 'on' ? 'hidden' : false,
+      outDir,
       rolldownOptions: {
         // The desktop Software Update window is its own page; a Cloud server adds its own
         // pages beside the editor, and the metrics dashboard builds alone.
@@ -86,9 +117,14 @@ export default defineConfig(async ({ command, mode }) => {
             : {
                 main: resolve(__dirname, 'index.html'),
                 updater: resolve(__dirname, 'updater.html')
-              }
+              },
+        output: { chunkFileNames }
       }
     },
-    server: createDevServerOptions(host, __dirname)
+    server: createDevServerOptions(
+      host,
+      __dirname,
+      cloudSite ? process.env.PORTLESS_URL : undefined
+    )
   }
 })

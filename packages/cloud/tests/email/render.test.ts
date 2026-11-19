@@ -1,0 +1,123 @@
+import { describe, expect, test } from 'bun:test'
+
+import { renderTransactionalEmail, type TransactionalEmailContent } from '#cloud/email'
+
+const ACCOUNT_URL = 'https://cloud.example.com/account/sessions'
+
+const notices: TransactionalEmailContent[] = [
+  {
+    kind: 'email-change-requested',
+    payload: { name: 'Ada', newEmail: 'ada@new.example.com', actionURL: ACCOUNT_URL }
+  },
+  {
+    kind: 'new-sign-in',
+    payload: {
+      name: 'Ada',
+      signedInAt: '2026-10-24T12:00:00.000Z',
+      ipAddress: '203.0.113.9',
+      browser: 'Chrome 141',
+      system: 'macOS',
+      desktop: false,
+      actionURL: ACCOUNT_URL
+    }
+  },
+  ...(['authenticator-on', 'passkey-removed', 'reset-by-administrator'] as const).map(
+    (change): TransactionalEmailContent => ({
+      kind: 'two-step-changed',
+      payload: { name: 'Ada', change, actionURL: ACCOUNT_URL }
+    })
+  )
+]
+
+describe('security notices', () => {
+  test.each(notices.map((content) => [content.kind, content] as const))(
+    '%s renders a subject and links back to the account',
+    async (_kind, content) => {
+      const rendered = await renderTransactionalEmail(content, 'en')
+      expect(rendered.subject.length).toBeGreaterThan(0)
+      expect(rendered.html).toContain(ACCOUNT_URL)
+      expect(rendered.text).toContain(ACCOUNT_URL)
+    }
+  )
+
+  test('a new sign-in names the address it came from', async () => {
+    const content = notices.find((notice) => notice.kind === 'new-sign-in')
+    if (!content) throw new Error('missing notice')
+    expect((await renderTransactionalEmail(content, 'en')).text).toContain('203.0.113.9')
+  })
+})
+
+describe('the storage-limit email', () => {
+  const PLAN_URL = 'https://cloud.example.com/account/plan'
+  const content = (upgradable: boolean): TransactionalEmailContent => ({
+    kind: 'storage-limit-reached',
+    payload: {
+      name: 'Ada',
+      usedBytes: 310 * 1024 ** 2,
+      limitBytes: 300 * 1024 ** 2,
+      upgradable,
+      actionURL: PLAN_URL
+    }
+  })
+
+  test('says how much the account holds against its plan, and links to the plan', async () => {
+    const rendered = await renderTransactionalEmail(content(true), 'en')
+    expect(rendered.text).toContain('310 MB')
+    expect(rendered.text).toContain('300 MB')
+    expect(rendered.text).toContain('Get more storage')
+    expect(rendered.html).toContain(PLAN_URL)
+  })
+
+  test('offers only freeing space where the server sells no plans', async () => {
+    const rendered = await renderTransactionalEmail(content(false), 'en')
+    expect(rendered.text).not.toContain('Get more storage')
+    expect(rendered.text).toContain('empty the trash')
+  })
+
+  test('the invitation letter links the bug form and the desktop beta, and is signed', async () => {
+    const rendered = await renderTransactionalEmail(
+      {
+        kind: 'enrollment-invited',
+        payload: { name: 'Ada', actionURL: 'https://cloud.example.com/' }
+      },
+      'en'
+    )
+    expect(rendered.subject).toBe('You can try OpenPencil Cloud now')
+    for (const url of [
+      'https://cloud.example.com/',
+      'https://openpencil.dev/download#beta',
+      'https://github.com/open-pencil/open-pencil/issues/new?template=bug_report.yml'
+    ]) {
+      expect(rendered.text).toContain(url)
+    }
+    expect(rendered.text).toContain('Hi Ada,')
+    expect(rendered.text).toContain('Danila')
+    expect(rendered.text).toContain('Founder of OpenPencil')
+    expect(rendered.text).not.toContain('{link}')
+  })
+
+  test('the letter to the waitlist thanks them for joining it, and greets no one', async () => {
+    const rendered = await renderTransactionalEmail(
+      {
+        kind: 'enrollment-invited',
+        payload: { name: null, actionURL: 'https://cloud.example.com/', waitlist: true }
+      },
+      'en'
+    )
+    expect(rendered.subject).toBe('OpenPencil Cloud is ready')
+    expect(rendered.text).toContain('Thank you for joining the OpenPencil Cloud waitlist.')
+    expect(rendered.text).not.toContain('Hi ')
+    expect(rendered.text).not.toContain('you asked to try')
+    // Opening with Cloud being open, it doesn't say so again before the beta.
+    expect(rendered.text).not.toContain('It’s open now')
+    // The rest is the same letter: the beta, where to report, the desktop beta, and the signature.
+    for (const url of [
+      'https://cloud.example.com/',
+      'https://openpencil.dev/download#beta',
+      'https://github.com/open-pencil/open-pencil/issues/new?template=bug_report.yml'
+    ]) {
+      expect(rendered.text).toContain(url)
+    }
+    expect(rendered.text).toContain('Founder of OpenPencil')
+  })
+})

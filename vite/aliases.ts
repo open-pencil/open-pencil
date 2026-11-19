@@ -28,6 +28,7 @@ export function createOpenPencilAliases(rootDir: string, options: { cloud?: bool
   return [
     { find: /^fs$/, replacement: emptyNodeModule },
     { find: /^path$/, replacement: emptyNodeModule },
+    { find: /^node:process$/, replacement: resolve(rootDir, 'vite/node-process.ts') },
     ...(options.cloud === false ? cloudOffAliases(rootDir) : []),
     { find: '@', replacement: resolve(rootDir, 'src') },
     { find: '#vue', replacement: resolve(rootDir, 'packages/vue/src') },
@@ -63,9 +64,11 @@ export function createOpenPencilAliases(rootDir: string, options: { cloud?: bool
       replacement: resolve(rootDir, 'packages/scene-graph/src/index.ts')
     },
     { find: '@open-pencil/scene-graph', replacement: resolve(rootDir, 'packages/scene-graph/src') },
+    { find: '#std', replacement: resolve(rootDir, 'packages/std/src') },
+    { find: '@open-pencil/std', replacement: resolve(rootDir, 'packages/std/src') },
     { find: '#cloud', replacement: resolve(rootDir, 'packages/cloud/src') },
     {
-      find: /^@open-pencil\/cloud\/(contract|client)$/,
+      find: /^@open-pencil\/cloud\/(contract|client|email)$/,
       replacement: resolve(rootDir, 'packages/cloud/src/$1/index.ts')
     },
     { find: '#emit', replacement: resolve(rootDir, 'packages/emit/src') },
@@ -99,10 +102,6 @@ export function createOpenPencilAliases(rootDir: string, options: { cloud?: bool
       replacement: `${resolve(rootDir, 'packages/core/assets')}/`
     },
     { find: /^@open-pencil\/core$/, replacement: resolve(rootDir, 'packages/core/src/index.ts') },
-    { find: '@open-pencil/core', replacement: resolve(rootDir, 'packages/core/src') },
-    {
-      find: 'opentype.js',
-      replacement: resolve(rootDir, 'node_modules/opentype.js/dist/opentype.mjs')
-    }
+    { find: '@open-pencil/core', replacement: resolve(rootDir, 'packages/core/src') }
   ]
 }

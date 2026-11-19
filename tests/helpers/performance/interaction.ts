@@ -1,5 +1,7 @@
 import type { Page } from '@playwright/test'
 
+import { readProbe } from './probe'
+
 /** Own the instrumentation and remote handle for exactly one interaction. */
 export async function measureInteraction(
   page: Page,
@@ -32,14 +34,5 @@ export async function measureInteraction(
       }
     }
   }, selectedId)
-  try {
-    await run()
-    return await probe.evaluate((probe) => probe.read())
-  } finally {
-    try {
-      await probe.evaluate((probe) => probe.dispose())
-    } finally {
-      await probe.dispose()
-    }
-  }
+  return readProbe(probe, run)
 }

@@ -9,6 +9,10 @@
 // not touch the list. No fs
 // scope is widened here: the dialog plugin scopes what it returns, and nothing
 // else is ever read from disk.
+import { invoke } from '@tauri-apps/api/core'
+
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { notificationMessages } from '@/app/i18n/notifications'
 import { activateTabForPath, chooseTauriOpenPaths, openFileFromPath } from '@/app/shell/menu/files'
 
@@ -41,7 +45,7 @@ export async function searchLinkedNode(
   try {
     return { found: await selectByName(name) }
   } catch (error) {
-    return { error: clamp(error instanceof Error ? error.message : String(error)) }
+    return { error: clamp(errorMessage(error)) }
   }
 }
 
@@ -55,7 +59,6 @@ export async function searchLinkedNode(
 export type SuffixMatcher = (candidate: string, relative: string) => Promise<boolean>
 
 const tauriMatchesSuffix: SuffixMatcher = async (candidate, relative) => {
-  const { invoke } = await import('@tauri-apps/api/core')
   return invoke<boolean>('path_matches_suffix', { candidate, suffix: relative })
 }
 
@@ -73,7 +76,7 @@ export async function resolveDeepLinkFile(
 /** File-system entry points, injected so tests can drive the picker branch. */
 interface DeepLinkIo {
   choosePaths: () => Promise<string[]>
-  openPath: (path: string) => Promise<void>
+  openPath: (path: string) => Promise<unknown>
   /** Focuses the tab already showing `path`. False when no tab holds it. */
   activateTab: (path: string) => Promise<boolean>
   matchesSuffix: SuffixMatcher

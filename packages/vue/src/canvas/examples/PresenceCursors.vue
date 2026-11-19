@@ -48,6 +48,6 @@ watchEffect(() => {
 
 <template>
   <CanvasRoot :show-rulers="false">
-    <CanvasSurface class="block h-[400px] w-[600px]" />
+    <CanvasSurface class="block h-100 w-150" />
   </CanvasRoot>
 </template>

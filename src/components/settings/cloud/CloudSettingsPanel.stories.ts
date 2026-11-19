@@ -39,11 +39,11 @@ const meta = {
     components: { CloudSettingsPanel, AppConfirmationDialog },
     setup: () => ({ args }),
     template: `
-      <div class="flex h-[560px] bg-panel p-6">
+      <div class="flex h-140 bg-panel p-6">
         <div class="flex w-full max-w-2xl flex-col">
           <CloudSettingsPanel :servers="args.servers" :listed="args.listed" @connect="args.onConnect">
             <template #hosted>
-              <div class="rounded border border-dashed border-border p-3 text-[11px] text-muted">
+              <div class="rounded border border-dashed border-border p-3 text-2xs text-muted">
                 The OpenPencil Cloud waitlist
               </div>
             </template>

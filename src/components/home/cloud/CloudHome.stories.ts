@@ -19,6 +19,8 @@ import type { CloudDocumentRow, HomeCloudAccount, HomeLocation } from './types'
 
 type Args = {
   account: HomeCloudAccount | null
+  /** Cloud has yet to say whether this app is signed in. */
+  checking?: boolean
   active: HomeLocation
   title: string
   subtitle?: string
@@ -75,12 +77,13 @@ const meta = {
     },
     setup: () => ({ args, workspaces, query: ref(''), view: ref<'grid' | 'list'>('grid') }),
     template: `
-      <div :class="['flex h-dvh max-h-[760px] flex-col', args.realActions && '-m-8 max-h-none']">
+      <div :class="['flex h-dvh max-h-190 flex-col', args.realActions && '-m-8 max-h-none']">
         <HomeLayout>
           <template #sidebar>
             <HomeSidebar
               :active="args.active"
               :account="args.account"
+              :checking="args.checking"
               :workspaces="args.account ? workspaces : []"
               :shared-count="3"
               :storage="{ label: 'Studio bucket', detail: 'R2' }"
@@ -90,6 +93,7 @@ const meta = {
             <HomeLocationMenu
               :active="args.active"
               :account="args.account"
+              :checking="args.checking"
               :workspaces="args.account ? workspaces : []"
               :shared-count="3"
               :storage="{ label: 'Studio bucket', detail: 'R2' }"
@@ -181,6 +185,11 @@ export const SignedOut: Story = {
       .slice(0, 4)
       .map((document) => ({ ...document, shared: false, editedBy: undefined }))
   }
+}
+
+/** While Cloud checks the session, the sidebar neither offers to sign in nor lists workspaces. */
+export const CheckingAccount: Story = {
+  args: { account: null, checking: true, state: 'loading', documents: [] }
 }
 
 export const Phone: Story = {

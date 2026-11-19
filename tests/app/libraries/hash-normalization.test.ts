@@ -20,7 +20,7 @@ function source() {
 
 describe('library hash normalization', () => {
   test('ignores representation-only FIG round-trip changes', async () => {
-    initCodec()
+    await initCodec()
     const graph = source()
     const previous = await createLibraryRevision({ libraryId: 'library', name: 'Library', graph })
     const restored = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
@@ -29,7 +29,7 @@ describe('library hash normalization', () => {
   })
 
   test('still detects semantic changes after a FIG round trip', async () => {
-    initCodec()
+    await initCodec()
     const graph = source()
     const previous = await createLibraryRevision({ libraryId: 'library', name: 'Library', graph })
     const restored = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)

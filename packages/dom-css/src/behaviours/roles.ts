@@ -5,7 +5,8 @@ export type ControlRole =
   | { type: 'root'; control: ControlModel }
   | { type: 'part'; control: ControlModel; part: string }
   | { type: 'item'; group: ControlModel; control: ControlModel; index: number }
-  | { type: 'trigger'; control: ControlModel; index: number }
+  /** A tab trigger; `tab` is its own control when it is an instance with the tab behaviour. */
+  | { type: 'trigger'; control: ControlModel; index: number; tab?: ControlModel }
   | { type: 'panel'; control: ControlModel; index: number }
   | { type: 'text'; control: ControlModel; valueId: string }
 
@@ -28,8 +29,16 @@ export function controlRoles(
       roles.set(path, { type: 'trigger', control, index })
     for (const [index, path] of control.panels.entries())
       roles.set(path, { type: 'panel', control, index })
-    for (const [index, item] of control.items.entries())
-      roles.set(item.path, { type: 'item', group: control, control: item, index })
+    for (const [index, item] of control.items.entries()) {
+      // A tab stays its list's trigger, at its place among the triggers, with its own states.
+      const trigger = control.kind === 'tabs' ? control.triggers.indexOf(item.path) : -1
+      roles.set(
+        item.path,
+        trigger === -1
+          ? { type: 'item', group: control, control: item, index }
+          : { type: 'trigger', control, index: trigger, tab: item }
+      )
+    }
   }
   return roles
 }

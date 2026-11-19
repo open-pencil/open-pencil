@@ -1,10 +1,10 @@
 import type { Page } from '@playwright/test'
 
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { expect, test } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { testPath } from '#tests/helpers/paths'
-
 // This size exceeds the 3x overscan budget and previously produced fractional
 // raster offsets, even though the live scene itself was pixel-aligned.
 test.use({ viewport: { width: 1700, height: 1100 }, deviceScaleFactor: 2 })

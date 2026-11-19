@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { MAX_TIMER_MS } from '@open-pencil/std/timing'
+
 import { resolveMCPRoot } from '#mcp/root'
 import { MCP_VERSION, startServer } from '#mcp/server'
 import { readToolPolicyFromEnv } from '#mcp/tool/policy'
@@ -40,7 +42,10 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `                               file after no app is attached for this many ms. The\n` +
       `                               grace period starts at startup and after disconnects.\n` +
       `                               Unset/0 disables it (default) — do not set this for\n` +
-      `                               manual/CLI use, since nothing may ever register.\n`
+      `                               manual/CLI use, since nothing may ever register.\n` +
+      `  OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE  Set to 1 to shut down when stdin closes, so a\n` +
+      `                               parent that starts the server through a shell wrapper\n` +
+      `                               can stop it by closing the pipe. Unset for manual/CLI use.\n`
   )
   process.exit(0)
 }
@@ -63,17 +68,13 @@ const port = rawPort
 // the PORT value alone determines whether TCP is enabled (PORT=0 is the kill switch).
 const withTcp = port > 0
 
-const MAX_TIMEOUT_MS = 2_147_483_647
-
 /** Read a millisecond timeout from the environment, exiting on an invalid value. */
 function readTimeoutEnv(name: string): number | undefined {
   const text = process.env[name]?.trim()
   if (!text) return undefined
   const timeoutMs = Number(text)
-  if (!/^\d+$/.test(text) || timeoutMs > MAX_TIMEOUT_MS) {
-    process.stderr.write(
-      `Error: ${name} must be an integer in 0–${MAX_TIMEOUT_MS}, got "${text}"\n`
-    )
+  if (!/^\d+$/.test(text) || timeoutMs > MAX_TIMER_MS) {
+    process.stderr.write(`Error: ${name} must be an integer in 0–${MAX_TIMER_MS}, got "${text}"\n`)
     process.exit(1)
   }
   return timeoutMs
@@ -132,3 +133,18 @@ const shutdown = async () => {
 
 process.on('SIGINT', () => void shutdown().catch(() => process.exit(1)))
 process.on('SIGTERM', () => void shutdown().catch(() => process.exit(1)))
+
+// A parent that started this server through a shell wrapper cannot always kill it directly
+// (on Windows, ending `cmd /c` leaves the process it started running), but its end of the
+// stdin pipe closes with it.
+if (process.env.OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE === '1') {
+  let stdinClosed = false
+  const onStdinClosed = () => {
+    if (stdinClosed) return
+    stdinClosed = true
+    void shutdown().catch(() => process.exit(1))
+  }
+  process.stdin.on('end', onStdinClosed)
+  process.stdin.on('close', onStdinClosed)
+  process.stdin.resume()
+}

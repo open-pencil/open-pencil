@@ -37,7 +37,9 @@ const {
   ariaLabel,
   disabled: disabledProp = false,
   bound: boundProp = false,
-  editPolicy = 'editable'
+  editPolicy = 'editable',
+  units = [],
+  round
 } = defineProps<NumberFieldRootProps>()
 const emit = defineEmits<NumberFieldRootEmits>()
 defineSlots<NumberFieldRootSlots>()
@@ -55,7 +57,9 @@ const workingValue = ref(0)
 const isMixed = computed(() => binding?.state.value === 'mixed' || typeof modelValue === 'symbol')
 const numericValue = computed(() => {
   const resolved = binding?.resolvedValue.value
-  if (binding?.state.value === 'bound' && typeof resolved === 'number') return resolved
+  if (binding?.state.value === 'bound' && typeof resolved === 'number') {
+    return round ? round(resolved) : resolved
+  }
   return typeof modelValue === 'number' ? modelValue : 0
 })
 const displayValue = computed(() => {
@@ -80,9 +84,15 @@ const ariaLabelValue = computed(() => ariaLabel)
 let interactionStartValue = 0
 let interactionStartedMixed = false
 let mutationRequested = false
+/**
+ * The draft the field itself last wrote, on focus or with the arrow keys, whose value is already
+ * absolute: `-1` there is not "minus 1". A draft the user types is an expression.
+ */
+let absoluteDraft: string | null = null
 let stopMove: (() => void) | undefined
 let stopUp: (() => void) | undefined
 let stopCancel: (() => void) | undefined
+let stopLost: (() => void) | undefined
 let scrubTarget: Element | undefined
 let scrubPointerId: number | undefined
 
@@ -107,14 +117,16 @@ function beginInteraction() {
   interactionStartedMixed = isMixed.value
   workingValue.value = numericValue.value
   mutationRequested = false
+  absoluteDraft = null
   invalidReason.value = null
 }
 
-function updateValue(value: number) {
+/** Shows `value` live, in the unit typed after it when there is one. */
+function updateValue(value: number, unit?: string) {
   const normalized = normalizeNumberValue(clampNumberValue(value, min, max))
   workingValue.value = normalized
   if (binding?.actions.applyValue(normalized)) return
-  if (modelValue !== normalized) emit('update:modelValue', normalized)
+  if (modelValue !== normalized || unit) emit('update:modelValue', normalized, unit)
 }
 
 function restoreInteractionValue() {
@@ -127,15 +139,19 @@ function restoreInteractionValue() {
   }
 }
 
-function finishCommit(value: number) {
-  updateValue(value)
+function finishCommit(value: number, unit?: string) {
+  // A field left as it began sends nothing: a bound field begins from the variable's value, which
+  // can differ from the value it was given (a scaled binding, a fractional size shown rounded).
+  const untouched =
+    !mutationRequested && !interactionStartedMixed && !unit && value === interactionStartValue
+  if (!untouched) updateValue(value, unit)
   editing.value = false
   if (
     mutationRequested ||
     workingValue.value !== interactionStartValue ||
     interactionStartedMixed
   ) {
-    emit('commit', workingValue.value, interactionStartValue)
+    emit('commit', workingValue.value, interactionStartValue, unit)
   }
   binding?.actions.commitMutation()
 }
@@ -144,6 +160,8 @@ function startEdit() {
   if (editing.value || !canMutate()) return
   beginInteraction()
   draftValue.value = interactionStartedMixed ? '' : String(interactionStartValue)
+  // A mixed field's empty draft stays an expression, which Enter rejects.
+  absoluteDraft = interactionStartedMixed ? null : draftValue.value
   editing.value = true
   void nextTick(() => {
     inputRef.value?.focus()
@@ -162,10 +180,24 @@ function onInput(event: Event) {
   setDraft(inputValue(event))
 }
 
+/** The typed expression without a unit from `units` it ends with, and that unit. */
+function splitUnit(expression: string): { value: string; unit?: string } {
+  const source = expression.trim()
+  const unit = [...units]
+    .sort((a, b) => b.length - a.length)
+    .find((candidate) => source.toLowerCase().endsWith(candidate.toLowerCase()))
+  return unit ? { value: source.slice(0, -unit.length), unit } : { value: source }
+}
+
 function commitEdit() {
   if (!editing.value) return
   const expression = draftValue.value
-  const result = evaluateNumberExpression(expression, {
+  const { value, unit } = splitUnit(expression)
+  if (expression === absoluteDraft) {
+    finishCommit(workingValue.value, unit)
+    return
+  }
+  const result = evaluateNumberExpression(value, {
     current: interactionStartValue,
     max,
     mixed: interactionStartedMixed
@@ -179,7 +211,7 @@ function commitEdit() {
     emit('invalid', expression, result.error)
     return
   }
-  finishCommit(result.value)
+  finishCommit(result.value, unit)
 }
 
 function cancelEdit() {
@@ -195,9 +227,11 @@ function stopScrubListeners() {
   stopMove?.()
   stopUp?.()
   stopCancel?.()
+  stopLost?.()
   stopMove = undefined
   stopUp = undefined
   stopCancel = undefined
+  stopLost = undefined
   if (scrubTarget && scrubPointerId != null && scrubTarget.hasPointerCapture(scrubPointerId)) {
     scrubTarget.releasePointerCapture(scrubPointerId)
   }
@@ -207,7 +241,8 @@ function stopScrubListeners() {
 }
 
 function startScrub(event: PointerEvent) {
-  if (!canMutate()) return
+  // One pointer scrubs at a time; another's press leaves it alone.
+  if (scrubPointerId != null || !canMutate()) return
   event.preventDefault()
   beginInteraction()
 
@@ -262,6 +297,12 @@ function startScrub(event: PointerEvent) {
   stopCancel = useEventListener(listenerTarget, 'pointercancel', (cancelEvent: PointerEvent) => {
     if (cancelEvent.pointerId === event.pointerId) finish(true)
   })
+  // Taken away before the release, as Escape in a picker does, the scrub puts its value back:
+  // the release may land elsewhere and never reach the field. The document hears it too when
+  // the field was removed meanwhile.
+  stopLost = useEventListener(document, 'lostpointercapture', (lostEvent: PointerEvent) => {
+    if (lostEvent.pointerId === event.pointerId) finish(true)
+  })
 }
 
 function stepValueFromKeyboard(event: KeyboardEvent) {
@@ -270,13 +311,16 @@ function stepValueFromKeyboard(event: KeyboardEvent) {
   if (!requestMutation('step')) return true
   event.preventDefault()
 
-  const draftResult = editing.value
-    ? evaluateNumberExpression(draftValue.value, {
-        current: interactionStartValue,
-        max,
-        mixed: interactionStartedMixed
-      })
-    : undefined
+  // A unit typed after the value stays on it, for the commit to report.
+  const draft = editing.value ? splitUnit(draftValue.value) : undefined
+  const draftResult =
+    draft && draftValue.value !== absoluteDraft
+      ? evaluateNumberExpression(draft.value, {
+          current: interactionStartValue,
+          max,
+          mixed: interactionStartedMixed
+        })
+      : undefined
   const base = draftResult?.ok ? draftResult.value : workingValue.value
   const next = stepNumberValue(
     base,
@@ -286,8 +330,9 @@ function stepValueFromKeyboard(event: KeyboardEvent) {
     min,
     max
   )
-  updateValue(next)
-  draftValue.value = String(next)
+  updateValue(next, draft?.unit)
+  draftValue.value = `${next}${draft?.unit ?? ''}`
+  absoluteDraft = draftValue.value
 
   if (!editing.value) {
     emit('commit', next, interactionStartValue)

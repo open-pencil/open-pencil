@@ -1,0 +1,75 @@
+:root {
+  --loader-bg: #1e1e1e;
+  --loader-fg: 255, 255, 255;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --loader-bg: #f3f4f6;
+    --loader-fg: 32, 33, 36;
+  }
+}
+html[data-theme='dark'] {
+  --loader-bg: #1e1e1e;
+  --loader-fg: 255, 255, 255;
+}
+html[data-theme='light'] {
+  --loader-bg: #f3f4f6;
+  --loader-fg: 32, 33, 36;
+}
+body {
+  margin: 0;
+  background: var(--loader-bg);
+}
+#boot-splash {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  color: rgb(var(--loader-fg));
+  background: var(--loader-bg);
+}
+/* The splash follows the page's mount element and covers it until the app draws something there. */
+#app:not(:empty) ~ #boot-splash {
+  display: none;
+}
+#boot-splash::before {
+  content: '';
+  width: 40px;
+  height: 40px;
+  background: url('/brand/app-icon.svg') center / contain no-repeat;
+}
+#boot-splash .bar {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  transform: translate(-50%, 40px);
+  width: 100px;
+  height: 2px;
+  background: rgba(var(--loader-fg), 0.08);
+  border-radius: 1px;
+  overflow: hidden;
+}
+#boot-splash .bar::after {
+  content: '';
+  display: block;
+  height: 100%;
+  width: 40%;
+  background: rgba(var(--loader-fg), 0.25);
+  border-radius: 1px;
+  animation: slide 1s ease-in-out infinite;
+}
+@keyframes slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #boot-splash .bar::after {
+    animation: none;
+  }
+}

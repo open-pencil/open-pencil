@@ -1,6 +1,6 @@
-import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 const editor = useEditorSetup()
 
 function getPageChildren() {
@@ -86,7 +86,6 @@ test('context menu shows expected items', async () => {
   await expect(contextItem('context-toggle-visibility')).toBeVisible()
   await expect(contextItem('context-toggle-lock')).toBeVisible()
   await expect(contextItem('context-flatten')).toBeVisible()
-  await expect(contextItem('context-outline-text')).toBeVisible()
   await expect(contextItem('context-outline-stroke')).toBeVisible()
   await expect(contextItem('context-boolean-union')).toHaveCount(0)
 
@@ -221,7 +220,8 @@ test('create component via context menu', async () => {
   editor.canvas.assertNoErrors()
 })
 
-test('outline stroke is disabled for fill-only shapes', async () => {
+// Figma desktop 126 outlines a fill-only layer into a vector of its fill.
+test('outline stroke is offered for fill-only shapes, as in Figma', async () => {
   await editor.canvas.clearCanvas()
   await editor.canvas.drawRect(200, 200, 120, 80)
   await editor.canvas.waitForRender()
@@ -230,7 +230,7 @@ test('outline stroke is disabled for fill-only shapes', async () => {
 
   const item = contextItem('context-outline-stroke')
   await expect(item).toBeVisible()
-  await expect(item).toHaveAttribute('data-disabled', '')
+  await expect(item).not.toHaveAttribute('data-disabled')
   await closeMenu()
 })
 

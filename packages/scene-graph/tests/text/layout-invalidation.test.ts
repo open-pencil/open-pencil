@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test'
+import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { copyStyleRuns } from '@open-pencil/scene-graph/copy'
@@ -95,4 +95,133 @@ test('resizing flat text drops its glyphs so it reflows, while path text scales 
 
   expect(flat.derivedTextGlyphs).toBeNull()
   expect(path.derivedTextGlyphs?.[0].scaleX).toBe(2)
+})
+
+describe('text cache resets', () => {
+  const glyphs = [{ commandsBlob: new Uint8Array([0]), x: 0, y: 10, fontSize: 12 }]
+  const cached = (graph: SceneGraph) =>
+    graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'Text',
+      width: 100,
+      height: 20,
+      derivedLayout: { width: 100, height: 20 },
+      derivedTextGlyphs: glyphs
+    })
+  const publish = (graph: SceneGraph) => {
+    const updates: Partial<SceneNode>[] = []
+    graph.onNodeEvents({ updated: (_id, changes) => updates.push({ ...changes }) })
+    return updates
+  }
+
+  test('a size put back during layout still publishes the caches it reset', () => {
+    const graph = new SceneGraph()
+    const node = cached(graph)
+    const updates = publish(graph)
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(node.id, { width: 50 })
+      graph.updateNode(node.id, { width: 100 })
+    })
+
+    expect(node.derivedLayout).toBeNull()
+    expect(node.derivedTextGlyphs).toBeNull()
+    expect(updates).toEqual([{ derivedLayout: null, derivedTextGlyphs: null }])
+  })
+
+  test('a size put back during layout publishes nothing when nothing was cached', () => {
+    const graph = new SceneGraph()
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, { text: 'Text', width: 100 })
+    const updates = publish(graph)
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(node.id, { width: 50 })
+      graph.updateNode(node.id, { width: 100 })
+    })
+
+    expect(updates).toEqual([])
+  })
+
+  test('a direct edit carries only the caches that were set', () => {
+    const graph = new SceneGraph()
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, { text: 'Text', width: 100 })
+    const updates = publish(graph)
+
+    graph.updateNode(node.id, { width: 50 })
+
+    expect(updates).toEqual([{ width: 50 }])
+  })
+
+  test('values the caller supplies win over the resets', () => {
+    const graph = new SceneGraph()
+    const node = cached(graph)
+    Object.assign(node, { textPicture: new Uint8Array([1]) })
+    const picture = new Uint8Array([2])
+    graph.updateNode(node.id, { width: 50, textPicture: picture })
+    expect(node.textPicture).toBe(picture)
+
+    const pathData = {
+      network: { vertices: [], segments: [], regions: [] },
+      normalizedSize: { x: 1, y: 1 },
+      tValue: 0,
+      forward: true
+    }
+    Object.assign(node, { derivedTextGlyphs: glyphs })
+    graph.updateNode(node.id, { text: 'Old', derivedTextGlyphs: null, textPathData: pathData })
+    expect(node.textPathData).toBe(pathData)
+  })
+})
+
+describe('path text without glyph outlines', () => {
+  const pathData = {
+    network: { vertices: [], segments: [], regions: [] },
+    normalizedSize: { x: 1, y: 1 },
+    tValue: 0,
+    forward: true
+  }
+
+  function outlinelessPathText(graph: SceneGraph) {
+    return graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'Text',
+      fontSize: 12,
+      derivedTextGlyphs: [],
+      textPathData: structuredClone(pathData),
+      textPathBox: { x: 0, y: 0, width: 100, height: 40 }
+    })
+  }
+
+  test('keeps its path when the update places the path box with the new size', () => {
+    const graph = new SceneGraph()
+    const node = outlinelessPathText(graph)
+    graph.updateNode(node.id, { fontSize: 24, textPathBox: { x: 0, y: 0, width: 200, height: 80 } })
+    expect(node.textPathData).toEqual(pathData)
+  })
+
+  test('drops its path on a type edit after the path box update cleared its glyphs', () => {
+    const graph = new SceneGraph()
+    const node = outlinelessPathText(graph)
+    graph.updateNode(node.id, { fontSize: 24, textPathBox: { x: 0, y: 0, width: 200, height: 80 } })
+    graph.updateNode(node.id, { fontSize: 30 })
+    expect(node.textPathData).toBeNull()
+  })
+
+  test('drops its path when its type changes alone', () => {
+    const graph = new SceneGraph()
+    const node = outlinelessPathText(graph)
+    graph.updateNode(node.id, { fontSize: 24 })
+    expect(node.textPathData).toBeNull()
+  })
+
+  test('drops its path when the update repeats the path box it already has', () => {
+    const graph = new SceneGraph()
+    const node = outlinelessPathText(graph)
+    graph.updateNode(node.id, { fontSize: 24, textPathBox: { x: 0, y: 0, width: 100, height: 40 } })
+    expect(node.textPathData).toBeNull()
+  })
+
+  test('drops its path when the update clears the path box', () => {
+    const graph = new SceneGraph()
+    const node = outlinelessPathText(graph)
+    graph.updateNode(node.id, { fontSize: 24, textPathBox: null })
+    expect(node.textPathData).toBeNull()
+  })
 })

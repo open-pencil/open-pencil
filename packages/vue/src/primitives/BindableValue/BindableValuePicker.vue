@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ComboboxRoot } from 'reka-ui'
 
+import { useOverlayOpen } from '#vue/lifecycle/overlays'
 import { useBindableValue } from '#vue/primitives/BindableValue/context'
 
 const ctx = useBindableValue()
+useOverlayOpen(() => ctx.open.value)
 
 function select(value: unknown) {
   if (typeof value !== 'object' || value === null || !('id' in value)) return

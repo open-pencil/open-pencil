@@ -15,12 +15,15 @@ import {
   RangeCalendarPrev,
   RangeCalendarRoot
 } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed, shallowRef, watch } from 'vue'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
-import { rangeCalendar } from '@/theme/date/range-calendar'
+import rangeCalendarTheme from '@/theme/date/range-calendar'
 
 import type { DayRange } from './range'
+
+const rangeCalendar = tv(rangeCalendarTheme)
 
 /**
  * One month for picking a span of days. The model changes only once both ends are chosen, so a
@@ -65,13 +68,13 @@ function pick(range: DateRange) {
     <RangeCalendarHeader :class="ui.header()">
       <RangeCalendarPrev as-child>
         <IconButton label="Previous month">
-          <icon-lucide-chevron-left class="size-3.5" />
+          <icon-lucide-chevron-left data-direction="reading" class="size-3.5" />
         </IconButton>
       </RangeCalendarPrev>
       <RangeCalendarHeading :class="ui.heading()" />
       <RangeCalendarNext as-child>
         <IconButton label="Next month">
-          <icon-lucide-chevron-right class="size-3.5" />
+          <icon-lucide-chevron-right data-direction="reading" class="size-3.5" />
         </IconButton>
       </RangeCalendarNext>
     </RangeCalendarHeader>

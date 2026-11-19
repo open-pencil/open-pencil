@@ -39,6 +39,7 @@ export type DesignTokenIssue =
   | { kind: 'missing-alias'; collection: string; mode: string; token: string }
   | { kind: 'duplicate-path'; collection: string; token: string }
   | { kind: 'unsupported-effect'; style: string }
+  | { kind: 'ambiguous-reference'; style: string; field: string; token: string }
 
 /** An issue as one line of text, for the CLI and tool output. */
 export function designTokenIssueMessage(issue: DesignTokenIssue): string {
@@ -50,6 +51,8 @@ export function designTokenIssueMessage(issue: DesignTokenIssue): string {
     return `${issue.collection} / ${issue.mode}: ${issue.token} points at a variable that is gone`
   if (issue.kind === 'duplicate-path')
     return `${issue.collection}: ${issue.token} has the same token path as another variable`
+  if (issue.kind === 'ambiguous-reference')
+    return `${issue.style}: ${issue.field} refers to ${issue.token}, a path several collections hold, so other tools may read another variable`
   return `${issue.style}: an effect style with no visible shadow has no token`
 }
 

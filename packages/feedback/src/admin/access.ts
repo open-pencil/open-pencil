@@ -3,7 +3,9 @@ import { createMiddleware } from 'hono/factory'
 import { createLocalJWKSet, jwtVerify, type JSONWebKeySet } from 'jose'
 import * as v from 'valibot'
 
-const CERTS_TIMEOUT_MS = 10_000
+import { DEADLINE_MS } from '@open-pencil/std/timing'
+
+const CERTS_TIMEOUT_MS = DEADLINE_MS.request
 // Cloudflare rotates the signing key every six weeks and publishes the next one in advance, so
 // a short cache never misses a rotation for long.
 const CERTS_TTL_MS = 10 * 60 * 1000
@@ -41,13 +43,15 @@ export function requireAccess(services: FeedbackServices) {
     const team = c.env.ACCESS_TEAM_DOMAIN
     if (!token || !team || !c.env.ACCESS_AUD) return c.body(null, 403)
     try {
-      await jwtVerify(token, createLocalJWKSet(await keysFor(team)), {
+      const { payload } = await jwtVerify(token, createLocalJWKSet(await keysFor(team)), {
         issuer: team,
         audience: c.env.ACCESS_AUD,
         currentDate: services.now(),
         // jose checks `exp` only when a token has one; Access always sets it, so one without is refused.
         requiredClaims: ['exp']
       })
+      // Access puts the signed-in person's address in every token it issues for a person.
+      if (typeof payload.email === 'string') c.set('adminEmail', payload.email)
     } catch (error) {
       console.warn('Admin request refused', { error: String(error) })
       return c.body(null, 403)

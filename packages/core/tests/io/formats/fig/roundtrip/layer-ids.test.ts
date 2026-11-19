@@ -38,7 +38,11 @@ describe('.fig layer ids', () => {
   test('every open of the same file gives every layer the same id, inside instances too', async () => {
     const source = new SceneGraph()
     const page = source.getPages()[0].id
-    const component = source.createNode('COMPONENT', page, { name: 'Button', width: 80, height: 32 })
+    const component = source.createNode('COMPONENT', page, {
+      name: 'Button',
+      width: 80,
+      height: 32
+    })
     source.createNode('TEXT', component.id, { name: 'Label', text: 'Go' })
     source.createInstance(component.id, page)
     const bytes = await exportFigFile(source)

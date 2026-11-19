@@ -1,6 +1,8 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { idOf, parentIdOf, type SourceIndex } from '../instance-overrides/source-index'
+import { isComponentSetRecord } from '../node-change/convert'
 import { componentDependencies, slotContentDependencies } from './component/dependencies'
 import { createResourceResolver } from './resource-reference'
 import { styleDependencies } from './style-dependencies'
@@ -60,7 +62,9 @@ export function collectSceneDependencies(
   pageIds: ReadonlySet<string> | undefined,
   index: SourceIndex,
   /** The whole record for one of `changes`, when they are headers that leave fields out. */
-  whole: (record: NodeChange) => NodeChange = (record) => record
+  whole: (record: NodeChange) => NodeChange = (record) => record,
+  /** Records read with what they depend on besides the pages, such as a variant built on demand. */
+  rootIds: readonly string[] = []
 ): SceneDependencyClosure {
   const resolveReference = createResourceResolver(changes)
   const { sources, children } = index
@@ -74,6 +78,33 @@ export function collectSceneDependencies(
   const slotContentReferences = new Set<string>()
   const missingSlotContentIds = new Set<string>()
   validatePageSelection(sources, pageIds)
+  // The other variants of a variant's set: switching an instance's variant, in the panel or in
+  // preview, needs the whole set, while the set's page, whose other layers examples of it use,
+  // does not come with it. A set on Figma's internal canvas is a copy of a library's, kept for
+  // the variants the file uses, so it stays as the file uses it. Each parent is looked at once;
+  // record headers leave out what marks a set, so its whole record is read then.
+  const lookedAt = new Set<string>()
+  const onInternalCanvas = (record: NodeChange): boolean => {
+    let current: NodeChange | undefined = record
+    const seen = new Set<string>()
+    while (current && current.type !== 'CANVAS') {
+      const parentId = parentIdOf(current)
+      if (parentId === undefined || seen.has(parentId)) return false
+      seen.add(parentId)
+      current = sources.get(parentId)
+    }
+    return current?.internalOnly === true
+  }
+  const setVariants = (node: NodeChange): string[] => {
+    const parentId = node.type === 'SYMBOL' ? parentIdOf(node) : undefined
+    if (parentId === undefined || lookedAt.has(parentId)) return []
+    lookedAt.add(parentId)
+    const parent = sources.get(parentId)
+    if (!parent || onInternalCanvas(parent) || !isComponentSetRecord(whole(parent))) return []
+    return (children.get(parentId) ?? []).flatMap((sibling) =>
+      sibling.type === 'SYMBOL' ? (idOf(sibling) ?? []) : []
+    )
+  }
   const pending = changes
     .filter(
       (node) =>
@@ -81,6 +112,7 @@ export function collectSceneDependencies(
         (pageIds ? pageIds.has(idOf(node) ?? '') : node.internalOnly !== true)
     )
     .flatMap((node) => idOf(node) ?? [])
+  appendAll(pending, rootIds)
   while (pending.length) {
     const id = pending.pop()
     if (!id || contentIds.has(id)) continue
@@ -99,12 +131,18 @@ export function collectSceneDependencies(
     for (const component of components) componentReferences.add(component)
     const slotContent = slotContentDependencies(record)
     for (const content of slotContent) slotContentReferences.add(content)
-    pending.push(
-      ...(children.get(id) ?? []).flatMap((child) => idOf(child) ?? []),
-      ...styleDependencies(record, resolveReference, availableIds),
-      ...components,
-      ...slotContent
-    )
+    // A page can hold more children than an engine takes arguments, so none are spread.
+    for (const child of children.get(id) ?? []) {
+      const childId = idOf(child)
+      if (childId !== undefined) pending.push(childId)
+    }
+    for (const dependency of [
+      setVariants(node),
+      styleDependencies(record, resolveReference, availableIds),
+      components,
+      slotContent
+    ])
+      for (const dependencyId of dependency) pending.push(dependencyId)
   }
   collectAncestors(sources, contentIds, ancestorIds, missingIds)
   return {

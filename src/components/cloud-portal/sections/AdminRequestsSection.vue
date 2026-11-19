@@ -1,29 +1,36 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 
 import { useCloudPortalMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
-import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
+import type { PortalListRequest } from '@/app/cloud-portal/list'
+import { usePortalAction } from '@/app/cloud-portal/state'
 import { formatDate } from '@/app/i18n/date'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
 import PortalAccessRequests from '../console/PortalAccessRequests.vue'
-import type { AccessRequest, AccessRequestStatus } from '../types'
+import type { AccessRequestStatus } from '../types'
 
 const emit = defineEmits<{ changed: [] }>()
 const portal = usePortal()
 const messages = useCloudPortalMessages()
 const { locale } = useI18n()
-const filter = ref<AccessRequestStatus>('pending')
+const requests = useTemplateRef('requests')
 
-const {
-  data: requests,
-  error: loadError,
-  reload
-} = usePortalLoad(async (): Promise<AccessRequest[]> => {
-  const { enrollments } = await portal.api.enrollments(filter.value)
-  return enrollments.map((enrollment) => ({
+/** The official server approves everyone waiting at once, each with the founder's letter. */
+const official = portal.discovery.deployment === 'official'
+const waiting = ref(0)
+const invited = ref(false)
+const invitation = computed(() => {
+  if (invited.value) return 'sent'
+  return official && waiting.value > 0 ? 'offered' : null
+})
+
+async function load(request: PortalListRequest<AccessRequestStatus>) {
+  const { enrollments, total, counts } = await portal.api.enrollments(request)
+  waiting.value = counts.pending
+  const rows = enrollments.map((enrollment) => ({
     id: enrollment.id,
     name: enrollment.name,
     email: enrollment.email,
@@ -31,33 +38,53 @@ const {
     requestedOn: formatDate(enrollment.requestedAt, 'date', locale.value),
     status: enrollment.status,
     reviewedBy: enrollment.reviewedBy
+      ? (enrollment.reviewerName ?? messages.value.someoneElse)
+      : null,
+    note: enrollment.reviewNote
   }))
-}, [])
+  return { rows, total, counts }
+}
 
 const {
   subject: busy,
-  error: reviewError,
+  error,
   run: review
-} = usePortalAction(async (id: string, action: 'approve' | 'reject' | 'revoke') => {
-  await portal.api.reviewEnrollment(id, action)
+} = usePortalAction(async (id: string, action: 'approve' | 'reject' | 'revoke', note?: string) => {
+  await portal.api.reviewEnrollment(id, action, note)
   emit('changed')
-  await reload()
+  await requests.value?.reload()
 })
-const error = computed(() => reviewError.value ?? loadError.value)
 
-watch(filter, () => void reload())
+const {
+  busy: inviting,
+  error: inviteError,
+  run: invite
+} = usePortalAction(async () => {
+  await portal.api.inviteEnrollments()
+  invited.value = true
+  emit('changed')
+  await requests.value?.reload()
+})
 </script>
 
 <template>
   <div class="flex flex-col gap-3">
-    <AppAlert v-if="error" tone="error" :heading="messages.errorTitle" :description="error" />
+    <AppAlert
+      v-if="error ?? inviteError"
+      tone="error"
+      :heading="messages.errorTitle"
+      :description="error ?? inviteError ?? undefined"
+    />
     <PortalAccessRequests
-      v-model:filter="filter"
-      :requests="requests"
+      ref="requests"
+      :load="load"
       :busy="busy"
+      :invitation="invitation"
+      :inviting="inviting"
       @approve="(id) => review(id, 'approve')"
-      @reject="(id) => review(id, 'reject')"
-      @revoke="(id) => review(id, 'revoke')"
+      @reject="(id, note) => review(id, 'reject', note)"
+      @revoke="(id, note) => review(id, 'revoke', note)"
+      @invite="invite()"
     />
   </div>
 </template>

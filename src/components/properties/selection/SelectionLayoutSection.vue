@@ -39,7 +39,7 @@ const { panels } = useI18n()
 
     <LayoutFlowControl v-if="layout.layoutMode.value !== undefined" class="mb-2" />
     <TextResizingControl v-if="layout.textResize.value !== undefined" />
-    <div class="mt-2 mb-1 text-[11px] text-muted">{{ panels.dimensions }}</div>
+    <div class="mt-2 mb-1 text-2xs text-muted">{{ panels.dimensions }}</div>
 
     <PositionControlsRoot v-slot="{ wValue, hValue, actions }">
       <PanelGrid :columns="2">
@@ -71,7 +71,7 @@ const { panels } = useI18n()
     </PositionControlsRoot>
 
     <template v-if="layout.spacingAxis.value">
-      <div class="mt-2 mb-1 text-[11px] text-muted">{{ panels.spacing }}</div>
+      <div class="mt-2 mb-1 text-2xs text-muted">{{ panels.spacing }}</div>
       <PanelGrid :columns="2">
         <Tip :label="panels.spacing">
           <NumberField

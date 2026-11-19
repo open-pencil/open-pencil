@@ -9,7 +9,13 @@ import { followUpload } from '@/app/storage/sync'
 import { IS_BROWSER } from '@/constants'
 
 import { listSaveDestinations } from './destinations'
-import { canSaveTo, type SaveDestination, type SaveFailure, type SaveToState } from './model'
+import {
+  canSaveTo,
+  initialSaveChoice,
+  type SaveDestination,
+  type SaveFailure,
+  type SaveToState
+} from './model'
 import { writeDocumentTo } from './write'
 
 /** One Save to, from choosing where the document goes until it is there. */
@@ -47,30 +53,40 @@ function fail(session: SaveToSession, failure: SaveFailure): void {
  * With nowhere to save yet, it signs in to the Cloud server this app knows, or opens the settings
  * where a place to save is set up. While a save is on its way, it shows that one instead.
  */
-export async function openSaveTo(store: EditorStore): Promise<void> {
+export async function openSaveTo(
+  store: EditorStore,
+  options: {
+    /** Keeps the choice to one storage profile, such as the Cloud server a draft signed up to. */
+    profileId?: string
+    /** Leaves out places anyone may open, for a copy that is the person's own. */
+    exceptPublic?: boolean
+  } = {}
+): Promise<void> {
   const current = saveToSession.value
   if (current?.state.kind === 'saving' && !current.following.signal.aborted) {
     current.open = true
     return
   }
-  const destinations = await listSaveDestinations()
-  const writable = destinations.filter(canSaveTo)
-  const first = writable.at(0)
-  if (!first) {
+  const destinations = (await listSaveDestinations()).filter(
+    (destination) =>
+      (!options.profileId || destination.location.profileId === options.profileId) &&
+      !(options.exceptPublic && destination.public)
+  )
+  if (!destinations.some(canSaveTo)) {
     if (!signInToSaveTo()) openSettingsDialog(CLOUD_INCLUDED ? 'cloud' : 'storage')
     return
   }
-  const last = writable.find((destination) => destination.key === lastDestination.value)
+  const { chosen, ask } = initialSaveChoice(destinations, lastDestination.value)
   saveToSession.value = reactive<SaveToSession>({
     store: markRaw(store),
     destinations,
     name: store.state.documentName || 'Untitled',
-    chosen: (last ?? first).key,
+    chosen,
     state: { kind: 'ready' },
-    open: writable.length > 1,
+    open: ask,
     following: markRaw(new AbortController())
   })
-  if (writable.length === 1) await confirmSaveTo()
+  if (!ask) await confirmSaveTo()
 }
 
 /**
@@ -92,7 +108,7 @@ export async function confirmSaveTo(): Promise<void> {
   try {
     const binding = await writeDocumentTo(session.store, destination.location, name)
     if (!binding) return fail(session, { reason: 'unavailable' })
-    lastDestination.value = destination.key
+    if (!destination.public) lastDestination.value = destination.key
     const meta = await getLocalCanvasStore().getMeta(binding.documentId)
     const totalBytes = meta?.figSize ?? 0
     const outcome = await followUpload(binding.documentId, {

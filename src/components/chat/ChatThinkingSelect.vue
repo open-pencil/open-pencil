@@ -5,10 +5,10 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { chatThinkingLevel } from '@/app/ai/chat/thinking'
 import { thinkingLevelLabel, thinkingLevelOptions } from '@/app/ai/models/thinking'
-import ThinkingMeter from '@/components/chat/ThinkingMeter.vue'
+import ChatThinkingMeter from '@/components/chat/ChatThinkingMeter.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { chatProfileTheme } from '@/theme/chat/profile'
-import { chatThinkingTheme } from '@/theme/chat/thinking'
+
+import { chatProfileTheme, chatThinkingTheme } from './ui'
 
 const { ai } = useI18n()
 const ui = chatProfileTheme()
@@ -26,13 +26,13 @@ const selectedLabel = computed(() => thinkingLevelLabel(chatThinkingLevel.value,
   >
     <template #trigger>
       <button type="button" :class="ui.trigger({ class: thinking.trigger() })">
-        <ThinkingMeter :level="chatThinkingLevel" />
+        <ChatThinkingMeter :level="chatThinkingLevel" />
         <span :class="thinking.label()">{{ selectedLabel }}</span>
         <icon-lucide-chevron-down :class="ui.triggerChevron()" aria-hidden="true" />
       </button>
     </template>
     <template #option-end="{ option }">
-      <ThinkingMeter :level="option.value" :class="thinking.option()" />
+      <ChatThinkingMeter :level="option.value" :class="thinking.option()" />
     </template>
   </AppSelect>
 </template>

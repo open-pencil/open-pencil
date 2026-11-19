@@ -1,10 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#fig-tests/helpers/guid'
 import { materializeDocument } from '#fig/document/materialize'
 import { createDocumentReader } from '#fig/document/read'
+import { createResourceResolver } from '#fig/document/resource-reference'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('copies archive images into document-owned resources', () => {
   const bytes = new Uint8Array([1, 2, 3])
@@ -67,4 +68,28 @@ test('keeps variable resources outside scene pages and rejects silent omission',
   })
   expect(reported).toHaveLength(2)
   expect(graph.getChildren(graph.getPages()[0].id)).toEqual([])
+})
+
+test('an explicit unversioned record wins regardless of source ordering', () => {
+  const entries: NodeChange[] = [
+    { guid: { sessionID: 1, localID: 1 }, key: 'style' },
+    { guid: { sessionID: 1, localID: 2 }, key: 'style', version: 'v2' }
+  ]
+  for (const records of [entries, entries.toReversed()]) {
+    const resolve = createResourceResolver(records)
+    expect(resolve({ assetRef: { key: 'style' } })).toBe('1:1')
+    expect(resolve({ assetRef: { key: 'style', version: 'v2' } })).toBe('1:2')
+    expect(resolve({ assetRef: { key: 'style', version: 'missing' } })).toBeUndefined()
+  }
+})
+
+test('resolves exact resource versions and refuses ambiguous unversioned references', () => {
+  const resolve = createResourceResolver([
+    { guid: { sessionID: 1, localID: 1 }, key: 'collection', version: 'v1' },
+    { guid: { sessionID: 1, localID: 2 }, key: 'collection', version: 'v2' }
+  ] as NodeChange[])
+  expect(resolve({ assetRef: { key: 'collection', version: 'v2' } })).toBe('1:2')
+  expect(resolve({ assetRef: { key: 'collection', version: 'missing' } })).toBeUndefined()
+  expect(resolve({ assetRef: { key: 'collection' } })).toBeUndefined()
+  expect(resolve({ guid: { sessionID: 2, localID: 3 } })).toBe('2:3')
 })

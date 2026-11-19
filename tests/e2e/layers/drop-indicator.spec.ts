@@ -30,7 +30,7 @@ async function dragLayerAndObserveIndicator(
 }
 
 test('layer reorder exposes a visible drop indicator before dropping', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0
@@ -58,7 +58,7 @@ test('layer reorder exposes a visible drop indicator before dropping', async ({ 
 })
 
 test('layer child drop exposes a visible container highlight before dropping', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0

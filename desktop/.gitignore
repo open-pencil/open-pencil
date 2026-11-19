@@ -6,3 +6,6 @@
 
 # Tauri-generated capability schema files
 /gen/
+
+# Written by the release (`notices` in tools/release/release-packages).
+/generated/THIRD-PARTY-NOTICES.md

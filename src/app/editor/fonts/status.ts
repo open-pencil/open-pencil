@@ -1,35 +1,60 @@
 import { computed, ref } from 'vue'
 
 import { computeAllLayouts } from '@open-pencil/core/layout'
-import { documentFontStatus, fontManager, fontResolver } from '@open-pencil/core/text'
+import { DocumentFontUses, fontManager, fontResolver } from '@open-pencil/core/text'
+import { errorMessage } from '@open-pencil/std/errors'
 import { useEditorEvent } from '@open-pencil/vue/editor/events'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { loadFont, requestLocalFontAccess } from '@/app/editor/fonts'
+import { loadFont, onInstalledFontsChanged, requestLocalFontAccess } from '@/app/editor/fonts'
 
 export function useDocumentFontStatus() {
   const editor = useEditorStore()
   const revision = ref(0)
   const retrying = ref(false)
+  /** A font installed while a retry runs, which may have missed it, retries once more after. */
+  let retryAgain = false
+
+  // The page's text faces, kept by layer: a keystroke updates one layer rather than walking
+  // a page of tens of thousands of layers again.
+  let uses = new DocumentFontUses(editor.graph, editor.state.currentPageId)
 
   const refresh = () => {
     revision.value++
   }
+  const rebuild = () => {
+    uses = new DocumentFontUses(editor.graph, editor.state.currentPageId)
+    refresh()
+  }
+  const updateNode = (nodeId: string) => {
+    uses.update(nodeId)
+    refresh()
+  }
 
   useEditorEvent('font:resolution-changed', refresh)
-  useEditorEvent('graph:replaced', refresh)
-  useEditorEvent('page:changed', refresh)
-  useEditorEvent('node:created', refresh)
-  useEditorEvent('node:updated', refresh)
-  useEditorEvent('node:deleted', refresh)
+  // Fonts a paste or script loads reach no resolver, so their arrival refreshes the status too.
+  useEditorEvent('font:loaded', refresh)
+  useEditorEvent('graph:replaced', rebuild)
+  useEditorEvent('page:changed', rebuild)
+  useEditorEvent('node:created', (node) => updateNode(node.id))
+  useEditorEvent('node:updated', updateNode)
+  useEditorEvent('node:reparented', updateNode)
+  useEditorEvent('node:reordered', updateNode)
+  useEditorEvent('node:deleted', (nodeId) => {
+    uses.remove(nodeId)
+    refresh()
+  })
 
   const status = computed(() => {
     void revision.value
-    return documentFontStatus(editor.graph, editor.state.currentPageId)
+    return uses.status()
   })
 
   async function retry() {
-    if (retrying.value) return
+    if (retrying.value) {
+      retryAgain = true
+      return
+    }
     retrying.value = true
     const preparation = editor.preparationController.begin({ kind: 'font-retry' })
     let succeeded = false
@@ -54,10 +79,7 @@ export function useDocumentFontStatus() {
       preparation.update({ phase: 'preparing-render' })
       editor.requestRender()
       if (editor.renderer) {
-        await editor.preparationController.waitForPresentation(
-          preparation.id,
-          editor.state.sceneVersion
-        )
+        await editor.preparationController.waitForPresentation(preparation.id, editor.state)
       }
       refresh()
       succeeded = true
@@ -65,7 +87,7 @@ export function useDocumentFontStatus() {
       if (!preparation.signal.aborted) {
         preparation.fail({
           code: 'font-failed',
-          message: error instanceof Error ? error.message : String(error),
+          message: errorMessage(error),
           retryable: true
         })
       }
@@ -73,7 +95,16 @@ export function useDocumentFontStatus() {
       if (succeeded) preparation.complete()
       retrying.value = false
     }
+    if (retryAgain) {
+      retryAgain = false
+      if (status.value.issues.length > 0) await retry()
+    }
   }
+
+  // A missing font installed while the document is open is loaded then, as a retry would.
+  onInstalledFontsChanged(() => {
+    if (status.value.issues.length > 0) void retry()
+  })
 
   function selectAffectedNodes() {
     editor.select(status.value.issues.flatMap((issue) => issue.nodeIds))

@@ -7,6 +7,9 @@ const cls = useDialogUI(ui)
 
 <template>
   <footer data-slot="dialog-footer" :class="cls.footer">
+    <div v-if="$slots.start" data-slot="dialog-footer-start" :class="cls.footerStart">
+      <slot name="start" />
+    </div>
     <slot />
   </footer>
 </template>

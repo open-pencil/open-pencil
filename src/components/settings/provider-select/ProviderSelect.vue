@@ -4,13 +4,19 @@ import { computed, onMounted, ref } from 'vue'
 
 import {
   ACP_AGENTS,
+  acpAgentFor,
   AI_PROVIDERS,
   AUTOMATION_HTTP_PORT,
   IS_TAURI,
-  type AIProviderID
+  type AIProviderID,
+  providerKind
 } from '@open-pencil/core/constants'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 import { useAIMessages } from '@open-pencil/vue/i18n'
 
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { cloudAIAvailable } from '@/app/cloud/integration'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import type { AppSelectGroup } from '@/components/ui/select/select'
 
@@ -21,7 +27,7 @@ async function checkMCPHealth(retries = 3, delayMs = 1000) {
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(`http://127.0.0.1:${AUTOMATION_HTTP_PORT}/health`, {
-        signal: AbortSignal.timeout(2000)
+        signal: AbortSignal.timeout(DEADLINE_MS.probe)
       })
       if (res.ok) {
         mcpAvailable.value = true
@@ -52,13 +58,18 @@ interface ProviderSelectProps {
 
 const { allowAgents = true, ui } = defineProps<ProviderSelectProps>()
 
-if (IS_TAURI) {
+// Agents run as local processes, and they reach the canvas through the MCP server.
+const agentsAvailable = canRunHostProcesses()
+
+if (agentsAvailable) {
   onMounted(() => {
     void checkMCPHealth()
   })
 }
 
-const acpAgents = computed(() => (allowAgents && IS_TAURI && mcpAvailable.value ? ACP_AGENTS : []))
+const acpAgents = computed(() =>
+  allowAgents && agentsAvailable && mcpAvailable.value ? ACP_AGENTS : []
+)
 
 const providerID = defineModel<AIProviderID>({ required: true })
 const providerDef = computed(
@@ -66,11 +77,9 @@ const providerDef = computed(
 )
 
 const displayName = computed(() => {
-  if (providerID.value === 'harness:pi') return 'Pi'
-  if (providerID.value.startsWith('acp:')) {
-    const agentId = providerID.value.replace('acp:', '')
-    return ACP_AGENTS.find((agent) => agent.id === agentId)?.name ?? providerID.value
-  }
+  if (providerKind(providerID.value) === 'harness') return 'Pi'
+  if (providerKind(providerID.value) === 'acp')
+    return acpAgentFor(providerID.value)?.name ?? providerID.value
   return providerDef.value.name
 })
 
@@ -89,8 +98,15 @@ const groups = computed(() => {
 
   result.push({
     label: acpAgents.value.length ? ai.value.providerGroupProviders : undefined,
-    // Signing in returns to a port on this computer, which only the desktop app can open.
-    options: AI_PROVIDERS.filter((provider) => IS_TAURI || !provider.signInOnly)
+    options: AI_PROVIDERS.filter(
+      (provider) =>
+        // Signing in returns to a port on this computer, which only the desktop app can open.
+        (IS_TAURI || !provider.signInOnly) &&
+        // Cloud's AI service is offered while the Home server has one, and kept when chosen.
+        (provider.id !== OPENPENCIL_AI_PROVIDER ||
+          cloudAIAvailable.value ||
+          providerID.value === OPENPENCIL_AI_PROVIDER)
+    )
       .sort((left, right) => left.name.localeCompare(right.name))
       .map((provider) => ({
         value: provider.id,

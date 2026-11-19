@@ -10,7 +10,7 @@ import { toolCursor } from '@open-pencil/vue/editor/tool-cursor'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useFollowView } from '@/app/presence/follow-view'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
-import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
+import PreparationOverlay from '@/components/preparation/canvas/PreparationOverlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
 
 /**
@@ -37,9 +37,7 @@ const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIs
     showRulers: false,
     shouldSuspendRender,
     onReady: store.markCanvasReady,
-    onViewportResize: (width, height) => store.setViewportSize(width, height),
-    onPresented: ({ sceneVersion }) =>
-      store.preparationController.acknowledgePresentation(sceneVersion)
+    onViewportResize: (width, height) => store.setViewportSize(width, height)
   })
 
 const { cursorOverride } = useCanvasInput(

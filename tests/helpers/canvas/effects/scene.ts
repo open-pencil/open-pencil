@@ -1,11 +1,26 @@
 import type { Effect, SceneGraph } from '@open-pencil/scene-graph'
 
-const solid = (r: number, g: number, b: number, opacity = 1) => ({
-  type: 'SOLID' as const,
-  color: { r, g, b, a: 1 },
-  opacity,
-  visible: true
-})
+import { solid } from '../paints'
+
+/** Three 40×120 stripes, red, teal, and blue, from `x`,`y`, named `<name> 1` to `<name> 3`. */
+function addStripes(graph: SceneGraph, pageId: string, name: string, x: number, y: number) {
+  const colors = [
+    [0.96, 0.35, 0.35],
+    [0.08, 0.73, 0.73],
+    [0.23, 0.51, 0.96]
+  ] as const
+  return colors.map(
+    ([r, g, b], index) =>
+      graph.createNode('RECTANGLE', pageId, {
+        name: `${name} ${index + 1}`,
+        x: x + index * 40,
+        y,
+        width: 40,
+        height: 120,
+        fills: [solid(r, g, b)]
+      }).id
+  )
+}
 
 function effect(type: Effect['type'], radius: number, y = 0): Effect {
   return {
@@ -23,8 +38,9 @@ function effect(type: Effect['type'], radius: number, y = 0): Effect {
 /**
  * Layer blur, drop and inner shadow, and background blur, each at a 16px radius, plus a drop
  * shadow, shown behind the node, under a fill at 0% opacity, which casts nothing; a boolean's
- * background blur, inside its result alone; and sharp inner shadows over the rounded corners of
- * an opaque and a translucent fill, where no fill shows through the edge.
+ * background blur, inside its result alone; sharp inner shadows over the rounded corners of
+ * an opaque and a translucent fill, where no fill shows through the edge; and a layer blur and
+ * both shadows at a negative radius, as a variable can give one, which draws like a radius of 0.
  */
 export function createBlurEffectsScene(graph: SceneGraph, pageId: string): void {
   const card = { y: 100, width: 120, height: 120, cornerRadius: 20 }
@@ -49,20 +65,7 @@ export function createBlurEffectsScene(graph: SceneGraph, pageId: string): void 
     fills: [solid(1, 1, 1)],
     effects: [effect('INNER_SHADOW', 16, 8)]
   })
-  for (const [index, color] of [
-    [0.96, 0.35, 0.35],
-    [0.08, 0.73, 0.73],
-    [0.23, 0.51, 0.96]
-  ].entries()) {
-    graph.createNode('RECTANGLE', pageId, {
-      name: `Stripe ${index + 1}`,
-      x: 620 + index * 40,
-      y: 100,
-      width: 40,
-      height: 120,
-      fills: [solid(color[0], color[1], color[2])]
-    })
-  }
+  addStripes(graph, pageId, 'Stripe', 620, 100)
   graph.createNode('RECTANGLE', pageId, {
     name: 'Background blur',
     x: 640,
@@ -87,20 +90,7 @@ export function createBlurEffectsScene(graph: SceneGraph, pageId: string): void 
       }
     ]
   })
-  for (const [index, color] of [
-    [0.96, 0.35, 0.35],
-    [0.08, 0.73, 0.73],
-    [0.23, 0.51, 0.96]
-  ].entries()) {
-    graph.createNode('RECTANGLE', pageId, {
-      name: `Union stripe ${index + 1}`,
-      x: 260 + index * 40,
-      y: 280,
-      width: 40,
-      height: 120,
-      fills: [solid(color[0], color[1], color[2])]
-    })
-  }
+  addStripes(graph, pageId, 'Union stripe', 260, 280)
   const union = graph.createNode('BOOLEAN_OPERATION', pageId, {
     name: 'Union background blur',
     x: 260,
@@ -129,6 +119,16 @@ export function createBlurEffectsScene(graph: SceneGraph, pageId: string): void 
           color: { r: 0, g: 0, b: 0, a: 1 }
         }
       ]
+    })
+  }
+  for (const [index, type] of (['LAYER_BLUR', 'DROP_SHADOW', 'INNER_SHADOW'] as const).entries()) {
+    graph.createNode('RECTANGLE', pageId, {
+      name: `Negative ${type.toLowerCase().replace('_', ' ')}`,
+      x: 80 + index * 180,
+      ...card,
+      y: 460,
+      fills: [solid(0.31, 0.27, 0.9)],
+      effects: [effect(type, -6, type === 'LAYER_BLUR' ? 0 : 8)]
     })
   }
 }
@@ -285,4 +285,134 @@ export function createShadowSilhouetteScene(graph: SceneGraph, pageId: string): 
     cornerRadius: 12,
     fills: [green]
   })
+}
+
+/** A grain effect at Figma's defaults with `params`, built as the scene graph holds it. */
+function grain(type: 'NOISE' | 'TEXTURE', props: Partial<Effect>): Effect {
+  return {
+    type,
+    radius: 4,
+    spread: 0,
+    offset: { x: 0, y: 0 },
+    color: { r: 0, g: 0, b: 0, a: 1 },
+    visible: true,
+    ...props
+  }
+}
+
+/**
+ * Noise and texture effects on the canvas, in two rows: monotone, duotone, and multitone noise
+ * and a larger monotone grain over a light fill, then textures over stripes, unclipped and clipped
+ * to the shape.
+ */
+export function createGrainEffectsScene(graph: SceneGraph, pageId: string): void {
+  const light = solid(0.92, 0.93, 0.96)
+  const noises: Partial<Effect>[] = [
+    { noise: { noiseType: 'MONOTONE', noiseSize: { x: 1, y: 1 }, density: 0.6 } },
+    {
+      color: { r: 0.9, g: 0.2, b: 0.3, a: 1 },
+      noise: {
+        noiseType: 'DUOTONE',
+        noiseSize: { x: 1, y: 1 },
+        density: 0.8,
+        secondaryColor: { r: 0.2, g: 0.3, b: 0.9, a: 1 }
+      }
+    },
+    {
+      noise: { noiseType: 'MULTITONE', noiseSize: { x: 1, y: 1 }, density: 1, opacity: 0.8 }
+    },
+    { noise: { noiseType: 'MONOTONE', noiseSize: { x: 4, y: 4 }, density: 1 } }
+  ]
+  noises.forEach((props, index) => {
+    graph.createNode('RECTANGLE', pageId, {
+      name: `Noise ${index + 1}`,
+      x: 80 + index * 180,
+      y: 80,
+      width: 140,
+      height: 110,
+      cornerRadius: 16,
+      fills: [light],
+      effects: [grain('NOISE', props)]
+    })
+  })
+  for (const [index, clipToShape] of [false, true].entries()) {
+    const x = 80 + index * 360
+    addStripes(graph, pageId, `Under texture ${index + 1}`, x, 240)
+    graph.createNode('RECTANGLE', pageId, {
+      name: clipToShape ? 'Texture clipped' : 'Texture',
+      x: x + 20,
+      y: 260,
+      width: 80,
+      height: 80,
+      cornerRadius: 12,
+      fills: [solid(0.1, 0.12, 0.2)],
+      effects: [
+        grain('TEXTURE', { radius: 6, texture: { noiseSize: { x: 3, y: 3 }, clipToShape } })
+      ]
+    })
+  }
+  addCoverageNoises(graph, pageId)
+}
+
+/**
+ * Noise over what layers draw, as Figma grains it: a 30% fill at 30% over stripes, a stroke
+ * outside the fill, nothing at all on a layer with no fill, and a frame's children, not its gaps.
+ */
+function addCoverageNoises(graph: SceneGraph, pageId: string): void {
+  const red = grain('NOISE', {
+    color: { r: 1, g: 0, b: 0, a: 1 },
+    noise: { noiseType: 'MONOTONE', noiseSize: { x: 1, y: 1 }, density: 1 }
+  })
+  addStripes(graph, pageId, 'Under translucent noise', 80, 420)
+  graph.createNode('RECTANGLE', pageId, {
+    name: 'Translucent noise',
+    x: 90,
+    y: 440,
+    width: 100,
+    height: 80,
+    fills: [solid(1, 1, 1, 0.3)],
+    effects: [red]
+  })
+  graph.createNode('RECTANGLE', pageId, {
+    name: 'Stroked noise',
+    x: 300,
+    y: 450,
+    width: 80,
+    height: 60,
+    fills: [solid(1, 1, 1)],
+    strokes: [{ ...solid(0.2, 0.3, 0.9), weight: 12, align: 'OUTSIDE' }],
+    strokeWeight: 12,
+    strokeAlign: 'OUTSIDE',
+    effects: [red]
+  })
+  addStripes(graph, pageId, 'Under unfilled noise', 460, 420)
+  graph.createNode('RECTANGLE', pageId, {
+    name: 'Unfilled noise',
+    x: 470,
+    y: 440,
+    width: 100,
+    height: 80,
+    fills: [],
+    effects: [red]
+  })
+  const frame = graph.createNode('FRAME', pageId, {
+    name: 'Frame noise',
+    x: 640,
+    y: 420,
+    width: 160,
+    height: 120,
+    fills: [],
+    clipsContent: false,
+    effects: [red]
+  })
+  for (const x of [0, 100]) {
+    graph.createNode('RECTANGLE', frame.id, {
+      name: `Frame noise child ${x}`,
+      x,
+      y: 0,
+      width: 60,
+      height: 120,
+      fills: [solid(1, 1, 1)]
+    })
+  }
 }

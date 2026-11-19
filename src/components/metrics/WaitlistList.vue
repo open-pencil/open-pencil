@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
 import { formatTime } from '@/app/metrics/format'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import { metricsWaitlist } from '@/theme/metrics/dashboard'
+import { metricsWaitlistTheme } from '@/theme/metrics/dashboard'
 
 import type { WaitlistSignup } from './types'
+
+const metricsWaitlist = tv(metricsWaitlistTheme)
 
 /**
  * Latest Cloud waitlist sign-ups by email domain; addresses never reach the dashboard. A long

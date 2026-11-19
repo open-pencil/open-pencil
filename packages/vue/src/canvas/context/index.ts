@@ -1,4 +1,4 @@
-import { type InjectionKey, type Ref, inject, provide } from 'vue'
+import { type ComputedRef, type InjectionKey, type Ref, inject, provide } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 
@@ -6,6 +6,8 @@ export interface CanvasContext {
   canvasRef: Ref<HTMLCanvasElement | null>
   ready: Ref<boolean>
   renderNow: () => void
+  /** The pointer's cursor over the canvas, from the active tool and what is under it. */
+  cursor: ComputedRef<string | undefined>
   hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null
   hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null

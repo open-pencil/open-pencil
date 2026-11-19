@@ -1,5 +1,7 @@
 import { agentDiscovery } from './discovery'
 
+export { AgentNotInstalledError } from './not-installed'
+
 /** What an agent chat needs before it can start, each fixed by guided setup. */
 export type AgentSetupProblem =
   | 'companion-missing'

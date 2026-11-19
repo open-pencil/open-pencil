@@ -1,29 +1,27 @@
 <script setup lang="ts">
+import ChannelFields from '@/components/color-picker-panel/ChannelFields.vue'
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
-import HsbFields from '@/components/color-picker-panel/HsbFields.vue'
-import HslFields from '@/components/color-picker-panel/HslFields.vue'
+import HsbSliders from '@/components/color-picker-panel/HsbSliders.vue'
+import HslSliders from '@/components/color-picker-panel/HslSliders.vue'
 import OkhclFields from '@/components/color-picker-panel/OkhclFields.vue'
-import RGBFields from '@/components/color-picker-panel/RGBFields.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const ctx = useColorPickerPanelContext()
 </script>
 
 <template>
-  <div class="flex flex-col gap-2">
+  <!-- As in Figma, the format and its values share a row. -->
+  <div class="flex items-center gap-0.5">
     <AppSelect
-      class="w-[120px]"
+      :ui="{ trigger: 'w-17 flex-none' }"
       data-test-id="color-format-select"
       :model-value="ctx.fieldFormat"
       :options="ctx.fieldOptions"
       @update:model-value="ctx.setFieldFormat"
     />
-
-    <div class="min-w-0 flex flex-col gap-2">
-      <RGBFields v-if="ctx.fieldFormat === 'rgb'" />
-      <HslFields v-else-if="ctx.fieldFormat === 'hsl'" />
-      <HsbFields v-else-if="ctx.fieldFormat === 'hsb'" />
-      <OkhclFields v-else />
-    </div>
+    <ChannelFields class="flex-1" />
   </div>
+  <HslSliders v-if="ctx.fieldFormat === 'hsl'" />
+  <HsbSliders v-else-if="ctx.fieldFormat === 'hsb'" />
+  <OkhclFields v-else-if="ctx.fieldFormat === 'okhcl'" />
 </template>

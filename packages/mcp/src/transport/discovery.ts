@@ -1,8 +1,11 @@
-import { randomBytes } from 'node:crypto'
-import { access, constants, lstat, readFile, rename, unlink, writeFile } from 'node:fs/promises'
+import { access, constants, lstat, readFile, unlink } from 'node:fs/promises'
 import { Socket } from 'node:net'
 
 import * as v from 'valibot'
+
+import { writeFileAtomic } from '@open-pencil/core/node/fs'
+import { errorMessage } from '@open-pencil/std/errors'
+import { DEADLINE_MS, SECOND_MS } from '@open-pencil/std/timing'
 
 import { MCP_TOOL_SCOPES, type MCPToolScope } from '#mcp/tool/scope'
 import { getDiscoveryPath, getSocketPath, platformHasUnixSockets } from '#mcp/transport/paths'
@@ -22,6 +25,11 @@ export interface DiscoveryInfo {
   httpPort: number
   authRequired: boolean
   authToken: string | null
+  /**
+   * The token to give an MCP client: it opens `/mcp` and nothing `authToken` opens besides. Null
+   * without auth, and absent from a file an older server wrote.
+   */
+  clientToken?: string | null
   version: string
   startedAt: string
   disabledTools?: string[]
@@ -40,6 +48,7 @@ const discoveryInfoSchema = v.pipe(
     startedAt: v.string(),
     socketPath: v.nullable(v.pipe(v.string(), v.nonEmpty())),
     authToken: v.nullable(v.string()),
+    clientToken: v.optional(v.nullable(v.string())),
     disabledTools: v.optional(v.array(v.string()), () => []),
     scope: v.optional(v.picklist(MCP_TOOL_SCOPES), 'document')
   })
@@ -55,11 +64,9 @@ export function parseDiscoveryInfo(raw: string): DiscoveryInfo | null {
  * Writes the discovery JSON file at the platform-appropriate location.
  * Overwrites any existing file (from a previous server instance).
  *
- * The write is atomic: a sibling temp file is written first with `0o600`
- * permissions, then renamed over the final path. This avoids leaving
- * a half-written file visible to readers if the process is killed
- * mid-write, and prevents concurrent writers from corrupting the file
- * by interleaving their writes.
+ * The file is written all at once with `0o600` permissions, replacing a symlink at the path
+ * rather than writing through it, so readers never see half a file and concurrent writers never
+ * interleave.
  *
  * WARNING: The auth token is written in plaintext. Do not sync the discovery
  * file to cloud storage or include it in backups without encryption.
@@ -67,17 +74,7 @@ export function parseDiscoveryInfo(raw: string): DiscoveryInfo | null {
 export async function writeDiscoveryFile(info: DiscoveryInfo): Promise<void> {
   const path = await getDiscoveryPath()
   const json = JSON.stringify(info, null, 2)
-  // Add a random component to guarantee uniqueness
-  const random = randomBytes(6).toString('hex')
-  const tmpPath = `${path}.${process.pid}.${random}.tmp`
-  await writeFile(tmpPath, json, { mode: 0o600, encoding: 'utf-8' })
-  try {
-    await rename(tmpPath, path)
-  } catch (err) {
-    // Best-effort cleanup of the temp file on rename failure
-    await unlink(tmpPath).catch(() => undefined)
-    throw err
-  }
+  await writeFileAtomic(path, json, { mode: 0o600 })
 }
 
 /**
@@ -94,10 +91,7 @@ export async function readDiscoveryFile(): Promise<DiscoveryInfo | null> {
   try {
     raw = await readFile(path, 'utf-8')
   } catch (e) {
-    if (!isEnoent(e))
-      process.stderr.write(
-        `  Discovery: read warning (${e instanceof Error ? e.message : String(e)})\n`
-      )
+    if (!isEnoent(e)) process.stderr.write(`  Discovery: read warning (${errorMessage(e)})\n`)
     return null
   }
 
@@ -142,7 +136,7 @@ async function isSocketLiveViaTcp(socketPath: string): Promise<boolean> {
   }
 
   return fetch(`http://127.0.0.1:${info.httpPort}/health`, {
-    signal: AbortSignal.timeout(2000)
+    signal: AbortSignal.timeout(DEADLINE_MS.probe)
   })
     .then(() => true)
     .catch((e) => {
@@ -171,7 +165,8 @@ function probeSocketLive(socketPath: string): Promise<boolean> {
       // oxlint-disable-next-line no-multiple-resolved -- settled flag guarantees single resolution
       resolve(result)
     }
-    const timer = setTimeout(() => finish(true), 1000)
+    // A socket that neither connects nor refuses in this long has something behind it.
+    const timer = setTimeout(() => finish(true), SECOND_MS)
     socket.once('connect', () => finish(true))
     socket.once('error', (err) => {
       const code = (err as NodeJS.ErrnoException).code

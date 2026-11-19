@@ -1,10 +1,9 @@
+import type { HotkeyPlatform } from '@tanstack/hotkeys'
 import { compact } from 'es-toolkit/array'
-
-import { editorCommandMetadata } from '@open-pencil/vue/editor/commands'
 
 import { APP_MENU_APP_ITEMS, APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
-import { shortcutTokenToAccelerator } from '@/app/shell/menu/shortcut'
+import { appMenuItemShortcut, shortcutToAccelerator } from '@/app/shell/menu/shortcut'
 
 export const MENU_PATH = 'desktop/generated/menu.json'
 export const APP_MENU_PATH = 'desktop/generated/app-menu.json'
@@ -13,10 +12,17 @@ function isNativeVisible(entry: { target?: string }): boolean {
   return entry.target !== 'browser'
 }
 
-function entryAccelerator(entry: AppMenuActionItem): string | undefined {
-  const shortcut =
-    entry.shortcut ?? (entry.command ? editorCommandMetadata(entry.command).shortcut : undefined)
-  return entry.accelerator ?? shortcutTokenToAccelerator(shortcut)
+function entryAccelerator(
+  entry: AppMenuActionItem,
+  platform: HotkeyPlatform = 'windows'
+): string | undefined {
+  return shortcutToAccelerator(appMenuItemShortcut(entry, platform))
+}
+
+/** The macOS accelerator, written only where it differs, as for Figma's distribute keys. */
+function macAccelerator(entry: AppMenuActionItem): string | undefined {
+  const mac = entryAccelerator(entry, 'mac')
+  return mac === entryAccelerator(entry) ? undefined : mac
 }
 
 function cleanEntry(entry: AppMenuEntry): unknown | null {
@@ -26,6 +32,7 @@ function cleanEntry(entry: AppMenuEntry): unknown | null {
     id: entry.id,
     label: entry.label,
     accelerator: entryAccelerator(entry),
+    macAccelerator: macAccelerator(entry),
     checkbox: entry.checkbox,
     feature: entry.feature,
     sub: entry.sub ? compact(entry.sub.map(cleanEntry)) : undefined
@@ -36,6 +43,7 @@ function cleanGroup(group: AppMenuGroupSchema): unknown | null {
   if (!isNativeVisible(group)) return null
   return {
     label: group.label,
+    feature: group.feature,
     items: compact(group.items.map(cleanEntry))
   }
 }

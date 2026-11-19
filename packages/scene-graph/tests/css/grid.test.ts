@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { GridTrack } from '@open-pencil/scene-graph'
 import { parseCSSGridTracks } from '@open-pencil/scene-graph/css'
+import { MAX_GRID_TRACKS } from '@open-pencil/scene-graph/layout'
 
 const fr = (value: number): GridTrack => ({ sizing: 'FR', value })
 const fixed = (value: number): GridTrack => ({ sizing: 'FIXED', value })
@@ -34,8 +35,28 @@ describe('parseCSSGridTracks', () => {
     expect(parseCSSGridTracks('repeat(100000, 1fr)')).toHaveLength(100)
   })
 
+  test('bounds the tracks nested repeats multiply to', () => {
+    const nested = 'repeat(100, repeat(100, repeat(100, repeat(100, repeat(100, 1fr)))))'
+    expect(parseCSSGridTracks(nested)).toHaveLength(MAX_GRID_TRACKS)
+    expect(parseCSSGridTracks(`${nested} ${nested}`)).toHaveLength(MAX_GRID_TRACKS)
+  })
+
   test('returns separate track objects for repeated tracks', () => {
     const [first, second] = parseCSSGridTracks('repeat(2, 1fr)')
     expect(first).not.toBe(second)
+  })
+  test('named lines size no tracks', () => {
+    expect(parseCSSGridTracks('[start] 200px [end]')).toEqual([{ sizing: 'FIXED', value: 200 }])
+    expect(parseCSSGridTracks('[a b] 1fr [c d] auto')).toEqual([
+      { sizing: 'FR', value: 1 },
+      { sizing: 'AUTO', value: 0 }
+    ])
+    expect(parseCSSGridTracks('repeat(2, [col] 1fr)')).toHaveLength(2)
+    // The value parser keeps names written without spaces in the same word as the size.
+    expect(parseCSSGridTracks('[start]200px[end]')).toEqual([{ sizing: 'FIXED', value: 200 }])
+    expect(parseCSSGridTracks('[a]1fr[b]2fr')).toEqual([
+      { sizing: 'FR', value: 1 },
+      { sizing: 'FR', value: 2 }
+    ])
   })
 })

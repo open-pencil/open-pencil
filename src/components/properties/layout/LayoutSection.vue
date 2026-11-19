@@ -49,7 +49,7 @@ const { panels } = useI18n()
         <LayoutFlowControl v-if="LAYOUT_CONTAINER_TYPES.has(ctx.node.type)">
           <LayoutWrapToggle v-if="ctx.isFlex" />
         </LayoutFlowControl>
-        <div v-if="ctx.node.type !== 'TEXT'" class="mt-2 mb-1 text-[11px] text-muted">
+        <div v-if="ctx.node.type !== 'TEXT'" class="mt-2 mb-1 text-2xs text-muted">
           {{ panels.dimensions }}
         </div>
         <TextResizingControl v-if="ctx.node.type === 'TEXT'" />

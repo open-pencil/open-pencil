@@ -1,3 +1,5 @@
+import { sha256 } from '@noble/hashes/sha2.js'
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js'
 import { StorageSerializers, useLocalStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { computed, ref } from 'vue'
@@ -13,7 +15,9 @@ const CLOUD_SERVERS_KEY = 'open-pencil:cloud-servers'
 const cloudAccountSchema = v.object({
   id: v.string(),
   name: v.string(),
-  email: v.string()
+  email: v.string(),
+  /** The address of the account's picture on the server; unset shows initials. */
+  image: v.optional(v.nullable(v.string()))
 })
 
 const cloudServerSchema = v.object({
@@ -67,10 +71,7 @@ export function findCloudServer(id: string): CloudServer | null {
 
 /** The same address always gets the same id, on every device. */
 export async function cloudServerId(url: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(url))
-  return Array.from(new Uint8Array(digest, 0, 16), (byte) =>
-    byte.toString(16).padStart(2, '0')
-  ).join('')
+  return bytesToHex(sha256(utf8ToBytes(url)).subarray(0, 16))
 }
 
 /**

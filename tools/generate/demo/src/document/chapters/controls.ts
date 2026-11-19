@@ -1,6 +1,7 @@
 import { Frame } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { TOUR_KEYS } from '../callout'
 import { previewPill } from '../chrome'
 import type { PlayerParts } from '../player/card'
 import { optionToggle, playToggle, progressSlider, skipButton } from '../player/controls'
@@ -42,7 +43,7 @@ export async function createControlsChapter(context: ChapterContext): Promise<Pl
       step: 3,
       title: 'Press play',
       body: 'Open preview and press the play button: it swaps to pause. Drag the slider. Nothing you do in preview changes the document; Reset puts it all back.',
-      keys: '⌥ ⌘ ↩',
+      keys: TOUR_KEYS.preview,
       where: previewPill(theme)
     }
   })

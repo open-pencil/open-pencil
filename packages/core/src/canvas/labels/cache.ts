@@ -1,9 +1,12 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
-import type { RenderOverlays } from '#core/canvas/renderer'
+import type { RenderOverlays } from '#core/canvas/renderer/skia'
 import { createSceneGeometry } from '#core/geometry'
 
 import { hasFrameTitle } from './layout'
+
+/** A cached label's node where it now is, with what `metadata` adds. */
+type PlacedLabel<U> = { node: SceneNode; absX: number; absY: number } & U
 
 export interface CachedSection {
   nodeId: string
@@ -49,8 +52,8 @@ function collectVisibleLabels<
   cachedItems: T[],
   metadata: (cached: T) => U,
   preview: RenderOverlays['rotationPreview']
-): Array<{ node: SceneNode; absX: number; absY: number } & U> {
-  const result: Array<{ node: SceneNode; absX: number; absY: number } & U> = []
+): Array<PlacedLabel<U>> {
+  const result: Array<PlacedLabel<U>> = []
   const geometry = createSceneGeometry(graph, preview)
   for (const cached of cachedItems) {
     const node = graph.getNode(cached.nodeId)

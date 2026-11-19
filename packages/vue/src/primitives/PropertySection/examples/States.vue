@@ -48,7 +48,7 @@ function toggleFill(index: number) {
 
 <template>
   <div
-    class="grid w-full max-w-[620px] gap-4 rounded-lg border border-[var(--vp-c-divider)] bg-[var(--vp-c-bg-soft)] p-5 text-xs text-[var(--vp-c-text-1)] sm:grid-cols-2"
+    class="grid w-full max-w-155 gap-4 rounded-lg border border-[var(--vp-c-divider)] bg-[var(--vp-c-bg-soft)] p-5 text-xs text-[var(--vp-c-text-1)] sm:grid-cols-2"
   >
     <div class="space-y-3">
       <PropertySectionRoot

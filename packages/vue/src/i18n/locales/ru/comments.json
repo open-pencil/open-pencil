@@ -24,6 +24,13 @@
   "empty": "Комментариев пока нет. Щёлкните по холсту, чтобы оставить комментарий.",
   "noMatches": "Нет подходящих комментариев.",
   "replyCount": "Ответы: {count}",
+  "clusterCount": "Комментарии: {count}",
   "commentDeleted": "Комментарий удалён",
-  "hideComments": "Скрыть комментарии"
+  "hideComments": "Скрыть комментарии",
+  "mentionPeople": "Кого упомянуть",
+  "unread": "Не прочитано",
+  "notifyMention": "Упоминания в комментариях",
+  "notifyReply": "Ответы на ваши комментарии",
+  "notifyReplyHint": "Кто-то отвечает в ветке комментариев, где вы писали.",
+  "notifyTitle": "{author} · {document}"
 }

@@ -5,16 +5,19 @@ import type { Color as RekaColor, ColorChannel, ColorSpace } from 'reka-ui'
 import type { ColorSliderUI } from '@/components/color-picker-panel/ui'
 import { useColorSliderUI } from '@/components/color-picker-panel/ui'
 import NumberField from '@/components/inputs/NumberField.vue'
+import LeftToRight from '@/components/ui/direction/LeftToRight.vue'
 
 interface StandardColorSliderProps {
   label: string
+  /** Only the slider, labelled for assistive technology, as Figma's hue and alpha are. */
+  bare?: boolean
   modelValue: RekaColor
   channel: ColorChannel
   colorSpace?: ColorSpace
   step?: number
-  numberValue: number
-  numberMin: number
-  numberMax: number
+  numberValue?: number
+  numberMin?: number
+  numberMax?: number
   numberStep?: number
   suffix?: string
   checkerboard?: boolean
@@ -24,6 +27,7 @@ interface StandardColorSliderProps {
 
 const {
   label,
+  bare = false,
   modelValue,
   channel,
   colorSpace = 'hsl',
@@ -51,20 +55,27 @@ const styles = useColorSliderUI(
 
 <template>
   <div :class="styles.root.value">
-    <span :class="styles.label.value">{{ label }}</span>
-    <ColorSliderRoot
-      :class="styles.slider.value"
-      :model-value="modelValue"
-      :channel="channel"
-      :color-space="colorSpace"
-      :step="step"
-      data-slot="slider"
-      @update:color="emit('update', $event)"
-    >
-      <ColorSliderTrack :class="styles.track.value" />
-      <ColorSliderThumb :class="styles.thumb.value" :style="{ background: thumbFill }" />
-    </ColorSliderRoot>
+    <span v-if="!bare" :class="styles.label.value">{{ label }}</span>
+    <LeftToRight>
+      <ColorSliderRoot
+        :class="styles.slider.value"
+        :model-value="modelValue"
+        :channel="channel"
+        :color-space="colorSpace"
+        :step="step"
+        data-slot="slider"
+        @update:color="emit('update', $event)"
+      >
+        <ColorSliderTrack :class="styles.track.value" />
+        <ColorSliderThumb
+          :class="styles.thumb.value"
+          :aria-label="label"
+          :style="{ background: thumbFill }"
+        />
+      </ColorSliderRoot>
+    </LeftToRight>
     <NumberField
+      v-if="!bare && numberValue !== undefined"
       :class="styles.input.value"
       :aria-label="label"
       :model-value="numberValue"
@@ -72,7 +83,7 @@ const styles = useColorSliderUI(
       :max="numberMax"
       :step="numberStep"
       :suffix="suffix"
-      :ui="{ leading: 'hidden', field: 'pl-1.5', display: 'pl-1.5' }"
+      :ui="{ leading: 'hidden', field: 'ps-1.5', display: 'ps-1.5' }"
       @update:model-value="emit('updateNumber', $event)"
     />
   </div>

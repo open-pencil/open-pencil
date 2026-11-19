@@ -1,4 +1,4 @@
-import type { FontManager } from '#core/text/fonts'
+import type { FontManager } from '#core/text/font/manager'
 
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 

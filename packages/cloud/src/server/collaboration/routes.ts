@@ -1,11 +1,15 @@
-import { parseResolveDocumentShare } from '#cloud/contract'
+import { resolveDocumentShareSchema } from '#cloud/contract'
 import type { CloudActor, CloudSessionResolver } from '#cloud/server/auth'
 import type { CollaborationTicketService } from '#cloud/server/collaboration/service'
 import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents'
-import { CLOUD_RATE_LIMITS, createActorRateLimiter } from '#cloud/server/rate-limit'
+import {
+  CLOUD_RATE_LIMITS,
+  routeParamResource,
+  createResourceRateLimiter
+} from '#cloud/server/rate-limit'
 import { DocumentShareInvalidError, DocumentShareSignInRequiredError } from '#cloud/server/sharing'
-import { validatedJSON } from '#cloud/server/validation'
+import { documentParams, shareParams, validatedJSON } from '#cloud/server/validation'
 import { Hono, type Context } from 'hono'
 import type { Kysely } from 'kysely'
 
@@ -29,42 +33,52 @@ export function createCollaborationRoutes(
   if (rateLimit) {
     router.use(
       '/documents/:documentId/collaboration-ticket',
-      createActorRateLimiter(
+      createResourceRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.collaborationTicket,
-        undefined,
-        (context) => context.req.param('documentId') ?? 'unknown-document'
+        routeParamResource('documentId')
       )
     )
   }
-  return router.post('/documents/:documentId/collaboration-ticket', async (context) => {
-    try {
-      return context.json({
-        ticket: await service.issueUserTicket(context.get('actor'), context.req.param('documentId'))
-      })
-    } catch (error) {
-      const response = notFound(context, error)
-      if (response) return response
-      throw error
-    }
-  })
-}
-
-export function createPublicCollaborationRoutes(
-  service: CollaborationTicketService,
-  resolveSession?: CloudSessionResolver
-) {
-  return new Hono().post(
-    '/shares/:shareId/collaboration-ticket',
-    validatedJSON(parseResolveDocumentShare),
+  return router.post(
+    '/documents/:documentId/collaboration-ticket',
+    documentParams,
     async (context) => {
       try {
         return context.json({
+          ticket: await service.issueUserTicket(
+            context.get('actor'),
+            context.req.valid('param').documentId
+          )
+        })
+      } catch (error) {
+        const response = notFound(context, error)
+        if (response) return response
+        throw error
+      }
+    }
+  )
+}
+
+export function createPublicCollaborationRoutes(
+  service: Pick<CollaborationTicketService, 'issueShareTicket'>,
+  resolveSession?: CloudSessionResolver
+) {
+  return new Hono<CollaborationRouteEnvironment>().post(
+    '/shares/:shareId/collaboration-ticket',
+    shareParams,
+    validatedJSON(resolveDocumentShareSchema),
+    async (context) => {
+      try {
+        const actor = resolveSession ? await resolveSession(context.req.raw) : null
+        // A signed-in caller is named in error reports, as on the routes that require one.
+        if (actor) context.set('actor', actor)
+        return context.json({
           ticket: await service.issueShareTicket(
-            context.req.param('shareId'),
+            context.req.valid('param').shareId,
             context.req.valid('json'),
-            resolveSession ? ((await resolveSession(context.req.raw)) ?? undefined) : undefined
+            actor ?? undefined
           )
         })
       } catch (error) {

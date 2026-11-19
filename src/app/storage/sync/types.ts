@@ -1,4 +1,6 @@
-export type OutboxJobType = 'putCanvas' | 'putThumb' | 'deleteCanvas'
+import { randomHex } from '@open-pencil/std/random'
+
+export type OutboxJobType = 'putCanvas' | 'deleteCanvas'
 
 export type OutboxJob = {
   id: string
@@ -36,7 +38,5 @@ export function supersedePutCanvasJobs(
 }
 
 export function makeJobId(): string {
-  const bytes = new Uint8Array(8)
-  crypto.getRandomValues(bytes)
-  return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('')
+  return randomHex(8)
 }

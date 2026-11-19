@@ -86,6 +86,36 @@ test('double-clicking a section title renames it inline', async () => {
     .toBe('Primitives')
 })
 
+// Figma shows only the field while a name is renamed: a shorter name leaves none of the old one.
+test('a section title being renamed leaves the canvas title to the field', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.graph.createNode('SECTION', store.state.currentPageId, {
+      id: 'section-rename-shorter',
+      name: 'Section 1',
+      x: 120,
+      y: 160,
+      width: 280,
+      height: 180
+    })
+    store.requestRender()
+  })
+  await editor.canvas.waitForRender()
+
+  const canvas = editor.page.getByTestId('canvas-element')
+  await canvas.dblclick({ position: { x: 128, y: 142 } })
+  const input = editor.page.getByRole('textbox', { name: 'Layer name' })
+  await input.fill('Se')
+  await editor.canvas.waitForRender()
+  const box = await canvas.boundingBox()
+  if (!box) throw new Error('Canvas has no box')
+  await expect(editor.page).toHaveScreenshot('section-rename-shorter.png', {
+    clip: { x: box.x + 110, y: box.y + 126, width: 160, height: 32 }
+  })
+  await input.press('Escape')
+})
+
 // Figma desktop 126: the name above a frame or component renames in place and stays selected.
 test('double-clicking a frame or component name renames it inline and keeps it selected', async () => {
   const ids = await editor.page.evaluate(() => {

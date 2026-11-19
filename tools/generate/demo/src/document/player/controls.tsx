@@ -34,7 +34,7 @@ export function progressSlider({ vars }: Theme): TreeNode {
 
 /** Play and pause: a toggle whose variants swap the icon. */
 export function playToggle({ vars }: Theme): TreeNode {
-  const variant = (state: 'Off' | 'On', icon: string) => (
+  const variant = (state: 'Off' | 'On', icon: `lucide:${string}`) => (
     <Component
       name={`Playing=${state}`}
       flex="row"

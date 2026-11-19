@@ -1,18 +1,30 @@
-import { fromUint8Array } from 'js-base64'
+import { isEqual } from 'es-toolkit/predicate'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
+import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import { readIcon } from '@open-pencil/scene-graph/icons'
-import { imageMimeType } from '@open-pencil/scene-graph/images'
+import { imageDataURL } from '@open-pencil/scene-graph/images'
 import { layoutSizingInParent } from '@open-pencil/scene-graph/layout'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { DesignTokens, type CSSModes } from '../tokens/references'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
-import { cssColor, dropShadowToCSS, effectsToCSS, fillToCSS, strokeColorToCSS } from './css'
+import {
+  cssColor,
+  effectsToCSS,
+  fillToCSS,
+  gradientToCSS,
+  letterSpacingRoomCSS,
+  letterSpacingToCSS,
+  lineHeightToCSS,
+  strokeColorToCSS,
+  textEffectsToCSS
+} from './css'
 import { addGridContainer, addGridPlacement } from './grid'
-import { textCaseToCSS, textElementContent } from './text'
+import { addPositioning, constraintSizes, placement } from './position'
+import { textCaseToCSS, textElementContent, uniformLetterSpacing } from './text'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
 const IMAGE_SOURCE_URL_KEY = 'image-source-url'
@@ -96,8 +108,12 @@ function addSize(
   parent: SceneNode | undefined,
   css: FieldCSS
 ): void {
+  const placed = placement(node, parent)
   const sized = (axis: 'width' | 'height') =>
-    node[axis] > 0 && !hugs(node, axis) && !stretches(node, parent, axis)
+    node[axis] > 0 &&
+    !hugs(node, axis) &&
+    !stretches(node, parent, axis) &&
+    !(placed && constraintSizes(node, placed.parent, axis))
   if (sized('width')) style.width = css('width', px(node.width))
   if (sized('height')) style.height = css('height', px(node.height))
 }
@@ -117,28 +133,6 @@ function stretches(
   if (parent.layoutMode === 'GRID') return true
   const mainAxis = parent.layoutMode === 'HORIZONTAL' ? 'width' : 'height'
   return axis !== mainAxis
-}
-
-/**
- * Place a layer at its coordinates when its parent does not lay it out: it is absolutely
- * positioned, or its parent frame has no auto layout. A frame without auto layout becomes the
- * containing block of the children it places.
- */
-function addPositioning(
-  style: DesignStyleDeclaration,
-  node: SceneNode,
-  parent: SceneNode | undefined
-): void {
-  const placed =
-    node.layoutPositioning === 'ABSOLUTE' ||
-    (parent !== undefined && parent.type !== 'CANVAS' && parent.layoutMode === 'NONE')
-  if (placed) {
-    style.position = 'absolute'
-    style.left = `${node.x}px`
-    style.top = `${node.y}px`
-  } else if (node.layoutMode === 'NONE' && node.type !== 'TEXT' && node.childIds.length > 0) {
-    style.position = 'relative'
-  }
 }
 
 function addSizeConstraints(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
@@ -214,14 +208,15 @@ function addPadding(style: DesignStyleDeclaration, node: SceneNode, css: FieldCS
 }
 
 function addFlexGap(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
-  if (node.itemSpacing <= 0 && node.counterAxisSpacing <= 0) return
+  const counterAxisSpacing = node.counterAxisSpacing ?? 0
+  if (node.itemSpacing <= 0 && counterAxisSpacing <= 0) return
   const item = css('itemSpacing', px(node.itemSpacing))
-  if (node.counterAxisSpacing <= 0) {
+  if (counterAxisSpacing <= 0) {
     style.gap = item
     return
   }
 
-  const counter = css('counterAxisSpacing', px(node.counterAxisSpacing))
+  const counter = css('counterAxisSpacing', px(counterAxisSpacing))
   if (node.layoutMode === 'HORIZONTAL') {
     if (node.itemSpacing > 0) style['column-gap'] = item
     style['row-gap'] = counter
@@ -230,11 +225,6 @@ function addFlexGap(style: DesignStyleDeclaration, node: SceneNode, css: FieldCS
 
   if (node.itemSpacing > 0) style['row-gap'] = item
   style['column-gap'] = counter
-}
-
-/** Image bytes as a data URL of the type they are encoded in. */
-function imageDataURL(bytes: Uint8Array): string {
-  return `data:${imageMimeType(bytes)};base64,${fromUint8Array(bytes)}`
 }
 
 /**
@@ -261,6 +251,47 @@ export function isPositioned(position: unknown): boolean {
 function addShaderLayerStyle(style: DesignStyleDeclaration): void {
   if (!isPositioned(style.position)) style.position = 'relative'
   style.isolation = 'isolate'
+}
+
+/**
+ * The layer's visible fills, painted bottom to top: its lowest solid fill as `background-color`,
+ * and every gradient and every colour stacked above another fill as `background-image`, the top
+ * one first, as CSS stacks them. A colour can only stack as an image, so it is written as a
+ * gradient of itself. An image fill is the element's own image.
+ */
+function addBackground(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
+  const layers: { image: string; blend: string }[] = []
+  let color: string | undefined
+  node.fills.forEach((fill, index) => {
+    if (!fill.visible) return
+    const blend = layerBlendMode(fill.blendMode)
+    if (fill.type === 'SOLID') {
+      const value = css(`fills/${index}/color`, fillToCSS(fill) ?? '')
+      if (color === undefined && layers.length === 0) color = value
+      else layers.unshift({ image: `linear-gradient(${value}, ${value})`, blend })
+      return
+    }
+    const gradient = gradientToCSS(fill, node.width, node.height)
+    if (gradient) layers.unshift({ image: gradient, blend })
+    // A paint below every colour, such as an image, leaves no colour for the bottom.
+    else if (color === undefined) color = ''
+  })
+  if (layers.length > 0) {
+    style['background-image'] = layers.map((layer) => layer.image).join(', ')
+    if (layers.some((layer) => layer.blend !== 'normal')) {
+      style['background-blend-mode'] = layers.map((layer) => layer.blend).join(', ')
+    }
+  }
+  if (color) style['background-color'] = color
+}
+
+/**
+ * A fill's blend mode as `background-blend-mode` takes it, which has no `plus-` modes: linear
+ * burn and dodge blend normally there.
+ */
+function layerBlendMode(mode: Fill['blendMode']): string {
+  const css = mode ? CSS_BLEND_MODE[mode] : undefined
+  return css && !css.startsWith('plus-') ? css : 'normal'
 }
 
 function addImageStyle(style: DesignStyleDeclaration, node: SceneNode): void {
@@ -307,11 +338,10 @@ function styleFromSceneNode(
   addSize(style, node, parent, css)
   addPositioning(style, node, parent)
   addSizeConstraints(style, node, css)
-  const fill = fillToCSS(node.fills.at(0))
-  if (fill) style['background-color'] = css('fills/0/color', fill)
+  addBackground(style, node, css)
   addImageStyle(style, node)
   addStroke(style, node, css)
-  Object.assign(style, effectsToCSS(node.effects))
+  Object.assign(style, effectsToCSS(node.effects, css))
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
   addCornerRadii(style, node, css)
   if (node.clipsContent) style.overflow = 'hidden'
@@ -357,14 +387,21 @@ function styleFromTextNode(
   style['font-size'] = css('fontSize', px(node.fontSize))
   style['font-weight'] = String(node.fontWeight)
   if (node.italic) style['font-style'] = 'italic'
-  if (node.lineHeight !== null) style['line-height'] = css('lineHeight', px(node.lineHeight))
-  if (node.letterSpacing !== 0)
-    style['letter-spacing'] = css('letterSpacing', px(node.letterSpacing))
+  if (node.lineHeight !== null) {
+    style['line-height'] = css('lineHeight', lineHeightToCSS(node.lineHeight))
+  }
+  const spacing = css('letterSpacing', letterSpacingToCSS(node.letterSpacing))
+  if (node.letterSpacing.value !== 0) style['letter-spacing'] = spacing
+  // The spacing after a line's last letter needs room only when one spacing ends every line.
+  const ending = uniformLetterSpacing(node)
+  if (ending && ending.value !== 0) {
+    const written = isEqual(ending, node.letterSpacing) ? spacing : letterSpacingToCSS(ending)
+    Object.assign(style, letterSpacingRoomCSS(ending, written, style.width))
+  }
   if (node.textAlignHorizontal !== 'LEFT')
     style['text-align'] = node.textAlignHorizontal.toLowerCase()
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
-  const shadow = dropShadowToCSS(node.effects[0])
-  if (shadow) style['text-shadow'] = shadow
+  Object.assign(style, textEffectsToCSS(node.effects, css))
   if (node.textDecoration !== 'NONE') {
     style['text-decoration-line'] =
       node.textDecoration === 'UNDERLINE' ? 'underline' : 'line-through'
@@ -536,16 +573,26 @@ export function sceneNodeToDesignDocument(
   nodeId: string,
   options: Omit<SceneGraphToDesignOptions, 'rootId'> = {}
 ): DesignDocument {
-  const node = graph.getNode(nodeId)
+  return sceneNodesToDesignDocument(graph, [nodeId], options)
+}
+
+/**
+ * Project several nodes, each with its own box, as one document: the tokens any of them
+ * references are the document's, so its stylesheet defines them all.
+ */
+export function sceneNodesToDesignDocument(
+  graph: SceneGraph,
+  nodeIds: readonly string[],
+  options: Omit<SceneGraphToDesignOptions, 'rootId'> = {}
+): DesignDocument {
   const context = projectionContext(graph, options)
   const modes = context.tokens?.defaultModes() ?? new Map<string, string>()
-  const projected = node ? sceneNodeToDesignNode(context, node, modes, true) : null
-  return {
-    type: 'document',
-    sourceGraph: graph,
-    tokens: context.tokens,
-    children: projected ? [projected] : []
-  }
+  const children = nodeIds.flatMap((id) => {
+    const node = graph.getNode(id)
+    const projected = node ? sceneNodeToDesignNode(context, node, modes, true) : null
+    return projected ? [projected] : []
+  })
+  return { type: 'document', sourceGraph: graph, tokens: context.tokens, children }
 }
 
 export type { SceneGraphToDesignOptions as ToDesignDocumentOptions }

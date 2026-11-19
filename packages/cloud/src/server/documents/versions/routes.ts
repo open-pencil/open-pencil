@@ -1,10 +1,15 @@
 import {
-  parseDuplicateDocumentVersion,
-  parseSaveDocumentVersion,
-  parseUpdateDocumentVersion
+  duplicateDocumentVersionSchema,
+  saveDocumentVersionSchema,
+  updateDocumentVersionSchema
 } from '#cloud/contract'
 import { documentDomainError, type DocumentRouteEnvironment } from '#cloud/server/documents/routes'
-import { validatedJSON, validatedQuery } from '#cloud/server/validation'
+import {
+  documentParams,
+  documentVersionParams,
+  validatedJSON,
+  validatedQuery
+} from '#cloud/server/validation'
 import { Hono, type Context } from 'hono'
 import * as v from 'valibot'
 
@@ -14,7 +19,6 @@ const pageSchema = v.object({
   before: v.optional(v.pipe(v.string(), v.uuid())),
   limit: v.optional(v.pipe(v.string(), v.toNumber(), v.integer(), v.minValue(1)))
 })
-const parsePage = (input: unknown) => v.parse(pageSchema, input)
 
 async function answer(context: Context, run: () => Promise<Response>): Promise<Response> {
   try {
@@ -29,79 +33,85 @@ async function answer(context: Context, run: () => Promise<Response>): Promise<R
 /** A document's version history: listing, naming, opening, restoring, and duplicating versions. */
 export function createDocumentVersionRoutes(service: DocumentVersionService) {
   return new Hono<DocumentRouteEnvironment>()
-    .get('/documents/:documentId/versions', validatedQuery(parsePage), (context) =>
+    .get('/documents/:documentId/versions', documentParams, validatedQuery(pageSchema), (context) =>
       answer(context, async () =>
         context.json(
           await service.list(
             context.get('actor').userId,
-            context.req.param('documentId'),
+            context.req.valid('param').documentId,
             context.req.valid('query')
           )
         )
       )
     )
-    .post('/documents/:documentId/versions', validatedJSON(parseSaveDocumentVersion), (context) =>
-      answer(context, async () =>
-        context.json(
-          {
-            version: await service.save(
-              context.get('actor').userId,
-              context.req.param('documentId'),
-              context.req.valid('json')
-            )
-          },
-          201
+    .post(
+      '/documents/:documentId/versions',
+      documentParams,
+      validatedJSON(saveDocumentVersionSchema),
+      (context) =>
+        answer(context, async () =>
+          context.json(
+            {
+              version: await service.save(
+                context.get('actor').userId,
+                context.req.valid('param').documentId,
+                context.req.valid('json')
+              )
+            },
+            201
+          )
         )
-      )
     )
     .patch(
       '/documents/:documentId/versions/:versionId',
-      validatedJSON(parseUpdateDocumentVersion),
+      documentVersionParams,
+      validatedJSON(updateDocumentVersionSchema),
       (context) =>
         answer(context, async () =>
           context.json({
             version: await service.update(
               context.get('actor').userId,
-              context.req.param('documentId'),
-              context.req.param('versionId'),
+              context.req.valid('param').documentId,
+              context.req.valid('param').versionId,
               context.req.valid('json')
             )
           })
         )
     )
-    .get('/documents/:documentId/versions/:versionId', (context) =>
+    .get('/documents/:documentId/versions/:versionId', documentVersionParams, (context) =>
       answer(context, async () =>
         context.json(
           await service.download(
             context.get('actor').userId,
-            context.req.param('documentId'),
-            context.req.param('versionId')
+            context.req.valid('param').documentId,
+            context.req.valid('param').versionId
           )
         )
       )
     )
-    .post('/documents/:documentId/versions/:versionId/restore', (context) =>
+    .post('/documents/:documentId/versions/:versionId/restore', documentVersionParams, (context) =>
       answer(context, async () =>
         context.json(
           await service.restore(
             context.get('actor').userId,
-            context.req.param('documentId'),
-            context.req.param('versionId')
+            context.req.valid('param').documentId,
+            context.req.valid('param').versionId
           )
         )
       )
     )
     .post(
       '/documents/:documentId/versions/:versionId/duplicate',
-      validatedJSON(parseDuplicateDocumentVersion),
+      documentVersionParams,
+      validatedJSON(duplicateDocumentVersionSchema),
       (context) =>
         answer(context, async () =>
           context.json(
             {
               document: await service.duplicate(
                 context.get('actor').userId,
-                context.req.param('documentId'),
-                context.req.param('versionId'),
+                context.req.valid('param').documentId,
+                context.req.valid('param').versionId,
                 context.req.valid('json')
               )
             },

@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import type { Editor } from '@open-pencil/core'
 import { BLACK } from '@open-pencil/core/constants'
 import type { VariableCollection, VariableType, VariableValue } from '@open-pencil/scene-graph'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 export function createVariableCollectionActions(editor: Editor, activeCollectionId: Ref<string>) {
   function setActiveCollection(id: string) {
@@ -63,12 +63,6 @@ export function createVariableCollectionActions(editor: Editor, activeCollection
     return editor.duplicateMode(colId, modeId)
   }
 
-  function setActiveMode(modeId: string) {
-    const colId = activeCollectionId.value
-    if (!colId) return
-    editor.setActiveMode(colId, modeId)
-  }
-
   return {
     setActiveCollection,
     addCollection,
@@ -78,8 +72,7 @@ export function createVariableCollectionActions(editor: Editor, activeCollection
     removeMode,
     renameMode,
     setDefaultMode,
-    duplicateMode,
-    setActiveMode
+    duplicateMode
   }
 }
 

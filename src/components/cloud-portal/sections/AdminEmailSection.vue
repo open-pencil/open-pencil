@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { useTemplateRef } from 'vue'
 
+import type { CloudAdminEmailFilter } from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
-import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
+import type { PortalListRequest } from '@/app/cloud-portal/list'
+import { usePortalAction } from '@/app/cloud-portal/state'
 import { formatDate } from '@/app/i18n/date'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
@@ -14,6 +16,7 @@ import type { PortalEmail } from '../types'
 const portal = usePortal()
 const messages = useCloudPortalMessages()
 const { locale } = useI18n()
+const emails = useTemplateRef('emails')
 
 function deliveryStatus(status: string): PortalEmail['status'] {
   if (status === 'accepted') return 'sent'
@@ -22,37 +25,33 @@ function deliveryStatus(status: string): PortalEmail['status'] {
   return 'waiting'
 }
 
-const {
-  data: emails,
-  error: loadError,
-  reload
-} = usePortalLoad(async (): Promise<PortalEmail[]> => {
-  const { messages: rows } = await portal.api.email()
-  return rows.map((row) => ({
+async function load(request: PortalListRequest<CloudAdminEmailFilter>) {
+  const { messages: sent, total, counts } = await portal.api.email(request)
+  const rows = sent.map((row) => ({
     id: row.id,
     kind: row.kind,
     recipient: row.recipientEmailNormalized,
     status: deliveryStatus(row.status),
     attempts: row.attemptCount,
-    when: formatDate(row.nextAttemptAt, 'date', locale.value),
+    when: formatDate(row.nextAttemptAt, 'dateTime', locale.value),
     error: row.lastErrorCode
   }))
-}, [])
+  return { rows, total, counts }
+}
 
 const {
   subject: busy,
-  error: retryError,
+  error,
   run: retry
 } = usePortalAction(async (id: string) => {
   await portal.api.regenerateEmail(id)
-  await reload()
+  await emails.value?.reload()
 })
-const error = computed(() => retryError.value ?? loadError.value)
 </script>
 
 <template>
   <div class="flex flex-col gap-3">
     <AppAlert v-if="error" tone="error" :heading="messages.errorTitle" :description="error" />
-    <PortalEmailDelivery :emails="emails" :busy="busy" @retry="retry" />
+    <PortalEmailDelivery ref="emails" :load="load" :busy="busy" @retry="retry" />
   </div>
 </template>

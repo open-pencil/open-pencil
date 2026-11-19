@@ -1,24 +1,16 @@
 import * as v from 'valibot'
 
 import { defineTool } from './schema'
-import { applyPhoto } from './stock-photo/apply'
+import { applyPhotos } from './stock-photo/apply'
 import { getActiveProvider } from './stock-photo/providers'
 import { parsePhotoRequests } from './stock-photo/requests'
 
-export { applyPhoto, type PhotoRequest, type PhotoResult } from './stock-photo/apply'
+export { applyPhotos, type PhotoRequest, type PhotoResult } from './stock-photo/apply'
 export { parsePhotoRequests } from './stock-photo/requests'
-export {
-  getStockPhotoProviders,
-  registerStockPhotoProvider,
-  setActiveStockPhotoProvider,
-  setPexelsAPIKey,
-  setUnsplashAccessKey,
-  type StockPhotoProvider,
-  type StockPhotoResult
-} from './stock-photo/providers'
+export { setPexelsAPIKey, setUnsplashAccessKey } from './stock-photo/providers'
 
 export const stockPhoto = defineTool({
-  name: 'stock_photo',
+  name: 'search_stock_photos',
 
   description:
     'Search stock photos and apply to leaf image placeholders or closed area geometry. ' +
@@ -38,14 +30,14 @@ export const stockPhoto = defineTool({
     const provider = getActiveProvider()
     if (!provider) {
       return {
-        error: `No stock photo provider configured. Ask the user to add an API key in AI chat settings. Available providers: Pexels, Unsplash.`
+        error: `No stock photo service has a key. Ask the user to add a Pexels or Unsplash key: Insert photo in the toolbar asks for one.`
       }
     }
 
     const reqs = parsePhotoRequests(requests)
     if ('error' in reqs) return reqs
 
-    const results = await Promise.all(reqs.map((request) => applyPhoto(figma, provider, request)))
+    const results = await applyPhotos(figma, provider, reqs)
     const ok = results.filter((result) => result.photo).length
 
     return { applied: ok, failed: results.length - ok, provider: provider.name, results }

@@ -19,7 +19,8 @@ for (const theme of ['light', 'dark']) {
       return id
     }, theme)
     const section = page.getByRole('region', { name: 'Typography', exact: true })
-    await expect(section.locator('[data-property="letterSpacing"]')).toContainText('px')
+    // A new text has no letter spacing in percent, as Figma shows it.
+    await expect(section.locator('[data-property="letterSpacing"]')).toContainText('%')
     await expect(section.locator('[data-property="lineHeight"]')).toContainText('Auto')
     await expect(section).toHaveScreenshot(`typography-groups-${theme}.png`)
     await section.getByRole('button', { name: 'Align center horizontally', exact: true }).click()

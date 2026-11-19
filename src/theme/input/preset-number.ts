@@ -1,8 +1,11 @@
-import { tv } from 'tailwind-variants'
+import { SETTINGS_SELECT_WIDTH } from '../settings/controls'
 
-/** Control widths are plain strings so they can be forwarded to child UI props. */
+/**
+ * Control widths are plain strings so they can be forwarded to child UI props. The field sits in
+ * settings rows, so its select is as wide as theirs.
+ */
 export const presetNumberSizes = {
-  select: 'w-full sm:w-44',
+  select: SETTINGS_SELECT_WIDTH,
   field: 'w-full sm:w-32'
 } as const
 
@@ -13,8 +16,6 @@ const presetNumberTheme = {
     error: 'text-xs text-error'
   }
 } as const
-
-export const presetNumber = tv(presetNumberTheme)
 
 export type PresetNumberTheme = typeof presetNumberTheme
 

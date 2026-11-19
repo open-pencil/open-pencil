@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import type { List, ListItem, Root, RootContent } from 'mdast'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 
+import { appendAll } from '@open-pencil/std/arrays'
+
 import { ALLOWED_CATEGORIES, headingText, sectionEnd } from './validate'
 
 type Category = (typeof ALLOWED_CATEGORIES)[number]
@@ -20,8 +22,15 @@ export const FRAGMENT_CATEGORIES = {
 
 export type FragmentCategory = keyof typeof FRAGMENT_CATEGORIES
 
+/** A pull request's number, or a GitHub security advisory's ID. */
+const FRAGMENT_SOURCE = /^(?:[1-9]\d*|GHSA(?:-[23456789cfghjmpqrvwx]{4}){3})$/
+
 export interface ChangeFragment {
-  pullRequest: number
+  /**
+   * The folder the fragment came from: its pull request's number, or for a fix from a security
+   * advisory's private fork, which has no pull request here, the advisory's GHSA ID.
+   */
+  source: string
   category: FragmentCategory
   /** Each bullet's Markdown, starting with `- `, as it will appear in the changelog. */
   bullets: string[]
@@ -65,11 +74,13 @@ export async function readFragments(directory: string): Promise<FragmentReadResu
   })
   for (const entry of entries) {
     if (entry.isFile() && entry.name === 'README.md') continue
-    if (!entry.isDirectory() || !/^[1-9]\d*$/.test(entry.name)) {
-      errors.push(`changes/${entry.name}: expected a folder named after its pull request number.`)
+    if (!entry.isDirectory() || !FRAGMENT_SOURCE.test(entry.name)) {
+      errors.push(
+        `changes/${entry.name}: expected a folder named after its pull request number or security advisory.`
+      )
       continue
     }
-    const pullRequest = Number(entry.name)
+    const source = entry.name
     for (const file of await readdir(join(directory, entry.name), { withFileTypes: true })) {
       const path = `changes/${entry.name}/${file.name}`
       const category = file.name.replace(/\.md$/, '')
@@ -85,12 +96,12 @@ export async function readFragments(directory: string): Promise<FragmentReadResu
         await readFile(join(directory, entry.name, file.name), 'utf8'),
         path
       )
-      errors.push(...parsed.errors)
-      if (parsed.bullets.length > 0)
-        fragments.push({ pullRequest, category, bullets: parsed.bullets })
+      appendAll(errors, parsed.errors)
+      if (parsed.bullets.length > 0) fragments.push({ source, category, bullets: parsed.bullets })
     }
   }
-  fragments.sort((a, b) => a.pullRequest - b.pullRequest)
+  // Pull requests in the order they were opened, then advisories.
+  fragments.sort((a, b) => a.source.localeCompare(b.source, 'en', { numeric: true }))
   // Directory listings come in no fixed order; sorted errors read the same on every machine.
   return { fragments, errors: errors.toSorted() }
 }
@@ -115,7 +126,12 @@ function unreleasedBullets(changelog: string, nodes: RootContent[]): Map<Categor
         throw new Error(`${at}: "${text}" is not an Unreleased category.`)
       }
     } else if (node.type === 'list' && !node.ordered && current) {
-      bullets.get(current)?.push(...node.children.map((item) => listItemMarkdown(changelog, item)))
+      const list = bullets.get(current)
+      if (list)
+        appendAll(
+          list,
+          node.children.map((item) => listItemMarkdown(changelog, item))
+        )
     } else {
       throw new Error(`${at}: Unreleased holds content outside a category bullet list.`)
     }
@@ -145,7 +161,8 @@ export function assembleUnreleased(changelog: string, fragments: ChangeFragment[
 
   const bullets = unreleasedBullets(changelog, tree.children.slice(headingIndex + 1, end))
   for (const fragment of fragments) {
-    bullets.get(FRAGMENT_CATEGORIES[fragment.category])?.push(...fragment.bullets)
+    const list = bullets.get(FRAGMENT_CATEGORIES[fragment.category])
+    if (list) appendAll(list, fragment.bullets)
   }
 
   const sectionStart = tree.children[headingIndex].position?.start.offset ?? 0
@@ -159,7 +176,7 @@ export async function removeFragments(
   directory: string,
   fragments: ChangeFragment[]
 ): Promise<void> {
-  const folders = new Set(fragments.map((fragment) => String(fragment.pullRequest)))
+  const folders = new Set(fragments.map((fragment) => fragment.source))
   await Promise.all(
     [...folders].map((folder) => rm(join(directory, folder), { recursive: true, force: true }))
   )

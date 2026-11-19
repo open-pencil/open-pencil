@@ -12,8 +12,8 @@ const models = [
     group: 'Recommended'
   },
   {
-    value: 'openai/gpt-6.1-sol',
-    label: 'GPT-6.1 Sol',
+    value: 'openai/gpt-6.2-sol',
+    label: 'GPT-6.2 Sol',
     meta: 'Latest',
     group: 'Latest'
   },
@@ -65,7 +65,7 @@ const meta = {
     template: `
       <div class="w-80 bg-canvas p-6 text-surface">
         <AppCombobox v-model="value" v-bind="args" />
-        <p class="mt-3 font-mono text-[10px] text-muted">{{ value }}</p>
+        <p class="mt-3 font-mono text-3xs text-muted">{{ value }}</p>
       </div>
     `
   }),

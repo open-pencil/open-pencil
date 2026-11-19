@@ -2,7 +2,7 @@ import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
   await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()

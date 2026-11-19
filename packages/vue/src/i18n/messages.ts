@@ -23,7 +23,6 @@ import { pageMessageDefaults, pageMessages } from '#vue/i18n/messages/pages'
 import { panelMessageDefaults, panelMessages } from '#vue/i18n/messages/panels'
 import { recoveryMessageDefaults, recoveryMessages } from '#vue/i18n/messages/recovery'
 import { renameMessageDefaults, renameMessages } from '#vue/i18n/messages/rename'
-import { renderingMessageDefaults, renderingMessages } from '#vue/i18n/messages/rendering'
 import { settingsMessageDefaults, settingsMessages } from '#vue/i18n/messages/settings'
 import { shapeMessageDefaults, shapeMessages } from '#vue/i18n/messages/shapes'
 import { statusMessageDefaults, statusMessages } from '#vue/i18n/messages/statuses'
@@ -56,7 +55,6 @@ export {
   pageMessages,
   panelMessages,
   recoveryMessages,
-  renderingMessages,
   renameMessages,
   settingsMessages,
   shapeMessages,
@@ -90,7 +88,6 @@ export const messageDefaults = {
   pages: pageMessageDefaults,
   panels: panelMessageDefaults,
   recovery: recoveryMessageDefaults,
-  rendering: renderingMessageDefaults,
   rename: renameMessageDefaults,
   settings: settingsMessageDefaults,
   shapes: shapeMessageDefaults,

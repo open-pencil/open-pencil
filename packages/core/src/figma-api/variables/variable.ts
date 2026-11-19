@@ -62,6 +62,7 @@ export function writeVariableValue(
   modeId: string,
   value: VariableValue
 ): void {
+  graph.willChangeVariable(variable.id)
   variable.valuesByMode[modeId] = structuredClone(value)
   updateTokenExpression(variable, modeId, value)
   reconcileVariableLayouts(graph, { variables: [variable.id] })
@@ -84,6 +85,13 @@ export class FigmaVariable {
     return variable
   }
 
+  /** The variable, reported to the graph as about to change. */
+  get #changing(): Variable {
+    const variable = this.#variable
+    this.#graph.willChangeVariable(variable.id)
+    return variable
+  }
+
   get name(): string {
     return this.#variable.name
   }
@@ -91,7 +99,7 @@ export class FigmaVariable {
   set name(name: string) {
     const variable = this.#variable
     assertVariableName(this.#graph, 'set_name', name, variable.collectionId, variable.id)
-    variable.name = name
+    this.#changing.name = name
   }
 
   get description(): string {
@@ -99,7 +107,7 @@ export class FigmaVariable {
   }
 
   set description(description: string) {
-    this.#variable.description = description
+    this.#changing.description = description
   }
 
   get hiddenFromPublishing(): boolean {
@@ -107,7 +115,7 @@ export class FigmaVariable {
   }
 
   set hiddenFromPublishing(hidden: boolean) {
-    this.#variable.hiddenFromPublishing = hidden
+    this.#changing.hiddenFromPublishing = hidden
   }
 
   get variableCollectionId(): string {
@@ -138,7 +146,7 @@ export class FigmaVariable {
 
   /** Scopes the plugin API cannot name stay, as the script never saw them. */
   set scopes(scopes: FigmaVariableScope[]) {
-    const variable = this.#variable
+    const variable = this.#changing
     if (scopes.includes('ALL_SCOPES')) {
       delete variable.scopes
       return
@@ -152,12 +160,12 @@ export class FigmaVariable {
   }
 
   setVariableCodeSyntax(platform: CodeSyntaxPlatform, value: string): void {
-    const variable = this.#variable
+    const variable = this.#changing
     variable.codeSyntax = { ...variable.codeSyntax, [platform]: value }
   }
 
   removeVariableCodeSyntax(platform: CodeSyntaxPlatform): void {
-    const variable = this.#variable
+    const variable = this.#changing
     const { [platform]: _removed, ...rest } = variable.codeSyntax ?? {}
     variable.codeSyntax = rest
   }
@@ -224,6 +232,7 @@ export class FigmaVariableCollection {
   }
 
   set name(name: string) {
+    this.#graph.willChangeCollection(this.id)
     this.#collection.name = name
   }
 

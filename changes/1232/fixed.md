@@ -1,1 +1,0 @@
-- Choosing from a menu that showed a placeholder, such as Move to in a dialog, no longer leaves the dialog hidden from screen readers.

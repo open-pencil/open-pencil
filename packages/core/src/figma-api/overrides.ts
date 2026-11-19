@@ -10,8 +10,10 @@ import type {
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import type { InstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 
-import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
-import { assertProxyEditable, graph, raw } from './accessor-utils'
+import { graphOf } from '#core/figma-api/graph'
+
+import type { NodeProxyInternals, ProxyThis } from './accessors/utils'
+import { assertProxyEditable, raw } from './accessors/utils'
 import { flushPendingLayout } from './pending-layout'
 
 /** One layer of an instance and the fields an edit changed on it, as Figma's `overrides`. */
@@ -40,6 +42,7 @@ const FIGMA_OVERRIDE_FIELDS: Readonly<Partial<Record<string, readonly string[]>>
   fontFamily: ['fontName'],
   fontWeight: ['fontName'],
   italic: ['fontName'],
+  fontStyle: ['fontName'],
   letterSpacing: ['letterSpacing'],
   lineHeight: ['lineHeight'],
   textCase: ['textCase'],
@@ -238,28 +241,41 @@ function resetInstanceOverrides(graph: SceneGraph, root: SceneNode): void {
   graph.syncInstance(outermost.id)
 }
 
+/**
+ * Figma's `InstanceNode` members for overrides: the list, and `removeOverrides` with its
+ * deprecated name `resetOverrides`, which do the same. Installed on instance proxies alone, as
+ * Figma has them on no other node.
+ */
 export function installInstanceOverrideAccessors(
-  prototype: object,
-  internals: NodeProxyInternals
+  target: object,
+  internals: NodeProxyInternals,
+  type: SceneNode['type']
 ): void {
-  Object.defineProperties(prototype, {
+  if (type !== 'INSTANCE') return
+  // A proxy a script kept from before the instance was detached checks that it still is one.
+  const instance = (target: ProxyThis, method: string): SceneNode => {
+    const node = raw(target, internals)
+    if (node.type !== 'INSTANCE') throw new TypeError(`${method}() can only be called on instances`)
+    return node
+  }
+  const removal = (method: string) => ({
+    value(this: ProxyThis) {
+      const node = instance(this, method)
+      assertProxyEditable(this, internals)
+      resetInstanceOverrides(graphOf(this), node)
+    }
+  })
+  Object.defineProperties(target, {
     overrides: {
       get(this: ProxyThis): FigmaInstanceOverride[] | undefined {
         const node = raw(this, internals)
         if (node.type !== 'INSTANCE') return undefined
         // Figma lists the size its layout gives the instance.
-        flushPendingLayout(graph(this, internals))
-        return instanceOverrides(graph(this, internals), node)
+        flushPendingLayout(graphOf(this))
+        return instanceOverrides(graphOf(this), node)
       }
     },
-    resetOverrides: {
-      value(this: ProxyThis) {
-        const node = raw(this, internals)
-        if (node.type !== 'INSTANCE')
-          throw new TypeError('resetOverrides() can only be called on instances')
-        assertProxyEditable(this, internals)
-        resetInstanceOverrides(graph(this, internals), node)
-      }
-    }
+    resetOverrides: removal('resetOverrides'),
+    removeOverrides: removal('removeOverrides')
   })
 }

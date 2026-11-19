@@ -2,15 +2,13 @@ import { es, jsx } from '@open-pencil/emit'
 
 import type { ComponentModel, GeneratedKind } from '../model'
 
-export const IDENTIFIER = /^[A-Za-z_$][\w$]*$/
-
 /** `styles.thumb`, or `styles['switch-thumb']` for a class that isn't an identifier. */
 export function moduleClass(className: string): es.SyntaxNode {
   return {
     type: 'MemberExpression',
     object: es.identifier('styles'),
-    property: IDENTIFIER.test(className) ? es.identifier(className) : es.string(className),
-    computed: !IDENTIFIER.test(className),
+    property: es.isIdentifierName(className) ? es.identifier(className) : es.string(className),
+    computed: !es.isIdentifierName(className),
     optional: false
   }
 }

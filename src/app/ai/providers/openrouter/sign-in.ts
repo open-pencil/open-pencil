@@ -1,8 +1,9 @@
+import { listen } from '@tauri-apps/api/event'
 import * as v from 'valibot'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
+import { createDeferred } from '@open-pencil/std/async'
 
-import { createDeferred } from '@/app/runtime/deferred'
 import { openExternalLink } from '@/app/shell/ui'
 import { WEB_APP_ORIGIN } from '@/constants'
 
@@ -83,7 +84,6 @@ function popupCallback(state: string): Promise<SignInCallback | { failure: 'bloc
  * the desktop shell forwards its query as an `oauth-callback` event.
  */
 async function deepLinkCallback(state: string): Promise<SignInCallback> {
-  const { listen } = await import('@tauri-apps/api/event')
   const { received, stop } = pendingRedirect()
   const unlisten = await listen<unknown>(OAUTH_CALLBACK_EVENT, (event) => {
     const callback = v.safeParse(oauthCallbackSchema, event.payload)

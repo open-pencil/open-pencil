@@ -9,7 +9,7 @@
     "test": "bun test tests"
   },
   "dependencies": {
-    "opentype.js": "^2.0.0"
+    "harfbuzzjs": "1.6.4"
   },
   "devDependencies": {
     "@open-pencil/core": "workspace:*",

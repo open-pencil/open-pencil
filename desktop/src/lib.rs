@@ -1,12 +1,17 @@
 mod agents;
+mod capabilities;
 mod credentials;
+mod explicit_sync;
 mod files;
 mod fonts;
+mod icons;
 mod launch;
 mod menu;
 mod network;
 mod system;
+mod updates;
 
+use capabilities::DesktopCapabilities;
 use credentials::{
     credential_access_paused, credential_read, credential_remove, credential_retry_access,
     credential_status, credential_store_availability, credential_write,
@@ -15,8 +20,8 @@ use fonts::{list_system_fonts, load_system_font};
 use launch::args;
 use menu::events::handle_menu_event;
 use menu::{
-    install_app_menu, native_menu_checked, set_native_menu_checked, set_native_menu_features,
-    NativeMenuInputs, NativeMenuState,
+    install_app_menu, native_menu_checked, set_native_menu_checked, set_native_menu_disabled,
+    set_native_menu_features, NativeMenuInputs, NativeMenuState,
 };
 use network::http::{cancel_http_request, proxy_http_request, ProxyHttpRequests};
 use std::sync::Mutex;
@@ -26,10 +31,24 @@ use tauri::{Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let _ = fix_path_env::fix();
-    agents::path::augment_process_path();
+    // Before anything starts GTK or EGL, which read the variable once: WebKitGTK before 2.54.2
+    // crashes on Wayland with NVIDIA otherwise (`explicit_sync`).
+    #[cfg(target_os = "linux")]
+    explicit_sync::disable_nvidia_explicit_sync();
+
+    let capabilities = DesktopCapabilities::from_env();
+    // Both only help find host programs; a sandbox that cannot run them has no use for
+    // the login shell `fix_path_env` starts.
+    if capabilities.host_processes {
+        let _ = fix_path_env::fix();
+        agents::path::augment_process_path();
+    }
 
     let mut builder = tauri::Builder::default();
+
+    if capabilities.self_update {
+        builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+    }
 
     #[cfg(feature = "native-test")]
     {
@@ -54,7 +73,14 @@ pub fn run() {
 
     builder = builder.plugin(tauri_plugin_deep_link::init());
 
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder
+            .on_web_content_process_terminate(system::window::reload_after_page_process_ended);
+    }
+
     builder
+        .manage(capabilities)
         .manage(launch::PendingOpen::default())
         .manage(ProxyHttpRequests::default())
         .manage(network::oauth::ChatGPTOAuthLoopback::default())
@@ -64,7 +90,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             agents::lookup::agent_lookup,
             agents::lookup::agent_workspace,
-            files::fig::build_fig_file,
+            files::fig::compress_fig_canvas,
             network::oauth::chatgpt_oauth_listen,
             network::oauth::chatgpt_oauth_wait,
             network::oauth::chatgpt_oauth_cancel,
@@ -76,6 +102,9 @@ pub fn run() {
             credential_store_availability,
             credential_write,
             agents::mcp::mcp_lookup,
+            agents::skills::skill_folders,
+            agents::skills::project_skill_folders,
+            agents::skills::skill_folder_file,
             #[cfg(feature = "native-test")]
             launch::native_test_open_deep_link,
             system::opener::open_external_url,
@@ -84,15 +113,20 @@ pub fn run() {
             launch::paths::path_matches_suffix,
             list_system_fonts,
             load_system_font,
+            icons::sf_symbols_catalogue,
+            icons::sf_symbols_render,
             proxy_http_request,
             cancel_http_request,
             files::recent::set_recent_files,
             set_native_menu_features,
+            set_native_menu_disabled,
             native_menu_checked,
             set_native_menu_checked,
             launch::take_pending_open,
             launch::take_pending_rooms,
             system::env::sharing_disabled_by_env,
+            system::crash::take_last_panic,
+            updates::check_for_update,
             launch::take_pending_cloud_links,
             system::env::webview_version
         ])
@@ -101,13 +135,41 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_os::init())
         .on_menu_event(|app, event| {
             handle_menu_event(app, event.id().0.as_str());
         })
-        .setup(|app| {
+        .setup(move |app| {
+            // Before the main window exists, so its first script can already spawn.
+            capabilities.grant(app.handle())?;
+
+            // Panics from here on are kept for the next launch to offer as a report.
+            if let Ok(directory) = app.path().app_data_dir() {
+                system::crash::install_panic_hook(
+                    directory,
+                    app.package_info().version.to_string(),
+                );
+            }
+
+            // The main window is built here rather than from the config alone, so that pages it
+            // opens with `window.open` reach the system browser.
+            let main = app
+                .config()
+                .app
+                .windows
+                .first()
+                .cloned()
+                .ok_or("the main window is not configured")?;
+            let window = tauri::WebviewWindowBuilder::from_config(app.handle(), &main)?
+                .initialization_script(capabilities.init_script())
+                .on_new_window(system::opener::open_new_window_externally(
+                    app.handle().clone(),
+                ))
+                .build()?;
+            fonts::watch::start(app.handle(), &window);
+
             launch::queue_open_paths(app.handle(), args::startup_open_paths());
 
             use tauri_plugin_deep_link::DeepLinkExt;

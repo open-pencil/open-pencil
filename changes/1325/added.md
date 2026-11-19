@@ -1,1 +1,0 @@
-- Scripts can create shapes with text and read or set their kind and label: `figma.createShapeWithText()`, `shapeType` (refusing kinds FigJam does not have), and `text` as the label's text node (#1114).

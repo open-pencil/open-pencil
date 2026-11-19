@@ -9,6 +9,7 @@ import type {
   VariableCollectionMode
 } from '@open-pencil/scene-graph'
 import { printFormula, variableValueReferences } from '@open-pencil/scene-graph/variables'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { fileSegment, placeTokens, tokenPath, tokenReference, tokenTree } from './paths'
 import { styleTokens, withOriginalName, type TokenReferences } from './styles'
@@ -213,7 +214,7 @@ export function exportDesignTokens(graph: SceneGraph): DesignTokenExport {
   const context: ExportContext = { graph, references, collectionOf, issues }
   const files: DesignTokenFile[] = []
   const styles = styleTokens(graph, references)
-  issues.push(...styles.issues)
+  appendAll(issues, styles.issues)
   const stylesPath = styles.tokens.length > 0 ? STYLES_FILE : null
   const folders = distinct(collections.map((collection) => fileSegment(collection.name)))
   const collectionNames = distinct(

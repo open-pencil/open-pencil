@@ -6,22 +6,19 @@ import { IS_BROWSER } from '@open-pencil/core/constants'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
 import { getActiveEditorStoreOrNull, useActiveEditorStoreRef } from '@/app/editor/active-store'
+import {
+  DEFAULT_THEME,
+  resolveAppTheme,
+  THEME_STORAGE_KEY,
+  type AppTheme
+} from '@/app/settings/theme'
 import { useAccentPalette } from '@/app/shell/accent'
 import { ACCENT_TOKENS, type AccentPalette } from '@/app/shell/accent/palette'
 
-export const APP_THEMES = ['dark', 'light', 'auto'] as const
-export type AppTheme = (typeof APP_THEMES)[number]
-
-const THEME_STORAGE_KEY = 'open-pencil:theme'
-const DEFAULT_THEME: AppTheme = 'dark'
-
 const theme = useLocalStorage<AppTheme>(THEME_STORAGE_KEY, DEFAULT_THEME)
 const prefersDark = usePreferredDark()
-/** The theme in effect; a stored value that is not a theme reads as the default dark. */
-export const resolvedAppTheme = computed<'dark' | 'light'>(() => {
-  if (theme.value === 'auto') return prefersDark.value ? 'dark' : 'light'
-  return theme.value === 'light' ? 'light' : 'dark'
-})
+/** The theme in effect. */
+export const resolvedAppTheme = computed(() => resolveAppTheme(theme.value, prefersDark.value))
 const accentPalette = useAccentPalette(() => resolvedAppTheme.value)
 
 function readRulerTheme(): RulerTheme | null {

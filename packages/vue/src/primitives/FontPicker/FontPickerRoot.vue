@@ -21,15 +21,23 @@ import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 import type { FontPickerUI } from '#vue/primitives/FontPicker/types'
 import { useFontPicker, type FontAccessController } from '#vue/primitives/FontPicker/useFontPicker'
 
-const { listFamilies, localFontAccess, ui, emptySearchText, emptyFontsText, emptyFontsHint } =
-  defineProps<{
-    listFamilies: () => Promise<string[] | FontFamilyOption[]>
-    localFontAccess?: FontAccessController
-    ui?: FontPickerUI
-    emptySearchText?: string
-    emptyFontsText?: string
-    emptyFontsHint?: string
-  }>()
+const {
+  listFamilies,
+  localFontAccess,
+  ui,
+  searchPlaceholder = 'Search fonts…',
+  emptySearchText,
+  emptyFontsText,
+  emptyFontsHint
+} = defineProps<{
+  listFamilies: () => Promise<string[] | FontFamilyOption[]>
+  localFontAccess?: FontAccessController
+  ui?: FontPickerUI
+  searchPlaceholder?: string
+  emptySearchText?: string
+  emptyFontsText?: string
+  emptyFontsHint?: string
+}>()
 
 const modelValue = defineModel<string>({ required: true })
 const emit = defineEmits<{ select: [family: string] }>()
@@ -114,7 +122,7 @@ function familyOf(value: unknown): unknown {
             v-model="searchTerm"
             :display-value="() => ''"
             :class="ui?.search"
-            placeholder="Search fonts…"
+            :placeholder="searchPlaceholder"
             autocomplete="off"
             autocorrect="off"
             autocapitalize="off"

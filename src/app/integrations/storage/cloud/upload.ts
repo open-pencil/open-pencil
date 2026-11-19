@@ -2,12 +2,14 @@ import { limitAsync, retry } from 'es-toolkit'
 
 import type { CloudAPIClient } from '@open-pencil/cloud/client'
 import type { ObjectUploadTarget } from '@open-pencil/cloud/contract'
+import { backoffDelay, SECOND_MS, type Backoff } from '@open-pencil/std/timing'
 
 import type { StorageTransferProgress } from '../types'
 
 const MULTIPART_CONCURRENCY = 4
 const PART_RETRIES = 2
-const RETRY_DELAY_MS = 200
+/** A part's upload is retried soon, since a part fails on a dropped connection more than a busy store. */
+const PART_RETRY: Backoff = { baseMs: 200, capMs: 5 * SECOND_MS, jitter: true }
 
 type ObjectFetch = (input: string, init: RequestInit) => Promise<Response>
 type MultipartUpload = Extract<ObjectUploadTarget, { kind: 'multipart' }>
@@ -82,7 +84,7 @@ async function putPart(
     },
     {
       retries: PART_RETRIES,
-      delay: (attempt) => RETRY_DELAY_MS * 2 ** attempt,
+      delay: (attempt) => backoffDelay(attempt, PART_RETRY),
       signal,
       shouldRetry: (error) => error instanceof ObjectUploadError && retryable(error.status)
     }

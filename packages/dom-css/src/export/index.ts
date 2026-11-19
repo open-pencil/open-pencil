@@ -2,6 +2,7 @@
 export {
   sceneGraphToDesignDocument,
   sceneNodeToDesignDocument,
+  sceneNodesToDesignDocument,
   type SceneGraphToDesignOptions,
   type VectorElementRenderer
 } from './projection'
@@ -12,7 +13,7 @@ export {
   sceneNodesToTailwindJSXWithLayers,
   type TailwindJSXWithLayers
 } from './tailwind-jsx'
-export { serializeHTML } from './html'
+export { serializeHTML, serializeNode } from './html'
 export {
   LAYER_COMPONENT_FRAMEWORKS,
   layerComponents,

@@ -7,6 +7,7 @@ import type {
 } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { variableValueReferences } from '@open-pencil/scene-graph/variables'
+import { appendAll } from '@open-pencil/std/arrays'
 
 /** A reference to a variable, as Figma's plugin API writes one. */
 export interface FigmaVariableAlias {
@@ -104,7 +105,7 @@ function readsVariable(graph: SceneGraph, from: string, id: string): boolean {
     const variable = graph.variables.get(next)
     if (!variable) continue
     for (const value of Object.values(variable.valuesByMode)) {
-      pending.push(...variableValueReferences(value))
+      appendAll(pending, variableValueReferences(value))
     }
   }
   return false

@@ -2,7 +2,12 @@ import { tool } from 'ai'
 import { isPlainObject } from 'es-toolkit'
 
 import { graphFromPageSnapshot } from '@open-pencil/core'
-import { registerComponentCatalog, isAtomicTool, toolsToAI } from '@open-pencil/core/tools'
+import {
+  registerComponentCatalog,
+  isAtomicTool,
+  toolsToAI,
+  type AIAdapterOptions
+} from '@open-pencil/core/tools'
 
 import {
   currentRun,
@@ -41,7 +46,11 @@ function withUndoNote(result: unknown, note: string): unknown {
   return isPlainObject(result) ? { ...result, undoNote: note } : { result, undoNote: note }
 }
 
-export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnosticContext) {
+export function createAITools(
+  store: EditorStore,
+  diagnosticContext?: AIDiagnosticContext,
+  encodeModelImage?: AIAdapterOptions['encodeModelImage']
+) {
   const libraryService = useLibraryService()
   libraryService.bindEditor(store)
   registerComponentCatalog(store.graph, libraryService)
@@ -91,7 +100,8 @@ export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnost
           entry.cause
         )
       },
-      getStepBudget: () => stepBudget(store)
+      getStepBudget: () => stepBudget(store),
+      encodeModelImage
     },
     { tool }
   )

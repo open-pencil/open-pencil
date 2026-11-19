@@ -4,6 +4,9 @@ import { randomUUID } from 'node:crypto'
 import { McpServer } from '@modelcontextprotocol/server'
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
+import { MCP_SERVER_INSTRUCTIONS } from '#mcp/instructions'
 import { resolveMCPRoot } from '#mcp/root'
 import { MCP_VERSION, registerTools } from '#mcp/server'
 import { createStdioRPCBridge } from '#mcp/stdio/bridge'
@@ -91,7 +94,10 @@ const bridge = createStdioRPCBridge({
   }
 })
 
-const mcpServer = new McpServer({ name: 'open-pencil', version: MCP_VERSION })
+const mcpServer = new McpServer(
+  { name: 'open-pencil', version: MCP_VERSION },
+  { instructions: MCP_SERVER_INSTRUCTIONS }
+)
 // One client per process: its tool calls show as one agent in the app.
 registerTools(mcpServer, {
   policy: toolPolicy,
@@ -112,7 +118,7 @@ process.on('uncaughtException', (err) => {
 })
 
 process.on('unhandledRejection', (reason: unknown) => {
-  const message = reason instanceof Error ? reason.message : String(reason)
+  const message = errorMessage(reason)
   process.stderr.write(`Fatal: unhandled rejection — ${message}\n`)
   process.exit(1)
 })

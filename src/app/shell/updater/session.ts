@@ -1,6 +1,14 @@
+import { getCurrentWindow } from '@tauri-apps/api/window'
+import { relaunch } from '@tauri-apps/plugin-process'
 import type { DownloadEvent } from '@tauri-apps/plugin-updater'
 import { shallowRef, type ShallowRef } from 'vue'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
+import { appPreferences } from '@/app/settings/preferences/store'
+
+import { resolveUpdateChannel } from './channel'
+import { checkUpdateChannel } from './feed'
 import type { UpdateFailureStep } from './messages'
 import type { DownloadProgress } from './progress'
 import { requestRestartApproval } from './restart'
@@ -51,6 +59,11 @@ export interface UpdaterSession {
   restart(): Promise<void>
   /** Repeats the step that failed. */
   retry(): Promise<void>
+  /**
+   * Checks again after the update channel changed, so the window never installs the other
+   * channel's build; one already downloading, installing, or installed carries on.
+   */
+  recheck(): Promise<void>
   dismiss(): Promise<void>
 }
 
@@ -74,15 +87,26 @@ export function createUpdaterSession(backend: UpdaterBackend): UpdaterSession {
     await update?.close()
   }
 
+  // Each check's number: a recheck can start while an earlier one runs, and the earlier one,
+  // asked of the other channel, must not replace what the newer one finds.
+  let checks = 0
+
   async function check() {
+    const current = ++checks
     state.value = { status: 'checking' }
     try {
       await release()
-      pending = await backend.check()
+      const update = await backend.check()
+      if (current !== checks) {
+        await update?.close()
+        return
+      }
+      pending = update
       state.value = pending
         ? { status: 'available', release: releaseInfo(pending) }
         : { status: 'up-to-date' }
     } catch (error) {
+      if (current !== checks) return
       state.value = { status: 'failed', step: 'check', error: errorMessage(error) }
     }
   }
@@ -217,13 +241,19 @@ export function createUpdaterSession(backend: UpdaterBackend): UpdaterSession {
     return install()
   }
 
+  async function recheck() {
+    const { status } = state.value
+    if (status === 'downloading' || status === 'installing' || status === 'installed') return
+    await check()
+  }
+
   async function dismiss() {
     if (state.value.status === 'installing') return
     await release()
     await backend.closeWindow()
   }
 
-  return { state, check, install, cancel, restart, retry, dismiss }
+  return { state, check, install, cancel, restart, retry, recheck, dismiss }
 }
 
 function releaseInfo(update: PendingUpdate): ReleaseInfo {
@@ -234,23 +264,16 @@ function releaseInfo(update: PendingUpdate): ReleaseInfo {
   }
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
-}
-
 export function createTauriUpdaterBackend(): UpdaterBackend {
   return {
     async check() {
-      const { check } = await import('@tauri-apps/plugin-updater')
-      return check()
+      return checkUpdateChannel(resolveUpdateChannel(appPreferences.value.updates.channel))
     },
     confirmRestart: requestRestartApproval,
     async relaunch() {
-      const { relaunch } = await import('@tauri-apps/plugin-process')
       await relaunch()
     },
     async closeWindow() {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window')
       await getCurrentWindow().close()
     },
     installQuitsApp: navigator.userAgent.includes('Windows')

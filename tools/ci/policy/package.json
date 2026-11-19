@@ -9,6 +9,8 @@
     "test": "bun test tests"
   },
   "dependencies": {
+    "@commitlint/format": "^21.2.3",
+    "@commitlint/types": "^21.2.3",
     "@open-pencil/package-artifacts-tools": "workspace:*"
   }
 }

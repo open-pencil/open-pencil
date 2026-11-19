@@ -2,15 +2,12 @@
 import {
   ContextMenuContent,
   ContextMenuPortal,
-  ContextMenuRoot,
-  ContextMenuTrigger,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItemIndicator,
   DropdownMenuPortal,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -25,13 +22,16 @@ import ZoomDropdown from '@/components/editor/ZoomDropdown.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppContextMenuTrigger from '@/components/ui/menu/AppContextMenuTrigger.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
-import { comments as commentsTheme } from '@/theme/comments'
 
 import CommentActionsMenu from './CommentActionsMenu.vue'
 import CommentListItem from './CommentListItem.vue'
+import { comments as commentsTheme } from './ui'
 
 /** The comments list that takes over the right sidebar while the Comment tool is active. */
 const store = useEditorStore()
@@ -75,7 +75,7 @@ function setSort(value: unknown) {
       {{ messages.comments }}
       <template #actions>
         <ZoomDropdown />
-        <DropdownMenuRoot :modal="false">
+        <AppDropdownMenuRoot :modal="false">
           <DropdownMenuTrigger as-child>
             <IconButton :label="messages.filterAndSort" :active="filtered">
               <icon-lucide-list-filter class="size-3.5" />
@@ -120,7 +120,7 @@ function setSort(value: unknown) {
               </MenuScrollArea>
             </DropdownMenuContent>
           </DropdownMenuPortal>
-        </DropdownMenuRoot>
+        </AppDropdownMenuRoot>
       </template>
     </PanelHeader>
 
@@ -142,17 +142,18 @@ function setSort(value: unknown) {
       :label="filtered ? messages.noMatches : messages.empty"
     />
     <ul v-else :class="ui.list()" :aria-label="messages.comments">
-      <ContextMenuRoot v-for="thread in listed" :key="thread.id" :modal="false">
-        <ContextMenuTrigger as-child>
+      <AppContextMenuRoot v-for="thread in listed" :key="thread.id" :modal="false">
+        <AppContextMenuTrigger as-child>
           <CommentListItem
             :thread="thread"
             :number="numbers.get(thread.id) ?? 0"
             :page-name="pageName(thread.pageId, thread.pageName)"
             :active="comments.activeThreadId.value === thread.id"
+            :unread="comments.isUnread(thread.id)"
             @select="comments.focusThread(thread.id)"
           >
             <template #actions>
-              <DropdownMenuRoot :modal="false">
+              <AppDropdownMenuRoot :modal="false">
                 <DropdownMenuTrigger as-child>
                   <IconButton :label="messages.moreActions">
                     <icon-lucide-ellipsis class="size-3.5" />
@@ -165,7 +166,7 @@ function setSort(value: unknown) {
                     </MenuScrollArea>
                   </DropdownMenuContent>
                 </DropdownMenuPortal>
-              </DropdownMenuRoot>
+              </AppDropdownMenuRoot>
               <IconButton
                 :label="thread.resolved ? messages.reopen : messages.resolve"
                 :active="thread.resolved"
@@ -177,7 +178,7 @@ function setSort(value: unknown) {
               </IconButton>
             </template>
           </CommentListItem>
-        </ContextMenuTrigger>
+        </AppContextMenuTrigger>
         <ContextMenuPortal>
           <ContextMenuContent :class="menuCls.content">
             <MenuScrollArea>
@@ -185,7 +186,7 @@ function setSort(value: unknown) {
             </MenuScrollArea>
           </ContextMenuContent>
         </ContextMenuPortal>
-      </ContextMenuRoot>
+      </AppContextMenuRoot>
     </ul>
   </section>
 </template>

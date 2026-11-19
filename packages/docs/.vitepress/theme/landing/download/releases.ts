@@ -61,6 +61,8 @@ export function classifyAsset(asset: {
   url: string
   size: number
 }): ReleaseFile | null {
+  // OpenPencil Chromium (`OpenPencil-Chromium_…`) shares the release but is not offered here.
+  if (asset.name.startsWith('OpenPencil-Chromium_')) return null
   const match = FILE_PATTERNS.find(({ pattern }) => pattern.test(asset.name))
   if (!match) return null
   const { platform, arch, format } = match
@@ -79,14 +81,20 @@ export function filesFor(release: Release, platform: Platform): ReleaseFile[] {
     )
 }
 
+/** The rolling nightly pre-release, which the update channel offers but the page never does. */
+const NIGHTLY_TAG = 'nightly'
+
 /**
  * The newest stable release, and the newest pre-release when it came out after it. Releases are
  * drafted before they are published, so they are compared by when they were published.
  */
-export function latestReleases<T extends { prerelease: boolean; published_at: string }>(
-  published: readonly T[]
-): { stable: T | null; beta: T | null } {
-  const [betas, stables] = partition(published, (release) => release.prerelease)
+export function latestReleases<
+  T extends { tag_name: string; prerelease: boolean; published_at: string }
+>(published: readonly T[]): { stable: T | null; beta: T | null } {
+  const [betas, stables] = partition(
+    published.filter((release) => release.tag_name !== NIGHTLY_TAG),
+    (release) => release.prerelease
+  )
   const stable = maxBy(stables, (release) => Date.parse(release.published_at)) ?? null
   const beta = maxBy(betas, (release) => Date.parse(release.published_at)) ?? null
   const newer = beta && (!stable || Date.parse(beta.published_at) > Date.parse(stable.published_at))

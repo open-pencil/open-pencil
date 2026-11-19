@@ -4,10 +4,13 @@ import type { CalendarDate } from '@internationalized/date'
 import { groupBy, sumBy } from 'es-toolkit'
 import * as v from 'valibot'
 
+import { appendAll } from '@open-pencil/std/arrays'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
+
 import { releaseFileKind } from './assets'
 
 const API = 'https://api.github.com'
-const REQUEST_TIMEOUT_MS = 15_000
+const REQUEST_TIMEOUT_MS = DEADLINE_MS.slowRequest
 // GitHub's maximum page size; a repository with more releases or issues takes several pages.
 const PER_PAGE = 100
 
@@ -99,7 +102,7 @@ export function githubClient(
     const all: v.InferOutput<typeof releasesSchema> = []
     for (let page = 1; ; page++) {
       const batch = await get(`/releases?per_page=${PER_PAGE}&page=${page}`, releasesSchema)
-      all.push(...batch)
+      appendAll(all, batch)
       if (batch.length < PER_PAGE) return all
     }
   }

@@ -1,1 +1,0 @@
-- Shadows of a frame or group whose only content is one rotated or flipped layer render about four times faster.

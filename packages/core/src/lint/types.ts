@@ -1,3 +1,5 @@
+import type { SharedStyleKind } from '@open-pencil/scene-graph'
+
 export type Severity = 'error' | 'warning' | 'info' | 'off'
 
 export type Category =
@@ -83,6 +85,7 @@ export interface LintNode {
   rotation: number
   visible: boolean
   locked: boolean
+  opacity: number
   layoutMode: string
   layoutPositioning: 'AUTO' | 'ABSOLUTE'
   layoutGrow: number
@@ -123,6 +126,10 @@ export interface LintNode {
     visible: boolean
     radius: number
   }>
+  /** The shared text style this layer uses, when it has one. */
+  textStyleId: string | null
+  /** The shared effect style this layer uses, when it has one. */
+  effectStyleId: string | null
   parent?: LintNode
 }
 
@@ -136,6 +143,8 @@ export interface LintVariables {
 
 export interface RuleContext {
   variables: LintVariables
+  /** Whether `id`, a layer's style link, names a shared style of that kind in the document. */
+  isSharedStyle(kind: SharedStyleKind, id: string | null): boolean
   report(issue: {
     node: LintNode
     message: string

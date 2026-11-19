@@ -1,0 +1,7 @@
+// The Worker xml.test.ts runs, on the deployments' compatibility date and flags.
+{
+  "name": "cloud-xml-test",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"]
+}

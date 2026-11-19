@@ -1,13 +1,13 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { deflateSync } from 'fflate'
+import { encodeArchive, open } from '#core-tests/helpers/fig/archive'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { compressFigDataSync, parseFigBuffer } from '@open-pencil/fig'
-import { getCompiledSchema, getSchemaBytes, initCodec } from '@open-pencil/kiwi/fig/codec'
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { parseFigBuffer } from '@open-pencil/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type Fill, type SceneNode } from '@open-pencil/scene-graph'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive/access'
 
@@ -61,24 +61,8 @@ async function adjustedPhotoArchive(): Promise<Uint8Array> {
   for (const record of parsed.nodeChanges)
     for (const paint of [...(record.fillPaints ?? []), ...(record.strokePaints ?? [])])
       if (paint.type === 'IMAGE') paint.paintFilter = { ...PAINT_FILTER }
-  const kiwi = getCompiledSchema().encodeMessage({
-    type: 'NODE_CHANGES',
-    sessionID: 0,
-    ackID: 0,
-    nodeChanges: parsed.nodeChanges,
-    blobs: parsed.blobs.map((bytes) => ({ bytes }))
-  })
-  return compressFigDataSync(
-    deflateSync(getSchemaBytes()),
-    kiwi,
-    expectDefined(parsed.thumbnailPNG, 'thumbnail'),
-    parsed.metaJSON ?? '{}',
-    [{ name: `images/${PHOTO_NAME}`, data: PHOTO }]
-  )
+  return encodeArchive(parsed, [{ name: `images/${PHOTO_NAME}`, data: PHOTO }])
 }
-
-const open = (bytes: Uint8Array) =>
-  parseFigFile(bytes.slice().buffer as ArrayBuffer, { populate: 'first-page' })
 
 function photoIn(graph: SceneGraph): SceneNode {
   return expectDefined(

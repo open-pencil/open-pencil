@@ -4,6 +4,7 @@ import type { ComputedRef, Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
 import type { BlendMode, SceneNode } from '@open-pencil/scene-graph'
+import { independentCornerChanges } from '@open-pencil/scene-graph/variables'
 
 import type { CornerGeometryKey, CornerRadiusKey } from '#vue/controls/appearance/types'
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
@@ -241,9 +242,7 @@ export function createAppearanceActions({
       if (liveNodes.length === 0) return
       const allVisible = liveNodes.every((n) => n.visible)
       editor.undo.runBatch('Toggle visibility', () => {
-        for (const n of liveNodes) {
-          editor.updateNodeWithUndo(n.id, { visible: !allVisible }, 'Toggle visibility')
-        }
+        for (const n of liveNodes) editor.setNodeVisibility(n.id, !allVisible)
       })
       return
     }
@@ -252,7 +251,7 @@ export function createAppearanceActions({
     if (!selected) return
     const liveNode = editor.getNode(selected.id)
     if (!liveNode) return
-    editor.updateNodeWithUndo(liveNode.id, { visible: !liveNode.visible }, 'Toggle visibility')
+    editor.setNodeVisibility(liveNode.id, !liveNode.visible)
   }
 
   function toggleIndependentCorners() {
@@ -281,13 +280,7 @@ export function createAppearanceActions({
             if (target.independentCorners) continue
             editor.updateNodeWithUndo(
               target.id,
-              {
-                independentCorners: true,
-                topLeftRadius: target.cornerRadius,
-                topRightRadius: target.cornerRadius,
-                bottomRightRadius: target.cornerRadius,
-                bottomLeftRadius: target.cornerRadius
-              } as Partial<SceneNode>,
+              independentCornerChanges(target),
               'Independent corner radii'
             )
           } else {
@@ -301,7 +294,7 @@ export function createAppearanceActions({
                 topRightRadius: uniform,
                 bottomRightRadius: uniform,
                 bottomLeftRadius: uniform
-              } as Partial<SceneNode>,
+              },
               'Uniform corner radius'
             )
           }
@@ -336,7 +329,7 @@ export function createAppearanceActions({
       for (const target of targets) {
         editor.commitNodeUpdate(
           target.id,
-          { [key]: snapshots?.get(target.id) ?? previous } as Partial<SceneNode>,
+          { [key]: snapshots?.get(target.id) ?? previous },
           `Change ${key}`
         )
       }

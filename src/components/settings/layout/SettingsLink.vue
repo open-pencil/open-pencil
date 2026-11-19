@@ -5,5 +5,5 @@ const { href } = defineProps<{ href: string }>()
 </script>
 
 <template>
-  <ExternalLink :href="href" class="text-[11px]"><slot /></ExternalLink>
+  <ExternalLink :href="href" class="text-2xs"><slot /></ExternalLink>
 </template>

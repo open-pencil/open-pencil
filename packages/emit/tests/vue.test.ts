@@ -153,3 +153,15 @@ describe('conditional elements', () => {
     )
   })
 })
+
+describe('spread attributes', () => {
+  test('bind an object with v-bind, before the attributes that override it', () => {
+    const node = vue.element('input', [
+      vue.spread(es.parseExpression('{ ...$attrs, class: undefined }')),
+      vue.attribute('class', 'field')
+    ])
+    expect(vue.printTemplate(node)).toBe(
+      '<input v-bind="({ ...$attrs, class: undefined })" class="field" />'
+    )
+  })
+})

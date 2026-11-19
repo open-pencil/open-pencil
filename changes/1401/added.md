@@ -1,1 +1,0 @@
-- `@open-pencil/core/io/formats/html` exports the HTML renderer on its own, like the raster and SVG exporters.

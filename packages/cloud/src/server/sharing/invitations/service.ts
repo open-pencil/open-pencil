@@ -11,10 +11,17 @@ import { cloudInvitationURL } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents/errors'
-import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
+import {
+  INVITATION_LIFETIME_MS,
+  INVITATION_SECRET_BYTES,
+  spendInvitationBudget,
+  type DocumentInvitationMessage,
+  type InvitationDelivery,
+  type InvitationOutbox
+} from '#cloud/server/invitations'
 import type { Kysely } from 'kysely'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { requireSharingAccess } from '../access'
 import {
@@ -26,9 +33,6 @@ import {
 import { dateString, grantContract, invitationContract } from '../contracts'
 import { hashCapability } from '../crypto'
 import { DocumentShareInvalidError, InvitationDeliveryError } from '../errors'
-
-const INVITATION_SECRET_BYTES = 24
-const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60_000
 
 /** Workspace invitations share the invitation link; their ids are not document invitations. */
 export type WorkspaceInvitationResolver = {
@@ -46,7 +50,6 @@ export type InvitationServiceOptions = {
   delivery?: InvitationDelivery
   outbox?: InvitationOutbox
   publicURL?: string
-  appURL?: string
 }
 
 export function createInvitationService(
@@ -71,6 +74,8 @@ export function createInvitationService(
         'document.name as documentName'
       ])
       .where('documentInvitation.id', '=', invitationId)
+      // A taken-down document's invitations name nothing until it is restored.
+      .where('document.disabledAt', 'is', null)
       .executeTakeFirst()
     if (!invitation || !invitationTokenIsActive(invitation, input.token)) {
       throw new DocumentShareInvalidError()
@@ -131,30 +136,39 @@ export function createInvitationService(
       const token = randomHex(INVITATION_SECRET_BYTES)
       const expiresAt = new Date(Date.now() + INVITATION_LIFETIME_MS)
       const deliveryContext =
-        (options.delivery || options.outbox) && options.publicURL && options.appURL
+        (options.delivery || options.outbox) && options.publicURL
           ? await Promise.all([
               database
                 .selectFrom('user')
-                .select('name')
+                .select(['name', 'locale'])
                 .where('id', '=', userId)
                 .executeTakeFirst(),
               database
                 .selectFrom('document')
                 .select('name')
                 .where('id', '=', documentId)
-                .executeTakeFirstOrThrow()
+                .executeTakeFirstOrThrow(),
+              database
+                .selectFrom('user')
+                .select('locale')
+                .where((expression) =>
+                  expression(expression.fn('lower', [expression.ref('email')]), '=', input.email)
+                )
+                .executeTakeFirst()
             ])
           : null
       const acceptanceURL =
-        deliveryContext && options.publicURL && options.appURL
-          ? cloudInvitationURL(options.appURL, options.publicURL, id, token)
+        deliveryContext && options.publicURL
+          ? cloudInvitationURL(options.publicURL, id, token)
           : null
-      const message =
+      const message: DocumentInvitationMessage | null =
         deliveryContext && acceptanceURL
           ? {
               deliveryId: id,
               recipientEmail: input.email,
-              inviterName: deliveryContext[0]?.name ?? 'An OpenPencil user',
+              // Someone without an account yet reads the inviter's language.
+              locale: deliveryContext[2]?.locale ?? deliveryContext[0]?.locale ?? 'en',
+              inviterName: deliveryContext[0]?.name ?? null,
               documentName: deliveryContext[1].name,
               permission: input.permission,
               expiresAt: expiresAt.toISOString(),
@@ -162,6 +176,7 @@ export function createInvitationService(
             }
           : null
       const row = await database.transaction().execute(async (transaction) => {
+        await spendInvitationBudget(transaction, { senderId: userId, email: input.email })
         const inserted = await transaction
           .insertInto('documentInvitation')
           .values({
@@ -235,18 +250,21 @@ export function createInvitationService(
       if (workspace) return { kind: 'workspace', ...workspace }
       const invitation = await database
         .selectFrom('documentInvitation')
+        .innerJoin('document', 'document.id', 'documentInvitation.documentId')
         .select([
-          'id',
-          'documentId',
-          'emailNormalized',
-          'permission',
-          'invitedBy',
-          'tokenHash',
-          'expiresAt',
-          'acceptedAt',
-          'revokedAt'
+          'documentInvitation.id',
+          'documentInvitation.documentId',
+          'documentInvitation.emailNormalized',
+          'documentInvitation.permission',
+          'documentInvitation.invitedBy',
+          'documentInvitation.tokenHash',
+          'documentInvitation.expiresAt',
+          'documentInvitation.acceptedAt',
+          'documentInvitation.revokedAt'
         ])
-        .where('id', '=', invitationId)
+        .where('documentInvitation.id', '=', invitationId)
+        // Refused, not consumed, while the document is taken down, so it works again on restore.
+        .where('document.disabledAt', 'is', null)
         .executeTakeFirst()
       if (
         !invitation ||

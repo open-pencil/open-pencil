@@ -22,13 +22,13 @@ describe('version history', () => {
     const store = createEditorStore()
     openVersionHistory(store)
     expect(isVersionHistoryOpen(store)).toBe(true)
-    expect(store.state.readOnly).toBe(true)
+    expect(store.state.hostRestrictions.readOnly).toBe(true)
     expect(shownEditorStore(store)).toBe(store)
     expect(versionPreviewKey(store)).toBe('')
 
     closeVersionHistory(store)
     expect(isVersionHistoryOpen(store)).toBe(false)
-    expect(store.state.readOnly).toBe(false)
+    expect(store.state.hostRestrictions.readOnly).toBe(false)
   })
 
   test('leaves a viewer’s document read-only after closing', () => {
@@ -36,7 +36,7 @@ describe('version history', () => {
     store.setReadOnly(true)
     openVersionHistory(store)
     closeVersionHistory(store)
-    expect(store.state.readOnly).toBe(true)
+    expect(store.state.hostRestrictions.readOnly).toBe(true)
   })
 
   test('reloads only the list of the document whose history changed', () => {

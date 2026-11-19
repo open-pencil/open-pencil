@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { autoFrame, rect } from '#core-tests/helpers/layout'
 
 import { createEditor } from '@open-pencil/core'
 import { computeAllLayouts } from '@open-pencil/core/layout'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 describe('deleteSelected', () => {
   test('reflows fixed vertical auto-layout siblings', () => {
@@ -25,6 +25,14 @@ describe('deleteSelected', () => {
     editor.select([footerB.id])
     editor.deleteSelected()
 
+    expect(getNodeOrThrow(editor.graph, body.id).height).toBe(220)
+    expect(getNodeOrThrow(editor.graph, footerA.id).y).toBe(260)
+
+    editor.undo.undo()
+    expect(getNodeOrThrow(editor.graph, body.id).height).toBe(180)
+    expect(getNodeOrThrow(editor.graph, footerB.id).y).toBe(260)
+
+    editor.undo.redo()
     expect(getNodeOrThrow(editor.graph, body.id).height).toBe(220)
     expect(getNodeOrThrow(editor.graph, footerA.id).y).toBe(260)
   })

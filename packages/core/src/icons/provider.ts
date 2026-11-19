@@ -1,9 +1,11 @@
-import { iconToHTML, iconToSVG } from '@iconify/utils'
+import { getIconData, iconToHTML, iconToSVG, type IconifyIcon } from '@iconify/utils'
 import { chunk } from 'es-toolkit'
 
+import type { IconOptions } from '@open-pencil/scene-graph/icons'
+
 import { createIconifyAPIClient } from './api'
-import { buildIconData } from './svg'
-import type { IconCollection, IconData, IconifyIconEntry, IconSearchResult } from './types'
+import { buildIconData } from './artwork'
+import type { IconCollection, IconData, IconSearchResult } from './types'
 
 export interface IconSearchOptions {
   limit?: number
@@ -18,8 +20,15 @@ export interface IconSearchOptions {
  */
 export interface IconProvider {
   search(query: string, options?: IconSearchOptions): Promise<IconSearchResult>
-  /** Each named icon at `size`, by name; names the source lacks are left out. */
-  icons(names: readonly string[], size: number): Promise<Map<string, IconData>>
+  /**
+   * Each named icon at `size`, by name; names the source lacks are left out. `options` sets how
+   * a set that has options draws them, its defaults filling in the rest; other sets ignore it.
+   */
+  icons(
+    names: readonly string[],
+    size: number,
+    options?: IconOptions
+  ): Promise<Map<string, IconData>>
   /**
    * Each named icon as SVG markup for pickers to show, painted in `currentColor` where the icon
    * takes its color; names the source lacks are left out.
@@ -41,15 +50,13 @@ export function parseIconName(name: string): { prefix: string; iconName: string 
 /** Names per request, so the query string of a long list stays well within URL limits. */
 const NAMES_PER_REQUEST = 100
 
-/** An icon's body and box, with the set's default box filled in. */
-type IconEntry = Required<IconifyIconEntry>
-
 /**
  * Icons from the Iconify API, fetched one request per set and cached by name, so search
  * previews and placed icons share what was loaded.
  */
 export function createIconifyProvider(client = createIconifyAPIClient()): IconProvider {
-  const entries = new Map<string, IconEntry>()
+  /** Icons with their aliases and the set's defaults resolved, as Iconify draws them. */
+  const entries = new Map<string, IconifyIcon>()
   const built = new Map<string, IconData>()
   // Shared answers; a failed one is dropped so the next call asks again.
   let catalogue: Promise<IconCollection[]> | null = null
@@ -68,22 +75,19 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
   async function request(prefix: string, iconNames: string[]): Promise<void> {
     const collection = await client.fetchCollection(prefix, iconNames)
     for (const iconName of iconNames) {
-      const parent = collection.aliases?.[iconName]?.parent
-      const entry = collection.icons[iconName] ?? (parent ? collection.icons[parent] : undefined)
+      // An alias may flip, turn, or resize its parent; a set may give every icon a box.
+      const icon = getIconData(collection, iconName)
       const name = `${prefix}:${iconName}`
-      if (!entry) {
-        absent.add(name)
-        continue
-      }
-      entries.set(name, {
-        body: entry.body,
-        width: entry.width ?? collection.width ?? 24,
-        height: entry.height ?? collection.height ?? 24
-      })
+      if (icon) entries.set(name, icon)
+      else absent.add(name)
     }
   }
 
-  async function load(names: readonly string[]): Promise<void> {
+  /**
+   * Starts or joins the requests for the names not yet loaded, so overlapping calls share them,
+   * and returns them to wait on.
+   */
+  function load(names: readonly string[]): Promise<void>[] {
     const waiting = new Set<Promise<void>>()
     const needed = new Map<string, string[]>()
     for (const name of names) {
@@ -113,23 +117,22 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
         waiting.add(pending)
       }
     }
-    await Promise.all(waiting)
+    return [...waiting]
   }
 
   return {
     search: (query, options) => client.search(query, options),
 
     async icons(names, size) {
-      await load(names)
+      // Placing an icon reports the first failed request at once rather than placing fewer.
+      await Promise.all(load(names))
       const found = new Map<string, IconData>()
       for (const name of names) {
         const entry = entries.get(name)
         const parsed = parseIconName(name)
         if (!entry || !parsed) continue
         const key = `${name}@${size}`
-        const icon =
-          built.get(key) ??
-          buildIconData(entry, parsed.prefix, parsed.iconName, entry.width, entry.height, size)
+        const icon = built.get(key) ?? buildIconData(entry, parsed.prefix, parsed.iconName, size)
         built.set(key, icon)
         found.set(name, icon)
       }
@@ -152,7 +155,8 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
     },
 
     async previews(names) {
-      await load(names)
+      const settled = await Promise.allSettled(load(names))
+      const failed = settled.find((result) => result.status === 'rejected')
       const found = new Map<string, string>()
       for (const name of names) {
         const entry = entries.get(name)
@@ -160,6 +164,8 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
         const { attributes, body } = iconToSVG(entry)
         found.set(name, iconToHTML(body, attributes))
       }
+      // What loaded is shown even when another request failed; with nothing loaded, the failure.
+      if (failed && found.size === 0) throw failed.reason
       return found
     }
   }

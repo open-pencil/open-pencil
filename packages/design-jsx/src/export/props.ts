@@ -2,12 +2,18 @@ import { isEqual, omitBy, pick } from 'es-toolkit'
 
 import type { ArcData, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { DEFAULT_FONT_FAMILY } from '@open-pencil/scene-graph/constants'
-import { layoutSizing } from '@open-pencil/scene-graph/layout'
+import { counterAxisSpacingOf, layoutSizing } from '@open-pencil/scene-graph/layout'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+import { vectorNetworkPaths } from '@open-pencil/scene-graph/vector-network'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { BLEND_MODE, TEXT_ALIGN, TEXT_ALIGN_VERTICAL, TEXT_CASE, TEXT_DECORATION } from '../enums'
+import { textLengthJSX } from '../overrides/text'
+import { withPropertyBindings } from './components/properties'
+import { componentReferences, type ComponentReference } from './components/references'
 import { collectDecorationProps } from './decoration'
+import { collectFontSettingProps, FONT_SETTING_FIELDS } from './font'
 import {
   collectCornerRadii,
   collectPadding,
@@ -15,9 +21,10 @@ import {
   formatTracks,
   getNodeContext
 } from './helpers'
-import { collectEffectProps, collectFillProps, collectStrokeProps } from './paint'
+import { collectEffectProps, collectFillProps, collectStrokeProps } from './paints'
 import { collectStateProps } from './state'
 import type { JSXProp } from './value'
+import { variableReferences, type VariableExport } from './variables'
 
 export type { JSXProp } from './value'
 
@@ -62,7 +69,8 @@ function collectFlexAlignmentProps(node: SceneNode, props: JSXProp[]): void {
 
   if (node.layoutWrap === 'WRAP') {
     props.push(['wrap', true])
-    if (node.counterAxisSpacing > 0) props.push(['rowGap', node.counterAxisSpacing])
+    const rowGap = counterAxisSpacingOf(node)
+    if (rowGap > 0) props.push(['rowGap', rowGap])
   }
 
   if (node.primaryAxisAlign === 'CENTER') props.push(['justify', 'center'])
@@ -78,8 +86,9 @@ function collectFlexAlignmentProps(node: SceneNode, props: JSXProp[]): void {
 function collectAutoLayoutPaddingProps(node: SceneNode, props: JSXProp[]): void {
   const pad = collectPadding(node)
   if (!pad) return
-  props.push(
-    ...emitPadding(
+  appendAll(
+    props,
+    emitPadding(
       pad,
       (v) => ['p', v] as JSXProp,
       (y, x) =>
@@ -196,8 +205,7 @@ function collectSizingProps(
 }
 
 function collectTextSizingProps(node: SceneNode, graph: SceneGraph, props: JSXProp[]): void {
-  const autoResize = node.textAutoResize
-  const emitH = autoResize === 'NONE' || autoResize === 'TRUNCATE'
+  const emitH = node.textAutoResize === 'NONE'
   // Don't emit fixed w when text stretches to fill parent — the layoutAlignSelf
   // check below will emit w="fill" instead. Without this guard, w={computedPx}
   // gets emitted first and blocks the fill detection.
@@ -213,7 +221,7 @@ function collectTextSizingProps(node: SceneNode, graph: SceneGraph, props: JSXPr
       const parent = node.parentId ? graph.getNode(node.parentId) : null
       return parent?.layoutMode === 'HORIZONTAL'
     })()
-  const emitW = autoResize !== 'WIDTH_AND_HEIGHT' && !isFillWidth && !isGrowWidth
+  const emitW = node.textAutoResize !== 'WIDTH_AND_HEIGHT' && !isFillWidth && !isGrowWidth
   if (emitW && node.width > 0) props.push(['w', node.width])
   if (emitH && node.height > 0) props.push(['h', node.height])
 }
@@ -228,8 +236,22 @@ const DECORATION_FIELDS = [
 
 const TEXT_DEFAULTS = pick(
   createDefaultNode(() => '', 'TEXT'),
-  DECORATION_FIELDS
+  [...DECORATION_FIELDS, ...FONT_SETTING_FIELDS]
 )
+
+/** The fields of `node` that differ from a new text's. */
+function ownTextFields<K extends keyof typeof TEXT_DEFAULTS>(
+  node: SceneNode,
+  fields: readonly K[]
+) {
+  return omitBy(pick(node, fields), (value, key) => isEqual(value, TEXT_DEFAULTS[key]))
+}
+
+/** A text's font settings, and whether its optical size follows the font size. */
+function collectTextFontSettingProps(node: SceneNode, props: JSXProp[]): void {
+  collectFontSettingProps(ownTextFields(node, FONT_SETTING_FIELDS), props)
+  if (!node.opticalSizeFromFontSize) props.push(['fontOpticalSizing', 'none'])
+}
 
 /** A font weight as `weight` writes it, by name for the weights that have one. */
 export function fontWeightValue(weight: number): string | number {
@@ -252,15 +274,14 @@ function collectTextNodeProps(node: SceneNode, props: JSXProp[]): void {
   if (node.textAlignVertical !== 'TOP') {
     props.push(['textAlignVertical', TEXT_ALIGN_VERTICAL.print(node.textAlignVertical)])
   }
-  if (node.lineHeight != null) props.push(['lineHeight', node.lineHeight])
-  if (node.letterSpacing !== 0) props.push(['letterSpacing', node.letterSpacing])
+  if (node.lineHeight != null) props.push(['lineHeight', textLengthJSX(node.lineHeight)])
+  if (node.letterSpacing.value !== 0) {
+    props.push(['letterSpacing', textLengthJSX(node.letterSpacing)])
+  }
   if (node.textDecoration !== 'NONE')
     props.push(['textDecoration', TEXT_DECORATION.print(node.textDecoration)])
-  collectDecorationProps(
-    omitBy(pick(node, DECORATION_FIELDS), (value, key) => isEqual(value, TEXT_DEFAULTS[key])),
-    node,
-    props
-  )
+  collectDecorationProps(ownTextFields(node, DECORATION_FIELDS), node, props)
+  collectTextFontSettingProps(node, props)
   if (node.textCase !== 'ORIGINAL') props.push(['textCase', TEXT_CASE.print(node.textCase)])
   if (node.maxLines != null) props.push(['maxLines', node.maxLines])
   if (node.textTruncation === 'ENDING' && node.maxLines == null) props.push(['truncate', true])
@@ -273,8 +294,7 @@ function collectTextNodeProps(node: SceneNode, props: JSXProp[]): void {
 const TEXT_AUTO_RESIZE: Record<SceneNode['textAutoResize'], string> = {
   NONE: 'none',
   WIDTH_AND_HEIGHT: 'width',
-  HEIGHT: 'height',
-  TRUNCATE: 'truncate'
+  HEIGHT: 'height'
 }
 
 /** The renderer infers auto-resize from the width props; say so only when it differs. */
@@ -313,10 +333,24 @@ function collectShapeNodeProps(node: SceneNode, props: JSXProp[]): void {
   if (node.type === 'POLYGON' && node.pointCount !== 3) {
     props.push(['points', node.pointCount])
   }
+  if (node.type === 'VECTOR' && node.vectorNetwork) {
+    // Figma's own form of a vector's geometry, which <Vector> reads back as written.
+    const paths = vectorNetworkPaths(node.vectorNetwork)
+    if (paths.length > 0) props.push(['paths', paths.map((path) => ({ ...path }))])
+  }
 }
 
-/** The props of `node`, in the order they are printed. */
-export function collectProps(node: SceneNode, graph: SceneGraph): JSXProp[] {
+/**
+ * The props of `node`, in the order they are printed, with the variables it binds written as
+ * `variables` writes them: by default, by reference to the document's. Components are named as
+ * `reference` names them.
+ */
+export function collectProps(
+  node: SceneNode,
+  graph: SceneGraph,
+  variables: VariableExport = variableReferences(graph),
+  reference: ComponentReference = componentReferences(graph)
+): JSXProp[] {
   const props: JSXProp[] = []
   const ctx = getNodeContext(node, graph)
 
@@ -333,7 +367,7 @@ export function collectProps(node: SceneNode, graph: SceneGraph): JSXProp[] {
     collectTextAutoResizeProp(node, ctx, props)
   }
   collectShapeNodeProps(node, props)
-  collectStateProps(node, ctx, graph, props)
+  collectStateProps(node, ctx, props, variables)
 
-  return props
+  return withPropertyBindings(props, node, graph, reference)
 }

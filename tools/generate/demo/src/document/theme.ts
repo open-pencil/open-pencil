@@ -1,6 +1,10 @@
-import { defineVars, type DesignVariable } from '@open-pencil/design-jsx'
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
+import {
+  defineMode,
+  defineVars,
+  designMode,
+  type DesignMode,
+  type DesignVariable
+} from '@open-pencil/design-jsx'
 
 /**
  * The tour's colors live in two collections, each with a Dark and a Light mode: Theme, for the
@@ -56,65 +60,36 @@ const CHROME_COLORS = [
 
 type Vars<T extends readonly Entry[]> = Record<T[number][0], DesignVariable>
 
-function addCollection(
-  graph: SceneGraph,
-  prefix: string,
-  name: string,
-  entries: readonly Entry[]
-): Record<string, DesignVariable> {
-  const collectionId = `${prefix}-collection`
-  const modeIds: Record<Mode, string> = { dark: `${prefix}-dark`, light: `${prefix}-light` }
-  graph.addCollection({
-    id: collectionId,
+/**
+ * A collection with a Dark and a Light mode, Dark the default, and its variables by their keys.
+ * A render that binds any of them adds the collection to the file.
+ */
+function defineCollection(name: string, entries: readonly Entry[]) {
+  const named = defineVars(
     name,
-    modes: [
-      { modeId: modeIds.dark, name: MODE_NAMES.dark },
-      { modeId: modeIds.light, name: MODE_NAMES.light }
-    ],
-    defaultModeId: modeIds.dark,
-    variableIds: []
-  })
-  const value = (raw: string | number) => (typeof raw === 'number' ? raw : parseColor(raw))
-  for (const [key, variableName, dark, light] of entries) {
-    graph.addVariable({
-      id: `${prefix}-${key}`,
-      name: variableName,
-      type: typeof dark === 'number' ? 'FLOAT' : 'COLOR',
-      collectionId,
-      valuesByMode: { [modeIds.dark]: value(dark), [modeIds.light]: value(light) },
-      description: '',
-      hiddenFromPublishing: false
-    })
-  }
-  // Each reference carries its dark value, for layers drawn before they are bound, such as icons.
-  return defineVars(
-    Object.fromEntries(
-      entries.map(([key, variableName, dark]) => [
-        key,
-        { id: `${prefix}-${key}`, name: variableName, value: dark }
-      ])
-    )
+    Object.fromEntries(entries.map(([, variableName, dark]) => [variableName, dark])),
+    { mode: MODE_NAMES.dark }
   )
+  const light = defineMode(
+    named,
+    MODE_NAMES.light,
+    Object.fromEntries(entries.map(([, variableName, , value]) => [variableName, value]))
+  )
+  const vars: Record<string, DesignVariable> = Object.fromEntries(
+    entries.map(([key, variableName]) => [key, named[variableName]])
+  )
+  return { vars, modes: { dark: designMode(name, MODE_NAMES.dark), light } }
 }
 
 /** The tour's collections, with references to every variable in them. */
-export function createTheme(graph: SceneGraph) {
-  const vars = addCollection(graph, 'demo-theme', COLLECTION_NAMES.theme, [
-    ...THEME_COLORS,
-    ...THEME_NUMBERS
-  ]) as Vars<typeof THEME_COLORS> & Vars<typeof THEME_NUMBERS>
-  const chrome = addCollection(
-    graph,
-    'demo-chrome',
-    COLLECTION_NAMES.chrome,
-    CHROME_COLORS
-  ) as Vars<typeof CHROME_COLORS>
+export function createTheme() {
+  const theme = defineCollection(COLLECTION_NAMES.theme, [...THEME_COLORS, ...THEME_NUMBERS])
+  const chrome = defineCollection(COLLECTION_NAMES.chrome, CHROME_COLORS)
   return {
-    vars,
-    chrome,
-    /** The Theme collection and its modes, for frames that pin one. */
-    collectionId: 'demo-theme-collection',
-    modeIds: { dark: 'demo-theme-dark', light: 'demo-theme-light' } satisfies Record<Mode, string>
+    vars: theme.vars as Vars<typeof THEME_COLORS> & Vars<typeof THEME_NUMBERS>,
+    chrome: chrome.vars as Vars<typeof CHROME_COLORS>,
+    /** The Theme collection's modes, for frames that pin one. */
+    modes: theme.modes satisfies Record<Mode, DesignMode>
   }
 }
 

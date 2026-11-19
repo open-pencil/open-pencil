@@ -1,5 +1,5 @@
 import type { FontFallbackScript } from '#core/text/fallbacks'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 import { FontResolver } from '#core/text/resolver/resolver'
 import type {
   FontResolutionCandidate,

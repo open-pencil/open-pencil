@@ -1,15 +1,16 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, dirname, extname, resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 import { defineCommand } from 'citty'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import { createHeadlessIconMatcher } from '@open-pencil/core/icons/match'
 import { readHTMLDocument, type ReadHTMLResult } from '@open-pencil/core/io/formats/html/import'
 
 import { requireFile } from '#cli/app/client'
 import { fmtList, ok, printError } from '#cli/format'
+import { writeFigDocument } from '#cli/headless'
 
-const io = new IORegistry(BUILTIN_IO_FORMATS)
 const OUTPUT_FORMATS = new Set(['fig', 'json'])
 
 interface ImportArgs {
@@ -22,6 +23,7 @@ interface ImportArgs {
   tailwindFile?: string
   pageName: string
   json?: boolean
+  'icon-names': boolean
 }
 
 function defaultOutput(input: string, format: string): string {
@@ -51,10 +53,14 @@ async function tailwindCandidatesForArgs(args: ImportArgs): Promise<string[] | u
 }
 
 async function importHTML(args: ImportArgs): Promise<ReadHTMLResult> {
-  return readHTMLDocument(await readTextFile(requireFile(args.file)), {
+  const file = requireFile(args.file)
+  return readHTMLDocument(await readTextFile(file), {
+    // Relative stylesheets, fonts, and images resolve beside the file, as a browser opening it.
+    baseURL: pathToFileURL(resolve(file)).href,
     cssText: await cssTextForArgs(args),
     tailwind: await tailwindCandidatesForArgs(args),
-    pageName: args.pageName
+    pageName: args.pageName,
+    matchIcon: args['icon-names'] ? createHeadlessIconMatcher() : undefined
   })
 }
 
@@ -69,8 +75,7 @@ async function writeOutput(args: ImportArgs, { styled, graph }: ReadHTMLResult) 
     return output
   }
 
-  const result = await io.writeDocument('fig', graph)
-  await writeFile(output, result.data as Uint8Array)
+  await writeFigDocument(graph, output)
   return output
 }
 
@@ -122,6 +127,12 @@ export default defineCommand({
     json: {
       type: 'boolean',
       description: 'Print a machine-readable summary to stdout'
+    },
+    'icon-names': {
+      type: 'boolean',
+      description:
+        'Name inline SVG without data-icon after the Iconify icon it draws, downloading an icon index and the candidate icons; --no-icon-names turns this matching off, and SVG named by data-icon stays an icon (default: true)',
+      default: true
     }
   },
   async run({ args }) {

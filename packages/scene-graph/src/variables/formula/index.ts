@@ -120,7 +120,9 @@ export function parseVariableFormula(
     graph,
     variableId,
     (collectionId) =>
-      collectionId === variable.collectionId ? modeId : graph.getActiveModeId(collectionId),
+      collectionId === variable.collectionId
+        ? modeId
+        : (graph.variableCollections.get(collectionId)?.defaultModeId ?? ''),
     new Set(),
     new Map(),
     new Map([[variableId, value]])

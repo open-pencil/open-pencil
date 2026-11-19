@@ -1,16 +1,18 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { clipPolygon, visualBoundsCorners } from '@open-pencil/scene-graph/clipping'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import {
-  clipPolygon,
   effectOverflow,
   geometryBlobBounds,
   intersectVisualBounds,
   strokeOverflow,
   unionVisualBounds,
+  visualBoundsToRect,
   type VisualBounds
 } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type {
   AnalyzeOverlapsArgs,
@@ -40,15 +42,6 @@ export function visualBoundsArea(bounds: VisualBounds): number {
   const width = bounds.maxX - bounds.minX
   const height = bounds.maxY - bounds.minY
   return width > 0 && height > 0 ? width * height : 0
-}
-
-export function boundsToRect(bounds: VisualBounds): Rect {
-  return {
-    x: bounds.minX,
-    y: bounds.minY,
-    width: bounds.maxX - bounds.minX,
-    height: bounds.maxY - bounds.minY
-  }
 }
 
 export function toNodeSummary(node: SceneNode): OverlapNodeSummary {
@@ -263,10 +256,8 @@ function aabbFromCorners(corners: Vector[]): VisualBounds {
 }
 
 /**
- * Compute a node's visual bounds in canvas space using the world matrix,
- * correctly handling nested ancestor rotations. This replaces the previous
- * `nodeVisualBounds` call which used `rotatedBBox` with the node's LOCAL
- * rotation and the rotated origin — wrong when ancestors are rotated.
+ * Compute a node's visual bounds in canvas space through its world matrix,
+ * so rotated and flipped ancestors count.
  *
  * Includes stroke overflow (uniform), effect overflow (directional),
  * fill/stroke geometry (transformed through the world matrix), and
@@ -353,12 +344,7 @@ function collectClipChain(graph: SceneGraph, node: SceneNode): Vector[][] {
     const current = graph.getNode(currentId)
     if (!current) break
     if (current.type === 'CANVAS') break
-    if (
-      current.clipsContent &&
-      (current.type === 'FRAME' || current.type === 'COMPONENT' || current.type === 'INSTANCE')
-    ) {
-      clips.push(nodeWorldCorners(current, graph))
-    }
+    if (clipsChildren(current)) clips.push(nodeWorldCorners(current, graph))
     currentId = current.parentId
   }
   return clips
@@ -377,12 +363,7 @@ export function computeNodeBounds(
   // ancestor preserving the polygon. Collapsing to an AABB between clips would
   // reintroduce corners already removed by an inner clip, so hidden regions
   // could look visible again to a later outer clip.
-  let polygon: Vector[] | null = [
-    { x: visual.minX, y: visual.minY },
-    { x: visual.maxX, y: visual.minY },
-    { x: visual.maxX, y: visual.maxY },
-    { x: visual.minX, y: visual.maxY }
-  ]
+  let polygon: Vector[] | null = visualBoundsCorners(visual)
   for (const clip of clips) {
     polygon = clipPolygon(polygon, clip)
     if (!polygon) {
@@ -405,7 +386,7 @@ function makeOverlapItem(
   suggestion: string,
   areaField: 'intersection' | 'overflow' = 'intersection'
 ): OverlapItem {
-  const intersectionRect = boundsToRect(intersection)
+  const intersectionRect = visualBoundsToRect(intersection)
   const area =
     areaField === 'intersection'
       ? visualBoundsArea(intersection)

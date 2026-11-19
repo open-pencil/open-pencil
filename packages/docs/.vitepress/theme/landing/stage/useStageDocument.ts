@@ -1,5 +1,7 @@
 import { getCurrentInstance, provide, ref } from 'vue'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
 import { provideTabEditorStore } from '@/app/editor/active-store'
 import { createTab, switchTab } from '@/app/tabs'
@@ -42,16 +44,13 @@ export function useStageDocument(scene: SceneBuilder) {
       // As the app does when it opens a page: render, and finish once that frame is on screen,
       // so whatever stands in for the stage until now never gives way to an empty canvas.
       preparation.update({ phase: 'preparing-render' })
-      await store.preparationController.waitForPresentation(
-        preparation.id,
-        store.state.sceneVersion
-      )
+      await store.preparationController.waitForPresentation(preparation.id, store.state)
       preparation.complete()
       ready.value = true
     } catch (error) {
       preparation.fail({
         code: 'layout-failed',
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage(error),
         retryable: false
       })
     }

@@ -7,9 +7,12 @@ import {
   type AdminErrorCode
 } from '#cloud/contract'
 import type { CloudAccountRoutes } from '#cloud/server/account/routes'
+import type { CloudAccessTokenRoutes } from '#cloud/server/account/tokens'
 import type { CloudAPI } from '#cloud/server/api'
 import { hc } from 'hono/client'
 import * as v from 'valibot'
+
+import { anySignal, DEADLINE_MS } from '@open-pencil/std/timing'
 
 export type CloudPortalAPIErrorKind =
   | 'authentication-required'
@@ -56,10 +59,10 @@ export type CloudCall = <Output>(
  * body is checked against the contract.
  */
 export function createCloudCall(options: CloudPortalClientOptions = {}): CloudCall {
-  const timeoutMs = options.timeoutMs ?? 10_000
+  const timeoutMs = options.timeoutMs ?? DEADLINE_MS.request
   return async (send, schema, callerSignal) => {
     const timeout = AbortSignal.timeout(timeoutMs)
-    const signal = callerSignal ? AbortSignal.any([callerSignal, timeout]) : timeout
+    const signal = anySignal([callerSignal, timeout])
     let response: PortalResponse
     try {
       response = await send({ init: { signal } })
@@ -69,11 +72,11 @@ export function createCloudCall(options: CloudPortalClientOptions = {}): CloudCa
       throw new CloudPortalAPIError('network', undefined, { cause })
     }
     if (response.status === 401) throw new CloudPortalAPIError('authentication-required')
-    if (response.status === 403) throw new CloudPortalAPIError('authorization-required')
     let body: unknown
     try {
       body = await response.json()
     } catch (cause) {
+      if (response.status === 403) throw new CloudPortalAPIError('authorization-required')
       throw new CloudPortalAPIError('protocol', undefined, { cause })
     }
     if (!response.ok) {
@@ -82,6 +85,11 @@ export function createCloudCall(options: CloudPortalClientOptions = {}): CloudCa
       let code: AdminErrorCode | AccountSecurityErrorCode | undefined
       if (accountError.success) code = accountError.output.error.code
       else if (adminError.success) code = adminError.output.error.code
+      // A refusal that says why, such as a session that must sign in again, is the domain's;
+      // a bare or plain `forbidden` one is a missing permission.
+      if (response.status === 403 && (!code || code === 'forbidden')) {
+        throw new CloudPortalAPIError('authorization-required')
+      }
       throw new CloudPortalAPIError('domain', code)
     }
     const parsed = v.safeParse(schema, body)
@@ -102,6 +110,7 @@ export function createPortalRouteClients(options: CloudPortalClientOptions = {})
   }
   return {
     account: hc<CloudAccountRoutes>(origin, clientOptions).api.account,
+    tokens: hc<CloudAccessTokenRoutes>(origin, clientOptions).api.account.tokens,
     admin: hc<CloudAdminRoutes>(new URL('/api/admin', origin).href, clientOptions),
     api: hc<CloudAPI>(new URL('/api', origin).href, clientOptions)
   }

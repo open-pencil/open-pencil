@@ -5,10 +5,11 @@ import { useCollaborationMessages } from '@open-pencil/vue/i18n'
 
 import { isFetchingRoom, type PendingRoomStatus } from '@/app/collab/room/status'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
-import { roomScreen } from '@/theme/collaboration/room-screen'
 
 import RoomNameLine from './RoomNameLine.vue'
+import { roomScreen } from './ui'
 
 /**
  * What a room tab shows instead of the editor until the room's document arrives: what it is doing
@@ -20,7 +21,7 @@ const {
   sender = null,
   othersWaiting = [],
   name,
-  copied = false,
+  link,
   desktopLink = null,
   downloadURL = null
 } = defineProps<{
@@ -31,7 +32,8 @@ const {
   othersWaiting?: string[]
   /** The person's name in the room, generated until they set one. */
   name: string
-  copied?: boolean
+  /** The room's link, which Copy link copies. */
+  link: string
   /** An `openpencil://join` link, offered in desktop browsers. */
   desktopLink?: string | null
   /** Where to get the desktop app, offered beside `desktopLink`. */
@@ -39,7 +41,6 @@ const {
 }>()
 
 const emit = defineEmits<{
-  copyLink: []
   leave: []
   rename: [name: string]
 }>()
@@ -131,18 +132,14 @@ const progress = computed(() => {
       <template #action>
         <div :class="ui.actions()">
           <div :class="ui.buttons()">
-            <AppButton
+            <AppCopyButton
+              :value="link"
+              :label="messages.copyLink"
+              :copied-label="messages.linkCopied"
               color="neutral"
               variant="outline"
               data-test-id="room-screen-copy-link"
-              @click="emit('copyLink')"
-            >
-              <template #leading>
-                <icon-lucide-check v-if="copied" class="size-3" />
-                <icon-lucide-copy v-else class="size-3" />
-              </template>
-              {{ copied ? messages.linkCopied : messages.copyLink }}
-            </AppButton>
+            />
             <AppButton
               color="neutral"
               variant="ghost"

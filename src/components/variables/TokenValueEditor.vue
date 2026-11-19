@@ -6,6 +6,7 @@ import { tokenNumberToCSS, variableUnit } from '@open-pencil/dom-css/export'
 import type { Variable, VariableLiteral, VariableValue } from '@open-pencil/scene-graph'
 import { colorToHex8 } from '@open-pencil/scene-graph/color'
 import { formulaSymbol } from '@open-pencil/scene-graph/variables'
+import { errorMessage } from '@open-pencil/std/errors'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import {
@@ -170,7 +171,7 @@ const preview = computed(() => {
   try {
     return { edit: parseTokenEditorText(variable, modeId, draft.value, formula), error: '' }
   } catch (error) {
-    return { edit: undefined, error: error instanceof Error ? error.message : String(error) }
+    return { edit: undefined, error: errorMessage(error) }
   }
 })
 const error = computed(() => commitError.value || (committed.value ? preview.value.error : ''))
@@ -242,12 +243,14 @@ function restoreInputFocus(event: Event) {
   field.value?.setSelectionRange(caret, caret)
   selection.value = { start: caret, end: caret }
 }
-/** The variable button sits at the field's end, or beside the control, as in the properties panel. */
+/** The variable button sits at the end of the value's field, or beside a switch. */
 const picker = computed(() => ({
   items: pickerItems.value,
   selected: alias.value,
   state: alias.value ? ('bound' as const) : ('unbound' as const),
-  triggerLabel: variables.value.useVariable,
+  // One of several modes names its mode, as the inspector's own picker does.
+  triggerLabel:
+    heading === 'mode' ? `${label}: ${variables.value.useVariable}` : variables.value.useVariable,
   searchPlaceholder: variables.value.searchVariables,
   emptyLabel: variables.value.noMatchingVariables,
   detachLabel: variables.value.detachVariable,
@@ -260,7 +263,7 @@ function detach() {
     const { resolved } = formula.parse(modeId, formula.format(value.value))
     emit('apply', resolved)
   } catch (error) {
-    commitError.value = error instanceof Error ? error.message : String(error)
+    commitError.value = errorMessage(error)
   }
 }
 </script>
@@ -297,9 +300,9 @@ function detach() {
         :label="label"
         @update:model-value="emit('apply', $event)"
       />
-      <!-- Text and colors edit in the inspector's own field and color picker. -->
-      <slot v-else name="control" />
-      <VariablePicker v-bind="picker" />
+      <VariablePicker v-if="variable.type === 'BOOLEAN'" v-bind="picker" />
+      <!-- Text and colors edit in the inspector's own field, with the variable button at its end. -->
+      <slot v-else name="control" :picker="picker" />
     </div>
     <TokenFormulaField
       v-else

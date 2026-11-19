@@ -1,12 +1,13 @@
 import { mapValues } from 'es-toolkit'
 
+import { resolvedVariantDefinition } from '../components/variants'
 import type { SceneGraph } from '../graph'
 import { readPluginData, withPluginData } from '../plugin-data/field'
 import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
 import type { ComponentPropertyDefinition, SceneNode } from '../types'
 import {
   behaviourContract,
-  INTERACTION_STATES,
+  interactionStatesOf,
   type BehaviourKind,
   type InteractionState
 } from './kinds'
@@ -85,17 +86,25 @@ export function withBehaviour(
   return withPluginData(owner.pluginData, OPEN_PENCIL_PLUGIN_DATA.behaviour, behaviour ?? undefined)
 }
 
-/** Component properties the behaviour can bind to: the owner's, and a set's variants' own. */
+/**
+ * Component properties the behaviour can bind to: the owner's, with a set's variant values and
+ * defaults read from its variants, and a set's variants' own.
+ */
 export function behaviourProperties(
   graph: SceneGraph,
   owner: SceneNode
 ): ComponentPropertyDefinition[] {
-  const variants =
-    owner.type === 'COMPONENT_SET'
-      ? owner.childIds.flatMap((id) => graph.getNode(id)?.componentPropertyDefinitions ?? [])
-      : []
+  const isSet = owner.type === 'COMPONENT_SET'
+  const own = isSet
+    ? owner.componentPropertyDefinitions.map((definition) =>
+        resolvedVariantDefinition(graph, owner, definition)
+      )
+    : owner.componentPropertyDefinitions
+  const variants = isSet
+    ? owner.childIds.flatMap((id) => graph.getNode(id)?.componentPropertyDefinitions ?? [])
+    : []
   const seen = new Set<string>()
-  return [...owner.componentPropertyDefinitions, ...variants].filter((definition) => {
+  return [...own, ...variants].filter((definition) => {
     if (seen.has(definition.id)) return false
     seen.add(definition.id)
     return true
@@ -142,19 +151,21 @@ const STATE_NAMES: Record<InteractionState, readonly string[]> = {
   hover: ['hover', 'hovered', 'hovering'],
   pressed: ['pressed', 'active', 'down', 'pressing'],
   focus: ['focus', 'focused', 'focus visible', 'focus-visible'],
-  disabled: ['disabled', 'inactive']
+  disabled: ['disabled', 'inactive'],
+  invalid: ['invalid', 'error']
 }
 
 /**
- * Interaction states for a variant property, each mapped to the value whose name means it, such
- * as `Hover` or `Pressed`; states without such a value are left unset.
+ * A kind of control's interaction states for a variant property, each mapped to the value whose
+ * name means it, such as `Hover` or `Pressed`; states without such a value are left unset.
  */
 export function guessInteractionStates(
+  kind: BehaviourKind,
   propertyId: string,
   values: readonly string[]
 ): BehaviourInteractionStates {
   const states: BehaviourInteractionStates = { propertyId }
-  for (const state of INTERACTION_STATES) {
+  for (const state of interactionStatesOf(kind)) {
     const match = values.find((value) => STATE_NAMES[state].includes(value.trim().toLowerCase()))
     if (match) states[state] = match
   }

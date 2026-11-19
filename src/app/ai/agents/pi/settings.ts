@@ -1,3 +1,5 @@
+import { homeDir, join } from '@tauri-apps/api/path'
+import { exists, readTextFile } from '@tauri-apps/plugin-fs'
 import * as v from 'valibot'
 
 /** The settings Pi's CLI keeps next to its sign-ins; only non-secret fields are read. */
@@ -25,10 +27,6 @@ export function parsePiSettings(text: string): string | null {
  * in there, on the desktop. Null where there is no home folder to look in.
  */
 export async function readPiAccount(): Promise<PiAccount | null> {
-  const [{ homeDir, join }, { exists, readTextFile }] = await Promise.all([
-    import('@tauri-apps/api/path'),
-    import('@tauri-apps/plugin-fs')
-  ])
   const home = await homeDir().catch(() => '')
   if (!home) return null
   const agentDir = await join(home, '.pi', 'agent')

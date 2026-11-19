@@ -1,6 +1,7 @@
 import type { App } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
+import { createOpenOverlaysPlugin } from '@open-pencil/vue/lifecycle/overlays'
 import { createRetainedScopePlugin } from '@open-pencil/vue/lifecycle/retention'
 
 const installed = new WeakSet<App>()
@@ -16,5 +17,5 @@ export function installAppPlugins(app: App): void {
     history: createMemoryHistory(),
     routes: [{ path: '/:pathMatch(.*)*', component: { render: () => null } }]
   })
-  app.use(createRetainedScopePlugin()).use(router)
+  app.use(createRetainedScopePlugin()).use(createOpenOverlaysPlugin()).use(router)
 }

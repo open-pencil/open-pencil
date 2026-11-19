@@ -9,7 +9,6 @@ const discovery: CloudDiscovery = {
   deployment: 'self-hosted',
   apiURL: 'https://cloud.example.com/api',
   authURL: 'https://cloud.example.com/api/auth',
-  appURL: 'https://app.example.com',
   localEditor: true,
   authentication: { socialProviders: [], enterpriseSSO: false, enrollmentMode: 'open' },
   capabilities: { documents: true, workspaces: true, collaboration: true }
@@ -19,8 +18,8 @@ function authorization(expiresIn = 600): CloudDeviceAuthorization {
   return {
     device_code: 'device-code',
     user_code: 'ABCD-EFGH',
-    verification_uri: 'https://cloud.example.com/cloud/device',
-    verification_uri_complete: 'https://cloud.example.com/cloud/device?user_code=ABCDEFGH',
+    verification_uri: 'https://cloud.example.com/auth/device',
+    verification_uri_complete: 'https://cloud.example.com/auth/device?user_code=ABCDEFGH',
     expires_in: expiresIn,
     interval: 1
   }

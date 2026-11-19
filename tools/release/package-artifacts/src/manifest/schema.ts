@@ -25,6 +25,10 @@ export const packageManifestSchema = v.looseObject({
   name: nonemptySchema,
   version: nonemptySchema,
   private: v.optional(v.boolean()),
+  /** An SPDX expression, such as `Apache-2.0 AND MIT`. */
+  license: v.optional(nonemptySchema),
+  /** The URL `npm fund` lists; npm also accepts `{ type, url }` and arrays, which we do not use. */
+  funding: v.optional(nonemptySchema),
   files: v.optional(v.array(nonemptySchema)),
   main: v.optional(nonemptySchema),
   types: v.optional(nonemptySchema),

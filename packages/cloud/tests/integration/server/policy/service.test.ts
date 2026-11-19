@@ -3,7 +3,9 @@ import { describe, expect, test } from 'bun:test'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import {
   CLOUD_FEATURE_KEYS,
+  createAccountEntitlementRepository,
   createDefaultCloudPolicy,
+  DatabaseEntitlementSource,
   createEntitlementService,
   EntitlementOpenFeatureProvider,
   StaticEntitlementSource
@@ -15,7 +17,13 @@ async function workspaceLimits(participants: number, technicalMaximumParticipant
     const workspaceId = crypto.randomUUID()
     await runtime.database
       .insertInto('workspace')
-      .values({ id: workspaceId, name: 'W', slug: `w-${workspaceId}`, createdBy: 'owner' })
+      .values({
+        id: workspaceId,
+        name: 'W',
+        slug: `w-${workspaceId}`,
+        createdBy: 'owner',
+        ownerId: 'owner'
+      })
       .execute()
     await runtime.database
       .insertInto('workspaceMember')
@@ -42,5 +50,110 @@ describe('workspace entitlements', () => {
   test('never report more participants than a room accepts', async () => {
     expect((await workspaceLimits(5000, 1000)).maximumParticipants).toBe(1000)
     expect((await workspaceLimits(10, 1000)).maximumParticipants).toBe(10)
+  })
+
+  test('give every workspace its owner’s plan and storage, whoever asks', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const [first, second] = [crypto.randomUUID(), crypto.randomUUID()]
+      await runtime.database
+        .insertInto('workspace')
+        .values(
+          [first, second].map((id) => ({
+            id,
+            name: 'W',
+            slug: `w-${id}`,
+            createdBy: 'owner',
+            ownerId: 'owner'
+          }))
+        )
+        .execute()
+      await runtime.database
+        .insertInto('workspaceMember')
+        .values([
+          { workspaceId: first, userId: 'owner', role: 'admin' },
+          { workspaceId: second, userId: 'owner', role: 'admin' },
+          { workspaceId: second, userId: 'member', role: 'editor' }
+        ])
+        .execute()
+      await runtime.database
+        .insertInto('workspaceStorageUsage')
+        .values({ workspaceId: first, committedBytes: 40 })
+        .execute()
+      await createAccountEntitlementRepository(runtime.database).set(
+        'owner',
+        { storage: { maximumBytes: 100 } },
+        'billing'
+      )
+      const service = createEntitlementService(
+        runtime.database,
+        createDefaultCloudPolicy(
+          new EntitlementOpenFeatureProvider(new DatabaseEntitlementSource(runtime.database))
+        ),
+        1_000_000
+      )
+      const entitlements = await service.workspace('member', second)
+      expect(entitlements.limits.maximumStorageBytes).toBe(100)
+      expect(entitlements.usage).toEqual({ committedStorageBytes: 40, reservedStorageBytes: 0 })
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('give an account its own plan, with the storage of every workspace it owns', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const [first, second, theirs] = [
+        crypto.randomUUID(),
+        crypto.randomUUID(),
+        crypto.randomUUID()
+      ]
+      await runtime.database
+        .insertInto('workspace')
+        .values(
+          [
+            { id: first, ownerId: 'owner' },
+            { id: second, ownerId: 'owner' },
+            { id: theirs, ownerId: 'someone-else' }
+          ].map(({ id, ownerId }) => ({
+            id,
+            name: 'W',
+            slug: `w-${id}`,
+            createdBy: ownerId,
+            ownerId
+          }))
+        )
+        .execute()
+      await runtime.database
+        .insertInto('workspaceStorageUsage')
+        .values([
+          { workspaceId: first, committedBytes: 40 },
+          { workspaceId: second, committedBytes: 2 },
+          { workspaceId: theirs, committedBytes: 500 }
+        ])
+        .execute()
+      await createAccountEntitlementRepository(runtime.database).set(
+        'owner',
+        { storage: { maximumBytes: 100 } },
+        'billing'
+      )
+      const service = createEntitlementService(
+        runtime.database,
+        createDefaultCloudPolicy(
+          new EntitlementOpenFeatureProvider(new DatabaseEntitlementSource(runtime.database))
+        ),
+        1_000_000
+      )
+      const entitlements = await service.account('owner')
+      expect(entitlements.limits.maximumStorageBytes).toBe(100)
+      expect(entitlements.usage).toEqual({ committedStorageBytes: 42, reservedStorageBytes: 0 })
+      // An account without workspaces has its deployment's defaults and holds nothing.
+      expect((await service.account('newcomer')).usage).toEqual({
+        committedStorageBytes: 0,
+        reservedStorageBytes: 0
+      })
+    } finally {
+      await runtime.close()
+    }
   })
 })

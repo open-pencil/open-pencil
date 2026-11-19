@@ -2,17 +2,19 @@ import { getToolName, isToolUIPart } from 'ai'
 import type { UIDataTypes, UIMessagePart, UITools } from 'ai'
 import { isEmptyObject } from 'es-toolkit'
 import { isValid } from 'js-base64'
+import * as v from 'valibot'
+
+import { searchResponseSchema, type SearchResult } from '@open-pencil/cloud/contract'
+import { isRecord } from '@open-pencil/std/records'
 
 export type ChatMessagePart = UIMessagePart<UIDataTypes, UITools>
 export type ToolCallPart = Extract<ChatMessagePart, { toolCallId: string }>
 
-const MCP_PREFIX = /^mcp__[^_]+__/
+// `mcp__<server>__`. The server name may hold single underscores, as Pi writes `open-pencil` as
+// `open_pencil`, so the prefix ends at the first double one.
+const MCP_PREFIX = /^mcp__.+?__/
 const SUMMARY_LENGTH = 60
 const IMAGE_MEDIA_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
 
 function truncate(text: string): string {
   const line = text.trim().split('\n')[0]?.trim() ?? ''
@@ -78,11 +80,11 @@ export function toolNodeIds(part: ToolCallPart): string[] {
   }
   if (part.state === 'output-available' && isRecord(part.output)) {
     const { output } = part
-    if (typeof output.deleted !== 'string') {
-      for (const key of ['id', 'ids', 'selection', 'results', 'created']) {
-        for (const id of stringIds(output[key])) ids.add(id)
-      }
+    for (const key of ['id', 'ids', 'selection', 'results', 'created', 'clones']) {
+      for (const id of stringIds(output[key])) ids.add(id)
     }
+    // A deleted node has nothing left to bring into view.
+    for (const id of stringIds(output.deleted)) ids.delete(id)
   }
   return [...ids]
 }
@@ -101,6 +103,24 @@ export function toolImage(part: ToolCallPart): string | null {
   if (typeof base64 !== 'string' || typeof mimeType !== 'string') return null
   if (!IMAGE_MEDIA_TYPES.has(mimeType) || !isValid(base64)) return null
   return `data:${mimeType};base64,${base64}`
+}
+
+const searchOutputSchema = v.union([
+  searchResponseSchema,
+  // Through OpenPencil's MCP server, as an agent such as Claude Code receives it.
+  v.pipe(
+    v.object({ content: v.tuple([v.object({ type: v.literal('text'), text: v.string() })]) }),
+    v.transform((output) => output.content[0].text),
+    v.parseJson(),
+    searchResponseSchema
+  )
+])
+
+/** The pages a `search_web` call found, to show as sources rather than JSON. */
+export function toolWebResults(part: ToolCallPart): SearchResult[] | null {
+  if (part.state !== 'output-available' || toolName(part) !== 'search_web') return null
+  const found = v.safeParse(searchOutputSchema, part.output)
+  return found.success ? found.output.results : null
 }
 
 /** Output with large binary payloads elided, for display as JSON. */
@@ -130,13 +150,26 @@ export function toolHasInput(part: ToolCallPart): boolean {
 export type MessagePartGroup =
   | { kind: 'part'; part: ChatMessagePart; index: number }
   | { kind: 'tools'; parts: { part: ToolCallPart; index: number }[] }
+  | { kind: 'compaction'; index: number; compaction: number }
 
-/** Consecutive tool calls form one group, so a long run can collapse into a single row. */
-export function groupMessageParts(parts: readonly ChatMessagePart[]): MessagePartGroup[] {
+/**
+ * Consecutive tool calls form one group, so a long run can collapse into a single row. Each
+ * compaction within the reply, before a step in `compactedSteps`, sits between groups and names
+ * its place in that list.
+ */
+export function groupMessageParts(
+  parts: readonly ChatMessagePart[],
+  compactedSteps: readonly number[] = []
+): MessagePartGroup[] {
   const groups: MessagePartGroup[] = []
+  let step = 0
   parts.forEach((part, index) => {
     // Step boundaries are not rendered, so they must not split a run of calls.
-    if (part.type === 'step-start') return
+    if (part.type === 'step-start') {
+      const compaction = compactedSteps.indexOf(step++)
+      if (compaction !== -1) groups.push({ kind: 'compaction', index, compaction })
+      return
+    }
     if (!isToolUIPart(part)) {
       groups.push({ kind: 'part', part, index })
       return

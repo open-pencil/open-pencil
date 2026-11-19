@@ -1,13 +1,20 @@
-import type { Ref } from 'vue'
+import { shallowRef, type Ref } from 'vue'
 
-import { hitTestGuides } from '@open-pencil/core/canvas'
+import { hitTestGuides, type SkiaRenderer } from '@open-pencil/core/canvas'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
+/** What a right-click on the canvas landed on, which picks the menu it opens. */
+export type CanvasContextTarget = 'guide' | 'layer' | 'canvas'
+
 export function createCanvasContextSelection(
   canvasRef: Ref<HTMLCanvasElement | null>,
-  store: EditorStore
+  store: EditorStore,
+  /** This pane's overlay canvas, which paints frame, section, and component names. */
+  getOverlayRenderer: () => SkiaRenderer | null
 ) {
+  const contextTarget = shallowRef<CanvasContextTarget>('canvas')
+
   function selectAtContextPoint(event: MouseEvent) {
     const canvas = canvasRef.value
     if (!canvas) return
@@ -32,12 +39,19 @@ export function createCanvasContextSelection(
     )
     if (guide) {
       store.setSelectedGuide({ ownerId: guide.ownerId, guideId: guide.guideId })
+      contextTarget.value = 'guide'
       return
     }
-    store.setSelectedGuide(null)
+    // The Comment tool selects the layer under a right-click but keeps the selection over empty
+    // canvas, as in Figma.
+    const commenting = store.state.activeTool === 'COMMENT'
     const { x: cx, y: cy } = store.screenToCanvas(sx, sy)
-    store.selectAtPoint(cx, cy)
+    const hit = store.selectAtPoint(cx, cy, getOverlayRenderer(), {
+      keepSelectionOnMiss: commenting
+    })
+    if (hit || !commenting) store.setSelectedGuide(null)
+    contextTarget.value = hit ? 'layer' : 'canvas'
   }
 
-  return { selectAtContextPoint }
+  return { selectAtContextPoint, contextTarget }
 }

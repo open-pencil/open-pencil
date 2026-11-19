@@ -13,7 +13,6 @@ const discovery = parseCloudDiscovery({
   deployment: 'self-hosted' as const,
   apiURL: 'https://cloud.example.com/api',
   authURL: 'https://cloud.example.com/api/auth',
-  appURL: 'https://app.example.com',
   authentication: {
     socialProviders: [],
     emailPassword: { signIn: true, signUp: true, minimumPasswordLength: 8 },
@@ -76,12 +75,17 @@ describe('signing in to Cloud with an email and password', () => {
 })
 
 describe('joining Cloud with an email and password', () => {
-  test('sends the verification link to the page it names', async () => {
+  test('sends the verification link to the page it names, in the app’s language', async () => {
     const { fetch, requests } = answering({ token: null, user: {} })
 
     const result = await signUpToCloudWithEmail(
       discovery,
-      { ...CREDENTIALS, name: 'Ada', verifiedURL: 'https://cloud.example.com/auth/verified' },
+      {
+        ...CREDENTIALS,
+        name: 'Ada',
+        verifiedURL: 'https://cloud.example.com/auth/verified',
+        locale: 'de'
+      },
       { fetch }
     )
 
@@ -89,6 +93,7 @@ describe('joining Cloud with an email and password', () => {
     expect(await requests[0]?.json()).toMatchObject({
       name: 'Ada',
       email: 'ada@example.com',
+      locale: 'de',
       callbackURL: 'https://cloud.example.com/auth/verified'
     })
   })

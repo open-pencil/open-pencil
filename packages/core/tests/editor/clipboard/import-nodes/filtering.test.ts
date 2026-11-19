@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { createClipboardGraph } from '#core-tests/helpers/clipboard'
 
 import { importClipboardNodes } from '@open-pencil/core/clipboard'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 describe('importClipboardNodes: filtering', () => {
   it('skips VARIABLE_SET and VARIABLE nodes', () => {
@@ -86,13 +86,7 @@ describe('importClipboardNodes: filtering', () => {
   it('skips non-visual Figma types', () => {
     const { graph, pageId } = createClipboardGraph()
 
-    const nonVisualTypes = [
-      'WIDGET',
-      'STAMP',
-      'CODE_BLOCK',
-      'TABLE_NODE',
-      'TABLE_CELL'
-    ]
+    const nonVisualTypes = ['WIDGET', 'STAMP', 'CODE_BLOCK', 'TABLE_NODE', 'TABLE_CELL']
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
       {

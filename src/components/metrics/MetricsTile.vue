@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { Sparkline } from 'vccs'
 import { computed } from 'vue'
 
 import { formatChange, formatCount } from '@/app/metrics/format'
-import { metricsTile } from '@/theme/metrics/dashboard'
+import { metricsTileTheme } from '@/theme/metrics/dashboard'
+
+const metricsTile = tv(metricsTileTheme)
 
 /**
  * A headline number, how it changed over the chosen days, and a bar for each of those days. A

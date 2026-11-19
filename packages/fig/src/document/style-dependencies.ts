@@ -11,9 +11,15 @@ export const STYLE_REFERENCE_FIELDS = [
   'styleIdForGrid'
 ] as const
 
+/** A vector's style table, whose region entries name a fill style as a record does. */
+export function vectorStyleTable(node: NodeChange): NodeChange[] {
+  const vectorData = node.vectorData as { styleOverrideTable?: NodeChange[] } | undefined
+  return vectorData?.styleOverrideTable ?? []
+}
+
 /**
- * Include available style definitions, including references declared on override paths and by
- * ranges of text.
+ * Include available style definitions, including references declared on override paths, by
+ * ranges of text, and by a vector's regions.
  */
 export function styleDependencies(
   node: NodeChange,
@@ -22,8 +28,13 @@ export function styleDependencies(
 ): Set<string> {
   const result = new Set<string>()
   forEachOverrideRecord(node, (source) => {
-    // Ranges of a text name their styles in its style table, as the record names its own.
-    for (const record of [source, ...(source.textData?.styleOverrideTable ?? [])]) {
+    // Ranges of a text and regions of a vector name their styles in a style table, as the record
+    // names its own.
+    for (const record of [
+      source,
+      ...(source.textData?.styleOverrideTable ?? []),
+      ...vectorStyleTable(source)
+    ]) {
       for (const field of STYLE_REFERENCE_FIELDS) {
         const reference = record[field]
         if (!reference) continue

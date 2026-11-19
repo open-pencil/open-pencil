@@ -1,3 +1,5 @@
+import { appendAll } from '@open-pencil/std/arrays'
+
 import type { EditorCommandId } from '#vue/editor/commands/types'
 import type { useEditorCommands } from '#vue/editor/commands/use'
 import type { MenuActionNode, MenuEntry, MenuSeparatorNode } from '#vue/editor/menu-model/types'
@@ -12,13 +14,15 @@ type CanvasMenuCommand =
   | 'selection.componentSetAction'
   | 'selection.instanceActions'
   | 'selection.iconActions'
-  | 'selection.ungroupWhenGroup'
+  | 'selection.ungroupWhenAvailable'
   | 'selection.moveToPageWhenAvailable'
+  | 'selection.arrangeWhenAvailable'
 
 type CanvasMenuGroup = readonly CanvasMenuCommand[]
 
 type CanvasMenuTranslations = {
   moveToPage: string
+  autoArrange: string
 }
 
 export type CanvasMenuOptions = {
@@ -41,11 +45,10 @@ const CANVAS_MENU_GROUPS = [
   [
     'selection.group',
     'selection.frameSelection',
-    'selection.ungroupWhenGroup',
+    'selection.ungroupWhenAvailable',
     'selection.wrapInAutoLayout',
     'selection.toggleMask',
     'selection.flatten',
-    'selection.outlineText',
     'selection.outlineStroke'
   ],
   [
@@ -55,7 +58,8 @@ const CANVAS_MENU_GROUPS = [
     'selection.iconActions'
   ],
   ['selection.toggleVisibility', 'selection.toggleLock'],
-  ['selection.flipHorizontal', 'selection.flipVertical']
+  ['selection.flipHorizontal', 'selection.flipVertical'],
+  ['selection.arrangeWhenAvailable']
 ] satisfies readonly CanvasMenuGroup[]
 
 function separator(): MenuSeparatorNode {
@@ -69,6 +73,28 @@ function moveToPageItem({ otherPages, moveSelectionToPage, selection, t }: Canva
     action: () => moveSelectionToPage(page.id)
   }))
   return [{ label: t.moveToPage, sub } satisfies MenuActionNode]
+}
+
+/** The Auto Arrange layouts, in the groups every arrange menu shows them in. */
+export const AUTO_ARRANGE_GROUPS = [
+  ['selection.arrangeSpread', 'selection.arrangeCompact', 'selection.arrangePack'],
+  [
+    'selection.arrangeFlowDown',
+    'selection.arrangeFlowRight',
+    'selection.arrangeTreeDown',
+    'selection.arrangeTreeRight',
+    'selection.arrangeRadial',
+    'selection.arrangeNetwork'
+  ]
+] satisfies readonly (readonly EditorCommandId[])[]
+
+function arrangeItem({ commandMenuItem, selection, t }: CanvasMenuOptions): MenuEntry[] {
+  if (!selection.canAutoArrange.value) return []
+  const sub = AUTO_ARRANGE_GROUPS.flatMap((group, index) => [
+    ...(index > 0 ? [separator()] : []),
+    ...group.map((command) => commandMenuItem(command))
+  ])
+  return [{ label: t.autoArrange, sub } satisfies MenuActionNode]
 }
 
 function componentItems({ commandMenuItem, selection }: CanvasMenuOptions): MenuEntry[] {
@@ -100,6 +126,8 @@ function conditionalCommand(command: CanvasMenuCommand, options: CanvasMenuOptio
   switch (command) {
     case 'selection.moveToPageWhenAvailable':
       return moveToPageItem(options)
+    case 'selection.arrangeWhenAvailable':
+      return arrangeItem(options)
     case 'selection.componentAction':
       return componentItems(options)
     case 'selection.componentSetAction':
@@ -108,8 +136,10 @@ function conditionalCommand(command: CanvasMenuCommand, options: CanvasMenuOptio
       return instanceItems(options)
     case 'selection.iconActions':
       return iconItems(options)
-    case 'selection.ungroupWhenGroup':
-      return options.selection.isGroup.value ? [options.commandMenuItem('selection.ungroup')] : []
+    case 'selection.ungroupWhenAvailable':
+      return options.selection.canUngroup.value
+        ? [options.commandMenuItem('selection.ungroup')]
+        : []
     default:
       return [options.commandMenuItem(command)]
   }
@@ -121,7 +151,7 @@ export function buildCanvasContextMenu(options: CanvasMenuOptions): MenuEntry[] 
     const groupEntries = group.flatMap((command) => conditionalCommand(command, options))
     if (groupEntries.length === 0) continue
     if (entries.length > 0) entries.push(separator())
-    entries.push(...groupEntries)
+    appendAll(entries, groupEntries)
   }
   return entries
 }

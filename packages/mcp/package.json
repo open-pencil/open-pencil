@@ -1,12 +1,13 @@
 {
   "name": "@open-pencil/mcp",
-  "version": "0.16.0",
+  "version": "0.17.0-beta.5",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/mcp"
   },
+  "funding": "https://ko-fi.com/dannote",
   "bin": {
     "openpencil-mcp": "./dist/stdio.mjs",
     "openpencil-mcp-http": "./dist/index.mjs"
@@ -65,9 +66,10 @@
   "dependencies": {
     "@hono/node-server": "^1.19.17",
     "@modelcontextprotocol/server": "^2.0.0",
+    "@noble/hashes": "^2.4.0",
     "@open-pencil/core": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
-    "@valibot/to-json-schema": "^1.8.0",
+    "@open-pencil/std": "workspace:*",
     "es-toolkit": "^1.52.0",
     "hono": "^4.13.13",
     "js-base64": "^3.9.3",
@@ -76,6 +78,8 @@
     "ws": "^8.21.3"
   },
   "devDependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@open-pencil/test-support": "workspace:*",
     "@types/node": "^25.9.9",
     "@types/ws": "^8.18.1"
   }

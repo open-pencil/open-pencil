@@ -1,16 +1,17 @@
 import { reactive } from 'vue'
 
+import { toError } from '@open-pencil/std/errors'
+
 import { connectAutomation } from '@/app/automation/bridge/server'
 import type { EditorStore } from '@/app/editor/active-store'
 import { isTauri } from '@/app/tauri/env'
 
 import { mcpFailure, type MCPFailure } from './failure'
+import { getAutomationHealthFailure, type AutomationHealth } from './health'
 import { setMCPToolDescriptors } from './preferences'
 import {
-  type AutomationHealth,
   type AutomationServerHandle,
   readAutomationHealth,
-  getAutomationHealthFailure,
   getAutomationStartupFailure,
   getMCPServerURL,
   spawnMCPIfNeeded
@@ -65,10 +66,6 @@ function describeStartupFailure(
 /** Technical summary for logs; the UI renders translated copy from the code. */
 function failureDetail(failure: MCPFailure): string {
   return failure.detail ? `${failure.code}: ${failure.detail}` : failure.code
-}
-
-function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error(String(error))
 }
 
 export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
@@ -144,7 +141,7 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
     state.status = 'starting'
     state.failure = null
     state.externallyManaged = false
-    let failure: MCPFailure | null = null
+    let failure: MCPFailure | null
     let thrown: Error | null = null
     try {
       server = await dependencies.spawn()
@@ -205,7 +202,7 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
           const error = new Error('Editor is not ready')
           state.status = 'error'
           state.failure = null
-          return { ok: false, error } as MCPRuntimeResult
+          return { ok: false, error }
         }
         return startOperation()
       })

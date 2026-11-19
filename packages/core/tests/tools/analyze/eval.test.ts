@@ -17,7 +17,7 @@ test('returns what a script returns as the JSON it prints as', async () => {
   )
 
   expect(result).toMatchObject({ width: null, list: [1, null], byId: {} })
-  expect(result).toHaveProperty('page.type', 'CANVAS')
+  expect(result).toHaveProperty('page.type', 'PAGE')
 })
 
 test('a script result makes a tool message the AI SDK accepts in the next prompt', async () => {

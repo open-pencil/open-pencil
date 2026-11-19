@@ -1,10 +1,11 @@
-import { AI_PROVIDERS } from '@open-pencil/core/constants'
+import { AI_PROVIDERS, providerKind } from '@open-pencil/core/constants'
 
 import { aiModelSettings, modelConnectionCredentialRef } from '@/app/ai/models'
 import { VECTORIZE_CREDENTIAL_REFS } from '@/app/editor/vectorize/credentials'
 import { mcpConnectionSettings, mcpConnectionCredentialRef } from '@/app/integrations/mcp'
 import { storageCredentialRefs, storageProviderRegistry } from '@/app/integrations/storage'
 import {
+  EXA_CREDENTIAL,
   PEXELS_CREDENTIAL,
   UNSPLASH_CREDENTIAL,
   providerCredentialRef
@@ -19,11 +20,11 @@ function uniqueCredentialRefs(references: CredentialRef[]): CredentialRef[] {
 }
 
 export function appCredentialRefs(): CredentialRef[] {
-  const legacyAIRefs = AI_PROVIDERS.filter((provider) => !provider.id.startsWith('acp:')).map(
+  const legacyAIRefs = AI_PROVIDERS.filter((provider) => providerKind(provider.id) !== 'acp').map(
     (provider) => providerCredentialRef(provider.id)
   )
   const modelConnectionRefs = aiModelSettings.value.connections
-    .filter((connection) => !connection.providerID.startsWith('acp:'))
+    .filter((connection) => providerKind(connection.providerID) !== 'acp')
     .map(modelConnectionCredentialRef)
   const storageCredentials = storageProviderRegistry
     .list()
@@ -33,6 +34,7 @@ export function appCredentialRefs(): CredentialRef[] {
     ...modelConnectionRefs,
     PEXELS_CREDENTIAL,
     UNSPLASH_CREDENTIAL,
+    EXA_CREDENTIAL,
     ...VECTORIZE_CREDENTIAL_REFS,
     ...mcpConnectionSettings.value.connections.map((connection) =>
       mcpConnectionCredentialRef(connection.id)

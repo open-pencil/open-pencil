@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import { AI_PROVIDERS, REASONING_EFFORTS } from '@open-pencil/core/constants'
 import type { AIProviderID, ModelOption, ReasoningEffort } from '@open-pencil/core/constants'
+import { DAY_MS, DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { modelOptionsSchema } from '@/app/ai/models/catalog/schema'
 import { cachedChatGPTModels } from '@/app/ai/providers/chatgpt/catalog'
@@ -11,6 +12,7 @@ const openRouterModelSchema = v.looseObject({
   id: v.optional(v.unknown()),
   name: v.optional(v.unknown()),
   supported_parameters: v.optional(v.unknown()),
+  context_length: v.optional(v.unknown()),
   architecture: v.nullish(v.looseObject({ input_modalities: v.optional(v.unknown()) })),
   top_provider: v.nullish(v.looseObject({ max_completion_tokens: v.optional(v.unknown()) })),
   reasoning: v.nullish(
@@ -32,9 +34,9 @@ const openRouterModelsResponseSchema = v.pipe(
 
 const OPENROUTER_MODELS_URL = 'https://openrouter.ai/api/v1/models'
 const OPENROUTER_MODELS_CACHE_KEY = 'openrouter/models-v2'
-const OPENROUTER_MODELS_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const OPENROUTER_MODELS_CACHE_TTL_MS = DAY_MS
 // Runtime creation waits for the list, so a stalled request falls back to the curated models.
-const OPENROUTER_MODELS_TIMEOUT_MS = 10_000
+const OPENROUTER_MODELS_TIMEOUT_MS = DEADLINE_MS.request
 function curatedProviderModels(providerID: AIProviderID) {
   return AI_PROVIDERS.find((provider) => provider.id === providerID)?.models ?? []
 }
@@ -73,6 +75,10 @@ export function normalizeOpenRouterModel(model: OpenRouterModel): ModelOption | 
   }
   if (typeof maxOutputTokens === 'number' && Number.isFinite(maxOutputTokens)) {
     normalized.recommendedMaxOutputTokens = Math.min(128_000, Math.max(1024, maxOutputTokens))
+  }
+  const context = model.context_length
+  if (typeof context === 'number' && Number.isFinite(context) && context > 0) {
+    normalized.contextWindow = context
   }
   const minEffort = minReasoningEffort(model)
   if (minEffort) normalized.minReasoningEffort = minEffort
@@ -120,7 +126,16 @@ export async function resolveProviderModel(
   modelID: string,
   fetcher?: typeof fetch
 ): Promise<ModelOption | undefined> {
-  return (await listProviderModels(providerID, fetcher)).find((model) => model.id === modelID)
+  const listed = (await listProviderModels(providerID, fetcher)).find(
+    (model) => model.id === modelID
+  )
+  // A profile saved with a model the list has since dropped keeps what that model accepts.
+  return (
+    listed ??
+    AI_PROVIDERS.find((provider) => provider.id === providerID)?.retiredModels?.find(
+      (model) => model.id === modelID
+    )
+  )
 }
 
 export function resetOpenRouterModelsForTests(): void {

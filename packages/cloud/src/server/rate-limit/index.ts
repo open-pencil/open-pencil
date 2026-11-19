@@ -4,7 +4,12 @@ export {
   CLOUD_RATE_LIMITS,
   createActorRateLimiter,
   createCloudRateLimiter,
+  createResourceRateLimiter,
+  createRouteRateLimiter,
   createTrustedIPRateLimiter,
-  type RateLimitPolicy
+  routeHasOwnBudget,
+  routeParamResource,
+  type RateLimitPolicy,
+  type ResourceRateLimitPolicy
 } from './middleware'
 export { PostgresRateLimitStore } from './postgres'

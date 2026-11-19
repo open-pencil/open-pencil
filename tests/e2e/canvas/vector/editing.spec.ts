@@ -1,3 +1,5 @@
+import { fromUint8Array } from 'js-base64'
+
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { vectorEditDriver } from '#tests/helpers/canvas/vector-edit/driver'
 
@@ -61,7 +63,7 @@ test('vector edit overlay follows nested transforms and live path fills', async 
       fills: [blue],
       fillGeometry: [
         { windingRule: 'NONZERO', commandsBlob: rectBlob(0, 0, 100, 100) },
-        { windingRule: 'NONZERO', commandsBlob: rectBlob(100, 0, 100, 100), fills: [orange] }
+        { windingRule: 'NONZERO', commandsBlob: rectBlob(100, 0, 100, 100) }
       ],
       vectorNetwork: {
         vertices: [
@@ -86,7 +88,7 @@ test('vector edit overlay follows nested transforms and live path fills', async 
         ],
         regions: [
           { windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] },
-          { windingRule: 'NONZERO', loops: [[4, 5, 6, 7]] }
+          { windingRule: 'NONZERO', loops: [[4, 5, 6, 7]], fills: [orange] }
         ]
       }
     })
@@ -100,6 +102,63 @@ test('vector edit overlay follows nested transforms and live path fills', async 
   editor.canvas.assertNoErrors()
   const buffer = await editor.canvas.screenshotCanvasRegion()
   expect(buffer).toMatchSnapshot('vector-edit-mode-overlay.png')
+})
+
+// Figma desktop, live: a handle on a point is drawn above it, its line over its own point too, and
+// a press there takes the handle.
+test('vector edit mode draws handles above the points', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const stroke = {
+      type: 'SOLID' as const,
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      visible: true,
+      opacity: 1
+    }
+    const vector = store.graph.createNode('VECTOR', store.state.currentPageId, {
+      name: 'Handle on a point',
+      x: 200,
+      y: 160,
+      width: 200,
+      height: 100,
+      fills: [],
+      strokes: [{ ...stroke, weight: 1, align: 'CENTER' }],
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 100 },
+          { x: 200, y: 0 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: { x: 100, y: 100 }, tangentEnd: { x: 0, y: -60 } },
+          { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+        ],
+        regions: []
+      }
+    })
+    store.enterNodeEditMode(vector.id)
+    const editState = store.getNodeEditState()
+    if (editState) editState.selectedVertexIndices = new Set([0])
+    store.requestRender()
+  })
+  await editor.canvas.waitForRender()
+  editor.canvas.assertNoErrors()
+  const image = await editor.canvas.screenshotCanvasRegion()
+  // The snapshot comparison tolerates a few pixels, so read the selected point's centre: the grey
+  // of its handle line, not the point's blue.
+  const [red, green, blue] = await editor.page.evaluate(async (base64) => {
+    const bitmap = await createImageBitmap(
+      await (await fetch(`data:image/png;base64,${base64}`)).blob()
+    )
+    const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d')
+    if (!context) throw new Error('2D canvas unavailable')
+    context.drawImage(bitmap, 0, 0)
+    const at = (value: number) => value * devicePixelRatio
+    return Array.from(context.getImageData(at(200), at(160), 1, 1).data)
+  }, fromUint8Array(image))
+  expect(Math.abs(red - blue) + Math.abs(green - blue)).toBeLessThan(20)
+  expect(image).toMatchSnapshot('vector-edit-handle-on-point.png')
 })
 
 test('a Pen-created Bézier commits a vertex drag on mouseup', async () => {
@@ -282,6 +341,58 @@ test('dragging a vector point snaps to sibling bounds and clears guides on relea
   editor.canvas.assertNoErrors()
 })
 
+// Figma desktop 126: dragging a straight segment puts a point where it was pressed and drags it.
+test('dragging a straight segment bends it at a new point', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const zero = { x: 0, y: 0 }
+    const vector = store.graph.createNode('VECTOR', store.state.currentPageId, {
+      name: 'Line',
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 1,
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 }
+        ],
+        segments: [{ start: 0, end: 1, tangentStart: zero, tangentEnd: zero }],
+        regions: []
+      }
+    })
+    store.enterNodeEditMode(vector.id)
+  })
+  await editor.canvas.waitForRender()
+
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas bounds unavailable')
+  await editor.page.mouse.move(box.x + 130, box.y + 100)
+  await editor.page.mouse.down()
+  await editor.page.mouse.move(box.x + 130, box.y + 60, { steps: 8 })
+  await editor.page.mouse.up()
+
+  const path = await editor.page.evaluate(() => {
+    const editState = window.openPencil?.getStore?.().getNodeEditState()
+    return {
+      vertices: editState?.vertices.map(({ x, y }) => ({ x: Math.round(x), y: Math.round(y) })),
+      segments: editState?.segments.length,
+      selected: [...(editState?.selectedVertexIndices ?? [])]
+    }
+  })
+  expect(path).toEqual({
+    vertices: [
+      { x: 100, y: 100 },
+      { x: 200, y: 100 },
+      { x: 130, y: 60 }
+    ],
+    segments: 2,
+    selected: [2]
+  })
+  editor.canvas.assertNoErrors()
+})
+
 test('Enter opens a selected vector’s path, but not one an instance draws from its component', async () => {
   const scene = vectorEditDriver(() => editor.page)
   const ids = await scene.build()
@@ -294,4 +405,62 @@ test('Enter opens a selected vector’s path, but not one an instance draws from
   }
   expect(await editedAfterEnter(ids.vector)).toBe(ids.vector)
   expect(await editedAfterEnter(ids.copy)).toBeNull()
+})
+
+// Figma desktop 126: undo after leaving opens the path again, then takes back its changes one by
+// one, and undo past the first change leaves it.
+test('undo after leaving vector edit mode opens the path again and steps back through it', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const zero = { x: 0, y: 0 }
+    const vector = store.graph.createNode('VECTOR', store.state.currentPageId, {
+      name: 'Line',
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 1,
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 }
+        ],
+        segments: [{ start: 0, end: 1, tangentStart: zero, tangentEnd: zero }],
+        regions: []
+      }
+    })
+    store.enterNodeEditMode(vector.id)
+  })
+  await editor.canvas.waitForRender()
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas bounds unavailable')
+  const { mouse, keyboard } = editor.page
+  const end = () =>
+    editor.page.evaluate(() => {
+      const point = window.openPencil?.getStore?.().getNodeEditState()?.vertices[1]
+      return point ? [Math.round(point.x), Math.round(point.y)] : null
+    })
+
+  await mouse.move(box.x + 200, box.y + 100)
+  await mouse.down()
+  await mouse.move(box.x + 200, box.y + 140, { steps: 8 })
+  await mouse.up()
+  await keyboard.press('Enter')
+  expect(await end()).toBeNull()
+
+  await keyboard.press('ControlOrMeta+z')
+  expect(await end()).toEqual([200, 140])
+  await keyboard.press('ControlOrMeta+z')
+  expect(await end()).toEqual([200, 100])
+  await keyboard.press('ControlOrMeta+z')
+  expect(await end()).toBeNull()
+
+  for (let i = 0; i < 3; i++) await keyboard.press('ControlOrMeta+Shift+z')
+  expect(await end()).toBeNull()
+  const height = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const [line] = store?.graph.getChildren(store.state.currentPageId) ?? []
+    return Math.round(line?.height ?? 0)
+  })
+  expect(height).toBe(40)
 })

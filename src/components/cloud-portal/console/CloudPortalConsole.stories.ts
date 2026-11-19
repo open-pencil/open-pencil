@@ -1,23 +1,62 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { ref } from 'vue'
+import { expect, waitFor, within } from 'storybook/test'
+
+import { svgDataURL } from '@open-pencil/scene-graph/images'
 
 import PortalAccountSecurity from '../account/PortalAccountSecurity.vue'
+import PortalPlan from '../account/PortalPlan.vue'
+import PortalProfile from '../account/PortalProfile.vue'
+import PortalSessions from '../account/PortalSessions.vue'
 import PortalConsoleLayout from '../layout/PortalConsoleLayout.vue'
-import type { AccessRequest, PortalSection } from '../types'
+import { PORTAL_SECTION_ICONS } from '../layout/sections'
+import type {
+  AccessRequest,
+  PortalActivityEntry,
+  PortalEmail,
+  PortalPerson,
+  PortalDocumentRow,
+  PortalPersonDetail,
+  PortalPlan as PortalPlanType,
+  PortalSection,
+  PortalSession,
+  PortalSignIn
+} from '../types'
 import PortalAccessRequests from './PortalAccessRequests.vue'
 import PortalActivity from './PortalActivity.vue'
+import PortalDocuments from './PortalDocuments.vue'
 import PortalEmailDelivery from './PortalEmailDelivery.vue'
 import PortalPeople from './PortalPeople.vue'
+import PortalPersonPage from './PortalPerson.vue'
 import PortalStatus from './PortalStatus.vue'
 
 const account = { id: 'user-ana', name: 'Ana Duarte', email: 'ana@studio.example' }
 const sections: PortalSection[] = [
-  { id: 'security', label: 'Sign-in and security', group: 'Your account' },
-  { id: 'status', label: 'Overview', group: 'Server' },
-  { id: 'requests', label: 'Access requests', group: 'Server', count: 3 },
-  { id: 'people', label: 'People', group: 'Server' },
-  { id: 'email', label: 'Email delivery', group: 'Server' },
-  { id: 'activity', label: 'Activity', group: 'Server' }
+  { id: 'profile', icon: PORTAL_SECTION_ICONS.profile, label: 'Profile', group: 'Your account' },
+  { id: 'plan', icon: PORTAL_SECTION_ICONS.plan, label: 'Plan', group: 'Your account' },
+  {
+    id: 'security',
+    icon: PORTAL_SECTION_ICONS.security,
+    label: 'Sign-in and security',
+    group: 'Your account'
+  },
+  { id: 'sessions', icon: PORTAL_SECTION_ICONS.sessions, label: 'Sessions', group: 'Your account' },
+  { id: 'status', icon: PORTAL_SECTION_ICONS.overview, label: 'Overview', group: 'Server' },
+  {
+    id: 'requests',
+    icon: PORTAL_SECTION_ICONS.requests,
+    label: 'Access requests',
+    group: 'Server',
+    count: 3
+  },
+  {
+    id: 'documents',
+    icon: PORTAL_SECTION_ICONS.documents,
+    label: 'Documents',
+    group: 'Server'
+  },
+  { id: 'people', icon: PORTAL_SECTION_ICONS.people, label: 'People', group: 'Server' },
+  { id: 'email', icon: PORTAL_SECTION_ICONS.email, label: 'Email delivery', group: 'Server' },
+  { id: 'activity', icon: PORTAL_SECTION_ICONS.activity, label: 'Activity', group: 'Server' }
 ]
 const requests: AccessRequest[] = [
   {
@@ -45,18 +84,330 @@ const requests: AccessRequest[] = [
     status: 'pending'
   }
 ]
+const people: PortalPerson[] = [
+  {
+    id: 'user-ana',
+    name: 'Ana Duarte',
+    email: 'ana@studio.example',
+    admin: true,
+    suspended: false,
+    twoStep: true,
+    joinedOn: 'Mar 3, 2026',
+    lastActive: 'now',
+    workspaceCount: 3,
+    methods: ['credential', 'google'],
+    you: true
+  },
+  {
+    id: 'user-ben',
+    name: 'Ben Ortiz',
+    email: 'ben@studio.example',
+    admin: true,
+    suspended: false,
+    twoStep: true,
+    joinedOn: 'Mar 3, 2026',
+    lastActive: '2 hr. ago',
+    workspaceCount: 2,
+    methods: ['google']
+  },
+  {
+    id: 'user-mia',
+    name: 'Mia Chen',
+    email: 'mia@client.example',
+    admin: false,
+    suspended: false,
+    twoStep: false,
+    joinedOn: 'Jun 12, 2026',
+    lastActive: 'yesterday',
+    workspaceCount: 1,
+    methods: ['credential', 'github']
+  },
+  {
+    id: 'user-tom',
+    name: 'Tom Weber',
+    email: 'tom@agency.example',
+    admin: false,
+    suspended: true,
+    suspendedReason: 'Shared files outside the studio',
+    twoStep: false,
+    joinedOn: 'Oct 2, 2026',
+    lastActive: null,
+    workspaceCount: 0,
+    methods: ['credential']
+  },
+  {
+    id: 'user-joon',
+    name: 'Joon Park',
+    email: 'joon@agency.example',
+    admin: false,
+    suspended: false,
+    twoStep: false,
+    joinedOn: 'Nov 16, 2026',
+    lastActive: '1 hr. ago',
+    workspaceCount: 0,
+    methods: ['apple'],
+    access: 'waiting'
+  }
+]
+/** A console list's server for a story: every page holds `rows`, and each filter `counts`. */
+const serve =
+  <Filter extends string, Row>(rows: Row[], counts: Record<Filter, number>) =>
+  () =>
+    Promise.resolve({ rows, total: rows.length, counts })
+const loadPeople = serve(people, {
+  all: 24,
+  administrators: 2,
+  suspended: 1,
+  'without-two-step': 9
+})
+const loadRequests = serve(requests, { pending: 3, approved: 18, rejected: 2, revoked: 1 })
+const loadNoRequests = serve<AccessRequest['status'], AccessRequest>([], {
+  pending: 0,
+  approved: 18,
+  rejected: 2,
+  revoked: 1
+})
+/** A design's thumbnail as the editor saves one: a frame with a heading and a button. */
+function thumbnail(accent: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="320" height="200" fill="#f3f4f6"/><rect x="40" y="30" width="240" height="140" rx="10" fill="#fff"/><rect x="64" y="58" width="150" height="14" rx="4" fill="#1f2328"/><rect x="64" y="84" width="190" height="8" rx="4" fill="#9ca3af"/><rect x="64" y="122" width="80" height="26" rx="6" fill="${accent}"/></svg>`
+  return svgDataURL(svg)
+}
+const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString()
+const documentRows: PortalDocumentRow[] = [
+  {
+    id: 'd1',
+    name: 'Spring campaign',
+    kind: 'design',
+    saved: true,
+    workspace: 'Community',
+    owner: account,
+    updatedAt: hoursAgo(0.2),
+    thumbnail: thumbnail('#2563eb'),
+    exposure: { community: true, links: 0, editLinks: 0 },
+    takenDown: false,
+    takenDownReason: null,
+    openReports: 0,
+    deletedForever: false,
+    destroyed: null
+  },
+  {
+    id: 'd2',
+    name: 'Sprint retro',
+    kind: 'board',
+    saved: true,
+    workspace: 'Studio',
+    owner: { id: 'user-ben', name: 'Ben Ortiz', email: 'ben@studio.example' },
+    updatedAt: hoursAgo(5),
+    thumbnail: thumbnail('#db2777'),
+    exposure: { community: false, links: 2, editLinks: 1 },
+    takenDown: false,
+    takenDownReason: null,
+    openReports: 1,
+    deletedForever: false,
+    destroyed: null
+  },
+  {
+    id: 'd3',
+    name: 'Untitled',
+    kind: 'design',
+    saved: false,
+    workspace: 'Chloe’s workspace',
+    owner: { id: 'user-chloe', name: 'Chloe Martin', email: 'chloe@agency.example' },
+    updatedAt: hoursAgo(30),
+    thumbnail: null,
+    exposure: { community: false, links: 0, editLinks: 0 },
+    takenDown: false,
+    takenDownReason: null,
+    openReports: 0,
+    deletedForever: false,
+    destroyed: null
+  },
+  {
+    id: 'd4',
+    name: 'Giveaway',
+    kind: 'design',
+    saved: true,
+    workspace: 'Promo',
+    owner: null,
+    updatedAt: hoursAgo(24 * 12),
+    thumbnail: thumbnail('#ca8a04'),
+    exposure: { community: false, links: 1, editLinks: 0 },
+    takenDown: true,
+    takenDownReason: 'Phishing page',
+    openReports: 0,
+    deletedForever: false,
+    destroyed: null
+  }
+]
+const loadDocuments = serve(documentRows, { all: 4, reported: 1, disabled: 1, purged: 0 })
+const emails: PortalEmail[] = [
+  {
+    id: 'e1',
+    kind: 'document-invitation',
+    recipient: 'chloe@agency.example',
+    status: 'failed',
+    attempts: 5,
+    when: 'Oct 25, 2026, 10:42 AM',
+    error: 'Mailbox unavailable'
+  },
+  {
+    id: 'e2',
+    kind: 'email-verification',
+    recipient: 'diego@studio.example',
+    status: 'sent',
+    attempts: 1,
+    when: 'Oct 25, 2026, 9:15 AM',
+    error: null
+  },
+  {
+    id: 'e4',
+    kind: 'new-sign-in',
+    recipient: 'ana@studio.example',
+    status: 'sent',
+    attempts: 1,
+    when: 'Oct 25, 2026, 8:51 AM',
+    error: null
+  },
+  {
+    id: 'e3',
+    kind: 'enrollment-approved',
+    recipient: 'mia@client.example',
+    status: 'waiting',
+    attempts: 2,
+    when: 'Oct 24, 2026, 6:20 PM',
+    error: null
+  }
+]
+const loadEmails = serve(emails, { all: 4, sent: 2, waiting: 1, failed: 1 })
+const entries: PortalActivityEntry[] = [
+  {
+    id: 'a1',
+    actor: { id: 'user-ana', name: 'Ana Duarte' },
+    action: 'enrollment.approved',
+    target: 'mia@client.example',
+    reason: null,
+    when: 'Oct 24, 2026, 3:10 PM'
+  },
+  {
+    id: 'a2',
+    actor: { id: 'user-ben', name: 'Ben Ortiz' },
+    action: 'user.banned',
+    target: 'Tom Weber',
+    reason: 'Shared files outside the studio',
+    when: 'Oct 21, 2026, 11:02 AM'
+  },
+  {
+    id: 'a3',
+    actor: { id: 'user-ana', name: 'Ana Duarte' },
+    action: 'user.admin-granted',
+    target: 'Ben Ortiz',
+    reason: null,
+    when: 'Sep 28, 2026, 9:30 AM'
+  }
+]
+const loadActivity = serve(entries, { all: 3, accounts: 2, requests: 1, email: 0 })
+const sessions: PortalSession[] = [
+  {
+    id: 's1',
+    current: true,
+    method: 'passkey',
+    browser: 'Chrome 141',
+    system: 'macOS',
+    ipAddress: '203.0.113.9',
+    lastActive: 'now',
+    signedInOn: 'Oct 20, 2026'
+  },
+  {
+    id: 's2',
+    current: false,
+    method: 'desktop',
+    browser: null,
+    system: 'macOS',
+    ipAddress: '203.0.113.9',
+    lastActive: '3 hr. ago',
+    signedInOn: 'Oct 2, 2026'
+  },
+  {
+    id: 's3',
+    current: false,
+    method: 'google',
+    browser: 'Safari 26',
+    system: 'iOS',
+    ipAddress: '198.51.100.24',
+    lastActive: '4 days',
+    signedInOn: 'Sep 28, 2026'
+  }
+]
+const signIns: PortalSignIn[] = [
+  {
+    id: 'i1',
+    method: 'passkey',
+    browser: 'Chrome 141',
+    system: 'macOS',
+    ipAddress: '203.0.113.9',
+    when: 'Oct 20, 2026, 9:14 AM'
+  },
+  {
+    id: 'i2',
+    method: 'desktop',
+    browser: null,
+    system: 'macOS',
+    ipAddress: '203.0.113.9',
+    when: 'Oct 2, 2026, 4:05 PM'
+  },
+  {
+    id: 'i3',
+    method: 'google',
+    browser: 'Safari 26',
+    system: 'iOS',
+    ipAddress: '198.51.100.24',
+    when: 'Sep 28, 2026, 8:40 PM'
+  }
+]
+const person: PortalPersonDetail = {
+  person: people[2] ?? people[0],
+  emailVerified: true,
+  methods: [
+    { id: 'method-password', provider: 'credential', linkedOn: 'Jun 12, 2026', canRemove: true },
+    { id: 'method-google', provider: 'google', linkedOn: 'Jul 1, 2026', canRemove: true }
+  ],
+  authenticator: false,
+  passkeyCount: 0,
+  workspaces: [
+    { id: 'w1', name: 'Spring campaign', role: 'editor', memberCount: 6 },
+    { id: 'w2', name: 'Mia’s workspace', role: 'admin', memberCount: 1 }
+  ],
+  sessions: sessions.slice(2),
+  signIns: signIns.slice(2)
+}
+const MB = 1024 * 1024
+const freePlan: PortalPlanType = {
+  storage: { usedBytes: 212 * MB, totalBytes: 300 * MB },
+  services: false,
+  monthlyCredits: null
+}
+const paidPlan: PortalPlanType = {
+  storage: { usedBytes: 3482 * MB, totalBytes: 10240 * MB },
+  services: true,
+  monthlyCredits: 3000
+}
 const components = {
   PortalConsoleLayout,
   PortalAccountSecurity,
+  PortalProfile,
+  PortalPlan,
+  PortalSessions,
+  PortalPerson: PortalPersonPage,
   PortalAccessRequests,
   PortalActivity,
+  PortalDocuments,
   PortalEmailDelivery,
   PortalPeople,
   PortalStatus
 }
 
 const meta = {
-  title: 'App/Cloud Portal/Console',
+  title: 'App/Cloud/Portal/Console',
   tags: ['autodocs'],
   parameters: { layout: 'fullscreen' }
 } satisfies Meta
@@ -73,9 +424,24 @@ const story = (
 ): Story => ({
   render: () => ({
     components,
-    setup: () => ({ account, sections, requests, filter: ref('pending'), ...extra }),
+    setup: () => ({
+      account,
+      sections,
+      sessions,
+      signIns,
+      person,
+      loadPeople,
+      loadRequests,
+      loadNoRequests,
+      loadEmails,
+      loadActivity,
+      loadDocuments,
+      freePlan,
+      paidPlan,
+      ...extra
+    }),
     template: `
-      <div class="h-[720px]">
+      <div class="h-180">
         <PortalConsoleLayout host="cloud.studio.example" :account="account" :sections="sections" active="${active}" heading="${heading}" description="${description}">
           ${body}
         </PortalConsoleLayout>
@@ -83,13 +449,37 @@ const story = (
   })
 })
 
+export const Profile = story(
+  'profile',
+  'Profile',
+  'How you appear to people on cloud.studio.example.',
+  `<PortalProfile :profile="{ id: 'user-ana', name: 'Ana Duarte', email: 'ana@studio.example', image: null, memberSince: 'Mar 3, 2026' }" />`
+)
+export const PlanFree = story(
+  'plan',
+  'Plan',
+  'What your account includes, and what you pay for.',
+  `<PortalPlan :plan="freePlan" sells />`
+)
+export const PlanPaid = story(
+  'plan',
+  'Plan',
+  'What your account includes, and what you pay for.',
+  `<PortalPlan :plan="paidPlan" sells />`
+)
+export const Sessions = story(
+  'sessions',
+  'Sessions',
+  'Where your account is signed in, and when it was.',
+  `<PortalSessions manage :sessions="sessions" :sign-ins="signIns" />`
+)
 export const SignInAndSecurity = story(
   'security',
   'Sign-in and security',
   'How you sign in to cloud.studio.example.',
   `<PortalAccountSecurity
     :methods="[{ id: 'm1', provider: 'google', linkedOn: 'in March', canUnlink: true }, { id: 'm2', provider: 'credential', linkedOn: 'in March', canUnlink: true }]"
-    :linkable="['apple']"
+    :linkable="['apple', 'github']"
     :authenticator="{ available: true, on: true }"
     :passkeys="[{ id: 'p1', name: 'MacBook Pro', addedOn: 'in July' }]"
   />`
@@ -110,48 +500,71 @@ export const Overview = story(
   'status',
   'Overview',
   'cloud.studio.example',
-  `<PortalStatus :status="{ deployment: 'self-hosted', enrollmentMode: 'approval', emailTransport: 'smtp', pendingEnrollment: 3, pendingEmail: 0, failedEmail: 1 }" />`
+  `<PortalStatus :status="{ deployment: 'self-hosted', enrollmentMode: 'approval', emailTransport: 'smtp', pendingEnrollment: 3, pendingEmail: 0, failedEmail: 1, accounts: 24, workspaces: 11, documents: 186, storedBytes: 4831838208 }" />`
 )
 export const AccessRequests = story(
   'requests',
   'Access requests',
   'People asking to join. Approving lets them sign in; each gets an email either way.',
-  `<PortalAccessRequests v-model:filter="filter" :requests="requests" />`
+  `<PortalAccessRequests :load="loadRequests" />`
+)
+export const AccessRequestsInvitation = story(
+  'requests',
+  'Access requests',
+  'People asking to join. Approving lets them sign in; each gets an email either way.',
+  `<PortalAccessRequests :load="loadRequests" invitation="offered" />`
+)
+export const AccessRequestsInvited = story(
+  'requests',
+  'Access requests',
+  'People asking to join. Approving lets them sign in; each gets an email either way.',
+  `<PortalAccessRequests :load="loadRequests" invitation="sent" />`
 )
 export const NoAccessRequests = story(
   'requests',
   'Access requests',
   'People asking to join. Approving lets them sign in; each gets an email either way.',
-  `<PortalAccessRequests v-model:filter="filter" :requests="[]" />`
+  `<PortalAccessRequests :load="loadNoRequests" />`
 )
 export const People = story(
   'people',
   'People',
   '24 accounts on this server.',
-  `<PortalPeople :people="[
-    { id: 'user-ana', name: 'Ana Duarte', email: 'ana@studio.example', admin: true, suspended: false, joinedOn: 'in March', you: true },
-    { id: 'user-ben', name: 'Ben Ortiz', email: 'ben@studio.example', admin: true, suspended: false, joinedOn: 'in March' },
-    { id: 'user-mia', name: 'Mia Chen', email: 'mia@client.example', admin: false, suspended: false, joinedOn: 'in June' },
-    { id: 'user-tom', name: 'Tom Weber', email: 'tom@agency.example', admin: false, suspended: true, joinedOn: 'last week' }
-  ]" />`
+  `<PortalPeople :load="loadPeople" />`
 )
+export const Person = story('people', 'People', '', `<PortalPerson :detail="person" />`)
 export const EmailDelivery = story(
   'email',
   'Email delivery',
   'Invitations, sign-in links, and access decisions the server sends.',
-  `<PortalEmailDelivery :emails="[
-    { id: 'e1', kind: 'document-invitation', recipient: 'chloe@agency.example', status: 'failed', attempts: 5, when: '10:42', error: 'Mailbox unavailable' },
-    { id: 'e2', kind: 'email-verification', recipient: 'diego@studio.example', status: 'sent', attempts: 1, when: '09:15' },
-    { id: 'e3', kind: 'enrollment-approved', recipient: 'mia@client.example', status: 'sent', attempts: 1, when: 'Yesterday' }
-  ]" />`
+  `<PortalEmailDelivery :load="loadEmails" />`
 )
 export const Activity = story(
   'activity',
   'Activity',
   'What administrators did on this server.',
-  `<PortalActivity :entries="[
-    { id: 'a1', actor: { id: 'user-ana', name: 'Ana Duarte' }, action: 'enrollment.approved', target: 'mia@client.example', when: 'Yesterday' },
-    { id: 'a2', actor: { id: 'user-ben', name: 'Ben Ortiz' }, action: 'user.banned', target: 'tom@agency.example', when: 'Mon' },
-    { id: 'a3', actor: { id: 'user-ana', name: 'Ana Duarte' }, action: 'user.admin-granted', target: 'Ben Ortiz', when: 'Sep 28' }
-  ]" />`
+  `<PortalActivity :load="loadActivity" />`
 )
+export const Documents: Story = {
+  ...story(
+    'documents',
+    'Documents',
+    'Every document on this server, latest change first.',
+    `<PortalDocuments :load="loadDocuments" />`
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // Each document says who beyond its workspace can open it, private ones included.
+    await expect(await canvas.findByText('In community')).toBeVisible()
+    await expect(canvas.getByText('Editable by link')).toBeVisible()
+    await expect(canvas.getByText('Private')).toBeVisible()
+    const miniature = canvasElement.querySelector('[data-test-id="document-miniature"]')
+    if (!(miniature instanceof HTMLElement)) throw new Error('No document shows a miniature')
+    // The preview opens in a portal, outside the story's canvas.
+    const preview = () =>
+      canvasElement.ownerDocument.querySelector('[data-test-id="document-preview"] img')
+    // Focusing the miniature opens it, so the keyboard reaches it as hovering does.
+    miniature.focus()
+    await waitFor(() => expect(preview()).toHaveAttribute('alt', 'Preview of Spring campaign'))
+  }
+}

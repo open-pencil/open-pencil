@@ -3,51 +3,36 @@
 mod catalog;
 #[cfg(target_os = "macos")]
 mod macos;
+mod names;
 mod sfnt;
 mod style;
+pub mod watch;
 
 use serde::Serialize;
-use std::sync::OnceLock;
 
+/// A family and its faces, each by the name its font gives it, with its weight and slant.
 #[derive(Serialize, Clone)]
 pub struct FontFamily {
     family: String,
-    styles: Vec<String>,
+    faces: Vec<catalog::ListedFace>,
 }
-
-static FONT_CACHE: OnceLock<Vec<FontFamily>> = OnceLock::new();
 
 fn enumerate_system_fonts() -> Vec<FontFamily> {
     let mut families: Vec<FontFamily> = catalog::families()
         .into_iter()
         .filter(|(_, faces)| !faces.is_empty())
-        .map(|(family, faces)| {
-            let mut styles: Vec<String> = Vec::new();
-            for face in &faces {
-                for name in style::face_styles(face.weight, face.italic, face.weight_axis) {
-                    if !styles.contains(&name) {
-                        styles.push(name);
-                    }
-                }
-            }
-            FontFamily { family, styles }
-        })
+        .map(|(family, faces)| FontFamily { family, faces })
         .collect();
     families.sort_by(|a, b| a.family.cmp(&b.family));
     families
 }
 
+/// The installed families, read once until the fonts change (`watch`).
 #[tauri::command]
 pub async fn list_system_fonts() -> Vec<FontFamily> {
-    if let Some(cached) = FONT_CACHE.get() {
-        return cached.clone();
-    }
-
-    let families = tauri::async_runtime::spawn_blocking(enumerate_system_fonts)
+    tauri::async_runtime::spawn_blocking(enumerate_system_fonts)
         .await
-        .unwrap_or_default();
-    let _ = FONT_CACHE.set(families.clone());
-    families
+        .unwrap_or_default()
 }
 
 #[derive(Debug, Serialize)]
@@ -72,8 +57,7 @@ impl FontLoadError {
 }
 
 fn load_system_font_blocking(family: String, style: String) -> Result<Vec<u8>, FontLoadError> {
-    let (weight, italic) = style::requested_face(&style);
-    let Some(face) = catalog::load_face(&family, weight, italic) else {
+    let Some(face) = catalog::load_face(&family, &style) else {
         #[cfg(target_os = "macos")]
         if macos::family_has_only_unsupported_outlines(&family) {
             return Err(FontLoadError::new(

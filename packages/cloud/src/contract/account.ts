@@ -1,10 +1,25 @@
+import { isValid as isBase64 } from 'js-base64'
 import * as v from 'valibot'
 
-export const cloudAccountStateSchema = v.picklist(['active', 'pending', 'rejected', 'revoked'])
+/**
+ * Where an account stands: it may use the server, waits for an administrator, was refused or had
+ * its access taken back, has to prove its second step in this session, as after signing in through
+ * a linked account such as Google, or has to accept the server's current terms first.
+ */
+export const cloudAccountStateSchema = v.picklist([
+  'active',
+  'pending',
+  'rejected',
+  'revoked',
+  'two-step',
+  'terms'
+])
 export const cloudIdentitySchema = v.object({
   userId: v.string(),
   email: v.pipe(v.string(), v.email()),
   name: v.string(),
+  /** The account's picture, such as one a social provider gave it. */
+  image: v.optional(v.nullable(v.string())),
   deploymentRole: v.optional(v.picklist(['user', 'admin']))
 })
 
@@ -13,23 +28,67 @@ export const cloudAccountStatusResponseSchema = v.object({
   state: cloudAccountStateSchema
 })
 
-export const cloudAuthenticationProviderSchema = v.picklist(['credential', 'google', 'apple'])
+/** Accepting the server's terms: the version the person read, which must be the current one. */
+export const cloudTermsAcceptanceSchema = v.object({ version: v.pipe(v.string(), v.minLength(1)) })
+
+/**
+ * The providers a person can sign in with besides a password, which this editor has buttons for,
+ * in the order it shows them. Every list of providers in Cloud derives from this one.
+ */
+export const CLOUD_SOCIAL_PROVIDERS = ['google', 'apple', 'github'] as const
+export const cloudSocialProviderSchema = v.picklist(CLOUD_SOCIAL_PROVIDERS)
+export type CloudSocialProvider = v.InferOutput<typeof cloudSocialProviderSchema>
+/** Each provider's name, as its owner writes it in every language. */
+export const CLOUD_SOCIAL_PROVIDER_NAMES: Record<CloudSocialProvider, string> = {
+  google: 'Google',
+  apple: 'Apple',
+  github: 'GitHub'
+}
+export const cloudAuthenticationProviderSchema = v.picklist([
+  'credential',
+  ...CLOUD_SOCIAL_PROVIDERS
+])
 export const cloudAuthenticationMethodSchema = v.object({
   id: v.string(),
   provider: cloudAuthenticationProviderSchema,
   createdAt: v.string(),
   canUnlink: v.boolean()
 })
+
+/** Whether this editor knows `provider`, so a newer server's other providers can be left out. */
+export function isKnownSocialProvider(provider: string): provider is CloudSocialProvider {
+  return (CLOUD_SOCIAL_PROVIDERS as readonly string[]).includes(provider)
+}
+
+/** Whether `provider` is a way to sign in this editor knows: a password or a known provider. */
+export function isKnownAuthenticationProvider(
+  provider: string
+): provider is CloudAuthenticationProvider {
+  return provider === 'credential' || isKnownSocialProvider(provider)
+}
+
+/**
+ * A newer server may list a provider this editor has no words or button for: those entries are
+ * left out rather than failing the whole response, and anything else malformed still fails.
+ */
 export const cloudAuthenticationMethodsResponseSchema = v.object({
-  methods: v.array(cloudAuthenticationMethodSchema),
-  availableSocialProviders: v.array(v.picklist(['google', 'apple']))
+  methods: v.pipe(
+    v.array(v.looseObject({ provider: v.string() })),
+    v.filterItems((method) => isKnownAuthenticationProvider(method.provider)),
+    v.array(cloudAuthenticationMethodSchema)
+  ),
+  availableSocialProviders: v.pipe(
+    v.array(v.string()),
+    v.filterItems(isKnownSocialProvider),
+    v.array(cloudSocialProviderSchema)
+  )
 })
 export const cloudPasswordChangeSchema = v.object({
   currentPassword: v.string(),
   newPassword: v.string()
 })
 export const cloudSocialLinkSchema = v.object({
-  provider: v.picklist(['google', 'apple']),
+  provider: cloudSocialProviderSchema,
   callbackURL: v.pipe(v.string(), v.url())
 })
 export const cloudSocialLinkResponseSchema = v.object({ url: v.pipe(v.string(), v.url()) })
@@ -40,7 +99,15 @@ export const accountSecurityErrorCodeSchema = v.picklist([
   'password_too_long',
   'last_authentication_method',
   'session_not_fresh',
-  'authentication_method_failed'
+  'authentication_method_failed',
+  'code_invalid',
+  'email_unchanged',
+  'email_change_unavailable',
+  'current_session',
+  'picture_invalid',
+  'account_sole_admin',
+  'last_admin_required',
+  'terms_changed'
 ])
 export const accountSecurityErrorResponseSchema = v.object({
   error: v.object({ code: accountSecurityErrorCodeSchema })
@@ -72,6 +139,57 @@ export const cloudPasskeySchema = v.object({
 export const cloudPasskeysResponseSchema = v.object({ passkeys: v.array(cloudPasskeySchema) })
 export const cloudPasskeyDeleteSchema = v.object({ id: v.string() })
 
+/**
+ * Personal access tokens: an account's own credentials for scripts and CI, sent as
+ * `Authorization: Bearer <token>`. A token acts as its account on the document API only; it never
+ * changes how the account is reached, makes other tokens, or reaches administration.
+ */
+export const CLOUD_ACCESS_TOKEN_PREFIX = 'opc_'
+export const CLOUD_ACCESS_TOKEN_NAME_MAX_LENGTH = 64
+export const CLOUD_ACCESS_TOKEN_MAX_DAYS = 365
+export const cloudAccessTokenSchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  /** The token's first characters, prefix included, to tell tokens apart; never the whole token. */
+  start: v.nullable(v.string()),
+  createdAt: v.string(),
+  expiresAt: v.nullable(v.string()),
+  lastUsedAt: v.nullable(v.string())
+})
+export const cloudAccessTokensResponseSchema = v.object({
+  tokens: v.array(cloudAccessTokenSchema)
+})
+export const cloudAccessTokenCreateSchema = v.object({
+  name: v.pipe(
+    v.string(),
+    v.trim(),
+    v.minLength(1),
+    v.maxLength(CLOUD_ACCESS_TOKEN_NAME_MAX_LENGTH)
+  ),
+  expiresInDays: v.pipe(
+    v.number(),
+    v.integer(),
+    v.minValue(1),
+    v.maxValue(CLOUD_ACCESS_TOKEN_MAX_DAYS)
+  )
+})
+/** A new token, the only time the whole of it is shown. */
+export const cloudAccessTokenCreatedResponseSchema = v.object({
+  token: v.pipe(v.string(), v.startsWith(CLOUD_ACCESS_TOKEN_PREFIX)),
+  accessToken: cloudAccessTokenSchema
+})
+export const cloudAccessTokenRevokeSchema = v.object({ id: v.pipe(v.string(), v.minLength(1)) })
+
+export function parseCloudAccessTokenCreate(input: unknown) {
+  return v.parse(cloudAccessTokenCreateSchema, input)
+}
+export function parseCloudAccessTokenRevoke(input: unknown) {
+  return v.parse(cloudAccessTokenRevokeSchema, input)
+}
+
+export function parseCloudTermsAcceptance(input: unknown) {
+  return v.parse(cloudTermsAcceptanceSchema, input)
+}
 export function parseCloudMFAEnable(input: unknown) {
   return v.parse(cloudMFAEnableSchema, input)
 }
@@ -93,6 +211,138 @@ export function parseCloudUnlinkAuthenticationMethod(input: unknown) {
 
 export const cloudAccountMutationResponseSchema = v.object({ ok: v.literal(true) })
 
+/** Who an account belongs to, as the portal shows it. */
+export const cloudPersonSchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  email: v.pipe(v.string(), v.email()),
+  /** The address of the account's picture, which the server serves; null shows initials. */
+  image: v.nullable(v.string())
+})
+/** What a person can see and change about themselves. */
+export const cloudProfileSchema = v.object({
+  ...cloudPersonSchema.entries,
+  createdAt: v.string(),
+  /** Whether the server can send the verification a new email address needs. */
+  emailChangeAvailable: v.boolean()
+})
+export const cloudProfileResponseSchema = v.object({ profile: cloudProfileSchema })
+export const cloudProfileUpdateSchema = v.object({
+  name: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100))
+})
+/** The largest picture an account may upload, once the page has cropped and shrunk it. */
+export const CLOUD_PICTURE_MAX_BYTES = 256 * 1024
+/** The width and height a page shrinks a picture to before it uploads it. */
+export const CLOUD_PICTURE_SIZE = 256
+export const cloudPictureUploadSchema = v.object({
+  /** The picture's PNG or JPEG bytes, in Base64. */
+  data: v.pipe(
+    v.string(),
+    v.maxLength(Math.ceil(CLOUD_PICTURE_MAX_BYTES / 3) * 4),
+    v.check((value) => isBase64(value))
+  )
+})
+/** The address the account's picture is now served from. */
+export const cloudPictureResponseSchema = v.object({ image: v.string() })
+export const cloudEmailChangeSchema = v.object({
+  newEmail: v.pipe(v.string(), v.trim(), v.toLowerCase(), v.email()),
+  callbackURL: v.pipe(v.string(), v.url())
+})
+
+/** How a sign-in was made: the method it used, or the desktop app's approved code. */
+const SIGN_IN_METHODS = [
+  'password',
+  ...CLOUD_SOCIAL_PROVIDERS,
+  'passkey',
+  'two-step',
+  'email-link',
+  'desktop',
+  'other'
+] as const
+export const cloudSignInMethodSchema = v.picklist(SIGN_IN_METHODS)
+/** A method a newer server names that this editor does not know reads as `other`; a value that is
+ * not a method name at all still fails. */
+const signInMethodResponseSchema = v.pipe(
+  v.string(),
+  v.transform((method) => (v.is(cloudSignInMethodSchema, method) ? method : ('other' as const)))
+)
+export const cloudAccountSessionSchema = v.object({
+  id: v.string(),
+  /** The session this request was made with. */
+  current: v.boolean(),
+  method: v.nullable(signInMethodResponseSchema),
+  ipAddress: v.nullable(v.string()),
+  /** The browser and system the server read from the client's user agent, such as `Chrome 141`. */
+  browser: v.nullable(v.string()),
+  system: v.nullable(v.string()),
+  createdAt: v.string(),
+  lastActiveAt: v.string(),
+  expiresAt: v.string()
+})
+export const cloudAccountSessionsResponseSchema = v.object({
+  sessions: v.array(cloudAccountSessionSchema)
+})
+export const cloudSessionRevokeSchema = v.object({ sessionId: v.pipe(v.string(), v.minLength(1)) })
+export const cloudSignInSchema = v.object({
+  id: v.string(),
+  method: signInMethodResponseSchema,
+  ipAddress: v.nullable(v.string()),
+  /** The browser and system the server read from the client's user agent, such as `Chrome 141`. */
+  browser: v.nullable(v.string()),
+  system: v.nullable(v.string()),
+  createdAt: v.string()
+})
+export const cloudSignInsResponseSchema = v.object({ signIns: v.array(cloudSignInSchema) })
+
+/** A workspace an account deletion reads: one it would delete, or one that stops it. */
+export const cloudAccountDeletionWorkspaceSchema = v.object({
+  id: v.pipe(v.string(), v.uuid()),
+  name: v.string()
+})
+/** A document the account would lose, which Download all saves first. */
+export const cloudAccountDeletionDocumentSchema = v.object({
+  id: v.pipe(v.string(), v.uuid()),
+  name: v.string(),
+  workspaceName: v.string()
+})
+/**
+ * What deleting the account takes: the workspaces only it belongs to, which go with their
+ * documents; the ones it leaves to their other members; the ones it alone administers for other
+ * members, which stop the deletion until it makes someone else an admin; and the documents it
+ * would lose, those workspaces' and the ones it created in workspaces it leaves.
+ */
+export const cloudAccountDeletionSchema = v.object({
+  /** The account is the deployment's only administrator, which also stops the deletion. */
+  lastAdministrator: v.boolean(),
+  blockedBy: v.array(cloudAccountDeletionWorkspaceSchema),
+  deletes: v.array(cloudAccountDeletionWorkspaceSchema),
+  leaves: v.array(cloudAccountDeletionWorkspaceSchema),
+  documents: v.array(cloudAccountDeletionDocumentSchema)
+})
+export const cloudAccountDeletionResponseSchema = v.object({
+  deletion: cloudAccountDeletionSchema
+})
+/** The password, for a session that signed in too long ago to delete the account on its own. */
+export const cloudAccountDeleteSchema = v.object({
+  password: v.optional(v.pipe(v.string(), v.minLength(1)))
+})
+
+export function parseCloudProfileUpdate(input: unknown) {
+  return v.parse(cloudProfileUpdateSchema, input)
+}
+export function parseCloudPictureUpload(input: unknown) {
+  return v.parse(cloudPictureUploadSchema, input)
+}
+export function parseCloudEmailChange(input: unknown) {
+  return v.parse(cloudEmailChangeSchema, input)
+}
+export function parseCloudAccountDelete(input: unknown) {
+  return v.parse(cloudAccountDeleteSchema, input)
+}
+export function parseCloudSessionRevoke(input: unknown) {
+  return v.parse(cloudSessionRevokeSchema, input)
+}
+
 export type AccountSecurityErrorCode = v.InferOutput<typeof accountSecurityErrorCodeSchema>
 export type CloudAuthenticationProvider = v.InferOutput<typeof cloudAuthenticationProviderSchema>
 export type CloudAuthenticationMethod = v.InferOutput<typeof cloudAuthenticationMethodSchema>
@@ -101,3 +351,10 @@ export type CloudAuthenticationMethods = v.InferOutput<
 >
 
 export type CloudAccountStatus = v.InferOutput<typeof cloudAccountStatusResponseSchema>
+export type CloudProfile = v.InferOutput<typeof cloudProfileSchema>
+export type CloudAccessToken = v.InferOutput<typeof cloudAccessTokenSchema>
+export type CloudAccessTokenCreate = v.InferOutput<typeof cloudAccessTokenCreateSchema>
+export type CloudSignInMethod = v.InferOutput<typeof cloudSignInMethodSchema>
+export type CloudAccountSession = v.InferOutput<typeof cloudAccountSessionSchema>
+export type CloudSignIn = v.InferOutput<typeof cloudSignInSchema>
+export type CloudAccountDeletion = v.InferOutput<typeof cloudAccountDeletionSchema>

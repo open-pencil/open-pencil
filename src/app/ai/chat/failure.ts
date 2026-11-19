@@ -1,10 +1,17 @@
 import { APICallError, StreamProviderError } from 'ai'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
+import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
+
 export type AIChatFailureReason =
   | 'authentication'
   | 'forbidden'
   | 'insufficient-credit'
+  | 'cloud-credits-exhausted'
+  | 'context-limit'
   | 'model-not-found'
+  | 'agent-not-installed'
   | 'network'
   | 'output-limit'
   | 'rate-limit'
@@ -17,6 +24,8 @@ export type AIChatFailure = {
   detail?: string
   statusCode?: number
   retryable?: boolean
+  /** With `cloud-credits-exhausted`: when the workspace's allowance renews, if the service said. */
+  resetsAt?: string
 }
 
 export type ProviderErrorShape = {
@@ -48,12 +57,8 @@ export function providerErrorStatus(error: unknown): number | null {
   )
 }
 
-function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
-}
-
 function normalizedErrorText(error: unknown): string {
-  return errorText(error).toLowerCase()
+  return errorMessage(error).toLowerCase()
 }
 
 export function isInsufficientCreditError(error: unknown): boolean {
@@ -72,6 +77,26 @@ export function isInsufficientCreditError(error: unknown): boolean {
   ].some((phrase) => text.includes(phrase))
 }
 
+/**
+ * The request held more than the model reads: HTTP 413, or the code and wording providers give a
+ * prompt past the context window (OpenAI `context_length_exceeded`, Anthropic "prompt is too
+ * long", Gemini's input token count).
+ */
+export function isContextLimitError(error: unknown): boolean {
+  if (providerErrorStatus(error) === 413) return true
+  const body = APICallError.isInstance(error) ? (error.responseBody ?? '') : ''
+  const text = `${normalizedErrorText(error)} ${body.toLowerCase()}`
+  return [
+    'context_length_exceeded',
+    'prompt is too long',
+    'maximum context length',
+    'context window',
+    'input token count',
+    'too many tokens',
+    'request_too_large'
+  ].some((phrase) => text.includes(phrase))
+}
+
 function statusFailureReason(status: number | null): AIChatFailureReason | null {
   if (status === 401) return 'authentication'
   if (status === 402) return 'insufficient-credit'
@@ -83,6 +108,7 @@ function statusFailureReason(status: number | null): AIChatFailureReason | null 
 }
 
 function failureReason(error: unknown): AIChatFailureReason {
+  if (isContextLimitError(error)) return 'context-limit'
   const statusReason = statusFailureReason(providerErrorStatus(error))
   if (statusReason) return statusReason
   if (isInsufficientCreditError(error)) return 'insufficient-credit'
@@ -121,10 +147,13 @@ export function classifyAIChatError(
   error: unknown,
   { signInOnly = false }: { signInOnly?: boolean } = {}
 ): AIChatFailure {
+  if (error instanceof AgentNotInstalledError) {
+    return { reason: 'agent-not-installed', detail: errorMessage(error) }
+  }
   const reason = failureReason(error)
   return {
     reason: signInOnly ? signInFailureReason(reason) : reason,
-    detail: errorText(error),
+    detail: errorMessage(error),
     statusCode: providerErrorStatus(error) ?? undefined,
     // A provider error after the stream starts arrives as StreamProviderError, not APICallError.
     retryable:

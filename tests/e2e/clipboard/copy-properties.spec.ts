@@ -1,6 +1,6 @@
-import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 const editor = useEditorSetup()
 
 const SOURCE = { x: 100, y: 150, width: 120, height: 80 }
@@ -62,7 +62,7 @@ test('Alt+Cmd+C then Alt+Cmd+V moves the look of one layer to another, in one un
   await selectAt(SOURCE)
   expect((await selectedLook())?.id).toBe(sourceId)
   await editor.page.keyboard.press('ControlOrMeta+Alt+KeyC')
-  await expect(editor.page.getByText('Copied properties.')).toBeVisible()
+  await expect(editor.page.getByText('Copied properties.', { exact: true })).toBeVisible()
 
   await selectAt(TARGET)
   await editor.page.keyboard.press('ControlOrMeta+Alt+KeyV')

@@ -3,7 +3,7 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { composeProjectName, localCloudDeploymentTOML } from './config'
 
@@ -76,8 +76,9 @@ async function authSecret(): Promise<string> {
 }
 
 async function start(project: string): Promise<void> {
-  const [cloudURL, mailURL, objectStorageURL, editorURL] = await Promise.all([
+  const [cloudURL, siteURL, mailURL, objectStorageURL, editorURL] = await Promise.all([
     portlessURL('cloud.open-pencil'),
+    portlessURL('cloud-site.open-pencil'),
     portlessURL('mail.open-pencil'),
     portlessURL('s3.open-pencil'),
     portlessURL('open-pencil')
@@ -111,7 +112,9 @@ async function start(project: string): Promise<void> {
       editorURL,
       // Browsers upload straight to object storage, and Safari blocks plain HTTP from HTTPS pages.
       objectStorageURL,
-      smtpPort
+      smtpPort,
+      // A workspace of this local server to show as its community gallery.
+      communityWorkspace: process.env.OPENPENCIL_CLOUD_DEV_COMMUNITY_WORKSPACE || undefined
     }),
     { mode: 0o600 }
   )
@@ -126,18 +129,20 @@ async function start(project: string): Promise<void> {
   ])
 
   const betterAuthSecret = await authSecret()
-  // The server serves the editor and its own pages from this build, rebuilt on every change.
-  const site = Bun.spawn(['bun', 'run', 'build:cloud', '--watch'], {
-    cwd: root,
-    stdout: 'inherit',
-    stderr: 'inherit'
-  })
+  // The server serves the editor and its own pages from Vite's development server, so an edit
+  // shows at once, through hot updates, with no build.
+  const site = Bun.spawn(
+    ['bunx', 'portless', 'run', '--name', 'cloud-site.open-pencil', 'vite', '--mode', 'cloud'],
+    { cwd: root, stdout: 'inherit', stderr: 'inherit' }
+  )
 
   console.warn(`OpenPencil Cloud: ${cloudURL}`)
   console.warn(`Captured email:  ${mailURL}`)
   console.warn('Stop the services with `bun run cloud:dev:down`; their data is kept.')
 
   try {
+    // The Cloud package's own `dev` script, which loads its Vue email templates; plain `bun` reads
+    // a `.vue` import as its file path, and every email went out empty.
     process.exitCode = await execute(
       [
         'bunx',
@@ -146,8 +151,10 @@ async function start(project: string): Promise<void> {
         '--name',
         'cloud.open-pencil',
         'bun',
-        '--watch',
-        'packages/cloud/src/runtime/node/main.ts'
+        'run',
+        '--cwd',
+        'packages/cloud',
+        'dev'
       ],
       {
         allowFailure: true,
@@ -155,7 +162,7 @@ async function start(project: string): Promise<void> {
           ...process.env,
           HOST: '127.0.0.1',
           OPENPENCIL_CLOUD_CONFIG: generatedConfig,
-          OPENPENCIL_CLOUD_SITE_DIR: join(root, 'dist-cloud'),
+          OPENPENCIL_CLOUD_DEV_SITE_URL: siteURL,
           DATABASE_URL: `postgresql://openpencil:${POSTGRES_PASSWORD}@127.0.0.1:${postgresPort}/openpencil`,
           BETTER_AUTH_SECRET: betterAuthSecret,
           S3_ACCESS_KEY_ID,
@@ -164,7 +171,7 @@ async function start(project: string): Promise<void> {
       }
     )
   } finally {
-    // The watcher stops with the server however the server ends.
+    // The development server stops with the Cloud server however that ends.
     site.kill()
   }
 }

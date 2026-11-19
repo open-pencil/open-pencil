@@ -5,8 +5,9 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { maxOf } from '@open-pencil/std/arrays'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { expectDefined, getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'
 
 function nodeIn(children: PenNode[], id: string) {
@@ -90,8 +91,8 @@ describe('parsePenFile — shapes', () => {
     )
     const xs = expectDefined(node.vectorNetwork).vertices.map((vertex) => vertex.x)
     const ys = expectDefined(node.vectorNetwork).vertices.map((vertex) => vertex.y)
-    expect(Math.max(...xs)).toBeCloseTo(50)
-    expect(Math.max(...ys)).toBeCloseTo(40)
+    expect(maxOf(xs)).toBeCloseTo(50)
+    expect(maxOf(ys)).toBeCloseTo(40)
   })
 
   test('keeps an even-odd fill rule', () => {

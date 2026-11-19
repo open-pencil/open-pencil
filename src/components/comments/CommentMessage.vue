@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { COMMENT_MENTION, mentionPlugin } from '@/app/comments/mentions/plugin'
+import RelativeTime from '@/components/date/RelativeTime.vue'
 import MarkdownContent from '@/components/markdown/MarkdownContent.vue'
 import PersonAvatar from '@/components/presence/PersonAvatar.vue'
-import { comments } from '@/theme/comments'
 
 import { useCommentAuthor } from './author'
-import CommentTime from './CommentTime.vue'
+import CommentMention from './CommentMention.vue'
+import { comments } from './ui'
 
 /** One message of a thread: who wrote it, when, and what. */
 const { author, color, at, text } = defineProps<{
@@ -20,6 +22,9 @@ defineSlots<{ actions?(): unknown }>()
 
 const who = useCommentAuthor()
 const ui = comments()
+// Mentions render as names in the accent; other links stay links.
+const components = { [COMMENT_MENTION]: CommentMention }
+const plugins = [mentionPlugin()]
 </script>
 
 <template>
@@ -27,9 +32,14 @@ const ui = comments()
     <PersonAvatar :name="who.name(author)" :color="who.color(color)" />
     <div :class="ui.messageMeta()">
       <span :class="ui.messageAuthor()">{{ who.name(author) }}</span>
-      <CommentTime :at="at" :class="ui.messageTime()" />
+      <RelativeTime :at="at" :class="ui.messageTime()" />
       <span v-if="$slots.actions" :class="ui.messageActions()"><slot name="actions" /></span>
     </div>
-    <MarkdownContent :content="text" :class="ui.messageText()" />
+    <MarkdownContent
+      :content="text"
+      :components="components"
+      :plugins="plugins"
+      :class="ui.messageText()"
+    />
   </article>
 </template>

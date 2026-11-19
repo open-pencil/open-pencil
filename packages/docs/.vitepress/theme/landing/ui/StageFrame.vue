@@ -86,6 +86,8 @@ onMounted(() => {
 <style scoped>
 .stage-frame {
   position: relative;
+  /* Keeps the poster and loading overlays above the stage, not above the page's sticky nav. */
+  isolation: isolate;
   height: 100%;
   overflow: hidden;
   border: 1px solid var(--vp-c-divider);

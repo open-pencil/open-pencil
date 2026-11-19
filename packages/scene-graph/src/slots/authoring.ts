@@ -1,3 +1,4 @@
+import { propertyOwner } from '../components/properties'
 import type { SceneGraph } from '../graph'
 import type { ComponentPropertyDefinition, SceneNode, SlotSettings } from '../types'
 import { slotPropertyId } from './frames'
@@ -10,13 +11,14 @@ export const DEFAULT_SLOT_SETTINGS: SlotSettings = {
 }
 
 /**
- * The main component a layer belongs to, which defines the slots inside it. Layers of an
- * instance are not authored there, so a layer under an instance has none.
+ * The main component or set that defines the slots inside a layer: the component the layer
+ * belongs to, or that component's set. Layers of an instance are not authored there, so a
+ * layer under an instance has none.
  */
 export function slotOwner(graph: SceneGraph, node: SceneNode): SceneNode | undefined {
   let current = node.parentId ? graph.getNode(node.parentId) : undefined
   while (current && current.type !== 'CANVAS') {
-    if (current.type === 'COMPONENT') return current
+    if (current.type === 'COMPONENT') return propertyOwner(graph, current)
     if (current.type === 'INSTANCE') return undefined
     current = current.parentId ? graph.getNode(current.parentId) : undefined
   }

@@ -1,6 +1,8 @@
 # cloud-staging.openpencil.dev, the official staging deployment. Secrets come from the Worker's
-# secrets: BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, S3_ACCESS_KEY_ID, and
-# S3_SECRET_ACCESS_KEY; DATABASE_URL is Hyperdrive's.
+# secrets: BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, APPLE_PRIVATE_KEY,
+# GITHUB_CLIENT_SECRET,
+# S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, and OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY; DATABASE_URL is
+# Hyperdrive's.
 schema_version = 2
 
 # Staging is only for people the team approved: no editor or shared files without signing in.
@@ -19,6 +21,12 @@ notification_emails = ["admin@openpencil.dev"]
 [authentication.email_password]
 enabled = false
 
+# Deployment administrators confirm a second step before the admin console opens.
+[authentication.mfa]
+required_for_admins = true
+totp = true
+recovery_codes = true
+
 [authentication.trusted_proxies]
 headers = ["cf-connecting-ip"]
 addresses = []
@@ -26,39 +34,94 @@ addresses = []
 [authentication.providers.google]
 client_id = { from_env = "GOOGLE_CLIENT_ID" }
 
+# Sign in with Apple through the Services ID of team N7D7M3Q3CD, grouped with the desktop app's App
+# ID. The server signs Apple's client secret from APPLE_PRIVATE_KEY, the .p8 key with this key ID.
+[authentication.providers.apple]
+client_id = "dev.openpencil.cloud"
+team_id = "N7D7M3Q3CD"
+key_id = "CA37HQZJQ5"
+
+# Sign in with GitHub through the open-pencil organization's "OpenPencil Cloud" GitHub App, which
+# both deployments share; its client secret is GITHUB_CLIENT_SECRET. Production adds this
+# table only together with minimum_editor_version set to a release with #2202, which turns older
+# editors away: those before #2153 cannot read discovery once it lists GitHub, and those before
+# #2202 cannot read the account pages of someone who has a GitHub method or sign-in.
+[authentication.providers.github]
+client_id = "Iv23li8PkDEmgHf69oUW"
+
+# An R2 bucket placed in eastern North America, near the database. Its CORS rules allow GET, PUT,
+# and HEAD from public_url; S3_* are an R2 API token's keys for this bucket alone.
 [object_storage]
-endpoint = "https://br-lucky-forest-aeigmjr4.storage.c-2.us-east-2.aws.neon.tech"
-region = "us-east-2"
+endpoint = "https://ca633c52af8f8351ed72fb5d12b423f0.r2.cloudflarestorage.com"
+region = "auto"
 bucket = "openpencil-cloud-staging"
-force_path_style = true
+force_path_style = false
 checksum_verification = "metadata"
+# Kept until the bucket's expire-deleted rule removes them after 7 days.
+deleted_prefix = "deleted/"
 
 [documents]
 retention_days = 30
+purge_grace_days = 7
+
+# OpenPencil services' staging Worker, which trusts this Cloud's tokens.
+[services]
+endpoint = "https://services-staging.openpencil.dev"
+
+# OpenPencil billing's staging Worker, which sells plans and credit packs with the staging Stripe
+# sandbox and sets each account's plan through the internal API below.
+[billing]
+endpoint = "https://billing-staging.openpencil.dev"
+
+# The internal API billing writes plans through; the token is the OPENPENCIL_CLOUD_SERVICE_TOKEN
+# secret, which billing holds as CLOUD_SERVICE_TOKEN.
+[internal_api]
 
 [email]
 transport = "cloudflare"
 from = "cloud@openpencil.dev"
+# Replies reach the team's inbox; cloud@ receives nothing.
+reply_to = "hello@openpencil.dev"
 
+# The free plan, which every account takes until billing stores a plan for it.
 [entitlements]
-source = "static"
+source = "database"
 
 [entitlements.documents]
 maximum_file_bytes = 1_073_741_824
 revision_history = true
 
+# 300 MB.
 [entitlements.storage]
-maximum_bytes = 107_374_182_400
+maximum_bytes = 314_572_800
 
 [entitlements.sharing]
 links = true
-guest_view = false
+guest_view = true
 guest_edit = false
-guest_presence = false
+guest_presence = true
 
 [entitlements.collaboration]
 enabled = true
 maximum_participants = 100
 
-[entitlements.ai]
+# No AI or search on the free plan; a plan billing sells turns them on with its monthly credits.
+[entitlements.services]
 enabled = false
+monthly_credit_allowance = 0
+
+# The hosted service's own terms and privacy policy; each account accepts terms_version once before
+# using the server, and again when it changes.
+[legal]
+terms_url = "https://openpencil.dev/cloud/legal/terms"
+privacy_url = "https://openpencil.dev/cloud/legal/privacy"
+terms_version = "2026-11-18"
+require_acceptance = true
+abuse_email = "abuse@openpencil.dev"
+minimum_age = 16
+
+# Server errors go to the OpenPencil PostHog project; the key is the POSTHOG_PROJECT_API_KEY secret.
+[error_tracking]
+provider = "posthog"
+host = "https://eu.i.posthog.com"
+include_ids = true

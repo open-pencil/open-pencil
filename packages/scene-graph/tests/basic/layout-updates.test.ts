@@ -96,3 +96,51 @@ describe('updates made by layout', () => {
     expect(updates.map(({ changes }) => changes)).toEqual([{ x: 5 }, { x: 0 }])
   })
 })
+
+describe('geometry layout writes after an edit', () => {
+  const edited = (graph: SceneGraph, id: string) => graph.getNode(id)?.source.editedFields
+
+  test('count as edited, so formats save them', () => {
+    const graph = new SceneGraph()
+    const id = rect(graph, 'Card', 0, 0)
+
+    graph.withLayoutMutations(() => graph.updateNode(id, { y: 12, primaryAxisSizing: 'FIXED' }))
+
+    expect(edited(graph, id)).toEqual(['y'])
+  })
+
+  test('do not count when layout lays out what the document already holds', () => {
+    const graph = new SceneGraph()
+    const id = rect(graph, 'Card', 0, 0)
+
+    graph.applyDerivedLayoutDuring(() =>
+      graph.withLayoutMutations(() => graph.updateNode(id, { y: 12 }))
+    )
+    graph.preserveSourceMetadataDuring(() =>
+      graph.withLayoutMutations(() => graph.updateNode(id, { x: 4 }))
+    )
+
+    expect(edited(graph, id)).toEqual([])
+  })
+
+  test('do not count for values layout changed and then put back', () => {
+    const graph = new SceneGraph()
+    const id = rect(graph, 'Card', 8, 0)
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(id, { x: -1 })
+      graph.updateNode(id, { x: 8 })
+    })
+
+    expect(edited(graph, id)).toEqual([])
+  })
+
+  test('count for a value written as it already was, as a preview commits what it showed', () => {
+    const graph = new SceneGraph()
+    const id = rect(graph, 'Card', 0, 0)
+
+    graph.withLayoutMutations(() => graph.updateNode(id, { x: 0 }))
+
+    expect(edited(graph, id)).toEqual(['x'])
+  })
+})

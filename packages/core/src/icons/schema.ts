@@ -29,3 +29,34 @@ export const collectionListSchema = v.pipe(
     hidden: v.optional(v.array(v.string()))
   })
 )
+
+/** An icon's box and turn, as an icon, an alias, or a whole set gives them. */
+const iconPropsEntries = {
+  left: v.optional(v.number()),
+  top: v.optional(v.number()),
+  width: v.optional(v.number()),
+  height: v.optional(v.number()),
+  rotate: v.optional(v.number()),
+  hFlip: v.optional(v.boolean()),
+  vFlip: v.optional(v.boolean())
+}
+
+/**
+ * `GET /{prefix}.json?icons=…`: the asked-for icons and the aliases that lead to them, with the
+ * set's default box, which `getIconData` resolves into one icon.
+ */
+export const iconSetSchema = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    prefix: v.string(),
+    left: v.optional(v.number()),
+    top: v.optional(v.number()),
+    width: v.optional(v.number()),
+    height: v.optional(v.number()),
+    icons: v.record(v.string(), v.object({ body: v.string(), ...iconPropsEntries })),
+    aliases: v.optional(v.record(v.string(), v.object({ parent: v.string(), ...iconPropsEntries })))
+  })
+)
+
+export type IconSet = v.InferOutput<typeof iconSetSchema>

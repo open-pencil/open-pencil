@@ -34,3 +34,5 @@ Les mises en forme partielles sont conservées sous forme de plages et participe
 ## Polices
 
 OpenPencil détecte les polices du système lorsque l’environnement le permet. Si une police manque, son état est signalé et une police de remplacement est utilisée jusqu’à sa disponibilité.
+
+Quand la police est variable, comme Inter, la section Typographie affiche ses axes (graisse, taille optique, chasse et autres) avec la valeur à laquelle chacun est dessiné ; choisir une graisse, une inclinaison ou une famille les ramène à ceux du style. La taille optique affiche **Auto** tant qu’elle suit la taille de police ; une valeur ou **Fixe** dans son menu la fige, et **Auto** la fait suivre à nouveau.

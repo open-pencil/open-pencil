@@ -1,5 +1,11 @@
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
-import { createCloudApp, createBetterAuthAdapter, parseCloudServerConfig } from '#cloud/server'
+import {
+  createCloudApp,
+  createBetterAuthAdapter,
+  parseCloudServerConfig,
+  type AuthenticationEmailService
+} from '#cloud/server'
+import { testClient } from 'hono/testing'
 
 export const accountAuthenticationConfig = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -24,19 +30,32 @@ const ignore = async (): Promise<void> => {
   await Promise.resolve()
 }
 
+/** Security notices for an account email service whose test does not read them. */
+export const ignoredSecurityNotices = {
+  sendEmailChangeRequested: ignore,
+  sendNewSignIn: ignore,
+  sendTwoStepChanged: ignore
+}
+
 export function accountAuthenticationRequest(
   path: string,
   body?: object,
-  cookie?: string
+  cookie?: string,
+  init: { headers?: Record<string, string>; method?: string } = {}
 ): Request {
-  const headers = new Headers()
+  const headers = new Headers(init.headers)
   if (body) headers.set('Content-Type', 'application/json')
   if (cookie) headers.set('Cookie', cookie)
   return new Request(new URL(path, accountAuthenticationConfig.publicURL), {
-    method: body ? 'POST' : 'GET',
+    method: init.method ?? (body ? 'POST' : 'GET'),
     headers,
     body: body ? JSON.stringify(body) : undefined
   })
+}
+
+/** Request options that send a session cookie, or none for a signed-out request. */
+export function withCookie(cookie?: string): { headers: Record<string, string> } {
+  return { headers: cookie ? { Cookie: cookie } : {} }
 }
 
 export function authenticationCookie(response: Response): string {
@@ -62,7 +81,16 @@ export function accountAuthenticationObjects() {
     async head() {
       return null
     },
-    delete: ignore
+    delete: ignore,
+    async write() {
+      throw new Error('not used')
+    },
+    async read() {
+      return null
+    },
+    async readRange() {
+      return null
+    }
   }
 }
 
@@ -70,28 +98,30 @@ export async function createAccountAuthenticationFixture(
   options: {
     config?: typeof accountAuthenticationConfig
     onPasswordChanged?: () => void
+    /** Account emails the test reads; the rest go nowhere. */
+    email?: Partial<AuthenticationEmailService>
   } = {}
 ) {
   const config = options.config ?? accountAuthenticationConfig
   const runtime = await createCloudTestDatabase()
   const auth = createBetterAuthAdapter(config, runtime.database, undefined, {
     email: {
+      ...ignoredSecurityNotices,
       sendVerification: ignore,
       sendPasswordReset: ignore,
       async sendPasswordChanged() {
         options.onPasswordChanged?.()
-      }
+      },
+      ...options.email
     }
   })
-  return {
-    ...runtime,
-    app: createCloudApp({
-      config,
-      database: runtime.database,
-      auth,
-      objects: accountAuthenticationObjects()
-    })
-  }
+  const app = createCloudApp({
+    config,
+    database: runtime.database,
+    auth,
+    objects: accountAuthenticationObjects()
+  })
+  return { ...runtime, app, client: testClient(app) }
 }
 
 export async function approveAccount(
@@ -99,7 +129,7 @@ export async function approveAccount(
   input: { email: string; name: string; userId: string }
 ): Promise<void> {
   await database
-    .insertInto('cloudEnrollment')
+    .insertInto('enrollment')
     .values({
       id: crypto.randomUUID(),
       emailNormalized: input.email,
@@ -116,13 +146,14 @@ export async function approveAccount(
 
 export async function createVerifiedCredentialAccount(
   fixture: Awaited<ReturnType<typeof createAccountAuthenticationFixture>>,
-  input: { email: string; name: string; password: string; approved: boolean }
+  input: { email: string; name: string; password: string; approved: boolean; image?: string }
 ): Promise<{ userId: string; sessionCookie: string }> {
   await fixture.app.fetch(
     accountAuthenticationRequest('/api/auth/sign-up/email', {
       name: input.name,
       email: input.email,
-      password: input.password
+      password: input.password,
+      image: input.image
     })
   )
   const user = await fixture.database

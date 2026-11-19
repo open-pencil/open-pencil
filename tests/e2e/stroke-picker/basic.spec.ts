@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { fillDriver } from '#tests/helpers/canvas/fill-driver'
 import { waitForDemo } from '#tests/helpers/demo'
 import { propertyItems, propertySection } from '#tests/helpers/properties'
 
@@ -44,7 +45,7 @@ async function getSelectedStroke(page: Page) {
 
 test('stroke picker updates stroke color on a rectangle', async ({ page }) => {
   const canvas = new CanvasHelper(page)
-  await page.goto('/')
+  await page.goto('/?test')
   await canvas.waitForInit()
 
   await canvas.drawRect(120, 120, 180, 120)
@@ -66,7 +67,7 @@ test('stroke picker updates stroke color on a rectangle', async ({ page }) => {
 
 test('stroke picker alpha slider updates stroke opacity and alpha', async ({ page }) => {
   const canvas = new CanvasHelper(page)
-  await page.goto('/')
+  await page.goto('/?test')
   await canvas.waitForInit()
 
   await canvas.drawRect(120, 120, 180, 120)
@@ -140,11 +141,11 @@ test('stroke picker hsb saturation and brightness sliders update stroke color on
   ).toBe(true)
 })
 
-test('bound stroke picker is non-destructive, rolls back Escape, and detaches in one undo step', async ({
+test('bound stroke picker is non-destructive, keeps a detaching edit on Escape, and undoes it in one step', async ({
   page
 }) => {
   const canvas = new CanvasHelper(page)
-  await page.goto('/')
+  await page.goto('/?test')
   await canvas.waitForInit()
   await canvas.drawRect(120, 120, 180, 120)
   await propertySection(page, 'Stroke').getByRole('button', { name: 'Add stroke' }).click()
@@ -169,45 +170,20 @@ test('bound stroke picker is non-destructive, rolls back Escape, and detaches in
   })
   await canvas.waitForRender()
 
+  const stroke = fillDriver(() => page)
   await openStrokePicker(page)
-  expect(
-    await page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
-      const id = [...store.state.selectedIds][0]
-      return id ? store.getNode(id)?.boundVariables['strokes/0/color'] : undefined
-    })
-  ).toBe(before.binding)
+  expect(await stroke.boundPaint('strokes')).toEqual(before)
 
   await dragSlider(page, canvas, 'color-slider-hue', 0.55)
-  await page.keyboard.press('Escape')
-  await canvas.waitForRender()
-  const afterEscape = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const id = [...store.state.selectedIds][0]
-    const node = id ? store.getNode(id) : null
-    return { color: node?.strokes[0]?.color, binding: node?.boundVariables['strokes/0/color'] }
-  })
-  expect(afterEscape).toEqual(before)
+  const edited = await stroke.boundPaint('strokes')
+  expect(edited.binding).toBeUndefined()
+  expect(edited.color).not.toEqual(before.color)
 
-  await openStrokePicker(page)
-  await dragSlider(page, canvas, 'color-slider-hue', 0.75)
-  await propertyItems(page, 'strokes')
-    .first()
-    .getByRole('button', { name: 'Stroke', exact: true })
-    .click()
+  await page.keyboard.press('Escape')
+  await expect(page.locator('[data-picker-content]')).toBeHidden()
   await canvas.waitForRender()
-  expect((await getSelectedStroke(page))?.color).not.toEqual(before.color)
+  expect(await stroke.boundPaint('strokes')).toEqual(edited)
 
   await canvas.undo()
-  await canvas.waitForRender()
-  const restored = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const id = [...store.state.selectedIds][0]
-    const node = id ? store.getNode(id) : null
-    return { color: node?.strokes[0]?.color, binding: node?.boundVariables['strokes/0/color'] }
-  })
-  expect(restored).toEqual(before)
+  expect(await stroke.boundPaint('strokes')).toEqual(before)
 })

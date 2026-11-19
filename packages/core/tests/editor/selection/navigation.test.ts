@@ -34,6 +34,19 @@ describe('keyboard layer navigation', () => {
     expect(editor.state.selectedIds).toEqual(new Set([middle.id]))
   })
 
+  // Measured in Figma 126 (scratch/pr-oracle/nav-keys.ts): Enter on a frame's children selects a
+  // group's children in the group's place and keeps the layers without children.
+  test('selectChildren opens the layers that have children and keeps the others', () => {
+    const { editor, frame, bottom, top } = layerTree()
+    const group = editor.graph.createNode('GROUP', frame.id, { name: 'Group' })
+    const inside = editor.graph.createNode('RECTANGLE', group.id, { name: 'Inside' })
+    editor.select([bottom.id, group.id, top.id])
+
+    editor.selectChildren()
+
+    expect(editor.state.selectedIds).toEqual(new Set([bottom.id, inside.id, top.id]))
+  })
+
   test('selectParent selects the parent and stops at the page', () => {
     const { editor, frame, middle } = layerTree()
     editor.select([middle.id])

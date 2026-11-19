@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
+import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
-import { portalForm } from '@/theme/cloud-portal/form'
+import AppCopyField from '@/components/ui/input/AppCopyField.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 
 import PortalPublicLayout from '../layout/PortalPublicLayout.vue'
 
 /**
- * Approving a sign-in started in the desktop app: the person checks that the code matches the
- * one the app shows, then lets the app use their account.
+ * Approving a sign-in started in the desktop app, which opens this page with its code: the page
+ * shows that code for the person to compare with the app's, as RFC 8628 asks of a link that carries
+ * the code, and warns them to approve only a sign-in they started.
  */
 const {
   host,
@@ -37,10 +40,9 @@ const ui = portalForm({ size: 'lg' })
     :heading="messages.deviceTitle"
     :description="messages.deviceDescription({ email })"
   >
-    <div class="flex flex-col items-center gap-2 rounded-lg border border-border px-4 py-4">
-      <span class="text-xs text-muted">{{ messages.deviceCheckCode }}</span>
-      <span class="font-mono text-xl tracking-[0.3em] text-surface">{{ code }}</span>
-    </div>
+    <AppFormField :label="messages.deviceCheckCode" size="lg" :label-for="false">
+      <AppCopyField :value="code" look="code" />
+    </AppFormField>
     <AppAlert v-if="error" tone="error" :heading="messages.errorTitle" :description="error" />
     <AppAlert
       tone="warning"

@@ -1,6 +1,6 @@
 import { uniq } from 'es-toolkit/array'
 
-import type { CanvasGuide } from '@open-pencil/scene-graph/guides'
+import { newGuideId, type CanvasGuide } from '@open-pencil/scene-graph/guides'
 
 import type { EditorContext } from './types'
 
@@ -18,10 +18,6 @@ function replaceGuides(ctx: EditorContext, ownerId: string, guides: CanvasGuide[
   node.source.editedFields = uniq([...node.source.editedFields, 'guides'])
   ctx.emitEditorEvent('guides:changed', ownerId, structuredClone(guides))
   ctx.requestRender()
-}
-
-function newGuideId(): string {
-  return `guide:${crypto.randomUUID()}`
 }
 
 export function createGuideActions(ctx: EditorContext) {

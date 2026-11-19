@@ -3,16 +3,16 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuPortal,
-  ContextMenuRoot,
   ContextMenuSeparator,
   ContextMenuSub,
   ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger
+  ContextMenuSubTrigger
 } from 'reka-ui'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppContextMenuTrigger from '@/components/ui/menu/AppContextMenuTrigger.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
@@ -40,10 +40,10 @@ const dangerItem = useMenuUI({ item: 'justify-start gap-2 text-error' }).item
 </script>
 
 <template>
-  <ContextMenuRoot>
-    <ContextMenuTrigger as-child>
+  <AppContextMenuRoot>
+    <AppContextMenuTrigger as-child>
       <slot />
-    </ContextMenuTrigger>
+    </AppContextMenuTrigger>
     <ContextMenuPortal>
       <ContextMenuContent :class="menu.content" data-test-id="variables-row-menu">
         <MenuScrollArea>
@@ -63,7 +63,7 @@ const dangerItem = useMenuUI({ item: 'justify-start gap-2 text-error' }).item
             <ContextMenuSubTrigger :class="menu.subTrigger" data-test-id="variables-move-to-group">
               <icon-lucide-folder-input :class="menu.icon" />
               <span class="flex-1">{{ variables.moveToGroup }}</span>
-              <icon-lucide-chevron-right :class="menu.icon" />
+              <icon-lucide-chevron-right data-direction="reading" :class="menu.icon" />
             </ContextMenuSubTrigger>
             <ContextMenuPortal>
               <ContextMenuSubContent :class="menu.content">
@@ -104,5 +104,5 @@ const dangerItem = useMenuUI({ item: 'justify-start gap-2 text-error' }).item
         </MenuScrollArea>
       </ContextMenuContent>
     </ContextMenuPortal>
-  </ContextMenuRoot>
+  </AppContextMenuRoot>
 </template>

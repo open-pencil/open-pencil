@@ -8,15 +8,19 @@ export interface ParsedFontStyle {
   italic: boolean
 }
 
+/**
+ * The standard weights by the names Google Fonts gives them, which most fonts and Figma's font
+ * list use; a font's own names can differ ("Semi Bold", "Book", "Heavy").
+ */
 export const FONT_WEIGHT_NAMES: Record<number, string> = {
   100: 'Thin',
-  200: 'Extra Light',
+  200: 'ExtraLight',
   300: 'Light',
   400: 'Regular',
   500: 'Medium',
-  600: 'Semi Bold',
+  600: 'SemiBold',
   700: 'Bold',
-  800: 'Extra Bold',
+  800: 'ExtraBold',
   900: 'Black'
 }
 
@@ -36,22 +40,56 @@ const FONT_WEIGHT_BY_STYLE: ReadonlyMap<string, number> = new Map(
   FONT_WEIGHT_ALIASES.flatMap(({ names, weight }) => names.map((name) => [name, weight] as const))
 )
 
-export function normalizeFontStyleName(style: string): string {
+function normalizeFontStyleName(style: string): string {
   return style
     .toLowerCase()
     .replace(/italic|oblique/u, '')
     .replace(/[^a-z0-9]+/gu, '')
 }
 
+const FONT_WIDTH_NAMES = [
+  'ultracondensed',
+  'ultracompressed',
+  'extracompressed',
+  'extracondensed',
+  'compressed',
+  'condensed',
+  'narrow',
+  'semicompressed',
+  'semicondensed',
+  'demicondensed',
+  'semiexpanded',
+  'semiextended',
+  'expanded',
+  'extended',
+  'wide',
+  'extraexpanded',
+  'extraextended',
+  'ultraexpanded',
+  'ultraextended'
+]
+
+const FONT_WIDTH_NAME = new RegExp(
+  FONT_WIDTH_NAMES.toSorted((a, b) => b.length - a.length).join('|'),
+  'u'
+)
+
+function weightOfStyleName(name: string): number {
+  const numericWeight = name.match(/(?:^|[^0-9])([1-9]00)(?:[^0-9]|$)/u)?.[1]
+  return numericWeight ? Number(numericWeight) : (FONT_WEIGHT_BY_STYLE.get(name) ?? 400)
+}
+
 export function parseFontStyle(style: string | undefined): ParsedFontStyle {
   const raw = style ?? ''
-  const italic = /(?:italic|oblique)/iu.test(raw)
   const normalized = normalizeFontStyleName(raw)
-  const numericWeight = normalized.match(/(?:^|[^0-9])([1-9]00)(?:[^0-9]|$)/u)?.[1]
   return {
-    weight: numericWeight ? Number(numericWeight) : (FONT_WEIGHT_BY_STYLE.get(normalized) ?? 400),
-    italic
+    weight: weightOfStyleName(normalized.replace(FONT_WIDTH_NAME, '')),
+    italic: /(?:italic|oblique)/iu.test(raw)
   }
+}
+
+export function namesWidth(style: string): boolean {
+  return FONT_WIDTH_NAME.test(normalizeFontStyleName(style))
 }
 
 export function styleToWeight(style: string | undefined): number {
@@ -62,16 +100,56 @@ export function normalizeFontFamily(family: string): string {
   return family.replace(/\s+(Variable|\d+(?:pt|px|em))$/i, '')
 }
 
-export function styleToVariant(style: string): string {
-  const weight = styleToWeight(style)
-  const italic = style.toLowerCase().includes('italic')
-  if (weight === 400 && !italic) return 'regular'
-  if (weight === 400 && italic) return 'italic'
-  return italic ? `${weight}italic` : `${weight}`
+export function faceLoadKey(weight: number, italic = false): string {
+  const rounded = Math.round(weight / 100) * 100
+  const label = FONT_WEIGHT_NAMES[rounded] ?? 'Regular'
+  return italic ? `${label} Italic` : label
 }
 
-export function weightToStyle(weight: number, italic = false): string {
-  const rounded = Math.round(weight / 100) * 100
-  const label = (FONT_WEIGHT_NAMES[rounded] ?? 'Regular').replace(/ /g, '')
-  return italic ? `${label} Italic` : label
+/**
+ * The name Google Fonts gives the face at `weight` and slant ("SemiBold Italic", and "Italic"
+ * for the regular weight), for a face whose font has not said its own.
+ */
+export function standardStyleName(weight: number, italic = false): string {
+  const label = FONT_WEIGHT_NAMES[Math.round(weight / 100) * 100] ?? 'Regular'
+  if (!italic) return label
+  return label === 'Regular' ? 'Italic' : `${label} Italic`
+}
+
+/** A style name compared without case or spaces, so "Semi Bold" and "SemiBold" name one face. */
+export function styleSpelling(style: string): string {
+  return style.toLowerCase().replace(/\s+/gu, '')
+}
+
+/**
+ * Whether `style` only names a weight and slant ("Bold Italic", "Semi Bold"), so any face of that
+ * weight is it; a name such as "Book" or "Condensed Bold" is one face of its own.
+ */
+export function namesWeight(style: string): boolean {
+  const { weight, italic } = parseFontStyle(style)
+  const spelling = styleSpelling(style)
+  return [faceLoadKey(weight, italic), standardStyleName(weight, italic)]
+    .map(styleSpelling)
+    .includes(spelling)
+}
+
+/** A face as text sets it: a weight and slant, and the name it was given, if any. */
+export interface NamedFace {
+  fontWeight: number
+  italic: boolean
+  fontStyle: string | null
+}
+
+/**
+ * The style a face loads and draws as. A name that only spells its weight and slant ("Semi Bold",
+ * "Italic") loads as the weight's key, so whichever font of the family draws that weight draws
+ * it; any other name ("Book", "Condensed Bold", "Retina") is a face the weight cannot pick, and
+ * it loads and draws by that name.
+ */
+export function faceStyleKey({ fontWeight, italic, fontStyle }: NamedFace): string {
+  const key = faceLoadKey(fontWeight, italic)
+  if (!fontStyle) return key
+  const spelling = styleSpelling(fontStyle)
+  const weightNames = [key, standardStyleName(fontWeight, italic)].map(styleSpelling)
+  return weightNames.includes(spelling) ? key : fontStyle
 }

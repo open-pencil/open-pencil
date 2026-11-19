@@ -15,9 +15,10 @@ interface OkhclChannelSliderProps {
   min: number
   max: number
   step?: number
-  displayValue: number
-  displayMin: number
-  displayMax: number
+  /** A value field beside the slider; without it the panel's row of values shows the channel. */
+  displayValue?: number
+  displayMin?: number
+  displayMax?: number
   displayStep?: number
   suffix?: string
   gradient?: string
@@ -71,9 +72,14 @@ const styles = useColorSliderUI(
       @update:model-value="emit('update:modelValue', $event)"
     >
       <ChannelSliderTrack :class="styles.track.value" :style="gradient" />
-      <ChannelSliderThumb :class="styles.thumb.value" :style="{ background: thumbFill }" />
+      <ChannelSliderThumb
+        :class="styles.thumb.value"
+        :aria-label="label"
+        :style="{ background: thumbFill }"
+      />
     </ChannelSliderRoot>
     <NumberField
+      v-if="displayValue !== undefined"
       :class="styles.input.value"
       :aria-label="label"
       :model-value="displayValue"
@@ -81,7 +87,7 @@ const styles = useColorSliderUI(
       :max="displayMax"
       :step="displayStep"
       :suffix="suffix"
-      :ui="{ leading: 'hidden', field: 'pl-1.5', display: 'pl-1.5' }"
+      :ui="{ leading: 'hidden', field: 'ps-1.5', display: 'ps-1.5' }"
       @update:model-value="emit('updateDisplay', $event)"
     />
   </div>

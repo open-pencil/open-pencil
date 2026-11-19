@@ -3,9 +3,11 @@ import { describe, expect, test } from 'bun:test'
 import {
   configuredSocialProviders,
   createBetterAuthAdapter,
+  enrollmentEmailOptions,
   parseCloudServerConfig
 } from '#cloud/server'
 import type { CloudDatabase } from '#cloud/server'
+import { TRUSTED_SOCIAL_PROVIDERS } from '#cloud/server/auth/social-providers'
 import type { BetterAuthOptions } from 'better-auth'
 import {
   DummyDriver,
@@ -42,6 +44,18 @@ function database(): Kysely<CloudDatabase> {
 }
 
 describe('Cloud authentication', () => {
+  test('offers the invitation letter only where the deployment is the official one', () => {
+    const selfHosted = parseCloudServerConfig(baseConfig)
+    const official = parseCloudServerConfig({
+      ...baseConfig,
+      deployment: 'official',
+      deploymentAdminMFARequired: true,
+      totpEnabled: true
+    })
+    expect(enrollmentEmailOptions(selfHosted, undefined).invitations).toBe(false)
+    expect(enrollmentEmailOptions(official, undefined).invitations).toBe(true)
+  })
+
   test('keeps social providers optional for self-hosting', () => {
     const config = parseCloudServerConfig(baseConfig)
     expect(configuredSocialProviders(config)).toEqual([])
@@ -56,9 +70,18 @@ describe('Cloud authentication', () => {
       appleClientId: 'apple-client',
       appleTeamId: 'apple-team',
       appleKeyId: 'apple-key',
-      applePrivateKey: 'private-key-loaded-lazily'
+      applePrivateKey: 'private-key-loaded-lazily',
+      githubClientId: 'github-client',
+      githubClientSecret: 'github-secret'
     })
-    expect(configuredSocialProviders(config)).toEqual(['apple', 'google'])
+    // In the order the editor shows them.
+    expect(configuredSocialProviders(config)).toEqual(['google', 'apple', 'github'])
+  })
+
+  test('links GitHub to an existing account only by an address GitHub verified', () => {
+    // A trusted provider links whatever it says of the address; GitHub can give one it has not
+    // verified, so Better Auth must check it.
+    expect(TRUSTED_SOCIAL_PROVIDERS).toEqual(['google', 'apple'])
   })
 
   test('retains explicit trusted client IP configuration', () => {

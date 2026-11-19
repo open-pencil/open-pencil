@@ -1,9 +1,11 @@
-import { fromUint8Array } from 'js-base64'
 import type PptxGenJS from 'pptxgenjs'
 
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { imageDataURL } from '@open-pencil/scene-graph/images'
 import TransformMatrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
+import { lineHeightPixels, styleRunPieces, textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import {
   hasUnsupportedTransform,
@@ -323,7 +325,7 @@ function isImageLeaf(node: SceneNode): boolean {
 
 /** True when `node` clips and some descendant actually reaches past its bounds. */
 function clipsOverflowingContent(graph: SceneGraph, node: SceneNode): boolean {
-  if (!node.clipsContent || !CONTAINER_TYPES.has(node.type)) return false
+  if (!clipsChildren(node) || !CONTAINER_TYPES.has(node.type)) return false
   const toNodeSpace = TransformMatrix.invert(getWorldMatrix(node, graph))
   if (!toNodeSpace) return false
 
@@ -349,7 +351,7 @@ function clipsOverflowingContent(graph: SceneGraph, node: SceneNode): boolean {
         corners[i + 1] < -CLIP_EPSILON_PX || corners[i + 1] > node.height + CLIP_EPSILON_PX
       if (outsideX || outsideY) return true
     }
-    pending.push(...child.childIds)
+    for (const childId of child.childIds) pending.push(childId)
   }
   return false
 }
@@ -434,6 +436,7 @@ function addEditableText(ctx: ExportCtx, node: SceneNode, opacity: number): void
   const singleLine = node.maxLines === 1 || node.textAutoResize === 'WIDTH_AND_HEIGHT'
 
   const runs = buildTextRuns(ctx, node, opacity)
+  const lineHeightPx = lineHeightPixels(node.lineHeight, node.fontSize)
   ctx.slide.addText(runs, {
     x: box.x,
     y: box.y,
@@ -448,7 +451,7 @@ function addEditableText(ctx: ExportCtx, node: SceneNode, opacity: number): void
     // If the receiving app reflows text past the box, shrink to avoid layout
     // breakage; otherwise this has no effect.
     fit: 'shrink',
-    lineSpacing: node.lineHeight != null ? pt(ctx, node.lineHeight) : undefined,
+    lineSpacing: lineHeightPx != null ? pt(ctx, lineHeightPx) : undefined,
     shadow: mapShadow(node, opacity)
   })
   ctx.stats.editable += 1
@@ -458,27 +461,12 @@ function addEditableText(ctx: ExportCtx, node: SceneNode, opacity: number): void
 function buildTextRuns(ctx: ExportCtx, node: SceneNode, opacity: number): PptxGenJS.TextProps[] {
   const text = applyTextCase(node.text, node.textCase)
 
-  interface Seg {
-    start: number
-    end: number
-    style: Partial<SceneNode> & { fills?: Fill[] }
-  }
-  const segs: Seg[] = []
-  const sorted = [...node.styleRuns].sort((a, b) => a.start - b.start)
-  let cursor = 0
-  for (const run of sorted) {
-    const start = Math.max(run.start, cursor)
-    const end = Math.min(run.start + run.length, text.length)
-    if (start > cursor) segs.push({ start: cursor, end: start, style: {} })
-    if (end > start) segs.push({ start, end, style: run.style })
-    cursor = Math.max(cursor, end)
-  }
-  if (cursor < text.length) segs.push({ start: cursor, end: text.length, style: {} })
-  if (segs.length === 0) segs.push({ start: 0, end: text.length, style: {} })
+  const pieces = styleRunPieces(node.styleRuns, text.length)
+  const segs = pieces.length > 0 ? pieces : [{ start: 0, end: 0, style: null }]
 
   const baseFill = firstVisibleFill(node)
   return segs.map((seg) => {
-    const s = seg.style
+    const s = seg.style ?? {}
     const fill = s.fills?.find((f) => f.visible && f.type === 'SOLID') ?? baseFill
     const fontSize = s.fontSize ?? node.fontSize
     const weight = s.fontWeight ?? node.fontWeight
@@ -492,7 +480,10 @@ function buildTextRuns(ctx: ExportCtx, node: SceneNode, opacity: number): PptxGe
         italic: s.italic ?? node.italic,
         color: fill ? hex(fill.color) : '000000',
         transparency: transparency(opacity * (fill ? fill.opacity * fill.color.a : 1)),
-        charSpacing: charSpacingPt(ctx, s.letterSpacing ?? node.letterSpacing),
+        charSpacing: charSpacingPt(
+          ctx,
+          textLengthPixels(s.letterSpacing ?? node.letterSpacing, fontSize)
+        ),
         underline: deco === 'UNDERLINE' ? { style: 'sng' as const } : undefined,
         strike: deco === 'STRIKETHROUGH' ? ('sngStrike' as const) : undefined
       }
@@ -514,7 +505,7 @@ async function addFallbackImage(
   }
   const box = nodeBox(ctx, node)
   ctx.slide.addImage({
-    data: `data:image/png;base64,${fromUint8Array(data)}`,
+    data: imageDataURL(data),
     x: box.x,
     y: box.y,
     w: box.w,

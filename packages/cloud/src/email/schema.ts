@@ -1,4 +1,8 @@
-import { documentPermissionSchema, workspaceRoleSchema } from '#cloud/contract'
+import {
+  documentPermissionSchema,
+  documentReportReasonSchema,
+  workspaceRoleSchema
+} from '#cloud/contract'
 import * as v from 'valibot'
 
 export type TransactionalEmailKind =
@@ -9,12 +13,24 @@ export type TransactionalEmailKind =
   | 'enrollment-approved'
   | 'enrollment-rejected'
   | 'enrollment-revoked'
+  | 'enrollment-invited'
   | 'email-verification'
   | 'password-reset'
   | 'password-changed'
+  | 'email-change-requested'
+  | 'new-sign-in'
+  | 'two-step-changed'
+  | 'document-report'
+  | 'storage-limit-reached'
+  | 'document-blocked'
+  | 'document-restored'
+  | 'document-report-received'
+  | 'document-report-decided'
+  | 'comment-notification'
 
 const documentInvitationEmailPayloadSchema = v.object({
-  inviterName: v.string(),
+  /** Null when the inviter's account is gone, so the email says someone invited you. */
+  inviterName: v.nullable(v.string()),
   documentName: v.string(),
   permission: documentPermissionSchema,
   expiresAt: v.string(),
@@ -22,7 +38,8 @@ const documentInvitationEmailPayloadSchema = v.object({
 })
 
 const workspaceInvitationEmailPayloadSchema = v.object({
-  inviterName: v.string(),
+  /** Null when the inviter's account is gone, so the email says someone invited you. */
+  inviterName: v.nullable(v.string()),
   workspaceName: v.string(),
   role: workspaceRoleSchema,
   expiresAt: v.string(),
@@ -30,8 +47,11 @@ const workspaceInvitationEmailPayloadSchema = v.object({
 })
 
 const enrollmentEmailPayloadSchema = v.object({
-  name: v.string(),
-  actionURL: v.string()
+  /** Null when the request named no one, so the email greets no one by name. */
+  name: v.nullable(v.string()),
+  actionURL: v.string(),
+  /** An invitation letter to someone from openpencil.dev's waitlist, who asked nowhere else. */
+  waitlist: v.optional(v.literal(true))
 })
 
 const adminEnrollmentNotificationPayloadSchema = v.object({
@@ -41,9 +61,108 @@ const adminEnrollmentNotificationPayloadSchema = v.object({
   actionURL: v.string()
 })
 
+const documentReportPayloadSchema = v.object({
+  documentName: v.string(),
+  reason: documentReportReasonSchema,
+  description: v.string(),
+  actionURL: v.string()
+})
+
+const storageLimitReachedPayloadSchema = v.object({
+  name: v.string(),
+  usedBytes: v.number(),
+  limitBytes: v.number(),
+  /** Whether the server sells plans, so the account can get more storage rather than only free it. */
+  upgradable: v.boolean(),
+  actionURL: v.string()
+})
+
+/** To a workspace's owner: an administrator took one of its documents down. */
+const documentBlockedPayloadSchema = v.object({
+  /** The owner's name, or null when the account has none. */
+  name: v.nullable(v.string()),
+  documentName: v.string(),
+  /** Why, as the administrator wrote it, or null when they gave no reason. */
+  reason: v.nullable(v.string()),
+  /** Where to write to contest it: the deployment's abuse address, or null without one. */
+  contactEmail: v.nullable(v.pipe(v.string(), v.email())),
+  actionURL: v.string()
+})
+
+/** To a workspace's owner: a document taken down is back. */
+const documentRestoredPayloadSchema = v.object({
+  name: v.nullable(v.string()),
+  documentName: v.string(),
+  actionURL: v.string()
+})
+
+/** To whoever reported a document: their report arrived. */
+const documentReportReceivedPayloadSchema = v.object({ documentName: v.string() })
+
+/** To whoever reported a document: what the administrators decided. */
+const documentReportDecidedPayloadSchema = v.object({
+  documentName: v.string(),
+  /** The document blocked, the report acted on some other way, or the document left as it was. */
+  outcome: v.picklist(['blocked', 'actioned', 'dismissed']),
+  /** Where to write to disagree: the deployment's abuse address, or null without one. */
+  contactEmail: v.nullable(v.pipe(v.string(), v.email()))
+})
+
+/** To someone a comment names, or who takes part in its thread: what it says, and where. */
+const commentNotificationPayloadSchema = v.object({
+  /** The recipient's name, or null when the account has none. */
+  name: v.nullable(v.string()),
+  /** Who wrote the comment, or null when the account has no name. */
+  authorName: v.nullable(v.string()),
+  documentName: v.string(),
+  /** The comment names the recipient, or answers a thread they take part in. */
+  reason: v.picklist(['mention', 'reply']),
+  /** The start of what the comment says. */
+  excerpt: v.string(),
+  actionURL: v.string(),
+  /** Where the recipient chooses which comments they hear about. */
+  settingsURL: v.string()
+})
+
 const authenticationEmailPayloadSchema = v.object({
   name: v.string(),
-  actionURL: v.optional(v.string())
+  actionURL: v.optional(v.string()),
+  /** What a verification link confirms: a new account, or a new address for one. */
+  purpose: v.optional(v.picklist(['account', 'change']))
+})
+
+const emailChangeRequestedPayloadSchema = v.object({
+  name: v.string(),
+  newEmail: v.string(),
+  actionURL: v.string()
+})
+
+const newSignInPayloadSchema = v.object({
+  name: v.string(),
+  signedInAt: v.string(),
+  ipAddress: v.nullable(v.string()),
+  browser: v.nullable(v.string()),
+  system: v.nullable(v.string()),
+  desktop: v.boolean(),
+  actionURL: v.string()
+})
+
+/** What changed about how an account proves it is its owner's. */
+export const twoStepChangeSchema = v.picklist([
+  'authenticator-on',
+  'authenticator-off',
+  'passkey-added',
+  'passkey-removed',
+  'reset-by-administrator',
+  'sign-in-method-removed'
+])
+
+const twoStepChangedPayloadSchema = v.object({
+  name: v.string(),
+  change: twoStepChangeSchema,
+  /** For a removed sign-in method, which: `credential` for a password, or a provider. */
+  method: v.optional(v.string()),
+  actionURL: v.string()
 })
 
 function content<const Kind extends TransactionalEmailKind, Payload extends v.GenericSchema>(
@@ -61,9 +180,20 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('enrollment-approved', enrollmentEmailPayloadSchema),
   content('enrollment-rejected', enrollmentEmailPayloadSchema),
   content('enrollment-revoked', enrollmentEmailPayloadSchema),
+  content('enrollment-invited', enrollmentEmailPayloadSchema),
   content('email-verification', authenticationEmailPayloadSchema),
   content('password-reset', authenticationEmailPayloadSchema),
-  content('password-changed', authenticationEmailPayloadSchema)
+  content('password-changed', authenticationEmailPayloadSchema),
+  content('email-change-requested', emailChangeRequestedPayloadSchema),
+  content('new-sign-in', newSignInPayloadSchema),
+  content('two-step-changed', twoStepChangedPayloadSchema),
+  content('document-report', documentReportPayloadSchema),
+  content('storage-limit-reached', storageLimitReachedPayloadSchema),
+  content('document-blocked', documentBlockedPayloadSchema),
+  content('document-restored', documentRestoredPayloadSchema),
+  content('document-report-received', documentReportReceivedPayloadSchema),
+  content('document-report-decided', documentReportDecidedPayloadSchema),
+  content('comment-notification', commentNotificationPayloadSchema)
 ])
 
 /** A transactional email's kind with the payload that kind renders. */
@@ -80,6 +210,10 @@ export type AdminEnrollmentNotificationPayload = v.InferOutput<
   typeof adminEnrollmentNotificationPayloadSchema
 >
 export type AuthenticationEmailPayload = v.InferOutput<typeof authenticationEmailPayloadSchema>
+export type EmailChangeRequestedPayload = v.InferOutput<typeof emailChangeRequestedPayloadSchema>
+export type NewSignInPayload = v.InferOutput<typeof newSignInPayloadSchema>
+export type TwoStepChange = v.InferOutput<typeof twoStepChangeSchema>
+export type TwoStepChangedPayload = v.InferOutput<typeof twoStepChangedPayloadSchema>
 
 export type TransactionalEmailPayloadByKind = {
   [Kind in TransactionalEmailKind]: Extract<TransactionalEmailContent, { kind: Kind }>['payload']
@@ -99,3 +233,12 @@ export type RenderedTransactionalEmail = {
   html: string
   text: string
 }
+export type DocumentReportPayload = v.InferOutput<typeof documentReportPayloadSchema>
+export type StorageLimitReachedPayload = v.InferOutput<typeof storageLimitReachedPayloadSchema>
+export type DocumentBlockedPayload = v.InferOutput<typeof documentBlockedPayloadSchema>
+export type DocumentRestoredPayload = v.InferOutput<typeof documentRestoredPayloadSchema>
+export type DocumentReportReceivedPayload = v.InferOutput<
+  typeof documentReportReceivedPayloadSchema
+>
+export type DocumentReportDecidedPayload = v.InferOutput<typeof documentReportDecidedPayloadSchema>
+export type CommentNotificationPayload = v.InferOutput<typeof commentNotificationPayloadSchema>

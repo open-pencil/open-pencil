@@ -2,11 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type CommentReply, type CommentThread } from '@open-pencil/scene-graph'
 import { readComments, writeComments } from '@open-pencil/scene-graph/comments'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { openRoomSession, type RoomSession } from '@/app/collab/session'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { createMemoryRooms } from '#tests/helpers/collab/memory-transport'
 
 const ROOM = 'dddddddddddddddddddddddddddddddd'
@@ -174,6 +174,21 @@ describe('document data in a room', () => {
       await settle()
       expect(guest.graph.enabledLibraries.get('lib-1')?.revisionId).toBe('rev-1')
       expect(guest.graph.documentColorSpace).toBe('display-p3')
+    })
+  })
+
+  test('a board reaches the other peer and a viewer, with its tools', async () => {
+    await withRoom(async ({ host, guest, settle }) => {
+      guest.setTool('RECTANGLE')
+      guest.setReadOnly(true)
+      host.setDocumentKind('board')
+      await settle()
+      expect([guest.graph.documentKind, guest.state.documentKind]).toEqual(['board', 'board'])
+      // The board offers no rectangle: the guest drops it for Move and cannot pick it again.
+      expect(guest.state.activeTool).toBe('SELECT')
+      guest.setReadOnly(false)
+      guest.setTool('RECTANGLE')
+      expect(guest.state.activeTool).toBe('SELECT')
     })
   })
 

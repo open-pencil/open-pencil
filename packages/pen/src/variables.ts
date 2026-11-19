@@ -1,3 +1,5 @@
+import { groupBy, uniq } from 'es-toolkit/array'
+
 import {
   generateId,
   type SceneGraph,
@@ -13,24 +15,29 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { PenDocument, PenNumber, PenVariable, PenVariableScalar } from './schema'
 
-type Theme = Record<string, string>
+export type Theme = Record<string, string>
 
 /**
  * A document's variables, resolved in the theme of the layer being read. pen.dev themes are axes,
- * such as `mode` and `density`, each with its values; every combination of one value per axis is
- * one mode of a single collection, since a variable can depend on several axes at once.
+ * such as `mode` and `density`, each with its values. The axes a variable's values combine share a
+ * collection, whose modes are every combination of one value per axis; an axis no variable
+ * combines with another is a collection of its own, as Figma keeps independent modes apart.
  */
 export interface VarContext {
-  collectionId: string
   byName: Map<string, Variable>
   resolveColor(ref: string): Color
   resolveNumber(ref: string): number
+  /** The number the variable holds, or nothing when it holds none. */
+  numberValue(ref: string): number | undefined
   resolveString(ref: string): string
   resolveBoolean(ref: string): boolean
   /** Merges a layer's theme over its parent's until the returned function is called. */
   enterTheme(theme: Theme): () => void
-  /** The mode of the theme being read. */
-  modeId(): string
+  /**
+   * The modes a layer setting `theme` takes: in each collection holding one of its axes, the mode
+   * of the theme being read.
+   */
+  variableModes(theme: Theme): Record<string, string>
 }
 
 export function isVarRef(val: unknown): val is `$${string}` {
@@ -56,6 +63,18 @@ export function resolveNumber(value: PenNumber | undefined, ctx: VarContext, fal
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
+/** A number, or the value of the number variable it references; nothing where there is none. */
+export function resolveOptionalNumber(
+  value: PenNumber | undefined,
+  ctx: VarContext
+): number | undefined {
+  if (value === undefined) return undefined
+  if (typeof value === 'number') return value
+  if (isVarRef(value)) return ctx.numberValue(value)
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
 /** A boolean, or the value of the variable it references. */
 export function resolveBoolean(
   value: boolean | string | undefined,
@@ -73,10 +92,12 @@ export function resolveString(value: string | undefined, ctx: VarContext): strin
 }
 
 /**
- * Every value a field can take: the value itself, or each value its variable has in any theme,
- * through aliases. For loading what a document may draw before it is read in a theme.
+ * Every value a field can take: the value itself, or the value its variable has in each theme,
+ * through aliases, with the empty value where a theme has none, as reading resolves it. For
+ * loading what a document may draw before it is read in a theme.
  */
 export function possibleValues(value: string | undefined, doc: PenDocument): string[] {
+  const axes = themeAxes(doc)
   const found = new Set<string>()
   const seen = new Set<string>()
   const visit = (raw: PenVariableScalar | undefined) => {
@@ -89,10 +110,13 @@ export function possibleValues(value: string | undefined, doc: PenDocument): str
     const definition = doc.variables?.[name]
     if (!definition || seen.has(name)) return
     seen.add(name)
-    const entries = Array.isArray(definition.value)
-      ? definition.value
-      : [{ value: definition.value }]
-    for (const entry of entries) visit(entry.value)
+    const empty = emptyValue(sceneType(definition.type))
+    // Only the axes its values name decide which applies.
+    for (const theme of combinations(axesOf(definition, axes))) {
+      const themed = rawValue(definition, theme)
+      if (themed !== undefined) visit(themed)
+      else if (typeof empty !== 'object') found.add(String(empty))
+    }
   }
   visit(value)
   return [...found]
@@ -119,6 +143,11 @@ function emptyValue(type: VariableType): VariableValue {
 }
 
 type Axis = [name: string, values: string[]]
+
+/** The document's theme axes that have values. */
+function themeAxes(doc: PenDocument): Axis[] {
+  return Object.entries(doc.themes ?? {}).filter(([, values]) => values.length > 0)
+}
 
 /** Every combination of one value per axis, the first values first. */
 function combinations(axes: Axis[]): Theme[] {
@@ -163,37 +192,91 @@ function themeKey(theme: Theme, axes: Axis[]): string {
   return axes.map(([axis]) => theme[axis]).join('\u0000')
 }
 
-export function buildVarContext(graph: SceneGraph, doc: PenDocument): VarContext {
-  const axes: Axis[] = Object.entries(doc.themes ?? {}).filter(([, values]) => values.length > 0)
+/** The document's axes a variable's values name, in the document's order. */
+function axesOf(definition: PenVariable, axes: Axis[]): Axis[] {
+  if (!Array.isArray(definition.value)) return []
+  const named = new Set(definition.value.flatMap((entry) => Object.keys(entry.theme ?? {})))
+  return axes.filter(([axis]) => named.has(axis))
+}
+
+/** The axes in groups, each joining the axes some variable's values combine, through any chain. */
+function axisGroups(axes: Axis[], definitions: PenVariable[]): Axis[][] {
+  const parent = new Map(axes.map(([axis]) => [axis, axis]))
+  const root = (axis: string): string => {
+    const next = parent.get(axis) ?? axis
+    return next === axis ? axis : root(next)
+  }
+  for (const definition of definitions) {
+    const named = axesOf(definition, axes)
+    const first = named.at(0)
+    if (!first) continue
+    for (const [axis] of named.slice(1)) parent.set(root(axis), root(first[0]))
+  }
+  return Object.values(groupBy(axes, ([axis]) => root(axis)))
+}
+
+/** A collection for a group of axes: one mode for each combination of their values. */
+interface ThemeCollection {
+  id: string
+  axes: Axis[]
+  themes: Theme[]
+  modes: VariableCollectionMode[]
+  modeByTheme: Map<string, string>
+}
+
+function addThemeCollection(graph: SceneGraph, axes: Axis[]): ThemeCollection {
   const themes = combinations(axes)
   const modes: VariableCollectionMode[] = themes.map((theme) => ({
     modeId: generateId(),
     name: axes.length === 0 ? 'Default' : axes.map(([axis]) => theme[axis]).join(' / ')
   }))
-  const modeByTheme = new Map(themes.map((theme, index) => [themeKey(theme, axes), modes[index]]))
-  const collectionId = generateId()
+  const id = generateId()
   graph.addCollection({
-    id: collectionId,
-    name: axes.length === 1 ? axes[0][0] : 'Theme',
+    id,
+    name: axes.length === 0 ? 'Variables' : axes.map(([axis]) => axis).join(' / '),
     modes,
     defaultModeId: modes[0].modeId,
     variableIds: []
   })
+  const modeByTheme = new Map(
+    themes.map((theme, index) => [themeKey(theme, axes), modes[index].modeId])
+  )
+  return { id, axes, themes, modes, modeByTheme }
+}
 
+export function buildVarContext(graph: SceneGraph, doc: PenDocument): VarContext {
+  const axes = themeAxes(doc)
   const definitions = Object.entries(doc.variables ?? {})
+  const collections = axisGroups(
+    axes,
+    definitions.map(([, definition]) => definition)
+  ).map((group) => addThemeCollection(graph, group))
+  const collectionOfAxis = new Map(
+    collections.flatMap((collection) => collection.axes.map(([axis]) => [axis, collection]))
+  )
+  // A variable no axis decides goes with the first axes, where it holds one value in every mode.
+  const fallback = collections[0] ?? addThemeCollection(graph, [])
+  const collectionFor = (definition: PenVariable) => {
+    const first = axesOf(definition, axes).at(0)
+    return (first && collectionOfAxis.get(first[0])) ?? fallback
+  }
+
   const ids = new Map(definitions.map(([name]) => [name, generateId()]))
   const byName = new Map<string, Variable>()
   const byId = new Map<string, Variable>()
+  const collectionById = new Map<string, ThemeCollection>()
   for (const [name, definition] of definitions) {
     const type = sceneType(definition.type)
+    const collection = collectionFor(definition)
+    collectionById.set(collection.id, collection)
     const variable: Variable = {
       id: ids.get(name) ?? generateId(),
       name,
       type,
-      collectionId,
+      collectionId: collection.id,
       valuesByMode: Object.fromEntries(
-        themes.map((theme, index) => [
-          modes[index].modeId,
+        collection.themes.map((theme, index) => [
+          collection.modes[index].modeId,
           sceneValue(rawValue(definition, theme), type, ids)
         ])
       ),
@@ -205,14 +288,16 @@ export function buildVarContext(graph: SceneGraph, doc: PenDocument): VarContext
     byId.set(variable.id, variable)
   }
 
-  let current: Theme = themes[0]
-  const modeId = () => modeByTheme.get(themeKey(current, axes))?.modeId ?? modes[0].modeId
+  let current: Theme = Object.fromEntries(axes.map(([axis, values]) => [axis, values[0]]))
+  const modeIn = (collection: ThemeCollection) =>
+    collection.modeByTheme.get(themeKey(current, collection.axes)) ?? collection.modes[0].modeId
 
   /** A variable's value in the current theme, following aliases. */
   function resolve(ref: string): VariableValue | undefined {
     let variable = byName.get(varName(ref))
     for (let hops = 0; variable && hops <= byName.size; hops++) {
-      const value = variable.valuesByMode[modeId()]
+      const collection = collectionById.get(variable.collectionId)
+      const value = collection ? variable.valuesByMode[modeIn(collection)] : undefined
       if (typeof value !== 'object' || !('aliasId' in value)) return value
       variable = byId.get(value.aliasId)
     }
@@ -220,15 +305,17 @@ export function buildVarContext(graph: SceneGraph, doc: PenDocument): VarContext
   }
 
   return {
-    collectionId,
     byName,
     resolveColor(ref) {
       const value = resolve(ref)
       return typeof value === 'object' && 'r' in value ? value : { ...BLACK }
     },
     resolveNumber(ref) {
+      return this.numberValue(ref) ?? 0
+    },
+    numberValue(ref) {
       const value = resolve(ref)
-      return typeof value === 'number' ? value : 0
+      return typeof value === 'number' ? value : undefined
     },
     resolveString(ref) {
       const value = resolve(ref)
@@ -248,6 +335,9 @@ export function buildVarContext(graph: SceneGraph, doc: PenDocument): VarContext
         current = outer
       }
     },
-    modeId
+    variableModes(theme) {
+      const touched = uniq(Object.keys(theme).flatMap((axis) => collectionOfAxis.get(axis) ?? []))
+      return Object.fromEntries(touched.map((collection) => [collection.id, modeIn(collection)]))
+    }
   }
 }

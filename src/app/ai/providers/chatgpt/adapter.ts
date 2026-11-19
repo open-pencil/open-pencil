@@ -1,7 +1,7 @@
 import { createOpenAI } from '@ai-sdk/openai'
 import { defaultSettingsMiddleware, wrapLanguageModel } from 'ai'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import type { ModelCredentialStore, ModelProviderAdapter } from '@/app/ai/providers/types'
 import type { FetchFunction } from '@/app/http/types'

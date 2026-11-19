@@ -1,4 +1,21 @@
-import type { SceneGraph, VariableType } from '@open-pencil/scene-graph'
+import type {
+  Effect as PluginEffect,
+  VariableBindableEffectField
+} from '@figma/plugin-typings/plugin-api-standalone'
+
+import type { Effect, SceneGraph, VariableType } from '@open-pencil/scene-graph'
+import {
+  EFFECT_BINDING_PROPERTIES,
+  effectBindableProperties,
+  effectBindingVariableType,
+  type EffectBindingProperty
+} from '@open-pencil/scene-graph/variables'
+
+import { boundEffectCopy, type FigmaEffect } from '#core/figma-api/effects'
+import type { FigmaRectangleNode } from '#core/figma-api/node-types'
+
+/** An effect as a layer's `effects` holds it, Figma's typings and OpenPencil's read-back alike. */
+type FigmaNodeEffect = FigmaRectangleNode['effects'][number]
 
 import { FIGMA_DEFAULT_VALUES, variableAlias, type FigmaVariableAlias } from './values'
 import { FigmaVariable, FigmaVariableCollection, assertVariableName } from './variable'
@@ -9,8 +26,9 @@ export {
   figmaBoundVariables,
   paintBindings,
   setLayerBinding,
+  effectBindings,
+  setEffectBindings,
   setPaintBindings,
-  withPaintBinding,
   type FigmaBindableField
 } from './bindings'
 
@@ -142,4 +160,43 @@ export class FigmaVariablesAPI {
       boundVariables: { ...others, color: variableAlias(variable.id) }
     }
   }
+
+  /**
+   * A copy of `effect` with one property bound to `variable`; it binds when the effect is set on a
+   * layer. As in Figma, the copy's values are not resolved yet, a shadow's spread reads 0, and
+   * `null` unbinds every property of the effect, not only `field`.
+   */
+  setBoundVariableForEffect<E extends PluginEffect | FigmaEffect>(
+    effect: E,
+    field: VariableBindableEffectField,
+    variable: { readonly id: string } | null
+  ): Extract<FigmaNodeEffect, { type: E['type'] }> {
+    // Typed as a layer's effects are, from Figma's typings, so the copy can be set on a layer.
+    return boundEffectCopy('setBoundVariableForEffect', effect, (modelled) => {
+      const property = assertEffectField(modelled.type, field)
+      if (variable === null) return {}
+      if (typeof variable !== 'object') {
+        throw new TypeError(`in setBoundVariableForEffect: Expected node, got ${typeof variable}`)
+      }
+      const type = effectBindingVariableType(property)
+      if (this.#graph.variables.get(variable.id)?.type !== type) {
+        throw new Error(
+          `in setBoundVariableForEffect: can only bind ${type.toLowerCase()} variables to ${property}`
+        )
+      }
+      return { ...modelled.boundVariables, [property]: variableAlias(variable.id) }
+    }) as Extract<FigmaNodeEffect, { type: E['type'] }>
+  }
+}
+
+/** Figma's check of the property `setBoundVariableForEffect` binds, which a blur limits to radius. */
+function assertEffectField(type: Effect['type'], field: unknown): EffectBindingProperty {
+  const properties = effectBindableProperties(type)
+  const found = properties.find((property) => property === field)
+  if (found) return found
+  const expected =
+    properties.length === 1
+      ? `Invalid input: expected "${properties[0]}"`
+      : `Invalid option: expected one of ${EFFECT_BINDING_PROPERTIES.map((name) => `"${name}"`).join('|')}`
+  throw new Error(`in setBoundVariableForEffect: Property "field" failed validation: ${expected}`)
 }

@@ -2,9 +2,10 @@ import { expect, test } from 'bun:test'
 
 import { APICallError } from 'ai'
 
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { createRunRecorder } from '@/app/ai/chat/trace/recorder'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { memoryTraceStore } from '#tests/helpers/chat/trace-store'
 
 const KEY = 'sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789'

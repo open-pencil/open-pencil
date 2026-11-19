@@ -2,6 +2,8 @@ import { readFile } from 'node:fs/promises'
 
 import { expect, test, type Page } from '@playwright/test'
 
+import { repoPath } from '@open-pencil/test-support/paths'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 /** Drops files on the canvas the way a drag from the desktop delivers them. */
@@ -28,7 +30,7 @@ test('a document dropped on the canvas opens in a new tab', async ({ page }) => 
   await new CanvasHelper(page).waitForInit()
   const tabs = page.getByRole('tablist').filter({ has: page.getByTestId('tabbar-tab') })
 
-  const bytes = [...(await readFile('tests/fixtures/circle-text.fig'))]
+  const bytes = [...(await readFile(repoPath('tests/fixtures/circle-text.fig')))]
   await dropOnCanvas(page, [{ name: 'circle-text.fig', bytes }])
 
   await expect(tabs.getByRole('tab').last()).toContainText('circle-text')
@@ -76,4 +78,42 @@ test('an SVG dropped on the canvas is placed, not opened as a document', async (
   await expect(page.getByText('Could not open', { exact: false })).toHaveCount(0)
   await expect(tabs.getByRole('tab')).toHaveCount(1)
   await expect(tabs.getByRole('tab').first()).toHaveText(tabName)
+})
+
+const CARD_PAGE =
+  '<div style="width:160px;padding:12px;background:#e0f2fe"><p style="margin:0">Placed card</p></div>'
+
+test('an HTML page dropped on the canvas is placed as layers, not opened as a document', async ({
+  page
+}) => {
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+  const tabs = page.getByRole('tablist').filter({ has: page.getByTestId('tabbar-tab') })
+
+  await dropOnCanvas(page, [{ name: 'card.html', bytes: [...new TextEncoder().encode(CARD_PAGE)] }])
+
+  // The page's outer box, its text inside, joins the layers of the document in view.
+  await expect(page.getByTestId('layers-item').filter({ hasText: 'div' })).toHaveCount(1)
+  await expect(tabs.getByRole('tab')).toHaveCount(1)
+})
+
+test('File → Place… places an HTML page and an SVG in the open document', async ({ page }) => {
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+  const tabs = page.getByRole('tablist').filter({ has: page.getByTestId('tabbar-tab') })
+  const svg = '<svg width="20" height="20"><rect width="20" height="20" fill="#f00"/></svg>'
+
+  await page.getByTestId('menubar-file').click()
+  const chooser = page.waitForEvent('filechooser')
+  await page.getByRole('menuitem', { name: 'Place…' }).click()
+  await (
+    await chooser
+  ).setFiles([
+    { name: 'card.html', mimeType: 'text/html', buffer: Buffer.from(CARD_PAGE) },
+    { name: 'mark.svg', mimeType: 'image/svg+xml', buffer: Buffer.from(svg) }
+  ])
+
+  await expect(page.getByTestId('layers-item').filter({ hasText: 'div' })).toHaveCount(1)
+  await expect(page.getByTestId('layers-item').filter({ hasText: 'mark' })).toHaveCount(1)
+  await expect(tabs.getByRole('tab')).toHaveCount(1)
 })

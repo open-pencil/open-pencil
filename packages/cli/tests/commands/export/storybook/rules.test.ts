@@ -27,7 +27,9 @@ describe('Storybook export rules', () => {
     })
     expect(plan(target('Icons', 'legacy')).stories).toBe('none')
     // A file no rule names keeps everything it would have.
-    expect(storyPlan({ rules: [{ match: 'Icons/**', stories: 'single' }] })(target('Forms', 'input'))).toEqual({})
+    expect(
+      storyPlan({ rules: [{ match: 'Icons/**', stories: 'single' }] })(target('Forms', 'input'))
+    ).toEqual({})
   })
 
   test('fill titles from the file, its default title included', () => {

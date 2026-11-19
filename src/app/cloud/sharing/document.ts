@@ -183,5 +183,5 @@ export async function cloudLinkURL(target: Target): Promise<string | null> {
   const share = activeShare(await target.client.listDocumentShares(target.documentId))
   if (!share) return null
   const secret = await readShareSecret(target.server.id, share.id)
-  return secret ? cloudShareURL(target.discovery.appURL, target.server.url, share.id, secret) : null
+  return secret ? cloudShareURL(target.server.url, share.id, secret) : null
 }

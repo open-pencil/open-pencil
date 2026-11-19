@@ -8,7 +8,7 @@
  * `.cmd` directly fails with ENOENT. Routing through `cmd /c` lets the shell
  * resolve the shim via PATHEXT.
  *
- * `command` is the name of a shell scope entry in desktop/capabilities/default.json, and
+ * `command` is the name of a shell scope entry in desktop/capabilities/host-processes.json, and
  * each scope entry pins the whole command line. On Windows the entry for `name` is
  * `cmd-<name>`, which runs exactly `cmd /c <name> <args>`: a scope that let `cmd` take any
  * arguments would let the webview run any command.
@@ -44,4 +44,13 @@ export function resolveScopedCommand(
     return { command: `cmd-${scope}`, args: ['/c', program, ...args] }
   }
   return { command: scope, args }
+}
+
+/**
+ * Environment for a program started through `cmd /c`. `cmd` looks in its own folder before
+ * `PATH`, so a `.cmd` or `.exe` left in an agent's workspace would run in place of the agent;
+ * `NoDefaultCurrentDirectoryInExePath` is Windows' switch that turns that lookup off.
+ */
+export function platformCommandEnv(userAgent: string = detectUserAgent()): Record<string, string> {
+  return userAgent.includes('Windows') ? { NoDefaultCurrentDirectoryInExePath: '1' } : {}
 }

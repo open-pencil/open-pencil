@@ -1,4 +1,7 @@
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { Channel, invoke } from '@tauri-apps/api/core'
+
+import { randomHex } from '@open-pencil/std/random'
+import { abortReason, untilAborted } from '@open-pencil/std/timing'
 
 import type { FetchFunction } from '@/app/http/types'
 
@@ -62,42 +65,6 @@ function headersToProxyHeaders(headers: Headers): ProxyHttpHeader[] {
   return [...headers.entries()].map(([name, value]) => ({ name, value }))
 }
 
-function abortReason(signal: AbortSignal): Error {
-  return signal.reason instanceof Error
-    ? signal.reason
-    : new DOMException('The operation was aborted', 'AbortError')
-}
-
-export function withAbortSignal<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
-  if (signal.aborted) {
-    void promise.catch(() => undefined)
-    return Promise.reject(abortReason(signal))
-  }
-
-  return new Promise<T>((resolve, reject) => {
-    const cleanup = () => signal.removeEventListener('abort', onAbort)
-    const onAbort = () => {
-      cleanup()
-      reject(abortReason(signal))
-    }
-    signal.addEventListener('abort', onAbort, { once: true })
-    void (async () => {
-      try {
-        const value = await promise
-        cleanup()
-        resolve(value)
-      } catch (error) {
-        cleanup()
-        reject(
-          error instanceof Error
-            ? error
-            : new Error('Desktop HTTP request failed', { cause: error })
-        )
-      }
-    })()
-  })
-}
-
 export interface TauriFetchOptions {
   timeoutMs?: number
   maxResponseBytes?: number
@@ -144,7 +111,6 @@ async function executeTauriFetch(
 
   const request = new Request(input, init)
   request.signal.throwIfAborted()
-  const { Channel, invoke } = await import('@tauri-apps/api/core')
   request.signal.throwIfAborted()
 
   // Capture generated multipart headers before consuming the Request body.
@@ -210,7 +176,7 @@ async function executeTauriFetch(
   }
   let head: ProxyHttpHead
   try {
-    head = await withAbortSignal(
+    head = await untilAborted(
       invoke<ProxyHttpHead>('proxy_http_request', { request: payload, onBody }).catch(
         (error: unknown) => {
           throw fetchError(error)

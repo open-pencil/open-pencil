@@ -1,12 +1,11 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { fontManager } from '@open-pencil/core/text'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type TextParagraphStyle } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 const LIST: TextParagraphStyle[] = [
   { listType: 'NONE', indentation: 0, paragraphSpacing: 24, paragraphIndent: 30 },
@@ -18,10 +17,10 @@ const LIST: TextParagraphStyle[] = [
 beforeAll(async () => {
   await initCodec()
   const inter = expectDefined(
-    await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+    await fontManager.fetchBundledFont('/InterVariable.ttf'),
     'bundled Inter font'
   )
-  fontManager.markLoaded('Inter', 'Regular', inter)
+  await fontManager.markLoaded('Inter', 'Regular', inter)
 })
 
 test('writes lists as Figma does and reads them back', async () => {

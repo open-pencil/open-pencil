@@ -12,13 +12,14 @@ export const menu = tv({
       floatingSurface,
       motionStyles.floating
     ],
-    item: 'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[11px] outline-none select-none data-[disabled]:cursor-default data-[disabled]:text-muted/50 data-[highlighted]:bg-hover',
+    item: 'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-2xs outline-none select-none data-[disabled]:cursor-default data-[disabled]:text-muted/50 data-[highlighted]:bg-hover',
     separator: 'mx-1 my-1 h-px bg-border',
-    label: 'px-2 pt-1.5 pb-1 text-[11px] text-muted select-none',
-    shortcut: 'text-[11px] text-muted',
+    label: 'px-2 pt-1.5 pb-1 text-2xs text-muted select-none',
+    /** Key glyphs read left to right in either direction: ⌘N, not N⌘. */
+    shortcut: 'text-2xs text-muted [direction:ltr] [unicode-bidi:isolate]',
     icon: 'size-3 text-muted',
     subTrigger:
-      'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[11px] outline-none select-none',
+      'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-2xs outline-none select-none',
     // As in Figma and macOS menus: no scrollbar, a chevron strip over each end that has more.
     // No overscroll: WebKit's bounce takes the top past zero, which kept the top strip showing.
     scrollRoot: 'relative flex min-h-0 flex-col',

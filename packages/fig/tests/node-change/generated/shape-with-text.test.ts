@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#fig-tests/helpers/assert'
 import { normalizeFigFragment } from '#fig/document/fragment'
 import { generationOverridesOf } from '#fig/node-change/generated/records'
 import { nodeChangeToProps, sceneNodeToKiwi } from '#fig/node-change/index'
@@ -11,6 +10,8 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { createShapeWithText, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { shapeWithTextLabelBox } from '@open-pencil/scene-graph/shape-with-text'
+import { percentLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 const guid = (localID: number) => ({ sessionID: 0, localID })
 const slot = (localID: number) => ({ guids: [{ sessionID: 40_000_000, localID }] })
@@ -86,13 +87,15 @@ describe('shapes with text', () => {
     })
     expect(shape.fills[0]?.color).toEqual(green)
     expect(shape.strokes[0]).toMatchObject({ color: darkGreen, weight: 4 })
+    // Connectors keep clear of the stroke by its weight.
+    expect(shape).toMatchObject({ strokeWeight: 4, strokeAlign: 'CENTER' })
     const label = expectDefined(shapeWithTextLabel(graph, shape))
     expect(label).toMatchObject({
       text: 'Decision',
       fontFamily: 'Inter',
       fontWeight: 500,
       fontSize: 24,
-      lineHeight: 36,
+      lineHeight: percentLength(150),
       textAutoResize: 'HEIGHT'
     })
     expect(label.fills[0]).toMatchObject({ color: black })

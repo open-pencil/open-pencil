@@ -1,0 +1,6 @@
+# The toolchain the engine's WebAssembly module builds with; rustup installs it on first use.
+[toolchain]
+channel = "1.98.1"
+targets = ["wasm32-unknown-unknown"]
+components = ["clippy", "rustfmt"]
+profile = "minimal"

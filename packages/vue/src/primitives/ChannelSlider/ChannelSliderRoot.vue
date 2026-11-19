@@ -88,6 +88,7 @@ function commit(values: number[]) {
     :orientation="orientation"
     :disabled="disabled"
     :inverted="inverted"
+    dir="ltr"
     data-slot="root"
     @value-commit="commit"
   >

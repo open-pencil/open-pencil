@@ -148,7 +148,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
         @update:model-value="updateStyle"
       />
 
-      <p v-if="isMixed" class="text-[11px] text-muted">{{ panels.mixedStrokesHelp }}</p>
+      <p v-if="isMixed" class="text-2xs text-muted">{{ panels.mixedStrokesHelp }}</p>
 
       <PropertyItemRow
         v-for="(stroke, index) in items"
@@ -174,7 +174,11 @@ function onToggleSides(nodes: readonly SceneNode[]) {
               <FillPicker
                 :label="panels.stroke"
                 :fill="displayStroke(stroke, binding.resolvedValue)"
-                :okhcl="createStrokeOkhclAdapter(okhcl, activeNode, index)"
+                :okhcl="
+                  createStrokeOkhclAdapter(okhcl, activeNode, index, (update) =>
+                    applyPaintMutation(binding.actions, flush, update)
+                  )
+                "
                 :layer-size="selectedNodeIds.length === 1 ? activeNode : null"
                 :keep-open="gradients.pressesHandle"
                 :active-stop="gradients.stop(gradients.target(selectedNodeIds, 'strokes', index))"
@@ -187,6 +191,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
                   )
                 "
                 @open-change="onPickerOpenChange(selectedNodeIds, index, $event, binding.actions)"
+                @commit="commitPaintMutation(binding.actions)"
                 @cancel="cancelPaintMutation(binding.actions)"
               />
             </template>
@@ -233,7 +238,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
       <div v-if="!isMixed && items.length > 0" class="mt-1 flex items-center gap-1.5">
         <AppSelect
           :label="panels.strokeType"
-          :ui="{ trigger: 'w-[88px] flex-none' }"
+          :ui="{ trigger: 'w-22 flex-none' }"
           :model-value="alignValue"
           :placeholder="panels.mixed"
           :options="strokeCtx.alignOptions"
@@ -260,7 +265,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
           v-if="sidesOffered"
           :label="panels.strokeSides"
           size="xs"
-          class="size-[26px] shrink-0"
+          class="size-6.5 shrink-0"
           :active="expandedSides"
           data-property="stroke-sides"
           @click="onToggleSides(selectedNodes)"

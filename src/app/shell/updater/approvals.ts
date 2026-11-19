@@ -1,3 +1,4 @@
+import { emitTo, listen } from '@tauri-apps/api/event'
 import * as v from 'valibot'
 import { onScopeDispose } from 'vue'
 
@@ -15,7 +16,6 @@ export function useRestartApprovals(): void {
   let disposed = false
 
   async function register() {
-    const { emitTo, listen } = await import('@tauri-apps/api/event')
     const unlisten = await listen<unknown>(RESTART_REQUEST_EVENT, ({ payload }) => {
       const parsed = v.safeParse(restartRequestSchema, payload)
       if (!parsed.success) return

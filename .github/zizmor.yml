@@ -1,0 +1,10 @@
+# zizmor's configuration (https://docs.zizmor.sh/configuration/).
+rules:
+  # Local actions stay `./.github/actions/...`, the form actionlint and every runner understand.
+  self-repository:
+    disable: true
+  # Third-party actions are pinned to commits; Dependabot keeps the pins current.
+  unpinned-uses:
+    config:
+      policies:
+        "*": hash-pin

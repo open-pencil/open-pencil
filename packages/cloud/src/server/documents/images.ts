@@ -6,10 +6,13 @@ import type {
   RequestImageUploadsInput
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
+import { logCloud, loggedError } from '#cloud/server/logging'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { StorageQuotaService } from '#cloud/server/quota'
 import { uniq, uniqBy } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
+
+import { DAY_MS, MINUTE_MS } from '@open-pencil/std/timing'
 
 /** Images are stored as the bytes their file holds, whatever format those are. */
 export const IMAGE_CONTENT_TYPE = 'application/octet-stream'
@@ -17,7 +20,10 @@ export const IMAGE_CONTENT_TYPE = 'application/octet-stream'
 type Executor = Kysely<CloudDatabase> | Transaction<CloudDatabase>
 
 /** An image no revision has used for this long may be released; a save uploads first. */
-export const IMAGE_RELEASE_GRACE_MS = 24 * 60 * 60_000
+export const IMAGE_RELEASE_GRACE_MS = DAY_MS
+
+/** How long a link to download a revision or its images works. */
+export const DOWNLOAD_LIFETIME_MS = 5 * MINUTE_MS
 
 /**
  * The images a workspace's documents use, each stored once under the SHA-256 the object store
@@ -53,7 +59,7 @@ export function createDocumentImages(
           .execute()
       } catch (error) {
         // Cleanup releases it once it expires.
-        console.warn('Giving up an image upload failed', error)
+        logCloud('warn', 'Giving up an image upload failed', { error: loggedError(error) })
       }
     }
   }

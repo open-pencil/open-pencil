@@ -8,6 +8,11 @@ export const workspaceSummarySchema = v.object({
   name: v.string(),
   slug: v.string(),
   role: workspaceRoleSchema,
+  /**
+   * Whether the signed-in account owns the workspace, and so pays for its plan and AI credits.
+   * Absent from servers released before it.
+   */
+  owner: v.optional(v.boolean()),
   createdAt: v.string(),
   updatedAt: v.string()
 })
@@ -42,6 +47,7 @@ export const workspaceMemberSchema = v.object({
   userId: v.string(),
   name: v.string(),
   email: v.string(),
+  image: v.nullable(v.string()),
   role: workspaceRoleSchema,
   joinedAt: v.string()
 })
@@ -52,6 +58,8 @@ export const workspaceInvitationSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   email: v.string(),
   role: workspaceRoleSchema,
+  /** Who sent it; the name is null once their account is gone. */
+  invitedBy: v.object({ id: v.string(), name: v.nullable(v.string()) }),
   invitedAt: v.string(),
   expiresAt: v.string()
 })

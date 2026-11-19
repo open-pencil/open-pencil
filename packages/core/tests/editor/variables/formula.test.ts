@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { layerDependencies } from '@open-pencil/scene-graph/transfer'
 import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
 
 import {
@@ -52,7 +53,7 @@ test('numeric and Boolean formulas update 100 instances, layout, undo, clipboard
   for (const id of instances) expect(graph.getNode(id)?.itemSpacing).toBe(8)
   editor.undo.redo()
   for (const id of instances) expect(graph.getNode(id)?.itemSpacing).toBe(12)
-  const clipboard = captureClipboardVariables(graph, [component])
+  const clipboard = captureClipboardVariables(graph, layerDependencies(graph, [component]))
   expect(clipboard.variables).toHaveLength(4)
   const destination = new SceneGraph()
   const transfer = importClipboardVariables(destination, clipboard)

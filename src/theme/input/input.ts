@@ -5,8 +5,8 @@ const defaultInputBase =
 
 export const inputAdornment = {
   root: 'relative flex min-w-0 shrink-0 items-center',
-  leading: 'pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted',
-  trailing: 'absolute inset-y-0 right-2 flex items-center gap-1 text-muted'
+  leading: 'pointer-events-none absolute inset-y-0 inset-s-3 flex items-center text-muted',
+  trailing: 'absolute inset-y-0 inset-e-2 flex items-center gap-1 text-muted'
 }
 
 export default {
@@ -17,7 +17,7 @@ export default {
       panel: panelFieldBase
     },
     size: {
-      xs: 'h-6 px-2 text-[11px]',
+      xs: 'h-6 px-2 text-2xs',
       sm: 'h-7 px-2.5 text-xs',
       md: 'h-8 px-3 text-xs',
       lg: 'h-9 px-3 text-sm'

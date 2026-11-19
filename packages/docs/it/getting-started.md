@@ -4,7 +4,7 @@
 
 OpenPencil funziona direttamente nel browser e non richiede installazione. Apri [app.openpencil.dev](https://app.openpencil.dev) per iniziare a progettare.
 
-Se vuoi creare un prodotto basato su OpenPencil invece di utilizzare soltanto l'applicazione predefinita, consulta la sezione [Automazione](/programmable/) e la documentazione del [Vue SDK](/programmable/sdk/).
+Se vuoi creare un prodotto basato su OpenPencil invece di utilizzare soltanto l'applicazione predefinita, consulta la sezione [Automazione](/developers/) e la documentazione del [Vue SDK](/developers/sdk/).
 
 ## Applicazione desktop
 
@@ -74,7 +74,7 @@ L'editor sarà disponibile all'indirizzo `http://localhost:1420`.
 | ------------------------------- | ---------------------------------------------------------------------------------- |
 | `bun run dev` | Avvia il server di sviluppo con HMR |
 | `bun run build` | Genera la versione di produzione |
-| `bun run check` | Esegue oxlint e controlla i tipi con tsgo |
+| `bun run check` | Esegue oxlint e controlla i tipi con TypeScript 7 |
 | `bun run test` | Esegue i test E2E e di regressione visiva con Playwright |
 | `bun run test:update` | Aggiorna gli screenshot di riferimento |
 | `bun run test:unit` | Esegue gli unit test con bun:test |

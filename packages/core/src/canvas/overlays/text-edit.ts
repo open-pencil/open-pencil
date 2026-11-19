@@ -1,9 +1,10 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { styleRunAt } from '@open-pencil/scene-graph/text'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { TEXT_CARET_COLOR, TEXT_CARET_WIDTH, TEXT_SELECTION_ALPHA } from '#core/constants'
 import type { TextEditor } from '#core/text/editor'
 import { previousGraphemeBoundary } from '#core/text/graphemes'
@@ -18,9 +19,7 @@ import { withScreenStroke } from './outline'
  */
 export function textCaretColor(node: SceneNode, index: number): Color {
   const character = index > 0 ? previousGraphemeBoundary(node.text, index) : 0
-  const run = node.styleRuns.find(
-    (item) => character >= item.start && character < item.start + item.length
-  )
+  const run = styleRunAt(node.styleRuns, character)
   const visible = (run?.style.fills ?? node.fills).filter((fill) => fill.visible)
   const [fill] = visible
   if (visible.length !== 1 || fill.type !== 'SOLID') return TEXT_CARET_COLOR
@@ -31,7 +30,9 @@ export function drawTextEditOverlay(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  editor: TextEditor
+  editor: TextEditor,
+  /** How far the outline sits outside the text, as around a connector label's plate. */
+  outset = 0
 ): void {
   // Path text lays the paragraph out flat and then maps each glyph onto the
   // path. The flat caret / selection rects are in that flat space, so painting
@@ -44,7 +45,10 @@ export function drawTextEditOverlay(
   }
 
   withScreenStroke(r, { color: r.selColor() }, (paint) =>
-    canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), paint)
+    canvas.drawRect(
+      r.ck.LTRBRect(-outset, -outset, node.width + outset, node.height + outset),
+      paint
+    )
   )
 
   const selRects = editor.getSelectionRects()
@@ -59,7 +63,7 @@ export function drawTextEditOverlay(
     const caret = editor.getCaretRect()
     if (caret) {
       const color = textCaretColor(node, editor.caretIndex ?? 0)
-      r.auxFill.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+      r.auxFill.setColorComponents(color.r, color.g, color.b, color.a)
       const w = TEXT_CARET_WIDTH / r.zoom
       canvas.drawRect(
         r.ck.LTRBRect(caret.x - w / 2, caret.y0, caret.x + w / 2, caret.y1),
@@ -86,10 +90,7 @@ function drawPathTextCaret(
     const xs = corners.map((point) => point.x)
     const ys = corners.map((point) => point.y)
     withScreenStroke(r, { color: r.selColor() }, (paint) =>
-      canvas.drawRect(
-        r.ck.LTRBRect(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)),
-        paint
-      )
+      canvas.drawRect(r.ck.LTRBRect(minOf(xs), minOf(ys), maxOf(xs), maxOf(ys)), paint)
     )
   }
 
@@ -113,7 +114,7 @@ function drawPathTextCaret(
   if (!caret) return
   r.auxStroke.setStrokeWidth(TEXT_CARET_WIDTH / r.zoom)
   const color = textCaretColor(node, editor.caretIndex ?? 0)
-  r.auxStroke.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  r.auxStroke.setColorComponents(color.r, color.g, color.b, color.a)
   r.auxStroke.setPathEffect(null)
   canvas.drawLine(caret.from.x, caret.from.y, caret.to.x, caret.to.y, r.auxStroke)
 }

@@ -11,15 +11,10 @@ export type CanvasRenderLayer = 'full' | 'scene' | 'overlays'
 
 export interface UseCanvasOptions {
   shouldSuspendRender?: () => boolean
-  onPresented?: (versions: { renderVersion: number; sceneVersion: number }) => void
   /**
    * Selects which render layer this canvas owns.
    */
   layer?: CanvasRenderLayer
-  /**
-   * Enables the experimental tiled scene renderer for this surface.
-   */
-  sceneRenderer?: 'retained' | 'tiled'
   /**
    * Forces ruler visibility on or off for this canvas.
    *
@@ -42,6 +37,11 @@ export interface UseCanvasOptions {
    * Called once the rendering surface is ready.
    */
   onReady?: () => void
+  /**
+   * Called instead of `onReady` when the surface cannot start, as when CanvasKit fails to
+   * load. Without it the failure is left unhandled.
+   */
+  onFailed?: (error: unknown) => void
   /**
    * Reports the color space the canvas actually presents, including fallbacks, or null
    * when no surface could be configured.

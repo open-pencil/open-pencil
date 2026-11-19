@@ -5,6 +5,9 @@
   "localFonts": "ローカルフォント",
   "onlineFonts": "オンラインフォント",
   "downloadedCache": "ダウンロード済みキャッシュ",
+  "cachedFontCount": {
+    "many": "{count} 個のフォント"
+  },
   "systemFontAccess": "システムフォントアクセス",
   "systemFontsAvailable": "システムフォントを利用できます。",
   "allowBrowserFontAccess": "システムフォントが見つからない場合にブラウザーのフォントアクセスを許可します。",

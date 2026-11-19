@@ -3,7 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import {
   accountAuthenticationRequest,
   createAccountAuthenticationFixture,
-  createVerifiedCredentialAccount
+  createVerifiedCredentialAccount,
+  withCookie
 } from '#cloud-tests/helpers/account-authentication'
 
 describe('account password changes', () => {
@@ -34,15 +35,14 @@ describe('account password changes', () => {
         .executeTakeFirstOrThrow()
       expect(Number(before.count)).toBeGreaterThan(1)
 
-      const response = await fixture.app.fetch(
-        accountAuthenticationRequest(
-          '/api/account/authentication/change-password',
-          {
+      const response = await fixture.client.api.account.authentication['change-password'].$post(
+        {
+          json: {
             currentPassword: 'the original long password',
             newPassword: 'the replacement long password'
-          },
-          account.sessionCookie
-        )
+          }
+        },
+        withCookie(account.sessionCookie)
       )
       expect(response.status).toBe(200)
       expect(passwordChanged).toBe(true)
@@ -53,9 +53,7 @@ describe('account password changes', () => {
         .executeTakeFirstOrThrow()
       expect(Number(after.count)).toBe(1)
       expect(
-        await fixture.app.fetch(
-          accountAuthenticationRequest('/api/account/status', undefined, account.sessionCookie)
-        )
+        await fixture.client.api.account.status.$get(undefined, withCookie(account.sessionCookie))
       ).toHaveProperty('status', 200)
     } finally {
       await fixture.close()

@@ -1,4 +1,5 @@
 import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
+import { cubicPoint } from '@open-pencil/scene-graph/geometry'
 import type { Vector, Rect } from '@open-pencil/scene-graph/primitives'
 
 export interface CubicPoints {
@@ -22,31 +23,6 @@ export interface NetworkNearestResult extends NearestResult {
 // ---------------------------------------------------------------------------
 // De Casteljau evaluation
 // ---------------------------------------------------------------------------
-
-/** Evaluate a cubic bezier at parameter t (0..1). */
-export function evalCubic(
-  p0x: number,
-  p0y: number,
-  p1x: number,
-  p1y: number,
-  p2x: number,
-  p2y: number,
-  p3x: number,
-  p3y: number,
-  t: number
-): Vector {
-  const mt = 1 - t
-  const mt2 = mt * mt
-  const t2 = t * t
-  const a = mt2 * mt
-  const b = 3 * mt2 * t
-  const c = 3 * mt * t2
-  const d = t2 * t
-  return {
-    x: a * p0x + b * p1x + c * p2x + d * p3x,
-    y: a * p0y + b * p1y + c * p2y + d * p3y
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Curve splitting (De Casteljau subdivision)
@@ -190,13 +166,13 @@ export function computeAccurateBounds(network: VectorNetwork): Rect {
 
     // X extrema
     for (const t of cubicExtrema(p0.x, cp1.x, cp2.x, p3.x)) {
-      const pt = evalCubic(p0.x, p0.y, cp1.x, cp1.y, cp2.x, cp2.y, p3.x, p3.y, t)
+      const pt = cubicPoint(p0, cp1, cp2, p3, t)
       update(pt.x, pt.y)
     }
 
     // Y extrema
     for (const t of cubicExtrema(p0.y, cp1.y, cp2.y, p3.y)) {
-      const pt = evalCubic(p0.x, p0.y, cp1.x, cp1.y, cp2.x, cp2.y, p3.x, p3.y, t)
+      const pt = cubicPoint(p0, cp1, cp2, p3, t)
       update(pt.x, pt.y)
     }
   }
@@ -227,7 +203,7 @@ export function nearestPointOnCubic(
   // Coarse sampling
   for (let i = 0; i <= coarseSamples; i++) {
     const t = i / coarseSamples
-    const pt = evalCubic(p0.x, p0.y, cp1.x, cp1.y, cp2.x, cp2.y, p3.x, p3.y, t)
+    const pt = cubicPoint(p0, cp1, cp2, p3, t)
     const dx = pt.x - px
     const dy = pt.y - py
     const d = dx * dx + dy * dy
@@ -248,7 +224,7 @@ export function nearestPointOnCubic(
 
     for (let i = 0; i <= 4; i++) {
       const t = lo + step * i
-      const pt = evalCubic(p0.x, p0.y, cp1.x, cp1.y, cp2.x, cp2.y, p3.x, p3.y, t)
+      const pt = cubicPoint(p0, cp1, cp2, p3, t)
       const dx = pt.x - px
       const dy = pt.y - py
       const d = dx * dx + dy * dy
@@ -264,7 +240,7 @@ export function nearestPointOnCubic(
     hi = Math.min(1, bestT + step)
   }
 
-  const pt = evalCubic(p0.x, p0.y, cp1.x, cp1.y, cp2.x, cp2.y, p3.x, p3.y, bestT)
+  const pt = cubicPoint(p0, cp1, cp2, p3, bestT)
   return { t: bestT, x: pt.x, y: pt.y, distance: Math.sqrt(bestDist) }
 }
 

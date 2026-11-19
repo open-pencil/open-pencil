@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -30,6 +29,7 @@ import { modeAttributeText, modeConditionPlaceholder } from '@/app/editor/tokens
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -208,7 +208,7 @@ function attributeDone(event: KeyboardEvent) {
           @change="commitName"
           @enter="done"
         />
-        <DropdownMenuRoot>
+        <AppDropdownMenuRoot>
           <DropdownMenuTrigger as-child>
             <IconButton
               :label="variables.collectionActions"
@@ -231,7 +231,7 @@ function attributeDone(event: KeyboardEvent) {
               </MenuScrollArea>
             </DropdownMenuContent>
           </DropdownMenuPortal>
-        </DropdownMenuRoot>
+        </AppDropdownMenuRoot>
       </div>
       <PanelFieldGroup
         v-if="collection.modes.length > 1"
@@ -289,7 +289,7 @@ function attributeDone(event: KeyboardEvent) {
           <AppBadge v-if="item.modeId === collection.defaultModeId">
             {{ variables.defaultMode }}
           </AppBadge>
-          <DropdownMenuRoot>
+          <AppDropdownMenuRoot>
             <DropdownMenuTrigger as-child>
               <IconButton :label="variables.modeActions({ mode: item.name })">
                 <icon-lucide-ellipsis class="size-3.5" />
@@ -322,7 +322,7 @@ function attributeDone(event: KeyboardEvent) {
                 </MenuScrollArea>
               </DropdownMenuContent>
             </DropdownMenuPortal>
-          </DropdownMenuRoot>
+          </AppDropdownMenuRoot>
         </div>
 
         <template v-if="item.modeId === collection.defaultModeId">

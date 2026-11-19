@@ -1,5 +1,7 @@
-import { scaleGeometryPaths } from '../copy'
+import { cloneVectorNetwork, copyDerivedGlyphs, scaleGeometryPaths } from '../copy'
+import { scaledTextLength } from '../text/lengths'
 import { TEXT_PARAGRAPH_SPACING_FIELDS } from '../text/paragraphs'
+import { followsPath } from '../text/path'
 import {
   type Effect,
   type Fill,
@@ -10,7 +12,6 @@ import {
   type StyleRun,
   type TextParagraphStyle
 } from '../types'
-import { cloneVectorNetwork } from '../vector-network'
 
 function scaledOptional(value: number | null, scale: number): number | null {
   return value == null ? null : value * scale
@@ -29,7 +30,15 @@ function scaledEffects(effects: readonly Effect[], scale: number): Effect[] {
     ...structuredClone(effect),
     offset: { x: effect.offset.x * scale, y: effect.offset.y * scale },
     radius: effect.radius * scale,
-    spread: effect.spread * scale
+    spread: effect.spread * scale,
+    ...(effect.progressive
+      ? {
+          progressive: {
+            ...structuredClone(effect.progressive),
+            startRadius: effect.progressive.startRadius * scale
+          }
+        }
+      : {})
   }))
 }
 
@@ -53,8 +62,8 @@ function scaledStyleRuns(styleRuns: readonly StyleRun[], scale: number): StyleRu
     style: {
       ...structuredClone(run.style),
       fontSize: run.style.fontSize == null ? undefined : run.style.fontSize * scale,
-      letterSpacing: run.style.letterSpacing == null ? undefined : run.style.letterSpacing * scale,
-      lineHeight: scaledOptional(run.style.lineHeight ?? null, scale),
+      letterSpacing: run.style.letterSpacing && scaledTextLength(run.style.letterSpacing, scale),
+      lineHeight: run.style.lineHeight && scaledTextLength(run.style.lineHeight, scale),
       textDecorationThickness: scaledOptional(run.style.textDecorationThickness ?? null, scale),
       textUnderlineOffset: scaledOptional(run.style.textUnderlineOffset ?? null, scale)
     }
@@ -104,7 +113,34 @@ function scaledVectorNetwork(node: SceneNode, scale: number): SceneNode['vectorN
     segment.tangentEnd.x *= scale
     segment.tangentEnd.y *= scale
   }
+  // A region's own paints scale as the layer's do.
+  for (const region of network.regions) {
+    if (region.fills) region.fills = scaledFills(region.fills, scale)
+  }
   return network
+}
+
+function scaledPathText(node: SceneNode, scale: number): Partial<SceneNode> {
+  if (!node.textPathData && !followsPath(node)) {
+    return {}
+  }
+  const box = node.textPathBox
+  return {
+    derivedTextGlyphs:
+      copyDerivedGlyphs(node.derivedTextGlyphs)?.map((glyph) => ({
+        ...glyph,
+        x: glyph.x * scale,
+        y: glyph.y * scale,
+        fontSize: glyph.fontSize * scale,
+        ...(glyph.advance === undefined ? {} : { advance: glyph.advance * scale })
+      })) ?? null,
+    textPathBox: box && {
+      x: box.x * scale,
+      y: box.y * scale,
+      width: box.width * scale,
+      height: box.height * scale
+    }
+  }
 }
 
 export function scaleNodeChanges(
@@ -127,8 +163,8 @@ export function scaleNodeChanges(
     bottomRightRadius: node.bottomRightRadius * scale,
     bottomLeftRadius: node.bottomLeftRadius * scale,
     fontSize: node.fontSize * scale,
-    letterSpacing: node.letterSpacing * scale,
-    lineHeight: scaledOptional(node.lineHeight, scale),
+    letterSpacing: scaledTextLength(node.letterSpacing, scale),
+    lineHeight: node.lineHeight && scaledTextLength(node.lineHeight, scale),
     textDecorationThickness: scaledOptional(node.textDecorationThickness, scale),
     textUnderlineOffset: scaledOptional(node.textUnderlineOffset, scale),
     styleRuns: scaledStyleRuns(node.styleRuns, scale),
@@ -136,8 +172,9 @@ export function scaleNodeChanges(
     paragraphSpacing: node.paragraphSpacing * scale,
     paragraphIndent: node.paragraphIndent * scale,
     textParagraphs: scaledParagraphStyles(node.textParagraphs, scale),
+    derivedTextHeight: scaledOptional(node.derivedTextHeight, scale),
     itemSpacing: node.itemSpacing * scale,
-    counterAxisSpacing: node.counterAxisSpacing * scale,
+    counterAxisSpacing: node.counterAxisSpacing === null ? null : node.counterAxisSpacing * scale,
     paddingTop: node.paddingTop * scale,
     paddingRight: node.paddingRight * scale,
     paddingBottom: node.paddingBottom * scale,
@@ -159,6 +196,7 @@ export function scaleNodeChanges(
     layoutGrids: scaledLayoutGrids(node.layoutGrids, scale),
     vectorNetwork: scaledVectorNetwork(node, scale),
     fillGeometry: scaleGeometryPaths(node.fillGeometry, scale, scale),
-    strokeGeometry: scaleGeometryPaths(node.strokeGeometry, scale, scale)
+    strokeGeometry: scaleGeometryPaths(node.strokeGeometry, scale, scale),
+    ...scaledPathText(node, scale)
   }
 }

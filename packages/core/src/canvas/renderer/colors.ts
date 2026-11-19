@@ -11,18 +11,12 @@ import {
 } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-function resolvedVariableColor(
-  color: Color,
-  graph: SceneGraph,
-  presentation: RenderColorSpace
-): ResolvedRenderColor {
-  return {
-    ...resolveRGBAForPreview(color, {
-      documentColorSpace: graph.documentColorSpace,
-      colorSpace: presentation
-    }),
-    cssColor: ''
-  }
+/**
+ * A bound paint draws the color it stores, which its variable last wrote into it, as Figma draws
+ * it; OkHCL data kept from before it was bound no longer describes it.
+ */
+function isBound(node: SceneNode, list: 'fills' | 'strokes', index: number): boolean {
+  return `${list}/${index}/color` in node.boundVariables
 }
 
 export function resolveFillColorInfo(
@@ -32,15 +26,9 @@ export function resolveFillColorInfo(
   graph: SceneGraph,
   presentation: RenderColorSpace
 ): ResolvedRenderColor {
-  const varId = node.boundVariables[`fills/${fillIndex}/color`]
-  if (varId) {
-    const resolved = graph.resolveColorVariableForNode(node.id, varId)
-    if (resolved) return resolvedVariableColor(resolved, graph, presentation)
-  }
-  return resolveNodeFillColor(fill, fillIndex, node, {
-    documentColorSpace: graph.documentColorSpace,
-    colorSpace: presentation
-  })
+  const options = { documentColorSpace: graph.documentColorSpace, colorSpace: presentation }
+  if (isBound(node, 'fills', fillIndex)) return resolveRGBAForPreview(fill.color, options)
+  return resolveNodeFillColor(fill, fillIndex, node, options)
 }
 
 export function resolveFillColor(
@@ -50,9 +38,24 @@ export function resolveFillColor(
   graph: SceneGraph,
   presentation: RenderColorSpace
 ): Color {
-  const varId = node.boundVariables[`fills/${fillIndex}/color`]
-  if (!varId && !getFillOkHCL(node, fillIndex)) return normalizeColor(fill.color)
+  if (isBound(node, 'fills', fillIndex) || !getFillOkHCL(node, fillIndex))
+    return normalizeColor(fill.color)
   return resolveFillColorInfo(fill, fillIndex, node, graph, presentation).color
+}
+
+/**
+ * A gradient stop's color as drawn. Bindings and OkHCL data belong to a solid paint's one color, so
+ * a stop only goes through color management, whatever paint list or index its gradient sits at.
+ */
+export function resolveGradientStopColor(
+  color: Color,
+  graph: SceneGraph,
+  presentation: RenderColorSpace
+): Color {
+  return resolveRGBAForPreview(color, {
+    documentColorSpace: graph.documentColorSpace,
+    colorSpace: presentation
+  }).color
 }
 
 export function resolveStrokeColorInfo(
@@ -62,15 +65,9 @@ export function resolveStrokeColorInfo(
   graph: SceneGraph,
   presentation: RenderColorSpace
 ): ResolvedRenderColor {
-  const varId = node.boundVariables[`strokes/${strokeIndex}/color`]
-  if (varId) {
-    const resolved = graph.resolveColorVariableForNode(node.id, varId)
-    if (resolved) return resolvedVariableColor(resolved, graph, presentation)
-  }
-  return resolveNodeStrokeColor(stroke, strokeIndex, node, {
-    documentColorSpace: graph.documentColorSpace,
-    colorSpace: presentation
-  })
+  const options = { documentColorSpace: graph.documentColorSpace, colorSpace: presentation }
+  if (isBound(node, 'strokes', strokeIndex)) return resolveRGBAForPreview(stroke.color, options)
+  return resolveNodeStrokeColor(stroke, strokeIndex, node, options)
 }
 
 export function resolveStrokeColor(
@@ -80,7 +77,7 @@ export function resolveStrokeColor(
   graph: SceneGraph,
   presentation: RenderColorSpace
 ): Color {
-  const varId = node.boundVariables[`strokes/${strokeIndex}/color`]
-  if (!varId && !getStrokeOkHCL(node, strokeIndex)) return normalizeColor(stroke.color)
+  if (isBound(node, 'strokes', strokeIndex) || !getStrokeOkHCL(node, strokeIndex))
+    return normalizeColor(stroke.color)
   return resolveStrokeColorInfo(stroke, strokeIndex, node, graph, presentation).color
 }

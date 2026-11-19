@@ -7,6 +7,15 @@ import {
 } from '@modelcontextprotocol/server'
 import { withTimeout } from 'es-toolkit/promise'
 
+import {
+  MCP_AGENT_HEADER,
+  MCP_DEFERS_TOOLS_HEADER,
+  MCP_CHAT_HEADER
+} from '@open-pencil/core/constants'
+import { errorMessage } from '@open-pencil/std/errors'
+import { MINUTE_MS } from '@open-pencil/std/timing'
+
+import { MCP_SERVER_INSTRUCTIONS } from '#mcp/instructions'
 import { createPendingRequests } from '#mcp/server/pending-requests'
 import { MCP_AGENT_KINDS, type MCPAgentSession, type MCPToolSettled } from '#mcp/tool/registration'
 
@@ -47,37 +56,34 @@ const MAX_MCP_SESSIONS = 10
 /** App chat ids are random hex; anything else is ignored rather than forwarded. */
 const CHAT_ID = /^[0-9a-f]{16,64}$/
 
-/** The opener a session's first request names through the app's agent and chat headers. */
-export function sessionOpener(
-  kind: string | undefined,
-  chat: string | undefined
-): MCPSessionOpener {
-  return {
-    kind: MCP_AGENT_KINDS.find((candidate) => candidate === kind) ?? 'mcp',
-    ...(chat && CHAT_ID.test(chat) ? { chat } : {})
+/** The opener a session's first request names through the app's agent, chat, and tool headers. */
+export function sessionOpener(header: (name: string) => string | undefined): MCPSessionOpener {
+  const kind = header(MCP_AGENT_HEADER)
+  const opener: MCPSessionOpener = {
+    kind: MCP_AGENT_KINDS.find((candidate) => candidate === kind) ?? 'mcp'
   }
+  const chat = header(MCP_CHAT_HEADER)
+  if (chat && CHAT_ID.test(chat)) opener.chat = chat
+  if (header(MCP_DEFERS_TOOLS_HEADER) === '1') opener.defersTools = true
+  return opener
 }
-const MCP_SESSION_IDLE_TIMEOUT_MS = 15 * 60_000
+const MCP_SESSION_IDLE_TIMEOUT_MS = 15 * MINUTE_MS
 const MAX_SWEEP_INTERVAL_MS = 60_000
 // The MCP SDK's close() does not enforce a timeout internally.
 const SESSION_CLOSE_TIMEOUT_MS = 5_000
-
-function describeError(e: unknown): string {
-  return e instanceof Error ? e.message : String(e)
-}
 
 async function closeSession(session: Pick<MCPSession, 'transport' | 'server'>): Promise<void> {
   try {
     await withTimeout(() => session.transport.close(), SESSION_CLOSE_TIMEOUT_MS)
   } catch (e) {
     // Best-effort: the transport may already be closed or in a bad state
-    process.stderr.write(`  MCP session: transport close warning (${describeError(e)})\n`)
+    process.stderr.write(`  MCP session: transport close warning (${errorMessage(e)})\n`)
   }
   try {
     await withTimeout(() => session.server.close(), SESSION_CLOSE_TIMEOUT_MS)
   } catch (e) {
     // Best-effort
-    process.stderr.write(`  MCP session: server close warning (${describeError(e)})\n`)
+    process.stderr.write(`  MCP session: server close warning (${errorMessage(e)})\n`)
   }
 }
 
@@ -109,7 +115,7 @@ export function createMCPSessionManager({
       if (session.initialized) onSessionClosed?.(id)
     } catch (e) {
       // Application notification must not prevent resource cleanup.
-      process.stderr.write(`  MCP session: close notification warning (${describeError(e)})\n`)
+      process.stderr.write(`  MCP session: close notification warning (${errorMessage(e)})\n`)
     }
     const task = closeSession(session).finally(() => closing.delete(id))
     closing.set(id, task)
@@ -121,7 +127,7 @@ export function createMCPSessionManager({
       onSessionOpened?.(agent)
     } catch (e) {
       // Application notification must not fail the client's initialize.
-      process.stderr.write(`  MCP session: open notification warning (${describeError(e)})\n`)
+      process.stderr.write(`  MCP session: open notification warning (${errorMessage(e)})\n`)
     }
   }
 
@@ -160,7 +166,10 @@ export function createMCPSessionManager({
     if (inFlight) return inFlight
 
     const promise = (async () => {
-      const server = new McpServer({ name: 'open-pencil', version: serverVersion })
+      const server = new McpServer(
+        { name: 'open-pencil', version: serverVersion },
+        { instructions: MCP_SERVER_INSTRUCTIONS }
+      )
       const agent: MCPAgentSession = { id, ...opener }
 
       const transport = new WebStandardStreamableHTTPServerTransport({

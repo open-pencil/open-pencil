@@ -1,17 +1,21 @@
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { boardDriver } from '#tests/helpers/canvas/board-driver'
 import { shapeWithTextDriver } from '#tests/helpers/canvas/shape-with-text-driver'
 import { propertyField, propertySection } from '#tests/helpers/properties'
 import { toolbarToolTestId } from '#tests/helpers/test-ids'
 
 const editor = useEditorSetupWithClear()
 const shapes = shapeWithTextDriver(() => editor.page)
+const board = boardDriver(() => editor.page)
 
 test.beforeEach(async () => {
   await editor.page.keyboard.press('Escape')
   await shapes.showOrigin()
 })
+
+test.afterEach(() => board.close())
 
 async function lastShape() {
   const shape = (await shapes.shapes()).at(-1)
@@ -94,74 +98,30 @@ test('the tool keeps the kind picked last, and a drag draws the shape as large a
   expect(await shapes.shapes()).toHaveLength(before)
 })
 
-test('the properties panel switches a shape to another kind, keeping its size', async () => {
+// FigJam: on a board R arms a square, whatever kind the Shapes panel picked last.
+test('R on a board arms a square shape, not the kind picked last', async () => {
   await shapes.showTool()
-  await shapes.pickKind('Square')
-  await clickAt(200, 200)
+  await shapes.pickKind('Cylinder')
   await editor.page.keyboard.press('Escape')
-  await editor.page.locator('[data-property="shape-kind"]').click()
-  await editor.page.getByRole('option', { name: 'Hexagon', exact: true }).click()
-  await editor.canvas.waitForRender()
-  expect(await lastShape()).toMatchObject({ kind: 'HEXAGON', width: 176, height: 176 })
-
-  await editor.page.keyboard.press('ControlOrMeta+z')
-  await editor.canvas.waitForRender()
+  await board.open()
+  await editor.canvas.click(20, 20)
+  await editor.page.keyboard.press('r')
+  await clickAt(400, 200)
+  await editor.page.keyboard.press('Escape')
   expect((await lastShape()).kind).toBe('SQUARE')
 })
 
-test("the properties panel paints a shape with FigJam's palette and sizes its text", async () => {
+test("a shape's panel keeps to FigJam's choices, without free-form typography or corners", async () => {
   await shapes.showTool()
   await shapes.pickKind('Square')
   await clickAt(200, 200)
   await editor.page.keyboard.type('Ship it')
   await editor.page.keyboard.press('Escape')
 
-  const fill = editor.page.getByRole('radiogroup', { name: 'Fill' })
-  await fill.getByRole('radio', { name: 'Violet', exact: true }).click()
-  await expect(fill.getByRole('radio', { name: 'Violet', exact: true })).toHaveAttribute(
-    'aria-checked',
-    'true'
-  )
-  expect(await lastShape()).toMatchObject({ fill: '#874fff', stroke: '#5427b4' })
-
-  const dashed = editor.page.locator('[data-property="shape-line-dashed"]')
-  await dashed.click()
-  await expect(dashed).toHaveAttribute('aria-pressed', 'true')
-  const noFill = editor.page
-    .getByRole('radiogroup', { name: 'Fill' })
-    .getByRole('radio', { name: 'None', exact: true })
-  await noFill.click()
-  await expect(noFill).toHaveAttribute('aria-checked', 'true')
-  await fill.getByRole('radio', { name: 'Violet', exact: true }).click()
-  expect(await lastShape()).toMatchObject({ fill: '#874fff' })
-
-  await editor.page.locator('[data-property="shape-text-size"]').click()
-  await editor.page.getByRole('option', { name: 'Huge', exact: true }).click()
-  await editor.canvas.waitForRender()
-  await expect(editor.page.locator('[data-property="shape-text-size"]')).toContainText('Huge')
-  const huge = await lastShape()
-  expect(huge.label?.fontSize).toBe(96)
-  expect(huge.height).toBeGreaterThan(176)
-})
-
-test("a shape's panel styles its label and rounds its corners, as Figma's does", async () => {
-  await shapes.showTool()
-  await shapes.pickKind('Square')
-  await clickAt(200, 200)
-  await editor.page.keyboard.type('Ship it')
-  await editor.page.keyboard.press('Escape')
-
-  await expect(propertySection(editor.page, 'Typography')).toBeVisible()
-  await expect(propertyField(editor.page, 'cornerRadius')).toBeVisible()
-  const size = propertySection(editor.page, 'Typography').getByRole('spinbutton', {
-    name: 'Font size'
-  })
-  await size.click()
-  await editor.page.keyboard.press('ControlOrMeta+a')
-  await editor.page.keyboard.type('24')
-  await size.press('Enter')
-  await editor.canvas.waitForRender()
-  expect((await lastShape()).label?.fontSize).toBe(24)
+  for (const section of ['Typography', 'Appearance', 'Fill', 'Stroke', 'Effects']) {
+    await expect(propertySection(editor.page, section)).toHaveCount(0)
+  }
+  await expect(propertyField(editor.page, 'cornerRadius')).toHaveCount(0)
 })
 
 test('a shape whose height was set keeps it, and cuts a long label off with "…"', async () => {

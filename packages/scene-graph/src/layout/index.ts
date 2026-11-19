@@ -1,4 +1,7 @@
 export * from './aspect-ratio'
 export * from './guides'
 export * from './keywords'
+export * from './limits'
 export * from './sizing'
+export * from './spacing'
+export * from './strokes'

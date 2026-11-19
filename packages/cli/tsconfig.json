@@ -5,6 +5,7 @@
     "moduleResolution": "bundler",
     "strict": true,
     "skipLibCheck": true,
+    "types": ["node"],
     "paths": {
       "#cli/*": ["./src/*"]
     }

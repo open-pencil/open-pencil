@@ -5,6 +5,7 @@ import {
 } from '@open-pencil/dom-css/browser'
 import type { ComponentStyling } from '@open-pencil/dom-css/export'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -50,7 +51,7 @@ export async function previewDOMCode(
   styling: ComponentStyling
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const graph = sceneGraphFromStyledHTML(await designDocument(source, styling), {
+    const graph = await sceneGraphFromStyledHTML(await designDocument(source, styling), {
       pageName: 'Code preview'
     })
     const pageId = graph.getPages()[0]?.id ?? graph.rootId
@@ -59,7 +60,7 @@ export async function previewDOMCode(
     store.replaceGraph(graph)
     return { ok: true }
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+    return { ok: false, error: errorMessage(error) }
   }
 }
 

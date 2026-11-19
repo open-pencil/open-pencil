@@ -133,3 +133,29 @@ test('the graph keeps its connectors indexed as they come and go', () => {
   graph.deleteNode(connector.id)
   expect(graph.connectorIds.has(connector.id)).toBe(false)
 })
+
+// Live Figma Design 2026-10-25: an elbow from a 96 × 64 shape's AUTO to a 200 px square's CENTER
+// runs down, across midway, and down into the square, stopping its end gap short of the centre.
+test('an elbow joined at the centre runs into the layer to its centre', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const from = graph.createNode('RECTANGLE', page, { x: 4980, y: 4915, width: 96, height: 64 })
+  const to = graph.createNode('RECTANGLE', page, { x: 5020, y: 5085, width: 200, height: 200 })
+  const connector = createConnector(graph, page, {
+    start: boundEndpoint(from.id),
+    end: boundEndpoint(to.id, 'CENTER'),
+    startCap: 'ROUND',
+    endCap: 'ARROW_LINES'
+  })
+  layoutConnector(graph, connector)
+  const laid = graph.getNode(connector.id) ?? connector
+  expect(connectorRouteEnds(graph, laid)?.end).toEqual({ x: 5120, y: 5178.5 })
+  const line = connectorSublayers(graph, laid)?.line
+  const ys = (line?.vectorNetwork?.vertices ?? []).map((v) => laid.y + (line?.y ?? 0) + v.y)
+  expect(ys).toContain(5082)
+  // A straight connector still stops at the outline.
+  graph.updateNode(connector.id, { connectorLineType: 'STRAIGHT' })
+  const straight = graph.getNode(connector.id) ?? connector
+  layoutConnector(graph, straight)
+  expect(connectorRouteEnds(graph, straight)?.end.y).toBeLessThan(5085)
+})

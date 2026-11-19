@@ -13,7 +13,7 @@ const authorSchema = v.optional(
 )
 
 export const getComments = defineTool({
-  name: 'get_comments',
+  name: 'list_comments',
   description:
     'Read the comments people left on the canvas, oldest first: each thread with its text, ' +
     'author, page, the layer it is pinned to, its position, replies, and whether it is ' +
@@ -74,7 +74,7 @@ export const addComment = defineTool({
 export const replyToComment = defineTool({
   name: 'reply_to_comment',
   description:
-    'Answer a comment thread by ID from get_comments, for example to say what you changed. A ' +
+    'Answer a comment thread by ID from list_comments, for example to say what you changed. A ' +
     'reply reopens a resolved thread. Text may use Markdown, as in add_comment.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({

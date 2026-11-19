@@ -29,12 +29,15 @@ const {
   asChild = false,
   side = 'top',
   disabled = false,
+  truncated = false,
   label
 } = defineProps<{
   asChild?: boolean
   label?: string
   side?: 'top' | 'bottom' | 'left' | 'right'
   disabled?: boolean
+  /** Show only while the text it repeats is cut off, as a hover on a truncated label does. */
+  truncated?: boolean
 }>()
 
 const trigger = shallowRef<HTMLElement>()
@@ -75,8 +78,13 @@ const {
   { immediate: false }
 )
 
+function isCutOff() {
+  const element = anchor.value
+  return Boolean(element && element.scrollWidth > element.clientWidth)
+}
+
 function show() {
-  if (!label || disabled) return
+  if (!label || disabled || (truncated && !isCutOff())) return
   document.dispatchEvent(new CustomEvent(TOOLTIP_CLAIM_EVENT, { detail: trigger.value }))
   stopOpenTimer()
   if (performance.now() - lastClosedAt.value < TOOLTIP_SKIP_DELAY_MS) open.value = true

@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import { IS_BROWSER } from '@open-pencil/core/constants'
 import {
   DESIGN_JSX_ELEMENTS,
@@ -5,8 +7,16 @@ import {
   transformDesignJSXProgram,
   type DesignJSXProgram
 } from '@open-pencil/design-jsx'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { sandboxDocument } from '@/app/code/sandbox/document'
+import frameScript from '@/app/code/sandbox/frame.ts?script'
+import {
+  SANDBOX_READY,
+  SANDBOX_RUN,
+  sandboxFrameMessageSchema,
+  type SandboxRunRequest
+} from '@/app/code/sandbox/schema'
 import {
   DESIGN_JSX_DEFAULT_READY_TIMEOUT_MS,
   DESIGN_JSX_DEFAULT_TIMEOUT_MS,
@@ -37,20 +47,14 @@ export async function evaluateDesignJSX(
   try {
     program = transformDesignJSXProgram(source)
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+    return { ok: false, error: errorMessage(error) }
   }
 
   const validationLimits = resolveDesignJSXValidationLimits(limits)
   const iframe = document.createElement('iframe')
   iframe.hidden = true
   iframe.setAttribute('sandbox', 'allow-scripts')
-  iframe.srcdoc = sandboxDocument({
-    elements: Object.fromEntries(
-      DESIGN_JSX_ELEMENTS.map(({ name, runtimeType }) => [name, runtimeType])
-    ),
-    helpers: DESIGN_JSX_HELPERS.map(({ name }) => name),
-    limits: validationLimits
-  })
+  iframe.srcdoc = sandboxDocument(frameScript)
   document.body.append(iframe)
 
   return new Promise((resolve) => {
@@ -69,38 +73,41 @@ export async function evaluateDesignJSX(
       // eslint-disable-next-line promise/no-multiple-resolved -- settled guard makes completion single-shot
       resolve(result)
     }
-    const onMessage = (event: MessageEvent) => {
+    const onMessage = (event: MessageEvent<unknown>) => {
       if (event.source !== iframe.contentWindow || event.origin !== 'null') return
-      const message = event.data as {
-        type?: string
-        id?: string
-        ok?: boolean
-        value?: unknown
-        error?: string
-      }
-      if (message.type === 'open-pencil-design-jsx-ready') {
+      const parsed = v.safeParse(sandboxFrameMessageSchema, event.data)
+      if (!parsed.success) return
+      const message = parsed.output
+      if (message.type === SANDBOX_READY) {
         clearTimeout(timer)
         // eslint-disable-next-line promise/no-multiple-resolved -- finish has a settled guard
         timer = setTimeout(
           () => finish({ ok: false, error: 'Design JSX execution timed out.' }),
           timeoutMs
         )
-        iframe.contentWindow?.postMessage(
-          { type: 'open-pencil-design-jsx-run', id, code: program.code },
-          '*'
-        )
+        const request: SandboxRunRequest = {
+          id,
+          code: program.code,
+          elements: Object.fromEntries(
+            DESIGN_JSX_ELEMENTS.map(({ name, runtimeType }) => [name, runtimeType])
+          ),
+          helpers: DESIGN_JSX_HELPERS.map(({ name }) => name),
+          limits: validationLimits
+        }
+        iframe.contentWindow?.postMessage({ type: SANDBOX_RUN, ...request }, '*')
         return
       }
-      if (message.type !== 'open-pencil-design-jsx-result' || message.id !== id) return
+      if (message.id !== id) return
       if (!message.ok) {
-        finish({ ok: false, error: message.error ?? 'Design JSX execution failed.' })
+        finish({ ok: false, error: message.error })
         return
       }
       try {
-        const roots = validateDesignJSXOutput(message.value, validationLimits)
-        finish({ ok: true, roots, lineOffset: program.lineOffset })
+        const { collections } = message
+        const roots = validateDesignJSXOutput(message.value, validationLimits, collections)
+        finish({ ok: true, roots, collections, lineOffset: program.lineOffset })
       } catch (error) {
-        finish({ ok: false, error: error instanceof Error ? error.message : String(error) })
+        finish({ ok: false, error: errorMessage(error) })
       }
     }
     timer = setTimeout(

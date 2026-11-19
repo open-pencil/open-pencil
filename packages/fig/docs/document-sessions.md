@@ -109,7 +109,8 @@ This is load rollback, not an undo command. Existing user history remains intact
 
 ## Implementation and tests
 
-- [Session and assembly API](../src/document/materialize.ts)
+- [Session API](../src/document/session.ts)
+- [Assembly API](../src/document/materialize.ts)
 - [Page-load rollback](../src/document/load-transaction.ts)
 - [Compact component checkpoints](../src/document/component/checkpoint.ts)
 - [Buffered graph events](../../scene-graph/src/buffered-events.ts)
@@ -117,4 +118,4 @@ This is load rollback, not an undo command. Existing user history remains intact
 - [Recovery](../../core/src/kiwi/fig/session/recovery.ts)
 - [Session tests](../tests/document/session.test.ts)
 - [Checkpoint validation](../tests/document/checkpoint.test.ts)
-- [Worker/undo/recovery integration tests](../../../tests/engine/io/fig/session/)
+- [Worker/undo/recovery integration tests](../../core/tests/io/formats/fig/session/)

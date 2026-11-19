@@ -58,7 +58,7 @@ export function shaderLayers(
 }
 
 /** Whether an effect's name can be imported, as every effect the library has can. */
-const isEffectName = (type: string) => /^[A-Za-z_$][\w$]*$/.test(type)
+const isEffectName = (type: string) => es.isIdentifierName(type)
 
 /** The effects of `components` a generated component draws: those it can import by name. */
 export const drawnEffects = (components: readonly ShaderComponent[] | undefined) =>

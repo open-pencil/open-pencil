@@ -35,6 +35,7 @@ import { cloudServerHost } from '@/app/cloud/servers/address'
 import { findCloudServer } from '@/app/cloud/servers/store'
 import { cloudConnection } from '@/app/cloud/sessions/connection'
 import { openExternalLink, toast } from '@/app/shell/ui'
+import { useHeldContent } from '@/components/ui/overlay/held'
 import { OFFICIAL_CLOUD_URL } from '@/constants'
 
 import CloudConnectDialog from './CloudConnectDialog.vue'
@@ -70,6 +71,23 @@ watch(cloudSignedIn, (signedIn) => {
   }
 })
 
+// Cancelling resets the attempt as the dialog closes; it keeps drawing the step it was on.
+const shown = useHeldContent(
+  () => ({
+    step: cloudConnectStep.value,
+    choosing: cloudConnectChoosing.value,
+    server: cloudConnectServer.value,
+    error: cloudConnectError.value,
+    failure: cloudConnectFailure.value,
+    busy: cloudConnectBusy.value,
+    email: cloudConnectEmail.value,
+    resent: cloudConnectResent.value,
+    device: device.value,
+    canGoBack: cloudConnectCanGoBack.value
+  }),
+  cloudConnectOpen
+)
+
 function onOpenChange(open: boolean) {
   if (!open) cancelCloudConnect()
 }
@@ -93,18 +111,18 @@ function forgotPassword() {
     :open="cloudConnectOpen"
     v-model:kind="cloudConnectKind"
     v-model:address="cloudConnectAddress"
-    :step="cloudConnectStep"
+    :step="shown.step"
     :official="official"
-    :choosing="cloudConnectChoosing"
-    :server="cloudConnectServer"
-    :error="cloudConnectError"
-    :failure="cloudConnectFailure"
-    :busy="cloudConnectBusy"
-    :email="cloudConnectEmail"
-    :resent="cloudConnectResent"
-    :device="device"
-    :desktop="cloudConnectServer?.route === 'device'"
-    :can-go-back="cloudConnectCanGoBack"
+    :choosing="shown.choosing"
+    :server="shown.server"
+    :error="shown.error"
+    :failure="shown.failure"
+    :busy="shown.busy"
+    :email="shown.email"
+    :resent="shown.resent"
+    :device="shown.device"
+    :desktop="shown.server?.route === 'device'"
+    :can-go-back="shown.canGoBack"
     @update:open="onOpenChange"
     @continue="continueCloudConnect"
     @back="backCloudConnect"

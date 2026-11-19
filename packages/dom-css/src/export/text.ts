@@ -1,11 +1,20 @@
+import { uniq } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { CharacterStyleOverride, HyperlinkTarget, SceneNode } from '@open-pencil/scene-graph'
+import type {
+  CharacterStyleOverride,
+  HyperlinkTarget,
+  SceneNode,
+  TextLength
+} from '@open-pencil/scene-graph'
 import {
   hasTextList,
   listNumberFormat,
   paragraphSpacingAt,
   paragraphStyleAt,
+  pixelLength,
+  styleRunPieces,
+  textLengthPixels,
   textListItems,
   textParagraphRanges,
   type TextListItem,
@@ -13,7 +22,7 @@ import {
 } from '@open-pencil/scene-graph/text'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
-import { fillToCSS } from './css'
+import { fillToCSS, letterSpacingToCSS, lineHeightToCSS } from './css'
 
 /** The character styles CSS writes, as a text layer and its runs hold them. */
 type CharacterStyle = Pick<
@@ -89,6 +98,28 @@ function linkHref(link: HyperlinkTarget | null | undefined): string | null {
   }
 }
 
+/**
+ * The letter spacing every character of a text has, from its run or the layer, or `undefined`
+ * when characters differ or there are none: then no one spacing ends every line. Characters
+ * spaced and sized as the layer is give the layer's own spacing; otherwise each spacing is
+ * resolved at its characters' font size, as CSS resolves `em` where a run sets its own size.
+ */
+export function uniformLetterSpacing(node: SceneNode): TextLength | undefined {
+  const spacings = styleRunPieces(node.styleRuns, node.text.length).map(({ style }) => ({
+    length: style?.letterSpacing ?? node.letterSpacing,
+    fontSize: style?.fontSize ?? node.fontSize
+  }))
+  if (spacings.length === 0) return undefined
+  const asLayer = spacings.every(
+    ({ length, fontSize }) =>
+      isEqual(length, node.letterSpacing) &&
+      (length.unit === 'PIXELS' || fontSize === node.fontSize)
+  )
+  if (asLayer) return node.letterSpacing
+  const pixels = uniq(spacings.map(({ length, fontSize }) => textLengthPixels(length, fontSize)))
+  return pixels.length === 1 ? pixelLength(pixels[0]) : undefined
+}
+
 export function textCaseToCSS(value: SceneNode['textCase']): string | undefined {
   if (value === 'UPPER') return 'uppercase'
   if (value === 'LOWER') return 'lowercase'
@@ -107,23 +138,12 @@ function characterStyle(node: SceneNode, override: CharacterStyleOverride = {}):
 
 /** The text in ranges of one style each: the runs, and the layer's own style between them. */
 function styledRanges(node: SceneNode): StyledRange[] {
-  const ranges: StyledRange[] = []
   const base = characterStyle(node)
-  let at = 0
-  for (const run of node.styleRuns.toSorted((a, b) => a.start - b.start)) {
-    const start = Math.max(at, run.start)
-    const end = Math.min(node.text.length, run.start + run.length)
-    if (start > at) ranges.push({ start: at, end: start, style: base, href: null })
-    if (end > start) {
-      const href = linkHref(run.style.hyperlink)
-      ranges.push({ start, end, style: characterStyle(node, run.style), href })
-    }
-    at = Math.max(at, end)
-  }
-  if (at < node.text.length) {
-    ranges.push({ start: at, end: node.text.length, style: base, href: null })
-  }
-  return ranges
+  return styleRunPieces(node.styleRuns, node.text.length).map(({ start, end, style }) =>
+    style
+      ? { start, end, style: characterStyle(node, style), href: linkHref(style.hyperlink) }
+      : { start, end, style: base, href: null }
+  )
 }
 
 /** Underline or strikethrough as CSS writes it: Figma's offset is CSS's, from the baseline. */
@@ -155,11 +175,30 @@ function characterCSS(style: CharacterStyle, decorated: boolean): DesignStyleDec
     'font-size': px(style.fontSize),
     'font-weight': String(style.fontWeight),
     'font-style': style.italic ? 'italic' : 'normal',
-    'letter-spacing': px(style.letterSpacing),
-    'line-height': style.lineHeight === null ? 'normal' : px(style.lineHeight),
+    'letter-spacing': letterSpacingToCSS(style.letterSpacing),
+    'line-height': style.lineHeight === null ? 'normal' : lineHeightToCSS(style.lineHeight),
     'text-transform': textCaseToCSS(style.textCase) ?? 'none',
     ...(decorated ? decorationCSS(style) : {})
   }
+}
+
+/**
+ * What a run's span sets beyond the text's own style. A percent letter spacing is written again
+ * where the span changes the font size: CSS inherits spacing already resolved at the text's size,
+ * while the canvas spaces each run by its own size.
+ */
+function spanCSS(
+  style: CharacterStyle,
+  decorated: boolean,
+  base: DesignStyleDeclaration
+): DesignStyleDeclaration {
+  const own = characterCSS(style, decorated)
+  const css = differing(own, base)
+  const { unit, value } = style.letterSpacing
+  if (unit === 'PERCENT' && value !== 0 && 'font-size' in css) {
+    css['letter-spacing'] = own['letter-spacing']
+  }
+  return css
 }
 
 /** What `css` sets differently from `base`. */
@@ -222,7 +261,7 @@ function inlineContent(projection: TextProjection, start: number, end: number): 
     const from = Math.max(start, range.start)
     const to = Math.min(end, range.end)
     if (to <= from) continue
-    const css = differing(characterCSS(range.style, !decorated), base)
+    const css = spanCSS(range.style, !decorated, base)
     const text = node.text.slice(from, to)
     const previous = pieces.at(-1)
     if (previous && previous.href === range.href && isEqual(previous.css, css)) {

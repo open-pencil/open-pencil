@@ -98,8 +98,8 @@ function styleEqual(a: StyleRun['style'], b: StyleRun['style']): boolean {
     a.textDecoration === b.textDecoration &&
     a.fontSize === b.fontSize &&
     a.fontFamily === b.fontFamily &&
-    a.letterSpacing === b.letterSpacing &&
-    a.lineHeight === b.lineHeight &&
+    isEqual(a.letterSpacing, b.letterSpacing) &&
+    isEqual(a.lineHeight, b.lineHeight) &&
     fillsEqual(a.fills ?? [], b.fills ?? [])
   )
 }

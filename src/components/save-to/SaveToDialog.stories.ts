@@ -46,7 +46,7 @@ const bucket: SaveDestination = {
 }
 
 const meta = {
-  title: 'App/Save To/Dialog',
+  title: 'App/Cloud/Save To Dialog',
   tags: ['autodocs'],
   args: {
     destinations: official,
@@ -58,7 +58,7 @@ const meta = {
     components: { SaveToDialog },
     setup: () => ({ args, name: ref('Onboarding flow'), destination: ref(args.destination) }),
     template: `
-      <div class="h-[680px]">
+      <div class="h-170">
         <SaveToDialog :open="true" v-model:name="name" v-model:destination="destination" :destinations="args.destinations" :state="args.state" @save="args.onSave" />
       </div>`
   })
@@ -77,3 +77,13 @@ export const TooLarge: Story = {
   args: { state: { kind: 'error', reason: 'too-large', limitBytes: 256 * 1024 ** 2 } }
 }
 export const Offline: Story = { args: { state: { kind: 'error', reason: 'offline' } } }
+/** The server's community gallery, chosen on purpose: saving there publishes. */
+export const PublicGallery: Story = {
+  args: {
+    destinations: [
+      ...official,
+      { ...workspace(officialServer, 'community', 'Community', 'admin'), public: true }
+    ],
+    destination: 'official/community'
+  }
+}

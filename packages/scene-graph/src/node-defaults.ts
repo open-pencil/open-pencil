@@ -5,6 +5,7 @@ import {
   DEFAULT_STROKE_WEIGHT
 } from './constants'
 import { createInstanceOverrideState } from './instances/overrides'
+import { NO_LETTER_SPACING } from './text/lengths'
 import type { NodeType, SceneNode, SourceMetadata } from './types'
 
 export function createDefaultSourceMetadata(): SourceMetadata {
@@ -51,30 +52,48 @@ export function newStrokeGeometry(
   return { weight: first?.weight ?? node.strokeWeight, align: first?.align ?? node.strokeAlign }
 }
 
+/** A caller's list, or a fresh empty one: a list default belongs to the one layer it was made for. */
+function ownList<T>(given: T[] | undefined): T[] {
+  return given ?? []
+}
+
+/** A caller's record, or a fresh empty one, for the same reason. */
+function ownRecord<V>(given: Record<string, V> | undefined): Record<string, V> {
+  return given ?? {}
+}
+
+/** A new layer's fills: black on text, none elsewhere. */
+function defaultFills(type: NodeType): SceneNode['fills'] {
+  return type === 'TEXT' ? [{ type: 'SOLID', color: BLACK, opacity: 1, visible: true }] : []
+}
+
 export function createDefaultNode(
   generateId: () => string,
   type: NodeType,
   overrides: Partial<SceneNode> = {}
 ): SceneNode {
-  return {
+  // A literal ending in a spread is built one field at a time, and V8 keeps an object given this
+  // many fields that way in dictionary mode, about 3 KB more per layer; a spread copy of a
+  // finished literal keeps fast fields, in JavaScriptCore as well.
+  // Imports supply most lists and records, so a default is made only where the caller gives none.
+  const defaults = {
     id: generateId(),
     type,
     name: type.charAt(0) + type.slice(1).toLowerCase(),
     parentId: null,
-    childIds: [],
+    childIds: ownList(overrides.childIds),
     x: 0,
     y: 0,
     width: 100,
     height: 100,
     rotation: 0,
-    source: createDefaultSourceMetadata(),
+    source: overrides.source ?? createDefaultSourceMetadata(),
     derivedLayout: null,
-    fills:
-      type === 'TEXT' ? [{ type: 'SOLID' as const, color: BLACK, opacity: 1, visible: true }] : [],
-    strokes: [],
-    effects: [],
-    layoutGrids: [],
-    guides: [],
+    fills: overrides.fills ?? defaultFills(type),
+    strokes: ownList(overrides.strokes),
+    effects: ownList(overrides.effects),
+    layoutGrids: ownList(overrides.layoutGrids),
+    guides: ownList(overrides.guides),
     fillStyleId: null,
     strokeStyleId: null,
     textStyleId: null,
@@ -97,12 +116,13 @@ export function createDefaultNode(
     fontFamily: DEFAULT_FONT_FAMILY,
     fontWeight: 400,
     italic: false,
+    fontStyle: null,
     textAlignHorizontal: 'LEFT',
     textDirection: 'AUTO',
     textLanguage: null,
     leadingTrim: 'NONE',
     lineHeight: null,
-    letterSpacing: 0,
+    letterSpacing: NO_LETTER_SPACING,
     layoutMode: 'NONE',
     layoutDirection: 'AUTO',
     layoutWrap: 'NO_WRAP',
@@ -122,8 +142,8 @@ export function createDefaultNode(
     layoutAlignSelf: 'AUTO',
     vectorNetwork: null,
     handleMirroring: 'NONE',
-    fillGeometry: [],
-    strokeGeometry: [],
+    fillGeometry: ownList(overrides.fillGeometry),
+    strokeGeometry: ownList(overrides.strokeGeometry),
     arcData: null,
     textAlignVertical: 'TOP',
     textAutoResize: 'NONE',
@@ -131,23 +151,24 @@ export function createDefaultNode(
     textDecoration: 'NONE',
     textDecorationStyle: 'SOLID',
     textDecorationThickness: null,
-    textDecorationFills: [],
+    textDecorationFills: ownList(overrides.textDecorationFills),
     textDecorationSkipInk: true,
     textUnderlineOffset: null,
     maxLines: null,
-    textParagraphs: [],
+    textParagraphs: ownList(overrides.textParagraphs),
     listSpacing: 0,
     paragraphSpacing: 0,
     paragraphIndent: 0,
     hangingList: false,
-    styleRuns: [],
-    fontVariations: [],
-    fontFeatures: [],
+    styleRuns: ownList(overrides.styleRuns),
+    fontVariations: ownList(overrides.fontVariations),
+    opticalSizeFromFontSize: true,
+    fontFeatures: ownList(overrides.fontFeatures),
     horizontalConstraint: 'MIN',
     verticalConstraint: 'MIN',
     strokeCap: 'NONE',
     strokeJoin: 'MITER',
-    dashPattern: [],
+    dashPattern: ownList(overrides.dashPattern),
     borderTopWeight: 0,
     borderRightWeight: 0,
     borderBottomWeight: 0,
@@ -166,11 +187,14 @@ export function createDefaultNode(
     connectorLineType: 'ELBOWED',
     connectorStartCap: 'ROUND',
     connectorEndCap: 'ARROW_LINES',
+    connectorControlPoints: ownList(overrides.connectorControlPoints),
+    connectorCurveHandles: null,
+    connectorLabelPosition: null,
     isMask: false,
     maskType: 'ALPHA',
     maskIsOutline: false,
-    gridTemplateColumns: [],
-    gridTemplateRows: [],
+    gridTemplateColumns: ownList(overrides.gridTemplateColumns),
+    gridTemplateRows: ownList(overrides.gridTemplateRows),
     gridColumnGap: 0,
     gridRowGap: 0,
     gridPosition: null,
@@ -181,16 +205,17 @@ export function createDefaultNode(
     textTruncation: 'DISABLED',
     autoRename: true,
     pointCount: 5,
-    starInnerRadius: 0.38,
+    // Figma's: the golden-ratio star, whose inner points line up with its outer ones.
+    starInnerRadius: (3 - Math.sqrt(5)) / 2,
     shapeWithTextType: 'SQUARE',
     shapeUserHeight: 0,
     shapeTruncates: false,
     componentId: null,
-    instanceOverrides: createInstanceOverrideState(),
-    componentPropertyDefinitions: [],
-    componentPropertyReferences: [],
-    componentPropertyAssignments: {},
-    componentPropertyValues: {},
+    instanceOverrides: overrides.instanceOverrides ?? createInstanceOverrideState(),
+    componentPropertyDefinitions: ownList(overrides.componentPropertyDefinitions),
+    componentPropertyReferences: ownList(overrides.componentPropertyReferences),
+    componentPropertyAssignments: ownRecord(overrides.componentPropertyAssignments),
+    componentPropertyValues: ownRecord(overrides.componentPropertyValues),
     componentKey: null,
     sourceLibraryKey: null,
     publishId: null,
@@ -198,31 +223,33 @@ export function createDefaultNode(
     sharedSymbolVersion: null,
     publishedVersion: null,
     librarySource: null,
+    libraryLayerId: null,
     isPublishable: false,
     isSymbolPublishable: false,
     isExposedInstance: false,
     symbolDescription: '',
-    symbolLinks: [],
-    variantPropSpecs: [],
-    boundVariables: {},
-    variableBindingScales: {},
-    variableAssignmentScales: {},
+    symbolLinks: ownList(overrides.symbolLinks),
+    variantPropSpecs: ownList(overrides.variantPropSpecs),
+    boundVariables: ownRecord(overrides.boundVariables),
+    variableBindingScales: ownRecord(overrides.variableBindingScales),
+    variableAssignmentScales: ownRecord(overrides.variableAssignmentScales),
     componentScale: 1,
-    variableModes: {},
-    exportSettings: [],
+    variableModes: ownRecord(overrides.variableModes),
+    exportSettings: ownList(overrides.exportSettings),
     status: null,
-    pluginData: [],
-    pluginRelaunchData: [],
+    pluginData: ownList(overrides.pluginData),
+    pluginRelaunchData: ownList(overrides.pluginRelaunchData),
     internalOnly: false,
     flipX: false,
     flipY: false,
     textPicture: null,
     derivedTextGlyphs: null,
+    derivedTextHeight: null,
     textPathData: null,
     textPathBox: null,
-    booleanOperation: undefined,
-    ...overrides
+    booleanOperation: undefined
   } satisfies CompleteNodeFields
+  return { ...defaults, ...overrides }
 }
 
 /** Containers whose bounds follow their children and that set no coordinate space, as in Figma. */
@@ -239,6 +266,37 @@ export const SIDE_STROKE_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
   'COMPONENT_SET',
   'INSTANCE'
 ])
+
+/** The kinds that hold layers of their own on the canvas: what a shadow or a clip encloses. */
+export const LAYER_CONTAINER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
+  'FRAME',
+  'GROUP',
+  'SECTION',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE'
+])
+
+export function isLayerContainer(node: Pick<SceneNode, 'type'>): boolean {
+  return LAYER_CONTAINER_TYPES.has(node.type)
+}
+
+/** The kinds that clip their children when their clip content is on. */
+export const CLIPPING_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
+  'FRAME',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE'
+])
+
+/**
+ * Whether a layer clips its children: a frame, component, component set or instance with clip
+ * content on. A section or group has no such setting in Figma and never clips, whatever an import
+ * left in `clipsContent` (Figma desktop, live).
+ */
+export function clipsChildren(node: Pick<SceneNode, 'type' | 'clipsContent'>): boolean {
+  return node.clipsContent && CLIPPING_TYPES.has(node.type)
+}
 
 export const CONTAINER_TYPES = new Set<NodeType>([
   'CANVAS',
