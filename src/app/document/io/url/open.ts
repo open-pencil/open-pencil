@@ -9,7 +9,7 @@ import { closeTab, createDocumentTab, openFileInNewTab } from '@/app/tabs'
 import { IS_TAURI } from '@/constants'
 
 import { remoteFetch } from './fetch'
-import { renderWebPage } from './render/page'
+import type { RenderedWebPage } from './render/page'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
@@ -55,6 +55,15 @@ function fetchFailure(error: unknown): string {
 }
 
 /**
+ * The page as its scripts build it, rendered by the desktop app, or null when it cannot be. The
+ * renderer and the scripts it runs in the page are loaded only on desktop, where they are used.
+ */
+async function renderOnDesktop(url: string): Promise<RenderedWebPage | null> {
+  const { renderWebPage } = await import('./render/page')
+  return renderWebPage(url).catch(() => null)
+}
+
+/**
  * Opens what a web address holds: a page as editable layers, as opening an HTML file does but with
  * the stylesheets and pictures it links; a design document as File → Open does; and an SVG or a
  * picture in a new design. Throws, with words for the person, for anything it cannot open.
@@ -73,7 +82,7 @@ export async function openWebAddress(url: URL, signal?: AbortSignal): Promise<vo
     case 'html': {
       // The desktop app renders the page, so a page its scripts build opens as it shows; the
       // HTML its server sent stands in when it cannot be rendered, and in the browser.
-      const rendered = IS_TAURI ? await renderWebPage(remote.url).catch(() => null) : null
+      const rendered = IS_TAURI ? await renderOnDesktop(remote.url) : null
       signal?.throwIfAborted()
       const html = rendered ? new TextEncoder().encode(rendered.html) : remote.bytes
       const pageURL = rendered?.url ?? remote.url
