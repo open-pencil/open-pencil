@@ -5,6 +5,9 @@ import { nextShownFrame } from '@open-pencil/vue/shared/frame'
  * bridge accept an unbounded, caller-supplied URL, and buffering whatever the host
  * sends would let one response exhaust the tab. Well past any real design file.
  */
+/** How long a download's link stays after its click: long enough for the browser to start it. */
+const DOWNLOAD_LINK_LIFETIME_MS = 100
+
 export const MAX_REMOTE_DOCUMENT_BYTES = 64 * 1024 * 1024
 
 export function resolveBrowserFileURL(path: string): URL {
@@ -36,5 +39,5 @@ export function downloadBlob(data: Uint8Array | Blob, filename: string, mime: st
   setTimeout(() => {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-  }, 100)
+  }, DOWNLOAD_LINK_LIFETIME_MS)
 }

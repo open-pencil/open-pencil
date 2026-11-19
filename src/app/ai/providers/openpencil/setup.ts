@@ -1,10 +1,10 @@
 import { watch } from 'vue'
 
 import type { RoleModels, ServiceCatalog } from '@open-pencil/cloud/contract'
+import { DEADLINE_MS, withDeadline } from '@open-pencil/std/timing'
 
 import { aiModelSettings, setUpRoleModels, type RoleModelChoice } from '@/app/ai/models'
 import { isUnconfiguredModelSettings } from '@/app/ai/models/settings/onboarding/apply'
-import { withAbortSignal } from '@/app/runtime/abort'
 
 import { cloudCatalogModel } from './catalog'
 import { OPENPENCIL_AI_PROVIDER } from './provider'
@@ -29,11 +29,7 @@ function choice(catalog: ServiceCatalog, modelID: string | null): RoleModelChoic
 }
 
 /** How long setup waits for each request before counting the try as failed and retrying. */
-const REQUEST_DEADLINE_MS = 30_000
-
-function withDeadline<T>(promise: Promise<T>): Promise<T> {
-  return withAbortSignal(promise, AbortSignal.timeout(REQUEST_DEADLINE_MS))
-}
+const REQUEST_DEADLINE_MS = DEADLINE_MS.slowRequest
 
 /**
  * Whether the models are as a fresh install leaves them: its unset Design model, and the other
@@ -67,11 +63,11 @@ export async function setUpCloudAI(
 ): Promise<boolean> {
   const identity = cloud.identity.value
   if (!identity || !untouched()) return false
-  const workspace = await withDeadline(cloud.firstWorkspace())
+  const workspace = await withDeadline(REQUEST_DEADLINE_MS, () => cloud.firstWorkspace())
   if (!current() || cloud.identity.value !== identity || !untouched()) return false
   const client = workspace ? cloud.client(workspace.id) : null
   if (!workspace || !client) return false
-  const catalog = await withDeadline(client.catalog())
+  const catalog = await withDeadline(REQUEST_DEADLINE_MS, () => client.catalog())
   // Another sign-in, or a model the person set up meanwhile, wins over this answer.
   if (!current() || cloud.identity.value !== identity || !untouched()) return false
   const roles = catalogRoleModels(catalog)

@@ -8,7 +8,6 @@ import type {
   StyleRun,
   TextParagraphStyle
 } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   parseCSSColor,
   resolveCSSFontFamily,
@@ -17,6 +16,7 @@ import {
   parseCSSNumber
 } from '@open-pencil/scene-graph/css'
 import { appendStyleRun } from '@open-pencil/scene-graph/text'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { colorToFillFromCSS, mergedStyle, pickStyle } from './css-values'

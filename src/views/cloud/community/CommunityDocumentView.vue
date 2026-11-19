@@ -148,7 +148,7 @@ useHead({ title: () => document.value?.name ?? messages.value.communityTitle })
               </template>
               {{ copied ? cloud.shareLinkCopied : cloud.shareCopyLink }}
             </AppButton>
-            <p class="text-pretty text-xs text-muted">{{ messages.communityOpenNote }}</p>
+            <p class="text-xs text-muted">{{ messages.communityOpenNote }}</p>
           </div>
           <div
             v-if="document.versions.length > 0"

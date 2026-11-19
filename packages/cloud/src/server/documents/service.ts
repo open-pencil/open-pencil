@@ -16,6 +16,7 @@ import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/doc
 import {
   createDocumentImages,
   currentImageUsage,
+  DOWNLOAD_LIFETIME_MS,
   documentImageLinks,
   revisionImageDownloads
 } from '#cloud/server/documents/images'
@@ -43,8 +44,6 @@ import type { CloudPolicy } from '#cloud/server/policy/policy'
 import { storageLimitReached } from '#cloud/server/policy/storage'
 import { createStorageQuotaService, StorageQuotaExceededError } from '#cloud/server/quota'
 import type { Kysely } from 'kysely'
-
-const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
 
 export type DocumentServiceOptions = {
   policy?: CloudPolicy

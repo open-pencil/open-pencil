@@ -80,6 +80,7 @@ An `extends` path resolves from the file that declares it, so a configuration in
 
 | Rule                                                               | What it asks for                                                                  |
 | ------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `@open-pencil/runtime/no-inline-delay`                             | A named constant, not a number in place, for a timer delay or `AbortSignal.timeout`. |
 | `@open-pencil/runtime/no-math-random`                              | `crypto.getRandomValues()` instead of `Math.random()`.                            |
 | `@open-pencil/runtime/no-silent-catch`                             | No empty `catch` blocks.                                                          |
 | `@open-pencil/runtime/no-conditional-object-spreads`               | An explicit branch instead of several or large conditional spreads in one object. |

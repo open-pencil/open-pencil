@@ -16,7 +16,7 @@ import {
 
 import { TextEditor } from '@open-pencil/core/text'
 import type { SceneNode, TextLength } from '@open-pencil/scene-graph'
-import { minOf } from '@open-pencil/scene-graph/arrays'
+import { minOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 

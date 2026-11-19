@@ -1,6 +1,7 @@
 import valueParser, { type FunctionNode, type Node } from 'postcss-value-parser'
 
-import { appendAll } from '../arrays'
+import { appendAll } from '@open-pencil/std/arrays'
+
 import { MAX_GRID_TRACKS } from '../layout/limits'
 import type { GridTrack } from '../types'
 import { parseCSSNumber } from './values'

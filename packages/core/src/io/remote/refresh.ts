@@ -1,6 +1,6 @@
 import { parse, type DefaultTreeAdapterTypes } from 'parse5'
 
-import { minOf } from '@open-pencil/scene-graph/arrays'
+import { minOf } from '@open-pencil/std/arrays'
 
 type ParsedNode = DefaultTreeAdapterTypes.Node
 

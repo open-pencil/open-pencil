@@ -6,9 +6,10 @@ import type { WebSocket } from 'ws'
 import { isAuthorized } from '#mcp/auth'
 import type { RPCJSONObject } from '#mcp/json'
 import type { PendingRequest } from '#mcp/rpc-types'
+import { APP_RPC_DEADLINE_MS, APP_WAIT_DEADLINE_MS } from '#mcp/transport/deadlines'
 
-const RPC_TIMEOUT = 20_000
-const APP_WAIT_TIMEOUT = 10_000
+const RPC_TIMEOUT = APP_RPC_DEADLINE_MS
+const APP_WAIT_TIMEOUT = APP_WAIT_DEADLINE_MS
 
 const APP_NOT_CONNECTED_MESSAGE =
   'OpenPencil app is not connected. STOP and tell the user: "The OpenPencil desktop app is not running, no document is open, or the desktop app is connected to a different MCP server. Please start OpenPencil, open a document, and try again." Do NOT attempt to start the app yourself or retry automatically.'

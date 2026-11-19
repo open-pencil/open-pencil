@@ -1,6 +1,6 @@
 import type { UIMessageChunk } from 'ai'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 /** A tool call as the chat shows it. */
 export interface ReplyToolCall {

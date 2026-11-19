@@ -3,11 +3,11 @@ import { uniq } from 'es-toolkit'
 import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import { SNAP_THRESHOLD_SCREEN_PX } from '@open-pencil/core/constants'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { computeSnap, type SnapGuide } from '@open-pencil/scene-graph/snap'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 export interface PixelSnapResult {
   delta: Vector

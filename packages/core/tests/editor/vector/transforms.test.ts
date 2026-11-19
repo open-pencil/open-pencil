@@ -3,9 +3,9 @@ import { describe, test, expect } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { computeHandleVisibleVertices, regenerateFillGeometry } from '@open-pencil/core/vector'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
-import { minOf } from '@open-pencil/scene-graph/arrays'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { minOf } from '@open-pencil/std/arrays'
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 const NETWORK: VectorNetwork = {
   vertices: [

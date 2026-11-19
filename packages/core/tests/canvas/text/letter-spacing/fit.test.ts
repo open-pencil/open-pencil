@@ -24,7 +24,7 @@ import {
 } from '#core-tests/helpers/text/letter-spacing'
 
 import type { CharacterStyleOverride, StyleRun, TextLength } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { measureTextAsDrawn } from '#core/canvas/text'

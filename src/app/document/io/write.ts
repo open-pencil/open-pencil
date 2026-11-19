@@ -1,6 +1,6 @@
 import { lstat, remove, rename, writeFile as tauriWrite } from '@tauri-apps/plugin-fs'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { storageLocationOf } from '@/app/integrations/storage/location'

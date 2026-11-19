@@ -7,7 +7,7 @@ import {
   RELAY_SERVER_PEER,
   type CollaborationTicket
 } from '@open-pencil/cloud/contract'
-import { minOf } from '@open-pencil/scene-graph/arrays'
+import { minOf } from '@open-pencil/std/arrays'
 
 import type { RoomImageStore } from '@/app/collab/images'
 import { leaveRoom, openDocumentRoom, roomForStore } from '@/app/collab/rooms'

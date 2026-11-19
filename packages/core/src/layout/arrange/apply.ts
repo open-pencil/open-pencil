@@ -1,9 +1,9 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { boundEndpoint, layoutConnector } from '@open-pencil/scene-graph/connectors'
 import { getParentWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import type { ArrangeInput, ArrangedRoute, Arrangement } from './boxes'
 import { runConnectorAlong } from './routes'

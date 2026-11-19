@@ -2,7 +2,7 @@ import { sumBy } from 'es-toolkit'
 import * as v from 'valibot'
 
 import type { DownloadedFontCache } from '@open-pencil/core/text'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import {
   readCacheBytes,

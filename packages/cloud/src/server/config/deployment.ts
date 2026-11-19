@@ -2,6 +2,8 @@ import { staticEntitlementsFromTOML } from '#cloud/server/policy/static'
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
 
+import { DAY_MS } from '@open-pencil/std/timing'
+
 import { parseCloudServerConfig, type CloudServerConfig } from './schema'
 import {
   cloudDeploymentConfigSchema,
@@ -95,8 +97,8 @@ function workerConfig(config: CloudDeploymentConfig) {
     cleanupBatchSize: cleanup?.batch_size,
     cleanupIntervalMs: cleanup?.interval_ms,
     cleanupLeaseDurationMs: cleanup?.lease_ms,
-    documentRetentionMs: config.documents.retention_days * 86_400_000,
-    documentPurgeGraceMs: config.documents.purge_grace_days * 86_400_000
+    documentRetentionMs: config.documents.retention_days * DAY_MS,
+    documentPurgeGraceMs: config.documents.purge_grace_days * DAY_MS
   }
 }
 

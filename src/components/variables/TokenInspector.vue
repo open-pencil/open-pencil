@@ -21,8 +21,8 @@ import {
   type VariableValue
 } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { randomHex } from '@open-pencil/scene-graph/random'
 import { tokenNumberFromUnit, tokenNumberInUnit } from '@open-pencil/scene-graph/variables'
+import { randomHex } from '@open-pencil/std/random'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import type {

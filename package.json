@@ -6,6 +6,7 @@
   "workspaces": [
     "packages/canvaskit",
     "packages/taffy",
+    "packages/std",
     "packages/scene-graph",
     "packages/pen",
     "packages/drawio",
@@ -183,6 +184,7 @@
     "@open-pencil/mermaid": "workspace:*",
     "@open-pencil/pen": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
+    "@open-pencil/std": "workspace:*",
     "@open-pencil/vue": "workspace:*",
     "@openrouter/ai-sdk-provider": "^3.1.0",
     "@posthog/core": "1.59.1",

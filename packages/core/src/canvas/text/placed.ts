@@ -3,9 +3,9 @@ import { isEqual } from 'es-toolkit/predicate'
 
 import type { Paragraph } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { appendAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { styleRunAt, textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+import { appendAll, maxOf, minOf } from '@open-pencil/std/arrays'
 
 import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
 import { shownSourceIndices } from '#core/text/case'

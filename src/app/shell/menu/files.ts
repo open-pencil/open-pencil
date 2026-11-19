@@ -7,6 +7,7 @@ import { decode } from 'ufo'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { readBoundedBody } from '@open-pencil/core/io/remote'
+import { anySignal } from '@open-pencil/std/timing'
 
 import { setOpenPencilOpenFileHandler } from '@/app/browser-bridge'
 import { resolveBrowserFileURL, MAX_REMOTE_DOCUMENT_BYTES } from '@/app/document/io/browser'
@@ -74,9 +75,7 @@ export async function openBrowserFileFromURL(url: URL, init?: RequestInit): Prom
   // The cap needs a controller of its own, so a caller's signal is combined with it
   // rather than replaced: dropping it would leave the caller unable to cancel.
   const controller = new AbortController()
-  const signal = init?.signal
-    ? AbortSignal.any([init.signal, controller.signal])
-    : controller.signal
+  const signal = anySignal([init?.signal, controller.signal])
   const response = await fetch(url, { ...init, signal })
   if (!response.ok)
     throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`)

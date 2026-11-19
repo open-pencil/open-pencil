@@ -1,6 +1,7 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import { appendAll } from '../arrays'
+import { appendAll } from '@open-pencil/std/arrays'
+
 import { reapplyComponentPropertyAssignments } from '../components/properties'
 import type { SceneGraph } from '../graph'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'

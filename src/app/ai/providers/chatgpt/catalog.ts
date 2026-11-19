@@ -3,6 +3,7 @@ import * as v from 'valibot'
 
 import { REASONING_EFFORTS } from '@open-pencil/core/constants'
 import type { ModelOption, ReasoningEffort } from '@open-pencil/core/constants'
+import { DAY_MS, DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { modelOptionsSchema } from '@/app/ai/models/catalog/schema'
 import { readCacheJSON, writeCacheJSON } from '@/app/cache'
@@ -18,17 +19,16 @@ import { CHATGPT_CODEX_BASE_URL } from './fetch'
 const CODEX_RELEASE_URL = 'https://registry.npmjs.org/@openai/codex/latest'
 const CODEX_RELEASE_CACHE_KEY = 'chatgpt/codex-release'
 const CHATGPT_MODELS_CACHE_KEY = 'chatgpt/models'
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000
-const REQUEST_TIMEOUT_MS = 10_000
+const CACHE_TTL_MS = DAY_MS
+const REQUEST_TIMEOUT_MS = DEADLINE_MS.request
 
 const codexRelease = cachedRemoteJSON({
   key: CODEX_RELEASE_CACHE_KEY,
   schema: v.string(),
   maxAgeMs: CACHE_TTL_MS,
   load: async (fetcher) => {
-    const response = await fetcher(CODEX_RELEASE_URL, {
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-    })
+    // `cachedRemoteJSON` bounds the request.
+    const response = await fetcher(CODEX_RELEASE_URL)
     if (!response.ok) throw new Error(`Codex release request failed: ${response.status}`)
     const release = v.parse(
       v.pipe(v.string(), v.parseJson(), v.looseObject({ version: v.string() })),

@@ -1,7 +1,7 @@
 import { pickBy, uniq } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { REKA_ELEMENTS } from '../behaviours'
 import { componentPropNames } from '../components/instances'

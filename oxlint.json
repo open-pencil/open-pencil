@@ -391,7 +391,7 @@
     {
       "files": [
         "src/**/*.{ts,vue}",
-        "packages/{scene-graph,pen,kiwi,fig,core,dom-css,vue}/src/**/*.{ts,vue}",
+        "packages/{std,scene-graph,pen,kiwi,fig,core,dom-css,vue}/src/**/*.{ts,vue}",
         "packages/cloud/src/{client,contract}/**/*.ts"
       ],
       "rules": {

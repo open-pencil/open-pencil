@@ -1,5 +1,7 @@
 import { delay } from 'es-toolkit'
 
+import { DEADLINE_MS } from '@open-pencil/std/timing'
+
 import { serializeHTML } from '../export/html'
 import type {
   CSSComputeOptions,
@@ -379,8 +381,11 @@ async function computeStylesInShadowRoot(
   }
 }
 
-/** How long a page's linked stylesheets may take to load before it is laid out without the rest. */
-const STYLESHEET_WAIT_MS = 20_000
+/**
+ * How long a page's linked stylesheets may take to load before it is laid out without the rest:
+ * a page may link several, each its own request, so they share a slow request's bound.
+ */
+const STYLESHEET_WAIT_MS = DEADLINE_MS.slowRequest
 
 /**
  * Resolves once a `<style>` element's imported sheets have loaded or failed, which its `load` and

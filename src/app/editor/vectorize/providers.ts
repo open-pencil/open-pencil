@@ -4,6 +4,7 @@ import * as v from 'valibot'
 import { IS_TAURI } from '@open-pencil/core/constants'
 import { readBoundedBody } from '@open-pencil/core/io/remote'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
+import { DEADLINE_MS, MINUTE_MS } from '@open-pencil/std/timing'
 
 import { tauriFetch } from '@/app/tauri/http'
 
@@ -15,9 +16,9 @@ import {
   VectorizeTimeoutError
 } from './types'
 
-const REQUEST_TIMEOUT_MS = 30_000
+const REQUEST_TIMEOUT_MS = DEADLINE_MS.slowRequest
 /** Arrow writes the SVG token by token, so a detailed image takes it minutes, not seconds. */
-const QUIVER_TIMEOUT_MS = 180_000
+const QUIVER_TIMEOUT_MS = 3 * MINUTE_MS
 const NATIVE_TIMEOUT_GRACE_MS = 1000
 const MAX_SVG_BYTES = 20 * 1024 * 1024
 const MAX_API_RESPONSE_BYTES = 1024 * 1024

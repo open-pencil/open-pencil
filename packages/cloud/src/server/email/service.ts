@@ -3,6 +3,8 @@ import type { EmailLocale, TransactionalEmailKind } from '#cloud/email'
 import type { CloudDatabase, TransactionalEmailStatus } from '#cloud/server/db'
 import type { Kysely, Transaction } from 'kysely'
 
+import { backoffDelay, HOUR_MS, SECOND_MS, type Backoff } from '@open-pencil/std/timing'
+
 import { decryptTransactionalEmailPayload, encryptTransactionalEmailPayload } from './crypto'
 import type {
   EnqueueTransactionalEmailInput,
@@ -13,7 +15,8 @@ import type {
 } from './types'
 
 const DEFAULT_MAXIMUM_ATTEMPTS = 5
-const MAXIMUM_RETRY_DELAY_MS = 60 * 60_000
+/** Mail is retried patiently: a provider that refused it is rarely back within seconds. */
+const EMAIL_RETRY: Backoff = { baseMs: 30 * SECOND_MS, capMs: HOUR_MS, jitter: false }
 
 export type TransactionalEmailTransportErrorKind =
   | 'configuration'
@@ -49,7 +52,7 @@ function normalizedEmail(value: string): string {
 }
 
 function retryDelayMilliseconds(attemptCount: number): number {
-  return Math.min(MAXIMUM_RETRY_DELAY_MS, 2 ** Math.max(0, attemptCount - 1) * 30_000)
+  return backoffDelay(attemptCount - 1, EMAIL_RETRY)
 }
 
 function transportFailure(error: unknown): TransactionalEmailTransportError {

@@ -2,9 +2,9 @@ import { behaviourArgs } from '#dom-css/behaviours/args'
 import { uniq } from 'es-toolkit/array'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { defaultVariant } from '@open-pencil/scene-graph/components'
 import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import type { StoryProp } from './module'
 import { claimName } from './names'

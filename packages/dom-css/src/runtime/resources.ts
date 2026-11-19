@@ -1,5 +1,6 @@
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { parseCSSColor } from '@open-pencil/scene-graph/css'
+import { appendAll } from '@open-pencil/std/arrays'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import {
   parseFontFaceRules,
@@ -13,7 +14,7 @@ import type { DesignElement, DesignResource, DesignResourceFetch } from '../type
  * before styling goes on without it. An image without a size takes its own once loaded, moving
  * what follows it, but a request that never ends must not hold an import forever.
  */
-export const RESOURCE_TIMEOUT_MS = 10_000
+export const RESOURCE_TIMEOUT_MS = DEADLINE_MS.request
 
 /**
  * The color a document's canvas is painted, as CSS takes it: the root element's background, or

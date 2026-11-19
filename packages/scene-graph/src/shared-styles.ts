@@ -1,10 +1,11 @@
 import { compact, isEqual, omit, pick } from 'es-toolkit'
 
+import { randomHex } from '@open-pencil/std/random'
+
 import { BLACK } from './constants'
 import { copyEffects, copyFills, copyLayoutGrids } from './copy'
 import type { SceneGraph } from './graph'
 import { newStrokeGeometry } from './node-defaults'
-import { randomHex } from './random'
 import { STROKE_LINE_KEYS } from './strokes'
 import { styleRunReferences } from './text/references'
 import type {

@@ -5,7 +5,7 @@ import { figArchiveOf } from '#fig-tests/helpers/fig-fixtures'
 import { createFigDocumentSession, materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('selected-page assembly excludes unrelated content but keeps cross-page components', () => {

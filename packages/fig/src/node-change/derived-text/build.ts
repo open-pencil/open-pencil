@@ -2,7 +2,6 @@ import { groupBy } from 'es-toolkit/array'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { CharacterStyleOverride, DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { faceStyleKey, normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import {
@@ -11,6 +10,7 @@ import {
   paragraphIndexAt,
   textParagraphRanges
 } from '@open-pencil/scene-graph/text'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import { bytesToHex } from '../bytes'
 import type { PlacedTextGlyph, TextDecorationRecord } from '../export/runtime'

@@ -4,7 +4,7 @@ import { useDocumentVisibility, useWindowFocus } from '@vueuse/core'
 import { watch } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { randomInt } from '@open-pencil/scene-graph/random'
+import { randomInt } from '@open-pencil/std/random'
 
 import { appPreferences, type NotificationPreferences } from '@/app/settings/preferences/store'
 import { activeTab } from '@/app/tabs'

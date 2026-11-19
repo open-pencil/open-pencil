@@ -4,7 +4,7 @@ import type { CanvasKit, Image } from '@open-pencil/canvaskit'
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 export function unpremultipliedPixels(ck: CanvasKit, image: Image) {
   return expectDefined(

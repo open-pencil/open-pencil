@@ -1,12 +1,15 @@
 import type { ServiceCatalog } from '@open-pencil/cloud/contract'
+import { MINUTE_MS, SECOND_MS, withDeadline } from '@open-pencil/std/timing'
 
 import { cloudAIClient, cloudAIIdentity } from '@/app/cloud/integration'
-import { withAbortSignal } from '@/app/runtime/abort'
 
 /** How long a workspace's catalog answers context lookups before it is asked for again. */
-const CATALOG_TTL_MS = 10 * 60 * 1000
-/** Sending waits on this lookup, so a catalog that doesn't answer soon counts as unknown. */
-const CATALOG_DEADLINE_MS = 5_000
+const CATALOG_TTL_MS = 10 * MINUTE_MS
+/**
+ * Sending waits on this lookup, so a catalog that doesn't answer soon counts as unknown: shorter
+ * than an ordinary request's deadline, since the message is held until then.
+ */
+const CATALOG_DEADLINE_MS = 5 * SECOND_MS
 
 const catalogs = new Map<string, { at: number; catalog: Promise<ServiceCatalog | null> }>()
 
@@ -20,7 +23,7 @@ function workspaceCatalog(workspaceId: string): Promise<ServiceCatalog | null> {
     catalog: Promise.resolve(null)
   }
   entry.catalog = client
-    ? withAbortSignal(client.catalog(), AbortSignal.timeout(CATALOG_DEADLINE_MS)).catch(() => {
+    ? withDeadline(CATALOG_DEADLINE_MS, () => client.catalog()).catch(() => {
         // A failed read is asked for again next time rather than kept, unless a newer read
         // already took its place.
         if (catalogs.get(key) === entry) catalogs.delete(key)

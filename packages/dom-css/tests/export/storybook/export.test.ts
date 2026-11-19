@@ -9,8 +9,8 @@ import { exportStorybook } from '#dom-css/index'
 
 import { es } from '@open-pencil/emit'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { emptyBehaviour, withBehaviour } from '@open-pencil/scene-graph/behaviours'
+import { appendAll } from '@open-pencil/std/arrays'
 
 function buttonGraph() {
   const graph = new SceneGraph()

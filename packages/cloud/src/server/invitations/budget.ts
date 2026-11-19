@@ -2,13 +2,15 @@ import type { CloudDatabase } from '#cloud/server/db'
 import { lockForTransaction } from '#cloud/server/db/expressions'
 import type { Transaction } from 'kysely'
 
+import { DAY_MS } from '@open-pencil/std/timing'
+
 /**
  * How many invitations, to documents and workspaces alike, one person may send in a day, and how
  * many one address may receive from everyone. Each sends an email naming the inviter and the file,
  * both of which the sender chooses, so without a daily budget invitations are a way to send spam.
  */
 export const INVITATION_BUDGET = {
-  windowMs: 24 * 60 * 60 * 1000,
+  windowMs: DAY_MS,
   perSender: 100,
   perRecipient: 5
 } as const

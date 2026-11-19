@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import { AI_PROVIDERS, REASONING_EFFORTS } from '@open-pencil/core/constants'
 import type { AIProviderID, ModelOption, ReasoningEffort } from '@open-pencil/core/constants'
+import { DAY_MS, DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { modelOptionsSchema } from '@/app/ai/models/catalog/schema'
 import { cachedChatGPTModels } from '@/app/ai/providers/chatgpt/catalog'
@@ -33,9 +34,9 @@ const openRouterModelsResponseSchema = v.pipe(
 
 const OPENROUTER_MODELS_URL = 'https://openrouter.ai/api/v1/models'
 const OPENROUTER_MODELS_CACHE_KEY = 'openrouter/models-v2'
-const OPENROUTER_MODELS_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const OPENROUTER_MODELS_CACHE_TTL_MS = DAY_MS
 // Runtime creation waits for the list, so a stalled request falls back to the curated models.
-const OPENROUTER_MODELS_TIMEOUT_MS = 10_000
+const OPENROUTER_MODELS_TIMEOUT_MS = DEADLINE_MS.request
 function curatedProviderModels(providerID: AIProviderID) {
   return AI_PROVIDERS.find((provider) => provider.id === providerID)?.models ?? []
 }

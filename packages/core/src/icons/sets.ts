@@ -1,5 +1,5 @@
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import type { IconOptions } from '@open-pencil/scene-graph/icons'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { parseIconName, type IconProvider } from '#core/icons/provider'
 import type { IconCollection, IconData, IconSearchResult } from '#core/icons/types'

@@ -6,7 +6,7 @@ import {
   type ModelOption,
   providerKind
 } from '@open-pencil/core/constants'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { modelProviderName } from '@/app/ai/models/provider-name'
 import type { AIModelCapability, AIModelProfileId, AIModelRole } from '@/app/ai/models/types'

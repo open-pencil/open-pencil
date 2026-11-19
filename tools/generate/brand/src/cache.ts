@@ -5,7 +5,7 @@ import { dirname, join, relative, sep } from 'node:path'
 import sharp from 'sharp'
 import * as v from 'valibot'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { targetDirectory, targetFiles } from './config.ts'
 import type { BrandTarget } from './config.ts'

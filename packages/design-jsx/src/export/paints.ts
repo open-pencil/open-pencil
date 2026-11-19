@@ -1,5 +1,4 @@
 import type { Effect, Fill, GradientTransform, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { UNSET_GLASS, UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
 import {
   gradientTransformRows,
@@ -7,6 +6,7 @@ import {
 } from '@open-pencil/scene-graph/gradient'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { STROKE_ALIGN, STROKE_CAP, STROKE_JOIN } from '../enums'
 import { formatColor, formatShadow } from './helpers'

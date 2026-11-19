@@ -80,7 +80,7 @@ async function discard(snapshot: RecoverableSnapshot): Promise<void> {
   <section v-if="snapshots.length" class="mb-8" data-test-id="home-recovery">
     <div class="mb-3 min-w-0">
       <h2 class="text-base font-semibold">{{ recovery.sectionTitle }}</h2>
-      <p class="mt-0.5 text-pretty text-xs text-muted">{{ recovery.sectionDescription }}</p>
+      <p class="mt-0.5 text-xs text-muted">{{ recovery.sectionDescription }}</p>
     </div>
     <div
       :class="

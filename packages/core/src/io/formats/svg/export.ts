@@ -39,13 +39,13 @@ import {
 export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
 import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import {
   hasRegionFills,
   looseSegments,
   regionSVGPaths
 } from '@open-pencil/scene-graph/vector-network'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
 import { svg, svgElement, renderSVGNode } from './node'
