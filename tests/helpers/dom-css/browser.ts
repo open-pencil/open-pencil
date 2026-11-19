@@ -217,6 +217,7 @@ export interface ImportedLayer {
   id: string
   captured: Rect
   layer: Rect
+  layoutMode: SceneNode['layoutMode']
 }
 
 export async function browserImportedLayers(
@@ -248,7 +249,7 @@ export async function browserImportedLayers(
         if (!box) return []
         const position = graph.getAbsolutePosition(node.id)
         const layer = { x: position.x, y: position.y, width: node.width, height: node.height }
-        return [{ id: node.name, captured: box, layer }]
+        return [{ id: node.name, captured: box, layer, layoutMode: node.layoutMode }]
       })
     },
     {

@@ -1,4 +1,5 @@
 import type { CollabEditor } from '@open-pencil/collab'
+import { isAbortError } from '@open-pencil/std/errors'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -31,7 +32,7 @@ export function followRoomPages(store: EditorStore): () => void {
     void store
       .switchPage(pageId)
       .catch((error: unknown) => {
-        if (error instanceof Error && error.name === 'AbortError') return
+        if (isAbortError(error)) return
         console.error('[Collab] Failed to switch to a synced page:', error)
       })
       .finally(() => {

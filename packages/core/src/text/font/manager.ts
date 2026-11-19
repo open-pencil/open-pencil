@@ -10,6 +10,7 @@ import {
   normalizeFontFamily,
   parseFontStyle
 } from '@open-pencil/scene-graph/font-style'
+import { DEADLINE_MS, withDeadline } from '@open-pencil/std/timing'
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import {
@@ -103,6 +104,7 @@ export class FontManager {
   private readonly localFonts = new LocalFonts()
   private readonly faces = new FamilyFaceCatalog({
     localFonts: () => this.localFonts.list(),
+    ownLocalFaces: (family) => this.localFonts.ownFamilyFaces(family),
     webFaces: (family) => this.webFonts.familyFaces(family),
     bundledStyles: (family) => this.bundled.styles(family)
   })
@@ -114,6 +116,11 @@ export class FontManager {
     CanvasKit,
     { provider: TypefaceFontProvider; users: number }
   >()
+
+  constructor() {
+    // A local font read that names a family of its own gives the family's faces anew.
+    this.localFonts.onOwnFamiliesChanged(() => this.faces.forget())
+  }
 
   /**
    * The provider every renderer and shaper of `canvasKit` draws from. They share one module's
@@ -325,6 +332,22 @@ export class FontManager {
     return fonts
   }
 
+  /**
+   * The family and style the font of a local face read for `family` and `style` names it with,
+   * where the browser lists it under other names; `null` otherwise. Saving these names keeps a
+   * text in the face on every platform and in Figma.
+   */
+  ownFaceName(family: string, style: string): { family: string; style: string } | null {
+    return this.localFonts.ownFace(family, style) ?? null
+  }
+
+  /** Lists the browser's local fonts again; whether the list changed. */
+  async refreshLocalFonts(): Promise<boolean> {
+    const changed = await this.localFonts.refresh()
+    if (changed) this.faces.forget()
+    return changed
+  }
+
   async listFamilies(): Promise<string[]> {
     const options = await this.listFamilyOptions()
     return options.map((option) => option.family)
@@ -345,8 +368,12 @@ export class FontManager {
         if (!byFamily.has(family)) byFamily.set(family, { family, source: provider })
       }
     }
-    for (const family of [...fonts.map((font) => font.family), ...this.faces.hostFamilies()])
-      byFamily.set(family, { family, source: 'local' })
+    const installed = [
+      ...fonts.map((font) => font.family),
+      ...this.localFonts.ownFamilies(),
+      ...this.faces.hostFamilies()
+    ]
+    for (const family of installed) byFamily.set(family, { family, source: 'local' })
     return [...byFamily.values()].sort((a, b) => a.family.localeCompare(b.family))
   }
 
@@ -428,7 +455,20 @@ export class FontManager {
       )
       const normalized = normalizeFontFamily(family)
       const families = normalized === family ? [family] : [family, normalized]
-      const resolved = await this.webFonts.fetchFont(families, style, requestedCharacters, signal)
+      // A font is a real download, so it gets a transfer's time before it counts as failed. The
+      // deadline's signal goes on only with the caller's: without one, concurrent loads of a face
+      // share one download, which a signal of its own would split.
+      const resolved = await withDeadline(
+        DEADLINE_MS.transfer,
+        (bounded) =>
+          this.webFonts.fetchFont(
+            families,
+            style,
+            requestedCharacters,
+            signal ? bounded : undefined
+          ),
+        signal
+      )
       if (!resolved || resolved.buffers.length === 0) return null
       const primary = resolved.buffers[0]
       // Providers serve faces by weight; a named face comes only from a variable file that has it.

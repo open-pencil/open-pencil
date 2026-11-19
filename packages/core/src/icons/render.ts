@@ -1,6 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import {
+  centerGlyph,
   iconGlyph,
   iconLayerName,
   isPlacedIconName,
@@ -13,11 +14,6 @@ import {
 } from '@open-pencil/scene-graph/icons'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import {
-  createResizeSnapshot,
-  scaledChildRect,
-  scaledGeometryChanges
-} from '@open-pencil/scene-graph/resize'
 import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { createPlacedVector, vectorizedPathPaints } from '#core/vector/vectorize/placement'
@@ -95,17 +91,19 @@ function scaledPaths(icon: IconData, size: number): IconPath[] {
 
 /**
  * Draws an icon into a frame that already exists, `size` square at its origin, and records the
- * icon on it, as for one placed with {@link placeIcon}. The icon may have been built at any size.
+ * icon on it, as for one placed with {@link placeIcon}, unless `identity` is off, as for artwork
+ * with no name in a set. The icon may have been built at any size.
  */
 export function drawIcon(
   graph: SceneGraph,
   frameId: string,
   icon: IconData,
   size: number,
-  color: Color
+  color: Color,
+  { identity = true }: { identity?: boolean } = {}
 ): void {
   for (const path of scaledPaths(icon, size)) addPath(graph, frameId, path, color)
-  recordIcon(graph, frameId, `${icon.prefix}:${icon.name}`, icon.options)
+  if (identity) recordIcon(graph, frameId, `${icon.prefix}:${icon.name}`, icon.options)
 }
 
 /**
@@ -156,15 +154,14 @@ export function recolorIcon(graph: SceneGraph, frameId: string, color: Color): v
 
 /**
  * Draws another icon in an icon's frame, keeping its position and color, so the swap reads as
- * a change of glyph. `icon` is built square, at the frame's shorter side, and stretched to the
- * frame. Does nothing to a frame that is not an icon.
+ * a change of glyph. The glyph is drawn square at the frame's shorter side, whatever size `icon`
+ * was built at, and centered in the frame, as one placed in a frame of that shape is. Does
+ * nothing to a frame that is not an icon.
  */
 export function swapIcon(graph: SceneGraph, frameId: string, icon: IconData): void {
   const frame = graph.getNode(frameId)
   if (!frame || !readIcon(frame)) return
   const color = iconColor(graph, frame) ?? BLACK
-  // The paths are scaled to the size the icon was built at; their boxes must match it.
-  const size = icon.width
   for (const child of graph.getChildren(frameId)) graph.deleteNode(child.id)
   const name = `${icon.prefix}:${icon.name}`
   const previous = readIcon(frame)
@@ -172,30 +169,8 @@ export function swapIcon(graph: SceneGraph, frameId: string, icon: IconData): vo
     // A layer still named after its icon takes the new icon's name; a name someone gave stays.
     name: previous && isPlacedIconName(frame.name, previous.name) ? iconLayerName(name) : frame.name
   })
-  for (const path of icon.paths) addPath(graph, frameId, path, color)
-  fitPaths(graph, frameId, size)
+  const size = Math.min(frame.width, frame.height)
+  for (const path of scaledPaths(icon, size)) addPath(graph, frameId, path, color)
+  centerGlyph(graph, frameId, size)
   recordIcon(graph, frameId, name, icon.options)
-}
-
-/**
- * Stretches paths drawn in a `size` square to their frame, as a resize would, so an icon that
- * was resized unevenly is swapped or reset at the shape it has rather than as a square.
- */
-function fitPaths(graph: SceneGraph, frameId: string, size: number): void {
-  const frame = graph.getNode(frameId)
-  if (!frame || (frame.width === size && frame.height === size)) return
-  const square = { width: size, height: size }
-  for (const path of graph.getChildren(frameId)) {
-    const rect = scaledChildRect(path, square, frame)
-    graph.updateNode(path.id, {
-      ...rect,
-      ...scaledGeometryChanges(
-        createResizeSnapshot(path),
-        path.width,
-        path.height,
-        rect.width,
-        rect.height
-      )
-    })
-  }
 }

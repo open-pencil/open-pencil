@@ -1,12 +1,13 @@
 {
   "name": "@open-pencil/scene-graph",
-  "version": "0.17.0-beta.4",
+  "version": "0.17.0-beta.5",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/scene-graph"
   },
+  "funding": "https://ko-fi.com/dannote",
   "files": [
     "dist",
     "src",
@@ -25,12 +26,6 @@
       "bun": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./arrays": {
-      "types": "./dist/arrays.d.ts",
-      "bun": "./src/arrays.ts",
-      "import": "./dist/arrays.js",
-      "default": "./dist/arrays.js"
     },
     "./arrow-caps": {
       "types": "./dist/arrow-caps.d.ts",
@@ -97,6 +92,12 @@
       "bun": "./src/coordinate.ts",
       "import": "./dist/coordinate.js",
       "default": "./dist/coordinate.js"
+    },
+    "./corners": {
+      "types": "./dist/corners.d.ts",
+      "bun": "./src/corners.ts",
+      "import": "./dist/corners.js",
+      "default": "./dist/corners.js"
     },
     "./copy": {
       "types": "./dist/copy.d.ts",
@@ -212,6 +213,12 @@
       "import": "./dist/layout/index.js",
       "default": "./dist/layout/index.js"
     },
+    "./masks": {
+      "types": "./dist/masks.d.ts",
+      "bun": "./src/masks.ts",
+      "import": "./dist/masks.js",
+      "default": "./dist/masks.js"
+    },
     "./matrix": {
       "types": "./dist/matrix.d.ts",
       "bun": "./src/matrix.ts",
@@ -254,6 +261,12 @@
       "import": "./dist/parse-path.js",
       "default": "./dist/parse-path.js"
     },
+    "./paths": {
+      "types": "./dist/paths/index.d.ts",
+      "bun": "./src/paths/index.ts",
+      "import": "./dist/paths/index.js",
+      "default": "./dist/paths/index.js"
+    },
     "./plugin-data": {
       "types": "./dist/plugin-data/index.d.ts",
       "bun": "./src/plugin-data/index.ts",
@@ -283,12 +296,6 @@
       "bun": "./src/primitives/index.ts",
       "import": "./dist/primitives/index.js",
       "default": "./dist/primitives/index.js"
-    },
-    "./random": {
-      "types": "./dist/random.d.ts",
-      "bun": "./src/random.ts",
-      "import": "./dist/random.js",
-      "default": "./dist/random.js"
     },
     "./resize": {
       "types": "./dist/resize.d.ts",
@@ -343,6 +350,12 @@
       "bun": "./src/statuses/index.ts",
       "import": "./dist/statuses/index.js",
       "default": "./dist/statuses/index.js"
+    },
+    "./strokes": {
+      "types": "./dist/strokes.d.ts",
+      "bun": "./src/strokes.ts",
+      "import": "./dist/strokes.js",
+      "default": "./dist/strokes.js"
     },
     "./text": {
       "types": "./dist/text/index.d.ts",
@@ -412,6 +425,7 @@
   },
   "dependencies": {
     "@noble/hashes": "^2.4.0",
+    "@open-pencil/std": "workspace:*",
     "culori": "^4.0.2",
     "es-toolkit": "^1.52.0",
     "image-size": "^2.0.4",
@@ -419,6 +433,7 @@
     "nanoevents": "^9.1.0",
     "postcss-value-parser": "^4.2.0",
     "svgpath": "^2.6.0",
+    "ufo": "^1.6.4",
     "valibot": "^1.5.0"
   },
   "devDependencies": {

@@ -11,21 +11,32 @@ import {
   user
 } from '#cloud-tests/helpers/relay'
 import { COLLAB_ACTIONS, RELAY_CLOSE, RELAY_SERVER_PEER } from '#cloud/contract'
-import { createCollaborationRelay, type CollaborationRelay } from '#cloud/server'
+import {
+  createCollaborationRelay,
+  type CollaborationRelay,
+  type CollaborationRelayOptions
+} from '#cloud/server'
 import { readRelayPeerState, type RelayPeerState } from '#cloud/server/collaboration/relay/resume'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
 const documentId = crypto.randomUUID()
 
-function hubOver(store: ReturnType<typeof memoryStateStore>['store']) {
+/**
+ * A relay over `store` with the production message limit (1 MiB) and room for every peer these
+ * tests join, saving at once so a second relay reads what the first kept.
+ */
+function hubOver(
+  store: ReturnType<typeof memoryStateStore>['store'],
+  onError: CollaborationRelayOptions['onError'] = () => undefined
+) {
   return createCollaborationRelay({
     authSecret: relaySecret,
     store,
     maximumMessageBytes: 1_048_576,
     maximumConnectionsPerRoom: 100,
     persistDelayMs: 0,
-    onError: () => undefined
+    onError
   })
 }
 
@@ -232,5 +243,39 @@ describe('resuming collaboration peers', () => {
   test('refuses kept state that is not a peer', () => {
     expect(readRelayPeerState({ peerId: 'not-a-uuid' })).toBeNull()
     expect(readRelayPeerState(null)).toBeNull()
+  })
+
+  test('names the refreshed ticket’s document and person when a refresh fails', async () => {
+    const memory = memoryStateStore()
+    const alice = await joinRemembered(hubOver(memory.store))
+    const saved = readRelayPeerState(alice.remembered.state)
+    if (!saved) throw new Error('Expected a remembered peer')
+    const reports: unknown[] = []
+    const second = hubOver(memory.store, (message, _error, ids) => reports.push({ message, ids }))
+    const resumed = connectTestClient((socket) =>
+      second.resume(
+        {
+          ...socket,
+          remember: () => {
+            throw new Error('Attachment too large')
+          }
+        },
+        saved
+      )
+    )
+    const { principal } = saved.authorization
+    resumed.send({
+      type: 'auth',
+      token: await relayTicket({ documentId, permission: 'edit', principal })
+    })
+    await until(() => reports.length > 0)
+    expect(resumed.closed?.code).toBe(RELAY_CLOSE.protocol)
+    expect(reports).toEqual([
+      {
+        message: 'Checking a collaboration ticket failed',
+        ids: { documentId, userId: principal.kind === 'user' ? principal.userId : undefined }
+      }
+    ])
+    await second.close()
   })
 })

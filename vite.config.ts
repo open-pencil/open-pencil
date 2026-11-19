@@ -66,8 +66,9 @@ export default defineConfig(async ({ command, mode }) => {
         automationRoute.browserURL.replace(/^ws/, 'http')
       )
     },
-    // Dynamic browser fixtures must not trigger a dependency-optimizer reload mid-test.
-    optimizeDeps: { include: ['ai/test'] },
+    // Dependencies found only after the page loads, such as dynamic browser fixtures and semver
+    // behind the campaigns, would make the optimizer reload the page mid-test or mid-story.
+    optimizeDeps: { include: ['ai/test', 'semver'] },
     plugins: [
       rawMarkdownPlugin(),
       inlineScriptPlugin(),

@@ -71,6 +71,7 @@ export function createDocumentIOActions(
   return {
     renameDocument: sourceActions.renameDocument,
     onDocumentRenamed: sourceActions.onDocumentRenamed,
+    onAutosaveFailed: sourceActions.onAutosaveFailed,
     downloadBlob,
     fitCurrentPageToViewport,
     getDocumentFilePath: sourceState.getFilePath,

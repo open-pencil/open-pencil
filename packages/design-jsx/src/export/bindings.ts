@@ -1,7 +1,7 @@
 import { isEqual } from 'es-toolkit'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { insertAll } from '@open-pencil/scene-graph/arrays'
+import { insertAll } from '@open-pencil/std/arrays'
 
 import {
   PADDING_FIELDS,
@@ -10,6 +10,7 @@ import {
   type BindingContext,
   type BoundProp
 } from '../variables/props'
+import { writtenEffectIndices } from './paints'
 import type { JSXProp, JSXValue } from './value'
 import type { VariableExport } from './variables'
 
@@ -122,6 +123,22 @@ function expandCorners(
   )
 }
 
+const EFFECT_FIELD = /^effects\/(\d+)\/(.+)$/
+
+/**
+ * The layer's bindings by the fields JSX writes: an effect's renumbered as the effects JSX
+ * writes are, and those of effects it leaves out dropped.
+ */
+function writtenBindings(node: SceneNode): Array<[string, string]> {
+  const effects = writtenEffectIndices(node)
+  return Object.entries(node.boundVariables).flatMap(([field, variableId]): [string, string][] => {
+    const match = EFFECT_FIELD.exec(field)
+    if (!match) return [[field, variableId]]
+    const index = effects.get(Number(match[1]))
+    return index === undefined ? [] : [[`effects/${index}/${match[2]}`, variableId]]
+  })
+}
+
 /**
  * Write the variables `node` binds through the props that set those fields, such as
  * `bg={theme.Surface}` and `p={density.Pad}`, and the rest in `bind`. Padding stays in `bind`
@@ -132,7 +149,7 @@ export function collectBindingProps(
   props: JSXProp[],
   variables: VariableExport
 ): void {
-  const remaining = new Map(Object.entries(node.boundVariables))
+  const remaining = new Map(writtenBindings(node))
   // A variable only `bind` can name, by its ID, is not written in a prop, which reads a string.
   const named = (variableId: string) => typeof variables.variable(variableId) !== 'string'
   const laidOut = node.layoutMode !== 'NONE'

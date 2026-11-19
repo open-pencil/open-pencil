@@ -19,6 +19,16 @@ describe('effect type options', () => {
     expect(offersGlass([createDefaultEffect()], 0)).toBe(true)
   })
 
+  test('texture, like glass, is offered once per layer, and noise to every row', () => {
+    const texture: Effect = { ...createDefaultEffect(), type: 'TEXTURE' }
+    const offers = (effects: Effect[], index: number, type: Effect['type']) =>
+      effectOptionsFor(effects, index).some((option) => option.value === type)
+    const effects = [texture, createDefaultEffect()]
+    expect(offers(effects, 0, 'TEXTURE')).toBe(true)
+    expect(offers(effects, 1, 'TEXTURE')).toBe(false)
+    expect(offers(effects, 1, 'NOISE')).toBe(true)
+  })
+
   test('every glass row keeps glass when a script gave the layer several', () => {
     const effects = [glass, glass]
     expect(offersGlass(effects, 0)).toBe(true)
@@ -40,6 +50,8 @@ describe('effect type labels', () => {
         catalog.layerBlur,
         catalog.backgroundBlur,
         catalog.foregroundBlur,
+        catalog.noise,
+        catalog.texture,
         catalog.glass
       ]
     }

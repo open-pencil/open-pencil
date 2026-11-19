@@ -171,6 +171,10 @@ export function createCanvasSurfaceManager({
     return true
   }
 
+  /** Visible tiles the renderer had drawn by the last frame; a new renderer counts from zero. */
+  let lastTilesRendered = 0
+  let progressRenderer: SkiaRenderer | null = null
+
   /**
    * Reports the frame as shown once the whole visible scene is on it. A scene frame with tiles
    * still to draw is not: a loader waiting on it would give way to a canvas that then fills in.
@@ -179,13 +183,27 @@ export function createCanvasSurfaceManager({
    */
   function reportPresented(renderer: SkiaRenderer) {
     const layer = options?.layer ?? 'full'
-    if (layer === 'overlays' || (layer === 'scene' && !renderer.tiledSceneCovered)) return
+    if (layer === 'overlays') return
     const renderedState = options?.getRenderState?.() ?? editor.state
     if (renderedState !== editor.state) return
-    editor.reportPresented({
+    const versions = {
       renderVersion: renderedState.renderVersion,
       sceneVersion: renderedState.sceneVersion
-    })
+    }
+    // A scene still filling in reports the tiles it drew, so a wait for it can tell a large page
+    // drawing slowly, as on a slow machine, from a canvas that stopped drawing.
+    if (renderer !== progressRenderer) {
+      progressRenderer = renderer
+      lastTilesRendered = 0
+    }
+    const tilesRendered = renderer.tiledScene.visibleTilesRendered
+    const drewTiles = tilesRendered > lastTilesRendered
+    lastTilesRendered = tilesRendered
+    if (layer === 'scene' && !renderer.tiledSceneCovered) {
+      if (drewTiles) editor.reportProgress(versions)
+      return
+    }
+    editor.reportPresented(versions)
   }
 
   /** UI floating over the canvas this frame, which edge-pinned overlays avoid. */

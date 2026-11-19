@@ -26,6 +26,11 @@
         "label": "Open Recent"
       },
       {
+        "id": "place",
+        "label": "Place…",
+        "feature": "document"
+      },
+      {
         "type": "separator"
       },
       {
@@ -727,6 +732,11 @@
       {
         "id": "open-tour",
         "label": "Open the Tour"
+      },
+      {
+        "id": "check-updates",
+        "label": "Check for Updates…",
+        "feature": "self-update"
       },
       {
         "type": "separator"

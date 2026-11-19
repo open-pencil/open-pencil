@@ -5,6 +5,9 @@ import type { CloudPolicyContext } from './keys'
 
 type WorkspacePolicyTarget = { workspaceId: string } | { documentId: string }
 
+/** A policy context for a workspace, which names it. */
+type WorkspacePolicyContext = CloudPolicyContext & { workspaceId: string }
+
 /**
  * The policy context for a workspace, or for a document by its workspace: its owner's plan, which
  * every workspace they own takes, so creating more workspaces adds no allowance. Null when the
@@ -14,7 +17,7 @@ export async function workspacePolicyContext(
   database: Kysely<CloudDatabase> | Transaction<CloudDatabase>,
   target: WorkspacePolicyTarget,
   context: Pick<CloudPolicyContext, 'actorId' | 'deploymentMode'>
-): Promise<(CloudPolicyContext & { workspaceId: string }) | null> {
+): Promise<WorkspacePolicyContext | null> {
   const row =
     'documentId' in target
       ? await database
@@ -29,7 +32,7 @@ export async function workspacePolicyContext(
           .where('id', '=', target.workspaceId)
           .executeTakeFirst()
   if (!row) return null
-  const policyContext: CloudPolicyContext & { workspaceId: string } = {
+  const policyContext: WorkspacePolicyContext = {
     targetingKey: row.ownerId,
     subjectType: 'user',
     workspaceId: row.workspaceId,

@@ -1,4 +1,5 @@
-import { appendAll } from '../arrays'
+import { appendAll } from '@open-pencil/std/arrays'
+
 import type { SceneGraph } from '../graph'
 import type { Color } from '../primitives'
 import type { Variable, VariableLiteral, VariableValue } from '../types'

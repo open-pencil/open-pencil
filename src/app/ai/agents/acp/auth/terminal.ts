@@ -1,13 +1,14 @@
 import { Command } from '@tauri-apps/plugin-shell'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
+import { createDeferred } from '@open-pencil/std/async'
+import { MINUTE_MS } from '@open-pencil/std/timing'
 
 import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
-import { createDeferred } from '@/app/runtime/deferred'
 import { platformCommandEnv, resolveScopedCommand } from '@/app/tauri/command'
 
 /** Long enough to sign in from a fresh browser, short enough not to leave a login waiting. */
-const SIGN_IN_TIMEOUT_MS = 5 * 60_000
+const SIGN_IN_TIMEOUT_MS = 5 * MINUTE_MS
 
 /**
  * Terminal hyperlinks (OSC 8) and colour or cursor codes, which the login prints for a

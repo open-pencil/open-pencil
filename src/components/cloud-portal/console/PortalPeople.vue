@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { createColumnHelper } from '@tanstack/vue-table'
 import { compact } from 'es-toolkit'
-import { computed, h } from 'vue'
+import { computed, h, ref } from 'vue'
 
-import type { CloudAdminUserFilter } from '@open-pencil/cloud/contract'
+import {
+  CLOUD_SOCIAL_PROVIDER_NAMES,
+  CLOUD_SOCIAL_PROVIDERS,
+  type CloudAdminUserFilter,
+  type CloudAdminUserMethod
+} from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import {
@@ -12,8 +17,10 @@ import {
   type PortalListRequest,
   type PortalTableFeatures
 } from '@/app/cloud-portal/list'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 import PortalIdentityCell from '../table/PortalIdentityCell.vue'
+import PortalSignInMethodsCell from '../table/PortalSignInMethodsCell.vue'
 import PortalStatusCell from '../table/PortalStatusCell.vue'
 import PortalTable from '../table/PortalTable.vue'
 import type { PortalPerson, PortalPersonAction } from '../types'
@@ -25,7 +32,8 @@ import PortalPersonActions from './PortalPersonActions.vue'
  */
 const { load, busy = false } = defineProps<{
   load: (
-    request: PortalListRequest<CloudAdminUserFilter>
+    request: PortalListRequest<CloudAdminUserFilter>,
+    method?: CloudAdminUserMethod
   ) => Promise<PortalListPage<CloudAdminUserFilter, PortalPerson>>
   busy?: boolean
 }>()
@@ -39,7 +47,14 @@ const messages = useCloudPortalMessages()
 /** What an account is on the server, as badges; an ordinary account has none. */
 function standing(person: PortalPerson) {
   const words = messages.value
+  const access = {
+    waiting: { label: words.statusWaiting, tone: 'warning' as const },
+    declined: { label: words.statusDeclined, tone: 'neutral' as const },
+    removed: { label: words.statusRemoved, tone: 'neutral' as const }
+  }
   return compact([
+    // An account exists from its first sign-in, before anyone approved its request.
+    person.access && access[person.access],
     person.admin && { label: words.administrator, tone: 'neutral' as const },
     person.suspended && { label: words.suspended, tone: 'error' as const },
     !person.suspended &&
@@ -48,10 +63,14 @@ function standing(person: PortalPerson) {
   ])
 }
 
+/** Narrows any filter to people who sign in one way; `any` leaves it as it is. */
+const method = ref<CloudAdminUserMethod | 'any'>('any')
+
 const column = createColumnHelper<PortalTableFeatures, PortalPerson>()
 const people = usePortalList<CloudAdminUserFilter, PortalPerson>({
   filter: 'all',
-  load: (request) => load(request),
+  load: (request) => load(request, method.value === 'any' ? undefined : method.value),
+  scope: method,
   rowId: (person) => person.id,
   columns: column.columns([
     column.display({
@@ -71,7 +90,7 @@ const people = usePortalList<CloudAdminUserFilter, PortalPerson>({
     column.display({
       id: 'role',
       header: () => messages.value.columnRole,
-      meta: { class: 'hidden max-w-56 @md/table:table-cell' },
+      meta: { role: 'tag' },
       // The badge says the account is suspended; the line under it says why.
       cell: ({ row: { original: person } }) =>
         h(PortalStatusCell, {
@@ -80,23 +99,30 @@ const people = usePortalList<CloudAdminUserFilter, PortalPerson>({
           detail: person.suspendedReason
         })
     }),
+    column.display({
+      id: 'methods',
+      header: () => messages.value.columnSignIn,
+      meta: { role: 'tag' },
+      cell: ({ row: { original: person } }) =>
+        h(PortalSignInMethodsCell, { methods: person.methods })
+    }),
     column.accessor('workspaceCount', {
       header: () => messages.value.columnWorkspaces,
-      meta: { class: 'hidden w-24 text-right tabular-nums @2xl/table:table-cell' }
+      meta: { role: 'count' }
     }),
     column.accessor((person) => person.lastActive ?? messages.value.notSignedIn, {
       id: 'lastActive',
       header: () => messages.value.columnLastActive,
-      meta: { class: 'hidden w-32 whitespace-nowrap text-muted @xl/table:table-cell' }
+      meta: { role: 'date' }
     }),
     column.accessor('joinedOn', {
       header: () => messages.value.columnJoined,
-      meta: { class: 'hidden w-28 whitespace-nowrap text-muted @3xl/table:table-cell' }
+      meta: { role: 'date' }
     }),
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px text-right', actions: true },
+      meta: { role: 'actions' },
       cell: ({ row: { original: person } }) =>
         h(PortalPersonActions, {
           person,
@@ -113,6 +139,14 @@ const filters = computed(() => [
   { value: 'suspended' as const, label: messages.value.filterSuspended },
   { value: 'without-two-step' as const, label: messages.value.filterWithoutTwoStep }
 ])
+const methods = computed(() => [
+  { value: 'any' as const, label: messages.value.signInAny },
+  { value: 'password' as const, label: messages.value.password },
+  ...CLOUD_SOCIAL_PROVIDERS.map((provider) => ({
+    value: provider,
+    label: CLOUD_SOCIAL_PROVIDER_NAMES[provider]
+  }))
+])
 
 defineExpose({ reload: people.reload })
 </script>
@@ -127,5 +161,14 @@ defineExpose({ reload: people.reload })
     :empty-description="messages.noPeopleFoundDescription"
   >
     <template #icon><icon-lucide-users class="size-5" /></template>
+    <template #toolbar>
+      <AppSelect
+        v-model="method"
+        :label="messages.columnSignIn"
+        :options="methods"
+        size="md"
+        :ui="{ trigger: 'w-36' }"
+      />
+    </template>
   </PortalTable>
 </template>

@@ -120,6 +120,51 @@ keeps on its own, and versions someone named (`document_version`, one per revisi
   freed file's row stays until the object store deletes it, so a failed delete is retried. With
   the `revision_history` entitlement off, a workspace keeps 30 days of versions, as on a free plan.
 
+### Comments
+
+A Cloud document's comments live on the server (`comment_thread`, `comment`), not in its file: a
+thread is a pin and whether it is resolved, and its comments are the first message and the replies,
+oldest first.
+
+- Each comment names the account that wrote it, and an agent's name when one wrote it for them; an
+  account deleted later reads as nameless. A comment brought in from a file has no account and keeps
+  the name the file gave.
+- Everyone who can read the document reads its comments, guests on a link included. Everyone signed
+  in who can read writes them, on a view link too; guests never do. Only a comment's author changes
+  what it says. Its author or anyone who can edit deletes it, for good; deleting a thread's first
+  comment deletes the thread. Anyone who comments resolves or reopens a thread, and whoever started
+  it or an editor moves its pin. These are the `comment` and `moderate` actions in
+  `src/server/auth/access-control.ts`.
+- Members reach them at `/api/documents/:id/threads`; link visitors at `/api/shares/:id/threads`,
+  with the link secret in every request's body, reads included. A document holds at most 5,000
+  threads and a thread 500 comments (`comment_limit_reached`).
+- After each change the server sends `comments`, with the thread's ID, to the document's rooms, and
+  open editors fetch that thread; peers cannot send it. Comments never enter the room's Yjs state or
+  a revision, and go with their document when it is deleted for good.
+- In the editor, a Cloud tab's document holds the server's threads, so the comment list, pins,
+  scripts, agents and Save As read them as they read a file's (`src/app/cloud/comments/`). What the
+  tab changes in them is sent as the requests that make it, under the IDs the editor chose, so a
+  retry finds what it made; a change the server refuses is taken back. Only a tombstone deletes: a
+  thread the document lacks, as a file opened in its place does, is one it has not heard of. An
+  agent's comment is the signed-in account's, naming the agent.
+- The Cloud storage provider keeps comments (`keepsComments`), so a save to it writes the file
+  without them, while Save As, a download, and the portal's Download all write them in. A document
+  this device has not uploaded yet, as one just saved to Cloud, brings its file's threads along
+  under the names the file gave (`POST /api/documents/:id/threads/import`, editors only).
+- A mention is a Markdown link to the account, `[@Ana](openpencil://person/<id>)`, as chat writes
+  its references; the composer shows `@Ana` and offers, for `@`, the people who can open the
+  document (`GET /api/documents/:id/threads/people`: names and pictures, never addresses). Each
+  request lists the accounts it names, and the server keeps those who can read the document
+  (`comment_mention`), at most 50 a comment.
+- Email (`comment-notification`) goes to the people a comment names, and, for a reply, to the
+  thread's other writers who chose every comment; an edit tells only the people it adds. Each
+  account chooses all, mentions (the default), or none at `/account/notifications`
+  (`GET`/`PUT /api/account/notifications`). One person's comments send at most 200 such emails a
+  day and one account receives at most 50 (`comment_email`); past either a mention is still kept,
+  only not emailed. The email links to `/documents/:id?comment=<thread>`, which opens the thread.
+- A thread is unread for an account while someone else wrote in it after the account last read it
+  (`comment_read`); opening it, or writing in it, reads it. Pins and the list mark unread threads.
+
 ## Authentication and authorization
 
 Better Auth owns users, sessions, social sign-in, email and password, passkeys, TOTP, and recovery
@@ -460,15 +505,33 @@ contract and the same credits.
 A `[billing]` table advertises a billing service by its `endpoint`, which needs the services'
 signing key and the internal API. `POST /api/billing/token` signs a short-lived token for the
 signed-in person's own account, with the services' key but the `openpencil-billing` audience, so it
-spends no credits. The billing service verifies it against the same published keys, sells the plans
-and credit packs of its catalog, sends the person to its payment provider's checkout or portal, and
-sets the account's plan through the internal API as it is paid. The contract is
-`src/contract/billing.ts`. Editors link to the server's plan page, `CLOUD_ACCOUNT_PLAN_PATH`, whenever
-it advertises billing.
+spends no credits. Cloud has no billing pages of its own: its plan page shows the account's storage
+and monthly credits, and, when the server advertises billing, posts a fresh token as the form field
+`token` to the service's `CLOUD_BILLING_PAGE_PATHS.session`. The service verifies it against the
+same published keys and keeps its own session from there: its pages sell the plans and credit packs
+of its catalog, send the person to its payment provider's checkout or portal, and set the account's
+plan through the internal API as it is paid. A service whose session ended sends the person to
+`CLOUD_ACCOUNT_BILLING_PATH`, the plan page, which opens billing again at once. A Cloud from
+before the handoff called the service's JSON account, checkout, and portal routes, which a service
+with its own pages need not keep, and this one posts to `/session`. Upgrade the service first,
+then Cloud straight after, in the same window: between the two, the old plan page cannot buy. Discovery's
+`billing.freePlan` is what an account without a plan has, from the default entitlements, so the
+service's pricing page compares its plans with it. The contract is `src/contract/billing.ts`. Editors
+link to the server's plan page, `CLOUD_ACCOUNT_PLAN_PATH`, whenever it advertises billing.
+
+A plan may be priced by the seat (`billingSeatPricingSchema`): an account's seats are the people
+who can edit, as editors or admins, across the workspaces it owns, each counted once, the owner
+too, and viewers not at all (`accountSeats` in `src/server/billing/seats.ts`). Billing reads the
+count from the internal API at `GET /api/internal/accounts/:userId/seats`. Whenever a role change, a
+removal, an invitation accepted, a workspace deleted, or ownership passing on may change it, Cloud
+posts a billing token for each owner it touched to the service's `CLOUD_BILLING_API_PATHS.seats`
+after the change commits (`createSeatNotifier`), on Workers through `waitUntil`. A notice carries
+no count and may be lost, so the service treats it as a prompt to read the count and also
+reconciles on its own.
 
 A service answers below its endpoint at the paths in `CLOUD_SERVICES_API_PATHS`: model requests
 follow the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
-catalog, wallet, and usage pages are the contract's own. `CloudServicesSchema` types those routes as
+catalog, wallet, and usage pages are the contract's own. The catalog's `roleModels` names the model the service recommends for each of the editor's roles; an editor signed in to the service with only a fresh install's unset model sets itself up with them (`src/app/ai/providers/openpencil/setup.ts`), and a service without them has its `defaultModelID` take every role, except Vision, which stays unassigned when that model reads no images. A catalog from before roles whose default model calls no tools starts without `roleModels`, and editors then set nothing up. `CloudServicesSchema` types those routes as
 Hono does, so the client calls them through `hc` and still parses each answer, since a service is
 deployed apart from the editor; a service built with Hono can check its app against the same type.
 The reference service is the services server in `src/services`, run by `src/runtime/node/services`:
@@ -498,7 +561,8 @@ tool tells the model how to set search up.
 Services that decide entitlements, such as billing, write them through the internal API rather than
 the database: `setAccountEntitlements` in `src/server/internal`, which runtimes expose over HTTP at
 `PUT /api/internal/accounts/:userId/entitlements` with a bearer token (`[internal_api]`) or a
-private transport of their own. Every write carries an
+private transport of their own, and read an account's seats at
+`GET /api/internal/accounts/:userId/seats`. Every write carries an
 increasing `externalVersion`, and a write older than the stored one is refused, because billing
 events arrive out of order. Cloud keeps answering from the last entitlements it received while the
 writer is down.
@@ -691,3 +755,9 @@ same rule.
 `cloud_` prefix the rest never had; they lose it, and only a name Better Auth already uses gets a
 qualifier (`api_rate_limit` beside its `rate_limit`). Migrations that shipped before the rename
 type their queries against the names they ran with, so their SQL never changes.
+
+**2026-11 · Comments on Cloud documents belong to the server.** Kept in the file, a comment's author
+is a name anyone who can edit may type, deleting one only marks it while its text stays in every
+revision, viewers cannot comment without being able to edit, and the server cannot tell anyone they
+were mentioned. Files written from a Cloud document still carry its comments, so leaving Cloud loses
+none; local files and peer-to-peer rooms keep theirs in the document.

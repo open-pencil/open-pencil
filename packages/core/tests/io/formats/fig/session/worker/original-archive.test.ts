@@ -154,13 +154,13 @@ function edit(graph: SceneGraph) {
 const names = (bytes: Uint8Array) =>
   parseFigBuffer(bytes.slice().buffer).nodeChanges.flatMap((record) => record.name ?? [])
 
-test('a page load that finds the graph diverged leaves the worker writing the archive', async () => {
+test('a page loads through the worker after an edit, and the worker writes the archive', async () => {
   const opened = await openViaWorker()
   edit(opened)
   try {
-    const worker = createFigPopulationWorker(opened)
-    expect(await worker?.populate(opened.getPages()[1].id)).toBeNull()
-    worker?.terminate()
+    const second = opened.getPages()[1]
+    expect(await createFigPopulationWorker(opened)?.populate(second.id)).toBe(true)
+    expect(opened.getChildren(second.id)).toHaveLength(1)
     expect(names(await exportFigFile(opened))).toContain('Edited again')
   } finally {
     releaseFigPopulationWorker(opened)

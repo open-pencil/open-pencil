@@ -1,8 +1,9 @@
 import { uniq } from 'es-toolkit'
 import type { FontFaceData, RemoteFontSource, ResolveFontResult } from 'unifont'
 
-import { minOf } from '@open-pencil/scene-graph/arrays'
 import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
+import { minOf } from '@open-pencil/std/arrays'
+import { toError } from '@open-pencil/std/errors'
 
 import { IS_BROWSER } from '#core/constants'
 import {
@@ -182,7 +183,7 @@ function waitForFontOperation<T>(operation: Promise<T>, signal?: AbortSignal): P
       try {
         signal.throwIfAborted()
       } catch (error) {
-        reject(error instanceof Error ? error : new Error(String(error)))
+        reject(toError(error))
       }
     }
     signal.addEventListener('abort', abort, { once: true })
@@ -194,7 +195,7 @@ function waitForFontOperation<T>(operation: Promise<T>, signal?: AbortSignal): P
       },
       (error: unknown) => {
         signal.removeEventListener('abort', abort)
-        reject(error instanceof Error ? error : new Error(String(error)))
+        reject(toError(error))
         return undefined
       }
     )

@@ -12,9 +12,9 @@ import {
   type DesignViewport
 } from '@open-pencil/dom-css'
 import { serializeHTML } from '@open-pencil/dom-css/export'
-import { insertAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { insertAll, maxOf, minOf } from '@open-pencil/std/arrays'
 
 import type { HTMLEngine, HTMLEngineFetch, HTMLEngineResource } from './engine'
 import { loadHTMLEngine } from './load'

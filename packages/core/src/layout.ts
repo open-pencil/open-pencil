@@ -1,3 +1,5 @@
+import { once } from 'es-toolkit'
+
 import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text/direction'
 import { computeLayout as computeBoxes, type LayoutNode } from '@open-pencil/taffy'
 
@@ -19,6 +21,17 @@ import { configureChildAsLeaf } from './layout/leaf'
 import { sizeAutoResizingText } from './layout/text-auto-resize'
 export { sizeAutoResizingText } from './layout/text-auto-resize'
 export {
+  flowChildren,
+  flowGaps,
+  gapTick,
+  PADDING_SIDES,
+  paddingOf,
+  paddingRect,
+  paddingTick,
+  type FlowGap,
+  type PaddingSide
+} from './layout/spacing-marks'
+export {
   estimateTextSize,
   getTextMeasurer,
   installTextMeasurer,
@@ -30,12 +43,14 @@ import { connectorSublayers, layoutConnector } from '@open-pencil/scene-graph/co
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
 
 import {
+  alignCappedFill,
   applyMinMaxConstraints,
   applyLockedAspectRatio,
   configureAbsoluteChild,
   createLayoutNode,
   mapAlignSelf,
   mapGridTrack,
+  parentSizedAcross,
   parentStretchedAxis,
   setLayoutPadding
 } from './layout/node'
@@ -194,6 +209,7 @@ function insertFlexChildren(
 ): void {
   const box = insertFlowBox(parentNode, parent)
   const flow: LayoutNode[] = []
+  const sizedAcross = once(() => parentSizedAcross(graph, parent))
   for (const node of graph.getChildren(parent.id)) {
     const child = asLaidOutIn(graph, node, parent)
     const item = createLayoutNode()
@@ -204,6 +220,7 @@ function insertFlexChildren(
       item.style.display = 'none'
     } else {
       configureInFlowChild(item, child, parent, graph, direction)
+      alignCappedFill(item, child, parent, sizedAcross)
       flow.push(item)
     }
 

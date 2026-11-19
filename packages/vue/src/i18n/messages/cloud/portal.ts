@@ -1,7 +1,10 @@
 import { count, params } from '@nanostores/i18n'
 
 import { i18n } from '#vue/i18n/create'
+import { communityPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/community'
+import { personPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/person'
 import { planPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/plan'
+import { requestPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/requests'
 import { accessTokenPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/tokens'
 
 /** Copy for the pages a Cloud server shows on its own address. */
@@ -24,8 +27,8 @@ export const cloudPortalMessageDefaults = {
   returnsTo: params('Then you go back to {destination}.'),
   returnsToDesktop: 'the OpenPencil app',
   returnsToEditor: 'the editor',
-  continueWithGoogle: 'Continue with Google',
-  continueWithApple: 'Continue with Apple',
+  /** A sign-in provider's button; `provider` is its name, such as Google. */
+  continueWith: params('Continue with {provider}'),
   or: 'or',
   name: 'Name',
   email: 'Email',
@@ -77,6 +80,8 @@ export const cloudPortalMessageDefaults = {
 
   pendingTitle: 'Your request is with an administrator',
   pendingDescription: params('We email {email} when you can sign in. Nothing else to do for now.'),
+  pendingHiddenEmail:
+    'Already have an account here? Sign out and sign in to it as you usually do: Apple hid your email, so this one is new.',
   closedTitle: 'You can’t use this server',
   closedDescription:
     'An administrator declined or removed your access. Ask them if you think this is a mistake.',
@@ -124,7 +129,7 @@ export const cloudPortalMessageDefaults = {
 
   deviceTitle: 'Sign in to the OpenPencil app?',
   deviceDescription: params('The OpenPencil app asks to use your account, {email}.'),
-  deviceEnterCode: 'Enter the code the app shows',
+  deviceCheckCode: 'Check that the app shows this code',
   deviceWarningTitle: 'Only approve a sign-in you started',
   deviceWarningDescription:
     'If you didn’t just sign in to OpenPencil on a computer, deny this request.',
@@ -148,8 +153,23 @@ export const cloudPortalMessageDefaults = {
   securityDescription: params('How you sign in to {host}.'),
   sessions: 'Sessions',
   sessionsDescription: 'Where your account is signed in, and when it was.',
+  notifications: 'Notifications',
+  notificationsDescription: 'Which comments you hear about by email.',
+  commentEmails: 'Comment emails',
+  commentEmailsAll: 'All comments',
+  commentEmailsAllDescription:
+    'Comments that mention you, and replies in threads you started or replied to.',
+  commentEmailsMentions: 'Mentions only',
+  commentEmailsMentionsDescription: 'Comments that mention you.',
+  commentEmailsOff: 'None',
+  commentEmailsOffDescription:
+    'No email about comments. You still see them, and new ones, in the editor.',
+  notificationsSaved: 'Notification settings saved',
   ...accessTokenPortalMessageDefaults,
+  ...requestPortalMessageDefaults,
+  ...communityPortalMessageDefaults,
   ...planPortalMessageDefaults,
+  ...personPortalMessageDefaults,
   overview: 'Overview',
   accessRequests: 'Access requests',
   accessRequestsDescription:
@@ -249,8 +269,8 @@ export const cloudPortalMessageDefaults = {
   noSignIns: 'No sign-ins recorded yet.',
   signedInWith: params('With {method}'),
   methodPassword: 'password',
-  methodGoogle: 'Google',
-  methodApple: 'Apple',
+  /** A sign-in provider, as `signedInWith` names it; `provider` is its name, such as Google. */
+  methodProvider: params('{provider}'),
   methodPasskey: 'a passkey',
   methodTwoStep: 'two-step sign-in',
   methodEmailLink: 'an email link',
@@ -259,8 +279,6 @@ export const cloudPortalMessageDefaults = {
 
   waysToSignIn: 'Ways to sign in',
   waysToSignInDescription: 'Keep at least one, so you can always get back in.',
-  providerGoogle: 'Google',
-  providerApple: 'Apple',
   linkedOn: params('Linked {date}'),
   notLinked: 'Not linked',
   link: 'Link',
@@ -320,17 +338,6 @@ export const cloudPortalMessageDefaults = {
   statusRemoved: 'Access removed',
   asked: params('Asked {date}'),
   reviewedBy: params('{decision} by {name}'),
-  decline: 'Decline',
-  removeAccess: 'Remove access',
-  declineHeading: params('Decline {name}?'),
-  declineDescription: 'They get an email saying so, and can ask again later.',
-  removeAccessHeading: params('Remove access for {name}?'),
-  removeAccessDescription: 'They can’t sign in any more, and get an email saying so.',
-  reviewNote: 'Note for administrators (optional)',
-  noteDetail: params('Note: {note}'),
-  noOneWaiting: 'No one is waiting',
-  nothingHere: 'Nothing here yet',
-  requestsEmptyDescription: 'New requests appear here, and administrators get an email for each.',
   searchPeople: 'Search people…',
   filterEveryone: 'Everyone',
   filterAdministrators: 'Administrators',
@@ -360,6 +367,8 @@ export const cloudPortalMessageDefaults = {
   columnPerson: 'Person',
   columnRole: 'Role',
   columnWorkspaces: 'Workspaces',
+  columnSignIn: 'Sign-in',
+  signInAny: 'Any sign-in',
   columnWorkspace: 'Workspace',
   columnMembers: 'Members',
   columnLastActive: 'Last active',
@@ -401,26 +410,6 @@ export const cloudPortalMessageDefaults = {
   removePersonPictureDescription:
     'Their initials show in its place. They can upload another picture.',
 
-  backToPeople: 'All people',
-  personAccount: 'Account',
-  emailVerified: 'Verified',
-  emailNotVerified: 'Not verified',
-  joinedRow: 'Joined',
-  lastActiveRow: 'Last active',
-  signInMethods: 'Ways to sign in',
-  twoStepRow: 'Two-step sign-in',
-  twoStepNone: 'Not set up',
-  passkeyCount: count({ one: '{count} passkey', many: '{count} passkeys' }),
-  personWorkspaces: 'Workspaces',
-  personWorkspacesEmpty: 'Not in any workspace.',
-  workspaceMembers: count({ one: '{count} member', many: '{count} members' }),
-  workspaceRoleAdmin: 'Admin',
-  workspaceRoleEditor: 'Editor',
-  workspaceRoleViewer: 'Viewer',
-  personSessions: 'Sessions',
-  noSessions: 'Not signed in anywhere.',
-  personNotFound: 'There’s no such account',
-  personNotFoundDescription: 'It may have been removed. Go back to the list of people.',
   you: '(you)',
   administrator: 'Administrator',
   suspended: 'Suspended',
@@ -495,6 +484,8 @@ export const cloudPortalMessageDefaults = {
   activityEmailRetried: 'retried an email to',
   activityTwoStepReset: 'reset two-step sign-in for',
   activityPictureRemoved: 'removed the picture of',
+  activityAccountDeleted: 'deleted the account of',
+  activitySignInMethodRemoved: 'removed a way to sign in from',
   activityReason: params('Reason: {reason}'),
   activityChanged: 'changed',
   reports: 'Reports',
@@ -514,6 +505,7 @@ export const cloudPortalMessageDefaults = {
   columnReported: 'Reported',
   columnOwner: 'Owner',
   columnUpdated: 'Last changed',
+  columnAccess: 'Access',
   reportReasonSpam: 'Spam or phishing',
   reportReasonIllegal: 'Illegal content',
   reportReasonCopyright: 'Copyright',
@@ -529,6 +521,13 @@ export const cloudPortalMessageDefaults = {
   deletedForever: 'Deleted forever',
   destroyedOn: params('Removed from the server on {date}'),
   openReports: count({ one: '{count} open report', many: '{count} open reports' }),
+  /** Who beyond its workspace can open a document, in the documents list. */
+  privateDocument: 'Private',
+  sharedByLink: 'Shared by link',
+  editableByLink: 'Editable by link',
+  inCommunity: 'In community',
+  documentPreview: params('Preview of {name}'),
+  downloadDocument: 'Download',
   takeDown: 'Take down',
   restoreDocument: 'Restore document',
   revokeLink: 'Revoke link',
@@ -556,6 +555,7 @@ export const cloudPortalMessageDefaults = {
   activityTookDown: 'took down',
   activityRestoredDocument: 'restored',
   activityUndeletedDocument: 'brought back',
+  activityDownloadedDocument: 'downloaded',
   activityRevokedLink: 'revoked a link:',
   activityDismissedReport: 'dismissed a report:',
   activityActionedReport: 'closed a report:',
@@ -567,7 +567,9 @@ export const cloudPortalMessageDefaults = {
   errorAccountSoleAdmin:
     'You’re still the only admin of a workspace other people use. Make someone else an admin first.',
   errorSelfAction: 'You can’t do that to your own account.',
+  errorAccountApproved: 'This account was approved, so only its owner can delete it.',
   errorTwoStepRequired: 'Turn on two-step sign-in first.',
+  errorTwoStepUnconfirmed: 'Confirm it’s you with your second step, then try again.',
   errorNotAllowed: 'You don’t have permission to do that.',
   errorNetwork: 'Couldn’t reach the server. Check your connection.',
   errorAlreadyDecided: 'Someone already decided this request. Refresh to see it.',

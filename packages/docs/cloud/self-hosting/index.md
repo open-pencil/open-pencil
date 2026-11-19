@@ -61,7 +61,7 @@ Settings live in a TOML file; environment variables supply secrets and tell the 
 2. Copy [`.env.example`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/.env.example) and set:
    - `OPENPENCIL_CLOUD_CONFIG`: the path to the TOML file;
    - `OPENPENCIL_CLOUD_SITE_DIR`: the path to `dist-cloud/`. Without it the server still runs its API, but the editor and the sign-in, account, and administration pages answer 404, and it warns at startup;
-   - the secrets the TOML names, by default `DATABASE_URL`, `BETTER_AUTH_SECRET`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY`, plus `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_PRIVATE_KEY`, `S3_SESSION_TOKEN`, `OPENPENCIL_CLOUD_SMTP_USER`, and `OPENPENCIL_CLOUD_SMTP_PASSWORD` when their sections are enabled.
+   - the secrets the TOML names, by default `DATABASE_URL`, `BETTER_AUTH_SECRET`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY`, plus `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_PRIVATE_KEY`, `GITHUB_CLIENT_SECRET`, `S3_SESSION_TOKEN`, `OPENPENCIL_CLOUD_SMTP_USER`, and `OPENPENCIL_CLOUD_SMTP_PASSWORD` when their sections are enabled.
 3. Start the server with the environment loaded, for example `node --env-file=.env dist-standalone/server.mjs`, or, installed from npm, `node --env-file=.env "$(command -v openpencil-cloud)"`.
 
 Use `{ from_env = "CUSTOM_NAME" }` in the TOML to read a secret from a different variable. A missing required secret stops startup and names the variable without printing a value.
@@ -76,6 +76,27 @@ For a server only its members use, set `deployment.local_editor = false`: the we
 
 Links the server sends point at its own address: `/documents/<id>` for a document, `/share/<id>` for a shared link, and `/invitations/<id>` for an invitation. An editor at another address, such as a development build, can still connect when its origin is in `deployment.trusted_origins`; people sign in there by approving a code, as in the desktop app.
 
+## Your name on the server's pages
+
+The server's public pages, such as its community gallery, carry your name rather than OpenPencil's: the bar shows the server's address, the gallery, and help, and the footer your legal links with a small "Powered by OpenPencil". Name the server, add your logo, and point help at your own page under `[deployment.branding]`:
+
+```toml
+[deployment.branding]
+name = "Acme Design"
+logo_url = "https://acme.example/logo.svg"
+help_url = "https://intranet.acme.example/design-help"
+```
+
+Without `help_url`, help goes to the OpenPencil documentation. The addresses must be `http` or `https`.
+
+## Editor versions
+
+When a server update needs a newer editor, set `deployment.minimum_editor_version`, such as `"0.17.0"`. An older desktop app then shows a banner offering its update instead of connecting, and the server answers its requests with `426 Upgrade Required`; a browser tab on an older editor offers a reload. Requests that name no editor version, from the CLI or MCP, are served as before.
+
+Turning on GitHub sign-in (`[authentication.providers.github]`) needs a minimum too. Editors from before GitHub sign-in cannot read the server once it offers GitHub: the oldest fail to connect, and the rest fail to open the account pages of anyone who signed in with GitHub. Set `minimum_editor_version` to an editor release that offers GitHub sign-in in the same change.
+
+Versions compare in SemVer order, where a pre-release comes before its release: `"0.18.0"` turns away `0.18.0-beta.2`. To let a release's betas and nightlies in, name the earliest one you accept, such as `"0.18.0-beta.1"`; nightlies come after their release's betas, so `"0.18.0-nightly.20261116"` admits nightlies from that day on but no betas. Editors before 0.18.0 cannot read a pre-release minimum and stop connecting, so name one only when the minimum is already 0.18.0 or later.
+
 ## Reverse proxy
 
 - Terminate TLS in front of the server and the object store, on stable hostnames.
@@ -84,15 +105,17 @@ Links the server sends point at its own address: `/documents/<id>` for a documen
 
 ## The first administrator
 
-Set `[authentication.enrollment] mode = "approval"` for a controlled deployment: a verified identity then creates a pending request that an administrator reviews. Startup never grants roles, so bootstrap the first operator from a repository checkout that reads the same configuration and secrets and can reach the server's database at `DATABASE_URL`:
+Set `[authentication.enrollment] mode = "approval"` for a controlled deployment: a verified identity then creates a pending request that an administrator reviews. Startup never grants roles, so bootstrap the first operator from a repository checkout that can reach the server's database. The command needs only `DATABASE_URL`, and refuses a database the server's version has not migrated yet:
 
 ```sh
-bun --filter @open-pencil/cloud admin approve owner@example.com
+DATABASE_URL=postgres://… bun --filter @open-pencil/cloud admin approve owner@example.com
 # after that person signs in once
-bun --filter @open-pencil/cloud admin grant owner@example.com
+DATABASE_URL=postgres://… bun --filter @open-pencil/cloud admin grant owner@example.com
 ```
 
-Deployment administrators manage enrollment and users in the server's administration pages. They are separate from workspace administrators.
+From then on, deployment administrators approve requests and grant or revoke the role in the server's administration pages, which ask for two-step sign-in first; keep the command for when no administrator can sign in. Deployment administrators are separate from workspace administrators.
+
+Deployment administrators can see what every document on the server looks like: **Documents** and **Reports** in the console show the thumbnail each document was last saved with, along with its kind, owner, when it last changed, and who beyond its workspace can open it, through the community gallery or a share link. They can also download any saved document, to open it in the app without changing the original; **Activity** records each download. Say so in your privacy policy.
 
 ## Terms and privacy
 
@@ -109,7 +132,9 @@ workspace = "0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b"
 
 Anyone can then open its documents read-only, without signing in or a share link, and **everything saved there is public**: saving a document to the workspace publishes it, and moving it out or to Trash takes it down. Its members work in it as in any workspace. A document the members couldn't open either, because it is in Trash, an administrator blocked it, it was never saved, or its creator is banned, stays out of the gallery.
 
-The gallery is served without signing in:
+The server shows the gallery at `/community`, and each document's page at `/community/<document>`: its preview, its named versions, and buttons that open it read-only in the browser, at `/community/<document>/open`, or in the desktop app. Both pages carry the title, description, and preview image that link previews read.
+
+Its data is served without signing in:
 
 - `GET /api/community` lists its documents, most recently changed first, each with its named versions and the path of its thumbnail.
 - `GET /api/community/<document>/document` downloads a document as it is now, or with `?version=<version>` as one of its named versions; other history stays private.

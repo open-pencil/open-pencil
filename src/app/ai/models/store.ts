@@ -1,4 +1,4 @@
-import { uniq } from 'es-toolkit'
+import { isEmptyObject, pickBy, uniq } from 'es-toolkit'
 import * as v from 'valibot'
 import { computed, ref, watch } from 'vue'
 
@@ -6,9 +6,13 @@ import {
   AI_PROVIDERS,
   DEFAULT_AI_MODEL,
   DEFAULT_AI_PROVIDER,
-  type AIProviderID
+  type AIProviderID,
+  providerKind
 } from '@open-pencil/core/constants'
 
+import type { AgentChoices } from '@/app/ai/agents/acp/options'
+import { agentCapabilities, isAgentProvider } from '@/app/ai/models/agent'
+import { profileModelID } from '@/app/ai/models/language-model'
 import {
   readAIModelSettingsStorage,
   readLegacyAIModelStorage,
@@ -32,12 +36,12 @@ import {
 
 const LEGACY_CONNECTION_ID = 'connection-default'
 const LEGACY_MODEL_ID: AIModelProfileId = 'model-default'
-const DEFAULT_MAX_OUTPUT_TOKENS = 16_384
+export const DEFAULT_MAX_OUTPUT_TOKENS = 16_384
 
 function isProviderID(value: unknown): value is AIProviderID {
   return (
     typeof value === 'string' &&
-    (value.startsWith('acp:') || AI_PROVIDERS.some((provider) => provider.id === value))
+    (providerKind(value) === 'acp' || AI_PROVIDERS.some((provider) => provider.id === value))
   )
 }
 
@@ -83,6 +87,14 @@ function normalizedMaxOutputTokens(value: unknown): number {
 
 const capabilitySchema = v.picklist(['tools', 'vision'])
 
+/** An ACP agent's own value for one of its options; an empty one keeps the agent's. */
+const agentChoiceSchema = v.fallback(v.optional(v.pipe(v.string(), v.nonEmpty())), undefined)
+const agentChoicesSchema = v.object({
+  thought_level: agentChoiceSchema,
+  mode: agentChoiceSchema,
+  collaboration_mode: agentChoiceSchema
+}) satisfies v.GenericSchema<unknown, AgentChoices>
+
 const profileSchema = v.object({
   id: v.custom<AIModelProfileId>((id) => typeof id === 'string' && id.startsWith('model-')),
   name: v.fallback(v.string(), 'Model'),
@@ -93,6 +105,7 @@ const profileSchema = v.object({
   thinkingLevel: v.optional(v.unknown()),
   harnessThinkingLevel: v.optional(v.unknown()),
   reasoningEffort: v.optional(v.unknown()),
+  agentChoices: v.fallback(v.optional(agentChoicesSchema), undefined),
   harnessPermissionMode: v.fallback(v.optional(v.picklist(HARNESS_PERMISSION_MODES)), undefined),
   capabilities: v.fallback(
     v.pipe(
@@ -129,20 +142,27 @@ function curatedModelCapabilities(
   providerID: AIProviderID,
   modelID: string
 ): AIModelCapability[] | null {
-  const model = AI_PROVIDERS.find((provider) => provider.id === providerID)?.models.find(
+  const provider = AI_PROVIDERS.find((candidate) => candidate.id === providerID)
+  // A model since retired keeps what it could do for the settings that still name it.
+  const model = [...(provider?.models ?? []), ...(provider?.retiredModels ?? [])].find(
     (candidate) => candidate.id === modelID
   )
   return model?.capabilities ? [...model.capabilities] : null
 }
 
-function hydrateCuratedCapabilities(
-  profiles: AIModelProfile[],
-  connections: AIModelConnection[]
-): void {
+/**
+ * An agent's profile has what its kind allows; a catalog model's capabilities come from the
+ * catalog.
+ */
+function hydrateCapabilities(profiles: AIModelProfile[], connections: AIModelConnection[]): void {
   for (const profile of profiles) {
-    if (profile.customModelID) continue
     const connection = connections.find((candidate) => candidate.id === profile.connectionId)
     if (!connection) continue
+    if (isAgentProvider(connection.providerID)) {
+      profile.capabilities = agentCapabilities(connection.providerID, profile.capabilities)
+      continue
+    }
+    if (profile.customModelID) continue
     const capabilities = curatedModelCapabilities(connection.providerID, profile.modelID)
     if (capabilities) profile.capabilities = uniq(capabilities)
   }
@@ -167,7 +187,7 @@ export function parseAIModelSettings(value: unknown): AIModelSettings | null {
     .map((profile) => parseProfile(profile, connectionIds))
     .filter((profile) => profile !== null)
   if (!models.length) return null
-  hydrateCuratedCapabilities(models, connections)
+  hydrateCapabilities(models, connections)
   const modelIds = new Set(models.map((profile) => profile.id))
   const rawAssignments = stored.output.assignments
   const rawDesign = typeof rawAssignments.design === 'string' ? rawAssignments.design : ''
@@ -179,17 +199,10 @@ export function parseAIModelSettings(value: unknown): AIModelSettings | null {
     fast: optionalAssignment(rawAssignments.fast, modelIds),
     vision: optionalAssignment(rawAssignments.vision, modelIds)
   }
-  for (const role of ['review', 'fast', 'vision'] as const) {
-    const assignment = assignments[role]
-    if (assignment === null) continue
-    const profileId = assignment === 'design' ? resolvedDesign : assignment
-    const profile = models.find((candidate) => candidate.id === profileId)
-    const connection = connections.find((candidate) => candidate.id === profile?.connectionId)
-    const invalidAgent =
-      connection?.providerID.startsWith('acp:') || connection?.providerID === 'harness:pi'
-    const invalidVision = role === 'vision' && !profile?.capabilities.includes('vision')
-    if (invalidAgent || invalidVision) assignments[role] = null
-  }
+  const vision = assignments.vision
+  const visionProfileId = vision === 'design' ? resolvedDesign : vision
+  const visionProfile = models.find((profile) => profile.id === visionProfileId)
+  if (vision !== null && !visionProfile?.capabilities.includes('vision')) assignments.vision = null
   return { version: 1, connections, models, assignments }
 }
 
@@ -199,7 +212,7 @@ function legacySettings(): AIModelSettings {
   const provider = AI_PROVIDERS.find((definition) => definition.id === providerID)
   const modelID = readLegacyAIModelStorage('ai-model') ?? provider?.defaultModel ?? DEFAULT_AI_MODEL
   const customModelID = readLegacyAIModelStorage('ai-custom-model') ?? ''
-  const displayModel = customModelID || modelID
+  const displayModel = profileModelID({ modelID, customModelID })
   const name = displayModel
     ? provider?.models.find((model) => model.id === displayModel)?.name || displayModel
     : 'Design model'
@@ -248,11 +261,11 @@ export const aiModelSettings = ref<AIModelSettings>(loadSettings())
 
 watch(aiModelSettings, (settings) => writeAIModelSettingsStorage(settings), { deep: true })
 
-function createConnectionId(): string {
+export function createConnectionId(): string {
   return `connection-${crypto.randomUUID()}`
 }
 
-function createModelId(): AIModelProfileId {
+export function createModelId(): AIModelProfileId {
   return `model-${crypto.randomUUID()}`
 }
 
@@ -274,13 +287,9 @@ export function designModelProfiles(): AIModelProfile[] {
   return aiModelSettings.value.models.filter(isDesignModelProfile)
 }
 
-export function isAgentModelProfile(profile: AIModelProfile | null): boolean {
-  const providerID = profile ? modelConnection(profile.connectionId)?.providerID : undefined
-  return Boolean(providerID?.startsWith('acp:') || providerID === 'harness:pi')
-}
-
 export function isACPModelProfile(profile: AIModelProfile | null): boolean {
-  return Boolean(profile && modelConnection(profile.connectionId)?.providerID.startsWith('acp:'))
+  const providerID = profile ? modelConnection(profile.connectionId)?.providerID : undefined
+  return providerID !== undefined && providerKind(providerID) === 'acp'
 }
 
 export function resolveAIModelRole(role: AIModelRole): ResolvedAIModelRole | null {
@@ -349,6 +358,7 @@ function draftForProfile(
     cloudWorkspaceId: connection.cloudWorkspaceId,
     maxOutputTokens: profile.maxOutputTokens,
     thinkingLevel: profile.thinkingLevel,
+    agentChoices: { ...profile.agentChoices },
     harnessPermissionMode: profile.harnessPermissionMode ?? 'allow-edits',
     capabilities: [...profile.capabilities]
   }
@@ -369,6 +379,7 @@ function newProfileDraft(connection: AIModelConnection | null): AIModelProfileDr
     cloudWorkspaceId: connection?.cloudWorkspaceId,
     maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS,
     thinkingLevel: 'default',
+    agentChoices: {},
     harnessPermissionMode: 'allow-edits',
     capabilities: ['tools']
   }
@@ -382,21 +393,27 @@ export function createModelProfileDraft(profileId?: string): AIModelProfileDraft
   return newProfileDraft(designConnection ?? aiModelSettings.value.connections[0])
 }
 
+/** An ACP agent's effort and modes, which only agent profiles keep; none keeps the agent's own. */
+function draftAgentChoices(draft: AIModelProfileDraft): AgentChoices | undefined {
+  if (providerKind(draft.providerID) !== 'acp') return undefined
+  const choices = pickBy(draft.agentChoices, Boolean)
+  return isEmptyObject(choices) ? undefined : choices
+}
+
 export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfile {
   const provider = AI_PROVIDERS.find((definition) => definition.id === draft.providerID)
-  const effectiveModel = draft.customModelID.trim() || draft.modelID.trim()
+  const effectiveModel = profileModelID(draft)
   if (!draft.name.trim()) throw new Error('Model name is required')
   // Agents choose their own model, and Pi falls back to its own default model.
-  if (
-    !draft.providerID.startsWith('acp:') &&
-    draft.providerID !== 'harness:pi' &&
-    !effectiveModel
-  ) {
+  if (!isAgentProvider(draft.providerID) && !effectiveModel) {
     throw new Error('Model ID is required')
   }
+  const capabilities = isAgentProvider(draft.providerID)
+    ? agentCapabilities(draft.providerID, draft.capabilities)
+    : uniq(draft.capabilities)
   if (
     draft.profileId === aiModelSettings.value.assignments.design &&
-    !draft.capabilities.includes('tools')
+    !capabilities.includes('tools')
   ) {
     throw new Error('The Design model must support tools')
   }
@@ -409,9 +426,10 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
     customModelID: draft.customModelID.trim(),
     maxOutputTokens: normalizedMaxOutputTokens(draft.maxOutputTokens),
     thinkingLevel: draft.thinkingLevel,
+    agentChoices: draftAgentChoices(draft),
     harnessPermissionMode:
-      draft.providerID === 'harness:pi' ? draft.harnessPermissionMode : undefined,
-    capabilities: uniq(draft.capabilities)
+      providerKind(draft.providerID) === 'harness' ? draft.harnessPermissionMode : undefined,
+    capabilities
   }
   const index = aiModelSettings.value.models.findIndex((model) => model.id === profile.id)
   if (index === -1) aiModelSettings.value.models.push(profile)
@@ -499,7 +517,6 @@ export function setModelRoleAssignment(role: AIModelRole, assignment: AIModelRol
       assignment === 'design'
         ? modelProfile(aiModelSettings.value.assignments.design)
         : modelProfile(assignment)
-    if (isAgentModelProfile(profile)) return
     if (role === 'vision' && !profile?.capabilities.includes('vision')) return
   }
   aiModelSettings.value.assignments[role] = assignment

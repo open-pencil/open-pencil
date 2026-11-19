@@ -5,7 +5,7 @@ import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import { subtreeVisualBounds } from '#core/canvas/renderer/visual-bounds'
 import { nodeOrientationMatrix } from '#core/geometry'
 

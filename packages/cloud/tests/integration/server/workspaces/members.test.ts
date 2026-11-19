@@ -10,6 +10,7 @@ import {
   parseCloudServerConfig,
   type CloudActor
 } from '#cloud/server'
+import { testClient } from 'hono/testing'
 import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
@@ -57,12 +58,7 @@ async function testApp() {
     runtime,
     as(person: CloudActor) {
       actor = person
-      return (path: string, init?: { method?: string; json?: unknown }) =>
-        app.request(path, {
-          method: init?.method ?? 'GET',
-          headers: { 'Content-Type': 'application/json', Origin: config.publicURL },
-          body: init?.json === undefined ? undefined : JSON.stringify(init.json)
-        })
+      return testClient(app, undefined, undefined, { headers: { Origin: config.publicURL } })
     }
   }
 }
@@ -81,15 +77,15 @@ describe('workspace members', () => {
     const { runtime, as } = await testApp()
     try {
       const created = await responseJSON(
-        await as(people.alice)('/api/workspaces', { method: 'POST', json: { name: 'Studio' } }),
+        await as(people.alice).api.workspaces.$post({ json: { name: 'Studio' } }),
         v.object({ workspace: v.object({ id: v.string(), role: v.string() }) })
       )
       const workspaceId = created.workspace.id
       expect(created.workspace.role).toBe('admin')
 
       const invited = await responseJSON(
-        await as(people.alice)(`/api/workspaces/${workspaceId}/invitations`, {
-          method: 'POST',
+        await as(people.alice).api.workspaces[':workspaceId'].invitations.$post({
+          param: { workspaceId },
           json: { email: ' Bob@Example.com ', role: 'editor' }
         }),
         createdSchema
@@ -101,16 +97,18 @@ describe('workspace members', () => {
       const token = link.hash.slice(1)
 
       const listed = await responseJSON(
-        await as(people.alice)(`/api/workspaces/${workspaceId}/members`),
+        await as(people.alice).api.workspaces[':workspaceId'].members.$get({
+          param: { workspaceId }
+        }),
         membersSchema
       )
       expect(listed.members.map((member) => member.email)).toEqual(['alice@example.com'])
       expect(listed.invitations.map((invitation) => invitation.email)).toEqual(['bob@example.com'])
 
-      const preview = await as(people.bob)(
-        `/api/public/invitations/${invited.invitation.id}/preview`,
-        { method: 'POST', json: { token } }
-      )
+      const preview = await as(people.bob).api.public.invitations[':invitationId'].preview.$post({
+        param: { invitationId: invited.invitation.id },
+        json: { token }
+      })
       expect(await preview.json()).toMatchObject({
         invitation: {
           kind: 'workspace',
@@ -120,28 +118,31 @@ describe('workspace members', () => {
         }
       })
 
-      const wrongAccount = await as(people.carol)(
-        `/api/invitations/${invited.invitation.id}/accept`,
-        { method: 'POST', json: { token } }
-      )
+      const wrongAccount = await as(people.carol).api.invitations[':invitationId'].accept.$post({
+        param: { invitationId: invited.invitation.id },
+        json: { token }
+      })
       expect(wrongAccount.status).toBe(404)
 
-      const accepted = await as(people.bob)(`/api/invitations/${invited.invitation.id}/accept`, {
-        method: 'POST',
+      const accepted = await as(people.bob).api.invitations[':invitationId'].accept.$post({
+        param: { invitationId: invited.invitation.id },
         json: { token }
       })
       expect(await accepted.json()).toEqual({
         accepted: { kind: 'workspace', workspaceId, role: 'editor' }
       })
       const bobsWorkspaces = await responseJSON(
-        await as(people.bob)('/api/workspaces'),
-        v.object({ workspaces: v.array(v.object({ id: v.string() })) })
+        await as(people.bob).api.workspaces.$get(),
+        v.object({ workspaces: v.array(v.object({ id: v.string(), owner: v.boolean() })) })
       )
-      expect(bobsWorkspaces.workspaces.map((workspace) => workspace.id)).toContain(workspaceId)
+      // A member who joined doesn't own it, so the editor sends them to the owner for credits.
+      expect(bobsWorkspaces.workspaces).toContainEqual({ id: workspaceId, owner: false })
 
       // Members other than administrators see who is in, not who is invited.
       const asMember = await responseJSON(
-        await as(people.bob)(`/api/workspaces/${workspaceId}/members`),
+        await as(people.bob).api.workspaces[':workspaceId'].members.$get({
+          param: { workspaceId }
+        }),
         membersSchema
       )
       expect(asMember.members.map((member) => member.email)).toEqual([
@@ -149,29 +150,28 @@ describe('workspace members', () => {
         'bob@example.com'
       ])
       expect(asMember.invitations).toEqual([])
-      const notAdmin = await as(people.bob)(`/api/workspaces/${workspaceId}/invitations`, {
-        method: 'POST',
+      const notAdmin = await as(people.bob).api.workspaces[':workspaceId'].invitations.$post({
+        param: { workspaceId },
         json: { email: 'carol@example.com', role: 'viewer' }
       })
       expect(notAdmin.status).toBe(403)
 
-      const lastAdmin = await as(people.alice)(
-        `/api/workspaces/${workspaceId}/members/${people.alice.userId}`,
-        { method: 'PATCH', json: { role: 'editor' } }
-      )
+      const lastAdmin = await as(people.alice).api.workspaces[':workspaceId'].members[
+        ':userId'
+      ].$patch({ param: { workspaceId, userId: people.alice.userId }, json: { role: 'editor' } })
       expect(lastAdmin.status).toBe(409)
-      const aliceLeaves = await as(people.alice)(
-        `/api/workspaces/${workspaceId}/members/${people.alice.userId}`,
-        { method: 'DELETE' }
-      )
+      const aliceLeaves = await as(people.alice).api.workspaces[':workspaceId'].members[
+        ':userId'
+      ].$delete({ param: { workspaceId, userId: people.alice.userId } })
       expect(aliceLeaves.status).toBe(409)
 
-      const bobLeaves = await as(people.bob)(
-        `/api/workspaces/${workspaceId}/members/${people.bob.userId}`,
-        { method: 'DELETE' }
-      )
+      const bobLeaves = await as(people.bob).api.workspaces[':workspaceId'].members[
+        ':userId'
+      ].$delete({ param: { workspaceId, userId: people.bob.userId } })
       expect(bobLeaves.status).toBe(204)
-      const again = await as(people.bob)(`/api/workspaces/${workspaceId}/members`)
+      const again = await as(people.bob).api.workspaces[':workspaceId'].members.$get({
+        param: { workspaceId }
+      })
       expect(again.status).toBe(404)
     } finally {
       await runtime.close()
@@ -184,13 +184,13 @@ describe('workspace members', () => {
       const create = async (name: string) =>
         (
           await responseJSON(
-            await as(people.alice)('/api/workspaces', { method: 'POST', json: { name } }),
+            await as(people.alice).api.workspaces.$post({ json: { name } }),
             v.object({ workspace: v.object({ id: v.string() }) })
           )
         ).workspace.id
       const invite = (workspaceId: string) =>
-        as(people.alice)(`/api/workspaces/${workspaceId}/invitations`, {
-          method: 'POST',
+        as(people.alice).api.workspaces[':workspaceId'].invitations.$post({
+          param: { workspaceId },
           json: { email: 'target@example.com', role: 'viewer' }
         })
       const first = await create('First')
@@ -202,7 +202,11 @@ describe('workspace members', () => {
       expect(await refused.json()).toEqual({ error: { code: 'rate_limited' } })
 
       expect(
-        (await as(people.alice)(`/api/workspaces/${first}`, { method: 'DELETE' })).status
+        (
+          await as(people.alice).api.workspaces[':workspaceId'].$delete({
+            param: { workspaceId: first }
+          })
+        ).status
       ).toBeLessThan(300)
       expect((await invite(await create('Second'))).status).toBe(429)
     } finally {
@@ -214,7 +218,7 @@ describe('workspace members', () => {
     const { runtime, as } = await testApp()
     try {
       const created = await responseJSON(
-        await as(people.alice)('/api/workspaces', { method: 'POST', json: { name: 'Studio' } }),
+        await as(people.alice).api.workspaces.$post({ json: { name: 'Studio' } }),
         v.object({ workspace: v.object({ id: v.string() }) })
       )
       const workspaceId = created.workspace.id
@@ -245,17 +249,15 @@ describe('workspace members', () => {
         ).ownerId
       expect(await owner()).toBe(people.alice.userId)
 
-      const aliceLeaves = await as(people.alice)(
-        `/api/workspaces/${workspaceId}/members/${people.alice.userId}`,
-        { method: 'DELETE' }
-      )
+      const aliceLeaves = await as(people.alice).api.workspaces[':workspaceId'].members[
+        ':userId'
+      ].$delete({ param: { workspaceId, userId: people.alice.userId } })
       expect(aliceLeaves.status).toBe(204)
       expect(await owner()).toBe(people.bob.userId)
 
-      const bobSteppedDown = await as(people.carol)(
-        `/api/workspaces/${workspaceId}/members/${people.bob.userId}`,
-        { method: 'PATCH', json: { role: 'editor' } }
-      )
+      const bobSteppedDown = await as(people.carol).api.workspaces[':workspaceId'].members[
+        ':userId'
+      ].$patch({ param: { workspaceId, userId: people.bob.userId }, json: { role: 'editor' } })
       expect(bobSteppedDown.status).toBe(204)
       expect(await owner()).toBe(people.carol.userId)
     } finally {
@@ -267,31 +269,32 @@ describe('workspace members', () => {
     const { runtime, as } = await testApp()
     try {
       const created = await responseJSON(
-        await as(people.alice)('/api/workspaces', { method: 'POST', json: { name: 'Studio' } }),
+        await as(people.alice).api.workspaces.$post({ json: { name: 'Studio' } }),
         v.object({ workspace: v.object({ id: v.string() }) })
       )
       const workspaceId = created.workspace.id
-      const invite = (role: string) =>
-        as(people.alice)(`/api/workspaces/${workspaceId}/invitations`, {
-          method: 'POST',
+      const invite = (role: 'viewer' | 'editor') =>
+        as(people.alice).api.workspaces[':workspaceId'].invitations.$post({
+          param: { workspaceId },
           json: { email: 'bob@example.com', role }
         })
       const first = await responseJSON(await invite('viewer'), createdSchema)
       const second = await responseJSON(await invite('editor'), createdSchema)
 
-      const stale = await as(people.bob)(`/api/invitations/${first.invitation.id}/accept`, {
-        method: 'POST',
+      const stale = await as(people.bob).api.invitations[':invitationId'].accept.$post({
+        param: { invitationId: first.invitation.id },
         json: { token: new URL(first.acceptanceURL).hash.slice(1) }
       })
       expect(stale.status).toBe(404)
 
-      const withdrawn = await as(people.alice)(
-        `/api/workspaces/${workspaceId}/invitations/${second.invitation.id}`,
-        { method: 'DELETE' }
-      )
+      const withdrawn = await as(people.alice).api.workspaces[':workspaceId'].invitations[
+        ':invitationId'
+      ].$delete({ param: { workspaceId, invitationId: second.invitation.id } })
       expect(withdrawn.status).toBe(204)
       const listed = await responseJSON(
-        await as(people.alice)(`/api/workspaces/${workspaceId}/members`),
+        await as(people.alice).api.workspaces[':workspaceId'].members.$get({
+          param: { workspaceId }
+        }),
         membersSchema
       )
       expect(listed.invitations).toEqual([])
@@ -303,28 +306,29 @@ describe('workspace members', () => {
     const { runtime, as } = await testApp()
     try {
       const created = await responseJSON(
-        await as(people.alice)('/api/workspaces', { method: 'POST', json: { name: 'Studio' } }),
+        await as(people.alice).api.workspaces.$post({ json: { name: 'Studio' } }),
         v.object({ workspace: v.object({ id: v.string() }) })
       )
       const workspaceId = created.workspace.id
       const first = await responseJSON(
-        await as(people.alice)(`/api/workspaces/${workspaceId}/invitations`, {
-          method: 'POST',
+        await as(people.alice).api.workspaces[':workspaceId'].invitations.$post({
+          param: { workspaceId },
           json: { email: 'bob@example.com', role: 'viewer' }
         }),
         createdSchema
       )
       const resent = await responseJSON(
-        await as(people.alice)(
-          `/api/workspaces/${workspaceId}/invitations/${first.invitation.id}/resend`,
-          { method: 'POST' }
-        ),
+        await as(people.alice).api.workspaces[':workspaceId'].invitations[
+          ':invitationId'
+        ].resend.$post({ param: { workspaceId, invitationId: first.invitation.id } }),
         createdSchema
       )
       expect(resent.invitation).toMatchObject({ email: 'bob@example.com', role: 'viewer' })
       expect(resent.invitation.id).not.toBe(first.invitation.id)
       const listed = await responseJSON(
-        await as(people.alice)(`/api/workspaces/${workspaceId}/members`),
+        await as(people.alice).api.workspaces[':workspaceId'].members.$get({
+          param: { workspaceId }
+        }),
         v.object({
           invitations: v.array(
             v.object({
@@ -338,26 +342,24 @@ describe('workspace members', () => {
         { id: resent.invitation.id, invitedBy: { id: people.alice.userId, name: 'Alice' } }
       ])
 
-      const stale = await as(people.bob)(`/api/invitations/${first.invitation.id}/accept`, {
-        method: 'POST',
+      const stale = await as(people.bob).api.invitations[':invitationId'].accept.$post({
+        param: { invitationId: first.invitation.id },
         json: { token: new URL(first.acceptanceURL).hash.slice(1) }
       })
       expect(stale.status).toBe(404)
-      const accepted = await as(people.bob)(`/api/invitations/${resent.invitation.id}/accept`, {
-        method: 'POST',
+      const accepted = await as(people.bob).api.invitations[':invitationId'].accept.$post({
+        param: { invitationId: resent.invitation.id },
         json: { token: new URL(resent.acceptanceURL).hash.slice(1) }
       })
       expect(accepted.status).toBe(200)
 
-      const gone = await as(people.alice)(
-        `/api/workspaces/${workspaceId}/invitations/${resent.invitation.id}/resend`,
-        { method: 'POST' }
-      )
+      const gone = await as(people.alice).api.workspaces[':workspaceId'].invitations[
+        ':invitationId'
+      ].resend.$post({ param: { workspaceId, invitationId: resent.invitation.id } })
       expect(gone.status).toBe(404)
-      const notAdmin = await as(people.bob)(
-        `/api/workspaces/${workspaceId}/invitations/${first.invitation.id}/resend`,
-        { method: 'POST' }
-      )
+      const notAdmin = await as(people.bob).api.workspaces[':workspaceId'].invitations[
+        ':invitationId'
+      ].resend.$post({ param: { workspaceId, invitationId: first.invitation.id } })
       expect(notAdmin.status).toBe(403)
     } finally {
       await runtime.close()
@@ -367,7 +369,7 @@ describe('workspace members', () => {
     const { runtime, as } = await testApp()
     try {
       const created = await responseJSON(
-        await as(people.alice)('/api/workspaces', { method: 'POST', json: { name: 'Studio' } }),
+        await as(people.alice).api.workspaces.$post({ json: { name: 'Studio' } }),
         v.object({ workspace: v.object({ id: v.string() }) })
       )
       const workspaceId = created.workspace.id
@@ -376,7 +378,8 @@ describe('workspace members', () => {
         .insertInto('document')
         .values({ id: documentId, workspaceId, name: 'Poster', createdBy: people.alice.userId })
         .execute()
-      const remove = () => as(people.alice)(`/api/workspaces/${workspaceId}`, { method: 'DELETE' })
+      const remove = () =>
+        as(people.alice).api.workspaces[':workspaceId'].$delete({ param: { workspaceId } })
 
       const withDocument = await remove()
       expect(withDocument.status).toBe(409)
@@ -390,10 +393,15 @@ describe('workspace members', () => {
       expect(await (await remove()).json()).toEqual({ error: { code: 'cleanup_pending' } })
 
       await runtime.database.deleteFrom('document').where('id', '=', documentId).execute()
-      const notAdmin = await as(people.bob)(`/api/workspaces/${workspaceId}`, { method: 'DELETE' })
+      const notAdmin = await as(people.bob).api.workspaces[':workspaceId'].$delete({
+        param: { workspaceId }
+      })
       expect(notAdmin.status).toBe(404)
       expect((await remove()).status).toBe(204)
-      expect((await as(people.alice)(`/api/workspaces/${workspaceId}`)).status).toBe(404)
+      expect(
+        (await as(people.alice).api.workspaces[':workspaceId'].$get({ param: { workspaceId } }))
+          .status
+      ).toBe(404)
     } finally {
       await runtime.close()
     }

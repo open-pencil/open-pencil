@@ -1,3 +1,5 @@
+import { DEADLINE_MS } from '@open-pencil/std/timing'
+
 import { serializeHTML } from '../export/html'
 import type {
   CSSComputeOptions,
@@ -14,16 +16,28 @@ export interface BrowserCSSRuntimeOptions {
   sandbox?: 'shadow-root' | 'iframe'
 }
 
+/**
+ * The computed properties the importer reads, the same the HTML engine reports, so a page imports
+ * alike whichever runtime styles it.
+ */
 const DEFAULT_COMPUTED_PROPERTIES = [
+  'align-content',
   'align-items',
+  'align-self',
   'aspect-ratio',
+  'backdrop-filter',
+  'background-clip',
   'background-color',
   'background-image',
+  'background-position',
+  'background-repeat',
+  'background-size',
   'border-bottom-color',
-  'border-bottom-style',
   'border-bottom-left-radius',
   'border-bottom-right-radius',
+  'border-bottom-style',
   'border-bottom-width',
+  'border-collapse',
   'border-left-color',
   'border-left-style',
   'border-left-width',
@@ -31,53 +45,106 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'border-right-color',
   'border-right-style',
   'border-right-width',
+  'border-spacing',
   'border-top-color',
-  'border-top-style',
   'border-top-left-radius',
   'border-top-right-radius',
+  'border-top-style',
   'border-top-width',
+  'bottom',
   'box-shadow',
   'box-sizing',
+  'caption-side',
+  'clip-path',
   'color',
   'column-gap',
+  'content',
   'display',
-  'align-self',
-  'bottom',
+  'fill',
+  'fill-opacity',
+  'fill-rule',
+  'filter',
+  'flex-basis',
   'flex-direction',
+  'flex-grow',
+  'flex-shrink',
   'flex-wrap',
   'font-family',
   'font-size',
+  'font-stretch',
   'font-style',
   'font-weight',
   'gap',
+  'grid-column-end',
+  'grid-column-start',
+  'grid-row-end',
+  'grid-row-start',
+  'grid-template-columns',
+  'grid-template-rows',
   'height',
   'justify-content',
-  'letter-spacing',
+  'justify-items',
+  'justify-self',
   'left',
+  'letter-spacing',
   'line-height',
+  'list-style-type',
+  'margin-bottom',
+  'margin-left',
+  'margin-right',
+  'margin-top',
   'max-height',
   'max-width',
   'min-height',
   'min-width',
+  'mix-blend-mode',
   'object-fit',
+  'object-position',
   'opacity',
+  'outline-color',
+  'outline-offset',
+  'outline-style',
+  'outline-width',
   'overflow',
+  'overflow-x',
+  'overflow-y',
   'padding-bottom',
   'padding-left',
   'padding-right',
   'padding-top',
   'position',
   'right',
+  'rotate',
   'row-gap',
+  'scale',
+  'stroke',
+  'stroke-dasharray',
+  'stroke-linecap',
+  'stroke-linejoin',
+  'stroke-opacity',
+  'stroke-width',
   'text-align',
+  'text-anchor',
+  'text-decoration-color',
   'text-decoration-line',
+  'text-decoration-style',
+  'text-decoration-thickness',
+  'text-indent',
+  'text-overflow',
   'text-shadow',
   'text-transform',
+  'text-underline-offset',
+  'text-wrap-mode',
   'top',
   'transform',
   'transform-origin',
+  'translate',
+  'vertical-align',
+  'visibility',
   'white-space',
-  'width'
+  'width',
+  'word-spacing',
+  'z-index'
 ] as const
 
 function resolveBrowserDocument(documentOverride: Document | undefined): Document {
@@ -182,11 +249,26 @@ function computedStyleToRecord(
   return entries
 }
 
+const SIDE_MARGINS = ['margin-left', 'margin-right'] as const
+
+/**
+ * Gives `auto` side margins as `auto`: `getComputedStyle` reports the length layout resolved them
+ * to, which loses that they center or end-align the block. Their computed value says so where the
+ * browser has CSS Typed OM; elsewhere the lengths stay.
+ */
+function keepAutoSideMargins(element: Element, style: Record<string, string>): void {
+  if (!('computedStyleMap' in element)) return
+  const computed = element.computedStyleMap()
+  for (const side of SIDE_MARGINS) {
+    if (computed.get(side)?.toString() === 'auto') style[side] = 'auto'
+  }
+}
+
 /**
  * How long layout waits for an image to load. An image without a size takes its own once loaded,
  * moving what follows it, but a request that never ends must not hold an import forever.
  */
-const IMAGE_LOAD_LIMIT_MS = 10_000
+const IMAGE_LOAD_LIMIT_MS = DEADLINE_MS.request
 
 /** Resolves once every image under `root` has loaded or failed, or the time limit passes. */
 function imagesLoaded(root: ParentNode, view: Window): Promise<void> {
@@ -340,7 +422,9 @@ function copyComputedStyles(
   }
 
   for (const [designElement, domElement] of pairs) {
-    designElement.computedStyle = computedStyleToRecord(view.getComputedStyle(domElement), options)
+    const style = computedStyleToRecord(view.getComputedStyle(domElement), options)
+    keepAutoSideMargins(domElement, style)
+    designElement.computedStyle = style
   }
   // After the styles are copied: reading layout switches transforms off for a moment.
   if (options.layout) recordLayout(pairs, frame.origin, frame.styleRoot)

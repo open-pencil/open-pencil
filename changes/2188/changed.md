@@ -1,0 +1,1 @@
+- Cloud: the plan page shows your storage and monthly credits, and opens the server's billing pages to buy, change, or pay for a plan, so Cloud itself has no checkout of its own (#2188).

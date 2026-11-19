@@ -7,10 +7,10 @@ import {
   renderRegionToImage
 } from '@open-pencil/core/io/formats/raster'
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
-import { boundedImageScale } from '@/app/ai/tools/vision/inspect'
+import { boundedImageScale } from '@/app/ai/tools/vision/render'
 import type { EditorStore } from '@/app/editor/active-store'
 import type { ChangePreviewSize } from '@/app/settings/preferences/store'
 

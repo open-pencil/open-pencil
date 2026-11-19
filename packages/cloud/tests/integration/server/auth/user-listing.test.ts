@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
-  accountAuthenticationRequest,
   createAccountAuthenticationFixture,
-  createVerifiedCredentialAccount
+  createVerifiedCredentialAccount,
+  withCookie
 } from '#cloud-tests/helpers/account-authentication'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import * as v from 'valibot'
@@ -43,12 +43,9 @@ describe('deployment user listing', () => {
       const page = async (offset: number) =>
         (
           await responseJSON(
-            await fixture.app.fetch(
-              accountAuthenticationRequest(
-                `/api/admin/users?limit=2&offset=${offset}`,
-                undefined,
-                cookie
-              )
+            await fixture.client.api.admin.users.$get(
+              { query: { limit: '2', offset: String(offset) } },
+              withCookie(cookie)
             ),
             usersSchema
           )

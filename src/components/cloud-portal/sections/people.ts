@@ -1,11 +1,21 @@
 import type { CloudPortalClient } from '@open-pencil/cloud/client'
-import type { CloudAdminUser } from '@open-pencil/cloud/contract'
+import type { CloudAdminUser, EnrollmentStatus } from '@open-pencil/cloud/contract'
 
 import type { useDateFormat } from '@/app/i18n/date'
 
 import type { PortalPerson, PortalPersonAction } from '../types'
 
 type Dates = ReturnType<typeof useDateFormat>
+
+/** How the console words a request to join that is not approved. */
+const ACCESS = {
+  pending: 'waiting',
+  rejected: 'declined',
+  revoked: 'removed'
+} as const satisfies Record<
+  Exclude<EnrollmentStatus, 'approved'>,
+  NonNullable<PortalPerson['access']>
+>
 
 /** An account as the console shows it; `you` marks the administrator's own. */
 export function portalPerson(
@@ -25,6 +35,8 @@ export function portalPerson(
     joinedOn: dates.format(user.createdAt, 'date'),
     lastActive: user.lastActiveAt ? dates.relative(user.lastActiveAt) : null,
     workspaceCount: user.workspaceCount,
+    methods: user.methods,
+    ...(user.request && user.request !== 'approved' && { access: ACCESS[user.request] }),
     you: user.id === you
   }
 }
@@ -43,7 +55,8 @@ export function personAction(
     'reset-two-step': () => api.userAction('reset-two-step', person.id),
     'remove-picture': () => api.userAction('remove-picture', person.id),
     suspend: () => api.userAction('ban', person.id, reason),
-    restore: () => api.userAction('unban', person.id)
+    restore: () => api.userAction('unban', person.id),
+    delete: () => api.userAction('delete', person.id)
   }
   return requests[action]()
 }

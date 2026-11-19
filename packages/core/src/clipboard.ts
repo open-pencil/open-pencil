@@ -15,15 +15,15 @@ import {
 import type { GUID } from '@open-pencil/kiwi/fig'
 import { initCodec, type NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   collectionAssetKey,
   derivedAssetVersion,
   variableAssetKey
 } from '@open-pencil/scene-graph/asset-keys'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
-import { randomInt } from '@open-pencil/scene-graph/random'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
+import { appendAll } from '@open-pencil/std/arrays'
+import { randomInt } from '@open-pencil/std/random'
 
 import {
   collectComponentPropertyIds,

@@ -1,6 +1,8 @@
 import { ofetch } from 'ofetch'
 import * as v from 'valibot'
 
+import { DEADLINE_MS } from '@open-pencil/std/timing'
+
 export interface StockPhotoResult {
   /** The image at the size asked for, to place in the document. */
   url: string
@@ -167,7 +169,7 @@ const unsplashSearchSchema = v.object({ results: v.array(unsplashPhotoSchema) })
 const unsplashListSchema = v.array(unsplashPhotoSchema)
 
 /** How long a use report may take; the photo is already placed, so a slow one is dropped. */
-const REPORT_USE_TIMEOUT_MS = 10_000
+const REPORT_USE_TIMEOUT_MS = DEADLINE_MS.request
 
 /** Unsplash asks for links back to it to name the app they come from. */
 const UNSPLASH_REFERRAL = 'utm_source=openpencil&utm_medium=referral'

@@ -150,6 +150,11 @@ export type StorageProviderRegistration = {
   description: string
   preferenceFields: readonly StoragePreferenceField[]
   credentialFields: readonly StorageCredentialField[]
+  /**
+   * Whether the provider keeps its documents' comments itself, as Cloud does: the files it stores
+   * then leave them out, and the app reads them from the provider.
+   */
+  keepsComments?: boolean
   createAdapter(runtime: StorageProviderRuntime): StorageAdapter
 }
 

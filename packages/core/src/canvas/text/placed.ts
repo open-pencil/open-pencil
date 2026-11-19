@@ -3,13 +3,13 @@ import { isEqual } from 'es-toolkit/predicate'
 
 import type { Paragraph } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { appendAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
-import { textLengthPixels } from '@open-pencil/scene-graph/text'
+import { styleRunAt, textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+import { appendAll, maxOf, minOf } from '@open-pencil/std/arrays'
 
 import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
 import { shownSourceIndices } from '#core/text/case'
-import { candidateSources, fontAt, styleRunAt, type StyleRun } from '#core/text/character-face'
+import { candidateSources, fontAt, type StyleRun } from '#core/text/character/face'
 import { ELLIPSIS } from '#core/text/ellipsis'
 import {
   glyphOutlineSourceSync,
@@ -61,7 +61,7 @@ function styleRunsOver(
   for (let index = start; index < end; index++) {
     const source = sourceAt(index)
     if (!current || source < current.start || source >= current.start + current.length)
-      current = styleRunAt(node, source)
+      current = styleRunAt(node.styleRuns, source)
     runs.push(current)
   }
   return runs

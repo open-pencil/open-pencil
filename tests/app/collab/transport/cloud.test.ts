@@ -9,7 +9,7 @@ import {
   type RelayClientFrame,
   type RelayServerFrame
 } from '@open-pencil/cloud/contract'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { createCloudRelayJoin, relayReconnectDelay } from '@/app/collab/transport/cloud'

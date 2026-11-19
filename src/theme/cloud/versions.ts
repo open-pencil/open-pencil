@@ -13,7 +13,6 @@ export default {
     line: 'absolute top-0 bottom-[-0.75rem] left-1/2 w-px -translate-x-1/2 bg-border',
     body: 'flex min-w-0 flex-col gap-0.5',
     title: 'min-w-0 truncate font-semibold text-surface',
-    current: 'min-w-0 truncate font-semibold text-surface group-data-[selected]/item:text-accent',
     description: 'line-clamp-3 min-w-0 break-words text-surface/80',
     author: 'min-w-0 truncate text-2xs text-muted',
     time: 'text-2xs text-muted',

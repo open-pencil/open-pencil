@@ -13,6 +13,7 @@ export type TransactionalEmailKind =
   | 'enrollment-approved'
   | 'enrollment-rejected'
   | 'enrollment-revoked'
+  | 'enrollment-invited'
   | 'email-verification'
   | 'password-reset'
   | 'password-changed'
@@ -25,6 +26,7 @@ export type TransactionalEmailKind =
   | 'document-restored'
   | 'document-report-received'
   | 'document-report-decided'
+  | 'comment-notification'
 
 const documentInvitationEmailPayloadSchema = v.object({
   /** Null when the inviter's account is gone, so the email says someone invited you. */
@@ -47,7 +49,9 @@ const workspaceInvitationEmailPayloadSchema = v.object({
 const enrollmentEmailPayloadSchema = v.object({
   /** Null when the request named no one, so the email greets no one by name. */
   name: v.nullable(v.string()),
-  actionURL: v.string()
+  actionURL: v.string(),
+  /** An invitation letter to someone from openpencil.dev's waitlist, who asked nowhere else. */
+  waitlist: v.optional(v.literal(true))
 })
 
 const adminEnrollmentNotificationPayloadSchema = v.object({
@@ -104,6 +108,22 @@ const documentReportDecidedPayloadSchema = v.object({
   contactEmail: v.nullable(v.pipe(v.string(), v.email()))
 })
 
+/** To someone a comment names, or who takes part in its thread: what it says, and where. */
+const commentNotificationPayloadSchema = v.object({
+  /** The recipient's name, or null when the account has none. */
+  name: v.nullable(v.string()),
+  /** Who wrote the comment, or null when the account has no name. */
+  authorName: v.nullable(v.string()),
+  documentName: v.string(),
+  /** The comment names the recipient, or answers a thread they take part in. */
+  reason: v.picklist(['mention', 'reply']),
+  /** The start of what the comment says. */
+  excerpt: v.string(),
+  actionURL: v.string(),
+  /** Where the recipient chooses which comments they hear about. */
+  settingsURL: v.string()
+})
+
 const authenticationEmailPayloadSchema = v.object({
   name: v.string(),
   actionURL: v.optional(v.string()),
@@ -133,12 +153,15 @@ export const twoStepChangeSchema = v.picklist([
   'authenticator-off',
   'passkey-added',
   'passkey-removed',
-  'reset-by-administrator'
+  'reset-by-administrator',
+  'sign-in-method-removed'
 ])
 
 const twoStepChangedPayloadSchema = v.object({
   name: v.string(),
   change: twoStepChangeSchema,
+  /** For a removed sign-in method, which: `credential` for a password, or a provider. */
+  method: v.optional(v.string()),
   actionURL: v.string()
 })
 
@@ -157,6 +180,7 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('enrollment-approved', enrollmentEmailPayloadSchema),
   content('enrollment-rejected', enrollmentEmailPayloadSchema),
   content('enrollment-revoked', enrollmentEmailPayloadSchema),
+  content('enrollment-invited', enrollmentEmailPayloadSchema),
   content('email-verification', authenticationEmailPayloadSchema),
   content('password-reset', authenticationEmailPayloadSchema),
   content('password-changed', authenticationEmailPayloadSchema),
@@ -168,7 +192,8 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('document-blocked', documentBlockedPayloadSchema),
   content('document-restored', documentRestoredPayloadSchema),
   content('document-report-received', documentReportReceivedPayloadSchema),
-  content('document-report-decided', documentReportDecidedPayloadSchema)
+  content('document-report-decided', documentReportDecidedPayloadSchema),
+  content('comment-notification', commentNotificationPayloadSchema)
 ])
 
 /** A transactional email's kind with the payload that kind renders. */
@@ -216,3 +241,4 @@ export type DocumentReportReceivedPayload = v.InferOutput<
   typeof documentReportReceivedPayloadSchema
 >
 export type DocumentReportDecidedPayload = v.InferOutput<typeof documentReportDecidedPayloadSchema>
+export type CommentNotificationPayload = v.InferOutput<typeof commentNotificationPayloadSchema>

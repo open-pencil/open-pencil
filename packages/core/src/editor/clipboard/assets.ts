@@ -2,12 +2,12 @@ import { sumBy } from 'es-toolkit'
 import { filename } from 'pathe/utils'
 
 import type { Fill } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import {
   computeImageHash,
   IMPORTABLE_RASTER_TYPES,
   isSVGFile
 } from '@open-pencil/scene-graph/images'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { TRANSPARENT } from '#core/constants'
 import { parentLocalPoint, resolvePasteTarget } from '#core/editor/clipboard/paste/target'

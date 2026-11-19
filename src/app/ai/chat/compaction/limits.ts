@@ -2,11 +2,16 @@ import { computedAsync } from '@vueuse/core'
 import type { UIMessage } from 'ai'
 import { computed, type Ref } from 'vue'
 
+import { providerKind, type AIProviderID } from '@open-pencil/core/constants'
+
 import { contextTokensOf, usageOf } from '@/app/ai/chat/metadata'
 import { resolveModelsDevModel } from '@/app/ai/models/catalog'
 import { resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
 import { designModelConnection, designModelProfile } from '@/app/ai/models/store'
+import type { ResolvedAIModelRole } from '@/app/ai/models/types'
+import { cloudContextWindow } from '@/app/ai/providers/openpencil/context'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 
 import { compactionOf, messagesSinceCompaction } from './marker'
 
@@ -16,24 +21,43 @@ export interface ContextLimits {
   maxOutputTokens: number
 }
 
+/** A model's context window from its catalog: Cloud's for its own service, else the provider's. */
+async function contextWindowOf(
+  providerID: AIProviderID,
+  modelID: string,
+  cloudWorkspaceId: string | undefined
+): Promise<number | undefined> {
+  if (providerID === OPENPENCIL_AI_PROVIDER) {
+    return cloudWorkspaceId ? cloudContextWindow(cloudWorkspaceId, modelID) : undefined
+  }
+  const listed = await resolveProviderModel(providerID, modelID)
+  return listed?.contextWindow ?? (await resolveModelsDevModel(providerID, modelID))?.contextWindow
+}
+
 /**
- * The Design model's limits, when the conversation runs on a model the chat calls itself and
- * its catalog gives a window. Agents keep their own context.
+ * A model's limits, when the chat calls it itself and its catalog gives a window. Agents keep
+ * their own context.
  */
-export async function designContextLimits(): Promise<ContextLimits | null> {
-  const profile = designModelProfile.value
-  const providerID = designModelConnection.value?.providerID
-  if (!profile || !providerID || providerID.startsWith('acp:') || providerID === 'harness:pi')
-    return null
+export async function contextLimitsOf({
+  connection,
+  profile
+}: Pick<ResolvedAIModelRole, 'connection' | 'profile'>): Promise<ContextLimits | null> {
+  const providerID = connection.providerID
+  if (providerKind(providerID) !== 'api') return null
   const modelID = resolveLanguageModelID({
     providerID,
     modelID: profile.modelID,
     customModelID: profile.customModelID
   })
-  const listed = await resolveProviderModel(providerID, modelID)
-  const contextWindow =
-    listed?.contextWindow ?? (await resolveModelsDevModel(providerID, modelID))?.contextWindow
+  const contextWindow = await contextWindowOf(providerID, modelID, connection.cloudWorkspaceId)
   return contextWindow ? { contextWindow, maxOutputTokens: profile.maxOutputTokens } : null
+}
+
+/** The Design model's limits, which the conversation's requests fill. */
+export async function designContextLimits(): Promise<ContextLimits | null> {
+  const profile = designModelProfile.value
+  const connection = designModelConnection.value
+  return profile && connection ? contextLimitsOf({ connection, profile }) : null
 }
 
 /**

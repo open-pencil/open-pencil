@@ -9,12 +9,14 @@ import { useRouter } from 'vue-router'
 import { provideEditor } from '@open-pencil/vue'
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { watchCloudAISetup } from '@/app/ai/providers/openpencil/setup'
 import { startCloud } from '@/app/cloud/integration'
+import { useAutosaveFeedback } from '@/app/document/autosave/feedback'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { endRecoverySession, startRecoverySession } from '@/app/document/recovery/session'
 import { useFollowingEditorStore } from '@/app/editor/active-store'
+import { useInterfaceDirection } from '@/app/i18n/direction'
 import { offerCrashReports } from '@/app/reports/crash'
-import { useInterfaceDirection } from '@/app/shell/direction'
 import { interfaceScalePreference } from '@/app/shell/interface-scale'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
@@ -25,9 +27,9 @@ import { useWebUpdates } from '@/app/shell/updater/web'
 import { openSaveTo } from '@/app/storage/save-to/session'
 import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
+import CampaignPromptHost from '@/components/campaigns/CampaignPromptHost.vue'
 import { CloudHosts } from '@/components/cloud/integration'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
-import DonationPrompt from '@/components/donation/DonationPrompt.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
 import ReportDialogHost from '@/components/reports/ReportDialogHost.vue'
@@ -56,6 +58,7 @@ useHead({
 provideEditor(useFollowingEditorStore())
 useAppTheme()
 useDocumentCloseProtection()
+useAutosaveFeedback()
 useRestartApprovals()
 useWebUpdates()
 startRecoverySession()
@@ -79,6 +82,8 @@ onMounted(() => {
       saveTo: (store, serverId) => openSaveTo(store, { profileId: serverId })
     })
   )
+  // Signing in to a Cloud plan with AI sets the models up, so nobody has to choose one.
+  onUnmounted(watchCloudAISetup())
 })
 </script>
 
@@ -97,7 +102,7 @@ onMounted(() => {
         <PublishLibraryDialog />
         <LibraryUpdateReviewDialog />
         <UsageStatsPrompt />
-        <DonationPrompt />
+        <CampaignPromptHost />
         <ReportDialogHost />
         <AppToaster />
         <VoiceCallAudio />

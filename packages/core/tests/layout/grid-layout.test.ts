@@ -5,7 +5,7 @@ import { autoFrame, fixed, fr, gridFrame, pageId, rect } from '#core-tests/helpe
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { computeLayout, computeAllLayouts } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 describe('Grid Layout', () => {

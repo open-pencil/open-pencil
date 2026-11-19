@@ -40,6 +40,9 @@ function authAdapter() {
     async resolveAccountSession() {
       return null
     },
+    async twoStepConfirmed() {
+      return true
+    },
     async resolveAccessToken() {
       return null
     },
@@ -59,7 +62,7 @@ function authAdapter() {
       return complete()
     },
     async startSocialLink() {
-      return 'https://accounts.example.com/link'
+      return { url: 'https://accounts.example.com/link', headers: new Headers() }
     },
     async unlinkAuthenticationMethod() {
       return complete()
@@ -223,6 +226,27 @@ describe('deployment admin user safety', () => {
           aaguid: null
         })
         .execute()
+      // The administrator and the suspended account use a password; Grace, Google and Apple.
+      await runtime.database
+        .insertInto('account')
+        .values(
+          (
+            [
+              [ADMIN_ID, 'credential'],
+              [USER_ID, 'google'],
+              [USER_ID, 'apple'],
+              [SUSPENDED_ID, 'credential']
+            ] as const
+          ).map(([userId, providerId], index) => ({
+            id: crypto.randomUUID(),
+            userId,
+            providerId,
+            accountId: `${providerId}-${userId}`,
+            createdAt: new Date(Date.UTC(2026, 0, 1 + index)),
+            updatedAt: new Date()
+          }))
+        )
+        .execute()
       const workspaceId = crypto.randomUUID()
       await runtime.database
         .insertInto('workspace')
@@ -253,6 +277,24 @@ describe('deployment admin user safety', () => {
         'without-two-step': 1
       })
       expect(everyone.users.map((user) => user.twoStep)).toEqual([true, false, true])
+      expect(everyone.users.map((user) => user.methods)).toEqual([
+        ['credential'],
+        ['google', 'apple'],
+        ['credential']
+      ])
+      expect((await service.list({ method: 'apple' })).users.map((user) => user.id)).toEqual([
+        USER_ID
+      ])
+      // A sign-in method narrows every filter, and the counts follow it.
+      const passwords = await service.list({ method: 'password' })
+      expect(passwords.users.map((user) => user.id)).toEqual([ADMIN_ID, SUSPENDED_ID])
+      expect(passwords.counts).toEqual({
+        all: 2,
+        administrators: 1,
+        suspended: 1,
+        'without-two-step': 0
+      })
+      expect((await service.list({ filter: 'suspended', method: 'google' })).users).toEqual([])
       expect(everyone.users[1]).toMatchObject({
         image: 'https://images.example.com/grace.png',
         workspaceCount: 1,
@@ -276,10 +318,29 @@ describe('deployment admin user safety', () => {
         USER_ID
       ])
 
+      // Where everyone may join, the list says nothing about requests.
+      expect(everyone.users.every((user) => user.request === undefined)).toBe(true)
+      // Where people are approved, an account that signed in but waits shows its request.
+      await runtime.database
+        .insertInto('enrollment')
+        .values([
+          { id: crypto.randomUUID(), emailNormalized: 'admin@example.com', status: 'approved' },
+          { id: crypto.randomUUID(), emailNormalized: 'grace@example.com', status: 'pending' }
+        ])
+        .execute()
+      const approving = createAdminUserService(runtime.database, authAdapter(), { approval: true })
+      expect((await approving.list()).users.map((user) => user.request)).toEqual([
+        'approved',
+        'pending',
+        null
+      ])
+
       const detail = await service.detail(USER_ID)
       expect(detail?.workspaces).toEqual([
         expect.objectContaining({ id: workspaceId, name: 'Studio', role: 'admin', memberCount: 1 })
       ])
+      expect(detail?.methods.map((method) => method.provider)).toEqual(['google', 'apple'])
+      expect(detail?.methods.every((method) => method.id.length > 0)).toBe(true)
       expect(await service.detail(crypto.randomUUID())).toBeNull()
     } finally {
       await runtime.close()
@@ -356,6 +417,115 @@ describe('deployment admin user safety', () => {
           action: 'user.two-step-reset',
           actor: { id: ADMIN_ID, name: 'Admin' },
           subject: { type: 'user', id: USER_ID, name: 'Locked Out' }
+        })
+      ])
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('removes a sign-in method from another account, keeping its last, and says so', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      await runtime.database
+        .insertInto('user')
+        .values([
+          {
+            id: ADMIN_ID,
+            name: 'Admin',
+            email: 'admin@example.com',
+            emailVerified: true,
+            role: 'admin'
+          },
+          {
+            id: USER_ID,
+            name: 'Grace',
+            email: 'grace@example.com',
+            emailVerified: true,
+            role: 'user'
+          }
+        ])
+        .execute()
+      const [password, google, adminPassword] = [
+        { id: crypto.randomUUID(), userId: USER_ID, providerId: 'credential' },
+        { id: crypto.randomUUID(), userId: USER_ID, providerId: 'google' },
+        { id: crypto.randomUUID(), userId: ADMIN_ID, providerId: 'credential' }
+      ]
+      await runtime.database
+        .insertInto('account')
+        .values(
+          [password, google, adminPassword].map((method) => ({
+            ...method,
+            accountId: method.id,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }))
+        )
+        .execute()
+      const notices: string[] = []
+      const service = createAdminUserService(runtime.database, authAdapter(), {
+        notify: {
+          ...ignoredSecurityNotices,
+          sendVerification: complete,
+          sendPasswordReset: complete,
+          sendPasswordChanged: complete,
+          async sendTwoStepChanged(input) {
+            notices.push(`${input.email}:${input.change}:${input.method}`)
+          }
+        }
+      })
+
+      // An administrator changes their own on their security page.
+      await expect(
+        service.removeSignInMethod(ADMIN_ID, ADMIN_ID, adminPassword.id)
+      ).rejects.toThrow('themselves')
+      // A method of another account names nothing here.
+      await expect(
+        service.removeSignInMethod(ADMIN_ID, USER_ID, adminPassword.id)
+      ).rejects.toThrow()
+
+      // A notice that cannot be queued takes the removal back with it, so a retry still finds it.
+      const unqueued = createAdminUserService(runtime.database, authAdapter(), {
+        notify: {
+          ...ignoredSecurityNotices,
+          sendVerification: complete,
+          sendPasswordReset: complete,
+          sendPasswordChanged: complete,
+          sendTwoStepChanged: () => Promise.reject(new Error('queue down'))
+        }
+      })
+      await expect(unqueued.removeSignInMethod(ADMIN_ID, USER_ID, google.id)).rejects.toThrow()
+
+      await service.removeSignInMethod(ADMIN_ID, USER_ID, google.id)
+      const left = await runtime.database
+        .selectFrom('account')
+        .select('providerId')
+        .where('userId', '=', USER_ID)
+        .execute()
+      expect(left).toEqual([{ providerId: 'credential' }])
+      expect(notices).toEqual(['grace@example.com:sign-in-method-removed:google'])
+      // The Google account can't link itself back by Grace's email at its next sign-in.
+      const blocks = await runtime.database
+        .selectFrom('verification')
+        .select(['identifier', 'value'])
+        .execute()
+      expect(blocks).toEqual([
+        { identifier: `sign-in-method-block:${USER_ID}:google`, value: google.id }
+      ])
+
+      // The account keeps a way in.
+      await expect(
+        service.removeSignInMethod(ADMIN_ID, USER_ID, password.id)
+      ).rejects.toMatchObject({ code: 'last_authentication_method' })
+      expect(notices).toHaveLength(1)
+
+      const { events } = await createAdminAuditService(runtime.database).list()
+      expect(events).toEqual([
+        expect.objectContaining({
+          action: 'user.sign-in-method-removed',
+          actor: { id: ADMIN_ID, name: 'Admin' },
+          subject: { type: 'user', id: USER_ID, name: 'Grace' },
+          metadata: { provider: 'google' }
         })
       ])
     } finally {

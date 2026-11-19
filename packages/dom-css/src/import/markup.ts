@@ -1,7 +1,7 @@
 import { INLINE_TAGS } from '#dom-css/import/flow'
 import { parseStyleAttribute } from '#dom-css/import/style-attribute'
 import type { DesignDocument, DesignElement, DesignNode } from '#dom-css/types'
-import { parseFragment, type DefaultTreeAdapterTypes } from 'parse5'
+import { html, parseFragment, type DefaultTreeAdapterTypes } from 'parse5'
 
 function attrsToRecord(attrs: DefaultTreeAdapterTypes.Element['attrs']): Record<string, string> {
   const result: Record<string, string> = {}
@@ -63,7 +63,8 @@ function childToDesignNode(
   const attrs = attrsToRecord(node.attrs)
   const element: DesignElement = {
     type: 'element',
-    tagName: node.tagName.toLowerCase(),
+    // SVG names such as `clipPath` keep the case the parser gives them, which SVG needs.
+    tagName: node.namespaceURI === html.NS.SVG ? node.tagName : node.tagName.toLowerCase(),
     attrs,
     children: childrenToDesignNodes(node.childNodes, isInlineElement(node))
   }

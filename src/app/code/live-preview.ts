@@ -4,6 +4,7 @@ import { reconcileRenderedLayers, type TreeNode } from '@open-pencil/design-jsx'
 import { Fragment } from '@open-pencil/design-jsx/jsx-runtime'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { convertDesignJSXRoots } from '@/app/code/sandbox/convert'
 import { evaluateDesignJSX } from '@/app/code/sandbox/evaluate'
@@ -94,7 +95,7 @@ export async function previewDesignJSX(
   try {
     roots = convertDesignJSXRoots(evaluated.roots, evaluated.lineOffset, evaluated.collections)
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+    return { ok: false, error: errorMessage(error) }
   }
 
   const before = store.snapshotPage()
@@ -122,7 +123,12 @@ export async function previewDesignJSX(
       onNode
     })
     const renderedIds = results.map(({ id }) => id)
-    const { rootIds, ids } = reconcileRenderedLayers(store.graph, session.rootIds, renderedIds)
+    const { rootIds, ids } = reconcileRenderedLayers(
+      store.graph,
+      session.rootIds,
+      renderedIds,
+      results[0]?.keepChildrenIds
+    )
     if (session.targetIndex >= 0) {
       for (const [index, id] of rootIds.entries()) {
         store.graph.insertChildAt(id, session.targetParentId, session.targetIndex + index)
@@ -141,7 +147,7 @@ export async function previewDesignJSX(
   } catch (error) {
     store.restorePageFromSnapshot(before)
     store.select(selectionBefore)
-    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+    return { ok: false, error: errorMessage(error) }
   }
 }
 

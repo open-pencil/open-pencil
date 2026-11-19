@@ -5,8 +5,7 @@ import { drawGuides } from '#core/canvas/guides/draw'
 import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
 import { placeIssueMarkers } from '#core/canvas/issues/layout'
 import { drawComponentLabels, drawFrameTitles, drawSectionTitles } from '#core/canvas/labels/draw'
-import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
-import { drawNodeEditOverlay } from '#core/canvas/node-edit-overlay'
+import { cachedGlyphWidth } from '#core/canvas/labels/paragraphs'
 import {
   drawAutoLayoutHover,
   drawFlashes,
@@ -28,11 +27,12 @@ import { drawGradientHandles } from '#core/canvas/overlays/handles/gradient'
 import { drawShapeHandles } from '#core/canvas/overlays/handles/shape'
 import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
+import { drawNodeEditOverlay } from '#core/canvas/overlays/node-edit'
+import { drawPenOverlay, drawPencilOverlay } from '#core/canvas/overlays/pen'
 import { drawPixelGrid } from '#core/canvas/overlays/pixel-grid'
 import { drawCodeFocus } from '#core/canvas/overlays/selection'
 import { drawSlotOutlines } from '#core/canvas/overlays/slots'
-import { drawPenOverlay, drawPencilOverlay } from '#core/canvas/pen-overlay'
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import { drawRulers } from '#core/canvas/rulers'
 import { RULER_SIZE } from '#core/constants'
 import { editedBlurRamp } from '#core/editor/handles/blur-ramp'
@@ -189,7 +189,7 @@ export function drawOverlayPass(
   drawMarquee(r, canvas, overlays.marquee)
   drawLayoutInsertIndicator(r, canvas, overlays.layoutInsertIndicator)
   if (!measuring && !overlays.transforming && r.editHandles) {
-    drawAutoLayoutHover(r, canvas, graph, overlays.autoLayoutHover)
+    drawAutoLayoutHover(r, canvas, graph, overlays.autoLayoutHover, overlays.rotationPreview)
   }
   drawNodeEditOverlay(r, canvas, graph, overlays.nodeEditState)
   drawPenOverlay(r, canvas, overlays.penState)
@@ -208,7 +208,8 @@ export function drawChromePass(
   overlays: RenderOverlays
 ): void {
   r.profiler.beginPhase('render:rulers')
-  if (r.showRulers) drawRulers(r, canvas, graph, selectedIds, overlays.guides)
+  if (r.showRulers)
+    drawRulers(r, canvas, graph, selectedIds, overlays.guides, overlays.rotationPreview)
   r.profiler.endPhase('render:rulers')
   r.profiler.drawHUD(canvas, r.showRulers)
 }

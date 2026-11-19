@@ -24,14 +24,14 @@ import { createCanvasTransformInput } from '#vue/canvas/transform/input'
 import { finishMarquee } from '#vue/canvas/transform/marquee'
 import { commitRotationDrag } from '#vue/canvas/transform/rotation'
 import { handleNodeEditPointerUp, updateNodeEditHover } from '#vue/canvas/vector-input/input'
-import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
+import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout/hover'
 import { createClickCounter } from '#vue/shared/input/click-count'
 import { refreshConnectorDrag } from '#vue/shared/input/connector/draw'
 import { handleMoveUp } from '#vue/shared/input/move/drag'
 import { setupPanZoom } from '#vue/shared/input/pan/zoom'
-import { commitResizePreview } from '#vue/shared/input/resize'
+import { commitResizePreview } from '#vue/shared/input/resize/apply'
 import { commitSelectionResize } from '#vue/shared/input/resize/selection'
-import { updateHoverCursor } from '#vue/shared/input/select'
+import { updateHoverCursor } from '#vue/shared/input/select/hover'
 import { resolveShapeHandleHover } from '#vue/shared/input/shape-handles'
 import { useSpaceHeld } from '#vue/shared/input/space-key'
 import type { DragState } from '#vue/shared/input/types'
@@ -260,8 +260,10 @@ export function useCanvasInput(
     if (!editor.state.editingTextId) canvasRef.value?.focus()
     editor.setHoveredNode(null)
     const { sx, sy, cx, cy } = getCoords(e)
-    // Guides belong to the document, so a read-only one neither moves nor gains them.
-    const guidesEditable = e.button === 0 && editsLayers()
+    // Guides belong to the document, so a read-only one neither moves nor gains them. A press
+    // with the Comment tool places a comment instead, and leaves a selected guide selected.
+    const commenting = editor.state.activeTool === 'COMMENT'
+    const guidesEditable = e.button === 0 && editsLayers() && !commenting
     if (guidesEditable && guideInput.tryStartExisting(sx, sy, e.altKey)) {
       e.preventDefault()
       return
@@ -270,7 +272,7 @@ export function useCanvasInput(
       e.preventDefault()
       return
     }
-    editor.setSelectedGuide(null)
+    if (!commenting) editor.setSelectedGuide(null)
 
     const clickCount = recordClick(sx, sy, e.detail)
     if (clickCount >= 2 && takesMultiClick(e)) {

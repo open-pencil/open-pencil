@@ -6,7 +6,7 @@ import { cloneVectorNetwork, copyGeometryPaths, copyStrokes } from '@open-pencil
 import { collectResizeDescendants } from '@open-pencil/scene-graph/resize'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
+import { applyResize, commitResizePreview } from '#vue/shared/input/resize/apply'
 import type { DragResize } from '#vue/shared/input/types'
 const RED: Fill = {
   type: 'SOLID',

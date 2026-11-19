@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
+import { usePortalSignInMethodLabel } from '@/app/cloud-portal/methods'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
@@ -49,8 +50,7 @@ const emit = defineEmits<{
 }>()
 
 const messages = useCloudPortalMessages()
-const providerLabel = (provider: PortalSignInMethod) =>
-  provider === 'google' ? messages.value.providerGoogle : messages.value.providerApple
+const providerLabel = usePortalSignInMethodLabel()
 const social = computed(() =>
   methods.flatMap((method) =>
     method.provider === 'credential' ? [] : [{ ...method, provider: method.provider }]
@@ -142,12 +142,12 @@ function confirm() {
       <template #title>{{ messages.twoStepSection }}</template>
       <template #description>{{ messages.twoStepSectionDescription }}</template>
       <SettingsGroup>
-        <SettingsRow :label="messages.authenticatorApp">
-          <template #description>
-            <p class="mt-1 flex items-center gap-1.5 text-xs text-muted">
+        <SettingsRow :description="messages.authenticatorOff">
+          <template #label>
+            <span class="flex items-center gap-1.5">
+              {{ messages.authenticatorApp }}
               <AppBadge v-if="authenticator.on">{{ messages.authenticatorOn }}</AppBadge>
-              <template v-else>{{ messages.authenticatorOff }}</template>
-            </p>
+            </span>
           </template>
           <div v-if="authenticator.on" class="flex items-center gap-1">
             <AppButton size="sm" variant="ghost" :disabled="busy" @click="emit('newRecoveryCodes')">

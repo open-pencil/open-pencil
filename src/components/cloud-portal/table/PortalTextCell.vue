@@ -2,13 +2,14 @@
 import type { Component } from 'vue'
 
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
+import { PORTAL_TEXT_STAND_IN } from '@/theme/cloud-portal/columns'
 
 import { portalTable } from './ui'
 
 /**
  * A cell of words: a line of text, optionally strong, with an icon or badge beside it, a line under
- * it, and a quotation such as a reason someone gave. `narrowDetail` is a line only a narrow table
- * shows, for a column it hides.
+ * it, and a quotation such as a reason someone gave. `narrowDetail` stands in for the row's `text`
+ * column while a narrow table hides it (`PORTAL_TEXT_STAND_IN`).
  */
 const {
   text,
@@ -38,7 +39,7 @@ const ui = portalTable()
         {{ text }}
         <AppBadge v-if="badge">{{ badge }}</AppBadge>
       </p>
-      <p v-if="narrowDetail" :class="[ui.detail(), '@xl/table:hidden']">{{ narrowDetail }}</p>
+      <p v-if="narrowDetail" :class="[ui.detail(), PORTAL_TEXT_STAND_IN]">{{ narrowDetail }}</p>
       <p v-if="detail" :class="ui.detail()">{{ detail }}</p>
       <p v-if="quote" :class="ui.quote()">“{{ quote }}”</p>
     </div>

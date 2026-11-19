@@ -1,5 +1,8 @@
+import compareVersions from 'semver/functions/compare.js'
+import parseVersion from 'semver/functions/parse.js'
 import * as v from 'valibot'
 
+import { isKnownSocialProvider } from './account'
 import { cloudBillingDiscoverySchema } from './billing'
 import { cloudServicesDiscoverySchema } from './services'
 
@@ -8,6 +11,15 @@ export const CLOUD_DISCOVERY_PATH = '/.well-known/openpencil' as const
 
 export const cloudDeploymentSchema = v.picklist(['official', 'self-hosted'])
 export type CloudDeployment = v.InferOutput<typeof cloudDeploymentSchema>
+
+/**
+ * The server's sign-in providers that this editor knows. A newer server may offer one this editor
+ * has no button for; it is left out rather than failing discovery, so the editor still connects.
+ */
+const socialProvidersSchema = v.pipe(
+  v.array(v.string()),
+  v.transform((providers) => providers.filter(isKnownSocialProvider))
+)
 
 export const cloudAuthenticationSchema = v.object({
   emailPassword: v.optional(
@@ -23,7 +35,7 @@ export const cloudAuthenticationSchema = v.object({
       )
     })
   ),
-  socialProviders: v.array(v.picklist(['apple', 'google'])),
+  socialProviders: socialProvidersSchema,
   enterpriseSSO: v.boolean(),
   enrollmentMode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open'),
   mfa: v.optional(
@@ -44,8 +56,47 @@ export const cloudCapabilitiesSchema = v.object({
 })
 export type CloudCapabilities = v.InferOutput<typeof cloudCapabilitiesSchema>
 
-/** A released editor version, `major.minor.patch`. */
-export const cloudEditorVersionSchema = v.pipe(v.string(), v.regex(/^\d+\.\d+\.\d+$/))
+/**
+ * An editor version, as SemVer: a release such as `0.18.0`, or a pre-release such as
+ * `0.18.0-beta.2` or a nightly's `0.18.0-nightly.20261116`.
+ *
+ * Editors before 0.18.0 accept only `major.minor.patch` here and fail discovery on anything else,
+ * so a server names a pre-release minimum only once its minimum is already 0.18.0 or later.
+ */
+export const cloudEditorVersionSchema = v.pipe(
+  v.string(),
+  v.check(isSemVer, 'Expected a SemVer version')
+)
+
+/**
+ * Whether the text is exactly a SemVer version, build metadata included: semver's own parse also
+ * takes a `v` prefix or spaces, which a version here never has.
+ */
+function isSemVer(value: string): boolean {
+  const parsed = parseVersion(value)
+  if (!parsed) return false
+  const build = parsed.build.length > 0 ? `+${parsed.build.join('.')}` : ''
+  return `${parsed.version}${build}` === value
+}
+
+/**
+ * The header desktop editors send with each request, naming their version, so a server can refuse
+ * an editor older than its `minimumEditorVersion`. Browser editors leave it out: the server serves
+ * them, and an older server's CORS rules would refuse a header they don't list.
+ */
+export const CLOUD_EDITOR_VERSION_HEADER = 'X-OpenPencil-Editor-Version' as const
+
+/**
+ * Whether `version` is `minimum` or later, in SemVer order: a pre-release comes before its
+ * release, so `0.18.0-beta.2` is not at least `0.18.0`; a release's nightlies come after its
+ * betas and order by date. To admit a release's pre-releases, name the earliest one, such as
+ * `0.18.0-beta.1`, or `0.18.0-nightly.20261116` for nightlies from that day on. A
+ * version that isn't SemVer, on either side, is not at least anything.
+ */
+export function isEditorVersionAtLeast(version: string, minimum: string): boolean {
+  if (!isSemVer(version) || !isSemVer(minimum)) return false
+  return compareVersions(version, minimum) >= 0
+}
 
 /**
  * Whether editors offer this server to everyone, and from which editor version on. Only the
@@ -72,6 +123,24 @@ export const cloudLegalDiscoverySchema = v.object({
 })
 export type CloudLegalDiscovery = v.InferOutput<typeof cloudLegalDiscoverySchema>
 
+/** A web address a page may link or load: `http` or `https` only, never a script or data URL. */
+const webURLSchema = v.pipe(
+  v.string(),
+  v.url(),
+  v.check((value) => ['http:', 'https:'].includes(new URL(value).protocol))
+)
+
+/**
+ * How a self-hosted server names itself on its public pages: the operator's name and logo in the
+ * bar, and where its people get help. The official server is OpenPencil's own and names none.
+ */
+export const cloudBrandingSchema = v.object({
+  name: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(80))),
+  logoURL: v.optional(webURLSchema),
+  helpURL: v.optional(webURLSchema)
+})
+export type CloudBranding = v.InferOutput<typeof cloudBrandingSchema>
+
 /**
  * The server's community gallery: the workspace whose documents anyone may open read-only.
  * Saving to it publishes, so editors never choose it for anyone and say so when it is chosen.
@@ -93,13 +162,19 @@ export const cloudDiscoverySchema = v.object({
   authentication: cloudAuthenticationSchema,
   capabilities: cloudCapabilitiesSchema,
   listing: v.optional(cloudListingSchema),
+  /**
+   * The oldest editor version the server works with. Older editors ask to be updated instead of
+   * connecting, and the server refuses their requests.
+   */
+  minimumEditorVersion: v.optional(cloudEditorVersionSchema),
   /** The services editors reach with Cloud-signed tokens; absent when the deployment has none. */
   services: v.optional(cloudServicesDiscoverySchema),
   /** Where people manage their plan and buy credits; absent when the deployment does not bill. */
   billing: v.optional(cloudBillingDiscoverySchema),
   /** The community gallery; absent when the deployment has none. */
   community: v.optional(cloudCommunityDiscoverySchema),
-  legal: v.optional(cloudLegalDiscoverySchema)
+  legal: v.optional(cloudLegalDiscoverySchema),
+  branding: v.optional(cloudBrandingSchema)
 })
 export type CloudDiscovery = v.InferOutput<typeof cloudDiscoverySchema>
 

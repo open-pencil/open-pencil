@@ -3,7 +3,7 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { composeProjectName, localCloudDeploymentTOML } from './config'
 
@@ -141,6 +141,8 @@ async function start(project: string): Promise<void> {
   console.warn('Stop the services with `bun run cloud:dev:down`; their data is kept.')
 
   try {
+    // The Cloud package's own `dev` script, which loads its Vue email templates; plain `bun` reads
+    // a `.vue` import as its file path, and every email went out empty.
     process.exitCode = await execute(
       [
         'bunx',
@@ -149,8 +151,10 @@ async function start(project: string): Promise<void> {
         '--name',
         'cloud.open-pencil',
         'bun',
-        '--watch',
-        'packages/cloud/src/runtime/node/main.ts'
+        'run',
+        '--cwd',
+        'packages/cloud',
+        'dev'
       ],
       {
         allowFailure: true,

@@ -1,18 +1,18 @@
+import type { JSONValue, ToolResultPart, ToolSet, tool as createTool } from 'ai'
 /**
  * Adapter: tool definitions → Vercel AI SDK `tool()` objects.
  *
  * Consumes native tool input schemas and wraps execution with FigmaAPI instantiation.
  */
-
-import type { JSONValue, ToolResultPart, ToolSet, tool as createTool } from 'ai'
 import { isEmptyObject } from 'es-toolkit'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import type { FigmaAPI } from '#core/figma-api'
 import { graphOf } from '#core/figma-api/graph'
 
-import { isToolExposed, toolStandardJSONSchema, type ToolDef } from './schema'
+import { isToolExposed, toolInputFor, toolStandardJSONSchema, type ToolDef } from './schema'
 
 export interface ToolLogEntry {
   tool: string
@@ -206,7 +206,7 @@ export function toolsToAI(
     if (!isToolExposed(def, 'ai')) continue
     const toolOpts: Record<string, unknown> = {
       description: def.description,
-      inputSchema: toolStandardJSONSchema(def.input),
+      inputSchema: toolStandardJSONSchema(toolInputFor(def, 'ai')),
       execute: async (args: Record<string, unknown>, { toolCallId }: { toolCallId: string }) => {
         const startTime = Date.now()
         const figma = options.getFigma()
@@ -238,7 +238,7 @@ export function toolsToAI(
           }
           return execResult
         } catch (err) {
-          const errorMsg = err instanceof Error ? err.message : String(err)
+          const errorMsg = errorMessage(err)
           emitToolLog(options, def, args, startTime, figma, nodeBefore, null, {
             error: errorMsg,
             cause: err

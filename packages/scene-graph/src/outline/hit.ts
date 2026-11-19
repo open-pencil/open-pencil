@@ -2,10 +2,12 @@ import { compact } from 'es-toolkit'
 
 import { arrowCapOverflow, isArrowCap, lineStrokeEnds } from '../arrow-caps'
 import { getWorldMatrix } from '../coordinate'
+import { strokeWeightOf } from '../geometry'
 import type { SceneGraph } from '../graph'
 import Matrix from '../matrix'
+import { paintShows } from '../paints/shows'
 import type { Vector } from '../primitives'
-import type { Fill, SceneNode, Stroke } from '../types'
+import type { SceneNode, Stroke } from '../types'
 import { hitsArrowHeads } from './heads'
 import { containsByWinding, distanceToLines, distanceToSegment } from './point'
 import { shapeOutline, type OutlineArea, type ShapeOutline } from './shapes'
@@ -16,47 +18,28 @@ const EDGE_SAMPLES = 8
 /** How far a flattened curve may stray from the shape when nothing tighter is asked for. */
 const DEFAULT_TOLERANCE = 0.25
 
-/**
- * Whether a paint makes its layer clickable, as in Figma: a visible paint that shows something.
- * A paint at 0% opacity, or a gradient whose stops are all transparent, does not; 1% does, and
- * the layer's own opacity does not matter.
- */
-export function isHitPaint(paint: Fill): boolean {
-  if (!paint.visible || !(paint.opacity > 0)) return false
-  if (paint.gradientStops) return paint.gradientStops.some((stop) => stop.color.a > 0)
-  if (paint.type === 'SOLID') return paint.color.a > 0
-  return true
-}
-
 function insideArea(area: OutlineArea, point: Vector): boolean {
   return containsByWinding(area.contours, area.windingRule, point)
 }
 
-/** A stroke's weight; with independent borders the widest side, for layers without per-side lines. */
-function strokeWeightOf(node: SceneNode, stroke: Stroke): number {
-  if (node.independentStrokeWeights) {
-    return Math.max(
-      node.borderTopWeight,
-      node.borderRightWeight,
-      node.borderBottomWeight,
-      node.borderLeftWeight
-    )
-  }
-  return Number.isFinite(stroke.weight) ? stroke.weight : node.strokeWeight
+/** A stroke's weight, the widest side with sides of their own, for layers without per-side lines. */
+function hitWeight(node: SceneNode, stroke: Stroke): number {
+  const weight = strokeWeightOf(node, stroke)
+  return Number.isFinite(weight) ? weight : node.strokeWeight
 }
 
 /** The farthest a layer's clickable strokes reach outside its box, in its own units. */
 export function strokeReach(node: SceneNode): number {
   let reach = 0
   for (const stroke of node.strokes) {
-    if (!isHitPaint(stroke)) continue
-    const weight = strokeWeightOf(node, stroke)
+    if (!paintShows(stroke)) continue
+    const weight = hitWeight(node, stroke)
     // A line's stroke lies a full weight to one side of it.
     const side = node.type === 'LINE' || stroke.align === 'OUTSIDE'
     reach = Math.max(reach, side ? weight : weight / 2)
   }
   // Arrow heads reach past the stroke.
-  const hitStrokes = node.strokes.filter(isHitPaint)
+  const hitStrokes = node.strokes.filter(paintShows)
   return Math.max(reach, arrowCapOverflow(hitStrokes, node.strokeCap, node.vectorNetwork))
 }
 
@@ -306,7 +289,7 @@ function strokeHits(node: SceneNode, stroke: Stroke, probe: Probe, pad: number):
   if (probe.strokeAreaWithin) return probe.strokeAreaWithin(pad)
   const align = probe.closed && !probe.centered ? stroke.align : 'CENTER'
   if (probe.strokeOnEdge) {
-    const weight = strokeWeightOf(node, stroke)
+    const weight = hitWeight(node, stroke)
     return probe.edgeWithin(strokeReachAt(align, weight, probe.inside) + pad)
   }
   // A flat cap ends the stroke at the line's end; round and square caps paint past it.
@@ -321,7 +304,7 @@ function strokeHits(node: SceneNode, stroke: Stroke, probe: Probe, pad: number):
   }
   if (node.type === 'LINE' && probe.local) {
     // Figma strokes a line a full weight to one side, along the path the renderer draws.
-    const weight = strokeWeightOf(node, stroke)
+    const weight = hitWeight(node, stroke)
     if (!(weight > 0)) return false
     const { start, end } = lineStrokeEnds(node.width, node.height, weight, cap)
     if (reaches(measureLine([start, end], [true, true], probe.local), weight / 2)) return true
@@ -336,11 +319,11 @@ function strokeHits(node: SceneNode, stroke: Stroke, probe: Probe, pad: number):
   }
   const network = node.type === 'VECTOR' ? node.vectorNetwork : null
   if (network && probe.local) {
-    const weight = strokeWeightOf(node, stroke)
+    const weight = hitWeight(node, stroke)
     if (weight > 0 && hitsArrowHeads(network, cap, weight, probe.local, pad)) return true
   }
   return probe.lines.some((line, index) => {
-    const weight = probe.lineWeights?.[index] ?? strokeWeightOf(node, stroke)
+    const weight = probe.lineWeights?.[index] ?? hitWeight(node, stroke)
     // A side with no weight paints no border.
     if (!(weight > 0)) return false
     return reaches(line, strokeReachAt(align, weight, probe.inside))
@@ -363,7 +346,7 @@ export function hitsShape(
   const tolerance = pad > 0 ? Math.min(DEFAULT_TOLERANCE, pad / 4) : DEFAULT_TOLERANCE
   const probe = probeNode(graph, node, px, py, tolerance)
   if (!probe) return null
-  const fills = node.fills.filter(isHitPaint)
+  const fills = node.fills.filter(paintShows)
   if (fills.length > 0 && probe.closed && (probe.inside || probe.edgeWithin(pad))) return true
-  return node.strokes.some((stroke) => isHitPaint(stroke) && strokeHits(node, stroke, probe, pad))
+  return node.strokes.some((stroke) => paintShows(stroke) && strokeHits(node, stroke, probe, pad))
 }

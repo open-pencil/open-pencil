@@ -17,6 +17,7 @@ const DEFAULT_SECRET_NAMES = {
   googleClientId: 'GOOGLE_CLIENT_ID',
   googleClientSecret: 'GOOGLE_CLIENT_SECRET',
   applePrivateKey: 'APPLE_PRIVATE_KEY',
+  githubClientSecret: 'GITHUB_CLIENT_SECRET',
   s3AccessKeyId: 'S3_ACCESS_KEY_ID',
   s3SecretAccessKey: 'S3_SECRET_ACCESS_KEY',
   s3SessionToken: 'S3_SESSION_TOKEN',
@@ -52,8 +53,17 @@ const providerSchema = v.strictObject({
       private_key: defaultReference(DEFAULT_SECRET_NAMES.applePrivateKey),
       app_bundle_identifier: v.optional(textSchema)
     })
+  ),
+  github: v.optional(
+    v.strictObject({
+      client_id: configurableTextSchema,
+      client_secret: defaultReference(DEFAULT_SECRET_NAMES.githubClientSecret)
+    })
   )
 })
+
+/** Where replies go, when someone reads the email and writes back; `from` otherwise. */
+const replyToSchema = v.optional(v.pipe(v.string(), v.email()))
 
 const emailSchema = v.optional(
   v.variant('transport', [
@@ -61,6 +71,7 @@ const emailSchema = v.optional(
     v.strictObject({
       transport: v.literal('smtp'),
       from: textSchema,
+      reply_to: replyToSchema,
       smtp: v.strictObject({
         host: textSchema,
         port: positiveIntegerSchema,
@@ -73,7 +84,11 @@ const emailSchema = v.optional(
         })
       })
     }),
-    v.strictObject({ transport: v.literal('cloudflare'), from: textSchema })
+    v.strictObject({
+      transport: v.literal('cloudflare'),
+      from: textSchema,
+      reply_to: replyToSchema
+    })
   ]),
   { transport: 'none' }
 )
@@ -91,7 +106,17 @@ export const cloudDeploymentConfigSchema = v.strictObject({
     trusted_origins: v.optional(v.array(urlSchema), []),
     // The server's editor works with files on this device without signing in to the server.
     local_editor: v.optional(v.boolean(), true),
-    listing: v.optional(v.strictObject({ minimum_editor_version: cloudEditorVersionSchema }))
+    listing: v.optional(v.strictObject({ minimum_editor_version: cloudEditorVersionSchema })),
+    // How a self-hosted server names itself on its public pages.
+    branding: v.optional(
+      v.strictObject({
+        name: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(80))),
+        logo_url: v.optional(urlSchema),
+        help_url: v.optional(urlSchema)
+      })
+    ),
+    // Older editors ask to be updated, and the server refuses their requests.
+    minimum_editor_version: v.optional(cloudEditorVersionSchema)
   }),
   database: v.optional(
     v.strictObject({ url: defaultReference(DEFAULT_SECRET_NAMES.databaseURL) }),
@@ -292,7 +317,9 @@ export const cloudDeploymentConfigSchema = v.strictObject({
       host: v.optional(urlSchema, POSTHOG_DEFAULT_HOST),
       project_api_key: v.optional(configurableTextSchema, {
         from_env: DEFAULT_SECRET_NAMES.posthogProjectAPIKey
-      })
+      }),
+      /** Send the account and record IDs an error involved; off, reports name neither. */
+      include_ids: v.optional(v.boolean(), false)
     })
   )
 })

@@ -1,3 +1,5 @@
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
 import { viewDiagnosticsAction } from '@/app/diagnostics/view'
 import { readFigDocument } from '@/app/document/io/fig'
@@ -160,14 +162,14 @@ export async function openStorageDocumentInNewTab(
       const diagnostic = describeDiagnosticError(error)
       load.fail({
         code: 'read-failed',
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage(error),
         retryable: diagnostic.retryable ?? true
       })
       recordStorageFailure({ operation: 'download', ...diagnostic })
       toast.error(
         notificationMessages.get().openFileFailed({
           name: document.name,
-          error: error instanceof Error ? error.message : String(error)
+          error: errorMessage(error)
         }),
         viewDiagnosticsAction()
       )

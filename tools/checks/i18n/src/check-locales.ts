@@ -6,7 +6,7 @@ import { compact } from 'es-toolkit/array'
 import * as v from 'valibot'
 
 import { emailMessageDefaults } from '@open-pencil/cloud/email'
-import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONObject } from '@open-pencil/std/json'
 import {
   LOCALE_DIR_NAMES,
   TRANSLATED_LOCALES,

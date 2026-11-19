@@ -8,8 +8,10 @@ import {
   AI_PROVIDERS,
   AUTOMATION_HTTP_PORT,
   IS_TAURI,
-  type AIProviderID
+  type AIProviderID,
+  providerKind
 } from '@open-pencil/core/constants'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 import { useAIMessages } from '@open-pencil/vue/i18n'
 
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
@@ -25,7 +27,7 @@ async function checkMCPHealth(retries = 3, delayMs = 1000) {
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(`http://127.0.0.1:${AUTOMATION_HTTP_PORT}/health`, {
-        signal: AbortSignal.timeout(2000)
+        signal: AbortSignal.timeout(DEADLINE_MS.probe)
       })
       if (res.ok) {
         mcpAvailable.value = true
@@ -75,8 +77,8 @@ const providerDef = computed(
 )
 
 const displayName = computed(() => {
-  if (providerID.value === 'harness:pi') return 'Pi'
-  if (providerID.value.startsWith('acp:'))
+  if (providerKind(providerID.value) === 'harness') return 'Pi'
+  if (providerKind(providerID.value) === 'acp')
     return acpAgentFor(providerID.value)?.name ?? providerID.value
   return providerDef.value.name
 })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ContextMenuPortal, ContextMenuTrigger, PopoverContent, PopoverPortal } from 'reka-ui'
+import { ContextMenuPortal, PopoverContent, PopoverPortal } from 'reka-ui'
 import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watch, type Component } from 'vue'
 import IconLucideAlignHorizontalSpaceBetween from '~icons/lucide/align-horizontal-space-between'
 import IconLucideAlignVerticalSpaceBetween from '~icons/lucide/align-vertical-space-between'
@@ -18,7 +18,7 @@ import {
   SECTION_TITLE_GAP,
   SECTION_TITLE_HEIGHT
 } from '@open-pencil/core/constants'
-import type { ViewportTransform } from '@open-pencil/core/geometry'
+import { screenToWorld, worldToScreen, type ViewportTransform } from '@open-pencil/core/geometry'
 import { PlayIslands, useCanvasInput } from '@open-pencil/vue/canvas'
 import { useCanvasDrop } from '@open-pencil/vue/canvas/drop'
 import { useEyedropperLoupe } from '@open-pencil/vue/canvas/eyedropper'
@@ -47,6 +47,7 @@ import FollowFrame from '@/components/presence/FollowFrame.vue'
 import StatusLabelMenu from '@/components/statuses/StatusLabelMenu.vue'
 import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
 import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppContextMenuTrigger from '@/components/ui/menu/AppContextMenuTrigger.vue'
 import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
@@ -85,7 +86,6 @@ const onViewportResize = (width: number, height: number) => {
 }
 
 const { updateCursor } = useCanvasCollaborationAwareness(store)
-const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
 
 const shouldSuspendRender = () =>
   store.state.preparation !== null &&
@@ -125,6 +125,7 @@ useCanvas(sceneCanvasRef, store, {
   }
 })
 const {
+  getRenderer: getOverlayRenderer,
   hitTestSectionTitle,
   hitTestComponentLabel,
   hitTestFrameTitle,
@@ -147,6 +148,11 @@ const {
   getRenderState,
   onViewportResize
 })
+const { selectAtContextPoint, contextTarget } = createCanvasContextSelection(
+  canvasRef,
+  store,
+  getOverlayRenderer
+)
 const {
   drag,
   cursorOverride,
@@ -222,13 +228,12 @@ const canvasLabelEditAnchor = computed(() => {
   if (!node) return null
   const origin = store.graph.getAbsolutePosition(node.id)
   // The view the reference projects through, so screen-sized offsets match the drawn frame.
-  const { zoom, panX, panY } = overlayView.value
+  const view = overlayView.value
+  const { zoom } = view
   const kind = canvasLabelEdit.value?.kind
   // The canvas starts an upright label on a whole screen pixel; the field starts on the same one.
-  const abs = {
-    x: (Math.round(origin.x * zoom + panX) - panX) / zoom,
-    y: (Math.round(origin.y * zoom + panY) - panY) / zoom
-  }
+  const screen = worldToScreen(view, origin)
+  const abs = screenToWorld(view, { x: Math.round(screen.x), y: Math.round(screen.y) })
   // A component's name starts after its diamond, which keeps its screen size at any zoom.
   if (kind === 'component-label')
     return { x: abs.x + (COMPONENT_LABEL_ICON_SIZE + COMPONENT_LABEL_ICON_GAP) / zoom, y: abs.y }
@@ -298,7 +303,7 @@ const cursor = computed(() =>
 
 <template>
   <AppContextMenuRoot :modal="false">
-    <ContextMenuTrigger as-child @contextmenu.capture="selectAtContextPoint">
+    <AppContextMenuTrigger as-child @contextmenu.capture="selectAtContextPoint">
       <div
         ref="area"
         dir="ltr"
@@ -397,10 +402,10 @@ const cursor = computed(() =>
           :preparation="store.state.preparation"
         />
       </div>
-    </ContextMenuTrigger>
+    </AppContextMenuTrigger>
 
     <ContextMenuPortal>
-      <CanvasMenu />
+      <CanvasMenu :target="contextTarget" />
     </ContextMenuPortal>
   </AppContextMenuRoot>
 </template>

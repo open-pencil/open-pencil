@@ -2,15 +2,14 @@ import { valibotSchema } from '@ai-sdk/valibot'
 import { generateText, tool } from 'ai'
 import * as v from 'valibot'
 
-import { computeContentBounds } from '@open-pencil/core/io/formats/raster'
-
 import { createAIModelRuntime } from '@/app/ai/models'
-import { runtimeReasoningSettings } from '@/app/ai/models/reasoning/settings'
+import { answersQuestions, askModel } from '@/app/ai/models/ask'
 import { runPageId } from '@/app/ai/reply/run'
 import type { VisionModelDependencies } from '@/app/ai/tools/vision/runtime'
 import type { EditorStore } from '@/app/editor/active-store'
 
-const DEFAULT_VISION_MAX_EDGE = 1280
+import { renderForModel } from './render'
+
 const MAX_VISION_MAX_EDGE = 4096
 const MAX_VISION_OUTPUT_TOKENS = 1200
 
@@ -28,16 +27,6 @@ export type VisualInspectionResult = {
 
 export type VisualInspectionDependencies = VisionModelDependencies
 
-export function boundedImageScale(
-  width: number,
-  height: number,
-  maxEdge = DEFAULT_VISION_MAX_EDGE
-): number {
-  const longestEdge = Math.max(width, height)
-  if (longestEdge <= 0) return 0
-  return Math.min(1, maxEdge / longestEdge)
-}
-
 export async function inspectRenderedDesign(
   store: EditorStore,
   request: VisualInspectionRequest,
@@ -47,7 +36,7 @@ export async function inspectRenderedDesign(
   }
 ): Promise<VisualInspectionResult | { error: string }> {
   const runtime = await dependencies.createRuntime('vision')
-  if (runtime?.kind !== 'direct') {
+  if (!runtime || !answersQuestions(runtime)) {
     return { error: 'Configure a vision-capable model in Settings to inspect rendered designs.' }
   }
 
@@ -59,43 +48,25 @@ export async function inspectRenderedDesign(
   if (nodeIds.length === 0) {
     nodeIds = store.graph.getChildren(pageId).map((node) => node.id)
   }
-  const bounds = computeContentBounds(store.graph, nodeIds)
-  if (!bounds) return { error: 'No visible design content to inspect.' }
-  const width = bounds.maxX - bounds.minX
-  const height = bounds.maxY - bounds.minY
-  const scale = boundedImageScale(width, height, request.maxEdge)
-  if (scale <= 0) return { error: 'No visible design content to inspect.' }
+  const render = await renderForModel(store, nodeIds, pageId, request.maxEdge)
+  if (!render) return { error: 'No visible design content to inspect.' }
 
-  const image = await store.renderExportImage(nodeIds, scale, 'PNG', pageId)
-  if (!image) return { error: 'Could not render the design for visual inspection.' }
-
-  const result = await dependencies.inspect({
-    model: runtime.model,
-    maxOutputTokens: Math.min(runtime.role.profile.maxOutputTokens, MAX_VISION_OUTPUT_TOKENS),
-    ...runtimeReasoningSettings(runtime),
-    messages: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text:
-              request.question?.trim() ||
-              'Review this rendered design. Concisely identify visual hierarchy, alignment, spacing, clipping, contrast, and rendering problems. Return actionable findings only.'
-          },
-          { type: 'file', mediaType: 'image/png', data: image }
-        ]
-      }
-    ]
-  })
+  const analysis = await askModel(
+    runtime,
+    {
+      text:
+        request.question?.trim() ||
+        'Review this rendered design. Concisely identify visual hierarchy, alignment, spacing, clipping, contrast, and rendering problems. Return actionable findings only.',
+      images: [{ mediaType: 'image/png', data: render.png }],
+      maxOutputTokens: MAX_VISION_OUTPUT_TOKENS
+    },
+    { generate: dependencies.inspect, askAgent: dependencies.askAgent }
+  )
 
   return {
-    analysis: result.text,
+    analysis,
     inspectedNodeIds: nodeIds,
-    image: {
-      width: Math.ceil(width * scale),
-      height: Math.ceil(height * scale)
-    }
+    image: { width: render.width, height: render.height }
   }
 }
 

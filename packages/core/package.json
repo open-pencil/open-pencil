@@ -1,12 +1,13 @@
 {
   "name": "@open-pencil/core",
-  "version": "0.17.0-beta.4",
+  "version": "0.17.0-beta.5",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/core"
   },
+  "funding": "https://ko-fi.com/dannote",
   "files": [
     "dist",
     "src",
@@ -67,6 +68,11 @@
       "types": "./dist/icons/index.d.ts",
       "import": "./dist/icons/index.js",
       "default": "./dist/icons/index.js"
+    },
+    "./icons/match": {
+      "types": "./dist/icons/match/index.d.ts",
+      "import": "./dist/icons/match/index.js",
+      "default": "./dist/icons/match/index.js"
     },
     "./canvas": {
       "types": "./dist/canvas/index.d.ts",
@@ -201,6 +207,7 @@
   "dependencies": {
     "@figma/plugin-typings": "^1.140.0",
     "@iconify/utils": "^3.1.4",
+    "@noble/hashes": "^2.4.0",
     "@open-pencil/canvaskit": "workspace:*",
     "@open-pencil/design-jsx": "workspace:*",
     "@open-pencil/dom-css": "workspace:*",
@@ -211,6 +218,7 @@
     "@open-pencil/mermaid": "workspace:*",
     "@open-pencil/pen": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
+    "@open-pencil/std": "workspace:*",
     "@open-pencil/taffy": "workspace:*",
     "@tauri-apps/api": "^2.12.1",
     "@valibot/to-json-schema": "^1.8.0",
@@ -246,6 +254,7 @@
     "ufo": "^1.6.4",
     "unifont": "1.0.3",
     "valibot": "^1.5.0",
+    "whaticon": "^0.4.0",
     "woff2-encoder": "2.0.0"
   },
   "devDependencies": {

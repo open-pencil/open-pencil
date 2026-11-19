@@ -14,6 +14,7 @@ import type {
   TransactionalEmailKind,
   TransactionalEmailPayloadByKind
 } from './schema'
+import CommentNotification from './templates/CommentNotification.vue'
 import DocumentBlocked from './templates/DocumentBlocked.vue'
 import DocumentInvitation from './templates/DocumentInvitation.vue'
 import DocumentReport from './templates/DocumentReport.vue'
@@ -23,6 +24,7 @@ import DocumentRestored from './templates/DocumentRestored.vue'
 import EmailChangeRequested from './templates/EmailChangeRequested.vue'
 import EmailRoot from './templates/EmailRoot.vue'
 import EmailVerification from './templates/EmailVerification.vue'
+import EnrollmentInvitation from './templates/EnrollmentInvitation.vue'
 import EnrollmentNotification from './templates/EnrollmentNotification.vue'
 import EnrollmentUpdate from './templates/EnrollmentUpdate.vue'
 import NewSignIn from './templates/NewSignIn.vue'
@@ -80,6 +82,10 @@ const EMAILS: {
     props: { kind: 'revoked' },
     subject: (_payload, t) => t.enrollmentRevokedSubject
   },
+  'enrollment-invited': {
+    component: EnrollmentInvitation,
+    subject: (payload, t) => (payload.waitlist ? t.invitationWaitlistSubject : t.invitationSubject)
+  },
   'admin-enrollment-notification': {
     component: EnrollmentNotification,
     subject: (_payload, t) => t.enrollmentNotificationSubject
@@ -123,6 +129,18 @@ const EMAILS: {
   'document-report-decided': {
     component: DocumentReportDecided,
     subject: (payload, t) => t.reportDecidedSubject({ document: payload.documentName })
+  },
+  'comment-notification': {
+    component: CommentNotification,
+    subject: (payload, t) => {
+      const words = {
+        author: payload.authorName ?? t.commentSomeone,
+        document: payload.documentName
+      }
+      return payload.reason === 'mention'
+        ? t.commentMentionSubject(words)
+        : t.commentReplySubject(words)
+    }
   }
 }
 

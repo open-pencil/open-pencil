@@ -1,6 +1,7 @@
 import { clamp } from 'es-toolkit'
 
 import type { ArcData, SceneNode } from '@open-pencil/scene-graph'
+import { isWholeArc } from '@open-pencil/scene-graph/geometry'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /**
@@ -23,17 +24,10 @@ export const ARC_HANDLE = {
 export type ArcHandleKind = 'arcStart' | 'arcEnd' | 'arcRatio'
 
 const FULL_TURN = 2 * Math.PI
-/** How close to a full turn a sweep draws and edits as a whole ellipse: 0.01°. */
-const WHOLE_TOLERANCE = (0.01 * Math.PI) / 180
 
 /** The arc an ellipse is drawn with, a whole one when it has none. */
 export function arcOf(node: SceneNode): ArcData {
   return node.arcData ?? { startingAngle: 0, endingAngle: FULL_TURN, innerRadius: 0 }
-}
-
-/** Whether an arc sweeps a whole turn, so it is drawn and edited as a whole ellipse or ring. */
-export function isWholeArc(arc: ArcData): boolean {
-  return Math.abs(arc.endingAngle - arc.startingAngle) >= FULL_TURN - WHOLE_TOLERANCE
 }
 
 /** The node-local point at an angle, a share of the way from the centre to the edge. */

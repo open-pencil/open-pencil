@@ -244,6 +244,22 @@ export function materializeReader(
   )
 }
 
+/** The instances a definition holds itself, not those inside its instances or nested definitions. */
+function definitionInstances(
+  occurrence: InstanceOccurrence,
+  nodes: ReadonlyMap<InstanceOccurrence, SceneNode>
+): string[] {
+  return occurrence.children.flatMap((child) => {
+    if (child.properties.type === 'SYMBOL') {
+      return []
+    }
+    if (child.mainComponentId === null) {
+      return definitionInstances(child, nodes)
+    }
+    return nodes.get(child)?.id ?? []
+  })
+}
+
 function materializeReaderInto(
   pages: InstanceOccurrence[],
   plan: ComponentConstruction[],
@@ -292,9 +308,14 @@ function materializeReaderInto(
     for (const child of occurrence.children) createShells(child, node.id)
   }
   for (const page of pages) createShells(page, graph.rootId)
-  for (const item of plan) {
-    onProgress?.()
-    if (components.has(item.sourceId)) continue
+  /**
+   * Instances a load into an edited graph must sync with their components, which may have
+   * changed live since the file loaded. Only this load's new instances: syncing a whole
+   * component would copy its sizes over the sizes Figma derived for instances placed earlier.
+   */
+  const resync = new Set<string>()
+  const buildComponent = (item: ComponentConstruction): void => {
+    if (edited) reconcileOccurrenceStructure(item.occurrence, graph, components)
     const parentId = sources.get(item.parentSourceId)
     if (!parentId) throw new Error(`Unmaterialized component parent ${item.parentSourceId}`)
     const existingNodes = new Map<InstanceOccurrence, SceneNode>()
@@ -318,6 +339,10 @@ function materializeReaderInto(
       recordId
     })
     rememberDerivedSizes(built.nodes)
+    if (edited) {
+      reconcileLiveComponentEdits(graph, built)
+      for (const id of definitionInstances(item.occurrence, built.nodes)) resync.add(id)
+    }
     // Linking and checkpoints address a nested definition's layers through this tree too.
     const nodes = new Map(built.nodes)
     for (const [node, component] of nested) {
@@ -331,12 +356,10 @@ function materializeReaderInto(
     componentIds.set(item.sourceId, materialized.root.id)
     sources.set(item.sourceId, materialized.root.id)
   }
-  /**
-   * Instances a load into an edited graph must sync with their components, which may have
-   * changed live since the file loaded. Only this page's new instances: syncing a whole component would copy its
-   * sizes over the sizes Figma derived for instances earlier pages already placed.
-   */
-  const resync = new Set<string>()
+  for (const item of plan) {
+    onProgress?.()
+    if (!components.has(item.sourceId)) buildComponent(item)
+  }
   const populateInstances = (occurrence: InstanceOccurrence): void => {
     if (occurrence.properties.type === 'SYMBOL') return
     const parentId = sources.get(occurrence.sourceId)

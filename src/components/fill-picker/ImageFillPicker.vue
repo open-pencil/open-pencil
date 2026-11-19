@@ -32,7 +32,14 @@ const { fill, layerSize = null } = defineProps<{
   /** The layer the fill is on, which a new crop starts by covering, as Fill does. */
   layerSize?: { width: number; height: number } | null
 }>()
-const emit = defineEmits<{ update: [fill: Fill] }>()
+const emit = defineEmits<{
+  update: [fill: Fill]
+  /**
+   * A chosen, dropped, or downloaded image, which arrives once it is read: the fill with it, built
+   * from the fill as it is when the image is applied.
+   */
+  image: [withImage: () => Fill]
+}>()
 
 const store = useEditorStore()
 const { panels } = useI18n()
@@ -50,12 +57,12 @@ const { open: pickImage, onChange: onFileChange } = useFileDialog({
 
 function fillWith(bytes: Uint8Array) {
   const hash = store.storeImage(bytes)
-  emit('update', {
+  emit('image', () => ({
     ...fill,
     type: 'IMAGE',
     imageHash: hash,
     imageScaleMode: fill.imageScaleMode ?? 'FILL'
-  })
+  }))
 }
 
 async function fillWithFile(file: File) {
@@ -117,13 +124,42 @@ function rotate() {
 
 <template>
   <div class="space-y-2">
+    <div class="flex items-center gap-1.5">
+      <AppSelect
+        :ui="{ trigger: 'w-28' }"
+        :model-value="scaleMode"
+        :options="IMAGE_SCALE_MODES"
+        @update:model-value="(m) => (scaleMode = m as ImageScaleMode)"
+      />
+      <div v-if="scaleMode === 'TILE'" class="w-16 flex-none">
+        <NumberField
+          :model-value="tileScale"
+          :min="1"
+          suffix="%"
+          :aria-label="panels.imageTileScale"
+          data-test-id="fill-picker-tile-scale"
+          @update:model-value="setTileScale"
+          @commit="setTileScale"
+        />
+      </div>
+      <!-- A crop holds its own turn in its transform, so only the other modes turn the image. -->
+      <IconButton
+        v-if="scaleMode !== 'CROP'"
+        class="ms-auto"
+        :label="panels.rotate90"
+        data-test-id="fill-picker-rotate-image"
+        @click="rotate"
+      >
+        <icon-lucide-rotate-cw class="size-3.5" />
+      </IconButton>
+    </div>
     <!--
-      As Figma's image fill: the image, with its actions in the middle. With no image they show at
+      As Figma's image fill: its framing above, then the image, with its actions in the middle. With no image they show at
       once; over an image they show on hover or when the keyboard reaches them.
     -->
     <div
       ref="well"
-      class="group relative flex h-28 items-center justify-center overflow-hidden rounded border border-border bg-panel-secondary data-[dragging]:border-accent"
+      class="group relative flex aspect-square items-center justify-center overflow-hidden rounded border border-border bg-panel-secondary data-[dragging]:border-accent"
       :data-empty="imagePreviewURL ? undefined : ''"
       :data-dragging="dragging ? '' : undefined"
       data-test-id="fill-picker-image-well"
@@ -161,34 +197,6 @@ function rotate() {
           </template>
         </PhotoPicker>
       </div>
-    </div>
-    <div class="flex items-center gap-1.5">
-      <AppSelect
-        :ui="{ trigger: 'min-w-0 flex-1' }"
-        :model-value="scaleMode"
-        :options="IMAGE_SCALE_MODES"
-        @update:model-value="(m) => (scaleMode = m as ImageScaleMode)"
-      />
-      <div v-if="scaleMode === 'TILE'" class="w-16 flex-none">
-        <NumberField
-          :model-value="tileScale"
-          :min="1"
-          suffix="%"
-          :aria-label="panels.imageTileScale"
-          data-test-id="fill-picker-tile-scale"
-          @update:model-value="setTileScale"
-          @commit="setTileScale"
-        />
-      </div>
-      <!-- A crop holds its own turn in its transform, so only the other modes turn the image. -->
-      <IconButton
-        v-if="scaleMode !== 'CROP'"
-        :label="panels.rotate90"
-        data-test-id="fill-picker-rotate-image"
-        @click="rotate"
-      >
-        <icon-lucide-rotate-cw class="size-3.5" />
-      </IconButton>
     </div>
   </div>
 </template>

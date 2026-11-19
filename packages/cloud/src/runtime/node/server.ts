@@ -87,7 +87,10 @@ async function startConfiguredServer(
     invitationOutbox,
     transport: emailTransport
   } = createNodeTransactionalEmailRuntime(config, database)
-  const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email)
+  // The adapter that serves for as long as the server runs checks the schema once it starts.
+  const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email, {
+    validateSchema: true
+  })
   const policy = createConfiguredCloudPolicy(config, database)
   // Cleanup sweeps may run longer than a request should, so they have a connection of their own
   // without the statement timeout.
@@ -122,8 +125,12 @@ async function startConfiguredServer(
     store: createCollaborationStateStore(database, objects),
     maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
     maximumConnectionsPerRoom: config.technicalLimits.maximumConnectionsPerRoom,
-    onError: (message, error) =>
-      void reportCloudError(reportError, message, error, { source: 'relay' }),
+    onError: (message, error, { userId, ...resources } = {}) =>
+      void reportCloudError(reportError, message, error, {
+        source: 'relay',
+        resources,
+        ...(userId && { userId })
+      }),
     ...relayDocumentLookups(database, policy, config.deployment)
   })
   const app = createCloudApp({
@@ -139,6 +146,8 @@ async function startConfiguredServer(
     onDocumentRestored: (documentId) => relay.startOver(documentId),
     onDocumentTakenDown: (documentId) => relay.closeDocument(documentId),
     onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId),
+    onDocumentCommentsChanged: (documentId, threadId) =>
+      relay.announceComments(documentId, threadId),
     reportError,
     forwardedRequestId: proxyRequestId
   })

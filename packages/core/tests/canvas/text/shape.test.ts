@@ -4,8 +4,8 @@ import { join } from 'node:path'
 import type { ShapedText } from '@open-pencil/fig/node-change'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { appendAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { pixelLength } from '@open-pencil/scene-graph/text'
+import { appendAll, maxOf, minOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
@@ -257,8 +257,11 @@ describe('text shaping for saved glyphs', () => {
       [9, third]
     ])
 
+    // Figma saves no baseline for the empty line after a closing newline, as its files show.
     const closing = expectDefined(await shape({ text: 'one\n' }), 'text ending in a newline')
-    expect(closing.baselines).toHaveLength(2)
+    expect(closing.baselines.map((line) => [line.firstCharacter, line.endCharacter])).toEqual([
+      [0, 4]
+    ])
     expect(closing.glyphs).toHaveLength(3)
   })
 

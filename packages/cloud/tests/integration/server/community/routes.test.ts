@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
+import { saveDocument, THUMBNAIL_PNG } from '#cloud-tests/helpers/save'
 import { fetchCommunityTour } from '#cloud/client'
 import { communityDocumentsSchema, communityDownloadSchema } from '#cloud/contract'
 import {
@@ -12,8 +13,8 @@ import {
   type CloudActor,
   type CloudServerConfig
 } from '#cloud/server'
-import { unzipSync, zipSync } from 'fflate'
-import { fromUint8Array, toUint8Array } from 'js-base64'
+import { unzipSync } from 'fflate'
+import { testClient } from 'hono/testing'
 import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
@@ -29,20 +30,10 @@ const config = parseCloudServerConfig({
 })
 
 const alice: CloudActor = { userId: 'alice', email: 'alice@example.com', name: 'Alice' }
-/** A 2×2 PNG, the smallest thumbnail the reader takes for one. */
-const PNG = toUint8Array(
-  'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEUlEQVR4nGP4z8DwH4QZYAwAR8oH+WdZbrcAAAAASUVORK5CYII='
-)
 const documentSchema = v.object({
   document: v.object({ id: v.string(), currentRevisionId: v.nullable(v.string()) })
 })
 const idSchema = v.object({ id: v.string() })
-
-async function sha256(bytes: Uint8Array): Promise<string> {
-  return fromUint8Array(
-    new Uint8Array(await crypto.subtle.digest('SHA-256', Uint8Array.from(bytes)))
-  )
-}
 
 /**
  * Alice's server with two workspaces: Community, which the deployment names as its gallery, and
@@ -59,67 +50,36 @@ async function gallery() {
       objects: objects.store,
       resolveSession: async () => (signedIn ? alice : null)
     })
-  const owner = app(config, true)
-  const request = (path: string, init: { method?: string; json?: unknown } = {}) =>
-    owner.request(`/api${path}`, {
-      method: init.method ?? 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      body: init.json === undefined ? undefined : JSON.stringify(init.json)
-    })
+  const owner = testClient(app(config, true))
 
   async function workspace(name: string) {
     const created = await responseJSON(
-      await request('/workspaces', { method: 'POST', json: { name } }),
+      await owner.api.workspaces.$post({ json: { name } }),
       v.object({ workspace: idSchema })
     )
     return created.workspace.id
   }
   async function document(workspaceId: string, name: string) {
     const created = await responseJSON(
-      await request(`/workspaces/${workspaceId}/documents`, { method: 'POST', json: { name } }),
+      await owner.api.workspaces[':workspaceId'].documents.$post({
+        param: { workspaceId },
+        json: { name }
+      }),
       documentSchema
     )
     return created.document.id
   }
-  /** Saves the document the way the editor does, as a file that carries a thumbnail. */
-  async function save(documentId: string, baseRevisionId: string | null, label: string) {
-    const bytes = zipSync({ 'canvas.fig': new TextEncoder().encode(label), 'thumbnail.png': PNG })
-    const checksum = await sha256(bytes)
-    const upload = await responseJSON(
-      await request(`/documents/${documentId}/uploads`, {
-        method: 'POST',
-        json: {
-          baseRevisionId,
-          byteSize: bytes.byteLength,
-          checksum,
-          contentType: 'application/octet-stream'
-        }
-      }),
-      idSchema
+  const save = (documentId: string, baseRevisionId: string | null, label: string) =>
+    saveDocument(
+      { client: owner, database: runtime.database, objects: objects.store },
+      documentId,
+      baseRevisionId,
+      label
     )
-    const row = await runtime.database
-      .selectFrom('upload')
-      .select('objectKey')
-      .where('id', '=', upload.id)
-      .executeTakeFirstOrThrow()
-    await objects.store.write({
-      key: row.objectKey,
-      bytes,
-      checksum,
-      contentType: 'application/octet-stream'
-    })
-    const committed = await responseJSON(
-      await request(`/uploads/${upload.id}/commit`, { method: 'POST', json: { checksum } }),
-      documentSchema
-    )
-    const revision = committed.document.currentRevisionId
-    if (!revision) throw new Error('The save left no revision')
-    return revision
-  }
   async function nameVersion(documentId: string, name: string, description = '') {
     const named = await responseJSON(
-      await request(`/documents/${documentId}/versions`, {
-        method: 'POST',
+      await owner.api.documents[':documentId'].versions.$post({
+        param: { documentId },
         json: { name, description }
       }),
       v.object({ version: idSchema })
@@ -132,17 +92,19 @@ async function gallery() {
   const community = app({ ...config, community: { workspaceId: communityId } }, false)
   return {
     runtime,
-    request,
+    owner,
     workspace: { community: communityId, studio: studioId },
     document,
     save,
     nameVersion,
     objects,
-    visitor: (path: string, init?: RequestInit) => community.request(path, init),
+    visitor: testClient(community),
+    /** A request to the gallery's server as a page sends it, headers and all. */
+    request: (path: string, init?: RequestInit) => community.request(path, init),
     /** The gallery's server, naming `tour` as the tour editors open. */
     withTour: (tour: string) =>
       app({ ...config, community: { workspaceId: communityId, tourDocumentId: tour } }, false),
-    withoutGallery: (path: string) => app(config, false).request(path)
+    withoutGallery: testClient(app(config, false))
   }
 }
 
@@ -157,7 +119,7 @@ describe('community gallery', () => {
     await server.document(server.workspace.community, 'Draft')
     const trashed = await server.document(server.workspace.community, 'Old')
     await server.save(trashed, null, 'old')
-    await server.request(`/documents/${trashed}`, { method: 'DELETE' })
+    await server.owner.api.documents[':documentId'].$delete({ param: { documentId: trashed } })
     const removed = await server.document(server.workspace.community, 'Removed')
     await server.save(removed, null, 'removed')
     await server.runtime.database
@@ -187,7 +149,7 @@ describe('community gallery', () => {
       .execute()
 
     const listed = await responseJSON(
-      await server.visitor('/api/community'),
+      await server.visitor.api.community.$get(),
       communityDocumentsSchema
     )
 
@@ -204,13 +166,22 @@ describe('community gallery', () => {
             id: release,
             name: '0.17.0',
             description: 'The release tour',
-            createdAt: expect.any(String)
+            createdAt: expect.any(String),
+            // Saved again since it was named, so the gallery holds a newer state.
+            current: false
           }
         ]
       }
     ])
-    expect((await server.visitor(`/api/community/${spam}/document`)).status).toBe(404)
-    expect((await server.withoutGallery('/api/community')).status).toBe(404)
+    expect(
+      (
+        await server.visitor.api.community[':documentId'].document.$get({
+          param: { documentId: spam },
+          query: {}
+        })
+      ).status
+    ).toBe(404)
+    expect((await server.withoutGallery.api.community.$get()).status).toBe(404)
   })
 
   test('opens a document as it is now or as a named version, and nothing outside it', async () => {
@@ -223,14 +194,20 @@ describe('community gallery', () => {
     await server.save(secret, null, 'secret')
 
     const latest = await responseJSON(
-      await server.visitor(`/api/community/${tour}/document`),
+      await server.visitor.api.community[':documentId'].document.$get({
+        param: { documentId: tour },
+        query: {}
+      }),
       communityDownloadSchema
     )
     expect(latest.document.revisionId).toBe(current)
     expect(latest.version).toBeNull()
 
     const named = await responseJSON(
-      await server.visitor(`/api/community/${tour}/document?version=${release}`),
+      await server.visitor.api.community[':documentId'].document.$get({
+        param: { documentId: tour },
+        query: { version: release }
+      }),
       communityDownloadSchema
     )
     expect(named.document.revisionId).toBe(first)
@@ -238,20 +215,31 @@ describe('community gallery', () => {
 
     // A checkpoint is not a published version; a private document does not exist here.
     const unnamed = await server.nameVersion(tour, 'Draft')
-    await server.request(`/documents/${tour}/versions/${unnamed}`, {
-      method: 'PATCH',
+    await server.owner.api.documents[':documentId'].versions[':versionId'].$patch({
+      param: { documentId: tour, versionId: unnamed },
       json: { name: null }
     })
     expect(
-      (await server.visitor(`/api/community/${tour}/document?version=${unnamed}`)).status
+      (
+        await server.visitor.api.community[':documentId'].document.$get({
+          param: { documentId: tour },
+          query: { version: unnamed }
+        })
+      ).status
     ).toBe(404)
-    expect((await server.visitor(`/api/community/${secret}/document`)).status).toBe(404)
     expect(
       (
-        await server.visitor(`/api/community/${secret}/images`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ checksums: [`${'A'.repeat(43)}=`] })
+        await server.visitor.api.community[':documentId'].document.$get({
+          param: { documentId: secret },
+          query: {}
+        })
+      ).status
+    ).toBe(404)
+    expect(
+      (
+        await server.visitor.api.community[':documentId'].images.$post({
+          param: { documentId: secret },
+          json: { checksums: [`${'A'.repeat(43)}=`] }
         })
       ).status
     ).toBe(404)
@@ -267,23 +255,23 @@ describe('community gallery', () => {
     const docs = 'https://docs.example.com'
 
     for (const path of ['/api/community', '/.well-known/openpencil']) {
-      const response = await server.visitor(path, from(docs))
+      const response = await server.request(path, from(docs))
       expect(response.headers.get('access-control-allow-origin')).toBe('*')
       expect(response.headers.get('access-control-allow-credentials')).toBeNull()
     }
-    const preflight = await server.visitor(
+    const preflight = await server.request(
       '/api/community',
       from(docs, { method: 'OPTIONS', headers: { 'Access-Control-Request-Method': 'GET' } })
     )
     expect(preflight.headers.get('access-control-allow-origin')).toBe('*')
 
     // Anything else stays with the origins the server trusts, which send their account.
-    const write = await server.visitor(
+    const write = await server.request(
       '/api/workspaces',
       from(docs, { method: 'OPTIONS', headers: { 'Access-Control-Request-Method': 'POST' } })
     )
     expect(write.headers.get('access-control-allow-origin')).toBeNull()
-    const own = await server.visitor('/api/community', from('http://localhost:8787'))
+    const own = await server.request('/api/community', from('http://localhost:8787'))
     expect(own.headers.get('access-control-allow-origin')).toBe('http://localhost:8787')
     expect(own.headers.get('access-control-allow-credentials')).toBe('true')
   })
@@ -294,15 +282,23 @@ describe('community gallery', () => {
     const first = await server.save(tour, null, 'first')
     const current = await server.save(tour, first, 'second')
 
-    const thumbnail = await server.visitor(`/api/community/thumbnails/${tour}/${current}`)
+    const thumbnail = await server.visitor.api.community.thumbnails[':documentId'][
+      ':revisionId'
+    ].$get({ param: { documentId: tour, revisionId: current } })
     expect(thumbnail.status).toBe(200)
     expect(thumbnail.headers.get('content-type')).toBe('image/png')
     // Cached no longer than the listing, so a takedown reaches every copy within minutes.
     expect(thumbnail.headers.get('cache-control')).toBe('public, max-age=300')
-    expect([...new Uint8Array(await thumbnail.arrayBuffer())]).toEqual([...PNG])
+    expect([...new Uint8Array(await thumbnail.arrayBuffer())]).toEqual([...THUMBNAIL_PNG])
 
     // An address for a revision that is no longer current shows nothing rather than old work.
-    expect((await server.visitor(`/api/community/thumbnails/${tour}/${first}`)).status).toBe(404)
+    expect(
+      (
+        await server.visitor.api.community.thumbnails[':documentId'][':revisionId'].$get({
+          param: { documentId: tour, revisionId: first }
+        })
+      ).status
+    ).toBe(404)
   })
 
   test('hands any page the tour as the release it asks for, else as it is now', async () => {
@@ -340,7 +336,7 @@ describe('community gallery', () => {
     // A server naming no tour has none to give.
     const plain = async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(input instanceof Request ? input.url : String(input))
-      return server.visitor(`${url.pathname}${url.search}`, init)
+      return server.request(`${url.pathname}${url.search}`, init)
     }
     expect(await fetchCommunityTour('http://localhost:8787', { fetch: plain })).toBeNull()
   })

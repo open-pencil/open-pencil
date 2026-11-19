@@ -13,6 +13,7 @@ export const menuMessageDefaults = {
   newBoard: 'New board',
   newTab: 'New tab',
   open: 'Open…',
+  place: 'Place…',
   openTour: 'Open the Tour',
   diagnostics: 'Diagnostics…',
   reportProblem: 'Report a problem…',

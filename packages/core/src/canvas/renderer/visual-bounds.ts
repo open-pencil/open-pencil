@@ -1,7 +1,7 @@
 import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import {
-  blurSigma,
+  blurReach,
   unionVisualBounds,
   type VisualBounds,
   widestBlurRadius
@@ -159,6 +159,11 @@ export class RenderedBoundsCache {
     if (graph.getNode(node.id) !== node) {
       return subtreeVisualBounds(graph, node, Matrix.identity(), preview)
     }
+    // Culling asks for every layer on every frame: answer a measured one without the closures.
+    if (!preview) {
+      const known = this.entryOf(graph).byNode.get(node.id)
+      if (known !== undefined) return known ?? NOTHING_DRAWN
+    }
     const measured = this.measuredIn(graph, preview)
     let own = measured.get(node)
     if (own === undefined) {
@@ -301,7 +306,7 @@ function nodeBackdropReach(graph: SceneGraph, node: SceneNode): number {
     if (!effect.visible) continue
     if (effect.type === 'GLASS') reach = Math.max(reach, glassSampleRadius(node, effect))
     if (effect.type === 'BACKGROUND_BLUR') {
-      reach = Math.max(reach, 3 * blurSigma(widestBlurRadius(effect)) + 1)
+      reach = Math.max(reach, blurReach(widestBlurRadius(effect)))
     }
   }
   if (reach === 0) return 0

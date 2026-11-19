@@ -58,12 +58,84 @@ test('Accent color recolors the interface, persists, and a cancelled custom pick
 
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-accent-custom').click()
-  const red = page.getByRole('spinbutton', { name: 'Red', exact: true })
-  await red.fill('0')
-  await red.press('Enter')
+  await page.getByRole('spinbutton', { name: 'Red', exact: true }).click()
+  await page.keyboard.press('ControlOrMeta+A')
+  await page.keyboard.type('0')
+  await page.keyboard.press('Enter')
   await expect(page.getByTestId('settings-accent-custom')).toHaveAttribute('aria-pressed', 'true')
   await expect.poll(accent).not.toBe(chosen)
   await page.keyboard.press('Escape')
   await expect.poll(accent).toBe(chosen)
   await expect(green).toBeChecked()
+})
+
+test('Escape during a custom accent drag puts back only that drag; closing then restores the accent', async ({
+  page
+}) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  const accent = () =>
+    page.evaluate(() => document.documentElement.style.getPropertyValue('--color-accent'))
+  const initial = await accent()
+
+  await page.getByTestId('app-settings-trigger').click()
+  await page.getByTestId('settings-accent-custom').click()
+  const area = page.locator('[data-picker-content] .cursor-crosshair')
+  const box = await area.boundingBox()
+  if (!box) throw new Error('Missing colour area')
+  const at = (x: number, y: number) => [box.x + box.width * x, box.y + box.height * y] as const
+
+  // The first drag ends, so its colour is kept.
+  await page.mouse.move(...at(0.9, 0.1))
+  await page.mouse.down()
+  await page.mouse.move(...at(0.8, 0.2), { steps: 4 })
+  await page.mouse.up()
+  await expect.poll(accent).not.toBe(initial)
+  const first = await accent()
+
+  // Escape during the second drag puts back only that drag.
+  await page.mouse.move(...at(0.2, 0.6))
+  await page.mouse.down()
+  await page.mouse.move(...at(0.3, 0.7), { steps: 4 })
+  await expect.poll(accent).not.toBe(first)
+  await page.keyboard.press('Escape')
+  await page.mouse.up()
+  await expect.poll(accent).toBe(first)
+  await expect(area).toBeVisible()
+
+  // Escape that closes the picker restores the accent it opened with.
+  await page.keyboard.press('Escape')
+  await expect(area).toHaveCount(0)
+  await expect.poll(accent).toBe(initial)
+})
+
+test('Escape during the first custom accent drag keeps the preset chosen', async ({ page }) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  const accent = () =>
+    page.evaluate(() => document.documentElement.style.getPropertyValue('--color-accent'))
+
+  await page.getByTestId('app-settings-trigger').click()
+  const presets = page.getByRole('radiogroup', { name: 'Accent color', exact: true })
+  const green = presets.getByRole('radio', { name: 'Green', exact: true })
+  await green.click()
+  await expect(green).toBeChecked()
+  const chosen = await accent()
+
+  await page.getByTestId('settings-accent-custom').click()
+  const area = page.locator('[data-picker-content] .cursor-crosshair')
+  const box = await area.boundingBox()
+  if (!box) throw new Error('Missing colour area')
+  await page.mouse.move(box.x + box.width * 0.9, box.y + box.height * 0.1)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.7, { steps: 4 })
+  await expect.poll(accent).not.toBe(chosen)
+  await page.keyboard.press('Escape')
+  await page.mouse.up()
+
+  await expect.poll(accent).toBe(chosen)
+  await expect(green).toBeChecked()
+  await expect(page.getByTestId('settings-accent-custom')).toHaveAttribute('aria-pressed', 'false')
 })

@@ -25,6 +25,7 @@ import type {
   CommandPaletteItem
 } from '@open-pencil/vue/primitives/CommandPalette'
 
+import { createPlaceMenuActions } from '@/app/document/io/place'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
@@ -90,7 +91,7 @@ export function useAppMenu() {
     otherPages,
     moveSelectionToPage
   } = useEditorCommands()
-  const { menu, locale, availableLocales, localeLabels, setLocale } = useI18n()
+  const { menu, updates, locale, availableLocales, localeLabels, setLocale } = useI18n()
   const { theme, setTheme } = useAppTheme()
   const { isMobile } = useViewportKind()
 
@@ -99,6 +100,7 @@ export function useAppMenu() {
     'new-board': 'newBoard',
     'new-tab': 'newTab',
     open: 'open',
+    place: 'place',
     'open-tour': 'openTour',
     diagnostics: 'diagnostics',
     'report-problem': 'reportProblem',
@@ -106,6 +108,7 @@ export function useAppMenu() {
     'help-docs': 'documentation',
     'help-shortcuts': 'keyboardShortcuts',
     'help-whats-new': 'whatsNew',
+    'check-updates': 'checkUpdates',
     'help-community': 'community',
     'help-github': 'github',
     save: 'save',
@@ -181,10 +184,11 @@ export function useAppMenu() {
   const actions: Partial<Record<string, () => void>> = {
     ...createTabMenuActions(),
     ...createSaveMenuActions(),
+    ...createPlaceMenuActions(),
     'export-selection': () => exportSelection('png'),
     ...createSelectionMenuActions(store),
     settings: openSettingsDialog,
-    ...createHelpMenuActions(),
+    ...createHelpMenuActions(updates),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),

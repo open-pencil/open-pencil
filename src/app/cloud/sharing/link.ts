@@ -6,7 +6,7 @@ import {
   createCloudAPIClient,
   downloadCloudDocument
 } from '@open-pencil/cloud/client'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { useCollabIdentity } from '@/app/collab/identity'
 import type { EditorStore } from '@/app/editor/session'

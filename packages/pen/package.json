@@ -1,12 +1,13 @@
 {
   "name": "@open-pencil/pen",
-  "version": "0.17.0-beta.4",
+  "version": "0.17.0-beta.5",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/pen"
   },
+  "funding": "https://ko-fi.com/dannote",
   "files": [
     "dist",
     "src",
@@ -35,6 +36,7 @@
     "typecheck": "bunx tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@open-pencil/std": "workspace:*",
     "es-toolkit": "^1.52.0",
     "valibot": "^1.5.0"
   },

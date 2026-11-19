@@ -4,7 +4,7 @@ import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { SkiaRenderer } from '#core/canvas/renderer'
+import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { renderNodesToImage } from '#core/io/formats/raster/render'
 
 /** A saved glyph outline: move to the first point, lines through the rest, in em units. */

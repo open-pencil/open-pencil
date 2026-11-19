@@ -4,9 +4,11 @@ import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
 import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_STROKE_MITER_LIMIT,
-  DEFAULT_STROKE_WEIGHT
+  DEFAULT_STROKE_WEIGHT,
+  TRANSPARENT
 } from '@open-pencil/scene-graph/constants'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
+import { hasLayoutGridAlignment } from '@open-pencil/scene-graph/layout'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
 import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
@@ -93,7 +95,7 @@ import type { Vector, GUID } from '@open-pencil/scene-graph/primitives'
 import { savedFace } from './font/style'
 import { numericVariableAssignmentScales, sourceVariableBindingScales } from './variable/bindings'
 export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable/bindings'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import type { FigVariableModeMap } from './variable/maps'
 
@@ -490,7 +492,7 @@ function convertDerivedText(
   const layoutSize = nc.derivedTextData?.layoutSize
   return {
     derivedLayout: layoutSize ? { width: layoutSize.x, height: layoutSize.y } : null,
-    derivedTextHeight: savedLinesHeight(nc),
+    derivedTextHeight: sizesToLines(nc) ? null : savedLinesHeight(nc),
     derivedTextGlyphs: convertFigmaDerivedTextGlyphs(
       nc.derivedTextData,
       blobs,
@@ -499,15 +501,24 @@ function convertDerivedText(
   }
 }
 
+/** Whether a text's box grows to its lines, which then never run past it. */
+function sizesToLines(nc: NodeChange): boolean {
+  return nc.textAutoResize === 'HEIGHT' || nc.textAutoResize === 'WIDTH_AND_HEIGHT'
+}
+
 /**
- * How far the lines Figma saved reach: the bottom of the last one. Figma's layout size is the box
- * of a fixed-size text even when its lines draw past it, so the lines themselves tell.
+ * How tall the lines Figma saved are, from the top of the first to the bottom of the last. Figma's
+ * layout size is the box of a fixed-size text even when its lines draw past it, above it as well
+ * as below, so the lines themselves tell.
  */
 function savedLinesHeight(nc: NodeChange): number | null {
-  const bottoms = (nc.derivedTextData?.baselines ?? []).map(
-    (line) => (line.lineY ?? line.position.y - line.lineAscent) + line.lineHeight
-  )
-  return bottoms.length > 0 ? maxOf(bottoms) : null
+  const baselines = nc.derivedTextData?.baselines ?? []
+  if (baselines.length === 0) {
+    return null
+  }
+  const tops = baselines.map((line) => line.lineY ?? line.position.y - line.lineAscent)
+  const bottoms = baselines.map((line, index) => tops[index] + line.lineHeight)
+  return maxOf(bottoms) - minOf(tops)
 }
 
 function convertLayoutPadding(
@@ -634,8 +645,15 @@ function sharedStyleType(value: string | undefined): SharedStyleType | null {
   return null
 }
 
+/**
+ * A file's guides as Figma reads them: one without an alignment is dropped, and one without a
+ * color is transparent (Figma desktop, live, pasting records that lost either field).
+ */
 function convertLayoutGrids(value: unknown): LayoutGrid[] {
-  return Array.isArray(value) ? structuredClone(value as LayoutGrid[]) : []
+  if (!Array.isArray(value)) return []
+  return structuredClone(value as LayoutGrid[])
+    .filter(hasLayoutGridAlignment)
+    .map((grid) => ({ ...grid, color: grid.color ?? { ...TRANSPARENT } }))
 }
 
 function convertTextPathData(nc: NodeChange, blobs: Uint8Array[]): SceneNode['textPathData'] {
@@ -738,18 +756,21 @@ function withFiniteNumbers(nc: NodeChange): NodeChange {
   return omitBy(nc, dropped)
 }
 
+/** A node change as scene node properties, with the kind of node it makes. */
+export type NodeChangeProps = Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' }
+
 export function nodeChangeToProps(
   record: NodeChange,
   blobs: Uint8Array[],
   metadata: 'source' | 'occurrence' = 'source'
-): Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } {
+): NodeChangeProps {
   const nc = withFiniteNumbers(record)
   const nodeType = resolveNodeType(nc)
 
   const vectorAndStrokeProps = convertVectorAndStrokeProps(nc, blobs)
   const textPathData = convertTextPathData(nc, blobs)
 
-  const props: Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } = {
+  const props: NodeChangeProps = {
     nodeType,
     name: nc.name ?? nodeType,
     source:
@@ -1007,7 +1028,7 @@ function extractComponentPropertyAssignments(nc: NodeChange): Record<string, str
   )
 }
 
-function extractVariantPropSpecs(nc: NodeChange): VariantPropSpec[] {
+export function extractVariantPropSpecs(nc: NodeChange): VariantPropSpec[] {
   const specs = nc.variantPropSpecs as Array<{ propDefId?: GUID; value?: string }> | undefined
   if (!specs?.length) return []
   return specs

@@ -2,7 +2,7 @@
 @import 'tw-animate-css';
 @import './theme/markdown/markdown.css';
 
-@import './theme/tokens.css';
+@import '../packages/vue/src/theme/tokens.css';
 
 /*
  * Every scroll container in the app takes the thin scrollbar; `scrollbar-none` still hides one,
@@ -11,6 +11,28 @@
 @layer base {
   * {
     @apply scrollbar-thin;
+  }
+}
+
+/*
+ * Where text breaks into lines. Headings and captions balance their lines; paragraphs and list
+ * items avoid a lone word on the last line; centered text, such as an empty state or a notice,
+ * balances whatever it holds, so a short message does not end on a stray word or split a phrase.
+ * Every rule has no specificity, so a component's own `text-*` wrap class still wins, and each
+ * sets only the style, never whether text wraps (`pre`, `truncate`). Browsers without these values
+ * wrap as before.
+ */
+@layer base {
+  :where(h1, h2, h3, h4, h5, h6, caption, figcaption, legend) {
+    text-wrap-style: balance;
+  }
+
+  :where(p, li, dd, blockquote) {
+    text-wrap-style: pretty;
+  }
+
+  :where(.text-center, .text-center *) {
+    text-wrap-style: balance;
   }
 }
 

@@ -7,6 +7,7 @@ interface Args {
   offersTour?: boolean
   tourOpening?: boolean
   tourFailed?: boolean
+  cloudReady?: boolean
 }
 
 const meta = {
@@ -54,6 +55,11 @@ export const TourFailed: Story = {
     const row = tourRow()
     await expect(row && within(row).getByRole('button')).toBeEnabled()
   }
+}
+
+/** Signing in to Cloud set AI up while the welcome showed, so it says AI is ready. */
+export const CloudReady: Story = {
+  args: { cloudReady: true }
 }
 
 /** A phone-width section: the button moves under the text instead of overflowing. */

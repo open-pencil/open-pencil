@@ -1,12 +1,13 @@
 {
   "name": "@open-pencil/fig",
-  "version": "0.17.0-beta.4",
+  "version": "0.17.0-beta.5",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/fig"
   },
+  "funding": "https://ko-fi.com/dannote",
   "files": [
     "dist",
     "src",
@@ -58,6 +59,8 @@
     "typecheck": "bunx tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
+    "@noble/hashes": "^2.4.0",
+    "@open-pencil/std": "workspace:*",
     "es-toolkit": "^1.52.0",
     "fflate": "^0.8.3",
     "js-base64": "^3.9.3",

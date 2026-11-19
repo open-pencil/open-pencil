@@ -4,10 +4,11 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import {
   createEnrollmentService,
   createTransactionalEmailService,
+  decryptTransactionalEmailPayload,
   PostgresRateLimitStore
 } from '#cloud/server'
 
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 
 describe('Cloud enrollment integration', () => {
   test('deduplicates requests and applies audited reviews', async () => {
@@ -117,6 +118,82 @@ describe('Cloud enrollment integration', () => {
         requestCount: 20,
         keyHash: expect.not.stringContaining('person@example.com')
       })
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('invites everyone waiting with the letter, once, only where invitations are offered', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const email = createTransactionalEmailService(runtime.database, {
+        encryptionSecret: 'enrollment-test-secret-at-least-32-characters',
+        from: 'cloud@example.com'
+      })
+      const options = { publicURL: 'https://cloud.example.com', adminRecipients: [], email }
+      const selfHosted = createEnrollmentService(runtime.database, options)
+      const official = createEnrollmentService(runtime.database, { ...options, invitations: true })
+      await official.request({ email: 'ada@example.com', name: 'Ada' })
+      // Grace joined openpencil.dev's waitlist; an administrator recorded her here.
+      await official.request({ email: 'grace@example.com', source: 'waitlist' })
+      // Ada asked here already: the waitlist doesn't take her request, or the letter for asking.
+      expect(await official.request({ email: 'ada@example.com', source: 'waitlist' })).toBe(
+        'unchanged'
+      )
+      await official.request({ email: 'linus@example.com', name: 'Linus' })
+      const [declined] = (await official.list({ search: 'linus' })).enrollments
+      if (!declined) throw new Error('Expected the request to decline')
+      await official.review('admin-user', declined.id, 'rejected', {})
+
+      const withoutEmail = createEnrollmentService(runtime.database, {
+        ...options,
+        email: undefined,
+        invitations: true
+      })
+      for (const service of [selfHosted, withoutEmail]) {
+        await expect(service.invitePending('admin-user')).rejects.toMatchObject({
+          code: 'invitations_unavailable'
+        })
+      }
+      // Another administrator declined it after this reviewer saw it waiting.
+      await expect(
+        official.review('admin-user', declined.id, 'approved', {
+          invite: true,
+          expectedStatus: 'pending'
+        })
+      ).rejects.toMatchObject({ code: 'invalid_enrollment_transition' })
+      expect(await official.invitePending('admin-user')).toEqual({ invited: 2 })
+      expect(await official.invitePending('admin-user')).toEqual({ invited: 0 })
+
+      expect(await official.isApproved('ada@example.com')).toBe(true)
+      expect(await official.isApproved('grace@example.com')).toBe(true)
+      expect(await official.statusForEmail('linus@example.com')).toBe('rejected')
+      const letters = await runtime.database
+        .selectFrom('transactionalEmail')
+        .select(['id', 'kind', 'recipientEmailNormalized', 'payloadEncrypted'])
+        .where('kind', 'in', ['enrollment-invited', 'enrollment-approved'])
+        .orderBy('recipientEmailNormalized')
+        .execute()
+      expect(letters.map((letter) => [letter.kind, letter.recipientEmailNormalized])).toEqual([
+        ['enrollment-invited', 'ada@example.com'],
+        ['enrollment-invited', 'grace@example.com']
+      ])
+      // Ada asked here and gets the letter that says so; Grace's thanks her for the waitlist.
+      const payloads = await Promise.all(
+        letters.map(async (letter) => {
+          const content = await decryptTransactionalEmailPayload(
+            'enrollment-test-secret-at-least-32-characters',
+            letter.id,
+            'enrollment-invited',
+            letter.payloadEncrypted ?? ''
+          )
+          return content.payload
+        })
+      )
+      expect(payloads.map((payload) => 'waitlist' in payload && payload.waitlist)).toEqual([
+        false,
+        true
+      ])
     } finally {
       await runtime.close()
     }

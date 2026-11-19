@@ -1,12 +1,14 @@
 export {
   adminErrorStatus,
   AdminDomainError,
+  approveEnrollmentByEmail,
   createAdminAuditService,
   createAdminEmailService,
   createAdminOperationsService,
   createAdminUserService,
   createCloudAdminRoutes,
   createEnrollmentService,
+  grantDeploymentAdminByEmail,
   normalizeEnrollmentEmail,
   type AdminAuditService,
   type AdminErrorCode,
@@ -41,6 +43,7 @@ export {
   createAuthenticationEmailService,
   createAccountAuthenticationService,
   createCloudAuthenticationRuntime,
+  enrollmentEmailOptions,
   createBetterAuthAdapter,
   createCloudIdentityResolver,
   createCloudSessionResolver,
@@ -61,6 +64,7 @@ export {
   type AccessRequest,
   type DocumentRole
 } from './auth'
+export { configuredSocialProviders } from './auth/social-providers'
 export {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
@@ -125,7 +129,6 @@ export {
   CloudConfigError,
   cloudDeploymentConfigSchema,
   cloudDiscoveryFromConfig,
-  configuredSocialProviders,
   parseCloudDeploymentConfig,
   parseCloudDeploymentSource,
   parseCloudDeploymentTOML,
@@ -142,6 +145,7 @@ export {
 export {
   createCloudDatabase,
   migrateCloudDatabase,
+  pendingCloudMigrations,
   type CloudDatabase,
   type CloudDatabaseOptions,
   type Document,
@@ -180,6 +184,16 @@ export {
   LIMITED_HISTORY_DAYS,
   type DocumentVersionService
 } from './documents/versions'
+export {
+  COMMENT_EMAIL_BUDGET,
+  CommentConflictError,
+  CommentLimitError,
+  createCommentRoutes,
+  createCommentService,
+  createSharedCommentRoutes,
+  type CommentActor,
+  type CommentService
+} from './comments'
 export {
   createInvitationOutbox,
   createTransactionalEmailService,

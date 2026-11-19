@@ -1,6 +1,7 @@
 import type { WebMCP } from 'webmcp-types'
 
-import { parseToolArgs, toolJSONSchema, type ToolDef } from '@open-pencil/core/tools'
+import { parseToolArgs, toolInputFor, toolJSONSchema, type ToolDef } from '@open-pencil/core/tools'
+import { anySignal } from '@open-pencil/std/timing'
 
 import { getWebMCPTools } from './policy'
 import { type WebMCPMode } from './schema'
@@ -29,7 +30,7 @@ export function registerWebMCPTools(
     try {
       for (const def of getWebMCPTools(mode)) {
         lifetime.signal.throwIfAborted()
-        const schema = def.input
+        const schema = toolInputFor(def, 'webmcp')
         await context.registerTool(
           {
             name: def.name,
@@ -38,9 +39,7 @@ export function registerWebMCPTools(
             annotations: { readOnlyHint: !def.mutates, untrustedContentHint: true },
             execute: async (input, options?: WebMCP.ToolExecuteCallbackOptions) => {
               // Early document.modelContext implementations omit execution options.
-              const signal = options?.signal
-                ? AbortSignal.any([lifetime.signal, options.signal])
-                : lifetime.signal
+              const signal = anySignal([lifetime.signal, options?.signal])
               lifetime.signal.throwIfAborted()
               signal.throwIfAborted()
               const args = parseToolArgs(def.name, schema, input)

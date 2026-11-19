@@ -10,10 +10,10 @@ import {
 
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { SkiaRenderer } from '#core/canvas/renderer'
+import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { drawDerivedText, snapDerivedGlyphBaseline } from '#core/canvas/text/derived'
 
 let ck: Awaited<ReturnType<typeof getCanvasKit>>

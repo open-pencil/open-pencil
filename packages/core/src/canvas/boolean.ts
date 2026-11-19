@@ -3,21 +3,23 @@ import type { Fill, SceneGraph, SceneNode, Stroke, WindingRule } from '@open-pen
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
+import { addOpenSegmentsToPath } from '@open-pencil/scene-graph/paths'
 
 import { getTextOutlineSupport } from '#core/text/outlines'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
-import { addOpenSegmentsToPath } from '#core/vector/path-helpers'
 
-import { clearFillShader } from './fills'
+import { renderLeafWithEffects } from './effects'
+import { clearFillShader } from './fills/paint'
 import { sharedPath } from './paths/shared'
 import { curvePathData } from './paths/svg-data'
-import type { SkiaRenderer } from './renderer'
+import { unitedPath } from './paths/union'
+import type { SkiaRenderer } from './renderer/skia'
 import {
   configureStrokePaint,
   forVisibleStrokes,
   normalizeDashPattern,
   withStrokeDash
-} from './strokes'
+} from './strokes/draw'
 import { makeLineSegmentPath, makeLineStrokeOutline } from './strokes/line'
 import { textNodeToOutlinePath } from './text/outlines/glyphs'
 
@@ -53,20 +55,8 @@ export function canMakeBooleanSourceNode(node: SceneNode, graph: SceneGraph): bo
   })
 }
 
-function unitedPath(r: SkiaRenderer, regions: Path[]): Path | null {
-  let merged = regions[0].copy()
-  for (let index = 1; index < regions.length; index++) {
-    const union = r.ck.Path.MakeFromOp(merged, regions[index], r.ck.PathOp.Union)
-    merged.delete()
-    if (!union) {
-      return null
-    }
-    merged = union
-  }
-  return merged
-}
-
-function fillGeometryPath(r: SkiaRenderer, node: SceneNode): Path | null {
+/** The union of the layer's saved fill geometry, a copy the caller owns; null without any. */
+export function fillGeometryPath(r: SkiaRenderer, node: SceneNode): Path | null {
   const regions = r.getFillGeometry(node)
   if (!regions || regions.length === 0) {
     return null
@@ -557,7 +547,7 @@ export function renderBooleanOperation(
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  r.renderEffects(canvas, node, graph, 'behind')
-  paintBooleanOperation(r, canvas, node, graph, () => r.renderEffects(canvas, node, graph, 'inner'))
-  r.renderEffects(canvas, node, graph, 'front')
+  renderLeafWithEffects(r, canvas, node, graph, (inner) =>
+    paintBooleanOperation(r, canvas, node, graph, inner)
+  )
 }

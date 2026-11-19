@@ -24,6 +24,13 @@
   "empty": "لا توجد تعليقات بعد. انقر على لوحة الرسم لترك تعليق.",
   "noMatches": "لا توجد تعليقات مطابقة.",
   "replyCount": "الردود: {count}",
+  "clusterCount": "التعليقات: {count}",
   "commentDeleted": "تم حذف التعليق",
-  "hideComments": "إخفاء التعليقات"
+  "hideComments": "إخفاء التعليقات",
+  "mentionPeople": "أشخاص للإشارة إليهم",
+  "unread": "غير مقروء",
+  "notifyMention": "الإشارات في التعليقات",
+  "notifyReply": "الردود على تعليقاتك",
+  "notifyReplyHint": "يرد أحدهم في سلسلة تعليقات كتبتَ فيها.",
+  "notifyTitle": "{author} · {document}"
 }

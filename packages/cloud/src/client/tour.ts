@@ -21,7 +21,9 @@ export async function fetchCommunityTour(
   const tourId = discovery.community?.tourDocumentId
   if (!tourId) return null
   const cloud = createCloudAPIClient(discovery.apiURL, { fetch, signal: options.signal })
-  const tour = (await cloud.listCommunityDocuments()).find((document) => document.id === tourId)
+  const tour = (await cloud.listCommunityDocuments()).documents.find(
+    (document) => document.id === tourId
+  )
   if (!tour) return null
   const release = tour.versions.find((version) => version.name === options.version) ?? null
   const download = await cloud.getCommunityDocument(tour.id, release?.id ?? null)

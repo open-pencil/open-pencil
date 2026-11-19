@@ -164,17 +164,22 @@ const readThreadRecord = (value: unknown) => {
  * plugin data, which holds the review statuses and file settings, entry by entry; comment
  * threads one by one with their replies by id, so people commenting at once all keep theirs;
  * the libraries it uses; and its color space. A viewer receives these and sends none.
+ *
+ * Without `comments`, the threads stay out of the room, as where a server keeps them: each peer's
+ * document keeps the threads it has, and the room neither sends nor replaces them.
  */
 export function bindDocumentSync({
   editor,
   ydoc,
   data,
-  meta
+  meta,
+  comments: syncsComments = true
 }: {
   editor: CollabEditor
   ydoc: Y.Doc
   data: YDocumentData
   meta: YMeta
+  comments?: boolean
 }) {
   // What the room holds as this peer last wrote or read it, so only what changed since is sent.
   let sent = readDocumentData(editor)
@@ -193,7 +198,9 @@ export function bindDocumentSync({
     const next = readDocumentData(editor)
     ydoc.transact(() => {
       writeChanges(data.entries, next.entries, sent.entries)
-      writeChanges(data.threads, next.threads, sent.threads, { nested: BY_REPLY })
+      if (syncsComments) {
+        writeChanges(data.threads, next.threads, sent.threads, { nested: BY_REPLY })
+      }
       writeChanges(data.libraries, next.libraries, sent.libraries)
       if (next.colorSpace !== sent.colorSpace) data.settings.set(COLOR_SPACE_KEY, next.colorSpace)
       if (next.kind !== sent.kind) data.settings.set(KIND_KEY, next.kind)
@@ -219,7 +226,9 @@ export function bindDocumentSync({
   }) {
     const next = readDocumentData(editor)
     if (!ids || ids.entries) takeRecords(data.entries, next.entries, readEntry, ids?.entries)
-    if (!ids || ids.threads) takeRecords(data.threads, next.threads, readThreadRecord, ids?.threads)
+    if (syncsComments && (!ids || ids.threads)) {
+      takeRecords(data.threads, next.threads, readThreadRecord, ids?.threads)
+    }
     if (!ids || ids.libraries) {
       takeRecords(data.libraries, next.libraries, readBinding, ids?.libraries)
     }
@@ -285,7 +294,7 @@ export function bindDocumentSync({
 
   const stops = [
     observe('entries'),
-    observe('threads'),
+    ...(syncsComments ? [observe('threads')] : []),
     observe('libraries'),
     editor.onEditorEvent('node:updated', (id, changes) => {
       if (id === editor.graph.rootId && 'pluginData' in changes) send()

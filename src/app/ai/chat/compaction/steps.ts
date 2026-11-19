@@ -1,26 +1,26 @@
 import type { LanguageModel, LanguageModelUsage, ModelMessage, UIMessage } from 'ai'
 
+import { createDeferred } from '@open-pencil/std/async'
+
 import { compactAutomatically } from '@/app/ai/chat/preferences'
-import { createDeferred } from '@/app/runtime/deferred'
 
 import { autoCompactAt, designContextLimits, summaryBudget, type ContextLimits } from './limits'
 import { compactionOf, summaryText, type StepCompaction } from './marker'
+import { summaryWriter, type SummaryWriter } from './model'
 import { summarizeModelMessages } from './summarize'
 
-/** The model's limits, or null when they cannot be read or the reply is stopped first. */
-async function readLimits(
-  contextLimits: () => Promise<ContextLimits | null>,
+/** What `work` gives, or null when the reply is stopped first: a stalled lookup must not hold it open. */
+async function unlessStopped<T>(
+  work: Promise<T>,
   signal: AbortSignal | undefined
-): Promise<ContextLimits | null> {
-  const lookup = contextLimits().catch(() => null)
-  if (!signal) return lookup
+): Promise<T | null> {
+  if (!signal) return work
   if (signal.aborted) return null
-  // A stalled catalog fetch must not hold a stopped reply open.
   const stopped = createDeferred<null>()
   const stop = () => stopped.resolve(null)
   signal.addEventListener('abort', stop, { once: true })
   try {
-    return await Promise.race([lookup, stopped.promise])
+    return await Promise.race([work, stopped.promise])
   } finally {
     signal.removeEventListener('abort', stop)
   }
@@ -40,7 +40,9 @@ interface StepState {
  */
 export function createStepCompaction(
   model: LanguageModel,
-  contextLimits: () => Promise<ContextLimits | null> = designContextLimits
+  contextLimits: () => Promise<ContextLimits | null> = designContextLimits,
+  /** Who writes the summaries, given the reply's own model and limits. */
+  summaryWriterFor: (conversation: SummaryWriter) => Promise<SummaryWriter> = summaryWriter
 ) {
   let limits: ContextLimits | null = null
   let abortSignal: AbortSignal | undefined
@@ -52,7 +54,12 @@ export function createStepCompaction(
 
   /** Before a reply: whether it may compact, read once, and what its request starts with. */
   async function begin(sent: readonly UIMessage[], signal: AbortSignal | undefined) {
-    limits = compactAutomatically.value ? await readLimits(contextLimits, signal) : null
+    limits = compactAutomatically.value
+      ? await unlessStopped(
+          contextLimits().catch(() => null),
+          signal
+        )
+      : null
     abortSignal = signal
     const first = sent.at(0)
     summaryFirst = first !== undefined && compactionOf(first) !== null
@@ -70,10 +77,13 @@ export function createStepCompaction(
     if (last <= 0) return undefined
     let summary: string
     try {
+      // The request is sized for the model that writes it, whose window may be the smaller.
+      const writer = await unlessStopped(summaryWriterFor({ model, limits }), abortSignal)
+      if (!writer) return undefined
       summary = await summarizeModelMessages(messages.slice(0, last), {
-        model,
+        model: writer.model,
         summaryFirst,
-        budget: summaryBudget(limits),
+        budget: writer.limits ? summaryBudget(writer.limits) : undefined,
         abortSignal
       })
     } catch {

@@ -1,13 +1,16 @@
+import { compact } from 'es-toolkit'
+
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 import {
   getNodeRotationOrigin,
   getWorldMatrix,
   localTransformFromWorld
 } from '@open-pencil/scene-graph/coordinate'
+import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
-import { normalizeDashPattern } from '#core/canvas/strokes'
+import { normalizeDashPattern } from '#core/canvas/strokes/draw'
 import { lineStrokePath } from '#core/canvas/strokes/line'
 import { fittedDashPattern } from '#core/canvas/strokes/sides'
 import { exportBounds } from '#core/io/formats/raster'
@@ -15,20 +18,19 @@ import { exportBounds } from '#core/io/formats/raster'
 import {
   nextDefId,
   formatSolidColor,
-  createFilterDef,
   drawnFills,
   resolveFill,
   solidFillOpacity,
   SVG_STROKE_CAP,
-  SVG_STROKE_JOIN
+  SVG_STROKE_JOIN,
+  type SVGExportContext
 } from './defs'
+import { layerEffects, withLayerEffects, type ExportEffectWarning } from './effects'
 import {
   round,
   geometryBlobToSVGPath,
   makePolygonPoints,
   roundedPolygonPath,
-  hasRadius,
-  hasSmoothCorners,
   boxOutlinePath,
   arcPath,
   shapeWithTextOutlinePath
@@ -37,15 +39,15 @@ import {
 export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
 import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import {
   hasRegionFills,
   looseSegments,
   regionSVGPaths
 } from '@open-pencil/scene-graph/vector-network'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
-import type { SVGExportContext } from './defs'
 import { svg, svgElement, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
@@ -80,13 +82,17 @@ function vectorShapeElements(
 ): SVGNode[] {
   const elements: SVGNode[] = []
   const filled = fillOutlines(node)
-  appendAll(elements, outlineElements(node, filled?.outlines ?? [], common, ctx, fallbackFills))
+  // Saved stroke geometry draws the stroke below, filled; stroking the fill too would paint it twice.
+  const stroked =
+    node.strokeGeometry.length > 0 && !!strokeAttrs.stroke && strokeAttrs.stroke !== 'none'
+  const outline = stroked ? { ...common, stroke: 'none' } : common
+  appendAll(elements, outlineElements(node, filled?.outlines ?? [], outline, ctx, fallbackFills))
   const network = node.vectorNetwork
   if (network && !filled) appendAll(elements, networkElements(node, network, common))
   // Traced regions leave the open segments, which the canvas strokes, to add here.
   else if (network && filled?.traced && looseSegments(network).length > 0)
     appendAll(elements, openPathElements(node, network, common, looseSegments))
-  if (node.strokeGeometry.length > 0 && strokeAttrs.stroke && strokeAttrs.stroke !== 'none') {
+  if (stroked) {
     for (const geo of node.strokeGeometry) {
       const d = geometryBlobToSVGPath(geo.commandsBlob)
       if (d) {
@@ -133,6 +139,8 @@ function nodeShapeElements(
 
   switch (node.type) {
     case 'ELLIPSE': {
+      // Saved geometry first, as the canvas and hit testing draw an ellipse.
+      if (node.fillGeometry.length > 0) return vectorShapeElements(node, common, strokeAttrs, ctx)
       if (node.arcData) {
         return [svg('path', { d: arcPath(node), ...common })]
       }
@@ -196,8 +204,8 @@ function boxOutlineElement(
 ): SVGNode {
   const width = round(node.width)
   const height = round(node.height)
-  if (!hasRadius(node)) return svg('rect', { width, height, ...attrs })
-  if (node.independentCorners || hasSmoothCorners(node)) {
+  if (!nodeHasRadius(node)) return svg('rect', { width, height, ...attrs })
+  if (node.independentCorners || nodeHasSmoothCorners(node)) {
     return svg('path', { d: boxOutlinePath(node), ...attrs })
   }
   // SVG clamps rx and ry to their own sides; the canvas keeps a too-large radius circular.
@@ -256,14 +264,8 @@ function buildGroupAttrs(
     attrs.style = `mix-blend-mode: ${blend}`
   }
 
-  const filterDef = createFilterDef(node.effects, ctx)
-  if (filterDef) {
-    ctx.defs.push(filterDef.node)
-    attrs.filter = `url(#${filterDef.id})`
-  }
-
   let clipId: string | undefined
-  if (node.clipsContent && node.childIds.length > 0) {
+  if (clipsChildren(node) && node.childIds.length > 0) {
     clipId = nextDefId(ctx, 'clip')
     ctx.defs.push(svg('clipPath', { id: clipId }, boxOutlineElement(node, {})))
   }
@@ -416,6 +418,7 @@ function layerId(name: string, ids: NonNullable<SVGExportContext['layerIds']>): 
 }
 
 function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
+  const effects = layerEffects(node, ctx)
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
   if (node.type === 'TEXT') {
@@ -424,7 +427,8 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
       node,
       ctx
     )
-    return svg('g', groupAttrs, renderTextNode(node, fill.color, ctx, fill.opacity))
+    const text = renderTextNode(node, fill.color, ctx, fill.opacity)
+    return svgElement('g', groupAttrs, withLayerEffects([text], effects, groupAttrs))
   }
 
   const visibleFills = node.fills.filter((f) => f.visible)
@@ -466,7 +470,7 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     appendAll(children, childContent)
   }
 
-  const validChildren = children.filter((c): c is SVGNode => c !== null)
+  const validChildren = withLayerEffects(compact(children), effects, groupAttrs)
 
   if (validChildren.length === 0 && Object.keys(groupAttrs).length === 0) {
     return null
@@ -490,6 +494,8 @@ export interface SVGExportOptions {
   xmlDeclaration?: boolean
   /** Target export color space (default: srgb) */
   colorSpace?: 'srgb' | 'display-p3'
+  /** Receives each effect the export leaves out because SVG cannot draw it, such as glass. */
+  onWarning?: (warning: ExportEffectWarning) => void
   /**
    * Line breaks of text nodes as the editor laid them out, wraps included. Without them, only
    * explicit newlines start a new baseline, which renderers that do not wrap SVG text keep.
@@ -519,6 +525,7 @@ export function renderNodesToSVG(
     defIdCounter: 0,
     graph,
     colorSpace: options.colorSpace ?? 'srgb',
+    onWarning: options.onWarning,
     textLayout: options.textLayout,
     layerIds: options.layerIds ? { names: new Map(), taken: new Set() } : undefined
   }

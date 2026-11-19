@@ -1,7 +1,12 @@
 import { uniq } from 'es-toolkit'
 
-import { AI_PROVIDERS, type AIProviderID, type ModelOption } from '@open-pencil/core/constants'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import {
+  AI_PROVIDERS,
+  type AIProviderID,
+  type ModelOption,
+  providerKind
+} from '@open-pencil/core/constants'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { modelProviderName } from '@/app/ai/models/provider-name'
 import type { AIModelCapability, AIModelProfileId, AIModelRole } from '@/app/ai/models/types'
@@ -115,7 +120,7 @@ const NO_CURRENT: CurrentOnboardingModels = {
 
 /** ACP agents and Pi, which run on this computer and choose their own model. */
 export function isOnboardingAgent(providerID: string): boolean {
-  return providerID.startsWith('acp:') || providerID === 'harness:pi'
+  return providerKind(providerID) !== 'api'
 }
 
 /** Whether this app can use an access: agents and subscriptions each need the desktop app. */
@@ -148,10 +153,6 @@ export function usableCurrentModels(
     review: reviewOrFast(current.review),
     fast: reviewOrFast(current.fast)
   }
-}
-
-function isAgentModel(model: PlannedModel | null): boolean {
-  return Boolean(model && isOnboardingAgent(model.providerID))
 }
 
 function catalogModels(providerID: AIProviderID): ModelOption[] {
@@ -187,7 +188,21 @@ function plannedModel(providerID: OnboardingAccess, serverVision = false): Plann
 }
 
 /** The provider's model tagged as fast, for low-cost background work. */
-function fastModel(providerID: AIProviderID): PlannedModel | null {
+/**
+ * The model the provider recommends for `role` (`ProviderRoleModels` in Core), if it names one
+ * its catalog lists.
+ */
+function recommendedModel(
+  providerID: AIProviderID,
+  role: Exclude<AIModelRole, 'design'>
+): PlannedModel | null {
+  const id = AI_PROVIDERS.find((definition) => definition.id === providerID)?.roles?.[role]
+  const model = id ? catalogModels(providerID).find((candidate) => candidate.id === id) : null
+  return model ? fromCatalog(providerID, model) : null
+}
+
+/** The provider's catalog model tagged Fast that calls tools, for one that recommends none. */
+function taggedFastModel(providerID: AIProviderID): PlannedModel | null {
   const model = catalogModels(providerID).find(
     (candidate) => candidate.tag === 'Fast' && candidate.capabilities?.includes('tools')
   )
@@ -208,9 +223,9 @@ function keepable(model: PlannedModel | null, access: OnboardingAccess[]): model
   return !isOnboardingAccess(model.providerID) || access.includes(model.providerID)
 }
 
-/** Whether a role may follow the design model: agents cannot, and vision needs image input. */
+/** Whether a role may follow the design model; vision needs one that accepts images. */
 export function canFollowDesign(role: AIModelRole, design: PlannedModel | null): boolean {
-  if (!design || isAgentModel(design)) return false
+  if (!design) return false
   return role !== 'vision' || hasVision(design)
 }
 
@@ -239,6 +254,13 @@ function planVision(
   current: PlannedRole
 ): PlannedRole {
   if (current !== null && current !== 'design' && keepable(current, access)) return current
+  // Images already going to a design model that reads them keep going there.
+  if (current === 'design' && canFollowDesign('vision', design)) return 'design'
+  // The design model's provider may recommend another of its models for images.
+  const recommended = design ? recommendedModel(design.providerID, 'vision') : null
+  if (recommended && hasVision(recommended) && recommended.modelID !== design?.modelID) {
+    return recommended
+  }
   if (canFollowDesign('vision', design)) return 'design'
   // A local server that reads images is preferred over a paid account, and a subscription
   // already paid for over one billed by use.
@@ -269,24 +291,29 @@ function keepRole(
   role: 'review' | 'fast',
   design: PlannedModel | null
 ) {
-  const choice = current[role]
   if (!current.configured) return false
-  if (choice === 'design') return canFollowDesign(role, design)
-  return !isAgentModel(choice)
+  return current[role] !== 'design' || canFollowDesign(role, design)
 }
 
-/** Review follows the design model, or uses the API model chosen for vision behind an agent. */
+/** Review follows the design model, or uses the model chosen for vision when there is none. */
 function planReview(
   design: PlannedModel | null,
   vision: PlannedRole,
   current: CurrentOnboardingModels
 ): PlannedRole {
   if (keepRole(current, 'review', design)) return current.review
+  // A provider may recommend a stronger, or image-reading, model for reviews.
+  const recommended = design ? recommendedModel(design.providerID, 'review') : null
+  if (recommended && recommended.modelID !== design?.modelID) return recommended
   if (canFollowDesign('review', design)) return 'design'
   return vision !== 'design' && vision?.capabilities.includes('tools') ? vision : null
 }
 
-/** Fast work uses the provider's fast model when it has one, otherwise the design model. */
+/**
+ * Fast work uses the model the provider recommends for it, even when that is the design model,
+ * since Fast tasks run only with a model of their own; otherwise a model tagged Fast, otherwise
+ * the design model itself; with an agent designing, Fast follows it and so stays off.
+ */
 function planFast(
   design: PlannedModel | null,
   vision: PlannedRole,
@@ -295,9 +322,14 @@ function planFast(
   if (keepRole(current, 'fast', design)) return current.fast
   const apiVision = vision === 'design' ? null : vision
   const base = canFollowDesign('fast', design) ? design : apiVision
-  const fast = base ? fastModel(base.providerID) : null
-  if (fast && fast.modelID !== base?.modelID) return fast
-  if (canFollowDesign('fast', design)) return 'design'
+  const recommended = base ? recommendedModel(base.providerID, 'fast') : null
+  if (recommended?.capabilities.includes('tools')) return recommended
+  const fast = base ? taggedFastModel(base.providerID) : null
+  if (fast) return fast
+  // An agent designs with a model of its own choosing that Fast tasks can't call, so they stay
+  // off by following it, as before. An API model is given to Fast itself, since following
+  // Design would turn Fast tasks off.
+  if (base === design && design && isOnboardingAgent(design.providerID)) return 'design'
   return base
 }
 
@@ -309,8 +341,9 @@ function roleModels(plan: Omit<OnboardingPlan, 'connections'>): PlannedModel[] {
 
 /**
  * Proposes a model for each role, preferring what is already configured and then access the
- * person already has. Agents choose their own model and cannot take the other roles, so those
- * fall back to an API model. Roles the person did not ask about keep their configuration.
+ * person already has. Agents choose their own model and take no images until their profile says
+ * so, so visual review falls back to an API model. Roles the person did not ask about keep their
+ * configuration.
  */
 export function planOnboarding(answers: OnboardingAnswers, options: PlanOptions): OnboardingPlan {
   const access = availableAccess(answers, options)
@@ -374,7 +407,8 @@ export function roleChoiceKey(choice: PlannedRole): string {
 
 /**
  * Choices for a role: configured models, every suitable catalog model of a connected provider,
- * an agent or server for the design role, and for the other roles the design model or nothing.
+ * and an agent or server when it has the role's capability. Roles other than design also offer
+ * the design model, when they can follow it, or nothing.
  */
 export function roleOptions(
   role: AIModelRole,
@@ -399,9 +433,7 @@ export function roleOptions(
       )
     }
   }
-  const suitable = candidates.filter(
-    (model) => model.capabilities.includes(needs) && (role === 'design' || !isAgentModel(model))
-  )
+  const suitable = candidates.filter((model) => model.capabilities.includes(needs))
   const unique = new Map(suitable.map((model) => [roleChoiceKey(model), model]))
   const models = [...unique.values()]
   if (role === 'design') return models

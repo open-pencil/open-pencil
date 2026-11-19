@@ -17,7 +17,7 @@
 
 import type { Effect, GlassEffectParams, SceneNode } from '@open-pencil/scene-graph'
 import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
-import { blurSigma } from '@open-pencil/scene-graph/geometry'
+import { blurSigma, kernelReach } from '@open-pencil/scene-graph/geometry'
 
 import { defineShader, type Float2, type Float4 } from '#core/canvas/sksl'
 
@@ -170,5 +170,5 @@ export function glassBackdropSigma(effect: Effect): number {
  */
 export function glassSampleRadius(node: SceneNode, effect: Effect): number {
   const depth = glassDepth(glassParams(effect).depth, node.width, node.height)
-  return depth * 1.1 + 3 * glassBackdropSigma(effect) + 1
+  return depth * 1.1 + kernelReach(glassBackdropSigma(effect))
 }

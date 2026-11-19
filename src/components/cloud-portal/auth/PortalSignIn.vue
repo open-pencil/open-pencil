@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { CloudLegalDiscovery } from '@open-pencil/cloud/contract'
+import { CLOUD_SOCIAL_PROVIDER_NAMES, type CloudLegalDiscovery } from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import { portalForm } from '@/components/cloud-portal/ui'
 import CloudAccountForm from '@/components/cloud/account/CloudAccountForm.vue'
+import CloudProviderLogo from '@/components/cloud/account/CloudProviderLogo.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
@@ -52,10 +53,8 @@ const emit = defineEmits<{
 const ui = portalForm({ size: 'lg' })
 const messages = useCloudPortalMessages()
 const signUp = computed(() => mode === 'sign-up')
-const labels = computed<Record<PortalSignInMethod, string>>(() => ({
-  google: messages.value.continueWithGoogle,
-  apple: messages.value.continueWithApple
-}))
+const label = (method: PortalSignInMethod) =>
+  messages.value.continueWith({ provider: CLOUD_SOCIAL_PROVIDER_NAMES[method] })
 const description = computed(() => {
   if (!returnsTo) return undefined
   return messages.value.returnsTo({
@@ -70,6 +69,7 @@ const showForm = computed(() => !!emailPassword && (!signUp.value || emailPasswo
   <PortalPublicLayout
     :host="host"
     :heading="signUp ? messages.signUpTitle : messages.signInTitle"
+    :tab-title="signUp ? messages.signUpTitle : messages.signIn"
     :description="description"
   >
     <AppAlert
@@ -120,14 +120,15 @@ const showForm = computed(() => !!emailPassword && (!signUp.value || emailPasswo
         size="lg"
         variant="outline"
         :class="ui.submit()"
+        :ui="{ icon: 'size-4' }"
         :disabled="submitting"
         @click="emit('provider', method)"
       >
+        <!-- Brand marks read at 16px; the button's own 14px slot would push them below the label. -->
         <template #leading>
-          <icon-ai-google v-if="method === 'google'" class="size-4" />
-          <icon-ai-apple v-else class="size-4" />
+          <CloudProviderLogo :provider="method" class="size-full" />
         </template>
-        {{ labels[method] }}
+        {{ label(method) }}
       </AppButton>
     </div>
 

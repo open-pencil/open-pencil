@@ -2,9 +2,10 @@ import { uniq } from 'es-toolkit'
 
 import type { CanvasKit, Image, ImageFilter, Shader, TileMode } from '@open-pencil/canvaskit'
 import type { ProgressiveBlur } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { visualBoundsCorners } from '@open-pencil/scene-graph/clipping'
 import { blurSigma, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 /**
  * How far apart neighbouring blur levels sit: each is this much wider than the last, or this many
@@ -182,12 +183,7 @@ function bandBox(
     maxX: UNBOUNDED,
     maxY: UNBOUNDED
   }
-  let polygon: Vector[] = [
-    { x: bounds.minX, y: bounds.minY },
-    { x: bounds.maxX, y: bounds.minY },
-    { x: bounds.maxX, y: bounds.maxY },
-    { x: bounds.minX, y: bounds.maxY }
-  ]
+  let polygon = visualBoundsCorners(bounds)
   if (Number.isFinite(from))
     polygon = clipPolygon(polygon, (point) => along(point) - (from - slack))
   if (Number.isFinite(to)) polygon = clipPolygon(polygon, (point) => to + slack - along(point))

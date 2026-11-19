@@ -54,6 +54,47 @@ test('Select All and Undo from the menu edit a focused text field', async () => 
   await expect(field).toHaveValue('hello world')
 })
 
+test('Undo and Redo from the menu reach an editor that keeps its own history', async () => {
+  // As CodeMirror's history() does: it answers the browser's history input events itself.
+  await editor.page.evaluate(() => {
+    const field = document.createElement('div')
+    field.dataset.testId = 'focused-command-field'
+    field.contentEditable = 'true'
+    field.dataset.history = ''
+    field.addEventListener('beforeinput', (event) => {
+      if (!event.inputType.startsWith('history')) return
+      event.preventDefault()
+      field.dataset.history += `${event.inputType} `
+    })
+    document.body.append(field)
+    field.focus()
+  })
+  const field = editor.page.getByTestId('focused-command-field')
+  // Counts the native history edits, which must not also run once the editor took the event.
+  const nativeEdits = await editor.page.evaluateHandle(() => {
+    const execCommand = document.execCommand.bind(document)
+    const calls: string[] = []
+    document.execCommand = (command, ...rest) => {
+      calls.push(command)
+      return execCommand(command, ...rest)
+    }
+    return {
+      calls,
+      restore: () => Reflect.deleteProperty(document, 'execCommand')
+    }
+  })
+
+  try {
+    expect(await runAsNativeMenu('edit.undo')).toEqual([])
+    expect(await runAsNativeMenu('edit.redo')).toEqual([])
+    await expect(field).toHaveAttribute('data-history', 'historyUndo historyRedo ')
+    expect(await nativeEdits.evaluate(({ calls }) => calls)).toEqual([])
+  } finally {
+    await nativeEdits.evaluate(({ restore }) => restore())
+    await nativeEdits.dispose()
+  }
+})
+
 test('canvas commands wait while a text field has focus, view commands do not', async () => {
   await focusTextField('Name')
 

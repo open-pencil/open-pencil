@@ -1,13 +1,13 @@
 import { describe, expect, mock, test } from 'bun:test'
 
 import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
+import { createDeferred } from '@open-pencil/std/async'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import type { AgentAuthCheck } from '@/app/ai/agents/acp/auth/session'
 import type { AgentAuthStatus } from '@/app/ai/agents/acp/auth/status'
 import type { TerminalSignIn } from '@/app/ai/agents/acp/auth/terminal'
 import { createAgentAccounts } from '@/app/ai/agents/setup/accounts'
-import { createDeferred } from '@/app/runtime/deferred'
 const claude = expectDefined(
   ACP_AGENTS.find((agent) => agent.id === 'claude-code'),
   'Claude Code'

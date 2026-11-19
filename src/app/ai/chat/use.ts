@@ -4,6 +4,7 @@ import { IS_BROWSER } from '@open-pencil/core/constants'
 
 import { resumingAgent } from '@/app/ai/agents/acp/session'
 import { createConversationHistory } from '@/app/ai/chat/history/controller'
+import { conversationTitle } from '@/app/ai/chat/history/title'
 import { propertiesTab } from '@/app/ai/chat/panel'
 import { createChatSessionManager } from '@/app/ai/chat/session'
 import {
@@ -54,7 +55,8 @@ const history = createConversationHistory({
     if (isACPProvider.value) return 'acp'
     return isHarnessProvider.value ? 'harness' : 'direct'
   },
-  resumingAgent: () => resumingAgent(providerID.value)
+  resumingAgent: () => resumingAgent(providerID.value),
+  title: conversationTitle
 })
 
 registerAIChatEffects(chatSession.markTransportDirty)

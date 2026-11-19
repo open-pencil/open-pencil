@@ -46,6 +46,7 @@ const rawCloudServerConfigSchema = v.object({
   deployment: v.picklist(['official', 'self-hosted']),
   publicURL: httpURLSchema,
   listingMinimumEditorVersion: v.optional(cloudEditorVersionSchema),
+  minimumEditorVersion: v.optional(cloudEditorVersionSchema),
   relayURL: v.optional(websocketURLSchema),
   technicalLimits: v.optional(
     v.object({
@@ -113,6 +114,8 @@ const rawCloudServerConfigSchema = v.object({
   appleTeamId: optionalTextSchema,
   appleKeyId: optionalTextSchema,
   applePrivateKey: optionalTextSchema,
+  githubClientId: optionalTextSchema,
+  githubClientSecret: optionalTextSchema,
   appleAppBundleIdentifier: optionalTextSchema,
   s3Endpoint: httpURLSchema,
   s3Region: v.pipe(v.string(), v.trim(), v.minLength(1)),
@@ -132,6 +135,7 @@ const rawCloudServerConfigSchema = v.object({
   smtpUser: optionalTextSchema,
   smtpPassword: optionalTextSchema,
   emailFrom: optionalTextSchema,
+  emailReplyTo: v.optional(v.pipe(v.string(), v.email())),
   emailTransport: v.optional(v.picklist(['none', 'smtp', 'cloudflare']), 'none'),
   emailBatchSize: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1000)), 50),
   emailIntervalMs: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1000)), 30_000),
@@ -197,12 +201,22 @@ const rawCloudServerConfigSchema = v.object({
       tourDocumentId: v.optional(v.pipe(v.string(), v.uuid()))
     })
   ),
+  /** How a self-hosted server names itself on its public pages. */
+  branding: v.optional(
+    v.object({
+      name: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(80))),
+      logoURL: v.optional(httpURLSchema),
+      helpURL: v.optional(httpURLSchema)
+    })
+  ),
   /** Where server errors are reported; without it the server reports nothing. */
   errorTracking: v.optional(
     v.object({
       provider: v.literal('posthog'),
       host: httpURLSchema,
-      projectAPIKey: v.pipe(v.string(), v.trim(), v.minLength(1))
+      projectAPIKey: v.pipe(v.string(), v.trim(), v.minLength(1)),
+      /** Error reports name the account and records involved; off unless a deployment sets it. */
+      includeIds: v.optional(v.boolean(), false)
     })
   )
 })
@@ -263,6 +277,7 @@ function validateAuthenticationConfig(config: CloudServerConfig): void {
     'appleKeyId',
     'applePrivateKey'
   ])
+  requireTogether(config, 'GitHub', ['githubClientId', 'githubClientSecret'])
 }
 
 function validateEmailConfig(config: CloudServerConfig): void {

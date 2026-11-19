@@ -8,11 +8,11 @@ import {
   type SceneNode,
   type Stroke
 } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { blurReach, shadowReach } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
@@ -341,6 +341,17 @@ describe('text past its box', () => {
     const bounds = textBounds({ derivedTextHeight: 154, rotation: 90 })
     expect(bounds.maxX - bounds.minX).toBeCloseTo(154)
     expect(bounds.maxY - bounds.minY).toBeCloseTo(110)
+  })
+
+  // Figma 126 lets a 20 px line in a 12 px box run past the side away from its vertical alignment.
+  test('lines past a fixed-size box reach away from its vertical alignment', () => {
+    const rows = (textAlignVertical: SceneNode['textAlignVertical']) => {
+      const bounds = textBounds({ y: 0, height: 12, derivedTextHeight: 20, textAlignVertical })
+      return [bounds.minY, bounds.maxY]
+    }
+    expect(rows('TOP')).toEqual([0, 20])
+    expect(rows('CENTER')).toEqual([-4, 16])
+    expect(rows('BOTTOM')).toEqual([-8, 12])
   })
 
   test('lines within the box leave it as it is', () => {

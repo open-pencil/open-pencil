@@ -332,12 +332,12 @@ Discover available tools and their arguments from the connected server or browse
 ## Key tools for agents
 
 - **`query_nodes`** — XPath selectors to find specific nodes without fetching the full tree.
-- **`get_jsx`** — inspect any node as JSX in the same format accepted by `render`.
+- **`get_jsx`** — inspect any node as JSX in the same format accepted by `render`. Long JSX comes back outlined: deep layers are written with `keepChildren` and a comment naming their ID to read next, and rendering the outline with `replace_id` on that node keeps those layers' children.
 - **`diff_nodes`** — compare two nodes as an appliable patch of JSX attributes; `preview_patch` previews setting attributes and `apply_patch` applies a patch only if the nodes still match it.
 - **`diff_pixels`** — pixel diff between two rendered nodes; use it to confirm an edit changed only the intended region.
 - **`describe`** — semantic analysis of role, visual style, layout, and design issues.
 - **`batch_update`** — apply multiple node updates efficiently.
-- **`export_image` / `export_svg` / `export_pdf`** — visual verification and deliverables.
+- **`export_image` / `export_svg` / `export_pdf`** — visual verification and deliverables. `export_svg` lists the effects SVG cannot draw, such as glass, in `warnings`; the SVG leaves them out.
 - **`zoom_to_fit` / `set_viewport` / `get_viewport`** — move the user's view only when they ask to be shown something.
 - **`get_codegen_prompt`** — retrieve OpenPencil's current JSX/codegen guidance.
 - **`undo` / `redo`** — revert or reapply your newest change; they refuse to touch the user's edits.

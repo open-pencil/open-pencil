@@ -12,7 +12,7 @@ import type {
   PropertyListActions,
   PropertyListItemFor,
   PropertyListKey,
-  PropertyListPatchFor
+  PropertyListChange
 } from '#vue/primitives/PropertyList/types.ts'
 
 function moveItem<T>(items: readonly T[], fromIndex: number, toIndex: number): readonly T[] {
@@ -143,7 +143,7 @@ export function useEditorPropertyList<K extends PropertyListKey>(propKey: K) {
     }
   }
 
-  function patch(index: number, changes: PropertyListPatchFor<K>) {
+  function patch(index: number, changes: PropertyListChange<K>) {
     const nodes = targetNodes()
     if (nodes.length === 0) return
     batch.ensure(
@@ -154,7 +154,8 @@ export function useEditorPropertyList<K extends PropertyListKey>(propKey: K) {
       const current = propArray(node)[index]
       if (!current) continue
       const next = [...propArray(node)]
-      next[index] = { ...current, ...structuredClone(changes) }
+      const patched = typeof changes === 'function' ? changes(current) : changes
+      next[index] = { ...current, ...structuredClone(patched) }
       updateArray(node, next, `Change ${propKey}`)
     }
   }

@@ -1,5 +1,7 @@
 import { RequestError } from '@agentclientprotocol/sdk/unstable'
 
+import { isAbortError } from '@open-pencil/std/errors'
+
 import { REDACTED, scrubDiagnosticText } from './scrub'
 
 export type DiagnosticErrorInfo = {
@@ -10,7 +12,7 @@ export type DiagnosticErrorInfo = {
 
 function isRetryableError(error: unknown): boolean | null {
   if (!(error instanceof Error)) return null
-  if (error.name === 'AbortError') return false
+  if (isAbortError(error)) return false
   if ('status' in error && typeof error.status === 'number') {
     return error.status === 408 || error.status === 429 || error.status >= 500
   }

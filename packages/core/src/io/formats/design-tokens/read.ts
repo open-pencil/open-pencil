@@ -2,7 +2,7 @@ import { isPlainObject } from 'es-toolkit/predicate'
 import { basename, dirname, join, normalize } from 'pathe'
 import * as v from 'valibot'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { pathName } from './paths'
 import { OPENPENCIL_EXTENSION } from './types'

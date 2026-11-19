@@ -1,11 +1,11 @@
 import {
   COMMUNITY_THUMBNAIL_PATH,
-  parseCommunityDownloadQuery,
-  parseRequestImageLinks
+  communityDownloadQuerySchema,
+  requestImageLinksSchema
 } from '#cloud/contract'
 import { documentDomainError } from '#cloud/server/documents'
 import {
-  communityThumbnailParams,
+  documentRevisionParams,
   documentParams,
   validatedJSON,
   validatedQuery
@@ -43,7 +43,7 @@ export function createCommunityRoutes(community: CommunityService) {
     .get(
       '/community/:documentId/document',
       documentParams,
-      validatedQuery(parseCommunityDownloadQuery),
+      validatedQuery(communityDownloadQuerySchema),
       (context) =>
         communityRoute(context, async () => {
           const { documentId } = context.req.valid('param')
@@ -55,7 +55,7 @@ export function createCommunityRoutes(community: CommunityService) {
     .post(
       '/community/:documentId/images',
       documentParams,
-      validatedJSON(parseRequestImageLinks),
+      validatedJSON(requestImageLinksSchema),
       (context) =>
         communityRoute(context, async () =>
           context.json(
@@ -76,7 +76,7 @@ export function createCommunityRoutes(community: CommunityService) {
 export function createCommunityThumbnailRoutes(community: CommunityService) {
   return new Hono().get(
     `${COMMUNITY_THUMBNAIL_PATH}/:documentId/:revisionId`,
-    communityThumbnailParams,
+    documentRevisionParams,
     (context) =>
       communityRoute(context, async () => {
         const { documentId, revisionId } = context.req.valid('param')

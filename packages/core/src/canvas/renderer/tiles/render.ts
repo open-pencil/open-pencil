@@ -2,7 +2,6 @@ import type { Image as CKImage } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { paintPageBackground } from '#core/canvas/page/background'
-import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   type RenderChunk,
   type RenderChunkIndex,
@@ -10,6 +9,7 @@ import {
   drawRenderChunkDirect
 } from '#core/canvas/renderer/chunks'
 import { rendererNow } from '#core/canvas/renderer/clock'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
 import type { CachedTile } from './cache'
 import type { TileCostModel } from './cost'

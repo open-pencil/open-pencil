@@ -11,18 +11,28 @@ import {
   type CloudFetch,
   type CloudPortalClient
 } from '@open-pencil/cloud/client'
-import type { CloudDiscovery, WorkspaceSummary } from '@open-pencil/cloud/contract'
+import {
+  CLOUD_EDITOR_VERSION_HEADER,
+  type CloudDiscovery,
+  type WorkspaceSummary
+} from '@open-pencil/cloud/contract'
 
+import { APP_VERSION } from '@/app/runtime/version'
 import { tauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
 
-import { rememberCloudAccount, type CloudAccount, type CloudServer } from '../servers/store'
+import {
+  findCloudServer,
+  rememberCloudAccount,
+  type CloudAccount,
+  type CloudServer
+} from '../servers/store'
 import { tellCloudLocale } from './locale'
 import { clearCloudSessionToken, readCloudSessionToken } from './token'
 
 /**
  * Where this app stands with a server: signed in, waiting for an administrator, refused, asked to
- * accept the server's current terms, signed out after having been signed in, never signed in, or
+ * prove its second step in the browser, asked to accept the server's current terms, signed out after having been signed in, never signed in, or
  * out of reach.
  */
 export type CloudSessionState =
@@ -30,6 +40,7 @@ export type CloudSessionState =
   | 'signed-in'
   | 'pending'
   | 'closed'
+  | 'two-step'
   | 'terms'
   | 'expired'
   | 'signed-out'
@@ -67,18 +78,50 @@ function publish(serverId: string, connection: CloudConnection): void {
   cloudConnections.value = { ...cloudConnections.value, [serverId]: connection }
 }
 
-/** Desktop requests skip the webview's CORS, since a server lists only its web editors. */
-export const cloudFetch: CloudFetch = (input, init) =>
-  IS_TAURI ? tauriFetch(input, init) : globalThis.fetch(input, init)
+/**
+ * Desktop requests skip the webview's CORS, since a server lists only its web editors, and name the
+ * editor's version so a server can refuse one older than it supports.
+ */
+export const cloudFetch: CloudFetch = (input, init) => {
+  if (!IS_TAURI) return globalThis.fetch(input, init)
+  // A request's own headers, then the call's, as `fetch` would combine them.
+  const headers = new Headers(input instanceof Request ? input.headers : undefined)
+  new Headers(init?.headers).forEach((value, name) => headers.set(name, value))
+  headers.set(CLOUD_EDITOR_VERSION_HEADER, APP_VERSION)
+  return tauriFetch(input, { ...init, headers })
+}
+
+/**
+ * A server that refused this editor as too old raised its minimum since the app last asked: the
+ * kept discovery is stale, so the server is asked again and its answer says to update.
+ */
+/**
+ * Servers being asked again after a refusal. A refusal during that check, as from a replica still
+ * on the old minimum while discovery comes from one on the new, starts no other one.
+ */
+const rechecking = new Set<string>()
+
+function recheckRefusedEditor(serverId: string): void {
+  const server = findCloudServer(serverId)
+  if (!server || rechecking.has(serverId)) return
+  rechecking.add(serverId)
+  discoveries.delete(server.url)
+  void refreshCloudConnection(server).finally(() => rechecking.delete(serverId))
+}
 
 /** Requests to one server, carrying its device-code token when this app has one. */
 export function cloudServerFetch(serverId: string): CloudFetch {
   return async (input, init) => {
     const token = await readCloudSessionToken(serverId)
-    if (!token) return cloudFetch(input, init)
-    const headers = new Headers(init?.headers)
-    headers.set('Authorization', `Bearer ${token}`)
-    return cloudFetch(input, { ...init, headers })
+    let request = init
+    if (token) {
+      const headers = new Headers(init?.headers)
+      headers.set('Authorization', `Bearer ${token}`)
+      request = { ...init, headers }
+    }
+    const response = await cloudFetch(input, request)
+    if (response.status === 426) recheckRefusedEditor(serverId)
+    return response
   }
 }
 
@@ -86,7 +129,7 @@ export function cloudServerFetch(serverId: string): CloudFetch {
 export function discoverCloudServer(url: string): Promise<CloudDiscovery> {
   const cached = discoveries.get(url)
   if (cached) return cached
-  const request = discoverCloud(url, { fetch: cloudFetch })
+  const request = discoverCloud(url, { fetch: cloudFetch, editorVersion: APP_VERSION })
   discoveries.set(url, request)
   request.catch(() => discoveries.delete(url))
   return request
@@ -107,11 +150,26 @@ export function cloudPortalClient(
   })
 }
 
+/** Forgets a token the server turned away, unless a newer sign-in replaced it meanwhile. */
+async function clearCloudSessionTokenIfStill(serverId: string, token: string | null) {
+  if (token && (await readCloudSessionToken(serverId)) === token) {
+    await clearCloudSessionToken(serverId)
+  }
+}
+
+/**
+ * Where this app stands with a server. The account it answers with is remembered only while
+ * `current` says no newer check started, so a check that finishes late cannot put back an account
+ * another signed in over.
+ */
 async function signedInConnection(
   server: CloudServer,
-  discovery: CloudDiscovery
+  discovery: CloudDiscovery,
+  current: () => boolean
 ): Promise<CloudConnection> {
   const portal = cloudPortalClient(server, discovery)
+  // The token the answer is about: a newer sign-in may store another while the check runs.
+  const token = await readCloudSessionToken(server.id)
   let status: Awaited<ReturnType<typeof portal.accountStatus>>
   try {
     status = await portal.accountStatus()
@@ -120,7 +178,7 @@ async function signedInConnection(
       throw error
     }
     // A token the server no longer accepts cannot be used again; keep the account to sign back in.
-    if (await readCloudSessionToken(server.id)) await clearCloudSessionToken(server.id)
+    await clearCloudSessionTokenIfStill(server.id, token)
     return {
       ...INITIAL,
       state: server.account ? 'expired' : 'signed-out',
@@ -134,9 +192,18 @@ async function signedInConnection(
     email: status.user.email,
     image: status.user.image ?? null
   }
-  rememberCloudAccount(server.id, account)
+  if (current()) rememberCloudAccount(server.id, account)
+  if (status.state === 'two-step' && token) {
+    // A desktop app's own session counts as proved once a browser that proved it approved the
+    // sign-in; one from before that never will, so the app signs in again.
+    await clearCloudSessionTokenIfStill(server.id, token)
+    return { ...INITIAL, state: 'expired', discovery, account }
+  }
   if (status.state !== 'active') {
-    const state = status.state === 'pending' || status.state === 'terms' ? status.state : 'closed'
+    const state =
+      status.state === 'pending' || status.state === 'terms' || status.state === 'two-step'
+        ? status.state
+        : 'closed'
     return { ...INITIAL, state, discovery, account }
   }
   const { workspaces } = await cloudAPIClient(server, discovery).listWorkspaces()
@@ -200,7 +267,11 @@ async function askServer(server: CloudServer, generation: number): Promise<Cloud
   let next: CloudConnection
   try {
     const discovery = await discoverCloudServer(server.url)
-    next = await signedInConnection(server, discovery)
+    next = await signedInConnection(
+      server,
+      discovery,
+      () => generations.get(server.id) === generation
+    )
   } catch (error) {
     next = {
       ...previous,

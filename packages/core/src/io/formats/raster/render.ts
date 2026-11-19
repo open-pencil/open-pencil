@@ -7,6 +7,7 @@ import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-gr
 import { CORNER_FIELDS } from '@open-pencil/scene-graph/fields'
 import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { SupersampledOutput } from '#core/canvas/images/state'
@@ -340,12 +341,7 @@ export function prepareSelectionRenderGraph(
 function clippingAncestors(graph: SceneGraph, node: SceneNode): SceneNode[] {
   const frames: SceneNode[] = []
   for (let parent = node.parentId ? graph.getNode(node.parentId) : undefined; parent;) {
-    if (
-      parent.clipsContent &&
-      (parent.type === 'FRAME' || parent.type === 'COMPONENT' || parent.type === 'INSTANCE')
-    ) {
-      frames.unshift(parent)
-    }
+    if (clipsChildren(parent)) frames.unshift(parent)
     parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
   }
   return frames

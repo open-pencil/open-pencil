@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, ref } from 'vue'
 
+import { errorMessage, isAbortError } from '@open-pencil/std/errors'
 import { useAIMessages } from '@open-pencil/vue/i18n'
 
 import type { ChatReference } from '@/app/ai/chat/references/link'
@@ -60,10 +61,10 @@ async function open() {
     await openReference(store, reference)
   } catch (error) {
     // A newer page switch supersedes this one.
-    if (error instanceof Error && error.name === 'AbortError') return
+    if (isAbortError(error)) return
     toast.error(
       notificationMessages.get().operationFailed({
-        error: error instanceof Error ? error.message : String(error)
+        error: errorMessage(error)
       })
     )
   }

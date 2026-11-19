@@ -5,8 +5,8 @@ import { expectFigmaRow, renderRow } from '#core-tests/helpers/figma-rows'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { maxOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { sideDashSpans, sideStrokeRRects } from '#core/canvas/strokes/sides'
@@ -134,8 +134,7 @@ describe('strokes with sides of their own weights, as in Figma', () => {
           rounded(graph, hostId)
           const frame = graph.getNode(expectDefined(graph.getNode(hostId)).childIds[0])
           if (!frame) return
-          frame.strokeCap = strokeCap
-          frame.strokes = frame.strokes.map((stroke) => ({ ...stroke, dashPattern: [20, 10] }))
+          graph.updateNode(frame.id, { strokeCap, dashPattern: [20, 10] })
         },
         70,
         160,

@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import type { List, ListItem, Root, RootContent } from 'mdast'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { ALLOWED_CATEGORIES, headingText, sectionEnd } from './validate'
 

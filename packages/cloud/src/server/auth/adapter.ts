@@ -2,7 +2,8 @@ import type {
   CloudAccessToken,
   CloudAccessTokenCreate,
   CloudAccountSession,
-  CloudSignIn
+  CloudSignIn,
+  CloudSocialProvider
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth/session'
 
@@ -39,6 +40,12 @@ export type CloudAuthenticationMethodRecord = {
   createdAt: Date
 }
 
+/**
+ * Where a link sends the browser, and the cookies that let the provider's callback match it to this
+ * request: the browser has to keep them, or the callback refuses the link.
+ */
+export type SocialLinkStart = { url: string; headers: Headers }
+
 export interface CloudAuthAdapter {
   handler(request: Request): Promise<Response>
   resolveIdentity(headers: Headers): Promise<CloudIdentity | null>
@@ -48,6 +55,12 @@ export interface CloudAuthAdapter {
    * terms: enough to leave, by downloading its documents and deleting the account.
    */
   resolveAccountSession(headers: Headers): Promise<CloudActor | null>
+  /**
+   * Whether the signed-in session proved its account's second step, or the account has none.
+   * Neither resolver above accepts a session that has not: signing in through a linked account
+   * such as Google never asks for it.
+   */
+  twoStepConfirmed(headers: Headers): Promise<boolean>
   /**
    * The account a personal access token stands for, from `Authorization: Bearer`, once it is held
    * to what a session would be. Only the document API reads tokens.
@@ -67,8 +80,8 @@ export interface CloudAuthAdapter {
   ): Promise<void>
   startSocialLink(
     headers: Headers,
-    input: { provider: 'google' | 'apple'; callbackURL: string }
-  ): Promise<string>
+    input: { provider: CloudSocialProvider; callbackURL: string }
+  ): Promise<SocialLinkStart>
   unlinkAuthenticationMethod(headers: Headers, methodId: string): Promise<void>
   banUser(headers: Headers, userId: string, reason?: string): Promise<void>
   unbanUser(headers: Headers, userId: string): Promise<void>

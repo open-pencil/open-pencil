@@ -1,58 +1,62 @@
 #!/usr/bin/env node
 
-import { createMigratedNodeCloudDatabase } from './bootstrap'
+import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
+import {
+  approveEnrollmentByEmail,
+  createEnrollmentService,
+  grantDeploymentAdminByEmail,
+  pendingCloudMigrations
+} from '#cloud/server'
 
-const [operation, email] = process.argv.slice(2)
-if ((operation !== 'approve' && operation !== 'grant') || !email) {
-  throw new Error('Usage: admin <approve|grant> <email>')
+/**
+ * Approves a person and makes them a deployment administrator, for a deployment that has none
+ * to do it in the console, or records a request for access, as if they had asked here, for an
+ * administrator to review in the console; `request` sends no email, and `--waitlist` marks someone
+ * from openpencil.dev's waitlist, whose approval with the invitation letter thanks them for joining
+ * it. It needs only the database,
+ * through `DATABASE_URL`, and refuses one this version's server has not migrated, rather than
+ * migrating it under another version.
+ */
+const args = process.argv.slice(2)
+const waitlist = args.includes('--waitlist')
+const [operation, email, ...nameWords] = args.filter((arg) => arg !== '--waitlist')
+if ((operation !== 'approve' && operation !== 'grant' && operation !== 'request') || !email) {
+  throw new Error('Usage: admin <approve|grant|request> <email> [name] [--waitlist]')
 }
+if (waitlist && operation !== 'request') throw new Error('--waitlist only marks a request')
+const connectionString = process.env.DATABASE_URL
+if (!connectionString) throw new Error('DATABASE_URL must name the deployment database')
 
-const { database } = await createMigratedNodeCloudDatabase(process.env)
+const database = createPostgresCloudDatabase({ connectionString })
 try {
-  const normalized = email.trim().toLowerCase()
-  if (operation === 'approve') {
-    await database
-      .insertInto('enrollment')
-      .values({
-        id: crypto.randomUUID(),
-        emailNormalized: normalized,
-        name: null,
-        reason: 'Administrative bootstrap',
-        status: 'approved',
-        reviewedAt: new Date(),
-        reviewedBy: 'cli-bootstrap',
-        reviewNote: 'Approved through CLI bootstrap',
-        approvedUserId: null
-      })
-      .onConflict((conflict) =>
-        conflict.column('emailNormalized').doUpdateSet({
-          status: 'approved',
-          reviewedAt: new Date(),
-          reviewedBy: 'cli-bootstrap',
-          reviewNote: 'Approved through CLI bootstrap'
-        })
+  const pending = await pendingCloudMigrations(database)
+  if (pending.length > 0) {
+    throw new Error(
+      `The database has not run ${pending.join(', ')}; deploy this version or run migrate first`
+    )
+  }
+  if (operation === 'request') {
+    const outcome = await createEnrollmentService(database).request({
+      email,
+      name: nameWords.join(' '),
+      ...(waitlist && { source: 'waitlist' as const })
+    })
+    // An address already waiting or approved keeps its request, so it is not marked as waitlist.
+    console.log(
+      JSON.stringify(
+        outcome === 'recorded'
+          ? { requested: email, ...(waitlist && { waitlist }) }
+          : { unchanged: email }
       )
-      .execute()
-    console.log(JSON.stringify({ approved: normalized }))
+    )
   } else {
-    const user = await database
-      .selectFrom('user')
-      .select(['id', 'email'])
-      .where('email', '=', normalized)
-      .executeTakeFirstOrThrow()
-    await database.updateTable('user').set({ role: 'admin' }).where('id', '=', user.id).execute()
-    await database
-      .insertInto('adminAuditEvent')
-      .values({
-        id: crypto.randomUUID(),
-        actorUserId: 'cli-bootstrap',
-        action: 'user.admin-granted',
-        subjectType: 'user',
-        subjectId: user.id,
-        metadata: { email: normalized }
-      })
-      .execute()
-    console.log(JSON.stringify({ admin: normalized, userId: user.id }))
+    console.log(
+      JSON.stringify(
+        operation === 'approve'
+          ? { approved: await approveEnrollmentByEmail(database, email) }
+          : await grantDeploymentAdminByEmail(database, email)
+      )
+    )
   }
 } finally {
   await database.destroy()

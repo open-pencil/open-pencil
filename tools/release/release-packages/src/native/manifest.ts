@@ -5,7 +5,7 @@ import { isEqual, pick } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { desktopAssets, desktopTargets } from './catalog.ts'
-import { identitySchema, releaseVersion, sha256Schema, type ReleaseIdentity } from './context.ts'
+import { identitySchema, sha256Schema, type ReleaseIdentity } from './context.ts'
 export const artifactSchema = v.object({
   name: v.pipe(v.string(), v.regex(/^[A-Za-z0-9_.-]+$/)),
   sha256: sha256Schema,
@@ -43,7 +43,7 @@ export function validateTargetManifests(
     if (seenTargets.has(manifest.target)) throw new Error('Duplicate native target')
     seenTargets.add(manifest.target)
 
-    const expected = desktopAssets(manifest.target, releaseVersion(identity.tag))
+    const expected = desktopAssets(manifest.target, identity.version)
       .flatMap((asset) => (asset.signed ? [asset.name, `${asset.name}.sig`] : [asset.name]))
       .sort()
     const actual = manifest.files.map((file) => file.name).sort()

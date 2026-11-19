@@ -6,7 +6,7 @@ import {
   resolveVectorFramePlacement,
   svgToVectorPaths
 } from '@open-pencil/core/vector'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 let ck: Awaited<ReturnType<typeof getCanvasKit>>

@@ -5,11 +5,7 @@ description: The terms for using OpenPencil Cloud at cloud.openpencil.dev, the h
 
 # OpenPencil Cloud Terms of Service
 
-::: warning Draft
-This is a draft awaiting legal review. It is not in force, and it changes before OpenPencil Cloud opens. Text in [brackets] is still to be filled in.
-:::
-
-Version: 2026-11-15
+Version: 2026-11-18
 
 These terms cover OpenPencil Cloud at `cloud.openpencil.dev` (the "Service"), run by Alena Poyarkova, a sole trader registered in Mexico under RFC POAL920708M63 ("we"). They don't cover the OpenPencil app, which is open-source software under its own license and works without the Service, or a Cloud server someone else runs: that server's operator sets its own terms.
 
@@ -50,7 +46,25 @@ To report content that breaks these rules, use **Report** on the shared document
 
 ## OpenPencil services
 
-The Service includes hosted features such as AI chat ("services"), which draw on a monthly credit allowance. What you send to them goes to the model providers listed under [Subprocessors](./subprocessors) to produce a response. Don't send content you aren't allowed to share with them. Credit allowances can change, and unused credits don't carry over.
+The Service includes hosted features such as AI chat ("services"), which use credits. What you send to them goes to the model providers listed under [Subprocessors](./subprocessors) to produce a response. Don't send content you aren't allowed to share with them.
+
+## Paid plans and credits
+
+Without a paid plan, an account has the free plan. Paid plans and credits are sold at `billing.openpencil.dev`, and the [pricing page](https://openpencil.dev/pricing) lists what each includes and costs.
+
+- **Prices and tax.** Prices are in US dollars and don't include tax. Where tax such as VAT applies, it's worked out from your billing address and added at checkout.
+- **Payment.** Stripe handles payments; we never see or store your card details. Stripe emails a receipt for each payment, and your invoices are in your billing settings.
+- **Renewal.** A paid plan is billed monthly in advance and renews every month until you cancel.
+- **Cancelling.** You can cancel at any time in your billing settings. Your plan stays until the end of the month you paid for, then ends. We don't refund the rest of a month you've started, except as described under Right of withdrawal or where the law requires it.
+- **Price changes.** We tell you at least 30 days before a new price applies to your plan, so you can cancel before it does.
+- **Failed payments.** If a renewal payment fails, Stripe tries again over about two weeks, and your plan stays meanwhile. If it still fails, the plan ends.
+- **When a plan ends,** your account goes back to the free plan. Your documents stay. While they use more storage than the free plan includes, they're read-only: you can still open, download, and delete them, or subscribe again.
+- **Monthly credits.** A plan's monthly credits renew at the start of each month, and unused ones don't carry over.
+- **Credits you buy** last for the period shown when you buy them, counted from the purchase (365 days for the credits on sale now), and are used after your monthly credits. They can't be exchanged for money or moved to another account, and they expire if unused. Using credits needs a plan that includes services: credits you bought stay in your account until they expire, ready for when you have one.
+- **Right of withdrawal.** If you're a consumer in the EU, the UK, or another country with a similar law, you can usually withdraw from an online purchase within 14 days. When you buy, you ask for it to start right away:
+  - Credits are added to your account as soon as you pay, so once they are, you can no longer withdraw from that purchase.
+  - You can withdraw from a new plan within 14 days of buying it by writing to [support@openpencil.dev](mailto:support@openpencil.dev). We refund what you paid, less the part of the month you've already had.
+- **Other refunds.** Apart from the above, payments aren't refundable unless the law requires it. If something went wrong, such as a double charge, write to support and we'll put it right.
 
 ## Availability and changes
 
@@ -62,7 +76,7 @@ To the extent the law allows, we aren't liable for indirect or consequential los
 
 ## Ending
 
-You can stop using the Service and delete your account at any time from your account settings. We may suspend or end your access as described under [When we act](#when-we-act).
+You can stop using the Service and delete your account at any time from your account settings. Deleting it cancels a paid plan and ends the credits you bought, without a refund for the rest of the month, except as described under Right of withdrawal or where the law requires it. We may suspend or end your access as described under [When we act](#when-we-act).
 
 ## Changes to these terms
 

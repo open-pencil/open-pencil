@@ -25,10 +25,12 @@ import {
 } from '@open-pencil/scene-graph/generated'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { styleRunPieces } from '@open-pencil/scene-graph/text'
 
 import { computeContentBounds } from '#core/io/formats/raster'
-import { renderNodesToSVG } from '#core/io/formats/svg'
+import { renderNodesToSVG, type ExportEffectWarning } from '#core/io/formats/svg'
 
+import { droppedEffectWarnings } from './effects'
 import { DEFAULT_FONT_FAMILY } from './paint'
 import { EMPTY_GEOMETRY, placed, placedValues, round, type Placed } from './placement'
 import { drawioShapeValues } from './shapes'
@@ -105,15 +107,13 @@ function fontValues(text: SceneNode): Record<string, string | undefined> {
 function labelHTML(text: SceneNode): string {
   const { text: characters, styleRuns } = text
   let html = ''
-  let at = 0
-  const plain = (to: number) => {
-    html += escapeText(characters.slice(at, to)).replaceAll('\n', '<br>')
-    at = to
-  }
-  for (const run of [...styleRuns].sort((a, b) => a.start - b.start)) {
-    plain(run.start)
+  for (const { start, end, style: s } of styleRunPieces(styleRuns, characters.length)) {
+    const inner = escapeText(characters.slice(start, end)).replaceAll('\n', '<br>')
+    if (!s) {
+      html += inner
+      continue
+    }
     const css: string[] = []
-    const { style: s } = run
     if (s.fontWeight !== undefined) css.push(`font-weight: ${s.fontWeight}`)
     if (s.italic !== undefined) css.push(`font-style: ${s.italic ? 'italic' : 'normal'}`)
     if (s.textDecoration)
@@ -122,14 +122,8 @@ function labelHTML(text: SceneNode): string {
     if (s.fontFamily) css.push(`font-family: ${s.fontFamily}`)
     const fill = s.fills?.find((paint) => paint.type === 'SOLID')
     if (fill?.type === 'SOLID') css.push(`color: ${colorToHex(fill.color)}`)
-    const inner = escapeText(characters.slice(run.start, run.start + run.length)).replaceAll(
-      '\n',
-      '<br>'
-    )
     html += css.length > 0 ? `<span style="${css.join('; ')}">${inner}</span>` : inner
-    at = run.start + run.length
   }
-  plain(characters.length)
   return html
 }
 
@@ -178,7 +172,8 @@ class PageWriter {
 
   constructor(
     private readonly graph: SceneGraph,
-    private readonly pageId: string
+    private readonly pageId: string,
+    private readonly onWarning?: (warning: ExportEffectWarning) => void
   ) {}
 
   private idOf(nodeId: string): string {
@@ -284,6 +279,9 @@ class PageWriter {
   }
 
   private layer(node: SceneNode, parent: string) {
+    for (const warning of droppedEffectWarnings(this.graph, this.pageId, node)) {
+      this.onWarning?.(warning)
+    }
     const placement = this.place(node, parent)
     const { geometry } = placement
     switch (node.type) {
@@ -415,7 +413,7 @@ class PageWriter {
 
   /** A layer draw.io has no cell for, drawn as the SVG image it exports as, where it covers. */
   private picture(node: SceneNode, parent: string) {
-    const svg = renderNodesToSVG(this.graph, this.pageId, [node.id])
+    const svg = renderNodesToSVG(this.graph, this.pageId, [node.id], { onWarning: this.onWarning })
     if (!svg) return
     const data = fromUint8Array(new TextEncoder().encode(svg))
     this.push(node, parent, {
@@ -518,9 +516,14 @@ class PageWriter {
 }
 
 /** One page of layers as a draw.io page, holding `nodeIds` or every layer on it. */
-function pageOf(graph: SceneGraph, pageId: string, nodeIds?: readonly string[]): DrawIOPage {
+function pageOf(
+  graph: SceneGraph,
+  pageId: string,
+  nodeIds?: readonly string[],
+  onWarning?: (warning: ExportEffectWarning) => void
+): DrawIOPage {
   const page = graph.getNode(pageId)
-  const writer = new PageWriter(graph, pageId)
+  const writer = new PageWriter(graph, pageId, onWarning)
   writer.write(nodeIds ?? page?.childIds ?? [])
   return {
     id: pageId,
@@ -537,16 +540,28 @@ export type DrawIOExportTarget =
   | { pageIds: readonly string[] }
   | { pageId: string; nodeIds: readonly string[] }
 
+export interface DrawIOExportOptions {
+  /**
+   * Receives each effect left out: every effect of a layer drawn as a draw.io cell, and what SVG
+   * cannot draw of one drawn as an SVG image.
+   */
+  onWarning?: (warning: ExportEffectWarning) => void
+}
+
 /**
  * Layers as a draw.io file: FigJam shapes as draw.io's shapes of the same meaning, connectors as
  * edges joined to them, bent the way they were dragged, text as text, sections as swimlanes, and
  * frames and groups as containers. A layer draw.io has no cell for goes as an SVG image of
- * itself, so nothing is lost.
+ * itself. `onWarning` hears of each effect left out.
  */
-export function sceneGraphToDrawIO(graph: SceneGraph, target: DrawIOExportTarget): DrawIOFile {
+export function sceneGraphToDrawIO(
+  graph: SceneGraph,
+  target: DrawIOExportTarget,
+  { onWarning }: DrawIOExportOptions = {}
+): DrawIOFile {
   const pages =
     'pageIds' in target
-      ? target.pageIds.map((pageId) => pageOf(graph, pageId))
-      : [pageOf(graph, target.pageId, target.nodeIds)]
+      ? target.pageIds.map((pageId) => pageOf(graph, pageId, undefined, onWarning))
+      : [pageOf(graph, target.pageId, target.nodeIds, onWarning)]
   return { pages, unreadable: [] }
 }

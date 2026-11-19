@@ -14,9 +14,15 @@ import {
 } from '@open-pencil/html-engine'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import type { IconMatcher } from '#core/icons/match'
 import type { IOFormatAdapter } from '#core/io/types'
 
-import { registerLayerFonts, registerPageFontFace, resolvePageFontFamilies } from './fonts'
+import {
+  registerFallbackFont,
+  registerLayerFonts,
+  registerPageFontFace,
+  resolvePageFontFamilies
+} from './fonts'
 import { HTML_IMPORT_VIEWPORT, sceneGraphFromStyledHTML } from './layers'
 
 export interface ReadHTMLOptions {
@@ -34,6 +40,8 @@ export interface ReadHTMLOptions {
   readAsset?: (path: string) => Promise<Uint8Array | null>
   /** The viewport the page is laid out in. */
   viewport?: DesignViewport
+  /** Names the icons inline SVG draws without the page naming them, as `createHeadlessIconMatcher`. */
+  matchIcon?: IconMatcher
 }
 
 export interface ReadHTMLResult {
@@ -165,6 +173,7 @@ export async function readHTMLDocument(
   options: ReadHTMLOptions = {}
 ): Promise<ReadHTMLResult> {
   const engine = await loadHTMLEngine()
+  await registerFallbackFont(engine)
   // The page's own fonts, from its `@font-face` rules, which its text may name first.
   const pageFamilies = new Map<string, string>()
   const runtime = createHTMLEngineRuntime({
@@ -193,10 +202,19 @@ export async function readHTMLDocument(
   }
   let styled = await style()
   if (await registerLayerFonts(engine, designDocumentToLayers(styled).graph)) styled = await style()
-  return { styled, graph: await sceneGraphFromStyledHTML(styled, { pageName: options.pageName }) }
+  const graph = await sceneGraphFromStyledHTML(styled, {
+    pageName: options.pageName,
+    matchIcon: options.matchIcon
+  })
+  return { styled, graph }
 }
 
-/** Reads HTML files where the HTML engine can load, as in the CLI and the MCP server. */
+/**
+ * Reads HTML files where the HTML engine can load, as in the CLI and the MCP server. It does not
+ * match inline SVG to icons by how it draws, so opening a page asks no icon service; SVG the page
+ * names with `data-icon` is still that icon. `readHTMLDocument` with a matcher matches, as
+ * `openpencil import` passes one.
+ */
 export const headlessHTMLReader: IOFormatAdapter<'html'> = {
   id: 'html',
   label: 'HTML',

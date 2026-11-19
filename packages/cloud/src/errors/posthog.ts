@@ -9,6 +9,10 @@ export type ErrorReportContext<Source extends string = string> = {
   requestId?: string
   /** What failed, as the server's log says it; not sent to PostHog, whose report has the error. */
   message?: string
+  /** The signed-in user the error happened for, by account ID. */
+  userId?: string
+  /** The records involved, by kind, such as `{ documentId }`; IDs only, never their contents. */
+  resources?: Readonly<Record<string, string>>
 }
 
 /** Sends a caught error where it is seen; it never rejects. */
@@ -17,12 +21,27 @@ export type ErrorReporter<Source extends string = string> = (
   context: ErrorReportContext<Source>
 ) => Promise<void>
 
+/** A record kind as PostHog's properties name it: `documentId` as `document_id`. */
+function propertyName(kind: string): string {
+  return kind.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
+}
+
+/** The context's record IDs as report properties. */
+function resourceProperties(resources: Readonly<Record<string, string>> = {}) {
+  return Object.fromEntries(Object.entries(resources).map(([kind, id]) => [propertyName(kind), id]))
+}
+
 export type PostHogErrorReporterOptions = {
   /** The project API key, or how to read it; a key that cannot be read yet is read again later. */
   key: string | (() => Promise<string>)
   host: string
-  /** Sent with every report: which service and deployment report, never who made the request. */
+  /** Sent with every report: which service and deployment report. */
   properties: Record<string, string>
+  /**
+   * Also send the context's account and record IDs: the user as the report's `distinct_id`, the
+   * records as `document_id` and the like. Off, a report names neither, as it always did.
+   */
+  includeIds?: boolean
   /** The property that names the context's `source`, such as `cloud_source`. */
   sourceProperty: string
   /** Names the service in its own log, such as `Cloud`. */
@@ -33,7 +52,8 @@ export type PostHogErrorReporterOptions = {
 /**
  * Reports errors to PostHog error tracking, each as it is caught, as a `$exception` with no person
  * profile and no GeoIP. A report carries `properties`, the source, and a request's method and
- * matched route and ID; never who made the request or what it carried.
+ * matched route and ID; with `includeIds`, also the account and record IDs involved. Never a name,
+ * an email, an address, or what a request carried.
  */
 export function createPostHogErrorReporter<Source extends string>(
   options: PostHogErrorReporterOptions
@@ -65,13 +85,17 @@ export function createPostHogErrorReporter<Source extends string>(
   return async (error, context) => {
     try {
       const client = await posthog()
+      const ids = options.includeIds === true
       // Undefined request fields are left out of the event's JSON.
-      await client.captureExceptionImmediate(error, undefined, {
+      await client.captureExceptionImmediate(error, ids ? context.userId : undefined, {
         ...options.properties,
         [options.sourceProperty]: context.source,
         http_method: context.method,
         http_route: context.route,
-        request_id: context.requestId
+        request_id: context.requestId,
+        ...(ids ? resourceProperties(context.resources) : {}),
+        // A user's ID names the report's user, never a person profile in PostHog.
+        $process_person_profile: false
       })
     } catch (failure) {
       console.error(`[${logName}] Reporting an error failed:`, failure)

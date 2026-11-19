@@ -23,10 +23,32 @@ export const CLOUD_BILLING_TOKEN_AUDIENCE = 'openpencil-billing' as const
  */
 export const CLOUD_ACCOUNT_PLAN_PATH = '/account/plan' as const
 
-/** Where the billing service answers, below the discovered `endpoint`. */
+/**
+ * The plan page with billing's own pages opening at once: where billing sends someone whose
+ * session there ended, so Cloud signs them in to billing again.
+ */
+export const CLOUD_ACCOUNT_BILLING_PATH = `${CLOUD_ACCOUNT_PLAN_PATH}?open=billing` as const
+
+/**
+ * The billing service's own pages, below the discovered `endpoint`: where Cloud's plan page sends
+ * the signed-in person, posting a billing token as the form field `token` to `session`, and the
+ * public pricing page. The service answers that post with `303 See Other`, never `307` or `308`,
+ * which a browser follows by posting the same body, the token, again to wherever they point.
+ */
+export const CLOUD_BILLING_PAGE_PATHS = {
+  session: '/session',
+  pricing: '/pricing'
+} as const
+
+/**
+ * Where the billing service answers, below the discovered `endpoint`. Cloud posts to `seats`,
+ * with a billing token for the account as its bearer, whenever the people who can edit in that
+ * account's workspaces change; the service reads the count from Cloud's internal API.
+ */
 export const CLOUD_BILLING_API_PATHS = {
   base: '/v1',
   catalog: '/v1/catalog',
+  seats: '/v1/seats',
   account: '/v1/account',
   checkout: '/v1/checkout',
   portal: '/v1/portal'
@@ -38,9 +60,24 @@ const centsSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
 const bytesSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
 const creditsSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
 
+/**
+ * What an account without a plan has: the deployment's free plan, which a pricing page compares
+ * the plans with.
+ */
+export const billingFreePlanSchema = v.object({
+  /** The storage an account may use, or `null` for no limit. */
+  storageBytes: v.nullable(bytesSchema),
+  /** Whether the free plan includes services, such as AI and search. */
+  services: v.boolean(),
+  /** Credits granted each month with services, or `null` for no monthly limit. */
+  monthlyCredits: v.nullable(creditsSchema)
+})
+export type BillingFreePlan = v.InferOutput<typeof billingFreePlanSchema>
+
 export const cloudBillingDiscoverySchema = v.object({
   endpoint: urlSchema,
-  contractVersion: v.literal(CLOUD_BILLING_CONTRACT_VERSION)
+  contractVersion: v.literal(CLOUD_BILLING_CONTRACT_VERSION),
+  freePlan: v.optional(billingFreePlanSchema)
 })
 export type CloudBillingDiscovery = v.InferOutput<typeof cloudBillingDiscoverySchema>
 
@@ -66,13 +103,45 @@ export const billingTokenClaimsSchema = v.object({
 })
 export type BillingTokenClaims = v.InferOutput<typeof billingTokenClaimsSchema>
 
-/** A plan an account subscribes to, billed every month in US dollars before tax. */
+const seatCountSchema = v.pipe(v.number(), v.integer(), v.minValue(1))
+
+/**
+ * A plan priced by the seat: everyone who can edit in the account's workspaces takes one, and the
+ * account pays for at least `minimum`. Every seat costs the price of the tier its count reaches,
+ * and adds its storage and credits to what the account shares.
+ */
+export const billingSeatPricingSchema = v.object({
+  minimum: seatCountSchema,
+  /** From the fewest seats up: the first from 1, each later one from more seats. */
+  tiers: v.pipe(
+    v.array(v.object({ fromSeats: seatCountSchema, unitPriceCents: centsSchema })),
+    v.minLength(1),
+    v.check((tiers) => tiers[0]?.fromSeats === 1, 'The first seat tier starts at one seat'),
+    v.check(
+      (tiers) =>
+        tiers.every(
+          (tier, index) => index === 0 || tier.fromSeats > (tiers[index - 1]?.fromSeats ?? 0)
+        ),
+      'Seat tiers start at more seats each'
+    )
+  ),
+  storageBytesPerSeat: bytesSchema,
+  monthlyCreditsPerSeat: creditsSchema
+})
+export type BillingSeatPricing = v.InferOutput<typeof billingSeatPricingSchema>
+
+/**
+ * A plan an account subscribes to, billed every month in US dollars before tax. A plan priced by
+ * the seat states its price, storage, and credits at its minimum, so an editor that reads no
+ * `seats` still shows what it starts at.
+ */
 export const billingPlanSchema = v.object({
   id: idSchema,
   name: v.pipe(v.string(), v.minLength(1)),
   monthlyPriceCents: centsSchema,
   storageBytes: bytesSchema,
-  monthlyCredits: creditsSchema
+  monthlyCredits: creditsSchema,
+  seats: v.optional(billingSeatPricingSchema)
 })
 export type BillingPlan = v.InferOutput<typeof billingPlanSchema>
 

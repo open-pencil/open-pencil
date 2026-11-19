@@ -19,7 +19,6 @@ import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { PluginDataEntry, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   readBehaviour,
   renameBehaviourProperties,
@@ -28,6 +27,7 @@ import {
 import { orderKeyBetween, siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID, Rect, Size } from '@open-pencil/scene-graph/primitives'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
@@ -412,6 +412,8 @@ export interface FigExportSetupOptions {
   recordOwners?: ReadonlyMap<string, string>
   /** Writing into an archive: the variables, collections and modes it holds keep their GUIDs. */
   archiveResourceIds?: ReadonlySet<string>
+  /** Leaves the document's comments out of its record. */
+  withoutComments?: boolean
 }
 
 /**
@@ -430,7 +432,7 @@ export async function prepareFigExport(
   const documentNc = makeDocumentNodeChange(docGuid, graph.documentColorSpace)
   const rootNode = graph.getNode(graph.rootId)
   if (rootNode) Object.assign(documentNc, rootNode.source.fig.rawNodeFields)
-  applyDocumentPluginData(documentNc, graph)
+  applyDocumentPluginData(documentNc, graph, { withoutComments: options.withoutComments })
 
   const pages = graph.getPages(true)
   const nodeIdToGuid = new Map<string, GUID>()
@@ -561,6 +563,11 @@ export interface FigFileExtrasOptions {
   renderHeadlessThumbnail?: boolean
   /** The name `meta.json` records for the file. */
   documentName?: string
+  /**
+   * Leaves the document's comments out of the file, for a server that keeps them itself, as
+   * Cloud does; the file is then never the opened archive as it was.
+   */
+  withoutComments?: boolean
 }
 
 /**

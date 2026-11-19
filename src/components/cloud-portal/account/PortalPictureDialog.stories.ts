@@ -47,7 +47,9 @@ export const Unreadable: Story = {
   args: { file: new File(['not a picture'], 'notes.png', { type: 'image/png' }) },
   play: async () => {
     const page = within(document.body)
-    await expect(await page.findByText(/isn’t a picture the page can open/)).toBeVisible()
+    const warning = await page.findByText(/isn’t a picture the page can open/)
+    // The dialog fades in, so its text is visible once that ends.
+    await waitFor(() => expect(warning).toBeVisible())
     await expect(page.getByRole('button', { name: 'Save picture' })).toBeDisabled()
   }
 }

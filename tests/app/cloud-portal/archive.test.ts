@@ -3,18 +3,38 @@ import { describe, expect, test } from 'bun:test'
 import { unzipSync } from 'fflate'
 
 import { cloudChecksum } from '@open-pencil/cloud/client'
+import type { CloudCommentThread } from '@open-pencil/cloud/contract'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { readComments } from '@open-pencil/scene-graph/comments'
 
 import { saveAccountArchive } from '@/app/cloud-portal/archive'
 
 const ORIGIN = 'https://cloud.example.com'
 const WORKSPACE = '00000000-0000-4000-8000-000000000001'
 
-type Stored = { id: string; name: string; kind: 'design' | 'board'; bytes: Uint8Array | null }
+type Stored = {
+  id: string
+  name: string
+  kind: 'design' | 'board'
+  bytes: Uint8Array | null
+  threads?: CloudCommentThread[]
+}
 
 /** A server holding `stored`: its API names each file, its object store serves the bytes. */
 function server(stored: Stored[]): typeof fetch {
   return (async (input: string | URL | Request) => {
     const url = new URL(input instanceof Request ? input.url : input.toString())
+    const comments = stored.find(
+      (candidate) => url.pathname === `/api/documents/${candidate.id}/threads`
+    )
+    if (comments) {
+      return Response.json({
+        threads: comments.threads ?? [],
+        access: { canComment: true, canModerate: true, accountId: null }
+      })
+    }
     const document = stored.find((candidate) => url.pathname.endsWith(candidate.id))
     if (!document) return new Response('missing', { status: 404 })
     if (url.pathname === `/objects/${document.id}`) {
@@ -239,5 +259,54 @@ describe('account archive', () => {
     expect(result?.saved).toBe(0)
     expect(result?.failed.map((document) => document.name)).toEqual(['Lost'])
     expect(picked.state).toEqual({ closed: false, aborted: true })
+  })
+
+  test('writes the comments the server keeps back into each file', async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0]?.id ?? ''
+    const bytes = await exportFigFile(graph)
+    const thread: CloudCommentThread = {
+      id: '00000000-0000-4000-8000-000000000201',
+      pageId,
+      pageName: 'Page 1',
+      nodeId: null,
+      nodeName: null,
+      offsetX: null,
+      offsetY: null,
+      x: 10,
+      y: 20,
+      createdAt: '2026-11-01T00:00:00.000Z',
+      updatedAt: '2026-11-01T00:00:00.000Z',
+      resolvedAt: null,
+      resolvedBy: null,
+      createdBy: 'ana',
+      unread: false,
+      comments: [
+        {
+          id: '00000000-0000-4000-8000-000000000202',
+          author: { kind: 'user', id: 'ana', name: 'Ana' },
+          agent: null,
+          body: 'Tighten the heading',
+          mentions: [],
+          createdAt: '2026-11-01T00:00:00.000Z',
+          editedAt: null
+        }
+      ]
+    }
+    const stored: Stored[] = [{ id: id(1), name: 'Plan', kind: 'design', bytes, threads: [thread] }]
+    const saved: Uint8Array[] = []
+    await saveAccountArchive([{ id: id(1), name: 'Plan', workspaceName: 'Solo' }], {
+      apiURL: `${ORIGIN}/api`,
+      archiveName: 'Files.zip',
+      fetch: server(stored),
+      save: (zip) => saved.push(zip)
+    })
+
+    const file = unzipSync(saved[0] ?? new Uint8Array())['Plan.fig'] ?? new Uint8Array()
+    const comments = readComments(await parseFigFile(Uint8Array.from(file).buffer))
+    expect(comments.map(({ id, author, text }) => ({ id, author, text }))).toEqual([
+      { id: thread.id, author: 'Ana', text: 'Tighten the heading' }
+    ])
   })
 })

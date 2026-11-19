@@ -8,6 +8,7 @@ Headless Vue 3 primitives and composables; the root app is one consumer. Primiti
 - `PropertySection`, `SegmentedControl`, and `PropertyList` under `packages/vue/src/primitives/` are controlled and editor-agnostic. Connect PropertyList events to selection and undo through `useEditorPropertyList()` or an app adapter; never call `useEditor()` from a primitive.
 - Compose property rows from `PanelGrid`, `PanelFieldGroup`, `PanelItemRow`, and `PropertyItemRow`; use `BindableValue`, `FillRoot`, and `FillSwatch` rather than rebuilding binding or picker infrastructure.
 - Binding-aware fields detach or mutate only on the first value change; opening and focusing are non-destructive.
+- Pickers group undo through `usePickerGesture` (`ColorPickerRoot`, the app's `FillPicker`): a press to its release is one step, a change with no press held is a step of its own, and Escape puts back only a press still held, otherwise closing and keeping changes. Route a picker's changes through it and end the step on its `commit`, never per update or per open picker (`tests/e2e/color-picker/history.spec.ts`).
 - Prefer models, events, and props over imperative slot actions except for explicitly renderless action primitives. Use VueUse for DOM refs and focus.
 - Preserve interaction gotchas when refactoring: splitter handles, NumberField pointer ownership, section dragging, panel containment, and number-spinner styling.
 

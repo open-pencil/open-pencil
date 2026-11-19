@@ -9,6 +9,8 @@ import { resolveCommand } from 'package-manager-detector/commands'
 import { detect, getUserAgent } from 'package-manager-detector/detect'
 import { WebSocketServer, type WebSocket } from 'ws'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { bearerToken, isAuthorized, mcpRequestToken } from '#mcp/auth'
 import { createBrowserRPCBridge } from '#mcp/browser-rpc'
 import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from '#mcp/http-options'
@@ -69,6 +71,7 @@ export {
   type RegisterToolsOptions,
   type RPCSender
 } from '#mcp/tool/registration'
+import { MAX_TIMER_MS } from '@open-pencil/std/timing'
 
 export interface ServerOptions {
   /** TCP port for the HTTP + WebSocket server. Ignored when `withTcp` is false. When set to 0 with `withTcp: true`, binds to an ephemeral port. Defaults to 7600. */
@@ -198,7 +201,7 @@ function createHonoApp(options: {
       const result = await sendToBrowser(body as RPCJSONObject)
       return c.json(result)
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e)
+      const msg = errorMessage(e)
       return c.json({ ok: false, error: msg }, 502)
     }
   })
@@ -543,8 +546,6 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
 
   return handle
 }
-
-const MAX_TIMER_MS = 2_147_483_647
 
 function validateTimeoutOption(name: string, timeoutMs: number | undefined): void {
   if (timeoutMs === undefined) return

@@ -151,6 +151,9 @@ openpencil import page.html [options]
 | `--tailwind-file` | | File containing Tailwind utility candidates |
 | `--page-name` | | Scene graph page name (default: `DOM/CSS`) |
 | `--json` | | Print a machine-readable summary |
+| `--no-icon-names` | | Don't match inline SVG to the Iconify icons it draws |
+
+Inline SVG marked with `data-icon` becomes that icon, and other inline SVG that draws an Iconify icon from a popular set becomes that icon, as in the app. Matching downloads an icon index from jsDelivr and asks the Iconify API for the candidate icons by name, never sending the SVG; `--no-icon-names` turns matching off, and SVG named by `data-icon` still becomes its icon.
 
 Examples:
 
@@ -235,7 +238,7 @@ openpencil analyze clusters [file] [options]
 
 ## diff create
 
-Patch that turns one node tree into another, as JSX attribute changes plus moved, added, and removed children. Children match by name; see [Comparing designs](/programmable/cli/comparing) for the format.
+Patch that turns one node tree into another, as JSX attribute changes plus moved, added, and removed children. Children match by name; see [Comparing designs](/developers/cli/comparing) for the format.
 
 ```sh
 openpencil diff create [file] --from <id> --to <id> [options]
@@ -316,7 +319,7 @@ openpencil diff files <before> <after> [options]
 
 ## documents
 
-Manage documents (tabs) in the running app. See [Controlling the App](/programmable/cli/app-control).
+Manage documents (tabs) in the running app. See [Controlling the App](/developers/cli/app-control).
 
 ```sh
 openpencil documents list [--json]
@@ -338,7 +341,7 @@ openpencil documents activate <document-id> [--page-id <id>] [--json]
 
 ## undo / redo
 
-Undo or redo the newest change made through the CLI or MCP in the running app. Fails when the newest change was made in the editor; see [Controlling the App](/programmable/cli/app-control#undo-and-redo).
+Undo or redo the newest change made through the CLI or MCP in the running app. Fails when the newest change was made in the editor; see [Controlling the App](/developers/cli/app-control#undo-and-redo).
 
 ```sh
 openpencil undo [--document-id <id>] [--json]
@@ -354,7 +357,7 @@ openpencil settings get [key] [--json]
 openpencil settings set <key> <value> [--json]
 ```
 
-See [Controlling the App](/programmable/cli/app-control#settings) for the available keys.
+See [Controlling the App](/developers/cli/app-control#settings) for the available keys.
 
 ## tool
 

@@ -1,19 +1,29 @@
+import type { useFileMessages } from '@open-pencil/vue/i18n'
+
 import type { EditorPreparation, EditorPreparationProgress } from '@/app/editor/preparation/types'
 
-export const preparationPhaseLabels = {
-  reading: 'Reading document',
-  decoding: 'Decoding Figma document',
-  materializing: 'Preparing layers',
-  'populating-page': 'Preparing page',
-  'resolving-fonts': 'Resolving fonts',
-  'resolving-fallbacks': 'Finalizing typography',
-  layout: 'Computing layout',
-  'drawing-shaders': 'Drawing shaders',
-  'preparing-render': 'Preparing canvas'
-} satisfies Record<EditorPreparation['phase'], string>
+type FileMessages = ReturnType<typeof useFileMessages>['value']
 
-export function preparationLabel(preparation: EditorPreparation | null): string {
-  return preparation ? preparationPhaseLabels[preparation.phase] : 'Loading…'
+/** The message naming each preparation phase on the canvas's loading screen. */
+const PHASE_MESSAGES = {
+  reading: 'preparationReading',
+  decoding: 'preparationDecoding',
+  styling: 'preparationStyling',
+  'naming-icons': 'preparationNamingIcons',
+  materializing: 'preparationMaterializing',
+  'populating-page': 'preparationPopulatingPage',
+  'resolving-fonts': 'preparationResolvingFonts',
+  'resolving-fallbacks': 'preparationResolvingFallbacks',
+  layout: 'preparationLayout',
+  'drawing-shaders': 'preparationDrawingShaders',
+  'preparing-render': 'preparationPreparingRender'
+} as const satisfies Record<EditorPreparation['phase'], keyof FileMessages>
+
+export function preparationLabel(
+  preparation: EditorPreparation | null,
+  files: FileMessages
+): string {
+  return preparation ? files[PHASE_MESSAGES[preparation.phase]] : files.preparing
 }
 
 export function preparationPercent(progress: EditorPreparationProgress | null): number | null {

@@ -10,7 +10,8 @@ import {
   type GlassEffectParams,
   type SceneNode
 } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import Matrix from '@open-pencil/scene-graph/matrix'
+import { maxOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
@@ -85,10 +86,28 @@ const solid = (r: number, g = r, b = r) => ({
   visible: true
 })
 
-/** Red of every pixel of a 256px frame holding `backdrop` and then the glass layer. */
+/** Pixels of the frame the test reads: a row or a column, in frame pixels. */
+interface Strip {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/** How far around a strip the scene is drawn: past the most the glass moves the backdrop, its depth. */
+const STRIP_MARGIN = 40
+/** As a raster export draws, at twice the size and then scaled down. */
+const SUPERSAMPLE = 2
+
+/**
+ * Red of the pixels in `strip` of a 256px frame holding `backdrop` and then the glass layer, drawn
+ * as a raster export draws them. Only the strip and `STRIP_MARGIN` around it are drawn, so the
+ * glass shader runs on the CPU for those pixels alone; the pixels match the whole export's.
+ */
 function render(
   backdrop: (graph: SceneGraph, frameId: string) => void,
-  layer: Partial<SceneNode> & { type?: 'RECTANGLE' | 'ELLIPSE' }
+  layer: Partial<SceneNode> & { type?: 'RECTANGLE' | 'ELLIPSE' },
+  strip: Strip
 ): (x: number, y: number) => number {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id
@@ -96,17 +115,49 @@ function render(
   backdrop(graph, frame.id)
   const { type = 'RECTANGLE', ...props } = layer
   graph.createNode(type, frame.id, { x: 28, y: 28, width: 200, height: 200, fills: [], ...props })
-  const png = expectDefined(
-    renderNodesToImage(ck, renderer, graph, page, [frame.id], {
-      scale: 1,
-      format: 'PNG',
-      trimTransparent: false
-    })
-  )
-  const image = expectDefined(ck.MakeImageFromEncoded(png))
+
+  const large = expectDefined(ck.MakeSurface(256 * SUPERSAMPLE, 256 * SUPERSAMPLE))
+  const small = expectDefined(ck.MakeSurface(256, 256))
+  const drawnFor = renderer.images.supersampledOutput
   try {
+    const canvas = large.getCanvas()
+    canvas.clear(ck.TRANSPARENT)
+    canvas.scale(SUPERSAMPLE, SUPERSAMPLE)
+    canvas.clipRect(
+      ck.XYWHRect(
+        strip.x - STRIP_MARGIN,
+        strip.y - STRIP_MARGIN,
+        strip.width + 2 * STRIP_MARGIN,
+        strip.height + 2 * STRIP_MARGIN
+      ),
+      ck.ClipOp.Intersect,
+      false
+    )
+    renderer.images.supersampledOutput = {
+      outputFromWorld: Matrix.multiply(
+        Matrix.scaled(1 / SUPERSAMPLE, 1 / SUPERSAMPLE),
+        canvas.getTotalMatrix()
+      )
+    }
+    renderer.renderSceneToCanvas(canvas, graph, page)
+    const image = large.makeImageSnapshot()
+    try {
+      small.getCanvas().clear(ck.TRANSPARENT)
+      small
+        .getCanvas()
+        .drawImageRectOptions(
+          image,
+          ck.LTRBRect(0, 0, 256 * SUPERSAMPLE, 256 * SUPERSAMPLE),
+          ck.LTRBRect(0, 0, 256, 256),
+          ck.FilterMode.Linear,
+          ck.MipmapMode.None,
+          null
+        )
+    } finally {
+      image.delete()
+    }
     const pixels = expectDefined(
-      image.readPixels(0, 0, {
+      small.makeImageSnapshot().readPixels(0, 0, {
         width: 256,
         height: 256,
         alphaType: ck.AlphaType.Unpremul,
@@ -116,9 +167,16 @@ function render(
     )
     return (x, y) => pixels[(y * 256 + x) * 4]
   } finally {
-    image.delete()
+    renderer.images.supersampledOutput = drawnFor
+    large.delete()
+    small.delete()
   }
 }
+
+/** The row from `x` along `length` pixels at `y`. */
+const row = (x: number, y: number, length: number): Strip => ({ x, y, width: length, height: 1 })
+/** The column from `y` down `length` pixels at `x`. */
+const column = (x: number, y: number, length: number): Strip => ({ x, y, width: 1, height: length })
 
 function stripes(graph: SceneGraph, frameId: string) {
   for (let x = 0; x < 256; x += 16) {
@@ -156,26 +214,33 @@ function expectFigma(ours: number[], figma: number[], maxDifference: number, max
 
 describe('glass draws as Figma does', () => {
   test('refraction folds the backdrop inward within depth of a box edge', () => {
-    const red = render(stripes, { effects: [glass({})] })
-    const row = FIGMA.refraction.map((_, index) => red(24 + index, 128))
-    expectFigma(row, FIGMA.refraction, 6, 2)
+    const strip = row(24, 128, FIGMA.refraction.length)
+    const red = render(stripes, { effects: [glass({})] }, strip)
+    const pixels = FIGMA.refraction.map((_, index) => red(24 + index, 128))
+    expectFigma(pixels, FIGMA.refraction, 6, 2)
   })
 
-  test('light adds a rim and a band that turn with the light angle', () => {
-    for (const [name, lightAngle] of [
-      ['light 0°', 0],
-      ['light 45°', 45]
-    ] as const) {
-      const red = render(gray, {
-        effects: [glass({ refraction: 0, depth: 30, lightIntensity: 1, lightAngle })]
-      })
-      const column = FIGMA[name].map((_, index) => red(128, 26 + index))
-      expectFigma(column, FIGMA[name], 5, 2)
-    }
-  })
+  for (const [name, lightAngle] of [
+    ['light 0°', 0],
+    ['light 45°', 45]
+  ] as const) {
+    test(`light adds a rim and a band that turn with the light angle: ${name}`, () => {
+      const red = render(
+        gray,
+        { effects: [glass({ refraction: 0, depth: 30, lightIntensity: 1, lightAngle })] },
+        column(128, 26, FIGMA[name].length)
+      )
+      const pixels = FIGMA[name].map((_, index) => red(128, 26 + index))
+      expectFigma(pixels, FIGMA[name], 5, 2)
+    })
+  }
 
   test('an ellipse refracts along its own outline', () => {
-    const red = render(columns, { type: 'ELLIPSE', effects: [glass({ depth: 30 })] })
+    const red = render(
+      columns,
+      { type: 'ELLIPSE', effects: [glass({ depth: 30 })] },
+      row(29, 128, FIGMA_CIRCLE_DISPLACEMENT.length)
+    )
     const moved = FIGMA_CIRCLE_DISPLACEMENT.map((_, index) => red(29 + index, 128) - (29 + index))
     for (const [index, figma] of FIGMA_CIRCLE_DISPLACEMENT.entries()) {
       expect(Math.abs(moved[index] - figma)).toBeLessThanOrEqual(1.5)

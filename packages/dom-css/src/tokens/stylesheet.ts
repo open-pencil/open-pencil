@@ -5,8 +5,8 @@ import type {
   VariableCollectionMode,
   VariableValue
 } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { variableValueReferences } from '@open-pencil/scene-graph/variables'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { cssColor } from '../export/css'
 import { formulaToCSS } from './formula'

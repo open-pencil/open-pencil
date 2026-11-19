@@ -27,6 +27,9 @@ export async function fetchOfficialTour(): Promise<Uint8Array | null> {
 /** Nothing opens from a Cloud link without Cloud. */
 export const openingCloudLink = computed(() => false)
 
+/** No account on OpenPencil Cloud without Cloud. */
+export const officialCloudSignedIn = computed(() => false)
+
 export type { CloudAIWorkspace } from '@/app/cloud/ai/access'
 
 export const cloudAIAvailable = computed(() => false)
@@ -39,6 +42,22 @@ export function cloudAIClient(): CloudServicesClient | null {
 
 export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
   return []
+}
+
+export async function firstCloudAIWorkspace(): Promise<CloudAIWorkspace | null> {
+  return null
+}
+
+export function cloudOwnsWorkspace(): boolean | null {
+  return null
+}
+
+export function renewCloudAIToken(): void {
+  // Without Cloud there is no token to drop.
+}
+
+export async function cloudMonthlyAllowance(): Promise<number | null> {
+  return null
 }
 
 export function startCloud(): () => void {

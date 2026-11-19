@@ -94,6 +94,7 @@ export default defineConfig({
               '@open-pencil/vue': ['packages/vue/src/index.ts'],
               '@open-pencil/vue/*': ['packages/vue/src/*'],
               '#vue/*': ['packages/vue/src/*'],
+              '@open-pencil/std/*': ['packages/std/src/*'],
               '@open-pencil/scene-graph': ['packages/scene-graph/src/index.ts'],
               '@open-pencil/scene-graph/*': ['packages/scene-graph/src/*'],
               '#scene-graph/*': ['packages/scene-graph/src/*']
@@ -107,7 +108,7 @@ export default defineConfig({
   vite: {
     resolve: {
       alias: [
-        { find: '#docs-api', replacement: resolve(docsRoot, 'programmable/sdk/api') },
+        { find: '#docs-api', replacement: resolve(docsRoot, 'developers/sdk/api') },
         { find: '#docs', replacement: configDir },
         ...appSource.alias
       ]

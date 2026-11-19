@@ -1,0 +1,1 @@
+- The Pi agent in the OpenPencil companion now runs Pi 1.5, which connects to MCP servers itself (#2199).

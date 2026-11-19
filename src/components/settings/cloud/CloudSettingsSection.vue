@@ -19,6 +19,7 @@ import { cloudConnection, forgetCloudConnection } from '@/app/cloud/sessions/con
 import { signOutOfCloud } from '@/app/cloud/sessions/sign-out'
 import { clearCloudSessionToken } from '@/app/cloud/sessions/token'
 import { openExternalLink, toast } from '@/app/shell/ui'
+import CampaignNoteHost from '@/components/campaigns/CampaignNoteHost.vue'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 
@@ -36,6 +37,7 @@ const entries = computed<CloudServerEntry[]>(() =>
     if (
       connection.state === 'pending' ||
       connection.state === 'closed' ||
+      connection.state === 'two-step' ||
       connection.state === 'terms' ||
       connection.state === 'expired' ||
       connection.state === 'signed-out'
@@ -67,6 +69,12 @@ async function askToRemove(id: string) {
 function manageAccount(id: string) {
   const server = findCloudServer(id)
   if (server) void openExternalLink(joinURL(server.url, '/account'))
+}
+
+/** Opens the server's page where this browser's session proves its second step. */
+function confirmTwoStep(id: string) {
+  const server = findCloudServer(id)
+  if (server) void openExternalLink(new URL('/account/confirm', server.url).href)
 }
 
 /** Opens the server's terms page, where accepting the current version lets the account back in. */
@@ -107,10 +115,12 @@ async function remove() {
       @sign-in="(id) => openCloudConnect({ serverId: id })"
       @manage-account="manageAccount"
       @review-terms="reviewTerms"
+      @confirm-two-step="confirmTwoStep"
       @show-on-home="showCloudServerOnHome"
       @sign-out="signOut"
       @remove="askToRemove"
     >
+      <template #campaign><CampaignNoteHost placement="settings-cloud" /></template>
       <template #hosted><CloudWaitlist /></template>
     </CloudSettingsPanel>
     <AppConfirmationDialog

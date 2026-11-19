@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import { drawArrowHeads } from '#core/canvas/strokes'
+import { drawArrowHeads } from '#core/canvas/strokes/draw'
 
 import { asCanvas, asRenderer } from './helpers'
 

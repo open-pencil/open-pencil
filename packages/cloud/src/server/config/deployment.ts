@@ -2,6 +2,8 @@ import { staticEntitlementsFromTOML } from '#cloud/server/policy/static'
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
 
+import { DAY_MS } from '@open-pencil/std/timing'
+
 import { parseCloudServerConfig, type CloudServerConfig } from './schema'
 import {
   cloudDeploymentConfigSchema,
@@ -48,11 +50,16 @@ function defaultEntitlements(config: CloudDeploymentConfig) {
 function emailConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
   if (config.email.transport === 'none') return { emailTransport: 'none' as const }
   if (config.email.transport === 'cloudflare') {
-    return { emailTransport: 'cloudflare' as const, emailFrom: config.email.from }
+    return {
+      emailTransport: 'cloudflare' as const,
+      emailFrom: config.email.from,
+      emailReplyTo: config.email.reply_to
+    }
   }
   return {
     emailTransport: 'smtp' as const,
     emailFrom: config.email.from,
+    emailReplyTo: config.email.reply_to,
     smtpHost: config.email.smtp.host,
     smtpPort: config.email.smtp.port,
     smtpSecure: config.email.smtp.secure,
@@ -64,6 +71,7 @@ function emailConfig(config: CloudDeploymentConfig, environment: CloudEnvironmen
 function authenticationConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
   const google = config.authentication.providers.google
   const apple = config.authentication.providers.apple
+  const github = config.authentication.providers.github
   return {
     googleClientId: google ? configuredText(environment, google.client_id) : undefined,
     googleClientSecret: google ? requiredSecret(environment, google.client_secret) : undefined,
@@ -71,7 +79,9 @@ function authenticationConfig(config: CloudDeploymentConfig, environment: CloudE
     appleTeamId: apple?.team_id,
     appleKeyId: apple?.key_id,
     applePrivateKey: apple ? requiredSecret(environment, apple.private_key) : undefined,
-    appleAppBundleIdentifier: apple?.app_bundle_identifier
+    appleAppBundleIdentifier: apple?.app_bundle_identifier,
+    githubClientId: github ? configuredText(environment, github.client_id) : undefined,
+    githubClientSecret: github ? requiredSecret(environment, github.client_secret) : undefined
   }
 }
 
@@ -87,8 +97,8 @@ function workerConfig(config: CloudDeploymentConfig) {
     cleanupBatchSize: cleanup?.batch_size,
     cleanupIntervalMs: cleanup?.interval_ms,
     cleanupLeaseDurationMs: cleanup?.lease_ms,
-    documentRetentionMs: config.documents.retention_days * 86_400_000,
-    documentPurgeGraceMs: config.documents.purge_grace_days * 86_400_000
+    documentRetentionMs: config.documents.retention_days * DAY_MS,
+    documentPurgeGraceMs: config.documents.purge_grace_days * DAY_MS
   }
 }
 
@@ -127,7 +137,8 @@ function errorTrackingConfig(config: CloudDeploymentConfig, environment: CloudEn
   return {
     provider: tracking.provider,
     host: tracking.host,
-    projectAPIKey: configuredText(environment, tracking.project_api_key)
+    projectAPIKey: configuredText(environment, tracking.project_api_key),
+    includeIds: tracking.include_ids
   }
 }
 
@@ -152,6 +163,7 @@ export function parseCloudDeploymentConfig(
     trustedOrigins: config.deployment.trusted_origins,
     localEditor: config.deployment.local_editor,
     listingMinimumEditorVersion: config.deployment.listing?.minimum_editor_version,
+    minimumEditorVersion: config.deployment.minimum_editor_version,
     databaseURL: requiredSecret(environment, config.database.url),
     authSecret: requiredSecret(environment, config.authentication.secret),
     enrollmentMode: config.authentication.enrollment.mode,
@@ -204,6 +216,11 @@ export function parseCloudDeploymentConfig(
     community: config.community
       ? { workspaceId: config.community.workspace, tourDocumentId: config.community.tour }
       : undefined,
+    branding: config.deployment.branding && {
+      name: config.deployment.branding.name,
+      logoURL: config.deployment.branding.logo_url,
+      helpURL: config.deployment.branding.help_url
+    },
     errorTracking: errorTrackingConfig(config, environment),
     technicalLimits: technicalLimits(config)
   })

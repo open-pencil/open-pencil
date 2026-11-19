@@ -83,31 +83,23 @@ test('email-only desktop authorization stays on its issuing instance', async () 
       .executeTakeFirst()
     expect(stored?.userId).toBe(user.userId)
     expect(new Date(stored?.expiresAt ?? 0).getTime()).toBeGreaterThan(Date.now())
-    const discoveryResponse = await fixture.app.fetch(
-      accountAuthenticationRequest('/.well-known/openpencil')
-    )
+    const discoveryResponse = await fixture.client['.well-known'].openpencil.$get()
     const discovery = parseCloudDiscovery(await discoveryResponse.json())
-    const session = await fixture.app.fetch(
-      new Request('https://cloud.example.com/api/session', {
-        headers: { Authorization: `Bearer ${tokenBody.access_token}` }
-      })
-    )
+    const session = await fixture.client.api.session.$get(undefined, {
+      headers: { Authorization: `Bearer ${tokenBody.access_token}` }
+    })
     expect(session.status).toBe(200)
-    const invalid = await fixture.app.fetch(
-      new Request('https://cloud.example.com/api/session', {
-        headers: { Authorization: `Bearer ${crypto.randomUUID()}` }
-      })
-    )
+    const invalid = await fixture.client.api.session.$get(undefined, {
+      headers: { Authorization: `Bearer ${crypto.randomUUID()}` }
+    })
     expect(invalid.status).toBe(401)
     await signOutFromCloud(discovery, {
       accessToken: tokenBody.access_token,
       fetch: async (input, init) => fixture.app.fetch(new Request(input, init))
     })
-    const revoked = await fixture.app.fetch(
-      new Request('https://cloud.example.com/api/session', {
-        headers: { Authorization: `Bearer ${tokenBody.access_token}` }
-      })
-    )
+    const revoked = await fixture.client.api.session.$get(undefined, {
+      headers: { Authorization: `Bearer ${tokenBody.access_token}` }
+    })
     expect(revoked.status).toBe(401)
   } finally {
     await fixture.close()

@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit'
+
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { MaterializedComponentOccurrence } from '../instance-overrides/source-children'
@@ -7,7 +9,9 @@ import {
   restoreComponentCheckpoint,
   type ComponentCheckpoint
 } from './component/checkpoint'
-import { loadPageTransaction } from './load-transaction'
+import { createSavedVariants, type SavedVariant } from './component/set-variants'
+import type { SceneDependencyClosure } from './dependency-closure'
+import { keepContainerOrder, loadPageTransaction } from './load-transaction'
 import {
   materializeReader,
   withArchiveImages,
@@ -24,6 +28,13 @@ export interface FigSessionCheckpoint {
   savedSizeNodeIds: string[]
   loadedPageIds: string[]
   components: Array<[string, ComponentCheckpoint]>
+  /** Saved variants, by the set's layer, of the sets with variants no load has built. */
+  savedVariants?: Array<[string, SavedVariant[]]>
+  /**
+   * Instances left out of their definitions because their component would contain itself. They
+   * never became layers, and a save drops their records, as Figma's repair deletes them.
+   */
+  droppedRecordIds?: string[]
 }
 
 /**
@@ -94,6 +105,49 @@ export function createFigDocumentSession(
   const loaded = new Set<string>(resume?.checkpoint.loadedPageIds)
   const edits = watchGraphEdits(state.graph, resume !== undefined)
   let recordInfo: FigArchiveRecordInfo | undefined
+  const savedVariants = createSavedVariants({
+    sets: () => archive.reader.componentSetVariants,
+    layerOf: () => state.sources,
+    isBuilt: (id) => state.components.has(id),
+    header: (id) => archive.reader.recordHeader(id)
+  })
+  const isDeleted = (layerId: string | undefined): boolean =>
+    layerId !== undefined && !state.graph.getNode(layerId)
+  /**
+   * A layer the user deleted stays deleted: nothing that nests one of its components, or that
+   * would sit inside it, is built from the file.
+   */
+  const needsDeletedLayer = ({ contentIds, ancestorIds }: SceneDependencyClosure): boolean =>
+    [...contentIds].some((sourceId) => isDeleted(state.componentIds.get(sourceId))) ||
+    [...ancestorIds].some((sourceId) => isDeleted(state.sources.get(sourceId)))
+  /**
+   * All or none: the components' joint dependencies are checked before any of them is built, and
+   * the load is undone when `accept`, run once they are built, throws.
+   */
+  const loadComponents = (
+    ids: readonly string[],
+    accept: () => void = () => undefined,
+    onProgress?: () => void
+  ): boolean => {
+    const pending = ids.filter((id) => !state.components.has(id))
+    if (pending.length === 0) {
+      return true
+    }
+    const reader = archive.reader.selectComponents(pending)
+    if (needsDeletedLayer(reader.dependencyClosure)) {
+      return false
+    }
+    loadPageTransaction(state, reader.dependencyClosure, () => {
+      keepContainerOrder(state, reader, reader.dependencyClosure.ancestorIds, () =>
+        materializeReader(reader, archive.blobs, sessionOptions, state, {
+          edited: edits.edited,
+          onProgress
+        })
+      )
+      accept()
+    })
+    return true
+  }
   return {
     checkpoint(): FigSessionCheckpoint {
       return structuredClone({
@@ -105,9 +159,28 @@ export function createFigDocumentSession(
         components: [...state.components].map(([id, component]) => [
           id,
           checkpointComponent(component)
+        ]),
+        savedVariants: savedVariants.bySetLayer(),
+        droppedRecordIds: uniq([
+          ...(resume?.checkpoint.droppedRecordIds ?? []),
+          ...archive.reader.droppedRecords()
         ])
       } satisfies FigSessionCheckpoint)
     },
+    /** The saved variants of the set a layer is, when a load has left some of them unbuilt. */
+    savedVariants(setLayerId: string): readonly SavedVariant[] {
+      return savedVariants.ofSetLayer(setLayerId)
+    },
+    layerOf(sourceId: string): string | undefined {
+      return state.sources.get(sourceId)
+    },
+    /**
+     * Build components the pages left out, such as variants no instance uses, with what they
+     * depend on. Layers already in the graph keep their order; the new ones take their saved
+     * places among them. Returns whether they are built: none is when one of them needs a layer
+     * the user deleted.
+     */
+    loadComponents,
     graph: state.graph,
     graphPageId(sourcePageId: string): string | undefined {
       return archive.reader.pages.some((page) => page.id === sourcePageId)
@@ -128,13 +201,22 @@ export function createFigDocumentSession(
     loadPage(id: string, onProgress?: () => void): void {
       if (loaded.has(id)) return
       const reader = archive.reader.selectPages(new Set([id]))
-      loadPageTransaction(state, reader.dependencyClosure, () => {
-        materializeReader(reader, archive.blobs, sessionOptions, state, {
-          edited: edits.edited,
-          onProgress
+      const { contentIds, ancestorIds } = reader.dependencyClosure
+      // On the internal canvas a switch may have built variants of a set before its page loads.
+      const internalOnly = archive.reader.pages.find((page) => page.id === id)?.internalOnly
+      if (internalOnly && needsDeletedLayer(reader.dependencyClosure)) {
+        throw new Error(`Page ${id} nests a component that was deleted after the file opened`)
+      }
+      const keptContainers = internalOnly ? [...contentIds, ...ancestorIds] : []
+      loadPageTransaction(state, reader.dependencyClosure, () =>
+        keepContainerOrder(state, reader, keptContainers, () => {
+          materializeReader(reader, archive.blobs, sessionOptions, state, {
+            edited: edits.edited,
+            onProgress
+          })
+          loaded.add(id)
         })
-        loaded.add(id)
-      })
+      )
     },
     get loadedPageIds(): ReadonlySet<string> {
       return new Set(loaded)

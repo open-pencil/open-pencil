@@ -12,7 +12,6 @@ import {
 } from '@open-pencil/fig/node-change'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
@@ -24,6 +23,7 @@ import {
   layersResolvingCollections,
   layersUsingVariables
 } from '@open-pencil/scene-graph/variables'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import {
@@ -93,13 +93,19 @@ interface RecordPlan {
 interface ArchiveRecords {
   byGuid: ReadonlyMap<string, string>
   byNode: ReadonlyMap<string, string>
+  /** Records a component loop repair left out, which have no layer to keep them. */
+  dropped: readonly string[]
 }
 
 function archiveRecords(graph: SceneGraph): ArchiveRecords | null {
   const checkpoint = readerCheckpoint(graph)
   if (!checkpoint) return null
   const byGuid = figCheckpointRecords(checkpoint)
-  return { byGuid, byNode: new Map([...byGuid].map(([guid, nodeId]) => [nodeId, guid])) }
+  return {
+    byGuid,
+    byNode: new Map([...byGuid].map(([guid, nodeId]) => [nodeId, guid])),
+    dropped: checkpoint.droppedRecordIds ?? []
+  }
 }
 
 /**
@@ -281,6 +287,7 @@ function planRecords(
   const removed: GUID[] = []
   for (const [guid, nodeId] of archived.byGuid)
     if (!graph.nodes.has(nodeId)) removed.push(stringToGuid(guid))
+  for (const guid of archived.dropped) removed.push(stringToGuid(guid))
   return { records, orderKeys, removed, replaceVariables }
 }
 
@@ -428,7 +435,8 @@ async function buildPatch(
   runtime: FigNodeChangeExportRuntime,
   info: FigArchiveRecordInfo,
   changes: ArchiveChangeSummary,
-  archived: ArchiveRecords
+  archived: ArchiveRecords,
+  withoutComments = false
 ): Promise<{ patch: FigRecordPatch; graph: SceneGraph } | null> {
   // Serializing reads the document and writes nothing to it, so the records come from it directly.
   const graph = source
@@ -438,12 +446,14 @@ async function buildPatch(
     blobs: Array.from({ length: info.blobCount }, () => new Uint8Array(0)),
     recordOwners: archived.byGuid,
     archiveRecordIds: info.recordIds,
-    archiveResourceIds: changes.resourceIds
+    archiveResourceIds: changes.resourceIds,
+    withoutComments
   })
   const records = writeRecords(setup, plan)
   if (!records) return null
-  // The document's own fields, its plugin data among them, are written on the document record.
-  if (changes.documentChanged || changes.touched.has(graph.rootId))
+  // The document's own fields, its plugin data among them, are written on the document record,
+  // and so is leaving out comments the archive may hold.
+  if (changes.documentChanged || changes.touched.has(graph.rootId) || withoutComments)
     records.unshift(documentRecord(setup, info))
   if (plan.replaceVariables) {
     const internalPage = graph.getPages(true).find((page) => page.internalOnly)
@@ -521,7 +531,7 @@ export async function writePatchedFigFile(
   const info = await archive.info()
   let built: Awaited<ReturnType<typeof buildPatch>>
   try {
-    built = await buildPatch(source, runtime, info, changes, archived)
+    built = await buildPatch(source, runtime, info, changes, archived, options.withoutComments)
   } catch (error) {
     if (error instanceof UnpatchableChangeError) return null
     throw error
