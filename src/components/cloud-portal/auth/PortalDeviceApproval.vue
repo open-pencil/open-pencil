@@ -4,6 +4,8 @@ import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppCopyField from '@/components/ui/input/AppCopyField.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 
 import PortalPublicLayout from '../layout/PortalPublicLayout.vue'
 
@@ -38,10 +40,9 @@ const ui = portalForm({ size: 'lg' })
     :heading="messages.deviceTitle"
     :description="messages.deviceDescription({ email })"
   >
-    <div :class="ui.shownCode()">
-      {{ messages.deviceCheckCode }}
-      <span :class="ui.shownCodeValue()">{{ code }}</span>
-    </div>
+    <AppFormField :label="messages.deviceCheckCode" size="lg" :label-for="false">
+      <AppCopyField :value="code" look="code" />
+    </AppFormField>
     <AppAlert v-if="error" tone="error" :heading="messages.errorTitle" :description="error" />
     <AppAlert
       tone="warning"
