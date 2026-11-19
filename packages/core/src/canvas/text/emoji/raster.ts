@@ -49,8 +49,6 @@ export function rasterizeNotoEmoji(
   provider: TypefaceFontProvider,
   text: string
 ): Image | null {
-  const surface = ck.MakeSurface(EMOJI_IMAGE_SIZE, EMOJI_IMAGE_SIZE)
-  if (!surface) return null
   const style = new ck.ParagraphStyle({
     textStyle: {
       fontFamilies: [NOTO_COLOR_EMOJI_FAMILY],
@@ -67,17 +65,22 @@ export function rasterizeNotoEmoji(
       const advance = paragraph.getMaxIntrinsicWidth()
       if (advance <= 0) return null
       const scale = EMOJI_IMAGE_SIZE / advance
-      const canvas = surface.getCanvas()
-      canvas.clear(ck.TRANSPARENT)
-      canvas.translate(0, (EMOJI_IMAGE_SIZE - paragraph.getHeight() * scale) / 2)
-      canvas.scale(scale, scale)
-      canvas.drawParagraph(paragraph, 0, 0)
-      return surface.makeImageSnapshot()
+      const surface = ck.MakeSurface(EMOJI_IMAGE_SIZE, EMOJI_IMAGE_SIZE)
+      if (!surface) return null
+      try {
+        const canvas = surface.getCanvas()
+        canvas.clear(ck.TRANSPARENT)
+        canvas.translate(0, (EMOJI_IMAGE_SIZE - paragraph.getHeight() * scale) / 2)
+        canvas.scale(scale, scale)
+        canvas.drawParagraph(paragraph, 0, 0)
+        return surface.makeImageSnapshot()
+      } finally {
+        surface.dispose()
+      }
     } finally {
       paragraph.delete()
     }
   } finally {
     builder.delete()
-    surface.delete()
   }
 }
