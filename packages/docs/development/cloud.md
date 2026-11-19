@@ -507,7 +507,9 @@ signing key and the internal API. `POST /api/billing/token` signs a short-lived 
 signed-in person's own account, with the services' key but the `openpencil-billing` audience, so it
 spends no credits. Cloud has no billing pages of its own: its plan page shows the account's storage
 and monthly credits, and, when the server advertises billing, posts a fresh token as the form field
-`token` to the service's `CLOUD_BILLING_PAGE_PATHS.session`. The service verifies it against the
+`token` to the service's `CLOUD_BILLING_PAGE_PATHS.session`. Cloud's pages send `Referrer-Policy: strict-origin`,
+so that post names Cloud's origin: under `no-referrer` or `same-origin`, browsers send
+`Origin: null` with it, which the service's check of where a form came from refuses. The service verifies it against the
 same published keys and keeps its own session from there: its pages sell the plans and credit packs
 of its catalog, send the person to its payment provider's checkout or portal, and set the account's
 plan through the internal API as it is paid. A service whose session ended sends the person to
@@ -518,6 +520,14 @@ then Cloud straight after, in the same window: between the two, the old plan pag
 `billing.freePlan` is what an account without a plan has, from the default entitlements, so the
 service's pricing page compares its plans with it. The contract is `src/contract/billing.ts`. Editors
 link to the server's plan page, `CLOUD_ACCOUNT_PLAN_PATH`, whenever it advertises billing.
+
+`bun run cloud:dev` runs with a billing service when `OPENPENCIL_CLOUD_DEV_BILLING_URL` names one,
+such as the official service run locally: it generates the services' signing key and the internal
+API's token into `deploy/generated/`, adds the `[services]`, `[billing]`, and `[internal_api]`
+tables, keeps entitlements in the database where billing writes plans, and gives the free plan the
+official Cloud's 300 MB, which the service's pricing page shows. `OPENPENCIL_CLOUD_DEV_SERVICES_URL`
+names the services, `http://127.0.0.1:8788` by default. The service reaches Cloud over portless's
+HTTPS, so both trust its certificate through `NODE_EXTRA_CA_CERTS`.
 
 A plan may be priced by the seat (`billingSeatPricingSchema`): an account's seats are the people
 who can edit, as editors or admins, across the workspaces it owns, each counted once, the owner
