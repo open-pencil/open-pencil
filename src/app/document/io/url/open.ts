@@ -60,12 +60,13 @@ export async function openWebAddress(url: URL, signal?: AbortSignal): Promise<vo
     case 'html':
       await openFileInNewTab(new File([remote.bytes], remote.name || remote.title), {
         path: remote.url,
-        webPage: { url: remote.url, title: remote.title }
+        webPage: { url: remote.url, title: remote.title },
+        signal
       })
       return
     case 'document':
       // Opened as a picked file is: its address is no file path a save could write back to.
-      await openFileInNewTab(new File([remote.bytes], remote.name))
+      await openFileInNewTab(new File([remote.bytes], remote.name), { signal })
       return
     case 'svg':
       await openImage(

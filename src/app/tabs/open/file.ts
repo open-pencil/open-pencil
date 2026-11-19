@@ -45,6 +45,8 @@ export interface OpenInTabOptions {
    * read from where it lives, and its document called by the page's title.
    */
   webPage?: OpenedWebPage
+  /** Cancels the open, as the user cancelling it does: the tab it was opening closes. */
+  signal?: AbortSignal
 }
 
 /**
@@ -53,7 +55,7 @@ export interface OpenInTabOptions {
  */
 export async function openFileInNewTab(
   file: File,
-  { handle, path, webPage }: OpenInTabOptions = {}
+  { handle, path, webPage, signal }: OpenInTabOptions = {}
 ): Promise<EditorStore> {
   const domImport = webPage !== undefined || isDOMImportFile(file)
   const identity: DocumentSourceIdentity = {
@@ -101,7 +103,11 @@ export async function openFileInNewTab(
 
   const { completion, pendingOpen, store, opening, load } = decision
   let succeeded = false
+  const cancel = () => load.cancel('user')
+  signal?.addEventListener('abort', cancel, { once: true })
   try {
+    if (signal?.aborted) cancel()
+    load.signal.throwIfAborted()
     if (domImport) {
       await store.openDOMFile(file, { handle, path, webPage, preparation: load })
       completion.resolve(undefined)
@@ -151,6 +157,7 @@ export async function openFileInNewTab(
     await releaseOpeningTab(opening)
     throw error
   } finally {
+    signal?.removeEventListener('abort', cancel)
     if (succeeded) load.complete()
     fileOpenCoordinator.remove(pendingOpen)
   }

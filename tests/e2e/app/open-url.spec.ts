@@ -93,6 +93,44 @@ test('a web page opens as layers with the stylesheet and pictures it links', asy
   })
 })
 
+test('closing the dialog while a page imports opens nothing', async ({ page }) => {
+  let releasePicture: () => void = () => undefined
+  const released = new Promise<void>((resolve) => {
+    releasePicture = resolve
+  })
+  let pictureRequested: () => void = () => undefined
+  const requested = new Promise<void>((resolve) => {
+    pictureRequested = resolve
+  })
+  await page.route(`${SITE}/**`, async (route) => {
+    const { pathname } = new URL(route.request().url())
+    if (pathname === '/') {
+      return route.fulfill({
+        headers: { ...OPEN, 'content-type': 'text/html' },
+        body: '<p>Slow page</p><img src="/slow.png">'
+      })
+    }
+    // The picture holds the import open until the dialog has closed.
+    pictureRequested()
+    await released
+    return route.fulfill({ status: 404, headers: OPEN })
+  })
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+
+  const dialog = await openFromURL(page, SITE)
+  await requested
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+  releasePicture()
+  await page.waitForFunction(() => window.openPencil?.getStore?.().state.preparation === null)
+
+  // The import stopped with the dialog: the page's text never reached the document.
+  expect(await getPageTexts(page)).not.toContainEqual(
+    expect.objectContaining({ text: 'Slow page' })
+  )
+})
+
 test('an address that holds a PDF says it cannot be opened yet', async ({ page }) => {
   await page.route(`${SITE}/**`, (route) =>
     route.fulfill({ headers: { ...OPEN, 'content-type': 'application/pdf' }, body: '%PDF-1.7\n' })
