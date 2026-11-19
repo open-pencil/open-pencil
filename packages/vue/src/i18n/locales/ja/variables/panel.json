@@ -105,6 +105,7 @@
   "scopeFontFamily": "フォントファミリー",
   "exportDesignTokens": "デザイントークンとして書き出す",
   "importDesignTokens": "デザイントークンを読み込む",
+  "importDesignTokensFolder": "デザイントークンのフォルダーを読み込む",
   "libraryCollection": "ライブラリ",
   "libraryCollectionHint": "ライブラリからコピーされています。編集はこのファイルに保存され、Figma にも表示されます。",
   "addedToLibraryCollection": "ここで追加されました。ライブラリのコレクションに追加された変数は Figma に表示されません。",
