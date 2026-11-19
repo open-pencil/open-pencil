@@ -343,10 +343,9 @@ function setImageShader(
     localMatrix,
     landsOnOutputPixels(r, node, graph, localMatrix)
   )
-  const shader = hasImageAdjustments(fill.filters)
-    ? makeAdjustedImageShader(r, image, fill.filters)
-    : image
+  let shader = image
   try {
+    if (hasImageAdjustments(fill.filters)) shader = makeAdjustedImageShader(r, image, fill.filters)
     paint.setShader(shader)
     markShaded(r, paint)
   } finally {
