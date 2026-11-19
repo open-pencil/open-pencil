@@ -12,6 +12,7 @@ type CopyFieldVariants = VariantProps<typeof copyField>
 /**
  * Read-only text with an icon button that copies it and briefly confirms, its label the button's
  * tooltip; without `copyLabel`, only the text, for a code shown to compare rather than to paste.
+ * The text is a command, an address, or a code, so it reads left to right in any interface.
  */
 const {
   value,
@@ -32,7 +33,7 @@ const cls = computed(() => copyField({ look }))
 
 <template>
   <div data-slot="copy-field" :data-look="look" :class="cls.root({ class: ui?.root })">
-    <code :class="cls.value({ class: ui?.value })">{{ value }}</code>
+    <code dir="ltr" :class="cls.value({ class: ui?.value })">{{ value }}</code>
     <AppCopyButton
       v-if="copyLabel && copiedLabel"
       :value="value"
