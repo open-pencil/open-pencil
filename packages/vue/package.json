@@ -424,6 +424,11 @@
       "import": "./dist/shared/input/index.js",
       "default": "./dist/shared/input/index.js"
     },
+    "./shared/refresh": {
+      "types": "./dist/shared/refresh.d.ts",
+      "import": "./dist/shared/refresh.js",
+      "default": "./dist/shared/refresh.js"
+    },
     "./shared/search": {
       "types": "./dist/shared/search/index.d.ts",
       "import": "./dist/shared/search/index.js",

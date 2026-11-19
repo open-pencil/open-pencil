@@ -1,0 +1,1 @@
+- Home lists Cloud workspaces made or left elsewhere, on the server's pages or another device, when the window regains focus, every minute while shown, or from the workspace's refresh button, instead of after a restart.

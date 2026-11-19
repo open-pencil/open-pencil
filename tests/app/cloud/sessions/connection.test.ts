@@ -11,6 +11,8 @@ import { addCloudServer, cloudServers, removeCloudServer } from '@/app/cloud/ser
 import {
   checkedCloudConnection,
   cloudConnection,
+  cloudConnections,
+  forgetCloudConnection,
   recheckedCloudConnection,
   refreshCloudConnection
 } from '@/app/cloud/sessions/connection'
@@ -249,5 +251,74 @@ describe('Cloud connections', () => {
     await starting
     expect((await waiting).state).toBe('unreachable')
     expect(statusRequests).toBe(1)
+  })
+
+  test('list a workspace made elsewhere in the background, keeping the last answer meanwhile', async () => {
+    answers['/api/account/status'] = { status: 200, body: { user, state: 'active' } }
+    answers['/api/workspaces'] = { status: 200, body: { workspaces: [workspace] } }
+    const target = await server()
+    await refreshCloudConnection(target)
+
+    // Nothing changed: the connection is left as it was, so nothing that shows it re-renders.
+    const unchanged = cloudConnections.value
+    await refreshCloudConnection(target, { background: true })
+    expect(cloudConnections.value).toBe(unchanged)
+
+    const gallery = { ...workspace, id: '2b0f9c3e-5d61-4a7e-8f20-9c1d3e4b5a60', name: 'Community' }
+    answers['/api/workspaces'] = { status: 200, body: { workspaces: [workspace, gallery] } }
+    const asking = refreshCloudConnection(target, { background: true })
+    // The list stays on screen while the server is asked, rather than showing a check.
+    expect(cloudConnection(target.id).state).toBe('signed-in')
+    await asking
+    expect(cloudConnection(target.id).workspaces.map((entry) => entry.name)).toEqual([
+      'Design',
+      'Community'
+    ])
+
+    // A server out of reach for a moment leaves the last answer in place.
+    answers['/api/account/status'] = { status: 503, body: { error: { code: 'unavailable' } } }
+    expect((await refreshCloudConnection(target, { background: true })).state).toBe('signed-in')
+    expect(cloudConnection(target.id).state).toBe('signed-in')
+    expect(cloudConnection(target.id).workspaces).toHaveLength(2)
+  })
+
+  test('show no account as signed in once a background check met another before failing', async () => {
+    answers['/api/account/status'] = { status: 200, body: { user, state: 'active' } }
+    answers['/api/workspaces'] = { status: 200, body: { workspaces: [workspace] } }
+    const target = await server()
+    await refreshCloudConnection(target)
+
+    const other = { userId: 'user-2', email: 'grace@example.com', name: 'Grace' }
+    answers['/api/account/status'] = { status: 200, body: { user: other, state: 'active' } }
+    answers['/api/workspaces'] = { status: 503, body: { error: { code: 'unavailable' } } }
+    await refreshCloudConnection(target, { background: true })
+    expect(cloudConnection(target.id).state).not.toBe('signed-in')
+    expect(cloudServers.value[0]?.account?.id).toBe('user-2')
+  })
+
+  test('answer a refresh button from a check that starts after the click', async () => {
+    answers['/api/account/status'] = { status: 200, body: { user, state: 'active' } }
+    answers['/api/workspaces'] = { status: 200, body: { workspaces: [workspace] } }
+    const target = await server()
+    await refreshCloudConnection(target)
+
+    const before = statusRequests
+    const running = refreshCloudConnection(target, { background: true })
+    // Made after the running check asked for the list, so only a later check can find it.
+    const gallery = { ...workspace, id: '2b0f9c3e-5d61-4a7e-8f20-9c1d3e4b5a60', name: 'Community' }
+    answers['/api/workspaces'] = { status: 200, body: { workspaces: [workspace, gallery] } }
+    const clicked = await refreshCloudConnection(target, { background: true, fresh: true })
+    await running
+    expect(statusRequests - before).toBe(2)
+    expect(clicked.workspaces.map((entry) => entry.name)).toEqual(['Design', 'Community'])
+  })
+
+  test('publish a failed background check when there was no answer to keep', async () => {
+    answers['/api/account/status'] = { status: 503, body: { error: { code: 'unavailable' } } }
+    const target = await server()
+    // No answer to keep, as after signing out drops it.
+    forgetCloudConnection(target.id)
+    await refreshCloudConnection(target, { background: true })
+    expect(cloudConnection(target.id).state).toBe('unreachable')
   })
 })
