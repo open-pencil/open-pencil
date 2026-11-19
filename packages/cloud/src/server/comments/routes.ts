@@ -25,7 +25,10 @@ import {
   shareThreadParams,
   validatedJSON
 } from '#cloud/server/validation'
+import { omit } from 'es-toolkit'
 import { Hono, type Context } from 'hono'
+import type { BlankEnv } from 'hono/types'
+import type * as v from 'valibot'
 
 import {
   CommentConflictError,
@@ -62,6 +65,16 @@ async function answer(
 function threadOrGone(context: Context, thread: Awaited<ReturnType<CommentService['get']>> | null) {
   return thread ? context.json({ thread }) : context.body(null, 204)
 }
+
+/** A route's context once its share, thread, and request body, read by `Schema`, are validated. */
+type SharedThreadContext<Schema extends v.GenericSchema> = Context<
+  BlankEnv,
+  string,
+  {
+    in: { param: { shareId: string; threadId: string }; json: v.InferInput<Schema> }
+    out: { param: { shareId: string; threadId: string }; json: v.InferOutput<Schema> }
+  }
+>
 
 /** A document's comments for its members and the people it is shared with directly. */
 export function createCommentRoutes(service: CommentService) {
@@ -217,6 +230,38 @@ export function createSharedCommentRoutes(
     )
   }
 
+  /** A route that acts on a shared thread for whoever opened the share, answering with no content. */
+  function sharedThreadAction(act: (actor: CommentActor, threadId: string) => Promise<void>) {
+    return (context: SharedThreadContext<typeof sharedCommentsRequestSchema>) => {
+      const { shareId, threadId } = context.req.valid('param')
+      return shared(context, shareId, context.req.valid('json'), async (actor) => {
+        await act(actor, threadId)
+        return context.body(null, 204)
+      })
+    }
+  }
+
+  /**
+   * A route that changes a shared thread with the edit its request carries, for whoever opened the
+   * share, answering with the thread.
+   */
+  function sharedThreadChange<Schema extends v.GenericSchema<unknown, SharedCommentsRequest>>(
+    change: (
+      actor: CommentActor,
+      threadId: string,
+      edit: Omit<v.InferOutput<Schema>, 'share'>
+    ) => Promise<unknown>,
+    status: 200 | 201 = 200
+  ) {
+    return (context: SharedThreadContext<Schema>) => {
+      const { shareId, threadId } = context.req.valid('param')
+      const request = context.req.valid('json')
+      return shared(context, shareId, request, async (actor) =>
+        context.json({ thread: await change(actor, threadId, omit(request, ['share'])) }, status)
+      )
+    }
+  }
+
   return new Hono()
     .post(
       '/shares/:shareId/threads/list',
@@ -256,49 +301,30 @@ export function createSharedCommentRoutes(
       '/shares/:shareId/threads/:threadId/read',
       shareThreadParams,
       validatedJSON(sharedCommentsRequestSchema),
-      (context) => {
-        const { shareId, threadId } = context.req.valid('param')
-        return shared(context, shareId, context.req.valid('json'), async (actor) => {
-          await service.markRead(actor, threadId)
-          return context.body(null, 204)
-        })
-      }
+      sharedThreadAction((actor, threadId) => service.markRead(actor, threadId))
     )
     .patch(
       '/shares/:shareId/threads/:threadId',
       shareThreadParams,
       validatedJSON(sharedUpdateCommentThreadSchema),
-      (context) => {
-        const { shareId, threadId } = context.req.valid('param')
-        const { share, ...input } = context.req.valid('json')
-        return shared(context, shareId, { share }, async (actor) =>
-          context.json({ thread: await service.updateThread(actor, threadId, input) })
-        )
-      }
+      sharedThreadChange<typeof sharedUpdateCommentThreadSchema>((actor, threadId, edit) =>
+        service.updateThread(actor, threadId, edit)
+      )
     )
     .delete(
       '/shares/:shareId/threads/:threadId',
       shareThreadParams,
       validatedJSON(sharedCommentsRequestSchema),
-      (context) => {
-        const { shareId, threadId } = context.req.valid('param')
-        return shared(context, shareId, context.req.valid('json'), async (actor) => {
-          await service.deleteThread(actor, threadId)
-          return context.body(null, 204)
-        })
-      }
+      sharedThreadAction((actor, threadId) => service.deleteThread(actor, threadId))
     )
     .post(
       '/shares/:shareId/threads/:threadId/comments',
       shareThreadParams,
       validatedJSON(sharedCreateCommentSchema),
-      (context) => {
-        const { shareId, threadId } = context.req.valid('param')
-        const { share, ...input } = context.req.valid('json')
-        return shared(context, shareId, { share }, async (actor) =>
-          context.json({ thread: await service.reply(actor, threadId, input) }, 201)
-        )
-      }
+      sharedThreadChange<typeof sharedCreateCommentSchema>(
+        (actor, threadId, comment) => service.reply(actor, threadId, comment),
+        201
+      )
     )
     .patch(
       '/shares/:shareId/threads/:threadId/comments/:commentId',
