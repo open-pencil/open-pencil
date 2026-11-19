@@ -2,8 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-import { svgDataURL } from '@open-pencil/scene-graph/images'
-import { imageHeader } from '@open-pencil/scene-graph/images'
+import { imageHeader, svgDataURL } from '@open-pencil/scene-graph/images'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { readHTMLDocument } from '#core/io/formats/html/import'
