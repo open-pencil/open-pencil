@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useScroll } from '@vueuse/core'
+import { useElementSize, useScroll } from '@vueuse/core'
 import { TreeItem, TreeVirtualizer, ContextMenuPortal } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, nextTick, useAttrs, useTemplateRef, watch } from 'vue'
@@ -30,6 +30,7 @@ import LayerTreeRenameRow from './LayerTreeRenameRow.vue'
 import LayerTreeStickyRow from './LayerTreeStickyRow.vue'
 import { provideLayerTreeUI } from './ui'
 import type { LayerTreeUI } from './ui'
+import { createRowsOverflow } from './width'
 
 interface LayerTreeRootActions {
   select: (id: string, selection: boolean | LayerSelectionMode) => void
@@ -50,7 +51,7 @@ defineOptions({ inheritAttrs: false })
 
 const { ui } = defineProps<{ ui?: LayerTreeUI }>()
 
-const { rowHeight, indent } = useLayerTreeGeometry()
+const { rowHeight, indent, nameStart, buttons } = useLayerTreeGeometry()
 const attrs = useAttrs()
 const styles = tv(layerTreeTheme)()
 provideLayerTreeUI(() => ui)
@@ -58,6 +59,8 @@ const store = useEditorStore()
 const viewport = useTemplateRef<HTMLElement>('viewport')
 /** How far the rows are scrolled, for the pinned top-level row. */
 const { y: scrollTop } = useScroll(viewport)
+const { width: viewportWidth } = useElementSize(viewport)
+const rowsOverflow = createRowsOverflow()
 let pendingScrollPosition: number | undefined
 watch(
   [rowHeight, () => store.state.currentPageId],
@@ -175,13 +178,43 @@ function chrome(scope: Omit<LayerTreeSlotScope, 'actions'>) {
 }
 
 /**
+ * The rows' width, wider than the list for the widest row's whole name. It goes on the
+ * virtualizer's own element, over its `width: 100%`; its rows fill it, and a wider block runs
+ * past the list's end in either reading direction, so the list scrolls sideways.
+ */
+function rowsWidth(rows: readonly LayerRow[]): string {
+  const el = viewport.value
+  const overflow = rowsOverflow(rows, {
+    // The list sets the rows' text size, so its font is the names' font.
+    font: el ? getComputedStyle(el).font : '',
+    indent: indent.value,
+    nameStart: nameStart.value,
+    buttons: buttons.value,
+    viewportWidth: viewportWidth.value
+  })
+  return `calc(100% + ${overflow}px)`
+}
+
+/**
+ * The sideways scroll that shows a row with one level of its parent's indent before it, as
+ * Figma's layers panel does when a layer is selected; top two levels need none.
+ */
+function inlineScroll(level: number): number {
+  return Math.max(0, level - 2) * indent.value
+}
+
+/**
  * Bring a row into view. A nested row stops below the top-level row pinned over the top of the
- * list, so the pin never covers it; rows are one height, so their place is exact.
+ * list, so the pin never covers it; rows are one height, so their place is exact. Sideways, the
+ * list scrolls to the row's depth, so a deep layer's name shows instead of shrinking away.
  */
 function revealRow(rows: readonly LayerRow[], index: number) {
   const el = viewport.value
   const row = rows.at(index)
   if (!el || !row) return
+  // Mirrored, the start edge is on the right and sideways scroll runs negative from it.
+  const inline = inlineScroll(row.level)
+  el.scrollLeft = getComputedStyle(el).direction === 'rtl' ? -inline : inline
   // A layer showing as the pinned row is in view already, so selecting it keeps the list still.
   if (stickyTopLevelRow(rows, el.scrollTop, rowHeight.value)?.index === index) return
   const top = index * rowHeight.value
@@ -227,7 +260,7 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
       <AppContextMenuTrigger as-child @contextmenu="onLayerRightClick">
         <div
           v-bind="attrs"
-          class="relative min-h-0 flex-1 overflow-hidden"
+          class="relative min-h-0 flex-1 overflow-hidden px-1"
           @focusin="scope.actions.setFocused(true)"
           @focusout="onFocusOut($event, scope.actions)"
         >
@@ -240,6 +273,7 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
             <TreeVirtualizer
               v-slot="{ item, virtualizer }"
               :key="rowHeight"
+              :style="{ minWidth: rowsWidth(scope.visibleRows) }"
               :estimate-size="rowHeight"
               :text-content="layerTextContent"
             >

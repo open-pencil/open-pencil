@@ -36,6 +36,7 @@ watch(renameInput, (input) => {
 <template>
   <LayerTreeRowShell
     :pad-left="padLeft"
+    :content-class="styles.content({ class: ui?.content })"
     data-slot="rename-row"
     :class="styles.renameRow({ class: ui?.renameRow })"
   >

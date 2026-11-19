@@ -47,11 +47,13 @@ const modeNames = computed(() =>
     return []
   })
 )
+const showIssue = computed(() => !!issue && (issue.own || !expanded))
 const layerTree = tv(layerTreeTheme)
 const styles = computed(() =>
   layerTree({
     expanded,
     actionsVisible: node.locked || !node.visible,
+    trailingShown: node.locked || !node.visible || showIssue.value,
     selected,
     focused: chrome.focused,
     dragging: chrome.draggingId === node.id,
@@ -67,6 +69,7 @@ const styles = computed(() =>
 <template>
   <LayerTreeRowShell
     :pad-left="padLeft"
+    :content-class="styles.content({ class: ui?.content })"
     data-test-id="layers-item"
     data-slot="row"
     :data-selected="selected || undefined"
@@ -104,21 +107,27 @@ const styles = computed(() =>
         {{ name }}
       </span>
     </span>
-    <LayerIssueMark v-if="issue && (issue.own || !expanded)" :mark="issue" />
+    <template #end>
+      <span data-slot="trailing" :class="styles.trailing({ class: ui?.trailing })">
+        <LayerIssueMark v-if="issue && showIssue" :mark="issue" />
 
-    <LayerTreeActions
-      :node="node"
-      :ui="{
-        actions: styles.actions({ class: ui?.actions }),
-        action: styles.action({ class: ui?.action }),
-        lockIcon: layerTree({ actionActive: node.locked }).actionIcon({ class: ui?.actionIcon }),
-        visibilityIcon: layerTree({ actionActive: !node.visible }).actionIcon({
-          class: ui?.actionIcon
-        })
-      }"
-      @toggle-lock="actions.toggleLock"
-      @toggle-visibility="actions.toggleVisibility"
-    />
+        <LayerTreeActions
+          :node="node"
+          :ui="{
+            actions: styles.actions({ class: ui?.actions }),
+            action: styles.action({ class: ui?.action }),
+            lockIcon: layerTree({ actionActive: node.locked }).actionIcon({
+              class: ui?.actionIcon
+            }),
+            visibilityIcon: layerTree({ actionActive: !node.visible }).actionIcon({
+              class: ui?.actionIcon
+            })
+          }"
+          @toggle-lock="actions.toggleLock"
+          @toggle-visibility="actions.toggleVisibility"
+        />
+      </span>
+    </template>
 
     <LayerTreeDropIndicator
       :active="chrome.instructionTargetId === node.id"
