@@ -2,6 +2,7 @@ import { ref, watch, type Ref } from 'vue'
 
 import { libraryAssetKeyForComponent } from '@open-pencil/core/library'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import type { EditorStore } from '@/app/editor/session'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -45,7 +46,7 @@ export function useInstanceUpdate(
     } catch (cause) {
       toast.error(
         notificationMessages.get().operationFailed({
-          error: cause instanceof Error ? cause.message : String(cause)
+          error: errorMessage(cause)
         })
       )
     } finally {

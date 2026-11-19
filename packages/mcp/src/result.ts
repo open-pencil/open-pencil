@@ -1,5 +1,7 @@
 import { Buffer } from 'node:buffer'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 export type MCPContent =
   | { type: 'text'; text: string }
   | { type: 'image'; data: string; mimeType: string }
@@ -32,6 +34,6 @@ export function ok(data: unknown, toolName?: string): MCPResult {
 }
 
 export function fail(e: unknown): MCPResult {
-  const msg = e instanceof Error ? e.message : String(e)
+  const msg = errorMessage(e)
   return { content: [{ type: 'text', text: JSON.stringify({ error: msg }) }], isError: true }
 }

@@ -1,3 +1,4 @@
+import { sha256 } from '@noble/hashes/sha2.js'
 import { limitAsync, sumBy } from 'es-toolkit'
 import { fromUint8Array } from 'js-base64'
 
@@ -7,8 +8,7 @@ import type { StorageTransferProgress } from '../types'
 import { assembleCloudDocument } from './images'
 
 export async function cloudChecksum(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', Uint8Array.from(bytes))
-  return fromUint8Array(new Uint8Array(digest))
+  return fromUint8Array(sha256(bytes))
 }
 
 type ObjectFetch = (input: string, init: RequestInit) => Promise<Response>

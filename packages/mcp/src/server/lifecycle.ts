@@ -8,6 +8,7 @@ import { getRequestListener } from '@hono/node-server'
 import type { Hono } from 'hono'
 import type { WebSocketServer } from 'ws'
 
+import { errorMessage } from '@open-pencil/std/errors'
 import { SECOND_MS } from '@open-pencil/std/timing'
 
 import type { MCPToolScope } from '#mcp/tool/scope'
@@ -135,7 +136,7 @@ export async function startSocketListener(
     await closeServer(server).catch(() => undefined)
     await cleanupSocket(resolvedPath).catch(() => undefined)
     throw new Error(
-      `Socket chmod failed — refusing to serve with insecure permissions: ${e instanceof Error ? e.message : String(e)}`
+      `Socket chmod failed — refusing to serve with insecure permissions: ${errorMessage(e)}`
     )
   }
 

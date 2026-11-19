@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { createDeferred } from '@open-pencil/std/async'
+
 import {
   claimFailureNotice,
   saveWithFeedback,
   showSaveFailure
 } from '@/app/document/io/save/feedback'
-import { createDeferred } from '@/app/runtime/deferred'
 import { toast } from '@/app/shell/ui'
 
 afterEach(() => {

@@ -1,5 +1,7 @@
 import { APICallError, StreamProviderError } from 'ai'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 
 export type AIChatFailureReason =
@@ -55,12 +57,8 @@ export function providerErrorStatus(error: unknown): number | null {
   )
 }
 
-function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
-}
-
 function normalizedErrorText(error: unknown): string {
-  return errorText(error).toLowerCase()
+  return errorMessage(error).toLowerCase()
 }
 
 export function isInsufficientCreditError(error: unknown): boolean {
@@ -150,12 +148,12 @@ export function classifyAIChatError(
   { signInOnly = false }: { signInOnly?: boolean } = {}
 ): AIChatFailure {
   if (error instanceof AgentNotInstalledError) {
-    return { reason: 'agent-not-installed', detail: errorText(error) }
+    return { reason: 'agent-not-installed', detail: errorMessage(error) }
   }
   const reason = failureReason(error)
   return {
     reason: signInOnly ? signInFailureReason(reason) : reason,
-    detail: errorText(error),
+    detail: errorMessage(error),
     statusCode: providerErrorStatus(error) ?? undefined,
     // A provider error after the stream starts arrives as StreamProviderError, not APICallError.
     retryable:

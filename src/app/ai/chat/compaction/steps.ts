@@ -1,7 +1,8 @@
 import type { LanguageModel, LanguageModelUsage, ModelMessage, UIMessage } from 'ai'
 
+import { createDeferred } from '@open-pencil/std/async'
+
 import { compactAutomatically } from '@/app/ai/chat/preferences'
-import { createDeferred } from '@/app/runtime/deferred'
 
 import { autoCompactAt, designContextLimits, summaryBudget, type ContextLimits } from './limits'
 import { compactionOf, summaryText, type StepCompaction } from './marker'

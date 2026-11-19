@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { effectScope, nextTick, reactive, ref, type EffectScope } from 'vue'
 
 import type { ServiceCatalog } from '@open-pencil/cloud/contract'
+import { createDeferred, type Deferred } from '@open-pencil/std/async'
 
 import { useCloudModelSelection } from '@/app/ai/models/settings/profile-editor/cloud'
 import { createModelProfileDraft } from '@/app/ai/models/store'
@@ -10,7 +11,6 @@ import type { AIModelProfileDraft } from '@/app/ai/models/types'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import type { CloudAISource } from '@/app/ai/providers/openpencil/source'
 import type { CloudAIWorkspace } from '@/app/cloud/integration'
-import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
 const ALICE = 'home:alice'
 const BOB = 'home:bob'

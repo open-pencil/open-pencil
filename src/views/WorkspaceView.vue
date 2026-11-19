@@ -6,6 +6,7 @@ import { useEventListener, whenever } from '@vueuse/core'
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import { errorMessage } from '@open-pencil/std/errors'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import {
@@ -133,7 +134,7 @@ function openFirstTab(): Tab {
       toast.error(
         notificationMessages.get().openFileFailed({
           name: 'Demo',
-          error: error instanceof Error ? error.message : String(error)
+          error: errorMessage(error)
         })
       )
     })
@@ -207,7 +208,7 @@ function reportOpenFailure(error: unknown): void {
   console.error('[Open With]', error)
   toast.error(
     notificationMessages.get().openQueuedFilesFailed({
-      error: error instanceof Error ? error.message : String(error)
+      error: errorMessage(error)
     })
   )
 }

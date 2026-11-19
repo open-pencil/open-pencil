@@ -1,3 +1,5 @@
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { APP_VERSION } from '@/app/runtime/version'
 
 /**
@@ -81,7 +83,7 @@ const PERMISSION_PATTERN = /not allowed|permission denied|forbidden|acl/i
 
 /** Spawn failures only expose text, so the reason is derived once, in one place. */
 export function classifySpawnFailure(error: unknown): MCPFailure {
-  const message = error instanceof Error ? error.message : String(error)
+  const message = errorMessage(error)
   if (error instanceof MCPStartupError) return error.failure
   if (PERMISSION_PATTERN.test(message)) return mcpFailure('permission-denied', message)
   return mcpFailure('unknown', message)

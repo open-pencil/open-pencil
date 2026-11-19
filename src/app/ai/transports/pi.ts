@@ -6,6 +6,8 @@ import type {
   HarnessTurnEvent,
   HarnessTurnUsage
 } from '@open-pencil/harness'
+import { toError } from '@open-pencil/std/errors'
+import { randomHex } from '@open-pencil/std/random'
 
 import { spawnHarnessProcess, type HarnessProcess } from '@/app/ai/agents/pi/process'
 import { compactionOf, type StepCompaction } from '@/app/ai/chat/compaction/marker'
@@ -23,11 +25,7 @@ interface PendingRequest {
 }
 
 function requestID(): string {
-  if (typeof crypto === 'undefined' || typeof crypto.getRandomValues !== 'function') {
-    throw new TypeError('Harness requests require Web Crypto')
-  }
-  const bytes = crypto.getRandomValues(new Uint8Array(16))
-  return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+  return randomHex(16)
 }
 
 /** Sends chunks to a reply still being read; once it finished or was cancelled, they are dropped. */
@@ -309,7 +307,7 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
   }
 
   private readonly fail = (error: unknown): void => {
-    this.failAll(error instanceof Error ? error : new Error(String(error)))
+    this.failAll(toError(error))
   }
 
   private failAll(error: Error): void {

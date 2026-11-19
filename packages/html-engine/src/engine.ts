@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { createMutex } from '@open-pencil/std/async'
 import { DEADLINE_MS, untilAborted } from '@open-pencil/std/timing'
 
 import { imageStandIn, rasterImageSize } from './images'
@@ -141,7 +142,7 @@ export class HTMLEngine {
   readonly #exports: EngineExports
   readonly #encoder = new TextEncoder()
   readonly #decoder = new TextDecoder()
-  #queue: Promise<unknown> = Promise.resolve()
+  #layouts = createMutex()
 
   private constructor(exports: EngineExports) {
     this.#exports = exports
@@ -274,8 +275,6 @@ export class HTMLEngine {
 
   /** Lays the document out once every resource it asks for is answered, and captures it. */
   layout(html: string, options: HTMLEngineLayoutOptions): Promise<HTMLEngineCapture> {
-    const run = this.#queue.then(() => this.#layout(html, options))
-    this.#queue = run.catch(() => undefined)
-    return run
+    return this.#layouts.run(() => this.#layout(html, options))
   }
 }

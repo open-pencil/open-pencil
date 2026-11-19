@@ -22,6 +22,7 @@ import {
   type StorybookFramework
 } from '@open-pencil/dom-css'
 import { appendAll } from '@open-pencil/std/arrays'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { requireFile } from '#cli/app/client'
 import { requestedPage } from '#cli/app/target'
@@ -278,10 +279,6 @@ function outputFor(args: StorybookArgs, file: string): string {
   return resolve(args.output ?? `${basename(file, extname(file))}-stories`)
 }
 
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
-}
-
 /** An editor saves a file in a few writes; it is exported once they stop for this long. */
 const SAVE_SETTLE_MS = 200
 
@@ -311,7 +308,7 @@ export async function exportStorybookFromFile(args: StorybookArgs): Promise<void
   try {
     documents = await resolveDocuments(args)
   } catch (error) {
-    printError(message(error))
+    printError(errorMessage(error))
     process.exit(1)
   }
   if (documents.length > 1 && !args.beside && !args.output) {
@@ -338,7 +335,7 @@ export async function exportStorybookFromFile(args: StorybookArgs): Promise<void
     try {
       await run(file)
     } catch (error) {
-      printError(`${file}: ${message(error)}`)
+      printError(`${file}: ${errorMessage(error)}`)
       failed.push(file)
     }
   }
@@ -349,7 +346,7 @@ export async function exportStorybookFromFile(args: StorybookArgs): Promise<void
 
   // A save can land mid-write or break the document; report it and keep watching.
   watchDocuments(documents, (file) =>
-    run(file).catch((error: unknown) => printError(`${file}: ${message(error)}`))
+    run(file).catch((error: unknown) => printError(`${file}: ${errorMessage(error)}`))
   )
   console.log(
     ok(

@@ -3,6 +3,8 @@ import { shallowReactive } from 'vue'
 import { createEditor } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { createDeferred } from '@open-pencil/std/async'
+import { errorMessage } from '@open-pencil/std/errors'
 import { createShaderRasterizer } from '@open-pencil/vue/canvas/surface'
 
 import { useCollabIdentity } from '@/app/collab/identity'
@@ -37,7 +39,6 @@ import {
   type AppSwitchPageOptions
 } from '@/app/editor/session/types'
 import { notificationMessages } from '@/app/i18n/notifications'
-import { createDeferred } from '@/app/runtime/deferred'
 import { toast } from '@/app/shell/ui'
 import { IS_TAURI } from '@/constants'
 
@@ -183,13 +184,13 @@ function buildEditorStore(initialGraph?: SceneGraph) {
           error instanceof Error && error.message === 'The operation was timed out'
         preparation.fail({
           code: presentationTimedOut ? 'render-failed' : 'layout-failed',
-          message: error instanceof Error ? error.message : String(error),
+          message: errorMessage(error),
           retryable: true
         })
         if (presentationTimedOut) {
           toast.error(
             notificationMessages.get().operationFailed({
-              error: error instanceof Error ? error.message : String(error)
+              error: errorMessage(error)
             })
           )
         }

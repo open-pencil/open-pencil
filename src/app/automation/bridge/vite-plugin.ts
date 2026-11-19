@@ -10,6 +10,7 @@ import type { Plugin } from 'vite'
 
 import { serializeDisabledTools } from '@open-pencil/mcp/tools'
 import { platformHasUnixSockets } from '@open-pencil/mcp/transport'
+import { errorMessage } from '@open-pencil/std/errors'
 import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import {
@@ -294,7 +295,7 @@ export function automationPlugin(
             response.end()
           } catch (error) {
             response.statusCode = devMCPConfigurationErrorStatus(error)
-            response.end(error instanceof Error ? error.message : String(error))
+            response.end(errorMessage(error))
           }
         })()
       })

@@ -3,12 +3,12 @@ import { describe, expect, test } from 'bun:test'
 
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { createDeferred } from '@open-pencil/std/async'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { runEditorTool } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { acquireDocumentEdit } from '@/app/automation/execution/lock'
-import { createDeferred } from '@/app/runtime/deferred'
 import { createTab } from '@/app/tabs'
 
 import {

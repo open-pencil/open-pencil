@@ -1,10 +1,11 @@
 import { onScopeDispose, watch } from 'vue'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { saveDocument } from '@/app/cloud/integration'
 import {
   claimFailureNotice,
   clearSaveFailure,
-  saveErrorText,
   saveWithFeedback,
   showSaveFailure
 } from '@/app/document/io/save/feedback'
@@ -27,7 +28,7 @@ function reportAutosaves({ id, store }: Tab): () => void {
     failureMessage: (error: unknown) =>
       notificationMessages
         .get()
-        .autosaveFailed({ name: store.state.documentName, error: saveErrorText(error) })
+        .autosaveFailed({ name: store.state.documentName, error: errorMessage(error) })
   }
   // Save, Save to, a retry, or an autosave: whatever wrote the edits ends the failure.
   const stopSaved = watch(
@@ -50,7 +51,7 @@ function reportAutosaves({ id, store }: Tab): () => void {
     notify({
       event: 'saveFailed',
       title: messages.saveFailedTitle({ name }),
-      body: saveErrorText(error),
+      body: errorMessage(error),
       tabId: id,
       tag: `save:${id}`,
       open: () => void switchTab(id)

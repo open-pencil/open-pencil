@@ -1,6 +1,7 @@
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 import { loadFigDataDecompressor } from '@open-pencil/kiwi/fig/container'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { toError } from '@open-pencil/std/errors'
 
 import { IS_BROWSER } from '#core/constants'
 import { deserializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
@@ -107,7 +108,7 @@ export async function parseFigFileViaWorker(
         cleanupAbort()
         channel.port1.close()
         worker.terminate()
-        reject(error instanceof Error ? error : new Error(String(error)))
+        reject(toError(error))
       }
     }
     channel.port1.start()

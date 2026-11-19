@@ -1,5 +1,7 @@
 import * as v from 'valibot'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import type { FigmaAPI } from '#core/figma-api'
 import { graphOf } from '#core/figma-api/graph'
 import { OpenPencilAPI } from '#core/openpencil-api'
@@ -43,7 +45,7 @@ export const bindVariable = defineTool({
     try {
       new OpenPencilAPI(figma).bindVariable(args.node_id, args.field, variable)
     } catch (err) {
-      return { error: err instanceof Error ? err.message : String(err) }
+      return { error: errorMessage(err) }
     }
     return { node_id: args.node_id, field: args.field, variable_id: args.variable_id }
   }
