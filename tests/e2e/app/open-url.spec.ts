@@ -109,6 +109,18 @@ test('an address that holds a picture opens it in a new design', async ({ page }
     .toEqual([['IMAGE']])
 })
 
+test('a picture that cannot be read leaves no empty design behind', async ({ page }) => {
+  await page.route(`${SITE}/**`, (route) =>
+    route.fulfill({ headers: { ...OPEN, 'content-type': 'image/svg+xml' }, body: 'not an svg' })
+  )
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+
+  const dialog = await openFromURL(page, `${SITE}/broken.svg`)
+
+  await expectRefused(page, dialog)
+})
+
 test('closing the dialog while a page imports opens nothing', async ({ page }) => {
   let releasePicture: () => void = () => undefined
   const released = new Promise<void>((resolve) => {

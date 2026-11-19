@@ -7,7 +7,7 @@ export interface LinkedStylesheet {
 }
 
 /**
- * The stylesheet a `<link>`, read through `attribute`, loads, unless it is an alternate one. A
+ * The stylesheet a `<link>`, read through `attribute`, loads, unless it is an alternate or disabled one. A
  * media query that could end the `@import` rule it goes into, holding `;`, `{`, or `}`, is no
  * media query, so its sheet is left out.
  */
@@ -16,6 +16,9 @@ export function linkedStylesheet(
 ): LinkedStylesheet | null {
   const rel = attribute('rel')?.toLowerCase().split(/\s+/) ?? []
   if (!rel.includes('stylesheet') || rel.includes('alternate')) return null
+  // A disabled sheet does not apply on the page, so it does not apply here either.
+  const disabled = attribute('disabled')
+  if (disabled !== null && disabled !== undefined) return null
   const href = attribute('href')?.trim()
   const media = attribute('media')?.trim()
   if (!href || (media && /[;{}]/.test(media))) return null

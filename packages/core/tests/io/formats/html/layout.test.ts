@@ -293,6 +293,30 @@ describe('CSS mask icons', () => {
     expect(paints.every((paint) => paint.color?.r === 1 && paint.color.g === 0)).toBe(true)
   })
 
+  test('keeps a shape the mask hides hidden, and a half-covered one half covered', async () => {
+    const icon =
+      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' fill='transparent'/><rect width='8' height='8' style='fill: rgba(0, 0, 0, 0.5)'/></svg>"
+    const masked = element(
+      {
+        ...box(16, 16),
+        'background-color': 'rgb(255, 0, 0)',
+        'mask-image': `url("${svgDataURL(icon)}")`
+      },
+      { box: rect(0, 0, 16, 16) }
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [masked] })
+    const frame = graph.getChildren(graph.getPages()[0].id)[0]
+    const fills = graph
+      .flattenTree(frame.id)
+      .flatMap(({ node }) => (node.id === frame.id ? [] : node.fills))
+      .filter((fill) => fill.visible && (fill.color?.a ?? 1) * fill.opacity > 0)
+
+    // Only the half-covered square shows, in the background color at half strength.
+    expect(fills).toHaveLength(1)
+    expect(fills[0]?.color).toMatchObject({ r: 1, g: 0, b: 0 })
+    expect((fills[0]?.color?.a ?? 1) * (fills[0]?.opacity ?? 1)).toBeCloseTo(0.5)
+  })
+
   test('keeps the content of an element masked over it', async () => {
     const icon =
       "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 4'><rect width='4' height='4'/></svg>"

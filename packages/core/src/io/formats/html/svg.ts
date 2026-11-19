@@ -5,6 +5,7 @@ import type { DesignDocument, DesignElement } from '@open-pencil/dom-css'
 import { serializeNode } from '@open-pencil/dom-css/export'
 import { elementSVG, type ElementSVG } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { colorToCSS, tryParseColor } from '@open-pencil/scene-graph/color'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import {
   parseCSSColor,
@@ -12,6 +13,7 @@ import {
   parseFragmentReference
 } from '@open-pencil/scene-graph/css'
 import { ICON_NAME, iconLayerName } from '@open-pencil/scene-graph/icons'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { drawIcon, parseIconName } from '#core/icons'
 import { svgIconPaths } from '#core/icons/artwork'
@@ -217,11 +219,24 @@ function drawNamedIcon(
 
 const PAINT_PROPERTIES = ['fill', 'stroke'] as const
 
+/**
+ * What a shape's fill or stroke becomes under a mask showing `paint` through it: the paint's color
+ * at the shape's own opacity times the paint's, since the mask lets through only as much as the
+ * shape covers. `none`, and a paint fully transparent already, stay as they are.
+ */
+function maskedPaint(value: string, paint: Color): string | null {
+  if (value === 'none') return null
+  const own = tryParseColor(value)
+  if (own?.a === 0) return null
+  return colorToCSS({ ...paint, a: paint.a * (own?.a ?? 1) })
+}
+
 /** Repaints an element's visible fill and stroke, written as attributes or inline, in `paint`. */
-function repaint(element: XMLElement, paint: string): void {
+function repaint(element: XMLElement, paint: Color): void {
   for (const property of PAINT_PROPERTIES) {
     const value = element.getAttribute(property)
-    if (value && value !== 'none') element.setAttribute(property, paint)
+    const next = value ? maskedPaint(value, paint) : null
+    if (next) element.setAttribute(property, next)
   }
   // Inline declarations win over attributes, so they take the paint too, read as the SVG reader
   // reads them.
@@ -229,7 +244,8 @@ function repaint(element: XMLElement, paint: string): void {
   if (!PAINT_PROPERTIES.some((property) => styles.has(property))) return
   for (const property of PAINT_PROPERTIES) {
     const value = styles.get(property)
-    if (value && value !== 'none') styles.set(property, paint)
+    const next = value ? maskedPaint(value, paint) : null
+    if (next) styles.set(property, next)
   }
   element.setAttribute(
     'style',
@@ -238,10 +254,10 @@ function repaint(element: XMLElement, paint: string): void {
 }
 
 /** Paints every shape an SVG draws in one color, as a CSS mask shows its background through them. */
-function paintShapes(root: XMLElement, paint: string): void {
+function paintShapes(root: XMLElement, paint: Color): void {
   // Shapes that name no fill take the root's, black by default; a root that fills nothing keeps
   // its `none`, so a stroked icon stays a line.
-  if (root.getAttribute('fill') !== 'none') root.setAttribute('fill', paint)
+  if (!root.hasAttribute('fill')) root.setAttribute('fill', colorToCSS(paint))
   for (const element of [root, ...Array.from(root.getElementsByTagName('*'))]) {
     repaint(element, paint)
   }
@@ -264,7 +280,8 @@ function elementSVGMarkup(
   }
   root.setAttribute('width', String(box.width))
   root.setAttribute('height', String(box.height))
-  if (paint) paintShapes(root, paint)
+  const color = paint ? tryParseColor(paint) : null
+  if (color) paintShapes(root, color)
   return new XMLSerializer().serializeToString(root)
 }
 

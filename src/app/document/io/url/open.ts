@@ -5,7 +5,7 @@ import { errorMessage } from '@open-pencil/std/errors'
 import { filesMessages } from '@open-pencil/vue/i18n'
 
 import { pastePoint } from '@/app/editor/clipboard/paste/content'
-import { createDocumentTab, openFileInNewTab } from '@/app/tabs'
+import { closeTab, createDocumentTab, openFileInNewTab } from '@/app/tabs'
 import { IS_TAURI } from '@/constants'
 
 import { remoteFetch } from './fetch'
@@ -29,12 +29,19 @@ export function parseWebAddress(text: string): URL | null {
 
 /** Opens an SVG or a picture in a new design, as dropping it on an empty canvas places it. */
 async function openImage(file: File): Promise<void> {
-  const { store } = createDocumentTab('design')
-  // A picture's size is read with the renderer, which a new tab has once its canvas is ready.
-  await store.canvasReady
-  const point = pastePoint(store)
-  if (!(await store.placeFiles([file], point.x, point.y))) {
-    throw new Error(filesMessages.get().openURLUnsupported)
+  const tab = createDocumentTab('design')
+  const { store } = tab
+  try {
+    // A picture's size is read with the renderer, which a new tab has once its canvas is ready.
+    await store.canvasReady
+    const point = pastePoint(store)
+    if (!(await store.placeFiles([file], point.x, point.y))) {
+      throw new Error(filesMessages.get().openURLUnsupported)
+    }
+  } catch (error) {
+    // A picture that could not be placed leaves no empty design behind.
+    await closeTab(tab.id, 'discard')
+    throw error
   }
 }
 
