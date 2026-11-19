@@ -1,3 +1,5 @@
+import { anySignal, DEADLINE_MS } from '@open-pencil/std/timing'
+
 import { createCloudAPIClient } from './api'
 import { discoverCloud, type CloudFetch } from './discovery'
 import { downloadCloudDocument } from './files'
@@ -27,12 +29,16 @@ export async function fetchCommunityTour(
   if (!tour) return null
   const release = tour.versions.find((version) => version.name === options.version) ?? null
   const download = await cloud.getCommunityDocument(tour.id, release?.id ?? null)
+  // Each object from the store is bounded too, its body included, as the API's requests are: a
+  // caller such as the docs landing passes no signal and keeps the answer it waits for.
   const bytes = await downloadCloudDocument(
     download.document,
-    (input, init) => fetch(input, init),
-    {
-      signal: options.signal
-    }
+    (input, init) =>
+      fetch(input, {
+        ...init,
+        signal: anySignal([init.signal, AbortSignal.timeout(DEADLINE_MS.transfer)])
+      }),
+    { signal: options.signal }
   )
   return { name: tour.name, version: download.version?.name ?? null, bytes }
 }
