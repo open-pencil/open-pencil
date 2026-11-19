@@ -1,15 +1,23 @@
-import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { CanvasKit, ColorSpace } from '@open-pencil/canvaskit'
+import type {
+  DocumentColorSpace,
+  Fill,
+  SceneGraph,
+  SceneNode,
+  Stroke
+} from '@open-pencil/scene-graph'
 import {
+  normalizeColor,
   resolveNodeFillColor,
   resolveNodeStrokeColor,
-  resolveRGBAForPreview,
-  type RenderColorSpace,
-  type ResolvedRenderColor,
-  normalizeColor,
-  getFillOkHCL,
-  getStrokeOkHCL
+  toExtendedSRGB
 } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+
+/** Skia's color space for a document's. */
+export function skColorSpace(ck: CanvasKit, space: DocumentColorSpace): ColorSpace {
+  return space === 'display-p3' ? ck.ColorSpace.DISPLAY_P3 : ck.ColorSpace.SRGB
+}
 
 /**
  * A bound paint draws the color it stores, which its variable last wrote into it, as Figma draws
@@ -19,65 +27,41 @@ function isBound(node: SceneNode, list: 'fills' | 'strokes', index: number): boo
   return `${list}/${index}/color` in node.boundVariables
 }
 
-export function resolveFillColorInfo(
-  fill: Fill,
-  fillIndex: number,
-  node: SceneNode,
-  graph: SceneGraph,
-  presentation: RenderColorSpace
-): ResolvedRenderColor {
-  const options = { documentColorSpace: graph.documentColorSpace, colorSpace: presentation }
-  if (isBound(node, 'fills', fillIndex)) return resolveRGBAForPreview(fill.color, options)
-  return resolveNodeFillColor(fill, fillIndex, node, options)
-}
-
+/**
+ * A solid fill's color as Skia is given it, its OkHCL color fitted to the document's gamut: in
+ * extended sRGB, which Skia converts into the document's space of the surfaces it draws on.
+ */
 export function resolveFillColor(
   fill: Fill,
   fillIndex: number,
   node: SceneNode,
-  graph: SceneGraph,
-  presentation: RenderColorSpace
+  graph: SceneGraph
 ): Color {
-  if (isBound(node, 'fills', fillIndex) || !getFillOkHCL(node, fillIndex))
-    return normalizeColor(fill.color)
-  return resolveFillColorInfo(fill, fillIndex, node, graph, presentation).color
+  const space = graph.documentColorSpace
+  const color = isBound(node, 'fills', fillIndex)
+    ? normalizeColor(fill.color)
+    : resolveNodeFillColor(fill, fillIndex, node, { documentColorSpace: space }).color
+  return toExtendedSRGB(color, space)
 }
 
 /**
  * A gradient stop's color as drawn. Bindings and OkHCL data belong to a solid paint's one color, so
  * a stop only goes through color management, whatever paint list or index its gradient sits at.
  */
-export function resolveGradientStopColor(
-  color: Color,
-  graph: SceneGraph,
-  presentation: RenderColorSpace
-): Color {
-  return resolveRGBAForPreview(color, {
-    documentColorSpace: graph.documentColorSpace,
-    colorSpace: presentation
-  }).color
+export function resolveGradientStopColor(color: Color, graph: SceneGraph): Color {
+  return toExtendedSRGB(normalizeColor(color), graph.documentColorSpace)
 }
 
-export function resolveStrokeColorInfo(
-  stroke: Stroke,
-  strokeIndex: number,
-  node: SceneNode,
-  graph: SceneGraph,
-  presentation: RenderColorSpace
-): ResolvedRenderColor {
-  const options = { documentColorSpace: graph.documentColorSpace, colorSpace: presentation }
-  if (isBound(node, 'strokes', strokeIndex)) return resolveRGBAForPreview(stroke.color, options)
-  return resolveNodeStrokeColor(stroke, strokeIndex, node, options)
-}
-
+/** A stroke's color as drawn, its OkHCL color fitted to the document's gamut. */
 export function resolveStrokeColor(
   stroke: Stroke,
   strokeIndex: number,
   node: SceneNode,
-  graph: SceneGraph,
-  presentation: RenderColorSpace
+  graph: SceneGraph
 ): Color {
-  if (isBound(node, 'strokes', strokeIndex) || !getStrokeOkHCL(node, strokeIndex))
-    return normalizeColor(stroke.color)
-  return resolveStrokeColorInfo(stroke, strokeIndex, node, graph, presentation).color
+  const space = graph.documentColorSpace
+  const color = isBound(node, 'strokes', strokeIndex)
+    ? normalizeColor(stroke.color)
+    : resolveNodeStrokeColor(stroke, strokeIndex, node, { documentColorSpace: space }).color
+  return toExtendedSRGB(color, space)
 }

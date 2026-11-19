@@ -1,6 +1,6 @@
 import type { Canvas, CanvasKit, Paint } from '@open-pencil/canvaskit'
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
-import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
+import type { DocumentColorSpace, Fill, SceneNode } from '@open-pencil/scene-graph'
+import { normalizeColor, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import { styleRunAt } from '@open-pencil/scene-graph/text'
 
@@ -105,7 +105,8 @@ export function drawTextDecorations(
   ck: CanvasKit,
   canvas: Canvas,
   rects: readonly TextDecorationRect[],
-  textPaint: Paint
+  textPaint: Paint,
+  space: DocumentColorSpace
 ): void {
   for (const rect of rects) {
     const fill = solidColor(rect.fills)
@@ -114,7 +115,7 @@ export function drawTextDecorations(
       paint.setAntiAlias(true)
       paint.setStyle(ck.PaintStyle.Fill)
       if (fill?.type === 'SOLID') {
-        const { r: red, g, b, a } = resolveRGBAForPreview(fill.color).color
+        const { r: red, g, b, a } = toExtendedSRGB(normalizeColor(fill.color), space)
         paint.setShader(null)
         paint.setColorComponents(red, g, b, a * fill.opacity)
       }
@@ -138,7 +139,8 @@ function drawKeycapFrames(
   node: SceneNode,
   layout: TextLayout,
   y: number,
-  paint: Paint
+  paint: Paint,
+  space: DocumentColorSpace
 ): void {
   const text = shownText(node)
   if (!text.includes(COMBINING_KEYCAP)) return
@@ -157,7 +159,9 @@ function drawKeycapFrames(
       // The frame takes the colour the paragraph gives its mark: its style run's, if it has one.
       const source = sourceIndexAt.get(character) ?? character
       const run = styleRunAt(node.styleRuns, source)
-      runPaint.setColor(run ? styleRunColor(ck, run.style, paint.getColor()) : paint.getColor())
+      runPaint.setColor(
+        run ? styleRunColor(ck, run.style, paint.getColor(), space) : paint.getColor()
+      )
       // On the whole pixel its character is drawn on.
       drawKeycapFrame(ck, canvas, glyph.x, drawnBaseline(glyph.y), glyph.fontSize, runPaint)
     }
@@ -172,16 +176,17 @@ export function drawTextLayout(
   node: SceneNode,
   prepared: PreparedText,
   y: number,
-  textPaint: Paint
+  textPaint: Paint,
+  space: DocumentColorSpace
 ): void {
   const layout = prepared.paragraph
   layout.draw(canvas, 0, y)
-  drawKeycapFrames(ck, canvas, node, layout, y, textPaint)
+  drawKeycapFrames(ck, canvas, node, layout, y, textPaint, space)
   if (!hasDecoration(node)) return
   if (prepared.decorations?.y !== y) {
     const glyphs = laidOutGlyphs(node, layout, shownText(node), y)
     const rects = glyphs ? textDecorationRects(node, laidOutDecoratedGlyphs(glyphs)) : []
     prepared.decorations = { y, rects }
   }
-  drawTextDecorations(ck, canvas, prepared.decorations.rects, textPaint)
+  drawTextDecorations(ck, canvas, prepared.decorations.rects, textPaint, space)
 }

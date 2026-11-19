@@ -63,12 +63,19 @@ for (const colorSpace of ['srgb', 'display-p3'] as const) {
       { colorSpace, samples }
     )
     await canvas.waitForRender()
-    expect(
-      await readScenePixels(
-        page,
-        samples.map((_, index) => ({ x: 56 + index * 32, y: 56 }))
-      )
-    ).toEqual(samples.map((rgb) => [...rgb, 255]))
+    const shown = await readScenePixels(
+      page,
+      samples.map((_, index) => ({ x: 56 + index * 32, y: 56 }))
+    )
+    // A P3 document is drawn in 8-bit P3, as Figma draws it, so its sRGB bitmap comes back to the
+    // sRGB screen through P3 and may round a level either way.
+    const tolerance = colorSpace === 'srgb' ? 0 : 1
+    for (const [index, rgb] of samples.entries()) {
+      for (const [channel, value] of rgb.entries()) {
+        expect(Math.abs(shown[index][channel] - value)).toBeLessThanOrEqual(tolerance)
+      }
+      expect(shown[index][3]).toBe(255)
+    }
     canvas.assertNoErrors()
   })
 }

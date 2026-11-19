@@ -1,5 +1,5 @@
 import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { DocumentColorSpace, SceneNode } from '@open-pencil/scene-graph'
 
 import type { FontResolutionSettled } from '#core/text/resolver'
 
@@ -16,6 +16,8 @@ export interface FontReadinessRenderer {
 
 export interface TextRenderer extends FontReadinessRenderer {
   ck: CanvasKit
+  /** The space the document's colors are in; sRGB where text is only measured. */
+  documentColorSpace?: DocumentColorSpace
   fontProvider: TypefaceFontProvider | null
   fontsLoaded: boolean
 }

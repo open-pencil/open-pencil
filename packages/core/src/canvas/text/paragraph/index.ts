@@ -7,8 +7,12 @@ import type {
   TextFontFeatures,
   TextFontVariations
 } from '@open-pencil/canvaskit'
-import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
-import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
+import type {
+  CharacterStyleOverride,
+  DocumentColorSpace,
+  SceneNode
+} from '@open-pencil/scene-graph'
+import { normalizeColor, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import { faceStyleKey, type NamedFace } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import { lineHeightPixels, styleRunPieces, textLengthPixels } from '@open-pencil/scene-graph/text'
@@ -118,11 +122,12 @@ function drawnFontStyle(
 export function styleRunColor(
   ck: CanvasKit,
   style: SceneNode['styleRuns'][number]['style'],
-  baseColor: Float32Array
+  baseColor: Float32Array,
+  space: DocumentColorSpace
 ): Float32Array {
   const visibleFill = style.fills?.find((fill) => fill.visible && fill.type === 'SOLID')
   if (!visibleFill) return baseColor
-  const color = resolveRGBAForPreview(visibleFill.color).color
+  const color = toExtendedSRGB(normalizeColor(visibleFill.color), space)
   return ck.Color4f(color.r, color.g, color.b, color.a * visibleFill.opacity)
 }
 
@@ -163,7 +168,7 @@ function pushStyleRun(
   const runLoaded = loadedFace(runFamily, runWeight, runItalic, runKey)
 
   const textStyle = new ck.TextStyle({
-    color: styleRunColor(ck, style, baseColor),
+    color: styleRunColor(ck, style, baseColor, r.documentColorSpace ?? 'srgb'),
     fontFamilies: fontFamilies(runFamily, runFace),
     fontSize: runFontSize,
     locale: styleRunLanguage(style, node),
