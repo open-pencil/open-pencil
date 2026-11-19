@@ -9,6 +9,7 @@ import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { getRecoveryStore, resetRecoveryStoreForTests } from '@/app/document/recovery'
 import { createMemoryRecoveryStore } from '@/app/document/recovery/memory'
+import { toast } from '@/app/shell/ui'
 import {
   closeTab,
   createHomeTab,
@@ -53,23 +54,31 @@ function setupGlobals() {
   globalThis.cancelAnimationFrame = window.cancelAnimationFrame
 }
 
-function acknowledgePendingPresentation(): void {
+/** Stands in for each tab's canvas once its page waits to be shown. */
+function presentPendingPages(present: (store: Tab['store']) => void): void {
   for (const tab of getTabsSnapshot()) {
     if (tab.store.state.preparation?.phase !== 'preparing-render') continue
-    tab.store.preparationController.acknowledgePresentation(tab.store.state)
+    present(tab.store)
   }
+}
+
+function acknowledgePresentation(store: Tab['store']): void {
+  store.preparationController.acknowledgePresentation(store.state)
 }
 
 type FileOpenOutcome = { status: 'fulfilled' } | { status: 'rejected'; reason: unknown }
 
-async function settleFileOpen(opening: Promise<unknown>): Promise<void> {
+async function settleFileOpen(
+  opening: Promise<unknown>,
+  present: (store: Tab['store']) => void = acknowledgePresentation
+): Promise<void> {
   const outcome: Promise<FileOpenOutcome> = opening.then(
     () => ({ status: 'fulfilled' }),
     (reason: unknown) => ({ status: 'rejected', reason })
   )
 
   const awaitOutcome = async (): Promise<FileOpenOutcome> => {
-    acknowledgePendingPresentation()
+    presentPendingPages(present)
     const result = await Promise.race([
       outcome,
       new Promise<null>((resolve) => {
@@ -158,6 +167,7 @@ describe('openFileInNewTab deduplication', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+    toast.toasts.value = []
     Reflect.deleteProperty(globalThis, 'window')
     Reflect.deleteProperty(globalThis, 'document')
     Reflect.deleteProperty(globalThis, 'requestAnimationFrame')
@@ -318,6 +328,28 @@ describe('openFileInNewTab deduplication', () => {
     expect([after.kind, after.store]).toEqual(['home', home.store])
     // Home was in front when the open began, so it is again, not the other design.
     expect(getActiveStore()).toBe(home.store)
+  })
+
+  test('keeps a document open in its tab when its first frame cannot be shown', async () => {
+    createHomeTab()
+    const count = tabCount()
+    const failures: string[] = []
+    const opening = openFileInNewTab(new File([], 'slow.fig'), undefined, '/tmp/slow.fig')
+
+    // A canvas that stops drawing before the page is on screen, as a timed-out wait does.
+    const stalled = new Set<Tab['store']>()
+    await settleFileOpen(opening, (store) => {
+      if (stalled.has(store)) return
+      stalled.add(store)
+      store.onPreparationEvent('preparation:failed', (failure) => failures.push(failure.code))
+      store.preparationController.failCanvas(new Error('canvas stalled'))
+    })
+    const store = await opening
+
+    expect(failures).toEqual(['render-failed'])
+    expect(tabCount()).toBe(count + 1)
+    expect(getActiveStore()).toBe(store)
+    expect(store.state.documentName).toBe('slow')
   })
 
   test('activates the existing tab when the same path is opened again', async () => {
