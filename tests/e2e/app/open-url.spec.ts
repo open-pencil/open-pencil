@@ -124,10 +124,40 @@ test('a picture that cannot be read leaves no empty design behind', async ({ pag
 
   const dialog = await openFromURL(page, `${SITE}/broken.svg`)
 
-  await expectRefused(page, dialog)
+  // The address was read, so the dialog closed; the open failed after, which a notice says.
+  await expect(dialog).toHaveCount(0)
+  await expect(page.getByText(/Could not open “broken”/, { exact: false }).last()).toBeVisible()
+  await expect(page.getByTestId('tabbar-tab')).toHaveCount(1)
 })
 
-test('closing the dialog while a page imports opens nothing', async ({ page }) => {
+test('a page opens in the window size the dialog chose, which it remembers', async ({ page }) => {
+  await page.route(`${SITE}/**`, (route) =>
+    route.fulfill({
+      headers: { ...OPEN, 'content-type': 'text/html' },
+      body: '<style>body { margin: 0 } main { height: 50px; background: #2563eb }</style><main></main>'
+    })
+  )
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+
+  await page.getByTestId('menubar-file').click()
+  await page.getByRole('menuitem', { name: 'Open from URL…' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Open from URL' })
+  await dialog.getByRole('button', { name: 'Mobile' }).click()
+  await page.keyboard.press('Escape')
+  await openFromURL(page, SITE)
+
+  await expect
+    .poll(async () => (await getPageChildren(page)).map(({ type, width }) => ({ type, width })))
+    .toEqual([{ type: 'FRAME', width: 390 }])
+  await page.getByTestId('menubar-file').click()
+  await page.getByRole('menuitem', { name: 'Open from URL…' }).click()
+  await expect(dialog.getByRole('button', { name: 'Mobile' })).toHaveAttribute('data-state', 'on')
+})
+
+test('the tab shows the page loading its files, and closing it cancels the open', async ({
+  page
+}) => {
   let releasePicture: () => void = () => undefined
   const released = new Promise<void>((resolve) => {
     releasePicture = resolve
@@ -154,15 +184,24 @@ test('closing the dialog while a page imports opens nothing', async ({ page }) =
 
   const dialog = await openFromURL(page, SITE)
   await requested
-  await page.keyboard.press('Escape')
+  // The page was read, so the dialog closed and its tab shows the open going on.
   await expect(dialog).toHaveCount(0)
-  releasePicture()
-  await page.waitForFunction(() => window.openPencil?.getStore?.().state.preparation === null)
+  await expect(page.getByText('Loading stylesheets and pictures')).toBeVisible()
+  const tab = page.getByTestId('tabbar-tab').filter({ hasText: 'site.example.test' })
+  await expect(tab).toHaveCount(1)
 
-  // The import stopped with the dialog: the page's text never reached the document.
+  await page
+    .getByTestId('tabbar-close')
+    .and(page.getByLabel(/site\.example\.test/))
+    .click()
+  releasePicture()
+
+  // The import stopped with its tab, which is gone, and a cancelled open is no failure.
+  await expect(tab).toHaveCount(0)
   expect(await getPageTexts(page)).not.toContainEqual(
     expect.objectContaining({ text: 'Slow page' })
   )
+  await expect(page.getByText(/Could not open/)).toHaveCount(0)
 })
 
 test('an address that holds a PDF says it cannot be opened yet', async ({ page }) => {

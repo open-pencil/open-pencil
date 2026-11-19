@@ -695,6 +695,7 @@ ar:panels.iconSetNeedsNewerMacOS
 de:panels.iconSetNeedsNewerMacOS
 es:panels.iconSetNeedsNewerMacOS
 fr:panels.iconSetNeedsNewerMacOS
+fr:files.openURLSizeMobile
 it:panels.iconSetNeedsNewerMacOS
 pl:panels.iconSetNeedsNewerMacOS
 pt-br:panels.iconSetNeedsNewerMacOS
@@ -705,11 +706,19 @@ ar:cloudPortal.methodProvider
 de:cloudPortal.methodProvider
 es:cloudPortal.methodProvider
 it:cloudPortal.methodProvider
+it:files.openURLSizeDesktop
+it:files.openURLSizeTablet
+it:files.openURLSizeMobile
 ja:cloudPortal.methodProvider
 pl:cloudPortal.methodProvider
 pt-br:cloudPortal.methodProvider
+pt-br:files.openURLSizeDesktop
+pt-br:files.openURLSizeTablet
 ru:cloudPortal.methodProvider
 zh-cn:cloudPortal.methodProvider
 de:settings.importing
+de:files.openURLSizeDesktop
+de:files.openURLSizeTablet
 pl:settings.importing
 pl:panels.gradient
+pl:files.openURLSizeTablet
