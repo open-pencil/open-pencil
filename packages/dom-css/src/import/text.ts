@@ -20,6 +20,7 @@ import { appendAll } from '@open-pencil/std/arrays'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { colorToFillFromCSS, mergedStyle, pickStyle } from './css-values'
+import { elementDisplay } from './flow'
 
 /** The character styles a text layer and its runs take from CSS. */
 export type CSSCharacterStyle = Pick<
@@ -203,7 +204,12 @@ function isList(
       (child.type === 'element' && child.tagName.toLowerCase() === 'li' && isListItem(child))
   )
 
+  /**
+   * An item drawn as a list item, with its marker on a line of its own: one a page lays out as
+   * `inline-block` or `flex`, such as a row of footer links, has no marker and is no list text.
+   */
   function isListItem(item: DesignElement): boolean {
+    if (elementDisplay(item, mergedStyle(item)) !== 'list-item') return false
     return item.children.every(
       (child) =>
         child.type === 'text' ||

@@ -5,11 +5,15 @@ import {
   placeLayersFromLayout
 } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { WHITE } from '@open-pencil/scene-graph/constants'
+import { parseCSSColor } from '@open-pencil/scene-graph/css'
 
+import { setPageBackgrounds } from '#core/figma-api/page-backgrounds'
 import type { IconMatcher } from '#core/icons/match'
 import { layoutAuthoredNodes } from '#core/layout'
 import { prepareGraphFonts } from '#core/text/prepare'
 
+import { resolvePageFontFamilies, type PageFontFamilies } from './fonts'
 import { drawInlineSVGs } from './svg'
 
 /**
@@ -33,11 +37,28 @@ export const HTML_IMPORT_VIEWPORT: DesignViewport = { width: 1440, height: 900 }
  */
 export async function sceneGraphFromStyledHTML(
   styled: DesignDocument,
-  options: { pageName?: string; matchIcon?: IconMatcher } = {}
+  options: {
+    pageName?: string
+    matchIcon?: IconMatcher
+    /** The families the page's own `@font-face` rules loaded, as `loadPageFontFaces` returns them. */
+    pageFamilies?: PageFontFamilies
+  } = {}
 ): Promise<SceneGraph> {
+  // Text is set in the first family of its `font-family` list there is a font for, the page's own
+  // first, as a browser sets it, rather than naming one the editor cannot draw, such as
+  // `Helvetica Neue` on a system without it. Families the HTML engine already resolved name a
+  // single font that loads.
+  await resolvePageFontFamilies(styled, options.pageFamilies)
   const { graph, boxes, transforms, svgs } = designDocumentToLayers(styled, {
     pageName: options.pageName
   })
+  // The page shows what a browser paints behind the page: its own background, or white.
+  const background = parseCSSColor(styled.background) ?? WHITE
+  for (const page of graph.getPages()) {
+    setPageBackgrounds(graph, page, [
+      { type: 'SOLID', color: { ...background, a: 1 }, opacity: background.a, visible: true }
+    ])
+  }
   const pageIds = graph.getPages().map((page) => page.id)
   await prepareGraphFonts(graph, pageIds)
   layoutAuthoredNodes(graph, pageIds)
@@ -49,3 +70,5 @@ export async function sceneGraphFromStyledHTML(
   applyCSSTransforms(graph, transforms)
   return graph
 }
+
+export { loadPageFontFaces } from './page-fonts'

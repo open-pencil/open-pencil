@@ -1,0 +1,13 @@
+- Pictures an imported HTML page links appear instead of empty layers: PNG, JPEG, GIF, WebP, and AVIF as image fills and SVG served as `image/svg+xml` as vector layers. HTML opened or pasted in the app brings pictures by web address, and the CLI and pages opened from a URL bring relative ones too (#2210).
+- Imported HTML keeps attributes written without a value, such as `hidden` or the `data-v-…` attributes of scoped styles, so the rules that select them still apply (#2210).
+- An imported HTML page with a `<script>` between its sections lays the sections after it out where the page put them, instead of stacking them over the top of the page (#2210).
+- A list whose items a page lays out as `inline-block`, such as a row of footer links, imports as a row of layers without bullets (#2210).
+- Text in HTML opened or pasted in the app is set in the first family of its `font-family` list the editor has a font for, as a browser sets it, instead of being reported missing for a first family such as Helvetica Neue (#2210).
+- HTML imported in the dark-themed app is styled in the light color scheme, as the CLI styles it, instead of mixing a page's dark media rules with its light classes (#2210).
+- Text beside other items in a flex row or grid, such as a label next to an icon, wraps in the room they leave as a browser wraps it, instead of running past its container on one line (#2210).
+- Imported HTML draws a border only on the sides a page gives a width, in that side's color, so a reset such as `* { border: 0 solid }` no longer turns a transparent border into a visible line (#2210).
+- An SVG paint that refers to a `<pattern>` falls back to the color written after it, or paints nothing, instead of painting the shape black (#2210).
+- A corner radius given as a percentage, such as `border-radius: 50%` on a dot or an avatar, rounds the imported layer instead of being dropped (#2210).
+- HTML opened or pasted in the app is set in the fonts its page loads with `@font-face`, icon fonts among them, as the CLI already did (#2210).
+- An HTML page imported as a document keeps the background a browser paints behind it, its own or white, instead of the editor's grey (#2210).
+- Text fields in HTML opened or pasted in the app show what they hold, their value or else their placeholder in its own style, instead of importing empty (#2210).

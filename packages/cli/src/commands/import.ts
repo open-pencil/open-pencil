@@ -5,7 +5,10 @@ import { pathToFileURL } from 'node:url'
 import { defineCommand } from 'citty'
 
 import { createHeadlessIconMatcher } from '@open-pencil/core/icons/match'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { readHTMLDocument, type ReadHTMLResult } from '@open-pencil/core/io/formats/html/import'
+import { fetchRemoteFile, type RemoteFileKind } from '@open-pencil/core/io/remote'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { requireFile } from '#cli/app/client'
 import { fmtList, ok, printError } from '#cli/format'
@@ -26,9 +29,14 @@ interface ImportArgs {
   'icon-names': boolean
 }
 
-function defaultOutput(input: string, format: string): string {
-  const base = basename(input, extname(input))
-  return resolve(`${base}.${format}`)
+/** The HTML to import, where it came from, the address it resolves against, and its title. */
+interface ImportInput {
+  html: string
+  /** The file path or web address, as the summary reports it. */
+  source: string
+  baseURL: string
+  /** What the imported document is called, which names the output by default. */
+  title: string
 }
 
 async function readTextFile(path: string): Promise<string> {
@@ -52,11 +60,51 @@ async function tailwindCandidatesForArgs(args: ImportArgs): Promise<string[] | u
   return classes.length > 0 ? classes : undefined
 }
 
-async function importHTML(args: ImportArgs): Promise<ReadHTMLResult> {
+/** A web address to import from, when the input is one rather than a file path. */
+function webAddress(input: string | undefined): URL | null {
+  if (!input || !/^https?:\/\//i.test(input)) return null
+  return URL.canParse(input) ? new URL(input) : null
+}
+
+const KIND_NAMES: Record<Exclude<RemoteFileKind, 'html'>, string> = {
+  svg: 'an SVG image',
+  image: 'an image',
+  document: 'a design document; open it in OpenPencil instead',
+  pdf: 'a PDF, which OpenPencil cannot read yet',
+  unsupported: 'not an HTML page'
+}
+
+/** The page at a web address, resolved against the address a redirect ends at. */
+async function fetchPage(url: URL): Promise<ImportInput> {
+  const file = await fetchRemoteFile(url, { io: new IORegistry(BUILTIN_IO_FORMATS) })
+  if (file.kind !== 'html') throw new Error(`${url.href} is ${KIND_NAMES[file.kind]}`)
+  return {
+    html: new TextDecoder().decode(file.bytes),
+    source: url.href,
+    baseURL: file.url,
+    title: file.title
+  }
+}
+
+async function readInput(args: ImportArgs): Promise<ImportInput> {
+  const url = webAddress(args.file)
+  if (url) return fetchPage(url)
   const file = requireFile(args.file)
-  return readHTMLDocument(await readTextFile(file), {
+  return {
+    html: await readTextFile(file),
+    source: file,
     // Relative stylesheets, fonts, and images resolve beside the file, as a browser opening it.
     baseURL: pathToFileURL(resolve(file)).href,
+    title: basename(file, extname(file))
+  }
+}
+
+async function importHTML(
+  args: ImportArgs,
+  { html, baseURL }: ImportInput
+): Promise<ReadHTMLResult> {
+  return readHTMLDocument(html, {
+    baseURL,
     cssText: await cssTextForArgs(args),
     tailwind: await tailwindCandidatesForArgs(args),
     pageName: args.pageName,
@@ -64,9 +112,9 @@ async function importHTML(args: ImportArgs): Promise<ReadHTMLResult> {
   })
 }
 
-async function writeOutput(args: ImportArgs, { styled, graph }: ReadHTMLResult) {
+async function writeOutput(args: ImportArgs, title: string, { styled, graph }: ReadHTMLResult) {
   const format = args.format.toLowerCase()
-  const output = args.output ? resolve(args.output) : defaultOutput(requireFile(args.file), format)
+  const output = resolve(args.output ?? `${title}.${format}`)
 
   await mkdir(dirname(output), { recursive: true })
 
@@ -80,11 +128,14 @@ async function writeOutput(args: ImportArgs, { styled, graph }: ReadHTMLResult) 
 }
 
 export default defineCommand({
-  meta: { description: 'Import HTML/CSS/Tailwind into an OpenPencil document' },
+  meta: {
+    description:
+      'Import HTML/CSS/Tailwind, from a file or a web address, into an OpenPencil document'
+  },
   args: {
     file: {
       type: 'positional',
-      description: 'Input HTML file path',
+      description: 'Input HTML file path, or the http(s) address of a web page',
       required: true
     },
     output: {
@@ -142,11 +193,18 @@ export default defineCommand({
       process.exit(1)
     }
 
-    const imported = await importHTML(args)
-    const output = await writeOutput(args, imported)
+    let input: ImportInput
+    try {
+      input = await readInput(args)
+    } catch (error) {
+      printError(errorMessage(error))
+      process.exit(1)
+    }
+    const imported = await importHTML(args, input)
+    const output = await writeOutput(args, input.title, imported)
     const pages = imported.graph.getPages()
     const summary = {
-      input: requireFile(args.file),
+      input: input.source,
       output,
       format,
       pages: pages.length,

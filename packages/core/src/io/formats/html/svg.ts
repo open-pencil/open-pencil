@@ -1,8 +1,11 @@
+import { XMLSerializer, type Element as XMLElement } from '@xmldom/xmldom'
 import { compact, isEmptyObject, omit } from 'es-toolkit'
 
 import type { DesignDocument, DesignElement } from '@open-pencil/dom-css'
 import { serializeNode } from '@open-pencil/dom-css/export'
+import { elementSVG, type ElementSVG } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { colorToCSS, tryParseColor } from '@open-pencil/scene-graph/color'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import {
   parseCSSColor,
@@ -10,13 +13,16 @@ import {
   parseFragmentReference
 } from '@open-pencil/scene-graph/css'
 import { ICON_NAME, iconLayerName } from '@open-pencil/scene-graph/icons'
-import { parseSVGViewBoxValue } from '@open-pencil/scene-graph/parse-path'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { drawIcon, parseIconName } from '#core/icons'
 import { svgIconPaths } from '#core/icons/artwork'
 import type { IconMatcher } from '#core/icons/match'
 import { extractSVGContent } from '#core/icons/svg'
+import { inlineStyles } from '#core/icons/svg/presentation'
+import { parseSVGDocument } from '#core/io/formats/svg/document'
 import { createSVGNodes } from '#core/io/formats/svg/import'
+import { parseSVGSize, parseSVGViewBox } from '#core/io/formats/svg/metadata'
 import { svgViewportAttributes } from '#core/vector/vectorize/svg/transform'
 
 import { designElements } from './elements'
@@ -191,16 +197,17 @@ function drawNamedIcon(
   element: DesignElement,
   named: { prefix: string; name: string },
   markup: string,
-  box: { width: number; height: number }
+  box: { width: number; height: number },
+  paint: string | undefined
 ): boolean {
   const content = extractSVGContent(markup)
   if (content.texts.length > 0 || content.paths.some((path) => path.clipPaths?.length)) return false
-  const attrs: Partial<Record<string, string>> = element.attrs
-  const viewBox = attrs.viewBox ?? attrs.viewbox
-  const space = parseSVGViewBoxValue(viewBox) ?? { x: 0, y: 0, ...box }
+  // The markup's own viewBox: an image's or a mask's SVG is not the element's attributes.
+  const space = parseSVGViewBox(markup) ?? { x: 0, y: 0, ...box }
   const paths = svgIconPaths(content, space, box, svgViewportAttributes(markup))
   if (paths.length === 0) return true
-  const color = parseCSSColor(element.computedStyle?.color) ?? BLACK
+  // A mask icon takes the background that shows through it; other SVG, the text color.
+  const color = parseCSSColor(paint ?? element.computedStyle?.color) ?? BLACK
   drawIcon(graph, frameId, { ...named, ...box, paths }, Math.max(box.width, box.height), color)
   // A layer the page gave no id or class, named only by its tag, takes the icon's name, as an
   // icon placed from the picker does, so swapping it renames it too.
@@ -208,6 +215,74 @@ function drawNamedIcon(
     graph.updateNode(frameId, { name: iconLayerName(`${named.prefix}:${named.name}`) })
   }
   return true
+}
+
+const PAINT_PROPERTIES = ['fill', 'stroke'] as const
+
+/**
+ * What a shape's fill or stroke becomes under a mask showing `paint` through it: the paint's color
+ * at the shape's own opacity times the paint's, since the mask lets through only as much as the
+ * shape covers. `none`, and a paint fully transparent already, stay as they are.
+ */
+function maskedPaint(value: string, paint: Color): string | null {
+  if (value === 'none') return null
+  const own = tryParseColor(value)
+  if (own?.a === 0) return null
+  return colorToCSS({ ...paint, a: paint.a * (own?.a ?? 1) })
+}
+
+/** Repaints an element's visible fill and stroke, written as attributes or inline, in `paint`. */
+function repaint(element: XMLElement, paint: Color): void {
+  for (const property of PAINT_PROPERTIES) {
+    const value = element.getAttribute(property)
+    const next = value ? maskedPaint(value, paint) : null
+    if (next) element.setAttribute(property, next)
+  }
+  // Inline declarations win over attributes, so they take the paint too, read as the SVG reader
+  // reads them.
+  const styles = new Map(inlineStyles(element))
+  if (!PAINT_PROPERTIES.some((property) => styles.has(property))) return
+  for (const property of PAINT_PROPERTIES) {
+    const value = styles.get(property)
+    const next = value ? maskedPaint(value, paint) : null
+    if (next) styles.set(property, next)
+  }
+  element.setAttribute(
+    'style',
+    Array.from(styles, ([name, value]) => `${name}: ${value}`).join('; ')
+  )
+}
+
+/** Paints every shape an SVG draws in one color, as a CSS mask shows its background through them. */
+function paintShapes(root: XMLElement, paint: Color): void {
+  // Shapes that name no fill take the root's, black by default; a root that fills nothing keeps
+  // its `none`, so a stroked icon stays a line.
+  if (!root.hasAttribute('fill')) root.setAttribute('fill', colorToCSS(paint))
+  for (const element of [root, ...Array.from(root.getElementsByTagName('*'))]) {
+    repaint(element, paint)
+  }
+}
+
+/**
+ * The SVG an element draws, at the size of the layer it became: an image's picture, or a mask's
+ * shapes in `paint`. Both scale to the element's box, so an SVG that gives only a size scales from
+ * a `viewBox` of that size.
+ */
+function elementSVGMarkup(
+  { markup, paint }: ElementSVG,
+  box: { width: number; height: number }
+): string | null {
+  const root = parseSVGDocument(markup)?.documentElement
+  if (!root) return null
+  if (!root.hasAttribute('viewBox')) {
+    const { width, height } = parseSVGSize(markup, box)
+    root.setAttribute('viewBox', `0 0 ${width} ${height}`)
+  }
+  root.setAttribute('width', String(box.width))
+  root.setAttribute('height', String(box.height))
+  const color = paint ? tryParseColor(paint) : null
+  if (color) paintShapes(root, color)
+  return new XMLSerializer().serializeToString(root)
 }
 
 /**
@@ -223,7 +298,8 @@ function drawArtwork(graph: SceneGraph, frameId: string, element: DesignElement,
 }
 
 /**
- * Draws each inline SVG HTML import built a frame for into that frame, at the size layout and
+ * Draws each inline SVG, image showing an SVG, and element an SVG masks, HTML import built a frame
+ * for into that frame, at the size layout and
  * placement gave it, with `currentColor` in the element's color, `<use>` and `url()` reaching
  * definitions elsewhere in the page, and the paint the page's CSS gives each shape. An SVG that
  * is an icon, because the page names it, as `data-icon="lucide:save"`, or because `matchIcon`
@@ -247,16 +323,18 @@ export async function drawInlineSVGs(
     const frame = graph.getNode(frameId)
     if (!frame || frame.width <= 0 || frame.height <= 0) return []
     const box = { width: frame.width, height: frame.height }
-    return [{ frameId, element, box, markup: svgMarkup(element, byId, box) }]
+    const own = elementSVG(element)
+    const markup = own ? elementSVGMarkup(own, box) : svgMarkup(element, byId, box)
+    return markup ? [{ frameId, element, box, markup, paint: own?.paint }] : []
   })
   const unnamed = drawn.filter(({ element }) => !iconName(element))
   const matched = matchIcon ? await matchIcon(unnamed.map(({ markup }) => markup)) : []
   const found = new Map(unnamed.map(({ frameId }, i) => [frameId, matched[i] ?? null]))
-  for (const { frameId, element, box, markup } of drawn) {
+  for (const { frameId, element, box, markup, paint } of drawn) {
     const name = found.get(frameId)
     const parsed = name ? parseIconName(name) : null
     const icon = iconName(element) ?? (parsed && { prefix: parsed.prefix, name: parsed.iconName })
-    if (!icon || !drawNamedIcon(graph, frameId, element, icon, markup, box)) {
+    if (!icon || !drawNamedIcon(graph, frameId, element, icon, markup, box, paint)) {
       drawArtwork(graph, frameId, element, markup)
     }
   }

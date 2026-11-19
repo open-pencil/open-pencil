@@ -1,12 +1,13 @@
 import { escapeRegExp } from 'es-toolkit'
 
 import type { ClipboardSnapshot, Editor, PastedTextLink } from '@open-pencil/core'
-import { HTML_IMPORT_VIEWPORT } from '@open-pencil/core/io/formats/html/layers'
+import { HTML_IMPORT_VIEWPORT, loadPageFontFaces } from '@open-pencil/core/io/formats/html/layers'
 import { browserHTMLHasBoxes, browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { errorMessage } from '@open-pencil/std/errors'
 import { filesMessages, menuMessages } from '@open-pencil/vue/i18n'
 
+import { pageFetch } from '@/app/document/io/url/fetch'
 import { importIconMatcher } from '@/app/editor/icons/provider'
 import { toast } from '@/app/shell/ui'
 
@@ -154,11 +155,15 @@ async function prepareLayers(editor: Editor, markup: string): Promise<ClipboardS
   for (;;) {
     const target = editor.htmlPasteTarget()
     const width = target.width ?? HTML_IMPORT_VIEWPORT.width
+    const fetch = pageFetch()
     const styled = await browserHTMLToDesignDocument(markup, {
-      compute: { layout: true, viewport: { width, height: HTML_IMPORT_VIEWPORT.height } }
+      compute: { layout: true, viewport: { width, height: HTML_IMPORT_VIEWPORT.height } },
+      // Pictures and fonts a copied page uses by web address come with its layers.
+      fetch
     })
     const snapshot = await editor.prepareStyledHTML(styled, {
-      matchIcon: importIconMatcher(editor)
+      matchIcon: importIconMatcher(editor),
+      pageFamilies: await loadPageFontFaces(styled, fetch)
     })
     const now = editor.htmlPasteTarget()
     if (now.id === target.id && now.width === target.width) return snapshot

@@ -7,12 +7,32 @@ import type {
   DesignDocument,
   DesignElement,
   DesignNode,
+  DesignResourceFetch,
   DesignViewport
 } from '../types'
+import { showFormText } from './form-text'
+import { showGeneratedContent } from './generated'
 import { recordLayout } from './layout'
+import { attachImages, canvasBackground, fontFaceRules } from './resources'
 
 export interface BrowserCSSRuntimeOptions {
   document?: Document
+  /**
+   * The address the page came from, which its relative stylesheets, images, and fonts resolve
+   * against, as on the page itself.
+   */
+  baseURL?: string
+  /**
+   * Reads the pictures the page's images show, which go with their elements. The measuring frame
+   * has loaded them, but a picture from another site cannot be read back from it.
+   */
+  fetch?: DesignResourceFetch
+}
+
+/** Styled elements, and each `<img>` with the address the frame loaded its picture from. */
+interface CopiedStyles {
+  document: DesignDocument
+  images: [DesignElement, string][]
 }
 
 /**
@@ -92,6 +112,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'margin-left',
   'margin-right',
   'margin-top',
+  'mask-image',
   'max-height',
   'max-width',
   'min-height',
@@ -269,15 +290,25 @@ function keepAutoSideMargins(element: Element, style: Record<string, string>): v
  */
 const LOAD_LIMIT_MS = DEADLINE_MS.request
 
+/**
+ * How long a page's linked stylesheets may take to load before it is laid out without the rest:
+ * a page may link several, each its own request, so they share a slow request's bound.
+ */
+const STYLESHEET_LIMIT_MS = DEADLINE_MS.slowRequest
+
 function nextFrame(view: Window): Promise<void> {
   return new Promise((resolve) => {
     view.requestAnimationFrame(() => resolve())
   })
 }
 
-/** Resolves once `loaded()` holds, looked at each frame of `view`, or the time limit passes. */
-async function untilLoaded(view: Window, loaded: () => boolean): Promise<void> {
-  const deadline = view.performance.now() + LOAD_LIMIT_MS
+/** Resolves once `loaded()` holds, looked at each frame of `view`, or `limit` passes. */
+async function untilLoaded(
+  view: Window,
+  loaded: () => boolean,
+  limit = LOAD_LIMIT_MS
+): Promise<void> {
+  const deadline = view.performance.now() + limit
   while (!loaded() && view.performance.now() < deadline) await nextFrame(view)
 }
 
@@ -285,6 +316,26 @@ async function untilLoaded(view: Window, loaded: () => boolean): Promise<void> {
 function fontsLoaded(frame: Document): boolean {
   frame.documentElement.getBoundingClientRect()
   return frame.fonts.status !== 'loading'
+}
+
+/**
+ * Whether every sheet a stylesheet imports, and every sheet those import, has loaded or failed:
+ * an `@import` rule's sheet stays null until then, in Chromium and WebKit alike. A sheet from
+ * another site cannot be looked into, so what it imports is not waited for.
+ */
+function importsLoaded(sheet: CSSStyleSheet): boolean {
+  let rules: CSSRuleList
+  try {
+    rules = sheet.cssRules
+  } catch {
+    return true
+  }
+  for (const rule of Array.from(rules)) {
+    if (!('styleSheet' in rule && 'href' in rule)) continue
+    const imported = (rule as CSSImportRule).styleSheet
+    if (!imported || !importsLoaded(imported)) return false
+  }
+  return true
 }
 
 /**
@@ -318,16 +369,19 @@ function applySandboxHostStyle(element: HTMLElement, viewport: DesignViewport | 
     'border: 0',
     'visibility: hidden',
     'pointer-events: none',
-    'contain: layout style paint'
+    'contain: layout style paint',
+    // A page is styled as in a light browser whatever the app's theme: an iframe's
+    // `prefers-color-scheme` follows its element's color scheme, and the HTML engine is light too.
+    'color-scheme: light'
   ].join(';')
 }
 
 /**
- * What the measuring frame may do. Its content is markup and CSS from a file, the clipboard, or a
- * code editor, laid out only to be measured: without `allow-scripts` the browser runs no script
- * element, event handler attribute, or `javascript:` URL in the frame or in a frame nested in it.
- * `allow-same-origin` keeps its document readable from this one, and gives the content nothing
- * while it cannot run.
+ * What the measuring frame may do. Its content is markup and CSS from a file, the clipboard, a web
+ * page, or a code editor, laid out only to be measured: without `allow-scripts` the browser runs
+ * no script element, event handler attribute, or `javascript:` URL in the frame or in a frame
+ * nested in it. `allow-same-origin` keeps its document readable from this one, and gives the
+ * content nothing while it cannot run.
  */
 const MEASURING_FRAME_SANDBOX = 'allow-same-origin'
 
@@ -343,8 +397,9 @@ async function computeStylesInFrame(
   browserDocument: Document,
   designDocument: DesignDocument,
   cssText: string,
-  options: CSSComputeOptions
-): Promise<DesignDocument> {
+  options: CSSComputeOptions,
+  baseURL: string | undefined
+): Promise<CopiedStyles> {
   const host = browserDocument.defaultView
   if (!host) throw new TypeError('Browser CSS runtime requires a document shown in a window')
   const iframe = browserDocument.createElement('iframe')
@@ -359,10 +414,18 @@ async function computeStylesInFrame(
     iframeDocument.open()
     iframeDocument.write(MEASURING_FRAME_DOCUMENT)
     iframeDocument.close()
+    if (baseURL) {
+      const base = iframeDocument.createElement('base')
+      base.href = baseURL
+      iframeDocument.head.append(base)
+    }
 
     const style = iframeDocument.createElement('style')
     style.textContent = cssText
     iframeDocument.head.append(style)
+    // The sheets it imports, such as a page's linked stylesheets, apply once they load.
+    const { sheet } = style
+    if (sheet) await untilLoaded(host, () => importsLoaded(sheet), STYLESHEET_LIMIT_MS)
 
     // The document's top-level nodes go straight into the body, so `body` rules and selectors
     // such as `body > header` apply to them as they do on the page they came from.
@@ -370,10 +433,12 @@ async function computeStylesInFrame(
     content.innerHTML = serializeHTML(designDocument)
 
     await settle(host, iframeDocument)
-    return copyComputedStyles(designDocument, content, options, {
+    const copied = await copyComputedStyles(host, designDocument, content, options, {
       origin: iframeDocument.documentElement,
       styleRoot: iframeDocument.head
     })
+    copied.document.background = canvasBackground(iframeDocument)
+    return copied
   } finally {
     iframe.remove()
   }
@@ -386,32 +451,51 @@ interface LayoutFrame {
   styleRoot: Node & ParentNode
 }
 
-function copyComputedStyles(
+async function copyComputedStyles(
+  host: Window,
   designDocument: DesignDocument,
   content: Element,
   options: CSSComputeOptions,
   frame: LayoutFrame
-): DesignDocument {
+): Promise<CopiedStyles> {
   const view = content.ownerDocument.defaultView
   if (!view) throw new TypeError('Browser CSS runtime requires getComputedStyle')
 
   const nextDocument = structuredClone(designDocument)
   const pairs: [DesignElement, Element][] = []
-  const domChildren = Array.from(content.childNodes)
-  for (const [index, child] of nextDocument.children.entries()) {
-    const domChild = domChildren.at(index)
+  // Elements pair by their order among elements, as they do further down: text nodes do not
+  // line up, since text either side of a dropped element, such as a <script>, is two nodes here and
+  // one once written into the sandbox.
+  const elements = nextDocument.children.filter(
+    (child): child is DesignElement => child.type === 'element'
+  )
+  const domElements = Array.from(content.children)
+  for (const [index, child] of elements.entries()) {
+    const domChild = domElements.at(index)
     if (domChild) collectElementPairs(child, domChild, pairs)
   }
 
+  // Generated content becomes elements, laid out before anything is read.
+  if (showGeneratedContent(pairs, view, frame.styleRoot, content) > 0) {
+    const frameDocument = content.ownerDocument
+    await nextFrame(host)
+    await untilLoaded(host, () => fontsLoaded(frameDocument))
+  }
+
+  const images: [DesignElement, string][] = []
   for (const [designElement, domElement] of pairs) {
     const style = computedStyleToRecord(view.getComputedStyle(domElement), options)
     keepAutoSideMargins(domElement, style)
     designElement.computedStyle = style
+    // The address the picture loaded from, its `srcset` choice and the page's base applied.
+    if (domElement instanceof view.HTMLImageElement && domElement.currentSrc)
+      images.push([designElement, domElement.currentSrc])
   }
   // After the styles are copied: reading layout switches transforms off for a moment.
   if (options.layout) recordLayout(pairs, frame.origin, frame.styleRoot)
+  showFormText(pairs, view, (style) => computedStyleToRecord(style, options))
 
-  return nextDocument
+  return { document: nextDocument, images }
 }
 
 /**
@@ -426,7 +510,19 @@ export function createBrowserCSSRuntime(options: BrowserCSSRuntimeOptions = {}):
     kind: 'browser',
     parseHTML: (html) => parseHTMLWithDocument(browserDocument, html),
     serializeHTML,
-    computeStyles: (designDocument, cssText = '', computeOptions = {}) =>
-      computeStylesInFrame(browserDocument, designDocument, cssText, computeOptions)
+    async computeStyles(designDocument, cssText = '', computeOptions = {}) {
+      const copied = await computeStylesInFrame(
+        browserDocument,
+        designDocument,
+        cssText,
+        computeOptions,
+        options.baseURL
+      )
+      await attachImages(copied.images, options.fetch)
+      if (options.fetch) {
+        copied.document.fontFaces = await fontFaceRules(cssText, options.baseURL, options.fetch)
+      }
+      return copied.document
+    }
   }
 }

@@ -206,6 +206,26 @@ interface Candidate {
   anchor: Vector
 }
 
+/**
+ * The marker for issues merged into one, led by the first: its layers in order, its severity, and
+ * the issues they all count.
+ */
+function mergedMarker(
+  items: readonly { marker: DesignIssueMarker }[],
+  key: string,
+  rect: Rect,
+  anchor: Vector
+): PlacedIssueMarker {
+  return {
+    key,
+    nodeIds: items.map((item) => item.marker.nodeId),
+    severity: items[0].marker.severity,
+    count: sumBy(items, (item) => item.marker.count),
+    rect,
+    anchor
+  }
+}
+
 interface EdgeCandidate {
   marker: DesignIssueMarker
   /** Where the ray toward the layer leaves the viewport. */
@@ -304,12 +324,7 @@ function layoutEdgePins(
   )
   // Candidates arrive most severe first, then nearest, so each pin lists its layers that way.
   return groups.map(({ items, rect }) => ({
-    key: `edge:${items[0].marker.nodeId}`,
-    nodeIds: items.map((item) => item.marker.nodeId),
-    severity: items[0].marker.severity,
-    count: sumBy(items, (item) => item.marker.count),
-    rect,
-    anchor: items[0].point,
+    ...mergedMarker(items, `edge:${items[0].marker.nodeId}`, rect, items[0].point),
     direction: items[0].direction
   }))
 }
@@ -384,14 +399,7 @@ export function placeIssueMarkers(
         items[0].anchor,
         sumBy(items, (item) => item.marker.count)
       )
-  ).map(({ items, rect }): PlacedIssueMarker => ({
-    key: items[0].marker.nodeId,
-    nodeIds: items.map((item) => item.marker.nodeId),
-    severity: items[0].marker.severity,
-    count: sumBy(items, (item) => item.marker.count),
-    rect,
-    anchor: items[0].anchor
-  }))
+  ).map(({ items, rect }) => mergedMarker(items, items[0].marker.nodeId, rect, items[0].anchor))
   const edgePins = layoutEdgePins(edgeCandidates, edgeArea, options.obstacles ?? [], measureText)
   return [...placed, ...edgePins]
 }

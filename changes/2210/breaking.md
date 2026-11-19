@@ -1,0 +1,1 @@
+- `@open-pencil/html-engine` no longer exports `HTMLEngineResource` and `HTMLEngineFetch`; use `DesignResource` and `DesignResourceFetch` from `@open-pencil/dom-css`, which the browser runtime's new `fetch` option takes too (#2210).

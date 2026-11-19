@@ -21,8 +21,30 @@ export function getPageChildren(page: Page) {
       height: n.height,
       layoutMode: n.layoutMode,
       childIds: n.childIds,
-      vectorNetwork: n.vectorNetwork
+      vectorNetwork: n.vectorNetwork,
+      fillTypes: n.fills.map((fill) => fill.type)
     }))
+  })
+}
+
+/** The background color of the page in view, as the canvas shows it. */
+export function getPageColor(page: Page) {
+  return page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.pageColor
+  })
+}
+
+/** Every text layer on the current page, at any depth: its text and the family it is set in. */
+export function getPageTexts(page: Page) {
+  return page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.graph
+      .flattenTree(store.state.currentPageId)
+      .filter(({ node }) => node.type === 'TEXT')
+      .map(({ node }) => ({ text: node.text, fontFamily: node.fontFamily }))
   })
 }
 

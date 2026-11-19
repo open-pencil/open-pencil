@@ -9,6 +9,7 @@ import svgpath from 'svgpath'
 
 import type { Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
+import { parseCSSURLs, parsePaintFallback } from '@open-pencil/scene-graph/css'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { IconPaint } from '@open-pencil/scene-graph/icons'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
@@ -67,6 +68,16 @@ interface PathPaints {
   tint: IconPaint[]
 }
 
+/**
+ * The color a paint draws in: itself, or for a `url()` paint server the import does not read, such
+ * as a `<pattern>`, the fallback written after it, as `url(#p) red`; none without one, as SVG
+ * paints nothing for a reference it cannot use.
+ */
+function solidPaint(paint: string): string | undefined {
+  const solid = parseCSSURLs(paint).length > 0 ? parsePaintFallback(paint) : paint
+  return solid === 'none' ? undefined : solid
+}
+
 function pathPaints(
   path: IconPathInfo,
   defaultColor: string,
@@ -77,25 +88,32 @@ function pathPaints(
   const fills: Fill[] = []
   const strokes: Stroke[] = []
   if (path.fill) {
-    const fill = gradient(path.fill) ?? {
-      type: 'SOLID' as const,
-      color: paintColor(path.fill, defaultColor),
-      opacity: 1,
-      visible: true
-    }
-    fills.push({ ...fill, opacity: path.fillOpacity })
-    if (path.fill === CURRENT_COLOR) tint.push('fill')
+    const fillGradient = gradient(path.fill)
+    const solid = fillGradient ? undefined : solidPaint(path.fill)
+    const fill =
+      fillGradient ??
+      (solid && {
+        type: 'SOLID' as const,
+        color: paintColor(solid, defaultColor),
+        opacity: 1,
+        visible: true
+      })
+    if (fill) fills.push({ ...fill, opacity: path.fillOpacity })
+    // A fallback in the host's color, as `url(#p) currentColor`, follows it as a plain one does.
+    if (solid === CURRENT_COLOR) tint.push('fill')
   }
-  if (path.stroke) {
+  const strokeGradient = path.stroke ? gradient(path.stroke) : null
+  const strokeColor = path.stroke ? solidPaint(path.stroke) : undefined
+  if (path.stroke && (strokeGradient || strokeColor)) {
     const line = createPathStroke(
-      paintColor(path.stroke, defaultColor),
+      paintColor(strokeColor ?? path.stroke, defaultColor),
       path.strokeWidth * strokeScale,
       path.strokeCap,
       path.strokeJoin
     )
     // A gradient stroke keeps the line's weight, alignment, cap, and join.
-    strokes.push({ ...line, ...gradient(path.stroke), opacity: path.strokeOpacity })
-    if (path.stroke === CURRENT_COLOR) tint.push('stroke')
+    strokes.push({ ...line, ...strokeGradient, opacity: path.strokeOpacity })
+    if (!strokeGradient && strokeColor === CURRENT_COLOR) tint.push('stroke')
   }
   return { fills, strokes, tint }
 }
