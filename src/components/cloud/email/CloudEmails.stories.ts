@@ -24,8 +24,13 @@ export default meta
 type Story = StoryObj<Meta<Args>>
 
 /** The sample email of one kind, rendered as Cloud sends it in the chosen language. */
-function sample(kind: TransactionalEmailKind): Story {
-  const content = EMAIL_SAMPLES.find((email) => email.kind === kind)
+/** The sample of `kind`; `waitlist` picks the invitation letter to someone from the waitlist. */
+function sample(kind: TransactionalEmailKind, waitlist = false): Story {
+  const content = EMAIL_SAMPLES.find(
+    (email) =>
+      email.kind === kind &&
+      ('waitlist' in email.payload && email.payload.waitlist === true) === waitlist
+  )
   if (!content) throw new Error(`No sample email of kind ${kind}`)
   return {
     render: (args: Args) => ({
@@ -43,6 +48,7 @@ export const EnrollmentApproved = sample('enrollment-approved')
 export const EnrollmentRejected = sample('enrollment-rejected')
 export const EnrollmentRevoked = sample('enrollment-revoked')
 export const EnrollmentInvited = sample('enrollment-invited')
+export const EnrollmentInvitedFromWaitlist = sample('enrollment-invited', true)
 export const EnrollmentNotification = sample('admin-enrollment-notification')
 export const EmailVerification = sample('email-verification')
 export const PasswordReset = sample('password-reset')

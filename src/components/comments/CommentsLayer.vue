@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { useEventListener } from '@vueuse/core'
-import {
-  ContextMenuContent,
-  ContextMenuPortal,
-  ContextMenuTrigger,
-  PopoverContent,
-  PopoverPortal
-} from 'reka-ui'
+import { ContextMenuContent, ContextMenuPortal, PopoverContent, PopoverPortal } from 'reka-ui'
 import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 
 import type { ViewportTransform } from '@open-pencil/core/geometry'
@@ -18,6 +12,7 @@ import { commentPreview } from '@/app/comments/format'
 import { useComments } from '@/app/comments/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppContextMenuTrigger from '@/components/ui/menu/AppContextMenuTrigger.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
@@ -271,7 +266,7 @@ function closeCard() {
       </button>
 
       <AppContextMenuRoot v-for="pin in shownPins" :key="pin.thread.id" :modal="false">
-        <ContextMenuTrigger as-child>
+        <AppContextMenuTrigger as-child>
           <CommentPin
             :author="author.name(pin.thread.author)"
             :color="pin.thread.authorColor"
@@ -291,7 +286,7 @@ function closeCard() {
             @lostpointercapture="pinDrag.end"
             @click.stop="pinDrag.click(pin.thread.id)"
           />
-        </ContextMenuTrigger>
+        </AppContextMenuTrigger>
         <ContextMenuPortal>
           <ContextMenuContent :class="menuCls.content">
             <MenuScrollArea>

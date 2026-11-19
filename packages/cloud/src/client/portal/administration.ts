@@ -105,7 +105,7 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
       )
     },
     userAction(
-      action: 'ban' | 'unban' | 'revoke-sessions' | 'reset-two-step' | 'remove-picture',
+      action: 'ban' | 'unban' | 'revoke-sessions' | 'reset-two-step' | 'remove-picture' | 'delete',
       userId: string,
       reason?: string,
       signal?: AbortSignal

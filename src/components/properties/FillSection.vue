@@ -82,6 +82,15 @@ function updatePickerFill(
   applyPaintMutation(binding, flush, () => update(nextFill))
 }
 
+/**
+ * A shader joins the picker's paint edit, so a drag in its colour is one step. It replaces the
+ * paint, so a binding that refuses the edit, such as an unresolved one, does not stop it: the
+ * shader is then written as a step of its own.
+ */
+function updateShader(binding: BindableValueActions<Color>, flush: () => void, write: () => void) {
+  if (!applyPaintMutation(binding, flush, write)) write()
+}
+
 function updateSolidColor(
   binding: BindableValueActions<Color>,
   flush: () => void,
@@ -156,7 +165,11 @@ function updateSolidColor(
               <template #preview>
                 <FillPicker
                   :fill="displayFill(fill, binding.resolvedValue)"
-                  :okhcl="createFillOkhclAdapter(okhcl, activeNode, index)"
+                  :okhcl="
+                    createFillOkhclAdapter(okhcl, activeNode, index, (update) =>
+                      applyPaintMutation(binding.actions, flush, update)
+                    )
+                  "
                   :shader="fillShader(activeNode, fill)"
                   :layer-size="selectedNodeIds.length === 1 ? activeNode : null"
                   :keep-open="gradients.pressesHandle"
@@ -169,8 +182,13 @@ function updateSolidColor(
                       actions.update(index, next)
                     )
                   "
-                  @update-shader="store.setShaderPaint(selectedNodeIds, 'fills', index, $event)"
+                  @update-shader="
+                    updateShader(binding.actions, flush, () =>
+                      store.setShaderPaint(selectedNodeIds, 'fills', index, $event)
+                    )
+                  "
                   @open-change="onPickerOpenChange(selectedNodeIds, index, $event, binding.actions)"
+                  @commit="commitPaintMutation(binding.actions)"
                   @cancel="cancelPaintMutation(binding.actions)"
                 />
               </template>

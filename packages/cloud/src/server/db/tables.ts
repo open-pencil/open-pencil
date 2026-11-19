@@ -472,6 +472,8 @@ export interface EnrollmentTable {
   reviewNote: string | null
   requestRevision: Generated<number>
   approvedUserId: string | null
+  /** `waitlist` for someone an administrator recorded from openpencil.dev's waitlist. */
+  source: ColumnType<'waitlist' | null, 'waitlist' | null | undefined, 'waitlist' | null>
 }
 
 export interface APIRateLimitTable {

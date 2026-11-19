@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, within } from 'storybook/test'
 import { provide } from 'vue'
 import IconCheck from '~icons/lucide/check'
 import IconClock from '~icons/lucide/clock'
@@ -112,17 +112,12 @@ export const ForgotPassword = story(`<PortalResetPassword :host="host" step="req
 export const ChooseNewPassword = story(`<PortalResetPassword :host="host" step="choose" />`)
 export const ApproveDesktopSignIn: Story = {
   ...story(`<PortalDeviceApproval :host="host" code="WDJB-MJHT" email="ana@studio.example" />`),
-  /** Approve waits for the code the app shows; another one, or none, leaves it off. */
+  /** The page shows the code from its link to compare with the app's; Approve is one click. */
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const field = canvas.getByRole('textbox', { name: 'Enter the code the app shows' })
-    const approve = canvas.getByRole('button', { name: 'Approve' })
-    await expect(approve).toBeDisabled()
-    await userEvent.type(field, 'ABCD-EFGH')
-    await expect(approve).toBeDisabled()
-    await userEvent.clear(field)
-    await userEvent.type(field, 'wdjb mjht')
-    await expect(approve).toBeEnabled()
+    await expect(canvas.getByText('WDJB-MJHT')).toBeVisible()
+    await expect(canvas.getByText('Check that the app shows this code')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Approve' })).toBeEnabled()
   }
 }
 export const DesktopSignInApproved = story(`

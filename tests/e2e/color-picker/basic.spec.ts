@@ -190,3 +190,94 @@ test('okhcl channels preserve intent metadata while updating the fill', async ()
   expect(lightnessIntent?.l).toBeCloseTo(0.75, 1)
   expect(lightnessIntent?.c).toBeCloseTo(chromaIntent?.c ?? 0, 3)
 })
+
+test('switching paint types keeps the tab row where it was', async () => {
+  // Tall enough for every type to fit below the swatch; one that does not is shifted up to fit.
+  const viewport = page.viewportSize()
+  await page.setViewportSize({ width: viewport?.width ?? 1280, height: 1000 })
+  await page.keyboard.press('Escape')
+  await canvas.clearCanvas()
+  await canvas.drawRect(100, 100, 160, 120)
+  await canvas.waitForRender()
+  await openFillPicker()
+  // Measured once the picker has finished scaling in.
+  await page
+    .getByTestId('fill-picker-tab-solid')
+    .evaluate((tab) =>
+      Promise.all(
+        (tab.closest('[data-picker-content]')?.getAnimations() ?? []).map((a) => a.finished)
+      )
+    )
+  const tabRow = async () => {
+    const box = await page.getByTestId('fill-picker-tab-solid').boundingBox()
+    if (!box) throw new Error('Missing paint type tabs')
+    return box.y
+  }
+  const at = await tabRow()
+
+  // Each type is a different height; the picker opened for Solid keeps its top for the others.
+  for (const type of ['image', 'shader', 'solid']) {
+    await page.getByTestId(`fill-picker-tab-${type}`).click()
+    await expect(page.getByTestId(`fill-picker-tab-${type}`)).toHaveAttribute('data-active', 'true')
+    expect(await tabRow()).toBeCloseTo(at, 0)
+  }
+  if (viewport) await page.setViewportSize(viewport)
+})
+
+test('a gradient stop’s colour opens a picker beside this one, and one undo puts it back', async () => {
+  await page.keyboard.press('Escape')
+  await canvas.clearCanvas()
+  await canvas.drawRect(100, 100, 160, 120)
+  await canvas.waitForRender()
+  await openFillPicker()
+  await page.getByTestId('fill-picker-tab-gradient').click()
+  await expect(page.getByTestId('color-slider-hue')).toHaveCount(0)
+  const stops = async () => (await getSelectedFill())?.gradientStops ?? []
+  await expect.poll(async () => (await stops()).length).toBe(2)
+  await canvas.clearHistory()
+  const before = await stops()
+
+  const picker = page.locator('[data-picker-content]')
+  await picker.first().getByRole('button', { name: 'Edit color' }).last().click()
+  await expect(picker).toHaveCount(2)
+  const [outer, stop] = await Promise.all([
+    picker.first().boundingBox(),
+    picker.last().boundingBox()
+  ])
+  if (!outer || !stop) throw new Error('Missing pickers')
+  expect(stop.x + stop.width).toBeLessThanOrEqual(outer.x)
+
+  await dragSlider('color-slider-hue', 0.4)
+  await expect.poll(async () => (await stops())[1].color).not.toEqual(before[1].color)
+  expect((await stops())[0]).toEqual(before[0])
+
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
+  await canvas.undo()
+  await expect.poll(stops).toEqual(before)
+})
+
+test('a press in the picker while a list in it is open closes only the list', async () => {
+  await page.keyboard.press('Escape')
+  await canvas.clearCanvas()
+  await canvas.drawRect(100, 100, 160, 120)
+  await canvas.waitForRender()
+  await openFillPicker()
+  await page.getByTestId('color-format-select').click()
+  const list = page.getByRole('listbox')
+  await expect(list).toBeVisible()
+  // Pressed once the list has finished opening, as a person would.
+  await list.evaluate((element) =>
+    Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished))
+  )
+
+  // Over the canvas, which takes context-menu presses, the press must not reach it.
+  const picker = page.locator('[data-picker-content]')
+  const box = await picker.boundingBox()
+  if (!box) throw new Error('Missing picker')
+  await page.mouse.click(box.x + box.width - 24, box.y + 24)
+
+  await expect(page.getByRole('option')).toHaveCount(0)
+  await expect(picker).toBeVisible()
+  expect(await getSelectedFill()).not.toBeNull()
+})

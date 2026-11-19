@@ -821,3 +821,9 @@ zh-cn:files.openURLInvalid
 zh-cn:files.openURLPDF
 zh-cn:files.openURLUnsupported
 zh-cn:menu.openURL
+ja:email.invitationWaitlistSubject
+ja:email.invitationWaitlistPreview
+ja:email.invitationWaitlistThanks
+zh-cn:email.invitationWaitlistSubject
+zh-cn:email.invitationWaitlistPreview
+zh-cn:email.invitationWaitlistThanks

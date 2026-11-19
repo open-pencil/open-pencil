@@ -2,7 +2,6 @@
 import {
   ContextMenuContent,
   ContextMenuPortal,
-  ContextMenuTrigger,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItemIndicator,
@@ -24,6 +23,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppContextMenuTrigger from '@/components/ui/menu/AppContextMenuTrigger.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -143,7 +143,7 @@ function setSort(value: unknown) {
     />
     <ul v-else :class="ui.list()" :aria-label="messages.comments">
       <AppContextMenuRoot v-for="thread in listed" :key="thread.id" :modal="false">
-        <ContextMenuTrigger as-child>
+        <AppContextMenuTrigger as-child>
           <CommentListItem
             :thread="thread"
             :number="numbers.get(thread.id) ?? 0"
@@ -178,7 +178,7 @@ function setSort(value: unknown) {
               </IconButton>
             </template>
           </CommentListItem>
-        </ContextMenuTrigger>
+        </AppContextMenuTrigger>
         <ContextMenuPortal>
           <ContextMenuContent :class="menuCls.content">
             <MenuScrollArea>

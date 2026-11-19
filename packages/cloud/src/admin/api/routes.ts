@@ -219,6 +219,11 @@ export function createCloudAdminRoutes(
           services.users.removePicture(actorId, userId)
         )
       )
+      .post('/users/delete', validatedJSON(userMutationSchema), (context) =>
+        accountMutation(context, context.req.valid('json').userId, (actorId, userId) =>
+          services.users.deleteUnapproved(actorId, userId)
+        )
+      )
       .post('/users/ban', validatedJSON(userMutationSchema), async (context) => {
         const input = context.req.valid('json')
         await services.users.ban(

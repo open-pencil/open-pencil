@@ -87,6 +87,12 @@ const confirmation = computed(() => {
       description: words.restoreDescription,
       confirm: words.restoreAccount,
       tone: 'primary'
+    },
+    delete: {
+      heading: words.deletePersonAccountHeading({ name }),
+      description: words.deletePersonAccountDescription,
+      confirm: words.deletePersonAccount,
+      tone: 'danger'
     }
   }
   return copy[action]
@@ -103,7 +109,13 @@ const items = computed(() => {
     person.image && { action: 'remove-picture' as const, label: words.removePersonPicture },
     person.suspended
       ? { action: 'restore' as const, label: words.restoreAccount, separated: true }
-      : { action: 'suspend' as const, label: words.suspendAccount, separated: true }
+      : { action: 'suspend' as const, label: words.suspendAccount, separated: true },
+    // Only an account that never got in; one that did leaves by its owner's own deletion.
+    !person.admin &&
+      (person.access === 'waiting' || person.access === 'declined') && {
+        action: 'delete' as const,
+        label: words.deletePersonAccount
+      }
   ])
 })
 

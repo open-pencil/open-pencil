@@ -40,6 +40,11 @@ export const EMAIL_SAMPLES: TransactionalEmailContent[] = [
     kind,
     payload: { name: 'Ada', actionURL: EMAIL_SAMPLE_URL }
   })),
+  // The letter to someone from openpencil.dev's waitlist, which gave no name.
+  {
+    kind: 'enrollment-invited',
+    payload: { name: null, actionURL: EMAIL_SAMPLE_URL, waitlist: true }
+  },
   {
     kind: 'admin-enrollment-notification',
     payload: {

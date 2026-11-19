@@ -3,7 +3,6 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuPortal,
-  ContextMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
@@ -17,6 +16,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
 import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppContextMenuTrigger from '@/components/ui/menu/AppContextMenuTrigger.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -75,7 +75,7 @@ const menuUI = computed(() =>
     :class="styles.root({ class: normalizeClass(className) })"
   >
     <AppContextMenuRoot :disabled="!menu">
-      <ContextMenuTrigger as="div" data-slot="surface" :class="styles.surface()">
+      <AppContextMenuTrigger as="div" data-slot="surface" :class="styles.surface()">
         <button
           type="button"
           :disabled="disabled"
@@ -139,7 +139,7 @@ const menuUI = computed(() =>
             </DropdownMenuContent>
           </DropdownMenuPortal>
         </AppDropdownMenuRoot>
-      </ContextMenuTrigger>
+      </AppContextMenuTrigger>
       <ContextMenuPortal v-if="menu">
         <ContextMenuContent :class="menuUI.content">
           <MenuScrollArea>

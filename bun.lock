@@ -129,7 +129,7 @@
         "@feature-sliced/steiger-plugin": "^0.5.8",
         "@figma/plugin-typings": "^1.140.0",
         "@hono/node-server": "^1.19.17",
-        "@iconify-json/lucide": "^1.2.139",
+        "@iconify-json/lucide": "^1.2.156",
         "@lobehub/icons-static-svg": "^1.95.1",
         "@modelcontextprotocol/client": "^2.0.0",
         "@open-pencil/brand-tools": "workspace:*",
@@ -994,7 +994,8 @@
     "tools/generate/demo": {
       "name": "@open-pencil/demo-tools",
       "dependencies": {
-        "@iconify-json/lucide": "^1.2.139",
+        "@iconify-json/lucide": "^1.2.156",
+        "@iconify/utils": "^3.1.4",
         "@open-pencil/core": "workspace:*",
         "@open-pencil/design-jsx": "workspace:*",
         "@open-pencil/package-artifacts-tools": "workspace:*",
@@ -1657,7 +1658,7 @@
 
     "@humanwhocodes/retry": ["@humanwhocodes/retry@0.4.3", "", {}, "sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ=="],
 
-    "@iconify-json/lucide": ["@iconify-json/lucide@1.2.139", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-QRJrLcEC+O4cHCxd8Nzos2s6oI8+qUywJ/ww7EEEKTKNkWE5HOa89QlNk4gD3Ao0AbUh2ml1pkqcXKTg8XZgIw=="],
+    "@iconify-json/lucide": ["@iconify-json/lucide@1.2.156", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-IOB3g2X+cmpoEPcjEbGfpDWPPzXioeDW2gnYgaNxYSaVEHyM4fQqP2uz29cdRQJbQwo5CTQ8D9NJnATeCQKatQ=="],
 
     "@iconify-json/simple-icons": ["@iconify-json/simple-icons@1.2.100", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-536pN2RCEQyy5bYwzayrs4e9egr8cmtVcbdSHLaQl/ULUsihzn1eZ0+Hhn50zgz9cbEotiynKsKQSEjFJ7qKmw=="],
 
