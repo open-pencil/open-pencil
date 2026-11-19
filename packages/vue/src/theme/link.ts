@@ -1,4 +1,4 @@
-import { focusStyles } from './focus'
+import { focusStyles } from './focus/styles'
 
 /** A link in running text, underlined, with the focus ring every control takes. */
 export const linkTheme = {

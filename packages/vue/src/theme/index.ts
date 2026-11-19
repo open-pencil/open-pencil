@@ -4,12 +4,12 @@
  * pages, give their own markup the same look. Pass one to `tv()`; Tailwind generates its classes
  * from this source, which `tokens.css` themes.
  */
-export { alertTheme } from './alert'
-export { buttonTheme } from './button'
-export { panelFieldBase, panelFieldState } from './field'
-export { focusStyles } from './focus'
-export { inputAdornment, inputTheme } from './input'
+export { alertTheme } from './feedback/alert'
+export { buttonTheme } from './button/button'
+export { panelFieldBase, panelFieldState } from './panel/field/base'
+export { focusStyles } from './focus/styles'
+export { inputAdornment, inputTheme } from './input/input'
 export { linkTheme } from './link'
-export { portalLayoutTheme } from './portal-layout'
-export { portalPublicTheme } from './portal-public'
-export { settingsTheme } from './settings'
+export { portalLayoutTheme } from './cloud-portal/layout'
+export { portalPublicTheme } from './cloud-portal/public'
+export { settingsTheme } from './settings/layout'

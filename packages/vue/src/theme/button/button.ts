@@ -1,4 +1,4 @@
-import { focusStyles } from './focus'
+import { focusStyles } from '#vue/theme/focus/styles'
 
 /** The app's button: a colour, a variant, a size, and a shape. */
 export const buttonTheme = {
