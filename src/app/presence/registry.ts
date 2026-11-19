@@ -48,10 +48,7 @@ interface Presence {
   followPage: string | null
   /** The page a follow switch is on its way to, so cursor updates do not restart it. */
   switching: string | null
-  /**
-   * True while following centers the view or the canvas shifts with the layout; any other
-   * viewport change is yours.
-   */
+  /** True while following centers the view; any other viewport change is yours. */
   moving: boolean
   /** Our agents the person stopped following mid-work; following them again waits until they rest. */
   declined: Set<string>
@@ -84,8 +81,7 @@ export function presenceOf(store: EditorStore): Presence {
     refreshCursors(store)
   })
   // Zooming or fitting the view yourself, by any shortcut or menu, ends following. A page
-  // switch restores that page's viewport without this event, so only centering and layout
-  // shifts are ours.
+  // switch restores that page's viewport without this event, so only centering is ours.
   store.onEditorEvent('viewport:changed', () => {
     if (presence.following.value && !presence.moving) stopFollowing(store, true)
   })
@@ -367,17 +363,6 @@ export function follow(store: EditorStore, target: FollowTarget | null): void {
   presence.autoFollowed = null
   presence.followPage = store.state.currentPageId
   keepFollowing(store)
-}
-
-export function panForCanvasLayout(store: EditorStore, dx: number, dy: number): void {
-  const presence = presenceOf(store)
-  const wasMoving = presence.moving
-  presence.moving = true
-  try {
-    store.pan(dx, dy)
-  } finally {
-    presence.moving = wasMoving
-  }
 }
 
 /** Rename one of our agents; the new name reaches the room with our next awareness update. */

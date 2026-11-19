@@ -34,7 +34,6 @@ import { useAIChat } from '@/app/ai/chat/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
-import { keepDrawingStillAsCanvasMoves } from '@/app/editor/canvas/layout-shift'
 import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
@@ -85,8 +84,9 @@ const onViewportResize = (width: number, height: number) => {
   if (paneId) store.resizePane(paneId, width, height)
   if (isActivePane.value) store.setViewportSize(width, height)
 }
+// The layout moved the canvas on screen: pan the other way so the drawing stays where it was.
 const onViewportMove = (dx: number, dy: number) =>
-  keepDrawingStillAsCanvasMoves(store, paneId, dx, dy)
+  store.shiftPane(paneId ?? store.activePaneId.value, -dx, -dy)
 
 const { updateCursor } = useCanvasCollaborationAwareness(store)
 
