@@ -55,9 +55,10 @@ function formsStackingContext(style: DesignStyleDeclaration): boolean {
 }
 
 /**
- * The paint order a container's children have by their `z-index`, or null when none has one. Only
- * children out of the flow move, absolutely positioned ones or any in a container without auto
- * layout, so the order of the flow is kept.
+ * The paint order a container's children have where CSS paints them out of tree order, or null
+ * when none is: positioned boxes paint after the boxes in the flow, a positive `z-index` later
+ * still and a negative one first. Only children out of the flow move, absolutely positioned ones
+ * or any in a container without auto layout, so the order of the flow is kept.
  */
 export function stackingOf(
   node: SceneNode,
@@ -65,18 +66,25 @@ export function stackingOf(
   parts: readonly FlowBlock[]
 ): Stacking | null {
   const children: StackedChild[] = []
+  let flowAfter = false
   for (const { layer, style: childStyle } of parts) {
-    const z = zIndexOf(childStyle)
     const movable = layer.layoutPositioning === 'ABSOLUTE' || node.layoutMode === 'NONE'
-    if (z !== null && z !== 0 && movable) children.push({ id: layer.id, z })
+    if (!isPositioned(childStyle) || !movable) {
+      // A positioned box before a box in the flow is painted out of tree order.
+      if (children.some((child) => child.z === 0)) flowAfter = true
+      continue
+    }
+    const z = zIndexOf(childStyle) ?? 0
+    children.push({ id: layer.id, z })
   }
-  if (children.length === 0) return null
+  if (!flowAfter && children.every((child) => child.z === 0)) return null
   return { parentId: node.id, isContext: formsStackingContext(style), children }
 }
 
 /**
  * Puts each container's children in the order CSS paints them: negative layers first, lowest
- * first, then the rest as they were, then positive ones, lowest first. A container that is not a
+ * first, then the boxes in the flow as they were, then positioned ones, lowest first and in tree
+ * order at the same level. A container that is not a
  * stacking context paints its negative layers under its own background, which a layer's fills
  * cannot go under, so its fills move to a layer of their own above those children.
  */
@@ -85,7 +93,8 @@ export function applyStacking(graph: SceneGraph, stackings: Stackings): void {
     const parent = graph.getNode(parentId)
     if (!parent) continue
     const below = children.filter((child) => child.z < 0).toSorted((a, b) => a.z - b.z)
-    const above = children.filter((child) => child.z > 0).toSorted((a, b) => a.z - b.z)
+    // Sorted stably, so positioned boxes at the same level keep their tree order.
+    const above = children.filter((child) => child.z >= 0).toSorted((a, b) => a.z - b.z)
     const moved = new Set(children.map((child) => child.id))
     const order = [
       ...below.map((child) => child.id),

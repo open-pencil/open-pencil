@@ -53,4 +53,20 @@ describe('z-index in imported HTML', () => {
     ])
     expect(pic.fills.map((fill) => fill.type)).toEqual(['SOLID'])
   })
+
+  test('paints a positioned box after the boxes in the flow that follow it, as an icon over a field', async () => {
+    const { graph } = await readHTMLDocument(`<style>
+      body { margin: 0 }
+      .search { position: relative; width: 240px }
+      .icon { position: absolute; left: 12px; top: 12px; width: 16px; height: 16px; background: #111 }
+      .field { height: 40px; background: #fff }
+    </style>
+    <div class="search"><span class="icon"></span><div class="field"></div></div>`)
+    const [search] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(graph.getChildren(search?.id ?? '').map((child) => child.name)).toEqual([
+      'field',
+      'icon'
+    ])
+  })
 })
