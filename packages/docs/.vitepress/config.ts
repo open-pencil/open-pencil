@@ -10,7 +10,6 @@ import { defineConfig } from 'vitepress'
 import llmstxt from 'vitepress-plugin-llms'
 
 import { ensureBrandAssets } from '@open-pencil/brand-tools'
-import { ensureDemoDocument } from '@open-pencil/demo-tools'
 import { landingPosterFingerprint } from '@open-pencil/landing-posters-tools/fingerprint'
 import { appSourceConfig } from '@open-pencil/vite-config/app-source'
 
@@ -20,7 +19,7 @@ import { rootThemeConfig } from './root-theme.ts'
 import { securityTxt } from './security-txt.ts'
 import { BASE, LOCALE_PREFIXES, applyPageSeo, siteHead, withAlternateSitemapLinks } from './seo.ts'
 
-await Promise.all([ensureBrandAssets(['docs']), ensureDemoDocument()])
+await ensureBrandAssets(['docs'])
 
 const configDir = dirname(fileURLToPath(import.meta.url))
 const docsRoot = dirname(configDir)
@@ -95,6 +94,7 @@ export default defineConfig({
               '@open-pencil/vue': ['packages/vue/src/index.ts'],
               '@open-pencil/vue/*': ['packages/vue/src/*'],
               '#vue/*': ['packages/vue/src/*'],
+              '@open-pencil/std/*': ['packages/std/src/*'],
               '@open-pencil/scene-graph': ['packages/scene-graph/src/index.ts'],
               '@open-pencil/scene-graph/*': ['packages/scene-graph/src/*'],
               '#scene-graph/*': ['packages/scene-graph/src/*']

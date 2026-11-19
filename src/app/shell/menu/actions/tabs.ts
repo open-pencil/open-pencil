@@ -1,3 +1,4 @@
+import { showOpenURLDialog } from '@/app/document/io/url/dialog'
 import { openFileDialog } from '@/app/shell/menu/files'
 import {
   activeTab,
@@ -15,6 +16,7 @@ export function createTabMenuActions(): Partial<Record<string, () => void>> {
     'new-board': () => createDocumentTab('board'),
     'new-tab': () => openNewFileTab(),
     open: () => void openFileDialog(),
+    'open-url': showOpenURLDialog,
     close: () => {
       if (activeTab.value) void closeTab(activeTab.value.id)
     },

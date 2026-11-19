@@ -85,7 +85,8 @@ export function elementDisplay(element: DesignElement, style: DesignStyleDeclara
   const display = pickStyle(style, 'display')?.trim().toLowerCase()
   if (display) return display
   const tag = element.tagName.toLowerCase()
-  if (INLINE_TAGS.has(tag)) return 'inline'
+  // Generated content, `::before` and `::after`, is inline unless styled otherwise, as in CSS.
+  if (INLINE_TAGS.has(tag) || tag.startsWith('::')) return 'inline'
   if (tag === 'li') return 'list-item'
   return INLINE_BLOCK_TAGS.has(tag) ? 'inline-block' : 'block'
 }

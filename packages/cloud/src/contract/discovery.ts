@@ -2,6 +2,7 @@ import compareVersions from 'semver/functions/compare.js'
 import parseVersion from 'semver/functions/parse.js'
 import * as v from 'valibot'
 
+import { isKnownSocialProvider } from './account'
 import { cloudBillingDiscoverySchema } from './billing'
 import { cloudServicesDiscoverySchema } from './services'
 
@@ -10,13 +11,6 @@ export const CLOUD_DISCOVERY_PATH = '/.well-known/openpencil' as const
 
 export const cloudDeploymentSchema = v.picklist(['official', 'self-hosted'])
 export type CloudDeployment = v.InferOutput<typeof cloudDeploymentSchema>
-
-/** The sign-in providers this editor offers buttons for. */
-const SOCIAL_PROVIDERS = ['apple', 'google'] as const
-
-function isKnownSocialProvider(value: string): value is (typeof SOCIAL_PROVIDERS)[number] {
-  return (SOCIAL_PROVIDERS as readonly string[]).includes(value)
-}
 
 /**
  * The server's sign-in providers that this editor knows. A newer server may offer one this editor
@@ -150,8 +144,12 @@ export type CloudBranding = v.InferOutput<typeof cloudBrandingSchema>
 /**
  * The server's community gallery: the workspace whose documents anyone may open read-only.
  * Saving to it publishes, so editors never choose it for anyone and say so when it is chosen.
+ * `tourDocumentId` is the gallery document editors open as their tour.
  */
-export const cloudCommunityDiscoverySchema = v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })
+export const cloudCommunityDiscoverySchema = v.object({
+  workspaceId: v.pipe(v.string(), v.uuid()),
+  tourDocumentId: v.optional(v.pipe(v.string(), v.uuid()))
+})
 export type CloudCommunityDiscovery = v.InferOutput<typeof cloudCommunityDiscoverySchema>
 
 export const cloudDiscoverySchema = v.object({

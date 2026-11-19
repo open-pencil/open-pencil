@@ -1,1 +1,0 @@
-- Deleting a layer inside a group, moving it to another page, or dragging it out in the layers panel fits the group to the layers left, removes a group left empty, and undo brings the group back as it was (#2140).

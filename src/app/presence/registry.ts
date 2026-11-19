@@ -3,7 +3,7 @@ import { shallowRef, type ShallowRef } from 'vue'
 import { AI_ACTIVE_COLOR } from '@open-pencil/core/constants'
 import { computeContentBounds } from '@open-pencil/core/io/formats/raster'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import type { RemotePeer } from '@/app/collab/types'
 import type { EditorStore } from '@/app/editor/active-store'

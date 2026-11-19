@@ -55,3 +55,52 @@ export function appArtwork(
   svg.add(mark)
   return svg.svg()
 }
+
+const BIMI_SIZE = 256
+
+/**
+ * The mark for BIMI, the logo mail apps show beside the domain's messages: SVG Tiny Portable/Secure,
+ * which has no patterns, clipping, references, or arcs, on the ivory tile, and sized to stay
+ * inside the circle most apps crop it to. The grid is left out, as in the monochrome mark, and an
+ * arc becomes the circle it draws.
+ */
+export function bimiArtwork(source: string, adapter: ImageAdapter): string {
+  const mark = stringToSVG(source, adapter)
+  const [x = 0, y = 0, width = 0, height = 0] = String(mark.attr('viewBox'))
+    .split(/\s+/)
+    .map(Number)
+  const center = { x: x + width / 2, y: y + height / 2 }
+  const parts = mark.find('[data-part]')
+  // The farthest any part reaches from the mark's center, which the crop circle must still hold.
+  let reach = 0
+  for (const part of parts) {
+    const box = part.bbox()
+    for (const px of [box.x, box.x2]) {
+      for (const py of [box.y, box.y2]) {
+        reach = Math.max(reach, Math.hypot(px - center.x, py - center.y))
+      }
+    }
+  }
+  const scale = ((BIMI_SIZE / 2) * brand.bimiReach) / reach
+  const shapes = parts.map((part) => {
+    const fill = String(part.attr('fill'))
+    const d = String(part.attr('d'))
+    if (/[Aa]/.test(d)) {
+      const box = part.bbox()
+      return `<circle cx="${box.cx}" cy="${box.cy}" r="${box.width / 2}" fill="${fill}"/>`
+    }
+    const rule = part.attr('fill-rule') ? ` fill-rule="${String(part.attr('fill-rule'))}"` : ''
+    return `<path d="${d}" fill="${fill}"${rule}/>`
+  })
+  const half = BIMI_SIZE / 2
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" baseProfile="tiny-ps" viewBox="0 0 ${BIMI_SIZE} ${BIMI_SIZE}">`,
+    '<title>OpenPencil</title>',
+    `<rect width="${BIMI_SIZE}" height="${BIMI_SIZE}" fill="${brand.background}"/>`,
+    `<g transform="translate(${half} ${half}) scale(${scale.toFixed(4)}) translate(${-center.x} ${-center.y})">`,
+    ...shapes,
+    '</g>',
+    '</svg>',
+    ''
+  ].join('\n')
+}

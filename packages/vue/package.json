@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/vue",
-  "version": "0.17.0-beta.5",
+  "version": "0.17.0-beta.6",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -424,6 +424,11 @@
       "import": "./dist/shared/input/index.js",
       "default": "./dist/shared/input/index.js"
     },
+    "./shared/refresh": {
+      "types": "./dist/shared/refresh.d.ts",
+      "import": "./dist/shared/refresh.js",
+      "default": "./dist/shared/refresh.js"
+    },
     "./shared/search": {
       "types": "./dist/shared/search/index.d.ts",
       "import": "./dist/shared/search/index.js",
@@ -479,6 +484,7 @@
     "@nanostores/vue": "^1.1.0",
     "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
+    "@open-pencil/std": "workspace:*",
     "@tanstack/hotkeys": "^0.24.0",
     "@vueuse/core": "^14.4.0",
     "es-toolkit": "^1.52.0",

@@ -1,3 +1,5 @@
+import { sha256 } from '@noble/hashes/sha2.js'
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js'
 import { StorageSerializers, useLocalStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { computed, ref } from 'vue'
@@ -69,10 +71,7 @@ export function findCloudServer(id: string): CloudServer | null {
 
 /** The same address always gets the same id, on every device. */
 export async function cloudServerId(url: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(url))
-  return Array.from(new Uint8Array(digest, 0, 16), (byte) =>
-    byte.toString(16).padStart(2, '0')
-  ).join('')
+  return bytesToHex(sha256(utf8ToBytes(url)).subarray(0, 16))
 }
 
 /**

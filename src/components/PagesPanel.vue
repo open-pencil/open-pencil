@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { templateRef } from '@vueuse/core'
-import { ContextMenuContent, ContextMenuItem, ContextMenuPortal, ContextMenuTrigger } from 'reka-ui'
+import { ContextMenuContent, ContextMenuItem, ContextMenuPortal } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, ref, watch, type ComponentPublicInstance } from 'vue'
 
@@ -18,6 +18,7 @@ import PagePresenceHover from '@/components/presence/PagePresenceHover.vue'
 import PresenceMarkers from '@/components/presence/PresenceMarkers.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppContextMenuTrigger from '@/components/ui/menu/AppContextMenuTrigger.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import pageListTheme from '@/theme/page-list'
@@ -112,7 +113,7 @@ function setupPageRowRef(
       <div :class="baseStyles.body()">
         <div data-test-id="pages-scroll" :class="baseStyles.viewport()">
           <AppContextMenuRoot v-for="pg in pages" :key="pg.id" :modal="false">
-            <ContextMenuTrigger as-child>
+            <AppContextMenuTrigger as-child>
               <div
                 data-test-id="pages-row"
                 :ref="(value) => setupPageRowRef(value, pg, pages, actions.move)"
@@ -171,7 +172,7 @@ function setupPageRowRef(
                   :class="pageStyles(pg, currentPageId).dropIndicator()"
                 />
               </div>
-            </ContextMenuTrigger>
+            </AppContextMenuTrigger>
             <ContextMenuPortal>
               <ContextMenuContent :class="menuCls.content" :side-offset="2" align="start">
                 <MenuScrollArea>

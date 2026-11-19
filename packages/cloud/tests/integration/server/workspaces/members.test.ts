@@ -133,9 +133,10 @@ describe('workspace members', () => {
       })
       const bobsWorkspaces = await responseJSON(
         await as(people.bob).api.workspaces.$get(),
-        v.object({ workspaces: v.array(v.object({ id: v.string() })) })
+        v.object({ workspaces: v.array(v.object({ id: v.string(), owner: v.boolean() })) })
       )
-      expect(bobsWorkspaces.workspaces.map((workspace) => workspace.id)).toContain(workspaceId)
+      // A member who joined doesn't own it, so the editor sends them to the owner for credits.
+      expect(bobsWorkspaces.workspaces).toContainEqual({ id: workspaceId, owner: false })
 
       // Members other than administrators see who is in, not who is invited.
       const asMember = await responseJSON(

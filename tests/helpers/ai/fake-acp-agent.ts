@@ -10,8 +10,9 @@ import {
   type SetSessionConfigOptionRequest
 } from '@agentclientprotocol/sdk/unstable'
 
+import { createDeferred } from '@open-pencil/std/async'
+
 import type { AgentLaunch } from '@/app/ai/agents/acp/connection'
-import { createDeferred } from '@/app/runtime/deferred'
 
 export const WORKSPACE = '/agent-workspace'
 

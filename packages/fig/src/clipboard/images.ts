@@ -1,6 +1,7 @@
+import { bytesToHex } from '@noble/hashes/utils.js'
+
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
-import { bytesToHex } from '../node-change/bytes'
 import { forEachImageReference, nameImagesForFigma } from '../node-change/images'
 
 /**

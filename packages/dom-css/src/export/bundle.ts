@@ -1,9 +1,9 @@
 import type { CSSFontFaceRule } from '@acemir/cssom'
 import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
 import { parseDataURL } from '@open-pencil/scene-graph/images'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import { tokenStylesheet, type TokenStylesheetFormat } from '../tokens/stylesheet'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'

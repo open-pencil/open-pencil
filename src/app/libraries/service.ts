@@ -30,7 +30,7 @@ import type {
   ComponentCatalogInsertInput,
   ComponentCatalogLibraryAsset
 } from '@open-pencil/core/tools'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/session'

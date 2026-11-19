@@ -13,12 +13,12 @@ import {
 import type { UIMessage, UIMessageChunk } from 'ai'
 
 import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
+import { createDeferred } from '@open-pencil/std/async'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import type { AgentChoices, AgentModelChoices } from '@/app/ai/agents/acp/options'
 import { AGENT_SESSION_META } from '@/app/ai/agents/acp/tools'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
-import { createDeferred } from '@/app/runtime/deferred'
 
 import { agentPipes } from './fake-acp-agent'
 
@@ -200,7 +200,7 @@ export function fakeAgents({
       return { command: agent.command, searchPath: '/lookup/bin' }
     },
     spawn,
-    authToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
+    toolsToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
     linkTools: async (_token, linkOptions) => {
       defersTools.push(linkOptions?.defersTools ?? false)
       return {

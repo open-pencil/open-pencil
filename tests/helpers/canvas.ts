@@ -188,6 +188,11 @@ export class CanvasHelper extends CanvasPointer {
     await this.waitForRender()
   }
 
+  /** As in a freshly opened document: nothing to undo yet. */
+  async clearHistory() {
+    await this.page.evaluate(() => window.openPencil?.getStore?.().undo.clear())
+  }
+
   async selectAll() {
     await this.pressKey('Meta+a')
   }

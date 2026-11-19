@@ -1,7 +1,6 @@
-import { useEventListener, useIntervalFn } from '@vueuse/core'
 import { computed, onBeforeUnmount, onMounted, readonly, ref, shallowRef, type Ref } from 'vue'
 
-import { IS_BROWSER } from '@open-pencil/core/constants'
+import { useAutoRefresh } from '#vue/shared/refresh'
 
 import { createDocumentPreviews } from './previews'
 
@@ -43,62 +42,30 @@ export function useDocumentWorkspace<Item extends DocumentWorkspaceItem>(
       ? (id, error) => options.onPreviewError?.(id, error)
       : undefined
   })
-  let refreshPromise: Promise<void> | null = null
-  let refreshQueued = false
   let disposed = false
 
-  function refresh(): Promise<void> {
-    if (refreshPromise) return refreshPromise
+  async function load(): Promise<void> {
     loading.value = true
-    const nextRefresh = options.source
-      .refresh()
-      .then((items) => {
-        if (!disposed && items) {
-          previews.reconcile(documents.value, items)
-          error.value = null
-          documents.value = items
-          lastRefreshedAt.value = new Date()
-        }
-        return undefined
-      })
-      .catch((reason: unknown) => {
-        if (!disposed) error.value = reason
-      })
-      .finally(() => {
-        loading.value = false
-        refreshPromise = null
-        if (refreshQueued && !disposed) {
-          refreshQueued = false
-          void refresh()
-        }
-      })
-    refreshPromise = nextRefresh
-    return nextRefresh
+    try {
+      const items = await options.source.refresh()
+      if (!disposed && items) {
+        previews.reconcile(documents.value, items)
+        error.value = null
+        documents.value = items
+        lastRefreshedAt.value = new Date()
+      }
+    } catch (reason: unknown) {
+      if (!disposed) error.value = reason
+    } finally {
+      loading.value = false
+    }
   }
 
-  function invalidate(): Promise<void> {
-    if (!refreshPromise) return refresh()
-    refreshQueued = true
-    return refreshPromise
-  }
-
-  if (options.refreshOnFocus !== false && IS_BROWSER) {
-    useEventListener(window, 'focus', () => void invalidate())
-  }
-  if (options.refreshOnReconnect !== false && IS_BROWSER) {
-    useEventListener(window, 'online', () => void invalidate())
-  }
-  if (options.refreshInterval && options.refreshInterval > 0) {
-    useIntervalFn(
-      () => {
-        if (typeof document === 'undefined' || document.visibilityState === 'visible') {
-          void invalidate()
-        }
-      },
-      options.refreshInterval,
-      { immediate: true, immediateCallback: false }
-    )
-  }
+  const { refresh, invalidate, cancelQueued } = useAutoRefresh(load, {
+    interval: options.refreshInterval,
+    onFocus: options.refreshOnFocus,
+    onReconnect: options.refreshOnReconnect
+  })
 
   let unsubscribeSource: (() => void) | null = null
   onMounted(() => {
@@ -108,6 +75,7 @@ export function useDocumentWorkspace<Item extends DocumentWorkspaceItem>(
   onBeforeUnmount(() => {
     unsubscribeSource?.()
     disposed = true
+    cancelQueued()
     previews.dispose()
   })
 

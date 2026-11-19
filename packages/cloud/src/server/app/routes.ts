@@ -13,6 +13,7 @@ import { createTermsService } from '#cloud/server/account/terms'
 import { createAccessTokenRoutes } from '#cloud/server/account/tokens'
 import { createCloudAPIRouter, createPublicCloudAPIRouter } from '#cloud/server/api'
 import { createAuthenticationEmailService } from '#cloud/server/auth'
+import { signInProviders } from '#cloud/server/auth/methods'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
 import { Hono } from 'hono'
 
@@ -40,6 +41,7 @@ export function createAppRouters(
       users: createAdminUserService(database, services.auth, {
         requireMFA: config.deploymentAdminMFARequired,
         approval: config.enrollmentMode === 'approval',
+        signInProviders: signInProviders(config),
         pictures: app.pictures,
         notify: services.transactionalEmail
           ? createAuthenticationEmailService(services.transactionalEmail, config.publicURL)

@@ -1,7 +1,6 @@
 import type * as DesignTypes from './types'
 
 export { exportStorybook, STORY_MODES, STORYBOOK_FRAMEWORKS } from './export/storybook/export'
-export { serializeNode } from './export/html'
 export { createBrowserCSSRuntime, createCSSRuntime } from './runtime'
 export { parseHTMLDocument } from './import/markup'
 export {
@@ -52,6 +51,8 @@ export type CSSRuntime = DesignTypes.CSSRuntime
 export type DesignDocument = DesignTypes.DesignDocument
 export type DesignElement = DesignTypes.DesignElement
 export type DesignLayout = DesignTypes.DesignLayout
+export type DesignResource = DesignTypes.DesignResource
+export type DesignResourceFetch = DesignTypes.DesignResourceFetch
 export type DesignViewport = DesignTypes.DesignViewport
 export type DesignNode = DesignTypes.DesignNode
 export type DesignStyleDeclaration = DesignTypes.DesignStyleDeclaration

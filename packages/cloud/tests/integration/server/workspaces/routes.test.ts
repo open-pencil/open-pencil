@@ -136,7 +136,7 @@ describe('Cloud workspace routes', () => {
       const listResponse = await client.api.workspaces.$get()
       expect(listResponse.status).toBe(200)
       expect(await listResponse.json()).toMatchObject({
-        workspaces: [{ id: created.workspace.id, role: 'admin' }]
+        workspaces: [{ id: created.workspace.id, role: 'admin', owner: true }]
       })
 
       const getResponse = await client.api.workspaces[':workspaceId'].$get({
@@ -172,6 +172,38 @@ describe('Cloud workspace routes', () => {
       })
       expect(response.status).toBe(404)
       expect(await response.json()).toEqual({ error: { code: 'not_found' } })
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test("answers 404, and reports nothing, for another account's workspace entitlements", async () => {
+    const { app, runtime } = await testApp(alice)
+    try {
+      const created = await responseJSON(
+        await testClient(app).api.workspaces.$post({
+          json: { name: 'Private', slug: 'private-plan' }
+        }),
+        v.object({ workspace: v.object({ id: v.string() }) })
+      )
+      const reported: unknown[] = []
+      const bobApp = createCloudApp({
+        config,
+        database: runtime.database,
+        auth: createBetterAuthAdapter(config, runtime.database),
+        objects: createMemoryObjectStore().store,
+        resolveSession: async () => bob,
+        reportError: async (error) => {
+          reported.push(error)
+        }
+      })
+
+      const response = await testClient(bobApp).api.workspaces[':workspaceId'].entitlements.$get({
+        param: { workspaceId: created.workspace.id }
+      })
+      expect(response.status).toBe(404)
+      expect(await response.json()).toEqual({ error: { code: 'not_found' } })
+      expect(reported).toEqual([])
     } finally {
       await runtime.close()
     }

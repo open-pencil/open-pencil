@@ -259,6 +259,8 @@
   "aiSetupWelcomeDescription": "Crie e edite designs em uma tela aberta. Importe arquivos do Figma e faça deles os seus.",
   "aiSetupWelcomeAITitle": "Crie com IA",
   "aiSetupWelcomeAIDescription": "Conecte a IA que você já usa para editar a tela e revisar designs. Você pode mudar isso depois nas Configurações.",
+  "aiSetupWelcomeCloudReadyTitle": "A IA está pronta",
+  "aiSetupWelcomeCloudReadyDescription": "Seu plano do OpenPencil Cloud inclui IA, então o chat já funciona com os modelos que ele recomenda. Você pode mudá-los depois nas Configurações.",
   "aiSetupWelcomeTourTitle": "Faça o tour",
   "aiSetupWelcomeTourDescription": "Um arquivo curto que apresenta componentes e slots, controles funcionais, modos, shaders, código e lint, com um cartão em cada parte dizendo o que experimentar.",
   "aiSetupTakeTour": "Abrir o tour",

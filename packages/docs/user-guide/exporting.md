@@ -56,7 +56,11 @@ OpenPencil uses the .fig format for full documents — the same binary format as
 
 A file picker dialog opens, filtered for `.fig` and `.pen` files. On the desktop app, this uses the native OS dialog.
 
-You can also drag a `.fig`, `.pen`, or other supported document onto the window; it opens in a new tab. Images and SVG files dropped on the canvas are placed in the document instead, and any other file reports that it can't be opened.
+**File → Open from URL…** opens a web address. A web page opens as editable layers, with the stylesheets and pictures it links; an image or an SVG opens in a new design, and a `.fig`, `.pen`, or other supported document opens as it would from your computer. The desktop app fetches any address. In the browser, only sites that let other sites read them can be opened, and the dialog says so when a site does not. The page's scripts do not run, so a page that builds itself with JavaScript opens as the HTML its server sends.
+
+You can also drag a `.fig`, `.pen`, HTML, or other supported document onto the window; it opens in a new tab. Images, SVG files, and HTML pages dropped on the canvas are placed in the document instead, an HTML page as editable layers laid out as a browser would, and any other file reports that it can't be opened.
+
+**File → Place…** does the same from a file picker: it places images, SVG files, and HTML pages in the middle of the view.
 
 ### Saving Files
 

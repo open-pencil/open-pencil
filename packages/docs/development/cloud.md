@@ -421,6 +421,28 @@ it opens the stored file, is no edit of its own. The saver saves whenever any cl
 than `saved` records, so a tab that becomes the saver also saves edits an earlier saver left, and
 opening a document nobody edited uploads nothing.
 
+## Community gallery examples
+
+A deployment's community gallery is the workspace its `openpencil-cloud.toml` names with
+`[community] workspace`. The gallery's examples are ordinary documents there, published from CI as
+an account that belongs to that workspace. The **Publish gallery examples** workflow runs
+`tools/ci/cloud-examples` with the `cloud-<target>` environment's `CLOUD_URL` and
+`CLOUD_COMMUNITY_WORKSPACE` variables and its `CLOUD_COMMUNITY_TOKEN` secret, a personal access
+token of that account.
+
+The tool builds each example in its manifest (`src/examples.ts`; the tour is the editor's demo
+document) and saves it as the editor does, through `saveCloudDocument` in
+`@open-pencil/cloud/client`: the document is created the first time, gets a new revision only when
+its file changed, and, given a version, has its current state named after the release once. A run
+with the same files and version changes nothing.
+
+`[community] tour` names the gallery document editors open as their tour: discovery advertises it as
+`community.tourDocumentId`, and the editor and the docs landing download it with `fetchCommunityTour`
+from `@open-pencil/cloud/client`, as the version named for their release when there is one. Set it to
+the Welcome tour's document ID once the workflow has published it. Discovery and the gallery's
+public reads answer any origin without credentials, so the docs site can fetch them; everything else
+keeps the server's trusted origins.
+
 ## Configuration
 
 Operators author one schema-versioned TOML file. It owns URLs, trusted origins and proxies,
@@ -497,9 +519,19 @@ then Cloud straight after, in the same window: between the two, the old plan pag
 service's pricing page compares its plans with it. The contract is `src/contract/billing.ts`. Editors
 link to the server's plan page, `CLOUD_ACCOUNT_PLAN_PATH`, whenever it advertises billing.
 
+A plan may be priced by the seat (`billingSeatPricingSchema`): an account's seats are the people
+who can edit, as editors or admins, across the workspaces it owns, each counted once, the owner
+too, and viewers not at all (`accountSeats` in `src/server/billing/seats.ts`). Billing reads the
+count from the internal API at `GET /api/internal/accounts/:userId/seats`. Whenever a role change, a
+removal, an invitation accepted, a workspace deleted, or ownership passing on may change it, Cloud
+posts a billing token for each owner it touched to the service's `CLOUD_BILLING_API_PATHS.seats`
+after the change commits (`createSeatNotifier`), on Workers through `waitUntil`. A notice carries
+no count and may be lost, so the service treats it as a prompt to read the count and also
+reconciles on its own.
+
 A service answers below its endpoint at the paths in `CLOUD_SERVICES_API_PATHS`: model requests
 follow the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
-catalog, wallet, and usage pages are the contract's own. `CloudServicesSchema` types those routes as
+catalog, wallet, and usage pages are the contract's own. The catalog's `roleModels` names the model the service recommends for each of the editor's roles; an editor signed in to the service with only a fresh install's unset model sets itself up with them (`src/app/ai/providers/openpencil/setup.ts`), and a service without them has its `defaultModelID` take every role, except Vision, which stays unassigned when that model reads no images. A catalog from before roles whose default model calls no tools starts without `roleModels`, and editors then set nothing up. `CloudServicesSchema` types those routes as
 Hono does, so the client calls them through `hc` and still parses each answer, since a service is
 deployed apart from the editor; a service built with Hono can check its app against the same type.
 The reference service is the services server in `src/services`, run by `src/runtime/node/services`:
@@ -529,7 +561,8 @@ tool tells the model how to set search up.
 Services that decide entitlements, such as billing, write them through the internal API rather than
 the database: `setAccountEntitlements` in `src/server/internal`, which runtimes expose over HTTP at
 `PUT /api/internal/accounts/:userId/entitlements` with a bearer token (`[internal_api]`) or a
-private transport of their own. Every write carries an
+private transport of their own, and read an account's seats at
+`GET /api/internal/accounts/:userId/seats`. Every write carries an
 increasing `externalVersion`, and a write older than the stored one is refused, because billing
 events arrive out of order. Cloud keeps answering from the last entitlements it received while the
 writer is down.

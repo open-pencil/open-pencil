@@ -95,7 +95,7 @@ import type { Vector, GUID } from '@open-pencil/scene-graph/primitives'
 import { savedFace } from './font/style'
 import { numericVariableAssignmentScales, sourceVariableBindingScales } from './variable/bindings'
 export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable/bindings'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import type { FigVariableModeMap } from './variable/maps'
 
@@ -756,18 +756,21 @@ function withFiniteNumbers(nc: NodeChange): NodeChange {
   return omitBy(nc, dropped)
 }
 
+/** A node change as scene node properties, with the kind of node it makes. */
+export type NodeChangeProps = Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' }
+
 export function nodeChangeToProps(
   record: NodeChange,
   blobs: Uint8Array[],
   metadata: 'source' | 'occurrence' = 'source'
-): Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } {
+): NodeChangeProps {
   const nc = withFiniteNumbers(record)
   const nodeType = resolveNodeType(nc)
 
   const vectorAndStrokeProps = convertVectorAndStrokeProps(nc, blobs)
   const textPathData = convertTextPathData(nc, blobs)
 
-  const props: Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } = {
+  const props: NodeChangeProps = {
     nodeType,
     name: nc.name ?? nodeType,
     source:

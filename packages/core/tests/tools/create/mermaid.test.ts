@@ -5,7 +5,7 @@ import * as v from 'valibot'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { importMermaid } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { minOf } from '@open-pencil/scene-graph/arrays'
+import { minOf } from '@open-pencil/std/arrays'
 
 const importedSchema = v.object({
   ids: v.array(v.string()),

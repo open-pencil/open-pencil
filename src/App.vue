@@ -9,7 +9,9 @@ import { useRouter } from 'vue-router'
 import { provideEditor } from '@open-pencil/vue'
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { watchCloudAISetup } from '@/app/ai/providers/openpencil/setup'
 import { startCloud } from '@/app/cloud/integration'
+import { useAutosaveFeedback } from '@/app/document/autosave/feedback'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { endRecoverySession, startRecoverySession } from '@/app/document/recovery/session'
 import { useFollowingEditorStore } from '@/app/editor/active-store'
@@ -27,6 +29,7 @@ import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
 import CampaignPromptHost from '@/components/campaigns/CampaignPromptHost.vue'
 import { CloudHosts } from '@/components/cloud/integration'
+import OpenURLDialog from '@/components/document/open-url/OpenURLDialog.vue'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
@@ -56,6 +59,7 @@ useHead({
 provideEditor(useFollowingEditorStore())
 useAppTheme()
 useDocumentCloseProtection()
+useAutosaveFeedback()
 useRestartApprovals()
 useWebUpdates()
 startRecoverySession()
@@ -79,6 +83,8 @@ onMounted(() => {
       saveTo: (store, serverId) => openSaveTo(store, { profileId: serverId })
     })
   )
+  // Signing in to a Cloud plan with AI sets the models up, so nobody has to choose one.
+  onUnmounted(watchCloudAISetup())
 })
 </script>
 
@@ -94,6 +100,7 @@ onMounted(() => {
         <SaveToHost />
         <CloudHosts />
         <UnsavedChangesDialog />
+        <OpenURLDialog />
         <PublishLibraryDialog />
         <LibraryUpdateReviewDialog />
         <UsageStatsPrompt />

@@ -7,7 +7,7 @@ import satisfies from 'spdx-satisfies'
 import * as v from 'valibot'
 import type { Plugin, PluginOption } from 'vite'
 
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 
 /**
  * The licenses a bundled npm package may carry. EPL-2.0 and MPL-2.0 are file-level copyleft, met

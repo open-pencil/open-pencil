@@ -12,13 +12,17 @@ use blitz_dom::{BaseDocument, DocumentConfig, Node, StyleThreading};
 use blitz_html::HtmlDocument;
 use blitz_traits::net::{Bytes, NetHandler, NetProvider, Request};
 use blitz_traits::shell::{ColorScheme, Viewport};
+use cssparser::{ParseError, Parser, ToCss, Token, serialize_string};
 use parley::fontique::{Blob, FontInfoOverride, GenericFamily};
 use parley::{FontContext, PositionedLayoutItem};
 use serde_json::{Map, Value, json};
 use style::computed_values::border_collapse::T as BorderCollapse;
 use style::properties::{LonghandId, PropertyDeclarationId};
+use style::servo_arc::Arc as ServoArc;
+use style::stylesheets::{CssRule, Stylesheet};
 use style::values::generics::font::LineHeight;
 use style::values::specified::box_::DisplayInside;
+use url::{Position, Url};
 
 /// Computed properties the importer reads. Everything else is left out to keep captures small.
 /// Those in `default_styles` are reported only when they differ from their initial value; the
@@ -76,6 +80,7 @@ const PROPERTIES: &[&str] = &[
     "background-position",
     "background-repeat",
     "background-clip",
+    "mask-image",
     "border-top-width",
     "border-right-width",
     "border-bottom-width",
@@ -136,6 +141,16 @@ const PROPERTIES: &[&str] = &[
     "border-collapse",
     "border-spacing",
     "caption-side",
+    "fill",
+    "fill-opacity",
+    "fill-rule",
+    "stroke",
+    "stroke-width",
+    "stroke-opacity",
+    "stroke-linecap",
+    "stroke-linejoin",
+    "stroke-dasharray",
+    "text-anchor",
 ];
 
 /// Properties reported as their computed values too, where the used values `style` reports lose
@@ -337,11 +352,11 @@ fn computed(node: &Node) -> Option<Value> {
     Some(Value::Object(out))
 }
 
-fn styles(doc: &BaseDocument, node: &Node) -> Value {
+fn styles(doc: &BaseDocument, node: &Node, local: &[Url]) -> Value {
     let defaults = default_styles();
     let mut out = Map::new();
     for property in PROPERTIES {
-        let value = doc.resolved_style_value(node.id, property);
+        let value = local_urls(doc.resolved_style_value(node.id, property), local);
         // Stylo answers a property it does not implement with an empty value.
         if value.is_empty() {
             continue;
@@ -353,6 +368,95 @@ fn styles(doc: &BaseDocument, node: &Node) -> Value {
         out.insert((*property).into(), value.into());
     }
     Value::Object(out)
+}
+
+/// `value` with each `url()` that points into the document itself written as its fragment,
+/// `url("#fade")`, as browsers report a local reference such as `fill: url(#fade)`. Stylo
+/// resolves it against the document's base URL, which reads as a link to another file.
+fn local_urls(value: String, local: &[Url]) -> String {
+    if !value.contains("url(") {
+        return value;
+    }
+    let mut out = String::new();
+    write_local_urls(&mut Parser::new(&value), local, &mut out);
+    out
+}
+
+fn write_local_urls(input: &mut Parser<'_>, local: &[Url], out: &mut String) {
+    while let Ok(token) = input.next_including_whitespace_and_comments() {
+        let token = token.clone();
+        let closing = match &token {
+            Token::UnquotedUrl(url) => {
+                write_url(url, local, out);
+                continue;
+            }
+            Token::Function(name) if name.eq_ignore_ascii_case("url") => {
+                let quoted = input.parse_nested_block(|block| {
+                    block
+                        .expect_string()
+                        .map(|url| url.as_ref().to_owned())
+                        .map_err(ParseError::<()>::from)
+                });
+                if let Ok(url) = quoted {
+                    write_url(&url, local, out);
+                    continue;
+                }
+                ")"
+            }
+            Token::Function(_) | Token::ParenthesisBlock => ")",
+            Token::SquareBracketBlock => "]",
+            Token::CurlyBracketBlock => "}",
+            _ => {
+                let _ = token.to_css(out);
+                continue;
+            }
+        };
+        let _ = token.to_css(out);
+        let _ = input.parse_nested_block(|block| {
+            write_local_urls(block, local, out);
+            Ok::<(), ParseError<()>>(())
+        });
+        out.push_str(closing);
+    }
+}
+
+/// `url("…")`, as a fragment when `raw` points into the document, its base being one in `local`.
+fn write_url(raw: &str, local: &[Url], out: &mut String) {
+    let fragment = Url::parse(raw)
+        .ok()
+        .filter(|url| {
+            let base = &url[..Position::AfterQuery];
+            local.iter().any(|own| own[..Position::AfterQuery] == *base)
+        })
+        .and_then(|url| url.fragment().map(|fragment| format!("#{fragment}")));
+    out.push_str("url(");
+    let _ = serialize_string(fragment.as_deref().unwrap_or(raw), out);
+    out.push(')');
+}
+
+/// What a `url()` resolves against when it points into the document: the document's base URL,
+/// and each author stylesheet's, imported ones included. A fragment-only `url(#fade)` refers to
+/// the document whichever stylesheet holds it, but Stylo resolves it against that stylesheet's
+/// URL and keeps only the result; a stylesheet itself is never what a paint or clip points at.
+fn local_bases(doc: &BaseDocument) -> Vec<Url> {
+    let guard = doc.guard().read();
+    let mut bases = vec![doc.base_url().clone()];
+    let mut sheets: Vec<ServoArc<Stylesheet>> = doc
+        .author_stylesheets()
+        .map(|sheet| sheet.0.clone())
+        .collect();
+    while let Some(sheet) = sheets.pop() {
+        let contents = sheet.contents.read_with(&guard);
+        bases.push((*contents.url_data.0).clone());
+        for rule in contents.rules(&guard) {
+            if let CssRule::Import(import) = rule
+                && let Some(imported) = import.read_with(&guard).stylesheet.as_sheet()
+            {
+                sheets.push(imported.clone());
+            }
+        }
+    }
+    bases
 }
 
 /// Initial values of the captured properties that are not inherited. An inherited property is
@@ -377,6 +481,7 @@ fn default_styles() -> &'static HashMap<&'static str, String> {
             ("background-position", "0% 0%"),
             ("background-repeat", "repeat"),
             ("background-clip", "border-box"),
+            ("mask-image", "none"),
             ("border-top-style", "none"),
             ("border-right-style", "none"),
             ("border-bottom-style", "none"),
@@ -536,6 +641,7 @@ fn is_table_part(node: &Node) -> bool {
 /// boxes grow by it on each side to be the boxes a browser reports.
 fn capture_node(
     doc: &BaseDocument,
+    local: &[Url],
     node: &Node,
     out: &mut Vec<Value>,
     parent: Option<usize>,
@@ -556,7 +662,7 @@ fn capture_node(
     let Some(el) = node.element_data() else {
         // Document, comment, or doctype: walk its children only.
         for &child in &node.children {
-            capture_node(doc, &doc.tree()[child], out, parent, None);
+            capture_node(doc, local, &doc.tree()[child], out, parent, None);
         }
         return;
     };
@@ -601,7 +707,7 @@ fn capture_node(
         };
         entry.insert("image".into(), kind.into());
     }
-    entry.insert("style".into(), styles(doc, node));
+    entry.insert("style".into(), styles(doc, node, local));
     if let Some(computed) = computed(node) {
         entry.insert("computed".into(), computed);
     }
@@ -616,26 +722,56 @@ fn capture_node(
             .collect();
         entry.insert("fragments".into(), Value::Array(rects));
     }
-    if let Some(lines) = lines(node, (pos.x, pos.y)) {
-        entry.insert("lines".into(), lines);
+    // Text a flex container or a grid holds among its items is laid out in anonymous blocks, which
+    // live outside the DOM; their lines are the element's own text's, as a browser reports them.
+    let mut own_lines = match lines(node, (pos.x, pos.y)) {
+        Some(Value::Array(own)) => own,
+        _ => Vec::new(),
+    };
+    for anonymous in node
+        .anonymous_blocks
+        .iter()
+        .filter_map(|&id| doc.get_node(id))
+    {
+        let at = anonymous.absolute_position(0.0, 0.0);
+        if let Some(Value::Array(block)) = lines(anonymous, (at.x, at.y)) {
+            own_lines.extend(block);
+        }
+    }
+    if !own_lines.is_empty() {
+        entry.insert("lines".into(), Value::Array(own_lines));
     }
     out.push(Value::Object(entry));
 
     let pseudo = |id: Option<blitz_traits::node_id::NodeId>| id.and_then(|id| doc.get_node(id));
     if let Some(before) = pseudo(el.before) {
-        capture_pseudo(doc, before, "::before", out, index);
+        capture_pseudo(doc, local, before, "::before", out, index);
     }
     for &child in &node.children {
-        capture_node(doc, &doc.tree()[child], out, Some(index), child_gutter);
+        capture_node(
+            doc,
+            local,
+            &doc.tree()[child],
+            out,
+            Some(index),
+            child_gutter,
+        );
     }
     if let Some(after) = pseudo(el.after) {
-        capture_pseudo(doc, after, "::after", out, index);
+        capture_pseudo(doc, local, after, "::after", out, index);
     }
 }
 
-fn capture_pseudo(doc: &BaseDocument, node: &Node, tag: &str, out: &mut Vec<Value>, parent: usize) {
+fn capture_pseudo(
+    doc: &BaseDocument,
+    local: &[Url],
+    node: &Node,
+    tag: &str,
+    out: &mut Vec<Value>,
+    parent: usize,
+) {
     let before = out.len();
-    capture_node(doc, node, out, Some(parent), None);
+    capture_node(doc, local, node, out, Some(parent), None);
     if let Some(Value::Object(entry)) = out.get_mut(before) {
         entry.insert("tag".into(), tag.into());
     }
@@ -647,7 +783,8 @@ pub fn capture() -> String {
         s.doc.resolve(0.0);
         let doc = &s.doc;
         let mut nodes = Vec::new();
-        capture_node(doc, doc.root_node(), &mut nodes, None, None);
+        let local = local_bases(doc);
+        capture_node(doc, &local, doc.root_node(), &mut nodes, None, None);
         let (w, h) = doc.viewport().window_size;
         // Values the nodes leave out are these; the host fills them back in.
         let initial: Map<String, Value> = default_styles()

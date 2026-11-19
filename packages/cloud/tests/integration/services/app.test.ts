@@ -168,6 +168,13 @@ async function relay(
 }
 
 describe('Services server', () => {
+  test('answers its health check without a token', async () => {
+    const context = await relay()
+    const response = await context.client.health.$get()
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ status: 'ok' })
+  })
+
   test('refuses requests without a token Cloud signed for this service', async () => {
     const context = await relay()
     const { privateKey: otherKey } = await generateKeyPair('ES256')

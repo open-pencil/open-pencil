@@ -29,9 +29,11 @@ import type { AuthenticationEmailService } from './email'
 import { AUTH_BASE_PATH, CORE_AUTH_PATHS, authRequestPath } from './endpoints'
 import { enrollmentOptions } from './enrollment'
 import { betterAuthLogger } from './logger'
+import { removeSignInMethod, signInMethodHooks, signInProviders } from './methods'
 import { createMFAAssuranceService, createProofRecorder, verifySecondFactor } from './mfa-assurance'
 import { passwordOptions } from './passwords'
-import { APPLE_AUDIENCE, socialProviders } from './social-providers'
+import { authRateLimit } from './rate-limit'
+import { APPLE_AUDIENCE, socialProviders, TRUSTED_SOCIAL_PROVIDERS } from './social-providers'
 
 const BETTER_AUTH_SCHEMA_VERSION = '1.7.7+mfa.1'
 const DAY_SECONDS = 24 * 60 * 60
@@ -62,6 +64,7 @@ export function createBetterAuthAdapter(
   const activity = createSignInActivity(database, authenticationEmail)
   // A new address is confirmed through a link sent to it, so changing one needs email delivery.
   const emailChangeAvailable = Boolean(config.emailPasswordEnabled && authenticationEmail)
+  const providers = signInProviders(config)
   // The plugins are built first, so the options below name their endpoints by the paths they declare.
   const twoStep = twoFactor({
     issuer: 'OpenPencil Cloud',
@@ -94,24 +97,32 @@ export function createBetterAuthAdapter(
     rateLimit: { enabled: false },
     enableSessionForAPIKeys: false
   })
+  const joining = enrollmentOptions(
+    config,
+    database,
+    enrollment,
+    authenticationEmail,
+    emailChangeAvailable
+  )
   const auth = betterAuth({
     appName: 'OpenPencil Cloud',
     logger: betterAuthLogger,
     baseURL: config.publicURL,
     basePath: AUTH_BASE_PATH,
-    // Clients never reach Better Auth's own administration, which `/api/admin` replaces with MFA,
-    // origin, last-administrator, and audit checks, nor the endpoints Cloud's policy manages
-    // through its account routes; the server still calls them itself.
+    // Clients never reach Better Auth's administration, which `/api/admin` replaces with its own
+    // checks, nor the endpoints Cloud's account routes manage; the server still calls them itself.
     disabledPaths: [
       ...Object.values(administration.endpoints).map((endpoint) => endpoint.path),
       // Tokens are made, listed, and revoked through `/api/account/tokens`, with a fresh session.
       ...Object.values(accessTokens.endpoints).map((endpoint) => endpoint.path),
       passkeys.endpoints.deletePasskey.path,
       twoStep.endpoints.disableTwoFactor.path,
-      // Accounts are deleted through `/api/account/delete`, which an account awaiting approval
-      // cannot reach either.
+      // Accounts are deleted through `/api/account/delete`, closed to accounts awaiting approval.
       CORE_AUTH_PATHS.deleteUser,
-      CORE_AUTH_PATHS.deleteUserCallback
+      CORE_AUTH_PATHS.deleteUserCallback,
+      // Linking and unlinking go through `/api/account/authentication`, with a fresh session.
+      CORE_AUTH_PATHS.linkSocialAccount,
+      CORE_AUTH_PATHS.unlinkAccount
     ],
     secret: config.authSecret,
     database: {
@@ -124,7 +135,7 @@ export function createBetterAuthAdapter(
       accountLinking: {
         enabled: true,
         disableImplicitLinking: false,
-        trustedProviders: ['google', 'apple'],
+        trustedProviders: TRUSTED_SOCIAL_PROVIDERS,
         allowDifferentEmails: false,
         allowUnlinkingAll: false,
         requireLocalEmailVerified: true
@@ -139,24 +150,9 @@ export function createBetterAuthAdapter(
       },
       ...(runtime.runInBackground ? { backgroundTasks: { handler: runtime.runInBackground } } : {})
     },
-    rateLimit: {
-      enabled: true,
-      storage: 'database',
-      window: 60,
-      max: 100,
-      customRules: {
-        [devices.endpoints.deviceCode.path]: { window: 60, max: 10 },
-        [devices.endpoints.deviceToken.path]: { window: 60, max: 60 },
-        [devices.endpoints.deviceApprove.path]: { window: 60, max: 10 },
-        [devices.endpoints.deviceDeny.path]: { window: 60, max: 10 },
-        [CORE_AUTH_PATHS.signInEmail]: { window: 10, max: 3 },
-        [CORE_AUTH_PATHS.signUpEmail]: { window: 10, max: 3 },
-        [CORE_AUTH_PATHS.requestPasswordReset]: { window: 60, max: 3 },
-        [CORE_AUTH_PATHS.sendVerificationEmail]: { window: 60, max: 3 }
-      }
-    },
+    rateLimit: authRateLimit(devices.endpoints),
     emailAndPassword: passwordOptions(config, authenticationEmail),
-    ...enrollmentOptions(config, database, enrollment, authenticationEmail, emailChangeAvailable),
+    ...joining,
     plugins: [
       ...(config.captchaProvider && config.captchaSecretKey
         ? [
@@ -189,6 +185,7 @@ export function createBetterAuthAdapter(
       accessTokens
     ],
     socialProviders: socialProviders(config),
+    databaseHooks: { ...joining.databaseHooks, ...signInMethodHooks },
     trustedOrigins: [
       config.publicURL,
       ...config.trustedOrigins,
@@ -316,8 +313,7 @@ export function createBetterAuthAdapter(
    */
   const activeAccountPaths = new Set(
     [
-      // Approving a desktop sign-in hands the app a session of its own, recorded as having proved
-      // the second step, so only a session that did may approve one.
+      // The desktop session it grants counts as two-step proved; only a proved session may grant one.
       auth.api.deviceApprove,
       auth.api.deviceDeny,
       auth.api.generatePasskeyRegistrationOptions,
@@ -412,16 +408,13 @@ export function createBetterAuthAdapter(
     },
     async startSocialLink(headers, input) {
       await freshSession(headers)
-      const response = await auth.api.linkSocialAccount({
-        headers,
-        body: {
-          provider: input.provider,
-          callbackURL: input.callbackURL,
-          errorCallbackURL: input.callbackURL,
-          disableRedirect: true
-        }
-      })
-      return response.url
+      const body = { ...input, errorCallbackURL: input.callbackURL, disableRedirect: true }
+      const link = await auth.api.linkSocialAccount({ headers, body, returnHeaders: true })
+      return { url: link.response.url, headers: link.headers }
+    },
+    async unlinkAuthenticationMethod(headers, methodId) {
+      const session = await freshSession(headers)
+      await removeSignInMethod(database, { userId: session.user.id, methodId, providers })
     },
     async deleteAccount(headers, password) {
       const { headers: answer } = await auth.api.deleteUser({
@@ -430,9 +423,6 @@ export function createBetterAuthAdapter(
         returnHeaders: true
       })
       return answer
-    },
-    async unlinkAuthenticationMethod(headers, methodId) {
-      await auth.api.unlinkAccount({ headers, body: { accountId: methodId } })
     },
     async banUser(headers, userId, reason) {
       await auth.api.banUser({ headers, body: { userId, banReason: reason } })

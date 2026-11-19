@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
+import * as v from 'valibot'
 
 import {
   MCP_AGENT_HEADER,
@@ -23,7 +24,9 @@ import { parseDiscoveryInfo } from '#mcp/transport/discovery'
 
 import {
   connectMockBrowser,
+  openWs,
   readHealth,
+  readNextResponse,
   waitForBrowserRegistration,
   type MockBrowser
 } from '../helpers/server'
@@ -446,6 +449,40 @@ describe('MCP server sharing only the selection', () => {
     await rpc({ command: 'tool', args: { name: 'get_node', args: { id: '0:1' } } })
     const call = browser.requests.find((request) => request.command === 'tool')
     expect(call?.args).toMatchObject({ name: 'get_node', scope: 'selection' })
+  })
+
+  test('keeps requests sent over an authenticated socket to the selection tools too', async () => {
+    const { browser, handle } = expectDefined(ctx, 'client')
+    const socket = await openWs(`ws://127.0.0.1:${handle.httpPort}`, TEST_CLIENT_AUTH_TOKEN)
+    const response = v.looseObject({ type: v.literal('response'), id: v.string(), ok: v.boolean() })
+    const request = async (id: string, command: string, args: object) => {
+      socket.send(JSON.stringify({ type: 'request', id, command, args }))
+      return readNextResponse(socket, response)
+    }
+
+    try {
+      expect(await request('settings', 'update_settings', { settings: {} })).toMatchObject({
+        id: 'settings',
+        ok: false
+      })
+      expect(await request('eval', 'eval', { code: 'figma.currentPage.name' })).toMatchObject({
+        ok: false
+      })
+      expect(
+        await request('delete', 'tool', { name: 'delete_nodes', args: { ids: ['0:1'] } })
+      ).toMatchObject({ ok: false })
+      expect(browser.requests).toEqual([])
+
+      // What the selection allows goes through, marked with the scope whatever the caller wrote.
+      await request('read', 'tool', { name: 'get_node', args: { id: '0:1' }, scope: 'document' })
+      expect(browser.requests).toHaveLength(1)
+      expect(browser.requests[0]).toMatchObject({
+        command: 'tool',
+        args: { name: 'get_node', scope: 'selection' }
+      })
+    } finally {
+      socket.close()
+    }
   })
 })
 

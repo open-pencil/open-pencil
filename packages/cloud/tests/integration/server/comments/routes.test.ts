@@ -153,6 +153,22 @@ describe('comment routes', () => {
     // A view link lets someone signed in comment, never delete others' comments.
     expect(listed.access).toEqual({ canComment: true, canModerate: false, accountId: 'alice' })
 
+    const threadParam = { ...param, threadId: thread.id }
+    const one = shares[':threadId']
+    const replied = await one.comments.$post({ param: threadParam, json: { share, body: 'Re' } })
+    expect(replied.status).toBe(201)
+    const withReply = await responseJSON(replied, commentThreadResponseSchema)
+    expect(withReply.thread.comments.map((comment) => comment.body)).toEqual(['Hi', 'Re'])
+    const resolved = await one.$patch({ param: threadParam, json: { share, resolved: true } })
+    expect(
+      (await responseJSON(resolved, commentThreadResponseSchema)).thread.resolvedAt
+    ).not.toBeNull()
+    expect((await one.read.$post({ param: threadParam, json: { share } })).status).toBe(204)
+    // The author deletes their own thread through the link.
+    expect((await one.$delete({ param: threadParam, json: { share } })).status).toBe(204)
+    const after = await shares.list.$post({ param, json: { share } })
+    expect((await responseJSON(after, commentThreadsSchema)).threads).toEqual([])
+
     const wrong = { secret: 'f'.repeat(64) }
     expect((await shares.list.$post({ param, json: { share: wrong } })).status).toBe(404)
   })

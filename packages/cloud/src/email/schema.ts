@@ -49,7 +49,9 @@ const workspaceInvitationEmailPayloadSchema = v.object({
 const enrollmentEmailPayloadSchema = v.object({
   /** Null when the request named no one, so the email greets no one by name. */
   name: v.nullable(v.string()),
-  actionURL: v.string()
+  actionURL: v.string(),
+  /** An invitation letter to someone from openpencil.dev's waitlist, who asked nowhere else. */
+  waitlist: v.optional(v.literal(true))
 })
 
 const adminEnrollmentNotificationPayloadSchema = v.object({
@@ -151,12 +153,15 @@ export const twoStepChangeSchema = v.picklist([
   'authenticator-off',
   'passkey-added',
   'passkey-removed',
-  'reset-by-administrator'
+  'reset-by-administrator',
+  'sign-in-method-removed'
 ])
 
 const twoStepChangedPayloadSchema = v.object({
   name: v.string(),
   change: twoStepChangeSchema,
+  /** For a removed sign-in method, which: `credential` for a password, or a provider. */
+  method: v.optional(v.string()),
   actionURL: v.string()
 })
 

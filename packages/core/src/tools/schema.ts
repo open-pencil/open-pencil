@@ -1,16 +1,15 @@
-/**
- * Tool definition schema.
- *
- * Native Valibot inputs and execution capabilities are owned by each tool.
- * Adapters consume these contracts rather than maintaining transport-specific schemas.
- */
-
 import {
   // eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
   toJsonSchema as toJSONSchema,
   // eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
   type toStandardJsonSchema as toStandardJSONSchema
 } from '@valibot/to-json-schema'
+/**
+ * Tool definition schema.
+ *
+ * Native Valibot inputs and execution capabilities are owned by each tool.
+ * Adapters consume these contracts rather than maintaining transport-specific schemas.
+ */
 import { omit } from 'es-toolkit/object'
 import * as v from 'valibot'
 
@@ -22,6 +21,7 @@ import {
   MAX_LAYOUT_LENGTH,
   MAX_LAYOUT_SPACING
 } from '@open-pencil/scene-graph/layout'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import type { FigmaFontNameInput } from '#core/figma-api/fonts/names'
@@ -176,7 +176,7 @@ export function requireNodes(figma: FigmaAPI, ids: ReadonlyArray<string>): Figma
 
 /** A tool's answer when the operation it wraps throws: the error's message for the caller. */
 export function toolFailure(error: unknown): { error: string } {
-  return { error: error instanceof Error ? error.message : String(error) }
+  return { error: errorMessage(error) }
 }
 
 export function nodeNotFound(id: string): { error: string } {

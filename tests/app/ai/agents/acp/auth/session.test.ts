@@ -11,13 +11,13 @@ import {
 } from '@agentclientprotocol/sdk/unstable'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { createDeferred } from '@open-pencil/std/async'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { checkAgentAuth, signInWithAgent, type ToolsProbe } from '@/app/ai/agents/acp/auth/session'
 import { AUTH_STATUS_UPDATE_METHOD, type AgentAuthStatus } from '@/app/ai/agents/acp/auth/status'
 import type { AgentLaunch } from '@/app/ai/agents/acp/connection'
 import { AGENT_SESSION_META, type OwnToolsOutcome } from '@/app/ai/agents/acp/tools'
-import { createDeferred } from '@/app/runtime/deferred'
 const codex = expectDefined(
   ACP_AGENTS.find((agent) => agent.id === 'codex'),
   'Codex'

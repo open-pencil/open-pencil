@@ -22,9 +22,10 @@ import type { CredentialStatus } from '@/app/settings/credentials/types'
 async function testCloudConnection(
   target: AIModelProfileDraft
 ): Promise<ProviderConnectionTestResult> {
-  const client = cloudAIClient(target.cloudWorkspaceId ?? '')
+  const workspaceId = target.cloudWorkspaceId ?? ''
+  const client = cloudAIClient(workspaceId)
   if (!client) return { ok: false, reason: 'cloud-unavailable' }
-  const cloud = cloudModelConfig(client, target.modelID)
+  const cloud = cloudModelConfig(client, target.modelID, workspaceId)
   return testProviderConnection(cloud.config, cloud.runtime)
 }
 

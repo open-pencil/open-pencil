@@ -141,6 +141,7 @@ export default defineConfig({
     'shared/font-status/index': './src/shared/font-status/index.ts',
     'shared/frame': './src/shared/frame.ts',
     'shared/input/index': './src/shared/input/index.ts',
+    'shared/refresh': './src/shared/refresh.ts',
     'shared/search/index': './src/shared/search/index.ts',
     'testing/index': './src/testing/index.ts',
     'variables/index': './src/variables/index.ts'

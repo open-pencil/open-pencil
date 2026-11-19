@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 
 import { exportHTMLBundle } from '#dom-css/export/bundle'
 import { serializeHTML } from '#dom-css/export/html'
+import { parseHTMLDocument } from '#dom-css/import/markup'
 
 import { createCSSRuntime } from '@open-pencil/dom-css'
 import { cardDocument, simpleCardDocument } from '@open-pencil/test-support/dom-css'
@@ -10,6 +11,12 @@ describe('@open-pencil/dom-css runtime', () => {
   it('serializes DesignDOM as HTML', () => {
     expect(serializeHTML(cardDocument)).toContain('<article class="card">')
     expect(serializeHTML(cardDocument)).toContain('OpenPencil')
+  })
+
+  it('keeps attributes without a value, which selectors such as scoped styles match', () => {
+    const html = serializeHTML(parseHTMLDocument('<div class="nav" data-v-8c3dd060 hidden></div>'))
+
+    expect(html).toContain('<div class="nav" data-v-8c3dd060 hidden>')
   })
 
   it('keeps images with invalid Base64 inline instead of extracting them', async () => {

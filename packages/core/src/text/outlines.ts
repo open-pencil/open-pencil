@@ -1,5 +1,4 @@
 import type { CharacterStyleOverride, FontVariation, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import {
@@ -8,6 +7,7 @@ import {
   textLengthPixels,
   textVerticalOffset
 } from '@open-pencil/scene-graph/text'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { drawnFontVariations } from '#core/text/font/families'
 import {

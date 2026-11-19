@@ -1,6 +1,6 @@
 import type { ToolCapability, ToolDef } from '@open-pencil/core/tools'
 import { ALL_TOOLS, toolChangesDocument, isToolExposed } from '@open-pencil/core/tools'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import type { ToolAvailability, ToolDescriptor, ToolEffect } from '#mcp/tool/metadata'
 

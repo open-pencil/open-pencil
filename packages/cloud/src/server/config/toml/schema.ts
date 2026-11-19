@@ -17,6 +17,7 @@ const DEFAULT_SECRET_NAMES = {
   googleClientId: 'GOOGLE_CLIENT_ID',
   googleClientSecret: 'GOOGLE_CLIENT_SECRET',
   applePrivateKey: 'APPLE_PRIVATE_KEY',
+  githubClientSecret: 'GITHUB_CLIENT_SECRET',
   s3AccessKeyId: 'S3_ACCESS_KEY_ID',
   s3SecretAccessKey: 'S3_SECRET_ACCESS_KEY',
   s3SessionToken: 'S3_SESSION_TOKEN',
@@ -51,6 +52,12 @@ const providerSchema = v.strictObject({
       key_id: textSchema,
       private_key: defaultReference(DEFAULT_SECRET_NAMES.applePrivateKey),
       app_bundle_identifier: v.optional(textSchema)
+    })
+  ),
+  github: v.optional(
+    v.strictObject({
+      client_id: configurableTextSchema,
+      client_secret: defaultReference(DEFAULT_SECRET_NAMES.githubClientSecret)
     })
   )
 })
@@ -294,9 +301,15 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   ),
   /**
    * Optional: a workspace whose documents anyone may open read-only, without signing in or a
-   * link, as the deployment's community gallery. Everything saved there is public.
+   * link, as the deployment's community gallery. Everything saved there is public. `tour` names
+   * the gallery document the editor opens as its tour, and the docs landing shows.
    */
-  community: v.optional(v.strictObject({ workspace: v.pipe(v.string(), v.uuid()) })),
+  community: v.optional(
+    v.strictObject({
+      workspace: v.pipe(v.string(), v.uuid()),
+      tour: v.optional(v.pipe(v.string(), v.uuid()))
+    })
+  ),
   /** Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. */
   error_tracking: v.optional(
     v.strictObject({
@@ -304,7 +317,9 @@ export const cloudDeploymentConfigSchema = v.strictObject({
       host: v.optional(urlSchema, POSTHOG_DEFAULT_HOST),
       project_api_key: v.optional(configurableTextSchema, {
         from_env: DEFAULT_SECRET_NAMES.posthogProjectAPIKey
-      })
+      }),
+      /** Send the account and record IDs an error involved; off, reports name neither. */
+      include_ids: v.optional(v.boolean(), false)
     })
   )
 })

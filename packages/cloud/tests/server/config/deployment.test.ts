@@ -109,6 +109,20 @@ lease_ms = 180000
 `
 
 describe('Cloud TOML deployment configuration', () => {
+  test('reads GitHub’s client secret from GITHUB_CLIENT_SECRET', () => {
+    const source = minimalSource.replace(
+      '[authentication.providers.google]',
+      '[authentication.providers.google]\n\n[authentication.providers.github]\nclient_id = "Iv-client"'
+    )
+    expect(
+      parseCloudDeploymentTOML(source, {
+        ...environment,
+        GITHUB_CLIENT_SECRET: 'github-secret'
+      })
+    ).toMatchObject({ githubClientId: 'Iv-client', githubClientSecret: 'github-secret' })
+    expect(() => parseCloudDeploymentTOML(source, environment)).toThrow()
+  })
+
   test('uses conventional secret references without TOML boilerplate', () => {
     expect(parseCloudDeploymentTOML(minimalSource, environment)).toMatchObject({
       deployment: 'self-hosted',
@@ -268,6 +282,22 @@ workspace = "${workspace}"
     ).toThrow()
   })
 
+  test('names the gallery document editors open as their tour, by its ID', () => {
+    const workspace = '0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b'
+    const tour = '7c6939c0-dedc-4fbe-80b2-80919621de10'
+    const source = `${minimalSource}
+[community]
+workspace = "${workspace}"
+tour = "${tour}"
+`
+    const config = parseCloudDeploymentTOML(source, environment)
+    expect(cloudDiscoveryFromConfig(config).community).toEqual({
+      workspaceId: workspace,
+      tourDocumentId: tour
+    })
+    expect(() => parseCloudDeploymentTOML(source.replace(tour, 'tour'), environment)).toThrow()
+  })
+
   test('keeps deleted files under a prefix only when one is configured', () => {
     expect(parseCloudDeploymentTOML(minimalSource, environment).s3DeletedPrefix).toBeUndefined()
     const keeping = (prefix: string) =>
@@ -291,7 +321,12 @@ provider = "posthog"
     expect(
       parseCloudDeploymentTOML(tracked, { ...environment, POSTHOG_PROJECT_API_KEY: 'phc_test' })
         .errorTracking
-    ).toEqual({ provider: 'posthog', host: 'https://eu.i.posthog.com', projectAPIKey: 'phc_test' })
+    ).toEqual({
+      provider: 'posthog',
+      host: 'https://eu.i.posthog.com',
+      projectAPIKey: 'phc_test',
+      includeIds: false
+    })
 
     const inline = tracked.replace(
       'provider = "posthog"',
@@ -300,8 +335,15 @@ provider = "posthog"
     expect(parseCloudDeploymentTOML(inline, environment).errorTracking).toEqual({
       provider: 'posthog',
       host: 'https://eu.i.posthog.com',
-      projectAPIKey: 'phc_inline'
+      projectAPIKey: 'phc_inline',
+      includeIds: false
     })
+    expect(
+      parseCloudDeploymentTOML(
+        inline.replace('provider = "posthog"', 'provider = "posthog"\ninclude_ids = true'),
+        environment
+      ).errorTracking?.includeIds
+    ).toBe(true)
   })
 
   test('advertises services and billing only when configured', () => {

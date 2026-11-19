@@ -1,6 +1,12 @@
 import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
-import { parseCSSAspectRatio, parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
+import {
+  dimension,
+  parseCSSAspectRatio,
+  parseCSSNumber,
+  splitCSSValue
+} from '@open-pencil/scene-graph/css'
+import type { Size } from '@open-pencil/scene-graph/primitives'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import type { DesignStyleDeclaration } from '../types'
 import { colorToFillFromCSS, pickStyle } from './css-values'
@@ -79,10 +85,16 @@ function sideStyle(style: DesignStyleDeclaration, side: BorderSide): string | un
   return sideValue(style, `border-${side}-style`, 'border-style', side)
 }
 
-/** Whether a side's border is drawn: its style is neither `none`, CSS's default, nor `hidden`. */
+/**
+ * Whether a side's border is drawn: its style is neither `none`, CSS's default, nor `hidden`,
+ * and it has a width, as a reset such as `* { border: 0 solid }` styles every side without
+ * drawing any. A side with no width given is drawn, as `border: solid` gives it `medium`.
+ */
 function paints(style: DesignStyleDeclaration, side: BorderSide): boolean {
   const value = sideStyle(style, side)
-  return value !== undefined && value !== 'none' && value !== 'hidden'
+  if (value === undefined || value === 'none' || value === 'hidden') return false
+  const width = parseCSSNumber(sideValue(style, `border-${side}-width`, 'border-width', side))
+  return width === null || width > 0
 }
 
 /** The sides whose borders are drawn, in CSS order. */
@@ -148,12 +160,31 @@ export function setBorderWeights(
   )
 }
 
-export function applyCornerRadii(node: SceneNode, style: DesignStyleDeclaration): void {
-  const cornerRadius = firstCSSNumber(style, 'border-radius')
-  const topLeft = firstCSSNumber(style, 'border-top-left-radius')
-  const topRight = firstCSSNumber(style, 'border-top-right-radius')
-  const bottomRight = firstCSSNumber(style, 'border-bottom-right-radius')
-  const bottomLeft = firstCSSNumber(style, 'border-bottom-left-radius')
+/**
+ * A corner's radius in pixels. A percentage is of the box, across and down; a layer has one radius
+ * per corner, so it takes the smaller, which turns `50%` on a square into a circle.
+ */
+function cornerRadiusOf(value: string | undefined, box: Size | undefined): number | null {
+  const first = splitCSSValue(value ?? '').at(0)
+  const percentage = first ? dimension(first) : null
+  if (percentage?.unit === '%' && box) {
+    return (percentage.number / 100) * Math.min(box.width, box.height)
+  }
+  return parseCSSNumber(first)
+}
+
+/** Corner radii, a percentage of `box`, the size the element was laid out at. */
+export function applyCornerRadii(
+  node: SceneNode,
+  style: DesignStyleDeclaration,
+  box: Size | undefined
+): void {
+  const radius = (property: string) => cornerRadiusOf(pickStyle(style, property), box)
+  const cornerRadius = radius('border-radius')
+  const topLeft = radius('border-top-left-radius')
+  const topRight = radius('border-top-right-radius')
+  const bottomRight = radius('border-bottom-right-radius')
+  const bottomLeft = radius('border-bottom-left-radius')
 
   const corners = [topLeft, topRight, bottomRight, bottomLeft]
   // A runtime that reports only the longhands, as computed styles do, gives four equal corners

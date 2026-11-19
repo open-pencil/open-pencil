@@ -43,6 +43,9 @@ import { cancelScriptWaits, waitOutsideScript } from './waits'
 const noop = () => undefined
 
 /** What a host passes to `FigmaAPI` beyond the document. */
+/** A page's proxy, which also carries the page's selection, as a Figma page does. */
+type FigmaPageProxy = FigmaNodeProxy & { selection: FigmaNodeProxy[] }
+
 export interface FigmaAPIOptions {
   /** Fetches the HTTP(S) URLs `figma.createImageAsync` loads; the global `fetch` by default. */
   fetch?: images.ImageFetch
@@ -230,7 +233,7 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
     return proxy
   }
 
-  #ensurePageProxy(proxy: FigmaNodeProxy): FigmaNodeProxy & { selection: FigmaNodeProxy[] } {
+  #ensurePageProxy(proxy: FigmaNodeProxy): FigmaPageProxy {
     if (!this.#pageProxies.has(proxy)) {
       Object.defineProperty(proxy, 'selection', {
         get: () => this.#selection,
@@ -242,14 +245,14 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
       })
       this.#pageProxies.add(proxy)
     }
-    return proxy as FigmaNodeProxy & { selection: FigmaNodeProxy[] }
+    return proxy as FigmaPageProxy
   }
 
   get root(): FigmaNodeProxy {
     return this.wrapNode(this.#graph.rootId)
   }
 
-  get currentPage(): FigmaNodeProxy & { selection: FigmaNodeProxy[] } {
+  get currentPage(): FigmaPageProxy {
     return this.#ensurePageProxy(this.wrapNode(this.#currentPageId))
   }
 

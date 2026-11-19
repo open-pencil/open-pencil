@@ -6,6 +6,7 @@ import { useDocumentWorkspace } from '@open-pencil/vue/document/workspace'
 import { useCloudMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { cloudSyncState } from '@/app/cloud/documents/status'
+import { refreshHomeCloud } from '@/app/cloud/home'
 import { findCloudServer } from '@/app/cloud/servers/store'
 import { cloudAPIClient, cloudConnection } from '@/app/cloud/sessions/connection'
 import { CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/sessions/token'
@@ -152,6 +153,12 @@ function open(row: CloudDocumentRow) {
   // Opening reports its own failure.
   void openStorageDocumentInNewTab(document, location.value).catch(() => undefined)
 }
+
+/** The workspace's files, and the server's workspaces, which may have changed elsewhere too. */
+function refresh() {
+  void refreshHomeCloud({ fresh: true })
+  void files.refresh()
+}
 </script>
 
 <template>
@@ -167,7 +174,7 @@ function open(row: CloudDocumentRow) {
     @open="open"
     @delete="requestDelete"
     @members="openWorkspaceMembers(serverId, workspace.id)"
-    @refresh="files.refresh"
+    @refresh="refresh"
     @new-design="createStoredDocument(location)"
     @review-conflicts="reviewConflicts"
   />

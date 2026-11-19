@@ -29,10 +29,6 @@ jobs:
         with:
           packages: 'true'
 
-      # The demo document the landing's stages open draws its shader stills in headless Chromium.
-      - name: Install Chromium for the demo document
-        uses: ./.github/actions/setup/playwright
-
       - run: bun run --filter @open-pencil/docs build:site
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

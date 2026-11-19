@@ -1,9 +1,9 @@
 import { DEFAULT_SLOT_CONTENT } from '#fig/instance-overrides/types'
 
 import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 import { ownsSlotContent, slotPropertyId } from '@open-pencil/scene-graph/slots'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
 

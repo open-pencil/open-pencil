@@ -1,4 +1,5 @@
 import { icons as lucide } from '@iconify-json/lucide'
+import { getIconData } from '@iconify/utils'
 
 import { designJSXRenderer } from '@open-pencil/core/design-jsx'
 import { createIconifyProvider } from '@open-pencil/core/icons'
@@ -17,7 +18,8 @@ const client: IconifyClient = {
       height: lucide.height,
       icons: Object.fromEntries(
         iconNames.flatMap((name) => {
-          const icon = lucide.icons[name]
+          // Lucide keeps renamed icons as aliases, which the Iconify API resolves too.
+          const icon = getIconData(lucide, name)
           return icon ? [[name, icon]] : []
         })
       )

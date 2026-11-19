@@ -1,8 +1,11 @@
+import { compact } from 'es-toolkit'
+
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { laysOutBoxes } from './import/boxes'
 import { mergeCSSText } from './import/css-text'
 import { jsxToDesignDocumentCore, type JSXChild } from './import/jsx/core'
+import { linkedStylesheet, stylesheetImportRules } from './import/linked-stylesheets'
 import { designDocumentToSceneGraph, type ToSceneGraphOptions } from './import/scene-graph'
 import type { CompileTailwindCSSOptions } from './import/tailwind'
 import { createBrowserCSSRuntime, type BrowserCSSRuntimeOptions } from './runtime/browser'
@@ -13,6 +16,11 @@ export type { JSXChild, JSXElementProps, JSXStyleInput, JSXTag } from './import/
 
 export interface BrowserToDesignDocumentOptions extends BrowserCSSRuntimeOptions {
   cssText?: string
+  /**
+   * Applies the page's `<link rel="stylesheet">` sheets, resolved against `baseURL`, ahead of
+   * its own CSS, as a page fetched from its address needs.
+   */
+  importLinkedStylesheets?: boolean
   compute?: CSSComputeOptions
   signal?: AbortSignal
 }
@@ -37,10 +45,6 @@ export interface BrowserTailwindToDesignDocumentOptions
 export interface BrowserTailwindToSceneGraphOptions
   extends BrowserTailwindToDesignDocumentOptions, ToSceneGraphOptions {}
 
-function createRuntime(options: BrowserCSSRuntimeOptions) {
-  return createBrowserCSSRuntime({ sandbox: 'iframe', ...options })
-}
-
 async function compileBrowserTailwindCSS(
   candidates: string | Iterable<string>,
   options: CompileTailwindCSSOptions
@@ -57,10 +61,33 @@ function resolveBrowserDocument(documentOverride: Document | undefined): Documen
   return document
 }
 
-function extractEmbeddedCSSText(html: string, browserDocument: Document): string | undefined {
+function parseWithBrowser(html: string, browserDocument: Document): Document {
   const Parser = browserDocument.defaultView?.DOMParser
   if (!Parser) throw new TypeError('Browser DOM/CSS helpers require DOMParser')
-  const parsed = new Parser().parseFromString(html, 'text/html')
+  return new Parser().parseFromString(html, 'text/html')
+}
+
+/** The page's `<link rel="stylesheet">` sheets as `@import` rules, in document order. */
+/**
+ * The page's linked stylesheets as `@import` rules. Without a base address, only those linked by a
+ * full address: a relative one would resolve against the host instead of the page.
+ */
+function linkedStylesheetImports(
+  html: string,
+  browserDocument: Document,
+  baseURL: string | undefined
+): string | undefined {
+  const links = parseWithBrowser(html, browserDocument).querySelectorAll('link')
+  const sheets = compact(
+    Array.from(links, (link) => linkedStylesheet((name) => link.getAttribute(name)))
+  )
+  return stylesheetImportRules(
+    baseURL === undefined ? sheets.filter(({ href }) => URL.canParse(href)) : sheets
+  )
+}
+
+function extractEmbeddedCSSText(html: string, browserDocument: Document): string | undefined {
+  const parsed = parseWithBrowser(html, browserDocument)
   const styles = Array.from(parsed.querySelectorAll('style'))
     .map((style) => (style.textContent ? style.textContent.trim() : ''))
     .filter((css): css is string => !!css)
@@ -75,7 +102,7 @@ function extractEmbeddedCSSText(html: string, browserDocument: Document): string
 export function browserHTMLHasBoxes(html: string, options: { document?: Document } = {}): boolean {
   const browserDocument = resolveBrowserDocument(options.document)
   if (extractEmbeddedCSSText(html, browserDocument)) return true
-  return laysOutBoxes(createRuntime({ document: browserDocument }).parseHTML(html))
+  return laysOutBoxes(createBrowserCSSRuntime({ document: browserDocument }).parseHTML(html))
 }
 
 export async function browserHTMLToDesignDocument(
@@ -84,9 +111,16 @@ export async function browserHTMLToDesignDocument(
 ): Promise<DesignDocument> {
   options.signal?.throwIfAborted()
   const browserDocument = resolveBrowserDocument(options.document)
-  const runtime = createRuntime({ ...options, document: browserDocument })
+  const runtime = createBrowserCSSRuntime({ ...options, document: browserDocument })
   const document = runtime.parseHTML(html)
-  const cssText = mergeCSSText(extractEmbeddedCSSText(html, browserDocument), options.cssText)
+  // `@import` rules count only before every other rule, so the linked sheets come first.
+  const cssText = mergeCSSText(
+    options.importLinkedStylesheets
+      ? linkedStylesheetImports(html, browserDocument, options.baseURL)
+      : undefined,
+    extractEmbeddedCSSText(html, browserDocument),
+    options.cssText
+  )
   return runtime.computeStyles(document, cssText, options.compute)
 }
 
@@ -127,7 +161,7 @@ export async function browserJSXToDesignDocument(
   options: BrowserToDesignDocumentOptions = {}
 ): Promise<DesignDocument> {
   const document = jsxToDesignDocumentCore(input)
-  const runtime = createRuntime(options)
+  const runtime = createBrowserCSSRuntime(options)
   return runtime.computeStyles(document, options.cssText, options.compute)
 }
 

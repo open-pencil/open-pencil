@@ -104,6 +104,13 @@ require_acceptance = true
 abuse_email = "abuse@openpencil.dev"
 minimum_age = 16
 
-# Server errors go to the OpenPencil PostHog project, on its EU Cloud.
+# The community gallery: everything saved in this workspace is public. The Publish gallery examples
+# workflow saves the tour there.
+[community]
+workspace = "93da8f62-e949-420f-a962-483f649306cf"
+
+# Server errors go to the OpenPencil PostHog project, on its EU Cloud, with the account and record
+# IDs involved, as the Cloud privacy policy says.
 [error_tracking]
 provider = "posthog"
+include_ids = true

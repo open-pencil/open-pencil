@@ -1,24 +1,12 @@
 import type { Element } from '@xmldom/xmldom'
 
+import { parseSVGViewBoxValue } from '@open-pencil/scene-graph/parse-path'
 import type { Rect, Size } from '@open-pencil/scene-graph/primitives'
 
 import { parseSVGDocument } from './document'
 
 function rootElement(svg: string): Element | null {
   return parseSVGDocument(svg)?.documentElement ?? null
-}
-
-/** A `viewBox` value as a rect, or null when it is malformed or does not establish a viewport. */
-export function parseSVGViewBoxValue(value: string | null | undefined): Rect | null {
-  if (!value) return null
-  const values = value
-    .trim()
-    .split(/[\s,]+/)
-    .map(Number)
-  if (values.length !== 4 || values.some((entry) => !Number.isFinite(entry))) return null
-  const [x = 0, y = 0, width = 0, height = 0] = values
-  if (width <= 0 || height <= 0) return null
-  return { x, y, width, height }
 }
 
 export function parseSVGViewBox(svg: string): Rect | null {

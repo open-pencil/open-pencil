@@ -1,3 +1,5 @@
+import { DEADLINE_MS } from '@open-pencil/std/timing'
+
 import { IS_BROWSER } from '#core/constants'
 import { servesRuntimeAsset, unservedRuntimeAssetMessage } from '#core/runtime-assets/served'
 
@@ -71,7 +73,8 @@ export class BundledFonts {
     if (IS_BROWSER) {
       const file = url.replace(/^\//, '')
       const located = this.locate(file)
-      const response = await fetch(located)
+      // A font is a real download, so it gets a transfer's time before it counts as failed.
+      const response = await fetch(located, { signal: AbortSignal.timeout(DEADLINE_MS.transfer) })
       // A missing file answers with an error or fallback page, which must not be read as a font.
       if (!servesRuntimeAsset(response)) {
         void response.body?.cancel()

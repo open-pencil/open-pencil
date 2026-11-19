@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { DocumentFontUses, fontManager, fontResolver } from '@open-pencil/core/text'
+import { errorMessage } from '@open-pencil/std/errors'
 import { useEditorEvent } from '@open-pencil/vue/editor/events'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -86,7 +87,7 @@ export function useDocumentFontStatus() {
       if (!preparation.signal.aborted) {
         preparation.fail({
           code: 'font-failed',
-          message: error instanceof Error ? error.message : String(error),
+          message: errorMessage(error),
           retryable: true
         })
       }

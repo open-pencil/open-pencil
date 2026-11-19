@@ -1,5 +1,9 @@
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
 import { clamp } from 'es-toolkit/math'
+import { invert, mapValues, pickBy } from 'es-toolkit/object'
+import { isEmptyObject } from 'es-toolkit/predicate'
 
+import type { PaintFilter } from '@open-pencil/kiwi/fig'
 import type { Effect as KiwiEffect, Paint, VariableAliasValue } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
@@ -11,6 +15,7 @@ import type {
   ProgressiveBlur,
   TextureEffectParams,
   BlendMode,
+  ImageFilters,
   ImageScaleMode,
   GradientTransform,
   StrokeCap,
@@ -19,7 +24,38 @@ import type {
 import { BLACK, UNSET_GLASS, UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
 import type { Color, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { hexToBytes } from './bytes'
+/**
+ * Figma's image adjustments by the archive's names. The schema has no `saturation`; `vibrance` is
+ * its one saturation adjustment. `detail`, `vignette` and `brightness` have no plugin API name, so
+ * a paint written from its fill leaves them out.
+ */
+const PAINT_FILTER_FIELDS = {
+  exposure: 'exposure',
+  contrast: 'contrast',
+  saturation: 'vibrance',
+  temperature: 'temperature',
+  tint: 'tint',
+  highlights: 'highlights',
+  shadows: 'shadows'
+} as const satisfies Record<keyof ImageFilters, keyof PaintFilter>
+
+const IMAGE_FILTER_FIELDS = invert(PAINT_FILTER_FIELDS)
+
+/** Figma keeps contrast at 0.3 of the plugin API's value, linear over -1 to 1; the rest as they are. */
+const PAINT_FILTER_CONTRAST = 0.3
+
+/** `adjustments` renamed by `names`, leaving out those at 0; undefined when every one is. */
+function renameAdjustments<To extends string, From extends string>(
+  names: Readonly<Record<To, From>>,
+  adjustments: Partial<Record<From, number>> | undefined
+): Partial<Record<To, number>> | undefined {
+  if (!adjustments) return undefined
+  const renamed = pickBy(
+    mapValues(names, (name) => adjustments[name]),
+    Boolean
+  )
+  return isEmptyObject(renamed) ? undefined : renamed
+}
 
 export function safeColor(color: Color | Omit<Color, 'a'>): Color {
   return { r: color.r, g: color.g, b: color.b, a: 'a' in color ? color.a : 1 }
@@ -41,6 +77,9 @@ function writeMediaPaintFields(paint: Paint, fill: Fill): void {
   if (fill.imageRotation) {
     paint.rotation = fill.imageRotation
   }
+  const paintFilter = renameAdjustments(IMAGE_FILTER_FIELDS, fill.filters)
+  if (paintFilter?.contrast) paintFilter.contrast *= PAINT_FILTER_CONTRAST
+  if (paintFilter) paint.paintFilter = paintFilter
 }
 
 export function fillToKiwiPaint(fill: Fill): Paint {
@@ -81,9 +120,7 @@ function convertColor(color?: Partial<Color>): Color {
 type MediaHash = string | Uint8Array | Record<string, number>
 
 function bytesHashToString(hash: Exclude<MediaHash, string>): string {
-  return Object.values(hash)
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('')
+  return bytesToHex(hash instanceof Uint8Array ? hash : Uint8Array.from(Object.values(hash)))
 }
 
 function mediaHash(source: { hash?: MediaHash } | undefined): string | undefined {
@@ -162,6 +199,9 @@ function applyImagePaintFields(fill: Fill, p: Paint): void {
   if (p.transform && fill.imageScaleMode === 'CROP')
     fill.imageTransform = convertGradientTransform(p.transform)
   if (p.rotation) fill.imageRotation = p.rotation
+  const filters = renameAdjustments(PAINT_FILTER_FIELDS, p.paintFilter)
+  if (filters?.contrast) filters.contrast /= PAINT_FILTER_CONTRAST
+  if (filters) fill.filters = filters
 }
 
 function applySchemaPaintFields(fill: Fill, p: Paint): void {

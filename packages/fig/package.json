@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/fig",
-  "version": "0.17.0-beta.5",
+  "version": "0.17.0-beta.6",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -59,6 +59,8 @@
     "typecheck": "bunx tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
+    "@noble/hashes": "^2.4.0",
+    "@open-pencil/std": "workspace:*",
     "es-toolkit": "^1.52.0",
     "fflate": "^0.8.3",
     "js-base64": "^3.9.3",

@@ -16,8 +16,9 @@ import {
   parseCounterAxisAlign,
   parsePrimaryAxisAlign
 } from '@open-pencil/scene-graph/layout'
-import type { Color, JSONObject, Size } from '@open-pencil/scene-graph/primitives'
+import type { Color, Size } from '@open-pencil/scene-graph/primitives'
 import { withShaderPaints, type ShaderPaint } from '@open-pencil/scene-graph/shaders'
+import type { JSONObject } from '@open-pencil/std/json'
 
 import { DESIGN_JSX_STYLE_KEYS, designJSXProp } from '../definitions'
 import {

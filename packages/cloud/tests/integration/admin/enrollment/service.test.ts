@@ -4,10 +4,11 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import {
   createEnrollmentService,
   createTransactionalEmailService,
+  decryptTransactionalEmailPayload,
   PostgresRateLimitStore
 } from '#cloud/server'
 
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 
 describe('Cloud enrollment integration', () => {
   test('deduplicates requests and applies audited reviews', async () => {
@@ -133,7 +134,12 @@ describe('Cloud enrollment integration', () => {
       const selfHosted = createEnrollmentService(runtime.database, options)
       const official = createEnrollmentService(runtime.database, { ...options, invitations: true })
       await official.request({ email: 'ada@example.com', name: 'Ada' })
-      await official.request({ email: 'grace@example.com', name: 'Grace' })
+      // Grace joined openpencil.dev's waitlist; an administrator recorded her here.
+      await official.request({ email: 'grace@example.com', source: 'waitlist' })
+      // Ada asked here already: the waitlist doesn't take her request, or the letter for asking.
+      expect(await official.request({ email: 'ada@example.com', source: 'waitlist' })).toBe(
+        'unchanged'
+      )
       await official.request({ email: 'linus@example.com', name: 'Linus' })
       const [declined] = (await official.list({ search: 'linus' })).enrollments
       if (!declined) throw new Error('Expected the request to decline')
@@ -162,15 +168,31 @@ describe('Cloud enrollment integration', () => {
       expect(await official.isApproved('ada@example.com')).toBe(true)
       expect(await official.isApproved('grace@example.com')).toBe(true)
       expect(await official.statusForEmail('linus@example.com')).toBe('rejected')
-      const kinds = await runtime.database
+      const letters = await runtime.database
         .selectFrom('transactionalEmail')
-        .select(['kind', 'recipientEmailNormalized'])
+        .select(['id', 'kind', 'recipientEmailNormalized', 'payloadEncrypted'])
         .where('kind', 'in', ['enrollment-invited', 'enrollment-approved'])
         .orderBy('recipientEmailNormalized')
         .execute()
-      expect(kinds).toEqual([
-        { kind: 'enrollment-invited', recipientEmailNormalized: 'ada@example.com' },
-        { kind: 'enrollment-invited', recipientEmailNormalized: 'grace@example.com' }
+      expect(letters.map((letter) => [letter.kind, letter.recipientEmailNormalized])).toEqual([
+        ['enrollment-invited', 'ada@example.com'],
+        ['enrollment-invited', 'grace@example.com']
+      ])
+      // Ada asked here and gets the letter that says so; Grace's thanks her for the waitlist.
+      const payloads = await Promise.all(
+        letters.map(async (letter) => {
+          const content = await decryptTransactionalEmailPayload(
+            'enrollment-test-secret-at-least-32-characters',
+            letter.id,
+            'enrollment-invited',
+            letter.payloadEncrypted ?? ''
+          )
+          return content.payload
+        })
+      )
+      expect(payloads.map((payload) => 'waitlist' in payload && payload.waitlist)).toEqual([
+        false,
+        true
       ])
     } finally {
       await runtime.close()

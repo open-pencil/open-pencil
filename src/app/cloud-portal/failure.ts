@@ -46,6 +46,7 @@ export function usePortalFailureMessages() {
       last_admin_required: value.errorLastAdmin,
       account_sole_admin: value.errorAccountSoleAdmin,
       self_admin_action_forbidden: value.errorSelfAction,
+      account_approved: value.errorAccountApproved,
       mfa_required: value.errorTwoStepRequired,
       two_step_unconfirmed: value.errorTwoStepUnconfirmed,
       invalid_enrollment_transition: value.errorAlreadyDecided,

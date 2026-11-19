@@ -6,11 +6,11 @@ import {
   type ImageScaleMode,
   type SceneNode
 } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import { parseCSSAlignSelf, parseCSSNumber, parseCSSShadows } from '@open-pencil/scene-graph/css'
 import { blurRadiusForSigma } from '@open-pencil/scene-graph/geometry'
-import { computeImageHash, imageHeader, parseDataURL } from '@open-pencil/scene-graph/images'
+import { computeImageHash } from '@open-pencil/scene-graph/images'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import {
@@ -44,14 +44,17 @@ import {
   type ParentFlow
 } from './flow'
 import { alignGridItems, isGrid } from './grid'
+import { isSVGArtwork, imagePicture, maskSVG } from './pictures'
 import {
   applyCapturedLines,
   capturedBox,
+  capturedLinesBox,
   capturedTextBox,
   placeTopLevelLayers,
   type CapturedBox,
   type CapturedBoxes
 } from './placement'
+import { applySVGSize, isInlineSVG } from './svg'
 import {
   applyCollapsedBorders,
   applyTableLayout,
@@ -122,15 +125,6 @@ function imageScaleModeFromObjectFit(value: string | undefined): ImageScaleMode 
   return null
 }
 
-/**
- * The raster image a data URL carries. Anything else, such as an SVG or Base64 that does not
- * decode, stays the element's source URL rather than an image fill nothing could draw.
- */
-function imageFromDataURL(value: string | undefined): Uint8Array | null {
-  const bytes = value ? parseDataURL(value)?.bytes : undefined
-  return bytes && imageHeader(bytes) ? bytes : null
-}
-
 function applyImageFill(
   graph: SceneGraph,
   node: SceneNode,
@@ -139,8 +133,9 @@ function applyImageFill(
 ): void {
   if (element.tagName.toLowerCase() !== 'img') return
   const source = element.attrs.src
-  const bytes = imageFromDataURL(source)
-  if (!bytes) {
+  const picture = imagePicture(element)
+  // A picture nothing could draw keeps its address, which exporting the layer writes back.
+  if (picture?.kind !== 'raster') {
     if (source) {
       node.pluginData.push({
         pluginId: DOM_CSS_PLUGIN_ID,
@@ -151,6 +146,7 @@ function applyImageFill(
     return
   }
 
+  const { bytes } = picture
   const imageHash = computeImageHash(bytes)
   graph.images.set(imageHash, bytes)
   node.fills = [
@@ -202,7 +198,7 @@ function applyElementStyle(
   const opacity = parseCSSNumber(pickStyle(style, 'opacity'))
   if (opacity !== null) node.opacity = opacity
 
-  applyCornerRadii(node, style)
+  applyCornerRadii(node, style, element.layout?.box ?? node)
 
   const overflow = pickStyle(style, 'overflow')
   if (overflow === 'hidden' || overflow === 'clip') node.clipsContent = true
@@ -321,6 +317,11 @@ function hasContent(element: DesignElement): boolean {
 interface Recorded {
   boxes: CapturedBoxes
   transforms: CSSTransforms
+  /**
+   * Inline SVG, and images showing SVG, by the frame built for each, for the caller to draw once
+   * laid out.
+   */
+  svgs: Map<string, DesignElement>
   /** Cells of tables with collapsed borders, until their table draws each shared border once. */
   collapsedCells: SceneNode[]
 }
@@ -360,6 +361,8 @@ function createElementNode(
   const style = mergedStyle(element)
   const display = elementDisplay(element, style)
   if (display === 'none' || isTableColumn(display)) return null
+  if (isInlineSVG(element) || isSVGArtwork(element))
+    return createSVGFrame(graph, parentId, element, parentFlow, recorded)
   if (
     isTextLikeElement(element) &&
     !hasBoxStyle(element, style, parentFlow) &&
@@ -423,10 +426,53 @@ function layOutTablesAndGrids(
 }
 
 /**
+ * Inline SVG as a frame with the element's box and style and none of its shapes, recorded for
+ * the caller to draw into once layout has sized it.
+ */
+function createSVGFrame(
+  graph: SceneGraph,
+  parentId: string,
+  element: DesignElement,
+  parentFlow: ParentFlow,
+  recorded: Recorded
+): SceneNode {
+  const style = mergedStyle(element)
+  const node = graph.createNode('FRAME', parentId, {
+    name: element.attrs.id || element.attrs.class || element.tagName,
+    clipsContent: false
+  })
+  applyElementStyle(graph, node, element, style)
+  // A mask's background shows through its shapes only, which the artwork paints.
+  if (maskSVG(element)) node.fills = []
+  applySVGSize(node, element, style)
+  recordElement(graph, recorded, node, element, style)
+  recorded.svgs.set(node.id, element)
+  applyFlowSizing(graph, node, style, elementDisplay(element, style), parentFlow)
+  return node
+}
+
+/**
  * A box's children as layers: blocks of text in its own flow as one text, since a flex box's
  * children are items, or each child as a layer of its own. Returns the layers of its child
  * elements, with their styles.
  */
+/** How many runs of text that show something an element holds among its children. */
+function textRuns(element: DesignElement): number {
+  return element.children.filter((child) => child.type === 'text' && child.text.trim() !== '')
+    .length
+}
+
+/**
+ * The box an element's own text was laid out in. Text alone in a box takes the box its lines are
+ * in. Text among the items of a flex container or a grid is an item of its own, its lines the
+ * container's only ones, as the items around it lay out as blocks; text among other elements has
+ * no box of its own.
+ */
+function ownTextBox(element: DesignElement, holdsItems: boolean): CapturedBox | undefined {
+  if (element.children.every((child) => child.type === 'text')) return capturedTextBox(element)
+  return holdsItems && textRuns(element) === 1 ? capturedLinesBox(element) : undefined
+}
+
 function createChildLayers(
   graph: SceneGraph,
   node: SceneNode,
@@ -445,10 +491,7 @@ function createChildLayers(
     if (flow === 'block') alignBlockLines(graph, node, style, true)
     return []
   }
-  // Text alone in a box takes the box its lines are in; text among elements has none of its own.
-  const textBox = element.children.every((child) => child.type === 'text')
-    ? capturedTextBox(element)
-    : undefined
+  const textBox = ownTextBox(element, flow === 'flex' || grid)
   // Whether everything the element holds sits in its lines, which its `text-align` aligns.
   let inlineContent = true
   const blocks: FlowBlock[] = []
@@ -456,7 +499,8 @@ function createChildLayers(
   for (const child of element.children) {
     const inherited = inheritedTextStyle(style)
     const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
-    if (layer?.type === 'TEXT') record(graph, recorded, layer, textBox)
+    // Text the element holds directly sits in its lines; an element that became text has its own box.
+    if (layer?.type === 'TEXT' && child.type === 'text') record(graph, recorded, layer, textBox)
     if (child.type !== 'element' || !layer) continue
     const childStyle = mergedStyle(child)
     parts.push({ layer, element: child, style: childStyle })
@@ -505,6 +549,11 @@ export interface DesignLayers {
   boxes: CapturedBoxes
   /** The elements' transforms, for `applyCSSTransforms` once the layers are laid out. */
   transforms: CSSTransforms
+  /**
+   * Inline SVG elements by the frame built for each. The frame takes the element's box and
+   * style but none of its shapes, which the caller draws into it at the size layout gives it.
+   */
+  svgs: Map<string, DesignElement>
 }
 
 /**
@@ -518,7 +567,12 @@ export function designDocumentToLayers(
 ): DesignLayers {
   const graph = new SceneGraph()
   const page = graph.getPages().find((node) => node.type === 'CANVAS') ?? graph.addPage('DesignDOM')
-  const recorded: Recorded = { boxes: new Map(), transforms: new Map(), collapsedCells: [] }
+  const recorded: Recorded = {
+    boxes: new Map(),
+    transforms: new Map(),
+    svgs: new Map(),
+    collapsedCells: []
+  }
 
   page.name = options.pageName ?? 'DesignDOM'
 
@@ -538,6 +592,7 @@ export function designDocumentToSceneGraph(
   return designDocumentToLayers(document, options).graph
 }
 
+export { elementSVG, imagePicture, type ElementSVG, type ImagePicture } from './pictures'
 export { placeLayersFromLayout, type CapturedBox, type CapturedBoxes } from './placement'
 export { applyCSSTransforms, type CSSTransform, type CSSTransforms } from './transform'
 

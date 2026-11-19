@@ -2,6 +2,7 @@ import { defineCommand } from 'citty'
 
 import { flushPendingLayout } from '@open-pencil/core/figma-api'
 import { compileScript } from '@open-pencil/core/tools'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { isAppMode, requireFile, rpc } from '#cli/app/client'
 import { appPageTargetRPCArgs, pageOptions } from '#cli/app/target'
@@ -70,7 +71,7 @@ export default defineCommand({
     try {
       result = await editDocument(graph, () => compileScript(code)(figma))
     } catch (err) {
-      printError(err instanceof Error ? err.message : String(err))
+      printError(errorMessage(err))
       process.exit(1)
     }
 

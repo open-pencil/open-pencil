@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from 'bun:test'
 
+import { createDeferred } from '@open-pencil/std/async'
 import { useI18n } from '@open-pencil/vue/i18n'
 
-import { createDeferred } from '@/app/runtime/deferred'
 import {
   appPreferences,
   DEFAULT_APP_PREFERENCES,

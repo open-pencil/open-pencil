@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/html-engine",
-  "version": "0.17.0-beta.5",
+  "version": "0.17.0-beta.6",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@open-pencil/dom-css": "workspace:*",
+    "@open-pencil/std": "workspace:*",
     "valibot": "^1.5.0"
   },
   "devDependencies": {

@@ -1,6 +1,8 @@
 import type { Context, Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { MAX_FILE_TRANSFER_BYTES, readInsideRoot, writeInsideRoot } from '#mcp/tool/output'
 
 /**
@@ -14,7 +16,7 @@ function filePath(c: Context): string {
 }
 
 function failure(c: Context, e: unknown) {
-  return c.json({ error: e instanceof Error ? e.message : String(e) }, 400)
+  return c.json({ error: errorMessage(e) }, 400)
 }
 
 /**

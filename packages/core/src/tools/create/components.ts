@@ -1,5 +1,7 @@
 import * as v from 'valibot'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import type { FigmaComponentNode, FigmaNodeProxy } from '#core/figma-api'
 import { OpenPencilAPI } from '#core/openpencil-api'
 import { toolNumber, defineTool, nodeSummary, requireNodes } from '#core/tools/schema'
@@ -50,7 +52,7 @@ export const combineAsVariants = defineTool({
       const componentSet = figma.combineAsVariants(nodes, parent)
       return nodeSummary(componentSet)
     } catch (error) {
-      return { error: error instanceof Error ? error.message : String(error) }
+      return { error: errorMessage(error) }
     }
   }
 })
@@ -85,7 +87,7 @@ export const exposeInstanceSwap = defineTool({
         new OpenPencilAPI(figma).exposeInstanceSwap(slots, candidates, property_name)
       )
     } catch (error) {
-      return { error: error instanceof Error ? error.message : String(error) }
+      return { error: errorMessage(error) }
     }
   }
 })

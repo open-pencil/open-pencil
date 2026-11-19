@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
+import { cloudChecksum } from '@open-pencil/cloud/client'
 import type { DocumentImageLink } from '@open-pencil/cloud/contract'
 import { fetchStub } from '@open-pencil/test-support/fetch'
 
 import { cloudRoomImages } from '@/app/cloud/rooms/images'
-import { cloudChecksum } from '@/app/integrations/storage/cloud/download'
 const DOCUMENT = 'document-1'
 const photo = new Uint8Array([137, 80, 78, 71, 1, 2, 3])
 const logo = new Uint8Array([71, 73, 70, 56, 4, 5])

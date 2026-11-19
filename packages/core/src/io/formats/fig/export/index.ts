@@ -8,17 +8,18 @@ import {
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { readComments } from '@open-pencil/scene-graph/comments'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
 import {
   hasPendingReaderPages,
   populateFigInternalPages,
-  populateReaderExport
+  populateReaderExport,
+  readerCheckpoint
 } from '#core/kiwi/fig/session/document-state'
 import { originalFigArchive } from '#core/kiwi/fig/session/original-archive'
 
@@ -117,8 +118,11 @@ export async function exportFigFileStream(
   const reuseArchive = await archiveImagesNamedForFigma(sourceGraph)
   // The document's comments may be in the opened archive, and this write leaves them out.
   const dropsComments = !!options.withoutComments && readComments(sourceGraph).length > 0
+  // A read that left out an instance whose component would contain itself changed the document,
+  // and the archive still holds that instance.
+  const repairedLoops = (readerCheckpoint(sourceGraph)?.droppedRecordIds?.length ?? 0) > 0
   const originalArchive =
-    reuseArchive && !dropsComments ? await originalFigArchive(sourceGraph) : null
+    reuseArchive && !dropsComments && !repairedLoops ? await originalFigArchive(sourceGraph) : null
   if (originalArchive) {
     const reused = options.documentName
       ? renameFigArchive(originalArchive, options.documentName)

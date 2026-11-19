@@ -2,6 +2,151 @@
 
 ## Unreleased
 
+## 0.17.0-beta.6 — 2026-11-19
+
+This is a pre-release that lists changes since 0.17.0-beta.5: npm packages are published under the `next` tag, and installed apps on the stable release do not update to it. Linux package managers see `0.17.0-beta.6` as newer than `0.17.0`, so `.deb` and `.rpm` users should remove the beta before installing the final 0.17.0.
+
+### Breaking changes
+
+- Self-hosted Cloud compares `minimum_editor_version` in SemVer order: a pre-release comes before its release, so `"0.18.0"` turns away `0.18.0-beta.2`, and a minimum may name a pre-release to admit it (#2153).
+- `@open-pencil/cloud/client` no longer exports `createCloudBillingClient`, `CloudBillingClient`, `CloudBillingClientOptions`, or `CloudBillingError`: Cloud's plan page now signs the person in to the billing service's own pages instead of calling its API, and the contract's billing schemas remain in `@open-pencil/cloud/contract` (#2188).
+- The Vue SDK's panel messages replace `linearGradient` and `radialGradient` with `gradient`, the label of the fill picker's gradient tab; a gradient's own type names come from the gradient editor's subtypes (#2201).
+- `serializeNode` is exported from `@open-pencil/dom-css/export` only, no longer from the package root (#2164).
+- `@open-pencil/html-engine` no longer exports `HTMLEngineResource` and `HTMLEngineFetch`; use `DesignResource` and `DesignResourceFetch` from `@open-pencil/dom-css`, which the browser runtime's new `fetch` option takes too (#2210).
+- `@open-pencil/scene-graph` no longer exports `random` or `arrays`, nor the `JSONValue`, `JSONObject`, `JSONArray`, and `JSONPrimitive` types from `primitives`. Import them from `@open-pencil/std/random`, `@open-pencil/std/arrays`, and `@open-pencil/std/json` (#2217).
+- `createBrowserCSSRuntime()` no longer takes `sandbox`: it always lays markup out in a frame that runs no script, and the shadow-root mode, which ran markup in the host page, is gone (GHSA-x4rx-8c38-9hw8).
+
+### Added
+
+- `get_jsx` returns JSX too long to show whole as an outline, with deep layers written with `keepChildren` and the id to read them by, instead of cutting it mid-text; rendering the outline with `replace_id` keeps the children it left out (#2118).
+- HTML import keeps blocks centered by `margin: auto` or `<center>` in auto layout, and aligns inline-blocks by `text-align` (#2126).
+- **Settings → Prompts** lets you write your own instructions for the Design agent, added after OpenPencil's or in their place, and your own prompts for design reviews, chat titles, and compaction summaries as Knap templates, with completion of variables, filters, and tags, a list of what each variable holds that writes one in with a click, errors underlined, a preview, and Reset to default (#2132).
+- Figma's noise and texture effects open from `.fig` files, render on the canvas and in exports, export to SVG and Design JSX, work through the plugin API, and can be added and edited in the effects panel. Noise matches Figma's grain statistics rather than its exact pattern (#2137).
+- HTML import keeps tables with collapsed borders, captions, or cells spanning rows in auto layout, drawing each collapsed border once, and aligns the items of one-column grids as the page does (#2145).
+- Comments on Cloud documents are kept by the server under each person's account: people who can view a document read them, and those signed in to the server also write them, so a guest following a share link only reads; deleted comments are gone for good, and files saved or downloaded from Cloud still carry them. Typing `@` mentions people who can open the document and emails them, threads with new replies show as unread, and the account's Notifications page chooses which comments arrive by email (#2146).
+- Coding agent profiles choose the agent's own thinking level for their model, such as Claude Code's Max or Codex's Ultra, and the chat composer changes it for the next message (#2147).
+- The desktop app can follow nightly builds: Settings → Updates → Update channel switches between Stable and Nightly, and switching back to Stable installs the current stable release at the next check (#2154).
+- HTML import keeps CSS grids of several columns as grid layers, with the page's tracks, gaps, and item areas, instead of placing their items by hand (#2157).
+- Coding agent profiles choose the agent's own modes, such as Claude Code's Plan or Codex's Read-only and its Plan collaboration mode, and the chat composer changes them for the next message; when approving a plan moves the agent to another mode, the chat follows (#2160).
+- HTML import draws inline SVG as vector artwork in the page's colors, reaching icon sprites elsewhere on the page, keeps an icon named by `data-icon` as that icon, names other inline SVG after the Iconify icon it draws (Settings → Editor and `openpencil import --no-icon-names` turn this off), and keeps stacks spaced by their children's margins in auto layout (#2164).
+- Cloud: the official server's editor says Cloud is in beta and links the desktop beta (#2165).
+- Cloud: `[email] reply_to` names where replies to Cloud's emails go, and the admin command's `request` records an access request for review (#2167).
+- The Icon section sets how Material Symbols are drawn, by their optical size, weight, fill, and grade, and a placed Material Symbol starts at the optical size of its size (#2176).
+- The Icon section sets how SF Symbols are drawn in the macOS app, by weight, scale, rendering, and variable value, and SF Symbols add palette rendering, with secondary and tertiary colors, and multicolor rendering in Apple's own colors (#2176).
+- `insert_icon` and Design JSX `<Icon>` take `options` that set how Material Symbols and SF Symbols are drawn (#2176).
+- Where SF Symbols can't be drawn, in the browser, on Windows and Linux, and on macOS before 14, the icon picker and the Icon section say what they need, with a link to instructions (#2176).
+- Cloud documents send a system notification when someone mentions you in a comment, and, if turned on in Settings › Notifications, when someone replies in a thread you wrote in; clicking it opens the thread (#2178).
+- Cloud: the admin console shows each document's thumbnail with a larger preview on hover, its kind, when it last changed as a relative time, and who beyond its workspace can open it, and lets deployment administrators download a document, which Activity records (#2180).
+- Comments and version history show the exact date and time when you hover a relative time (#2180).
+- Cloud administrators see how each person signs in, filter People by password, Google, or Apple, and can remove a sign-in method other than a person's last, which emails the person.
+- A failed autosave stays shown with Retry save until the document saves, and sends a system notification while you are away; turn it off in Settings › Notifications (#2187).
+- AI on OpenPencil Cloud works as soon as you sign in on a fresh install with a plan that includes it: the app sets up the model the server recommends for each kind of work, with nothing to choose or paste. A model you already set up stays as it is (#2195).
+- Self-hosted Cloud error reports can name the signed-in account and the documents and workspaces involved, with `include_ids` in `[error_tracking]`; by default reports omit account and record IDs (#2196).
+- Cloud: a banner over the editor warns when your AI credits run low or run out. On servers that sell credits it links the workspace owner to buying more, and asks other members to go to the owner (#2197).
+- Crowded comment pins gather into one bubble with their count when zoomed out, and clicking it zooms in until they part, as in Figma.
+- Self-hosted Cloud can offer GitHub sign-in through a GitHub App configured under `[authentication.providers.github]`, with its client secret in `GITHUB_CLIENT_SECRET`; a GitHub account whose verified email matches an existing account links to it once that account has verified its email. Older editors cannot read a server that offers GitHub, so set `minimum_editor_version` to a release with GitHub sign-in when you turn it on (#2202).
+- Open Cloud files send a system notification while you are away when they were changed in two places and need you to choose a version, or became view only because their owner's storage is full; turn either off in Settings › Notifications (#2205).
+- HTML pages dropped on the canvas of an open document are placed there as editable layers, and **File → Place…** places images, SVG files, and HTML pages from a file picker; pasted and placed HTML names its icons as HTML import does (#2207).
+- **File → Open from URL…** opens a web page as editable layers with the stylesheets and pictures it links, and an image, SVG, or design file as File → Open does; the desktop app opens any address, the browser sites that allow it. A page that sends a browser elsewhere at once with `<meta http-equiv="refresh">` opens as the page a visitor sees, and `openpencil import` accepts a web address (#2210).
+- HTML opened or pasted in the app draws CSS mask icons, such as Iconify's and VitePress's, as vector layers in the element's color (#2210).
+- Imported HTML keeps content CSS generates with `::before` and `::after`, such as separators, list markers drawn as boxes, and the arrow after an external link, as layers named for them (#2210).
+- Generated content in HTML opened or pasted in the app shows the numbers CSS counters give it, such as numbered steps or `1.2` section labels (#2210).
+- Cloud: a billing plan can be priced by the seat. Billing reads how many people can edit across an account's workspaces from the internal API, and Cloud tells it when that changes (#2211).
+- `@open-pencil/std`, OpenPencil's own standard library beside es-toolkit, with no dependencies: deadlines, backoff, and lengths of time (`timing`), secure randomness (`random`), what was thrown (`errors`), objects to check before reading (`records`), deferreds and mutexes whose waiters stop when their signal aborts (`async`), array helpers safe for large inputs (`arrays`), and JSON types (`json`) (#2217, #2226).
+- Cloud: the AI services server answers `GET /health` without a token, for uptime checks (#2219).
+- Cloud administrators can delete an account whose request to join is waiting or was declined, from its menu in People; approved accounts and administrators are left to their owners (#2220).
+
+### Changed
+
+- The tour opens from the OpenPencil Cloud gallery instead of a copy built into the app, as the version published for your release, so it needs a connection (#2072).
+- `render` with `replace_id` updates the layer in place, so it and its descendants that match by type and name keep their ids, and the bindings and links to them (#2118).
+- The chat shows that an agent is working for the whole reply, and Claude Code's thinking appears as summaries instead of being left out (#2147).
+- `@open-pencil/cloud`'s route types take what each route's schema accepts rather than what it outputs, so a typed client may leave out an optional or defaulted field, and query strings are typed as the text they carry. The reference services server answers an `Authorization` header that is not a bearer token with 400 `invalid_request` instead of 401 (#2150).
+- Self-hosted Cloud: the `admin` command that approves and promotes the first deployment administrator needs only `DATABASE_URL` instead of the whole deployment configuration and its secrets, and stops on a database the server has not migrated yet (#2151).
+- Desktop and browser editors keep connecting to Cloud servers that offer sign-in methods they have no button for, or name a pre-release as their minimum editor version (#2153).
+- Design JSX `dashPattern` dashes every stroke without a dash of its own, as `strokeCap` and `strokeJoin` reach strokes without their own, instead of setting a layer pattern the canvas did not draw (#2186).
+- Cloud: the plan page shows your storage and monthly credits, and opens the server's billing pages to buy, change, or pay for a plan, so Cloud itself has no checkout of its own (#2188).
+- Guided AI setup gives each role the provider's recommended model, unless what you assigned still works, such as a stronger model for design reviews and a fast one for quick tasks, and providers whose main model reads no images review and read them with one that does. The model lists now include Claude Fable 5.2, GPT-6.2 Sol and Astra, GPT-6.1 Terra, and Gemini 4 Carbon and Argon (#2195).
+- The Pi agent in the OpenPencil companion now runs Pi 1.5, which connects to MCP servers itself (#2199).
+- Colour and fill pickers are laid out as Figma's: a square colour area, the eyedropper beside hue and alpha, and the format with all its values in one row. A gradient stop's colour opens in a picker of its own beside the fill picker, the Image tab shows its framing above a square preview, and the Shader tab shows the shader.
+- The desktop sign-in approval page shows the code from its link to compare with the app's, so approving takes one click instead of typing the code.
+
+### Fixed
+
+- The Comment tool pans with the middle mouse button, and its right-click selects the layer under the pointer and opens a short menu, as in Figma.
+- Letter-spaced text fits and aligns as in Figma: the spacing after the last letter no longer adds an ellipsis or an extra line break, left-aligned lines start at the box edge, and right-aligned and centred lines line up with the box (#1857).
+- The marquee selection rectangle keeps a one-pixel border at every zoom, instead of taking the border width the selection overlay left behind, which made it a thick band on a zoomed-out canvas.
+- Replacing a layer with design JSX keeps the original when the replacement fails to render instead of deleting it, and the replacement takes the original's place among its siblings instead of moving to the end (#1428, #2120).
+- HTML import borders tables by their `border` attribute, and keeps a border whose color is written with spaces, such as `rgb(0 0 0)` (#2126).
+- A Fill layer capped by a maximum width sits where its parent aligns its children, as in Figma, instead of at the start (#2126).
+- Text set in a font Windows lists under families of its own, such as Segoe UI Variable's optical sizes or Sitka's, loads that font in the browser, and choosing such a font in the browser saves the family and style Figma and the desktop app use; Segoe UI Variable no longer loads Segoe UI (#2131).
+- The desktop app lists each font family once, under the family its font names, and fonts installed or removed while the app runs show in the font picker and load without a restart (#2131).
+- Vectors with overlapping fill regions, common in imported icons, cast one drop shadow and stroke each edge once instead of once per region (#2133).
+- Deleting a layer inside a group, moving it to another page, or dragging it out in the layers panel fits the group to the layers left, removes a group left empty, and undo brings the group back as it was (#2140).
+- On Linux, the code panel's keys no longer go dead when a menu item uses the same shortcut, Undo and Redo from the menu now reach the code panel's own edits such as indenting and commenting, and `Tab` and `Shift+Tab` indent.
+- Undoing a duplicate, a layers panel drag, or a reorder inside an instance's slot takes one step instead of two (#2143).
+- A wrapping auto layout frame places its lines where it aligns its children, as in Figma, instead of at the start (#2145).
+- HTML import reads an `aspect-ratio` written beside `auto`, such as `auto 16 / 9`, as its ratio (#2145).
+- The chat field no longer flashes its placeholder each time a message is sent (#2147).
+- HTML, JSX, and Tailwind export lay letter-spaced text out as the canvas does: a line that fits stays on one line, right-aligned and centred lines line up with the box, and auto-width text takes no extra room for the spacing after its last letter (#2149).
+- Text that ends with a line break saves no baseline for the empty line after it, as Figma saves it, and Home and End work on that line (#2156).
+- HTML and Tailwind export write a letter spacing or line height bound to a variable as its token instead of its value (#2156).
+- Cloud: a wrong or missing two-step code says so instead of reporting a server error or asking to sign in again, and the admin console marks accounts still waiting for approval instead of listing them as members (#2159).
+- Stopping a coding agent's reply while it waits for permission closes the permission dialog instead of leaving it asking about a turn that is over (#2160).
+- Relative times count calendar days, so something from late the day before yesterday reads "2 days ago" instead of "yesterday" (#2162).
+- SVG import and design JSX fit a `<symbol>` drawn through `<use>` to its `viewBox` (#2164).
+- Links, comment mentions, and other accent-colored text meet WCAG AA contrast in both themes, including with a light custom accent (#2166).
+- Windows and Linux have Check for Updates… in the Help menu, which only the macOS application menu had.
+- `.pen` instances nested in another component take the theme of the screen they are placed in, including theme-bound clips and swapped icons (#2170).
+- Cloud console pages no longer skip a heading level for screen readers, the profile picture's zoom slider has a name screen readers read out, and green "Sent" and other success badges read at WCAG AA contrast in the light theme (#2180).
+- Cloud: signing out, or another account signing in on the same device, now clears the previous account's documents from Recent and removes its local copies that are already uploaded (#2182).
+- On macOS 14 and later, agents can keep editing through MCP while the desktop app is hidden or the screen is locked, instead of every call timing out (#979, #2184).
+- Cloud on Cloudflare Workers reports S3 errors by their code instead of `ReferenceError: DOMParser is not defined` (#2185).
+- A dashed stroke set in the properties panel keeps its dash pattern when a document is saved and reopened, and so does a stroke weight or dash set on a layer inside an instance (#2186).
+- An instance layer that overrides its stroke weight, alignment, cap, join, or dash keeps it when the component's stroke color changes or the instance is swapped, and still takes the component's later color changes (#2186).
+- Cancelling a change previewed on a layer inside an instance, such as scrubbing its opacity, no longer leaves that property overridden (#2186).
+- `.fig` files open when an instance leads back into its own component: a swap to the component around it expands once, and a component that would contain itself leaves that instance out, as Figma does (#2191).
+- The web editor learns whether OpenPencil Cloud is open to it, instead of failing on a blocked request each time it starts.
+- Escape closes a fill, stroke, or effect colour picker and keeps what was changed in it; during a drag it puts back only that drag and leaves the picker open. Each drag in a picker is its own undo step, and dragging an effect colour, an OkHCL value, or a shader colour no longer records a step per movement (#1437).
+- The fill picker's gradient tab is labelled Gradient instead of Linear and has its own icon instead of the blend mode one.
+- Switching a fill from Shader back to Solid or Gradient brings back the colour or gradient it had, instead of transparent black.
+- Switching paint types in the fill picker no longer moves the picker: it opens level with its swatch and moves only to stay in the window, as in Figma.
+- Leaving a shader for another paint type in the fill picker stops drawing the shader, and the Image tab then opens an empty image fill instead of the shader again.
+- The loading screen names what it is doing for every kind of document, in the interface language: an HTML import shows laying out the page and naming icons, and other documents no longer say "Decoding Figma document" (#2203).
+- `.pen` instances show the children their `ref` places in them, in place of the component's, and size to them (#2193).
+- Pictures an imported HTML page links appear instead of empty layers: PNG, JPEG, GIF, WebP, and AVIF as image fills and SVG served as `image/svg+xml` as vector layers. HTML opened or pasted in the app brings pictures by web address, and the CLI and pages opened from a URL bring relative ones too (#2210).
+- Imported HTML keeps attributes written without a value, such as `hidden` or the `data-v-…` attributes of scoped styles, so the rules that select them still apply (#2210).
+- An imported HTML page with a `<script>` between its sections lays the sections after it out where the page put them, instead of stacking them over the top of the page (#2210).
+- A list whose items a page lays out as `inline-block`, such as a row of footer links, imports as a row of layers without bullets (#2210).
+- Text in HTML opened or pasted in the app is set in the first family of its `font-family` list the editor has a font for, as a browser sets it, instead of being reported missing for a first family such as Helvetica Neue (#2210).
+- HTML imported in the dark-themed app is styled in the light color scheme, as the CLI styles it, instead of mixing a page's dark media rules with its light classes (#2210).
+- Text beside other items in a flex row or grid, such as a label next to an icon, wraps in the room they leave as a browser wraps it, instead of running past its container on one line (#2210).
+- Imported HTML draws a border only on the sides a page gives a width, in that side's color, so a reset such as `* { border: 0 solid }` no longer turns a transparent border into a visible line (#2210).
+- An SVG paint that refers to a `<pattern>` falls back to the color written after it, or paints nothing, instead of painting the shape black (#2210).
+- A corner radius given as a percentage, such as `border-radius: 50%` on a dot or an avatar, rounds the imported layer instead of being dropped (#2210).
+- HTML opened or pasted in the app is set in the fonts its page loads with `@font-face`, icon fonts among them, as the CLI already did (#2210).
+- An HTML page imported as a document keeps the background a browser paints behind it, its own or white, instead of the editor's grey (#2210).
+- Text fields in HTML opened or pasted in the app show what they hold, their value or else their placeholder in its own style, instead of importing empty (#2210).
+- A shader fill's swatch shows its new frame after a change to the shader.
+- A press while a list or menu is open, such as a picker's colour format list, only closes it; on the canvas or the layers, pages, and assets panels it no longer also clears the selection or closes the picker.
+- Requests to OpenPencil Cloud, the model catalog, and font downloads no longer wait forever on a server that doesn't answer (#2217).
+- The desktop app on older macOS no longer fails opening a design from a link, syncing with S3 storage, or reaching a Cloud server, where its WebKit lacked a browser feature the app relied on (#2217).
+- Cloud: the AI workspace list no longer fails when it lists a workspace the account has since left or that was deleted, and the server answers 404 for that workspace's entitlements instead of an error (#2225).
+- Opening the desktop sign-in page several times no longer turns away new sign-in codes for half an hour, and a page that cannot check its code offers to try again instead of calling the code expired.
+- A document whose page stops drawing before it is first shown stays open in its tab and reports the failure, instead of its tab closing with no message (#2070).
+- Home lists Cloud workspaces made or left elsewhere, on the server's pages or another device, when the window regains focus, every minute while shown, or from the workspace's refresh button, instead of after a restart.
+
+### Performance
+
+- Deleting, hiding, reordering, or outlining a layer, or moving it to another page, no longer lays out every auto layout frame on its page, including on undo and redo (#2128).
+
+### Security
+
+- Cloud: two-step sign-in now applies however someone signs in: an account with an authenticator app or a passkey that signs in with Google is asked for its code, a recovery code, or the passkey before it can be used, and an administrator asked to confirm again goes straight to the code instead of an error (#2161).
+- A coding agent the app starts, or any MCP client, gets a token that opens only MCP sessions, where the server's tool switches, file root, and "Share only the selection" apply, instead of the server's own token, which also opened `/rpc`, `/files`, and the app's socket; requests sent over the socket now keep to the selection too (GHSA-6r2v-cq7x-fvh6).
+- Opening, dropping, or pasting HTML as layers, and previewing HTML in the Code tab, no longer runs scripts the markup carries, such as an image's `onerror`: the browser lays it out in a frame that runs no script (GHSA-x4rx-8c38-9hw8).
+- On desktop, the app's window can no longer write to the folders it looks for coding agents and its own companions in, such as `%LOCALAPPDATA%\agy\bin` on Windows, so nothing it runs could have been put there from inside the window (GHSA-x4rx-8c38-9hw8).
+
 ## 0.17.0-beta.5 — 2026-11-15
 
 This is a pre-release that lists changes since 0.17.0-beta.4: npm packages are published under the `next` tag, and installed apps on the stable release do not update to it. Linux package managers see `0.17.0-beta.5` as newer than `0.17.0`, so `.deb` and `.rpm` users should remove the beta before installing the final 0.17.0.

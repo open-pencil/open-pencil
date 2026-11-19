@@ -10,13 +10,13 @@ import {
 } from '@open-pencil/core'
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { worldRectToScreen } from '@open-pencil/core/geometry'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import {
   readShaderPaints,
   shaderOfPaint,
   type ShaderPreset
 } from '@open-pencil/scene-graph/shaders'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { provideShaderFrames } from '#vue/canvas/surface/shader/frames'
 import { canDrawShaders } from '#vue/canvas/surface/shader/rasterizer'

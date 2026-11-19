@@ -11,7 +11,7 @@ import {
 } from '@open-pencil/vue/primitives/GradientEditor'
 import { inputValue } from '@open-pencil/vue/shared/dom-events'
 
-import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
+import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
 import PaintField from '@/components/inputs/PaintField.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -121,11 +121,12 @@ function listStopClass(active: boolean) {
             @update:opacity="s.actions.updateOpacity($event * 100)"
             @click.stop
           >
+            <!-- As in Figma, a stop's colour opens a picker of its own beside this one. -->
             <template #preview>
-              <button
-                class="size-4 shrink-0 cursor-pointer rounded border border-border p-0"
-                :style="{ background: s.css }"
-                @click.stop="s.actions.select"
+              <ColorPicker
+                :color="stop.color"
+                @open-change="$event && s.actions.select()"
+                @update="root.actions.updateActiveColor"
               />
             </template>
             <template #value>
@@ -147,12 +148,6 @@ function listStopClass(active: boolean) {
           </IconButton>
         </GradientEditorStop>
       </div>
-
-      <ColorPickerPanel
-        :color="root.activeColor"
-        eyedropper
-        @update="root.actions.updateActiveColor"
-      />
     </div>
   </GradientEditorRoot>
 </template>

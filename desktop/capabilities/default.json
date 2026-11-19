@@ -52,7 +52,13 @@
         { "path": "$LOCALDATA/Microsoft/WindowsApps" },
         { "path": "$LOCALDATA/Microsoft/WindowsApps/**" },
         { "path": "$HOME/scoop" },
-        { "path": "$HOME/scoop/**" }
+        { "path": "$HOME/scoop/**" },
+        { "path": "$LOCALDATA/agy" },
+        { "path": "$LOCALDATA/agy/**" },
+        { "path": "/opt/local" },
+        { "path": "/opt/local/**" },
+        { "path": "/home/linuxbrew" },
+        { "path": "/home/linuxbrew/**" }
       ]
     },
     {

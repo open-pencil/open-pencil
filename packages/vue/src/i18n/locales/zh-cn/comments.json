@@ -24,6 +24,7 @@
   "empty": "还没有评论。点击画布即可留下评论。",
   "noMatches": "没有匹配的评论。",
   "replyCount": "回复：{count}",
+  "clusterCount": "评论：{count}",
   "commentDeleted": "评论已删除",
   "hideComments": "隐藏评论",
   "mentionPeople": "要提及的人",

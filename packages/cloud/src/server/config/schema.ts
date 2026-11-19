@@ -114,6 +114,8 @@ const rawCloudServerConfigSchema = v.object({
   appleTeamId: optionalTextSchema,
   appleKeyId: optionalTextSchema,
   applePrivateKey: optionalTextSchema,
+  githubClientId: optionalTextSchema,
+  githubClientSecret: optionalTextSchema,
   appleAppBundleIdentifier: optionalTextSchema,
   s3Endpoint: httpURLSchema,
   s3Region: v.pipe(v.string(), v.trim(), v.minLength(1)),
@@ -192,7 +194,13 @@ const rawCloudServerConfigSchema = v.object({
    * The workspace whose documents anyone may open read-only, without signing in or a link: the
    * deployment's community gallery. Without it the server has none.
    */
-  community: v.optional(v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })),
+  community: v.optional(
+    v.object({
+      workspaceId: v.pipe(v.string(), v.uuid()),
+      /** The gallery document editors open as their tour. */
+      tourDocumentId: v.optional(v.pipe(v.string(), v.uuid()))
+    })
+  ),
   /** How a self-hosted server names itself on its public pages. */
   branding: v.optional(
     v.object({
@@ -206,7 +214,9 @@ const rawCloudServerConfigSchema = v.object({
     v.object({
       provider: v.literal('posthog'),
       host: httpURLSchema,
-      projectAPIKey: v.pipe(v.string(), v.trim(), v.minLength(1))
+      projectAPIKey: v.pipe(v.string(), v.trim(), v.minLength(1)),
+      /** Error reports name the account and records involved; off unless a deployment sets it. */
+      includeIds: v.optional(v.boolean(), false)
     })
   )
 })
@@ -267,6 +277,7 @@ function validateAuthenticationConfig(config: CloudServerConfig): void {
     'appleKeyId',
     'applePrivateKey'
   ])
+  requireTogether(config, 'GitHub', ['githubClientId', 'githubClientSecret'])
 }
 
 function validateEmailConfig(config: CloudServerConfig): void {

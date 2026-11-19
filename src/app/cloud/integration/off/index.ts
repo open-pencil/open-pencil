@@ -19,6 +19,11 @@ export const CLOUD_INCLUDED: boolean = false
 // Still the identifier Home and Save to compare locations with; no provider registers it.
 export { CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/sessions/token'
 
+/** The tour lives in OpenPencil Cloud's gallery, which a build without Cloud cannot reach. */
+export async function fetchOfficialTour(): Promise<Uint8Array | null> {
+  return null
+}
+
 /** Nothing opens from a Cloud link without Cloud. */
 export const openingCloudLink = computed(() => false)
 
@@ -37,6 +42,22 @@ export function cloudAIClient(): CloudServicesClient | null {
 
 export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
   return []
+}
+
+export async function firstCloudAIWorkspace(): Promise<CloudAIWorkspace | null> {
+  return null
+}
+
+export function cloudOwnsWorkspace(): boolean | null {
+  return null
+}
+
+export function renewCloudAIToken(): void {
+  // Without Cloud there is no token to drop.
+}
+
+export async function cloudMonthlyAllowance(): Promise<number | null> {
+  return null
 }
 
 export function startCloud(): () => void {

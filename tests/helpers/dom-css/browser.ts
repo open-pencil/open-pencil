@@ -97,22 +97,20 @@ export async function browserRuntimeComputeStyles(
   page: Page,
   document: DesignDocument,
   cssText: string,
-  sandbox: 'shadow-root' | 'iframe' = 'iframe',
   compute: CSSComputeOptions = {}
 ) {
   await ensureAppPage(page)
 
   return page.evaluate(
-    async ({ designDocument, css, modulePath, sandboxMode, computeOptions }) => {
+    async ({ designDocument, css, modulePath, computeOptions }) => {
       const { createBrowserCSSRuntime } = await import(modulePath)
-      const runtime = createBrowserCSSRuntime({ document: window.document, sandbox: sandboxMode })
+      const runtime = createBrowserCSSRuntime({ document: window.document })
       return runtime.computeStyles(designDocument, css, computeOptions)
     },
     {
       designDocument: document,
       css: cssText,
       modulePath: BROWSER_RUNTIME_MODULE,
-      sandboxMode: sandbox,
       computeOptions: compute
     }
   )
@@ -209,22 +207,33 @@ export async function computedStyleProperties(
 
 const CORE_HTML_LAYERS_MODULE = '/@id/@open-pencil/core/io/formats/html/layers'
 
-/**
- * Imports HTML as the app does: styled and laid out by the browser, then built into layers by
- * Core. Returns each element with an id, its captured box, and the box of the layer named for it.
- */
-export interface ImportedLayer {
-  id: string
-  captured: Rect
-  layer: Rect
-  layoutMode: SceneNode['layoutMode']
+/** A layer of imported HTML, as the probes below report it. */
+export interface ImportedLayerSummary {
+  name: string
+  type: SceneNode['type']
+  text: string
+  width: number
+  height: number
+  /** How many fills and strokes it shows. */
+  paints: number
 }
 
-export async function browserImportedLayers(
+interface BrowserImport {
+  /** The box the browser laid out for each element with an id. */
+  captured: Record<string, Rect>
+  /** Every layer in tree order, with its position on the page. */
+  layers: (ImportedLayerSummary & { x: number; y: number; layoutMode: SceneNode['layoutMode'] })[]
+}
+
+/**
+ * Imports HTML as the app does: styled and laid out by the browser, then built into layers by
+ * Core.
+ */
+async function importInBrowser(
   page: Page,
   html: string,
   viewport: { width: number; height: number }
-): Promise<ImportedLayer[]> {
+): Promise<BrowserImport> {
   await ensureAppPage(page)
   return page.evaluate(
     async ({ source, size, domModule, layersModule }) => {
@@ -234,23 +243,30 @@ export async function browserImportedLayers(
         compute: { layout: true, viewport: size }
       })
       const graph: SceneGraph = await sceneGraphFromStyledHTML(styled)
-      const captured = new Map<string, Rect>()
+      const captured: Record<string, Rect> = {}
       const walk = (nodes: DesignNode[]) => {
         for (const node of nodes) {
           if (node.type !== 'element') continue
-          if (node.attrs.id && node.layout) captured.set(node.attrs.id, node.layout.box)
+          if (node.attrs.id && node.layout) captured[node.attrs.id] = node.layout.box
           walk(node.children)
         }
       }
       walk(styled.children)
-      const pageId = graph.getPages()[0].id
-      return graph.flattenTree(pageId).flatMap(({ node }) => {
-        const box = captured.get(node.name)
-        if (!box) return []
+      const layers = graph.flattenTree(graph.getPages()[0].id).map(({ node }) => {
         const position = graph.getAbsolutePosition(node.id)
-        const layer = { x: position.x, y: position.y, width: node.width, height: node.height }
-        return [{ id: node.name, captured: box, layer, layoutMode: node.layoutMode }]
+        return {
+          name: node.name,
+          type: node.type,
+          text: node.text,
+          x: position.x,
+          y: position.y,
+          width: node.width,
+          height: node.height,
+          paints: [...node.fills, ...node.strokes].filter((paint) => paint.visible).length,
+          layoutMode: node.layoutMode
+        }
       })
+      return { captured, layers }
     },
     {
       source: html,
@@ -259,4 +275,46 @@ export async function browserImportedLayers(
       layersModule: CORE_HTML_LAYERS_MODULE
     }
   )
+}
+
+/** An element with an id: its captured box, and the box of the layer named for it. */
+export interface ImportedLayer {
+  id: string
+  captured: Rect
+  layer: Rect
+  layoutMode: SceneNode['layoutMode']
+}
+
+/** Imports HTML as the app does, and pairs each element with an id with the layer named for it. */
+export async function browserImportedLayers(
+  page: Page,
+  html: string,
+  viewport: { width: number; height: number }
+): Promise<ImportedLayer[]> {
+  const { captured, layers } = await importInBrowser(page, html, viewport)
+  return layers.flatMap(({ name, x, y, width, height, layoutMode }) =>
+    name in captured
+      ? [{ id: name, captured: captured[name], layer: { x, y, width, height }, layoutMode }]
+      : []
+  )
+}
+
+/**
+ * Imports HTML as the app does and lists every layer, in tree order: its name, type, text, and
+ * size. For content no id names, such as generated `::before` and `::after` boxes.
+ */
+export async function browserImportedLayerSummaries(
+  page: Page,
+  html: string,
+  viewport: { width: number; height: number }
+): Promise<ImportedLayerSummary[]> {
+  const { layers } = await importInBrowser(page, html, viewport)
+  return layers.map(({ name, type, text, width, height, paints }) => ({
+    name,
+    type,
+    text,
+    width,
+    height,
+    paints
+  }))
 }

@@ -331,6 +331,16 @@ export interface MFAAssuranceTable {
   verifiedAt: TimestampColumn
 }
 
+/** Better Auth's keyed values, which also hold an administrator's sign-in blocks. */
+export interface VerificationTable {
+  id: string
+  identifier: string
+  value: string
+  expiresAt: TimestampColumn
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
+}
+
 export interface SignInTable {
   id: string
   userId: string
@@ -462,6 +472,8 @@ export interface EnrollmentTable {
   reviewNote: string | null
   requestRevision: Generated<number>
   approvedUserId: string | null
+  /** `waitlist` for someone an administrator recorded from openpencil.dev's waitlist. */
+  source: ColumnType<'waitlist' | null, 'waitlist' | null | undefined, 'waitlist' | null>
 }
 
 export interface APIRateLimitTable {
@@ -502,6 +514,7 @@ export interface CloudDatabase {
   passkey: PasskeyTable
   mfaAssurance: MFAAssuranceTable
   signIn: SignInTable
+  verification: VerificationTable
   userPicture: UserPictureTable
   user: AuthUserTable
   apikey: AccessTokenTable

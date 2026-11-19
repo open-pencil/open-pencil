@@ -1,7 +1,9 @@
 import type { EmailLocale, TwoStepChange } from '#cloud/email'
+import type { CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js'
+import type { Transaction } from 'kysely'
 
 export type AuthenticationEmailService = {
   sendVerification(input: {
@@ -42,12 +44,17 @@ export type AuthenticationEmailService = {
     system: string | null
     desktop: boolean
   }): Promise<void>
-  sendTwoStepChanged(input: {
-    email: string
-    name: string
-    userId: string
-    change: TwoStepChange
-  }): Promise<void>
+  sendTwoStepChanged(
+    input: {
+      email: string
+      name: string
+      userId: string
+      change: TwoStepChange
+      /** For a removed sign-in method, which one. */
+      method?: string
+    },
+    transaction?: Transaction<CloudDatabase>
+  ): Promise<void>
 }
 
 function tokenHash(value: string): string {
@@ -112,17 +119,22 @@ export function createAuthenticationEmailService(
         }
       })
     },
-    async sendTwoStepChanged(input) {
-      await email.enqueue({
-        idempotencyKey: `two-step-changed/${input.userId}/${crypto.randomUUID()}`,
-        kind: 'two-step-changed',
-        recipientEmail: input.email,
-        payload: {
-          name: input.name,
-          change: input.change,
-          actionURL: new URL('/account/security', publicURL).href
-        }
-      })
+    // Queued in the transaction that made the change, so the change and its notice commit together.
+    async sendTwoStepChanged(input, transaction) {
+      await email.enqueue(
+        {
+          idempotencyKey: `two-step-changed/${input.userId}/${crypto.randomUUID()}`,
+          kind: 'two-step-changed',
+          recipientEmail: input.email,
+          payload: {
+            name: input.name,
+            change: input.change,
+            ...(input.method && { method: input.method }),
+            actionURL: new URL('/account/security', publicURL).href
+          }
+        },
+        transaction
+      )
     }
   }
 }

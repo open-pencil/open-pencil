@@ -22,8 +22,17 @@
         "accelerator": "CmdOrCtrl+O"
       },
       {
+        "id": "open-url",
+        "label": "Open from URL…"
+      },
+      {
         "id": "open-recent",
         "label": "Open Recent"
+      },
+      {
+        "id": "place",
+        "label": "Place…",
+        "feature": "document"
       },
       {
         "type": "separator"

@@ -1,6 +1,8 @@
 import { variantSet } from '#fig/document/component/links'
 import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/source-metadata'
+/* eslint-disable max-lines */
+import { bytesToHex } from '@noble/hashes/utils.js'
 import { compact } from 'es-toolkit/array'
 
 import type { Effect as KiwiEffect, NodeChange } from '@open-pencil/kiwi/fig/codec'
@@ -12,7 +14,6 @@ import type {
   SceneNode,
   VariantPropSpec
 } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { variantOptions } from '@open-pencil/scene-graph/components'
 import {
   DEFAULT_STROKE_MITER_LIMIT,
@@ -28,9 +29,8 @@ import {
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
+import { appendAll } from '@open-pencil/std/arrays'
 
-/* eslint-disable max-lines */
-import { bytesToHex } from '../bytes'
 import { exportCanvasGuides } from '../canvas-guides'
 import { instanceExportAddress, snapshotInstanceGeometry } from '../instance/geometry'
 import { modeledEffectIndexes } from '../paint'
@@ -899,6 +899,15 @@ function applySharedStyleProps(
   if (node.guides.length > 0) nc.guides = exportCanvasGuides(node.guides)
 }
 
+/**
+ * The dash a record writes: a layer's strokes draw with their own pattern, as they do with their
+ * weight and alignment, and a layer without strokes keeps its pattern for the next stroke.
+ */
+function nodeDashPattern(node: SceneNode): number[] {
+  if (node.strokes.length === 0) return node.dashPattern
+  return node.strokes[0].dashPattern ?? []
+}
+
 function applyNodeVisualProps(
   context: SceneNodeToKiwiContext,
   node: SceneNode,
@@ -942,7 +951,8 @@ function applyNodeVisualProps(
   if (node.strokeMiterLimit !== DEFAULT_STROKE_MITER_LIMIT || 'miterLimit' in rawNodeFields) {
     nc.miterLimit = node.strokeMiterLimit
   }
-  if (node.dashPattern.length > 0) nc.dashPattern = node.dashPattern
+  const dashPattern = nodeDashPattern(node)
+  if (dashPattern.length > 0 || 'dashPattern' in rawNodeFields) nc.dashPattern = dashPattern
   if (node.arcData) {
     nc.arcData = {
       startingAngle: node.arcData.startingAngle,

@@ -18,6 +18,8 @@ import { jwtVerify, type JWTVerifyGetKey } from 'jose'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
+import { MINUTE_MS } from '@open-pencil/std/timing'
+
 import type { ServicesConfig } from './config'
 import type { ServicesDatabase } from './db'
 import { creditsFor, meteredUsage } from './metering'
@@ -74,7 +76,7 @@ const FORWARDED_FIELDS = [
 ] as const
 
 /** How long an upstream answer may take in all, streamed or not, so a stalled one cannot hold a request slot forever. */
-const DEFAULT_UPSTREAM_TIMEOUT_MS = 10 * 60_000
+const DEFAULT_UPSTREAM_TIMEOUT_MS = 10 * MINUTE_MS
 
 function aiError(
   context: Context,
@@ -112,6 +114,7 @@ function concurrencyLimiter(maximum: number) {
  * OpenAI-compatible upstream with one key, and holds each workspace to its monthly allowance.
  * A request is admitted while the workspace has credits left and charged once its usage is known,
  * so concurrent requests can overdraw the allowance by what they cost.
+ * `/health` answers without a token, for uptime checks; it says nothing about the upstream.
  */
 export function createServicesApp(services: ServicesAppDependencies) {
   const { config } = services
@@ -158,6 +161,7 @@ export function createServicesApp(services: ServicesAppDependencies) {
         maxAge: 600
       })
     )
+    .get('/health', (context) => context.json({ status: 'ok' as const }))
     .use(`${CLOUD_SERVICES_API_PATHS.base}/*`, requireToken)
     .get(CLOUD_SERVICES_API_PATHS.catalog, (context) => context.json(config.catalog))
     .get(CLOUD_SERVICES_API_PATHS.wallet, async (context) => {

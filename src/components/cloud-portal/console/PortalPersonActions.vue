@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { compact } from 'es-toolkit'
-import { computed, ref } from 'vue'
+import { computed, onDeactivated, ref } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
@@ -33,6 +33,10 @@ const confirming = ref<PortalPersonAction | null>(null)
 const reason = ref('')
 
 const confirmingShown = useHeldContent(confirming)
+// The console keeps a page it leaves; a confirmation must not outlive the visit that opened it.
+onDeactivated(() => {
+  confirming.value = null
+})
 const confirmation = computed(() => {
   const action = confirmingShown.value
   if (!action) return null
@@ -83,6 +87,12 @@ const confirmation = computed(() => {
       description: words.restoreDescription,
       confirm: words.restoreAccount,
       tone: 'primary'
+    },
+    delete: {
+      heading: words.deletePersonAccountHeading({ name }),
+      description: words.deletePersonAccountDescription,
+      confirm: words.deletePersonAccount,
+      tone: 'danger'
     }
   }
   return copy[action]
@@ -99,7 +109,13 @@ const items = computed(() => {
     person.image && { action: 'remove-picture' as const, label: words.removePersonPicture },
     person.suspended
       ? { action: 'restore' as const, label: words.restoreAccount, separated: true }
-      : { action: 'suspend' as const, label: words.suspendAccount, separated: true }
+      : { action: 'suspend' as const, label: words.suspendAccount, separated: true },
+    // Only an account that never got in; one that did leaves by its owner's own deletion.
+    !person.admin &&
+      (person.access === 'waiting' || person.access === 'declined') && {
+        action: 'delete' as const,
+        label: words.deletePersonAccount
+      }
   ])
 })
 

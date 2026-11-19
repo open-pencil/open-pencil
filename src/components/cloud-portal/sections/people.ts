@@ -35,6 +35,7 @@ export function portalPerson(
     joinedOn: dates.format(user.createdAt, 'date'),
     lastActive: user.lastActiveAt ? dates.relative(user.lastActiveAt) : null,
     workspaceCount: user.workspaceCount,
+    methods: user.methods,
     ...(user.request && user.request !== 'approved' && { access: ACCESS[user.request] }),
     you: user.id === you
   }
@@ -54,7 +55,8 @@ export function personAction(
     'reset-two-step': () => api.userAction('reset-two-step', person.id),
     'remove-picture': () => api.userAction('remove-picture', person.id),
     suspend: () => api.userAction('ban', person.id, reason),
-    restore: () => api.userAction('unban', person.id)
+    restore: () => api.userAction('unban', person.id),
+    delete: () => api.userAction('delete', person.id)
   }
   return requests[action]()
 }

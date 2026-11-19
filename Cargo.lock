@@ -3758,14 +3758,16 @@ dependencies = [
  "blitz-dom",
  "blitz-html",
  "blitz-traits",
+ "cssparser 0.38.0",
  "parley",
  "serde_json",
  "stylo",
+ "url",
 ]
 
 [[package]]
 name = "open_pencil"
-version = "0.17.0-beta.5"
+version = "0.17.0-beta.6"
 dependencies = [
  "fix-path-env",
  "fontique 0.11.1",

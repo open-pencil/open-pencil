@@ -1,6 +1,8 @@
 import { reactive, watch, type Ref, type WatchStopHandle } from 'vue'
 import type { WebMCP } from 'webmcp-types'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { getWebMCPTools } from './policy'
 import {
   registerWebMCPTools,
@@ -69,7 +71,7 @@ export function createWebMCPRuntimeService() {
           } catch (error) {
             if (request !== version) return
             state.status = 'error'
-            state.error = error instanceof Error ? error.message : String(error)
+            state.error = errorMessage(error)
           }
         }
         pending = pending.then(configure)

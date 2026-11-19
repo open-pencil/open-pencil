@@ -1,7 +1,7 @@
 import type { SyntaxNode } from '@lezer/common'
 import { decodeHTML } from 'entities'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { DESIGN_JSX_ELEMENTS } from '../elements'
 import { FRAGMENT, type TreeNode } from '../tree'

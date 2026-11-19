@@ -1,3 +1,5 @@
+import { sha256 } from '@noble/hashes/sha2.js'
+import { utf8ToBytes } from '@noble/hashes/utils.js'
 import { fromUint8Array } from 'js-base64'
 
 /** An OAuth PKCE pair and the state that ties a redirect to the attempt that started it. */
@@ -13,8 +15,7 @@ function randomToken(bytes: number): string {
 
 /** The S256 challenge for a verifier: the base64url SHA-256 digest, without padding. */
 export async function pkceChallenge(verifier: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))
-  return fromUint8Array(new Uint8Array(digest), true)
+  return fromUint8Array(sha256(utf8ToBytes(verifier)), true)
 }
 
 /** The secrets of a PKCE pair, drawn at once; only the challenge needs to wait for hashing. */

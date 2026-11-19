@@ -9,6 +9,7 @@ import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { getRecoveryStore, resetRecoveryStoreForTests } from '@/app/document/recovery'
 import { createMemoryRecoveryStore } from '@/app/document/recovery/memory'
+import { toast } from '@/app/shell/ui'
 import {
   closeTab,
   createHomeTab,
@@ -53,23 +54,31 @@ function setupGlobals() {
   globalThis.cancelAnimationFrame = window.cancelAnimationFrame
 }
 
-function acknowledgePendingPresentation(): void {
+/** Stands in for each tab's canvas once its page waits to be shown. */
+function presentPendingPages(present: (store: Tab['store']) => void): void {
   for (const tab of getTabsSnapshot()) {
     if (tab.store.state.preparation?.phase !== 'preparing-render') continue
-    tab.store.preparationController.acknowledgePresentation(tab.store.state)
+    present(tab.store)
   }
+}
+
+function acknowledgePresentation(store: Tab['store']): void {
+  store.preparationController.acknowledgePresentation(store.state)
 }
 
 type FileOpenOutcome = { status: 'fulfilled' } | { status: 'rejected'; reason: unknown }
 
-async function settleFileOpen(opening: Promise<unknown>): Promise<void> {
+async function settleFileOpen(
+  opening: Promise<unknown>,
+  present: (store: Tab['store']) => void = acknowledgePresentation
+): Promise<void> {
   const outcome: Promise<FileOpenOutcome> = opening.then(
     () => ({ status: 'fulfilled' }),
     (reason: unknown) => ({ status: 'rejected', reason })
   )
 
   const awaitOutcome = async (): Promise<FileOpenOutcome> => {
-    acknowledgePendingPresentation()
+    presentPendingPages(present)
     const result = await Promise.race([
       outcome,
       new Promise<null>((resolve) => {
@@ -158,6 +167,7 @@ describe('openFileInNewTab deduplication', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+    toast.toasts.value = []
     Reflect.deleteProperty(globalThis, 'window')
     Reflect.deleteProperty(globalThis, 'document')
     Reflect.deleteProperty(globalThis, 'requestAnimationFrame')
@@ -250,7 +260,7 @@ describe('openFileInNewTab deduplication', () => {
     const count = tabCount()
 
     await settleFileOpen(
-      openFileInNewTab(new File([], 'design.fig'), undefined, '/tmp/after-draft.fig')
+      openFileInNewTab(new File([], 'design.fig'), { path: '/tmp/after-draft.fig' })
     )
 
     expect(tabCount()).toBe(count + 1)
@@ -263,7 +273,7 @@ describe('openFileInNewTab deduplication', () => {
     const untouched = getActiveStore()
     const replaced: unknown[] = []
     const { off } = onTabDocumentReplaced((store) => replaced.push(store))
-    await settleFileOpen(openFileInNewTab(new File([], 'design.fig'), undefined, '/tmp/reused.fig'))
+    await settleFileOpen(openFileInNewTab(new File([], 'design.fig'), { path: '/tmp/reused.fig' }))
     off()
     expect(getActiveStore() === untouched).toBe(true)
     expect(replaced.includes(untouched)).toBe(true)
@@ -274,7 +284,7 @@ describe('openFileInNewTab deduplication', () => {
     const count = tabCount()
 
     await settleFileOpen(
-      openFileInNewTab(new File([], 'design.fig'), undefined, '/tmp/from-home.fig')
+      openFileInNewTab(new File([], 'design.fig'), { path: '/tmp/from-home.fig' })
     )
 
     expect(tabCount()).toBe(count + 1)
@@ -293,7 +303,7 @@ describe('openFileInNewTab deduplication', () => {
     ;(figModule.readFigFile as ReturnType<typeof vi.fn>).mockResolvedValueOnce(graph)
     const populate = vi.spyOn(figModule, 'populateFigPage')
 
-    await settleFileOpen(openFileInNewTab(new File([], 'cover.fig'), undefined, '/tmp/cover.fig'))
+    await settleFileOpen(openFileInNewTab(new File([], 'cover.fig'), { path: '/tmp/cover.fig' }))
 
     expect(populate).not.toHaveBeenCalled()
   })
@@ -307,7 +317,7 @@ describe('openFileInNewTab deduplication', () => {
     const count = tabCount()
 
     await expect(
-      settleFileOpen(openFileInNewTab(new File([], 'broken.fig'), undefined, '/tmp/broken.fig'))
+      settleFileOpen(openFileInNewTab(new File([], 'broken.fig'), { path: '/tmp/broken.fig' }))
     ).rejects.toThrow('read failed')
 
     expect(tabCount()).toBe(count)
@@ -320,13 +330,35 @@ describe('openFileInNewTab deduplication', () => {
     expect(getActiveStore()).toBe(home.store)
   })
 
+  test('keeps a document open in its tab when its first frame cannot be shown', async () => {
+    createHomeTab()
+    const count = tabCount()
+    const failures: string[] = []
+    const opening = openFileInNewTab(new File([], 'slow.fig'), { path: '/tmp/slow.fig' })
+
+    // A canvas that stops drawing before the page is on screen, as a timed-out wait does.
+    const stalled = new Set<Tab['store']>()
+    await settleFileOpen(opening, (store) => {
+      if (stalled.has(store)) return
+      stalled.add(store)
+      store.onPreparationEvent('preparation:failed', (failure) => failures.push(failure.code))
+      store.preparationController.failCanvas(new Error('canvas stalled'))
+    })
+    const store = await opening
+
+    expect(failures).toEqual(['render-failed'])
+    expect(tabCount()).toBe(count + 1)
+    expect(getActiveStore()).toBe(store)
+    expect(store.state.documentName).toBe('slow')
+  })
+
   test('activates the existing tab when the same path is opened again', async () => {
     const initialCount = tabCount()
     const file = new File([], 'design.fig')
 
-    await settleFileOpen(openFileInNewTab(file, undefined, '/tmp/design.fig'))
+    await settleFileOpen(openFileInNewTab(file, { path: '/tmp/design.fig' }))
     const openedStore = getActiveStore()
-    await settleFileOpen(openFileInNewTab(file, undefined, '/tmp/design.fig'))
+    await settleFileOpen(openFileInNewTab(file, { path: '/tmp/design.fig' }))
 
     expect(tabCount()).toBe(initialCount)
     expect(getActiveStore()).toBe(openedStore)
@@ -343,9 +375,9 @@ describe('openFileInNewTab deduplication', () => {
     const initialCount = tabCount()
     const file = new File([], 'concurrent.fig')
 
-    const first = openFileInNewTab(file, undefined, '/tmp/concurrent.fig')
+    const first = openFileInNewTab(file, { path: '/tmp/concurrent.fig' })
     await started.promise
-    const second = openFileInNewTab(file, undefined, '/tmp/concurrent.fig')
+    const second = openFileInNewTab(file, { path: '/tmp/concurrent.fig' })
     await Promise.resolve()
 
     expect(figModule.readFigFile).toHaveBeenCalledTimes(1)
@@ -365,8 +397,8 @@ describe('openFileInNewTab deduplication', () => {
     })
     const initialCount = tabCount()
 
-    const first = openFileInNewTab(new File([], 'first.fig'), undefined, '/tmp/first.fig')
-    const second = openFileInNewTab(new File([], 'second.fig'), undefined, '/tmp/second.fig')
+    const first = openFileInNewTab(new File([], 'first.fig'), { path: '/tmp/first.fig' })
+    const second = openFileInNewTab(new File([], 'second.fig'), { path: '/tmp/second.fig' })
     await bothStarted.promise
 
     expect(figModule.readFigFile).toHaveBeenCalledTimes(2)
@@ -382,10 +414,10 @@ describe('openFileInNewTab deduplication', () => {
       .mockResolvedValueOnce(new SceneGraph())
 
     await expect(
-      settleFileOpen(openFileInNewTab(new File([], 'retry.fig'), undefined, '/tmp/retry.fig'))
+      settleFileOpen(openFileInNewTab(new File([], 'retry.fig'), { path: '/tmp/retry.fig' }))
     ).rejects.toThrow('read failed')
     await expect(
-      settleFileOpen(openFileInNewTab(new File([], 'retry.fig'), undefined, '/tmp/retry.fig'))
+      settleFileOpen(openFileInNewTab(new File([], 'retry.fig'), { path: '/tmp/retry.fig' }))
     ).resolves.toBeUndefined()
 
     expect(figModule.readFigFile).toHaveBeenCalledTimes(2)

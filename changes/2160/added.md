@@ -1,1 +1,0 @@
-- Coding agent profiles choose the agent's own modes, such as Claude Code's Plan or Codex's Read-only and its Plan collaboration mode, and the chat composer changes them for the next message; when approving a plan moves the agent to another mode, the chat follows (#2160).

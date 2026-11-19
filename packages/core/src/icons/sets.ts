@@ -1,5 +1,5 @@
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import type { IconOptions } from '@open-pencil/scene-graph/icons'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { parseIconName, type IconProvider } from '#core/icons/provider'
 import type { IconCollection, IconData, IconSearchResult } from '#core/icons/types'
@@ -50,8 +50,9 @@ export function createIconSetsProvider({
     names: readonly string[],
     ask: (provider: IconProvider, names: string[]) => Promise<Map<string, T>>
   ): Promise<Map<string, T>> {
+    // Each ask runs inside an async call, so one that throws at once fails like one that rejects.
     const parts = await Promise.allSettled(
-      [...byProvider(names)].map(([provider, part]) => ask(provider, part))
+      [...byProvider(names)].map(async ([provider, part]) => ask(provider, part))
     )
     const failed = parts.find((part) => part.status === 'rejected')
     if (failed && parts.every((part) => part.status === 'rejected')) throw failed.reason

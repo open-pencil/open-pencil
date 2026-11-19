@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/cloud",
-  "version": "0.17.0-beta.5",
+  "version": "0.17.0-beta.6",
   "description": "Self-hostable OpenPencil Cloud: accounts, workspaces, document revisions, sharing, collaboration, and the services server, for Node and Cloudflare Workers.",
   "license": "Apache-2.0 AND MIT",
   "repository": {
@@ -137,6 +137,7 @@
     "@open-pencil/fig": "workspace:*",
     "@open-pencil/kiwi": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
+    "@open-pencil/std": "workspace:*",
     "@openfeature/server-sdk": "^1.23.0",
     "@vue-email/components": "^0.0.21",
     "@vue-email/render": "^0.0.9",

@@ -17,6 +17,7 @@ import {
   validateVectorNetwork,
   vectorNetworkPaths
 } from '@open-pencil/scene-graph/vector-network'
+import { toError } from '@open-pencil/std/errors'
 
 import {
   prepareFollowedFieldEdit,
@@ -287,7 +288,7 @@ export function installVectorNodeProxyAccessors(
           assignVectorNetwork(this, internals, value, null)
           return Promise.resolve()
         } catch (error) {
-          return Promise.reject(error instanceof Error ? error : new Error(String(error)))
+          return Promise.reject(toError(error))
         }
       },
       enumerable: true,

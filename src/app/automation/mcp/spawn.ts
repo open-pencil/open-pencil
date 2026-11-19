@@ -6,7 +6,8 @@ import { compact } from 'es-toolkit/array'
 
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { serializeDisabledTools } from '@open-pencil/mcp/tools'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { errorMessage, toError } from '@open-pencil/std/errors'
+import { randomHex } from '@open-pencil/std/random'
 
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { canRunHostProcesses } from '@/app/tauri/capabilities'
@@ -101,10 +102,6 @@ export function getAutomationStartupError(): Error | null {
 
 export function getAutomationStartupFailure(): MCPFailure | null {
   return runtimeAutomationStartupFailure
-}
-
-function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error(String(error))
 }
 
 function missingMCPError(searched: string[] = []): Error {
@@ -400,7 +397,7 @@ async function resolveTauriHomeDir(): Promise<string> {
     throw new Error(
       'Failed to resolve home directory for MCP root. ' +
         'The MCP server requires a home directory to scope file operations. ' +
-        (e instanceof Error ? e.message : String(e))
+        errorMessage(e)
     )
   }
 }

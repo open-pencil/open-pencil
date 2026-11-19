@@ -1,1 +1,0 @@
-- Self-hosted Cloud compares `minimum_editor_version` in SemVer order: a pre-release comes before its release, so `"0.18.0"` turns away `0.18.0-beta.2`, and a minimum may name a pre-release to admit it (#2153).

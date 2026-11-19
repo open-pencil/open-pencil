@@ -1,5 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import type {
   RenderChunk,

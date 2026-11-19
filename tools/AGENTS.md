@@ -40,6 +40,7 @@ Private tooling lives under `tools/<role>/<domain>/{src,tests}`; Steiger enforce
 ## Releases
 
 - Update versions in the root and publishable package manifests plus `desktop/tauri.conf.json` and `desktop/Cargo.toml`; run `bun run changelog:assemble`, curate `Unreleased` (`bun run check:changelog --release`), and move it into `## x.y.z — YYYY-MM-DD`; commit `Release vX.Y.Z`; tag and push `vX.Y.Z`. A pre-release uses `X.Y.Z-beta.N` throughout.
+- Before tagging a stable release, run **Publish gallery examples** with target `production` and `version` `X.Y.Z`: the app and docs that deploy from the tag open the tour named for their release, and without it they open the gallery's current tour (`tools/ci/cloud-examples`).
 - `.github/workflows/build.yml` is the source of truth: `v*` tags (or dispatches for an immutable stable tag) build shared frontend/package outputs once, build signed desktop artifacts in parallel, verify and attest one complete same-run artifact set, publish npm packages, and replace the draft release assets using the exact changelog section. Policy, provenance, and recovery: `tools/release/release-packages/README.md`.
 - A binary a release ships with Rust crates compiled in carries their third-party notices: each is listed in `NOTICED_ARTIFACTS` (`tools/release/release-packages/src/notices/artifacts.ts`), the release job writes the notices with cargo-about before `prepare`, accepting the licenses the crate's `deny.toml` allows, and `pack` refuses a package without them (`tools/release/release-packages/tests/notices/artifacts.test.ts`).
 - The editor's build writes `THIRD-PARTY-NOTICES.md` for the npm packages it bundles, the service worker's Workbox packages included, with `rollup-plugin-license`, and fails on a license outside its allowlist (`vite/third-party-notices.ts`). The shared frontend archive refuses to form without it and the desktop Rust notices, and every stable desktop bundle carries both under `licenses/`; a release tag from before a kind of notice is built without it (`tools/release/release-packages/tests/native/frontend.test.ts`).
@@ -69,8 +70,8 @@ OpenPencil keeps forks of dependencies it builds into WebAssembly: Skia's Canvas
 
 How the `/demo` tour is structured and built: `packages/docs/development/demo-tour.md`.
 
-- The tour is built from `tools/generate/demo` into the ignored `public/demo.fig` and opened like any `.fig` file; never generate it in the browser (`tools/generate/demo/src/ensure.ts`).
-- A chapter that needs something new from the engine adds that package's `src` to the fingerprint `ensureDemoDocument` rebuilds on; `bun run generate:demo` forces a rebuild (`tools/generate/demo/src/ensure.ts`).
+- The tour lives only in the Cloud gallery: `buildDemoDocument` builds it for `tools/ci/cloud-examples` to publish, and the app and docs landing download it; never bundle it or generate it in the browser (`src/app/cloud/community/tour.ts`).
+- `bun run generate:demo <output.fig>` writes the tour to a file to check a chapter locally (`tools/generate/demo/src/cli.ts`).
 - Bind every color in the tour, icons included, to the Theme and App chrome collections, whose Dark and Light modes `src/app/demo/theme.ts` switches by name (`tools/generate/demo/src/document/theme.ts`).
 - Shader stills need the Playwright Chromium with WebGPU; without it the build skips them, and only an editor in a browser with WebGPU draws the frames when the demo opens (`tools/generate/demo/src/shaders/stills.ts`).
 

@@ -1,3 +1,4 @@
+import { isEqual } from 'es-toolkit'
 import { shallowRef } from 'vue'
 
 import {
@@ -192,7 +193,9 @@ async function signedInConnection(
     email: status.user.email,
     image: status.user.image ?? null
   }
-  if (current()) rememberCloudAccount(server.id, account)
+  // Written only when it changed, so a check that finds the same account replaces nothing.
+  const remembered = findCloudServer(server.id)?.account ?? null
+  if (current() && !isEqual(remembered, account)) rememberCloudAccount(server.id, account)
   if (status.state === 'two-step' && token) {
     // A desktop app's own session counts as proved once a browser that proved it approved the
     // sign-in; one from before that never will, so the app signs in again.
@@ -224,11 +227,35 @@ export function tellCloudConnectionLocale(server: CloudServer): void {
   }
 }
 
+export type CloudConnectionRefresh = {
+  /**
+   * Keeps the last answer shown while the server is asked, and keeps it if the server cannot be
+   * reached, as a list kept current in the background does. A check already under way answers
+   * instead of a new one.
+   */
+  background?: boolean
+  /**
+   * With `background`, waits for a check already under way and then asks again, so the answer
+   * comes from a check that started after the call, as a refresh button promises.
+   */
+  fresh?: boolean
+}
+
 /** Asks the server where this app stands and publishes the answer. */
-export function refreshCloudConnection(server: CloudServer): Promise<CloudConnection> {
+export function refreshCloudConnection(
+  server: CloudServer,
+  options: CloudConnectionRefresh = {}
+): Promise<CloudConnection> {
+  if (options.background) {
+    const running = checks.get(server.id)
+    if (running && options.fresh) {
+      return running.then(() => refreshCloudConnection(server, { background: true }))
+    }
+    if (running) return running
+  }
   const generation = (generations.get(server.id) ?? 0) + 1
   generations.set(server.id, generation)
-  const check = askServer(server, generation)
+  const check = askServer(server, generation, options.background ?? false)
   checks.set(server.id, check)
   void check.finally(() => {
     if (checks.get(server.id) === check) checks.delete(server.id)
@@ -261,9 +288,13 @@ export function recheckedCloudConnection(server: CloudServer): Promise<CloudConn
   return checks.get(server.id) ?? refreshCloudConnection(server)
 }
 
-async function askServer(server: CloudServer, generation: number): Promise<CloudConnection> {
+async function askServer(
+  server: CloudServer,
+  generation: number,
+  background: boolean
+): Promise<CloudConnection> {
   const previous = cloudConnection(server.id)
-  publish(server.id, { ...previous, state: 'checking', failure: null })
+  if (!background) publish(server.id, { ...previous, state: 'checking', failure: null })
   let next: CloudConnection
   try {
     const discovery = await discoverCloudServer(server.url)
@@ -273,6 +304,12 @@ async function askServer(server: CloudServer, generation: number): Promise<Cloud
       () => generations.get(server.id) === generation
     )
   } catch (error) {
+    // Kept only when there is an answer to keep, one the server gave and Home shows, and while it
+    // is still the account the server last named: a check that met another account before failing
+    // must not leave the old one shown as signed in.
+    const remembered = findCloudServer(server.id)?.account ?? null
+    const answered = previous.state !== 'checking'
+    if (background && answered && isEqual(remembered, previous.account)) return previous
     next = {
       ...previous,
       state: 'unreachable',
@@ -280,7 +317,9 @@ async function askServer(server: CloudServer, generation: number): Promise<Cloud
       failure: error instanceof CloudClientError ? error.reason : 'unreachable'
     }
   }
-  if (generations.get(server.id) === generation) {
+  // A background check that found nothing new leaves the connection as it is, so nothing that
+  // shows it re-renders.
+  if (generations.get(server.id) === generation && !(background && isEqual(previous, next))) {
     publish(server.id, next)
     // Once the answer is out, so a language picked while the check ran is the one it reports.
     tellCloudConnectionLocale(server)

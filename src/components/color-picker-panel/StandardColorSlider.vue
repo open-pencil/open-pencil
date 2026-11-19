@@ -9,13 +9,15 @@ import LeftToRight from '@/components/ui/direction/LeftToRight.vue'
 
 interface StandardColorSliderProps {
   label: string
+  /** Only the slider, labelled for assistive technology, as Figma's hue and alpha are. */
+  bare?: boolean
   modelValue: RekaColor
   channel: ColorChannel
   colorSpace?: ColorSpace
   step?: number
-  numberValue: number
-  numberMin: number
-  numberMax: number
+  numberValue?: number
+  numberMin?: number
+  numberMax?: number
   numberStep?: number
   suffix?: string
   checkerboard?: boolean
@@ -25,6 +27,7 @@ interface StandardColorSliderProps {
 
 const {
   label,
+  bare = false,
   modelValue,
   channel,
   colorSpace = 'hsl',
@@ -52,7 +55,7 @@ const styles = useColorSliderUI(
 
 <template>
   <div :class="styles.root.value">
-    <span :class="styles.label.value">{{ label }}</span>
+    <span v-if="!bare" :class="styles.label.value">{{ label }}</span>
     <LeftToRight>
       <ColorSliderRoot
         :class="styles.slider.value"
@@ -64,10 +67,15 @@ const styles = useColorSliderUI(
         @update:color="emit('update', $event)"
       >
         <ColorSliderTrack :class="styles.track.value" />
-        <ColorSliderThumb :class="styles.thumb.value" :style="{ background: thumbFill }" />
+        <ColorSliderThumb
+          :class="styles.thumb.value"
+          :aria-label="label"
+          :style="{ background: thumbFill }"
+        />
       </ColorSliderRoot>
     </LeftToRight>
     <NumberField
+      v-if="!bare && numberValue !== undefined"
       :class="styles.input.value"
       :aria-label="label"
       :model-value="numberValue"

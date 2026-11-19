@@ -1,6 +1,5 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { minOf } from '@open-pencil/scene-graph/arrays'
 import { nodeCornerRadii, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import {
   borderWeights,
@@ -8,6 +7,7 @@ import {
   strokeSideWeights,
   type SideWeights
 } from '@open-pencil/scene-graph/geometry'
+import { minOf } from '@open-pencil/std/arrays'
 
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { normalizeDashPattern } from '#core/canvas/strokes/draw'

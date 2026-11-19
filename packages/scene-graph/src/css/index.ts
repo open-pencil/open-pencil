@@ -26,4 +26,13 @@ export {
   type CSSTransformBox,
   type CSSTransformStyle
 } from './transform'
-export { dimension, parseCSSColor, parseCSSNumber, splitCSSValue } from './values'
+export {
+  dimension,
+  parseCSSColor,
+  parseCSSNumber,
+  parseCSSURLReferences,
+  parseCSSURLs,
+  parsePaintFallback,
+  parseFragmentReference,
+  splitCSSValue
+} from './values'

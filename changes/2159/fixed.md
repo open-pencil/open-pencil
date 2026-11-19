@@ -1,1 +1,0 @@
-- Cloud: a wrong or missing two-step code says so instead of reporting a server error or asking to sign in again, and the admin console marks accounts still waiting for approval instead of listing them as members (#2159).

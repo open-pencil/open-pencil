@@ -75,9 +75,12 @@ describe('Cloud discovery contract', () => {
   })
 
   test('leaves out sign-in providers this editor has no button for', () => {
-    const authentication = { ...discovery.authentication, socialProviders: ['github', 'google'] }
+    const authentication = {
+      ...discovery.authentication,
+      socialProviders: ['gitlab', 'github', 'google']
+    }
     expect(parseCloudDiscovery({ ...discovery, authentication }).authentication).toMatchObject({
-      socialProviders: ['google']
+      socialProviders: ['github', 'google']
     })
   })
 

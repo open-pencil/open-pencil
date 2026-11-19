@@ -38,9 +38,9 @@ describe('changelog fragments', () => {
     const changelog =
       '# Changelog\n\n## Unreleased\n\n### Fixed\n\n- Keep user data.\n\n## 1.0.0 — 2026-01-01\n\n### Added\n\n- Ship it.\n'
     const assembled = assembleUnreleased(changelog, [
-      { pullRequest: 7, category: 'fixed', bullets: ['- Stop the crash.'] },
-      { pullRequest: 9, category: 'breaking', bullets: ['- Remove the old API.'] },
-      { pullRequest: 8, category: 'added', bullets: ['- Add export.', '- Add import.'] }
+      { source: '7', category: 'fixed', bullets: ['- Stop the crash.'] },
+      { source: '9', category: 'breaking', bullets: ['- Remove the old API.'] },
+      { source: '8', category: 'added', bullets: ['- Add export.', '- Add import.'] }
     ])
 
     expect(assembled).toBe(
@@ -70,8 +70,8 @@ describe('changelog fragments', () => {
     const changelog =
       '# Changelog\n\n## Unreleased\n\n## 1.0.0 — 2026-01-01\n\n### Added\n\n- Ship it.\n'
     const assembled = assembleUnreleased(changelog, [
-      { pullRequest: 3, category: 'fixed', bullets: ['- Stop the crash.'] },
-      { pullRequest: 4, category: 'fixed', bullets: ['- Stop the crash.'] }
+      { source: '3', category: 'fixed', bullets: ['- Stop the crash.'] },
+      { source: '4', category: 'fixed', bullets: ['- Stop the crash.'] }
     ])
 
     expect(validateChangelog(assembled).errors).toEqual([
@@ -99,17 +99,21 @@ describe('readFragments', () => {
     await mkdir(join(directory, '42'))
     await writeFile(join(directory, '42', 'fixed.md'), '- Stop the crash.\n')
     await writeFile(join(directory, '42', 'notes.md'), '- Not a category.\n')
+    await mkdir(join(directory, 'GHSA-6r2v-cq7x-fvh6'))
+    await writeFile(join(directory, 'GHSA-6r2v-cq7x-fvh6', 'security.md'), '- Close the hole.\n')
     await mkdir(join(directory, 'draft'))
     await writeFile(join(directory, 'README.md'), '# Unreleased changes\n')
 
     const { fragments, errors } = await readFragments(directory)
 
     expect(fragments).toEqual([
-      { pullRequest: 42, category: 'fixed', bullets: ['- Stop the crash.'] }
+      { source: '42', category: 'fixed', bullets: ['- Stop the crash.'] },
+      // A fix from a security advisory's private fork has no pull request here.
+      { source: 'GHSA-6r2v-cq7x-fvh6', category: 'security', bullets: ['- Close the hole.'] }
     ])
     expect(errors).toEqual([
       expect.stringContaining('changes/42/notes.md: expected one of breaking.md'),
-      'changes/draft: expected a folder named after its pull request number.'
+      'changes/draft: expected a folder named after its pull request number or security advisory.'
     ])
   })
 })

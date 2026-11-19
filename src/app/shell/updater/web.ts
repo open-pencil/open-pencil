@@ -123,7 +123,7 @@ export type WaitingUpdate = {
   /** Whether a service worker controls this page, as `navigator.serviceWorker.controller` says. */
   controlled: boolean
   /** The installed version waiting to take over, if any. */
-  waiting: (EventTarget & { readonly state: ServiceWorkerState }) | null
+  waiting: ServiceWorkerLike | null
   /** Asks the waiting version to take over, reloading a controlled page once it does. */
   activate: () => void
   reload: () => void
