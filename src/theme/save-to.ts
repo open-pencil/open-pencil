@@ -1,4 +1,4 @@
-import { focusStyles } from './focus/styles'
+import { focusStyles } from '@open-pencil/vue/theme'
 
 /** Choosing where a document from this device goes: a Cloud workspace or the storage bucket. */
 export default {

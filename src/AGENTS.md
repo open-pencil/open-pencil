@@ -77,6 +77,7 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 ### Building blocks
 
 - Use Reka UI primitives and typed Tailwind Variants themes under `src/theme/**`; merge per-instance `ui` slot overrides, expose `class` for single-root components, and do not add one-off class props. Use `UI` casing in type names. App wrappers around SDK primitives use shared UI helpers rather than scattered raw classes.
+- A theme a page outside the editor needs too, such as a button, alert, input, link, focus ring, settings layout, or the Cloud portal's frame, lives in `packages/vue/src/theme/` and is imported from `@open-pencil/vue/theme`, so Cloud's billing pages and services beside it look the same without copies (`packages/vue/src/theme/index.ts`).
 - Design tokens, custom variants, and custom utilities live in `packages/vue/src/theme/tokens.css`, which the docs site also imports; `src/app.css` keeps only the app's document-level rules.
 - Line breaking is set once in `src/app.css`: headings and captions balance their lines, paragraphs and list items avoid a lone last word, and anything under `text-center` balances. So write messages as `p` or headings, center short ones with `text-center`, and add `text-balance`/`text-pretty` or a non-breaking space only to override a case the base rules get wrong (`src/app.css`).
 - Tailwind 4 and `tw-animate-css`; no static inline styling or component `<style>` blocks. Dynamic `:style` bindings are allowed for runtime geometry and CSS variables.

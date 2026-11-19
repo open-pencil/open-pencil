@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { useId } from 'vue'
+
+import { settingsTheme } from '@open-pencil/vue/theme'
 
 import { useSettingsSectionHeading } from './heading'
 import SettingsResetButton from './SettingsResetButton.vue'
+
+const ui = tv(settingsTheme)()
 
 /**
  * A titled block of settings. A setting edited as a whole, such as the toolbar's layout, is
@@ -18,17 +23,17 @@ const heading = useSettingsSectionHeading()
 </script>
 
 <template>
-  <section class="flex flex-col gap-3" :aria-labelledby="headingId">
-    <div class="flex items-start justify-between gap-4">
-      <div class="min-w-0 flex-1">
-        <component :is="heading" :id="headingId" class="text-xs font-semibold text-surface">
+  <section :class="ui.section()" :aria-labelledby="headingId">
+    <div :class="ui.sectionHeader()">
+      <div :class="ui.sectionText()">
+        <component :is="heading" :id="headingId" :class="ui.sectionTitle()">
           <slot name="title" />
         </component>
-        <p v-if="$slots.description" class="mt-1 text-2xs text-muted">
+        <p v-if="$slots.description" :class="ui.sectionDescription()">
           <slot name="description" />
         </p>
       </div>
-      <div v-if="modified || $slots.actions" class="flex shrink-0 items-center gap-1">
+      <div v-if="modified || $slots.actions" :class="ui.sectionActions()">
         <SettingsResetButton v-if="modified" @reset="emit('reset')" />
         <slot name="actions" />
       </div>

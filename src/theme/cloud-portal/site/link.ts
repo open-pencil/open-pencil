@@ -1,4 +1,4 @@
-import { focusStyles } from '@/theme/focus/styles'
+import { focusStyles } from '@open-pencil/vue/theme'
 
 /** A link in the site's bar or footer: plain muted text that brightens, or the current page. */
 export default {

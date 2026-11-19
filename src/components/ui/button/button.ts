@@ -1,7 +1,7 @@
 import { twMerge } from 'tailwind-merge'
 import { tv } from 'tailwind-variants'
 
-import appButtonTheme from '@/theme/button/button'
+import { buttonTheme } from '@open-pencil/vue/theme'
 
 const button = tv({
   base: 'inline-flex items-center justify-center transition-colors select-none',
@@ -59,7 +59,7 @@ export function useButtonUI(options?: {
   }
 }
 
-const appButton = tv(appButtonTheme)
+const appButton = tv(buttonTheme)
 
 export type AppButtonColor = 'neutral' | 'primary' | 'error'
 export type AppButtonVariant = 'solid' | 'outline' | 'soft' | 'subtle' | 'ghost' | 'link'

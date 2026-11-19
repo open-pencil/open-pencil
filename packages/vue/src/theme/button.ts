@@ -1,6 +1,7 @@
-import { focusStyles } from '../focus/styles'
+import { focusStyles } from './focus'
 
-export default {
+/** The app's button: a colour, a variant, a size, and a shape. */
+export const buttonTheme = {
   slots: {
     base: [
       'inline-flex cursor-pointer items-center justify-center gap-1.5 font-medium whitespace-nowrap select-none transition-colors',

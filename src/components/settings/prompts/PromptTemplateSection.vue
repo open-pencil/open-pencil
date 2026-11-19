@@ -2,13 +2,13 @@
 import { computed, ref, useTemplateRef } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
+import { focusStyles } from '@open-pencil/vue/theme'
 
 import type { PromptVariables, TemplatePrompt } from '@/app/ai/prompts/definitions'
 import { useTemplatePromptSetting } from '@/app/ai/prompts/settings/use'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
-import { focusStyles } from '@/theme/focus/styles'
 
 import PromptEditor from './PromptEditor.vue'
 

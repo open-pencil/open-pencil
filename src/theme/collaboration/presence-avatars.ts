@@ -1,7 +1,7 @@
+import { focusStyles } from '@open-pencil/vue/theme'
+
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
-
-import { focusStyles } from '../focus/styles'
 
 /** The toolbar's avatar stack controls: your menu, collaborators to follow, and everyone. */
 export default {

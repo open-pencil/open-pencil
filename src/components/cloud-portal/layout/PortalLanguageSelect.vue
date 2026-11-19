@@ -2,9 +2,9 @@
 import { computed } from 'vue'
 
 import { type Locale, useI18n } from '@open-pencil/vue/i18n'
+import { focusStyles } from '@open-pencil/vue/theme'
 
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { focusStyles } from '@/theme/focus/styles'
 
 /**
  * The language of a Cloud page, as Settings sets it in the editor: the same list and names, and

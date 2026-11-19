@@ -1,4 +1,4 @@
-import { panelFieldBase, panelFieldState } from '../panel/field/base'
+import { panelFieldBase, panelFieldState } from './field'
 
 const defaultInputBase =
   'min-w-0 rounded-md border border-border bg-input text-surface outline-none hover:border-muted/60 focus:border-panel-focus focus:ring-1 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-60'
@@ -9,7 +9,8 @@ export const inputAdornment = {
   trailing: 'absolute inset-y-0 inset-e-2 flex items-center gap-1 text-muted'
 }
 
-export default {
+/** A text or number field, in the app's default tone or the property panel's. */
+export const inputTheme = {
   base: 'w-full tabular-nums',
   variants: {
     tone: {

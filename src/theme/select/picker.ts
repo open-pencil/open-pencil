@@ -1,6 +1,7 @@
+import { panelFieldBase } from '@open-pencil/vue/theme'
+
 import { motionStyles } from '../motion/styles'
 import { floatingSurface } from '../overlay'
-import { panelFieldBase } from '../panel/field/base'
 
 /** Choices per row in the grid and gallery layouts; keyboard navigation moves this many for a row. */
 export const APP_PICKER_COLUMNS = { grid: 8, gallery: 3 } as const

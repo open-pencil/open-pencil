@@ -1,0 +1,1 @@
+- `@open-pencil/vue/theme` publishes the editor's button, alert, input, link, focus ring, settings layout, and Cloud portal frame as tailwind-variants configurations, so a page beside Cloud, such as its billing pages, can look like it.

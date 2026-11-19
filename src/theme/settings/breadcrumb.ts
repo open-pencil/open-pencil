@@ -1,4 +1,4 @@
-import { focusStyles } from '../focus/styles'
+import { focusStyles } from '@open-pencil/vue/theme'
 
 /** The path in the Settings window's title while an editor is open. */
 export default {

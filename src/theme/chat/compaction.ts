@@ -1,5 +1,6 @@
+import { focusStyles } from '@open-pencil/vue/theme'
+
 import { collapsibleContentMotion } from '../collapsible/collapsible'
-import { focusStyles } from '../focus/styles'
 
 /**
  * The divider a compaction leaves in the transcript: a rule with its label in the middle,

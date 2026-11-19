@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { focusStyles } from '@open-pencil/vue/theme'
 
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
-import { focusStyles } from '@/theme/focus/styles'
 
 import { portalTable } from './ui'
 
