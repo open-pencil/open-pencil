@@ -9,7 +9,9 @@ import { refreshCloudConnection } from '@/app/cloud/sessions/connection'
 
 import { cloudDiscoveryFixture } from '#tests/helpers/cloud/discovery'
 
-const ORIGIN = 'https://cloud.example.com'
+// The app keeps a server's discovery per address while it runs, so an address another file also
+// uses would hand this one that file's discovery, without the services these tests rely on.
+const ORIGIN = 'https://ai.cloud.example.com'
 const GONE = '0d6a4c1e-2b3f-4a5d-8e6f-7a8b9c0d1e2f'
 const STUDIO = '6f1c2d3e-4f50-4d7e-9a52-0b6f4f9e3c1a'
 
