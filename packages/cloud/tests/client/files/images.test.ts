@@ -13,7 +13,8 @@ describe('image commit batches', () => {
         uploadId: `upload-${index}`,
         parts: Array.from({ length: 10 }, (_, part) => ({
           partNumber: part + 1,
-          etag: 'e'.repeat(255)
+          // As S3 sends them, quoted, so each quote is escaped once sent.
+          etag: `"${'e'.repeat(253)}"`
         }))
       }
     }))

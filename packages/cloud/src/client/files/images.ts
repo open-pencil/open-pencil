@@ -1,5 +1,9 @@
-import { CLOUD_API_MAX_BODY_BYTES, type ObjectUploadTarget } from '#cloud/contract'
-import { limitAsync } from 'es-toolkit'
+import {
+  CLOUD_API_MAX_BODY_BYTES,
+  type CommitImageUploadsInput,
+  type ObjectUploadTarget
+} from '#cloud/contract'
+import { limitAsync, sumBy } from 'es-toolkit'
 
 import type { CloudAPIClient } from '../api'
 import { putCloudObject, type CloudObjectFetch } from './objects'
@@ -8,13 +12,34 @@ const IMAGE_UPLOAD_CONCURRENCY = 4
 /** How much of a request one image commit may fill: each upload brings its parts' ETags. */
 const IMAGE_COMMIT_BYTES = CLOUD_API_MAX_BODY_BYTES / 2
 
+/** What one upload adds to a commit besides its parts: its keys, its ID, and its checksum. */
+const UPLOAD_ENTRY_BYTES = 256
+/** What one part adds besides its ETag: its keys, a part number up to 10,000, and escaped quotes. */
+const PART_ENTRY_BYTES = 48
+
+type ImageCommitUpload = CommitImageUploadsInput['uploads'][number]
+
+/**
+ * At most what an upload adds to a commit's body: fixed room for its fields, and the lengths of
+ * the strings the object store chose, its multipart upload's ID and each part's ETag.
+ */
+function commitEntryBytes(upload: ImageCommitUpload): number {
+  const multipart = upload.multipart
+  if (!multipart) return UPLOAD_ENTRY_BYTES
+  return (
+    UPLOAD_ENTRY_BYTES +
+    multipart.uploadId.length +
+    sumBy(multipart.parts, (part) => PART_ENTRY_BYTES + part.etag.length)
+  )
+}
+
 /** Uploads in commits that each stay under `IMAGE_COMMIT_BYTES` once sent. */
-export function imageCommitBatches<T>(uploads: readonly T[]): T[][] {
+export function imageCommitBatches<T extends ImageCommitUpload>(uploads: readonly T[]): T[][] {
   const batches: T[][] = []
   let batch: T[] = []
   let bytes = 0
   for (const upload of uploads) {
-    const size = new TextEncoder().encode(JSON.stringify(upload)).byteLength + 1
+    const size = commitEntryBytes(upload)
     if (batch.length > 0 && bytes + size > IMAGE_COMMIT_BYTES) {
       batches.push(batch)
       batch = []
