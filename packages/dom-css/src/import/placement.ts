@@ -11,7 +11,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { DesignElement } from '../types'
 import { contentInsets } from './box'
-import { mergedStyle } from './css-values'
+import { mergedStyle, pickStyle } from './css-values'
 
 /**
  * Where the engine that styled the document laid a layer out. For text, `box` is the box its
@@ -63,18 +63,23 @@ export function capturedBox(element: DesignElement): CapturedBox | undefined {
  * borders, which its lines wrap to; down, the lines themselves, which start lower than the
  * content box when the element aligns its content, as a table cell does by `vertical-align`.
  * The words take less when they do not fill a line, as a layer that fills its parent's width
- * is wider than its words.
+ * is wider than its words. Text the browser balances, or wraps to avoid a lone last word, breaks
+ * where it would not by filling each line, so it is as wide as its widest line, where filling
+ * each line breaks it the same way.
  */
 export function capturedTextBox(element: DesignElement): CapturedBox | undefined {
   const layout = element.layout
   if (!layout?.lines || layout.lines.length === 0) return undefined
-  const insets = contentInsets(mergedStyle(element))
+  const style = mergedStyle(element)
+  const insets = contentInsets(style)
   const extent = computeBounds(layout.lines)
+  const wrapStyle = pickStyle(style, 'text-wrap-style')?.trim()
+  const narrowed = layout.lines.length > 1 && (wrapStyle === 'balance' || wrapStyle === 'pretty')
   return {
     box: {
-      x: layout.box.x + insets.left,
+      x: narrowed ? extent.x : layout.box.x + insets.left,
       y: extent.y,
-      width: layout.box.width - insets.left - insets.right,
+      width: narrowed ? extent.width : layout.box.width - insets.left - insets.right,
       height: extent.height
     },
     lines: layout.lines.length,

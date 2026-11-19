@@ -143,6 +143,21 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     )
   })
 
+  test('breaks balanced text where the browser does', async ({ page }) => {
+    const title = 'About custom domains and GitHub Pages'
+    const layers = await browserImportedLayerSummaries(
+      page,
+      `<style>body { margin: 0 } h3 { width: 300px; margin: 0; font: 600 20px/24px sans-serif }</style>
+      <h3 style="text-wrap: balance">${title}</h3><h3>${title}</h3>`,
+      VIEWPORT
+    )
+    const [balanced, filled] = layers.filter((layer) => layer.type === 'TEXT')
+
+    // Two lines either way; balanced, the first breaks early, so its widest line is narrower.
+    expect(balanced?.height).toBe(filled?.height)
+    expect(balanced?.width).toBeLessThan((filled?.width ?? 0) - 20)
+  })
+
   test('reads text a framework’s comment splits as one run', async ({ page }) => {
     const layers = await browserImportedLayerSummaries(
       page,

@@ -137,6 +137,7 @@ const PROPERTIES: &[&str] = &[
     "text-indent",
     "white-space",
     "text-wrap-mode",
+    "text-wrap-style",
     "text-overflow",
     "vertical-align",
     "list-style-type",

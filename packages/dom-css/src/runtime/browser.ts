@@ -163,6 +163,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'text-transform',
   'text-underline-offset',
   'text-wrap-mode',
+  'text-wrap-style',
   'top',
   'transform',
   'transform-origin',
