@@ -1,0 +1,1 @@
+- Renderer teardown releases CanvasKit surfaces and the chrome typeface instead of retaining them.
