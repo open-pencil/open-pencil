@@ -251,7 +251,7 @@ export function applyGradientFill(
   const t = fill.gradientTransform
   if (!stops || !t) return false
   const colors = stops.map((s) => {
-    const c = resolveGradientStopColor(s.color, graph, r.presentationColorSpace)
+    const c = resolveGradientStopColor(s.color, graph)
     return r.ck.Color4f(c.r, c.g, c.b, c.a)
   })
   const positions = stops.map((s) => s.position)

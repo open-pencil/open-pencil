@@ -2,6 +2,7 @@ import type { Canvas, Image, Paint, Shader } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'
+import { skColorSpace } from '#core/canvas/renderer/colors'
 import { compiledProgram } from '#core/canvas/renderer/shaders'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { makeOffscreenSurface } from '#core/canvas/renderer/tiles/surface-pool'
@@ -86,14 +87,13 @@ export function glassGeometryMap(
   if (cached) return cached
   // Compiling may fail; nothing is made before it has.
   const program = compiledProgram(r.ck, r.shaders, GLASS_GEOMETRY_MAP)
-  const target = r.surface.imageInfo()
   const surface = makeOffscreenSurface(r, {
     width: Math.ceil(width * scale),
     height: Math.ceil(height * scale),
     colorType: r.ck.ColorType.RGBA_F16,
     alphaType: r.ck.AlphaType.Premul,
-    // The canvas's own space, so nothing converts the values on the way in or out.
-    colorSpace: target.colorSpace
+    // The space the document is drawn in, so nothing converts the values on the way in or out.
+    colorSpace: skColorSpace(r.ck, r.documentColorSpace)
   })
   if (!surface) return null
   const origin: [number, number] = [-MAP_MARGIN, -MAP_MARGIN]

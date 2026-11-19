@@ -1,7 +1,14 @@
 import { isEqual, noop } from 'es-toolkit'
 
-import type { Effect, SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
-import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
+import type {
+  DocumentColorSpace,
+  Effect,
+  SceneNode,
+  SceneGraph,
+  Fill,
+  Stroke
+} from '@open-pencil/scene-graph'
+import { toExtendedSRGB, type RenderColorSpace } from '@open-pencil/scene-graph/color'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
@@ -34,6 +41,7 @@ import { RenderProfiler } from '#core/profiler'
 import type { FontResolutionSnapshot } from '#core/text/resolver'
 
 import * as RenderColors from './colors'
+import { releaseDocumentSurface, type DocumentSurface } from './document-surface'
 import { createChromeFonts, createTextFontState } from './fonts'
 import * as RendererFonts from './fonts'
 import { destroyRenderer, releaseLiveImages } from './lifecycle'
@@ -154,8 +162,15 @@ export class SkiaRenderer {
   rulerTheme: RulerTheme | null = null
   /** Selection chrome, set from editor state each frame through {@link setSelectionTheme}. */
   selectionTheme: SelectionTheme = DEFAULT_SELECTION_THEME
-  /** Colour space this renderer's surface presents; colours convert into it when painting. */
+  /** The color space of the surface this renderer presents on, which the screen shows. */
   presentationColorSpace: RenderColorSpace = 'srgb'
+  /**
+   * The color space of the document being drawn: the surfaces it is drawn on hold its colors in it,
+   * and its blend modes work in it. Set with {@link useDocumentColorSpace}.
+   */
+  documentColorSpace: DocumentColorSpace = 'srgb'
+  /** A surface in the document's color space the size of the screen's, while the two differ. */
+  documentSurface: DocumentSurface | null = null
   navigationPhase: EditorState['navigation']['phase'] = 'idle'
   navigationGeneration = 0
   tracksSceneSettlement = true
@@ -427,6 +442,7 @@ export class SkiaRenderer {
       // geometry maps and the node pictures that may have recorded them.
       releaseLiveImages(this)
       this.glassMaps.clear()
+      releaseDocumentSurface(this)
       this.invalidateAllPictures()
     }
     this.surface.dispose()
@@ -729,38 +745,8 @@ export class SkiaRenderer {
     return RenderText.buildParagraph(this, node, color, opts)
   }
 
-  resolveFillColorInfo(
-    fill: Fill,
-    fillIndex: number,
-    node: SceneNode,
-    graph: SceneGraph
-  ): ResolvedRenderColor {
-    return RenderColors.resolveFillColorInfo(
-      fill,
-      fillIndex,
-      node,
-      graph,
-      this.presentationColorSpace
-    )
-  }
-
   resolveFillColor(fill: Fill, fillIndex: number, node: SceneNode, graph: SceneGraph): Color {
-    return RenderColors.resolveFillColor(fill, fillIndex, node, graph, this.presentationColorSpace)
-  }
-
-  resolveStrokeColorInfo(
-    stroke: Stroke,
-    strokeIndex: number,
-    node: SceneNode,
-    graph: SceneGraph
-  ): ResolvedRenderColor {
-    return RenderColors.resolveStrokeColorInfo(
-      stroke,
-      strokeIndex,
-      node,
-      graph,
-      this.presentationColorSpace
-    )
+    return RenderColors.resolveFillColor(fill, fillIndex, node, graph)
   }
 
   resolveStrokeColor(
@@ -769,13 +755,23 @@ export class SkiaRenderer {
     node: SceneNode,
     graph: SceneGraph
   ): Color {
-    return RenderColors.resolveStrokeColor(
-      stroke,
-      strokeIndex,
-      node,
-      graph,
-      this.presentationColorSpace
-    )
+    return RenderColors.resolveStrokeColor(stroke, strokeIndex, node, graph)
+  }
+
+  /**
+   * A color stored in the document, such as an effect's, as Skia is given it: in extended sRGB,
+   * which Skia converts into the document's space of the surfaces the document is drawn on.
+   */
+  renderColor(color: Color): Color {
+    return toExtendedSRGB(color, this.documentColorSpace)
+  }
+
+  /** Draws in `space` from now on, starting over what was drawn in another. */
+  useDocumentColorSpace(space: DocumentColorSpace): void {
+    if (space === this.documentColorSpace) return
+    this.documentColorSpace = space
+    this.glassMaps.clear()
+    this.invalidateAllPictures()
   }
 
   screenToCanvas(sx: number, sy: number): Vector {

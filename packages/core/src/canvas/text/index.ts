@@ -240,7 +240,15 @@ export function buildTextPicture(r: TextRenderer, node: SceneNode): Uint8Array |
   const layout = buildParagraph(r, node)
   const paint = new ck.Paint()
   try {
-    drawTextLayout(ck, recCanvas, node, { paragraph: layout }, 0, paint)
+    drawTextLayout(
+      ck,
+      recCanvas,
+      node,
+      { paragraph: layout },
+      0,
+      paint,
+      r.documentColorSpace ?? 'srgb'
+    )
   } finally {
     paint.delete()
     layout.delete()

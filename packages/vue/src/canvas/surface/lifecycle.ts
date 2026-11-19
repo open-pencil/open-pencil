@@ -269,13 +269,10 @@ export function createCanvasSurfaceManager({
       createSurface(canvas, { reloadFonts: true })
       return
     }
-    // Tiles keep the colours they were recorded in, so a resize that changes the presentation
-    // color space starts them over like a new context.
-    const presentation = result.presentation ?? 'srgb'
-    const sameContext =
-      result.glHandle === null && state.renderer.presentationColorSpace === presentation
-    state.renderer.presentationColorSpace = presentation
-    state.renderer.replaceSurface(surface, { sameContext })
+    // Tiles are drawn in the document's color space, whatever the screen presents, so only a new
+    // context starts them over.
+    state.renderer.presentationColorSpace = result.presentation ?? 'srgb'
+    state.renderer.replaceSurface(surface, { sameContext: result.glHandle === null })
     renderNow()
   }
 

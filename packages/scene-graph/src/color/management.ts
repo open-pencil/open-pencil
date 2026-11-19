@@ -60,6 +60,31 @@ function convertComponents(color: Color, from: RenderColorSpace, to: RenderColor
   })
 }
 
+/**
+ * `color`, whose components are in `space`, as the sRGB components of the same color: past 0 and 1
+ * where it lies outside sRGB. A renderer that takes sRGB colors, as Skia does, keeps a wide-gamut
+ * color whole this way and converts it into the space of whatever it draws on.
+ */
+export function toExtendedSRGB(color: Color, space: RenderColorSpace): Color {
+  return convertComponents(color, space, 'srgb')
+}
+
+const toLinearSRGB = converter('lrgb')
+
+/**
+ * The 3×3 matrix, row by row, taking linear components in `space` to linear sRGB ones: its
+ * columns are the space's primaries in linear sRGB.
+ */
+export function linearSRGBMatrix(space: RenderColorSpace): number[] {
+  const mode = space === 'display-p3' ? 'p3' : 'rgb'
+  const columns = [
+    { r: 1, g: 0, b: 0 },
+    { r: 0, g: 1, b: 0 },
+    { r: 0, g: 0, b: 1 }
+  ].map((primary) => toLinearSRGB({ mode, ...primary }))
+  return (['r', 'g', 'b'] as const).flatMap((row) => columns.map((column) => column[row]))
+}
+
 function isOutsideGamut(color: Color, space: RenderColorSpace): boolean {
   if (space === 'display-p3') {
     return !isDisplayableP3({ mode: 'p3', r: color.r, g: color.g, b: color.b, alpha: color.a })

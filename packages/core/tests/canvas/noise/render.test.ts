@@ -4,7 +4,12 @@ import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { noise } from '@open-pencil/design-jsx'
-import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  SceneGraph,
+  type DocumentColorSpace,
+  type Effect,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { withNoiseEffects } from '#core/canvas/noise/render'
@@ -16,9 +21,10 @@ afterAll(() => renderer.destroy())
 
 const SIZE = 128
 
-/** The red channel of a 128 px white square with `effect`, exported at 1×. */
-function exportedRed(effect: Effect): Uint8Array {
+/** The red channel of a 128 px white square with `effect`, exported at 1× from a `space` document. */
+function exportedRed(effect: Effect, space: DocumentColorSpace = 'srgb'): Uint8Array {
   const graph = new SceneGraph()
+  graph.documentColorSpace = space
   const page = graph.getPages()[0].id
   const node = graph.createNode('RECTANGLE', page, {
     width: SIZE,
@@ -66,6 +72,16 @@ describe('noise effects drawn as Figma draws them', () => {
     expect(full.mean).toBeCloseTo(0.4996, 2)
     expect(full.bare).toBeCloseTo(0.021, 2)
     expect(coverage(exportedRed(noise({ color: '#000000', density: 0 }))).mean).toBe(0)
+  })
+
+  test('lay the same grains in a Display P3 document', () => {
+    // The level tiles are data: drawn into a P3 document they must not be converted as colors.
+    const effect = noise({ color: '#000000', noiseSize: 1, density: 0.5 })
+    const srgb = exportedRed(effect)
+    const p3 = exportedRed(effect, 'display-p3')
+    let worst = 0
+    for (let i = 0; i < srgb.length; i++) worst = Math.max(worst, Math.abs(srgb[i] - p3[i]))
+    expect(worst).toBeLessThanOrEqual(1)
   })
 
   test('sample once per output pixel in a supersampled export, so the grains stay sharp', () => {
