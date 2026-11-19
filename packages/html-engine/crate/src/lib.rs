@@ -121,6 +121,7 @@ const PROPERTIES: &[&str] = &[
     "font-weight",
     "font-style",
     "font-stretch",
+    "font-optical-sizing",
     "line-height",
     "letter-spacing",
     "word-spacing",

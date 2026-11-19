@@ -165,6 +165,7 @@ const CHARACTER_FIELDS = [
   'fontSize',
   'fontWeight',
   'fontVariations',
+  'opticalSizeFromFontSize',
   'italic',
   'letterSpacing',
   'lineHeight',

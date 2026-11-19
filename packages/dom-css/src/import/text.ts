@@ -42,6 +42,7 @@ export type CSSCharacterStyle = Pick<
   | 'textUnderlineOffset'
   | 'textCase'
   | 'fontVariations'
+  | 'opticalSizeFromFontSize'
 >
 
 /**
@@ -154,6 +155,11 @@ export function characterStyleFromCSS(
     fontFamily: family || base.fontFamily,
     fontSize: parseCSSNumber(pickStyle(style, 'font-size')) ?? base.fontSize,
     ...cssFontWeight(style, base),
+    // CSS sets a variable font's optical size from the font size unless told not to.
+    opticalSizeFromFontSize:
+      pickStyle(style, 'font-optical-sizing') === undefined
+        ? base.opticalSizeFromFontSize
+        : pickStyle(style, 'font-optical-sizing')?.trim() !== 'none',
     italic: fontStyle === undefined ? base.italic : fontStyle === 'italic',
     letterSpacing: parseCSSLetterSpacing(pickStyle(style, 'letter-spacing')) ?? base.letterSpacing,
     lineHeight: parsedLineHeight === undefined ? base.lineHeight : parsedLineHeight,

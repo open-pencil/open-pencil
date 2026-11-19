@@ -95,6 +95,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'font-family',
   'font-size',
   'font-stretch',
+  'font-optical-sizing',
   'font-style',
   'font-weight',
   'gap',

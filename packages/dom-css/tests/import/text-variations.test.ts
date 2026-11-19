@@ -32,4 +32,9 @@ describe('variable font axes from CSS', () => {
   it('leaves a named weight at normal width to the font’s instance', () => {
     expect(textLayer({ 'font-weight': '600', 'font-stretch': '100%' })?.fontVariations).toEqual([])
   })
+
+  it('sets the optical size from the font size, as CSS does unless told not to', () => {
+    expect(textLayer({ 'font-optical-sizing': 'auto' })?.opticalSizeFromFontSize).toBe(true)
+    expect(textLayer({ 'font-optical-sizing': 'none' })?.opticalSizeFromFontSize).toBe(false)
+  })
 })
