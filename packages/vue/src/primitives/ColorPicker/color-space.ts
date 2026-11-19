@@ -3,7 +3,11 @@ import type { Color as RekaColor, ColorChannel, ColorSpace as RekaColorSpace } f
 import { computed, hasInjectionContext, inject, provide, toValue } from 'vue'
 import type { ComputedRef, InjectionKey, MaybeRefOrGetter } from 'vue'
 
-import { colorToDisplayCSS, type RenderColorSpace } from '@open-pencil/scene-graph/color'
+import {
+  colorToDisplayCSS,
+  resolveRGBAForPreview,
+  type RenderColorSpace
+} from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 /** The profile colors are stored in, and the one the canvas beside them presents them in. */
@@ -207,17 +211,57 @@ export function sliderTrackBackground(
 /**
  * The style of a saturation-by-brightness area of hue `h` for colors stored or shown in a profile
  * other than sRGB: white to the full hue across, darkened toward black downward. `undefined` in
- * sRGB, where Reka's own style is right.
+ * sRGB, where Reka's own style is right, and when colors are shown in another profile than they
+ * are stored in, which {@link saturationBrightnessPixels} draws instead.
  */
 export function saturationBrightnessArea(
   h: number,
   spaces: ColorSpaces
 ): Record<string, string> | undefined {
-  if (isSRGB(spaces)) return undefined
+  if (isSRGB(spaces) || spaces.stored !== spaces.shown) return undefined
   const hue = sceneColor({ space: 'hsb', h, s: 100, b: 100, alpha: 1 })
   const white = { r: 1, g: 1, b: 1, a: 1 }
   return {
     backgroundColor: 'transparent',
     backgroundImage: `linear-gradient(to top, #000000, transparent), ${gradient('to right', [white, hue], spaces)}`
   }
+}
+
+/** Pixels across and down that {@link saturationBrightnessPixels} draws; the browser smooths them. */
+export const SATURATION_BRIGHTNESS_SIZE = 64
+
+/**
+ * The RGBA pixels, in `spaces.shown`, of a saturation-by-brightness area of hue `h` whose colors
+ * are stored in another profile: each pixel made from the stored components and then converted,
+ * clipping as the canvas clips. Layered CSS gradients would darken colors already clipped, which
+ * is not the color the document stores. `undefined` when both profiles are the same.
+ */
+export function saturationBrightnessPixels(
+  h: number,
+  spaces: ColorSpaces,
+  size = SATURATION_BRIGHTNESS_SIZE
+): Uint8ClampedArray<ArrayBuffer> | undefined {
+  if (spaces.stored === spaces.shown) return undefined
+  const hue = sceneColor({ space: 'hsb', h, s: 100, b: 100, alpha: 1 })
+  const pixels = new Uint8ClampedArray(size * size * 4)
+  const last = Math.max(size - 1, 1)
+  for (let row = 0; row < size; row++) {
+    const brightness = 1 - row / last
+    for (let column = 0; column < size; column++) {
+      const saturation = column / last
+      // HSB is linear in the stored components: white toward the hue, then scaled toward black.
+      const channel = (full: number) => brightness * (1 - saturation + saturation * full)
+      const stored = { r: channel(hue.r), g: channel(hue.g), b: channel(hue.b), a: 1 }
+      const shown = resolveRGBAForPreview(stored, {
+        documentColorSpace: spaces.stored,
+        colorSpace: spaces.shown
+      }).color
+      const at = (row * size + column) * 4
+      pixels[at] = shown.r * 255
+      pixels[at + 1] = shown.g * 255
+      pixels[at + 2] = shown.b * 255
+      pixels[at + 3] = 255
+    }
+  }
+  return pixels
 }
