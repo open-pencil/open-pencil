@@ -2,6 +2,7 @@ import type { PDFDocument } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas'
+import { drawingExport } from '#core/canvas/images/baked'
 import { exportBounds, prepareSelectionRenderGraph } from '#core/io/formats/raster/render'
 import { extractExportGraph } from '#core/io/subgraph'
 
@@ -37,7 +38,9 @@ export function renderPagesToPDF(
 ): PDFExportResult | null {
   const doc = new renderer.ck.PDFDocument(options.title ?? '', 'OpenPencil', PDF_RASTER_DPI)
   try {
-    const pages = specs.flatMap((spec) => drawPage(doc, renderer, graph, spec) ?? [])
+    const pages = drawingExport(renderer.images, () =>
+      specs.flatMap((spec) => drawPage(doc, renderer, graph, spec) ?? [])
+    )
     if (pages.length === 0) {
       doc.abort()
       return null

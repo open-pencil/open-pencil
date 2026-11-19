@@ -36,6 +36,7 @@ export interface RendererImages {
   /** Images whose sharper preview has decoded since the last frame. */
   readonly decodedPreviewHashes: Set<string>
   supersampledOutput: SupersampledOutput | null
+  adjustedForExport: Map<string, Image | null> | null
 }
 
 export function createRendererImages(): RendererImages {
@@ -53,7 +54,8 @@ export function createRendererImages(): RendererImages {
     previewsDrawn: false,
     fillUsers: new Map(),
     decodedPreviewHashes: new Set(),
-    supersampledOutput: null
+    supersampledOutput: null,
+    adjustedForExport: null
   }
   return images
 }

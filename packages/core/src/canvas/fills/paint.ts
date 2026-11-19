@@ -8,6 +8,7 @@ import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-g
 
 import { setPaintBlendMode } from '#core/canvas/blend/modes'
 import { hasImageAdjustments, makeAdjustedImageShader } from '#core/canvas/images/adjustments'
+import { adjustedImageForExport } from '#core/canvas/images/baked'
 import { previewEdge } from '#core/canvas/images/previews'
 import {
   drawOffOutputGrid,
@@ -314,9 +315,33 @@ export function applyGradientFill(
 }
 
 /**
- * Sets `paint`'s shader to `img` laid out as `fill` places it on `node`; `preview`, when `img`
- * is a downscaled preview, keeps a tiled image at its original size.
+ * `img` laid out as `fill` places it on `node`; `preview`, when `img` is a downscaled preview,
+ * keeps a tiled image at its original size.
  */
+function placedImageShader(
+  r: SkiaRenderer,
+  fill: Fill,
+  node: SceneNode,
+  graph: SceneGraph,
+  img: Image,
+  preview?: { originalWidth: number; originalHeight: number }
+): Shader {
+  const localMatrix = imageFillMatrix(
+    fill,
+    node,
+    img.width(),
+    img.height(),
+    preview && { width: preview.originalWidth, height: preview.originalHeight }
+  )
+  return makeImageShader(
+    r,
+    img,
+    fill.imageScaleMode ?? 'FILL',
+    localMatrix,
+    landsOnOutputPixels(r, node, graph, localMatrix)
+  )
+}
+
 function setImageShader(
   r: SkiaRenderer,
   fill: Fill,
@@ -326,23 +351,7 @@ function setImageShader(
   paint: Paint,
   preview?: { originalWidth: number; originalHeight: number }
 ): boolean {
-  const imgW = img.width()
-  const imgH = img.height()
-  const scaleMode = fill.imageScaleMode ?? 'FILL'
-  const localMatrix = imageFillMatrix(
-    fill,
-    node,
-    imgW,
-    imgH,
-    preview && { width: preview.originalWidth, height: preview.originalHeight }
-  )
-  const image = makeImageShader(
-    r,
-    img,
-    scaleMode,
-    localMatrix,
-    landsOnOutputPixels(r, node, graph, localMatrix)
-  )
+  const image = placedImageShader(r, fill, node, graph, img, preview)
   let shader = image
   try {
     if (hasImageAdjustments(fill.filters)) shader = makeAdjustedImageShader(r, image, fill.filters)
@@ -351,6 +360,24 @@ function setImageShader(
   } finally {
     if (shader !== image) shader.delete()
     image.delete()
+  }
+  return true
+}
+
+function setBakedImageShader(
+  r: SkiaRenderer,
+  fill: Fill,
+  node: SceneNode,
+  graph: SceneGraph,
+  baked: Image,
+  paint: Paint
+): boolean {
+  const shader = placedImageShader(r, fill, node, graph, baked)
+  try {
+    paint.setShader(shader)
+    markShaded(r, paint)
+  } finally {
+    shader.delete()
   }
   return true
 }
@@ -367,6 +394,11 @@ export function applyImageFill(
   const live = r.images.live.get(hash)
   if (live?.surface === r.surface) {
     return setImageShader(r, fill, node, graph, live.image, paint)
+  }
+  const baked =
+    hasImageAdjustments(fill.filters) && adjustedImageForExport(r, graph, hash, fill.filters)
+  if (baked) {
+    return setBakedImageShader(r, fill, node, graph, baked, paint)
   }
   if (r.viewportImageRendering) {
     r.noteImageFillUser(hash, node.id)
