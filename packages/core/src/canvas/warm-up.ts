@@ -137,6 +137,6 @@ export function warmUpEffectPrograms(
     r.effectLayerPaint.setImageFilter(null)
     r.effectWarmUpFailedPage = pageId
   } finally {
-    surface?.delete()
+    surface?.dispose()
   }
 }

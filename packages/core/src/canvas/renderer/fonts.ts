@@ -13,6 +13,7 @@ import {
   COMPONENT_LABEL_FONT_SIZE,
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE,
+  HUD_FONT_SIZE,
   LABEL_FONT_SIZE,
   SECTION_TITLE_FONT_FAMILY,
   SECTION_TITLE_FONT_SIZE,
@@ -42,6 +43,8 @@ export interface ChromeFonts {
   value: Font | null
   sectionTitle: Font | null
   componentLabel: Font | null
+  /** The profiler HUD's text, which the profiler borrows. */
+  hud: Font | null
 }
 
 export function createChromeFonts(): ChromeFonts {
@@ -51,7 +54,8 @@ export function createChromeFonts(): ChromeFonts {
     size: null,
     value: null,
     sectionTitle: null,
-    componentLabel: null
+    componentLabel: null,
+    hud: null
   }
 }
 
@@ -215,23 +219,24 @@ export async function loadFonts(
   if (fontData) {
     const typeface = r.ck.Typeface.MakeFreeTypeFaceFromData(fontData)
     if (typeface) {
-      const previous = r.chromeTypeface
-      r.chromeTypeface = typeface
       try {
-        r.profiler.setTypeface(typeface)
+        r.chromeFonts.text?.delete()
+        r.chromeFonts.label?.delete()
+        r.chromeFonts.size?.delete()
+        r.chromeFonts.sectionTitle?.delete()
+        r.chromeFonts.componentLabel?.delete()
+        r.chromeFonts.hud?.delete()
+        r.chromeFonts.text = new r.ck.Font(typeface, DEFAULT_FONT_SIZE)
+        r.chromeFonts.label = new r.ck.Font(typeface, LABEL_FONT_SIZE)
+        r.chromeFonts.size = new r.ck.Font(typeface, SIZE_FONT_SIZE)
+        r.chromeFonts.sectionTitle = new r.ck.Font(typeface, SECTION_TITLE_FONT_SIZE)
+        r.chromeFonts.componentLabel = new r.ck.Font(typeface, COMPONENT_LABEL_FONT_SIZE)
+        r.chromeFonts.hud = new r.ck.Font(typeface, HUD_FONT_SIZE)
+        r.profiler.setFont(r.chromeFonts.hud)
       } finally {
-        previous?.delete()
+        // The fonts hold their own references to the face.
+        typeface.delete()
       }
-      r.chromeFonts.text?.delete()
-      r.chromeFonts.label?.delete()
-      r.chromeFonts.size?.delete()
-      r.chromeFonts.sectionTitle?.delete()
-      r.chromeFonts.componentLabel?.delete()
-      r.chromeFonts.text = new r.ck.Font(typeface, DEFAULT_FONT_SIZE)
-      r.chromeFonts.label = new r.ck.Font(typeface, LABEL_FONT_SIZE)
-      r.chromeFonts.size = new r.ck.Font(typeface, SIZE_FONT_SIZE)
-      r.chromeFonts.sectionTitle = new r.ck.Font(typeface, SECTION_TITLE_FONT_SIZE)
-      r.chromeFonts.componentLabel = new r.ck.Font(typeface, COMPONENT_LABEL_FONT_SIZE)
     }
   }
 

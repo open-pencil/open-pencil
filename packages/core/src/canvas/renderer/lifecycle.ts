@@ -74,7 +74,5 @@ export function destroyRenderer(r: SkiaRenderer): void {
   r.tiledScene.destroy()
   r.wholeScene.picture?.delete()
   r.profiler.destroy()
-  r.chromeTypeface?.delete()
-  r.chromeTypeface = null
   r.surface.dispose()
 }

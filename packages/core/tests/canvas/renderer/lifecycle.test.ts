@@ -119,7 +119,8 @@ function createRenderer() {
       size: deletable<Font>(),
       value: null,
       sectionTitle: deletable<Font>(),
-      componentLabel: deletable<Font>()
+      componentLabel: deletable<Font>(),
+      hud: deletable<Font>()
     },
     fontProvider: null,
     fontsLoaded: true,
@@ -173,7 +174,7 @@ test('destroyRenderer releases tiled resources before deleting the main surface'
 
 test('destroyRenderer deletes all renderer-owned paints and label fonts', () => {
   const renderer = createRenderer()
-  const { sectionTitle, componentLabel } = renderer.chromeFonts
+  const { sectionTitle, componentLabel, hud } = renderer.chromeFonts
   const pencilStrokePaint = renderer.pencilStrokePaint
 
   destroyRenderer(renderer)
@@ -181,6 +182,7 @@ test('destroyRenderer deletes all renderer-owned paints and label fonts', () => 
   expect(pencilStrokePaint.delete).toHaveBeenCalled()
   expect(sectionTitle?.delete).toHaveBeenCalled()
   expect(componentLabel?.delete).toHaveBeenCalled()
+  expect(hud?.delete).toHaveBeenCalled()
 })
 
 test('destroyRenderer stops the bounds cache watching the graphs it measured', () => {

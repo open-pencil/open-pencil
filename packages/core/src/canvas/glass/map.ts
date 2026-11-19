@@ -133,6 +133,6 @@ export function glassGeometryMap(
     image?.delete()
     paint?.delete()
     fill?.delete()
-    surface.delete()
+    surface.dispose()
   }
 }
