@@ -43,24 +43,31 @@ function selectPreset(value: unknown): void {
   if (preset) accentPreference.value = { kind: 'preset', preset }
 }
 
-/** The accent before the custom picker opened, restored when the edit is cancelled. */
+/** The accent before the custom picker opened, restored when Escape closes it. */
 const beforeEdit = shallowRef<AccentPreference | null>(null)
+/** The accent as the last finished change left it, a preset or a custom colour. */
+const settled = shallowRef<AccentPreference | null>(null)
 
 function onPickerOpenChange(open: boolean): void {
-  if (open) beforeEdit.value = { ...accentPreference.value }
-  else beforeEdit.value = null
+  beforeEdit.value = open ? { ...accentPreference.value } : null
+  settled.value = beforeEdit.value
 }
 
 function onCustomColor(color: Color): void {
   accentPreference.value = { kind: 'custom', color: colorToHex(color) }
 }
 
+function onCommit(): void {
+  settled.value = { ...accentPreference.value }
+}
+
 /**
- * Only Escape closing the picker restores the accent it opened with; a press put back has already
- * come back through `update`, keeping what earlier presses changed.
+ * A press put back returns to the accent the last finished change left, so a preset stays a
+ * preset; Escape closing the picker returns to the accent it opened with.
  */
 function onCancel(cause: PickerCancelCause): void {
-  if (cause === 'escape' && beforeEdit.value) accentPreference.value = beforeEdit.value
+  const restore = cause === 'escape' ? beforeEdit.value : settled.value
+  if (restore) accentPreference.value = restore
 }
 </script>
 
@@ -91,6 +98,7 @@ function onCancel(cause: PickerCancelCause): void {
         escape-reverts
         @update="onCustomColor"
         @open-change="onPickerOpenChange"
+        @commit="onCommit"
         @cancel="onCancel"
       >
         <template #trigger>
