@@ -1,4 +1,5 @@
 import type { DesignResource, DesignResourceFetch } from '@open-pencil/dom-css'
+import { parseDataURL } from '@open-pencil/scene-graph/images'
 
 import { readBoundedBody } from './body'
 import { MAX_REMOTE_FILE_BYTES, mediaType } from './file'
@@ -8,13 +9,20 @@ export const MAX_PAGE_RESOURCE_BYTES = 256 * 1024 * 1024
 
 /**
  * Reads the files a page loads, such as stylesheets, fonts, and pictures, with `fetch`: each up
- * to `maxBytes`, from the address a redirect ends at, with the media type its server sent.
+ * to `maxBytes`, from the address a redirect ends at, with the media type its server sent. A
+ * `data:` URL carries its file in itself, so it is read from the URL, never sent anywhere.
  */
 export function networkResourceFetch(
   fetch: typeof globalThis.fetch,
   maxBytes = MAX_REMOTE_FILE_BYTES
 ): DesignResourceFetch {
   return async (url, signal) => {
+    if (URL.canParse(url) && new URL(url).protocol === 'data:') {
+      const data = parseDataURL(url)
+      return data && data.bytes.byteLength <= maxBytes
+        ? { url, bytes: data.bytes, contentType: data.mimeType }
+        : null
+    }
     const response = await fetch(url, { signal }).catch(() => null)
     if (!response?.ok) return null
     const bytes = await readBoundedBody(response, maxBytes).catch(() => null)
