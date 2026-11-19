@@ -215,6 +215,13 @@ export async function loadFonts(
   if (fontData) {
     const typeface = r.ck.Typeface.MakeFreeTypeFaceFromData(fontData)
     if (typeface) {
+      const previous = r.chromeTypeface
+      r.chromeTypeface = typeface
+      try {
+        r.profiler.setTypeface(typeface)
+      } finally {
+        previous?.delete()
+      }
       r.chromeFonts.text?.delete()
       r.chromeFonts.label?.delete()
       r.chromeFonts.size?.delete()
@@ -225,7 +232,6 @@ export async function loadFonts(
       r.chromeFonts.size = new r.ck.Font(typeface, SIZE_FONT_SIZE)
       r.chromeFonts.sectionTitle = new r.ck.Font(typeface, SECTION_TITLE_FONT_SIZE)
       r.chromeFonts.componentLabel = new r.ck.Font(typeface, COMPONENT_LABEL_FONT_SIZE)
-      r.profiler.setTypeface(typeface)
     }
   }
 

@@ -63,6 +63,7 @@ import type {
   Path,
   Surface,
   TextureSource,
+  Typeface,
   TypefaceFontProvider
 } from '@open-pencil/canvaskit'
 
@@ -171,6 +172,8 @@ export class SkiaRenderer {
 
   // Fonts: the document's provider and the faces the chrome draws with.
   fontProvider: TypefaceFontProvider | null = null
+  /** Owns the face the profiler borrows, including while its HUD has not been opened. */
+  chromeTypeface: Typeface | null = null
   fontsLoaded = false
   fontGeneration = 0
   onFontResolutionSettled:
@@ -429,7 +432,7 @@ export class SkiaRenderer {
       this.glassMaps.clear()
       this.invalidateAllPictures()
     }
-    this.surface.delete()
+    this.surface.dispose()
     this.surface = surface
     this.invalidateScenePicture()
   }

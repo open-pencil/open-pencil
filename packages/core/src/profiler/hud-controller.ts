@@ -26,5 +26,6 @@ export class HudController {
   destroy(): void {
     this.hud?.destroy()
     this.hud = null
+    this.typeface = null
   }
 }
