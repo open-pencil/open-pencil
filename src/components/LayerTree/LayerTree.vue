@@ -17,7 +17,7 @@ import {
 } from '@open-pencil/vue/primitives/LayerTree'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { layerIssueMarks } from '@/app/editor/design-check/layers'
+import { layerIssueMarks, showsLayerIssueMark } from '@/app/editor/design-check/layers'
 import { appPreferences } from '@/app/settings/preferences/store'
 import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
 import AppContextMenuTrigger from '@/components/ui/menu/AppContextMenuTrigger.vue'
@@ -28,9 +28,10 @@ import { useLayerTreeGeometry } from './geometry'
 import LayerTreeNodeRow from './LayerTreeNodeRow.vue'
 import LayerTreeRenameRow from './LayerTreeRenameRow.vue'
 import LayerTreeStickyRow from './LayerTreeStickyRow.vue'
+import { layerModeNames } from './mode-names'
 import { provideLayerTreeUI } from './ui'
 import type { LayerTreeUI } from './ui'
-import { createRowsOverflow } from './width'
+import { createTextMeasure, rowsOverflow } from './width'
 
 interface LayerTreeRootActions {
   select: (id: string, selection: boolean | LayerSelectionMode) => void
@@ -51,7 +52,8 @@ defineOptions({ inheritAttrs: false })
 
 const { ui } = defineProps<{ ui?: LayerTreeUI }>()
 
-const { rowHeight, indent, nameStart, buttons } = useLayerTreeGeometry()
+const { rowHeight, indent, nameStart, buttons, badge, badgeTextSize, issueMark } =
+  useLayerTreeGeometry()
 const attrs = useAttrs()
 const styles = tv(layerTreeTheme)()
 provideLayerTreeUI(() => ui)
@@ -60,7 +62,8 @@ const viewport = useTemplateRef<HTMLElement>('viewport')
 /** How far the rows are scrolled, for the pinned top-level row. */
 const { y: scrollTop } = useScroll(viewport)
 const { width: viewportWidth } = useElementSize(viewport)
-const rowsOverflow = createRowsOverflow()
+const measureText = createTextMeasure()
+const root = useTemplateRef<InstanceType<typeof LayerTreeRoot>>('root')
 let pendingScrollPosition: number | undefined
 watch(
   [rowHeight, () => store.state.currentPageId],
@@ -180,20 +183,34 @@ function chrome(scope: Omit<LayerTreeSlotScope, 'actions'>) {
 /**
  * The rows' width, wider than the list for the widest row's whole name. It goes on the
  * virtualizer's own element, over its `width: 100%`; its rows fill it, and a wider block runs
- * past the list's end in either reading direction, so the list scrolls sideways.
+ * past the list's end in either reading direction, so the list scrolls sideways. The rows are
+ * reactive, so a rename or a new mode badge widens it, while other renders reuse it.
  */
-function rowsWidth(rows: readonly LayerRow[]): string {
+const rowsWidth = computed(() => {
   const el = viewport.value
-  const overflow = rowsOverflow(rows, {
-    // The list sets the rows' text size, so its font is the names' font.
-    font: el ? getComputedStyle(el).font : '',
-    indent: indent.value,
-    nameStart: nameStart.value,
-    buttons: buttons.value,
-    viewportWidth: viewportWidth.value
-  })
+  // The list sets the rows' text size, so its font is the names' font.
+  const style = el ? getComputedStyle(el) : null
+  const marks = issueMarks.value
+  const overflow = rowsOverflow(
+    root.value?.visibleRows ?? [],
+    {
+      font: style?.font ?? '',
+      badgeFont: style ? `${style.fontWeight} ${badgeTextSize.value}px ${style.fontFamily}` : '',
+      indent: indent.value,
+      nameStart: nameStart.value,
+      buttons: buttons.value,
+      badge: badge.value,
+      issueMark: issueMark.value,
+      viewportWidth: viewportWidth.value
+    },
+    {
+      modeNames: (row) => layerModeNames(store.graph, row.node.modeIds),
+      showsIssue: (row, expanded) => showsLayerIssueMark(marks?.get(row.node.id), expanded)
+    },
+    measureText
+  )
   return `calc(100% + ${overflow}px)`
-}
+})
 
 /**
  * The sideways scroll that shows a row with one level of its parent's indent before it, as
@@ -254,7 +271,7 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
 </script>
 
 <template>
-  <LayerTreeRoot v-slot="scope" :indent-per-level="indent">
+  <LayerTreeRoot ref="root" v-slot="scope" :indent-per-level="indent">
     <AppContextMenuRoot :modal="false">
       <!-- The trigger covers the pinned row too, so right-clicking it opens the layer menu. -->
       <AppContextMenuTrigger as-child @contextmenu="onLayerRightClick">
@@ -273,7 +290,7 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
             <TreeVirtualizer
               v-slot="{ item, virtualizer }"
               :key="rowHeight"
-              :style="{ minWidth: rowsWidth(scope.visibleRows) }"
+              :style="{ minWidth: rowsWidth }"
               :estimate-size="rowHeight"
               :text-content="layerTextContent"
             >

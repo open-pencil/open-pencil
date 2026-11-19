@@ -106,6 +106,30 @@ for (const direction of ['ltr', 'rtl'] as const) {
       expect(part.right).toBeLessThanOrEqual(bounds.viewport.right)
     }
 
+    // A longer name widens the list, so scrolled to its end the new name ends in view, uncut.
+    await page.evaluate(
+      (id) =>
+        window.openPencil?.getStore?.()?.renameNode(id, 'Deep layer renamed to a much longer name'),
+      ids.at(-1) ?? ''
+    )
+    await expect(leafRow).toContainText('much longer name')
+    const name = await leafRow.evaluate((row) => {
+      const viewport = row.closest<HTMLElement>('[data-test-id="layers-scroll"]')
+      const text = row.querySelector('[data-slot="label"] > span')
+      if (!viewport || !text) throw new Error('Layer row parts missing')
+      // Toward the end is negative scrollLeft in a right-to-left list; the browser clamps it.
+      const end = getComputedStyle(viewport).direction === 'rtl' ? -1 : 1
+      viewport.scrollLeft = end * viewport.scrollWidth
+      const rect = text.getBoundingClientRect()
+      const view = viewport.getBoundingClientRect()
+      const rtl = end < 0
+      return {
+        truncated: text.scrollWidth > text.clientWidth,
+        endInView: rtl ? rect.left >= view.left : rect.right <= view.right
+      }
+    })
+    expect(name).toEqual({ truncated: false, endInView: true })
+
     await select(ids[0])
     await expect.poll(() => scroller.evaluate((el) => Math.abs(el.scrollLeft))).toBe(0)
     canvas.assertNoErrors()

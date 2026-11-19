@@ -5,7 +5,10 @@ import { computed } from 'vue'
 import type { LayerNode } from '@open-pencil/vue/primitives/LayerTree'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import type { LayerIssueMark as LayerIssueMarkData } from '@/app/editor/design-check/layers'
+import {
+  showsLayerIssueMark,
+  type LayerIssueMark as LayerIssueMarkData
+} from '@/app/editor/design-check/layers'
 import LayerIssueMark from '@/components/design-check/LayerIssueMark.vue'
 import { COMPONENT_TYPES, nodeIcon } from '@/components/icons'
 import layerTreeTheme from '@/theme/layer-tree'
@@ -14,6 +17,7 @@ import LayerTreeActions from './LayerTreeActions.vue'
 import LayerTreeDisclosure from './LayerTreeDisclosure.vue'
 import LayerTreeDropIndicator from './LayerTreeDropIndicator.vue'
 import LayerTreeRowShell from './LayerTreeRowShell.vue'
+import { layerModeNames } from './mode-names'
 import type { LayerTreeChrome, LayerTreeItemActions } from './types'
 import { useLayerTreeUI } from './ui'
 
@@ -37,17 +41,8 @@ const emit = defineEmits<{
 
 const ui = useLayerTreeUI()
 const store = useEditorStore()
-/** The names of the variable modes set on the layer itself, tagged after its name as in Figma. */
-const modeNames = computed(() =>
-  (node.modeIds ?? []).flatMap((modeId) => {
-    for (const collection of store.graph.variableCollections.values()) {
-      const mode = collection.modes.find((candidate) => candidate.modeId === modeId)
-      if (mode) return [mode.name]
-    }
-    return []
-  })
-)
-const showIssue = computed(() => !!issue && (issue.own || !expanded))
+const modeNames = computed(() => layerModeNames(store.graph, node.modeIds))
+const showIssue = computed(() => showsLayerIssueMark(issue, expanded))
 const layerTree = tv(layerTreeTheme)
 const styles = computed(() =>
   layerTree({

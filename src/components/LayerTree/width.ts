@@ -1,58 +1,67 @@
 import type { LayerRow } from '@open-pencil/vue/primitives/LayerTree'
 
 export interface LayerRowMetrics {
-  /** The tree's label font, as `getComputedStyle(…).font` gives it. */
+  /** The names' font and the variable mode badges' font, as canvas `font` strings. */
   font: string
+  badgeFont: string
   indent: number
   /** From a row's indent to the start of its name: disclosure, icon, and their gaps. */
   nameStart: number
   /** The buttons at a row's end, with their gap and the row's end padding. */
   buttons: number
+  /** Space a variable mode badge takes besides its text, and an issue mark with its gap. */
+  badge: number
+  issueMark: number
   /** The list's own width, which rows fill before they scroll. */
   viewportWidth: number
 }
 
-/**
- * How far the layer rows reach past the list sideways, as in Figma's layers panel: far enough
- * for the widest row's indent and whole name, so no name is ever cut short, only scrolled out of
- * view. Name widths are measured once per font; the result is kept until the rows or metrics
- * change, since the tree renders far more often than it changes.
- */
-export function createRowsOverflow() {
+export interface LayerRowDecorations {
+  modeNames: (row: LayerRow) => readonly string[]
+  /** Whether the row shows an issue mark; `expanded` is whether its children are listed. */
+  showsIssue: (row: LayerRow, expanded: boolean) => boolean
+}
+
+/** Text widths in a font, measured once each on a canvas. */
+export function createTextMeasure() {
   let context: CanvasRenderingContext2D | null = null
   const widths = new Map<string, number>()
-  let measuredFont = ''
-  let last: { rows: readonly LayerRow[]; key: string; overflow: number } | null = null
-
-  function nameWidth(name: string): number {
-    let width = widths.get(name)
+  return (text: string, font: string): number => {
+    const key = `${font}\n${text}`
+    let width = widths.get(key)
     if (width === undefined) {
       context ??= document.createElement('canvas').getContext('2d')
       if (!context) return 0
-      context.font = measuredFont
-      width = context.measureText(name).width
-      widths.set(name, width)
+      context.font = font
+      width = context.measureText(text).width
+      widths.set(key, width)
     }
     return width
   }
+}
 
-  return (rows: readonly LayerRow[], metrics: LayerRowMetrics): number => {
-    const key = JSON.stringify(metrics)
-    if (last?.rows === rows && last.key === key) return last.overflow
-    if (metrics.font !== measuredFont) {
-      widths.clear()
-      measuredFont = metrics.font
+/**
+ * How far the layer rows reach past the list sideways, as in Figma's layers panel: far enough
+ * for the widest row's indent, whole name, mode badges, and issue mark, so no name is ever cut
+ * short, only scrolled out of view.
+ */
+export function rowsOverflow(
+  rows: readonly LayerRow[],
+  metrics: LayerRowMetrics,
+  decorations: LayerRowDecorations,
+  measure: (text: string, font: string) => number
+): number {
+  if (!metrics.font) return 0
+  let widest = 0
+  for (const [index, row] of rows.entries()) {
+    let width = (row.level - 1) * metrics.indent + metrics.nameStart
+    width += measure(row.node.name, metrics.font)
+    for (const name of decorations.modeNames(row)) {
+      width += metrics.badge + measure(name, metrics.badgeFont)
     }
-    let widest = 0
-    if (metrics.font) {
-      for (const row of rows) {
-        const width =
-          (row.level - 1) * metrics.indent + metrics.nameStart + nameWidth(row.node.name)
-        if (width > widest) widest = width
-      }
-    }
-    const overflow = Math.max(0, Math.ceil(widest + metrics.buttons - metrics.viewportWidth))
-    last = { rows, key, overflow }
-    return overflow
+    const expanded = row.hasChildren && (rows[index + 1]?.level ?? 0) > row.level
+    if (decorations.showsIssue(row, expanded)) width += metrics.issueMark
+    if (width > widest) widest = width
   }
+  return Math.max(0, Math.ceil(widest + metrics.buttons - metrics.viewportWidth))
 }
