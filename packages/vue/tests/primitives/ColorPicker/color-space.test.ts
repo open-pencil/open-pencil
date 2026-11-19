@@ -7,6 +7,7 @@ import type { Fill } from '@open-pencil/scene-graph'
 import {
   colorToDisplayCSS,
   okhclToRGBA,
+  resolveRGBAForPreview,
   rgbaToOkHCL,
   type RenderColorSpace
 } from '@open-pencil/scene-graph/color'
@@ -17,6 +18,8 @@ import { useColorModel } from '#vue/controls/color-model/use'
 import {
   linearGradientCSS,
   provideColorSpace,
+  saturationBrightnessArea,
+  saturationBrightnessPixels,
   sliderTrackBackground,
   useColorCSS
 } from '#vue/primitives/ColorPicker/color-space'
@@ -166,5 +169,34 @@ describe('gradients shown in another profile than stored', () => {
     // Shown clipped to sRGB, so the stops are rgb(), not color(display-p3 …).
     expect(saturationTrack).not.toContain('color(display-p3')
     app.unmount()
+  })
+})
+
+describe('saturation-by-brightness area in another shown profile', () => {
+  test('darkens in the stored components before clipping, as the canvas does', () => {
+    const spaces = { stored: 'display-p3', shown: 'srgb' } as const
+    const size = 3
+    const pixels = saturationBrightnessPixels(0, spaces, size)
+    // Full saturation at half brightness: the document's P3 (0.5, 0, 0), shown in sRGB.
+    const expected = resolveRGBAForPreview(
+      { r: 0.5, g: 0, b: 0, a: 1 },
+      { documentColorSpace: 'display-p3', colorSpace: 'srgb' }
+    ).color
+    const byte = (value: number) => Math.round(Math.min(1, Math.max(0, value)) * 255)
+    const at = (1 * size + 2) * 4
+    expect([pixels?.[at], pixels?.[at + 1], pixels?.[at + 2]]).toEqual([
+      byte(expected.r),
+      byte(expected.g),
+      byte(expected.b)
+    ])
+    // Darkening the clipped sRGB red would give 128 instead.
+    expect(pixels?.[at]).toBeGreaterThan(130)
+    expect(saturationBrightnessArea(0, spaces)).toBeUndefined()
+  })
+
+  test('the same profile keeps exact CSS gradients and draws no pixels', () => {
+    const p3 = { stored: 'display-p3', shown: 'display-p3' } as const
+    expect(saturationBrightnessPixels(0, p3)).toBeUndefined()
+    expect(saturationBrightnessArea(0, p3)).toBeDefined()
   })
 })
