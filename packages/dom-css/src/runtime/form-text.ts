@@ -1,3 +1,5 @@
+import { parseCSSNumber } from '@open-pencil/scene-graph/css'
+
 import { contentInsets } from '../import/box'
 import { inheritedTextStyle } from '../import/flow'
 import type { DesignElement, DesignLayout, DesignStyleDeclaration } from '../types'
@@ -11,19 +13,31 @@ function shownText(field: HTMLInputElement | HTMLTextAreaElement) {
   return field.placeholder ? { text: field.placeholder, placeholder: true } : null
 }
 
-/** The box inside a field's border and padding, where its text sits. */
-function contentBox(layout: DesignLayout, style: DesignStyleDeclaration): DesignLayout {
+/**
+ * Where a field's text sits: inside its border and padding, and for a one-line field, its line
+ * centered on that box, as browsers center an input's text however tall the box is.
+ */
+function textBox(
+  layout: DesignLayout,
+  style: DesignStyleDeclaration,
+  oneLine: boolean
+): DesignLayout {
   const { top, right, bottom, left } = contentInsets(style)
   const { x, y, width, height } = layout.box
-  return {
-    box: {
-      x: x + left,
-      y: y + top,
-      width: Math.max(0, width - left - right),
-      height: Math.max(0, height - top - bottom)
-    }
+  const content = {
+    x: x + left,
+    y: y + top,
+    width: Math.max(0, width - left - right),
+    height: Math.max(0, height - top - bottom)
   }
+  const fontSize = parseCSSNumber(style['font-size']) ?? 16
+  const line = parseCSSNumber(style['line-height']) ?? fontSize * NORMAL_LINE_HEIGHT
+  if (!oneLine) return { box: content }
+  return { box: { ...content, y: content.y + (content.height - line) / 2, height: line } }
 }
+
+/** The line height `normal` gives most fonts, as a multiple of the font size. */
+const NORMAL_LINE_HEIGHT = 1.2
 
 /**
  * Shows the text a text field draws inside it, which no element of the page holds: what is typed
@@ -58,7 +72,8 @@ export function showFormText(
           display: 'block',
           'white-space': isInput ? 'pre' : 'pre-wrap'
         },
-        layout: designElement.layout && contentBox(designElement.layout, own)
+        // The line is the field's own, whatever its placeholder's style says.
+        layout: designElement.layout && textBox(designElement.layout, own, isInput)
       }
     ]
   }

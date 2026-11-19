@@ -125,6 +125,24 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(fieldText.map((layer) => layer.paints)).toEqual([0, 0])
   })
 
+  test('centers a field’s line of text however tall its box, as browsers do', async ({ page }) => {
+    const layers = await browserImportedLayerSummaries(
+      page,
+      `<style>body { margin: 0 } input { box-sizing: border-box; height: 41px; padding: 16px 12px; font: 16px/24px sans-serif }</style>
+      <input placeholder="Search articles">`,
+      VIEWPORT
+    )
+    const field = layers.find((layer) => layer.name === 'input')
+    const text = layers.find((layer) => layer.name === '::placeholder')
+
+    // The 24px line overflows the 9px content box, and sits centered on it rather than below.
+    expect(text?.height).toBe(24)
+    expect((text?.y ?? 0) + (text?.height ?? 0) / 2).toBeCloseTo(
+      (field?.y ?? 0) + (field?.height ?? 0) / 2,
+      0
+    )
+  })
+
   test('runs none of the page’s event handlers', async ({ page }) => {
     await browserImportedLayerSummaries(
       page,
