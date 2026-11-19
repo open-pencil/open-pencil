@@ -194,7 +194,13 @@ const rawCloudServerConfigSchema = v.object({
    * The workspace whose documents anyone may open read-only, without signing in or a link: the
    * deployment's community gallery. Without it the server has none.
    */
-  community: v.optional(v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })),
+  community: v.optional(
+    v.object({
+      workspaceId: v.pipe(v.string(), v.uuid()),
+      /** The gallery document editors open as their tour. */
+      tourDocumentId: v.optional(v.pipe(v.string(), v.uuid()))
+    })
+  ),
   /** How a self-hosted server names itself on its public pages. */
   branding: v.optional(
     v.object({

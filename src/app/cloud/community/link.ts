@@ -1,11 +1,10 @@
 import { shallowRef, watch } from 'vue'
 
-import { createCloudAPIClient } from '@open-pencil/cloud/client'
+import { createCloudAPIClient, downloadCloudDocument } from '@open-pencil/cloud/client'
 import { cloudCommunityPath, parseCloudLinkPath } from '@open-pencil/cloud/contract'
 import { cloudMessages } from '@open-pencil/vue/i18n'
 
 import type { EditorStore } from '@/app/editor/session'
-import { downloadCloudDocument } from '@/app/integrations/storage/cloud/download'
 import { storageFetch } from '@/app/integrations/storage/s3/fetch'
 import { toast } from '@/app/shell/ui'
 import { allTabs, getTabForStore, onTabDocumentReplaced, openFileInNewTab } from '@/app/tabs'

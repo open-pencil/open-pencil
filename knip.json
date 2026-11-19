@@ -4,7 +4,6 @@
   "ignoreWorkspaces": ["packages/acp", "packages/demos"],
   "ignoreUnresolved": [
     "~icons/*",
-    "#app-public/*",
     "/src/app/editor/fonts/index.ts",
     "/packages/core/src/text/index.ts",
     "/src/app/tabs/index.ts",

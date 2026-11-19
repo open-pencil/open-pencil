@@ -1,0 +1,1 @@
+- The tour opens from the OpenPencil Cloud gallery instead of a copy built into the app, as the version published for your release, so it needs a connection (#2072).

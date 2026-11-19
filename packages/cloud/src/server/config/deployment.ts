@@ -213,7 +213,9 @@ export function parseCloudDeploymentConfig(
     ...workerConfig(config),
     ...serviceConfig(config, environment),
     legal: legalConfig(config),
-    community: config.community ? { workspaceId: config.community.workspace } : undefined,
+    community: config.community
+      ? { workspaceId: config.community.workspace, tourDocumentId: config.community.tour }
+      : undefined,
     branding: config.deployment.branding && {
       name: config.deployment.branding.name,
       logoURL: config.deployment.branding.logo_url,
