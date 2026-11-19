@@ -54,6 +54,6 @@ export function presentDocumentSurface(screen: Canvas, surface: Surface): void {
 }
 
 export function releaseDocumentSurface(r: Pick<SkiaRenderer, 'documentSurface'>): void {
-  r.documentSurface?.surface.delete()
+  r.documentSurface?.surface.dispose()
   r.documentSurface = null
 }
