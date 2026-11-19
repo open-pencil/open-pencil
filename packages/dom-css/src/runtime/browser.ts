@@ -1,7 +1,7 @@
 import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { serializeHTML } from '../export/html'
-import { joinAdjacentText } from '../import/text-nodes'
+import { joinAdjacentText } from '../import/adjacent-text'
 import type {
   CSSComputeOptions,
   CSSRuntime,
