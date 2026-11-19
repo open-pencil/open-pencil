@@ -190,3 +190,36 @@ test('okhcl channels preserve intent metadata while updating the fill', async ()
   expect(lightnessIntent?.l).toBeCloseTo(0.75, 1)
   expect(lightnessIntent?.c).toBeCloseTo(chromaIntent?.c ?? 0, 3)
 })
+
+test('switching paint types keeps the tab row where it was', async () => {
+  // Tall enough for every type to fit below the swatch; one that does not is shifted up to fit.
+  const viewport = page.viewportSize()
+  await page.setViewportSize({ width: viewport?.width ?? 1280, height: 1000 })
+  await page.keyboard.press('Escape')
+  await canvas.clearCanvas()
+  await canvas.drawRect(100, 100, 160, 120)
+  await canvas.waitForRender()
+  await openFillPicker()
+  // Measured once the picker has finished scaling in.
+  await page
+    .getByTestId('fill-picker-tab-solid')
+    .evaluate((tab) =>
+      Promise.all(
+        (tab.closest('[data-picker-content]')?.getAnimations() ?? []).map((a) => a.finished)
+      )
+    )
+  const tabRow = async () => {
+    const box = await page.getByTestId('fill-picker-tab-solid').boundingBox()
+    if (!box) throw new Error('Missing paint type tabs')
+    return box.y
+  }
+  const at = await tabRow()
+
+  // Each type is a different height; the picker opened for Solid keeps its top for the others.
+  for (const type of ['image', 'shader', 'solid']) {
+    await page.getByTestId(`fill-picker-tab-${type}`).click()
+    await expect(page.getByTestId(`fill-picker-tab-${type}`)).toHaveAttribute('data-active', 'true')
+    expect(await tabRow()).toBeCloseTo(at, 0)
+  }
+  if (viewport) await page.setViewportSize(viewport)
+})

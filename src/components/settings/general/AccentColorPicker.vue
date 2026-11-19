@@ -6,6 +6,7 @@ import { computed, shallowRef } from 'vue'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { useSettingsMessages } from '@open-pencil/vue/i18n'
+import type { PickerCancelCause } from '@open-pencil/vue/primitives/ColorPicker'
 
 import { accentPreference } from '@/app/shell/accent'
 import { ACCENT_PRESET_COLORS, accentBaseColor } from '@/app/shell/accent/palette'
@@ -42,20 +43,31 @@ function selectPreset(value: unknown): void {
   if (preset) accentPreference.value = { kind: 'preset', preset }
 }
 
-/** The accent before the custom picker opened, restored when the edit is cancelled. */
+/** The accent before the custom picker opened, restored when Escape closes it. */
 const beforeEdit = shallowRef<AccentPreference | null>(null)
+/** The accent as the last finished change left it, a preset or a custom colour. */
+const settled = shallowRef<AccentPreference | null>(null)
 
 function onPickerOpenChange(open: boolean): void {
-  if (open) beforeEdit.value = { ...accentPreference.value }
-  else beforeEdit.value = null
+  beforeEdit.value = open ? { ...accentPreference.value } : null
+  settled.value = beforeEdit.value
 }
 
 function onCustomColor(color: Color): void {
   accentPreference.value = { kind: 'custom', color: colorToHex(color) }
 }
 
-function onCancel(): void {
-  if (beforeEdit.value) accentPreference.value = beforeEdit.value
+function onCommit(): void {
+  settled.value = { ...accentPreference.value }
+}
+
+/**
+ * A press put back returns to the accent the last finished change left, so a preset stays a
+ * preset; Escape closing the picker returns to the accent it opened with.
+ */
+function onCancel(cause: PickerCancelCause): void {
+  const restore = cause === 'escape' ? beforeEdit.value : settled.value
+  if (restore) accentPreference.value = restore
 }
 </script>
 
@@ -83,8 +95,10 @@ function onCancel(): void {
       <ColorPicker
         :color="customColor"
         :eyedropper="false"
+        escape-reverts
         @update="onCustomColor"
         @open-change="onPickerOpenChange"
+        @commit="onCommit"
         @cancel="onCancel"
       >
         <template #trigger>
