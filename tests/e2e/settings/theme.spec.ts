@@ -58,9 +58,10 @@ test('Accent color recolors the interface, persists, and a cancelled custom pick
 
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-accent-custom').click()
-  const red = page.getByRole('spinbutton', { name: 'Red', exact: true })
-  await red.fill('0')
-  await red.press('Enter')
+  await page.getByRole('spinbutton', { name: 'Red', exact: true }).click()
+  await page.keyboard.press('ControlOrMeta+A')
+  await page.keyboard.type('0')
+  await page.keyboard.press('Enter')
   await expect(page.getByTestId('settings-accent-custom')).toHaveAttribute('aria-pressed', 'true')
   await expect.poll(accent).not.toBe(chosen)
   await page.keyboard.press('Escape')

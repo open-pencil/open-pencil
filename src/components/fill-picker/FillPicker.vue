@@ -124,7 +124,7 @@ const pickerOkhcl = computed<OkHCLControls | null>(() =>
     : null
 )
 const cls = usePopoverUI({
-  content: 'max-h-(--reka-popover-content-available-height) w-60 overflow-y-auto p-2'
+  content: 'max-h-(--reka-popover-content-available-height) w-60 overflow-y-auto p-0'
 })
 const { panels } = useI18n()
 
@@ -157,7 +157,8 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
           @pointer-down-outside="outside.onPointerDownOutside"
           @focus-outside="outside.onFocusOutside"
         >
-          <div class="mb-2 flex items-center gap-0.5">
+          <!-- As in Figma: the paint types, a divider, then the type's controls inset 16 px. -->
+          <div class="flex items-center gap-0.5 border-b border-border p-2">
             <Tip :label="panels.solid">
               <button
                 :data-active="root.category === 'SOLID' || undefined"
@@ -204,30 +205,37 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
             </Tip>
           </div>
 
-          <ColorPickerPanel
-            v-if="root.category === 'SOLID'"
-            :color="root.fill.color"
-            :okhcl="pickerOkhcl"
-            eyedropper
-            @update="update(applySolidFillColor(root.fill, $event))"
-          />
+          <div class="p-4">
+            <ColorPickerPanel
+              v-if="root.category === 'SOLID'"
+              :color="root.fill.color"
+              :okhcl="pickerOkhcl"
+              eyedropper
+              @update="update(applySolidFillColor(root.fill, $event))"
+            />
 
-          <GradientEditor
-            v-if="root.category === 'GRADIENT'"
-            v-model:active-stop="activeStop"
-            :fill="root.fill"
-            @update="update"
-          />
+            <GradientEditor
+              v-if="root.category === 'GRADIENT'"
+              v-model:active-stop="activeStop"
+              :fill="root.fill"
+              @update="update"
+            />
 
-          <ShaderFillPicker v-if="shader" :preset="shader.preset" @update="updateShader" />
+            <ShaderFillPicker
+              v-if="shader"
+              :preset="shader.preset"
+              :preview="image.url.value"
+              @update="updateShader"
+            />
 
-          <ImageFillPicker
-            v-else-if="root.category === 'IMAGE'"
-            :fill="root.fill"
-            :layer-size="layerSize"
-            @update="update"
-            @image="updateImage"
-          />
+            <ImageFillPicker
+              v-else-if="root.category === 'IMAGE'"
+              :fill="root.fill"
+              :layer-size="layerSize"
+              @update="update"
+              @image="updateImage"
+            />
+          </div>
         </PopoverContent>
       </PopoverPortal>
     </AppPopoverRoot>
