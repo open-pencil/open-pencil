@@ -62,22 +62,61 @@ function sceneColor(color: RekaColor): Color {
   return { r: r / 255, g: g / 255, b: b / 255, a: alpha }
 }
 
+/** Stops between two given ones when colors are shown in another profile than they are stored in. */
+const CLIPPED_SAMPLES = 8
+
+type GradientStop = { color: Color; position?: number }
+
+function mix(from: Color, to: Color, t: number): Color {
+  const at = (key: keyof Color) => from[key] + (to[key] - from[key]) * t
+  return { r: at('r'), g: at('g'), b: at('b'), a: at('a') }
+}
+
+/**
+ * `stops` with positions, and, when colors are shown in another profile, the colors between
+ * each pair blended in the stored components: a CSS blend of the clipped ends would leave the
+ * colors the document blends to, as a P3 red clipped to sRGB, blended with white.
+ */
+function placedStops(
+  stops: ReadonlyArray<GradientStop>,
+  spaces: ColorSpaces
+): ReadonlyArray<GradientStop> {
+  if (spaces.stored === spaces.shown) return stops
+  const last = Math.max(stops.length - 1, 1)
+  const placed = stops.map((stop, index) => ({
+    color: stop.color,
+    position: stop.position ?? index / last
+  }))
+  return placed.flatMap((stop, index) => {
+    if (index === placed.length - 1) return [stop]
+    const next = placed[index + 1]
+    return Array.from({ length: CLIPPED_SAMPLES }, (_, step) => {
+      const t = step / CLIPPED_SAMPLES
+      return {
+        color: mix(stop.color, next.color, t),
+        position: stop.position + (next.position - stop.position) * t
+      }
+    })
+  })
+}
+
 /**
  * A CSS linear gradient through `stops`, each at its `position` from 0 to 1 or spread evenly,
  * blended in the components the colors are stored in, as the canvas blends a gradient fill.
  */
 export function linearGradientCSS(
   direction: string,
-  stops: ReadonlyArray<{ color: Color; position?: number }>,
+  stops: ReadonlyArray<GradientStop>,
   spaces: ColorSpaces
 ): string {
-  const css = stops.map(({ color, position }) =>
+  const css = placedStops(stops, spaces).map(({ color, position }) =>
     position === undefined
       ? colorCSS(color, spaces)
       : `${colorCSS(color, spaces)} ${position * 100}%`
   )
-  // sRGB is what CSS blends legacy colors in already.
-  const interpolation = spaces.stored === 'srgb' ? '' : ` in ${spaces.stored}`
+  // sRGB colors shown as sRGB are legacy CSS colors, which CSS blends in sRGB already; any
+  // other stop would blend in Oklab unless told the stored profile.
+  const interpolation = isSRGB(spaces) ? '' : ` in ${spaces.stored}`
   return `linear-gradient(${direction}${interpolation}, ${css.join(', ')})`
 }
 

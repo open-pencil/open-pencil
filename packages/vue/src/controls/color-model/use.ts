@@ -45,7 +45,10 @@ export function useColorModel(options: UseColorModelOptions) {
   const provided = useColorSpaces()
   const spaces = computed((): ColorSpaces => {
     const stored = toValue(options.colorSpace)
-    return stored ? { stored, shown: stored } : provided.value
+    const around = provided.value
+    if (!stored) return around
+    // The profile the canvas presents still applies to colors stored in the one around them.
+    return { stored, shown: around.stored === stored ? around.shown : stored }
   })
   const space = computed(() => spaces.value.stored)
   const value = computed(() => createColorModelValue(color.value, sourceOkHCL.value, space.value))
