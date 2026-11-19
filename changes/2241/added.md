@@ -1,0 +1,1 @@
+- Image fills and strokes draw their exposure, contrast, saturation, temperature, tint, highlights, and shadows adjustments on the canvas and in exports, matching Figma's output.
