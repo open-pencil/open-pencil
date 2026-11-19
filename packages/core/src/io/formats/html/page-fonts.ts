@@ -38,8 +38,11 @@ async function readableFont(bytes: Uint8Array): Promise<ArrayBuffer | null> {
 /**
  * Loads the faces a page's `@font-face` rules declare for the families its text uses, with
  * `fetch`, and registers them with the font manager under the family and face each rule names, so
- * the page's text is set in its own fonts, icon fonts among them. A rule's sources are tried in
- * order until one is in a format the font manager reads. Returns the families it loaded.
+ * the page's text is set in its own fonts, icon fonts among them. A family the editor already has,
+ * bundled, installed, or from Google Fonts, keeps the editor's complete copy rather than a page's
+ * subset of it, which would leave its other glyphs and faces out. A rule's sources are tried in
+ * order until one is in a format the font manager reads. Returns the families the page's text can
+ * be set in.
  */
 export async function loadPageFontFaces(
   styled: DesignDocument,
@@ -49,17 +52,18 @@ export async function loadPageFontFaces(
   const loaded = new Map<string, string>()
   for (const rule of styled.fontFaces ?? []) {
     if (!used.has(rule.family.toLowerCase())) continue
+    const style = faceStyleName(rule.family, rule.weight, rule.italic)
+    if (await fontManager.loadFont(rule.family, style)) {
+      loaded.set(rule.family.toLowerCase(), rule.family)
+      continue
+    }
     for (const source of rule.sources) {
       const resource = await fetch(source, AbortSignal.timeout(FONT_LOAD_TIMEOUT_MS)).catch(
         () => null
       )
       const data = resource ? await readableFont(resource.bytes) : null
       if (!data) continue
-      await fontManager.markLoaded(
-        rule.family,
-        faceStyleName(rule.family, rule.weight, rule.italic),
-        data
-      )
+      await fontManager.markLoaded(rule.family, style, data)
       loaded.set(rule.family.toLowerCase(), rule.family)
       break
     }

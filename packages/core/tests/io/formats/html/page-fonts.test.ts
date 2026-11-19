@@ -58,4 +58,19 @@ describe('a page’s own fonts', () => {
 
     expect(requested).toEqual([])
   })
+
+  test('keeps the editor’s own copy of a family the page also ships', async () => {
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+    await fontManager.markLoaded('Editor Sans', 'Regular', font)
+    const requested: string[] = []
+
+    const families = await loadPageFontFaces(page('Editor Sans', [FONT_URL]), async (url) => {
+      requested.push(url)
+      return null
+    })
+
+    // The page's text is set in the family, from the editor's copy, and the page's is not read.
+    expect([...families.values()]).toEqual(['Editor Sans'])
+    expect(requested).toEqual([])
+  })
 })
