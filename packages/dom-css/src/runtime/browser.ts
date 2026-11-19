@@ -19,6 +19,11 @@ import { attachImages, canvasBackground, fontFaceRules, RESOURCE_TIMEOUT_MS } fr
 
 export interface BrowserCSSRuntimeOptions {
   document?: Document
+  /**
+   * Where the HTML is styled. `iframe` keeps it apart from the host page and runs none of its
+   * scripts or event handlers, so use it for HTML from anywhere else. `shadow-root` puts it in the
+   * host document, where its event handlers run: only for HTML the host trusts.
+   */
   sandbox?: 'shadow-root' | 'iframe'
   /**
    * The address the page came from, which its relative stylesheets, images, and fonts resolve
@@ -316,9 +321,17 @@ function imagesLoaded(root: ParentNode, view: Window): Promise<void> {
  * it out with them, so lines break and boxes size as the page shows them, not in a fallback font
  * or around an image that has not arrived.
  */
+/**
+ * Resolves once a document's fonts have loaded, or after `RESOURCE_TIMEOUT_MS`, so a font that
+ * never finishes arriving does not hold the import open; text then lays out in the fonts it has.
+ */
+function fontsLoaded(browserDocument: Document): Promise<unknown> {
+  return Promise.race([browserDocument.fonts.ready, delay(RESOURCE_TIMEOUT_MS)])
+}
+
 async function settle(browserDocument: Document, content: ParentNode): Promise<void> {
   await requestFrame(browserDocument)
-  await browserDocument.fonts.ready
+  await fontsLoaded(browserDocument)
   const view = browserDocument.defaultView
   if (view) await imagesLoaded(content, view)
   await requestFrame(browserDocument)
@@ -408,6 +421,9 @@ async function computeStylesInIframe(
   baseURL: string | undefined
 ): Promise<CopiedStyles> {
   const iframe = browserDocument.createElement('iframe')
+  // Same origin, so the runtime reads its styles and layout, but no scripts: the HTML is the
+  // page's, and its event handlers and `javascript:` links must not run beside the host.
+  iframe.sandbox.value = 'allow-same-origin'
   applySandboxHostStyle(iframe, options.viewport)
   browserDocument.body.append(iframe)
 
@@ -480,7 +496,7 @@ async function copyComputedStyles(
   // Generated content becomes elements, laid out before anything is read.
   if (showGeneratedContent(pairs, view, frame.styleRoot, content) > 0) {
     await requestFrame(content.ownerDocument)
-    await content.ownerDocument.fonts.ready
+    await fontsLoaded(content.ownerDocument)
   }
 
   const images: [DesignElement, string][] = []

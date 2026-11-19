@@ -216,6 +216,8 @@ export interface ImportedLayerSummary {
   text: string
   width: number
   height: number
+  /** How many fills and strokes it shows. */
+  paints: number
 }
 
 interface BrowserImport {
@@ -262,6 +264,7 @@ async function importInBrowser(
           y: position.y,
           width: node.width,
           height: node.height,
+          paints: [...node.fills, ...node.strokes].filter((paint) => paint.visible).length,
           layoutMode: node.layoutMode
         }
       })
@@ -308,5 +311,12 @@ export async function browserImportedLayerSummaries(
   viewport: { width: number; height: number }
 ): Promise<ImportedLayerSummary[]> {
   const { layers } = await importInBrowser(page, html, viewport)
-  return layers.map(({ name, type, text, width, height }) => ({ name, type, text, width, height }))
+  return layers.map(({ name, type, text, width, height, paints }) => ({
+    name,
+    type,
+    text,
+    width,
+    height,
+    paints
+  }))
 }

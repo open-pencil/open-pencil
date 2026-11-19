@@ -1,0 +1,1 @@
+- HTML opened or pasted in the app no longer runs the page's event handlers, such as an image's `onerror`, beside the editor: the browser styles it with scripts turned off (#2210).

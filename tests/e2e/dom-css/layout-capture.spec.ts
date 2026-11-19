@@ -105,7 +105,7 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
   test('shows what a text field holds: its value, else its placeholder', async ({ page }) => {
     const layers = await browserImportedLayerSummaries(
       page,
-      `<style>body { margin: 0; font-size: 14px } input { width: 200px; padding: 8px }</style>
+      `<style>body { margin: 0; font-size: 14px } input { width: 200px; padding: 8px; border: 1px solid #ccc }</style>
       <input type="email" placeholder="you@example.com">
       <input value="Night Drive">
       <input type="checkbox">`,
@@ -114,7 +114,21 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     const texts = layers.filter((layer) => layer.type === 'TEXT').map((layer) => layer.text)
 
     expect(texts).toEqual(['you@example.com', 'Night Drive'])
-    expect(layers.find((layer) => layer.name === '::placeholder')).toBeDefined()
+    // The text sits in the field's content box, not in a second bordered box inside it.
+    const fieldText = layers.filter(
+      (layer) => layer.name === '::placeholder' || layer.name === '::value'
+    )
+    expect(fieldText.map((layer) => layer.paints)).toEqual([0, 0])
+  })
+
+  test('runs none of the page’s event handlers', async ({ page }) => {
+    await browserImportedLayerSummaries(
+      page,
+      `<img src="missing.png" onerror="top.openPencilImportRan = true"><svg onload="top.openPencilImportRan = true"></svg>`,
+      VIEWPORT
+    )
+
+    expect(await page.evaluate(() => 'openPencilImportRan' in window)).toBe(false)
   })
 
   test('numbers generated content with the page’s CSS counters', async ({ page }) => {
@@ -137,6 +151,29 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(texts).toEqual(
       expect.arrayContaining(['1Create\n2Push\n3Visit', '1.1 Setup\n1.2 Usage', '2 Next'])
     )
+  })
+
+  test('counts as CSS scopes counters, from the body, past hidden elements', async ({ page }) => {
+    const layers = await browserImportedLayerSummaries(
+      page,
+      `<style>
+        body { margin: 0; font-size: 14px; counter-reset: step 5 }
+        .step::before { counter-increment: step; content: counter(step) " " }
+        .hidden { display: none }
+        .tick { counter-increment: tick }
+        .ticks::before { content: "ticks " counter(tick) }
+      </style>
+      <p class="step hidden">Hidden</p>
+      <p class="step">Shown</p>
+      <section><span class="tick"></span></section>
+      <p class="ticks"></p>`,
+      VIEWPORT
+    )
+    const texts = layers.filter((layer) => layer.type === 'TEXT').map((layer) => layer.text)
+
+    // The body starts at 5 and the hidden step does not count; a counter the section's span made
+    // ends with the section.
+    expect(texts).toEqual(expect.arrayContaining(['6 Shown', 'ticks 0']))
   })
 
   test('keeps auto side margins, which center or end-align a block', async ({ page }) => {
