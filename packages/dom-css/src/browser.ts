@@ -45,10 +45,6 @@ export interface BrowserTailwindToDesignDocumentOptions
 export interface BrowserTailwindToSceneGraphOptions
   extends BrowserTailwindToDesignDocumentOptions, ToSceneGraphOptions {}
 
-function createRuntime(options: BrowserCSSRuntimeOptions) {
-  return createBrowserCSSRuntime({ sandbox: 'iframe', ...options })
-}
-
 async function compileBrowserTailwindCSS(
   candidates: string | Iterable<string>,
   options: CompileTailwindCSSOptions
@@ -106,7 +102,7 @@ function extractEmbeddedCSSText(html: string, browserDocument: Document): string
 export function browserHTMLHasBoxes(html: string, options: { document?: Document } = {}): boolean {
   const browserDocument = resolveBrowserDocument(options.document)
   if (extractEmbeddedCSSText(html, browserDocument)) return true
-  return laysOutBoxes(createRuntime({ document: browserDocument }).parseHTML(html))
+  return laysOutBoxes(createBrowserCSSRuntime({ document: browserDocument }).parseHTML(html))
 }
 
 export async function browserHTMLToDesignDocument(
@@ -115,7 +111,7 @@ export async function browserHTMLToDesignDocument(
 ): Promise<DesignDocument> {
   options.signal?.throwIfAborted()
   const browserDocument = resolveBrowserDocument(options.document)
-  const runtime = createRuntime({ ...options, document: browserDocument })
+  const runtime = createBrowserCSSRuntime({ ...options, document: browserDocument })
   const document = runtime.parseHTML(html)
   // `@import` rules count only before every other rule, so the linked sheets come first.
   const cssText = mergeCSSText(
@@ -165,7 +161,7 @@ export async function browserJSXToDesignDocument(
   options: BrowserToDesignDocumentOptions = {}
 ): Promise<DesignDocument> {
   const document = jsxToDesignDocumentCore(input)
-  const runtime = createRuntime(options)
+  const runtime = createBrowserCSSRuntime(options)
   return runtime.computeStyles(document, options.cssText, options.compute)
 }
 

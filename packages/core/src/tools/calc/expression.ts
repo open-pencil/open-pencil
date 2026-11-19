@@ -1,5 +1,7 @@
 import jsep from 'jsep'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 /**
  * Arithmetic expression evaluator for the `calc` tool.
  *
@@ -144,7 +146,7 @@ export function evaluateExpression(source: string): number {
     tree = jsep(source)
   } catch (error) {
     // jsep's own messages already name the offending character and position.
-    throw new CalcSyntaxError(error instanceof Error ? error.message : String(error))
+    throw new CalcSyntaxError(errorMessage(error))
   }
   return evaluateNode(tree)
 }

@@ -97,22 +97,20 @@ export async function browserRuntimeComputeStyles(
   page: Page,
   document: DesignDocument,
   cssText: string,
-  sandbox: 'shadow-root' | 'iframe' = 'iframe',
   compute: CSSComputeOptions = {}
 ) {
   await ensureAppPage(page)
 
   return page.evaluate(
-    async ({ designDocument, css, modulePath, sandboxMode, computeOptions }) => {
+    async ({ designDocument, css, modulePath, computeOptions }) => {
       const { createBrowserCSSRuntime } = await import(modulePath)
-      const runtime = createBrowserCSSRuntime({ document: window.document, sandbox: sandboxMode })
+      const runtime = createBrowserCSSRuntime({ document: window.document })
       return runtime.computeStyles(designDocument, css, computeOptions)
     },
     {
       designDocument: document,
       css: cssText,
       modulePath: BROWSER_RUNTIME_MODULE,
-      sandboxMode: sandbox,
       computeOptions: compute
     }
   )

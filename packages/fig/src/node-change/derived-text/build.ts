@@ -1,3 +1,4 @@
+import { bytesToHex } from '@noble/hashes/utils.js'
 import { groupBy } from 'es-toolkit/array'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
@@ -12,7 +13,6 @@ import {
 } from '@open-pencil/scene-graph/text'
 import { maxOf, minOf } from '@open-pencil/std/arrays'
 
-import { bytesToHex } from '../bytes'
 import type { PlacedTextGlyph, TextDecorationRecord } from '../export/runtime'
 import { figmaStyleName, standardStyleNamer, type StyleNamer } from '../font/style'
 import { bakeGlyphScale, encodePathCommandsBlob, type OutlineCommand } from '../path/commands'

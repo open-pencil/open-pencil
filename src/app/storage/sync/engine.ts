@@ -1,5 +1,6 @@
 import { IS_BROWSER } from '@open-pencil/core/constants'
 import { minOf } from '@open-pencil/std/arrays'
+import { errorMessage } from '@open-pencil/std/errors'
 import { BACKOFF, backoffDelay } from '@open-pencil/std/timing'
 
 import {
@@ -167,7 +168,7 @@ async function pumpOnce(): Promise<void> {
       errorCode,
       retryable
     })
-    const message = error instanceof Error ? error.message : String(error)
+    const message = errorMessage(error)
     if (error instanceof StorageRevisionConflictError) {
       // Both versions stay: the local bytes on this device, the newer one on the provider.
       // The job waits for the person to choose, and other work carries on.

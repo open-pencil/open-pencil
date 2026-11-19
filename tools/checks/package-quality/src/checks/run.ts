@@ -1,6 +1,7 @@
 import { compact, mapAsync } from 'es-toolkit'
 
 import { CommandError, runCommand, type CommandRequest } from '@open-pencil/package-artifacts-tools'
+import { toError } from '@open-pencil/std/errors'
 
 /** Drain every check before reporting failures, so callers can safely remove shared fixtures. */
 export async function runPackageChecks(
@@ -18,7 +19,7 @@ export async function runPackageChecks(
         if (error instanceof CommandError) {
           return new Error(compact([error.message, error.stdout, error.stderr]).join('\n'))
         }
-        return error instanceof Error ? error : new Error(String(error))
+        return toError(error)
       }
     },
     { concurrency }

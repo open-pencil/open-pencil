@@ -4,6 +4,7 @@ import { Socket } from 'node:net'
 import * as v from 'valibot'
 
 import { writeFileAtomic } from '@open-pencil/core/node/fs'
+import { errorMessage } from '@open-pencil/std/errors'
 import { DEADLINE_MS, SECOND_MS } from '@open-pencil/std/timing'
 
 import { MCP_TOOL_SCOPES, type MCPToolScope } from '#mcp/tool/scope'
@@ -24,6 +25,11 @@ export interface DiscoveryInfo {
   httpPort: number
   authRequired: boolean
   authToken: string | null
+  /**
+   * The token to give an MCP client: it opens `/mcp` and nothing `authToken` opens besides. Null
+   * without auth, and absent from a file an older server wrote.
+   */
+  clientToken?: string | null
   version: string
   startedAt: string
   disabledTools?: string[]
@@ -42,6 +48,7 @@ const discoveryInfoSchema = v.pipe(
     startedAt: v.string(),
     socketPath: v.nullable(v.pipe(v.string(), v.nonEmpty())),
     authToken: v.nullable(v.string()),
+    clientToken: v.optional(v.nullable(v.string())),
     disabledTools: v.optional(v.array(v.string()), () => []),
     scope: v.optional(v.picklist(MCP_TOOL_SCOPES), 'document')
   })
@@ -84,10 +91,7 @@ export async function readDiscoveryFile(): Promise<DiscoveryInfo | null> {
   try {
     raw = await readFile(path, 'utf-8')
   } catch (e) {
-    if (!isEnoent(e))
-      process.stderr.write(
-        `  Discovery: read warning (${e instanceof Error ? e.message : String(e)})\n`
-      )
+    if (!isEnoent(e)) process.stderr.write(`  Discovery: read warning (${errorMessage(e)})\n`)
     return null
   }
 

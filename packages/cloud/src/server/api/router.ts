@@ -14,7 +14,7 @@ import {
 import { createCommunityRoutes, type CommunityService } from '#cloud/server/community'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { DocumentService } from '#cloud/server/documents'
-import { createDocumentRoutes } from '#cloud/server/documents'
+import { createDocumentRoutes, DocumentNotFoundError } from '#cloud/server/documents'
 import {
   createDocumentVersionRoutes,
   type DocumentVersionService
@@ -82,12 +82,19 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
     .get('/workspaces/:workspaceId/entitlements', workspaceParams, async (context) => {
       if (!services.entitlements)
         return context.json({ error: { code: 'not_found' as const } }, 404)
-      return context.json({
-        entitlements: await services.entitlements.workspace(
-          context.get('actor').userId,
-          context.req.valid('param').workspaceId
-        )
-      })
+      try {
+        return context.json({
+          entitlements: await services.entitlements.workspace(
+            context.get('actor').userId,
+            context.req.valid('param').workspaceId
+          )
+        })
+      } catch (error) {
+        // A workspace the account left, or one that has gone, since the editor listed it.
+        if (error instanceof DocumentNotFoundError)
+          return context.json({ error: { code: 'not_found' as const } }, 404)
+        throw error
+      }
     })
     .get('/session', (context) => context.json({ user: context.get('actor') }))
     .route(

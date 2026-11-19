@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { createDeferred, type Deferred } from '@open-pencil/std/async'
+
 import { createCloudTokenCache } from '@/app/cloud/tokens'
-import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
 const MINUTE = 60_000
 

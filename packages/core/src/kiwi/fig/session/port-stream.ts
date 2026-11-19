@@ -1,3 +1,4 @@
+import { errorMessage } from '@open-pencil/std/errors'
 /**
  * A byte stream carried over a `MessagePort` of its own, for engines that cannot transfer a
  * `ReadableStream` itself, as WebKit cannot. The reading side asks for each chunk, so one chunk
@@ -32,7 +33,7 @@ export function sendStream(stream: ReadableStream<Uint8Array>, port: MessagePort
       const bytes = next.value.slice()
       answer({ type: 'chunk', bytes }, [bytes.buffer])
     } catch (error) {
-      answer({ type: 'error', message: error instanceof Error ? error.message : String(error) })
+      answer({ type: 'error', message: errorMessage(error) })
       port.close()
     }
   }

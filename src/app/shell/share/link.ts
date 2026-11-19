@@ -1,6 +1,7 @@
 import { useClipboard, useShare } from '@vueuse/core'
 import { computed } from 'vue'
 
+import { isAbortError } from '@open-pencil/std/errors'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 
 /** How a link went out: through the system share sheet, onto the clipboard, or not at all. */
@@ -27,7 +28,7 @@ export function useSendLink() {
       return 'shared'
     } catch (error) {
       // Closing the sheet without sending is a choice; any other failure still gets the link out.
-      if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled'
+      if (isAbortError(error)) return 'cancelled'
       await copy(url)
       return 'copied'
     }

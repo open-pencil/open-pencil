@@ -22,6 +22,8 @@ export interface AutomationHealth {
   tools?: ToolDescriptor[]
   /** The server tells the app when an agent opens a session, so a chat can wait for its agent. */
   agentSessionEvents?: boolean
+  /** The server's `/mcp` takes the client token, which opens nothing else. */
+  clientTokens?: boolean
 }
 
 /** The automation server's HTTP origin: the development server's in development. */
@@ -44,6 +46,7 @@ interface AutomationHealthRecord {
   discoveryPath?: unknown
   tools?: unknown
   agentSessionEvents?: unknown
+  clientTokens?: unknown
 }
 
 function isAutomationHealthRecord(value: unknown): value is AutomationHealthRecord {
@@ -80,12 +83,14 @@ function parseAutomationHealth(value: unknown): AutomationHealth | null {
   const discoveryPath = optionalString(value.discoveryPath)
   const tools = parseToolDescriptors(value.tools)
   const agentSessionEvents = optionalBoolean(value.agentSessionEvents)
+  const clientTokens = optionalBoolean(value.clientTokens)
   if (
     version === null ||
     authRequired === null ||
     discoveryPath === null ||
     tools === null ||
-    agentSessionEvents === null
+    agentSessionEvents === null ||
+    clientTokens === null
   ) {
     return null
   }
@@ -95,6 +100,7 @@ function parseAutomationHealth(value: unknown): AutomationHealth | null {
   if (discoveryPath !== undefined) health.discoveryPath = discoveryPath
   if (tools !== undefined) health.tools = tools
   if (agentSessionEvents !== undefined) health.agentSessionEvents = agentSessionEvents
+  if (clientTokens !== undefined) health.clientTokens = clientTokens
   return health
 }
 
@@ -146,7 +152,16 @@ export function assertCompatibleMCPVersion(health: AutomationHealth): void {
   const runningMajorMinor = health.version ? parseMajorMinor(health.version) : null
   const oursMajorMinor = parseMajorMinor(APP_VERSION)
   if (!oursMajorMinor) return
-  if (runningMajorMinor === oursMajorMinor) return
+  if (runningMajorMinor === oursMajorMinor) {
+    // The same minor can predate client tokens; its /mcp would refuse the token agents get.
+    if (health.clientTokens) return
+    throw new MCPStartupError(
+      `The running MCP server (v${health.version ?? 'unknown'}) predates the client tokens ` +
+        `OpenPencil desktop v${APP_VERSION} gives its agents. ` +
+        `Run: ${MCP_INSTALL_COMMAND}, then restart the MCP server.`,
+      mcpFailure('outdated', health.version)
+    )
+  }
   const runningVersion = health.version ? `v${health.version}` : 'an older version'
   // The running server's own install command names its own version, so the fix always
   // comes from this app's version.

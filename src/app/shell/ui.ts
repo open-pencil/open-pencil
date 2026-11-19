@@ -3,6 +3,7 @@ import { useEventListener } from '@vueuse/core'
 import { ref, toRaw } from 'vue'
 
 import { RefusedEditError } from '@open-pencil/core'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { recordRuntimeError } from '@/app/diagnostics'
 import { reportErrorAction } from '@/app/reports/state'
@@ -189,7 +190,7 @@ function setupGlobalErrorHandler() {
       return
     }
     recordRuntimeError(e.reason, 'rejection')
-    const msg = e.reason instanceof Error ? e.reason.message : String(e.reason)
+    const msg = errorMessage(e.reason)
     error(msg || 'An unexpected error occurred', reportErrorAction(e.reason, 'rejection'))
   })
 }

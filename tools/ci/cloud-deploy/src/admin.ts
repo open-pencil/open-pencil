@@ -1,5 +1,6 @@
 import { CommandError, runCommand } from '@open-pencil/package-artifacts-tools'
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools/workspace'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { CLOUD_TARGETS, type CloudTarget } from './ref'
 
@@ -90,7 +91,7 @@ if (import.meta.main) {
   try {
     await runOfficialAdmin(process.argv.slice(2), await resolveWorkspaceRoot(process.cwd()))
   } catch (error) {
-    console.error(error instanceof Error ? error.message : String(error))
+    console.error(errorMessage(error))
     process.exit(1)
   }
 }

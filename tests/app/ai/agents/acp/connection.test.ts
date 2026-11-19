@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { createDeferred } from '@open-pencil/std/async'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { connectAgent, withinDeadline } from '@/app/ai/agents/acp/connection'
-import { createDeferred } from '@/app/runtime/deferred'
 
 import { fakeOneOffAgent } from '#tests/helpers/ai/fake-acp-agent'
 

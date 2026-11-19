@@ -1,4 +1,5 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { errorMessage } from '@open-pencil/std/errors'
 import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import type { EditorStore } from '@/app/editor/session'
@@ -75,7 +76,7 @@ export async function openTour(): Promise<boolean> {
 export function openTourFromMenu(): void {
   openTour().catch((error: unknown) => {
     console.error('[Tour] Could not open the tour:', error)
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     toast.error(notificationMessages.get().openTourFailed({ error: detail }))
   })
 }

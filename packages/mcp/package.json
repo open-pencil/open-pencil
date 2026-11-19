@@ -66,6 +66,7 @@
   "dependencies": {
     "@hono/node-server": "^1.19.17",
     "@modelcontextprotocol/server": "^2.0.0",
+    "@noble/hashes": "^2.4.0",
     "@open-pencil/core": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
     "@open-pencil/std": "workspace:*",

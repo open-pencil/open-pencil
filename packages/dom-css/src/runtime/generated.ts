@@ -127,7 +127,7 @@ export function showGeneratedContent(
     counters.leave(domElement)
   }
   // The counters the root and the elements around it start, such as `body { counter-reset }`,
-  // from the outermost in. A shadow root's host page is outside, and stays out.
+  // from the outermost in, up to the measuring frame's root.
   const around: Element[] = []
   for (let element: Element | null = root; element; element = element.parentElement) {
     around.unshift(element)

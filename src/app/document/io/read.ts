@@ -2,6 +2,7 @@ import { filename } from 'pathe/utils'
 
 import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import { stopFigReaderWorker } from '@open-pencil/core/io/formats/fig'
+import { errorMessage } from '@open-pencil/std/errors'
 import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
@@ -54,7 +55,7 @@ export function createOpenActions({
       await preparationController
         .waitForPresentation(load.id, editor.state)
         .catch((error: unknown) => {
-          const message = error instanceof Error ? error.message : String(error)
+          const message = errorMessage(error)
           load.fail({ code: 'render-failed', message, retryable: true })
           toast.error(notificationMessages.get().operationFailed({ error: message }))
         })
@@ -64,7 +65,7 @@ export function createOpenActions({
       const diagnostic = describeDiagnosticError(e)
       load.fail({
         code: 'decode-failed',
-        message: e instanceof Error ? e.message : String(e),
+        message: errorMessage(e),
         retryable: diagnostic.retryable ?? true
       })
       recordDocumentFailure({
@@ -77,7 +78,7 @@ export function createOpenActions({
       toast.error(
         notificationMessages.get().openFileFailed({
           name: file.name,
-          error: e instanceof Error ? e.message : String(e)
+          error: errorMessage(e)
         }),
         viewDiagnosticsAction()
       )
@@ -161,7 +162,7 @@ export function createReloadActions({
       const diagnostic = describeDiagnosticError(error)
       load.fail({
         code: 'decode-failed',
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage(error),
         retryable: diagnostic.retryable ?? true
       })
       recordDocumentFailure({
@@ -173,7 +174,7 @@ export function createReloadActions({
       toast.error(
         notificationMessages.get().openFileFailed({
           name: state.documentName,
-          error: error instanceof Error ? error.message : String(error)
+          error: errorMessage(error)
         }),
         viewDiagnosticsAction()
       )

@@ -14,6 +14,7 @@
     "test": "bun test tests"
   },
   "dependencies": {
+    "@noble/hashes": "^2.4.0",
     "@open-pencil/package-artifacts-tools": "workspace:*",
     "@open-pencil/package-quality-tools": "workspace:*",
     "@posthog/cli": "0.18.12",

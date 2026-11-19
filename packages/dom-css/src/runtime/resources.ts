@@ -12,9 +12,9 @@ import {
 import type { DesignElement, DesignResource, DesignResourceFetch } from '../types'
 
 /**
- * How long a page's picture or stylesheet may take to arrive, or an image to load in the sandbox,
- * before styling goes on without it. An image without a size takes its own once loaded, moving
- * what follows it, but a request that never ends must not hold an import forever.
+ * How long a page's picture, stylesheet, or font file may take to arrive when read back for the
+ * document, before the import goes on without it: a request that never ends must not hold an
+ * import forever.
  */
 export const RESOURCE_TIMEOUT_MS = DEADLINE_MS.request
 

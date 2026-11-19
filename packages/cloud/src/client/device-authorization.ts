@@ -2,6 +2,8 @@ import type { CloudDiscovery } from '#cloud/contract'
 import { joinURL } from 'ufo'
 import * as v from 'valibot'
 
+import { sleep } from '@open-pencil/std/timing'
+
 import type { CloudFetch } from './discovery'
 
 const deviceCodeSchema = v.object({
@@ -41,24 +43,6 @@ export type CloudDevicePollingOptions = {
   sleep?: (milliseconds: number, signal?: AbortSignal) => Promise<void>
 }
 
-function abortableSleep(milliseconds: number, signal?: AbortSignal): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(resolve, milliseconds)
-    signal?.addEventListener(
-      'abort',
-      () => {
-        clearTimeout(timeout)
-        reject(
-          signal.reason instanceof Error
-            ? signal.reason
-            : new DOMException('Authorization cancelled', 'AbortError')
-        )
-      },
-      { once: true }
-    )
-  })
-}
-
 function authEndpoint(discovery: CloudDiscovery, path: string): string {
   return joinURL(discovery.authURL, path)
 }
@@ -93,12 +77,12 @@ export async function pollCloudDeviceToken(
 ): Promise<CloudDeviceToken> {
   const request = options.fetch ?? globalThis.fetch
   const now = options.now ?? Date.now
-  const sleep = options.sleep ?? abortableSleep
+  const wait = options.sleep ?? sleep
   const expiresAt = now() + authorization.expires_in * 1000
   let interval = authorization.interval * 1000
   while (now() < expiresAt) {
     options.signal?.throwIfAborted()
-    await sleep(interval, options.signal)
+    await wait(interval, options.signal)
     if (now() >= expiresAt) break
     const response = await request(authEndpoint(discovery, 'device/token'), {
       method: 'POST',

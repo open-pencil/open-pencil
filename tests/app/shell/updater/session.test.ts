@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import type { DownloadEvent } from '@tauri-apps/plugin-updater'
 
-import { createDeferred } from '@/app/runtime/deferred'
+import { createDeferred } from '@open-pencil/std/async'
+
 import {
   createUpdaterSession,
   type PendingUpdate,

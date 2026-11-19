@@ -3,13 +3,13 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { effectScope, nextTick, ref, type EffectScope } from 'vue'
 
 import type { CreditWallet } from '@open-pencil/cloud/contract'
+import { createDeferred, type Deferred } from '@open-pencil/std/async'
 
 import {
   noteCloudRequestSettled,
   useCloudCreditBalance,
   type CloudBalanceSource
 } from '@/app/ai/providers/openpencil/balance'
-import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
 function wallet(balance: number | null): CreditWallet {
   return {

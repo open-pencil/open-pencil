@@ -3,6 +3,8 @@ import { relaunch } from '@tauri-apps/plugin-process'
 import type { DownloadEvent } from '@tauri-apps/plugin-updater'
 import { shallowRef, type ShallowRef } from 'vue'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { appPreferences } from '@/app/settings/preferences/store'
 
 import { resolveUpdateChannel } from './channel'
@@ -260,10 +262,6 @@ function releaseInfo(update: PendingUpdate): ReleaseInfo {
     currentVersion: update.currentVersion,
     notes: update.body?.trim() ?? ''
   }
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
 }
 
 export function createTauriUpdaterBackend(): UpdaterBackend {

@@ -59,6 +59,7 @@
     "typecheck": "bunx tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
+    "@noble/hashes": "^2.4.0",
     "@open-pencil/std": "workspace:*",
     "es-toolkit": "^1.52.0",
     "fflate": "^0.8.3",

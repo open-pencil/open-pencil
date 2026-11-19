@@ -1,3 +1,4 @@
+import { bytesToHex } from '@noble/hashes/utils.js'
 import { bundleFromJSON, bundleToJSON, type SerializedBundle } from '@sigstore/bundle'
 import { decode, isValid, toUint8Array } from 'js-base64'
 import { verify as verifySigstoreBundle } from 'sigstore'
@@ -82,7 +83,7 @@ export function releaseSignerIdentity(source: ReleaseSource): string {
 function integrityHex(integrity: string): string {
   const match = /^sha512-(.+)$/.exec(integrity)
   if (!match?.[1] || !isValid(match[1])) throw new Error(`unsupported integrity ${integrity}`)
-  return Array.from(toUint8Array(match[1]), (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return bytesToHex(toUint8Array(match[1]))
 }
 
 /**

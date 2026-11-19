@@ -1,6 +1,7 @@
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { fetchRemoteFile, type RemoteFile } from '@open-pencil/core/io/remote'
 import { imageMimeType } from '@open-pencil/scene-graph/images'
+import { errorMessage } from '@open-pencil/std/errors'
 import { filesMessages } from '@open-pencil/vue/i18n'
 
 import { pastePoint } from '@/app/editor/clipboard/paste/content'
@@ -38,7 +39,7 @@ function fetchFailure(error: unknown): string {
   const files = filesMessages.get()
   // The browser reports a site that refuses to be read by other sites as a bare network error.
   if (error instanceof TypeError && !IS_TAURI) return files.openURLBlocked
-  return error instanceof Error ? error.message : String(error)
+  return errorMessage(error)
 }
 
 /**

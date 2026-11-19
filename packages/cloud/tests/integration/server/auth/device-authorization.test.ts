@@ -105,3 +105,25 @@ test('email-only desktop authorization stays on its issuing instance', async () 
     await fixture.close()
   }
 })
+
+test('reopening the desktop sign-in page keeps looking its code up', async () => {
+  const fixture = await createAccountAuthenticationFixture()
+  try {
+    const issued = await fixture.app.fetch(
+      accountAuthenticationRequest('/api/auth/device/code', {
+        client_id: 'openpencil-desktop:test-connection'
+      })
+    )
+    const { user_code: userCode } = await responseJSON(issued, v.object({ user_code: v.string() }))
+    const statuses: number[] = []
+    for (let page = 0; page < 10; page++) {
+      const lookup = await fixture.app.fetch(
+        accountAuthenticationRequest(`/api/auth/device?user_code=${userCode}`)
+      )
+      statuses.push(lookup.status)
+    }
+    expect(statuses).toEqual(Array.from({ length: 10 }, () => 200))
+  } finally {
+    await fixture.close()
+  }
+})

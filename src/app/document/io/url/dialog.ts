@@ -1,5 +1,7 @@
 import { ref } from 'vue'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { openWebAddress, parseWebAddress } from './open'
 
 /** Whether File → Open from URL… is showing its dialog. */
@@ -22,6 +24,6 @@ export async function submitOpenURL(text: string, signal: AbortSignal): Promise<
     return null
   } catch (error) {
     if (signal.aborted) return null
-    return error instanceof Error ? error.message : String(error)
+    return errorMessage(error)
   }
 }

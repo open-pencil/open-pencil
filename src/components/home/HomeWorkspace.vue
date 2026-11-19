@@ -3,6 +3,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { computed, ref, shallowRef } from 'vue'
 
 import type { DocumentKind } from '@open-pencil/scene-graph'
+import { errorMessage } from '@open-pencil/std/errors'
 import { useDocumentWorkspace } from '@open-pencil/vue/document/workspace'
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -95,7 +96,7 @@ async function retryCredentialAccess() {
 const storageError = computed(() => {
   const error = storageWorkspace.error.value
   if (error == null) return null
-  return error instanceof Error ? error.message : String(error)
+  return errorMessage(error)
 })
 const storageDescription = computed(() => {
   const provider = storageProviderRegistry.get(activeStorageProviderID.value)
@@ -197,7 +198,7 @@ async function openRecent(document: RecentDocument): Promise<void> {
     const listed = storageWorkspace.lastRefreshedAt.value ? storageDocuments.value : undefined
     await openRecentDocument(document, listed)
   } catch (error) {
-    openError.value = error instanceof Error ? error.message : String(error)
+    openError.value = errorMessage(error)
   }
 }
 
@@ -206,7 +207,7 @@ async function openStorageDocument(document: StorageDocument): Promise<void> {
   try {
     await openStorageDocumentInNewTab(document)
   } catch (error) {
-    openError.value = error instanceof Error ? error.message : String(error)
+    openError.value = errorMessage(error)
   }
 }
 

@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { createDeferred } from '@open-pencil/std/async'
+
 import {
   callbackOutcome,
   startSignIn,
@@ -8,7 +10,6 @@ import {
   type SignInFlow
 } from '@/app/ai/providers/sign-in/attempt'
 import { pkceChallenge } from '@/app/ai/providers/sign-in/pkce'
-import { createDeferred } from '@/app/runtime/deferred'
 
 interface FakeCallback extends SignInCallback {
   state: string

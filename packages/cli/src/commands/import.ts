@@ -8,6 +8,7 @@ import { createHeadlessIconMatcher } from '@open-pencil/core/icons/match'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { readHTMLDocument, type ReadHTMLResult } from '@open-pencil/core/io/formats/html/import'
 import { fetchRemoteFile, type RemoteFileKind } from '@open-pencil/core/io/remote'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { requireFile } from '#cli/app/client'
 import { fmtList, ok, printError } from '#cli/format'
@@ -196,7 +197,7 @@ export default defineCommand({
     try {
       input = await readInput(args)
     } catch (error) {
-      printError(error instanceof Error ? error.message : String(error))
+      printError(errorMessage(error))
       process.exit(1)
     }
     const imported = await importHTML(args, input)

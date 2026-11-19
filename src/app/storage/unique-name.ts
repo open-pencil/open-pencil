@@ -1,3 +1,5 @@
+import { randomHex } from '@open-pencil/std/random'
+
 /**
  * Pick a display name that does not collide with existing stored document names.
  * First free: `Name`, then `Name (1)`, `Name (2)`, …
@@ -19,9 +21,7 @@ export function nextUniqueStorageName(desired: string, taken: Iterable<string>):
 
   // Extremely unlikely — still avoid silent overwrite of the display name.
   for (;;) {
-    const bytes = new Uint8Array(4)
-    crypto.getRandomValues(bytes)
-    const suffix = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('')
+    const suffix = randomHex(4)
     const candidate = `${base} (${suffix})`
     if (!used.has(candidate)) return candidate
   }

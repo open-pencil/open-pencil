@@ -7,6 +7,7 @@ import { decode } from 'ufo'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { readBoundedBody } from '@open-pencil/core/io/remote'
+import { errorMessage, isAbortError } from '@open-pencil/std/errors'
 import { anySignal } from '@open-pencil/std/timing'
 
 import { setOpenPencilOpenFileHandler } from '@/app/browser-bridge'
@@ -117,7 +118,7 @@ export async function openDesignFileBatch<T>(
       await openItem(item)
     } catch (error) {
       const name = displayName(item)
-      const detail = error instanceof Error ? error.message : String(error)
+      const detail = errorMessage(error)
       console.error(`Failed to open ${name}:`, error)
       toast.error(notificationMessages.get().openFileFailed({ name, error: detail }))
     }
@@ -197,7 +198,7 @@ export async function openFileDialog() {
       )
       return
     } catch (e) {
-      if ((e as Error).name === 'AbortError') return
+      if (isAbortError(e)) return
     }
   }
 

@@ -2,6 +2,7 @@ import { save } from '@tauri-apps/plugin-dialog'
 
 import { DOCUMENT_EXTENSIONS } from '@open-pencil/core/io'
 import type { DocumentKind } from '@open-pencil/scene-graph'
+import { isAbortError } from '@open-pencil/std/errors'
 
 import { pickBrowserSaveFile } from '@/app/document/io/capability'
 import { documentFileName } from '@/app/document/io/names'
@@ -31,7 +32,7 @@ export async function chooseBrowserFigSaveHandle(kind: DocumentKind) {
       ]
     })
   } catch (error) {
-    if ((error as Error).name === 'AbortError') return null
+    if (isAbortError(error)) return null
     throw error
   }
 }

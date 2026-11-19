@@ -1,3 +1,4 @@
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
 import { clamp } from 'es-toolkit/math'
 
 import type { Effect as KiwiEffect, Paint, VariableAliasValue } from '@open-pencil/kiwi/fig/codec'
@@ -18,8 +19,6 @@ import type {
 } from '@open-pencil/scene-graph'
 import { BLACK, UNSET_GLASS, UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
 import type { Color, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
-
-import { hexToBytes } from './bytes'
 
 export function safeColor(color: Color | Omit<Color, 'a'>): Color {
   return { r: color.r, g: color.g, b: color.b, a: 'a' in color ? color.a : 1 }
@@ -81,9 +80,7 @@ function convertColor(color?: Partial<Color>): Color {
 type MediaHash = string | Uint8Array | Record<string, number>
 
 function bytesHashToString(hash: Exclude<MediaHash, string>): string {
-  return Object.values(hash)
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('')
+  return bytesToHex(hash instanceof Uint8Array ? hash : Uint8Array.from(Object.values(hash)))
 }
 
 function mediaHash(source: { hash?: MediaHash } | undefined): string | undefined {

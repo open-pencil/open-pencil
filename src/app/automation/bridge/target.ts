@@ -1,17 +1,12 @@
 import type { AutomationDocumentSummary } from '@open-pencil/core/rpc'
+import { isRecord, type UnknownRecord } from '@open-pencil/std/records'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { getTabById, getTabForStore, getTabsSnapshot, type Tab } from '@/app/tabs'
 
-export type UnknownRecord = { [key: string]: unknown }
-
 export type AutomationTargetArgs = {
   document_id?: unknown
   page_id?: unknown
-}
-
-export function isUnknownRecord(value: unknown): value is UnknownRecord {
-  return Boolean(value && typeof value === 'object' && !Array.isArray(value))
 }
 
 export type AutomationTarget = {
@@ -44,7 +39,7 @@ export type TargetResponse = Record<string, unknown> & { target: AutomationTarge
 
 export function responseWithTarget(body: unknown, target: AutomationTarget): TargetResponse {
   const targetResult = targetToResult(target)
-  if (isUnknownRecord(body)) {
+  if (isRecord(body)) {
     return { ...body, target: targetResult }
   }
   return { ok: true, result: body, target: targetResult }

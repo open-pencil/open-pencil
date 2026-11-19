@@ -26,5 +26,5 @@ if (changelogErrors.length > 0) {
 await writeFile(changelogPath, assembled)
 await removeFragments(changesPath, fragments)
 process.stdout.write(
-  `Moved ${fragments.length} fragments from ${new Set(fragments.map((f) => f.pullRequest)).size} pull requests into Unreleased. Curate the section before the release commit.\n`
+  `Moved ${fragments.length} fragments from ${new Set(fragments.map((f) => f.source)).size} pull requests into Unreleased. Curate the section before the release commit.\n`
 )

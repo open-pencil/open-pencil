@@ -8,7 +8,10 @@ export default defineConfig(
       timing: './src/timing.ts',
       random: './src/random.ts',
       arrays: './src/arrays.ts',
-      json: './src/json.ts'
+      json: './src/json.ts',
+      errors: './src/errors.ts',
+      records: './src/records.ts',
+      async: './src/async.ts'
     }
   })
 )

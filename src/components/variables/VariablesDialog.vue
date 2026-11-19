@@ -4,6 +4,7 @@ import { DialogTitle } from 'reka-ui'
 import { computed, defineAsyncComponent, ref, shallowRef, watch } from 'vue'
 
 import type { DesignTokenBundle } from '@open-pencil/core/io/formats/design-tokens'
+import { errorMessage } from '@open-pencil/std/errors'
 import { useDocumentShortcuts } from '@open-pencil/vue/editor/keyboard'
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -44,11 +45,7 @@ const importBundle = shallowRef<DesignTokenBundle | null>(null)
 const importOpen = ref(false)
 
 function reportFailure(error: unknown) {
-  toast.error(
-    notificationMessages
-      .get()
-      .operationFailed({ error: error instanceof Error ? error.message : String(error) })
-  )
+  toast.error(notificationMessages.get().operationFailed({ error: errorMessage(error) }))
 }
 
 /** The latest import asked for; an earlier one still reading does not replace its preview. */

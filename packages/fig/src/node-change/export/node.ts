@@ -1,6 +1,8 @@
 import { variantSet } from '#fig/document/component/links'
 import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/source-metadata'
+/* eslint-disable max-lines */
+import { bytesToHex } from '@noble/hashes/utils.js'
 import { compact } from 'es-toolkit/array'
 
 import type { Effect as KiwiEffect, NodeChange } from '@open-pencil/kiwi/fig/codec'
@@ -29,8 +31,6 @@ import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-grap
 import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 import { appendAll } from '@open-pencil/std/arrays'
 
-/* eslint-disable max-lines */
-import { bytesToHex } from '../bytes'
 import { exportCanvasGuides } from '../canvas-guides'
 import { instanceExportAddress, snapshotInstanceGeometry } from '../instance/geometry'
 import { modeledEffectIndexes } from '../paint'
