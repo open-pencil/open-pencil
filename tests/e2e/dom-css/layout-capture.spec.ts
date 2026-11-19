@@ -117,6 +117,28 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(layers.find((layer) => layer.name === '::placeholder')).toBeDefined()
   })
 
+  test('numbers generated content with the page’s CSS counters', async ({ page }) => {
+    const layers = await browserImportedLayerSummaries(
+      page,
+      `<style>
+        body { margin: 0; font-size: 14px }
+        .steps { counter-reset: step; list-style: none; margin: 0; padding: 0 }
+        .steps > li::before { counter-increment: step; content: counter(step) }
+        .toc, .toc ol { counter-reset: part; list-style: none; padding: 0 }
+        .toc li::before { counter-increment: part; content: counters(part, ".") " " }
+      </style>
+      <ol class="steps"><li>Create</li><li>Push</li><li>Visit</li></ol>
+      <ol class="toc"><li>Intro<ol><li>Setup</li><li>Usage</li></ol></li><li>Next</li></ol>`,
+      VIEWPORT
+    )
+    const texts = layers.filter((layer) => layer.type === 'TEXT').map((layer) => layer.text)
+
+    // Each inline ::before runs on in its item's text, numbered as the page numbers it.
+    expect(texts).toEqual(
+      expect.arrayContaining(['1Create\n2Push\n3Visit', '1.1 Setup\n1.2 Usage', '2 Next'])
+    )
+  })
+
   test('keeps auto side margins, which center or end-align a block', async ({ page }) => {
     const document = await captured(
       page,

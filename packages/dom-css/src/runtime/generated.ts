@@ -1,6 +1,7 @@
 import valueParser from 'postcss-value-parser'
 
 import type { DesignElement } from '../types'
+import { CounterState } from './counters'
 
 const PSEUDO_ELEMENTS = ['before', 'after'] as const
 
@@ -23,16 +24,23 @@ const REPLACED_TAGS = new Set([
 ])
 
 /**
- * The text a computed `content` value shows: its strings and the attributes it names, in order.
- * Null for `none` and `normal`, which generate no box; counters, quotes, and images add no text.
+ * The text a computed `content` value shows: its strings, the attributes it names, and its
+ * counters as they stand, in order. Null for `none` and `normal`, which generate no box; quotes and
+ * images add no text.
  */
-export function generatedText(content: string, element: Element): string | null {
+export function generatedText(
+  content: string,
+  element: Element,
+  counters: CounterState
+): string | null {
   if (content === 'none' || content === 'normal') return null
   let text = ''
   for (const node of valueParser(content).nodes) {
     if (node.type === 'string') text += node.value
-    else if (node.type === 'function' && node.value.toLowerCase() === 'attr') {
-      text += element.getAttribute(node.nodes.at(0)?.value ?? '') ?? ''
+    else if (node.type === 'function') {
+      const name = node.value.toLowerCase()
+      if (name === 'attr') text += element.getAttribute(node.nodes.at(0)?.value ?? '') ?? ''
+      else if (name === 'counter' || name === 'counters') text += counters.text(node)
     }
   }
   return text
@@ -46,47 +54,76 @@ function inlineStyle(style: CSSStyleDeclaration): string {
     .join(';')
 }
 
+/** Shows one pseudo-element of `domElement` as an element of its own; returns whether it did. */
+function showPseudoElement(
+  pseudo: (typeof PSEUDO_ELEMENTS)[number],
+  designElement: DesignElement,
+  domElement: Element,
+  view: Window,
+  counters: CounterState,
+  pairs: [DesignElement, Element][]
+): boolean {
+  const style = view.getComputedStyle(domElement, `::${pseudo}`)
+  if (style.content === 'none' || style.content === 'normal' || style.display === 'none') {
+    return false
+  }
+  // A pseudo-element's own counters apply first, so `content: counter(step)` beside
+  // `counter-increment: step` shows the step it counts.
+  counters.apply(style, domElement)
+  const text = generatedText(style.content, domElement, counters) ?? ''
+  const box = domElement.ownerDocument.createElement('span')
+  box.style.cssText = inlineStyle(style)
+  if (text) box.textContent = text
+  const generated: DesignElement = {
+    type: 'element',
+    tagName: `::${pseudo}`,
+    attrs: {},
+    children: text ? [{ type: 'text', text }] : []
+  }
+  if (pseudo === 'before') {
+    domElement.prepend(box)
+    designElement.children.unshift(generated)
+  } else {
+    domElement.append(box)
+    designElement.children.push(generated)
+  }
+  domElement.setAttribute(GENERATED_ATTRIBUTE, '')
+  pairs.push([generated, box])
+  return true
+}
+
 /**
  * Shows each paired element's `::before` and `::after` as elements of their own, in the sandbox and
  * in the document, so they are laid out, styled, and imported as any element is: a box with its
  * pseudo-element's computed style and text, first or last among the element's children, named
- * `::before` or `::after`. The pseudo-elements themselves are switched off so nothing shows twice.
- * Adds the pairs it makes to `pairs`, and returns how many it made.
+ * `::before` or `::after`. The sandbox is walked in document order, so CSS counters count as the
+ * page counts them. The pseudo-elements themselves are switched off so nothing shows twice. Adds
+ * the pairs it makes to `pairs`, and returns how many it made.
  */
 export function showGeneratedContent(
   pairs: [DesignElement, Element][],
   view: Window,
-  styleRoot: Node & ParentNode
+  styleRoot: Node & ParentNode,
+  root: Element
 ): number {
+  const designElements = new Map(pairs.map(([design, dom]) => [dom, design]))
+  const counters = new CounterState()
   let made = 0
-  // Only the elements already paired: the boxes this adds have no generated content of their own.
-  for (const [designElement, domElement] of pairs.slice()) {
-    if (REPLACED_TAGS.has(domElement.localName)) continue
-    for (const pseudo of PSEUDO_ELEMENTS) {
-      const style = view.getComputedStyle(domElement, `::${pseudo}`)
-      const text = generatedText(style.content, domElement)
-      if (text === null || style.display === 'none') continue
-      const box = domElement.ownerDocument.createElement('span')
-      box.style.cssText = inlineStyle(style)
-      if (text) box.textContent = text
-      const generated: DesignElement = {
-        type: 'element',
-        tagName: `::${pseudo}`,
-        attrs: {},
-        children: text ? [{ type: 'text', text }] : []
-      }
-      if (pseudo === 'before') {
-        domElement.prepend(box)
-        designElement.children.unshift(generated)
-      } else {
-        domElement.append(box)
-        designElement.children.push(generated)
-      }
-      domElement.setAttribute(GENERATED_ATTRIBUTE, '')
-      pairs.push([generated, box])
+  const visit = (domElement: Element) => {
+    const parent = domElement.parentElement === root ? null : domElement.parentElement
+    counters.apply(view.getComputedStyle(domElement), parent)
+    // The children as the page has them, before any generated box joins them.
+    const children = Array.from(domElement.children)
+    const designElement = designElements.get(domElement)
+    const shows = designElement !== undefined && !REPLACED_TAGS.has(domElement.localName)
+    if (shows && showPseudoElement('before', designElement, domElement, view, counters, pairs))
       made++
-    }
+    for (const child of children) visit(child)
+    if (shows && showPseudoElement('after', designElement, domElement, view, counters, pairs))
+      made++
+    counters.leave(domElement)
   }
+  for (const child of Array.from(root.children)) visit(child)
   if (made > 0) {
     const off = styleRoot.ownerDocument?.createElement('style')
     if (off) {

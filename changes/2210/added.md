@@ -2,3 +2,4 @@
 - HTML opened or pasted in the app draws CSS mask icons, such as Iconify's and VitePress's, as vector layers in the element's color (#2210).
 - Imported HTML keeps content CSS generates with `::before` and `::after`, such as separators, list markers drawn as boxes, and the arrow after an external link, as layers named for them (#2210).
 - Opening a URL follows a page that sends a browser elsewhere at once with `<meta http-equiv="refresh">`, so it opens the page a visitor sees (#2210).
+- Generated content in HTML opened or pasted in the app shows the numbers CSS counters give it, such as numbered steps or `1.2` section labels (#2210).

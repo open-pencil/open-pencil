@@ -473,7 +473,7 @@ async function copyComputedStyles(
   }
 
   // Generated content becomes elements, laid out before anything is read.
-  if (showGeneratedContent(pairs, view, frame.styleRoot) > 0) {
+  if (showGeneratedContent(pairs, view, frame.styleRoot, content) > 0) {
     await requestFrame(content.ownerDocument)
     await content.ownerDocument.fonts.ready
   }
