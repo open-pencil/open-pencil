@@ -98,7 +98,10 @@ async function renderFigThumbnail(
 ): Promise<FigThumbnail> {
   const frame = pageId ? thumbnailFrame(graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT) : null
   if (!pageId || !frame) return placeholderThumbnail()
-  const png = await renderFigThumbnailPNG(graph, pageId, options)
+  const png = await renderFigThumbnailPNG(graph, pageId, options).catch((error: unknown) => {
+    console.warn('[.fig] Could not draw the file preview:', error)
+    return null
+  })
   if (!png) return placeholderThumbnail()
   const { minX, minY, maxX, maxY } = frame.bounds
   return {
