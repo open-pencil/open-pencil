@@ -40,16 +40,20 @@ pub struct RenderRequest {
 struct Settling {
     ready: bool,
     changes: u64,
+    /// Tells one document from the next, as a page that navigates becomes another.
+    document: f64,
 }
 
 fn is_web(url: &Url) -> bool {
     matches!(url.scheme(), "http" | "https")
 }
 
-/// Runs `script` in the page and parses what it returns, or fails when it does not answer.
+/// Runs `script` in the page and parses what it returns, or fails when it does not answer within
+/// `limit`.
 async fn evaluate<R: Runtime>(
     window: &WebviewWindow<R>,
     script: &str,
+    limit: Duration,
 ) -> Result<serde_json::Value, String> {
     let (sender, receiver) = oneshot::channel::<String>();
     let sender = Mutex::new(Some(sender));
@@ -60,7 +64,7 @@ async fn evaluate<R: Runtime>(
             }
         })
         .map_err(|e| e.to_string())?;
-    let answer = tokio::time::timeout(SCRIPT_LIMIT, receiver)
+    let answer = tokio::time::timeout(limit, receiver)
         .await
         .map_err(|_| "The page stopped answering".to_owned())?
         .map_err(|_| "The page closed".to_owned())?;
@@ -69,28 +73,33 @@ async fn evaluate<R: Runtime>(
 
 /// Waits until the page has loaded, its fonts with it, and has gone `QUIET_PERIOD` without a change
 /// to its document or a finished request, as a page that builds itself has finished, or until
-/// `deadline`.
-async fn settle<R: Runtime>(
-    window: &WebviewWindow<R>,
-    script: &str,
-    deadline: Instant,
-) -> Result<(), String> {
-    let mut last: Option<(u64, Instant)> = None;
-    while Instant::now() < deadline {
-        let settling: Settling = serde_json::from_value(evaluate(window, script).await?)
-            .map_err(|e| format!("The page answered unreadably: {e}"))?;
+/// `deadline`, when it is read as it stands. A page that navigates starts its quiet period again.
+async fn settle<R: Runtime>(window: &WebviewWindow<R>, script: &str, deadline: Instant) {
+    let mut last: Option<(f64, u64, Instant)> = None;
+    loop {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            return;
+        }
+        let Ok(answer) = evaluate(window, script, remaining.min(SCRIPT_LIMIT)).await else {
+            return;
+        };
+        let Ok(settling) = serde_json::from_value::<Settling>(answer) else {
+            return;
+        };
         let now = Instant::now();
         match last {
-            Some((changes, since)) if changes == settling.changes => {
+            Some((document, changes, since))
+                if document == settling.document && changes == settling.changes =>
+            {
                 if settling.ready && now.duration_since(since) >= QUIET_PERIOD {
-                    return Ok(());
+                    return;
                 }
             }
-            _ => last = Some((settling.changes, now)),
+            _ => last = Some((settling.document, settling.changes, now)),
         }
-        tokio::time::sleep(POLL_INTERVAL).await;
+        tokio::time::sleep(POLL_INTERVAL.min(remaining)).await;
     }
-    Ok(())
 }
 
 async fn render<R: Runtime>(
@@ -101,8 +110,8 @@ async fn render<R: Runtime>(
     let deadline = Instant::now() + RENDER_LIMIT;
     // A page that never finishes loading is still read once the limit passes.
     let _ = tokio::time::timeout(RENDER_LIMIT, loaded).await;
-    settle(window, &request.settle_script, deadline).await?;
-    evaluate(window, &request.snapshot_script).await
+    settle(window, &request.settle_script, deadline).await;
+    evaluate(window, &request.snapshot_script, SCRIPT_LIMIT).await
 }
 
 /// Opens `request.url` in a hidden webview of the given size, waits for the page to build itself,

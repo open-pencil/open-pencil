@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import * as v from 'valibot'
 
-import type * as RenderScripts from '@/app/document/io/url/render/scripts'
+import type * as RenderPage from '@/app/document/io/url/render/page'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
@@ -12,12 +12,9 @@ async function pageScripts(page: Page) {
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
   return page.evaluate(async () => {
-    const scriptsURL = '/src/app/document/io/url/render/scripts.ts'
-    const scripts: typeof RenderScripts = await import(scriptsURL)
-    return {
-      settle: scripts.pageScript(scripts.pageSettling),
-      snapshot: scripts.pageScript(scripts.pageSnapshot)
-    }
+    const pageURL = '/src/app/document/io/url/render/page.ts'
+    const render: typeof RenderPage = await import(pageURL)
+    return render.RENDER_SCRIPTS
   })
 }
 
@@ -26,7 +23,8 @@ const APP_PAGE = `<!doctype html><html><head><title>Board</title></head><body>
 <div id="root"></div>
 <noscript><p>Enable JavaScript</p></noscript>
 <script>
-  setTimeout(() => {
+  // Built when the test asks, after it has read the page once, as a page builds after it loads.
+  document.addEventListener('build', () => {
     const sheet = document.head.appendChild(document.createElement('style')).sheet
     sheet.insertRule('.card { width: 120px }')
     const adopted = new CSSStyleSheet()
@@ -37,10 +35,10 @@ const APP_PAGE = `<!doctype html><html><head><title>Board</title></head><body>
     document.getElementById('name').value = 'Ada'
     document.getElementById('done').checked = true
     document.getElementById('note').value = 'Draft'
-  }, 300)
+  })
 </script></body></html>`
 
-const settlingSchema = v.object({ ready: v.boolean(), changes: v.number() })
+const settlingSchema = v.object({ ready: v.boolean(), changes: v.number(), document: v.number() })
 const snapshotSchema = v.object({ html: v.string(), url: v.string() })
 
 test('a rendered page reads back as the HTML its scripts built', async ({ page }) => {
@@ -53,10 +51,12 @@ test('a rendered page reads back as the HTML its scripts built', async ({ page }
 
   // Counting starts with the first question; the script then builds the page, which it counts.
   const before = await settling()
+  await page.evaluate(() => document.dispatchEvent(new Event('build')))
   await expect(page.locator('h1.title')).toBeVisible()
   const after = await settling()
   expect(after.ready).toBe(true)
   expect(after.changes).toBeGreaterThan(before.changes)
+  expect(after.document).toBe(before.document)
 
   const { html, url } = v.parse(snapshotSchema, await page.evaluate(scripts.snapshot))
   const matches = (selector: string) =>
