@@ -10,6 +10,7 @@ import type {
   DesignResourceFetch,
   DesignViewport
 } from '../types'
+import { showFormText } from './form-text'
 import { showGeneratedContent } from './generated'
 import { recordLayout } from './layout'
 import { attachImages, canvasBackground, fontFaceRules, RESOURCE_TIMEOUT_MS } from './resources'
@@ -488,6 +489,7 @@ async function copyComputedStyles(
   }
   // After the styles are copied: reading layout switches transforms off for a moment.
   if (options.layout) recordLayout(pairs, frame.origin, frame.styleRoot)
+  showFormText(pairs, view, (style) => computedStyleToRecord(style, options))
 
   return { document: nextDocument, images }
 }

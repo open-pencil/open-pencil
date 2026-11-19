@@ -10,3 +10,4 @@
 - A corner radius given as a percentage, such as `border-radius: 50%` on a dot or an avatar, rounds the imported layer instead of being dropped (#2210).
 - HTML opened or pasted in the app is set in the fonts its page loads with `@font-face`, icon fonts among them, as the CLI already did (#2210).
 - An HTML page imported as a document keeps the background a browser paints behind it, its own or white, instead of the editor's grey (#2210).
+- Text fields in HTML opened or pasted in the app show what they hold, their value or else their placeholder in its own style, instead of importing empty (#2210).

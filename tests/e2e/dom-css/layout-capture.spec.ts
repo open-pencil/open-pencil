@@ -102,6 +102,21 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     })
   })
 
+  test('shows what a text field holds: its value, else its placeholder', async ({ page }) => {
+    const layers = await browserImportedLayerSummaries(
+      page,
+      `<style>body { margin: 0; font-size: 14px } input { width: 200px; padding: 8px }</style>
+      <input type="email" placeholder="you@example.com">
+      <input value="Night Drive">
+      <input type="checkbox">`,
+      VIEWPORT
+    )
+    const texts = layers.filter((layer) => layer.type === 'TEXT').map((layer) => layer.text)
+
+    expect(texts).toEqual(['you@example.com', 'Night Drive'])
+    expect(layers.find((layer) => layer.name === '::placeholder')).toBeDefined()
+  })
+
   test('keeps auto side margins, which center or end-align a block', async ({ page }) => {
     const document = await captured(
       page,
