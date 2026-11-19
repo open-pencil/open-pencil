@@ -1,5 +1,7 @@
 import valueParser from 'postcss-value-parser'
 
+import { formatListNumber, type ListNumberFormat } from '@open-pencil/scene-graph/text'
+
 /** One counter's instance: its value, and the element whose children see it, null at the root. */
 interface CounterInstance {
   value: number
@@ -24,64 +26,25 @@ function counterValues(value: string, fallback: number): [string, number][] {
   return pairs
 }
 
-const ROMAN: [number, string][] = [
-  [1000, 'm'],
-  [900, 'cm'],
-  [500, 'd'],
-  [400, 'cd'],
-  [100, 'c'],
-  [90, 'xc'],
-  [50, 'l'],
-  [40, 'xl'],
-  [10, 'x'],
-  [9, 'ix'],
-  [5, 'v'],
-  [4, 'iv'],
-  [1, 'i']
-]
-
-function roman(value: number): string {
-  let rest = value
-  let text = ''
-  for (const [amount, letters] of ROMAN) {
-    while (rest >= amount) {
-      text += letters
-      rest -= amount
-    }
-  }
-  return text
+/** The list number formats `formatListNumber` writes, by the CSS counter style that names each. */
+const LIST_FORMATS: Partial<Record<string, ListNumberFormat>> = {
+  'lower-alpha': 'LOWER_ALPHA',
+  'lower-latin': 'LOWER_ALPHA',
+  'lower-roman': 'LOWER_ROMAN'
 }
 
-function alphabetic(value: number): string {
-  let rest = value
-  let text = ''
-  while (rest > 0) {
-    rest--
-    text = String.fromCharCode(97 + (rest % 26)) + text
-    rest = Math.floor(rest / 26)
-  }
-  return text
-}
-
-/** A counter's value in a list style, as `counter(name, style)` writes it; decimal by default. */
+/**
+ * A counter's value in a list style, as `counter(name, style)` writes it; decimal by default.
+ * Letters and Roman numerals count from 1, so other values stay decimal, as browsers fall back.
+ */
 function formatted(value: number, style: string | undefined): string {
-  const positive = value > 0
-  switch (style) {
-    case 'decimal-leading-zero':
-      return value >= 0 && value < 10 ? `0${value}` : String(value)
-    case 'lower-roman':
-      return positive && value < 4000 ? roman(value) : String(value)
-    case 'upper-roman':
-      return positive && value < 4000 ? roman(value).toUpperCase() : String(value)
-    case 'lower-alpha':
-    case 'lower-latin':
-      return positive ? alphabetic(value) : String(value)
-    case 'upper-alpha':
-    case 'upper-latin':
-      return positive ? alphabetic(value).toUpperCase() : String(value)
-    default:
-      return String(value)
-  }
+  const name = style?.toLowerCase() ?? 'decimal'
+  if (name === 'decimal-leading-zero') return value >= 0 && value < 10 ? `0${value}` : String(value)
+  const upper = name.startsWith('upper-')
+  const format = LIST_FORMATS[upper ? `lower-${name.slice('upper-'.length)}` : name]
+  if (!format || value < 1 || (format === 'LOWER_ROMAN' && value >= 4000)) return String(value)
+  const text = formatListNumber(value, format)
+  return upper ? text.toUpperCase() : text
 }
 
 /** The counters in effect, by name, innermost last, as CSS scopes them in document order. */
