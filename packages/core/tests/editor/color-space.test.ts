@@ -69,6 +69,34 @@ describe('document color profile', () => {
     expectColor(page(), blue)
   })
 
+  test('converting covers gradient strokes and text decoration paints', () => {
+    editor = createEditor()
+    editor.graph.documentColorSpace = 'display-p3'
+    const pageId = editor.state.currentPageId
+    const paint = { type: 'SOLID' as const, color: BLUE, opacity: 1, visible: true }
+    const gradientStroke = {
+      ...paint,
+      type: 'GRADIENT_LINEAR' as const,
+      gradientStops: [
+        { color: BLUE, position: 0 },
+        { color: P3_RED, position: 1 }
+      ],
+      weight: 2,
+      align: 'CENTER' as const
+    }
+    const layer = editor.graph.createNode('TEXT', pageId, {
+      text: 'Hi',
+      strokes: [gradientStroke],
+      textDecorationFills: [paint]
+    })
+    editor.setDocumentColorSpace('srgb', 'convert')
+    const node = editor.graph.getNode(layer.id)
+    const blue = toExtendedSRGB(BLUE, 'display-p3')
+    expectColor(node?.strokes[0].gradientStops?.[0].color, blue)
+    expect(node?.strokes[0].weight).toBe(2)
+    expectColor(node?.textDecorationFills[0].color, blue)
+  })
+
   test('undoing a conversion puts back every value and the profile in one step', () => {
     const { fill, stroke, accent, page } = p3Document()
     const before = { stroke: stroke(), page: page() }
