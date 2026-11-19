@@ -4,12 +4,18 @@ import { defineComponent, h, nextTick, ref } from 'vue'
 import type { Ref } from 'vue'
 
 import type { Fill } from '@open-pencil/scene-graph'
-import { okhclToRGBA, rgbaToOkHCL, type RenderColorSpace } from '@open-pencil/scene-graph/color'
+import {
+  colorToDisplayCSS,
+  okhclToRGBA,
+  rgbaToOkHCL,
+  type RenderColorSpace
+} from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 
 import { useColorModel } from '#vue/controls/color-model/use'
 import {
+  linearGradientCSS,
   provideColorSpace,
   sliderTrackBackground,
   useColorCSS
@@ -100,5 +106,52 @@ describe('color space of shown colors', () => {
     model.updateOkHCLChannel('l', 0.5)
     const expected = okhclToRGBA({ ...model.okhcl.value, l: 0.5 }, 'display-p3')
     expect(updates.at(-1)?.r).toBeCloseTo(expected.r, 5)
+  })
+})
+
+describe('gradients shown in another profile than stored', () => {
+  test('blend in the stored components before clipping, so midpoints match the canvas', () => {
+    const white = { r: 1, g: 1, b: 1, a: 1 }
+    const css = linearGradientCSS('to right', [{ color: white }, { color: P3_RED }], {
+      stored: 'display-p3',
+      shown: 'srgb'
+    })
+    // The document's midpoint P3 (1, 0.5, 0.5), shown in sRGB, is a stop of its own.
+    expect(css).toContain(
+      `${colorToDisplayCSS({ r: 1, g: 0.5, b: 0.5, a: 1 }, { documentColorSpace: 'display-p3', colorSpace: 'srgb' })} 50%`
+    )
+    expect(css).toStartWith('linear-gradient(to right in display-p3, ')
+  })
+
+  test('sRGB colors shown in P3 still blend in sRGB', () => {
+    const css = linearGradientCSS(
+      'to right',
+      [{ color: { r: 0, g: 0, b: 0, a: 1 } }, { color: { r: 1, g: 1, b: 1, a: 1 } }],
+      { stored: 'srgb', shown: 'display-p3' }
+    )
+    expect(css).toStartWith('linear-gradient(to right in srgb, ')
+  })
+
+  test('useColorModel keeps the provided presentation for colors stored in its profile', () => {
+    let saturationTrack: string | undefined
+    const Child = defineComponent({
+      setup() {
+        const model = useColorModel({ color: P3_RED, colorSpace: 'display-p3' })
+        saturationTrack = model.sliderGradient.value.hsbSaturation
+        return () => h('div')
+      }
+    })
+    const app = createTestRenderer().createApp(
+      defineComponent({
+        setup() {
+          provideColorSpace('display-p3', 'srgb')
+          return () => h(Child)
+        }
+      })
+    )
+    app.mount(hostNode())
+    // Shown clipped to sRGB, so the stops are rgb(), not color(display-p3 …).
+    expect(saturationTrack).not.toContain('color(display-p3')
+    app.unmount()
   })
 })
