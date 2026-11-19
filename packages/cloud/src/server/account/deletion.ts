@@ -172,6 +172,11 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
       } = {}
     ): Promise<void> {
       await database.transaction().execute(async (transaction) => {
+        // The administrators' rows lock first, in one order for every deletion, so two
+        // administrators deleting themselves at once wait for each other rather than deadlock.
+        if (await lastAdministrator(transaction, account.id, true)) {
+          throw new AccountLastAdministratorError()
+        }
         const user = await transaction
           .selectFrom('user')
           .select(['id', 'email', 'name', 'role'])
@@ -179,9 +184,6 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
           .forUpdate()
           .executeTakeFirstOrThrow()
         await options.before?.(transaction, user)
-        if (await lastAdministrator(transaction, user.id, true)) {
-          throw new AccountLastAdministratorError()
-        }
         const workspaceIds = await transaction
           .selectFrom('workspaceMember')
           .select('workspaceId')
