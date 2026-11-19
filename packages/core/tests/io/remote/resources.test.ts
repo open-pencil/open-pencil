@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { fromUint8Array } from 'js-base64'
-
+import { imageDataURL } from '@open-pencil/scene-graph/images'
 import { fetchStub } from '@open-pencil/test-support/fetch'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
@@ -14,13 +13,17 @@ describe('networkResourceFetch', () => {
     const requested: string[] = []
     const read = networkResourceFetch(
       fetchStub(async (input) => {
-        requested.push(String(input))
+        requested.push(input instanceof Request ? input.url : input.toString())
         return new Response(null, { status: 404 })
       })
     )
-    const url = `data:image/png;base64,${fromUint8Array(png)}`
+    const url = imageDataURL(png)
 
-    expect(await read(url)).toEqual({ url, bytes: png, contentType: 'image/png' })
+    expect(await read(url, new AbortController().signal)).toEqual({
+      url,
+      bytes: png,
+      contentType: 'image/png'
+    })
     expect(requested).toEqual([])
   })
 })
