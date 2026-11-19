@@ -42,6 +42,9 @@ const PAINT_FILTER_FIELDS = {
 
 const IMAGE_FILTER_FIELDS = invert(PAINT_FILTER_FIELDS)
 
+/** Figma keeps contrast at 0.3 of the plugin API's value, linear over -1 to 1; the rest as they are. */
+const PAINT_FILTER_CONTRAST = 0.3
+
 /** `adjustments` renamed by `names`, leaving out those at 0; undefined when every one is. */
 function renameAdjustments<To extends string, From extends string>(
   names: Readonly<Record<To, From>>,
@@ -76,6 +79,7 @@ function writeMediaPaintFields(paint: Paint, fill: Fill): void {
     paint.rotation = fill.imageRotation
   }
   const paintFilter = renameAdjustments(IMAGE_FILTER_FIELDS, fill.filters)
+  if (paintFilter?.contrast) paintFilter.contrast *= PAINT_FILTER_CONTRAST
   if (paintFilter) paint.paintFilter = paintFilter
 }
 
@@ -197,6 +201,7 @@ function applyImagePaintFields(fill: Fill, p: Paint): void {
     fill.imageTransform = convertGradientTransform(p.transform)
   if (p.rotation) fill.imageRotation = p.rotation
   const filters = renameAdjustments(PAINT_FILTER_FIELDS, p.paintFilter)
+  if (filters?.contrast) filters.contrast /= PAINT_FILTER_CONTRAST
   if (filters) fill.filters = filters
 }
 

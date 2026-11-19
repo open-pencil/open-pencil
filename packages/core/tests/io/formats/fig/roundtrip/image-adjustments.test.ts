@@ -16,10 +16,13 @@ setDefaultTimeout(60_000)
 const PHOTO = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 7, 7, 7])
 const PHOTO_NAME = computeImageHash(PHOTO)
 
-/** Every adjustment Figma's image panel offers, as the archive names them. */
+/** The archive's contrast, -0.25 at 0.3 scale, as the 32-bit float it keeps. */
+const ARCHIVE_CONTRAST = Math.fround(-0.075)
+
+/** Every adjustment Figma's image panel offers, as the archive names and scales them. */
 const PAINT_FILTER = {
   exposure: 0.5,
-  contrast: -0.25,
+  contrast: ARCHIVE_CONTRAST,
   vibrance: 0.75,
   temperature: -0.5,
   tint: 0.125,
@@ -29,7 +32,7 @@ const PAINT_FILTER = {
 
 const FILTERS = {
   exposure: 0.5,
-  contrast: -0.25,
+  contrast: ARCHIVE_CONTRAST / 0.3,
   saturation: 0.75,
   temperature: -0.5,
   tint: 0.125,

@@ -10,10 +10,10 @@ import {
 import type { Paint } from '@open-pencil/kiwi/fig/codec'
 import type { Fill } from '@open-pencil/scene-graph'
 
-/** Every adjustment Figma's image panel offers, as the archive names them. */
+/** Every adjustment Figma's image panel offers, as the archive names and scales them. */
 const PAINT_FILTER = {
   exposure: 0.5,
-  contrast: -0.25,
+  contrast: -0.075,
   vibrance: 0.75,
   temperature: -0.5,
   tint: 0.125,
