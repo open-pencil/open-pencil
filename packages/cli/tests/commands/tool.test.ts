@@ -59,6 +59,17 @@ describe('tool CLI', () => {
     expect(result.pages.map((page) => page.name)).toContain('From CLI')
   })
 
+  test('reads tool arguments from stdin with --args-file -', async () => {
+    const { path } = await writeFourPageFig()
+    const outPath = join(await mkdtemp(join(tmpdir(), 'open-pencil-tool-')), 'out.fig')
+    const created = await runCLI(
+      ['tool', 'call', 'create_page', path, '--args-file', '-', '--output', outPath, '--json'],
+      { stdin: '{"name":"From Stdin"}' }
+    )
+    expect(created.exitCode).toBe(0)
+    expect(JSON.parse(created.stdout)).toMatchObject({ name: 'From Stdin' })
+  })
+
   test('runs a tool on the page --page-id names in a file', async () => {
     const { path, pageIds } = await writeFourPageFig()
     const page = await runCLI([
