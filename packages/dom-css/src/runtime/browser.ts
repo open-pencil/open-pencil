@@ -404,7 +404,14 @@ const MEASURING_FRAME_SANDBOX = 'allow-same-origin'
  */
 const MEASURING_FRAME_POLICY = "script-src 'none'; frame-src 'none'; object-src 'none'"
 
-const MEASURING_FRAME_DOCUMENT = `<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="${MEASURING_FRAME_POLICY}"></head><body></body></html>`
+/**
+ * The frame lays the page out across the whole viewport, as a browser with overlay scrollbars
+ * does: a classic scrollbar would narrow it, and an element fixed just past the right edge, such
+ * as a closed drawer, would show in the strip it leaves.
+ */
+const MEASURING_FRAME_STYLE = 'html { scrollbar-width: none }'
+
+const MEASURING_FRAME_DOCUMENT = `<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="${MEASURING_FRAME_POLICY}"><style>${MEASURING_FRAME_STYLE}</style></head><body></body></html>`
 
 async function computeStylesInFrame(
   browserDocument: Document,
