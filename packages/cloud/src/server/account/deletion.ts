@@ -158,15 +158,27 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
      * Removes everything Cloud keeps about the account, in one transaction, or refuses with
      * `AccountDeletionBlockedError` and changes nothing. Its workspaces are locked first, so nobody
      * joins one, changes a role in one, or adds a document to one while it decides. `before` runs
-     * first in that transaction, as an administrator's check and audit entry do; a throw from it
-     * changes nothing.
+     * first in that transaction, with the account's row locked and read again, as an
+     * administrator's check and audit entry do; a throw from it changes nothing. The address is the
+     * locked one, so a change that lands meanwhile cannot leave another address's request behind.
      */
     async remove(
-      user: { id: string; email: string },
-      options: { before?: (transaction: Transaction<CloudDatabase>) => Promise<void> } = {}
+      account: { id: string },
+      options: {
+        before?: (
+          transaction: Transaction<CloudDatabase>,
+          user: { id: string; email: string; name: string; role: string | null }
+        ) => Promise<void>
+      } = {}
     ): Promise<void> {
       await database.transaction().execute(async (transaction) => {
-        await options.before?.(transaction)
+        const user = await transaction
+          .selectFrom('user')
+          .select(['id', 'email', 'name', 'role'])
+          .where('id', '=', account.id)
+          .forUpdate()
+          .executeTakeFirstOrThrow()
+        await options.before?.(transaction, user)
         if (await lastAdministrator(transaction, user.id, true)) {
           throw new AccountLastAdministratorError()
         }

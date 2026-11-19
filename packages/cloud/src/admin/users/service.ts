@@ -459,62 +459,54 @@ export function createAdminUserService(
      */
     async deleteUnapproved(actorId: string, userId: string): Promise<void> {
       refuseSelf(actorId, userId, 'delete')
-      const user = await database
-        .selectFrom('user')
-        .select(['id', 'email', 'name'])
-        .where('id', '=', userId)
-        .executeTakeFirstOrThrow()
-      await deletion.remove(user, {
-        // Under the account's and the request's locks, so neither a promotion nor an approval can
-        // land between the check and the delete.
-        async before(transaction) {
-          const current = await transaction
-            .selectFrom('user')
-            .select('role')
-            .where('id', '=', userId)
-            .forUpdate()
-            .executeTakeFirstOrThrow()
-          const request = await transaction
-            .selectFrom('enrollment')
-            .select(['id', 'status', 'approvedUserId'])
-            .where('emailNormalized', '=', normalizeEnrollmentEmail(user.email))
-            .forUpdate()
-            .executeTakeFirst()
-          // A request that is waiting again may have been approved before and removed: that account
-          // got in, and leaves only by its owner's hand.
-          const approvedBefore =
-            request !== undefined &&
-            (request.approvedUserId !== null ||
-              (await transaction
-                .selectFrom('adminAuditEvent')
-                .select('id')
-                .where('action', '=', 'enrollment.approved')
-                .where('subjectType', '=', 'enrollment')
-                .where('subjectId', '=', request.id)
-                .executeTakeFirst()) !== undefined)
-          if (
-            current.role === 'admin' ||
-            approvedBefore ||
-            (request?.status !== 'pending' && request?.status !== 'rejected')
-          ) {
-            throw new AdminDomainError(
-              'account_approved',
-              'Only an account whose request was never approved can be deleted'
-            )
+      await deletion.remove(
+        { id: userId },
+        {
+          // Under the account's and the request's locks, with the account as locked, so neither a
+          // promotion, an address change, nor an approval can land between the check and the delete.
+          async before(transaction, user) {
+            const request = await transaction
+              .selectFrom('enrollment')
+              .select(['id', 'status', 'approvedUserId'])
+              .where('emailNormalized', '=', normalizeEnrollmentEmail(user.email))
+              .forUpdate()
+              .executeTakeFirst()
+            // A request that is waiting again may have been approved before and removed: that account
+            // got in, and leaves only by its owner's hand.
+            const approvedBefore =
+              request !== undefined &&
+              (request.approvedUserId !== null ||
+                (await transaction
+                  .selectFrom('adminAuditEvent')
+                  .select('id')
+                  .where('action', '=', 'enrollment.approved')
+                  .where('subjectType', '=', 'enrollment')
+                  .where('subjectId', '=', request.id)
+                  .executeTakeFirst()) !== undefined)
+            if (
+              user.role === 'admin' ||
+              approvedBefore ||
+              (request?.status !== 'pending' && request?.status !== 'rejected')
+            ) {
+              throw new AdminDomainError(
+                'account_approved',
+                'Only an account whose request was never approved can be deleted'
+              )
+            }
+            await transaction
+              .insertInto('adminAuditEvent')
+              .values({
+                id: crypto.randomUUID(),
+                actorUserId: actorId,
+                action: 'user.deleted',
+                subjectType: 'user',
+                subjectId: userId,
+                metadata: { name: user.name, email: user.email }
+              })
+              .execute()
           }
-          await transaction
-            .insertInto('adminAuditEvent')
-            .values({
-              id: crypto.randomUUID(),
-              actorUserId: actorId,
-              action: 'user.deleted',
-              subjectType: 'user',
-              subjectId: userId,
-              metadata: { name: user.name, email: user.email }
-            })
-            .execute()
         }
-      })
+      )
     },
 
     /** Takes down a person's picture, such as one that should not be shown; initials replace it. */
