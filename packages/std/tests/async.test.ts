@@ -9,7 +9,7 @@ describe('createDeferred', () => {
     expect(await resolved.promise).toBe(3)
     const rejected = createDeferred<number>()
     rejected.reject(new Error('no'))
-    expect(rejected.promise).rejects.toThrow('no')
+    await expect(rejected.promise).rejects.toThrow('no')
   })
 })
 
@@ -39,7 +39,7 @@ describe('createMutex', () => {
     const mutex = createMutex()
     const failed = mutex.run(() => Promise.reject(new Error('broke')))
     const next = mutex.run(() => 'ran')
-    expect(failed).rejects.toThrow('broke')
+    await expect(failed).rejects.toThrow('broke')
     expect(await next).toBe('ran')
   })
 
@@ -53,7 +53,7 @@ describe('createMutex', () => {
     }, controller.signal)
     const after = mutex.run(() => 'after')
     controller.abort()
-    expect(waiting).rejects.toThrow()
+    await expect(waiting).rejects.toThrow()
     release()
     expect(await after).toBe('after')
     expect(ran).toBe(false)
@@ -61,7 +61,7 @@ describe('createMutex', () => {
 
   test('an already aborted signal rejects at once', async () => {
     const mutex = createMutex()
-    expect(mutex.acquire(AbortSignal.abort())).rejects.toThrow()
+    await expect(mutex.acquire(AbortSignal.abort())).rejects.toThrow()
   })
 })
 
@@ -90,7 +90,9 @@ describe('createKeyedMutex', () => {
 
   test('a key used again after it went idle starts a fresh turn order', async () => {
     const mutex = createKeyedMutex<string>()
-    expect(mutex.run('file', () => Promise.reject(new Error('broke')))).rejects.toThrow('broke')
+    await expect(mutex.run('file', () => Promise.reject(new Error('broke')))).rejects.toThrow(
+      'broke'
+    )
     expect(await mutex.run('file', () => 'again')).toBe('again')
   })
 })
