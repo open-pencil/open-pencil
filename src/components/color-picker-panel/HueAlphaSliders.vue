@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { colorToCSS } from '@open-pencil/scene-graph/color'
 import { useMessages } from '@open-pencil/vue/i18n'
+import { useColorCSS } from '@open-pencil/vue/primitives/ColorPicker'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import EyedropperButton from '@/components/color-picker-panel/EyedropperButton.vue'
@@ -8,6 +8,7 @@ import StandardColorSlider from '@/components/color-picker-panel/StandardColorSl
 
 const ctx = useColorPickerPanelContext()
 const pickerMessages = useMessages('panels/pickers')
+const colorToCSS = useColorCSS()
 </script>
 
 <template>

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ColorSliderRoot, ColorSliderThumb, ColorSliderTrack } from 'reka-ui'
 import type { Color as RekaColor, ColorChannel, ColorSpace } from 'reka-ui'
+import { computed } from 'vue'
+
+import { sliderTrackBackground, useColorSpace } from '@open-pencil/vue/primitives/ColorPicker'
 
 import type { ColorSliderUI } from '@/components/color-picker-panel/ui'
 import { useColorSliderUI } from '@/components/color-picker-panel/ui'
@@ -47,6 +50,12 @@ const emit = defineEmits<{
   updateNumber: [value: number]
 }>()
 
+const space = useColorSpace()
+// Reka writes its track in sRGB; in another profile the track shows the colors the canvas draws.
+const trackBackground = computed(() =>
+  sliderTrackBackground(modelValue, channel, colorSpace, space.value)
+)
+
 const styles = useColorSliderUI(
   () => checkerboard,
   () => ui
@@ -66,7 +75,10 @@ const styles = useColorSliderUI(
         data-slot="slider"
         @update:color="emit('update', $event)"
       >
-        <ColorSliderTrack :class="styles.track.value" />
+        <ColorSliderTrack
+          :class="styles.track.value"
+          :style="trackBackground ? { background: trackBackground } : undefined"
+        />
         <ColorSliderThumb
           :class="styles.thumb.value"
           :aria-label="label"

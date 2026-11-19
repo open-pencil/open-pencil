@@ -23,6 +23,12 @@ a preference, set `escapeReverts`: Escape then also puts back the color the pick
 emits `cancel` with `'escape'`. Opening or focusing the picker does not
 emit a color update.
 
+Colors are read as sRGB unless an ancestor calls `provideColorSpace()` with the profile they are
+stored in. An editor shell passes the document's profile, `() => store.state.documentColorSpace`,
+so a Display P3 document's swatches, gradient stops, and `useColorModel` OkHCL values show its
+colors as the canvas draws them. A preference picker inside that shell calls
+`provideColorSpace('srgb')` for its own subtree.
+
 ```vue twoslash
 <script setup lang="ts">
 import { ref } from 'vue'

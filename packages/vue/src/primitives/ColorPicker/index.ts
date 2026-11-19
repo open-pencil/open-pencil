@@ -6,3 +6,12 @@ export {
   type PickerCancelCause,
   type PickerGestureOptions
 } from '#vue/primitives/ColorPicker/gesture'
+export {
+  colorCSS,
+  linearGradientCSS,
+  provideColorSpace,
+  saturationBrightnessArea,
+  sliderTrackBackground,
+  useColorCSS,
+  useColorSpace
+} from '#vue/primitives/ColorPicker/color-space'

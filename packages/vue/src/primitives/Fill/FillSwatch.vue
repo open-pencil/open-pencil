@@ -2,6 +2,8 @@
 import { Primitive } from 'reka-ui'
 import { computed } from 'vue'
 
+import { useColorSpace } from '#vue/primitives/ColorPicker/color-space'
+
 import type { FillSwatchProps, FillSwatchSlots } from './types'
 import { fillCategory, fillIsTransparent, fillSwatchBackground } from './useFill'
 
@@ -10,7 +12,8 @@ defineSlots<FillSwatchSlots>()
 defineOptions({ inheritAttrs: false })
 
 const category = computed(() => fillCategory(fill))
-const background = computed(() => fillSwatchBackground(fill))
+const space = useColorSpace()
+const background = computed(() => fillSwatchBackground(fill, space.value))
 const transparent = computed(() => fillIsTransparent(fill))
 const slotProps = computed(() => ({
   fill,

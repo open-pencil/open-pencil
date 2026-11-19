@@ -1,13 +1,24 @@
 <script setup lang="ts">
-import { colorToCSS } from '@open-pencil/scene-graph/color'
 import { toPercent } from '@open-pencil/vue/controls/color-model'
 import { useMessages } from '@open-pencil/vue/i18n'
+import {
+  linearGradientCSS,
+  useColorCSS,
+  useColorSpace
+} from '@open-pencil/vue/primitives/ColorPicker'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import EyedropperButton from '@/components/color-picker-panel/EyedropperButton.vue'
 import OkhclChannelSlider from '@/components/color-picker-panel/OkhclChannelSlider.vue'
 
 const ctx = useColorPickerPanelContext()
+const colorToCSS = useColorCSS()
+const space = useColorSpace()
+const alphaGradient = () => {
+  const color = { ...ctx.color, a: 1 }
+  const stops = [{ color: { ...color, a: 0 } }, { color }]
+  return `background: ${linearGradientCSS('to right', stops, space.value)}`
+}
 const pickerMessages = useMessages('panels/pickers')
 const percentText = (value: number) => `${Math.round(toPercent(value))}%`
 </script>
@@ -63,7 +74,7 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
           :max="1"
           :step="0.001"
           checkerboard
-          :gradient="`background: linear-gradient(to right, transparent, ${colorToCSS({ ...ctx.color, a: 1 })})`"
+          :gradient="alphaGradient()"
           :thumb-fill="colorToCSS(ctx.color)"
           :format-value-text="percentText"
           data-test-id="color-slider-okhcl-a"

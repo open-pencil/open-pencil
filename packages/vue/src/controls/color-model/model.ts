@@ -2,13 +2,8 @@ import { convertToHsb, convertToHsl, convertToRgb } from 'reka-ui'
 import type { Color as RekaColor, HSBColor, HSLColor, RGBColor } from 'reka-ui'
 
 import type { Fill, Stroke } from '@open-pencil/scene-graph'
-import {
-  colorToCSS,
-  okhclToRGBA,
-  rgba255ToColor,
-  rgbaToOkHCL
-} from '@open-pencil/scene-graph/color'
-import type { OkHCLColor } from '@open-pencil/scene-graph/color'
+import { okhclToRGBA, rgba255ToColor, rgbaToOkHCL } from '@open-pencil/scene-graph/color'
+import type { OkHCLColor, RenderColorSpace } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type {
@@ -21,6 +16,7 @@ import type {
   SliderGradientModel,
   SliderPreviewModel
 } from '#vue/controls/color-model/types'
+import { linearGradientCSS } from '#vue/primitives/ColorPicker/color-space'
 
 export interface ColorModelValue {
   rekaColor: RekaColor
@@ -35,14 +31,18 @@ const OKHCL_LIGHTNESS_MID = 0.5
 const OKHCL_HUE_PREVIEW_MIN_CHROMA = 0.15
 const OKHCL_HUE_PREVIEW_FALLBACK_LIGHTNESS = 0.7
 
-export function createColorModelValue(color: Color, okhcl?: OkHCLColor | null): ColorModelValue {
+export function createColorModelValue(
+  color: Color,
+  okhcl?: OkHCLColor | null,
+  space: RenderColorSpace = 'srgb'
+): ColorModelValue {
   const rekaColor = sceneToRekaColor(color)
   return {
     rekaColor,
     rgb: convertToRgb(rekaColor),
     hsl: convertToHsl(rekaColor),
     hsb: convertToHsb(rekaColor),
-    okhcl: applyOkHCLPatch(okhcl ?? rgbaToOkHCL(color), {})
+    okhcl: applyOkHCLPatch(okhcl ?? rgbaToOkHCL(color, space), {})
   }
 }
 
@@ -132,19 +132,28 @@ export function createSliderPreviewModel(model: ColorModelValue): SliderPreviewM
   }
 }
 
-export function createOkHCLSliderPreviewModel(color: OkHCLColor): OkHCLSliderPreviewModel {
+export function createOkHCLSliderPreviewModel(
+  color: OkHCLColor,
+  space: RenderColorSpace = 'srgb'
+): OkHCLSliderPreviewModel {
   return {
-    okhclHue: okhclToRGBA({
-      ...color,
-      c: Math.max(color.c, OKHCL_HUE_PREVIEW_MIN_CHROMA),
-      l: color.l <= 0 || color.l >= 1 ? OKHCL_HUE_PREVIEW_FALLBACK_LIGHTNESS : color.l
-    }),
-    okhclChroma: okhclToRGBA(color),
-    okhclLightness: okhclToRGBA(color)
+    okhclHue: okhclToRGBA(
+      {
+        ...color,
+        c: Math.max(color.c, OKHCL_HUE_PREVIEW_MIN_CHROMA),
+        l: color.l <= 0 || color.l >= 1 ? OKHCL_HUE_PREVIEW_FALLBACK_LIGHTNESS : color.l
+      },
+      space
+    ),
+    okhclChroma: okhclToRGBA(color, space),
+    okhclLightness: okhclToRGBA(color, space)
   }
 }
 
-export function createSliderGradientModel(model: ColorModelValue): SliderGradientModel {
+export function createSliderGradientModel(
+  model: ColorModelValue,
+  space: RenderColorSpace = 'srgb'
+): SliderGradientModel {
   const hslGray = rekaToSceneColor({ ...model.hsl, s: 0 })
   const hslColor = rekaToSceneColor({ ...model.hsl, s: 100 })
   const hslBlack = rekaToSceneColor({ ...model.hsl, l: 0 })
@@ -156,23 +165,28 @@ export function createSliderGradientModel(model: ColorModelValue): SliderGradien
   const hsbBright = rekaToSceneColor({ ...model.hsb, b: 100 })
 
   return {
-    hslSaturation: gradient(hslGray, hslColor),
-    hslLightness: gradient(hslBlack, hslMid, hslWhite),
-    hsbSaturation: gradient(hsbGray, hsbColor),
-    hsbBrightness: gradient(hsbBlack, hsbBright)
+    hslSaturation: gradient(space, hslGray, hslColor),
+    hslLightness: gradient(space, hslBlack, hslMid, hslWhite),
+    hsbSaturation: gradient(space, hsbGray, hsbColor),
+    hsbBrightness: gradient(space, hsbBlack, hsbBright)
   }
 }
 
-export function createOkHCLSliderGradientModel(color: OkHCLColor): OkHCLSliderGradientModel {
+export function createOkHCLSliderGradientModel(
+  color: OkHCLColor,
+  space: RenderColorSpace = 'srgb'
+): OkHCLSliderGradientModel {
   return {
     okhclChroma: gradient(
-      okhclToRGBA({ ...color, c: 0 }),
-      okhclToRGBA({ ...color, c: OKHCL_CHROMA_MAX })
+      space,
+      okhclToRGBA({ ...color, c: 0 }, space),
+      okhclToRGBA({ ...color, c: OKHCL_CHROMA_MAX }, space)
     ),
     okhclLightness: gradient(
-      okhclToRGBA({ ...color, l: 0 }),
-      okhclToRGBA({ ...color, l: OKHCL_LIGHTNESS_MID }),
-      okhclToRGBA({ ...color, l: 1 })
+      space,
+      okhclToRGBA({ ...color, l: 0 }, space),
+      okhclToRGBA({ ...color, l: OKHCL_LIGHTNESS_MID }, space),
+      okhclToRGBA({ ...color, l: 1 }, space)
     )
   }
 }
@@ -213,8 +227,9 @@ export function fromPercent(value: number): number {
   return clampUnit(value / 100)
 }
 
-function gradient(...colors: Color[]): string {
-  return `background: linear-gradient(to right, ${colors.map(colorToCSS).join(', ')});`
+function gradient(space: RenderColorSpace, ...colors: Color[]): string {
+  const stops = colors.map((color) => ({ color }))
+  return `background: ${linearGradientCSS('to right', stops, space)};`
 }
 
 function clampUnit(value: number): number {

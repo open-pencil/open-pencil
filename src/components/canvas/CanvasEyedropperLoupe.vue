@@ -7,13 +7,15 @@
 import { tv } from 'tailwind-variants'
 import { computed, useTemplateRef, watchEffect } from 'vue'
 
-import { colorToCSS, colorToHexRaw } from '@open-pencil/scene-graph/color'
+import { colorToHexRaw } from '@open-pencil/scene-graph/color'
 import type { EyedropperLoupe } from '@open-pencil/vue/canvas/eyedropper'
+import { useColorCSS } from '@open-pencil/vue/primitives/ColorPicker'
 
 import { remToPx } from '@/app/shell/root-font-size'
 import theme from '@/theme/canvas/eyedropper-loupe'
 
 const loupeTheme = tv(theme)
+const colorToCSS = useColorCSS()
 
 /** From the card's corner to the centre pixel's centre: 0.375rem padding and 4.5 pixels of 0.5rem. */
 const LOUPE_CENTRE_OFFSET_REM = 0.375 + 4.5 * 0.5
