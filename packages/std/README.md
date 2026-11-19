@@ -10,4 +10,4 @@ OpenPencil's own standard library, beside [es-toolkit](https://es-toolkit.dev): 
 | `@open-pencil/std/json` | The `JSONValue`, `JSONObject`, `JSONArray`, and `JSONPrimitive` types. |
 | `@open-pencil/std/errors` | `errorMessage`, `toError`, and `isAbortError`, for whatever was thrown. |
 | `@open-pencil/std/records` | `isRecord` and the `UnknownRecord` type, for reading objects before validating them. |
-| `@open-pencil/std/async` | `createDeferred`, and `createMutex`, whose holders take turns and stop waiting when their signal aborts. |
+| `@open-pencil/std/async` | `createDeferred`; `createMutex`, whose holders take turns and stop waiting when their signal aborts; and `createKeyedMutex`, a mutex for each key that is dropped once idle. |

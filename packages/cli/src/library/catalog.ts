@@ -22,17 +22,12 @@ import {
   validateLibraryRevision
 } from '@open-pencil/core/library'
 import { writeFileAtomic } from '@open-pencil/core/node/fs'
-import { createMutex, type Mutex } from '@open-pencil/std/async'
+import { createKeyedMutex } from '@open-pencil/std/async'
 
-const catalogPublications = new Map<string, Mutex>()
+const catalogPublications = createKeyedMutex<string>()
 
-async function serializePublication<T>(root: string, operation: () => Promise<T>): Promise<T> {
-  let mutex = catalogPublications.get(root)
-  if (!mutex) {
-    mutex = createMutex()
-    catalogPublications.set(root, mutex)
-  }
-  return mutex.run(operation)
+function serializePublication<T>(root: string, operation: () => Promise<T>): Promise<T> {
+  return catalogPublications.run(root, operation)
 }
 
 export class FileSystemLibraryCatalog implements LibraryCatalog {

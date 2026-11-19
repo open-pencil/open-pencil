@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createDeferred, createMutex } from '@open-pencil/std/async'
+import { createDeferred, createKeyedMutex, createMutex } from '@open-pencil/std/async'
 
 describe('createDeferred', () => {
   test('settles from outside the promise', async () => {
@@ -62,5 +62,35 @@ describe('createMutex', () => {
   test('an already aborted signal rejects at once', async () => {
     const mutex = createMutex()
     expect(mutex.acquire(AbortSignal.abort())).rejects.toThrow()
+  })
+})
+
+describe('createKeyedMutex', () => {
+  test('holders of one key take turns while other keys run alongside', async () => {
+    const mutex = createKeyedMutex<string>()
+    const order: string[] = []
+    const first = createDeferred<undefined>()
+    const a = mutex.run('file', async () => {
+      order.push('a')
+      await first.promise
+      order.push('a done')
+    })
+    const b = mutex.run('file', () => {
+      order.push('b')
+    })
+    const other = mutex.run('other', () => {
+      order.push('other')
+    })
+    await other
+    expect(order).toEqual(['a', 'other'])
+    first.resolve(undefined)
+    await Promise.all([a, b])
+    expect(order).toEqual(['a', 'other', 'a done', 'b'])
+  })
+
+  test('a key used again after it went idle starts a fresh turn order', async () => {
+    const mutex = createKeyedMutex<string>()
+    expect(mutex.run('file', () => Promise.reject(new Error('broke')))).rejects.toThrow('broke')
+    expect(await mutex.run('file', () => 'again')).toBe('again')
   })
 })

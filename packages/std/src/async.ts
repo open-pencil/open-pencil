@@ -63,3 +63,33 @@ export function createMutex(): Mutex {
     }
   }
 }
+
+export interface KeyedMutex<K> {
+  /** Runs `operation` in its turn among the holders of `key`, whether the one before succeeded or not. */
+  run<T>(key: K, operation: () => Promise<T> | T, signal?: AbortSignal): Promise<T>
+}
+
+/**
+ * A mutex for each key, such as a file or a connection: holders of one key take turns, and
+ * holders of different keys run side by side. A key's mutex is dropped once its last holder
+ * finishes, so keys that come and go are not kept.
+ */
+export function createKeyedMutex<K>(): KeyedMutex<K> {
+  const held = new Map<K, { mutex: Mutex; holders: number }>()
+  return {
+    async run(key, operation, signal) {
+      let entry = held.get(key)
+      if (!entry) {
+        entry = { mutex: createMutex(), holders: 0 }
+        held.set(key, entry)
+      }
+      entry.holders += 1
+      try {
+        return await entry.mutex.run(operation, signal)
+      } finally {
+        entry.holders -= 1
+        if (entry.holders === 0) held.delete(key)
+      }
+    }
+  }
+}

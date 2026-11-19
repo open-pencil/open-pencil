@@ -39,6 +39,40 @@ function isNumber(node: ESTree.Node | undefined, value: number): boolean {
   return node?.type === 'Literal' && node.value === value
 }
 
+function isString(node: ESTree.Node | undefined, value: string): boolean {
+  return node?.type === 'Literal' && node.value === value
+}
+
+/**
+ * Whether `name` is the parameter of a callback that maps over bytes, as in
+ * `bytes.map((byte) => …)` or `Array.from(bytes, (byte) => …)`, so formatting one number is not
+ * mistaken for converting bytes.
+ */
+function mapsBytes(node: ESTree.Node, name: string): boolean {
+  let current: ESTree.Node | null = node.parent
+  while (
+    current &&
+    current.type !== 'ArrowFunctionExpression' &&
+    current.type !== 'FunctionExpression'
+  ) {
+    current = current.parent
+  }
+  if (!current) return false
+  const [param] = current.params
+  if (param?.type !== 'Identifier' || param.name !== name) return false
+  const call = current.parent
+  if (call?.type !== 'CallExpression' || !call.arguments.includes(current)) return false
+  const { callee } = call
+  if (callee.type !== 'MemberExpression' || callee.computed) return false
+  if (callee.property.type !== 'Identifier') return false
+  if (callee.property.name === 'map') return true
+  return (
+    callee.property.name === 'from' &&
+    callee.object.type === 'Identifier' &&
+    callee.object.name === 'Array'
+  )
+}
+
 /**
  * Require the shared helpers over writing them inline: `errorMessage`, `toError`, and
  * `isAbortError` from `@open-pencil/std/errors`, and `bytesToHex` from `@noble/hashes/utils.js`.
@@ -89,10 +123,15 @@ export const noHandRolledStdHelpers = defineRule({
         if (named && abort) context.report({ node, messageId: 'isAbortError' })
       },
       CallExpression(node) {
-        if (!isMember(node.callee, 'padStart') || !isNumber(node.arguments[0], 2)) return
+        if (!isMember(node.callee, 'padStart')) return
+        if (!isNumber(node.arguments[0], 2) || !isString(node.arguments[1], '0')) return
         const padded = node.callee.object
         if (padded.type !== 'CallExpression' || !isMember(padded.callee, 'toString')) return
-        if (isNumber(padded.arguments[0], 16)) context.report({ node, messageId: 'bytesToHex' })
+        if (!isNumber(padded.arguments[0], 16)) return
+        const byte = padded.callee.object
+        if (byte.type === 'Identifier' && mapsBytes(node, byte.name)) {
+          context.report({ node, messageId: 'bytesToHex' })
+        }
       }
     }
   }
