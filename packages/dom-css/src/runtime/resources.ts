@@ -1,6 +1,7 @@
+import { compact } from 'es-toolkit'
 import { limitAsync } from 'es-toolkit/promise'
 
-import { parseCSSColor } from '@open-pencil/scene-graph/css'
+import { parseCSSColor, parseCSSURLs } from '@open-pencil/scene-graph/css'
 import { appendAll } from '@open-pencil/std/arrays'
 import { DEADLINE_MS } from '@open-pencil/std/timing'
 
@@ -66,12 +67,14 @@ export async function fontFaceRules(
 const IMAGE_READS_IN_FLIGHT = 6
 
 /**
- * Reads each image's picture with `fetch` and puts it on its element, each address once and a few
- * at a time. One that cannot be read leaves its element as it was.
+ * Reads the pictures elements show with `fetch` and puts them on the elements: an `<img>`'s from
+ * the address it loaded, and each `background-image` layer's from its computed `url()`. Each
+ * address is read once, a few at a time, and one that cannot be read is left out.
  */
 export async function attachImages(
   images: readonly [DesignElement, string][],
-  fetch: DesignResourceFetch | undefined
+  fetch: DesignResourceFetch | undefined,
+  backgrounds: readonly DesignElement[] = []
 ): Promise<void> {
   if (!fetch) return
   const pictures = new Map<string, Promise<DesignResource | null>>()
@@ -80,15 +83,30 @@ export async function attachImages(
     (url: string) => fetch(url, AbortSignal.timeout(RESOURCE_TIMEOUT_MS)).catch(() => null),
     IMAGE_READS_IN_FLIGHT
   )
-  await Promise.all(
-    images.map(async ([element, url]) => {
-      let picture = pictures.get(url)
-      if (!picture) {
-        picture = read(url)
-        pictures.set(url, picture)
-      }
-      const resource = await picture
+  const picture = (url: string) => {
+    let reading = pictures.get(url)
+    if (!reading) {
+      reading = read(url)
+      pictures.set(url, reading)
+    }
+    return reading
+  }
+  await Promise.all([
+    ...images.map(async ([element, url]) => {
+      const resource = await picture(url)
       if (resource) element.image = resource
+    }),
+    ...backgrounds.map(async (element) => {
+      const urls = backgroundImageURLs(element)
+      const resources = compact(await Promise.all(urls.map(picture)))
+      if (resources.length > 0) element.backgroundImages = resources
     })
+  ])
+}
+
+/** The addresses an element's computed `background-image` layers name, as computed, absolute. */
+export function backgroundImageURLs(element: DesignElement): string[] {
+  return parseCSSURLs(element.computedStyle?.['background-image']).filter((url) =>
+    URL.canParse(url)
   )
 }

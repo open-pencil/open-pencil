@@ -70,4 +70,25 @@ describe('pictures in imported HTML', () => {
     // Each address is read once, however many images show it.
     expect(requested.filter((path) => path === 'photo.png')).toHaveLength(1)
   })
+
+  test('fills a box with the pictures its background layers show, under the top layer', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const { graph } = await readHTMLDocument(
+      `<div class="cover"></div><div class="tile"></div>
+      <style>
+        div { width: 200px; height: 100px }
+        .cover { background: url(photo.png) center / cover, #2563eb }
+        .tile { background-image: url(photo.png); background-repeat: repeat }
+      </style>`,
+      { readAsset: async (path) => (path === 'photo.png' ? png : null) }
+    )
+    const [cover, tile] = graph.getChildren(graph.getPages()[0].id)
+
+    // The color stays the bottom fill and the picture paints over it, filling the box.
+    expect(cover.fills.map((fill) => fill.type)).toEqual(['SOLID', 'IMAGE'])
+    expect(cover.fills[1]).toMatchObject({ imageScaleMode: 'FILL' })
+    expect(cover.fills[1]?.imageHash && graph.images.get(cover.fills[1].imageHash)).toEqual(png)
+    // A picture repeated at its own size tiles the box.
+    expect(tile.fills).toEqual([expect.objectContaining({ type: 'IMAGE', imageScaleMode: 'TILE' })])
+  })
 })

@@ -38,13 +38,13 @@ test('a web page opens as layers with the stylesheet and pictures it links', asy
     if (pathname === '/') {
       return route.fulfill({
         headers: { ...OPEN, 'content-type': 'text/html' },
-        body: '<link rel="stylesheet" href="/site.css"><div class="box"></div><img src="img/photo.png"><img src="img/logo.svg" style="display:block;width:40px;height:20px"><p>Set in the site font</p>'
+        body: '<link rel="stylesheet" href="/site.css"><div class="box"></div><div class="hero"></div><img src="img/photo.png"><img src="img/logo.svg" style="display:block;width:40px;height:20px"><p>Set in the site font</p>'
       })
     }
     if (pathname === '/site.css') {
       return route.fulfill({
         headers: { ...OPEN, 'content-type': 'text/css' },
-        body: "@font-face { font-family: 'Site Sans'; src: url(fonts/site.ttf) format('truetype') } .box { width: 120px; height: 40px; background: #2563eb } p { font-family: 'Site Sans', sans-serif; margin: 0 } body { background: #f0f4f8 }"
+        body: "@font-face { font-family: 'Site Sans'; src: url(fonts/site.ttf) format('truetype') } .box { width: 120px; height: 40px; background: #2563eb } .hero { width: 80px; height: 40px; background: url(img/photo.png) center / cover } p { font-family: 'Site Sans', sans-serif; margin: 0 } body { background: #f0f4f8 }"
       })
     }
     if (pathname === '/img/photo.png') {
@@ -79,6 +79,8 @@ test('a web page opens as layers with the stylesheet and pictures it links', asy
     )
     .toEqual([
       { width: 120, image: false, artwork: false },
+      // A CSS background picture fills its box as the page shows it.
+      { width: 80, image: true, artwork: false },
       expect.objectContaining({ image: true }),
       // The SVG picture becomes the vector layers it draws, at the size the page shows it.
       { width: 40, image: false, artwork: true },

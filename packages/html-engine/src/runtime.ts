@@ -1,4 +1,6 @@
 import {
+  attachImages,
+  backgroundImageURLs,
   parseFontFaceRules,
   parseHTMLDocument,
   parseStylesheetImports,
@@ -321,6 +323,15 @@ function keepingFetch(
   }
 }
 
+/** A fetch that answers from what the engine already loaded before it asks `fetch`. */
+function loadedFirst(
+  answered: ReadonlyMap<string, DesignResource>,
+  fetch: DesignResourceFetch | undefined
+): DesignResourceFetch | undefined {
+  if (!fetch) return undefined
+  return async (url, signal) => answered.get(url) ?? fetch(url, signal)
+}
+
 /** What an `<img>` loaded, by its `src` resolved against the page's address. */
 function imageOf(
   element: DesignElement,
@@ -367,6 +378,11 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
         const image = imageOf(element, answered, options.baseURL)
         if (image) element.image = image
       }
+      // Background pictures the engine loaded are kept; any it did not are read as images are.
+      const backgrounds = pairs
+        .map(([element]) => element)
+        .filter((element) => backgroundImageURLs(element).length > 0)
+      await attachImages([], loadedFirst(answered, options.fetch), backgrounds)
       showGeneratedContent(capture, pairs, compute.layout === true)
       styled.background = canvasBackground(capture)
       return styled

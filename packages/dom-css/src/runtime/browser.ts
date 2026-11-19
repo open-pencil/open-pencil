@@ -13,7 +13,7 @@ import type {
 import { showFormText } from './form-text'
 import { showGeneratedContent } from './generated'
 import { recordLayout } from './layout'
-import { attachImages, canvasBackground, fontFaceRules } from './resources'
+import { attachImages, backgroundImageURLs, canvasBackground, fontFaceRules } from './resources'
 
 export interface BrowserCSSRuntimeOptions {
   document?: Document
@@ -29,10 +29,14 @@ export interface BrowserCSSRuntimeOptions {
   fetch?: DesignResourceFetch
 }
 
-/** Styled elements, and each `<img>` with the address the frame loaded its picture from. */
+/**
+ * Styled elements, each `<img>` with the address the frame loaded its picture from, and the
+ * elements whose backgrounds show pictures.
+ */
 interface CopiedStyles {
   document: DesignDocument
   images: [DesignElement, string][]
+  backgrounds: DesignElement[]
 }
 
 /**
@@ -117,6 +121,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'max-width',
   'min-height',
   'min-width',
+  'isolation',
   'mix-blend-mode',
   'object-fit',
   'object-position',
@@ -483,6 +488,7 @@ async function copyComputedStyles(
   }
 
   const images: [DesignElement, string][] = []
+  const backgrounds: DesignElement[] = []
   for (const [designElement, domElement] of pairs) {
     const style = computedStyleToRecord(view.getComputedStyle(domElement), options)
     keepAutoSideMargins(domElement, style)
@@ -490,12 +496,13 @@ async function copyComputedStyles(
     // The address the picture loaded from, its `srcset` choice and the page's base applied.
     if (domElement instanceof view.HTMLImageElement && domElement.currentSrc)
       images.push([designElement, domElement.currentSrc])
+    if (backgroundImageURLs(designElement).length > 0) backgrounds.push(designElement)
   }
   // After the styles are copied: reading layout switches transforms off for a moment.
   if (options.layout) recordLayout(pairs, frame.origin, frame.styleRoot)
   showFormText(pairs, view, (style) => computedStyleToRecord(style, options))
 
-  return { document: nextDocument, images }
+  return { document: nextDocument, images, backgrounds }
 }
 
 /**
@@ -518,7 +525,7 @@ export function createBrowserCSSRuntime(options: BrowserCSSRuntimeOptions = {}):
         computeOptions,
         options.baseURL
       )
-      await attachImages(copied.images, options.fetch)
+      await attachImages(copied.images, options.fetch, copied.backgrounds)
       if (options.fetch) {
         copied.document.fontFaces = await fontFaceRules(cssText, options.baseURL, options.fetch)
       }

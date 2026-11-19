@@ -1,15 +1,8 @@
 import { pick } from 'es-toolkit'
 
-import {
-  SceneGraph,
-  type Effect,
-  type ImageScaleMode,
-  type SceneNode
-} from '@open-pencil/scene-graph'
-import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
+import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
 import { parseCSSAlignSelf, parseCSSNumber, parseCSSShadows } from '@open-pencil/scene-graph/css'
 import { blurRadiusForSigma } from '@open-pencil/scene-graph/geometry'
-import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { maxOf } from '@open-pencil/std/arrays'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
@@ -44,7 +37,8 @@ import {
   type ParentFlow
 } from './flow'
 import { alignGridItems, isGrid } from './grid'
-import { isSVGArtwork, imagePicture, maskSVG } from './pictures'
+import { applyImageFill, backgroundImageFills } from './image-fills'
+import { isSVGArtwork, maskSVG } from './pictures'
 import {
   applyCapturedLines,
   capturedBox,
@@ -54,6 +48,7 @@ import {
   type CapturedBox,
   type CapturedBoxes
 } from './placement'
+import { stackingOf, type Stackings } from './stacking'
 import { applySVGSize, isInlineSVG } from './svg'
 import {
   applyCollapsedBorders,
@@ -77,9 +72,6 @@ import {
   type CSSCharacterStyle
 } from './text'
 import { cssTransform, type CSSTransforms } from './transform'
-
-const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
-const IMAGE_SOURCE_URL_KEY = 'image-source-url'
 
 export interface DesignDocumentToSceneGraphOptions {
   pageName?: string
@@ -119,48 +111,6 @@ function isTextLikeElement(node: DesignElement): boolean {
   ].includes(node.tagName.toLowerCase())
 }
 
-function imageScaleModeFromObjectFit(value: string | undefined): ImageScaleMode | null {
-  if (value === 'contain' || value === 'scale-down') return 'FIT'
-  if (value === 'cover') return 'FILL'
-  return null
-}
-
-function applyImageFill(
-  graph: SceneGraph,
-  node: SceneNode,
-  element: DesignElement,
-  style: DesignStyleDeclaration
-): void {
-  if (element.tagName.toLowerCase() !== 'img') return
-  const source = element.attrs.src
-  const picture = imagePicture(element)
-  // A picture nothing could draw keeps its address, which exporting the layer writes back.
-  if (picture?.kind !== 'raster') {
-    if (source) {
-      node.pluginData.push({
-        pluginId: DOM_CSS_PLUGIN_ID,
-        key: IMAGE_SOURCE_URL_KEY,
-        value: source
-      })
-    }
-    return
-  }
-
-  const { bytes } = picture
-  const imageHash = computeImageHash(bytes)
-  graph.images.set(imageHash, bytes)
-  node.fills = [
-    {
-      type: 'IMAGE',
-      imageHash,
-      imageScaleMode: imageScaleModeFromObjectFit(pickStyle(style, 'object-fit')) ?? 'FILL',
-      color: TRANSPARENT,
-      opacity: 1,
-      visible: true
-    }
-  ]
-}
-
 function applyElementStyle(
   graph: SceneGraph,
   node: SceneNode,
@@ -172,7 +122,10 @@ function applyElementStyle(
   applyPositioning(node, style)
   applyPadding(node, style)
 
-  const fills = fillsFromStyle(style, 'background-color')
+  const fills = [
+    ...fillsFromStyle(style, 'background-color'),
+    ...backgroundImageFills(graph, element, style)
+  ]
   if (fills.length > 0) node.fills = fills
   applyImageFill(graph, node, element, style)
 
@@ -324,6 +277,8 @@ interface Recorded {
   svgs: Map<string, DesignElement>
   /** Cells of tables with collapsed borders, until their table draws each shared border once. */
   collapsedCells: SceneNode[]
+  /** Containers whose children paint in `z-index` order, for `applyStacking` once laid out. */
+  stackings: Stackings
 }
 
 /** Remembers where the layer's element was laid out, and how many lines its text took. */
@@ -399,6 +354,8 @@ function createElementNode(
   const ownCells = recorded.collapsedCells.length
   const parts = createChildLayers(graph, node, element, style, flow, recorded, isGrid(display))
   layOutTablesAndGrids(graph, node, style, display, parts, recorded, ownCells)
+  const stacking = stackingOf(node, style, parts)
+  if (stacking) recorded.stackings.push(stacking)
   return node
 }
 
@@ -554,6 +511,8 @@ export interface DesignLayers {
    * style but none of its shapes, which the caller draws into it at the size layout gives it.
    */
   svgs: Map<string, DesignElement>
+  /** Containers whose children paint in `z-index` order, for `applyStacking` once laid out. */
+  stackings: Stackings
 }
 
 /**
@@ -571,7 +530,8 @@ export function designDocumentToLayers(
     boxes: new Map(),
     transforms: new Map(),
     svgs: new Map(),
-    collapsedCells: []
+    collapsedCells: [],
+    stackings: []
   }
 
   page.name = options.pageName ?? 'DesignDOM'
@@ -582,7 +542,8 @@ export function designDocumentToLayers(
   placeTopLevelLayers(graph, page.id, recorded.boxes)
 
   fitPageToChildren(page, graph)
-  return { graph, ...recorded }
+  const { boxes, transforms, svgs, stackings } = recorded
+  return { graph, boxes, transforms, svgs, stackings }
 }
 
 export function designDocumentToSceneGraph(
@@ -595,5 +556,6 @@ export function designDocumentToSceneGraph(
 export { elementSVG, imagePicture, type ElementSVG, type ImagePicture } from './pictures'
 export { placeLayersFromLayout, type CapturedBox, type CapturedBoxes } from './placement'
 export { applyCSSTransforms, type CSSTransform, type CSSTransforms } from './transform'
+export { applyStacking, type Stacking, type Stackings } from './stacking'
 
 export type { DesignDocumentToSceneGraphOptions as ToSceneGraphOptions }
