@@ -1,1 +1,0 @@
-- `@open-pencil/cloud/client` no longer exports `createCloudBillingClient`, `CloudBillingClient`, `CloudBillingClientOptions`, or `CloudBillingError`: Cloud's plan page now signs the person in to the billing service's own pages instead of calling its API, and the contract's billing schemas remain in `@open-pencil/cloud/contract` (#2188).

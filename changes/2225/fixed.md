@@ -1,1 +1,0 @@
-- Cloud: the AI workspace list no longer fails when it lists a workspace the account has since left or that was deleted, and the server answers 404 for that workspace's entitlements instead of an error (#2225).

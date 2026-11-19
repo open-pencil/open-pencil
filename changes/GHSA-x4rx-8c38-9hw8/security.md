@@ -1,2 +1,0 @@
-- Opening, dropping, or pasting HTML as layers, and previewing HTML in the Code tab, no longer runs scripts the markup carries, such as an image's `onerror`: the browser lays it out in a frame that runs no script (GHSA-x4rx-8c38-9hw8).
-- On desktop, the app's window can no longer write to the folders it looks for coding agents and its own companions in, such as `%LOCALAPPDATA%\agy\bin` on Windows, so nothing it runs could have been put there from inside the window (GHSA-x4rx-8c38-9hw8).

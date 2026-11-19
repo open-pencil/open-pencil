@@ -1,1 +1,0 @@
-- `.fig` files open when an instance leads back into its own component: a swap to the component around it expands once, and a component that would contain itself leaves that instance out, as Figma does (#2191).

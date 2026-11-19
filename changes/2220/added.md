@@ -1,1 +1,0 @@
-- Cloud administrators can delete an account whose request to join is waiting or was declined, from its menu in People; approved accounts and administrators are left to their owners (#2220).

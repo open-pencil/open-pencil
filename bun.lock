@@ -207,7 +207,7 @@
     },
     "packages/canvaskit": {
       "name": "@open-pencil/canvaskit",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@webgpu/types": "0.1.21",
       },
@@ -217,7 +217,7 @@
     },
     "packages/cli": {
       "name": "@open-pencil/cli",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "bin": {
         "openpencil": "./bin/openpencil.js",
       },
@@ -243,7 +243,7 @@
     },
     "packages/cloud": {
       "name": "@open-pencil/cloud",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "bin": {
         "openpencil-services": "./dist/bin/services.mjs",
         "openpencil-cloud": "./dist/bin/server.mjs",
@@ -318,7 +318,7 @@
     },
     "packages/collab": {
       "name": "@open-pencil/collab",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@open-pencil/scene-graph": "workspace:*",
         "@open-pencil/std": "workspace:*",
@@ -334,7 +334,7 @@
     },
     "packages/core": {
       "name": "@open-pencil/core",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@figma/plugin-typings": "^1.140.0",
         "@iconify/utils": "^3.1.4",
@@ -414,7 +414,7 @@
     },
     "packages/design-jsx": {
       "name": "@open-pencil/design-jsx",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@lezer/common": "^1.5.2",
         "@lezer/javascript": "^1.5.4",
@@ -477,7 +477,7 @@
     },
     "packages/dom-css": {
       "name": "@open-pencil/dom-css",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@acemir/cssom": "^0.9.31",
         "@open-pencil/emit": "workspace:*",
@@ -518,7 +518,7 @@
     },
     "packages/drawio": {
       "name": "@open-pencil/drawio",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@xmldom/xmldom": "^0.9.12",
         "fflate": "^0.8.3",
@@ -534,7 +534,7 @@
     },
     "packages/emit": {
       "name": "@open-pencil/emit",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@sveltejs/acorn-typescript": "^1.0.13",
         "acorn": "^8.18.0",
@@ -551,7 +551,7 @@
     },
     "packages/feedback": {
       "name": "@open-pencil/feedback",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@internationalized/date": "^3.12.3",
         "@open-pencil/cloud": "workspace:*",
@@ -579,7 +579,7 @@
     },
     "packages/fig": {
       "name": "@open-pencil/fig",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@noble/hashes": "^2.4.0",
         "@open-pencil/std": "workspace:*",
@@ -602,7 +602,7 @@
     },
     "packages/harness": {
       "name": "@open-pencil/harness",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "bin": {
         "openpencil-harness": "./dist/stdio.mjs",
       },
@@ -621,7 +621,7 @@
     },
     "packages/html-engine": {
       "name": "@open-pencil/html-engine",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@open-pencil/dom-css": "workspace:*",
         "@open-pencil/std": "workspace:*",
@@ -640,7 +640,7 @@
     },
     "packages/kiwi": {
       "name": "@open-pencil/kiwi",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@hpcc-js/wasm-zstd": "^1.16.2",
         "fflate": "^0.8.3",
@@ -654,7 +654,7 @@
     },
     "packages/mcp": {
       "name": "@open-pencil/mcp",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "bin": {
         "openpencil-mcp": "./dist/stdio.mjs",
         "openpencil-mcp-http": "./dist/index.mjs",
@@ -682,7 +682,7 @@
     },
     "packages/mermaid": {
       "name": "@open-pencil/mermaid",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "entities": "^8.0.0",
         "parse5": "^8.0.1",
@@ -698,7 +698,7 @@
     },
     "packages/oxlint-plugin": {
       "name": "@open-pencil/oxlint-plugin",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@oxlint/plugins": "1.57.0",
         "es-toolkit": "^1.52.0",
@@ -712,7 +712,7 @@
     },
     "packages/pen": {
       "name": "@open-pencil/pen",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@open-pencil/std": "workspace:*",
         "es-toolkit": "^1.52.0",
@@ -731,7 +731,7 @@
     },
     "packages/scene-graph": {
       "name": "@open-pencil/scene-graph",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@noble/hashes": "^2.4.0",
         "@open-pencil/std": "workspace:*",
@@ -756,7 +756,7 @@
     },
     "packages/std": {
       "name": "@open-pencil/std",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "devDependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
         "@types/bun": "^1.3.14",
@@ -766,7 +766,7 @@
     },
     "packages/taffy": {
       "name": "@open-pencil/taffy",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "devDependencies": {
         "@open-pencil/fork-releases-tools": "workspace:*",
       },
@@ -801,7 +801,7 @@
     },
     "packages/vue": {
       "name": "@open-pencil/vue",
-      "version": "0.17.0-beta.5",
+      "version": "0.17.0-beta.6",
       "dependencies": {
         "@atlaskit/pragmatic-drag-and-drop": "^1.8.1",
         "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.2.0",

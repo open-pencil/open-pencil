@@ -1,1 +1,0 @@
-- Cloud: a banner over the editor warns when your AI credits run low or run out. On servers that sell credits it links the workspace owner to buying more, and asks other members to go to the owner (#2197).

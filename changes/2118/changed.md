@@ -1,1 +1,0 @@
-- `render` with `replace_id` updates the layer in place, so it and its descendants that match by type and name keep their ids, and the bindings and links to them (#2118).

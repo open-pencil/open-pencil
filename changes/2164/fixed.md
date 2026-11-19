@@ -1,1 +1,0 @@
-- SVG import and design JSX fit a `<symbol>` drawn through `<use>` to its `viewBox` (#2164).

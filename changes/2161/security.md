@@ -1,1 +1,0 @@
-- Cloud: two-step sign-in now applies however someone signs in: signing in with Google asks for the code from your authenticator app, a recovery code, or a passkey before the account can be used, and an administrator asked to confirm again goes straight to the code instead of an error (#2161).
