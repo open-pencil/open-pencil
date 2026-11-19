@@ -22,7 +22,10 @@ import type { EditorContext } from './types'
  */
 export type DocumentColorProfileMode = 'assign' | 'convert'
 
-type PaintFields = Pick<SceneNode, 'fills' | 'strokes' | 'effects' | 'styleRuns'>
+type PaintFields = Pick<
+  SceneNode,
+  'fills' | 'strokes' | 'effects' | 'styleRuns' | 'textDecorationFills'
+>
 
 /** What converting changes, before and after, so one undo step can put it back. */
 interface ColorChanges {
@@ -31,13 +34,25 @@ interface ColorChanges {
   variables: Map<string, { before: Variable['valuesByMode']; after: Variable['valuesByMode'] }>
 }
 
-function convertFill(fill: Fill, convert: (color: Color) => Color): Fill {
-  const next = copyFill(fill)
-  next.color = convert(fill.color)
-  if (fill.gradientStops) {
-    next.gradientStops = fill.gradientStops.map((stop) => ({ ...stop, color: convert(stop.color) }))
+/** `copy` of a paint, its color and gradient stops converted; a stroke keeps its geometry. */
+function convertPaint<T extends Fill>(
+  paint: T,
+  copy: (paint: T) => T,
+  convert: (color: Color) => Color
+): T {
+  const next = copy(paint)
+  next.color = convert(paint.color)
+  if (paint.gradientStops) {
+    next.gradientStops = paint.gradientStops.map((stop) => ({
+      ...stop,
+      color: convert(stop.color)
+    }))
   }
   return next
+}
+
+function convertFill(fill: Fill, convert: (color: Color) => Color): Fill {
+  return convertPaint(fill, copyFill, convert)
 }
 
 function paintFields(node: SceneNode): PaintFields {
@@ -45,25 +60,30 @@ function paintFields(node: SceneNode): PaintFields {
     fills: node.fills.map(copyFill),
     strokes: node.strokes.map(copyStroke),
     effects: copyEffects(node.effects),
-    styleRuns: copyStyleRuns(node.styleRuns)
+    styleRuns: copyStyleRuns(node.styleRuns),
+    textDecorationFills: node.textDecorationFills.map(copyFill)
   }
 }
 
 function convertedPaintFields(node: SceneNode, convert: (color: Color) => Color): PaintFields {
+  const convertFills = (fills: Fill[]) => fills.map((fill) => convertFill(fill, convert))
   return {
-    fills: node.fills.map((fill) => convertFill(fill, convert)),
-    strokes: node.strokes.map((stroke) => ({
-      ...copyStroke(stroke),
-      color: convert(stroke.color)
-    })),
+    fills: convertFills(node.fills),
+    strokes: node.strokes.map((stroke) => convertPaint(stroke, copyStroke, convert)),
     effects: copyEffects(node.effects).map((effect) => ({
       ...effect,
       color: convert(effect.color)
     })),
     styleRuns: copyStyleRuns(node.styleRuns).map((run) => ({
       ...run,
-      style: { ...run.style, fills: run.style.fills?.map((fill) => convertFill(fill, convert)) }
-    }))
+      style: {
+        ...run.style,
+        fills: run.style.fills && convertFills(run.style.fills),
+        textDecorationFills:
+          run.style.textDecorationFills && convertFills(run.style.textDecorationFills)
+      }
+    })),
+    textDecorationFills: convertFills(node.textDecorationFills)
   }
 }
 
@@ -88,8 +108,9 @@ function convertedColors(
       })
       continue
     }
-    const { fills, strokes, effects, styleRuns } = node
-    if (!fills.length && !strokes.length && !effects.length && !styleRuns.length) continue
+    const { fills, strokes, effects, styleRuns, textDecorationFills } = node
+    const paints = [fills, strokes, effects, styleRuns, textDecorationFills]
+    if (paints.every((list) => list.length === 0)) continue
     changes.layers.set(node.id, {
       before: paintFields(node),
       after: convertedPaintFields(node, convert)
