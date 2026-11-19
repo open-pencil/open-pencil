@@ -1,6 +1,7 @@
 import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { serializeHTML } from '../export/html'
+import { joinAdjacentText } from '../import/text-nodes'
 import type {
   CSSComputeOptions,
   CSSRuntime,
@@ -211,9 +212,11 @@ function domNodeToDesignNode(node: Node): DesignNode | null {
 
   const element = node as Element
   if (NON_RENDERED_TAGS.has(element.tagName.toLowerCase())) return null
-  const children = Array.from(element.childNodes)
-    .map(domNodeToDesignNode)
-    .filter((child): child is DesignNode => child !== null)
+  const children = joinAdjacentText(
+    Array.from(element.childNodes)
+      .map(domNodeToDesignNode)
+      .filter((child): child is DesignNode => child !== null)
+  )
   const style = 'style' in element ? (element.style as CSSStyleDeclaration) : undefined
 
   return {
@@ -232,9 +235,11 @@ function parseHTMLWithDocument(browserDocument: Document, html: string): DesignD
   const parsed = parser.parseFromString(html, 'text/html')
   return {
     type: 'document',
-    children: Array.from(parsed.body.childNodes)
-      .map(domNodeToDesignNode)
-      .filter((node): node is DesignNode => node !== null)
+    children: joinAdjacentText(
+      Array.from(parsed.body.childNodes)
+        .map(domNodeToDesignNode)
+        .filter((node): node is DesignNode => node !== null)
+    )
   }
 }
 

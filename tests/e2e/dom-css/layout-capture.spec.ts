@@ -143,6 +143,19 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     )
   })
 
+  test('reads text a framework’s comment splits as one run', async ({ page }) => {
+    const layers = await browserImportedLayerSummaries(
+      page,
+      `<style>body { margin: 0 } .label { padding: 2px; background: #eee }</style>
+      <span class="label">Category<!-- -->:</span>`,
+      VIEWPORT
+    )
+
+    expect(layers.filter((layer) => layer.type === 'TEXT').map((layer) => layer.text)).toEqual([
+      'Category:'
+    ])
+  })
+
   test('runs none of the page’s event handlers', async ({ page }) => {
     await browserImportedLayerSummaries(
       page,
