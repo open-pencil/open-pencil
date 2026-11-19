@@ -84,7 +84,7 @@ const EMAILS: {
   },
   'enrollment-invited': {
     component: EnrollmentInvitation,
-    subject: (_payload, t) => t.invitationSubject
+    subject: (payload, t) => (payload.waitlist ? t.invitationWaitlistSubject : t.invitationSubject)
   },
   'admin-enrollment-notification': {
     component: EnrollmentNotification,

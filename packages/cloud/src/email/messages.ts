@@ -55,6 +55,12 @@ export const emailMessageDefaults = {
   invitationSubject: 'You can try OpenPencil Cloud now',
   invitationHeading: 'Cloud is open',
   invitationPreview: 'OpenPencil Cloud is open, and you can sign in now.',
+  invitationWaitlistSubject: 'OpenPencil Cloud is ready',
+  invitationWaitlistPreview: 'You joined the waitlist; Cloud is open now.',
+  invitationWaitlistBeta:
+    'It’s still a beta: some features are switched off, and some things will break. When they do, reply to this email and tell me, or {link} if you’re comfortable with that. I read both.',
+  invitationWaitlistThanks:
+    'Thank you for joining the OpenPencil Cloud waitlist. Here’s the one email we promised: Cloud is open, and you can sign in now.',
   invitationThanks:
     'A while ago you asked to try OpenPencil Cloud. Thanks for being curious enough to ask, and for waiting. We were still testing it then and weren’t ready to let anyone in.',
   invitationBeta:
