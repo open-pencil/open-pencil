@@ -8,7 +8,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 
-import { usePickerGesture } from './gesture'
+import { usePickerGesture, type PickerCancelCause } from './gesture'
 import { pickerOutsideHandlers, type PickerKeepOpen } from './outside'
 
 // Opens toward the start of the line, away from a panel at its end: left, or right when mirrored.
@@ -45,12 +45,12 @@ const emit = defineEmits<{
   /** Ends the edit made so far as one undo step: a press's release, or a change with none held. */
   commit: []
   /**
-   * Escape during a press that changed the colour, or the picker closing during one: the colour
-   * from before the press has just come back through `update`, and a listener that batches the
-   * press can roll it back. With `escapeReverts`, also Escape closing the picker, after the colour
-   * it opened with has come back.
+   * `press`: Escape during a press that changed the colour, or the picker closing during one; the
+   * colour from before the press has just come back through `update`, and a listener that batches
+   * the press can roll it back, keeping what earlier presses changed. `escape`: with
+   * `escapeReverts`, Escape closed the picker after the colour it opened with came back.
    */
-  cancel: []
+  cancel: [cause: PickerCancelCause]
 }>()
 
 const swatchBg = computed(() => colorToCSS(color))
@@ -65,7 +65,7 @@ const gesture = usePickerGesture({
   commit: () => emit('commit'),
   cancel: () => {
     emit('update', pressColor)
-    emit('cancel')
+    emit('cancel', 'press')
   }
 })
 const { open: popupOpen, portalActive } = useRetainedPopup(
@@ -99,7 +99,7 @@ function update(next: Color) {
 function onEscapeKeyDown() {
   if (!escapeReverts) return
   emit('update', openColor)
-  emit('cancel')
+  emit('cancel', 'escape')
 }
 
 const outside = pickerOutsideHandlers(() => keepOpen)

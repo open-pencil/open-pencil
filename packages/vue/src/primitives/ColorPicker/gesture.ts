@@ -11,6 +11,12 @@ export interface PickerGestureOptions {
   beforeChange?: () => void
 }
 
+/**
+ * Why a picker reports `cancel`: `press` when Escape, or the picker closing, put back a press's
+ * change; `escape` when Escape closed a picker that puts back the colour it opened with.
+ */
+export type PickerCancelCause = 'press' | 'escape'
+
 /** Every picker surface carries this, including one opened from inside another picker. */
 const PICKER_CONTENT = '[data-picker-content]'
 
