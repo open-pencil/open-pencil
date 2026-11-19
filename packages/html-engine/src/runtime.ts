@@ -15,6 +15,7 @@ import {
 } from '@open-pencil/dom-css'
 import { serializeHTML } from '@open-pencil/dom-css/export'
 import { insertAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { parseCSSColor } from '@open-pencil/scene-graph/css'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
@@ -290,6 +291,19 @@ function showGeneratedContent(
   }
 }
 
+/**
+ * The color the page's canvas is painted, as CSS takes it: the root element's background, or the
+ * body's when the root has none.
+ */
+function canvasBackground(capture: HTMLEngineCapture): string | undefined {
+  const background = (tag: string) => {
+    const node = capture.nodes.find((candidate) => candidate.tag === tag)
+    const color = node?.style?.['background-color']
+    return color && parseCSSColor(color) ? color : undefined
+  }
+  return background('html') ?? background('body')
+}
+
 /** A fetch that also keeps what it answered, by the URL asked for and the one it came from. */
 function keepingFetch(
   fetch: DesignResourceFetch | undefined,
@@ -350,6 +364,7 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
         if (image) element.image = image
       }
       showGeneratedContent(capture, pairs, compute.layout === true)
+      styled.background = canvasBackground(capture)
       return styled
     }
   }

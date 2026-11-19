@@ -5,7 +5,10 @@ import {
   placeLayersFromLayout
 } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { WHITE } from '@open-pencil/scene-graph/constants'
+import { parseCSSColor } from '@open-pencil/scene-graph/css'
 
+import { setPageBackgrounds } from '#core/figma-api/page-backgrounds'
 import type { IconMatcher } from '#core/icons/match'
 import { layoutAuthoredNodes } from '#core/layout'
 import { prepareGraphFonts } from '#core/text/prepare'
@@ -49,6 +52,13 @@ export async function sceneGraphFromStyledHTML(
   const { graph, boxes, transforms, svgs } = designDocumentToLayers(styled, {
     pageName: options.pageName
   })
+  // The page shows what a browser paints behind the page: its own background, or white.
+  const background = parseCSSColor(styled.background) ?? WHITE
+  for (const page of graph.getPages()) {
+    setPageBackgrounds(graph, page, [
+      { type: 'SOLID', color: { ...background, a: 1 }, opacity: background.a, visible: true }
+    ])
+  }
   const pageIds = graph.getPages().map((page) => page.id)
   await prepareGraphFonts(graph, pageIds)
   layoutAuthoredNodes(graph, pageIds)

@@ -8,7 +8,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
-import { getPageChildren, getPageTexts } from '#tests/helpers/store'
+import { getPageChildren, getPageColor, getPageTexts } from '#tests/helpers/store'
 
 const SITE = 'https://site.example.test'
 /** Lets the app's own origin read the fake site, as a site that allows other sites does. */
@@ -44,7 +44,7 @@ test('a web page opens as layers with the stylesheet and pictures it links', asy
     if (pathname === '/site.css') {
       return route.fulfill({
         headers: { ...OPEN, 'content-type': 'text/css' },
-        body: "@font-face { font-family: 'Site Sans'; src: url(fonts/site.ttf) format('truetype') } .box { width: 120px; height: 40px; background: #2563eb } p { font-family: 'Site Sans', sans-serif; margin: 0 }"
+        body: "@font-face { font-family: 'Site Sans'; src: url(fonts/site.ttf) format('truetype') } .box { width: 120px; height: 40px; background: #2563eb } p { font-family: 'Site Sans', sans-serif; margin: 0 } body { background: #f0f4f8 }"
       })
     }
     if (pathname === '/img/photo.png') {
@@ -84,6 +84,8 @@ test('a web page opens as layers with the stylesheet and pictures it links', asy
       { width: 40, image: false, artwork: true },
       expect.objectContaining({ artwork: true })
     ])
+  // The page behind the layers is the site's own background.
+  expect(await getPageColor(page)).toMatchObject({ r: 0xf0 / 255, g: 0xf4 / 255, b: 0xf8 / 255 })
   // Text in the page's own web font is set in it, loaded from the site.
   expect(await getPageTexts(page)).toContainEqual({
     text: 'Set in the site font',

@@ -1,25 +1,18 @@
 import { delay } from 'es-toolkit'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
-
 import { serializeHTML } from '../export/html'
-import {
-  parseFontFaceRules,
-  parseStylesheetImports,
-  type CSSFontFaceRule
-} from '../import/font-faces'
 import type {
   CSSComputeOptions,
   CSSRuntime,
   DesignDocument,
   DesignElement,
   DesignNode,
-  DesignResource,
   DesignResourceFetch,
   DesignViewport
 } from '../types'
 import { showGeneratedContent } from './generated'
 import { recordLayout } from './layout'
+import { attachImages, canvasBackground, fontFaceRules, RESOURCE_TIMEOUT_MS } from './resources'
 
 export interface BrowserCSSRuntimeOptions {
   document?: Document
@@ -291,12 +284,6 @@ function keepAutoSideMargins(element: Element, style: Record<string, string>): v
   }
 }
 
-/**
- * How long layout waits for an image to load. An image without a size takes its own once loaded,
- * moving what follows it, but a request that never ends must not hold an import forever.
- */
-const IMAGE_LOAD_LIMIT_MS = 10_000
-
 /** Resolves once every image under `root` has loaded or failed, or the time limit passes. */
 function imagesLoaded(root: ParentNode, view: Window): Promise<void> {
   const images = Array.from(root.querySelectorAll('img'))
@@ -316,7 +303,7 @@ function imagesLoaded(root: ParentNode, view: Window): Promise<void> {
     )
   ).then(() => undefined)
   const limit = new Promise<void>((resolve) => {
-    view.setTimeout(resolve, IMAGE_LOAD_LIMIT_MS)
+    view.setTimeout(resolve, RESOURCE_TIMEOUT_MS)
   })
   return Promise.race([loaded, limit])
 }
@@ -443,10 +430,12 @@ async function computeStylesInIframe(
     content.innerHTML = serializeHTML(designDocument)
 
     await settle(iframeDocument, iframeDocument)
-    return await copyComputedStyles(designDocument, content, options, {
+    const copied = await copyComputedStyles(designDocument, content, options, {
       origin: iframeDocument.documentElement,
       styleRoot: iframeDocument.head
     })
+    copied.document.background = canvasBackground(iframeDocument)
+    return copied
   } finally {
     iframe.remove()
   }
@@ -501,57 +490,6 @@ async function copyComputedStyles(
   if (options.layout) recordLayout(pairs, frame.origin, frame.styleRoot)
 
   return { document: nextDocument, images }
-}
-
-/** The most stylesheets read for a page's `@font-face` rules, through linked sheets and `@import`. */
-const MAX_FONT_STYLESHEETS = 32
-
-/**
- * The `@font-face` rules of a page's CSS and every stylesheet it imports, read with `fetch`: the
- * sandbox loaded those sheets, but one from another site cannot be read back from it.
- */
-async function fontFaceRules(
-  cssText: string,
-  baseURL: string | undefined,
-  fetch: DesignResourceFetch
-): Promise<CSSFontFaceRule[]> {
-  const rules = parseFontFaceRules(cssText, baseURL)
-  const queue = parseStylesheetImports(cssText, baseURL)
-  const read = new Set<string>()
-  while (queue.length > 0 && read.size < MAX_FONT_STYLESHEETS) {
-    const url = queue.shift()
-    if (url === undefined || read.has(url)) continue
-    read.add(url)
-    const sheet = await fetch(url, AbortSignal.timeout(IMAGE_LOAD_LIMIT_MS)).catch(() => null)
-    if (!sheet) continue
-    const css = new TextDecoder().decode(sheet.bytes)
-    appendAll(rules, parseFontFaceRules(css, sheet.url))
-    appendAll(queue, parseStylesheetImports(css, sheet.url))
-  }
-  return rules
-}
-
-/**
- * Reads each image's picture with `fetch` and puts it on its element, each address once. One that
- * cannot be read leaves its element as it was.
- */
-async function attachImages(
-  images: readonly [DesignElement, string][],
-  fetch: DesignResourceFetch | undefined
-): Promise<void> {
-  if (!fetch) return
-  const pictures = new Map<string, Promise<DesignResource | null>>()
-  await Promise.all(
-    images.map(async ([element, url]) => {
-      let picture = pictures.get(url)
-      if (!picture) {
-        picture = fetch(url, AbortSignal.timeout(IMAGE_LOAD_LIMIT_MS)).catch(() => null)
-        pictures.set(url, picture)
-      }
-      const resource = await picture
-      if (resource) element.image = resource
-    })
-  )
 }
 
 export function createBrowserCSSRuntime(options: BrowserCSSRuntimeOptions = {}): CSSRuntime {

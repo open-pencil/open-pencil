@@ -16,6 +16,11 @@ export interface DesignDocument {
    * host to load the faces its text is set in.
    */
   fontFaces?: CSSFontFaceRule[]
+  /**
+   * The color the page's canvas is painted: the root element's background, or the body's when the
+   * root has none, as CSS paints it; none when neither has one, which a browser shows as white.
+   */
+  background?: string
   sourceGraph?: SceneGraph
   /** Variable references the projection wrote, for Tailwind names and the token stylesheet. */
   tokens?: DesignTokens

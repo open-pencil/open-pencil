@@ -9,3 +9,4 @@
 - An SVG paint that refers to a `<pattern>` falls back to the color written after it, or paints nothing, instead of painting the shape black (#2210).
 - A corner radius given as a percentage, such as `border-radius: 50%` on a dot or an avatar, rounds the imported layer instead of being dropped (#2210).
 - HTML opened or pasted in the app is set in the fonts its page loads with `@font-face`, icon fonts among them, as the CLI already did (#2210).
+- An HTML page imported as a document keeps the background a browser paints behind it, its own or white, instead of the editor's grey (#2210).
