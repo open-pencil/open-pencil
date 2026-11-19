@@ -73,6 +73,32 @@ function mix(from: Color, to: Color, t: number): Color {
 }
 
 /**
+ * Where CSS draws stops of these `positions`: an omitted first or last one at an end, a run of
+ * omitted ones spread evenly between the stops around it, and none before the one ahead of it.
+ */
+function cssStopPositions(positions: ReadonlyArray<number | undefined>): number[] {
+  const placed = positions.map((position, index) => {
+    if (position !== undefined) return position
+    if (index === 0) return 0
+    return index === positions.length - 1 ? 1 : undefined
+  })
+  let ahead = 0
+  for (const [index, position] of placed.entries()) {
+    if (position !== undefined) {
+      ahead = Math.max(ahead, position)
+      placed[index] = ahead
+      continue
+    }
+    const end = placed.findIndex((next, at) => at > index && next !== undefined)
+    const to = Math.max(placed[end] ?? 1, ahead)
+    const span = end - index + 1
+    for (let at = index; at < end; at++)
+      placed[at] = ahead + ((to - ahead) * (at - index + 1)) / span
+  }
+  return placed.map((position) => position ?? 1)
+}
+
+/**
  * `stops` with positions, and, when colors are shown in another profile, the colors between
  * each pair blended in the stored components: a CSS blend of the clipped ends would leave the
  * colors the document blends to, as a P3 red clipped to sRGB, blended with white.
@@ -82,11 +108,8 @@ function placedStops(
   spaces: ColorSpaces
 ): ReadonlyArray<GradientStop> {
   if (spaces.stored === spaces.shown) return stops
-  const last = Math.max(stops.length - 1, 1)
-  const placed = stops.map((stop, index) => ({
-    color: stop.color,
-    position: stop.position ?? index / last
-  }))
+  const positions = cssStopPositions(stops.map((stop) => stop.position))
+  const placed = stops.map((stop, index) => ({ color: stop.color, position: positions[index] }))
   return placed.flatMap((stop, index) => {
     if (index === placed.length - 1) return [stop]
     const next = placed[index + 1]

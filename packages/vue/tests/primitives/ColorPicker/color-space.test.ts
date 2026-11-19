@@ -123,6 +123,19 @@ describe('gradients shown in another profile than stored', () => {
     expect(css).toStartWith('linear-gradient(to right in display-p3, ')
   })
 
+  test('an unpositioned stop sits where CSS puts it, between its neighbours', () => {
+    const spaces = { stored: 'display-p3', shown: 'srgb' } as const
+    const white = { r: 1, g: 1, b: 1, a: 1 }
+    const black = { r: 0, g: 0, b: 0, a: 1 }
+    const css = linearGradientCSS(
+      'to right',
+      [{ color: white, position: 0.2 }, { color: P3_RED }, { color: black, position: 0.6 }],
+      spaces
+    )
+    const red = colorToDisplayCSS(P3_RED, { documentColorSpace: 'display-p3', colorSpace: 'srgb' })
+    expect(css).toContain(`${red} 40%`)
+  })
+
   test('sRGB colors shown in P3 still blend in sRGB', () => {
     const css = linearGradientCSS(
       'to right',
