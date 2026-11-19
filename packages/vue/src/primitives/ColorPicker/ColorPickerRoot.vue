@@ -3,11 +3,11 @@ import { unrefElement } from '@vueuse/core'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger, useDirection } from 'reka-ui'
 import { computed, shallowRef, useTemplateRef } from 'vue'
 
-import { colorToCSS } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 
+import { useColorCSS } from './color-space'
 import { usePickerGesture, type PickerCancelCause } from './gesture'
 import { pickerOutsideHandlers, type PickerKeepOpen } from './outside'
 
@@ -53,7 +53,8 @@ const emit = defineEmits<{
   cancel: [cause: PickerCancelCause]
 }>()
 
-const swatchBg = computed(() => colorToCSS(color))
+const colorCSS = useColorCSS()
+const swatchBg = computed(() => colorCSS(color))
 let pressColor: Color = { ...color }
 const gesture = usePickerGesture({
   open: () => popupOpen.value,

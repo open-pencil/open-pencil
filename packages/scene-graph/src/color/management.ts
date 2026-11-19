@@ -96,16 +96,10 @@ function resolveTargetSpace(options?: ColorPreviewOptions): RenderColorSpace {
   return options?.colorSpace ?? options?.documentColorSpace ?? DEFAULT_COLOR_SPACE
 }
 
+/** `color`, whose components are already in `targetSpace`, as CSS. */
 function formatCSSForTarget(color: Color, targetSpace: RenderColorSpace): string {
   if (targetSpace === 'display-p3') {
-    const p3 = toP3({ mode: 'rgb', r: color.r, g: color.g, b: color.b, alpha: color.a })
-    return formatCss({
-      mode: 'p3',
-      r: p3.r,
-      g: p3.g,
-      b: p3.b,
-      alpha: p3.alpha ?? color.a
-    })
+    return formatCss({ mode: 'p3', r: color.r, g: color.g, b: color.b, alpha: color.a })
   }
 
   return formatRgb({

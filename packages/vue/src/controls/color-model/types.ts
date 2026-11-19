@@ -30,6 +30,11 @@ export interface OkHCLControls {
 export interface UseColorModelOptions {
   color: MaybeRefOrGetter<Color>
   okhcl?: MaybeRefOrGetter<OkHCLColor | null | undefined>
+  /**
+   * The profile `color` is stored in, which OkHCL values and slider previews are read and made in.
+   * Defaults to what `provideColorSpace` declared for the calling component, else sRGB.
+   */
+  colorSpace?: MaybeRefOrGetter<RenderColorSpace>
   format?: MaybeRefOrGetter<ColorFieldFormat | undefined>
   defaultFormat?: ColorFieldFormat
   onUpdate?: (color: Color) => void

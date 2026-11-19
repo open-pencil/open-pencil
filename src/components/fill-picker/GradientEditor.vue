@@ -2,8 +2,8 @@
 import { tv } from 'tailwind-variants'
 
 import type { Fill } from '@open-pencil/scene-graph'
-import { colorToCSS } from '@open-pencil/scene-graph/color'
 import { useI18n } from '@open-pencil/vue/i18n'
+import { useColorCSS } from '@open-pencil/vue/primitives/ColorPicker'
 import {
   GradientEditorRoot,
   GradientEditorBar,
@@ -23,6 +23,7 @@ const emit = defineEmits<{ update: [fill: Fill] }>()
 const activeStop = defineModel<number>('activeStop')
 const { panels, editor } = useI18n()
 const fillPicker = tv(fillPickerTheme)
+const colorToCSS = useColorCSS()
 
 function barStopClass(active: boolean, dragging: boolean) {
   return fillPicker({ active, dragging }).barStop()

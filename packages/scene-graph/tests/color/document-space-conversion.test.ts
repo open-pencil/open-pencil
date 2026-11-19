@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { resolveOkHCLForPreview, resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
+import {
+  colorToDisplayCSS,
+  resolveOkHCLForPreview,
+  resolveRGBAForPreview
+} from '@open-pencil/scene-graph/color'
 
 /** #2563EB as authored in an sRGB document. */
 const BLUE = { r: 0.1450980392156863, g: 0.38823529411764707, b: 0.9215686274509803, a: 1 }
@@ -56,6 +60,22 @@ describe('document colour profile conversion', () => {
     const resolved = resolveRGBAForPreview(BLUE, { documentColorSpace: 'display-p3' })
     expect(resolved.targetSpace).toBe('display-p3')
     expect(resolved.color).toEqual(BLUE)
+  })
+
+  test("a P3 document's colour is written as its own P3 components", () => {
+    expect(colorToDisplayCSS(P3_RED, { documentColorSpace: 'display-p3' })).toBe(
+      'color(display-p3 1 0 0)'
+    )
+    expect(colorToDisplayCSS(BLUE, { documentColorSpace: 'srgb' })).toBe('rgb(37, 99, 235)')
+  })
+
+  test('an sRGB colour written for a P3 target is converted once', () => {
+    const css = colorToDisplayCSS(BLUE, { colorSpace: 'display-p3' })
+    const resolved = resolveRGBAForPreview(BLUE, { colorSpace: 'display-p3' })
+    expect(css).toBe(
+      `color(display-p3 ${resolved.color.r} ${resolved.color.g} ${resolved.color.b})`
+    )
+    expect(resolved.color.b).toBeCloseTo(0.89, 2)
   })
 
   test('OKHCL colours resolve into the requested target space', () => {
