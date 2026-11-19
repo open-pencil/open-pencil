@@ -99,7 +99,7 @@
   "resetSentDescription": "إذا كان لـ {email} حساب هنا، فإن رابط إعادة التعيين في طريقه إليك.",
   "deviceTitle": "تسجيل الدخول إلى تطبيق OpenPencil؟",
   "deviceDescription": "يطلب تطبيق OpenPencil استخدام حسابك، {email}.",
-  "deviceEnterCode": "أدخل الرمز الذي يعرضه التطبيق",
+  "deviceCheckCode": "تحقّق من أن التطبيق يعرض هذا الرمز",
   "deviceWarningTitle": "لا توافق إلا على تسجيل دخول بدأته بنفسك",
   "deviceWarningDescription": "إذا لم تسجّل الدخول إلى OpenPencil للتو على جهاز كمبيوتر، فارفض هذا الطلب.",
   "approve": "موافقة",

@@ -325,8 +325,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
           :value="device.code"
           :copy-label="t.copyCode"
           :copied-label="common.copied"
-          look="command"
-          :ui="{ root: 'w-full py-3 ps-4', value: 'flex-1 text-center text-lg tracking-[0.3em]' }"
+          look="code"
         />
         <p :class="ui.deviceStatus()" role="status">
           <icon-lucide-loader-circle :class="ui.spinner()" aria-hidden="true" />
