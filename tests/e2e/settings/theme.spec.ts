@@ -109,3 +109,33 @@ test('Escape during a custom accent drag puts back only that drag; closing then 
   await expect(area).toHaveCount(0)
   await expect.poll(accent).toBe(initial)
 })
+
+test('Escape during the first custom accent drag keeps the preset chosen', async ({ page }) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  const accent = () =>
+    page.evaluate(() => document.documentElement.style.getPropertyValue('--color-accent'))
+
+  await page.getByTestId('app-settings-trigger').click()
+  const presets = page.getByRole('radiogroup', { name: 'Accent color', exact: true })
+  const green = presets.getByRole('radio', { name: 'Green', exact: true })
+  await green.click()
+  await expect(green).toBeChecked()
+  const chosen = await accent()
+
+  await page.getByTestId('settings-accent-custom').click()
+  const area = page.locator('[data-picker-content] .cursor-crosshair')
+  const box = await area.boundingBox()
+  if (!box) throw new Error('Missing colour area')
+  await page.mouse.move(box.x + box.width * 0.9, box.y + box.height * 0.1)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.7, { steps: 4 })
+  await expect.poll(accent).not.toBe(chosen)
+  await page.keyboard.press('Escape')
+  await page.mouse.up()
+
+  await expect.poll(accent).toBe(chosen)
+  await expect(green).toBeChecked()
+  await expect(page.getByTestId('settings-accent-custom')).toHaveAttribute('aria-pressed', 'false')
+})
