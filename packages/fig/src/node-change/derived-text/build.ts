@@ -106,6 +106,11 @@ function shapedGlyphRecords(
   shaped: ShapedText,
   context: DerivedTextBuildContext
 ): DerivedTextGlyphRecord[] {
+  // A glyph the shaper could not outline would be saved with no commandsBlob, and
+  // Figma draws nothing for it instead of laying the text out itself (#1760): leave
+  // the node's glyphs out altogether, so readers lay the text out themselves. A
+  // partial set of outlines would draw the text with gaps, so it is all or none.
+  if (shaped.glyphs.some((glyph) => glyph.commands === null)) return []
   return shaped.glyphs.map((glyph) => ({
     commandsBlob: glyph.commands
       ? appendGlyphBlob(

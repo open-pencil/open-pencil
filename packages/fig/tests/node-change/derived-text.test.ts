@@ -97,7 +97,21 @@ describe('derived text writer', () => {
     const data = expectDefined(buildNodeDerivedTextData(textNode(), writer), 'derived text')
 
     expect(data.baselines).toHaveLength(2)
-    expect(data.glyphs?.every((glyph) => glyph.commandsBlob === undefined)).toBe(true)
+    expect(data.glyphs).toEqual([])
+    expect(writer.blobs).toHaveLength(0)
+  })
+
+  test('writes no glyphs when any shaped glyph has no outline (#1760)', () => {
+    // One glyph the shaper could not outline (an Arabic-script character in a
+    // substituted face, as in 0.17.0-beta.1) must not leave outline-less records
+    // behind: Figma draws nothing for them instead of laying the text out itself.
+    const shaped = twoLines(SQUARE)
+    shaped.glyphs[1] = { ...shaped.glyphs[1], commands: null }
+    const writer = context(shaped)
+    const data = expectDefined(buildNodeDerivedTextData(textNode(), writer), 'derived text')
+
+    expect(data.baselines).toHaveLength(2)
+    expect(data.glyphs).toEqual([])
     expect(writer.blobs).toHaveLength(0)
   })
 
