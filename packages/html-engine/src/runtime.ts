@@ -249,11 +249,14 @@ function generatedChildren(capture: HTMLEngineCapture): Map<number, number[]> {
 }
 
 /** The text a captured node holds directly, as a pseudo-element's generated content. */
-function ownText(capture: HTMLEngineCapture, index: number): string {
-  return capture.nodes
-    .filter((node) => node.parent === index && node.text !== undefined)
-    .map((node) => node.text)
-    .join('')
+/** Each captured node's own text, its text children's joined in order, by the node's index. */
+function ownTexts(capture: HTMLEngineCapture): Map<number, string> {
+  const texts = new Map<number, string>()
+  for (const node of capture.nodes) {
+    if (node.text === undefined || node.parent === undefined) continue
+    texts.set(node.parent, (texts.get(node.parent) ?? '') + node.text)
+  }
+  return texts
 }
 
 /**
@@ -268,11 +271,12 @@ function showGeneratedContent(
 ): void {
   const indexes = new Map(capture.nodes.map((node, index) => [node, index]))
   const generated = generatedChildren(capture)
+  const texts = ownTexts(capture)
   for (const [element, node] of pairs) {
     const index = indexes.get(node)
     for (const pseudo of (index === undefined ? undefined : generated.get(index)) ?? []) {
       const captured = capture.nodes[pseudo]
-      const text = ownText(capture, pseudo)
+      const text = texts.get(pseudo) ?? ''
       const child: DesignElement = {
         type: 'element',
         tagName: captured.tag ?? '::before',

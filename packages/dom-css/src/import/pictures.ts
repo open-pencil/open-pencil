@@ -54,3 +54,15 @@ export function elementSVG(element: DesignElement): ElementSVG | null {
   if (picture?.kind === 'svg') return { markup: picture.markup }
   return maskSVG(element)
 }
+
+/**
+ * Whether an element becomes the artwork of the SVG it draws, as inline SVG does: an image showing
+ * an SVG, or an element an SVG masks that holds nothing that shows, such as an icon. A mask over
+ * content keeps the content.
+ */
+export function isSVGArtwork(element: DesignElement): boolean {
+  const holdsNothing = element.children.every(
+    (child) => child.type === 'text' && child.text.trim() === ''
+  )
+  return holdsNothing && elementSVG(element) !== null
+}

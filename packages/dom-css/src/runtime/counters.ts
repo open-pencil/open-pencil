@@ -62,10 +62,10 @@ export class CounterState {
       this.#counters.set(name, stack)
     }
     for (const [name, value] of counterValues(style.getPropertyValue('counter-increment'), 1)) {
-      this.#innermost(name).value += value
+      this.#innermost(name, scope).value += value
     }
     for (const [name, value] of counterValues(style.getPropertyValue('counter-set'), 0)) {
-      this.#innermost(name).value = value
+      this.#innermost(name, scope).value = value
     }
   }
 
@@ -90,12 +90,15 @@ export class CounterState {
     return formatted(stack.at(-1)?.value ?? 0, args.at(1)?.value)
   }
 
-  /** The innermost instance of a counter, made at the root when none is in effect, as in CSS. */
-  #innermost(name: string): CounterInstance {
+  /**
+   * The innermost instance of a counter. One no element reset is made where it is first used, as
+   * in CSS, for that element, its descendants, and its later siblings, the scope given.
+   */
+  #innermost(name: string, scope: Element | null): CounterInstance {
     const stack = this.#counters.get(name) ?? []
     let innermost = stack.at(-1)
     if (!innermost) {
-      innermost = { value: 0, scope: null }
+      innermost = { value: 0, scope }
       stack.push(innermost)
       this.#counters.set(name, stack)
     }

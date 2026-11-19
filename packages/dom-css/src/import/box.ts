@@ -1,7 +1,10 @@
-import valueParser from 'postcss-value-parser'
-
 import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { parseCSSAspectRatio, parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
+import {
+  dimension,
+  parseCSSAspectRatio,
+  parseCSSNumber,
+  splitCSSValue
+} from '@open-pencil/scene-graph/css'
 import type { Size } from '@open-pencil/scene-graph/primitives'
 import { maxOf } from '@open-pencil/std/arrays'
 
@@ -163,9 +166,9 @@ export function setBorderWeights(
  */
 function cornerRadiusOf(value: string | undefined, box: Size | undefined): number | null {
   const first = splitCSSValue(value ?? '').at(0)
-  const dimension = first ? valueParser.unit(first) : false
-  if (dimension && dimension.unit === '%' && box) {
-    return (Number(dimension.number) / 100) * Math.min(box.width, box.height)
+  const percentage = first ? dimension(first) : null
+  if (percentage?.unit === '%' && box) {
+    return (percentage.number / 100) * Math.min(box.width, box.height)
   }
   return parseCSSNumber(first)
 }

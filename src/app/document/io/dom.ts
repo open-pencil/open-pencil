@@ -67,9 +67,10 @@ export function createDOMOpenActions({
       cssText: options.cssText,
       signal: load.signal,
       compute: { layout: true, viewport: HTML_IMPORT_VIEWPORT },
-      // A page from the web brings its stylesheets and pictures from where it lives.
+      // A page brings its stylesheets and pictures from where it lives; a local file, those it
+      // links by full address.
       baseURL,
-      importLinkedStylesheets: baseURL !== undefined,
+      importLinkedStylesheets: true,
       fetch
     })
     load.signal.throwIfAborted()

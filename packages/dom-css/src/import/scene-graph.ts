@@ -44,7 +44,7 @@ import {
   type ParentFlow
 } from './flow'
 import { alignGridItems, isGrid } from './grid'
-import { elementSVG, imagePicture, maskSVG } from './pictures'
+import { isSVGArtwork, imagePicture, maskSVG } from './pictures'
 import {
   applyCapturedLines,
   capturedBox,
@@ -361,8 +361,7 @@ function createElementNode(
   const style = mergedStyle(element)
   const display = elementDisplay(element, style)
   if (display === 'none' || isTableColumn(display)) return null
-  // An image showing an SVG, or an element an SVG masks, becomes its artwork, as inline SVG does.
-  if (isInlineSVG(element) || elementSVG(element))
+  if (isInlineSVG(element) || isSVGArtwork(element))
     return createSVGFrame(graph, parentId, element, parentFlow, recorded)
   if (
     isTextLikeElement(element) &&
@@ -500,7 +499,8 @@ function createChildLayers(
   for (const child of element.children) {
     const inherited = inheritedTextStyle(style)
     const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
-    if (layer?.type === 'TEXT') record(graph, recorded, layer, textBox)
+    // Text the element holds directly sits in its lines; an element that became text has its own box.
+    if (layer?.type === 'TEXT' && child.type === 'text') record(graph, recorded, layer, textBox)
     if (child.type !== 'element' || !layer) continue
     const childStyle = mergedStyle(child)
     parts.push({ layer, element: child, style: childStyle })

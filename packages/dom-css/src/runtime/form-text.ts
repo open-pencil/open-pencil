@@ -1,3 +1,4 @@
+import { inheritedTextStyle } from '../import/flow'
 import type { DesignElement, DesignLayout, DesignStyleDeclaration } from '../types'
 
 /** Input types that show what is typed, or their placeholder, as a line of text. */
@@ -54,7 +55,12 @@ export function showFormText(
         tagName: shown.placeholder ? '::placeholder' : '::value',
         attrs: {},
         children: [{ type: 'text', text: shown.text }],
-        computedStyle: { ...style, display: 'block', 'white-space': isInput ? 'pre' : 'pre-wrap' },
+        // Only the text's own styling: the field's padding, border, and background stay on it.
+        computedStyle: {
+          ...inheritedTextStyle(style),
+          display: 'block',
+          'white-space': isInput ? 'pre' : 'pre-wrap'
+        },
         layout: designElement.layout && contentBox(designElement.layout, own)
       }
     ]

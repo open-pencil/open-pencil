@@ -72,10 +72,21 @@ function parseWithBrowser(html: string, browserDocument: Document): Document {
 }
 
 /** The page's `<link rel="stylesheet">` sheets as `@import` rules, in document order. */
-function linkedStylesheetImports(html: string, browserDocument: Document): string | undefined {
+/**
+ * The page's linked stylesheets as `@import` rules. Without a base address, only those linked by a
+ * full address: a relative one would resolve against the host instead of the page.
+ */
+function linkedStylesheetImports(
+  html: string,
+  browserDocument: Document,
+  baseURL: string | undefined
+): string | undefined {
   const links = parseWithBrowser(html, browserDocument).querySelectorAll('link')
+  const sheets = compact(
+    Array.from(links, (link) => linkedStylesheet((name) => link.getAttribute(name)))
+  )
   return stylesheetImportRules(
-    compact(Array.from(links, (link) => linkedStylesheet((name) => link.getAttribute(name))))
+    baseURL === undefined ? sheets.filter(({ href }) => URL.canParse(href)) : sheets
   )
 }
 
@@ -108,7 +119,9 @@ export async function browserHTMLToDesignDocument(
   const document = runtime.parseHTML(html)
   // `@import` rules count only before every other rule, so the linked sheets come first.
   const cssText = mergeCSSText(
-    options.importLinkedStylesheets ? linkedStylesheetImports(html, browserDocument) : undefined,
+    options.importLinkedStylesheets
+      ? linkedStylesheetImports(html, browserDocument, options.baseURL)
+      : undefined,
     extractEmbeddedCSSText(html, browserDocument),
     options.cssText
   )

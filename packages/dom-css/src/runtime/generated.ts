@@ -110,8 +110,11 @@ export function showGeneratedContent(
   const counters = new CounterState()
   let made = 0
   const visit = (domElement: Element) => {
+    const style = view.getComputedStyle(domElement)
+    // An element that is not rendered, nor anything in it, counts nothing.
+    if (style.display === 'none') return
     const parent = domElement.parentElement === root ? null : domElement.parentElement
-    counters.apply(view.getComputedStyle(domElement), parent)
+    counters.apply(style, parent)
     // The children as the page has them, before any generated box joins them.
     const children = Array.from(domElement.children)
     const designElement = designElements.get(domElement)
@@ -123,6 +126,13 @@ export function showGeneratedContent(
       made++
     counters.leave(domElement)
   }
+  // The counters the root and the elements around it start, such as `body { counter-reset }`,
+  // from the outermost in. A shadow root's host page is outside, and stays out.
+  const around: Element[] = []
+  for (let element: Element | null = root; element; element = element.parentElement) {
+    around.unshift(element)
+  }
+  for (const element of around) counters.apply(view.getComputedStyle(element), null)
   for (const child of Array.from(root.children)) visit(child)
   if (made > 0) {
     const off = styleRoot.ownerDocument?.createElement('style')

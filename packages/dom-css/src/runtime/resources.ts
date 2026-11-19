@@ -1,3 +1,5 @@
+import { limitAsync } from 'es-toolkit/promise'
+
 import { parseCSSColor } from '@open-pencil/scene-graph/css'
 import { appendAll } from '@open-pencil/std/arrays'
 import { DEADLINE_MS } from '@open-pencil/std/timing'
@@ -58,8 +60,14 @@ export async function fontFaceRules(
 }
 
 /**
- * Reads each image's picture with `fetch` and puts it on its element, each address once. One that
- * cannot be read leaves its element as it was.
+ * How many pictures are read at once: enough to keep a page's requests flowing, few enough that
+ * the bytes in flight stay within what a page's budget counts as each read completes.
+ */
+const IMAGE_READS_IN_FLIGHT = 6
+
+/**
+ * Reads each image's picture with `fetch` and puts it on its element, each address once and a few
+ * at a time. One that cannot be read leaves its element as it was.
  */
 export async function attachImages(
   images: readonly [DesignElement, string][],
@@ -67,11 +75,16 @@ export async function attachImages(
 ): Promise<void> {
   if (!fetch) return
   const pictures = new Map<string, Promise<DesignResource | null>>()
+  // Each read's deadline starts when it does, not while it waits its turn.
+  const read = limitAsync(
+    (url: string) => fetch(url, AbortSignal.timeout(RESOURCE_TIMEOUT_MS)).catch(() => null),
+    IMAGE_READS_IN_FLIGHT
+  )
   await Promise.all(
     images.map(async ([element, url]) => {
       let picture = pictures.get(url)
       if (!picture) {
-        picture = fetch(url, AbortSignal.timeout(RESOURCE_TIMEOUT_MS)).catch(() => null)
+        picture = read(url)
         pictures.set(url, picture)
       }
       const resource = await picture
