@@ -170,6 +170,7 @@ fr:panels.export
 fr:panels.framePresetCategoryFigmaCommunity
 fr:panels.glassDispersion
 fr:panels.image
+fr:panels.imageSaturation
 fr:panels.libraryDestination
 fr:panels.maskTypeAlpha
 fr:panels.maskTypeLuminance
