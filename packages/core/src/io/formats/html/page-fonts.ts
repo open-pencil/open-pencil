@@ -1,11 +1,14 @@
+import { uniq } from 'es-toolkit'
 import { fileTypeFromBuffer } from 'file-type'
 
-import type { DesignDocument, DesignResourceFetch } from '@open-pencil/dom-css'
+import type { CSSFontFaceRule, DesignDocument, DesignResourceFetch } from '@open-pencil/dom-css'
 import { cssFontFamilyName, parseCSSFontFamilies } from '@open-pencil/scene-graph/css'
 
 import { fontManager } from '#core/text/font/manager'
 import { faceStyleName } from '#core/text/font/names'
+import { fontAxes } from '#core/text/font/variation'
 import { sfntFont } from '#core/text/font/woff2'
+import { isProviderFontFile } from '#core/text/web-font/providers'
 
 import { designElements } from './elements'
 import type { PageFontFamilies } from './fonts'
@@ -38,12 +41,29 @@ async function readableFont(bytes: Uint8Array): Promise<ArrayBuffer | null> {
 /**
  * Loads the faces a page's `@font-face` rules declare for the families its text uses, with
  * `fetch`, and registers them with the font manager under the family and face each rule names, so
- * the page's text is set in its own fonts, icon fonts among them. A family the editor already has,
- * bundled, installed, or from Google Fonts, keeps the editor's complete copy rather than a page's
- * subset of it, which would leave its other glyphs and faces out. A rule's sources are tried in
- * order until one is in a format the font manager reads. Returns the families the page's text can
- * be set in; once `signal` aborts, it stops and rejects without registering another face.
+ * the page's text is set in its own fonts, as the browser sets it, icon fonts among them. A face the
+ * page loads from a provider the editor fetches fonts from, such as Google Fonts, is the editor's
+ * own copy of it, whole rather than the page's subsets. A face the page serves itself is the page's
+ * file, even where the editor has a family of that name, which may be another design; a face split
+ * into files by `unicode-range` draws from all of them. A rule's sources are tried in order until
+ * one is in a format the font manager reads. Returns the families the page's text can be set in;
+ * once `signal` aborts, it stops and rejects without registering another face.
  */
+/** The weights a face can be asked for by, a hundred apart. */
+const FACE_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900]
+
+/**
+ * The faces a page's font file draws: the one its rule names, and for a variable file every
+ * weight its `wght` axis reaches, as the browser draws each weight the page asks for from it.
+ */
+function stylesDrawnBy(data: ArrayBuffer, rule: CSSFontFaceRule): string[] {
+  const own = faceStyleName(rule.family, rule.weight, rule.italic)
+  const wght = fontAxes(data)?.find((axis) => axis.tag === 'wght')
+  if (!wght) return [own]
+  const weights = FACE_WEIGHTS.filter((weight) => weight >= wght.min && weight <= wght.max)
+  return uniq([own, ...weights.map((weight) => faceStyleName(rule.family, weight, rule.italic))])
+}
+
 export async function loadPageFontFaces(
   styled: DesignDocument,
   fetch: DesignResourceFetch,
@@ -52,16 +72,16 @@ export async function loadPageFontFaces(
   const used = familiesUsed(styled)
   const loaded = new Map<string, string>()
   const rules = (styled.fontFaces ?? []).filter((rule) => used.has(rule.family.toLowerCase()))
-  // Which faces the editor has is settled before any of the page's are registered, so a page
-  // that splits a face into subsets by unicode-range loads every subset, not just the first.
-  const editorHas = await Promise.all(
-    rules.map((rule) =>
-      fontManager.loadFont(rule.family, faceStyleName(rule.family, rule.weight, rule.italic))
-    )
-  )
-  for (const [index, rule] of rules.entries()) {
+  // The faces this page registered a file for, which its later subsets join.
+  const registered = new Set<string>()
+  for (const rule of rules) {
     const style = faceStyleName(rule.family, rule.weight, rule.italic)
-    if (editorHas[index]) {
+    const face = `${rule.family.toLowerCase()}|${style}`
+    if (
+      !registered.has(face) &&
+      rule.sources.some(isProviderFontFile) &&
+      (await fontManager.loadFont(rule.family, style))
+    ) {
       loaded.set(rule.family.toLowerCase(), rule.family)
       continue
     }
@@ -76,7 +96,12 @@ export async function loadPageFontFaces(
       // An import cancelled meanwhile registers nothing: the font manager is shared, and a face it
       // took now could replace one a later import loaded.
       signal?.throwIfAborted()
-      await fontManager.markLoaded(rule.family, style, data)
+      for (const faceStyle of stylesDrawnBy(data, rule)) {
+        const key = `${rule.family.toLowerCase()}|${faceStyle}`
+        if (registered.has(key)) await fontManager.addFaceShard(rule.family, faceStyle, data)
+        else await fontManager.markLoaded(rule.family, faceStyle, data)
+        registered.add(key)
+      }
       loaded.set(rule.family.toLowerCase(), rule.family)
       break
     }

@@ -617,6 +617,16 @@ export class FontManager {
     await loadHarfBuzz()
   }
 
+  /**
+   * Adds a file that covers more of a face's characters than the file loaded for it, such as one
+   * of the subsets a web page splits a font into by `unicode-range`; text draws what the face's
+   * own file lacks from it.
+   */
+  async addFaceShard(family: string, style: string, data: ArrayBuffer): Promise<void> {
+    this.registerSupplemental(family, style, data, 'registered')
+    await loadHarfBuzz()
+  }
+
   loadedFontSource(family: string, style: string): FontLoadedSource | null {
     return this.loadedFamilySources.get(`${family}|${style}`) ?? null
   }

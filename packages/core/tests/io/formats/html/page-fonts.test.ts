@@ -59,18 +59,34 @@ describe('a page’s own fonts', () => {
     expect(requested).toEqual([])
   })
 
-  test('keeps the editor’s own copy of a family the page also ships', async () => {
-    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
-    await fontManager.markLoaded('Editor Sans', 'Regular', font)
+  test('sets text in the font the page serves, over the editor’s family of that name', async () => {
+    const editors = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).arrayBuffer()
+    const pages = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+    await fontManager.markLoaded('Shared Sans', 'Regular', editors)
     const requested: string[] = []
 
-    const families = await loadPageFontFaces(page('Editor Sans', [FONT_URL]), async (url) => {
+    await loadPageFontFaces(page('Shared Sans', [FONT_URL]), async (url) => {
+      requested.push(url)
+      return { url, bytes: pages }
+    })
+
+    // The page's file is what the page draws with; the editor's may be another design.
+    expect(requested).toEqual([FONT_URL])
+    expect(fontManager.loadedData('Shared Sans', 'Regular')?.byteLength).toBe(pages.byteLength)
+  })
+
+  test('takes a font the page loads from Google Fonts from the editor’s own copy', async () => {
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+    await fontManager.markLoaded('Provider Sans', 'Regular', font)
+    const requested: string[] = []
+    const subset = 'https://fonts.gstatic.com/s/providersans/v1/latin.woff2'
+
+    const families = await loadPageFontFaces(page('Provider Sans', [subset]), async (url) => {
       requested.push(url)
       return null
     })
 
-    // The page's text is set in the family, from the editor's copy, and the page's is not read.
-    expect([...families.values()]).toEqual(['Editor Sans'])
+    expect([...families.values()]).toEqual(['Provider Sans'])
     expect(requested).toEqual([])
   })
 
@@ -95,6 +111,8 @@ describe('a page’s own fonts', () => {
     })
 
     expect(requested).toEqual(subsets)
+    // The later subset joins the first as a file the face draws its other characters from.
+    expect(fontManager.shardData('Page Subset Sans', 'Regular')).toHaveLength(1)
   })
 
   test('passes over a source that does not decode for the next one', async () => {
@@ -129,5 +147,20 @@ describe('a page’s own fonts', () => {
 
     await expect(loading).rejects.toThrow()
     expect(await fontManager.loadFont('Page Cancelled Sans', 'Regular')).toBeNull()
+  })
+
+  test('draws every weight a variable page font reaches from it', async () => {
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+
+    await loadPageFontFaces(page('Page Variable Sans', [FONT_URL]), async (url) => ({
+      url,
+      bytes: font
+    }))
+
+    // The rule names one weight; headings at 600 draw from the same file, as the browser draws them.
+    expect(fontManager.loadedData('Page Variable Sans', 'SemiBold')?.byteLength).toBe(
+      font.byteLength
+    )
+    expect(fontManager.loadedFontSource('Page Variable Sans', 'Bold')).toBe('registered')
   })
 })
