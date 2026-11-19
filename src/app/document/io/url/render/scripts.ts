@@ -6,8 +6,9 @@
  */
 
 /**
- * Whether the page has loaded with its fonts, and how many changes its document has had, which a
- * page that builds itself with scripts keeps making until it is done. Counts from the first call.
+ * Whether the page has loaded with its fonts, and how much activity it has had: the changes to its
+ * document, counted from the first call, and the requests it has finished, such as the data a
+ * page that builds itself fetches before it renders it. Both stop once it is done.
  */
 export function pageSettling(): { ready: boolean; changes: number } {
   // Where the count is kept between calls: the script carries nothing from one run to the next.
@@ -30,7 +31,7 @@ export function pageSettling(): { ready: boolean; changes: number } {
   }
   return {
     ready: document.readyState === 'complete' && document.fonts.status === 'loaded',
-    changes
+    changes: changes + performance.getEntriesByType('resource').length
   }
 }
 

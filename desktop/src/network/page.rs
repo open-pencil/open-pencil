@@ -15,8 +15,9 @@ use tokio::sync::oneshot;
 const RENDER_LIMIT: Duration = Duration::from_secs(30);
 /// How often a loaded page is asked whether it has settled.
 const POLL_INTERVAL: Duration = Duration::from_millis(200);
-/// How long a loaded page's document must stay unchanged to count as built.
-const QUIET_PERIOD: Duration = Duration::from_millis(500);
+/// How long a loaded page must go without a change to its document or a finished request to count
+/// as built: long enough for a page to fetch its data and render it after it loads.
+const QUIET_PERIOD: Duration = Duration::from_millis(1000);
 /// How long one script may take to answer before the page counts as unresponsive.
 const SCRIPT_LIMIT: Duration = Duration::from_secs(10);
 
@@ -28,8 +29,8 @@ pub struct RenderRequest {
     url: String,
     width: f64,
     height: f64,
-    /// Answers `{ ready, changes }`: whether the page has loaded with its fonts, and how many
-    /// changes its document has had.
+    /// Answers `{ ready, changes }`: whether the page has loaded with its fonts, and how much
+    /// activity it has had, changes to its document and finished requests.
     settle_script: String,
     /// Answers the snapshot the app imports.
     snapshot_script: String,
@@ -66,8 +67,9 @@ async fn evaluate<R: Runtime>(
     serde_json::from_str(&answer).map_err(|e| format!("The page answered unreadably: {e}"))
 }
 
-/// Waits until the page has loaded, its fonts with it, and its document has stopped changing for
-/// `QUIET_PERIOD`, as a page that builds itself has finished, or until `deadline`.
+/// Waits until the page has loaded, its fonts with it, and has gone `QUIET_PERIOD` without a change
+/// to its document or a finished request, as a page that builds itself has finished, or until
+/// `deadline`.
 async fn settle<R: Runtime>(
     window: &WebviewWindow<R>,
     script: &str,
