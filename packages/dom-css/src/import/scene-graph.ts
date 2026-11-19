@@ -164,6 +164,7 @@ const CHARACTER_FIELDS = [
   'fontFamily',
   'fontSize',
   'fontWeight',
+  'fontVariations',
   'italic',
   'letterSpacing',
   'lineHeight',
