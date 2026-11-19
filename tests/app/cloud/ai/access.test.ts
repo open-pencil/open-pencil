@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
 
 import { CLOUD_SERVICES_CONTRACT_VERSION } from '@open-pencil/cloud/contract'
 import { fetchStub } from '@open-pencil/test-support/fetch'
@@ -76,6 +76,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  mock.restore()
   for (const server of cloudServers.value) removeCloudServer(server.id)
 })
 
