@@ -51,7 +51,7 @@ export async function sceneGraphFromStyledHTML(
      * clips the rest, such as a drawer or menu placed off-screen. Without it, as for pasted HTML,
      * the layers stay on the canvas as they are.
      */
-    window?: DesignViewport
+    pageWindow?: DesignViewport
   } = {}
 ): Promise<SceneGraph> {
   // Text is set in the first family of its `font-family` list there is a font for, the page's own
@@ -80,8 +80,8 @@ export async function sceneGraphFromStyledHTML(
   applyStacking(graph, stackings)
   await drawInlineSVGs(graph, svgs, styled, options.matchIcon)
   applyCSSTransforms(graph, transforms)
-  if (options.window) {
-    for (const page of graph.getPages()) frameAsWindow(graph, page, options.window, background)
+  if (options.pageWindow) {
+    for (const page of graph.getPages()) frameAsWindow(graph, page, options.pageWindow, background)
   }
   return graph
 }
@@ -93,7 +93,7 @@ export async function sceneGraphFromStyledHTML(
 function frameAsWindow(
   graph: SceneGraph,
   page: SceneNode,
-  window: DesignViewport,
+  pageWindow: DesignViewport,
   background: Color
 ): void {
   const layers = graph.getChildren(page.id)
@@ -103,8 +103,8 @@ function frameAsWindow(
     name: page.name,
     x: 0,
     y: 0,
-    width: window.width,
-    height: Math.max(window.height, bottom),
+    width: pageWindow.width,
+    height: Math.max(pageWindow.height, bottom),
     clipsContent: true,
     fills: [{ type: 'SOLID', color: { ...background, a: 1 }, opacity: background.a, visible: true }]
   })

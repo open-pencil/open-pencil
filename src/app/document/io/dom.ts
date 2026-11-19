@@ -81,7 +81,7 @@ export function createDOMOpenActions({
       pageFamilies,
       // A web page sits in a frame the size of the window it was laid out in; a file's HTML,
       // often a snippet, stays loose layers.
-      window: options.baseURL === undefined ? undefined : HTML_IMPORT_VIEWPORT,
+      pageWindow: options.baseURL === undefined ? undefined : HTML_IMPORT_VIEWPORT,
       // Asked only when the page draws SVG it does not name, which the index may be loading for.
       matchIcon:
         matcher &&

@@ -164,7 +164,7 @@ export async function readHTMLDocument(
   const graph = await sceneGraphFromStyledHTML(styled, {
     pageName: options.pageName,
     matchIcon: options.matchIcon,
-    window: options.framed ? (options.viewport ?? HTML_IMPORT_VIEWPORT) : undefined
+    pageWindow: options.framed ? (options.viewport ?? HTML_IMPORT_VIEWPORT) : undefined
   })
   return { styled, graph }
 }
