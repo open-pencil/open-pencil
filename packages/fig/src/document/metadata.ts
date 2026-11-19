@@ -16,6 +16,7 @@ export function applyDocumentMetadata(graph: SceneGraph, document: NodeChange | 
     })) ?? []
   root.source.fig.rawNodeFields.strokeJoin = document.strokeJoin
   root.source.fig.rawNodeFields.strokeWeight = document.strokeWeight
+  graph.documentColorSpace = document.documentColorProfile === 'DISPLAY_P3' ? 'display-p3' : 'srgb'
   const bindings = readNodeChangePluginData(document, OPEN_PENCIL_PLUGIN_DATA.enabledLibraries)
   for (const binding of bindings ?? []) graph.enabledLibraries.set(binding.libraryId, binding)
 }
