@@ -1,39 +1,7 @@
 /**
- * Scripts the desktop app runs inside a page it renders in a hidden webview. Each is sent as its
- * own source text and runs in the page, not in the app: it may use only the page's globals and
- * nothing imported, and it must not await, since the webview returns a script's value at once.
- * Their value comes back as JSON.
+ * The page snapshot script the desktop app runs in a page it renders in a hidden webview, imported
+ * as `?script`: it runs in the page, with only the page's globals, and the app reads its default export.
  */
-
-/**
- * Whether the page has loaded with its fonts, and how much activity it has had: the changes to its
- * document, counted from the first call, and the requests it has finished, such as the data a
- * page that builds itself fetches before it renders it. Both stop once it is done.
- */
-export function pageSettling(): { ready: boolean; changes: number } {
-  // Where the count is kept between calls: the script carries nothing from one run to the next.
-  const key = '__openPencilDocumentChanges'
-  const kept: unknown = Reflect.get(window, key)
-  let changes = 0
-  if (
-    typeof kept === 'object' &&
-    kept !== null &&
-    'count' in kept &&
-    typeof kept.count === 'number'
-  ) {
-    changes = kept.count
-  } else {
-    const counter = { count: 0 }
-    new MutationObserver((records) => {
-      counter.count += records.length
-    }).observe(document, { subtree: true, childList: true, attributes: true, characterData: true })
-    Reflect.set(window, key, counter)
-  }
-  return {
-    ready: document.readyState === 'complete' && document.fonts.status === 'loaded',
-    changes: changes + performance.getEntriesByType('resource').length
-  }
-}
 
 /**
  * The page as its scripts left it, as HTML a static import reads: CSS rules scripts inserted with
@@ -42,7 +10,7 @@ export function pageSettling(): { ready: boolean; changes: number } {
  * no script and would show what `<noscript>` holds, and a `<base>` that resolves its addresses as
  * the page did.
  */
-export function pageSnapshot(): { html: string; url: string } {
+function pageSnapshot(): { html: string; url: string } {
   const live = document.documentElement
   const copy = live.cloneNode(true)
   if (!(copy instanceof HTMLElement)) return { html: live.outerHTML, url: location.href }
@@ -106,7 +74,5 @@ export function pageSnapshot(): { html: string; url: string } {
   return { html: doctype + copy.outerHTML, url: location.href }
 }
 
-/** A script that runs `script` in the page and gives back its value. */
-export function pageScript(script: () => unknown): string {
-  return `(${String(script)})()`
-}
+/** The snapshot, which the desktop app reads once the bundled script has run. */
+export default pageSnapshot()
