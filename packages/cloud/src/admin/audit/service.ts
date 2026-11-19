@@ -72,6 +72,12 @@ function searchCondition(pattern: string) {
   }
 }
 
+/** The name an entry recorded about its subject, as deleting an account does. */
+function recordedName(metadata: unknown): string | undefined {
+  if (typeof metadata !== 'object' || metadata === null || !('name' in metadata)) return undefined
+  return typeof metadata.name === 'string' ? metadata.name : undefined
+}
+
 export function createAdminAuditService(database: Kysely<CloudDatabase>) {
   return {
     /**
@@ -144,7 +150,9 @@ export function createAdminAuditService(database: Kysely<CloudDatabase>) {
         subject: {
           type: event.subjectType,
           id: event.subjectId,
-          name: subjectName(event.subjectType, event.subjectId) ?? null
+          // A deleted account is named by what its deletion's entry recorded.
+          name:
+            subjectName(event.subjectType, event.subjectId) ?? recordedName(event.metadata) ?? null
         },
         metadata: event.metadata,
         createdAt: event.createdAt

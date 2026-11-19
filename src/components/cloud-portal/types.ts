@@ -64,6 +64,7 @@ export type PortalPersonAction =
   | 'remove-picture'
   | 'suspend'
   | 'restore'
+  | 'delete'
 
 /** What the server read about the browser or app a session or sign-in came from. */
 export type PortalDevice = {

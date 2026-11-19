@@ -15,6 +15,7 @@ import {
   type CloudAdminUserFilter,
   type CloudAdminUserMethod
 } from '#cloud/contract'
+import { createAccountDeletionService } from '#cloud/server/account/deletion'
 import {
   createSignInActivity,
   type AuthenticationEmailService,
@@ -128,6 +129,8 @@ export function createAdminUserService(
       })
       .execute()
   }
+
+  const deletion = createAccountDeletionService(database)
 
   function refuseSelf(actorId: string, userId: string, action: string): void {
     if (actorId === userId) {
@@ -446,6 +449,64 @@ export function createAdminUserService(
         // A method of another account, or none, names nothing here, as an unknown person does.
         throw new NoResultError(database.selectFrom('account').toOperationNode())
       })
+    },
+
+    /**
+     * Deletes an account that never got in: its request to join is still waiting or was declined,
+     * as with someone who signed up again behind Apple's hidden email. It goes as its owner's own
+     * deletion does, sessions and sign-in methods with it; the audit entry keeps who it was. An
+     * account that was approved, or an administrator, is refused: those leave by their own hand.
+     */
+    async deleteUnapproved(actorId: string, userId: string): Promise<void> {
+      refuseSelf(actorId, userId, 'delete')
+      await deletion.remove(
+        { id: userId },
+        {
+          // Under the account's and the request's locks, with the account as locked, so neither a
+          // promotion, an address change, nor an approval can land between the check and the delete.
+          async before(transaction, user) {
+            const request = await transaction
+              .selectFrom('enrollment')
+              .select(['id', 'status', 'approvedUserId'])
+              .where('emailNormalized', '=', normalizeEnrollmentEmail(user.email))
+              .forUpdate()
+              .executeTakeFirst()
+            // A request that is waiting again may have been approved before and removed: that account
+            // got in, and leaves only by its owner's hand.
+            const approvedBefore =
+              request !== undefined &&
+              (request.approvedUserId !== null ||
+                (await transaction
+                  .selectFrom('adminAuditEvent')
+                  .select('id')
+                  .where('action', '=', 'enrollment.approved')
+                  .where('subjectType', '=', 'enrollment')
+                  .where('subjectId', '=', request.id)
+                  .executeTakeFirst()) !== undefined)
+            if (
+              user.role === 'admin' ||
+              approvedBefore ||
+              (request?.status !== 'pending' && request?.status !== 'rejected')
+            ) {
+              throw new AdminDomainError(
+                'account_approved',
+                'Only an account whose request was never approved can be deleted'
+              )
+            }
+            await transaction
+              .insertInto('adminAuditEvent')
+              .values({
+                id: crypto.randomUUID(),
+                actorUserId: actorId,
+                action: 'user.deleted',
+                subjectType: 'user',
+                subjectId: userId,
+                metadata: { name: user.name, email: user.email }
+              })
+              .execute()
+          }
+        }
+      )
     },
 
     /** Takes down a person's picture, such as one that should not be shown; initials replace it. */

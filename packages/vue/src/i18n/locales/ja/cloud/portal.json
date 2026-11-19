@@ -486,6 +486,7 @@
   "activityEmailRetried": "がメールを再送信:",
   "activityTwoStepReset": "が2段階認証をリセット:",
   "activityPictureRemoved": "が画像を削除:",
+  "activityAccountDeleted": "がアカウントを削除しました:",
   "activityReason": "理由：{reason}",
   "activityChanged": "が変更:",
   "errorTitle": "操作できませんでした",
@@ -494,6 +495,7 @@
   "errorLastAdmin": "サーバーには少なくとも1人の管理者が必要です。",
   "errorAccountSoleAdmin": "他の人が使っているワークスペースの唯一の管理者のままです。先に他の人を管理者にしてください。",
   "errorSelfAction": "自分のアカウントにはこの操作を行えません。",
+  "errorAccountApproved": "このアカウントは承認済みのため、削除できるのは本人だけです。",
   "errorTwoStepRequired": "先に2段階認証をオンにしてください。",
   "errorTwoStepUnconfirmed": "2段階目の確認で本人であることを確かめてから、もう一度お試しください。",
   "errorNotAllowed": "この操作を行う権限がありません。",
@@ -613,6 +615,9 @@
   "removeSignInMethod": "削除",
   "removeSignInMethodHeading": "{name}のサインイン方法から {provider} を削除しますか？",
   "removeSignInMethodDescription": "再度追加されるまで、この方法ではサインインできなくなります。本人にはメールでお知らせします。サインイン済みのデバイスは、すべての場所からサインアウトさせるまでそのままです。",
+  "deletePersonAccount": "アカウントを削除",
+  "deletePersonAccountHeading": "{name} のアカウントを削除しますか？",
+  "deletePersonAccountDescription": "参加リクエストは一度も承認されていないため、アカウント、サインイン方法、リクエストが削除されます。アクティビティログには名前とメールアドレスが残ります。再登録は可能です。",
   "activitySignInMethodRemoved": "がサインイン方法を削除:",
   "signInAny": "すべてのサインイン"
 }

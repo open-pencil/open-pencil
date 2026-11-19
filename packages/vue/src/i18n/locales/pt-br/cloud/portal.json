@@ -505,6 +505,7 @@
   "activityEmailRetried": "tentou reenviar um e-mail para",
   "activityTwoStepReset": "redefiniu a verificação em duas etapas de",
   "activityPictureRemoved": "removeu a foto de",
+  "activityAccountDeleted": "excluiu a conta de",
   "activityReason": "Motivo: {reason}",
   "activityChanged": "alterou",
   "errorTitle": "Isso não funcionou",
@@ -513,6 +514,7 @@
   "errorLastAdmin": "O servidor precisa de pelo menos um administrador.",
   "errorAccountSoleAdmin": "Você ainda é o único admin de um espaço de trabalho que outras pessoas usam. Primeiro torne outra pessoa admin.",
   "errorSelfAction": "Você não pode fazer isso com a sua própria conta.",
+  "errorAccountApproved": "Esta conta foi aprovada, então só o titular pode excluí-la.",
   "errorTwoStepRequired": "Ative primeiro a verificação em duas etapas.",
   "errorTwoStepUnconfirmed": "Confirme que é você com a segunda etapa e tente de novo.",
   "errorNotAllowed": "Você não tem permissão para fazer isso.",
@@ -623,6 +625,9 @@
   "removeSignInMethod": "Remover",
   "removeSignInMethodHeading": "Remover {provider} das formas de entrar de {name}?",
   "removeSignInMethodDescription": "A pessoa não poderá mais entrar com essa forma até adicioná-la de novo e receberá um e-mail avisando. Os dispositivos já conectados continuam assim até você desconectá-la de todos os lugares.",
+  "deletePersonAccount": "Excluir conta",
+  "deletePersonAccountHeading": "Excluir a conta de {name}?",
+  "deletePersonAccountDescription": "O pedido de acesso nunca foi aprovado, então a conta, as formas de entrar e o pedido são excluídos. O registro de atividade mantém o nome e o e-mail. A pessoa pode se cadastrar de novo.",
   "activitySignInMethodRemoved": "removeu uma forma de entrar de",
   "signInAny": "Qualquer forma de entrar"
 }

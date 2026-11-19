@@ -275,6 +275,7 @@ watch(
         :key="personId"
         :user-id="personId"
         @back="select('people')"
+        @deleted="(userId) => userId === personId && select('people')"
       />
       <AdminPeopleSection
         v-else-if="active === 'people'"
