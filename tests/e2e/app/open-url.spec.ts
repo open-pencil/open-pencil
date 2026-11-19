@@ -69,9 +69,13 @@ test('a web page opens as layers with the stylesheet and pictures it links', asy
 
   await expect(dialog).toHaveCount(0)
   await expect(tabs.getByRole('tab').last()).toContainText('site.example.test')
+  // The page sits in a frame the size of the window it was laid out in.
+  await expect
+    .poll(async () => (await getPageChildren(page)).map(({ type, width }) => ({ type, width })))
+    .toEqual([{ type: 'FRAME', width: 1440 }])
   await expect
     .poll(async () =>
-      (await getPageChildren(page)).map(({ width, fillTypes, childIds }) => ({
+      (await getPageChildren(page, { inFrame: true })).map(({ width, fillTypes, childIds }) => ({
         width,
         image: fillTypes.includes('IMAGE'),
         artwork: childIds.length > 0

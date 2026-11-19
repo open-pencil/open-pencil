@@ -5,9 +5,11 @@ import {
   designDocumentToLayers,
   placeLayersFromLayout
 } from '@open-pencil/dom-css/scene-graph'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { WHITE } from '@open-pencil/scene-graph/constants'
 import { parseCSSColor } from '@open-pencil/scene-graph/css'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { setPageBackgrounds } from '#core/figma-api/page-backgrounds'
 import type { IconMatcher } from '#core/icons/match'
@@ -43,6 +45,13 @@ export async function sceneGraphFromStyledHTML(
     matchIcon?: IconMatcher
     /** The families the page's own `@font-face` rules loaded, as `loadPageFontFaces` returns them. */
     pageFamilies?: PageFontFamilies
+    /**
+     * The browser window a page opened as a document was laid out in. Its layers then go in one
+     * frame as wide as the window and as tall as the page, which shows what the window would and
+     * clips the rest, such as a drawer or menu placed off-screen. Without it, as for pasted HTML,
+     * the layers stay on the canvas as they are.
+     */
+    window?: DesignViewport
   } = {}
 ): Promise<SceneGraph> {
   // Text is set in the first family of its `font-family` list there is a font for, the page's own
@@ -71,7 +80,35 @@ export async function sceneGraphFromStyledHTML(
   applyStacking(graph, stackings)
   await drawInlineSVGs(graph, svgs, styled, options.matchIcon)
   applyCSSTransforms(graph, transforms)
+  if (options.window) {
+    for (const page of graph.getPages()) frameAsWindow(graph, page, options.window, background)
+  }
   return graph
+}
+
+/**
+ * Moves a page's top-level layers into a frame named after the page, as wide as the window and as
+ * tall as the page, showing its background and clipping what the window would not show.
+ */
+function frameAsWindow(
+  graph: SceneGraph,
+  page: SceneNode,
+  window: DesignViewport,
+  background: Color
+): void {
+  const layers = graph.getChildren(page.id)
+  if (layers.length === 0) return
+  const bottom = maxOf(layers.map((layer) => layer.y + layer.height))
+  const frame = graph.createNode('FRAME', page.id, {
+    name: page.name,
+    x: 0,
+    y: 0,
+    width: window.width,
+    height: Math.max(window.height, bottom),
+    clipsContent: true,
+    fills: [{ type: 'SOLID', color: { ...background, a: 1 }, opacity: background.a, visible: true }]
+  })
+  for (const layer of layers) graph.reparentNode(layer.id, frame.id)
 }
 
 export { loadPageFontFaces } from './page-fonts'
