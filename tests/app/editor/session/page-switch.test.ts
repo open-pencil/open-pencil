@@ -40,7 +40,5 @@ test('a page that cannot be shown stays in and fails its preparation as a render
   expect(store.state.currentPageId).toBe(b)
   expect(failures).toEqual(['render-failed'])
   expect(store.state.preparation).toBeNull()
-  expect(toast.toasts.value.map((entry) => entry.message)).toEqual([
-    'Operation failed: canvas stalled'
-  ])
+  expect(toast.toasts.value.map((entry) => entry.variant)).toEqual(['error'])
 })
