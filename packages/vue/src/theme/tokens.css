@@ -4,6 +4,12 @@
  * `@open-pencil/vue/theme/tokens.css` for pages built apart from the app, such as the official
  * billing service's, to import into their own Tailwind stylesheet.
  */
+
+/*
+ * The component styles beside this file (`@open-pencil/vue/theme`), so a page that imports the
+ * tokens also gets the classes those styles use, wherever the package is installed.
+ */
+@source './';
 @custom-variant motion-safe {
   @media (prefers-reduced-motion: no-preference) {
     &:where(:root:not([data-motion='off']), :root:not([data-motion='off']) *) {
