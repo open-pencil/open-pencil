@@ -429,7 +429,7 @@ export class SkiaRenderer {
       this.glassMaps.clear()
       this.invalidateAllPictures()
     }
-    this.surface.delete()
+    this.surface.dispose()
     this.surface = surface
     this.invalidateScenePicture()
   }

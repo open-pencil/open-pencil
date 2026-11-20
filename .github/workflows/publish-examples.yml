@@ -29,9 +29,11 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # The environment only for its variables, secret, and reviewers: a deployment record here would
+    # read as staging's newest deployment, which a production deploy promotes.
     environment:
       name: cloud-${{ inputs.target }}
-      url: ${{ vars.CLOUD_URL }}
+      deployment: false
     permissions:
       contents: read
     steps:

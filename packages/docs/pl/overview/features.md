@@ -36,7 +36,7 @@ Zawartość kart „Design”, „Kod”, „AI” i „Sprawdź” zależy od z
 OpenPencil używa Skia przez CanvasKit WASM — tego samego silnika graficznego co Figma:
 
 - gradienty liniowe, radialne, kątowe i diamentowe;
-- zalewy obrazami z różnymi trybami skalowania;
+- zalewy obrazami z różnymi trybami skalowania i korektami (ekspozycja, kontrast, nasycenie, temperatura, odcień, światła, cienie);
 - pamięć podręczna efektów osobnych obiektów;
 - łuki, częściowe elipsy i pierścienie;
 - pomijanie obiektów poza widokiem i ponowne użycie pędzli;

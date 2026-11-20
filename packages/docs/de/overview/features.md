@@ -36,7 +36,7 @@ Die Registerkarten Design, Code, KI und Prüfen passen sich der aktuellen Auswah
 Skia über CanvasKit WASM ist dieselbe Grafik-Engine, die auch Figma verwendet. OpenPencil unterstützt unter anderem:
 
 - lineare, radiale, Winkel- und Diamantverläufe;
-- Bildfüllungen mit verschiedenen Skalierungsarten;
+- Bildfüllungen mit verschiedenen Skalierungsarten und Anpassungen (Belichtung, Kontrast, Sättigung, Temperatur, Tönung, Lichter, Tiefen);
 - Zwischenspeicherung von Effekten pro Objekt;
 - Bögen, partielle Ellipsen und Ringe;
 - Auslassen nicht sichtbarer Objekte und Wiederverwenden von Zeichenwerkzeugen;

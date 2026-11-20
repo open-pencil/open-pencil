@@ -1,0 +1,1 @@
+- Deeply nested layers keep their names readable: the layers panel scrolls sideways to the selected layer, as in Figma.
