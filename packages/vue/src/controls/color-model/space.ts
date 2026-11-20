@@ -1,9 +1,16 @@
-import { convertToHsb, convertToHsl, convertToRgb, getChannelRange, setChannelValue } from 'reka-ui'
-import type { Color as RekaColor, ColorChannel, ColorSpace as RekaColorSpace } from 'reka-ui'
-import { computed, hasInjectionContext, inject, provide, toValue } from 'vue'
-import type { ComputedRef, InjectionKey, MaybeRefOrGetter } from 'vue'
+import {
+  computed,
+  hasInjectionContext,
+  inject,
+  onScopeDispose,
+  provide,
+  shallowRef,
+  toValue
+} from 'vue'
+import type { ComputedRef, InjectionKey, MaybeRefOrGetter, ShallowRef } from 'vue'
 
-import { colorToProfileCSS, convertColor, type ColorProfile } from '@open-pencil/scene-graph/color'
+import type { Editor } from '@open-pencil/core'
+import { colorToProfileCSS, type ColorProfile } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 /** The profile colors are stored in, and the one the canvas beside them presents them in. */
@@ -12,7 +19,8 @@ export interface ColorSpaces {
   shown: ColorProfile
 }
 
-const SRGB: ColorSpaces = { stored: 'srgb', shown: 'srgb' }
+/** Colors stored and shown in sRGB, as an interface color or a preference is. */
+export const SRGB_SPACES: ColorSpaces = { stored: 'srgb', shown: 'srgb' }
 
 const COLOR_SPACES_KEY: InjectionKey<() => ColorSpaces> = Symbol('open-pencil-color-spaces')
 
@@ -35,7 +43,7 @@ export function provideColorSpace(
  * called outside a component.
  */
 export function useColorSpaces(): ComputedRef<ColorSpaces> {
-  const srgb = () => SRGB
+  const srgb = () => SRGB_SPACES
   const spaces = hasInjectionContext() ? inject(COLOR_SPACES_KEY, srgb) : srgb
   return computed(() => spaces())
 }
@@ -55,11 +63,6 @@ export function colorCSS(color: Color, spaces: ColorSpaces): string {
 export function useColorCSS(): (color: Color) => string {
   const spaces = useColorSpaces()
   return (color) => colorCSS(color, spaces.value)
-}
-
-function sceneColor(color: RekaColor): Color {
-  const { r, g, b, alpha } = convertToRgb(color)
-  return { r: r / 255, g: g / 255, b: b / 255, a: alpha }
 }
 
 /** Stops between two given ones when colors are shown in another profile than they are stored in. */
@@ -143,118 +146,50 @@ export function linearGradientCSS(
   return `linear-gradient(${direction}${interpolation}, ${css.join(', ')})`
 }
 
-function gradient(direction: string, colors: Color[], spaces: ColorSpaces): string {
-  return linearGradientCSS(
-    direction,
-    colors.map((color) => ({ color })),
-    spaces
-  )
-}
-
-function isSRGB(spaces: ColorSpaces): boolean {
+/** Whether colors are both stored and shown in sRGB, which CSS and Reka draw as they are. */
+export function isSRGB(spaces: ColorSpaces): boolean {
   return spaces.stored === 'srgb' && spaces.shown === 'srgb'
 }
 
-const HUES = [0, 60, 120, 180, 240, 300, 360]
-
-/** The colors a slider of `channel` runs through, as Reka draws its track. */
-function trackColors(color: RekaColor, channel: ColorChannel, model: RekaColorSpace): RekaColor[] {
-  const opaque = { ...color, alpha: 1 }
-  const hsl = convertToHsl(opaque)
-  const hsb = convertToHsb(opaque)
-  switch (channel) {
-    case 'hue':
-      return HUES.map((h) => ({ space: 'hsb', h, s: 100, b: 100, alpha: 1 }))
-    case 'saturation': {
-      const l = model === 'hsl' ? hsl.l : 50
-      return [0, 100].map((s) => ({ ...hsl, s, l }))
-    }
-    case 'lightness':
-      return [0, 50, 100].map((l) => ({ ...hsl, l }))
-    case 'brightness':
-      return [0, 100].map((b) => ({ ...hsb, b }))
-    case 'alpha':
-      return [0, 1].map((alpha) => ({ ...convertToRgb(color), alpha }))
-    default: {
-      const { min, max } = getChannelRange(channel)
-      return [min, max].map((value) => setChannelValue(opaque, channel, value))
-    }
-  }
-}
-
-const CHECKERBOARD = [
-  'linear-gradient(45deg, #ccc 25%, transparent 25%)',
-  'linear-gradient(-45deg, #ccc 25%, transparent 25%)',
-  'linear-gradient(45deg, transparent 75%, #ccc 75%)',
-  'linear-gradient(-45deg, transparent 75%, #ccc 75%)'
-].join(', ')
+const PRESENTATION_KEY: InjectionKey<ShallowRef<ColorProfile | null>> = Symbol(
+  'open-pencil-canvas-presentation'
+)
 
 /**
- * The background of a color slider's track for colors stored or shown in a profile other than
- * sRGB, which Reka cannot write; `undefined` in sRGB, where Reka's own track is right.
+ * Provides `editor`'s document profile as the profile colors are stored in, and the profile its
+ * canvas reports presenting, through {@link reportCanvasPresentation}, as the one they are shown
+ * in. `provideEditor` calls this, so swatches and pickers under it match the canvas.
  */
-export function sliderTrackBackground(
-  color: RekaColor,
-  channel: ColorChannel,
-  model: RekaColorSpace,
-  spaces: ColorSpaces
-): string | undefined {
-  if (isSRGB(spaces)) return undefined
-  const track = gradient('to right', trackColors(color, channel, model).map(sceneColor), spaces)
-  return channel === 'alpha' ? `${track}, ${CHECKERBOARD}` : track
+export function provideEditorColorSpaces(editor: Editor): void {
+  // Read when a color is shown, not now: an editor that follows the active document may have none
+  // yet. The events only mark the profile as changed.
+  const changes = shallowRef(0)
+  const changed = () => {
+    changes.value++
+  }
+  const stops = [
+    editor.onEditorEvent('document:color-space-changed', changed),
+    editor.onEditorEvent('graph:replaced', changed)
+  ]
+  onScopeDispose(() => {
+    for (const stop of stops) stop()
+  })
+  const stored = () => {
+    void changes.value
+    return editor.graph.documentColorSpace
+  }
+  const presentation = shallowRef<ColorProfile | null>(null)
+  provide(PRESENTATION_KEY, presentation)
+  provideColorSpace(stored, () => presentation.value ?? stored())
 }
 
 /**
- * The style of a saturation-by-brightness area of hue `h` for colors stored or shown in a profile
- * other than sRGB: white to the full hue across, darkened toward black downward. `undefined` in
- * sRGB, where Reka's own style is right, and when colors are shown in another profile than they
- * are stored in, which {@link saturationBrightnessPixels} draws instead.
+ * The function a canvas calls with the profile it presents in, or null once it stops, for the
+ * spaces {@link provideEditorColorSpaces} provides. Does nothing outside such a subtree.
  */
-export function saturationBrightnessArea(
-  h: number,
-  spaces: ColorSpaces
-): Record<string, string> | undefined {
-  if (isSRGB(spaces) || spaces.stored !== spaces.shown) return undefined
-  const hue = sceneColor({ space: 'hsb', h, s: 100, b: 100, alpha: 1 })
-  const white = { r: 1, g: 1, b: 1, a: 1 }
-  return {
-    backgroundColor: 'transparent',
-    backgroundImage: `linear-gradient(to top, #000000, transparent), ${gradient('to right', [white, hue], spaces)}`
+export function reportCanvasPresentation(): (presentation: ColorProfile | null) => void {
+  const presentation = hasInjectionContext() ? inject(PRESENTATION_KEY, null) : null
+  return (value) => {
+    if (presentation) presentation.value = value
   }
-}
-
-/** Pixels across and down that {@link saturationBrightnessPixels} draws; the browser smooths them. */
-export const SATURATION_BRIGHTNESS_SIZE = 64
-
-/**
- * The RGBA pixels, in `spaces.shown`, of a saturation-by-brightness area of hue `h` whose colors
- * are stored in another profile: each pixel made from the stored components and then converted,
- * clipping as the canvas clips. Layered CSS gradients would darken colors already clipped, which
- * is not the color the document stores. `undefined` when both profiles are the same.
- */
-export function saturationBrightnessPixels(
-  h: number,
-  spaces: ColorSpaces,
-  size = SATURATION_BRIGHTNESS_SIZE
-): Uint8ClampedArray<ArrayBuffer> | undefined {
-  if (spaces.stored === spaces.shown) return undefined
-  const hue = sceneColor({ space: 'hsb', h, s: 100, b: 100, alpha: 1 })
-  const pixels = new Uint8ClampedArray(size * size * 4)
-  const last = Math.max(size - 1, 1)
-  for (let row = 0; row < size; row++) {
-    const brightness = 1 - row / last
-    for (let column = 0; column < size; column++) {
-      const saturation = column / last
-      // HSB is linear in the stored components: white toward the hue, then scaled toward black.
-      const channel = (full: number) => brightness * (1 - saturation + saturation * full)
-      const stored = { r: channel(hue.r), g: channel(hue.g), b: channel(hue.b), a: 1 }
-      const shown = convertColor(stored, spaces.stored, spaces.shown)
-      const at = (row * size + column) * 4
-      pixels[at] = shown.r * 255
-      pixels[at + 1] = shown.g * 255
-      pixels[at + 2] = shown.b * 255
-      pixels[at + 3] = 255
-    }
-  }
-  return pixels
 }

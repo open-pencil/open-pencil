@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { toPercent } from '@open-pencil/vue/controls/color-model'
-import { useI18n } from '@open-pencil/vue/i18n'
 import {
   linearGradientCSS,
+  toPercent,
   useColorCSS,
   useColorSpaces
-} from '@open-pencil/vue/primitives/ColorPicker'
+} from '@open-pencil/vue/controls/color-model'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import EyedropperButton from '@/components/color-picker-panel/EyedropperButton.vue'

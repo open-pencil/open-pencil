@@ -1,30 +1,26 @@
 <script setup lang="ts">
 import { ColorAreaArea, ColorAreaRoot, ColorAreaThumb } from 'reka-ui'
-import { computed, useTemplateRef, watchEffect } from 'vue'
+import { computed, shallowRef, useTemplateRef, watch, watchEffect } from 'vue'
 
-import {
-  SATURATION_BRIGHTNESS_SIZE,
-  saturationBrightnessArea,
-  saturationBrightnessPixels,
-  useColorSpaces
-} from '@open-pencil/vue/primitives/ColorPicker'
+import { useColorSpaces } from '@open-pencil/vue/controls/color-model'
 
+import { AREA_SIZE, saturationBrightnessPixels } from '@/components/color-picker-panel/backgrounds'
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import LeftToRight from '@/components/ui/direction/LeftToRight.vue'
 
 const ctx = useColorPickerPanelContext()
 const spaces = useColorSpaces()
 // A gray has no hue of its own, so the area keeps showing the last one, as Reka's does.
-let lastHue = 0
-const hue = computed(() => {
-  const hsb = ctx.hsbColor
-  if (hsb.s > 0 && hsb.b > 0) lastHue = hsb.h
-  return lastHue
-})
-// Reka writes its area in sRGB; in another profile the area shows the colors the canvas draws.
-const areaStyle = computed(() => saturationBrightnessArea(hue.value, spaces.value))
-// Colors shown in another profile than they are stored in are drawn pixel by pixel, so each is
-// converted and clipped as the canvas clips it.
+const hue = shallowRef(ctx.hsbColor.h)
+watch(
+  () => ctx.hsbColor,
+  (hsb) => {
+    if (hsb.s > 0 && hsb.b > 0) hue.value = hsb.h
+  },
+  { immediate: true }
+)
+// Reka writes its area as sRGB CSS; for colors stored or shown in another profile the area is
+// drawn pixel by pixel, as the canvas draws those colors.
 const pixels = computed(() => saturationBrightnessPixels(hue.value, spaces.value))
 const canvas = useTemplateRef('canvas')
 
@@ -34,9 +30,7 @@ watchEffect(() => {
   if (!data || !target) return
   const colorSpace = spaces.value.shown
   const context = target.getContext('2d', { colorSpace })
-  if (!context) return
-  const size = SATURATION_BRIGHTNESS_SIZE
-  context.putImageData(new ImageData(data, size, size, { colorSpace }), 0, 0)
+  context?.putImageData(new ImageData(data, AREA_SIZE, AREA_SIZE, { colorSpace }), 0, 0)
 })
 </script>
 
@@ -52,13 +46,14 @@ watchEffect(() => {
     >
       <ColorAreaArea
         class="relative aspect-square w-full cursor-crosshair overflow-hidden rounded"
-        :style="pixels ? undefined : (areaStyle ?? style)"
+        :style="pixels ? undefined : style"
       >
         <canvas
           v-if="pixels"
+          :key="spaces.shown"
           ref="canvas"
-          :width="SATURATION_BRIGHTNESS_SIZE"
-          :height="SATURATION_BRIGHTNESS_SIZE"
+          :width="AREA_SIZE"
+          :height="AREA_SIZE"
           class="pointer-events-none absolute inset-0 size-full"
           data-test-id="color-area-pixels"
         />

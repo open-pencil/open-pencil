@@ -5,8 +5,9 @@ import { computed, shallowRef } from 'vue'
 
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { provideColorSpace } from '@open-pencil/vue/controls/color-model'
 import { useSettingsMessages } from '@open-pencil/vue/i18n'
-import { provideColorSpace, type PickerCancelCause } from '@open-pencil/vue/primitives/ColorPicker'
+import { type PickerCancelCause } from '@open-pencil/vue/primitives/ColorPicker'
 
 import { accentPreference } from '@/app/shell/accent'
 import { ACCENT_PRESET_COLORS, accentBaseColor } from '@/app/shell/accent/palette'

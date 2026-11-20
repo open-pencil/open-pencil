@@ -5,9 +5,9 @@ import { computed, shallowRef, useTemplateRef } from 'vue'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { useColorCSS } from '#vue/controls/color-model/space'
 import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 
-import { useColorCSS } from './color-space'
 import { usePickerGesture, type PickerCancelCause } from './gesture'
 import { pickerOutsideHandlers, type PickerKeepOpen } from './outside'
 

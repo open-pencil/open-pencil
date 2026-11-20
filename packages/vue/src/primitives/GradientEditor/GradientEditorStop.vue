@@ -4,7 +4,7 @@ import { computed } from 'vue'
 
 import { colorToHexRaw } from '@open-pencil/scene-graph/color'
 
-import { useColorCSS } from '#vue/primitives/ColorPicker/color-space'
+import { useColorCSS } from '#vue/controls/color-model/space'
 import type {
   GradientEditorStopActions,
   GradientEditorStopProps,

@@ -8,9 +8,10 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
   colorCSS,
   linearGradientCSS,
+  SRGB_SPACES,
   useColorSpaces,
   type ColorSpaces
-} from '#vue/primitives/ColorPicker/color-space'
+} from '#vue/controls/color-model/space'
 
 import type { FillCategory } from './types'
 
@@ -47,10 +48,7 @@ export function fillIsTransparent(fill: Fill): boolean {
 }
 
 /** A swatch's CSS background for `fill`, whose colors are stored and shown in `spaces`. */
-export function fillSwatchBackground(
-  fill: Fill,
-  spaces: ColorSpaces = { stored: 'srgb', shown: 'srgb' }
-): string {
+export function fillSwatchBackground(fill: Fill, spaces: ColorSpaces = SRGB_SPACES): string {
   if (fillCategory(fill) === 'GRADIENT' && fill.gradientStops?.length) {
     return gradientCSS(fill.gradientStops, fill.opacity, spaces)
   }

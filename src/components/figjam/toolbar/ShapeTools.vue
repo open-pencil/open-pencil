@@ -2,8 +2,8 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { colorToHex } from '@open-pencil/scene-graph/color'
 import { figJamColor } from '@open-pencil/scene-graph/figjam'
+import { useColorCSS } from '@open-pencil/vue/controls/color-model'
 import { useShapeWithText } from '@open-pencil/vue/controls/shape-with-text'
 import { useFigJamMessages, useShapeMessages } from '@open-pencil/vue/i18n'
 
@@ -24,10 +24,11 @@ import ToolbarMenu from './ToolbarMenu.vue'
 const shape = useShapeWithText()
 const shapes = useShapeMessages()
 const figjam = useFigJamMessages()
+const colorCSS = useColorCSS()
 const styles = tv(theme)()
 
 const fillHex = computed(() =>
-  shape.color.value ? colorToHex(figJamColor(shape.color.value)) : undefined
+  shape.color.value ? colorCSS(figJamColor(shape.color.value)) : undefined
 )
 const kind = computed(() => shape.kind.value ?? 'SQUARE')
 </script>

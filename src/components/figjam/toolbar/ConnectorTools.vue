@@ -5,9 +5,9 @@ import IconCircleDashed from '~icons/lucide/circle-dashed'
 import IconMinus from '~icons/lucide/minus'
 
 import type { ConnectorLineType, StrokeCap } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
 import { figJamColor } from '@open-pencil/scene-graph/figjam'
 import { generatedFrameText } from '@open-pencil/scene-graph/generated'
+import { useColorCSS } from '@open-pencil/vue/controls/color-model'
 import { useConnector } from '@open-pencil/vue/controls/connector'
 import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
 
@@ -25,12 +25,13 @@ import ToolbarOptions, { type ToolbarOption } from './ToolbarOptions.vue'
 const store = useEditorStore()
 const connector = useConnector()
 const figjam = useFigJamMessages()
+const colorCSS = useColorCSS()
 const { panels } = useI18n()
 const { lineOptions, capOptions } = useConnectorOptions()
 const styles = tv(theme)()
 
 const hex = computed(() =>
-  connector.color.value ? colorToHex(figJamColor(connector.color.value)) : undefined
+  connector.color.value ? colorCSS(figJamColor(connector.color.value)) : undefined
 )
 type Weight = 'thin' | 'thick'
 type Dash = 'solid' | 'dashed'

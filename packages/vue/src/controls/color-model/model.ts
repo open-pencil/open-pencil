@@ -6,6 +6,7 @@ import { okhclToRGBA, rgba255ToColor, rgbaToOkHCL } from '@open-pencil/scene-gra
 import type { OkHCLColor, ColorProfile } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { linearGradientCSS, SRGB_SPACES, type ColorSpaces } from '#vue/controls/color-model/space'
 import type {
   HSBChannel,
   HSLChannel,
@@ -16,7 +17,6 @@ import type {
   SliderGradientModel,
   SliderPreviewModel
 } from '#vue/controls/color-model/types'
-import { linearGradientCSS, type ColorSpaces } from '#vue/primitives/ColorPicker/color-space'
 
 export interface ColorModelValue {
   rekaColor: RekaColor
@@ -152,7 +152,7 @@ export function createOkHCLSliderPreviewModel(
 
 export function createSliderGradientModel(
   model: ColorModelValue,
-  spaces: ColorSpaces = { stored: 'srgb', shown: 'srgb' }
+  spaces: ColorSpaces = SRGB_SPACES
 ): SliderGradientModel {
   const hslGray = rekaToSceneColor({ ...model.hsl, s: 0 })
   const hslColor = rekaToSceneColor({ ...model.hsl, s: 100 })
@@ -174,7 +174,7 @@ export function createSliderGradientModel(
 
 export function createOkHCLSliderGradientModel(
   color: OkHCLColor,
-  spaces: ColorSpaces = { stored: 'srgb', shown: 'srgb' }
+  spaces: ColorSpaces = SRGB_SPACES
 ): OkHCLSliderGradientModel {
   const space = spaces.stored
   return {

@@ -23,12 +23,13 @@ a preference, set `escapeReverts`: Escape then also puts back the color the pick
 emits `cancel` with `'escape'`. Opening or focusing the picker does not
 emit a color update.
 
-Colors are read as sRGB unless an ancestor calls `provideColorSpace(stored, shown)`: the profile
-they are stored in, and the one the canvas presents them in. An editor shell passes the document's
-profile and the canvas's presentation, so a Display P3 document's swatches and gradient stops match
-the canvas, in P3 where it presents P3 and clipped to sRGB where it falls back, and `useColorModel`
-reads and writes OkHCL values in the stored profile. A preference picker inside that shell calls
-`provideColorSpace('srgb')` for its own subtree.
+Swatches and pickers show colors in the profiles `provideColorSpace(stored, shown)` from
+`@open-pencil/vue/controls/color-model` declares: the profile colors are stored in, and the one the
+canvas presents them in. `provideEditor` provides the editor document's profile, and `CanvasRoot`
+reports what its canvas presents, so a Display P3 document's swatches and gradient stops match the
+canvas: in P3 where it presents P3, clipped to sRGB where it falls back. `useColorModel` reads and
+writes OkHCL values in the stored profile. Without a provider colors are sRGB; a preference picker
+inside an editor calls `provideColorSpace('srgb')` for its own subtree.
 
 ```vue twoslash
 <script setup lang="ts">

@@ -20,6 +20,7 @@ import {
   withHue,
   withRGBChannel
 } from '#vue/controls/color-model/model'
+import { useColorSpaces } from '#vue/controls/color-model/space'
 import type {
   ColorFieldFormat,
   HSBChannel,
@@ -29,7 +30,6 @@ import type {
   RekaColorValue,
   UseColorModelOptions
 } from '#vue/controls/color-model/types'
-import { useColorSpaces, type ColorSpaces } from '#vue/primitives/ColorPicker/color-space'
 
 /** Built-in presentation formats understood by the color model. */
 export const BUILT_IN_COLOR_FORMATS = ['hex', 'rgb', 'hsl', 'hsb', 'okhcl'] as const
@@ -42,14 +42,9 @@ export function useColorModel(options: UseColorModelOptions) {
   const localFormat = ref<ColorFieldFormat>(options.defaultFormat ?? 'rgb')
   const color = computed(() => toValue(options.color))
   const sourceOkHCL = computed(() => toValue(options.okhcl))
-  const provided = useColorSpaces()
-  const spaces = computed((): ColorSpaces => {
-    const stored = toValue(options.colorSpace)
-    const around = provided.value
-    if (!stored) return around
-    // The profile the canvas presents still applies to colors stored in the one around them.
-    return { stored, shown: around.stored === stored ? around.shown : stored }
-  })
+  // The profiles provided for the calling component: OkHCL values are read and made in the stored
+  // one, and slider previews show in the one the canvas presents.
+  const spaces = useColorSpaces()
   const space = computed(() => spaces.value.stored)
   const value = computed(() => createColorModelValue(color.value, sourceOkHCL.value, space.value))
   const format = computed(() => toValue(options.format) ?? localFormat.value)
