@@ -5,6 +5,8 @@ import { defineComponent, h, reactive } from 'vue'
 import { createDefaultEditorState, createEditor, type Editor } from '@open-pencil/core'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { collectionsBoundIn } from '@open-pencil/scene-graph/variables'
+import { createDeferred } from '@open-pencil/std/async'
+import { DEADLINE_MS, withDeadline } from '@open-pencil/std/timing'
 import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 import { MIXED } from '@open-pencil/vue/controls/node-props'
 import {
@@ -217,14 +219,18 @@ describe('variable mode labels in a mounted control', () => {
 
   async function switchLocale(code: 'ja') {
     const before = variablesMessages.get()
-    setLocale(code)
-    await new Promise<void>((resolve) => {
-      const stop = variablesMessages.subscribe((messages) => {
-        if (messages === before) return
-        queueMicrotask(() => stop())
-        resolve()
-      })
+    const loaded = createDeferred<undefined>()
+    const stop = variablesMessages.listen((messages) => {
+      if (messages !== before) {
+        loaded.resolve(undefined)
+      }
     })
+    try {
+      setLocale(code)
+      await withDeadline(DEADLINE_MS.probe, () => loaded.promise)
+    } finally {
+      stop()
+    }
   }
 
   test('follow the language and the file’s collections', async () => {
