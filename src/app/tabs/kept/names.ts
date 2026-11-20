@@ -1,7 +1,10 @@
-// A design kept only on this device carries its name in its recovery copy, which is written when
-// the document changes. A rename alone changes nothing the copy tracks, so the copy, and every
-// reload, would keep the old name; renaming such a design counts as a change to it.
+// A design kept only on this device carries its name in its recovery copy, which is written a few
+// seconds after the document changes. A rename alone changes nothing the copy tracks, so the copy,
+// and every reload, would keep the old name; renaming such a design counts as a change to it, and
+// its copy is written at once.
 import { watch } from 'vue'
+
+import { errorMessage } from '@open-pencil/std/errors'
 
 import type { EditorStore } from '@/app/editor/session'
 import { allTabs, getTabsSnapshot, type Tab } from '@/app/tabs/state'
@@ -17,7 +20,13 @@ export function keepDesignNames(designIdOf: (tab: Tab) => string | null): () => 
         const { store } = tab
         const off = store.onDocumentRenamed(() => {
           // Read when renamed: a tab that restores a copy takes its ID while it loads.
-          if (designIdOf(tab)) store.markDocumentChanged()
+          if (!designIdOf(tab)) return
+          store.markDocumentChanged()
+          // Written now rather than after the edits' few seconds' wait, so a reload right after
+          // renaming keeps the name.
+          void store.persistRecoveryNow().catch((error: unknown) => {
+            console.warn(`[Kept tabs] Could not keep the design's new name: ${errorMessage(error)}`)
+          })
         }).off
         followed.set(store, off)
       }

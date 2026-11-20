@@ -49,9 +49,31 @@ test('a renamed design keeps its name across a reload', async ({ browser, baseUR
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     store.createShape('RECTANGLE', 120, 120, 240, 140)
-    store.renameDocument('Landing page')
     await store.persistRecoveryNow()
   })
+  await page.evaluate(() => window.openPencil?.getStore?.()?.renameDocument('Landing page'))
+  // The copy takes the new name at once, well before the few seconds edits wait to be written.
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async () => {
+          const request = indexedDB.open('open-pencil-recovery')
+          const database = await new Promise<IDBDatabase>((resolve, reject) => {
+            request.onsuccess = () => resolve(request.result)
+            request.onerror = () => reject(request.error)
+          })
+          const all = database.transaction('meta').objectStore('meta').getAll()
+          const names = await new Promise<unknown[]>((resolve, reject) => {
+            all.onsuccess = () => resolve(all.result)
+            all.onerror = () => reject(all.error)
+          })
+          return names.map((meta) =>
+            typeof meta === 'object' && meta && 'documentName' in meta ? meta.documentName : null
+          )
+        }),
+      { timeout: 1500 }
+    )
+    .toContain('Landing page')
 
   await page.reload()
   await expect(page.getByTestId('tabbar-tab').filter({ hasText: 'Landing page' })).toBeVisible()
