@@ -31,6 +31,8 @@ export function drawSnapGuides(r: SkiaRenderer, canvas: Canvas, guides?: SnapGui
   if (!guides || guides.length === 0) return
 
   for (const guide of guides) {
+    // Equal-spacing gaps run along their axis and draw in `drawSpacingGuides`.
+    if (guide.spacing !== undefined) continue
     const paint = guide.marks ? vertexSnapPaint(r, VERTEX_SNAP_GUIDE_ALPHA) : r.snapPaint
     if (guide.axis === 'x') {
       const x = worldXToScreen(r, guide.position)

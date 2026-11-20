@@ -333,6 +333,12 @@
       "import": "./dist/slots/index.js",
       "default": "./dist/slots/index.js"
     },
+    "./equal-spacing": {
+      "types": "./dist/equal-spacing.d.ts",
+      "bun": "./src/equal-spacing.ts",
+      "import": "./dist/equal-spacing.js",
+      "default": "./dist/equal-spacing.js"
+    },
     "./snap": {
       "types": "./dist/snap.d.ts",
       "bun": "./src/snap.ts",

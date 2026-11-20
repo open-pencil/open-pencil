@@ -11,6 +11,11 @@ export interface SnapGuide {
   to: number
   /** Points along the guide that lined up, marked with a cross: a guide through path vertices. */
   marks?: number[]
+  /**
+   * Set on a gap equal spacing matched, to the gap's length. The gap then runs along `axis` from
+   * `from` to `to` at `position` across it, rather than being a line at `position` on that axis.
+   */
+  spacing?: number
 }
 
 export interface SnapResult {
