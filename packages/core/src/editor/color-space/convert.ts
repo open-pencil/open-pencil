@@ -1,5 +1,5 @@
 import type {
-  ColorProfile,
+  Fill,
   SceneGraph,
   SceneNode,
   Variable,
@@ -7,30 +7,100 @@ import type {
   VariableFormulaNode,
   VariableValue
 } from '@open-pencil/scene-graph'
-import { convertColor } from '@open-pencil/scene-graph/color'
-import { mapNodeColors, mapPaintColors, type NodeColorFields } from '@open-pencil/scene-graph/copy'
+import {
+  cloneVectorNetwork,
+  copyEffects,
+  copyFill,
+  copyLayoutGrids,
+  copyStyleRuns
+} from '@open-pencil/scene-graph/copy'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { getPageBackgrounds, pageSourceWithBackgrounds } from '#core/figma-api/page-backgrounds'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
-import type { EditorContext } from './types'
+/** The node fields that hold colors, which {@link mapNodeColors} rewrites. */
+type NodeColorFields = Pick<
+  SceneNode,
+  'fills' | 'strokes' | 'effects' | 'styleRuns' | 'textDecorationFills' | 'layoutGrids'
+> &
+  Partial<Pick<SceneNode, 'vectorNetwork'>>
+
+/** A paint with its color and gradient stops passed through `map`; a stroke keeps its geometry. */
+function mapPaintColors<T extends Fill>(paint: T, map: (color: Color) => Color): T {
+  const next = copyFill(paint)
+  next.color = map(paint.color)
+  if (paint.gradientStops) {
+    next.gradientStops = paint.gradientStops.map((stop) => ({ ...stop, color: map(stop.color) }))
+  }
+  return next
+}
 
 /**
- * How a document takes another color profile, as Figma's File color profile dialog offers it:
- * `assign` keeps every stored number and reads it in the new profile, so colors change; `convert`
- * rewrites the numbers so colors look the same, mapping those the new profile cannot show to the
- * nearest it can.
+ * Copies of every field of `node`, a layer or its saved color fields, that stores a color, each
+ * color passed through `map`: fills, strokes, and their gradient stops, effects and a duotone
+ * noise's second color, text runs and decoration paints, layout grids, and vector regions' own
+ * fills. `null` when it stores no color. Converting a document's
+ * colors to another profile walks them all here.
  */
-export type DocumentColorProfileMode = 'assign' | 'convert'
+function mapNodeColors(
+  node: NodeColorFields,
+  map: (color: Color) => Color
+): NodeColorFields | null {
+  const regions = node.vectorNetwork?.regions.some((region) => region.fills?.length)
+  const holdsColors =
+    regions ||
+    [
+      node.fills,
+      node.strokes,
+      node.effects,
+      node.styleRuns,
+      node.textDecorationFills,
+      node.layoutGrids
+    ].some((list) => list.length > 0)
+  if (!holdsColors) return null
+  const mapFills = (fills: Fill[]) => fills.map((fill) => mapPaintColors(fill, map))
+  const fields: NodeColorFields = {
+    fills: mapFills(node.fills),
+    strokes: node.strokes.map((stroke) => mapPaintColors(stroke, map)),
+    effects: copyEffects(node.effects).map((effect) => {
+      const next = { ...effect, color: map(effect.color) }
+      if (effect.noise?.secondaryColor) {
+        next.noise = { ...effect.noise, secondaryColor: map(effect.noise.secondaryColor) }
+      }
+      return next
+    }),
+    styleRuns: copyStyleRuns(node.styleRuns).map((run) => ({
+      ...run,
+      style: {
+        ...run.style,
+        fills: run.style.fills && mapFills(run.style.fills),
+        textDecorationFills:
+          run.style.textDecorationFills && mapFills(run.style.textDecorationFills)
+      }
+    })),
+    textDecorationFills: mapFills(node.textDecorationFills),
+    layoutGrids: copyLayoutGrids(node.layoutGrids).map((grid) =>
+      grid.color ? { ...grid, color: map(grid.color) } : grid
+    )
+  }
+  if (node.vectorNetwork && regions) {
+    const network = cloneVectorNetwork(node.vectorNetwork)
+    network.regions = network.regions.map((region) =>
+      region.fills ? { ...region, fills: mapFills(region.fills) } : region
+    )
+    fields.vectorNetwork = network
+  }
+  return fields
+}
 
-type ConvertColor = (color: Color) => Color
+export type ConvertColor = (color: Color) => Color
 
 /**
  * The stored colors a conversion changes, as they were before it: redoing converts them again,
  * since converting is deterministic, so only one copy of each is kept.
  */
-interface ColorsBefore {
+export interface ColorsBefore {
   layers: Map<string, NodeColorFields>
   pages: Map<string, SceneNode['source']>
   variables: Map<string, Variable['valuesByMode']>
@@ -65,7 +135,7 @@ function convertVariableValue(value: VariableValue, convert: ConvertColor): Vari
 }
 
 /** Every stored color in `graph` as it is now: layers' color fields, pages, and color variables. */
-function colorsBefore(graph: SceneGraph): ColorsBefore {
+export function colorsBefore(graph: SceneGraph): ColorsBefore {
   const before: ColorsBefore = { layers: new Map(), pages: new Map(), variables: new Map() }
   for (const node of graph.getAllNodes()) {
     if (node.type === 'CANVAS') {
@@ -84,7 +154,7 @@ function colorsBefore(graph: SceneGraph): ColorsBefore {
 }
 
 /** Writes the colors in `before`, converted through `convert` when given, back into `graph`. */
-function writeColors(graph: SceneGraph, before: ColorsBefore, convert: ConvertColor | null) {
+export function writeColors(graph: SceneGraph, before: ColorsBefore, convert: ConvertColor | null) {
   for (const [id, fields] of before.layers) {
     if (!graph.getNode(id)) continue
     graph.updateNode(id, mapNodeColors(fields, convert ?? ((color) => ({ ...color }))) ?? {})
@@ -115,62 +185,4 @@ function writeColors(graph: SceneGraph, before: ColorsBefore, convert: ConvertCo
       : structuredClone(values)
   }
   reconcileVariableLayouts(graph, { variables: [...before.variables.keys()] })
-}
-
-export function createColorSpaceActions(
-  ctx: EditorContext,
-  loadPageNodes: (pageId: string) => Promise<void>
-) {
-  function setProfile(space: ColorProfile) {
-    ctx.graph.documentColorSpace = space
-    ctx.emitEditorEvent('document:color-space-changed', space)
-    ctx.requestRender()
-  }
-
-  /**
-   * Gives the document `colorSpace` as one undo step. Assigning keeps every value; converting
-   * rewrites every stored color so it looks the same: layers' paints, effects, text runs, layout
-   * grids, and vector regions, page backgrounds, and color variables, on every page, loading
-   * the pages not opened yet first so none keeps values in the old profile.
-   */
-  async function setDocumentColorSpace(
-    colorSpace: ColorProfile,
-    mode: DocumentColorProfileMode = 'assign'
-  ): Promise<void> {
-    const graph = ctx.graph
-    const previous = graph.documentColorSpace
-    if (previous === colorSpace) return
-    if (mode === 'assign') {
-      setProfile(colorSpace)
-      ctx.undo.push({
-        label: 'Assign color profile',
-        forward: () => setProfile(colorSpace),
-        inverse: () => setProfile(previous)
-      })
-      return
-    }
-
-    await Promise.all(graph.getPages().map((page) => loadPageNodes(page.id)))
-    // The document may have been closed, replaced, or converted while its pages loaded.
-    if (ctx.graph !== graph || graph.documentColorSpace !== previous) return
-    const before = colorsBefore(graph)
-    const convert: ConvertColor = (color) => convertColor(color, previous, colorSpace, 'map')
-    const forward = () => {
-      writeColors(graph, before, convert)
-      setProfile(colorSpace)
-    }
-    forward()
-    ctx.undo.push({
-      label: 'Convert color profile',
-      forward,
-      inverse: () => {
-        writeColors(graph, before, null)
-        setProfile(previous)
-      }
-    })
-  }
-
-  return {
-    setDocumentColorSpace
-  }
 }
