@@ -25,7 +25,7 @@ const TILES: ImageFilters[] = [
   }
 ]
 
-/** One image, given as its encoded bytes, in a grid of four columns, one tile per adjustment; returns the tiles' ids. */
+/** One image, given as its encoded bytes, in a grid of four columns, one tile per adjustment. */
 export function createImageAdjustmentsScene(graph: SceneGraph, pageId: string, bytes: number[]) {
   const image = Uint8Array.from(bytes)
   const hash = computeImageHash(image)

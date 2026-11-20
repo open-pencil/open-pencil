@@ -21,6 +21,7 @@ import { SceneGraph, type ImageFilters, type SceneNode } from '@open-pencil/scen
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { decodedImageBytes } from '#core/canvas/images/cache'
 import { drawingExport } from '#core/canvas/images/exporting'
 import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { getCanvasKit } from '#core/canvaskit'
@@ -269,10 +270,6 @@ const SMALL_EDGES = [8, 9, 10, 11, 12, 13]
 const DRAWN_EDGE = 96
 const BOUNDED_SCALE = 1.5
 
-function bakedWeight(edge: number): number {
-  return Math.ceil(edge * edge * 4 * (4 / 3))
-}
-
 function manySmallImages() {
   const graph = new SceneGraph()
   const pageId = graph.getPages()[0].id
@@ -323,7 +320,8 @@ function exportedWithin(budget: number | null): BoundedExport {
 
 describe('the baked images an export keeps', () => {
   const unbounded = exportedWithin(null)
-  const twoImages = bakedWeight(SMALL_EDGES.at(-1) ?? 0) * 2
+  const largest = SMALL_EDGES.at(-1) ?? 0
+  const twoImages = decodedImageBytes(largest, largest) * 2
 
   test.each([
     ['holds fewer than every baked image', twoImages],
