@@ -25,29 +25,30 @@ const TILES: ImageFilters[] = [
   }
 ]
 
-/** One image, given as its encoded bytes, in a grid of four columns, one tile per adjustment. */
+/** One image, given as its encoded bytes, in a grid of four columns, one tile per adjustment; returns the tiles' ids. */
 export function createImageAdjustmentsScene(graph: SceneGraph, pageId: string, bytes: number[]) {
   const image = Uint8Array.from(bytes)
   const hash = computeImageHash(image)
   graph.images.set(hash, image)
-  TILES.forEach((filters, index) => {
-    graph.createNode('RECTANGLE', pageId, {
-      name: `Adjusted image ${index}`,
-      x: 40 + (index % 4) * 112,
-      y: 40 + Math.floor(index / 4) * 112,
-      width: 102,
-      height: 101,
-      fills: [
-        {
-          type: 'IMAGE',
-          imageHash: hash,
-          imageScaleMode: 'FIT',
-          color: { r: 0, g: 0, b: 0, a: 1 },
-          visible: true,
-          opacity: 1,
-          filters
-        }
-      ]
-    })
-  })
+  return TILES.map(
+    (filters, index) =>
+      graph.createNode('RECTANGLE', pageId, {
+        name: `Adjusted image ${index}`,
+        x: 40 + (index % 4) * 112,
+        y: 40 + Math.floor(index / 4) * 112,
+        width: 102,
+        height: 101,
+        fills: [
+          {
+            type: 'IMAGE',
+            imageHash: hash,
+            imageScaleMode: 'FIT',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+            visible: true,
+            opacity: 1,
+            filters
+          }
+        ]
+      }).id
+  )
 }
