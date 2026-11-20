@@ -3,6 +3,7 @@ import { isEqual } from 'es-toolkit/predicate'
 
 import type {
   CharacterStyleOverride,
+  ColorProfile,
   HyperlinkTarget,
   SceneNode,
   TextLength
@@ -147,7 +148,10 @@ function styledRanges(node: SceneNode): StyledRange[] {
 }
 
 /** Underline or strikethrough as CSS writes it: Figma's offset is CSS's, from the baseline. */
-function decorationCSS(style: CharacterStyle): DesignStyleDeclaration {
+function decorationCSS(
+  style: CharacterStyle,
+  profile: ColorProfile = 'srgb'
+): DesignStyleDeclaration {
   if (style.textDecoration === 'NONE') return {}
   const underline = style.textDecoration === 'UNDERLINE'
   const css: DesignStyleDeclaration = {
@@ -156,7 +160,10 @@ function decorationCSS(style: CharacterStyle): DesignStyleDeclaration {
   if (style.textDecorationStyle !== 'SOLID') {
     css['text-decoration-style'] = style.textDecorationStyle.toLowerCase()
   }
-  const color = fillToCSS(style.textDecorationFills.find((fill) => fill.visible))
+  const color = fillToCSS(
+    style.textDecorationFills.find((fill) => fill.visible),
+    profile
+  )
   if (color) css['text-decoration-color'] = color
   if (style.textDecorationThickness !== null) {
     css['text-decoration-thickness'] = px(style.textDecorationThickness)
@@ -168,9 +175,13 @@ function decorationCSS(style: CharacterStyle): DesignStyleDeclaration {
   return css
 }
 
-function characterCSS(style: CharacterStyle, decorated: boolean): DesignStyleDeclaration {
+function characterCSS(
+  style: CharacterStyle,
+  decorated: boolean,
+  profile: ColorProfile
+): DesignStyleDeclaration {
   return {
-    color: fillToCSS(style.fills.at(0)) ?? '',
+    color: fillToCSS(style.fills.at(0), profile) ?? '',
     'font-family': style.fontFamily,
     'font-size': px(style.fontSize),
     'font-weight': String(style.fontWeight),
@@ -178,7 +189,7 @@ function characterCSS(style: CharacterStyle, decorated: boolean): DesignStyleDec
     'letter-spacing': letterSpacingToCSS(style.letterSpacing),
     'line-height': style.lineHeight === null ? 'normal' : lineHeightToCSS(style.lineHeight),
     'text-transform': textCaseToCSS(style.textCase) ?? 'none',
-    ...(decorated ? decorationCSS(style) : {})
+    ...(decorated ? decorationCSS(style, profile) : {})
   }
 }
 
@@ -190,9 +201,10 @@ function characterCSS(style: CharacterStyle, decorated: boolean): DesignStyleDec
 function spanCSS(
   style: CharacterStyle,
   decorated: boolean,
-  base: DesignStyleDeclaration
+  base: DesignStyleDeclaration,
+  profile: ColorProfile
 ): DesignStyleDeclaration {
-  const own = characterCSS(style, decorated)
+  const own = characterCSS(style, decorated, profile)
   const css = differing(own, base)
   const { unit, value } = style.letterSpacing
   if (unit === 'PERCENT' && value !== 0 && 'font-size' in css) {
@@ -227,6 +239,8 @@ interface TextProjection {
   ranges: StyledRange[]
   base: DesignStyleDeclaration
   decorated: boolean
+  /** The profile the document's colors are in, which CSS writes them for. */
+  profile: ColorProfile
 }
 
 function textNode(text: string): DesignNode {
@@ -255,13 +269,13 @@ function linkElement(href: string, css: DesignStyleDeclaration, text: string): D
  * linked characters are a link instead.
  */
 function inlineContent(projection: TextProjection, start: number, end: number): DesignNode[] {
-  const { node, ranges, base, decorated } = projection
+  const { node, ranges, base, decorated, profile } = projection
   const pieces: { css: DesignStyleDeclaration; text: string; href: string | null }[] = []
   for (const range of ranges) {
     const from = Math.max(start, range.start)
     const to = Math.min(end, range.end)
     if (to <= from) continue
-    const css = spanCSS(range.style, !decorated, base)
+    const css = spanCSS(range.style, !decorated, base, profile)
     const text = node.text.slice(from, to)
     const previous = pieces.at(-1)
     if (previous && previous.href === range.href && isEqual(previous.css, css)) {
@@ -433,19 +447,21 @@ function groupEm(
  */
 export function textElementContent(
   node: SceneNode,
-  layerStyle: DesignStyleDeclaration
+  layerStyle: DesignStyleDeclaration,
+  profile: ColorProfile = 'srgb'
 ): { tagName: string; style: DesignStyleDeclaration; children: DesignNode[] } {
   const ranges = styledRanges(node)
   const decorated = uniformDecoration(node, ranges)
   const style = Object.fromEntries(
     Object.entries(layerStyle).filter(([property]) => !DECORATION_PROPERTIES.has(property))
   )
-  if (decorated) Object.assign(style, decorationCSS(characterStyle(node)))
+  if (decorated) Object.assign(style, decorationCSS(characterStyle(node), profile))
   const projection: TextProjection = {
     node,
     ranges,
-    base: characterCSS(characterStyle(node), decorated),
-    decorated
+    base: characterCSS(characterStyle(node), decorated, profile),
+    decorated,
+    profile
   }
   if (!needsBlocks(node)) {
     return { tagName: 'span', style, children: inlineContent(projection, 0, node.text.length) }

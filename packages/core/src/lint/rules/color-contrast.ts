@@ -1,5 +1,10 @@
 import { clipPolygon } from '@open-pencil/scene-graph/clipping'
-import { colorToHex, compositeOver, contrastRatio } from '@open-pencil/scene-graph/color'
+import {
+  colorToHex,
+  compositeOver,
+  contrastRatio,
+  convertColor
+} from '@open-pencil/scene-graph/color'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { degToRad, rotatedCorners, rotatePoint } from '@open-pencil/scene-graph/geometry'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
@@ -202,7 +207,13 @@ export default defineRule({
       (color, paint) => compositeOver(opaque(paint.color), color, paint.opacity),
       bg
     )
-    const ratio = contrastRatio(fg, bg)
+    // Composited in the document's profile, as the canvas blends; WCAG measures in sRGB, whose
+    // formulas hold for components past 0 and 1, so a P3 color is measured as itself.
+    const profile = context.colorProfile
+    const ratio = contrastRatio(
+      convertColor(fg, profile, 'srgb'),
+      convertColor(bg, profile, 'srgb')
+    )
     const minRatio = requiredContrast(node)
     if (ratio < minRatio)
       context.report({
@@ -212,8 +223,8 @@ export default defineRule({
         data: {
           ratio: Math.floor(ratio * 100) / 100,
           minRatio,
-          foreground: colorToHex(fg),
-          background: colorToHex(bg)
+          foreground: colorToHex(convertColor(fg, profile, 'srgb', 'map')),
+          background: colorToHex(convertColor(bg, profile, 'srgb', 'map'))
         }
       })
   }

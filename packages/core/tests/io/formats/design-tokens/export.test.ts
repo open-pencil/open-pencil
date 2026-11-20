@@ -3,7 +3,14 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 
-import { exportDesignTokens, RESOLVER_FILE, STYLES_FILE } from '#core/io/formats/design-tokens'
+import {
+  defaultTokenImportOptions,
+  exportDesignTokens,
+  planTokenImport,
+  readDesignTokens,
+  RESOLVER_FILE,
+  STYLES_FILE
+} from '#core/io/formats/design-tokens'
 
 const blue = { r: 0, g: 0.4, b: 0.8, a: 1 }
 const white = { r: 1, g: 1, b: 1, a: 1 }
@@ -207,6 +214,32 @@ describe('design token export', () => {
         { $ref: '#/modifiers/Theme' },
         { $ref: '#/sets/Styles' }
       ]
+    })
+  })
+})
+
+describe('color tokens of a document in a color profile', () => {
+  test('a Display P3 document writes its colors as P3 with an sRGB hex, and reads them back', () => {
+    const graph = new SceneGraph()
+    graph.documentColorSpace = 'display-p3'
+    const collection = graph.createCollection('Theme')
+    graph.createVariable('Brand', 'COLOR', collection.id, { r: 1, g: 0, b: 0, a: 1 })
+    const exported = exportDesignTokens(graph)
+    const brand = exported.files
+      .map((entry) => (entry.content as Record<string, { $value?: unknown }>).Brand)
+      .find((token) => token !== undefined)
+    expect(brand?.$value).toMatchObject({ colorSpace: 'display-p3', components: [1, 0, 0] })
+    // The hex is the nearest sRGB red, inside sRGB, not the P3 numbers read as sRGB.
+    expect(brand?.$value).not.toMatchObject({ hex: '#ff0000' })
+
+    const target = new SceneGraph()
+    target.documentColorSpace = 'display-p3'
+    const bundle = readDesignTokens(
+      exported.files.map((entry) => ({ path: entry.path, text: JSON.stringify(entry.content) }))
+    )
+    const plan = planTokenImport(target, bundle, defaultTokenImportOptions(target, bundle))
+    expect(plan.collections[0].variables[0].values[0]).toMatchObject({
+      value: { r: 1, g: 0, b: 0 }
     })
   })
 })

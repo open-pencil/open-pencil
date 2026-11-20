@@ -229,6 +229,25 @@ describe('exportAsync', () => {
     expect([jpg[0], jpg[1]]).toEqual([0xff, 0xd8])
   })
 
+  test("passes the export color profile to the image export, the document's for DOCUMENT", async () => {
+    const figma = createAPI()
+    const profiles: unknown[] = []
+    figma.exportImage = (ids, options) => {
+      profiles.push(options.colorSpace)
+      return headlessRenderNodes(
+        graphOf(figma),
+        options.pageId ?? figma.currentPageId,
+        ids,
+        options
+      )
+    }
+    const rect = figma.createRectangle()
+    for (const colorProfile of ['DOCUMENT', 'SRGB', 'DISPLAY_P3_V4'] as const) {
+      await rect.exportAsync({ format: 'PNG', colorProfile })
+    }
+    expect(profiles).toEqual([undefined, 'srgb', 'display-p3'])
+  })
+
   test('exports a layer that draws nothing as one blank pixel, and refuses it as a vector', async () => {
     const figma = createAPI()
     const codec = createCanvasKitRasterCodec(await getCanvasKit())

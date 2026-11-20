@@ -1,6 +1,7 @@
 import { isEqual } from 'es-toolkit'
 
 import type {
+  ColorProfile,
   Fill,
   SceneGraph,
   SceneNode,
@@ -8,6 +9,7 @@ import type {
   VariableFormulaNode,
   VariableValue
 } from '@open-pencil/scene-graph'
+import { convertColor } from '@open-pencil/scene-graph/color'
 import {
   cloneVectorNetwork,
   copyEffects,
@@ -255,4 +257,18 @@ export function replayConversion(graph: SceneGraph, conversion: ColorConversion,
     mapVariableValues(graph, id, swapping(changes, redo))
   }
   reconcileVariableLayouts(graph, { variables: [...conversion.variables.keys()] })
+}
+
+/**
+ * Converts every color a copy of a document stores on its layers and pages into `to`, and gives
+ * it that profile, for a format that can only hold one, such as PPTX or draw.io. Variables are
+ * left alone: the copy shares them with its document, and layers hold their resolved colors.
+ */
+export function convertDocumentColors(graph: SceneGraph, to: ColorProfile): void {
+  const from = graph.documentColorSpace
+  if (from === to) return
+  const before = colorsBefore(graph)
+  before.variables.clear()
+  writeColors(graph, before, (color) => convertColor(color, from, to, 'map'))
+  graph.documentColorSpace = to
 }
