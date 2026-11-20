@@ -1,4 +1,5 @@
 import { readStoredTheme, resolveAppTheme } from '@/app/settings/theme'
+import { hasKeptTabs } from '@/app/tabs/kept/storage'
 
 import { holdSplashForDesign } from './opening-design'
 
@@ -12,4 +13,4 @@ document.documentElement.dataset.theme = resolveAppTheme(
   matchMedia('(prefers-color-scheme: dark)').matches
 )
 
-holdSplashForDesign(location.pathname)
+holdSplashForDesign(location.pathname, hasKeptTabs())

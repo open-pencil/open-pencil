@@ -1,7 +1,8 @@
 // Keeps a design that lives only on this device in the address bar, `/design/<id>`, so a reload
 // opens it again. The ID is the design's recovery copy, which keeps the same ID across reloads;
-// Cloud documents and rooms keep the addresses `address.ts` gives them.
-import { watch } from 'vue'
+// Cloud documents and rooms keep the addresses `address.ts` gives them. On start, the designs the
+// browser tab had open come back with it (`kept/`).
+import { shallowRef, watch } from 'vue'
 import {
   START_LOCATION,
   type RouteLocationNormalized,
@@ -12,11 +13,12 @@ import {
 import { errorMessage } from '@open-pencil/std/errors'
 
 import { openingCloudLink } from '@/app/cloud/integration'
-import { activeRoom } from '@/app/collab/rooms'
+import { roomForStore } from '@/app/collab/rooms'
 import { getRecoveryStore } from '@/app/document/recovery'
 import type { EditorStore } from '@/app/editor/session'
 import { onBeforeReload } from '@/app/shell/reload'
-import { restoreRecoverySnapshot } from '@/app/tabs/open/recovery'
+import { keepOpenTabs, restoreKeptTabs } from '@/app/tabs/kept'
+import type { Tab } from '@/app/tabs/state'
 import { releaseSplashForDesign } from '@/splash/opening-design'
 
 import { activeTab } from './index'
@@ -27,16 +29,20 @@ export function designRoutePath(designId: string): string {
   return `${DESIGN_ROUTE_PREFIX}${designId}`
 }
 
-/** Whether the document is kept nowhere but this device: no stored copy, file, or Cloud link. */
+/** Whether the document is kept nowhere but this device: no stored copy, file, room, or Cloud link. */
 function livesOnlyHere(store: EditorStore): boolean {
   const source = store.getSourceIdentity()
-  return store.getStorageBinding() === null && source.path === null && source.handle === null
+  return (
+    store.getStorageBinding() === null &&
+    source.path === null &&
+    source.handle === null &&
+    !roomForStore(store)
+  )
 }
 
-/** The `/design/` address of the active tab, or null when it has none of its own. */
-function activeDesignId(): string | null {
-  const tab = activeTab.value
-  if (tab?.kind !== 'document' || activeRoom.value) return null
+/** A tab's `/design/` ID: its recovery copy's, for a design kept only here, otherwise null. */
+export function designIdOf(tab: Tab | undefined): string | null {
+  if (tab?.kind !== 'document') return null
   return livesOnlyHere(tab.store) ? tab.store.getRecoveryId() : null
 }
 
@@ -52,19 +58,7 @@ export async function designRouteGuard(
   if (from !== START_LOCATION) return true
   const designId = to.params.designId
   if (typeof designId !== 'string') return '/'
-  if (await getRecoveryStore().read(designId)) return true
-  releaseSplashForDesign()
-  return '/'
-}
-
-/** Opens the design an address names; one whose copy is gone leaves the person on Home. */
-async function openDesign(designId: string): Promise<boolean> {
-  if (!(await getRecoveryStore().read(designId))) {
-    console.debug(`[Design address] No copy of ${designId} is left on this device`)
-    return false
-  }
-  await restoreRecoverySnapshot(designId)
-  return true
+  return (await getRecoveryStore().read(designId)) ? true : '/'
 }
 
 /**
@@ -72,8 +66,7 @@ async function openDesign(designId: string): Promise<boolean> {
  * announced reload right after an edit still finds the design its address names.
  */
 function persistActiveDesign(): Promise<void> {
-  // `activeDesignId` is set only for a document tab, so its store is the design's.
-  const store = activeDesignId() ? activeTab.value?.store : undefined
+  const store = designIdOf(activeTab.value) ? activeTab.value?.store : undefined
   if (!store) return Promise.resolve()
   return store.persistRecoveryNow().catch((error: unknown) => {
     console.warn(
@@ -83,32 +76,29 @@ function persistActiveDesign(): Promise<void> {
 }
 
 /**
- * Puts the active design's address in the address bar, and on start opens the design the address
- * names. Until that design has opened the address stays, so a reload meanwhile keeps it, and the
- * boot splash stays over the app. A reload the app announces, such as the development server's,
- * writes the design's copy first.
+ * Puts the active design's address in the address bar. On start it reopens the designs the browser
+ * tab had open and the one the address names, in front; until they have opened the address stays,
+ * so a reload meanwhile keeps it, and the boot splash stays over the app. A reload the app
+ * announces, such as the development server's, writes the design's copy first.
  */
 export function syncDesignAddress(
   router: Router,
   route: RouteLocationNormalizedLoaded
 ): () => void {
   const startId = typeof route.params.designId === 'string' ? route.params.designId : null
-  let opening = startId !== null
-  if (startId) {
-    void openDesign(startId)
-      .catch((error: unknown) =>
-        console.error(`[Design address] Could not open ${startId}: ${errorMessage(error)}`)
-      )
-      .finally(() => {
-        opening = false
-        releaseSplashForDesign()
-        update()
-      })
-  }
+  const restored = shallowRef(false)
+  void restoreKeptTabs(startId, designIdOf)
+    .catch((error: unknown) =>
+      console.error(`[Design address] Could not reopen the open designs: ${errorMessage(error)}`)
+    )
+    .finally(() => {
+      restored.value = true
+      releaseSplashForDesign()
+    })
 
   function update(): void {
-    if (opening || openingCloudLink.value) return
-    const designId = activeDesignId()
+    if (!restored.value || openingCloudLink.value) return
+    const designId = designIdOf(activeTab.value)
     const onDesign = route.path.startsWith(DESIGN_ROUTE_PREFIX)
     if (designId) {
       const path = designRoutePath(designId)
@@ -124,7 +114,8 @@ export function syncDesignAddress(
     // address is worked out again once loading ends (`preparation` clears).
     () =>
       [
-        activeDesignId(),
+        restored.value,
+        designIdOf(activeTab.value),
         activeTab.value?.store.state.preparation ?? null,
         openingCloudLink.value,
         route.path
@@ -132,9 +123,11 @@ export function syncDesignAddress(
     update,
     { immediate: true }
   )
+  const stopKeeping = keepOpenTabs(designIdOf, () => restored.value)
   const stopReload = onBeforeReload(persistActiveDesign)
   return () => {
     stopWatch()
+    stopKeeping()
     stopReload()
   }
 }
