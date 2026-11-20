@@ -1,6 +1,6 @@
 import { tv, type VariantProps } from 'tailwind-variants'
 
-import { alertTheme } from '@open-pencil/vue/theme'
+import { alertTheme } from '@open-pencil/theme'
 
 import type { ComponentUI } from '@/components/ui/types'
 

@@ -1,4 +1,4 @@
-import { focusStyles } from '@open-pencil/vue/theme'
+import { focusStyles } from '@open-pencil/theme'
 
 /** A side list of places, drawn like the Settings dialog's sections: groups split by rules, headings, 28px rows with icons. */
 export default {

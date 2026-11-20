@@ -1,4 +1,4 @@
-import { focusStyles } from '@open-pencil/vue/theme'
+import { focusStyles } from '@open-pencil/theme'
 
 /** Accent color swatches in Settings › General › Appearance. */
 export default {

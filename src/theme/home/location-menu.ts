@@ -1,4 +1,4 @@
-import { focusStyles } from '@open-pencil/vue/theme'
+import { focusStyles } from '@open-pencil/theme'
 
 /**
  * The home tab's location picker in a narrow window, in place of the sidebar; touch-sized only

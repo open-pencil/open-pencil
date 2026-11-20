@@ -1,4 +1,4 @@
-import { focusStyles } from '@open-pencil/vue/theme'
+import { focusStyles } from '@open-pencil/theme'
 
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'

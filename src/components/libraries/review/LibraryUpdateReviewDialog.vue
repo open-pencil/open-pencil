@@ -4,8 +4,8 @@ import { computed, ref, shallowRef, watch } from 'vue'
 
 import { createLibraryUpdatePreview, type LibraryUpdatePreview } from '@open-pencil/core/library'
 import { errorMessage } from '@open-pencil/std/errors'
+import { focusStyles } from '@open-pencil/theme'
 import { useI18n } from '@open-pencil/vue/i18n'
-import { focusStyles } from '@open-pencil/vue/theme'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { notificationMessages } from '@/app/i18n/notifications'

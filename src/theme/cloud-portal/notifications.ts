@@ -1,4 +1,4 @@
-import { focusStyles } from '@open-pencil/vue/theme'
+import { focusStyles } from '@open-pencil/theme'
 
 /** The account's notification settings: which comments it hears about by email. */
 export default {

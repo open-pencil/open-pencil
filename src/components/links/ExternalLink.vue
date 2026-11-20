@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { linkTheme } from '@open-pencil/vue/theme'
+import { linkTheme } from '@open-pencil/theme'
 
 import type { ComponentUI } from '@/components/ui/types'
 

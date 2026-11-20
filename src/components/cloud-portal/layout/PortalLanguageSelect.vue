@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { focusStyles } from '@open-pencil/theme'
 import { type Locale, useI18n } from '@open-pencil/vue/i18n'
-import { focusStyles } from '@open-pencil/vue/theme'
 
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 

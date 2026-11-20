@@ -2,7 +2,7 @@
 @import 'tw-animate-css';
 @import './theme/markdown/markdown.css';
 
-@import '../packages/vue/src/theme/tokens.css';
+@import '../packages/theme/src/tokens.css';
 
 /*
  * Every scroll container in the app takes the thin scrollbar; `scrollbar-none` still hides one,

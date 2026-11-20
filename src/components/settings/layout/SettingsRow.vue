@@ -2,7 +2,7 @@
 import { Primitive } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
-import { settingsTheme } from '@open-pencil/vue/theme'
+import { settingsTheme } from '@open-pencil/theme'
 
 import SettingsResetButton from './SettingsResetButton.vue'
 

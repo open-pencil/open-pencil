@@ -3,7 +3,7 @@ import { Primitive } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { normalizeClass, useAttrs, useSlots, useTemplateRef, type HTMLAttributes } from 'vue'
 
-import { inputAdornment, inputTheme } from '@open-pencil/vue/theme'
+import { inputAdornment, inputTheme } from '@open-pencil/theme'
 
 import type { ControlSize } from '@/theme/control'
 

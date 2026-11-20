@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { useId } from 'vue'
 
-import { settingsTheme } from '@open-pencil/vue/theme'
+import { settingsTheme } from '@open-pencil/theme'
 
 import { useSettingsSectionHeading } from './heading'
 import SettingsResetButton from './SettingsResetButton.vue'

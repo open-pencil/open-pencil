@@ -1,6 +1,6 @@
 import { tv } from 'tailwind-variants'
 
-import { portalPublicTheme } from '@open-pencil/vue/theme'
+import { portalPublicTheme } from '@open-pencil/theme'
 
 import formTheme from '@/theme/cloud-portal/form'
 

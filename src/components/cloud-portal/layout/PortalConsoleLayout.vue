@@ -4,8 +4,8 @@ import { uniq } from 'es-toolkit'
 import { tv } from 'tailwind-variants'
 import { useTemplateRef, watch } from 'vue'
 
+import { portalLayoutTheme } from '@open-pencil/theme'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
-import { portalLayoutTheme } from '@open-pencil/vue/theme'
 
 import BrandMark from '@/components/brand/BrandMark.vue'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'

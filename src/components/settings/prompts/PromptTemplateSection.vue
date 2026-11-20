@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef } from 'vue'
 
+import { focusStyles } from '@open-pencil/theme'
 import { useI18n } from '@open-pencil/vue/i18n'
-import { focusStyles } from '@open-pencil/vue/theme'
 
 import type { PromptVariables, TemplatePrompt } from '@/app/ai/prompts/definitions'
 import { useTemplatePromptSetting } from '@/app/ai/prompts/settings/use'

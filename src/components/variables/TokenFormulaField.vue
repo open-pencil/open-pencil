@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { useSlots, useTemplateRef } from 'vue'
 
-import { inputTheme } from '@open-pencil/vue/theme'
+import { inputTheme } from '@open-pencil/theme'
 
 import formulaFieldTheme from '@/theme/variables/formula-field'
 

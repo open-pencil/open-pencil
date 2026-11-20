@@ -1,4 +1,4 @@
-import { focusStyles } from '@open-pencil/vue/theme'
+import { focusStyles } from '@open-pencil/theme'
 
 export default {
   // The icon passes the pointer to the button: Reka's Splitter only sees that a control covers

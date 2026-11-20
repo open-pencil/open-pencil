@@ -1,4 +1,4 @@
-import { focusStyles } from '@open-pencil/vue/theme'
+import { focusStyles } from '@open-pencil/theme'
 
 /** The bar over the site's pages: translucent and sticky, the brand, its links, and actions. */
 export default {

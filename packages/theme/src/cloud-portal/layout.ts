@@ -1,4 +1,4 @@
-import { focusStyles } from '#vue/theme/focus/styles'
+import { focusStyles } from '#theme/focus/styles'
 
 /** The Cloud console: a bar with the server and account, sections in a sidebar. */
 export const portalLayoutTheme = {

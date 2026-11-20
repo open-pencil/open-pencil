@@ -1,7 +1,7 @@
 import { twMerge } from 'tailwind-merge'
 import { tv } from 'tailwind-variants'
 
-import { buttonTheme } from '@open-pencil/vue/theme'
+import { buttonTheme } from '@open-pencil/theme'
 
 const button = tv({
   base: 'inline-flex items-center justify-center transition-colors select-none',

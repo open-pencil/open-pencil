@@ -1,4 +1,4 @@
-import { panelFieldBase } from '@open-pencil/vue/theme'
+import { panelFieldBase } from '@open-pencil/theme'
 
 import { motionStyles } from '../motion/styles'
 import { floatingSurface } from '../overlay'

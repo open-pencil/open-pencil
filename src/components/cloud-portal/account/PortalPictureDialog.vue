@@ -4,8 +4,8 @@ import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
 import type { Size } from '@open-pencil/scene-graph/primitives'
+import { focusStyles } from '@open-pencil/theme'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
-import { focusStyles } from '@open-pencil/vue/theme'
 
 import {
   centredCrop,

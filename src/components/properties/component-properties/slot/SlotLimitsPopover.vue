@@ -2,10 +2,10 @@
 import { PopoverClose, PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
+import { focusStyles } from '@open-pencil/theme'
 import type { SlotLimit } from '@open-pencil/vue/controls/slots'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
-import { focusStyles } from '@open-pencil/vue/theme'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { useInlineSide } from '@/components/ui/direction/inline-side'

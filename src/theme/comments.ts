@@ -1,4 +1,4 @@
-import { focusStyles } from '@open-pencil/vue/theme'
+import { focusStyles } from '@open-pencil/theme'
 
 /** A pin's bubble is this many pixels square: `p-1` around a 24px avatar, or `size-8`. */
 export const COMMENT_PIN_SIZE = 32

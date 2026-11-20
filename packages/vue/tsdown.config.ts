@@ -95,7 +95,6 @@ export default defineConfig({
     'controls/shader/index': './src/controls/shader/index.ts',
     'controls/shape-with-text/index': './src/controls/shape-with-text/index.ts',
     'controls/shared-style/index': './src/controls/shared-style/index.ts',
-    'theme/index': './src/theme/index.ts',
     'controls/slots/index': './src/controls/slots/index.ts',
     'controls/sticky/index': './src/controls/sticky/index.ts',
     'controls/stroke/index': './src/controls/stroke/index.ts',
@@ -160,8 +159,6 @@ export default defineConfig({
   hash: false,
   clean: true,
   outDir: './dist',
-  // The theme's tokens ship as they are, for a consumer's own Tailwind build to import.
-  copy: [{ from: 'src/theme/tokens.css', to: 'dist/theme' }],
   treeshake: {
     moduleSideEffects: false
   },

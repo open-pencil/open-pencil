@@ -443,13 +443,7 @@
       "types": "./dist/variables/index.d.ts",
       "import": "./dist/variables/index.js",
       "default": "./dist/variables/index.js"
-    },
-    "./theme": {
-      "types": "./dist/theme/index.d.ts",
-      "import": "./dist/theme/index.js",
-      "default": "./dist/theme/index.js"
-    },
-    "./theme/tokens.css": "./dist/theme/tokens.css"
+    }
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

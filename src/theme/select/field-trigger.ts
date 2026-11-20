@@ -1,4 +1,4 @@
-import { focusStyles } from '@open-pencil/vue/theme'
+import { focusStyles } from '@open-pencil/theme'
 
 /**
  * The menu button at the end of a field. It is the same 20px box as the variable button beside it,

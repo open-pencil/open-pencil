@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { computed, ref } from 'vue'
 
-import { panelFieldBase } from '@open-pencil/vue/theme'
+import { panelFieldBase } from '@open-pencil/theme'
 
 import { BindingTrigger } from '@/components/ui/binding'
 

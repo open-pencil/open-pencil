@@ -1,4 +1,4 @@
-import { focusStyles } from '@open-pencil/vue/theme'
+import { focusStyles } from '@open-pencil/theme'
 
 /**
  * A month of days for picking a span: the ends are solid, the days between a tint, and the

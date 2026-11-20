@@ -1,4 +1,4 @@
-import { focusStyles } from '@open-pencil/vue/theme'
+import { focusStyles } from '@open-pencil/theme'
 
 /**
  * Tabs across the top of the right panel. Tabs with icons show their labels whenever the whole row

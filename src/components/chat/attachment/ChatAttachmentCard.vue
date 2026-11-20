@@ -2,8 +2,8 @@
 import { useObjectUrl } from '@vueuse/core'
 import { computed, ref, toRef } from 'vue'
 
+import { focusStyles } from '@open-pencil/theme'
 import { useI18n } from '@open-pencil/vue/i18n'
-import { focusStyles } from '@open-pencil/vue/theme'
 
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
 import { AppDialogBody, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'

@@ -1,4 +1,4 @@
-import { panelFieldBase } from '@open-pencil/vue/theme'
+import { panelFieldBase } from '@open-pencil/theme'
 
 /**
  * A panel field that shows a value without editing it as a number: Auto in a gap field, a typed

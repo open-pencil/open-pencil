@@ -1,4 +1,4 @@
-import { focusStyles } from '@open-pencil/vue/theme'
+import { focusStyles } from '@open-pencil/theme'
 
 /** The metrics dashboard: a bar like Cloud's console, then cards on a grid. */
 export const metricsDashboardTheme = {

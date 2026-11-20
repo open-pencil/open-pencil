@@ -1,6 +1,6 @@
 import { tv } from 'tailwind-variants'
 
-import { inputTheme } from '@open-pencil/vue/theme'
+import { inputTheme } from '@open-pencil/theme'
 
 export interface InputUI {
   base?: string

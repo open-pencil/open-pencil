@@ -1,4 +1,4 @@
-import { focusStyles } from '@open-pencil/vue/theme'
+import { focusStyles } from '@open-pencil/theme'
 
 import { collapsibleContentMotion } from '../collapsible/collapsible'
 

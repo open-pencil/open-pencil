@@ -1,4 +1,4 @@
-import { panelFieldBase } from '@open-pencil/vue/theme'
+import { panelFieldBase } from '@open-pencil/theme'
 
 const numberFieldTheme = {
   slots: {
