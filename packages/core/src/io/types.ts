@@ -1,6 +1,6 @@
 import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
+import type { ColorProfile } from '@open-pencil/scene-graph/color'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { IconProvider } from '#core/icons'
@@ -88,13 +88,13 @@ export interface FigWriteOptions {
 export interface RasterExportOptions {
   scale?: number
   quality?: number
-  colorSpace?: RenderColorSpace
+  colorSpace?: ColorProfile
   format: RasterExportFormat
 }
 
 export interface SVGExportOptions {
   xmlDeclaration?: boolean
-  colorSpace?: RenderColorSpace
+  colorSpace?: ColorProfile
   /** Receives each effect the export leaves out because SVG cannot draw it. */
   onWarning?: (warning: ExportEffectWarning) => void
 }

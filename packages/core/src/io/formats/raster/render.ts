@@ -2,7 +2,7 @@ import { pick } from 'es-toolkit'
 
 import type { CanvasKit, Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { toExtendedSRGB, type RenderColorSpace } from '@open-pencil/scene-graph/color'
+import { toExtendedSRGB, type ColorProfile } from '@open-pencil/scene-graph/color'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { CORNER_FIELDS } from '@open-pencil/scene-graph/fields'
 import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
@@ -26,7 +26,7 @@ interface RenderOptions {
   scale: number
   format: ExportFormat
   quality?: number
-  colorSpace?: RenderColorSpace
+  colorSpace?: ColorProfile
   trimTransparent?: boolean
   /** Crop to the layers' boxes rather than to everything they draw, as Figma can for text. */
   useAbsoluteBounds?: boolean

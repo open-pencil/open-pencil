@@ -6,7 +6,7 @@ import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { noise } from '@open-pencil/design-jsx'
 import {
   SceneGraph,
-  type DocumentColorSpace,
+  type ColorProfile,
   type Effect,
   type SceneNode
 } from '@open-pencil/scene-graph'
@@ -22,7 +22,7 @@ afterAll(() => renderer.destroy())
 const SIZE = 128
 
 /** The red channel of a 128 px white square with `effect`, exported at 1× from a `space` document. */
-function exportedRed(effect: Effect, space: DocumentColorSpace = 'srgb'): Uint8Array {
+function exportedRed(effect: Effect, space: ColorProfile = 'srgb'): Uint8Array {
   const graph = new SceneGraph()
   graph.documentColorSpace = space
   const page = graph.getPages()[0].id

@@ -3,7 +3,7 @@ import type { Color as RekaColor, HSBColor, HSLColor, RGBColor } from 'reka-ui'
 
 import type { Fill, Stroke } from '@open-pencil/scene-graph'
 import { okhclToRGBA, rgba255ToColor, rgbaToOkHCL } from '@open-pencil/scene-graph/color'
-import type { OkHCLColor, RenderColorSpace } from '@open-pencil/scene-graph/color'
+import type { OkHCLColor, ColorProfile } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type {
@@ -34,7 +34,7 @@ const OKHCL_HUE_PREVIEW_FALLBACK_LIGHTNESS = 0.7
 export function createColorModelValue(
   color: Color,
   okhcl?: OkHCLColor | null,
-  space: RenderColorSpace = 'srgb'
+  space: ColorProfile = 'srgb'
 ): ColorModelValue {
   const rekaColor = sceneToRekaColor(color)
   return {
@@ -134,7 +134,7 @@ export function createSliderPreviewModel(model: ColorModelValue): SliderPreviewM
 
 export function createOkHCLSliderPreviewModel(
   color: OkHCLColor,
-  space: RenderColorSpace = 'srgb'
+  space: ColorProfile = 'srgb'
 ): OkHCLSliderPreviewModel {
   return {
     okhclHue: okhclToRGBA(

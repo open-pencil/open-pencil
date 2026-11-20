@@ -1,18 +1,18 @@
-import type { DocumentColorSpace, SceneNode } from '@open-pencil/scene-graph'
-import { resolveOkHCLForPreview, rgbaToOkHCL } from '@open-pencil/scene-graph/color'
+import type { ColorProfile, SceneNode } from '@open-pencil/scene-graph'
+import { okhclToRGBA, rgbaToOkHCL } from '@open-pencil/scene-graph/color'
 import { copyEffects, copyFill, copyStyleRuns, copyStroke } from '@open-pencil/scene-graph/copy'
 
 import type { EditorContext } from './types'
 
 export type DocumentColorProfileMode = 'assign' | 'convert'
 
-function remapColor(color: SceneNode['fills'][number]['color'], target: DocumentColorSpace) {
-  return resolveOkHCLForPreview(rgbaToOkHCL(color), { documentColorSpace: target }).color
+function remapColor(color: SceneNode['fills'][number]['color'], target: ColorProfile) {
+  return okhclToRGBA(rgbaToOkHCL(color), target)
 }
 
 function remapNodeColors(
   node: SceneNode,
-  target: DocumentColorSpace,
+  target: ColorProfile,
   mode: DocumentColorProfileMode
 ): Partial<SceneNode> | null {
   if (mode === 'assign') return null
@@ -68,7 +68,7 @@ function remapNodeColors(
 
 export function createColorSpaceActions(ctx: EditorContext) {
   function setDocumentColorSpace(
-    colorSpace: DocumentColorSpace,
+    colorSpace: ColorProfile,
     mode: DocumentColorProfileMode = 'assign'
   ) {
     if (ctx.graph.documentColorSpace === colorSpace) return

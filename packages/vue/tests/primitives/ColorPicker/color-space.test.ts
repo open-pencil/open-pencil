@@ -5,11 +5,11 @@ import type { Ref } from 'vue'
 
 import type { Fill } from '@open-pencil/scene-graph'
 import {
-  colorToDisplayCSS,
+  colorToProfileCSS,
+  convertColor,
   okhclToRGBA,
-  resolveRGBAForPreview,
   rgbaToOkHCL,
-  type RenderColorSpace
+  type ColorProfile
 } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
@@ -29,7 +29,7 @@ const P3_RED: Color = { r: 1, g: 0, b: 0, a: 1 }
 const solid = (color: Color): Fill => ({ type: 'SOLID', color, opacity: 1, visible: true })
 
 /** What a component under `provideColorSpace(stored, shown)`, or under none, shows `P3_RED` as. */
-function shown(stored?: Ref<RenderColorSpace>, presented?: Ref<RenderColorSpace>) {
+function shown(stored?: Ref<ColorProfile>, presented?: Ref<ColorProfile>) {
   let colorCSS: ((color: Color) => string) | undefined
   let swatch: Ref<string> | undefined
   const Child = defineComponent({
@@ -63,7 +63,7 @@ describe('color space of shown colors', () => {
   })
 
   test("a Display P3 document's swatches show its colors as P3, following a profile change", async () => {
-    const space = ref<RenderColorSpace>('display-p3')
+    const space = ref<ColorProfile>('display-p3')
     const { color, swatch, unmount } = shown(space)
     expect(color()).toBe('color(display-p3 1 0 0)')
     expect(swatch()).toBe('color(display-p3 1 0 0)')
@@ -121,7 +121,7 @@ describe('gradients shown in another profile than stored', () => {
     })
     // The document's midpoint P3 (1, 0.5, 0.5), shown in sRGB, is a stop of its own.
     expect(css).toContain(
-      `${colorToDisplayCSS({ r: 1, g: 0.5, b: 0.5, a: 1 }, { documentColorSpace: 'display-p3', colorSpace: 'srgb' })} 50%`
+      `${colorToProfileCSS({ r: 1, g: 0.5, b: 0.5, a: 1 }, 'display-p3', 'srgb')} 50%`
     )
     expect(css).toStartWith('linear-gradient(to right in display-p3, ')
   })
@@ -135,7 +135,7 @@ describe('gradients shown in another profile than stored', () => {
       [{ color: white, position: 0.2 }, { color: P3_RED }, { color: black, position: 0.6 }],
       spaces
     )
-    const red = colorToDisplayCSS(P3_RED, { documentColorSpace: 'display-p3', colorSpace: 'srgb' })
+    const red = colorToProfileCSS(P3_RED, 'display-p3', 'srgb')
     expect(css).toContain(`${red} 40%`)
   })
 
@@ -178,10 +178,7 @@ describe('saturation-by-brightness area in another shown profile', () => {
     const size = 3
     const pixels = saturationBrightnessPixels(0, spaces, size)
     // Full saturation at half brightness: the document's P3 (0.5, 0, 0), shown in sRGB.
-    const expected = resolveRGBAForPreview(
-      { r: 0.5, g: 0, b: 0, a: 1 },
-      { documentColorSpace: 'display-p3', colorSpace: 'srgb' }
-    ).color
+    const expected = convertColor({ r: 0.5, g: 0, b: 0, a: 1 }, 'display-p3', 'srgb')
     const byte = (value: number) => Math.round(Math.min(1, Math.max(0, value)) * 255)
     const at = (1 * size + 2) * 4
     expect([pixels?.[at], pixels?.[at + 1], pixels?.[at + 2]]).toEqual([

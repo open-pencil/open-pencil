@@ -7,11 +7,7 @@ import type {
   TextFontFeatures,
   TextFontVariations
 } from '@open-pencil/canvaskit'
-import type {
-  CharacterStyleOverride,
-  DocumentColorSpace,
-  SceneNode
-} from '@open-pencil/scene-graph'
+import type { CharacterStyleOverride, ColorProfile, SceneNode } from '@open-pencil/scene-graph'
 import { normalizeColor, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import { faceStyleKey, type NamedFace } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
@@ -123,7 +119,7 @@ export function styleRunColor(
   ck: CanvasKit,
   style: SceneNode['styleRuns'][number]['style'],
   baseColor: Float32Array,
-  space: DocumentColorSpace
+  space: ColorProfile
 ): Float32Array {
   const visibleFill = style.fills?.find((fill) => fill.visible && fill.type === 'SOLID')
   if (!visibleFill) return baseColor

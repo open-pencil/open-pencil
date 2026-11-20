@@ -1,5 +1,5 @@
 import type { ImageInfo, Surface } from '@open-pencil/canvaskit'
-import type { DocumentColorSpace } from '@open-pencil/scene-graph'
+import type { ColorProfile } from '@open-pencil/scene-graph'
 
 import { skColorSpace } from '#core/canvas/renderer/colors'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
@@ -35,7 +35,7 @@ export function makeTileSurface(renderer: SkiaRenderer, size: number): Surface |
 
 export class TileSurfacePool {
   private readonly available: Surface[] = []
-  private space: DocumentColorSpace = 'srgb'
+  private space: ColorProfile = 'srgb'
 
   acquire(renderer: SkiaRenderer): Surface | null {
     // Surfaces of another document color space would convert what tiles draw into it.

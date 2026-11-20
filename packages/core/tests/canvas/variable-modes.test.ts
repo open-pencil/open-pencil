@@ -43,11 +43,11 @@ describe('node-scoped variable modes', () => {
     })
     const child = graph.createNode('RECTANGLE', darkFrame.id, { fills: [BOUND_FILL] })
     graph.bindVariable(child.id, 'fills/0/color', 'background')
-    expect(resolveFillColor(child.fills[0], 0, child, graph)).toEqual(DARK)
+    expect(resolveFillColor(child.fills[0], graph)).toEqual(DARK)
 
     // A literal written over the bound paint draws as written while the binding stays, as Figma's.
     graph.updateNode(child.id, { fills: [BOUND_FILL] })
     expect(child.boundVariables['fills/0/color']).toBe('background')
-    expect(resolveFillColor(child.fills[0], 0, child, graph)).toEqual(LIGHT)
+    expect(resolveFillColor(child.fills[0], graph)).toEqual(LIGHT)
   })
 })

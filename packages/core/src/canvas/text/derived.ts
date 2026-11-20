@@ -2,7 +2,7 @@ import { fromUint8Array } from 'js-base64'
 
 import type { Canvas, Paint, Path } from '@open-pencil/canvaskit'
 import type {
-  DocumentColorSpace,
+  ColorProfile,
   Fill,
   DerivedTextGlyph,
   SceneNode,
@@ -316,7 +316,7 @@ class StyleRunPaints {
 
   constructor(
     private readonly base: Paint,
-    private readonly space: DocumentColorSpace
+    private readonly space: ColorProfile
   ) {}
 
   for(run: StyleRun, fills: readonly Fill[]): Paint[] {

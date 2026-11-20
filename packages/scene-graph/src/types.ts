@@ -58,7 +58,11 @@ export interface NodeChangeObserver {
   resume?: () => void
 }
 
-export type DocumentColorSpace = 'srgb' | 'display-p3'
+/**
+ * A color profile: the one a document's colors are stored in, or the one they are shown or
+ * exported in. Figma files are sRGB or Display P3.
+ */
+export type ColorProfile = 'srgb' | 'display-p3'
 
 /** What a document is for, as Figma keeps design files and FigJam boards apart. */
 export type DocumentKind = 'design' | 'board'

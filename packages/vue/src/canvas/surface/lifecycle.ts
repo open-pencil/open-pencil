@@ -5,11 +5,9 @@ import type { Ref } from 'vue'
 import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { Editor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
+import type { ColorProfile } from '@open-pencil/scene-graph'
 
-import {
-  supportsWideGamutPresentation,
-  type PresentationColorSpace
-} from '#vue/canvas/surface/color-space'
+import { supportsWideGamutPresentation } from '#vue/canvas/surface/color-space'
 import {
   makeGLSurface,
   releaseWebGLContext,
@@ -42,7 +40,7 @@ type SurfaceManagerState = {
   glHandle: CanvasGLHandle | null
   /** The canvas the WebGL context belongs to, kept until the context is released. */
   glCanvas: HTMLCanvasElement | null
-  presentation: PresentationColorSpace | null
+  presentation: ColorProfile | null
 }
 
 export function createCanvasSurfaceManager({
