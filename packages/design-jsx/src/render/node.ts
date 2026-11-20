@@ -171,7 +171,10 @@ function placeArtwork<Artwork>(
   const color =
     typeof resolved === 'object'
       ? resolved
-      : parseColor(typeof props.color === 'string' ? props.color : '#000000')
+      : parseColor(
+          typeof props.color === 'string' ? props.color : '#000000',
+          graph.documentColorSpace
+        )
   const node = services.createArtwork(graph, artwork, { parentId, size, color, overrides })
   if (variableId) bindSolidPaints(graph, node, variableId)
   return node

@@ -25,7 +25,7 @@ export const STATUS_COLORS: readonly Color[] = [
   '#ff8c1a',
   '#f24822',
   '#ff24bd'
-].map(parseColor)
+].map((hex) => parseColor(hex))
 
 const PRESETS = Object.keys(STATUS_WORKFLOW_PRESETS) as StatusWorkflowPreset[]
 
