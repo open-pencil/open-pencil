@@ -4,13 +4,8 @@ import { defineComponent, h, nextTick, ref } from 'vue'
 import type { Ref } from 'vue'
 
 import { createEditor } from '@open-pencil/core'
-import type { Fill } from '@open-pencil/scene-graph'
-import {
-  colorToProfileCSS,
-  okhclToRGBA,
-  rgbaToOkHCL,
-  type ColorProfile
-} from '@open-pencil/scene-graph/color'
+import type { Fill, ColorProfile } from '@open-pencil/scene-graph'
+import { colorToProfileCSS, okhclToRGBA, rgbaToOkHCL } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 

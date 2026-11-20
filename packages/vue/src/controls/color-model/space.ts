@@ -10,7 +10,8 @@ import {
 import type { ComputedRef, InjectionKey, MaybeRefOrGetter, ShallowRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
-import { colorToProfileCSS, type ColorProfile } from '@open-pencil/scene-graph/color'
+import type { ColorProfile } from '@open-pencil/scene-graph'
+import { colorToProfileCSS } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 /** The profile colors are stored in, and the one the canvas beside them presents them in. */

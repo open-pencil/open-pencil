@@ -1,5 +1,5 @@
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { colorToHex, colorToProfileCSS, type ColorProfile } from '@open-pencil/scene-graph/color'
+import type { Fill, SceneGraph, SceneNode, ColorProfile } from '@open-pencil/scene-graph'
+import { colorToHex, colorToProfileCSS } from '@open-pencil/scene-graph/color'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import {
   gradientPoint,
