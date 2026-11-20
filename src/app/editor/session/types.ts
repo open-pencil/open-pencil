@@ -17,7 +17,7 @@ export function createInitialAppEditorState(pageId: string): AppEditorState {
     theme: resolvedAppTheme.value,
     snappingPreferences: { ...appPreferences.value.editing.snapping },
     showUI: true,
-    showRulers: true,
+    showRulers: false,
     showRemoteCursors: true,
     activeRibbonTab: 'panels',
     panelMode: 'design',
