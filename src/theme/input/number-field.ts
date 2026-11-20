@@ -1,4 +1,4 @@
-import { panelFieldBase } from '../panel/field/base'
+import { panelFieldBase } from '@open-pencil/theme'
 
 const numberFieldTheme = {
   slots: {

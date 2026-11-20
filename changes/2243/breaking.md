@@ -1,0 +1,1 @@
+- The editor's design tokens moved from `@open-pencil/vue/theme/tokens.css` to `@open-pencil/theme/tokens.css`, in a package of their own with the component styles, since the headless Vue SDK never used them.
