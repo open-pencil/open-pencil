@@ -14,11 +14,8 @@ import {
   type AspectDriver
 } from '#vue/shared/input/resize/rect'
 import { explicitSnapTargets } from '#vue/shared/input/snap/explicit-targets'
-import {
-  optionalEditorState,
-  resolveObjectPixelSnap,
-  worldBoundsNode
-} from '#vue/shared/input/snap/resolve'
+import { optionalEditorState, resolveObjectPixelSnap } from '#vue/shared/input/snap/resolve'
+import { layerSnapTargets } from '#vue/shared/input/snap/targets'
 import type { DragResize } from '#vue/shared/input/types'
 
 function movesLeft(handle: HandlePosition): boolean {
@@ -266,10 +263,7 @@ export function snapResizedEdges(
     state.snapGuides = []
     return rect
   }
-  const targets = editor.graph
-    .getChildren(source.parentId)
-    .filter((candidate) => candidate.visible && !source.movingIds.has(candidate.id))
-    .map((candidate) => worldBoundsNode(candidate, editor))
+  const targets = layerSnapTargets(source.parentId, source.movingIds, editor)
   const snap = resolveObjectPixelSnap(
     new Set(source.movingIds),
     activeEdgeBounds(canvas.handle, canvas.bounds),
