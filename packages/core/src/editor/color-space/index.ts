@@ -1,0 +1,75 @@
+import type { ColorProfile } from '@open-pencil/scene-graph'
+import { convertColor } from '@open-pencil/scene-graph/color'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
+import type { EditorContext } from '#core/editor/types'
+
+/**
+ * How a document takes another color profile, as Figma's File color profile dialog offers it:
+ * `assign` keeps every stored number and reads it in the new profile, so colors change; `convert`
+ * rewrites the numbers so colors look the same, mapping those the new profile cannot show to the
+ * nearest it can.
+ */
+export type DocumentColorProfileMode = 'assign' | 'convert'
+
+export function createColorSpaceActions(
+  ctx: EditorContext,
+  loadPageNodes: (pageId: string) => Promise<void>
+) {
+  function setProfile(space: ColorProfile) {
+    ctx.graph.documentColorSpace = space
+    ctx.emitEditorEvent('document:color-space-changed', space)
+    ctx.requestRender()
+  }
+
+  /**
+   * Gives the document `colorSpace` as one undo step. Assigning keeps every value; converting
+   * rewrites every stored color so it looks the same: layers' paints, effects, text runs, layout
+   * grids, and vector regions, page backgrounds, and color variables, on every page, loading
+   * the pages not opened yet first so none keeps values in the old profile.
+   */
+  async function setDocumentColorSpace(
+    colorSpace: ColorProfile,
+    mode: DocumentColorProfileMode = 'assign'
+  ): Promise<void> {
+    const graph = ctx.graph
+    const previous = graph.documentColorSpace
+    if (previous === colorSpace) return
+    if (mode === 'assign') {
+      setProfile(colorSpace)
+      ctx.undo.push({
+        label: 'Assign color profile',
+        forward: () => setProfile(colorSpace),
+        inverse: () => setProfile(previous)
+      })
+      return
+    }
+
+    // Converting walks every stored color, which most sessions never need at startup.
+    const [{ colorsBefore, writeColors }] = await Promise.all([
+      import('./convert'),
+      ...graph.getPages().map((page) => loadPageNodes(page.id))
+    ])
+    // The document may have been closed, replaced, or converted while its pages loaded.
+    if (ctx.graph !== graph || graph.documentColorSpace !== previous) return
+    const before = colorsBefore(graph)
+    const convert = (color: Color) => convertColor(color, previous, colorSpace, 'map')
+    const forward = () => {
+      writeColors(graph, before, convert)
+      setProfile(colorSpace)
+    }
+    forward()
+    ctx.undo.push({
+      label: 'Convert color profile',
+      forward,
+      inverse: () => {
+        writeColors(graph, before, null)
+        setProfile(previous)
+      }
+    })
+  }
+
+  return {
+    setDocumentColorSpace
+  }
+}
