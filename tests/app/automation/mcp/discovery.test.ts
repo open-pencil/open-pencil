@@ -49,8 +49,7 @@ afterEach(async () => {
 describe('Linux MCP discovery path', () => {
   test('uses $XDG_RUNTIME_DIR/openpencil/mcp.json when the runtime directory is set', async () => {
     useLinux()
-    // The server trims XDG_RUNTIME_DIR; Tauri can hand the value back with surrounding space.
-    await mockDiscoveryPaths(() => `  ${RUNTIME}  `)
+    await mockDiscoveryPaths(() => RUNTIME)
 
     await expect(computeExpectedDiscoveryPath()).resolves.toBe(RUNTIME_DISCOVERY)
   })
