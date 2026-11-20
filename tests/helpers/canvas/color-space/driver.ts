@@ -30,13 +30,16 @@ export async function dismissWideGamutBanner(page: Page) {
   await banner.waitFor({ state: 'detached' })
 }
 
-/** Builds the wide gamut scene in a Display P3 document. */
-export async function showWideGamutScene(page: Page) {
+/** Builds a scene of the color-space scene module in a Display P3 document. */
+export async function showWideGamutScene(
+  page: Page,
+  scene: 'createWideGamutScene' | 'createP3RenderingScene' = 'createWideGamutScene'
+) {
   await page.evaluate(() => window.openPencil?.getStore?.().setDocumentColorSpace('display-p3'))
   const { frameId } = await pageScene<typeof WideGamutScene>(
     () => page,
     '/tests/helpers/canvas/color-space/scene.ts'
-  ).build('createWideGamutScene')
+  ).build(scene)
   return frameId
 }
 
