@@ -2,8 +2,8 @@
 import { tv } from 'tailwind-variants'
 
 import type { Fill } from '@open-pencil/scene-graph'
+import { useColorCSS } from '@open-pencil/vue/controls/color-model'
 import { useMessages } from '@open-pencil/vue/i18n'
-import { useColorCSS } from '@open-pencil/vue/primitives/ColorPicker'
 import {
   GradientEditorRoot,
   GradientEditorBar,

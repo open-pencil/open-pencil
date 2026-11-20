@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { useColorCSS } from '@open-pencil/vue/controls/color-model'
 import { useMessages } from '@open-pencil/vue/i18n'
-import { useColorCSS } from '@open-pencil/vue/primitives/ColorPicker'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import StandardColorSlider from '@/components/color-picker-panel/StandardColorSlider.vue'

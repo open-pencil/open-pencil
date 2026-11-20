@@ -4,8 +4,8 @@ import type { Fill, GradientStop, GradientTransform } from '@open-pencil/scene-g
 import { DEFAULT_GRADIENT_TRANSFORM } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { linearGradientCSS, useColorSpaces } from '#vue/controls/color-model/space'
 import { useColorModel } from '#vue/controls/color-model/use'
-import { linearGradientCSS, useColorSpaces } from '#vue/primitives/ColorPicker/color-space'
 
 type GradientSubtype =
   | 'GRADIENT_LINEAR'

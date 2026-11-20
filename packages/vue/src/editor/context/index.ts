@@ -3,6 +3,8 @@ import type { InjectionKey } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
 
+import { provideEditorColorSpaces } from '#vue/controls/color-model/space'
+
 /**
  * Injection key for the current OpenPencil editor instance.
  *
@@ -19,6 +21,8 @@ export const EDITOR_KEY: InjectionKey<Editor> = Symbol('open-pencil-editor')
  */
 export function provideEditor(editor: Editor) {
   provide(EDITOR_KEY, editor)
+  // Swatches and pickers below show the document's colors as its canvas presents them.
+  provideEditorColorSpaces(editor)
 }
 
 /**

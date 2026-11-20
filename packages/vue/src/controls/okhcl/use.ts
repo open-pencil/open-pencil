@@ -2,6 +2,7 @@ import { ref } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { useColorSpaces } from '#vue/controls/color-model/space'
 import type { ColorFieldFormat } from '#vue/controls/color-model/types'
 import {
   OKHCL_FIELD_OPTIONS,
@@ -12,7 +13,6 @@ import {
   getStrokeOkHCLColor
 } from '#vue/controls/okhcl/helpers'
 import { useEditor } from '#vue/editor/context'
-import { useColorSpaces } from '#vue/primitives/ColorPicker/color-space'
 
 export function useOkHCL() {
   const editor = useEditor()

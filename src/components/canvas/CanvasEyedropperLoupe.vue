@@ -9,7 +9,7 @@ import { computed, useTemplateRef, watchEffect } from 'vue'
 
 import { colorToHexRaw } from '@open-pencil/scene-graph/color'
 import type { EyedropperLoupe } from '@open-pencil/vue/canvas/eyedropper'
-import { useColorCSS, useColorSpaces } from '@open-pencil/vue/primitives/ColorPicker'
+import { useColorCSS, useColorSpaces } from '@open-pencil/vue/controls/color-model'
 
 import { remToPx } from '@/app/shell/root-font-size'
 import theme from '@/theme/canvas/eyedropper-loupe'

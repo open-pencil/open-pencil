@@ -3,8 +3,9 @@ import { ColorSliderRoot, ColorSliderThumb, ColorSliderTrack } from 'reka-ui'
 import type { Color as RekaColor, ColorChannel, ColorSpace } from 'reka-ui'
 import { computed } from 'vue'
 
-import { sliderTrackBackground, useColorSpaces } from '@open-pencil/vue/primitives/ColorPicker'
+import { useColorSpaces } from '@open-pencil/vue/controls/color-model'
 
+import { sliderTrackBackground } from '@/components/color-picker-panel/backgrounds'
 import type { ColorSliderUI } from '@/components/color-picker-panel/ui'
 import { useColorSliderUI } from '@/components/color-picker-panel/ui'
 import NumberField from '@/components/inputs/NumberField.vue'

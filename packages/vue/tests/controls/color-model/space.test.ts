@@ -3,10 +3,10 @@ import { describe, expect, test } from 'bun:test'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import type { Ref } from 'vue'
 
+import { createEditor } from '@open-pencil/core'
 import type { Fill } from '@open-pencil/scene-graph'
 import {
   colorToProfileCSS,
-  convertColor,
   okhclToRGBA,
   rgbaToOkHCL,
   type ColorProfile
@@ -14,16 +14,38 @@ import {
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 
-import { useColorModel } from '#vue/controls/color-model/use'
 import {
   linearGradientCSS,
   provideColorSpace,
-  saturationBrightnessArea,
-  saturationBrightnessPixels,
-  sliderTrackBackground,
-  useColorCSS
-} from '#vue/primitives/ColorPicker/color-space'
+  provideEditorColorSpaces,
+  reportCanvasPresentation,
+  useColorCSS,
+  useColorSpaces
+} from '#vue/controls/color-model/space'
+import { useColorModel } from '#vue/controls/color-model/use'
 import { useFill } from '#vue/primitives/Fill/useFill'
+
+/** Runs `child` in a component under one that runs `parent`, as an app mounts them. */
+function mountUnder<T>(parent: () => void, child: () => T) {
+  let result: T | undefined
+  const Child = defineComponent({
+    setup() {
+      result = child()
+      return () => h('div')
+    }
+  })
+  const app = createTestRenderer().createApp(
+    defineComponent({
+      setup() {
+        parent()
+        return () => h(Child)
+      }
+    })
+  )
+  app.mount(hostNode())
+  if (result === undefined) throw new Error('Expected the child to set up')
+  return { result, unmount: () => app.unmount() }
+}
 
 const P3_RED: Color = { r: 1, g: 0, b: 0, a: 1 }
 const solid = (color: Color): Fill => ({ type: 'SOLID', color, opacity: 1, visible: true })
@@ -81,34 +103,46 @@ describe('color space of shown colors', () => {
     unmount()
   })
 
-  test('slider tracks are left to Reka in sRGB and drawn in P3 components otherwise', () => {
-    const red = { space: 'rgb', r: 255, g: 0, b: 0, alpha: 1 } as const
-    const srgb = { stored: 'srgb', shown: 'srgb' } as const
-    const p3 = { stored: 'display-p3', shown: 'display-p3' } as const
-    expect(sliderTrackBackground(red, 'hue', 'hsb', srgb)).toBeUndefined()
-    expect(sliderTrackBackground(red, 'hue', 'hsb', p3)).toBe(
-      'linear-gradient(to right in display-p3, color(display-p3 1 0 0), color(display-p3 1 1 0), ' +
-        'color(display-p3 0 1 0), color(display-p3 0 1 1), color(display-p3 0 0 1), ' +
-        'color(display-p3 1 0 1), color(display-p3 1 0 0))'
-    )
-    expect(sliderTrackBackground(red, 'alpha', 'hsb', p3)).toStartWith(
-      'linear-gradient(to right in display-p3, color(display-p3 1 0 0 / 0), color(display-p3 1 0 0)), '
-    )
-  })
-
   test("OkHCL reads and writes a P3 document's components as P3", () => {
     const updates: Color[] = []
-    const model = useColorModel({
-      color: P3_RED,
-      colorSpace: 'display-p3',
-      onUpdate: (color) => updates.push(color)
-    })
+    const { result: model, unmount } = mountUnder(
+      () => provideColorSpace('display-p3'),
+      () => useColorModel({ color: P3_RED, onUpdate: (color) => updates.push(color) })
+    )
     const okhcl = rgbaToOkHCL(P3_RED, 'display-p3')
     expect(model.okhcl.value.c).toBeCloseTo(okhcl.c, 5)
     expect(model.okhcl.value.c).toBeGreaterThan(rgbaToOkHCL(P3_RED).c)
     model.updateOkHCLChannel('l', 0.5)
     const expected = okhclToRGBA({ ...model.okhcl.value, l: 0.5 }, 'display-p3')
     expect(updates.at(-1)?.r).toBeCloseTo(expected.r, 5)
+    unmount()
+  })
+
+  test('slider previews show in the profile the canvas presents', () => {
+    const { result: model, unmount } = mountUnder(
+      () => provideColorSpace('display-p3', 'srgb'),
+      () => useColorModel({ color: P3_RED })
+    )
+    // Shown clipped to sRGB, so the stops are rgb(), not color(display-p3 …).
+    expect(model.sliderGradient.value.hsbSaturation).not.toContain('color(display-p3')
+    unmount()
+  })
+
+  test("provideEditor's spaces follow the document's profile and the canvas's presentation", async () => {
+    const editor = createEditor()
+    const { result, unmount } = mountUnder(
+      () => provideEditorColorSpaces(editor),
+      () => ({ spaces: useColorSpaces(), report: reportCanvasPresentation() })
+    )
+    expect(result.spaces.value).toEqual({ stored: 'srgb', shown: 'srgb' })
+    editor.setDocumentColorSpace('display-p3')
+    await nextTick()
+    expect(result.spaces.value).toEqual({ stored: 'display-p3', shown: 'display-p3' })
+    result.report('srgb')
+    await nextTick()
+    expect(result.spaces.value).toEqual({ stored: 'display-p3', shown: 'srgb' })
+    unmount()
+    editor.dispose()
   })
 })
 
@@ -146,54 +180,5 @@ describe('gradients shown in another profile than stored', () => {
       { stored: 'srgb', shown: 'display-p3' }
     )
     expect(css).toStartWith('linear-gradient(to right in srgb, ')
-  })
-
-  test('useColorModel keeps the provided presentation for colors stored in its profile', () => {
-    let saturationTrack: string | undefined
-    const Child = defineComponent({
-      setup() {
-        const model = useColorModel({ color: P3_RED, colorSpace: 'display-p3' })
-        saturationTrack = model.sliderGradient.value.hsbSaturation
-        return () => h('div')
-      }
-    })
-    const app = createTestRenderer().createApp(
-      defineComponent({
-        setup() {
-          provideColorSpace('display-p3', 'srgb')
-          return () => h(Child)
-        }
-      })
-    )
-    app.mount(hostNode())
-    // Shown clipped to sRGB, so the stops are rgb(), not color(display-p3 …).
-    expect(saturationTrack).not.toContain('color(display-p3')
-    app.unmount()
-  })
-})
-
-describe('saturation-by-brightness area in another shown profile', () => {
-  test('darkens in the stored components before clipping, as the canvas does', () => {
-    const spaces = { stored: 'display-p3', shown: 'srgb' } as const
-    const size = 3
-    const pixels = saturationBrightnessPixels(0, spaces, size)
-    // Full saturation at half brightness: the document's P3 (0.5, 0, 0), shown in sRGB.
-    const expected = convertColor({ r: 0.5, g: 0, b: 0, a: 1 }, 'display-p3', 'srgb')
-    const byte = (value: number) => Math.round(Math.min(1, Math.max(0, value)) * 255)
-    const at = (1 * size + 2) * 4
-    expect([pixels?.[at], pixels?.[at + 1], pixels?.[at + 2]]).toEqual([
-      byte(expected.r),
-      byte(expected.g),
-      byte(expected.b)
-    ])
-    // Darkening the clipped sRGB red would give 128 instead.
-    expect(pixels?.[at]).toBeGreaterThan(130)
-    expect(saturationBrightnessArea(0, spaces)).toBeUndefined()
-  })
-
-  test('the same profile keeps exact CSS gradients and draws no pixels', () => {
-    const p3 = { stored: 'display-p3', shown: 'display-p3' } as const
-    expect(saturationBrightnessPixels(0, p3)).toBeUndefined()
-    expect(saturationBrightnessArea(0, p3)).toBeDefined()
   })
 })

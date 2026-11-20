@@ -5,6 +5,7 @@ import { provideCanvas } from '#vue/canvas/context'
 import { useCanvas } from '#vue/canvas/surface/use'
 import { useTextEdit } from '#vue/canvas/text-edit/use'
 import { useCanvasInput } from '#vue/canvas/useCanvasInput'
+import { reportCanvasPresentation } from '#vue/controls/color-model/space'
 import { useEditor } from '#vue/editor/context'
 import { toolCursor } from '#vue/editor/tool-cursor'
 
@@ -30,6 +31,7 @@ const emit = defineEmits<{
 }>()
 
 const editor = useEditor()
+const reportPresentation = reportCanvasPresentation()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const ready = ref(false)
 
@@ -43,7 +45,8 @@ const { renderNow, hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle
       ready.value = true
       emit('ready')
     },
-    onFailed: (error) => emit('failed', error)
+    onFailed: (error) => emit('failed', error),
+    onPresentation: reportPresentation
   }
 )
 

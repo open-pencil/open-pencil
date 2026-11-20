@@ -2,8 +2,8 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { colorToHex } from '@open-pencil/scene-graph/color'
 import { figJamColor } from '@open-pencil/scene-graph/figjam'
+import { useColorCSS } from '@open-pencil/vue/controls/color-model'
 import { useFigJamStyle } from '@open-pencil/vue/controls/figjam-style'
 import { useMessages } from '@open-pencil/vue/i18n'
 
@@ -26,10 +26,11 @@ const store = useEditorStore()
 const toolbar = useFigJamStyle()
 const figjam = useMessages('figjam')
 const commands = useMessages('commands')
+const colorCSS = useColorCSS()
 const styles = tv(theme)()
 
 const hex = computed(() =>
-  toolbar.color.value ? colorToHex(figJamColor(toolbar.color.value)) : undefined
+  toolbar.color.value ? colorCSS(figJamColor(toolbar.color.value)) : undefined
 )
 </script>
 
