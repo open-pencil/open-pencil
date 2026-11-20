@@ -2,7 +2,11 @@ import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
-import { formatColor, type SVGExportContext } from '#core/io/formats/svg/defs'
+import {
+  formatColor,
+  type SVGColorProfiles,
+  type SVGExportContext
+} from '#core/io/formats/svg/defs'
 import { svg, type SVGNode } from '#core/io/formats/svg/node'
 import { round } from '#core/io/formats/svg/paths'
 import {
@@ -16,7 +20,7 @@ import { shownText } from '#core/text/case'
 
 function styleOverrideToTspanAttrs(
   style: CharacterStyleOverride,
-  colorSpace: 'srgb' | 'display-p3',
+  colors: SVGColorProfiles,
   parentFillOpacity: number | undefined,
   node: Pick<SceneNode, 'fontSize' | 'letterSpacing'>
 ): Record<string, string | number | undefined> {
@@ -44,10 +48,10 @@ function styleOverrideToTspanAttrs(
     if (visibleFill) {
       // Paragraphs and saved glyphs draw a run at color.a * opacity. Shapes paint opacity alone.
       const alpha = round(visibleFill.color.a * visibleFill.opacity)
-      if (colorSpace === 'display-p3') {
-        attrs.fill = formatColor({ ...visibleFill.color, a: 1 }, alpha, colorSpace)
+      if (colors.to === 'display-p3') {
+        attrs.fill = formatColor({ ...visibleFill.color, a: 1 }, alpha, colors)
       } else {
-        attrs.fill = formatColor(visibleFill.color, 1, colorSpace)
+        attrs.fill = formatColor(visibleFill.color, 1, colors)
         if (alpha < 1) attrs['fill-opacity'] = alpha
       }
       // `fill-opacity` inherits, so an opaque run has to cover a translucent parent.
@@ -120,7 +124,7 @@ export function renderTextNode(
   ctx: SVGExportContext,
   fillOpacity?: number
 ): SVGNode {
-  const { colorSpace, textLayout } = ctx
+  const { colors, textLayout } = ctx
   const direction = resolveNodeTextDirection(node)
   const lines = textLayout ? textLayout(node) : null
   const laidOut = lines && lines.length > 0 ? lines : null
@@ -144,7 +148,7 @@ export function renderTextNode(
     'letter-spacing': letterSpacing ? round(letterSpacing) : undefined
   }
   const spanAttrs = (style: CharacterStyleOverride, fallback?: SVGFallbackFace) => ({
-    ...styleOverrideToTspanAttrs(style, colorSpace, fillOpacity, node),
+    ...styleOverrideToTspanAttrs(style, colors, fillOpacity, node),
     ...spanFontAttrs(fallback)
   })
 

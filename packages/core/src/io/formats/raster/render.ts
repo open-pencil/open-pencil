@@ -169,6 +169,8 @@ interface SurfaceTarget {
   quality: number
   setup: (canvas: Canvas) => void
   trimTransparent?: boolean
+  /** The profile the image is encoded in; the document's own unless given. */
+  colorSpace?: ColorProfile
 }
 
 function supersampledOutput(canvas: Canvas, renderScale: number): SupersampledOutput {
@@ -214,8 +216,9 @@ function renderToSurface(
 
     const highResImage = surface.makeImageSnapshot()
     const downsamplePixels = ck.Malloc(Uint8Array, width * height * 4)
+    // Colors blend in the document's profile; the encoded image is converted into the one asked for.
     const downsampleSurface = ck.MakeRasterDirectSurface(
-      documentImageInfo(ck, profile, width, height),
+      documentImageInfo(ck, target.colorSpace ?? profile, width, height),
       downsamplePixels,
       width * 4
     )
@@ -412,7 +415,8 @@ export function renderNodesToImage(
       canvas.scale(options.scale, options.scale)
       canvas.translate(-bounds.minX, -bounds.minY)
     },
-    trimTransparent: options.trimTransparent
+    trimTransparent: options.trimTransparent,
+    colorSpace: options.colorSpace
   })
 }
 

@@ -1,7 +1,7 @@
 import { countBy } from 'es-toolkit/array'
 import { isEmptyObject, isPlainObject } from 'es-toolkit/predicate'
 
-import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { ColorProfile, Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 import {
   effectBindingField,
@@ -140,10 +140,15 @@ export const SHADOW_TOKEN_FIELDS = {
 /** A bound effect field's token reference, such as `{shadow.blur}` for `effects/0/radius`. */
 export type ShadowReferences = Readonly<Partial<Record<string, string>>>
 
-function shadowValue(effect: Effect, index: number, references: ShadowReferences) {
+function shadowValue(
+  effect: Effect,
+  index: number,
+  references: ShadowReferences,
+  profile: ColorProfile
+) {
   const field = (property: EffectBindingProperty) => references[effectBindingField(index, property)]
   return {
-    color: field('color') ?? colorTokenValue(effect.color),
+    color: field('color') ?? colorTokenValue(effect.color, profile),
     offsetX: field('offsetX') ?? dimensionTokenValue(effect.offset.x),
     offsetY: field('offsetY') ?? dimensionTokenValue(effect.offset.y),
     blur: field('radius') ?? dimensionTokenValue(effect.radius),
@@ -156,10 +161,14 @@ function shadowValue(effect: Effect, index: number, references: ShadowReferences
  * A shadow token's `$value`: the visible shadows of `effects`, bound fields as references to their
  * variables' tokens, or undefined when there are none.
  */
-export function shadowTokenValue(effects: readonly Effect[], references: ShadowReferences = {}) {
+export function shadowTokenValue(
+  effects: readonly Effect[],
+  references: ShadowReferences = {},
+  profile: ColorProfile = 'srgb'
+) {
   const values = [...effects.entries()]
     .filter(([, effect]) => isShadow(effect) && effect.visible)
-    .map(([index, effect]) => shadowValue(effect, index, references))
+    .map(([index, effect]) => shadowValue(effect, index, references, profile))
   if (values.length === 0) return undefined
   return values.length === 1 ? values[0] : values
 }
@@ -185,7 +194,7 @@ function shadowToken(
   references: TokenReferences
 ): DesignToken | undefined {
   const bindings = effectReferences(node, references)
-  const $value = shadowTokenValue(node.effects, bindings)
+  const $value = shadowTokenValue(node.effects, bindings, graph.documentColorSpace)
   if ($value === undefined) return undefined
   const exact = node.effects.every(
     (effect) =>

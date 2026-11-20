@@ -321,7 +321,7 @@ function effectStyle(
   const ownBindings = own?.bindings ?? {}
   // Extension effects that do not read fall back to the token's own shadows.
   const exact = own?.effects ? tryParseFigmaEffects(own.effects) : null
-  if (exact && isEqual(token.value, shadowTokenValue(exact, ownBindings))) {
+  if (exact && isEqual(token.value, shadowTokenValue(exact, ownBindings, profile))) {
     return {
       fields: { effects: exact },
       bindings: aliasedBindings(ownBindings, own?.aliasData ?? {}, alias)

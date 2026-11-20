@@ -12,6 +12,7 @@ import { exportFigFile, parseFigFile } from './formats/fig'
 import { readPenDocument } from './formats/pen/read'
 import type { PPTXExportOptions } from './formats/pptx'
 import { rasterFormat } from './formats/raster/adapter'
+import { graphInSRGB } from './srgb'
 import { extractExportGraph } from './subgraph'
 import { resolveExportNodes, singleExportNode, type ExportNodes } from './targets'
 import type {
@@ -25,6 +26,11 @@ import type {
   IOFormatSupport,
   SVGExportOptions
 } from './types'
+
+/** The request with its document's colors brought into sRGB, for a format that holds no other. */
+async function inSRGB(request: ExportRequest): Promise<ExportRequest> {
+  return { ...request, graph: await graphInSRGB(request.graph) }
+}
 
 /** Formats that export a document, page, selection, or single node alike. */
 const EXPORT_EVERY_TARGET: IOFormatSupport = {
@@ -176,12 +182,15 @@ export const drawioFormat: IOFormatAdapter<'drawio'> = {
     )
     return { graph, sourceFormat: 'drawio' }
   },
-  async writeDocument(graph) {
+  async writeDocument(source) {
+    // draw.io holds sRGB colors only.
+    const graph = await graphInSRGB(source)
     const pageIds = graph.getPages().map((page) => page.id)
     return writeDrawIO(graph, { pageIds })
   },
   // A page or a selection goes as a one-page diagram; the document, every page.
-  async exportContent(request) {
+  async exportContent(source) {
+    const request = await inSRGB(source)
     if (request.target.scope === 'document') {
       const pageIds = request.graph.getPages().map((page) => page.id)
       return writeDrawIO(request.graph, { pageIds })
@@ -317,7 +326,9 @@ export const pptxFormat: IOFormatAdapter<'pptx'> = {
   mimeTypes: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
   support: EXPORT_EVERY_TARGET,
   exportOptions: FIXED_SIZE_EXPORT,
-  async exportContent(request, options?: PPTXExportOptions, context?: IOContext) {
+  async exportContent(source, options?: PPTXExportOptions, context?: IOContext) {
+    // PowerPoint holds sRGB colors only.
+    const request = await inSRGB(source)
     const target = resolvePPTXExportNodes(request)
     if (!target) throw new Error('Nothing to export')
     const { renderNodesToPPTX } = await import('./formats/pptx')

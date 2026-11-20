@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { ColorProfile, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   isValidExportScale,
   MAX_EXPORT_SCALE,
@@ -12,6 +12,16 @@ import type { RasterCodec } from '#core/io/formats/raster/pixels'
 import { findPageId } from '#core/io/subgraph'
 
 import type { ExportRequest } from './settings'
+
+/**
+ * The profile an image export is encoded in, by Figma's export setting: `DOCUMENT` the document's
+ * own, the others a profile of their own, into which the document's colors are converted.
+ */
+const EXPORT_COLOR_PROFILES = {
+  DOCUMENT: undefined,
+  SRGB: 'srgb',
+  DISPLAY_P3_V4: 'display-p3'
+} as const satisfies Record<string, ColorProfile | undefined>
 
 /** What a host lends an export: its renderer, for raster formats and PDF, and its image codec. */
 export interface ExportHost {
@@ -96,7 +106,8 @@ async function exportImage(
     scale,
     format: request.format,
     pageId,
-    useAbsoluteBounds: request.useAbsoluteBounds
+    useAbsoluteBounds: request.useAbsoluteBounds,
+    colorSpace: EXPORT_COLOR_PROFILES[request.colorProfile ?? 'DOCUMENT']
   })
   if (!data || data.length === 0) throw nothingToExport()
   return data
