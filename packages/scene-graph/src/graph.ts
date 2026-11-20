@@ -63,19 +63,7 @@ export class SceneGraph {
   figKiwiVersion: number | null = null
   /** Deflated kiwi schema bytes from the original .fig file, preserved for roundtrip fidelity. */
   figSchemaDeflated: Uint8Array | null = null
-  private colorSpace: DocumentColorSpace = 'srgb'
-  /**
-   * The profile the document's colors are stored in. Changing it drops every text's saved
-   * picture, which holds its colors as drawn in the old profile, so the text is laid out again.
-   */
-  get documentColorSpace(): DocumentColorSpace {
-    return this.colorSpace
-  }
-  set documentColorSpace(space: DocumentColorSpace) {
-    if (space === this.colorSpace) return
-    this.colorSpace = space
-    for (const node of this.nodes.values()) if (node.textPicture) node.textPicture = null
-  }
+  documentColorSpace: DocumentColorSpace = 'srgb'
   documentKind: DocumentKind = 'design'
   enabledLibraries = new Map<string, EnabledLibraryBinding>()
   readonly emitter = new BufferedSceneEmitter()
