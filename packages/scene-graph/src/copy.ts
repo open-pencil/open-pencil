@@ -11,6 +11,7 @@
 import { readGeometryBlob } from './geometry'
 import { cloneInstanceOverrideState } from './instances/overrides'
 import { createDefaultSourceMetadata } from './node-defaults'
+import type { Color } from './primitives'
 import type {
   ArcData,
   ComponentPropertyDefinition,
@@ -350,4 +351,79 @@ export function cloneNodeProps(
     connectorCurveHandles: structuredClone(src.connectorCurveHandles),
     connectorLabelPosition: src.connectorLabelPosition ? { ...src.connectorLabelPosition } : null
   }
+}
+
+/** The node fields that hold colors, which {@link mapNodeColors} rewrites. */
+export type NodeColorFields = Pick<
+  SceneNode,
+  'fills' | 'strokes' | 'effects' | 'styleRuns' | 'textDecorationFills' | 'layoutGrids'
+> &
+  Partial<Pick<SceneNode, 'vectorNetwork'>>
+
+/** A paint with its color and gradient stops passed through `map`; a stroke keeps its geometry. */
+export function mapPaintColors<T extends Fill>(paint: T, map: (color: Color) => Color): T {
+  const next = copyFill(paint)
+  next.color = map(paint.color)
+  if (paint.gradientStops) {
+    next.gradientStops = paint.gradientStops.map((stop) => ({ ...stop, color: map(stop.color) }))
+  }
+  return next
+}
+
+/**
+ * Copies of every field of `node`, a layer or its saved color fields, that stores a color, each
+ * color passed through `map`: fills, strokes, and their gradient stops, effects and a duotone
+ * noise's second color, text runs and decoration paints, layout grids, and vector regions' own
+ * fills. `null` when it stores no color. Converting a document's colors to another profile walks
+ * them all here.
+ */
+export function mapNodeColors(
+  node: NodeColorFields,
+  map: (color: Color) => Color
+): NodeColorFields | null {
+  const regions = node.vectorNetwork?.regions.some((region) => region.fills?.length)
+  const holdsColors =
+    regions ||
+    [
+      node.fills,
+      node.strokes,
+      node.effects,
+      node.styleRuns,
+      node.textDecorationFills,
+      node.layoutGrids
+    ].some((list) => list.length > 0)
+  if (!holdsColors) return null
+  const mapFills = (fills: Fill[]) => fills.map((fill) => mapPaintColors(fill, map))
+  const fields: NodeColorFields = {
+    fills: mapFills(node.fills),
+    strokes: node.strokes.map((stroke) => mapPaintColors(stroke, map)),
+    effects: copyEffects(node.effects).map((effect) => {
+      const next = { ...effect, color: map(effect.color) }
+      if (effect.noise?.secondaryColor) {
+        next.noise = { ...effect.noise, secondaryColor: map(effect.noise.secondaryColor) }
+      }
+      return next
+    }),
+    styleRuns: copyStyleRuns(node.styleRuns).map((run) => ({
+      ...run,
+      style: {
+        ...run.style,
+        fills: run.style.fills && mapFills(run.style.fills),
+        textDecorationFills:
+          run.style.textDecorationFills && mapFills(run.style.textDecorationFills)
+      }
+    })),
+    textDecorationFills: mapFills(node.textDecorationFills),
+    layoutGrids: copyLayoutGrids(node.layoutGrids).map((grid) =>
+      grid.color ? { ...grid, color: map(grid.color) } : grid
+    )
+  }
+  if (node.vectorNetwork && regions) {
+    const network = cloneVectorNetwork(node.vectorNetwork)
+    network.regions = network.regions.map((region) =>
+      region.fills ? { ...region, fills: mapFills(region.fills) } : region
+    )
+    fields.vectorNetwork = network
+  }
+  return fields
 }

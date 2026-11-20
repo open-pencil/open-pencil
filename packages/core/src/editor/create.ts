@@ -204,7 +204,7 @@ export function createEditor(options?: EditorOptions) {
   const structure = createStructureActions(ctx)
   const components = createComponentActions(ctx)
   const clipboard = createClipboardActions(ctx)
-  const colorSpace = createColorSpaceActions(ctx)
+  const colorSpace = createColorSpaceActions(ctx, pages.loadPageNodes)
   const documentSettings = createDocumentSettingsActions(ctx)
   const undoActions = createUndoActions(ctx)
   const text = createTextActions(ctx)
