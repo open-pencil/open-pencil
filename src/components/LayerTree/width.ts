@@ -48,10 +48,18 @@ function trailingWidth(parts: readonly number[], metrics: LayerRowMetrics): numb
   return sum(parts) + metrics.trailingGap * Math.max(0, parts.length - 1) + metrics.rowEnd
 }
 
+/** The narrowest a cut name gets: its ellipsis, or the whole name when that is narrower. */
+export function shortestNameWidth(nameWidth: number, ellipsisWidth: number): number {
+  return Math.min(nameWidth, ellipsisWidth)
+}
+
+export const NAME_ELLIPSIS = '…'
+
 /**
- * How far the layer rows reach past the list sideways, as in Figma's layers panel: far enough for
- * the widest idle row's indent, whole name, compact mode badge, issue mark, and the buttons a
- * locked or hidden layer always shows. Buttons that show only on hover cut the name instead.
+ * How far the layer rows reach past the list sideways, as in Figma's layers panel. Idle, a row
+ * needs its indent, whole name, compact mode badge, issue mark, and the buttons a locked or hidden
+ * layer always shows. Hovered, the other rows show their buttons too and cut the name down to an
+ * ellipsis, so a row with a short name can need more room hovered than idle.
  */
 export function rowsOverflow(
   rows: readonly LayerRow[],
@@ -59,24 +67,27 @@ export function rowsOverflow(
   decorations: LayerRowDecorations,
   measure: (text: string, font: string) => number
 ): number {
-  if (!metrics.font) return 0
+  if (!metrics.font) {
+    return 0
+  }
+  const ellipsis = measure(NAME_ELLIPSIS, metrics.font)
   let widest = 0
   for (const [index, row] of rows.entries()) {
-    let width = (row.level - 1) * metrics.indent + metrics.nameStart
-    width += measure(row.node.name, metrics.font)
+    const start = (row.level - 1) * metrics.indent + metrics.nameStart
+    const name = measure(row.node.name, metrics.font)
     const modeCount = decorations.modeCount(row)
-    if (modeCount > 0) {
-      width += metrics.badge + measure(String(modeCount), metrics.badgeFont)
-    }
+    const badge = modeCount > 0 ? metrics.badge + measure(String(modeCount), metrics.badgeFont) : 0
     const expanded = row.hasChildren && (rows[index + 1]?.level ?? 0) > row.level
-    const trailing: number[] = []
-    if (decorations.showsIssue(row, expanded)) {
-      trailing.push(metrics.issueMark)
-    }
+    const mark = decorations.showsIssue(row, expanded) ? [metrics.issueMark] : []
+    const withButtons = trailingWidth([...mark, metrics.buttons], metrics)
+    let width: number
     if (decorations.buttonsAlwaysShown(row)) {
-      trailing.push(metrics.buttons)
+      width = start + name + badge + withButtons
+    } else {
+      const idle = start + name + badge + trailingWidth(mark, metrics)
+      const hovered = start + shortestNameWidth(name, ellipsis) + badge + withButtons
+      width = Math.max(idle, hovered)
     }
-    width += trailingWidth(trailing, metrics)
     if (width > widest) {
       widest = width
     }

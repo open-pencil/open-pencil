@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { useElementSize, useScroll } from '@vueuse/core'
+import { isEqual } from 'es-toolkit'
 import { TreeItem, TreeVirtualizer, ContextMenuPortal } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, nextTick, useAttrs, useTemplateRef, watch } from 'vue'
 
 import { useInlineRename } from '@open-pencil/vue/editor/inline-rename'
-import { useVariableMessages } from '@open-pencil/vue/i18n'
 import {
   LayerTreeRoot,
   LayerTreeItem,
@@ -29,7 +29,7 @@ import { useLayerTreeGeometry } from './geometry'
 import LayerTreeNodeRow from './LayerTreeNodeRow.vue'
 import LayerTreeRenameRow from './LayerTreeRenameRow.vue'
 import LayerTreeStickyRow from './LayerTreeStickyRow.vue'
-import { layerAppliedModes } from './mode-names'
+import { type CollectionModeIds, collectionModeIds, layerAppliedModeCount } from './mode-names'
 import { provideLayerTreeUI } from './ui'
 import type { LayerTreeUI } from './ui'
 import { createTextMeasure, rowsOverflow } from './width'
@@ -68,7 +68,6 @@ const attrs = useAttrs()
 const styles = tv(layerTreeTheme)()
 provideLayerTreeUI(() => ui)
 const store = useEditorStore()
-const variables = useVariableMessages()
 const viewport = useTemplateRef<HTMLElement>('viewport')
 /** How far the rows are scrolled, for the pinned top-level row. */
 const { y: scrollTop } = useScroll(viewport)
@@ -192,17 +191,28 @@ function chrome(scope: Omit<LayerTreeSlotScope, 'actions'>) {
 }
 
 /**
+ * The collections' modes, kept as the same value while they stay the same, so a scene change
+ * that leaves them alone, such as a drag frame, does not measure the rows again.
+ */
+const modeIds = computed<CollectionModeIds>((previous) => {
+  void store.state.sceneVersion
+  const next = collectionModeIds(store.graph)
+  return previous && isEqual(previous, next) ? previous : next
+})
+
+/**
  * The rows' width, wider than the list for the widest row's whole name. It goes on the
  * virtualizer's own element, over its `width: 100%`; its rows fill it, and a wider block runs
- * past the list's end in either reading direction, so the list scrolls sideways. The rows are
- * reactive, so a rename or a new mode badge widens it, while other renders reuse it.
+ * past the list's end in either reading direction, so the list scrolls sideways. It follows the
+ * reactive rows (their names, nesting, lock, visibility, and modes), the issue marks, and the
+ * collections' modes, and stays put through other scene changes.
  */
 const rowsWidth = computed(() => {
   const el = viewport.value
   // The list sets the rows' text size, so its font is the names' font.
   const style = el ? getComputedStyle(el) : null
   const marks = issueMarks.value
-  void store.state.sceneVersion
+  const collections = modeIds.value
   const overflow = rowsOverflow(
     root.value?.visibleRows ?? [],
     {
@@ -218,9 +228,7 @@ const rowsWidth = computed(() => {
       viewportWidth: viewportWidth.value
     },
     {
-      modeCount: (row) =>
-        layerAppliedModes(store.graph, row.node.variableModes, variables.value.numberedCollection)
-          .length,
+      modeCount: (row) => layerAppliedModeCount(row.node.variableModes, collections),
       showsIssue: (row, expanded) => showsLayerIssueMark(marks?.get(row.node.id), expanded),
       buttonsAlwaysShown: (row) => row.node.locked || !row.node.visible
     },
