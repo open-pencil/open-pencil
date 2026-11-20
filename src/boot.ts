@@ -7,6 +7,7 @@ import { createOpenOverlaysPlugin } from '@open-pencil/vue/lifecycle/overlays'
 import { createRetainedScopePlugin } from '@open-pencil/vue/lifecycle/retention'
 
 import './app.css'
+import './swipe-navigation.css'
 import { recordRuntimeError } from '@/app/diagnostics'
 import { installNativeFigArchives } from '@/app/document/io/native-fig'
 import { preloadCanvasKit } from '@/app/editor/canvas/canvaskit'
