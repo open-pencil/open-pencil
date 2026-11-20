@@ -78,7 +78,7 @@ export const insertIcon = defineTool({
 
     const size = args.size ?? 24
     const color = args.color ?? '#000000'
-    const parsedColor = parseColor(color)
+    const parsedColor = parseColor(color, graphOf(figma).documentColorSpace)
 
     let icons
     try {

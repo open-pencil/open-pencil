@@ -4,6 +4,7 @@ import { decode, parsePath } from 'ufo'
 
 import { tryParseColor } from '../color'
 import type { Color } from '../primitives'
+import type { ColorProfile } from '../types'
 
 /** A CSS dimension's number and lowercase unit, or null. */
 export function dimension(value: string): { number: number; unit: string } | null {
@@ -37,10 +38,13 @@ export function parseCSSNumber(value: string | undefined): number | null {
   }
 }
 
-/** A CSS color that paints something; null for an invalid or fully transparent one. */
-export function parseCSSColor(value: string | undefined): Color | null {
+/** A CSS color that paints something, as components in `profile`; null for an invalid or transparent one. */
+export function parseCSSColor(
+  value: string | undefined,
+  profile: ColorProfile = 'srgb'
+): Color | null {
   if (!value) return null
-  const color = tryParseColor(value.trim())
+  const color = tryParseColor(value.trim(), profile)
   return color && color.a > 0 ? color : null
 }
 

@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import type { VariableType } from '@open-pencil/scene-graph'
+import type { ColorProfile, VariableType } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -15,8 +15,8 @@ function figmaValue(value: ToolValue): FigmaVariableValue {
 
 type ToolValue = Color | number | string | boolean
 
-function parseVariableValue(type: VariableType, value: string): ToolValue {
-  if (type === 'COLOR') return parseColor(value)
+function parseVariableValue(type: VariableType, value: string, profile: ColorProfile): ToolValue {
+  if (type === 'COLOR') return parseColor(value, profile)
   if (type === 'FLOAT') return Number(value)
   if (type === 'BOOLEAN') return value === 'true'
   return value
@@ -41,7 +41,10 @@ export const createVariable = defineTool({
   execute: (figma, args) => {
     const type = args.type
     // The value is checked first, so a value the variable cannot hold creates nothing.
-    const value = args.value === undefined ? undefined : parseVariableValue(type, args.value)
+    const value =
+      args.value === undefined
+        ? undefined
+        : parseVariableValue(type, args.value, graphOf(figma).documentColorSpace)
     if (typeof value === 'number' && !Number.isFinite(value))
       return { error: `"${args.value}" is not a number` }
     const variable = figma.variables.createVariable(args.name, args.collection_id, type)
@@ -66,7 +69,11 @@ export const setVariable = defineTool({
   execute: (figma, args) => {
     const variable = figma.variables.getVariableById(args.id)
     if (!variable) return { error: `Variable "${args.id}" not found` }
-    const parsedValue = parseVariableValue(variable.resolvedType, args.value)
+    const parsedValue = parseVariableValue(
+      variable.resolvedType,
+      args.value,
+      graphOf(figma).documentColorSpace
+    )
     variable.setValueForMode(args.mode, figmaValue(parsedValue))
     return { id: args.id, mode: args.mode, value: parsedValue }
   }
