@@ -72,7 +72,9 @@ function drawPage(
   // Layers draw by themselves, without the page behind them, clipped by the frames around them.
   const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds: spec.nodeIds })
   const { pageId } = extracted
-  if (!pageId) return null
+  if (!pageId) {
+    return null
+  }
   prepareSelectionRenderGraph(graph, extracted.graph, pageId, spec.nodeIds)
 
   const canvas = doc.beginPage(width, height)

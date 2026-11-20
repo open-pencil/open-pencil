@@ -2,9 +2,11 @@ import { afterAll, describe, expect, test } from 'bun:test'
 
 import {
   ALL_SEVEN,
-  callsDuring,
+  bakedImage,
+  decodesDuring,
   distinctPixels,
   encode,
+  exportWork,
   imageFill,
   isOpaque,
   largestDifference,
@@ -14,12 +16,10 @@ import {
   withDecoded
 } from '#core-tests/helpers/adjusted-images'
 
-import { SceneGraph, type ImageFilters } from '@open-pencil/scene-graph'
+import { SceneGraph, type ImageFilters, type SceneNode } from '@open-pencil/scene-graph'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import * as baked from '#core/canvas/images/baked'
-import { shaderIsCheaper } from '#core/canvas/images/exporting'
 import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { getCanvasKit } from '#core/canvaskit'
 import {
@@ -34,6 +34,7 @@ afterAll(() => renderer.destroy())
 
 const NOISE_EDGE = 256
 const NOISE_PNG = encode(distinctPixels(NOISE_EDGE * NOISE_EDGE), NOISE_EDGE, NOISE_EDGE)
+const NOISE_HASH = computeImageHash(NOISE_PNG)
 const SMALL_EDGE = 8
 const SMALL_PNG = encode(distinctPixels(SMALL_EDGE * SMALL_EDGE), SMALL_EDGE, SMALL_EDGE)
 const WIDE_EDGE = 64
@@ -52,11 +53,15 @@ const WIDE_GAMUT_SETS: ImageFilters[] = [
   { tint: -1 }
 ]
 
-function layersOf(png: Uint8Array, sizes: number[]) {
+function graphWith(png: Uint8Array) {
   const graph = new SceneGraph()
+  graph.images.set(computeImageHash(png), png)
+  return { graph, pageId: graph.getPages()[0].id }
+}
+
+function layersOf(png: Uint8Array, sizes: number[]) {
+  const { graph, pageId } = graphWith(png)
   const hash = computeImageHash(png)
-  graph.images.set(hash, png)
-  const pageId = graph.getPages()[0].id
   const nodeIds = sizes.map(
     (size, index) =>
       graph.createNode('RECTANGLE', pageId, {
@@ -69,44 +74,86 @@ function layersOf(png: Uint8Array, sizes: number[]) {
   return { graph, pageId, nodeIds }
 }
 
-function bakesAndScans(job: () => void): { bakes: number; scans: number } {
-  let scans = 0
-  const bakes = callsDuring(baked, 'bakeFromPalette', () => {
-    scans = callsDuring(baked, 'withSourcePixels', job)
-  })
-  return { bakes, scans }
-}
-
-function exported(png: Uint8Array, sizes: number[], scale: number): Uint8Array {
-  const { graph, pageId, nodeIds } = layersOf(png, sizes)
+function exportedNodes(
+  r: SkiaRenderer,
+  graph: SceneGraph,
+  pageId: string,
+  nodeIds: string[],
+  scale = 1
+) {
   return expectDefined(
-    renderNodesToImage(ck, renderer, graph, pageId, nodeIds, { scale, format: 'PNG' }),
+    renderNodesToImage(ck, r, graph, pageId, nodeIds, { scale, format: 'PNG' }),
     'export'
   )
 }
 
+function exported(png: Uint8Array, sizes: number[], scale: number): Uint8Array {
+  const { graph, pageId, nodeIds } = layersOf(png, sizes)
+  return exportedNodes(renderer, graph, pageId, nodeIds, scale)
+}
+
+function exportedLayer(layer: Partial<SceneNode>) {
+  const { graph, pageId } = graphWith(NOISE_PNG)
+  const node = graph.createNode('RECTANGLE', pageId, layer)
+  return exportWork(renderer, () => {
+    exportedNodes(renderer, graph, pageId, [node.id])
+  })
+}
+
+function patternOfNoise(scale: number) {
+  const { graph, pageId } = graphWith(NOISE_PNG)
+  const source = graph.createNode('RECTANGLE', pageId, {
+    x: 5000,
+    width: NOISE_EDGE,
+    height: NOISE_EDGE,
+    fills: [imageFill(NOISE_HASH, ALL_SEVEN)]
+  })
+  graph.createNode('RECTANGLE', pageId, {
+    width: NOISE_EDGE,
+    height: NOISE_EDGE,
+    fills: [
+      {
+        type: 'PATTERN',
+        sourceNodeId: source.id,
+        scale,
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        opacity: 1,
+        visible: true
+      }
+    ]
+  })
+  return { graph, pageId }
+}
+
 describe('choosing between a baked image and the adjustment shader', () => {
-  test('draws a large many-colour image shown small through the shader, counting once', () => {
-    const counted = bakesAndScans(() => {
+  test('draws a large many-colour image shown small through the shader', () => {
+    const work = exportWork(renderer, () => {
       exported(NOISE_PNG, [16, 16], 1)
     })
-    expect(counted).toEqual({ bakes: 0, scans: 1 })
+    expect(work).toEqual({ bakes: 0, counted: 1 })
+  })
+
+  test('skips counting colours when even the least bake costs more than the shader', () => {
+    const work = exportWork(renderer, () => {
+      exported(NOISE_PNG, [2], 1)
+    })
+    expect(work).toEqual({ bakes: 0, counted: 0 })
   })
 
   test('bakes a small image drawn larger than it is', () => {
-    const counted = bakesAndScans(() => {
+    const work = exportWork(renderer, () => {
       exported(SMALL_PNG, [96, 96], 1)
     })
-    expect(counted).toEqual({ bakes: 1, scans: 1 })
+    expect(work).toEqual({ bakes: 1, counted: 1 })
   })
 
   test('weighs a thumbnail by the pixels it covers', () => {
     const noise = layersOf(NOISE_PNG, [512])
     const small = layersOf(SMALL_PNG, [512])
-    const noiseThumbnail = bakesAndScans(() => {
+    const noiseThumbnail = exportWork(renderer, () => {
       expectDefined(renderThumbnail(ck, renderer, noise.graph, noise.pageId, 32, 32), 'thumbnail')
     })
-    const smallThumbnail = bakesAndScans(() => {
+    const smallThumbnail = exportWork(renderer, () => {
       expectDefined(renderThumbnail(ck, renderer, small.graph, small.pageId, 32, 32), 'thumbnail')
     })
     expect(noiseThumbnail.bakes).toBe(0)
@@ -116,10 +163,10 @@ describe('choosing between a baked image and the adjustment shader', () => {
   test('weighs a region render by the pixels it covers', () => {
     const { graph, pageId } = layersOf(NOISE_PNG, [512])
     const region = { minX: 0, minY: 0, maxX: 512, maxY: 512 }
-    const small = bakesAndScans(() => {
+    const small = exportWork(renderer, () => {
       expectDefined(drawRegionToImage(ck, renderer, graph, pageId, region, 0.05), 'region')
     })
-    const large = bakesAndScans(() => {
+    const large = exportWork(renderer, () => {
       expectDefined(drawRegionToImage(ck, renderer, graph, pageId, region, 1), 'region')
     })
     expect(small.bakes).toBe(0)
@@ -129,28 +176,57 @@ describe('choosing between a baked image and the adjustment shader', () => {
   test('weighs only the part of a layer the export shows', () => {
     const { graph, pageId } = layersOf(NOISE_PNG, [4096])
     const corner = { minX: 0, minY: 0, maxX: 64, maxY: 64 }
-    const counted = bakesAndScans(() => {
+    const work = exportWork(renderer, () => {
       expectDefined(drawRegionToImage(ck, renderer, graph, pageId, corner, 1), 'region')
     })
-    expect(counted.bakes).toBe(0)
-  })
-})
-
-describe('the cost of baking', () => {
-  const source = { width: 100, height: 100, bakesExactly: true, distinctColors: null }
-
-  test('loses for an image it cannot read exactly in eight bits', () => {
-    expect(shaderIsCheaper({ ...source, bakesExactly: false }, Number.POSITIVE_INFINITY)).toBe(true)
+    expect(work.bakes).toBe(0)
   })
 
-  test('wins without counting when the draw covers as many pixels as the image holds', () => {
-    expect(shaderIsCheaper({ ...source, distinctColors: 10_000 }, 10_000)).toBe(false)
+  test('neither counts nor bakes a layer outside the region', () => {
+    const { graph, pageId } = layersOf(NOISE_PNG, [512])
+    const elsewhere = { minX: 1000, minY: 1000, maxX: 1064, maxY: 1064 }
+    const work = exportWork(renderer, () => {
+      expectDefined(drawRegionToImage(ck, renderer, graph, pageId, elsewhere, 1), 'region')
+    })
+    expect(work).toEqual({ bakes: 0, counted: 0 })
   })
 
-  test('needs the colours counted when the image holds more pixels than the draw covers', () => {
-    expect(shaderIsCheaper(source, 1000)).toBe(false)
-    expect(shaderIsCheaper({ ...source, distinctColors: 5000 }, 1000)).toBe(true)
-    expect(shaderIsCheaper({ ...source, distinctColors: 50 }, 1000)).toBe(false)
+  test('weighs an image stroke by its band, not the whole layer', () => {
+    const stroke = { ...imageFill(NOISE_HASH, ALL_SEVEN), weight: 1, align: 'INSIDE' as const }
+    const work = exportedLayer({ width: NOISE_EDGE, height: NOISE_EDGE, strokes: [stroke] })
+    expect(work.bakes).toBe(0)
+  })
+
+  test('weighs a rotated strip by its own area, not its bounding box', () => {
+    const work = exportedLayer({
+      width: 1000,
+      height: 4,
+      rotation: 45,
+      fills: [imageFill(NOISE_HASH, ALL_SEVEN)]
+    })
+    expect(work.bakes).toBe(0)
+  })
+
+  test('weighs an image in a pattern source at the scale the pattern draws it', () => {
+    const { graph, pageId } = patternOfNoise(0.04)
+    const region = { minX: 0, minY: 0, maxX: NOISE_EDGE, maxY: NOISE_EDGE }
+    const work = exportWork(renderer, () => {
+      expectDefined(drawRegionToImage(ck, renderer, graph, pageId, region, 1), 'region')
+    })
+    expect(work.bakes).toBe(0)
+  })
+
+  test('decodes an image once when the shader draws it', () => {
+    const own = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
+    try {
+      const { graph, pageId, nodeIds } = layersOf(NOISE_PNG, [16])
+      const decodes = decodesDuring(() => {
+        exportedNodes(own, graph, pageId, nodeIds)
+      })
+      expect(decodes).toBe(1)
+    } finally {
+      own.destroy()
+    }
   })
 })
 
@@ -168,7 +244,7 @@ describe('a Display P3 image', () => {
 
   test.each(WIDE_GAMUT_SETS)('bakes exactly as the shader adjusts it: %o', (filters) => {
     withDecoded(WIDE_GAMUT_PNG, (image) => {
-      const bake = expectDefined(baked.bakeAdjustedImage(renderer, image, filters), 'baked image')
+      const bake = bakedImage(renderer, image, filters)
       try {
         const shaded = shaderPixels(renderer, image, filters, 'unpremultiplied')
         expect(largestDifference(readImage(bake, 'unpremultiplied'), shaded, isOpaque)).toBe(0)

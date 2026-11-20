@@ -11,10 +11,11 @@ const ALPHA_BITS = 0xff000000
 const COLOR_BITS = 0x00ffffff
 export const PALETTE_ROW = 4096
 
-export interface SourcePixels {
+export interface SourceScan {
   readonly info: ImageInfo
   readonly bytes: Uint8Array
   readonly pixels: Uint32Array
+  readonly palette: ColorPalette
 }
 
 function unpremultiplied(
@@ -51,23 +52,34 @@ export function holdsEightBitChannels(r: SkiaRenderer, image: Image): boolean {
   return eightBit.some((type) => type.value === stored)
 }
 
-export function withSourcePixels<T>(
-  r: SkiaRenderer,
-  image: Image,
-  use: (source: SourcePixels) => T
-): T | null {
-  const colorSpace = image.getColorSpace()
-  try {
-    const info = unpremultiplied(r, image.width(), image.height(), colorSpace)
-    const bytes = image.readPixels(0, 0, info)
-    if (!(bytes instanceof Uint8Array)) {
-      return null
+function paletteOf(pixels: Uint32Array): ColorPalette {
+  const palette = new ColorPalette()
+  for (const pixel of pixels) {
+    if (!isTransparent(pixel)) {
+      palette.add(opaque(pixel))
     }
-    const pixels = new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.length / BYTES_PER_PIXEL)
-    return use({ info, bytes, pixels })
-  } finally {
-    colorSpace.delete()
   }
+  return palette
+}
+
+export function scanSource(r: SkiaRenderer, image: Image): SourceScan | null {
+  const colorSpace = image.getColorSpace()
+  const info = unpremultiplied(r, image.width(), image.height(), colorSpace)
+  const bytes = image.readPixels(0, 0, info)
+  if (!(bytes instanceof Uint8Array)) {
+    colorSpace.delete()
+    return null
+  }
+  const pixels = new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.length / BYTES_PER_PIXEL)
+  return { info, bytes, pixels, palette: paletteOf(pixels) }
+}
+
+export function releaseScan(scan: SourceScan): void {
+  scan.info.colorSpace.delete()
+}
+
+export function scanByteLength(scan: SourceScan): number {
+  return scan.bytes.byteLength + scan.palette.byteLength
 }
 
 function adjustPalette(
@@ -130,45 +142,26 @@ function mipmappedImage(r: SkiaRenderer, info: ImageInfo, pixels: Uint8Array): I
   }
 }
 
-export function paletteOf(pixels: Uint32Array): ColorPalette {
-  const palette = new ColorPalette()
-  for (const pixel of pixels) {
-    if (!isTransparent(pixel)) {
-      palette.add(opaque(pixel))
-    }
-  }
-  return palette
-}
-
-export function bakeFromPalette(
+export function bakeFromScan(
   r: SkiaRenderer,
-  source: SourcePixels,
-  palette: ColorPalette,
+  scan: SourceScan,
   filters: ImageFilters
 ): Image | null {
-  const { info, bytes, pixels } = source
+  const { info, palette } = scan
   if (palette.count === 0) {
-    return mipmappedImage(r, info, bytes)
+    return mipmappedImage(r, info, scan.bytes)
   }
   const adjusted = adjustPalette(r, palette, info.colorSpace, filters)
   if (!adjusted) {
     return null
   }
+  const pixels = scan.pixels.slice()
   for (let at = 0; at < pixels.length; at++) {
     const pixel = pixels[at]
     if (!isTransparent(pixel)) {
       pixels[at] = withAlphaOf(adjusted[palette.indexOf(opaque(pixel))], pixel)
     }
   }
-  return mipmappedImage(r, { ...info, colorSpace: r.ck.ColorSpace.SRGB }, bytes)
-}
-
-export function bakeAdjustedImage(
-  r: SkiaRenderer,
-  image: Image,
-  filters: ImageFilters
-): Image | null {
-  return withSourcePixels(r, image, (source) =>
-    bakeFromPalette(r, source, paletteOf(source.pixels), filters)
-  )
+  const srgb = { ...info, colorSpace: r.ck.ColorSpace.SRGB }
+  return mipmappedImage(r, srgb, new Uint8Array(pixels.buffer))
 }

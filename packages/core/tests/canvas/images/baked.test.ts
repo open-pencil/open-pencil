@@ -1,11 +1,12 @@
-import { afterAll, describe, expect, test } from 'bun:test'
+import { afterAll, describe, expect, spyOn, test } from 'bun:test'
 
 import {
   ALL_SEVEN,
   OPAQUE,
-  callsDuring,
+  bakedImage,
   distinctPixels,
   encode,
+  exportWork,
   imageFill,
   isOpaque,
   isTranslucent,
@@ -24,8 +25,7 @@ import { SceneGraph, type ImageFilters } from '@open-pencil/scene-graph'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import * as adjustments from '#core/canvas/images/adjustments'
-import { PALETTE_ROW, bakeAdjustedImage } from '#core/canvas/images/baked'
+import { PALETTE_ROW } from '#core/canvas/images/baked'
 import { createImageCache } from '#core/canvas/images/cache'
 import { adjustedImageForExport, drawingExport } from '#core/canvas/images/exporting'
 import { SkiaRenderer } from '#core/canvas/renderer/skia'
@@ -124,7 +124,7 @@ function bakedPixels(
   filters: ImageFilters,
   alpha: AlphaType
 ): Uint8Array {
-  const baked = expectDefined(bakeAdjustedImage(r, image, filters), 'baked image')
+  const baked = bakedImage(r, image, filters)
   try {
     return readImage(baked, alpha)
   } finally {
@@ -148,8 +148,8 @@ function expectShaderMatch(
   expect(largestDifference(premultiplied, shadedPremultiplied, isTransparent)).toBe(0)
 }
 
-function adjustmentShadersMade(job: () => void): number {
-  return callsDuring(adjustments, 'makeAdjustedImageShader', job)
+function bakesDuring(r: SkiaRenderer, job: () => void): number {
+  return exportWork(r, job).bakes
 }
 
 function expectBakeMatchesShader(r: SkiaRenderer, image: Image, filters: ImageFilters): void {
@@ -237,7 +237,7 @@ describe('adjusted images in exports', () => {
       { page: 0, filters: { exposure: 0.3 } },
       { page: 0, filters: { saturation: -1 } }
     ])
-    const made = adjustmentShadersMade(() => {
+    const made = bakesDuring(renderer, () => {
       expectDefined(
         renderNodesToImage(
           ck,
@@ -260,7 +260,7 @@ describe('adjusted images in exports', () => {
       { page: 1, filters: { exposure: 0.3 } },
       { page: 1, filters: { saturation: -1 } }
     ])
-    const made = adjustmentShadersMade(() => {
+    const made = bakesDuring(renderer, () => {
       expectDefined(renderPagesToPDF(renderer, graph, specs), 'PDF')
     })
     expect(made).toBe(2)
@@ -274,7 +274,7 @@ describe('adjusted images in exports', () => {
         { page: 0, filters: { tint: 1 } },
         { page: 1, filters: { tint: 1 } }
       ])
-      const made = adjustmentShadersMade(() => {
+      const made = bakesDuring(own, () => {
         expectDefined(renderPagesToPDF(own, graph, specs), 'PDF')
       })
       expect(made).toBe(1)
@@ -288,7 +288,7 @@ describe('adjusted images in exports', () => {
     try {
       const { graph, specs } = graphWithLayers([{ page: 0, filters: { contrast: 1 } }])
       expect(own.images.cache.get(HASH)).toBeUndefined()
-      const made = adjustmentShadersMade(() => {
+      const made = bakesDuring(own, () => {
         expectDefined(renderPagesToPDF(own, graph, specs), 'PDF')
       })
       expect(made).toBe(1)
@@ -310,7 +310,7 @@ describe('adjusted images in exports', () => {
     } finally {
       recorder.delete()
     }
-    const made = adjustmentShadersMade(() => {
+    const made = bakesDuring(renderer, () => {
       expectDefined(renderPagesToPDF(renderer, graph, specs), 'PDF')
     })
     expect(made).toBe(1)
@@ -319,37 +319,54 @@ describe('adjusted images in exports', () => {
 
 describe('the export scope', () => {
   const { graph, specs } = graphWithLayers([{ page: 0, filters: ALL_SEVEN }])
-  const layer = expectDefined(graph.getNode(specs[0].nodeIds[0]), 'layer')
+  const node = expectDefined(graph.getNode(specs[0].nodeIds[0]), 'layer')
+  const draw = { hash: HASH, filters: ALL_SEVEN, node }
+
+  function bakedInScope(image: Image): Image | null {
+    return adjustedImageForExport(renderer, draw, () => image)
+  }
 
   test('bakes nothing outside an export', () => {
-    expect(adjustedImageForExport(renderer, graph, HASH, ALL_SEVEN, layer)).toBeNull()
+    withDecoded(PNG, (image) => {
+      expect(bakedInScope(image)).toBeNull()
+    })
   })
 
   test('frees what it baked when the drawing throws', () => {
     const kept: { image: Image | null } = { image: null }
-    expect(() =>
-      drawingExport(renderer.images, null, () => {
-        kept.image = adjustedImageForExport(renderer, graph, HASH, ALL_SEVEN, layer)
-        throw new Error('drawing failed')
-      })
-    ).toThrow('drawing failed')
+    withDecoded(PNG, (image) => {
+      expect(() =>
+        drawingExport(renderer.images, null, () => {
+          kept.image = bakedInScope(image)
+          throw new Error('drawing failed')
+        })
+      ).toThrow('drawing failed')
+    })
     expect(expectDefined(kept.image, 'baked image').isDeleted()).toBe(true)
     expect(renderer.images.exporting).toBeNull()
   })
 
   test('shares one bake across nested exports and frees it when the outer one ends', () => {
-    const made = adjustmentShadersMade(() => {
+    withDecoded(PNG, (image) => {
       const baked = drawingExport(renderer.images, null, () => {
-        const outer = adjustedImageForExport(renderer, graph, HASH, ALL_SEVEN, layer)
-        const nested = drawingExport(renderer.images, null, () =>
-          adjustedImageForExport(renderer, graph, HASH, ALL_SEVEN, layer)
-        )
+        const outer = bakedInScope(image)
+        const nested = drawingExport(renderer.images, null, () => bakedInScope(image))
         expect(nested).toBe(outer)
         expect(expectDefined(nested, 'baked image').isDeleted()).toBe(false)
         return nested
       })
       expect(expectDefined(baked, 'baked image').isDeleted()).toBe(true)
     })
-    expect(made).toBe(1)
+  })
+
+  test('reads an image once for every set of filters it bakes with', () => {
+    withDecoded(PNG, (image) => {
+      const reads = spyOn(image, 'readPixels')
+      drawingExport(renderer.images, null, () => {
+        adjustedImageForExport(renderer, { ...draw, filters: { tint: 1 } }, () => image)
+        adjustedImageForExport(renderer, { ...draw, filters: { tint: -1 } }, () => image)
+      })
+      expect(reads).toHaveBeenCalledTimes(1)
+    })
   })
 })

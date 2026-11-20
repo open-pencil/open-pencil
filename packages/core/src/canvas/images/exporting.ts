@@ -1,14 +1,31 @@
-import type { Image } from '@open-pencil/canvaskit'
-import type { ImageFilters, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import Matrix from '@open-pencil/scene-graph/matrix'
+import type { Canvas, Image } from '@open-pencil/canvaskit'
+import type { ImageFilters, SceneNode, Stroke } from '@open-pencil/scene-graph'
 
+import { ResourceCache } from '#core/cache/resource'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
 import { adjustmentValues } from './adjustments'
-import { bakeFromPalette, holdsEightBitChannels, paletteOf, withSourcePixels } from './baked'
+import {
+  bakeFromScan,
+  holdsEightBitChannels,
+  releaseScan,
+  scanByteLength,
+  scanSource,
+  type SourceScan
+} from './baked'
+import { IMAGE_CACHE_BYTES } from './cache'
+import { areaScale, coveredRasterPixels, shaderIsCheaper } from './export-cost'
 import type { ExportImages, ExportSource, ExportTarget, RendererImages } from './state'
 
-const SOURCE_PIXELS_PER_SHADER_RUN = 100
+const SCANS_BYTES = IMAGE_CACHE_BYTES / 2
+const MAX_SCANS = 64
+
+export interface AdjustedImageDraw {
+  readonly hash: string
+  readonly filters: ImageFilters
+  readonly node: SceneNode
+  readonly stroke?: Stroke
+}
 
 function drawingOn<T>(exporting: ExportImages, target: ExportTarget | null, draw: () => T): T {
   if (!target) {
@@ -23,6 +40,20 @@ function drawingOn<T>(exporting: ExportImages, target: ExportTarget | null, draw
   }
 }
 
+function openExport(): ExportImages {
+  return {
+    adjusted: new Map(),
+    sources: new Map(),
+    scans: new ResourceCache({
+      maxEntries: MAX_SCANS,
+      maxWeight: SCANS_BYTES,
+      weight: scanByteLength,
+      dispose: releaseScan
+    }),
+    target: null
+  }
+}
+
 export function drawingExport<T>(
   images: RendererImages,
   target: ExportTarget | null,
@@ -32,42 +63,34 @@ export function drawingExport<T>(
   if (open) {
     return drawingOn(open, target, draw)
   }
-  const exporting: ExportImages = { adjusted: new Map(), sources: new Map(), target: null }
+  const exporting = openExport()
   images.exporting = exporting
   try {
     return drawingOn(exporting, target, draw)
   } finally {
     images.exporting = null
+    exporting.scans.clear()
     for (const image of exporting.adjusted.values()) {
       image?.delete()
     }
   }
 }
 
-function coveredRasterPixels(target: ExportTarget | null, node: SceneNode): number {
-  if (!target) {
-    return Number.POSITIVE_INFINITY
+export function drawingPictureRasterizedByExport<T>(
+  images: RendererImages,
+  recording: Canvas,
+  draw: () => T
+): T {
+  const outer = images.exporting?.target
+  if (!outer) {
+    return draw()
   }
-  const { width, height } = node
-  const corners = Matrix.mapPoints(target.canvas.getTotalMatrix(), [
-    0,
-    0,
-    width,
-    0,
-    width,
-    height,
-    0,
-    height
-  ])
-  const [x0, y0, x1, y1, x2, y2, x3, y3] = corners
-  const [clipLeft, clipTop, clipRight, clipBottom] = target.canvas.getDeviceClipBounds()
-  const coveredWidth =
-    Math.min(clipRight, Math.max(x0, x1, x2, x3)) - Math.max(clipLeft, Math.min(x0, x1, x2, x3))
-  const coveredHeight =
-    Math.min(clipBottom, Math.max(y0, y1, y2, y3)) - Math.max(clipTop, Math.min(y0, y1, y2, y3))
-  const covered =
-    Math.max(0, coveredWidth) * Math.max(0, coveredHeight) * target.rasterPixelsPerDeviceUnit ** 2
-  return Number.isNaN(covered) ? Number.POSITIVE_INFINITY : covered
+  const outerScale = Math.sqrt(areaScale(outer.canvas.getTotalMatrix()))
+  const target = {
+    canvas: recording,
+    rasterPixelsPerDeviceUnit: outer.rasterPixelsPerDeviceUnit * outerScale
+  }
+  return drawingExport(images, target, draw)
 }
 
 function describeSource(r: SkiaRenderer, image: Image): ExportSource {
@@ -79,40 +102,28 @@ function describeSource(r: SkiaRenderer, image: Image): ExportSource {
   }
 }
 
-export function shaderIsCheaper(source: ExportSource, coveredPixels: number): boolean {
-  if (!source.bakesExactly) {
-    return true
-  }
-  const sourcePixels = source.width * source.height
-  if (sourcePixels <= coveredPixels) {
-    return false
-  }
-  if (source.distinctColors === null) {
-    return false
-  }
-  const bakeCost = source.distinctColors + sourcePixels / SOURCE_PIXELS_PER_SHADER_RUN
-  return bakeCost >= coveredPixels
-}
-
-function withStoredImage(
+function withScan<T>(
   r: SkiaRenderer,
-  graph: SceneGraph,
+  exporting: ExportImages,
   hash: string,
-  use: (image: Image) => Image | null
-): Image | null {
-  const cached = r.images.cache.get(hash)
-  if (cached) {
-    return use(cached)
+  image: Image,
+  use: (scan: SourceScan) => T
+): T | null {
+  const kept = exporting.scans.get(hash)
+  if (kept) {
+    return use(kept)
   }
-  const data = graph.images.get(hash)
-  const decoded = data && r.ck.MakeImageFromEncoded(data)
-  if (!decoded) {
+  const scan = scanSource(r, image)
+  if (!scan) {
     return null
   }
+  if (exporting.scans.set(hash, scan)) {
+    return use(scan)
+  }
   try {
-    return use(decoded)
+    return use(scan)
   } finally {
-    decoded.delete()
+    releaseScan(scan)
   }
 }
 
@@ -120,50 +131,41 @@ function bakedImageKey(hash: string, filters: ImageFilters): string {
   return `${hash}:${Object.values(adjustmentValues(filters)).join(',')}`
 }
 
-function bakeUnlessShaderIsCheaper(
-  r: SkiaRenderer,
-  exporting: ExportImages,
-  image: Image,
-  draw: { hash: string; filters: ImageFilters; coveredPixels: number }
-): Image | null {
-  const source = exporting.sources.get(draw.hash) ?? describeSource(r, image)
-  exporting.sources.set(draw.hash, source)
-  if (shaderIsCheaper(source, draw.coveredPixels)) {
-    return null
-  }
-  return withSourcePixels(r, image, (pixels) => {
-    const palette = paletteOf(pixels.pixels)
-    source.distinctColors = palette.count
-    if (shaderIsCheaper(source, draw.coveredPixels)) {
-      return null
-    }
-    const baked = bakeFromPalette(r, pixels, palette, draw.filters)
-    exporting.adjusted.set(bakedImageKey(draw.hash, draw.filters), baked)
-    return baked
-  })
-}
-
 export function adjustedImageForExport(
   r: SkiaRenderer,
-  graph: SceneGraph,
-  hash: string,
-  filters: ImageFilters,
-  node: SceneNode
+  draw: AdjustedImageDraw,
+  storedImage: () => Image | null
 ): Image | null {
   const exporting = r.images.exporting
   if (!exporting) {
     return null
   }
-  const kept = exporting.adjusted.get(bakedImageKey(hash, filters))
+  const key = bakedImageKey(draw.hash, draw.filters)
+  const kept = exporting.adjusted.get(key)
   if (kept !== undefined) {
     return kept
   }
-  const coveredPixels = coveredRasterPixels(exporting.target, node)
-  const known = exporting.sources.get(hash)
+  const coveredPixels = coveredRasterPixels(exporting.target, draw.node, draw.stroke)
+  const known = exporting.sources.get(draw.hash)
   if (known && shaderIsCheaper(known, coveredPixels)) {
     return null
   }
-  return withStoredImage(r, graph, hash, (image) =>
-    bakeUnlessShaderIsCheaper(r, exporting, image, { hash, filters, coveredPixels })
-  )
+  const image = storedImage()
+  if (!image) {
+    return null
+  }
+  const source = known ?? describeSource(r, image)
+  exporting.sources.set(draw.hash, source)
+  if (shaderIsCheaper(source, coveredPixels)) {
+    return null
+  }
+  return withScan(r, exporting, draw.hash, image, (scan) => {
+    source.distinctColors = scan.palette.count
+    if (shaderIsCheaper(source, coveredPixels)) {
+      return null
+    }
+    const baked = bakeFromScan(r, scan, draw.filters)
+    exporting.adjusted.set(key, baked)
+    return baked
+  })
 }

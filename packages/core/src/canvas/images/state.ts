@@ -2,6 +2,9 @@ import type { Canvas, Image, Surface } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 
+import type { ResourceCache } from '#core/cache/resource'
+
+import type { SourceScan } from './baked'
 import { createImageCache } from './cache'
 import { ImagePreviewCache } from './previews'
 
@@ -25,6 +28,7 @@ export interface ExportSource {
 export interface ExportImages {
   readonly adjusted: Map<string, Image | null>
   readonly sources: Map<string, ExportSource>
+  readonly scans: ResourceCache<string, SourceScan>
   target: ExportTarget | null
 }
 

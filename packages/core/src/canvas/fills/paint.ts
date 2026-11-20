@@ -1,5 +1,5 @@
 import type { Canvas, Image, Paint, Shader } from '@open-pencil/canvaskit'
-import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
+import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
 import { drawnImageHash, imageFillMatrix } from '@open-pencil/scene-graph/images'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -8,7 +8,10 @@ import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-g
 
 import { setPaintBlendMode } from '#core/canvas/blend/modes'
 import { hasImageAdjustments, makeAdjustedImageShader } from '#core/canvas/images/adjustments'
-import { adjustedImageForExport } from '#core/canvas/images/exporting'
+import {
+  adjustedImageForExport,
+  drawingPictureRasterizedByExport
+} from '#core/canvas/images/exporting'
 import { previewEdge } from '#core/canvas/images/previews'
 import {
   drawOffOutputGrid,
@@ -152,22 +155,24 @@ function recordPatternSource(
   const recorder = new r.ck.PictureRecorder()
   const canvas = recorder.beginRecording(bounds)
 
-  for (const position of layout.positions) {
-    canvas.save()
-    canvas.translate(position.x, position.y)
-    canvas.scale(layout.scale, layout.scale)
-    if (!drawVectorMultiStyleFills(r, canvas, source, graph, patternStack)) {
-      paintFills(
-        r,
-        source.fills,
-        source,
-        graph,
-        (sourceFill) => drawNodeFill(r, canvas, source, sourceFill),
-        { patternStack }
-      )
+  drawingPictureRasterizedByExport(r.images, canvas, () => {
+    for (const position of layout.positions) {
+      canvas.save()
+      canvas.translate(position.x, position.y)
+      canvas.scale(layout.scale, layout.scale)
+      if (!drawVectorMultiStyleFills(r, canvas, source, graph, patternStack)) {
+        paintFills(
+          r,
+          source.fills,
+          source,
+          graph,
+          (sourceFill) => drawNodeFill(r, canvas, source, sourceFill),
+          { patternStack }
+        )
+      }
+      canvas.restore()
     }
-    canvas.restore()
-  }
+  })
 
   const picture = recorder.finishRecordingAsPicture()
   recorder.delete()
@@ -382,23 +387,34 @@ function setBakedImageShader(
   return true
 }
 
+function decodedOnDemand(r: SkiaRenderer, data: Uint8Array | undefined) {
+  let decoded: Image | null | undefined
+  return {
+    image(): Image | null {
+      if (decoded === undefined) {
+        decoded = data ? r.ck.MakeImageFromEncoded(data) : null
+      }
+      return decoded
+    },
+    release(): void {
+      decoded?.delete()
+    }
+  }
+}
+
 export function applyImageFill(
   r: SkiaRenderer,
   fill: Fill,
   node: SceneNode,
   graph: SceneGraph,
-  paint: Paint = r.fillPaint
+  paint: Paint = r.fillPaint,
+  stroke?: Stroke
 ): boolean {
   const hash = drawnImageHash(fill)
   if (!hash) return false
   const live = r.images.live.get(hash)
   if (live?.surface === r.surface) {
     return setImageShader(r, fill, node, graph, live.image, paint)
-  }
-  const baked =
-    hasImageAdjustments(fill.filters) && adjustedImageForExport(r, graph, hash, fill.filters, node)
-  if (baked) {
-    return setBakedImageShader(r, fill, node, graph, baked, paint)
   }
   if (r.viewportImageRendering) {
     r.noteImageFillUser(hash, node.id)
@@ -411,19 +427,29 @@ export function applyImageFill(
     : undefined
   if (r.viewportImageRendering && !preview) return false
   const key = preview?.key ?? hash
-  let img = r.images.cache.get(key)
+  const cached = r.images.cache.get(key)
+  const encoded = decodedOnDemand(r, preview?.preview.bytes ?? graph.images.get(hash))
+  let img = cached
   let temporary = false
-  if (!img) {
-    const data = preview?.preview.bytes ?? graph.images.get(hash)
-    if (!data) return false
-    const decoded = r.ck.MakeImageFromEncoded(data)
-    if (!decoded) return false
-    try {
-      img = decoded.makeCopyWithDefaultMipmaps()
-    } finally {
-      decoded.delete()
+  try {
+    const filters = fill.filters
+    const baked =
+      !preview &&
+      hasImageAdjustments(filters) &&
+      adjustedImageForExport(r, { hash, filters, node, stroke }, () => cached ?? encoded.image())
+    if (baked) {
+      return setBakedImageShader(r, fill, node, graph, baked, paint)
     }
-    temporary = !r.images.cache.set(key, img)
+    if (!img) {
+      const decoded = encoded.image()
+      if (!decoded) {
+        return false
+      }
+      img = decoded.makeCopyWithDefaultMipmaps()
+      temporary = !r.images.cache.set(key, img)
+    }
+  } finally {
+    encoded.release()
   }
 
   try {

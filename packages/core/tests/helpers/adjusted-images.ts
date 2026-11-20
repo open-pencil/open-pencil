@@ -5,6 +5,8 @@ import type { ImageFilters } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { makeAdjustedImageShader } from '#core/canvas/images/adjustments'
+import { bakeFromScan, releaseScan, scanSource } from '#core/canvas/images/baked'
+import { drawingExport } from '#core/canvas/images/exporting'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { getCanvasKit } from '#core/canvaskit'
 
@@ -157,16 +159,37 @@ export const isOpaque = (alpha: number) => alpha === OPAQUE
 export const isTranslucent = (alpha: number) => alpha > 0 && alpha < OPAQUE
 export const isTransparent = (alpha: number) => alpha === 0
 
-export function callsDuring<T extends object, K extends keyof T>(
-  owner: T,
-  method: K,
-  job: () => void
-): number {
-  const spy = spyOn(owner, method)
+export interface ExportWork {
+  readonly bakes: number
+  readonly counted: number
+}
+
+export function exportWork(renderer: SkiaRenderer, job: () => void): ExportWork {
+  return drawingExport(renderer.images, null, () => {
+    job()
+    const { adjusted, sources } = expectDefined(renderer.images.exporting, 'export scope')
+    return {
+      bakes: [...adjusted.values()].filter((image) => image !== null).length,
+      counted: [...sources.values()].filter((source) => source.distinctColors !== null).length
+    }
+  })
+}
+
+export function decodesDuring(job: () => void): number {
+  const spy = spyOn(ck, 'MakeImageFromEncoded')
   try {
     job()
     return spy.mock.calls.length
   } finally {
     spy.mockRestore()
+  }
+}
+
+export function bakedImage(renderer: SkiaRenderer, image: Image, filters: ImageFilters): Image {
+  const scan = expectDefined(scanSource(renderer, image), 'scanned image')
+  try {
+    return expectDefined(bakeFromScan(renderer, scan, filters), 'baked image')
+  } finally {
+    releaseScan(scan)
   }
 }

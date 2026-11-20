@@ -25,6 +25,10 @@ export class ColorPalette {
     this.count++
   }
 
+  get byteLength(): number {
+    return this.colors.byteLength + this.keys.byteLength + this.indices.byteLength
+  }
+
   indexOf(color: number): number {
     return this.indices[this.slotOf(color)]
   }
