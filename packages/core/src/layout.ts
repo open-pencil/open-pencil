@@ -48,6 +48,7 @@ import {
   applyLockedAspectRatio,
   configureAbsoluteChild,
   createLayoutNode,
+  layoutPadding,
   mapAlignSelf,
   mapGridTrack,
   parentSizedAcross,
@@ -210,8 +211,9 @@ function insertFlexChildren(
   const box = insertFlowBox(parentNode, parent)
   const flow: LayoutNode[] = []
   const sizedAcross = once(() => parentSizedAcross(graph, parent))
-  for (const node of graph.getChildren(parent.id)) {
-    const child = asLaidOutIn(graph, node, parent)
+  const children = graph.getChildren(parent.id).map((node) => asLaidOutIn(graph, node, parent))
+  const flexBasisUnit = fillBasisUnit(children, parent)
+  for (const child of children) {
     const item = createLayoutNode()
 
     if (child.layoutPositioning === 'ABSOLUTE') {
@@ -219,7 +221,7 @@ function insertFlexChildren(
     } else if (!child.visible) {
       item.style.display = 'none'
     } else {
-      configureInFlowChild(item, child, parent, graph, direction)
+      configureInFlowChild(item, child, parent, graph, direction, flexBasisUnit)
       alignCappedFill(item, child, parent, sizedAcross)
       flow.push(item)
     }
@@ -229,17 +231,40 @@ function insertFlexChildren(
   setFlowEdges(parentNode, box, parent, flow, direction)
 }
 
+/**
+ * The flex basis one unit of Fill takes in this container: the largest main-axis padding
+ * per unit of grow among the container's growing auto-layout children. Taffy, like Yoga and
+ * CSS, does not let a flex basis drop below a node's padding, so growing siblings from a
+ * zero basis split unevenly whenever their paddings differ: the padding is added on top of
+ * the equal share. Starting every growing child from a basis proportional to its grow, at
+ * least as large as its own padding, puts them on the same footing, so equal grow splits
+ * equally and unequal grow keeps its ratio.
+ */
+function fillBasisUnit(children: readonly SceneNode[], parent: SceneNode): number {
+  const isRow = parent.layoutMode === 'HORIZONTAL'
+  let unit = 0
+  for (const child of children) {
+    if (child.layoutGrow <= 0 || child.layoutMode === 'NONE') continue
+    if (!child.visible || child.layoutPositioning === 'ABSOLUTE') continue
+    const padding = layoutPadding(child)
+    const main = isRow ? padding.left + padding.right : padding.top + padding.bottom
+    unit = Math.max(unit, main / child.layoutGrow)
+  }
+  return unit
+}
+
 function configureInFlowChild(
   item: LayoutNode,
   child: SceneNode,
   parent: SceneNode,
   graph: SceneGraph,
-  direction: 'LTR' | 'RTL'
+  direction: 'LTR' | 'RTL',
+  flexBasisUnit: number
 ): void {
   if (child.layoutMode === 'GRID') {
-    configureChildAsGrid(item, child, parent, graph, direction)
+    configureChildAsGrid(item, child, parent, graph, direction, flexBasisUnit)
   } else if (child.layoutMode !== 'NONE') {
-    configureChildAsAutoLayout(item, child, parent, graph, direction)
+    configureChildAsAutoLayout(item, child, parent, graph, direction, flexBasisUnit)
   } else {
     configureChildAsLeaf(item, child, parent, graph)
   }
@@ -262,7 +287,8 @@ function configureChildAsGrid(
   child: SceneNode,
   parent: SceneNode,
   graph: SceneGraph,
-  inheritedDirection: 'LTR' | 'RTL'
+  inheritedDirection: 'LTR' | 'RTL',
+  flexBasisUnit: number
 ): void {
   const direction = resolveNodeLayoutDirection(child, inheritedDirection)
   item.style.display = 'grid'
@@ -289,7 +315,7 @@ function configureChildAsGrid(
   if (child.layoutGrow > 0) {
     item.style.flexGrow = child.layoutGrow
     item.style.flexShrink = 1
-    item.style.flexBasis = 0
+    item.style.flexBasis = child.layoutGrow * flexBasisUnit
     if (!stretchCross) {
       if (isParentRow) item.style.height = child.height
       else item.style.width = child.width
@@ -328,7 +354,8 @@ function configureAutoLayoutChildSizing(
   parent: SceneNode,
   graph: SceneGraph,
   widthSizing: LayoutSizing,
-  heightSizing: LayoutSizing
+  heightSizing: LayoutSizing,
+  flexBasisUnit: number
 ): void {
   const isParentRow = parent.layoutMode === 'HORIZONTAL'
   const fixedDerivedMainAxis = isParentRow
@@ -337,7 +364,7 @@ function configureAutoLayoutChildSizing(
 
   if (isParentRow) {
     if (fixedDerivedMainAxis) item.style.width = child.derivedLayout?.width ?? child.width
-    else setMainAxisSizing(item, 'width', widthSizing, child.width, child.layoutGrow)
+    else setMainAxisSizing(item, 'width', widthSizing, child.width, child.layoutGrow, flexBasisUnit)
     const keepsSize = fillKeepsSizeInHuggingParent(child, parent, 'height')
     setCrossAxisSizing(item, 'height', heightSizing, child.height, keepsSize)
     return
@@ -346,7 +373,8 @@ function configureAutoLayoutChildSizing(
   const keepsSize = fillKeepsSizeInHuggingParent(child, parent, 'width')
   setCrossAxisSizing(item, 'width', widthSizing, child.width, keepsSize)
   if (fixedDerivedMainAxis) item.style.height = child.derivedLayout?.height ?? child.height
-  else setMainAxisSizing(item, 'height', heightSizing, child.height, child.layoutGrow)
+  else
+    setMainAxisSizing(item, 'height', heightSizing, child.height, child.layoutGrow, flexBasisUnit)
 }
 
 function configureChildAsAutoLayout(
@@ -354,13 +382,22 @@ function configureChildAsAutoLayout(
   child: SceneNode,
   parent: SceneNode,
   graph: SceneGraph,
-  inheritedDirection: 'LTR' | 'RTL'
+  inheritedDirection: 'LTR' | 'RTL',
+  flexBasisUnit: number
 ): void {
   const direction = resolveNodeLayoutDirection(child, inheritedDirection)
   const widthSizing = layoutSizing(graph, child, 'HORIZONTAL')
   const heightSizing = layoutSizing(graph, child, 'VERTICAL')
 
-  configureAutoLayoutChildSizing(item, child, parent, graph, widthSizing, heightSizing)
+  configureAutoLayoutChildSizing(
+    item,
+    child,
+    parent,
+    graph,
+    widthSizing,
+    heightSizing,
+    flexBasisUnit
+  )
 
   const selfAlign = mapAlignSelf(child.layoutAlignSelf)
   if (selfAlign != null) item.style.alignSelf = selfAlign
