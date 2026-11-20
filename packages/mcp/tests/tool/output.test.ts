@@ -41,6 +41,13 @@ describe('MCP path scoping', () => {
     expect(result.resolved).toBe(resolve(`${root}/sub/dir/file.fig`))
   })
 
+  test('allows a dot-folder path inside root', async () => {
+    // A pen.dev library lives under a hidden folder (`~/.pencil/documents/<id>/…`);
+    // the MCP root check is containment only, so a dot segment is not a rejection.
+    const result = await resolveSafePath(`${root}/.pencil/documents/abc/design.pen`, root)
+    expect(result.resolved).toBe(resolve(`${root}/.pencil/documents/abc/design.pen`))
+  })
+
   test('allows root itself', async () => {
     const result = await resolveSafePath(root, root)
     expect(result.resolved).toBe(root)
