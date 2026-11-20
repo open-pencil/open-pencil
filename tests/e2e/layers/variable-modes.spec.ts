@@ -1,6 +1,8 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import { layerDriver } from '#tests/helpers/canvas/layers'
 
 const editor = useEditorSetup()
+const layers = layerDriver(() => editor.page)
 
 const LAYER_NAME = 'Profile header, wide'
 
@@ -16,49 +18,28 @@ const badgeEndsBeforeActions = (row: Row) =>
     return badge.getBoundingClientRect().right <= actions.getBoundingClientRect().left + 0.5
   })
 
+const settled = () =>
+  editor.page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      })
+  )
+
+const setRowWidth = (row: Row, width: string) =>
+  row.evaluate((element, rowWidth) => {
+    element.style.width = rowWidth
+  }, width)
+
+const badgeFormIn = (row: Row) =>
+  row
+    .locator('[data-slot="variable-mode"]')
+    .evaluate((element) =>
+      element.querySelector('[data-slot="variable-mode-count"]') ? 'count' : 'full'
+    )
+
 test('a layer with modes in several collections keeps its whole name beside one mode badge', async () => {
-  const { frameId, singleId, copyId } = await editor.page.evaluate((name) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) {
-      throw new Error('OpenPencil store not initialized')
-    }
-    const { graph } = store
-    const twoModes = (collectionName: string, first: string, second: string) => {
-      const collection = graph.createCollection(collectionName)
-      graph.renameMode(collection.id, collection.defaultModeId, first)
-      const secondMode = graph.createMode(collection.id, second)
-      if (!secondMode) {
-        throw new Error('Expected a second mode')
-      }
-      return { collection, secondMode }
-    }
-    const theme = twoModes('Theme', 'Light', 'Dark')
-    const themeCopy = {
-      ...structuredClone(theme.collection),
-      id: `${theme.collection.id}-copy`,
-      variableIds: [],
-      modes: theme.collection.modes.map((mode) => ({ ...mode, name: `${mode.name} alt` }))
-    }
-    graph.addCollection(themeCopy)
-    const density = twoModes('Density', 'Comfortable', 'Compact')
-    const size = twoModes('Size', 'Small', 'Large')
-    const frame = store.createShape('FRAME', 100, 100, 200, 160)
-    graph.updateNode(frame, {
-      name,
-      variableModes: {
-        [theme.collection.id]: theme.secondMode,
-        [themeCopy.id]: theme.collection.defaultModeId,
-        [density.collection.id]: density.secondMode,
-        [size.collection.id]: size.secondMode
-      }
-    })
-    const single = store.createShape('FRAME', 400, 100, 200, 160)
-    graph.updateNode(single, {
-      name: 'Single',
-      variableModes: { [density.collection.id]: density.secondMode }
-    })
-    return { frameId: frame, singleId: single, copyId: themeCopy.id }
-  }, LAYER_NAME)
+  const { frameId, singleId, copyId } = await layers.layersWithModes(LAYER_NAME)
 
   const row = editor.page.locator(`[data-node-id="${frameId}"] [data-slot="row"]`)
   const badge = row.locator('[data-slot="variable-mode"]')
@@ -83,28 +64,15 @@ test('a layer with modes in several collections keeps its whole name beside one 
   const fadedOut = { clipped: true, faded: true, ellipsis: false }
   expect(await nameEnd()).toEqual(uncut)
   expect(await badgeClipped()).toBe(false)
-  const layers = editor.page.getByTestId('layers-scroll')
-  expect(await layers.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
+  const layersScroll = editor.page.getByTestId('layers-scroll')
+  expect(await layersScroll.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(
+    0
+  )
 
-  const settled = () =>
-    editor.page.evaluate(
-      () =>
-        new Promise<void>((resolve) => {
-          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-        })
-    )
-  const badgeForm = () =>
-    badge.evaluate((element) =>
-      element.querySelector('[data-slot="variable-mode-count"]') ? 'count' : 'full'
-    )
+  const badgeForm = () => badgeFormIn(row)
   const actionsShown = () =>
     expect(row.locator('[data-slot="actions"]')).toHaveCSS('position', 'static')
   const badgeWidth = () => badge.evaluate((element) => element.getBoundingClientRect().width)
-
-  const setRowWidth = (target: typeof row, width: string) =>
-    target.evaluate((element, rowWidth) => {
-      element.style.width = rowWidth
-    }, width)
 
   const idleSlack = await row.evaluate((element) => {
     const label = element.querySelector('[data-slot="label"]')
@@ -144,7 +112,7 @@ test('a layer with modes in several collections keeps its whole name beside one 
   await expect(row.locator('[data-slot="variable-mode-more"]')).toHaveText('+3')
   await expect.poll(nameEnd).toEqual(uncut)
 
-  const listWidth = await layers.evaluate((element) => element.clientWidth)
+  const listWidth = await layersScroll.evaluate((element) => element.clientWidth)
   const formsSeen = new Set<string>()
   for (let width = 160; width <= 400; width += 8) {
     await setRowWidth(row, `${width}px`)
@@ -181,9 +149,7 @@ test('a layer with modes in several collections keeps its whole name beside one 
   await setRowWidth(row, '400px')
   await expect(count).toHaveCount(0)
 
-  await editor.page.evaluate((id) => {
-    window.openPencil?.getStore?.()?.renameCollection(id, 'Brand')
-  }, copyId)
+  await layers.renameCollection(copyId, 'Brand')
   await expect(badge.locator('.sr-only')).toHaveText(
     'Theme: Dark, Brand: Light alt, Density: Compact, and Size: Large'
   )
@@ -191,31 +157,7 @@ test('a layer with modes in several collections keeps its whole name beside one 
 })
 
 test('a deep layer with a short name keeps its mode badge clear of the buttons on hover', async () => {
-  const leafId = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) {
-      throw new Error('OpenPencil store not initialized')
-    }
-    const { graph } = store
-    const collection = graph.createCollection('Spacing')
-    const secondMode = graph.createMode(collection.id, 'Loose')
-    if (!secondMode) {
-      throw new Error('Expected a second mode')
-    }
-    let parentId = store.state.currentPageId
-    for (let depth = 0; depth < 10; depth++) {
-      parentId = graph.createNode('FRAME', parentId, { name: 'G', width: 100, height: 100 }).id
-    }
-    const leaf = graph.createNode('FRAME', parentId, {
-      name: 'A',
-      width: 20,
-      height: 20,
-      variableModes: { [collection.id]: secondMode }
-    })
-    store.requestRender()
-    store.select([leaf.id])
-    return leaf.id
-  })
+  const leafId = await layers.deepLayerWithMode()
 
   const row = editor.page.locator(`[data-node-id="${leafId}"] [data-slot="row"]`)
   const badge = row.locator('[data-slot="variable-mode"]')

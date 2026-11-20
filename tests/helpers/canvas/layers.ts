@@ -2,6 +2,9 @@ import type { Page } from '@playwright/test'
 
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import type * as LayerModeScenes from './layer-modes/scene'
+import { pageScene } from './page-scene'
+
 /** A frame to add: its size and layout, and the rectangles inside it. */
 interface FrameSetup {
   name: string
@@ -25,7 +28,45 @@ export function layerDriver(page: () => Page) {
     }, setup)
   }
 
+  /** Selects layers by id, as a click on the canvas does, revealing them in the panel. */
+  function select(ids: readonly string[]): Promise<void> {
+    return page().evaluate((layerIds) => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      store.select([...layerIds])
+    }, ids)
+  }
+
+  const modeScenes = pageScene<typeof LayerModeScenes>(
+    page,
+    '/tests/helpers/canvas/layer-modes/scene.ts'
+  )
+
   return {
+    /** Setup: a layer named `name` with modes in four collections, and one with a single mode. */
+    layersWithModes(name: string) {
+      return modeScenes.build('createLayersWithModes', name)
+    },
+
+    /** Setup: a layer with one mode ten frames deep, selected so the layers panel shows it. */
+    async deepLayerWithMode(): Promise<string> {
+      const id = await modeScenes.build('createDeepLayerWithMode')
+      await select([id])
+      return id
+    },
+
+    /** Driver: renames a variable collection, as the variables panel does. */
+    renameCollection(id: string, name: string): Promise<void> {
+      return page().evaluate(
+        ({ collectionId, collectionName }) => {
+          const store = window.openPencil?.getStore?.()
+          if (!store) throw new Error('OpenPencil store not initialized')
+          store.renameCollection(collectionId, collectionName)
+        },
+        { collectionId: id, collectionName: name }
+      )
+    },
+
     /** Where the centre of the named layer shows on the canvas, in canvas-element pixels. */
     screenCenter(name: string): Promise<Vector> {
       return page().evaluate((layerName) => {
@@ -94,13 +135,7 @@ export function layerDriver(page: () => Page) {
     },
 
     /** Driver: selects layers by id, as a click on the canvas does, revealing them in the panel. */
-    select(ids: readonly string[]): Promise<void> {
-      return page().evaluate((layerIds) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
-        store.select([...layerIds])
-      }, ids)
-    },
+    select,
 
     /** Driver: clears the selection, so a screenshot shows no handles. */
     clearSelection(): Promise<void> {
