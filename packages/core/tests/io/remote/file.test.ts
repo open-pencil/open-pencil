@@ -129,4 +129,37 @@ describe('fetchRemoteFile', () => {
     ).rejects.toThrow('500')
     expect(cancelled).toBe(true)
   })
+
+  test('fetches a file over the old 64 MiB cap', async () => {
+    const fetch = fetchStub(async () => {
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new Uint8Array(65 * 1024 * 1024))
+          controller.close()
+        }
+      })
+      return new Response(body, { headers: { 'content-type': 'application/octet-stream' } })
+    })
+
+    const file = await fetchRemoteFile(new URL('https://example.com/ios27.fig'), { fetch, io })
+
+    expect(file.bytes.byteLength).toBe(65 * 1024 * 1024)
+    expect(file.kind).toBe('document')
+  })
+
+  test('refuses a file that declares itself over 512 MiB without reading it', async () => {
+    const fetch = fetchStub(
+      async () =>
+        new Response(new ReadableStream<Uint8Array>(), {
+          headers: {
+            'content-type': 'application/octet-stream',
+            'content-length': String(512 * 1024 * 1024 + 1)
+          }
+        })
+    )
+
+    await expect(
+      fetchRemoteFile(new URL('https://example.com/huge.fig'), { fetch, io })
+    ).rejects.toThrow('exceeds 512 MiB')
+  })
 })

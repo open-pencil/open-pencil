@@ -269,8 +269,12 @@ export function writesFileOutput(toolName: string): boolean {
   return toolName in FILE_OUTPUTS
 }
 
-/** The largest document `/files` passes either way, as the app caps documents it fetches. */
-export const MAX_FILE_TRANSFER_BYTES = 64 * 1024 * 1024
+/**
+ * The largest document `/files` passes either way, as the app caps documents it fetches.
+ * Published design kits run past 64 MiB — Apple's iOS UI kit is about 160 MB — so the
+ * ceiling sits at 512 MiB.
+ */
+export const MAX_FILE_TRANSFER_BYTES = 512 * 1024 * 1024
 
 /** Write `content` to a path inside `root`, creating its folders, and return where it landed. */
 export async function writeInsideRoot(

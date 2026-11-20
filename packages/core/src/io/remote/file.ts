@@ -33,8 +33,11 @@ export interface RemoteFile {
   kind: RemoteFileKind
 }
 
-/** The most a file fetched from an address may hold. Well past any real page or design file. */
-export const MAX_REMOTE_FILE_BYTES = 64 * 1024 * 1024
+/**
+ * The most a file fetched from an address may hold. Published design kits run past
+ * 64 MiB — Apple's iOS UI kit is about 160 MB — so the ceiling sits at 512 MiB.
+ */
+export const MAX_REMOTE_FILE_BYTES = 512 * 1024 * 1024
 
 /**
  * How long one remote file may take to arrive, headers and body: a server that sends a byte now
