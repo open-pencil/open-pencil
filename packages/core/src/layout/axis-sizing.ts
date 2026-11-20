@@ -1,5 +1,6 @@
 import type { LayoutSizing, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import type { LayoutNode } from '@open-pencil/taffy'
 
 type Axis = 'width' | 'height'
@@ -29,12 +30,32 @@ export function asFlatLeaf(child: SceneNode, parent: SceneNode): SceneNode {
   const main = isRow ? child.width : child.height
   const cross = isRow ? child.height : child.width
   if (main !== 0 && cross !== 0) return child
+  const [mainExtent, crossExtent] = geometryExtents(child, isRow)
+  const flatMain = main === 0 && mainExtent === 0
+  const flatCross = cross === 0 && crossExtent === 0
+  if (!flatMain && !flatCross) return child
   const align = parent.counterAxisAlign === 'STRETCH' ? 'MIN' : parent.counterAxisAlign
   return {
     ...child,
-    layoutGrow: main === 0 ? 0 : child.layoutGrow,
-    layoutAlignSelf: cross === 0 ? align : child.layoutAlignSelf
+    layoutGrow: flatMain ? 0 : child.layoutGrow,
+    layoutAlignSelf: flatCross ? align : child.layoutAlignSelf
   }
+}
+
+/**
+ * How far a vector's own geometry reaches along its parent's main and cross axes. A layout pass
+ * can leave a Fill vector at no size, as when its parent is first laid out at a fallback size too
+ * small for its padding; its geometry still has extent there, so it is not a flat line and fills
+ * again once its parent has room.
+ */
+function geometryExtents(child: SceneNode, isRow: boolean): [number, number] {
+  const vertices = child.vectorNetwork?.vertices ?? []
+  if (vertices.length === 0) return [0, 0]
+  const xs = vertices.map((vertex) => vertex.x)
+  const ys = vertices.map((vertex) => vertex.y)
+  const width = maxOf(xs) - minOf(xs)
+  const height = maxOf(ys) - minOf(ys)
+  return isRow ? [width, height] : [height, width]
 }
 
 /**

@@ -127,6 +127,9 @@ export function buildPenGraph(doc: PenDocument, options: PenReadOptions = {}): S
   }
   populateInstances(build)
 
+  // Paths get their geometry at the size they were read at, so layout sees their extent: a Fill
+  // path a first pass leaves at no width is not a flat line and fills on the next pass.
+  if (options.layout) drawAtFinalSize(build, false)
   options.layout?.(graph)
   drawAtFinalSize(build, options.layout !== undefined)
   const spread = options.layout ? spreadAround(graph, [...build.aroundIds]) : false
