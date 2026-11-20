@@ -169,7 +169,7 @@ export function exportWork(renderer: SkiaRenderer, job: () => void): ExportWork 
     job()
     const { adjusted, sources } = expectDefined(renderer.images.exporting, 'export scope')
     return {
-      bakes: [...adjusted.values()].filter((image) => image !== null).length,
+      bakes: adjusted.size,
       counted: [...sources.values()].filter((source) => source.distinctColors !== null).length
     }
   })

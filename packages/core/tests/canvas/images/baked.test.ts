@@ -27,7 +27,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { PALETTE_ROW } from '#core/canvas/images/baked'
 import { createImageCache } from '#core/canvas/images/cache'
-import { adjustedImageForExport, drawingExport } from '#core/canvas/images/exporting'
+import { drawingExport, withAdjustedImageForExport } from '#core/canvas/images/exporting'
 import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { getCanvasKit } from '#core/canvaskit'
 import { renderPagesToPDF } from '#core/io/formats/pdf/export'
@@ -323,7 +323,12 @@ describe('the export scope', () => {
   const draw = { hash: HASH, filters: ALL_SEVEN, node }
 
   function bakedInScope(image: Image): Image | null {
-    return adjustedImageForExport(renderer, draw, () => image)
+    return withAdjustedImageForExport(
+      renderer,
+      draw,
+      () => image,
+      (baked) => baked
+    )
   }
 
   test('bakes nothing outside an export', () => {
@@ -363,8 +368,18 @@ describe('the export scope', () => {
     withDecoded(PNG, (image) => {
       const reads = spyOn(image, 'readPixels')
       drawingExport(renderer.images, null, () => {
-        adjustedImageForExport(renderer, { ...draw, filters: { tint: 1 } }, () => image)
-        adjustedImageForExport(renderer, { ...draw, filters: { tint: -1 } }, () => image)
+        withAdjustedImageForExport(
+          renderer,
+          { ...draw, filters: { tint: 1 } },
+          () => image,
+          () => true
+        )
+        withAdjustedImageForExport(
+          renderer,
+          { ...draw, filters: { tint: -1 } },
+          () => image,
+          () => true
+        )
       })
       expect(reads).toHaveBeenCalledTimes(1)
     })

@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, test } from 'bun:test'
+import { afterAll, describe, expect, spyOn, test } from 'bun:test'
 
 import {
   ALL_SEVEN,
@@ -16,10 +16,12 @@ import {
   withDecoded
 } from '#core-tests/helpers/adjusted-images'
 
+import type { Image } from '@open-pencil/canvaskit'
 import { SceneGraph, type ImageFilters, type SceneNode } from '@open-pencil/scene-graph'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { drawingExport } from '#core/canvas/images/exporting'
 import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { getCanvasKit } from '#core/canvaskit'
 import {
@@ -260,5 +262,88 @@ describe('a Display P3 image', () => {
       const shaded = shaderPixels(renderer, image, ALL_SEVEN, 'unpremultiplied')
       expect(largestDifference(readEncoded(png, 'unpremultiplied'), shaded, isOpaque)).toBe(0)
     })
+  })
+})
+
+const SMALL_EDGES = [8, 9, 10, 11, 12, 13]
+const DRAWN_EDGE = 96
+const BOUNDED_SCALE = 1.5
+
+function bakedWeight(edge: number): number {
+  return Math.ceil(edge * edge * 4 * (4 / 3))
+}
+
+function manySmallImages() {
+  const graph = new SceneGraph()
+  const pageId = graph.getPages()[0].id
+  const hashes = SMALL_EDGES.map((edge) => {
+    const png = encode(distinctPixels(edge * edge), edge, edge)
+    const hash = computeImageHash(png)
+    graph.images.set(hash, png)
+    return hash
+  })
+  const nodeIds = [...hashes, ...hashes].map(
+    (hash, index) =>
+      graph.createNode('RECTANGLE', pageId, {
+        x: index * (DRAWN_EDGE + 10),
+        width: DRAWN_EDGE,
+        height: DRAWN_EDGE,
+        fills: [imageFill(hash, ALL_SEVEN)]
+      }).id
+  )
+  return { graph, pageId, nodeIds }
+}
+
+interface BoundedExport {
+  readonly png: Uint8Array
+  readonly heldPeak: number
+  readonly baked: Image[]
+}
+
+function exportedWithin(budget: number | null): BoundedExport {
+  const { graph, pageId, nodeIds } = manySmallImages()
+  const baked: Image[] = []
+  let heldPeak = 0
+  const png = drawingExport(renderer.images, null, () => {
+    const { adjusted } = expectDefined(renderer.images.exporting, 'export scope')
+    if (budget !== null) {
+      adjusted.resize(budget)
+    }
+    const keep = adjusted.set.bind(adjusted)
+    spyOn(adjusted, 'set').mockImplementation((key, image) => {
+      baked.push(image)
+      const kept = keep(key, image)
+      heldPeak = Math.max(heldPeak, adjusted.weight)
+      return kept
+    })
+    return exportedNodes(renderer, graph, pageId, nodeIds, BOUNDED_SCALE)
+  })
+  return { png, heldPeak, baked }
+}
+
+describe('the baked images an export keeps', () => {
+  const unbounded = exportedWithin(null)
+  const twoImages = bakedWeight(SMALL_EDGES.at(-1) ?? 0) * 2
+
+  test.each([
+    ['holds fewer than every baked image', twoImages],
+    ['holds none of the images larger than it', 0]
+  ])('%s and exports the same pixels', (_, budget) => {
+    const bounded = exportedWithin(budget)
+    expect(bounded.heldPeak).toBeLessThanOrEqual(budget)
+    expect(bounded.baked.length).toBeGreaterThan(SMALL_EDGES.length)
+    expect(
+      largestDifference(
+        readEncoded(bounded.png, 'unpremultiplied'),
+        readEncoded(unbounded.png, 'unpremultiplied'),
+        () => true
+      )
+    ).toBe(0)
+    expect(bounded.baked.every((image) => image.isDeleted())).toBe(true)
+  })
+
+  test('bakes each image once when the budget holds them all', () => {
+    expect(unbounded.baked.length).toBe(SMALL_EDGES.length)
+    expect(unbounded.baked.every((image) => image.isDeleted())).toBe(true)
   })
 })

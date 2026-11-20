@@ -13,11 +13,12 @@ import {
   scanSource,
   type SourceScan
 } from './baked'
-import { IMAGE_CACHE_BYTES } from './cache'
+import { createImageCache, IMAGE_CACHE_BYTES } from './cache'
 import { areaScale, coveredRasterPixels, shaderIsCheaper } from './export-cost'
 import type { ExportImages, ExportSource, ExportTarget, RendererImages } from './state'
 
 const SCANS_BYTES = IMAGE_CACHE_BYTES / 2
+const BAKED_BYTES = IMAGE_CACHE_BYTES / 2
 const MAX_SCANS = 64
 
 export interface AdjustedImageDraw {
@@ -42,7 +43,8 @@ function drawingOn<T>(exporting: ExportImages, target: ExportTarget | null, draw
 
 function openExport(): ExportImages {
   return {
-    adjusted: new Map(),
+    adjusted: createImageCache(BAKED_BYTES),
+    unbakeable: new Set(),
     sources: new Map(),
     scans: new ResourceCache({
       maxEntries: MAX_SCANS,
@@ -70,9 +72,7 @@ export function drawingExport<T>(
   } finally {
     images.exporting = null
     exporting.scans.clear()
-    for (const image of exporting.adjusted.values()) {
-      image?.delete()
-    }
+    exporting.adjusted.clear()
   }
 }
 
@@ -131,20 +131,51 @@ function bakedImageKey(hash: string, filters: ImageFilters): string {
   return `${hash}:${Object.values(adjustmentValues(filters)).join(',')}`
 }
 
-export function adjustedImageForExport(
+function usingBaked<T>(
+  exporting: ExportImages,
+  key: string,
+  baked: Image,
+  use: (baked: Image) => T
+): T {
+  if (exporting.adjusted.set(key, baked)) {
+    return use(baked)
+  }
+  try {
+    return use(baked)
+  } finally {
+    baked.delete()
+  }
+}
+
+export function withAdjustedImageForExport<T>(
   r: SkiaRenderer,
   draw: AdjustedImageDraw,
-  storedImage: () => Image | null
-): Image | null {
+  storedImage: () => Image | null,
+  use: (baked: Image) => T
+): T | null {
   const exporting = r.images.exporting
   if (!exporting) {
     return null
   }
   const key = bakedImageKey(draw.hash, draw.filters)
   const kept = exporting.adjusted.get(key)
-  if (kept !== undefined) {
-    return kept
+  if (kept) {
+    return use(kept)
   }
+  if (exporting.unbakeable.has(key)) {
+    return null
+  }
+  const baked = bakedForExport(r, exporting, draw, key, storedImage)
+  return baked ? usingBaked(exporting, key, baked, use) : null
+}
+
+function bakedForExport(
+  r: SkiaRenderer,
+  exporting: ExportImages,
+  draw: AdjustedImageDraw,
+  key: string,
+  storedImage: () => Image | null
+): Image | null {
   const coveredPixels = coveredRasterPixels(exporting.target, draw.node, draw.stroke)
   const known = exporting.sources.get(draw.hash)
   if (known && shaderIsCheaper(known, coveredPixels)) {
@@ -165,7 +196,9 @@ export function adjustedImageForExport(
       return null
     }
     const baked = bakeFromScan(r, scan, draw.filters)
-    exporting.adjusted.set(key, baked)
+    if (!baked) {
+      exporting.unbakeable.add(key)
+    }
     return baked
   })
 }
