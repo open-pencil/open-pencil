@@ -72,6 +72,11 @@ export interface Build {
   iconPageId: string | null
   /** Layers whose children an override replaced, whose instances are detached. */
   replaced: Set<string>
+  /**
+   * The components that are refs whose children each copied layer came through, by the copy's ID,
+   * so a copy never takes the children of a component it is already inside.
+   */
+  refCopyAncestry: Map<string, ReadonlySet<string>>
 }
 
 function penPlacement(pen: PenOverride, ctx: VarContext): PenPlacement {
@@ -341,30 +346,71 @@ function instanceFields(ref: PenNode, component: PenNode | undefined): PenNode {
 /** How many components that are refs a use resolves through before it stops, so a cycle ends. */
 const MAX_REF_COMPONENT_DEPTH = 16
 
-/** A copy of a component's layer under `prefix`, as a use names the layers it copies. */
-function withIdPrefix(node: PenNode, prefix: string): PenNode {
-  return {
-    ...node,
-    id: `${prefix}/${node.id}`,
-    children: node.children?.map((child) => withIdPrefix(child, prefix))
+const NO_ANCESTRY: ReadonlySet<string> = new Set()
+
+/**
+ * Copies of a component's layers under `prefix`, as a use names the layers it copies, each
+ * recorded as having come through `ancestry`.
+ */
+function copiedLayers(
+  layers: readonly PenNode[],
+  prefix: string,
+  ancestry: ReadonlySet<string>,
+  build: Build
+): PenNode[] {
+  return layers.map((layer) => {
+    const id = `${prefix}/${layer.id}`
+    build.refCopyAncestry.set(id, ancestry)
+    return {
+      ...layer,
+      id,
+      children: layer.children && copiedLayers(layer.children, prefix, ancestry, build)
+    }
+  })
+}
+
+/** Descendant overrides with the use's on top, merged field by field where both name a path. */
+function mergedDescendants(
+  middle: PenNode['descendants'],
+  own: PenNode['descendants']
+): PenNode['descendants'] {
+  if (!middle || !own) return middle ?? own
+  const merged = { ...middle }
+  for (const [path, override] of Object.entries(own)) {
+    const under = merged[path]
+    // A replacement layer (one naming its type) takes the path whole, as it does on its own.
+    merged[path] = under && !override.type ? { ...under, ...override } : override
   }
+  return merged
 }
 
 /**
  * A reusable component can itself be a `ref` to another component, with its own fields,
  * children, and overrides. pen.dev reads a use of it as a use of the base component that
  * carries the middle component's fields, children, and overrides under the use's own.
+ * `copiedChildren` is whether the result's children are copies already named for the use.
  */
-function throughRefComponents(pen: PenNode, build: Build): PenNode {
+function throughRefComponents(
+  pen: PenNode,
+  build: Build
+): { pen: PenNode; copiedChildren: boolean } {
   let current = pen
+  let copiedChildren = false
+  const ancestry = build.refCopyAncestry.get(pen.id) ?? NO_ANCESTRY
   for (let depth = 0; depth < MAX_REF_COMPONENT_DEPTH; depth++) {
-    if (current.type !== 'ref' || !current.ref) return current
+    if (current.type !== 'ref' || !current.ref) break
     const component = build.components.get(current.ref)
-    if (component?.type !== 'ref' || !component.ref) return current
+    if (component?.type !== 'ref' || !component.ref) break
     const { id: _id, reusable: _reusable, x: _x, y: _y, name: _name, ...middle } = component
     const { ref: _ref, type: _type, ...own } = current
     const theme = { ...middle.theme, ...own.theme }
-    const useId = current.id
+    // A copy inside this component's own children does not take them again, so a cycle of
+    // components ends instead of copying without end.
+    const inherits = !own.children && middle.children && !ancestry.has(component.id)
+    const children = inherits
+      ? copiedLayers(middle.children ?? [], pen.id, new Set([...ancestry, component.id]), build)
+      : own.children
+    copiedChildren ||= Boolean(inherits)
     current = {
       ...middle,
       ...own,
@@ -372,22 +418,17 @@ function throughRefComponents(pen: PenNode, build: Build): PenNode {
       ref: component.ref,
       name: own.name ?? component.name,
       theme: Object.keys(theme).length > 0 ? theme : undefined,
-      descendants:
-        middle.descendants || own.descendants
-          ? { ...middle.descendants, ...own.descendants }
-          : undefined,
-      // The middle component's children are its own layers; a use draws copies of them under
-      // its own ID, as it does a component's layers, so they never share an ID with the originals.
-      children: own.children ?? middle.children?.map((child) => withIdPrefix(child, useId))
+      descendants: mergedDescendants(middle.descendants, own.descendants),
+      children
     }
   }
-  return current
+  return { pen: current, copiedChildren }
 }
 
 /** Builds a layer and its children in the layer's theme, merged over its parent's. */
 export function createSceneNode(layer: PenNode, parentId: string, build: Build): string | null {
   if (layer.type === 'prompt') return null
-  const pen = throughRefComponents(layer, build)
+  const { pen, copiedChildren } = throughRefComponents(layer, build)
   const component = pen.type === 'ref' && pen.ref ? build.components.get(pen.ref) : undefined
   // A component that is not a frame has no instances; its uses are plain copies.
   const instanceOf = pen.type === 'ref' && component?.type === 'frame' ? component : undefined
@@ -402,13 +443,18 @@ export function createSceneNode(layer: PenNode, parentId: string, build: Build):
       node.componentId = instanceOf.id
       build.instances.set(node.id, pen)
     } else {
-      const children = pen.type === 'ref' ? (component?.children ?? []) : (pen.children ?? [])
-      for (const child of children) {
-        createSceneNode(
-          pen.type === 'ref' ? { ...child, id: `${pen.id}/${child.id}` } : child,
-          node.id,
-          build
-        )
+      // Children a middle component gave are copies named for this use already.
+      if (copiedChildren) {
+        for (const child of pen.children ?? []) createSceneNode(child, node.id, build)
+      } else {
+        const children = pen.type === 'ref' ? (component?.children ?? []) : (pen.children ?? [])
+        for (const child of children) {
+          createSceneNode(
+            pen.type === 'ref' ? { ...child, id: `${pen.id}/${child.id}` } : child,
+            node.id,
+            build
+          )
+        }
       }
     }
     return node.id

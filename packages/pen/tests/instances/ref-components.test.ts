@@ -72,3 +72,56 @@ describe('parsePenFile — components that are refs', () => {
     expect(graph.getChildren('use')).toHaveLength(1)
   })
 })
+
+describe('parsePenFile — overrides and copies through components that are refs', () => {
+  test('keeps the middle component’s override fields under the use’s on the same path', () => {
+    const row: PenNode = {
+      id: 'row',
+      type: 'frame',
+      reusable: true,
+      children: [{ id: 'cell', type: 'ref', ref: 'tab' }]
+    }
+    const graph = parseDocument([
+      tab,
+      row,
+      {
+        id: 'styled',
+        type: 'ref',
+        ref: 'row',
+        reusable: true,
+        descendants: { cell: { width: 90, height: 20 } }
+      },
+      { id: 'use', type: 'ref', ref: 'styled', descendants: { cell: { width: 70 } } }
+    ])
+    const [cell] = graph.getChildren('use')
+    expect(cell).toMatchObject({ width: 70, height: 20 })
+  })
+
+  test('draws a middle component’s children when the base component is not a frame', () => {
+    const group: PenNode = { id: 'group', type: 'group', reusable: true }
+    const graph = parseDocument([
+      tab,
+      group,
+      { id: 'pair', type: 'ref', ref: 'group', reusable: true, children: bar.children },
+      { id: 'use', type: 'ref', ref: 'pair' }
+    ])
+    expect(graph.getChildren('use')).toHaveLength(2)
+  })
+
+  test('ends a cycle of components that are refs instead of copying without end', () => {
+    const graph = parseDocument([
+      { id: 'f', type: 'frame', reusable: true, width: 10, height: 10 },
+      { id: 'a', type: 'ref', ref: 'b', reusable: true },
+      {
+        id: 'b',
+        type: 'ref',
+        ref: 'f',
+        reusable: true,
+        children: [{ id: 'c', type: 'ref', ref: 'a' }]
+      },
+      { id: 'use', type: 'ref', ref: 'a' }
+    ])
+    expect(getNodeOrThrow(graph, 'use')).toBeDefined()
+    expect(graph.nodes.size).toBeLessThan(50)
+  })
+})

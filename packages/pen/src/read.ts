@@ -106,6 +106,7 @@ export function buildPenGraph(doc: PenDocument, options: PenReadOptions = {}): S
     placements: new Map(),
     groupIds: new Set(),
     aroundIds: new Set(),
+    refCopyAncestry: new Map(),
     iconComponents: new Map(),
     iconPageId: null,
     replaced: new Set()
