@@ -38,6 +38,9 @@ const badgeFormIn = (row: Row) =>
       element.querySelector('[data-slot="variable-mode-count"]') ? 'count' : 'full'
     )
 
+const nameClipped = (row: Row) =>
+  row.locator('[data-slot="name"]').evaluate((element) => element.scrollWidth > element.clientWidth)
+
 test('a layer with modes in several collections keeps its whole name beside one mode badge', async () => {
   const { frameId, singleId, copyId } = await layers.layersWithModes(LAYER_NAME)
 
@@ -174,5 +177,31 @@ test('a deep layer with a short name keeps its mode badge clear of the buttons o
   expect(await badge.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(false)
   expect(await badgeEndsBeforeActions(row)).toBe(true)
   await editor.page.mouse.move(0, 0)
+  editor.canvas.assertNoErrors()
+})
+
+test('locking or unlocking a hovered layer remeasures its mode badge for the buttons that stay', async () => {
+  const { frameId } = await layers.layersWithModes(LAYER_NAME)
+  const row = editor.page.locator(`[data-node-id="${frameId}"] [data-slot="row"]`)
+  const lock = row.locator('[data-slot="action"]').first()
+  const fullBadgeLeavesNameWhole = async (width: number, state: string) => {
+    await lock.blur()
+    await editor.page.mouse.move(0, 0)
+    await settled()
+    if ((await badgeFormIn(row)) === 'full') {
+      expect(await nameClipped(row), `${state} row ${width}px wide`).toBe(false)
+    }
+  }
+
+  for (let width = 160; width <= 400; width += 8) {
+    await setRowWidth(row, `${width}px`)
+    await row.hover({ position: { x: 4, y: 4 } })
+    await lock.click()
+    await expect(row.locator('[data-slot="actions"]')).toHaveAttribute('data-persistent', 'true')
+    await fullBadgeLeavesNameWhole(width, 'locked')
+    await lock.click()
+    await expect(row.locator('[data-slot="actions"]')).not.toHaveAttribute('data-persistent')
+    await fullBadgeLeavesNameWhole(width, 'unlocked')
+  }
   editor.canvas.assertNoErrors()
 })

@@ -67,7 +67,7 @@ const fullBadgeFits = useFullModeBadgeFitsBesideName(
     fullForm: useTemplateRef('fullForm'),
     actions: useTemplateRef<ComponentPublicInstance>('actions')
   },
-  [() => node.name, () => firstMode.value?.mode, moreModes]
+  [() => node.name, () => firstMode.value?.mode, moreModes, () => node.locked, () => node.visible]
 )
 const nameCut = useLayerNameCut(nameElement, () => node.name)
 const showIssue = computed(() => showsLayerIssueMark(issue, expanded))
