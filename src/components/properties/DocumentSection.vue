@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import type { DocumentColorSpace } from '@open-pencil/scene-graph'
+import type { ColorProfile } from '@open-pencil/scene-graph'
 import type { FigCompression } from '@open-pencil/scene-graph/fig-compression'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
@@ -29,19 +29,19 @@ const compression = computed<FigCompression>({
   set: (value) => store.setFigCompression(value)
 })
 
-const profileOptions = computed<Array<{ value: DocumentColorSpace; label: string }>>(() => [
+const profileOptions = computed<Array<{ value: ColorProfile; label: string }>>(() => [
   { value: 'srgb', label: panels.value.colorProfileSRGB },
   { value: 'display-p3', label: panels.value.colorProfileDisplayP3 }
 ])
 
 /** The profile picked and waiting on Assign or Convert. */
-const pendingProfile = ref<DocumentColorSpace | null>(null)
+const pendingProfile = ref<ColorProfile | null>(null)
 const pendingName = computed(() => {
   const pending = pendingProfile.value
   return pending && (profileOptions.value.find((option) => option.value === pending)?.label ?? null)
 })
 
-const profile = computed<DocumentColorSpace>({
+const profile = computed<ColorProfile>({
   get: () => store.state.documentColorSpace,
   set: (value) => {
     if (value !== store.state.documentColorSpace) pendingProfile.value = value
