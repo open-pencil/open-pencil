@@ -13,7 +13,7 @@ const layerTreeTheme = {
     disclosurePlaceholder: 'w-(--layer-row-disclosure) shrink-0',
     icon: 'size-(--layer-row-icon) shrink-0',
     label: 'flex min-w-0 flex-1 items-center gap-(--layer-row-badge-gap)',
-    name: 'min-w-0 truncate',
+    name: 'min-w-0 overflow-hidden whitespace-nowrap ltr:data-cut:mask-r-from-[calc(100%-var(--layer-row-name-fade))] rtl:data-cut:mask-l-from-[calc(100%-var(--layer-row-name-fade))]',
     modeBadge:
       'relative flex shrink-0 items-center overflow-hidden rounded-full border-(length:--layer-row-badge-border) border-current/40 px-(--layer-row-badge-padding) text-(length:--layer-row-badge-text) leading-3.5',
     modeFull: 'flex w-max shrink-0 items-center whitespace-nowrap',

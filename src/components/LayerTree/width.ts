@@ -11,6 +11,7 @@ export interface LayerRowMetrics {
   nameStart: number
   /** Space a variable mode badge takes besides its text. */
   badge: number
+  nameFadeWidth: number
   rowEnd: number
   trailingGap: number
   issueMark: number
@@ -48,18 +49,16 @@ function trailingWidth(parts: readonly number[], metrics: LayerRowMetrics): numb
   return sum(parts) + metrics.trailingGap * Math.max(0, parts.length - 1) + metrics.rowEnd
 }
 
-/** The narrowest a cut name gets: its ellipsis, or the whole name when that is narrower. */
-export function shortestNameWidth(nameWidth: number, ellipsisWidth: number): number {
-  return Math.min(nameWidth, ellipsisWidth)
+/** The narrowest a cut name gets: its fade, or the whole name when that is narrower. */
+export function shortestNameWidth(nameWidth: number, fadeWidth: number): number {
+  return Math.min(nameWidth, fadeWidth)
 }
-
-export const NAME_ELLIPSIS = '…'
 
 /**
  * How far the layer rows reach past the list sideways, as in Figma's layers panel. Idle, a row
  * needs its indent, whole name, compact mode badge, issue mark, and the buttons a locked or hidden
- * layer always shows. Hovered, the other rows show their buttons too and cut the name down to an
- * ellipsis, so a row with a short name can need more room hovered than idle.
+ * layer always shows. Hovered, the other rows show their buttons too and cut the name down to its
+ * fade, so a row with a short name can need more room hovered than idle.
  */
 export function rowsOverflow(
   rows: readonly LayerRow[],
@@ -70,7 +69,6 @@ export function rowsOverflow(
   if (!metrics.font) {
     return 0
   }
-  const ellipsis = measure(NAME_ELLIPSIS, metrics.font)
   let widest = 0
   for (const [index, row] of rows.entries()) {
     const start = (row.level - 1) * metrics.indent + metrics.nameStart
@@ -85,7 +83,7 @@ export function rowsOverflow(
       width = start + name + badge + withButtons
     } else {
       const idle = start + name + badge + trailingWidth(mark, metrics)
-      const hovered = start + shortestNameWidth(name, ellipsis) + badge + withButtons
+      const hovered = start + shortestNameWidth(name, metrics.nameFadeWidth) + badge + withButtons
       width = Math.max(idle, hovered)
     }
     if (width > widest) {

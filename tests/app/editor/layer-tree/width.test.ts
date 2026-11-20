@@ -14,6 +14,7 @@ const metrics: LayerRowMetrics = {
   indent: 16,
   nameStart: 36,
   badge: 14,
+  nameFadeWidth: 20,
   rowEnd: 8,
   trailingGap: 4,
   issueMark: 16,
@@ -22,9 +23,6 @@ const metrics: LayerRowMetrics = {
 }
 
 function measure(text: string, font: string): number {
-  if (text === '…') {
-    return 8
-  }
   return text.length * (font === 'badge' ? 5 : 10)
 }
 
@@ -57,8 +55,12 @@ describe('layer rows overflow', () => {
     expect(rowsOverflow([row('x'.repeat(20))], metrics, decorations(), measure)).toBe(44)
   })
 
-  test('a deep short name widens the list for its hovered buttons, ellipsis, and badge', () => {
-    expect(rowsOverflow([row('A', 11)], metrics, decorations({ modes: 1 }), measure)).toBe(65)
+  test('a deep short name widens the list for its hovered buttons, whole name, and badge', () => {
+    expect(rowsOverflow([row('A', 11)], metrics, decorations({ modes: 1 }), measure)).toBe(67)
+  })
+
+  test('a deep name cut on hover keeps its fade before the badge and buttons', () => {
+    expect(rowsOverflow([row('ABCDE', 11)], metrics, decorations({ modes: 1 }), measure)).toBe(77)
   })
 
   test('a locked or hidden row holds its whole name beside the buttons it always shows', () => {
@@ -69,12 +71,12 @@ describe('layer rows overflow', () => {
 
   test('an issue mark sits a gap before the hovered buttons', () => {
     const narrow = { ...metrics, viewportWidth: 100 }
-    expect(rowsOverflow([row('A')], narrow, decorations({ issue: true }), measure)).toBe(6)
+    expect(rowsOverflow([row('A')], narrow, decorations({ issue: true }), measure)).toBe(8)
   })
 
   test('the widest row sets the overflow', () => {
     const rows = [row('Card title'), row('A', 11), row('x'.repeat(20))]
-    expect(rowsOverflow(rows, metrics, decorations({ modes: 1 }), measure)).toBe(65)
+    expect(rowsOverflow(rows, metrics, decorations({ modes: 1 }), measure)).toBe(67)
   })
 
   test('rows are not measured before the list has a font', () => {

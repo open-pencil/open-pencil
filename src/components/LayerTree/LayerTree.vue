@@ -62,6 +62,7 @@ const {
   issueMark,
   buttons,
   badge,
+  nameFadeWidth,
   badgeTextSize
 } = useLayerTreeGeometry()
 const attrs = useAttrs()
@@ -215,6 +216,7 @@ const rowsWidth = computed(() => {
       indent: indent.value,
       nameStart: nameStart.value,
       badge: badge.value,
+      nameFadeWidth: nameFadeWidth.value,
       rowEnd: rowEnd.value,
       trailingGap: trailingGap.value,
       issueMark: issueMark.value,

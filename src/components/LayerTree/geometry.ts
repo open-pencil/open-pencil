@@ -16,7 +16,8 @@ const rowPartRem = {
   '--layer-row-action-gap': 0.125,
   '--layer-row-badge-gap': 0.375,
   '--layer-row-badge-padding': 0.375,
-  '--layer-row-badge-text': 0.625
+  '--layer-row-badge-text': 0.625,
+  '--layer-row-name-fade': 1.25
 } as const
 
 const BADGE_BORDER_PX = 1
@@ -51,6 +52,7 @@ export function useLayerTreeGeometry() {
         remToPx(rowPartRem['--layer-row-badge-gap'] + 2 * rowPartRem['--layer-row-badge-padding']) +
         2 * BADGE_BORDER_PX
     ),
-    badgeTextSize: computed(() => remToPx(rowPartRem['--layer-row-badge-text']))
+    badgeTextSize: computed(() => remToPx(rowPartRem['--layer-row-badge-text'])),
+    nameFadeWidth: computed(() => remToPx(rowPartRem['--layer-row-name-fade']))
   }
 }

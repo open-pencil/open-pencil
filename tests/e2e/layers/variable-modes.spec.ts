@@ -69,9 +69,19 @@ test('a layer with modes in several collections keeps its whole name beside one 
   await expect(badge.locator('.sr-only')).toHaveText(fullList)
 
   const name = row.getByText(LAYER_NAME, { exact: true })
-  const nameClipped = () => name.evaluate((element) => element.scrollWidth > element.clientWidth)
   const badgeClipped = () => badge.evaluate((element) => element.scrollWidth > element.clientWidth)
-  expect(await nameClipped()).toBe(false)
+  const nameEnd = () =>
+    name.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return {
+        clipped: element.scrollWidth > element.clientWidth,
+        faded: style.maskImage.includes('gradient'),
+        ellipsis: style.textOverflow === 'ellipsis'
+      }
+    })
+  const uncut = { clipped: false, faded: false, ellipsis: false }
+  const fadedOut = { clipped: true, faded: true, ellipsis: false }
+  expect(await nameEnd()).toEqual(uncut)
   expect(await badgeClipped()).toBe(false)
   const layers = editor.page.getByTestId('layers-scroll')
   expect(await layers.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
@@ -111,12 +121,12 @@ test('a layer with modes in several collections keeps its whole name beside one 
   const slackHoverCannotFit = 8
   await setRowWidth(row, `${rowWidth - idleSlack + slackHoverCannotFit}px`)
   await settled()
-  expect(await nameClipped()).toBe(false)
+  expect(await nameEnd()).toEqual(uncut)
   const idleForm = await badgeForm()
   const idleBadgeWidth = await badgeWidth()
   await row.hover({ position: { x: 4, y: 4 } })
   await actionsShown()
-  await expect.poll(nameClipped).toBe(true)
+  await expect.poll(nameEnd).toEqual(fadedOut)
   expect(await badgeForm()).toBe(idleForm)
   expect(await badgeWidth()).toBe(idleBadgeWidth)
   expect(await badgeClipped()).toBe(false)
@@ -132,7 +142,7 @@ test('a layer with modes in several collections keeps its whole name beside one 
   await expect(fullForm).toBeVisible()
   await expect(row.locator('[data-slot="variable-mode-name"]')).toHaveText('Dark')
   await expect(row.locator('[data-slot="variable-mode-more"]')).toHaveText('+3')
-  expect(await nameClipped()).toBe(false)
+  await expect.poll(nameEnd).toEqual(uncut)
 
   const listWidth = await layers.evaluate((element) => element.clientWidth)
   const formsSeen = new Set<string>()
@@ -147,6 +157,9 @@ test('a layer with modes in several collections keeps its whole name beside one 
     await actionsShown()
     expect(await badgeForm(), `row ${width}px wide`).toBe(idle)
     expect(await badgeClipped(), `row ${width}px wide`).toBe(false)
+    const hovered = await nameEnd()
+    expect(hovered.faded, `row ${width}px wide`).toBe(hovered.clipped)
+    expect(hovered.ellipsis, `row ${width}px wide`).toBe(false)
     if (width <= listWidth) {
       expect(await badgeEndsBeforeActions(row), `row ${width}px wide`).toBe(true)
     }
@@ -156,7 +169,7 @@ test('a layer with modes in several collections keeps its whole name beside one 
 
   await setRowWidth(row, '120px')
   await expect(count).toHaveText('4')
-  expect(await nameClipped()).toBe(true)
+  await expect.poll(nameEnd).toEqual(fadedOut)
   expect(await badgeClipped()).toBe(false)
 
   const singleRow = editor.page.locator(`[data-node-id="${singleId}"] [data-slot="row"]`)

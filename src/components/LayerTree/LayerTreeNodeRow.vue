@@ -22,6 +22,7 @@ import LayerTreeDropIndicator from './LayerTreeDropIndicator.vue'
 import LayerTreeRowShell from './LayerTreeRowShell.vue'
 import { useFullModeBadgeFitsBesideName } from './mode-badge-fit'
 import { layerAppliedModes } from './mode-names'
+import { useLayerNameCut } from './name-cut'
 import type { LayerTreeChrome, LayerTreeItemActions } from './types'
 import { useLayerTreeUI } from './ui'
 
@@ -57,16 +58,18 @@ const modesLabel = computed(() => {
   const entries = appliedModes.value.map((applied) => variables.value.appliedMode(applied))
   return new Intl.ListFormat(language.value, { type: 'conjunction' }).format(entries)
 })
+const nameElement = useTemplateRef('name')
 const fullBadgeFits = useFullModeBadgeFitsBesideName(
   {
     label: useTemplateRef('label'),
-    name: useTemplateRef('name'),
+    name: nameElement,
     badge: useTemplateRef('badge'),
     fullForm: useTemplateRef('fullForm'),
     actions: useTemplateRef<ComponentPublicInstance>('actions')
   },
   [() => node.name, () => firstMode.value?.mode, moreModes]
 )
+const nameCut = useLayerNameCut(nameElement, () => node.name)
 const showIssue = computed(() => showsLayerIssueMark(issue, expanded))
 const layerTree = tv(layerTreeTheme)
 const styles = computed(() =>
@@ -118,7 +121,9 @@ const styles = computed(() =>
 
     <component :is="nodeIcon(node)" data-slot="icon" :class="styles.icon({ class: ui?.icon })" />
     <span ref="label" data-slot="label" :class="styles.label({ class: ui?.label })">
-      <span ref="name" data-slot="name" :class="styles.name()">{{ node.name }}</span>
+      <span ref="name" data-slot="name" :data-cut="nameCut || undefined" :class="styles.name()">{{
+        node.name
+      }}</span>
       <Tip v-if="firstMode" :label="modesLabel" as-child>
         <span ref="badge" data-slot="variable-mode" :class="styles.modeBadge()">
           <span

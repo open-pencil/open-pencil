@@ -1,7 +1,8 @@
 import { type MaybeComputedElementRef, unrefElement, useResizeObserver } from '@vueuse/core'
 import { type WatchSource, ref, watch } from 'vue'
 
-import { NAME_ELLIPSIS, createTextMeasure, shortestNameWidth } from './width'
+import { useLayerTreeGeometry } from './geometry'
+import { shortestNameWidth } from './width'
 
 interface ModeBadgeElements {
   label: MaybeComputedElementRef
@@ -24,8 +25,6 @@ function inlineChrome(element: Element) {
 /** `scrollWidth` rounds to whole pixels, so the name may be up to this much wider. */
 const SCROLL_WIDTH_ROUNDING = 1
 
-const measureEllipsis = createTextMeasure()
-
 function columnGap(element: Element | null) {
   return element ? Number.parseFloat(getComputedStyle(element).columnGap) || 0 : 0
 }
@@ -45,13 +44,14 @@ function shownNow(actions: Element | null | undefined) {
 
 /**
  * Whether the full badge fits after the whole name while idle, and after the name cut to its
- * ellipsis once hovered, so the badge keeps its form either way and never runs under the buttons.
+ * fade once hovered, so the badge keeps its form either way and never runs under the buttons.
  */
 export function useFullModeBadgeFitsBesideName(
   elements: ModeBadgeElements,
   content: WatchSource<unknown>[]
 ) {
   const fits = ref(true)
+  const { nameFadeWidth } = useLayerTreeGeometry()
 
   function measure() {
     const label = unrefElement(elements.label)
@@ -65,10 +65,7 @@ export function useFullModeBadgeFitsBesideName(
     const hoverTake = widthHoverActionsTake(actions)
     const idleRoom = label.getBoundingClientRect().width + (shownNow(actions) ? hoverTake : 0)
     const nameWidth = name.scrollWidth + SCROLL_WIDTH_ROUNDING
-    const cutNameWidth = shortestNameWidth(
-      nameWidth,
-      measureEllipsis(NAME_ELLIPSIS, getComputedStyle(name).font)
-    )
+    const cutNameWidth = shortestNameWidth(nameWidth, nameFadeWidth.value)
     const fullBadgeWidth =
       columnGap(label) + fullForm.getBoundingClientRect().width + inlineChrome(badge)
     fits.value =
