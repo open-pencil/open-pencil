@@ -1,8 +1,8 @@
 import { pick } from 'es-toolkit'
 
 import type { CanvasKit, Canvas } from '@open-pencil/canvaskit'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { toExtendedSRGB, type ColorProfile } from '@open-pencil/scene-graph/color'
+import type { SceneGraph, SceneNode, ColorProfile } from '@open-pencil/scene-graph'
+import { toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { CORNER_FIELDS } from '@open-pencil/scene-graph/fields'
 import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'

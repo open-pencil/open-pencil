@@ -1,6 +1,5 @@
 import type { CanvasKit } from '@open-pencil/canvaskit'
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import type { ColorProfile } from '@open-pencil/scene-graph/color'
+import type { SceneGraph, ColorProfile } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { IconProvider } from '#core/icons'
