@@ -7,10 +7,6 @@ import { remToPx } from '@/app/shell/root-font-size'
 const ROW_HEIGHT_REM = 1.5
 const INDENT_REM = 1
 
-/**
- * The sizes of a row's parts, in rem. Each row sets them as CSS variables, which the `layer-tree`
- * theme sizes those parts by, and the row width math adds them up, so both use the same numbers.
- */
 const rowPartRem = {
   '--layer-row-gap': 0.25,
   '--layer-row-disclosure': 1,
@@ -25,7 +21,6 @@ const rowPartRem = {
 
 const BADGE_BORDER_PX = 1
 
-/** The CSS variables a row's parts take their sizes from. */
 export const layerRowPartSizes: Record<string, string> = {
   ...Object.fromEntries(Object.entries(rowPartRem).map(([name, rem]) => [name, `${rem}rem`])),
   '--layer-row-badge-border': `${BADGE_BORDER_PX}px`
