@@ -338,9 +338,56 @@ function instanceFields(ref: PenNode, component: PenNode | undefined): PenNode {
   return { ...inherited, ...own, theme, name: ref.name ?? component.name }
 }
 
+/** How many components that are refs a use resolves through before it stops, so a cycle ends. */
+const MAX_REF_COMPONENT_DEPTH = 16
+
+/** A copy of a component's layer under `prefix`, as a use names the layers it copies. */
+function withIdPrefix(node: PenNode, prefix: string): PenNode {
+  return {
+    ...node,
+    id: `${prefix}/${node.id}`,
+    children: node.children?.map((child) => withIdPrefix(child, prefix))
+  }
+}
+
+/**
+ * A reusable component can itself be a `ref` to another component, with its own fields,
+ * children, and overrides. pen.dev reads a use of it as a use of the base component that
+ * carries the middle component's fields, children, and overrides under the use's own.
+ */
+function throughRefComponents(pen: PenNode, build: Build): PenNode {
+  let current = pen
+  for (let depth = 0; depth < MAX_REF_COMPONENT_DEPTH; depth++) {
+    if (current.type !== 'ref' || !current.ref) return current
+    const component = build.components.get(current.ref)
+    if (component?.type !== 'ref' || !component.ref) return current
+    const { id: _id, reusable: _reusable, x: _x, y: _y, name: _name, ...middle } = component
+    const { ref: _ref, type: _type, ...own } = current
+    const theme = { ...middle.theme, ...own.theme }
+    const useId = current.id
+    current = {
+      ...middle,
+      ...own,
+      type: 'ref',
+      ref: component.ref,
+      name: own.name ?? component.name,
+      theme: Object.keys(theme).length > 0 ? theme : undefined,
+      descendants:
+        middle.descendants || own.descendants
+          ? { ...middle.descendants, ...own.descendants }
+          : undefined,
+      // The middle component's children are its own layers; a use draws copies of them under
+      // its own ID, as it does a component's layers, so they never share an ID with the originals.
+      children: own.children ?? middle.children?.map((child) => withIdPrefix(child, useId))
+    }
+  }
+  return current
+}
+
 /** Builds a layer and its children in the layer's theme, merged over its parent's. */
-export function createSceneNode(pen: PenNode, parentId: string, build: Build): string | null {
-  if (pen.type === 'prompt') return null
+export function createSceneNode(layer: PenNode, parentId: string, build: Build): string | null {
+  if (layer.type === 'prompt') return null
+  const pen = throughRefComponents(layer, build)
   const component = pen.type === 'ref' && pen.ref ? build.components.get(pen.ref) : undefined
   // A component that is not a frame has no instances; its uses are plain copies.
   const instanceOf = pen.type === 'ref' && component?.type === 'frame' ? component : undefined
