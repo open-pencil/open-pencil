@@ -35,7 +35,14 @@ import {
 
 export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
-import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
+import type {
+  ColorProfile,
+  Fill,
+  SceneGraph,
+  SceneNode,
+  Stroke,
+  VectorNetwork
+} from '@open-pencil/scene-graph'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import {
   hasRegionFills,
@@ -557,7 +564,10 @@ export function renderNodeSVGElement(
     idPrefix,
     colorSpace = graph.documentColorSpace,
     tint
-  }: Partial<Pick<SVGExportContext, 'tint' | 'colorSpace'>> & { idPrefix: string }
+  }: Pick<SVGExportOptions, 'colorSpace'> &
+    Partial<Pick<SVGExportContext, 'tint'>> & {
+      idPrefix: string
+    }
 ): SVGNode | null {
   const colors = { from: graph.documentColorSpace, to: colorSpace }
   const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colors, idPrefix, tint }
