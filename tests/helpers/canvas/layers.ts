@@ -60,7 +60,9 @@ export function layerDriver(page: () => Page) {
       return page().evaluate(
         ({ collectionId, collectionName }) => {
           const store = window.openPencil?.getStore?.()
-          if (!store) throw new Error('OpenPencil store not initialized')
+          if (!store) {
+            throw new Error('OpenPencil store not initialized')
+          }
           store.renameCollection(collectionId, collectionName)
         },
         { collectionId: id, collectionName: name }

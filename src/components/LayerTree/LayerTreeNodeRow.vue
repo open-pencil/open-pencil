@@ -71,12 +71,6 @@ const fullBadgeFits = useFullModeBadgeFitsBesideName(
 )
 const nameCut = useLayerNameCut(nameElement, () => node.name)
 
-function returnPointerFocusToRow(event: FocusEvent) {
-  const badge = event.currentTarget
-  if (badge instanceof HTMLElement && !badge.matches(':focus-visible')) {
-    badge.closest<HTMLElement>('[role="treeitem"]')?.focus({ preventScroll: true })
-  }
-}
 const showIssue = computed(() => showsLayerIssueMark(issue, expanded))
 const layerTree = tv(layerTreeTheme)
 const styles = computed(() =>
@@ -95,6 +89,13 @@ const styles = computed(() =>
       chrome.instructionTargetId === node.id && chrome.instruction?.type === 'make-child'
   })
 )
+
+function returnPointerFocusToRow(event: FocusEvent) {
+  const badge = event.currentTarget
+  if (badge instanceof HTMLElement && !badge.matches(':focus-visible')) {
+    badge.closest<HTMLElement>('[role="treeitem"]')?.focus({ preventScroll: true })
+  }
+}
 </script>
 
 <template>

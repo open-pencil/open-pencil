@@ -180,12 +180,15 @@ test('a deep layer with a short name keeps its mode badge clear of the buttons o
   editor.canvas.assertNoErrors()
 })
 
-test('locking or unlocking a hovered layer remeasures its mode badge for the buttons that stay', async () => {
+test('locking or hiding a hovered layer remeasures its mode badge for the buttons that stay', async () => {
+  test.slow()
   const { frameId } = await layers.layersWithModes(LAYER_NAME)
   const row = editor.page.locator(`[data-node-id="${frameId}"] [data-slot="row"]`)
   const lock = row.locator('[data-slot="action"]').first()
+  const eye = row.locator('[data-slot="action"]').nth(1)
   const fullBadgeLeavesNameWhole = async (width: number, state: string) => {
     await lock.blur()
+    await eye.blur()
     await editor.page.mouse.move(0, 0)
     await settled()
     if ((await badgeFormIn(row)) === 'full') {
@@ -202,6 +205,13 @@ test('locking or unlocking a hovered layer remeasures its mode badge for the but
     await lock.click()
     await expect(row.locator('[data-slot="actions"]')).not.toHaveAttribute('data-persistent')
     await fullBadgeLeavesNameWhole(width, 'unlocked')
+    await row.hover({ position: { x: 4, y: 4 } })
+    await eye.click()
+    await expect(row.locator('[data-slot="actions"]')).toHaveAttribute('data-persistent', 'true')
+    await fullBadgeLeavesNameWhole(width, 'hidden')
+    await eye.click()
+    await expect(row.locator('[data-slot="actions"]')).not.toHaveAttribute('data-persistent')
+    await fullBadgeLeavesNameWhole(width, 'shown')
   }
   editor.canvas.assertNoErrors()
 })
