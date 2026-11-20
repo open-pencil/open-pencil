@@ -18,6 +18,7 @@ import { getRecoveryStore } from '@/app/document/recovery'
 import type { EditorStore } from '@/app/editor/session'
 import { onBeforeReload } from '@/app/shell/reload'
 import { keepOpenTabs, restoreKeptTabs } from '@/app/tabs/kept'
+import { keepDesignNames } from '@/app/tabs/kept/names'
 import type { Tab } from '@/app/tabs/state'
 import { releaseSplashForDesign } from '@/splash/opening-design'
 
@@ -124,10 +125,12 @@ export function syncDesignAddress(
     { immediate: true }
   )
   const stopKeeping = keepOpenTabs(designIdOf, () => restored.value)
+  const stopNaming = keepDesignNames(designIdOf)
   const stopReload = onBeforeReload(persistActiveDesign)
   return () => {
     stopWatch()
     stopKeeping()
+    stopNaming()
     stopReload()
   }
 }

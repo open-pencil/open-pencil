@@ -38,3 +38,23 @@ test('a reload keeps the designs open in tabs, in order, with the one in front',
 
   await context.close()
 })
+
+test('a renamed design keeps its name across a reload', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL })
+  const page = await context.newPage()
+  page.on('dialog', (dialog) => void dialog.accept())
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+  await page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.createShape('RECTANGLE', 120, 120, 240, 140)
+    store.renameDocument('Landing page')
+    await store.persistRecoveryNow()
+  })
+
+  await page.reload()
+  await expect(page.getByTestId('tabbar-tab').filter({ hasText: 'Landing page' })).toBeVisible()
+
+  await context.close()
+})
