@@ -76,3 +76,23 @@ describe('drawing a document in another color space than the screen', () => {
     expect(renderer.documentSurface).toBeNull()
   })
 })
+
+describe('saved pictures and the document profile', () => {
+  test('drawing on surfaces of another space keeps pictures; a document that takes another profile drops them', () => {
+    const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(4, 4), 'surface'))
+    renderers.push(renderer)
+    let dropped = 0
+    const invalidate = renderer.invalidateAllPictures.bind(renderer)
+    renderer.invalidateAllPictures = () => {
+      dropped++
+      invalidate()
+    }
+    // A thumbnail or export of another document switches the surface space and back.
+    renderer.useDocumentColorSpace('display-p3')
+    renderer.useDocumentColorSpace('srgb')
+    expect(dropped).toBe(0)
+    renderer.recordPicturesIn('display-p3')
+    renderer.recordPicturesIn('display-p3')
+    expect(dropped).toBe(1)
+  })
+})

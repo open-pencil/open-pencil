@@ -2,7 +2,7 @@ import type { Canvas, Image, Paint, Shader } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'
-import { skColorSpace } from '#core/canvas/renderer/colors'
+import { documentImageInfo } from '#core/canvas/renderer/colors'
 import { compiledProgram } from '#core/canvas/renderer/shaders'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { makeOffscreenSurface } from '#core/canvas/renderer/tiles/surface-pool'
@@ -82,19 +82,22 @@ export function glassGeometryMap(
   // A power of two at or above the device scale, so a zoom keeps its map until the next step.
   const step = 2 ** Math.ceil(Math.log2(Math.max(deviceScale(canvas), 1 / 64)))
   const scale = Math.min(step, MAX_MAP_SIDE / Math.max(width, height))
-  const key = `${node.id}:${node.width}x${node.height}:${depth}:${scale}:${segmentsHash(outline.segments)}`
+  const key = `${r.documentColorSpace}:${node.id}:${node.width}x${node.height}:${depth}:${scale}:${segmentsHash(outline.segments)}`
   const cached = r.glassMaps.get(key)
   if (cached) return cached
   // Compiling may fail; nothing is made before it has.
   const program = compiledProgram(r.ck, r.shaders, GLASS_GEOMETRY_MAP)
-  const surface = makeOffscreenSurface(r, {
-    width: Math.ceil(width * scale),
-    height: Math.ceil(height * scale),
-    colorType: r.ck.ColorType.RGBA_F16,
-    alphaType: r.ck.AlphaType.Premul,
-    // The space the document is drawn in, so nothing converts the values on the way in or out.
-    colorSpace: skColorSpace(r.ck, r.documentColorSpace)
-  })
+  // The space the document is drawn in, so nothing converts the values on the way in or out.
+  const surface = makeOffscreenSurface(
+    r,
+    documentImageInfo(
+      r.ck,
+      r.documentColorSpace,
+      Math.ceil(width * scale),
+      Math.ceil(height * scale),
+      r.ck.ColorType.RGBA_F16
+    )
+  )
   if (!surface) return null
   const origin: [number, number] = [-MAP_MARGIN, -MAP_MARGIN]
   let fill: Shader | null = null

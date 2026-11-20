@@ -11,7 +11,7 @@ import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { SupersampledOutput } from '#core/canvas/images/state'
-import { skColorSpace } from '#core/canvas/renderer/colors'
+import { documentImageInfo } from '#core/canvas/renderer/colors'
 import { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { absoluteRenderBounds } from '#core/geometry/render-bounds'
@@ -190,16 +190,10 @@ function renderToSurface(
   const renderHeight = height * renderScale
   // The document's color space, as Figma exports a document: its colors blend in it, and the
   // encoded image is tagged with it.
-  const colorSpace = skColorSpace(ck, graph.documentColorSpace)
+  const profile = graph.documentColorSpace
   const pixels = ck.Malloc(Uint8Array, renderWidth * renderHeight * 4)
   const surface = ck.MakeRasterDirectSurface(
-    {
-      alphaType: ck.AlphaType.Premul,
-      colorType: ck.ColorType.RGBA_8888,
-      colorSpace,
-      width: renderWidth,
-      height: renderHeight
-    },
+    documentImageInfo(ck, profile, renderWidth, renderHeight),
     pixels,
     renderWidth * 4
   )
@@ -221,13 +215,7 @@ function renderToSurface(
     const highResImage = surface.makeImageSnapshot()
     const downsamplePixels = ck.Malloc(Uint8Array, width * height * 4)
     const downsampleSurface = ck.MakeRasterDirectSurface(
-      {
-        alphaType: ck.AlphaType.Premul,
-        colorType: ck.ColorType.RGBA_8888,
-        colorSpace,
-        width,
-        height
-      },
+      documentImageInfo(ck, profile, width, height),
       downsamplePixels,
       width * 4
     )

@@ -169,6 +169,11 @@ export class SkiaRenderer {
    * and its blend modes work in it. Set with {@link useDocumentColorSpace}.
    */
   documentColorSpace: ColorProfile = 'srgb'
+  /**
+   * The profile of the document the saved pictures were recorded from: a picture holds that
+   * document's colors as they read in it, so a document that takes another profile draws anew.
+   */
+  picturesColorSpace: ColorProfile = 'srgb'
   /** A surface in the document's color space the size of the screen's, while the two differ. */
   documentSurface: DocumentSurface | null = null
   navigationPhase: EditorState['navigation']['phase'] = 'idle'
@@ -761,11 +766,18 @@ export class SkiaRenderer {
     return toExtendedSRGB(color, this.documentColorSpace)
   }
 
-  /** Draws in `space` from now on, starting over what was drawn in another. */
+  /**
+   * Draws on surfaces in `space` from now on. Saved pictures and glass maps stay: pictures hold
+   * extended sRGB colors, which suit a surface in any space, and glass maps are kept per space.
+   */
   useDocumentColorSpace(space: ColorProfile): void {
-    if (space === this.documentColorSpace) return
     this.documentColorSpace = space
-    this.glassMaps.clear()
+  }
+
+  /** Drops the saved pictures when the document they were recorded from took another profile. */
+  recordPicturesIn(space: ColorProfile): void {
+    if (space === this.picturesColorSpace) return
+    this.picturesColorSpace = space
     this.invalidateAllPictures()
   }
 

@@ -1,7 +1,7 @@
 import type { Canvas, Surface } from '@open-pencil/canvaskit'
 import type { ColorProfile } from '@open-pencil/scene-graph'
 
-import { skColorSpace } from '#core/canvas/renderer/colors'
+import { documentImageInfo } from '#core/canvas/renderer/colors'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { makeOffscreenSurface } from '#core/canvas/renderer/tiles/surface-pool'
 
@@ -31,13 +31,7 @@ export function documentSurfaceFor(r: SkiaRenderer): Surface | null {
   const kept = r.documentSurface
   if (kept?.space === space && kept.width === width && kept.height === height) return kept.surface
   releaseDocumentSurface(r)
-  const surface = makeOffscreenSurface(r, {
-    width,
-    height,
-    colorType: r.ck.ColorType.RGBA_8888,
-    alphaType: r.ck.AlphaType.Premul,
-    colorSpace: skColorSpace(r.ck, space)
-  })
+  const surface = makeOffscreenSurface(r, documentImageInfo(r.ck, space, width, height))
   if (!surface) return null
   r.documentSurface = { surface, width, height, space }
   return surface
