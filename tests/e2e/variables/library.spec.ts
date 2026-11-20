@@ -1,30 +1,11 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { propertySection } from '#tests/helpers/properties'
+import { seedLibraryCopies } from '#tests/helpers/variables/library'
 
 const editor = useEditorSetup()
 
 test('library copies are told apart from local variables in the page panel and the inspector', async () => {
-  await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const { graph } = store
-    const theme = graph.createCollection('Theme')
-    graph.renameMode(theme.id, theme.defaultModeId, 'Light')
-    graph.createMode(theme.id, 'Dark')
-    const radius = graph.createVariable('radius', 'FLOAT', theme.id, 4)
-    Object.assign(theme, { key: 'theme-a', version: '1:1' })
-    Object.assign(radius, { key: 'radius-a', version: '1:1', hiddenFromPublishing: true })
-    graph.addCollection({
-      ...structuredClone(theme),
-      id: `${theme.id}-copy`,
-      key: 'theme-b',
-      variableIds: []
-    })
-    const size = graph.createCollection('Size')
-    graph.createVariable('gap', 'FLOAT', size.id, 8)
-    graph.createVariable('icon', 'FLOAT', size.id, 16)
-    store.state.sceneVersion++
-  })
+  await seedLibraryCopies(editor.page)
 
   const rows = editor.page.locator('[data-variable-mode-row]')
   await expect(rows).toHaveCount(1)
