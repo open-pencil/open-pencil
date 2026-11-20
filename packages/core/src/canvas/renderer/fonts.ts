@@ -1,7 +1,7 @@
 import { uniqBy } from 'es-toolkit'
 
 import type { Font, TypefaceFontProvider } from '@open-pencil/canvaskit'
-import type { DocumentColorSpace, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { CONNECTOR_LABEL_FONT } from '@open-pencil/scene-graph/connectors'
 import { FIGJAM_TYPEFACES } from '@open-pencil/scene-graph/figjam'
 import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
@@ -64,16 +64,10 @@ export interface PendingFontNode {
   keys: Set<string>
 }
 
-/**
- * Font bookkeeping per text layer: demands in flight, the font generation and document color space
- * a saved picture was first drawn in, and readiness.
- */
+/** Font bookkeeping per text layer: demands in flight, saved pictures' generations, and readiness. */
 export interface TextFontState {
   readonly pending: Map<string, PendingFontNode>
-  readonly pictureGenerations: Map<
-    string,
-    { data: Uint8Array; generation: number; space: DocumentColorSpace }
-  >
+  readonly pictureGenerations: Map<string, { data: Uint8Array; generation: number }>
   /** Readiness of a text's fonts, found once per layer per font generation; a change to the layer drops it. */
   readonly readiness: Map<
     string,
@@ -117,12 +111,8 @@ export function trackFontDemand(r: SkiaRenderer, node: SceneNode, key: string): 
   r.textFonts.pending.set(node.id, pending)
 }
 
-/**
- * Whether a text's saved picture still draws it: drawn under the same fonts, and in the same
- * document color space, since the picture holds its colors as they were drawn then.
- */
 export function isTextPictureCurrent(
-  r: Pick<SkiaRenderer, 'fontGeneration' | 'documentColorSpace'> & {
+  r: Pick<SkiaRenderer, 'fontGeneration'> & {
     textFonts: Pick<TextFontState, 'pictureGenerations'>
   },
   node: SceneNode
@@ -134,14 +124,10 @@ export function isTextPictureCurrent(
   }
   const cached = r.textFonts.pictureGenerations.get(node.id)
   if (!cached || cached.data !== data) {
-    r.textFonts.pictureGenerations.set(node.id, {
-      data,
-      generation: r.fontGeneration,
-      space: r.documentColorSpace
-    })
+    r.textFonts.pictureGenerations.set(node.id, { data, generation: r.fontGeneration })
     return true
   }
-  return cached.generation === r.fontGeneration && cached.space === r.documentColorSpace
+  return cached.generation === r.fontGeneration
 }
 
 function settleFontDemand(
