@@ -5,7 +5,6 @@ import { nodeToXPath } from '@open-pencil/core/xpath'
 import { useComments } from '@/app/comments/use'
 import type { EditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste/replace'
-import { pasteClipboardAsLayers } from '@/app/editor/clipboard/paste/web'
 import {
   copySelectionProperties,
   pasteClipboardProperties
@@ -95,7 +94,9 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
     // Pastes where the menu was opened, as Paste here does.
     pasteAsLayers: () => {
       const { cursorCanvasX: x, cursorCanvasY: y } = store.state
-      void pasteClipboardAsLayers(store, x != null && y != null ? { x, y } : undefined)
+      void import('@/app/editor/clipboard/paste/web').then(({ pasteClipboardAsLayers }) =>
+        pasteClipboardAsLayers(store, x != null && y != null ? { x, y } : undefined)
+      )
     },
     copyProperties: () => copySelectionProperties(store),
     pasteProperties: () => pasteClipboardProperties(store),

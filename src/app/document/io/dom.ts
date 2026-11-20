@@ -1,12 +1,6 @@
 import { basename, extname } from 'pathe'
 
 import { resolveEditorProfile } from '@open-pencil/core'
-import {
-  HTML_IMPORT_VIEWPORT,
-  loadPageFontFaces,
-  sceneGraphFromStyledHTML
-} from '@open-pencil/core/io/formats/html/layers'
-import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 import { errorMessage } from '@open-pencil/std/errors'
 import { nextFrame } from '@open-pencil/vue/shared/frame'
 
@@ -56,6 +50,14 @@ export function createDOMOpenActions({
   ) {
     await nextFrame()
     const pageName = options.documentName ?? 'DOM Import'
+    // The HTML importer loads on demand, kept out of the editor's startup code.
+    const [
+      { HTML_IMPORT_VIEWPORT, loadPageFontFaces, sceneGraphFromStyledHTML },
+      { browserHTMLToDesignDocument }
+    ] = await Promise.all([
+      import('@open-pencil/core/io/formats/html/layers'),
+      import('@open-pencil/dom-css/browser')
+    ])
     load.update({ phase: 'styling', detail: pageName })
     // Laid out as a browser would, so layers land where the page put its elements.
     const { baseURL } = options
