@@ -205,3 +205,31 @@ test('locking or unlocking a hovered layer remeasures its mode badge for the but
   }
   editor.canvas.assertNoErrors()
 })
+
+test('the keyboard reaches a layer mode badge and opens its list of modes', async () => {
+  const { frameId } = await layers.layersWithModes('Keyboard reach')
+  const item = editor.page.locator(`[data-node-id="${frameId}"]`)
+  const row = item.locator('[data-slot="row"]')
+  const badge = row.locator('[data-slot="variable-mode"]')
+  await setRowWidth(row, '400px')
+
+  await row.click({ position: { x: 4, y: 4 } })
+  await expect(item).toBeFocused()
+  await editor.page.keyboard.press('Tab')
+  await expect(badge).toBeFocused()
+  await expect(editor.page.getByRole('tooltip')).toHaveText(
+    (await badge.locator('.sr-only').textContent()) ?? ''
+  )
+  await editor.page.keyboard.press('Tab')
+  await expect(row.locator('[data-slot="action"]').first()).toBeFocused()
+  await expect(editor.page.getByRole('tooltip')).not.toHaveText(
+    (await badge.locator('.sr-only').textContent()) ?? ''
+  )
+
+  await badge.click()
+  await expect(item).toBeFocused()
+  await editor.page.keyboard.press('ArrowUp')
+  await expect(item).not.toBeFocused()
+  await expect(editor.page.locator(':focus')).toHaveAttribute('role', 'treeitem')
+  editor.canvas.assertNoErrors()
+})

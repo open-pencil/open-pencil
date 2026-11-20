@@ -70,6 +70,13 @@ const fullBadgeFits = useFullModeBadgeFitsBesideName(
   [() => node.name, () => firstMode.value?.mode, moreModes, () => node.locked, () => node.visible]
 )
 const nameCut = useLayerNameCut(nameElement, () => node.name)
+
+function returnPointerFocusToRow(event: FocusEvent) {
+  const badge = event.currentTarget
+  if (badge instanceof HTMLElement && !badge.matches(':focus-visible')) {
+    badge.closest<HTMLElement>('[role="treeitem"]')?.focus({ preventScroll: true })
+  }
+}
 const showIssue = computed(() => showsLayerIssueMark(issue, expanded))
 const layerTree = tv(layerTreeTheme)
 const styles = computed(() =>
@@ -125,7 +132,13 @@ const styles = computed(() =>
         node.name
       }}</span>
       <Tip v-if="firstMode" :label="modesLabel" as-child>
-        <span ref="badge" data-slot="variable-mode" :class="styles.modeBadge()">
+        <span
+          ref="badge"
+          tabindex="0"
+          data-slot="variable-mode"
+          :class="styles.modeBadge()"
+          @focus="returnPointerFocusToRow"
+        >
           <span
             ref="fullForm"
             aria-hidden="true"
