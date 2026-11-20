@@ -4,7 +4,7 @@ import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { texture } from '@open-pencil/design-jsx'
-import { SceneGraph, type DocumentColorSpace, type Fill } from '@open-pencil/scene-graph'
+import { SceneGraph, type ColorProfile, type Fill } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { withLeafTexture } from '#core/canvas/texture/render'
@@ -17,7 +17,7 @@ afterAll(() => renderer.destroy())
  * The red channel of a 120 px blue square inside a 160 px white frame, with `clipToShape` set as
  * given, exported from a document in `space`: 0 where the square shows and 255 where it does not.
  */
-function texturedSquare(clipToShape: boolean, space: DocumentColorSpace = 'srgb'): number[] {
+function texturedSquare(clipToShape: boolean, space: ColorProfile = 'srgb'): number[] {
   const graph = new SceneGraph()
   graph.documentColorSpace = space
   const page = graph.getPages()[0].id

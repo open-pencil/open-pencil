@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { buildP3BlendCells, P3_BLENDS, P3_CELL } from '#core-tests/helpers/display-p3'
 
-import { SceneGraph, type DocumentColorSpace } from '@open-pencil/scene-graph'
+import { SceneGraph, type ColorProfile } from '@open-pencil/scene-graph'
 import { toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
@@ -20,7 +20,7 @@ afterEach(() => {
 })
 
 /** Draws the blend cells of a document in `space` on an sRGB screen, as the canvas does. */
-function drawOnSRGBScreen(space: DocumentColorSpace) {
+function drawOnSRGBScreen(space: ColorProfile) {
   const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(WIDTH, HEIGHT), 'surface'))
   renderers.push(renderer)
   const graph = new SceneGraph()

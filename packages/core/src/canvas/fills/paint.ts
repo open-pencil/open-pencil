@@ -21,7 +21,6 @@ import { drawOutline, withNodeOutline } from '#core/canvas/shapes'
 import { makeDiamondGradient } from './gradients/diamond'
 
 interface PaintFillsOptions {
-  readonly bindToNodeFills?: boolean
   readonly patternStack?: Set<string>
 }
 
@@ -33,13 +32,11 @@ export function paintFills(
   draw: (fill: Fill) => void,
   options: PaintFillsOptions = {}
 ): void {
-  for (let index = 0; index < fills.length; index++) {
-    const fill = fills[index]
+  for (const fill of fills) {
     if (!fill.visible) continue
-    const fillIndex = options.bindToNodeFills === false ? -1 : index
     const applied = options.patternStack
-      ? applyFill(r, fill, node, graph, fillIndex, options.patternStack)
-      : r.applyFill(fill, node, graph, fillIndex)
+      ? applyFill(r, fill, node, graph, options.patternStack)
+      : r.applyFill(fill, node, graph)
     if (!applied) continue
     r.fillPaint.setAlphaf(fill.opacity)
     const blends = fill.blendMode !== undefined && fill.blendMode !== 'NORMAL'
@@ -73,7 +70,7 @@ export function drawVectorMultiStyleFills(
       node,
       graph,
       () => canvas.drawPath(path, r.fillPaint),
-      { bindToNodeFills: !region.fills, patternStack }
+      { patternStack }
     )
   }
   return true
@@ -110,13 +107,12 @@ export function applyFill(
   fill: Fill,
   node: SceneNode,
   graph: SceneGraph,
-  fillIndex = 0,
   patternStack = new Set<string>()
 ): boolean {
   clearFillShader(r)
 
   if (fill.type === 'SOLID') {
-    const c = r.resolveFillColor(fill, fillIndex, node, graph)
+    const c = r.resolveFillColor(fill, graph)
     r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
     return true
   }
@@ -132,7 +128,7 @@ export function applyFill(
   if (fill.type === 'PATTERN' && applyPatternFill(r, fill, node, graph, patternStack)) return true
 
   if (fill.type === 'PATTERN' || fill.type === 'NOISE' || fill.type === 'CUSTOM') {
-    const c = r.resolveFillColor(fill, fillIndex, node, graph)
+    const c = r.resolveFillColor(fill, graph)
     r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
     return true
   }

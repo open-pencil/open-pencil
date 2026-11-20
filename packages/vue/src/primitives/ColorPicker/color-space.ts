@@ -3,17 +3,13 @@ import type { Color as RekaColor, ColorChannel, ColorSpace as RekaColorSpace } f
 import { computed, hasInjectionContext, inject, provide, toValue } from 'vue'
 import type { ComputedRef, InjectionKey, MaybeRefOrGetter } from 'vue'
 
-import {
-  colorToDisplayCSS,
-  resolveRGBAForPreview,
-  type RenderColorSpace
-} from '@open-pencil/scene-graph/color'
+import { colorToProfileCSS, convertColor, type ColorProfile } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 /** The profile colors are stored in, and the one the canvas beside them presents them in. */
 export interface ColorSpaces {
-  stored: RenderColorSpace
-  shown: RenderColorSpace
+  stored: ColorProfile
+  shown: ColorProfile
 }
 
 const SRGB: ColorSpaces = { stored: 'srgb', shown: 'srgb' }
@@ -28,8 +24,8 @@ const COLOR_SPACES_KEY: InjectionKey<() => ColorSpaces> = Symbol('open-pencil-co
  * sRGB, as a preference's are.
  */
 export function provideColorSpace(
-  stored: MaybeRefOrGetter<RenderColorSpace>,
-  shown: MaybeRefOrGetter<RenderColorSpace> = stored
+  stored: MaybeRefOrGetter<ColorProfile>,
+  shown: MaybeRefOrGetter<ColorProfile> = stored
 ): void {
   provide(COLOR_SPACES_KEY, () => ({ stored: toValue(stored), shown: toValue(shown) }))
 }
@@ -45,14 +41,14 @@ export function useColorSpaces(): ComputedRef<ColorSpaces> {
 }
 
 /** The profile colors in this subtree are stored in, which their values are read and made in. */
-export function useColorSpace(): ComputedRef<RenderColorSpace> {
+export function useColorSpace(): ComputedRef<ColorProfile> {
   const spaces = useColorSpaces()
   return computed(() => spaces.value.stored)
 }
 
 /** `color`, whose components are in `spaces.stored`, as CSS showing it in `spaces.shown`. */
 export function colorCSS(color: Color, spaces: ColorSpaces): string {
-  return colorToDisplayCSS(color, { documentColorSpace: spaces.stored, colorSpace: spaces.shown })
+  return colorToProfileCSS(color, spaces.stored, spaces.shown)
 }
 
 /** {@link colorCSS} in the profiles of this subtree. */
@@ -252,10 +248,7 @@ export function saturationBrightnessPixels(
       // HSB is linear in the stored components: white toward the hue, then scaled toward black.
       const channel = (full: number) => brightness * (1 - saturation + saturation * full)
       const stored = { r: channel(hue.r), g: channel(hue.g), b: channel(hue.b), a: 1 }
-      const shown = resolveRGBAForPreview(stored, {
-        documentColorSpace: spaces.stored,
-        colorSpace: spaces.shown
-      }).color
+      const shown = convertColor(stored, spaces.stored, spaces.shown)
       const at = (row * size + column) * 4
       pixels[at] = shown.r * 255
       pixels[at + 1] = shown.g * 255

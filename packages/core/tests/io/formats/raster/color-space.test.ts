@@ -4,7 +4,7 @@ import { buildP3BlendCells, P3_BLENDS, P3_CELL } from '#core-tests/helpers/displ
 
 import type { ColorSpace, Image } from '@open-pencil/canvaskit'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
-import { SceneGraph, type DocumentColorSpace } from '@open-pencil/scene-graph'
+import { SceneGraph, type ColorProfile } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
@@ -19,7 +19,7 @@ beforeAll(async () => {
   await renderer.loadFonts()
 })
 
-function exported(space: DocumentColorSpace) {
+function exported(space: ColorProfile) {
   const graph = new SceneGraph()
   graph.documentColorSpace = space
   const page = graph.getPages()[0]

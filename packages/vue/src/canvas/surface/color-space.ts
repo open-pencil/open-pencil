@@ -1,7 +1,5 @@
 import { IS_BROWSER } from '@open-pencil/core/constants'
-import type { DocumentColorSpace } from '@open-pencil/scene-graph'
-
-export type PresentationColorSpace = 'srgb' | 'display-p3'
+import type { ColorProfile } from '@open-pencil/scene-graph'
 
 /** The drawing-buffer storage API is not in the installed DOM lib yet (Chromium 122+). */
 interface ColorManagedContext {
@@ -19,7 +17,7 @@ interface ColorManagedContext {
 const UNMASKED_RENDERER_WEBGL = 0x9246
 
 export interface PresentationRequest {
-  documentColorSpace: DocumentColorSpace
+  documentColorSpace: ColorProfile
   wideGamutDisplay: boolean
   width: number
   height: number
@@ -84,7 +82,7 @@ function installDrawingBuffer(
 export function configurePresentation(
   context: ColorManagedContext | null,
   request: PresentationRequest
-): PresentationColorSpace | null {
+): ColorProfile | null {
   if (!context?.drawingBufferColorSpace) return 'srgb'
   try {
     if (

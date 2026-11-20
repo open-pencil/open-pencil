@@ -502,9 +502,8 @@ export function paintBooleanOperation(
   if (!path) return
 
   try {
-    for (let fillIndex = 0; fillIndex < node.fills.length; fillIndex++) {
-      const fill = node.fills[fillIndex]
-      if (!fill.visible || !r.applyFill(fill, node, graph, fillIndex)) continue
+    for (const fill of node.fills) {
+      if (!fill.visible || !r.applyFill(fill, node, graph)) continue
       r.fillPaint.setAlphaf(fill.opacity)
       try {
         canvas.drawPath(path, r.fillPaint)

@@ -1,5 +1,5 @@
 import type { Canvas, CanvasKit, Paint } from '@open-pencil/canvaskit'
-import type { DocumentColorSpace, Fill, SceneNode } from '@open-pencil/scene-graph'
+import type { ColorProfile, Fill, SceneNode } from '@open-pencil/scene-graph'
 import { normalizeColor, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import { styleRunAt } from '@open-pencil/scene-graph/text'
@@ -106,7 +106,7 @@ export function drawTextDecorations(
   canvas: Canvas,
   rects: readonly TextDecorationRect[],
   textPaint: Paint,
-  space: DocumentColorSpace
+  space: ColorProfile
 ): void {
   for (const rect of rects) {
     const fill = solidColor(rect.fills)
@@ -140,7 +140,7 @@ function drawKeycapFrames(
   layout: TextLayout,
   y: number,
   paint: Paint,
-  space: DocumentColorSpace
+  space: ColorProfile
 ): void {
   const text = shownText(node)
   if (!text.includes(COMBINING_KEYCAP)) return
@@ -177,7 +177,7 @@ export function drawTextLayout(
   prepared: PreparedText,
   y: number,
   textPaint: Paint,
-  space: DocumentColorSpace
+  space: ColorProfile
 ): void {
   const layout = prepared.paragraph
   layout.draw(canvas, 0, y)

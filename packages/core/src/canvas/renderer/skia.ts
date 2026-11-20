@@ -1,14 +1,14 @@
 import { isEqual, noop } from 'es-toolkit'
 
 import type {
-  DocumentColorSpace,
+  ColorProfile,
   Effect,
   SceneNode,
   SceneGraph,
   Fill,
   Stroke
 } from '@open-pencil/scene-graph'
-import { toExtendedSRGB, type RenderColorSpace } from '@open-pencil/scene-graph/color'
+import { toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
@@ -163,12 +163,12 @@ export class SkiaRenderer {
   /** Selection chrome, set from editor state each frame through {@link setSelectionTheme}. */
   selectionTheme: SelectionTheme = DEFAULT_SELECTION_THEME
   /** The color space of the surface this renderer presents on, which the screen shows. */
-  presentationColorSpace: RenderColorSpace = 'srgb'
+  presentationColorSpace: ColorProfile = 'srgb'
   /**
    * The color space of the document being drawn: the surfaces it is drawn on hold its colors in it,
    * and its blend modes work in it. Set with {@link useDocumentColorSpace}.
    */
-  documentColorSpace: DocumentColorSpace = 'srgb'
+  documentColorSpace: ColorProfile = 'srgb'
   /** A surface in the document's color space the size of the screen's, while the two differ. */
   documentSurface: DocumentSurface | null = null
   navigationPhase: EditorState['navigation']['phase'] = 'idle'
@@ -745,17 +745,12 @@ export class SkiaRenderer {
     return RenderText.buildParagraph(this, node, color, opts)
   }
 
-  resolveFillColor(fill: Fill, fillIndex: number, node: SceneNode, graph: SceneGraph): Color {
-    return RenderColors.resolveFillColor(fill, fillIndex, node, graph)
+  resolveFillColor(fill: Fill, graph: SceneGraph): Color {
+    return RenderColors.resolveFillColor(fill, graph)
   }
 
-  resolveStrokeColor(
-    stroke: Stroke,
-    strokeIndex: number,
-    node: SceneNode,
-    graph: SceneGraph
-  ): Color {
-    return RenderColors.resolveStrokeColor(stroke, strokeIndex, node, graph)
+  resolveStrokeColor(stroke: Stroke, graph: SceneGraph): Color {
+    return RenderColors.resolveStrokeColor(stroke, graph)
   }
 
   /**
@@ -767,7 +762,7 @@ export class SkiaRenderer {
   }
 
   /** Draws in `space` from now on, starting over what was drawn in another. */
-  useDocumentColorSpace(space: DocumentColorSpace): void {
+  useDocumentColorSpace(space: ColorProfile): void {
     if (space === this.documentColorSpace) return
     this.documentColorSpace = space
     this.glassMaps.clear()
@@ -831,8 +826,8 @@ export class SkiaRenderer {
     TextRender.renderText(this, canvas, node, fill)
   }
 
-  applyFill(fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex = 0): boolean {
-    return Fills.applyFill(this, fill, node, graph, fillIndex)
+  applyFill(fill: Fill, node: SceneNode, graph: SceneGraph): boolean {
+    return Fills.applyFill(this, fill, node, graph)
   }
 
   drawNodeFill(canvas: Canvas, node: SceneNode, fill?: Fill): void {

@@ -4,7 +4,7 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
-import { SceneGraph, type DocumentColorSpace } from '@open-pencil/scene-graph'
+import { SceneGraph, type ColorProfile } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -47,8 +47,8 @@ describe('raster export', () => {
     graph.createNode('RECTANGLE', page.id)
     const viewport = { x: 1, y: 2, w: 3, h: 4 }
     const renderer = {
-      documentColorSpace: 'srgb' as DocumentColorSpace,
-      useDocumentColorSpace(space: DocumentColorSpace) {
+      documentColorSpace: 'srgb' as ColorProfile,
+      useDocumentColorSpace(space: ColorProfile) {
         this.documentColorSpace = space
       },
       editingTextId: null,
@@ -75,8 +75,8 @@ describe('raster export', () => {
     const invalidated: string[] = []
     const seen: Array<string | null> = []
     const renderer = {
-      documentColorSpace: 'srgb' as DocumentColorSpace,
-      useDocumentColorSpace(space: DocumentColorSpace) {
+      documentColorSpace: 'srgb' as ColorProfile,
+      useDocumentColorSpace(space: ColorProfile) {
         this.documentColorSpace = space
       },
       editingTextId: 'edited' as string | null,

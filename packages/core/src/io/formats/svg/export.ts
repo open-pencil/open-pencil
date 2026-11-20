@@ -1,6 +1,6 @@
 import { compact } from 'es-toolkit'
 
-import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
+import type { ColorProfile } from '@open-pencil/scene-graph/color'
 import {
   getNodeRotationOrigin,
   getWorldMatrix,
@@ -582,7 +582,7 @@ export function renderNodeSVGElement(
     idPrefix,
     colorSpace = 'srgb',
     tint
-  }: Pick<SVGExportContext, 'tint'> & { idPrefix: string; colorSpace?: RenderColorSpace }
+  }: Pick<SVGExportContext, 'tint'> & { idPrefix: string; colorSpace?: ColorProfile }
 ): SVGNode | null {
   const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colorSpace, idPrefix, tint }
   const drawn = renderNode({ ...node, x: 0, y: 0, rotation: 0, opacity: 1 }, ctx)

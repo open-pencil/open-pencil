@@ -1,5 +1,5 @@
 import type { Canvas, Surface } from '@open-pencil/canvaskit'
-import type { DocumentColorSpace } from '@open-pencil/scene-graph'
+import type { ColorProfile } from '@open-pencil/scene-graph'
 
 import { skColorSpace } from '#core/canvas/renderer/colors'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
@@ -10,7 +10,7 @@ export interface DocumentSurface {
   surface: Surface
   width: number
   height: number
-  space: DocumentColorSpace
+  space: ColorProfile
 }
 
 /**
