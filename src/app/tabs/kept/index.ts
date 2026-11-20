@@ -1,12 +1,10 @@
 import * as v from 'valibot'
-// Keeps the designs open in this browser tab across a reload: their recovery copies' IDs, in tab
-// order, go to `sessionStorage` as tabs change, and the next load reopens them in that order.
+// Keeps the designs open in this browser tab across a reload: their `/design/` IDs, in tab order,
+// go to `sessionStorage` as tabs change, and the next load reopens them in that order.
 import { watch } from 'vue'
 
 import { errorMessage } from '@open-pencil/std/errors'
 
-import { getRecoveryStore } from '@/app/document/recovery'
-import { restoreRecoverySnapshot } from '@/app/tabs/open/recovery'
 import {
   activeTab,
   allTabs,
@@ -19,7 +17,7 @@ import {
 import { readKeptTabsText, writeKeptTabsText } from './storage'
 
 const keptTabsSchema = v.object({
-  /** The recovery copy IDs of the open designs, in tab order. */
+  /** The `/design/` IDs of the open designs, in tab order. */
   designs: v.array(v.pipe(v.string(), v.nonEmpty()))
 })
 
@@ -43,11 +41,12 @@ function writeKeptTabs(kept: KeptTabs): void {
 /**
  * Reopens the designs this browser tab had open, in their order, and `activeDesignId`'s with them
  * when it was not among them. The tab in front is then that design's, or the one in front before,
- * such as Home. A design whose copy is gone is skipped.
+ * such as Home. `reopen` opens one; a design it cannot find is skipped.
  */
 export async function restoreKeptTabs(
   activeDesignId: string | null,
-  designIdOf: (tab: Tab) => string | null
+  designIdOf: (tab: Tab) => string | null,
+  reopen: (designId: string) => Promise<void>
 ): Promise<void> {
   const before = activeTab.value
   const { designs } = readKeptTabs()
@@ -56,7 +55,7 @@ export async function restoreKeptTabs(
   for (const id of ids) {
     if (getTabsSnapshot().some((tab) => designIdOf(tab) === id)) continue
     try {
-      if (await getRecoveryStore().read(id)) await restoreRecoverySnapshot(id)
+      await reopen(id)
     } catch (error) {
       console.error(`[Kept tabs] Could not reopen ${id}: ${errorMessage(error)}`)
     }

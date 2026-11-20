@@ -1,6 +1,7 @@
-// Keeps a design that lives only on this device in the address bar, `/design/<id>`, so a reload
-// opens it again. The ID is the design's recovery copy, which keeps the same ID across reloads;
-// Cloud documents and rooms keep the addresses `address.ts` gives them. On start, the designs the
+// Keeps a design that lives only on this device, or in the storage bucket, in the address bar,
+// `/design/<id>`, so a reload opens it again. The ID is the design's recovery copy, which keeps the
+// same ID across reloads, or its stored document's (`stored-design.ts`); Cloud documents and rooms
+// keep the addresses `address.ts` gives them. On start, the designs the
 // browser tab had open come back with it (`kept/`).
 import { shallowRef, watch } from 'vue'
 import {
@@ -19,10 +20,12 @@ import type { EditorStore } from '@/app/editor/session'
 import { onBeforeReload } from '@/app/shell/reload'
 import { keepOpenTabs, restoreKeptTabs } from '@/app/tabs/kept'
 import { keepDesignNames } from '@/app/tabs/kept/names'
+import { restoreRecoverySnapshot } from '@/app/tabs/open/recovery'
 import type { Tab } from '@/app/tabs/state'
 import { releaseSplashForDesign } from '@/splash/opening-design'
 
 import { activeTab } from './index'
+import { hasStoredDesign, reopenStoredDesign, storedDesignIdOf } from './stored-design'
 
 export const DESIGN_ROUTE_PREFIX = '/design/'
 
@@ -41,10 +44,30 @@ function livesOnlyHere(store: EditorStore): boolean {
   )
 }
 
-/** A tab's `/design/` ID: its recovery copy's, for a design kept only here, otherwise null. */
-export function designIdOf(tab: Tab | undefined): string | null {
+/** The recovery copy's ID of a tab's design kept only here, otherwise null. */
+export function recoveryDesignIdOf(tab: Tab | undefined): string | null {
   if (tab?.kind !== 'document') return null
   return livesOnlyHere(tab.store) ? tab.store.getRecoveryId() : null
+}
+
+/**
+ * A tab's `/design/` ID: its recovery copy's for a design kept only here, its stored document's for
+ * one kept in the storage bucket, otherwise null.
+ */
+export function designIdOf(tab: Tab | undefined): string | null {
+  if (tab?.kind !== 'document') return null
+  return recoveryDesignIdOf(tab) ?? storedDesignIdOf(tab.store)
+}
+
+/** Whether this device can open the design `designId` names again. */
+async function designExists(designId: string): Promise<boolean> {
+  return (await getRecoveryStore().read(designId)) !== null || (await hasStoredDesign(designId))
+}
+
+/** Opens the design `designId` names in a tab: its recovery copy, or the stored document. */
+async function reopenDesign(designId: string): Promise<void> {
+  if (await getRecoveryStore().read(designId)) await restoreRecoverySnapshot(designId)
+  else await reopenStoredDesign(designId)
 }
 
 /**
@@ -59,7 +82,7 @@ export async function designRouteGuard(
   if (from !== START_LOCATION) return true
   const designId = to.params.designId
   if (typeof designId !== 'string') return '/'
-  return (await getRecoveryStore().read(designId)) ? true : '/'
+  return (await designExists(designId)) ? true : '/'
 }
 
 /**
@@ -67,7 +90,8 @@ export async function designRouteGuard(
  * announced reload right after an edit still finds the design its address names.
  */
 function persistActiveDesign(): Promise<void> {
-  const store = designIdOf(activeTab.value) ? activeTab.value?.store : undefined
+  // A stored design saves and uploads on its own; only a recovery copy waits a few seconds.
+  const store = recoveryDesignIdOf(activeTab.value) ? activeTab.value?.store : undefined
   if (!store) return Promise.resolve()
   return store.persistRecoveryNow().catch((error: unknown) => {
     console.warn(
@@ -88,7 +112,7 @@ export function syncDesignAddress(
 ): () => void {
   const startId = typeof route.params.designId === 'string' ? route.params.designId : null
   const restored = shallowRef(false)
-  void restoreKeptTabs(startId, designIdOf)
+  void restoreKeptTabs(startId, designIdOf, reopenDesign)
     .catch((error: unknown) =>
       console.error(`[Design address] Could not reopen the open designs: ${errorMessage(error)}`)
     )
@@ -125,7 +149,7 @@ export function syncDesignAddress(
     { immediate: true }
   )
   const stopKeeping = keepOpenTabs(designIdOf, () => restored.value)
-  const stopNaming = keepDesignNames(designIdOf)
+  const stopNaming = keepDesignNames(recoveryDesignIdOf)
   const stopReload = onBeforeReload(persistActiveDesign)
   return () => {
     stopWatch()
