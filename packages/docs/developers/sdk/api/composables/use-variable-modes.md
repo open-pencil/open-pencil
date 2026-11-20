@@ -15,7 +15,7 @@ import { useVariableModes } from '@open-pencil/vue/controls/variable-modes'
 const { choices, applied, setMode } = useVariableModes()
 ```
 
-- `choices` lists every collection with more than one mode for pages and layers that hold others (frames, groups, sections, components, and instances), so a theme can be chosen before anything inside binds its variables; for other layers, only those whose variables they use, through their own bindings or variables those alias. A library copy with no variables is left out unless a target sets a mode in it. Each has its `label` (the collection name, numbered when listed collections share one), its `modes`, its `value` (the mode set on every target, `MIXED` when they differ, or `null` for Auto), and the `inherited` mode the targets show without one of their own.
+- `choices` lists every collection with more than one mode for pages and layers that hold others (frames, groups, sections, components, and instances), so a theme can be chosen before anything inside binds its variables; for other layers, those whose variables they use, through their own bindings or variables those alias, and those they set a mode in, so it can be cleared. A library copy with no variables is left out unless a target sets a mode in it. Each has its `label` (the collection name, numbered when listed collections share one), its `modes`, its `value` (the mode set on every target, `MIXED` when they differ, or `null` for Auto), and the `inherited` mode the targets show without one of their own.
 - `applied` is the part of `choices` with a mode set on at least one target.
 - `setMode(collectionId, modeId)` sets the mode on every target in one undo step; `null` clears it, so the targets inherit their parent's mode again.
 

@@ -149,6 +149,22 @@ describe('library copies in variable mode choices', () => {
     ])
   })
 
+  test('list the collections a layer that holds no others sets a mode in, so it can clear them', () => {
+    const { editor, graph, page, theme, empty, dark, node } = libraryCopies()
+    const rectangle = graph.createNode('RECTANGLE', page, {
+      variableModes: { [theme.id]: dark, [empty.id]: dark }
+    })
+    const targets = [node(rectangle.id)]
+    expect(variableModeChoices(editor, targets).map((c) => [c.collectionId, c.value])).toEqual([
+      [theme.id, dark],
+      [empty.id, dark]
+    ])
+    setVariableMode(editor, targets, empty.id, null)
+    expect(variableModeChoices(editor, [node(rectangle.id)]).map((c) => c.collectionId)).toEqual([
+      theme.id
+    ])
+  })
+
   test('keep a local collection without variables', () => {
     const { editor, graph, page, theme, node } = setup()
     const local = graph.createCollection('Spacing')
