@@ -78,6 +78,7 @@ export function renderFromEditorState(
   interactive = false
 ): void {
   r.useDocumentColorSpace(graph.documentColorSpace)
+  r.recordPicturesIn(graph.documentColorSpace)
   const previewMode = r.images.previews.enabled && needsImagePreviews(graph)
   if (
     r.images.memoryGraph !== graph ||

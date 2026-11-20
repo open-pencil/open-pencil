@@ -1,4 +1,4 @@
-import type { CanvasKit, ColorSpace } from '@open-pencil/canvaskit'
+import type { CanvasKit, ColorSpace, ColorType, ImageInfo } from '@open-pencil/canvaskit'
 import type { ColorProfile, Fill, SceneGraph, Stroke } from '@open-pencil/scene-graph'
 import { normalizeColor, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -6,6 +6,26 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 /** Skia's color space for a document's. */
 export function skColorSpace(ck: CanvasKit, space: ColorProfile): ColorSpace {
   return space === 'display-p3' ? ck.ColorSpace.DISPLAY_P3 : ck.ColorSpace.SRGB
+}
+
+/**
+ * A premultiplied surface `width` by `height` in `profile`, as a document is drawn on: its colors
+ * and blend modes work in its own profile there, as on the screen and in Figma's export.
+ */
+export function documentImageInfo(
+  ck: CanvasKit,
+  profile: ColorProfile,
+  width: number,
+  height: number,
+  colorType: ColorType = ck.ColorType.RGBA_8888
+): ImageInfo {
+  return {
+    width,
+    height,
+    colorType,
+    alphaType: ck.AlphaType.Premul,
+    colorSpace: skColorSpace(ck, profile)
+  }
 }
 
 /**

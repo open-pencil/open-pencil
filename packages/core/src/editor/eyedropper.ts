@@ -7,7 +7,7 @@ import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
-import { skColorSpace } from '#core/canvas/renderer/colors'
+import { documentImageInfo } from '#core/canvas/renderer/colors'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 
@@ -53,16 +53,11 @@ export function sampleScenePixels(
   if (!Number.isInteger(size) || size < 1 || size % 2 === 0 || !(scale > 0)) return null
   const page = graph.getNode(pageId)
   if (!page) return null
-  const colorSpace = skColorSpace(ck, graph.documentColorSpace)
+  const info = documentImageInfo(ck, graph.documentColorSpace, size, size)
+  const { colorSpace } = info
   // `MakeSurface` is always sRGB; a raster surface makes others, apart from itself.
   const base = ck.MakeSurface(1, 1)
-  const surface = base?.makeSurface({
-    width: size,
-    height: size,
-    colorType: ck.ColorType.RGBA_8888,
-    alphaType: ck.AlphaType.Premul,
-    colorSpace
-  })
+  const surface = base?.makeSurface(info)
   base?.dispose()
   if (!surface) return null
   const previousViewport = renderer.worldViewport
