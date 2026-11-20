@@ -1,0 +1,1 @@
+- Rendering commands work when the CLI is installed in a folder whose path contains a space or an accented letter (#2023).
