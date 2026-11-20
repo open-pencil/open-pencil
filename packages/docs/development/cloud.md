@@ -526,8 +526,10 @@ such as the official service run locally: it generates the services' signing key
 API's token into `deploy/generated/`, adds the `[services]`, `[billing]`, and `[internal_api]`
 tables, keeps entitlements in the database where billing writes plans, and gives the free plan the
 official Cloud's 300 MB, which the service's pricing page shows. `OPENPENCIL_CLOUD_DEV_SERVICES_URL`
-names the services, `http://127.0.0.1:8788` by default. The service reaches Cloud over portless's
-HTTPS, so both trust its certificate through `NODE_EXTRA_CA_CERTS`.
+names the services, `http://127.0.0.1:8788` by default. The billing URL must be HTTPS, with the
+service run under portless as Cloud is: a browser names no origin for a form posted from an HTTPS
+page to an HTTP one, which the service refuses. The service reaches Cloud over portless's HTTPS
+too, so both trust its certificate through `NODE_EXTRA_CA_CERTS`.
 
 A plan may be priced by the seat (`billingSeatPricingSchema`): an account's seats are the people
 who can edit, as editors or admins, across the workspaces it owns, each counted once, the owner
