@@ -132,12 +132,7 @@ const styles = computed(() =>
               +{{ moreModes }}
             </span>
           </span>
-          <span
-            v-if="!fullBadgeFits"
-            aria-hidden="true"
-            data-slot="variable-mode-count"
-            :class="styles.modeCount()"
-          >
+          <span v-if="!fullBadgeFits" aria-hidden="true" data-slot="variable-mode-count">
             {{ appliedModes.length }}
           </span>
           <span class="sr-only">{{ modesLabel }}</span>

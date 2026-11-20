@@ -1,3 +1,5 @@
+import { sum } from 'es-toolkit'
+
 import type { LayerRow } from '@open-pencil/vue/primitives/LayerTree'
 
 export interface LayerRowMetrics {
@@ -7,11 +9,12 @@ export interface LayerRowMetrics {
   indent: number
   /** From a row's indent to the start of its name: disclosure, icon, and their gaps. */
   nameStart: number
-  /** The buttons at a row's end, with their gap and the row's end padding. */
-  buttons: number
-  /** Space a variable mode badge takes besides its text, and an issue mark with its gap. */
+  /** Space a variable mode badge takes besides its text. */
   badge: number
+  rowEnd: number
+  trailingGap: number
   issueMark: number
+  buttons: number
   /** The list's own width, which rows fill before they scroll. */
   viewportWidth: number
 }
@@ -20,6 +23,7 @@ export interface LayerRowDecorations {
   modeCount: (row: LayerRow) => number
   /** Whether the row shows an issue mark; `expanded` is whether its children are listed. */
   showsIssue: (row: LayerRow, expanded: boolean) => boolean
+  buttonsAlwaysShown: (row: LayerRow) => boolean
 }
 
 /** Text widths in a font, measured once each on a canvas. */
@@ -40,10 +44,14 @@ export function createTextMeasure() {
   }
 }
 
+function trailingWidth(parts: readonly number[], metrics: LayerRowMetrics): number {
+  return sum(parts) + metrics.trailingGap * Math.max(0, parts.length - 1) + metrics.rowEnd
+}
+
 /**
- * How far the layer rows reach past the list sideways, as in Figma's layers panel: far enough
- * for the widest row's indent, whole name, compact mode badge, and issue mark, so no name is ever cut
- * short, only scrolled out of view.
+ * How far the layer rows reach past the list sideways, as in Figma's layers panel: far enough for
+ * the widest idle row's indent, whole name, compact mode badge, issue mark, and the buttons a
+ * locked or hidden layer always shows. Buttons that show only on hover cut the name instead.
  */
 export function rowsOverflow(
   rows: readonly LayerRow[],
@@ -61,8 +69,17 @@ export function rowsOverflow(
       width += metrics.badge + measure(String(modeCount), metrics.badgeFont)
     }
     const expanded = row.hasChildren && (rows[index + 1]?.level ?? 0) > row.level
-    if (decorations.showsIssue(row, expanded)) width += metrics.issueMark
-    if (width > widest) widest = width
+    const trailing: number[] = []
+    if (decorations.showsIssue(row, expanded)) {
+      trailing.push(metrics.issueMark)
+    }
+    if (decorations.buttonsAlwaysShown(row)) {
+      trailing.push(metrics.buttons)
+    }
+    width += trailingWidth(trailing, metrics)
+    if (width > widest) {
+      widest = width
+    }
   }
-  return Math.max(0, Math.ceil(widest + metrics.buttons - metrics.viewportWidth))
+  return Math.max(0, Math.ceil(widest - metrics.viewportWidth))
 }

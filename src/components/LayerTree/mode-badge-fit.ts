@@ -26,11 +26,18 @@ function columnGap(element: Element | null) {
   return element ? Number.parseFloat(getComputedStyle(element).columnGap) || 0 : 0
 }
 
-function widthHiddenActionsTakeOnHover(actions: Element | null | undefined) {
-  if (!actions || getComputedStyle(actions).position !== 'absolute') {
+function shownOnlyOnHover(actions: Element) {
+  return (
+    !actions.hasAttribute('data-persistent') && getComputedStyle(actions).position !== 'absolute'
+  )
+}
+
+function widthHoverActionsTake(actions: Element | null | undefined) {
+  if (!actions || !shownOnlyOnHover(actions)) {
     return 0
   }
-  return actions.getBoundingClientRect().width + columnGap(actions.parentElement)
+  const gapBefore = actions.previousElementSibling ? columnGap(actions.parentElement) : 0
+  return actions.getBoundingClientRect().width + gapBefore
 }
 
 export function useFullModeBadgeFitsBesideName(
@@ -48,11 +55,10 @@ export function useFullModeBadgeFitsBesideName(
       return
     }
     const fullBadgeWidth = fullForm.getBoundingClientRect().width + inlineChrome(badge)
-    const room =
-      label.getBoundingClientRect().width -
-      widthHiddenActionsTakeOnHover(unrefElement(elements.actions))
+    const idleRoom =
+      label.getBoundingClientRect().width + widthHoverActionsTake(unrefElement(elements.actions))
     const nameWidth = name.scrollWidth + SCROLL_WIDTH_ROUNDING
-    fits.value = nameWidth + columnGap(label) + fullBadgeWidth <= room
+    fits.value = nameWidth + columnGap(label) + fullBadgeWidth <= idleRoom
   }
 
   useResizeObserver(() => [unrefElement(elements.label), unrefElement(elements.fullForm)], measure)

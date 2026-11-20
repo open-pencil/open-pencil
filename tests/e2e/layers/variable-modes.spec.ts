@@ -62,6 +62,17 @@ test('a layer with modes in several collections keeps its whole name beside one 
   const layers = editor.page.getByTestId('layers-scroll')
   expect(await layers.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
 
+  const actionsShown = () =>
+    expect(row.locator('[data-slot="actions"]')).toHaveCSS('position', 'static')
+  const badgeWidth = () => badge.evaluate((element) => element.getBoundingClientRect().width)
+  const idleBadgeWidth = await badgeWidth()
+  await row.hover({ position: { x: 4, y: 4 } })
+  await actionsShown()
+  await expect.poll(nameClipped).toBe(true)
+  await expect(count).toHaveText('4')
+  expect(await badgeWidth()).toBe(idleBadgeWidth)
+  expect(await badgeClipped()).toBe(false)
+
   await row.hover()
   await badge.hover()
   await expect(editor.page.getByRole('tooltip')).toHaveText(fullList)
@@ -99,8 +110,9 @@ test('a layer with modes in several collections keeps its whole name beside one 
     formsSeen.add(idle)
     await row.hover({ position: { x: 4, y: 4 } })
     await settled()
-    await expect(row.locator('[data-slot="actions"]')).toHaveCSS('position', 'static')
+    await actionsShown()
     expect(await badgeForm(), `row ${width}px wide`).toBe(idle)
+    expect(await badgeClipped(), `row ${width}px wide`).toBe(false)
   }
   expect([...formsSeen].sort()).toEqual(['count', 'full'])
   await editor.page.mouse.move(0, 0)

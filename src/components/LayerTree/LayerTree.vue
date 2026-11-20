@@ -53,8 +53,17 @@ defineOptions({ inheritAttrs: false })
 
 const { ui } = defineProps<{ ui?: LayerTreeUI }>()
 
-const { rowHeight, indent, nameStart, buttons, badge, badgeTextSize, issueMark } =
-  useLayerTreeGeometry()
+const {
+  rowHeight,
+  indent,
+  nameStart,
+  rowEnd,
+  trailingGap,
+  issueMark,
+  buttons,
+  badge,
+  badgeTextSize
+} = useLayerTreeGeometry()
 const attrs = useAttrs()
 const styles = tv(layerTreeTheme)()
 provideLayerTreeUI(() => ui)
@@ -193,6 +202,7 @@ const rowsWidth = computed(() => {
   // The list sets the rows' text size, so its font is the names' font.
   const style = el ? getComputedStyle(el) : null
   const marks = issueMarks.value
+  void store.state.sceneVersion
   const overflow = rowsOverflow(
     root.value?.visibleRows ?? [],
     {
@@ -200,16 +210,19 @@ const rowsWidth = computed(() => {
       badgeFont: style ? `${style.fontWeight} ${badgeTextSize.value}px ${style.fontFamily}` : '',
       indent: indent.value,
       nameStart: nameStart.value,
-      buttons: buttons.value,
       badge: badge.value,
+      rowEnd: rowEnd.value,
+      trailingGap: trailingGap.value,
       issueMark: issueMark.value,
+      buttons: buttons.value,
       viewportWidth: viewportWidth.value
     },
     {
       modeCount: (row) =>
         layerAppliedModes(store.graph, row.node.variableModes, variables.value.numberedCollection)
           .length,
-      showsIssue: (row, expanded) => showsLayerIssueMark(marks?.get(row.node.id), expanded)
+      showsIssue: (row, expanded) => showsLayerIssueMark(marks?.get(row.node.id), expanded),
+      buttonsAlwaysShown: (row) => row.node.locked || !row.node.visible
     },
     measureText
   )
