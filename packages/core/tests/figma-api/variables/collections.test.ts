@@ -129,6 +129,16 @@ describe('figma.variables', () => {
     expect([...graph.variableCollections.values(), ...graph.variables.values()]).toEqual(before)
   })
 
+  test('a variable the file added to a library collection stays the file’s own', () => {
+    const { api, brand } = withLibrary()
+    const addedRecord = graphOf(api).createVariable('added', 'FLOAT', brand.id, 1)
+    const added = expectDefined(api.variables.getVariableById(addedRecord.id), 'added')
+    expect(added.remote).toBe(false)
+    expect(api.variables.getLocalVariables('FLOAT').map(({ name }) => name)).toContain('added')
+    added.setValueForMode(brand.defaultModeId, 2)
+    expect(addedRecord.valuesByMode[brand.defaultModeId]).toBe(2)
+  })
+
   test('a removed variable or collection throws on reading remote, as in Figma', () => {
     const { size, collection } = tokens()
     size.remove()
