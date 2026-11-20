@@ -1,5 +1,7 @@
 import { readStoredTheme, resolveAppTheme } from '@/app/settings/theme'
 
+import { holdSplashForDesign } from './opening-design'
+
 // The splash's stylesheet builds with this script, and each page inlines both.
 import './style.css'
 
@@ -9,3 +11,5 @@ document.documentElement.dataset.theme = resolveAppTheme(
   readStoredTheme(),
   matchMedia('(prefers-color-scheme: dark)').matches
 )
+
+holdSplashForDesign(location.pathname)
