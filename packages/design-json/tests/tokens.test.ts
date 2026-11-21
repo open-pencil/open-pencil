@@ -62,4 +62,27 @@ describe('design tokens', () => {
     expect(compactDesign(graph, [box.id]).tokens[0].tokens).toHaveLength(4)
     expect(designToJSON(graph, [box.id], { tokens: false }).tokens).toEqual([])
   })
+
+  test('a compact layer names the variables its fields use', () => {
+    const { graph } = palette()
+    const pageId = graph.getPages()[0].id
+    const variableNamed = (name: string) =>
+      [...graph.variables.values()].find((variable) => variable.name === name)?.id ?? ''
+    const card = graph.createNode('RECTANGLE', pageId, {
+      width: 10,
+      height: 10,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+    })
+    card.boundVariables = {
+      'fills/0/color': variableNamed('surface'),
+      cornerRadius: variableNamed('radius/card')
+    }
+    const plain = graph.createNode('RECTANGLE', pageId, { width: 10, height: 10 })
+    const [cardLayer, plainLayer] = compactDesign(graph, [card.id, plain.id]).roots
+    expect(cardLayer.variables).toEqual({ cornerRadius: 'radius/card' })
+    // A bound color names its variable beside its value.
+    expect(cardLayer.style?.fills).toEqual([{ value: '#FFFFFF', name: 'surface' }])
+    expect(plainLayer.style?.fills).toBeUndefined()
+    expect(plainLayer.variables).toBeUndefined()
+  })
 })

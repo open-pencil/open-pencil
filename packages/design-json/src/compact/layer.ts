@@ -48,12 +48,28 @@ export function compactLayer(graph: SceneGraph, node: SceneNode): CompactLayer {
     kind,
     layout: describeLayout(node),
     // A text's fills are its color, and an image's are the image.
-    style: describeStyle(node, kind !== 'text' && kind !== 'image'),
-    text: describeText(node),
+    style: describeStyle(graph, node, kind !== 'text' && kind !== 'image'),
+    text: describeText(graph, node),
     vector: kind === 'vector' ? describeVector(node) : undefined,
     images: images.length > 0 ? images : undefined,
+    variables: variableNames(graph, node),
     component: describeComponent(graph, node)
   }
+}
+
+/** A paint's color binding, which the color itself names in `style` or `text`. */
+const PAINT_COLOR = /^(fills|strokes)\/\d+\/color$/
+
+/**
+ * The variables the layer's other fields use, by the name each was given; its ID if it is gone.
+ * Colors name theirs where they are.
+ */
+function variableNames(graph: SceneGraph, node: SceneNode): Record<string, string> | undefined {
+  const entries = Object.entries(node.boundVariables).filter(([field]) => !PAINT_COLOR.test(field))
+  if (entries.length === 0) return undefined
+  return Object.fromEntries(
+    entries.map(([field, id]) => [field, graph.variables.get(id)?.name ?? id])
+  )
 }
 
 /** A shape whose fills draw an image is an image; otherwise the kind follows the layer type. */
@@ -84,7 +100,7 @@ function describeLayout(node: SceneNode): CompactLayout | undefined {
   }
 }
 
-function describeText(node: SceneNode): CompactText | undefined {
+function describeText(graph: SceneGraph, node: SceneNode): CompactText | undefined {
   if (node.type !== 'TEXT') return undefined
   return {
     content: node.text,
@@ -94,7 +110,7 @@ function describeText(node: SceneNode): CompactText | undefined {
       weight: node.fontWeight,
       italic: node.italic
     },
-    color: firstSolidColor(node.fills),
+    color: firstSolidColor(graph, node),
     align: node.textAlignHorizontal
   }
 }

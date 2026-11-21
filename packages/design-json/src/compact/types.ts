@@ -3,7 +3,7 @@ import type { DesignTokenCollection } from '#design-json/tokens'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 export const COMPACT_DESIGN_FORMAT = 'open-pencil/design-json-compact'
-export const COMPACT_DESIGN_VERSION = 1
+export const COMPACT_DESIGN_VERSION = 2
 
 /** What a layer is, as something that renders it would need to know. */
 export type CompactKind =
@@ -29,11 +29,20 @@ export interface CompactLayout {
   wrap: boolean
 }
 
+/**
+ * A color: its `value`, a hex color or the kind of gradient, and the `name` of the variable it is
+ * bound to, such as `color/black`, when it is bound to one.
+ */
+export interface CompactColor {
+  value: string
+  name?: string
+}
+
 /** How a layer looks, with only what differs from a plain, unstyled layer. */
 export interface CompactStyle {
-  /** The visible fills: hex colors, or the kind of gradient. */
-  fills?: string[]
-  border?: { colors: string[]; width: number }
+  /** The visible fills. */
+  fills?: CompactColor[]
+  border?: { colors: CompactColor[]; width: number }
   radius?: number
   opacity?: number
   /** The visible effects by type, as `DROP_SHADOW` or `LAYER_BLUR`. */
@@ -44,7 +53,7 @@ export interface CompactStyle {
 export interface CompactText {
   content: string
   font: { family: string; size: number; weight: number; italic: boolean }
-  color?: string
+  color?: CompactColor
   align: string
 }
 
@@ -77,6 +86,11 @@ export interface CompactNode {
   vector?: CompactVector
   /** Hashes of the images its fills draw, described in {@link CompactDesign.images}. */
   images?: string[]
+  /**
+   * The variables its fields other than colors use, by name, keyed as the design binds them:
+   * `itemSpacing`, `paddingLeft`, `cornerRadius`. A color names its variable beside its value.
+   */
+  variables?: Record<string, string>
   /** For an instance: the main component it shows, and the values of its properties. */
   component?: { id: string; name: string; props: Record<string, string> }
   /**

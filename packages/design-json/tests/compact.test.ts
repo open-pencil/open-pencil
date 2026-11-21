@@ -59,12 +59,16 @@ describe('compact design', () => {
       kind: 'frame',
       box: { x: 100, y: 50, width: 300, height: 200 },
       layout: { direction: 'column', gap: 8 },
-      style: { fills: ['#FFFFFF'], radius: 12 }
+      style: { fills: [{ value: '#FFFFFF' }], radius: 12 }
     })
     expect(root.children?.map((child) => child.kind)).toEqual(['text', 'image'])
     expect(root.children?.[0]).toMatchObject({
       box: { x: 16, y: 16 },
-      text: { content: 'Hello', font: { family: 'Inter', weight: 700 }, color: '#000000' }
+      text: {
+        content: 'Hello',
+        font: { family: 'Inter', weight: 700 },
+        color: { value: '#000000' }
+      }
     })
     const photo = root.children?.[1]
     expect(photo?.images).toEqual(['photo'])

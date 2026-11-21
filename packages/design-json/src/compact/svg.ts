@@ -1,4 +1,4 @@
-import type { CompactNode, CompactVectorPath } from '#design-json/compact/types'
+import type { CompactColor, CompactNode, CompactVectorPath } from '#design-json/compact/types'
 
 /**
  * A vector layer of the compact view as a standalone SVG file, painted with its first fill and
@@ -26,17 +26,17 @@ function fillAttributes(path: CompactVectorPath, node: CompactNode): string[] {
   if (path.fillRule === 'none') return []
   const color = node.style?.fills?.find(isHexColor)
   if (!color) return []
-  return [`fill="${color}"`, `fill-rule="${path.fillRule}"`]
+  return [`fill="${color.value}"`, `fill-rule="${path.fillRule}"`]
 }
 
 function strokeAttributes(node: CompactNode): string[] {
   const border = node.style?.border
   const color = border?.colors.find(isHexColor)
   if (!border || !color) return []
-  return [`stroke="${color}"`, `stroke-width="${border.width}"`]
+  return [`stroke="${color.value}"`, `stroke-width="${border.width}"`]
 }
 
 /** Solid paints are hex colors; gradients and other paints are named by their kind. */
-function isHexColor(paint: string): boolean {
-  return paint.startsWith('#')
+function isHexColor(paint: CompactColor): boolean {
+  return paint.value.startsWith('#')
 }

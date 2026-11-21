@@ -39,7 +39,9 @@ function colorsOf(node: CompactNode): string[] {
     ...(style?.fills ?? []),
     ...(style?.border?.colors ?? []),
     ...(text?.color ? [text.color] : [])
-  ].filter((color) => color.startsWith('#'))
+  ]
+    .map((color) => color.value)
+    .filter((color) => color.startsWith('#'))
 }
 
 function componentsShown(nodes: readonly CompactNode[]): CompactSummary['components'] {
