@@ -193,6 +193,7 @@ export function createFigDocumentSession(
       recordInfo ??= figArchiveRecordInfo({
         records: archive.records,
         resources: archive.reader.resources,
+        slotContent: archive.reader.slotContent,
         blobCount: archive.blobs.length,
         imageHashes: archive.images.map(([hash]) => hash)
       })

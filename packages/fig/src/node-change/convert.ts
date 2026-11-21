@@ -1164,6 +1164,8 @@ function extractSourceMetadata(nc: NodeChange, blobs: Uint8Array[]): SceneNode['
     fig: {
       ...extractFigmaRawGeometry(nc, blobs),
       ...extractFigmaSymbolMetadata(nc, blobs),
+      // The reader fills these in once it knows which slots the instance's layers show.
+      hiddenSlotAssignments: [],
       layout: extractFigmaLayoutMetadata(nc)
     }
   }

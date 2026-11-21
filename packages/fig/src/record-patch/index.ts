@@ -47,6 +47,11 @@ export interface FigArchiveRecordInfo {
    * not model; a save writes them back as they are.
    */
   unreadVariables: NodeChange[]
+  /**
+   * The slot content frames the file keeps and the records below them, for a save that writes
+   * an instance's slot assignment without the layers to show its content.
+   */
+  slotContent: NodeChange[]
 }
 
 export interface FigPatchedArchiveInput {
@@ -90,6 +95,7 @@ export function figArchiveRecordInfo(archive: {
   records: readonly NodeChange[]
   /** The variable and collection records, whole; `records` may hold only their headers. */
   resources: readonly NodeChange[]
+  slotContent: readonly NodeChange[]
   blobCount: number
   imageHashes: readonly string[]
 }): FigArchiveRecordInfo {
@@ -101,6 +107,7 @@ export function figArchiveRecordInfo(archive: {
     nextLocalId: highestLocalId(archive.records) + 1,
     imageHashes: [...archive.imageHashes],
     documentId: guidKey(archive.records.find((record) => record.type === 'DOCUMENT')?.guid) ?? null,
+    slotContent: [...archive.slotContent],
     unreadVariables: archive.resources.filter(
       (record) => record.type === 'VARIABLE' && !isModeledVariableType(record.variableResolvedType)
     )

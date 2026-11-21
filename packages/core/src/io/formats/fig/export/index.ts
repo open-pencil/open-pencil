@@ -1,4 +1,10 @@
-import { bytesStream, readStreamBytes, renameFigArchive, streamFigArchive } from '@open-pencil/fig'
+import {
+  bytesStream,
+  figCheckpointRecords,
+  readStreamBytes,
+  renameFigArchive,
+  streamFigArchive
+} from '@open-pencil/fig'
 import {
   nameImagesForFigma,
   placeSlotContent,
@@ -36,6 +42,7 @@ import {
   type KiwiNodeChange,
   prepareFigExport
 } from './setup'
+import { savedSlotContentFor } from './slot-content'
 import { appendVariableNodeChanges, sequentialPositions, assignSharedStyleGuids } from './variables'
 
 type InternalResourceContext = FigExportSetup & {
@@ -162,21 +169,30 @@ async function writeFigFile(
   // The export reads the document itself and writes nothing to it. Only pages still in the
   // archive need a copy, which they load into instead of the document.
   let graph = sourceGraph
+  let checkpoint = readerCheckpoint(sourceGraph)
   if (hasPendingReaderPages(sourceGraph)) {
     graph = cloneSceneGraphForFigExport(sourceGraph)
-    populateReaderExport(sourceGraph, graph)
+    checkpoint = populateReaderExport(sourceGraph, graph) ?? checkpoint
   }
-  const unreadVariables = (await figArchive(sourceGraph)?.info())?.unreadVariables ?? []
+  const archived = await figArchive(sourceGraph)?.info()
   const setup = await prepareFigExport(graph, runtime, {
     withoutComments: options.withoutComments,
-    unreadVariables
+    // Records read from the file keep their GUIDs, slot content among them, and new ones start
+    // past every GUID the file holds.
+    recordOwners: checkpoint && figCheckpointRecords(checkpoint),
+    nextLocalId: archived?.nextLocalId,
+    unreadVariables: archived?.unreadVariables
   })
   const { compiled, schemaDeflated } = exportSchema(graph)
   const { canvasEntries, internalCanvasGuid, localIdCounter, blobs } = setup
   const nodeChanges: KiwiNodeChange[] = [setup.documentNc]
   for (const entry of canvasEntries) nodeChanges.push(entry.canvasNc)
 
-  appendInternalResources({ ...setup, nodeChanges, unreadVariables })
+  appendInternalResources({
+    ...setup,
+    nodeChanges,
+    unreadVariables: archived?.unreadVariables ?? []
+  })
 
   const orderedCanvasEntries = [
     ...canvasEntries.filter((entry) => entry.page.internalOnly),
@@ -208,6 +224,14 @@ async function writeFigFile(
     const first = countCanvasChildren(nodeChanges, internalCanvasGuid)
     placeSlotContent(slotContentRecords, internalCanvasGuid, first, fractionalPosition)
     appendAll(nodeChanges, slotContentRecords)
+    let next = first + slotContentRecords.filter((record) => record.isSlotContent).length
+    const saved = savedSlotContentFor(
+      nodeChanges,
+      archived?.slotContent ?? [],
+      internalCanvasGuid,
+      () => fractionalPosition(next++)
+    )
+    appendAll(nodeChanges, saved)
   }
 
   const msg: Record<string, unknown> = {

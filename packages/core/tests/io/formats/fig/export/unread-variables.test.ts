@@ -33,6 +33,7 @@ test('the archive names the variable records the reader leaves out', () => {
   const info = figArchiveRecordInfo({
     records: [{ guid: guid(4), type: 'VARIABLE' }],
     resources: [{ guid: guid(3), type: 'VARIABLE_SET' }, color, paint],
+    slotContent: [],
     blobCount: 0,
     imageHashes: []
   })

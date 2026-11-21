@@ -70,6 +70,11 @@ export interface FigmaSourcePayload {
   layout: FigmaLayoutMetadata | null
   symbolOverrides: unknown[]
   componentPropAssignments: unknown[]
+  /**
+   * An instance's saved assignments of slot content that no layer shows, as when its variant
+   * has no frame for the slot. Figma keeps them, and the content, for a variant that does.
+   */
+  hiddenSlotAssignments: unknown[]
   derivedSymbolData: unknown[]
   derivedSymbolDataLayoutVersion: number | null
   uniformScaleFactor: number | null
