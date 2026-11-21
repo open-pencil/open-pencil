@@ -162,11 +162,11 @@ describe('a page’s own fonts', () => {
       bytes: font
     }))
 
-    // The rule names one weight; headings at 600 draw from the same file, as the browser draws them.
-    expect(fontManager.loadedData('Page Variable Sans', 'SemiBold')?.byteLength).toBe(
+    // The rule names one weight; headings at 600 draw from the same file, as the browser draws them,
+    // once the import loads the faces its text uses.
+    expect((await fontManager.loadFont('Page Variable Sans', 'SemiBold'))?.byteLength).toBe(
       font.byteLength
     )
-    expect(fontManager.loadedFontSource('Page Variable Sans', 'Bold')).toBe('registered')
   })
 
   test('keeps a weight another rule names in that rule’s own file', async () => {
@@ -186,8 +186,10 @@ describe('a page’s own fonts', () => {
     }))
 
     // The variable file reaches 700, but the page names Bold's file itself, as the browser uses it.
-    expect(fontManager.loadedData('Page Named Bold Sans', 'Bold')?.byteLength).toBe(bold.byteLength)
-    expect(fontManager.loadedData('Page Named Bold Sans', 'SemiBold')?.byteLength).toBe(
+    expect((await fontManager.loadFont('Page Named Bold Sans', 'Bold'))?.byteLength).toBe(
+      bold.byteLength
+    )
+    expect((await fontManager.loadFont('Page Named Bold Sans', 'SemiBold'))?.byteLength).toBe(
       variable.byteLength
     )
   })

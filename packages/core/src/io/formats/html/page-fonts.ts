@@ -1,4 +1,3 @@
-import { uniq } from 'es-toolkit'
 import { fileTypeFromBuffer } from 'file-type'
 
 import type { CSSFontFaceRule, DesignDocument, DesignResourceFetch } from '@open-pencil/dom-css'
@@ -6,7 +5,6 @@ import { cssFontFamilyName, parseCSSFontFamilies } from '@open-pencil/scene-grap
 
 import { fontManager } from '#core/text/font/manager'
 import { faceStyleName } from '#core/text/font/names'
-import { fontAxes } from '#core/text/font/variation'
 import { sfntFont } from '#core/text/font/woff2'
 
 import { designElements } from './elements'
@@ -45,21 +43,6 @@ async function servedByProvider(rule: CSSFontFaceRule): Promise<boolean> {
   return false
 }
 
-/** The weights a face can be asked for by, a hundred apart. */
-const FACE_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900]
-
-/**
- * The faces a page's font file draws: the one its rule names, and for a variable file every
- * weight its `wght` axis reaches, as the browser draws each weight the page asks for from it.
- */
-function stylesDrawnBy(data: ArrayBuffer, rule: CSSFontFaceRule): string[] {
-  const own = faceStyleName(rule.family, rule.weight, rule.italic)
-  const wght = fontAxes(data)?.find((axis) => axis.tag === 'wght')
-  if (!wght) return [own]
-  const weights = FACE_WEIGHTS.filter((weight) => weight >= wght.min && weight <= wght.max)
-  return uniq([own, ...weights.map((weight) => faceStyleName(rule.family, weight, rule.italic))])
-}
-
 /**
  * Loads the faces a page's `@font-face` rules declare for the families its text uses, with
  * `fetch`, and registers them with the font manager under the family and face each rule names, so
@@ -81,13 +64,6 @@ export async function loadPageFontFaces(
   const rules = (styled.fontFaces ?? []).filter((rule) => used.has(rule.family.toLowerCase()))
   // The faces this page registered a file for, which its later subsets join.
   const registered = new Set<string>()
-  // The faces a rule names itself, which a variable file of another rule does not stand in for.
-  const named = new Set(
-    rules.map(
-      (rule) =>
-        `${rule.family.toLowerCase()}|${faceStyleName(rule.family, rule.weight, rule.italic)}`
-    )
-  )
   for (const rule of rules) {
     const style = faceStyleName(rule.family, rule.weight, rule.italic)
     const face = `${rule.family.toLowerCase()}|${style}`
@@ -107,17 +83,15 @@ export async function loadPageFontFaces(
       // A source that does not decode is passed over for the next, as an unreadable one is.
       const data = resource ? await readableFont(resource.bytes).catch(() => null) : null
       if (!data) continue
-      for (const faceStyle of stylesDrawnBy(data, rule)) {
-        const key = `${rule.family.toLowerCase()}|${faceStyle}`
-        // A weight another rule names is that rule's file, which it registers itself.
-        if (key !== face && named.has(key)) continue
-        // An import cancelled meanwhile registers nothing more: the font manager is shared, and a
-        // face it took now could replace one a later import loaded.
-        signal?.throwIfAborted()
-        if (registered.has(key)) await fontManager.addFaceShard(rule.family, faceStyle, data)
-        else await fontManager.markLoaded(rule.family, faceStyle, data)
-        registered.add(key)
-      }
+      // An import cancelled meanwhile registers nothing more: the font manager is shared, and a
+      // face it took now could replace one a later import loaded.
+      signal?.throwIfAborted()
+      // The first file of a face is its own; the face's later files, its subsets, join it. A
+      // variable file draws the family's other weights through the manager as any variable face
+      // does, unless the page names their files too.
+      if (registered.has(face)) await fontManager.addFaceShard(rule.family, style, data)
+      else await fontManager.markLoaded(rule.family, style, data)
+      registered.add(face)
       loaded.set(rule.family.toLowerCase(), rule.family)
       break
     }
