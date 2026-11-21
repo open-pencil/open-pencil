@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'bun:test'
+import { join } from 'node:path'
 
-import { designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
+import { designDocumentToLayers, designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
 import type { DesignElement } from '#dom-css/index'
+
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 function box(name: string, visibility: string, children: DesignElement[] = []): DesignElement {
   return {
@@ -33,5 +36,33 @@ describe('visibility in imported HTML', () => {
       fills: []
     })
     expect(layers.find((layer) => layer.name === 'item')?.visible).toBe(true)
+  })
+
+  it('hides the text a hidden box holds itself, while its child shows again', () => {
+    const menu = box('menu', 'hidden', [box('item', 'visible')])
+    menu.children.unshift({ type: 'text', text: 'Hidden label' })
+    const layers = layersOf(menu)
+
+    expect(layers.find((layer) => layer.type === 'TEXT')).toMatchObject({
+      text: 'Hidden label',
+      visible: false
+    })
+    expect(layers.find((layer) => layer.name === 'item')?.visible).toBe(true)
+  })
+
+  it('leaves out the background pictures of a box that paints nothing of its own', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const menu = box('menu', 'hidden', [box('item', 'visible')])
+    menu.computedStyle = {
+      ...menu.computedStyle,
+      'background-image': 'url("https://site.test/photo.png")',
+      'background-size': '10px 10px',
+      'background-repeat': 'no-repeat'
+    }
+    menu.backgroundImages = [{ url: 'https://site.test/photo.png', bytes: png }]
+
+    const { backgroundPictures } = designDocumentToLayers({ type: 'document', children: [menu] })
+
+    expect(backgroundPictures).toEqual([])
   })
 })

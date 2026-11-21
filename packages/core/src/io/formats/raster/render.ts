@@ -264,12 +264,12 @@ function renderToSurface(
     const resultBytes = encoded ? new Uint8Array(encoded) : null
 
     image.delete()
-    downsampleSurface.delete()
+    downsampleSurface.dispose()
     ck.Free(downsamplePixels)
     return resultBytes
   } finally {
     renderer.images.supersampledOutput = drawnFor
-    surface.delete()
+    surface.dispose()
     ck.Free(pixels)
   }
 }

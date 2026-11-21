@@ -1,19 +1,14 @@
 import { basename, extname } from 'pathe'
 
 import { resolveEditorProfile } from '@open-pencil/core'
-import {
-  HTML_IMPORT_VIEWPORT,
-  loadPageFontFaces,
-  sceneGraphFromStyledHTML
-} from '@open-pencil/core/io/formats/html/layers'
 import { remoteFileTitle } from '@open-pencil/core/io/remote'
 import type { DesignViewport } from '@open-pencil/dom-css'
-import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 import { errorMessage } from '@open-pencil/std/errors'
 import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
+import { loadHTMLImporter } from '@/app/document/io/importer'
 import type { OpenFileOptions } from '@/app/document/io/state'
 import { countedFetch, pageFetch } from '@/app/document/io/url/fetch'
 import type { RenderedWebPage } from '@/app/document/io/url/render/page'
@@ -54,7 +49,8 @@ async function renderedPage(
   load.update({ phase: 'rendering-page', detail: webPage.title })
   try {
     const { renderWebPage } = await import('@/app/document/io/url/render/page')
-    return await renderWebPage(webPage.url, webPage.viewport ?? HTML_IMPORT_VIEWPORT, load.signal)
+    const viewport = webPage.viewport ?? (await loadHTMLImporter()).HTML_IMPORT_VIEWPORT
+    return await renderWebPage(webPage.url, viewport, load.signal)
   } catch {
     load.signal.throwIfAborted()
     return null
@@ -101,6 +97,12 @@ export function createDOMOpenActions({
   ) {
     await nextFrame()
     const pageName = options.documentName ?? 'DOM Import'
+    const {
+      HTML_IMPORT_VIEWPORT,
+      loadPageFontFaces,
+      sceneGraphFromStyledHTML,
+      browserHTMLToDesignDocument
+    } = await loadHTMLImporter()
     const { baseURL, viewport = HTML_IMPORT_VIEWPORT } = options
     const webPage = baseURL !== undefined
     // A web page counts the files it loads as it lays out: its stylesheets, pictures, and fonts.

@@ -36,7 +36,7 @@ Le schede Design, Codice, AI e Verifica cambiano in base alla selezione.
 OpenPencil usa Skia tramite CanvasKit WASM, lo stesso motore grafico di Figma:
 
 - gradienti lineari, radiali, angolari e a diamante;
-- riempimenti immagine con diverse modalità di scala;
+- riempimenti immagine con diverse modalità di scala e regolazioni (esposizione, contrasto, saturazione, temperatura, tinta, luci, ombre);
 - cache degli effetti per oggetto;
 - archi, ellissi parziali e anelli;
 - esclusione degli oggetti fuori dalla vista e riuso delle vernici;

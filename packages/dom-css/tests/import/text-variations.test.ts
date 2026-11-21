@@ -37,4 +37,47 @@ describe('variable font axes from CSS', () => {
     expect(textLayer({ 'font-optical-sizing': 'auto' })?.opticalSizeFromFontSize).toBe(true)
     expect(textLayer({ 'font-optical-sizing': 'none' })?.opticalSizeFromFontSize).toBe(false)
   })
+
+  it('keeps a span’s width and optical sizing in its own run', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'p',
+          attrs: {},
+          computedStyle: { 'font-family': 'Inter', 'font-size': '16px', 'font-weight': '400' },
+          children: [
+            { type: 'text', text: 'Plain ' },
+            {
+              type: 'element',
+              tagName: 'span',
+              attrs: {},
+              computedStyle: {
+                'font-family': 'Inter',
+                'font-size': '16px',
+                'font-weight': '400',
+                'font-stretch': '87.5%',
+                'font-optical-sizing': 'none',
+                display: 'inline'
+              },
+              children: [{ type: 'text', text: 'narrow' }]
+            }
+          ]
+        }
+      ]
+    })
+    const [text] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(text?.styleRuns?.map(({ start, length, style }) => ({ start, length, style }))).toEqual([
+      {
+        start: 6,
+        length: 6,
+        style: expect.objectContaining({
+          fontVariations: [{ axis: 'wdth', value: 87.5 }],
+          opticalSizeFromFontSize: false
+        })
+      }
+    ])
+  })
 })

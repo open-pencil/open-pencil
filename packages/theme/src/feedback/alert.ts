@@ -1,4 +1,5 @@
-const alertTheme = {
+/** An alert: what just happened, or what went wrong, in one of four tones. */
+export const alertTheme = {
   slots: {
     root: 'flex items-start gap-2.5 rounded-lg border p-3 text-xs',
     icon: 'mt-0.5 size-4 shrink-0',
@@ -18,5 +19,3 @@ const alertTheme = {
   },
   defaultVariants: { tone: 'info' as const }
 } as const
-
-export default alertTheme

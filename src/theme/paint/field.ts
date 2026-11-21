@@ -1,4 +1,4 @@
-import { panelFieldBase } from '../panel/field/base'
+import { panelFieldBase } from '@open-pencil/theme'
 
 /** A paint row: swatch, value, opacity, and variable button in one field. */
 export default {

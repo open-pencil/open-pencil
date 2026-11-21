@@ -24,6 +24,24 @@ describe('a web page in its window', () => {
     expect(drawer && graph.getAbsolutePosition(drawer.id).x).toBeGreaterThanOrEqual(1440)
   })
 
+  test('reaches down to content that overflows a short box', async () => {
+    const { graph } = await readHTMLDocument(
+      `<style>
+        body { margin: 0 }
+        .short { height: 100px }
+        .tall { height: 1600px; background: #2563eb }
+        .clipped { height: 100px; overflow: hidden }
+        .clipped div { height: 3000px }
+      </style>
+      <div class="short"><div class="tall"></div></div><div class="clipped"><div></div></div>`,
+      { pageName: 'Overflow', framed: true }
+    )
+    const [window] = graph.getChildren(graph.getPages()[0].id)
+
+    // The tall child shows below its box, as the page scrolls to it; a clipped one does not.
+    expect(window?.height).toBe(1600)
+  })
+
   test('leaves HTML that is not a page, such as a snippet, as loose layers', async () => {
     const { graph } = await readHTMLDocument(PAGE)
 

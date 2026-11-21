@@ -1,9 +1,15 @@
 /*
  * Design tokens, custom variants, and utilities shared by every surface that renders app
  * components: the app itself and the docs site's landing page. Published as
- * `@open-pencil/vue/theme/tokens.css` for pages built apart from the app, such as the official
+ * `@open-pencil/theme/tokens.css` for pages built apart from the app, such as the official
  * billing service's, to import into their own Tailwind stylesheet.
  */
+
+/*
+ * The component styles beside this file (`@open-pencil/theme`), so a page that imports the
+ * tokens also gets the classes those styles use, wherever the package is installed.
+ */
+@source './';
 @custom-variant motion-safe {
   @media (prefers-reduced-motion: no-preference) {
     &:where(:root:not([data-motion='off']), :root:not([data-motion='off']) *) {

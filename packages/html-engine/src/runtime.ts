@@ -264,13 +264,14 @@ function ownTexts(capture: HTMLEngineCapture): Map<number, string> {
 /**
  * Shows each element's `::before` and `::after` as elements of their own, first and last among its
  * children, with the style, box, and text the engine generated for them, so they are imported as
- * any element is.
+ * any element is. Returns the elements it made.
  */
 function showGeneratedContent(
   capture: HTMLEngineCapture,
   pairs: readonly [DesignElement, HTMLEngineNode][],
   layout: boolean
-): void {
+): DesignElement[] {
+  const made: DesignElement[] = []
   const indexes = new Map(capture.nodes.map((node, index) => [node, index]))
   const generated = generatedChildren(capture)
   const texts = ownTexts(capture)
@@ -293,8 +294,10 @@ function showGeneratedContent(
       if (layout) child.layout = layoutOf(captured)
       if (captured.tag === '::after') element.children.push(child)
       else element.children.unshift(child)
+      made.push(child)
     }
   }
+  return made
 }
 
 /**
@@ -378,12 +381,13 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
         const image = imageOf(element, answered, options.baseURL)
         if (image) element.image = image
       }
+      const generated = showGeneratedContent(capture, pairs, compute.layout === true)
       // Background pictures the engine loaded are kept; any it did not are read as images are.
-      const backgrounds = pairs
-        .map(([element]) => element)
-        .filter((element) => backgroundImageURLs(element).length > 0)
+      // Generated content draws them too.
+      const backgrounds = [...pairs.map(([element]) => element), ...generated].filter(
+        (element) => backgroundImageURLs(element).length > 0
+      )
       await attachImages([], loadedFirst(answered, options.fetch), backgrounds)
-      showGeneratedContent(capture, pairs, compute.layout === true)
       styled.background = canvasBackground(capture)
       return styled
     }

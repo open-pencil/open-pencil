@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CheckboxIndicator, CheckboxRoot } from 'reka-ui'
 
-import { focusStyles } from '@/theme/focus/styles'
+import { focusStyles } from '@open-pencil/theme'
 
 /** Named by `ariaLabel`, or by visible text through `ariaLabelledby`. */
 const {

@@ -4,6 +4,7 @@ import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
 import type { Size } from '@open-pencil/scene-graph/primitives'
+import { focusStyles } from '@open-pencil/theme'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import {
@@ -22,7 +23,6 @@ import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
 import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
-import { focusStyles } from '@/theme/focus/styles'
 
 /** The side of the square the picture is placed in, in CSS pixels. */
 const FRAME = 240

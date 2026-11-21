@@ -414,9 +414,14 @@ export function splitOutOfFlow(element: DesignElement): {
   return { inFlow: keep(element), outOfFlow }
 }
 
-function hidesByVisibility(node: DesignElement): boolean {
-  const visibility = pickStyle(mergedStyle(node), 'visibility')?.trim()
+/** Whether a box's `visibility` hides what it paints and the text it holds. */
+export function hiddenByVisibility(style: DesignStyleDeclaration): boolean {
+  const visibility = pickStyle(style, 'visibility')?.trim()
   return visibility === 'hidden' || visibility === 'collapse'
+}
+
+function hidesByVisibility(node: DesignElement): boolean {
+  return hiddenByVisibility(mergedStyle(node))
 }
 
 /**

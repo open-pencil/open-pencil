@@ -112,6 +112,7 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
       `<style>body { margin: 0; font-size: 14px } input { width: 200px; padding: 8px; border: 1px solid #ccc }</style>
       <input type="email" placeholder="you@example.com">
       <input value="Night Drive">
+      <input value="Hidden" style="display: none">
       <input type="checkbox">`,
       VIEWPORT
     )
