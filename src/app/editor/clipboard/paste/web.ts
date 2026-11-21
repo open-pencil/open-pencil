@@ -2,6 +2,7 @@ import { escapeRegExp } from 'es-toolkit'
 
 import type { ClipboardSnapshot, Editor, PastedTextLink } from '@open-pencil/core'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 import { errorMessage } from '@open-pencil/std/errors'
 import { filesMessages, menuMessages } from '@open-pencil/vue/i18n'
 
@@ -220,16 +221,26 @@ export async function pasteWebClipboard(
   }
   const pastedId = await editor.pasteText(text, x, y, links)
   if (!pastedId || !markup) return pastedId !== null
+  // The step this paste made, which the offer and its undo are about, whatever is pasted later.
+  const step = editor.undo.undoLabel === PASTE_TEXT_LABEL ? (editor.undo.peekUndo() ?? null) : null
   // The text is in first; the offer of layers waits for the importer, which may load slowly or
   // not at all, and shows only while that paste is still the last edit.
-  void offerLayers(editor, clipboard, markup, pastedId, { x, y })
+  void offerLayers(editor, clipboard, markup, { step, pastedId }, { x, y })
   return true
 }
 
-/** Whether the text `pastedId` names is still the last edit, selected as the paste left it. */
-function isLastTextPaste(editor: Editor, pastedId: string): boolean {
+/**
+ * Whether the paste that made `step` is still the last edit, with the text it pasted, `pastedId`,
+ * selected as the paste left it. A later paste of text has the same label but is another step.
+ */
+function isLastTextPaste(editor: Editor, step: UndoEntry | null, pastedId: string): boolean {
   const selected = editor.state.selectedIds
-  return editor.undo.undoLabel === PASTE_TEXT_LABEL && selected.size === 1 && selected.has(pastedId)
+  return (
+    step !== null &&
+    editor.undo.peekUndo() === step &&
+    selected.size === 1 &&
+    selected.has(pastedId)
+  )
 }
 
 /**
@@ -240,14 +251,14 @@ async function offerLayers(
   editor: Editor,
   clipboard: WebClipboard,
   markup: string,
-  pastedId: string,
+  { step, pastedId }: { step: UndoEntry | null; pastedId: string },
   point: Vector
 ): Promise<void> {
   if (!(await offersLayers(clipboard).catch(() => false))) return
-  if (!isLastTextPaste(editor, pastedId)) return
+  if (!isLastTextPaste(editor, step, pastedId)) return
   // Only the paste this notice is about is taken back, while it is still the last edit.
   const takeBackText = () => {
-    if (isLastTextPaste(editor, pastedId)) editor.undoAction()
+    if (isLastTextPaste(editor, step, pastedId)) editor.undoAction()
   }
   toast.info(filesMessages.get().pastedAsText, {
     label: menuMessages.get().pasteAsLayers,
