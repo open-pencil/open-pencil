@@ -1,5 +1,7 @@
 import type { Page } from '@playwright/test'
 
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { pageScene, waitForSettledScene } from '../page-scene'
 import type * as WideGamutScene from './scene'
 
@@ -88,5 +90,24 @@ export async function sceneBufferState(page: Page) {
       documentColorSpace: window.openPencil?.getStore?.().graph.documentColorSpace,
       error: gl.getError()
     }
+  })
+}
+
+/** Starts a test from an sRGB document whose page is `pageColor`. */
+export async function resetDocumentProfile(page: Page, pageColor: Color) {
+  await page.evaluate((color) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('Editor unavailable')
+    store.setDocumentColorSpace('srgb')
+    store.setPageColor(color)
+  }, pageColor)
+}
+
+/** The document's color profile and its current page's stored color. */
+export function documentProfileState(page: Page) {
+  return page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('Editor unavailable')
+    return { space: store.state.documentColorSpace, pageColor: store.state.pageColor }
   })
 }
