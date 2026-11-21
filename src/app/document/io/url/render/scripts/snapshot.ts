@@ -4,17 +4,10 @@
  */
 
 /**
- * The page as its scripts left it, as HTML a static import reads: CSS rules scripts inserted with
- * `insertRule` or adopted as constructed sheets written into style elements, what form fields
- * hold written into their attributes, `<script>` and `<noscript>` left out, since the import runs
- * no script and would show what `<noscript>` holds, and a `<base>` that resolves its addresses as
- * the page did.
+ * Writes the CSS the page's scripts left into the copy's style elements: rules inserted with
+ * `insertRule`, sheets the page turned off left out, and adopted sheets after the document's own.
  */
-function pageSnapshot(): { html: string; url: string } {
-  const live = document.documentElement
-  const copy = live.cloneNode(true)
-  if (!(copy instanceof HTMLElement)) return { html: live.outerHTML, url: location.href }
-
+function copyStylesheets(live: HTMLElement, copy: HTMLElement): void {
   const rulesOf = (sheet: CSSStyleSheet | null): string | null => {
     if (!sheet) return null
     try {
@@ -26,18 +19,44 @@ function pageSnapshot(): { html: string; url: string } {
   const liveStyles = Array.from(live.querySelectorAll('style'))
   const copiedStyles = Array.from(copy.querySelectorAll('style'))
   for (const [index, style] of liveStyles.entries()) {
-    const rules = rulesOf(style.sheet)
     const copied = copiedStyles.at(index)
+    // A sheet the page turned off has no markup that says so; it is left out instead.
+    if (style.sheet?.disabled) copied?.remove()
+    const rules = rulesOf(style.sheet)
     if (rules !== null && copied) copied.textContent = rules
   }
+  const liveLinks = Array.from(live.querySelectorAll('link'))
+  const copiedLinks = Array.from(copy.querySelectorAll('link'))
+  for (const [index, link] of liveLinks.entries()) {
+    if (link.sheet?.disabled) copiedLinks.at(index)?.remove()
+  }
   const head = copy.querySelector('head') ?? copy
+  // Adopted sheets apply after the document's own, so they are written after all of those.
+  const end = copy.querySelector('body') ?? head
   for (const sheet of document.adoptedStyleSheets) {
+    if (sheet.disabled) continue
     const rules = rulesOf(sheet)
     if (rules === null) continue
     const style = document.createElement('style')
     style.textContent = rules
-    head.append(style)
+    end.append(style)
   }
+}
+
+/**
+ * The page as its scripts left it, as HTML a static import reads: CSS rules scripts inserted with
+ * `insertRule` or adopted as constructed sheets written into style elements, what form fields
+ * hold written into their attributes, `<script>` and `<noscript>` left out, since the import runs
+ * no script and would show what `<noscript>` holds, and a `<base>` that resolves its addresses as
+ * the page did.
+ */
+function pageSnapshot(): { html: string; url: string } {
+  const live = document.documentElement
+  const copy = live.cloneNode(true)
+  if (!(copy instanceof HTMLElement)) return { html: live.outerHTML, url: location.href }
+
+  copyStylesheets(live, copy)
+  const head = copy.querySelector('head') ?? copy
 
   // What a field holds, written where the copy's markup shows it.
   const copyValue = (field: Element, copied: Element) => {
