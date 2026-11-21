@@ -25,7 +25,13 @@ import {
   resetDOMCodePreview,
   type DOMCodeSession
 } from '@/app/code/dom-preview'
-import { generatedCodeAsync, generatedDesignJSX } from '@/app/code/generated'
+import {
+  generatedCodeAsync,
+  generatedDesignJSX,
+  generatedJSON,
+  type GeneratedCode
+} from '@/app/code/generated'
+import { codeJSONDetail, isJSONDetail } from '@/app/code/json-detail'
 import { useCodeLayers } from '@/app/code/layers/use'
 import {
   createDesignJSXEditSession,
@@ -131,25 +137,34 @@ const sourceOptions = computed(() => [
   { value: 'design-jsx' as const, label: code.value.sourceDesignJSX },
   { value: 'html-css' as const, label: code.value.sourceHTML },
   { value: 'vue' as const, label: code.value.sourceVue },
-  { value: 'react' as const, label: code.value.sourceReact }
+  { value: 'react' as const, label: code.value.sourceReact },
+  { value: 'json' as const, label: code.value.sourceJSON }
 ])
 const stylingOptions = computed(() => [
   { value: 'css', label: code.value.stylingCSS },
   { value: 'tailwind', label: code.value.stylingTailwind }
 ])
-/** Components are generated; Design JSX and HTML are edited into layers. */
-const readOnly = computed(() => source.value === 'vue' || source.value === 'react')
+const jsonDetailOptions = computed(() => [
+  { value: 'full', label: code.value.jsonFull },
+  { value: 'compact', label: code.value.jsonCompact }
+])
+/** Components and JSON are generated; Design JSX and HTML are edited into layers. */
+const readOnly = computed(
+  () => source.value === 'vue' || source.value === 'react' || source.value === 'json'
+)
 /** A read-only document's code is read, never previewed or applied back. */
 const codeReadOnly = computed(() => readOnly.value || !resolveEditorProfile(store.state).edits)
 const editorLabel = computed(() => {
   if (source.value === 'html-css') return code.value.editorHTMLCSSLabel
   if (source.value === 'vue') return code.value.sourceVue
   if (source.value === 'react') return code.value.sourceReact
+  if (source.value === 'json') return code.value.sourceJSON
   return code.value.editorDesignLabel
 })
 /** What the empty state says each generated source shows for a selection. */
 const emptyDescription = computed(() => {
   if (source.value === 'design-jsx') return code.value.noSelectionDesignJSX
+  if (source.value === 'json') return code.value.noSelectionJSON
   return code.value.noSelectionComponents({ framework: editorLabel.value })
 })
 const statusTone = computed(() => {
@@ -309,19 +324,31 @@ function changeStyling(next: string): Promise<void> | undefined {
   return regenerate(() => (codeStyling.value = next))
 }
 
+function changeJSONDetail(next: string): Promise<void> | undefined {
+  if (next === codeJSONDetail.value || !isJSONDetail(next)) return
+  return regenerate(() => (codeJSONDetail.value = next))
+}
+
 const selectionKey = computed(() => [...store.state.selectedIds].join(','))
 
 /** Generations of components and HTML in flight; only the latest shows. */
 let generation = 0
+
+function showGenerated(generated: GeneratedCode) {
+  codeLayers.showGenerated(generated)
+  draft.value = generated.code
+}
 
 /** Shows the code generated for the selection, replacing whatever the editor held. */
 function showCanvas(next: CodeSource) {
   const selected = [...store.state.selectedIds]
   followedSelection = selectionKey.value
   if (next === 'design-jsx') {
-    const generated = generatedDesignJSX(store.graph, selected)
-    codeLayers.showGenerated(generated)
-    draft.value = generated.code
+    showGenerated(generatedDesignJSX(store.graph, selected))
+    return
+  }
+  if (next === 'json') {
+    showGenerated(generatedJSON(store.graph, selected, codeJSONDetail.value))
     return
   }
   const current = ++generation
@@ -334,8 +361,7 @@ function showCanvas(next: CodeSource) {
   void generatedCodeAsync(next, styling, store.graph, selected).then((generated) => {
     if (current !== generation || source.value !== next || codeStyling.value !== styling)
       return generated
-    codeLayers.showGenerated(generated)
-    draft.value = generated.code
+    showGenerated(generated)
     return generated
   })
 }
@@ -404,13 +430,22 @@ watch(
         @update:model-value="changeSource"
       />
       <SegmentedControl
-        v-if="source !== 'design-jsx'"
+        v-if="source !== 'design-jsx' && source !== 'json'"
         :model-value="codeStyling"
         :options="stylingOptions"
         :label="code.styling"
         data-test-id="code-panel-styling"
         :ui="{ root: 'shrink-0' }"
         @update:model-value="changeStyling"
+      />
+      <SegmentedControl
+        v-if="source === 'json'"
+        :model-value="codeJSONDetail"
+        :options="jsonDetailOptions"
+        :label="code.jsonDetail"
+        data-test-id="code-panel-json-detail"
+        :ui="{ root: 'shrink-0' }"
+        @update:model-value="changeJSONDetail"
       />
       <AppCopyButton
         v-if="source === 'design-jsx'"

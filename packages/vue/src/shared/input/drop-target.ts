@@ -110,7 +110,7 @@ export function findEnclosingDrawParent(
 }
 
 /** The frame or page that holds a layer, looking past the groups it sits in. */
-function enclosingContainer(id: string, editor: Editor): string {
+export function enclosingContainer(id: string, editor: Editor): string {
   let parent = editor.graph.getNode(editor.graph.getNode(id)?.parentId ?? '')
   while (parent?.parentId && ENCLOSING_TYPES.has(parent.type)) {
     parent = editor.graph.getNode(parent.parentId)

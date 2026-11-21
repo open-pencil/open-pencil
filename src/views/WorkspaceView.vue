@@ -46,6 +46,7 @@ import {
   type Tab
 } from '@/app/tabs'
 import { syncTabAddress } from '@/app/tabs/address'
+import { syncDesignAddress } from '@/app/tabs/design-address'
 import { isTauri } from '@/app/tauri/env'
 import { offerUsageStatsPrompt, startSharing, usageStatsPrompt } from '@/app/telemetry'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
@@ -106,6 +107,8 @@ watch(
 const opensCloudLink = ['documentId', 'shareId', 'invitationId'].some(
   (param) => typeof route.params[param] === 'string'
 )
+// A design's address reopens it beside Home, as a Cloud link does (`syncDesignAddress`).
+const opensDesign = typeof route.params.designId === 'string'
 const { collaboration } = useI18n()
 const joinRoomFromInput = useJoinRoom()
 
@@ -122,7 +125,7 @@ function openFirstTab(): Tab {
     // A link that fails leaves the person on Home, not in an empty design.
     if (pinHome) return createHomeTab()
   }
-  return showHomeFirst || opensCloudLink ? createHomeTab() : createTab()
+  return showHomeFirst || opensCloudLink || opensDesign ? createHomeTab() : createTab()
 }
 
 // Block-scoped so the view does not keep the first tab's store after that tab closes.
@@ -185,6 +188,7 @@ provide(COLLAB_KEY, collab)
 exposeCollaborationActions(collab, joinRoomFromInput)
 exposeAutomationTestRequests()
 syncTabAddress(router, route)
+syncDesignAddress(router, route)
 
 useEventListener(
   document,

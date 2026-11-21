@@ -33,6 +33,7 @@ import {
 } from '@open-pencil/scene-graph/resize'
 import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata'
 
+import { resizedFromCenter } from '#vue/shared/input/resize/center'
 import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
 import { layerSnapSource, resizedRect } from '#vue/shared/input/resize/snap'
 import { optionalEditorState } from '#vue/shared/input/snap/resolve'
@@ -111,7 +112,8 @@ function resizedPlacement(
   cy: number,
   shiftKey: boolean,
   editor: Editor,
-  ctrlKey: boolean
+  ctrlKey: boolean,
+  centered: boolean
 ): LayerPlacement {
   const { origRect } = d
   const aspect = keptAspectRatio(d, shiftKey, ctrlKey)
@@ -127,7 +129,9 @@ function resizedPlacement(
     editor,
     ctrlKey
   )
-  return placeInResizedFrame(placement, origRect, rect)
+  // Alt resizes from the center, as in Figma.
+  const placed = centered ? resizedFromCenter(d.handle, origRect, rect, aspect) : rect
+  return placeInResizedFrame(placement, origRect, placed)
 }
 
 /** The angle and flips a layer had when the drag started. */
@@ -246,7 +250,8 @@ export function applyResize(
   cy: number,
   shiftKey: boolean,
   editor: Editor,
-  ctrlKey = false
+  ctrlKey = false,
+  altKey = false
 ) {
   // Drag state lives in Vue-reactive input state; nested arrays read through
   // it are reactive proxies. Writing those into the graph poisons it for
@@ -263,7 +268,8 @@ export function applyResize(
     cy,
     shiftKey,
     editor,
-    ctrlKey
+    ctrlKey,
+    altKey
   )
   const changes = { ...scaledChanges(d, node.type, newRect), rotation, flipX, flipY }
   applyResizedRect(d, node, newRect, changes, editor)

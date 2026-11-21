@@ -22,7 +22,8 @@ export const COMPONENT_COLOR = { r: 0.592, g: 0.278, b: 1, a: 1 } satisfies Colo
 /** Slot frames and their outlines, `#f24bbc` like the app's `--color-slot`. */
 export const SLOT_COLOR = { r: 0.949, g: 0.294, b: 0.737, a: 1 } satisfies Color
 export const SLOT_EMPTY_FILL_ALPHA = 0.08
-export const SNAP_COLOR = { r: 1.0, g: 0.0, b: 0.56, a: 1 } satisfies Color
+/** Smart guides, the red orange `#f24822` Figma draws them and its measurements in. */
+export const SNAP_COLOR = { r: 0.949, g: 0.282, b: 0.133, a: 1 } satisfies Color
 /** Guides through path vertices and their crosses, measured from Figma's pen and vector edit mode. */
 export const VERTEX_SNAP_COLOR = { r: 0.81, g: 0.3, b: 0.18, a: 1 } satisfies Color
 export const VERTEX_SNAP_GUIDE_ALPHA = 0.6

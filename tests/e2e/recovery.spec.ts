@@ -45,15 +45,18 @@ test('keeps recovery independent from cancelling an unsaved-document close', asy
     )
     .toBe(1)
 
-  // A reload leaves the copy on purpose, so Home lists it without calling it a crash's.
+  // Closing the window leaves the copy on purpose, so Home lists it without calling it a crash's.
+  // A reload of the same window would reopen the design in its tab (`src/app/tabs/kept/`).
   page.once('dialog', (dialog) => dialog.accept())
-  await page.goto('/?recent-files')
-  const kept = page.getByTestId('home-recovery').locator('[data-slot="document-entry"]')
+  await page.close({ runBeforeUnload: true })
+  const home = await context.newPage()
+  await home.goto('/?recent-files')
+  const kept = home.getByTestId('home-recovery').locator('[data-slot="document-entry"]')
   await expect(kept).toHaveCount(1)
   await expect(kept).not.toContainText('Kept after a crash')
   await kept.locator('[data-slot="trigger"]').click()
-  await expect(page.getByText('Retained recovery rectangle')).toBeVisible()
-  await expect(page.getByTestId('home-recovery')).toHaveCount(0)
+  await expect(home.getByText('Retained recovery rectangle')).toBeVisible()
+  await expect(home.getByTestId('home-recovery')).toHaveCount(0)
 
   await context.close()
 })

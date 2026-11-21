@@ -38,6 +38,7 @@
         "@open-pencil/cloud": "workspace:*",
         "@open-pencil/collab": "workspace:*",
         "@open-pencil/core": "workspace:*",
+        "@open-pencil/design-json": "workspace:*",
         "@open-pencil/design-jsx": "workspace:*",
         "@open-pencil/dom-css": "workspace:*",
         "@open-pencil/feedback": "workspace:*",
@@ -412,6 +413,20 @@
         "ai",
         "vite",
       ],
+    },
+    "packages/design-json": {
+      "name": "@open-pencil/design-json",
+      "version": "0.17.0-beta.6",
+      "dependencies": {
+        "@open-pencil/scene-graph": "workspace:*",
+        "@open-pencil/std": "workspace:*",
+        "es-toolkit": "^1.52.0",
+        "js-base64": "^3.9.3",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.14",
+        "typescript": "npm:@typescript/typescript6@^6.0.2",
+      },
     },
     "packages/design-jsx": {
       "name": "@open-pencil/design-jsx",
@@ -1930,6 +1945,8 @@
     "@open-pencil/core": ["@open-pencil/core@workspace:packages/core"],
 
     "@open-pencil/demo-tools": ["@open-pencil/demo-tools@workspace:tools/generate/demo"],
+
+    "@open-pencil/design-json": ["@open-pencil/design-json@workspace:packages/design-json"],
 
     "@open-pencil/design-jsx": ["@open-pencil/design-jsx@workspace:packages/design-jsx"],
 

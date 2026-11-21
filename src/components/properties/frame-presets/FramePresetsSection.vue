@@ -5,13 +5,14 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { FRAME_PRESET_CATEGORIES, type FramePreset } from '@/app/editor/frame-presets'
+import { createFrameInView } from '@/app/editor/frame-presets-view'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
 const store = useEditorStore()
 const { panels } = useI18n()
 
 function createFrame(preset: FramePreset) {
-  store.createFrameFromPreset(preset)
+  createFrameInView(store, preset)
 }
 </script>
 

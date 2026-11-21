@@ -1,0 +1,5 @@
+/* Outweighs `#app:not(:empty) ~ #boot-splash` in `style.css`, which hides the splash once the app
+   draws, while a design's address opens its design (`opening-design.ts`). */
+html[data-opening-design] #app ~ #boot-splash {
+  display: flex;
+}

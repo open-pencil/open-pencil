@@ -3,12 +3,11 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { computeSelectionBounds } from '@open-pencil/scene-graph/snap'
 
+import { withEqualSpacing } from '#vue/shared/input/snap/equal-spacing'
 import { explicitSnapTargets } from '#vue/shared/input/snap/explicit-targets'
-import {
-  resolveObjectPixelSnap,
-  worldBoundsNode,
-  worldDeltaToParentLocal
-} from '#vue/shared/input/snap/resolve'
+import { moveSnapScope } from '#vue/shared/input/snap/move-scope'
+import { resolveObjectPixelSnap, worldDeltaToParentLocal } from '#vue/shared/input/snap/resolve'
+import { layerSnapTargets } from '#vue/shared/input/snap/targets'
 import type { DragMove } from '#vue/shared/input/types'
 
 function movingSelection(drag: DragMove, dx: number, dy: number, editor: Editor): SceneNode[] {
@@ -40,21 +39,16 @@ function moveParentId(drag: DragMove, editor: Editor): string {
   return firstNode?.parentId ?? editor.state.currentPageId
 }
 
-function parentTargets(parentId: string, editor: Editor): SceneNode[] {
-  return editor.graph
-    .getChildren(parentId)
-    .filter((node) => node.visible)
-    .map((node) => worldBoundsNode(node, editor))
-}
-
 export function applyMoveSnap(
   drag: DragMove,
   dx: number,
   dy: number,
   editor: Editor,
-  disableSnapping = false
+  disableSnapping = false,
+  dropTarget: SceneNode | null = null
 ): { dx: number; dy: number } {
   const parentId = moveParentId(drag, editor)
+  const scopeId = moveSnapScope(drag, dropTarget, parentId, editor)
   const localDelta = worldDeltaToParentLocal({ x: dx, y: dy }, parentId, editor)
   const selectionBounds = computeSelectionBounds(movingSelection(drag, dx, dy, editor))
   if (!selectionBounds || disableSnapping) {
@@ -62,12 +56,19 @@ export function applyMoveSnap(
     return { dx: localDelta.x, dy: localDelta.y }
   }
 
-  const snap = resolveObjectPixelSnap(
+  const targets = layerSnapTargets(scopeId, editor.state.selectedIds, editor)
+  const snap = withEqualSpacing(
+    resolveObjectPixelSnap(
+      editor.state.selectedIds,
+      selectionBounds,
+      targets,
+      editor,
+      explicitSnapTargets(scopeId, editor)
+    ),
     editor.state.selectedIds,
     selectionBounds,
-    parentTargets(parentId, editor),
-    editor,
-    explicitSnapTargets(parentId, editor)
+    targets,
+    editor
   )
   editor.setSnapGuides(snap.guides)
   const localCorrection = worldDeltaToParentLocal(snap.correction, parentId, editor)

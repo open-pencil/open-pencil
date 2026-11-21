@@ -1,0 +1,9 @@
+/*
+ * A two-finger swipe across a Mac trackpad goes back or forward in the browser's history when the
+ * page has nothing to scroll that way, which cut panning short and left the editor. Figma turns it
+ * off; so does this: no horizontal overscroll on the page, so no history swipe.
+ */
+html,
+body {
+  overscroll-behavior-x: none;
+}

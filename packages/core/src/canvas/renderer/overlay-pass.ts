@@ -21,6 +21,7 @@ import {
 import { drawAIOverlays } from '#core/canvas/overlays/ai'
 import { drawComponentSetBorders } from '#core/canvas/overlays/component-sets'
 import { drawConnectorTarget } from '#core/canvas/overlays/connectors'
+import { drawSpacingGuides } from '#core/canvas/overlays/equal-spacing'
 import { drawDropTarget, drawEditingText } from '#core/canvas/overlays/feedback'
 import { drawBlurRampHandles } from '#core/canvas/overlays/handles/blur-ramp'
 import { drawGradientHandles } from '#core/canvas/overlays/handles/gradient'
@@ -186,6 +187,7 @@ export function drawOverlayPass(
   if (overlays.guides?.redline) drawMeasurementSegment(r, canvas, overlays.guides.redline.segment)
   drawGuides(r, canvas, graph, overlays.guides)
   drawSnapGuides(r, canvas, overlays.snapGuides)
+  drawSpacingGuides(r, canvas, overlays.snapGuides)
   drawMarquee(r, canvas, overlays.marquee)
   drawLayoutInsertIndicator(r, canvas, overlays.layoutInsertIndicator)
   if (!measuring && !overlays.transforming && r.editHandles) {

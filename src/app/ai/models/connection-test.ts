@@ -117,9 +117,12 @@ function classifyError(
   return classifyStatus(providerErrorStatus(error), text) ?? classifyMessage(text) ?? 'unknown'
 }
 
+/** The fewest output tokens OpenAI's Responses API accepts; other providers take as few. */
+const CONNECTION_TEST_OUTPUT_TOKENS = 16
+
 /**
- * Sends a one-token request. A test of a saved credential passes its store in `runtime`, so a
- * sign-in the request refreshes keeps the new tokens instead of leaving a spent refresh token
+ * Sends a request for a short reply. A test of a saved credential passes its store in `runtime`,
+ * so a sign-in the request refreshes keeps the new tokens instead of leaving a spent refresh token
  * saved; a `runtime` with its own fetch, such as Cloud's AI service, is used instead of the default.
  */
 export async function testProviderConnection(
@@ -133,8 +136,9 @@ export async function testProviderConnection(
     await generateText({
       model: await createLanguageModel(config, runtime),
       prompt: 'Reply with OK.',
-      maxOutputTokens: 1,
-      // A one-token reply, which a provider answers like any model request.
+      // A short reply, which a provider answers like any model request. OpenAI's Responses API
+      // refuses fewer than 16 output tokens, so a one-token test failed with a valid key.
+      maxOutputTokens: CONNECTION_TEST_OUTPUT_TOKENS,
       abortSignal: AbortSignal.timeout(DEADLINE_MS.slowRequest)
     })
     return { ok: true }

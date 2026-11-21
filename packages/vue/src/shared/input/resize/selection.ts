@@ -19,6 +19,7 @@ import {
   commitResizePreview,
   scaledChanges
 } from '#vue/shared/input/resize/apply'
+import { resizedFromCenter } from '#vue/shared/input/resize/center'
 import {
   resizedRect,
   roundsToPixels,
@@ -105,6 +106,7 @@ function resizedBox(
   cy: number,
   shiftKey: boolean,
   ctrlKey: boolean,
+  altKey: boolean,
   editor: Editor
 ): Rect {
   const { origBounds } = d
@@ -112,7 +114,7 @@ function resizedBox(
     shiftKey && origBounds.width > 0 && origBounds.height > 0
       ? origBounds.width / origBounds.height
       : null
-  return resizedRect(
+  const rect = resizedRect(
     d.handle,
     origBounds,
     { x: cx - d.startX, y: cy - d.startY },
@@ -121,6 +123,10 @@ function resizedBox(
     editor,
     ctrlKey
   )
+  // Alt resizes from the center, as in Figma.
+  if (!altKey) return rect
+
+  return resizedFromCenter(d.handle, origBounds, rect, aspect)
 }
 
 /** Scales the selection's box with the pointer; Shift keeps its proportions. */
@@ -130,12 +136,13 @@ export function applySelectionResize(
   cy: number,
   shiftKey: boolean,
   editor: Editor,
-  ctrlKey = false
+  ctrlKey = false,
+  altKey = false
 ) {
   // As in applyResize: reactive drag state must not leak into graph writes.
   const d = toRaw(dragState)
   const { origBounds } = d
-  const bounds = resizedBox(d, cx, cy, shiftKey, ctrlKey, editor)
+  const bounds = resizedBox(d, cx, cy, shiftKey, ctrlKey, altKey, editor)
   // A layer locked to its ratio lands on whole pixels in a design, as Figma rounds it.
   const pixels = roundsToPixels(editor)
   const round = pixels ? wholePixels : undefined

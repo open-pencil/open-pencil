@@ -57,6 +57,7 @@ export default defineConfig(
       'shape-with-text/index': './src/shape-with-text/index.ts',
       'shared-styles': './src/shared-styles.ts',
       'slots/index': './src/slots/index.ts',
+      'equal-spacing': './src/equal-spacing.ts',
       snap: './src/snap.ts',
       'source-metadata': './src/source-metadata.ts',
       'statuses/index': './src/statuses/index.ts',

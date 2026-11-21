@@ -21,6 +21,7 @@ import {
   pressSelects,
   selectionIsLocked
 } from '#vue/shared/input/select/move'
+import { selectedContainerHolding } from '#vue/shared/input/select/selected-container'
 import { tryStartShapeHandleDrag } from '#vue/shared/input/shape-handles'
 import { tryStartStickyScale } from '#vue/shared/input/sticky/scale'
 import type { DragState } from '#vue/shared/input/types'
@@ -151,7 +152,9 @@ function pressLayers(
     return
   }
 
-  const selects = pressSelects(hit, cx, cy, editor, deep)
+  // A press inside a selected frame drags the frame; a click without a drag selects the layer.
+  const heldBy = e.shiftKey || deep ? undefined : selectedContainerHolding(hit, editor)
+  const selects = !heldBy && pressSelects(hit, cx, cy, editor, deep)
   const shiftPressedSelectedId = e.shiftKey
     ? pressedSelectedLayer(hit, selects, cx, cy, editor)
     : undefined
@@ -172,6 +175,7 @@ function pressLayers(
   // Where layers only move, Alt copies nothing and layers stay in their parents.
   const drag = createSelectionMoveDrag(cx, cy, sx, sy, editor, e.altKey && layerEdits === 'all')
   drag.clickDeselectsId = shiftPressedSelectedId
+  if (heldBy) drag.clickSelectsId = hit.id
   setDrag(drag)
 }
 

@@ -125,11 +125,11 @@ export function moveCanvasDrag(
     return
   }
   if (d.type === 'resize') {
-    applyResize(d, cx, cy, e.shiftKey, editor, e.ctrlKey)
+    applyResize(d, cx, cy, e.shiftKey, editor, e.ctrlKey, e.altKey)
     return
   }
   if (d.type === 'resize-selection') {
-    applySelectionResize(d, cx, cy, e.shiftKey, editor, e.ctrlKey)
+    applySelectionResize(d, cx, cy, e.shiftKey, editor, e.ctrlKey, e.altKey)
     return
   }
 
@@ -159,7 +159,7 @@ export function moveCanvasDrag(
   }
 
   if (d.type === 'draw') {
-    handleDrawMove(d, cx, cy, e.shiftKey)
+    handleDrawMove(d, cx, cy, e.shiftKey, e.ctrlKey)
     return
   }
 
