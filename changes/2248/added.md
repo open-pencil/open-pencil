@@ -1,0 +1,1 @@
+- File → Open from URL… lets you choose the window size a page is laid out at (Desktop, Tablet, or Mobile) and, in the desktop app, whether the page's scripts run first; both choices are remembered. The dialog closes once the address is read, and the page's tab shows the open's progress, including the files it has loaded; closing the tab cancels the open.

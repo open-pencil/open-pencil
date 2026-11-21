@@ -3,8 +3,9 @@
 //! call no command without one, so the page reaches nothing of the app's. Pop-ups, downloads, and
 //! navigation away from the web are refused.
 
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Mutex;
+use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
 use tauri::webview::{NewWindowResponse, PageLoadEvent};
@@ -23,9 +24,15 @@ const SCRIPT_LIMIT: Duration = Duration::from_secs(10);
 
 static NEXT_RENDER: AtomicU64 = AtomicU64::new(0);
 
+/// The renders under way by the id the app gave each, and how to cancel each one.
+static RENDERS: LazyLock<Mutex<HashMap<String, oneshot::Sender<()>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
 #[derive(Debug, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RenderRequest {
+    /// Names the render, so `cancel_web_page_render` can stop it.
+    id: String,
     url: String,
     width: f64,
     height: f64,
@@ -127,6 +134,11 @@ pub async fn render_web_page(
     }
     let (loaded_sender, loaded) = oneshot::channel::<()>();
     let loaded_sender = Mutex::new(Some(loaded_sender));
+    // Registered before its window is built, so a cancel that arrives meanwhile is not lost.
+    let (cancel_sender, cancelled) = oneshot::channel::<()>();
+    if let Ok(mut renders) = RENDERS.lock() {
+        renders.insert(request.id.clone(), cancel_sender);
+    }
     let label = format!("web-page-{}", NEXT_RENDER.fetch_add(1, Ordering::Relaxed));
     let window = WebviewWindowBuilder::new(&app, &label, WebviewUrl::External(url))
         .visible(false)
@@ -144,11 +156,41 @@ pub async fn render_web_page(
                 }
             }
         })
-        .build()
-        .map_err(|e| format!("Could not open the page: {e}"))?;
-    let result = render(&window, loaded, &request).await;
+        .build();
+    let window = match window {
+        Ok(window) => window,
+        Err(error) => {
+            forget_render(&request.id);
+            return Err(format!("Could not open the page: {error}"));
+        }
+    };
+    let result = tokio::select! {
+        result = render(&window, loaded, &request) => result,
+        _ = cancelled => Err("The render was cancelled".to_owned()),
+    };
+    forget_render(&request.id);
     let _ = window.destroy();
     result
+}
+
+/// Drops the cancel channel of the render `id` names, once it has ended or could not start.
+fn forget_render(id: &str) {
+    if let Ok(mut renders) = RENDERS.lock() {
+        renders.remove(id);
+    }
+}
+
+/// Stops the render `id` names, if it is still under way: its page closes at once, and the render
+/// fails.
+#[tauri::command]
+pub fn cancel_web_page_render(id: String) {
+    let sender = RENDERS
+        .lock()
+        .ok()
+        .and_then(|mut renders| renders.remove(&id));
+    if let Some(sender) = sender {
+        let _ = sender.send(());
+    }
 }
 
 #[cfg(test)]

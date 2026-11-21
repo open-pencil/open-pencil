@@ -58,6 +58,10 @@ A file picker dialog opens, filtered for `.fig` and `.pen` files. On the desktop
 
 **File → Open from URL…** opens a web address. A web page opens as editable layers, with the stylesheets and pictures it links; an image or an SVG opens in a new design, and a `.fig`, `.pen`, or other supported document opens as it would from your computer. The desktop app fetches any address. In the browser, only sites that let other sites read them can be opened, and the dialog says so when a site does not. The desktop app first loads the page in a hidden, private window where its scripts run, waits until the page has gone a moment without changing, for up to 30 seconds, and opens what it built then, so a single-page app usually opens with its content. A page that keeps changing is opened as it stands at that point, and one that cannot be loaded this way opens from the HTML its server sends. The browser app runs no page scripts and opens the HTML the server sends.
 
+Under the address, choose the window size the page is laid out at: Desktop (1440 × 900), Tablet (768 × 1024), or Mobile (390 × 844). The page lays out as it would in a window of that size and sits in a frame of that width. In the desktop app, turn off **Run the page’s scripts** to open the HTML the server sends instead, for example when rendering lands on a cookie banner or a sign-in page. Both choices are remembered for the next open.
+
+The dialog closes once the address is read, and the page opens in a new tab that shows how far it has got: running the page’s scripts, loading its stylesheets and pictures with a count of the files loaded so far, then laying out. Closing the tab cancels the open, and the desktop app closes the hidden window at once.
+
 You can also drag a `.fig`, `.pen`, HTML, or other supported document onto the window; it opens in a new tab. Images, SVG files, and HTML pages dropped on the canvas are placed in the document instead, an HTML page as editable layers laid out as a browser would, and any other file reports that it can't be opened.
 
 **File → Place…** does the same from a file picker: it places images, SVG files, and HTML pages in the middle of the view.
