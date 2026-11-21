@@ -213,29 +213,49 @@ export async function pasteWebClipboard(
   const { x, y } = pastePoint(editor, cursorPos)
   rememberWebClipboard(clipboard.html, clipboard.text)
   const markup = layerMarkup(clipboard)
-  // Text still pastes when the importer cannot load; only the offer of layers needs it.
-  const offered = markup !== null && (await offersLayers(clipboard).catch(() => false))
   // A laid-out copy without text, such as an empty card, has nothing to paste but its layers.
   if (text.trim().length === 0) {
+    const offered = markup !== null && (await offersLayers(clipboard).catch(() => false))
     return offered && markup ? pasteHTMLAsLayers(editor, markup, { x, y }) : false
   }
   const pastedId = await editor.pasteText(text, x, y, links)
-  if (!pastedId || !markup || !offered) return pastedId !== null
+  if (!pastedId || !markup) return pastedId !== null
+  // The text is in first; the offer of layers waits for the importer, which may load slowly or
+  // not at all, and shows only while that paste is still the last edit.
+  void offerLayers(editor, clipboard, markup, pastedId, { x, y })
+  return true
+}
+
+/** Whether the text `pastedId` names is still the last edit, selected as the paste left it. */
+function isLastTextPaste(editor: Editor, pastedId: string): boolean {
+  const selected = editor.state.selectedIds
+  return editor.undo.undoLabel === PASTE_TEXT_LABEL && selected.size === 1 && selected.has(pastedId)
+}
+
+/**
+ * Offers to paste the clipboard's HTML as layers in place of the text just pasted, when the HTML
+ * lays boxes out and that paste is still the last edit.
+ */
+async function offerLayers(
+  editor: Editor,
+  clipboard: WebClipboard,
+  markup: string,
+  pastedId: string,
+  point: Vector
+): Promise<void> {
+  if (!(await offersLayers(clipboard).catch(() => false))) return
+  if (!isLastTextPaste(editor, pastedId)) return
   // Only the paste this notice is about is taken back, while it is still the last edit.
   const takeBackText = () => {
-    const selected = editor.state.selectedIds
-    const isLastPaste =
-      editor.undo.undoLabel === PASTE_TEXT_LABEL && selected.size === 1 && selected.has(pastedId)
-    if (isLastPaste) editor.undoAction()
+    if (isLastTextPaste(editor, pastedId)) editor.undoAction()
   }
   toast.info(filesMessages.get().pastedAsText, {
     label: menuMessages.get().pasteAsLayers,
     run: (toastId) => {
       toast.remove(toastId)
-      void pasteHTMLAsLayers(editor, markup, { x, y }, takeBackText)
+      void pasteHTMLAsLayers(editor, markup, point, takeBackText)
     }
   })
-  return true
 }
 
 /**
