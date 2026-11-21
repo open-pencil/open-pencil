@@ -105,6 +105,8 @@
   "scopeFontFamily": "字体",
   "exportDesignTokens": "导出为设计令牌",
   "importDesignTokens": "导入设计令牌",
+  "tokenPreset": "变量预设",
+  "loadTokenPreset": "载入 {preset} 变量",
   "libraryCollection": "库",
   "libraryCollectionHint": "从库中复制。编辑会保存在此文件中，并显示在 Figma 里。",
   "addedToLibraryCollection": "在这里添加。Figma 不会显示添加到库集合中的变量。",

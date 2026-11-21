@@ -13,13 +13,16 @@ import { createTokenCopy } from '@/app/editor/tokens/copy'
 import {
   DESIGN_TOKEN_FILE_ACCEPT,
   exportDesignTokenArchive,
-  readDesignTokenImport
+  readDesignTokenImport,
+  readTokenPresetImport
 } from '@/app/editor/tokens/design-tokens'
 import { pendingTokenImport } from '@/app/editor/tokens/dialog'
+import type { TokenPreset } from '@/app/editor/tokens/presets'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { AppDialogClose, AppDialogRoot } from '@/components/ui/dialog'
+import TokenPresetPicker from '@/components/variables/TokenPresetPicker.vue'
 import TokensPanel from '@/components/variables/TokensPanel.vue'
 
 const store = useEditorStore()
@@ -51,17 +54,27 @@ function reportFailure(error: unknown) {
 /** The latest import asked for; an earlier one still reading does not replace its preview. */
 let importRequest = 0
 
-/** Token files, a folder's worth, or a zip of them; the import dialog shows what they would do. */
-function importFiles(files: readonly File[]) {
+/** Reads tokens to import; the import dialog shows what they would do. */
+function previewImport(read: () => Promise<DesignTokenBundle>) {
   const request = ++importRequest
   void (async () => {
-    const bundle = await readDesignTokenImport(files)
+    const bundle = await read()
     if (request !== importRequest) return
     importBundle.value = bundle
     importOpen.value = true
   })().catch((error: unknown) => {
     if (request === importRequest) reportFailure(error)
   })
+}
+
+/** Token files, a folder's worth, or a zip of them. */
+function importFiles(files: readonly File[]) {
+  previewImport(() => readDesignTokenImport(files))
+}
+
+/** A preset's tokens, such as Tailwind's default colors and spacing. */
+function loadPreset(preset: TokenPreset) {
+  previewImport(() => readTokenPresetImport(preset))
 }
 
 const tokenFiles = useFileDialog({ accept: DESIGN_TOKEN_FILE_ACCEPT, multiple: true, reset: true })
@@ -98,6 +111,7 @@ function exportTokens() {
     <DialogTitle class="sr-only">{{ variables.localVariables }}</DialogTitle>
     <TokensPanel @copy="copyTokens" @export="exportTokens">
       <template #actions>
+        <TokenPresetPicker @load="loadPreset" />
         <IconButton
           :label="variables.importDesignTokens"
           data-test-id="variables-import-tokens"

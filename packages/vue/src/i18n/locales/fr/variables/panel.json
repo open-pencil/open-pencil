@@ -105,6 +105,8 @@
   "scopeFontFamily": "Famille de police",
   "exportDesignTokens": "Exporter en design tokens",
   "importDesignTokens": "Importer des design tokens",
+  "tokenPreset": "Préréglage de variables",
+  "loadTokenPreset": "Charger les variables {preset}",
   "libraryCollection": "Bibliothèque",
   "libraryCollectionHint": "Copiée d'une bibliothèque. Les modifications sont enregistrées dans ce fichier et visibles dans Figma.",
   "addedToLibraryCollection": "Ajoutée ici. Figma n'affiche pas les variables ajoutées à la collection d'une bibliothèque.",

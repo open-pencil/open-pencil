@@ -105,6 +105,8 @@
   "scopeFontFamily": "Гарнитура шрифта",
   "exportDesignTokens": "Экспортировать как дизайн-токены",
   "importDesignTokens": "Импортировать дизайн-токены",
+  "tokenPreset": "Набор переменных",
+  "loadTokenPreset": "Загрузить переменные {preset}",
   "libraryCollection": "Библиотека",
   "libraryCollectionHint": "Скопирована из библиотеки. Изменения сохраняются в этом файле и видны в Figma.",
   "addedToLibraryCollection": "Добавлена здесь. Figma не показывает переменные, добавленные в коллекцию библиотеки.",

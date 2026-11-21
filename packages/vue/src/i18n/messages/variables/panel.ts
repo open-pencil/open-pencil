@@ -112,6 +112,8 @@ export const variablesMessageDefaults = {
   scopeFontFamily: 'Font family',
   exportDesignTokens: 'Export as design tokens',
   importDesignTokens: 'Import design tokens',
+  tokenPreset: 'Variable preset',
+  loadTokenPreset: params('Load {preset} variables'),
   libraryCollection: 'Library',
   libraryCollectionHint: 'Copied from a library. Edits are saved in this file and show in Figma.',
   addedToLibraryCollection:

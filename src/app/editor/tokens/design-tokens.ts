@@ -10,6 +10,7 @@ import type {
 import { saveExportedFile } from '@/app/document/export/files'
 import { downloadBlob } from '@/app/document/io/browser'
 import type { EditorStore } from '@/app/editor/active-store'
+import type { TokenPreset } from '@/app/editor/tokens/presets'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 
@@ -34,8 +35,9 @@ function issueName(issue: DesignTokenIssue): string {
   return issue.token
 }
 
-/** The W3C token reader and writer load with the first import or export. */
+/** The W3C token reader and writer, and the presets, load with the first import or export. */
 const loadDesignTokens = () => import('@open-pencil/core/io/formats/design-tokens')
+const loadTokenPresets = () => import('@/app/editor/tokens/presets/files')
 
 /**
  * Saves the document's variables and styles as W3C design tokens: a zip of one file per
@@ -90,4 +92,13 @@ export async function readDesignTokenImport(files: readonly File[]): Promise<Des
   const sources = await readDesignTokenFiles(files)
   const { readDesignTokens } = await loadDesignTokens()
   return readDesignTokens(sources)
+}
+
+/** What loading a preset, such as Tailwind's defaults, would define in the document. */
+export async function readTokenPresetImport(preset: TokenPreset): Promise<DesignTokenBundle> {
+  const [{ readDesignTokens }, { tokenPresetFiles }] = await Promise.all([
+    loadDesignTokens(),
+    loadTokenPresets()
+  ])
+  return readDesignTokens(tokenPresetFiles(preset))
 }

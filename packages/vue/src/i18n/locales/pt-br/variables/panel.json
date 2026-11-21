@@ -105,6 +105,8 @@
   "scopeFontFamily": "Família da fonte",
   "exportDesignTokens": "Exportar como tokens de design",
   "importDesignTokens": "Importar tokens de design",
+  "tokenPreset": "Predefinição de variáveis",
+  "loadTokenPreset": "Carregar variáveis do {preset}",
   "libraryCollection": "Biblioteca",
   "libraryCollectionHint": "Copiada de uma biblioteca. As edições são salvas neste arquivo e aparecem no Figma.",
   "addedToLibraryCollection": "Adicionada aqui. O Figma não mostra variáveis adicionadas à coleção de uma biblioteca.",
