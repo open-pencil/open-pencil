@@ -22,6 +22,21 @@ function tokens() {
   return { api, collection, mode, size, label, flag, color }
 }
 
+/** The tokens, plus a library's Brand collection as a file keeps its copy: keyed, unpublishable. */
+function withLibrary() {
+  const context = tokens()
+  const graph = graphOf(context.api)
+  const brandRecord = graph.createCollection('Brand')
+  Object.assign(brandRecord, { key: 'brand-collection', version: '1:1' })
+  const blue = { r: 0, g: 0, b: 1, a: 1 }
+  const accentRecord = graph.createVariable('accent', 'COLOR', brandRecord.id, blue)
+  Object.assign(accentRecord, { key: 'brand-accent', version: '1:1', hiddenFromPublishing: true })
+  const { variables } = context.api
+  const brand = expectDefined(variables.getVariableCollectionById(brandRecord.id), 'brand')
+  const accent = expectDefined(variables.getVariableById(accentRecord.id), 'accent')
+  return { ...context, brand, accent }
+}
+
 describe('figma.variables', () => {
   test('creates collections and variables with Figma’s shapes and defaults', () => {
     const { api, collection, mode, size, label, flag, color } = tokens()
@@ -52,6 +67,84 @@ describe('figma.variables', () => {
     expect(api.variables.createVariable('by-id', collection.id, 'STRING').resolvedType).toBe(
       'STRING'
     )
+  })
+
+  test('leave library copies out of the local lists and report them as remote', async () => {
+    const { api, collection, size, brand, accent } = withLibrary()
+    expect(api.variables.getLocalVariableCollections().map(({ id }) => id)).toEqual([collection.id])
+    expect((await api.variables.getLocalVariableCollectionsAsync()).map(({ id }) => id)).toEqual([
+      collection.id
+    ])
+    expect(api.variables.getLocalVariables('COLOR').map(({ name }) => name)).toEqual(['color'])
+    expect((await api.variables.getLocalVariablesAsync()).map(({ name }) => name)).not.toContain(
+      'accent'
+    )
+    expect([collection.remote, size.remote]).toEqual([false, false])
+    expect([brand.remote, accent.remote]).toEqual([true, true])
+  })
+
+  test('a library variable is never hidden from publishing and refuses the flag', () => {
+    const { api, size, accent } = withLibrary()
+    size.hiddenFromPublishing = true
+    expect(size.hiddenFromPublishing).toBe(true)
+
+    expect(accent.hiddenFromPublishing).toBe(false)
+    expect(() => {
+      accent.hiddenFromPublishing = false
+    }).toThrow('in set_hiddenFromPublishing: Cannot edit a remote variable')
+    expect(graphOf(api).variables.get(accent.id)?.hiddenFromPublishing).toBe(true)
+  })
+
+  test('every edit to a library variable or collection throws and writes nothing', () => {
+    const { api, brand, accent } = withLibrary()
+    const graph = graphOf(api)
+    const before = structuredClone([
+      ...graph.variableCollections.values(),
+      ...graph.variables.values()
+    ])
+    const mode = brand.defaultModeId
+    const variableEdits: Array<[string, () => unknown]> = [
+      ['set_name', () => (accent.name = 'other')],
+      ['set_description', () => (accent.description = 'other')],
+      ['set_scopes', () => (accent.scopes = ['FRAME_FILL'])],
+      ['setVariableCodeSyntax', () => accent.setVariableCodeSyntax('WEB', 'x')],
+      ['removeVariableCodeSyntax', () => accent.removeVariableCodeSyntax('WEB')],
+      ['setValueForMode', () => accent.setValueForMode(mode, { r: 1, g: 0, b: 0, a: 1 })],
+      ['remove', () => accent.remove()]
+    ]
+    const collectionEdits: Array<[string, () => unknown]> = [
+      ['createVariable', () => api.variables.createVariable('new', brand, 'FLOAT')],
+      ['set_name', () => (brand.name = 'other')],
+      ['addMode', () => brand.addMode('Dark')],
+      ['renameMode', () => brand.renameMode(mode, 'Dark')],
+      ['removeMode', () => brand.removeMode(mode)],
+      ['remove', () => brand.remove()]
+    ]
+    for (const [method, edit] of variableEdits) {
+      expect(edit).toThrow(new RegExp(`^in ${method}: Cannot edit a remote variable$`))
+    }
+    for (const [method, edit] of collectionEdits) {
+      expect(edit).toThrow(new RegExp(`^in ${method}: Cannot edit a remote variable collection$`))
+    }
+    expect([...graph.variableCollections.values(), ...graph.variables.values()]).toEqual(before)
+  })
+
+  test('a variable the file added to a library collection stays the file’s own', () => {
+    const { api, brand } = withLibrary()
+    const addedRecord = graphOf(api).createVariable('added', 'FLOAT', brand.id, 1)
+    const added = expectDefined(api.variables.getVariableById(addedRecord.id), 'added')
+    expect(added.remote).toBe(false)
+    expect(api.variables.getLocalVariables('FLOAT').map(({ name }) => name)).toContain('added')
+    added.setValueForMode(brand.defaultModeId, 2)
+    expect(addedRecord.valuesByMode[brand.defaultModeId]).toBe(2)
+  })
+
+  test('a removed variable or collection throws on reading remote, as in Figma', () => {
+    const { size, collection } = tokens()
+    size.remove()
+    expect(() => size.remote).toThrow(`Variable ${size.id} has been removed`)
+    collection.remove()
+    expect(() => collection.remote).toThrow(`Variable collection ${collection.id} has been removed`)
   })
 
   test('async lookups return what the sync ones do', async () => {

@@ -1,3 +1,5 @@
+import { sum } from 'es-toolkit'
+
 import type { LayerRow } from '@open-pencil/vue/primitives/LayerTree'
 
 export interface LayerRowMetrics {
@@ -7,19 +9,22 @@ export interface LayerRowMetrics {
   indent: number
   /** From a row's indent to the start of its name: disclosure, icon, and their gaps. */
   nameStart: number
-  /** The buttons at a row's end, with their gap and the row's end padding. */
-  buttons: number
-  /** Space a variable mode badge takes besides its text, and an issue mark with its gap. */
+  /** Space a variable mode badge takes besides its text. */
   badge: number
+  nameFadeWidth: number
+  rowEnd: number
+  trailingGap: number
   issueMark: number
+  buttons: number
   /** The list's own width, which rows fill before they scroll. */
   viewportWidth: number
 }
 
 export interface LayerRowDecorations {
-  modeNames: (row: LayerRow) => readonly string[]
+  modeCount: (row: LayerRow) => number
   /** Whether the row shows an issue mark; `expanded` is whether its children are listed. */
   showsIssue: (row: LayerRow, expanded: boolean) => boolean
+  buttonsAlwaysShown: (row: LayerRow) => boolean
 }
 
 /** Text widths in a font, measured once each on a canvas. */
@@ -40,10 +45,20 @@ export function createTextMeasure() {
   }
 }
 
+function trailingWidth(parts: readonly number[], metrics: LayerRowMetrics): number {
+  return sum(parts) + metrics.trailingGap * Math.max(0, parts.length - 1) + metrics.rowEnd
+}
+
+/** The narrowest a cut name gets: its fade, or the whole name when that is narrower. */
+export function shortestNameWidth(nameWidth: number, fadeWidth: number): number {
+  return Math.min(nameWidth, fadeWidth)
+}
+
 /**
- * How far the layer rows reach past the list sideways, as in Figma's layers panel: far enough
- * for the widest row's indent, whole name, mode badges, and issue mark, so no name is ever cut
- * short, only scrolled out of view.
+ * How far the layer rows reach past the list sideways, as in Figma's layers panel. Idle, a row
+ * needs its indent, whole name, compact mode badge, issue mark, and the buttons a locked or hidden
+ * layer always shows. Hovered, the other rows show their buttons too and cut the name down to its
+ * fade, so a row with a short name can need more room hovered than idle.
  */
 export function rowsOverflow(
   rows: readonly LayerRow[],
@@ -51,17 +66,29 @@ export function rowsOverflow(
   decorations: LayerRowDecorations,
   measure: (text: string, font: string) => number
 ): number {
-  if (!metrics.font) return 0
+  if (!metrics.font) {
+    return 0
+  }
   let widest = 0
   for (const [index, row] of rows.entries()) {
-    let width = (row.level - 1) * metrics.indent + metrics.nameStart
-    width += measure(row.node.name, metrics.font)
-    for (const name of decorations.modeNames(row)) {
-      width += metrics.badge + measure(name, metrics.badgeFont)
-    }
+    const start = (row.level - 1) * metrics.indent + metrics.nameStart
+    const name = measure(row.node.name, metrics.font)
+    const modeCount = decorations.modeCount(row)
+    const badge = modeCount > 0 ? metrics.badge + measure(String(modeCount), metrics.badgeFont) : 0
     const expanded = row.hasChildren && (rows[index + 1]?.level ?? 0) > row.level
-    if (decorations.showsIssue(row, expanded)) width += metrics.issueMark
-    if (width > widest) widest = width
+    const mark = decorations.showsIssue(row, expanded) ? [metrics.issueMark] : []
+    const withButtons = trailingWidth([...mark, metrics.buttons], metrics)
+    let width: number
+    if (decorations.buttonsAlwaysShown(row)) {
+      width = start + name + badge + withButtons
+    } else {
+      const idle = start + name + badge + trailingWidth(mark, metrics)
+      const hovered = start + shortestNameWidth(name, metrics.nameFadeWidth) + badge + withButtons
+      width = Math.max(idle, hovered)
+    }
+    if (width > widest) {
+      widest = width
+    }
   }
-  return Math.max(0, Math.ceil(widest + metrics.buttons - metrics.viewportWidth))
+  return Math.max(0, Math.ceil(widest - metrics.viewportWidth))
 }

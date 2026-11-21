@@ -133,5 +133,7 @@
   "formulaIf": "condição, então, senão",
   "formulaText": "número como texto",
   "formulaTruthy": "valor como verdadeiro ou falso",
-  "unsupportedExpression": "O OpenPencil ainda não consegue avaliar {name}. Ao salvar, ele é mantido como está."
+  "unsupportedExpression": "O OpenPencil ainda não consegue avaliar {name}. Ao salvar, ele é mantido como está.",
+  "numberedCollection": "{name} ({number})",
+  "appliedMode": "{collection}: {mode}"
 }

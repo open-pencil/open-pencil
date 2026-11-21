@@ -2,6 +2,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { setVariableMode, variableModeChoices } from '#vue/controls/variable-modes/helpers'
 import { useEditor } from '#vue/editor/context'
+import { useVariableMessages } from '#vue/i18n'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 /**
@@ -13,6 +14,7 @@ import { useSceneComputed } from '#vue/internal/scene-computed/use'
  */
 export function useVariableModes() {
   const editor = useEditor()
+  const messages = useVariableMessages()
 
   const targets = useSceneComputed((): SceneNode[] => {
     const selected = [...editor.state.selectedIds]
@@ -22,7 +24,9 @@ export function useVariableModes() {
     const page = editor.getNode(editor.state.currentPageId)
     return page ? [page] : []
   })
-  const choices = useSceneComputed(() => variableModeChoices(editor, targets.value))
+  const choices = useSceneComputed(() =>
+    variableModeChoices(editor, targets.value, messages.value.numberedCollection)
+  )
   const applied = useSceneComputed(() => choices.value.filter((choice) => choice.value !== null))
 
   function setMode(collectionId: string, modeId: string | null) {

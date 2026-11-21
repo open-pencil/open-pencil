@@ -46,8 +46,13 @@ export interface LayerNode {
   mask?: boolean
   visible: boolean
   locked: boolean
-  /** The variable modes set on the layer itself, which Figma tags its row with. */
+  /**
+   * The variable modes set on the layer itself.
+   * @deprecated Library copies of one collection share mode ids; read `variableModes`.
+   */
   modeIds?: string[]
+  /** The variable modes set on the layer itself by collection id, which Figma tags its row with. */
+  variableModes?: Record<string, string>
   children?: LayerNode[]
 }
 

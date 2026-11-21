@@ -61,6 +61,20 @@ describe('variable roundtrip', () => {
     expect(Object.values(strVar.valuesByMode)[0]).toBe('Hello')
   })
 
+  test('a library variable keeps its saved publishing flag across export → re-import', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    const library = graph.createCollection('Brand')
+    Object.assign(library, { key: 'brand-collection', version: '1:1' })
+    const accent = graph.createVariable('accent', 'COLOR', library.id, { r: 0, g: 0, b: 1, a: 1 })
+    Object.assign(accent, { key: 'brand-accent', version: '1:1', hiddenFromPublishing: true })
+
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+    const copy = [...reimported.variables.values()].find((variable) => variable.name === 'accent')
+    expect(copy).toMatchObject({ key: 'brand-accent', hiddenFromPublishing: true })
+  })
+
   test('text bound to a string variable survives export → re-import', async () => {
     await initCodec()
     const graph = new SceneGraph()

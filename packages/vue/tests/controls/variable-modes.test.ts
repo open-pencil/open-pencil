@@ -1,10 +1,25 @@
-import { describe, expect, test } from 'bun:test'
+import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { defineComponent, h, reactive } from 'vue'
+
+import { createDefaultEditorState, createEditor, type Editor } from '@open-pencil/core'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { collectionsBoundIn } from '@open-pencil/scene-graph/variables'
+import { createDeferred } from '@open-pencil/std/async'
+import { DEADLINE_MS, withDeadline } from '@open-pencil/std/timing'
+import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 import { MIXED } from '@open-pencil/vue/controls/node-props'
-import { setVariableMode, variableModeChoices } from '@open-pencil/vue/controls/variable-modes'
+import {
+  appliedVariableModes,
+  collectionLabels,
+  setVariableMode,
+  useVariableModes,
+  variableModeChoices
+} from '@open-pencil/vue/controls/variable-modes'
+
+import { provideEditor } from '#vue/editor/context'
+import { setLocale } from '#vue/i18n/locale'
+import { variablesMessages } from '#vue/i18n/messages'
 
 const RED = { r: 1, g: 0, b: 0, a: 1 }
 
@@ -76,6 +91,184 @@ describe('variable mode choices', () => {
     expect(inherited?.inherited).toEqual({ modeId: dark, name: 'Dark' })
     expect(variableModeChoices(editor, [node(outer.id)])[0]?.value).toBe(dark)
     expect(variableModeChoices(editor, [node(outer.id), node(inner.id)])[0]?.value).toBe(MIXED)
+  })
+})
+
+describe('library copies in variable mode choices', () => {
+  function libraryCopies() {
+    const context = setup()
+    const { graph, theme } = context
+    Object.assign(theme, { key: 'theme-a', version: '1:1' })
+    const empty = { ...structuredClone(theme), id: 'theme-b', key: 'theme-b', variableIds: [] }
+    graph.addCollection(empty)
+    return { ...context, empty }
+  }
+
+  const numbered = ({ name, number }: { name: string; number: string }) => `${name} #${number}`
+
+  test('number same-named collections across the file, in collection order', () => {
+    const { graph, theme, density, empty } = libraryCopies()
+    expect(collectionLabels(graph, numbered)).toEqual(
+      new Map([
+        [theme.id, 'Theme #1'],
+        [density.id, 'Density'],
+        [empty.id, 'Theme #2']
+      ])
+    )
+  })
+
+  test('number only namesakes listed together, each by its place in the file', () => {
+    const { graph, density, empty } = libraryCopies()
+    const third = graph.createCollection('Theme')
+    expect(collectionLabels(graph, numbered, [empty.id, density.id])).toEqual(
+      new Map([
+        [density.id, 'Density'],
+        [empty.id, 'Theme']
+      ])
+    )
+    expect(collectionLabels(graph, numbered, [third.id, empty.id])).toEqual(
+      new Map([
+        [empty.id, 'Theme #2'],
+        [third.id, 'Theme #3']
+      ])
+    )
+  })
+
+  test('leave out a library copy without variables that no target sets a mode in', () => {
+    const { editor, page, theme, node } = libraryCopies()
+    expect(variableModeChoices(editor, [node(page)]).map((c) => [c.collectionId, c.label])).toEqual(
+      [[theme.id, 'Theme']]
+    )
+  })
+
+  test('list it, numbered apart from its namesake, where a target sets a mode in it', () => {
+    const { editor, graph, theme, empty, dark, plain, node } = libraryCopies()
+    graph.updateNode(plain.id, { variableModes: { [empty.id]: dark } })
+    expect(
+      variableModeChoices(editor, [node(plain.id)]).map((c) => [c.collectionId, c.label, c.name])
+    ).toEqual([
+      [theme.id, 'Theme (1)', 'Theme'],
+      [empty.id, 'Theme (2)', 'Theme']
+    ])
+  })
+
+  test('list the collections a layer that holds no others sets a mode in, so it can clear them', () => {
+    const { editor, graph, page, theme, empty, dark, node } = libraryCopies()
+    const rectangle = graph.createNode('RECTANGLE', page, {
+      variableModes: { [theme.id]: dark, [empty.id]: dark }
+    })
+    const targets = [node(rectangle.id)]
+    expect(variableModeChoices(editor, targets).map((c) => [c.collectionId, c.value])).toEqual([
+      [theme.id, dark],
+      [empty.id, dark]
+    ])
+    setVariableMode(editor, targets, empty.id, null)
+    expect(variableModeChoices(editor, [node(rectangle.id)]).map((c) => c.collectionId)).toEqual([
+      theme.id
+    ])
+  })
+
+  test('name each applied mode from its own collection, numbering namesakes set together', () => {
+    const { graph, theme, light, dark, empty } = libraryCopies()
+    empty.modes = empty.modes.map((mode) => ({ ...mode, name: `${mode.name} copy` }))
+    expect(appliedVariableModes(graph, { [empty.id]: light, [theme.id]: dark }, numbered)).toEqual([
+      { collectionId: theme.id, collection: 'Theme #1', mode: 'Dark' },
+      { collectionId: empty.id, collection: 'Theme #2', mode: 'Light copy' }
+    ])
+    expect(appliedVariableModes(graph, { [empty.id]: dark }, numbered)).toEqual([
+      { collectionId: empty.id, collection: 'Theme', mode: 'Dark copy' }
+    ])
+  })
+
+  test('leave out applied modes whose collection or mode is gone', () => {
+    const { graph, theme, dark, density } = setup()
+    expect(appliedVariableModes(graph, { [theme.id]: 'missing', gone: dark }, numbered)).toEqual([])
+    expect(appliedVariableModes(graph, { [density.id]: dark }, numbered)).toEqual([])
+  })
+
+  test('keep a local collection without variables', () => {
+    const { editor, graph, page, theme, node } = setup()
+    const local = graph.createCollection('Spacing')
+    graph.createMode(local.id, 'Wide')
+    expect(variableModeChoices(editor, [node(page)]).map((c) => c.collectionId)).toEqual([
+      theme.id,
+      local.id
+    ])
+  })
+})
+
+describe('variable mode labels in a mounted control', () => {
+  let unmount: (() => void) | undefined
+
+  /** `@nanostores/vue` follows a store only where `window` exists, as in the app. */
+  beforeAll(() => {
+    Object.defineProperty(globalThis, 'window', { value: globalThis, configurable: true })
+  })
+
+  afterAll(() => {
+    Reflect.deleteProperty(globalThis, 'window')
+  })
+
+  afterEach(() => {
+    unmount?.()
+    setLocale('en')
+  })
+
+  function mountModes(editor: Editor) {
+    let modes: ReturnType<typeof useVariableModes> | undefined
+    const Control = defineComponent({
+      setup() {
+        modes = useVariableModes()
+        return () => h('div')
+      }
+    })
+    const app = createTestRenderer().createApp(
+      defineComponent({
+        setup() {
+          provideEditor(editor)
+          return () => h(Control)
+        }
+      })
+    )
+    app.mount(hostNode())
+    unmount = () => app.unmount()
+    if (!modes) throw new Error('Expected the variable modes')
+    return modes
+  }
+
+  async function switchLocale(code: 'ja') {
+    const before = variablesMessages.get()
+    const loaded = createDeferred<undefined>()
+    const stop = variablesMessages.listen((messages) => {
+      if (messages !== before) {
+        loaded.resolve(undefined)
+      }
+    })
+    try {
+      setLocale(code)
+      await withDeadline(DEADLINE_MS.probe, () => loaded.promise)
+    } finally {
+      stop()
+    }
+  }
+
+  test('follow the language and the file’s collections', async () => {
+    const { graph, page, theme } = setup()
+    const editor = createEditor({ graph, state: reactive(createDefaultEditorState(page)) })
+    const copy = graph.createCollection('Theme')
+    graph.createMode(copy.id, 'Dark')
+    const { choices } = mountModes(editor)
+    const labels = () => choices.value.map((choice) => choice.label)
+    expect(labels()).toEqual(['Theme (1)', 'Theme (2)'])
+
+    await switchLocale('ja')
+    expect(labels()).toEqual(['Theme（1）', 'Theme（2）'])
+
+    editor.renameCollection(copy.id, 'Brand')
+    expect(labels()).toEqual(['Theme', 'Brand'])
+
+    editor.renameCollection(theme.id, 'Brand')
+    expect(labels()).toEqual(['Brand（1）', 'Brand（2）'])
   })
 })
 

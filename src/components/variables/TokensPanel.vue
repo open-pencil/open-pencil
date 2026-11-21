@@ -7,6 +7,7 @@ import type { VariableTokenFields } from '@open-pencil/core'
 import type { TokenStylesheetFormat } from '@open-pencil/dom-css/export'
 import {
   isLibraryCollection,
+  type VariableCollection,
   type VariableType,
   type VariableValue
 } from '@open-pencil/scene-graph'
@@ -15,6 +16,7 @@ import {
   parseVariableFormula,
   variableFormulaReference
 } from '@open-pencil/scene-graph/variables'
+import { collectionLabels } from '@open-pencil/vue/controls/variable-modes'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 import { useVariables } from '@open-pencil/vue/variables'
@@ -155,13 +157,27 @@ const cssCandidates = computed(() =>
   editedRow.value ? cssReferenceCandidates(editor.graph, editedRow.value.variable) : []
 )
 
+const collectionNames = computed(() =>
+  collectionLabels(
+    editor.graph,
+    messages.value.numberedCollection,
+    ctx.collections.value.map((candidate) => candidate.id)
+  )
+)
+function collectionLabel(candidate: Pick<VariableCollection, 'id' | 'name'>): string {
+  return collectionNames.value.get(candidate.id) ?? candidate.name
+}
+
 const collectionOptions = computed(() =>
-  ctx.collections.value.map((candidate) => ({ value: candidate.id, label: candidate.name }))
+  ctx.collections.value.map((candidate) => ({
+    value: candidate.id,
+    label: collectionLabel(candidate)
+  }))
 )
 const sidebarCollections = computed(() =>
   ctx.collections.value.map((candidate) => ({
     id: candidate.id,
-    name: candidate.name,
+    name: collectionLabel(candidate),
     count: candidate.variableIds.length,
     library: isLibraryCollection(candidate)
   }))
@@ -488,7 +504,7 @@ const groupOptions = computed(() => groupEntries.value.map((entry) => entry.path
               :value="candidate.id"
               data-test-id="variables-collection-tab"
             >
-              {{ candidate.name }}
+              {{ collectionLabel(candidate) }}
             </AppTabsTrigger>
           </AppTabsList>
         </AppTabsRoot>

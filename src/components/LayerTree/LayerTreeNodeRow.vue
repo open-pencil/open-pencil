@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { useStore } from '@nanostores/vue'
 import { tv } from 'tailwind-variants'
-import { computed } from 'vue'
+import { type ComponentPublicInstance, computed, useTemplateRef } from 'vue'
 
+import { locale, useVariableMessages } from '@open-pencil/vue/i18n'
 import type { LayerNode } from '@open-pencil/vue/primitives/LayerTree'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -11,13 +13,16 @@ import {
 } from '@/app/editor/design-check/layers'
 import LayerIssueMark from '@/components/design-check/LayerIssueMark.vue'
 import { COMPONENT_TYPES, nodeIcon } from '@/components/icons'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import layerTreeTheme from '@/theme/layer-tree'
 
 import LayerTreeActions from './LayerTreeActions.vue'
 import LayerTreeDisclosure from './LayerTreeDisclosure.vue'
 import LayerTreeDropIndicator from './LayerTreeDropIndicator.vue'
 import LayerTreeRowShell from './LayerTreeRowShell.vue'
-import { layerModeNames } from './mode-names'
+import { useFullModeBadgeFitsBesideName } from './mode-badge-fit'
+import { layerAppliedModes } from './mode-names'
+import { useLayerNameCut } from './name-cut'
 import type { LayerTreeChrome, LayerTreeItemActions } from './types'
 import { useLayerTreeUI } from './ui'
 
@@ -41,7 +46,31 @@ const emit = defineEmits<{
 
 const ui = useLayerTreeUI()
 const store = useEditorStore()
-const modeNames = computed(() => layerModeNames(store.graph, node.modeIds))
+const variables = useVariableMessages()
+const language = useStore(locale)
+const appliedModes = computed(() => {
+  void store.state.sceneVersion
+  return layerAppliedModes(store.graph, node.variableModes, variables.value.numberedCollection)
+})
+const firstMode = computed(() => appliedModes.value[0])
+const moreModes = computed(() => appliedModes.value.length - 1)
+const modesLabel = computed(() => {
+  const entries = appliedModes.value.map((applied) => variables.value.appliedMode(applied))
+  return new Intl.ListFormat(language.value, { type: 'conjunction' }).format(entries)
+})
+const nameElement = useTemplateRef('name')
+const fullBadgeFits = useFullModeBadgeFitsBesideName(
+  {
+    label: useTemplateRef('label'),
+    name: nameElement,
+    badge: useTemplateRef('badge'),
+    fullForm: useTemplateRef('fullForm'),
+    actions: useTemplateRef<ComponentPublicInstance>('actions')
+  },
+  [() => node.name, () => firstMode.value?.mode, moreModes, () => node.locked, () => node.visible]
+)
+const nameCut = useLayerNameCut(nameElement, () => node.name)
+
 const showIssue = computed(() => showsLayerIssueMark(issue, expanded))
 const layerTree = tv(layerTreeTheme)
 const styles = computed(() =>
@@ -55,10 +84,18 @@ const styles = computed(() =>
     visible: node.visible,
     component: COMPONENT_TYPES.has(node.type),
     slot: node.slot,
+    compactModes: !fullBadgeFits.value,
     childDropTarget:
       chrome.instructionTargetId === node.id && chrome.instruction?.type === 'make-child'
   })
 )
+
+function returnPointerFocusToRow(event: FocusEvent) {
+  const badge = event.currentTarget
+  if (badge instanceof HTMLElement && !badge.matches(':focus-visible')) {
+    badge.closest<HTMLElement>('[role="treeitem"]')?.focus({ preventScroll: true })
+  }
+}
 </script>
 
 <template>
@@ -91,22 +128,42 @@ const styles = computed(() =>
     />
 
     <component :is="nodeIcon(node)" data-slot="icon" :class="styles.icon({ class: ui?.icon })" />
-    <span data-slot="label" :class="styles.label({ class: ui?.label })">
-      <span class="min-w-0 truncate">{{ node.name }}</span>
-      <span
-        v-for="name in modeNames"
-        :key="name"
-        data-slot="variable-mode"
-        class="shrink-0 rounded-full border border-current/40 px-1.5 text-3xs leading-3.5"
-      >
-        {{ name }}
-      </span>
+    <span ref="label" data-slot="label" :class="styles.label({ class: ui?.label })">
+      <span ref="name" data-slot="name" :data-cut="nameCut || undefined" :class="styles.name()">{{
+        node.name
+      }}</span>
+      <Tip v-if="firstMode" :label="modesLabel" as-child>
+        <span
+          ref="badge"
+          tabindex="0"
+          data-slot="variable-mode"
+          :class="styles.modeBadge()"
+          @focus="returnPointerFocusToRow"
+        >
+          <span
+            ref="fullForm"
+            aria-hidden="true"
+            data-slot="variable-mode-full"
+            :class="styles.modeFull()"
+          >
+            <span data-slot="variable-mode-name">{{ firstMode.mode }}</span>
+            <span v-if="moreModes > 0" data-slot="variable-mode-more" :class="styles.moreModes()">
+              +{{ moreModes }}
+            </span>
+          </span>
+          <span v-if="!fullBadgeFits" aria-hidden="true" data-slot="variable-mode-count">
+            {{ appliedModes.length }}
+          </span>
+          <span class="sr-only">{{ modesLabel }}</span>
+        </span>
+      </Tip>
     </span>
     <template #end>
       <span data-slot="trailing" :class="styles.trailing({ class: ui?.trailing })">
         <LayerIssueMark v-if="issue && showIssue" :mark="issue" />
 
         <LayerTreeActions
+          ref="actions"
           :node="node"
           :ui="{
             actions: styles.actions({ class: ui?.actions }),

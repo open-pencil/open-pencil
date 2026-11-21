@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useElementSize, useScroll } from '@vueuse/core'
+import { isEqual } from 'es-toolkit'
 import { TreeItem, TreeVirtualizer, ContextMenuPortal } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, nextTick, useAttrs, useTemplateRef, watch } from 'vue'
@@ -28,7 +29,7 @@ import { useLayerTreeGeometry } from './geometry'
 import LayerTreeNodeRow from './LayerTreeNodeRow.vue'
 import LayerTreeRenameRow from './LayerTreeRenameRow.vue'
 import LayerTreeStickyRow from './LayerTreeStickyRow.vue'
-import { layerModeNames } from './mode-names'
+import { type CollectionModeIds, collectionModeIds, layerAppliedModeCount } from './mode-names'
 import { provideLayerTreeUI } from './ui'
 import type { LayerTreeUI } from './ui'
 import { createTextMeasure, rowsOverflow } from './width'
@@ -52,8 +53,18 @@ defineOptions({ inheritAttrs: false })
 
 const { ui } = defineProps<{ ui?: LayerTreeUI }>()
 
-const { rowHeight, indent, nameStart, buttons, badge, badgeTextSize, issueMark } =
-  useLayerTreeGeometry()
+const {
+  rowHeight,
+  indent,
+  nameStart,
+  rowEnd,
+  trailingGap,
+  issueMark,
+  buttons,
+  badge,
+  nameFadeWidth,
+  badgeTextSize
+} = useLayerTreeGeometry()
 const attrs = useAttrs()
 const styles = tv(layerTreeTheme)()
 provideLayerTreeUI(() => ui)
@@ -180,17 +191,23 @@ function chrome(scope: Omit<LayerTreeSlotScope, 'actions'>) {
   }
 }
 
+const modeIds = computed<CollectionModeIds>((previous) => {
+  void store.state.sceneVersion
+  const next = collectionModeIds(store.graph)
+  return previous && isEqual(previous, next) ? previous : next
+})
+
 /**
  * The rows' width, wider than the list for the widest row's whole name. It goes on the
  * virtualizer's own element, over its `width: 100%`; its rows fill it, and a wider block runs
- * past the list's end in either reading direction, so the list scrolls sideways. The rows are
- * reactive, so a rename or a new mode badge widens it, while other renders reuse it.
+ * past the list's end in either reading direction, so the list scrolls sideways.
  */
 const rowsWidth = computed(() => {
   const el = viewport.value
   // The list sets the rows' text size, so its font is the names' font.
   const style = el ? getComputedStyle(el) : null
   const marks = issueMarks.value
+  const collections = modeIds.value
   const overflow = rowsOverflow(
     root.value?.visibleRows ?? [],
     {
@@ -198,14 +215,18 @@ const rowsWidth = computed(() => {
       badgeFont: style ? `${style.fontWeight} ${badgeTextSize.value}px ${style.fontFamily}` : '',
       indent: indent.value,
       nameStart: nameStart.value,
-      buttons: buttons.value,
       badge: badge.value,
+      nameFadeWidth: nameFadeWidth.value,
+      rowEnd: rowEnd.value,
+      trailingGap: trailingGap.value,
       issueMark: issueMark.value,
+      buttons: buttons.value,
       viewportWidth: viewportWidth.value
     },
     {
-      modeNames: (row) => layerModeNames(store.graph, row.node.modeIds),
-      showsIssue: (row, expanded) => showsLayerIssueMark(marks?.get(row.node.id), expanded)
+      modeCount: (row) => layerAppliedModeCount(row.node.variableModes, collections),
+      showsIssue: (row, expanded) => showsLayerIssueMark(marks?.get(row.node.id), expanded),
+      buttonsAlwaysShown: (row) => row.node.locked || !row.node.visible
     },
     measureText
   )
