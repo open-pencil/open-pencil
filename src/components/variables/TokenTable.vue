@@ -16,6 +16,7 @@ import {
   groupAncestry,
   groupHeadings,
   parseTokenValueText,
+  renamedInGroup,
   tokenValueText,
   type TokenGroup,
   type TokenRow
@@ -185,10 +186,8 @@ function startRename(id: string) {
 
 function commitName(row: TokenRow, text: string) {
   editing.value = null
-  const label = text.trim()
-  if (!label) return
-  const path = row.variable.name.slice(0, row.variable.name.length - row.label.length)
-  if (path + label !== row.variable.name) emit('rename', row.variable.id, path + label)
+  const name = renamedInGroup(row.variable.name, text)
+  if (name && name !== row.variable.name) emit('rename', row.variable.id, name)
 }
 
 /** Numbers and text edit in place; colors, booleans and aliases open the inspector instead. */

@@ -41,5 +41,23 @@ test('the variables list folds its groups and creates a variable in one from its
   const row = dialog.getByTestId('variable-row').filter({ hasText: '--color-red-new-color' })
   await expect(row).toBeVisible()
   await expect(row).toHaveAttribute('data-state', 'checked')
+
+  // Renamed in the inspector, the token keeps its group, which shows fixed above its name.
+  const inspector = dialog.getByTestId('token-inspector')
+  await expect(inspector.getByTestId('variables-name-group')).toHaveText('color / red')
+  const name = inspector.getByTestId('variables-name')
+  await expect(name).toHaveValue('New color')
+  await name.fill('accent')
+  await name.press('Enter')
+  await expect(
+    dialog.getByTestId('variable-row').filter({ hasText: '--color-red-accent' })
+  ).toBeVisible()
+  // A `/` would make a group, so the name refuses it and says how to move the token instead.
+  await name.fill('blue/accent')
+  await name.press('Tab')
+  await expect(inspector.getByRole('alert')).toBeVisible()
+  await expect(
+    dialog.getByTestId('variable-row').filter({ hasText: '--color-red-accent' })
+  ).toBeVisible()
   editor.canvas.assertNoErrors()
 })

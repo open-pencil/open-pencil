@@ -109,6 +109,7 @@
   "tokenThemes": "Motywy",
   "recentVariables": "Ostatnie",
   "editCollection": "Edytuj kolekcję",
+  "nameHoldsSlash": "Nazwa nie może zawierać „/”. Aby zmienić grupę, użyj: Przenieś do grupy.",
   "addVariableToGroup": "Utwórz zmienną w {group}",
   "loadTokenPreset": "Wczytaj zmienne {preset}",
   "libraryCollection": "Biblioteka",

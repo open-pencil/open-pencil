@@ -109,6 +109,7 @@
   "tokenThemes": "テーマ",
   "recentVariables": "最近使用",
   "editCollection": "コレクションを編集",
+  "nameHoldsSlash": "名前に「/」は使えません。グループを変えるには「グループに移動」を使います。",
   "addVariableToGroup": "{group} に変数を作成",
   "loadTokenPreset": "{preset} の変数を読み込む",
   "libraryCollection": "ライブラリ",

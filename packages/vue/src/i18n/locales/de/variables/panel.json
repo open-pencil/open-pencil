@@ -109,6 +109,7 @@
   "tokenThemes": "Designvorlagen",
   "recentVariables": "Zuletzt verwendet",
   "editCollection": "Sammlung bearbeiten",
+  "nameHoldsSlash": "Ein Name darf kein „/“ enthalten. Um die Gruppe zu ändern, nutze In Gruppe verschieben.",
   "addVariableToGroup": "Variable in {group} erstellen",
   "loadTokenPreset": "{preset}-Variablen laden",
   "libraryCollection": "Bibliothek",

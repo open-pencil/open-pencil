@@ -7,6 +7,8 @@ export default {
     label: 'text-2xs text-muted',
     hint: 'text-3xs text-muted',
     error: 'text-3xs text-error',
+    /** The group a token sits in, above its name: fixed, since a rename never moves it. */
+    group: 'flex min-w-0 items-center gap-1 text-2xs text-muted',
     /** One mode's value, under the mode's name when there are several. */
     value: 'flex flex-col gap-1',
     /** The fixed `--` in front of a CSS name the user types. */

@@ -304,6 +304,22 @@ export function inGroup(path: string, group: string): boolean {
   return path === group || path.startsWith(`${group}/`)
 }
 
+/** The group a token sits in, from its name: `color/red` for `color/red/500`, empty at the top. */
+export function groupOf(name: string): string {
+  const at = name.lastIndexOf('/')
+  return at === -1 ? '' : name.slice(0, at)
+}
+
+/**
+ * A token's name with its own part, the one a rename edits, replaced. Its group stays: a rename
+ * never moves a token, and a part holding `/` is no name, since it would make a group.
+ */
+export function renamedInGroup(name: string, label: string): string | undefined {
+  const trimmed = label.trim()
+  if (!trimmed || trimmed.includes('/')) return undefined
+  return nameInGroup(trimmed, groupOf(name))
+}
+
 /** A token's name moved into `group`, keeping its own last segment: `Brand/Primary`. */
 export function nameInGroup(name: string, group: string): string {
   const label = name.slice(name.lastIndexOf('/') + 1)

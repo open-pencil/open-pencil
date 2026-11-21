@@ -31,6 +31,7 @@ import type {
   TokenFormulaActions,
   TokenRow
 } from '@/app/editor/tokens/model'
+import { groupOf, renamedInGroup } from '@/app/editor/tokens/model'
 import { SCOPES_BY_TYPE } from '@/app/editor/tokens/scopes'
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import PaintField from '@/components/inputs/PaintField.vue'
@@ -142,7 +143,7 @@ const draft = reactive({
 })
 
 function resetDraft(current: Variable) {
-  draft.name = current.name
+  draft.name = current.name.slice(current.name.lastIndexOf('/') + 1)
   draft.cssName = explicitCSSName(current) ?? ''
   draft.description = current.description
   for (const mode of collection.modes) {
@@ -170,16 +171,27 @@ watch(
   { immediate: true }
 )
 
+/** The group the token sits in, shown above its name; renaming never moves it out. */
+const group = computed(() => groupOf(variable.value.name))
+const nameInvalid = computed(() => draft.name.includes('/'))
+
+/** Renames the token's own part; a name refused keeps what was typed so it can be corrected. */
 function commitName() {
-  const name = draft.name.trim()
+  if (nameInvalid.value) return
+  const name = renamedInGroup(variable.value.name, draft.name)
   if (name && name !== variable.value.name) emit('rename', name)
-  else draft.name = variable.value.name
+  else resetDraft(variable.value)
+}
+
+function nameDone(event: KeyboardEvent) {
+  if (!nameInvalid.value) done(event)
 }
 
 /** The browser's CSS parser decides what a custom property name may be. */
 const validator = computedAsync(loadTokenValidator, null)
 const fieldId = useId()
 const nameId = `${fieldId}-name`
+const nameErrorId = `${nameId}-error`
 const unitId = `${fieldId}-unit`
 const cssNameId = `${fieldId}-css-name`
 const cssNameErrorId = `${cssNameId}-error`
@@ -362,7 +374,24 @@ function cssNameDone(event: KeyboardEvent) {
   <aside :class="ui.root()" data-test-id="token-inspector">
     <section :class="ui.section()">
       <PanelFieldGroup :label="variables.name" :for="nameId">
-        <AppInput :id="nameId" v-model="draft.name" size="sm" @change="commitName" @enter="done" />
+        <p v-if="group" :class="ui.group()" data-test-id="variables-name-group">
+          <icon-lucide-folder class="size-3 shrink-0" aria-hidden="true" />
+          <span class="truncate">{{ group.split('/').join(' / ') }}</span>
+        </p>
+        <AppInput
+          :id="nameId"
+          v-model="draft.name"
+          size="sm"
+          :state="nameInvalid ? 'invalid' : 'idle'"
+          :aria-invalid="nameInvalid"
+          :aria-describedby="nameInvalid ? nameErrorId : undefined"
+          data-test-id="variables-name"
+          @change="commitName"
+          @enter="nameDone"
+        />
+        <p v-if="nameInvalid" :id="nameErrorId" :class="ui.error()" role="alert">
+          {{ variables.nameHoldsSlash }}
+        </p>
       </PanelFieldGroup>
       <PanelFieldGroup :label="variables.cssName" :for="cssNameId">
         <Tip :label="variables.cssNameHint">

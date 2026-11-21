@@ -109,6 +109,7 @@
   "tokenThemes": "Thèmes",
   "recentVariables": "Récentes",
   "editCollection": "Modifier la collection",
+  "nameHoldsSlash": "Un nom ne peut pas contenir « / ». Pour changer de groupe, utilisez Déplacer vers le groupe.",
   "addVariableToGroup": "Créer une variable dans {group}",
   "loadTokenPreset": "Charger les variables {preset}",
   "libraryCollection": "Bibliothèque",

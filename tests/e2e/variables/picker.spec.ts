@@ -40,9 +40,8 @@ test('the variable picker groups Tailwind by path, and lists what was applied as
   await fill.getByRole('button', { name: 'Apply variable' }).click()
   const recent = picker.getByRole('button', { name: 'Recent', exact: true })
   await expect(recent).toHaveAttribute('aria-expanded', 'true')
-  // Recent names a variable by the end of its path; its full name stays its accessible name.
-  await expect(picker.getByRole('option').first()).toHaveText('red 500')
-  await expect(picker.getByRole('option').first()).toHaveAccessibleName('color/red/500')
+  // Recent names a variable in full, as the field it is bound to does.
+  await expect(picker.getByRole('option').first()).toHaveText(/color\/red\/500/)
   await expect(picker.getByRole('button', { name: 'red', exact: true })).toHaveAttribute(
     'aria-expanded',
     'true'

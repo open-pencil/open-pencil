@@ -67,17 +67,11 @@ function recentItems(): AppPickerItem[] {
     if (!item) return []
     const row = {
       value: `${RECENT_PREFIX}${id}`,
-      label: shortName(item.name),
-      accessibleName: item.name,
+      label: item.name,
       group: item.collection
     }
     return [{ ...row, folder: variables.value.recentVariables }]
   })
-}
-
-/** A recent variable by the end of its path, `red 500` for `color/red/500`; its swatch tells it apart. */
-function shortName(name: string): string {
-  return name.split('/').slice(-2).join(' ')
 }
 
 /** A collection's ID by the name its heading shows. */

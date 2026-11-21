@@ -116,6 +116,7 @@ export const variablesMessageDefaults = {
   tokenThemes: 'Themes',
   recentVariables: 'Recent',
   editCollection: 'Edit collection',
+  nameHoldsSlash: 'A name can’t hold “/”. To change its group, use Move to group.',
   addVariableToGroup: params('Create variable in {group}'),
   loadTokenPreset: params('Load {preset} variables'),
   libraryCollection: 'Library',

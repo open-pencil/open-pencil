@@ -109,6 +109,7 @@
   "tokenThemes": "Темы",
   "recentVariables": "Недавние",
   "editCollection": "Изменить коллекцию",
+  "nameHoldsSlash": "Имя не может содержать «/». Чтобы сменить группу, используйте «Переместить в группу».",
   "addVariableToGroup": "Создать переменную в {group}",
   "loadTokenPreset": "Загрузить переменные {preset}",
   "libraryCollection": "Библиотека",

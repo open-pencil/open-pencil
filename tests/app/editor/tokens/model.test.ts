@@ -10,6 +10,7 @@ import {
   modeAttributeText,
   nameInGroup,
   parseTokenValueText,
+  renamedInGroup,
   reorderedVariableIds,
   searchTokenIds,
   tokenGroups,
@@ -105,6 +106,13 @@ describe('groups', () => {
     expect(inGroup('Space/Inline', 'Space')).toBe(true)
     expect(inGroup('Space', 'Space')).toBe(true)
     expect(inGroup('Spacer', 'Space')).toBe(false)
+  })
+
+  test("a rename edits the token's own part and keeps its group", () => {
+    expect(renamedInGroup('color/red/50', '55')).toBe('color/red/55')
+    expect(renamedInGroup('Primary', ' Brand ')).toBe('Brand')
+    expect(renamedInGroup('color/red/50', 'red/55')).toBeUndefined()
+    expect(renamedInGroup('color/red/50', '  ')).toBeUndefined()
   })
 
   test('moving a token keeps its own name', () => {

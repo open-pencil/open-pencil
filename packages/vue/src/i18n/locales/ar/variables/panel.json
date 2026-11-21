@@ -109,6 +109,7 @@
   "tokenThemes": "السمات",
   "recentVariables": "الأخيرة",
   "editCollection": "تعديل المجموعة",
+  "nameHoldsSlash": "لا يمكن أن يحتوي الاسم على “/”. لتغيير مجموعته، استخدم نقل إلى مجموعة.",
   "addVariableToGroup": "إنشاء متغير في {group}",
   "loadTokenPreset": "تحميل متغيرات {preset}",
   "libraryCollection": "المكتبة",

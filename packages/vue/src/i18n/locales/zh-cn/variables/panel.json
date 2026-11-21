@@ -109,6 +109,7 @@
   "tokenThemes": "主题",
   "recentVariables": "最近使用",
   "editCollection": "编辑集合",
+  "nameHoldsSlash": "名称不能包含“/”。要更改分组，请使用“移至分组”。",
   "addVariableToGroup": "在 {group} 中创建变量",
   "loadTokenPreset": "载入 {preset} 变量",
   "libraryCollection": "库",
