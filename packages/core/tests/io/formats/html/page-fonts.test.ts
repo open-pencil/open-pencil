@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, spyOn, test } from 'bun:test'
 import { join } from 'node:path'
 
 import type { DesignDocument, DesignResourceFetch } from '@open-pencil/dom-css'
@@ -59,19 +59,64 @@ describe('a page’s own fonts', () => {
     expect(requested).toEqual([])
   })
 
-  test('keeps the editor’s own copy of a family the page also ships', async () => {
-    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
-    await fontManager.markLoaded('Editor Sans', 'Regular', font)
+  test('sets text in the font the page serves, over the editor’s family of that name', async () => {
+    const editors = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).arrayBuffer()
+    const pages = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+    await fontManager.markLoaded('Shared Sans', 'Regular', editors)
     const requested: string[] = []
 
-    const families = await loadPageFontFaces(page('Editor Sans', [FONT_URL]), async (url) => {
+    await loadPageFontFaces(page('Shared Sans', [FONT_URL]), async (url) => {
       requested.push(url)
-      return null
+      return { url, bytes: pages }
     })
 
-    // The page's text is set in the family, from the editor's copy, and the page's is not read.
-    expect([...families.values()]).toEqual(['Editor Sans'])
+    // The page's file is what the page draws with; the editor's may be another design.
+    expect(requested).toEqual([FONT_URL])
+    expect(fontManager.loadedData('Shared Sans', 'Regular')?.byteLength).toBe(pages.byteLength)
+  })
+
+  test('takes a font the page loads from Google Fonts from the editor’s own copy', async () => {
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+    await fontManager.markLoaded('Provider Sans', 'Regular', font)
+    const requested: string[] = []
+    const subset = 'https://fonts.gstatic.com/s/providersans/v1/latin.woff2'
+    // Google Fonts serves the family, from where the page loads it.
+    const serves = spyOn(fontManager, 'servesFontFile').mockImplementation(
+      async (_family, url) => url === subset
+    )
+
+    const families = await loadPageFontFaces(page('Provider Sans', [subset]), async (url) => {
+      requested.push(url)
+      return null
+    }).finally(() => serves.mockRestore())
+
+    expect([...families.values()]).toEqual(['Provider Sans'])
     expect(requested).toEqual([])
+  })
+
+  test('tries a rule’s sources in the page’s order, its own file before a provider’s', async () => {
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+    const editor = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).arrayBuffer()
+    await fontManager.markLoaded('Ordered Sans', 'Regular', editor, 'google')
+    const own = 'https://site.example.test/fonts/ordered.ttf'
+    const provided = 'https://fonts.gstatic.com/s/orderedsans/v1/latin.woff2'
+    const serves = spyOn(fontManager, 'servesFontFile').mockImplementation(
+      async (_family, url) => url === provided
+    )
+    const requested: string[] = []
+
+    try {
+      await loadPageFontFaces(page('Ordered Sans', [own, provided]), async (url) => {
+        requested.push(url)
+        return { url, bytes: font }
+      })
+    } finally {
+      serves.mockRestore()
+    }
+
+    // The browser uses the first source it can read, the page's own file.
+    expect(requested).toEqual([own])
+    expect(fontManager.loadedData('Ordered Sans', 'Regular')?.byteLength).toBe(font.byteLength)
   })
 
   test('loads every subset a page splits one face into', async () => {
@@ -95,6 +140,8 @@ describe('a page’s own fonts', () => {
     })
 
     expect(requested).toEqual(subsets)
+    // The later subset joins the first as a file the face draws its other characters from.
+    expect(fontManager.shardData('Page Subset Sans', 'Regular')).toHaveLength(1)
   })
 
   test('passes over a source that does not decode for the next one', async () => {
@@ -129,5 +176,45 @@ describe('a page’s own fonts', () => {
 
     await expect(loading).rejects.toThrow()
     expect(await fontManager.loadFont('Page Cancelled Sans', 'Regular')).toBeNull()
+  })
+
+  test('draws every weight a variable page font reaches from it', async () => {
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+
+    await loadPageFontFaces(page('Page Variable Sans', [FONT_URL]), async (url) => ({
+      url,
+      bytes: font
+    }))
+
+    // The rule names one weight; headings at 600 draw from the same file, as the browser draws them,
+    // once the import loads the faces its text uses.
+    expect((await fontManager.loadFont('Page Variable Sans', 'SemiBold'))?.byteLength).toBe(
+      font.byteLength
+    )
+  })
+
+  test('keeps a weight another rule names in that rule’s own file', async () => {
+    const variable = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+    const bold = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).bytes()
+    const styled = page('Page Named Bold Sans', ['https://site.test/variable.ttf'])
+    styled.fontFaces?.push({
+      family: 'Page Named Bold Sans',
+      weight: 700,
+      italic: false,
+      sources: ['https://site.test/bold.ttf']
+    })
+
+    await loadPageFontFaces(styled, async (url) => ({
+      url,
+      bytes: url.endsWith('bold.ttf') ? bold : variable
+    }))
+
+    // The variable file reaches 700, but the page names Bold's file itself, as the browser uses it.
+    expect((await fontManager.loadFont('Page Named Bold Sans', 'Bold'))?.byteLength).toBe(
+      bold.byteLength
+    )
+    expect((await fontManager.loadFont('Page Named Bold Sans', 'SemiBold'))?.byteLength).toBe(
+      variable.byteLength
+    )
   })
 })

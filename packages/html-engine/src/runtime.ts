@@ -1,4 +1,6 @@
 import {
+  attachImages,
+  backgroundImageURLs,
   parseFontFaceRules,
   parseHTMLDocument,
   parseStylesheetImports,
@@ -262,13 +264,14 @@ function ownTexts(capture: HTMLEngineCapture): Map<number, string> {
 /**
  * Shows each element's `::before` and `::after` as elements of their own, first and last among its
  * children, with the style, box, and text the engine generated for them, so they are imported as
- * any element is.
+ * any element is. Returns the elements it made.
  */
 function showGeneratedContent(
   capture: HTMLEngineCapture,
   pairs: readonly [DesignElement, HTMLEngineNode][],
   layout: boolean
-): void {
+): DesignElement[] {
+  const made: DesignElement[] = []
   const indexes = new Map(capture.nodes.map((node, index) => [node, index]))
   const generated = generatedChildren(capture)
   const texts = ownTexts(capture)
@@ -291,8 +294,10 @@ function showGeneratedContent(
       if (layout) child.layout = layoutOf(captured)
       if (captured.tag === '::after') element.children.push(child)
       else element.children.unshift(child)
+      made.push(child)
     }
   }
+  return made
 }
 
 /**
@@ -319,6 +324,15 @@ function keepingFetch(
     if (resource) answered.set(url, resource).set(resource.url, resource)
     return resource
   }
+}
+
+/** A fetch that answers from what the engine already loaded before it asks `fetch`. */
+function loadedFirst(
+  answered: ReadonlyMap<string, DesignResource>,
+  fetch: DesignResourceFetch | undefined
+): DesignResourceFetch | undefined {
+  if (!fetch) return undefined
+  return async (url, signal) => answered.get(url) ?? fetch(url, signal)
 }
 
 /** What an `<img>` loaded, by its `src` resolved against the page's address. */
@@ -367,7 +381,13 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
         const image = imageOf(element, answered, options.baseURL)
         if (image) element.image = image
       }
-      showGeneratedContent(capture, pairs, compute.layout === true)
+      const generated = showGeneratedContent(capture, pairs, compute.layout === true)
+      // Background pictures the engine loaded are kept; any it did not are read as images are.
+      // Generated content draws them too.
+      const backgrounds = [...pairs.map(([element]) => element), ...generated].filter(
+        (element) => backgroundImageURLs(element).length > 0
+      )
+      await attachImages([], loadedFirst(answered, options.fetch), backgrounds)
       styled.background = canvasBackground(capture)
       return styled
     }

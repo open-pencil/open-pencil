@@ -39,7 +39,9 @@ export function createCloudApp(services: CloudServices) {
   const allowedOrigins = new Set(
     [config.publicURL, ...config.trustedOrigins].map((origin) => new URL(origin).origin)
   )
-  const cloudCORS = createCloudCORS(allowedOrigins)
+  // Billing's pages sign a visitor in with their Cloud session as they open (`CLOUD_BILLING_TOKEN_PATH`).
+  const billingOrigin = config.billingEndpoint && new URL(config.billingEndpoint).origin
+  const cloudCORS = createCloudCORS(allowedOrigins, billingOrigin || undefined)
   const app = createAppServices(services)
   const resolvers = createRequestResolvers(services)
   const checks = createRequestChecks(services, resolvers)

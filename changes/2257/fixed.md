@@ -1,0 +1,1 @@
+- The Linux desktop app reads the MCP discovery file from `$XDG_RUNTIME_DIR/openpencil` when that directory is set.

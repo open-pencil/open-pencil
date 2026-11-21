@@ -7,6 +7,8 @@ type FileMessages = ReturnType<typeof useFileMessages>['value']
 /** The message naming each preparation phase on the canvas's loading screen. */
 const PHASE_MESSAGES = {
   reading: 'preparationReading',
+  'rendering-page': 'preparationRenderingPage',
+  'loading-files': 'preparationLoadingFiles',
   decoding: 'preparationDecoding',
   styling: 'preparationStyling',
   'naming-icons': 'preparationNamingIcons',

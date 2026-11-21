@@ -30,6 +30,16 @@ const APP_PAGE = `<!doctype html><html><head><title>Board</title></head><body>
     const adopted = new CSSStyleSheet()
     adopted.replaceSync('.title { font-weight: 700 }')
     document.adoptedStyleSheets = [adopted]
+    const theme = document.body.appendChild(document.createElement('style'))
+    theme.textContent = '.title { color: red }'
+    theme.sheet.disabled = true
+    const late = new CSSStyleSheet()
+    late.replaceSync('.title { color: green }')
+    late.disabled = true
+    document.adoptedStyleSheets = [adopted, late]
+    // A style in the body that the adopted sheet still overrides on the live page.
+    document.body.appendChild(document.createElement('style')).textContent =
+      '.title { font-weight: 400 }'
     document.getElementById('root').innerHTML =
       '<div class="card"><h1 class="title">Built by script</h1><input id="name"><input id="done" type="checkbox"><textarea id="note"></textarea></div>'
     document.getElementById('name').value = 'Ada'
@@ -71,6 +81,22 @@ test('a rendered page reads back as the HTML its scripts built', async ({ page }
   // Rules inserted through CSSOM and adopted sheets come back as text.
   expect(html).toContain('.card { width: 120px; }')
   expect(html).toContain('.title { font-weight: 700; }')
+  // A sheet the page turned off stays off; adopted sheets come after the document's own.
+  expect(html).not.toContain('color: red')
+  expect(html).not.toContain('color: green')
+  // Imported as the live page draws it: the adopted sheet wins over the body's own style.
+  const weight = await page.evaluate((markup) => {
+    const frame = document.createElement('iframe')
+    frame.srcdoc = markup.replace(/<base[^>]*>/, '')
+    document.body.append(frame)
+    return new Promise<string>((resolve) => {
+      frame.addEventListener('load', () => {
+        const title = frame.contentDocument?.querySelector('.title')
+        resolve(title ? getComputedStyle(title).fontWeight : '')
+      })
+    })
+  }, html)
+  expect(weight).toBe('700')
   // What the fields hold is in their markup; scripts and <noscript> are gone.
   expect(await matches('#name[value="Ada"]')).toBe(true)
   expect(await matches('#done[checked]')).toBe(true)
