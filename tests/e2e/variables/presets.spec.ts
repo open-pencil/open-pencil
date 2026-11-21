@@ -10,7 +10,7 @@ test("the Tailwind preset loads Tailwind's default colors and spacing as one und
   const dialog = editor.page.getByTestId('variables-dialog')
   await expect(dialog.getByTestId('variables-preset-select')).toHaveText('Tailwind')
 
-  await dialog.getByRole('button', { name: 'Load Tailwind variables' }).click()
+  await dialog.getByTestId('variables-empty-load-preset').click()
   const importDialog = editor.page.getByTestId('variables-import-dialog')
   // 288 colors and 35 spacing steps.
   await expect(importDialog.getByTestId('variables-import-summary')).toHaveText(

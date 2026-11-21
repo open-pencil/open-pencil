@@ -367,13 +367,16 @@ const groupOptions = computed(() => groupEntries.value.map((entry) => entry.path
           <icon-lucide-folder class="size-5" />
         </template>
         <template #action>
-          <AppButton
-            variant="soft"
-            data-test-id="variables-create-collection"
-            @click="ctx.addCollection"
-          >
-            {{ messages.createCollection }}
-          </AppButton>
+          <div class="flex items-center gap-2">
+            <AppButton
+              variant="soft"
+              data-test-id="variables-create-collection"
+              @click="ctx.addCollection"
+            >
+              {{ messages.createCollection }}
+            </AppButton>
+            <slot name="empty-actions" />
+          </div>
         </template>
       </AppPlaceholder>
     </template>

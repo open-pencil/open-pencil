@@ -1,21 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
 import { useI18n } from '@open-pencil/vue/i18n'
 
-import {
-  DEFAULT_TOKEN_PRESET,
-  TOKEN_PRESET_NAMES,
-  TOKEN_PRESETS,
-  type TokenPreset
-} from '@/app/editor/tokens/presets'
+import { TOKEN_PRESET_NAMES, TOKEN_PRESETS, type TokenPreset } from '@/app/editor/tokens/presets'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const emit = defineEmits<{ load: [preset: TokenPreset] }>()
 
 const { variables } = useI18n()
-const preset = ref<TokenPreset>(DEFAULT_TOKEN_PRESET)
+const preset = defineModel<TokenPreset>({ required: true })
 const options = TOKEN_PRESETS.map((value) => ({ value, label: TOKEN_PRESET_NAMES[value] }))
 </script>
 
