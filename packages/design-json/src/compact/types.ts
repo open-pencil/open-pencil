@@ -70,6 +70,19 @@ export interface CompactVector {
   paths: CompactVectorPath[]
 }
 
+/** A comment left on a layer, with its replies. */
+export interface CompactComment {
+  id: string
+  /** Where its pin is: in its layer's box, or on the canvas for a comment on no layer. */
+  x: number
+  y: number
+  author: string
+  /** Markdown. */
+  text: string
+  resolved?: true
+  replies?: Array<{ author: string; text: string }>
+}
+
 /** Why a layer sits where the design did not put it. */
 export type CompactInference = 'contained' | 'overlap'
 
@@ -91,6 +104,11 @@ export interface CompactNode {
    * `itemSpacing`, `paddingLeft`, `cornerRadius`. A color names its variable beside its value.
    */
   variables?: Record<string, string>
+  /**
+   * The comments left on it: those pinned over it and over none of its children, or over a group
+   * the design made, which keeps them rather than its layers.
+   */
+  comments?: CompactComment[]
   /** For an instance: the main component it shows, and the values of its properties. */
   component?: { id: string; name: string; props: Record<string, string> }
   /**
@@ -126,6 +144,8 @@ export interface CompactDesign {
   version: typeof COMPACT_DESIGN_VERSION
   roots: CompactNode[]
   images: Record<string, CompactImage>
+  /** Comments on the layers' pages pinned over none of them, at their place on the canvas. */
+  comments: CompactComment[]
   /** Every variable in the document as a token, by collection, with its value in each mode. */
   tokens: DesignTokenCollection[]
   summary: CompactSummary

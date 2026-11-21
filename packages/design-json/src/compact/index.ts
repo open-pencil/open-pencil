@@ -1,9 +1,11 @@
+import { attachComments } from '#design-json/compact/comments'
 import { inferNesting } from '#design-json/compact/overlap'
 import { compactImages, summarize } from '#design-json/compact/summary'
 import { draftLayers, finishDraft } from '#design-json/compact/tree'
 import {
   COMPACT_DESIGN_FORMAT,
   COMPACT_DESIGN_VERSION,
+  type CompactComment,
   type CompactDesign,
   type CompactDesignOptions,
   type CompactNode
@@ -23,24 +25,29 @@ export function compactDesign(
   nodeIds: readonly string[],
   options: CompactDesignOptions = {}
 ): CompactDesign {
-  const roots = compactRoots(graph, nodeIds, options)
+  const { roots, comments } = compactRoots(graph, nodeIds, options)
   return {
     format: COMPACT_DESIGN_FORMAT,
     version: COMPACT_DESIGN_VERSION,
     roots,
     images: compactImages(graph, roots),
+    comments,
     tokens: designTokens(graph),
     summary: summarize(roots)
   }
 }
 
-/** The layers asked for, their boxes on the canvas, nested as the options say. */
+/**
+ * The layers asked for, their boxes on the canvas, nested as the options say, with the comments
+ * on them, and the comments on none of them.
+ */
 function compactRoots(
   graph: SceneGraph,
   nodeIds: readonly string[],
   options: CompactDesignOptions
-): CompactNode[] {
+): { roots: CompactNode[]; comments: CompactComment[] } {
   const drafts = draftLayers(graph, nodeIds, options)
   const placed = options.inferNesting ? inferNesting(drafts) : drafts
-  return placed.map((draft) => finishDraft(draft, { x: 0, y: 0 }))
+  const comments = attachComments(graph, placed)
+  return { roots: placed.map((draft) => finishDraft(draft, { x: 0, y: 0 })), comments }
 }
