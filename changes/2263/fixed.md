@@ -1,1 +1,1 @@
-- Design files up to 256 MiB, such as Apple's iOS UI kit, open through MCP and from web links; the limit was 64 MiB.
+- Design files up to 256 MiB open through MCP and from web links; the limit was 64 MiB.

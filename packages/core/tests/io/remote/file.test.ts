@@ -146,7 +146,7 @@ describe('fetchRemoteFile', () => {
       return new Response(body, { headers: { 'content-type': 'application/octet-stream' } })
     })
 
-    const file = await fetchRemoteFile(new URL('https://example.com/ios27.fig'), { fetch, io })
+    const file = await fetchRemoteFile(new URL('https://example.com/large.fig'), { fetch, io })
 
     expect(file.bytes.byteLength).toBe(65 * 1024 * 1024)
     expect(file.kind).toBe('document')

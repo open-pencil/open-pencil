@@ -36,8 +36,7 @@ export interface RemoteFile {
 /**
  * The most a file fetched from an address may hold, and the one cap every document transfer
  * shares: URL opens, browser links, and the MCP server's `/files`. The body is counted as it
- * streams and buffered whole, so this bounds what one response can take; published design kits
- * run past 64 MiB, as Apple's iOS UI kit is about 160 MB.
+ * streams and buffered whole, so this bounds what one response can take.
  */
 export const MAX_REMOTE_FILE_BYTES = 256 * 1024 * 1024
 
