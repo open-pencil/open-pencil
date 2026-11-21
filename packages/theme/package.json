@@ -1,0 +1,53 @@
+{
+  "name": "@open-pencil/theme",
+  "version": "0.17.0-beta.7",
+  "description": "OpenPencil's look as Tailwind CSS: the design tokens, light and dark, and tailwind-variants configs for buttons, inputs, alerts, links, settings, and Cloud's pages. No framework and no runtime dependencies; bring Tailwind CSS 4 and tailwind-variants.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "directory": "packages/theme"
+  },
+  "funding": "https://ko-fi.com/dannote",
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "imports": {
+    "#theme/*": {
+      "types": "./src/*.ts",
+      "bun": "./src/*.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "bun": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./tokens.css": "./dist/tokens.css"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "bunx tsdown --config tsdown.config.ts",
+    "check": "bun run typecheck && bun run build",
+    "prepack": "bun run build",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@types/bun": "^1.3.14",
+    "tsdown": "^0.22.14",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}

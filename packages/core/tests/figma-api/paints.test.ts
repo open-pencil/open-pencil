@@ -344,6 +344,90 @@ describe('an image paint', () => {
   })
 })
 
+// Recorded in Figma with the same scripts.
+describe('image filters', () => {
+  const ADJUSTED = {
+    exposure: 0.5,
+    contrast: -0.25,
+    saturation: 1,
+    temperature: -1,
+    tint: 0.25,
+    highlights: 0.75,
+    shadows: -0.5
+  }
+
+  function imageFill(filters?: object) {
+    return { type: 'IMAGE', imageHash: HASH, scaleMode: 'FILL', ...(filters && { filters }) }
+  }
+
+  test('read every slider the layer keeps, and 0 for the rest', () => {
+    const { graph, figma } = api()
+    const rectangle = figma.createRectangle()
+    const fill: Fill = {
+      type: 'IMAGE',
+      ...SCENE_PAINT,
+      imageHash: HASH,
+      imageScaleMode: 'FILL',
+      filters: { exposure: 0.5, shadows: -0.5 }
+    }
+    graph.updateNode(rectangle.id, { fills: [fill] })
+    expect(rectangle.fills).toEqual([
+      expect.objectContaining({ filters: { ...NO_FILTERS, exposure: 0.5, shadows: -0.5 } })
+    ])
+  })
+
+  test('are kept on the layer as written', () => {
+    const { graph, figma } = api()
+    const rectangle = figma.createRectangle()
+    setFills(rectangle, [imageFill(ADJUSTED)])
+    expect(rectangle.fills).toEqual([expect.objectContaining({ filters: ADJUSTED })])
+    expect(graph.getNode(rectangle.id)?.fills[0]?.filters).toEqual(ADJUSTED)
+  })
+
+  test('left out of a write read 0, even where the replaced paint had them', () => {
+    const { figma } = api()
+    const rectangle = figma.createRectangle()
+    setFills(rectangle, [imageFill(ADJUSTED)])
+    setFills(rectangle, [imageFill({ saturation: 0.5 })])
+    expect(rectangle.fills).toEqual([
+      expect.objectContaining({ filters: { ...NO_FILTERS, saturation: 0.5 } })
+    ])
+  })
+
+  test('survive a script reading the fills and writing them back', () => {
+    const { graph, figma } = api()
+    const rectangle = figma.createRectangle()
+    setFills(rectangle, [imageFill({ exposure: 0.5, tint: 0.25 })])
+    const read = rectangle.fills
+    rectangle.fills = read
+    expect(rectangle.fills).toEqual([
+      expect.objectContaining({ filters: { ...NO_FILTERS, exposure: 0.5, tint: 0.25 } })
+    ])
+    expect(graph.getNode(rectangle.id)?.fills[0]?.filters).toEqual({ exposure: 0.5, tint: 0.25 })
+  })
+
+  test('cleared, as none or every slider at 0, leave the layer without adjustments', () => {
+    const { graph, figma } = api()
+    const rectangle = figma.createRectangle()
+    for (const cleared of [undefined, {}, NO_FILTERS]) {
+      setFills(rectangle, [imageFill(ADJUSTED)])
+      setFills(rectangle, [imageFill(cleared)])
+      expect(rectangle.fills).toEqual([expect.objectContaining({ filters: NO_FILTERS })])
+      expect(graph.getNode(rectangle.id)?.fills[0]).not.toHaveProperty('filters')
+    }
+  })
+
+  test('refuse a slider outside -1 to 1 or one Figma does not name', () => {
+    const rectangle = api().figma.createRectangle()
+    expect(() => setFills(rectangle, [imageFill({ exposure: 2 })])).toThrow(
+      failure('Too big: expected number to be <=1 at [0].filters.exposure')
+    )
+    expect(() => setFills(rectangle, [imageFill({ vibrance: 0.5 })])).toThrow(
+      failure('Unrecognized key: "vibrance" at [0].filters')
+    )
+  })
+})
+
 describe('paint types', () => {
   test('a gradient stop colour needs its alpha, unlike a solid colour', () => {
     const rectangle = api().figma.createRectangle()

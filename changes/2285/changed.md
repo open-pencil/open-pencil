@@ -1,0 +1,1 @@
+- The OpenPencil Cloud Docker image runs on Node 26 and Debian 13 (trixie) instead of Node 22 on Debian 12.

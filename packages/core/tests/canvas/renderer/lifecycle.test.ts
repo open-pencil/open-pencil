@@ -1,4 +1,4 @@
-import { expect, test, mock } from 'bun:test'
+import { expect, test, mock, spyOn } from 'bun:test'
 
 import type { Font, Paint, Surface } from '@open-pencil/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -39,6 +39,60 @@ test('destroying a renderer that never loaded fonts leaves the others their font
   }
 })
 
+test('font reload and renderer teardown release the typefaces loaded for the chrome', async () => {
+  const made = spyOn(ck.Typeface, 'MakeFreeTypeFaceFromData')
+  const faces = () =>
+    made.mock.results.flatMap((result) =>
+      result.type === 'return' && result.value ? [result.value] : []
+    )
+  const drawing = renderer()
+  try {
+    await drawing.loadFonts()
+    const first = faces()
+    expect(first.length).toBeGreaterThan(0)
+    await drawing.loadFonts()
+    expect(first.every((face) => face.isDeleted())).toBe(true)
+    drawing.profiler.setVisible(true)
+    drawing.profiler.drawHUD(drawing.surface.getCanvas(), false)
+    drawing.destroy()
+    expect(faces().every((face) => face.isDeleted())).toBe(true)
+  } finally {
+    drawing.destroy()
+    made.mockRestore()
+  }
+})
+
+test('replacing and destroying software surfaces releases their WASM pixel buffers', () => {
+  const heap = ck as typeof ck & {
+    _malloc: (bytes: number) => number
+    _free: (ptr: number) => void
+  }
+  const allocated = spyOn(heap, '_malloc')
+  const freed = spyOn(heap, '_free')
+  try {
+    const width = 48
+    const height = 32
+    const first = expectDefined(ck.MakeSurface(width, height))
+    const next = expectDefined(ck.MakeSurface(width, height))
+    const buffers = allocated.mock.calls.flatMap(([bytes], i) =>
+      bytes === width * height * 4 ? [allocated.mock.results[i].value] : []
+    )
+    const drawing = new SkiaRenderer(ck, first)
+    try {
+      drawing.replaceSurface(next)
+      expect(buffers).toHaveLength(2)
+      expect(freed).toHaveBeenCalledWith(buffers[0])
+      expect(freed).not.toHaveBeenCalledWith(buffers[1])
+    } finally {
+      drawing.destroy()
+    }
+    expect(freed).toHaveBeenCalledWith(buffers[1])
+  } finally {
+    allocated.mockRestore()
+    freed.mockRestore()
+  }
+})
+
 function deletable<T>() {
   return { delete: mock() } as T & { delete: ReturnType<typeof mock> }
 }
@@ -65,7 +119,8 @@ function createRenderer() {
       size: deletable<Font>(),
       value: null,
       sectionTitle: deletable<Font>(),
-      componentLabel: deletable<Font>()
+      componentLabel: deletable<Font>(),
+      hud: deletable<Font>()
     },
     fontProvider: null,
     fontsLoaded: true,
@@ -96,7 +151,7 @@ function createRenderer() {
     tiledScene: asDouble<SkiaRenderer['tiledScene']>({ destroy: mock() }),
     labelParagraphCache: asDouble<SkiaRenderer['labelParagraphCache']>({ clear: mock() }),
     profiler: { destroy: mock() } as Partial<SkiaRenderer['profiler']> as SkiaRenderer['profiler'],
-    surface: deletable<Surface>()
+    surface: asDouble<Surface>({ dispose: mock() })
   }
   return asRenderer(renderer)
 }
@@ -108,18 +163,18 @@ test('destroyRenderer releases tiled resources before deleting the main surface'
     teardown.push('text')
   })
   renderer.tiledScene.destroy = mock(() => teardown.push('tiled'))
-  renderer.surface.delete = mock(() => teardown.push('surface')) as typeof renderer.surface.delete
+  renderer.surface.dispose = mock(() => teardown.push('surface'))
 
   destroyRenderer(renderer)
 
   expect(renderer.tiledScene.destroy).toHaveBeenCalledTimes(1)
-  expect(renderer.surface.delete).toHaveBeenCalledTimes(1)
+  expect(renderer.surface.dispose).toHaveBeenCalledTimes(1)
   expect(teardown).toEqual(['text', 'tiled', 'surface'])
 })
 
 test('destroyRenderer deletes all renderer-owned paints and label fonts', () => {
   const renderer = createRenderer()
-  const { sectionTitle, componentLabel } = renderer.chromeFonts
+  const { sectionTitle, componentLabel, hud } = renderer.chromeFonts
   const pencilStrokePaint = renderer.pencilStrokePaint
 
   destroyRenderer(renderer)
@@ -127,6 +182,7 @@ test('destroyRenderer deletes all renderer-owned paints and label fonts', () => 
   expect(pencilStrokePaint.delete).toHaveBeenCalled()
   expect(sectionTitle?.delete).toHaveBeenCalled()
   expect(componentLabel?.delete).toHaveBeenCalled()
+  expect(hud?.delete).toHaveBeenCalled()
 })
 
 test('destroyRenderer stops the bounds cache watching the graphs it measured', () => {

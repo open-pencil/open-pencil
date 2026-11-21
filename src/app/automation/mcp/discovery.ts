@@ -1,4 +1,4 @@
-import { homeDir, join } from '@tauri-apps/api/path'
+import { homeDir, join, runtimeDir } from '@tauri-apps/api/path'
 import { readTextFile, exists } from '@tauri-apps/plugin-fs'
 import * as v from 'valibot'
 
@@ -35,6 +35,15 @@ export async function discoveryFileExists(discoveryPath: string): Promise<boolea
   }
 }
 
+/** Trimmed `$XDG_RUNTIME_DIR`, or '' when it is unset or blank. */
+async function xdgRuntimeDir(): Promise<string> {
+  try {
+    return (await runtimeDir()).trim()
+  } catch {
+    return ''
+  }
+}
+
 /**
  * Computes the expected MCP discovery file path using the same platform
  * logic as the server's getDiscoveryPath(), but via Tauri APIs since we
@@ -47,20 +56,20 @@ export async function computeExpectedDiscoveryPath(): Promise<string> {
 
   const isMac = navigator.platform.includes('Mac')
   const isWindows = navigator.platform.includes('Win')
-  // Must match the server's getPlatformDir() in packages/mcp/src/transport/paths.ts.
-  // On Windows, LOCALAPPDATA usually equals <home>\AppData\Local, so this fallback
-  // matches the server's path in the common case. When it doesn't (custom
-  // LOCALAPPDATA), resolveDiscoveryPath() falls back to the /health endpoint.
+  // Must match getPlatformDir() in packages/mcp/src/transport/paths.ts.
+  // On Windows, LOCALAPPDATA usually equals <home>\AppData\Local, so this
+  // fallback matches the server in the common case. A custom LOCALAPPDATA still
+  // reaches resolveDiscoveryPath()'s /health fallback.
   if (isMac) {
     return join(home, 'Library', 'Application Support', 'OpenPencil', 'mcp.json')
   }
   if (isWindows) {
     return join(home, 'AppData', 'Local', 'OpenPencil', 'mcp.json')
   }
-  // Linux: $XDG_RUNTIME_DIR/openpencil/mcp.json or ~/.openpencil/mcp.json.
-  // In Tauri we don't have direct env access, so we use the home-directory
-  // fallback. The server may use XDG_RUNTIME_DIR if set — when the paths
-  // differ, resolveDiscoveryPath() falls back to the /health endpoint.
+  // Linux and other Unix: $XDG_RUNTIME_DIR/openpencil/mcp.json, else ~/.openpencil/mcp.json.
+  // That directory sits outside home, which the /health fallback refuses.
+  const runtime = await xdgRuntimeDir()
+  if (runtime) return join(runtime, 'openpencil', 'mcp.json')
   return join(home, '.openpencil', 'mcp.json')
 }
 
@@ -75,9 +84,9 @@ export async function computeExpectedDiscoveryPath(): Promise<string> {
  * Security tradeoff: the `/health` endpoint is unauthenticated, so a
  * compromised server could redirect us to a malicious path. This is mitigated
  * by the fact that the server is on localhost and was spawned by us. The
- * fallback exists because local computation can be wrong (e.g., XDG_RUNTIME_DIR
- * mismatches on Linux where the server uses `$XDG_RUNTIME_DIR/openpencil` but
- * the local computation falls back to `~/.openpencil`).
+ * fallback exists because local computation can still be wrong (for example a
+ * custom LOCALAPPDATA on Windows). A path outside the home directory, such as
+ * Linux `$XDG_RUNTIME_DIR`, is never taken from `/health`.
  */
 export async function resolveDiscoveryPath(healthDiscoveryPath?: string): Promise<string> {
   const expected = await computeExpectedDiscoveryPath()
