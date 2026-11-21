@@ -152,8 +152,8 @@ describe('checkDocsIntegrity', () => {
 
     expect(check(docsRoot).errors).toEqual([
       "Redirect '/plain' must use root-relative paths.",
-      "Redirect source '/kept' still has a page and would shadow it.",
-      "Redirect source '/guide/*' still has pages and would shadow them."
+      "Redirect source '/guide/*' still has pages and would shadow them.",
+      "Redirect source '/kept' still has a page and would shadow it."
     ])
   })
 
