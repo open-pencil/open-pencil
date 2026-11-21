@@ -43,6 +43,8 @@ export interface SVGExportContext {
    * given out so far, defs included, so no two elements share one.
    */
   layerIds?: { names: Map<string, number>; taken: Set<string> }
+  /** True while rendering inside a `VECTOR` mask so descendant fills are treated as opaque. */
+  inVectorMask?: boolean
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {

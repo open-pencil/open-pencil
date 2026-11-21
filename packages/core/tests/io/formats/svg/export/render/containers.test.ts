@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { makeSceneGraph, firstPageId } from '@open-pencil/test-support/scene'
 
+import { createSVGNodes, renderNodesToSVG } from '#core/io/formats/svg'
 import { boxOutlinePath } from '#core/io/formats/svg/paths'
 
 import { exportSVG, exportSVGOrThrow } from '../helpers'
@@ -220,5 +221,96 @@ describe('renderNodesToSVG()', () => {
     const result = exportSVGOrThrow(graph, [group.id])
     expect(result).toContain('<rect')
     expect(result).toContain('fill="#FF0000"')
+  })
+
+  test('imported clipPath mask clips subsequent content without painting the mask (#2274)', () => {
+    const graph = makeSceneGraph('Page 1')
+    const pageId = firstPageId(graph)
+    const source = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="30">
+  <defs><clipPath id="window"><rect width="20" height="20"/></clipPath></defs>
+  <rect width="60" height="30" fill="#ffffff"/>
+  <g clip-path="url(#window)"><rect x="10" width="35" height="20" fill="#ff0000"/></g>
+</svg>`
+    const frame = createSVGNodes(graph, pageId, source)
+    if (!frame) throw new Error('Expected imported frame')
+    const result = renderNodesToSVG(graph, pageId, [frame.id], {
+      useAbsoluteBounds: true,
+      xmlDeclaration: false
+    })
+    if (!result) throw new Error('Expected exported SVG')
+    expect(result).toContain('<mask id="mask1" style="mask-type:alpha" maskUnits="userSpaceOnUse"')
+    expect(result).toContain('<g mask="url(#mask1)">')
+    // Mask path is defined inside <defs><mask>, never painted in the body alongside #FF0000.
+    const body = result.split('</defs>')[1] ?? ''
+    expect(body).not.toContain('fill="#000000"')
+    expect(body).toContain('fill="#FF0000"')
+  })
+
+  test('mask runs honor visibility, trailing masks, and maskType modes', () => {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
+      width: 100,
+      height: 100
+    })
+    // Before first mask: unmasked
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 10,
+      height: 10,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 1, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    // Hidden mask: ignored
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 20,
+      height: 20,
+      isMask: true,
+      visible: false,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    // VECTOR mask with partial fill opacity becomes opaque in <mask>
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 30,
+      height: 30,
+      isMask: true,
+      maskType: 'VECTOR',
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 0.25 }, opacity: 0.25, visible: true }]
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 40,
+      height: 40,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    // LUMINANCE mask starts a second run
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 50,
+      height: 50,
+      isMask: true,
+      maskType: 'LUMINANCE',
+      fills: [{ type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.5, a: 1 }, opacity: 1, visible: true }]
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 60,
+      height: 60,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }]
+    })
+    // Trailing mask with no masked siblings draws nothing
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 70,
+      height: 70,
+      isMask: true,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+
+    const result = exportSVGOrThrow(graph, [frame.id])
+    expect(result).toContain(
+      'style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="30" height="30"'
+    )
+    expect(result).toContain(
+      'style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="50" height="50"'
+    )
+    expect(result).not.toContain('fill-opacity="0.25"')
+    expect(result).not.toContain('width="70"')
+    expect(result).toContain('fill="#00FF00"')
+    expect(result).toContain('<g mask="url(#mask0)">')
+    expect(result).toContain('<g mask="url(#mask1)">')
   })
 })
