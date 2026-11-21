@@ -191,10 +191,11 @@ pub async fn render_web_page(
     forget_render(&request.id);
     // A render cancelled while its page ran leaves the page; the next one, or this, blanks it.
     if let Ok(mut slot) = RENDER_WINDOW.try_lock() {
-        if let Some(render_window) = slot.as_ref() {
-            if blank(&render_window.window).is_err() {
-                *slot = None;
-            }
+        if slot
+            .as_ref()
+            .is_some_and(|render_window| blank(&render_window.window).is_err())
+        {
+            discard(&mut slot);
         }
     }
     result
@@ -233,14 +234,22 @@ async fn render_in_window(
     })();
     if let Err(error) = opened {
         // A window that no longer answers is made again for the next render.
-        *slot = None;
+        discard(&mut slot);
         return Err(format!("Could not open the page: {error}"));
     }
     let result = render(&render_window.window, loaded, request).await;
     if blank(&render_window.window).is_err() {
-        *slot = None;
+        discard(&mut slot);
     }
     result
+}
+
+/// Closes the render window and forgets it, so the next render makes a new one: a window that did
+/// not go back to the blank page may still be running the page it had.
+fn discard(slot: &mut Option<RenderWindow>) {
+    if let Some(render_window) = slot.take() {
+        let _ = render_window.window.destroy();
+    }
 }
 
 /// Drops the cancel channel of the render `id` names, once it has ended or could not start.
