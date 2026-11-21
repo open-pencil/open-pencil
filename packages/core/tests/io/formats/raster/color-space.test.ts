@@ -19,7 +19,7 @@ beforeAll(async () => {
   await renderer.loadFonts()
 })
 
-function exported(space: ColorProfile) {
+function exported(space: ColorProfile, encodeIn?: ColorProfile) {
   const graph = new SceneGraph()
   graph.documentColorSpace = space
   const page = graph.getPages()[0]
@@ -30,7 +30,11 @@ function exported(space: ColorProfile) {
   })
   const cells = buildP3BlendCells(graph, frame.id)
   const png = expectDefined(
-    renderNodesToImage(ck, renderer, graph, page.id, [frame.id], { scale: 1, format: 'PNG' }),
+    renderNodesToImage(ck, renderer, graph, page.id, [frame.id], {
+      scale: 1,
+      format: 'PNG',
+      colorSpace: encodeIn
+    }),
     'png'
   )
   return { cells, image: expectDefined(ck.MakeImageFromEncoded(png), 'image') }
@@ -78,6 +82,24 @@ describe('raster export of a document in a color profile', () => {
       } finally {
         image.delete()
       }
+    }
+  })
+
+  test('a Display P3 document exported as sRGB blends in P3 and is converted into sRGB', () => {
+    const p3 = exported('display-p3')
+    const srgb = exported('display-p3', 'srgb')
+    try {
+      expect(ck.ColorSpace.Equals(srgb.image.getColorSpace(), ck.ColorSpace.SRGB)).toBe(true)
+      // The same blended pixel, read in sRGB from either image, within rounding.
+      const [, multiply] = p3.cells
+      const fromP3 = components(p3.image, multiply.x, multiply.y, ck.ColorSpace.SRGB)
+      const fromSRGB = components(srgb.image, multiply.x, multiply.y, ck.ColorSpace.SRGB)
+      fromP3.forEach((channel, index) =>
+        expect(Math.abs(channel - fromSRGB[index])).toBeLessThanOrEqual(1)
+      )
+    } finally {
+      p3.image.delete()
+      srgb.image.delete()
     }
   })
 

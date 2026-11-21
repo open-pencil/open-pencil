@@ -1,6 +1,7 @@
 import { isEqual } from 'es-toolkit'
 
 import type {
+  ColorProfile,
   Fill,
   SceneGraph,
   SceneNode,
@@ -8,6 +9,7 @@ import type {
   VariableFormulaNode,
   VariableValue
 } from '@open-pencil/scene-graph'
+import { convertColor } from '@open-pencil/scene-graph/color'
 import {
   cloneVectorNetwork,
   copyEffects,
@@ -196,11 +198,13 @@ function swapping(changes: ColorChanges, redo: boolean): MapColor {
 
 /**
  * Rewrites every stored color in `graph` through `convert`: layers' color fields, page
- * backgrounds, and color variables. Returns what it changed, for {@link replayConversion}.
+ * backgrounds, and color variables unless `variables` is false. Returns what it changed, for
+ * {@link replayConversion}.
  */
 export function convertColors(
   graph: SceneGraph,
-  convert: (color: Color) => Color
+  convert: (color: Color) => Color,
+  { variables = true }: { variables?: boolean } = {}
 ): ColorConversion {
   const conversion: ColorConversion = { layers: new Map(), pages: new Map(), variables: new Map() }
   for (const node of graph.getAllNodes()) {
@@ -220,7 +224,7 @@ export function convertColors(
     graph.updateNode(node.id, fields)
     conversion.layers.set(node.id, changes)
   }
-  for (const variable of graph.variables.values()) {
+  for (const variable of variables ? graph.variables.values() : []) {
     if (variable.type !== 'COLOR') continue
     const changes: ColorChanges = new Map()
     mapVariableValues(graph, variable.id, recording(convert, changes))
@@ -255,4 +259,16 @@ export function replayConversion(graph: SceneGraph, conversion: ColorConversion,
     mapVariableValues(graph, id, swapping(changes, redo))
   }
   reconcileVariableLayouts(graph, { variables: [...conversion.variables.keys()] })
+}
+
+/**
+ * Converts every color a copy of a document stores on its layers and pages into `to`, and gives
+ * it that profile, for a format that can only hold one, such as PPTX or draw.io. Variables are
+ * left alone: the copy shares them with its document, and layers hold their resolved colors.
+ */
+export function convertDocumentColors(graph: SceneGraph, to: ColorProfile): void {
+  const from = graph.documentColorSpace
+  if (from === to) return
+  convertColors(graph, (color) => convertColor(color, from, to, 'map'), { variables: false })
+  graph.documentColorSpace = to
 }

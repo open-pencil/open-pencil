@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 
 import { parseDrawIOFile } from '@open-pencil/drawio'
 import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
+import { colorToHex, convertColor } from '@open-pencil/scene-graph/color'
 import {
   boundEndpoint,
   connectorSublayers,
@@ -375,5 +376,23 @@ describe('exporting part of a design as draw.io', () => {
     // Off the shape's right side, 10 + 60 across and 20 + 40 / 2 down in the group at 100, 100,
     // by the gap a joined end leaves.
     expect(edge?.geometry.sourcePoint).toEqual({ x: 176, y: 140 })
+  })
+})
+
+describe('a document in a color profile', () => {
+  test('a Display P3 document writes its colors brought inside sRGB, and stays as it was', async () => {
+    const graph = new SceneGraph()
+    graph.documentColorSpace = 'display-p3'
+    const page = graph.getPages()[0]
+    const rect = graph.createNode('RECTANGLE', page.id, {
+      width: 40,
+      height: 40,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    const xml = await write(graph)
+    const mapped = colorToHex(convertColor({ r: 1, g: 0, b: 0, a: 1 }, 'display-p3', 'srgb', 'map'))
+    expect(xml).toContain(`fillColor=${mapped}`)
+    expect(graph.documentColorSpace).toBe('display-p3')
+    expect(graph.getNode(rect.id)?.fills[0].color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
   })
 })

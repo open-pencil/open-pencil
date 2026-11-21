@@ -1,5 +1,5 @@
 import type { CanvasKit } from '@open-pencil/canvaskit'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { ColorProfile, SceneGraph } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { createOffscreenRenderer } from '#core/canvas/renderer/offscreen'
@@ -70,6 +70,7 @@ export async function headlessRenderNodes(
     quality?: number
     trimTransparent?: boolean
     useAbsoluteBounds?: boolean
+    colorSpace?: ColorProfile
   } = {}
 ): Promise<Uint8Array<ArrayBuffer> | null> {
   return withHeadlessExport(async (renderer, ck) => {
@@ -83,7 +84,8 @@ export async function headlessRenderNodes(
           format: options.format ?? 'PNG',
           quality: options.quality,
           trimTransparent: options.trimTransparent,
-          useAbsoluteBounds: options.useAbsoluteBounds
+          useAbsoluteBounds: options.useAbsoluteBounds,
+          colorSpace: options.colorSpace
         })
     )
   })

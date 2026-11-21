@@ -12,9 +12,9 @@ import type { EditorStore } from '@/app/editor/active-store'
 export function renderAutomationImage(
   store: EditorStore,
   nodeIds: string[],
-  { scale = 1, format = 'PNG', pageId, useAbsoluteBounds }: ExportImageOptions
+  { scale = 1, format = 'PNG', pageId, useAbsoluteBounds, colorSpace }: ExportImageOptions
 ): Promise<Uint8Array | null> {
-  return store.renderExportImage(nodeIds, scale, format, pageId, { useAbsoluteBounds })
+  return store.renderExportImage(nodeIds, scale, format, pageId, { useAbsoluteBounds, colorSpace })
 }
 
 type ExportArgs = { nodeIds?: string[]; scope?: 'page'; scale?: number; format?: string }

@@ -26,6 +26,12 @@ import type {
   SVGExportOptions
 } from './types'
 
+/** The request with its document's colors brought into sRGB, for a format that holds no other. */
+async function inSRGB(request: ExportRequest): Promise<ExportRequest> {
+  const { graphInSRGB } = await import('./srgb')
+  return { ...request, graph: await graphInSRGB(request.graph) }
+}
+
 /** Formats that export a document, page, selection, or single node alike. */
 const EXPORT_EVERY_TARGET: IOFormatSupport = {
   exportDocument: true,
@@ -176,12 +182,16 @@ export const drawioFormat: IOFormatAdapter<'drawio'> = {
     )
     return { graph, sourceFormat: 'drawio' }
   },
-  async writeDocument(graph) {
+  async writeDocument(source) {
+    // draw.io holds sRGB colors only.
+    const { graphInSRGB } = await import('./srgb')
+    const graph = await graphInSRGB(source)
     const pageIds = graph.getPages().map((page) => page.id)
     return writeDrawIO(graph, { pageIds })
   },
   // A page or a selection goes as a one-page diagram; the document, every page.
-  async exportContent(request) {
+  async exportContent(source) {
+    const request = await inSRGB(source)
     if (request.target.scope === 'document') {
       const pageIds = request.graph.getPages().map((page) => page.id)
       return writeDrawIO(request.graph, { pageIds })
@@ -317,13 +327,18 @@ export const pptxFormat: IOFormatAdapter<'pptx'> = {
   mimeTypes: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
   support: EXPORT_EVERY_TARGET,
   exportOptions: FIXED_SIZE_EXPORT,
-  async exportContent(request, options?: PPTXExportOptions, context?: IOContext) {
+  async exportContent(source, options?: PPTXExportOptions, context?: IOContext) {
+    // PowerPoint holds sRGB colors only.
+    const request = await inSRGB(source)
     const target = resolvePPTXExportNodes(request)
     if (!target) throw new Error('Nothing to export')
     const { renderNodesToPPTX } = await import('./formats/pptx')
+    // A converted copy shares the document's layer ids, so its fallback images are drawn by the
+    // headless renderer, which starts clear, not by one holding the document's own pictures.
+    const converted = request.graph !== source.graph
     const data = await renderNodesToPPTX(request.graph, target.pageId, target.nodeIds, {
       ...options,
-      context: options?.context ?? context
+      context: converted ? undefined : (options?.context ?? context)
     })
     if (!data) throw new Error('Nothing to export')
     return {
