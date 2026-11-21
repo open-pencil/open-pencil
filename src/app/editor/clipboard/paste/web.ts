@@ -222,7 +222,12 @@ export async function pasteWebClipboard(
   const pastedId = await editor.pasteText(text, x, y, links)
   if (!pastedId || !markup) return pastedId !== null
   // The step this paste made, which the offer and its undo are about, whatever is pasted later.
-  const step = editor.undo.undoLabel === PASTE_TEXT_LABEL ? (editor.undo.peekUndo() ?? null) : null
+  // `pasteText` selects its text and records its step together, so while the text is still the
+  // whole selection, no later paste has recorded one since.
+  const selected = editor.state.selectedIds
+  const own = selected.size === 1 && selected.has(pastedId)
+  const step =
+    own && editor.undo.undoLabel === PASTE_TEXT_LABEL ? (editor.undo.peekUndo() ?? null) : null
   // The text is in first; the offer of layers waits for the importer, which may load slowly or
   // not at all, and shows only while that paste is still the last edit.
   void offerLayers(editor, clipboard, markup, { step, pastedId }, { x, y })
