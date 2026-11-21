@@ -332,9 +332,12 @@ export const pptxFormat: IOFormatAdapter<'pptx'> = {
     const target = resolvePPTXExportNodes(request)
     if (!target) throw new Error('Nothing to export')
     const { renderNodesToPPTX } = await import('./formats/pptx')
+    // A converted copy shares the document's layer ids, so its fallback images are drawn by the
+    // headless renderer, which starts clear, not by one holding the document's own pictures.
+    const converted = request.graph !== source.graph
     const data = await renderNodesToPPTX(request.graph, target.pageId, target.nodeIds, {
       ...options,
-      context: options?.context ?? context
+      context: converted ? undefined : (options?.context ?? context)
     })
     if (!data) throw new Error('Nothing to export')
     return {

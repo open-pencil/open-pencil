@@ -20,7 +20,9 @@ import {
   decodeDimension,
   decodeFontFamily,
   decodeFontWeight,
-  referencePath
+  importedColor,
+  referencePath,
+  shadowTokenProfile
 } from '#core/io/formats/design-tokens/decode'
 import { tokenReference } from '#core/io/formats/design-tokens/paths'
 import type { DesignTokenBundle, ReadToken } from '#core/io/formats/design-tokens/read'
@@ -309,6 +311,18 @@ function replaceShadows(
   return { effects, positions, kept }
 }
 
+/** `effects` from a file written in `source`, their colors read into `profile`. */
+function importedEffects(effects: Effect[], source: ColorProfile, profile: ColorProfile): Effect[] {
+  const read = (color: Color) => importedColor(color, source, profile)
+  return effects.map((effect) => ({
+    ...effect,
+    color: read(effect.color),
+    ...(effect.noise?.secondaryColor && {
+      noise: { ...effect.noise, secondaryColor: read(effect.noise.secondaryColor) }
+    })
+  }))
+}
+
 /** A shadow token as effect style fields and the fields its references bind. */
 function effectStyle(
   token: ReadToken,
@@ -320,15 +334,20 @@ function effectStyle(
   const own = parsed.success ? parsed.output : null
   const ownBindings = own?.bindings ?? {}
   // Extension effects that do not read fall back to the token's own shadows.
-  const exact = own?.effects ? tryParseFigmaEffects(own.effects) : null
-  if (exact && isEqual(token.value, shadowTokenValue(exact, ownBindings, profile))) {
+  const recorded = own?.effects ? tryParseFigmaEffects(own.effects) : null
+  // The token is current when it is what its own file would write; its effects are then read
+  // into this document as its colors are.
+  const source = shadowTokenProfile(token.value) ?? profile
+  if (recorded && isEqual(token.value, shadowTokenValue(recorded, ownBindings, source))) {
     return {
-      fields: { effects: exact },
+      fields: { effects: importedEffects(recorded, source, profile) },
       bindings: aliasedBindings(ownBindings, own?.aliasData ?? {}, alias)
     }
   }
   const shadows = shadowList(token.value, resolve, profile)
   if (!shadows) return null
+  // Edited shadows replace the recorded ones; the rest, such as blurs, are kept in this profile.
+  const exact = recorded && importedEffects(recorded, source, profile)
   const placed = exact
     ? replaceShadows(exact, shadows.effects)
     : { effects: shadows.effects, positions: shadows.effects.map((_, index) => index), kept: null }

@@ -10,7 +10,7 @@ import {
   type VariableScope,
   type VariableType
 } from '@open-pencil/scene-graph'
-import { tryParseColor } from '@open-pencil/scene-graph/color'
+import { convertColor, tryParseColor } from '@open-pencil/scene-graph/color'
 import { parseCSSNumber } from '@open-pencil/scene-graph/css'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { ROOT_FONT_SIZE_PX } from '@open-pencil/scene-graph/variables'
@@ -70,6 +70,30 @@ export function decodeColor(value: unknown, profile: ColorProfile): Color | null
     : FUNCTION_SPACES[colorSpace]?.(parts)
   if (!open) return hex ? tryParseColor(hex, profile) : null
   return tryParseColor(`${open} / ${alpha})`, profile)
+}
+
+/**
+ * A color a token file wrote in `source` as an import into `profile` reads it, as `decodeColor`
+ * reads that color's token: sRGB keeps its numbers, as hex does, and Display P3 is converted.
+ */
+export function importedColor(color: Color, source: ColorProfile, profile: ColorProfile): Color {
+  return source === 'srgb' ? color : convertColor(color, source, profile, 'map')
+}
+
+const tokenProfileSchema = v.object({
+  color: v.object({ colorSpace: v.picklist(['srgb', 'display-p3']) })
+})
+
+/**
+ * The profile a shadow token's file wrote its colors in, read from the first shadow whose color is
+ * written out rather than referenced; null when every color is a reference.
+ */
+export function shadowTokenProfile(value: unknown): ColorProfile | null {
+  for (const entry of Array.isArray(value) ? value : [value]) {
+    const parsed = v.safeParse(tokenProfileSchema, entry)
+    if (parsed.success) return parsed.output.color.colorSpace
+  }
+  return null
 }
 
 const dimensionSchema = v.object({ value: v.number(), unit: v.picklist(['px', 'rem']) })

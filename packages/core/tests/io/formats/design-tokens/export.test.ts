@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type ColorProfile } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import {
@@ -240,6 +240,62 @@ describe('color tokens of a document in a color profile', () => {
     const plan = planTokenImport(target, bundle, defaultTokenImportOptions(target, bundle))
     expect(plan.collections[0].variables[0].values[0]).toMatchObject({
       value: { r: 1, g: 0, b: 0 }
+    })
+  })
+
+  describe('a shadow style imported into a document in another profile', () => {
+    /** The effects an effect style with a multiplied P3-red shadow plans to in `to`. */
+    function importedShadow(from: ColorProfile, to: ColorProfile) {
+      const graph = new SceneGraph()
+      graph.documentColorSpace = from
+      const style = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
+        name: 'Elevation/Glow',
+        sharedStyleType: 'EFFECT',
+        internalOnly: true,
+        effects: [
+          {
+            type: 'DROP_SHADOW',
+            color: { r: 1, g: 0, b: 0, a: 0.5 },
+            offset: { x: 0, y: 4 },
+            radius: 12,
+            spread: 0,
+            visible: true,
+            blendMode: 'MULTIPLY',
+            showShadowBehindNode: true
+          }
+        ]
+      })
+      style.source.id = 'style:glow'
+      const target = new SceneGraph()
+      target.documentColorSpace = to
+      const bundle = readDesignTokens(
+        exportDesignTokens(graph).files.map((entry) => ({
+          path: entry.path,
+          text: JSON.stringify(entry.content)
+        }))
+      )
+      const plan = planTokenImport(target, bundle, defaultTokenImportOptions(target, bundle))
+      return plan.styles[0]?.fields.effects?.[0]
+    }
+
+    test('keeps what only the recorded effects hold, such as the blend mode', () => {
+      for (const [from, to] of [
+        ['srgb', 'display-p3'],
+        ['display-p3', 'srgb']
+      ] as const) {
+        expect(importedShadow(from, to)).toMatchObject({
+          blendMode: 'MULTIPLY',
+          showShadowBehindNode: true
+        })
+      }
+    })
+
+    test('reads the colors as the token does: sRGB numbers kept, P3 converted', () => {
+      expect(importedShadow('srgb', 'display-p3')?.color).toEqual({ r: 1, g: 0, b: 0, a: 0.5 })
+      const mapped = importedShadow('display-p3', 'srgb')?.color
+      expect(mapped?.r).toBeCloseTo(1, 1)
+      expect(mapped?.g).toBeLessThan(0.2)
+      expect(mapped?.g).toBeGreaterThan(0)
     })
   })
 })

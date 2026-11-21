@@ -54,7 +54,8 @@ export async function exportLayer(
       const svg = await renderNodesToLaidOutSVG(graph, pageId, ids, {
         xmlDeclaration: false,
         layerIds: request.svgIdAttribute,
-        useAbsoluteBounds: request.useAbsoluteBounds
+        useAbsoluteBounds: request.useAbsoluteBounds,
+        colorSpace: EXPORT_COLOR_PROFILES[request.colorProfile ?? 'DOCUMENT']
       })
       if (svg === null) throw noVisibleLayers()
       return request.format === 'SVG' ? new TextEncoder().encode(svg) : svg
