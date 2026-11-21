@@ -1,1 +1,0 @@
-- Opening a URL on desktop first renders the page with its scripts in a hidden private window and opens what they built once the page settles, so a page that builds itself with JavaScript, such as a single-page app, usually opens with its content instead of empty; a page that cannot be rendered opens from the HTML its server sends (#2238).

@@ -1,1 +1,0 @@
-- An image fill or stroke keeps Figma's adjustments, such as exposure, contrast, and saturation, when it is edited and the `.fig` file is saved, instead of losing them.
