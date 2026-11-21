@@ -121,8 +121,17 @@ function validateRedirects(docsRoot: string, redirectsPath: string): string[] {
     if (!REDIRECT_STATUSES.has(status)) {
       errors.push(`Redirect '${redirect.from}' has unsupported status '${status}'.`)
     }
-    if (!redirect.from.startsWith('/') || !redirect.to.startsWith('/')) {
+    // A page that moved to another site, such as Cloud's pricing to its billing service, goes
+    // there by its HTTPS address; there is no page here to check it against.
+    const elsewhere = URL.canParse(redirect.to) && new URL(redirect.to).protocol === 'https:'
+    if (!redirect.from.startsWith('/') || (!redirect.to.startsWith('/') && !elsewhere)) {
       errors.push(`Redirect '${redirect.from}' must use root-relative paths.`)
+      continue
+    }
+    if (elsewhere) {
+      if (routeExists(docsRoot, redirect.from)) {
+        errors.push(`Redirect source '${redirect.from}' still has a page and would shadow it.`)
+      }
       continue
     }
     // `/old/*` to `/new/:splat` moves a whole section: the new folder must exist and the old must not.
