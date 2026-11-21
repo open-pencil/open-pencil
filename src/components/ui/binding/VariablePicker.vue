@@ -237,7 +237,6 @@ defineOptions({ inheritAttrs: false })
         <IconButton
           v-if="collectionIds.has(group)"
           :label="editCollectionLabel"
-          data-test-id="variable-picker-edit-collection"
           @click.stop="editCollection(group)"
         >
           <icon-lucide-pencil class="size-3" />
