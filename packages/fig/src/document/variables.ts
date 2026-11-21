@@ -1,10 +1,15 @@
 import { sortBy } from 'es-toolkit/array'
 import * as v from 'valibot'
 
-import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
+import type {
+  NodeChange,
+  VariableDataEntry,
+  VariableDataValuesEntry
+} from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type {
   SceneGraph,
+  VariableCollection,
   VariableFormulaNode,
   VariableValue,
   VariableColorExpression
@@ -136,9 +141,16 @@ function colorExpression(
   return v.parse(variableColorExpressionSchema, { expression: 'COMPOSE_COLOR', color, opacity })
 }
 
+/** Where a variable's saved values land among the modes of the collection it opens in. */
+interface ModeTargets {
+  collection: VariableCollection
+  /** The name of every mode the document saved, by ID, across its collections. */
+  savedNames: ReadonlyMap<string, string>
+}
+
 function modeValues(
   resource: NodeChange,
-  modes: readonly string[],
+  targets: ModeTargets,
   resolve: ReturnType<typeof createResourceResolver>,
   onUnsupportedExpression?: ExpressionReporter
 ): Record<string, VariableValue> {
@@ -146,52 +158,101 @@ function modeValues(
   if (!entries.length) throw new Error('Missing mode values')
   const values: Record<string, VariableValue> = {}
   for (const entry of entries) {
-    const modeId = guidToString(entry.modeID)
-    // A value for a mode its collection no longer lists can never show; the others still open.
-    if (!modes.includes(modeId)) continue
-    let value: VariableValue
-    try {
-      value = valueOf(entry.variableData, resolve)
-    } catch (error) {
-      if (!(error instanceof UnsupportedExpressionError) || !onUnsupportedExpression) throw error
-      const data = structuredClone(entry.variableData)
-      const references: (string | null)[] = []
-      const modeKeys: string[] = []
-      mapUnsupportedExpressionReferences(
-        data,
-        (reference) => {
-          references.push(resolve(reference) ?? null)
-          return undefined
-        },
-        (guid) => {
-          modeKeys.push(guidToString(guid))
-          return guid
-        }
-      )
-      value = {
-        expression: 'UNSUPPORTED',
-        function: data.value?.expressionValue?.expressionFunction ?? '',
-        value: { ...data },
-        references,
-        modes: modeKeys
-      }
-      onUnsupportedExpression({
-        sourceId: resource.guid ? guidToString(resource.guid) : '',
-        modeId,
-        reason: 'unsupported-variable-expression'
-      })
-    }
-    if (
-      typeof value === 'object' &&
-      'expression' in value &&
-      value.expression === 'FORMULA' &&
-      value.type !== resource.variableResolvedType
-    )
-      throw new Error(`Expression result type does not match ${resource.variableResolvedType}`)
-    values[modeId] = value
+    const modeId = targetMode(guidToString(entry.modeID), targets)
+    if (!modeId || modeId in values) continue
+    values[modeId] = entryValue(resource, entry, modeId, resolve, onUnsupportedExpression)
   }
-  if (Object.keys(values).length === 0) throw new Error('No values for its collection’s modes')
-  return values
+  if (Object.keys(values).length > 0) return values
+  // Saved only for another collection's modes: its first value keeps the variable as it looked.
+  const modeId = targets.collection.defaultModeId
+  return { [modeId]: entryValue(resource, entries[0], modeId, resolve, onUnsupportedExpression) }
+}
+
+/**
+ * The collection's mode a saved value belongs to: the mode it was saved for, or else the one of
+ * the same name, as when the variable's values were saved for another collection's Light and
+ * Dark. A value matching neither can never show.
+ */
+function targetMode(savedModeId: string, { collection, savedNames }: ModeTargets) {
+  if (collection.modes.some((mode) => mode.modeId === savedModeId)) return savedModeId
+  const name = savedNames.get(savedModeId)
+  return collection.modes.find((mode) => mode.name === name)?.modeId
+}
+
+function entryValue(
+  resource: NodeChange,
+  entry: VariableDataValuesEntry,
+  modeId: string,
+  resolve: ReturnType<typeof createResourceResolver>,
+  onUnsupportedExpression?: ExpressionReporter
+): VariableValue {
+  const value = readEntryValue(resource, entry, modeId, resolve, onUnsupportedExpression)
+  if (
+    typeof value === 'object' &&
+    'expression' in value &&
+    value.expression === 'FORMULA' &&
+    value.type !== resource.variableResolvedType
+  )
+    throw new Error(`Expression result type does not match ${resource.variableResolvedType}`)
+  return value
+}
+
+function readEntryValue(
+  resource: NodeChange,
+  entry: VariableDataValuesEntry,
+  modeId: string,
+  resolve: ReturnType<typeof createResourceResolver>,
+  onUnsupportedExpression?: ExpressionReporter
+): VariableValue {
+  try {
+    return valueOf(entry.variableData, resolve)
+  } catch (error) {
+    if (!(error instanceof UnsupportedExpressionError) || !onUnsupportedExpression) throw error
+    onUnsupportedExpression({
+      sourceId: resource.guid ? guidToString(resource.guid) : '',
+      modeId,
+      reason: 'unsupported-variable-expression'
+    })
+    return unsupportedExpressionValue(entry, resolve)
+  }
+}
+
+/** An expression OpenPencil cannot evaluate, kept as saved with the references it holds. */
+function unsupportedExpressionValue(
+  entry: VariableDataValuesEntry,
+  resolve: ReturnType<typeof createResourceResolver>
+): VariableValue {
+  const data = structuredClone(entry.variableData)
+  const references: (string | null)[] = []
+  const modeKeys: string[] = []
+  mapUnsupportedExpressionReferences(
+    data,
+    (reference) => {
+      references.push(resolve(reference) ?? null)
+      return undefined
+    },
+    (guid) => {
+      modeKeys.push(guidToString(guid))
+      return guid
+    }
+  )
+  return {
+    expression: 'UNSUPPORTED',
+    function: data.value?.expressionValue?.expressionFunction ?? '',
+    value: { ...data },
+    references,
+    modes: modeKeys
+  }
+}
+
+/** Every saved mode's name by its ID, across the document's collections. */
+function savedModeNames(resources: readonly NodeChange[]): Map<string, string> {
+  const sets = resources.filter((resource) => resource.type === 'VARIABLE_SET')
+  return new Map(
+    sets.flatMap((set) =>
+      (set.variableSetModes ?? []).map((mode) => [guidToString(mode.id), mode.name] as const)
+    )
+  )
 }
 
 type SavedMode = NonNullable<NodeChange['variableSetModes']>[number]
@@ -366,6 +427,7 @@ function addVariables(
   onUnsupportedExpression?: ExpressionReporter
 ): void {
   const resolve = createResourceResolver(resources)
+  const savedNames = savedModeNames(resources)
   for (const resource of resources) {
     if (resource.type !== 'VARIABLE') continue
     const type = resource.variableResolvedType
@@ -386,12 +448,7 @@ function addVariables(
     try {
       Object.assign(
         valuesByMode,
-        modeValues(
-          resource,
-          collection.modes.map((mode) => mode.modeId),
-          resolve,
-          onUnsupportedExpression
-        )
+        modeValues(resource, { collection, savedNames }, resolve, onUnsupportedExpression)
       )
     } catch (error) {
       report(resource, error instanceof Error ? error.message : 'Invalid mode value')

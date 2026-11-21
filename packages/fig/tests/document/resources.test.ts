@@ -75,6 +75,44 @@ test('opens a variable with a value for a mode its collection no longer lists, w
   expect(graph.variables.get('1:4')?.valuesByMode).toEqual({ '1:10': 2 })
 })
 
+/** A Brand collection with Light and Dark, and a variable whose values were saved for `saved`. */
+function savedForOtherModes(saved: { id: ReturnType<typeof guid>; name: string }[]) {
+  const value = (floatValue: number) => ({ dataType: 'FLOAT' as const, value: { floatValue } })
+  const resources: NodeChange[] = [
+    {
+      guid: guid(3),
+      type: 'VARIABLE_SET',
+      variableSetModes: [
+        { id: guid(10), name: 'Light' },
+        { id: guid(11), name: 'Dark' }
+      ]
+    },
+    { guid: guid(5), type: 'VARIABLE_SET', variableSetModes: saved },
+    {
+      guid: guid(4),
+      type: 'VARIABLE',
+      variableResolvedType: 'FLOAT',
+      variableSetID: { guid: guid(3) },
+      variableDataValues: {
+        entries: saved.map((mode, index) => ({ modeID: mode.id, variableData: value(index + 1) }))
+      }
+    }
+  ]
+  return materializeDocument(resources).graph.variables.get('1:4')?.valuesByMode
+}
+
+test('opens values saved for another collection in its modes of the same name', () => {
+  const values = savedForOtherModes([
+    { id: guid(20), name: 'Dark' },
+    { id: guid(21), name: 'Light' }
+  ])
+  expect(values).toEqual({ '1:11': 1, '1:10': 2 })
+})
+
+test('keeps the first value in the default mode when no saved mode matches', () => {
+  expect(savedForOtherModes([{ id: guid(20), name: 'Mode 1' }])).toEqual({ '1:10': 1 })
+})
+
 test('keeps variable resources outside scene pages and rejects silent omission', () => {
   const changes: NodeChange[] = [
     { guid: guid(1), type: 'DOCUMENT' },
