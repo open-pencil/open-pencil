@@ -525,8 +525,12 @@ export class FontManager {
       this.registerFontInCanvasKit(family, loaded)
       return this.withRemoteCoverage(family, style, loaded, characters, signal)
     }
-    // An installed face of the style comes first; otherwise a variable file the family already
-    // loaded draws it.
+    // A variable file the document brought itself, such as a web page's own font, draws its
+    // family's other weights before an installed font of that name, which may be another design.
+    const own = this.sharedVariableFace(family, style, 'registered')
+    if (own) return this.withRemoteCoverage(family, style, own, characters, signal)
+    // An installed face of the style comes next; otherwise a variable file the family already
+    // loaded from elsewhere draws it.
     const installed = await this.loadInstalledFont(family, style)
     if (installed) return installed
     const shared = this.sharedVariableFace(family, style)
@@ -592,13 +596,19 @@ export class FontManager {
   /**
    * A variable font the family loaded for another style in the same slant whose weight axis
    * reaches this style's weight, registered for this style too: one file draws every weight.
+   * With `source`, only a file loaded from there.
    */
-  private sharedVariableFace(family: string, style: string): ArrayBuffer | null {
+  private sharedVariableFace(
+    family: string,
+    style: string,
+    source?: FontLoadedSource
+  ): ArrayBuffer | null {
     const { weight, italic } = parseFontStyle(style)
     // A face named apart from its weight ("Condensed Bold") is drawn by a file that has it.
     const named = !namesWeight(style)
     for (const [key, data] of this.loadedFamilies) {
       if (!key.startsWith(`${family}|`)) continue
+      if (source && this.loadedFamilySources.get(key) !== source) continue
       if (parseFontStyle(key.slice(family.length + 1)).italic !== italic) continue
       if (named && !hasNamedInstance(data, style)) continue
       const wght = fontAxes(data)?.find((axis) => axis.tag === 'wght')

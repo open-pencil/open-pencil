@@ -289,6 +289,17 @@ test('a host read that outlives its loader never registers the replaced loader d
   expect(drawn.every((data) => data === replacement)).toBe(true)
 })
 
+test('draws a weight from the document’s own variable font before an installed one', async () => {
+  const manager = offlineManager()
+  const variable = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  const installed = new ArrayBuffer(16)
+  manager.setHostFontLoader(async () => installed)
+  // A page's own font under a name an installed font also has, which may be another design.
+  await manager.markLoaded('Fonts Test Own Variable', 'Regular', variable)
+
+  expect(await manager.loadFont('Fonts Test Own Variable', 'SemiBold')).toBe(variable)
+})
+
 test('draws every weight its variable font covers from the one file, in the same slant', async () => {
   const manager = offlineManager()
   const variable = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
@@ -299,7 +310,7 @@ test('draws every weight its variable font covers from the one file, in the same
   expect(await manager.loadFont('Fonts Test Variable', 'Bold Italic')).toBeNull()
 })
 
-test('an installed face of the style comes before a variable file loaded for another style', async () => {
+test('an installed face of the style comes before a web font loaded for another style', async () => {
   const manager = offlineManager()
   const family = 'Fonts Test Installed First'
   const variable = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
@@ -307,7 +318,8 @@ test('an installed face of the style comes before a variable file loaded for ano
   manager.setHostFontLoader(async (name, style) =>
     name === family && style === 'Regular' ? installed : null
   )
-  await manager.markLoaded(family, 'Light', variable)
+  // Fetched from a web font provider, not brought by the document.
+  await manager.markLoaded(family, 'Light', variable, 'google')
   expect(await manager.loadFont(family, 'Regular')).toBe(installed)
   // A weight nothing installs draws from the variable file.
   expect(await manager.loadFont(family, 'Bold')).toBe(variable)
