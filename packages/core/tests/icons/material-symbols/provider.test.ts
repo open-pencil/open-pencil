@@ -72,6 +72,17 @@ describe('Material Symbols', () => {
     expect(css[0]?.searchParams.get('icon_names')).toBe('dark_mode,home,nothing')
   })
 
+  test('never asks Google for a name outside the Material Symbols alphabet', async () => {
+    const { provider, requests } = await setup()
+    const icons = await provider.icons(
+      ['material-symbols-rounded:home', 'material-symbols-rounded:arrow-left'],
+      40
+    )
+    expect([...icons.keys()]).toEqual(['material-symbols-rounded:home'])
+    const css = requests.filter((url) => url.pathname === '/css2')
+    expect(css.map((url) => url.searchParams.get('icon_names'))).toEqual(['home'])
+  })
+
   test('draws an icon in its em square at the axes its options set, defaults filling the rest', async () => {
     const { provider } = await setup()
     const name = 'material-symbols-rounded:home'
