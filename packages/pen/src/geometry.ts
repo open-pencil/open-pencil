@@ -40,13 +40,20 @@ function networkBounds(network: VectorNetwork): ViewBox {
  * box; without one, the geometry's own bounds do. An axis the geometry has no extent on is not
  * scaled, so a straight line keeps its place.
  */
-export function pathNetwork(pen: PenNode, width: number, height: number): VectorNetwork | null {
+export function pathNetwork(
+  pen: PenNode,
+  width: number,
+  height: number,
+  keepEmptyAxes = false
+): VectorNetwork | null {
   if (!pen.geometry) return null
   const network = parseSVGPath(pen.geometry, pen.fillRule === 'evenodd' ? 'EVENODD' : 'NONZERO')
   if (network.vertices.length === 0) return network
   const [vx, vy, vw, vh] = pen.viewBox ?? networkBounds(network)
-  const sx = vw > 0 ? width / vw : 1
-  const sy = vh > 0 ? height / vh : 1
+  // Before layout, an axis read at no size keeps the geometry's own extent, so layout can still
+  // tell the path is not flat there.
+  const sx = vw > 0 && !(keepEmptyAxes && width === 0) ? width / vw : 1
+  const sy = vh > 0 && !(keepEmptyAxes && height === 0) ? height / vh : 1
   for (const vertex of network.vertices) {
     vertex.x = (vertex.x - vx) * sx
     vertex.y = (vertex.y - vy) * sy

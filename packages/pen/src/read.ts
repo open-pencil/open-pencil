@@ -67,7 +67,7 @@ function drawAtFinalSize(build: Build, laidOut: boolean): void {
     const node = build.graph.getNode(id)
     if (!node) continue
     if (pen.type === 'path') {
-      const network = pathNetwork(pen, node.width, node.height)
+      const network = pathNetwork(pen, node.width, node.height, !laidOut)
       if (network) node.vectorNetwork = network
     } else if (pen.type === 'icon' && laidOut) {
       // In the themes the icon was read in, which its colour and glyph may take variables from.

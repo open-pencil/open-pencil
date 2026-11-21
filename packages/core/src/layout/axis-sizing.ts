@@ -49,10 +49,19 @@ export function asFlatLeaf(child: SceneNode, parent: SceneNode): SceneNode {
  * again once its parent has room.
  */
 function geometryExtents(child: SceneNode, isRow: boolean): [number, number] {
-  const vertices = child.vectorNetwork?.vertices ?? []
-  if (vertices.length === 0) return [0, 0]
-  const xs = vertices.map((vertex) => vertex.x)
-  const ys = vertices.map((vertex) => vertex.y)
+  const network = child.vectorNetwork
+  if (!network || network.vertices.length === 0) return [0, 0]
+  // A curve reaches toward its handles, so a curve between points on one line is not flat.
+  const points = [...network.vertices]
+  for (const segment of network.segments) {
+    const start = network.vertices[segment.start]
+    const end = network.vertices[segment.end]
+    if (start)
+      points.push({ x: start.x + segment.tangentStart.x, y: start.y + segment.tangentStart.y })
+    if (end) points.push({ x: end.x + segment.tangentEnd.x, y: end.y + segment.tangentEnd.y })
+  }
+  const xs = points.map((point) => point.x)
+  const ys = points.map((point) => point.y)
   const width = maxOf(xs) - minOf(xs)
   const height = maxOf(ys) - minOf(ys)
   return isRow ? [width, height] : [height, width]
