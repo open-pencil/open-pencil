@@ -271,7 +271,7 @@ export function applyStrokeShader(
   if (drawnImageHash(stroke)) {
     let applied = true
     for (const paint of [r.strokePaint, r.fillPaint]) {
-      applied = applyImageFill(r, stroke, node, graph, paint) && applied
+      applied = applyImageFill(r, stroke, node, graph, paint, stroke) && applied
     }
     return applied
   }

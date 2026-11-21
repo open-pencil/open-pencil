@@ -1,0 +1,1 @@
+- Exports of images with adjustments are many times faster (#2267).
