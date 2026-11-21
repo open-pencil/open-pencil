@@ -12,9 +12,15 @@ import type { EditorContext } from '#core/editor/types'
  */
 export type DocumentColorProfileMode = 'assign' | 'convert'
 
+interface ColorSpaceHost {
+  loadPageNodes: (pageId: string) => Promise<void>
+  /** Why `setDocumentColorSpace` would be refused now, checked again after pages load. */
+  refusal: (colorSpace: ColorProfile, mode: DocumentColorProfileMode) => Error | null
+}
+
 export function createColorSpaceActions(
   ctx: EditorContext,
-  loadPageNodes: (pageId: string) => Promise<void>
+  { loadPageNodes, refusal }: ColorSpaceHost
 ) {
   function setProfile(space: ColorProfile) {
     ctx.graph.documentColorSpace = space
@@ -50,8 +56,11 @@ export function createColorSpaceActions(
       import('./convert'),
       ...graph.getPages().map((page) => loadPageNodes(page.id))
     ])
-    // The document may have been closed, replaced, or converted while its pages loaded.
+    // The document may have been closed, replaced, converted, or made read-only while its pages
+    // loaded; the editor's guard only checked the call as it started.
     if (ctx.graph !== graph || graph.documentColorSpace !== previous) return
+    const refused = refusal(colorSpace, mode)
+    if (refused) throw refused
     const before = colorsBefore(graph)
     const convert = (color: Color) => convertColor(color, previous, colorSpace, 'map')
     const forward = () => {

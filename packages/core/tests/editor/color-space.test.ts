@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core'
+import { createEditor, ReadOnlyDocumentError, type Editor } from '@open-pencil/core'
 import type { SceneNode, VariableValue } from '@open-pencil/scene-graph'
 import { toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -168,7 +168,7 @@ describe('document color profile', () => {
     const formula = editor.graph.createVariable('Mixed', 'COLOR', collection.id, {
       expression: 'FORMULA',
       type: 'COLOR',
-      value: { operator: 'add', operands: [BLUE, BLUE] }
+      value: { operator: 'add', operands: [{ aliasId: 'accent' }, BLUE] }
     } as VariableValue)
     const vector = editor.graph.createNode('VECTOR', pageId, {
       vectorNetwork: {
@@ -191,10 +191,27 @@ describe('document color profile', () => {
     const node = editor.graph.getNode(frame.id)
     expectColor(node?.layoutGrids[0].color, blue)
     expectColor(node?.effects[0].noise?.secondaryColor, blue)
-    const value = editor.graph.variables.get(formula.id)?.valuesByMode[mode] as {
-      value: { operands: Color[] }
+    const value = editor.graph.variables.get(formula.id)?.valuesByMode[mode]
+    const operation =
+      typeof value === 'object' && 'expression' in value && value.expression === 'FORMULA'
+        ? value.value
+        : null
+    if (typeof operation !== 'object' || !operation || !('operands' in operation)) {
+      throw new Error('Expected the formula to keep its operation')
     }
-    expectColor(value.value.operands[1], blue)
+    // An alias operand is left as it is; only literal colors convert.
+    expect(operation.operands[0]).toEqual({ aliasId: 'accent' })
+    expectColor(operation.operands[1], blue)
+  })
+
+  test('a document made read-only while its pages load is not converted', async () => {
+    const { fill } = p3Document()
+    const converting = editor.setDocumentColorSpace('srgb', 'convert')
+    editor.setReadOnly(true)
+    expect(converting).rejects.toBeInstanceOf(ReadOnlyDocumentError)
+    await converting.catch(() => undefined)
+    expect(editor.graph.documentColorSpace).toBe('display-p3')
+    expect(fill()?.color).toEqual(P3_RED)
   })
 
   test('undoing a conversion puts back every value and the profile in one step', async () => {

@@ -111,7 +111,7 @@ function isColorValue(value: VariableValue | VariableFormulaNode): value is Colo
 }
 
 function isAlias(value: VariableFormulaNode): value is VariableAlias {
-  return typeof value === 'object' && 'type' in value && value.type === 'VARIABLE_ALIAS'
+  return typeof value === 'object' && 'aliasId' in value
 }
 
 /** A formula's literal colors converted, its aliases and other operands as they were. */
