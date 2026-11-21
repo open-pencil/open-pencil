@@ -37,11 +37,9 @@ export async function exportPDFDocument(
   specs: readonly PDFPageSpec[],
   { renderer: hostRenderer, ...options }: PDFDocumentOptions = {}
 ): Promise<PDFExportResult | null> {
-  // A PDF holds sRGB colors: a Display P3 document's are brought inside sRGB first. That copy
-  // keeps the document's layer ids, so it is drawn by the headless renderer, which starts clear,
-  // never by one that has drawn the document.
-  const graph = await graphInSRGB(source)
-  const sharedRenderer = graph === source ? hostRenderer : null
+  // A PDF holds sRGB colors: a Display P3 document's are brought inside sRGB first.
+  const { graph, copied } = await graphInSRGB(source)
+  const sharedRenderer = copied ? null : hostRenderer
   const draw = async (renderer: SkiaRenderer) => {
     const byPage = groupBy(specs, (spec) => spec.pageId)
     for (const [pageId, pageSpecs] of Object.entries(byPage)) {

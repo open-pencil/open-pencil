@@ -26,10 +26,21 @@ import type {
   SVGExportOptions
 } from './types'
 
-/** The request with its document's colors brought into sRGB, for a format that holds no other. */
-async function inSRGB(request: ExportRequest): Promise<ExportRequest> {
+/** `graph` with its colors brought into sRGB, loaded on first use: most sessions never need it. */
+async function documentInSRGB(graph: SceneGraph) {
   const { graphInSRGB } = await import('./srgb')
-  return { ...request, graph: await graphInSRGB(request.graph) }
+  return graphInSRGB(graph)
+}
+
+/**
+ * The request with its document's colors brought into sRGB, for a format that holds no other,
+ * and whether that took a copy, which only a renderer that has not drawn the document may draw.
+ */
+async function inSRGB(
+  request: ExportRequest
+): Promise<{ request: ExportRequest; copied: boolean }> {
+  const { graph, copied } = await documentInSRGB(request.graph)
+  return { request: { ...request, graph }, copied }
 }
 
 /** Formats that export a document, page, selection, or single node alike. */
@@ -184,14 +195,13 @@ export const drawioFormat: IOFormatAdapter<'drawio'> = {
   },
   async writeDocument(source) {
     // draw.io holds sRGB colors only.
-    const { graphInSRGB } = await import('./srgb')
-    const graph = await graphInSRGB(source)
+    const { graph } = await documentInSRGB(source)
     const pageIds = graph.getPages().map((page) => page.id)
     return writeDrawIO(graph, { pageIds })
   },
   // A page or a selection goes as a one-page diagram; the document, every page.
   async exportContent(source) {
-    const request = await inSRGB(source)
+    const { request } = await inSRGB(source)
     if (request.target.scope === 'document') {
       const pageIds = request.graph.getPages().map((page) => page.id)
       return writeDrawIO(request.graph, { pageIds })
@@ -329,16 +339,14 @@ export const pptxFormat: IOFormatAdapter<'pptx'> = {
   exportOptions: FIXED_SIZE_EXPORT,
   async exportContent(source, options?: PPTXExportOptions, context?: IOContext) {
     // PowerPoint holds sRGB colors only.
-    const request = await inSRGB(source)
+    const { request, copied } = await inSRGB(source)
     const target = resolvePPTXExportNodes(request)
     if (!target) throw new Error('Nothing to export')
     const { renderNodesToPPTX } = await import('./formats/pptx')
-    // A converted copy shares the document's layer ids, so its fallback images are drawn by the
-    // headless renderer, which starts clear, not by one holding the document's own pictures.
-    const converted = request.graph !== source.graph
+    // A copy's fallback images are drawn by the headless renderer, not the host's.
     const data = await renderNodesToPPTX(request.graph, target.pageId, target.nodeIds, {
       ...options,
-      context: converted ? undefined : (options?.context ?? context)
+      context: copied ? undefined : (options?.context ?? context)
     })
     if (!data) throw new Error('Nothing to export')
     return {
