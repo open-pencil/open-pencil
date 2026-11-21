@@ -305,12 +305,84 @@ describe('renderNodesToSVG()', () => {
       'style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="30" height="30"'
     )
     expect(result).toContain(
-      'style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="50" height="50"'
+      'style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="50" height="50"'
     )
+    expect(result).toContain('type="luminanceToAlpha"')
+    expect(result).toContain('operator="in"')
     expect(result).not.toContain('fill-opacity="0.25"')
     expect(result).not.toContain('width="70"')
     expect(result).toContain('fill="#00FF00"')
     expect(result).toContain('<g mask="url(#mask0)">')
+    expect(result).toContain('<g mask="url(#mask2)">')
+  })
+
+  test('consecutive VECTOR frame masks allocate distinct clip ids and mixed runs keep each mask mode', () => {
+    const graph = makeSceneGraph('Page 1')
+    const root = graph.createNode('FRAME', firstPageId(graph), {
+      width: 100,
+      height: 100
+    })
+
+    // Two consecutive clipped VECTOR frame masks must share ctx.defIdCounter
+    for (const x of [0, 40]) {
+      const maskFrame = graph.createNode('FRAME', root.id, {
+        x,
+        width: 20,
+        height: 20,
+        clipsContent: true,
+        isMask: true,
+        maskType: 'VECTOR'
+      })
+      graph.createNode('RECTANGLE', maskFrame.id, {
+        width: 20,
+        height: 20,
+        fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+      })
+    }
+    graph.createNode('RECTANGLE', root.id, {
+      width: 100,
+      height: 20,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+
+    // Mixed ALPHA (dark) + LUMINANCE run on its own sibling container
+    const mixed = graph.createNode('FRAME', root.id, {
+      y: 30,
+      width: 100,
+      height: 40
+    })
+    graph.createNode('RECTANGLE', mixed.id, {
+      width: 20,
+      height: 20,
+      isMask: true,
+      maskType: 'ALPHA',
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    graph.createNode('RECTANGLE', mixed.id, {
+      x: 25,
+      width: 20,
+      height: 20,
+      isMask: true,
+      maskType: 'LUMINANCE',
+      opacity: 0.5,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+    })
+    graph.createNode('RECTANGLE', mixed.id, {
+      width: 60,
+      height: 20,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }]
+    })
+
+    const result = exportSVGOrThrow(graph, [root.id])
+    expect(result).toContain('<clipPath id="clip2">')
+    expect(result).toContain('<clipPath id="clip3">')
+    expect(result).toContain('<g clip-path="url(#clip2)">')
+    expect(result).toContain('<g clip-path="url(#clip3)">')
+    // Dark ALPHA member stays unfiltered inside mask-type:alpha; only LUMINANCE member gets the filter.
     expect(result).toContain('<g mask="url(#mask1)">')
+    expect(result).toContain('<rect width="20" height="20" fill="#000000"/>')
+    expect(result).toMatch(
+      /<g filter="url\(#maskLuma0\)">\s*<g transform="translate\(25, 0\)" opacity="0\.5">/
+    )
   })
 })
