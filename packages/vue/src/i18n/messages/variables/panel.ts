@@ -114,6 +114,7 @@ export const variablesMessageDefaults = {
   importDesignTokens: 'Import design tokens',
   tokenPreset: 'Variable preset',
   tokenThemes: 'Themes',
+  recentVariables: 'Recent',
   loadTokenPreset: params('Load {preset} variables'),
   libraryCollection: 'Library',
   libraryCollectionHint: 'Copied from a library. Edits are saved in this file and show in Figma.',

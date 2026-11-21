@@ -24,7 +24,15 @@ const appPickerTheme = {
     list: 'flex min-h-0 flex-col gap-2 overflow-y-auto px-2 pb-2',
     group: '',
     groupLabel: 'px-1 pb-1 text-3xs font-medium tracking-wide text-muted uppercase',
-    item: 'flex w-full cursor-pointer items-center gap-2 rounded px-1 py-1 text-start outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-hover',
+    item: 'flex w-full cursor-pointer items-center gap-2 rounded px-1 py-1 text-start outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-hover data-[nested]:ps-5',
+    // A heading within a group, such as `color`, over the folders it holds.
+    section: 'px-1 pt-1.5 pb-0.5 text-2xs font-medium text-muted capitalize',
+    // A folder's header opens and closes its choices; its summary, such as colors, sits after it.
+    folder:
+      'flex min-h-7 w-full cursor-pointer items-center gap-1.5 rounded px-1 text-start text-xs text-surface outline-none select-none hover:bg-hover focus-visible:bg-hover',
+    folderIcon:
+      'size-3 shrink-0 text-muted transition-transform motion-reduce:transition-none data-[open]:rotate-90',
+    folderLabel: 'min-w-0 flex-1 truncate',
     leading:
       'flex size-8 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-panel-secondary text-muted',
     text: 'min-w-0 flex-1',

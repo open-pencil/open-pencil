@@ -11,6 +11,14 @@ export interface AppPickerItem {
   description?: string
   /** Items keep their order; groups appear in the order their first item does. */
   group?: string
+  /** A heading within the group that its folders and items sit under, such as `color`. */
+  section?: string
+  /**
+   * A collapsible set within the group, such as a palette's shades, placed where its first item
+   * is. Closed until opened, unless it holds the selected item, is in `openFolders`, or a
+   * search shows what it matches.
+   */
+  folder?: string
   disabled?: boolean
 }
 
@@ -45,6 +53,8 @@ export interface AppPickerProps {
   search?: 'local' | 'remote'
   side?: 'left' | 'right' | 'top' | 'bottom'
   align?: 'start' | 'center' | 'end'
+  /** Folders that start open, by name, such as recent choices. */
+  openFolders?: readonly string[]
   ui?: ComponentUI<AppPickerTheme>
 }
 
@@ -66,6 +76,8 @@ export interface AppPickerSlots {
   /** A control at the end of the search field that narrows the list, such as a category. */
   'search-trailing'?(): VNode[]
   trailing?(props: { item: AppPickerItem }): VNode[]
+  /** A summary of a folder's items beside its name, such as the colors it holds. */
+  folder?(props: { folder: string; items: AppPickerItem[] }): VNode[]
   /** What the list says when it has nothing to show, such as a link; `emptyLabel` by default. */
   empty?(): VNode[]
   /**
@@ -105,6 +117,8 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import theme, { APP_PICKER_COLUMNS } from '@/theme/select/picker'
 
+import { pickerRows, type AppPickerRow } from './folders'
+
 const {
   heading,
   items,
@@ -121,6 +135,7 @@ const {
   search = 'local',
   side = 'left',
   align = 'start',
+  openFolders = [],
   ui
 } = defineProps<AppPickerProps>()
 const emit = defineEmits<{
@@ -132,16 +147,21 @@ const slots = defineSlots<AppPickerSlots>()
 const open = defineModel<boolean>('open', { default: false })
 const { portalActive } = useRetainedPopup(open, () => close())
 const query = defineModel<string>('query', { default: '' })
-// However the list closes, by the user or from outside through v-model, it reopens unfiltered.
+/** Folders the user opened or closed against how they start, by key. */
+const toggledFolders = shallowRef<ReadonlySet<string>>(new Set())
+// However the list closes, by the user or from outside through v-model, it reopens unfiltered,
+// its folders as they start.
 watch(open, (isOpen) => {
-  if (!isOpen) query.value = ''
+  if (isOpen) return
+  query.value = ''
+  toggledFolders.value = new Set()
 })
 const styles = computed(() => tv(theme)({ density, layout }))
 
 const matches = computed(() => {
   const term = query.value.trim()
   return term && search === 'local'
-    ? fuzzySearch(items, ['label', 'description', 'group'], term)
+    ? fuzzySearch(items, ['label', 'description', 'group', 'folder'], term)
     : items
 })
 const groups = computed(() => {
@@ -152,6 +172,26 @@ const groups = computed(() => {
   }
   return [...byGroup.entries()]
 })
+
+function startsOpen(folder: string, entries: AppPickerItem[]): boolean {
+  return openFolders.includes(folder) || entries.some((item) => item.value === selected)
+}
+
+function isFolderOpen(key: string, folder: string, entries: AppPickerItem[]): boolean {
+  if (query.value.trim()) return true
+  return startsOpen(folder, entries) !== toggledFolders.value.has(key)
+}
+
+function toggleFolder(key: string) {
+  const next = new Set(toggledFolders.value)
+  if (!next.delete(key)) next.add(key)
+  toggledFolders.value = next
+}
+
+/** Each group's rows: its choices, with folders closed or open. */
+const groupRows = computed<[string, AppPickerRow<AppPickerItem>[]][]>(() =>
+  groups.value.map(([group, entries]) => [group, pickerRows(group, entries, isFolderOpen)])
+)
 
 const highlighted = shallowRef<AppPickerItem | null>(null)
 watch(matches, () => {
@@ -282,42 +322,71 @@ function select(value: AcceptableValue) {
               <slot name="empty">{{ emptyLabel }}</slot>
             </p>
             <ListboxGroup
-              v-for="[group, entries] in groups"
+              v-for="[group, rows] in groupRows"
               :key="group"
               :class="styles.group({ class: ui?.group })"
             >
               <ListboxGroupLabel v-if="group" :class="styles.groupLabel({ class: ui?.groupLabel })">
                 {{ group }}
               </ListboxGroupLabel>
-              <!-- Reka marks a disabled option only with data-disabled; assistive tech needs aria-disabled. -->
-              <ListboxItem
-                v-for="item in entries"
-                :key="item.value"
-                :value="item.value"
-                :disabled="item.disabled"
-                :aria-disabled="item.disabled || undefined"
-                :aria-label="columns ? item.label : undefined"
-                :data-selected="item.value === selected || undefined"
-                :class="styles.item({ class: ui?.item })"
-              >
-                <span v-if="slots.leading" :class="styles.leading({ class: ui?.leading })">
-                  <slot name="leading" :item="item" />
-                </span>
-                <span :class="styles.text({ class: ui?.text })">
-                  <span :class="styles.label({ class: ui?.label })">{{ item.label }}</span>
-                  <span
-                    v-if="item.description && density === 'comfortable'"
-                    :class="styles.description({ class: ui?.description })"
-                  >
-                    {{ item.description }}
+              <template v-for="row in rows" :key="row.kind === 'item' ? row.item.value : row.key">
+                <div
+                  v-if="row.kind === 'section'"
+                  :class="styles.section({ class: ui?.section })"
+                  data-slot="section"
+                >
+                  {{ row.name }}
+                </div>
+                <button
+                  v-else-if="row.kind === 'folder'"
+                  type="button"
+                  :aria-expanded="row.open"
+                  :class="styles.folder({ class: ui?.folder })"
+                  data-slot="folder"
+                  @click="toggleFolder(row.key)"
+                >
+                  <icon-lucide-chevron-right
+                    data-direction="reading"
+                    :class="styles.folderIcon({ class: ui?.folderIcon })"
+                    :data-open="row.open || undefined"
+                  />
+                  <span :class="styles.folderLabel({ class: ui?.folderLabel })">{{
+                    row.name
+                  }}</span>
+                  <slot name="folder" :folder="row.name" :items="row.items" />
+                </button>
+                <!-- Reka marks a disabled option only with data-disabled; assistive tech needs aria-disabled. -->
+                <ListboxItem
+                  v-else
+                  :value="row.item.value"
+                  :disabled="row.item.disabled"
+                  :aria-disabled="row.item.disabled || undefined"
+                  :aria-label="
+                    columns || row.nested ? (row.item.description ?? row.item.label) : undefined
+                  "
+                  :data-selected="row.item.value === selected || undefined"
+                  :data-nested="row.nested || undefined"
+                  :class="styles.item({ class: ui?.item })"
+                >
+                  <span v-if="slots.leading" :class="styles.leading({ class: ui?.leading })">
+                    <slot name="leading" :item="row.item" />
                   </span>
-                </span>
-                <slot name="trailing" :item="item" />
-                <icon-lucide-check
-                  v-if="item.value === selected"
-                  :class="styles.check({ class: ui?.check })"
-                />
-              </ListboxItem>
+                  <span :class="styles.text({ class: ui?.text })">
+                    <span :class="styles.label({ class: ui?.label })">{{ row.item.label }}</span>
+                    <span
+                      v-if="row.item.description && density === 'comfortable'"
+                      :class="styles.description({ class: ui?.description })"
+                    >
+                      {{ row.item.description }}
+                    </span>
+                  </span>
+                  <slot name="trailing" :item="row.item" />
+                  <icon-lucide-check
+                    v-if="row.item.value === selected"
+                    :class="styles.check({ class: ui?.check })"
+                  />
+                </ListboxItem>
+              </template>
             </ListboxGroup>
           </ListboxContent>
         </ListboxRoot>

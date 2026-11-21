@@ -16,6 +16,8 @@ export interface VariablePickerItem {
 
 export interface VariablePickerProps {
   items: VariablePickerItem[]
+  /** Variables applied last, newest first, by ID; each collection lists them first as Recent. */
+  recent?: readonly string[]
   /** The variable the value points at now, checked in the list. */
   selected?: string
   state: BindingState

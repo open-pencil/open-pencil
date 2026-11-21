@@ -23,6 +23,7 @@ import { computed } from 'vue'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { useBindableValue } from '@open-pencil/vue/primitives/BindableValue'
 
+import { recentVariableIds, rememberRecentVariable } from '@/app/editor/tokens/recent'
 import { VariablePicker, type VariablePickerItem } from '@/components/ui/binding'
 
 /** The variable picker of a field inside `BindableValueRoot`, binding the field's targets. */
@@ -63,6 +64,11 @@ const items = computed<VariablePickerItem[]>(() =>
   })
 )
 
+function bind(id: string) {
+  rememberRecentVariable(id)
+  binding.actions.bind(id)
+}
+
 defineOptions({ inheritAttrs: false })
 </script>
 
@@ -83,9 +89,10 @@ defineOptions({ inheritAttrs: false })
     :ui="ui"
     v-model:open="open"
     :items="items"
+    :recent="recentVariableIds"
     :selected="binding.variable.value?.id"
     :state="binding.state.value"
-    @select="binding.actions.bind($event)"
+    @select="bind"
     @detach="binding.actions.unbind()"
     @create="binding.actions.create($event)"
   />

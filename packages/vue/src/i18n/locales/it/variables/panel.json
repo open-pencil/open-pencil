@@ -107,6 +107,7 @@
   "importDesignTokens": "Importa design token",
   "tokenPreset": "Preset di variabili",
   "tokenThemes": "Temi",
+  "recentVariables": "Recenti",
   "loadTokenPreset": "Carica le variabili di {preset}",
   "libraryCollection": "Libreria",
   "libraryCollectionHint": "Copiata da una libreria. Le modifiche vengono salvate in questo file e si vedono in Figma.",

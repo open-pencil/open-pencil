@@ -107,6 +107,7 @@
   "importDesignTokens": "Importuj tokeny projektowe",
   "tokenPreset": "Zestaw zmiennych",
   "tokenThemes": "Motywy",
+  "recentVariables": "Ostatnie",
   "loadTokenPreset": "Wczytaj zmienne {preset}",
   "libraryCollection": "Biblioteka",
   "libraryCollectionHint": "Skopiowana z biblioteki. Zmiany są zapisywane w tym pliku i widoczne w Figmie.",

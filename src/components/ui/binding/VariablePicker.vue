@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 
+import { colorToCSS } from '@open-pencil/scene-graph/color'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -8,7 +9,7 @@ import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import AppPicker, { type AppPickerItem } from '@/components/ui/select/AppPicker.vue'
 
 import BindingTrigger from './BindingTrigger.vue'
-import type { VariablePickerProps } from './picker'
+import type { VariablePickerItem, VariablePickerProps } from './picker'
 import { useBindingFieldUI } from './ui'
 
 /**
@@ -17,6 +18,7 @@ import { useBindingFieldUI } from './ui'
  */
 const {
   items,
+  recent = [],
   selected,
   state,
   triggerLabel,
@@ -41,7 +43,7 @@ const emit = defineEmits<{
   closeAutoFocus: [event: Event]
 }>()
 
-const { common } = useI18n()
+const { common, variables } = useI18n()
 const creating = ref(false)
 const createName = ref('')
 const createInput = ref<HTMLInputElement | null>(null)
@@ -52,12 +54,71 @@ const triggerTooltip = computed(() => {
   const bound = state === 'bound' ? items.find((item) => item.id === selected) : undefined
   return bound?.name ?? triggerLabel
 })
-const pickerItems = computed<AppPickerItem[]>(() =>
-  items.map((item) => ({ value: item.id, label: item.name, group: item.collection }))
-)
+/** A recent variable's row, listed apart from the same variable in its group. */
+const RECENT_PREFIX = 'recent:'
 
-function color(id: string) {
-  return items.find((item) => item.id === id)?.color
+function recentItems(): AppPickerItem[] {
+  const byId = new Map(items.map((item) => [item.id, item]))
+  return recent.flatMap((id) => {
+    const item = byId.get(id)
+    if (!item) return []
+    const row = { value: `${RECENT_PREFIX}${id}`, label: item.name, group: item.collection }
+    return [{ ...row, folder: variables.value.recentVariables }]
+  })
+}
+
+/** Recent variables, then each variable where its name's path puts it. */
+const pickerItems = computed<AppPickerItem[]>(() => {
+  const sections = sectionsOf(items)
+  return [...recentItems(), ...items.map((item) => groupedItem(item, sections))]
+})
+
+/** The headings a collection's longer paths make: `color` for `color/red/500`. */
+function sectionsOf(entries: readonly VariablePickerItem[]): Set<string> {
+  const deep = entries.filter((item) => item.name.split('/').length > 2)
+  return new Set(deep.map((item) => sectionKey(item.collection, item.name.split('/').slice(0, -2))))
+}
+
+function sectionKey(collection: string | undefined, path: readonly string[]): string {
+  return `${collection ?? ''}\u0000${path.join(' / ')}`
+}
+
+/**
+ * A name with a path lists its last part in a folder of the part before: `spacing/4` as `4` in
+ * `spacing`, and `color/red/500` as `500` in `red`, under the heading `color`. A name such as
+ * `color/white`, whose first part is already a heading, sits under it before its folders.
+ */
+function groupedItem(item: VariablePickerItem, sections: ReadonlySet<string>): AppPickerItem {
+  const path = item.name.split('/')
+  const row = { value: item.id, label: path.at(-1) ?? item.name, group: item.collection }
+  if (path.length < 2) return { ...row, label: item.name }
+  const parent = path.slice(0, -1)
+  if (sections.has(sectionKey(item.collection, parent))) {
+    return { ...row, description: item.name, section: parent.join(' / ') }
+  }
+  const section = path.length > 2 ? path.slice(0, -2).join(' / ') : undefined
+  return { ...row, description: item.name, section, folder: path.at(-2) }
+}
+
+function variableId(value: string): string {
+  return value.startsWith(RECENT_PREFIX) ? value.slice(RECENT_PREFIX.length) : value
+}
+
+function itemOf(value: string) {
+  const id = variableId(value)
+  return items.find((item) => item.id === id)
+}
+
+function color(value: string) {
+  return itemOf(value)?.color
+}
+
+/** The colors of a folder's variables, for the strip beside its name. */
+function folderColors(entries: readonly AppPickerItem[]) {
+  return entries.flatMap((entry) => {
+    const value = color(entry.value)
+    return value ? [value] : []
+  })
 }
 
 function startCreate() {
@@ -93,13 +154,14 @@ defineOptions({ inheritAttrs: false })
       :heading="triggerLabel"
       :items="pickerItems"
       :selected="selected"
+      :open-folders="[variables.recentVariables]"
       density="compact"
       :search-placeholder="searchPlaceholder"
       :empty-label="emptyLabel"
       :close-label="closeLabel ?? common.close"
       :tooltip="triggerTooltip"
       :side="side"
-      @select="emit('select', $event)"
+      @select="emit('select', variableId($event))"
       @close-auto-focus="emit('closeAutoFocus', $event)"
     >
       <template #trigger>
@@ -127,12 +189,24 @@ defineOptions({ inheritAttrs: false })
         <icon-lucide-diamond v-else class="size-3.5 text-muted" />
       </template>
       <template #trailing="{ item }">
-        <span
-          v-if="items.find((entry) => entry.id === item.value)?.text"
-          class="shrink-0 text-muted tabular-nums"
-        >
-          {{ items.find((entry) => entry.id === item.value)?.text }}
+        <span v-if="itemOf(item.value)?.text" class="shrink-0 text-muted tabular-nums">
+          {{ itemOf(item.value)?.text }}
         </span>
+      </template>
+      <template #folder="{ items: entries }">
+        <span
+          v-if="folderColors(entries).length > 0"
+          class="flex shrink-0 gap-px"
+          aria-hidden="true"
+        >
+          <span
+            v-for="(swatch, index) in folderColors(entries).slice(0, 11)"
+            :key="index"
+            class="size-2.5 first:rounded-s-sm last:rounded-e-sm"
+            :style="{ backgroundColor: colorToCSS(swatch) }"
+          />
+        </span>
+        <span v-else class="shrink-0 text-3xs text-muted tabular-nums">{{ entries.length }}</span>
       </template>
       <template v-if="state !== 'unbound' || creating || createLabel" #footer>
         <AppButton
