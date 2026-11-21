@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useDesignPromptSetting } from '@/app/ai/prompts/settings/use'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
@@ -18,7 +18,7 @@ import PromptTemplateSection from './PromptTemplateSection.vue'
  * OpenPencil's or in their place, and the Knap templates for reviews, chat titles, and
  * compaction summaries.
  */
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const design = useDesignPromptSetting()
 const { text: designText, mode: designMode, modified: designModified } = design
 const modes = computed(() => [

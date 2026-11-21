@@ -5,7 +5,7 @@ import { computed } from 'vue'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { figJamColor } from '@open-pencil/scene-graph/figjam'
 import { useShapeWithText } from '@open-pencil/vue/controls/shape-with-text'
-import { useFigJamMessages, useShapeMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import FigJamPalette from '@/components/figjam/FigJamPalette.vue'
 import { SHAPE_KIND_ICONS } from '@/components/icons/shapes'
@@ -22,8 +22,8 @@ import ToolbarMenu from './ToolbarMenu.vue'
  * outline, and, once the shape has a label, its text menus.
  */
 const shape = useShapeWithText()
-const shapes = useShapeMessages()
-const figjam = useFigJamMessages()
+const shapes = useMessages('shapes')
+const figjam = useMessages('figjam')
 const styles = tv(theme)()
 
 const fillHex = computed(() =>

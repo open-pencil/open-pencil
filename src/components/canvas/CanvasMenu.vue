@@ -17,7 +17,7 @@ import {
 } from '@open-pencil/vue/editor/commands'
 import { useMenuModel } from '@open-pencil/vue/editor/menu-model'
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
-import { useCommentMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { vTestId } from '@open-pencil/vue/testing'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -41,8 +41,8 @@ const store = useEditorStore()
 const { editor, selectedIds, hasSelection } = useSelectionState()
 const { menuItem } = useEditorCommands()
 const { canvasMenu } = useMenuModel()
-const { menu: t } = useI18n()
-const commentMessages = useCommentMessages()
+const t = useMessages('menu')
+const commentMessages = useMessages('comments')
 
 const entries = useCanvasContextMenu(
   () => ({

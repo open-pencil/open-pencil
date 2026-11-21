@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 
@@ -10,7 +10,7 @@ import type { CloudSyncState } from './types'
 /** A Cloud document's sync state as one small icon, explained on hover; nothing when synced. */
 const { state } = defineProps<{ state: CloudSyncState }>()
 
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const label = computed(
   () =>
     ({

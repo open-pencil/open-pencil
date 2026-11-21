@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useCloudMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { IS_OFFICIAL_CLOUD_SITE } from '@/app/cloud/availability'
 import { openExternalLink } from '@/app/shell/ui'
@@ -10,8 +10,8 @@ import { DESKTOP_BETA_DOWNLOAD_URL } from '@/constants'
  * Says the official Cloud is in beta while sign-up is open to testers, in the editor it serves on
  * its own address, and links the desktop beta, the first desktop release that works with it.
  */
-const cloud = useCloudMessages()
-const { common } = useI18n()
+const cloud = useMessages('cloud/editor')
+const common = useMessages('common')
 </script>
 
 <template>

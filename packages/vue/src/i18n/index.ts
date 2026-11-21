@@ -1,37 +1,5 @@
-export {
-  useI18n,
-  useI18nNamespace,
-  useAIMessages,
-  useAutomationMessages,
-  useCodeMessages,
-  useCollaborationMessages,
-  useCommandMessages,
-  useCommentMessages,
-  useCommonMessages,
-  useCredentialMessages,
-  useDesignCheckMessages,
-  useDiagnosticsMessages,
-  useEditorMessages,
-  useFileMessages,
-  useFontMessages,
-  useMediaMessages,
-  useMenuMessages,
-  usePageMessages,
-  usePanelMessages,
-  useRecoveryMessages,
-  useRenameMessages,
-  useSettingsMessages,
-  useStatusMessages,
-  useStorageMessages,
-  useFigJamMessages,
-  useShapeMessages,
-  useToolMessages,
-  useUpdateMessages,
-  useCloudMessages,
-  useCloudPortalMessages,
-  useVariableMessages,
-  useVariableTypeMessages
-} from '#vue/i18n/useI18n'
+export { useLocale, useMessages } from '#vue/i18n/use'
+export type { MessagesOf } from '#vue/i18n/use'
 export { i18n } from '#vue/i18n/create'
 export {
   locale,
@@ -44,4 +12,5 @@ export {
 } from '#vue/i18n/locale'
 export { RIGHT_TO_LEFT_LOCALES, directedTranslations } from '#vue/i18n/direction'
 export type { Locale, TranslatedLocale } from '#vue/i18n/locale'
-export * from '#vue/i18n/messages'
+export { messageDefaults, messageStores } from '#vue/i18n/messages'
+export type { LocaleTranslations, MessageNamespace } from '#vue/i18n/messages'

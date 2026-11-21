@@ -1,0 +1,19 @@
+{
+  "decline": "Refuser",
+  "removeAccess": "Retirer l’accès",
+  "declineHeading": "Refuser {name} ?",
+  "declineDescription": "Cette personne en est informée par e-mail et pourra refaire une demande plus tard.",
+  "removeAccessHeading": "Retirer l’accès de {name} ?",
+  "removeAccessDescription": "Cette personne ne pourra plus se connecter et en sera informée par e-mail.",
+  "reviewNote": "Note pour les administrateurs (facultatif)",
+  "noteDetail": "Note : {note}",
+  "noOneWaiting": "Personne n’attend",
+  "nothingHere": "Rien pour le moment",
+  "requestsEmptyDescription": "Les nouvelles demandes apparaissent ici, et les administrateurs reçoivent un e-mail pour chacune.",
+  "inviteWaitingHeading": "Inviter toutes les personnes en attente",
+  "inviteWaitingDescription": "Approuve chaque demande en attente et envoie à chaque personne la lettre du fondateur sur la bêta.",
+  "inviteWaiting": "Approuver et inviter",
+  "inviteWaitingConfirmHeading": "Approuver et inviter toutes les personnes en attente ?",
+  "inviteWaitingConfirmDescription": "Chaque personne reçoit un e-mail : Cloud est ouvert, c’est encore une bêta, et voici où signaler les problèmes. La connexion est possible tout de suite.",
+  "invitationsSent": "Les invitations sont en route."
+}

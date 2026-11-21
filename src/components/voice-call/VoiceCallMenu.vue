@@ -3,7 +3,7 @@ import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, useId } from 'vue'
 
-import { useCollaborationMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { VoiceCallError } from '@/app/collab/voice/call'
 import AvatarStack from '@/components/presence/AvatarStack.vue'
@@ -60,7 +60,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const messages = useCollaborationMessages()
+const messages = useMessages('collaboration')
 const microphoneId = useId()
 const speakerId = useId()
 const ui = computed(() => voiceCall({ inCall }))

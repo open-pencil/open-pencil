@@ -1,7 +1,7 @@
 import { onMounted } from 'vue'
 
 import { acpAgentFor } from '@open-pencil/core/constants'
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { agentCommands } from '@/app/ai/agents/acp/commands'
 import {
@@ -19,7 +19,7 @@ import { commandCompletion, referenceCompletion, type ComposerSections } from '.
 
 /** What `/` and `@` offer in a message field. */
 export function useComposerCompletions() {
-  const ai = useAIMessages()
+  const ai = useMessages('ai')
   const { providerID } = useAIChat()
 
   // Skills installed since the app started are offered without opening Settings first.

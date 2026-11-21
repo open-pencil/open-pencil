@@ -1,7 +1,7 @@
 import { params } from '@nanostores/i18n'
 
 /**
- * Messages of the `cloudPortal` namespace for access requests: deciding each one, and on the
+ * Messages of the Cloud server's pages for access requests: deciding each one, and on the
  * official server, approving everyone waiting at once, each with the founder's letter.
  */
 export const requestPortalMessageDefaults = {

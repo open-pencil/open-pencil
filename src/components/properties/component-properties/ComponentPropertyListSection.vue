@@ -13,7 +13,7 @@ import { computed, ref, type ComponentPublicInstance } from 'vue'
 
 import type { ComponentPropertyType } from '@open-pencil/scene-graph'
 import { useComponentPropertyAuthoring } from '@open-pencil/vue/controls/component-props'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -37,7 +37,8 @@ const startSide = useInlineSide('start')
 /** A main component's text, boolean and swap properties, and the nested instances it exposes. */
 const authoring = useComponentPropertyAuthoring()
 const { context, definitions, rows, conflicts, componentSet, nestedInstances, editable } = authoring
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 const menu = useMenuUI({ content: 'min-w-44' })
 const item = menuItem({ justify: 'start' })
 const nestedOpen = ref(false)

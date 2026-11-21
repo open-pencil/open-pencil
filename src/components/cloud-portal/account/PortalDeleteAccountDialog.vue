@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 
 import type { CloudAccountDeletion } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { PortalAccountArchive } from '@/app/cloud-portal/archive'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -34,7 +34,7 @@ const {
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ downloadAll: []; confirm: [] }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const confirmed = ref(false)
 
 const blocked = computed(

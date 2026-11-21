@@ -3,7 +3,7 @@ import { computed, useTemplateRef } from 'vue'
 
 import { providerKind } from '@open-pencil/core/constants'
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { agentModeCategories } from '@/app/ai/agents/acp/options'
 import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
@@ -27,7 +27,7 @@ import ChatComposer from './ChatComposer.vue'
 
 const { providerID, providerDef, modelID, customModelID } = useAIChat()
 const { editor, selectedIds } = useSelectionState()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 
 const {
   status,

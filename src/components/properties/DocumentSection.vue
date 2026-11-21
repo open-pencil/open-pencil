@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import type { FigCompression } from '@open-pencil/scene-graph/fig-compression'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -12,7 +12,7 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 /** Settings for the whole document, shown with nothing selected. */
 const store = useEditorStore()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const current = useSceneComputed(() => store.figCompression())
 
 const compressionOptions = computed<Array<{ value: FigCompression; label: string }>>(() => [

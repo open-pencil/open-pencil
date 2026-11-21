@@ -7,7 +7,7 @@ import IconSave from '~icons/lucide/save'
 import IconZoomIn from '~icons/lucide/zoom-in'
 
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { isCloudBinding, openCloudShare, saveDocument } from '@/app/cloud/integration'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
@@ -32,7 +32,8 @@ function createMobileHudContext() {
   const collab = useCollabInjected()
   const store = useEditorStore()
   const { send } = useSendLink()
-  const { common, collaboration } = useI18n()
+  const common = useMessages('common')
+  const collaboration = useMessages('collaboration')
   const notifications = useNotificationMessages()
   const { getCommand } = useEditorCommands()
 

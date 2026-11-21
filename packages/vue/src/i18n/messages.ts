@@ -1,83 +1,67 @@
-import { aiMessageDefaults, aiMessages } from '#vue/i18n/messages/ai'
-import { automationMessageDefaults, automationMessages } from '#vue/i18n/messages/automation'
-import { cloudMessageDefaults, cloudMessages } from '#vue/i18n/messages/cloud/editor'
-import { cloudPortalMessageDefaults, cloudPortalMessages } from '#vue/i18n/messages/cloud/portal'
-import { codeMessageDefaults, codeMessages } from '#vue/i18n/messages/code'
-import {
-  collaborationMessageDefaults,
-  collaborationMessages
-} from '#vue/i18n/messages/collaboration'
-import { commandMessageDefaults, commandMessages } from '#vue/i18n/messages/commands'
-import { commentMessageDefaults, commentMessages } from '#vue/i18n/messages/comments'
-import { commonMessageDefaults, commonMessages } from '#vue/i18n/messages/common'
-import { credentialsMessageDefaults, credentialsMessages } from '#vue/i18n/messages/credentials'
-import { designCheckMessageDefaults, designCheckMessages } from '#vue/i18n/messages/design-check'
-import { diagnosticsMessageDefaults, diagnosticsMessages } from '#vue/i18n/messages/diagnostics'
-import { editorMessageDefaults, editorMessages } from '#vue/i18n/messages/editor'
-import { figJamMessageDefaults, figJamMessages } from '#vue/i18n/messages/figjam'
-import { filesMessageDefaults, filesMessages } from '#vue/i18n/messages/files'
-import { fontsMessageDefaults, fontsMessages } from '#vue/i18n/messages/fonts'
-import { mediaMessageDefaults, mediaMessages } from '#vue/i18n/messages/media'
-import { menuMessageDefaults, menuMessages } from '#vue/i18n/messages/menu'
-import { pageMessageDefaults, pageMessages } from '#vue/i18n/messages/pages'
-import { panelMessageDefaults, panelMessages } from '#vue/i18n/messages/panels'
-import { recoveryMessageDefaults, recoveryMessages } from '#vue/i18n/messages/recovery'
-import { renameMessageDefaults, renameMessages } from '#vue/i18n/messages/rename'
-import { settingsMessageDefaults, settingsMessages } from '#vue/i18n/messages/settings'
-import { shapeMessageDefaults, shapeMessages } from '#vue/i18n/messages/shapes'
-import { statusMessageDefaults, statusMessages } from '#vue/i18n/messages/statuses'
-import { storageMessageDefaults, storageMessages } from '#vue/i18n/messages/storage'
-import { toolMessageDefaults, toolMessages } from '#vue/i18n/messages/tools'
-import { updatesMessageDefaults, updatesMessages } from '#vue/i18n/messages/updates'
-import { variablesMessageDefaults, variablesMessages } from '#vue/i18n/messages/variables/panel'
-import {
-  variableTypeMessageDefaults,
-  variableTypeMessages
-} from '#vue/i18n/messages/variables/types'
+import type { Messages, TranslationsJSON } from '@nanostores/i18n'
+import { mapValues } from 'es-toolkit'
 
-export {
-  aiMessages,
-  automationMessages,
-  codeMessages,
-  collaborationMessages,
-  commandMessages,
-  commentMessages,
-  commonMessages,
-  credentialsMessages,
-  designCheckMessages,
-  diagnosticsMessages,
-  editorMessages,
-  figJamMessages,
-  filesMessages,
-  fontsMessages,
-  mediaMessages,
-  menuMessages,
-  pageMessages,
-  panelMessages,
-  recoveryMessages,
-  renameMessages,
-  settingsMessages,
-  shapeMessages,
-  statusMessages,
-  storageMessages,
-  toolMessages,
-  updatesMessages,
-  cloudMessages,
-  cloudPortalMessages,
-  variablesMessages,
-  variableTypeMessages
-}
+import { i18n } from '#vue/i18n/create'
+import { aiMessageDefaults } from '#vue/i18n/messages/ai'
+import { automationMessageDefaults } from '#vue/i18n/messages/automation'
+import { cloudMessageDefaults } from '#vue/i18n/messages/cloud/editor'
+import { cloudPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal'
+import { communityPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/community'
+import { personPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/person'
+import { planPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/plan'
+import { requestPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/requests'
+import { accessTokenPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/tokens'
+import { codeMessageDefaults } from '#vue/i18n/messages/code'
+import { collaborationMessageDefaults } from '#vue/i18n/messages/collaboration'
+import { commandMessageDefaults } from '#vue/i18n/messages/commands'
+import { commentMessageDefaults } from '#vue/i18n/messages/comments'
+import { commonMessageDefaults } from '#vue/i18n/messages/common'
+import { credentialsMessageDefaults } from '#vue/i18n/messages/credentials'
+import { designCheckMessageDefaults } from '#vue/i18n/messages/design-check'
+import { diagnosticsMessageDefaults } from '#vue/i18n/messages/diagnostics'
+import { editorMessageDefaults } from '#vue/i18n/messages/editor'
+import { figJamMessageDefaults } from '#vue/i18n/messages/figjam'
+import { filesMessageDefaults } from '#vue/i18n/messages/files'
+import { fontsMessageDefaults } from '#vue/i18n/messages/fonts'
+import { mediaMessageDefaults } from '#vue/i18n/messages/media'
+import { menuMessageDefaults } from '#vue/i18n/messages/menu'
+import { pageMessageDefaults } from '#vue/i18n/messages/pages'
+import { panelMessageDefaults } from '#vue/i18n/messages/panels'
+import { behaviourPanelMessageDefaults } from '#vue/i18n/messages/panels/behaviours'
+import { libraryPanelMessageDefaults } from '#vue/i18n/messages/panels/libraries'
+import { pickerPanelMessageDefaults } from '#vue/i18n/messages/panels/pickers'
+import { recoveryMessageDefaults } from '#vue/i18n/messages/recovery'
+import { renameMessageDefaults } from '#vue/i18n/messages/rename'
+import { settingsMessageDefaults } from '#vue/i18n/messages/settings'
+import { shapeMessageDefaults } from '#vue/i18n/messages/shapes'
+import { statusMessageDefaults } from '#vue/i18n/messages/statuses'
+import { storageMessageDefaults } from '#vue/i18n/messages/storage'
+import { toolMessageDefaults } from '#vue/i18n/messages/tools'
+import { updatesMessageDefaults } from '#vue/i18n/messages/updates'
+import { variablesMessageDefaults } from '#vue/i18n/messages/variables/panel'
+import { variableTypeMessageDefaults } from '#vue/i18n/messages/variables/types'
 
+/**
+ * Every namespace's English messages, named by the path of its file under `messages/`, which is
+ * also where each locale keeps its translations (`locales/<locale>/<namespace>.json`).
+ */
 export const messageDefaults = {
   ai: aiMessageDefaults,
   automation: automationMessageDefaults,
+  'cloud/editor': cloudMessageDefaults,
+  'cloud/portal': cloudPortalMessageDefaults,
+  'cloud/portal/community': communityPortalMessageDefaults,
+  'cloud/portal/person': personPortalMessageDefaults,
+  'cloud/portal/plan': planPortalMessageDefaults,
+  'cloud/portal/requests': requestPortalMessageDefaults,
+  'cloud/portal/tokens': accessTokenPortalMessageDefaults,
   code: codeMessageDefaults,
   collaboration: collaborationMessageDefaults,
   commands: commandMessageDefaults,
   comments: commentMessageDefaults,
   common: commonMessageDefaults,
   credentials: credentialsMessageDefaults,
-  designCheck: designCheckMessageDefaults,
+  'design-check': designCheckMessageDefaults,
   diagnostics: diagnosticsMessageDefaults,
   editor: editorMessageDefaults,
   figjam: figJamMessageDefaults,
@@ -87,6 +71,9 @@ export const messageDefaults = {
   menu: menuMessageDefaults,
   pages: pageMessageDefaults,
   panels: panelMessageDefaults,
+  'panels/behaviours': behaviourPanelMessageDefaults,
+  'panels/libraries': libraryPanelMessageDefaults,
+  'panels/pickers': pickerPanelMessageDefaults,
   recovery: recoveryMessageDefaults,
   rename: renameMessageDefaults,
   settings: settingsMessageDefaults,
@@ -95,8 +82,20 @@ export const messageDefaults = {
   storage: storageMessageDefaults,
   tools: toolMessageDefaults,
   updates: updatesMessageDefaults,
-  cloud: cloudMessageDefaults,
-  cloudPortal: cloudPortalMessageDefaults,
-  variables: variablesMessageDefaults,
-  variableTypes: variableTypeMessageDefaults
+  'variables/panel': variablesMessageDefaults,
+  'variables/types': variableTypeMessageDefaults
 } as const
+
+export type MessageNamespace = keyof typeof messageDefaults
+
+/** A locale's translations: a file for every namespace, each with some of its messages. */
+export type LocaleTranslations = Record<MessageNamespace, TranslationsJSON>
+
+type MessageStores = {
+  readonly [Namespace in MessageNamespace]: Messages<(typeof messageDefaults)[Namespace]>
+}
+
+/** Each namespace's messages in the current locale, as a store. */
+export const messageStores = mapValues(messageDefaults, (defaults, namespace) =>
+  i18n(namespace, defaults)
+) as MessageStores

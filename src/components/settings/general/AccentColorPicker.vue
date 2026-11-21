@@ -5,7 +5,7 @@ import { computed, shallowRef } from 'vue'
 
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { useSettingsMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import type { PickerCancelCause } from '@open-pencil/vue/primitives/ColorPicker'
 
 import { accentPreference } from '@/app/shell/accent'
@@ -15,7 +15,7 @@ import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import theme from '@/theme/settings/accent'
 
-const messages = useSettingsMessages()
+const messages = useMessages('settings')
 const styles = tv(theme)()
 
 const presetLabels = computed<Record<AccentPreset, string>>(() => ({

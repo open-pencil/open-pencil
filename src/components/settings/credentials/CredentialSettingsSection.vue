@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useCredentialSettings } from '@/app/settings/credentials/preferences/use'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
@@ -10,7 +10,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
-const { credentials } = useI18n()
+const credentials = useMessages('credentials')
 const { busy, paused, failed, checkFailed, remembered, retry, retryCheck } = useCredentialSettings()
 </script>
 

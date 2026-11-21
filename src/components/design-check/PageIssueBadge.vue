@@ -3,7 +3,7 @@ import { compact } from 'es-toolkit/array'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { DesignIssueCounts } from '@/app/editor/design-check/issues'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -17,7 +17,7 @@ const pageIssueBadge = tv(pageIssueBadgeTheme)
  */
 const { counts } = defineProps<{ counts: DesignIssueCounts | null }>()
 
-const messages = useDesignCheckMessages()
+const messages = useMessages('design-check')
 const errors = computed(() => counts?.error ?? 0)
 const warnings = computed(() => counts?.warning ?? 0)
 const total = computed(() => errors.value + warnings.value)

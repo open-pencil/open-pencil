@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const commonMessageDefaults = {
   cancel: 'Cancel',
   apply: 'Apply',
@@ -54,5 +52,3 @@ export const commonMessageDefaults = {
   /** Above a field that waits for a name or address typed out before something is deleted. */
   typeToConfirm: params('To confirm, type “{text}”.')
 } as const
-
-export const commonMessages = i18n('common', commonMessageDefaults)

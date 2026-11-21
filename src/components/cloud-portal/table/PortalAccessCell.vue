@@ -5,7 +5,7 @@ import IconLucideLink from '~icons/lucide/link'
 import IconLucideLock from '~icons/lucide/lock'
 import IconLucidePencilLine from '~icons/lucide/pencil-line'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { DocumentAccess } from '../console/content'
 
@@ -14,7 +14,7 @@ import type { DocumentAccess } from '../console/content'
  * not a warning, so it draws no badge.
  */
 const { access } = defineProps<{ access: DocumentAccess }>()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 
 const ICONS = {
   community: IconLucideGlobe,

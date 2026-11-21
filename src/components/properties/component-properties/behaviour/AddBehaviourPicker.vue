@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { BEHAVIOUR_KINDS, type BehaviourKind } from '@open-pencil/scene-graph/behaviours'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPicker, { type AppPickerItem } from '@/components/ui/select/AppPicker.vue'
@@ -11,7 +11,8 @@ import { useBehaviourLabels } from './labels'
 
 /** The section's + : the controls a component can behave as. */
 const emit = defineEmits<{ add: [kind: BehaviourKind] }>()
-const { panels, common } = useI18n()
+const behaviourMessages = useMessages('panels/behaviours')
+const common = useMessages('common')
 const labels = useBehaviourLabels()
 
 const items = computed<AppPickerItem[]>(() =>
@@ -30,15 +31,15 @@ function add(value: string) {
 
 <template>
   <AppPicker
-    :heading="panels.addBehaviour"
+    :heading="behaviourMessages.addBehaviour"
     :items="items"
-    :search-placeholder="panels.searchBehaviours"
-    :empty-label="panels.noBehavioursFound"
+    :search-placeholder="behaviourMessages.searchBehaviours"
+    :empty-label="behaviourMessages.noBehavioursFound"
     :close-label="common.close"
     @select="add"
   >
     <template #trigger>
-      <IconButton :label="panels.addBehaviour" data-property="add-behaviour">
+      <IconButton :label="behaviourMessages.addBehaviour" data-property="add-behaviour">
         <icon-lucide-plus class="size-3.5" />
       </IconButton>
     </template>

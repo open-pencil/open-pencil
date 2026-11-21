@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { DialogClose } from 'reka-ui'
 
-import { useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 
@@ -10,7 +10,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
  * default slot names it otherwise, and takes AppButton's props such as `size` and `disabled`.
  */
 defineOptions({ inheritAttrs: false })
-const common = useCommonMessages()
+const common = useMessages('common')
 </script>
 
 <template>

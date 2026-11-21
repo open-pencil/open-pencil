@@ -1,0 +1,19 @@
+{
+  "decline": "拒绝",
+  "removeAccess": "移除访问权限",
+  "declineHeading": "拒绝 {name}？",
+  "declineDescription": "对方会收到邮件通知，之后可以再次申请。",
+  "removeAccessHeading": "移除 {name} 的访问权限？",
+  "removeAccessDescription": "对方将无法再登录，并会收到邮件通知。",
+  "reviewNote": "给管理员的备注（可选）",
+  "noteDetail": "备注：{note}",
+  "noOneWaiting": "没有待处理的申请",
+  "nothingHere": "暂无内容",
+  "requestsEmptyDescription": "新申请会显示在这里，每条申请都会通过邮件通知管理员。",
+  "inviteWaitingHeading": "邀请所有等待中的人",
+  "inviteWaitingDescription": "批准所有等待中的申请，并给每个人发送创始人关于测试版的信。",
+  "inviteWaiting": "批准并邀请",
+  "inviteWaitingConfirmHeading": "批准并邀请所有等待中的人？",
+  "inviteWaitingConfirmDescription": "每个人会收到一封邮件：Cloud 已开放、仍是测试版，以及在哪里报告问题。他们可以立即登录。",
+  "invitationsSent": "邀请正在发送。"
+}

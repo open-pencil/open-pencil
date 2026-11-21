@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   changePreviewSize,
@@ -23,7 +23,9 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import { settingsSelectUI } from '@/theme/settings/controls'
 
-const { ai, automation, settings } = useI18n()
+const ai = useMessages('ai')
+const automation = useMessages('automation')
+const settings = useMessages('settings')
 const stepPresets = [25, 50, 100, 200]
 const defaults = DEFAULT_APP_PREFERENCES.chat
 const defaultSteps = resolveAgentStepLimit(defaults.maxAgentSteps)

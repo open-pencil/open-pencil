@@ -8,7 +8,7 @@ import {
   type ConstraintEdge,
   type ConstraintValue
 } from '@open-pencil/vue/controls/constraints'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import type { ConstraintsControlActions } from '@open-pencil/vue/primitives/ConstraintsControl'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -29,7 +29,7 @@ const { horizontal, vertical, actions } = defineProps<{
   actions: ConstraintsControlActions
 }>()
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const constraintStyles = tv(constraintsTheme)
 const horizontalPins = computed(() => constraintPins(horizontal))
 const verticalPins = computed(() => constraintPins(vertical))
