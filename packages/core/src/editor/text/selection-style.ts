@@ -2,6 +2,8 @@ import { omit, pick } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { CharacterStyleOverride, SceneNode, StyleRun } from '@open-pencil/scene-graph'
+import { copyFills } from '@open-pencil/scene-graph/copy'
+import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import type { EditorContext } from '#core/editor/types'
 import {
@@ -133,5 +135,41 @@ export function createTextSelectionStyle(
     return layerTextStyleChanges(node, changes)
   }
 
-  return { updateNode, updateNodeWithUndo, commitNodeUpdate, selectionStyle, layerChanges }
+  /**
+   * Applying a fill colour variable while characters are selected colours only those characters
+   * via `styleRuns` (leaving the layer's fills and variable bindings untouched), mirroring other
+   * panel fill edits while text is being edited.
+   */
+  function bindVariable(
+    id: string,
+    field: string,
+    variableId: string,
+    bind: (nodeId: string, path: string, variableId: string) => void,
+    updateWithUndo: (id: string, changes: Partial<SceneNode>, label?: string) => void
+  ) {
+    const range = selectedRange(id)
+    const target = range ? paintBindingTarget(field) : null
+    if (!range || target?.list !== 'fills') {
+      bind(id, field, variableId)
+      return
+    }
+    const node = ctx.graph.getNode(id)
+    const color = ctx.graph.resolveColorVariableForNode(id, variableId)
+    if (!node || !color) return
+    const [style] = characterStyles(node, range[0], range[0] + 1)
+    const fills = copyFills(style.fills)
+    const paint = fills.at(target.index)
+    if (!paint) return
+    fills[target.index] = { ...paint, color: { ...color, a: 1 }, opacity: color.a }
+    updateWithUndo(id, { fills }, 'Bind variable')
+  }
+
+  return {
+    updateNode,
+    updateNodeWithUndo,
+    commitNodeUpdate,
+    selectionStyle,
+    layerChanges,
+    bindVariable
+  }
 }

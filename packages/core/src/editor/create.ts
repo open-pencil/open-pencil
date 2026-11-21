@@ -430,6 +430,17 @@ export function createEditor(options?: EditorOptions) {
       textSelectionStyle.updateNodeWithUndo(id, changes, (target, next) =>
         nodes.updateNodeWithUndo(target, next, label)
       ),
+    bindVariable: (id: string, field: string, variableId: string) =>
+      textSelectionStyle.bindVariable(
+        id,
+        field,
+        variableId,
+        nodes.bindVariable,
+        (target, changes, label = 'Update') =>
+          textSelectionStyle.updateNodeWithUndo(target, changes, (nodeId, next) =>
+            nodes.updateNodeWithUndo(nodeId, next, label)
+          )
+      ),
     getTextSelectionStyle: textSelectionStyle.selectionStyle,
     layerChanges: textSelectionStyle.layerChanges,
 

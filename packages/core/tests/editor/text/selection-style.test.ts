@@ -60,6 +60,60 @@ describe('panel edits while text is edited', () => {
     expect(node().styleRuns).toEqual([])
   })
 
+  test('applying a color variable while characters are selected colors only the selection, not the layer', async () => {
+    const { editor, id, node } = await editingWorld()
+    const layerFills = node().fills
+    const colors = editor.graph.createCollection('Colors')
+    const brand = editor.graph.createVariable('brand', 'COLOR', colors.id, {
+      r: 0.2,
+      g: 0.6,
+      b: 0.9,
+      a: 0.5
+    })
+
+    editor.bindVariable(id, 'fills/0/color', brand.id)
+
+    expect(node().fills).toEqual(layerFills)
+    expect(node().boundVariables['fills/0/color']).toBeUndefined()
+    expect(node().styleRuns).toEqual([
+      {
+        start: 6,
+        length: 5,
+        style: {
+          fills: [
+            {
+              ...layerFills[0],
+              color: { r: 0.2, g: 0.6, b: 0.9, a: 1 },
+              opacity: 0.5
+            }
+          ]
+        }
+      }
+    ])
+
+    editor.undoAction()
+    expect(node().styleRuns).toEqual([])
+  })
+
+  test('binds a color variable to the layer when no characters are selected', async () => {
+    const { editor, id, node } = await editingWorld()
+    const state = expectDefined(editor.textEditor?.state, 'text editor state')
+    state.selectionAnchor = null
+    const colors = editor.graph.createCollection('Colors')
+    const brand = editor.graph.createVariable('brand', 'COLOR', colors.id, {
+      r: 0.2,
+      g: 0.6,
+      b: 0.9,
+      a: 1
+    })
+
+    editor.bindVariable(id, 'fills/0/color', brand.id)
+
+    expect(node().boundVariables['fills/0/color']).toBe(brand.id)
+    expect(node().fills[0].color).toEqual({ r: 0.2, g: 0.6, b: 0.9, a: 1 })
+    expect(node().styleRuns).toEqual([])
+  })
+
   test('record a dragged size as one step back to the runs it started from', async () => {
     const { editor, id, node } = await editingWorld()
 
