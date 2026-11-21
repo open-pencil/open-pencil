@@ -31,6 +31,22 @@ describe('converting colors between profiles', () => {
     expect(red.b).toBeLessThan(0)
   })
 
+  test('extending gives the components converting exactly does, inside sRGB and out', () => {
+    const colors = [
+      P3_RED,
+      BLUE,
+      { r: 0.02, g: 0.5, b: 1, a: 0.4 },
+      { r: -0.1, g: 1.2, b: 0, a: 1 }
+    ]
+    for (const color of colors) {
+      const exact = convertColor(color, 'display-p3', 'srgb')
+      const fast = toExtendedSRGB(color, 'display-p3')
+      for (const channel of ['r', 'g', 'b', 'a'] as const) {
+        expect(fast[channel]).toBeCloseTo(exact[channel], 12)
+      }
+    }
+  })
+
   test('mapping brings a color the target cannot show inside it, keeping its hue', () => {
     const red = convertColor(P3_RED, 'display-p3', 'srgb', 'map')
     expect(fitsGamut(red)).toBe(true)

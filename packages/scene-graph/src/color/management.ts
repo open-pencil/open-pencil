@@ -73,7 +73,33 @@ export function convertColor(
  * whatever it draws on, so a wide-gamut color reaches it whole.
  */
 export function toExtendedSRGB(color: Color, profile: ColorProfile): Color {
-  return convertColor(color, profile, 'srgb')
+  if (profile === 'srgb') return color
+  // Renderers call this for every paint they draw, so it skips culori's color objects: Display P3
+  // shares sRGB's transfer curve, leaving one matrix between the linear components.
+  // Indexed reads of a plain array: destructuring costs more than the conversion.
+  const m = P3_TO_LINEAR_SRGB
+  const r = decodeSRGB(color.r)
+  const g = decodeSRGB(color.g)
+  const b = decodeSRGB(color.b)
+  return {
+    r: encodeSRGB(m[0] * r + m[1] * g + m[2] * b),
+    g: encodeSRGB(m[3] * r + m[4] * g + m[5] * b),
+    b: encodeSRGB(m[6] * r + m[7] * g + m[8] * b),
+    a: color.a
+  }
+}
+
+/** The sRGB transfer curve, mirrored below zero as extended sRGB and culori's `lrgb` take it. */
+function decodeSRGB(channel: number): number {
+  const magnitude = Math.abs(channel)
+  if (magnitude <= 0.04045) return channel / 12.92
+  return (Math.sign(channel) || 1) * Math.pow((magnitude + 0.055) / 1.055, 2.4)
+}
+
+function encodeSRGB(channel: number): number {
+  const magnitude = Math.abs(channel)
+  if (magnitude <= 0.0031308) return channel * 12.92
+  return (Math.sign(channel) || 1) * (1.055 * Math.pow(magnitude, 1 / 2.4) - 0.055)
 }
 
 /**
@@ -101,6 +127,9 @@ export function linearSRGBMatrix(profile: ColorProfile): number[] {
   ].map((primary) => toLinearSRGB({ mode, ...primary }))
   return (['r', 'g', 'b'] as const).flatMap((row) => columns.map((column) => column[row]))
 }
+
+/** Display P3's matrix, made once: renderers convert every paint they draw through it. */
+const P3_TO_LINEAR_SRGB = linearSRGBMatrix('display-p3')
 
 /**
  * A CSS color in any space, mapped into sRGB the way CSS maps out-of-gamut colors: by reducing
