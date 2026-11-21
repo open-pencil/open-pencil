@@ -1,3 +1,5 @@
+import { decodePath } from 'ufo'
+
 import CanvasKitInit, { type CanvasKit } from '@open-pencil/canvaskit'
 
 import { IS_BROWSER } from './constants'
@@ -9,10 +11,23 @@ let instance: Promise<CanvasKit> | null = null
 const EXPLAIN_TIMEOUT_MS = 5000
 
 /**
- * Maps a CanvasKit file name (`canvaskit.wasm`) to the URL it loads from. Mirrors the font
- * manager's bundled-font locator: under Node the file is read beside the package, since
- * CanvasKit's Node loader reads `file:` URLs itself; in a browser the default expects the host
- * to serve it at the site root, and a bundling host sets its emitted URL instead.
+ * The filesystem path a `file:` URL names, with spaces and accents decoded. CanvasKit's Node
+ * loader reads the located file with `fs`, so a URL-encoded path (`%20` for a space) names a
+ * file that does not exist. A static `node:url` import is not an option here: this module also
+ * ships to browsers, whose build leaves `node:` imports external. The leading slash before a
+ * Windows drive letter is dropped, as `fileURLToPath` does.
+ */
+export function filePathFromURL(url: URL): string {
+  const path = decodePath(url.pathname)
+  return /^\/[A-Za-z]:/.test(path) ? path.slice(1) : path
+}
+
+/**
+ * Maps a CanvasKit file name (`canvaskit.wasm`) to where it loads from. Mirrors the font
+ * manager's bundled-font locator: under Node the file is read beside the package as a
+ * filesystem path, since CanvasKit's Node loader hands the located string to `fs`; in a
+ * browser the default expects the host to serve it at the site root, and a bundling host
+ * sets its emitted URL instead.
  */
 export type CanvasKitLocator = (file: string) => string
 
@@ -20,8 +35,13 @@ export interface CanvasKitOptions {
   locateFile?: CanvasKitLocator
 }
 
-let locator: CanvasKitLocator = (file) =>
-  IS_BROWSER ? `/${file}` : new URL(file, import.meta.resolve('@open-pencil/canvaskit')).href
+/** The default locator, exported so tests can check what Node is handed. */
+export const defaultCanvasKitLocator: CanvasKitLocator = (file) =>
+  IS_BROWSER
+    ? `/${file}`
+    : filePathFromURL(new URL(file, import.meta.resolve('@open-pencil/canvaskit')))
+
+let locator: CanvasKitLocator = defaultCanvasKitLocator
 
 /** Points CanvasKit at the host's copy of its files. Call before the first {@link getCanvasKit}. */
 export function setCanvasKitLocator(locate: CanvasKitLocator): void {
