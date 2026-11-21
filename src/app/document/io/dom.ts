@@ -207,7 +207,7 @@ export function createDOMOpenActions({
         load
       )
       // A web page is the HTML file its title names, so a save downloads `<title>.fig`.
-      const sourceName = options.webPage ? `${options.webPage.title}.html` : file.name
+      const sourceName = options.webPage ? `${page.title}.html` : file.name
       setDocumentSource(sourceName, 'html', options.handle, options.path)
       succeeded = true
     } catch (e) {

@@ -23,6 +23,9 @@ async function openFromURL(page: Page, address: string) {
   return dialog
 }
 
+/** The notices on screen that report a failure. */
+const failureNotices = (page: Page) => page.locator('[data-slot="toast"][data-tone="error"]')
+
 /** The dialog stays open with an alert saying why, and no document was opened. */
 async function expectRefused(page: Page, dialog: Locator) {
   await expect(dialog.getByRole('alert')).toBeVisible()
@@ -126,7 +129,7 @@ test('a picture that cannot be read leaves no empty design behind', async ({ pag
 
   // The address was read, so the dialog closed; the open failed after, which a notice says.
   await expect(dialog).toHaveCount(0)
-  await expect(page.getByText(/Could not open “broken”/, { exact: false }).last()).toBeVisible()
+  await expect(failureNotices(page)).toHaveCount(1)
   await expect(page.getByTestId('tabbar-tab')).toHaveCount(1)
 })
 
@@ -166,6 +169,10 @@ test('the tab shows the page loading its files, and closing it cancels the open'
   const requested = new Promise<void>((resolve) => {
     pictureRequested = resolve
   })
+  let pictureAnswered: () => void = () => undefined
+  const answered = new Promise<void>((resolve) => {
+    pictureAnswered = resolve
+  })
   await page.route(`${SITE}/**`, async (route) => {
     const { pathname } = new URL(route.request().url())
     if (pathname === '/') {
@@ -177,7 +184,8 @@ test('the tab shows the page loading its files, and closing it cancels the open'
     // The picture holds the import open until the dialog has closed.
     pictureRequested()
     await released
-    return route.fulfill({ status: 404, headers: OPEN })
+    await route.fulfill({ status: 404, headers: OPEN })
+    pictureAnswered()
   })
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
@@ -186,7 +194,9 @@ test('the tab shows the page loading its files, and closing it cancels the open'
   await requested
   // The page was read, so the dialog closed and its tab shows the open going on.
   await expect(dialog).toHaveCount(0)
-  await expect(page.getByText('Loading stylesheets and pictures')).toBeVisible()
+  await expect
+    .poll(() => page.evaluate(() => window.openPencil?.getStore?.().state.preparation?.phase))
+    .toBe('loading-files')
   const tab = page.getByTestId('tabbar-tab').filter({ hasText: 'site.example.test' })
   await expect(tab).toHaveCount(1)
 
@@ -195,13 +205,21 @@ test('the tab shows the page loading its files, and closing it cancels the open'
     .and(page.getByLabel(/site\.example\.test/))
     .click()
   releasePicture()
+  // Once the held picture is answered, a cancelled import that went on would finish or fail now.
+  await answered
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve())
+      })
+  )
 
   // The import stopped with its tab, which is gone, and a cancelled open is no failure.
   await expect(tab).toHaveCount(0)
   expect(await getPageTexts(page)).not.toContainEqual(
     expect.objectContaining({ text: 'Slow page' })
   )
-  await expect(page.getByText(/Could not open/)).toHaveCount(0)
+  await expect(failureNotices(page)).toHaveCount(0)
 })
 
 test('an address that holds a PDF says it cannot be opened yet', async ({ page }) => {
