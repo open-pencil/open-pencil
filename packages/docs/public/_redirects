@@ -1,3 +1,7 @@
+# Cloud's plans: the pricing page is billing's own, on its own address, where a visitor signed in
+# to Cloud is known as it opens.
+/pricing https://billing.openpencil.dev/pricing 302
+
 # Legacy documentation routes
 /guide/getting-started /getting-started 301
 /guide/features /overview/features 301
