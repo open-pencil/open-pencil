@@ -16,6 +16,7 @@ import {
 } from '@open-pencil/scene-graph/transfer'
 
 import {
+  existingAssetKey,
   libraryAssetKey,
   libraryCollectionAsset,
   libraryLayerAsset,
@@ -92,14 +93,32 @@ function layerIdentities(source: SceneGraph, keepCarried: boolean): (node: Scene
   return identify
 }
 
+/**
+ * The component set a keyless variant belongs to, when this snapshot would otherwise leave the
+ * set behind. A variant is not an asset of its own: instances hash it under the set's key, which
+ * they can only do while the variant stays parented to that set.
+ */
+function omittedVariantSet(
+  source: SceneGraph,
+  closure: ReadonlySet<string>,
+  node: SceneNode
+): SceneNode | undefined {
+  if (node.type !== 'COMPONENT' || existingAssetKey(node)) return undefined
+  const parent = node.parentId ? source.getNode(node.parentId) : undefined
+  if (parent?.type !== 'COMPONENT_SET' || closure.has(parent.id)) return undefined
+  return parent
+}
+
 function addSnapshotNode(
   source: SceneGraph,
   target: SceneGraph,
   sourceId: string,
   targetParentId: string,
   mappedIds: Map<string, string>,
-  identify: (node: SceneNode) => string
+  identify: (node: SceneNode) => string,
+  options?: { descend: boolean }
 ): void {
+  if (mappedIds.has(sourceId)) return
   const node = source.getNode(sourceId)
   if (!node) return
   const created = target.createNode(node.type, targetParentId, {
@@ -111,6 +130,7 @@ function addSnapshotNode(
     libraryLayerId: identify(node)
   })
   mappedIds.set(sourceId, created.id)
+  if (options?.descend === false) return
   for (const childId of node.childIds)
     addSnapshotNode(source, target, childId, created.id, mappedIds, identify)
 }
@@ -119,7 +139,8 @@ function addSnapshotNode(
  * A revision's graph: the published components with the components they use, the published
  * styles and the styles those use, and the variables, collections, and images all of them need.
  * `assetIds` limits what is published; every publishable component, style, and collection by
- * default. Variables and collections keep their IDs, which are the source document's own.
+ * default. A keyless variant still brings its component set, so instances of it hash under that
+ * set's key. Variables and collections keep their IDs, which are the source document's own.
  */
 export function extractLibrarySnapshot(
   source: SceneGraph,
@@ -136,8 +157,22 @@ export function extractLibrarySnapshot(
     source,
     roots.map((node) => node.id)
   )
+  const closureRoots = [...closure]
+    .map((id) => source.getNode(id))
+    .filter((node): node is SceneNode =>
+      Boolean(node && (!node.parentId || !closure.has(node.parentId)))
+    )
+  // The set is not selected, but the variant still has to hash under its key.
+  const variantSets = uniqBy(
+    closureRoots.flatMap((node) => {
+      const set = omittedVariantSet(source, closure, node)
+      return set ? [set] : []
+    }),
+    (set) => set.id
+  )
   const dependencies = layerDependencies(source, [
     ...[...closure].flatMap((id) => source.getNode(id) ?? []),
+    ...variantSets,
     ...publishedStyles
   ])
   const styles = uniqBy([...publishedStyles, ...dependencies.styles], (node) => node.id)
@@ -146,14 +181,16 @@ export function extractLibrarySnapshot(
   page.name = 'Library definitions'
   page.internalOnly = true
   const mappedIds = new Map<string, string>()
-  const closureRoots = [...closure]
-    .map((id) => source.getNode(id))
-    .filter((node): node is SceneNode =>
-      Boolean(node && (!node.parentId || !closure.has(node.parentId)))
-    )
   const identify = layerIdentities(source, keepLayerIdentities)
-  for (const root of [...closureRoots, ...styles])
-    addSnapshotNode(source, snapshot, root.id, page.id, mappedIds, identify)
+  for (const set of variantSets) {
+    // Other variants of the set were not selected, and nothing here instances them.
+    addSnapshotNode(source, snapshot, set.id, page.id, mappedIds, identify, { descend: false })
+  }
+  for (const root of [...closureRoots, ...styles]) {
+    const set = omittedVariantSet(source, closure, root)
+    const setId = set ? mappedIds.get(set.id) : undefined
+    addSnapshotNode(source, snapshot, root.id, setId ?? page.id, mappedIds, identify)
+  }
   for (const [sourceId, targetId] of mappedIds)
     if (sourceId === targetId) throw new Error('Snapshot IDs must be remapped')
   remapCopiedReferences(snapshot, mappedIds, { followTextLinks: true })
@@ -233,6 +270,20 @@ function normalizedLibraryField(key: string, value: unknown): unknown {
   return value
 }
 
+/**
+ * The asset an instance of `component` depends on. A variant is not published on its own: the set
+ * is the asset a library lists and a consumer updates, so a variant with no key of its own takes
+ * the set's. One that already has a key keeps it, as does every component outside a set, so a
+ * library that already published under that key keeps the same content hash.
+ */
+function instanceDependencyKey(graph: SceneGraph, component: SceneNode): string {
+  if (!existingAssetKey(component)) {
+    const parent = component.parentId ? graph.getNode(component.parentId) : undefined
+    if (parent?.type === 'COMPONENT_SET') return libraryAssetKey(parent)
+  }
+  return libraryAssetKey(component)
+}
+
 export function canonicalLibraryNode(
   graph: SceneGraph,
   node: SceneNode,
@@ -253,7 +304,7 @@ export function canonicalLibraryNode(
   const component = node.componentId ? graph.getNode(node.componentId) : undefined
   const dependencyKey =
     component?.type === 'COMPONENT' || component?.type === 'COMPONENT_SET'
-      ? libraryAssetKey(component)
+      ? instanceDependencyKey(graph, component)
       : null
   const dependency =
     component && dependencyKey && !dependencyStack.has(component.id)
