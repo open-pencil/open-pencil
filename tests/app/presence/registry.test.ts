@@ -267,6 +267,17 @@ test('zooming yourself stops following', () => {
   expect(presenceOf(store).following.value).toBeNull()
 })
 
+test('the layout moving the canvas keeps following, panning yourself stops it', () => {
+  const { store, pageId } = setup()
+  const ana = { clientId: 4, name: 'Ana', color: red, agents: [] }
+  setPeers(store, [{ ...ana, cursor: { x: 40, y: 50, pageId, zoom: 1 } }])
+  follow(store, { kind: 'person', clientId: 4 })
+  store.shiftPane(store.activePaneId.value, 230, 0)
+  expect(presenceOf(store).following.value).toEqual({ kind: 'person', clientId: 4 })
+  store.pan(10, 0)
+  expect(presenceOf(store).following.value).toBeNull()
+})
+
 test('cursor updates while heading to a page do not restart the switch', async () => {
   const { store, other } = setup()
   store.preparationController.acknowledgePresentation({

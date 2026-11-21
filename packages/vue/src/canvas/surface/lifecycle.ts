@@ -19,6 +19,7 @@ import {
 } from '#vue/canvas/surface/gl-surface'
 import { createImagePreviewDecoder } from '#vue/canvas/surface/image-preview'
 import { useCanvasKitLoader } from '#vue/canvas/surface/kit-loader'
+import { createCanvasOriginTracker } from '#vue/canvas/surface/origin'
 import { createCanvasRenderLoop } from '#vue/canvas/surface/render-loop'
 import { useCanvasResizeObserver } from '#vue/canvas/surface/resize-observer'
 import { createShaderRasterizer } from '#vue/canvas/surface/shader/rasterizer'
@@ -67,6 +68,8 @@ export function createCanvasSurfaceManager({
     glCanvas: null,
     presentation: null
   }
+
+  const origin = createCanvasOriginTracker(options?.onViewportMove)
 
   // The scene of an editing canvas shows an empty sticky note's placeholder, and every layer an
   // empty connector label's while it is typed into, as the overlays draw the text being edited,
@@ -125,7 +128,7 @@ export function createCanvasSurfaceManager({
     state.renderer = null
     releaseGLContext()
 
-    sizeCanvas(canvas, editor, options?.onViewportResize)
+    origin.place(sizeCanvas(canvas, editor, options?.onViewportResize))
 
     const result = makeGLSurface(
       ck,
@@ -251,7 +254,7 @@ export function createCanvasSurfaceManager({
       return
     }
 
-    sizeCanvas(canvas, editor, options?.onViewportResize)
+    origin.place(sizeCanvas(canvas, editor, options?.onViewportResize))
 
     const result = makeGLSurface(
       ck,
