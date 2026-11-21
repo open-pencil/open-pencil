@@ -1,0 +1,1 @@
+- Importing a design tokens folder now resolves the references in tokens.resolver.json, so a CLI dtcg export imports as its collections and modes.

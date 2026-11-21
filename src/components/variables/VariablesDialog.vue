@@ -69,6 +69,22 @@ tokenFiles.onChange((files) => {
   if (files?.length) importFiles([...files])
 })
 
+/**
+ * A token folder, as the CLI's dtcg export writes one: the resolver at its root and one
+ * token file per collection mode in folders below it. A folder pick keeps every file's
+ * path inside it, which is how the resolver's `$ref`s find the files; picking the
+ * resolver on its own cannot, since a file picker gives no path to its siblings.
+ */
+const tokenFolder = useFileDialog({
+  accept: DESIGN_TOKEN_FILE_ACCEPT,
+  multiple: true,
+  reset: true,
+  directory: true
+})
+tokenFolder.onChange((files) => {
+  if (files?.length) importFiles([...files])
+})
+
 // Token files dropped on the window come here through the document's pending import.
 const pendingImport = pendingTokenImport(store)
 watch(
@@ -104,6 +120,13 @@ function exportTokens() {
           @click="tokenFiles.open()"
         >
           <icon-lucide-file-input class="size-3.5" />
+        </IconButton>
+        <IconButton
+          :label="variables.importDesignTokensFolder"
+          data-test-id="variables-import-tokens-folder"
+          @click="tokenFolder.open()"
+        >
+          <icon-lucide-folder-input class="size-3.5" />
         </IconButton>
         <IconButton
           :label="expanded ? variables.collapse : variables.expand"

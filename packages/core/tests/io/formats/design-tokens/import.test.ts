@@ -81,6 +81,72 @@ describe('reading token files', () => {
     expect(bundle.collections[0].modes[0].tokens.map((token) => token.name)).toEqual(['gap'])
   })
 
+  test('a resolver reads a dtcg export folder: one file per mode in folders below it', () => {
+    const bundle = readDesignTokens(
+      files({
+        'tokens-output/tokens.resolver.json': {
+          version: '2025-11-01',
+          sets: {
+            Primitive: { sources: [{ $ref: 'Primitive/Mode 1.tokens.json' }] },
+            Layout: { sources: [{ $ref: 'Layout/Mode 1.tokens.json' }] }
+          },
+          modifiers: {
+            Theme: {
+              contexts: {
+                Light: [{ $ref: 'Theme/Light.tokens.json' }],
+                Dark: [{ $ref: 'Theme/Dark.tokens.json' }]
+              },
+              default: 'Light'
+            }
+          },
+          resolutionOrder: [
+            { $ref: '#/sets/Primitive' },
+            { $ref: '#/sets/Layout' },
+            { $ref: '#/modifiers/Theme' }
+          ]
+        },
+        'tokens-output/Primitive/Mode 1.tokens.json': {
+          color: { $type: 'color', brand: { $value: '#2563eb' } },
+          $extensions: {
+            'dev.openpencil': { collection: 'Primitive', mode: 'Mode 1', default: true }
+          }
+        },
+        'tokens-output/Layout/Mode 1.tokens.json': {
+          space: { $type: 'dimension', md: { $value: { value: 8, unit: 'px' } } },
+          $extensions: {
+            'dev.openpencil': { collection: 'Layout', mode: 'Mode 1', default: true }
+          }
+        },
+        'tokens-output/Theme/Light.tokens.json': {
+          color: { $type: 'color', surface: { $value: '#ffffff' } },
+          $extensions: {
+            'dev.openpencil': { collection: 'Theme', mode: 'Light', default: true }
+          }
+        },
+        'tokens-output/Theme/Dark.tokens.json': {
+          color: { $type: 'color', surface: { $value: '#09090b' } },
+          $extensions: {
+            'dev.openpencil': { collection: 'Theme', mode: 'Dark', default: false }
+          }
+        }
+      })
+    )
+
+    expect(bundle.issues).toEqual([])
+    expect(bundle.collections.map((collection) => collection.name)).toEqual([
+      'Primitive',
+      'Layout',
+      'Theme'
+    ])
+    expect(
+      bundle.collections.map((collection) => collection.modes[0].tokens.map((token) => token.name))
+    ).toEqual([['color/brand'], ['space/md'], ['color/surface']])
+    expect(bundle.collections[2].modes.map((mode) => [mode.name, mode.isDefault])).toEqual([
+      ['Light', true],
+      ['Dark', false]
+    ])
+  })
+
   test('a resolver ref is relative to its file, from the top with `/`, and never above the top', () => {
     const tokens = (name: string) => ({ [name]: { $type: 'number', $value: 1 } })
     const bundle = readDesignTokens(
