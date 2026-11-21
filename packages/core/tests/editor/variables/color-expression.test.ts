@@ -4,7 +4,7 @@ import { createEditor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { layerDependencies } from '@open-pencil/scene-graph/transfer'
 
-import { resolveFillColor } from '#core/canvas/renderer/colors'
+import { drawnColor } from '#core/canvas/renderer/colors'
 import {
   captureClipboardVariables,
   importClipboardVariables
@@ -39,7 +39,7 @@ test('100 instances repaint derived colors on a token edit, undo, and redo', () 
   // A bound paint draws the color its variable wrote into it, the alpha as the paint's opacity.
   const colorOf = (node: typeof component | null) => {
     if (!node) throw new Error('Missing component instance')
-    return { ...resolveFillColor(node.fills[0], graph), a: node.fills[0].opacity }
+    return { ...drawnColor(node.fills[0].color, graph), a: node.fills[0].opacity }
   }
   editor.updateVariableValue(base.id, collection.defaultModeId, { r: 0, g: 0, b: 1, a: 1 })
   for (const node of [component, ...instances]) {

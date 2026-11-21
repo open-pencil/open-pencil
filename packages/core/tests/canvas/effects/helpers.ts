@@ -187,7 +187,6 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     drawNodeFill: mock(() => undefined),
     drawNodeStroke: mock(() => undefined),
     drawStrokeWithAlign: mock(() => undefined),
-    resolveStrokeColor: mock(() => ({ r: 0, g: 0, b: 0, a: 1 })),
     nodePictures: {
       get: mock(() => undefined),
       set: mock(() => undefined),

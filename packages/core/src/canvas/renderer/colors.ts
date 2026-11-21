@@ -1,5 +1,5 @@
 import type { CanvasKit, ColorSpace, ColorType, ImageInfo } from '@open-pencil/canvaskit'
-import type { ColorProfile, Fill, SceneGraph, Stroke } from '@open-pencil/scene-graph'
+import type { ColorProfile, SceneGraph } from '@open-pencil/scene-graph'
 import { normalizeColor, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -29,20 +29,11 @@ export function documentImageInfo(
 }
 
 /**
- * A paint's color as Skia is given it: its stored components, in the document's profile, as
- * extended sRGB, which Skia converts into the document's space of the surfaces it draws on. The
- * stored color is what draws, as in Figma; an OkHCL value kept for editing only describes it.
+ * A stored color, such as a paint's or a gradient stop's, as Skia is given it: its components, in
+ * the document's profile, as extended sRGB, which Skia converts into the document's space of the
+ * surfaces it draws on. The stored color is what draws, as in Figma; an OkHCL value kept for
+ * editing only describes it.
  */
-export function resolveFillColor(fill: Fill, graph: SceneGraph): Color {
-  return toExtendedSRGB(normalizeColor(fill.color), graph.documentColorSpace)
-}
-
-/** A gradient stop's color as drawn, as {@link resolveFillColor} gives a paint's. */
-export function resolveGradientStopColor(color: Color, graph: SceneGraph): Color {
+export function drawnColor(color: Color, graph: SceneGraph): Color {
   return toExtendedSRGB(normalizeColor(color), graph.documentColorSpace)
-}
-
-/** A stroke's color as drawn, as {@link resolveFillColor} gives a fill's. */
-export function resolveStrokeColor(stroke: Stroke, graph: SceneGraph): Color {
-  return toExtendedSRGB(normalizeColor(stroke.color), graph.documentColorSpace)
 }

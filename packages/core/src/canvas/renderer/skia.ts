@@ -1,13 +1,6 @@
 import { isEqual, noop } from 'es-toolkit'
 
-import type {
-  ColorProfile,
-  Effect,
-  SceneNode,
-  SceneGraph,
-  Fill,
-  Stroke
-} from '@open-pencil/scene-graph'
+import type { ColorProfile, Effect, SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import { toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
@@ -40,7 +33,6 @@ import { screenToWorld } from '#core/geometry/viewport'
 import { RenderProfiler } from '#core/profiler'
 import type { FontResolutionSnapshot } from '#core/text/resolver'
 
-import * as RenderColors from './colors'
 import { releaseDocumentSurface, type DocumentSurface } from './document-surface'
 import { createChromeFonts, createTextFontState } from './fonts'
 import * as RendererFonts from './fonts'
@@ -748,14 +740,6 @@ export class SkiaRenderer {
     opts?: RenderText.ParagraphBuildOptions
   ): RenderText.TextLayout {
     return RenderText.buildParagraph(this, node, color, opts)
-  }
-
-  resolveFillColor(fill: Fill, graph: SceneGraph): Color {
-    return RenderColors.resolveFillColor(fill, graph)
-  }
-
-  resolveStrokeColor(stroke: Stroke, graph: SceneGraph): Color {
-    return RenderColors.resolveStrokeColor(stroke, graph)
   }
 
   /**

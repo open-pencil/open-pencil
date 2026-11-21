@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 
-import { resolveFillColor } from '#core/canvas/renderer/colors'
+import { drawnColor } from '#core/canvas/renderer/colors'
 
 const LIGHT = { r: 1, g: 1, b: 1, a: 1 }
 const DARK = { r: 0.04, g: 0.04, b: 0.05, a: 1 }
@@ -43,11 +43,11 @@ describe('node-scoped variable modes', () => {
     })
     const child = graph.createNode('RECTANGLE', darkFrame.id, { fills: [BOUND_FILL] })
     graph.bindVariable(child.id, 'fills/0/color', 'background')
-    expect(resolveFillColor(child.fills[0], graph)).toEqual(DARK)
+    expect(drawnColor(child.fills[0].color, graph)).toEqual(DARK)
 
     // A literal written over the bound paint draws as written while the binding stays, as Figma's.
     graph.updateNode(child.id, { fills: [BOUND_FILL] })
     expect(child.boundVariables['fills/0/color']).toBe('background')
-    expect(resolveFillColor(child.fills[0], graph)).toEqual(LIGHT)
+    expect(drawnColor(child.fills[0].color, graph)).toEqual(LIGHT)
   })
 })
