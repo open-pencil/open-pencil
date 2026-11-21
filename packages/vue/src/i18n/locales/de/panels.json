@@ -590,6 +590,7 @@
   "strokeDashGap": "Lücke",
   "lineHeightMode": "Zeilenhöhenmodus",
   "unresolvedVariable": "Variablenwert nicht verfügbar",
+  "variableDeleted": "Variable wurde gelöscht",
   "behaviour": "Verhalten",
   "addBehaviour": "Verhalten hinzufügen",
   "removeBehaviour": "Verhalten entfernen",

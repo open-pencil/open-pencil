@@ -56,7 +56,8 @@ export function variableModeChoices(editor: Editor, targets: SceneNode[]): Varia
   const choices: VariableModeChoice[] = []
   for (const collection of graph.variableCollections.values()) {
     if (collection.modes.length < 2) continue
-    if (used && !used.has(collection.id)) continue
+    // A deleted collection is offered only where its variables are still bound.
+    if (used ? !used.has(collection.id) : collection.deleted) continue
     const inherited = shared(
       targets.map((target) =>
         target.parentId

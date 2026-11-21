@@ -40,7 +40,7 @@ export function variableFormulaReference(graph: SceneGraph, id: string): string 
   const variable = graph.variables.get(id)
   if (!variable) return `{#${id}}`
   const unique = (name: string, of: (id: string) => string | undefined) =>
-    [...graph.variables.keys()].filter((other) => of(other) === name).length === 1
+    graph.getLiveVariables().filter((other) => of(other.id) === name).length === 1
   const plain = variable.name
   if (
     !/[{}]/.test(plain) &&
@@ -72,11 +72,12 @@ export function formatVariableFormula(
  * edited variable's own collection when a name appears in several.
  */
 function resolveReference(graph: SceneGraph, collectionId: string, name: string): FormulaReference {
+  // A deleted variable is still reached by its ID, as a formula saved before the deletion names it.
   const candidates = [...graph.variables.values()].filter(
     (candidate) =>
       name === `#${candidate.id}` ||
-      name === qualifiedName(graph, candidate.id) ||
-      name === candidate.name
+      (!candidate.deleted &&
+        (name === qualifiedName(graph, candidate.id) || name === candidate.name))
   )
   const local = candidates.filter((candidate) => candidate.collectionId === collectionId)
   const matches = local.length === 1 ? local : candidates

@@ -13,6 +13,7 @@ import {
 } from '@open-pencil/kiwi/schema-runtime'
 
 import { readFigArchiveParts, streamFigArchive, type FigImageEntry } from '../archive'
+import { isModeledVariableType } from '../document/variables'
 import { guidKey } from './entry'
 import { mergeRecords, type FigRecordPatch } from './merge'
 import { archiveCodec, scanMessage } from './scan'
@@ -41,6 +42,11 @@ export interface FigArchiveRecordInfo {
   imageHashes: string[]
   /** The document record's GUID, as `session:local`. */
   documentId: string | null
+  /**
+   * Variable records the reader leaves out of the document, such as one of a type OpenPencil does
+   * not model; a save writes them back as they are.
+   */
+  unreadVariables: NodeChange[]
 }
 
 export interface FigPatchedArchiveInput {
@@ -82,6 +88,8 @@ function highestLocalId(records: readonly NodeChange[]): number {
 
 export function figArchiveRecordInfo(archive: {
   records: readonly NodeChange[]
+  /** The variable and collection records, whole; `records` may hold only their headers. */
+  resources: readonly NodeChange[]
   blobCount: number
   imageHashes: readonly string[]
 }): FigArchiveRecordInfo {
@@ -92,7 +100,10 @@ export function figArchiveRecordInfo(archive: {
     blobCount: archive.blobCount,
     nextLocalId: highestLocalId(archive.records) + 1,
     imageHashes: [...archive.imageHashes],
-    documentId: guidKey(archive.records.find((record) => record.type === 'DOCUMENT')?.guid) ?? null
+    documentId: guidKey(archive.records.find((record) => record.type === 'DOCUMENT')?.guid) ?? null,
+    unreadVariables: archive.resources.filter(
+      (record) => record.type === 'VARIABLE' && !isModeledVariableType(record.variableResolvedType)
+    )
   }
 }
 

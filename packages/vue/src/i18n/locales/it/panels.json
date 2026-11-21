@@ -590,6 +590,7 @@
   "strokeDashGap": "Spazio",
   "lineHeightMode": "Modalità altezza riga",
   "unresolvedVariable": "Valore della variabile non disponibile",
+  "variableDeleted": "La variabile è stata eliminata",
   "behaviour": "Comportamento",
   "addBehaviour": "Aggiungi comportamento",
   "removeBehaviour": "Rimuovi comportamento",

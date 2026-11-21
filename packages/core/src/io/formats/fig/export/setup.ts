@@ -16,7 +16,7 @@ import {
   savedPropertyCopyIds
 } from '@open-pencil/fig/node-change'
 import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { PluginDataEntry, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
@@ -412,6 +412,8 @@ export interface FigExportSetupOptions {
   recordOwners?: ReadonlyMap<string, string>
   /** Writing into an archive: the variables, collections and modes it holds keep their GUIDs. */
   archiveResourceIds?: ReadonlySet<string>
+  /** Records the document never read, which the write keeps, so nothing new takes their GUIDs. */
+  unreadVariables?: readonly KiwiNodeChange[]
   /** Leaves the document's comments out of its record. */
   withoutComments?: boolean
 }
@@ -437,9 +439,10 @@ export async function prepareFigExport(
   const pages = graph.getPages(true)
   const nodeIdToGuid = new Map<string, GUID>()
   const assignedGuidValues = new Set<string>()
-  // Reserve the document GUID to prevent imported nodes with source.id "0:0"
-  // from reusing the document's own GUID slot.
+  // No layer takes the document's GUID, which an imported "0:0" would, or an unread record's.
   assignedGuidValues.add(`${docGuid.sessionID}:${docGuid.localID}`)
+  for (const { guid } of options.unreadVariables ?? [])
+    if (guid) assignedGuidValues.add(guidToString(guid))
   const varIdToGuid = new Map<string, GUID>()
   const modeIdToGuid = new Map<string, GUID>()
   const propertyIdToGuid = new Map<string, GUID>()

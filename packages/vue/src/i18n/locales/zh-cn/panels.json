@@ -583,6 +583,7 @@
   "strokeDashGap": "间距",
   "lineHeightMode": "行高模式",
   "unresolvedVariable": "变量值不可用",
+  "variableDeleted": "变量已删除",
   "behaviour": "行为",
   "addBehaviour": "添加行为",
   "removeBehaviour": "移除行为",

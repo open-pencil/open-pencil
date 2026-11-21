@@ -22,6 +22,7 @@ import type {
 } from '@open-pencil/scene-graph'
 import { fractionalPosition, orderKeyBetween } from '@open-pencil/scene-graph/order-keys'
 import {
+  deletedVariablesOf,
   modesDefaultFirst,
   isUnsupportedVariableValue,
   foldFormula,
@@ -238,13 +239,26 @@ export function sequentialPositions(start = 0): () => string {
   return () => fractionalPosition(index++)
 }
 
+/** Whether the collection an unread variable record names is still in the document. */
+function keepsCollection(graph: SceneGraph, record: NodeChange): boolean {
+  const reference = record.variableSetID
+  if (reference?.guid) return graph.variableCollections.has(guidToString(reference.guid))
+  const key = reference?.assetRef?.key
+  return !key || [...graph.variableCollections.values()].some((item) => item.key === key)
+}
+
+/**
+ * The document's collections and variables, deleted ones included, then the variable records it
+ * never read, which go back as the file saved them unless their collection is gone.
+ */
 export function appendVariableNodeChanges(
   graph: SceneGraph,
   changes: NodeChange[],
   parent: GUID,
   ids: Map<string, GUID>,
   modes: Map<string, GUID>,
-  nextPosition: () => string = sequentialPositions()
+  nextPosition: () => string = sequentialPositions(),
+  unread: readonly NodeChange[] = []
 ): void {
   const modeKey = (modeId: string) => guidToString(modes.get(modeId) ?? stringToGuid(modeId))
   for (const collection of graph.variableCollections.values()) {
@@ -266,11 +280,16 @@ export function appendVariableNodeChanges(
       ),
       pluginData: collectionPluginDataNodeChange(collection, modeKey),
       key: collection.key,
-      version: collection.version
+      version: collection.version,
+      ...(collection.deleted ? { isSoftDeleted: true } : {})
     })
-    for (const id of collection.variableIds) {
-      const variable = graph.variables.get(id)
-      if (!variable) continue
+    // Deleted variables follow the listed ones: the file keeps them for the layers bound to them.
+    const variables = [
+      ...collection.variableIds.flatMap((id) => graph.variables.get(id) ?? []),
+      ...deletedVariablesOf(graph, collection.id)
+    ]
+    for (const variable of variables) {
+      const id = variable.id
       changes.push({
         guid: ids.get(id) ?? stringToGuid(id),
         parentIndex: { guid: parent, position: nextPosition() },
@@ -292,8 +311,16 @@ export function appendVariableNodeChanges(
         },
         ...variableMetadataNodeChange(variable, modeKey),
         key: variable.key,
-        version: variable.version
+        version: variable.version,
+        ...(variable.deleted ? { isSoftDeleted: true } : {})
       })
     }
+  }
+  for (const record of unread) {
+    if (!keepsCollection(graph, record)) continue
+    changes.push({
+      ...structuredClone(record),
+      parentIndex: { guid: parent, position: nextPosition() }
+    })
   }
 }

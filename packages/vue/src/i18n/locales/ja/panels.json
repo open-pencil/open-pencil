@@ -583,6 +583,7 @@
   "strokeDashGap": "間隔",
   "lineHeightMode": "行の高さモード",
   "unresolvedVariable": "変数の値を取得できません",
+  "variableDeleted": "変数は削除されました",
   "behaviour": "動作",
   "addBehaviour": "動作を追加",
   "removeBehaviour": "動作を削除",

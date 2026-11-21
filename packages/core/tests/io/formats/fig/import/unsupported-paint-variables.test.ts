@@ -131,7 +131,7 @@ test('opening a file with a PAINT variable skips the variable and reports it', (
     '1:11': { r: 0, g: 0, b: 0.5, a: 1 }
   })
   expect(graph.variables.get('1:5')).toBeUndefined()
-  const reported = diagnostics.filter((entry) => entry.kind === 'resource')
+  const reported = diagnostics.filter((entry) => entry.kind === 'variable-type')
   expect(reported).toHaveLength(1)
   expect(reported[0]?.diagnostic).toMatchObject({
     type: 'VARIABLE',

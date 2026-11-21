@@ -597,6 +597,7 @@
   "strokeDashGap": "Промежуток",
   "lineHeightMode": "Режим межстрочного интервала",
   "unresolvedVariable": "Значение переменной недоступно",
+  "variableDeleted": "Переменная удалена",
   "behaviour": "Поведение",
   "addBehaviour": "Добавить поведение",
   "removeBehaviour": "Удалить поведение",

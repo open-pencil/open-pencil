@@ -332,6 +332,16 @@ export class SceneGraph {
     return Variables.getVariablesByType(this, type)
   }
 
+  /** Every variable but the deleted ones, which only their bindings still reach. */
+  getLiveVariables(): Variable[] {
+    return Variables.liveVariables(this)
+  }
+
+  /** Every collection but the deleted ones. */
+  getLiveCollections(): VariableCollection[] {
+    return Variables.liveCollections(this)
+  }
+
   bindVariable(nodeId: string, field: string, variableId: string): void {
     Variables.bindVariable(this, nodeId, field, variableId)
   }

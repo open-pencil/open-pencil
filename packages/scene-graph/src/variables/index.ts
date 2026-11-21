@@ -35,11 +35,31 @@ import { applyBoundPaintColor } from './paints'
 
 export * from './resolution'
 
+/** Variables a list shows: every one but those deleted, which only their bindings still reach. */
+export function liveVariables(graph: SceneGraph): Variable[] {
+  return [...graph.variables.values()].filter((variable) => !variable.deleted)
+}
+
+/** Collections a list shows: every one but those deleted. */
+export function liveCollections(graph: SceneGraph): VariableCollection[] {
+  return [...graph.variableCollections.values()].filter((collection) => !collection.deleted)
+}
+
+/**
+ * A collection's deleted variables, which its `variableIds` leave out. A deleted collection's
+ * variables are all deleted.
+ */
+export function deletedVariablesOf(graph: SceneGraph, collectionId: string): Variable[] {
+  return [...graph.variables.values()].filter(
+    (variable) => variable.collectionId === collectionId && variable.deleted
+  )
+}
+
 export function addVariable(graph: SceneGraph, variable: Variable): void {
   graph.willChangeVariable(variable.id)
   graph.variables.set(variable.id, variable)
   const collection = graph.variableCollections.get(variable.collectionId)
-  if (collection && !collection.variableIds.includes(variable.id)) {
+  if (collection && !variable.deleted && !collection.variableIds.includes(variable.id)) {
     graph.willChangeCollection(collection.id)
     collection.variableIds.push(variable.id)
   }
@@ -141,6 +161,7 @@ export function removeCollection(graph: SceneGraph, id: string): void {
     for (const varId of Array.from(collection.variableIds)) {
       removeVariable(graph, varId)
     }
+    for (const variable of deletedVariablesOf(graph, id)) removeVariable(graph, variable.id)
   }
   graph.willChangeCollection(id)
   graph.variableCollections.delete(id)
@@ -244,7 +265,7 @@ export function getVariablesForCollection(graph: SceneGraph, collectionId: strin
 }
 
 export function getVariablesByType(graph: SceneGraph, type: VariableType): Variable[] {
-  return [...graph.variables.values()].filter((v) => v.type === type)
+  return liveVariables(graph).filter((v) => v.type === type)
 }
 
 /** Checks that an effect binding names an effect the node has, a property it binds, and its type. */

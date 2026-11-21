@@ -597,6 +597,7 @@
   "strokeDashGap": "Odstęp",
   "lineHeightMode": "Tryb wysokości wiersza",
   "unresolvedVariable": "Wartość zmiennej jest niedostępna",
+  "variableDeleted": "Zmienna została usunięta",
   "behaviour": "Zachowanie",
   "addBehaviour": "Dodaj zachowanie",
   "removeBehaviour": "Usuń zachowanie",

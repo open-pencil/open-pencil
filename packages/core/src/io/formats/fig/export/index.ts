@@ -15,6 +15,7 @@ import { appendAll } from '@open-pencil/std/arrays'
 
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
+import { figArchive } from '#core/kiwi/fig/session/archive/access'
 import {
   hasPendingReaderPages,
   populateFigInternalPages,
@@ -37,7 +38,11 @@ import {
 } from './setup'
 import { appendVariableNodeChanges, sequentialPositions, assignSharedStyleGuids } from './variables'
 
-type InternalResourceContext = FigExportSetup & { nodeChanges: KiwiNodeChange[] }
+type InternalResourceContext = FigExportSetup & {
+  nodeChanges: KiwiNodeChange[]
+  /** Variable records of the opened file the document never read, written back as they are. */
+  unreadVariables: readonly KiwiNodeChange[]
+}
 
 /**
  * Children already written under a canvas. Shared styles, variables and the canvas's own
@@ -98,7 +103,8 @@ function appendInternalResources(context: InternalResourceContext): void {
       internalCanvasGuid,
       context.varIdToGuid,
       context.modeIdToGuid,
-      sequentialPositions(written + sharedStyleNodes.length)
+      sequentialPositions(written + sharedStyleNodes.length),
+      context.unreadVariables
     )
   }
 }
@@ -160,15 +166,17 @@ async function writeFigFile(
     graph = cloneSceneGraphForFigExport(sourceGraph)
     populateReaderExport(sourceGraph, graph)
   }
+  const unreadVariables = (await figArchive(sourceGraph)?.info())?.unreadVariables ?? []
   const setup = await prepareFigExport(graph, runtime, {
-    withoutComments: options.withoutComments
+    withoutComments: options.withoutComments,
+    unreadVariables
   })
   const { compiled, schemaDeflated } = exportSchema(graph)
   const { canvasEntries, internalCanvasGuid, localIdCounter, blobs } = setup
   const nodeChanges: KiwiNodeChange[] = [setup.documentNc]
   for (const entry of canvasEntries) nodeChanges.push(entry.canvasNc)
 
-  appendInternalResources({ ...setup, nodeChanges })
+  appendInternalResources({ ...setup, nodeChanges, unreadVariables })
 
   const orderedCanvasEntries = [
     ...canvasEntries.filter((entry) => entry.page.internalOnly),
