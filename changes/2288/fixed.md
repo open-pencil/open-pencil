@@ -1,0 +1,1 @@
+- A sideways two-finger swipe on a Mac trackpad over the editor no longer goes back in Safari's history.
