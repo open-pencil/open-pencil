@@ -1,0 +1,1 @@
+- Someone signed in to Cloud is signed in to its billing service's pages as they open, so the pricing page marks their plan and buying one goes straight to checkout.
