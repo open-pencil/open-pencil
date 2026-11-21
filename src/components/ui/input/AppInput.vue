@@ -3,8 +3,9 @@ import { Primitive } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { normalizeClass, useAttrs, useSlots, useTemplateRef, type HTMLAttributes } from 'vue'
 
+import { inputAdornment, inputTheme } from '@open-pencil/theme'
+
 import type { ControlSize } from '@/theme/control'
-import theme, { inputAdornment } from '@/theme/input/input'
 
 interface AppInputProps {
   density?: 'compact' | 'comfortable'
@@ -57,7 +58,7 @@ defineExpose({
 })
 const slots = useSlots()
 function inputClass() {
-  return tv(theme)({
+  return tv(inputTheme)({
     tone,
     size,
     state,

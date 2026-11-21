@@ -1,10 +1,12 @@
 import { describe, test, expect } from 'bun:test'
 import { randomUUID } from 'node:crypto'
-import { mkdir, realpath, rm, symlink, writeFile } from 'node:fs/promises'
+import { mkdir, open, realpath, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-import { resolveSafePath } from '#mcp/tool/output'
+import { MAX_REMOTE_FILE_BYTES } from '@open-pencil/core/io/remote'
+
+import { readInsideRoot, resolveSafePath } from '#mcp/tool/output'
 
 const isUnix = process.platform !== 'win32'
 const TEST_ID = randomUUID().slice(0, 8)
@@ -322,6 +324,49 @@ describe('MCP path scoping', () => {
       expect(result.realPath).toBe(canonicalTarget)
     } finally {
       await rm(testDir, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('readInsideRoot size cap', () => {
+  const MIB = 1024 * 1024
+
+  async function sparseFile(root: string, name: string, size: number): Promise<string> {
+    const path = join(root, name)
+    const handle = await open(path, 'w')
+    try {
+      await handle.truncate(size)
+    } finally {
+      await handle.close()
+    }
+    return path
+  }
+
+  test('reads a file over the old 64 MiB cap', async () => {
+    const root = resolve(tmpdir(), 'mcp-' + TEST_ID + '-read-cap-test')
+    try {
+      await mkdir(root, { recursive: true })
+      await sparseFile(root, 'large.fig', 65 * MIB)
+
+      const bytes = await readInsideRoot('large.fig', root)
+
+      expect(bytes.byteLength).toBe(65 * MIB)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('still refuses a file over the cap without reading it', async () => {
+    const root = resolve(tmpdir(), 'mcp-' + TEST_ID + '-read-cap-over-test')
+    try {
+      await mkdir(root, { recursive: true })
+      await sparseFile(root, 'huge.fig', MAX_REMOTE_FILE_BYTES + 1)
+
+      await expect(readInsideRoot('huge.fig', root)).rejects.toThrow(
+        `"huge.fig" is larger than ${MAX_REMOTE_FILE_BYTES} bytes`
+      )
+    } finally {
+      await rm(root, { recursive: true, force: true })
     }
   })
 })

@@ -1,1 +1,0 @@
-- Opening billing from Cloud's plan page signs in, instead of being refused, because Cloud's pages now name their origin to other sites.

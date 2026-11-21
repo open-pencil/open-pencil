@@ -4,6 +4,7 @@ import { uniq } from 'es-toolkit'
 import { tv } from 'tailwind-variants'
 import { useTemplateRef, watch } from 'vue'
 
+import { portalLayoutTheme } from '@open-pencil/theme'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import BrandMark from '@/components/brand/BrandMark.vue'
@@ -15,7 +16,6 @@ import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
 import { skeleton } from '@/components/ui/feedback/skeleton'
 import { sideList } from '@/components/ui/list/side-list'
 import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
-import portalLayoutTheme from '@/theme/cloud-portal/layout'
 
 import type { PortalSection } from '../types'
 

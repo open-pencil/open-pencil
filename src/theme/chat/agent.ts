@@ -1,4 +1,4 @@
-import { focusStyles } from '../focus/styles'
+import { focusStyles } from '@open-pencil/theme'
 
 /**
  * A coding agent's controls in the composer: its mode, its model with the thinking level, and

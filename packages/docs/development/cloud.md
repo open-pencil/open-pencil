@@ -513,7 +513,13 @@ so that post names Cloud's origin: under `no-referrer` or `same-origin`, browser
 same published keys and keeps its own session from there: its pages sell the plans and credit packs
 of its catalog, send the person to its payment provider's checkout or portal, and set the account's
 plan through the internal API as it is paid. A service whose session ended sends the person to
-`CLOUD_ACCOUNT_BILLING_PATH`, the plan page, which opens billing again at once. A Cloud from
+`CLOUD_ACCOUNT_BILLING_PATH`, the plan page, which opens billing again at once. Billing's own pages, at the
+advertised endpoint's origin, may also ask for a token themselves (`CLOUD_BILLING_TOKEN_PATH`):
+Cloud's CORS lets that one origin call that one route with the visitor's session, so someone
+already signed in to Cloud is signed in to billing as its pages open, and its pricing page knows
+their plan. The session cookie reaches it only where billing is on the same site as Cloud, as
+`billing.openpencil.dev` is to `cloud.openpencil.dev`; elsewhere billing's pages fall back to the
+plan page's handoff. A Cloud from
 before the handoff called the service's JSON account, checkout, and portal routes, which a service
 with its own pages need not keep, and this one posts to `/session`. Upgrade the service first,
 then Cloud straight after, in the same window: between the two, the old plan page cannot buy. Discovery's
