@@ -123,6 +123,7 @@ pub fn run() {
             set_native_menu_disabled,
             native_menu_checked,
             set_native_menu_checked,
+            launch::allow_open_file,
             launch::take_pending_open,
             launch::take_pending_rooms,
             system::env::sharing_disabled_by_env,

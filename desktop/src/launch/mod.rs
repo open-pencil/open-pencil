@@ -5,7 +5,7 @@ pub mod args;
 pub mod links;
 pub mod paths;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use tauri::{Emitter, Manager};
@@ -101,6 +101,50 @@ pub fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec
     queue_pending(app, files);
 }
 
+/// The design-document extensions the frontend opens (`io.findReader` plus the DOM
+/// documents `openFileFromPath` accepts). The command below allow-lists one such file
+/// and nothing else, so a caller cannot use it to reach an executable or a secret file.
+const OPENABLE_DOCUMENT_EXTENSIONS: [&str; 10] = [
+    "fig", "jam", "pen", "drawio", "dio", "mmd", "mermaid", "html", "htm", "xhtml",
+];
+
+fn is_openable_document(path: &Path) -> bool {
+    path.extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| {
+            OPENABLE_DOCUMENT_EXTENSIONS
+                .iter()
+                .any(|allowed| allowed.eq_ignore_ascii_case(extension))
+        })
+}
+
+/// Allow the frontend to read the one file it was explicitly asked to open.
+///
+/// Files handed to the executable are allow-listed by `queue_open_paths` before the
+/// frontend sees them, but a file automation names (`open_document`) or a recent file
+/// reaches the frontend with no such call, so a path the fs scope does not already
+/// cover is refused as a forbidden path. That includes every hidden folder:
+/// `requireLiteralLeadingDot` keeps `**` from matching a dot segment, so
+/// `%USERPROFILE%\.pencil\documents\…` never matches the read scope even though it
+/// sits under the user's home.
+///
+/// Only the one named file is allowed, never its folder, and only when it is a design
+/// document: the general rule that the webview cannot write inside hidden folders
+/// stays in place, and a file that was never opened stays refused.
+#[tauri::command]
+pub fn allow_open_file(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    let path = PathBuf::from(path);
+    if !is_openable_document(&path) {
+        return Err(format!(
+            "Only design documents can be opened: {}",
+            path.display()
+        ));
+    }
+    app.fs_scope()
+        .allow_file(&path)
+        .map_err(|error| error.to_string())
+}
+
 /// The scheme filter is load-bearing: on macOS the plugin forwards every
 /// `RunEvent::Opened` URL here, including the `file://` URLs of a double-clicked
 /// document, which `queue_open_paths` already handles.
@@ -168,5 +212,55 @@ fn queue_rooms<R: tauri::Runtime>(app: &tauri::AppHandle<R>, rooms: Vec<String>)
     let _ = app.emit("open-room-links", ());
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.set_focus();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn allow_open_file_accepts_the_documents_the_frontend_opens() {
+        for name in [
+            "design.fig",
+            "board.jam",
+            "design.pen",
+            "diagram.drawio",
+            "diagram.dio",
+            "notes.mmd",
+            "notes.mermaid",
+            "page.html",
+            "page.htm",
+            "page.xhtml",
+        ] {
+            assert!(
+                is_openable_document(Path::new(name)),
+                "{name} should be openable"
+            );
+        }
+        // Case follows the filesystem: the frontend's check lowercases the name.
+        assert!(is_openable_document(Path::new("DESIGN.FIG")));
+        assert!(is_openable_document(Path::new(
+            "C:\\Users\\ada\\.pencil\\documents\\abc\\design.pen"
+        )));
+    }
+
+    #[test]
+    fn allow_open_file_refuses_anything_that_is_not_a_design_document() {
+        for name in [
+            "notes.txt",
+            "run.sh",
+            "run.exe",
+            "id_ed25519",
+            "settings.json",
+            ".bashrc",
+            "design",
+            "design.fig.bak",
+        ] {
+            assert!(
+                !is_openable_document(Path::new(name)),
+                "{name} should not be openable"
+            );
+        }
     }
 }

@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { readFile } from '@tauri-apps/plugin-fs'
 import { useFileDialog } from '@vueuse/core'
@@ -127,6 +128,14 @@ export async function openDesignFileBatch<T>(
 
 export async function readTauriDesignFile(path: string): Promise<File> {
   assertSupportedDesignFile(path)
+  // A file handed to the executable is allow-listed by the shell before the frontend
+  // sees it; one automation or recent files names was never shown to the shell, so a
+  // path the fs scope does not already cover is refused as a forbidden path. That
+  // includes every hidden folder: `requireLiteralLeadingDot` keeps `**` from matching
+  // a dot segment, so `%USERPROFILE%\.pencil\documents\…` never matches the read
+  // scope even though it sits under the user's home. Allow-listing the one named
+  // file first opens it exactly as an argv open does.
+  await invoke('allow_open_file', { path })
   const bytes = await readFile(path)
   return new File([bytes], basename(path) || 'file.fig')
 }
