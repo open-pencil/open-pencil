@@ -330,11 +330,13 @@ function sameRGB(a: Color, b: Color): boolean {
 
 /**
  * Rewrites every stored color in `graph` through `convert`: layers' color fields, page
- * backgrounds, and color variables. Returns what it changed, for {@link replayConversion}.
+ * backgrounds, and color variables unless `variables` is false. Returns what it changed, for
+ * {@link replayConversion}.
  */
 export function convertColors(
   graph: SceneGraph,
-  convert: (color: Color) => Color
+  convert: (color: Color) => Color,
+  { variables: withVariables = true }: { variables?: boolean } = {}
 ): ColorConversion {
   const conversion: ColorConversion = {
     layers: new Map(),
@@ -350,7 +352,7 @@ export function convertColors(
     for (const value of Object.values(variable.valuesByMode)) variableValueReferences(value)
   }
   const variables = new Map<string, Variable['valuesByMode']>()
-  for (const variable of graph.variables.values()) {
+  for (const variable of withVariables ? graph.variables.values() : []) {
     if (variable.type !== 'COLOR') continue
     const changes: ColorChanges = new Map()
     const values = mappedVariableValues(variable.valuesByMode, recording(convert, changes))
@@ -433,8 +435,6 @@ export function replayConversion(graph: SceneGraph, conversion: ColorConversion,
 export function convertDocumentColors(graph: SceneGraph, to: ColorProfile): void {
   const from = graph.documentColorSpace
   if (from === to) return
-  const before = colorsBefore(graph)
-  before.variables.clear()
-  writeColors(graph, before, (color) => convertColor(color, from, to, 'map'))
+  convertColors(graph, (color) => convertColor(color, from, to, 'map'), { variables: false })
   graph.documentColorSpace = to
 }
