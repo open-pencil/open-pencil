@@ -113,6 +113,7 @@ API намеренно близок к Figma Plugin API, но работает �
 ### Переменные
 
 - `figma.variables.getLocalVariables(type?)`, `getVariableById(id)`, `getLocalVariableCollections()`, `getVariableCollectionById(id)` и их варианты `…Async`
+- Переменные и коллекции библиотек, которые использует файл, сообщают `remote: true`. Как в Figma, `getLocalVariables` и `getLocalVariableCollections` их не возвращают; `getVariableById`, `getVariableCollectionById` и `node.boundVariables` по-прежнему до них достают. Переменная библиотеки сообщает `hiddenFromPublishing: false`. Как в Figma, любое изменение переменной или коллекции библиотеки бросает ошибку: запись `name`, `description`, `scopes` или `hiddenFromPublishing`, `setValueForMode`, методы code syntax, `addMode`, `renameMode`, `removeMode`, `remove()` и `createVariable` в коллекции библиотеки
 - `figma.variables.createVariableCollection(name)` и `createVariable(name, collection, resolvedType)` — каждый режим получает значение Figma по умолчанию
 - `figma.variables.createVariableAlias(variable)`, `setBoundVariableForPaint(paint, 'color', variable)` и `setBoundVariableForEffect(effect, field, variable)` — привязывает `color`, `radius`, `spread`, `offsetX` или `offsetY` тени либо `radius` размытия
 - `variable.setValueForMode(modeId, value)`, `valuesByMode`, `resolveForConsumer(node)`, `name`, `description`, `scopes`, `codeSyntax` и `remove()`

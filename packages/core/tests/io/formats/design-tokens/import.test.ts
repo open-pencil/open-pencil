@@ -4,6 +4,8 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import {
   defaultTokenImportOptions,
+  importTokensIntoGraph,
+  OPENPENCIL_EXTENSION,
   planTokenImport,
   readDesignTokens,
   type DesignTokenSourceFile
@@ -338,5 +340,41 @@ describe('planning an import', () => {
         fields: { effects: [{ type: 'DROP_SHADOW', offset: { x: 0, y: 2 }, radius: 4 }] }
       }
     ])
+  })
+})
+
+describe('applying an import', () => {
+  test('a library variable keeps the publishing flag its file saved, while its value updates', () => {
+    const graph = new SceneGraph()
+    const library = graph.createCollection('Brand')
+    library.key = 'brand-collection'
+    const accent = graph.createVariable('accent', 'COLOR', library.id, {
+      r: 0,
+      g: 0,
+      b: 1,
+      a: 1
+    })
+    Object.assign(accent, { key: 'brand-accent', hiddenFromPublishing: true })
+    const bundle = readDesignTokens(
+      files({
+        'Brand/Default.tokens.json': {
+          accent: {
+            $type: 'color',
+            $value: '#ff0000',
+            $extensions: { [OPENPENCIL_EXTENSION]: { hiddenFromPublishing: false } }
+          }
+        }
+      })
+    )
+    const options = defaultTokenImportOptions(graph, bundle)
+    options.collections[0] = {
+      target: { kind: 'existing', collectionId: library.id },
+      modes: [{ kind: 'existing', modeId: library.defaultModeId }]
+    }
+
+    importTokensIntoGraph(graph, graph.getPages()[0].id, planTokenImport(graph, bundle, options))
+
+    expect(accent.valuesByMode[library.defaultModeId]).toEqual({ r: 1, g: 0, b: 0, a: 1 })
+    expect(accent.hiddenFromPublishing).toBe(true)
   })
 })

@@ -48,12 +48,12 @@ function select(choice: VariableModeChoice, value: string) {
     <ComponentPropertyRow
       v-for="choice in choices"
       :key="choice.collectionId"
-      :name="choice.name"
+      :name="choice.label"
       data-variable-mode-row
     >
       <AppSelect
         :model-value="current(choice)"
-        :label="choice.name"
+        :label="choice.label"
         :groups="groups(choice)"
         @update:model-value="(value: string) => select(choice, value)"
       />

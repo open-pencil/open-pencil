@@ -1,0 +1,1 @@
+- Library variable collections no longer count as local variables, show as hidden from publishing, come back from the plugin API's local variable calls, or accept plugin API edits, and mode pickers skip an empty library copy and number collections that share a name (#2275).

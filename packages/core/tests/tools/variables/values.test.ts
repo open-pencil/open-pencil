@@ -3,7 +3,17 @@ import { describe, expect, test } from 'bun:test'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { createVariable, deleteVariable } from '#core/tools/variables/values'
+import { deleteCollection } from '#core/tools/variables/collections'
+import { createVariable, deleteVariable, setVariable } from '#core/tools/variables/values'
+
+function libraryVariable() {
+  const graph = new SceneGraph()
+  const collection = graph.createCollection('Tokens')
+  collection.key = 'library-collection'
+  const variable = graph.createVariable('gap', 'FLOAT', collection.id, 8)
+  variable.key = 'library-variable'
+  return { graph, collection, variable, figma: new FigmaAPI(graph) }
+}
 
 describe('variable value tools', () => {
   test('a value the variable cannot hold creates no variable', async () => {
@@ -19,6 +29,23 @@ describe('variable value tools', () => {
       name: 'gap',
       valuesByMode: { [collection.defaultModeId]: 8 }
     })
+  })
+
+  test('tools pass on the plugin api refusal for a library variable and change nothing', () => {
+    const { graph, collection, variable, figma } = libraryVariable()
+    const mode = collection.defaultModeId
+
+    expect(() => setVariable.execute(figma, { id: variable.id, mode, value: '16' })).toThrow(
+      'in setValueForMode: Cannot edit a remote variable'
+    )
+    expect(() => deleteVariable.execute(figma, { id: variable.id })).toThrow(
+      'in remove: Cannot edit a remote variable'
+    )
+    expect(() => deleteCollection.execute(figma, { id: collection.id })).toThrow(
+      'in remove: Cannot edit a remote variable collection'
+    )
+    expect(graph.variables.get(variable.id)?.valuesByMode[mode]).toBe(8)
+    expect(graph.variableCollections.has(collection.id)).toBe(true)
   })
 
   test('deleting a variable the document lacks reports it', async () => {
