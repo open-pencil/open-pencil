@@ -49,7 +49,10 @@ heavy('fonts CLI', () => {
     const data: DocumentFontStatus = JSON.parse(stdout)
     expect(data.faithful).toBe(false)
     expect(data.issues.length).toBeGreaterThan(0)
-    expect(data.issues.every((face) => face.status === 'unresolved')).toBe(true)
+    // A family found nowhere draws in the bundled default family, which substitutes it.
+    expect(
+      data.issues.every((face) => face.status === 'substituted' && face.source === null)
+    ).toBe(true)
   })
   test('uses the standard human-readable formatter', async () => {
     const { stdout, stderr, exitCode } = await runCLI(['fonts', GOLD])
