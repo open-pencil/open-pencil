@@ -147,7 +147,8 @@ function modeValues(
   const values: Record<string, VariableValue> = {}
   for (const entry of entries) {
     const modeId = guidToString(entry.modeID)
-    if (!modes.includes(modeId)) throw new Error('Unknown mode')
+    // A value for a mode its collection no longer lists can never show; the others still open.
+    if (!modes.includes(modeId)) continue
     let value: VariableValue
     try {
       value = valueOf(entry.variableData, resolve)
@@ -189,6 +190,7 @@ function modeValues(
       throw new Error(`Expression result type does not match ${resource.variableResolvedType}`)
     values[modeId] = value
   }
+  if (Object.keys(values).length === 0) throw new Error('No values for its collection’s modes')
   return values
 }
 

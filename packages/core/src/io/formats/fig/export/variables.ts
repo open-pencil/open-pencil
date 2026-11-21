@@ -16,6 +16,8 @@ import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   SceneGraph,
   SceneNode,
+  Variable,
+  VariableCollection,
   VariableFormulaNode,
   VariableCollectionMode,
   VariableValue
@@ -285,7 +287,7 @@ export function appendVariableNodeChanges(
           : { guid },
         variableResolvedType: variable.type,
         variableDataValues: {
-          entries: Object.entries(variable.valuesByMode).map(([mode, value]) => ({
+          entries: valuesInCollectionModes(variable, collection).map(([mode, value]) => ({
             modeID: modes.get(mode) ?? stringToGuid(mode),
             variableData: variableValueToKiwi(graph, value, variable.type, ids, modes)
           }))
@@ -296,4 +298,13 @@ export function appendVariableNodeChanges(
       })
     }
   }
+}
+
+/** A variable's values for the modes its collection lists; a value for any other never shows. */
+function valuesInCollectionModes(
+  variable: Variable,
+  collection: VariableCollection
+): [string, VariableValue][] {
+  const listed = new Set(collection.modes.map((mode) => mode.modeId))
+  return Object.entries(variable.valuesByMode).filter(([mode]) => listed.has(mode))
 }

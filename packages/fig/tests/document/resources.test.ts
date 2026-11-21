@@ -51,6 +51,30 @@ test('loads mode values without treating false, zero or empty text as missing', 
   expect(graph.variableCollections.get('1:3')?.variableIds).toEqual(['1:4', '1:5', '1:6'])
 })
 
+test('opens a variable with a value for a mode its collection no longer lists, without it', () => {
+  const kept = guid(10)
+  const gone = guid(11)
+  const collection = guid(3)
+  const value = (floatValue: number) => ({ dataType: 'FLOAT' as const, value: { floatValue } })
+  const resources: NodeChange[] = [
+    { guid: collection, type: 'VARIABLE_SET', variableSetModes: [{ id: kept, name: 'Default' }] },
+    {
+      guid: guid(4),
+      type: 'VARIABLE',
+      variableResolvedType: 'FLOAT',
+      variableSetID: { guid: collection },
+      variableDataValues: {
+        entries: [
+          { modeID: gone, variableData: value(1) },
+          { modeID: kept, variableData: value(2) }
+        ]
+      }
+    }
+  ]
+  const { graph } = materializeDocument(resources)
+  expect(graph.variables.get('1:4')?.valuesByMode).toEqual({ '1:10': 2 })
+})
+
 test('keeps variable resources outside scene pages and rejects silent omission', () => {
   const changes: NodeChange[] = [
     { guid: guid(1), type: 'DOCUMENT' },
