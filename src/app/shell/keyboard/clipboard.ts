@@ -12,6 +12,7 @@ import {
   pasteLayerText,
   pastePoint
 } from '@/app/editor/clipboard/paste/content'
+import { pasteWebClipboard } from '@/app/editor/clipboard/paste/web'
 import { browserSystemClipboard } from '@/app/editor/clipboard/system/browser'
 import { tauriSystemClipboard } from '@/app/editor/clipboard/system/tauri'
 import type { SystemClipboard } from '@/app/editor/clipboard/system/types'
@@ -103,10 +104,7 @@ export function bindEditorClipboard(store: EditorStore) {
 
     // Text and web pages from elsewhere paste as text, as in Figma, offering layers for HTML.
     if (html || text) {
-      // The HTML importer loads on demand, kept out of the editor's startup code.
-      void import('@/app/editor/clipboard/paste/web').then(({ pasteWebClipboard }) =>
-        pasteWebClipboard(store, { html, text }, cursorPos)
-      )
+      void pasteWebClipboard(store, { html, text }, cursorPos)
       return
     }
 

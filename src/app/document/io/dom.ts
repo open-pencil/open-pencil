@@ -6,6 +6,7 @@ import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
+import { loadHTMLImporter } from '@/app/document/io/importer'
 import type { OpenFileOptions } from '@/app/document/io/state'
 import { pageFetch } from '@/app/document/io/url/fetch'
 import { importIconMatcher } from '@/app/editor/icons/provider'
@@ -50,14 +51,12 @@ export function createDOMOpenActions({
   ) {
     await nextFrame()
     const pageName = options.documentName ?? 'DOM Import'
-    // The HTML importer loads on demand, kept out of the editor's startup code.
-    const [
-      { HTML_IMPORT_VIEWPORT, loadPageFontFaces, sceneGraphFromStyledHTML },
-      { browserHTMLToDesignDocument }
-    ] = await Promise.all([
-      import('@open-pencil/core/io/formats/html/layers'),
-      import('@open-pencil/dom-css/browser')
-    ])
+    const {
+      HTML_IMPORT_VIEWPORT,
+      loadPageFontFaces,
+      sceneGraphFromStyledHTML,
+      browserHTMLToDesignDocument
+    } = await loadHTMLImporter()
     load.update({ phase: 'styling', detail: pageName })
     // Laid out as a browser would, so layers land where the page put its elements.
     const { baseURL } = options

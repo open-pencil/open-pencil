@@ -1,12 +1,11 @@
 import { escapeRegExp } from 'es-toolkit'
 
 import type { ClipboardSnapshot, Editor, PastedTextLink } from '@open-pencil/core'
-import { HTML_IMPORT_VIEWPORT, loadPageFontFaces } from '@open-pencil/core/io/formats/html/layers'
-import { browserHTMLHasBoxes, browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { errorMessage } from '@open-pencil/std/errors'
 import { filesMessages, menuMessages } from '@open-pencil/vue/i18n'
 
+import { loadHTMLImporter } from '@/app/document/io/importer'
 import { pageFetch } from '@/app/document/io/url/fetch'
 import { importIconMatcher } from '@/app/editor/icons/provider'
 import { toast } from '@/app/shell/ui'
@@ -139,10 +138,11 @@ export function pastedText({ html, text }: WebClipboard): {
  * Whether pasting as text should offer layers: the copy is HTML source, or its HTML lays boxes
  * out. A sentence copied from a page or a document carries text styling only, so it does not.
  */
-export function offersLayers(clipboard: WebClipboard): boolean {
-  return (
-    isHTMLMarkup(clipboard.text) || (clipboard.html !== '' && browserHTMLHasBoxes(clipboard.html))
-  )
+export async function offersLayers(clipboard: WebClipboard): Promise<boolean> {
+  if (isHTMLMarkup(clipboard.text)) return true
+  if (clipboard.html === '') return false
+  const { browserHTMLHasBoxes } = await loadHTMLImporter()
+  return browserHTMLHasBoxes(clipboard.html)
 }
 
 /**
@@ -151,6 +151,8 @@ export function offersLayers(clipboard: WebClipboard): boolean {
  * and the HTML laid out again until neither it nor its width changed meanwhile.
  */
 async function prepareLayers(editor: Editor, markup: string): Promise<ClipboardSnapshot | null> {
+  const { HTML_IMPORT_VIEWPORT, browserHTMLToDesignDocument, loadPageFontFaces } =
+    await loadHTMLImporter()
   // Each further pass needs the destination to change again while the HTML is laid out.
   for (;;) {
     const target = editor.htmlPasteTarget()
@@ -211,7 +213,8 @@ export async function pasteWebClipboard(
   const { x, y } = pastePoint(editor, cursorPos)
   rememberWebClipboard(clipboard.html, clipboard.text)
   const markup = layerMarkup(clipboard)
-  const offered = markup !== null && offersLayers(clipboard)
+  // Text still pastes when the importer cannot load; only the offer of layers needs it.
+  const offered = markup !== null && (await offersLayers(clipboard).catch(() => false))
   // A laid-out copy without text, such as an empty card, has nothing to paste but its layers.
   if (text.trim().length === 0) {
     return offered && markup ? pasteHTMLAsLayers(editor, markup, { x, y }) : false

@@ -8,6 +8,7 @@ import { filterCanvasFiles } from '@open-pencil/vue/canvas/drop'
 
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import { pastePoint } from '@/app/editor/clipboard/paste/content'
+import { pasteHTMLAsLayers } from '@/app/editor/clipboard/paste/web'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { DOM_DOCUMENT_EXTENSIONS, isDOMDocumentFile } from '@/app/shell/menu/files'
 import { toast } from '@/app/shell/ui'
@@ -32,8 +33,6 @@ export async function placeFiles(
   // Each page on its own, so one that cannot be read is reported and the rest still land.
   for (const page of files.filter((file) => isDOMDocumentFile(file.name))) {
     try {
-      // The HTML importer loads on demand, kept out of the editor's startup code.
-      const { pasteHTMLAsLayers } = await import('@/app/editor/clipboard/paste/web')
       await pasteHTMLAsLayers(editor, await page.text(), point)
     } catch (error) {
       reportFailure(page.name, error)
