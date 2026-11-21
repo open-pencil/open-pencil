@@ -13,6 +13,7 @@ de:automation.version
 de:code.editorDesignLabel
 de:code.sourceDesignJSX
 de:code.sourceHTML
+de:code.sourceJSON
 de:code.sourceVue
 de:code.sourceReact
 de:code.styling
@@ -88,6 +89,7 @@ es:automation.statusError
 es:code.editorDesignLabel
 es:code.sourceDesignJSX
 es:code.sourceHTML
+es:code.sourceJSON
 es:code.sourceVue
 es:code.sourceReact
 es:code.stylingCSS
@@ -131,6 +133,8 @@ fr:automation.version
 fr:code.editorDesignLabel
 fr:code.sourceDesignJSX
 fr:code.sourceHTML
+fr:code.sourceJSON
+fr:code.jsonCompact
 fr:code.sourceVue
 fr:code.sourceReact
 fr:code.stylingCSS
@@ -219,6 +223,7 @@ it:ai.subagentBack
 it:code.editorDesignLabel
 it:code.sourceDesignJSX
 it:code.sourceHTML
+it:code.sourceJSON
 it:code.sourceVue
 it:code.sourceReact
 it:code.stylingCSS
@@ -262,6 +267,7 @@ it:storage.providerR2
 ja:code.editorDesignLabel
 ja:code.sourceDesignJSX
 ja:code.sourceHTML
+ja:code.sourceJSON
 ja:code.sourceVue
 ja:code.sourceReact
 ja:code.stylingCSS
@@ -291,6 +297,7 @@ pl:automation.port
 pl:code.editorDesignLabel
 pl:code.sourceDesignJSX
 pl:code.sourceHTML
+pl:code.sourceJSON
 pl:code.sourceVue
 pl:code.sourceReact
 pl:code.stylingCSS
@@ -327,6 +334,7 @@ ru:ai.notifyTitle
 ru:code.editorDesignLabel
 ru:code.sourceDesignJSX
 ru:code.sourceHTML
+ru:code.sourceJSON
 ru:code.sourceVue
 ru:code.sourceReact
 ru:code.stylingCSS
@@ -352,6 +360,7 @@ zh-cn:ai.notifyTitle
 zh-cn:code.editorDesignLabel
 zh-cn:code.sourceDesignJSX
 zh-cn:code.sourceHTML
+zh-cn:code.sourceJSON
 zh-cn:code.sourceVue
 zh-cn:code.sourceReact
 zh-cn:code.stylingCSS
@@ -572,6 +581,7 @@ pt-br:cloudPortal.workspaceRoleEditor
 pt-br:code.editorDesignLabel
 pt-br:code.sourceDesignJSX
 pt-br:code.sourceHTML
+pt-br:code.sourceJSON
 pt-br:code.sourceReact
 pt-br:code.sourceVue
 pt-br:code.stylingCSS
@@ -619,6 +629,7 @@ ar:ai.completions
 ar:ai.responses
 ar:code.sourceDesignJSX
 ar:code.sourceHTML
+ar:code.sourceJSON
 ar:code.sourceVue
 ar:code.sourceReact
 ar:code.stylingCSS

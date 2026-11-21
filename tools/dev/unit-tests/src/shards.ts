@@ -34,7 +34,12 @@ export const UNIT_TEST_GROUPS = {
   fig: ['packages/fig/tests', 'packages/kiwi/tests'],
   mcp: ['packages/mcp/tests'],
   render: ['packages/core/tests/canvas'],
-  'scene-graph': ['packages/std/tests', 'packages/scene-graph/tests', 'packages/collab/tests'],
+  'scene-graph': [
+    'packages/std/tests',
+    'packages/scene-graph/tests',
+    'packages/collab/tests',
+    'packages/design-json/tests'
+  ],
   vue: ['packages/vue/tests']
 } as const
 

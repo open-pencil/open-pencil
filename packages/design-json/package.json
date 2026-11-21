@@ -1,0 +1,30 @@
+{
+  "name": "@open-pencil/design-json",
+  "version": "0.17.0-beta.6",
+  "private": true,
+  "description": "A design's layers as JSON: every field of each layer, its children, and the variables, components, and images they reference, with options to shape the output.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#design-json/*": "./src/*.ts",
+    "#design-json-tests/*": "./tests/*.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test tests",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@open-pencil/scene-graph": "workspace:*",
+    "@open-pencil/std": "workspace:*",
+    "es-toolkit": "^1.52.0",
+    "js-base64": "^3.9.3"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}

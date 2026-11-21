@@ -4,9 +4,13 @@
   "sourceHTML": "HTML",
   "sourceVue": "Vue",
   "sourceReact": "React",
+  "sourceJSON": "JSON",
   "styling": "التنسيق",
   "stylingCSS": "CSS",
   "stylingTailwind": "Tailwind",
+  "jsonDetail": "تفاصيل JSON",
+  "jsonFull": "كامل",
+  "jsonCompact": "موجز",
   "editorDesignLabel": "Design JSX",
   "editorHTMLCSSLabel": "HTML وCSS",
   "updating": "جارٍ التحديث…",
@@ -21,5 +25,6 @@
   "noSelection": "حدّد طبقة لرؤية الكود الخاص بها",
   "noSelectionDesignJSX": "أو اكتب Design JSX لإضافة طبقات جديدة إلى الصفحة.",
   "noSelectionComponents": "تُولَّد مكوّنات {framework} للطبقات المحددة.",
+  "noSelectionJSON": "تُكتب كل حقول الطبقات المحددة بصيغة JSON.",
   "writeJSX": "كتابة JSX"
 }

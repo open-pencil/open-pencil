@@ -50,7 +50,9 @@ function designJSXProps(issue: DesignIssue): readonly string[] {
 const CLASS_PROPS: Record<Exclude<CodeSource, 'design-jsx'>, readonly string[]> = {
   'html-css': ['class'],
   vue: ['class'],
-  react: ['className']
+  react: ['className'],
+  // JSON writes a layer's fields, not markup with a class to mark.
+  json: []
 }
 
 /**

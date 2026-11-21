@@ -1,6 +1,6 @@
 import type { ComponentStyling } from '@open-pencil/dom-css/export'
 
-export type CodeSource = 'design-jsx' | 'html-css' | 'vue' | 'react'
+export type CodeSource = 'design-jsx' | 'html-css' | 'vue' | 'react' | 'json'
 
 export const DESIGN_JSX_STARTER_SOURCE = '<Frame name="New frame" w={320} h={240} fill="#ffffff" />'
 

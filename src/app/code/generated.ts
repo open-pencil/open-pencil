@@ -1,4 +1,5 @@
 import { vectorElement } from '@open-pencil/core/io'
+import { compactDesign, designToJSON } from '@open-pencil/design-json'
 import { selectionToJSXWithLayers } from '@open-pencil/design-jsx'
 import {
   layerComponents,
@@ -8,6 +9,7 @@ import {
 } from '@open-pencil/dom-css/export'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import type { JSONDetail } from '@/app/code/json-detail'
 import { starterSourceFor, type CodeSource } from '@/app/code/templates'
 
 /** Generated code and the layer behind each of its elements, in pre-order. */
@@ -17,12 +19,29 @@ export interface GeneratedCode {
 }
 
 /** Sources generated as the panel opens them, which take a moment: components and HTML. */
-export type AsyncCodeSource = Exclude<CodeSource, 'design-jsx'>
+export type AsyncCodeSource = Exclude<CodeSource, 'design-jsx' | 'json'>
 
 /** Design JSX for the selection, or the starter for writing new layers. */
 export function generatedDesignJSX(graph: SceneGraph, nodeIds: string[]): GeneratedCode {
   if (nodeIds.length === 0) return { code: starterSourceFor('design-jsx'), layerIds: [] }
   return selectionToJSXWithLayers(nodeIds, graph)
+}
+
+/**
+ * The selected layers as JSON. In full, everything `@open-pencil/design-json` writes: every
+ * field, what is computed for them, what they reference, and the document's comments. Compact,
+ * their structure in brief, with layers drawn inside or over one another nested or grouped.
+ */
+export function generatedJSON(
+  graph: SceneGraph,
+  nodeIds: string[],
+  detail: JSONDetail
+): GeneratedCode {
+  const json =
+    detail === 'compact'
+      ? compactDesign(graph, nodeIds, { inferNesting: true })
+      : designToJSON(graph, nodeIds)
+  return { code: JSON.stringify(json, null, 2), layerIds: [] }
 }
 
 /** Each file of each component under a comment naming it, as a project would hold them. */

@@ -10,6 +10,7 @@ import {
 } from '@codemirror/commands'
 import { html } from '@codemirror/lang-html'
 import { javascript } from '@codemirror/lang-javascript'
+import { json } from '@codemirror/lang-json'
 import { bracketMatching, foldGutter, foldKeymap, indentOnInput } from '@codemirror/language'
 import { lintKeymap } from '@codemirror/lint'
 import { searchKeymap } from '@codemirror/search'
@@ -89,6 +90,7 @@ let externalUpdate = false
 
 function languageExtensions(language: CodeEditorLanguage): Extension {
   if (language === 'html-css' || language === 'vue') return html()
+  if (language === 'json') return json()
   return [
     javascript({ jsx: true, typescript: true }),
     ...(language === 'design-jsx' ? designJSXExtensions() : [])

@@ -273,6 +273,30 @@ for (const [label, generated] of [
   })
 }
 
+test('JSON writes every field of the selection, read-only and without styling', async () => {
+  await editor.canvas.drawRect(100, 100, 200, 150)
+  await openCodePanel()
+  await selectSource('JSON')
+  await expect(codeEditor()).toContainText(
+    /"format": "open-pencil\/design-json".*"type": "RECTANGLE"/
+  )
+  await expect(codeEditor()).toContainText(/"width": 200,.*"height": 150/)
+  await expect(codeEditor()).toHaveAttribute('aria-readonly', 'true')
+  await expect(editor.page.getByTestId('code-panel-styling')).toHaveCount(0)
+})
+
+test('JSON Compact shows the structure of the selection in brief', async () => {
+  await editor.canvas.drawRect(100, 100, 200, 150)
+  await openCodePanel()
+  await selectSource('JSON')
+  const detail = editor.page.getByTestId('code-panel-json-detail')
+  await detail.getByRole('button', { name: 'Compact' }).click()
+  await expect(codeEditor()).toContainText(/"format": "open-pencil\/design-json-compact"/)
+  await expect(codeEditor()).toContainText(/"kind": "shape".*"width": 200,.*"height": 150/)
+  await detail.getByRole('button', { name: 'Full' }).click()
+  await expect(codeEditor()).toContainText(/"format": "open-pencil\/design-json",/)
+})
+
 async function selectStyling(label: string) {
   await editor.page.getByTestId('code-panel-styling').getByRole('button', { name: label }).click()
 }
