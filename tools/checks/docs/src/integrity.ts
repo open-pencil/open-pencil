@@ -129,8 +129,13 @@ function validateRedirects(docsRoot: string, redirectsPath: string): string[] {
       continue
     }
     if (elsewhere) {
-      if (routeExists(docsRoot, redirect.from)) {
-        errors.push(`Redirect source '${redirect.from}' still has a page and would shadow it.`)
+      const section = redirect.from.endsWith('/*') ? redirect.from.slice(0, -'*'.length) : null
+      if (section ? existsSync(join(docsRoot, section)) : routeExists(docsRoot, redirect.from)) {
+        errors.push(
+          section
+            ? `Redirect source '${redirect.from}' still has pages and would shadow them.`
+            : `Redirect source '${redirect.from}' still has a page and would shadow it.`
+        )
       }
       continue
     }
