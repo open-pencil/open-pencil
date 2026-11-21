@@ -159,7 +159,7 @@ export function moveCanvasDrag(
   }
 
   if (d.type === 'draw') {
-    handleDrawMove(d, cx, cy, e.shiftKey)
+    handleDrawMove(d, cx, cy, e.shiftKey, e.ctrlKey)
     return
   }
 

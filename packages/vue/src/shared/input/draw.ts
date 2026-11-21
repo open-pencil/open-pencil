@@ -1,12 +1,14 @@
 import type { Editor } from '@open-pencil/core'
 import { DEFAULT_TEXT_HEIGHT, DEFAULT_TEXT_WIDTH } from '@open-pencil/core/constants'
+import type { HandlePosition } from '@open-pencil/core/geometry'
 import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { generatedFrameText, SHAPE_WITH_TEXT_SIZE } from '@open-pencil/scene-graph/generated'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { findDrawParent } from '#vue/shared/input/drop-target'
-import { gridRounding } from '#vue/shared/input/snap/resolve'
+import { layerSnapSource, resizedRect } from '#vue/shared/input/resize/snap'
+import { gridRounding, optionalEditorState } from '#vue/shared/input/snap/resolve'
 import { TOOL_TO_NODE } from '#vue/shared/input/types'
 import type { DragDraw, DragState } from '#vue/shared/input/types'
 
@@ -73,27 +75,26 @@ function lineGeometry(d: DragDraw, dx: number, dy: number, shiftKey: boolean): P
   return { x: d.startX, y: d.startY, width: Math.hypot(dx, dy), height: 0, rotation: angle }
 }
 
-export function handleDrawMove(d: DragDraw, cx: number, cy: number, shiftKey: boolean) {
+export function handleDrawMove(
+  d: DragDraw,
+  cx: number,
+  cy: number,
+  shiftKey: boolean,
+  disableSnapping = false
+) {
   const point = d.toLocal(cx, cy)
-  let w = d.snap(point.x) - d.startX
-  let h = d.snap(point.y) - d.startY
+  const corner = { x: d.snap(point.x), y: d.snap(point.y) }
   if (d.line) {
-    d.update(lineGeometry(d, w, h, shiftKey))
+    d.update(lineGeometry(d, corner.x - d.startX, corner.y - d.startY, shiftKey))
     return
   }
+  d.update(d.box(corner, shiftKey, disableSnapping))
+}
 
-  if (shiftKey) {
-    const size = Math.max(Math.abs(w), Math.abs(h))
-    w = Math.sign(w) * size
-    h = Math.sign(h) * size
-  }
-
-  d.update({
-    x: w < 0 ? d.startX + w : d.startX,
-    y: h < 0 ? d.startY + h : d.startY,
-    width: Math.abs(w),
-    height: Math.abs(h)
-  })
+/** The handle a drawn box grows by: the corner on the pointer's side of the start point. */
+function drawnCorner(dx: number, dy: number): HandlePosition {
+  if (dy < 0) return dx < 0 ? 'nw' : 'ne'
+  return dx < 0 ? 'sw' : 'se'
 }
 
 /** Gives a layer made by a click its default size; returns whether it was only clicked. */
@@ -139,9 +140,12 @@ function createDraw(
   const preview = editor.beginNodePreview('Draw dimensions')
   let finished = false
 
+  const clearGuides = () => optionalEditorState(editor)?.snapGuides.splice(0)
+
   function cancel() {
     if (finished) return
     finished = true
+    clearGuides()
     preview.cancel()
     // Never replay an old document's creation undo against a replacement graph.
     if (editor.graph === graph) editor.undo.rollbackBatch()
@@ -154,6 +158,7 @@ function createDraw(
       return
     }
     finished = true
+    clearGuides()
     const node = graph.getNode(nodeId)
     try {
       const clicked = node ? settleDrawnSize(preview, node) : false
@@ -193,6 +198,21 @@ function createDraw(
     line,
     snap,
     nodeId,
+    // A box drawn from a point is a resize from a box of no size, by the corner under the pointer.
+    box: (corner, square, disableSnapping) => {
+      const dx = corner.x - startX
+      const dy = corner.y - startY
+      const handle = drawnCorner(dx, dy)
+      return resizedRect(
+        handle,
+        { x: startX, y: startY, width: 0, height: 0 },
+        { x: dx, y: dy },
+        square ? 1 : null,
+        layerSnapSource({ nodeId, handle }, editor),
+        editor,
+        disableSnapping
+      )
+    },
     update: (changes) => {
       if (!finished) preview.update(nodeId, changes)
     },

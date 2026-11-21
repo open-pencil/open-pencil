@@ -30,6 +30,11 @@ export interface DragDraw {
   /** Lands a coordinate on the pixel grid while Snap to pixel grid is on. */
   snap: (value: number) => number
   nodeId: string
+  /**
+   * The box from the start point to `corner`, its moving edges snapped to other layers and the
+   * guides as a resize's are, and kept square when `square`; Control turns snapping off.
+   */
+  box: (corner: Vector, square: boolean, disableSnapping: boolean) => Rect
   update: (changes: Partial<SceneNode>) => void
   commit: () => void
   cancel: () => void

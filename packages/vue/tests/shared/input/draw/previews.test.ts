@@ -75,6 +75,31 @@ describe('draw creation previews', () => {
     }
   })
 
+  test('snaps the corner being drawn to other layers and shows their guides', () => {
+    for (const disableSnapping of [false, true]) {
+      const editor = createEditor()
+      try {
+        editor.createShape('RECTANGLE', 300, 300, 100, 100)
+        const drag = start(editor, 'RECTANGLE')
+        handleDrawMove(drag, 298, 202, false, disableSnapping)
+        const node = editor.graph.getNode(drag.nodeId)
+        if (disableSnapping) {
+          expect(node).toMatchObject({ x: 100, y: 100, width: 198, height: 102 })
+          expect(editor.state.snapGuides).toEqual([])
+        } else {
+          expect(node).toMatchObject({ x: 100, y: 100, width: 200, height: 102 })
+          expect(editor.state.snapGuides).toContainEqual(
+            expect.objectContaining({ axis: 'x', position: 300 })
+          )
+        }
+        drag.commit()
+        expect(editor.state.snapGuides).toEqual([])
+      } finally {
+        editor.dispose()
+      }
+    }
+  })
+
   test('graph replacement discards pending draw batches without replaying or deleting history', () => {
     const editor = createEditor()
     try {
