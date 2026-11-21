@@ -103,6 +103,19 @@ function validateMarkdownLinks(docsRoot: string, markdownFiles: string[]): strin
   return errors
 }
 
+/** What a redirect from `from` would hide here: a page, or a section's pages for `/section/*`. */
+function shadowedBy(docsRoot: string, from: string): string | null {
+  const section = from.endsWith('/*') ? from.slice(0, -'*'.length) : null
+  if (section) {
+    return existsSync(join(docsRoot, section))
+      ? `Redirect source '${from}' still has pages and would shadow them.`
+      : null
+  }
+  return routeExists(docsRoot, from)
+    ? `Redirect source '${from}' still has a page and would shadow it.`
+    : null
+}
+
 function validateRedirects(docsRoot: string, redirectsPath: string): string[] {
   if (!existsSync(redirectsPath)) return [`Missing redirects file '${redirectsPath}'.`]
 
@@ -129,14 +142,8 @@ function validateRedirects(docsRoot: string, redirectsPath: string): string[] {
       continue
     }
     if (elsewhere) {
-      const section = redirect.from.endsWith('/*') ? redirect.from.slice(0, -'*'.length) : null
-      if (section ? existsSync(join(docsRoot, section)) : routeExists(docsRoot, redirect.from)) {
-        errors.push(
-          section
-            ? `Redirect source '${redirect.from}' still has pages and would shadow them.`
-            : `Redirect source '${redirect.from}' still has a page and would shadow it.`
-        )
-      }
+      const shadowing = shadowedBy(docsRoot, redirect.from)
+      if (shadowing) errors.push(shadowing)
       continue
     }
     // `/old/*` to `/new/:splat` moves a whole section: the new folder must exist and the old must not.
