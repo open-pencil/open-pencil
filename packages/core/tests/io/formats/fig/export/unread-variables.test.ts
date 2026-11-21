@@ -10,6 +10,7 @@ import { appendVariableNodeChanges } from '#core/io/formats/fig/export/variables
 
 /** A PAINT variable as Figma writes it; the pinned schema has no PAINT type or paint values. */
 function paintVariable(localID: number, collectionId: string): NodeChange {
+  const value = { paintValue: { type: 'SOLID' } }
   return {
     guid: guid(localID),
     type: 'VARIABLE',
@@ -20,7 +21,7 @@ function paintVariable(localID: number, collectionId: string): NodeChange {
     ...({
       variableResolvedType: 'PAINT',
       variableDataValues: {
-        entries: [{ modeID: guid(10), variableData: { value: { paintValue: { type: 'SOLID' } } } }]
+        entries: [{ modeID: guid(10), variableData: { value } }]
       }
     } as Partial<NodeChange>)
   }
