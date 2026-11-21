@@ -127,7 +127,7 @@ export async function renderInstanceNode(
   const component = resolveComponent(graph, props, context?.refs)
   if (!component) throw componentNotFound(props)
   const overrides: Partial<SceneNode> = {
-    ...propsToOverrides(props, false, parentLayout),
+    ...propsToOverrides(props, false, parentLayout, graph.documentColorSpace),
     ...layerMetadata(modes, bound.references)
   }
   // Instances inherit their container layout, but explicitly authored dimensions

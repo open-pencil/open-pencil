@@ -59,7 +59,12 @@ function renderOwnLayerElement(
   const parentLayout = graph.getNode(parentId)?.layoutMode ?? 'NONE'
   const layer = omitBy(
     {
-      ...propsToOverrides(readElementProps(element.layer, props), false, parentLayout),
+      ...propsToOverrides(
+        readElementProps(element.layer, props),
+        false,
+        parentLayout,
+        graph.documentColorSpace
+      ),
       ...layerMetadata(modes, bound.references)
     },
     (value) => value === undefined
@@ -72,7 +77,8 @@ function renderOwnLayerElement(
       propsToOverrides(
         preparePropsForRender(graph, spanProps, true, { parentId, modes }).props,
         true,
-        'NONE'
+        'NONE',
+        graph.documentColorSpace
       )
     graph.updateNode(textLayer.id, textContentFields(tree, {}, textLayer, spanOverrides))
   }
@@ -277,7 +283,7 @@ export function elementOverrides(
   const layer = { parentId, modes }
   const { props, bindings } = preparePropsForRender(graph, bound.props, isText, layer)
   const overrides = {
-    ...propsToOverrides(props, isText, parentLayout),
+    ...propsToOverrides(props, isText, parentLayout, graph.documentColorSpace),
     ...shapeOverrides(nodeType, props),
     ...layerMetadata(modes, bound.references)
   }
@@ -285,7 +291,12 @@ export function elementOverrides(
   if (isText) {
     // A span's variables give their values; characters keep no bindings of their own.
     const spanOverrides = (spanProps: Record<string, unknown>) =>
-      propsToOverrides(preparePropsForRender(graph, spanProps, true, layer).props, true, 'NONE')
+      propsToOverrides(
+        preparePropsForRender(graph, spanProps, true, layer).props,
+        true,
+        'NONE',
+        graph.documentColorSpace
+      )
     Object.assign(overrides, textContentFields(tree, props, overrides, spanOverrides, markdown))
   }
   return { overrides, bindings }
