@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { join as joinPath } from 'node:path'
+import { posix } from 'node:path'
 
 import { BaseDirectory } from '@tauri-apps/api/path'
+
+import { isRecord } from '@open-pencil/std/records'
 
 import { computeExpectedDiscoveryPath, resolveDiscoveryPath } from '@/app/automation/mcp/discovery'
 
@@ -19,22 +21,20 @@ function useLinux(): void {
   })
 }
 
-function isArgs(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
 /** `runtime` is what `runtimeDir()` resolves to; throwing means the directory is unavailable. */
 async function mockDiscoveryPaths(runtime: () => string): Promise<void> {
   await mockTauriIPC((cmd, args) => {
     if (cmd === 'plugin:path|resolve_directory') {
-      const directory = isArgs(args) ? args.directory : undefined
+      const directory = isRecord(args) ? args.directory : undefined
       if (directory === BaseDirectory.Home) return HOME
       if (directory === BaseDirectory.Runtime) return runtime()
       return null
     }
     if (cmd === 'plugin:path|join') {
-      const paths = isArgs(args) && Array.isArray(args.paths) ? args.paths : []
-      return joinPath(...paths.filter((segment): segment is string => typeof segment === 'string'))
+      const paths = isRecord(args) && Array.isArray(args.paths) ? args.paths : []
+      return posix.join(
+        ...paths.filter((segment): segment is string => typeof segment === 'string')
+      )
     }
     if (cmd === 'plugin:fs|exists') return false
     return null
