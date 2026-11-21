@@ -205,7 +205,11 @@ function shadowToken(
   )
   // Bindings ride along so a file read back binds them where `$value` has no place for them.
   const own: Record<string, unknown> = ownBindings(graph, node, bindings)
-  if (!exact) own.effects = node.effects.map((effect) => toFigmaEffect(effect))
+  if (!exact) {
+    own.effects = node.effects.map((effect) => toFigmaEffect(effect))
+    // Their colors are the document's numbers, which a file read into another profile converts.
+    own.colorSpace = graph.documentColorSpace
+  }
   if (isEmptyObject(own)) return { $type: 'shadow', $value }
   return { $type: 'shadow', $value, $extensions: { [OPENPENCIL_EXTENSION]: own } }
 }

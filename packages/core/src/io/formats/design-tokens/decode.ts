@@ -80,22 +80,6 @@ export function importedColor(color: Color, source: ColorProfile, profile: Color
   return source === 'srgb' ? color : convertColor(color, source, profile, 'map')
 }
 
-const tokenProfileSchema = v.object({
-  color: v.object({ colorSpace: v.picklist(['srgb', 'display-p3']) })
-})
-
-/**
- * The profile a shadow token's file wrote its colors in, read from the first shadow whose color is
- * written out rather than referenced; null when every color is a reference.
- */
-export function shadowTokenProfile(value: unknown): ColorProfile | null {
-  for (const entry of Array.isArray(value) ? value : [value]) {
-    const parsed = v.safeParse(tokenProfileSchema, entry)
-    if (parsed.success) return parsed.output.color.colorSpace
-  }
-  return null
-}
-
 const dimensionSchema = v.object({ value: v.number(), unit: v.picklist(['px', 'rem']) })
 const durationSchema = v.object({ value: v.number(), unit: v.picklist(['ms', 's']) })
 

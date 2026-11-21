@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type ColorProfile } from '@open-pencil/scene-graph'
+import { convertColor } from '@open-pencil/scene-graph/color'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import {
@@ -288,6 +289,46 @@ describe('color tokens of a document in a color profile', () => {
           showShadowBehindNode: true
         })
       }
+    })
+
+    test('an edited shadow color leaves the recorded ones in the profile they were written in', () => {
+      const graph = new SceneGraph()
+      const shadow = {
+        type: 'DROP_SHADOW' as const,
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        offset: { x: 0, y: 4 },
+        radius: 12,
+        spread: 0,
+        visible: true
+      }
+      const style = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
+        name: 'Elevation/Glow',
+        sharedStyleType: 'EFFECT',
+        internalOnly: true,
+        effects: [shadow, { ...shadow, color: { r: 1, g: 0, b: 0, a: 1 }, visible: false }]
+      })
+      style.source.id = 'style:glow'
+      const files = exportDesignTokens(graph).files.map((entry) => {
+        const text = JSON.stringify(entry.content)
+        // The visible shadow's color edited in the file, to Display P3 green.
+        return {
+          path: entry.path,
+          text: text.replace(
+            '"colorSpace":"srgb","components":[0,0,0]',
+            '"colorSpace":"display-p3","components":[0,1,0]'
+          )
+        }
+      })
+      // Read into an sRGB document, where a color taken for P3 would be converted.
+      const target = new SceneGraph()
+      const bundle = readDesignTokens(files)
+      const plan = planTokenImport(target, bundle, defaultTokenImportOptions(target, bundle))
+      const effects = plan.styles[0]?.fields.effects
+      // The edited P3 green is brought inside sRGB.
+      const green = convertColor({ r: 0, g: 1, b: 0, a: 1 }, 'display-p3', 'srgb', 'map')
+      expect(effects?.[0]?.color.b).toBeCloseTo(green.b, 4)
+      // The hidden sRGB red keeps its numbers, not converted as if it were P3.
+      expect(effects?.[1]).toMatchObject({ visible: false, color: { r: 1, g: 0, b: 0, a: 1 } })
     })
 
     test('reads the colors as the token does: sRGB numbers kept, P3 converted', () => {
