@@ -3,7 +3,7 @@ import valueParser, { type Node } from 'postcss-value-parser'
 import { tryParseColor } from '../color'
 import { BLACK } from '../constants'
 import type { Color } from '../primitives'
-import type { Effect } from '../types'
+import type { ColorProfile, Effect } from '../types'
 import { parseCSSNumber } from './values'
 
 /** The layers of a shadow list, split at its top-level commas. */
@@ -26,7 +26,7 @@ function layersOf(nodes: Node[]): Node[][] {
  * One layer: `inset`, two to four lengths, and a color in any order. Without a color it is
  * black, as `currentColor` usually is; a layer with anything else, such as `none`, is dropped.
  */
-function shadowOf(nodes: Node[]): Effect[] {
+function shadowOf(nodes: Node[], profile: ColorProfile): Effect[] {
   let inset = false
   let color: Color | null = null
   const lengths: number[] = []
@@ -40,7 +40,7 @@ function shadowOf(nodes: Node[]): Effect[] {
       lengths.push(length)
       continue
     }
-    const parsed = tryParseColor(valueParser.stringify(node))
+    const parsed = tryParseColor(valueParser.stringify(node), profile)
     if (!parsed || color) return []
     color = parsed
   }
@@ -60,9 +60,13 @@ function shadowOf(nodes: Node[]): Effect[] {
 
 /**
  * The shadows of a CSS `box-shadow` or `text-shadow` list, such as
- * `0 4px 8px rgb(0 0 0 / 0.2), inset 0 1px #fff`: drop shadows, and inner shadows for `inset`.
+ * `0 4px 8px rgb(0 0 0 / 0.2), inset 0 1px #fff`: drop shadows, and inner shadows for `inset`,
+ * their colors read into `profile`.
  */
-export function parseCSSShadows(value: string | undefined): Effect[] {
+export function parseCSSShadows(
+  value: string | undefined,
+  profile: ColorProfile = 'srgb'
+): Effect[] {
   if (!value) return []
-  return layersOf(valueParser(value).nodes).flatMap(shadowOf)
+  return layersOf(valueParser(value).nodes).flatMap((layer) => shadowOf(layer, profile))
 }

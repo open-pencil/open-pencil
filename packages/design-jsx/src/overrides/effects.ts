@@ -1,4 +1,4 @@
-import type { Effect, SceneNode } from '@open-pencil/scene-graph'
+import type { ColorProfile, Effect, SceneNode } from '@open-pencil/scene-graph'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import { parseCSSShadows } from '@open-pencil/scene-graph/css'
 
@@ -13,14 +13,18 @@ function isEffect(value: unknown): value is Effect {
 }
 
 /** `effects` takes structured effects; `shadow` appends its shadows and `blur` a layer blur. */
-export function applyEffectOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
+export function applyEffectOverrides(
+  props: Record<string, unknown>,
+  o: Partial<SceneNode>,
+  profile: ColorProfile
+): void {
   if (Array.isArray(props.effects)) {
     const effects = props.effects.filter(isEffect).map((effect) => structuredClone(effect))
     if (effects.length > 0) o.effects = effects
   }
 
   // A CSS shadow list, as `box-shadow` takes it.
-  const shadows = typeof props.shadow === 'string' ? parseCSSShadows(props.shadow) : []
+  const shadows = typeof props.shadow === 'string' ? parseCSSShadows(props.shadow, profile) : []
   if (shadows.length > 0) o.effects = [...(o.effects ?? []), ...shadows]
 
   if (typeof props.blur === 'number') {
