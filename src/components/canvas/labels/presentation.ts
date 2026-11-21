@@ -32,9 +32,7 @@ export function canvasLabelPresentation(
   if (figJam) {
     const outline = node?.strokes[figJam.strokeIndex]
     const background =
-      (node &&
-        outline &&
-        editor.renderer?.resolveStrokeColor(outline, figJam.strokeIndex, node, editor.graph)) ||
+      (node && outline && editor.renderer?.resolveStrokeColor(outline, editor.graph)) ||
       figJam.background
     // Opaque, as the pill it edits is.
     return { background: { ...background, a: 1 }, foreground: figJam.lightText ? 'light' : 'dark' }
@@ -42,7 +40,7 @@ export function canvasLabelPresentation(
   const fill = node?.fills[0]
   const background =
     node && fill?.visible
-      ? (editor.renderer?.resolveFillColor(fill, 0, node, editor.graph) ?? fill.color)
+      ? (editor.renderer?.resolveFillColor(fill, editor.graph) ?? fill.color)
       : DEFAULT_LABEL_BACKGROUND
   const foreground = canvasLabelForeground(background, editor.state.pageColor)
   return { background, foreground: foreground.r === 0 ? 'dark' : 'light' }

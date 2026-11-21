@@ -1,83 +1,48 @@
-import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import {
-  resolveNodeFillColor,
-  resolveNodeStrokeColor,
-  resolveRGBAForPreview,
-  type RenderColorSpace,
-  type ResolvedRenderColor,
-  normalizeColor,
-  getFillOkHCL,
-  getStrokeOkHCL
-} from '@open-pencil/scene-graph/color'
+import type { CanvasKit, ColorSpace, ColorType, ImageInfo } from '@open-pencil/canvaskit'
+import type { ColorProfile, Fill, SceneGraph, Stroke } from '@open-pencil/scene-graph'
+import { normalizeColor, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-/**
- * A bound paint draws the color it stores, which its variable last wrote into it, as Figma draws
- * it; OkHCL data kept from before it was bound no longer describes it.
- */
-function isBound(node: SceneNode, list: 'fills' | 'strokes', index: number): boolean {
-  return `${list}/${index}/color` in node.boundVariables
-}
-
-export function resolveFillColorInfo(
-  fill: Fill,
-  fillIndex: number,
-  node: SceneNode,
-  graph: SceneGraph,
-  presentation: RenderColorSpace
-): ResolvedRenderColor {
-  const options = { documentColorSpace: graph.documentColorSpace, colorSpace: presentation }
-  if (isBound(node, 'fills', fillIndex)) return resolveRGBAForPreview(fill.color, options)
-  return resolveNodeFillColor(fill, fillIndex, node, options)
-}
-
-export function resolveFillColor(
-  fill: Fill,
-  fillIndex: number,
-  node: SceneNode,
-  graph: SceneGraph,
-  presentation: RenderColorSpace
-): Color {
-  if (isBound(node, 'fills', fillIndex) || !getFillOkHCL(node, fillIndex))
-    return normalizeColor(fill.color)
-  return resolveFillColorInfo(fill, fillIndex, node, graph, presentation).color
+/** Skia's color space for a document's. */
+export function skColorSpace(ck: CanvasKit, space: ColorProfile): ColorSpace {
+  return space === 'display-p3' ? ck.ColorSpace.DISPLAY_P3 : ck.ColorSpace.SRGB
 }
 
 /**
- * A gradient stop's color as drawn. Bindings and OkHCL data belong to a solid paint's one color, so
- * a stop only goes through color management, whatever paint list or index its gradient sits at.
+ * A premultiplied surface `width` by `height` in `profile`, as a document is drawn on: its colors
+ * and blend modes work in its own profile there, as on the screen and in Figma's export.
  */
-export function resolveGradientStopColor(
-  color: Color,
-  graph: SceneGraph,
-  presentation: RenderColorSpace
-): Color {
-  return resolveRGBAForPreview(color, {
-    documentColorSpace: graph.documentColorSpace,
-    colorSpace: presentation
-  }).color
+export function documentImageInfo(
+  ck: CanvasKit,
+  profile: ColorProfile,
+  width: number,
+  height: number,
+  colorType: ColorType = ck.ColorType.RGBA_8888
+): ImageInfo {
+  return {
+    width,
+    height,
+    colorType,
+    alphaType: ck.AlphaType.Premul,
+    colorSpace: skColorSpace(ck, profile)
+  }
 }
 
-export function resolveStrokeColorInfo(
-  stroke: Stroke,
-  strokeIndex: number,
-  node: SceneNode,
-  graph: SceneGraph,
-  presentation: RenderColorSpace
-): ResolvedRenderColor {
-  const options = { documentColorSpace: graph.documentColorSpace, colorSpace: presentation }
-  if (isBound(node, 'strokes', strokeIndex)) return resolveRGBAForPreview(stroke.color, options)
-  return resolveNodeStrokeColor(stroke, strokeIndex, node, options)
+/**
+ * A paint's color as Skia is given it: its stored components, in the document's profile, as
+ * extended sRGB, which Skia converts into the document's space of the surfaces it draws on. The
+ * stored color is what draws, as in Figma; an OkHCL value kept for editing only describes it.
+ */
+export function resolveFillColor(fill: Fill, graph: SceneGraph): Color {
+  return toExtendedSRGB(normalizeColor(fill.color), graph.documentColorSpace)
 }
 
-export function resolveStrokeColor(
-  stroke: Stroke,
-  strokeIndex: number,
-  node: SceneNode,
-  graph: SceneGraph,
-  presentation: RenderColorSpace
-): Color {
-  if (isBound(node, 'strokes', strokeIndex) || !getStrokeOkHCL(node, strokeIndex))
-    return normalizeColor(stroke.color)
-  return resolveStrokeColorInfo(stroke, strokeIndex, node, graph, presentation).color
+/** A gradient stop's color as drawn, as {@link resolveFillColor} gives a paint's. */
+export function resolveGradientStopColor(color: Color, graph: SceneGraph): Color {
+  return toExtendedSRGB(normalizeColor(color), graph.documentColorSpace)
+}
+
+/** A stroke's color as drawn, as {@link resolveFillColor} gives a fill's. */
+export function resolveStrokeColor(stroke: Stroke, graph: SceneGraph): Color {
+  return toExtendedSRGB(normalizeColor(stroke.color), graph.documentColorSpace)
 }

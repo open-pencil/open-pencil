@@ -2,6 +2,7 @@ import { hasInjectionContext, inject, provide, shallowRef, triggerRef, watch } f
 import type { InjectionKey } from 'vue'
 
 import { provideEditor } from '@open-pencil/vue'
+import { provideColorSpace } from '@open-pencil/vue/controls/color-model'
 
 import type { EditorStore } from '@/app/editor/session'
 
@@ -42,7 +43,21 @@ const TAB_STORE_KEY: InjectionKey<EditorStore> = Symbol('open-pencil-tab-store')
  */
 export function provideTabEditorStore(store: EditorStore) {
   provide(TAB_STORE_KEY, store)
+  provideEditorStore(store)
+}
+
+/**
+ * Hands `store` to the SDK's `useEditor`, and has swatches and pickers show its document's colors
+ * as its canvas presents them: in Display P3 where the canvas can, clipped to sRGB where it falls
+ * back, as on WebKit.
+ */
+export function provideEditorStore(store: EditorStore) {
   provideEditor(store)
+  // The tab's own state, which follows the active tab, in place of the SDK's per-editor default.
+  provideColorSpace(
+    () => store.state.documentColorSpace,
+    () => store.state.canvasPresentation ?? store.state.documentColorSpace
+  )
 }
 
 /**

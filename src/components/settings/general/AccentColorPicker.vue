@@ -5,8 +5,9 @@ import { computed, shallowRef } from 'vue'
 
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { provideColorSpace } from '@open-pencil/vue/controls/color-model'
 import { useSettingsMessages } from '@open-pencil/vue/i18n'
-import type { PickerCancelCause } from '@open-pencil/vue/primitives/ColorPicker'
+import { type PickerCancelCause } from '@open-pencil/vue/primitives/ColorPicker'
 
 import { accentPreference } from '@/app/shell/accent'
 import { ACCENT_PRESET_COLORS, accentBaseColor } from '@/app/shell/accent/palette'
@@ -16,6 +17,8 @@ import Tip from '@/components/ui/overlay/Tip.vue'
 import theme from '@/theme/settings/accent'
 
 const messages = useSettingsMessages()
+// The accent is an interface color, sRGB whatever profile the open document has.
+provideColorSpace('srgb')
 const styles = tv(theme)()
 
 const presetLabels = computed<Record<AccentPreset, string>>(() => ({

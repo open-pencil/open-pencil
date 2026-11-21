@@ -1,10 +1,10 @@
 import { computed, ref, type Ref } from 'vue'
 
 import type { Fill, GradientStop, GradientTransform } from '@open-pencil/scene-graph'
-import { colorToCSS } from '@open-pencil/scene-graph/color'
 import { DEFAULT_GRADIENT_TRANSFORM } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { linearGradientCSS, useColorSpaces } from '#vue/controls/color-model/space'
 import { useColorModel } from '#vue/controls/color-model/use'
 
 type GradientSubtype =
@@ -37,10 +37,9 @@ export function useGradientStops(fill: Ref<Fill>, onUpdate: (fill: Fill) => void
     return s[Math.min(activeStopIndex.value, s.length - 1)].color
   })
 
+  const spaces = useColorSpaces()
   const barBackground = computed(() =>
-    stops.value.length
-      ? `linear-gradient(to right, ${stops.value.map((s) => `${colorToCSS(s.color)} ${s.position * 100}%`).join(', ')})`
-      : ''
+    stops.value.length ? linearGradientCSS('to right', stops.value, spaces.value) : ''
   )
 
   function emitStops(newStops: GradientStop[]) {
