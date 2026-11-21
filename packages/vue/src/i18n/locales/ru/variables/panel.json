@@ -106,6 +106,7 @@
   "exportDesignTokens": "Экспортировать как дизайн-токены",
   "importDesignTokens": "Импортировать дизайн-токены",
   "tokenPreset": "Набор переменных",
+  "tokenThemes": "Темы",
   "loadTokenPreset": "Загрузить переменные {preset}",
   "libraryCollection": "Библиотека",
   "libraryCollectionHint": "Скопирована из библиотеки. Изменения сохраняются в этом файле и видны в Figma.",

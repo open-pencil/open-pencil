@@ -1,10 +1,9 @@
-import {
-  OPENPENCIL_EXTENSION,
-  type DesignTokenGroup,
-  type DesignTokenSourceFile
+import type {
+  DesignTokenGroup,
+  DesignTokenSourceFile
 } from '@open-pencil/core/io/formats/design-tokens'
-import type { VariableScope } from '@open-pencil/scene-graph'
 
+import { colorToken, presetTokenFile, spacingToken, stepKey } from '../tokens'
 import {
   TAILWIND_PALETTES,
   TAILWIND_SHADES,
@@ -13,36 +12,30 @@ import {
   TAILWIND_VERSION
 } from './theme'
 
-/** Where padding, gaps, and sizes offer the spacing tokens, as Tailwind's spacing utilities do. */
-const SPACING_SCOPES: VariableScope[] = ['GAP', 'WIDTH_HEIGHT']
-
 /**
- * Tailwind CSS's default colors and spacing as one design token file: a `Tailwind` collection
- * with one mode, colors as `color/<palette>/<shade>` and spacing as `spacing/<step>`, each named
- * in code by the CSS that Tailwind's theme gives it.
+ * Tailwind CSS's default colors and spacing: a `Tailwind` collection with colors as
+ * `color/<palette>/<shade>` and spacing as `spacing/<step>`, each named in code by the CSS that
+ * Tailwind's theme gives it.
  */
 export function tailwindTokenFiles(): DesignTokenSourceFile[] {
-  const document: DesignTokenGroup = {
-    $description: `Tailwind CSS ${TAILWIND_VERSION} default theme`,
-    $extensions: { [OPENPENCIL_EXTENSION]: { collection: 'Tailwind', mode: 'Default' } },
-    color: { $type: 'color', ...plainColors(), ...paletteColors() },
-    spacing: { $type: 'dimension', ...spacingTokens() }
-  }
-  return [{ path: 'tailwind.tokens.json', text: JSON.stringify(document) }]
+  return presetTokenFile('Tailwind', `Tailwind CSS ${TAILWIND_VERSION} default theme`, {
+    color: { ...plainColors(), ...paletteColors() },
+    spacing: spacingTokens()
+  })
 }
 
 function plainColors(): DesignTokenGroup {
   return {
-    black: colorToken('black', 'srgb', [0, 0, 0]),
-    white: colorToken('white', 'srgb', [1, 1, 1])
+    black: colorToken({ colorSpace: 'srgb', components: [0, 0, 0] }, 'var(--color-black)'),
+    white: colorToken({ colorSpace: 'srgb', components: [1, 1, 1] }, 'var(--color-white)')
   }
 }
 
 function paletteColors(): DesignTokenGroup {
   return Object.fromEntries(
-    Object.entries(TAILWIND_PALETTES).map(([palette, shades]) => [
+    Object.entries(TAILWIND_PALETTES).map(([palette, values]) => [
       palette,
-      paletteShades(palette, shades)
+      paletteShades(palette, values)
     ])
   )
 }
@@ -51,7 +44,10 @@ function paletteShades(palette: string, values: readonly string[]): DesignTokenG
   return Object.fromEntries(
     TAILWIND_SHADES.map((shade, index) => [
       shade,
-      colorToken(`${palette}-${shade}`, 'oklch', oklchComponents(values[index]))
+      colorToken(
+        { colorSpace: 'oklch', components: oklchComponents(values[index]) },
+        `var(--color-${palette}-${shade})`
+      )
     ])
   )
 }
@@ -61,33 +57,15 @@ function oklchComponents(value: string): (number | 'none')[] {
   return value.split(' ').map((part) => (part === 'none' ? 'none' : Number(part)))
 }
 
-function colorToken(cssName: string, colorSpace: string, components: (number | 'none')[]) {
-  return {
-    $value: { colorSpace, components },
-    $extensions: { [OPENPENCIL_EXTENSION]: { codeSyntax: { WEB: `var(--color-${cssName})` } } }
-  }
-}
-
-/** The documented steps and `px`; a step's key cannot hold a dot, so `0.5` is named apart. */
+/** `px` and the documented steps, each a multiple of `--spacing`. */
 function spacingTokens(): DesignTokenGroup {
   const steps = TAILWIND_SPACING_STEPS.map((step) => [
-    step.replace('.', '_'),
-    spacingToken(step, { value: Number(step) * TAILWIND_SPACING_REM, unit: 'rem' }, 'rem')
+    stepKey(step),
+    spacingToken(
+      step,
+      { value: Number(step) * TAILWIND_SPACING_REM, unit: 'rem' },
+      `calc(var(--spacing) * ${step})`
+    )
   ])
-  return Object.fromEntries([['px', spacingToken('px', { value: 1, unit: 'px' }, 'px')], ...steps])
-}
-
-function spacingToken(step: string, value: { value: number; unit: string }, unit: string) {
-  const web = step === 'px' ? '1px' : `calc(var(--spacing) * ${step})`
-  return {
-    $value: value,
-    $extensions: {
-      [OPENPENCIL_EXTENSION]: {
-        name: `spacing/${step}`,
-        unit,
-        scopes: SPACING_SCOPES,
-        codeSyntax: { WEB: web }
-      }
-    }
-  }
+  return Object.fromEntries([['px', spacingToken('px', { value: 1, unit: 'px' }, '1px')], ...steps])
 }

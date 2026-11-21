@@ -106,6 +106,7 @@
   "exportDesignTokens": "デザイントークンとして書き出す",
   "importDesignTokens": "デザイントークンを読み込む",
   "tokenPreset": "変数プリセット",
+  "tokenThemes": "テーマ",
   "loadTokenPreset": "{preset} の変数を読み込む",
   "libraryCollection": "ライブラリ",
   "libraryCollectionHint": "ライブラリからコピーされています。編集はこのファイルに保存され、Figma にも表示されます。",

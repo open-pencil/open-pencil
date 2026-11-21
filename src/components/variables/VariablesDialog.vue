@@ -17,11 +17,7 @@ import {
   readTokenPresetImport
 } from '@/app/editor/tokens/design-tokens'
 import { pendingTokenImport } from '@/app/editor/tokens/dialog'
-import {
-  DEFAULT_TOKEN_PRESET,
-  TOKEN_PRESET_NAMES,
-  type TokenPreset
-} from '@/app/editor/tokens/presets'
+import { TOKEN_PRESET_NAMES, TOKEN_PRESETS, type TokenPreset } from '@/app/editor/tokens/presets'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -77,9 +73,6 @@ function importFiles(files: readonly File[]) {
   previewImport(() => readDesignTokenImport(files))
 }
 
-/** The preset the picker offers, Tailwind until another is chosen. */
-const preset = ref<TokenPreset>(DEFAULT_TOKEN_PRESET)
-
 /** A preset's tokens, such as Tailwind's default colors and spacing. */
 function loadPreset(chosen: TokenPreset) {
   previewImport(() => readTokenPresetImport(chosen))
@@ -119,7 +112,7 @@ function exportTokens() {
     <DialogTitle class="sr-only">{{ variables.localVariables }}</DialogTitle>
     <TokensPanel @copy="copyTokens" @export="exportTokens">
       <template #actions>
-        <TokenPresetPicker v-model="preset" @load="loadPreset" />
+        <TokenPresetPicker @load="loadPreset" />
         <IconButton
           :label="variables.importDesignTokens"
           data-test-id="variables-import-tokens"
@@ -139,9 +132,11 @@ function exportTokens() {
       </template>
       <template #empty-actions>
         <AppButton
+          v-for="preset in TOKEN_PRESETS"
+          :key="preset"
           color="primary"
           variant="solid"
-          data-test-id="variables-empty-load-preset"
+          :data-test-id="`variables-empty-load-${preset}`"
           @click="loadPreset(preset)"
         >
           {{ variables.loadTokenPreset({ preset: TOKEN_PRESET_NAMES[preset] }) }}

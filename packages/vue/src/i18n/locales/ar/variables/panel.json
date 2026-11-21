@@ -106,6 +106,7 @@
   "exportDesignTokens": "تصدير كرموز تصميم",
   "importDesignTokens": "استيراد رموز التصميم",
   "tokenPreset": "مجموعة متغيرات جاهزة",
+  "tokenThemes": "السمات",
   "loadTokenPreset": "تحميل متغيرات {preset}",
   "libraryCollection": "المكتبة",
   "libraryCollectionHint": "منسوخة من مكتبة. تُحفظ التعديلات في هذا الملف وتظهر في Figma.",

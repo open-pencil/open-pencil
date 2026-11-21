@@ -106,6 +106,7 @@
   "exportDesignTokens": "Exporter en design tokens",
   "importDesignTokens": "Importer des design tokens",
   "tokenPreset": "Préréglage de variables",
+  "tokenThemes": "Thèmes",
   "loadTokenPreset": "Charger les variables {preset}",
   "libraryCollection": "Bibliothèque",
   "libraryCollectionHint": "Copiée d'une bibliothèque. Les modifications sont enregistrées dans ce fichier et visibles dans Figma.",
