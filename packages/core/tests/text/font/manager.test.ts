@@ -350,6 +350,43 @@ test('a variable font shared with another weight still fetches the characters it
   expect(google.stylesheets.at(-1)?.searchParams.get('text')).toContain('xyz')
 })
 
+test('keeps a document’s own file for a face once fetched for other characters', async () => {
+  const manager = new FontManager()
+  const family = 'Fonts Test Own Coverage'
+  const variable = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  const own = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).arrayBuffer()
+  const google = fakeGoogleFonts([
+    {
+      family,
+      weights: [400],
+      files: [{ url: 'https://fonts.gstatic.com/s/test/own.ttf', data: variable, weight: '400' }]
+    }
+  ])
+  await withGoogleFonts(
+    google,
+    async () => {
+      await manager.loadFont(family, 'Regular', 'abc')
+      // The page brings its own file for the face the provider served.
+      await manager.markLoaded(family, 'Regular', own)
+      expect(await manager.loadFont(family, 'Regular', 'xyz')).toBe(own)
+    },
+    manager
+  )
+})
+
+test('draws the weights an installed font loaded earlier from a document’s variable font', async () => {
+  const manager = offlineManager()
+  const family = 'Fonts Test Taken Over'
+  const variable = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  const installed = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).arrayBuffer()
+  manager.setHostFontLoader(async (name) => (name === family ? installed : null))
+  expect(await manager.loadFont(family, 'SemiBold')).toBe(installed)
+
+  await manager.markLoaded(family, 'Regular', variable)
+
+  expect(await manager.loadFont(family, 'SemiBold')).toBe(variable)
+})
+
 test('keeps the file it has when the same font is read or downloaded again', async () => {
   const manager = offlineManager()
   const family = 'Fonts Test Same File'

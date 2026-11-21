@@ -1,6 +1,6 @@
 import { fileTypeFromBuffer } from 'file-type'
 
-import type { CSSFontFaceRule, DesignDocument, DesignResourceFetch } from '@open-pencil/dom-css'
+import type { DesignDocument, DesignResourceFetch } from '@open-pencil/dom-css'
 import { cssFontFamilyName, parseCSSFontFamilies } from '@open-pencil/scene-graph/css'
 
 import { fontManager } from '#core/text/font/manager'
@@ -35,14 +35,6 @@ async function readableFont(bytes: Uint8Array): Promise<ArrayBuffer | null> {
   return sfntFont(bytes.slice().buffer)
 }
 
-/** Whether a rule loads its font from a provider the editor fetches that family from itself. */
-async function servedByProvider(rule: CSSFontFaceRule): Promise<boolean> {
-  for (const source of rule.sources) {
-    if (await fontManager.servesFontFile(rule.family, source).catch(() => false)) return true
-  }
-  return false
-}
-
 /**
  * Loads the faces a page's `@font-face` rules declare for the families its text uses, with
  * `fetch`, and registers them with the font manager under the family and face each rule names, so
@@ -67,16 +59,18 @@ export async function loadPageFontFaces(
   for (const rule of rules) {
     const style = faceStyleName(rule.family, rule.weight, rule.italic)
     const face = `${rule.family.toLowerCase()}|${style}`
-    if (
-      !registered.has(face) &&
-      (await servedByProvider(rule)) &&
-      (await fontManager.loadFont(rule.family, style))
-    ) {
-      loaded.set(rule.family.toLowerCase(), rule.family)
-      continue
-    }
     for (const source of rule.sources) {
       signal?.throwIfAborted()
+      // A source a provider serves for the family is the editor's own copy, whole, when the editor
+      // has one; sources are tried in the page's order, as the browser tries them.
+      if (
+        !registered.has(face) &&
+        (await fontManager.servesFontFile(rule.family, source).catch(() => false)) &&
+        (await fontManager.loadFont(rule.family, style))
+      ) {
+        loaded.set(rule.family.toLowerCase(), rule.family)
+        break
+      }
       const resource = await fetch(source, AbortSignal.timeout(FONT_LOAD_TIMEOUT_MS)).catch(
         () => null
       )

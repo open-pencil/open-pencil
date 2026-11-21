@@ -95,6 +95,28 @@ describe('a page’s own fonts', () => {
     serves.mockRestore()
   })
 
+  test('tries a rule’s sources in the page’s order, its own file before a provider’s', async () => {
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+    const editor = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).arrayBuffer()
+    await fontManager.markLoaded('Ordered Sans', 'Regular', editor, 'google')
+    const own = 'https://site.example.test/fonts/ordered.ttf'
+    const provided = 'https://fonts.gstatic.com/s/orderedsans/v1/latin.woff2'
+    const serves = spyOn(fontManager, 'servesFontFile').mockImplementation(
+      async (_family, url) => url === provided
+    )
+    const requested: string[] = []
+
+    await loadPageFontFaces(page('Ordered Sans', [own, provided]), async (url) => {
+      requested.push(url)
+      return { url, bytes: font }
+    })
+
+    // The browser uses the first source it can read, the page's own file.
+    expect(requested).toEqual([own])
+    expect(fontManager.loadedData('Ordered Sans', 'Regular')?.byteLength).toBe(font.byteLength)
+    serves.mockRestore()
+  })
+
   test('loads every subset a page splits one face into', async () => {
     const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
     const subsets = [

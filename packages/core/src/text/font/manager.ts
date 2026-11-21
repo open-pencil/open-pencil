@@ -624,7 +624,12 @@ export class FontManager {
     await this.loadFont(family, faceLoadKey(weight))
   }
 
-  /** Registers a font the caller already has, resolving once its outlines can be read. */
+  /**
+   * Registers a font the caller already has, resolving once its outlines can be read. A font a
+   * document brings (`registered`, the default) is the face's own file from then on: nothing a
+   * provider fetched for it earlier is fetched again, and a variable file takes over the weights
+   * of its slant its axis reaches that came from anywhere but the document.
+   */
   async markLoaded(
     family: string,
     style: string,
@@ -632,7 +637,33 @@ export class FontManager {
     source: FontLoadedSource = 'registered'
   ): Promise<void> {
     this.registerAndCache(family, style, data, source)
+    if (source === 'registered') {
+      this.remoteCoverage.delete(`${family}|${style}`)
+      this.takeOverCoveredFaces(family, style, data)
+    }
     await loadHarfBuzz()
+  }
+
+  /**
+   * Registers a document's variable file for the faces of its family and slant it reaches that
+   * were loaded from elsewhere, such as an installed font, so they draw from the document's file
+   * as a weight loaded after it does; the faces the document registered itself stay its own.
+   */
+  private takeOverCoveredFaces(family: string, style: string, data: ArrayBuffer): void {
+    const wght = fontAxes(data)?.find((axis) => axis.tag === 'wght')
+    if (!wght) return
+    const { italic } = parseFontStyle(style)
+    for (const key of this.loadedFamilies.keys()) {
+      if (!key.startsWith(`${family}|`) || this.loadedFamilySources.get(key) === 'registered') {
+        continue
+      }
+      const faceStyle = key.slice(family.length + 1)
+      const face = parseFontStyle(faceStyle)
+      if (face.italic !== italic || !namesWeight(faceStyle)) continue
+      if (face.weight < wght.min || face.weight > wght.max) continue
+      this.remoteCoverage.delete(key)
+      this.registerAndCache(family, faceStyle, data, 'registered')
+    }
   }
 
   /**
