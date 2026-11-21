@@ -1,0 +1,1 @@
+- Soft light layers, fills, strokes and shadows blend as Figma draws them instead of too light on dark backdrops, and PDF export keeps them as soft light (#2134).

@@ -191,6 +191,8 @@ export class SkiaRenderer {
   // Images and the geometry, pictures, and tiles that hold the drawn scene.
   readonly images = createRendererImages()
   viewportImageRendering = false
+  /** Skia's PDF backend writes only built-in blend modes, never a runtime blender. */
+  builtInBlendModesOnly = false
   nodePaths = new NodePathCaches()
   /** Each node's picture of itself with its effects, good for the font generation it was recorded at. */
   readonly nodePictures = new Map<string, NodePictureEntry>()
@@ -204,6 +206,7 @@ export class SkiaRenderer {
   tiledSceneBackgroundPending = false
   /** WebGL has built the programs of progressive blurs and glass (`warmUpEffectPrograms`). */
   effectProgramsWarm = false
+  recordingPictures = 0
   /**
    * The page and document version last found without effects worth warming up, so a page is
    * scanned again only once the document changes.

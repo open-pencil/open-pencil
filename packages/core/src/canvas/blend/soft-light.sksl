@@ -1,0 +1,12 @@
+// Figma's soft light (live-measured): W3C's with its two source branches swapped, clamped late.
+half4 main(half4 src, half4 dst) {
+  half3 s = src.rgb / max(src.a, 0.0001);
+  half3 b = dst.rgb / max(dst.a, 0.0001);
+  half3 lifted = mix(sqrt(b), ((16 * b - 12) * b + 4) * b, step(b, half3(0.25)));
+  half3 darkSource = b - (1 - 2 * s) * (lifted - b);
+  half3 lightSource = b + (2 * s - 1) * b * (1 - b);
+  half3 blended = mix(darkSource, lightSource, step(half3(0.5), s));
+  half3 rgb = src.rgb * (1 - dst.a) + dst.rgb * (1 - src.a) + src.a * dst.a * blended;
+  half alpha = src.a + dst.a * (1 - src.a);
+  return half4(clamp(rgb, half3(0), half3(alpha)), alpha);
+}

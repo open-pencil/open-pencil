@@ -36,6 +36,8 @@ export function renderPagesToPDF(
   options: PDFExportOptions = {}
 ): PDFExportResult | null {
   const doc = new renderer.ck.PDFDocument(options.title ?? '', 'OpenPencil', PDF_RASTER_DPI)
+  const builtInBlendModesOnly = renderer.builtInBlendModesOnly
+  renderer.builtInBlendModesOnly = true
   try {
     const pages = specs.flatMap((spec) => drawPage(doc, renderer, graph, spec) ?? [])
     if (pages.length === 0) {
@@ -47,6 +49,7 @@ export function renderPagesToPDF(
     if (!data) throw new Error('The PDF document was closed before its pages were written')
     return { data, pages }
   } finally {
+    renderer.builtInBlendModesOnly = builtInBlendModesOnly
     doc.delete()
   }
 }
