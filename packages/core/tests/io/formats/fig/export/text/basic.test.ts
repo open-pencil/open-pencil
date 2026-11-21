@@ -74,6 +74,8 @@ describe('text node export', () => {
 
     const graph = new SceneGraph()
     const api = new FigmaAPI(graph)
+    // The plugin API lays text out again only in a loaded font, as Figma does.
+    await api.loadFontAsync({ family: 'Inter', style: 'Regular' })
     const text = api.createText()
     text.name = 'Truncated'
     text.characters = 'A long label'
