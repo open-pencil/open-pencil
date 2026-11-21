@@ -1,7 +1,7 @@
-import { focusStyles } from '../focus/styles'
+import { focusStyles } from '#theme/focus/styles'
 
 /** The Cloud console: a bar with the server and account, sections in a sidebar. */
-export default {
+export const portalLayoutTheme = {
   slots: {
     page: 'flex h-full min-h-0 flex-col overflow-hidden bg-canvas text-surface',
     bar: 'flex h-11 shrink-0 items-center gap-2 border-b border-border bg-panel px-4',

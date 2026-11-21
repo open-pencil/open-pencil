@@ -46,7 +46,10 @@ const PAGE_HEADERS = {
   'Content-Security-Policy': SITE_CONTENT_SECURITY_POLICY,
   // Browsers take this only over HTTPS; a deployment on plain HTTP is unaffected.
   'Strict-Transport-Security': 'max-age=31536000',
-  'Referrer-Policy': 'no-referrer',
+  // Another site learns only Cloud's origin, never an address such as a share link's; unlike
+  // `no-referrer` or `same-origin`, a form posted to one, as billing's sign-in is, still names its
+  // origin there instead of `null`.
+  'Referrer-Policy': 'strict-origin',
   'X-Content-Type-Options': 'nosniff'
 }
 

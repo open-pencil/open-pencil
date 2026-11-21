@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { buildDemoGraph, measuringRenderer } from '#demo/build'
+import { buildDemoGraph, withMeasuringRenderer } from '#demo/build'
 import { CHAPTERS, sectionName } from '#demo/document/chapters/names'
 
 import { exportFigFile, readFigFile, populateAllFigPages } from '@open-pencil/core/io/formats/fig'
@@ -40,10 +40,10 @@ function behaviours(target: SceneGraph): { kind: string; missing: string[] }[] {
 }
 
 beforeAll(async () => {
-  const { ck, renderer } = await measuringRenderer()
-  const built = await buildDemoGraph(renderer)
   // The .fig the app opens, without the shader stills: the editor draws those on open.
-  const bytes = await exportFigFile(built, { ck, renderer })
+  const bytes = await withMeasuringRenderer(async (renderer) =>
+    exportFigFile(await buildDemoGraph(renderer), { ck: renderer.ck, renderer })
+  )
   graph = await readFigFile(new File([bytes.slice()], 'Demo.fig'))
   populateAllFigPages(graph)
 })

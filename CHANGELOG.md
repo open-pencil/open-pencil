@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+## 0.17.0-beta.7 — 2026-11-21
+
+This is a pre-release that lists changes since 0.17.0-beta.6: npm packages are published under the `next` tag, and installed apps on the stable release do not update to it. Linux package managers see `0.17.0-beta.7` as newer than `0.17.0`, so `.deb` and `.rpm` users should remove the beta before installing the final 0.17.0.
+
+### Breaking changes
+
+- The editor's design tokens moved from `@open-pencil/vue/theme/tokens.css` to `@open-pencil/theme/tokens.css`, a package of their own, since the headless Vue SDK never used them (#2243).
+
+### Added
+
+- Opening a URL on desktop first renders the page with its scripts in a hidden private window and opens what they built once the page settles, so a page that builds itself with JavaScript, such as a single-page app, usually opens with its content instead of empty; a page that cannot be rendered opens from the HTML its server sends (#2238).
+- Image fills and strokes draw their exposure, contrast, saturation, temperature, tint, highlights, and shadows adjustments on the canvas and in exports, matching Figma's output, and the image fill picker sets them with sliders, as Figma's does (#2241).
+- `@open-pencil/theme` publishes the editor's design tokens and its button, alert, input, link, focus ring, settings layout, and Cloud portal frame as tailwind-variants configurations, with no framework, so a page beside Cloud, such as its billing pages, can look like the editor (#2243).
+
+### Fixed
+
+- Exports, previews, the eyedropper, and closing a canvas free the image memory and fonts they used instead of keeping them (#2232).
+- An image fill or stroke keeps Figma's adjustments, such as exposure, contrast, and saturation, when it is edited and the `.fig` file is saved, instead of losing them (#2233).
+- Deeply nested layers keep their names readable: the layers panel scrolls sideways to the selected layer, as in Figma (#2246).
+- Opening billing from Cloud's plan page signs in, instead of being refused, because Cloud's pages now name their origin to other sites (#2249).
+
 ## 0.17.0-beta.6 — 2026-11-19
 
 This is a pre-release that lists changes since 0.17.0-beta.5: npm packages are published under the `next` tag, and installed apps on the stable release do not update to it. Linux package managers see `0.17.0-beta.6` as newer than `0.17.0`, so `.deb` and `.rpm` users should remove the beta before installing the final 0.17.0.

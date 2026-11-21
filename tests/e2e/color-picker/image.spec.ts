@@ -90,3 +90,63 @@ test('Escape after choosing an image for a stroke keeps the image stroke', async
   expect(await fill.selectedPaint('strokes')).toEqual(image)
   editor.canvas.assertNoErrors()
 })
+
+/** The adjustment slider labelled `name`: its thumb, and the middle and half-width of its run. */
+async function adjustmentSlider(name: string) {
+  const thumb = picker().getByRole('slider', { name, exact: true })
+  const box = await picker().getByTestId(`fill-picker-${name.toLowerCase()}`).boundingBox()
+  if (!box) throw new Error(`No ${name} slider`)
+  return { thumb, middle: box.x + box.width / 2, half: box.width / 2, y: box.y + box.height / 2 }
+}
+
+async function dragAdjustment(name: string, from: number, to: number) {
+  const { middle, half, y } = await adjustmentSlider(name)
+  await editor.page.mouse.move(middle + from * half, y)
+  await editor.page.mouse.down()
+  await editor.page.mouse.move(middle + to * half, y, { steps: 8 })
+  await editor.page.mouse.up()
+}
+
+test('a drag on an adjustment sets it, and lands on 0 near the middle, in one undo step', async () => {
+  await chooseImage()
+  await reopenPicker()
+
+  await dragAdjustment('Exposure', 0, 0.58)
+  await expect
+    .poll(async () => (await fill.selectedPaint())?.filters?.exposure)
+    .toBeCloseTo(0.58, 1)
+
+  await dragAdjustment('Exposure', 0.58, 0.03)
+  await expect.poll(async () => (await fill.selectedPaint())?.filters?.exposure).toBe(0)
+
+  await editor.canvas.undo()
+  await expect
+    .poll(async () => (await fill.selectedPaint())?.filters?.exposure)
+    .toBeCloseTo(0.58, 1)
+
+  await pressEscape()
+  expect((await fill.selectedPaint())?.filters?.exposure).toBeCloseTo(0.58, 1)
+  editor.canvas.assertNoErrors()
+})
+
+test('arrow keys step an adjustment by a hundredth of what Figma stores, ten with Shift', async () => {
+  await chooseImage()
+  await reopenPicker()
+
+  const { thumb } = await adjustmentSlider('Contrast')
+  await thumb.focus()
+  await editor.page.keyboard.press('ArrowRight')
+  // Figma stores contrast at 0.3 of the plugin API's value, so a step is 0.01 / 0.3.
+  await expect
+    .poll(async () => (await fill.selectedPaint())?.filters?.contrast)
+    .toBeCloseTo(1 / 30, 4)
+  await editor.page.keyboard.press('Shift+ArrowRight')
+  await expect
+    .poll(async () => (await fill.selectedPaint())?.filters?.contrast)
+    .toBeCloseTo(11 / 30, 4)
+
+  await (await adjustmentSlider('Tint')).thumb.focus()
+  await editor.page.keyboard.press('ArrowLeft')
+  await expect.poll(async () => (await fill.selectedPaint())?.filters?.tint).toBeCloseTo(-0.01, 4)
+  editor.canvas.assertNoErrors()
+})

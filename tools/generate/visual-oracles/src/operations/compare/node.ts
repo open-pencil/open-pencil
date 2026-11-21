@@ -19,7 +19,7 @@ import { parseArgs } from 'node:util'
 
 import { $ } from 'bun'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { withOffscreenRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { importClipboardNodes } from '@open-pencil/core/clipboard'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
@@ -133,19 +133,11 @@ async function renderOurs(html: string) {
   }
 
   const ck = await getCanvasKit()
-  const surface = ck.MakeSurface(1, 1)
-  if (!surface) throw new Error('Failed to create CanvasKit surface')
-  const renderer = new SkiaRenderer(ck, surface)
-  renderer.viewportWidth = 1
-  renderer.viewportHeight = 1
-  renderer.dpr = 1
-
-  const data = renderNodesToImage(ck, renderer, graph, pageId, createdIds, {
-    scale,
-    format: 'PNG'
+  const data = await withOffscreenRenderer(ck, async (renderer) => {
+    renderer.viewportWidth = 1
+    renderer.viewportHeight = 1
+    return renderNodesToImage(ck, renderer, graph, pageId, createdIds, { scale, format: 'PNG' })
   })
-
-  surface.delete()
   if (!data) throw new Error('Render produced no image')
   await Bun.write(oursPath, data)
   console.log(`   → ${oursPath}`)

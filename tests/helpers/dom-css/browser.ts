@@ -212,6 +212,9 @@ export interface ImportedLayerSummary {
   name: string
   type: SceneNode['type']
   text: string
+  /** Where the layer sits on the page. */
+  x: number
+  y: number
   width: number
   height: number
   /** How many fills and strokes it shows. */
@@ -309,10 +312,12 @@ export async function browserImportedLayerSummaries(
   viewport: { width: number; height: number }
 ): Promise<ImportedLayerSummary[]> {
   const { layers } = await importInBrowser(page, html, viewport)
-  return layers.map(({ name, type, text, width, height, paints }) => ({
+  return layers.map(({ name, type, text, x, y, width, height, paints }) => ({
     name,
     type,
     text,
+    x,
+    y,
     width,
     height,
     paints

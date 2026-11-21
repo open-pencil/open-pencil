@@ -214,7 +214,7 @@ export interface Fill {
   imageTransform?: GradientTransform
   /** Clockwise turn of a Fill, Fit or Tile image, in multiples of 90°; a crop holds its own. */
   imageRotation?: number
-  /** An image's adjustments, kept and saved; the canvas does not draw them. */
+  /** An image's adjustments, in Figma's plugin API units. */
   filters?: ImageFilters
   sourceNodeId?: string
   scale?: number

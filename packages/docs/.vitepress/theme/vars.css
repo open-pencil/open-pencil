@@ -1,5 +1,5 @@
 /*
- * The docs site takes its palette from the editor's own tokens (`packages/vue/src/theme/tokens.css`), so
+ * The docs site takes its palette from the editor's own tokens (`packages/theme/src/tokens.css`), so
  * the site and the app components it embeds read as one product.
  */
 :root {

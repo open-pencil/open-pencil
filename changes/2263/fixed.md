@@ -1,0 +1,1 @@
+- Design files up to 256 MiB open through MCP and from web links; the limit was 64 MiB.

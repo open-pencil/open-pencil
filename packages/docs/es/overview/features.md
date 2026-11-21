@@ -36,7 +36,7 @@ Las pestañas Diseño, Código, IA y Revisar se adaptan a la selección:
 OpenPencil usa Skia mediante CanvasKit WASM, el mismo motor gráfico de Figma:
 
 - degradados lineales, radiales, angulares y diamante;
-- rellenos de imagen con varios modos de escala;
+- rellenos de imagen con varios modos de escala y ajustes (exposición, contraste, saturación, temperatura, matiz, iluminaciones, sombras);
 - caché de efectos por objeto;
 - arcos, elipses parciales y anillos;
 - exclusión de objetos fuera de la vista y reutilización de herramientas de pintura;
