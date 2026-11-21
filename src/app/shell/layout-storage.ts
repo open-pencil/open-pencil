@@ -3,19 +3,20 @@ import * as v from 'valibot'
 
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
-import { remToPx } from './root-font-size'
-
 const EDITOR_LAYOUT_KEY = 'open-pencil:editor-layout'
-/**
- * The left panel's share of the window, in percent, when the editor first opens at the default
- * interface size; a larger interface widens it by the same factor.
- */
+/** The left panel's share of the window, in percent, when the editor first opens. */
 const DEFAULT_LEFT_PANEL = 18
-/** The root font size the left panel's share is set for. */
+/**
+ * The root font size of the default interface size. The layout nobody saved is made for it rather
+ * than for the interface size when the editor mounts, which depends on whether the size was applied
+ * yet; a larger interface widens the panels through their minimum widths (`EditorWorkspace.vue`),
+ * and returning to the default gives back this layout.
+ */
 const DEFAULT_REM_PX = 16
 /**
- * How wide the right panel opens, in rem, whatever the window's width: wide enough for its fields
- * and the AI chat at the interface size, without growing on a large screen as a share would.
+ * How wide the right panel opens, in rem of the default interface size, whatever the window's
+ * width: wide enough for its fields and the AI chat, without growing on a large screen as a share
+ * would.
  */
 const DEFAULT_RIGHT_PANEL_REM = 16
 /** The window width a layout is made for before there is a window, as in tests. */
@@ -25,8 +26,8 @@ const NOMINAL_WINDOW_WIDTH = 1280
 function defaultEditorLayout(): number[] {
   const width = IS_BROWSER && window.innerWidth > 0 ? window.innerWidth : NOMINAL_WINDOW_WIDTH
   // Within the panels' own limits in EditorWorkspace.vue.
-  const left = clamp((DEFAULT_LEFT_PANEL * remToPx(1)) / DEFAULT_REM_PX, 10, 30)
-  const right = clamp((remToPx(DEFAULT_RIGHT_PANEL_REM) / width) * 100, 10, 30)
+  const left = DEFAULT_LEFT_PANEL
+  const right = clamp(((DEFAULT_RIGHT_PANEL_REM * DEFAULT_REM_PX) / width) * 100, 10, 30)
   return [left, 100 - left - right, right]
 }
 
