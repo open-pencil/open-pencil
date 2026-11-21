@@ -24,8 +24,6 @@ export interface DesignToken {
   values: Record<string, DesignTokenValue>
   /** The token each mode takes its value from, by mode name, for the modes that alias one. */
   aliases?: Record<string, string>
-  /** How each platform names the token in code, as Dev Mode shows it. */
-  codeSyntax?: Variable['codeSyntax']
 }
 
 export interface DesignTokenCollection {
@@ -74,8 +72,7 @@ function describeToken(
     values: Object.fromEntries(
       collection.modes.map((mode) => [mode.name, tokenValue(graph, variable, mode.modeId)])
     ),
-    aliases: Object.keys(aliases).length > 0 ? aliases : undefined,
-    codeSyntax: variable.codeSyntax
+    aliases: Object.keys(aliases).length > 0 ? aliases : undefined
   }
 }
 

@@ -37,10 +37,10 @@ describe('Tailwind token preset', () => {
     expect([...graph.variableCollections.values()].map((c) => c.name)).toEqual(['Tailwind'])
   })
 
-  test('names colors by palette and shade, and in code as Tailwind does', () => {
+  test('names colors by palette and shade, with no code syntax of their own', () => {
     const { graph, byName } = importTailwind()
     const blue = byName('color/blue/500')
-    expect(blue?.codeSyntax).toEqual({ WEB: 'var(--color-blue-500)' })
+    expect(blue?.codeSyntax).toBeUndefined()
     const collection = graph.variableCollections.get(blue?.collectionId ?? '')
     const value = blue?.valuesByMode[collection?.defaultModeId ?? '']
     // oklch(62.3% 0.214 259.815) is about #2B7FFF.
@@ -52,7 +52,7 @@ describe('Tailwind token preset', () => {
     const { byName } = importTailwind()
     const four = byName('spacing/4')
     expect(four).toMatchObject({ unit: 'rem', scopes: ['GAP', 'WIDTH_HEIGHT'] })
-    expect(four?.codeSyntax).toEqual({ WEB: 'calc(var(--spacing) * 4)' })
+    expect(four?.codeSyntax).toBeUndefined()
     expect(Object.values(four?.valuesByMode ?? {})).toEqual([16])
     expect(Object.values(byName('spacing/0.5')?.valuesByMode ?? {})).toEqual([2])
     expect(Object.values(byName('spacing/px')?.valuesByMode ?? {})).toEqual([1])

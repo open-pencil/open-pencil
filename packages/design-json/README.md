@@ -41,7 +41,7 @@ What the renderer works out on its own, such as where text breaks into lines, is
 
 ## Tokens
 
-Both views carry `tokens`: every variable in the document, used by the layers or not, by collection. Each collection lists its mode names, default first, and whether it is a library's copy. Each token has its name, type, description, and `codeSyntax`, and `values` by mode name, resolved through aliases, with colors as hex (`#RRGGBB`, or `#RRGGBBAA` when translucent). `aliases` names the token each mode takes its value from. `designTokens(graph)` writes the same list on its own, and `tokens: false` leaves it out of `designToJSON`.
+Both views carry `tokens`: every variable in the document, used by the layers or not, by collection. Each collection lists its mode names, default first, and whether it is a library's copy. Each token has its name, type, and description, and `values` by mode name, resolved through aliases, with colors as hex (`#RRGGBB`, or `#RRGGBBAA` when translucent). `aliases` names the token each mode takes its value from. `designTokens(graph)` writes the same list on its own, and `tokens: false` leaves it out of `designToJSON`.
 
 ## Compact
 
