@@ -1,0 +1,1 @@
+- Applying a color variable in the Fill panel while characters are selected in a text layer now colors only the selected characters rather than the whole layer.
