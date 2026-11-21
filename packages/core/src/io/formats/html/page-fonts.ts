@@ -8,7 +8,6 @@ import { fontManager } from '#core/text/font/manager'
 import { faceStyleName } from '#core/text/font/names'
 import { fontAxes } from '#core/text/font/variation'
 import { sfntFont } from '#core/text/font/woff2'
-import { isProviderFontFile } from '#core/text/web-font/providers'
 
 import { designElements } from './elements'
 import type { PageFontFamilies } from './fonts'
@@ -36,6 +35,14 @@ async function readableFont(bytes: Uint8Array): Promise<ArrayBuffer | null> {
   const type = (await fileTypeFromBuffer(bytes))?.mime
   if (!type || !READABLE_FONT_TYPES.has(type)) return null
   return sfntFont(bytes.slice().buffer)
+}
+
+/** Whether a rule loads its font from a provider the editor fetches that family from itself. */
+async function servedByProvider(rule: CSSFontFaceRule): Promise<boolean> {
+  for (const source of rule.sources) {
+    if (await fontManager.servesFontFile(rule.family, source).catch(() => false)) return true
+  }
+  return false
 }
 
 /** The weights a face can be asked for by, a hundred apart. */
@@ -86,7 +93,7 @@ export async function loadPageFontFaces(
     const face = `${rule.family.toLowerCase()}|${style}`
     if (
       !registered.has(face) &&
-      rule.sources.some(isProviderFontFile) &&
+      (await servedByProvider(rule)) &&
       (await fontManager.loadFont(rule.family, style))
     ) {
       loaded.set(rule.family.toLowerCase(), rule.family)

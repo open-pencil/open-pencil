@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, spyOn, test } from 'bun:test'
 import { join } from 'node:path'
 
 import type { DesignDocument, DesignResourceFetch } from '@open-pencil/dom-css'
@@ -80,6 +80,10 @@ describe('a page’s own fonts', () => {
     await fontManager.markLoaded('Provider Sans', 'Regular', font)
     const requested: string[] = []
     const subset = 'https://fonts.gstatic.com/s/providersans/v1/latin.woff2'
+    // Google Fonts serves the family, from where the page loads it.
+    const serves = spyOn(fontManager, 'servesFontFile').mockImplementation(
+      async (_family, url) => url === subset
+    )
 
     const families = await loadPageFontFaces(page('Provider Sans', [subset]), async (url) => {
       requested.push(url)
@@ -88,6 +92,7 @@ describe('a page’s own fonts', () => {
 
     expect([...families.values()]).toEqual(['Provider Sans'])
     expect(requested).toEqual([])
+    serves.mockRestore()
   })
 
   test('loads every subset a page splits one face into', async () => {

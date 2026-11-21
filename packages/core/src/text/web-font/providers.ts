@@ -45,22 +45,3 @@ export function isRemoteFontSource(
 ): source is RemoteFontSource {
   return 'url' in source
 }
-
-/**
- * Where the font providers the editor fetches from serve their font files, by host, with the path
- * a host shares with other files: the same families a page loading a font from one of them uses.
- */
-const PROVIDER_FONT_FILES: ReadonlyMap<string, string> = new Map([
-  ['fonts.gstatic.com', '/'],
-  ['fonts.bunny.net', '/'],
-  ['cdn.fontshare.com', '/'],
-  ['cdn.jsdelivr.net', '/fontsource/']
-])
-
-/** Whether a font file comes from a provider the editor fetches fonts from itself. */
-export function isProviderFontFile(url: string): boolean {
-  if (!URL.canParse(url)) return false
-  const { protocol, hostname, pathname } = new URL(url)
-  const path = PROVIDER_FONT_FILES.get(hostname)
-  return protocol === 'https:' && path !== undefined && pathname.startsWith(path)
-}

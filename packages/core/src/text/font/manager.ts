@@ -271,6 +271,14 @@ export class FontManager {
     return this.faces.faces(family)
   }
 
+  /**
+   * Whether a font file is one an enabled web font provider serves for the family, so the
+   * editor's own copy of it is the same design; see `WebFontResolver.servesFontFile`.
+   */
+  servesFontFile(family: string, url: string): Promise<boolean> {
+    return this.webFonts.servesFontFile(family, url)
+  }
+
   /** The faces `familyFaces` found for a family, once it has; `undefined` before. */
   loadedFamilyFaces(family: string): FamilyFace[] | null | undefined {
     return this.faces.foundFaces(family)
