@@ -94,10 +94,10 @@ function groupedItem(item: VariablePickerItem, sections: ReadonlySet<string>): A
   if (path.length < 2) return { ...row, label: item.name }
   const parent = path.slice(0, -1)
   if (sections.has(sectionKey(item.collection, parent))) {
-    return { ...row, description: item.name, section: parent.join(' / ') }
+    return { ...row, accessibleName: item.name, section: parent.join(' / ') }
   }
   const section = path.length > 2 ? path.slice(0, -2).join(' / ') : undefined
-  return { ...row, description: item.name, section, folder: path.at(-2) }
+  return { ...row, accessibleName: item.name, section, folder: path.at(-2) }
 }
 
 function variableId(value: string): string {

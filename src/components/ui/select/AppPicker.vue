@@ -11,6 +11,8 @@ export interface AppPickerItem {
   description?: string
   /** Items keep their order; groups appear in the order their first item does. */
   group?: string
+  /** The name assistive tech reads when `label` is only part of it, as `500` of `color/red/500`. */
+  accessibleName?: string
   /** A heading within the group that its folders and items sit under, such as `color`. */
   section?: string
   /**
@@ -161,7 +163,7 @@ const styles = computed(() => tv(theme)({ density, layout }))
 const matches = computed(() => {
   const term = query.value.trim()
   return term && search === 'local'
-    ? fuzzySearch(items, ['label', 'description', 'group', 'folder'], term)
+    ? fuzzySearch(items, ['label', 'accessibleName', 'description', 'group', 'folder'], term)
     : items
 })
 const groups = computed(() => {
@@ -361,9 +363,7 @@ function select(value: AcceptableValue) {
                   :value="row.item.value"
                   :disabled="row.item.disabled"
                   :aria-disabled="row.item.disabled || undefined"
-                  :aria-label="
-                    columns || row.nested ? (row.item.description ?? row.item.label) : undefined
-                  "
+                  :aria-label="row.item.accessibleName ?? (columns ? row.item.label : undefined)"
                   :data-selected="row.item.value === selected || undefined"
                   :data-nested="row.nested || undefined"
                   :class="styles.item({ class: ui?.item })"

@@ -88,9 +88,9 @@ for (const theme of ['light', 'dark']) {
         await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
         await expect(paint.locator('[data-slot="pill"]')).toHaveAttribute('data-unresolved')
         await paint.getByRole('button', { name: 'Apply variable' }).click()
-        // Paths list in a folder of their first part, which opens to show its variables.
-        await picker.getByRole('button', { name: 'Paint', exact: true }).click()
-        await page.getByRole('option', { name: 'Paint/Replacement' }).click()
+        // The bound variable's folder, Paint, opens with the picker.
+        // After the Fill, Recent lists it too; either row applies it.
+        await page.getByRole('option', { name: 'Paint/Replacement' }).first().click()
         // A closed picker stays in the page while it animates out; the next field's must be the only one.
         await expect(picker).toHaveCount(0)
         await expect(paint).toContainText('Paint/Replacement')
@@ -103,10 +103,6 @@ for (const theme of ['light', 'dark']) {
       await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
       await expect(field.locator('[data-slot="pill"]')).toHaveAttribute('data-unresolved')
       await field.getByRole('button', { name: 'Apply variable' }).click()
-      await page
-        .getByRole('dialog', { name: 'Apply variable' })
-        .getByRole('button', { name: 'Tracking', exact: true })
-        .click()
       await page.getByRole('option', { name: 'Tracking/Replacement' }).click()
       // A resolved number shows its value, so the unresolved pill is gone.
       await expect(field).toHaveAttribute('data-bound')

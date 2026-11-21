@@ -11,7 +11,8 @@ test('the variable picker groups Tailwind by path, and lists what was applied as
   const dialog = page.getByTestId('variables-dialog')
   await dialog.getByTestId('variables-empty-load-tailwind').click()
   await page.getByTestId('variables-import-confirm').click()
-  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('variables-import-dialog')).toBeHidden()
+  await dialog.getByRole('button', { name: 'Close' }).click()
   await expect(dialog).toBeHidden()
 
   await page.evaluate(() => {
