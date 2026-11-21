@@ -89,4 +89,26 @@ describe('vectorChangesFromPagePath', () => {
     expect(changes?.height).toBe(0)
     expect(changes?.fills[0]?.gradientTransform).toEqual(IDENTITY_GRADIENT_TRANSFORM)
   })
+
+  test('keeps finite coordinates when one page-path vertex is NaN', () => {
+    const { graph, node } = gradientVector()
+    graph.updateNode(node.id, { x: 0, y: 0, width: 100, height: 100 })
+
+    const changes = vectorChangesFromPagePath(graph, node, {
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 100, y: 100 },
+        { x: Number.NaN, y: 50 }
+      ],
+      segments: [],
+      regions: []
+    })
+
+    expect([changes?.x, changes?.y, changes?.width, changes?.height]).toEqual([0, 0, 100, 100])
+    const vertices = changes?.vectorNetwork?.vertices
+    if (!vertices) throw new Error('Expected a vector network')
+    expect(vertices[0]).toMatchObject({ x: 0, y: 0 })
+    expect(vertices[1]).toMatchObject({ x: 100, y: 100 })
+    expect(vertices[2]?.x).toBeNaN()
+  })
 })

@@ -17,6 +17,10 @@ import {
 } from '@open-pencil/scene-graph/resize'
 import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+import {
+  geometryAxisLengths,
+  vectorNetworkAxisLengths
+} from '@open-pencil/scene-graph/vector-bounds'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import {
@@ -46,7 +50,6 @@ import { syncVariantName } from '#core/figma-api/variants'
 import { figmaRotation } from '#core/geometry/figma'
 import { absoluteRenderBounds } from '#core/geometry/render-bounds'
 import { restoredHuggedSize } from '#core/layout/apply'
-import { computeAccurateBounds } from '#core/vector/curve-math'
 
 const TRANSFORM_FIELDS: ReadonlySet<string> = new Set(NODE_TRANSFORM_FIELDS)
 
@@ -322,24 +325,55 @@ function descendants(scene: SceneGraph, node: SceneNode): SceneNode[] {
 }
 
 /**
- * A vector's path scaled to its new size, as Figma's resize does. The stroke keeps its weight: with
- * a path to stroke, the saved stroke outline goes and the stroke draws from the scaled path, as
- * when the path is set; without one, the outline is all that draws the stroke, so it scales.
+ * The box a zero side scales from. A vector uses its network, each axis on its own, so one
+ * non-finite coordinate leaves the other measurable. Any other layer uses its saved fill,
+ * on the curve rather than its handles. That fill is the shape a childless boolean draws.
  */
-function resizedVectorGeometry(node: SceneNode, width: number, height: number): Partial<SceneNode> {
-  if (node.type !== 'VECTOR') return {}
-  // A side at zero keeps the path along it, as in Figma, so the next resize scales the path from
-  // its own extent and gets the shape back.
-  const bounds = node.vectorNetwork ? computeAccurateBounds(node.vectorNetwork) : null
-  const fromWidth = node.width > 0 ? node.width : (bounds?.width ?? 0)
-  const fromHeight = node.height > 0 ? node.height : (bounds?.height ?? 0)
-  return scaledGeometryChanges(
+function collapsedFillExtent(node: SceneNode): Pick<Rect, 'width' | 'height'> | null {
+  if (node.type === 'VECTOR') {
+    return node.vectorNetwork && node.vectorNetwork.vertices.length > 0
+      ? vectorNetworkAxisLengths(node.vectorNetwork)
+      : null
+  }
+  return geometryAxisLengths(node.fillGeometry)
+}
+
+/** A length a collapsed side can scale from. A non-finite one is no usable length. */
+function finiteLength(size: number | undefined): number {
+  return typeof size === 'number' && Number.isFinite(size) ? size : 0
+}
+
+/**
+ * Geometry that follows a new size, as Figma's resize and a handle resize do. A vector's path
+ * scales, and its stroke keeps its weight: with a path to stroke, the saved stroke outline goes
+ * and the stroke draws from the scaled path; without one, the outline is all that draws the
+ * stroke, so it scales. Any other layer drops a saved outline the same way, so an inside stroke
+ * follows the new box. Text lays its outlines out again instead of scaling them. A side set to
+ * zero keeps the saved fill's coordinates, and the next size scales them from that fill.
+ */
+function resizedNodeGeometry(node: SceneNode, width: number, height: number): Partial<SceneNode> {
+  if (node.type === 'TEXT') return {}
+  const bounds = collapsedFillExtent(node)
+  const fromWidth = node.width > 0 ? node.width : finiteLength(bounds?.width)
+  const fromHeight = node.height > 0 ? node.height : finiteLength(bounds?.height)
+  const changes = scaledGeometryChanges(
     createResizeSnapshot(node),
     fromWidth,
     fromHeight,
     width || fromWidth,
     height || fromHeight
   )
+  // A non-vector drops its stroke outline whenever the box changes. Holding a zero side at the
+  // fill's old extent leaves the scale at 1, which would otherwise keep the outline.
+  if (
+    node.type !== 'VECTOR' &&
+    node.strokeGeometry.length > 0 &&
+    (width !== node.width || height !== node.height) &&
+    !Object.hasOwn(changes, 'strokeGeometry')
+  ) {
+    return { ...changes, strokeGeometry: [] }
+  }
+  return changes
 }
 
 /** The least size Figma's `resize` gives a side; `resizeWithoutConstraints` allows zero. */
@@ -430,7 +464,7 @@ function resizeNode(
     constrained || node.type === 'INSTANCE'
       ? new Map(descendants(scene, node).map((child) => [child.id, createResizeSnapshot(child)]))
       : new Map<string, ResizeSnapshot>()
-  const geometry = resizedVectorGeometry(node, width, height)
+  const geometry = resizedNodeGeometry(node, width, height)
   // A locked ratio does not hold here; it takes the new size, as in Figma.
   const recaptured = recapturedAspectRatio(node, width, height)
   const changed = { width: width !== size.width, height: height !== size.height }
