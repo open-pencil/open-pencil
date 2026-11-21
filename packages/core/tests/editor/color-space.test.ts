@@ -5,7 +5,7 @@ import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode, VariableValue } from '@open-pencil/scene-graph'
-import { toExtendedSRGB } from '@open-pencil/scene-graph/color'
+import { fitsGamut, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { getPageBackgrounds, pageSourceWithBackgrounds } from '#core/figma-api/page-backgrounds'
@@ -66,6 +66,7 @@ describe('document color profile', () => {
     const red = fill()?.color
     expect(red?.r).toBeGreaterThan(0.95)
     expect(red?.g).toBeLessThan(0.2)
+    expect(fitsGamut(red ?? P3_RED)).toBe(true)
     expectColor(accent(), red ?? P3_RED)
     // The paint's own opacity is kept, not replaced with the color's alpha.
     expect(fill()?.opacity).toBe(0.5)
@@ -288,6 +289,20 @@ describe('document color profile', () => {
     expect(network()?.vertices[1]).toEqual({ x: 40, y: 0 })
     expectColor(network()?.regions[0].fills?.[0].color, toExtendedSRGB(BLUE, 'display-p3'))
     expect(fills()[0].color).toEqual(GREEN)
+  })
+
+  test('undoing a conversion after the document was replaced changes only its own document', async () => {
+    p3Document()
+    const original = editor.graph
+    const layer = original.getChildren(editor.state.currentPageId)[0]
+    await editor.setDocumentColorSpace('srgb', 'convert')
+    const replacement = new SceneGraph()
+    replacement.documentColorSpace = 'srgb'
+    editor.replaceGraph(replacement)
+    editor.undo.undo()
+    expect(replacement.documentColorSpace).toBe('srgb')
+    expect(original.documentColorSpace).toBe('display-p3')
+    expect(original.getNode(layer.id)?.fills[0].color).toEqual(P3_RED)
   })
 
   test('undoing a conversion puts back every value and the profile in one step', async () => {

@@ -1,4 +1,4 @@
-import type { ColorProfile } from '@open-pencil/scene-graph'
+import type { ColorProfile, SceneGraph } from '@open-pencil/scene-graph'
 import { convertColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -22,8 +22,13 @@ export function createColorSpaceActions(
   ctx: EditorContext,
   { loadPageNodes, refusal }: ColorSpaceHost
 ) {
-  function setProfile(space: ColorProfile) {
-    ctx.graph.documentColorSpace = space
+  /**
+   * Gives `graph` the profile `space`. An undo step changes the document that recorded it, even
+   * after another replaced it in the editor, so its profile and colors always change together.
+   */
+  function setProfile(graph: SceneGraph, space: ColorProfile) {
+    graph.documentColorSpace = space
+    if (ctx.graph !== graph) return
     ctx.emitEditorEvent('document:color-space-changed', space)
     ctx.requestRender()
   }
@@ -42,11 +47,11 @@ export function createColorSpaceActions(
     const previous = graph.documentColorSpace
     if (previous === colorSpace) return
     if (mode === 'assign') {
-      setProfile(colorSpace)
+      setProfile(graph, colorSpace)
       ctx.undo.push({
         label: 'Assign color profile',
-        forward: () => setProfile(colorSpace),
-        inverse: () => setProfile(previous)
+        forward: () => setProfile(graph, colorSpace),
+        inverse: () => setProfile(graph, previous)
       })
       return
     }
@@ -64,16 +69,16 @@ export function createColorSpaceActions(
     const conversion = convertColors(graph, (color: Color) =>
       convertColor(color, previous, colorSpace, 'map')
     )
-    setProfile(colorSpace)
+    setProfile(graph, colorSpace)
     ctx.undo.push({
       label: 'Convert color profile',
       forward: () => {
         replayConversion(graph, conversion, true)
-        setProfile(colorSpace)
+        setProfile(graph, colorSpace)
       },
       inverse: () => {
         replayConversion(graph, conversion, false)
-        setProfile(previous)
+        setProfile(graph, previous)
       }
     })
   }
