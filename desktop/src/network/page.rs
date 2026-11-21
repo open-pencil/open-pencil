@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{LazyLock, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
 use tauri::webview::{NewWindowResponse, PageLoadEvent};
@@ -121,8 +121,55 @@ async fn render<R: Runtime>(
     evaluate(window, &request.snapshot_script, SCRIPT_LIMIT).await
 }
 
-/// Opens `request.url` in a hidden webview of the given size, waits for the page to build itself,
-/// and returns what `request.snapshot_script` reads from it. The webview is gone afterwards.
+/// The hidden webview pages are rendered in, kept for the app's lifetime and reused: a webview
+/// closed on macOS leaves its window behind, so one made per render would leave one per render.
+/// `loaded` is where the page now loading reports that it has.
+struct RenderWindow {
+    window: WebviewWindow,
+    loaded: Arc<Mutex<Option<oneshot::Sender<()>>>>,
+}
+
+/// The render window, once a render has made it; held for the whole of a render, so renders take
+/// turns in it.
+static RENDER_WINDOW: LazyLock<tokio::sync::Mutex<Option<RenderWindow>>> =
+    LazyLock::new(|| tokio::sync::Mutex::new(None));
+
+/// Where the render window goes between renders, so no page runs in it meanwhile.
+const BLANK_PAGE: &str = "about:blank";
+
+fn is_blank(url: &Url) -> bool {
+    url.scheme() == "about"
+}
+
+fn build_render_window(app: &AppHandle) -> tauri::Result<RenderWindow> {
+    let loaded = Arc::new(Mutex::new(None::<oneshot::Sender<()>>));
+    let reporting = Arc::clone(&loaded);
+    let label = format!("web-page-{}", NEXT_RENDER.fetch_add(1, Ordering::Relaxed));
+    let blank = Url::parse(BLANK_PAGE).map_err(tauri::Error::InvalidUrl)?;
+    let window = WebviewWindowBuilder::new(app, &label, WebviewUrl::External(blank))
+        .visible(false)
+        .focused(false)
+        .skip_taskbar(true)
+        .incognito(true)
+        // Web pages, and the blank page between them.
+        .on_navigation(|url| is_web(url) || is_blank(url))
+        .on_new_window(|_, _| NewWindowResponse::Deny)
+        .on_download(|_, _| false)
+        .on_page_load(move |_, payload| {
+            // Only the page being rendered counts, not the blank page left for it.
+            if payload.event() == PageLoadEvent::Finished && !is_blank(payload.url()) {
+                if let Some(sender) = reporting.lock().ok().and_then(|mut slot| slot.take()) {
+                    let _ = sender.send(());
+                }
+            }
+        })
+        .build()?;
+    Ok(RenderWindow { window, loaded })
+}
+
+/// Opens `request.url` in the hidden render webview at the given size, waits for the page to build
+/// itself, and returns what `request.snapshot_script` reads from it. The webview is left on a blank
+/// page afterwards, with nothing of the page kept.
 #[tauri::command]
 pub async fn render_web_page(
     app: AppHandle,
@@ -132,44 +179,67 @@ pub async fn render_web_page(
     if !is_web(&url) {
         return Err("Only web pages can be rendered".to_owned());
     }
-    let (loaded_sender, loaded) = oneshot::channel::<()>();
-    let loaded_sender = Mutex::new(Some(loaded_sender));
-    // Registered before its window is built, so a cancel that arrives meanwhile is not lost.
+    // Registered before the render waits its turn, so a cancel that arrives meanwhile is not lost.
     let (cancel_sender, cancelled) = oneshot::channel::<()>();
     if let Ok(mut renders) = RENDERS.lock() {
         renders.insert(request.id.clone(), cancel_sender);
     }
-    let label = format!("web-page-{}", NEXT_RENDER.fetch_add(1, Ordering::Relaxed));
-    let window = WebviewWindowBuilder::new(&app, &label, WebviewUrl::External(url))
-        .visible(false)
-        .focused(false)
-        .skip_taskbar(true)
-        .incognito(true)
-        .inner_size(request.width, request.height)
-        .on_navigation(is_web)
-        .on_new_window(|_, _| NewWindowResponse::Deny)
-        .on_download(|_, _| false)
-        .on_page_load(move |_, payload| {
-            if payload.event() == PageLoadEvent::Finished {
-                if let Some(sender) = loaded_sender.lock().ok().and_then(|mut slot| slot.take()) {
-                    let _ = sender.send(());
-                }
-            }
-        })
-        .build();
-    let window = match window {
-        Ok(window) => window,
-        Err(error) => {
-            forget_render(&request.id);
-            return Err(format!("Could not open the page: {error}"));
-        }
-    };
     let result = tokio::select! {
-        result = render(&window, loaded, &request) => result,
+        result = render_in_window(&app, url, &request) => result,
         _ = cancelled => Err("The render was cancelled".to_owned()),
     };
     forget_render(&request.id);
-    let _ = window.destroy();
+    // A render cancelled while its page ran leaves the page; the next one, or this, blanks it.
+    if let Ok(mut slot) = RENDER_WINDOW.try_lock() {
+        if let Some(render_window) = slot.as_ref() {
+            if blank(&render_window.window).is_err() {
+                *slot = None;
+            }
+        }
+    }
+    result
+}
+
+/// Leaves the render window on the blank page, with the page's data cleared.
+fn blank(window: &WebviewWindow) -> tauri::Result<()> {
+    let blank = Url::parse(BLANK_PAGE).map_err(tauri::Error::InvalidUrl)?;
+    window.navigate(blank)?;
+    window.clear_all_browsing_data()
+}
+
+async fn render_in_window(
+    app: &AppHandle,
+    url: Url,
+    request: &RenderRequest,
+) -> Result<serde_json::Value, String> {
+    let mut slot = RENDER_WINDOW.lock().await;
+    if slot.is_none() {
+        *slot =
+            Some(build_render_window(app).map_err(|e| format!("Could not open the page: {e}"))?);
+    }
+    let Some(render_window) = slot.as_ref() else {
+        return Err("Could not open the page".to_owned());
+    };
+    let (loaded_sender, loaded) = oneshot::channel::<()>();
+    let opened = (|| {
+        render_window.window.clear_all_browsing_data()?;
+        render_window
+            .window
+            .set_size(tauri::LogicalSize::new(request.width, request.height))?;
+        if let Ok(mut waiting) = render_window.loaded.lock() {
+            *waiting = Some(loaded_sender);
+        }
+        render_window.window.navigate(url)
+    })();
+    if let Err(error) = opened {
+        // A window that no longer answers is made again for the next render.
+        *slot = None;
+        return Err(format!("Could not open the page: {error}"));
+    }
+    let result = render(&render_window.window, loaded, request).await;
+    if blank(&render_window.window).is_err() {
+        *slot = None;
+    }
     result
 }
 
