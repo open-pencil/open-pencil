@@ -1,6 +1,6 @@
 import { clipPolygon } from '@open-pencil/scene-graph/clipping'
 import {
-  colorToHex,
+  colorToSRGBHex,
   compositeOver,
   contrastRatio,
   convertColor
@@ -223,8 +223,8 @@ export default defineRule({
         data: {
           ratio: Math.floor(ratio * 100) / 100,
           minRatio,
-          foreground: colorToHex(convertColor(fg, profile, 'srgb', 'map')),
-          background: colorToHex(convertColor(bg, profile, 'srgb', 'map'))
+          foreground: colorToSRGBHex(fg, profile),
+          background: colorToSRGBHex(bg, profile)
         }
       })
   }

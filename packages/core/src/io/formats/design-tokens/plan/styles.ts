@@ -8,6 +8,8 @@ import type {
   SceneNode,
   TextLength
 } from '@open-pencil/scene-graph'
+import { colorProfileSchema } from '@open-pencil/scene-graph/color'
+import { mapEffectColors } from '@open-pencil/scene-graph/copy'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 import { percentLength, pixelLength, textLengthSchema } from '@open-pencil/scene-graph/text'
@@ -91,7 +93,7 @@ const ownTextSchema = v.object({
 const ownEffectsSchema = v.object({
   effects: v.optional(v.array(v.unknown())),
   /** The profile `effects` were written in; files from before profiles were written in sRGB. */
-  colorSpace: v.optional(v.fallback(v.picklist(['srgb', 'display-p3']), 'srgb'), 'srgb'),
+  colorSpace: v.optional(v.fallback(colorProfileSchema, 'srgb'), 'srgb'),
   bindings: v.optional(v.record(v.string(), v.string())),
   aliasData: v.optional(v.fallback(aliasDataSchema, {}))
 })
@@ -314,14 +316,7 @@ function replaceShadows(
 
 /** `effects` from a file written in `source`, their colors read into `profile`. */
 function importedEffects(effects: Effect[], source: ColorProfile, profile: ColorProfile): Effect[] {
-  const read = (color: Color) => importedColor(color, source, profile)
-  return effects.map((effect) => ({
-    ...effect,
-    color: read(effect.color),
-    ...(effect.noise?.secondaryColor && {
-      noise: { ...effect.noise, secondaryColor: read(effect.noise.secondaryColor) }
-    })
-  }))
+  return mapEffectColors(effects, (color) => importedColor(color, source, profile))
 }
 
 /** A shadow token as effect style fields and the fields its references bind. */

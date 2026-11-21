@@ -12,7 +12,7 @@ import type {
 import { convertColor } from '@open-pencil/scene-graph/color'
 import {
   cloneVectorNetwork,
-  copyEffects,
+  mapEffectColors,
   copyFill,
   copyStroke,
   copyLayoutGrids,
@@ -80,16 +80,7 @@ function mapNodeColors(node: NodeColorFields, map: MapColor): NodeColorFields | 
   const fields: NodeColorFields = {
     fills: mapFills(node.fills, map, 'fills'),
     strokes: node.strokes.map((stroke, index) => mapPaintColors(stroke, map, `strokes.${index}`)),
-    effects: copyEffects(node.effects).map((effect, index) => {
-      const next = { ...effect, color: map(effect.color, `effects.${index}`) }
-      if (effect.noise?.secondaryColor) {
-        next.noise = {
-          ...effect.noise,
-          secondaryColor: map(effect.noise.secondaryColor, `effects.${index}.noise`)
-        }
-      }
-      return next
-    }),
+    effects: mapEffectColors(node.effects, (color, slot) => map(color, `effects.${slot}`)),
     styleRuns: copyStyleRuns(node.styleRuns).map((run, index) => ({
       ...run,
       style: {

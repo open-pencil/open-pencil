@@ -1,6 +1,6 @@
 import { variableUnit } from '@open-pencil/dom-css/export'
 import type { ColorProfile, TokenUnit, Variable } from '@open-pencil/scene-graph'
-import { colorToHex, convertColor } from '@open-pencil/scene-graph/color'
+import { colorToSRGBHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { DesignTokenType } from './types'
@@ -35,12 +35,12 @@ export function variableTokenType(variable: Variable): DesignTokenType {
  * A color as DTCG 2025.10 writes it: the components in the document's profile, named as DTCG
  * names it, alpha, and the sRGB hex code tools display, brought inside sRGB where it lies outside.
  */
-export function colorTokenValue(color: Color, profile: ColorProfile = 'srgb') {
+export function colorTokenValue(color: Color, profile: ColorProfile) {
   return {
     colorSpace: profile,
     components: [trimNumber(color.r), trimNumber(color.g), trimNumber(color.b)],
     alpha: trimNumber(color.a),
-    hex: colorToHex(convertColor(color, profile, 'srgb', 'map')).toLowerCase()
+    hex: colorToSRGBHex(color, profile).toLowerCase()
   }
 }
 
@@ -58,7 +58,7 @@ function durationTokenValue(value: number, unit: TokenUnit) {
 export function literalTokenValue(
   variable: Variable,
   value: Color | number | string | boolean,
-  profile: ColorProfile = 'srgb'
+  profile: ColorProfile
 ): unknown {
   if (typeof value === 'object') return colorTokenValue(value, profile)
   if (typeof value === 'boolean') return value ? 1 : 0

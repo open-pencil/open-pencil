@@ -1,16 +1,25 @@
 export * from './contrast'
 export * from './management'
 export { normalizeColor } from './normalize'
+export { colorProfileSchema, EXPORT_COLOR_PROFILE_NAMES, exportColorProfileSchema } from './schema'
 export * from './okhcl'
 
 import { formatHex, formatHex8, formatRgb, differenceEuclidean } from 'culori'
 
 import type { Color } from '../primitives'
 import type { ColorProfile } from '../types'
-import { parseColor } from './management'
+import { convertColor, parseColor } from './management'
 
 export function colorToHex(color: Color): string {
   return formatHex({ mode: 'rgb', r: color.r, g: color.g, b: color.b }).toUpperCase()
+}
+
+/**
+ * `color`, whose components are in `profile`, as the sRGB hex code tools display: hex holds sRGB
+ * only, so a color outside it is brought inside by reducing chroma, not clipped.
+ */
+export function colorToSRGBHex(color: Color, profile: ColorProfile): string {
+  return colorToHex(convertColor(color, profile, 'srgb', 'map'))
 }
 
 export function colorToHex8(color: Color, alpha?: number): string {

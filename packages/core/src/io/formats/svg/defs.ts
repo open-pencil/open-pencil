@@ -1,5 +1,5 @@
 import type { ColorProfile, Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { colorToHex, colorToProfileCSS, convertColor } from '@open-pencil/scene-graph/color'
+import { colorToProfileCSS, colorToSRGBHex } from '@open-pencil/scene-graph/color'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import {
   gradientPoint,
@@ -67,7 +67,7 @@ export function formatColor(color: Color, opacity = 1, colors = SRGB_COLORS): st
     return colorToProfileCSS(alphaColor, colors.from, colors.to)
   }
   // Hex has no alpha. Stops and shadows already emit theirs; solid fills use `solidFillOpacity`.
-  return colorToHex(convertColor(alphaColor, colors.from, 'srgb', 'map'))
+  return colorToSRGBHex(alphaColor, colors.from)
 }
 
 /**
