@@ -57,6 +57,11 @@ export interface AppPickerProps {
   align?: 'start' | 'center' | 'end'
   /** Folders that start open, by name, such as recent choices. */
   openFolders?: readonly string[]
+  /**
+   * Groups and section headings open and close, starting open, so a long list such as a design
+   * system's variables can be folded down to what is wanted.
+   */
+  collapsible?: boolean
   ui?: ComponentUI<AppPickerTheme>
 }
 
@@ -119,7 +124,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import theme, { APP_PICKER_COLUMNS } from '@/theme/select/picker'
 
-import { pickerRows, type AppPickerRow } from './folders'
+import { folderKey, pickerRows, type AppPickerRow } from './folders'
 
 const {
   heading,
@@ -138,6 +143,7 @@ const {
   side = 'left',
   align = 'start',
   openFolders = [],
+  collapsible = false,
   ui
 } = defineProps<AppPickerProps>()
 const emit = defineEmits<{
@@ -190,9 +196,24 @@ function toggleFolder(key: string) {
   toggledFolders.value = next
 }
 
-/** Each group's rows: its choices, with folders closed or open. */
+/** A group or section heading, which starts open, shows its choices unless closed. */
+function isHeadingOpen(key: string): boolean {
+  if (!collapsible || query.value.trim()) return true
+  return !toggledFolders.value.has(key)
+}
+
+function groupKey(group: string): string {
+  return folderKey(group, '')
+}
+
+const openness = { folder: isFolderOpen, section: isHeadingOpen }
+
+/** Each group's rows: its choices, with headings and folders closed or open. */
 const groupRows = computed<[string, AppPickerRow<AppPickerItem>[]][]>(() =>
-  groups.value.map(([group, entries]) => [group, pickerRows(group, entries, isFolderOpen)])
+  groups.value.map(([group, entries]) => [
+    group,
+    isHeadingOpen(groupKey(group)) ? pickerRows(group, entries, openness) : []
+  ])
 )
 
 const highlighted = shallowRef<AppPickerItem | null>(null)
@@ -329,11 +350,41 @@ function select(value: AcceptableValue) {
               :class="styles.group({ class: ui?.group })"
             >
               <ListboxGroupLabel v-if="group" :class="styles.groupLabel({ class: ui?.groupLabel })">
-                {{ group }}
+                <button
+                  v-if="collapsible"
+                  type="button"
+                  :aria-expanded="isHeadingOpen(groupKey(group))"
+                  :class="styles.headingToggle({ class: ui?.headingToggle })"
+                  data-slot="group-toggle"
+                  @click="toggleFolder(groupKey(group))"
+                >
+                  <icon-lucide-chevron-right
+                    data-direction="reading"
+                    :class="styles.folderIcon({ class: ui?.folderIcon })"
+                    :data-open="isHeadingOpen(groupKey(group)) || undefined"
+                  />
+                  {{ group }}
+                </button>
+                <template v-else>{{ group }}</template>
               </ListboxGroupLabel>
               <template v-for="row in rows" :key="row.kind === 'item' ? row.item.value : row.key">
+                <button
+                  v-if="row.kind === 'section' && collapsible"
+                  type="button"
+                  :aria-expanded="row.open"
+                  :class="styles.section({ class: [styles.headingToggle(), ui?.section] })"
+                  data-slot="section"
+                  @click="toggleFolder(row.key)"
+                >
+                  <icon-lucide-chevron-right
+                    data-direction="reading"
+                    :class="styles.folderIcon({ class: ui?.folderIcon })"
+                    :data-open="row.open || undefined"
+                  />
+                  {{ row.name }}
+                </button>
                 <div
-                  v-if="row.kind === 'section'"
+                  v-else-if="row.kind === 'section'"
                   :class="styles.section({ class: ui?.section })"
                   data-slot="section"
                 >

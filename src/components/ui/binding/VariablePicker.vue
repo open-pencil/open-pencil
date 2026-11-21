@@ -155,6 +155,7 @@ defineOptions({ inheritAttrs: false })
       :items="pickerItems"
       :selected="selected"
       :open-folders="[variables.recentVariables]"
+      collapsible
       density="compact"
       :search-placeholder="searchPlaceholder"
       :empty-label="emptyLabel"

@@ -46,6 +46,14 @@ test('the variable picker groups Tailwind by path, and lists what was applied as
     'true'
   )
 
+  // The Color heading and the Tailwind collection fold what they hold.
+  const color = picker.locator('[data-slot="section"]', { hasText: 'color' })
+  await color.click()
+  await expect(color).toHaveAttribute('aria-expanded', 'false')
+  await expect(picker.getByRole('option', { name: 'color/white' })).toHaveCount(0)
+  await picker.locator('[data-slot="group-toggle"]', { hasText: 'Tailwind' }).click()
+  await expect(picker.locator('[data-slot="section"]')).toHaveCount(0)
+
   // A search opens the folders it matches.
   await picker.locator('input').first().fill('blue')
   await expect(picker.getByRole('option', { name: 'color/blue/500' })).toBeVisible()
