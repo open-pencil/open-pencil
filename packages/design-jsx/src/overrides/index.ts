@@ -579,7 +579,7 @@ export function propsToOverrides(
   props: Record<string, unknown>,
   isText: boolean,
   parentLayout: SceneNode['layoutMode'],
-  profile: ColorProfile = 'srgb'
+  profile: ColorProfile
 ): Partial<SceneNode> {
   // Layer props are read once, after `style` gives the ones the props leave unset.
   const layer = readLayerProps(normalizeStyleProps(props))

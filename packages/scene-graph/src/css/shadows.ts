@@ -49,7 +49,7 @@ function shadowOf(nodes: Node[], profile: ColorProfile): Effect[] {
  */
 export function parseCSSShadows(
   value: string | undefined,
-  profile: ColorProfile = 'srgb'
+  profile: ColorProfile
 ): Effect[] {
   if (!value) return []
   return cssLayerNodes(valueParser(value).nodes).flatMap((layer) => shadowOf(layer, profile))

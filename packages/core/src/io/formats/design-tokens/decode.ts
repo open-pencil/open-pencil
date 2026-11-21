@@ -59,7 +59,7 @@ const colorObjectSchema = v.object({
  * as Figma takes hex, and one in another space, such as Display P3, is converted into `profile`.
  * Earlier drafts wrote any CSS color string, which reads the same way.
  */
-export function decodeColor(value: unknown, profile: ColorProfile = 'srgb'): Color | null {
+export function decodeColor(value: unknown, profile: ColorProfile): Color | null {
   if (typeof value === 'string') return tryParseColor(value, profile)
   const parsed = v.safeParse(colorObjectSchema, value)
   if (!parsed.success) return null
@@ -254,7 +254,7 @@ function impliedScopes(token: ReadToken): VariableScope[] | undefined {
 /** A token as a variable value and OpenPencil's own token fields. */
 export function decodeVariableToken(
   token: ReadToken,
-  profile: ColorProfile = 'srgb'
+  profile: ColorProfile
 ): DecodedVariable | DecodeFailure {
   const type = variableTypeOf(token)
   if (type === 'unsupported-type' || type === 'invalid-value') return type
