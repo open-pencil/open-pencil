@@ -1,8 +1,9 @@
 import type { CanvasKit, SkPicture } from '@open-pencil/canvaskit'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
+import { withOffscreenRenderer } from '#core/canvas/renderer/offscreen'
 import { recordWorldPicture } from '#core/canvas/renderer/picture'
-import { SkiaRenderer } from '#core/canvas/renderer/skia'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 
 import type { StagedJSXPreview } from './stage'
@@ -27,8 +28,6 @@ async function recordStaged(
   signal: AbortSignal
 ): Promise<SkPicture | null> {
   renderer.pageId = pageId
-  await renderer.loadFonts()
-  signal.throwIfAborted()
   await renderer.prepareForExport(graph, pageId, nodeIds)
   signal.throwIfAborted()
   const bounds = computeContentBounds(graph, nodeIds)
@@ -49,12 +48,8 @@ export async function recordJSXPreview(
   signal: AbortSignal
 ): Promise<SkPicture | null> {
   signal.throwIfAborted()
-  const surface = ck.MakeSurface(1, 1)
-  if (!surface) return null
-  const renderer = new SkiaRenderer(ck, surface)
-  try {
-    return await recordStaged(renderer, staged, signal)
-  } finally {
-    renderer.destroy()
-  }
+  return withOffscreenRenderer(ck, async (renderer) => {
+    signal.throwIfAborted()
+    return recordStaged(renderer, staged, signal)
+  })
 }

@@ -12,6 +12,7 @@ import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { focusStyles } from '@open-pencil/theme'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -34,7 +35,6 @@ import { useHeldContent } from '@/components/ui/overlay/held'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { ASSET_GRID_THUMBNAIL_SIZE, ASSET_LIST_THUMBNAIL_SIZE } from '@/constants'
-import { focusStyles } from '@/theme/focus/styles'
 
 type AssetView = 'grid' | 'list'
 

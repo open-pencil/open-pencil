@@ -151,7 +151,7 @@ export function renderTile(
   } finally {
     canvas.restore()
     renderer.images.detailScale = previousDetail
-    if (margin > 0) surface.delete()
+    if (margin > 0) surface.dispose()
     else surfacePool.release(surface)
   }
 }

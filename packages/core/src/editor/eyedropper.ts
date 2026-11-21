@@ -80,7 +80,7 @@ export function sampleScenePixels(
     renderer.worldViewport = previousViewport
     renderer.viewportImageRendering = previousImageRendering
     renderer.presentationColorSpace = previousColorSpace
-    surface.delete()
+    surface.dispose()
   }
 }
 

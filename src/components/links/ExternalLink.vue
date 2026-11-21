@@ -2,8 +2,9 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
+import { linkTheme } from '@open-pencil/theme'
+
 import type { ComponentUI } from '@/components/ui/types'
-import linkTheme from '@/theme/link'
 
 const { href, ui } = defineProps<{
   href: string

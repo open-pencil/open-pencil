@@ -18,6 +18,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import { useImageDrop } from '@/components/ui/drop/useImageDrop'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
+import ImageAdjustments from './ImageAdjustments.vue'
 import { useImageFill } from './useImageFill'
 
 const IMAGE_SCALE_MODES: { value: ImageScaleMode; label: string }[] = [
@@ -198,5 +199,6 @@ function rotate() {
         </PhotoPicker>
       </div>
     </div>
+    <ImageAdjustments :fill @update="emit('update', $event)" />
   </div>
 </template>
