@@ -121,4 +121,22 @@ describe('pictures in imported HTML', () => {
     expect(graph.getChildren(padding.id)[0]).toMatchObject({ x: 10, y: 10, width: 20, height: 20 })
     expect(graph.getChildren(content.id)[0]).toMatchObject({ x: 20, y: 20, width: 20, height: 20 })
   })
+
+  test('draws the background picture of generated content', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const { graph } = await readHTMLDocument(
+      `<div class="badge"></div>
+      <style>
+        body { margin: 0 }
+        .badge::before { content: ''; display: block; width: 40px; height: 40px; background: url(photo.png) center / cover }
+      </style>`,
+      { readAsset: async (path) => (path === 'photo.png' ? png : null) }
+    )
+    const before = graph
+      .flattenTree(graph.getPages()[0].id)
+      .map(({ node }) => node)
+      .find((node) => node.name === '::before')
+
+    expect(before?.fills.map((fill) => fill.type)).toContain('IMAGE')
+  })
 })

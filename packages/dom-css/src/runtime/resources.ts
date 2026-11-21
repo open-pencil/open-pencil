@@ -97,8 +97,15 @@ export async function attachImages(
       if (resource) element.image = resource
     }),
     ...backgrounds.map(async (element) => {
-      const urls = backgroundImageURLs(element)
-      const resources = compact(await Promise.all(urls.map(picture)))
+      // Kept under the address the style names, which the importer looks each layer's picture up
+      // by, even when the read was redirected elsewhere.
+      const read = await Promise.all(
+        backgroundImageURLs(element).map(async (url) => {
+          const resource = await picture(url)
+          return resource && { ...resource, url }
+        })
+      )
+      const resources = compact(read)
       if (resources.length > 0) element.backgroundImages = resources
     })
   ])

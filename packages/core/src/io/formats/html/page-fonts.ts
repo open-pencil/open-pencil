@@ -38,17 +38,6 @@ async function readableFont(bytes: Uint8Array): Promise<ArrayBuffer | null> {
   return sfntFont(bytes.slice().buffer)
 }
 
-/**
- * Loads the faces a page's `@font-face` rules declare for the families its text uses, with
- * `fetch`, and registers them with the font manager under the family and face each rule names, so
- * the page's text is set in its own fonts, as the browser sets it, icon fonts among them. A face the
- * page loads from a provider the editor fetches fonts from, such as Google Fonts, is the editor's
- * own copy of it, whole rather than the page's subsets. A face the page serves itself is the page's
- * file, even where the editor has a family of that name, which may be another design; a face split
- * into files by `unicode-range` draws from all of them. A rule's sources are tried in order until
- * one is in a format the font manager reads. Returns the families the page's text can be set in;
- * once `signal` aborts, it stops and rejects without registering another face.
- */
 /** The weights a face can be asked for by, a hundred apart. */
 const FACE_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900]
 
@@ -64,6 +53,17 @@ function stylesDrawnBy(data: ArrayBuffer, rule: CSSFontFaceRule): string[] {
   return uniq([own, ...weights.map((weight) => faceStyleName(rule.family, weight, rule.italic))])
 }
 
+/**
+ * Loads the faces a page's `@font-face` rules declare for the families its text uses, with
+ * `fetch`, and registers them with the font manager under the family and face each rule names, so
+ * the page's text is set in its own fonts, as the browser sets it, icon fonts among them. A face the
+ * page loads from a provider the editor fetches fonts from, such as Google Fonts, is the editor's
+ * own copy of it, whole rather than the page's subsets. A face the page serves itself is the page's
+ * file, even where the editor has a family of that name, which may be another design; a face split
+ * into files by `unicode-range` draws from all of them. A rule's sources are tried in order until
+ * one is in a format the font manager reads. Returns the families the page's text can be set in;
+ * once `signal` aborts, it stops and rejects without registering another face.
+ */
 export async function loadPageFontFaces(
   styled: DesignDocument,
   fetch: DesignResourceFetch,
@@ -74,6 +74,13 @@ export async function loadPageFontFaces(
   const rules = (styled.fontFaces ?? []).filter((rule) => used.has(rule.family.toLowerCase()))
   // The faces this page registered a file for, which its later subsets join.
   const registered = new Set<string>()
+  // The faces a rule names itself, which a variable file of another rule does not stand in for.
+  const named = new Set(
+    rules.map(
+      (rule) =>
+        `${rule.family.toLowerCase()}|${faceStyleName(rule.family, rule.weight, rule.italic)}`
+    )
+  )
   for (const rule of rules) {
     const style = faceStyleName(rule.family, rule.weight, rule.italic)
     const face = `${rule.family.toLowerCase()}|${style}`
@@ -93,11 +100,13 @@ export async function loadPageFontFaces(
       // A source that does not decode is passed over for the next, as an unreadable one is.
       const data = resource ? await readableFont(resource.bytes).catch(() => null) : null
       if (!data) continue
-      // An import cancelled meanwhile registers nothing: the font manager is shared, and a face it
-      // took now could replace one a later import loaded.
-      signal?.throwIfAborted()
       for (const faceStyle of stylesDrawnBy(data, rule)) {
         const key = `${rule.family.toLowerCase()}|${faceStyle}`
+        // A weight another rule names is that rule's file, which it registers itself.
+        if (key !== face && named.has(key)) continue
+        // An import cancelled meanwhile registers nothing more: the font manager is shared, and a
+        // face it took now could replace one a later import loaded.
+        signal?.throwIfAborted()
         if (registered.has(key)) await fontManager.addFaceShard(rule.family, faceStyle, data)
         else await fontManager.markLoaded(rule.family, faceStyle, data)
         registered.add(key)

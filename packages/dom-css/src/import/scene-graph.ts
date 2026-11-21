@@ -32,6 +32,7 @@ import {
   flowOf,
   inheritedTextStyle,
   isInlineLevel,
+  hiddenByVisibility,
   hiddenPart,
   splitOutOfFlow,
   textAlignOf,
@@ -44,8 +45,8 @@ import { isSVGArtwork, maskSVG } from './pictures'
 import {
   applyCapturedLines,
   capturedBox,
-  capturedLinesBox,
   capturedTextBox,
+  ownTextBox,
   placeTopLevelLayers,
   type CapturedBox,
   type CapturedBoxes
@@ -416,27 +417,36 @@ function createSVGFrame(
 }
 
 /**
+ * An element's text as one layer, the boxes out of the flow inside it as layers of their own, or
+ * null when its children are not text: a flex container's and a grid's children are items, each
+ * a layer its container aligns, so only outside them is the element split.
+ */
+function createTextChildLayers(
+  graph: SceneGraph,
+  node: SceneNode,
+  element: DesignElement,
+  style: DesignStyleDeclaration,
+  flow: FlowKind | null,
+  recorded: Recorded
+): FlowBlock[] | null {
+  const { inFlow, outOfFlow } = splitOutOfFlow(element)
+  if (!holdsRichText(inFlow)) return null
+  const textStyle = inheritedTextStyle(style)
+  const textDisplay = flow === 'inline' ? 'inline' : 'block'
+  const text = createRichTextNode(graph, node.id, inFlow, textStyle, textDisplay, flow ?? 'none')
+  record(graph, recorded, text, capturedTextBox(element))
+  if (flow === 'block') alignBlockLines(graph, node, style, true)
+  return outOfFlow.flatMap((box) => {
+    const layer = createDesignNode(graph, node.id, box, flow ?? 'none', recorded)
+    return layer ? [{ layer, element: box, style: mergedStyle(box) }] : []
+  })
+}
+
+/**
  * A box's children as layers: blocks of text in its own flow as one text, since a flex box's
  * children are items, or each child as a layer of its own. Returns the layers of its child
  * elements, with their styles.
  */
-/** How many runs of text that show something an element holds among its children. */
-function textRuns(element: DesignElement): number {
-  return element.children.filter((child) => child.type === 'text' && child.text.trim() !== '')
-    .length
-}
-
-/**
- * The box an element's own text was laid out in. Text alone in a box takes the box its lines are
- * in. Text among the items of a flex container or a grid is an item of its own, its lines the
- * container's only ones, as the items around it lay out as blocks; text among other elements has
- * no box of its own.
- */
-function ownTextBox(element: DesignElement, holdsItems: boolean): CapturedBox | undefined {
-  if (element.children.every((child) => child.type === 'text')) return capturedTextBox(element)
-  return holdsItems && textRuns(element) === 1 ? capturedLinesBox(element) : undefined
-}
-
 function createChildLayers(
   graph: SceneGraph,
   node: SceneNode,
@@ -446,30 +456,26 @@ function createChildLayers(
   recorded: Recorded,
   grid = false
 ): FlowBlock[] {
-  // A flex container's and a grid's children are items, each a layer its container aligns. Text
-  // is one layer even with boxes out of the flow inside it, which become layers of their own.
-  const { inFlow, outOfFlow } = splitOutOfFlow(element)
-  if (flow !== 'flex' && !grid && holdsRichText(inFlow)) {
-    const textStyle = inheritedTextStyle(style)
-    const textDisplay = flow === 'inline' ? 'inline' : 'block'
-    const text = createRichTextNode(graph, node.id, inFlow, textStyle, textDisplay, flow ?? 'none')
-    record(graph, recorded, text, capturedTextBox(element))
-    if (flow === 'block') alignBlockLines(graph, node, style, true)
-    return outOfFlow.flatMap((box) => {
-      const layer = createDesignNode(graph, node.id, box, flow ?? 'none', recorded)
-      return layer ? [{ layer, element: box, style: mergedStyle(box) }] : []
-    })
-  }
+  const text =
+    flow !== 'flex' && !grid
+      ? createTextChildLayers(graph, node, element, style, flow, recorded)
+      : null
+  if (text) return text
   const textBox = ownTextBox(element, flow === 'flex' || grid)
   // Whether everything the element holds sits in its lines, which its `text-align` aligns.
   let inlineContent = true
   const blocks: FlowBlock[] = []
   const parts: FlowBlock[] = []
+  // A box hidden by `visibility` hides the text it holds itself, though a child may show again.
+  const textHidden = hiddenByVisibility(style)
   for (const child of element.children) {
     const inherited = inheritedTextStyle(style)
     const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
     // Text the element holds directly sits in its lines; an element that became text has its own box.
-    if (layer?.type === 'TEXT' && child.type === 'text') record(graph, recorded, layer, textBox)
+    if (layer?.type === 'TEXT' && child.type === 'text') {
+      record(graph, recorded, layer, textBox)
+      if (textHidden) layer.visible = false
+    }
     if (child.type !== 'element' || !layer) continue
     const childStyle = mergedStyle(child)
     parts.push({ layer, element: child, style: childStyle })
@@ -506,7 +512,13 @@ function createDesignNode(
   // shows inside paints nothing of its own.
   const hidden = layer ? hiddenPart(node) : 'none'
   if (layer && hidden === 'all') layer.visible = false
-  if (layer && hidden === 'own') Object.assign(layer, { fills: [], strokes: [], effects: [] })
+  if (layer && hidden === 'own') {
+    Object.assign(layer, { fills: [], strokes: [], effects: [] })
+    // Its background pictures are its own paint too, which placement would add back.
+    recorded.backgroundPictures = recorded.backgroundPictures.filter(
+      (picture) => picture.nodeId !== layer.id
+    )
+  }
   return layer
 }
 

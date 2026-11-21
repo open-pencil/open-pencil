@@ -163,4 +163,27 @@ describe('a page’s own fonts', () => {
     )
     expect(fontManager.loadedFontSource('Page Variable Sans', 'Bold')).toBe('registered')
   })
+
+  test('keeps a weight another rule names in that rule’s own file', async () => {
+    const variable = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+    const bold = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).bytes()
+    const styled = page('Page Named Bold Sans', ['https://site.test/variable.ttf'])
+    styled.fontFaces?.push({
+      family: 'Page Named Bold Sans',
+      weight: 700,
+      italic: false,
+      sources: ['https://site.test/bold.ttf']
+    })
+
+    await loadPageFontFaces(styled, async (url) => ({
+      url,
+      bytes: url.endsWith('bold.ttf') ? bold : variable
+    }))
+
+    // The variable file reaches 700, but the page names Bold's file itself, as the browser uses it.
+    expect(fontManager.loadedData('Page Named Bold Sans', 'Bold')?.byteLength).toBe(bold.byteLength)
+    expect(fontManager.loadedData('Page Named Bold Sans', 'SemiBold')?.byteLength).toBe(
+      variable.byteLength
+    )
+  })
 })

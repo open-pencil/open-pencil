@@ -8,11 +8,13 @@ import {
 } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { WHITE } from '@open-pencil/scene-graph/constants'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { parseCSSColor } from '@open-pencil/scene-graph/css'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { maxOf } from '@open-pencil/std/arrays'
 
 import { setPageBackgrounds } from '#core/figma-api/page-backgrounds'
+import { subtreeRenderBounds } from '#core/geometry/render-bounds'
 import type { IconMatcher } from '#core/icons/match'
 import { layoutAuthoredNodes } from '#core/layout'
 import { prepareGraphFonts } from '#core/text/prepare'
@@ -103,7 +105,14 @@ function frameAsWindow(
 ): void {
   const layers = graph.getChildren(page.id)
   if (layers.length === 0) return
-  const bottom = maxOf(layers.map((layer) => layer.y + layer.height))
+  // Down to what the page draws, a box's children overflowing it included, as the page scrolls to.
+  const bottom = maxOf(
+    layers.map(
+      (layer) =>
+        subtreeRenderBounds(graph, layer, getWorldMatrix(layer, graph), { reach: 'drawn' })?.maxY ??
+        layer.y + layer.height
+    )
+  )
   const frame = graph.createNode('FRAME', page.id, {
     name: page.name,
     x: 0,

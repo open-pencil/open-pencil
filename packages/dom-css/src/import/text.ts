@@ -85,6 +85,8 @@ const CHARACTER_PROPERTIES = [
   'font-size',
   'font-style',
   'font-weight',
+  'font-stretch',
+  'font-optical-sizing',
   'letter-spacing',
   'line-height',
   'white-space',

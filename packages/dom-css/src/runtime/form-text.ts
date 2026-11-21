@@ -28,16 +28,18 @@ export function showFormText(
     if (!field) continue
     const shown = shownText(field)
     const own = designElement.computedStyle
-    if (!shown || !own) continue
+    // A field that is not rendered shows no text either.
+    if (!shown || !own || own.display === 'none') continue
     const style = shown.placeholder
       ? styleOf(view.getComputedStyle(domElement, '::placeholder'))
       : own
     // A browser lays a field's text out inside it as a box of its own: a one-line field centers
     // its line however tall the field is, and a text area starts at the top. The field is that
-    // box, which auto layout reproduces, inside the field's own padding.
+    // box, which auto layout reproduces, inside the field's own padding. It stays in the line
+    // it sits in, as an inline field does.
     designElement.computedStyle = {
       ...own,
-      display: 'flex',
+      display: own.display === 'block' ? 'flex' : 'inline-flex',
       'flex-direction': 'row',
       'align-items': isInput ? 'center' : 'flex-start'
     }
