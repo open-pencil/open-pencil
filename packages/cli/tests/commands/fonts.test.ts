@@ -50,9 +50,9 @@ heavy('fonts CLI', () => {
     expect(data.faithful).toBe(false)
     expect(data.issues.length).toBeGreaterThan(0)
     // A family found nowhere draws in the bundled default family, which substitutes it.
-    expect(
-      data.issues.every((face) => face.status === 'substituted' && face.source === null)
-    ).toBe(true)
+    expect(data.issues.every((face) => face.status === 'substituted' && face.source === null)).toBe(
+      true
+    )
   })
   test('uses the standard human-readable formatter', async () => {
     const { stdout, stderr, exitCode } = await runCLI(['fonts', GOLD])
