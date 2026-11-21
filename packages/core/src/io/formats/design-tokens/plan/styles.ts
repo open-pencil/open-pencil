@@ -21,8 +21,7 @@ import {
   decodeFontFamily,
   decodeFontWeight,
   importedColor,
-  referencePath,
-  shadowTokenProfile
+  referencePath
 } from '#core/io/formats/design-tokens/decode'
 import { tokenReference } from '#core/io/formats/design-tokens/paths'
 import type { DesignTokenBundle, ReadToken } from '#core/io/formats/design-tokens/read'
@@ -91,6 +90,8 @@ const ownTextSchema = v.object({
 })
 const ownEffectsSchema = v.object({
   effects: v.optional(v.array(v.unknown())),
+  /** The profile `effects` were written in; files from before profiles were written in sRGB. */
+  colorSpace: v.optional(v.fallback(v.picklist(['srgb', 'display-p3']), 'srgb'), 'srgb'),
   bindings: v.optional(v.record(v.string(), v.string())),
   aliasData: v.optional(v.fallback(aliasDataSchema, {}))
 })
@@ -336,8 +337,8 @@ function effectStyle(
   // Extension effects that do not read fall back to the token's own shadows.
   const recorded = own?.effects ? tryParseFigmaEffects(own.effects) : null
   // The token is current when it is what its own file would write; its effects are then read
-  // into this document as its colors are.
-  const source = shadowTokenProfile(token.value) ?? profile
+  // into this document as its colors are, from the profile the file recorded them in.
+  const source = own?.colorSpace ?? 'srgb'
   if (recorded && isEqual(token.value, shadowTokenValue(recorded, ownBindings, source))) {
     return {
       fields: { effects: importedEffects(recorded, source, profile) },
