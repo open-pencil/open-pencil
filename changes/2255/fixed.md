@@ -1,0 +1,1 @@
+- Fixed piping JSON into 'openpencil tool call <tool> --args-file -' so it reads the arguments from standard input instead of running the tool with empty arguments.
