@@ -1,0 +1,1 @@
+- Sticky JSX export now keeps the color alpha channel for translucent fills instead of dropping it or mapping them to opaque palette names.
