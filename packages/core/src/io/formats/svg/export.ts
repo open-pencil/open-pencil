@@ -8,6 +8,7 @@ import {
 } from '@open-pencil/scene-graph/coordinate'
 import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
+import { asMaskShape } from '@open-pencil/scene-graph/masks'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { normalizeDashPattern } from '#core/canvas/strokes/draw'
@@ -48,6 +49,7 @@ import {
 import { appendAll } from '@open-pencil/std/arrays'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
+import { renderMaskedChildren } from './masks'
 import { svg, svgElement, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
@@ -389,12 +391,13 @@ function exportedFill(
 }
 
 function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
-  if (!node.visible) return null
+  const sourceNode = ctx.inVectorMask ? asMaskShape({ ...node, maskType: 'VECTOR' }) : node
+  if (!sourceNode.visible) return null
   // A layer without a name has nothing to be found by.
-  if (!ctx.layerIds || !node.name) return drawNode(node, ctx)
+  if (!ctx.layerIds || !sourceNode.name) return drawNode(sourceNode, ctx)
   // Parents take their names before their children, so a repeated name counts in layer order.
-  const id = layerId(node.name, ctx.layerIds)
-  const drawn = drawNode(node, ctx)
+  const id = layerId(sourceNode.name, ctx.layerIds)
+  const drawn = drawNode(sourceNode, ctx)
   if (!drawn) return null
   // A layer drawn as its only child's element keeps that child's id and gets its own group.
   if ('id' in drawn.attrs) return svg('g', { id }, drawn)
@@ -458,11 +461,7 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   )
 
   const childNodes = ctx.graph.getChildren(node.id)
-  const childContent: SVGNode[] = []
-  for (const child of childNodes) {
-    const rendered = renderNode(child, ctx)
-    if (rendered) childContent.push(rendered)
-  }
+  const childContent = renderMaskedChildren(childNodes, ctx, renderNode)
 
   if (clipId && childContent.length > 0) {
     children.push(svgElement('g', { 'clip-path': `url(#${clipId})` }, childContent))
