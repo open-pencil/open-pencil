@@ -32,20 +32,32 @@ function exactlyInProfile(color: CuloriColor, profile: ColorProfile): Color {
 
 /**
  * `color`, a culori color in any space, as components in `profile`, brought inside it the way CSS
- * maps out-of-gamut colors, by reducing chroma in OKLCH so lightness and hue hold. A color inside
- * already keeps its components, as mapping it would shift them by float noise. A missing (`none`)
- * component reads as zero.
+ * maps out-of-gamut colors, by reducing chroma in OKLCH so lightness and hue hold, and whether it
+ * had to be. A color inside already keeps its components, as mapping it would shift them by float
+ * noise; one on the gamut's edge, as every saturated primary is, counts as inside despite
+ * round-off. A missing (`none`) component reads as zero.
  */
-function insideProfile(color: CuloriColor, profile: ColorProfile): Color {
+export function fitIntoProfile(
+  color: CuloriColor,
+  profile: ColorProfile
+): { color: Color; clipped: boolean } {
   const exact = normalizeColor(exactlyInProfile(color, profile))
+  const clipped = !fitsGamut(exact)
   const p3 = profile === 'display-p3'
-  const inside = fitsGamut(exact)
-    ? exact
-    : normalizeColor(
+  const inside = clipped
+    ? normalizeColor(
         exactlyInProfile(p3 ? toDisplayableP3(color) : toDisplayableRGB(color), profile)
       )
+    : exact
   const clamp = (channel: number) => Math.min(1, Math.max(0, channel))
-  return { r: clamp(inside.r), g: clamp(inside.g), b: clamp(inside.b), a: color.alpha ?? 1 }
+  return {
+    color: { r: clamp(inside.r), g: clamp(inside.g), b: clamp(inside.b), a: color.alpha ?? 1 },
+    clipped
+  }
+}
+
+function insideProfile(color: CuloriColor, profile: ColorProfile): Color {
+  return fitIntoProfile(color, profile).color
 }
 
 function culoriColor(color: Color, profile: ColorProfile): CuloriColor {
