@@ -40,10 +40,24 @@ export type ModeTarget =
   | { kind: 'existing'; modeId: string }
   | { kind: 'skip' }
 
+/** A mode of the bundle written again into another mode, such as a file's one mode into Dark. */
+export interface ModeCopy {
+  /** The bundle mode the values come from, by its index. */
+  from: number
+  target: Exclude<ModeTarget, { kind: 'skip' }>
+  /** Where the mode applies in CSS, such as `.dark`; absent leaves the mode's own. */
+  condition?: string
+}
+
 /** The user's choice for one collection of the bundle, its modes in the bundle's order. */
 export interface CollectionImportChoice {
   target: CollectionTarget
   modes: ModeTarget[]
+  /**
+   * More modes that take a bundle mode's values, after `modes`: a file with one mode imported
+   * as Light and Dark writes it to Light through `modes` and to Dark through a copy.
+   */
+  copies?: ModeCopy[]
 }
 
 export interface TokenImportOptions {
@@ -398,6 +412,30 @@ function planValues(planner: Planner, index: number, rows: ReturnType<typeof pla
   }
 }
 
+/** The modes a collection's choice writes, each with the bundle mode its values come from. */
+function plannedModes(
+  collection: ReadCollection,
+  choice: CollectionImportChoice
+): Array<{ from: number; planned: PlannedMode }> {
+  const chosen = collection.modes.flatMap((mode, from) => {
+    const target = choice.modes.at(from) ?? { kind: 'new', name: mode.name }
+    if (target.kind === 'skip') return []
+    const planned = {
+      name: mode.name,
+      target,
+      isDefault: mode.isDefault,
+      condition: mode.condition
+    }
+    return [{ from, planned }]
+  })
+  const copies = (choice.copies ?? []).flatMap(({ from, target, condition }) => {
+    const mode = collection.modes.at(from)
+    if (!mode || choice.modes.at(from)?.kind === 'skip') return []
+    return [{ from, planned: { name: mode.name, target, isDefault: false, condition } }]
+  })
+  return [...chosen, ...copies]
+}
+
 /**
  * What importing a bundle with these choices would do, without doing it: the collections, modes,
  * and variables it adds or updates, the styles it makes, and what it skips and why. Nothing is
@@ -419,27 +457,14 @@ export function planTokenImport(
   const chosen = bundle.collections.flatMap((collection, bundleIndex) => {
     const choice = options.collections.at(bundleIndex)
     if (!choice || choice.target.kind === 'skip') return []
-    const modeIndexes = collection.modes.flatMap((_, modeIndex) =>
-      choice.modes[modeIndex]?.kind === 'skip' ? [] : [modeIndex]
-    )
-    if (modeIndexes.length === 0) return []
+    const modes = plannedModes(collection, choice)
+    if (modes.length === 0) return []
+    const modeIndexes = modes.map((mode) => mode.from)
     const target = choice.target
     planner.collections.push({
       name: collection.name,
       target,
-      modes: modeIndexes.map((modeIndex): PlannedMode => {
-        const mode = collection.modes[modeIndex]
-        const modeTarget = choice.modes.at(modeIndex)
-        return {
-          name: mode.name,
-          target:
-            modeTarget && modeTarget.kind !== 'skip'
-              ? modeTarget
-              : { kind: 'new', name: mode.name },
-          isDefault: mode.isDefault,
-          condition: mode.condition
-        }
-      }),
+      modes: modes.map((mode) => mode.planned),
       modeAttribute: collection.modeAttribute,
       variables: []
     })

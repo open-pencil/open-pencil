@@ -16,11 +16,33 @@ test("the Tailwind preset loads Tailwind's default colors and spacing as one und
   await expect(importDialog.getByTestId('variables-import-summary')).toHaveText(
     '323 to add · 0 to update · 0 skipped'
   )
+  // A preset of one mode imports as Light and Dark, for code to switch themes.
+  await expect(importDialog.getByRole('combobox', { name: 'Tailwind: Default' })).toHaveText(
+    'Light and Dark'
+  )
   await importDialog.getByTestId('variables-import-confirm').click()
   await expect(importDialog).toBeHidden()
+  const modes = await editor.page.evaluate(() =>
+    [...(window.openPencil?.getStore?.().graph.variableCollections.values() ?? [])].map(
+      (collection) => collection.modes.map((mode) => [mode.name, mode.condition ?? null])
+    )
+  )
+  expect(modes).toEqual([
+    [
+      ['Light', null],
+      ['Dark', '.dark']
+    ]
+  ])
 
   const stylesheet = dialog.getByTestId('token-output')
   // Tailwind's own sRGB fallback for red-500.
+  await expect(stylesheet).toContainText('--color-red-500: #FB2C36')
+  // The stylesheet folds to its title and opens again.
+  const toggle = dialog.getByTestId('variables-stylesheet-toggle')
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  await expect(stylesheet).not.toContainText('--color-red-500')
+  await toggle.click()
   await expect(stylesheet).toContainText('--color-red-500: #FB2C36')
 
   await dialog.getByTestId('variable-row').first().click()

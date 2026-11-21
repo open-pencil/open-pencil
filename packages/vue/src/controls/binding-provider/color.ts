@@ -5,6 +5,7 @@ import { randomHex } from '@open-pencil/std/random'
 
 import { useOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
 import type { BindingTarget } from '#vue/controls/binding-provider/types'
+import { themeModes } from '#vue/variables/modes'
 
 import { prepareModeEdit } from './mode-edit'
 import { resolveEffectiveBindingValue } from './resolution'
@@ -22,8 +23,7 @@ function colorCollection(editor: Editor): VariableCollection {
   const collection: VariableCollection = {
     id: `col:${randomHex(8)}`,
     name: 'Colors',
-    modes: [{ modeId: 'default', name: 'Mode 1' }],
-    defaultModeId: 'default',
+    ...themeModes(),
     variableIds: []
   }
   editor.addCollection(collection)

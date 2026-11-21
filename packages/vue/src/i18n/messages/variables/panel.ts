@@ -125,7 +125,12 @@ export const variablesMessageDefaults = {
   importTokensDescription:
     'Choose where each collection and mode goes. Variables with the same name are updated; nothing is deleted.',
   importNewCollection: 'New collection',
-  importNewMode: 'New mode',
+  importLightAndDark: 'Light and Dark',
+  importOneMode: 'One mode',
+  importModes: 'Modes',
+  importFileMode: params('Mode “{name}”'),
+  importFromFile: 'In the file',
+  importIntoDocument: 'In this document',
   importSkipTarget: 'Don’t import',
   importAddMissing: 'Add tokens that don’t exist yet',
   importStyles: params('Make text and effect styles ({count})'),

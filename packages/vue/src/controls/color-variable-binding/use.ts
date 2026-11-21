@@ -1,6 +1,7 @@
 import { randomHex } from '@open-pencil/std/random'
 
 import { useVariableBinding } from '#vue/controls/variable-binding/use'
+import { themeModes } from '#vue/variables/modes'
 
 const FALLBACK_COLOR_VARIABLE_NAME = 'New color'
 
@@ -28,8 +29,7 @@ export function useColorVariableBinding(kind: ColorBindingKind) {
     const collection: VariableCollection = {
       id: `col:${randomHex(8)}`,
       name: 'Colors',
-      modes: [{ modeId: 'default', name: 'Mode 1' }],
-      defaultModeId: 'default',
+      ...themeModes(),
       variableIds: []
     }
     binding.store.addCollection(collection)

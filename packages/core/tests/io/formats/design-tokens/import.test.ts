@@ -148,6 +148,26 @@ describe('reading token files', () => {
 })
 
 describe('planning an import', () => {
+  test("a copy writes a mode's values into another mode too, as Light and Dark", () => {
+    const graph = new SceneGraph()
+    const bundle = readDesignTokens(
+      files({ 'brand.tokens.json': { color: { $type: 'color', bg: { $value: '#ffffff' } } } })
+    )
+    const options = defaultTokenImportOptions(graph, bundle)
+    options.collections[0].modes = [{ kind: 'new', name: 'Light' }]
+    options.collections[0].copies = [
+      { from: 0, target: { kind: 'new', name: 'Dark' }, condition: '.dark' }
+    ]
+    const planned = planTokenImport(graph, bundle, options).collections[0]
+
+    expect(planned.modes.map((mode) => [mode.target, mode.isDefault, mode.condition])).toEqual([
+      [{ kind: 'new', name: 'Light' }, true, undefined],
+      [{ kind: 'new', name: 'Dark' }, false, '.dark']
+    ])
+    expect(planned.variables[0].values).toHaveLength(2)
+    expect(planned.variables[0].values[1]).toEqual(planned.variables[0].values[0])
+  })
+
   test("tokens named like a library's collection make one of the file's own", () => {
     const graph = new SceneGraph()
     const library = graph.createCollection('Tokens')

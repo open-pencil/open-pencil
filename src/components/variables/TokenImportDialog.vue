@@ -3,7 +3,6 @@ import { computed, ref, watch } from 'vue'
 
 import {
   type TokenImportResult,
-  defaultTokenImportOptions,
   planTokenImport,
   type CollectionTarget,
   type DesignTokenBundle,
@@ -16,6 +15,13 @@ import { isLibraryCollection } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import {
+  choiceCollection,
+  clearLightAndDark,
+  setLightAndDark,
+  themeImportOptions,
+  writesLightAndDark
+} from '@/app/editor/tokens/import-modes'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -37,7 +43,7 @@ const options = ref<TokenImportOptions | null>(null)
 watch(
   () => bundle,
   (current) => {
-    options.value = current ? defaultTokenImportOptions(store.graph, current) : null
+    options.value = current ? themeImportOptions(store.graph, current) : null
   },
   { immediate: true }
 )
@@ -63,7 +69,7 @@ watch(
   () => store.state.sceneVersion,
   () => {
     if (open.value && bundle && options.value && isStale(options.value))
-      options.value = defaultTokenImportOptions(store.graph, bundle)
+      options.value = themeImportOptions(store.graph, bundle)
   }
 )
 
@@ -89,6 +95,8 @@ const styleCount = computed(
       .length ?? 0
 )
 
+const LIGHT_AND_DARK = 'light-dark'
+
 /** Select values: `new`, `skip`, or `existing:<id>`. */
 function targetValue(target: CollectionTarget | ModeTarget): string {
   if (target.kind === 'existing')
@@ -107,20 +115,38 @@ function collectionOptions() {
   ]
 }
 
+/** A mode's select value: `light-dark` when it is written into both, otherwise its target. */
+function modeValue(index: number, modeIndex: number): string {
+  const choice = options.value?.collections[index]
+  if (!choice) return 'skip'
+  if (writesLightAndDark(choice, modeIndex)) return LIGHT_AND_DARK
+  return targetValue(choice.modes[modeIndex] ?? { kind: 'skip' })
+}
+
+/**
+ * Where a file's mode can go: Light and Dark, one mode of its own, or a mode the collection has.
+ * A file of several modes can also leave one out; a file of one leaves it out by skipping the
+ * collection.
+ */
 function modeOptions(index: number) {
-  const target = options.value?.collections[index]?.target
-  const existing =
-    target?.kind === 'existing'
-      ? store.graph.variableCollections.get(target.collectionId)
-      : undefined
+  const choice = options.value?.collections[index]
+  const existing = choice ? choiceCollection(store.graph, choice) : undefined
+  const several = (bundle?.collections[index]?.modes.length ?? 0) > 1
   return [
-    { value: 'new', label: variables.value.importNewMode },
+    { value: LIGHT_AND_DARK, label: variables.value.importLightAndDark },
+    { value: 'new', label: variables.value.importOneMode },
     ...(existing?.modes ?? []).map((mode) => ({
       value: `existing:${mode.modeId}`,
       label: mode.name
     })),
-    { value: 'skip', label: variables.value.importSkipTarget }
+    ...(several ? [{ value: 'skip', label: variables.value.importSkipTarget }] : [])
   ]
+}
+
+/** What a mode row is about: the collection's modes, or which of its several modes. */
+function modeRowLabel(index: number, modeName: string) {
+  const several = (bundle?.collections[index]?.modes.length ?? 0) > 1
+  return several ? variables.value.importFileMode({ name: modeName }) : variables.value.importModes
 }
 
 /** Picking a collection matches its modes by name again, as the default choices do. */
@@ -128,24 +154,32 @@ function setCollection(index: number, value: string) {
   const choice = options.value?.collections[index]
   const source = bundle?.collections[index]
   if (!choice || !source) return
+  choice.copies = []
   if (value === 'skip' || value === 'new') {
     choice.target = value === 'skip' ? { kind: 'skip' } : { kind: 'new', name: source.name }
     choice.modes = source.modes.map((mode) => ({ kind: 'new', name: mode.name }))
-    return
+  } else {
+    const collectionId = value.slice('existing:'.length)
+    const existing = store.graph.variableCollections.get(collectionId)
+    choice.target = { kind: 'existing', collectionId }
+    choice.modes = source.modes.map((mode): ModeTarget => {
+      const match = existing?.modes.find((candidate) => candidate.name === mode.name)
+      return match ? { kind: 'existing', modeId: match.modeId } : { kind: 'new', name: mode.name }
+    })
   }
-  const collectionId = value.slice('existing:'.length)
-  const existing = store.graph.variableCollections.get(collectionId)
-  choice.target = { kind: 'existing', collectionId }
-  choice.modes = source.modes.map((mode): ModeTarget => {
-    const match = existing?.modes.find((candidate) => candidate.name === mode.name)
-    return match ? { kind: 'existing', modeId: match.modeId } : { kind: 'new', name: mode.name }
-  })
+  if (source.modes.length === 1 && choice.modes[0]?.kind === 'new')
+    setLightAndDark(choice, 0, choiceCollection(store.graph, choice))
 }
 
 function setMode(index: number, modeIndex: number, value: string) {
   const choice = options.value?.collections[index]
   const name = bundle?.collections[index]?.modes[modeIndex]?.name ?? ''
   if (!choice) return
+  if (value === LIGHT_AND_DARK) {
+    setLightAndDark(choice, modeIndex, choiceCollection(store.graph, choice))
+    return
+  }
+  clearLightAndDark(choice, modeIndex)
   if (value === 'skip') choice.modes[modeIndex] = { kind: 'skip' }
   else if (value === 'new') choice.modes[modeIndex] = { kind: 'new', name }
   else choice.modes[modeIndex] = { kind: 'existing', modeId: value.slice('existing:'.length) }
@@ -208,6 +242,14 @@ function importTokens() {
         v-if="options && bundle?.collections.length"
         class="max-h-72 overflow-y-auto rounded-lg border border-border"
       >
+        <div
+          class="sticky top-0 z-10 grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-2 border-b border-border bg-panel px-3 py-1.5 text-2xs font-medium text-muted"
+          aria-hidden="true"
+        >
+          <span>{{ variables.importFromFile }}</span>
+          <span class="size-3" />
+          <span>{{ variables.importIntoDocument }}</span>
+        </div>
         <section
           v-for="(collection, index) in bundle.collections"
           :key="`${index}:${collection.name}`"
@@ -234,14 +276,14 @@ function importTokens() {
               :key="`${modeIndex}:${mode.name}`"
               class="grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-2 py-1 pe-3 ps-6"
             >
-              <span class="truncate text-muted">{{ mode.name }}</span>
+              <span class="truncate text-muted">{{ modeRowLabel(index, mode.name) }}</span>
               <icon-lucide-arrow-right
                 data-direction="reading"
                 class="size-3 text-muted"
                 aria-hidden="true"
               />
               <AppSelect
-                :model-value="targetValue(options.collections[index].modes[modeIndex])"
+                :model-value="modeValue(index, modeIndex)"
                 :options="modeOptions(index)"
                 :label="`${collection.name}: ${mode.name}`"
                 @update:model-value="setMode(index, modeIndex, $event)"

@@ -5,6 +5,8 @@ import { BLACK } from '@open-pencil/core/constants'
 import type { VariableCollection, VariableType, VariableValue } from '@open-pencil/scene-graph'
 import { randomHex } from '@open-pencil/std/random'
 
+import { themeModes } from './modes'
+
 export function createVariableCollectionActions(editor: Editor, activeCollectionId: Ref<string>) {
   function setActiveCollection(id: string) {
     activeCollectionId.value = id
@@ -15,8 +17,7 @@ export function createVariableCollectionActions(editor: Editor, activeCollection
     const collection: VariableCollection = {
       id,
       name: 'New collection',
-      modes: [{ modeId: 'default', name: 'Mode 1' }],
-      defaultModeId: 'default',
+      ...themeModes(),
       variableIds: []
     }
     editor.addCollection(collection)

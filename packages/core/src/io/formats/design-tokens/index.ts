@@ -26,6 +26,7 @@ export {
   type CollectionTarget,
   type ImportSkip,
   type ImportSkipReason,
+  type ModeCopy,
   type ModeTarget,
   type PlannedCollection,
   type PlannedMode,

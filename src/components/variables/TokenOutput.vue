@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computedAsync } from '@vueuse/core'
+import { computedAsync, useLocalStorage } from '@vueuse/core'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -31,7 +31,10 @@ const { collectionId, layout = 'side' } = defineProps<{
 const emit = defineEmits<{ copy: [format: TokenStylesheetFormat]; export: [] }>()
 
 const { variables } = useI18n()
-const ui = computed(() => tv(outputTheme)({ layout }))
+/** Folded beside the list, the stylesheet shows its title alone; it stays folded across visits. */
+const folded = useLocalStorage('open-pencil:stylesheet-folded', false)
+const shownFolded = computed(() => layout === 'side' && folded.value)
+const ui = computed(() => tv(outputTheme)({ layout, folded: shownFolded.value }))
 const menu = useMenuUI({ content: 'w-60', item: 'justify-start gap-2' })
 const editor = useEditor()
 
@@ -57,7 +60,21 @@ const stylesheet = computedAsync(async () => {
 <template>
   <section :class="ui.root()" data-test-id="token-output">
     <div class="flex items-center gap-2 px-4 py-1.5">
-      <span v-if="layout === 'side'" :class="ui.title()">{{ variables.stylesheet }}</span>
+      <button
+        v-if="layout === 'side'"
+        type="button"
+        :class="[ui.title(), ui.toggle()]"
+        :aria-expanded="!folded"
+        data-test-id="variables-stylesheet-toggle"
+        @click="folded = !folded"
+      >
+        <icon-lucide-chevron-right
+          data-direction="reading"
+          :class="ui.chevron()"
+          :data-open="!folded || undefined"
+        />
+        {{ variables.stylesheet }}
+      </button>
       <span class="flex-1" />
       <AppDropdownMenuRoot>
         <DropdownMenuTrigger as-child>
@@ -99,6 +116,7 @@ const stylesheet = computedAsync(async () => {
       </AppDropdownMenuRoot>
     </div>
     <CodeViewer
+      v-if="!shownFolded"
       class="min-h-0 flex-1"
       :code="stylesheet"
       language="css"
