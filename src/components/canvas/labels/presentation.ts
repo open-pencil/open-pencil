@@ -1,11 +1,13 @@
 import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import { canvasLabelForeground } from '@open-pencil/core/canvas'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { normalizeColor } from '@open-pencil/scene-graph/color'
 import { figJamSectionTitleColors } from '@open-pencil/scene-graph/figjam'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import type { CanvasLabelKind } from '@open-pencil/vue/canvas/labels'
 
 export interface CanvasLabelPresentation {
+  /** In the document's profile, as its layers store colors; neutral greys read the same in any. */
   background: Color
   foreground: 'dark' | 'light'
 }
@@ -31,17 +33,12 @@ export function canvasLabelPresentation(
       : null
   if (figJam) {
     const outline = node?.strokes[figJam.strokeIndex]
-    const background =
-      (node && outline && editor.renderer?.resolveStrokeColor(outline, editor.graph)) ||
-      figJam.background
+    const background = outline ? normalizeColor(outline.color) : figJam.background
     // Opaque, as the pill it edits is.
     return { background: { ...background, a: 1 }, foreground: figJam.lightText ? 'light' : 'dark' }
   }
   const fill = node?.fills[0]
-  const background =
-    node && fill?.visible
-      ? (editor.renderer?.resolveFillColor(fill, editor.graph) ?? fill.color)
-      : DEFAULT_LABEL_BACKGROUND
+  const background = node && fill?.visible ? normalizeColor(fill.color) : DEFAULT_LABEL_BACKGROUND
   const foreground = canvasLabelForeground(background, editor.state.pageColor)
   return { background, foreground: foreground.r === 0 ? 'dark' : 'light' }
 }
