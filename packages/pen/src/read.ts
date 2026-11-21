@@ -62,12 +62,12 @@ function groupsInFlow(graph: SceneGraph, groupIds: Iterable<string>): boolean {
  * Draws each path in its box once boxes have their final size, which fill and fit sizing only give
  * once laid out, and redraws each icon laying out sized.
  */
-function drawAtFinalSize(build: Build, laidOut: boolean): void {
+function drawAtFinalSize(build: Build, laidOut: boolean, keepEmptyAxes = false): void {
   for (const [id, pen] of build.effective) {
     const node = build.graph.getNode(id)
     if (!node) continue
     if (pen.type === 'path') {
-      const network = pathNetwork(pen, node.width, node.height, !laidOut)
+      const network = pathNetwork(pen, node.width, node.height, keepEmptyAxes)
       if (network) node.vectorNetwork = network
     } else if (pen.type === 'icon' && laidOut) {
       // In the themes the icon was read in, which its colour and glyph may take variables from.
@@ -129,7 +129,7 @@ export function buildPenGraph(doc: PenDocument, options: PenReadOptions = {}): S
 
   // Paths get their geometry at the size they were read at, so layout sees their extent: a Fill
   // path a first pass leaves at no width is not a flat line and fills on the next pass.
-  if (options.layout) drawAtFinalSize(build, false)
+  if (options.layout) drawAtFinalSize(build, false, true)
   options.layout?.(graph)
   drawAtFinalSize(build, options.layout !== undefined)
   const spread = options.layout ? spreadAround(graph, [...build.aroundIds]) : false

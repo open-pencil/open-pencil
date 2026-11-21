@@ -1,7 +1,8 @@
 import type { LayoutSizing, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
-import { maxOf, minOf } from '@open-pencil/std/arrays'
 import type { LayoutNode } from '@open-pencil/taffy'
+
+import { computeAccurateBounds } from '#core/vector/curve-math'
 
 type Axis = 'width' | 'height'
 
@@ -51,19 +52,8 @@ export function asFlatLeaf(child: SceneNode, parent: SceneNode): SceneNode {
 function geometryExtents(child: SceneNode, isRow: boolean): [number, number] {
   const network = child.vectorNetwork
   if (!network || network.vertices.length === 0) return [0, 0]
-  // A curve reaches toward its handles, so a curve between points on one line is not flat.
-  const points = [...network.vertices]
-  for (const segment of network.segments) {
-    const start = network.vertices[segment.start]
-    const end = network.vertices[segment.end]
-    if (start)
-      points.push({ x: start.x + segment.tangentStart.x, y: start.y + segment.tangentStart.y })
-    if (end) points.push({ x: end.x + segment.tangentEnd.x, y: end.y + segment.tangentEnd.y })
-  }
-  const xs = points.map((point) => point.x)
-  const ys = points.map((point) => point.y)
-  const width = maxOf(xs) - minOf(xs)
-  const height = maxOf(ys) - minOf(ys)
+  // A curve reaches past its points, so a curve between points on one line is not flat.
+  const { width, height } = computeAccurateBounds(network)
   return isRow ? [width, height] : [height, width]
 }
 

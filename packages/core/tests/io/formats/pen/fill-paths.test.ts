@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { layoutAuthoredNodes } from '@open-pencil/core/layout'
+import { computeAccurateBounds } from '@open-pencil/core/vector'
 import { parsePenFile, type PenNode } from '@open-pencil/pen'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
@@ -146,7 +147,34 @@ describe('parsePenFile — Fill paths', () => {
         ]
       }
     ])
-    expect(getNodeOrThrow(graph, 'curve').width).toBeCloseTo(300, 0)
+    const curve = getNodeOrThrow(graph, 'curve')
+    expect(curve.width).toBeCloseTo(300, 0)
+    // The curve is drawn across the width it fills, not left at its source size.
+    expect(curve.vectorNetwork && computeAccurateBounds(curve.vectorNetwork).width).toBeCloseTo(
+      300,
+      0
+    )
     expect(getNodeOrThrow(graph, 'vertical').width).toBe(0)
+  })
+
+  test('a path given no width keeps no width when nothing lays it out', () => {
+    const graph = parsePenFile(
+      JSON.stringify({
+        version: '2.17',
+        children: [
+          {
+            id: 'flat',
+            type: 'path',
+            geometry: 'M0 0L100 0',
+            viewBox: [0, 0, 100, 0],
+            width: 0,
+            height: 0,
+            stroke: '#E5487F'
+          }
+        ]
+      })
+    )
+    const flat = getNodeOrThrow(graph, 'flat')
+    expect(flat.vectorNetwork && computeAccurateBounds(flat.vectorNetwork).width).toBe(0)
   })
 })
