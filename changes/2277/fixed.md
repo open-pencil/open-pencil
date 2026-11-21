@@ -1,1 +1,0 @@
-- A sideways two-finger swipe on a Mac trackpad pans the canvas instead of going back in the browser's history, as in Figma.
