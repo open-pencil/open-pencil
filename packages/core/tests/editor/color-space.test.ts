@@ -214,6 +214,59 @@ describe('document color profile', () => {
     expect(fill()?.color).toEqual(P3_RED)
   })
 
+  test('undoing and redoing a conversion keep edits made since', async () => {
+    const { fill } = p3Document()
+    const pageId = editor.state.currentPageId
+    const paint = { type: 'SOLID' as const, color: BLUE, opacity: 1, visible: true }
+    const vector = editor.graph.createNode('VECTOR', pageId, {
+      fills: [paint],
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 0, y: 10 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+          { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+          { start: 2, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+        ],
+        regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2]], fills: [paint] }]
+      }
+    })
+    const network = () => editor.graph.getNode(vector.id)?.vectorNetwork
+    const fills = () => editor.graph.getNode(vector.id)?.fills ?? []
+    await editor.setDocumentColorSpace('srgb', 'convert')
+    const converted = structuredClone(fills()[0].color)
+
+    // Edited outside the undo history, as a collaborator's change arrives.
+    const moved = structuredClone(network())
+    if (!moved) throw new Error('Expected the vector to keep its network')
+    moved.vertices[1] = { x: 40, y: 0 }
+    const GREEN = { r: 0, g: 1, b: 0, a: 1 }
+    editor.graph.updateNode(vector.id, {
+      vectorNetwork: moved,
+      fills: [
+        { ...paint, color: GREEN },
+        { ...fills()[0], visible: false }
+      ]
+    })
+
+    editor.undo.undo()
+    expect(network()?.vertices[1]).toEqual({ x: 40, y: 0 })
+    expectColor(network()?.regions[0].fills?.[0].color, BLUE)
+    // The new first paint stays; the converted one that moved is left, not guessed at.
+    expect(fills()[0].color).toEqual(GREEN)
+    expect(fills()[1]).toMatchObject({ visible: false, color: converted })
+    // The untouched layer goes back exactly.
+    expect(fill()?.color).toEqual(P3_RED)
+
+    editor.undo.redo()
+    expect(network()?.vertices[1]).toEqual({ x: 40, y: 0 })
+    expectColor(network()?.regions[0].fills?.[0].color, toExtendedSRGB(BLUE, 'display-p3'))
+    expect(fills()[0].color).toEqual(GREEN)
+  })
+
   test('undoing a conversion puts back every value and the profile in one step', async () => {
     const { fill, stroke, accent, page } = p3Document()
     const before = { stroke: stroke(), page: page() }
