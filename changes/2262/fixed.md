@@ -1,0 +1,1 @@
+- Opened .fig files containing variables whose type the importer does not support, such as PAINT variables, by skipping the unsupported variable and reporting it instead of refusing the whole document.
