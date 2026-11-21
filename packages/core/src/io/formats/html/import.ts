@@ -45,6 +45,11 @@ export interface ReadHTMLOptions {
   viewport?: DesignViewport
   /** Names the icons inline SVG draws without the page naming them, as `createHeadlessIconMatcher`. */
   matchIcon?: IconMatcher
+  /**
+   * Puts the page's layers in one frame the size of the window it was laid out in, as a page
+   * opened as a document shows; see `sceneGraphFromStyledHTML`.
+   */
+  framed?: boolean
 }
 
 export interface ReadHTMLResult {
@@ -160,7 +165,8 @@ export async function readHTMLDocument(
   if (await registerLayerFonts(engine, designDocumentToLayers(styled).graph)) styled = await style()
   const graph = await sceneGraphFromStyledHTML(styled, {
     pageName: options.pageName,
-    matchIcon: options.matchIcon
+    matchIcon: options.matchIcon,
+    pageWindow: options.framed ? (options.viewport ?? HTML_IMPORT_VIEWPORT) : undefined
   })
   return { styled, graph }
 }

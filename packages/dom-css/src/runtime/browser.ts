@@ -1,6 +1,7 @@
 import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { serializeHTML } from '../export/html'
+import { joinAdjacentText } from '../import/adjacent-text'
 import type {
   CSSComputeOptions,
   CSSRuntime,
@@ -13,7 +14,7 @@ import type {
 import { showFormText } from './form-text'
 import { showGeneratedContent } from './generated'
 import { recordLayout } from './layout'
-import { attachImages, canvasBackground, fontFaceRules } from './resources'
+import { attachImages, backgroundImageURLs, canvasBackground, fontFaceRules } from './resources'
 
 export interface BrowserCSSRuntimeOptions {
   document?: Document
@@ -29,10 +30,14 @@ export interface BrowserCSSRuntimeOptions {
   fetch?: DesignResourceFetch
 }
 
-/** Styled elements, and each `<img>` with the address the frame loaded its picture from. */
+/**
+ * Styled elements, each `<img>` with the address the frame loaded its picture from, and the
+ * elements whose backgrounds show pictures.
+ */
 interface CopiedStyles {
   document: DesignDocument
   images: [DesignElement, string][]
+  backgrounds: DesignElement[]
 }
 
 /**
@@ -46,6 +51,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'aspect-ratio',
   'backdrop-filter',
   'background-clip',
+  'background-origin',
   'background-color',
   'background-image',
   'background-position',
@@ -91,6 +97,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'font-family',
   'font-size',
   'font-stretch',
+  'font-optical-sizing',
   'font-style',
   'font-weight',
   'gap',
@@ -117,6 +124,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'max-width',
   'min-height',
   'min-width',
+  'isolation',
   'mix-blend-mode',
   'object-fit',
   'object-position',
@@ -155,6 +163,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'text-transform',
   'text-underline-offset',
   'text-wrap-mode',
+  'text-wrap-style',
   'top',
   'transform',
   'transform-origin',
@@ -204,9 +213,11 @@ function domNodeToDesignNode(node: Node): DesignNode | null {
 
   const element = node as Element
   if (NON_RENDERED_TAGS.has(element.tagName.toLowerCase())) return null
-  const children = Array.from(element.childNodes)
-    .map(domNodeToDesignNode)
-    .filter((child): child is DesignNode => child !== null)
+  const children = joinAdjacentText(
+    Array.from(element.childNodes)
+      .map(domNodeToDesignNode)
+      .filter((child): child is DesignNode => child !== null)
+  )
   const style = 'style' in element ? (element.style as CSSStyleDeclaration) : undefined
 
   return {
@@ -225,9 +236,11 @@ function parseHTMLWithDocument(browserDocument: Document, html: string): DesignD
   const parsed = parser.parseFromString(html, 'text/html')
   return {
     type: 'document',
-    children: Array.from(parsed.body.childNodes)
-      .map(domNodeToDesignNode)
-      .filter((node): node is DesignNode => node !== null)
+    children: joinAdjacentText(
+      Array.from(parsed.body.childNodes)
+        .map(domNodeToDesignNode)
+        .filter((node): node is DesignNode => node !== null)
+    )
   }
 }
 
@@ -391,7 +404,14 @@ const MEASURING_FRAME_SANDBOX = 'allow-same-origin'
  */
 const MEASURING_FRAME_POLICY = "script-src 'none'; frame-src 'none'; object-src 'none'"
 
-const MEASURING_FRAME_DOCUMENT = `<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="${MEASURING_FRAME_POLICY}"></head><body></body></html>`
+/**
+ * The frame lays the page out across the whole viewport, as a browser with overlay scrollbars
+ * does: a classic scrollbar would narrow it, and an element fixed just past the right edge, such
+ * as a closed drawer, would show in the strip it leaves.
+ */
+const MEASURING_FRAME_STYLE = 'html { scrollbar-width: none }'
+
+const MEASURING_FRAME_DOCUMENT = `<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="${MEASURING_FRAME_POLICY}"><style>${MEASURING_FRAME_STYLE}</style></head><body></body></html>`
 
 async function computeStylesInFrame(
   browserDocument: Document,
@@ -483,6 +503,7 @@ async function copyComputedStyles(
   }
 
   const images: [DesignElement, string][] = []
+  const backgrounds: DesignElement[] = []
   for (const [designElement, domElement] of pairs) {
     const style = computedStyleToRecord(view.getComputedStyle(domElement), options)
     keepAutoSideMargins(domElement, style)
@@ -490,12 +511,13 @@ async function copyComputedStyles(
     // The address the picture loaded from, its `srcset` choice and the page's base applied.
     if (domElement instanceof view.HTMLImageElement && domElement.currentSrc)
       images.push([designElement, domElement.currentSrc])
+    if (backgroundImageURLs(designElement).length > 0) backgrounds.push(designElement)
   }
   // After the styles are copied: reading layout switches transforms off for a moment.
   if (options.layout) recordLayout(pairs, frame.origin, frame.styleRoot)
   showFormText(pairs, view, (style) => computedStyleToRecord(style, options))
 
-  return { document: nextDocument, images }
+  return { document: nextDocument, images, backgrounds }
 }
 
 /**
@@ -518,7 +540,7 @@ export function createBrowserCSSRuntime(options: BrowserCSSRuntimeOptions = {}):
         computeOptions,
         options.baseURL
       )
-      await attachImages(copied.images, options.fetch)
+      await attachImages(copied.images, options.fetch, copied.backgrounds)
       if (options.fetch) {
         copied.document.fontFaces = await fontFaceRules(cssText, options.baseURL, options.fetch)
       }

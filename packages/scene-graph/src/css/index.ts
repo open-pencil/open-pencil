@@ -34,5 +34,6 @@ export {
   parseCSSURLs,
   parsePaintFallback,
   parseFragmentReference,
+  splitCSSLayers,
   splitCSSValue
 } from './values'
