@@ -8,6 +8,8 @@ export interface CapabilityItem {
   name: string
   description: string
   enabled: boolean
+  /** Optional formatted usage count for tool rows. */
+  usage?: string
   /** The switch cannot change now, such as a skill whose folder is off. */
   locked?: boolean
   /** Why it does not apply despite its switch, such as "Not used". */
