@@ -14,6 +14,8 @@ import { compact } from 'es-toolkit/array'
 import { omit } from 'es-toolkit/object'
 import { toUint8Array } from 'js-base64'
 
+import { MAX_REMOTE_FILE_BYTES } from '@open-pencil/core/io/remote'
+
 import { ok } from '#mcp/result'
 import type { MCPResult } from '#mcp/result'
 
@@ -269,13 +271,6 @@ export function writesFileOutput(toolName: string): boolean {
   return toolName in FILE_OUTPUTS
 }
 
-/**
- * The largest document `/files` passes either way, as the app caps documents it fetches.
- * Published design kits run past 64 MiB — Apple's iOS UI kit is about 160 MB — so the
- * ceiling sits at 512 MiB.
- */
-export const MAX_FILE_TRANSFER_BYTES = 512 * 1024 * 1024
-
 /** Write `content` to a path inside `root`, creating its folders, and return where it landed. */
 export async function writeInsideRoot(
   filePath: string,
@@ -315,8 +310,8 @@ async function readBounded(handle: FileHandle, name: string): Promise<Uint8Array
     const { bytesRead } = await handle.read(chunk, 0, chunk.length, total)
     if (bytesRead === 0) break
     total += bytesRead
-    if (total > MAX_FILE_TRANSFER_BYTES) {
-      throw new Error(`"${name}" is larger than ${MAX_FILE_TRANSFER_BYTES} bytes`)
+    if (total > MAX_REMOTE_FILE_BYTES) {
+      throw new Error(`"${name}" is larger than ${MAX_REMOTE_FILE_BYTES} bytes`)
     }
     chunks.push(chunk.subarray(0, bytesRead))
   }
@@ -329,7 +324,7 @@ async function readBounded(handle: FileHandle, name: string): Promise<Uint8Array
   return bytes
 }
 
-/** Read a file inside `root`, refusing one larger than `MAX_FILE_TRANSFER_BYTES`. */
+/** Read a file inside `root`, refusing one larger than `MAX_REMOTE_FILE_BYTES`. */
 export async function readInsideRoot(
   filePath: string,
   root: string
@@ -342,8 +337,8 @@ export async function readInsideRoot(
   try {
     const stats = await handle.stat()
     if (!stats.isFile()) throw new Error(`"${basename(realPath)}" is not a file`)
-    if (stats.size > MAX_FILE_TRANSFER_BYTES) {
-      throw new Error(`"${basename(realPath)}" is larger than ${MAX_FILE_TRANSFER_BYTES} bytes`)
+    if (stats.size > MAX_REMOTE_FILE_BYTES) {
+      throw new Error(`"${basename(realPath)}" is larger than ${MAX_REMOTE_FILE_BYTES} bytes`)
     }
     await resolveSafePath(realPath, root)
     return await readBounded(handle, basename(realPath))

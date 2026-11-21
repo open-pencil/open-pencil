@@ -1,1 +1,1 @@
-- Documents over 64 MiB, such as Apple's iOS UI kit, now open through MCP and web links: the three 64 MiB transfer caps are 512 MiB.
+- Design files up to 256 MiB, such as Apple's iOS UI kit, open through MCP and from web links; the limit was 64 MiB.

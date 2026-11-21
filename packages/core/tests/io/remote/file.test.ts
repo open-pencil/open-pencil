@@ -5,7 +5,12 @@ import { fetchStub } from '@open-pencil/test-support/fetch'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
-import { fetchRemoteFile, remoteFileKind, remoteFileTitle } from '#core/io/remote'
+import {
+  fetchRemoteFile,
+  MAX_REMOTE_FILE_BYTES,
+  remoteFileKind,
+  remoteFileTitle
+} from '#core/io/remote'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const text = (value: string) => new TextEncoder().encode(value)
@@ -147,19 +152,19 @@ describe('fetchRemoteFile', () => {
     expect(file.kind).toBe('document')
   })
 
-  test('refuses a file that declares itself over 512 MiB without reading it', async () => {
+  test('refuses a file that declares itself over the cap without reading it', async () => {
     const fetch = fetchStub(
       async () =>
         new Response(new ReadableStream<Uint8Array>(), {
           headers: {
             'content-type': 'application/octet-stream',
-            'content-length': String(512 * 1024 * 1024 + 1)
+            'content-length': String(MAX_REMOTE_FILE_BYTES + 1)
           }
         })
     )
 
     await expect(
       fetchRemoteFile(new URL('https://example.com/huge.fig'), { fetch, io })
-    ).rejects.toThrow('exceeds 512 MiB')
+    ).rejects.toThrow('exceeds 256 MiB')
   })
 })

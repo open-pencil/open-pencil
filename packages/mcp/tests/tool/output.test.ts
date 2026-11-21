@@ -4,6 +4,8 @@ import { mkdir, open, realpath, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
+import { MAX_REMOTE_FILE_BYTES } from '@open-pencil/core/io/remote'
+
 import { readInsideRoot, resolveSafePath } from '#mcp/tool/output'
 
 const isUnix = process.platform !== 'win32'
@@ -354,14 +356,14 @@ describe('readInsideRoot size cap', () => {
     }
   })
 
-  test('still refuses a file over 512 MiB without reading it', async () => {
+  test('still refuses a file over the cap without reading it', async () => {
     const root = resolve(tmpdir(), 'mcp-' + TEST_ID + '-read-cap-over-test')
     try {
       await mkdir(root, { recursive: true })
-      await sparseFile(root, 'huge.fig', 512 * MIB + 1)
+      await sparseFile(root, 'huge.fig', MAX_REMOTE_FILE_BYTES + 1)
 
       await expect(readInsideRoot('huge.fig', root)).rejects.toThrow(
-        `"huge.fig" is larger than ${512 * MIB} bytes`
+        `"huge.fig" is larger than ${MAX_REMOTE_FILE_BYTES} bytes`
       )
     } finally {
       await rm(root, { recursive: true, force: true })

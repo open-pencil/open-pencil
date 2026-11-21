@@ -1,15 +1,7 @@
 import { nextShownFrame } from '@open-pencil/vue/shared/frame'
 
-/**
- * Ceiling on a document fetched from a URL. Both the browser link and the automation
- * bridge accept an unbounded, caller-supplied URL, and buffering whatever the host
- * sends would let one response exhaust the tab. Published design kits run past 64 MiB —
- * Apple's iOS UI kit is about 160 MB — so the ceiling sits at 512 MiB.
- */
 /** How long a download's link stays after its click: long enough for the browser to start it. */
 const DOWNLOAD_LINK_LIFETIME_MS = 100
-
-export const MAX_REMOTE_DOCUMENT_BYTES = 512 * 1024 * 1024
 
 export function resolveBrowserFileURL(path: string): URL {
   const url = new URL(path, window.location.href)
