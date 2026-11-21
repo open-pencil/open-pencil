@@ -12,7 +12,6 @@ import { exportFigFile, parseFigFile } from './formats/fig'
 import { readPenDocument } from './formats/pen/read'
 import type { PPTXExportOptions } from './formats/pptx'
 import { rasterFormat } from './formats/raster/adapter'
-import { graphInSRGB } from './srgb'
 import { extractExportGraph } from './subgraph'
 import { resolveExportNodes, singleExportNode, type ExportNodes } from './targets'
 import type {
@@ -29,6 +28,7 @@ import type {
 
 /** The request with its document's colors brought into sRGB, for a format that holds no other. */
 async function inSRGB(request: ExportRequest): Promise<ExportRequest> {
+  const { graphInSRGB } = await import('./srgb')
   return { ...request, graph: await graphInSRGB(request.graph) }
 }
 
@@ -184,6 +184,7 @@ export const drawioFormat: IOFormatAdapter<'drawio'> = {
   },
   async writeDocument(source) {
     // draw.io holds sRGB colors only.
+    const { graphInSRGB } = await import('./srgb')
     const graph = await graphInSRGB(source)
     const pageIds = graph.getPages().map((page) => page.id)
     return writeDrawIO(graph, { pageIds })
