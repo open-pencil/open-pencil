@@ -12,7 +12,7 @@ import EyedropperButton from '@/components/color-picker-panel/EyedropperButton.v
 import OkhclChannelSlider from '@/components/color-picker-panel/OkhclChannelSlider.vue'
 
 const ctx = useColorPickerPanelContext()
-const colorToCSS = useColorCSS()
+const colorCSS = useColorCSS()
 const spaces = useColorSpaces()
 const alphaGradient = () => {
   const color = { ...ctx.color, a: 1 }
@@ -35,7 +35,7 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
           :min="0"
           :max="360"
           :step="1"
-          :thumb-fill="colorToCSS(ctx.okhclSliderPreview?.okhclHue ?? ctx.color)"
+          :thumb-fill="colorCSS(ctx.okhclSliderPreview?.okhclHue ?? ctx.color)"
           gradient="background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);"
           data-test-id="color-slider-okhcl-h"
           @update:model-value="ctx.updateOkHCLChannel('h', $event)"
@@ -48,7 +48,7 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
           :max="0.4"
           :step="0.001"
           :gradient="ctx.okhclSliderGradient?.okhclChroma ?? undefined"
-          :thumb-fill="colorToCSS(ctx.okhclSliderPreview?.okhclChroma ?? ctx.color)"
+          :thumb-fill="colorCSS(ctx.okhclSliderPreview?.okhclChroma ?? ctx.color)"
           :format-value-text="percentText"
           data-test-id="color-slider-okhcl-c"
           @update:model-value="ctx.updateOkHCLChannel('c', $event)"
@@ -61,7 +61,7 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
           :max="1"
           :step="0.001"
           :gradient="ctx.okhclSliderGradient?.okhclLightness ?? undefined"
-          :thumb-fill="colorToCSS(ctx.okhclSliderPreview?.okhclLightness ?? ctx.color)"
+          :thumb-fill="colorCSS(ctx.okhclSliderPreview?.okhclLightness ?? ctx.color)"
           :format-value-text="percentText"
           data-test-id="color-slider-okhcl-l"
           @update:model-value="ctx.updateOkHCLChannel('l', $event)"
@@ -75,7 +75,7 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
           :step="0.001"
           checkerboard
           :gradient="alphaGradient()"
-          :thumb-fill="colorToCSS(ctx.color)"
+          :thumb-fill="colorCSS(ctx.color)"
           :format-value-text="percentText"
           data-test-id="color-slider-okhcl-a"
           @update:model-value="ctx.updateOkHCLChannel('a', $event)"

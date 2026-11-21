@@ -2,11 +2,10 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { figJamColor } from '@open-pencil/scene-graph/figjam'
-import { useColorCSS } from '@open-pencil/vue/controls/color-model'
 import { useShapeWithText } from '@open-pencil/vue/controls/shape-with-text'
 import { useMessages } from '@open-pencil/vue/i18n'
 
+import { useFigJamColorCSS } from '@/components/figjam/color'
 import FigJamPalette from '@/components/figjam/FigJamPalette.vue'
 import { SHAPE_KIND_ICONS } from '@/components/icons/shapes'
 import ShapeKindPicker from '@/components/shapes/ShapeKindPicker.vue'
@@ -24,12 +23,9 @@ import ToolbarMenu from './ToolbarMenu.vue'
 const shape = useShapeWithText()
 const shapes = useMessages('shapes')
 const figjam = useMessages('figjam')
-const colorCSS = useColorCSS()
 const styles = tv(theme)()
 
-const fillHex = computed(() =>
-  shape.color.value ? colorCSS(figJamColor(shape.color.value)) : undefined
-)
+const dotColor = useFigJamColorCSS(() => shape.color.value)
 const kind = computed(() => shape.kind.value ?? 'SQUARE')
 </script>
 
@@ -57,7 +53,7 @@ const kind = computed(() => shape.kind.value ?? 'SQUARE')
   <span :class="styles.divider()" />
   <ToolbarMenu :label="figjam.changeColor" property="toolbar-color">
     <template #trigger>
-      <span :class="styles.dot()" :style="{ backgroundColor: fillHex }" />
+      <span :class="styles.dot()" :style="{ backgroundColor: dotColor }" />
     </template>
     <div :class="styles.group()">
       <IconButton

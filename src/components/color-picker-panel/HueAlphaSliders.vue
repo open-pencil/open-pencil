@@ -7,8 +7,8 @@ import EyedropperButton from '@/components/color-picker-panel/EyedropperButton.v
 import StandardColorSlider from '@/components/color-picker-panel/StandardColorSlider.vue'
 
 const ctx = useColorPickerPanelContext()
+const colorCSS = useColorCSS()
 const pickerMessages = useMessages('panels/pickers')
-const colorToCSS = useColorCSS()
 </script>
 
 <template>
@@ -22,7 +22,7 @@ const colorToCSS = useColorCSS()
         :model-value="ctx.rekaColor"
         channel="hue"
         color-space="hsl"
-        :thumb-fill="colorToCSS(ctx.sliderPreview.hue)"
+        :thumb-fill="colorCSS(ctx.sliderPreview.hue)"
         data-test-id="color-slider-hue"
         @update="ctx.updateRGBAHue($event.space === 'hsl' ? $event.h : 0)"
       />
@@ -34,7 +34,7 @@ const colorToCSS = useColorCSS()
         color-space="rgb"
         :step="0.1"
         checkerboard
-        :thumb-fill="colorToCSS(ctx.color)"
+        :thumb-fill="colorCSS(ctx.color)"
         data-test-id="color-slider-alpha"
         @update="ctx.updateRGBAAlpha($event.alpha)"
       />

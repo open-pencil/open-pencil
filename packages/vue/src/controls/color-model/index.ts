@@ -4,6 +4,7 @@ export {
   applySolidStrokeColor,
   applyStrokePaint,
   fromPercent,
+  rekaToSceneColor,
   toPercent
 } from '#vue/controls/color-model/model'
 export type {

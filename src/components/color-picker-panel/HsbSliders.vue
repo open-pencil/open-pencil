@@ -6,8 +6,8 @@ import { useColorPickerPanelContext } from '@/components/color-picker-panel/cont
 import StandardColorSlider from '@/components/color-picker-panel/StandardColorSlider.vue'
 
 const ctx = useColorPickerPanelContext()
+const colorCSS = useColorCSS()
 const pickerMessages = useMessages('panels/pickers')
-const colorToCSS = useColorCSS()
 </script>
 
 <template>
@@ -17,7 +17,7 @@ const colorToCSS = useColorCSS()
     channel="saturation"
     color-space="hsb"
     :step="0.1"
-    :thumb-fill="colorToCSS(ctx.sliderPreview.hsbSaturation)"
+    :thumb-fill="colorCSS(ctx.sliderPreview.hsbSaturation)"
     data-test-id="color-slider-hsb-s"
     @update="ctx.onRekaColorUpdate"
   />
@@ -28,7 +28,7 @@ const colorToCSS = useColorCSS()
     channel="brightness"
     color-space="hsb"
     :step="0.1"
-    :thumb-fill="colorToCSS(ctx.sliderPreview.hsbBrightness)"
+    :thumb-fill="colorCSS(ctx.sliderPreview.hsbBrightness)"
     data-test-id="color-slider-hsb-b"
     @update="ctx.onRekaColorUpdate"
   />

@@ -15,7 +15,7 @@ import { remToPx } from '@/app/shell/root-font-size'
 import theme from '@/theme/canvas/eyedropper-loupe'
 
 const loupeTheme = tv(theme)
-const colorToCSS = useColorCSS()
+const colorCSS = useColorCSS()
 
 /** From the card's corner to the centre pixel's centre: 0.375rem padding and 4.5 pixels of 0.5rem. */
 const LOUPE_CENTRE_OFFSET_REM = 0.375 + 4.5 * 0.5
@@ -56,7 +56,7 @@ watchEffect(() => {
         <span :class="styles.centre()" />
       </div>
       <div :class="styles.value()">
-        <span :class="styles.swatch()" :style="{ background: colorToCSS(loupe.color.value) }" />
+        <span :class="styles.swatch()" :style="{ background: colorCSS(loupe.color.value) }" />
         <span data-test-id="eyedropper-loupe-value">{{ colorToHexRaw(loupe.color.value) }}</span>
       </div>
     </div>

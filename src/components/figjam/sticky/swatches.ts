@@ -21,12 +21,14 @@ const COLOR_LABEL_KEYS = {
   pink: 'stickyColorPink'
 } as const satisfies Record<StickyColorName, string>
 
+const STICKY_ENTRIES = Object.entries(STICKY_COLORS) as [StickyColorName, Color][]
+
 /** FigJam's ten sticky note colours as swatches, and the one a note's colour is. */
 export function useStickySwatches(color: () => Color | null) {
   const panels = useMessages('panels')
   const colorCSS = useColorCSS()
   const swatches = computed(() =>
-    (Object.entries(STICKY_COLORS) as [StickyColorName, Color][]).map(([name, value]) => ({
+    STICKY_ENTRIES.map(([name, value]) => ({
       value: name,
       css: colorCSS(value),
       label: panels.value[COLOR_LABEL_KEYS[name]]
@@ -35,7 +37,7 @@ export function useStickySwatches(color: () => Color | null) {
   const selected = computed(() => {
     const current = color()
     return (
-      (Object.entries(STICKY_COLORS) as [StickyColorName, Color][]).find(
+      STICKY_ENTRIES.find(
         ([, value]) => current && colorToHex(value) === colorToHex(current)
       )?.[0] ?? null
     )

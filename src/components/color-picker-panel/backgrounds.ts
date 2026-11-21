@@ -2,19 +2,18 @@ import { convertToHsb, convertToHsl, convertToRgb, getChannelRange, setChannelVa
 import type { Color as RekaColor, ColorChannel, ColorSpace as RekaColorSpace } from 'reka-ui'
 
 import { convertColor } from '@open-pencil/scene-graph/color'
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import { isSRGB, linearGradientCSS, type ColorSpaces } from '@open-pencil/vue/controls/color-model'
+import {
+  isSRGB,
+  linearGradientCSS,
+  rekaToSceneColor,
+  type ColorSpaces
+} from '@open-pencil/vue/controls/color-model'
 
 /**
  * Backgrounds for the picker's area and slider tracks when colors are stored or shown in a
  * profile other than sRGB: Reka writes them as sRGB CSS, which would not be the colors the canvas
  * draws for a Display P3 document.
  */
-
-function sceneColor(color: RekaColor): Color {
-  const { r, g, b, alpha } = convertToRgb(color)
-  return { r: r / 255, g: g / 255, b: b / 255, a: alpha }
-}
 
 const HUES = [0, 60, 120, 180, 240, 300, 360]
 
@@ -43,14 +42,10 @@ function trackColors(color: RekaColor, channel: ColorChannel, model: RekaColorSp
   }
 }
 
-const CHECKERBOARD = [
-  'linear-gradient(45deg, #ccc 25%, transparent 25%)',
-  'linear-gradient(-45deg, #ccc 25%, transparent 25%)',
-  'linear-gradient(45deg, transparent 75%, #ccc 75%)',
-  'linear-gradient(-45deg, transparent 75%, #ccc 75%)'
-].join(', ')
-
-/** A slider track's background, or `undefined` in sRGB, where Reka's own track is right. */
+/**
+ * A slider track's background, or `undefined` in sRGB, where Reka's own track is right. An alpha
+ * track fades to transparent over the themed checkerboard its slider draws.
+ */
 export function sliderTrackBackground(
   color: RekaColor,
   channel: ColorChannel,
@@ -58,9 +53,10 @@ export function sliderTrackBackground(
   spaces: ColorSpaces
 ): string | undefined {
   if (isSRGB(spaces)) return undefined
-  const stops = trackColors(color, channel, model).map((stop) => ({ color: sceneColor(stop) }))
-  const track = linearGradientCSS('to right', stops, spaces)
-  return channel === 'alpha' ? `${track}, ${CHECKERBOARD}` : track
+  const stops = trackColors(color, channel, model).map((stop) => ({
+    color: rekaToSceneColor(stop)
+  }))
+  return linearGradientCSS('to right', stops, spaces)
 }
 
 /** Pixels across and down that {@link saturationBrightnessPixels} draws; the browser smooths them. */
@@ -78,7 +74,7 @@ export function saturationBrightnessPixels(
   size = AREA_SIZE
 ): Uint8ClampedArray<ArrayBuffer> | undefined {
   if (isSRGB(spaces)) return undefined
-  const hue = sceneColor({ space: 'hsb', h, s: 100, b: 100, alpha: 1 })
+  const hue = rekaToSceneColor({ space: 'hsb', h, s: 100, b: 100, alpha: 1 })
   const pixels = new Uint8ClampedArray(size * size * 4)
   const last = Math.max(size - 1, 1)
   for (let row = 0; row < size; row++) {
