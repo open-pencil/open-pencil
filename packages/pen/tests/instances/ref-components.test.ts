@@ -231,3 +231,72 @@ describe('parsePenFile — uses of components that are not frames', () => {
     expect(graph.nodes.size).toBeLessThan(2000)
   })
 })
+
+describe('parsePenFile — overrides on copies of components that are refs', () => {
+  const card: PenNode = {
+    id: 'card',
+    type: 'frame',
+    reusable: true,
+    children: [{ id: 'slot', type: 'frame', width: 10, height: 10 }]
+  }
+
+  test('gives each use its own copies of children a property override puts in', () => {
+    const graph = parseDocument([
+      card,
+      {
+        id: 'filled',
+        type: 'ref',
+        ref: 'card',
+        reusable: true,
+        descendants: { slot: { children: [{ id: 'item', type: 'frame', width: 5, height: 5 }] } }
+      },
+      { id: 'one', type: 'ref', ref: 'filled' },
+      { id: 'two', type: 'ref', ref: 'filled' }
+    ])
+    const parents = new Map<string, number>()
+    for (const node of graph.nodes.values()) {
+      for (const child of node.childIds) parents.set(child, (parents.get(child) ?? 0) + 1)
+    }
+    expect([...parents.values()].filter((count) => count > 1)).toEqual([])
+  })
+
+  const badge: PenNode = {
+    id: 'badge',
+    type: 'frame',
+    reusable: true,
+    children: [{ id: 'text', type: 'text', content: 'Badge', fontSize: 10 }]
+  }
+
+  test('merges a use’s nested override into the one its copy already carries', () => {
+    const graph = parseDocument([
+      badge,
+      {
+        id: 'group',
+        type: 'group',
+        reusable: true,
+        children: [
+          { id: 'inner', type: 'ref', ref: 'badge', descendants: { text: { content: 'Group' } } }
+        ]
+      },
+      { id: 'use', type: 'ref', ref: 'group', descendants: { 'inner/text': { fontSize: 20 } } }
+    ])
+    const [inner] = graph.getChildren('use')
+    const text = inner && graph.getChildren(inner.id)[0]
+    expect(text).toMatchObject({ text: 'Group', fontSize: 20 })
+  })
+
+  test('ends a loop through a layer an override puts in', () => {
+    const graph = parseDocument([
+      { id: 'g', type: 'group', reusable: true, children: [{ id: 'spot', type: 'frame' }] },
+      {
+        id: 'm',
+        type: 'ref',
+        ref: 'g',
+        reusable: true,
+        descendants: { spot: { id: 'loop', type: 'ref', ref: 'm' } }
+      },
+      { id: 'use', type: 'ref', ref: 'm' }
+    ])
+    expect(graph.nodes.size).toBeLessThan(50)
+  })
+})

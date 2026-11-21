@@ -398,7 +398,9 @@ function copiedReplacements(
 ): NonNullable<PenNode['descendants']> {
   return Object.fromEntries(
     Object.entries(middle).map(([path, override]) => {
-      if (!override.type || !override.id) return [path, override]
+      if (!override.type || !override.id) {
+        return [path, withCopiedChildren(override, prefix, ancestry, build)]
+      }
       const [copy] = copiedLayers(
         [{ ...override, type: override.type, id: override.id }],
         prefix,
@@ -408,6 +410,20 @@ function copiedReplacements(
       return [path, copy]
     })
   )
+}
+
+/**
+ * A property override with the children it gives copied under `prefix`, so two uses never share
+ * the IDs of layers the override puts in.
+ */
+function withCopiedChildren(
+  override: PenOverride,
+  prefix: string,
+  ancestry: ReadonlySet<string>,
+  build: Build
+): PenOverride {
+  if (!override.children) return override
+  return { ...override, children: copiedLayers(override.children, prefix, ancestry, build) }
 }
 
 /** Descendant overrides with the use's on top, merged field by field where both name a path. */
@@ -502,18 +518,29 @@ function applyCopyOverrides(
     const [first = '', ...rest] = path.split('/')
     const target = layerWithId(layers, `${prefix}/${first}`)
     if (!target) continue
+    // A layer put in here sits where the copy it replaces was, inside the same components.
+    const within = build.refCopyAncestry.get(target.id) ?? ancestry
     if (rest.length > 0) {
-      target.descendants = { ...target.descendants, [rest.join('/')]: override }
+      const key = rest.join('/')
+      const under = target.descendants?.[key]
+      target.descendants = {
+        ...target.descendants,
+        [key]: under && !override.type ? { ...under, ...override } : override
+      }
     } else if (override.type) {
       const [replacement] = copiedLayers(
         [{ ...override, type: override.type, id: override.id ?? first }],
         prefix,
-        ancestry,
+        within,
         build
       )
       layers = replacedLayer(layers, target, replacement)
     } else {
-      Object.assign(target, override, { id: target.id })
+      const theme = override.theme ? { ...target.theme, ...override.theme } : target.theme
+      Object.assign(target, withCopiedChildren(override, prefix, within, build), {
+        id: target.id,
+        theme
+      })
     }
   }
   return layers
