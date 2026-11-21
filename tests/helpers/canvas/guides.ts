@@ -11,6 +11,7 @@ export class CanvasGuideDriver {
       throw new Error('Canvas guide destination must be outside the rulers')
     }
 
+    await this.showRulers()
     const canvas = expectDefined(
       await this.page.getByTestId('canvas-element').boundingBox(),
       'canvas bounds'
@@ -23,5 +24,15 @@ export class CanvasGuideDriver {
     await this.page.mouse.up()
 
     return { x: canvas.x + x, y: canvas.y + y }
+  }
+
+  /** Rulers start hidden, and a guide is dragged out of one. */
+  private async showRulers() {
+    await this.page.evaluate(async () => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      store.state.showRulers = true
+      await new Promise(requestAnimationFrame)
+    })
   }
 }

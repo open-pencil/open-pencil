@@ -74,6 +74,11 @@ async function reopenDesign(designId: string): Promise<void> {
   await reopenStoredDesign(designId)
 }
 
+/** The base address, keeping the query and hash `to` came with, such as `?test`. */
+export function baseAddressFrom(to: Pick<RouteLocationNormalized, 'query' | 'hash'>) {
+  return { path: '/', query: to.query, hash: to.hash }
+}
+
 /**
  * The route guard of `/design/:designId`: an address the page loads with whose design has no copy
  * left on this device goes to `/` before anything shows. The app's own updates of the address pass,
@@ -82,11 +87,11 @@ async function reopenDesign(designId: string): Promise<void> {
 export async function designRouteGuard(
   to: RouteLocationNormalized,
   from: RouteLocationNormalized
-): Promise<true | string> {
+): Promise<true | ReturnType<typeof baseAddressFrom>> {
   if (from !== START_LOCATION) return true
   const designId = to.params.designId
-  if (typeof designId !== 'string') return '/'
-  return (await designExists(designId)) ? true : '/'
+  if (typeof designId !== 'string') return baseAddressFrom(to)
+  return (await designExists(designId)) ? true : baseAddressFrom(to)
 }
 
 /**

@@ -18,6 +18,8 @@ async function selectLayer(box: Rect, rotation = 0) {
           { type: 'SOLID', color: { r: 0.8, g: 0.8, b: 0.8, a: 1 }, visible: true, opacity: 1 }
         ]
       })
+      // Rulers start hidden.
+      store.state.showRulers = true
       store.state.zoom = 2
       store.state.panX = 0
       store.state.panY = 0

@@ -12,6 +12,12 @@ test('selection chrome, size pill and ruler badges follow the accent color', asy
   await page.getByTestId('app-settings-done').click()
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeHidden()
 
+  // Rulers start hidden; this one checks their badges too.
+  await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.state.showRulers = true
+  })
   await canvas.drawRect(160, 140, 240, 160)
   await canvas.waitForRender()
   canvas.assertNoErrors()

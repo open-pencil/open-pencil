@@ -77,3 +77,17 @@ for (const address of ['/design/missing-design', '/design', '/design/']) {
     await expect(page.locator('#boot-splash')).toBeHidden()
   })
 }
+
+test('an address with no design to show keeps its query on the base address', async ({ page }) => {
+  await page.goto('/design/missing-design?test')
+  await new CanvasHelper(page).waitForInit()
+  await expect.poll(() => new URL(page.url()).search).toBe('?test')
+})
+
+test('reloading a design that was never edited opens the editor again', async ({ page }) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  await page.reload()
+  await canvas.waitForInit()
+})
