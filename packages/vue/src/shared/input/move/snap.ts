@@ -5,6 +5,7 @@ import { computeSelectionBounds } from '@open-pencil/scene-graph/snap'
 
 import { withEqualSpacing } from '#vue/shared/input/snap/equal-spacing'
 import { explicitSnapTargets } from '#vue/shared/input/snap/explicit-targets'
+import { moveSnapScope } from '#vue/shared/input/snap/move-scope'
 import { resolveObjectPixelSnap, worldDeltaToParentLocal } from '#vue/shared/input/snap/resolve'
 import { layerSnapTargets } from '#vue/shared/input/snap/targets'
 import type { DragMove } from '#vue/shared/input/types'
@@ -43,9 +44,11 @@ export function applyMoveSnap(
   dx: number,
   dy: number,
   editor: Editor,
-  disableSnapping = false
+  disableSnapping = false,
+  dropTarget: SceneNode | null = null
 ): { dx: number; dy: number } {
   const parentId = moveParentId(drag, editor)
+  const scopeId = moveSnapScope(drag, dropTarget, parentId, editor)
   const localDelta = worldDeltaToParentLocal({ x: dx, y: dy }, parentId, editor)
   const selectionBounds = computeSelectionBounds(movingSelection(drag, dx, dy, editor))
   if (!selectionBounds || disableSnapping) {
@@ -53,14 +56,14 @@ export function applyMoveSnap(
     return { dx: localDelta.x, dy: localDelta.y }
   }
 
-  const targets = layerSnapTargets(parentId, editor.state.selectedIds, editor)
+  const targets = layerSnapTargets(scopeId, editor.state.selectedIds, editor)
   const snap = withEqualSpacing(
     resolveObjectPixelSnap(
       editor.state.selectedIds,
       selectionBounds,
       targets,
       editor,
-      explicitSnapTargets(parentId, editor)
+      explicitSnapTargets(scopeId, editor)
     ),
     editor.state.selectedIds,
     selectionBounds,

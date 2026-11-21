@@ -133,6 +133,8 @@ export interface DragMove {
   /** Where Control drops layers among an auto layout frame's children. */
   absoluteInsertIndex?: number
   clickDeselectsId?: string
+  /** The layer a press inside a selected frame reached, which a click without a drag selects. */
+  clickSelectsId?: string
 }
 
 export interface DragPan {

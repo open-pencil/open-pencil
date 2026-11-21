@@ -18,6 +18,7 @@ import type { Editor } from '@open-pencil/core'
 import { flowBlockBounds, flowOrder, flowSlot, type FlowDrag } from '#vue/shared/input/flow-reorder'
 import { landingOf, previewMove } from '#vue/shared/input/move/policy'
 import { applyMoveSnap } from '#vue/shared/input/move/snap'
+import { selectClickedLayer } from '#vue/shared/input/select/selected-container'
 import type { DragMove } from '#vue/shared/input/types'
 
 const AUTO_LAYOUT_REORDER_CLICK_SLOP = 3
@@ -229,7 +230,7 @@ export function handleMoveMove(
 
   editor.setLayoutInsertIndicator(null)
 
-  const snapped = applyMoveSnap(d, dx, dy, editor, modifiers.ctrlKey === true)
+  const snapped = applyMoveSnap(d, dx, dy, editor, modifiers.ctrlKey === true, dropTarget)
   // Snapping must not pull the layer off a locked axis.
   ;({ dx, dy } = lockToAxis(snapped.dx, snapped.dy, modifiers.shiftKey === true))
   d.appliedDx = dx
@@ -359,6 +360,7 @@ function isFlowClick(d: DragMove, flows: FlowDrag[], slots: number[]) {
 }
 
 function deselectClicked(d: DragMove, editor: Editor) {
+  selectClickedLayer(d, editor)
   if (d.clickDeselectsId && editor.state.selectedIds.has(d.clickDeselectsId)) {
     editor.select([d.clickDeselectsId], true)
   }
