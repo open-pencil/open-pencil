@@ -14,13 +14,18 @@ export type DocumentColorProfileMode = 'assign' | 'convert'
 
 interface ColorSpaceHost {
   loadPageNodes: (pageId: string) => Promise<void>
+  /**
+   * Runs writes without syncing instances: converting gives every instance layer its own
+   * converted colors, which syncing from the converted components would only write again.
+   */
+  withoutComponentSync: <T>(fn: () => T) => T
   /** Why `setDocumentColorSpace` would be refused now, checked again after pages load. */
   refusal: (colorSpace: ColorProfile, mode: DocumentColorProfileMode) => Error | null
 }
 
 export function createColorSpaceActions(
   ctx: EditorContext,
-  { loadPageNodes, refusal }: ColorSpaceHost
+  { loadPageNodes, withoutComponentSync, refusal }: ColorSpaceHost
 ) {
   /**
    * Gives `graph` the profile `space`. An undo step changes the document that recorded it, even
@@ -66,18 +71,18 @@ export function createColorSpaceActions(
     if (ctx.graph !== graph || graph.documentColorSpace !== previous) return
     const refused = refusal(colorSpace, mode)
     if (refused) throw refused
-    const conversion = convertColors(graph, (color: Color) =>
-      convertColor(color, previous, colorSpace, 'map')
+    const conversion = withoutComponentSync(() =>
+      convertColors(graph, (color: Color) => convertColor(color, previous, colorSpace, 'map'))
     )
     setProfile(graph, colorSpace)
     ctx.undo.push({
       label: 'Convert color profile',
       forward: () => {
-        replayConversion(graph, conversion, true)
+        withoutComponentSync(() => replayConversion(graph, conversion, true))
         setProfile(graph, colorSpace)
       },
       inverse: () => {
-        replayConversion(graph, conversion, false)
+        withoutComponentSync(() => replayConversion(graph, conversion, false))
         setProfile(graph, previous)
       }
     })

@@ -135,7 +135,7 @@ export function createEditor(options?: EditorOptions) {
     requestRender,
     onEditorEvent
   })
-  const { scheduleComponentSync, flushComponentSync, isSyncingComponents } =
+  const { scheduleComponentSync, flushComponentSync, isSyncingComponents, withoutComponentSync } =
     createComponentSyncScheduler(() => _graph, requestRender)
 
   const { subscribeToGraph, unsubscribeFromGraph } = createGraphEventSubscription({
@@ -206,6 +206,7 @@ export function createEditor(options?: EditorOptions) {
   const clipboard = createClipboardActions(ctx)
   const colorSpace = createColorSpaceActions(ctx, {
     loadPageNodes: pages.loadPageNodes,
+    withoutComponentSync,
     refusal: (profile, mode) => readOnly.refusal('setDocumentColorSpace', [profile, mode])
   })
   const documentSettings = createDocumentSettingsActions(ctx)

@@ -5,7 +5,7 @@ import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode, VariableValue } from '@open-pencil/scene-graph'
-import { fitsGamut, toExtendedSRGB } from '@open-pencil/scene-graph/color'
+import { convertColor, fitsGamut, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { getPageBackgrounds, pageSourceWithBackgrounds } from '#core/figma-api/page-backgrounds'
@@ -226,6 +226,26 @@ describe('document color profile', () => {
       const layer = [...graph.getAllNodes()].find((node) => node.name === name)
       expectColor(layer?.fills[0].color, blue)
     }
+  })
+
+  test('converting gives instances their converted colors once, still following the component', async () => {
+    editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const paint = (color: Color) => [{ type: 'SOLID' as const, color, opacity: 1, visible: true }]
+    const component = editor.graph.createNode('COMPONENT', pageId, { width: 10, height: 10 })
+    const dot = editor.graph.createNode('RECTANGLE', component.id, { fills: paint(BLUE) })
+    const instance = editor.graph.createInstance(component.id, pageId)
+    if (!instance) throw new Error('Expected an instance')
+    const instanceDot = () => editor.graph.getChildren(instance.id)[0]
+    await editor.setDocumentColorSpace('display-p3', 'convert')
+    await Promise.resolve()
+    const once = convertColor(BLUE, 'srgb', 'display-p3', 'map')
+    expect(editor.graph.getNode(dot.id)?.fills[0].color).toEqual(once)
+    expect(instanceDot().fills[0].color).toEqual(once)
+
+    editor.graph.updateNode(dot.id, { fills: paint(P3_RED) })
+    editor.graph.syncInstances(component.id)
+    expect(instanceDot().fills[0].color).toEqual(P3_RED)
   })
 
   test('a document made read-only while its pages load is not converted', async () => {

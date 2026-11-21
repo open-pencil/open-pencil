@@ -84,6 +84,7 @@ export function createComponentSyncScheduler(
 ) {
   let pendingComponentSync: Set<string> | null = null
   let isFlushingComponentSync = false
+  let syncPaused = false
 
   function flushComponentSync() {
     const ids = pendingComponentSync
@@ -110,7 +111,8 @@ export function createComponentSyncScheduler(
     // Layout's own writes are results, not edits: it lays out the instances too, and the edit
     // that made it run has already scheduled its sync.
     const graph = getGraph()
-    if (isFlushingComponentSync || graph.isApplyingImportedState || graph.isApplyingLayout) return
+    if (syncPaused || isFlushingComponentSync) return
+    if (graph.isApplyingImportedState || graph.isApplyingLayout) return
     if (!pendingComponentSync) {
       pendingComponentSync = new Set()
       queueMicrotask(flushComponentSync)
@@ -123,6 +125,19 @@ export function createComponentSyncScheduler(
     /** Brings instances in line with the component edits scheduled so far, now. */
     flushComponentSync,
     /** Instances are being brought in line with their components: results, not edits. */
-    isSyncingComponents: () => isFlushingComponentSync
+    isSyncingComponents: () => isFlushingComponentSync,
+    /**
+     * Runs `fn` without scheduling component syncs for its writes, for an edit that already
+     * gives every instance layer what syncing would, such as converting each stored color.
+     */
+    withoutComponentSync<T>(fn: () => T): T {
+      const previous = syncPaused
+      syncPaused = true
+      try {
+        return fn()
+      } finally {
+        syncPaused = previous
+      }
+    }
   }
 }

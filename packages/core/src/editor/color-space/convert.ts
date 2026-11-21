@@ -1,4 +1,4 @@
-import { isEqual } from 'es-toolkit'
+import { isEqual, pick } from 'es-toolkit'
 
 import type {
   Fill,
@@ -173,6 +173,31 @@ export interface ColorConversion {
   variables: Map<string, ColorChanges>
 }
 
+/** The field each slot's first segment names, so a write sets only the fields whose colors changed. */
+const SLOT_FIELDS = {
+  fills: 'fills',
+  strokes: 'strokes',
+  effects: 'effects',
+  runs: 'styleRuns',
+  decoration: 'textDecorationFills',
+  grids: 'layoutGrids',
+  regions: 'vectorNetwork'
+} as const satisfies Record<string, keyof NodeColorFields>
+
+/** Writes the fields of `fields` that `slots` changed onto layer `id`. */
+function writeChangedFields(
+  graph: SceneGraph,
+  id: string,
+  fields: NodeColorFields,
+  slots: Iterable<string>
+): void {
+  const changed = new Set<keyof NodeColorFields>()
+  for (const slot of slots) {
+    changed.add(SLOT_FIELDS[slot.slice(0, slot.indexOf('.')) as keyof typeof SLOT_FIELDS])
+  }
+  if (changed.size > 0) graph.updateNode(id, pick(fields, [...changed]))
+}
+
 function sameColor(a: Color, b: Color): boolean {
   return a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a
 }
@@ -185,12 +210,15 @@ function recording(convert: (color: Color) => Color, changes: ColorChanges): Map
   }
 }
 
-function swapping(changes: ColorChanges, redo: boolean): MapColor {
+/** Swaps each color still at the value the other side left, adding its slot to `swapped`. */
+function swapping(changes: ColorChanges, redo: boolean, swapped: string[] = []): MapColor {
   return (color, slot) => {
     const change = changes.get(slot)
     if (!change) return color
     const [expected, next] = redo ? [change.from, change.to] : [change.to, change.from]
-    return sameColor(color, expected) ? { ...next } : color
+    if (!sameColor(color, expected)) return color
+    swapped.push(slot)
+    return { ...next }
   }
 }
 
@@ -217,7 +245,7 @@ export function convertColors(
     }
     const fields = mapNodeColors(node, map)
     if (!fields || changes.size === 0) continue
-    graph.updateNode(node.id, fields)
+    writeChangedFields(graph, node.id, fields, changes.keys())
     conversion.layers.set(node.id, changes)
   }
   for (const variable of graph.variables.values()) {
@@ -237,8 +265,9 @@ export function convertColors(
 export function replayConversion(graph: SceneGraph, conversion: ColorConversion, redo: boolean) {
   for (const [id, changes] of conversion.layers) {
     const node = graph.getNode(id)
-    const fields = node && mapNodeColors(node, swapping(changes, redo))
-    if (fields) graph.updateNode(id, fields)
+    const swapped: string[] = []
+    const fields = node && mapNodeColors(node, swapping(changes, redo, swapped))
+    if (fields) writeChangedFields(graph, id, fields, swapped)
   }
   for (const [id, { before, after, colors }] of conversion.pages) {
     const page = graph.getNode(id)
