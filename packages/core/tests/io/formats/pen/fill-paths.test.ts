@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
 import { layoutAuthoredNodes } from '@open-pencil/core/layout'
-import { computeAccurateBounds } from '@open-pencil/core/vector'
 import { parsePenFile, type PenNode } from '@open-pencil/pen'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
+
+import { computeAccurateBounds } from '#core/vector/curve-math'
 
 function parseLaidOut(children: PenNode[]) {
   return parsePenFile(JSON.stringify({ version: '2.17', children }), {
