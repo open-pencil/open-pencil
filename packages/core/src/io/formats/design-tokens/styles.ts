@@ -164,7 +164,7 @@ function shadowValue(
 export function shadowTokenValue(
   effects: readonly Effect[],
   references: ShadowReferences = {},
-  profile: ColorProfile = 'srgb'
+  profile: ColorProfile
 ) {
   const values = [...effects.entries()]
     .filter(([, effect]) => isShadow(effect) && effect.visible)

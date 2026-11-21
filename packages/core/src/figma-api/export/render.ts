@@ -1,4 +1,9 @@
-import type { ColorProfile, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type {
+  ColorProfile,
+  ExportColorProfile,
+  SceneGraph,
+  SceneNode
+} from '@open-pencil/scene-graph'
 import {
   isValidExportScale,
   MAX_EXPORT_SCALE,
@@ -21,7 +26,12 @@ const EXPORT_COLOR_PROFILES = {
   DOCUMENT: undefined,
   SRGB: 'srgb',
   DISPLAY_P3_V4: 'display-p3'
-} as const satisfies Record<string, ColorProfile | undefined>
+} as const satisfies Record<ExportColorProfile, ColorProfile | undefined>
+
+/** The profile `request` is encoded in, or undefined for the document's own. */
+function exportProfile(request: { colorProfile?: ExportColorProfile }): ColorProfile | undefined {
+  return EXPORT_COLOR_PROFILES[request.colorProfile ?? 'DOCUMENT']
+}
 
 /** What a host lends an export: its renderer, for raster formats and PDF, and its image codec. */
 export interface ExportHost {
@@ -55,7 +65,7 @@ export async function exportLayer(
         xmlDeclaration: false,
         layerIds: request.svgIdAttribute,
         useAbsoluteBounds: request.useAbsoluteBounds,
-        colorSpace: EXPORT_COLOR_PROFILES[request.colorProfile ?? 'DOCUMENT']
+        colorSpace: exportProfile(request)
       })
       if (svg === null) throw noVisibleLayers()
       return request.format === 'SVG' ? new TextEncoder().encode(svg) : svg
@@ -108,7 +118,7 @@ async function exportImage(
     format: request.format,
     pageId,
     useAbsoluteBounds: request.useAbsoluteBounds,
-    colorSpace: EXPORT_COLOR_PROFILES[request.colorProfile ?? 'DOCUMENT']
+    colorSpace: exportProfile(request)
   })
   if (!data || data.length === 0) throw nothingToExport()
   return data

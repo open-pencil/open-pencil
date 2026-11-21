@@ -148,10 +148,7 @@ function styledRanges(node: SceneNode): StyledRange[] {
 }
 
 /** Underline or strikethrough as CSS writes it: Figma's offset is CSS's, from the baseline. */
-function decorationCSS(
-  style: CharacterStyle,
-  profile: ColorProfile = 'srgb'
-): DesignStyleDeclaration {
+function decorationCSS(style: CharacterStyle, profile: ColorProfile): DesignStyleDeclaration {
   if (style.textDecoration === 'NONE') return {}
   const underline = style.textDecoration === 'UNDERLINE'
   const css: DesignStyleDeclaration = {
@@ -227,10 +224,14 @@ function differing(
  * Whether the text decorates every character alike. CSS draws an element's decoration through
  * its descendants, which cannot take it off, so mixed decorations go on the spans instead.
  */
-function uniformDecoration(node: SceneNode, ranges: readonly StyledRange[]): boolean {
+function uniformDecoration(
+  node: SceneNode,
+  ranges: readonly StyledRange[],
+  profile: ColorProfile
+): boolean {
   const decorations = ranges
     .filter((range) => node.text.slice(range.start, range.end).replaceAll('\n', '') !== '')
-    .map((range) => decorationCSS(range.style))
+    .map((range) => decorationCSS(range.style, profile))
   return decorations.every((decoration) => isEqual(decoration, decorations[0]))
 }
 
@@ -448,10 +449,10 @@ function groupEm(
 export function textElementContent(
   node: SceneNode,
   layerStyle: DesignStyleDeclaration,
-  profile: ColorProfile = 'srgb'
+  profile: ColorProfile
 ): { tagName: string; style: DesignStyleDeclaration; children: DesignNode[] } {
   const ranges = styledRanges(node)
-  const decorated = uniformDecoration(node, ranges)
+  const decorated = uniformDecoration(node, ranges, profile)
   const style = Object.fromEntries(
     Object.entries(layerStyle).filter(([property]) => !DECORATION_PROPERTIES.has(property))
   )

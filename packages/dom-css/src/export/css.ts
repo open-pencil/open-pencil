@@ -18,15 +18,12 @@ import type { DesignStyleDeclaration } from '../types'
  * are hex, which Tailwind matches to its palette, and translucent ones `rgba()`; a Display P3
  * document's are `color(display-p3 …)`, so a browser shows them as the canvas does.
  */
-export function cssColor(color: Color, profile: ColorProfile = 'srgb'): string {
+export function cssColor(color: Color, profile: ColorProfile): string {
   if (profile === 'display-p3') return colorToProfileCSS(color, profile, profile)
   return color.a >= 1 ? colorToHex(color) : colorToCSS(color)
 }
 
-export function fillToCSS(
-  fill: Fill | undefined,
-  profile: ColorProfile = 'srgb'
-): string | undefined {
+export function fillToCSS(fill: Fill | undefined, profile: ColorProfile): string | undefined {
   if (fill?.type !== 'SOLID' || !fill.visible) return undefined
   return cssColor({ ...fill.color, a: fill.opacity }, profile)
 }
@@ -38,7 +35,8 @@ export type BorderSide = 'top' | 'right' | 'bottom' | 'left'
  * border insets the box its absolutely positioned children are placed in, where a stroke does not.
  */
 export function borderWidths(node: SceneNode): Record<BorderSide, number> {
-  if (!strokeColorToCSS(node.strokes.at(0))) return { top: 0, right: 0, bottom: 0, left: 0 }
+  // Only whether the first stroke projects matters here, not the profile its color is written in.
+  if (!strokeColorToCSS(node.strokes.at(0), 'srgb')) return { top: 0, right: 0, bottom: 0, left: 0 }
   if (!node.independentStrokeWeights) {
     const weight = node.strokes[0]?.weight ?? 0
     return { top: weight, right: weight, bottom: weight, left: weight }
@@ -53,7 +51,7 @@ export function borderWidths(node: SceneNode): Record<BorderSide, number> {
 
 export function strokeColorToCSS(
   stroke: Stroke | undefined,
-  profile: ColorProfile = 'srgb'
+  profile: ColorProfile
 ): string | undefined {
   if (!stroke?.visible) return undefined
   return cssColor({ ...stroke.color, a: stroke.opacity }, profile)
@@ -143,7 +141,7 @@ function addBlurs(
 export function effectsToCSS(
   effects: Effect[],
   css = LITERAL,
-  profile: ColorProfile = 'srgb'
+  profile: ColorProfile
 ): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
   const visible = visibleEffects(effects)
@@ -163,7 +161,7 @@ export function effectsToCSS(
 export function textEffectsToCSS(
   effects: Effect[],
   css = LITERAL,
-  profile: ColorProfile = 'srgb'
+  profile: ColorProfile
 ): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
   const visible = visibleEffects(effects)
@@ -278,7 +276,7 @@ export function gradientToCSS(
   fill: Fill,
   width: number,
   height: number,
-  profile: ColorProfile = 'srgb'
+  profile: ColorProfile
 ): string | undefined {
   const t = fill.gradientTransform ?? { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
   const center = gradientPoint(t, { x: 0.5, y: 0.5 })
