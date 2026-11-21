@@ -276,6 +276,29 @@ export function groupTree(groups: readonly TokenGroup[]): GroupEntry[] {
   return [...entries.values()]
 }
 
+/** A group's path and every group path above it, outermost first: `color`, `color/red`. */
+export function groupAncestry(path: string): string[] {
+  if (!path) return []
+  const segments = path.split('/')
+  return segments.map((_, index) => segments.slice(0, index + 1).join('/'))
+}
+
+/**
+ * The headings each group brings into the list, by its path: its own and those of the groups
+ * above it, each the first time it comes, so `color` heads `color/red` and `color/blue` once.
+ */
+export function groupHeadings(groups: readonly TokenGroup[]): Map<string, GroupEntry[]> {
+  const tree = new Map(groupTree(groups).map((entry) => [entry.path, entry]))
+  const placed = new Set<string>()
+  return new Map(
+    groups.map((group) => {
+      const fresh = groupAncestry(group.path).filter((path) => !placed.has(path))
+      for (const path of fresh) placed.add(path)
+      return [group.path, fresh.flatMap((path) => tree.get(path) ?? [])]
+    })
+  )
+}
+
 /** Whether a token's group is `group` or sits inside it. */
 export function inGroup(path: string, group: string): boolean {
   return path === group || path.startsWith(`${group}/`)

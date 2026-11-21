@@ -4,6 +4,7 @@ import { SceneGraph, type Variable, type VariableValue } from '@open-pencil/scen
 
 import {
   aliasCandidates,
+  groupHeadings,
   groupTree,
   inGroup,
   modeAttributeText,
@@ -78,6 +79,26 @@ describe('groups', () => {
       { path: 'Space', label: 'Space', depth: 0, count: 3 },
       { path: 'Space/Inline', label: 'Inline', depth: 1, count: 3 }
     ])
+  })
+
+  test("each group brings in its heading and its parents' the first time they come", () => {
+    const headings = groupHeadings(
+      groups([
+        ['color', 2],
+        ['color/red', 11],
+        ['color/blue', 11],
+        ['spacing', 3]
+      ])
+    )
+    const paths = (path: string) => headings.get(path)?.map((entry) => entry.path)
+    expect(paths('color')).toEqual(['color'])
+    expect(paths('color/red')).toEqual(['color/red'])
+    expect(paths('color/blue')).toEqual(['color/blue'])
+    expect(
+      groupHeadings(groups([['Space/Inline', 3]]))
+        .get('Space/Inline')
+        ?.map((entry) => entry.path)
+    ).toEqual(['Space', 'Space/Inline'])
   })
 
   test('a group holds its own tokens and those of groups inside it', () => {

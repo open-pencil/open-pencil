@@ -108,6 +108,8 @@
   "tokenPreset": "Variablen-Vorlage",
   "tokenThemes": "Designvorlagen",
   "recentVariables": "Zuletzt verwendet",
+  "editCollection": "Sammlung bearbeiten",
+  "addVariableToGroup": "Variable in {group} erstellen",
   "loadTokenPreset": "{preset}-Variablen laden",
   "libraryCollection": "Bibliothek",
   "libraryCollectionHint": "Aus einer Bibliothek kopiert. Änderungen werden in dieser Datei gespeichert und in Figma angezeigt.",

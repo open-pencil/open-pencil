@@ -108,6 +108,8 @@
   "tokenPreset": "変数プリセット",
   "tokenThemes": "テーマ",
   "recentVariables": "最近使用",
+  "editCollection": "コレクションを編集",
+  "addVariableToGroup": "{group} に変数を作成",
   "loadTokenPreset": "{preset} の変数を読み込む",
   "libraryCollection": "ライブラリ",
   "libraryCollectionHint": "ライブラリからコピーされています。編集はこのファイルに保存され、Figma にも表示されます。",

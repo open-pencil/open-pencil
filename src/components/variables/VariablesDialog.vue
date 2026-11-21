@@ -16,7 +16,7 @@ import {
   readDesignTokenImport,
   readTokenPresetImport
 } from '@/app/editor/tokens/design-tokens'
-import { pendingTokenImport } from '@/app/editor/tokens/dialog'
+import { pendingTokenImport, requestedVariablesCollection } from '@/app/editor/tokens/dialog'
 import { TOKEN_PRESET_NAMES, TOKEN_PRESETS, type TokenPreset } from '@/app/editor/tokens/presets'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
@@ -84,6 +84,7 @@ tokenFiles.onChange((files) => {
 })
 
 // Token files dropped on the window come here through the document's pending import.
+const requestedCollection = requestedVariablesCollection(store)
 const pendingImport = pendingTokenImport(store)
 watch(
   pendingImport,
@@ -110,7 +111,11 @@ function exportTokens() {
     :aria-describedby="undefined"
   >
     <DialogTitle class="sr-only">{{ variables.localVariables }}</DialogTitle>
-    <TokensPanel @copy="copyTokens" @export="exportTokens">
+    <TokensPanel
+      v-model:requested-collection="requestedCollection"
+      @copy="copyTokens"
+      @export="exportTokens"
+    >
       <template #actions>
         <TokenPresetPicker @load="loadPreset" />
         <IconButton

@@ -108,6 +108,8 @@
   "tokenPreset": "Preajuste de variables",
   "tokenThemes": "Temas",
   "recentVariables": "Recientes",
+  "editCollection": "Editar colección",
+  "addVariableToGroup": "Crear variable en {group}",
   "loadTokenPreset": "Cargar variables de {preset}",
   "libraryCollection": "Biblioteca",
   "libraryCollectionHint": "Copiada de una biblioteca. Los cambios se guardan en este archivo y se ven en Figma.",

@@ -5,6 +5,7 @@ import { colorToCSS } from '@open-pencil/scene-graph/color'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import AppPicker, { type AppPickerItem } from '@/components/ui/select/AppPicker.vue'
 
@@ -32,6 +33,7 @@ const {
   createDefaultName = '',
   disabled = false,
   derived = false,
+  editCollectionLabel,
   side,
   ui
 } = defineProps<VariablePickerProps>()
@@ -40,6 +42,7 @@ const emit = defineEmits<{
   select: [id: string]
   detach: []
   create: [name: string]
+  editCollection: [collectionId: string]
   closeAutoFocus: [event: Event]
 }>()
 
@@ -62,9 +65,36 @@ function recentItems(): AppPickerItem[] {
   return recent.flatMap((id) => {
     const item = byId.get(id)
     if (!item) return []
-    const row = { value: `${RECENT_PREFIX}${id}`, label: item.name, group: item.collection }
+    const row = {
+      value: `${RECENT_PREFIX}${id}`,
+      label: shortName(item.name),
+      accessibleName: item.name,
+      group: item.collection
+    }
     return [{ ...row, folder: variables.value.recentVariables }]
   })
+}
+
+/** A recent variable by the end of its path, `red 500` for `color/red/500`; its swatch tells it apart. */
+function shortName(name: string): string {
+  return name.split('/').slice(-2).join(' ')
+}
+
+/** A collection's ID by the name its heading shows. */
+const collectionIds = computed(
+  () =>
+    new Map(
+      items.flatMap((item) =>
+        item.collection && item.collectionId ? [[item.collection, item.collectionId] as const] : []
+      )
+    )
+)
+
+function editCollection(group: string) {
+  const id = collectionIds.value.get(group)
+  if (!id) return
+  open.value = false
+  emit('editCollection', id)
 }
 
 /** Recent variables, then each variable where its name's path puts it. */
@@ -208,6 +238,16 @@ defineOptions({ inheritAttrs: false })
           />
         </span>
         <span v-else class="shrink-0 text-3xs text-muted tabular-nums">{{ entries.length }}</span>
+      </template>
+      <template v-if="editCollectionLabel" #group-actions="{ group }">
+        <IconButton
+          v-if="collectionIds.has(group)"
+          :label="editCollectionLabel"
+          data-test-id="variable-picker-edit-collection"
+          @click.stop="editCollection(group)"
+        >
+          <icon-lucide-pencil class="size-3" />
+        </IconButton>
       </template>
       <template v-if="state !== 'unbound' || creating || createLabel" #footer>
         <AppButton

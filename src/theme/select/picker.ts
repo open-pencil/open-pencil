@@ -23,7 +23,11 @@ const appPickerTheme = {
       'h-full min-w-0 flex-1 bg-transparent pe-2 ps-7 text-xs text-surface outline-none placeholder:text-muted',
     list: 'flex min-h-0 flex-col gap-2 overflow-y-auto px-2 pb-2',
     group: '',
-    groupLabel: 'px-1 pb-1 text-3xs font-medium tracking-wide text-muted uppercase',
+    groupLabel:
+      'group/heading flex items-center gap-1 px-1 pb-1 text-3xs font-medium tracking-wide text-muted uppercase',
+    // Shown while the pointer is on the heading or a control in it has focus.
+    groupActions:
+      'flex shrink-0 items-center normal-case opacity-0 group-hover/heading:opacity-100 focus-within:opacity-100',
     item: 'flex w-full cursor-pointer items-center gap-2 rounded px-1 py-1 text-start outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-hover data-[nested]:ps-5',
     // A heading within a group, such as `color`, over the folders it holds.
     section: 'px-1 pt-1.5 pb-0.5 text-3xs font-medium tracking-wide text-muted uppercase',
@@ -48,6 +52,21 @@ const appPickerTheme = {
     footer: 'border-t border-border p-1'
   },
   variants: {
+    /**
+     * Headings that fold: each group, such as a variable collection, is a band that stays at the
+     * top while its choices scroll, so it reads apart from the muted section headings under it.
+     */
+    collapsible: {
+      true: {
+        groupLabel:
+          'sticky top-0 z-10 mb-0.5 rounded bg-panel-secondary px-1.5 py-1 text-2xs font-semibold text-surface',
+        // What the group holds, headings, folders such as Recent, and choices, sits in from it.
+        section: 'ps-2',
+        folder: 'ps-2',
+        item: 'ps-2 data-[nested]:ps-6'
+      },
+      false: {}
+    },
     density: {
       /** One line per choice, for plain names such as variables or styles. */
       compact: { leading: 'size-5 border-0 bg-transparent', item: 'min-h-7' },
@@ -86,7 +105,7 @@ const appPickerTheme = {
       }
     }
   },
-  defaultVariants: { density: 'comfortable' as const, layout: 'list' as const }
+  defaultVariants: { collapsible: false, density: 'comfortable' as const, layout: 'list' as const }
 }
 
 export type AppPickerTheme = typeof appPickerTheme

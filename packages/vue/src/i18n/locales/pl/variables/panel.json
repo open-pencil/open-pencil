@@ -108,6 +108,8 @@
   "tokenPreset": "Zestaw zmiennych",
   "tokenThemes": "Motywy",
   "recentVariables": "Ostatnie",
+  "editCollection": "Edytuj kolekcję",
+  "addVariableToGroup": "Utwórz zmienną w {group}",
   "loadTokenPreset": "Wczytaj zmienne {preset}",
   "libraryCollection": "Biblioteka",
   "libraryCollectionHint": "Skopiowana z biblioteki. Zmiany są zapisywane w tym pliku i widoczne w Figmie.",

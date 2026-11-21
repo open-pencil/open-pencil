@@ -85,6 +85,8 @@ export interface AppPickerSlots {
   trailing?(props: { item: AppPickerItem }): VNode[]
   /** A summary of a folder's items beside its name, such as the colors it holds. */
   folder?(props: { folder: string; items: AppPickerItem[] }): VNode[]
+  /** Controls at the end of a group's heading, such as editing the collection it names. */
+  'group-actions'?(props: { group: string }): VNode[]
   /** What the list says when it has nothing to show, such as a link; `emptyLabel` by default. */
   empty?(): VNode[]
   /**
@@ -164,7 +166,7 @@ watch(open, (isOpen) => {
   query.value = ''
   toggledFolders.value = new Set()
 })
-const styles = computed(() => tv(theme)({ density, layout }))
+const styles = computed(() => tv(theme)({ collapsible, density, layout }))
 
 const matches = computed(() => {
   const term = query.value.trim()
@@ -366,6 +368,13 @@ function select(value: AcceptableValue) {
                   {{ group }}
                 </button>
                 <template v-else>{{ group }}</template>
+                <span
+                  v-if="slots['group-actions']"
+                  :class="styles.groupActions({ class: ui?.groupActions })"
+                  data-slot="group-actions"
+                >
+                  <slot name="group-actions" :group="group" />
+                </span>
               </ListboxGroupLabel>
               <template v-for="row in rows" :key="row.kind === 'item' ? row.item.value : row.key">
                 <button

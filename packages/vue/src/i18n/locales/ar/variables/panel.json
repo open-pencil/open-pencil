@@ -108,6 +108,8 @@
   "tokenPreset": "مجموعة متغيرات جاهزة",
   "tokenThemes": "السمات",
   "recentVariables": "الأخيرة",
+  "editCollection": "تعديل المجموعة",
+  "addVariableToGroup": "إنشاء متغير في {group}",
   "loadTokenPreset": "تحميل متغيرات {preset}",
   "libraryCollection": "المكتبة",
   "libraryCollectionHint": "منسوخة من مكتبة. تُحفظ التعديلات في هذا الملف وتظهر في Figma.",

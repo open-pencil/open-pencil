@@ -115,6 +115,8 @@ export const variablesMessageDefaults = {
   tokenPreset: 'Variable preset',
   tokenThemes: 'Themes',
   recentVariables: 'Recent',
+  editCollection: 'Edit collection',
+  addVariableToGroup: params('Create variable in {group}'),
   loadTokenPreset: params('Load {preset} variables'),
   libraryCollection: 'Library',
   libraryCollectionHint: 'Copied from a library. Edits are saved in this file and show in Figma.',

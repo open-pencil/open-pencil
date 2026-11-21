@@ -94,8 +94,11 @@ export function createVariableValueActions(
     return 'New text'
   }
 
-  /** Adds a variable to the active collection and returns its id. */
-  function addVariable(type: VariableType = 'COLOR'): string | undefined {
+  /**
+   * Adds a variable to the active collection, in `group` when one is given (`color/red` names it
+   * `color/red/New color`), and returns its id.
+   */
+  function addVariable(type: VariableType = 'COLOR', group = ''): string | undefined {
     const col = getActiveCollection()
     if (!col) return undefined
 
@@ -107,7 +110,7 @@ export function createVariableValueActions(
 
     editor.addVariable({
       id,
-      name: defaultVariableName(type),
+      name: group ? `${group}/${defaultVariableName(type)}` : defaultVariableName(type),
       type,
       collectionId: col.id,
       valuesByMode,

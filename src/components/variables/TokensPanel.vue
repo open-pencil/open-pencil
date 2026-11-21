@@ -68,6 +68,17 @@ const compact = computed(() => width.value > 0 && width.value < TOKENS_PANEL_COM
 const wide = computed(() => width.value >= TOKENS_PANEL_SIDEBAR_WIDTH)
 
 const ctx = useVariables()
+/** A collection asked to show, such as from the variable picker's Edit button; shown, it clears. */
+const requestedCollection = defineModel<string | null>('requestedCollection', { default: null })
+watch(
+  [requestedCollection, ctx.collections],
+  ([id, current]) => {
+    if (!id || !current.some((candidate) => candidate.id === id)) return
+    ctx.activeCollectionId.value = id
+    requestedCollection.value = null
+  },
+  { immediate: true }
+)
 const { editor } = ctx
 const actions = useTokenActions(editor, (name) => messages.value.duplicateName({ name }))
 
@@ -243,12 +254,15 @@ function closeDetail() {
   groupingIds.value = null
 }
 
-/** A new token is selected, with nothing hiding it, so its name is ready to edit. */
-function addToken(type: VariableType) {
+/**
+ * A new token, in `group` when made from its heading, is selected with nothing hiding it, so its
+ * name is ready to edit.
+ */
+function addToken(type: VariableType, group = '') {
   ctx.searchTerm.value = ''
   groupFilter.value = null
   typeFilter.value = []
-  const id = ctx.addVariable(type)
+  const id = ctx.addVariable(type, group)
   if (id) selectedIds.value = [id]
 }
 
@@ -475,6 +489,8 @@ const groupOptions = computed(() => groupEntries.value.map((entry) => entry.path
         :collection="collection"
         :groups="groups"
         :group-options="groupOptions"
+        :expanded="searchMatches !== null"
+        @add="addToken"
         :labels="tableLabels"
         :mode-ids="[shownModeId]"
       />
@@ -534,6 +550,8 @@ const groupOptions = computed(() => groupEntries.value.map((entry) => entry.path
           :collection="collection"
           :groups="groups"
           :group-options="groupOptions"
+          :expanded="searchMatches !== null"
+          @add="addToken"
           :labels="tableLabels"
         />
         <Transition v-bind="swapTransition" mode="out-in">

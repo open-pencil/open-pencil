@@ -18,11 +18,14 @@ import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import { VARIABLE_TYPE_ICONS, VARIABLE_TYPES } from '@/components/variables/type-icons'
 
-/** `labelled` spells out "Create variable" where the toolbar has room for it. */
-const { labelled = false } = defineProps<{ labelled?: boolean }>()
+/**
+ * `labelled` spells out "Create variable" where the toolbar has room for it; `group` makes the
+ * small button on a group's heading that creates the variable in that group.
+ */
+const { labelled = false, group } = defineProps<{ labelled?: boolean; group?: string }>()
 const emit = defineEmits<{ add: [type: VariableType] }>()
 
-const { panels, variableTypes: text } = useI18n()
+const { panels, variables, variableTypes: text } = useI18n()
 const menu = useMenuUI({ content: 'w-48', item: 'justify-start gap-2' })
 
 const items = computed(() => {
@@ -40,7 +43,19 @@ const items = computed(() => {
   <AppDropdownMenuRoot>
     <!-- Reka anchors the menu to the element it mounted with, so a new button needs a new trigger. -->
     <DropdownMenuTrigger :key="String(labelled)" as-child>
-      <AppButton v-if="labelled" variant="soft" size="sm" data-test-id="variables-add-variable">
+      <IconButton
+        v-if="group !== undefined"
+        :label="variables.addVariableToGroup({ group })"
+        data-test-id="variables-add-to-group"
+      >
+        <icon-lucide-plus class="size-3" />
+      </IconButton>
+      <AppButton
+        v-else-if="labelled"
+        variant="soft"
+        size="sm"
+        data-test-id="variables-add-variable"
+      >
         <template #leading><icon-lucide-plus class="size-3.5" /></template>
         {{ panels.createVariable }}
       </AppButton>

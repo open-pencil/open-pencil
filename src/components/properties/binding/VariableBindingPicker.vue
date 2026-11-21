@@ -21,8 +21,11 @@ export interface VariableBindingPickerProps {
 import { computed } from 'vue'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { useI18n } from '@open-pencil/vue/i18n'
 import { useBindableValue } from '@open-pencil/vue/primitives/BindableValue'
 
+import { useEditorStore } from '@/app/editor/active-store'
+import { openVariablesCollection } from '@/app/editor/tokens/dialog'
 import { recentVariableIds, rememberRecentVariable } from '@/app/editor/tokens/recent'
 import { VariablePicker, type VariablePickerItem } from '@/components/ui/binding'
 
@@ -43,6 +46,8 @@ const {
 } = defineProps<VariableBindingPickerProps>()
 
 const binding = useBindableValue<unknown>()
+const store = useEditorStore()
+const { variables } = useI18n()
 const open = computed({
   get: () => binding.open.value,
   set: (value: boolean) => (value ? binding.actions.openPicker() : binding.actions.closePicker())
@@ -59,6 +64,7 @@ const items = computed<VariablePickerItem[]>(() =>
       id: variable.id,
       name: variable.name,
       collection: binding.provider.collectionName?.(variable),
+      collectionId: variable.collectionId,
       color: isColor(value) ? value : undefined
     }
   })
@@ -90,10 +96,12 @@ defineOptions({ inheritAttrs: false })
     v-model:open="open"
     :items="items"
     :recent="recentVariableIds"
+    :edit-collection-label="variables.editCollection"
     :selected="binding.variable.value?.id"
     :state="binding.state.value"
     @select="bind"
     @detach="binding.actions.unbind()"
     @create="binding.actions.create($event)"
+    @edit-collection="openVariablesCollection(store, $event)"
   />
 </template>

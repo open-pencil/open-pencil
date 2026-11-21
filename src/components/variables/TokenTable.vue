@@ -6,12 +6,15 @@ import { computed, ref, useTemplateRef, type ComponentPublicInstance } from 'vue
 import {
   isLibraryCollection,
   type VariableCollection,
+  type VariableType,
   type VariableValue
 } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import {
+  groupAncestry,
+  groupHeadings,
   parseTokenValueText,
   tokenValueText,
   type TokenGroup,
@@ -20,13 +23,21 @@ import {
 import BindingPill from '@/components/ui/binding/BindingPill.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
+import TokenAddMenu from '@/components/variables/TokenAddMenu.vue'
 import TokenCellInput from '@/components/variables/TokenCellInput.vue'
 import TokenRowMenu from '@/components/variables/TokenRowMenu.vue'
 import { VARIABLE_TYPE_ICONS } from '@/components/variables/type-icons'
 import { useConditionLabels } from '@/components/variables/useConditionLabels'
 import tableTheme from '@/theme/variables/table'
 
-const { collection, groups, labels, modeIds, groupOptions } = defineProps<{
+const {
+  collection,
+  groups,
+  labels,
+  modeIds,
+  groupOptions,
+  expanded = false
+} = defineProps<{
   collection: VariableCollection
   groups: TokenGroup[]
   labels: { name: string; cssName: string; empty: string }
@@ -34,6 +45,8 @@ const { collection, groups, labels, modeIds, groupOptions } = defineProps<{
   modeIds?: readonly string[]
   /** Groups the "Move to group" menu offers. */
   groupOptions: string[]
+  /** Every group shows its tokens, whatever was folded, as while searching. */
+  expanded?: boolean
 }>()
 /** Click selects one token, Shift extends, and Cmd or Ctrl adds or removes one. */
 const selectedIds = defineModel<string[]>('selectedIds', { default: () => [] })
@@ -45,6 +58,7 @@ const emit = defineEmits<{
   newGroup: [ids: string[]]
   remove: [ids: string[]]
   reorder: [sourceId: string, targetIndex: number, visibleIds: string[]]
+  add: [type: VariableType, group: string]
 }>()
 
 const { variables } = useI18n()
@@ -87,7 +101,50 @@ function focus() {
 }
 defineExpose({ focus })
 
-const rows = computed(() => groups.flatMap((group) => group.rows))
+/**
+ * Groups opened or closed on their heading against how they start, by path: a top-level group
+ * such as `color` starts open, the groups inside it such as `color/red` closed, so a long
+ * collection reads as its palettes. A folded group hides its tokens and the groups inside it.
+ */
+const toggledGroups = ref<ReadonlySet<string>>(new Set())
+const headings = computed(() => groupHeadings(groups))
+
+function startsOpen(path: string) {
+  return !path.includes('/')
+}
+
+function isGroupOpen(path: string) {
+  return expanded || startsOpen(path) !== toggledGroups.value.has(path)
+}
+
+function toggleGroup(path: string) {
+  const next = new Set(toggledGroups.value)
+  if (!next.delete(path)) next.add(path)
+  toggledGroups.value = next
+}
+
+/** A heading shows while every group above it is open. */
+function headingShown(path: string) {
+  return groupAncestry(path).slice(0, -1).every(isGroupOpen)
+}
+
+/** A group's tokens show while it and every group above it are open. */
+function rowsShown(path: string) {
+  return groupAncestry(path).every(isGroupOpen)
+}
+
+/** How far a group's tokens sit in: one step past its heading. */
+function rowDepth(path: string) {
+  return { '--group-depth': groupAncestry(path).length }
+}
+
+/** A token made from a group's heading lands in it, so the group and those above it open. */
+function addToGroup(type: VariableType, path: string) {
+  for (const group of groupAncestry(path)) if (!isGroupOpen(group)) toggleGroup(group)
+  emit('add', type, path)
+}
+
+const rows = computed(() => groups.flatMap((group) => (rowsShown(group.path) ? group.rows : [])))
 const visibleIds = computed(() => rows.value.map((row) => row.variable.id))
 
 /** Where a Shift-click range starts: the last token clicked without Shift. */
@@ -221,16 +278,41 @@ function dropEdge(id: string) {
         @contextmenu.capture="onContextMenu"
       >
         <ListboxGroup v-for="group in groups" :key="group.path">
-          <ListboxGroupLabel v-if="group.path" :class="ui.group()">{{
-            group.path
-          }}</ListboxGroupLabel>
+          <ListboxGroupLabel v-if="group.path" class="sr-only">{{ group.path }}</ListboxGroupLabel>
+          <template v-for="heading in headings.get(group.path) ?? []" :key="heading.path">
+            <div
+              v-if="headingShown(heading.path)"
+              :class="ui.group()"
+              :style="{ '--group-depth': heading.depth }"
+              :data-depth="heading.depth"
+              data-test-id="variable-group"
+            >
+              <button
+                type="button"
+                :class="ui.groupToggle()"
+                :aria-expanded="isGroupOpen(heading.path)"
+                @click="toggleGroup(heading.path)"
+              >
+                <icon-lucide-chevron-right
+                  data-direction="reading"
+                  :class="ui.groupChevron()"
+                  :data-open="isGroupOpen(heading.path) || undefined"
+                />
+                <span class="truncate">{{ heading.label }}</span>
+                <span :class="ui.groupCount()">({{ heading.count }})</span>
+              </button>
+              <span :class="ui.groupActions()">
+                <TokenAddMenu :group="heading.path" @add="addToGroup($event, heading.path)" />
+              </span>
+            </div>
+          </template>
           <ListboxItem
-            v-for="row in group.rows"
+            v-for="row in rowsShown(group.path) ? group.rows : []"
             :key="row.variable.id"
             :ref="(element) => dragTarget(row.variable.id, element)"
             :value="row.variable.id"
             :class="ui.row()"
-            :style="columns"
+            :style="[columns, rowDepth(group.path)]"
             :data-variable-id="row.variable.id"
             :data-drop="dropEdge(row.variable.id)"
             :data-dragging="reorder.draggingId.value === row.variable.id || undefined"

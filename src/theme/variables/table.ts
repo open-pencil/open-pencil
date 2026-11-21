@@ -14,10 +14,24 @@ export default {
       'sticky top-0 z-10 grid min-w-min items-center gap-3 border-b border-border bg-panel px-4 py-2 text-2xs font-medium text-muted',
       COLUMNS
     ],
-    group: 'px-4 pt-3 pb-1 text-2xs font-semibold text-muted',
+    /**
+     * A group's heading, a band set in by `--group-depth` so it reads apart from the tokens; a
+     * top-level group is brighter and in capitals like the variable picker's headings. Its Create
+     * button shows on hover or focus.
+     */
+    group:
+      'group/heading mt-1 flex min-h-7 items-center gap-1 border-y border-border/60 bg-panel-secondary pe-4 ps-[calc(1rem+var(--group-depth)*0.75rem)] text-2xs font-semibold text-muted data-[depth=0]:mt-2 data-[depth=0]:bg-panel-field data-[depth=0]:text-surface data-[depth=0]:uppercase data-[depth=0]:tracking-wide',
+    // A button's own style resets text-transform; the heading's capitals carry into it.
+    groupToggle:
+      'flex min-w-0 [text-transform:inherit] cursor-pointer items-center gap-1 rounded text-start outline-none hover:text-surface focus-visible:text-surface',
+    groupChevron:
+      'size-3 shrink-0 transition-transform motion-reduce:transition-none data-[open]:rotate-90',
+    groupCount: 'shrink-0 font-normal text-muted tabular-nums',
+    groupActions:
+      'ms-auto flex shrink-0 items-center normal-case opacity-0 group-hover/heading:opacity-100 focus-within:opacity-100 has-[[data-state=open]]:opacity-100',
     row: [
       COLUMNS,
-      'grid min-w-min cursor-pointer items-center gap-3 px-4 py-1.5 text-xs text-surface outline-none transition-colors duration-100 hover:bg-hover data-[highlighted]:bg-hover data-[state=checked]:bg-hover data-[state=checked]:ring-1 data-[state=checked]:ring-accent/40 data-[state=checked]:ring-inset data-[dragging]:opacity-50 data-[drop=after]:shadow-[inset_0_-2px_0_var(--color-accent)] data-[drop=before]:shadow-[inset_0_2px_0_var(--color-accent)] motion-reduce:transition-none'
+      'grid min-w-min cursor-pointer items-center gap-3 pe-4 ps-[calc(1rem+var(--group-depth,0)*0.75rem)] py-1.5 text-xs text-surface outline-none transition-colors duration-100 hover:bg-hover data-[highlighted]:bg-hover data-[state=checked]:bg-hover data-[state=checked]:ring-1 data-[state=checked]:ring-accent/40 data-[state=checked]:ring-inset data-[dragging]:opacity-50 data-[drop=after]:shadow-[inset_0_-2px_0_var(--color-accent)] data-[drop=before]:shadow-[inset_0_2px_0_var(--color-accent)] motion-reduce:transition-none'
     ],
     name: 'flex min-w-0 flex-col truncate',
     nameLine: 'flex min-w-0 items-center gap-1.5',

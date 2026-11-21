@@ -29,7 +29,7 @@ function choose(value: TokenPreset | '') {
     @update:model-value="choose"
   >
     <template #leading>
-      <icon-lucide-palette class="mr-1.5 size-3.5 shrink-0" aria-hidden="true" />
+      <icon-lucide-palette class="me-1.5 size-3.5 shrink-0" aria-hidden="true" />
     </template>
   </AppSelect>
 </template>

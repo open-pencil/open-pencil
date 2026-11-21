@@ -8,6 +8,8 @@ export interface VariablePickerItem {
   name: string
   /** The collection the variable belongs to; the list groups by it. */
   collection?: string
+  /** The collection's ID, which its Edit button opens. */
+  collectionId?: string
   /** A color variable's value, shown as a swatch in place of the variable icon. */
   color?: Color
   /** Resolved numeric value, or mixed/unresolved state for the selected targets. */
@@ -32,6 +34,8 @@ export interface VariablePickerProps {
   createDefaultName?: string
   disabled?: boolean
   derived?: boolean
+  /** Names an Edit button on each collection's heading, shown on hover; it emits `editCollection`. */
+  editCollectionLabel?: string
   side?: 'left' | 'right' | 'top' | 'bottom'
   ui?: BindingFieldUI
 }
