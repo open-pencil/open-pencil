@@ -2,6 +2,7 @@ import { stateStylesToCSS } from '#dom-css/behaviours/states/css'
 import { restLayerOf, stateStyles } from '#dom-css/behaviours/states/model'
 import { stateStylesToTailwind } from '#dom-css/behaviours/states/tailwind'
 import type { StateElement, StateNode, StateStyles } from '#dom-css/behaviours/states/types'
+import { themeVariableNames } from '#dom-css/tokens/names'
 import type { DesignDocument, DesignElement, DesignNode } from '#dom-css/types'
 import { zip } from 'es-toolkit/array'
 
@@ -98,6 +99,7 @@ export async function layerMarkup(
   const html: string[] = []
   const layers: (string | null)[] = []
   const css: string[] = []
+  const themeVariables = themeVariableNames(graph)
   for (const layerId of layerIds) {
     const layer = graph.getNode(layerId)
     const styles = layer && stateStyles(graph, layer, options)
@@ -107,7 +109,7 @@ export async function layerMarkup(
     const named = { ...styles, name }
     const sheet =
       options.styling === 'tailwind'
-        ? { document: stateStylesToTailwind(named), css: '' }
+        ? { document: stateStylesToTailwind(named, { themeVariables }), css: '' }
         : await stateStylesToCSS(named)
     html.push(serializeHTML(sheet.document, { indent: true }))
     appendAll(layers, markupLayers(graph, named, sheet.document))

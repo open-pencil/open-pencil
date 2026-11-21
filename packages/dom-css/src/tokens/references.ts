@@ -2,7 +2,7 @@ import type { Effect, SceneGraph, SceneNode, Variable } from '@open-pencil/scene
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { effectBindingTarget, type EffectBindingProperty } from '@open-pencil/scene-graph/variables'
 
-import { collectionVariables, variableCSSNames, variableNamespace } from './names'
+import { collectionVariables, themeVariableNames, variableCSSNames } from './names'
 import { modeAttribute } from './stylesheet'
 import { variableUnit } from './values'
 
@@ -229,9 +229,6 @@ export class DesignTokens {
 
   /** Custom properties the Tailwind stylesheet declares in `@theme`, which name utilities. */
   themeVariables(): string[] {
-    return [...this.names].flatMap(([id, name]) => {
-      const variable = this.#graph.variables.get(id)
-      return variable && variableNamespace(variable) !== undefined ? [`--${name}`] : []
-    })
+    return themeVariableNames(this.#graph)
   }
 }

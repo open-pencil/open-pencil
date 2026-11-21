@@ -123,6 +123,27 @@ describe('layers as HTML and CSS', () => {
     expect(css).toBe('')
   })
 
+  test('styled with Tailwind, a color variable is the theme utility it names', async () => {
+    const graph = new SceneGraph()
+    const frame = card(graph, 'Card')
+    const collection = graph.createCollection('Tailwind')
+    const black = graph.createVariable('color/black', 'COLOR', collection.id, {
+      r: 0,
+      g: 0,
+      b: 0,
+      a: 1
+    })
+    frame.fills = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    frame.boundVariables = { 'fills/0/color': black.id }
+
+    const { html } = await layerMarkup(graph, [frame.id], { styling: 'tailwind' })
+    const [vue] = await layerComponents(graph, [frame.id], 'vue', { styling: 'tailwind' })
+
+    expect(html).toContain('bg-black')
+    expect(html).not.toContain('bg-(--color-black)')
+    expect(fileText(vue?.files ?? [], 'Card.vue')).toContain('bg-black')
+  })
+
   test("styled with Tailwind, corners are rounded from Tailwind's radius scale", async () => {
     const graph = new SceneGraph()
     const frame = card(graph, 'Card')

@@ -11,6 +11,7 @@ import { allElements } from '#dom-css/behaviours/states/layers'
 import { ownerVariants, restLayerOf, stateStyles } from '#dom-css/behaviours/states/model'
 import { layerClassNames, propAttribute } from '#dom-css/behaviours/states/names'
 import type { StateElement, StateStyles } from '#dom-css/behaviours/states/types'
+import { themeVariableNames } from '#dom-css/tokens/names'
 import { camelCase } from 'es-toolkit/string'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
@@ -185,6 +186,8 @@ export interface ComponentModel {
   name: string
   kind: GeneratedKind
   styles: StateStyles
+  /** The custom properties Tailwind's `@theme` declares, so utilities name them as its own. */
+  themeVariables: readonly string[]
   /** The markup every framework writes, with each layer's part and the root's bindings. */
   tree: ComponentElement
   /**
@@ -562,6 +565,7 @@ export function componentModel(
     name,
     kind,
     styles,
+    themeVariables: themeVariableNames(graph),
     tree: componentTree(
       styles.root,
       {

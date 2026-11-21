@@ -145,3 +145,17 @@ export function variableCSSNames(variables: Iterable<Variable>): Map<string, str
 export function cssNameCodeSyntax(name: string): string {
   return `var(--${name})`
 }
+
+/**
+ * The custom properties a Tailwind `@theme` declares for the document's variables, each in a
+ * theme namespace: `--color-black` names `bg-black` and `text-black`, `--spacing-4` names `p-4`.
+ * A utility written against them reads as Tailwind's own instead of `bg-(--color-black)`.
+ */
+export function themeVariableNames(
+  graph: Pick<SceneGraph, 'variables' | 'variableCollections'>
+): string[] {
+  return [...variableCSSNames(collectionVariables(graph))].flatMap(([id, name]) => {
+    const variable = graph.variables.get(id)
+    return variable && variableNamespace(variable) !== undefined ? [`--${name}`] : []
+  })
+}

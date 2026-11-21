@@ -22,7 +22,9 @@ export function componentClasses(
 ): (className: string) => string {
   if (styling === 'css') return (className) => className
   const readable = layerClassNames(component.styles)
-  const utilities = stateTailwindClasses(component.styles)
+  const utilities = stateTailwindClasses(component.styles, {
+    themeVariables: component.themeVariables
+  })
   const byClass = new Map<string, string>()
   for (const [element, className] of readable) byClass.set(className, utilities.get(element) ?? '')
   for (const { shader } of shaderElements(component.tree))
