@@ -153,7 +153,8 @@ test('configured storage lists previews through ranges before opening the docume
   expect(fullDocumentGets).toBe(0)
 
   await entry.click()
-  await expect(page).toHaveURL(/\/$/)
+  // A design kept in the bucket takes its stored document's address, so a reload reopens it.
+  await expect(page).toHaveURL(/\/design\/remote-1$/)
   await canvas.waitForInit()
   await expect(page.getByText('Remote design').first()).toBeVisible()
   expect(fullDocumentGets).toBe(1)
