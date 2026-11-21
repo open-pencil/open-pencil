@@ -32,7 +32,7 @@ export function createColorSpaceActions(
    * Gives the document `colorSpace` as one undo step. Assigning keeps every value; converting
    * rewrites every stored color so it looks the same: layers' paints, effects, text runs, layout
    * grids, and vector regions, page backgrounds, and color variables, on every page, loading
-   * the pages not opened yet first so none keeps values in the old profile.
+   * the pages not opened yet first, internal ones too, so none keeps values in the old profile.
    */
   async function setDocumentColorSpace(
     colorSpace: ColorProfile,
@@ -54,7 +54,7 @@ export function createColorSpaceActions(
     // Converting walks every stored color, which most sessions never need at startup.
     const [{ convertColors, replayConversion }] = await Promise.all([
       import('./convert'),
-      ...graph.getPages().map((page) => loadPageNodes(page.id))
+      ...graph.getPages(true).map((page) => loadPageNodes(page.id))
     ])
     // The document may have been closed, replaced, converted, or made read-only while its pages
     // loaded; the editor's guard only checked the call as it started.

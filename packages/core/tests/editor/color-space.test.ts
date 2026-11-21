@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createEditor, ReadOnlyDocumentError, type Editor } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode, VariableValue } from '@open-pencil/scene-graph'
 import { toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -202,6 +205,26 @@ describe('document color profile', () => {
     // An alias operand is left as it is; only literal colors convert.
     expect(operation.operands[0]).toEqual({ aliasId: 'accent' })
     expectColor(operation.operands[1], blue)
+  })
+
+  test('converting loads and converts pages not opened yet, internal ones too', async () => {
+    await initCodec()
+    const source = new SceneGraph()
+    source.documentColorSpace = 'display-p3'
+    const paint = { type: 'SOLID' as const, color: BLUE, opacity: 1, visible: true }
+    const internal = source.addPage('Internal')
+    source.updateNode(internal.id, { internalOnly: true })
+    source.createNode('RECTANGLE', internal.id, { name: 'Hidden', fills: [paint] })
+    source.createNode('RECTANGLE', source.addPage('Second').id, { name: 'Later', fills: [paint] })
+    const bytes = await exportFigFile(source)
+    const graph = await parseFigFile(bytes.slice().buffer, { populate: 'first-page' })
+    editor = createEditor({ graph })
+    await editor.setDocumentColorSpace('srgb', 'convert')
+    const blue = toExtendedSRGB(BLUE, 'display-p3')
+    for (const name of ['Hidden', 'Later']) {
+      const layer = [...graph.getAllNodes()].find((node) => node.name === name)
+      expectColor(layer?.fills[0].color, blue)
+    }
   })
 
   test('a document made read-only while its pages load is not converted', async () => {
