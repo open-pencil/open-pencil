@@ -25,6 +25,5 @@
   "noSelection": "Selecione uma camada para ver o código dela",
   "noSelectionDesignJSX": "Ou escreva Design JSX para adicionar novas camadas à página.",
   "noSelectionComponents": "Os componentes {framework} são gerados para as camadas selecionadas.",
-  "noSelectionJSON": "Todos os campos das camadas selecionadas são escritos como JSON.",
   "writeJSX": "Escrever JSX"
 }

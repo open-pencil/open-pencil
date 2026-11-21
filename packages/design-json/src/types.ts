@@ -1,3 +1,5 @@
+import type { DesignTokenCollection } from '#design-json/tokens'
+
 import type { EnabledLibraryBinding, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { JSONObject } from '@open-pencil/std/json'
 
@@ -79,6 +81,11 @@ export interface DesignJSON {
    * included; each layer's `computed.commentThreadIds` names the live ones pinned to it.
    */
   comments: JSONObject[]
+  /**
+   * Every variable in the document, used by the layers or not, by collection, with its value in
+   * each mode resolved and colors as hex; empty when {@link DesignJSONOptions.tokens} is off.
+   */
+  tokens: DesignTokenCollection[]
 }
 
 /** What a {@link DesignJSONOptions.transform} is told about the layer it rewrites. */
@@ -123,6 +130,8 @@ export interface DesignJSONOptions {
   comments?: boolean
   /** Adds the `.fig` file's Kiwi schema to `document`. Off by default: it describes the format, not the design. */
   figSchema?: boolean
+  /** Writes every variable in the document as a token, with its value in each mode. On by default. */
+  tokens?: boolean
   /**
    * Rewrites each layer once its fields and children are written, children first; returning null
    * leaves the layer out.

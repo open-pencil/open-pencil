@@ -131,7 +131,6 @@ ja:automation.webmcpUnsupported
 ja:code.copyJSXReference
 ja:code.editorHTMLCSSLabel
 ja:code.noSelectionDesignJSX
-ja:code.noSelectionJSON
 ja:code.jsonDetail
 ja:code.writeJSX
 ja:collaboration.invalidRoomLink
@@ -371,7 +370,6 @@ zh-cn:automation.webmcpUnsupported
 zh-cn:code.copyJSXReference
 zh-cn:code.editorHTMLCSSLabel
 zh-cn:code.noSelectionDesignJSX
-zh-cn:code.noSelectionJSON
 zh-cn:code.jsonDetail
 zh-cn:code.writeJSX
 zh-cn:collaboration.invalidRoomLink

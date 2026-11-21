@@ -25,6 +25,5 @@
   "noSelection": "حدّد طبقة لرؤية الكود الخاص بها",
   "noSelectionDesignJSX": "أو اكتب Design JSX لإضافة طبقات جديدة إلى الصفحة.",
   "noSelectionComponents": "تُولَّد مكوّنات {framework} للطبقات المحددة.",
-  "noSelectionJSON": "تُكتب كل حقول الطبقات المحددة بصيغة JSON.",
   "writeJSX": "كتابة JSX"
 }

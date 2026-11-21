@@ -23,7 +23,6 @@
   "noSelection": "Wähle eine Ebene aus, um ihren Code zu sehen",
   "noSelectionDesignJSX": "Oder schreibe Design JSX, um der Seite neue Ebenen hinzuzufügen.",
   "noSelectionComponents": "{framework}-Komponenten werden für die ausgewählten Ebenen erzeugt.",
-  "noSelectionJSON": "Alle Felder der ausgewählten Ebenen werden als JSON geschrieben.",
   "writeJSX": "JSX schreiben",
   "canvasChangedExpression": "Auf der Arbeitsfläche jetzt {value}; der Ausdruck bleibt, wie er geschrieben ist.",
   "canvasChangedOrder": "Auf der Arbeitsfläche sind diese Ebenen jetzt anders angeordnet; der Code bleibt, wie er geschrieben ist."

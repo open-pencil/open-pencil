@@ -3,6 +3,7 @@ import { describeDocument } from '#design-json/document'
 import { writeLayersById, type LayerWriter } from '#design-json/layers'
 import { resolveOptions } from '#design-json/options'
 import { addReferences } from '#design-json/references/index'
+import { designTokens } from '#design-json/tokens'
 import {
   DESIGN_JSON_FORMAT,
   DESIGN_JSON_VERSION,
@@ -52,6 +53,7 @@ function documentWithLayers(writer: LayerWriter, layers: DesignJSONLayer[]): Des
     components: {},
     styles: {},
     images: {},
-    comments: documentComments(graph, options)
+    comments: documentComments(graph, options),
+    tokens: options.tokens ? designTokens(graph) : []
   }
 }

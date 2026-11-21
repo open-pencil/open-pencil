@@ -297,6 +297,21 @@ test('JSON Compact shows the structure of the selection in brief', async () => {
   await expect(codeEditor()).toContainText(/"format": "open-pencil\/design-json",/)
 })
 
+test('JSON lists the variables as tokens with nothing selected', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const collection = store.graph.createCollection('Palette')
+    store.graph.createVariable('brand/primary', 'COLOR', collection.id, { r: 1, g: 0, b: 0, a: 1 })
+    store.clearSelection()
+  })
+  await openCodePanel()
+  await selectSource('JSON')
+  await expect(editor.page.getByTestId('code-panel-empty')).toHaveCount(0)
+  await expect(codeEditor()).toContainText(/"tokens": \[.*"name": "Palette"/)
+  await expect(codeEditor()).toContainText(/"name": "brand\/primary".*"#FF0000"/)
+})
+
 async function selectStyling(label: string) {
   await editor.page.getByTestId('code-panel-styling').getByRole('button', { name: label }).click()
 }

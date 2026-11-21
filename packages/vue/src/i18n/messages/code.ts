@@ -29,7 +29,6 @@ export const codeMessageDefaults = {
   noSelection: 'Select a layer to see its code',
   noSelectionDesignJSX: 'Or write Design JSX to add new layers to the page.',
   noSelectionComponents: params('{framework} components are generated for the selected layers.'),
-  noSelectionJSON: 'Every field of the selected layers is written as JSON.',
   writeJSX: 'Write JSX'
 } as const
 

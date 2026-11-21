@@ -1,3 +1,5 @@
+import type { DesignTokenCollection } from '#design-json/tokens'
+
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 export const COMPACT_DESIGN_FORMAT = 'open-pencil/design-json-compact'
@@ -110,6 +112,8 @@ export interface CompactDesign {
   version: typeof COMPACT_DESIGN_VERSION
   roots: CompactNode[]
   images: Record<string, CompactImage>
+  /** Every variable in the document as a token, by collection, with its value in each mode. */
+  tokens: DesignTokenCollection[]
   summary: CompactSummary
 }
 

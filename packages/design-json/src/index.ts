@@ -18,6 +18,12 @@ export {
 } from '#design-json/compact/types'
 export { designToJSON } from '#design-json/export'
 export {
+  designTokens,
+  type DesignToken,
+  type DesignTokenCollection,
+  type DesignTokenValue
+} from '#design-json/tokens'
+export {
   DESIGN_JSON_FORMAT,
   DESIGN_JSON_VERSION,
   type DesignJSON,

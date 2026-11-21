@@ -114,7 +114,9 @@ const composing = ref(false)
  */
 const showEmptyState = computed(
   () =>
+    // HTML starts from a template, and JSON writes the document's tokens and pages without layers.
     source.value !== 'html-css' &&
+    source.value !== 'json' &&
     store.state.selectedIds.size === 0 &&
     !composing.value &&
     !designSession.value &&
@@ -164,7 +166,6 @@ const editorLabel = computed(() => {
 /** What the empty state says each generated source shows for a selection. */
 const emptyDescription = computed(() => {
   if (source.value === 'design-jsx') return code.value.noSelectionDesignJSX
-  if (source.value === 'json') return code.value.noSelectionJSON
   return code.value.noSelectionComponents({ framework: editorLabel.value })
 })
 const statusTone = computed(() => {

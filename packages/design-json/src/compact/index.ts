@@ -8,6 +8,7 @@ import {
   type CompactDesignOptions,
   type CompactNode
 } from '#design-json/compact/types'
+import { designTokens } from '#design-json/tokens'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -28,6 +29,7 @@ export function compactDesign(
     version: COMPACT_DESIGN_VERSION,
     roots,
     images: compactImages(graph, roots),
+    tokens: designTokens(graph),
     summary: summarize(roots)
   }
 }

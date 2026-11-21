@@ -30,7 +30,8 @@ export function generatedDesignJSX(graph: SceneGraph, nodeIds: string[]): Genera
 /**
  * The selected layers as JSON. In full, everything `@open-pencil/design-json` writes: every
  * field, what is computed for them, what they reference, and the document's comments. Compact,
- * their structure in brief, with layers drawn inside or over one another nested or grouped.
+ * their structure in brief, with layers drawn inside or over one another nested or grouped. Both
+ * list every variable as a token, so they show with nothing selected too.
  */
 export function generatedJSON(
   graph: SceneGraph,

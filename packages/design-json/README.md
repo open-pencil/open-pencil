@@ -39,6 +39,10 @@ The output is plain JSON, so `JSON.stringify` writes it as is. Its `format` and 
 
 What the renderer works out on its own, such as where text breaks into lines, is not in the document and so not in the JSON; the glyphs a `.fig` file saved are, in `derivedTextGlyphs`.
 
+## Tokens
+
+Both views carry `tokens`: every variable in the document, used by the layers or not, by collection. Each collection lists its mode names, default first, and whether it is a library's copy. Each token has its name, type, description, and `codeSyntax`, and `values` by mode name, resolved through aliases, with colors as hex (`#RRGGBB`, or `#RRGGBBAA` when translucent). `aliases` names the token each mode takes its value from. `designTokens(graph)` writes the same list on its own, and `tokens: false` leaves it out of `designToJSON`.
+
 ## Compact
 
 `compactDesign(graph, nodeIds, options)` writes the structure of the layers in brief, as something that renders them needs it, for an index or summary of a design rather than everything it keeps. Hidden layers are left out.

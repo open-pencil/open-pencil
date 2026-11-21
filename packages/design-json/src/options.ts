@@ -12,6 +12,7 @@ export interface ResolvedOptions extends Required<
     | 'computed'
     | 'comments'
     | 'figSchema'
+    | 'tokens'
   >
 > {
   pick: ReadonlySet<string> | null
@@ -31,6 +32,7 @@ export function resolveOptions(options: DesignJSONOptions): ResolvedOptions {
     computed: options.computed ?? true,
     comments: options.comments ?? true,
     figSchema: options.figSchema ?? false,
+    tokens: options.tokens ?? true,
     transform: options.transform
   }
 }
