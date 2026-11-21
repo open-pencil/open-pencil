@@ -5,6 +5,7 @@ import type {
   CompactNode,
   CompactText
 } from '#design-json/compact/types'
+import { describeVector } from '#design-json/compact/vector'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
@@ -34,8 +35,8 @@ const KINDS: Partial<Record<SceneNode['type'], CompactKind>> = {
 
 /**
  * TODO: Decide what the compact view keeps of each layer. This first cut keeps what rendering it
- * needs: what it is, its auto layout, how it looks, its text, its images, and the component an
- * instance shows. Review each field against what the generated code actually uses, and drop what
+ * needs: what it is, its auto layout, how it looks, its text, a vector's paths, its images, and
+ * the component an instance shows. Review each field against what the generated code actually uses, and drop what
  * it never reads.
  */
 export function compactLayer(graph: SceneGraph, node: SceneNode): CompactLayer {
@@ -49,6 +50,7 @@ export function compactLayer(graph: SceneGraph, node: SceneNode): CompactLayer {
     // A text's fills are its color, and an image's are the image.
     style: describeStyle(node, kind !== 'text' && kind !== 'image'),
     text: describeText(node),
+    vector: kind === 'vector' ? describeVector(node) : undefined,
     images: images.length > 0 ? images : undefined,
     component: describeComponent(graph, node)
   }

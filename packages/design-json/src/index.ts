@@ -1,4 +1,5 @@
 export { compactDesign } from '#design-json/compact/index'
+export { vectorSVG } from '#design-json/compact/svg'
 export {
   COMPACT_DESIGN_FORMAT,
   COMPACT_DESIGN_VERSION,
@@ -11,7 +12,9 @@ export {
   type CompactNode,
   type CompactStyle,
   type CompactSummary,
-  type CompactText
+  type CompactText,
+  type CompactVector,
+  type CompactVectorPath
 } from '#design-json/compact/types'
 export { designToJSON } from '#design-json/export'
 export {

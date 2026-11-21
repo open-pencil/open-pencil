@@ -43,10 +43,12 @@ What the renderer works out on its own, such as where text breaks into lines, is
 
 `compactDesign(graph, nodeIds, options)` writes the structure of the layers in brief, as something that renders them needs it, for an index or summary of a design rather than everything it keeps. Hidden layers are left out.
 
-- `roots`: each layer's `kind` (`frame`, `text`, `image`, `instance`, `shape`, `vector`...), its `box` relative to its parent, and only what it sets: `layout` for auto layout, `style` (fills, border, radius, opacity, effects), `text` (content, font, color), `images` (hashes), and `component` for an instance (the main component and its property values), with its `children`.
+- `roots`: each layer's `kind` (`frame`, `text`, `image`, `instance`, `shape`, `vector`...), its `box` relative to its parent, and only what it sets: `layout` for auto layout, `style` (fills, border, radius, opacity, effects), `text` (content, font, color), `images` (hashes), `vector` for a vector (its `width`, `height`, and `paths`, each SVG path data `d` in the layer's own coordinates with its `fillRule`, `none` for an open path), and `component` for an instance (the main component and its property values), with its `children`.
 - `images`: each image by hash, with its type, size, and the layers that draw it.
 - `summary`: how many layers of each kind, how deep the tree goes, the fonts, colors, and components it uses, and how many layers were nested by inference.
 
 With `inferNesting: true`, siblings that their parent does not lay out itself are nested as a reader would see them: a layer drawn wholly inside one below it becomes that layer's child (`inferred: 'contained'`), and layers that still overlap are wrapped in a group (`inferred: 'overlap'`). A layer without `inferred` sits where the design put it.
+
+`vectorSVG(node)` writes a compact vector as a standalone SVG file, painted with its first fill and its border, ready to save; it gives `null` for a layer without a `vector`.
 
 What each layer keeps is decided in one place, `compactLayer` in `src/compact/layer.ts`.

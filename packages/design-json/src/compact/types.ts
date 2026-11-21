@@ -46,6 +46,19 @@ export interface CompactText {
   align: string
 }
 
+/** One path of a vector: SVG path data, and how it fills, or `none` for an open path. */
+export interface CompactVectorPath {
+  d: string
+  fillRule: 'nonzero' | 'evenodd' | 'none'
+}
+
+/** The shape a vector draws, in its own coordinates from 0,0 to its width and height. */
+export interface CompactVector {
+  width: number
+  height: number
+  paths: CompactVectorPath[]
+}
+
 /** Why a layer sits where the design did not put it. */
 export type CompactInference = 'contained' | 'overlap'
 
@@ -58,6 +71,8 @@ export interface CompactNode {
   layout?: CompactLayout
   style?: CompactStyle
   text?: CompactText
+  /** For a vector: the paths it draws; `vectorSVG` writes them as an SVG file. */
+  vector?: CompactVector
   /** Hashes of the images its fills draw, described in {@link CompactDesign.images}. */
   images?: string[]
   /** For an instance: the main component it shows, and the values of its properties. */
