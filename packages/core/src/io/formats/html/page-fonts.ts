@@ -38,11 +38,13 @@ async function readableFont(bytes: Uint8Array): Promise<ArrayBuffer | null> {
 /**
  * Loads the faces a page's `@font-face` rules declare for the families its text uses, with
  * `fetch`, and registers them with the font manager under the family and face each rule names, so
- * the page's text is set in its own fonts, icon fonts among them. A family the editor already has,
- * bundled, installed, or from Google Fonts, keeps the editor's complete copy rather than a page's
- * subset of it, which would leave its other glyphs and faces out. A rule's sources are tried in
- * order until one is in a format the font manager reads. Returns the families the page's text can
- * be set in; once `signal` aborts, it stops and rejects without registering another face.
+ * the page's text is set in its own fonts, as the browser sets it, icon fonts among them. A face the
+ * page loads from a provider the editor fetches fonts from, such as Google Fonts, is the editor's
+ * own copy of it, whole rather than the page's subsets. A face the page serves itself is the page's
+ * file, even where the editor has a family of that name, which may be another design; a face split
+ * into files by `unicode-range` draws from all of them. A rule's sources are tried in order until
+ * one is in a format the font manager reads. Returns the families the page's text can be set in;
+ * once `signal` aborts, it stops and rejects without registering another face.
  */
 export async function loadPageFontFaces(
   styled: DesignDocument,
@@ -52,31 +54,38 @@ export async function loadPageFontFaces(
   const used = familiesUsed(styled)
   const loaded = new Map<string, string>()
   const rules = (styled.fontFaces ?? []).filter((rule) => used.has(rule.family.toLowerCase()))
-  // Which faces the editor has is settled before any of the page's are registered, so a page
-  // that splits a face into subsets by unicode-range loads every subset, not just the first.
-  const editorHas = await Promise.all(
-    rules.map((rule) =>
-      fontManager.loadFont(rule.family, faceStyleName(rule.family, rule.weight, rule.italic))
-    )
-  )
-  for (const [index, rule] of rules.entries()) {
+  // The faces this page registered a file for, which its later subsets join.
+  const registered = new Set<string>()
+  for (const rule of rules) {
     const style = faceStyleName(rule.family, rule.weight, rule.italic)
-    if (editorHas[index]) {
-      loaded.set(rule.family.toLowerCase(), rule.family)
-      continue
-    }
+    const face = `${rule.family.toLowerCase()}|${style}`
     for (const source of rule.sources) {
       signal?.throwIfAborted()
+      // A source a provider serves for the family is the editor's own copy, whole, when the editor
+      // has one; sources are tried in the page's order, as the browser tries them.
+      if (
+        !registered.has(face) &&
+        (await fontManager.servesFontFile(rule.family, source).catch(() => false)) &&
+        (await fontManager.loadFont(rule.family, style))
+      ) {
+        loaded.set(rule.family.toLowerCase(), rule.family)
+        break
+      }
       const resource = await fetch(source, AbortSignal.timeout(FONT_LOAD_TIMEOUT_MS)).catch(
         () => null
       )
       // A source that does not decode is passed over for the next, as an unreadable one is.
       const data = resource ? await readableFont(resource.bytes).catch(() => null) : null
       if (!data) continue
-      // An import cancelled meanwhile registers nothing: the font manager is shared, and a face it
-      // took now could replace one a later import loaded.
+      // An import cancelled meanwhile registers nothing more: the font manager is shared, and a
+      // face it took now could replace one a later import loaded.
       signal?.throwIfAborted()
-      await fontManager.markLoaded(rule.family, style, data)
+      // The first file of a face is its own; the face's later files, its subsets, join it. A
+      // variable file draws the family's other weights through the manager as any variable face
+      // does, unless the page names their files too.
+      if (registered.has(face)) await fontManager.addFaceShard(rule.family, style, data)
+      else await fontManager.markLoaded(rule.family, style, data)
+      registered.add(face)
       loaded.set(rule.family.toLowerCase(), rule.family)
       break
     }

@@ -23,6 +23,9 @@ async function openFromURL(page: Page, address: string) {
   return dialog
 }
 
+/** The notices on screen that report a failure. */
+const failureNotices = (page: Page) => page.locator('[data-slot="toast"][data-tone="error"]')
+
 /** The dialog stays open with an alert saying why, and no document was opened. */
 async function expectRefused(page: Page, dialog: Locator) {
   await expect(dialog.getByRole('alert')).toBeVisible()
@@ -38,13 +41,13 @@ test('a web page opens as layers with the stylesheet and pictures it links', asy
     if (pathname === '/') {
       return route.fulfill({
         headers: { ...OPEN, 'content-type': 'text/html' },
-        body: '<link rel="stylesheet" href="/site.css"><div class="box"></div><img src="img/photo.png"><img src="img/logo.svg" style="display:block;width:40px;height:20px"><p>Set in the site font</p>'
+        body: '<link rel="stylesheet" href="/site.css"><div class="box"></div><div class="hero"></div><img src="img/photo.png"><img src="img/logo.svg" style="display:block;width:40px;height:20px"><p>Set in the site font</p>'
       })
     }
     if (pathname === '/site.css') {
       return route.fulfill({
         headers: { ...OPEN, 'content-type': 'text/css' },
-        body: "@font-face { font-family: 'Site Sans'; src: url(fonts/site.ttf) format('truetype') } .box { width: 120px; height: 40px; background: #2563eb } p { font-family: 'Site Sans', sans-serif; margin: 0 } body { background: #f0f4f8 }"
+        body: "@font-face { font-family: 'Site Sans'; src: url(fonts/site.ttf) format('truetype') } .box { width: 120px; height: 40px; background: #2563eb } .hero { width: 80px; height: 40px; background: url(img/photo.png) center / cover } p { font-family: 'Site Sans', sans-serif; margin: 0 } body { background: #f0f4f8 }"
       })
     }
     if (pathname === '/img/photo.png') {
@@ -69,9 +72,13 @@ test('a web page opens as layers with the stylesheet and pictures it links', asy
 
   await expect(dialog).toHaveCount(0)
   await expect(tabs.getByRole('tab').last()).toContainText('site.example.test')
+  // The page sits in a frame the size of the window it was laid out in.
+  await expect
+    .poll(async () => (await getPageChildren(page)).map(({ type, width }) => ({ type, width })))
+    .toEqual([{ type: 'FRAME', width: 1440 }])
   await expect
     .poll(async () =>
-      (await getPageChildren(page)).map(({ width, fillTypes, childIds }) => ({
+      (await getPageChildren(page, { inFrame: true })).map(({ width, fillTypes, childIds }) => ({
         width,
         image: fillTypes.includes('IMAGE'),
         artwork: childIds.length > 0
@@ -79,6 +86,8 @@ test('a web page opens as layers with the stylesheet and pictures it links', asy
     )
     .toEqual([
       { width: 120, image: false, artwork: false },
+      // A CSS background picture fills its box as the page shows it.
+      { width: 80, image: true, artwork: false },
       expect.objectContaining({ image: true }),
       // The SVG picture becomes the vector layers it draws, at the size the page shows it.
       { width: 40, image: false, artwork: true },
@@ -118,10 +127,40 @@ test('a picture that cannot be read leaves no empty design behind', async ({ pag
 
   const dialog = await openFromURL(page, `${SITE}/broken.svg`)
 
-  await expectRefused(page, dialog)
+  // The address was read, so the dialog closed; the open failed after, which a notice says.
+  await expect(dialog).toHaveCount(0)
+  await expect(failureNotices(page)).toHaveCount(1)
+  await expect(page.getByTestId('tabbar-tab')).toHaveCount(1)
 })
 
-test('closing the dialog while a page imports opens nothing', async ({ page }) => {
+test('a page opens in the window size the dialog chose, which it remembers', async ({ page }) => {
+  await page.route(`${SITE}/**`, (route) =>
+    route.fulfill({
+      headers: { ...OPEN, 'content-type': 'text/html' },
+      body: '<style>body { margin: 0 } main { height: 50px; background: #2563eb }</style><main></main>'
+    })
+  )
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+
+  await page.getByTestId('menubar-file').click()
+  await page.getByRole('menuitem', { name: 'Open from URL…' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Open from URL' })
+  await dialog.getByRole('button', { name: 'Mobile' }).click()
+  await page.keyboard.press('Escape')
+  await openFromURL(page, SITE)
+
+  await expect
+    .poll(async () => (await getPageChildren(page)).map(({ type, width }) => ({ type, width })))
+    .toEqual([{ type: 'FRAME', width: 390 }])
+  await page.getByTestId('menubar-file').click()
+  await page.getByRole('menuitem', { name: 'Open from URL…' }).click()
+  await expect(dialog.getByRole('button', { name: 'Mobile' })).toHaveAttribute('data-state', 'on')
+})
+
+test('the tab shows the page loading its files, and closing it cancels the open', async ({
+  page
+}) => {
   let releasePicture: () => void = () => undefined
   const released = new Promise<void>((resolve) => {
     releasePicture = resolve
@@ -129,6 +168,10 @@ test('closing the dialog while a page imports opens nothing', async ({ page }) =
   let pictureRequested: () => void = () => undefined
   const requested = new Promise<void>((resolve) => {
     pictureRequested = resolve
+  })
+  let pictureAnswered: () => void = () => undefined
+  const answered = new Promise<void>((resolve) => {
+    pictureAnswered = resolve
   })
   await page.route(`${SITE}/**`, async (route) => {
     const { pathname } = new URL(route.request().url())
@@ -141,22 +184,42 @@ test('closing the dialog while a page imports opens nothing', async ({ page }) =
     // The picture holds the import open until the dialog has closed.
     pictureRequested()
     await released
-    return route.fulfill({ status: 404, headers: OPEN })
+    await route.fulfill({ status: 404, headers: OPEN })
+    pictureAnswered()
   })
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
 
   const dialog = await openFromURL(page, SITE)
   await requested
-  await page.keyboard.press('Escape')
+  // The page was read, so the dialog closed and its tab shows the open going on.
   await expect(dialog).toHaveCount(0)
-  releasePicture()
-  await page.waitForFunction(() => window.openPencil?.getStore?.().state.preparation === null)
+  await expect
+    .poll(() => page.evaluate(() => window.openPencil?.getStore?.().state.preparation?.phase))
+    .toBe('loading-files')
+  const tab = page.getByTestId('tabbar-tab').filter({ hasText: 'site.example.test' })
+  await expect(tab).toHaveCount(1)
 
-  // The import stopped with the dialog: the page's text never reached the document.
+  await page
+    .getByTestId('tabbar-close')
+    .and(page.getByLabel(/site\.example\.test/))
+    .click()
+  releasePicture()
+  // Once the held picture is answered, a cancelled import that went on would finish or fail now.
+  await answered
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve())
+      })
+  )
+
+  // The import stopped with its tab, which is gone, and a cancelled open is no failure.
+  await expect(tab).toHaveCount(0)
   expect(await getPageTexts(page)).not.toContainEqual(
     expect.objectContaining({ text: 'Slow page' })
   )
+  await expect(failureNotices(page)).toHaveCount(0)
 })
 
 test('an address that holds a PDF says it cannot be opened yet', async ({ page }) => {

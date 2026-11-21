@@ -77,6 +77,12 @@ body,
   overflow: hidden;
 }
 
+/* A sideways two-finger swipe on a Mac trackpad would go back in the browser's history. */
+html,
+body {
+  overscroll-behavior-x: none;
+}
+
 body {
   font-family: Inter, system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;

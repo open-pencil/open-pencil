@@ -1,5 +1,6 @@
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { fetchRemoteFile, remoteFileTitle, type RemoteFile } from '@open-pencil/core/io/remote'
+import { fetchRemoteFile, type RemoteFile } from '@open-pencil/core/io/remote'
+import type { DesignViewport } from '@open-pencil/dom-css'
 import { imageMimeType } from '@open-pencil/scene-graph/images'
 import { errorMessage } from '@open-pencil/std/errors'
 import { filesMessages } from '@open-pencil/vue/i18n'
@@ -9,7 +10,6 @@ import { closeTab, createDocumentTab, openFileInNewTab } from '@/app/tabs'
 import { IS_TAURI } from '@/constants'
 
 import { remoteFetch } from './fetch'
-import type { RenderedWebPage } from './render/page'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
@@ -54,26 +54,21 @@ function fetchFailure(error: unknown): string {
   return errorMessage(error)
 }
 
-/**
- * The page as its scripts build it, rendered by the desktop app, or null when it cannot be,
- * including when the renderer itself fails to load. The renderer and the scripts it runs in the
- * page are loaded only on desktop, where they are used.
- */
-async function renderOnDesktop(url: string): Promise<RenderedWebPage | null> {
-  try {
-    const { renderWebPage } = await import('./render/page')
-    return await renderWebPage(url)
-  } catch {
-    return null
-  }
+/** What a web address holds that OpenPencil opens: a page, a design document, or a picture. */
+export type OpenableRemoteFile = RemoteFile & { kind: 'html' | 'document' | 'svg' | 'image' }
+
+/** How a web page is opened: the window it is laid out in, and whether its scripts run first. */
+export interface WebPageOpenOptions {
+  viewport?: DesignViewport
+  /** Runs the page's scripts in the desktop app before importing what they built. */
+  runScripts?: boolean
 }
 
 /**
- * Opens what a web address holds: a page as editable layers, as opening an HTML file does but with
- * the stylesheets and pictures it links; a design document as File → Open does; and an SVG or a
- * picture in a new design. Throws, with words for the person, for anything it cannot open.
+ * Reads what a web address holds. Throws, with words for the person, when it cannot be read or
+ * holds nothing OpenPencil opens, so the address can be corrected before anything opens.
  */
-export async function openWebAddress(url: URL, signal?: AbortSignal): Promise<void> {
+export async function fetchWebAddress(url: URL, signal?: AbortSignal): Promise<OpenableRemoteFile> {
   const files = filesMessages.get()
   let remote: RemoteFile
   try {
@@ -81,28 +76,32 @@ export async function openWebAddress(url: URL, signal?: AbortSignal): Promise<vo
   } catch (error) {
     throw new Error(fetchFailure(error), { cause: error })
   }
-  // Closing the dialog while the address loaded leaves nothing opened.
   signal?.throwIfAborted()
+  if (remote.kind === 'pdf') throw new Error(files.openURLPDF)
+  if (remote.kind === 'unsupported') throw new Error(files.openURLUnsupported)
+  return { ...remote, kind: remote.kind }
+}
+
+/**
+ * Opens what a web address held in a tab of its own: a page as editable layers, as opening an
+ * HTML file does but with the stylesheets and pictures it links, laid out in `viewport` and, on
+ * desktop, built by its scripts first; a design document as File → Open does; and an SVG or a
+ * picture in a new design. The tab shows how far it has got, and closing it cancels the open.
+ */
+export async function openRemoteFile(
+  remote: OpenableRemoteFile,
+  { viewport, runScripts = true }: WebPageOpenOptions = {}
+): Promise<void> {
   switch (remote.kind) {
-    case 'html': {
-      // The desktop app renders the page, so a page its scripts build opens as it shows; the
-      // HTML its server sent stands in when it cannot be rendered, and in the browser.
-      const rendered = IS_TAURI ? await renderOnDesktop(remote.url) : null
-      signal?.throwIfAborted()
-      const html = rendered ? new TextEncoder().encode(rendered.html) : remote.bytes
-      const pageURL = rendered?.url ?? remote.url
-      // A page its scripts sent elsewhere is named after where it ended up.
-      const title = rendered ? remoteFileTitle(new URL(rendered.url)) : remote.title
-      await openFileInNewTab(new File([html], remote.name || title), {
-        path: pageURL,
-        webPage: { url: pageURL, title },
-        signal
+    case 'html':
+      await openFileInNewTab(new File([remote.bytes], remote.name || remote.title), {
+        path: remote.url,
+        webPage: { url: remote.url, title: remote.title, viewport, render: IS_TAURI && runScripts }
       })
       return
-    }
     case 'document':
       // Opened as a picked file is: its address is no file path a save could write back to.
-      await openFileInNewTab(new File([remote.bytes], remote.name), { signal })
+      await openFileInNewTab(new File([remote.bytes], remote.name))
       return
     case 'svg':
       await openImage(
@@ -114,10 +113,13 @@ export async function openWebAddress(url: URL, signal?: AbortSignal): Promise<vo
       await openImage(
         new File([remote.bytes], remote.name || remote.title, { type: imageMimeType(remote.bytes) })
       )
-      return
-    case 'pdf':
-      throw new Error(files.openURLPDF)
-    case 'unsupported':
-      throw new Error(files.openURLUnsupported)
   }
+}
+
+/** Reads a web address and opens what it holds; see `fetchWebAddress` and `openRemoteFile`. */
+export async function openWebAddress(
+  url: URL,
+  options: WebPageOpenOptions & { signal?: AbortSignal } = {}
+): Promise<void> {
+  await openRemoteFile(await fetchWebAddress(url, options.signal), options)
 }
