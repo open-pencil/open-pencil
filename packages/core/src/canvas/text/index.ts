@@ -264,10 +264,8 @@ export function measureTextInkAsDrawn(
 ): VisualBounds | null | undefined {
   if (!r.fontsLoaded || !r.fontProvider) return undefined
   if (node.type !== 'TEXT' || node.textPathData) return undefined
-  // Text in faces other than its own draws its saved glyphs, whose ink its layout does not show.
   const readiness = nodeFontReadiness(r, node)
   if (readiness === 'pending' || readiness === 'exhausted') return undefined
-  if (readiness !== 'ready' && (node.derivedTextGlyphs?.length ?? 0) > 0) return undefined
   if (!node.text) return null
   const compute = () => {
     const layout = buildParagraph(r, node, undefined, { halfLeading: true })
