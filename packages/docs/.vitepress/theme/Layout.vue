@@ -28,9 +28,9 @@ import ThemeButton from './site/ThemeButton.vue'
 <style>
 /*
  * From 1180px the header shows its settings as icons, instead of folding them into ⋯ below 1280px
- * as VitePress does: language, theme, and Discord, each a tile on hover with its name as a
- * tooltip, then the GitHub and editor buttons. VitePress's theme switch gives way to the icon.
- * Narrower, there is no room for them beside the links, and VitePress's own ⋯ and menu stay.
+ * as VitePress does: language, theme, and Discord, each a tile on hover, then the GitHub and
+ * editor buttons. VitePress's theme switch gives way to the icon. Narrower, there is no room for
+ * them beside the links, and VitePress's own ⋯ and menu stay.
  */
 .VPNavBar .content-body .theme-button,
 .VPNavBar .content-body .github {
@@ -97,7 +97,7 @@ import ThemeButton from './site/ThemeButton.vue'
   }
 }
 
-.VPNavBar .translations .button,
+.VPNavBar .translations .button .text,
 .VPNavBar .social-links .VPSocialLink,
 .site-header-icon {
   position: relative;
@@ -117,7 +117,7 @@ import ThemeButton from './site/ThemeButton.vue'
     color 0.25s;
 }
 
-.VPNavBar .translations .button:hover,
+.VPNavBar .translations .button:hover .text,
 .VPNavBar .social-links .VPSocialLink:hover,
 .site-header-icon:hover {
   background-color: var(--vp-c-default-soft);
@@ -129,8 +129,10 @@ import ThemeButton from './site/ThemeButton.vue'
   height: 18px;
 }
 
-/* Each icon's name, from its own label, below it on hover or keyboard focus. */
-.VPNavBar .translations .button[aria-label]:is(:hover, :focus-visible)::after,
+/*
+ * Each icon's name, from its own label, below it on hover or keyboard focus. Language has none:
+ * hovering it opens its menu, which the name would cover.
+ */
 .VPNavBar .social-links .VPSocialLink[aria-label]:is(:hover, :focus-visible)::after {
   content: attr(aria-label);
 }
@@ -139,7 +141,6 @@ import ThemeButton from './site/ThemeButton.vue'
   content: attr(data-tooltip);
 }
 
-.VPNavBar .translations .button[aria-label]:is(:hover, :focus-visible)::after,
 .VPNavBar .social-links .VPSocialLink[aria-label]:is(:hover, :focus-visible)::after,
 .VPNavBar .site-header-icon[data-tooltip]:is(:hover, :focus-visible)::after {
   position: absolute;
@@ -156,5 +157,14 @@ import ThemeButton from './site/ThemeButton.vue'
   white-space: nowrap;
   transform: translateX(-50%);
   pointer-events: none;
+}
+
+/*
+ * The language button keeps the bar's full height, its tile drawn on the icon inside: VitePress
+ * opens the menu below the button, and a shorter one would leave a gap that closes the menu as
+ * the pointer crosses it.
+ */
+.VPNavBar .translations .button {
+  padding: 0;
 }
 </style>
