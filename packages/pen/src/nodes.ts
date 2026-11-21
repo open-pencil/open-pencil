@@ -436,20 +436,24 @@ function mergedDescendants(
 function throughRefComponents(
   pen: PenNode,
   build: Build
-): { pen: PenNode; copiedChildren: boolean } {
+): { pen: PenNode; copiedChildren: boolean; blocked: boolean } {
   let current = pen
   let copiedChildren = false
+  let blocked = false
   const ancestry = build.refCopyAncestry.get(pen.id) ?? NO_ANCESTRY
-  for (let depth = 0; depth < MAX_REF_COMPONENT_DEPTH; depth++) {
+  for (let depth = 0; ; depth++) {
     if (current.type !== 'ref' || !current.ref) break
     const component = build.components.get(current.ref)
     if (component?.type !== 'ref' || !component.ref) break
+    // A chain longer than any a document means is a cycle: the use draws no layers.
+    if (depth >= MAX_REF_COMPONENT_DEPTH || ancestry.has(component.id)) {
+      blocked = true
+      break
+    }
     const { id: _id, reusable: _reusable, x: _x, y: _y, name: _name, ...middle } = component
     const { ref: _ref, type: _type, ...own } = current
     const theme = { ...middle.theme, ...own.theme }
-    // A copy inside this component's own children does not take them again, so a cycle of
-    // components ends instead of copying without end.
-    const inherits = !own.children && middle.children && !ancestry.has(component.id)
+    const inherits = !own.children && middle.children
     const through = new Set([...ancestry, component.id])
     const children = inherits
       ? copiedLayers(middle.children ?? [], pen.id, through, build)
@@ -468,12 +472,67 @@ function throughRefComponents(
       children
     }
   }
-  return { pen: current, copiedChildren }
+  return { pen: current, copiedChildren, blocked }
+}
+
+/** The layer among `layers`, at any depth, with ID `id`. */
+function layerWithId(layers: readonly PenNode[], id: string): PenNode | undefined {
+  for (const layer of layers) {
+    if (layer.id === id) return layer
+    const inside = layer.children && layerWithId(layer.children, id)
+    if (inside) return inside
+  }
+  return undefined
 }
 
 /**
- * Builds a layer's children under `parentId`: a plain use copies its component's layers under its
- * own ID, and children a middle component gave are copies named for this use already.
+ * Gives a use's copies of a component that is not a frame the use's descendant overrides, as an
+ * instance's copies take them: a key names the copy by the component layer's ID, and the rest of
+ * a longer key is an override of the instance that layer is. Copies are named under `prefix`.
+ */
+function applyCopyOverrides(
+  copies: PenNode[],
+  descendants: PenNode['descendants'],
+  prefix: string,
+  ancestry: ReadonlySet<string>,
+  build: Build
+): PenNode[] {
+  let layers = copies
+  for (const [path, override] of Object.entries(descendants ?? {})) {
+    const [first = '', ...rest] = path.split('/')
+    const target = layerWithId(layers, `${prefix}/${first}`)
+    if (!target) continue
+    if (rest.length > 0) {
+      target.descendants = { ...target.descendants, [rest.join('/')]: override }
+    } else if (override.type) {
+      const [replacement] = copiedLayers(
+        [{ ...override, type: override.type, id: override.id ?? first }],
+        prefix,
+        ancestry,
+        build
+      )
+      layers = replacedLayer(layers, target, replacement)
+    } else {
+      Object.assign(target, override, { id: target.id })
+    }
+  }
+  return layers
+}
+
+/** `layers` with `target`, at any depth, swapped for `replacement`. */
+function replacedLayer(layers: PenNode[], target: PenNode, replacement: PenNode): PenNode[] {
+  return layers.map((layer) => {
+    if (layer === target) return replacement
+    if (layer.children) layer.children = replacedLayer(layer.children, target, replacement)
+    return layer
+  })
+}
+
+/**
+ * Builds a layer's children under `parentId`. A use of a component that is not a frame draws
+ * copies of the component's layers, named under its own ID, with its overrides on them; children
+ * a middle component gave are such copies already. A copy inside a component's own layers does
+ * not copy them again, so a cycle of components ends.
  */
 function createCopiedChildren(
   pen: PenNode,
@@ -482,19 +541,25 @@ function createCopiedChildren(
   parentId: string,
   build: Build
 ): void {
-  if (copiedChildren || pen.type !== 'ref') {
+  if (pen.type !== 'ref') {
     for (const child of pen.children ?? []) createSceneNode(child, parentId, build)
     return
   }
-  for (const child of component?.children ?? []) {
-    createSceneNode({ ...child, id: `${pen.id}/${child.id}` }, parentId, build)
+  const ancestry = build.refCopyAncestry.get(pen.id) ?? NO_ANCESTRY
+  let copies = pen.children ?? []
+  if (!copiedChildren) {
+    if (!component || ancestry.has(component.id)) return
+    const through = new Set([...ancestry, component.id])
+    copies = copiedLayers(component.children ?? [], pen.id, through, build)
   }
+  copies = applyCopyOverrides(copies, pen.descendants, pen.id, ancestry, build)
+  for (const child of copies) createSceneNode(child, parentId, build)
 }
 
 /** Builds a layer and its children in the layer's theme, merged over its parent's. */
 export function createSceneNode(layer: PenNode, parentId: string, build: Build): string | null {
   if (layer.type === 'prompt') return null
-  const { pen, copiedChildren } = throughRefComponents(layer, build)
+  const { pen, copiedChildren, blocked } = throughRefComponents(layer, build)
   const component = pen.type === 'ref' && pen.ref ? build.components.get(pen.ref) : undefined
   // A component that is not a frame has no instances; its uses are plain copies.
   const instanceOf = pen.type === 'ref' && component?.type === 'frame' ? component : undefined
@@ -508,7 +573,7 @@ export function createSceneNode(layer: PenNode, parentId: string, build: Build):
     if (instanceOf) {
       node.componentId = instanceOf.id
       build.instances.set(node.id, pen)
-    } else {
+    } else if (!blocked) {
       createCopiedChildren(pen, component, copiedChildren, node.id, build)
     }
     return node.id

@@ -174,3 +174,60 @@ describe('parsePenFile — layers a component that is a ref puts in', () => {
     expect(graph.getChildren('use')[0]?.opacity).toBe(0.5)
   })
 })
+
+describe('parsePenFile — uses of components that are not frames', () => {
+  const group: PenNode = {
+    id: 'group',
+    type: 'group',
+    reusable: true,
+    children: [{ id: 'label', type: 'text', content: 'Base' }]
+  }
+
+  test('gives the copies a middle component’s overrides', () => {
+    const graph = parseDocument([
+      group,
+      {
+        id: 'middle',
+        type: 'ref',
+        ref: 'group',
+        reusable: true,
+        descendants: { label: { content: 'Middle' } }
+      },
+      { id: 'use', type: 'ref', ref: 'middle' }
+    ])
+    expect(graph.getChildren('use')[0]?.text).toBe('Middle')
+  })
+
+  test('ends a cycle that runs through a plain copy of a group', () => {
+    const graph = parseDocument([
+      {
+        id: 'g',
+        type: 'group',
+        reusable: true,
+        children: [{ id: 'r', type: 'ref', ref: 'm' }]
+      },
+      { id: 'f', type: 'frame', reusable: true, width: 10, height: 10 },
+      {
+        id: 'm',
+        type: 'ref',
+        ref: 'f',
+        reusable: true,
+        children: [{ id: 'c', type: 'ref', ref: 'g' }]
+      },
+      { id: 'use', type: 'ref', ref: 'g' }
+    ])
+    expect(graph.nodes.size).toBeLessThan(50)
+  })
+
+  test('ends a ring of components that are refs longer than the depth limit', () => {
+    const ring: PenNode[] = Array.from({ length: 17 }, (_, index) => ({
+      id: `r${index}`,
+      type: 'ref',
+      ref: `r${(index + 1) % 17}`,
+      reusable: true,
+      children: [{ id: `c${index}`, type: 'ref', ref: `r${(index + 2) % 17}` }]
+    }))
+    const graph = parseDocument([...ring, { id: 'use', type: 'ref', ref: 'r0' }])
+    expect(graph.nodes.size).toBeLessThan(2000)
+  })
+})
