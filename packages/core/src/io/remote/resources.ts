@@ -1,7 +1,10 @@
 import type { DesignResource, DesignResourceFetch } from '@open-pencil/dom-css'
 
 import { readBoundedBody } from './body'
-import { MAX_REMOTE_FILE_BYTES, mediaType } from './file'
+import { mediaType } from './file'
+
+/** The most one file a page loads, such as a stylesheet, font, or picture, may hold. */
+export const MAX_PAGE_FILE_BYTES = 64 * 1024 * 1024
 
 /** The most the files one page loads may hold together, so a page cannot exhaust memory. */
 export const MAX_PAGE_RESOURCE_BYTES = 256 * 1024 * 1024
@@ -12,7 +15,7 @@ export const MAX_PAGE_RESOURCE_BYTES = 256 * 1024 * 1024
  */
 export function networkResourceFetch(
   fetch: typeof globalThis.fetch,
-  maxBytes = MAX_REMOTE_FILE_BYTES
+  maxBytes = MAX_PAGE_FILE_BYTES
 ): DesignResourceFetch {
   return async (url, signal) => {
     const response = await fetch(url, { signal }).catch(() => null)
