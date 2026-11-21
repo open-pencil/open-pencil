@@ -52,7 +52,7 @@ export function createColorSpaceActions(
     }
 
     // Converting walks every stored color, which most sessions never need at startup.
-    const [{ colorsBefore, writeColors }] = await Promise.all([
+    const [{ convertColors, replayConversion }] = await Promise.all([
       import('./convert'),
       ...graph.getPages().map((page) => loadPageNodes(page.id))
     ])
@@ -61,18 +61,18 @@ export function createColorSpaceActions(
     if (ctx.graph !== graph || graph.documentColorSpace !== previous) return
     const refused = refusal(colorSpace, mode)
     if (refused) throw refused
-    const before = colorsBefore(graph)
-    const convert = (color: Color) => convertColor(color, previous, colorSpace, 'map')
-    const forward = () => {
-      writeColors(graph, before, convert)
-      setProfile(colorSpace)
-    }
-    forward()
+    const conversion = convertColors(graph, (color: Color) =>
+      convertColor(color, previous, colorSpace, 'map')
+    )
+    setProfile(colorSpace)
     ctx.undo.push({
       label: 'Convert color profile',
-      forward,
+      forward: () => {
+        replayConversion(graph, conversion, true)
+        setProfile(colorSpace)
+      },
       inverse: () => {
-        writeColors(graph, before, null)
+        replayConversion(graph, conversion, false)
         setProfile(previous)
       }
     })
