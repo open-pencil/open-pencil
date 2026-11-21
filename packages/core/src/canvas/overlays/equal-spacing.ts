@@ -1,6 +1,6 @@
 // The gaps Figma's equal spacing matched during a move: each a line with a tick at both ends and a
 // label with its length.
-import type { Canvas } from '@open-pencil/canvaskit'
+import type { Canvas, Paint } from '@open-pencil/canvaskit'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
@@ -10,20 +10,38 @@ import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 /** Half the length of the ticks closing a gap, in screen pixels. */
 const GAP_TICK_HALF_LENGTH = 4
 
+/**
+ * A tick across the gap's line: `along` is where it sits on the guide's axis and `across` where the
+ * line runs, both in screen pixels.
+ */
+function drawTick(
+  canvas: Canvas,
+  paint: Paint,
+  axis: SnapGuide['axis'],
+  along: number,
+  across: number
+): void {
+  if (axis === 'x') {
+    canvas.drawLine(
+      along,
+      across - GAP_TICK_HALF_LENGTH,
+      along,
+      across + GAP_TICK_HALF_LENGTH,
+      paint
+    )
+    return
+  }
+
+  canvas.drawLine(across - GAP_TICK_HALF_LENGTH, along, across + GAP_TICK_HALF_LENGTH, along, paint)
+}
+
+/** Closes the gap with a tick at both ends. */
 function drawGapTicks(r: SkiaRenderer, canvas: Canvas, guide: SnapGuide): void {
-  const paint = r.snapPaint
-  if (guide.axis === 'x') {
-    const y = worldYToScreen(r, guide.position)
-    for (const end of [guide.from, guide.to]) {
-      const x = worldXToScreen(r, end)
-      canvas.drawLine(x, y - GAP_TICK_HALF_LENGTH, x, y + GAP_TICK_HALF_LENGTH, paint)
-    }
-  } else {
-    const x = worldXToScreen(r, guide.position)
-    for (const end of [guide.from, guide.to]) {
-      const y = worldYToScreen(r, end)
-      canvas.drawLine(x - GAP_TICK_HALF_LENGTH, y, x + GAP_TICK_HALF_LENGTH, y, paint)
-    }
+  const toAlong = guide.axis === 'x' ? worldXToScreen : worldYToScreen
+  const toAcross = guide.axis === 'x' ? worldYToScreen : worldXToScreen
+  const across = toAcross(r, guide.position)
+  for (const end of [guide.from, guide.to]) {
+    drawTick(canvas, r.snapPaint, guide.axis, toAlong(r, end), across)
   }
 }
 

@@ -99,11 +99,10 @@ function neighbors(row: Span[], moving: Span, threshold: number) {
   let after: Span | undefined
   for (const span of row) {
     const spanCenter = (span.start + span.end) / 2
-    if (spanCenter < center && span.end <= moving.start + threshold) {
-      if (!before || span.end > before.end) before = span
-    } else if (spanCenter > center && span.start >= moving.end - threshold) {
-      if (!after || span.start < after.start) after = span
-    }
+    const isBefore = spanCenter < center && span.end <= moving.start + threshold
+    const isAfter = spanCenter > center && span.start >= moving.end - threshold
+    if (isBefore && (!before || span.end > before.end)) before = span
+    if (isAfter && (!after || span.start < after.start)) after = span
   }
   return { before, after }
 }

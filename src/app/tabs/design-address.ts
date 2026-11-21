@@ -66,8 +66,12 @@ async function designExists(designId: string): Promise<boolean> {
 
 /** Opens the design `designId` names in a tab: its recovery copy, or the stored document. */
 async function reopenDesign(designId: string): Promise<void> {
-  if (await getRecoveryStore().read(designId)) await restoreRecoverySnapshot(designId)
-  else await reopenStoredDesign(designId)
+  if (await getRecoveryStore().read(designId)) {
+    await restoreRecoverySnapshot(designId)
+    return
+  }
+
+  await reopenStoredDesign(designId)
 }
 
 /**
@@ -124,14 +128,15 @@ export function syncDesignAddress(
   function update(): void {
     if (!restored.value || openingCloudLink.value) return
     const designId = designIdOf(activeTab.value)
-    const onDesign = route.path.startsWith(DESIGN_ROUTE_PREFIX)
     if (designId) {
       const path = designRoutePath(designId)
       if (route.path !== path) void router.replace({ path, query: route.query, hash: route.hash })
-    } else if (onDesign) {
-      // Home, a room, or a stored file: the address `address.ts` keeps, or `/`.
-      void router.replace({ path: '/', query: route.query, hash: route.hash })
+      return
     }
+
+    if (!route.path.startsWith(DESIGN_ROUTE_PREFIX)) return
+    // Home, a room, or a stored file: the address `address.ts` keeps, or `/`.
+    void router.replace({ path: '/', query: route.query, hash: route.hash })
   }
 
   const stopWatch = watch(

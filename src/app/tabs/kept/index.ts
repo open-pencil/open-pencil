@@ -63,8 +63,13 @@ export async function restoreKeptTabs(
   const front = activeDesignId
     ? getTabsSnapshot().find((tab) => designIdOf(tab) === activeDesignId)
     : undefined
-  if (front) switchTab(front.id)
-  else if (!before || !switchTab(before.id)) createHomeTab()
+  if (front) {
+    switchTab(front.id)
+    return
+  }
+
+  if (before && switchTab(before.id)) return
+  createHomeTab()
 }
 
 /**

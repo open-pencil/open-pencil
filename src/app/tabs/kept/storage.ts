@@ -26,8 +26,12 @@ export function readKeptTabsText(): string | null {
 export function writeKeptTabsText(text: string | null): void {
   const storage = session()
   if (!storage) return
-  if (text === null) storage.removeItem(KEPT_TABS_STORAGE_KEY)
-  else storage.setItem(KEPT_TABS_STORAGE_KEY, text)
+  if (text === null) {
+    storage.removeItem(KEPT_TABS_STORAGE_KEY)
+    return
+  }
+
+  storage.setItem(KEPT_TABS_STORAGE_KEY, text)
 }
 
 /** Whether this browser tab has designs to reopen. */
