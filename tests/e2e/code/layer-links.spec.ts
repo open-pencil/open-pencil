@@ -63,8 +63,7 @@ function focusedLayer(page: Page) {
 }
 
 test.beforeEach(async () => {
-  await editor.page.reload()
-  await editor.canvas.waitForInit()
+  await editor.reload()
 })
 
 async function openCode(page: Page) {

@@ -13,8 +13,7 @@ import {
 const editor = useEditorSetup()
 
 test.beforeEach(async () => {
-  await editor.page.reload()
-  await editor.canvas.waitForInit()
+  await editor.reload()
 })
 
 function codeTab() {

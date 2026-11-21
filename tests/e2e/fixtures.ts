@@ -25,7 +25,28 @@ export function useEditorSetup(url = '/?test') {
     },
     get canvas() {
       return canvas
+    },
+    /** Reloads the shared page into a fresh editor that serial specs can reuse test after test. */
+    async reload() {
+      await page.reload()
+      await canvas.waitForInit()
+      await collectGarbage(page)
     }
+  }
+}
+
+/**
+ * Chromium keeps one renderer process across a page's reloads, and that process frees an earlier
+ * load's WebAssembly memory and WebGL contexts only when it collects garbage. About fifteen
+ * reloads in a row exhaust it and the page crashes, so the earlier loads are collected at once.
+ */
+async function collectGarbage(page: Page) {
+  if (page.context().browser()?.browserType().name() !== 'chromium') return
+  const cdp = await page.context().newCDPSession(page)
+  try {
+    await cdp.send('HeapProfiler.collectGarbage')
+  } finally {
+    await cdp.detach()
   }
 }
 
