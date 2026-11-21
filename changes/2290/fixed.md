@@ -1,0 +1,1 @@
+- SVG export now writes mask layers and imported clip paths as SVG `<mask>` definitions instead of drawing the mask shape visibly over unclipped content.
