@@ -109,7 +109,8 @@ function createGradientDef(
   const stopNodes = stops.map((s) =>
     svg('stop', {
       offset: `${round(s.position * 100)}%`,
-      'stop-color': formatColor(s.color, 1, ctx.colors),
+      // Alpha goes in stop-opacity alone; a P3 stop-color would carry it too, and SVG multiplies.
+      'stop-color': formatColor({ ...s.color, a: 1 }, 1, ctx.colors),
       'stop-opacity': s.color.a < 1 ? round(s.color.a) : undefined
     })
   )
