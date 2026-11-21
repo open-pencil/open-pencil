@@ -88,11 +88,10 @@ describe('a page’s own fonts', () => {
     const families = await loadPageFontFaces(page('Provider Sans', [subset]), async (url) => {
       requested.push(url)
       return null
-    })
+    }).finally(() => serves.mockRestore())
 
     expect([...families.values()]).toEqual(['Provider Sans'])
     expect(requested).toEqual([])
-    serves.mockRestore()
   })
 
   test('tries a rule’s sources in the page’s order, its own file before a provider’s', async () => {
@@ -106,15 +105,18 @@ describe('a page’s own fonts', () => {
     )
     const requested: string[] = []
 
-    await loadPageFontFaces(page('Ordered Sans', [own, provided]), async (url) => {
-      requested.push(url)
-      return { url, bytes: font }
-    })
+    try {
+      await loadPageFontFaces(page('Ordered Sans', [own, provided]), async (url) => {
+        requested.push(url)
+        return { url, bytes: font }
+      })
+    } finally {
+      serves.mockRestore()
+    }
 
     // The browser uses the first source it can read, the page's own file.
     expect(requested).toEqual([own])
     expect(fontManager.loadedData('Ordered Sans', 'Regular')?.byteLength).toBe(font.byteLength)
-    serves.mockRestore()
   })
 
   test('loads every subset a page splits one face into', async () => {

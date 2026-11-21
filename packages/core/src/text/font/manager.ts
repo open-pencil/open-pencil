@@ -78,6 +78,11 @@ export class FontManager {
    * between the two by the weight each declares.
    */
   private replacedFileData = new Map<string, Set<ArrayBuffer>>()
+  /**
+   * Faces drawn from a variable file loaded for another style of their family, rather than a file
+   * of their own: a document's later variable file replaces these, never a face it registered.
+   */
+  private inferredFaces = new Set<string>()
   private remoteCoverage = new Map<string, Set<string>>()
   private instanceVariations = new WeakMap<ArrayBuffer, Map<string, FontVariation[] | null>>()
   private variations = new WeakMap<
@@ -615,7 +620,7 @@ export class FontManager {
       if (!wght || (!named && (weight < wght.min || weight > wght.max))) continue
       const coverage = this.remoteCoverage.get(key)
       if (coverage) this.remoteCoverage.set(`${family}|${style}`, new Set(coverage))
-      return this.registerAndCache(family, style, data, this.loadedFamilySources.get(key))
+      return this.registerInferred(family, style, data, key, this.loadedFamilySources.get(key))
     }
     return null
   }
@@ -638,10 +643,36 @@ export class FontManager {
   ): Promise<void> {
     this.registerAndCache(family, style, data, source)
     if (source === 'registered') {
+      this.inferredFaces.delete(`${family}|${style}`)
       this.remoteCoverage.delete(`${family}|${style}`)
       this.takeOverCoveredFaces(family, style, data)
     }
     await loadHarfBuzz()
+  }
+
+  /**
+   * Registers `data`, the variable file of the face `sourceKey` names, for `style` too, with that
+   * face's own subsets, as a face drawn from it rather than one of its own.
+   */
+  private registerInferred(
+    family: string,
+    style: string,
+    data: ArrayBuffer,
+    sourceKey: string,
+    source?: FontLoadedSource
+  ): ArrayBuffer | null {
+    const buffer = this.registerAndCache(family, style, data, source)
+    this.inferredFaces.add(`${family}|${style}`)
+    for (const shard of this.ownShards(sourceKey)) {
+      this.registerSupplemental(family, style, shard, source)
+    }
+    return buffer
+  }
+
+  /** A face's files after its own that split it, leaving out files it replaced. */
+  private ownShards(key: string): ArrayBuffer[] {
+    const replaced = this.replacedFileData.get(key)
+    return (this.supplementalFamilyData.get(key) ?? []).filter((file) => !replaced?.has(file))
   }
 
   /**
@@ -653,16 +684,17 @@ export class FontManager {
     const wght = fontAxes(data)?.find((axis) => axis.tag === 'wght')
     if (!wght) return
     const { italic } = parseFontStyle(style)
+    const sourceKey = `${family}|${style}`
     for (const key of this.loadedFamilies.keys()) {
-      if (!key.startsWith(`${family}|`) || this.loadedFamilySources.get(key) === 'registered') {
-        continue
-      }
+      if (!key.startsWith(`${family}|`) || key === sourceKey) continue
+      const own = this.loadedFamilySources.get(key) === 'registered' && !this.inferredFaces.has(key)
+      if (own) continue
       const faceStyle = key.slice(family.length + 1)
       const face = parseFontStyle(faceStyle)
       if (face.italic !== italic || !namesWeight(faceStyle)) continue
       if (face.weight < wght.min || face.weight > wght.max) continue
       this.remoteCoverage.delete(key)
-      this.registerAndCache(family, faceStyle, data, 'registered')
+      this.registerInferred(family, faceStyle, data, sourceKey, 'registered')
     }
   }
 
@@ -673,6 +705,12 @@ export class FontManager {
    */
   async addFaceShard(family: string, style: string, data: ArrayBuffer): Promise<void> {
     this.registerSupplemental(family, style, data, 'registered')
+    // The weights drawn from this face's file draw what it lacks from the same subsets.
+    const file = this.loadedFamilies.get(`${family}|${style}`)
+    for (const key of this.inferredFaces) {
+      if (!key.startsWith(`${family}|`) || !file || this.loadedFamilies.get(key) !== file) continue
+      this.registerSupplemental(family, key.slice(family.length + 1), data, 'registered')
+    }
     await loadHarfBuzz()
   }
 

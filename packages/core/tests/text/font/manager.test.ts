@@ -387,6 +387,37 @@ test('draws the weights an installed font loaded earlier from a document’s var
   expect(await manager.loadFont(family, 'SemiBold')).toBe(variable)
 })
 
+test('a later document’s variable font replaces the weights an earlier one drew, not its own', async () => {
+  const manager = offlineManager()
+  const family = 'Fonts Test Later Document'
+  const first = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  const second = first.slice(0, first.byteLength)
+  new Uint8Array(second)[second.byteLength - 1] ^= 1
+  const bold = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).arrayBuffer()
+  await manager.markLoaded(family, 'Regular', first)
+  await manager.markLoaded(family, 'Bold', bold)
+  expect(await manager.loadFont(family, 'SemiBold')).toBe(first)
+
+  await manager.markLoaded(family, 'Regular', second)
+
+  // SemiBold was drawn from the first file; Bold is a file the document registered itself.
+  expect(await manager.loadFont(family, 'SemiBold')).toBe(second)
+  expect(await manager.loadFont(family, 'Bold')).toBe(bold)
+})
+
+test('a weight drawn from a face’s variable file draws from the face’s subsets too', async () => {
+  const manager = offlineManager()
+  const family = 'Fonts Test Inferred Shards'
+  const variable = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  const greek = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).arrayBuffer()
+  await manager.markLoaded(family, 'Regular', variable)
+  expect(await manager.loadFont(family, 'SemiBold')).toBe(variable)
+
+  await manager.addFaceShard(family, 'Regular', greek)
+
+  expect(manager.shardData(family, 'SemiBold')).toEqual([greek])
+})
+
 test('keeps the file it has when the same font is read or downloaded again', async () => {
   const manager = offlineManager()
   const family = 'Fonts Test Same File'
