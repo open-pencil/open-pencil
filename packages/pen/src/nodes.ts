@@ -369,14 +369,57 @@ function copiedLayers(
   })
 }
 
+/**
+ * A use's descendant overrides with each key that names a layer the middle component put in
+ * through a replacement renamed to that replacement's path, as pen.dev names it from there.
+ */
+function onMiddlePaths(
+  middle: NonNullable<PenNode['descendants']>,
+  own: NonNullable<PenNode['descendants']>
+): NonNullable<PenNode['descendants']> {
+  const pathOf = new Map<string, string>()
+  for (const [path, override] of Object.entries(middle)) {
+    if (override.type && override.id) pathOf.set(override.id, path)
+  }
+  return Object.fromEntries(
+    Object.entries(own).map(([path, override]) => [pathOf.get(path) ?? path, override])
+  )
+}
+
+/**
+ * The middle component's descendant overrides for a use: each layer one puts in is a copy under
+ * `prefix`, so it never shares an ID with the layer the middle component itself puts in.
+ */
+function copiedReplacements(
+  middle: NonNullable<PenNode['descendants']>,
+  prefix: string,
+  ancestry: ReadonlySet<string>,
+  build: Build
+): NonNullable<PenNode['descendants']> {
+  return Object.fromEntries(
+    Object.entries(middle).map(([path, override]) => {
+      if (!override.type || !override.id) return [path, override]
+      const [copy] = copiedLayers(
+        [{ ...override, type: override.type, id: override.id }],
+        prefix,
+        ancestry,
+        build
+      )
+      return [path, copy]
+    })
+  )
+}
+
 /** Descendant overrides with the use's on top, merged field by field where both name a path. */
 function mergedDescendants(
   middle: PenNode['descendants'],
-  own: PenNode['descendants']
+  own: PenNode['descendants'],
+  copy: (middle: NonNullable<PenNode['descendants']>) => NonNullable<PenNode['descendants']>
 ): PenNode['descendants'] {
-  if (!middle || !own) return middle ?? own
-  const merged = { ...middle }
-  for (const [path, override] of Object.entries(own)) {
+  if (!middle) return own
+  const merged = copy(middle)
+  if (!own) return merged
+  for (const [path, override] of Object.entries(onMiddlePaths(middle, own))) {
     const under = merged[path]
     // A replacement layer (one naming its type) takes the path whole, as it does on its own.
     merged[path] = under && !override.type ? { ...under, ...override } : override
@@ -407,8 +450,9 @@ function throughRefComponents(
     // A copy inside this component's own children does not take them again, so a cycle of
     // components ends instead of copying without end.
     const inherits = !own.children && middle.children && !ancestry.has(component.id)
+    const through = new Set([...ancestry, component.id])
     const children = inherits
-      ? copiedLayers(middle.children ?? [], pen.id, new Set([...ancestry, component.id]), build)
+      ? copiedLayers(middle.children ?? [], pen.id, through, build)
       : own.children
     copiedChildren ||= Boolean(inherits)
     current = {
@@ -418,7 +462,9 @@ function throughRefComponents(
       ref: component.ref,
       name: own.name ?? component.name,
       theme: Object.keys(theme).length > 0 ? theme : undefined,
-      descendants: mergedDescendants(middle.descendants, own.descendants),
+      descendants: mergedDescendants(middle.descendants, own.descendants, (overrides) =>
+        copiedReplacements(overrides, pen.id, through, build)
+      ),
       children
     }
   }

@@ -125,3 +125,52 @@ describe('parsePenFile — overrides and copies through components that are refs
     expect(graph.nodes.size).toBeLessThan(50)
   })
 })
+
+describe('parsePenFile — layers a component that is a ref puts in', () => {
+  const dialog: PenNode = {
+    id: 'dialog',
+    type: 'frame',
+    reusable: true,
+    children: [{ id: 'body', type: 'frame', width: 10, height: 10 }]
+  }
+  // A component that is a ref, replacing its base's body with a layer of its own.
+  const form: PenNode = {
+    id: 'form',
+    type: 'ref',
+    ref: 'dialog',
+    reusable: true,
+    descendants: {
+      body: {
+        id: 'fields',
+        type: 'frame',
+        children: [{ id: 'field', type: 'frame', width: 20, height: 20 }]
+      }
+    }
+  }
+
+  test('gives each use its own copy of the layer instead of sharing its ID', () => {
+    const graph = parseDocument([
+      dialog,
+      form,
+      { id: 'one', type: 'ref', ref: 'form' },
+      { id: 'two', type: 'ref', ref: 'form' }
+    ])
+    const parents = new Map<string, string[]>()
+    for (const node of graph.nodes.values()) {
+      for (const child of node.childIds)
+        parents.set(child, [...(parents.get(child) ?? []), node.id])
+    }
+    expect([...parents.values()].filter((list) => list.length > 1)).toEqual([])
+    expect(graph.getChildren('one')).toHaveLength(1)
+    expect(graph.getChildren('two')).toHaveLength(1)
+  })
+
+  test('applies a use’s override keyed by the layer’s own ID', () => {
+    const graph = parseDocument([
+      dialog,
+      form,
+      { id: 'use', type: 'ref', ref: 'form', descendants: { fields: { opacity: 0.5 } } }
+    ])
+    expect(graph.getChildren('use')[0]?.opacity).toBe(0.5)
+  })
+})
