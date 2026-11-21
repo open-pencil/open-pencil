@@ -45,17 +45,26 @@ function drawGapTicks(r: SkiaRenderer, canvas: Canvas, guide: SnapGuide): void {
   }
 }
 
+/** A snap guide that is an equal-spacing gap, with its length. */
+type GapGuide = SnapGuide & { spacing: number }
+
+function isGap(guide: SnapGuide): guide is GapGuide {
+  return guide.spacing !== undefined
+}
+
 /** Draws the snap guides that are equal-spacing gaps; `drawSnapGuides` leaves them to this. */
 export function drawSpacingGuides(r: SkiaRenderer, canvas: Canvas, guides?: SnapGuide[]): void {
-  for (const guide of guides ?? []) {
-    if (guide.spacing === undefined) continue
+  const gaps = (guides ?? []).filter(isGap)
+  // Every gap's ticks go under the labels: a small gap zoomed out puts its ticks, or a neighbor's,
+  // over the label's numerals.
+  for (const gap of gaps) drawGapTicks(r, canvas, gap)
+  for (const gap of gaps) {
     drawMeasurementSegment(r, canvas, {
-      axis: guide.axis,
-      from: guide.from,
-      to: guide.to,
-      cross: guide.position,
-      value: guide.spacing
+      axis: gap.axis,
+      from: gap.from,
+      to: gap.to,
+      cross: gap.position,
+      value: gap.spacing
     })
-    drawGapTicks(r, canvas, guide)
   }
 }
