@@ -425,6 +425,26 @@ function throughRefComponents(
   return { pen: current, copiedChildren }
 }
 
+/**
+ * Builds a layer's children under `parentId`: a plain use copies its component's layers under its
+ * own ID, and children a middle component gave are copies named for this use already.
+ */
+function createCopiedChildren(
+  pen: PenNode,
+  component: PenNode | undefined,
+  copiedChildren: boolean,
+  parentId: string,
+  build: Build
+): void {
+  if (copiedChildren || pen.type !== 'ref') {
+    for (const child of pen.children ?? []) createSceneNode(child, parentId, build)
+    return
+  }
+  for (const child of component?.children ?? []) {
+    createSceneNode({ ...child, id: `${pen.id}/${child.id}` }, parentId, build)
+  }
+}
+
 /** Builds a layer and its children in the layer's theme, merged over its parent's. */
 export function createSceneNode(layer: PenNode, parentId: string, build: Build): string | null {
   if (layer.type === 'prompt') return null
@@ -443,19 +463,7 @@ export function createSceneNode(layer: PenNode, parentId: string, build: Build):
       node.componentId = instanceOf.id
       build.instances.set(node.id, pen)
     } else {
-      // Children a middle component gave are copies named for this use already.
-      if (copiedChildren) {
-        for (const child of pen.children ?? []) createSceneNode(child, node.id, build)
-      } else {
-        const children = pen.type === 'ref' ? (component?.children ?? []) : (pen.children ?? [])
-        for (const child of children) {
-          createSceneNode(
-            pen.type === 'ref' ? { ...child, id: `${pen.id}/${child.id}` } : child,
-            node.id,
-            build
-          )
-        }
-      }
+      createCopiedChildren(pen, component, copiedChildren, node.id, build)
     }
     return node.id
   } finally {
