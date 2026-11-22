@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+
 import { strToU8, zipSync } from 'fflate'
 
 import { readDesignTokenImport } from '@/app/editor/tokens/design-tokens'
@@ -26,11 +27,7 @@ function pickedFile(name: string, content: string, relativePath = ''): File {
 describe('readDesignTokenImport', () => {
   test('a folder import skips an incidental invalid zip and still imports the valid tokens', async () => {
     const bundle = await readDesignTokenImport([
-      pickedFile(
-        'tokens.resolver.json',
-        JSON.stringify(resolver),
-        'tokens/tokens.resolver.json'
-      ),
+      pickedFile('tokens.resolver.json', JSON.stringify(resolver), 'tokens/tokens.resolver.json'),
       pickedFile(
         'Mode 1.tokens.json',
         JSON.stringify(primitiveMode),
