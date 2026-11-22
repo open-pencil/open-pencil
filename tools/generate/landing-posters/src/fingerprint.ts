@@ -14,6 +14,8 @@ export const LANDING_POSTER_INPUTS = {
     'packages/docs/.vitepress/theme',
     'src',
     'packages/core/src',
+    // The fonts Core bundles, which its source imports by path only.
+    'packages/core/assets',
     'packages/scene-graph/src',
     'packages/vue/src',
     'packages/design-jsx/src',
@@ -40,6 +42,7 @@ export const LANDING_POSTER_INPUTS = {
     // The CanvasKit and Taffy builds the stages draw and lay out with, pinned by release.
     'packages/canvaskit/release.json',
     'packages/taffy/release.json',
+    'packages/html-engine/crate/Cargo.toml',
     // Its locale prefixes are the pages the stills are captured on.
     'packages/docs/.vitepress/seo.ts'
   ]
