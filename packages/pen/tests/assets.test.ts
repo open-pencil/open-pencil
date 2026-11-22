@@ -63,6 +63,24 @@ describe('penAssets', () => {
     })
   })
 
+  test('lists an icon a ref sets on the component it places', () => {
+    const doc = parsePenDocument(
+      JSON.stringify({
+        version: '2.21',
+        children: [
+          { id: 'a', type: 'icon', library: 'lucide', icon: 'heart' },
+          // A ref that sets `icon` forwards it to the icon inside the component
+          // it places, so the name must be preloaded like a plain icon's.
+          { id: 'g', type: 'ref', ref: 'x', icon: 'sun' }
+        ]
+      })
+    )
+    expect(penAssets(doc)).toEqual({
+      icons: [{ name: 'lucide:heart' }, { name: 'lucide:sun' }],
+      images: []
+    })
+  })
+
   test('lists an icon whose weight variable holds no number at the default weight', () => {
     const doc = parsePenDocument(
       JSON.stringify({
