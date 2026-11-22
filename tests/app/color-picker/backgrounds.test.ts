@@ -19,8 +19,9 @@ describe('picker backgrounds in a color profile', () => {
         'color(display-p3 0 1 0), color(display-p3 0 1 1), color(display-p3 0 0 1), ' +
         'color(display-p3 1 0 1), color(display-p3 1 0 0))'
     )
-    expect(sliderTrackBackground(red, 'alpha', 'hsb', P3)).toStartWith(
-      'linear-gradient(to right in display-p3, color(display-p3 1 0 0 / 0), color(display-p3 1 0 0)), '
+    // The alpha track fades over the themed checkerboard its slider draws.
+    expect(sliderTrackBackground(red, 'alpha', 'hsb', P3)).toBe(
+      'linear-gradient(to right in display-p3, color(display-p3 1 0 0 / 0), color(display-p3 1 0 0))'
     )
   })
 

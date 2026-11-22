@@ -93,13 +93,13 @@ export function toExtendedSRGB(color: Color, profile: ColorProfile): Color {
 function decodeSRGB(channel: number): number {
   const magnitude = Math.abs(channel)
   if (magnitude <= 0.04045) return channel / 12.92
-  return (Math.sign(channel) || 1) * Math.pow((magnitude + 0.055) / 1.055, 2.4)
+  return (Math.sign(channel) || 1) * ((magnitude + 0.055) / 1.055) ** 2.4
 }
 
 function encodeSRGB(channel: number): number {
   const magnitude = Math.abs(channel)
   if (magnitude <= 0.0031308) return channel * 12.92
-  return (Math.sign(channel) || 1) * (1.055 * Math.pow(magnitude, 1 / 2.4) - 0.055)
+  return (Math.sign(channel) || 1) * (1.055 * magnitude ** (1 / 2.4) - 0.055)
 }
 
 /**
