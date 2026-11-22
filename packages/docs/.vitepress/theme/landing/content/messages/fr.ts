@@ -22,6 +22,12 @@ export const fr: LandingMessages = {
         'Auto layout, contraintes, remplissages, contours, effets et typographie, avec les réglages là où vous les attendez. Les composants ont des slots : une instance garde le design et apporte son propre contenu. Tout s’annule, et rien n’attend un serveur.',
       hint: 'Survolez la pochette sélectionnée et faites glisser un coin pour l’arrondir. Les autres lecteurs apportent leur pochette par le slot Artwork.'
     },
+    board: {
+      title: 'Planifiez sur des tableaux',
+      detail:
+        'Les tableaux apportent les notes adhésives, formes, connecteurs et sections de FigJam, et ouvrent et enregistrent les fichiers .jam que Figma lit. Collez un organigramme Mermaid ou ouvrez un diagramme draw.io : il devient des formes que vous pouvez déplacer, et les agents esquissent des tableaux avec les mêmes outils.',
+      hint: 'Faites glisser une note ou une forme : ses connecteurs suivent. Choisissez un outil dans la barre pour ajouter les vôtres.'
+    },
     interactive: {
       title: 'Des composants qui fonctionnent',
       detail:
@@ -115,71 +121,105 @@ export const fr: LandingMessages = {
     shipped: {
       label: 'Livré',
       entries: [
-        { title: 'Composants interactifs et aperçu' },
-        { title: 'Variables comme design tokens' },
-        { title: 'Linting avec corrections en un clic' },
-        { title: 'Agents AI comme collaborateurs, avec mode suivi' },
-        { title: 'Annuler, régénérer et modifier les échanges avec l’AI' },
-        { title: 'Code relié aux calques' },
-        { title: 'Diff visuel et correctifs' },
+        { title: 'OpenPencil Cloud, aussi auto-hébergé' },
+        { title: 'Des tableaux à la FigJam' },
+        { title: 'Des pages web en calques depuis une URL' },
+        { title: 'Agent Skills et sous-agents' },
+        { title: 'Des formules dans les variables' },
+        { title: 'Polices variables, Material Symbols et SF Symbols' },
+        { title: 'Verre, flou progressif, bruit et texture' },
+        { title: 'Réglages d’image' },
+        { title: 'L’outil Échelle' },
+        { title: 'Un canevas plus rapide' },
         { title: 'Commentaires et appels vocaux dans les salles partagées' },
-        { title: "Composants Vue et React dans l'onglet Code" },
-        { title: 'Import SVG et HTML en calques modifiables' },
-        { title: 'Remplissages par shaders' },
-        { title: 'Design tokens W3C' },
-        { title: 'Une visite guidée de l’éditeur' },
-        { title: 'Listes et styles pour n’importe quelle portion de texte' }
+        { title: 'Composants interactifs et aperçu' },
+        { title: 'Linting avec corrections en un clic' }
       ]
     },
     now: {
       label: 'En cours',
       entries: [
         {
-          title: 'Storybook à partir de vrais composants',
-          detail: 'Des stories qui utilisent Reka UI pour Vue et Radix UI pour React.'
+          title: 'Couleurs Display P3',
+          detail:
+            'Les documents sont dessinés et exportés dans leur profil colorimétrique, comme dans Figma.'
         },
         {
-          title: 'Création de composants',
-          detail: 'Modification des variantes plus rapide et sélection dans les composants.'
+          title: 'Importer des sites web',
+          detail:
+            'Des pages ouvertes depuis une URL plus fidèles au navigateur, en plusieurs tailles de fenêtre.'
+        },
+        {
+          title: 'OpenPencil sur Android',
+          detail: 'L’éditeur sur les téléphones, tablettes et appareils pliables Android.'
         }
       ]
     },
     next: {
       label: 'Ensuite',
-      lead: {
-        title: 'OpenPencil auto-hébergé',
-        detail:
-          'Tout l’espace de travail dans votre propre réseau : synchronisation, partage, commentaires et bibliothèques d’équipe, sans envoyer un fichier à qui que ce soit.',
-        features: [
-          {
-            title: 'Votre stockage',
-            detail: 'Les documents restent dans votre bucket, dans votre région.'
-          },
-          {
-            title: 'Votre identité',
-            detail: 'Connexion via votre fournisseur OIDC ou SSO, avec des rôles.'
-          },
-          {
-            title: 'Votre réseau',
-            detail: 'Un relais de collaboration qui fonctionne derrière votre pare-feu.'
-          },
-          {
-            title: 'Votre exploitation',
-            detail: 'Déploiement guidé, mises à niveau, sauvegardes et rétention.'
-          }
-        ]
-      },
-      entries: [
+      leads: [
         {
-          title: 'Historique des versions',
-          detail: 'Instantanés automatiques, points de contrôle nommés et restauration.'
+          title: 'OpenPencil sur votre téléphone',
+          detail:
+            'Une application compagnon pour iOS et Android, et l’éditeur lui-même sur téléphones et tablettes.',
+          features: [
+            {
+              title: 'Application compagnon',
+              detail:
+                'Ouvrez vos fichiers Cloud, suivez une salle en direct et répondez aux commentaires et aux agents.'
+            },
+            {
+              title: 'Aperçu sur l’appareil',
+              detail: 'Affichez un cadre du bureau sur votre téléphone pendant que vous designez.'
+            },
+            {
+              title: 'Designer sur tablette',
+              detail:
+                'Saisie tactile et au stylet, avec des panneaux pensés pour les petits écrans.'
+            },
+            {
+              title: 'Les mêmes documents',
+              detail: 'L’éditeur et le Cloud que vous utilisez déjà, pas une application à part.'
+            }
+          ]
+        },
+        {
+          title: 'Présentations',
+          detail:
+            'Des présentations à côté des designs et des tableaux, construites avec votre design system.',
+          features: [
+            {
+              title: 'Vos composants',
+              detail:
+                'Les présentations utilisent les mêmes composants, variables et bibliothèques que vos designs.'
+            },
+            {
+              title: 'Mode présentateur',
+              detail:
+                'Notes de l’orateur, présentation en plein écran et un public qui suit en direct.'
+            },
+            {
+              title: 'Fichiers Figma Slides',
+              detail: 'Ouvrez et enregistrez des fichiers .deck, et exportez en PDF et PowerPoint.'
+            },
+            {
+              title: 'Présentations par IA',
+              detail:
+                'Rédigez une présentation à partir d’un plan ou d’un document, dans son thème.'
+            }
+          ]
         }
       ],
-      cloud: {
-        title: 'OpenPencil Cloud',
-        detail:
-          "L'espace hébergé pour les équipes : synchronisation en direct, partage, bibliothèques et IA, sans rien à faire tourner."
-      }
+      entries: [
+        {
+          title: 'Authentification unique',
+          detail: 'OIDC et SSO pour les équipes, avec comptes de service et webhooks.'
+        },
+        {
+          title: 'Projets et dossiers',
+          detail: 'Organisez les espaces Cloud, avec modèles et recherche.'
+        }
+      ]
     },
     later: {
       label: 'Plus tard',
@@ -191,57 +231,47 @@ export const fr: LandingMessages = {
         {
           title: 'Éditeur intégrable',
           detail: 'Placez l’éditeur de cette page dans votre propre produit.'
-        }
+        },
+        { title: 'Prototypage', detail: 'Connexions, transitions et superpositions entre cadres.' }
       ]
     }
   },
   cloud: {
-    badge: 'Accès anticipé',
+    badge: 'Disponible',
     title: 'OpenPencil Cloud',
-    lede: "L'espace de design de votre équipe, hébergé pour vous. Tout le monde modifie les mêmes fichiers en direct, les partage par lien et conçoit avec l'IA, sans rien à installer ni à faire tourner. Vos fichiers restent ouverts : exportez-les en .fig quand vous voulez.",
+    lede: 'L’espace de design de votre équipe, hébergé pour vous. Tout le monde modifie les mêmes fichiers en direct, les partage par un lien et designe avec l’IA payée par les crédits du forfait, sans rien installer ni administrer. Commencez gratuitement avec 300 Mo et exportez vos fichiers en .fig quand vous voulez.',
+    signUp: 'Essayer OpenPencil Cloud',
+    plans: 'Voir les forfaits',
     features: [
       {
-        title: "Synchronisation d'équipe en temps réel",
+        title: 'Synchronisation en temps réel',
         detail:
-          'Chaque modification parvient à toute l’équipe dès qu’elle a lieu, sur tous les appareils.'
+          'Chaque modification parvient à toute l’équipe immédiatement, sur tous les appareils.'
       },
       {
-        title: 'Liens de partage et commentaires',
-        detail: 'Envoyez un lien pour relire un design et en discuter directement sur le canevas.'
+        title: 'Liens et commentaires',
+        detail: 'Envoyez un lien pour relire un design et discutez-en directement sur le canevas.'
       },
       {
-        title: "Bibliothèques d'équipe",
-        detail: 'Publiez composants, styles et tokens une fois et utilisez-les dans chaque fichier.'
+        title: 'Historique des versions',
+        detail: 'Versions nommées et sauvegardes automatiques à consulter, restaurer ou copier.'
       },
       {
-        title: 'IA hébergée',
-        detail: 'Des agents qui conçoivent avec vous, sans clés d’API à gérer.'
+        title: 'L’IA de votre forfait',
+        detail:
+          'Des agents qui designent avec vous, payés par les crédits du forfait, sans clé d’API.'
       },
       {
-        title: "SSO et contrôles d'administration",
-        detail: 'Authentification unique, rôles et contrôle de qui voit quoi.'
+        title: 'Auto-hébergez-le',
+        detail: 'Faites tourner le même serveur sur votre infrastructure, sous licence Apache 2.0.'
       }
     ]
-  },
-  waitlist: {
-    label: 'Adresse e-mail',
-    placeholder: 'vous@exemple.fr',
-    submit: "Rejoindre la liste d'attente",
-    confirmHuman: 'Confirmez que vous êtes humain',
-    invalid: 'Saisissez une adresse e-mail valide.',
-    joined: 'Consultez votre boîte de réception',
-    joinedDetail: 'Ouvrez le lien que nous vous avons envoyé pour confirmer votre adresse.',
-    failed: 'Impossible de joindre la liste d’attente. Vérifiez votre connexion et réessayez.',
-    privacy: "Nous ne vous écrirons qu'au sujet d'OpenPencil Cloud.",
-    refused: 'Nous n’avons pas pu confirmer que vous n’êtes pas un robot. Réessayez.',
-    limited: 'Trop de tentatives. Réessayez dans une minute.',
-    unavailable: 'Vous ne pouvez pas vous inscrire d’ici. Inscrivez-vous sur openpencil.dev.'
   },
   closing: {
     title: 'Emportez vos designs avec vous.',
     download: 'Télécharger OpenPencil',
     docs: 'Lire la documentation',
-    cloud: "Rejoindre la liste d'attente Cloud"
+    cloud: 'Essayer OpenPencil Cloud'
   },
   clipboard: {
     copy: 'Copier',

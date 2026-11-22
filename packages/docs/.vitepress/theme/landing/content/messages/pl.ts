@@ -22,6 +22,12 @@ export const pl: LandingMessages = {
         'Auto layout, ograniczenia, wypełnienia, obrysy, efekty i typografia, z kontrolkami tam, gdzie ich szukasz. Komponenty mają sloty: instancja zachowuje projekt i wnosi własną treść. Wszystko da się cofnąć i nic nie czeka na serwer.',
       hint: 'Najedź na zaznaczoną okładkę i przeciągnij róg, aby go zaokrąglić. Pozostałe odtwarzacze wnoszą własne okładki przez slot Artwork.'
     },
+    board: {
+      title: 'Planuj na tablicach',
+      detail:
+        'Tablice dają notatki samoprzylepne, kształty, łączniki i sekcje z FigJam oraz otwierają i zapisują pliki .jam, które czyta Figma. Wklej schemat blokowy Mermaid albo otwórz diagram draw.io, a stanie się kształtami do przesuwania; agenci szkicują tablice tymi samymi narzędziami.',
+      hint: 'Przeciągnij notatkę lub kształt: jej łączniki podążają za nią. Wybierz narzędzie z paska, aby dodać własne.'
+    },
     interactive: {
       title: 'Komponenty, które działają',
       detail:
@@ -115,71 +121,100 @@ export const pl: LandingMessages = {
     shipped: {
       label: 'Wydane',
       entries: [
-        { title: 'Interaktywne komponenty i podgląd' },
-        { title: 'Zmienne jako tokeny projektowe' },
-        { title: 'Linting z poprawkami jednym kliknięciem' },
-        { title: 'Agenci AI jako współpracownicy, z trybem śledzenia' },
-        { title: 'Cofanie, ponowne generowanie i edycja tur AI' },
-        { title: 'Kod powiązany z warstwami' },
-        { title: 'Wizualny diff i łatki' },
+        { title: 'OpenPencil Cloud, także na własnym serwerze' },
+        { title: 'Tablice w stylu FigJam' },
+        { title: 'Strony WWW z adresu URL jako warstwy' },
+        { title: 'Agent Skills i subagenci' },
+        { title: 'Formuły w zmiennych' },
+        { title: 'Fonty zmienne, Material Symbols i SF Symbols' },
+        { title: 'Szkło, rozmycie progresywne, szum i tekstura' },
+        { title: 'Korekty obrazów' },
+        { title: 'Narzędzie Skalowanie' },
+        { title: 'Szybsze płótno' },
         { title: 'Komentarze i rozmowy głosowe we wspólnych pokojach' },
-        { title: 'Komponenty Vue i React w karcie Kod' },
-        { title: 'Import SVG i HTML jako edytowalnych warstw' },
-        { title: 'Wypełnienia shaderami' },
-        { title: 'Design tokeny W3C' },
-        { title: 'Przewodnik po edytorze' },
-        { title: 'Listy i style dla dowolnego fragmentu tekstu' }
+        { title: 'Interaktywne komponenty i podgląd' },
+        { title: 'Linting z poprawkami jednym kliknięciem' }
       ]
     },
     now: {
       label: 'Teraz',
       entries: [
         {
-          title: 'Storybook z prawdziwych komponentów',
-          detail: 'Historie korzystające z Reka UI dla Vue i Radix UI dla React.'
+          title: 'Kolory Display P3',
+          detail: 'Dokumenty rysowane i eksportowane w ich profilu kolorów, jak w Figmie.'
         },
         {
-          title: 'Tworzenie komponentów',
-          detail: 'Szybsza edycja wariantów i zaznaczanie wewnątrz komponentów.'
+          title: 'Import stron internetowych',
+          detail: 'Strony z adresu URL bliższe przeglądarce, w kilku rozmiarach okna.'
+        },
+        {
+          title: 'OpenPencil na Androidzie',
+          detail: 'Edytor na telefonach, tabletach i składanych urządzeniach z Androidem.'
         }
       ]
     },
     next: {
       label: 'Następnie',
-      lead: {
-        title: 'OpenPencil na własnym serwerze',
-        detail:
-          'Cała przestrzeń robocza we własnej sieci: synchronizacja, udostępnianie, komentarze i biblioteki zespołu bez wysyłania pliku komukolwiek innemu.',
-        features: [
-          {
-            title: 'Twoja pamięć masowa',
-            detail: 'Dokumenty pozostają w Twoim zasobniku, w Twoim regionie.'
-          },
-          {
-            title: 'Twoja tożsamość',
-            detail: 'Logowanie przez Twojego dostawcę OIDC lub SSO, z rolami.'
-          },
-          {
-            title: 'Twoja sieć',
-            detail: 'Przekaźnik współpracy, który działa za Twoją zaporą.'
-          },
-          {
-            title: 'Twoje utrzymanie',
-            detail: 'Wdrożenie z przewodnikiem, aktualizacje, kopie zapasowe i retencja.'
-          }
-        ]
-      },
-      entries: [
+      leads: [
         {
-          title: 'Historia wersji',
-          detail: 'Automatyczne migawki, nazwane punkty kontrolne i przywracanie.'
+          title: 'OpenPencil w telefonie',
+          detail:
+            'Aplikacja towarzysząca na iOS i Androida oraz sam edytor na telefonach i tabletach.',
+          features: [
+            {
+              title: 'Aplikacja towarzysząca',
+              detail:
+                'Otwieraj pliki z Cloud, śledź pokój na żywo i odpowiadaj na komentarze i agentów.'
+            },
+            {
+              title: 'Podgląd na urządzeniu',
+              detail: 'Wyświetlaj ramkę z komputera na telefonie podczas projektowania.'
+            },
+            {
+              title: 'Projektowanie na tabletach',
+              detail: 'Obsługa dotykiem i rysikiem, z panelami dla małych ekranów.'
+            },
+            {
+              title: 'Te same dokumenty',
+              detail: 'Edytor i Cloud, których już używasz, a nie osobna aplikacja.'
+            }
+          ]
+        },
+        {
+          title: 'Prezentacje',
+          detail: 'Prezentacje obok projektów i tablic, zbudowane z twojego systemu projektowego.',
+          features: [
+            {
+              title: 'Twoje komponenty',
+              detail:
+                'Prezentacje używają tych samych komponentów, zmiennych i bibliotek co projekty.'
+            },
+            {
+              title: 'Widok prezentera',
+              detail:
+                'Notatki prelegenta, prezentowanie na pełnym ekranie i publiczność śledząca na żywo.'
+            },
+            {
+              title: 'Pliki Figma Slides',
+              detail: 'Otwieraj i zapisuj pliki .deck, eksportuj do PDF i PowerPointa.'
+            },
+            {
+              title: 'Prezentacje z AI',
+              detail: 'Szkic prezentacji z konspektu lub dokumentu, w motywie prezentacji.'
+            }
+          ]
         }
       ],
-      cloud: {
-        title: 'OpenPencil Cloud',
-        detail:
-          'Hostowana przestrzeń dla zespołów: synchronizacja na żywo, udostępnianie, biblioteki i AI, bez utrzymywania czegokolwiek.'
-      }
+      entries: [
+        {
+          title: 'Logowanie jednokrotne',
+          detail: 'OIDC i SSO dla zespołów, z kontami usług i webhookami.'
+        },
+        {
+          title: 'Projekty i foldery',
+          detail: 'Porządkuj przestrzenie Cloud, z szablonami i wyszukiwaniem.'
+        }
+      ]
     },
     later: {
       label: 'Później',
@@ -191,56 +226,45 @@ export const pl: LandingMessages = {
         {
           title: 'Edytor do osadzenia',
           detail: 'Przenieś edytor z tej strony do własnego produktu.'
-        }
+        },
+        { title: 'Prototypowanie', detail: 'Połączenia, przejścia i nakładki między ramkami.' }
       ]
     }
   },
   cloud: {
-    badge: 'Wczesny dostęp',
+    badge: 'Już dostępne',
     title: 'OpenPencil Cloud',
-    lede: 'Przestrzeń projektowa Twojego zespołu, hostowana za Ciebie. Wszyscy edytują te same pliki na żywo, udostępniają je linkiem i projektują z AI, bez instalowania i utrzymywania czegokolwiek. Pliki pozostają otwarte: eksportuj je do .fig, kiedy chcesz.',
+    lede: 'Przestrzeń projektowa twojego zespołu, hostowana za ciebie. Wszyscy edytują te same pliki na żywo, udostępniają je linkiem i projektują z AI opłacaną kredytami planu, bez instalowania i utrzymywania czegokolwiek. Zacznij za darmo z 300 MB i eksportuj pliki jako .fig, kiedy chcesz.',
+    signUp: 'Wypróbuj OpenPencil Cloud',
+    plans: 'Zobacz plany',
     features: [
       {
-        title: 'Synchronizacja zespołu w czasie rzeczywistym',
-        detail: 'Każda zmiana od razu trafia do całego zespołu, na każdym urządzeniu.'
+        title: 'Synchronizacja na żywo',
+        detail: 'Każda zmiana trafia do całego zespołu od razu, na każdym urządzeniu.'
       },
       {
         title: 'Linki i komentarze',
-        detail: 'Wyślij link do przeglądu projektu i omawiajcie go bezpośrednio na płótnie.'
+        detail: 'Wyślij link do przeglądu projektu i omawiaj go bezpośrednio na płótnie.'
       },
       {
-        title: 'Biblioteki zespołu',
-        detail: 'Opublikuj komponenty, style i tokeny raz i używaj ich w każdym pliku.'
+        title: 'Historia wersji',
+        detail: 'Nazwane wersje i autozapisy do podglądu, przywrócenia lub skopiowania.'
       },
       {
-        title: 'Hostowane AI',
-        detail: 'Agenci, którzy projektują z Tobą, bez zarządzania kluczami API.'
+        title: 'AI w twoim planie',
+        detail: 'Agenci projektujący z tobą, opłacani kredytami planu, bez kluczy API.'
       },
       {
-        title: 'SSO i kontrola administracyjna',
-        detail: 'Logowanie jednokrotne, role i kontrola nad tym, kto co widzi.'
+        title: 'Własny serwer',
+        detail: 'Uruchom ten sam serwer na własnej infrastrukturze, na licencji Apache 2.0.'
       }
     ]
-  },
-  waitlist: {
-    label: 'Adres e-mail',
-    placeholder: 'ty@przyklad.pl',
-    submit: 'Zapisz się na listę',
-    confirmHuman: 'Potwierdź, że jesteś człowiekiem',
-    invalid: 'Wpisz poprawny adres e-mail.',
-    joined: 'Sprawdź skrzynkę',
-    joinedDetail: 'Otwórz link, który wysłaliśmy, aby potwierdzić adres.',
-    failed: 'Nie udało się połączyć z listą oczekujących. Sprawdź połączenie i spróbuj ponownie.',
-    privacy: 'Piszemy tylko w sprawie OpenPencil Cloud.',
-    refused: 'Nie udało się potwierdzić, że nie jesteś botem. Spróbuj ponownie.',
-    limited: 'Zbyt wiele prób. Spróbuj ponownie za minutę.',
-    unavailable: 'Stąd nie można się zapisać. Zapisz się na openpencil.dev.'
   },
   closing: {
     title: 'Zabierz swoje projekty ze sobą.',
     download: 'Pobierz OpenPencil',
     docs: 'Czytaj dokumentację',
-    cloud: 'Zapisz się na listę Cloud'
+    cloud: 'Wypróbuj OpenPencil Cloud'
   },
   clipboard: {
     copy: 'Kopiuj',

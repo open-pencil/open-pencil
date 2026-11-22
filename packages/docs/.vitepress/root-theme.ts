@@ -37,7 +37,7 @@ export const rootThemeConfig = (): DefaultTheme.Config => ({
     '/': docsSidebar('', 'Reference', EN, EN_PROG)
   },
 
-  // From 1180px wide GitHub is a button of its own beside the editor's instead
+  // From 1320px wide GitHub is a button of its own beside the editor's instead
   // (`theme/site/GitHubButton.vue`); narrower, the menus list it here.
   socialLinks: [
     { icon: 'github', link: 'https://github.com/open-pencil/open-pencil', ariaLabel: 'GitHub' },
