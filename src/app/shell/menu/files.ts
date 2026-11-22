@@ -134,9 +134,11 @@ export async function readTauriDesignFile(path: string): Promise<File> {
   // a dot segment, so `%USERPROFILE%\.pencil\documents\…` never matches the read
   // scope even though it sits under the user's home. The shell reads the one named
   // file natively instead of granting the webview access to it: a scope grant would
-  // also let the webview write the file, reopening the hidden-file write path.
-  const bytes = await invoke<number[]>('read_open_file', { path })
-  return new File([new Uint8Array(bytes)], basename(path) || 'file.fig')
+  // also let the webview write the file, reopening the hidden-file write path. The
+  // bytes arrive as an `ArrayBuffer` — the shell sends them as a raw IPC body, not
+  // a JSON number array.
+  const bytes = await invoke<ArrayBuffer>('read_open_file', { path })
+  return new File([bytes], basename(path) || 'file.fig')
 }
 
 export async function chooseTauriOpenPaths(): Promise<string[]> {

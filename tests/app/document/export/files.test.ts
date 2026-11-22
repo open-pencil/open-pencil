@@ -53,7 +53,7 @@ describe('Tauri file actions', () => {
     await mockTauriIPC((cmd, args) => {
       expect(cmd).toBe('read_open_file')
       expect(args).toEqual({ path: '/tmp/design.pen' })
-      return [123, 34, 97, 34, 58, 49, 125]
+      return new TextEncoder().encode('{"a":1}').buffer
     })
 
     const file = await readTauriDesignFile('/tmp/design.pen')
@@ -66,7 +66,7 @@ describe('Tauri file actions', () => {
     await mockTauriIPC((cmd, args) => {
       expect(cmd).toBe('read_open_file')
       expect(args).toEqual({ path: 'C:\\Users\\me\\Design File.pen' })
-      return [123, 125]
+      return new TextEncoder().encode('{}').buffer
     })
 
     const file = await readTauriDesignFile('C:\\Users\\me\\Design File.pen')

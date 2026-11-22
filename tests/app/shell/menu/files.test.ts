@@ -35,7 +35,9 @@ describe('readTauriDesignFile', () => {
       if (cmd === 'read_open_file') {
         const path = (args as { path: string }).path
         calls.push({ cmd, path })
-        return BYTES
+        // The shell sends the bytes as a raw IPC body, so the mock returns an
+        // `ArrayBuffer`, not the JSON number array the old command returned.
+        return new Uint8Array(BYTES).buffer
       }
       if (cmd === 'plugin:fs|write_file') {
         const path = (args as { path: string }).path

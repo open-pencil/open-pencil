@@ -146,8 +146,20 @@ fn is_openable_document(path: &Path) -> bool {
 /// write path the desktop guidelines require to stay closed. This command only
 /// returns the bytes and never touches `fs_scope()`, so a file that was never opened
 /// stays refused for writing.
+///
+/// Only the editor window may call it: the updater webview owns no documents, so a
+/// script running in it must not reach document reads. The read runs on a blocking
+/// thread, since a document on a slow network share must not stall the desktop
+/// event loop, and the bytes cross IPC as a raw body rather than a JSON number
+/// array, so large documents do not pay decimal encoding and parsing per byte.
 #[tauri::command]
-pub fn read_open_file(path: String) -> Result<Vec<u8>, String> {
+pub async fn read_open_file(
+    webview: tauri::Webview,
+    path: String,
+) -> Result<tauri::ipc::Response, String> {
+    if webview.label() != "main" {
+        return Err("read_open_file is only available to the editor window".into());
+    }
     let path = PathBuf::from(path);
     if !is_openable_document(&path) {
         return Err(format!(
@@ -155,7 +167,12 @@ pub fn read_open_file(path: String) -> Result<Vec<u8>, String> {
             path.display()
         ));
     }
-    std::fs::read(&path).map_err(|error| error.to_string())
+    let bytes = tauri::async_runtime::spawn_blocking(move || {
+        std::fs::read(&path).map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| error.to_string())??;
+    Ok(tauri::ipc::Response::new(bytes))
 }
 
 /// The scheme filter is load-bearing: on macOS the plugin forwards every
