@@ -299,16 +299,27 @@ describe('document color profile', () => {
     for (let depth = 0; depth <= MAX_FORMULA_DEPTH + 1; depth++) {
       formula = { operator: 'add', operands: [formula, BLUE] }
     }
-    editor.graph.createVariable('Deep', 'COLOR', collection.id, {
-      expression: 'FORMULA',
-      type: 'COLOR',
-      value: formula
-    } as VariableValue)
-    expect(editor.setDocumentColorSpace('srgb', 'convert')).rejects.toThrow()
-    await editor.setDocumentColorSpace('srgb', 'convert').catch(() => undefined)
-    expect(editor.graph.documentColorSpace).toBe('display-p3')
-    expect(fill()?.color).toEqual(P3_RED)
-    expect(accent()).toEqual(P3_RED)
+    let number: VariableFormulaNode = 1
+    for (let depth = 0; depth <= MAX_FORMULA_DEPTH + 1; depth++) {
+      number = { operator: 'add', operands: [number, 1] }
+    }
+    // A color formula, and a number formula, as reconciling bindings walks every variable.
+    for (const [name, type, value] of [
+      ['Deep', 'COLOR', formula],
+      ['Deep number', 'FLOAT', number]
+    ] as const) {
+      const variable = editor.graph.createVariable(name, type, collection.id, {
+        expression: 'FORMULA',
+        type,
+        value
+      } as VariableValue)
+      expect(editor.setDocumentColorSpace('srgb', 'convert')).rejects.toThrow()
+      await editor.setDocumentColorSpace('srgb', 'convert').catch(() => undefined)
+      expect(editor.graph.documentColorSpace).toBe('display-p3')
+      expect(fill()?.color).toEqual(P3_RED)
+      expect(accent()).toEqual(P3_RED)
+      editor.graph.variables.delete(variable.id)
+    }
   })
 
   test('a document made read-only while its pages load is not converted', async () => {

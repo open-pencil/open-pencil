@@ -20,7 +20,8 @@ import {
   foldFormula,
   hasBoundPaints,
   layersUsingVariables,
-  recordWrittenBoundPaints
+  recordWrittenBoundPaints,
+  variableValueReferences
 } from '@open-pencil/scene-graph/variables'
 
 import { getPageBackgrounds, pageSourceWithBackgrounds } from '#core/figma-api/page-backgrounds'
@@ -284,7 +285,12 @@ export function convertColors(
     undone: new Set()
   }
   // Variables are mapped before anything is written: a formula too deep to walk throws here,
-  // leaving the document as it was.
+  // leaving the document as it was. Other variables' formulas are walked too, as reconciling
+  // bindings afterwards walks them.
+  for (const variable of graph.variables.values()) {
+    if (variable.type === 'COLOR') continue
+    for (const value of Object.values(variable.valuesByMode)) variableValueReferences(value)
+  }
   const variables = new Map<string, Variable['valuesByMode']>()
   for (const variable of graph.variables.values()) {
     if (variable.type !== 'COLOR') continue
