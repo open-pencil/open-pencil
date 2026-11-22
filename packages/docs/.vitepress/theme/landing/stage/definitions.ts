@@ -3,22 +3,33 @@ import { defineAsyncComponent, type Component } from 'vue'
 import type { SingleStageKind } from './kinds'
 import { SCENES, type SceneBuilder } from './scenes'
 
+/**
+ * A component a stage downloads only when it shows it, with the loader, so the stage can have it
+ * in place before it reports its scene on screen.
+ */
+export interface LazyComponent {
+  component: Component
+  load: () => Promise<unknown>
+}
+
+export function lazy(load: () => Promise<{ default: Component }>): LazyComponent {
+  return { component: defineAsyncComponent(load), load }
+}
+
 // Each panel is its own chunk, so a stage downloads only the panel it shows: the AI SDK
 // comes with the AI block, CodeMirror with the code blocks, and so on.
-const CodePanel = defineAsyncComponent(() => import('@/components/CodePanel.vue'))
-const DesignCheckPanel = defineAsyncComponent(
-  () => import('@/components/design-check/DesignCheckPanel.vue')
-)
-const DesignPanel = defineAsyncComponent(() => import('@/components/DesignPanel.vue'))
-const LayerTree = defineAsyncComponent(() => import('@/components/LayerTree/LayerTree.vue'))
-const TokensPanel = defineAsyncComponent(() => import('@/components/variables/TokensPanel.vue'))
-const AIChatPanel = defineAsyncComponent(() => import('./ai/AIChatPanel.vue'))
-const SdkSnippetPanel = defineAsyncComponent(() => import('./panels/SdkSnippetPanel.vue'))
-const TerminalPanel = defineAsyncComponent(() => import('./panels/TerminalPanel.vue'))
+const CodePanel = lazy(() => import('@/components/CodePanel.vue'))
+const DesignCheckPanel = lazy(() => import('@/components/design-check/DesignCheckPanel.vue'))
+const DesignPanel = lazy(() => import('@/components/DesignPanel.vue'))
+const LayerTree = lazy(() => import('@/components/LayerTree/LayerTree.vue'))
+const TokensPanel = lazy(() => import('@/components/variables/TokensPanel.vue'))
+const AIChatPanel = lazy(() => import('./ai/AIChatPanel.vue'))
+const SdkSnippetPanel = lazy(() => import('./panels/SdkSnippetPanel.vue'))
+const TerminalPanel = lazy(() => import('./panels/TerminalPanel.vue'))
 
 export interface StageDefinition {
   scene: SceneBuilder
-  panel?: Component
+  panel?: LazyComponent
   panelProps?: Record<string, unknown>
   /** The app nests the layer tree under a "Layers" heading; the stage supplies it. */
   layersHeading?: boolean

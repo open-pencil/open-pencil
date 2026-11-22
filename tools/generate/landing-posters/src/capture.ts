@@ -23,8 +23,6 @@ const VIEWPORTS: Record<PosterLayout, { width: number; height: number; touch: bo
 /** Stills for high-density screens, which look sharp downscaled on the others. */
 const PIXEL_RATIO = 2
 const WEBP_QUALITY = 80
-/** After a stage reports ready: fonts swap in, panels finish their transitions. */
-const SETTLE_MS = 1000
 const STAGE_TIMEOUT_MS = 120_000
 /** Pages captured at once; each holds a WebGL context per stage. */
 const CONCURRENCY = 3
@@ -102,9 +100,23 @@ async function capturePage(browser: Browser, origin: string, target: PosterTarge
       await page
         .locator(`.stage-frame[data-kind="${kind}"][data-ready]`)
         .waitFor({ timeout: STAGE_TIMEOUT_MS })
-      // The page's web fonts swap in when they arrive; a still must show the final ones.
-      await page.evaluate(() => document.fonts.ready)
-      await page.waitForTimeout(SETTLE_MS)
+      // A stage reports ready once its scene's first frame is on screen, with its panel, toolbar,
+      // and pill already loaded. What may still arrive: the page's web fonts and the images its
+      // panel shows. Then the next frame paints them.
+      await frame.evaluate(async (stage) => {
+        await document.fonts.ready
+        // One that fails to load is in the still as the page shows it; waiting is all this is for.
+        await Promise.allSettled([...stage.querySelectorAll('img')].map((image) => image.decode()))
+        // Transitions still running, such as a colour easing to the theme's, end first; endless
+        // animations, such as a spinner, are drawn as they are.
+        await Promise.allSettled(
+          stage
+            .getAnimations({ subtree: true })
+            .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+            .map((animation) => animation.finished)
+        )
+        await new Promise((painted) => requestAnimationFrame(() => requestAnimationFrame(painted)))
+      })
       for (const part of posterParts(kind)) {
         const element = part === 'frame' ? frame : frame.locator(`[data-poster-part="${part}"]`)
         const png = await element.screenshot({ animations: 'disabled' })
