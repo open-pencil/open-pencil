@@ -80,6 +80,9 @@ async function capturePage(browser: Browser, origin: string, target: PosterTarge
     isMobile: viewport.touch,
     hasTouch: viewport.touch,
     colorScheme: target.theme,
+    // Stills of a page at rest: shaders in preview show their saved frame instead of playing,
+    // which in the headless browser's software WebGPU kept the page busy and drew nothing.
+    reducedMotion: 'reduce',
     // VitePress reads the visitor's appearance choice from storage before it paints.
     storageState: {
       cookies: [],
