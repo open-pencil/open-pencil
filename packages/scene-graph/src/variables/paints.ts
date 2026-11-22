@@ -166,13 +166,13 @@ function recordApplied(
 }
 
 /** The variable's RGB at full alpha in the paint, and its alpha as the paint's opacity. */
-function applyColor(paint: Fill, color: Color): void {
+export function applyPaintColor(paint: Fill, color: Color): void {
   paint.color = { ...color, a: 1 }
   paint.opacity = color.a
 }
 
 /** Whether `paint` already shows `color` as a bound paint stores it. */
-function showsColor(paint: Fill, color: Color): boolean {
+export function showsPaintColor(paint: Fill, color: Color): boolean {
   return sameColor(paintColor(paint), color) && paint.color.a === 1
 }
 
@@ -224,13 +224,13 @@ function refresh(graph: SceneGraph, node: SceneNode, forced: (field: string) => 
     const modes = explicitModes(graph, node, bound.variableId)
     const stale = staleApplied(node, bound, paint, color, modes)
     recordApplied(node, bound, color, modes)
-    if ((!forced(bound.field) && !stale) || showsColor(paint, color)) continue
+    if ((!forced(bound.field) && !stale) || showsPaintColor(paint, color)) continue
     if (bound.list === 'fills') {
       fills ??= copyFills(node.fills)
-      applyColor(fills[bound.index], color)
+      applyPaintColor(fills[bound.index], color)
     } else {
       strokes ??= copyStrokes(node.strokes)
-      applyColor(strokes[bound.index], color)
+      applyPaintColor(strokes[bound.index], color)
     }
   }
   const changes: PaintLists = {}
@@ -370,7 +370,7 @@ export function keepCopyBoundPaints(
       const color = graph.resolveColorVariableForNode(target.id, variableId)
       if (!color) return
       const modes = explicitModes(graph, target, variableId)
-      if (!keeps || staleApplied(target, bound, own, color, modes)) applyColor(paint, color)
+      if (!keeps || staleApplied(target, bound, own, color, modes)) applyPaintColor(paint, color)
       recordApplied(target, bound, color, modes)
     })
   }

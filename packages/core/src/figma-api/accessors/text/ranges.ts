@@ -99,7 +99,7 @@ export function fontNameStyle(
   start: number,
   value: unknown,
   property = 'value'
-): CharacterStyleOverride {
+): ReturnType<typeof fontNameInputStyle> {
   const fontName = parseFigma(fontNameSchema, value, method, property)
   return fontNameInputStyle(method, fontName, currentFont(node, start))
 }

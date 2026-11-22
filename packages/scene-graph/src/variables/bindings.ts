@@ -1,18 +1,20 @@
 import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
+import { copyFills } from '../copy'
 import type { SceneGraph } from '../graph'
 import { hasInstanceOverride } from '../instances/overrides'
 import type { Color } from '../primitives'
 import { pixelLength } from '../text/lengths'
-import type { Effect, SceneNode, StyleRun, TextLength } from '../types'
+import type { CharacterStyleOverride, Effect, Fill, SceneNode, StyleRun, TextLength } from '../types'
 import {
   effectBindableProperties,
   effectBindingTarget,
   NUMERIC_FIELDS,
   isNumericVariableBindingField,
+  paintBindingTarget,
   type EffectBindingProperty
 } from './fields'
-import { refreshBoundPaints } from './paints'
+import { applyPaintColor, refreshBoundPaints, showsPaintColor } from './paints'
 import { collectionsResolving } from './resolution'
 import { subtreeNodes } from './subtree'
 import { variableText, variableTruthy } from './text'
@@ -119,9 +121,31 @@ export function resolvedValueBindings(graph: SceneGraph, node: SceneNode): Parti
 /** Fields of a range of characters a bound number gives its value; the rest need fonts loaded. */
 const NUMERIC_RUN_FIELDS = ['fontSize', 'fontWeight', 'letterSpacing', 'lineHeight'] as const
 
+function resolvedRunPaintColors(
+  graph: SceneGraph,
+  node: SceneNode,
+  style: CharacterStyleOverride,
+  bound: Readonly<Partial<Record<string, string>>>
+): CharacterStyleOverride {
+  let fills: Fill[] | undefined
+  for (const [field, variableId] of Object.entries(bound)) {
+    const target = paintBindingTarget(field)
+    if (target?.list !== 'fills' || !variableId) continue
+    const color = graph.resolveColorVariableForNode(node.id, variableId)
+    if (!color) continue
+    const baseFills = fills ?? style.fills ?? node.fills
+    const paint = baseFills.at(target.index)
+    if (!paint || showsPaintColor(paint, color)) continue
+    fills ??= copyFills(baseFills)
+    applyPaintColor(fills[target.index], color)
+  }
+  return fills ? { ...style, fills } : style
+}
+
 /**
- * The runs a text's character bindings resolve to in its mode, when a bound number differs from
- * what its characters hold. Bound font families and styles are left as stored, as the text's own.
+ * The runs a text's character bindings resolve to in its mode, when a bound number or fill colour
+ * differs from what its characters hold. Bound font families and styles are left as stored, as the
+ * text's own.
  */
 export function resolvedRunBindings(
   graph: SceneGraph,
@@ -140,6 +164,7 @@ export function resolvedRunBindings(
       if (isEqual(style[field], next)) continue
       style = { ...style, [field]: next }
     }
+    style = resolvedRunPaintColors(graph, node, style, bound)
     return style === run.style ? run : { ...run, style }
   })
   const changed = styleRuns.some((run, index) => run !== node.styleRuns[index])

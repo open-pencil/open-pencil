@@ -86,13 +86,91 @@ describe('panel edits while text is edited', () => {
               color: { r: 0.2, g: 0.6, b: 0.9, a: 1 },
               opacity: 0.5
             }
-          ]
+          ],
+          boundVariables: { 'fills/0/color': brand.id }
         }
       }
     ])
 
     editor.undoAction()
     expect(node().styleRuns).toEqual([])
+  })
+
+  test('keeps a bound color variable on selected words after deselecting and updates when the variable changes', async () => {
+    const { editor, id, node } = await editingWorld()
+    editor.updateNodeWithUndo(id, editor.layerChanges(id, { text: 'Keep two words black' }), 'Text')
+    editor.startTextEditing(id)
+    const state = expectDefined(editor.textEditor?.state, 'text editor state')
+    state.selectionAnchor = 5
+    state.cursor = 14 // "two words"
+
+    const layerFills = node().fills
+    const colors = editor.graph.createCollection('Colors')
+    const accent = editor.graph.createVariable('Accent', 'COLOR', colors.id, {
+      r: 0,
+      g: 0,
+      b: 1,
+      a: 1
+    })
+
+    editor.bindVariable(id, 'fills/0/color', accent.id)
+    editor.commitTextEdit()
+
+    editor.updateVariableValue(accent.id, colors.defaultModeId, {
+      r: 0,
+      g: 1,
+      b: 0,
+      a: 0.75
+    })
+
+    expect(node().fills).toEqual(layerFills)
+    expect(node().styleRuns).toEqual([
+      {
+        start: 5,
+        length: 9,
+        style: {
+          fills: [
+            {
+              ...layerFills[0],
+              color: { r: 0, g: 1, b: 0, a: 1 },
+              opacity: 0.75
+            }
+          ],
+          boundVariables: { 'fills/0/color': accent.id }
+        }
+      }
+    ])
+
+    // Unbinding the range removes the variable reference while keeping its fill color.
+    editor.startTextEditing(id)
+    const edited = expectDefined(editor.textEditor?.state, 'text editor state')
+    edited.selectionAnchor = 5
+    edited.cursor = 14
+    editor.unbindVariable(id, 'fills/0/color')
+    editor.commitTextEdit()
+
+    editor.updateVariableValue(accent.id, colors.defaultModeId, {
+      r: 1,
+      g: 0,
+      b: 0,
+      a: 1
+    })
+
+    expect(node().styleRuns).toEqual([
+      {
+        start: 5,
+        length: 9,
+        style: {
+          fills: [
+            {
+              ...layerFills[0],
+              color: { r: 0, g: 1, b: 0, a: 1 },
+              opacity: 0.75
+            }
+          ]
+        }
+      }
+    ])
   })
 
   test('binds a color variable to the layer when no characters are selected', async () => {

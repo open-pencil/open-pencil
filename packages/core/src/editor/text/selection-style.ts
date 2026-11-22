@@ -1,9 +1,14 @@
-import { omit, pick } from 'es-toolkit/object'
-import { isEqual } from 'es-toolkit/predicate'
+import { omit, omitBy, pick } from 'es-toolkit/object'
+import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
-import type { CharacterStyleOverride, SceneNode, StyleRun } from '@open-pencil/scene-graph'
+import type {
+  CharacterStyleOverride,
+  SceneNode,
+  StyleRun,
+  TextRunBoundVariables
+} from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
-import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
+import { applyPaintColor, paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import type { EditorContext } from '#core/editor/types'
 import {
@@ -135,10 +140,68 @@ export function createTextSelectionStyle(
     return layerTextStyleChanges(node, changes)
   }
 
+  function applyRangeFillBinding(
+    id: string,
+    field: string,
+    variableId: string | undefined,
+    updateWithUndo: (id: string, changes: Partial<SceneNode>, label?: string) => void
+  ): boolean {
+    const range = selectedRange(id)
+    const target = range ? paintBindingTarget(field) : null
+    if (!range || target?.list !== 'fills') return false
+    const node = ctx.graph.getNode(id)
+    if (!node) return true
+    const color = variableId ? ctx.graph.resolveColorVariableForNode(id, variableId) : undefined
+    if (variableId && !color) return true
+    const [start, end] = range
+    const chars = characterStyles(node, start, end)
+    let styleRuns = node.styleRuns
+    let at = 0
+    while (at < chars.length) {
+      let next = at + 1
+      while (
+        next < chars.length &&
+        isEqual(chars[next].fills, chars[at].fills) &&
+        isEqual(chars[next].boundVariables, chars[at].boundVariables)
+      ) {
+        next++
+      }
+      const style = chars[at]
+      const patch: CharacterStyleOverride = {}
+      if (variableId && color) {
+        const fills = copyFills(style.fills)
+        const paint = fills.at(target.index)
+        if (!paint) {
+          at = next
+          continue
+        }
+        applyPaintColor(paint, color)
+        patch.fills = fills
+        patch.boundVariables = { ...style.boundVariables, [field]: variableId }
+      } else {
+        const boundVariables = omitBy(
+          style.boundVariables,
+          (_, key) => key === field
+        ) as TextRunBoundVariables
+        if (!isEqual(boundVariables, style.boundVariables)) patch.boundVariables = boundVariables
+      }
+      if (!isEmptyObject(patch)) {
+        styleRuns = styleRunsWithPatch({ ...node, styleRuns }, start + at, start + next, patch)
+      }
+      at = next
+    }
+    if (isEqual(styleRuns, node.styleRuns)) return true
+    preview = null
+    runTextEditStep(() =>
+      updateWithUndo(id, { styleRuns }, variableId ? 'Bind variable' : 'Unbind variable')
+    )
+    return true
+  }
+
   /**
-   * Applying a fill colour variable while characters are selected colours only those characters
-   * via `styleRuns` (leaving the layer's fills and variable bindings untouched), mirroring other
-   * panel fill edits while text is being edited.
+   * Applying a fill colour variable while characters are selected colours those characters and
+   * binds the variable on their `styleRuns` (leaving the layer's fills and variable bindings
+   * untouched), mirroring other panel fill edits while text is being edited.
    */
   function bindVariable(
     id: string,
@@ -147,21 +210,21 @@ export function createTextSelectionStyle(
     bind: (nodeId: string, path: string, variableId: string) => void,
     updateWithUndo: (id: string, changes: Partial<SceneNode>, label?: string) => void
   ) {
-    const range = selectedRange(id)
-    const target = range ? paintBindingTarget(field) : null
-    if (!range || target?.list !== 'fills') {
+    if (!applyRangeFillBinding(id, field, variableId, updateWithUndo)) {
       bind(id, field, variableId)
-      return
     }
-    const node = ctx.graph.getNode(id)
-    const color = ctx.graph.resolveColorVariableForNode(id, variableId)
-    if (!node || !color) return
-    const [style] = characterStyles(node, range[0], range[0] + 1)
-    const fills = copyFills(style.fills)
-    const paint = fills.at(target.index)
-    if (!paint) return
-    fills[target.index] = { ...paint, color: { ...color, a: 1 }, opacity: color.a }
-    updateWithUndo(id, { fills }, 'Bind variable')
+  }
+
+  /** Unbinds a fill colour variable on selected characters when characters are selected. */
+  function unbindVariable(
+    id: string,
+    field: string,
+    unbind: (nodeId: string, path: string) => void,
+    updateWithUndo: (id: string, changes: Partial<SceneNode>, label?: string) => void
+  ) {
+    if (!applyRangeFillBinding(id, field, undefined, updateWithUndo)) {
+      unbind(id, field)
+    }
   }
 
   return {
@@ -170,6 +233,7 @@ export function createTextSelectionStyle(
     commitNodeUpdate,
     selectionStyle,
     layerChanges,
-    bindVariable
+    bindVariable,
+    unbindVariable
   }
 }

@@ -7,8 +7,8 @@ import {
   type HyperlinkTarget,
   type SceneNode,
   type StyleRun,
-  type TextBoundVariables,
-  type TextLength
+  type TextLength,
+  type TextRunBoundVariables
 } from '@open-pencil/scene-graph'
 import {
   FACE_KEYS,
@@ -17,6 +17,7 @@ import {
   styleDetachmentChanges
 } from '@open-pencil/scene-graph/shared-styles'
 import { appendStyleRun, characterOverrides } from '@open-pencil/scene-graph/text'
+import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 /** A character's style: the text's own, with its run's overrides over it. */
 export type CharacterStyle = Required<
@@ -45,7 +46,7 @@ export type CharacterStyle = Required<
   hyperlink: HyperlinkTarget | null
   textStyleId: string | null
   fillStyleId: string | null
-  boundVariables: TextBoundVariables
+  boundVariables: TextRunBoundVariables
 }
 
 export type TextStyleKey = (typeof TEXT_STYLE_KEYS)[number]
@@ -166,7 +167,7 @@ function detachedStyles(
   style: CharacterStyleOverride | undefined
 ): CharacterStyleOverride {
   if (!style) return {}
-  const styled = { ...node, ...current }
+  const styled = { ...node, ...omit(current, ['boundVariables']) }
   const changes = pick(style, [...TEXT_STYLE_KEYS, 'fills', 'textStyleId', 'fillStyleId'])
   const detached = styleDetachmentChanges(styled, changes)
   return pick(
@@ -240,7 +241,19 @@ export function textStyleChanges(
       ? (['fontStyle'] as const)
       : [])
   ]
-  const runs = node.styleRuns.map((run) => ({ ...run, style: omit(run.style, keys) }))
+  const replaceFillBindings = changed.includes('fills')
+  const runs = node.styleRuns.map((run) => {
+    const style: CharacterStyleOverride = omit(run.style, keys)
+    if (replaceFillBindings && style.boundVariables) {
+      const bound = omitBy(
+        style.boundVariables,
+        (_, field) => paintBindingTarget(field)?.list === 'fills'
+      ) as TextRunBoundVariables
+      if (isEmptyObject(bound)) delete style.boundVariables
+      else style.boundVariables = bound
+    }
+    return { ...run, style }
+  })
   const updated = { ...node, ...changes }
   const styleRuns = withoutRedundantOverrides(updated, runs)
   // A percent gives characters of another size their own length.

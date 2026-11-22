@@ -459,6 +459,9 @@ export type TextBindableField = (typeof TEXT_BINDABLE_FIELDS)[number]
 /** Variable IDs bound to text fields, by field. */
 export type TextBoundVariables = Partial<Record<TextBindableField, string>>
 
+/** Variable IDs a character run holds: text fields plus per-range fill colours (`fills/<i>/color`). */
+export type TextRunBoundVariables = Partial<Record<TextBindableField | `fills/${number}/color`, string>>
+
 /**
  * A line height or letter spacing as Figma keeps it: pixels, or a percent of the font size that
  * follows the size when it changes.
@@ -497,8 +500,8 @@ export interface CharacterStyleOverride {
   textStyleId?: string | null
   /** The fill style the characters use in place of the text's own; `null` uses none. */
   fillStyleId?: string | null
-  /** The characters' text field bindings, in place of the text's own. */
-  boundVariables?: TextBoundVariables
+  /** The characters' text field and fill bindings, in place of the text's own. */
+  boundVariables?: TextRunBoundVariables
 }
 
 export interface StyleRun {
