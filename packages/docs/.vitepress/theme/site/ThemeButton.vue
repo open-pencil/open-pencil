@@ -5,7 +5,7 @@ import { computed } from 'vue'
 import { SITE_MESSAGES } from './messages'
 
 /**
- * The theme as one icon in the header, a moon while dark and a sun while light, from 1180px wide
+ * The theme as one icon in the header, a moon while dark and a sun while light, from 1320px wide
  * (`Layout.vue`); narrower, VitePress's own switch in its menus stays.
  */
 const { isDark, localeIndex } = useData()
