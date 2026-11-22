@@ -29,7 +29,8 @@ export function useOkHCL() {
   const { getFieldFormat, setFillFieldFormat, setStrokeFieldFormat } = createOkHCLFieldFormats(
     fieldFormats,
     ensureFillOkHCL,
-    ensureStrokeOkHCL
+    ensureStrokeOkHCL,
+    profile
   )
 
   return {

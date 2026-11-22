@@ -4,8 +4,6 @@ import type { Editor } from '@open-pencil/core'
 import { BLACK } from '@open-pencil/core/constants'
 import type { SceneNode, ColorProfile } from '@open-pencil/scene-graph'
 import {
-  getFillOkHCL,
-  getStrokeOkHCL,
   okhclInProfile,
   paintOkHCL,
   rememberPaintOkHCL,
@@ -126,16 +124,20 @@ export function createOkHCLPreviewHelpers(editor: Editor, shown: () => ColorProf
 export function createOkHCLFieldFormats(
   fieldFormats: Ref<Map<string, ColorFieldFormat>>,
   ensureFillOkHCL: (node: SceneNode, index: number) => void,
-  ensureStrokeOkHCL: (node: SceneNode, index: number) => void
+  ensureStrokeOkHCL: (node: SceneNode, index: number) => void,
+  profile: () => ColorProfile
 ) {
   function getFieldFormat(node: SceneNode | null, index: number, kind: ColorKind) {
     if (!node) return 'rgb' as const
     const key = fieldKey(kind, node.id, index)
     const stored = fieldFormats.value.get(key)
     if (stored) return stored
-    return (kind === 'fill' ? getFillOkHCL(node, index) : getStrokeOkHCL(node, index))
-      ? 'okhcl'
-      : 'rgb'
+    // OkHCL is the default only while its color still makes the paint, as the fields read it.
+    const okhcl =
+      kind === 'fill'
+        ? getFillOkHCLColor(node, index, profile())
+        : getStrokeOkHCLColor(node, index, profile())
+    return okhcl ? 'okhcl' : 'rgb'
   }
 
   function setFillFieldFormat(node: SceneNode, index: number, format: ColorFieldFormat) {
