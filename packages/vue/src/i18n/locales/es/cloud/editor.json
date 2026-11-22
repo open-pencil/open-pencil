@@ -268,8 +268,6 @@
   "communityLinkFailed": "Este documento ya no está en la galería.",
   "communityBanner": "Un ejemplo de la comunidad, abierto en modo de solo lectura.",
   "communitySaveCopy": "Guardar una copia",
-  "betaBanner": "OpenPencil Cloud está en beta, así que puede que algunas cosas aún no funcionen. Para usarlo en la aplicación de escritorio, instala la beta.",
-  "betaDownload": "Descargar la beta",
   "creditsLowBanner": "Te quedan pocos créditos de IA.",
   "creditsOutBanner": "Te has quedado sin créditos de IA.",
   "creditsOutUntilBanner": "Te has quedado sin créditos de IA hasta el {date}.",

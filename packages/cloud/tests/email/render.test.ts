@@ -85,7 +85,7 @@ describe('the storage-limit email', () => {
     expect(rendered.subject).toBe('You can try OpenPencil Cloud now')
     for (const url of [
       'https://cloud.example.com/',
-      'https://openpencil.dev/download#beta',
+      'https://openpencil.dev/download',
       'https://github.com/open-pencil/open-pencil/issues/new?template=bug_report.yml'
     ]) {
       expect(rendered.text).toContain(url)
@@ -113,7 +113,7 @@ describe('the storage-limit email', () => {
     // The rest is the same letter: the beta, where to report, the desktop beta, and the signature.
     for (const url of [
       'https://cloud.example.com/',
-      'https://openpencil.dev/download#beta',
+      'https://openpencil.dev/download',
       'https://github.com/open-pencil/open-pencil/issues/new?template=bug_report.yml'
     ]) {
       expect(rendered.text).toContain(url)

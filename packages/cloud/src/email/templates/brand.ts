@@ -3,8 +3,8 @@
 /** The ivory app-icon tile, served as PNG because mail clients do not draw SVG. */
 export const LOGO_URL = 'https://openpencil.dev/brand/app-icon-1024.png'
 export const SITE_URL = 'https://openpencil.dev'
-/** The download page's beta section, with the newest desktop beta's installers. */
-export const DESKTOP_BETA_URL = 'https://openpencil.dev/download#beta'
+/** The download page, with the desktop app's installers. */
+export const DOWNLOAD_URL = 'https://openpencil.dev/download'
 /** The repository's bug report form. */
 export const BUG_REPORT_URL =
   'https://github.com/open-pencil/open-pencil/issues/new?template=bug_report.yml'

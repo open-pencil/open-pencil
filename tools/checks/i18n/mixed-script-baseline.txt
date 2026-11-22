@@ -755,7 +755,6 @@ zh-cn:cloudPortal.sitePoweredBy
 zh-cn:cloudPortal.inviteWaitingConfirmDescription
 ja:cloud.errorEditorOutdatedHeading
 ja:cloud.errorEditorOutdatedDescription
-ja:cloud.betaBanner
 ja:cloud.editorOutdatedBanner
 ja:cloud.updateOpenPencil
 ja:cloud.creditsLowBanner
@@ -767,7 +766,6 @@ ja:cloud.notifyStorageFull
 ja:cloud.notifyStorageFullHint
 zh-cn:cloud.errorEditorOutdatedHeading
 zh-cn:cloud.errorEditorOutdatedDescription
-zh-cn:cloud.betaBanner
 zh-cn:cloud.editorOutdatedBanner
 zh-cn:cloud.updateOpenPencil
 zh-cn:cloud.creditsLowBanner
