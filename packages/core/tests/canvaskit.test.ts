@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { decodePath } from 'ufo'
 
 import { defaultCanvasKitLocator, filePathFromURL } from '#core/canvaskit'
 
@@ -37,10 +38,32 @@ describe('CanvasKit locator', () => {
     )
   })
 
+  test('a file URL with a host keeps it as a UNC prefix', () => {
+    expect(
+      filePathFromURL(
+        new URL('file://server/share/node_modules/@open-pencil/canvaskit/dist/canvaskit.wasm')
+      )
+    ).toBe('\\\\server\\share\\node_modules\\@open-pencil\\canvaskit\\dist\\canvaskit.wasm')
+    // `localhost` names the local machine, so the host is dropped as `fileURLToPath` does.
+    expect(filePathFromURL(new URL('file://localhost/tmp/canvaskit.wasm'))).toBe(
+      '/tmp/canvaskit.wasm'
+    )
+  })
+
+  test('a literal percent in a path survives decoding', () => {
+    expect(filePathFromURL(new URL('file:///tmp/100%25/open-pencil/canvaskit.wasm'))).toBe(
+      '/tmp/100%/open-pencil/canvaskit.wasm'
+    )
+  })
+
   test('the default locator returns a filesystem path under Node, not a file URL', () => {
     const located = defaultCanvasKitLocator('canvaskit.wasm')
     expect(located.startsWith('file:')).toBe(false)
-    expect(located).not.toContain('%')
+    const resolved = decodePath(
+      new URL('canvaskit.wasm', import.meta.resolve('@open-pencil/canvaskit')).pathname
+    )
+    const expected = /^\/[A-Za-z]:/.test(resolved) ? resolved.slice(1) : resolved
+    expect(located).toBe(expected)
     expect(located.endsWith('/canvaskit.wasm')).toBe(true)
   })
 })

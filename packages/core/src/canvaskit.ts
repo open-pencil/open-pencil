@@ -15,10 +15,15 @@ const EXPLAIN_TIMEOUT_MS = 5000
  * loader reads the located file with `fs`, so a URL-encoded path (`%20` for a space) names a
  * file that does not exist. A static `node:url` import is not an option here: this module also
  * ships to browsers, whose build leaves `node:` imports external. The leading slash before a
- * Windows drive letter is dropped, as `fileURLToPath` does.
+ * Windows drive letter is dropped, as `fileURLToPath` does, and a non-localhost host is kept
+ * as a UNC prefix (`file://server/share/...` → `\\server\share\...`), since dropping it
+ * would resolve the path on the current drive instead.
  */
 export function filePathFromURL(url: URL): string {
   const path = decodePath(url.pathname)
+  if (url.hostname && url.hostname !== 'localhost') {
+    return `\\\\${url.hostname}${path.replaceAll('/', '\\')}`
+  }
   return /^\/[A-Za-z]:/.test(path) ? path.slice(1) : path
 }
 
