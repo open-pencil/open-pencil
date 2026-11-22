@@ -17,7 +17,11 @@ import {
 
 const HUES = [0, 60, 120, 180, 240, 300, 360]
 
-/** The colors a slider of `channel` runs through, as Reka draws its track. */
+/**
+ * The colors a slider of `channel` runs through, as Reka draws its track, which this replaces
+ * only outside sRGB. They follow Reka, not the SDK's `createSliderGradientModel`: its HSB
+ * saturation track keeps the brightness, where Reka's runs at half lightness.
+ */
 function trackColors(color: RekaColor, channel: ColorChannel, model: RekaColorSpace): RekaColor[] {
   const opaque = { ...color, alpha: 1 }
   const hsl = convertToHsl(opaque)

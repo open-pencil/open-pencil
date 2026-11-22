@@ -129,15 +129,18 @@ describe('color space of shown colors', () => {
       () => provideEditorColorSpaces(editor),
       () => ({ spaces: useColorSpaces(), report: reportCanvasPresentation() })
     )
-    expect(result.spaces.value).toEqual({ stored: 'srgb', shown: 'srgb' })
-    editor.setDocumentColorSpace('display-p3')
-    await nextTick()
-    expect(result.spaces.value).toEqual({ stored: 'display-p3', shown: 'display-p3' })
-    result.report('srgb')
-    await nextTick()
-    expect(result.spaces.value).toEqual({ stored: 'display-p3', shown: 'srgb' })
-    unmount()
-    editor.dispose()
+    try {
+      expect(result.spaces.value).toEqual({ stored: 'srgb', shown: 'srgb' })
+      editor.setDocumentColorSpace('display-p3')
+      await nextTick()
+      expect(result.spaces.value).toEqual({ stored: 'display-p3', shown: 'display-p3' })
+      result.report('srgb')
+      await nextTick()
+      expect(result.spaces.value).toEqual({ stored: 'display-p3', shown: 'srgb' })
+    } finally {
+      unmount()
+      editor.dispose()
+    }
   })
 })
 

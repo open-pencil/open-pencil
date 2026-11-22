@@ -185,6 +185,14 @@ export function provideEditorColorSpaces(editor: Editor): void {
 }
 
 /**
+ * Gives this subtree a presentation report of its own, which nothing reads, for an editor whose
+ * host tracks the shown profile itself: its canvas's reports then stay out of an outer editor's.
+ */
+export function isolateCanvasPresentation(): void {
+  provide(PRESENTATION_KEY, shallowRef<ColorProfile | null>(null))
+}
+
+/**
  * The function a canvas calls with the profile it presents in, or null once it stops, for the
  * spaces {@link provideEditorColorSpaces} provides. Does nothing outside such a subtree.
  */

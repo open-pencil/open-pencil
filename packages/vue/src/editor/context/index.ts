@@ -4,7 +4,11 @@ import type { InjectionKey, MaybeRefOrGetter } from 'vue'
 import type { Editor } from '@open-pencil/core'
 import type { ColorProfile } from '@open-pencil/scene-graph'
 
-import { provideColorSpace, provideEditorColorSpaces } from '#vue/controls/color-model/space'
+import {
+  isolateCanvasPresentation,
+  provideColorSpace,
+  provideEditorColorSpaces
+} from '#vue/controls/color-model/space'
 
 /**
  * Injection key for the current OpenPencil editor instance.
@@ -32,8 +36,12 @@ export interface ProvideEditorOptions {
 export function provideEditor(editor: Editor, options: ProvideEditorOptions = {}) {
   provide(EDITOR_KEY, editor)
   // Swatches and pickers below show the document's colors as its canvas presents them.
-  if (options.colorSpaces) provideColorSpace(options.colorSpaces.stored, options.colorSpaces.shown)
-  else provideEditorColorSpaces(editor)
+  if (options.colorSpaces) {
+    provideColorSpace(options.colorSpaces.stored, options.colorSpaces.shown)
+    isolateCanvasPresentation()
+  } else {
+    provideEditorColorSpaces(editor)
+  }
 }
 
 /**

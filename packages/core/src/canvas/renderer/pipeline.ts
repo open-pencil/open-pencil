@@ -273,6 +273,9 @@ export function render(
   layer: RenderLayer = 'full',
   interactive = false
 ): void {
+  // Every entry point draws in the profile of the graph it is given.
+  r.useDocumentColorSpace(graph.documentColorSpace)
+  r.recordPicturesIn(graph.documentColorSpace)
   r.editingTextId = overlays.editingTextId ?? null
   emitNavigationTrace('render:start', {
     layer,

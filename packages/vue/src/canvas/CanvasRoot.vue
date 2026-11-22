@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onScopeDispose, ref } from 'vue'
 
 import { provideCanvas } from '#vue/canvas/context'
 import { useCanvas } from '#vue/canvas/surface/use'
@@ -32,6 +32,8 @@ const emit = defineEmits<{
 
 const editor = useEditor()
 const reportPresentation = reportCanvasPresentation()
+// A canvas that goes away no longer presents the document.
+onScopeDispose(() => reportPresentation(null))
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const ready = ref(false)
 
