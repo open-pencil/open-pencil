@@ -45,6 +45,8 @@
   "errorEditorOutdatedDescription": "يحتاج هذا الخادم إلى إصدار أحدث من OpenPencil من هذا الإصدار.",
   "editorOutdatedBanner": "يحتاج {host} إلى إصدار أحدث من OpenPencil. حدّثه لتواصل العمل على ملفاتك هناك.",
   "updateOpenPencil": "تحديث OpenPencil",
+  "movingBanner": "ينتقل OpenPencil إلى {host} في {date}. تبقى الملفات المحفوظة في هذا المتصفح هنا: احفظها في Cloud أو نزّلها قبل ذلك.",
+  "movingOpen": "افتح في Cloud",
   "errorDeniedHeading": "تم رفض تسجيل الدخول",
   "errorDeniedDescription": "تم رفض الطلب في المتصفح. ابدأ من جديد لتسجيل الدخول.",
   "errorExpiredHeading": "انتهت صلاحية الرمز",

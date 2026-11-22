@@ -56,6 +56,7 @@ import {
   CloudEditorUpdateBanner,
   CloudVersionDialog
 } from '@/components/cloud/integration'
+import CloudMovingBanner from '@/components/cloud/moving/CloudMovingBanner.vue'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
 import EditorWorkspace from '@/components/editor/EditorWorkspace.vue'
 import FileApiBanner from '@/components/FileApiBanner.vue'
@@ -302,6 +303,7 @@ onUnmounted(() => {
 
 <template>
   <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
+    <CloudMovingBanner />
     <FileApiBanner />
     <ColorSpaceBanner />
     <FontStatusBanner />

@@ -36,6 +36,8 @@
   "errorEditorOutdatedDescription": "Ten serwer wymaga nowszej wersji OpenPencil niż ta.",
   "editorOutdatedBanner": "{host} wymaga nowszej wersji OpenPencil. Zaktualizuj ją, aby dalej pracować tam na swoich plikach.",
   "updateOpenPencil": "Zaktualizuj OpenPencil",
+  "movingBanner": "OpenPencil przenosi się na {host} {date}. Pliki zapisane w tej przeglądarce zostaną tutaj: zapisz je wcześniej w Cloud albo pobierz.",
+  "movingOpen": "Otwórz w Cloud",
   "errorDeniedHeading": "Odrzucono logowanie",
   "errorDeniedDescription": "Prośba została odrzucona w przeglądarce. Zacznij od nowa, aby się zalogować.",
   "errorExpiredHeading": "Kod wygasł",

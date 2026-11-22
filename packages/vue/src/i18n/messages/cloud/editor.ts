@@ -58,6 +58,10 @@ export const cloudMessageDefaults = {
     '{host} needs a newer version of OpenPencil. Update to keep working with your files there.'
   ),
   updateOpenPencil: 'Update OpenPencil',
+  movingBanner: params(
+    'OpenPencil is moving to {host} on {date}. Files kept in this browser stay here: save them to Cloud or download them first.'
+  ),
+  movingOpen: 'Open in Cloud',
   errorDeniedHeading: 'Sign-in was denied',
   errorDeniedDescription: 'The request was turned down in the browser. Start again to sign in.',
   errorExpiredHeading: 'The code expired',
