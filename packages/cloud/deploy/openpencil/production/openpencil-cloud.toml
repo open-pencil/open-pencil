@@ -11,6 +11,9 @@ mode = "official"
 public_url = "https://cloud.openpencil.dev"
 indexing = "allow"
 local_editor = true
+# Editors from 0.17.0 on show Cloud in Settings and Home and offer sign-in; earlier ones keep the
+# waitlist they were built with.
+listing = { minimum_editor_version = "0.17.0" }
 
 [database]
 
