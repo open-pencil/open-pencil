@@ -2,6 +2,7 @@ import { renderTransactionalEmail } from '#cloud/email'
 import type { EmailLocale, TransactionalEmailKind } from '#cloud/email'
 import {
   isSendableEmailKind,
+  RETIRED_TRANSACTIONAL_EMAIL_KINDS,
   type CloudDatabase,
   type TransactionalEmailStatus
 } from '#cloud/server/db'
@@ -174,6 +175,8 @@ export function createTransactionalEmailService(
             'attemptCount'
           ])
           .where('payloadEncrypted', 'is not', null)
+          // Retired kinds left pending stay as history; claiming them would take batch slots.
+          .where('kind', 'not in', RETIRED_TRANSACTIONAL_EMAIL_KINDS)
           .where((expression) =>
             expression.or([
               expression.and([
