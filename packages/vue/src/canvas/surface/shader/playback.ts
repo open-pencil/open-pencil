@@ -140,6 +140,10 @@ export function useShaderPlayback(options: {
     player.disposed = true
     players.delete(hash)
     getRenderer()?.setLiveImage(hash, null, player.nodeIds)
+    // Islands drawing its frames and the canvas show the still frame again, however playback
+    // ended: leaving preview, the shader leaving the page, or the system asking for less motion.
+    frames.publish(hash, null)
+    markDirty()
     retired.push(player)
     if (!stepping) release()
   }

@@ -12,6 +12,8 @@ import {
 import { chromium, type Browser, type BrowserContext } from '@playwright/test'
 import sharp from 'sharp'
 
+import { withDeadline } from '@open-pencil/std/timing'
+
 /**
  * The visitor's screen for each layout. On a desktop the page caps its content width, so one
  * wide viewport stands for every large screen; the phone is a common handset with touch input.
@@ -103,20 +105,27 @@ async function capturePage(browser: Browser, origin: string, target: PosterTarge
       // A stage reports ready once its scene's first frame is on screen, with its panel, toolbar,
       // and pill already loaded. What may still arrive: the page's web fonts and the images its
       // panel shows. Then the next frame paints them.
-      await frame.evaluate(async (stage) => {
-        await document.fonts.ready
-        // One that fails to load is in the still as the page shows it; waiting is all this is for.
-        await Promise.allSettled([...stage.querySelectorAll('img')].map((image) => image.decode()))
-        // Transitions still running, such as a colour easing to the theme's, end first; endless
-        // animations, such as a spinner, are drawn as they are.
-        await Promise.allSettled(
-          stage
-            .getAnimations({ subtree: true })
-            .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
-            .map((animation) => animation.finished)
-        )
-        await new Promise((painted) => requestAnimationFrame(() => requestAnimationFrame(painted)))
-      })
+      // Bounded like the wait for ready: an image that never arrives must not hold the run.
+      await withDeadline(STAGE_TIMEOUT_MS, () =>
+        frame.evaluate(async (stage) => {
+          await document.fonts.ready
+          // One that fails to load is in the still as the page shows it; waiting is all this is for.
+          await Promise.allSettled(
+            [...stage.querySelectorAll('img')].map((image) => image.decode())
+          )
+          // Transitions still running, such as a colour easing to the theme's, end first; endless
+          // animations, such as a spinner, are drawn as they are.
+          await Promise.allSettled(
+            stage
+              .getAnimations({ subtree: true })
+              .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+              .map((animation) => animation.finished)
+          )
+          await new Promise((painted) => {
+            requestAnimationFrame(() => requestAnimationFrame(painted))
+          })
+        })
+      )
       for (const part of posterParts(kind)) {
         const element = part === 'frame' ? frame : frame.locator(`[data-poster-part="${part}"]`)
         const png = await element.screenshot({ animations: 'disabled' })

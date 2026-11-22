@@ -44,11 +44,15 @@ const { stop } = useIntersectionObserver(
     emit('start')
     // Its panel, toolbar, and pill are downloaded before it mounts, so they are in place by the
     // time its scene's first frame is on screen and it reports ready, as the posters rely on.
+    // One that fails to download is tried again as it mounts, and shows nothing if it fails then
+    // too; the stage itself still mounts.
     await Promise.all([
       prepareEngine(),
-      definition.panel?.load(),
-      definition.toolbar ? EditorToolbar.load() : null,
-      definition.preview ? StagePreviewControls.load() : null
+      ...[
+        definition.panel?.load(),
+        definition.toolbar ? EditorToolbar.load() : null,
+        definition.preview ? StagePreviewControls.load() : null
+      ].map((loaded) => loaded?.catch(() => undefined))
     ])
     mounted.value = true
     void build()
