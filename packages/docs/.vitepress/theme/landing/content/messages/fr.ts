@@ -115,71 +115,105 @@ export const fr: LandingMessages = {
     shipped: {
       label: 'Livré',
       entries: [
-        { title: 'Composants interactifs et aperçu' },
-        { title: 'Variables comme design tokens' },
-        { title: 'Linting avec corrections en un clic' },
-        { title: 'Agents AI comme collaborateurs, avec mode suivi' },
-        { title: 'Annuler, régénérer et modifier les échanges avec l’AI' },
-        { title: 'Code relié aux calques' },
-        { title: 'Diff visuel et correctifs' },
+        { title: 'OpenPencil Cloud, aussi auto-hébergé' },
+        { title: 'Des tableaux à la FigJam' },
+        { title: 'Des pages web en calques depuis une URL' },
+        { title: 'Des formules dans les variables' },
+        { title: 'Polices variables, Material Symbols et SF Symbols' },
+        { title: 'Verre, flou progressif, bruit et texture' },
+        { title: 'Réglages d’image' },
+        { title: 'L’outil Échelle' },
+        { title: 'Un canevas plus rapide' },
+        { title: 'Revues de design et vos propres prompts IA' },
+        { title: 'Arabe et portugais du Brésil' },
         { title: 'Commentaires et appels vocaux dans les salles partagées' },
-        { title: "Composants Vue et React dans l'onglet Code" },
-        { title: 'Import SVG et HTML en calques modifiables' },
-        { title: 'Remplissages par shaders' },
-        { title: 'Design tokens W3C' },
-        { title: 'Une visite guidée de l’éditeur' },
-        { title: 'Listes et styles pour n’importe quelle portion de texte' }
+        { title: 'Composants interactifs et aperçu' },
+        { title: 'Linting avec corrections en un clic' }
       ]
     },
     now: {
       label: 'En cours',
       entries: [
         {
-          title: 'Storybook à partir de vrais composants',
-          detail: 'Des stories qui utilisent Reka UI pour Vue et Radix UI pour React.'
+          title: 'Couleurs Display P3',
+          detail:
+            'Les documents sont dessinés et exportés dans leur profil colorimétrique, comme dans Figma.'
         },
         {
-          title: 'Création de composants',
-          detail: 'Modification des variantes plus rapide et sélection dans les composants.'
+          title: 'Designer sur les pages en ligne',
+          detail: 'Comparez les pages d’un projet au design et ouvrez des pull requests.'
+        },
+        {
+          title: 'OpenPencil sur Android',
+          detail: 'L’éditeur sur les téléphones, tablettes et appareils pliables Android.'
         }
       ]
     },
     next: {
       label: 'Ensuite',
-      lead: {
-        title: 'OpenPencil auto-hébergé',
-        detail:
-          'Tout l’espace de travail dans votre propre réseau : synchronisation, partage, commentaires et bibliothèques d’équipe, sans envoyer un fichier à qui que ce soit.',
-        features: [
-          {
-            title: 'Votre stockage',
-            detail: 'Les documents restent dans votre bucket, dans votre région.'
-          },
-          {
-            title: 'Votre identité',
-            detail: 'Connexion via votre fournisseur OIDC ou SSO, avec des rôles.'
-          },
-          {
-            title: 'Votre réseau',
-            detail: 'Un relais de collaboration qui fonctionne derrière votre pare-feu.'
-          },
-          {
-            title: 'Votre exploitation',
-            detail: 'Déploiement guidé, mises à niveau, sauvegardes et rétention.'
-          }
-        ]
-      },
-      entries: [
+      leads: [
         {
-          title: 'Historique des versions',
-          detail: 'Instantanés automatiques, points de contrôle nommés et restauration.'
+          title: 'OpenPencil sur votre téléphone',
+          detail:
+            'Une application compagnon pour iOS et Android, et l’éditeur lui-même sur téléphones et tablettes.',
+          features: [
+            {
+              title: 'Application compagnon',
+              detail:
+                'Ouvrez vos fichiers Cloud, suivez une salle en direct et répondez aux commentaires et aux agents.'
+            },
+            {
+              title: 'Aperçu sur l’appareil',
+              detail: 'Affichez un cadre du bureau sur votre téléphone pendant que vous designez.'
+            },
+            {
+              title: 'Designer sur tablette',
+              detail:
+                'Saisie tactile et au stylet, avec des panneaux pensés pour les petits écrans.'
+            },
+            {
+              title: 'Les mêmes documents',
+              detail: 'L’éditeur et le Cloud que vous utilisez déjà, pas une application à part.'
+            }
+          ]
+        },
+        {
+          title: 'Présentations',
+          detail:
+            'Des présentations à côté des designs et des tableaux, construites avec votre design system.',
+          features: [
+            {
+              title: 'Vos composants',
+              detail:
+                'Les présentations utilisent les mêmes composants, variables et bibliothèques que vos designs.'
+            },
+            {
+              title: 'Mode présentateur',
+              detail:
+                'Notes de l’orateur, présentation en plein écran et un public qui suit en direct.'
+            },
+            {
+              title: 'Fichiers Figma Slides',
+              detail: 'Ouvrez et enregistrez des fichiers .deck, et exportez en PDF et PowerPoint.'
+            },
+            {
+              title: 'Présentations par IA',
+              detail:
+                'Rédigez une présentation à partir d’un plan ou d’un document, dans son thème.'
+            }
+          ]
         }
       ],
-      cloud: {
-        title: 'OpenPencil Cloud',
-        detail:
-          "L'espace hébergé pour les équipes : synchronisation en direct, partage, bibliothèques et IA, sans rien à faire tourner."
-      }
+      entries: [
+        {
+          title: 'Authentification unique',
+          detail: 'OIDC et SSO pour les équipes, avec comptes de service et webhooks.'
+        },
+        {
+          title: 'Projets et dossiers',
+          detail: 'Organisez les espaces Cloud, avec modèles et recherche.'
+        }
+      ]
     },
     later: {
       label: 'Plus tard',
@@ -191,7 +225,8 @@ export const fr: LandingMessages = {
         {
           title: 'Éditeur intégrable',
           detail: 'Placez l’éditeur de cette page dans votre propre produit.'
-        }
+        },
+        { title: 'Prototypage', detail: 'Connexions, transitions et superpositions entre cadres.' }
       ]
     }
   },

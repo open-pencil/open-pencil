@@ -114,68 +114,98 @@ export const en: LandingMessages = {
     shipped: {
       label: 'Shipped',
       entries: [
-        { title: 'Interactive components and preview' },
-        { title: 'Variables as design tokens' },
-        { title: 'Linting with one-click fixes' },
-        { title: 'AI agents as collaborators, with follow mode' },
-        { title: 'Revert, regenerate, and edit AI turns' },
-        { title: 'Code linked to canvas layers' },
-        { title: 'Visual diff and patch' },
+        { title: 'OpenPencil Cloud, also self-hosted' },
+        { title: 'FigJam-style boards' },
+        { title: 'Web pages from a URL as layers' },
+        { title: 'Variable formulas' },
+        { title: 'Variable fonts, Material Symbols, and SF Symbols' },
+        { title: 'Glass, progressive blur, noise, and texture' },
+        { title: 'Image adjustments' },
+        { title: 'The Scale tool' },
+        { title: 'A faster canvas' },
+        { title: 'Design reviews and your own AI prompts' },
+        { title: 'Arabic and Brazilian Portuguese' },
         { title: 'Comments and voice calls in shared rooms' },
-        { title: 'Vue and React components in the Code tab' },
-        { title: 'SVG and HTML import as editable layers' },
-        { title: 'Shader fills' },
-        { title: 'W3C design tokens' },
-        { title: 'A guided tour of the editor' },
-        { title: 'Lists and styles for any range of text' }
+        { title: 'Interactive components and preview' },
+        { title: 'Linting with one-click fixes' }
       ]
     },
     now: {
       label: 'Now',
       entries: [
         {
-          title: 'Storybook from real components',
-          detail: 'Stories that render Reka UI for Vue and Radix UI for React.'
+          title: 'Display P3 color',
+          detail: 'Documents drawn and exported in their color profile, as in Figma.'
         },
         {
-          title: 'Component authoring',
-          detail: 'Faster variant editing and canvas selection inside components.'
+          title: 'Design on running pages',
+          detail: 'Compare a project’s pages with the design and open pull requests.'
+        },
+        {
+          title: 'OpenPencil on Android',
+          detail: 'The editor on Android phones, tablets, and foldables.'
         }
       ]
     },
     next: {
       label: 'Next',
-      lead: {
-        title: 'Self-hosted OpenPencil',
-        detail:
-          'The whole workspace inside your own network: sync, sharing, comments, and team libraries without sending a file to anyone else.',
-        features: [
-          { title: 'Your storage', detail: 'Documents stay in your bucket, in your region.' },
-          {
-            title: 'Your identity',
-            detail: 'Sign-in through your OIDC or SSO provider, with roles.'
-          },
-          {
-            title: 'Your network',
-            detail: 'A collaboration relay that works behind your firewall.'
-          },
-          {
-            title: 'Your operations',
-            detail: 'Guided deployment, upgrades, backups, and retention.'
-          }
-        ]
-      },
-      entries: [
+      leads: [
         {
-          title: 'Version history',
-          detail: 'Automatic snapshots, named checkpoints, and restore.'
+          title: 'OpenPencil on your phone',
+          detail:
+            'A companion app for iOS and Android, and the editor itself on phones and tablets.',
+          features: [
+            {
+              title: 'Companion app',
+              detail: 'Open Cloud files, follow a room live, and answer comments and agents.'
+            },
+            {
+              title: 'Device preview',
+              detail: 'Mirror a frame from your desktop onto your phone while you design.'
+            },
+            {
+              title: 'Design on tablets',
+              detail: 'Touch and pencil input, with panels laid out for small screens.'
+            },
+            {
+              title: 'Same documents',
+              detail: 'The editor and Cloud you already use, not a separate app.'
+            }
+          ]
+        },
+        {
+          title: 'Presentations',
+          detail: 'Slide decks beside designs and boards, built from your design system.',
+          features: [
+            {
+              title: 'Your components',
+              detail: 'Decks use the same components, variables, and libraries as your designs.'
+            },
+            {
+              title: 'Presenter view',
+              detail: 'Speaker notes, full-screen presenting, and an audience that follows live.'
+            },
+            {
+              title: 'Figma Slides files',
+              detail: 'Open and save .deck files, and export to PDF and PowerPoint.'
+            },
+            {
+              title: 'Decks from AI',
+              detail: 'Draft a deck from an outline or a document, in the deck’s theme.'
+            }
+          ]
         }
       ],
-      cloud: {
-        title: 'OpenPencil Cloud',
-        detail:
-          'The hosted workspace for teams: live sync, sharing, libraries, and AI, with nothing to run.'
-      }
+      entries: [
+        {
+          title: 'Single sign-on',
+          detail: 'OIDC and SSO for teams, with service accounts and webhooks.'
+        },
+        {
+          title: 'Projects and folders',
+          detail: 'Organize Cloud workspaces, with templates and search.'
+        }
+      ]
     },
     later: {
       label: 'Later',
@@ -184,7 +214,8 @@ export const en: LandingMessages = {
         {
           title: 'Embeddable editor',
           detail: 'Put the editor on this page into your own product.'
-        }
+        },
+        { title: 'Prototyping', detail: 'Connections, transitions, and overlays between frames.' }
       ]
     }
   },

@@ -115,71 +115,101 @@ export const pl: LandingMessages = {
     shipped: {
       label: 'Wydane',
       entries: [
-        { title: 'Interaktywne komponenty i podgląd' },
-        { title: 'Zmienne jako tokeny projektowe' },
-        { title: 'Linting z poprawkami jednym kliknięciem' },
-        { title: 'Agenci AI jako współpracownicy, z trybem śledzenia' },
-        { title: 'Cofanie, ponowne generowanie i edycja tur AI' },
-        { title: 'Kod powiązany z warstwami' },
-        { title: 'Wizualny diff i łatki' },
+        { title: 'OpenPencil Cloud, także na własnym serwerze' },
+        { title: 'Tablice w stylu FigJam' },
+        { title: 'Strony WWW z adresu URL jako warstwy' },
+        { title: 'Formuły w zmiennych' },
+        { title: 'Fonty zmienne, Material Symbols i SF Symbols' },
+        { title: 'Szkło, rozmycie progresywne, szum i tekstura' },
+        { title: 'Korekty obrazów' },
+        { title: 'Narzędzie Skalowanie' },
+        { title: 'Szybsze płótno' },
+        { title: 'Przeglądy projektu i własne prompty AI' },
+        { title: 'Arabski i portugalski brazylijski' },
         { title: 'Komentarze i rozmowy głosowe we wspólnych pokojach' },
-        { title: 'Komponenty Vue i React w karcie Kod' },
-        { title: 'Import SVG i HTML jako edytowalnych warstw' },
-        { title: 'Wypełnienia shaderami' },
-        { title: 'Design tokeny W3C' },
-        { title: 'Przewodnik po edytorze' },
-        { title: 'Listy i style dla dowolnego fragmentu tekstu' }
+        { title: 'Interaktywne komponenty i podgląd' },
+        { title: 'Linting z poprawkami jednym kliknięciem' }
       ]
     },
     now: {
       label: 'Teraz',
       entries: [
         {
-          title: 'Storybook z prawdziwych komponentów',
-          detail: 'Historie korzystające z Reka UI dla Vue i Radix UI dla React.'
+          title: 'Kolory Display P3',
+          detail: 'Dokumenty rysowane i eksportowane w ich profilu kolorów, jak w Figmie.'
         },
         {
-          title: 'Tworzenie komponentów',
-          detail: 'Szybsza edycja wariantów i zaznaczanie wewnątrz komponentów.'
+          title: 'Projektowanie na działających stronach',
+          detail: 'Porównuj strony projektu z projektem graficznym i otwieraj pull requesty.'
+        },
+        {
+          title: 'OpenPencil na Androidzie',
+          detail: 'Edytor na telefonach, tabletach i składanych urządzeniach z Androidem.'
         }
       ]
     },
     next: {
       label: 'Następnie',
-      lead: {
-        title: 'OpenPencil na własnym serwerze',
-        detail:
-          'Cała przestrzeń robocza we własnej sieci: synchronizacja, udostępnianie, komentarze i biblioteki zespołu bez wysyłania pliku komukolwiek innemu.',
-        features: [
-          {
-            title: 'Twoja pamięć masowa',
-            detail: 'Dokumenty pozostają w Twoim zasobniku, w Twoim regionie.'
-          },
-          {
-            title: 'Twoja tożsamość',
-            detail: 'Logowanie przez Twojego dostawcę OIDC lub SSO, z rolami.'
-          },
-          {
-            title: 'Twoja sieć',
-            detail: 'Przekaźnik współpracy, który działa za Twoją zaporą.'
-          },
-          {
-            title: 'Twoje utrzymanie',
-            detail: 'Wdrożenie z przewodnikiem, aktualizacje, kopie zapasowe i retencja.'
-          }
-        ]
-      },
-      entries: [
+      leads: [
         {
-          title: 'Historia wersji',
-          detail: 'Automatyczne migawki, nazwane punkty kontrolne i przywracanie.'
+          title: 'OpenPencil w telefonie',
+          detail:
+            'Aplikacja towarzysząca na iOS i Androida oraz sam edytor na telefonach i tabletach.',
+          features: [
+            {
+              title: 'Aplikacja towarzysząca',
+              detail:
+                'Otwieraj pliki z Cloud, śledź pokój na żywo i odpowiadaj na komentarze i agentów.'
+            },
+            {
+              title: 'Podgląd na urządzeniu',
+              detail: 'Wyświetlaj ramkę z komputera na telefonie podczas projektowania.'
+            },
+            {
+              title: 'Projektowanie na tabletach',
+              detail: 'Obsługa dotykiem i rysikiem, z panelami dla małych ekranów.'
+            },
+            {
+              title: 'Te same dokumenty',
+              detail: 'Edytor i Cloud, których już używasz, a nie osobna aplikacja.'
+            }
+          ]
+        },
+        {
+          title: 'Prezentacje',
+          detail: 'Prezentacje obok projektów i tablic, zbudowane z twojego systemu projektowego.',
+          features: [
+            {
+              title: 'Twoje komponenty',
+              detail:
+                'Prezentacje używają tych samych komponentów, zmiennych i bibliotek co projekty.'
+            },
+            {
+              title: 'Widok prezentera',
+              detail:
+                'Notatki prelegenta, prezentowanie na pełnym ekranie i publiczność śledząca na żywo.'
+            },
+            {
+              title: 'Pliki Figma Slides',
+              detail: 'Otwieraj i zapisuj pliki .deck, eksportuj do PDF i PowerPointa.'
+            },
+            {
+              title: 'Prezentacje z AI',
+              detail: 'Szkic prezentacji z konspektu lub dokumentu, w motywie prezentacji.'
+            }
+          ]
         }
       ],
-      cloud: {
-        title: 'OpenPencil Cloud',
-        detail:
-          'Hostowana przestrzeń dla zespołów: synchronizacja na żywo, udostępnianie, biblioteki i AI, bez utrzymywania czegokolwiek.'
-      }
+      entries: [
+        {
+          title: 'Logowanie jednokrotne',
+          detail: 'OIDC i SSO dla zespołów, z kontami usług i webhookami.'
+        },
+        {
+          title: 'Projekty i foldery',
+          detail: 'Porządkuj przestrzenie Cloud, z szablonami i wyszukiwaniem.'
+        }
+      ]
     },
     later: {
       label: 'Później',
@@ -191,7 +221,8 @@ export const pl: LandingMessages = {
         {
           title: 'Edytor do osadzenia',
           detail: 'Przenieś edytor z tej strony do własnego produktu.'
-        }
+        },
+        { title: 'Prototypowanie', detail: 'Połączenia, przejścia i nakładki między ramkami.' }
       ]
     }
   },

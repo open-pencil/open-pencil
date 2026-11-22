@@ -115,71 +115,101 @@ export const de: LandingMessages = {
     shipped: {
       label: 'Erschienen',
       entries: [
-        { title: 'Interaktive Komponenten und Vorschau' },
-        { title: 'Variablen als Design-Tokens' },
-        { title: 'Linting mit Korrekturen per Klick' },
-        { title: 'KI-Agenten als Mitwirkende, mit Folgemodus' },
-        { title: 'KI-Schritte zurücknehmen, neu erzeugen und bearbeiten' },
-        { title: 'Code mit Ebenen verknüpft' },
-        { title: 'Visueller Diff und Patch' },
+        { title: 'OpenPencil Cloud, auch selbst gehostet' },
+        { title: 'Boards wie in FigJam' },
+        { title: 'Webseiten per URL als Ebenen' },
+        { title: 'Variablen mit Formeln' },
+        { title: 'Variable Schriften, Material Symbols und SF Symbols' },
+        { title: 'Glas, progressive Unschärfe, Rauschen und Textur' },
+        { title: 'Bildanpassungen' },
+        { title: 'Das Skalierungswerkzeug' },
+        { title: 'Eine schnellere Arbeitsfläche' },
+        { title: 'Design-Reviews und eigene KI-Prompts' },
+        { title: 'Arabisch und brasilianisches Portugiesisch' },
         { title: 'Kommentare und Sprachanrufe in geteilten Räumen' },
-        { title: 'Vue- und React-Komponenten im Code-Tab' },
-        { title: 'SVG- und HTML-Import als bearbeitbare Ebenen' },
-        { title: 'Shader-Füllungen' },
-        { title: 'W3C-Design-Tokens' },
-        { title: 'Eine geführte Tour durch den Editor' },
-        { title: 'Listen und Stile für beliebige Textbereiche' }
+        { title: 'Interaktive Komponenten und Vorschau' },
+        { title: 'Linting mit Korrekturen per Klick' }
       ]
     },
     now: {
       label: 'Jetzt',
       entries: [
         {
-          title: 'Storybook aus echten Komponenten',
-          detail: 'Stories mit Reka UI für Vue und Radix UI für React.'
+          title: 'Display-P3-Farben',
+          detail: 'Dokumente werden in ihrem Farbprofil gezeichnet und exportiert, wie in Figma.'
         },
         {
-          title: 'Komponenten erstellen',
-          detail: 'Schnelleres Bearbeiten von Varianten und Auswahl innerhalb von Komponenten.'
+          title: 'Auf laufenden Seiten gestalten',
+          detail: 'Vergleiche die Seiten eines Projekts mit dem Design und öffne Pull Requests.'
+        },
+        {
+          title: 'OpenPencil auf Android',
+          detail: 'Der Editor auf Android-Smartphones, -Tablets und Foldables.'
         }
       ]
     },
     next: {
       label: 'Als Nächstes',
-      lead: {
-        title: 'OpenPencil selbst hosten',
-        detail:
-          'Der gesamte Workspace in deinem eigenen Netzwerk: Synchronisierung, Freigabe, Kommentare und Team-Bibliotheken, ohne eine Datei an jemand anderen zu senden.',
-        features: [
-          {
-            title: 'Dein Speicher',
-            detail: 'Dokumente bleiben in deinem Bucket, in deiner Region.'
-          },
-          {
-            title: 'Deine Identität',
-            detail: 'Anmeldung über deinen OIDC- oder SSO-Anbieter, mit Rollen.'
-          },
-          {
-            title: 'Dein Netzwerk',
-            detail: 'Ein Kollaborations-Relay, das hinter deiner Firewall funktioniert.'
-          },
-          {
-            title: 'Dein Betrieb',
-            detail: 'Geführte Bereitstellung, Upgrades, Backups und Aufbewahrung.'
-          }
-        ]
-      },
-      entries: [
+      leads: [
         {
-          title: 'Versionsverlauf',
-          detail: 'Automatische Snapshots, benannte Checkpoints und Wiederherstellung.'
+          title: 'OpenPencil auf dem Smartphone',
+          detail:
+            'Eine Begleit-App für iOS und Android und der Editor selbst auf Smartphones und Tablets.',
+          features: [
+            {
+              title: 'Begleit-App',
+              detail:
+                'Öffne Cloud-Dateien, folge einem Raum live und antworte auf Kommentare und Agenten.'
+            },
+            {
+              title: 'Gerätevorschau',
+              detail: 'Spiegle einen Frame vom Desktop auf dein Smartphone, während du gestaltest.'
+            },
+            {
+              title: 'Gestalten auf Tablets',
+              detail: 'Touch- und Stifteingabe, mit Panels für kleine Bildschirme.'
+            },
+            {
+              title: 'Dieselben Dokumente',
+              detail: 'Der Editor und die Cloud, die du schon nutzt, keine separate App.'
+            }
+          ]
+        },
+        {
+          title: 'Präsentationen',
+          detail: 'Foliensätze neben Designs und Boards, gebaut aus deinem Design-System.',
+          features: [
+            {
+              title: 'Deine Komponenten',
+              detail:
+                'Präsentationen nutzen dieselben Komponenten, Variablen und Bibliotheken wie deine Designs.'
+            },
+            {
+              title: 'Referentenansicht',
+              detail: 'Sprechernotizen, Präsentieren im Vollbild und ein Publikum, das live folgt.'
+            },
+            {
+              title: 'Figma-Slides-Dateien',
+              detail: '.deck-Dateien öffnen und speichern, Export als PDF und PowerPoint.'
+            },
+            {
+              title: 'Präsentationen per KI',
+              detail:
+                'Entwirf eine Präsentation aus einer Gliederung oder einem Dokument, im Theme der Präsentation.'
+            }
+          ]
         }
       ],
-      cloud: {
-        title: 'OpenPencil Cloud',
-        detail:
-          'Der gehostete Arbeitsbereich für Teams: Live-Synchronisierung, Freigabe, Bibliotheken und KI, ohne eigenen Betrieb.'
-      }
+      entries: [
+        {
+          title: 'Single Sign-on',
+          detail: 'OIDC und SSO für Teams, mit Dienstkonten und Webhooks.'
+        },
+        {
+          title: 'Projekte und Ordner',
+          detail: 'Cloud-Arbeitsbereiche ordnen, mit Vorlagen und Suche.'
+        }
+      ]
     },
     later: {
       label: 'Später',
@@ -191,7 +221,8 @@ export const de: LandingMessages = {
         {
           title: 'Einbettbarer Editor',
           detail: 'Bring den Editor von dieser Seite in dein eigenes Produkt.'
-        }
+        },
+        { title: 'Prototyping', detail: 'Verbindungen, Übergänge und Overlays zwischen Frames.' }
       ]
     }
   },
