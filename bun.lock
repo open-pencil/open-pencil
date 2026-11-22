@@ -1053,6 +1053,7 @@
       "name": "@open-pencil/landing-posters-tools",
       "dependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
+        "@open-pencil/std": "workspace:*",
         "@playwright/test": "^1.63.0",
         "sharp": "0.34.5",
       },
