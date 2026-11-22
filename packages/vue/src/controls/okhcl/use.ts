@@ -25,7 +25,12 @@ export function useOkHCL() {
     editor,
     () => spaces.value.shown
   )
-  const profile = () => editor.graph.documentColorSpace
+  // The document's own profile, which the paints are stored in whatever a subtree shows; reading
+  // the provided spaces first makes a render that calls this follow a change of profile.
+  const profile = () => {
+    void spaces.value.stored
+    return editor.graph.documentColorSpace
+  }
   const { getFieldFormat, setFillFieldFormat, setStrokeFieldFormat } = createOkHCLFieldFormats(
     fieldFormats,
     ensureFillOkHCL,

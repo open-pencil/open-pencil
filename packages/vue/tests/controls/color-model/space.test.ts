@@ -144,6 +144,36 @@ describe('color space of shown colors', () => {
   })
 })
 
+describe('canvas presentation reports', () => {
+  test("a canvas that goes leaves the remaining canvas's report", async () => {
+    const editor = createEditor()
+    const { result, unmount } = mountUnder(
+      () => provideEditorColorSpaces(editor),
+      () => ({
+        spaces: useColorSpaces(),
+        first: reportCanvasPresentation(),
+        second: reportCanvasPresentation()
+      })
+    )
+    try {
+      editor.setDocumentColorSpace('display-p3')
+      result.first('srgb')
+      result.second('display-p3')
+      await nextTick()
+      expect(result.spaces.value.shown).toBe('display-p3')
+      result.second(null)
+      await nextTick()
+      expect(result.spaces.value.shown).toBe('srgb')
+      result.first(null)
+      await nextTick()
+      expect(result.spaces.value.shown).toBe('display-p3')
+    } finally {
+      unmount()
+      editor.dispose()
+    }
+  })
+})
+
 describe('gradients shown in another profile than stored', () => {
   test('blend in the stored components before clipping, so midpoints match the canvas', () => {
     const white = { r: 1, g: 1, b: 1, a: 1 }

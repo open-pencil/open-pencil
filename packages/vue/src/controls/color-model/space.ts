@@ -152,7 +152,10 @@ export function isSRGB(spaces: ColorSpaces): boolean {
   return spaces.stored === 'srgb' && spaces.shown === 'srgb'
 }
 
-const PRESENTATION_KEY: InjectionKey<ShallowRef<ColorProfile | null>> = Symbol(
+/** The profile each canvas under an editor reports presenting, by canvas, latest last. */
+type PresentationReports = ShallowRef<ReadonlyMap<symbol, ColorProfile>>
+
+const PRESENTATION_KEY: InjectionKey<PresentationReports> = Symbol(
   'open-pencil-canvas-presentation'
 )
 
@@ -179,9 +182,11 @@ export function provideEditorColorSpaces(editor: Editor): void {
     void changes.value
     return editor.graph.documentColorSpace
   }
-  const presentation = shallowRef<ColorProfile | null>(null)
-  provide(PRESENTATION_KEY, presentation)
-  provideColorSpace(stored, () => presentation.value ?? stored())
+  const reports: PresentationReports = shallowRef(new Map())
+  provide(PRESENTATION_KEY, reports)
+  // The canvas that reported last, of those still presenting, as a canvas that goes leaves the
+  // others' reports in place.
+  provideColorSpace(stored, () => [...reports.value.values()].at(-1) ?? stored())
 }
 
 /**
@@ -189,7 +194,7 @@ export function provideEditorColorSpaces(editor: Editor): void {
  * host tracks the shown profile itself: its canvas's reports then stay out of an outer editor's.
  */
 export function isolateCanvasPresentation(): void {
-  provide(PRESENTATION_KEY, shallowRef<ColorProfile | null>(null))
+  provide(PRESENTATION_KEY, shallowRef(new Map()))
 }
 
 /**
@@ -197,8 +202,13 @@ export function isolateCanvasPresentation(): void {
  * spaces {@link provideEditorColorSpaces} provides. Does nothing outside such a subtree.
  */
 export function reportCanvasPresentation(): (presentation: ColorProfile | null) => void {
-  const presentation = hasInjectionContext() ? inject(PRESENTATION_KEY, null) : null
+  const reports = hasInjectionContext() ? inject(PRESENTATION_KEY, null) : null
+  const canvas = Symbol('canvas')
   return (value) => {
-    if (presentation) presentation.value = value
+    if (!reports) return
+    const next = new Map(reports.value)
+    next.delete(canvas)
+    if (value) next.set(canvas, value)
+    reports.value = next
   }
 }
