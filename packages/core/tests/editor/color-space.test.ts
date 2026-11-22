@@ -277,6 +277,35 @@ describe('document color profile', () => {
     expect(fill()?.opacity).toBe(0.8)
   })
 
+  test('a bound paint refreshed in another mode after converting follows undo and redo', async () => {
+    editor = createEditor()
+    editor.graph.documentColorSpace = 'display-p3'
+    const collection = editor.graph.createCollection('Theme')
+    const light = collection.modes[0].modeId
+    const dark = editor.graph.createMode(collection.id, 'Dark')
+    if (!dark) throw new Error('Expected the dark mode')
+    const accent = editor.graph.createVariable('Accent', 'COLOR', collection.id, BLUE)
+    const variable = editor.graph.variables.get(accent.id)
+    if (!variable) throw new Error('Expected the variable')
+    variable.valuesByMode = { [light]: BLUE, [dark]: P3_RED }
+    const layer = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      fills: [{ type: 'SOLID', color: BLUE, opacity: 1, visible: true }],
+      boundVariables: { 'fills/0/color': accent.id }
+    })
+    const fill = () => editor.graph.getNode(layer.id)?.fills[0]
+    await editor.setDocumentColorSpace('srgb', 'convert')
+
+    // The layer moves to the dark mode outside the undo history, as a collaborator's edit does.
+    editor.updateNode(layer.id, { variableModes: { [collection.id]: dark } })
+    const darkConverted = convertColor(P3_RED, 'display-p3', 'srgb', 'map')
+    expectColor(fill()?.color, { ...darkConverted, a: 1 })
+
+    editor.undo.undo()
+    expect(fill()?.color).toEqual(P3_RED)
+    editor.undo.redo()
+    expectColor(fill()?.color, { ...darkConverted, a: 1 })
+  })
+
   test('a color set back after converting stays through undo and redo', async () => {
     const { fill } = p3Document()
     await editor.setDocumentColorSpace('srgb', 'convert')

@@ -12,6 +12,7 @@ import {
   cloneVectorNetwork,
   copyEffects,
   copyFill,
+  copyStroke,
   copyLayoutGrids,
   copyStyleRuns
 } from '@open-pencil/scene-graph/copy'
@@ -20,6 +21,7 @@ import {
   foldFormula,
   hasBoundPaints,
   layersUsingVariables,
+  paintBindingTarget,
   recordWrittenBoundPaints,
   variableValueReferences
 } from '@open-pencil/scene-graph/variables'
@@ -270,6 +272,55 @@ function keepBoundPaints(graph: SceneGraph, variableIds: readonly string[]): voi
   }
 }
 
+/** The color each bound paint's variable gives its layer, by layer and binding field. */
+type BoundColors = Map<string, Map<string, Color>>
+
+function boundColors(graph: SceneGraph, variableIds: readonly string[]): BoundColors {
+  const colors: BoundColors = new Map()
+  if (variableIds.length === 0) return colors
+  for (const node of layersUsingVariables(graph, variableIds)) {
+    const fields = new Map<string, Color>()
+    for (const [field, variableId] of Object.entries(node.boundVariables)) {
+      if (!paintBindingTarget(field)) continue
+      const color = graph.resolveColorVariableForNode(node.id, variableId)
+      if (color) fields.set(field, color)
+    }
+    if (fields.size > 0) colors.set(node.id, fields)
+  }
+  return colors
+}
+
+/**
+ * Gives each bound paint still showing the color its variable gave it before a replay, such as
+ * one refreshed in another mode since converting, the color its variable gives it now, keeping
+ * the paint's own opacity. Undo puts a variable's colors back, and a paint showing the converted
+ * one would otherwise keep it.
+ */
+function followBoundPaints(graph: SceneGraph, before: BoundColors): void {
+  for (const [id, fields] of before) {
+    const node = graph.getNode(id)
+    if (!node) continue
+    const lists: Pick<Partial<SceneNode>, 'fills' | 'strokes'> = {}
+    for (const [field, previous] of fields) {
+      const target = paintBindingTarget(field)
+      const variableId = node.boundVariables[field]
+      const now = variableId && graph.resolveColorVariableForNode(id, variableId)
+      if (!target || !now || sameRGB(previous, now)) continue
+      const list =
+        target.list === 'fills'
+          ? (lists.fills ??= node.fills.map(copyFill))
+          : (lists.strokes ??= node.strokes.map(copyStroke))
+      const paint = list.at(target.index)
+      if (paint && sameRGB(paint.color, previous)) paint.color = { ...now, a: paint.color.a }
+    }
+    if (lists.fills || lists.strokes) graph.updateNode(id, lists)
+  }
+}
+
+function sameRGB(a: Color, b: Color): boolean {
+  return a.r === b.r && a.g === b.g && a.b === b.b
+}
+
 /**
  * Rewrites every stored color in `graph` through `convert`: layers' color fields, page
  * backgrounds, and color variables. Returns what it changed, for {@link replayConversion}.
@@ -329,6 +380,7 @@ export function convertColors(
  */
 export function replayConversion(graph: SceneGraph, conversion: ColorConversion, redo: boolean) {
   if (!redo) conversion.undone.clear()
+  const bound = boundColors(graph, [...conversion.variables.keys()])
   const variables = new Map<string, Variable['valuesByMode']>()
   for (const [id, changes] of conversion.variables) {
     const variable = graph.variables.get(id)
@@ -361,6 +413,7 @@ export function replayConversion(graph: SceneGraph, conversion: ColorConversion,
     graph.updateNode(id, { source: pageSourceWithBackgrounds(page, backgrounds) })
   }
   for (const [id, values] of variables) writeVariableValues(graph, id, values)
+  followBoundPaints(graph, bound)
   keepBoundPaints(graph, [...conversion.variables.keys()])
   reconcileVariableLayouts(graph, { variables: [...conversion.variables.keys()] })
 }
