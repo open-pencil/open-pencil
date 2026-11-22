@@ -306,6 +306,23 @@ describe('document color profile', () => {
     expectColor(fill()?.color, { ...darkConverted, a: 1 })
   })
 
+  test('undo gives a bound paint holding a color of its own that color back', async () => {
+    editor = createEditor()
+    editor.graph.documentColorSpace = 'display-p3'
+    const collection = editor.graph.createCollection('Theme')
+    const accent = editor.graph.createVariable('Accent', 'COLOR', collection.id, P3_RED)
+    // The paint's own color is what converting the variable's color gives.
+    const own = { ...convertColor(P3_RED, 'display-p3', 'srgb', 'map'), a: 1 }
+    const layer = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      fills: [{ type: 'SOLID', color: own, opacity: 1, visible: true }],
+      boundVariables: { 'fills/0/color': accent.id }
+    })
+    const fill = () => editor.graph.getNode(layer.id)?.fills[0]
+    await editor.setDocumentColorSpace('srgb', 'convert')
+    editor.undo.undo()
+    expect(fill()?.color).toEqual(own)
+  })
+
   test('a color set back after converting stays through undo and redo', async () => {
     const { fill } = p3Document()
     await editor.setDocumentColorSpace('srgb', 'convert')

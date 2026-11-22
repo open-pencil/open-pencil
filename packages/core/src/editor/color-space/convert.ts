@@ -272,18 +272,22 @@ function keepBoundPaints(graph: SceneGraph, variableIds: readonly string[]): voi
   }
 }
 
-/** The color each bound paint's variable gives its layer, by layer and binding field. */
-type BoundColors = Map<string, Map<string, Color>>
+/**
+ * The color each bound paint's variable gives its layer, and the paint's own color, by layer and
+ * binding field, as they are before a replay writes anything.
+ */
+type BoundColors = Map<string, Map<string, { variable: Color; paint: Color }>>
 
 function boundColors(graph: SceneGraph, variableIds: readonly string[]): BoundColors {
   const colors: BoundColors = new Map()
   if (variableIds.length === 0) return colors
   for (const node of layersUsingVariables(graph, variableIds)) {
-    const fields = new Map<string, Color>()
+    const fields = new Map<string, { variable: Color; paint: Color }>()
     for (const [field, variableId] of Object.entries(node.boundVariables)) {
-      if (!paintBindingTarget(field)) continue
-      const color = graph.resolveColorVariableForNode(node.id, variableId)
-      if (color) fields.set(field, color)
+      const target = paintBindingTarget(field)
+      const paint = target && node[target.list].at(target.index)
+      const variable = graph.resolveColorVariableForNode(node.id, variableId)
+      if (paint && variable) fields.set(field, { variable, paint: { ...paint.color } })
     }
     if (fields.size > 0) colors.set(node.id, fields)
   }
@@ -291,27 +295,28 @@ function boundColors(graph: SceneGraph, variableIds: readonly string[]): BoundCo
 }
 
 /**
- * Gives each bound paint still showing the color its variable gave it before a replay, such as
- * one refreshed in another mode since converting, the color its variable gives it now, keeping
- * the paint's own opacity. Undo puts a variable's colors back, and a paint showing the converted
- * one would otherwise keep it.
+ * Gives each bound paint that showed the color its variable gave it before a replay, such as one
+ * refreshed in another mode since converting, the color its variable gives it now, keeping the
+ * paint's own opacity. Undo puts a variable's colors back, and a paint showing the converted one
+ * would otherwise keep it. A paint that held a color of its own is left to the layer's replay.
  */
 function followBoundPaints(graph: SceneGraph, before: BoundColors): void {
   for (const [id, fields] of before) {
     const node = graph.getNode(id)
     if (!node) continue
     const lists: Pick<Partial<SceneNode>, 'fills' | 'strokes'> = {}
-    for (const [field, previous] of fields) {
+    for (const [field, before] of fields) {
       const target = paintBindingTarget(field)
       const variableId = node.boundVariables[field]
       const now = variableId && graph.resolveColorVariableForNode(id, variableId)
-      if (!target || !now || sameRGB(previous, now)) continue
+      if (!target || !now || !sameRGB(before.paint, before.variable)) continue
+      if (sameRGB(before.variable, now)) continue
       const list =
         target.list === 'fills'
           ? (lists.fills ??= node.fills.map(copyFill))
           : (lists.strokes ??= node.strokes.map(copyStroke))
       const paint = list.at(target.index)
-      if (paint && sameRGB(paint.color, previous)) paint.color = { ...now, a: paint.color.a }
+      if (paint) paint.color = { ...now, a: paint.color.a }
     }
     if (lists.fills || lists.strokes) graph.updateNode(id, lists)
   }
