@@ -1,7 +1,7 @@
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { readReleaseNotes } from '#release/release-notes'
+import { readReleaseNotes, releaseChangelogPath } from '#release/release-notes'
 import { sourceMapsAssetName } from '#release/sourcemaps/bundle'
 import { isEqual } from 'es-toolkit'
 import { decode } from 'js-base64'
@@ -31,7 +31,7 @@ const notes = await readFile(paths.notes, 'utf8')
 // A nightly has no changelog section; its notes name the commit it builds.
 const sourceNotes = nightly
   ? nightlyNotes(version, identity.sourceCommit, repository)
-  : await readReleaseNotes(join(paths.root, 'CHANGELOG.md'), version, repository)
+  : await readReleaseNotes(await releaseChangelogPath(), version)
 if (notes !== sourceNotes) throw new Error('Release notes do not match their source')
 const config = v.parse(
   v.object({ plugins: v.object({ updater: v.object({ pubkey: v.string() }) }) }),
