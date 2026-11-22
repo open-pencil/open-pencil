@@ -30,17 +30,31 @@ export function useVariableBinding(options: UseVariableBindingOptions) {
   }
 
   function getBoundVariable(nodeId: string, index?: number): Variable | undefined {
+    const path = bindingPath(index)
+    const selection = store.getSelectionVariableBinding?.(nodeId, path)
+    if (selection) {
+      return !selection.mixed && selection.variableId
+        ? store.getVariable(selection.variableId)
+        : undefined
+    }
     const node = store.getNode(nodeId)
     if (!node) return undefined
-    const variableId = node.boundVariables[bindingPath(index)]
+    const variableId = node.boundVariables[path]
     return variableId ? store.getVariable(variableId) : undefined
   }
 
   function getBindingState(nodeIds: string[], index?: number): VariableBindingState {
+    const path = bindingPath(index)
     const variableIds = new Set<string | undefined>()
     for (const nodeId of nodeIds) {
-      const node = store.getNode(nodeId)
-      variableIds.add(node?.boundVariables[bindingPath(index)])
+      const selection = store.getSelectionVariableBinding?.(nodeId, path)
+      if (selection?.mixed) return 'mixed'
+      if (selection) {
+        variableIds.add(selection.variableId)
+      } else {
+        const node = store.getNode(nodeId)
+        variableIds.add(node?.boundVariables[path])
+      }
     }
     if (variableIds.size > 1) return 'mixed'
     return variableIds.has(undefined) ? 'unbound' : 'bound'

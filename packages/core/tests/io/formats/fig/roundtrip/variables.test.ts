@@ -575,4 +575,56 @@ describe('variable roundtrip', () => {
     expect(nodesWithPluginData).toBeGreaterThanOrEqual(2)
     expect(totalEntries).toBeGreaterThanOrEqual(3)
   })
+
+  test('text range fill color variable binding survives export → re-import', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    const col = graph.createCollection('Colors')
+    const accent = graph.createVariable('Accent', 'COLOR', col.id, {
+      r: 0.2,
+      g: 0.6,
+      b: 0.9,
+      a: 1
+    })
+    const page = graph.getPages()[0]
+    graph.createNode('TEXT', page.id, {
+      name: 'RangeText',
+      text: 'Hello world',
+      styleRuns: [
+        {
+          start: 6,
+          length: 5,
+          style: {
+            fills: [
+              {
+                type: 'SOLID',
+                color: { r: 0.2, g: 0.6, b: 0.9, a: 1 },
+                opacity: 1,
+                visible: true
+              }
+            ],
+            boundVariables: { 'fills/0/color': accent.id }
+          }
+        }
+      ]
+    })
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+    const node = expectDefined(
+      [...reimported.getAllNodes()].find(
+        (candidate) => candidate.type === 'TEXT' && candidate.name === 'RangeText'
+      ),
+      'RangeText node'
+    )
+    const reimportedAccent = expectDefined(
+      [...reimported.variables.values()].find((v) => v.name === 'Accent'),
+      'Accent variable'
+    )
+    expect(node.styleRuns).toHaveLength(1)
+    expect(node.styleRuns[0]?.style.boundVariables).toEqual({
+      'fills/0/color': reimportedAccent.id
+    })
+  })
 })

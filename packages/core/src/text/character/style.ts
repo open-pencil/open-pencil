@@ -137,13 +137,30 @@ function definedOverrides(style: CharacterStyleOverride): Partial<CharacterStyle
   return defined as Partial<CharacterStyle>
 }
 
+function fillBindings(
+  boundVariables: Partial<Record<string, string>> | undefined
+): Record<string, string> {
+  if (!boundVariables) return {}
+  return Object.fromEntries(
+    Object.entries(boundVariables).filter(
+      (entry): entry is [string, string] =>
+        entry[1] !== undefined && paintBindingTarget(entry[0])?.list === 'fills'
+    )
+  )
+}
+
 /** Style runs with no override that only repeats the text's own value. */
 function withoutRedundantOverrides(node: SceneNode, runs: StyleRun[]): StyleRun[] {
   const base = nodeStyle(node)
+  const layerFills = fillBindings(node.boundVariables)
   const result: StyleRun[] = []
   for (const run of runs) {
+    const runFills = fillBindings(run.style.boundVariables)
     const repeated = CHARACTER_STYLE_KEYS.filter(
-      (key) => run.style[key] !== undefined && isEqual(run.style[key], base[key])
+      (key) =>
+        run.style[key] !== undefined &&
+        isEqual(run.style[key], base[key]) &&
+        !(key === 'fills' && !isEqual(runFills, layerFills))
     )
     // A key a copy left undefined overrides nothing either.
     appendStyleRun(result, run.start, run.length, omitBy(omit(run.style, repeated), isUndefined))

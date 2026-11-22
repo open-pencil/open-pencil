@@ -440,6 +440,7 @@ export function createEditor(options?: EditorOptions) {
       ),
     unbindVariable: (id: string, field: string) =>
       textSelectionStyle.unbindVariable(id, field, nodes.unbindVariable, nodes.updateNodeWithUndo),
+    getSelectionVariableBinding: textSelectionStyle.selectionVariableBinding,
     getTextSelectionStyle: textSelectionStyle.selectionStyle,
     layerChanges: textSelectionStyle.layerChanges,
 

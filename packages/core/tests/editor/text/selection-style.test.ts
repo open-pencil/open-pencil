@@ -192,6 +192,107 @@ describe('panel edits while text is edited', () => {
     expect(node().styleRuns).toEqual([])
   })
 
+  test('does not copy layer text bindings into a range and preserves other copied fill bindings', async () => {
+    const { editor, id, node } = await editingWorld()
+    const colors = editor.graph.createCollection('Colors')
+    const primary = editor.graph.createVariable('primary', 'COLOR', colors.id, {
+      r: 0.1,
+      g: 0.1,
+      b: 0.1,
+      a: 1
+    })
+    const secondary = editor.graph.createVariable('secondary', 'COLOR', colors.id, {
+      r: 0.2,
+      g: 0.2,
+      b: 0.8,
+      a: 1
+    })
+    const accent = editor.graph.createVariable('accent', 'COLOR', colors.id, {
+      r: 0.9,
+      g: 0.2,
+      b: 0.3,
+      a: 1
+    })
+    const typo = editor.graph.createCollection('Typography')
+    const bodySize = editor.graph.createVariable('bodySize', 'FLOAT', typo.id, 16)
+
+    const secondFill: Fill = { ...RED, color: { r: 0.2, g: 0.2, b: 0.8, a: 1 } }
+    editor.graph.updateNode(id, { fills: [node().fills[0], secondFill] })
+    editor.graph.bindVariable(id, 'fontSize', bodySize.id)
+    editor.graph.bindVariable(id, 'fills/0/color', primary.id)
+    editor.graph.bindVariable(id, 'fills/1/color', secondary.id)
+
+    editor.bindVariable(id, 'fills/0/color', accent.id)
+
+    const [run] = node().styleRuns
+    expect(run?.style.boundVariables).toEqual({
+      'fills/0/color': accent.id,
+      'fills/1/color': secondary.id
+    })
+
+    editor.commitTextEdit()
+    editor.updateVariableValue(secondary.id, colors.defaultModeId, {
+      r: 0.4,
+      g: 0.8,
+      b: 0.5,
+      a: 1
+    })
+    expect(node().fills[1].color).toEqual({ r: 0.4, g: 0.8, b: 0.5, a: 1 })
+    expect(node().styleRuns[0]?.style.fills?.[1]?.color).toEqual({
+      r: 0.4,
+      g: 0.8,
+      b: 0.5,
+      a: 1
+    })
+  })
+
+  test('reports bound and mixed selection fill bindings and unbinds inherited layer fill bindings', async () => {
+    const { editor, id } = await editingWorld()
+    const colors = editor.graph.createCollection('Colors')
+    const primary = editor.graph.createVariable('primary', 'COLOR', colors.id, {
+      r: 0.1,
+      g: 0.1,
+      b: 0.1,
+      a: 1
+    })
+    const accent = editor.graph.createVariable('accent', 'COLOR', colors.id, {
+      r: 0.9,
+      g: 0.2,
+      b: 0.3,
+      a: 1
+    })
+
+    editor.graph.bindVariable(id, 'fills/0/color', primary.id)
+    editor.bindVariable(id, 'fills/0/color', accent.id)
+
+    expect(editor.getSelectionVariableBinding(id, 'fills/0/color')).toEqual({
+      mixed: false,
+      variableId: accent.id
+    })
+
+    const state = expectDefined(editor.textEditor?.state, 'text editor state')
+    state.selectionAnchor = 0
+    state.cursor = 5 // "Hello"
+    expect(editor.getSelectionVariableBinding(id, 'fills/0/color')).toEqual({
+      mixed: false,
+      variableId: primary.id
+    })
+
+    state.selectionAnchor = 4
+    state.cursor = 8 // "o wo" spans primary and accent
+    expect(editor.getSelectionVariableBinding(id, 'fills/0/color')).toEqual({ mixed: true })
+
+    // Unbinding "Hello" leaves the layer variable intact while detaching the selected range.
+    state.selectionAnchor = 0
+    state.cursor = 5
+    editor.unbindVariable(id, 'fills/0/color')
+    expect(editor.getSelectionVariableBinding(id, 'fills/0/color')).toEqual({
+      mixed: false,
+      variableId: undefined
+    })
+    expect(editor.graph.getNode(id)?.boundVariables['fills/0/color']).toBe(primary.id)
+  })
+
   test('record a dragged size as one step back to the runs it started from', async () => {
     const { editor, id, node } = await editingWorld()
 

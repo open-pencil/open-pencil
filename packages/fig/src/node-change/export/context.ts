@@ -263,13 +263,13 @@ export function isDescendantOf(
   return false
 }
 
-export function applyColorVariableBinding(
-  context: SceneNodeToKiwiContext,
-  node: SceneNode,
+export function applyBoundPaintColor(
+  context: Pick<SceneNodeToKiwiContext, 'graph' | 'varIdToGuid'>,
+  boundVariables: Partial<Record<string, string>>,
   paint: Paint,
   field: string
 ): Paint {
-  const variableId = node.boundVariables[field]
+  const variableId = boundVariables[field]
   // An imported paint carries the binding it arrived with. Unbinding the field has to clear
   // it, or the export hands Figma back a variable the document no longer references.
   if (!variableId) {
@@ -285,6 +285,15 @@ export function applyColorVariableBinding(
       value: { alias: variableAlias(context.graph, variableId, context.varIdToGuid) }
     }
   }
+}
+
+export function applyColorVariableBinding(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  paint: Paint,
+  field: string
+): Paint {
+  return applyBoundPaintColor(context, node.boundVariables, paint, field)
 }
 
 /** A node's fills with their colour variable aliases, for the record and for override claims alike. */

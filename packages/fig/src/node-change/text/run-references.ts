@@ -2,7 +2,11 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 
-import { exportedStyleReference, type SceneNodeToKiwiContext } from '../export/context'
+import {
+  applyBoundPaintColor,
+  exportedStyleReference,
+  type SceneNodeToKiwiContext
+} from '../export/context'
 import { textRunVariableEntries } from '../variable/bindings'
 import { textStyleOverrides } from './data-export'
 
@@ -32,8 +36,14 @@ function applyRunReferences(
       ? exportedStyleReference(context, style.fillStyleId)
       : { guid: { ...UNSET_GUID } }
   }
+  const runBoundVariables = style.boundVariables
+  if (override.fillPaints && runBoundVariables) {
+    override.fillPaints = override.fillPaints.map((paint, index) =>
+      applyBoundPaintColor(context, runBoundVariables, paint, `fills/${index}/color`)
+    )
+  }
   const entries = textRunVariableEntries(
-    style.boundVariables ?? {},
+    runBoundVariables ?? {},
     context.graph,
     context.varIdToGuid
   )

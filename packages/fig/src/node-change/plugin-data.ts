@@ -1,7 +1,7 @@
 import { omit } from 'es-toolkit/object'
 import * as v from 'valibot'
 
-import type { NodeChange, PluginData, PluginRelaunchData } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange, Paint, PluginData, PluginRelaunchData } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type {
   ExportSetting,
@@ -93,6 +93,17 @@ export function extractTextPathBox(nc: NodeChange): Rect | null {
   return readNodeChangePluginData(nc, textPathBox) ?? null
 }
 
+export function extractFillPaintBindings(
+  paints: readonly Paint[] | undefined
+): Record<string, string> {
+  const bindings: Record<string, string> = {}
+  paints?.forEach((paint, i) => {
+    const variableGuid = paint.colorVar?.value?.alias?.guid
+    if (variableGuid) bindings[`fills/${i}/color`] = guidToString(variableGuid)
+  })
+  return bindings
+}
+
 export function extractBoundVariables(nc: NodeChange): Record<string, string> {
   let bindings = readNodeChangePluginData(nc, boundVariables) ?? {}
   // Each paint and effect carries its own aliases. An instance's copy pairs its component's plugin
@@ -115,10 +126,7 @@ export function extractBoundVariables(nc: NodeChange): Record<string, string> {
       if (field) bindings = omit(bindings, [field])
     }
   }
-  nc.fillPaints?.forEach((paint, i) => {
-    const variableGuid = paint.colorVar?.value?.alias?.guid
-    if (variableGuid) bindings[`fills/${i}/color`] = guidToString(variableGuid)
-  })
+  Object.assign(bindings, extractFillPaintBindings(nc.fillPaints))
   nc.strokePaints?.forEach((paint, i) => {
     const variableGuid = paint.colorVar?.value?.alias?.guid
     if (variableGuid) bindings[`strokes/${i}/color`] = guidToString(variableGuid)

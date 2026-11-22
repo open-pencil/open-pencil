@@ -35,6 +35,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'getPages',
   'getSelectedNode',
   'getSelectedNodes',
+  'getSelectionVariableBinding',
   'getShownStatus',
   'getTextSelectionStyle',
   'getVariable',

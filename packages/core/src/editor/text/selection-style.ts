@@ -8,6 +8,7 @@ import type {
   TextRunBoundVariables
 } from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
+import { characterOverrides } from '@open-pencil/scene-graph/text'
 import { applyPaintColor, paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import type { EditorContext } from '#core/editor/types'
@@ -21,6 +22,37 @@ import {
 } from '#core/text/character/style'
 
 type NodeUpdate = (id: string, changes: Partial<SceneNode>) => void
+
+export interface SelectionVariableBindingState {
+  mixed: boolean
+  variableId?: string
+}
+
+function isFillBindingField(field: string): boolean {
+  return paintBindingTarget(field)?.list === 'fills'
+}
+
+function layerFillBindings(node: SceneNode): TextRunBoundVariables {
+  return Object.fromEntries(
+    Object.entries(node.boundVariables).filter(([key]) => isFillBindingField(key))
+  ) as TextRunBoundVariables
+}
+
+function readBoundVariable(
+  boundVariables: Partial<Record<string, string>> | undefined,
+  field: string
+): string | undefined {
+  return boundVariables?.[field]
+}
+
+function characterFillBinding(
+  node: SceneNode,
+  override: CharacterStyleOverride,
+  field: string
+): string | undefined {
+  if (override.fills !== undefined) return readBoundVariable(override.boundVariables, field)
+  return readBoundVariable(override.boundVariables, field) ?? node.boundVariables[field]
+}
 
 function styleKeys(changes: Partial<SceneNode>): TextStyleKey[] {
   return TEXT_STYLE_KEYS.filter((key) => Object.hasOwn(changes, key))
@@ -140,6 +172,25 @@ export function createTextSelectionStyle(
     return layerTextStyleChanges(node, changes)
   }
 
+  function selectionVariableBinding(
+    id: string,
+    field: string
+  ): SelectionVariableBindingState | null {
+    const range = selectedRange(id)
+    if (!range || !isFillBindingField(field)) return null
+    const node = ctx.graph.getNode(id)
+    if (!node) return null
+    const [start, end] = range
+    const overrides = characterOverrides(node.styleRuns, end)
+    const variableIds = new Set<string | undefined>()
+    for (let index = start; index < end; index++) {
+      variableIds.add(characterFillBinding(node, overrides[index] ?? {}, field))
+    }
+    if (variableIds.size > 1) return { mixed: true }
+    const [variableId] = variableIds
+    return { mixed: false, variableId }
+  }
+
   function applyRangeFillBinding(
     id: string,
     field: string,
@@ -155,18 +206,27 @@ export function createTextSelectionStyle(
     if (variableId && !color) return true
     const [start, end] = range
     const chars = characterStyles(node, start, end)
+    const explicit = characterOverrides(node.styleRuns, end)
+    const inheritedFillBindings = layerFillBindings(node)
     let styleRuns = node.styleRuns
     let at = 0
     while (at < chars.length) {
       let next = at + 1
-      while (
-        next < chars.length &&
-        isEqual(chars[next].fills, chars[at].fills) &&
-        isEqual(chars[next].boundVariables, chars[at].boundVariables)
-      ) {
+      const atOverride = explicit[start + at] ?? {}
+      while (next < chars.length) {
+        const nextOverride = explicit[start + next] ?? {}
+        if (
+          !isEqual(chars[next].fills, chars[at].fills) ||
+          (nextOverride.fills !== undefined) !== (atOverride.fills !== undefined) ||
+          !isEqual(nextOverride.boundVariables, atOverride.boundVariables)
+        ) {
+          break
+        }
         next++
       }
       const style = chars[at]
+      const hasExplicitFills = atOverride.fills !== undefined
+      const baseBound = atOverride.boundVariables ?? {}
       const patch: CharacterStyleOverride = {}
       if (variableId && color) {
         const fills = copyFills(style.fills)
@@ -177,13 +237,20 @@ export function createTextSelectionStyle(
         }
         applyPaintColor(paint, color)
         patch.fills = fills
-        patch.boundVariables = { ...style.boundVariables, [field]: variableId }
-      } else {
-        const boundVariables = omitBy(
-          style.boundVariables,
+        patch.boundVariables = {
+          ...(hasExplicitFills ? undefined : inheritedFillBindings),
+          ...baseBound,
+          [field]: variableId
+        }
+      } else if (hasExplicitFills || readBoundVariable(baseBound, field) !== undefined) {
+        const boundVariables = omitBy(baseBound, (_, key) => key === field) as TextRunBoundVariables
+        if (!isEqual(boundVariables, baseBound)) patch.boundVariables = boundVariables
+      } else if (readBoundVariable(inheritedFillBindings, field) !== undefined) {
+        patch.fills = copyFills(style.fills)
+        patch.boundVariables = omitBy(
+          { ...inheritedFillBindings, ...baseBound },
           (_, key) => key === field
         ) as TextRunBoundVariables
-        if (!isEqual(boundVariables, style.boundVariables)) patch.boundVariables = boundVariables
       }
       if (!isEmptyObject(patch)) {
         styleRuns = styleRunsWithPatch({ ...node, styleRuns }, start + at, start + next, patch)
@@ -232,6 +299,7 @@ export function createTextSelectionStyle(
     updateNodeWithUndo,
     commitNodeUpdate,
     selectionStyle,
+    selectionVariableBinding,
     layerChanges,
     bindVariable,
     unbindVariable

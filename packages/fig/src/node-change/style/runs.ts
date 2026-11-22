@@ -14,6 +14,7 @@ import { convertFontFeatures } from '../font/features'
 import { savedFace } from '../font/style'
 import { convertFontVariations } from '../font/variations'
 import { convertFills } from '../paint'
+import { extractFillPaintBindings } from '../plugin-data'
 import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from '../text/values'
 import { textRunVariableBindings } from '../variable/bindings'
 import { styleRefId } from './refs'
@@ -49,7 +50,10 @@ function applyRangeReferences(
     const id = styleRefId(override[field])
     if (id !== styleRefId(text[field])) style[key] = id
   }
-  const boundVariables = textRunVariableBindings(override)
+  const boundVariables = {
+    ...textRunVariableBindings(override),
+    ...extractFillPaintBindings(override.fillPaints)
+  }
   if (!isEmptyObject(boundVariables)) style.boundVariables = boundVariables
 }
 
