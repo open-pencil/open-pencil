@@ -22,6 +22,12 @@ export const es: LandingMessages = {
         'Auto layout, restricciones, rellenos, trazos, efectos y tipografía, con los controles donde los esperas. Los componentes tienen slots: una instancia conserva el diseño y aporta su propio contenido. Todo se puede deshacer y nada espera a un servidor.',
       hint: 'Pasa el puntero por la portada seleccionada y arrastra una esquina para redondearla. Los otros reproductores traen su propia portada por el slot Artwork.'
     },
+    board: {
+      title: 'Planifica en pizarras',
+      detail:
+        'Las pizarras traen las notas adhesivas, formas, conectores y secciones de FigJam, y abren y guardan los archivos .jam que lee Figma. Pega un diagrama de flujo de Mermaid o abre un diagrama de draw.io y se convierte en formas que puedes mover; los agentes dibujan pizarras con las mismas herramientas.',
+      hint: 'Arrastra una nota o una forma: sus conectores la siguen. Elige una herramienta de la barra para añadir las tuyas.'
+    },
     interactive: {
       title: 'Componentes que funcionan',
       detail:

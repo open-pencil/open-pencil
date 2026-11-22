@@ -22,6 +22,12 @@ export const it: LandingMessages = {
         'Auto layout, vincoli, riempimenti, tratti, effetti e tipografia, con i controlli dove te li aspetti. I componenti hanno slot: un’istanza mantiene il design e porta il proprio contenuto. Tutto si può annullare, e niente aspetta un server.',
       hint: 'Passa sopra la copertina selezionata e trascina un angolo per arrotondarlo. Gli altri lettori portano la propria copertina tramite lo slot Artwork.'
     },
+    board: {
+      title: 'Pianifica sulle lavagne',
+      detail:
+        'Le lavagne portano note adesive, forme, connettori e sezioni di FigJam, e aprono e salvano i file .jam che Figma legge. Incolla un diagramma di flusso Mermaid o apri un diagramma draw.io e diventa forme da spostare; gli agenti abbozzano lavagne con gli stessi strumenti.',
+      hint: 'Trascina una nota o una forma: i suoi connettori la seguono. Scegli uno strumento dalla barra per aggiungere i tuoi.'
+    },
     interactive: {
       title: 'Componenti che funzionano',
       detail:

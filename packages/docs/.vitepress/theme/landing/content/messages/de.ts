@@ -22,6 +22,12 @@ export const de: LandingMessages = {
         'Auto-Layout, Constraints, Füllungen, Konturen, Effekte und Typografie, mit den Reglern dort, wo du sie erwartest. Komponenten haben Slots: Eine Instanz behält das Design und bringt ihren eigenen Inhalt mit. Alles lässt sich rückgängig machen, und nichts wartet auf einen Server.',
       hint: 'Fahre über das ausgewählte Cover und zieh an einer Ecke, um sie abzurunden. Die anderen Player bringen ihr eigenes Cover über den Artwork-Slot mit.'
     },
+    board: {
+      title: 'Planen auf Boards',
+      detail:
+        'Boards bringen die Haftnotizen, Formen, Verbinder und Abschnitte von FigJam und öffnen und speichern die .jam-Dateien, die Figma liest. Füge ein Mermaid-Flussdiagramm ein oder öffne ein draw.io-Diagramm, und es wird zu Formen, die du verschieben kannst; Agenten skizzieren Boards mit denselben Werkzeugen.',
+      hint: 'Zieh eine Haftnotiz oder eine Form: Ihre Verbinder folgen. Wähle ein Werkzeug in der Werkzeugleiste, um eigene hinzuzufügen.'
+    },
     interactive: {
       title: 'Komponenten, die funktionieren',
       detail:

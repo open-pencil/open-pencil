@@ -22,6 +22,12 @@ export const fr: LandingMessages = {
         'Auto layout, contraintes, remplissages, contours, effets et typographie, avec les réglages là où vous les attendez. Les composants ont des slots : une instance garde le design et apporte son propre contenu. Tout s’annule, et rien n’attend un serveur.',
       hint: 'Survolez la pochette sélectionnée et faites glisser un coin pour l’arrondir. Les autres lecteurs apportent leur pochette par le slot Artwork.'
     },
+    board: {
+      title: 'Planifiez sur des tableaux',
+      detail:
+        'Les tableaux apportent les notes adhésives, formes, connecteurs et sections de FigJam, et ouvrent et enregistrent les fichiers .jam que Figma lit. Collez un organigramme Mermaid ou ouvrez un diagramme draw.io : il devient des formes que vous pouvez déplacer, et les agents esquissent des tableaux avec les mêmes outils.',
+      hint: 'Faites glisser une note ou une forme : ses connecteurs suivent. Choisissez un outil dans la barre pour ajouter les vôtres.'
+    },
     interactive: {
       title: 'Des composants qui fonctionnent',
       detail:

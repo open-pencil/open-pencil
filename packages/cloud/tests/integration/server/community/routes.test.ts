@@ -4,7 +4,7 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import { saveDocument, THUMBNAIL_PNG } from '#cloud-tests/helpers/save'
-import { fetchCommunityTour } from '#cloud/client'
+import { fetchCommunityExample, fetchCommunityTour } from '#cloud/client'
 import { communityDocumentsSchema, communityDownloadSchema } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
@@ -339,5 +339,36 @@ describe('community gallery', () => {
       return server.request(`${url.pathname}${url.search}`, init)
     }
     expect(await fetchCommunityTour('http://localhost:8787', { fetch: plain })).toBeNull()
+  })
+
+  test('hands any page a gallery document by its name, as the release it asks for', async () => {
+    const server = await gallery()
+    const board = await server.document(server.workspace.community, 'Sprint board')
+    const first = await server.save(board, null, 'first')
+    await server.nameVersion(board, '0.17.0')
+    await server.save(board, first, 'second')
+    const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(input instanceof Request ? input.url : String(input))
+      if (url.host !== 'objects.example.com') {
+        return server.request(`${url.pathname}${url.search}`, init)
+      }
+      const bytes = await server.objects.store.read(url.pathname.slice(1))
+      return bytes ? new Response(Uint8Array.from(bytes)) : new Response(null, { status: 404 })
+    }
+    const contents = async (bytes: Uint8Array) =>
+      new TextDecoder().decode(unzipSync(bytes)['canvas.fig'])
+
+    const released = await fetchCommunityExample('http://localhost:8787', 'Sprint board', {
+      version: '0.17.0',
+      fetch
+    })
+    if (!released) throw new Error('The release of the board was not found')
+    expect(released).toMatchObject({ name: 'Sprint board', version: '0.17.0' })
+    expect(await contents(released.bytes)).toBe('first')
+    const current = await fetchCommunityExample('http://localhost:8787', 'Sprint board', { fetch })
+    if (!current) throw new Error('The board was not found')
+    expect(current.version).toBeNull()
+    expect(await contents(current.bytes)).toBe('second')
+    expect(await fetchCommunityExample('http://localhost:8787', 'Missing', { fetch })).toBeNull()
   })
 })
