@@ -47,10 +47,7 @@ function shadowOf(nodes: Node[], profile: ColorProfile): Effect[] {
  * `0 4px 8px rgb(0 0 0 / 0.2), inset 0 1px #fff`: drop shadows, and inner shadows for `inset`,
  * their colors read into `profile`.
  */
-export function parseCSSShadows(
-  value: string | undefined,
-  profile: ColorProfile
-): Effect[] {
+export function parseCSSShadows(value: string | undefined, profile: ColorProfile): Effect[] {
   if (!value) return []
   return cssLayerNodes(valueParser(value).nodes).flatMap((layer) => shadowOf(layer, profile))
 }
