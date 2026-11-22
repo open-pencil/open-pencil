@@ -115,71 +115,101 @@ export const es: LandingMessages = {
     shipped: {
       label: 'Publicado',
       entries: [
-        { title: 'Componentes interactivos y vista previa' },
-        { title: 'Variables como tokens de diseño' },
-        { title: 'Linting con correcciones en un clic' },
-        { title: 'Agentes de IA como colaboradores, con modo seguir' },
-        { title: 'Revertir, regenerar y editar turnos de IA' },
-        { title: 'Código vinculado a las capas' },
-        { title: 'Diff visual y parches' },
+        { title: 'OpenPencil Cloud, también autoalojado' },
+        { title: 'Pizarras al estilo de FigJam' },
+        { title: 'Páginas web desde una URL como capas' },
+        { title: 'Agent Skills y subagentes' },
+        { title: 'Fórmulas en variables' },
+        { title: 'Fuentes variables, Material Symbols y SF Symbols' },
+        { title: 'Vidrio, desenfoque progresivo, ruido y textura' },
+        { title: 'Ajustes de imagen' },
+        { title: 'La herramienta Escalar' },
+        { title: 'Un lienzo más rápido' },
         { title: 'Comentarios y llamadas de voz en salas compartidas' },
-        { title: 'Componentes de Vue y React en la pestaña Código' },
-        { title: 'Importación de SVG y HTML como capas editables' },
-        { title: 'Rellenos con shaders' },
-        { title: 'Design tokens W3C' },
-        { title: 'Un recorrido guiado por el editor' },
-        { title: 'Listas y estilos para cualquier tramo de texto' }
+        { title: 'Componentes interactivos y vista previa' },
+        { title: 'Linting con correcciones en un clic' }
       ]
     },
     now: {
       label: 'Ahora',
       entries: [
         {
-          title: 'Storybook con componentes reales',
-          detail: 'Historias que usan Reka UI en Vue y Radix UI en React.'
+          title: 'Color Display P3',
+          detail: 'Los documentos se dibujan y exportan en su perfil de color, como en Figma.'
         },
         {
-          title: 'Creación de componentes',
-          detail: 'Edición de variantes más rápida y selección dentro de componentes.'
+          title: 'Importar sitios web',
+          detail: 'Páginas desde una URL más fieles al navegador, en varios tamaños de ventana.'
+        },
+        {
+          title: 'OpenPencil en Android',
+          detail: 'El editor en teléfonos, tabletas y plegables Android.'
         }
       ]
     },
     next: {
       label: 'Después',
-      lead: {
-        title: 'OpenPencil autoalojado',
-        detail:
-          'Todo el espacio de trabajo dentro de tu propia red: sincronización, uso compartido, comentarios y bibliotecas de equipo sin enviar un archivo a nadie más.',
-        features: [
-          {
-            title: 'Tu almacenamiento',
-            detail: 'Los documentos permanecen en tu bucket, en tu región.'
-          },
-          {
-            title: 'Tu identidad',
-            detail: 'Inicio de sesión con tu proveedor OIDC o SSO, con roles.'
-          },
-          {
-            title: 'Tu red',
-            detail: 'Un relé de colaboración que funciona detrás de tu cortafuegos.'
-          },
-          {
-            title: 'Tu operación',
-            detail: 'Despliegue guiado, actualizaciones, copias de seguridad y retención.'
-          }
-        ]
-      },
-      entries: [
+      leads: [
         {
-          title: 'Historial de versiones',
-          detail: 'Instantáneas automáticas, puntos de control con nombre y restauración.'
+          title: 'OpenPencil en tu teléfono',
+          detail:
+            'Una app complementaria para iOS y Android, y el propio editor en teléfonos y tabletas.',
+          features: [
+            {
+              title: 'App complementaria',
+              detail:
+                'Abre archivos de Cloud, sigue una sala en directo y responde a comentarios y agentes.'
+            },
+            {
+              title: 'Vista previa en el dispositivo',
+              detail: 'Refleja un marco del escritorio en tu teléfono mientras diseñas.'
+            },
+            {
+              title: 'Diseñar en tabletas',
+              detail: 'Entrada táctil y con lápiz, con paneles pensados para pantallas pequeñas.'
+            },
+            {
+              title: 'Los mismos documentos',
+              detail: 'El editor y la Cloud que ya usas, no una app aparte.'
+            }
+          ]
+        },
+        {
+          title: 'Presentaciones',
+          detail: 'Presentaciones junto a diseños y pizarras, hechas con tu sistema de diseño.',
+          features: [
+            {
+              title: 'Tus componentes',
+              detail:
+                'Las presentaciones usan los mismos componentes, variables y bibliotecas que tus diseños.'
+            },
+            {
+              title: 'Vista del presentador',
+              detail:
+                'Notas del orador, presentación a pantalla completa y un público que sigue en directo.'
+            },
+            {
+              title: 'Archivos de Figma Slides',
+              detail: 'Abre y guarda archivos .deck, y exporta a PDF y PowerPoint.'
+            },
+            {
+              title: 'Presentaciones con IA',
+              detail:
+                'Crea un borrador a partir de un esquema o un documento, con el tema de la presentación.'
+            }
+          ]
         }
       ],
-      cloud: {
-        title: 'OpenPencil Cloud',
-        detail:
-          'El espacio alojado para equipos: sincronización en directo, uso compartido, bibliotecas e IA, sin nada que mantener.'
-      }
+      entries: [
+        {
+          title: 'Inicio de sesión único',
+          detail: 'OIDC y SSO para equipos, con cuentas de servicio y webhooks.'
+        },
+        {
+          title: 'Proyectos y carpetas',
+          detail: 'Organiza los espacios de Cloud, con plantillas y búsqueda.'
+        }
+      ]
     },
     later: {
       label: 'Más adelante',
@@ -191,57 +221,46 @@ export const es: LandingMessages = {
         {
           title: 'Editor incrustable',
           detail: 'Lleva el editor de esta página a tu propio producto.'
-        }
+        },
+        { title: 'Prototipado', detail: 'Conexiones, transiciones y superposiciones entre marcos.' }
       ]
     }
   },
   cloud: {
-    badge: 'Acceso anticipado',
+    badge: 'Ya disponible',
     title: 'OpenPencil Cloud',
-    lede: 'El espacio de diseño de tu equipo, alojado por nosotros. Todos editan los mismos archivos en directo, los comparten con un enlace y diseñan con IA, sin nada que instalar ni mantener. Tus archivos siguen abiertos: expórtalos como .fig cuando quieras.',
+    lede: 'El espacio de diseño de tu equipo, alojado por nosotros. Todos editan los mismos archivos en directo, los comparten con un enlace y diseñan con IA pagada con los créditos del plan, sin nada que instalar ni mantener. Empieza gratis con 300 MB y exporta tus archivos como .fig cuando quieras.',
+    signUp: 'Prueba OpenPencil Cloud',
+    plans: 'Ver planes',
     features: [
       {
-        title: 'Sincronización del equipo en tiempo real',
+        title: 'Sincronización en tiempo real',
         detail: 'Cada cambio llega a todo el equipo al instante, en cualquier dispositivo.'
       },
       {
-        title: 'Enlaces para compartir y comentarios',
-        detail: 'Envía un enlace para revisar un diseño y coméntalo sobre el lienzo.'
+        title: 'Enlaces y comentarios',
+        detail: 'Envía un enlace para revisar un diseño y coméntalo directamente en el lienzo.'
       },
       {
-        title: 'Bibliotecas del equipo',
-        detail: 'Publica componentes, estilos y tokens una vez y úsalos en todos los archivos.'
+        title: 'Historial de versiones',
+        detail: 'Versiones con nombre y guardados automáticos para ver, restaurar o copiar.'
       },
       {
-        title: 'IA alojada',
-        detail: 'Agentes que diseñan contigo, sin claves de API que gestionar.'
+        title: 'IA incluida en tu plan',
+        detail:
+          'Agentes que diseñan contigo, pagados con los créditos de tu plan, sin claves de API.'
       },
       {
-        title: 'SSO y controles de administración',
-        detail: 'Inicio de sesión único, roles y control de quién ve qué.'
+        title: 'Autoalójalo',
+        detail: 'Ejecuta el mismo servidor en tu propia infraestructura, con licencia Apache 2.0.'
       }
     ]
-  },
-  waitlist: {
-    label: 'Correo electrónico',
-    placeholder: 'tu@ejemplo.com',
-    submit: 'Unirme a la lista',
-    confirmHuman: 'Confirma que eres humano',
-    invalid: 'Introduce un correo electrónico válido.',
-    joined: 'Revisa tu bandeja de entrada',
-    joinedDetail: 'Abre el enlace que te enviamos para confirmar tu dirección.',
-    failed:
-      'No se pudo contactar con la lista de espera. Comprueba tu conexión e inténtalo de nuevo.',
-    privacy: 'Solo te escribiremos sobre OpenPencil Cloud.',
-    refused: 'No pudimos confirmar que no eres un bot. Inténtalo de nuevo.',
-    limited: 'Demasiados intentos. Inténtalo de nuevo en un minuto.',
-    unavailable: 'No puedes unirte desde aquí. Únete en openpencil.dev.'
   },
   closing: {
     title: 'Llévate tus diseños contigo.',
     download: 'Descargar OpenPencil',
     docs: 'Leer la documentación',
-    cloud: 'Unirme a la lista de Cloud'
+    cloud: 'Prueba OpenPencil Cloud'
   },
   clipboard: {
     copy: 'Copiar',
