@@ -2,7 +2,6 @@ import type { TextListOptions } from '@figma/plugin-typings/plugin-api-standalon
 import { uniqBy } from 'es-toolkit/array'
 
 import type {
-  CharacterStyleOverride,
   HyperlinkTarget,
   SceneGraph,
   SceneNode,
