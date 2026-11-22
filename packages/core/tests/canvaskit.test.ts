@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'bun:test'
-import { decodePath } from 'ufo'
 
 import { defaultCanvasKitLocator, filePathFromURL } from '#core/canvaskit'
 
@@ -59,11 +58,13 @@ describe('CanvasKit locator', () => {
   test('the default locator returns a filesystem path under Node, not a file URL', () => {
     const located = defaultCanvasKitLocator('canvaskit.wasm')
     expect(located.startsWith('file:')).toBe(false)
-    const resolved = decodePath(
-      new URL('canvaskit.wasm', import.meta.resolve('@open-pencil/canvaskit')).pathname
+    // Build the expectation through the same conversion the locator uses, so a
+    // UNC install (`file://server/share/...`) keeps its host instead of having
+    // it discarded, and the suffix check accepts the UNC separator.
+    const expected = filePathFromURL(
+      new URL('canvaskit.wasm', import.meta.resolve('@open-pencil/canvaskit'))
     )
-    const expected = /^\/[A-Za-z]:/.test(resolved) ? resolved.slice(1) : resolved
     expect(located).toBe(expected)
-    expect(located.endsWith('/canvaskit.wasm')).toBe(true)
+    expect(located.endsWith('/canvaskit.wasm') || located.endsWith('\\canvaskit.wasm')).toBe(true)
   })
 })
