@@ -54,9 +54,9 @@ import {
   CloudCreditsBanner,
   CloudCommunityBanner,
   CloudEditorUpdateBanner,
+  CloudMovingBanner,
   CloudVersionDialog
 } from '@/components/cloud/integration'
-import CloudMovingBanner from '@/components/cloud/moving/CloudMovingBanner.vue'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
 import EditorWorkspace from '@/components/editor/EditorWorkspace.vue'
 import FileApiBanner from '@/components/FileApiBanner.vue'
