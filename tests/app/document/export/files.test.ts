@@ -51,8 +51,8 @@ describe('Tauri file actions', () => {
 
   test('reads a Tauri design file into a File object', async () => {
     await mockTauriIPC((cmd, args) => {
-      expect(cmd).toBe('plugin:fs|read_file')
-      expect(args).toEqual({ path: '/tmp/design.pen', options: undefined })
+      expect(cmd).toBe('read_open_file')
+      expect(args).toEqual({ path: '/tmp/design.pen' })
       return [123, 34, 97, 34, 58, 49, 125]
     })
 
@@ -63,7 +63,11 @@ describe('Tauri file actions', () => {
   })
 
   test('names a file read from a Windows path by its last segment', async () => {
-    await mockTauriIPC(() => [123, 125])
+    await mockTauriIPC((cmd, args) => {
+      expect(cmd).toBe('read_open_file')
+      expect(args).toEqual({ path: 'C:\\Users\\me\\Design File.pen' })
+      return [123, 125]
+    })
 
     const file = await readTauriDesignFile('C:\\Users\\me\\Design File.pen')
 

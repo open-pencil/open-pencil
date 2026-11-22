@@ -109,6 +109,18 @@ const OPENABLE_DOCUMENT_EXTENSIONS: [&str; 10] = [
 ];
 
 fn is_openable_document(path: &Path) -> bool {
+    // draw.io embeds its diagram in PNG/SVG exports (`flow.drawio.png`); those are
+    // supported editable documents, not arbitrary images.
+    if path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| {
+            let lower = name.to_lowercase();
+            lower.ends_with(".drawio.png") || lower.ends_with(".drawio.svg")
+        })
+    {
+        return true;
+    }
     path.extension()
         .and_then(|extension| extension.to_str())
         .is_some_and(|extension| {
@@ -118,7 +130,7 @@ fn is_openable_document(path: &Path) -> bool {
         })
 }
 
-/// Allow the frontend to read the one file it was explicitly asked to open.
+/// Read the one design document the frontend was explicitly asked to open, natively.
 ///
 /// Files handed to the executable are allow-listed by `queue_open_paths` before the
 /// frontend sees them, but a file automation names (`open_document`) or a recent file
@@ -128,11 +140,14 @@ fn is_openable_document(path: &Path) -> bool {
 /// `%USERPROFILE%\.pencil\documents\…` never matches the read scope even though it
 /// sits under the user's home.
 ///
-/// Only the one named file is allowed, never its folder, and only when it is a design
-/// document: the general rule that the webview cannot write inside hidden folders
-/// stays in place, and a file that was never opened stays refused.
+/// The read happens here, in the shell, instead of granting the webview access to
+/// the file: adding the path to the shared fs scope would also let the webview write
+/// it (the fs plugin uses the same scope for writes), reopening the hidden-file
+/// write path the desktop guidelines require to stay closed. This command only
+/// returns the bytes and never touches `fs_scope()`, so a file that was never opened
+/// stays refused for writing.
 #[tauri::command]
-pub fn allow_open_file(app: tauri::AppHandle, path: String) -> Result<(), String> {
+pub fn read_open_file(path: String) -> Result<Vec<u8>, String> {
     let path = PathBuf::from(path);
     if !is_openable_document(&path) {
         return Err(format!(
@@ -140,9 +155,7 @@ pub fn allow_open_file(app: tauri::AppHandle, path: String) -> Result<(), String
             path.display()
         ));
     }
-    app.fs_scope()
-        .allow_file(&path)
-        .map_err(|error| error.to_string())
+    std::fs::read(&path).map_err(|error| error.to_string())
 }
 
 /// The scheme filter is load-bearing: on macOS the plugin forwards every
@@ -220,7 +233,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn allow_open_file_accepts_the_documents_the_frontend_opens() {
+    fn read_open_file_accepts_the_documents_the_frontend_opens() {
         for name in [
             "design.fig",
             "board.jam",
@@ -246,7 +259,19 @@ mod tests {
     }
 
     #[test]
-    fn allow_open_file_refuses_anything_that_is_not_a_design_document() {
+    fn is_openable_document_accepts_drawio_exports() {
+        // A draw.io export embeds its diagram in the PNG/SVG, so the compound suffix
+        // names a supported document even though the final extension alone does not.
+        for name in ["flow.drawio.png", "flow.drawio.svg", "FLOW.DRAWIO.PNG"] {
+            assert!(
+                is_openable_document(Path::new(name)),
+                "{name} should be openable"
+            );
+        }
+    }
+
+    #[test]
+    fn read_open_file_refuses_anything_that_is_not_a_design_document() {
         for name in [
             "notes.txt",
             "run.sh",
@@ -256,6 +281,10 @@ mod tests {
             ".bashrc",
             "design",
             "design.fig.bak",
+            // Plain images are not documents, even with a draw.io-looking name.
+            "photo.png",
+            "diagram.svg",
+            "flow.png",
         ] {
             assert!(
                 !is_openable_document(Path::new(name)),

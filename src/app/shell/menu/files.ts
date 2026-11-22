@@ -1,6 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
-import { readFile } from '@tauri-apps/plugin-fs'
 import { useFileDialog } from '@vueuse/core'
 import { uniq } from 'es-toolkit/array'
 import { basename } from 'pathe'
@@ -133,11 +132,11 @@ export async function readTauriDesignFile(path: string): Promise<File> {
   // path the fs scope does not already cover is refused as a forbidden path. That
   // includes every hidden folder: `requireLiteralLeadingDot` keeps `**` from matching
   // a dot segment, so `%USERPROFILE%\.pencil\documents\…` never matches the read
-  // scope even though it sits under the user's home. Allow-listing the one named
-  // file first opens it exactly as an argv open does.
-  await invoke('allow_open_file', { path })
-  const bytes = await readFile(path)
-  return new File([bytes], basename(path) || 'file.fig')
+  // scope even though it sits under the user's home. The shell reads the one named
+  // file natively instead of granting the webview access to it: a scope grant would
+  // also let the webview write the file, reopening the hidden-file write path.
+  const bytes = await invoke<number[]>('read_open_file', { path })
+  return new File([new Uint8Array(bytes)], basename(path) || 'file.fig')
 }
 
 export async function chooseTauriOpenPaths(): Promise<string[]> {
