@@ -31,7 +31,7 @@ const notes = await readFile(paths.notes, 'utf8')
 // A nightly has no changelog section; its notes name the commit it builds.
 const sourceNotes = nightly
   ? nightlyNotes(version, identity.sourceCommit, repository)
-  : await readReleaseNotes(join(paths.root, 'CHANGELOG.md'), version)
+  : await readReleaseNotes(join(paths.root, 'CHANGELOG.md'), version, repository)
 if (notes !== sourceNotes) throw new Error('Release notes do not match their source')
 const config = v.parse(
   v.object({ plugins: v.object({ updater: v.object({ pubkey: v.string() }) }) }),
