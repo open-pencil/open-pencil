@@ -13,6 +13,15 @@ describe('moving to the Cloud site', () => {
     expect(movedURL({ pathname: '/demo', search: '', hash: '' })).toBe(`${cloud}/demo`)
   })
 
+  test('stays on the Cloud site whatever the path', () => {
+    const cloud = new URL(OFFICIAL_CLOUD_URL).origin
+    const moved = new URL(
+      movedURL({ pathname: '//elsewhere.example/rooms/abc', search: '', hash: '' })
+    )
+    expect(moved.origin).toBe(cloud)
+    expect(moved.pathname).toBe('//elsewhere.example/rooms/abc')
+  })
+
   test('says so only at the old address', () => {
     expect(isMovingSite('https://cloud.openpencil.dev')).toBe(false)
     expect(isMovingSite('http://localhost:1420')).toBe(false)

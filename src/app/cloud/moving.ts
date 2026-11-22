@@ -18,5 +18,10 @@ export function isMovingSite(origin: string): boolean {
  * a room, a share link, an invitation, or the tour continues there.
  */
 export function movedURL(page: Pick<Location, 'pathname' | 'search' | 'hash'>): string {
-  return new URL(`${page.pathname}${page.search}${page.hash}`, OFFICIAL_CLOUD_URL).href
+  // Set apart rather than parsed: a path such as `//elsewhere.example/` would name another host.
+  const url = new URL(OFFICIAL_CLOUD_URL)
+  url.pathname = page.pathname
+  url.search = page.search
+  url.hash = page.hash
+  return url.href
 }
