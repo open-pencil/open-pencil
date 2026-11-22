@@ -47,7 +47,7 @@
   "invitationThanks": "Il y a quelque temps, vous avez demandé à essayer OpenPencil Cloud. Merci pour votre curiosité, et pour votre patience. Nous étions encore en train de le tester et nous n’étions pas prêts à laisser entrer qui que ce soit.",
   "invitationBeta": "C’est ouvert maintenant, et vous pouvez vous connecter. C’est encore une bêta : certaines fonctionnalités sont désactivées, et certaines choses vont casser. Quand ça arrive, répondez à cet e-mail pour me le dire, ou {link} si vous préférez. Je lis les deux.",
   "invitationIssueLink": "ouvrez une issue sur GitHub",
-  "invitationDesktop": "Pour utiliser Cloud dans l’application de bureau, il vous faut la version bêta, sur la {link}.",
+  "invitationDesktop": "Pour utiliser Cloud dans l’application de bureau, installez OpenPencil 0.17 ou une version plus récente depuis la {link}.",
   "invitationDownloadLink": "page de téléchargement",
   "invitationAction": "Ouvrir Cloud",
   "invitationSignatureName": "Danila",

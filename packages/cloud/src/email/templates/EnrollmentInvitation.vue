@@ -2,7 +2,7 @@
 import { Link } from '@vue-email/components'
 
 import type { EnrollmentEmailPayload } from '../schema'
-import { BUG_REPORT_URL, DESKTOP_BETA_URL, styles } from './brand'
+import { BUG_REPORT_URL, DOWNLOAD_URL, styles } from './brand'
 import BrandEmail from './BrandEmail.vue'
 import EmailText from './EmailText.vue'
 import { greeting, useEmailLocalization } from './localization'
@@ -42,7 +42,7 @@ const [beforeDownload = '', afterDownload = ''] = t.invitationDesktop.split('{li
     </EmailText>
     <EmailText>
       {{ beforeDownload
-      }}<Link :href="DESKTOP_BETA_URL" :style="styles.link">{{ t.invitationDownloadLink }}</Link
+      }}<Link :href="DOWNLOAD_URL" :style="styles.link">{{ t.invitationDownloadLink }}</Link
       >{{ afterDownload }}
     </EmailText>
     <template #signature>

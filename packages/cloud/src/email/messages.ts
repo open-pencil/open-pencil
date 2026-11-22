@@ -66,7 +66,8 @@ export const emailMessageDefaults = {
   invitationBeta:
     'It’s open now, and you can sign in. It’s still a beta: some features are switched off, and some things will break. When they do, reply to this email and tell me, or {link} if you’re comfortable with that. I read both.',
   invitationIssueLink: 'open an issue on GitHub',
-  invitationDesktop: 'To use Cloud in the desktop app, you need the beta release from the {link}.',
+  invitationDesktop:
+    'To use Cloud in the desktop app, install OpenPencil 0.17 or later from the {link}.',
   invitationDownloadLink: 'download page',
   invitationAction: 'Open Cloud',
   invitationSignatureName: 'Danila',

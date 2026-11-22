@@ -268,8 +268,6 @@
   "communityLinkFailed": "Dieses Dokument ist nicht mehr in der Galerie.",
   "communityBanner": "Ein Community-Beispiel, schreibgeschützt geöffnet.",
   "communitySaveCopy": "Kopie speichern",
-  "betaBanner": "OpenPencil Cloud ist noch in der Beta, manches funktioniert vielleicht noch nicht. Um es in der Desktop-App zu nutzen, installiere die Beta.",
-  "betaDownload": "Beta herunterladen",
   "creditsLowBanner": "Dein KI-Guthaben wird knapp.",
   "creditsOutBanner": "Dein KI-Guthaben ist aufgebraucht.",
   "creditsOutUntilBanner": "Dein KI-Guthaben ist bis {date} aufgebraucht.",

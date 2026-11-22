@@ -47,7 +47,7 @@
   "invitationThanks": "少し前に OpenPencil Cloud の利用を申し込んでいただきました。興味を持ってくださったこと、そしてお待ちいただいたことに感謝します。その頃はまだテスト中で、どなたにも使っていただける状態ではありませんでした。",
   "invitationBeta": "現在は公開中で、サインインしていただけます。まだベータ版のため、一部の機能はオフになっていて、不具合も出るはずです。問題があれば、このメールに返信して教えてください。抵抗がなければ、{link}こともできます。どちらも私が読んでいます。",
   "invitationIssueLink": "GitHub で issue を作成する",
-  "invitationDesktop": "デスクトップアプリで Cloud を使うには、{link}からベータ版を入手してください。",
+  "invitationDesktop": "デスクトップアプリで Cloud を使うには、{link}から OpenPencil 0.17 以降をインストールしてください。",
   "invitationDownloadLink": "ダウンロードページ",
   "invitationAction": "Cloud を開く",
   "invitationSignatureName": "ダニラ",

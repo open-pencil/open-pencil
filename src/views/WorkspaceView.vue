@@ -51,7 +51,6 @@ import { isTauri } from '@/app/tauri/env'
 import { offerUsageStatsPrompt, startSharing, usageStatsPrompt } from '@/app/telemetry'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
 import {
-  CloudBetaBanner,
   CloudCreditsBanner,
   CloudCommunityBanner,
   CloudEditorUpdateBanner,
@@ -306,7 +305,6 @@ onUnmounted(() => {
     <FileApiBanner />
     <ColorSpaceBanner />
     <FontStatusBanner />
-    <CloudBetaBanner />
     <CloudCreditsBanner />
     <CloudEditorUpdateBanner />
     <CloudCommunityBanner />

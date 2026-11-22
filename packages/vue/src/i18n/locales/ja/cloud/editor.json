@@ -264,8 +264,6 @@
   "communityLinkFailed": "このドキュメントはもうギャラリーにありません。",
   "communityBanner": "コミュニティのサンプルを読み取り専用で開いています。",
   "communitySaveCopy": "コピーを保存",
-  "betaBanner": "OpenPencil Cloud はベータ版のため、まだうまく動かない部分があるかもしれません。デスクトップアプリで使うには、ベータ版をインストールしてください。",
-  "betaDownload": "ベータ版をダウンロード",
   "creditsLowBanner": "AIクレジットの残りが少なくなっています。",
   "creditsOutBanner": "AIクレジットを使い切りました。",
   "creditsOutUntilBanner": "{date}までAIクレジットを使い切りました。",
