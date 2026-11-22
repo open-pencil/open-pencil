@@ -19,13 +19,14 @@ describe('demo board', () => {
     expect(graph.documentKind).toBe('board')
   })
 
-  test('holds its stickies, shapes, and connectors in the section the landing frames', () => {
+  test('holds its stickies, headings, shapes, and connectors in the section the landing frames', () => {
     const [page] = graph.getPages()
     const section = graph.getChildren(page.id).find((node) => node.name === BOARD_SECTION)
     if (!section) throw new Error(`The board has no "${BOARD_SECTION}"`)
     const kinds = graph.getChildren(section.id).map((node) => node.type)
-    expect(kinds.filter((type) => type === 'STICKY')).toHaveLength(3)
-    expect(kinds.filter((type) => type === 'SHAPE_WITH_TEXT')).toHaveLength(4)
-    expect(kinds.filter((type) => type === 'CONNECTOR')).toHaveLength(7)
+    expect(kinds.filter((type) => type === 'STICKY')).toHaveLength(4)
+    expect(kinds.filter((type) => type === 'TEXT')).toHaveLength(2)
+    expect(kinds.filter((type) => type === 'SHAPE_WITH_TEXT')).toHaveLength(6)
+    expect(kinds.filter((type) => type === 'CONNECTOR')).toHaveLength(8)
   })
 })
