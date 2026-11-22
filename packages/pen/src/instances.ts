@@ -242,12 +242,11 @@ function applyIconToNestedIcons(build: Build, target: SceneNode, override: PenOv
     return
   }
   if (effective.get(target.id)?.type === 'icon') return
-  const icon: PenOverride = {
-    ...(override.icon !== undefined ? { icon: override.icon } : {}),
-    ...(override.library !== undefined ? { library: override.library } : {}),
-    ...(override.weight !== undefined ? { weight: override.weight } : {}),
-    ...(override.theme !== undefined ? { theme: override.theme } : {})
-  }
+  const icon: PenOverride = {}
+  if (override.icon !== undefined) icon.icon = override.icon
+  if (override.library !== undefined) icon.library = override.library
+  if (override.weight !== undefined) icon.weight = override.weight
+  if (override.theme !== undefined) icon.theme = override.theme
   for (const child of graph.getChildren(target.id)) {
     if (effective.get(child.id)?.type !== 'icon') continue
     overrideLayer(build, child, icon)
