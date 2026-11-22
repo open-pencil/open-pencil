@@ -138,6 +138,10 @@ export const pl: LandingMessages = {
           detail: 'Dokumenty rysowane i eksportowane w ich profilu kolorów, jak w Figmie.'
         },
         {
+          title: 'Import stron internetowych',
+          detail: 'Strony z adresu URL bliższe przeglądarce, w kilku rozmiarach okna.'
+        },
+        {
           title: 'OpenPencil na Androidzie',
           detail: 'Edytor na telefonach, tabletach i składanych urządzeniach z Androidem.'
         }

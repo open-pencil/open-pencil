@@ -49,6 +49,12 @@ See the [changelog](https://github.com/open-pencil/open-pencil/blob/master/CHANG
 - Import and export Figma Slides (`.deck`) files, and export to PDF and PowerPoint.
 - AI and MCP tools that draft a deck from an outline, a document, or a design, and keep it in the deck's theme.
 
+### Website import
+
+- Bring pages opened from a URL closer to the browser: text that wraps around floats, scaled and skewed elements, and the layout differences still measured against real sites.
+- Open a page at several window sizes at once, Desktop, Tablet, and Mobile, as frames side by side ([#107](https://github.com/open-pencil/open-pencil/issues/107)).
+- Open more sites in the browser app, which today opens only sites that allow it; the desktop app and `openpencil import` open any address.
+
 ### Figma fidelity
 
 - Preserve and round-trip more Figma metadata safely.
