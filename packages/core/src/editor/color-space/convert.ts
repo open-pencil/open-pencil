@@ -4,7 +4,6 @@ import type {
   Fill,
   SceneGraph,
   SceneNode,
-  VariableAlias,
   VariableFormulaNode,
   VariableValue
 } from '@open-pencil/scene-graph'
@@ -16,6 +15,12 @@ import {
   copyStyleRuns
 } from '@open-pencil/scene-graph/copy'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import {
+  foldFormula,
+  hasBoundPaints,
+  layersUsingVariables,
+  recordWrittenBoundPaints
+} from '@open-pencil/scene-graph/variables'
 
 import { getPageBackgrounds, pageSourceWithBackgrounds } from '#core/figma-api/page-backgrounds'
 import { reconcileVariableLayouts } from '#core/layout/variables'
@@ -108,24 +113,25 @@ function isColorValue(value: VariableValue | VariableFormulaNode): value is Colo
   return typeof value === 'object' && 'r' in value
 }
 
-function isAlias(value: VariableFormulaNode): value is VariableAlias {
-  return typeof value === 'object' && 'aliasId' in value
-}
-
-/** A formula's literal colors mapped, its aliases and other operands as they were. */
+/**
+ * A formula's literal colors mapped, its aliases and other operands as they were. Literals are
+ * named by their order in the formula, which a formula of the same shape keeps.
+ */
 function mapFormulaNode(
   node: VariableFormulaNode,
   map: MapColor,
   slot: string
 ): VariableFormulaNode {
-  if (isColorValue(node)) return map(node, slot)
-  if (typeof node !== 'object' || isAlias(node)) return node
-  return {
-    ...node,
-    operands: node.operands.map((operand, index) =>
-      mapFormulaNode(operand, map, `${slot}.${index}`)
-    )
-  }
+  let literals = 0
+  return foldFormula<VariableFormulaNode>(node, {
+    literal: (value) => {
+      const at = `${slot}.${literals++}`
+      // A literal object is a color; numbers, strings, and booleans stay.
+      return typeof value === 'object' ? map(value, at) : value
+    },
+    reference: (aliasId) => ({ aliasId }),
+    operation: ({ operator }, operands) => ({ operator, operands })
+  })
 }
 
 /** A color variable's value with its literal colors mapped, inside expressions too. */
@@ -223,6 +229,20 @@ function swapping(changes: ColorChanges, redo: boolean, swapped: string[] = []):
 }
 
 /**
+ * Records the converted variables' colors as the ones their bound paints last received.
+ * Converting is no edit to a variable, so those paints keep what they hold, their own opacity
+ * included, where a changed variable would otherwise write its color and alpha into them.
+ */
+function keepBoundPaints(graph: SceneGraph, variableIds: readonly string[]): void {
+  if (variableIds.length === 0) return
+  for (const node of layersUsingVariables(graph, variableIds)) {
+    if (hasBoundPaints(node)) {
+      recordWrittenBoundPaints(graph, node, { fills: node.fills, strokes: node.strokes })
+    }
+  }
+}
+
+/**
  * Rewrites every stored color in `graph` through `convert`: layers' color fields, page
  * backgrounds, and color variables. Returns what it changed, for {@link replayConversion}.
  */
@@ -254,6 +274,7 @@ export function convertColors(
     mapVariableValues(graph, variable.id, recording(convert, changes))
     if (changes.size > 0) conversion.variables.set(variable.id, changes)
   }
+  keepBoundPaints(graph, [...conversion.variables.keys()])
   reconcileVariableLayouts(graph, { variables: [...conversion.variables.keys()] })
   return conversion
 }
@@ -283,5 +304,6 @@ export function replayConversion(graph: SceneGraph, conversion: ColorConversion,
   for (const [id, changes] of conversion.variables) {
     mapVariableValues(graph, id, swapping(changes, redo))
   }
+  keepBoundPaints(graph, [...conversion.variables.keys()])
   reconcileVariableLayouts(graph, { variables: [...conversion.variables.keys()] })
 }

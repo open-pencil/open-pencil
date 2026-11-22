@@ -248,6 +248,34 @@ describe('document color profile', () => {
     expect(instanceDot().fills[0].color).toEqual(P3_RED)
   })
 
+  test("converting keeps a bound paint's own opacity, through undo and redo", async () => {
+    editor = createEditor()
+    editor.graph.documentColorSpace = 'display-p3'
+    const collection = editor.graph.createCollection('Theme')
+    const mode = collection.modes[0].modeId
+    const accent = editor.graph.createVariable('Accent', 'COLOR', collection.id, BLUE)
+    const layer = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      fills: [{ type: 'SOLID', color: BLUE, opacity: 0.5, visible: true }],
+      boundVariables: { 'fills/0/color': accent.id }
+    })
+    const fill = () => editor.graph.getNode(layer.id)?.fills[0]
+    expect(fill()?.opacity).toBe(0.5)
+
+    await editor.setDocumentColorSpace('srgb', 'convert')
+    expect(fill()?.opacity).toBe(0.5)
+    expectColor(fill()?.color, toExtendedSRGB(BLUE, 'display-p3'))
+    editor.undo.undo()
+    expect(fill()?.opacity).toBe(0.5)
+    expect(fill()?.color).toEqual(BLUE)
+    editor.undo.redo()
+    expect(fill()?.opacity).toBe(0.5)
+
+    // A later edit to the variable still refreshes the paint, as it does without converting.
+    editor.updateVariableValue(accent.id, mode, { r: 1, g: 0, b: 0, a: 0.8 })
+    expect(fill()?.color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
+    expect(fill()?.opacity).toBe(0.8)
+  })
+
   test('a document made read-only while its pages load is not converted', async () => {
     const { fill } = p3Document()
     const converting = editor.setDocumentColorSpace('srgb', 'convert')
