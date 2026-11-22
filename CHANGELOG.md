@@ -4,7 +4,7 @@
 
 ## 0.17.0 — 2026-11-22
 
-OpenPencil 0.17 adds OpenPencil Cloud, a self-hostable server where teams keep documents, edit them together in live rooms, share, comment, browse version history, and use AI paid from their plan's credits, and FigJam-style boards with sticky notes, shapes, connectors, and draw.io and Mermaid import. It also opens web pages from a URL as editable layers and adds variable formulas, variable fonts with Material Symbols and SF Symbols, Figma's glass, progressive blur, noise, and texture effects, image adjustments, the Scale tool, multi-layer transforms, custom AI prompts and design reviews, coding-agent subagents, and Arabic and Brazilian Portuguese. Auto layout now runs on Taffy, and PDF export draws with Skia.
+OpenPencil 0.17 adds OpenPencil Cloud, a self-hostable server where teams keep documents, edit them together in live rooms, share, comment, browse version history, and use AI paid from their plan's credits, and FigJam-style boards with sticky notes, shapes, connectors, and draw.io and Mermaid import. It also opens web pages from a URL as editable layers and adds variable formulas, variable fonts with Material Symbols and SF Symbols, Figma's glass, progressive blur, noise, and texture effects, image adjustments, the Scale tool, multi-layer transforms, custom AI prompts and design reviews, coding-agent subagents, and Arabic and Brazilian Portuguese. The canvas is much faster: a change settles in tens of milliseconds instead of over a second, only the tiles an edit touches are redrawn, and large `.fig` files open, switch pages, and save faster in less memory. Auto layout now runs on Taffy, and PDF export draws with Skia.
 
 ### Breaking changes
 
