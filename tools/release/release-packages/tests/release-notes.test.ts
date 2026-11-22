@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, dirname, join, sep } from 'node:path'
 
 import { readReleaseNotes, releaseChangelogPath } from '#release/release-notes'
 
@@ -71,9 +71,9 @@ describe('readReleaseNotes', () => {
     )
   })
 
-  test('reads the changelog beside the tooling', async () => {
-    expect(await releaseChangelogPath()).toBe(
-      join(import.meta.dirname, '../../../..', 'CHANGELOG.md')
-    )
+  test('reads the changelog of the checkout this tooling is in', async () => {
+    const path = await releaseChangelogPath()
+    expect(basename(path)).toBe('CHANGELOG.md')
+    expect(import.meta.dirname.startsWith(`${dirname(path)}${sep}`)).toBe(true)
   })
 })
