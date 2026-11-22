@@ -231,52 +231,41 @@ export const fr: LandingMessages = {
     }
   },
   cloud: {
-    badge: 'Accès anticipé',
+    badge: 'Disponible',
     title: 'OpenPencil Cloud',
-    lede: "L'espace de design de votre équipe, hébergé pour vous. Tout le monde modifie les mêmes fichiers en direct, les partage par lien et conçoit avec l'IA, sans rien à installer ni à faire tourner. Vos fichiers restent ouverts : exportez-les en .fig quand vous voulez.",
+    lede: 'L’espace de design de votre équipe, hébergé pour vous. Tout le monde modifie les mêmes fichiers en direct, les partage par un lien et designe avec l’IA payée par les crédits du forfait, sans rien installer ni administrer. Commencez gratuitement avec 300 Mo et exportez vos fichiers en .fig quand vous voulez.',
+    signUp: 'Essayer OpenPencil Cloud',
+    plans: 'Voir les forfaits',
     features: [
       {
-        title: "Synchronisation d'équipe en temps réel",
+        title: 'Synchronisation en temps réel',
         detail:
-          'Chaque modification parvient à toute l’équipe dès qu’elle a lieu, sur tous les appareils.'
+          'Chaque modification parvient à toute l’équipe immédiatement, sur tous les appareils.'
       },
       {
-        title: 'Liens de partage et commentaires',
-        detail: 'Envoyez un lien pour relire un design et en discuter directement sur le canevas.'
+        title: 'Liens et commentaires',
+        detail: 'Envoyez un lien pour relire un design et discutez-en directement sur le canevas.'
       },
       {
-        title: "Bibliothèques d'équipe",
-        detail: 'Publiez composants, styles et tokens une fois et utilisez-les dans chaque fichier.'
+        title: 'Historique des versions',
+        detail: 'Versions nommées et sauvegardes automatiques à consulter, restaurer ou copier.'
       },
       {
-        title: 'IA hébergée',
-        detail: 'Des agents qui conçoivent avec vous, sans clés d’API à gérer.'
+        title: 'L’IA de votre forfait',
+        detail:
+          'Des agents qui designent avec vous, payés par les crédits du forfait, sans clé d’API.'
       },
       {
-        title: "SSO et contrôles d'administration",
-        detail: 'Authentification unique, rôles et contrôle de qui voit quoi.'
+        title: 'Auto-hébergez-le',
+        detail: 'Faites tourner le même serveur sur votre infrastructure, sous licence Apache 2.0.'
       }
     ]
-  },
-  waitlist: {
-    label: 'Adresse e-mail',
-    placeholder: 'vous@exemple.fr',
-    submit: "Rejoindre la liste d'attente",
-    confirmHuman: 'Confirmez que vous êtes humain',
-    invalid: 'Saisissez une adresse e-mail valide.',
-    joined: 'Consultez votre boîte de réception',
-    joinedDetail: 'Ouvrez le lien que nous vous avons envoyé pour confirmer votre adresse.',
-    failed: 'Impossible de joindre la liste d’attente. Vérifiez votre connexion et réessayez.',
-    privacy: "Nous ne vous écrirons qu'au sujet d'OpenPencil Cloud.",
-    refused: 'Nous n’avons pas pu confirmer que vous n’êtes pas un robot. Réessayez.',
-    limited: 'Trop de tentatives. Réessayez dans une minute.',
-    unavailable: 'Vous ne pouvez pas vous inscrire d’ici. Inscrivez-vous sur openpencil.dev.'
   },
   closing: {
     title: 'Emportez vos designs avec vous.',
     download: 'Télécharger OpenPencil',
     docs: 'Lire la documentation',
-    cloud: "Rejoindre la liste d'attente Cloud"
+    cloud: 'Essayer OpenPencil Cloud'
   },
   clipboard: {
     copy: 'Copier',

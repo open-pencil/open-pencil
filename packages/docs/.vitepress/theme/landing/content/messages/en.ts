@@ -220,9 +220,11 @@ export const en: LandingMessages = {
     }
   },
   cloud: {
-    badge: 'Early access',
+    badge: 'Now open',
     title: 'OpenPencil Cloud',
-    lede: "Your team's design workspace, hosted for you. Everyone edits the same files live, shares them with a link, and designs with AI, with nothing to install or run. Your files stay open: export them as .fig whenever you like.",
+    lede: 'Your team’s design workspace, hosted for you. Everyone edits the same files live, shares them with a link, and designs with AI paid from the plan’s credits, with nothing to install or run. Start free with 300 MB, and export your files as .fig whenever you like.',
+    signUp: 'Try OpenPencil Cloud',
+    plans: 'See plans',
     features: [
       {
         title: 'Real-time team sync',
@@ -233,35 +235,25 @@ export const en: LandingMessages = {
         detail: 'Send a link to review a design and discuss it right on the canvas.'
       },
       {
-        title: 'Team libraries',
-        detail: 'Publish components, styles, and tokens once and use them in every file.'
+        title: 'Version history',
+        detail: 'Named versions and autosaves to look at, restore, or copy.'
       },
-      { title: 'Hosted AI', detail: 'Agents that design with you, with no API keys to manage.' },
       {
-        title: 'SSO and admin controls',
-        detail: 'Single sign-on, roles, and control over who sees what.'
+        title: 'AI from your plan',
+        detail:
+          'Agents that design with you, paid from your plan’s credits, with no API keys to manage.'
+      },
+      {
+        title: 'Self-host it',
+        detail: 'Run the same server on your own infrastructure, under the Apache License 2.0.'
       }
     ]
-  },
-  waitlist: {
-    label: 'Email address',
-    placeholder: 'you@example.com',
-    submit: 'Join the waitlist',
-    confirmHuman: 'Confirm you’re human',
-    invalid: 'Enter a valid email address.',
-    joined: 'Check your inbox',
-    joinedDetail: 'Open the link we sent to confirm your address.',
-    failed: 'Couldn’t reach the waitlist. Check your connection and try again.',
-    privacy: 'We only email you about OpenPencil Cloud.',
-    refused: 'We couldn’t confirm you’re not a bot. Try again.',
-    limited: 'Too many attempts. Try again in a minute.',
-    unavailable: 'You can’t join from here. Join on openpencil.dev instead.'
   },
   closing: {
     title: 'Take your designs with you.',
     download: 'Download OpenPencil',
     docs: 'Read the docs',
-    cloud: 'Join the Cloud waitlist'
+    cloud: 'Try OpenPencil Cloud'
   },
   clipboard: {
     copy: 'Copy',

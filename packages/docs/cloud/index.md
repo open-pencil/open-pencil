@@ -11,7 +11,7 @@ OpenPencil Cloud keeps documents on a server so they follow you across devices a
 
 There are two ways to use Cloud, and the editor works the same with both:
 
-- **The hosted service** at `cloud.openpencil.dev`, which the OpenPencil team runs. Its database, files, and collaboration rooms are in the European Union, and its [Terms of Service](./legal/terms), [Privacy Policy](./legal/privacy), and [subprocessors](./legal/subprocessors) are on this site. Until it opens, **Settings → Cloud** takes your email for the waitlist.
+- **The hosted service** at `cloud.openpencil.dev`, which the OpenPencil team runs. Its database, files, and collaboration rooms are in the European Union, and its [Terms of Service](./legal/terms), [Privacy Policy](./legal/privacy), and [subprocessors](./legal/subprocessors) are on this site. Sign up at [cloud.openpencil.dev](https://cloud.openpencil.dev), or from **Settings → Cloud** in OpenPencil 0.17 or later; the free plan includes 300 MB, and [plans](https://billing.openpencil.dev/pricing) add storage, editors, and AI credits.
 - **A server your team runs itself**, from the same open-source code ([self-hosting guide](./self-hosting/)). Its operator decides who can sign up, what plans and limits apply, and which terms and privacy policy you accept; this site's legal pages don't cover it.
 
 | Page                                | What it covers                                                      |

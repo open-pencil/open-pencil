@@ -227,52 +227,43 @@ export const de: LandingMessages = {
     }
   },
   cloud: {
-    badge: 'Früher Zugang',
+    badge: 'Jetzt verfügbar',
     title: 'OpenPencil Cloud',
-    lede: 'Der Design-Arbeitsbereich deines Teams, für dich gehostet. Alle bearbeiten dieselben Dateien live, teilen sie per Link und gestalten mit KI, ohne etwas zu installieren oder zu betreiben. Deine Dateien bleiben offen: Exportiere sie jederzeit als .fig.',
+    lede: 'Der Design-Arbeitsbereich deines Teams, für dich gehostet. Alle bearbeiten dieselben Dateien live, teilen sie per Link und gestalten mit KI, bezahlt aus den Credits des Plans, ohne etwas zu installieren oder zu betreiben. Starte kostenlos mit 300 MB und exportiere deine Dateien jederzeit als .fig.',
+    signUp: 'OpenPencil Cloud ausprobieren',
+    plans: 'Pläne ansehen',
     features: [
       {
-        title: 'Team-Synchronisierung in Echtzeit',
-        detail: 'Jede Änderung erreicht sofort alle im Team, auf jedem Gerät.'
+        title: 'Team-Sync in Echtzeit',
+        detail: 'Jede Änderung erreicht jedes Teammitglied sofort, auf jedem Gerät.'
       },
       {
-        title: 'Freigabelinks und Kommentare',
-        detail: 'Schick einen Link zur Durchsicht und diskutiert direkt auf der Leinwand.'
+        title: 'Links teilen und kommentieren',
+        detail:
+          'Schick einen Link zur Prüfung eines Designs und diskutiere direkt auf der Arbeitsfläche.'
       },
       {
-        title: 'Team-Bibliotheken',
-        detail: 'Komponenten, Stile und Tokens einmal veröffentlichen und in jeder Datei nutzen.'
+        title: 'Versionsverlauf',
+        detail:
+          'Benannte Versionen und automatische Sicherungen ansehen, wiederherstellen oder kopieren.'
       },
       {
-        title: 'Gehostete KI',
-        detail: 'Agenten, die mit dir gestalten, ohne API-Schlüssel zu verwalten.'
+        title: 'KI aus deinem Plan',
+        detail:
+          'Agenten, die mit dir gestalten, bezahlt aus den Credits deines Plans, ohne API-Schlüssel.'
       },
       {
-        title: 'SSO und Admin-Steuerung',
-        detail: 'Single Sign-on, Rollen und Kontrolle darüber, wer was sieht.'
+        title: 'Selbst hosten',
+        detail:
+          'Betreibe denselben Server auf deiner eigenen Infrastruktur, unter der Apache License 2.0.'
       }
     ]
-  },
-  waitlist: {
-    label: 'E-Mail-Adresse',
-    placeholder: 'du@beispiel.de',
-    submit: 'Auf die Warteliste',
-    confirmHuman: 'Bestätige, dass du ein Mensch bist',
-    invalid: 'Gib eine gültige E-Mail-Adresse ein.',
-    joined: 'Schau in dein Postfach',
-    joinedDetail: 'Öffne den Link, den wir dir geschickt haben, um deine Adresse zu bestätigen.',
-    failed:
-      'Die Warteliste ist nicht erreichbar. Prüfe deine Verbindung und versuch es noch einmal.',
-    privacy: 'Wir schreiben dir nur zu OpenPencil Cloud.',
-    refused: 'Wir konnten nicht bestätigen, dass du kein Bot bist. Versuch es noch einmal.',
-    limited: 'Zu viele Versuche. Versuch es in einer Minute noch einmal.',
-    unavailable: 'Von hier aus ist die Anmeldung nicht möglich. Trag dich auf openpencil.dev ein.'
   },
   closing: {
     title: 'Nimm deine Designs mit.',
     download: 'OpenPencil herunterladen',
     docs: 'Dokumentation lesen',
-    cloud: 'Auf die Cloud-Warteliste'
+    cloud: 'OpenPencil Cloud ausprobieren'
   },
   clipboard: {
     copy: 'Kopieren',

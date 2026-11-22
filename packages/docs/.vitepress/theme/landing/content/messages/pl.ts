@@ -227,51 +227,39 @@ export const pl: LandingMessages = {
     }
   },
   cloud: {
-    badge: 'Wczesny dostęp',
+    badge: 'Już dostępne',
     title: 'OpenPencil Cloud',
-    lede: 'Przestrzeń projektowa Twojego zespołu, hostowana za Ciebie. Wszyscy edytują te same pliki na żywo, udostępniają je linkiem i projektują z AI, bez instalowania i utrzymywania czegokolwiek. Pliki pozostają otwarte: eksportuj je do .fig, kiedy chcesz.',
+    lede: 'Przestrzeń projektowa twojego zespołu, hostowana za ciebie. Wszyscy edytują te same pliki na żywo, udostępniają je linkiem i projektują z AI opłacaną kredytami planu, bez instalowania i utrzymywania czegokolwiek. Zacznij za darmo z 300 MB i eksportuj pliki jako .fig, kiedy chcesz.',
+    signUp: 'Wypróbuj OpenPencil Cloud',
+    plans: 'Zobacz plany',
     features: [
       {
-        title: 'Synchronizacja zespołu w czasie rzeczywistym',
-        detail: 'Każda zmiana od razu trafia do całego zespołu, na każdym urządzeniu.'
+        title: 'Synchronizacja na żywo',
+        detail: 'Każda zmiana trafia do całego zespołu od razu, na każdym urządzeniu.'
       },
       {
         title: 'Linki i komentarze',
-        detail: 'Wyślij link do przeglądu projektu i omawiajcie go bezpośrednio na płótnie.'
+        detail: 'Wyślij link do przeglądu projektu i omawiaj go bezpośrednio na płótnie.'
       },
       {
-        title: 'Biblioteki zespołu',
-        detail: 'Opublikuj komponenty, style i tokeny raz i używaj ich w każdym pliku.'
+        title: 'Historia wersji',
+        detail: 'Nazwane wersje i autozapisy do podglądu, przywrócenia lub skopiowania.'
       },
       {
-        title: 'Hostowane AI',
-        detail: 'Agenci, którzy projektują z Tobą, bez zarządzania kluczami API.'
+        title: 'AI w twoim planie',
+        detail: 'Agenci projektujący z tobą, opłacani kredytami planu, bez kluczy API.'
       },
       {
-        title: 'SSO i kontrola administracyjna',
-        detail: 'Logowanie jednokrotne, role i kontrola nad tym, kto co widzi.'
+        title: 'Własny serwer',
+        detail: 'Uruchom ten sam serwer na własnej infrastrukturze, na licencji Apache 2.0.'
       }
     ]
-  },
-  waitlist: {
-    label: 'Adres e-mail',
-    placeholder: 'ty@przyklad.pl',
-    submit: 'Zapisz się na listę',
-    confirmHuman: 'Potwierdź, że jesteś człowiekiem',
-    invalid: 'Wpisz poprawny adres e-mail.',
-    joined: 'Sprawdź skrzynkę',
-    joinedDetail: 'Otwórz link, który wysłaliśmy, aby potwierdzić adres.',
-    failed: 'Nie udało się połączyć z listą oczekujących. Sprawdź połączenie i spróbuj ponownie.',
-    privacy: 'Piszemy tylko w sprawie OpenPencil Cloud.',
-    refused: 'Nie udało się potwierdzić, że nie jesteś botem. Spróbuj ponownie.',
-    limited: 'Zbyt wiele prób. Spróbuj ponownie za minutę.',
-    unavailable: 'Stąd nie można się zapisać. Zapisz się na openpencil.dev.'
   },
   closing: {
     title: 'Zabierz swoje projekty ze sobą.',
     download: 'Pobierz OpenPencil',
     docs: 'Czytaj dokumentację',
-    cloud: 'Zapisz się na listę Cloud'
+    cloud: 'Wypróbuj OpenPencil Cloud'
   },
   clipboard: {
     copy: 'Kopiuj',

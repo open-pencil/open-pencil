@@ -56,33 +56,15 @@ export interface LandingMessages {
     }
     later: { label: string; entries: RoadmapEntryMessages[] }
   }
-  /** The hosted product, with its waitlist. */
+  /** The hosted product, with the way in and its plans. */
   cloud: {
     badge: string
     title: string
     lede: string
+    /** Opens the official server's editor, where a visitor signs up. */
+    signUp: string
+    plans: string
     features: TitledDetail[]
-  }
-  /** The OpenPencil Cloud waitlist form, in the Cloud section. */
-  waitlist: {
-    /** Accessible name of the email field. */
-    label: string
-    placeholder: string
-    submit: string
-    /** The button while a sign-up waits on the visitor to tick Turnstile's check. */
-    confirmHuman: string
-    invalid: string
-    joined: string
-    joinedDetail: string
-    /** The service could not be reached, or failed. */
-    failed: string
-    privacy: string
-    /** Turnstile did not confirm a person. */
-    refused: string
-    /** Too many sign-ups from one place in a minute. */
-    limited: string
-    /** Turnstile cannot run on this page, such as a preview or local build. */
-    unavailable: string
   }
   closing: {
     title: string

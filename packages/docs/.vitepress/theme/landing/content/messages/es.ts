@@ -228,52 +228,40 @@ export const es: LandingMessages = {
     }
   },
   cloud: {
-    badge: 'Acceso anticipado',
+    badge: 'Ya disponible',
     title: 'OpenPencil Cloud',
-    lede: 'El espacio de diseño de tu equipo, alojado por nosotros. Todos editan los mismos archivos en directo, los comparten con un enlace y diseñan con IA, sin nada que instalar ni mantener. Tus archivos siguen abiertos: expórtalos como .fig cuando quieras.',
+    lede: 'El espacio de diseño de tu equipo, alojado por nosotros. Todos editan los mismos archivos en directo, los comparten con un enlace y diseñan con IA pagada con los créditos del plan, sin nada que instalar ni mantener. Empieza gratis con 300 MB y exporta tus archivos como .fig cuando quieras.',
+    signUp: 'Prueba OpenPencil Cloud',
+    plans: 'Ver planes',
     features: [
       {
-        title: 'Sincronización del equipo en tiempo real',
+        title: 'Sincronización en tiempo real',
         detail: 'Cada cambio llega a todo el equipo al instante, en cualquier dispositivo.'
       },
       {
-        title: 'Enlaces para compartir y comentarios',
-        detail: 'Envía un enlace para revisar un diseño y coméntalo sobre el lienzo.'
+        title: 'Enlaces y comentarios',
+        detail: 'Envía un enlace para revisar un diseño y coméntalo directamente en el lienzo.'
       },
       {
-        title: 'Bibliotecas del equipo',
-        detail: 'Publica componentes, estilos y tokens una vez y úsalos en todos los archivos.'
+        title: 'Historial de versiones',
+        detail: 'Versiones con nombre y guardados automáticos para ver, restaurar o copiar.'
       },
       {
-        title: 'IA alojada',
-        detail: 'Agentes que diseñan contigo, sin claves de API que gestionar.'
+        title: 'IA incluida en tu plan',
+        detail:
+          'Agentes que diseñan contigo, pagados con los créditos de tu plan, sin claves de API.'
       },
       {
-        title: 'SSO y controles de administración',
-        detail: 'Inicio de sesión único, roles y control de quién ve qué.'
+        title: 'Autoalójalo',
+        detail: 'Ejecuta el mismo servidor en tu propia infraestructura, con licencia Apache 2.0.'
       }
     ]
-  },
-  waitlist: {
-    label: 'Correo electrónico',
-    placeholder: 'tu@ejemplo.com',
-    submit: 'Unirme a la lista',
-    confirmHuman: 'Confirma que eres humano',
-    invalid: 'Introduce un correo electrónico válido.',
-    joined: 'Revisa tu bandeja de entrada',
-    joinedDetail: 'Abre el enlace que te enviamos para confirmar tu dirección.',
-    failed:
-      'No se pudo contactar con la lista de espera. Comprueba tu conexión e inténtalo de nuevo.',
-    privacy: 'Solo te escribiremos sobre OpenPencil Cloud.',
-    refused: 'No pudimos confirmar que no eres un bot. Inténtalo de nuevo.',
-    limited: 'Demasiados intentos. Inténtalo de nuevo en un minuto.',
-    unavailable: 'No puedes unirte desde aquí. Únete en openpencil.dev.'
   },
   closing: {
     title: 'Llévate tus diseños contigo.',
     download: 'Descargar OpenPencil',
     docs: 'Leer la documentación',
-    cloud: 'Unirme a la lista de Cloud'
+    cloud: 'Prueba OpenPencil Cloud'
   },
   clipboard: {
     copy: 'Copiar',
