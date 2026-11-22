@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, dirname, join, sep } from 'node:path'
 
-import { readReleaseNotes } from '#release/release-notes'
+import { readReleaseNotes, releaseChangelogPath } from '#release/release-notes'
 
 const changelog = `# Changelog
 
@@ -59,5 +59,21 @@ describe('readReleaseNotes', () => {
     await expect(
       readReleaseNotes(await changelogPath('## 1.2.0 — 2026-08-16\n'), '1.2.0')
     ).rejects.toThrow('Changelog section is empty for 1.2.0')
+  })
+
+  test('rejects a section too long for a GitHub release', async () => {
+    const entries = Array.from({ length: 700 }, (_, n) => `- Change ${n} ${'x'.repeat(180)}.`)
+    const path = await changelogPath(
+      `## 2.0.0 — 2026-11-22\n\n### Fixed\n\n${entries.join('\n')}\n`
+    )
+    await expect(readReleaseNotes(path, '2.0.0')).rejects.toThrow(
+      /^Changelog section for 2\.0\.0 is \d+ characters; a GitHub release takes 125000$/
+    )
+  })
+
+  test('reads the changelog of the checkout this tooling is in', async () => {
+    const path = await releaseChangelogPath()
+    expect(basename(path)).toBe('CHANGELOG.md')
+    expect(import.meta.dirname.startsWith(`${dirname(path)}${sep}`)).toBe(true)
   })
 })

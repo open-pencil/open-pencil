@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises'
 import type { Heading, List, ListItem, Root, RootContent } from 'mdast'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 
+import { RELEASE_NOTES_LIMIT } from '../release-notes.ts'
+
 export const ALLOWED_CATEGORIES = [
   'Breaking changes',
   'Added',
@@ -157,6 +159,29 @@ function validateUnreleased(
   }
 }
 
+/**
+ * A section becomes its release's notes on GitHub, which refuses long ones after npm has already
+ * published; one that long reads as a log and wants consolidating, as a final release does with
+ * its betas' sections.
+ */
+function validateSectionLengths(
+  source: string,
+  children: RootContent[],
+  headings: Array<{ index: number; node: Heading }>,
+  errors: string[]
+): void {
+  for (const { index, node } of headings) {
+    const start = node.position?.end.offset
+    if (start === undefined) continue
+    const next = children[sectionEnd(children, index)]
+    const length = source.slice(start, next?.position?.start.offset).trim().length
+    if (length < RELEASE_NOTES_LIMIT) continue
+    errors.push(
+      `Line ${line(node)}: section "${headingText(node)}" is ${length} characters; a GitHub release takes ${RELEASE_NOTES_LIMIT}. Consolidate it.`
+    )
+  }
+}
+
 export function validateChangelog(source: string): ChangelogValidationResult {
   const tree = fromMarkdown(source) as Root
   const errors: string[] = []
@@ -171,6 +196,7 @@ export function validateChangelog(source: string): ChangelogValidationResult {
   }
 
   for (const { node } of releaseHeadings) validateReleaseHeading(node, errors)
+  validateSectionLengths(source, tree.children, releaseHeadings, errors)
 
   const current = unreleased[0]
   if (current) {
