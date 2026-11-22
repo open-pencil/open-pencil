@@ -130,7 +130,7 @@ export function createComponentSyncScheduler(
      * Runs `fn` without scheduling component syncs for its writes, for an edit that already
      * gives every instance layer what syncing would, such as converting each stored color.
      */
-    withoutComponentSync<T>(fn: () => T): T {
+    withoutComponentSync: <T>(fn: () => T): T => {
       const previous = syncPaused
       syncPaused = true
       try {
