@@ -4,6 +4,7 @@ import type {
   Fill,
   SceneGraph,
   SceneNode,
+  Variable,
   VariableFormulaNode,
   VariableValue
 } from '@open-pencil/scene-graph'
@@ -147,16 +148,25 @@ function mapVariableValue(value: VariableValue, map: MapColor, slot: string): Va
   return value
 }
 
-function mapVariableValues(graph: SceneGraph, id: string, map: MapColor): void {
+/** A variable's values with their colors mapped, written nowhere yet. */
+function mappedVariableValues(
+  values: Variable['valuesByMode'],
+  map: MapColor
+): Variable['valuesByMode'] {
+  return Object.fromEntries(
+    Object.entries(values).map(([mode, value]) => [mode, mapVariableValue(value, map, mode)])
+  )
+}
+
+function writeVariableValues(
+  graph: SceneGraph,
+  id: string,
+  values: Variable['valuesByMode']
+): void {
   const variable = graph.variables.get(id)
   if (!variable) return
   graph.willChangeVariable(id)
-  variable.valuesByMode = Object.fromEntries(
-    Object.entries(variable.valuesByMode).map(([mode, value]) => [
-      mode,
-      mapVariableValue(value, map, mode)
-    ])
-  )
+  variable.valuesByMode = values
 }
 
 /** The colors a conversion rewrote in one layer, page, or variable, by slot. */
@@ -177,6 +187,11 @@ export interface ColorConversion {
   layers: Map<string, ColorChanges>
   pages: Map<string, PageConversion>
   variables: Map<string, ColorChanges>
+  /**
+   * The slots the last undo swapped back, as `owner slot`, which a redo swaps again and no
+   * others: a color undo left alone, edited since, stays as it is through redo too.
+   */
+  undone: Set<string>
 }
 
 /** The field each slot's first segment names, so a write sets only the fields whose colors changed. */
@@ -216,14 +231,26 @@ function recording(convert: (color: Color) => Color, changes: ColorChanges): Map
   }
 }
 
-/** Swaps each color still at the value the other side left, adding its slot to `swapped`. */
-function swapping(changes: ColorChanges, redo: boolean, swapped: string[] = []): MapColor {
+/**
+ * Undoing swaps each color of `owner` still at the value the conversion left, recording it in
+ * `conversion.undone`; redoing swaps back only those still at the value undo left. Each slot
+ * swapped is added to `swapped`.
+ */
+function swapping(
+  conversion: ColorConversion,
+  owner: string,
+  changes: ColorChanges,
+  redo: boolean,
+  swapped: string[] = []
+): MapColor {
   return (color, slot) => {
     const change = changes.get(slot)
-    if (!change) return color
+    const key = `${owner} ${slot}`
+    if (!change || (redo && !conversion.undone.has(key))) return color
     const [expected, next] = redo ? [change.from, change.to] : [change.to, change.from]
     if (!sameColor(color, expected)) return color
     swapped.push(slot)
+    if (!redo) conversion.undone.add(key)
     return { ...next }
   }
 }
@@ -250,7 +277,23 @@ export function convertColors(
   graph: SceneGraph,
   convert: (color: Color) => Color
 ): ColorConversion {
-  const conversion: ColorConversion = { layers: new Map(), pages: new Map(), variables: new Map() }
+  const conversion: ColorConversion = {
+    layers: new Map(),
+    pages: new Map(),
+    variables: new Map(),
+    undone: new Set()
+  }
+  // Variables are mapped before anything is written: a formula too deep to walk throws here,
+  // leaving the document as it was.
+  const variables = new Map<string, Variable['valuesByMode']>()
+  for (const variable of graph.variables.values()) {
+    if (variable.type !== 'COLOR') continue
+    const changes: ColorChanges = new Map()
+    const values = mappedVariableValues(variable.valuesByMode, recording(convert, changes))
+    if (changes.size === 0) continue
+    variables.set(variable.id, values)
+    conversion.variables.set(variable.id, changes)
+  }
   for (const node of graph.getAllNodes()) {
     const changes: ColorChanges = new Map()
     const map = recording(convert, changes)
@@ -268,12 +311,7 @@ export function convertColors(
     writeChangedFields(graph, node.id, fields, changes.keys())
     conversion.layers.set(node.id, changes)
   }
-  for (const variable of graph.variables.values()) {
-    if (variable.type !== 'COLOR') continue
-    const changes: ColorChanges = new Map()
-    mapVariableValues(graph, variable.id, recording(convert, changes))
-    if (changes.size > 0) conversion.variables.set(variable.id, changes)
-  }
+  for (const [id, values] of variables) writeVariableValues(graph, id, values)
   keepBoundPaints(graph, [...conversion.variables.keys()])
   reconcileVariableLayouts(graph, { variables: [...conversion.variables.keys()] })
   return conversion
@@ -284,26 +322,39 @@ export function convertColors(
  * source from the other side; everywhere else only colors still at the value it left swap.
  */
 export function replayConversion(graph: SceneGraph, conversion: ColorConversion, redo: boolean) {
+  if (!redo) conversion.undone.clear()
+  const variables = new Map<string, Variable['valuesByMode']>()
+  for (const [id, changes] of conversion.variables) {
+    const variable = graph.variables.get(id)
+    const map = swapping(conversion, `variable:${id}`, changes, redo)
+    if (variable) variables.set(id, mappedVariableValues(variable.valuesByMode, map))
+  }
   for (const [id, changes] of conversion.layers) {
     const node = graph.getNode(id)
     const swapped: string[] = []
-    const fields = node && mapNodeColors(node, swapping(changes, redo, swapped))
+    const map = swapping(conversion, `layer:${id}`, changes, redo, swapped)
+    const fields = node && mapNodeColors(node, map)
     if (fields) writeChangedFields(graph, id, fields, swapped)
   }
   for (const [id, { before, after, colors }] of conversion.pages) {
     const page = graph.getNode(id)
     if (!page) continue
+    const owner = `page:${id}`
     const [expected, target] = redo ? [before, after] : [after, before]
-    if (isEqual(page.source, expected)) {
+    const whole = !redo || conversion.undone.has(`${owner} *`)
+    if (whole && isEqual(page.source, expected)) {
       graph.updateNode(id, { source: structuredClone(target) })
+      if (!redo) {
+        conversion.undone.add(`${owner} *`)
+        for (const slot of colors.keys()) conversion.undone.add(`${owner} ${slot}`)
+      }
       continue
     }
-    const backgrounds = mapFills(getPageBackgrounds(page), swapping(colors, redo), 'backgrounds')
+    const map = swapping(conversion, owner, colors, redo)
+    const backgrounds = mapFills(getPageBackgrounds(page), map, 'backgrounds')
     graph.updateNode(id, { source: pageSourceWithBackgrounds(page, backgrounds) })
   }
-  for (const [id, changes] of conversion.variables) {
-    mapVariableValues(graph, id, swapping(changes, redo))
-  }
+  for (const [id, values] of variables) writeVariableValues(graph, id, values)
   keepBoundPaints(graph, [...conversion.variables.keys()])
   reconcileVariableLayouts(graph, { variables: [...conversion.variables.keys()] })
 }

@@ -4,9 +4,10 @@ import { createEditor, ReadOnlyDocumentError, type Editor } from '@open-pencil/c
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import type { SceneNode, VariableValue } from '@open-pencil/scene-graph'
+import type { SceneNode, VariableFormulaNode, VariableValue } from '@open-pencil/scene-graph'
 import { convertColor, fitsGamut, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { MAX_FORMULA_DEPTH } from '@open-pencil/scene-graph/variables'
 
 import { getPageBackgrounds, pageSourceWithBackgrounds } from '#core/figma-api/page-backgrounds'
 
@@ -274,6 +275,40 @@ describe('document color profile', () => {
     editor.updateVariableValue(accent.id, mode, { r: 1, g: 0, b: 0, a: 0.8 })
     expect(fill()?.color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
     expect(fill()?.opacity).toBe(0.8)
+  })
+
+  test('a color set back after converting stays through undo and redo', async () => {
+    const { fill } = p3Document()
+    await editor.setDocumentColorSpace('srgb', 'convert')
+    const layerId = editor.graph.getChildren(editor.state.currentPageId)[0].id
+    // A collaborator sets the converted color back to its old value, outside the undo history.
+    const current = fill()
+    if (!current) throw new Error('Expected the fill')
+    editor.graph.updateNode(layerId, { fills: [{ ...current, color: { ...P3_RED } }] })
+    editor.undo.undo()
+    expect(fill()?.color).toEqual(P3_RED)
+    editor.undo.redo()
+    // Undo left it alone, so redo does too.
+    expect(fill()?.color).toEqual(P3_RED)
+  })
+
+  test('a formula too deep to convert leaves the document as it was', async () => {
+    const { fill, accent } = p3Document()
+    const collection = editor.graph.createCollection('Deep')
+    let formula: VariableFormulaNode = BLUE
+    for (let depth = 0; depth <= MAX_FORMULA_DEPTH + 1; depth++) {
+      formula = { operator: 'add', operands: [formula, BLUE] }
+    }
+    editor.graph.createVariable('Deep', 'COLOR', collection.id, {
+      expression: 'FORMULA',
+      type: 'COLOR',
+      value: formula
+    } as VariableValue)
+    expect(editor.setDocumentColorSpace('srgb', 'convert')).rejects.toThrow()
+    await editor.setDocumentColorSpace('srgb', 'convert').catch(() => undefined)
+    expect(editor.graph.documentColorSpace).toBe('display-p3')
+    expect(fill()?.color).toEqual(P3_RED)
+    expect(accent()).toEqual(P3_RED)
   })
 
   test('a document made read-only while its pages load is not converted', async () => {
