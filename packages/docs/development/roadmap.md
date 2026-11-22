@@ -24,9 +24,9 @@ v0.17.0 (November 2026) shipped:
 - OpenPencil Cloud: workspaces, live rooms, sharing, comments, version history, Trash, plans and AI credits, an admin console, a community gallery, and a self-hosted server under the Apache License 2.0.
 - Boards: FigJam's sticky notes, shapes, connectors, and sections, saved as `.jam`, with draw.io and Mermaid import, Tidy Up, and Auto Arrange.
 - Opening web pages from a URL as editable layers, laid out by the same engine as HTML import.
+- Agent Skills that load when a request matches, coding-agent subagents that each work as their own agent on the canvas, and chat compaction for long sessions.
 - Variable formulas, variable fonts with Material Symbols and SF Symbols, Figma's glass, progressive blur, noise, and texture effects, image adjustments, the Scale tool, and multi-layer transforms.
-- Auto layout on Taffy, PDF export through Skia, a much faster progressive canvas, and Arabic and Brazilian Portuguese with a right-to-left interface.
-- Custom AI prompts, `/review` design reviews, chat compaction, Agent Skills, and coding-agent subagents.
+- A much faster progressive canvas, auto layout on Taffy, and PDF export through Skia.
 
 v0.16.0 (October 2026) shipped comments, shared rooms with voice calls, slots, component properties and behaviours with a live preview, shader fills, the Lint tab, variable modes on layers, the pencil tool, W3C design tokens, and Vue and React code in the Code tab.
 
