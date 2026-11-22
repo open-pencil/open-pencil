@@ -293,6 +293,26 @@ describe('panel edits while text is edited', () => {
     expect(editor.graph.getNode(id)?.boundVariables['fills/0/color']).toBe(primary.id)
   })
 
+  test('materializes fills when binding to the same layer variable and unbinding the range', async () => {
+    const { editor, id, node } = await editingWorld()
+    const colors = editor.graph.createCollection('Colors')
+    const initialColor = { r: 0.2, g: 0.4, b: 0.8, a: 1 }
+    const primary = editor.graph.createVariable('primary', 'COLOR', colors.id, initialColor)
+
+    editor.graph.bindVariable(id, 'fills/0/color', primary.id)
+    // Bind "world" to the same variable as the layer, then unbind only "world".
+    editor.bindVariable(id, 'fills/0/color', primary.id)
+    editor.unbindVariable(id, 'fills/0/color')
+    editor.commitTextEdit()
+
+    editor.updateVariableValue(primary.id, colors.defaultModeId, { r: 0.9, g: 0.1, b: 0.2, a: 1 })
+
+    expect(node().fills[0].color).toEqual({ r: 0.9, g: 0.1, b: 0.2, a: 1 })
+    expect(node().styleRuns).toHaveLength(1)
+    expect(node().styleRuns[0]?.style.fills?.[0]?.color).toEqual(initialColor)
+    expect(node().styleRuns[0]?.style.boundVariables).toBeUndefined()
+  })
+
   test('record a dragged size as one step back to the runs it started from', async () => {
     const { editor, id, node } = await editingWorld()
 

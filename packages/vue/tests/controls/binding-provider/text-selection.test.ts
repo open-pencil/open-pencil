@@ -20,11 +20,11 @@ describe('open-pencil binding provider while editing text', () => {
     const renderer = new SkiaRenderer(ck, surface)
     const editor = createEditor()
     editor.setCanvasKit(ck, renderer)
-    await renderer.loadFonts()
     cleanups.push(() => {
       editor.dispose()
       renderer.destroy()
     })
+    await renderer.loadFonts()
 
     const page = editor.state.currentPageId
     const text = editor.graph.createNode('TEXT', page, {

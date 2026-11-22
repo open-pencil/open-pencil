@@ -242,15 +242,22 @@ export function createTextSelectionStyle(
           ...baseBound,
           [field]: variableId
         }
-      } else if (hasExplicitFills || readBoundVariable(baseBound, field) !== undefined) {
-        const boundVariables = omitBy(baseBound, (_, key) => key === field) as TextRunBoundVariables
-        if (!isEqual(boundVariables, baseBound)) patch.boundVariables = boundVariables
-      } else if (readBoundVariable(inheritedFillBindings, field) !== undefined) {
-        patch.fills = copyFills(style.fills)
-        patch.boundVariables = omitBy(
-          { ...inheritedFillBindings, ...baseBound },
+      } else {
+        const inheritsTarget =
+          !hasExplicitFills && readBoundVariable(inheritedFillBindings, field) !== undefined
+        const sourceBound = hasExplicitFills
+          ? baseBound
+          : { ...inheritedFillBindings, ...baseBound }
+        const boundVariables = omitBy(
+          sourceBound,
           (_, key) => key === field
         ) as TextRunBoundVariables
+        if (inheritsTarget) {
+          patch.fills = copyFills(style.fills)
+          patch.boundVariables = boundVariables
+        } else if (hasExplicitFills || readBoundVariable(baseBound, field) !== undefined) {
+          if (!isEqual(boundVariables, baseBound)) patch.boundVariables = boundVariables
+        }
       }
       if (!isEmptyObject(patch)) {
         styleRuns = styleRunsWithPatch({ ...node, styleRuns }, start + at, start + next, patch)

@@ -1,6 +1,7 @@
 import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
+import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { applyFontFeaturesToKiwi } from '../font/features'
 import { figmaStyleName, standardStyleNamer, type StyleNamer } from '../font/style'
@@ -35,6 +36,12 @@ function applyTextDecorationOverrideFields(
   }
 }
 
+function hasFillVariableBinding(style: CharacterStyleOverride): boolean {
+  return Object.keys(style.boundVariables ?? {}).some(
+    (field) => paintBindingTarget(field)?.list === 'fills'
+  )
+}
+
 function textStyleOverrideToKiwi(
   id: number,
   style: CharacterStyleOverride,
@@ -63,8 +70,13 @@ function textStyleOverrideToKiwi(
   if (style.lineHeight !== undefined) override.lineHeight = figmaLineHeight(style.lineHeight)
   applyTextDecorationOverrideFields(override, style, fillToKiwiPaint)
   if (style.textCase) override.textCase = style.textCase
-  if (style.fills && style.fills.length > 0) {
-    override.fillPaints = style.fills.map(fillToKiwiPaint)
+  const exportedFills = style.fills?.length
+    ? style.fills
+    : hasFillVariableBinding(style)
+      ? node.fills
+      : undefined
+  if (exportedFills && exportedFills.length > 0) {
+    override.fillPaints = exportedFills.map(fillToKiwiPaint)
   }
   return override
 }
