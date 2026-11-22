@@ -139,10 +139,6 @@ export const it: LandingMessages = {
             'I documenti vengono disegnati ed esportati nel loro profilo colore, come in Figma.'
         },
         {
-          title: 'Progettare sulle pagine in esecuzione',
-          detail: 'Confronta le pagine di un progetto con il design e apri pull request.'
-        },
-        {
           title: 'OpenPencil su Android',
           detail: 'L’editor su telefoni, tablet e pieghevoli Android.'
         }

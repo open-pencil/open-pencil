@@ -139,10 +139,6 @@ export const fr: LandingMessages = {
             'Les documents sont dessinés et exportés dans leur profil colorimétrique, comme dans Figma.'
         },
         {
-          title: 'Designer sur les pages en ligne',
-          detail: 'Comparez les pages d’un projet au design et ouvrez des pull requests.'
-        },
-        {
           title: 'OpenPencil sur Android',
           detail: 'L’éditeur sur les téléphones, tablettes et appareils pliables Android.'
         }

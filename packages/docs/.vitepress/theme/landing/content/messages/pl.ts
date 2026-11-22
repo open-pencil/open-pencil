@@ -138,10 +138,6 @@ export const pl: LandingMessages = {
           detail: 'Dokumenty rysowane i eksportowane w ich profilu kolorów, jak w Figmie.'
         },
         {
-          title: 'Projektowanie na działających stronach',
-          detail: 'Porównuj strony projektu z projektem graficznym i otwieraj pull requesty.'
-        },
-        {
           title: 'OpenPencil na Androidzie',
           detail: 'Edytor na telefonach, tabletach i składanych urządzeniach z Androidem.'
         }
