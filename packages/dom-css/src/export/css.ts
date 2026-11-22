@@ -60,8 +60,6 @@ export function strokeColorToCSS(
 /** A bound field's CSS: `var()` where its variable draws the value, else the literal. */
 export type EffectFieldCSS = (field: string, literal: string) => string
 
-const LITERAL: EffectFieldCSS = (_field, literal) => literal
-
 function px(value: number): string {
   return `${Number(value.toFixed(3))}px`
 }
@@ -140,7 +138,7 @@ function addBlurs(
  */
 export function effectsToCSS(
   effects: Effect[],
-  css = LITERAL,
+  css: EffectFieldCSS,
   profile: ColorProfile
 ): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
@@ -160,7 +158,7 @@ export function effectsToCSS(
  */
 export function textEffectsToCSS(
   effects: Effect[],
-  css = LITERAL,
+  css: EffectFieldCSS,
   profile: ColorProfile
 ): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}

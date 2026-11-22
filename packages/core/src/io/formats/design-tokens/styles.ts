@@ -163,7 +163,7 @@ function shadowValue(
  */
 export function shadowTokenValue(
   effects: readonly Effect[],
-  references: ShadowReferences = {},
+  references: ShadowReferences,
   profile: ColorProfile
 ) {
   const values = [...effects.entries()]
