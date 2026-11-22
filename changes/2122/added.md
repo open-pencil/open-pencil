@@ -1,1 +1,0 @@
-- `useCanvas` takes `onViewportMove(dx, dy)`, called when a resize moves the canvas on screen, so a host can pan the view the other way and keep the drawing still (#2122).

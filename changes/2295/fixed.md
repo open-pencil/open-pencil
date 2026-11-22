@@ -1,1 +1,0 @@
-- The desktop app no longer leaves a closed window behind, about 0.5 MB each, for every web page it renders when opening a URL on macOS.
