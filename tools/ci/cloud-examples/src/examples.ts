@@ -1,5 +1,6 @@
 import { buildDemoDocument } from '@open-pencil/demo-tools'
-import { BOARD_NAME, buildDemoBoard } from '@open-pencil/demo-tools/board'
+import { buildDemoBoard } from '@open-pencil/demo-tools/board'
+import { BOARD_NAME } from '@open-pencil/demo-tools/board/names'
 
 /** An example the gallery shows: its document's name there, and how to build its file. */
 export type ExampleSource = { name: string; build(): Promise<Uint8Array> }

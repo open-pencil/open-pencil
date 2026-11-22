@@ -8,8 +8,8 @@
   "exports": {
     ".": "./src/build.ts",
     "./chapters": "./src/document/chapters/names.ts",
-    "./board": "./src/board.ts",
-    "./board/names": "./src/board-names.ts"
+    "./board": "./src/board/build.ts",
+    "./board/names": "./src/board/names.ts"
   },
   "scripts": {
     "test": "bun test tests"

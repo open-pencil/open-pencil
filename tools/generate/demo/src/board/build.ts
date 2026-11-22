@@ -4,10 +4,8 @@ import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { prepareGraphFonts } from '@open-pencil/core/text'
 
-import { BOARD_SECTION } from './board-names'
-import { withMeasuredText, withMeasuringRenderer } from './build'
-
-export { BOARD_NAME } from './board-names'
+import { withMeasuredText, withMeasuringRenderer } from '../build'
+import { BOARD_SECTION } from './names'
 
 /**
  * A planning board as a team would sketch one: what several people asked for, in clusters of

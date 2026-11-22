@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { buildDemoBoard } from '#demo/board'
-import { BOARD_SECTION } from '#demo/board-names'
+import { buildDemoBoard } from '#demo/board/build'
+import { BOARD_SECTION } from '#demo/board/names'
 
 import { populateAllFigPages, readFigFile } from '@open-pencil/core/io/formats/fig'
 import type { SceneGraph } from '@open-pencil/scene-graph'

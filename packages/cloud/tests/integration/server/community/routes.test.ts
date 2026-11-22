@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
@@ -35,12 +35,19 @@ const documentSchema = v.object({
 })
 const idSchema = v.object({ id: v.string() })
 
+/** Every gallery's database, closed after its test. */
+const opened: { close(): Promise<void> }[] = []
+afterEach(async () => {
+  for (const runtime of opened.splice(0)) await runtime.close()
+})
+
 /**
  * Alice's server with two workspaces: Community, which the deployment names as its gallery, and
  * Studio, which stays private. Requests to `community` come from nobody signed in.
  */
 async function gallery() {
   const runtime = await createCloudTestDatabase()
+  opened.push(runtime)
   const objects = createMemoryObjectStore()
   const app = (serverConfig: CloudServerConfig, signedIn: boolean) =>
     createCloudApp({
