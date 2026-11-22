@@ -27,7 +27,7 @@ import ThemeButton from './site/ThemeButton.vue'
 
 <style>
 /*
- * From 1180px the header shows its settings as icons, instead of folding them into ⋯ below 1280px
+ * From 1320px the header shows its settings as icons, instead of folding them into ⋯ below 1280px
  * as VitePress does: language, theme, and Discord, each a tile on hover, then the GitHub and
  * editor buttons. VitePress's theme switch gives way to the icon. Narrower, there is no room for
  * them beside the links, and VitePress's own ⋯ and menu stay.
@@ -37,7 +37,7 @@ import ThemeButton from './site/ThemeButton.vue'
   display: none;
 }
 
-@media (min-width: 1180px) {
+@media (min-width: 1320px) {
   .VPNavBar .content-body .theme-button,
   .VPNavBar .content-body .github {
     display: inline-flex;
@@ -78,16 +78,9 @@ import ThemeButton from './site/ThemeButton.vue'
     order: 5;
   }
 
-  /* The links a little closer, and search as its icon until 1400px, so the longest locales fit. */
+  /* The links a little closer, so the longest locales fit beside the full search box. */
   .VPNavBar .VPNavBarMenuLink {
     padding: 0 10px;
-  }
-
-  @media (max-width: 1399px) {
-    .VPNavBar .VPNavBarSearchButton .text,
-    .VPNavBar .VPNavBarSearchButton .keys {
-      display: none;
-    }
   }
 
   /* One divider, between the links and the icons; the rest would fall between hidden items. */

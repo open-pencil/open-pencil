@@ -8,7 +8,7 @@ import { data } from './repository.data'
 
 /**
  * The repository beside the editor's button, with its stars as GitHub counted them at build; the
- * header shows it from 1180px wide (`Layout.vue`).
+ * header shows it from 1320px wide (`Layout.vue`).
  */
 const { lang, localeIndex } = useData()
 const messages = computed(
