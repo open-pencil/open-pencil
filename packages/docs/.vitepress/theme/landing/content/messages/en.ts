@@ -22,6 +22,12 @@ export const en: LandingMessages = {
         'Auto layout, constraints, fills, strokes, effects, and typography, with the controls where you expect them. Components take slots, so an instance keeps the design and brings its own content. Everything is undoable, and nothing waits on a server.',
       hint: 'Hover the selected cover and drag a corner to round it. The other players bring their own covers through the Artwork slot.'
     },
+    board: {
+      title: 'Plan on boards',
+      detail:
+        'Boards bring FigJam’s sticky notes, shapes, connectors, and sections, and open and save the .jam files Figma reads. Paste a Mermaid flowchart or open a draw.io diagram and it becomes shapes you can move, and agents sketch boards with the same tools.',
+      hint: 'Drag a sticky note or a shape: its connectors follow. Pick a tool from the toolbar to add your own.'
+    },
     interactive: {
       title: 'Components that work',
       detail:

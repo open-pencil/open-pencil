@@ -30,6 +30,8 @@ export interface StageDefinition {
 export const STAGES: Record<SingleStageKind, StageDefinition> = {
   figma: { scene: SCENES.figma, panel: LayerTree, layersHeading: true },
   design: { scene: SCENES.slots, panel: DesignPanel, toolbar: true },
+  // A board opens on the canvas and its tools alone, as boards do in the app.
+  board: { scene: SCENES.board, toolbar: true },
   interactive: { scene: SCENES.hero, panel: DesignPanel, preview: true },
   tokens: { scene: SCENES.modes, panel: TokensPanel },
   shaders: { scene: SCENES.shaders, panel: DesignPanel, preview: true },

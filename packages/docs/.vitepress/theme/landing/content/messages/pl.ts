@@ -22,6 +22,12 @@ export const pl: LandingMessages = {
         'Auto layout, ograniczenia, wypełnienia, obrysy, efekty i typografia, z kontrolkami tam, gdzie ich szukasz. Komponenty mają sloty: instancja zachowuje projekt i wnosi własną treść. Wszystko da się cofnąć i nic nie czeka na serwer.',
       hint: 'Najedź na zaznaczoną okładkę i przeciągnij róg, aby go zaokrąglić. Pozostałe odtwarzacze wnoszą własne okładki przez slot Artwork.'
     },
+    board: {
+      title: 'Planuj na tablicach',
+      detail:
+        'Tablice dają notatki samoprzylepne, kształty, łączniki i sekcje z FigJam oraz otwierają i zapisują pliki .jam, które czyta Figma. Wklej schemat blokowy Mermaid albo otwórz diagram draw.io, a stanie się kształtami do przesuwania; agenci szkicują tablice tymi samymi narzędziami.',
+      hint: 'Przeciągnij notatkę lub kształt: jej łączniki podążają za nią. Wybierz narzędzie z paska, aby dodać własne.'
+    },
     interactive: {
       title: 'Komponenty, które działają',
       detail:
