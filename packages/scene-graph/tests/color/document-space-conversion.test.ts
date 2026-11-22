@@ -10,7 +10,8 @@ import {
   paintOkHCL,
   rgbaToOkHCL,
   setNodeFillOkHCL,
-  toExtendedSRGB
+  toExtendedSRGB,
+  tryParseColor
 } from '@open-pencil/scene-graph/color'
 
 /** #2563EB as authored in an sRGB document. */
@@ -29,6 +30,12 @@ describe('converting colors between profiles', () => {
     expect(red.r).toBeGreaterThan(1)
     expect(red.g).toBeLessThan(0)
     expect(red.b).toBeLessThan(0)
+  })
+
+  test('a component past the float range is no color', () => {
+    for (const input of ['oklch(0.5 1e999 0)', 'color(display-p3 1e999 0 0)', 'rgb(1e999 0 0)']) {
+      expect(tryParseColor(input, 'display-p3')).toBeNull()
+    }
   })
 
   test('extending gives the components converting exactly does, inside sRGB and out', () => {

@@ -171,6 +171,9 @@ const SRGB_SYNTAX_MODES = new Set(['rgb', 'hsl', 'hwb'])
 export function tryParseColor(input: string, profile: ColorProfile = 'srgb'): Color | null {
   const parsed = parse(input)
   if (!parsed) return null
+  // A component written past the float range, such as `1e999`, is no color.
+  if (Object.values(parsed).some((value) => typeof value === 'number' && !Number.isFinite(value)))
+    return null
   const a = parsed.alpha ?? 1
   // culori leaves a `none` channel out, which normalizing reads as zero.
   if (SRGB_SYNTAX_MODES.has(parsed.mode)) return normalizeColor({ ...toRGB(parsed), a })
