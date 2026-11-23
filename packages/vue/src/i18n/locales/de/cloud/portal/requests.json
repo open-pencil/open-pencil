@@ -9,11 +9,5 @@
   "noteDetail": "Notiz: {note}",
   "noOneWaiting": "Niemand wartet",
   "nothingHere": "Noch nichts vorhanden",
-  "requestsEmptyDescription": "Neue Anfragen erscheinen hier, und Administratoren erhalten für jede eine E-Mail.",
-  "inviteWaitingHeading": "Alle Wartenden einladen",
-  "inviteWaitingDescription": "Genehmigt jede wartende Anfrage und schickt jeder Person den Brief des Gründers zur Beta.",
-  "inviteWaiting": "Genehmigen und einladen",
-  "inviteWaitingConfirmHeading": "Alle Wartenden genehmigen und einladen?",
-  "inviteWaitingConfirmDescription": "Jede Person bekommt eine E-Mail: Cloud ist offen, es ist noch eine Beta, und wo man Probleme meldet. Anmelden geht sofort.",
-  "invitationsSent": "Die Einladungen sind unterwegs."
+  "requestsEmptyDescription": "Neue Anfragen erscheinen hier, und Administratoren erhalten für jede eine E-Mail."
 }

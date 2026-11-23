@@ -47,6 +47,8 @@ const kindLabels = computed<Record<string, string>>(() => ({
   'enrollment-requested': messages.value.emailKindEnrollmentRequested,
   'admin-enrollment-notification': messages.value.emailKindAdminNotification,
   'enrollment-approved': messages.value.emailKindEnrollmentApproved,
+  // The beta's invitation letter, no longer sent; the ones kept in the outbox approved a request.
+  'enrollment-invited': messages.value.emailKindEnrollmentApproved,
   'enrollment-rejected': messages.value.emailKindEnrollmentRejected,
   'enrollment-revoked': messages.value.emailKindEnrollmentRevoked,
   'email-verification': messages.value.emailKindVerification,

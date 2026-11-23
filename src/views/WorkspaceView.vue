@@ -51,10 +51,10 @@ import { isTauri } from '@/app/tauri/env'
 import { offerUsageStatsPrompt, startSharing, usageStatsPrompt } from '@/app/telemetry'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
 import {
-  CloudBetaBanner,
   CloudCreditsBanner,
   CloudCommunityBanner,
   CloudEditorUpdateBanner,
+  CloudMovingBanner,
   CloudVersionDialog
 } from '@/components/cloud/integration'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
@@ -303,10 +303,10 @@ onUnmounted(() => {
 
 <template>
   <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
+    <CloudMovingBanner />
     <FileApiBanner />
     <ColorSpaceBanner />
     <FontStatusBanner />
-    <CloudBetaBanner />
     <CloudCreditsBanner />
     <CloudEditorUpdateBanner />
     <CloudCommunityBanner />

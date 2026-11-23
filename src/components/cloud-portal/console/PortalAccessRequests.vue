@@ -10,9 +10,7 @@ import {
   type PortalListRequest,
   type PortalTableFeatures
 } from '@/app/cloud-portal/list'
-import AppButton from '@/components/ui/button/AppButton.vue'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
-import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
@@ -23,36 +21,19 @@ import PortalTable from '../table/PortalTable.vue'
 import PortalTextCell from '../table/PortalTextCell.vue'
 import type { AccessRequest, AccessRequestStatus } from '../types'
 
-/**
- * People asking to join a server that reviews new accounts, and the decisions made so far. The
- * official server also offers to approve everyone waiting at once, each with the founder's letter.
- */
-const {
-  load,
-  busy = null,
-  invitation = null,
-  inviting = false
-} = defineProps<{
+/** People asking to join a server that reviews new accounts, and the decisions made so far. */
+const { load, busy = null } = defineProps<{
   load: (
     request: PortalListRequest<AccessRequestStatus>
   ) => Promise<PortalListPage<AccessRequestStatus, AccessRequest>>
   /** The request a decision is being saved for. */
   busy?: string | null
-  /** Whether inviting everyone waiting is offered, or was just done. */
-  invitation?: 'offered' | 'sent' | null
-  inviting?: boolean
 }>()
 const emit = defineEmits<{
   approve: [id: string]
   reject: [id: string, note?: string]
   revoke: [id: string, note?: string]
-  invite: []
 }>()
-const confirmingInvite = ref(false)
-function invite() {
-  confirmingInvite.value = false
-  emit('invite')
-}
 
 const messages = useMessages('cloud/portal')
 const requestMessages = useMessages('cloud/portal/requests')
@@ -164,22 +145,6 @@ defineExpose({ reload: requests.reload })
 </script>
 
 <template>
-  <AppAlert
-    v-if="invitation === 'sent'"
-    tone="success"
-    :heading="requestMessages.invitationsSent"
-  />
-  <AppAlert
-    v-else-if="invitation === 'offered'"
-    :heading="requestMessages.inviteWaitingHeading"
-    :description="requestMessages.inviteWaitingDescription"
-  >
-    <template #actions>
-      <AppButton size="sm" variant="outline" :loading="inviting" @click="confirmingInvite = true">
-        {{ requestMessages.inviteWaiting }}
-      </AppButton>
-    </template>
-  </AppAlert>
   <PortalTable
     :list="requests"
     :label="messages.accessRequests"
@@ -210,12 +175,4 @@ defineExpose({ reload: requests.reload })
       </template>
     </AppFormField>
   </AppConfirmationDialog>
-  <AppConfirmationDialog
-    :open="confirmingInvite"
-    :heading="requestMessages.inviteWaitingConfirmHeading"
-    :description="requestMessages.inviteWaitingConfirmDescription"
-    :confirm-label="requestMessages.inviteWaiting"
-    @update:open="(open) => (confirmingInvite = open)"
-    @confirm="invite"
-  />
 </template>
