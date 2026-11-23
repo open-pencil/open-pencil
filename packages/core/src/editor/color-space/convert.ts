@@ -1,6 +1,7 @@
 import { isEqual, pick } from 'es-toolkit'
 
 import type {
+  ColorProfile,
   Fill,
   SceneGraph,
   SceneNode,
@@ -8,9 +9,10 @@ import type {
   VariableFormulaNode,
   VariableValue
 } from '@open-pencil/scene-graph'
+import { convertColor } from '@open-pencil/scene-graph/color'
 import {
   cloneVectorNetwork,
-  copyEffects,
+  mapEffectColors,
   copyFill,
   copyStroke,
   copyLayoutGrids,
@@ -78,16 +80,7 @@ function mapNodeColors(node: NodeColorFields, map: MapColor): NodeColorFields | 
   const fields: NodeColorFields = {
     fills: mapFills(node.fills, map, 'fills'),
     strokes: node.strokes.map((stroke, index) => mapPaintColors(stroke, map, `strokes.${index}`)),
-    effects: copyEffects(node.effects).map((effect, index) => {
-      const next = { ...effect, color: map(effect.color, `effects.${index}`) }
-      if (effect.noise?.secondaryColor) {
-        next.noise = {
-          ...effect.noise,
-          secondaryColor: map(effect.noise.secondaryColor, `effects.${index}.noise`)
-        }
-      }
-      return next
-    }),
+    effects: mapEffectColors(node.effects, (color, slot) => map(color, `effects.${slot}`)),
     styleRuns: copyStyleRuns(node.styleRuns).map((run, index) => ({
       ...run,
       style: {
@@ -328,11 +321,13 @@ function sameRGB(a: Color, b: Color): boolean {
 
 /**
  * Rewrites every stored color in `graph` through `convert`: layers' color fields, page
- * backgrounds, and color variables. Returns what it changed, for {@link replayConversion}.
+ * backgrounds, and color variables unless `variables` is false. Returns what it changed, for
+ * {@link replayConversion}.
  */
 export function convertColors(
   graph: SceneGraph,
-  convert: (color: Color) => Color
+  convert: (color: Color) => Color,
+  { variables: withVariables = true }: { variables?: boolean } = {}
 ): ColorConversion {
   const conversion: ColorConversion = {
     layers: new Map(),
@@ -348,7 +343,7 @@ export function convertColors(
     for (const value of Object.values(variable.valuesByMode)) variableValueReferences(value)
   }
   const variables = new Map<string, Variable['valuesByMode']>()
-  for (const variable of graph.variables.values()) {
+  for (const variable of withVariables ? graph.variables.values() : []) {
     if (variable.type !== 'COLOR') continue
     const changes: ColorChanges = new Map()
     const values = mappedVariableValues(variable.valuesByMode, recording(convert, changes))
@@ -421,4 +416,16 @@ export function replayConversion(graph: SceneGraph, conversion: ColorConversion,
   followBoundPaints(graph, bound)
   keepBoundPaints(graph, [...conversion.variables.keys()])
   reconcileVariableLayouts(graph, { variables: [...conversion.variables.keys()] })
+}
+
+/**
+ * Converts every color a copy of a document stores on its layers and pages into `to`, and gives
+ * it that profile, for a format that can only hold one, such as PPTX or draw.io. Variables are
+ * left alone: the copy shares them with its document, and layers hold their resolved colors.
+ */
+export function convertDocumentColors(graph: SceneGraph, to: ColorProfile): void {
+  const from = graph.documentColorSpace
+  if (from === to) return
+  convertColors(graph, (color) => convertColor(color, from, to, 'map'), { variables: false })
+  graph.documentColorSpace = to
 }

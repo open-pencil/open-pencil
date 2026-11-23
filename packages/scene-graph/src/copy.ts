@@ -11,6 +11,7 @@
 import { readGeometryBlob } from './geometry'
 import { cloneInstanceOverrideState } from './instances/overrides'
 import { createDefaultSourceMetadata } from './node-defaults'
+import type { Color } from './primitives'
 import type {
   ArcData,
   ComponentPropertyDefinition,
@@ -113,6 +114,26 @@ export function copyStrokes(strokes: Stroke[]): Stroke[] {
 
 export function copyEffects(effects: Effect[]): Effect[] {
   return effects.map(copyEffect)
+}
+
+/**
+ * Copies of `effects` with every color they hold passed through `map`: each effect's own and a
+ * duotone noise's second color. `map` is told where each sits, `0` or `0.noise` for the first.
+ */
+export function mapEffectColors(
+  effects: Effect[],
+  map: (color: Color, slot: string) => Color
+): Effect[] {
+  return copyEffects(effects).map((effect, index) => {
+    const next = { ...effect, color: map(effect.color, `${index}`) }
+    if (effect.noise?.secondaryColor) {
+      next.noise = {
+        ...effect.noise,
+        secondaryColor: map(effect.noise.secondaryColor, `${index}.noise`)
+      }
+    }
+    return next
+  })
 }
 
 export function copyLayoutGrids(grids: LayoutGrid[]): LayoutGrid[] {

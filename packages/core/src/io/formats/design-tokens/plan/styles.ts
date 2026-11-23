@@ -8,6 +8,8 @@ import type {
   SceneNode,
   TextLength
 } from '@open-pencil/scene-graph'
+import { colorProfileSchema } from '@open-pencil/scene-graph/color'
+import { mapEffectColors } from '@open-pencil/scene-graph/copy'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 import { percentLength, pixelLength, textLengthSchema } from '@open-pencil/scene-graph/text'
@@ -20,6 +22,7 @@ import {
   decodeDimension,
   decodeFontFamily,
   decodeFontWeight,
+  importedColor,
   referencePath
 } from '#core/io/formats/design-tokens/decode'
 import { tokenReference } from '#core/io/formats/design-tokens/paths'
@@ -89,6 +92,8 @@ const ownTextSchema = v.object({
 })
 const ownEffectsSchema = v.object({
   effects: v.optional(v.array(v.unknown())),
+  /** The profile `effects` were written in; files from before profiles were written in sRGB. */
+  colorSpace: v.optional(v.fallback(colorProfileSchema, 'srgb'), 'srgb'),
   bindings: v.optional(v.record(v.string(), v.string())),
   aliasData: v.optional(v.fallback(aliasDataSchema, {}))
 })
@@ -309,6 +314,11 @@ function replaceShadows(
   return { effects, positions, kept }
 }
 
+/** `effects` from a file written in `source`, their colors read into `profile`. */
+function importedEffects(effects: Effect[], source: ColorProfile, profile: ColorProfile): Effect[] {
+  return mapEffectColors(effects, (color) => importedColor(color, source, profile))
+}
+
 /** A shadow token as effect style fields and the fields its references bind. */
 function effectStyle(
   token: ReadToken,
@@ -320,15 +330,20 @@ function effectStyle(
   const own = parsed.success ? parsed.output : null
   const ownBindings = own?.bindings ?? {}
   // Extension effects that do not read fall back to the token's own shadows.
-  const exact = own?.effects ? tryParseFigmaEffects(own.effects) : null
-  if (exact && isEqual(token.value, shadowTokenValue(exact, ownBindings))) {
+  const recorded = own?.effects ? tryParseFigmaEffects(own.effects) : null
+  // The token is current when it is what its own file would write; its effects are then read
+  // into this document as its colors are, from the profile the file recorded them in.
+  const source = own?.colorSpace ?? 'srgb'
+  if (recorded && isEqual(token.value, shadowTokenValue(recorded, ownBindings, source))) {
     return {
-      fields: { effects: exact },
+      fields: { effects: importedEffects(recorded, source, profile) },
       bindings: aliasedBindings(ownBindings, own?.aliasData ?? {}, alias)
     }
   }
   const shadows = shadowList(token.value, resolve, profile)
   if (!shadows) return null
+  // Edited shadows replace the recorded ones; the rest, such as blurs, are kept in this profile.
+  const exact = recorded && importedEffects(recorded, source, profile)
   const placed = exact
     ? replaceShadows(exact, shadows.effects)
     : { effects: shadows.effects, positions: shadows.effects.map((_, index) => index), kept: null }
