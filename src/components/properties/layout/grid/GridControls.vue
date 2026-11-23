@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { panelNumber } from '@open-pencil/core/geometry'
 import type { GridTrackSizing } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -11,7 +11,7 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const ctx = useLayoutControlsContext()
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const trackProps: GridTrackProp[] = ['gridTemplateColumns', 'gridTemplateRows']
 
 function defaultTrackValue(sizing: GridTrackSizing): number {

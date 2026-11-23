@@ -18,7 +18,7 @@ import {
 
 import { provideEditor } from '#vue/editor/context'
 import { setLocale } from '#vue/i18n/locale'
-import { variablesMessages } from '#vue/i18n/messages'
+import { messageStores } from '#vue/i18n/messages'
 
 const RED = { r: 1, g: 0, b: 0, a: 1 }
 
@@ -218,9 +218,9 @@ describe('variable mode labels in a mounted control', () => {
   }
 
   async function switchLocale(code: 'ja') {
-    const before = variablesMessages.get()
+    const before = messageStores['variables/panel'].get()
     const loaded = createDeferred<undefined>()
-    const stop = variablesMessages.listen((messages) => {
+    const stop = messageStores['variables/panel'].listen((messages) => {
       if (messages !== before) {
         loaded.resolve(undefined)
       }

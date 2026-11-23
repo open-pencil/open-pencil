@@ -7,7 +7,7 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { provideEditor } from '@open-pencil/vue'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { watchCloudAISetup } from '@/app/ai/providers/openpencil/setup'
 import { startCloud } from '@/app/cloud/integration'
@@ -42,7 +42,8 @@ import AppShell from '@/components/shell/AppShell.vue'
 import AppToaster from '@/components/shell/AppToaster.vue'
 import VoiceCallAudio from '@/components/voice-call/VoiceCallAudio.vue'
 
-const { updates, locale } = useI18n()
+const updates = useMessages('updates')
+const { locale } = useLocale()
 const router = useRouter()
 const dir = useInterfaceDirection()
 

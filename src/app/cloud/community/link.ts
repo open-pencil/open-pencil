@@ -2,7 +2,7 @@ import { shallowRef, watch } from 'vue'
 
 import { createCloudAPIClient, downloadCloudDocument } from '@open-pencil/cloud/client'
 import { cloudCommunityPath, parseCloudLinkPath } from '@open-pencil/cloud/contract'
-import { cloudMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import type { EditorStore } from '@/app/editor/session'
 import { storageFetch } from '@/app/integrations/storage/s3/fetch'
@@ -110,6 +110,6 @@ export async function openCloudCommunityLink(link: CloudCommunityLink): Promise<
     setCommunityTab(store, link)
   } catch (error) {
     console.warn('[Cloud] Opening the community document failed:', error)
-    toast.error(cloudMessages.get().communityLinkFailed)
+    toast.error(messageStores['cloud/editor'].get().communityLinkFailed)
   }
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { AgentChoiceCategory } from '@/app/ai/agents/acp/options'
 import {
@@ -20,7 +20,7 @@ import { chatAgentTheme, chatProfileTheme } from '../ui'
  */
 const { category } = defineProps<{ category: AgentChoiceCategory }>()
 
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const profile = chatProfileTheme()
 const ui = chatAgentTheme()
 const offered = computed(() => chatAgentOptions.value?.[category] ?? null)

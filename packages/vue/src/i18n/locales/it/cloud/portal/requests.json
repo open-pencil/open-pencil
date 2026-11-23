@@ -1,0 +1,13 @@
+{
+  "decline": "Rifiuta",
+  "removeAccess": "Revoca accesso",
+  "declineHeading": "Rifiutare {name}?",
+  "declineDescription": "Riceve un’email che lo comunica e può richiedere di nuovo più tardi.",
+  "removeAccessHeading": "Revocare l’accesso a {name}?",
+  "removeAccessDescription": "Non potrà più accedere e riceverà un’email che lo comunica.",
+  "reviewNote": "Nota per gli amministratori (facoltativa)",
+  "noteDetail": "Nota: {note}",
+  "noOneWaiting": "Nessuno in attesa",
+  "nothingHere": "Ancora niente qui",
+  "requestsEmptyDescription": "Le nuove richieste compaiono qui e gli amministratori ricevono un’email per ciascuna."
+}

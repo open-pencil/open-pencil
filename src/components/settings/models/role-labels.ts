@@ -1,10 +1,10 @@
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { AIModelRole } from '@/app/ai/models/types'
 
 /** The name and explanation of each model role, shared by model settings and guided setup. */
 export function useModelRoleLabels() {
-  const { ai } = useI18n()
+  const ai = useMessages('ai')
   return (role: AIModelRole): { label: string; description: string } => {
     const roles = {
       design: [ai.value.modelRoleDesign, ai.value.modelRoleDesignDescription],

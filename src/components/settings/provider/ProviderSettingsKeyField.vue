@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
@@ -28,7 +28,7 @@ const emit = defineEmits<{
   blur: []
 }>()
 
-const { common } = useI18n()
+const common = useMessages('common')
 
 const inputDataTestId = computed(() => {
   if (kind === 'pexels') return 'provider-settings-pexels-key'

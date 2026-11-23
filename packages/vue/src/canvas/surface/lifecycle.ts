@@ -19,11 +19,12 @@ import {
 } from '#vue/canvas/surface/gl-surface'
 import { createImagePreviewDecoder } from '#vue/canvas/surface/image-preview'
 import { useCanvasKitLoader } from '#vue/canvas/surface/kit-loader'
+import { createCanvasOriginTracker } from '#vue/canvas/surface/origin'
 import { createCanvasRenderLoop } from '#vue/canvas/surface/render-loop'
 import { useCanvasResizeObserver } from '#vue/canvas/surface/resize-observer'
 import { createShaderRasterizer } from '#vue/canvas/surface/shader/rasterizer'
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
-import { editorMessages } from '#vue/i18n/messages/editor'
+import { messageStores } from '#vue/i18n'
 
 /**
  * The device's memory in bytes where the browser reports it. Browsers round it and stop at 8 GB,
@@ -68,13 +69,15 @@ export function createCanvasSurfaceManager({
     presentation: null
   }
 
+  const origin = createCanvasOriginTracker(options?.onViewportMove)
+
   // The scene of an editing canvas shows an empty sticky note's placeholder, and every layer an
   // empty connector label's while it is typed into, as the overlays draw the text being edited,
   // in the interface language, and draws them again when the language changes.
   const showsStickyPlaceholder = options?.layer !== 'overlays'
-  let stickyPlaceholder: string = editorMessages.get().stickyPlaceholder
-  let connectorLabelPlaceholder: string = editorMessages.get().connectorLabelPlaceholder
-  const stopPlaceholders = editorMessages.subscribe((messages) => {
+  let stickyPlaceholder: string = messageStores.editor.get().stickyPlaceholder
+  let connectorLabelPlaceholder: string = messageStores.editor.get().connectorLabelPlaceholder
+  const stopPlaceholders = messageStores.editor.subscribe((messages) => {
     if (
       messages.stickyPlaceholder === stickyPlaceholder &&
       messages.connectorLabelPlaceholder === connectorLabelPlaceholder
@@ -125,7 +128,7 @@ export function createCanvasSurfaceManager({
     state.renderer = null
     releaseGLContext()
 
-    sizeCanvas(canvas, editor, options?.onViewportResize)
+    origin.place(sizeCanvas(canvas, editor, options?.onViewportResize))
 
     const result = makeGLSurface(
       ck,
@@ -251,7 +254,7 @@ export function createCanvasSurfaceManager({
       return
     }
 
-    sizeCanvas(canvas, editor, options?.onViewportResize)
+    origin.place(sizeCanvas(canvas, editor, options?.onViewportResize))
 
     const result = makeGLSurface(
       ck,

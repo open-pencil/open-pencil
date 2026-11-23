@@ -2,7 +2,7 @@
 import * as v from 'valibot'
 import { computed, ref } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppPasswordInput from '@/components/ui/input/AppPasswordInput.vue'
@@ -18,7 +18,7 @@ const { purpose, minimumPasswordLength } = defineProps<{
 }>()
 const emit = defineEmits<{ submit: [passwords: { current: string; next: string }] }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const current = ref('')
 const next = ref('')
 const repeat = ref('')

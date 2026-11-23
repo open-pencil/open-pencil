@@ -4,7 +4,7 @@ import { computed } from 'vue'
 
 import { STICKY_COLORS } from '@open-pencil/scene-graph/generated'
 import { useStickyNote } from '@open-pencil/vue/controls/sticky'
-import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import FigJamSwatches from '@/components/figjam/FigJamSwatches.vue'
 import { useStickySwatches } from '@/components/figjam/sticky/swatches'
@@ -16,8 +16,8 @@ import ToolbarMenu from './ToolbarMenu.vue'
 
 /** FigJam's sticky note toolbar: its ten colours, its text menus, and its author line. */
 const sticky = useStickyNote()
-const figjam = useFigJamMessages()
-const { panels } = useI18n()
+const figjam = useMessages('figjam')
+const panels = useMessages('panels')
 const styles = tv(theme)()
 const { swatches, selected } = useStickySwatches(() => sticky.color.value)
 const hex = computed(() => swatches.value.find((swatch) => swatch.value === selected.value)?.hex)

@@ -8,7 +8,7 @@ import type {
   BehaviourPartControl,
   BehaviourValueControl
 } from '@open-pencil/vue/controls/behaviour'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
@@ -28,7 +28,8 @@ const emit = defineEmits<{
   mapValue: [mapping: { on: string; off: string }]
   setNumber: [settings: Omit<BehaviourNumberControl, 'id' | 'type'>]
 }>()
-const { panels } = useI18n()
+const panels = useMessages('panels')
+const behaviourMessages = useMessages('panels/behaviours')
 const labels = useBehaviourLabels()
 
 const part = computed(() => ('part' in row ? row.part : null))
@@ -53,7 +54,9 @@ function variantValues(boolean: BehaviourBooleanControl) {
 const MAPPING_SIDES = ['on', 'off'] as const
 
 const mappingLabel = (side: 'on' | 'off') =>
-  side === 'on' ? panels.value.behaviourOnValue : panels.value.behaviourOffValue
+  side === 'on'
+    ? behaviourMessages.value.behaviourOnValue
+    : behaviourMessages.value.behaviourOffValue
 
 function setMapping(boolean: BehaviourBooleanControl, side: 'on' | 'off', choice: string) {
   emit('mapValue', {
@@ -85,7 +88,7 @@ function commitNumber(number: BehaviourNumberControl, field: NumberSetting, inpu
 }
 
 function numberLabel(field: NumberSetting) {
-  const p = panels.value
+  const p = behaviourMessages.value
   return {
     min: p.behaviourMin,
     max: p.behaviourMax,
@@ -107,9 +110,9 @@ function numberLabel(field: NumberSetting) {
       :label="label"
       :property-id="part.propertyId"
       :options="part.options"
-      :placeholder="panels.behaviourChooseSlot"
-      :empty-label="panels.behaviourNoSlots"
-      :create-label="panels.behaviourAddSlot({ name: label })"
+      :placeholder="behaviourMessages.behaviourChooseSlot"
+      :empty-label="behaviourMessages.behaviourNoSlots"
+      :create-label="behaviourMessages.behaviourAddSlot({ name: label })"
       :missing="part.required"
       :data-property="`behaviour-part-${id}`"
       @bind="emit('bind', $event)"
@@ -120,9 +123,9 @@ function numberLabel(field: NumberSetting) {
         :label="label"
         :property-id="value.propertyId"
         :options="value.options"
-        :placeholder="panels.behaviourChooseProperty"
+        :placeholder="behaviourMessages.behaviourChooseProperty"
         :empty-label="panels.noComponentProperties"
-        :create-label="panels.behaviourAddVariants"
+        :create-label="behaviourMessages.behaviourAddVariants"
         :missing="value.required"
         :data-property="`behaviour-value-${id}`"
         @bind="emit('bind', $event)"
@@ -135,7 +138,9 @@ function numberLabel(field: NumberSetting) {
       >
         <PanelFieldGroup v-for="side in MAPPING_SIDES" :key="side" :label="mappingLabel(side)">
           <AppSelect
-            :label="panels.behaviourValueField({ value: label, side: mappingLabel(side) })"
+            :label="
+              behaviourMessages.behaviourValueField({ value: label, side: mappingLabel(side) })
+            "
             :model-value="value[side] ?? ''"
             :options="variantValues(value)"
             :data-property="`behaviour-value-${id}-${side}`"
@@ -149,9 +154,9 @@ function numberLabel(field: NumberSetting) {
       :label="label"
       :property-id="value.propertyId"
       :options="value.options"
-      :placeholder="panels.behaviourChooseProperty"
+      :placeholder="behaviourMessages.behaviourChooseProperty"
       :empty-label="panels.noComponentProperties"
-      :create-label="panels.behaviourAddTextLayer"
+      :create-label="behaviourMessages.behaviourAddTextLayer"
       :missing="value.required"
       :data-property="`behaviour-value-${id}`"
       @bind="emit('bind', $event)"

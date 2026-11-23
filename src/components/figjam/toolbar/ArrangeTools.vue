@@ -9,7 +9,7 @@ import IconAlignStartVertical from '~icons/lucide/align-start-vertical'
 
 import { usePosition } from '@open-pencil/vue/controls/position'
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { toolIcons } from '@/components/icons'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -20,7 +20,7 @@ import ToolbarOptions, { type ToolbarOption } from './ToolbarOptions.vue'
 /** What FigJam's toolbar offers any several layers: aligning them, and wrapping them in a section. */
 const position = usePosition()
 const { getCommand, runCommand } = useEditorCommands()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 
 type Alignment =
   | 'left'

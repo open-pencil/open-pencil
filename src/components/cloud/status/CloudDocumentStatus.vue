@@ -3,7 +3,7 @@ import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { CloudSyncState } from '@/components/home/cloud/types'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -71,7 +71,7 @@ const syncAttribute = computed(() => {
   return viewOnly ? 'view' : state
 })
 const popover = usePopoverUI({ content: 'w-72 p-3' })
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const summary = computed(() => {
   const m = t.value
   if (showsNotLive.value) return { label: m.statusNotLive, detail: m.statusNotLiveDetail }

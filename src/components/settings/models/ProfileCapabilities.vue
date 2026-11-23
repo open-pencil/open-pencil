@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { AgentChoiceCategory } from '@/app/ai/agents/acp/options'
 import type { AIModelCapability, HarnessPermissionMode, ThinkingLevel } from '@/app/ai/models'
@@ -53,7 +53,8 @@ const permissionMode = defineModel<HarnessPermissionMode>('permissionMode', { re
 
 const emit = defineEmits<{ agentOption: [category: AgentChoiceCategory, value: string] }>()
 
-const { ai, common } = useI18n()
+const ai = useMessages('ai')
+const common = useMessages('common')
 const thinkingLevelOptions = computed(() => buildThinkingLevelOptions(ai.value))
 const permissionOptions = computed(() => [
   { value: 'allow-reads', label: ai.value.harnessPermissionReads },

@@ -3,7 +3,7 @@ import { fetchRemoteFile, type RemoteFile } from '@open-pencil/core/io/remote'
 import type { DesignViewport } from '@open-pencil/dom-css'
 import { imageMimeType } from '@open-pencil/scene-graph/images'
 import { errorMessage } from '@open-pencil/std/errors'
-import { filesMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { pastePoint } from '@/app/editor/clipboard/paste/content'
 import { closeTab, createDocumentTab, openFileInNewTab } from '@/app/tabs'
@@ -37,7 +37,7 @@ async function openImage(file: File): Promise<void> {
     await store.canvasReady
     const point = pastePoint(store)
     if (!(await store.placeFiles([file], point.x, point.y))) {
-      throw new Error(filesMessages.get().openURLUnsupported)
+      throw new Error(messageStores.files.get().openURLUnsupported)
     }
   } catch (error) {
     // A picture that could not be placed leaves no empty design behind.
@@ -48,7 +48,7 @@ async function openImage(file: File): Promise<void> {
 
 /** Why an address could not be read, in words the dialog shows. */
 function fetchFailure(error: unknown): string {
-  const files = filesMessages.get()
+  const files = messageStores.files.get()
   // The browser reports a site that refuses to be read by other sites as a bare network error.
   if (error instanceof TypeError && !IS_TAURI) return files.openURLBlocked
   return errorMessage(error)
@@ -69,7 +69,7 @@ export interface WebPageOpenOptions {
  * holds nothing OpenPencil opens, so the address can be corrected before anything opens.
  */
 export async function fetchWebAddress(url: URL, signal?: AbortSignal): Promise<OpenableRemoteFile> {
-  const files = filesMessages.get()
+  const files = messageStores.files.get()
   let remote: RemoteFile
   try {
     remote = await fetchRemoteFile(url, { fetch: remoteFetch, signal, io })

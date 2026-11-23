@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const automationMessageDefaults = {
   aiToolAccessDescription:
     'Choose tools for direct AI model connections. ACP and Pi agents use MCP access instead.',
@@ -111,5 +109,3 @@ export const automationMessageDefaults = {
   statusStopped: 'Stopped',
   statusError: 'Error'
 } as const
-
-export const automationMessages = i18n('automation', automationMessageDefaults)

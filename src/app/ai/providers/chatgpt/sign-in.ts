@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import * as v from 'valibot'
 
-import { aiMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { openExternalLink } from '@/app/shell/ui'
 import { tauriFetch } from '@/app/tauri/http'
@@ -31,7 +31,7 @@ const loopbackOutcomeSchema = v.variant('kind', [
 async function loopbackCallback(
   state: string
 ): Promise<SignInCallback | { failure: 'port-in-use' }> {
-  const ai = aiMessages.get()
+  const ai = messageStores.ai.get()
   // The browser shows these after the redirect, so they come in the app's language.
   const pages = {
     signedIn: ai.aiSetupChatGPTCallbackSignedIn,

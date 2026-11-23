@@ -3,7 +3,7 @@ import { createColumnHelper } from '@tanstack/vue-table'
 import { computed, h } from 'vue'
 
 import type { CloudAdminEmailFilter } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   usePortalList,
@@ -28,7 +28,7 @@ const { load, busy = null } = defineProps<{
 }>()
 const emit = defineEmits<{ retry: [id: string] }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const tones = {
   sent: 'success',
   waiting: 'neutral',
@@ -47,6 +47,8 @@ const kindLabels = computed<Record<string, string>>(() => ({
   'enrollment-requested': messages.value.emailKindEnrollmentRequested,
   'admin-enrollment-notification': messages.value.emailKindAdminNotification,
   'enrollment-approved': messages.value.emailKindEnrollmentApproved,
+  // The beta's invitation letter, no longer sent; the ones kept in the outbox approved a request.
+  'enrollment-invited': messages.value.emailKindEnrollmentApproved,
   'enrollment-rejected': messages.value.emailKindEnrollmentRejected,
   'enrollment-revoked': messages.value.emailKindEnrollmentRevoked,
   'email-verification': messages.value.emailKindVerification,

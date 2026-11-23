@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 import { toPercent } from '@open-pencil/vue/controls/color-model'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import EyedropperButton from '@/components/color-picker-panel/EyedropperButton.vue'
 import OkhclChannelSlider from '@/components/color-picker-panel/OkhclChannelSlider.vue'
 
 const ctx = useColorPickerPanelContext()
-const { panels } = useI18n()
+const pickerMessages = useMessages('panels/pickers')
 const percentText = (value: number) => `${Math.round(toPercent(value))}%`
 </script>
 
@@ -19,7 +19,7 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
       <EyedropperButton v-if="ctx.eyedropper" />
       <div class="flex min-w-0 flex-1 flex-col gap-2">
         <OkhclChannelSlider
-          :label="panels.hue"
+          :label="pickerMessages.hue"
           :model-value="ctx.okhcl.okhcl.h"
           :min="0"
           :max="360"
@@ -31,7 +31,7 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
         />
 
         <OkhclChannelSlider
-          :label="panels.chroma"
+          :label="pickerMessages.chroma"
           :model-value="ctx.okhcl.okhcl.c"
           :min="0"
           :max="0.4"
@@ -44,7 +44,7 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
         />
 
         <OkhclChannelSlider
-          :label="panels.lightness"
+          :label="pickerMessages.lightness"
           :model-value="ctx.okhcl.okhcl.l"
           :min="0"
           :max="1"
@@ -57,7 +57,7 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
         />
 
         <OkhclChannelSlider
-          :label="panels.alpha"
+          :label="pickerMessages.alpha"
           :model-value="ctx.okhcl.okhcl.a ?? 1"
           :min="0"
           :max="1"

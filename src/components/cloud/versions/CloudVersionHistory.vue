@@ -14,7 +14,7 @@ import {
 import { computed, onMounted, useTemplateRef } from 'vue'
 
 import type { DocumentVersion } from '@open-pencil/cloud/contract'
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { canLinkToVersions, cloudVersionLinkURL } from '@/app/cloud/documents/link'
 import { duplicateVersion, editVersion, restoreVersion } from '@/app/cloud/versions/actions'
@@ -45,7 +45,7 @@ import { cloudVersions } from './ui'
  * document's versions, newest first. Choosing one shows it read-only in place of the document.
  */
 const shown = useEditorStore()
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const ui = cloudVersions()
 const menuCls = useMenuUI({ content: 'min-w-52', item: 'justify-start gap-2' })
 const filterItem = menuItem({ justify: 'start', class: 'relative pl-7' })

@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { documentDownloadSchema, documentKindSchema } from './documents'
+import { documentDownloadSchema, documentKindSchema, isCloudChecksum } from './documents'
 
 /**
  * Where a community document's thumbnail is served, by its document and revision: the address
@@ -47,6 +47,17 @@ export const communityDownloadQuerySchema = v.object({
   version: v.optional(v.pipe(v.string(), v.uuid()))
 })
 export type CommunityDownloadQuery = v.InferOutput<typeof communityDownloadQuerySchema>
+
+/**
+ * One stored part of a gallery document, its file or one of its images, by checksum, as it is
+ * now or in one of its named versions: what any page downloads it through, since storage answers
+ * only the deployment's own pages.
+ */
+export const communityObjectQuerySchema = v.object({
+  checksum: v.pipe(v.string(), v.check(isCloudChecksum)),
+  version: v.optional(v.pipe(v.string(), v.uuid()))
+})
+export type CommunityObjectQuery = v.InferOutput<typeof communityObjectQuerySchema>
 
 export function parseCommunityDownloadQuery(input: unknown): CommunityDownloadQuery {
   return v.parse(communityDownloadQuerySchema, input)

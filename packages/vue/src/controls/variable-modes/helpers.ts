@@ -15,7 +15,7 @@ import {
   collectionLabels,
   type NumberedCollectionFormat
 } from '#vue/controls/variable-modes/labels'
-import { variablesMessages } from '#vue/i18n/messages'
+import { messageStores } from '#vue/i18n/messages'
 
 /** A mode as the control lists it. */
 export type VariableModeOption = Pick<VariableCollectionMode, 'modeId' | 'name'>
@@ -55,7 +55,7 @@ function shared<T>(values: readonly T[]): MixedValue<T> {
 export function variableModeChoices(
   editor: Editor,
   targets: SceneNode[],
-  numbered: NumberedCollectionFormat = variablesMessages.get().numberedCollection
+  numbered: NumberedCollectionFormat = messageStores['variables/panel'].get().numberedCollection
 ): VariableModeChoice[] {
   if (targets.length === 0) return []
   const { graph } = editor

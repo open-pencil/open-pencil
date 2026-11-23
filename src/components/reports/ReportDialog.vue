@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { ReportSendFailure } from '@/app/reports/send'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -48,7 +48,7 @@ const email = defineModel<string>('email', { default: '' })
 const includeActivity = defineModel<boolean>('includeActivity', { default: true })
 const attachDocument = defineModel<boolean>('attachDocument', { default: false })
 
-const { diagnostics: messages } = useI18n()
+const messages = useMessages('diagnostics')
 const ui = tv(reportsTheme)()
 
 const heading = computed(() =>

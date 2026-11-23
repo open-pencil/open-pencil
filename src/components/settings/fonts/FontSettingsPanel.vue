@@ -7,7 +7,7 @@ import {
   WEB_FONT_PROVIDER_LABELS
 } from '@open-pencil/core/text'
 import type { WebFontProviderId } from '@open-pencil/core/text'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { DEFAULT_ONLINE_FONTS } from '@/app/editor/fonts'
 import { useFontSettings } from '@/app/settings/fonts/use'
@@ -23,7 +23,8 @@ import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
  * Where text gets its fonts: the system's, online providers', and on desktop the downloaded
  * cache and fallback packs.
  */
-const { fonts, common } = useI18n()
+const fonts = useMessages('fonts')
+const common = useMessages('common')
 /** Only the desktop app downloads fonts to disk; the browser leaves caching to itself. */
 const desktop = isTauri()
 const {
