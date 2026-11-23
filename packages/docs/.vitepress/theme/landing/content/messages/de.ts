@@ -237,6 +237,7 @@ export const de: LandingMessages = {
     lede: 'Der Design-Arbeitsbereich deines Teams, für dich gehostet. Alle bearbeiten dieselben Dateien live, teilen sie per Link und gestalten mit KI, bezahlt aus den Credits des Plans, ohne etwas zu installieren oder zu betreiben. Starte kostenlos mit 300 MB und exportiere deine Dateien jederzeit als .fig.',
     signUp: 'OpenPencil Cloud ausprobieren',
     plans: 'Pläne ansehen',
+    community: 'Community-Dateien ansehen',
     features: [
       {
         title: 'Team-Sync in Echtzeit',

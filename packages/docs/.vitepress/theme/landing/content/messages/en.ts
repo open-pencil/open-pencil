@@ -230,6 +230,7 @@ export const en: LandingMessages = {
     lede: 'Your team’s design workspace, hosted for you. Everyone edits the same files live, shares them with a link, and designs with AI paid from the plan’s credits, with nothing to install or run. Start free with 300 MB, and export your files as .fig whenever you like.',
     signUp: 'Try OpenPencil Cloud',
     plans: 'See plans',
+    community: 'Browse community files',
     features: [
       {
         title: 'Real-time team sync',

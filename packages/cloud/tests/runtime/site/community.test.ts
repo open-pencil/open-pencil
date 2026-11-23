@@ -4,15 +4,20 @@ import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
 
 const DOCUMENT_ID = '0b6f4f9e-3c1a-4d7e-9a52-6f1c2d3e4f50'
 const REVISION_ID = '5d4c3b2a-1f0e-4d9c-8b7a-6f5e4d3c2b1a'
+const VERSION_ID = '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d'
 
 const portal =
-  '<!doctype html><html><head><title>OpenPencil Cloud</title></head><body></body></html>'
+  '<!doctype html><html><head><title>OpenPencil Cloud</title></head><body><div id="app"></div></body></html>'
 const site: SiteFiles = async (path) =>
   path === '/cloud.html'
     ? { body: Uint8Array.from(new TextEncoder().encode(portal)), type: 'text/html' }
     : null
 
-function server(gallery: boolean | 'limited', name = 'Tour <of> "OpenPencil"') {
+function server(
+  gallery: boolean | 'limited',
+  name = 'Tour <of> "OpenPencil"',
+  indexingPolicy: 'allow' | 'deny' = 'allow'
+) {
   const api = {
     fetch: (request: Request) => {
       if (new URL(request.url).pathname !== '/api/community') {
@@ -34,13 +39,21 @@ function server(gallery: boolean | 'limited', name = 'Tour <of> "OpenPencil"') {
             updatedAt: '2026-11-14T00:00:00.000Z',
             revisionId: REVISION_ID,
             thumbnailPath: `/api/community/thumbnails/${DOCUMENT_ID}/${REVISION_ID}`,
-            versions: []
+            versions: [
+              {
+                id: VERSION_ID,
+                name: '0.17.0',
+                description: 'Notes </script><b>bold</b>',
+                createdAt: '2026-11-14T00:00:00.000Z',
+                current: true
+              }
+            ]
           }
         ]
       })
     }
   }
-  return createCloudServer(api, { site, indexingPolicy: 'allow' })
+  return createCloudServer(api, { site, indexingPolicy })
 }
 
 const visit = (app: ReturnType<typeof server>, path: string) =>
@@ -123,5 +136,48 @@ describe('community pages', () => {
       await visit(server(true, 'Price $& $` $$'), `/community/${DOCUMENT_ID}`)
     )
     expect(head.meta['og:title']).toBe('Price $& $` $$ · Community · cloud.example')
+  })
+
+  test('draw the document into the app root, escaped, for crawlers that run no script', async () => {
+    const html = await (await visit(server(true), `/community/${DOCUMENT_ID}`)).text()
+    const root = html.slice(html.indexOf('<div id="app">'), html.indexOf('</body>'))
+    expect(root).toContain('<h1>Tour &lt;of&gt; &quot;OpenPencil&quot;</h1>')
+    expect(root).toContain(`href="/community/${DOCUMENT_ID}/open"`)
+    expect(root).toContain('<time datetime="2026-11-14T00:00:00.000Z">0.17.0</time>')
+    expect(root).not.toContain('<b>bold</b>')
+  })
+
+  test('describe the document as structured data that cannot close its script', async () => {
+    const html = await (await visit(server(true), `/community/${DOCUMENT_ID}`)).text()
+    const scripts = html.match(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)
+    expect(scripts).toHaveLength(1)
+    const json = (scripts?.[0] ?? '').replace(/^<script[^>]*>/, '').replace(/<\/script>$/, '')
+    const data: unknown = JSON.parse(json)
+    expect(data).toMatchObject({
+      '@type': 'CreativeWork',
+      name: 'Tour <of> "OpenPencil"',
+      description: 'Notes </script><b>bold</b>',
+      url: `https://cloud.example/community/${DOCUMENT_ID}`,
+      version: '0.17.0'
+    })
+  })
+
+  test('list the gallery’s files with links to their pages', async () => {
+    const html = await (await visit(server(true), '/community')).text()
+    expect(html).toContain(`href="/community/${DOCUMENT_ID}"`)
+    expect(html).toContain('"@type":"CollectionPage"')
+  })
+
+  test('list the gallery’s pages in a sitemap where indexing is allowed', async () => {
+    const sitemap = await server(true).request('https://cloud.example/sitemap.xml')
+    expect(sitemap.headers.get('Content-Type')).toContain('application/xml')
+    const xml = await sitemap.text()
+    expect(xml).toStartWith('<?xml version="1.0" encoding="UTF-8"?>\n<urlset')
+    expect(xml).toContain('<loc>https://cloud.example/community</loc>')
+    expect(xml).toContain(
+      `<url><loc>https://cloud.example/community/${DOCUMENT_ID}</loc><lastmod>2026-11-14T00:00:00.000Z</lastmod></url>`
+    )
+    const denied = server(true, 'Tour', 'deny')
+    expect((await denied.request('https://cloud.example/sitemap.xml')).status).toBe(404)
   })
 })

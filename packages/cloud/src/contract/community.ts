@@ -8,6 +8,9 @@ import { documentDownloadSchema, documentKindSchema, isCloudChecksum } from './d
  */
 export const COMMUNITY_THUMBNAIL_PATH = '/api/community/thumbnails'
 
+/** Where a deployment that lets search engines index it lists its gallery's pages for them. */
+export const COMMUNITY_SITEMAP_PATH = '/sitemap.xml'
+
 export function communityThumbnailPath(documentId: string, revisionId: string): string {
   return `${COMMUNITY_THUMBNAIL_PATH}/${documentId}/${revisionId}`
 }

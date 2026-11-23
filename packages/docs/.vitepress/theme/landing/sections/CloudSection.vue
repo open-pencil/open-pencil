@@ -5,6 +5,7 @@ import IconMessageSquare from '~icons/lucide/message-square'
 import IconRefreshCw from '~icons/lucide/refresh-cw'
 import IconServer from '~icons/lucide/server'
 import IconSparkles from '~icons/lucide/sparkles'
+import IconLayoutGrid from '~icons/lucide/layout-grid'
 import IconTag from '~icons/lucide/tag'
 
 import { LINKS } from '../content/links'
@@ -28,6 +29,9 @@ const ICONS = [IconRefreshCw, IconMessageSquare, IconHistory, IconSparkles, Icon
         {{ messages.cloud.signUp }}
       </ActionButton>
       <ActionButton :href="LINKS.pricing" :icon="IconTag">{{ messages.cloud.plans }}</ActionButton>
+      <ActionButton :href="LINKS.community" :icon="IconLayoutGrid">
+        {{ messages.cloud.community }}
+      </ActionButton>
     </div>
     <dl class="landing-facts">
       <div v-for="(feature, index) in messages.cloud.features" :key="feature.title">

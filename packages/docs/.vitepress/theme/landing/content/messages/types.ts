@@ -64,6 +64,8 @@ export interface LandingMessages {
     /** Opens the official server's editor, where a visitor signs up. */
     signUp: string
     plans: string
+    /** Opens the official Cloud's community gallery. */
+    community: string
     features: TitledDetail[]
   }
   closing: {
