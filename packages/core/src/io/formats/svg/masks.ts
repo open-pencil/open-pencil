@@ -1,134 +1,104 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
-import { isVisibleMask, maskRuns } from '@open-pencil/scene-graph/masks'
+import { asMaskShape, isVisibleMask, maskRuns } from '@open-pencil/scene-graph/masks'
 
 import { subtreeRenderBounds } from '#core/geometry/render-bounds'
 
-import { nextDefId, type SVGExportContext } from './defs'
+import { defRegion, nextDefId, type SVGExportContext } from './defs'
 import { svg, svgElement, type SVGNode } from './node'
-import { round } from './paths'
 
 type RenderSVGChild = (node: SceneNode, ctx: SVGExportContext) => SVGNode | null
 
-function maskRunBounds(masks: readonly SceneNode[], ctx: SVGExportContext): VisualBounds | null {
-  let bounds: VisualBounds | null = null
-  for (const mask of masks) {
-    bounds = unionVisualBounds(
-      bounds,
-      subtreeRenderBounds(ctx.graph, mask, getNodeLocalMatrix(mask), { reach: 'drawn' })
-    )
-  }
-  return bounds
+function maskBounds(mask: SceneNode, ctx: SVGExportContext): VisualBounds | null {
+  return subtreeRenderBounds(ctx.graph, mask, getNodeLocalMatrix(mask), { reach: 'drawn' })
 }
 
-function renderLuminanceMaskMember(
-  mask: SceneNode,
+/**
+ * A luminance mask as the alpha it masks with. The canvas takes Skia's luma of the premultiplied
+ * color and masks with the layer once more, so half opacity reveals a quarter of what it masks.
+ * `luminanceToAlpha` reads the color before alpha, so the layer's alpha goes in twice.
+ */
+function luminanceAsAlpha(
   rendered: SVGNode,
+  bounds: VisualBounds | null,
   ctx: SVGExportContext
 ): SVGNode {
-  const filterId = nextDefId(ctx, 'maskLuma')
-  const bounds = subtreeRenderBounds(ctx.graph, mask, getNodeLocalMatrix(mask), { reach: 'drawn' })
-  const regionAttrs: Record<string, string | number> = bounds
-    ? {
-        x: round(bounds.minX),
-        y: round(bounds.minY),
-        width: round(Math.max(0, bounds.maxX - bounds.minX)),
-        height: round(Math.max(0, bounds.maxY - bounds.minY)),
-        filterUnits: 'userSpaceOnUse'
-      }
-    : {}
+  const id = nextDefId(ctx, 'maskLuma')
+  const region = bounds ? { ...defRegion(bounds), filterUnits: 'userSpaceOnUse' } : {}
   ctx.defs.push(
-    svgElement('filter', { id: filterId, ...regionAttrs, 'color-interpolation-filters': 'sRGB' }, [
+    svgElement('filter', { id, ...region, 'color-interpolation-filters': 'sRGB' }, [
       svg('feColorMatrix', { in: 'SourceGraphic', type: 'luminanceToAlpha', result: 'luma' }),
-      // Skia scales luminance by the mask alpha once via premultiplied color and a second time
-      // via DstIn, so half opacity reveals a quarter of what it masks.
-      svg('feComposite', { in: 'luma', in2: 'SourceGraphic', operator: 'in' })
+      svg('feComposite', { in: 'luma', in2: 'SourceGraphic', operator: 'in', result: 'lumaAlpha' }),
+      svg('feComposite', { in: 'lumaAlpha', in2: 'SourceGraphic', operator: 'in' })
     ])
   )
-  return svgElement('g', { filter: `url(#${filterId})` }, [rendered])
+  return svgElement('g', { filter: `url(#${id})` }, [rendered])
 }
 
-function renderMaskMember(
+/**
+ * One mask of a run, drawn as the canvas draws it (`renderMaskNodeContent`): an outline mask with
+ * its own fills opaque, its layers as they are, and its opacity and blur but not its blend mode.
+ */
+function renderMask(
   mask: SceneNode,
+  bounds: VisualBounds | null,
   ctx: SVGExportContext,
   renderNode: RenderSVGChild
 ): SVGNode | null {
-  const previousInVectorMask = ctx.inVectorMask
-  if (mask.maskType === 'VECTOR') {
-    ctx.inVectorMask = true
-  }
-  let rendered: SVGNode | null
-  try {
-    // A mask's opacity and blur reach what it masks, while its blend mode does not.
-    rendered = renderNode({ ...mask, blendMode: 'PASS_THROUGH' }, ctx)
-  } finally {
-    ctx.inVectorMask = previousInVectorMask
-  }
+  const rendered = renderNode(asMaskShape({ ...mask, blendMode: 'PASS_THROUGH' }), ctx)
   if (!rendered) return null
-  if (mask.maskType === 'LUMINANCE') {
-    return renderLuminanceMaskMember(mask, rendered, ctx)
-  }
-  return rendered
+  return mask.maskType === 'LUMINANCE' ? luminanceAsAlpha(rendered, bounds, ctx) : rendered
 }
 
+/**
+ * A container's children bottom to top, as the canvas draws them (`renderMaskedChildIds`): each
+ * mask run's masked siblings in a group held to an alpha `<mask>` of what its masks draw. A run
+ * with nothing to mask draws nothing.
+ */
 export function renderMaskedChildren(
   childNodes: readonly SceneNode[],
   ctx: SVGExportContext,
   renderNode: RenderSVGChild
 ): SVGNode[] {
   const out: SVGNode[] = []
+  const renderInto = (target: SVGNode[], nodes: readonly SceneNode[]) => {
+    for (const node of nodes) {
+      const rendered = renderNode(node, ctx)
+      if (rendered) target.push(rendered)
+    }
+  }
   let next = 0
   for (const run of maskRuns(childNodes, isVisibleMask)) {
-    for (; next < run.start; next++) {
-      const rendered = renderNode(childNodes[next], ctx)
-      if (rendered) out.push(rendered)
-    }
+    renderInto(out, childNodes.slice(next, run.start))
     next = run.end
     if (run.maskedStart === run.end) continue
 
-    const maskedContent: SVGNode[] = []
-    for (const sibling of childNodes.slice(run.maskedStart, run.end)) {
-      const rendered = renderNode(sibling, ctx)
-      if (rendered) maskedContent.push(rendered)
-    }
-    if (maskedContent.length === 0) continue
+    const masked: SVGNode[] = []
+    renderInto(masked, childNodes.slice(run.maskedStart, run.end))
+    if (masked.length === 0) continue
 
-    const masks = childNodes.slice(run.start, run.maskedStart)
+    let runBounds: VisualBounds | null = null
     const maskElements: SVGNode[] = []
-    for (const mask of masks) {
-      const rendered = renderMaskMember(mask, ctx, renderNode)
+    for (const mask of childNodes.slice(run.start, run.maskedStart)) {
+      const bounds = maskBounds(mask, ctx)
+      runBounds = unionVisualBounds(runBounds, bounds)
+      const rendered = renderMask(mask, bounds, ctx, renderNode)
       if (rendered) maskElements.push(rendered)
     }
     if (maskElements.length === 0) continue
 
-    const maskId = nextDefId(ctx, 'mask')
-    const bounds = maskRunBounds(masks, ctx)
-    const boundsAttrs = bounds
-      ? {
-          x: round(bounds.minX),
-          y: round(bounds.minY),
-          width: round(Math.max(0, bounds.maxX - bounds.minX)),
-          height: round(Math.max(0, bounds.maxY - bounds.minY))
-        }
-      : {}
+    const id = nextDefId(ctx, 'mask')
+    const region = runBounds ? defRegion(runBounds) : {}
     ctx.defs.push(
       svgElement(
         'mask',
-        {
-          id: maskId,
-          style: 'mask-type:alpha',
-          maskUnits: 'userSpaceOnUse',
-          ...boundsAttrs
-        },
+        { id, style: 'mask-type:alpha', maskUnits: 'userSpaceOnUse', ...region },
         maskElements
       )
     )
-    out.push(svgElement('g', { mask: `url(#${maskId})` }, maskedContent))
+    out.push(svgElement('g', { mask: `url(#${id})` }, masked))
   }
-  for (; next < childNodes.length; next++) {
-    const rendered = renderNode(childNodes[next], ctx)
-    if (rendered) out.push(rendered)
-  }
+  renderInto(out, childNodes.slice(next))
   return out
 }

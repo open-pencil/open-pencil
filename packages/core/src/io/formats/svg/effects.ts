@@ -7,7 +7,7 @@ import { maxOf } from '@open-pencil/std/arrays'
 import { subtreeRenderBounds } from '#core/geometry/render-bounds'
 import { shadowSpread } from '#core/geometry/shadows'
 
-import { nextDefId, type SVGExportContext } from './defs'
+import { defRegion, nextDefId, type SVGExportContext } from './defs'
 import { FilterBuilder, HARD_ALPHA } from './filter'
 import { noiseFilter, textureFilter } from './grain'
 import { svg, svgElement, type SVGNode } from './node'
@@ -245,18 +245,15 @@ function filterRegion(
   const roughened = maxOf(
     node.effects.map((e) => (e.visible && e.type === 'TEXTURE' ? e.radius : 0)).concat(0)
   )
-  const region = {
+  const region = defRegion({
     minX: Math.min(drawn.minX, -roughened),
     minY: Math.min(drawn.minY, -roughened),
     maxX: Math.max(drawn.maxX, node.width + roughened),
     maxY: Math.max(drawn.maxY, node.height + roughened)
-  }
+  })
   return {
     id,
-    x: round(region.minX),
-    y: round(region.minY),
-    width: round(region.maxX - region.minX),
-    height: round(region.maxY - region.minY),
+    ...region,
     filterUnits: 'userSpaceOnUse',
     'color-interpolation-filters': 'sRGB'
   }

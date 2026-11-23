@@ -5,7 +5,7 @@ import {
   getDefaultRenderColorSpace,
   type RenderColorSpace
 } from '@open-pencil/scene-graph/color'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
+import { computeBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import {
   gradientPoint,
   invertGradientTransform,
@@ -43,8 +43,6 @@ export interface SVGExportContext {
    * given out so far, defs included, so no two elements share one.
    */
   layerIds?: { names: Map<string, number>; taken: Set<string> }
-  /** True while rendering inside a `VECTOR` mask so descendant fills are treated as opaque. */
-  inVectorMask?: boolean
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {
@@ -52,6 +50,16 @@ export function nextDefId(ctx: SVGExportContext, prefix: string): string {
   while (ctx.layerIds?.taken.has(id)) id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
   ctx.layerIds?.taken.add(id)
   return id
+}
+
+/** The `x`, `y`, `width`, and `height` of a filter or mask region around `bounds`. */
+export function defRegion(bounds: VisualBounds): Record<'x' | 'y' | 'width' | 'height', number> {
+  return {
+    x: round(bounds.minX),
+    y: round(bounds.minY),
+    width: round(Math.max(0, bounds.maxX - bounds.minX)),
+    height: round(Math.max(0, bounds.maxY - bounds.minY))
+  }
 }
 
 export function formatColor(

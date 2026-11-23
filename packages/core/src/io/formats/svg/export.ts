@@ -8,7 +8,6 @@ import {
 } from '@open-pencil/scene-graph/coordinate'
 import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
-import { asMaskShape } from '@open-pencil/scene-graph/masks'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { normalizeDashPattern } from '#core/canvas/strokes/draw'
@@ -391,13 +390,12 @@ function exportedFill(
 }
 
 function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
-  const sourceNode = ctx.inVectorMask ? asMaskShape({ ...node, maskType: 'VECTOR' }) : node
-  if (!sourceNode.visible) return null
+  if (!node.visible) return null
   // A layer without a name has nothing to be found by.
-  if (!ctx.layerIds || !sourceNode.name) return drawNode(sourceNode, ctx)
+  if (!ctx.layerIds || !node.name) return drawNode(node, ctx)
   // Parents take their names before their children, so a repeated name counts in layer order.
-  const id = layerId(sourceNode.name, ctx.layerIds)
-  const drawn = drawNode(sourceNode, ctx)
+  const id = layerId(node.name, ctx.layerIds)
+  const drawn = drawNode(node, ctx)
   if (!drawn) return null
   // A layer drawn as its only child's element keeps that child's id and gets its own group.
   if ('id' in drawn.attrs) return svg('g', { id }, drawn)
