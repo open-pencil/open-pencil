@@ -49,6 +49,26 @@ message Group {
   })
 })
 
+test('a new enum member on a value already in use is refused', () => {
+  const next = parseSchema(`
+enum Kind {
+  A = 0;
+  B = 0;
+}
+
+struct Point {
+  float x;
+  float y;
+}
+
+message Shape {
+  Kind kind = 1;
+  Point[] points = 2;
+}
+`)
+  expect(incompatibleChanges(CURRENT, next)).toEqual(['Kind.B reuses 0, which is A'])
+})
+
 test('an update that removes, renumbers or retypes anything is refused, naming each change', () => {
   const next = parseSchema(`
 enum Kind {

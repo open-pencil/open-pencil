@@ -30,7 +30,7 @@ export function incompatibleChanges(current: Schema, next: Schema): string[] {
         : [`${definition.name} changed its struct fields`]
     }
     const fields = new Map(updated.fields.map((field) => [field.name, field]))
-    return definition.fields.flatMap((field) => {
+    const changes = definition.fields.flatMap((field) => {
       const changed = fields.get(field.name)
       const name = `${definition.name}.${field.name}`
       if (!changed) return [`${name} was removed`]
@@ -38,6 +38,18 @@ export function incompatibleChanges(current: Schema, next: Schema): string[] {
       const after = signature(updated, changed)
       return before === after ? [] : [`${name} changed from ${before} to ${after}`]
     })
+    // Kiwi allows enum aliases, and the last one names the value, so a new member on an existing
+    // value would read old data under its name; messages refuse a number used twice.
+    if (definition.kind !== 'ENUM') return changes
+    const known = new Map(definition.fields.map((field) => [field.value, field.name]))
+    const names = new Set(definition.fields.map((field) => field.name))
+    const reused = updated.fields.flatMap((field) => {
+      const owner = known.get(field.value)
+      return names.has(field.name) || owner === undefined
+        ? []
+        : [`${definition.name}.${field.name} reuses ${field.value}, which is ${owner}`]
+    })
+    return [...changes, ...reused]
   })
 }
 
