@@ -98,10 +98,7 @@ async function readToolArgs(args: {
   args?: string
   'args-file'?: string
 }): Promise<Record<string, unknown>> {
-  const file = args['args-file']
-  // Citty's parser treats a bare `-` after `--args-file` as another flag, so `--args-file -`
-  // arrives as an empty string; that empty value still means standard input.
-  const source = file !== undefined ? await readTextSource(file || '-') : args.args
+  const source = args['args-file'] ? await readTextSource(args['args-file']) : args.args
   if (!source) return {}
   const value: unknown = JSON.parse(source)
   // Valibot records accept arrays as index-keyed objects; tools never take them.
