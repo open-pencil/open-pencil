@@ -20,7 +20,7 @@ Mit einem Objektnamen wählt die App alle Ebenen auf der aktuellen Seite aus, di
 Die Webversion nimmt denselben Link aus ihrer Adressleiste an:
 
 ```
-https://app.openpencil.dev/?file=https://raw.githubusercontent.com/open-pencil/open-pencil/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
+https://cloud.openpencil.dev/?file=https://raw.githubusercontent.com/open-pencil/open-pencil/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
 ```
 
 Hier ist `file` eine absolute `https:`-URL, die auf `.pen` oder `.fig` endet – die Webversion hat kein Dateisystem, daher werden ein relativer Pfad, eine `http:`-URL oder jede andere Endung mit einer Warnung in der Konsole und sonst ohne Folgen abgelehnt. Die Endung wird dem Pfad der URL entnommen, ein Query-String an der verlinkten Datei ändert also nichts. Ein Fragment wird vor dem Abruf entfernt: Es erreicht den Server nie, daher öffnen `…/hikyo.pen#a` und `…/hikyo.pen#b` einen Tab, nicht zwei. `node` verhält sich genau wie oben: dieselbe Auswahl nach exaktem Namen samt Zoom, derselbe Hinweis, wenn keine Ebene den Namen trägt. Beide Werte sind URL-kodiert, ein literales `+` muss als `%2B` gesendet werden, und bei einem wiederholten Schlüssel gilt der letzte Wert, wie in der Desktop-Anwendung. Der Link wird auf jeder Route verarbeitet, `/share/<room>?file=…` und `/demo?file=…` funktionieren also wie `/?file=…`.

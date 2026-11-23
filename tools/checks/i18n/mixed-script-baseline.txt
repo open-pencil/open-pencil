@@ -758,6 +758,8 @@ ja:cloud.updateOpenPencil
 ja:cloud.creditsLowBanner
 ja:cloud.creditsOutBanner
 ja:cloud.creditsOutUntilBanner
+ja:cloud.movingBanner
+ja:cloud.movingOpen
 ja:cloud.notifyConflict
 ja:cloud.notifyConflictHint
 ja:cloud.notifyStorageFull
@@ -769,6 +771,8 @@ zh-cn:cloud.updateOpenPencil
 zh-cn:cloud.creditsLowBanner
 zh-cn:cloud.creditsOutBanner
 zh-cn:cloud.creditsOutUntilBanner
+zh-cn:cloud.movingBanner
+zh-cn:cloud.movingOpen
 zh-cn:cloud.notifyConflict
 zh-cn:cloud.notifyConflictHint
 zh-cn:cloud.notifyStorageFull

@@ -36,6 +36,8 @@
   "errorEditorOutdatedDescription": "このサーバーには、このバージョンより新しい OpenPencil が必要です。",
   "editorOutdatedBanner": "{host} には新しいバージョンの OpenPencil が必要です。アップデートすると、引き続きそこにあるファイルで作業できます。",
   "updateOpenPencil": "OpenPencil をアップデート",
+  "movingBanner": "OpenPencil は {date} に {host} へ移転します。このブラウザのファイルはここに残るので、それまでに Cloud に保存するかダウンロードしてください。",
+  "movingOpen": "Cloud で開く",
   "errorDeniedHeading": "サインインが拒否されました",
   "errorDeniedDescription": "ブラウザでリクエストが拒否されました。もう一度サインインを始めてください。",
   "errorExpiredHeading": "コードの有効期限が切れました",

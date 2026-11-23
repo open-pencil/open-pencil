@@ -100,7 +100,7 @@ La colaboración funciona directamente entre participantes mediante WebRTC y no 
 
 **Escritorio:** Tauri v2, unos 7 MB, para macOS, Windows y Linux, con menús nativos, uso sin conexión y guardado automático.
 
-**Web:** [app.openpencil.dev](https://app.openpencil.dev), instalable como PWA y adaptado a pantallas táctiles.
+**Web:** [cloud.openpencil.dev](https://cloud.openpencil.dev), instalable como PWA y adaptado a pantallas táctiles.
 
 ## Carga alternativa desde Google Fonts
 

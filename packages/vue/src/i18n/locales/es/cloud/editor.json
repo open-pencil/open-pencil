@@ -36,6 +36,8 @@
   "errorEditorOutdatedDescription": "Este servidor necesita una versión de OpenPencil más reciente que esta.",
   "editorOutdatedBanner": "{host} necesita una versión más reciente de OpenPencil. Actualízala para seguir trabajando con tus archivos allí.",
   "updateOpenPencil": "Actualizar OpenPencil",
+  "movingBanner": "OpenPencil se muda a {host} el {date}. Los archivos guardados en este navegador se quedan aquí: guárdalos en Cloud o descárgalos antes.",
+  "movingOpen": "Abrir en Cloud",
   "errorDeniedHeading": "Se ha denegado el inicio de sesión",
   "errorDeniedDescription": "La solicitud se rechazó en el navegador. Empieza de nuevo para iniciar sesión.",
   "errorExpiredHeading": "El código ha caducado",

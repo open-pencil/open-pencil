@@ -343,7 +343,7 @@ export const fr: LandingMessages = {
       },
       web: {
         title: 'Dans le navigateur',
-        detail: 'Le même éditeur sur app.openpencil.dev, sans rien installer.',
+        detail: 'Le même éditeur sur cloud.openpencil.dev, sans rien installer.',
         action: 'Ouvrir l’app web'
       },
       cli: {

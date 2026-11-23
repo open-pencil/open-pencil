@@ -1,5 +1,5 @@
 export const LINKS = {
-  app: 'https://app.openpencil.dev/demo',
+  app: 'https://cloud.openpencil.dev/demo',
   /** The download page, in the visitor's locale. */
   downloadPage: '/download',
   /** Every release file on GitHub, where the download page falls back. */

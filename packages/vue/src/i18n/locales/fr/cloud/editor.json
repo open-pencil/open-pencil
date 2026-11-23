@@ -36,6 +36,8 @@
   "errorEditorOutdatedDescription": "Ce serveur nécessite une version d’OpenPencil plus récente que celle-ci.",
   "editorOutdatedBanner": "{host} nécessite une version plus récente d’OpenPencil. Mettez-la à jour pour continuer à travailler sur vos fichiers.",
   "updateOpenPencil": "Mettre à jour OpenPencil",
+  "movingBanner": "OpenPencil déménage sur {host} le {date}. Les fichiers gardés dans ce navigateur restent ici : enregistrez-les dans Cloud ou téléchargez-les avant.",
+  "movingOpen": "Ouvrir dans Cloud",
   "errorDeniedHeading": "Connexion refusée",
   "errorDeniedDescription": "La demande a été refusée dans le navigateur. Recommencez pour vous connecter.",
   "errorExpiredHeading": "Le code a expiré",

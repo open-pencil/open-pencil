@@ -54,6 +54,7 @@ import {
   CloudCreditsBanner,
   CloudCommunityBanner,
   CloudEditorUpdateBanner,
+  CloudMovingBanner,
   CloudVersionDialog
 } from '@/components/cloud/integration'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
@@ -302,6 +303,7 @@ onUnmounted(() => {
 
 <template>
   <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
+    <CloudMovingBanner />
     <FileApiBanner />
     <ColorSpaceBanner />
     <FontStatusBanner />
