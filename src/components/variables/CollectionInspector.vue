@@ -15,7 +15,7 @@ import {
   isModeAttributeName,
   type VariableCollection
 } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   changeConditionKind,
@@ -56,7 +56,7 @@ const emit = defineEmits<{
   setCondition: [modeId: string, condition: string]
 }>()
 
-const { variables } = useI18n()
+const variables = useMessages('variables/panel')
 const { kindOptions } = useConditionLabels()
 const ui = computed(() => tv(inspectorTheme)({ layout }))
 const menu = useMenuUI({ content: 'w-44', item: 'justify-start gap-2' })

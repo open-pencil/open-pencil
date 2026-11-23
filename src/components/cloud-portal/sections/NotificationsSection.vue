@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 import { computed, useId } from 'vue'
 
 import type { CommentEmailSetting } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
@@ -17,7 +17,7 @@ import PortalPageSkeleton from '../layout/PortalPageSkeleton.vue'
 
 /** Which comments the signed-in account hears about by email; a choice saves at once. */
 const portal = usePortal()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const ui = tv(theme)()
 const headingId = useId()
 

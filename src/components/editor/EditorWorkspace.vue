@@ -8,7 +8,7 @@ import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { resolveEditorProfile } from '@open-pencil/core'
 import { formatShortcut } from '@open-pencil/vue/editor/commands'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { floatingChatOpen } from '@/app/ai/chat/panel'
 import { provideTabEditorStore } from '@/app/editor/active-store'
@@ -145,7 +145,7 @@ watch(
   },
   { immediate: true }
 )
-const { editor } = useI18n()
+const editor = useMessages('editor')
 // Until a room's document arrives there is nothing to edit, so its screen replaces the editor.
 const { pending: roomPending } = useRoomActions()
 </script>

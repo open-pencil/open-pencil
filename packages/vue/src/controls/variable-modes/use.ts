@@ -2,7 +2,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { setVariableMode, variableModeChoices } from '#vue/controls/variable-modes/helpers'
 import { useEditor } from '#vue/editor/context'
-import { useVariableMessages } from '#vue/i18n'
+import { useMessages } from '#vue/i18n'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 /**
@@ -14,7 +14,7 @@ import { useSceneComputed } from '#vue/internal/scene-computed/use'
  */
 export function useVariableModes() {
   const editor = useEditor()
-  const messages = useVariableMessages()
+  const messages = useMessages('variables/panel')
 
   const targets = useSceneComputed((): SceneNode[] => {
     const selected = [...editor.state.selectedIds]

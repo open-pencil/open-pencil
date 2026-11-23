@@ -7,7 +7,7 @@ import {
   figJamColor,
   type FigJamColorName
 } from '@open-pencil/scene-graph/figjam'
-import { useFigJamMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import FigJamSwatches from './FigJamSwatches.vue'
 
@@ -31,7 +31,7 @@ const {
   keepsMenuOpen?: boolean
 }>()
 const emit = defineEmits<{ select: [name: FigJamColorName]; none: [] }>()
-const figjam = useFigJamMessages()
+const figjam = useMessages('figjam')
 
 type FigJamMessages = (typeof figjam)['value']
 

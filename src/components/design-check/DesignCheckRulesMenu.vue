@@ -13,7 +13,7 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   setDesignCheckPreset,
@@ -28,7 +28,7 @@ import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
 import { usePresetLabels } from './usePresetLabels'
 
-const messages = useDesignCheckMessages()
+const messages = useMessages('design-check')
 const presetLabels = usePresetLabels()
 const menuCls = useMenuUI({ content: 'min-w-56' })
 const itemCls = menuItem({ justify: 'start', class: 'relative pl-7' })

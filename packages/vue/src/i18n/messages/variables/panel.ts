@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const variablesMessageDefaults = {
   createCollection: 'Create collection',
   renameCollection: 'Rename collection',
@@ -146,5 +144,3 @@ export const variablesMessageDefaults = {
   numberedCollection: params('{name} ({number})'),
   appliedMode: params('{collection}: {mode}')
 } as const
-
-export const variablesMessages = i18n('variables', variablesMessageDefaults)

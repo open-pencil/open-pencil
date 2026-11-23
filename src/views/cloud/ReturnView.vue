@@ -3,7 +3,7 @@ import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { cloudEditorReturnURL } from '@open-pencil/cloud/client'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { PORTAL_HOME } from '@/app/cloud-portal/navigation'
@@ -12,7 +12,7 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 const portal = usePortal()
 const route = useRoute()
 const router = useRouter()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 
 function editorDestination(editor: string): string | null {
   if (!editor) return null

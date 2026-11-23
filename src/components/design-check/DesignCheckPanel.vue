@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { turnOffDesignCheckRule } from '@/app/settings/preferences/apply'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -21,7 +21,7 @@ const { active, initialScope = 'page' } = defineProps<{
   initialScope?: DesignCheckScope
 }>()
 
-const messages = useDesignCheckMessages()
+const messages = useMessages('design-check')
 const styles = designCheck()
 const list = useTemplateRef<HTMLElement>('list')
 

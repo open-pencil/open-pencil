@@ -1,7 +1,7 @@
 import { useDocumentVisibility, useEventListener, useIntervalFn, whenever } from '@vueuse/core'
 import { watch } from 'vue'
 
-import { updatesMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 import { useOpenOverlays } from '@open-pencil/vue/lifecycle/overlays'
 
 import { confirmAppExit } from '@/app/document/close/exit'
@@ -51,7 +51,7 @@ export function offerWebUpdate(options: WebUpdateOptions = {}): void {
   }
 
   function offer() {
-    const messages = updatesMessages.get()
+    const messages = messageStores.updates.get()
     toast.info(messages.webUpdateReady, {
       label: messages.reload,
       run: () => {

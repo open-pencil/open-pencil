@@ -3,7 +3,7 @@ import type { VNode } from 'vue'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import type { OkHCLControls } from '@open-pencil/vue/controls/color-model'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { ColorPickerRoot, type PickerCancelCause } from '@open-pencil/vue/primitives/ColorPicker'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
@@ -12,7 +12,7 @@ import { usePopoverUI } from '@/components/ui/overlay/popover'
 import FillSwatchTrigger from '@/components/ui/paint/FillSwatchTrigger.vue'
 import { solidFill } from '@/components/ui/paint/swatch-trigger'
 
-const { panels } = useI18n()
+const pickerMessages = useMessages('panels/pickers')
 const {
   color,
   okhcl = null,
@@ -45,7 +45,7 @@ const keepOpen = eyedropper ? useEyedropperKeepOpen() : undefined
 <template>
   <ColorPickerRoot
     :color="color"
-    :label="panels.editColor"
+    :label="pickerMessages.editColor"
     :keep-open="keepOpen"
     :escape-reverts="escapeReverts"
     :ui="{ content: cls.content }"
@@ -57,7 +57,7 @@ const keepOpen = eyedropper ? useEyedropperKeepOpen() : undefined
     <!-- The same swatch a fill row shows, so a colour's preview reads alike in every field. -->
     <template #trigger="trigger">
       <slot name="trigger" v-bind="trigger">
-        <FillSwatchTrigger :fill="solidFill(color)" :label="panels.editColor" />
+        <FillSwatchTrigger :fill="solidFill(color)" :label="pickerMessages.editColor" />
       </slot>
     </template>
     <template #default="{ color: currentColor, update }">

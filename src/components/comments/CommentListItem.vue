@@ -4,7 +4,7 @@ import { computed } from 'vue'
 
 import type { CommentThread } from '@open-pencil/scene-graph'
 import { liveReplies } from '@open-pencil/scene-graph/comments'
-import { useCommentMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { commentPreview } from '@/app/comments/format'
 import RelativeTime from '@/components/date/RelativeTime.vue'
@@ -35,7 +35,7 @@ const emit = defineEmits<{ select: [] }>()
 
 defineSlots<{ actions?(): unknown }>()
 
-const messages = useCommentMessages()
+const messages = useMessages('comments')
 const author = useCommentAuthor()
 const ui = comments()
 

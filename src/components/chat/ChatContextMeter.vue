@@ -2,7 +2,7 @@
 import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { compactAutomatically } from '@/app/ai/chat/preferences'
 import { formatCompactNumber } from '@/app/i18n/number'
@@ -28,7 +28,7 @@ const {
   compactsAt: number
   replying?: boolean
 }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const ui = chatContextTheme()
 const popover = usePopoverUI({ content: ui.popover() })
 

@@ -1,1 +1,0 @@
-- Plugin API scripts read and keep an image's adjustments instead of resetting them (#2268).

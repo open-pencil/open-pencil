@@ -9,7 +9,12 @@ export {
 } from './services'
 export { cloudEditorReturnURL, cloudRedirectPath, cloudSignInURL } from './auth/navigation'
 export * from './files'
-export { fetchCommunityTour, type CommunityTour } from './tour'
+export {
+  fetchCommunityExample,
+  fetchCommunityTour,
+  type CommunityExample,
+  type CommunityTour
+} from './tour'
 export {
   CloudAPIError,
   createCloudAPIClient,

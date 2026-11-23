@@ -3,7 +3,7 @@ import { sumBy } from 'es-toolkit'
 import { computed } from 'vue'
 
 import { isLibraryCollection } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -22,7 +22,7 @@ const variableCount = computed(() =>
   sumBy(localCollections.value, (collection) => collection.variableIds.length)
 )
 const hasVariables = computed(() => variableCount.value > 0)
-const { panels } = useI18n()
+const panels = useMessages('panels')
 </script>
 
 <template>

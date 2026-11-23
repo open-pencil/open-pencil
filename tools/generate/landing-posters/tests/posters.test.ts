@@ -19,6 +19,8 @@ describe('landing poster paths', () => {
 
   test('split single-editor stages into canvas and panel, and keep collaboration whole', () => {
     expect(posterParts('design')).toEqual(['canvas', 'panel'])
+    // A board shows its canvas alone, as it opens in the app.
+    expect(posterParts('board')).toEqual(['canvas'])
     expect(posterParts('ai')).toEqual(['canvas', 'panel'])
     expect(posterParts('collab')).toEqual(['frame'])
   })

@@ -64,4 +64,10 @@ export interface UseCanvasOptions {
    * Receives this canvas surface's CSS viewport size after creation and resize.
    */
   onViewportResize?: (width: number, height: number) => void
+  /**
+   * Receives how far this canvas moved in the browser viewport when it was resized, as when a
+   * panel beside it hides. Pan the view by as much the other way to keep the drawing still on
+   * screen. Not called by default; on a page that scrolls, a move measured here includes scroll.
+   */
+  onViewportMove?: (dx: number, dy: number) => void
 }

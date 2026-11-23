@@ -1,0 +1,16 @@
+{
+  "plan": "الخطة",
+  "planDescription": "ما يتضمنه حسابك وما تدفعه مقابله.",
+  "planStorage": "التخزين",
+  "planStorageOf": "استُخدم {used} من {total}، عبر مساحات العمل التي تملكها",
+  "planStorageUsed": "استُخدم {used}، عبر مساحات العمل التي تملكها",
+  "planStorageFull": "ملفاتك للقراءة فقط",
+  "planStorageFullDescription": "تستهلك كل التخزين المتضمَّن في خطتك. احذف ملفات أو احصل على مزيد من التخزين لتعديلها من جديد.",
+  "planMonthlyCredits": "الرصيد الشهري",
+  "planCredits": "{credits} رصيد",
+  "planNoCredits": "غير متضمَّن",
+  "planUnlimitedCredits": "بلا حد شهري",
+  "planBilling": "الخطط والفوترة",
+  "planBillingDescription": "غيّر خطتك واشترِ المزيد من الرصيد واطّلع على فواتيرك.",
+  "planOpenBilling": "فتح الفوترة"
+}

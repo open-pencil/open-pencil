@@ -4,7 +4,7 @@ import { computed } from 'vue'
 
 import { focusStyles } from '@open-pencil/theme'
 import type { SlotLimit } from '@open-pencil/vue/controls/slots'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -16,7 +16,8 @@ import { usePopoverUI } from '@/components/ui/overlay/popover'
 const startSide = useInlineSide('start')
 const { limits } = defineProps<{ limits: SlotLimit[] }>()
 const emit = defineEmits<{ selectLayers: [] }>()
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 const { open: popupOpen, portalActive } = useRetainedPopup()
 const issues = computed(() => limits.filter((limit) => !limit.met).length)
 const styles = usePopoverUI({

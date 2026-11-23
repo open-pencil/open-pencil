@@ -20,7 +20,7 @@ With a node name, the app selects every layer carrying that exact name on the cu
 The web app takes the same link from its own address bar:
 
 ```
-https://app.openpencil.dev/?file=https://raw.githubusercontent.com/open-pencil/open-pencil/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
+https://cloud.openpencil.dev/?file=https://raw.githubusercontent.com/open-pencil/open-pencil/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
 ```
 
 Here `file` is an absolute `https:` URL ending in `.pen` or `.fig` — the web app has no filesystem, so a relative path, an `http:` URL or any other extension is refused with a console warning and nothing else. The extension is read off the URL's path, so a query string on the linked file changes nothing. A fragment is dropped before the fetch: it never reaches the server, so `…/hikyo.pen#a` and `…/hikyo.pen#b` open one tab, not two. `node` behaves exactly as above: the same exact-name selection and zoom, the same notice when no layer carries the name. Both values are URL-encoded, a literal `+` must be sent as `%2B`, and a repeated key takes its last value, as on the desktop. The link is handled on any route, so `/share/<room>?file=…` and `/demo?file=…` work like `/?file=…`.

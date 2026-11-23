@@ -1,0 +1,13 @@
+{
+  "decline": "Odrzuć",
+  "removeAccess": "Odbierz dostęp",
+  "declineHeading": "Odrzucić prośbę: {name}?",
+  "declineDescription": "Ta osoba dostanie o tym e-mail i może poprosić ponownie później.",
+  "removeAccessHeading": "Odebrać dostęp: {name}?",
+  "removeAccessDescription": "Ta osoba nie będzie mogła się zalogować i dostanie o tym e-mail.",
+  "reviewNote": "Notatka dla administratorów (opcjonalnie)",
+  "noteDetail": "Notatka: {note}",
+  "noOneWaiting": "Nikt nie czeka",
+  "nothingHere": "Nic tu jeszcze nie ma",
+  "requestsEmptyDescription": "Nowe prośby pojawią się tutaj, a administratorzy dostaną e-mail o każdej z nich."
+}

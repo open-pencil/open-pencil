@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   roleChoiceKey,
@@ -20,7 +20,7 @@ const { plan, options, isRecommended } = defineProps<{
   isRecommended: boolean
 }>()
 const emit = defineEmits<{ choose: [role: AIModelRole, key: string]; useRecommended: [] }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const { choiceLabel, roleLabel } = useRoleLabels()
 
 function selectOptions(role: AIModelRole) {

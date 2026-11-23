@@ -3,7 +3,7 @@ import { computedAsync } from '@vueuse/core'
 import { toDataURL } from 'qrcode'
 import { computed, ref, watch } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -25,7 +25,7 @@ const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ verify: [code: string] }>()
 
 const ui = portalForm()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const code = ref('')
 // Nothing to check until a code is typed: an empty one would only come back as an error.
 const entered = computed(() => code.value.trim() !== '')
