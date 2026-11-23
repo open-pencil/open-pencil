@@ -5,6 +5,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 ## Boundaries
 
 - Consumers import the `contract`, `client`, `email`, `server`, `runtime/node`, and `runtime/cloudflare` subpaths; browser code imports only `contract` and `client`, which stay on the browser baseline (`tests/app/shell/support/baseline.test.ts`, `compat/compat` in `oxlint.json`).
+- `client` needs no framework: no Vue, VueUse, or app code, so any host opens a document's room with it, the editor and embeds alike. What differs by host comes in as options, such as `objectFetch` for object storage and `page` for the relay's `pagehide` (`src/client/rooms/`).
 - `src/server` receives its database, object store, auth adapter, and delivery through injection and never imports `pg`, opens listeners, runs migrations, or starts timers; runtimes under `src/runtime/` own those (`src/runtime/node/server.ts`).
 - The package is published to npm; a directory imported as `#cloud/<dir>` is listed in `imports` in `package.json`, since the wildcard there names `.ts` files (`bun run check:packages`).
 - `@better-auth/core` is pinned to the `better-auth` version though nothing imports it: `@better-auth/passkey` accepts any later core, whose exact `@better-fetch/fetch` differs from its own, and npm then never finishes installing the package (`bun run test:packages`).

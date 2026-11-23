@@ -1,5 +1,6 @@
 import { createServer } from 'node:http'
 
+import { createCloudRelayJoin } from '@open-pencil/cloud/client'
 import { RELAY_PATH, type DocumentPermission } from '@open-pencil/cloud/contract'
 import { attachCollaborationRelay } from '@open-pencil/cloud/runtime/node'
 import {
@@ -7,8 +8,6 @@ import {
   signCollaborationTicket,
   type CollaborationStateStore
 } from '@open-pencil/cloud/server'
-
-import { createCloudRelayJoin } from '@/app/collab/transport/cloud'
 
 const AUTH_SECRET = 'relay-integration-secret-at-least-32-characters'
 

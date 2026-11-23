@@ -60,3 +60,12 @@ export {
   type CloudPortalClientOptions
 } from './portal/client'
 export type { CloudCommentRequests } from './comments'
+export { cloudRoomImages, sharedCloudRoomImages } from './rooms/images'
+export {
+  cloudTicketRelayJoin,
+  createCloudRelayJoin,
+  relayReconnectDelay,
+  ticketKeepsRoom,
+  type CloudRelayOptions,
+  type CloudRelayTicket
+} from './rooms/relay'

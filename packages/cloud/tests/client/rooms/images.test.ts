@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
-import { cloudChecksum } from '@open-pencil/cloud/client'
-import type { DocumentImageLink } from '@open-pencil/cloud/contract'
+import { cloudChecksum } from '#cloud/client/files/checksum'
+import { cloudRoomImages } from '#cloud/client/rooms/images'
+import type { DocumentImageLink } from '#cloud/contract'
+
 import { fetchStub } from '@open-pencil/test-support/fetch'
 
-import { cloudRoomImages } from '@/app/cloud/rooms/images'
 const DOCUMENT = 'document-1'
 const photo = new Uint8Array([137, 80, 78, 71, 1, 2, 3])
 const logo = new Uint8Array([71, 73, 70, 56, 4, 5])
@@ -25,8 +26,8 @@ async function cloud(stored: Map<string, Uint8Array>) {
       return bytes ? new Response(Uint8Array.from(bytes)) : new Response(null, { status: 503 })
     })
   )
-  const images = cloudRoomImages(
-    {
+  const images = cloudRoomImages({
+    client: {
       requestImageUploads: async () => [],
       commitImageUploads: async () => undefined,
       async getImageLinks(_documentId, checksums): Promise<DocumentImageLink[]> {
@@ -43,9 +44,10 @@ async function cloud(stored: Map<string, Uint8Array>) {
         }))
       }
     },
-    DOCUMENT,
-    true
-  )
+    documentId: DOCUMENT,
+    canStore: true,
+    objectFetch: (input, init) => fetch(input, init)
+  })
   return { images, asked }
 }
 

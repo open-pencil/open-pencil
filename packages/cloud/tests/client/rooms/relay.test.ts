@@ -1,5 +1,6 @@
 import { describe, expect, jest, test } from 'bun:test'
 
+import { createCloudRelayJoin, relayReconnectDelay } from '#cloud/client/rooms/relay'
 import {
   createRelayClientAssembler,
   decodeRelayClientFrame,
@@ -8,11 +9,10 @@ import {
   relayServerMessages,
   type RelayClientFrame,
   type RelayServerFrame
-} from '@open-pencil/cloud/contract'
+} from '#cloud/contract'
+
 import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { asDouble } from '@open-pencil/test-support/doubles'
-
-import { createCloudRelayJoin, relayReconnectDelay } from '@/app/collab/transport/cloud'
 
 /** A socket the test opens, feeds, and closes by hand. */
 class FakeSocket extends EventTarget {

@@ -1,5 +1,3 @@
-import { defaultWindow, useEventListener, useIntervalFn } from '@vueuse/core'
-
 import {
   createRelayServerAssembler,
   decodeRelayServerFrame,
@@ -7,8 +5,10 @@ import {
   RELAY_FORWARDING_BYTES,
   RELAY_HEARTBEAT,
   relayClientMessages,
+  type CollaborationTicket,
   type RelayClientFrame
-} from '@open-pencil/cloud/contract'
+} from '#cloud/contract'
+
 import {
   type CollabRoomTransport,
   createActionRegistry,
@@ -49,8 +49,8 @@ export type CloudRelayOptions = {
   createSocket?: (url: string) => WebSocket
   /** Whether the relay answers the heartbeat, as its tickets say; an older one turns a ping away. */
   heartbeat?: boolean
-  /** Where the page's `pagehide` and `pageshow` arrive; the window by default. */
-  page?: Window
+  /** Where the page's `pagehide` and `pageshow` arrive; the window by default, where there is one. */
+  page?: Pick<Window, 'addEventListener' | 'removeEventListener'>
   /** How long to wait before reconnection attempt `attempt`, counting from zero. */
   reconnectDelayMs?: (attempt: number) => number
   onError?: (message: string, error: unknown) => void
@@ -220,23 +220,21 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     // socket that stopped speaking for this room stops asking, and one still connecting was asked
     // nothing, so it owes no answer yet.
     let answered = true
-    const heartbeat = useIntervalFn(
-      () => {
+    let heartbeat: ReturnType<typeof setInterval> | undefined
+    const stopHeartbeat = () => clearInterval(heartbeat)
+    if (options.heartbeat === true) {
+      heartbeat = setInterval(() => {
         if (socket !== next) {
-          heartbeat.pause()
+          stopHeartbeat()
         } else if (next.readyState === WebSocket.OPEN && !answered) {
-          heartbeat.pause()
+          stopHeartbeat()
           giveUp(next)
         } else if (next.readyState === WebSocket.OPEN) {
           answered = false
           next.send(RELAY_HEARTBEAT.ping)
         }
-      },
-      HEARTBEAT_INTERVAL_MS,
-      { immediate: false }
-    )
-    // Started by hand: VueUse starts it on its own only where it finds a window.
-    if (options.heartbeat === true) heartbeat.resume()
+      }, HEARTBEAT_INTERVAL_MS)
+    }
     // A socket that was replaced or left behind by `leave()` no longer speaks for this room.
     next.addEventListener('open', () => {
       if (socket !== next) return
@@ -263,7 +261,7 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
       }
     })
     next.addEventListener('close', (event) => {
-      heartbeat.pause()
+      stopHeartbeat()
       if (socket !== next) return
       socket = null
       clearTimeout(refreshTimer)
@@ -314,13 +312,13 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     void connect()
   }
 
-  const page = options.page ?? defaultWindow
-  const stopListening = [
-    useEventListener(page, 'pagehide', suspend),
-    useEventListener(page, 'pageshow', (event: PageTransitionEvent) => {
-      if (event.persisted) resume()
-    })
-  ]
+  // Pages have these events; a server or worker host has neither and keeps its socket.
+  const page = options.page ?? ('onpagehide' in globalThis ? globalThis : undefined)
+  const onPageShow = (event: PageTransitionEvent) => {
+    if (event.persisted) resume()
+  }
+  page?.addEventListener('pagehide', suspend)
+  page?.addEventListener('pageshow', onPageShow)
 
   void connect()
 
@@ -339,7 +337,8 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     async leave() {
       if (left) return
       left = true
-      for (const stop of stopListening) stop()
+      page?.removeEventListener('pagehide', suspend)
+      page?.removeEventListener('pageshow', onPageShow)
       clearTimeout(refreshTimer)
       clearTimeout(reconnectTimer)
       actions.clear()
@@ -349,4 +348,45 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
       current?.close(1000, 'Left the room')
     }
   }
+}
+
+/**
+ * Whether a refreshed ticket keeps the peer in the room it joined as it joined it. A restore
+ * moves the document to a new room, and access that changed, as when the owner fills or frees
+ * their storage, needs the room joined again with it; either ends this one.
+ */
+export function ticketKeepsRoom(
+  first: Pick<CollaborationTicket, 'roomId' | 'permission' | 'readOnly'>,
+  next: Pick<CollaborationTicket, 'roomId' | 'permission' | 'readOnly'>
+): boolean {
+  return (
+    next.roomId === first.roomId &&
+    next.permission === first.permission &&
+    next.readOnly === first.readOnly
+  )
+}
+
+/**
+ * The relay connection for a document's room, presenting the ticket just issued first and a
+ * fresh one from `next` before each expires, until one no longer keeps the room.
+ */
+export function cloudTicketRelayJoin(
+  url: string,
+  first: CollaborationTicket,
+  next: () => Promise<CollaborationTicket>,
+  events: Pick<CloudRelayOptions, 'onRestored' | 'onRefused'> = {}
+): JoinCollabRoom {
+  let unused: CollaborationTicket | null = first
+  return createCloudRelayJoin({
+    url,
+    async ticket() {
+      const ticket = unused ?? (await next())
+      unused = null
+      if (!ticketKeepsRoom(first, ticket)) return null
+      return { token: ticket.token, expiresAt: ticket.expiresAt }
+    },
+    onRestored: events.onRestored,
+    onRefused: events.onRefused,
+    heartbeat: first.relayHeartbeat
+  })
 }

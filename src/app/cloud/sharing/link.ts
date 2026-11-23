@@ -3,8 +3,10 @@ import { ref, shallowRef, watch } from 'vue'
 
 import {
   CloudAPIError,
+  cloudTicketRelayJoin,
   createCloudAPIClient,
-  downloadCloudDocument
+  downloadCloudDocument,
+  sharedCloudRoomImages
 } from '@open-pencil/cloud/client'
 import { randomHex } from '@open-pencil/std/random'
 
@@ -21,14 +23,7 @@ import {
 import { IS_BROWSER } from '@/constants'
 
 import { cloudShareLinkTabs, rememberShareLinkTab } from '../reports/tabs'
-import { sharedCloudRoomImages } from '../rooms/images'
-import {
-  cloudRelayTransport,
-  leaveCloudRoom,
-  leaveRefusedRoom,
-  openCloudDocumentRoom,
-  stopWithTab
-} from '../rooms/live'
+import { leaveCloudRoom, leaveRefusedRoom, openCloudDocumentRoom, stopWithTab } from '../rooms/live'
 import { normalizeCloudServerURL } from '../servers/address'
 import { cloudServers } from '../servers/store'
 import { cloudFetch, cloudServerFetch, discoverCloudServer } from '../sessions/connection'
@@ -174,7 +169,7 @@ async function joinShareRoom(
   if (!current() || first.provider !== 'relay' || !first.serverURL) return
   const room = openCloudDocumentRoom(store, {
     roomId: first.roomId,
-    transport: cloudRelayTransport(
+    transport: cloudTicketRelayJoin(
       first.serverURL,
       first,
       () => client.getSharedCollaborationTicket(link.shareId, input),
@@ -194,7 +189,12 @@ async function joinShareRoom(
     permission: first.permission,
     readOnly: first.readOnly,
     guest: true,
-    images: sharedCloudRoomImages(client, link.shareId, input)
+    images: sharedCloudRoomImages({
+      client,
+      shareId: link.shareId,
+      share: input,
+      objectFetch: storageFetch
+    })
   })
   stopWithTab(store, room)
 }

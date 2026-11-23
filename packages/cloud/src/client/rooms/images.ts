@@ -1,19 +1,16 @@
-import { groupBy, limitAsync } from 'es-toolkit'
-
-import {
-  cloudChecksum,
-  uploadCloudImages,
-  type CloudAPIClient,
-  downloadCloudImage
-} from '@open-pencil/cloud/client'
+import type { CloudAPIClient } from '#cloud/client/api'
+import { cloudChecksum } from '#cloud/client/files/checksum'
+import { downloadCloudImage } from '#cloud/client/files/download'
+import { uploadCloudImages } from '#cloud/client/files/images'
+import type { CloudObjectFetch } from '#cloud/client/files/objects'
 import {
   isCloudChecksum,
   type DocumentImageLink,
   type ResolveDocumentShareInput
-} from '@open-pencil/cloud/contract'
-import type { RoomImageStore } from '@open-pencil/collab'
+} from '#cloud/contract'
+import { groupBy, limitAsync } from 'es-toolkit'
 
-import { storageFetch } from '@/app/integrations/storage/s3/fetch'
+import type { RoomImageStore } from '@open-pencil/collab'
 
 const IMAGE_LOAD_CONCURRENCY = 6
 
@@ -24,7 +21,8 @@ const IMAGE_LOAD_CONCURRENCY = 6
  */
 async function loadLinked(
   refs: readonly { name: string; ref: string }[],
-  links: (checksums: string[]) => Promise<DocumentImageLink[]>
+  links: (checksums: string[]) => Promise<DocumentImageLink[]>,
+  objectFetch: CloudObjectFetch
 ): Promise<ReadonlyMap<string, Uint8Array>> {
   const byChecksum = groupBy(
     refs.filter((ref) => isCloudChecksum(ref.ref)),
@@ -34,7 +32,7 @@ async function loadLinked(
   const loaded = new Map<string, Uint8Array>()
   if (checksums.length === 0) return loaded
   const download = limitAsync(
-    (link: DocumentImageLink) => downloadCloudImage(link, storageFetch),
+    (link: DocumentImageLink) => downloadCloudImage(link, objectFetch),
     IMAGE_LOAD_CONCURRENCY
   )
   await Promise.allSettled(
@@ -50,11 +48,18 @@ async function loadLinked(
  * A Cloud room's images, kept in the document's workspace under their SHA-256: an editor stores
  * what it adds, and everyone with access loads what the room names.
  */
-export function cloudRoomImages(
-  client: Pick<CloudAPIClient, 'requestImageUploads' | 'commitImageUploads' | 'getImageLinks'>,
-  documentId: string,
+export function cloudRoomImages({
+  client,
+  documentId,
+  canStore,
+  objectFetch
+}: {
+  client: Pick<CloudAPIClient, 'requestImageUploads' | 'commitImageUploads' | 'getImageLinks'>
+  documentId: string
   canStore: boolean
-): RoomImageStore {
+  /** How image bytes reach the object store, which may be another origin than the server. */
+  objectFetch: CloudObjectFetch
+}): RoomImageStore {
   return {
     canStore,
     async store(images) {
@@ -65,24 +70,35 @@ export function cloudRoomImages(
         cloud: client,
         documentId,
         images: named,
-        objectFetch: storageFetch
+        objectFetch
       })
       return new Map(named.map((image) => [image.name, image.checksum]))
     },
-    load: (refs) => loadLinked(refs, (checksums) => client.getImageLinks(documentId, checksums))
+    load: (refs) =>
+      loadLinked(refs, (checksums) => client.getImageLinks(documentId, checksums), objectFetch)
   }
 }
 
 /** A guest's view of a shared Cloud room's images: it loads what the room names and stores none. */
-export function sharedCloudRoomImages(
-  client: Pick<CloudAPIClient, 'getSharedImageLinks'>,
-  shareId: string,
+export function sharedCloudRoomImages({
+  client,
+  shareId,
+  share,
+  objectFetch
+}: {
+  client: Pick<CloudAPIClient, 'getSharedImageLinks'>
+  shareId: string
   share: ResolveDocumentShareInput
-): RoomImageStore {
+  objectFetch: CloudObjectFetch
+}): RoomImageStore {
   return {
     canStore: false,
     store: async () => new Map(),
     load: (refs) =>
-      loadLinked(refs, (checksums) => client.getSharedImageLinks(shareId, share, checksums))
+      loadLinked(
+        refs,
+        (checksums) => client.getSharedImageLinks(shareId, share, checksums),
+        objectFetch
+      )
   }
 }
