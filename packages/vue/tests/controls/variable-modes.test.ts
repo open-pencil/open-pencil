@@ -201,12 +201,19 @@ describe('variable mode labels in a mounted control', () => {
   let unmount: (() => void) | undefined
 
   /** `@nanostores/vue` follows a store only where `window` exists, as in the app. */
+  let windowDescriptor: PropertyDescriptor | undefined
+
   beforeAll(() => {
+    windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
     Object.defineProperty(globalThis, 'window', { value: globalThis, configurable: true })
   })
 
   afterAll(() => {
-    Reflect.deleteProperty(globalThis, 'window')
+    if (windowDescriptor) {
+      Object.defineProperty(globalThis, 'window', windowDescriptor)
+    } else {
+      Reflect.deleteProperty(globalThis, 'window')
+    }
   })
 
   afterEach(() => {
