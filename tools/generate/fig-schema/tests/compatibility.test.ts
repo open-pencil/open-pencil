@@ -66,7 +66,13 @@ message Shape {
   Point[] points = 2;
 }
 `)
-  expect(incompatibleChanges(CURRENT, next)).toEqual(['Kind.B reuses 0, which is A'])
+  expect(incompatibleChanges(CURRENT, next)).toEqual(['Kind 0 would read as B instead of A'])
+})
+
+test('reordering existing enum aliases is refused, since it renames the value they share', () => {
+  const current = parseSchema('enum Kind {\n  A = 0;\n  B = 1;\n  C = 1;\n}\n')
+  const next = parseSchema('enum Kind {\n  A = 0;\n  C = 1;\n  B = 1;\n}\n')
+  expect(incompatibleChanges(current, next)).toEqual(['Kind 1 would read as B instead of C'])
 })
 
 test('an update that removes, renumbers or retypes anything is refused, naming each change', () => {

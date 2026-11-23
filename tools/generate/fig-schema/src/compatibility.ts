@@ -8,6 +8,11 @@ function signature(definition: Definition, field: Field): string {
   return definition.kind === 'STRUCT' ? type : `${type}= ${field.value}`
 }
 
+/** The name each value of an enum decodes as: its last member, as Kiwi's decoder names it. */
+function decodedNames(definition: Definition): Map<number, string> {
+  return new Map(definition.fields.map((field) => [field.value, field.name]))
+}
+
 /**
  * How `next` would break what `current` writes: a definition or field it drops, a definition
  * whose kind changed, a field whose type or number changed, and a struct whose fields changed,
@@ -38,18 +43,18 @@ export function incompatibleChanges(current: Schema, next: Schema): string[] {
       const after = signature(updated, changed)
       return before === after ? [] : [`${name} changed from ${before} to ${after}`]
     })
-    // Kiwi allows enum aliases, and the last one names the value, so a new member on an existing
-    // value would read old data under its name; messages refuse a number used twice.
+    // Kiwi allows enum aliases and a value decodes as its last member, so every value must keep
+    // the name it decodes as; messages refuse a number used twice.
     if (definition.kind !== 'ENUM') return changes
-    const known = new Map(definition.fields.map((field) => [field.value, field.name]))
-    const names = new Set(definition.fields.map((field) => field.name))
-    const reused = updated.fields.flatMap((field) => {
-      const owner = known.get(field.value)
-      return names.has(field.name) || owner === undefined
+    const before = decodedNames(definition)
+    const after = decodedNames(updated)
+    const renamed = [...before].flatMap(([value, name]) => {
+      const now = after.get(value)
+      return now === undefined || now === name
         ? []
-        : [`${definition.name}.${field.name} reuses ${field.value}, which is ${owner}`]
+        : [`${definition.name} ${value} would read as ${now} instead of ${name}`]
     })
-    return [...changes, ...reused]
+    return [...changes, ...renamed]
   })
 }
 
