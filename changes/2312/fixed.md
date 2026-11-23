@@ -1,0 +1,1 @@
+- Layers inherited from a component show their dimensions without resize handles or editable width and height fields inside an instance.
