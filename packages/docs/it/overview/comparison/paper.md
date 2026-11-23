@@ -22,7 +22,7 @@ description: Le differenze tra OpenPencil, un editor di design open source, e Pa
 | Scripting                | CLI headless e scripting compatibile con la Figma Plugin API                                        | CLI per il suo server MCP                                                    |
 | Export del codice        | Design JSX, HTML, Vue e React con CSS o Tailwind                                                    | React con CSS o Tailwind                                                     |
 | Export                   | PNG, JPG, WEBP, SVG e `.fig`; PDF dalla CLI                                                         | PNG, SVG, PDF e video                                                        |
-| Collaborazione           | Stanze peer-to-peer oppure OpenPencil Cloud, con commenti e cronologia delle versioni               | Modifica in tempo reale con colleghi e agenti, e commenti                    |
+| Collaborazione           | Stanze peer-to-peer, oppure OpenPencil Cloud con commenti e cronologia delle versioni               | Modifica in tempo reale con colleghi e agenti, e commenti                    |
 
 ## File e hosting
 
@@ -30,7 +30,7 @@ Paper conserva i design sul proprio servizio. OpenPencil salva normali file `.fi
 
 ## AI e agenti
 
-Entrambi sono pensati per gli agenti. Paper non ha un assistente integrato: progetti con esso tramite un agente esterno come Claude Code o Cursor sul suo server MCP, e il piano gratuito consente 100 chiamate MCP a settimana.
+Entrambi sono pensati per gli agenti. Paper non ha un assistente integrato: progetti a mano oppure colleghi un agente esterno come Claude Code o Cursor tramite il suo server MCP, e il piano gratuito consente 100 chiamate MCP a settimana.
 
 OpenPencil ha un [assistente AI](/it/user-guide/ai-chat) dentro l’editor, che usa la chiave del tuo provider o i crediti Cloud, e gli stessi oltre 100 strumenti sono aperti agli agenti esterni tramite il [server MCP](/developers/mcp-server) senza limiti di chiamate. L’app desktop può anche eseguire [agenti di programmazione](/user-guide/coding-agents) dentro l’editor, ognuno con il proprio cursore sul canvas. La [CLI](/it/developers/cli/inspecting) ed [`eval`](/it/developers/cli/scripting) lavorano sui documenti senza aprire affatto l’editor.
 

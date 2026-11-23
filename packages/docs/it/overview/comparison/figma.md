@@ -18,28 +18,28 @@ Figma è lo strumento di design di interfacce più diffuso e funziona come servi
 | Self-hosting          | Server di OpenPencil Cloud                                                                                  | —                                                                                  |
 | Piattaforme           | App desktop per macOS, Windows e Linux, e browser                                                           | App desktop per macOS e Windows, e browser                                         |
 | File `.fig`           | Li apre e li salva; copia e incolla con Figma in entrambe le direzioni                                      | Nativi                                                                             |
-| AI integrata          | Assistente in chat con oltre 100 strumenti di design; le chiavi dei tuoi provider o i crediti Cloud         | AI di Figma con crediti mensili per postazione; modelli scelti da Figma            |
-| Agenti di programmazione | Server MCP che legge e scrive i design, più agenti eseguiti dentro l’editor                              | Server MCP per il contesto di design, con limiti di chiamate in base alla postazione |
+| AI integrata          | Assistente in chat con oltre 100 strumenti di design; le chiavi dei tuoi provider o i crediti Cloud         | AI di Figma con crediti mensili per postazione                                     |
+| Agenti di programmazione | Server MCP che legge e scrive i design, più agenti eseguiti dentro l’editor                              | Server MCP che legge e modifica i design, con limiti di chiamate in base alla postazione |
 | Scripting             | CLI headless e scripting compatibile con la Figma Plugin API                                                | Plugin dentro l’app                                                                |
-| Codice                | Design JSX, HTML, Vue e React con CSS o Tailwind, inclusi                                                   | Dev Mode sulle postazioni a pagamento                                              |
-| Collaborazione        | Stanze peer-to-peer oppure OpenPencil Cloud, con commenti e cronologia delle versioni                       | Modifica in tempo reale, commenti e cronologia delle versioni                      |
+| Codice                | Design JSX, HTML, Vue e React con CSS o Tailwind, inclusi                                                   | Ispezione del codice su tutti i piani; Dev Mode sulle postazioni a pagamento       |
+| Collaborazione        | Stanze peer-to-peer, oppure OpenPencil Cloud con commenti e cronologia delle versioni                       | Modifica in tempo reale, commenti e cronologia delle versioni                      |
 | Prototipazione        | Comportamenti dei componenti dal vivo; flussi e transizioni sono nella [roadmap](/development/roadmap)      | Flussi, interazioni e smart animate                                                |
 
 ## I tuoi file
 
 In Figma i documenti risiedono nel cloud di Figma. **Save local copy** scarica un `.fig` alla volta, senza commenti né cronologia delle versioni, e il proprietario del file può disattivarlo.
 
-OpenPencil conserva un `.fig` come un normale file sul tuo disco. Puoi aprirlo, modificarlo e rimandarlo a chi usa Figma, che lo apre come al solito. Anche copiare livelli in Figma e incollarli in OpenPencil funziona, in entrambe le direzioni. Per condividere i documenti, tienili nel tuo [bucket compatibile con S3](/user-guide/cloud-storage) o su [OpenPencil Cloud](/cloud/), sia il servizio ospitato sia un [server gestito dal tuo team](/cloud/self-hosting/). Consulta [Compatibilità con Figma](/it/reference/figma-compatibility) per sapere cosa si apre e si salva fedelmente oggi.
+OpenPencil conserva un `.fig` come un normale file sul tuo disco. Puoi aprirlo, modificarlo e rimandarlo a chi usa Figma. I file complessi possono apparire diversi quando vengono riaperti in Figma, quindi conserva l’originale finché non hai controllato il risultato. Anche copiare livelli in Figma e incollarli in OpenPencil funziona, in entrambe le direzioni. Per condividere i documenti, tienili nel tuo [bucket compatibile con S3](/user-guide/cloud-storage) o su [OpenPencil Cloud](/cloud/), sia il servizio ospitato sia un [server gestito dal tuo team](/cloud/self-hosting/). Consulta [Compatibilità con Figma](/it/reference/figma-compatibility) per sapere cosa si apre e si salva fedelmente oggi.
 
 ## Offline e Linux
 
-Figma non ha una modalità offline: senza connessione puoi continuare a modificare i file già aperti. La sua app desktop è per macOS e Windows. OpenPencil funziona completamente offline e ha un’app desktop nativa per macOS, Windows e Linux, con un download di circa 20 MB.
+Figma non ha una modalità offline: senza connessione puoi continuare a modificare i file già aperti. La sua app desktop è per macOS e Windows. OpenPencil funziona completamente offline e ha un’app desktop nativa per macOS, Windows e Linux.
 
 ## AI e automazione
 
-Le funzioni AI di Figma usano i modelli di Figma e consumano crediti mensili per postazione, e il server MCP di Figma fornisce agli agenti di programmazione il contesto di design entro limiti di chiamate che dipendono dalla postazione.
+Le funzioni AI di Figma usano i modelli forniti da Figma e consumano crediti mensili per postazione, e il server MCP di Figma permette agli agenti di programmazione di leggere e modificare i design entro limiti di chiamate che dipendono dalla postazione.
 
-L’[assistente AI](/it/user-guide/ai-chat) di OpenPencil funziona con la tua chiave per Anthropic, OpenAI, Google AI, OpenRouter o qualsiasi endpoint compatibile, senza limiti da parte nostra, oppure con i crediti inclusi in un piano OpenPencil Cloud. Agenti di programmazione come Claude Code, Codex e Cursor ottengono gli stessi oltre 100 strumenti tramite il [server MCP](/developers/mcp-server) e possono creare e modificare design, non solo leggerli. La [CLI](/it/developers/cli/inspecting) ispeziona, verifica ed esporta file `.fig` senza aprire l’editor, e [`eval`](/it/developers/cli/scripting) esegue su di essi script scritti per la Figma Plugin API.
+L’[assistente AI](/it/user-guide/ai-chat) di OpenPencil funziona con la tua chiave per Anthropic, OpenAI, Google AI, OpenRouter o qualsiasi endpoint compatibile, senza limiti da parte nostra, oppure con i crediti inclusi in un piano OpenPencil Cloud. Agenti di programmazione come Claude Code, Codex e Cursor ottengono gli stessi oltre 100 strumenti tramite il [server MCP](/developers/mcp-server) e possono creare e modificare design. La [CLI](/it/developers/cli/inspecting) ispeziona, verifica ed esporta file `.fig` senza aprire l’editor, e [`eval`](/it/developers/cli/scripting) esegue su di essi script scritti per la Figma Plugin API.
 
 ## Dove Figma è avanti
 

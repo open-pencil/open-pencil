@@ -65,7 +65,7 @@ openpencil export design.fig -f jsx --style tailwind
 
 ## Chat con AI
 
-<kbd>⌘</kbd><kbd>J</kbd> abre el asistente. Más de 100 herramientas crean formas, modifican estilos y disposiciones, trabajan con componentes y variables, ejecutan operaciones booleanas, analizan variables de diseño y exportan recursos. Admite Anthropic, OpenAI, Google AI, OpenRouter y extremos compatibles.
+<kbd>⌘</kbd><kbd>J</kbd> abre el asistente. Más de 100 herramientas crean formas, modifican estilos y disposiciones, trabajan con componentes y variables, ejecutan operaciones booleanas, analizan variables de diseño y exportan recursos. Admite Anthropic, OpenAI, Google AI, OpenRouter y extremos compatibles. Un conjunto básico de herramientas está activado por defecto; activa el resto en **Ajustes → Acceso a herramientas**.
 
 Las llamadas a herramientas aparecen en una cronología plegable. Para verificar visualmente los cambios, el asistente renderiza el resultado y lo compara con la solicitud. Todas las modificaciones realizadas por AI se pueden deshacer.
 
@@ -98,7 +98,7 @@ La colaboración funciona directamente entre participantes mediante WebRTC y no 
 
 ## Escritorio y web
 
-**Escritorio:** Tauri v2, una descarga de unos 20 MB, para macOS, Windows y Linux, con menús nativos, uso sin conexión y guardado automático.
+**Escritorio:** Tauri v2, con instaladores de unos 20 MB (la AppImage de Linux incluye más componentes y ocupa más), para macOS, Windows y Linux, con menús nativos, uso sin conexión y guardado automático.
 
 **Web:** [cloud.openpencil.dev](https://cloud.openpencil.dev), instalable como PWA y adaptado a pantallas táctiles.
 

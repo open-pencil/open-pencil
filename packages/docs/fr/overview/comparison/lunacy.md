@@ -17,8 +17,8 @@ description: Ce qui distingue OpenPencil et Lunacy, deux éditeurs de design de 
 | Format natif          | Figma `.fig`                                                                                                     | `.free` et Sketch `.sketch`                                                                    |
 | Fichiers `.fig`       | Les ouvre et les enregistre ; copier-coller avec Figma dans les deux sens                                        | Les ouvre                                                                                      |
 | Hors ligne            | Oui                                                                                                              | Oui, avec des documents locaux                                                                 |
-| Collaboration         | Salles pair-à-pair ou OpenPencil Cloud, avec commentaires et historique des versions                             | Cloud de Lunacy, avec commentaires ; cloud privé pour les équipes                              |
-| Auto-hébergement      | Serveur OpenPencil Cloud                                                                                         | —                                                                                              |
+| Collaboration         | Salles pair-à-pair, ou OpenPencil Cloud avec commentaires et historique des versions                             | Cloud de Lunacy ou cloud privé, avec commentaires                                              |
+| Auto-hébergement      | Serveur OpenPencil Cloud                                                                                         | Cloud privé sur vos propres serveurs, avec une licence payante                                 |
 | IA intégrée           | Assistant de chat avec plus de 100 outils de design ; vos propres clés de fournisseur ou des crédits Cloud       | Chat IA sur le service d’Icons8, plus des outils d’image                                       |
 | Agents de code        | Serveur MCP, plus Claude Code, Codex, Cursor et d’autres exécutés dans l’éditeur                                 | Serveur MCP                                                                                    |
 | Scripts               | CLI headless et scripts compatibles avec la Figma Plugin API                                                     | Plugins via son API MCP                                                                        |
@@ -28,11 +28,11 @@ description: Ce qui distingue OpenPencil et Lunacy, deux éditeurs de design de 
 
 ## Travailler avec les fichiers Figma
 
-Lunacy ouvre les fichiers `.fig` et enregistre dans son propre format `.free` ou en fichiers Sketch : un design qui quitte Figma pour Lunacy n’y revient pas en `.fig`. OpenPencil enregistre lui-même en `.fig` : vous pouvez ouvrir un fichier d’un collègue sur Figma, le modifier et le renvoyer, et copier-coller des calques entre les deux applications dans les deux sens. Voir [Compatibilité Figma](/fr/reference/figma-compatibility) pour ce qui est repris.
+Lunacy ouvre les fichiers `.fig` et enregistre dans son propre format `.free` ou en fichiers Sketch : un design qui quitte Figma pour Lunacy n’y revient pas en `.fig`. OpenPencil enregistre lui-même en `.fig` : vous pouvez ouvrir un fichier d’un collègue sur Figma, le modifier et le renvoyer, et copier-coller des calques entre les deux applications dans les deux sens. Un fichier complexe peut tout de même s’afficher différemment une fois rouvert dans Figma : gardez l’original jusqu’à avoir vérifié le résultat ; voir [Compatibilité Figma](/fr/reference/figma-compatibility).
 
 ## Open source et hébergement
 
-Lunacy est gratuit, mais fermé : Icons8 décide de ce qu’il fait et gère son cloud. Le code d’OpenPencil est ouvert, et les documents peuvent rester sur votre appareil, dans votre propre [bucket de stockage](/user-guide/cloud-storage) ou sur [OpenPencil Cloud](/cloud/), y compris sur un [serveur géré par votre équipe](/cloud/self-hosting/).
+Lunacy est gratuit mais propriétaire, et faire tourner son cloud privé sur vos propres serveurs exige une licence payante. Le code d’OpenPencil est ouvert, et les documents peuvent rester sur votre appareil, dans votre propre [bucket de stockage](/user-guide/cloud-storage) ou sur [OpenPencil Cloud](/cloud/), y compris sur un [serveur géré par votre équipe](/cloud/self-hosting/).
 
 ## IA et automatisation
 

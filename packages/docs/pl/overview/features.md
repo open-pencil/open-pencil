@@ -65,7 +65,7 @@ openpencil export design.fig -f jsx --style tailwind
 
 ## Czat AI
 
-Naciśnij <kbd>⌘</kbd><kbd>J</kbd>. Ponad 100 narzędzi tworzy figury, zmienia style i układ, pracuje z komponentami i zmiennymi, wykonuje operacje logiczne, analizuje tokeny projektu i eksportuje zasoby. Można podłączyć Anthropic, OpenAI, Google AI, OpenRouter albo zgodny punkt końcowy.
+Naciśnij <kbd>⌘</kbd><kbd>J</kbd>. Ponad 100 narzędzi tworzy figury, zmienia style i układ, pracuje z komponentami i zmiennymi, wykonuje operacje logiczne, analizuje tokeny projektu i eksportuje zasoby. Można podłączyć Anthropic, OpenAI, Google AI, OpenRouter albo zgodny punkt końcowy. Podstawowy zestaw narzędzi jest domyślnie włączony; pozostałe włączysz w **Ustawienia → Dostęp do narzędzi**.
 
 Wywołania narzędzi pojawiają się na zwijanej osi czasu. Do kontroli wizualnej asystent eksportuje wynik i porównuje go z poleceniem. Wszystkie zmiany AI można cofnąć.
 
@@ -96,7 +96,7 @@ Połączenie równorzędne WebRTC nie wymaga centralnego serwera. Udostępnij od
 
 ## Wersja komputerowa i internetowa
 
-**Komputer:** Tauri v2, około 20 MB do pobrania, dla macOS, Windows i Linux, z menu systemowymi, pracą bez sieci i automatycznym zapisem.
+**Komputer:** Tauri v2, z instalatorami około 20 MB (AppImage dla Linuksa zawiera więcej i jest większy), dla macOS, Windows i Linux, z menu systemowymi, pracą bez sieci i automatycznym zapisem.
 
 **Internet:** [cloud.openpencil.dev](https://cloud.openpencil.dev), możliwość instalacji jako PWA i interfejs dotykowy.
 

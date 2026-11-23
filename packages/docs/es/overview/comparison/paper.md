@@ -22,7 +22,7 @@ description: En qué se diferencian OpenPencil, un editor de diseño de código 
 | Scripts                  | CLI sin interfaz y scripts compatibles con la Figma Plugin API                                               | CLI para su servidor MCP                                                       |
 | Exportación de código    | Design JSX, HTML, Vue y React con CSS o Tailwind                                                             | React con CSS o Tailwind                                                       |
 | Exportación              | PNG, JPG, WEBP, SVG y `.fig`; PDF desde la CLI                                                               | PNG, SVG, PDF y vídeo                                                          |
-| Colaboración             | Salas peer-to-peer u OpenPencil Cloud, con comentarios e historial de versiones                              | Edición en tiempo real con compañeros y agentes, y comentarios                 |
+| Colaboración             | Salas peer-to-peer, u OpenPencil Cloud con comentarios e historial de versiones                              | Edición en tiempo real con compañeros y agentes, y comentarios                 |
 
 ## Archivos y alojamiento
 
@@ -30,7 +30,7 @@ Paper guarda los diseños en su propio servicio. OpenPencil guarda archivos `.fi
 
 ## IA y agentes
 
-Ambos están hechos para agentes. Paper no tiene asistente integrado: diseñas con él a través de un agente externo como Claude Code o Cursor sobre su servidor MCP, y su plan gratuito permite 100 llamadas MCP a la semana.
+Ambos están hechos para agentes. Paper no tiene asistente integrado: diseñas a mano o conectas un agente externo como Claude Code o Cursor a través de su servidor MCP, y su plan gratuito permite 100 llamadas MCP a la semana.
 
 OpenPencil tiene un [asistente de IA](/es/user-guide/ai-chat) dentro del editor, que usa tu propia clave de proveedor o créditos de Cloud, y las mismas más de 100 herramientas están abiertas a agentes externos a través del [servidor MCP](/developers/mcp-server) sin límites de llamadas. La aplicación de escritorio también puede ejecutar [agentes de código](/user-guide/coding-agents) dentro del editor, cada uno con su propio cursor en el lienzo. La [CLI](/es/developers/cli/inspecting) y [`eval`](/es/developers/cli/scripting) trabajan con documentos sin abrir el editor en absoluto.
 

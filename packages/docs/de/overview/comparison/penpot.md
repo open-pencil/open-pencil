@@ -16,7 +16,7 @@ OpenPencil und Penpot sind beide Open-Source-Designwerkzeuge, die sich anstelle 
 | Plattformen          | Desktop-App für macOS, Windows und Linux sowie Browser                                               | Browser                                              |
 | Offline nutzbar      | Ja; Dokumente können auf dem eigenen Gerät bleiben                                                   | Benötigt seinen Server                               |
 | Konten               | Zum Bearbeiten nicht nötig; optional für Cloud                                                       | Erforderlich                                         |
-| Zusammenarbeit       | Peer-to-Peer-Räume ohne Server oder OpenPencil Cloud mit Freigabe, Kommentaren und Versionsverlauf   | Serverbasiert, mit Freigabe, Kommentaren und Verlauf |
+| Zusammenarbeit       | Peer-to-Peer-Räume ohne Konto oder OpenPencil Cloud mit Freigabe, Kommentaren und Versionsverlauf    | Serverbasiert, mit Freigabe, Kommentaren und Verlauf |
 | Self-Hosting         | OpenPencil-Cloud-Server                                                                              | Docker-Bereitstellung                                |
 | Integrierte KI       | Chat-Assistent mit über 100 Designwerkzeugen; eigener Anbieterschlüssel oder Cloud-Guthaben          | —                                                    |
 | Agenten und Skripte  | MCP-Server, Headless-CLI und mit der Figma Plugin API kompatible Skripte                             | MCP-Server und Plugin API                            |
@@ -27,7 +27,7 @@ OpenPencil und Penpot sind beide Open-Source-Designwerkzeuge, die sich anstelle 
 
 ## Figma-Dateien
 
-OpenPencil öffnet `.fig`-Dateien direkt und speichert wieder als `.fig`. Ein Team kann also wechseln, ohne zuerst seine Bibliothek zu konvertieren, und wer noch mit Figma arbeitet, kann das Ergebnis öffnen. Werden Ebenen in Figma kopiert und in OpenPencil eingefügt, bleiben Füllungen, Konturen, automatische Anordnung, Text, Effekte und Vektornetzwerke erhalten; die umgekehrte Richtung funktioniert ebenfalls. Was übernommen wird und was nicht, steht unter [Figma-Kompatibilität](/de/reference/figma-compatibility).
+OpenPencil öffnet `.fig`-Dateien direkt und speichert wieder als `.fig`. Ein Team kann also wechseln, ohne zuerst seine Bibliothek zu konvertieren, und wer noch mit Figma arbeitet, kann das Ergebnis öffnen. Komplexe Dateien können beim erneuten Öffnen in Figma trotzdem anders aussehen; daher das Original behalten, bis das Ergebnis geprüft ist. Werden Ebenen in Figma kopiert und in OpenPencil eingefügt, bleiben Füllungen, Konturen, automatische Anordnung, Text, Effekte und Vektornetzwerke erhalten; die umgekehrte Richtung funktioniert ebenfalls. Was übernommen wird und was nicht, steht unter [Figma-Kompatibilität](/de/reference/figma-compatibility).
 
 Penpot verwendet ein eigenes `.penpot`-Format und öffnet keine `.fig`-Dateien. Für den Umstieg von Figma wird das Export-Plugin von Penpot in Figma ausgeführt und dessen Ergebnis importiert.
 
@@ -41,11 +41,11 @@ Penpot hat einen offiziellen MCP-Server, über den Coding-Agenten an seinen Date
 
 Penpot besteht aus Client und Server: Dokumente liegen auf einer Penpot-Instanz, entweder der gehosteten oder einer selbst mit Docker bereitgestellten, und alle melden sich dort an.
 
-OpenPencil speichert Dokumente standardmäßig auf dem eigenen Gerät. Für gemeinsames Bearbeiten lässt sich ein [Peer-to-Peer-Raum](/de/user-guide/collaboration) ohne Server oder Konto öffnen, mit Live-Cursorn, Folgemodus und Sprachanrufen. Für gemeinsamen Speicher, Berechtigungen, Kommentare und Versionsverlauf gibt es [OpenPencil Cloud](/cloud/): den gehosteten Dienst oder einen [vom eigenen Team betriebenen Server](/cloud/self-hosting/) aus demselben Open-Source-Code.
+OpenPencil speichert Dokumente standardmäßig auf dem eigenen Gerät. Für gemeinsames Bearbeiten lässt sich ein [Peer-to-Peer-Raum](/de/user-guide/collaboration) ohne Konto und ohne eigenes Hosting öffnen, mit Live-Cursorn, Folgemodus und Sprachanrufen. Für gemeinsamen Speicher, Berechtigungen, Kommentare und Versionsverlauf gibt es [OpenPencil Cloud](/cloud/): den gehosteten Dienst oder einen [vom eigenen Team betriebenen Server](/cloud/self-hosting/) aus demselben Open-Source-Code.
 
 ## Desktop-App
 
-OpenPencil hat eine native Desktop-App für macOS, Windows und Linux, rund 20 MB groß, mit nativen Menüs, Offline-Bearbeitung und automatischem Speichern. Außerdem läuft es im Browser unter [cloud.openpencil.dev](https://cloud.openpencil.dev). Penpot läuft im Browser.
+OpenPencil hat eine native Desktop-App für macOS, Windows und Linux mit nativen Menüs, Offline-Bearbeitung und automatischem Speichern. Außerdem läuft es im Browser unter [cloud.openpencil.dev](https://cloud.openpencil.dev). Penpot läuft im Browser.
 
 ## Wo Penpot voraus ist
 

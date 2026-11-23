@@ -17,8 +17,8 @@ description: Le differenze tra OpenPencil e Lunacy, due editor di design desktop
 | Formato nativo           | Figma `.fig`                                                                                           | `.free` e Sketch `.sketch`                                                             |
 | File `.fig`              | Li apre e li salva; copia e incolla con Figma in entrambe le direzioni                                 | Li apre                                                                                |
 | Uso offline              | Sì                                                                                                     | Sì, con documenti locali                                                               |
-| Collaborazione           | Stanze peer-to-peer oppure OpenPencil Cloud, con commenti e cronologia delle versioni                  | Il cloud di Lunacy, con commenti; cloud privato per i team                             |
-| Self-hosting             | Server di OpenPencil Cloud                                                                             | —                                                                                      |
+| Collaborazione           | Stanze peer-to-peer, oppure OpenPencil Cloud con commenti e cronologia delle versioni                  | Il cloud di Lunacy o un cloud privato, con commenti                                    |
+| Self-hosting             | Server di OpenPencil Cloud                                                                             | Cloud privato sui tuoi server, con licenza a pagamento                                 |
 | AI integrata             | Assistente in chat con oltre 100 strumenti di design; le chiavi dei tuoi provider o i crediti Cloud    | Chat AI sul servizio di Icons8, più strumenti per le immagini                          |
 | Agenti di programmazione | Server MCP, più Claude Code, Codex, Cursor e altri eseguiti dentro l’editor                            | Server MCP                                                                             |
 | Scripting                | CLI headless e scripting compatibile con la Figma Plugin API                                           | Plugin tramite la sua API MCP                                                          |
@@ -28,11 +28,11 @@ description: Le differenze tra OpenPencil e Lunacy, due editor di design desktop
 
 ## Lavorare con i file Figma
 
-Lunacy apre i file `.fig` e salva nel proprio formato `.free` o in file Sketch, quindi un design che passa da Figma a Lunacy non torna indietro come `.fig`. OpenPencil salva direttamente in `.fig`: puoi aprire un file di un collega che usa Figma, modificarlo e rimandarglielo, e copiare e incollare livelli tra le due app in entrambe le direzioni. Consulta [Compatibilità con Figma](/it/reference/figma-compatibility) per sapere cosa viene trasferito.
+Lunacy apre i file `.fig` e salva nel proprio formato `.free` o in file Sketch, quindi un design che passa da Figma a Lunacy non torna indietro come `.fig`. OpenPencil salva direttamente in `.fig`: puoi aprire un file di un collega che usa Figma, modificarlo e rimandarglielo, e copiare e incollare livelli tra le due app in entrambe le direzioni. I file complessi possono apparire diversi quando vengono riaperti in Figma, quindi conserva l’originale finché non hai controllato il risultato; consulta [Compatibilità con Figma](/it/reference/figma-compatibility).
 
 ## Open source e hosting
 
-Lunacy è gratuito ma chiuso: Icons8 decide cosa fa e gestisce il suo cloud. Il codice di OpenPencil è aperto, e i documenti possono restare sul tuo dispositivo, nel tuo [bucket di archiviazione](/user-guide/cloud-storage) o su [OpenPencil Cloud](/cloud/), compreso un [server gestito dal tuo team](/cloud/self-hosting/).
+Lunacy è gratuito ma closed source, e far girare il suo cloud privato sui tuoi server richiede una licenza a pagamento. Il codice di OpenPencil è aperto, e i documenti possono restare sul tuo dispositivo, nel tuo [bucket di archiviazione](/user-guide/cloud-storage) o su [OpenPencil Cloud](/cloud/), compreso un [server gestito dal tuo team](/cloud/self-hosting/).
 
 ## AI e automazione
 

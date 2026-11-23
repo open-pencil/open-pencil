@@ -22,7 +22,7 @@ description: Czym różnią się OpenPencil, edytor projektów o otwartym kodzie
 | Skrypty                | CLI bez interfejsu i skrypty zgodne z Figma Plugin API                                            | CLI dla jego serwera MCP                                               |
 | Eksport kodu           | Design JSX, HTML, Vue i React z CSS lub Tailwind                                                  | React z CSS lub Tailwind                                               |
 | Eksport                | PNG, JPG, WEBP, SVG i `.fig`; PDF z CLI                                                           | PNG, SVG, PDF i wideo                                                  |
-| Współpraca             | Pokoje peer-to-peer albo OpenPencil Cloud, z komentarzami i historią wersji                       | Edycja w czasie rzeczywistym z członkami zespołu i agentami oraz komentarze |
+| Współpraca             | Pokoje peer-to-peer albo OpenPencil Cloud z komentarzami i historią wersji                        | Edycja w czasie rzeczywistym z członkami zespołu i agentami oraz komentarze |
 
 ## Pliki i hosting
 
@@ -30,7 +30,7 @@ Paper przechowuje projekty we własnej usłudze. OpenPencil zapisuje zwykłe pli
 
 ## AI i agenci
 
-Oba narzędzia są stworzone dla agentów. Paper nie ma wbudowanego asystenta: projektujesz w nim przez zewnętrznego agenta, takiego jak Claude Code lub Cursor, korzystającego z jego serwera MCP, a darmowy plan pozwala na 100 wywołań MCP tygodniowo.
+Oba narzędzia są stworzone dla agentów. Paper nie ma wbudowanego asystenta: projektujesz w nim ręcznie albo podłączasz zewnętrznego agenta, takiego jak Claude Code lub Cursor, przez jego serwer MCP, a darmowy plan pozwala na 100 wywołań MCP tygodniowo.
 
 OpenPencil ma [asystenta AI](/pl/user-guide/ai-chat) wewnątrz edytora, korzystającego z Twojego klucza dostawcy lub kredytów Cloud, a te same ponad 100 narzędzi jest dostępnych dla zewnętrznych agentów przez [serwer MCP](/developers/mcp-server) bez limitów wywołań. Aplikacja na komputer może też uruchamiać [agentów programistycznych](/user-guide/coding-agents) wewnątrz edytora, każdego z własnym kursorem na obszarze roboczym. [CLI](/pl/developers/cli/inspecting) i [`eval`](/pl/developers/cli/scripting) działają na dokumentach w ogóle bez otwierania edytora.
 

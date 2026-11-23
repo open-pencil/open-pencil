@@ -17,8 +17,8 @@ description: Czym różnią się OpenPencil i Lunacy, dwa darmowe edytory projek
 | Natywny format         | Figma `.fig`                                                                                          | `.free` i Sketch `.sketch`                                                      |
 | Pliki `.fig`           | Otwiera je i zapisuje; kopiowanie i wklejanie z Figmą w obie strony                                   | Otwiera je                                                                      |
 | Praca offline          | Tak                                                                                                   | Tak, z dokumentami lokalnymi                                                    |
-| Współpraca             | Pokoje peer-to-peer albo OpenPencil Cloud, z komentarzami i historią wersji                           | Chmura Lunacy z komentarzami; prywatna chmura dla zespołów                      |
-| Własny hosting         | Serwer OpenPencil Cloud                                                                               | —                                                                               |
+| Współpraca             | Pokoje peer-to-peer albo OpenPencil Cloud z komentarzami i historią wersji                            | Chmura Lunacy lub prywatna chmura, z komentarzami                               |
+| Własny hosting         | Serwer OpenPencil Cloud                                                                               | Prywatna chmura na własnych serwerach, z płatną licencją                        |
 | Wbudowane AI           | Asystent w czacie z ponad 100 narzędziami projektowymi; własne klucze dostawców lub kredyty Cloud     | Czat AI w usłudze Icons8 oraz narzędzia do obrazów                              |
 | Agenci programistyczni | Serwer MCP oraz Claude Code, Codex, Cursor i inni działający wewnątrz edytora                         | Serwer MCP                                                                      |
 | Skrypty                | CLI bez interfejsu i skrypty zgodne z Figma Plugin API                                                | Wtyczki przez jego API MCP                                                      |
@@ -28,11 +28,11 @@ description: Czym różnią się OpenPencil i Lunacy, dwa darmowe edytory projek
 
 ## Praca z plikami Figma
 
-Lunacy otwiera pliki `.fig` i zapisuje we własnym formacie `.free` albo jako pliki Sketch, więc projekt, który trafił z Figmy do Lunacy, nie wraca jako `.fig`. OpenPencil sam zapisuje `.fig`: możesz otworzyć plik od kolegi pracującego w Figmie, zmienić go i odesłać, a także kopiować i wklejać warstwy między obiema aplikacjami w dowolnym kierunku. Co jest przenoszone, opisuje strona [Zgodność z Figmą](/pl/reference/figma-compatibility).
+Lunacy otwiera pliki `.fig` i zapisuje we własnym formacie `.free` albo jako pliki Sketch, więc projekt, który trafił z Figmy do Lunacy, nie wraca jako `.fig`. OpenPencil sam zapisuje `.fig`: możesz otworzyć plik od kolegi pracującego w Figmie, zmienić go i odesłać, a także kopiować i wklejać warstwy między obiema aplikacjami w dowolnym kierunku. Złożone pliki mogą po ponownym otwarciu w Figmie wyglądać inaczej, więc zachowaj oryginał, dopóki nie sprawdzisz wyniku; zobacz [Zgodność z Figmą](/pl/reference/figma-compatibility).
 
 ## Otwarty kod i hosting
 
-Lunacy jest darmowy, ale zamknięty: Icons8 decyduje, co robi program, i utrzymuje jego chmurę. Kod OpenPencil jest otwarty, a dokumenty mogą pozostać na Twoim urządzeniu, we własnym [zasobniku danych](/user-guide/cloud-storage) albo w [OpenPencil Cloud](/cloud/), także na [serwerze utrzymywanym przez Twój zespół](/cloud/self-hosting/).
+Lunacy jest darmowy, ale ma zamknięty kod, a uruchomienie jego prywatnej chmury na własnych serwerach wymaga płatnej licencji. Kod OpenPencil jest otwarty, a dokumenty mogą pozostać na Twoim urządzeniu, we własnym [zasobniku danych](/user-guide/cloud-storage) albo w [OpenPencil Cloud](/cloud/), także na [serwerze utrzymywanym przez Twój zespół](/cloud/self-hosting/).
 
 ## AI i automatyzacja
 

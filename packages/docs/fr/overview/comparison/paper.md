@@ -22,7 +22,7 @@ description: Ce qui distingue OpenPencil, un éditeur de design open source, et 
 | Scripts                  | CLI headless et scripts compatibles avec la Figma Plugin API                                                 | CLI pour son serveur MCP                                                               |
 | Export de code           | Design JSX, HTML, Vue et React avec CSS ou Tailwind                                                          | React avec CSS ou Tailwind                                                             |
 | Export                   | PNG, JPG, WEBP, SVG et `.fig` ; PDF depuis la CLI                                                            | PNG, SVG, PDF et vidéo                                                                 |
-| Collaboration            | Salles pair-à-pair ou OpenPencil Cloud, avec commentaires et historique des versions                         | Édition en temps réel avec coéquipiers et agents, et commentaires                      |
+| Collaboration            | Salles pair-à-pair, ou OpenPencil Cloud avec commentaires et historique des versions                         | Édition en temps réel avec coéquipiers et agents, et commentaires                      |
 
 ## Fichiers et hébergement
 
@@ -30,7 +30,7 @@ Paper conserve les designs sur son propre service. OpenPencil enregistre des fic
 
 ## IA et agents
 
-Les deux sont conçus pour les agents. Paper n’a pas d’assistant intégré : vous designez avec lui via un agent externe comme Claude Code ou Cursor sur son serveur MCP, et son offre gratuite autorise 100 appels MCP par semaine.
+Les deux sont conçus pour les agents. Paper n’a pas d’assistant intégré : vous designez à la main, ou connectez un agent externe comme Claude Code ou Cursor à son serveur MCP, et son offre gratuite autorise 100 appels MCP par semaine.
 
 OpenPencil dispose d’un [assistant IA](/fr/user-guide/ai-chat) dans l’éditeur, avec votre propre clé de fournisseur ou des crédits Cloud, et les mêmes 100+ outils sont ouverts aux agents externes via le [serveur MCP](/developers/mcp-server) sans limite d’appels. L’application de bureau peut aussi exécuter des [agents de code](/user-guide/coding-agents) dans l’éditeur, chacun avec son propre curseur sur le canevas. La [CLI](/fr/developers/cli/inspecting) et [`eval`](/fr/developers/cli/scripting) travaillent sur les documents sans ouvrir l’éditeur du tout.
 

@@ -21,14 +21,14 @@ description: Le differenze tra OpenPencil, un editor di design open source, e Pe
 | Agenti di programmazione | Server MCP, più Claude Code, Codex, Cursor e altri eseguiti dentro l’editor                         | Server MCP per Claude Code, Codex, Cursor e altri                                 |
 | Scripting                | CLI headless e scripting compatibile con la Figma Plugin API                                        | CLI                                                                               |
 | Export del codice        | Design JSX, HTML, Vue e React con CSS o Tailwind                                                    | HTML con CSS o Tailwind                                                           |
-| Collaborazione           | Modifica in tempo reale in stanze peer-to-peer o su OpenPencil Cloud, con commenti e cronologia     | Link di condivisione, condivisioni dal vivo, commenti e versioni                  |
+| Collaborazione           | Modifica in tempo reale in stanze peer-to-peer, o su OpenPencil Cloud con commenti e cronologia     | Link di condivisione, condivisioni dal vivo, commenti e versioni                  |
 | Self-hosting             | Server di OpenPencil Cloud                                                                          | —                                                                                 |
 
 ## Licenza e file
 
 Pencil è concesso in licenza, non venduto: i suoi termini vietano di modificare o ridistribuire l’app. L’editor di OpenPencil ha licenza MIT e il suo server Cloud Apache 2.0, quindi puoi leggerlo, modificarlo e ospitarlo tutto.
 
-OpenPencil salva nel formato `.fig` di Figma, che aprono anche Figma e altri strumenti. Apre i documenti `.pen`, quindi un progetto Pencil può essere importato e salvato come `.fig`; consulta [Esportazione](/it/user-guide/exporting) per l’apertura dei file.
+OpenPencil salva nel formato `.fig` di Figma, che aprono anche Figma e altri strumenti. Apre i documenti `.pen`, quindi un progetto Pencil può essere importato e salvato come `.fig`; consulta [Esportazione](/user-guide/exporting) per l’apertura dei file.
 
 ## AI
 
@@ -38,7 +38,7 @@ L’[assistente AI](/it/user-guide/ai-chat) di OpenPencil funziona con la tua ch
 
 ## Collaborazione
 
-OpenPencil consente di modificare insieme in tempo reale: apri una [stanza peer-to-peer](/it/user-guide/collaboration) senza server né account, oppure conserva i documenti su [OpenPencil Cloud](/cloud/), ospitato o sul tuo server, con condivisione, commenti e cronologia delle versioni. Pencil condivide i design tramite link e condivisione dal vivo, con commenti e versioni, sul proprio servizio.
+OpenPencil consente di modificare insieme in tempo reale: apri una [stanza peer-to-peer](/it/user-guide/collaboration) senza account e senza nulla da ospitare, oppure conserva i documenti su [OpenPencil Cloud](/cloud/), ospitato o sul tuo server, con condivisione, commenti e cronologia delle versioni. Pencil condivide i design tramite link e condivisione dal vivo, con commenti e versioni, sul proprio servizio.
 
 ## Dove Pencil è avanti
 

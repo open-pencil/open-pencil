@@ -65,7 +65,7 @@ openpencil export design.fig -f jsx --style tailwind
 
 ## Chat AI
 
-Premi <kbd>⌘</kbd><kbd>J</kbd>. Più di 100 strumenti creano forme, cambiano stili e disposizione, lavorano con componenti e variabili, eseguono operazioni booleane, analizzano token di design ed esportano risorse. Sono supportati Anthropic, OpenAI, Google AI, OpenRouter ed endpoint compatibili.
+Premi <kbd>⌘</kbd><kbd>J</kbd>. Più di 100 strumenti creano forme, cambiano stili e disposizione, lavorano con componenti e variabili, eseguono operazioni booleane, analizzano token di design ed esportano risorse. Sono supportati Anthropic, OpenAI, Google AI, OpenRouter ed endpoint compatibili. Un set di base di strumenti è attivo per impostazione predefinita; attiva gli altri in **Impostazioni → Accesso agli strumenti**.
 
 Le chiamate degli strumenti appaiono in una sequenza comprimibile. Per la verifica visiva, l’assistente renderizza il risultato e lo confronta con la richiesta. Tutte le modifiche AI possono essere annullate.
 
@@ -96,7 +96,7 @@ La connessione peer-to-peer WebRTC non richiede un server centrale. Condividi un
 
 ## Desktop e Web
 
-**Desktop:** Tauri v2, circa 20 MB da scaricare, per macOS, Windows e Linux, con menu nativi, uso senza rete e salvataggio automatico.
+**Desktop:** Tauri v2, con programmi di installazione di circa 20 MB (l’AppImage per Linux include più componenti ed è più grande), per macOS, Windows e Linux, con menu nativi, uso senza rete e salvataggio automatico.
 
 **Web:** [cloud.openpencil.dev](https://cloud.openpencil.dev), installabile come PWA e adattato agli schermi touch.
 

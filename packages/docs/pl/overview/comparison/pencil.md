@@ -21,7 +21,7 @@ description: Czym różnią się OpenPencil, edytor projektów o otwartym kodzie
 | Agenci programistyczni | Serwer MCP oraz Claude Code, Codex, Cursor i inni działający wewnątrz edytora                      | Serwer MCP dla Claude Code, Codex, Cursor i innych                                |
 | Skrypty                | CLI bez interfejsu i skrypty zgodne z Figma Plugin API                                             | CLI                                                                               |
 | Eksport kodu           | Design JSX, HTML, Vue i React z CSS lub Tailwind                                                   | HTML z CSS lub Tailwind                                                           |
-| Współpraca             | Edycja w czasie rzeczywistym w pokojach peer-to-peer lub w OpenPencil Cloud, z komentarzami i historią | Linki udostępniania, udostępnianie na żywo, komentarze i wersje               |
+| Współpraca             | Edycja w czasie rzeczywistym w pokojach peer-to-peer lub w OpenPencil Cloud z komentarzami i historią  | Linki udostępniania, udostępnianie na żywo, komentarze i wersje               |
 | Własny hosting         | Serwer OpenPencil Cloud                                                                            | —                                                                                 |
 
 ## Licencja i pliki
@@ -38,7 +38,7 @@ Oba edytory są zbudowane do pracy z AI. Pencil uruchamia kilku agentów na obsz
 
 ## Współpraca
 
-OpenPencil pozwala edytować wspólnie w czasie rzeczywistym: otwórz [pokój peer-to-peer](/pl/user-guide/collaboration) bez serwera i konta albo trzymaj dokumenty w [OpenPencil Cloud](/cloud/) — hostowanym lub na własnym serwerze — z udostępnianiem, komentarzami i historią wersji. Pencil udostępnia projekty przez link i udostępnianie na żywo, z komentarzami i wersjami, we własnej usłudze.
+OpenPencil pozwala edytować wspólnie w czasie rzeczywistym: otwórz [pokój peer-to-peer](/pl/user-guide/collaboration) bez konta i bez niczego do hostowania albo trzymaj dokumenty w [OpenPencil Cloud](/cloud/) — hostowanym lub na własnym serwerze — z udostępnianiem, komentarzami i historią wersji. Pencil udostępnia projekty przez link i udostępnianie na żywo, z komentarzami i wersjami, we własnej usłudze.
 
 ## Gdzie Pencil ma przewagę
 
