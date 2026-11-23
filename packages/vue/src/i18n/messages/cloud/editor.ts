@@ -169,6 +169,10 @@ export const cloudMessageDefaults = {
   shareResetLink: 'Reset link',
   shareLinkCopied: 'Link copied',
   shareCopyLink: 'Copy link',
+  shareCopyEmbed: 'Copy embed code',
+  shareEmbedCopied: 'Embed code copied',
+  shareEmbedTip:
+    'Shows this file in another site’s page, view only. Anyone who sees the code can open the file.',
   shareSendLink: 'Share link',
   shareLoadFailed: 'Couldn’t load who has access. Check your connection and try again.',
   shareChangeFailed: 'That change didn’t go through. Try again in a moment.',

@@ -2,6 +2,7 @@ import { describe, expect, spyOn, test } from 'bun:test'
 
 import {
   createCloudServer,
+  embedContentSecurityPolicy,
   SITE_CONTENT_SECURITY_POLICY,
   type SiteFiles
 } from '#cloud/runtime/site/server'
@@ -125,6 +126,51 @@ describe('Cloud server', () => {
       ])
     } finally {
       logged.mockRestore()
+    }
+  })
+
+  test('finds no embed where the deployment does not allow them', async () => {
+    for (const path of ['/embed', '/embed/share/abc', '/embed/community/abc']) {
+      expect((await navigate(path)).status).toBe(404)
+    }
+  })
+
+  test('serves embeds as the editor, framed by any site or only the allowed ones', async () => {
+    const anySite = createCloudServer(api, {
+      site,
+      indexingPolicy: 'allow',
+      embedding: { allowedOrigins: [] }
+    })
+    const page = await anySite.request('https://cloud.example/embed/share/abc', {
+      headers: { Accept: 'text/html' }
+    })
+    expect(await page.text()).toContain('Editor')
+    expect(page.headers.get('Content-Security-Policy')).toBe(embedContentSecurityPolicy([]))
+    expect(page.headers.get('Content-Security-Policy')).toContain('frame-ancestors *')
+    expect(page.headers.get('Cache-Control')).toBe('no-cache')
+    // The page around the frame is the one to index, whatever the server's policy.
+    expect(page.headers.get('X-Robots-Tag')).toContain('noindex')
+
+    const listed = createCloudServer(api, {
+      site,
+      indexingPolicy: 'deny',
+      embedding: { allowedOrigins: ['https://intranet.example/wiki/'] }
+    })
+    const framed = await listed.request('https://cloud.example/embed/community/abc')
+    expect(framed.headers.get('Content-Security-Policy')).toContain(
+      'frame-ancestors https://intranet.example'
+    )
+    // Every other page stays unframeable.
+    const editor = await listed.request('https://cloud.example/share/abc', {
+      headers: { Accept: 'text/html' }
+    })
+    expect(editor.headers.get('Content-Security-Policy')).toBe(SITE_CONTENT_SECURITY_POLICY)
+  })
+
+  test('lets embeds run what any page runs', () => {
+    const directives = embedContentSecurityPolicy(['https://a.example']).split('; ')
+    for (const directive of SITE_CONTENT_SECURITY_POLICY.split('; ')) {
+      if (!directive.startsWith('frame-ancestors')) expect(directives).toContain(directive)
     }
   })
 

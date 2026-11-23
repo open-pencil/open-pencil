@@ -63,7 +63,8 @@ export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscov
     capabilities: {
       documents: true,
       workspaces: true,
-      collaboration: true
+      collaboration: true,
+      embedding: config.embeddingEnabled
     },
     listing: config.listingMinimumEditorVersion
       ? { minimumEditorVersion: config.listingMinimumEditorVersion }

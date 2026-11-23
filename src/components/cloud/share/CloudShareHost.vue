@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useClipboard } from '@vueuse/core'
 import { computed, watch } from 'vue'
 
 import type { DocumentPermission } from '@open-pencil/cloud/contract'
@@ -7,6 +8,7 @@ import { useMessages } from '@open-pencil/vue/i18n'
 import { cloudConnection } from '@/app/cloud/sessions/connection'
 import { cloudShareOpen } from '@/app/cloud/sharing/dialog'
 import { cloudShareTarget, type CloudShareLink } from '@/app/cloud/sharing/document'
+import { cloudEmbedCode } from '@/app/cloud/sharing/embed'
 import { useCloudSharing } from '@/app/cloud/sharing/use'
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'
 import { useDateFormat } from '@/app/i18n/date'
@@ -44,6 +46,13 @@ const dialogOpen = computed({
 const shownTarget = useHeldContent(target)
 const shown = useHeldContent(sharing, dialogOpen)
 const { sendsLink, copied, send } = useSendLink()
+const embedClipboard = useClipboard({ legacy: true })
+
+/** Whether the document's server lets other sites show its shared documents in a frame. */
+const embeddable = computed(() => {
+  const serverId = storeRef.value?.getStorageBinding()?.profileId
+  return serverId ? (cloudConnection(serverId).discovery?.capabilities.embedding ?? false) : false
+})
 
 const workspace = computed(() => {
   const binding = storeRef.value?.getStorageBinding()
@@ -90,6 +99,17 @@ function sendLink() {
   void send(url, storeRef.value?.state.documentName)
 }
 
+/** Copies the frame that shows the document in another site's page, from the prepared link. */
+function copyEmbed() {
+  const url = linkURL.value
+  const code = url ? cloudEmbedCode(url, storeRef.value?.state.documentName ?? '') : null
+  if (!code) {
+    toast.error(t.value.shareLoadFailed)
+    return
+  }
+  void embedClipboard.copy(code)
+}
+
 watch(
   () => [cloudShareOpen.value, target.value] as const,
   ([open, current]) => {
@@ -114,10 +134,13 @@ watch(
     :inviting="inviting"
     :copied="copied"
     :sends-link="sendsLink"
+    :embeddable="embeddable"
+    :embed-copied="embedClipboard.copied.value"
     @invite="invite"
     @change-member="changeMember"
     @change-link="changeLink"
     @copy-link="sendLink"
+    @copy-embed="copyEmbed"
     @reset-link="resetLink"
   />
 </template>

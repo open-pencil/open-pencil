@@ -106,6 +106,15 @@ export const cloudDeploymentConfigSchema = v.strictObject({
     trusted_origins: v.optional(v.array(urlSchema), []),
     // The server's editor works with files on this device without signing in to the server.
     local_editor: v.optional(v.boolean(), true),
+    // Other sites may show documents shared by link and community documents in a frame. Only the
+    // listed origins may, or any site when none are listed.
+    embedding: v.optional(
+      v.strictObject({
+        enabled: v.boolean(),
+        allowed_origins: v.optional(v.array(urlSchema), [])
+      }),
+      { enabled: false, allowed_origins: [] }
+    ),
     listing: v.optional(v.strictObject({ minimum_editor_version: cloudEditorVersionSchema })),
     // How a self-hosted server names itself on its public pages.
     branding: v.optional(

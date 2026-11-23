@@ -1,8 +1,10 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, spyOn, test } from 'bun:test'
 
 import type { CloudAccountStatus } from '@open-pencil/cloud/contract'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 import {
+  enterCloudSite,
   isSecretCloudLink,
   leaveAfterSignOut,
   openLocalEditor,
@@ -83,6 +85,26 @@ describe('Cloud server editor pages', () => {
 
   test('open the editor when the server cannot say, since the editor works without it', () => {
     expect(visit('/', 'unreachable', { localEditor: false })).toBeNull()
+  })
+
+  test('show an embed without asking the server who is signed in', async () => {
+    const requests = spyOn(globalThis, 'fetch')
+    try {
+      const address = new URL('https://cloud.example/embed/community/abc')
+      const location = asDouble<Location>({
+        href: address.href,
+        origin: address.origin,
+        pathname: address.pathname,
+        search: address.search,
+        replace: () => {
+          throw new Error('An embed never leaves for another page')
+        }
+      })
+      expect(await enterCloudSite(location)).toBe(true)
+      expect(requests).not.toHaveBeenCalled()
+    } finally {
+      requests.mockRestore()
+    }
   })
 })
 

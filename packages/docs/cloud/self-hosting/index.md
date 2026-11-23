@@ -76,6 +76,18 @@ For a server only its members use, set `deployment.local_editor = false`: the we
 
 Links the server sends point at its own address: `/documents/<id>` for a document, `/share/<id>` for a shared link, and `/invitations/<id>` for an invitation. An editor at another address, such as a development build, can still connect when its origin is in `deployment.trusted_origins`; people sign in there by approving a code, as in the desktop app.
 
+## Embedding in other sites
+
+Other sites can show documents shared by link, and community gallery documents, in a frame at `/embed/…`: read-only, live, and without the visitor's account. Self-hosted servers keep this off; turn it on under `[deployment.embedding]`, and list the sites that may embed documents, or leave the list out to let any site:
+
+```toml
+[deployment.embedding]
+enabled = true
+allowed_origins = ["https://wiki.example.com"]
+```
+
+Only `/embed/…` pages may be framed; every other page of the server refuses to be. A shared link embeds only where guests may view it (`guest_view` under `[entitlements.sharing]`), since an embed never signs in. Embeds are never indexed, whatever `deployment.indexing` says.
+
 ## Your name on the server's pages
 
 The server's public pages, such as its community gallery, carry your name rather than OpenPencil's: the bar shows the server's address, the gallery, and help, and the footer your legal links with a small "Powered by OpenPencil". Name the server, add your logo, and point help at your own page under `[deployment.branding]`:

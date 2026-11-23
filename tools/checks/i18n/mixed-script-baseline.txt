@@ -805,3 +805,5 @@ zh-cn:files.openURLInvalid
 zh-cn:files.openURLPDF
 zh-cn:files.openURLUnsupported
 zh-cn:menu.openURL
+ja:cloud/embed.openInEditor
+zh-cn:cloud/embed.openInEditor

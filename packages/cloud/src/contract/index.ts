@@ -272,6 +272,11 @@ export {
   parseCloudLinkPath,
   cloudCommunityPath,
   cloudCommunityURL,
+  CLOUD_EMBED_PATH,
+  cloudEmbedCommunityURL,
+  cloudEmbedShareURL,
+  parseCloudEmbedPath,
+  type CloudEmbedKind,
   type CloudLinkKind,
   type CloudLinkPathKind
 } from './links'

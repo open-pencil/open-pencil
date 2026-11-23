@@ -15,6 +15,9 @@ local_editor = true
 # waitlist they were built with.
 listing = { minimum_editor_version = "0.17.0" }
 
+# Any site may show documents shared by link and community documents in a frame.
+embedding = { enabled = true }
+
 [database]
 
 [authentication.enrollment]

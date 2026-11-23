@@ -6,6 +6,7 @@ import {
   noDynamicTailwindStateClasses,
   noVueTemplateUIHooksOrSVG
 } from './dynamic-tailwind-classes.ts'
+import { sdkOnlyImportsInEmbed } from './embed.ts'
 import { noGraphBuildersInFrontEnds } from './graph-builders.ts'
 import { noNativeTitleAttributesInVue } from './native-titles.ts'
 import {
@@ -515,6 +516,7 @@ export const openPencilArchitecturePlugin = {
     noComponentsImportViews,
     noViewsImportedOutsideEntry,
     noEditorImportsInCloudPortal,
+    sdkOnlyImportsInEmbed,
     noTailwindVariantsInThemes,
     noNonUIImportsInSharedUI,
     noAppImportsInSharedUI,

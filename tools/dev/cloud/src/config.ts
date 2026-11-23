@@ -24,7 +24,9 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
       mode: 'self-hosted',
       public_url: endpoints.cloudURL,
       indexing: 'deny',
-      trusted_origins: [endpoints.editorURL, endpoints.cloudURL]
+      trusted_origins: [endpoints.editorURL, endpoints.cloudURL],
+      // Any page may frame documents, so embeds can be tried from a local HTML file.
+      embedding: { enabled: true }
     },
     database: {},
     authentication: {

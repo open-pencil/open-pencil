@@ -109,6 +109,25 @@ lease_ms = 180000
 `
 
 describe('Cloud TOML deployment configuration', () => {
+  test('lets other sites embed documents only where the deployment enables it', () => {
+    const embedding = (table: string) =>
+      parseCloudDeploymentTOML(
+        minimalSource.replace(
+          'trusted_origins = ["https://app.example.com"]',
+          `trusted_origins = ["https://app.example.com"]\n${table}`
+        ),
+        environment
+      )
+    expect(embedding('embedding = { enabled = true }')).toMatchObject({
+      embeddingEnabled: true,
+      embeddingOrigins: []
+    })
+    expect(
+      embedding('embedding = { enabled = true, allowed_origins = ["https://wiki.example"] }')
+    ).toMatchObject({ embeddingEnabled: true, embeddingOrigins: ['https://wiki.example'] })
+    expect(() => embedding('embedding = { enabled = true, origins = [] }')).toThrow()
+  })
+
   test('reads GitHub’s client secret from GITHUB_CLIENT_SECRET', () => {
     const source = minimalSource.replace(
       '[authentication.providers.google]',
@@ -131,6 +150,8 @@ describe('Cloud TOML deployment configuration', () => {
       enrollmentMode: 'approval',
       enrollmentAdminNotificationEmails: ['admin@example.com'],
       localEditor: true,
+      embeddingEnabled: false,
+      embeddingOrigins: [],
       emailPasswordEnabled: true,
       emailPasswordSignUpEnabled: false,
       emailPasswordMinimumLength: 16,

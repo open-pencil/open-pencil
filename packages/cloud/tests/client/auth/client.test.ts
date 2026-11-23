@@ -14,7 +14,7 @@ const discovery = parseCloudDiscovery({
   apiURL: 'https://cloud.example.com/api',
   authURL: 'https://cloud.example.com/api/auth',
   authentication: { socialProviders: ['google' as const], enterpriseSSO: false },
-  capabilities: { documents: true, workspaces: true, collaboration: true }
+  capabilities: { documents: true, workspaces: true, collaboration: true, embedding: false }
 })
 
 describe('Cloud Better Auth client', () => {

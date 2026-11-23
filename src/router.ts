@@ -9,10 +9,19 @@ import { homeLocation } from '@/app/home/location'
  */
 const EditorLayout = () => import('./views/EditorLayout.vue')
 const WorkspaceView = () => import('./views/WorkspaceView.vue')
+const EmbedView = () => import('./views/embed/EmbedView.vue')
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    // A Cloud document inside another site's page, read-only, without the editor around it. A
+    // build without Cloud has none, and bundles none of the embed.
+    ...(__OPENPENCIL_CLOUD__
+      ? [
+          { path: '/embed/share/:shareId', component: EmbedView },
+          { path: '/embed/community/:documentId', component: EmbedView }
+        ]
+      : []),
     {
       path: '/',
       component: EditorLayout,

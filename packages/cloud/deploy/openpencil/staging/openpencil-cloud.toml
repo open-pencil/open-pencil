@@ -12,6 +12,9 @@ public_url = "https://cloud-staging.openpencil.dev"
 indexing = "deny"
 local_editor = false
 
+# Any site may show documents shared by link and community documents in a frame.
+embedding = { enabled = true }
+
 [database]
 
 [authentication.enrollment]

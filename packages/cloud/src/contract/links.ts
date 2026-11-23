@@ -110,6 +110,44 @@ export function parseCloudLinkPath(
   }
 }
 
+/** Where the server shows documents inside other sites' pages, read-only. */
+export const CLOUD_EMBED_PATH = '/embed'
+
+/** What an embed shows: a document shared by link, or one of the community gallery's. */
+export type CloudEmbedKind = 'share' | 'community'
+
+const CLOUD_EMBED_LINK_PATH = /^\/embed\/(share|community)\/([^/]+)$/
+
+/**
+ * A document shared by link as another site shows it, `/embed/share/:id#secret`. The secret
+ * stays in the fragment, as in the link itself, so the embedding page names it only to the frame.
+ */
+export function cloudEmbedShareURL(serverURL: string, shareId: string, secret: string): string {
+  return serverLink(serverURL, `${CLOUD_EMBED_PATH}/share/${encodeParam(shareId)}`, {}, secret)
+}
+
+/** A community gallery document as another site shows it, `/embed/community/:id?version=…`. */
+export function cloudEmbedCommunityURL(
+  serverURL: string,
+  documentId: string,
+  versionId: string | null = null
+): string {
+  return serverLink(serverURL, `${CLOUD_EMBED_PATH}/community/${encodeParam(documentId)}`, {
+    version: versionId ?? undefined
+  })
+}
+
+/** The kind and ID of an embed's path, or null for any other path, as `parseCloudLinkPath`. */
+export function parseCloudEmbedPath(pathname: string): { kind: CloudEmbedKind; id: string } | null {
+  const [, kind, id] = pathname.match(CLOUD_EMBED_LINK_PATH) ?? []
+  if ((kind !== 'share' && kind !== 'community') || !id) return null
+  try {
+    return { kind, id: decodeURIComponent(id) }
+  } catch {
+    return null
+  }
+}
+
 /**
  * The desktop app's form of a Cloud link, `openpencil://cloud?url=<link>#secret`: the web link,
  * whose address names the server, with its secret kept in the fragment.

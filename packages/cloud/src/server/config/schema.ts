@@ -77,6 +77,10 @@ const rawCloudServerConfigSchema = v.object({
   trustedOrigins: v.optional(v.array(httpURLSchema), []),
   /** The server's editor works with files on this device without signing in to the server. */
   localEditor: v.optional(v.boolean(), true),
+  /** Other sites may show documents shared by link and community documents in a frame. */
+  embeddingEnabled: v.optional(v.boolean(), false),
+  /** The origins that may embed documents; any site when empty. */
+  embeddingOrigins: v.optional(v.array(httpURLSchema), []),
   authTrustedIPHeaders: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   authTrustedProxies: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   enrollmentMode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open'),

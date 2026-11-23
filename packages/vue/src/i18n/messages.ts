@@ -5,6 +5,7 @@ import { i18n } from '#vue/i18n/create'
 import { aiMessageDefaults } from '#vue/i18n/messages/ai'
 import { automationMessageDefaults } from '#vue/i18n/messages/automation'
 import { cloudMessageDefaults } from '#vue/i18n/messages/cloud/editor'
+import { cloudEmbedMessageDefaults } from '#vue/i18n/messages/cloud/embed'
 import { cloudPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal'
 import { communityPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/community'
 import { personPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/person'
@@ -49,6 +50,7 @@ export const messageDefaults = {
   ai: aiMessageDefaults,
   automation: automationMessageDefaults,
   'cloud/editor': cloudMessageDefaults,
+  'cloud/embed': cloudEmbedMessageDefaults,
   'cloud/portal': cloudPortalMessageDefaults,
   'cloud/portal/community': communityPortalMessageDefaults,
   'cloud/portal/person': personPortalMessageDefaults,

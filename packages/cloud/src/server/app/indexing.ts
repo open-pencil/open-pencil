@@ -1,4 +1,4 @@
-import { CLOUD_DISCOVERY_PATH } from '#cloud/contract'
+import { CLOUD_DISCOVERY_PATH, CLOUD_EMBED_PATH } from '#cloud/contract'
 
 export function shouldPreventIndexing(path: string, policy: 'allow' | 'deny'): boolean {
   return (
@@ -12,6 +12,9 @@ export function shouldPreventIndexing(path: string, policy: 'allow' | 'deny'): b
     path === '/sign-up' ||
     path === '/join' ||
     path === CLOUD_DISCOVERY_PATH ||
+    // A document inside another site's page; the page around it is the one to index.
+    path === CLOUD_EMBED_PATH ||
+    path.startsWith(`${CLOUD_EMBED_PATH}/`) ||
     // A community document in the editor; its page at `/community/:id` is the one to index.
     /^\/community\/[^/]+\/open\/?$/.test(path)
   )
@@ -36,5 +39,5 @@ export function withIndexingPolicy(
 export function robotsText(policy: 'allow' | 'deny'): string {
   return policy === 'deny'
     ? 'User-agent: *\nDisallow: /\n'
-    : 'User-agent: *\nDisallow: /admin\nDisallow: /account\nDisallow: /app\nDisallow: /api\nDisallow: /auth\nDisallow: /sign-in\nDisallow: /sign-up\nDisallow: /join\nDisallow: /.well-known\n'
+    : 'User-agent: *\nDisallow: /admin\nDisallow: /account\nDisallow: /app\nDisallow: /api\nDisallow: /auth\nDisallow: /sign-in\nDisallow: /sign-up\nDisallow: /join\nDisallow: /embed\nDisallow: /.well-known\n'
 }

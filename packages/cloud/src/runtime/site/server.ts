@@ -1,4 +1,8 @@
-import { CLOUD_PORTAL_COMMUNITY_PAGES, CLOUD_PORTAL_PAGE_ROOTS } from '#cloud/contract'
+import {
+  CLOUD_EMBED_PATH,
+  CLOUD_PORTAL_COMMUNITY_PAGES,
+  CLOUD_PORTAL_PAGE_ROOTS
+} from '#cloud/contract'
 import {
   cloudErrorHandler,
   cloudRequestId,
@@ -32,13 +36,26 @@ const EDITOR_PAGE = '/index.html'
  * providers reach other hosts through `fetch`, which it leaves be. Desktop sign-in approval and
  * the editor must never be framed by another site.
  */
-export const SITE_CONTENT_SECURITY_POLICY = [
+const SCRIPT_POLICY = [
   "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
-  "base-uri 'self'",
-  "frame-ancestors 'none'"
-].join('; ')
+  "base-uri 'self'"
+]
+
+export const SITE_CONTENT_SECURITY_POLICY = [...SCRIPT_POLICY, "frame-ancestors 'none'"].join('; ')
+
+/**
+ * What an embed's page may run, the same as any other page, and who may frame it: the listed
+ * origins, or any site. An embed only shows a document someone could already open by its link,
+ * read-only and without the visitor's account, so nothing a framing page could trick a click into
+ * changes anything.
+ */
+export function embedContentSecurityPolicy(allowedOrigins: readonly string[]): string {
+  const ancestors =
+    allowedOrigins.length === 0 ? '*' : allowedOrigins.map((url) => new URL(url).origin).join(' ')
+  return [...SCRIPT_POLICY, `frame-ancestors ${ancestors}`].join('; ')
+}
 
 const PAGE_HEADERS = {
   'Content-Type': 'text/html; charset=utf-8',
@@ -61,6 +78,11 @@ export type CloudServerOptions = {
   reportError?: CloudErrorReporter
   /** The request ID the runtime trusts from what stands in front of it; see `cloudRequestId`. */
   forwardedRequestId?: ForwardedRequestId
+  /**
+   * Who may show the server's documents in a frame at `/embed/…`: the listed origins, or any site
+   * when the list is empty. Without it, those addresses are not found.
+   */
+  embedding?: { allowedOrigins: readonly string[] }
 }
 
 function cacheControl(path: string): string {
@@ -75,7 +97,7 @@ function cacheControl(path: string): string {
  */
 export function createCloudServer(
   api: { fetch(request: Request): Response | Promise<Response> },
-  { site, indexingPolicy, reportError, forwardedRequestId }: CloudServerOptions
+  { site, indexingPolicy, reportError, forwardedRequestId, embedding }: CloudServerOptions
 ) {
   const server = new Hono()
     .onError(cloudErrorHandler(reportError))
@@ -104,6 +126,19 @@ export function createCloudServer(
         : PAGE_HEADERS
       return new Response(html, { status: meta.status, headers })
     })
+    const embedPages = [CLOUD_EMBED_PATH, `${CLOUD_EMBED_PATH}/*`]
+    if (embedding) {
+      const headers = {
+        ...PAGE_HEADERS,
+        'Content-Security-Policy': embedContentSecurityPolicy(embedding.allowedOrigins)
+      }
+      server.on(['GET', 'HEAD'], embedPages, async (c) => {
+        const page = await site(EDITOR_PAGE, c.req.raw)
+        return page ? c.body(page.body, 200, headers) : c.notFound()
+      })
+    } else {
+      server.on(['GET', 'HEAD'], embedPages, (c) => c.notFound())
+    }
     server.on(['GET', 'HEAD'], '*', async (c, next) => {
       await next()
       if (c.res.status !== 404) return

@@ -717,3 +717,4 @@ de:files.openURLSizeTablet
 pl:settings.importing
 pl:panels.gradient
 pl:files.openURLSizeTablet
+fr:cloud/embed.pages

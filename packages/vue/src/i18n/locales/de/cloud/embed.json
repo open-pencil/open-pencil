@@ -1,0 +1,9 @@
+{
+  "opening": "Wird geöffnet…",
+  "unavailable": "Diese Datei wird nicht mehr geteilt, oder der Link ist falsch.",
+  "failed": "Die Datei konnte nicht geöffnet werden.",
+  "tryAgain": "Erneut versuchen",
+  "openInEditor": "In OpenPencil öffnen",
+  "zoomToFit": "Auf Größe zoomen",
+  "pages": "Seiten"
+}

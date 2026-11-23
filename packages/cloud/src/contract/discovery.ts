@@ -52,7 +52,12 @@ export type CloudAuthentication = v.InferOutput<typeof cloudAuthenticationSchema
 export const cloudCapabilitiesSchema = v.object({
   documents: v.boolean(),
   workspaces: v.boolean(),
-  collaboration: v.boolean()
+  collaboration: v.boolean(),
+  /**
+   * Whether other sites may show this server's shared and community documents in a frame, at
+   * `/embed/…`; servers from before embeds leave it out.
+   */
+  embedding: v.optional(v.boolean(), false)
 })
 export type CloudCapabilities = v.InferOutput<typeof cloudCapabilitiesSchema>
 

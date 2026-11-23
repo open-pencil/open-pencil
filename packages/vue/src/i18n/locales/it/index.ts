@@ -3,6 +3,7 @@ import type { LocaleTranslations } from '#vue/i18n/messages'
 import ai from './ai.json'
 import automation from './automation.json'
 import cloudEditor from './cloud/editor.json'
+import cloudEmbed from './cloud/embed.json'
 import cloudPortal from './cloud/portal.json'
 import cloudPortalCommunity from './cloud/portal/community.json'
 import cloudPortalPerson from './cloud/portal/person.json'
@@ -43,6 +44,7 @@ export default {
   ai,
   automation,
   'cloud/editor': cloudEditor,
+  'cloud/embed': cloudEmbed,
   'cloud/portal': cloudPortal,
   'cloud/portal/community': cloudPortalCommunity,
   'cloud/portal/person': cloudPortalPerson,
