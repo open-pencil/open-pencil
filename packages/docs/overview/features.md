@@ -77,7 +77,7 @@ See [AI Chat](/user-guide/ai-chat) for setup and provider details.
 
 ## MCP Server
 
-Connect Claude Code, Cursor, Windsurf, or any MCP client to read and write `.fig` files headlessly. 100+ tools. Two transports: stdio and HTTP.
+Connect Claude Code, Cursor, Windsurf, or any MCP client to the running app to read and change the open document. 100+ tools. Two transports: stdio and HTTP. To work on `.fig` files without the app, use the [CLI](/developers/cli/inspecting).
 
 ```sh
 npm install -g @open-pencil/mcp

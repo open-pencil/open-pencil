@@ -71,7 +71,7 @@ Wywołania narzędzi pojawiają się na zwijanej osi czasu. Do kontroli wizualne
 
 ## Serwer MCP
 
-Claude Code, Cursor, Windsurf i inni klienci MCP mogą odczytywać i zmieniać `.fig` bez interfejsu. Dostępnych jest ponad 100 narzędzi oraz transporty stdio i HTTP.
+Claude Code, Cursor, Windsurf i inni klienci MCP łączą się z uruchomioną aplikacją, aby odczytywać i zmieniać otwarty dokument. Dostępnych jest ponad 100 narzędzi oraz transporty stdio i HTTP. Do pracy z plikami `.fig` bez aplikacji służy [CLI](/pl/developers/cli/inspecting).
 
 ```sh
 npm install -g @open-pencil/mcp

@@ -71,7 +71,7 @@ Werkzeugaufrufe erscheinen als einklappbare Einträge auf einer Zeitleiste. Zur 
 
 ## MCP-Server
 
-Claude Code, Cursor, Windsurf und andere MCP-Clients können `.fig`-Dateien mit mehr als 100 Werkzeugen ohne grafische Oberfläche lesen und verändern. Als Übertragung stehen stdio und HTTP zur Verfügung.
+Claude Code, Cursor, Windsurf und andere MCP-Clients verbinden sich mit der laufenden App und lesen und verändern das geöffnete Dokument mit mehr als 100 Werkzeugen. Als Übertragung stehen stdio und HTTP zur Verfügung. Für `.fig`-Dateien ohne die App gibt es die [CLI](/de/developers/cli/inspecting).
 
 ```sh
 npm install -g @open-pencil/mcp

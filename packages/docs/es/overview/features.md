@@ -71,7 +71,7 @@ Las llamadas a herramientas aparecen en una cronología plegable. Para verificar
 
 ## Servidor MCP
 
-Claude Code, Cursor, Windsurf y otros clientes MCP pueden leer y modificar archivos `.fig` con más de 100 herramientas. Están disponibles stdio y HTTP.
+Claude Code, Cursor, Windsurf y otros clientes MCP se conectan a la aplicación abierta para leer y modificar el documento con más de 100 herramientas. Están disponibles stdio y HTTP. Para trabajar con archivos `.fig` sin la aplicación, usa la [CLI](/es/developers/cli/inspecting).
 
 ```sh
 npm install -g @open-pencil/mcp

@@ -71,7 +71,7 @@ Le chiamate degli strumenti appaiono in una sequenza comprimibile. Per la verifi
 
 ## Server MCP
 
-Claude Code, Cursor, Windsurf e altri client MCP possono leggere e modificare `.fig` senza interfaccia. Sono disponibili più di 100 strumenti e i trasporti stdio e HTTP.
+Claude Code, Cursor, Windsurf e altri client MCP si collegano all’app aperta per leggere e modificare il documento. Sono disponibili più di 100 strumenti e i trasporti stdio e HTTP. Per lavorare sui file `.fig` senza l’app, usa la [CLI](/it/developers/cli/inspecting).
 
 ```sh
 npm install -g @open-pencil/mcp

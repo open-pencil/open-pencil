@@ -77,7 +77,7 @@ openpencil export design.fig -f jsx --style tailwind
 
 ## Сервер MCP
 
-Claude Code, Cursor, Windsurf и другие клиенты MCP могут читать и изменять `.fig` без интерфейса. Доступно более 100 инструментов и два транспорта: stdio и HTTP.
+Claude Code, Cursor, Windsurf и другие клиенты MCP подключаются к запущенному приложению, чтобы читать и изменять открытый документ. Доступно более 100 инструментов и два транспорта: stdio и HTTP. Для работы с файлами `.fig` без приложения есть [CLI](/ru/developers/cli/inspecting).
 
 ```sh
 npm install -g @open-pencil/mcp
