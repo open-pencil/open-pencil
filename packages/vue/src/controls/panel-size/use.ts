@@ -4,6 +4,7 @@ import { getNodeEditCapability, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { layerResizes } from '@open-pencil/scene-graph/generated'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { inheritsInstanceSize } from '@open-pencil/scene-graph/slots'
 
 import {
   applyResizedRect,
@@ -83,6 +84,7 @@ export function usePanelSize(editor: Editor) {
   function update(nodes: readonly SceneNode[], size: Partial<Size>, fallback: () => void) {
     if (interrupted) return
     if (!edits) {
+      if (nodes.some((node) => inheritsInstanceSize(editor.graph, node))) return
       if (!nodes.every(sizesLayersInside)) {
         fallback()
         return

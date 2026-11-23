@@ -43,6 +43,14 @@ export function slotScope(graph: SceneGraph, parentId: string): SlotScope {
   return { kind: 'free' }
 }
 
+/** Component layers inherit their dimensions. An instance's own slot content has its own size. */
+export function inheritsInstanceSize(graph: SceneGraph, node: SceneNode): boolean {
+  if (!node.parentId) return false
+  const scope = slotScope(graph, node.parentId)
+  if (scope.kind === 'locked') return scope.owner.type === 'INSTANCE'
+  return scope.kind === 'slot' && !ownsSlotContent(graph, scope.frame, scope.propertyId)
+}
+
 /** Every layer below `node`; `enterInstances` also walks the layers of nested instances. */
 function descendants(graph: SceneGraph, node: SceneNode, enterInstances: boolean): SceneNode[] {
   const result: SceneNode[] = []

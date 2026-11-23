@@ -3,6 +3,7 @@ import { SelectSeparator } from 'reka-ui'
 
 import { panelNumber } from '@open-pencil/core/geometry'
 import type { LayoutSizing } from '@open-pencil/scene-graph'
+import { inheritsInstanceSize } from '@open-pencil/scene-graph/slots'
 import type { SizeLimitProp } from '@open-pencil/vue/controls/layout'
 import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
@@ -79,6 +80,7 @@ function handleSelect(value: SizeSelectValue) {
       :icon="icon"
       :aria-label="label"
       :model-value="panelNumber(ctx.node[axis])"
+      :disabled="inheritsInstanceSize(ctx.editor.graph, ctx.node)"
       :min="0"
       :node-id="ctx.node.id"
       :binding-path="axis"

@@ -2,6 +2,7 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layerRotates } from '@open-pencil/scene-graph/generated'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { inheritsInstanceSize } from '@open-pencil/scene-graph/slots'
 
 import { drawSelectionLabels } from '#core/canvas/labels/selection'
 import { drawConnectorHover, drawConnectorSelection } from '#core/canvas/overlays/connectors'
@@ -234,7 +235,8 @@ function drawTextPathSelection(
             y: box.y,
             width: box.width,
             height: box.height
-          })
+          }),
+          !inheritsInstanceSize(graph, node)
         )
       }
 
@@ -281,13 +283,16 @@ function drawBoundsHandles(
   minY: number,
   maxX: number,
   maxY: number,
-  stalk: RotationHandleLayout | null
+  stalk: RotationHandleLayout | null,
+  showResize: boolean
 ): void {
   if (!r.editHandles || !hasTransformHandles((maxX - minX) * r.zoom, (maxY - minY) * r.zoom)) return
-  drawHandle(r, canvas, minX, minY)
-  drawHandle(r, canvas, maxX, minY)
-  drawHandle(r, canvas, minX, maxY)
-  drawHandle(r, canvas, maxX, maxY)
+  if (showResize) {
+    drawHandle(r, canvas, minX, minY)
+    drawHandle(r, canvas, maxX, minY)
+    drawHandle(r, canvas, minX, maxY)
+    drawHandle(r, canvas, maxX, maxY)
+  }
   if (!stalk) return
   canvas.drawLine(stalk.edge.x, stalk.edge.y, stalk.handle.x, stalk.handle.y, r.selectionPaint)
   drawHandle(r, canvas, stalk.handle.x, stalk.handle.y)
@@ -347,7 +352,8 @@ export function drawNodeSelection(
               y: y1,
               width: x2 - x1,
               height: y2 - y1
-            })
+            }),
+        !inheritsInstanceSize(graph, node)
       )
     },
     preview
@@ -385,7 +391,8 @@ export function drawGroupBounds(
   r.auxStroke.setColor(r.selColor(SELECTION_DASH_ALPHA))
   r.auxStroke.setPathEffect(null)
   canvas.drawRect(r.ck.LTRBRect(minX, minY, maxX, maxY), r.auxStroke)
-  drawBoundsHandlesScreenSpace(r, canvas, minX, minY, maxX, maxY, showRotation)
+  const showResize = nodes.some((node) => !inheritsInstanceSize(graph, node))
+  drawBoundsHandlesScreenSpace(r, canvas, minX, minY, maxX, maxY, showRotation, showResize)
 }
 
 export function drawHandle(r: SkiaRenderer, canvas: Canvas, x: number, y: number): void {
@@ -415,13 +422,16 @@ function drawBoundsHandlesScreenSpace(
   minY: number,
   maxX: number,
   maxY: number,
-  showRotation = true
+  showRotation: boolean,
+  showResize: boolean
 ): void {
   if (!r.editHandles || !hasTransformHandles(maxX - minX, maxY - minY)) return
-  drawHandleScreenSpace(r, canvas, minX, minY)
-  drawHandleScreenSpace(r, canvas, maxX, minY)
-  drawHandleScreenSpace(r, canvas, minX, maxY)
-  drawHandleScreenSpace(r, canvas, maxX, maxY)
+  if (showResize) {
+    drawHandleScreenSpace(r, canvas, minX, minY)
+    drawHandleScreenSpace(r, canvas, maxX, minY)
+    drawHandleScreenSpace(r, canvas, minX, maxY)
+    drawHandleScreenSpace(r, canvas, maxX, maxY)
+  }
   if (!showRotation) return
   const midX = (minX + maxX) / 2
   const rotationHandleY = minY - ROTATION_HANDLE_DISTANCE

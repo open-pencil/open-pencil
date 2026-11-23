@@ -1,5 +1,6 @@
 import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import { layerResizes, layerRotates } from '@open-pencil/scene-graph/generated'
+import { inheritsInstanceSize } from '@open-pencil/scene-graph/slots'
 
 import { connectorLineCursor } from '#vue/shared/input/connector/line'
 import {
@@ -30,7 +31,12 @@ function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): st
   for (const id of editor.state.selectedIds) {
     const node = editor.graph.getNode(id)
     // As a press does: only a layer its handles resize or scale shows a resize cursor on them.
-    if (!node || (!layerResizes(node) && !scalesByHandles(node))) continue
+    if (
+      !node ||
+      inheritsInstanceSize(editor.graph, node) ||
+      (!layerResizes(node) && !scalesByHandles(node))
+    )
+      continue
 
     const handleHit = getHitHandleByMatrix(
       cx,

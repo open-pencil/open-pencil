@@ -12,6 +12,7 @@ import {
   cancelResizePreview,
   commitResizePreview
 } from '#vue/shared/input/resize/apply'
+import { tryStartResize } from '#vue/shared/input/resize/start'
 import type { DragResize } from '#vue/shared/input/types'
 
 function drag(node: SceneNode): DragResize {
@@ -177,6 +178,26 @@ test('a press on a handle that does not move keeps a layer’s imported geometry
 })
 
 describe('resizing an instance', () => {
+  test('its inherited layers do not have resize handles', () => {
+    const editor = createEditor()
+    try {
+      const { graph } = editor
+      const page = editor.state.currentPageId
+      const card = graph.createNode('COMPONENT', page, { width: 120, height: 100 })
+      graph.createNode('RECTANGLE', card.id, { x: 10, y: 10, width: 40, height: 20 })
+      const instance = graph.createInstance(card.id, page, { x: 200 })
+      if (!instance) throw new Error('Expected an instance')
+      const [copy] = graph.getChildren(instance.id)
+
+      editor.select([instance.id])
+      expect(tryStartResize(320, 100, editor)?.handle).toBe('se')
+      editor.select([copy.id])
+      expect(tryStartResize(250, 30, editor)?.type).toBeUndefined()
+    } finally {
+      editor.dispose()
+    }
+  })
+
   test('places its layers by their constraints without making their sizes overrides', () => {
     // Repeats a Figma desktop 126 script: an instance resized to twice its component's size
     // claims only its own size, so a later component edit still sizes its layers.

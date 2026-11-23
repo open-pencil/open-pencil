@@ -182,7 +182,7 @@ function rawClaim(
         ? { fillPaints: createFillPaints(context, target) }
         : { strokePaints: createStrokePaints(context, target) }
     case 'size':
-      return { size: unscaledRootSize(instance, target) }
+      return target.type === 'INSTANCE' ? { size: unscaledRootSize(instance, target) } : undefined
     case 'layout-distance':
       return layoutDistanceClaim(raw, target[field], instance)
     case 'layout-mode':

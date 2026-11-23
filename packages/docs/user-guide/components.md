@@ -134,7 +134,7 @@ Instances can override specific properties without breaking the sync link. When 
 
 ### Overridable Properties
 
-A layer inside an instance can override its name, text, styled ranges, and font, every visual and text property listed above, its size, and whether it is visible or locked. Its position, rotation, flips, constraints, and mask cannot be overridden: they always come from the component. Scripts that set its position, rotation, constraints, or mask get Figma's error. Slot content is the instance's own and stays editable.
+A layer inside an instance can override its name, text, styled ranges, font, the visual and text properties listed above, and whether it is visible or locked. To change an inherited layer's dimensions, resize it in the main component or resize the instance and let its layout or constraints place the layer. Position, rotation, flips, constraints, and mask also come from the component. Scripts that set its position, rotation, constraints, or mask get Figma's error. Slot content is the instance's own and stays editable.
 
 Overrides in a `.fig` file come back as overrides when you open it, and are saved the way Figma writes them.
 
