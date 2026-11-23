@@ -43,6 +43,7 @@ export async function resolveAppAccessToken(
       'oauthAccessToken.scopes',
       'oauthAccessToken.expiresAt',
       'oauthAccessToken.revoked',
+      'oauthAccessToken.createdAt',
       'oauthClient.disabled'
     ])
     .where(
@@ -66,19 +67,21 @@ export async function resolveAppAccessToken(
     .where('userId', '=', stored.userId)
     .executeTakeFirst()
   if (!member) return null
-  // The person's consent for this app and workspace: disconnecting deletes it, which also stops
-  // tokens the app gets afterwards for an authorization code issued before.
+  // The person's consent for this app and workspace, as it stands: a token issued before it, for a
+  // connection since ended, stays dead after the app connects again, and a token reaches no scope
+  // the person has since taken back.
   const consent = await database
     .selectFrom('oauthConsent')
-    .select('id')
+    .select(['scopes', 'createdAt'])
     .where('clientId', '=', stored.clientId)
     .where('userId', '=', stored.userId)
     .where('referenceId', '=', stored.referenceId)
     .executeTakeFirst()
   if (!consent) return null
+  if (new Date(stored.createdAt).getTime() < new Date(consent.createdAt).getTime()) return null
   return {
     userId: stored.userId,
-    scopes: stored.scopes.filter(isTokenScope),
+    scopes: stored.scopes.filter(isTokenScope).filter((scope) => consent.scopes.includes(scope)),
     grant: { clientId: stored.clientId, workspaceId: stored.referenceId }
   }
 }

@@ -283,8 +283,7 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
           // Apps the account connected, which, like its tokens, have no key to cascade from.
           'oauthAccessToken',
           'oauthRefreshToken',
-          'oauthConsent',
-          'oauthWorkspaceChoice'
+          'oauthConsent'
         ] as const) {
           await transaction.deleteFrom(table).where('userId', '=', user.id).execute()
         }

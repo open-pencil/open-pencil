@@ -19,7 +19,7 @@ import {
 import { createAuthenticationEmailService } from '#cloud/server/auth'
 import { signInProviders } from '#cloud/server/auth/methods'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
-import { createOAuthRoutes, createOAuthService, createWorkspaceChoices } from '#cloud/server/oauth'
+import { createOAuthRoutes, createOAuthService } from '#cloud/server/oauth'
 import { Hono } from 'hono'
 
 import type { createRequestChecks, createRequestResolvers } from './checks'
@@ -107,11 +107,9 @@ export function createAppRouters(
           database,
           publicURL: config.publicURL,
           secret: config.authSecret,
-          choices: createWorkspaceChoices(database),
           steps: oauth.steps
         }),
         serverMetadata: oauth.serverMetadata,
-        sessionID: oauth.sessionID,
         requireActiveSession: checks.requireActiveSession,
         authenticatedMutationLimiter: limiters.authenticatedMutationLimiter
       })

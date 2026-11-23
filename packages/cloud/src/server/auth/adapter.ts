@@ -52,8 +52,6 @@ export type CloudOAuthAuthentication = {
   steps: OAuthProviderSteps
   /** The authorization server's metadata (RFC 8414). */
   serverMetadata: () => Promise<unknown>
-  /** The ID of the session the request is signed in with. */
-  sessionID: (headers: Headers) => Promise<string | null>
 }
 
 export interface CloudAuthAdapter {

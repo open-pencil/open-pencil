@@ -12,7 +12,6 @@ import {
   closedOAuthPaths,
   cloudOAuthAuthentication,
   cloudOAuthProviderOptions,
-  createWorkspaceChoices,
   providerRequest,
   resolveAppAccessToken
 } from '#cloud/server/oauth'
@@ -115,7 +114,7 @@ export function createBetterAuthAdapter(
   })
   // Apps connected through OAuth, where the deployment accepts them (`[oauth]`).
   const appProvider = config.oauthEnabled
-    ? oauthProvider(cloudOAuthProviderOptions(config.publicURL, createWorkspaceChoices(database)))
+    ? oauthProvider(cloudOAuthProviderOptions(config.publicURL))
     : undefined
   const joining = enrollmentOptions(
     config,

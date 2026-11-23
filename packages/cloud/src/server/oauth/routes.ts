@@ -18,8 +18,6 @@ export type OAuthRouteDependencies = {
   service: OAuthService
   /** The authorization server's metadata, as the OAuth provider builds it (RFC 8414). */
   serverMetadata(): Promise<unknown>
-  /** The signed-in session's ID, which the workspace an app gets is recorded against. */
-  sessionID(headers: Headers): Promise<string | null>
   requireActiveSession: MiddlewareHandler<CloudAPIEnvironment>
   authenticatedMutationLimiter: MiddlewareHandler<CloudAPIEnvironment>
 }
@@ -30,9 +28,7 @@ const requestQuerySchema = v.object({
 
 const FAILURE_STATUS = {
   invalid_request: 400,
-  workspace_not_found: 404,
-  // Another request of the same session is being answered; this one can be sent again.
-  request_in_progress: 409
+  workspace_not_found: 404
 } as const satisfies Record<OAuthRequestError['code'], number>
 
 /** The issuer's path, where clients that follow RFC 8414 look for its metadata. */
@@ -86,12 +82,10 @@ export function createOAuthRoutes(dependencies: OAuthRouteDependencies) {
       }
     })
     .post('/api/oauth/decision', validatedJSON(cloudOAuthDecisionSchema), async (context) => {
-      const sessionId = await dependencies.sessionID(context.req.raw.headers)
-      if (!sessionId) return context.json({ error: { code: 'unauthorized' as const } }, 401)
       try {
         const redirect = await service.decide(
           context.req.raw,
-          { id: sessionId, userId: context.get('actor').userId },
+          context.get('actor').userId,
           context.req.valid('json')
         )
         return context.json({ redirect })

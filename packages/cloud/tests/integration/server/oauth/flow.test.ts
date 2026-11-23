@@ -103,8 +103,8 @@ async function decide(decision: CloudOAuthDecision) {
   return new URL((await responseJSON(response, cloudOAuthDecisionResponseSchema)).redirect)
 }
 
-async function exchange(clientId: string, code: string, verifier: string) {
-  const response = await fixture.app.fetch(
+const redeem = (clientId: string, code: string, verifier: string) =>
+  fixture.app.fetch(
     new Request(new URL('/api/auth/oauth2/token', config.publicURL), {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -118,18 +118,21 @@ async function exchange(clientId: string, code: string, verifier: string) {
       })
     })
   )
+
+async function exchange(clientId: string, code: string, verifier: string) {
+  const response = await redeem(clientId, code, verifier)
   expect(response.status).toBe(200)
   return responseJSON(response, tokenSchema)
 }
 
-/** An authorization code for the granted workspace, with the verifier that redeems it. */
-async function approve() {
+/** An authorization code for a workspace, the granted one unless named, with its verifier. */
+async function approve(workspaceId = granted) {
   const { verifier, challenge } = await pkce()
   const page = await authorize(app, challenge, person.sessionCookie)
   const redirect = await decide({
     decision: 'allow',
     query: page.search.slice(1),
-    workspaceId: granted
+    workspaceId
   })
   const code = redirect.searchParams.get('code')
   if (!code) throw new Error('No code')
@@ -139,6 +142,17 @@ async function approve() {
 async function connections() {
   const response = await send('/api/account/connections', { cookie: person.sessionCookie })
   return (await responseJSON(response, cloudAppConnectionsResponseSchema)).connections
+}
+
+/** Disconnects every app, as a person does in Connected apps. */
+async function disconnect() {
+  for (const connection of await connections()) {
+    const response = await send('/api/account/connections/revoke', {
+      body: { id: connection.id },
+      cookie: person.sessionCookie
+    })
+    expect(response.status).toBe(200)
+  }
 }
 
 /** Connects a new app to the granted workspace, as a person does on the approval page. */
@@ -295,39 +309,18 @@ describe('connecting an app', () => {
     expect(redirect.searchParams.get('code')).not.toBeNull()
   })
 
-  test('answers one request of a session at a time', async () => {
-    const page = await authorize(app, (await pkce()).challenge, person.sessionCookie)
-    const session = await fixture.database
-      .selectFrom('session')
-      .select('id')
-      .where('userId', '=', person.userId)
-      .executeTakeFirstOrThrow()
-    // Another request of the same session is between its pick and its code.
-    await fixture.database
-      .insertInto('oauthWorkspaceChoice')
-      .values({
-        sessionId: session.id,
-        userId: person.userId,
-        workspaceId: other,
-        chosenAt: new Date()
-      })
-      .execute()
-    const response = await send('/api/oauth/decision', {
-      body: { decision: 'allow', query: page.search.slice(1), workspaceId: granted },
-      cookie: person.sessionCookie
-    })
-    expect(response.status).toBe(409)
-    // The other request's pick stays its own.
-    const kept = await fixture.database
-      .selectFrom('oauthWorkspaceChoice')
-      .select('workspaceId')
-      .where('sessionId', '=', session.id)
-      .executeTakeFirst()
-    expect(kept?.workspaceId).toBe(other)
-    await fixture.database
-      .deleteFrom('oauthWorkspaceChoice')
-      .where('sessionId', '=', session.id)
-      .execute()
+  test('gives each of two approvals in one session the workspace picked for it', async () => {
+    const approvals = await Promise.all(
+      [granted, other, granted, other].map(async (workspaceId) => ({
+        workspaceId,
+        ...(await approve(workspaceId))
+      }))
+    )
+    for (const { workspaceId, code, verifier } of approvals) {
+      const { access_token: token } = await exchange(app, code, verifier)
+      const listed = await responseJSON(await send('/api/workspaces', { token }), workspacesSchema)
+      expect(listed.workspaces.map((each) => each.id)).toEqual([workspaceId])
+    }
   })
 
   test('refuses a workspace the person is not in', async () => {
@@ -359,8 +352,10 @@ describe('connected apps', () => {
     const token = (await responseJSON(refreshed, tokenSchema)).access_token
     expect((await send('/api/workspaces', { token })).status).toBe(200)
 
-    const connection = (await connections()).find((each) => each.app.clientId === clientId)
-    expect(connection?.workspace.id).toBe(granted)
+    const connection = (await connections()).find(
+      (each) => each.app.clientId === clientId && each.workspace.id === granted
+    )
+    expect(connection).toBeDefined()
     expect(connection?.scopes).toEqual(['documents:read', 'documents:write'])
 
     const revoked = await send('/api/account/connections/revoke', {
@@ -371,17 +366,35 @@ describe('connected apps', () => {
     expect((await send('/api/workspaces', { token })).status).toBe(401)
   })
 
-  test('stop working from a code issued before disconnecting', async () => {
+  test('refuse a code issued before disconnecting', async () => {
     await connect()
     const { code, verifier } = await approve()
-    for (const connection of await connections()) {
-      await send('/api/account/connections/revoke', {
-        body: { id: connection.id },
-        cookie: person.sessionCookie
-      })
-    }
-    const late = await exchange(app, code, verifier)
-    expect((await send('/api/session', { token: late.access_token })).status).toBe(401)
+    await disconnect()
+    expect((await redeem(app, code, verifier)).status).toBe(400)
+  })
+
+  test('keep a token from before the app connected again out, and follow the scopes approved', async () => {
+    const { tokens } = await connect()
+    const token = tokens.access_token
+    const consent = (update: { createdAt?: Date; scopes?: string[] }) =>
+      fixture.database
+        .updateTable('oauthConsent')
+        .set(update)
+        .where('clientId', '=', app)
+        .where('referenceId', '=', granted)
+        .execute()
+    const write = () =>
+      send(`/api/workspaces/${granted}/documents`, { token, body: { name: 'By app' } })
+
+    // The person since approved the app read-only.
+    await consent({ scopes: ['documents:read', 'offline_access'] })
+    expect((await send(`/api/workspaces/${granted}/documents`, { token })).status).toBe(200)
+    expect((await write()).status).toBe(403)
+
+    // The connection the token was issued for ended, and the app connected again afterwards.
+    await consent({ createdAt: new Date(Date.now() + 60_000) })
+    expect((await send('/api/session', { token })).status).toBe(401)
+    await disconnect()
   })
 
   test('stop reaching a workspace the person left', async () => {

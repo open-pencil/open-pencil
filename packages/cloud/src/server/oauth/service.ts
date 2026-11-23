@@ -7,11 +7,12 @@ import {
   type CloudTokenScope
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
+import { jsonTextContains } from '#cloud/server/db/expressions'
 import { verifyOAuthQueryParams } from '@better-auth/oauth-provider'
 import { compact, uniq } from 'es-toolkit'
 import type { Kysely } from 'kysely'
 
-import type { WorkspaceChoices } from './choices'
+import { withWorkspace } from './choices'
 
 const isTokenScope = (scope: string): scope is CloudTokenScope =>
   CLOUD_TOKEN_SCOPES.some((each) => each === scope)
@@ -31,7 +32,7 @@ export type OAuthProviderSteps = {
 }
 
 export class OAuthRequestError extends Error {
-  constructor(readonly code: 'invalid_request' | 'workspace_not_found' | 'request_in_progress') {
+  constructor(readonly code: 'invalid_request' | 'workspace_not_found') {
     super(code)
     this.name = 'OAuthRequestError'
   }
@@ -45,10 +46,9 @@ export function createOAuthService(options: {
   database: Kysely<CloudDatabase>
   publicURL: string
   secret: string
-  choices: WorkspaceChoices
   steps: OAuthProviderSteps
 }) {
-  const { database, choices, steps } = options
+  const { database, steps } = options
 
   /** The request a signed query stands for, once its signature and age check out. */
   async function readQuery(query: string): Promise<URLSearchParams> {
@@ -100,23 +100,24 @@ export function createOAuthService(options: {
     },
 
     /**
-     * The person's answer: allowing records the workspace, lets the provider continue, and, when
-     * it asks for consent next, gives the consent the person just did; refusing ends the request.
+     * The person's answer: allowing lets the provider continue with the workspace picked for this
+     * answer alone and, when it asks for consent next, gives the consent the person just did;
+     * refusing ends the request.
      * Either way the answer is where the browser goes next.
      */
-    async decide(
-      request: Request,
-      session: { id: string; userId: string },
-      decision: CloudOAuthDecision
-    ): Promise<string> {
+    async decide(request: Request, userId: string, decision: CloudOAuthDecision): Promise<string> {
       await readQuery(decision.query)
       if (decision.decision === 'deny') {
         return (await steps.consent(request, decision.query, false)).url
       }
-      const choice = await choices.choose(session.id, session.userId, decision.workspaceId)
-      if (choice === 'not-member') throw new OAuthRequestError('workspace_not_found')
-      if (choice === 'in-progress') throw new OAuthRequestError('request_in_progress')
-      try {
+      const member = await database
+        .selectFrom('workspaceMember')
+        .select('workspaceId')
+        .where('userId', '=', userId)
+        .where('workspaceId', '=', decision.workspaceId)
+        .executeTakeFirst()
+      if (!member) throw new OAuthRequestError('workspace_not_found')
+      return withWorkspace(decision.workspaceId, async () => {
         const next = (await steps.continue(request, decision.query)).url
         const url = new URL(next, options.publicURL)
         // The provider asks for consent on the page the person just approved on.
@@ -127,10 +128,7 @@ export function createOAuthService(options: {
           return (await steps.consent(request, url.search.slice(1), true)).url
         }
         return next
-      } finally {
-        // Each request asks again which workspace, so an app is never handed one unseen.
-        await choices.clear(choice)
-      }
+      })
     },
 
     /** The apps the account connected, each with the workspace its grant reaches. */
@@ -177,8 +175,8 @@ export function createOAuthService(options: {
     },
 
     /**
-     * Disconnects an app from a workspace: its consent goes, so connecting again asks again, and
-     * every token of the grant is revoked at once.
+     * Disconnects an app from a workspace: its consent goes, so connecting again asks again, every
+     * token of the grant is revoked at once, and codes the app has not exchanged yet go too.
      */
     async revoke(userId: string, connectionId: string): Promise<boolean> {
       return database.transaction().execute(async (transaction) => {
@@ -200,6 +198,18 @@ export function createOAuthService(options: {
             .where('revoked', 'is', null)
             .execute()
         }
+        // The provider keeps a pending code as JSON text, naming its client, account, and workspace.
+        await transaction
+          .deleteFrom('verification')
+          .where(
+            jsonTextContains('value', {
+              type: 'authorization_code',
+              userId,
+              referenceId: consent.referenceId,
+              query: { client_id: consent.clientId }
+            })
+          )
+          .execute()
         return true
       })
     }

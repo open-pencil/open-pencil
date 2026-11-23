@@ -1,6 +1,6 @@
 import { sql, type ColumnDefinitionBuilder, type Kysely } from 'kysely'
 
-import { addIndexes, dropTables, now, required } from './schema'
+import { addIndexes, dropTables, required } from './schema'
 
 const TABLES = [
   'oauth_client',
@@ -9,8 +9,7 @@ const TABLES = [
   'oauth_refresh_token',
   'oauth_access_token',
   'oauth_consent',
-  'oauth_client_assertion',
-  'oauth_workspace_choice'
+  'oauth_client_assertion'
 ]
 
 const generatedID = (column: ColumnDefinitionBuilder) =>
@@ -25,9 +24,6 @@ const clientReference = (column: ColumnDefinitionBuilder) =>
  * Better Auth's own migration leaves the plugin out (`createBetterAuthAdapter`). Account and
  * session IDs are text without foreign keys, like every table Cloud builds; account deletion
  * removes an account's rows. Tokens and client secrets are kept as SHA-256 digests.
- *
- * `oauth_workspace_choice` is Cloud's own: the workspace a person picked for the app they are
- * connecting, per session, which the grant then reaches.
  */
 export async function up(database: Kysely<unknown>): Promise<void> {
   await database.schema
@@ -159,15 +155,6 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('id', 'text', (column) => column.primaryKey())
     .addColumn('expires_at', 'timestamptz', required)
     .execute()
-  await database.schema
-    .createTable('oauth_workspace_choice')
-    .addColumn('session_id', 'text', (column) => column.primaryKey())
-    .addColumn('user_id', 'text', required)
-    .addColumn('workspace_id', 'uuid', (column) =>
-      column.notNull().references('workspace.id').onDelete('cascade')
-    )
-    .addColumn('chosen_at', 'timestamptz', now)
-    .execute()
   await addIndexes(database, [
     ['oauth_client', ['user_id']],
     ['oauth_client_resource', ['resource_id']],
@@ -181,9 +168,7 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     ['oauth_access_token', ['authorization_code_id']],
     ['oauth_access_token', ['refresh_id']],
     ['oauth_consent', ['client_id']],
-    ['oauth_consent', ['user_id']],
-    ['oauth_workspace_choice', ['user_id']],
-    ['oauth_workspace_choice', ['workspace_id']]
+    ['oauth_consent', ['user_id']]
   ])
 }
 

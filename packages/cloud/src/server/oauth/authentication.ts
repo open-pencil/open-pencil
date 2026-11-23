@@ -19,7 +19,6 @@ type ProviderAPI = {
     asResponse: false
   }): Promise<unknown>
   getOAuthServerConfig(): Promise<unknown>
-  getSession(input: { headers: Headers }): Promise<{ session: { id: string } } | null>
 }
 
 const redirectSchema = v.object({ url: v.string() })
@@ -58,8 +57,7 @@ export function cloudOAuthAuthentication(api: ProviderAPI): CloudOAuthAuthentica
     serverMetadata: async () => {
       const metadata = v.parse(v.record(v.string(), v.unknown()), await api.getOAuthServerConfig())
       return omitBy(metadata, (_value, key) => key.startsWith('introspection_'))
-    },
-    sessionID: async (headers) => (await api.getSession({ headers }))?.session.id ?? null
+    }
   }
 }
 

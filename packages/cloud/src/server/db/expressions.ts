@@ -14,6 +14,11 @@ export function checkColumnIn(column: string, values: readonly string[]): Expres
   return sql<boolean>`${sql.ref(column)} in (${sql.join(values.map((value) => sql.lit(value)))})`
 }
 
+/** Whether a text column holding JSON contains `value`, as Postgres's `@>` matches `jsonb`. */
+export function jsonTextContains(column: string, value: object): Expression<boolean> {
+  return sql<boolean>`${sql.ref(column)}::jsonb @> ${JSON.stringify(value)}::jsonb`
+}
+
 /**
  * Holds a lock named `key` until the transaction ends, for a check and a write that must not
  * interleave with another transaction's, such as reserving storage from an account's allowance,

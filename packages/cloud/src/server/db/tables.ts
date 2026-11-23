@@ -571,7 +571,6 @@ export interface CloudDatabase {
   oauthAccessToken: OAuth.OAuthAccessTokenTable
   oauthRefreshToken: OAuth.OAuthRefreshTokenTable
   oauthConsent: OAuth.OAuthConsentTable
-  oauthWorkspaceChoice: OAuth.OAuthWorkspaceChoiceTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

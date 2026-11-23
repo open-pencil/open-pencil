@@ -1,9 +1,8 @@
 import type { TimestampColumn } from '#cloud/server/db/tables'
-import type { Generated } from 'kysely'
 
 /**
- * The OAuth provider's tables as far as Cloud reads them, built by migration `019_oauth`, and the
- * workspace picks Cloud keeps beside them; `CloudDatabase` lists them with the rest.
+ * The OAuth provider's tables as far as Cloud reads them, built by migration `019_oauth`;
+ * `CloudDatabase` lists them with the rest.
  */
 
 /** An app registered with the OAuth provider; only what Cloud itself reads. */
@@ -27,6 +26,7 @@ export interface OAuthAccessTokenTable {
   scopes: string[]
   expiresAt: TimestampColumn
   revoked: TimestampColumn | null
+  createdAt: TimestampColumn
 }
 
 export interface OAuthRefreshTokenTable {
@@ -46,12 +46,4 @@ export interface OAuthConsentTable {
   scopes: string[]
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
-}
-
-/** The workspace a person picked, in one session, for the app they are connecting. */
-export interface OAuthWorkspaceChoiceTable {
-  sessionId: string
-  userId: string
-  workspaceId: string
-  chosenAt: Generated<Date>
 }

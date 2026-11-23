@@ -10,7 +10,7 @@ import { hashCapability } from '#cloud/server/sharing/crypto'
 import type { OAuthOptions, Scope } from '@better-auth/oauth-provider'
 import { APIError } from 'better-auth'
 
-import type { WorkspaceChoices } from './choices'
+import { chosenWorkspace } from './choices'
 
 /** An access token's life; an app that asked for `offline_access` refreshes it. */
 const ACCESS_TOKEN_SECONDS = 60 * 60
@@ -28,13 +28,8 @@ const REFRESH_TOKEN_SECONDS = 30 * 24 * 60 * 60
  * - Access tokens are opaque and kept as digests, so revoking a connection stops them at once;
  *   Cloud checks them itself (`resolveAppAccessToken`).
  */
-export function cloudOAuthProviderOptions(
-  publicURL: string,
-  choices: WorkspaceChoices
-): OAuthOptions<Scope[]> {
+export function cloudOAuthProviderOptions(publicURL: string): OAuthOptions<Scope[]> {
   const resource = cloudAPIResource(publicURL)
-  const workspace = async (session: { id: string; userId: string }) =>
-    choices.current(session.id, session.userId)
   return {
     scopes: [...CLOUD_OAUTH_SCOPES],
     grantTypes: ['authorization_code', 'refresh_token'],
@@ -42,9 +37,9 @@ export function cloudOAuthProviderOptions(
     consentPage: CLOUD_OAUTH_AUTHORIZE_PAGE,
     postLogin: {
       page: CLOUD_OAUTH_AUTHORIZE_PAGE,
-      shouldRedirect: async ({ session }) => !(await workspace(session)),
-      consentReferenceId: async ({ session }) => {
-        const workspaceId = await workspace(session)
+      shouldRedirect: async () => !chosenWorkspace(),
+      consentReferenceId: async () => {
+        const workspaceId = chosenWorkspace()
         // The plugin asks for the reference before every consent and code; a grant always has one.
         if (!workspaceId) {
           throw new APIError('BAD_REQUEST', {
