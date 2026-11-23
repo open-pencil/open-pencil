@@ -1,12 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { CollabEditor } from '#collab/editor'
+import { bindRoomImages, type RoomImageStore } from '#collab/room/images'
 import { noop } from 'es-toolkit'
 import * as Y from 'yjs'
 
 import { asDouble } from '@open-pencil/test-support/doubles'
-
-import { bindRoomImages, type RoomImageStore } from '@/app/collab/images'
-import type { EditorStore } from '@/app/editor/active-store'
 /** A store that keeps images by a reference of its own, counting what it was asked. */
 function memoryImageStore(canStore = true, failStoring = false) {
   const kept = new Map<string, Uint8Array>()
@@ -43,7 +42,7 @@ function peer(images: RoomImageStore, retryDelayMs?: (attempt: number) => number
   const graphImages = new Map<string, Uint8Array>()
   let renders = 0
   const reports: string[] = []
-  const editor = asDouble<EditorStore>({
+  const editor = asDouble<CollabEditor>({
     graph: { images: graphImages },
     requestRender: () => {
       renders++
@@ -53,7 +52,8 @@ function peer(images: RoomImageStore, retryDelayMs?: (attempt: number) => number
     ydoc,
     yimages: ydoc.getMap<Uint8Array>('images'),
     yrefs: ydoc.getMap<string>('imageRefs'),
-    store: editor,
+    editor,
+    owner: editor,
     images,
     report: (message) => {
       reports.push(message)
@@ -172,7 +172,7 @@ describe('room images', () => {
   describe('a room that closes while storing', () => {
     /** One tab whose rooms come and go, as a room that starts over does. */
     function tab() {
-      const editor = asDouble<EditorStore>({
+      const editor = asDouble<CollabEditor>({
         graph: { images: new Map<string, Uint8Array>() },
         requestRender: () => undefined
       })
@@ -182,7 +182,8 @@ describe('room images', () => {
           ydoc,
           yimages: ydoc.getMap<Uint8Array>('images'),
           yrefs: ydoc.getMap<string>('imageRefs'),
-          store: editor,
+          editor,
+          owner: editor,
           images,
           report: () => undefined
         })

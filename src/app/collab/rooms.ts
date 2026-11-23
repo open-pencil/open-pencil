@@ -1,10 +1,10 @@
 import { computed, shallowRef, watch } from 'vue'
 
+import type { JoinCollabRoom, RoomImageStore } from '@open-pencil/collab'
+
 import { generateRoomId } from '@/app/collab/awareness'
-import type { RoomImageStore } from '@/app/collab/images'
 import { isRoomId } from '@/app/collab/room/id'
 import { openRoomSession, type RoomIdentity, type RoomSession } from '@/app/collab/session'
-import type { JoinCollabRoom } from '@/app/collab/transport'
 import type { EditorStore } from '@/app/editor/active-store'
 import { activeTab, allTabs, closeTab, createTab, getTabForStore, switchTab } from '@/app/tabs'
 

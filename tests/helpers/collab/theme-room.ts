@@ -1,11 +1,10 @@
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { createMemoryRooms } from '@open-pencil/test-support/collab/memory-transport'
 
 import { openRoomSession, type RoomSession } from '@/app/collab/session'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
-
-import { createMemoryRooms } from '#tests/helpers/collab/memory-transport'
 
 const ROOM = 'cccccccccccccccccccccccccccccccc'
 export const RED: Color = { r: 1, g: 0, b: 0, a: 1 }

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
-import type { PendingRoomStatus } from '@/app/collab/room/status'
+import type { PendingRoomStatus } from '@open-pencil/collab'
 
 import RoomScreen from './RoomScreen.vue'
 

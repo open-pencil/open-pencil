@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { deriveRoomStatus, type RoomStatusInput } from '@/app/collab/room/status'
+import { deriveRoomStatus, type RoomStatusInput } from '#collab/room/status'
 
 const DISCOVERY_MS = 12_000
 const UNREACHABLE_MS = 20_000

@@ -1,5 +1,4 @@
-import type { CollabRoomTransport, JoinCollabRoom } from '@/app/collab/transport'
-import type { CollabActionReceiver } from '@/app/collab/transport/types'
+import type { CollabActionReceiver, CollabRoomTransport, JoinCollabRoom } from '@open-pencil/collab'
 
 type MemoryPeer = {
   id: string

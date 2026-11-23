@@ -4,18 +4,19 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { connectTestClient, until } from '#cloud-tests/helpers/relay'
 import {
-  COLLAB_ACTIONS,
-  decodeRoomUpdate,
-  MAX_COLLAB_MESSAGE_BYTES,
-  RELAY_SERVER_PEER
-} from '#cloud/contract'
-import {
   createCollaborationRelay,
   createCollaborationStateStore,
   createCollaborationTicketService,
   createDocumentSharingService
 } from '#cloud/server'
 import * as Y from 'yjs'
+
+import {
+  COLLAB_ACTIONS,
+  decodeRoomUpdate,
+  MAX_COLLAB_MESSAGE_BYTES,
+  RELAY_SERVER_PEER
+} from '@open-pencil/collab'
 
 const authSecret = 'collaboration-test-secret-at-least-32-characters'
 const relayURL = 'wss://cloud.example.com/api/collaboration/relay'

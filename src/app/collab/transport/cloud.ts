@@ -3,17 +3,19 @@ import { defaultWindow, useEventListener, useIntervalFn } from '@vueuse/core'
 import {
   createRelayServerAssembler,
   decodeRelayServerFrame,
-  MAX_COLLAB_MESSAGE_BYTES,
   RELAY_CLOSE,
   RELAY_FORWARDING_BYTES,
   RELAY_HEARTBEAT,
   relayClientMessages,
   type RelayClientFrame
 } from '@open-pencil/cloud/contract'
+import {
+  type CollabRoomTransport,
+  createActionRegistry,
+  type JoinCollabRoom,
+  MAX_COLLAB_MESSAGE_BYTES
+} from '@open-pencil/collab'
 import { BACKOFF, backoffDelay } from '@open-pencil/std/timing'
-
-import { createActionRegistry } from './actions'
-import type { CollabRoomTransport, JoinCollabRoom } from './types'
 
 /** The relay announces everyone in the room in its welcome, so nobody is still on the way. */
 const RELAY_DISCOVERY_MS = 1000

@@ -1,37 +1,26 @@
 import { useIntervalFn } from '@vueuse/core'
 import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
 import { IndexeddbPersistence } from 'y-indexeddb'
-import * as awarenessProtocol from 'y-protocols/awareness'
-import * as Y from 'yjs'
+import type * as Y from 'yjs'
 
 import {
-  bindCollabGraphEvents,
-  bindDocumentSync,
-  bindVariableSync,
-  createYjsGraphSync,
-  readRoomName,
-  readRoot,
-  registerYjsObservers,
-  roomDocumentData,
-  trackRoomSaves,
-  TREE_FORMAT,
-  writeRoomName,
+  deriveRoomStatus,
+  openCollabRoom,
+  type CollabAction,
+  type JoinCollabRoom,
+  type RoomImageStore,
+  type RoomSavedCopy,
   type RoomSaves,
-  type YNodes,
-  type YRecords
+  type RoomStatus
 } from '@open-pencil/collab'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { shareAgentPreviews } from '@/app/collab/agent-preview'
 import { buildRemotePeers } from '@/app/collab/awareness'
-import { collabEditor, followRoomPages } from '@/app/collab/editor'
+import { collabEditor } from '@/app/collab/editor'
 import { useCollabIdentity } from '@/app/collab/identity'
-import { bindRoomImages, type RoomImageStore } from '@/app/collab/images'
 import { publishLocalAgents } from '@/app/collab/local-awareness'
-import { connectCollabRoom } from '@/app/collab/room/connection'
-import { deriveRoomStatus, type RoomStatus } from '@/app/collab/room/status'
-import type { JoinCollabRoom } from '@/app/collab/transport'
-import type { CollabAction } from '@/app/collab/transport/types'
+import { joinCollabRoom } from '@/app/collab/transport'
 import type { RemotePeer } from '@/app/collab/types'
 import { attachRoomVoice, type RoomVoice } from '@/app/collab/voice/room'
 import type { EditorStore } from '@/app/editor/active-store'
@@ -86,12 +75,6 @@ export interface RoomSession {
   dispose(): void
 }
 
-/** This device's saved copy of a room, so it opens before anyone else is online. */
-export interface RoomSavedCopy {
-  whenSynced: Promise<unknown>
-  destroy(): unknown
-}
-
 export interface RoomSessionOptions {
   roomId: string
   store: EditorStore
@@ -124,11 +107,16 @@ function openIndexedDBCopy(roomId: string, ydoc: Y.Doc): RoomSavedCopy {
 
 type CursorState = { x: number; y: number; pageId: string; zoom: number }
 
+/**
+ * A room in a tab: the room's document kept in step with the tab's editor by `openCollabRoom`,
+ * with what the app adds around it: this device's saved copy, presence of people and agents, the
+ * voice call, and the status the room's screen shows while the file is on its way.
+ */
 export function openRoomSession({
   roomId,
   store,
   origin,
-  joinRoom,
+  joinRoom = joinCollabRoom,
   identity = useCollabIdentity(),
   openSavedCopy = openIndexedDBCopy,
   unreachableMs = ROOM_UNREACHABLE_MS,
@@ -138,59 +126,24 @@ export function openRoomSession({
   images,
   commentsOnServer = false
 }: RoomSessionOptions): RoomSession {
-  const ydoc = new Y.Doc()
-  const awareness = new awarenessProtocol.Awareness(ydoc)
-  const ynodes: YNodes = ydoc.getMap('nodes')
-  const yimages = ydoc.getMap<Uint8Array>('images')
-  const roomImages = images
-    ? bindRoomImages({
-        ydoc,
-        yimages,
-        yrefs: ydoc.getMap<string>('imageRefs'),
-        store,
-        images,
-        report: (message, error) => console.error(`[Collab] ${message}:`, error)
-      })
-    : null
-  const meta = ydoc.getMap<unknown>('meta')
-  const yvariables: YRecords = ydoc.getMap('variables')
-  const ycollections: YRecords = ydoc.getMap('collections')
-  const documentData = roomDocumentData(ydoc)
-  const persistence = openSavedCopy(roomId, ydoc)
-  const saves = trackRoomSaves(ydoc, [
-    meta,
-    ynodes,
-    yimages,
-    yvariables,
-    ycollections,
-    documentData.entries,
-    documentData.threads,
-    documentData.libraries,
-    documentData.settings
-  ])
-  const editor = collabEditor(store)
-  const documentSync = bindDocumentSync({
-    editor,
-    ydoc,
-    data: documentData,
-    meta,
-    comments: !commentsOnServer
+  const room = openCollabRoom({
+    roomId,
+    editor: collabEditor(store),
+    joinRoom,
+    openSavedCopy,
+    holdsDocument,
+    images: images ? { store: images, owner: store } : undefined,
+    commentsOnServer
   })
-  const adopt = (apply: () => void) => (holdsDocument ? store.adoptChanges(apply) : apply())
+  const { awareness, connection } = room
 
   const peers = shallowRef<RemotePeer[]>([])
-  // A tab that holds the document shows it from the start; the room's screen would replace it.
-  const hasDocument = ref(holdsDocument)
-  const savedCopyLoaded = ref(false)
+  const hasDocument = ref(room.hasDocument())
+  const savedCopyLoaded = ref(room.savedCopyLoaded())
   const openedAt = Date.now()
   const now = ref(openedAt)
   /** When the current stretch of being connected to the service that introduces peers began. */
   const connectedSince = ref<number | null>(null)
-  let suppressYjsEvents = false
-  let suppressGraphSync = false
-  /** Whether a tab that holds a stored document has given way to the room's copy of it. */
-  let followsRoom = false
-  let disposed = false
 
   const status = computed(() =>
     deriveRoomStatus({
@@ -207,94 +160,23 @@ export function openRoomSession({
     })
   )
 
-  const sync = createYjsGraphSync({
-    getEditor: () => editor,
-    getYdoc: () => (disposed ? null : ydoc),
-    getYnodes: () => (disposed ? null : ynodes),
-    getYimages: () => (disposed ? null : yimages),
-    shareImage: roomImages ? (name, bytes) => roomImages.share(name, bytes) : undefined,
-    setSuppressYjsEvents: (value) => {
-      suppressYjsEvents = value
-    },
-    onApplied: followRoomPages(store)
+  const stopChanges = room.onChange(() => {
+    hasDocument.value = room.hasDocument()
+    savedCopyLoaded.value = room.savedCopyLoaded()
   })
-
-  function refreshDocument() {
-    if (disposed) return
-    const rootId = readRoot(meta)
-    hasDocument.value = rootId === undefined ? holdsDocument : store.graph.rootId === rootId
-    // The room's document is what a stored document's tab shows once the room holds it.
-    if (holdsDocument && hasDocument.value && rootId !== undefined && !followsRoom) {
-      followsRoom = true
-      suppressGraphSync = true
-      try {
-        // What the person drew while the room loaded is theirs; the rest is the file's copy.
-        sync.syncHeldBackEdits()
-        adopt(sync.dropLayersOutsideRoom)
-      } finally {
-        suppressGraphSync = false
-      }
-    }
-    if (hasDocument.value) documentSync.follow()
-    // Newcomers wait for someone who has the file, so peers say whether they do.
-    if (awareness.getLocalState()?.hasFile !== hasDocument.value) {
-      awareness.setLocalStateField('hasFile', hasDocument.value)
-    }
-    const name = readRoomName(meta)
-    if (hasDocument.value && name) store.state.documentName = name
-  }
 
   function updatePeers() {
     const next = buildRemotePeers(awareness.getStates(), awareness.clientID)
     peers.value = next
     setPeers(store, next)
   }
+  const stopPresence = room.onPresenceChange(updatePeers)
 
   function broadcastIdentity() {
     awareness.setLocalStateField('user', { name: identity.name.value, color: identity.color })
-    awareness.setLocalStateField('treeFormat', TREE_FORMAT)
   }
-
-  const unregisterYjsObservers = registerYjsObservers({
-    editor,
-    ynodes,
-    yimages,
-    hasImageRef: roomImages ? (name) => roomImages.hasRef(name) : undefined,
-    getSuppressYjsEvents: () => suppressYjsEvents,
-    setSuppressGraphSync: (value) => {
-      suppressGraphSync = value
-    },
-    applyYjsToGraph: (events) => {
-      adopt(() => sync.applyYjsToGraph(events))
-      refreshDocument()
-    }
-  })
-  meta.observe(refreshDocument)
-  // A rename reaches the room once the tab shows the room's copy; before that the room's name
-  // wins, as the room's other document data does when the tab starts following it.
-  function publishName(name: string) {
-    if (disposed || store.state.hostRestrictions.readOnly || !hasDocument.value) return
-    if (readRoot(meta) !== store.graph.rootId || name === readRoomName(meta)) return
-    writeRoomName(meta, name)
-  }
-  const stopName = store.onDocumentRenamed(publishName).off
-  awareness.on('change', updatePeers)
-
-  const connection = connectCollabRoom({
-    roomId,
-    ydoc,
-    awareness,
-    updatePeersList: updatePeers,
-    joinRoom
-  })
   broadcastIdentity()
 
-  void persistence.whenSynced.then(() => {
-    if (disposed) return undefined
-    savedCopyLoaded.value = true
-    refreshDocument()
-    return undefined
-  })
   // Signaling services report no events, so the tab polls while it waits for the file.
   function checkConnection() {
     now.value = Date.now()
@@ -314,14 +196,7 @@ export function openRoomSession({
   const stopAgentSync = publishLocalAgents(store, () => awareness, identity.color)
   const stopAgentPreviews = shareAgentPreviews(store, connection)
   const voice = attachRoomVoice({ awareness, peers, connection })
-  const variableSync = bindVariableSync({ editor, ydoc, yvariables, ycollections })
-  const unbindGraphEvents = bindCollabGraphEvents({
-    editor,
-    getYdoc: () => (disposed ? null : ydoc),
-    getYnodes: () => (disposed ? null : ynodes),
-    getSuppressGraphSync: () => suppressGraphSync,
-    syncLocalEdit: sync.syncLocalEdit
-  })
+  let disposed = false
 
   return {
     roomId,
@@ -333,22 +208,15 @@ export function openRoomSession({
     voice,
     identity,
     leavable,
-    saves,
+    saves: room.saves,
     updateCursor(x, y, pageId) {
       awareness.setLocalStateField('cursor', { x, y, pageId, zoom: store.state.zoom })
     },
     updateSelection(ids) {
       awareness.setLocalStateField('selection', ids)
     },
-    shareDocument() {
-      // Before the root is claimed, which makes the tab follow the room's document data.
-      documentSync.share()
-      sync.syncAllNodesToYjs()
-      variableSync.share()
-      writeRoomName(meta, store.state.documentName)
-      refreshDocument()
-    },
-    roomHasDocument: () => readRoot(meta) !== undefined,
+    shareDocument: () => room.shareDocument(),
+    roomHasDocument: () => room.roomHasDocument(),
     onSynced: (handler) => connection.onSynced(handler),
     onPeerLeave: (handler) => connection.onPeerLeave(handler),
     onVersionsChanged: (handler) => connection.onVersionsChanged(handler),
@@ -359,12 +227,6 @@ export function openRoomSession({
     upload: connection.upload,
     dispose() {
       if (disposed) return
-      stopName()
-      // Unbinding writes an edit still waiting to be sent, so it runs while the room is open.
-      unbindGraphEvents()
-      variableSync.dispose()
-      documentSync.dispose()
-      roomImages?.dispose()
       disposed = true
       connectionTimer.pause()
       stopNameWatch()
@@ -372,15 +234,9 @@ export function openRoomSession({
       stopAgentSync()
       stopAgentPreviews()
       voice.dispose()
-      meta.unobserve(refreshDocument)
-      unregisterYjsObservers()
-      saves.dispose()
-      // Destroying the awareness can emit a last change; nothing here should react to it.
-      awareness.off('change', updatePeers)
-      void connection.room.leave()
-      awareness.destroy()
-      void persistence.destroy()
-      ydoc.destroy()
+      stopChanges()
+      stopPresence()
+      room.dispose()
       peers.value = []
       setPeers(store, [])
     }

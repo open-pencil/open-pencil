@@ -10,11 +10,13 @@ import {
   until,
   user
 } from '#cloud-tests/helpers/relay'
-import { COLLAB_ACTIONS, decodeRelayServerFrame, type RelayServerFrame } from '#cloud/contract'
+import { decodeRelayServerFrame, type RelayServerFrame } from '#cloud/contract'
 import { createRelaySockets } from '#cloud/runtime/cloudflare/relay/sockets'
 import { createCollaborationRelay, type CollaborationStateStore } from '#cloud/server'
 import { readRelayPeerState, type RelayPeerState } from '#cloud/server/collaboration/relay/resume'
 import * as Y from 'yjs'
+
+import { COLLAB_ACTIONS } from '@open-pencil/collab'
 
 const documentId = crypto.randomUUID()
 const room = { documentId, roomEpoch: 0 }

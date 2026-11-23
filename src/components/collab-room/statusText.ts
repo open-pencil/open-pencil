@@ -1,6 +1,5 @@
+import type { RoomStatus } from '@open-pencil/collab'
 import type { MessagesOf } from '@open-pencil/vue/i18n'
-
-import type { RoomStatus } from '@/app/collab/room/status'
 
 type CollaborationMessages = MessagesOf<'collaboration'>
 

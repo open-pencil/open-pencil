@@ -13,6 +13,7 @@
     "types": ["bun"],
     "paths": {
       "#test-support/*": ["./src/*"],
+      "@open-pencil/collab": ["../collab/src/index.ts"],
       "@open-pencil/core": ["../core/src/index.ts"],
       "@open-pencil/core/*": ["../core/src/*"],
       "@open-pencil/scene-graph": ["../scene-graph/src/index.ts"],

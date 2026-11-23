@@ -3,7 +3,8 @@ import * as v from 'valibot'
 import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
 import type { Awareness } from 'y-protocols/awareness'
 
-import type { CollabRoomConnection } from '@/app/collab/room/connection'
+import type { CollabRoomConnection } from '@open-pencil/collab'
+
 import type { RemotePeer } from '@/app/collab/types'
 
 /** How often levels are read while in a call. */

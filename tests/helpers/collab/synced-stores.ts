@@ -5,12 +5,13 @@ import * as Y from 'yjs'
 import {
   bindCollabGraphEvents,
   createYjsGraphSync,
+  followRoomPages,
   registerYjsObservers
 } from '@open-pencil/collab'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { collabEditor, followRoomPages } from '@/app/collab/editor'
+import { collabEditor } from '@/app/collab/editor'
 import { createEditorStore } from '@/app/editor/session'
 
 import { connectYDocs } from '#tests/helpers/yjs'
@@ -24,6 +25,10 @@ export type SyncedStoreOptions = {
   connectImmediately?: boolean
   /** Sync local graph edits to Yjs through graph events, as a collab session does. */
   bindGraphEvents?: boolean
+}
+
+function report(message: string, error: unknown) {
+  console.error(`[Collab] ${message}:`, error)
 }
 
 export function createSyncedStores(options: SyncedStoreOptions = {}) {
@@ -50,7 +55,7 @@ export function createSyncedStores(options: SyncedStoreOptions = {}) {
     setSuppressYjsEvents: (value) => {
       hostSuppressYjsEvents = value
     },
-    onApplied: followRoomPages(hostStore)
+    onApplied: followRoomPages(collabEditor(hostStore), report)
   })
   const peerSync = createYjsGraphSync({
     getEditor: () => peerEditor,
@@ -60,7 +65,7 @@ export function createSyncedStores(options: SyncedStoreOptions = {}) {
     setSuppressYjsEvents: (value) => {
       peerSuppressYjsEvents = value
     },
-    onApplied: followRoomPages(peerStore)
+    onApplied: followRoomPages(collabEditor(peerStore), report)
   })
 
   registerYjsObservers({

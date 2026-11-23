@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { isFetchingRoom, type PendingRoomStatus } from '@open-pencil/collab'
 import { useMessages } from '@open-pencil/vue/i18n'
 
-import { isFetchingRoom, type PendingRoomStatus } from '@/app/collab/room/status'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'

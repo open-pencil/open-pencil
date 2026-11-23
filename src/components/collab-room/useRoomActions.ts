@@ -1,9 +1,9 @@
 import { computed } from 'vue'
 
+import { showsRoomDocument, type PendingRoomStatus } from '@open-pencil/collab'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 
 import { roomLinkURL } from '@/app/collab/room/links'
-import { showsRoomDocument, type PendingRoomStatus } from '@/app/collab/room/status'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
 import { DESKTOP_DOWNLOAD_URL, getShareURL, IS_BROWSER, IS_TAURI } from '@/constants'
 

@@ -2,17 +2,12 @@ import { isEqual } from 'es-toolkit'
 import * as v from 'valibot'
 import { effectScope, onScopeDispose, shallowRef, watch } from 'vue'
 
-import {
-  cloudPresenceSchema,
-  RELAY_SERVER_PEER,
-  type CollaborationTicket
-} from '@open-pencil/cloud/contract'
+import { cloudPresenceSchema, type CollaborationTicket } from '@open-pencil/cloud/contract'
+import { type JoinCollabRoom, RELAY_SERVER_PEER, type RoomImageStore } from '@open-pencil/collab'
 import { minOf } from '@open-pencil/std/arrays'
 
-import type { RoomImageStore } from '@/app/collab/images'
 import { leaveRoom, openDocumentRoom, roomForStore } from '@/app/collab/rooms'
 import type { RoomIdentity, RoomSession } from '@/app/collab/session'
-import type { JoinCollabRoom } from '@/app/collab/transport'
 import { createCloudRelayJoin } from '@/app/collab/transport/cloud'
 import type { EditorStore } from '@/app/editor/session'
 import { createStorageAdapter } from '@/app/integrations/storage'

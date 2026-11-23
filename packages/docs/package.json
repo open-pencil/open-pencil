@@ -36,6 +36,7 @@
     "@iconify/vue": "^5.0.1",
     "@open-pencil/canvaskit": "workspace:*",
     "@open-pencil/cloud": "workspace:*",
+    "@open-pencil/collab": "workspace:*",
     "@open-pencil/core": "workspace:*",
     "@open-pencil/design-jsx": "workspace:*",
     "@open-pencil/dom-css": "workspace:*",

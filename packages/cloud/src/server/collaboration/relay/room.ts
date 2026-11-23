@@ -1,13 +1,12 @@
+import { RELAY_CLOSE, relayServerMessages, type RelayServerFrame } from '#cloud/contract'
+import * as Y from 'yjs'
+
 import {
   COLLAB_ACTIONS,
   decodeRoomUpdate,
   encodeSyncReply,
-  RELAY_CLOSE,
-  RELAY_SERVER_PEER,
-  relayServerMessages,
-  type RelayServerFrame
-} from '#cloud/contract'
-import * as Y from 'yjs'
+  RELAY_SERVER_PEER
+} from '@open-pencil/collab'
 
 import type { RelayPeer, RelaySocket } from './connection'
 import type { RoomLog } from './log'

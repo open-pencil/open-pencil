@@ -3,6 +3,7 @@ import { afterEach, expect, test } from 'bun:test'
 
 import { shallowRef } from 'vue'
 
+import type { JoinCollabRoom } from '@open-pencil/collab'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import type { CommentThread } from '@open-pencil/scene-graph'
@@ -15,7 +16,6 @@ import {
 
 import { executeWithDocumentUndo } from '@/app/automation/execution/editor'
 import { openDocumentRoom, roomForStore, leaveRoom } from '@/app/collab/rooms'
-import type { JoinCollabRoom } from '@/app/collab/transport'
 import { useComments } from '@/app/comments/use'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { createEditorStore } from '@/app/editor/session/create'

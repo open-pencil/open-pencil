@@ -11,8 +11,8 @@ import {
   type DocumentImageLink,
   type ResolveDocumentShareInput
 } from '@open-pencil/cloud/contract'
+import type { RoomImageStore } from '@open-pencil/collab'
 
-import type { RoomImageStore } from '@/app/collab/images'
 import { storageFetch } from '@/app/integrations/storage/s3/fetch'
 
 const IMAGE_LOAD_CONCURRENCY = 6

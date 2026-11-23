@@ -1,6 +1,6 @@
+import type { RoomStatus } from '@open-pencil/collab'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { RoomStatus } from '@/app/collab/room/status'
 import type { AgentPresence, PersonPoint } from '@/app/presence/types'
 
 export interface RemotePeer {

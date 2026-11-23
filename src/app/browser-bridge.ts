@@ -1,7 +1,8 @@
 import type { ChatTransport, UIMessage } from 'ai'
 
+import type { RoomStatus } from '@open-pencil/collab'
+
 import type { CollabReturn } from '@/app/collab/context'
-import type { RoomStatus } from '@/app/collab/room/status'
 import type { EditorStore } from '@/app/editor/session/create'
 import { createNavigationBenchmarkHooks } from '@/app/performance/navigation/hooks'
 import type { NavigationBenchmarkHooks } from '@/app/performance/navigation/hooks'

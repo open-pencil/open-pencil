@@ -2,7 +2,8 @@
 import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
-import { showsRoomDocument } from '@/app/collab/room/status'
+import { showsRoomDocument } from '@open-pencil/collab'
+
 import CampaignNoteHost from '@/components/campaigns/CampaignNoteHost.vue'
 import ConnectedRoom from '@/components/collab-panel/ConnectedRoom.vue'
 import { useCollabPanelContext } from '@/components/collab-panel/context'
