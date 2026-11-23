@@ -43,6 +43,8 @@ This surface does **not** expose structural creation/deletion, arbitrary JavaScr
 npm install -g @open-pencil/mcp
 ```
 
+The package is also listed in the [Glama MCP server directory](https://glama.ai/mcp/servers/open-pencil/open-pencil).
+
 ## Stdio (Claude Code, Cursor, etc.)
 
 The stdio server discovers the running OpenPencil app automatically. It prefers the app's Unix domain socket on macOS and Linux and falls back to localhost TCP when needed. Make sure the desktop app is open with a document loaded.
