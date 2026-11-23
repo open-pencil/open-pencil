@@ -1,11 +1,11 @@
-import { converter, toGamut } from 'culori'
+import { converter } from 'culori'
 
 import { copyFill, copyStroke } from '../copy'
 import { readAllPluginData, withAllPluginData } from '../plugin-data/field'
 import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
 import type { Color } from '../primitives'
 import type { ColorProfile, PluginDataEntry, SceneNode } from '../types'
-import { fitsGamut } from './management'
+import { fitIntoProfile } from './management'
 
 export interface OkHCLColor {
   h: number
@@ -21,11 +21,7 @@ export interface OkHCLPayload {
   color: OkHCLColor
 }
 
-const toRGB = converter('rgb')
-const toP3 = converter('p3')
 const toOkHCL = converter('oklch')
-const toDisplayableRGB = toGamut('rgb', 'oklch')
-const toDisplayableP3 = toGamut('p3', 'oklch')
 
 function clampUnit(value: number): number {
   if (value < 0) return 0
@@ -49,29 +45,15 @@ function normalizeOkHCLColor(color: OkHCLColor): OkHCLColor {
 
 /**
  * `color` as components in `profile`, and whether the profile could not show it: a color past the
- * gamut is brought inside by reducing chroma, keeping lightness and hue. One that lands on the
- * gamut's edge, as every saturated primary does, counts as inside despite round-off.
+ * gamut is brought inside by reducing chroma, keeping lightness and hue, as {@link fitIntoProfile}
+ * brings any color inside.
  */
 export function okhclInProfile(
   color: OkHCLColor,
   profile: ColorProfile
 ): { color: Color; clipped: boolean } {
-  const normalized = normalizeOkHCLColor(color)
-  const oklch = { mode: 'oklch' as const, l: normalized.l, c: normalized.c, h: normalized.h }
-  const exact = profile === 'display-p3' ? toP3(oklch) : toRGB(oklch)
-  const clipped = !fitsGamut(exact)
-  const mapped = () =>
-    profile === 'display-p3' ? toP3(toDisplayableP3(oklch)) : toRGB(toDisplayableRGB(oklch))
-  const inside = clipped ? mapped() : exact
-  return {
-    color: {
-      r: clampUnit(inside.r),
-      g: clampUnit(inside.g),
-      b: clampUnit(inside.b),
-      a: normalized.a ?? 1
-    },
-    clipped
-  }
+  const { l, c, h, a } = normalizeOkHCLColor(color)
+  return fitIntoProfile({ mode: 'oklch', l, c, h, alpha: a ?? 1 }, profile)
 }
 
 /** Coordinates in `profile`, so callers can store colours in the document's profile. */

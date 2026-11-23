@@ -130,7 +130,7 @@ function storedValue(
   if (literalType(value) !== type)
     throw new Error(`Variable ${name} mixes ${type} with ${literalType(value)} values`)
   if (typeof value !== 'string') return value
-  const color = tryParseColor(value)
+  const color = tryParseColor(value, graph.documentColorSpace)
   if (!color) throw new Error(`Variable ${name} has "${value}", which is not a color`)
   return color
 }

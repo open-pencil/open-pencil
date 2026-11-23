@@ -1,7 +1,13 @@
 import { isEqual, isPlainObject } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 
-import type { Effect, SceneGraph, SceneNode, TextLength } from '@open-pencil/scene-graph'
+import type {
+  ColorProfile,
+  Effect,
+  SceneGraph,
+  SceneNode,
+  TextLength
+} from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 import { percentLength, pixelLength, textLengthSchema } from '@open-pencil/scene-graph/text'
@@ -216,17 +222,26 @@ function shadowReferences(raw: Record<string, unknown>): Record<string, string[]
  * One shadow of a shadow token, or the shadows a referenced shadow token holds; those reference a
  * whole shadow, not a variable, so they bind nothing.
  */
-function shadowEffects(raw: unknown, resolve: Resolve, depth = 0): ReadShadows | null {
+function shadowEffects(
+  raw: unknown,
+  resolve: Resolve,
+  profile: ColorProfile,
+  depth = 0
+): ReadShadows | null {
   const path = referencePath(raw)
   if (path) {
     const resolved = depth < 16 ? resolve(path) : undefined
     const shadows =
-      resolved?.kind === 'token' ? shadowList(resolved.token.value, resolve, depth + 1) : null
+      resolved?.kind === 'token'
+        ? shadowList(resolved.token.value, resolve, profile, depth + 1)
+        : null
     return shadows && { effects: shadows.effects, references: shadows.effects.map(() => ({})) }
   }
   if (!isPlainObject(raw)) return null
   const color = fieldValue<Color>(raw.color, resolve, (value) =>
-    isPlainObject(value) && typeof value.r === 'number' ? (value as Color) : decodeColor(value)
+    isPlainObject(value) && typeof value.r === 'number'
+      ? (value as Color)
+      : decodeColor(value, profile)
   )
   // A missing length is 0; one that names a token which does not resolve makes the shadow invalid.
   const length = (key: string) =>
@@ -246,11 +261,16 @@ function shadowEffects(raw: unknown, resolve: Resolve, depth = 0): ReadShadows |
   return { effects: [effect], references: [shadowReferences(raw)] }
 }
 
-function shadowList(value: unknown, resolve: Resolve, depth = 0): ReadShadows | null {
+function shadowList(
+  value: unknown,
+  resolve: Resolve,
+  profile: ColorProfile,
+  depth = 0
+): ReadShadows | null {
   const entries = Array.isArray(value) ? value : [value]
   const list: ReadShadows = { effects: [], references: [] }
   for (const entry of entries) {
-    const shadows = shadowEffects(entry, resolve, depth)
+    const shadows = shadowEffects(entry, resolve, profile, depth)
     if (!shadows) return null
     appendAll(list.effects, shadows.effects)
     appendAll(list.references, shadows.references)
@@ -293,7 +313,8 @@ function replaceShadows(
 function effectStyle(
   token: ReadToken,
   resolve: Resolve,
-  alias: Alias
+  alias: Alias,
+  profile: ColorProfile
 ): Pick<PlannedStyle, 'fields' | 'bindings'> | null {
   const parsed = v.safeParse(ownEffectsSchema, token.extensions[OPENPENCIL_EXTENSION])
   const own = parsed.success ? parsed.output : null
@@ -306,7 +327,7 @@ function effectStyle(
       bindings: aliasedBindings(ownBindings, own?.aliasData ?? {}, alias)
     }
   }
-  const shadows = shadowList(token.value, resolve)
+  const shadows = shadowList(token.value, resolve, profile)
   if (!shadows) return null
   const placed = exact
     ? replaceShadows(exact, shadows.effects)
@@ -384,7 +405,9 @@ export function planStyles(
       continue
     }
     const style =
-      kind === 'TEXT' ? textStyle(token, resolve, alias) : effectStyle(token, resolve, alias)
+      kind === 'TEXT'
+        ? textStyle(token, resolve, alias)
+        : effectStyle(token, resolve, alias, graph.documentColorSpace)
     if (!style) {
       skipped.push({ name: token.name, collection: undefined, reason: 'invalid-value' })
       continue
