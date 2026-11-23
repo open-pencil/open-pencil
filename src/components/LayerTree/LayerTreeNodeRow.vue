@@ -3,7 +3,7 @@ import { useStore } from '@nanostores/vue'
 import { tv } from 'tailwind-variants'
 import { type ComponentPublicInstance, computed, useTemplateRef } from 'vue'
 
-import { locale, useVariableMessages } from '@open-pencil/vue/i18n'
+import { locale, useMessages } from '@open-pencil/vue/i18n'
 import type { LayerNode } from '@open-pencil/vue/primitives/LayerTree'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -46,7 +46,7 @@ const emit = defineEmits<{
 
 const ui = useLayerTreeUI()
 const store = useEditorStore()
-const variables = useVariableMessages()
+const variables = useMessages('variables/panel')
 const language = useStore(locale)
 const appliedModes = computed(() => {
   void store.state.sceneVersion
