@@ -7,8 +7,8 @@ import type {
   TextFontFeatures,
   TextFontVariations
 } from '@open-pencil/canvaskit'
-import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
-import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
+import type { CharacterStyleOverride, ColorProfile, SceneNode } from '@open-pencil/scene-graph'
+import { normalizeColor, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import { faceStyleKey, type NamedFace } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import { lineHeightPixels, styleRunPieces, textLengthPixels } from '@open-pencil/scene-graph/text'
@@ -118,12 +118,22 @@ function drawnFontStyle(
 export function styleRunColor(
   ck: CanvasKit,
   style: SceneNode['styleRuns'][number]['style'],
-  baseColor: Float32Array
+  baseColor: Float32Array,
+  space: ColorProfile
 ): Float32Array {
   const visibleFill = style.fills?.find((fill) => fill.visible && fill.type === 'SOLID')
   if (!visibleFill) return baseColor
-  const color = resolveRGBAForPreview(visibleFill.color).color
+  const color = toExtendedSRGB(normalizeColor(visibleFill.color), space)
   return ck.Color4f(color.r, color.g, color.b, color.a * visibleFill.opacity)
+}
+
+/**
+ * A text style's color. CanvasKit keeps `color` in 8-bit sRGB, which clips a wide-gamut color, and
+ * draws `foregroundColor` with float components, so both carry it; a pushed foreground paint, as
+ * a gradient fill draws with, still takes their place.
+ */
+function textColor(color: Float32Array) {
+  return { color, foregroundColor: color }
 }
 
 function styleRunLanguage(
@@ -162,8 +172,9 @@ function pushStyleRun(
   const runKey = faceStyleKey(runFace)
   const runLoaded = loadedFace(runFamily, runWeight, runItalic, runKey)
 
+  const runColor = styleRunColor(ck, style, baseColor, r.documentColorSpace ?? 'srgb')
   const textStyle = new ck.TextStyle({
-    color: styleRunColor(ck, style, baseColor),
+    ...textColor(runColor),
     fontFamilies: fontFamilies(runFamily, runFace),
     fontSize: runFontSize,
     locale: styleRunLanguage(style, node),
@@ -297,7 +308,7 @@ export function buildSkParagraph(
   const nodeLoaded = loadedFace(nodeFamily, node.fontWeight, node.italic, nodeKey)
 
   const baseTextStyle = {
-    color: baseColor,
+    ...textColor(baseColor),
     fontFamilies: fontFamilies(nodeFamily, node),
     fontSize: baseFontSize,
     locale: node.textLanguage ?? undefined,

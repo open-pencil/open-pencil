@@ -1,1 +1,0 @@
-- The marquee selection rectangle keeps a one-pixel border at every zoom, instead of taking the border width the selection overlay left behind, which made it a thick band on a zoomed-out canvas.

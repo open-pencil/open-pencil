@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useAutomationMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'
@@ -22,7 +22,7 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
  */
 const { target } = defineProps<{ target: ToolAccessTarget }>()
 
-const automation = useAutomationMessages()
+const automation = useMessages('automation')
 const { tools, disabled, modified, reset } = useToolAccessSettings(target)
 const { search, groups, expanded, setGroupEnabled, isEnabled, setToolEnabled } = useToolAccess(
   tools,

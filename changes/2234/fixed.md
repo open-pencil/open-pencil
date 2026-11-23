@@ -1,0 +1,1 @@
+- Display P3 documents draw, blend, and export in their color profile, as in Figma: blend modes work on the document's P3 components on any screen, PNG, JPG, and WebP exports keep the P3 profile, swatches and the color picker show the document's P3 colors, and a saved Display P3 `.fig` file reopens in Display P3 (#2234).

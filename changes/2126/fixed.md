@@ -1,2 +1,0 @@
-- HTML import borders tables by their `border` attribute, and keeps a border whose color is written with spaces, such as `rgb(0 0 0)` (#2126).
-- A Fill layer capped by a maximum width sits where its parent aligns its children, as in Figma, instead of at the start (#2126).

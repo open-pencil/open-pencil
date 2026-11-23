@@ -8,7 +8,7 @@ import {
   type CloudLinkKind
 } from '@open-pencil/cloud/contract'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { cloudMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import type { EditorStore } from '@/app/editor/session'
 import { toast } from '@/app/shell/ui'
@@ -103,7 +103,7 @@ async function signInForLink(link: CloudLink): Promise<void> {
   const server = url ? await cloudServerForLink(url) : null
   if (!url || !server) {
     const host = url ? cloudServerHost(url) : link.server
-    toast.error(cloudMessages.get().documentLinkUnknownServer({ host }))
+    toast.error(messageStores['cloud/editor'].get().documentLinkUnknownServer({ host }))
     return
   }
   signingIn.value = JSON.stringify(link satisfies CloudLink)
@@ -127,7 +127,7 @@ export async function openCloudLink(link: CloudLink): Promise<void> {
     beginCloudInvitation(link.id, link.server, link.secret)
     return
   }
-  const messages = cloudMessages.get()
+  const messages = messageStores['cloud/editor'].get()
   signingIn.value = null
   let outcome: 'opened' | 'sign-in'
   try {

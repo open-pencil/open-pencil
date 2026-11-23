@@ -141,6 +141,7 @@ export default defineConfig({
     'shared/font-status/index': './src/shared/font-status/index.ts',
     'shared/frame': './src/shared/frame.ts',
     'shared/input/index': './src/shared/input/index.ts',
+    'shared/refresh': './src/shared/refresh.ts',
     'shared/search/index': './src/shared/search/index.ts',
     'testing/index': './src/testing/index.ts',
     'variables/index': './src/variables/index.ts'
@@ -158,8 +159,6 @@ export default defineConfig({
   hash: false,
   clean: true,
   outDir: './dist',
-  // The theme's tokens ship as they are, for a consumer's own Tailwind build to import.
-  copy: [{ from: 'src/theme/tokens.css', to: 'dist/theme' }],
   treeshake: {
     moduleSideEffects: false
   },

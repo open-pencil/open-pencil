@@ -9,7 +9,7 @@ import {
   tokenNumberToCSS
 } from '@open-pencil/dom-css/export'
 import type { TokenUnit } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { cssExpressionPreview } from '@/app/editor/tokens/css-expression'
 import type { CSSReferenceCandidate } from '@/app/editor/tokens/model'
@@ -33,7 +33,7 @@ const { id, label, unit, candidates, describedBy } = defineProps<{
   describedBy: string
 }>()
 const emit = defineEmits<{ commit: [css: string]; cancel: [] }>()
-const { variables } = useI18n()
+const variables = useMessages('variables/panel')
 const ui = tv(cssExpressionTheme)()
 const field = useTemplateRef<InstanceType<typeof TokenFormulaField>>('field')
 

@@ -167,12 +167,13 @@ export function createClipboardAssetActions(
     )
   }
 
-  async function placeFiles(files: File[], cx: number, cy: number) {
+  /** Places pictures and SVG files around a point; false when none of them could be read. */
+  async function placeFiles(files: File[], cx: number, cy: number): Promise<boolean> {
     const prepared = (await Promise.all(files.map(prepareAsset))).filter(
       (asset): asset is PreparedAsset => asset !== null
     )
     await loadSVGFonts(prepared)
-    placeAssets(prepared, cx, cy, 'Place files')
+    return placeAssets(prepared, cx, cy, 'Place files')
   }
 
   /** Paste SVG markup as layers, as Figma does; false when the text is not SVG. */

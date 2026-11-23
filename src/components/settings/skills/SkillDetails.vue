@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useAIMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { SelectedSkill } from '@/app/ai/skills/settings/use'
 import MarkdownContent from '@/components/markdown/MarkdownContent.vue'
@@ -19,8 +19,8 @@ const { entry } = defineProps<{ entry: SelectedSkill }>()
 
 const emit = defineEmits<{ done: []; remove: []; 'set-enabled': [enabled: boolean] }>()
 
-const ai = useAIMessages()
-const common = useCommonMessages()
+const ai = useMessages('ai')
+const common = useMessages('common')
 const messages = useSkillMessages()
 
 const skill = computed(() => entry.skill)

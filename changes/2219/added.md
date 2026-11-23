@@ -1,1 +1,0 @@
-- Cloud: the AI services server answers `GET /health` without a token, for uptime checks (#2219).

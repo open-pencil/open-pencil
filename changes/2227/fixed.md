@@ -1,1 +1,0 @@
-- Opening the desktop sign-in page several times no longer turns away new sign-in codes for half an hour, and a page that cannot check its code offers to try again instead of calling the code expired.

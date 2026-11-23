@@ -1,1 +1,0 @@
-- The loading screen names what it is doing for every kind of document, in the interface language: an HTML import shows laying out the page and naming icons, and other documents no longer say "Decoding Figma document" (#2203).

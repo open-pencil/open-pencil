@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import IconLibrary from '~icons/lucide/library'
+import IconArrowRight from '~icons/lucide/arrow-right'
+import IconHistory from '~icons/lucide/history'
 import IconMessageSquare from '~icons/lucide/message-square'
 import IconRefreshCw from '~icons/lucide/refresh-cw'
-import IconShieldCheck from '~icons/lucide/shield-check'
+import IconServer from '~icons/lucide/server'
 import IconSparkles from '~icons/lucide/sparkles'
+import IconTag from '~icons/lucide/tag'
 
+import { LINKS } from '../content/links'
 import { useLandingMessages } from '../content/messages'
-import WaitlistForm from '../waitlist/WaitlistForm.vue'
+import ActionButton from '../ui/ActionButton.vue'
 
 const messages = useLandingMessages()
 
-/** One per feature, in the order every locale lists them: sync, sharing, libraries, AI, admin. */
-const ICONS = [IconRefreshCw, IconMessageSquare, IconLibrary, IconSparkles, IconShieldCheck]
+/** One per feature, in the order every locale lists them: sync, sharing, history, AI, self-hosting. */
+const ICONS = [IconRefreshCw, IconMessageSquare, IconHistory, IconSparkles, IconServer]
 </script>
 
 <template>
@@ -20,7 +23,12 @@ const ICONS = [IconRefreshCw, IconMessageSquare, IconLibrary, IconSparkles, Icon
     <span class="landing-badge">{{ messages.cloud.badge }}</span>
     <h2>{{ messages.cloud.title }}</h2>
     <p class="lede">{{ messages.cloud.lede }}</p>
-    <WaitlistForm class="form" />
+    <div class="actions">
+      <ActionButton :href="LINKS.cloud" :icon="IconArrowRight" primary>
+        {{ messages.cloud.signUp }}
+      </ActionButton>
+      <ActionButton :href="LINKS.pricing" :icon="IconTag">{{ messages.cloud.plans }}</ActionButton>
+    </div>
     <dl class="landing-facts">
       <div v-for="(feature, index) in messages.cloud.features" :key="feature.title">
         <component :is="ICONS[index]" class="icon" aria-hidden="true" />
@@ -40,7 +48,10 @@ const ICONS = [IconRefreshCw, IconMessageSquare, IconLibrary, IconSparkles, Icon
   line-height: 1.6;
 }
 
-.form {
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-top: 28px;
 }
 

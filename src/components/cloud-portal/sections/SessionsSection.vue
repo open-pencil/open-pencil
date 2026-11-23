@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
@@ -14,7 +14,7 @@ import { portalSession, portalSignIn } from './sessions'
 
 /** Where the signed-in person's account is signed in, its recent sign-ins, and signing them out. */
 const portal = usePortal()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const dates = useDateFormat()
 
 const activity = usePortalLoad(async () => {

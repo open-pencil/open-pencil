@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import IconSmilePlus from '~icons/lucide/smile-plus'
 
-import { usePanelMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { toolbarPopupSide } from '@open-pencil/vue/primitives/Toolbar'
 import type { ToolbarAlign, ToolbarSide } from '@open-pencil/vue/primitives/Toolbar'
 
@@ -33,7 +33,8 @@ const {
   align?: ToolbarAlign
 }>()
 const store = useEditorStore()
-const panels = usePanelMessages()
+const panels = useMessages('panels')
+const pickerMessages = useMessages('panels/pickers')
 const popupSide = computed(() => toolbarPopupSide(side))
 /** The anchor runs along the toolbar's edge that faces the canvas. */
 const ANCHOR_EDGES = {
@@ -44,7 +45,7 @@ const ANCHOR_EDGES = {
 } as const
 
 function insert(name: string) {
-  store.insertIcon(name).catch(() => toast.error(panels.value.insertIconFailed))
+  store.insertIcon(name).catch(() => toast.error(pickerMessages.value.insertIconFailed))
 }
 </script>
 

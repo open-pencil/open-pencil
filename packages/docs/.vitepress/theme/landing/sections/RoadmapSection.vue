@@ -5,7 +5,6 @@ import IconArrowRight from '~icons/lucide/arrow-right'
 import { LINKS } from '../content/links'
 import { useLandingMessages, useLocalePath } from '../content/messages'
 import type { TitledDetail } from '../content/messages/types'
-import WaitlistForm from '../waitlist/WaitlistForm.vue'
 
 const messages = useLandingMessages()
 const localePath = useLocalePath()
@@ -16,8 +15,6 @@ interface TimelineEntry {
   detail?: string
   lead?: boolean
   features?: TitledDetail[]
-  /** Shows the Cloud waitlist form under the entry. */
-  waitlist?: boolean
 }
 
 interface TimelineStage {
@@ -30,8 +27,7 @@ interface TimelineStage {
 const stages = computed((): TimelineStage[] => {
   const { shipped, now, next, later } = messages.value.roadmap
   const planned: TimelineEntry[] = [
-    { ...next.lead, lead: true },
-    { ...next.cloud, lead: true, waitlist: true },
+    ...next.leads.map((entry) => ({ ...entry, lead: true })),
     ...next.entries
   ]
   return [
@@ -58,7 +54,6 @@ const stages = computed((): TimelineStage[] => {
           >
             <h3>{{ entry.title }}</h3>
             <p v-if="entry.detail">{{ entry.detail }}</p>
-            <WaitlistForm v-if="entry.waitlist" class="waitlist" />
             <dl v-if="entry.features" class="landing-facts">
               <div v-for="feature in entry.features" :key="feature.title">
                 <dt>{{ feature.title }}</dt>
@@ -201,10 +196,6 @@ const stages = computed((): TimelineStage[] => {
   font-size: 15px;
   font-weight: 500;
   text-decoration: none;
-}
-
-.entry .waitlist {
-  margin-top: 20px;
 }
 
 @media (max-width: 860px) {

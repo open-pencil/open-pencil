@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const codeMessageDefaults = {
   source: 'Code source',
   sourceDesignJSX: 'Design JSX',
@@ -27,5 +25,3 @@ export const codeMessageDefaults = {
   noSelectionComponents: params('{framework} components are generated for the selected layers.'),
   writeJSX: 'Write JSX'
 } as const
-
-export const codeMessages = i18n('code', codeMessageDefaults)

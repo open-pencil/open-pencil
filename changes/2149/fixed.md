@@ -1,1 +1,0 @@
-- HTML, JSX, and Tailwind export lay letter-spaced text out as the canvas does: a line that fits stays on one line, right-aligned and centred lines line up with the box, and auto-width text takes no extra room for the spacing after its last letter (#2149).

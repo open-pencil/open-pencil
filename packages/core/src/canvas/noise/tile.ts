@@ -1,5 +1,6 @@
 import type { Image } from '@open-pencil/canvaskit'
 
+import { skColorSpace } from '#core/canvas/renderer/colors'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
 /**
@@ -32,7 +33,13 @@ function level(u: number, shares: readonly number[]): number {
   return at
 }
 
-function cached(r: SkiaRenderer, key: string, build: () => Uint8Array): Image | null {
+/**
+ * A tile holds data, not colors, so it is tagged with the space of the surfaces it is drawn into,
+ * the document's, and Skia samples its bytes as they are.
+ */
+function cached(r: SkiaRenderer, name: string, build: () => Uint8Array): Image | null {
+  const space = r.documentColorSpace
+  const key = `${space}:${name}`
   const kept = r.shaders.tiles.get(key)
   if (kept) return kept
   const image = r.ck.MakeImage(
@@ -41,7 +48,7 @@ function cached(r: SkiaRenderer, key: string, build: () => Uint8Array): Image | 
       height: NOISE_TILE_CELLS,
       alphaType: r.ck.AlphaType.Unpremul,
       colorType: r.ck.ColorType.RGBA_8888,
-      colorSpace: r.ck.ColorSpace.SRGB
+      colorSpace: skColorSpace(r.ck, space)
     },
     build(),
     NOISE_TILE_CELLS * 4

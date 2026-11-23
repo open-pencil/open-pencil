@@ -236,6 +236,18 @@
       }
     },
     {
+      "files": ["packages/theme/src/**"],
+      "rules": {
+        "@open-pencil/imports/no-deep-parent-relative-imports": [
+          "error",
+          {
+            "minDepth": 1,
+            "alias": "#theme/*"
+          }
+        ]
+      }
+    },
+    {
       "files": ["packages/vue/src/**"],
       "rules": {
         "@open-pencil/imports/no-deep-parent-relative-imports": [
@@ -392,7 +404,7 @@
     {
       "files": [
         "src/**/*.{ts,vue}",
-        "packages/{std,scene-graph,pen,kiwi,fig,core,dom-css,vue}/src/**/*.{ts,vue}",
+        "packages/{std,scene-graph,pen,kiwi,fig,core,dom-css,theme,vue}/src/**/*.{ts,vue}",
         "packages/cloud/src/{client,contract}/**/*.ts"
       ],
       "rules": {

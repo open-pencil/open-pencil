@@ -19,7 +19,7 @@ import {
   type WatchSource
 } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortalLoad } from './state'
 
@@ -96,7 +96,7 @@ export function usePortalList<Filter extends string, Row extends RowData>(option
   /** Another input `load` reads, such as a narrowing the list offers beside its filters. */
   scope?: WatchSource
 }) {
-  const messages = useCloudPortalMessages()
+  const messages = useMessages('cloud/portal')
   const query = ref('')
   const search = refDebounced(query, SEARCH_DELAY_MS)
   const filter = shallowRef<Filter>(options.filter)

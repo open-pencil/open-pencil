@@ -1,0 +1,16 @@
+{
+  "plan": "Forfait",
+  "planDescription": "Ce que comprend votre compte, et ce que vous payez.",
+  "planStorage": "Stockage",
+  "planStorageOf": "{used} utilisés sur {total}, dans les espaces de travail dont vous êtes propriétaire",
+  "planStorageUsed": "{used} utilisés, dans les espaces de travail dont vous êtes propriétaire",
+  "planStorageFull": "Vos fichiers sont en lecture seule",
+  "planStorageFullDescription": "Ils occupent tout le stockage inclus dans votre forfait. Supprimez des fichiers ou obtenez plus de stockage pour les modifier à nouveau.",
+  "planMonthlyCredits": "Crédits chaque mois",
+  "planCredits": "{credits} crédits",
+  "planNoCredits": "Non inclus",
+  "planUnlimitedCredits": "Aucune limite mensuelle",
+  "planBilling": "Offres et facturation",
+  "planBillingDescription": "Changez d’offre, achetez plus de crédits et consultez vos factures.",
+  "planOpenBilling": "Ouvrir la facturation"
+}

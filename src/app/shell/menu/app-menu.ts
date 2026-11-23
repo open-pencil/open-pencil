@@ -19,7 +19,7 @@ import type { BuiltinIOFormatId } from '@open-pencil/core/io'
 import { formatShortcutKeys, useEditorCommands } from '@open-pencil/vue/editor/commands'
 import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 import type {
   CommandPaletteGroup,
   CommandPaletteItem
@@ -91,7 +91,9 @@ export function useAppMenu() {
     otherPages,
     moveSelectionToPage
   } = useEditorCommands()
-  const { menu, updates, locale, availableLocales, localeLabels, setLocale } = useI18n()
+  const menu = useMessages('menu')
+  const updates = useMessages('updates')
+  const { locale, availableLocales, localeLabels, setLocale } = useLocale()
   const { theme, setTheme } = useAppTheme()
   const { isMobile } = useViewportKind()
 
@@ -100,6 +102,7 @@ export function useAppMenu() {
     'new-board': 'newBoard',
     'new-tab': 'newTab',
     open: 'open',
+    'open-url': 'openURL',
     place: 'place',
     'open-tour': 'openTour',
     diagnostics: 'diagnostics',

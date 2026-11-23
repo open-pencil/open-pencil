@@ -13,7 +13,7 @@ import { computed } from 'vue'
 import IconChevronDown from '~icons/lucide/chevron-down'
 
 import type { EditorToolDef, Tool } from '@open-pencil/core'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { isToolbarToolActive, toolbarPopupSide } from '@open-pencil/vue/primitives/Toolbar'
 import type { ToolbarAlign, ToolbarSide } from '@open-pencil/vue/primitives/Toolbar'
 import {
@@ -59,7 +59,7 @@ const {
 }>()
 
 const toolbar = tv(toolbarTheme)
-const { editor } = useI18n()
+const editor = useMessages('editor')
 const triggerActive = computed(() => isToolbarToolActive(tool, activeTool))
 const styles = computed(() => toolbar({ active: triggerActive.value, mobile, side }))
 const popupSide = computed(() => toolbarPopupSide(side))

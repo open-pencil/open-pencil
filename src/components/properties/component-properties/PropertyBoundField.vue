@@ -6,7 +6,7 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import { usePanelMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import BoundFieldRow from '@/components/properties/binding/BoundFieldRow.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -28,7 +28,7 @@ const {
   compact?: boolean
 }>()
 const binding = usePropertyBinding(field)
-const panels = usePanelMessages()
+const panels = useMessages('panels')
 const menu = useMenuUI({ content: 'min-w-40' })
 const item = menuItem({ justify: 'start' })
 const chip =

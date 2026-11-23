@@ -1,7 +1,12 @@
 import { sumBy } from 'es-toolkit/math'
 
 import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { colorToHex, compositeOver, contrastRatio } from '@open-pencil/scene-graph/color'
+import {
+  colorToSRGBHex,
+  compositeOver,
+  contrastRatio,
+  convertColor
+} from '@open-pencil/scene-graph/color'
 import { counterAxisSpacingOf } from '@open-pencil/scene-graph/layout'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -236,11 +241,16 @@ function checkTextVisibility(ctx: LayoutContext): void {
     if (child.boundVariables[`fills/${textFillIndex}/color`]) continue
     const bg = findAncestorBackground(child, graph)
     if (!bg) continue
-    const ratio = contrastRatio(blendOver(textFill, child.opacity, bg), bg)
+    // Contrast is measured in sRGB, as the color-contrast lint rule measures it.
+    const profile = graph.documentColorSpace
+    const ratio = contrastRatio(
+      convertColor(blendOver(textFill, child.opacity, bg), profile, 'srgb'),
+      convertColor(bg, profile, 'srgb')
+    )
     const required = isLargeText(child) ? WCAG_AA_LARGE_TEXT_CONTRAST : WCAG_AA_CONTRAST
     if (ratio < required) {
       issues.push({
-        message: `"${child.name || child.text.slice(0, 20) || 'Text'}" contrast ${formatRatio(ratio)}:1 is below WCAG AA ${required}:1 (${colorToHex(textFill.color)} on ${colorToHex(bg)})`,
+        message: `"${child.name || child.text.slice(0, 20) || 'Text'}" contrast ${formatRatio(ratio)}:1 is below WCAG AA ${required}:1 (${colorToSRGBHex(textFill.color, profile)} on ${colorToSRGBHex(bg, profile)})`,
         suggestion: 'Increase contrast between text and background'
       })
     }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { cloudShareOpen } from '@/app/cloud/sharing/dialog'
 import { cloudShareTarget } from '@/app/cloud/sharing/document'
@@ -10,7 +10,7 @@ import { shareButton } from '@/components/collab-panel/ui'
 
 /** Opens the Cloud document's share dialog, which `CloudShareHost` shows for the app. */
 const store = useEditorStore()
-const { collaboration } = useI18n()
+const collaboration = useMessages('collaboration')
 const target = computed(() => {
   const binding = store.getStorageBinding()
   return binding ? cloudShareTarget(binding) : null

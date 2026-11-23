@@ -80,3 +80,119 @@ export function createWideGamutScene(graph: SceneGraph, pageId: string) {
   }
   return { frameId: frame.id }
 }
+
+/**
+ * A Display P3 document's paints where the profile shows: text, a gradient fill and a gradient
+ * stroke, a shadow, seeded noise and texture, and blend modes, all in colors outside sRGB.
+ */
+export function createP3RenderingScene(graph: SceneGraph, pageId: string) {
+  const frame = graph.createNode('FRAME', pageId, {
+    name: 'P3 rendering',
+    x: 0,
+    y: 0,
+    width: 520,
+    height: 300,
+    fills: [solid(1, 1, 1)]
+  })
+  const shadow = {
+    type: 'DROP_SHADOW' as const,
+    color: { r: 0, g: 0.4, b: 1, a: 0.6 },
+    offset: { x: 0, y: 6 },
+    radius: 10,
+    spread: 0,
+    visible: true
+  }
+  graph.createNode('TEXT', frame.id, {
+    name: 'P3 text',
+    x: 20,
+    y: 16,
+    width: 300,
+    height: 60,
+    text: 'Vivid',
+    fontFamily: 'Inter',
+    fontSize: 48,
+    fontWeight: 700,
+    textAutoResize: 'NONE',
+    fills: [solid(1, 0, 0)]
+  })
+  graph.createNode('RECTANGLE', frame.id, {
+    name: 'Gradient with stroke and shadow',
+    x: 20,
+    y: 100,
+    width: 200,
+    height: 80,
+    cornerRadius: 12,
+    fills: [
+      linearGradient([
+        { r: 1, g: 0, b: 0, a: 1 },
+        { r: 0, g: 1, b: 0, a: 1 }
+      ])
+    ],
+    strokes: [
+      {
+        ...linearGradient([
+          { r: 0, g: 0, b: 1, a: 1 },
+          { r: 1, g: 0, b: 1, a: 1 }
+        ]),
+        weight: 6,
+        align: 'INSIDE'
+      }
+    ],
+    effects: [shadow]
+  })
+  const base = { offset: { x: 0, y: 0 }, spread: 0, visible: true }
+  graph.createNode('RECTANGLE', frame.id, {
+    name: 'Noise',
+    x: 240,
+    y: 100,
+    width: 120,
+    height: 80,
+    fills: [solid(0, 0.8, 0.5)],
+    effects: [
+      {
+        ...base,
+        type: 'NOISE',
+        color: { r: 1, g: 0, b: 0, a: 1 },
+        radius: 0,
+        noise: { noiseType: 'MONOTONE', noiseSize: { x: 2, y: 2 }, density: 0.5, seed: 7 }
+      }
+    ]
+  })
+  graph.createNode('RECTANGLE', frame.id, {
+    name: 'Texture',
+    x: 380,
+    y: 100,
+    width: 120,
+    height: 80,
+    fills: [solid(1, 0.5, 0)],
+    effects: [
+      {
+        ...base,
+        type: 'TEXTURE',
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        radius: 6,
+        texture: { noiseSize: { x: 4, y: 4 }, clipToShape: true, seed: 3 }
+      }
+    ]
+  })
+  for (const [index, blendMode] of BLENDS.entries()) {
+    graph.createNode('RECTANGLE', frame.id, {
+      name: `Backdrop ${blendMode}`,
+      x: 20 + index * 80,
+      y: 210,
+      width: 70,
+      height: 70,
+      fills: [solid(0.3, 0.6, 0.7)]
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      name: blendMode,
+      x: 40 + index * 80,
+      y: 230,
+      width: 50,
+      height: 50,
+      blendMode,
+      fills: [solid(0.8, 0.4, 0.3)]
+    })
+  }
+  return { frameId: frame.id }
+}

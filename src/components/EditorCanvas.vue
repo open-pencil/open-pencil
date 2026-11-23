@@ -84,6 +84,9 @@ const onViewportResize = (width: number, height: number) => {
   if (paneId) store.resizePane(paneId, width, height)
   if (isActivePane.value) store.setViewportSize(width, height)
 }
+// The layout moved the canvas on screen: pan the other way so the drawing stays where it was.
+const onViewportMove = (dx: number, dy: number) =>
+  store.shiftPane(paneId ?? store.activePaneId.value, -dx, -dy)
 
 const { updateCursor } = useCanvasCollaborationAwareness(store)
 
@@ -120,6 +123,7 @@ useCanvas(sceneCanvasRef, store, {
   showRulers: false,
   getRenderState,
   onViewportResize,
+  onViewportMove,
   onPresentation: (colorSpace) => {
     store.state.canvasPresentation = colorSpace
   }

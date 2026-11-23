@@ -80,6 +80,9 @@ const PROPERTIES: &[&str] = &[
     "background-position",
     "background-repeat",
     "background-clip",
+    "background-origin",
+    "mask-image",
+    "isolation",
     "border-top-width",
     "border-right-width",
     "border-bottom-width",
@@ -119,6 +122,7 @@ const PROPERTIES: &[&str] = &[
     "font-weight",
     "font-style",
     "font-stretch",
+    "font-optical-sizing",
     "line-height",
     "letter-spacing",
     "word-spacing",
@@ -133,6 +137,7 @@ const PROPERTIES: &[&str] = &[
     "text-indent",
     "white-space",
     "text-wrap-mode",
+    "text-wrap-style",
     "text-overflow",
     "vertical-align",
     "list-style-type",
@@ -480,6 +485,9 @@ fn default_styles() -> &'static HashMap<&'static str, String> {
             ("background-position", "0% 0%"),
             ("background-repeat", "repeat"),
             ("background-clip", "border-box"),
+            ("background-origin", "padding-box"),
+            ("mask-image", "none"),
+            ("isolation", "auto"),
             ("border-top-style", "none"),
             ("border-right-style", "none"),
             ("border-bottom-style", "none"),
@@ -720,8 +728,24 @@ fn capture_node(
             .collect();
         entry.insert("fragments".into(), Value::Array(rects));
     }
-    if let Some(lines) = lines(node, (pos.x, pos.y)) {
-        entry.insert("lines".into(), lines);
+    // Text a flex container or a grid holds among its items is laid out in anonymous blocks, which
+    // live outside the DOM; their lines are the element's own text's, as a browser reports them.
+    let mut own_lines = match lines(node, (pos.x, pos.y)) {
+        Some(Value::Array(own)) => own,
+        _ => Vec::new(),
+    };
+    for anonymous in node
+        .anonymous_blocks
+        .iter()
+        .filter_map(|&id| doc.get_node(id))
+    {
+        let at = anonymous.absolute_position(0.0, 0.0);
+        if let Some(Value::Array(block)) = lines(anonymous, (at.x, at.y)) {
+            own_lines.extend(block);
+        }
+    }
+    if !own_lines.is_empty() {
+        entry.insert("lines".into(), Value::Array(own_lines));
     }
     out.push(Value::Object(entry));
 

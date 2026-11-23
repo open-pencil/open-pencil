@@ -1,1 +1,0 @@
-- HTML pages dropped on the canvas of an open document are placed there as editable layers, and **File → Place…** places images, SVG files, and HTML pages from a file picker; pasted and placed HTML names its icons as HTML import does (#2207).

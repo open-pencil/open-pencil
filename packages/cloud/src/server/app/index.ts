@@ -13,9 +13,9 @@ import { cloudRequestId } from '#cloud/server/logging'
 import { createPictureRoutes } from '#cloud/server/pictures'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
-import { cors } from 'hono/cors'
 
 import { createRequestChecks, createRequestResolvers } from './checks'
+import { createCloudCORS } from './cors'
 import { requireMinimumEditor } from './editors'
 import { robotsText, shouldPreventIndexing } from './indexing'
 import { createAppRateLimiters } from './limiters'
@@ -39,13 +39,9 @@ export function createCloudApp(services: CloudServices) {
   const allowedOrigins = new Set(
     [config.publicURL, ...config.trustedOrigins].map((origin) => new URL(origin).origin)
   )
-  const cloudCORS = cors({
-    origin: (origin) => (allowedOrigins.has(origin) ? origin : null),
-    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    maxAge: 600
-  })
+  // Billing's pages sign a visitor in with their Cloud session as they open (`CLOUD_BILLING_TOKEN_PATH`).
+  const billingOrigin = config.billingEndpoint && new URL(config.billingEndpoint).origin
+  const cloudCORS = createCloudCORS(allowedOrigins, billingOrigin || undefined)
   const app = createAppServices(services)
   const resolvers = createRequestResolvers(services)
   const checks = createRequestChecks(services, resolvers)
@@ -56,9 +52,9 @@ export function createCloudApp(services: CloudServices) {
     new Hono<CloudAPIEnvironment>()
       .onError(cloudErrorHandler(services.reportError))
       .use('*', cloudRequestId(services.forwardedRequestId))
-      // Discovery is public and read without credentials, so any editor's page may read it: an
-      // editor on another address learns whether the server lists it before it signs in.
-      .use(CLOUD_DISCOVERY_PATH, cors({ origin: '*', allowMethods: ['GET'] }))
+      // Discovery is public, so any editor's page may read it without credentials: an editor on
+      // another address learns whether the server lists it before it signs in.
+      .use(CLOUD_DISCOVERY_PATH, cloudCORS)
       .use('/api/*', cloudCORS)
       .use('/api/*', requireMinimumEditor(config.minimumEditorVersion))
       .use(

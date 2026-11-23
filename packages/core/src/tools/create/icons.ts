@@ -78,7 +78,6 @@ export const insertIcon = defineTool({
 
     const size = args.size ?? 24
     const color = args.color ?? '#000000'
-    const parsedColor = parseColor(color)
 
     let icons
     try {
@@ -90,6 +89,8 @@ export const insertIcon = defineTool({
     const inserted: { id: string; name: string; icon: string }[] = []
     const notFound: string[] = []
 
+    // Read after the lookup, beside the inserts, so a profile changed meanwhile is the one used.
+    const parsedColor = parseColor(color, graphOf(figma).documentColorSpace)
     const parentId = args.parent_id ?? figma.currentPage.id
     prepareSlotInsertion(graphOf(figma), parentId, 'insert_icon')
     for (const name of names) {

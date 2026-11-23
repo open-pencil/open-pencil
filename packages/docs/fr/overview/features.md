@@ -36,7 +36,7 @@ Les onglets Design, Code, IA et Vérifier s’adaptent à la sélection :
 OpenPencil utilise Skia via CanvasKit WASM, le même moteur graphique que Figma :
 
 - dégradés linéaires, radiaux, angulaires et diamant ;
-- remplissages d’image avec plusieurs modes d’échelle ;
+- remplissages d’image avec plusieurs modes d’échelle et réglages (exposition, contraste, saturation, température, teinte, hautes lumières, ombres) ;
 - cache des effets par objet ;
 - arcs, ellipses partielles et anneaux ;
 - exclusion des objets hors champ et réutilisation des outils de peinture ;
@@ -100,7 +100,7 @@ La collaboration fonctionne directement entre participants via WebRTC et ne néc
 
 **Bureau :** Tauri v2, environ 7 Mo, pour macOS, Windows et Linux, avec menus natifs, fonctionnement hors ligne et enregistrement automatique.
 
-**Web :** [app.openpencil.dev](https://app.openpencil.dev), installable comme PWA et adapté aux écrans tactiles.
+**Web :** [cloud.openpencil.dev](https://cloud.openpencil.dev), installable comme PWA et adapté aux écrans tactiles.
 
 ## Chargement de secours depuis Google Fonts
 

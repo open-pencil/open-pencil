@@ -5,6 +5,7 @@ import { parentLocalPoint, resolvePasteTarget } from '#core/editor/clipboard/pas
 import { layerTheme, newLayerDefaults } from '#core/editor/shapes/defaults'
 import type { EditorContext } from '#core/editor/types'
 import type { IconMatcher } from '#core/icons/match'
+import type { PageFontFamilies } from '#core/io/formats/html/fonts'
 import { layoutAuthoredNodes } from '#core/layout'
 
 import { captureClipboardSnapshot, type ClipboardSnapshot } from './snapshot'
@@ -72,14 +73,15 @@ export function createClipboardWebActions(ctx: EditorContext, deps: WebPasteDepe
   /**
    * Builds a styled, laid-out document's layers as HTML import builds them, ready to paste as
    * copied layers are; null when it shows nothing. Building first lets a caller keep what it would
-   * replace until the layers exist. `matchIcon` names the icons its inline SVG draws.
+   * replace until the layers exist. `matchIcon` names the icons its inline SVG draws, and
+   * `pageFamilies` are the page's own fonts, as `loadPageFontFaces` loaded them.
    */
   async function prepareStyledHTML(
     styled: DesignDocument,
-    options: { matchIcon?: IconMatcher } = {}
+    options: { matchIcon?: IconMatcher; pageFamilies?: PageFontFamilies } = {}
   ): Promise<ClipboardSnapshot | null> {
     const { sceneGraphFromStyledHTML } = await import('#core/io/formats/html/layers')
-    const graph = await sceneGraphFromStyledHTML(styled, { matchIcon: options.matchIcon })
+    const graph = await sceneGraphFromStyledHTML(styled, options)
     const roots = graph.getChildren(graph.getPages()[0].id)
     return roots.length > 0 ? captureClipboardSnapshot(graph, roots) : null
   }

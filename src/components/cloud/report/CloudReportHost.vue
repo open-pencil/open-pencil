@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 
 import type { DocumentReportReason } from '@open-pencil/cloud/contract'
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { cloudReport, sendCloudReport, type CloudReportInput } from '@/app/cloud/reports/file'
 import { toast } from '@/app/shell/ui'
@@ -11,7 +11,7 @@ import { useHeldContent } from '@/components/ui/overlay/held'
 import CloudReportDialog from './CloudReportDialog.vue'
 
 /** The one Report dialog, for a document opened from a share link. */
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const busy = ref(false)
 const failure = ref<'failed' | 'too-many' | null>(null)
 // Drawn from what it showed while it animates closed.

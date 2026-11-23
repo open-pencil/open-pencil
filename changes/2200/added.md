@@ -1,1 +1,0 @@
-- Crowded comment pins gather into one bubble with their count when zoomed out, and clicking it zooms in until they part, as in Figma.

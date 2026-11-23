@@ -16,8 +16,8 @@ import {
   textAutoResizeFor
 } from '@open-pencil/scene-graph/layout'
 
-import type { DesignElement, DesignStyleDeclaration } from '../types'
-import { pickStyle } from './css-values'
+import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
+import { mergedStyle, pickStyle } from './css-values'
 import { isTableRow } from './table'
 
 /**
@@ -85,7 +85,8 @@ export function elementDisplay(element: DesignElement, style: DesignStyleDeclara
   const display = pickStyle(style, 'display')?.trim().toLowerCase()
   if (display) return display
   const tag = element.tagName.toLowerCase()
-  if (INLINE_TAGS.has(tag)) return 'inline'
+  // Generated content, `::before` and `::after`, is inline unless styled otherwise, as in CSS.
+  if (INLINE_TAGS.has(tag) || tag.startsWith('::')) return 'inline'
   if (tag === 'li') return 'list-item'
   return INLINE_BLOCK_TAGS.has(tag) ? 'inline-block' : 'block'
 }
@@ -381,4 +382,58 @@ export function applyFlowSizing(
   }
   applyParentFill(graph, node, style, display, parentFlow, size)
   if (node.type === 'TEXT') applyTextSizing(graph, node, style, size)
+}
+
+/** Whether a box is out of the flow, placed by its own position rather than in the lines. */
+function isOutOfFlow(node: DesignNode): boolean {
+  if (node.type !== 'element') return false
+  const position = pickStyle(mergedStyle(node), 'position')?.trim()
+  return position === 'absolute' || position === 'fixed'
+}
+
+/**
+ * An element's content as its lines lay it out, and the boxes out of the flow inside it, such as a
+ * link's `::before` stretched over the card it is in, which take no part in the lines.
+ */
+export function splitOutOfFlow(element: DesignElement): {
+  inFlow: DesignElement
+  outOfFlow: DesignElement[]
+} {
+  const outOfFlow: DesignElement[] = []
+  const keep = (node: DesignElement): DesignElement => ({
+    ...node,
+    children: node.children.flatMap((child): DesignNode[] => {
+      if (child.type !== 'element') return [child]
+      if (isOutOfFlow(child)) {
+        outOfFlow.push(child)
+        return []
+      }
+      return [keep(child)]
+    })
+  })
+  return { inFlow: keep(element), outOfFlow }
+}
+
+/** Whether a box's `visibility` hides what it paints and the text it holds. */
+export function hiddenByVisibility(style: DesignStyleDeclaration): boolean {
+  const visibility = pickStyle(style, 'visibility')?.trim()
+  return visibility === 'hidden' || visibility === 'collapse'
+}
+
+function hidesByVisibility(node: DesignElement): boolean {
+  return hiddenByVisibility(mergedStyle(node))
+}
+
+/**
+ * How much of a box CSS hides with `visibility`: `all` of it, `own` paint only when a descendant
+ * sets `visibility: visible` and shows inside it, which a hidden layer would hide with it, or
+ * `none`.
+ */
+export function hiddenPart(element: DesignElement): 'all' | 'own' | 'none' {
+  if (!hidesByVisibility(element)) return 'none'
+  const showsAgain = (node: DesignElement): boolean =>
+    node.children.some(
+      (child) => child.type === 'element' && (!hidesByVisibility(child) || showsAgain(child))
+    )
+  return showsAgain(element) ? 'own' : 'all'
 }

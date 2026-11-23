@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { join } from 'node:path'
 
 import { sceneGraphFromStyledHTML } from '@open-pencil/core/io/formats/html/layers'
 import type {
@@ -7,7 +8,11 @@ import type {
   DesignNode,
   DesignStyleDeclaration
 } from '@open-pencil/dom-css'
+import { svgDataURL } from '@open-pencil/scene-graph/images'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
+import { FIXTURES } from '@open-pencil/test-support/paths'
+
+import { fontManager } from '#core/text/font/manager'
 
 function element(
   computedStyle: DesignStyleDeclaration,
@@ -198,5 +203,165 @@ describe('laying out HTML from its captured layout', () => {
     const labelLayer = graph.getChildren(graph.getPages()[0].id)[0]
 
     expect(labelLayer.layoutMode).toBe('VERTICAL')
+  })
+})
+
+describe('fonts of HTML styled in a browser', () => {
+  test('sets text in the first family of its list there is a font for', async () => {
+    const family = 'OpenPencil Stack Test'
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+    await fontManager.markLoaded(family, 'Regular', font)
+    // A browser on a system with neither of the first two falls through to the third.
+    const paragraph = element(
+      { 'font-family': `"Helvetica Neue", "No Such Family", "${family}", sans-serif` },
+      { box: rect(0, 0, 200, 20) },
+      [{ type: 'text', text: 'Hosted directly from your repository' }]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [paragraph] })
+    const text = graph
+      .flattenTree(graph.getPages()[0].id)
+      .find(({ node }) => node.type === 'TEXT')?.node
+
+    expect(text?.fontFamily).toBe(family)
+  })
+})
+
+describe('CSS mask icons', () => {
+  test('draws the SVG an element is masked with, its shapes in the element’s background', async () => {
+    const icon =
+      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M0 0h24v24H0z'/><path fill='none' stroke='black' d='M2 2h20'/></svg>"
+    const masked = element(
+      {
+        ...box(16, 16),
+        'background-color': 'rgb(255, 0, 0)',
+        'mask-image': `url("${svgDataURL(icon)}")`
+      },
+      { box: rect(0, 0, 16, 16) }
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [masked] })
+    const frame = graph.getChildren(graph.getPages()[0].id)[0]
+    const shapes = graph
+      .flattenTree(frame.id)
+      .flatMap(({ node }) => (node.id === frame.id ? [] : [node]))
+    const paints = shapes.flatMap((shape) => [...shape.fills, ...shape.strokes])
+
+    // The background shows through the shapes, not across the box.
+    expect(frame).toMatchObject({ width: 16, height: 16, fills: [] })
+    expect(paints.length).toBeGreaterThan(0)
+    expect(paints.every((paint) => paint.color?.r === 1 && paint.color.g === 0)).toBe(true)
+  })
+
+  test('keeps a stroked mask icon a line, its root filling nothing', async () => {
+    const icon =
+      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><path stroke='black' d='M2 2h20v20H2z'/></svg>"
+    const masked = element(
+      {
+        ...box(16, 16),
+        'background-color': 'rgb(255, 0, 0)',
+        'mask-image': `url("${svgDataURL(icon)}")`
+      },
+      { box: rect(0, 0, 16, 16) }
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [masked] })
+    const frame = graph.getChildren(graph.getPages()[0].id)[0]
+    const shapes = graph
+      .flattenTree(frame.id)
+      .flatMap(({ node }) => (node.id === frame.id ? [] : [node]))
+
+    expect(shapes.some((shape) => shape.strokes.length > 0)).toBe(true)
+    expect(shapes.flatMap((shape) => shape.fills)).toEqual([])
+  })
+
+  test('paints a mask’s root stroke and inline paints in the element’s background', async () => {
+    const icon =
+      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black'><path d='M2 2h20'/><rect x='4' y='4' width='8' height='8' style='fill: black'/></svg>"
+    const masked = element(
+      {
+        ...box(16, 16),
+        'background-color': 'rgb(255, 0, 0)',
+        'mask-image': `url("${svgDataURL(icon)}")`
+      },
+      { box: rect(0, 0, 16, 16) }
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [masked] })
+    const frame = graph.getChildren(graph.getPages()[0].id)[0]
+    const paints = graph
+      .flattenTree(frame.id)
+      .flatMap(({ node }) => (node.id === frame.id ? [] : [...node.fills, ...node.strokes]))
+
+    expect(paints.length).toBeGreaterThan(0)
+    expect(paints.every((paint) => paint.color?.r === 1 && paint.color.g === 0)).toBe(true)
+  })
+
+  test('keeps a shape the mask hides hidden, and a half-covered one half covered', async () => {
+    const icon =
+      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' fill='transparent'/><rect width='8' height='8' style='fill: rgba(0, 0, 0, 0.5)'/></svg>"
+    const masked = element(
+      {
+        ...box(16, 16),
+        'background-color': 'rgb(255, 0, 0)',
+        'mask-image': `url("${svgDataURL(icon)}")`
+      },
+      { box: rect(0, 0, 16, 16) }
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [masked] })
+    const frame = graph.getChildren(graph.getPages()[0].id)[0]
+    const fills = graph
+      .flattenTree(frame.id)
+      .flatMap(({ node }) => (node.id === frame.id ? [] : node.fills))
+      .filter((fill) => fill.visible && (fill.color?.a ?? 1) * fill.opacity > 0)
+
+    // Only the half-covered square shows, in the background color at half strength.
+    expect(fills).toHaveLength(1)
+    expect(fills[0]?.color).toMatchObject({ r: 1, g: 0, b: 0 })
+    expect((fills[0]?.color?.a ?? 1) * (fills[0]?.opacity ?? 1)).toBeCloseTo(0.5)
+  })
+
+  test('keeps the content of an element masked over it', async () => {
+    const icon =
+      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 4'><rect width='4' height='4'/></svg>"
+    const masked = element(
+      { ...box(80, 20), 'mask-image': `url("${svgDataURL(icon)}")` },
+      { box: rect(0, 0, 80, 20) },
+      [{ type: 'text', text: 'Masked label' }]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [masked] })
+    const texts = graph
+      .flattenTree(graph.getPages()[0].id)
+      .flatMap(({ node }) => (node.type === 'TEXT' ? [node.text] : []))
+
+    expect(texts).toEqual(['Masked label'])
+  })
+
+  test('draws a mask icon its matcher names at its box size, in the element’s background', async () => {
+    const icon =
+      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='none' stroke='black' stroke-width='2' d='M2 2h20v20H2z'/></svg>"
+    const masked = element(
+      {
+        ...box(16, 16),
+        'background-color': 'rgb(255, 0, 0)',
+        color: 'rgb(0, 0, 255)',
+        'mask-image': `url("${svgDataURL(icon)}")`
+      },
+      { box: rect(0, 0, 16, 16) }
+    )
+    const graph = await sceneGraphFromStyledHTML(
+      { type: 'document', children: [masked] },
+      { matchIcon: async (svgs) => svgs.map(() => 'lucide:square') }
+    )
+    const frame = graph.getChildren(graph.getPages()[0].id)[0]
+    const vectors = graph
+      .flattenTree(frame.id)
+      .flatMap(({ node }) => (node.type === 'VECTOR' ? [node] : []))
+    const bounds = vectors.map((vector) => {
+      const at = graph.getAbsolutePosition(vector.id)
+      return { left: at.x, right: at.x + vector.width }
+    })
+    const paints = vectors.flatMap((vector) => [...vector.fills, ...vector.strokes])
+
+    // The 24-unit icon scales into the 16px box, in red, the background, not the blue text.
+    expect(vectors.length).toBeGreaterThan(0)
+    expect(bounds.every(({ left, right }) => left >= -1 && right <= 17)).toBe(true)
+    expect(paints.every((paint) => paint.color?.r === 1 && paint.color.b === 0)).toBe(true)
   })
 })

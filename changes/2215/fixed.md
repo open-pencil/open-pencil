@@ -1,2 +1,0 @@
-- A shader fill's swatch shows its new frame after a change to the shader.
-- A press while a list or menu is open, such as a picker's colour format list, only closes it; on the canvas or the layers, pages, and assets panels it no longer also clears the selection or closes the picker.

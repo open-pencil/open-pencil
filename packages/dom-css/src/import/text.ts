@@ -3,12 +3,14 @@ import { isEqual } from 'es-toolkit/predicate'
 
 import type {
   CharacterStyleOverride,
+  FontVariation,
   HyperlinkTarget,
   SceneNode,
   StyleRun,
   TextParagraphStyle
 } from '@open-pencil/scene-graph'
 import {
+  dimension,
   parseCSSColor,
   resolveCSSFontFamily,
   parseCSSLetterSpacing,
@@ -20,6 +22,7 @@ import { appendAll } from '@open-pencil/std/arrays'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { colorToFillFromCSS, mergedStyle, pickStyle } from './css-values'
+import { elementDisplay } from './flow'
 
 /** The character styles a text layer and its runs take from CSS. */
 export type CSSCharacterStyle = Pick<
@@ -38,7 +41,36 @@ export type CSSCharacterStyle = Pick<
   | 'textDecorationSkipInk'
   | 'textUnderlineOffset'
   | 'textCase'
+  | 'fontVariations'
+  | 'opticalSizeFromFontSize'
 >
+
+/**
+ * The axes CSS sets that a font's named instances do not: a weight between the hundreds, as a
+ * variable font draws `font-weight: 440`, and a width other than normal, from `font-stretch`.
+ */
+function cssFontVariations(weight: number | null, stretch: string | undefined): FontVariation[] {
+  const variations: FontVariation[] = []
+  if (weight !== null && weight % 100 !== 0) variations.push({ axis: 'wght', value: weight })
+  const width = stretch ? dimension(stretch.trim()) : null
+  if (width?.unit === '%' && width.number !== 100)
+    variations.push({ axis: 'wdth', value: width.number })
+  return variations
+}
+
+/** The weight CSS sets, and the axes it sets that the weight's named instance does not. */
+function cssFontWeight(
+  style: DesignStyleDeclaration,
+  base: CSSCharacterStyle
+): Pick<CSSCharacterStyle, 'fontWeight' | 'fontVariations'> {
+  const weight = parseCSSNumber(pickStyle(style, 'font-weight'))
+  const stretch = pickStyle(style, 'font-stretch')
+  if (weight === null && stretch === undefined) {
+    return { fontWeight: base.fontWeight, fontVariations: base.fontVariations }
+  }
+  const fontWeight = weight ?? base.fontWeight
+  return { fontWeight, fontVariations: cssFontVariations(fontWeight, stretch) }
+}
 
 /** A character's style and the link it is part of. */
 type CharacterOfText = CSSCharacterStyle & { hyperlink?: HyperlinkTarget }
@@ -53,6 +85,8 @@ const CHARACTER_PROPERTIES = [
   'font-size',
   'font-style',
   'font-weight',
+  'font-stretch',
+  'font-optical-sizing',
   'letter-spacing',
   'line-height',
   'white-space',
@@ -122,7 +156,12 @@ export function characterStyleFromCSS(
   return {
     fontFamily: family || base.fontFamily,
     fontSize: parseCSSNumber(pickStyle(style, 'font-size')) ?? base.fontSize,
-    fontWeight: parseCSSNumber(pickStyle(style, 'font-weight')) ?? base.fontWeight,
+    ...cssFontWeight(style, base),
+    // CSS sets a variable font's optical size from the font size unless told not to.
+    opticalSizeFromFontSize:
+      pickStyle(style, 'font-optical-sizing') === undefined
+        ? base.opticalSizeFromFontSize
+        : pickStyle(style, 'font-optical-sizing')?.trim() !== 'none',
     italic: fontStyle === undefined ? base.italic : fontStyle === 'italic',
     letterSpacing: parseCSSLetterSpacing(pickStyle(style, 'letter-spacing')) ?? base.letterSpacing,
     lineHeight: parsedLineHeight === undefined ? base.lineHeight : parsedLineHeight,
@@ -203,7 +242,12 @@ function isList(
       (child.type === 'element' && child.tagName.toLowerCase() === 'li' && isListItem(child))
   )
 
+  /**
+   * An item drawn as a list item, with its marker on a line of its own: one a page lays out as
+   * `inline-block` or `flex`, such as a row of footer links, has no marker and is no list text.
+   */
   function isListItem(item: DesignElement): boolean {
+    if (elementDisplay(item, mergedStyle(item)) !== 'list-item') return false
     return item.children.every(
       (child) =>
         child.type === 'text' ||

@@ -1,1 +1,0 @@
-- Deleting, hiding, reordering, or outlining a layer, or moving it to another page, no longer lays out every auto layout frame on its page, including on undo and redo (#2128).

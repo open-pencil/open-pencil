@@ -1,1 +1,0 @@
-- The desktop sign-in approval page shows the code from its link to compare with the app's, so approving takes one click instead of typing the code.

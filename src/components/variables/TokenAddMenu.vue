@@ -8,7 +8,7 @@ import {
 import { computed } from 'vue'
 
 import type { VariableType } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { variablesAddTestId, vTestId } from '@open-pencil/vue/testing'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -22,7 +22,8 @@ import { VARIABLE_TYPE_ICONS, VARIABLE_TYPES } from '@/components/variables/type
 const { labelled = false } = defineProps<{ labelled?: boolean }>()
 const emit = defineEmits<{ add: [type: VariableType] }>()
 
-const { panels, variableTypes: text } = useI18n()
+const panels = useMessages('panels')
+const text = useMessages('variables/types')
 const menu = useMenuUI({ content: 'w-48', item: 'justify-start gap-2' })
 
 const items = computed(() => {

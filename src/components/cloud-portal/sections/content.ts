@@ -1,3 +1,4 @@
+import { downloadCloudDocument } from '@open-pencil/cloud/client'
 import type { CloudAdminDocument } from '@open-pencil/cloud/contract'
 
 import { documentFileName } from '@/app/cloud-portal/archive'
@@ -5,7 +6,6 @@ import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalAction } from '@/app/cloud-portal/state'
 import { downloadBlob } from '@/app/document/io/browser'
 import { formatDate } from '@/app/i18n/date'
-import { downloadCloudDocument } from '@/app/integrations/storage/cloud/download'
 
 import type { PortalContentAction, PortalDocumentRow } from '../types'
 

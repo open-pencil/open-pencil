@@ -1,7 +1,5 @@
 import { count, params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 /** Copy for OpenPencil Cloud inside the editor: connecting, sharing, syncing, and Home. */
 export const cloudMessageDefaults = {
   productName: 'OpenPencil Cloud',
@@ -58,6 +56,10 @@ export const cloudMessageDefaults = {
     '{host} needs a newer version of OpenPencil. Update to keep working with your files there.'
   ),
   updateOpenPencil: 'Update OpenPencil',
+  movingBanner: params(
+    'OpenPencil is moving to {host} on {date}. Files kept in this browser stay here: save them to Cloud or download them first.'
+  ),
+  movingOpen: 'Open in Cloud',
   errorDeniedHeading: 'Sign-in was denied',
   errorDeniedDescription: 'The request was turned down in the browser. Start again to sign in.',
   errorExpiredHeading: 'The code expired',
@@ -405,9 +407,6 @@ export const cloudMessageDefaults = {
   communityLinkFailed: 'This document isn’t in the gallery any more.',
   communityBanner: 'A community example, open read-only.',
   communitySaveCopy: 'Save a copy',
-  betaBanner:
-    'OpenPencil Cloud is in beta, so some things may not work yet. To use it in the desktop app, install the beta.',
-  betaDownload: 'Download the beta',
   creditsLowBanner: 'Your AI credits are running low.',
   creditsOutBanner: 'You’re out of AI credits.',
   creditsOutUntilBanner: params('You’re out of AI credits until {date}.'),
@@ -468,5 +467,3 @@ export const cloudMessageDefaults = {
   reportEmailInvalid: 'Enter an email address, or leave it empty.',
   versionCopyName: params('{name} (copy)')
 } as const
-
-export const cloudMessages = i18n('cloud', cloudMessageDefaults)

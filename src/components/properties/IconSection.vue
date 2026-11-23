@@ -7,7 +7,7 @@ import { colorToHex, parseColor } from '@open-pencil/scene-graph/color'
 import { iconLayerName, type IconOptions } from '@open-pencil/scene-graph/icons'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { useIcon } from '@open-pencil/vue/controls/icon'
-import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import IconPicker from '@/components/icon-picker/IconPicker.vue'
@@ -24,8 +24,8 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 import { SF_SYMBOLS_DOCS_URL } from '@/constants'
 import theme from '@/theme/select/app'
 
-const panels = usePanelMessages()
-const common = useCommonMessages()
+const panels = useMessages('panels')
+const common = useMessages('common')
 const {
   frameId,
   name,

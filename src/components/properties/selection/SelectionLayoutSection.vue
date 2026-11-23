@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useSelectionLayout } from '@open-pencil/vue/controls/selection-layout'
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { PositionControlsRoot } from '@open-pencil/vue/primitives/PositionControls'
 
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -21,7 +21,7 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 const layout = useSelectionLayout()
 const { getCommand } = useEditorCommands()
 const wrapInAutoLayout = getCommand('selection.wrapInAutoLayout')
-const { panels } = useI18n()
+const panels = useMessages('panels')
 </script>
 
 <template>

@@ -463,6 +463,26 @@ describe('reading HTML', () => {
     expect(image).toMatchObject({ width: view.getUint32(16), height: view.getUint32(20) })
   })
 
+  test('lays a list of inline-block items out in a row, without markers', async () => {
+    const { graph } = await readHTMLDocument(
+      `<ul style="margin:0;padding:0;font-family:'${TEST_FAMILY}'">
+        <li style="display:inline-block">Status</li>
+        <li style="display:inline-block;margin-left:10px">API</li>
+      </ul>`
+    )
+    const [list] = graph.getChildren(graph.getPages()[0].id)
+    const items = graph.getChildren(list.id)
+    const texts = graph
+      .flattenTree(graph.getPages()[0].id)
+      .flatMap(({ node }) => (node.type === 'TEXT' ? [node.text] : []))
+
+    // Each link is a layer of its own, side by side, as a browser lays the row out.
+    expect(texts).toEqual(['Status', 'API'])
+    expect(items).toHaveLength(2)
+    expect(items[1].y).toBe(items[0].y)
+    expect(items[1].x).toBeGreaterThan(items[0].x + items[0].width)
+  })
+
   test('draws text in the font its page loads with @font-face', async () => {
     const family = 'OpenPencil Page Brand'
     const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()

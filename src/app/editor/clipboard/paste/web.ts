@@ -1,12 +1,13 @@
 import { escapeRegExp } from 'es-toolkit'
 
 import type { ClipboardSnapshot, Editor, PastedTextLink } from '@open-pencil/core'
-import { HTML_IMPORT_VIEWPORT } from '@open-pencil/core/io/formats/html/layers'
-import { browserHTMLHasBoxes, browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 import { errorMessage } from '@open-pencil/std/errors'
-import { filesMessages, menuMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
+import { loadHTMLImporter } from '@/app/document/io/importer'
+import { pageFetch } from '@/app/document/io/url/fetch'
 import { importIconMatcher } from '@/app/editor/icons/provider'
 import { toast } from '@/app/shell/ui'
 
@@ -138,10 +139,11 @@ export function pastedText({ html, text }: WebClipboard): {
  * Whether pasting as text should offer layers: the copy is HTML source, or its HTML lays boxes
  * out. A sentence copied from a page or a document carries text styling only, so it does not.
  */
-export function offersLayers(clipboard: WebClipboard): boolean {
-  return (
-    isHTMLMarkup(clipboard.text) || (clipboard.html !== '' && browserHTMLHasBoxes(clipboard.html))
-  )
+export async function offersLayers(clipboard: WebClipboard): Promise<boolean> {
+  if (isHTMLMarkup(clipboard.text)) return true
+  if (clipboard.html === '') return false
+  const { browserHTMLHasBoxes } = await loadHTMLImporter()
+  return browserHTMLHasBoxes(clipboard.html)
 }
 
 /**
@@ -150,15 +152,21 @@ export function offersLayers(clipboard: WebClipboard): boolean {
  * and the HTML laid out again until neither it nor its width changed meanwhile.
  */
 async function prepareLayers(editor: Editor, markup: string): Promise<ClipboardSnapshot | null> {
+  const { HTML_IMPORT_VIEWPORT, browserHTMLToDesignDocument, loadPageFontFaces } =
+    await loadHTMLImporter()
   // Each further pass needs the destination to change again while the HTML is laid out.
   for (;;) {
     const target = editor.htmlPasteTarget()
     const width = target.width ?? HTML_IMPORT_VIEWPORT.width
+    const fetch = pageFetch()
     const styled = await browserHTMLToDesignDocument(markup, {
-      compute: { layout: true, viewport: { width, height: HTML_IMPORT_VIEWPORT.height } }
+      compute: { layout: true, viewport: { width, height: HTML_IMPORT_VIEWPORT.height } },
+      // Pictures and fonts a copied page uses by web address come with its layers.
+      fetch
     })
     const snapshot = await editor.prepareStyledHTML(styled, {
-      matchIcon: importIconMatcher(editor)
+      matchIcon: importIconMatcher(editor),
+      pageFamilies: await loadPageFontFaces(styled, fetch)
     })
     const now = editor.htmlPasteTarget()
     if (now.id === target.id && now.width === target.width) return snapshot
@@ -181,11 +189,11 @@ export async function pasteHTMLAsLayers(
     snapshot = await prepareLayers(editor, markup)
   } catch (error) {
     const reason = errorMessage(error)
-    toast.error(filesMessages.get().htmlPasteFailed({ error: reason }))
+    toast.error(messageStores.files.get().htmlPasteFailed({ error: reason }))
     return true
   }
   if (!snapshot) {
-    toast.info(filesMessages.get().htmlPasteEmpty)
+    toast.info(messageStores.files.get().htmlPasteEmpty)
     return true
   }
   beforePaste?.()
@@ -206,28 +214,64 @@ export async function pasteWebClipboard(
   const { x, y } = pastePoint(editor, cursorPos)
   rememberWebClipboard(clipboard.html, clipboard.text)
   const markup = layerMarkup(clipboard)
-  const offered = markup !== null && offersLayers(clipboard)
   // A laid-out copy without text, such as an empty card, has nothing to paste but its layers.
   if (text.trim().length === 0) {
+    const offered = markup !== null && (await offersLayers(clipboard).catch(() => false))
     return offered && markup ? pasteHTMLAsLayers(editor, markup, { x, y }) : false
   }
   const pastedId = await editor.pasteText(text, x, y, links)
-  if (!pastedId || !markup || !offered) return pastedId !== null
+  if (!pastedId || !markup) return pastedId !== null
+  // The step this paste made, which the offer and its undo are about, whatever is pasted later.
+  // `pasteText` selects its text and records its step together, so while the text is still the
+  // whole selection, no later paste has recorded one since.
+  const selected = editor.state.selectedIds
+  const own = selected.size === 1 && selected.has(pastedId)
+  const step =
+    own && editor.undo.undoLabel === PASTE_TEXT_LABEL ? (editor.undo.peekUndo() ?? null) : null
+  // The text is in first; the offer of layers waits for the importer, which may load slowly or
+  // not at all, and shows only while that paste is still the last edit.
+  void offerLayers(editor, clipboard, markup, { step, pastedId }, { x, y })
+  return true
+}
+
+/**
+ * Whether the paste that made `step` is still the last edit, with the text it pasted, `pastedId`,
+ * selected as the paste left it. A later paste of text has the same label but is another step.
+ */
+function isLastTextPaste(editor: Editor, step: UndoEntry | null, pastedId: string): boolean {
+  const selected = editor.state.selectedIds
+  return (
+    step !== null &&
+    editor.undo.peekUndo() === step &&
+    selected.size === 1 &&
+    selected.has(pastedId)
+  )
+}
+
+/**
+ * Offers to paste the clipboard's HTML as layers in place of the text just pasted, when the HTML
+ * lays boxes out and that paste is still the last edit.
+ */
+async function offerLayers(
+  editor: Editor,
+  clipboard: WebClipboard,
+  markup: string,
+  { step, pastedId }: { step: UndoEntry | null; pastedId: string },
+  point: Vector
+): Promise<void> {
+  if (!(await offersLayers(clipboard).catch(() => false))) return
+  if (!isLastTextPaste(editor, step, pastedId)) return
   // Only the paste this notice is about is taken back, while it is still the last edit.
   const takeBackText = () => {
-    const selected = editor.state.selectedIds
-    const isLastPaste =
-      editor.undo.undoLabel === PASTE_TEXT_LABEL && selected.size === 1 && selected.has(pastedId)
-    if (isLastPaste) editor.undoAction()
+    if (isLastTextPaste(editor, step, pastedId)) editor.undoAction()
   }
-  toast.info(filesMessages.get().pastedAsText, {
-    label: menuMessages.get().pasteAsLayers,
+  toast.info(messageStores.files.get().pastedAsText, {
+    label: messageStores.menu.get().pasteAsLayers,
     run: (toastId) => {
       toast.remove(toastId)
-      void pasteHTMLAsLayers(editor, markup, { x, y }, takeBackText)
+      void pasteHTMLAsLayers(editor, markup, point, takeBackText)
     }
   })
-  return true
 }
 
 /**
@@ -242,7 +286,7 @@ export async function pasteClipboardAsLayers(editor: Editor, cursorPos?: Vector)
   }
   const markup = layerMarkup(clipboard)
   if (!markup) {
-    toast.info(filesMessages.get().noHTMLToPasteAsLayers)
+    toast.info(messageStores.files.get().noHTMLToPasteAsLayers)
     return
   }
   await pasteHTMLAsLayers(editor, markup, cursorPos)

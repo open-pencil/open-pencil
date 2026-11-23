@@ -1,1 +1,0 @@
-- `.pen` instances nested in another component take the theme of the screen they are placed in, including theme-bound clips and swapped icons (#2170).

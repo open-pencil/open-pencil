@@ -2,10 +2,10 @@ import { fromUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
+import { readBoundedBody } from '@open-pencil/core/io/remote'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
 import { DEADLINE_MS, MINUTE_MS } from '@open-pencil/std/timing'
 
-import { readBoundedBody } from '@/app/document/io/browser'
 import { tauriFetch } from '@/app/tauri/http'
 
 import {

@@ -22,6 +22,7 @@ export {
   renewCloudAIToken,
   type CloudAIWorkspace
 } from '../ai/access'
+export { fetchOfficialTour } from '../community/tour'
 export { cloudDocumentAddress } from '../documents/link'
 export { isCloudBinding } from '../documents/status'
 export { saveDocument } from '../drafts/save'

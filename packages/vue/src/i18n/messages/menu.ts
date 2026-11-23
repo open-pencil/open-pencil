@@ -1,5 +1,3 @@
-import { i18n } from '#vue/i18n/create'
-
 export const menuMessageDefaults = {
   file: 'File',
   edit: 'Edit',
@@ -13,6 +11,7 @@ export const menuMessageDefaults = {
   newBoard: 'New board',
   newTab: 'New tab',
   open: 'Open…',
+  openURL: 'Open from URL…',
   place: 'Place…',
   openTour: 'Open the Tour',
   diagnostics: 'Diagnostics…',
@@ -109,5 +108,3 @@ export const menuMessageDefaults = {
   closeView: 'Close view',
   removeGuide: 'Remove guide'
 } as const
-
-export const menuMessages = i18n('menu', menuMessageDefaults)

@@ -17,13 +17,25 @@ import { withScreenStroke } from './outline'
  * black for a gradient, several fills, or none. The layer's opacity leaves it be. Measured in
  * Figma desktop.
  */
-export function textCaretColor(node: SceneNode, index: number): Color {
+/** The text's own color at the caret, when one solid paint colors it there. */
+function textFillCaretColor(node: SceneNode, index: number): Color | null {
   const character = index > 0 ? previousGraphemeBoundary(node.text, index) : 0
   const run = styleRunAt(node.styleRuns, character)
   const visible = (run?.style.fills ?? node.fills).filter((fill) => fill.visible)
   const [fill] = visible
-  if (visible.length !== 1 || fill.type !== 'SOLID') return TEXT_CARET_COLOR
+  if (visible.length !== 1 || fill.type !== 'SOLID') return null
   return { ...fill.color, a: fill.color.a * fill.opacity }
+}
+
+/** The caret's color: the text's own, in the document's profile, else the interface's. */
+export function textCaretColor(node: SceneNode, index: number): Color {
+  return textFillCaretColor(node, index) ?? TEXT_CARET_COLOR
+}
+
+/** The caret's color as Skia is given it: a document color converted, the interface's as is. */
+function caretPaintColor(r: SkiaRenderer, node: SceneNode, index: number): Color {
+  const fill = textFillCaretColor(node, index)
+  return fill ? r.renderColor(fill) : TEXT_CARET_COLOR
 }
 
 export function drawTextEditOverlay(
@@ -62,7 +74,7 @@ export function drawTextEditOverlay(
   if (editor.caretVisible && !editor.hasSelection()) {
     const caret = editor.getCaretRect()
     if (caret) {
-      const color = textCaretColor(node, editor.caretIndex ?? 0)
+      const color = caretPaintColor(r, node, editor.caretIndex ?? 0)
       r.auxFill.setColorComponents(color.r, color.g, color.b, color.a)
       const w = TEXT_CARET_WIDTH / r.zoom
       canvas.drawRect(
@@ -113,7 +125,7 @@ function drawPathTextCaret(
   const caret = editor.getPathCaret()
   if (!caret) return
   r.auxStroke.setStrokeWidth(TEXT_CARET_WIDTH / r.zoom)
-  const color = textCaretColor(node, editor.caretIndex ?? 0)
+  const color = caretPaintColor(r, node, editor.caretIndex ?? 0)
   r.auxStroke.setColorComponents(color.r, color.g, color.b, color.a)
   r.auxStroke.setPathEffect(null)
   canvas.drawLine(caret.from.x, caret.from.y, caret.to.x, caret.to.y, r.auxStroke)

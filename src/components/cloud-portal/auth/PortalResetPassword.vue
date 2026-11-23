@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -29,7 +29,7 @@ const {
 const emit = defineEmits<{ request: [email: string]; choose: [password: string]; back: [] }>()
 
 const ui = portalForm({ size: 'lg' })
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const value = ref('')
 </script>
 

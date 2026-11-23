@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 
 import { panelNumber } from '@open-pencil/core/geometry'
 import { counterAxisSpacingOf } from '@open-pencil/scene-graph/layout'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
@@ -17,7 +17,7 @@ import SelectFieldTrigger from '@/components/ui/select/SelectFieldTrigger.vue'
 const { axis = 'primary' } = defineProps<{ axis?: 'primary' | 'counter' }>()
 const ctx = useLayoutControlsContext()
 const { open: popupOpen, portalActive } = useRetainedPopup()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const anchor = ref<HTMLElement | null>(null)
 const prop = computed(() => (axis === 'primary' ? 'itemSpacing' : 'counterAxisSpacing'))
 const horizontal = computed(() => (ctx.node.layoutMode === 'HORIZONTAL') === (axis === 'primary'))

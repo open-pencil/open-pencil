@@ -1,4 +1,4 @@
-import { focusStyles } from '../focus/styles'
+import { focusStyles } from '@open-pencil/theme'
 
 /**
  * Tabs across the top of the right panel. Tabs with icons show their labels whenever the whole row

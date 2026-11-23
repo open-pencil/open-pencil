@@ -1,1 +1,0 @@
-- `@open-pencil/scene-graph` no longer exports `random` or `arrays`, nor the `JSONValue`, `JSONObject`, `JSONArray`, and `JSONPrimitive` types from `primitives`. Import them from `@open-pencil/std/random`, `@open-pencil/std/arrays`, and `@open-pencil/std/json` (#2217).

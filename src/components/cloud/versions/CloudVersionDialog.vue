@@ -5,7 +5,7 @@ import {
   DOCUMENT_VERSION_DESCRIPTION_MAX_LENGTH,
   DOCUMENT_VERSION_NAME_MAX_LENGTH
 } from '@open-pencil/cloud/contract'
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { editVersion, saveVersion } from '@/app/cloud/versions/actions'
 import {
@@ -26,8 +26,8 @@ import { useHeldContent } from '@/components/ui/overlay/held'
  * Figma's Add to version history: a title and what changed, for the document as it is now, or
  * as Edit version info for a version already in the history.
  */
-const t = useCloudMessages()
-const common = useCommonMessages()
+const t = useMessages('cloud/editor')
+const common = useMessages('common')
 const busy = ref(false)
 /** The opening whose save failed; a new opening is another object, so it starts without the alert. */
 const failedFor = shallowRef<VersionDialog | null>(null)

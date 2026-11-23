@@ -16,7 +16,7 @@ but master or a release tag, or the commit is not on master (`tools/ci/cloud-dep
 ## Billing
 
 A deployment whose `openpencil-cloud.toml` names `[billing]` sets plans through `[internal_api]`,
-with database entitlements whose values are the free plan; staging does. Its GitHub environment
+with database entitlements whose values are the free plan; staging and production do. Its GitHub environment
 then holds `OPENPENCIL_CLOUD_SERVICE_TOKEN`, which the workflow passes on only where it is set,
 and the billing Worker holds the same token as `CLOUD_SERVICE_TOKEN`. Make it once and give it to
 both in your own terminal, so it is never shown:
@@ -24,9 +24,13 @@ both in your own terminal, so it is never shown:
 ```sh
 token=$(openssl rand -base64 32)
 printf %s "$token" | gh secret set OPENPENCIL_CLOUD_SERVICE_TOKEN --env cloud-staging
-printf %s "$token" | bunx wrangler secret put CLOUD_SERVICE_TOKEN -c wrangler.billing.jsonc   # in openpencil-commerce
+printf %s "$token" | bunx wrangler secret put CLOUD_SERVICE_TOKEN -c packages/billing/wrangler.jsonc   # in openpencil-commerce
 unset token
 ```
+
+Production takes a token of its own, the same way, with `--env cloud-production` for the GitHub
+secret and `--env production` for the billing Worker's. Set it before production first deploys
+with `[billing]`: until the billing Worker holds it too, its plans can't reach Cloud.
 
 ## Before production's first deploy
 
@@ -47,8 +51,10 @@ These settings outside the repository:
   `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`. The bucket is in the EU jurisdiction, and its CORS
   rules allow GET, PUT, and HEAD from `https://cloud.openpencil.dev` with any request header
   (uploads send `Content-Type` and `x-amz-meta-openpencil-sha256`) and expose `ETag`, which
-  multipart uploads read for each part. Its `expire-deleted` lifecycle rule removes what
-  `deleted_prefix` keeps after 14 days, longer than the database's restore window.
+  multipart uploads read for each part. They also allow GET and HEAD from
+  `https://app.openpencil.dev` and `https://openpencil.dev`, whose pages download the tour from the
+  gallery. Its `expire-deleted` lifecycle rule removes what `deleted_prefix` keeps after 14 days,
+  longer than the database's restore window.
 - A Hyperdrive over the database's direct connection, as the runtime role, with query caching
   off, since a cached read can miss the write just before it. Hyperdrive pools connections itself,
   as staging's does. Its ID goes in `production/wrangler.jsonc`.

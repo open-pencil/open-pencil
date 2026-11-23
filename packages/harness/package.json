@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/harness",
-  "version": "0.17.0-beta.5",
+  "version": "0.17.0",
   "private": false,
   "license": "MIT",
   "description": "Optional OpenPencil companion CLI for coding-agent Harness sessions",

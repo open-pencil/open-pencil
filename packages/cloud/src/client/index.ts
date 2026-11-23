@@ -8,6 +8,13 @@ export {
   type CloudServicesTokenSource
 } from './services'
 export { cloudEditorReturnURL, cloudRedirectPath, cloudSignInURL } from './auth/navigation'
+export * from './files'
+export {
+  fetchCommunityExample,
+  fetchCommunityTour,
+  type CommunityExample,
+  type CommunityTour
+} from './tour'
 export {
   CloudAPIError,
   createCloudAPIClient,

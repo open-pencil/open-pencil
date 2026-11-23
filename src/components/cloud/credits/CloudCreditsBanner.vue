@@ -3,7 +3,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { withQuery } from 'ufo'
 import { computed, watch } from 'vue'
 
-import { useCloudMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useCloudCreditStanding } from '@/app/ai/providers/openpencil/standing'
 import { cloudBillingURL } from '@/app/cloud/integration'
@@ -18,8 +18,8 @@ import AppBanner from '@/components/ui/feedback/AppBanner.vue'
  * out warns even after running low was dismissed. Without a renewal date, a dismissal lasts until
  * the credits recover.
  */
-const cloud = useCloudMessages()
-const { common } = useI18n()
+const cloud = useMessages('cloud/editor')
+const common = useMessages('common')
 const dates = useDateFormat()
 const { standing, renewsAt, scope, healthy, pays } = useCloudCreditStanding()
 

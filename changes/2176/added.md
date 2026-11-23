@@ -1,4 +1,0 @@
-- The Icon section sets how Material Symbols are drawn, by their optical size, weight, fill, and grade, and a placed Material Symbol starts at the optical size of its size (#2176).
-- The Icon section sets how SF Symbols are drawn in the macOS app, by weight, scale, rendering, and variable value, and SF Symbols add palette rendering, with secondary and tertiary colors, and multicolor rendering in Apple's own colors (#2176).
-- `insert_icon` and Design JSX `<Icon>` take `options` that set how Material Symbols and SF Symbols are drawn (#2176).
-- Where SF Symbols can't be drawn, in the browser, on Windows and Linux, and on macOS before 14, the icon picker and the Icon section say what they need, with a link to instructions (#2176).

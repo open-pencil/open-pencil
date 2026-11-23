@@ -2,7 +2,7 @@ import { compact } from 'es-toolkit/array'
 import { computed } from 'vue'
 
 import { providerKind } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   aiModelSettings,
@@ -29,7 +29,7 @@ export interface DesignProfileOption {
  * the composer's profile select and an agent's model menu both offer.
  */
 export function useDesignProfiles() {
-  const { ai } = useI18n()
+  const ai = useMessages('ai')
 
   /** The profile's model and where it runs; an agent profile that names no model leaves it to the agent. */
   function profileMetadata(profile: AIModelProfile): string {

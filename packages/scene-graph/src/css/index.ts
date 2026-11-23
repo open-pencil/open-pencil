@@ -31,6 +31,9 @@ export {
   parseCSSColor,
   parseCSSNumber,
   parseCSSURLReferences,
+  parseCSSURLs,
+  parsePaintFallback,
   parseFragmentReference,
+  splitCSSLayers,
   splitCSSValue
 } from './values'

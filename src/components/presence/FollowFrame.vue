@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { isEditing } from '@open-pencil/vue/editor/keyboard'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { FollowedLabel } from '@/app/presence/registry'
 import followFrameTheme from '@/theme/collaboration/follow-frame'
@@ -16,7 +16,7 @@ const followFrame = tv(followFrameTheme)
 const { followed } = defineProps<{ followed: FollowedLabel }>()
 const emit = defineEmits<{ stop: [] }>()
 
-const { collaboration: messages } = useI18n()
+const messages = useMessages('collaboration')
 const ui = followFrame()
 
 // The bar's white label reads on the followed person's color.

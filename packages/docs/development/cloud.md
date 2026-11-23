@@ -421,6 +421,28 @@ it opens the stored file, is no edit of its own. The saver saves whenever any cl
 than `saved` records, so a tab that becomes the saver also saves edits an earlier saver left, and
 opening a document nobody edited uploads nothing.
 
+## Community gallery examples
+
+A deployment's community gallery is the workspace its `openpencil-cloud.toml` names with
+`[community] workspace`. The gallery's examples are ordinary documents there, published from CI as
+an account that belongs to that workspace. The **Publish gallery examples** workflow runs
+`tools/ci/cloud-examples` with the `cloud-<target>` environment's `CLOUD_URL` and
+`CLOUD_COMMUNITY_WORKSPACE` variables and its `CLOUD_COMMUNITY_TOKEN` secret, a personal access
+token of that account.
+
+The tool builds each example in its manifest (`src/examples.ts`; the tour is the editor's demo
+document) and saves it as the editor does, through `saveCloudDocument` in
+`@open-pencil/cloud/client`: the document is created the first time, gets a new revision only when
+its file changed, and, given a version, has its current state named after the release once. A run
+with the same files and version changes nothing.
+
+`[community] tour` names the gallery document editors open as their tour: discovery advertises it as
+`community.tourDocumentId`, and the editor and the docs landing download it with `fetchCommunityTour`
+from `@open-pencil/cloud/client`, as the version named for their release when there is one. Set it to
+the Welcome tour's document ID once the workflow has published it. Discovery and the gallery's
+public reads answer any origin without credentials, so the docs site can fetch them; everything else
+keeps the server's trusted origins.
+
 ## Configuration
 
 Operators author one schema-versioned TOML file. It owns URLs, trusted origins and proxies,
@@ -485,17 +507,35 @@ signing key and the internal API. `POST /api/billing/token` signs a short-lived 
 signed-in person's own account, with the services' key but the `openpencil-billing` audience, so it
 spends no credits. Cloud has no billing pages of its own: its plan page shows the account's storage
 and monthly credits, and, when the server advertises billing, posts a fresh token as the form field
-`token` to the service's `CLOUD_BILLING_PAGE_PATHS.session`. The service verifies it against the
+`token` to the service's `CLOUD_BILLING_PAGE_PATHS.session`. Cloud's pages send `Referrer-Policy: strict-origin`,
+so that post names Cloud's origin: under `no-referrer` or `same-origin`, browsers send
+`Origin: null` with it, which the service's check of where a form came from refuses. The service verifies it against the
 same published keys and keeps its own session from there: its pages sell the plans and credit packs
 of its catalog, send the person to its payment provider's checkout or portal, and set the account's
 plan through the internal API as it is paid. A service whose session ended sends the person to
-`CLOUD_ACCOUNT_BILLING_PATH`, the plan page, which opens billing again at once. A Cloud from
+`CLOUD_ACCOUNT_BILLING_PATH`, the plan page, which opens billing again at once. Billing's own pages, at the
+advertised endpoint's origin, may also ask for a token themselves (`CLOUD_BILLING_TOKEN_PATH`):
+Cloud's CORS lets that one origin call that one route with the visitor's session, so someone
+already signed in to Cloud is signed in to billing as its pages open, and its pricing page knows
+their plan. The session cookie reaches it only where billing is on the same site as Cloud, as
+`billing.openpencil.dev` is to `cloud.openpencil.dev`; elsewhere billing's pages fall back to the
+plan page's handoff. A Cloud from
 before the handoff called the service's JSON account, checkout, and portal routes, which a service
 with its own pages need not keep, and this one posts to `/session`. Upgrade the service first,
 then Cloud straight after, in the same window: between the two, the old plan page cannot buy. Discovery's
 `billing.freePlan` is what an account without a plan has, from the default entitlements, so the
 service's pricing page compares its plans with it. The contract is `src/contract/billing.ts`. Editors
 link to the server's plan page, `CLOUD_ACCOUNT_PLAN_PATH`, whenever it advertises billing.
+
+`bun run cloud:dev` runs with a billing service when `OPENPENCIL_CLOUD_DEV_BILLING_URL` names one,
+such as the official service run locally: it generates the services' signing key and the internal
+API's token into `deploy/generated/`, adds the `[services]`, `[billing]`, and `[internal_api]`
+tables, keeps entitlements in the database where billing writes plans, and gives the free plan the
+official Cloud's 300 MB, which the service's pricing page shows. `OPENPENCIL_CLOUD_DEV_SERVICES_URL`
+names the services, `http://127.0.0.1:8788` by default. The billing URL must be HTTPS, with the
+service run under portless as Cloud is: a browser names no origin for a form posted from an HTTPS
+page to an HTTP one, which the service refuses. The service reaches Cloud over portless's HTTPS
+too, so both trust its certificate through `NODE_EXTRA_CA_CERTS`.
 
 A plan may be priced by the seat (`billingSeatPricingSchema`): an account's seats are the people
 who can edit, as editors or admins, across the workspaces it owns, each counted once, the owner

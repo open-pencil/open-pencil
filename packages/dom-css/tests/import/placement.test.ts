@@ -54,6 +54,29 @@ describe('captured layout in the projection', () => {
     })
   })
 
+  it('gives text that is a flex item of its own the box of its container’s lines', () => {
+    // An icon and a run of text in a flex row: the text is an anonymous item, wrapped beside it.
+    const lines = [rect(24, 0, 189, 21), rect(24, 21, 170, 21), rect(24, 42, 60, 21)]
+    const hint = element(
+      'p',
+      { display: 'flex', 'column-gap': '8px', gap: '8px' },
+      { box: rect(0, 0, 220, 63), lines },
+      [
+        element('svg', { width: '16px', height: '16px' }, { box: rect(0, 0, 16, 16) }),
+        { type: 'text', text: 'This is the app’s own tour, a real .fig file. Open a chapter.' }
+      ]
+    )
+    const { graph, boxes } = designDocumentToLayers({ type: 'document', children: [hint] })
+    const row = graph.getChildren(graph.getPages()[0].id)[0]
+    const text = graph.getChildren(row.id).find((layer) => layer.type === 'TEXT')
+
+    expect(text && boxes.get(text.id)).toEqual({
+      box: rect(24, 0, 189, 63),
+      lines: 3,
+      extent: rect(24, 0, 189, 63)
+    })
+  })
+
   it('records nothing when the layout was not captured', () => {
     const plain: DesignElement = {
       type: 'element',
