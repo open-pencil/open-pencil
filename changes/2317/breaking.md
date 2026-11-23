@@ -1,0 +1,1 @@
+- `@open-pencil/cloud/contract` no longer exports the room protocol: import `COLLAB_ACTIONS`, `MAX_COLLAB_MESSAGE_BYTES`, `RELAY_SERVER_PEER`, `encodeSyncReply`, and `decodeRoomUpdate` from `@open-pencil/collab`.
