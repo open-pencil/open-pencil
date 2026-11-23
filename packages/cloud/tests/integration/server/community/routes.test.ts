@@ -252,6 +252,57 @@ describe('community gallery', () => {
     ).toBe(404)
   })
 
+  test('serves a gallery document’s stored parts to any page, and nothing else in storage', async () => {
+    const server = await gallery()
+    const tour = await server.document(server.workspace.community, 'Tour')
+    const first = await server.save(tour, null, 'first')
+    const release = await server.nameVersion(tour, '0.17.0')
+    await server.save(tour, first, 'second')
+    const secret = await server.document(server.workspace.studio, 'Secret')
+    await server.save(secret, null, 'secret')
+    const checksumOf = async (documentId: string) =>
+      (
+        await responseJSON(
+          await server.owner.api.documents[':documentId'].$get({ param: { documentId } }),
+          v.object({ document: v.object({ checksum: v.string() }) })
+        )
+      ).document.checksum
+    const named = await responseJSON(
+      await server.visitor.api.community[':documentId'].document.$get({
+        param: { documentId: tour },
+        query: { version: release }
+      }),
+      communityDownloadSchema
+    )
+    const current = await checksumOf(tour)
+    const object = (documentId: string, checksum: string, version?: string) =>
+      server.request(
+        `/api/community/${documentId}/objects?${new URLSearchParams(version ? { checksum, version } : { checksum })}`,
+        { headers: { Origin: 'http://localhost:5173' } }
+      )
+    const contents = async (response: Response) =>
+      new TextDecoder().decode(
+        unzipSync(new Uint8Array(await response.arrayBuffer()))['canvas.fig']
+      )
+
+    const now = await object(tour, current)
+    expect(now.status).toBe(200)
+    expect(now.headers.get('access-control-allow-origin')).toBe('*')
+    // Cached only as long as the listing is, so a takedown reaches every copy within minutes.
+    expect(now.headers.get('cache-control')).toBe('public, max-age=300')
+    expect(now.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(await contents(now)).toBe('second')
+    const released = await object(tour, named.document.checksum, release)
+    expect(await contents(released)).toBe('first')
+
+    // Only the revision asked for: the release's file is not the current one's, nor the reverse.
+    expect((await object(tour, named.document.checksum)).status).toBe(404)
+    expect((await object(tour, current, release)).status).toBe(404)
+    // Nothing outside the gallery, whatever checksum is named.
+    expect((await object(secret, await checksumOf(secret))).status).toBe(404)
+    expect((await object(tour, 'not-a-checksum')).status).toBe(400)
+  })
+
   test('lets any page read the gallery and the discovery, without an account', async () => {
     const server = await gallery()
     const from = (origin: string, init: RequestInit = {}) => {
@@ -354,11 +405,14 @@ describe('community gallery', () => {
     const first = await server.save(board, null, 'first')
     await server.nameVersion(board, '0.17.0')
     await server.save(board, first, 'second')
+    // Storage answers only the deployment's own pages, so nothing is read from it directly.
+    let fromStorage = 0
     const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(input instanceof Request ? input.url : String(input))
       if (url.host !== 'objects.example.com') {
         return server.request(`${url.pathname}${url.search}`, init)
       }
+      fromStorage++
       const bytes = await server.objects.store.read(url.pathname.slice(1))
       return bytes ? new Response(Uint8Array.from(bytes)) : new Response(null, { status: 404 })
     }
@@ -377,5 +431,6 @@ describe('community gallery', () => {
     expect(current.version).toBeNull()
     expect(await contents(current.bytes)).toBe('second')
     expect(await fetchCommunityExample('http://localhost:8787', 'Missing', { fetch })).toBeNull()
+    expect(fromStorage).toBe(0)
   })
 })

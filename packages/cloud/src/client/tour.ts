@@ -1,3 +1,6 @@
+import type { DocumentDownload } from '#cloud/contract'
+import { joinURL, withQuery } from 'ufo'
+
 import { anySignal, DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { createCloudAPIClient } from './api'
@@ -42,6 +45,29 @@ export function fetchCommunityExample(
   )
 }
 
+/**
+ * `document` with each of its stored parts, its file and its images, read through the gallery's
+ * route for them rather than the storage links the download names.
+ */
+function throughGallery(
+  document: DocumentDownload,
+  apiURL: string,
+  documentId: string,
+  versionId: string | null
+): DocumentDownload {
+  const route = joinURL(apiURL, 'community', documentId, 'objects')
+  const part = (checksum: string) => ({
+    ...document.download,
+    url: withQuery(route, versionId ? { checksum, version: versionId } : { checksum }),
+    headers: {}
+  })
+  return {
+    ...document,
+    download: part(document.checksum),
+    images: document.images.map((image) => ({ ...image, download: part(image.checksum) }))
+  }
+}
+
 type CommunityListing = Awaited<
   ReturnType<ReturnType<typeof createCloudAPIClient>['listCommunityDocuments']>
 >['documents']
@@ -63,10 +89,12 @@ async function fetchCommunityDocument(
   if (!picked) return null
   const release = picked.versions.find((version) => version.name === options.version) ?? null
   const download = await cloud.getCommunityDocument(picked.id, release?.id ?? null)
-  // Each object from the store is bounded too, its body included, as the API's requests are: a
-  // caller such as the docs landing passes no signal and keeps the answer it waits for.
+  // Each part is read through the gallery's own route, which any page may read, rather than the
+  // storage link, which answers only the deployment's pages. Each is bounded too, its body
+  // included, as the API's requests are: a caller such as the docs landing passes no signal and
+  // keeps the answer it waits for.
   const bytes = await downloadCloudDocument(
-    download.document,
+    throughGallery(download.document, discovery.apiURL, picked.id, release?.id ?? null),
     (input, init) =>
       fetch(input, {
         ...init,
