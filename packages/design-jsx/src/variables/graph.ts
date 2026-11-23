@@ -179,7 +179,7 @@ export function resolveVariableId(graph: SceneGraph, variable: DesignVariable): 
     return collection && variableNamed(graph, collection, variable.name)?.id
   }
   if (graph.variables.has(variable.name)) return variable.name
-  const matches = [...graph.variables.values()].filter((item) => item.name === variable.name)
+  const matches = graph.getLiveVariables().filter((item) => item.name === variable.name)
   if (matches.length > 1) {
     const [first] = matches
     const collection = graph.variableCollections.get(first.collectionId)?.name ?? ''

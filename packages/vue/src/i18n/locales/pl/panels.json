@@ -490,6 +490,7 @@
   "strokeDashGap": "Odstęp",
   "lineHeightMode": "Tryb wysokości wiersza",
   "unresolvedVariable": "Wartość zmiennej jest niedostępna",
+  "variableDeleted": "Zmienna została usunięta",
   "searchComponentProperties": "Szukaj właściwości",
   "noComponentProperties": "Nie znaleziono właściwości",
   "variableModeAuto": "Automatycznie ({mode})",

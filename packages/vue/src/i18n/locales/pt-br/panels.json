@@ -125,6 +125,7 @@
   "fontSize": "Tamanho da fonte",
   "lineHeightMode": "Modo da altura da linha",
   "unresolvedVariable": "Valor da variável indisponível",
+  "variableDeleted": "A variável foi excluída",
   "lineHeight": "Altura da linha",
   "letterSpacing": "Espaçamento entre letras",
   "textAlignment": "Alinhamento do texto",

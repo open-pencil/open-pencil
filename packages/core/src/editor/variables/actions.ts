@@ -116,15 +116,15 @@ export function createVariableActions(ctx: EditorContext) {
   }
 
   function getCollections() {
-    return [...ctx.graph.variableCollections.values()]
+    return ctx.graph.getLiveCollections()
   }
 
   function getCollectionCount() {
-    return ctx.graph.variableCollections.size
+    return ctx.graph.getLiveCollections().length
   }
 
   function getVariableCount() {
-    return ctx.graph.variables.size
+    return ctx.graph.getLiveVariables().length
   }
 
   function renameCollection(id: string, newName: string) {

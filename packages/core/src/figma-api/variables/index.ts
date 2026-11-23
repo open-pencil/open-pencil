@@ -90,7 +90,8 @@ export class FigmaVariablesAPI {
 
   getLocalVariables(type?: FigmaVariableResolvedType): FigmaVariable[] {
     const wanted = type === undefined ? undefined : assertType('getLocalVariables', type)
-    return [...this.#graph.variables.values()]
+    return this.#graph
+      .getLiveVariables()
       .filter((variable) => !isLibraryVariable(variable))
       .filter((variable) => wanted === undefined || variable.type === wanted)
       .map((variable) => new FigmaVariable(this.#graph, variable.id))
@@ -101,7 +102,8 @@ export class FigmaVariablesAPI {
   }
 
   getLocalVariableCollections(): FigmaVariableCollection[] {
-    return [...this.#graph.variableCollections.values()]
+    return this.#graph
+      .getLiveCollections()
       .filter((collection) => !isLibraryCollection(collection))
       .map((collection) => new FigmaVariableCollection(this.#graph, collection.id))
   }
