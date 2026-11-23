@@ -28,12 +28,14 @@ export async function exportTokenStylesheet(
 ): Promise<TokenExport> {
   const query = options.collection?.toLowerCase()
   const collectionIds = new Set(
-    [...graph.variableCollections.values()]
+    graph
+      .getLiveCollections()
       .filter((collection) => !query || collection.name.toLowerCase().includes(query))
       .map((collection) => collection.id)
   )
   const ids = new Set(
-    [...graph.variables.values()]
+    graph
+      .getLiveVariables()
       .filter((variable) => collectionIds.has(variable.collectionId))
       .filter((variable) => !options.type || variable.type === options.type)
       .map((variable) => variable.id)

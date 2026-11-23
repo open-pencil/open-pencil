@@ -490,6 +490,7 @@
   "strokeDashGap": "Промежуток",
   "lineHeightMode": "Режим межстрочного интервала",
   "unresolvedVariable": "Значение переменной недоступно",
+  "variableDeleted": "Переменная удалена",
   "searchComponentProperties": "Поиск свойств",
   "noComponentProperties": "Свойства не найдены",
   "variableModeAuto": "Авто ({mode})",

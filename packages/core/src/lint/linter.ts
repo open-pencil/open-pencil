@@ -268,7 +268,7 @@ function sharedStyleTypes(graph: SceneGraph): ReadonlyMap<string, SharedStyleTyp
 function describeVariables(graph: SceneGraph): LintVariables {
   const counts = { COLOR: 0, FLOAT: 0, STRING: 0, BOOLEAN: 0 }
   const colorsByHex = new Map<string, { id: string; name: string }>()
-  for (const variable of graph.variables.values()) {
+  for (const variable of graph.getLiveVariables()) {
     counts[variable.type]++
     if (variable.type !== 'COLOR') continue
     const color = graph.resolveColorVariable(variable.id)

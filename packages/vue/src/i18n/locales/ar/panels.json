@@ -125,6 +125,7 @@
   "fontSize": "حجم الخط",
   "lineHeightMode": "وضع ارتفاع السطر",
   "unresolvedVariable": "قيمة المتغيّر غير متاحة",
+  "variableDeleted": "تم حذف المتغير",
   "lineHeight": "ارتفاع السطر",
   "letterSpacing": "تباعد الأحرف",
   "textAlignment": "محاذاة النص",

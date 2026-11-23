@@ -8,6 +8,7 @@ export type {
 export { materializeInstance } from './materialize-instance'
 export { materializeComponentClosure } from './component-closure'
 export { linkInstanceSourceChildren, mapInstanceSourceChildren } from './source-children'
+export { slotContentAssignedBy } from './slot-records'
 export type { MaterializedInstance } from './materialize-instance'
 
 /** The Kiwi codec types only `symbolID`, so the remaining symbol fields are read through these. */

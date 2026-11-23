@@ -142,6 +142,7 @@ export const panelMessageDefaults = {
   fontSize: 'Font size',
   lineHeightMode: 'Line height mode',
   unresolvedVariable: 'Variable value unavailable',
+  variableDeleted: 'Variable was deleted',
   lineHeight: 'Line height',
   letterSpacing: 'Letter spacing',
   textAlignment: 'Text alignment',

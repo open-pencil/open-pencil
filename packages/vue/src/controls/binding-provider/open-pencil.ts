@@ -34,7 +34,7 @@ export function createOpenPencilBindingProvider<V>(
 ): BindingProvider<V> {
   const { contains } = useFilter({ sensitivity: 'base' })
   const variables = () =>
-    [...editor.graph.variables.values()].filter((variable) => options.types.includes(variable.type))
+    editor.graph.getLiveVariables().filter((variable) => options.types.includes(variable.type))
   const interactiveEdits: Array<{ end: () => void; stopSettling: () => void }> = []
 
   /**

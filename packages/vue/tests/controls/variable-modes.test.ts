@@ -44,10 +44,25 @@ function setup() {
   graph.createVariable('Gap', 'FLOAT', density.id, 8)
   const bound = { boundVariables: { 'fills/0/color': surface.id } }
   const outer = graph.createNode('FRAME', page, { name: 'Outer', ...bound })
-  const inner = graph.createNode('FRAME', outer.id, { name: 'Inner', ...bound })
+  const inner = graph.createNode('FRAME', outer.id, {
+    name: 'Inner',
+    ...bound
+  })
   const plain = graph.createNode('FRAME', page, { name: 'Plain' })
   const node = (id: string): SceneNode => expectDefined(graph.getNode(id), id)
-  return { editor, graph, page, theme, light, dark, density, outer, inner, plain, node }
+  return {
+    editor,
+    graph,
+    page,
+    theme,
+    light,
+    dark,
+    density,
+    outer,
+    inner,
+    plain,
+    node
+  }
 }
 
 describe('variable mode choices', () => {
@@ -72,6 +87,16 @@ describe('variable mode choices', () => {
       theme.id
     ])
     expect(variableModeChoices(editor, [node(unbound.id)])).toEqual([])
+  })
+
+  test('offer a deleted collection only where its variables are still bound', () => {
+    const { editor, graph, theme, page, outer, plain, node } = setup()
+    graph.addCollection({ ...theme, deleted: true })
+    const offered = (id: string) =>
+      variableModeChoices(editor, [node(id)]).map((c) => c.collectionId)
+    expect(offered(outer.id)).toEqual([theme.id])
+    expect(offered(page)).toEqual([theme.id])
+    expect(offered(plain.id)).toEqual([])
   })
 
   test('offer every collection with more than one mode for a page', () => {
@@ -274,7 +299,9 @@ describe('setting a variable mode', () => {
   test('clearing it restores the inherited mode and keeps other collections', () => {
     const { editor, graph, theme, density, light, dark, outer, node } = setup()
     const densityMode = density.defaultModeId
-    graph.updateNode(outer.id, { variableModes: { [density.id]: densityMode } })
+    graph.updateNode(outer.id, {
+      variableModes: { [density.id]: densityMode }
+    })
     setVariableMode(editor, [node(outer.id)], theme.id, dark)
     setVariableMode(editor, [node(outer.id)], theme.id, null)
     expect(node(outer.id).variableModes).toEqual({ [density.id]: densityMode })
