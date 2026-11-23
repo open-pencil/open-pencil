@@ -10,6 +10,7 @@ import type {
   TransactionalEmailKind,
   TransactionalEmailPayloadByKind
 } from '#cloud/email'
+import type * as OAuth from '#cloud/server/oauth/tables'
 import type { Account, Session } from 'better-auth'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
 
@@ -566,6 +567,11 @@ export interface CloudDatabase {
   commentRead: CommentReadTable
   commentEmail: CommentEmailTable
   notificationSetting: NotificationSettingTable
+  oauthClient: OAuth.OAuthClientTable
+  oauthAccessToken: OAuth.OAuthAccessTokenTable
+  oauthRefreshToken: OAuth.OAuthRefreshTokenTable
+  oauthConsent: OAuth.OAuthConsentTable
+  oauthWorkspaceChoice: OAuth.OAuthWorkspaceChoiceTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

@@ -9,6 +9,7 @@ import {
   createResourceRateLimiter
 } from '#cloud/server/rate-limit'
 import { DocumentShareInvalidError, DocumentShareSignInRequiredError } from '#cloud/server/sharing'
+import { tokenRoute } from '#cloud/server/tokens'
 import { documentParams, shareParams, validatedJSON } from '#cloud/server/validation'
 import { Hono, type Context } from 'hono'
 import type { Kysely } from 'kysely'
@@ -44,6 +45,8 @@ export function createCollaborationRoutes(
   return router.post(
     '/documents/:documentId/collaboration-ticket',
     documentParams,
+    // A ticket lets its holder edit, so a token that may only read gets none.
+    tokenRoute.write.document,
     async (context) => {
       try {
         return context.json({

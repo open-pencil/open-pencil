@@ -52,7 +52,9 @@ export type CloudAuthentication = v.InferOutput<typeof cloudAuthenticationSchema
 export const cloudCapabilitiesSchema = v.object({
   documents: v.boolean(),
   workspaces: v.boolean(),
-  collaboration: v.boolean()
+  collaboration: v.boolean(),
+  /** Whether people may connect apps such as ChatGPT through OAuth; servers before it accept none. */
+  apps: v.optional(v.boolean(), false)
 })
 export type CloudCapabilities = v.InferOutput<typeof cloudCapabilitiesSchema>
 

@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import { isCloudPortalPage } from '@open-pencil/cloud/contract'
+import { CLOUD_OAUTH_AUTHORIZE_PAGE, isCloudPortalPage } from '@open-pencil/cloud/contract'
 
 import type { PortalContext } from '@/app/cloud-portal/context'
 import {
@@ -74,6 +74,14 @@ export function createCloudPortalRouter(context: PortalContext) {
         meta: { account: true }
       },
       {
+        // An app asking to connect, with its signed request; a server that accepts none has none.
+        path: CLOUD_OAUTH_AUTHORIZE_PAGE,
+        name: 'authorize',
+        component: () => import('@/views/cloud/AuthorizeView.vue'),
+        meta: { account: true },
+        beforeEnter: () => (context.discovery.capabilities.apps ? true : PORTAL_HOME)
+      },
+      {
         path: '/account/pending',
         name: 'pending',
         component: () => import('@/views/cloud/StandingView.vue'),
@@ -134,6 +142,14 @@ export function createCloudPortalRouter(context: PortalContext) {
         name: 'tokens',
         component: () => import('@/views/cloud/ConsoleView.vue'),
         meta: { account: true }
+      },
+      {
+        path: '/account/apps',
+        name: 'apps',
+        component: () => import('@/views/cloud/ConsoleView.vue'),
+        meta: { account: true },
+        // Only a server that accepts apps lists them.
+        beforeEnter: () => (context.discovery.capabilities.apps ? true : { name: 'profile' })
       },
       {
         path: '/admin/:section(overview|requests|reports|documents|people|email|activity)?',

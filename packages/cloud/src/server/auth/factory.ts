@@ -7,8 +7,18 @@ import {
 import { createTermsService } from '#cloud/server/account/terms'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
+import {
+  bearerAppToken,
+  closedOAuthPaths,
+  cloudOAuthAuthentication,
+  cloudOAuthProviderOptions,
+  createWorkspaceChoices,
+  providerRequest,
+  resolveAppAccessToken
+} from '#cloud/server/oauth'
 import { createUserPictures, providerPictures } from '#cloud/server/pictures'
 import { apiKey } from '@better-auth/api-key'
+import { oauthProvider } from '@better-auth/oauth-provider'
 import { passkey } from '@better-auth/passkey'
 import { APIError, betterAuth } from 'better-auth'
 import { getMigrations } from 'better-auth/db/migration'
@@ -22,7 +32,14 @@ import {
 } from 'better-auth/plugins'
 import type { Kysely } from 'kysely'
 
-import { accessTokenAccount, bearerAccessToken, toAccessToken } from './access-tokens'
+import {
+  accessTokenAccess,
+  accessTokenMethods,
+  accessTokenScopes,
+  bearerAccessToken,
+  deploymentRole,
+  tokenActor
+} from './access-tokens'
 import { accountActivity, createSignInActivity } from './activity'
 import type { CloudAuthAdapter } from './adapter'
 import type { AuthenticationEmailService } from './email'
@@ -36,7 +53,6 @@ import { authRateLimit } from './rate-limit'
 import { APPLE_AUDIENCE, socialProviders, TRUSTED_SOCIAL_PROVIDERS } from './social-providers'
 
 const BETTER_AUTH_SCHEMA_VERSION = '1.7.7+mfa.1'
-const DAY_SECONDS = 24 * 60 * 60
 const ACCOUNT_SECURITY_FRESH_AGE_SECONDS = 10 * 60
 
 export type CloudAuthRuntimeOptions = {
@@ -97,6 +113,10 @@ export function createBetterAuthAdapter(
     rateLimit: { enabled: false },
     enableSessionForAPIKeys: false
   })
+  // Apps connected through OAuth, where the deployment accepts them (`[oauth]`).
+  const appProvider = config.oauthEnabled
+    ? oauthProvider(cloudOAuthProviderOptions(config.publicURL, createWorkspaceChoices(database)))
+    : undefined
   const joining = enrollmentOptions(
     config,
     database,
@@ -122,7 +142,8 @@ export function createBetterAuthAdapter(
       CORE_AUTH_PATHS.deleteUserCallback,
       // Linking and unlinking go through `/api/account/authentication`, with a fresh session.
       CORE_AUTH_PATHS.linkSocialAccount,
-      CORE_AUTH_PATHS.unlinkAccount
+      CORE_AUTH_PATHS.unlinkAccount,
+      ...(appProvider ? closedOAuthPaths(appProvider) : [])
     ],
     secret: config.authSecret,
     database: {
@@ -182,7 +203,8 @@ export function createBetterAuthAdapter(
         (user) => notifyTwoStep(user, 'passkey-added')
       ),
       providerPictures(createUserPictures(database, { publicURL: config.publicURL })),
-      accessTokens
+      accessTokens,
+      ...(appProvider ? [appProvider] : [])
     ],
     socialProviders: socialProviders(config),
     databaseHooks: { ...joining.databaseHooks, ...signInMethodHooks },
@@ -192,10 +214,6 @@ export function createBetterAuthAdapter(
       ...(config.appleClientId ? [APPLE_AUDIENCE] : [])
     ]
   })
-
-  // Administrators are granted only through the `admin` command or by another administrator.
-  const deploymentRole = (user: { id: string; role?: string | null }) =>
-    user.role === 'admin' ? ('admin' as const) : ('user' as const)
 
   /** The signed-in person, and the session they are signed in with. */
   async function signedIn(headers: Headers) {
@@ -288,23 +306,26 @@ export function createBetterAuthAdapter(
     return confirmed ? identity : null
   }
 
+  const tokenContext = { database, config, enrollment, terms }
   /** The account a personal access token in `Authorization: Bearer` stands for. */
   async function resolveAccessToken(headers: Headers) {
     const key = bearerAccessToken(headers)
-    if (!key) return null
-    const verified = await auth.api.verifyApiKey({ body: { key } })
-    if (!verified.valid || !verified.key) return null
-    const context = { database, config, enrollment, terms }
-    const user = await accessTokenAccount(context, verified.key.referenceId)
-    if (!user) return null
-    return {
-      userId: user.id,
-      email: user.email,
-      name: user.name,
-      deploymentRole: deploymentRole(user),
-      credential: 'token' as const
-    }
+    const verified = key ? await auth.api.verifyApiKey({ body: { key } }) : null
+    if (!verified?.valid || !verified.key) return null
+    const scopes = accessTokenScopes(accessTokenAccess(verified.key.permissions))
+    return tokenActor(tokenContext, verified.key.referenceId, 'token', { scopes })
   }
+  /** The account, app, and workspace an app's access token in `Authorization: Bearer` stands for. */
+  async function resolveAppToken(headers: Headers) {
+    const token = appProvider ? bearerAppToken(headers) : null
+    const grant = token ? await resolveAppAccessToken(database, config.publicURL, token) : null
+    if (!grant) return null
+    const { userId, ...access } = grant
+    return tokenActor(tokenContext, userId, 'app', access)
+  }
+  const authorizationRequest = appProvider
+    ? providerRequest(appProvider.endpoints, authRequestPath, resolveSession)
+    : async (request: Request) => request
 
   /**
    * The endpoints that read or change an account, which only an account that may use the server
@@ -352,7 +373,7 @@ export function createBetterAuthAdapter(
       if (activeAccountPaths.has(path) && !(await resolveSession(request.headers))) {
         return Response.json({ error: { code: 'unauthorized' } }, { status: 401 })
       }
-      const response = await auth.handler(request)
+      const response = await auth.handler(await authorizationRequest(request))
       if (response.ok) await recordProof(path, response, () => currentSession(request.headers))
       return response
     },
@@ -361,27 +382,15 @@ export function createBetterAuthAdapter(
     resolveAccountSession,
     twoStepConfirmed,
     resolveAccessToken,
-    async listAccessTokens(headers) {
-      const session = await currentSession(headers)
-      if (!session) return null
-      const { apiKeys } = await auth.api.listApiKeys({ headers })
-      return apiKeys.map(toAccessToken)
-    },
-    async createAccessToken(headers, input) {
-      // A token outlives the session that makes it, so making one needs a recent sign-in.
-      const session = await freshSession(headers)
-      const created = await auth.api.createApiKey({
-        body: {
-          name: input.name,
-          expiresIn: input.expiresInDays * DAY_SECONDS,
-          userId: session.user.id
-        }
-      })
-      return { token: created.key, accessToken: toAccessToken(created) }
-    },
-    async revokeAccessToken(headers, id) {
-      await auth.api.deleteApiKey({ headers, body: { keyId: id } })
-    },
+    resolveAppToken,
+    oauth: appProvider && cloudOAuthAuthentication(auth.api),
+    ...accessTokenMethods({
+      list: (headers) => auth.api.listApiKeys({ headers }),
+      create: (body) => auth.api.createApiKey({ body }),
+      remove: (headers, keyId) => auth.api.deleteApiKey({ headers, body: { keyId } }),
+      fresh: freshSession,
+      current: currentSession
+    }),
     async listAuthenticationMethods(headers) {
       const accounts = await auth.api.listUserAccounts({ headers })
       return accounts.map((account) => ({
@@ -575,10 +584,12 @@ export function createBetterAuthAdapter(
     },
     schemaVersion: BETTER_AUTH_SCHEMA_VERSION,
     async migrate() {
-      // The access token table is Cloud's migration `009_access_tokens`, built before this runs.
+      // Token and OAuth tables are Cloud's migrations `009_access_tokens` and `019_oauth`.
       const migrations = await getMigrations({
         ...auth.options,
-        plugins: auth.options.plugins.filter((plugin) => plugin.id !== accessTokens.id)
+        plugins: auth.options.plugins.filter(
+          (plugin) => plugin.id !== accessTokens.id && plugin.id !== appProvider?.id
+        )
       })
       await migrations.runMigrations()
     }

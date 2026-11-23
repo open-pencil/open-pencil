@@ -28,6 +28,7 @@ import {
   createPublicDocumentRoutes,
   createPublicSharingRoutes
 } from '#cloud/server/sharing'
+import { tokenRoute } from '#cloud/server/tokens'
 import { workspaceParams } from '#cloud/server/validation'
 import type { WorkspaceMemberService, WorkspaceService } from '#cloud/server/workspaces'
 import { createWorkspaceRoutes } from '#cloud/server/workspaces'
@@ -79,24 +80,31 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
         entitlements: await services.entitlements.account(context.get('actor').userId)
       })
     })
-    .get('/workspaces/:workspaceId/entitlements', workspaceParams, async (context) => {
-      if (!services.entitlements)
-        return context.json({ error: { code: 'not_found' as const } }, 404)
-      try {
-        return context.json({
-          entitlements: await services.entitlements.workspace(
-            context.get('actor').userId,
-            context.req.valid('param').workspaceId
-          )
-        })
-      } catch (error) {
-        // A workspace the account left, or one that has gone, since the editor listed it.
-        if (error instanceof DocumentNotFoundError)
+    .get(
+      '/workspaces/:workspaceId/entitlements',
+      workspaceParams,
+      tokenRoute.read.workspace,
+      async (context) => {
+        if (!services.entitlements)
           return context.json({ error: { code: 'not_found' as const } }, 404)
-        throw error
+        try {
+          return context.json({
+            entitlements: await services.entitlements.workspace(
+              context.get('actor').userId,
+              context.req.valid('param').workspaceId
+            )
+          })
+        } catch (error) {
+          // A workspace the account left, or one that has gone, since the editor listed it.
+          if (error instanceof DocumentNotFoundError)
+            return context.json({ error: { code: 'not_found' as const } }, 404)
+          throw error
+        }
       }
-    })
-    .get('/session', (context) => context.json({ user: context.get('actor') }))
+    )
+    .get('/session', tokenRoute.read.grant, (context) =>
+      context.json({ user: context.get('actor') })
+    )
     .route(
       '/',
       createServicesRoutes(

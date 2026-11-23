@@ -11,10 +11,15 @@ import { createAccountDeletionService } from '#cloud/server/account/deletion'
 import { createAccountRoutes } from '#cloud/server/account/routes'
 import { createTermsService } from '#cloud/server/account/terms'
 import { createAccessTokenRoutes } from '#cloud/server/account/tokens'
-import { createCloudAPIRouter, createPublicCloudAPIRouter } from '#cloud/server/api'
+import {
+  createCloudAPIRouter,
+  createPublicCloudAPIRouter,
+  type CloudAPIEnvironment
+} from '#cloud/server/api'
 import { createAuthenticationEmailService } from '#cloud/server/auth'
 import { signInProviders } from '#cloud/server/auth/methods'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
+import { createOAuthRoutes, createOAuthService, createWorkspaceChoices } from '#cloud/server/oauth'
 import { Hono } from 'hono'
 
 import type { createRequestChecks, createRequestResolvers } from './checks'
@@ -94,6 +99,23 @@ export function createAppRouters(
     requireActiveSession: checks.requireActiveSession,
     authenticatedMutationLimiter: limiters.authenticatedMutationLimiter
   })
+  const oauth = services.auth.oauth
+  const appConnections = oauth
+    ? createOAuthRoutes({
+        publicURL: config.publicURL,
+        service: createOAuthService({
+          database,
+          publicURL: config.publicURL,
+          secret: config.authSecret,
+          choices: createWorkspaceChoices(database),
+          steps: oauth.steps
+        }),
+        serverMetadata: oauth.serverMetadata,
+        sessionID: oauth.sessionID,
+        requireActiveSession: checks.requireActiveSession,
+        authenticatedMutationLimiter: limiters.authenticatedMutationLimiter
+      })
+    : new Hono<CloudAPIEnvironment>()
   const shared = {
     collaboration: app.collaboration,
     documents: app.documents,
@@ -119,5 +141,5 @@ export function createAppRouters(
   const internalAPI = config.internalServiceToken
     ? createInternalRoutes(createInternalService(database), config.internalServiceToken)
     : new Hono()
-  return { admin, account, accessTokens, cloudAPI, publicCloudAPI, internalAPI }
+  return { admin, account, accessTokens, appConnections, cloudAPI, publicCloudAPI, internalAPI }
 }

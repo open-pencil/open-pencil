@@ -131,3 +131,7 @@ tour = "d7cf3185-cc2a-450c-bc37-63ed06ec100b"
 provider = "posthog"
 host = "https://eu.i.posthog.com"
 include_ids = true
+
+# Apps such as ChatGPT, Claude, and Grok connect to staging accounts through OAuth.
+[oauth]
+enabled = true

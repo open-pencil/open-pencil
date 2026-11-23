@@ -16,6 +16,7 @@ import {
 } from '#cloud/server/rate-limit'
 import { sharingRoute } from '#cloud/server/sharing/http'
 import type { DocumentSharingService } from '#cloud/server/sharing/service'
+import { tokenRoute } from '#cloud/server/tokens'
 import {
   documentInvitationParams,
   documentParams,
@@ -53,18 +54,22 @@ export function createDocumentSharingRoutes(
     )
   }
   return router
-    .get('/documents/:documentId/users/:userId', documentUserParams, (context) =>
-      sharingRoute(context, async () =>
-        context.json({
-          user: await service.userProfile(
-            context.get('actor').userId,
-            context.req.valid('param').documentId,
-            context.req.valid('param').userId
-          )
-        })
-      )
+    .get(
+      '/documents/:documentId/users/:userId',
+      documentUserParams,
+      tokenRoute.read.document,
+      (context) =>
+        sharingRoute(context, async () =>
+          context.json({
+            user: await service.userProfile(
+              context.get('actor').userId,
+              context.req.valid('param').documentId,
+              context.req.valid('param').userId
+            )
+          })
+        )
     )
-    .get('/documents/:documentId/shares', documentParams, (context) =>
+    .get('/documents/:documentId/shares', documentParams, tokenRoute.read.document, (context) =>
       sharingRoute(context, async () =>
         context.json({
           shares: await service.listShares(
@@ -77,6 +82,7 @@ export function createDocumentSharingRoutes(
     .post(
       '/documents/:documentId/shares',
       documentParams,
+      tokenRoute.write.personal,
       validatedJSON(createDocumentShareSchema),
       (context) =>
         sharingRoute(context, async () =>
@@ -93,6 +99,7 @@ export function createDocumentSharingRoutes(
     .patch(
       '/documents/:documentId/shares/:shareId',
       documentShareParams,
+      tokenRoute.write.personal,
       validatedJSON(updateDocumentShareSchema),
       (context) =>
         sharingRoute(context, async () =>
@@ -106,28 +113,36 @@ export function createDocumentSharingRoutes(
           })
         )
     )
-    .post('/documents/:documentId/shares/:shareId/rotate', documentShareParams, (context) =>
-      sharingRoute(context, async () =>
-        context.json(
-          await service.rotateShare(
+    .post(
+      '/documents/:documentId/shares/:shareId/rotate',
+      documentShareParams,
+      tokenRoute.write.personal,
+      (context) =>
+        sharingRoute(context, async () =>
+          context.json(
+            await service.rotateShare(
+              context.get('actor').userId,
+              context.req.valid('param').documentId,
+              context.req.valid('param').shareId
+            )
+          )
+        )
+    )
+    .delete(
+      '/documents/:documentId/shares/:shareId',
+      documentShareParams,
+      tokenRoute.write.personal,
+      (context) =>
+        sharingRoute(context, async () => {
+          await service.revokeShare(
             context.get('actor').userId,
             context.req.valid('param').documentId,
             context.req.valid('param').shareId
           )
-        )
-      )
+          return context.body(null, 204)
+        })
     )
-    .delete('/documents/:documentId/shares/:shareId', documentShareParams, (context) =>
-      sharingRoute(context, async () => {
-        await service.revokeShare(
-          context.get('actor').userId,
-          context.req.valid('param').documentId,
-          context.req.valid('param').shareId
-        )
-        return context.body(null, 204)
-      })
-    )
-    .get('/documents/:documentId/grants', documentParams, (context) =>
+    .get('/documents/:documentId/grants', documentParams, tokenRoute.read.document, (context) =>
       sharingRoute(context, async () =>
         context.json({
           grants: await service.listGrants(
@@ -140,6 +155,7 @@ export function createDocumentSharingRoutes(
     .put(
       '/documents/:documentId/grants/:userId',
       documentUserParams,
+      tokenRoute.write.personal,
       validatedJSON(putDocumentGrantSchema),
       (context) =>
         sharingRoute(context, async () =>
@@ -153,29 +169,38 @@ export function createDocumentSharingRoutes(
           })
         )
     )
-    .delete('/documents/:documentId/grants/:userId', documentUserParams, (context) =>
-      sharingRoute(context, async () => {
-        await service.revokeGrant(
-          context.get('actor').userId,
-          context.req.valid('param').documentId,
-          context.req.valid('param').userId
-        )
-        return context.body(null, 204)
-      })
-    )
-    .get('/documents/:documentId/invitations', documentParams, (context) =>
-      sharingRoute(context, async () =>
-        context.json({
-          invitations: await service.listInvitations(
+    .delete(
+      '/documents/:documentId/grants/:userId',
+      documentUserParams,
+      tokenRoute.write.personal,
+      (context) =>
+        sharingRoute(context, async () => {
+          await service.revokeGrant(
             context.get('actor').userId,
-            context.req.valid('param').documentId
+            context.req.valid('param').documentId,
+            context.req.valid('param').userId
           )
+          return context.body(null, 204)
         })
-      )
+    )
+    .get(
+      '/documents/:documentId/invitations',
+      documentParams,
+      tokenRoute.read.document,
+      (context) =>
+        sharingRoute(context, async () =>
+          context.json({
+            invitations: await service.listInvitations(
+              context.get('actor').userId,
+              context.req.valid('param').documentId
+            )
+          })
+        )
     )
     .post(
       '/documents/:documentId/invitations',
       documentParams,
+      tokenRoute.write.personal,
       validatedJSON(createDocumentInvitationSchema),
       (context) =>
         sharingRoute(context, async () =>
@@ -207,6 +232,7 @@ export function createDocumentSharingRoutes(
     .delete(
       '/documents/:documentId/invitations/:invitationId',
       documentInvitationParams,
+      tokenRoute.write.personal,
       (context) =>
         sharingRoute(context, async () => {
           await service.revokeInvitation(
