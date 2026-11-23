@@ -280,7 +280,7 @@ function buildCanvasEntries(
   nodeIdToGuid: Map<string, GUID>,
   assignedGuidValues: Set<string>,
   sourceOwners: ReadonlyMap<string, string>,
-  ownGuids = true
+  keepsUnreadRecords: boolean
 ): { canvasEntries: CanvasExportEntry[]; internalCanvasGuid: GUID | null } {
   const canvasEntries: CanvasExportEntry[] = []
   let internalCanvasGuid: GUID | null = null
@@ -292,7 +292,7 @@ function buildCanvasEntries(
     const canvasGuid = (() => {
       if (!page.source.id) {
         return (
-          (ownGuids ? ownGuid(page.id, sourceOwners, assignedGuidValues) : null) ?? {
+          ownGuid(page.id, sourceOwners, assignedGuidValues) ?? {
             sessionID: 0,
             localID: localIdCounter.value++
           }
@@ -327,10 +327,8 @@ function buildCanvasEntries(
 
   const hasSharedStyles = [...graph.nodes.values()].some((node) => node.sharedStyleType !== null)
   const hasSlotContent = [...graph.nodes.values()].some((node) => ownsSlotContent(graph, node))
-  if (
-    (graph.variableCollections.size > 0 || hasSharedStyles || hasSlotContent) &&
-    internalCanvasGuid === null
-  ) {
+  const hasVariables = graph.variableCollections.size > 0 || keepsUnreadRecords
+  if ((hasVariables || hasSharedStyles || hasSlotContent) && internalCanvasGuid === null) {
     internalCanvasGuid = { sessionID: 0, localID: localIdCounter.value++ }
     assignedGuidValues.add(`${internalCanvasGuid.sessionID}:${internalCanvasGuid.localID}`)
     canvasEntries.push({
@@ -466,7 +464,7 @@ export async function prepareFigExport(
     nodeIdToGuid,
     assignedGuidValues,
     sourceOwners,
-    true
+    !!options.unreadVariables?.length
   )
   // Archive records keep their GUIDs: claim them before any copy that kept one can.
   for (const [guid, nodeId] of options.recordOwners ?? []) {

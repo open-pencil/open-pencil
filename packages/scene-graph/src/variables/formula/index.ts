@@ -45,6 +45,8 @@ export function variableFormulaReference(graph: SceneGraph, id: string): string 
   const plain = variable.name
   if (
     !/[{}]/.test(plain) &&
+    // A name that starts like an ID would be read as one.
+    !plain.startsWith('#') &&
     plain.trim() === plain &&
     unique(plain, (other) => graph.variables.get(other)?.name)
   )
@@ -73,13 +75,13 @@ export function formatVariableFormula(
  * edited variable's own collection when a name appears in several.
  */
 function resolveReference(graph: SceneGraph, collectionId: string, name: string): FormulaReference {
-  // A deleted variable is still reached by its ID, as a formula saved before the deletion names it.
-  const candidates = [...graph.variables.values()].filter(
-    (candidate) =>
-      name === `#${candidate.id}` ||
-      (!candidate.deleted &&
-        (name === qualifiedName(graph, candidate.id) || name === candidate.name))
-  )
+  // An ID names its variable before any name does; a deleted variable is reached only by it, as
+  // a formula saved before the deletion names it.
+  const byId = name.startsWith('#') ? graph.variables.get(name.slice(1)) : undefined
+  if (byId) return { id: byId.id, type: byId.type }
+  const candidates = graph
+    .getLiveVariables()
+    .filter((candidate) => name === qualifiedName(graph, candidate.id) || name === candidate.name)
   const local = candidates.filter((candidate) => candidate.collectionId === collectionId)
   const matches = local.length === 1 ? local : candidates
   const match = matches.at(0)

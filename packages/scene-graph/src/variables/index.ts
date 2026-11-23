@@ -35,9 +35,15 @@ import { applyBoundPaintColor } from './paints'
 
 export * from './resolution'
 
-/** Variables a list shows: every one but those deleted, which only their bindings still reach. */
+/**
+ * Variables a list shows: every one but those deleted, on their own or with their collection,
+ * which only their bindings still reach.
+ */
 export function liveVariables(graph: SceneGraph): Variable[] {
-  return [...graph.variables.values()].filter((variable) => !variable.deleted)
+  return [...graph.variables.values()].filter(
+    (variable) =>
+      !variable.deleted && !graph.variableCollections.get(variable.collectionId)?.deleted
+  )
 }
 
 /** Collections a list shows: every one but those deleted. */

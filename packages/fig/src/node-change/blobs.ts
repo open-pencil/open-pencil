@@ -1,6 +1,6 @@
 /** Whether a record field holds an index into its message's blobs, as path geometry does. */
 export function isBlobIndexField(key: string): boolean {
-  return key === 'commandsBlob' || key === 'vectorNetworkBlob'
+  return key === 'commandsBlob' || key === 'vectorNetworkBlob' || key === 'dataBlob'
 }
 
 /** A copy of a record, or any value in one, with each blob index it holds put through `map`. */

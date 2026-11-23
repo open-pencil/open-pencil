@@ -104,7 +104,7 @@ function appendInternalResources(context: InternalResourceContext): void {
       )
     )
   }
-  if (graph.variableCollections.size > 0) {
+  if (graph.variableCollections.size > 0 || context.unreadVariables.length > 0) {
     appendVariableNodeChanges(
       graph,
       nodeChanges,

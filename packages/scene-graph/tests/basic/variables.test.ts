@@ -18,6 +18,15 @@ describe('Variables', () => {
     expect(collection.variableIds).toEqual([accent.id])
   })
 
+  test('a deleted collection takes its variables out of the lists, but not out of reach', () => {
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Colors')
+    const accent = graph.createVariable('Accent', 'COLOR', collection.id)
+    graph.addCollection({ ...collection, deleted: true })
+    expect(graph.getLiveVariables()).toEqual([])
+    expect(graph.variables.get(accent.id)?.name).toBe('Accent')
+  })
+
   test('add and resolve color variable', () => {
     const graph = new SceneGraph()
     graph.addCollection({

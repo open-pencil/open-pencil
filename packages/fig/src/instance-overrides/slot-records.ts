@@ -1,8 +1,23 @@
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { assignmentValue } from './bindings/properties'
 import type { InstanceOccurrence } from './occurrence/types'
-import { assignedSlotContent, type ComponentPropAssignment } from './types'
+import { assignedSlotContent, forEachOverrideRecord, type ComponentPropAssignment } from './types'
+
+/** The slot content frames a record assigns: its own and its overrides', at every depth. */
+export function slotContentAssignedBy(record: NodeChange): string[] {
+  const ids: string[] = []
+  forEachOverrideRecord(record, (source) => {
+    const assignments = (source.componentPropAssignments ?? []) as ComponentPropAssignment[]
+    for (const assignment of assignments) {
+      const content = assignedSlotContent(assignmentValue(assignment))
+      if (content) ids.push(guidToString(content))
+    }
+  })
+  return ids
+}
 
 export interface SlotContentLayers {
   /**

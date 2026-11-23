@@ -309,14 +309,20 @@ describe('what the archive tells a save', () => {
     const frame = record(10, 1, { fillGeometry: geometry(4) } as Partial<NodeChange>)
     const child = record(11, 10, {
       fillGeometry: geometry(2),
-      strokeGeometry: geometry(4)
+      strokeGeometry: geometry(4),
+      fillPaints: [{ type: 'IMAGE', image: { dataBlob: 3 } }]
     } as Partial<NodeChange>)
     const blobs = [0, 1, 2, 3, 4].map((value) => new Uint8Array([value]))
     const { slotContent } = info({ slotContent: [frame, child], blobs })
-    expect(slotContent.blobs).toEqual([new Uint8Array([4]), new Uint8Array([2])])
+    expect(slotContent.blobs).toEqual([4, 2, 3].map((value) => new Uint8Array([value])))
     expect(slotContent.records).toEqual([
       { ...frame, fillGeometry: geometry(0) },
-      { ...child, fillGeometry: geometry(1), strokeGeometry: geometry(0) }
+      {
+        ...child,
+        fillGeometry: geometry(1),
+        strokeGeometry: geometry(0),
+        fillPaints: [{ type: 'IMAGE', image: { dataBlob: 2 } }]
+      } as NodeChange
     ])
   })
 })

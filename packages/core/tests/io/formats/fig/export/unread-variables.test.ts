@@ -28,7 +28,10 @@ function paintVariable(localID: number, extra: Partial<NodeChange> = {}): NodeCh
 }
 
 /** The records a save writes for one collection and its variable, then `unread`. */
-function written(unread: (collectionId: string) => FigUnreadVariable[]) {
+function written(
+  unread: (collectionId: string) => FigUnreadVariable[],
+  ids = (_collectionId: string) => new Map<string, ReturnType<typeof guid>>()
+) {
   const graph = new SceneGraph()
   const collection = graph.createCollection('Color Scheme')
   graph.createVariable('Accent', 'COLOR', collection.id)
@@ -38,7 +41,7 @@ function written(unread: (collectionId: string) => FigUnreadVariable[]) {
     graph,
     changes,
     guid(2),
-    new Map(),
+    ids(collection.id),
     new Map(),
     () => `${position++}`,
     unread(collection.id)
@@ -76,6 +79,22 @@ test('an unread variable that names its collection as its parent keeps naming it
   ])
   expect(changes[2].variableSetID).toEqual({ guid: changes[0].guid })
   expect(changes[2].parentIndex?.guid).toEqual(guid(2))
+})
+
+test('an unread variable names its collection under the GUID the save gives it', () => {
+  const changes = written(
+    (collectionId) => [
+      {
+        record: paintVariable(5, {
+          parentIndex: { guid: stringToGuid(collectionId), position: '0' }
+        }),
+        collectionId
+      }
+    ],
+    (collectionId) => new Map([[collectionId, guid(40)]])
+  )
+  expect(changes[0].guid).toEqual(guid(40))
+  expect(changes[2].variableSetID).toEqual({ guid: guid(40) })
 })
 
 test('an unread variable whose collection the file never held is written as it was', () => {

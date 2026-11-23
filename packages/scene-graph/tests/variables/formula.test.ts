@@ -174,6 +174,15 @@ test('a deleted variable is referenced by its ID, even beside a live one of its 
   expect(parse(text).resolved).toBe(8)
 })
 
+test('an ID names its variable before a variable named like that ID', () => {
+  const { graph, collection, base, derived, mode, parse, set } = setup()
+  set('{base} * 2')
+  graph.createVariable(`#${base.id}`, 'FLOAT', collection.id, 100)
+  const text = formatVariableFormula(graph, derived.valuesByMode[mode])
+  expect(parse(text).resolved).toBe(8)
+  expect(parse(`{#${base.id}} * 2`).resolved).toBe(8)
+})
+
 test('references with duplicate or reserved names retain editable ID fallbacks', () => {
   const { graph, base, derived, mode, parse, set } = setup()
   set('{base} * 2')

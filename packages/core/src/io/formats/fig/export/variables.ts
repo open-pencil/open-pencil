@@ -319,7 +319,7 @@ export function appendVariableNodeChanges(
     const written = structuredClone(record)
     // A record named its collection as its parent, which the internal canvas now is.
     if (!written.variableSetID && collectionId)
-      written.variableSetID = { guid: stringToGuid(collectionId) }
+      written.variableSetID = { guid: ids.get(collectionId) ?? stringToGuid(collectionId) }
     changes.push({ ...written, parentIndex: { guid: parent, position: nextPosition() } })
   }
 }

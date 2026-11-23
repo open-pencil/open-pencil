@@ -1,32 +1,9 @@
 import type { FigSlotContent } from '@open-pencil/fig'
+import { slotContentAssignedBy } from '@open-pencil/fig/instance-overrides'
 import { mapBlobIndices } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
-
-interface SlotValue {
-  varValue?: { value?: { slotContentIdValue?: { guid?: GUID } } }
-}
-
-/** What the pinned schema's `symbolData` leaves out: the overrides of nested instances. */
-interface SymbolOverrides {
-  symbolID?: GUID
-  symbolOverrides?: Array<{ componentPropAssignments?: SlotValue[] }>
-}
-
-/** The slot content frames a record's own assignments and its overrides' assignments name. */
-function assignedContent(record: NodeChange): string[] {
-  const assignments = [
-    ...((record.componentPropAssignments ?? []) as SlotValue[]),
-    ...((record.symbolData as SymbolOverrides | undefined)?.symbolOverrides ?? []).flatMap(
-      (override) => override.componentPropAssignments ?? []
-    )
-  ]
-  return assignments.flatMap((assignment) => {
-    const guid = assignment.varValue?.value?.slotContentIdValue?.guid
-    return guid ? [guidToString(guid)] : []
-  })
-}
 
 /**
  * The saved slot content the written records assign but do not hold, as when an instance's
@@ -46,7 +23,7 @@ export function savedSlotContentFor(
   )
   const missing = new Set<string>()
   const assign = (record: NodeChange) => {
-    for (const id of assignedContent(record)) if (!writtenIds.has(id)) missing.add(id)
+    for (const id of slotContentAssignedBy(record)) if (!writtenIds.has(id)) missing.add(id)
   }
   for (const record of written) assign(record)
   const blobIndex = new Map<number, number>()

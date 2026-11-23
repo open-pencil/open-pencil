@@ -53,6 +53,26 @@ test('keeps content that kept content assigns, wherever the file saved it', () =
   expect(records[2].parentIndex).toEqual({ guid: CANVAS, position: '1' })
 })
 
+test('keeps content that an override assigns, however deep it is nested', () => {
+  // The pinned schema types only `symbolID`; Figma nests overrides of nested instances.
+  const overrides = [
+    {
+      guidPath: { guids: [guid(51)] },
+      symbolData: {
+        symbolOverrides: [{ guidPath: { guids: [guid(52)] }, ...assigning(0, 20) }]
+      }
+    }
+  ]
+  const nested: NodeChange = {
+    guid: guid(31),
+    type: 'INSTANCE',
+    parentIndex: { guid: guid(10), position: '0' },
+    ...({ symbolData: { symbolID: guid(50), symbolOverrides: overrides } } as Partial<NodeChange>)
+  }
+  const { records } = keep([assigning(5, 10)], [frame(10), nested, frame(20)])
+  expect(records.map((record) => record.guid?.localID)).toEqual([10, 31, 20])
+})
+
 test('kept content cites its blobs in the blobs the save writes', () => {
   const geometry = (index: number) => [{ windingRule: 'NONZERO', commandsBlob: index }]
   const saved = [
