@@ -1,0 +1,16 @@
+{
+  "plan": "プラン",
+  "planDescription": "アカウントに含まれる内容と、お支払いの内容です。",
+  "planStorage": "ストレージ",
+  "planStorageOf": "{total} のうち {used} を使用中（所有するすべてのワークスペースの合計）",
+  "planStorageUsed": "{used} を使用中（所有するすべてのワークスペースの合計）",
+  "planStorageFull": "ファイルは読み取り専用です",
+  "planStorageFullDescription": "ファイルがプランに含まれるストレージをすべて使用しています。編集を再開するには、ファイルを削除するか、ストレージを追加してください。",
+  "planMonthlyCredits": "毎月のクレジット",
+  "planCredits": "{credits} クレジット",
+  "planNoCredits": "含まれません",
+  "planUnlimitedCredits": "月間上限なし",
+  "planBilling": "プランと請求",
+  "planBillingDescription": "プランの変更、クレジットの追加購入、請求書の確認ができます。",
+  "planOpenBilling": "請求ページを開く"
+}

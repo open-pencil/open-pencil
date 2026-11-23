@@ -11,6 +11,9 @@ mode = "official"
 public_url = "https://cloud.openpencil.dev"
 indexing = "allow"
 local_editor = true
+# Editors from 0.17.0 on show Cloud in Settings and Home and offer sign-in; earlier ones keep the
+# waitlist they were built with.
+listing = { minimum_editor_version = "0.17.0" }
 
 [database]
 
@@ -62,14 +65,24 @@ purge_grace_days = 7
 [services]
 endpoint = "https://services.openpencil.dev"
 
+# OpenPencil billing's production Worker, which sells plans and credit packs with Stripe's live
+# mode and sets each account's plan through the internal API below.
+[billing]
+endpoint = "https://billing.openpencil.dev"
+
+# The internal API billing writes plans through; the token is the OPENPENCIL_CLOUD_SERVICE_TOKEN
+# secret, which billing holds as CLOUD_SERVICE_TOKEN.
+[internal_api]
+
 [email]
 transport = "cloudflare"
 from = "cloud@openpencil.dev"
 # Replies reach the team's inbox; cloud@ receives nothing.
 reply_to = "hello@openpencil.dev"
 
+# The free plan: what an account without a plan from billing has.
 [entitlements]
-source = "static"
+source = "database"
 
 [entitlements.documents]
 maximum_file_bytes = 1_073_741_824

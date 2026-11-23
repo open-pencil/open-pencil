@@ -5,7 +5,7 @@ import { computed } from 'vue'
 import type { FigJamTextSize, FigJamTypeface } from '@open-pencil/scene-graph/figjam'
 import { STICKY_COLORS } from '@open-pencil/scene-graph/generated'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import FigJamSwatches from '@/components/figjam/FigJamSwatches.vue'
 import { useStickySwatches } from '@/components/figjam/sticky/swatches'
@@ -31,8 +31,8 @@ const emit = defineEmits<{
   'update:typeface': [value: FigJamTypeface]
 }>()
 
-const { panels } = useI18n()
-const figjam = useFigJamMessages()
+const panels = useMessages('panels')
+const figjam = useMessages('figjam')
 const styles = tv(stickyControlsTheme)
 
 const { swatches, selected: selectedColor } = useStickySwatches(() => color)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 
@@ -14,12 +14,13 @@ const { request, busy = false } = defineProps<{ request: AccessRequest; busy?: b
 const emit = defineEmits<{ approve: []; ask: [kind: 'reject' | 'revoke'] }>()
 
 const ui = portalTable()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const requestMessages = useMessages('cloud/portal/requests')
 const items = computed(() => {
   if (request.status === 'pending')
-    return [{ action: 'reject' as const, label: messages.value.decline }]
+    return [{ action: 'reject' as const, label: requestMessages.value.decline }]
   if (request.status === 'approved') {
-    return [{ action: 'revoke' as const, label: messages.value.removeAccess }]
+    return [{ action: 'revoke' as const, label: requestMessages.value.removeAccess }]
   }
   return []
 })

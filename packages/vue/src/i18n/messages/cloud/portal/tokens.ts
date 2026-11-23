@@ -1,6 +1,6 @@
 import { params } from '@nanostores/i18n'
 
-/** Messages of the `cloudPortal` namespace for an account's personal access tokens. */
+/** Messages of the Cloud server's pages for an account's personal access tokens. */
 export const accessTokenPortalMessageDefaults = {
   accessTokens: 'Access tokens',
   accessTokensDescription: 'Tokens that let scripts and CI use your documents as you.',

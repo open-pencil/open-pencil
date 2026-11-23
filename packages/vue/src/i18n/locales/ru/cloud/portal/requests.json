@@ -1,0 +1,13 @@
+{
+  "decline": "Отклонить",
+  "removeAccess": "Отозвать доступ",
+  "declineHeading": "Отклонить заявку {name}?",
+  "declineDescription": "Человек получит письмо об этом и сможет подать заявку позже.",
+  "removeAccessHeading": "Отозвать доступ у {name}?",
+  "removeAccessDescription": "Человек больше не сможет войти и получит письмо об этом.",
+  "reviewNote": "Заметка для администраторов (необязательно)",
+  "noteDetail": "Заметка: {note}",
+  "noOneWaiting": "Никто не ждёт",
+  "nothingHere": "Здесь пока пусто",
+  "requestsEmptyDescription": "Новые заявки появятся здесь, а администраторы получат письмо о каждой."
+}

@@ -95,6 +95,7 @@ pub fn run() {
             network::oauth::chatgpt_oauth_wait,
             network::oauth::chatgpt_oauth_cancel,
             network::page::render_web_page,
+            network::page::cancel_web_page_render,
             credential_read,
             credential_access_paused,
             credential_retry_access,

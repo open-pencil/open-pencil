@@ -3,7 +3,7 @@ import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
@@ -28,7 +28,7 @@ const emit = defineEmits<{ signIn: [] }>()
 const ui = cloudStatus()
 const popover = usePopoverUI({ content: 'w-72 p-3' })
 const popoverOpen = ref(false)
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const label = computed(() => (atStorageLimit ? t.value.statusStorageFull : t.value.viewOnly))
 const detail = computed(() => {
   if (atStorageLimit) return t.value.statusStorageFullDetail

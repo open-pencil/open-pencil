@@ -98,7 +98,7 @@ Połączenie równorzędne WebRTC nie wymaga centralnego serwera. Udostępnij od
 
 **Komputer:** Tauri v2, około 7 MB, dla macOS, Windows i Linux, z menu systemowymi, pracą bez sieci i automatycznym zapisem.
 
-**Internet:** [app.openpencil.dev](https://app.openpencil.dev), możliwość instalacji jako PWA i interfejs dotykowy.
+**Internet:** [cloud.openpencil.dev](https://cloud.openpencil.dev), możliwość instalacji jako PWA i interfejs dotykowy.
 
 ## Zastępcze ładowanie Google Fonts
 

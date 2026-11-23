@@ -113,6 +113,42 @@ export function createCommunityService(
     },
 
     /**
+     * A stored part of a gallery document, as it is now or in one of its named versions: its
+     * file, or one of its images, by checksum. Null for a checksum that revision does not hold,
+     * so nothing else in storage can be read through the gallery.
+     */
+    async object(documentId: string, checksum: string, versionId?: string) {
+      const row = await find(documentId)
+      const revisionId = versionId
+        ? (await versions.downloadNamedShared(documentId, versionId)).document.revisionId
+        : row.revisionId
+      const file = await database
+        .selectFrom('documentRevision')
+        .innerJoin('storageObject', 'storageObject.id', 'documentRevision.storageObjectId')
+        .select('storageObject.objectKey')
+        .where('documentRevision.id', '=', revisionId)
+        .where('documentRevision.documentId', '=', documentId)
+        .where('storageObject.checksum', '=', checksum)
+        .executeTakeFirst()
+      const image = file
+        ? null
+        : await database
+            .selectFrom('revisionImage')
+            .innerJoin('workspaceImage', (join) =>
+              join
+                .onRef('workspaceImage.workspaceId', '=', 'revisionImage.workspaceId')
+                .onRef('workspaceImage.checksum', '=', 'revisionImage.checksum')
+            )
+            .innerJoin('storageObject', 'storageObject.id', 'workspaceImage.storageObjectId')
+            .select('storageObject.objectKey')
+            .where('revisionImage.revisionId', '=', revisionId)
+            .where('revisionImage.checksum', '=', checksum)
+            .executeTakeFirst()
+      const key = file?.objectKey ?? image?.objectKey
+      return key ? objects.read(key) : null
+    },
+
+    /**
      * The thumbnail a gallery document's stored file carries, read from storage in ranges, for
      * the revision it is now; null when that revision is not current any more or has none.
      */

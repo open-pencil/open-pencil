@@ -1,0 +1,34 @@
+{
+  "backToPeople": "Todas as pessoas",
+  "personAccount": "Conta",
+  "emailVerified": "Verificado",
+  "emailNotVerified": "Não verificado",
+  "joinedRow": "Entrada",
+  "lastActiveRow": "Última atividade",
+  "signInMethods": "Formas de entrar",
+  "twoStepRow": "Verificação em duas etapas",
+  "twoStepNone": "Não configurada",
+  "passkeyCount": {
+    "one": "{count} chave de acesso",
+    "many": "{count} chaves de acesso"
+  },
+  "personWorkspaces": "Espaços de trabalho",
+  "personWorkspacesEmpty": "Não está em nenhum espaço de trabalho.",
+  "workspaceMembers": {
+    "one": "{count} membro",
+    "many": "{count} membros"
+  },
+  "workspaceRoleAdmin": "Administrador",
+  "workspaceRoleEditor": "Editor",
+  "workspaceRoleViewer": "Visualizador",
+  "personSessions": "Sessões",
+  "noSessions": "Não está conectada em nenhum lugar.",
+  "personNotFound": "Essa conta não existe",
+  "personNotFoundDescription": "Ela pode ter sido removida. Volte para a lista de pessoas.",
+  "removeSignInMethod": "Remover",
+  "removeSignInMethodHeading": "Remover {provider} das formas de entrar de {name}?",
+  "removeSignInMethodDescription": "A pessoa não poderá mais entrar com essa forma até adicioná-la de novo e receberá um e-mail avisando. Os dispositivos já conectados continuam assim até você desconectá-la de todos os lugares.",
+  "deletePersonAccount": "Excluir conta",
+  "deletePersonAccountHeading": "Excluir a conta de {name}?",
+  "deletePersonAccountDescription": "O pedido de acesso nunca foi aprovado, então a conta, as formas de entrar e o pedido são excluídos. O registro de atividade mantém o nome e o e-mail. A pessoa pode se cadastrar de novo."
+}

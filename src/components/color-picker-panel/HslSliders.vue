@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { colorToCSS } from '@open-pencil/scene-graph/color'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import StandardColorSlider from '@/components/color-picker-panel/StandardColorSlider.vue'
 
 const ctx = useColorPickerPanelContext()
-const { panels } = useI18n()
+const pickerMessages = useMessages('panels/pickers')
 </script>
 
 <template>
   <StandardColorSlider
-    :label="panels.saturation"
+    :label="pickerMessages.saturation"
     :model-value="ctx.rekaColor"
     channel="saturation"
     color-space="hsl"
@@ -22,7 +22,7 @@ const { panels } = useI18n()
   />
 
   <StandardColorSlider
-    :label="panels.lightness"
+    :label="pickerMessages.lightness"
     :model-value="ctx.rekaColor"
     channel="lightness"
     color-space="hsl"

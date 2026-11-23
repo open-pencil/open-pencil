@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Stroke } from '@open-pencil/scene-graph'
 import { useStrokeControls } from '@open-pencil/vue/controls/stroke'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
@@ -10,7 +10,7 @@ import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 const { stroke } = defineProps<{ stroke: Stroke }>()
 const emit = defineEmits<{ patch: [changes: Partial<Stroke>] }>()
 const controls = useStrokeControls()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 </script>
 
 <template>

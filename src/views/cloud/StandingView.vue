@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { openLocalEditor } from '@/app/cloud-portal/site'
@@ -12,7 +12,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 const portal = usePortal()
 const route = useRoute()
 const router = useRouter()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const pending = computed(() => route.name === 'pending')
 const email = computed(() => portal.account.value?.user.email ?? '')
 // Apple's Hide My Email gives an address no existing account has, so Cloud starts a new one.

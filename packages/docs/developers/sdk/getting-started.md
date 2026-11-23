@@ -171,7 +171,7 @@ These changes describe the current development version; use them when upgrading 
 - **Scene Graph overrides:** replace `SceneNode.overrides` records with `instanceOverrides`, whose `self` and `descendants` maps distinguish instance-level and descendant overrides. Use the public override helpers from `@open-pencil/scene-graph` rather than treating this as a simple field rename.
 - **Derived geometry:** rename `figmaDerivedLayout` to `derivedLayout`, `figmaDerivedTextGlyphs` to `derivedTextGlyphs`, and the exported `FigmaDerivedTextGlyph` type to `DerivedTextGlyph`.
 - **Binding providers:** implement `getBindingId()` and handle `unresolved`. For `edit-variable`, replace `setValue()` with `prepareEdit()`, which captures the edit key, value, setter, and restoration callback. See [BindableValue](./api/components/bindable-value).
-- **Translations:** replace `useDialogMessages()` and `dialogMessages` with the relevant product-domain composables and catalogs, such as `useSettingsMessages()` or `useRenameMessages()`. Catalog keys have also moved; do not just rename the import. See [useI18n](./api/composables/use-i18n).
+- **Translations:** read messages with `useMessages(namespace)`, where a namespace is named by its catalog's path, such as `'settings'` or `'cloud/portal'`, and locale state with `useLocale()`. `useI18n()`, the `use*Messages()` composables, and the per-catalog stores such as `panelMessages` are removed; outside components use `messageStores`. Messages of the pickers, libraries, and behaviours left `panels` for `panels/pickers`, `panels/libraries`, and `panels/behaviours`. See [useMessages](./api/composables/use-messages).
 - **CanvasKit:** use `PathBuilder` for mutable construction and retain the returned paths from immutable `Path` operations instead of expecting in-place mutation.
 - **Custom tools:** use native Valibot `input` schemas and execution metadata instead of `params`, `ParamDef`, or `paramToZod()`. Programmatic MCP integrations use MCP SDK v2 server/client types; see [MCP](../mcp-server).
 
@@ -181,4 +181,4 @@ These changes describe the current development version; use them when upgrading 
 - [API Reference](./api/)
 - [useEditor](./api/composables/use-editor)
 - [useCanvas](./api/composables/use-canvas)
-- [useI18n](./api/composables/use-i18n)
+- [useMessages](./api/composables/use-messages)

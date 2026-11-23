@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import type { SceneNode, TextLength } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 import { useEditor } from '@open-pencil/vue'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
@@ -24,7 +24,7 @@ const emit = defineEmits<{
 }>()
 const editor = useEditor()
 const { open: popupOpen, portalActive } = useRetainedPopup()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const isAutomatic = (node: SceneNode) => node.lineHeight == null && !node.boundVariables.lineHeight
 /** The pixels an automatic line height becomes when it is fixed. */
 const automaticPixels = (node: SceneNode) => Math.round((node.fontSize || 14) * 1.2)

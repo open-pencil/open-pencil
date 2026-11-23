@@ -224,6 +224,7 @@ function buildEditorStore(initialGraph?: SceneGraph) {
     splitPane: panes.splitPane,
     closePane: panes.closePane,
     resizePane: panes.resizePane,
+    shiftPane: panes.shiftPane,
     setSplitSizes: panes.setSplitSizes,
 
     // App-specific overrides and additions

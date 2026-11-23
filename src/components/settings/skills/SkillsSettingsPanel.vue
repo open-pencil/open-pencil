@@ -4,7 +4,7 @@ import { AlertDialogAction, AlertDialogCancel } from 'reka-ui'
 import { computed, ref } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { useAIMessages, useCommonMessages, useSettingsMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { skillPreferenceKey } from '@/app/ai/skills/preferences'
 import { useSkillsSettings, type SkillSourceGroup } from '@/app/ai/skills/settings/use'
@@ -29,9 +29,9 @@ import { useSkillMessages } from './messages'
 import SkillDetails from './SkillDetails.vue'
 
 /** Skills as Tool access lists tools: a group per source with its switch, a switch per skill. */
-const ai = useAIMessages()
-const common = useCommonMessages()
-const settings = useSettingsMessages()
+const ai = useMessages('ai')
+const common = useMessages('common')
+const settings = useMessages('settings')
 const messages = useSkillMessages()
 const skills = useSkillsSettings()
 const { groups, loading, uploading, uploadFailure, selected, detailOpen } = skills

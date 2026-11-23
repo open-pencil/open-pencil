@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const settingsMessageDefaults = {
   appearance: 'Appearance',
   interfaceScale: 'Interface size',
@@ -117,5 +115,3 @@ export const settingsMessageDefaults = {
   mobilePanelNavigation: 'Mobile panel navigation',
   notifications: 'Notifications'
 } as const
-
-export const settingsMessages = i18n('settings', settingsMessageDefaults)

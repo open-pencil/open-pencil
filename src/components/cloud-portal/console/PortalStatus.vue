@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { formatStorageBytes } from '@/app/storage/format-bytes'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
@@ -14,7 +14,7 @@ import type { PortalServerStatus } from '../types'
 /** How the server is set up and what is waiting on an administrator. */
 const { status } = defineProps<{ status: PortalServerStatus }>()
 const emit = defineEmits<{ open: [section: 'requests' | 'email'] }>()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 
 const deployment = computed(() =>
   status.deployment === 'official'

@@ -2,7 +2,7 @@ import { computed, ref, shallowRef, type Ref } from 'vue'
 
 import { CloudPortalAPIError } from '@open-pencil/cloud/client'
 import type { CloudAccountDeletion } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { saveAccountArchive, type PortalAccountArchive } from './archive'
 import { usePortal } from './context'
@@ -42,7 +42,7 @@ const download = {
 
 export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) {
   const portal = usePortal()
-  const messages = useCloudPortalMessages()
+  const messages = useMessages('cloud/portal')
   const failures = usePortalFailureMessages()
   const open = ref(false)
   const deletion: Ref<CloudAccountDeletion | null> = ref(null)

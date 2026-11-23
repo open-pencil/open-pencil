@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 
@@ -8,7 +8,7 @@ import { chatContextTheme } from './ui'
 /** Over the message field once the context is nearly full, with a way to compact it now. */
 const { percent, compacting = false } = defineProps<{ percent: number; compacting?: boolean }>()
 const emit = defineEmits<{ compact: [] }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const ui = chatContextTheme()
 </script>
 

@@ -22,7 +22,7 @@ import {
   type StrokeSides
 } from '#vue/controls/stroke/helpers'
 import { useEditor } from '#vue/editor/context'
-import { useI18n } from '#vue/i18n'
+import { useMessages } from '#vue/i18n'
 
 /**
  * Returns stroke-related helpers for property panels.
@@ -33,7 +33,7 @@ import { useI18n } from '#vue/i18n'
 export function useStrokeControls() {
   const store = useEditor()
   const { nodes, merged } = useNodeProps()
-  const { panels } = useI18n()
+  const panels = useMessages('panels')
   const sideMenuOpen = ref(false)
   const alignOptions = [
     { value: 'INSIDE' as const, label: panels.value.strokeAlignInside },

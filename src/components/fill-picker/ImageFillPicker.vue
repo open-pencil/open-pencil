@@ -5,7 +5,7 @@ import { computed, useTemplateRef } from 'vue'
 import type { StockPhotoResult } from '@open-pencil/core/tools'
 import type { Fill, ImageScaleMode } from '@open-pencil/scene-graph'
 import { coverImageTransform } from '@open-pencil/scene-graph/images'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { downloadPhoto } from '@/app/editor/photos/download'
@@ -43,7 +43,8 @@ const emit = defineEmits<{
 }>()
 
 const store = useEditorStore()
-const { panels } = useI18n()
+const panels = useMessages('panels')
+const pickerMessages = useMessages('panels/pickers')
 
 const { url: imagePreviewURL, size: imageSize } = useImageFill(() => fill.imageHash, {
   measure: true
@@ -88,7 +89,7 @@ async function fillWithPhoto(photo: StockPhotoResult, service: PhotoService) {
   try {
     fillWith((await downloadPhoto(service, photo)).bytes)
   } catch {
-    toast.error(panels.value.insertPhotoFailed)
+    toast.error(pickerMessages.value.insertPhotoFailed)
   }
 }
 
@@ -184,7 +185,7 @@ function rotate() {
           <template #leading><icon-lucide-upload class="size-3" /></template>
           {{ fill.imageHash ? 'Replace' : 'Choose image' }}
         </AppButton>
-        <PhotoPicker :heading="panels.stockPhoto" @select="fillWithPhoto">
+        <PhotoPicker :heading="pickerMessages.stockPhoto" @select="fillWithPhoto">
           <template #trigger>
             <AppButton
               size="sm"
@@ -193,7 +194,7 @@ function rotate() {
               data-test-id="fill-picker-stock-photo"
             >
               <template #leading><icon-lucide-image-plus class="size-3" /></template>
-              {{ panels.stockPhoto }}
+              {{ pickerMessages.stockPhoto }}
             </AppButton>
           </template>
         </PhotoPicker>

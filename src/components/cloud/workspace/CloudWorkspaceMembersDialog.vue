@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 
 import type { WorkspaceMembers, WorkspaceRole } from '@open-pencil/cloud/contract'
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useDateFormat } from '@/app/i18n/date'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
@@ -72,8 +72,8 @@ const emit = defineEmits<{
 }>()
 
 const ui = cloudWorkspace()
-const t = useCloudMessages()
-const common = useCommonMessages()
+const t = useMessages('cloud/editor')
+const common = useMessages('common')
 const dates = useDateFormat()
 const tab = ref('members')
 const name = ref(workspaceName)

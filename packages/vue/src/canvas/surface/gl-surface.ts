@@ -2,6 +2,7 @@ import type { CanvasKit, Surface } from '@open-pencil/canvaskit'
 import type { Editor } from '@open-pencil/core'
 import { IS_BROWSER } from '@open-pencil/core/constants'
 import type { DocumentColorSpace } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
 
@@ -109,13 +110,13 @@ function rememberWrittenStyle(canvas: HTMLCanvasElement): void {
  * one through its margins; pointers map from its box, so they follow. Under a transform, where no
  * snap holds, the canvas takes its layout size rounded and stays where it is. A flex container
  * that centres the canvas moves it by half a margin change, so there the snap can stay a quarter
- * pixel off.
+ * pixel off. Returns where the content box now starts on screen.
  */
 export function sizeCanvas(
   canvas: HTMLCanvasElement,
   editor: Editor,
   onViewportResize?: (width: number, height: number) => void
-) {
+): Vector {
   const dpr = IS_BROWSER ? window.devicePixelRatio || 1 : 1
   restoreOwnStyle(canvas)
   const box = canvas.getBoundingClientRect()
@@ -162,6 +163,7 @@ export function sizeCanvas(
   rememberWrittenStyle(canvas)
   if (onViewportResize) onViewportResize(width, height)
   else editor.setViewportSize(width, height)
+  return { x: left, y: top }
 }
 
 export function makeGLSurface(

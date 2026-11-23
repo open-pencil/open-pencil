@@ -14,7 +14,7 @@ import {
 import { computed } from 'vue'
 
 import { commentThreadNumbers, listCommentThreads } from '@open-pencil/scene-graph/comments'
-import { useCommentMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useComments } from '@/app/comments/use'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -36,7 +36,7 @@ import { comments as commentsTheme } from './ui'
 /** The comments list that takes over the right sidebar while the Comment tool is active. */
 const store = useEditorStore()
 const comments = useComments()
-const messages = useCommentMessages()
+const messages = useMessages('comments')
 const menuCls = useMenuUI({ content: 'min-w-52' })
 const itemCls = menuItem({ justify: 'start', class: 'relative pl-7' })
 const ui = commentsTheme()

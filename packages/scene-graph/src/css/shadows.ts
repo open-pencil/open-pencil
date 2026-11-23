@@ -4,23 +4,7 @@ import { tryParseColor } from '../color'
 import { BLACK } from '../constants'
 import type { Color } from '../primitives'
 import type { Effect } from '../types'
-import { parseCSSNumber } from './values'
-
-/** The layers of a shadow list, split at its top-level commas. */
-function layersOf(nodes: Node[]): Node[][] {
-  const layers: Node[][] = []
-  let current: Node[] = []
-  for (const node of nodes) {
-    if (node.type === 'div' && node.value === ',') {
-      layers.push(current)
-      current = []
-    } else if (node.type !== 'space' && node.type !== 'comment') {
-      current.push(node)
-    }
-  }
-  layers.push(current)
-  return layers
-}
+import { cssLayerNodes, parseCSSNumber } from './values'
 
 /**
  * One layer: `inset`, two to four lengths, and a color in any order. Without a color it is
@@ -64,5 +48,5 @@ function shadowOf(nodes: Node[]): Effect[] {
  */
 export function parseCSSShadows(value: string | undefined): Effect[] {
   if (!value) return []
-  return layersOf(valueParser(value).nodes).flatMap(shadowOf)
+  return cssLayerNodes(valueParser(value).nodes).flatMap(shadowOf)
 }

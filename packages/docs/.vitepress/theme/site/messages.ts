@@ -18,6 +18,11 @@ export interface SiteMessages {
   /** `{year}` is replaced. */
   copyright: string
   license: string
+  /** The header's theme button, named for what it switches to. */
+  lightTheme: string
+  darkTheme: string
+  /** The header's GitHub button; `{stars}` is replaced. */
+  githubStars: string
 }
 
 const en: SiteMessages = {
@@ -35,7 +40,10 @@ const en: SiteMessages = {
   security: 'Security',
   reportAbuse: 'Report abuse',
   copyright: '© {year} OpenPencil',
-  license: 'Released under the MIT License.'
+  license: 'Released under the MIT License.',
+  lightTheme: 'Switch to light theme',
+  darkTheme: 'Switch to dark theme',
+  githubStars: 'OpenPencil on GitHub, {stars} stars'
 }
 
 const de: SiteMessages = {
@@ -53,7 +61,10 @@ const de: SiteMessages = {
   security: 'Sicherheit',
   reportAbuse: 'Missbrauch melden',
   copyright: '© {year} OpenPencil',
-  license: 'Veröffentlicht unter der MIT-Lizenz.'
+  license: 'Veröffentlicht unter der MIT-Lizenz.',
+  lightTheme: 'Zum hellen Design wechseln',
+  darkTheme: 'Zum dunklen Design wechseln',
+  githubStars: 'OpenPencil auf GitHub, {stars} Sterne'
 }
 
 const es: SiteMessages = {
@@ -71,7 +82,10 @@ const es: SiteMessages = {
   security: 'Seguridad',
   reportAbuse: 'Denunciar abusos',
   copyright: '© {year} OpenPencil',
-  license: 'Publicado bajo la licencia MIT.'
+  license: 'Publicado bajo la licencia MIT.',
+  lightTheme: 'Cambiar al tema claro',
+  darkTheme: 'Cambiar al tema oscuro',
+  githubStars: 'OpenPencil en GitHub, {stars} estrellas'
 }
 
 const fr: SiteMessages = {
@@ -89,7 +103,10 @@ const fr: SiteMessages = {
   security: 'Sécurité',
   reportAbuse: 'Signaler un abus',
   copyright: '© {year} OpenPencil',
-  license: 'Publié sous licence MIT.'
+  license: 'Publié sous licence MIT.',
+  lightTheme: 'Passer au thème clair',
+  darkTheme: 'Passer au thème sombre',
+  githubStars: 'OpenPencil sur GitHub, {stars} étoiles'
 }
 
 const it: SiteMessages = {
@@ -107,7 +124,10 @@ const it: SiteMessages = {
   security: 'Sicurezza',
   reportAbuse: 'Segnala un abuso',
   copyright: '© {year} OpenPencil',
-  license: 'Rilasciato con licenza MIT.'
+  license: 'Rilasciato con licenza MIT.',
+  lightTheme: 'Passa al tema chiaro',
+  darkTheme: 'Passa al tema scuro',
+  githubStars: 'OpenPencil su GitHub, {stars} stelle'
 }
 
 const pl: SiteMessages = {
@@ -125,7 +145,10 @@ const pl: SiteMessages = {
   security: 'Bezpieczeństwo',
   reportAbuse: 'Zgłoś nadużycie',
   copyright: '© {year} OpenPencil',
-  license: 'Udostępniono na licencji MIT.'
+  license: 'Udostępniono na licencji MIT.',
+  lightTheme: 'Przełącz na jasny motyw',
+  darkTheme: 'Przełącz na ciemny motyw',
+  githubStars: 'OpenPencil na GitHubie, gwiazdki: {stars}'
 }
 
 const ru: SiteMessages = {
@@ -143,7 +166,10 @@ const ru: SiteMessages = {
   security: 'Безопасность',
   reportAbuse: 'Сообщить о нарушении',
   copyright: '© {year} OpenPencil',
-  license: 'Распространяется по лицензии MIT.'
+  license: 'Распространяется по лицензии MIT.',
+  lightTheme: 'Включить светлую тему',
+  darkTheme: 'Включить тёмную тему',
+  githubStars: 'OpenPencil на GitHub, звёзд: {stars}'
 }
 
 /** Keyed by the docs locale index, as `useData().localeIndex` gives it; `root` is English. */

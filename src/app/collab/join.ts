@@ -1,4 +1,4 @@
-import { useCollaborationMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { parseRoomInput } from '@/app/collab/room/id'
 import { joinRoom } from '@/app/collab/rooms'
@@ -8,7 +8,7 @@ import { joinRoom } from '@/app/collab/rooms'
  * link or ID, so the caller can say so instead of joining a room nobody shared.
  */
 export function useJoinRoom() {
-  const messages = useCollaborationMessages()
+  const messages = useMessages('collaboration')
   return (input: string): boolean => {
     const roomId = parseRoomInput(input)
     if (!roomId) return false

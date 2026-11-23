@@ -8,7 +8,7 @@ import {
   type VariableCollection,
   type VariableValue
 } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import {
@@ -47,7 +47,7 @@ const emit = defineEmits<{
   reorder: [sourceId: string, targetIndex: number, visibleIds: string[]]
 }>()
 
-const { variables } = useI18n()
+const variables = useMessages('variables/panel')
 const ui = tv(tableTheme)()
 /** Figma does not show a variable the file adds to a library's collection; such a row says so. */
 const libraryCollection = computed(() => isLibraryCollection(collection))

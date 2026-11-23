@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPickerField from '@/components/ui/select/AppPickerField.vue'
@@ -30,7 +30,8 @@ const {
 }>()
 const emit = defineEmits<{ bind: [propertyId: string]; create: [] }>()
 defineOptions({ inheritAttrs: false })
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 
 const items = computed(() => options.map((option) => ({ value: option.id, label: option.name })))
 </script>

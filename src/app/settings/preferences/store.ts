@@ -8,6 +8,7 @@ import { COMMENT_SORTS, type CommentSort } from '@open-pencil/scene-graph/commen
 import { TOOLBAR_ALIGNS, TOOLBAR_SIDES } from '@open-pencil/vue/primitives/Toolbar'
 
 import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/reply/step-limit'
+import { WEB_PAGE_SIZES, type WebPageSize } from '@/app/document/io/url/viewport'
 import { DEFAULT_TOOLBAR_DOCK, type ToolbarDock } from '@/app/editor/toolbar/dock'
 import {
   DEFAULT_TOOLBAR_LAYOUT,
@@ -171,6 +172,10 @@ export interface AppPreferences {
   import: {
     /** Inline SVG in imported HTML that draws an Iconify icon becomes that icon. */
     nameIcons: boolean
+    /** The window size File → Open from URL… last laid a web page out in. */
+    webPageSize: WebPageSize
+    /** Whether the desktop app runs a web page's scripts before importing it. */
+    runPageScripts: boolean
   }
   version: 1
   recovery: {
@@ -214,7 +219,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     tokenUsage: 'hover'
   },
   files: { recentLimit: DEFAULT_RECENT_FILES_LIMIT },
-  import: { nameIcons: true },
+  import: { nameIcons: true, webPageSize: 'desktop', runPageScripts: true },
   version: 1,
   recovery: { enabled: true },
   editing: {
@@ -287,7 +292,11 @@ const appPreferencesSchema = section({
   files: section({
     recentLimit: v.fallback(recentFilesLimitSchema, defaults.files.recentLimit)
   }),
-  import: section({ nameIcons: v.fallback(v.boolean(), defaults.import.nameIcons) }),
+  import: section({
+    nameIcons: v.fallback(v.boolean(), defaults.import.nameIcons),
+    webPageSize: v.fallback(v.picklist(WEB_PAGE_SIZES), defaults.import.webPageSize),
+    runPageScripts: v.fallback(v.boolean(), defaults.import.runPageScripts)
+  }),
   version: v.fallback(v.literal(1), 1),
   recovery: section({ enabled: v.fallback(v.boolean(), defaults.recovery.enabled) }),
   editing: section({
@@ -459,8 +468,12 @@ export function updateZoomSpeed(zoomSpeed: ZoomSpeed): void {
   appPreferences.value = { ...stored(), navigation: { zoomSpeed } }
 }
 
+export function updateImportPreferences(changes: Partial<AppPreferences['import']>): void {
+  appPreferences.value = { ...stored(), import: { ...stored().import, ...changes } }
+}
+
 export function updateNameImportedIcons(nameIcons: boolean): void {
-  appPreferences.value = { ...stored(), import: { nameIcons } }
+  updateImportPreferences({ nameIcons })
 }
 
 export function updateSnappingPreferences(changes: Partial<SnappingPreferences>): void {

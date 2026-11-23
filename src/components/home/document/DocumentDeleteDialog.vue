@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, shallowRef, watch } from 'vue'
 
-import { useFileMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { StorageDocument, StorageLocation } from '@/app/integrations/storage'
 import { toast } from '@/app/shell/ui'
@@ -18,7 +18,7 @@ const { location, description } = defineProps<{
 }>()
 /** The document to ask about; set it to ask, and it is cleared once the dialog closes. */
 const document = defineModel<StorageDocument | null>('document', { default: null })
-const files = useFileMessages()
+const files = useMessages('files')
 
 // The dialog closes itself before it confirms, and keeps its heading while it animates closed,
 // so it holds the document it was asked about apart from the model.

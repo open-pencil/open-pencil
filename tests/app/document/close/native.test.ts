@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { commonMessages, filesMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { chooseNativeDocumentClose } from '@/app/document/close/native'
 
@@ -18,8 +18,8 @@ function dialogReturning(result: string) {
 }
 
 test('maps the native Save, Don’t Save, and Cancel results to close choices', async () => {
-  const files = filesMessages.get()
-  const common = commonMessages.get()
+  const files = messageStores.files.get()
+  const common = messageStores.common.get()
   expect(await chooseNativeDocumentClose('Untitled', dialogReturning(common.save).show)).toBe(
     'save'
   )
@@ -35,8 +35,8 @@ test('maps the native Save, Don’t Save, and Cancel results to close choices', 
 })
 
 test('offers the localized buttons and names the document in the title', async () => {
-  const files = filesMessages.get()
-  const common = commonMessages.get()
+  const files = messageStores.files.get()
+  const common = messageStores.common.get()
   const dialog = dialogReturning(common.cancel)
   await chooseNativeDocumentClose('Brand kit', dialog.show)
   expect(dialog.calls[0]?.options?.title).toBe(files.saveBeforeClosing({ name: 'Brand kit' }))
