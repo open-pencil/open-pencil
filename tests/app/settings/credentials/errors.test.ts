@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { credentialsMessages } from '@open-pencil/vue/i18n'
 
-import { settingsErrorMessage } from '@/app/settings/credentials/errors'
+import { credentialSaveErrorMessage, settingsErrorMessage } from '@/app/settings/credentials/errors'
 import { CredentialStoreError } from '@/app/settings/credentials/types'
 
 describe('settingsErrorMessage', () => {
@@ -24,4 +24,17 @@ describe('settingsErrorMessage', () => {
     expect(settingsErrorMessage(new Error('Bearer token required'))).toBe('Bearer token required')
     expect(settingsErrorMessage('timeout')).toBe('timeout')
   })
+})
+
+test('credential save feedback keeps recovery instructions and omits backend details', () => {
+  const messages = credentialsMessages.get()
+  expect(credentialSaveErrorMessage(new CredentialStoreError('locked', 'backend detail'))).toBe(
+    messages.storeLocked
+  )
+  expect(
+    credentialSaveErrorMessage(new CredentialStoreError('unavailable', 'backend detail'))
+  ).toBe(messages.storeUnavailable)
+  expect(credentialSaveErrorMessage(new Error('sensitive backend detail'))).toBe(
+    messages.saveFailed
+  )
 })

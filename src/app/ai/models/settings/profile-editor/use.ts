@@ -15,7 +15,7 @@ import {
   saveModelProfileDraft,
   setModelConnectionAPIKey
 } from '@/app/ai/models'
-import { settingsErrorMessage } from '@/app/settings/credentials/errors'
+import { credentialSaveErrorMessage, settingsErrorMessage } from '@/app/settings/credentials/errors'
 import type { SettingsSaveResult } from '@/app/settings/save-result'
 
 import { useProfileConnection } from './connection'
@@ -120,7 +120,9 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
       saveResult.value = 'saved'
       return 'saved'
     } catch (reason) {
-      saveError.value = settingsErrorMessage(reason)
+      saveError.value = persisted
+        ? credentialSaveErrorMessage(reason)
+        : settingsErrorMessage(reason)
       saveResult.value = persisted ? 'partial' : 'failed'
       return saveResult.value
     } finally {

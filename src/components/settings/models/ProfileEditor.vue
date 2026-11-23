@@ -382,7 +382,11 @@ async function remove() {
           @agent-option="setAgentOption"
         />
 
-        <SettingsSaveFeedback :error="saveError" :result="saveResult" />
+        <SettingsSaveFeedback
+          :error="saveError"
+          :result="saveResult"
+          :partial-heading="saveError"
+        />
       </fieldset>
 
       <template v-if="canDelete" #footer-start>

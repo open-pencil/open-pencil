@@ -16,6 +16,7 @@ import {
   replaceAIModelSettings,
   setModelConnectionAPIKey
 } from '@/app/ai/models'
+import { credentialSaveErrorMessage } from '@/app/settings/credentials/errors'
 import type { SettingsSaveResult } from '@/app/settings/save-result'
 import { canRunHostProcesses } from '@/app/tauri/capabilities'
 import { isTauri } from '@/app/tauri/env'
@@ -77,6 +78,7 @@ export function useAIOnboarding({
   )
   const step = ref<AISetupStep>('goals')
   const busy = ref(false)
+  const saveError = ref<string | null>(null)
   const saveResult = ref<SettingsSaveResult | null>(null)
 
   const availability = { agentsAvailable, subscriptionsAvailable, current }
@@ -153,6 +155,7 @@ export function useAIOnboarding({
   async function apply(): Promise<SettingsSaveResult> {
     if (busy.value) return 'failed'
     busy.value = true
+    saveError.value = null
     saveResult.value = null
     let persisted = false
     try {
@@ -184,7 +187,8 @@ export function useAIOnboarding({
       }
       await refreshAIProviderStatus()
       saveResult.value = 'saved'
-    } catch {
+    } catch (reason) {
+      if (persisted) saveError.value = credentialSaveErrorMessage(reason)
       saveResult.value = persisted ? 'partial' : 'failed'
     } finally {
       busy.value = false
@@ -203,6 +207,7 @@ export function useAIOnboarding({
     gaps,
     hasDesign,
     busy,
+    saveError,
     saveResult,
     canContinue,
     plannedModel,

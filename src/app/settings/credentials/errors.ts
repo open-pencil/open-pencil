@@ -15,3 +15,13 @@ export function settingsErrorMessage(cause: unknown): string {
   }
   return errorMessage(cause)
 }
+
+/** A save failure can include provider data, so only display fixed credential guidance. */
+export function credentialSaveErrorMessage(cause: unknown): string {
+  const messages = credentialsMessages.get()
+  if (cause instanceof CredentialStoreError) {
+    if (cause.code === 'locked') return messages.storeLocked
+    if (cause.code === 'unavailable') return messages.storeUnavailable
+  }
+  return messages.saveFailed
+}

@@ -56,6 +56,7 @@ const {
   gaps,
   hasDesign,
   busy,
+  saveError,
   saveResult,
   canContinue,
   detections
@@ -239,6 +240,7 @@ async function finish(): Promise<void> {
         <AISetupSkills v-if="agentsAvailable" ref="skills" />
         <SettingsSaveFeedback
           :result="saveResult"
+          :partial-heading="saveError"
           :error="saveResult === 'saved' ? null : saveResult"
         />
       </template>
