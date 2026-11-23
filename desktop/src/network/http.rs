@@ -4,12 +4,14 @@ use reqwest::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tauri::async_runtime::JoinHandle;
 use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::Manager;
 use tokio::sync::oneshot;
+
+use super::address::{is_public, is_public_url, literal_ip, PublicResolver};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct ProxyHttpHeader {
@@ -28,7 +30,20 @@ pub struct ProxyHttpRequest {
     max_response_bytes: Option<usize>,
     follow_redirects: Option<bool>,
     timeout_ms: Option<u64>,
+    /// Set when a web page asks for the file, such as a picture or stylesheet of an imported page.
+    page_resource: Option<PageResource>,
 }
+
+/// The page a requested file belongs to.
+#[derive(Deserialize)]
+pub struct PageResource {
+    /// The page's own address; none for a page opened from a file or pasted, which counts as being
+    /// on the internet.
+    page_url: Option<String>,
+}
+
+/// The most redirects a request follows.
+const MAX_REDIRECTS: usize = 5;
 
 /// Status and headers; the body follows on the request's channel.
 #[derive(Serialize)]
@@ -132,6 +147,37 @@ fn request_method(method: Option<String>) -> Result<Method, ProxyHttpError> {
     Method::from_bytes(raw.as_bytes()).map_err(|e| ProxyHttpError::request(e.to_string()))
 }
 
+/// Whether a request for a page's file may reach only public addresses: when the page is on the
+/// internet, or has no web address of its own.
+async fn public_only(resource: Option<&PageResource>) -> bool {
+    let Some(resource) = resource else {
+        return false;
+    };
+    match resource.page_url.as_deref().map(reqwest::Url::parse) {
+        Some(Ok(page)) if matches!(page.scheme(), "http" | "https") => is_public_url(&page).await,
+        _ => true,
+    }
+}
+
+fn redirect_policy(follow: bool, public_only: bool) -> reqwest::redirect::Policy {
+    if !follow {
+        return reqwest::redirect::Policy::none();
+    }
+    if !public_only {
+        return reqwest::redirect::Policy::limited(MAX_REDIRECTS);
+    }
+    // Names are checked as they resolve; an address written into the redirect never resolves.
+    reqwest::redirect::Policy::custom(|attempt| {
+        if attempt.previous().len() >= MAX_REDIRECTS {
+            attempt.error("too many redirects")
+        } else if literal_ip(attempt.url()).is_some_and(|ip| !is_public(ip)) {
+            attempt.error("the page redirected to a private network address")
+        } else {
+            attempt.follow()
+        }
+    })
+}
+
 async fn send(request: ProxyHttpRequest) -> Result<reqwest::Response, ProxyHttpError> {
     let parsed =
         reqwest::Url::parse(&request.url).map_err(|e| ProxyHttpError::request(e.to_string()))?;
@@ -140,18 +186,27 @@ async fn send(request: ProxyHttpRequest) -> Result<reqwest::Response, ProxyHttpE
             "Only HTTP(S) requests are supported",
         ));
     }
+    let public_only = public_only(request.page_resource.as_ref()).await;
+    if public_only && literal_ip(&parsed).is_some_and(|ip| !is_public(ip)) {
+        return Err(ProxyHttpError::request(
+            "A page on the internet cannot load files from a private network address",
+        ));
+    }
 
-    let redirect_policy = if request.follow_redirects.unwrap_or(true) {
-        reqwest::redirect::Policy::limited(5)
-    } else {
-        reqwest::redirect::Policy::none()
-    };
-    let client = reqwest::Client::builder()
-        .redirect(redirect_policy)
+    let mut client = reqwest::Client::builder()
+        .redirect(redirect_policy(
+            request.follow_redirects.unwrap_or(true),
+            public_only,
+        ))
         // An idle limit, not a total one: a streamed model response can run for
         // minutes while still delivering bytes. Callers cap the total with timeout_ms.
         .connect_timeout(Duration::from_secs(30))
-        .read_timeout(Duration::from_secs(30))
+        .read_timeout(Duration::from_secs(30));
+    if public_only {
+        // A proxy would resolve names itself, out of the resolver's reach.
+        client = client.dns_resolver(Arc::new(PublicResolver)).no_proxy();
+    }
+    let client = client
         .build()
         .map_err(|e| ProxyHttpError::request(e.to_string()))?;
     let mut builder = client
@@ -297,7 +352,103 @@ pub fn cancel_http_request(requests: tauri::State<'_, ProxyHttpRequests>, id: St
 
 #[cfg(test)]
 mod tests {
-    use super::Requests;
+    use super::{send, PageResource, ProxyHttpRequest, Requests};
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+
+    /// A server on this machine that answers every request with `response`, and its port.
+    fn local_server(response: &'static str) -> u16 {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        std::thread::spawn(move || {
+            for mut stream in listener.incoming().flatten() {
+                let mut buffer = [0; 1024];
+                let _ = stream.read(&mut buffer);
+                let _ = stream.write_all(response.as_bytes());
+            }
+        });
+        port
+    }
+
+    fn get(url: String, page_resource: Option<PageResource>) -> ProxyHttpRequest {
+        ProxyHttpRequest {
+            id: "test".into(),
+            url,
+            method: None,
+            headers: None,
+            body: None,
+            max_response_bytes: None,
+            follow_redirects: None,
+            timeout_ms: Some(5_000),
+            page_resource,
+        }
+    }
+
+    const OK: &str = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok";
+
+    #[tokio::test]
+    async fn a_page_on_the_internet_cannot_load_from_this_machine() {
+        let port = local_server(OK);
+        let internet_page = || {
+            Some(PageResource {
+                page_url: Some("https://1.1.1.1/".into()),
+            })
+        };
+        for url in [
+            format!("http://127.0.0.1:{port}/"),
+            format!("http://localhost:{port}/"),
+        ] {
+            assert!(
+                send(get(url.clone(), internet_page())).await.is_err(),
+                "{url}"
+            );
+            // A pasted page, or one opened from a file, counts as on the internet.
+            let pasted = Some(PageResource { page_url: None });
+            assert!(send(get(url, pasted)).await.is_err());
+        }
+    }
+
+    #[tokio::test]
+    async fn a_page_on_this_machine_and_the_app_itself_reach_it() {
+        let port = local_server(OK);
+        let url = format!("http://localhost:{port}/style.css");
+        let local_page = Some(PageResource {
+            page_url: Some(format!("http://localhost:{port}/")),
+        });
+        assert_eq!(
+            send(get(url.clone(), local_page))
+                .await
+                .ok()
+                .unwrap()
+                .status(),
+            200
+        );
+        // The app's own requests, such as a model running on this machine.
+        assert_eq!(send(get(url, None)).await.ok().unwrap().status(), 200);
+    }
+
+    #[tokio::test]
+    async fn a_page_on_the_internet_is_not_redirected_into_the_network() {
+        let target = local_server(OK);
+        let location: &'static str = Box::leak(
+            format!(
+                "HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{target}/\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+            )
+            .into_boxed_str(),
+        );
+        let redirecting = local_server(location);
+        let url = format!("http://127.0.0.1:{redirecting}/");
+        // The redirecting server is on this machine too, so the page's own policy is tried on it
+        // directly: the app's requests follow the redirect, a page's are stopped.
+        let client = |public_only| {
+            reqwest::Client::builder()
+                .redirect(super::redirect_policy(true, public_only))
+                .build()
+                .unwrap()
+        };
+        assert_eq!(client(false).get(&url).send().await.unwrap().status(), 200);
+        assert!(client(true).get(&url).send().await.is_err());
+    }
 
     #[test]
     fn a_cancel_before_registration_refuses_the_request() {

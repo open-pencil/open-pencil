@@ -5,7 +5,7 @@ import {
 } from '@open-pencil/core/io/remote'
 import type { DesignResourceFetch } from '@open-pencil/dom-css'
 
-import { tauriFetch } from '@/app/tauri/http'
+import { createTauriFetch, tauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
 
 /**
@@ -16,9 +16,20 @@ export const remoteFetch: typeof fetch = IS_TAURI
   ? (input, init) => tauriFetch(input, init, MAX_REMOTE_FILE_BYTES)
   : globalThis.fetch.bind(globalThis)
 
-/** A fetch for the files one page loads, such as the pictures its images show; one per page. */
-export function pageFetch(): DesignResourceFetch {
-  return pageResourceFetch(networkResourceFetch(remoteFetch))
+/**
+ * A fetch for the files one page loads, such as the pictures its images show; one per page.
+ * `pageURL` is the page's own address, none for a page opened from a file or pasted. On desktop it
+ * decides which addresses the page's files may come from (`PageResource`); the browser applies its
+ * own rules.
+ */
+export function pageFetch(pageURL?: string): DesignResourceFetch {
+  const fetch: typeof globalThis.fetch = IS_TAURI
+    ? createTauriFetch({
+        maxResponseBytes: MAX_REMOTE_FILE_BYTES,
+        pageResource: { page_url: pageURL }
+      })
+    : remoteFetch
+  return pageResourceFetch(networkResourceFetch(fetch))
 }
 
 /**
