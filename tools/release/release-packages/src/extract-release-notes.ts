@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
-import { readReleaseNotes, releaseChangelogPath } from './release-notes'
+import { readReleaseNotes, releaseChangelogPath } from './release-notes/read'
 
 const [version, outputPath] = process.argv.slice(2)
 if (!version || !outputPath) {

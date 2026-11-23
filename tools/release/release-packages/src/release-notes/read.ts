@@ -6,8 +6,8 @@ import { fromMarkdown } from 'mdast-util-from-markdown'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 
-import { headingText, sectionEnd } from './changelog/validate.ts'
-import { RELEASE_NOTES_LIMIT } from './release-notes-limit.ts'
+import { headingText, sectionEnd } from '../changelog/validate.ts'
+import { RELEASE_NOTES_LIMIT } from './limit.ts'
 
 /**
  * The changelog a release's notes come from: the one in this tooling's checkout, at the workflow's
