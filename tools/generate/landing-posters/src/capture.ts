@@ -9,7 +9,7 @@ import {
   type PosterLayout,
   type PosterTarget
 } from '#docs-config/theme/landing/posters'
-import { chromium, type Browser, type BrowserContext } from '@playwright/test'
+import { chromium, type Browser } from '@playwright/test'
 import sharp from 'sharp'
 
 import { withDeadline } from '@open-pencil/std/timing'
@@ -51,27 +51,6 @@ function serveSite(dist: string) {
   })
 }
 
-/**
- * Lets the page read what other sites serve only to the docs site's own origin, as it reads them
- * on openpencil.dev: the stages download the tour from OpenPencil Cloud's storage, which allows
- * that origin and not the local server the stills are taken from.
- */
-async function readAsDocsSite(context: BrowserContext, origin: string) {
-  await context.route(
-    (url) => url.origin !== origin,
-    async (route) => {
-      if (route.request().resourceType() !== 'fetch') return route.continue()
-      const response = await route.fetch()
-      const headers = response.headers()
-      if (headers['access-control-allow-origin']) return route.fulfill({ response })
-      await route.fulfill({
-        response,
-        headers: { ...headers, 'access-control-allow-origin': origin }
-      })
-    }
-  )
-}
-
 async function capturePage(browser: Browser, origin: string, target: PosterTarget, out: string) {
   const viewport = VIEWPORTS[target.layout]
   const context = await browser.newContext({
@@ -92,7 +71,6 @@ async function capturePage(browser: Browser, origin: string, target: PosterTarge
     }
   })
   try {
-    await readAsDocsSite(context, origin)
     const page = await context.newPage()
     const prefix = target.locale === 'root' ? '' : `${target.locale}/`
     await page.goto(`${origin}/${prefix}?${POSTER_CAPTURE_PARAM}`)
