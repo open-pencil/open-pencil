@@ -330,7 +330,7 @@ export const ru: LandingMessages = {
       },
       web: {
         title: 'В браузере',
-        detail: 'Тот же редактор на app.openpencil.dev, без установки.',
+        detail: 'Тот же редактор на cloud.openpencil.dev, без установки.',
         action: 'Открыть веб-приложение'
       },
       cli: {

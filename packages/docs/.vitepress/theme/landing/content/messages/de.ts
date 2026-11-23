@@ -340,7 +340,7 @@ export const de: LandingMessages = {
       },
       web: {
         title: 'Im Browser',
-        detail: 'Derselbe Editor unter app.openpencil.dev, ohne Installation.',
+        detail: 'Derselbe Editor unter cloud.openpencil.dev, ohne Installation.',
         action: 'Web-App öffnen'
       },
       cli: {

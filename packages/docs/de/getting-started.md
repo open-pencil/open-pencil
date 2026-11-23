@@ -2,7 +2,7 @@
 
 ## Webversion
 
-OpenPencil läuft direkt im Browser und muss nicht installiert werden. Öffnen Sie [app.openpencil.dev](https://app.openpencil.dev), um mit der Gestaltung zu beginnen.
+OpenPencil läuft direkt im Browser und muss nicht installiert werden. Öffnen Sie [cloud.openpencil.dev](https://cloud.openpencil.dev), um mit der Gestaltung zu beginnen.
 
 Wenn Sie ein eigenes Produkt auf OpenPencil aufbauen möchten, lesen Sie den Bereich [Automatisierung](/developers/) und die Dokumentation zum [Vue SDK](/developers/sdk/).
 

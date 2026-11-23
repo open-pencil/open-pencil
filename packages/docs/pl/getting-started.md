@@ -2,7 +2,7 @@
 
 ## Wersja internetowa
 
-OpenPencil działa bezpośrednio w przeglądarce i nie wymaga instalacji. Otwórz [app.openpencil.dev](https://app.openpencil.dev), aby rozpocząć pracę.
+OpenPencil działa bezpośrednio w przeglądarce i nie wymaga instalacji. Otwórz [cloud.openpencil.dev](https://cloud.openpencil.dev), aby rozpocząć pracę.
 
 Jeśli chcesz zbudować własny produkt na bazie OpenPencil, a nie tylko korzystać z gotowej aplikacji, przejdź do sekcji [Automatyzacja](/developers/) lub dokumentacji [Vue SDK](/developers/sdk/).
 
