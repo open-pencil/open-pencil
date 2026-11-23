@@ -2,7 +2,7 @@ import { afterAll, describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { renderFromEditorState } from '#core/canvas/renderer/pipeline'
@@ -42,6 +42,15 @@ function cornerPixel(
         expectDefined(graph.createInstance(parent.id, page.id, { x: 0 }), 'instance').id
       )
     : nodes
+  return selectedCornerPixel(graph, picked, levels)
+}
+
+function selectedCornerPixel(
+  graph: SceneGraph,
+  picked: readonly SceneNode[],
+  levels: { layerEdits?: LayerEdits; readOnly?: boolean } = {}
+) {
+  const page = expectDefined(graph.getPages()[0], 'page')
   const state = createDefaultEditorState(page.id)
   state.pageColor = BLACK
   state.zoom = 1
@@ -94,3 +103,30 @@ describe.each([1, 2])('a selection of %i layer(s)', (layers) => {
     expect(cornerPixel(layers, { readOnly: true })).toEqual(BLACK_PIXEL)
   })
 })
+
+test.each([
+  { locked: true, pixel: BLACK_PIXEL },
+  { locked: false, pixel: WHITE_PIXEL }
+])(
+  'a mixed selection shows resize handles according to its standalone layer lock ($locked)',
+  ({ locked, pixel }) => {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0], 'page')
+    const component = graph.createNode('COMPONENT', page.id, { x: -64, width: 32, height: 32 })
+    graph.createNode('RECTANGLE', component.id, { x: 16, y: 16, width: 20, height: 20 })
+    const instance = expectDefined(
+      graph.createInstance(component.id, page.id, { x: 0 }),
+      'instance'
+    )
+    const [inherited] = graph.getChildren(instance.id)
+    const standalone = graph.createNode('RECTANGLE', page.id, {
+      x: 28,
+      y: 28,
+      width: 20,
+      height: 20,
+      locked
+    })
+
+    expect(selectedCornerPixel(graph, [inherited, standalone])).toEqual(pixel)
+  }
+)

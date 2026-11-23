@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { buildInstanceResizeScene } from '#tests/helpers/canvas/instance-sizing-driver'
 
 test('inherited sizes can be read in the panel while the instance itself can be resized', async ({
   page
@@ -8,22 +9,12 @@ test('inherited sizes can be read in the panel while the instance itself can be 
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
-  const instanceId = await page.evaluate(() => {
-    const editor = window.openPencil?.getStore?.()
-    if (!editor) throw new Error('Editor unavailable')
-    const { graph } = editor
-    const pageId = editor.state.currentPageId
-    const component = graph.createNode('COMPONENT', pageId, { width: 120, height: 100 })
-    graph.createNode('RECTANGLE', component.id, { width: 40, height: 20 })
-    const instance = graph.createInstance(component.id, pageId, { x: 150 })
-    if (!instance) throw new Error('Instance not created')
-    editor.select([graph.getChildren(instance.id)[0].id])
-    return instance.id
-  })
+  const scene = await buildInstanceResizeScene(page)
   const width = page.getByRole('spinbutton', { name: 'Width', exact: true })
+  await scene.select('inherited')
   await expect(width).toHaveAttribute('aria-valuenow', '40')
   await expect(width).toBeDisabled()
-  await page.evaluate((id) => window.openPencil?.getStore?.().select([id]), instanceId)
+  await scene.select('instance')
   await expect(width).toHaveAttribute('aria-valuenow', '120')
   await expect(width).toBeEnabled()
   canvas.assertNoErrors()

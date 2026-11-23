@@ -2,10 +2,9 @@ import type { Editor } from '@open-pencil/core'
 import type { HandlePosition } from '@open-pencil/core/geometry'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { selectionPlacement } from '@open-pencil/scene-graph/coordinate'
-import { layerResizes } from '@open-pencil/scene-graph/generated'
 import { enforcedAspectRatio } from '@open-pencil/scene-graph/layout'
 import { collectResizeDescendants, createResizeSnapshot } from '@open-pencil/scene-graph/resize'
-import { inheritsInstanceSize } from '@open-pencil/scene-graph/slots'
+import { canResizeLayer } from '@open-pencil/scene-graph/slots'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
 import type { DragResize } from '#vue/shared/input/types'
@@ -45,8 +44,7 @@ export function tryStartResize(cx: number, cy: number, editor: Editor): DragResi
     const node = editor.graph.getNode(id)
     // A sticky note only scales, from its corners; see `tryStartStickyScale`. A connector is
     // shaped by its ends.
-    if (!node || node.locked || !layerResizes(node) || inheritsInstanceSize(editor.graph, node))
-      continue
+    if (!node || !canResizeLayer(editor.graph, node)) continue
     const handleResult = getHitHandleByMatrix(
       cx,
       cy,

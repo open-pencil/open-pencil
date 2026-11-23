@@ -1,4 +1,4 @@
-import { isGeneratedFrame } from '../generated'
+import { isGeneratedFrame, layerResizes } from '../generated'
 import type { SceneGraph } from '../graph'
 import { getInstanceOverride, setInstanceOverride } from '../instances/overrides'
 import { cloneChildrenWithMapping } from '../instances/sync'
@@ -49,6 +49,11 @@ export function inheritsInstanceSize(graph: SceneGraph, node: SceneNode): boolea
   const scope = slotScope(graph, node.parentId)
   if (scope.kind === 'locked') return scope.owner.type === 'INSTANCE'
   return scope.kind === 'slot' && !ownsSlotContent(graph, scope.frame, scope.propertyId)
+}
+
+/** Whether the selection's resize handles can directly resize this layer. */
+export function canResizeLayer(graph: SceneGraph, node: SceneNode): boolean {
+  return !node.locked && layerResizes(node) && !inheritsInstanceSize(graph, node)
 }
 
 /** Every layer below `node`; `enterInstances` also walks the layers of nested instances. */

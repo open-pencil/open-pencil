@@ -1,5 +1,6 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import type * as SizingFixture from '#tests/helpers/canvas/instance-sizing'
+import { buildInstanceResizeScene } from '#tests/helpers/canvas/instance-sizing-driver'
 
 test.use({ viewport: { width: 900, height: 700 } })
 
@@ -23,4 +24,15 @@ test('Fill instances wrap inside narrower parents after component synchronizatio
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
   expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('instance-fill-sizing.png')
+})
+
+test('a selection of an inherited layer and a locked layer has no resize handles', async () => {
+  const scene = await buildInstanceResizeScene(editor.page)
+  await scene.select('inherited', 'locked')
+  await editor.canvas.waitForRender()
+  editor.canvas.assertNoErrors()
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot(
+    'mixed-locked-inherited-selection.png',
+    { maxDiffPixelRatio: 0, threshold: 0 }
+  )
 })

@@ -2,7 +2,7 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layerRotates } from '@open-pencil/scene-graph/generated'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import { inheritsInstanceSize } from '@open-pencil/scene-graph/slots'
+import { canResizeLayer, inheritsInstanceSize } from '@open-pencil/scene-graph/slots'
 
 import { drawSelectionLabels } from '#core/canvas/labels/selection'
 import { drawConnectorHover, drawConnectorSelection } from '#core/canvas/overlays/connectors'
@@ -391,7 +391,7 @@ export function drawGroupBounds(
   r.auxStroke.setColor(r.selColor(SELECTION_DASH_ALPHA))
   r.auxStroke.setPathEffect(null)
   canvas.drawRect(r.ck.LTRBRect(minX, minY, maxX, maxY), r.auxStroke)
-  const showResize = nodes.some((node) => !inheritsInstanceSize(graph, node))
+  const showResize = nodes.some((node) => canResizeLayer(graph, node))
   drawBoundsHandlesScreenSpace(r, canvas, minX, minY, maxX, maxY, showRotation, showResize)
 }
 

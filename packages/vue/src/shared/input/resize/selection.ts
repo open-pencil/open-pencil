@@ -9,10 +9,9 @@ import {
 } from '@open-pencil/core/geometry'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { placeInResizedBounds, selectionPlacement } from '@open-pencil/scene-graph/coordinate'
-import { layerResizes } from '@open-pencil/scene-graph/generated'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
-import { inheritsInstanceSize } from '@open-pencil/scene-graph/slots'
+import { canResizeLayer } from '@open-pencil/scene-graph/slots'
 
 import {
   applyResizedRect,
@@ -60,14 +59,7 @@ export function selectionResizeHandleAt(
   editor: Editor
 ): HandlePosition | null {
   const box = selectionBox(editor)
-  if (
-    !box ||
-    !selectionTakes(
-      editor,
-      (node) => layerResizes(node) && !inheritsInstanceSize(editor.graph, node)
-    )
-  )
-    return null
+  if (!box || !selectionTakes(editor, (node) => canResizeLayer(editor.graph, node))) return null
   const zone = transformZoneAt({ x: cx, y: cy }, box, editor.renderer?.zoom ?? 1)
   return zone?.kind === 'resize' ? zone.handle : null
 }
@@ -84,9 +76,7 @@ export function tryStartSelectionResize(
   const members = compact(
     [...editor.state.selectedIds].map((id) => {
       const node = editor.graph.getNode(id)
-      // A sticky note only scales, from its own corners, and a connector follows its ends.
-      if (!node || node.locked || !layerResizes(node) || inheritsInstanceSize(editor.graph, node))
-        return undefined
+      if (!node || !canResizeLayer(editor.graph, node)) return undefined
       const drag = createResizeDrag(node, handle, cx, cy, editor)
       return { drag, placement: drag.origPlacement ?? selectionPlacement(node, editor.graph) }
     })

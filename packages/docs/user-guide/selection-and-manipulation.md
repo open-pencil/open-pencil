@@ -29,7 +29,7 @@ Select objects to move, resize, rotate, duplicate, and organize them on the canv
 
 ## Resizing
 
-Selected nodes show 8 resize handles (4 corners + 4 edge midpoints). Drag any handle to resize.
+Drag a corner or an edge midpoint to resize. A multi-selection shows resize handles when at least one layer can be resized. The drag applies to those layers.
 
 - <kbd>Shift</kbd> + drag a corner handle to constrain proportions
 
