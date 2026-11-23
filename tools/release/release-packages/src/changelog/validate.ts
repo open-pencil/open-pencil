@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import type { Heading, List, ListItem, Root, RootContent } from 'mdast'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 
-import { RELEASE_NOTES_LIMIT } from '../release-notes.ts'
+import { RELEASE_NOTES_LIMIT } from '../release-notes-limit.ts'
 
 export const ALLOWED_CATEGORIES = [
   'Breaking changes',
