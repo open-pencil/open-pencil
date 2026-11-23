@@ -1,8 +1,8 @@
 import { pick } from 'es-toolkit'
 
 import type { CanvasKit, Canvas } from '@open-pencil/canvaskit'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
+import type { SceneGraph, SceneNode, ColorProfile } from '@open-pencil/scene-graph'
+import { toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { CORNER_FIELDS } from '@open-pencil/scene-graph/fields'
 import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
@@ -11,6 +11,7 @@ import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { SupersampledOutput } from '#core/canvas/images/state'
+import { documentImageInfo } from '#core/canvas/renderer/colors'
 import { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { absoluteRenderBounds } from '#core/geometry/render-bounds'
@@ -25,7 +26,7 @@ interface RenderOptions {
   scale: number
   format: ExportFormat
   quality?: number
-  colorSpace?: RenderColorSpace
+  colorSpace?: ColorProfile
   trimTransparent?: boolean
   /** Crop to the layers' boxes rather than to everything they draw, as Figma can for text. */
   useAbsoluteBounds?: boolean
@@ -187,15 +188,12 @@ function renderToSurface(
     width * height * SUPERSAMPLE * SUPERSAMPLE <= MAX_RASTER_PIXELS ? SUPERSAMPLE : 1
   const renderWidth = width * renderScale
   const renderHeight = height * renderScale
+  // The document's color space, as Figma exports a document: its colors blend in it, and the
+  // encoded image is tagged with it.
+  const profile = graph.documentColorSpace
   const pixels = ck.Malloc(Uint8Array, renderWidth * renderHeight * 4)
   const surface = ck.MakeRasterDirectSurface(
-    {
-      alphaType: ck.AlphaType.Premul,
-      colorType: ck.ColorType.RGBA_8888,
-      colorSpace: ck.ColorSpace.SRGB,
-      width: renderWidth,
-      height: renderHeight
-    },
+    documentImageInfo(ck, profile, renderWidth, renderHeight),
     pixels,
     renderWidth * 4
   )
@@ -217,13 +215,7 @@ function renderToSurface(
     const highResImage = surface.makeImageSnapshot()
     const downsamplePixels = ck.Malloc(Uint8Array, width * height * 4)
     const downsampleSurface = ck.MakeRasterDirectSurface(
-      {
-        alphaType: ck.AlphaType.Premul,
-        colorType: ck.ColorType.RGBA_8888,
-        colorSpace: ck.ColorSpace.SRGB,
-        width,
-        height
-      },
+      documentImageInfo(ck, profile, width, height),
       downsamplePixels,
       width * 4
     )
@@ -498,7 +490,7 @@ export function renderThumbnail(
   if (!frame) return null
   const { bounds, scale, width: pixelW, height: pixelH } = frame
   // The page's own background, which the editor's page colour matches only while it is open.
-  const background = getPageColor(graph.getNode(pageId))
+  const background = toExtendedSRGB(getPageColor(graph.getNode(pageId)), graph.documentColorSpace)
 
   return renderToSurface(ck, renderer, {
     graph,
@@ -535,7 +527,8 @@ export function drawRegionToImage(
     format: 'PNG',
     quality: 100,
     setup: (canvas) => {
-      canvas.clear(ck.Color4f(renderer.pageColor.r, renderer.pageColor.g, renderer.pageColor.b, 1))
+      const background = toExtendedSRGB(renderer.pageColor, graph.documentColorSpace)
+      canvas.clear(ck.Color4f(background.r, background.g, background.b, 1))
       canvas.scale(scale, scale)
       canvas.translate(-bounds.minX, -bounds.minY)
     }

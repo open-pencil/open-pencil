@@ -5,7 +5,7 @@ import type * as Y from 'yjs'
 import type {
   CommentReply,
   CommentThread,
-  DocumentColorSpace,
+  ColorProfile,
   DocumentKind,
   EnabledLibraryBinding,
   PluginDataEntry
@@ -42,7 +42,7 @@ const bindingSchema = v.object({
   revisionId: v.string(),
   enabled: v.boolean()
 })
-const colorSpaceSchema = v.picklist(['srgb', 'display-p3'] satisfies DocumentColorSpace[])
+const colorSpaceSchema = v.picklist(['srgb', 'display-p3'] satisfies ColorProfile[])
 const kindSchema = v.picklist(['design', 'board'] satisfies DocumentKind[])
 
 /**
@@ -68,7 +68,7 @@ export function roomDocumentData(ydoc: Y.Doc): YDocumentData {
 
 type DocumentData = DocumentNodeData & {
   libraries: Map<string, EnabledLibraryBinding>
-  colorSpace: DocumentColorSpace | undefined
+  colorSpace: ColorProfile | undefined
   kind: DocumentKind | undefined
 }
 

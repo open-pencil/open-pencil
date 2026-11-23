@@ -1,10 +1,5 @@
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import {
-  colorToHex,
-  colorToDisplayCSS,
-  getDefaultRenderColorSpace,
-  type RenderColorSpace
-} from '@open-pencil/scene-graph/color'
+import type { Fill, SceneGraph, SceneNode, ColorProfile } from '@open-pencil/scene-graph'
+import { colorToHex, colorToProfileCSS } from '@open-pencil/scene-graph/color'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import {
   gradientPoint,
@@ -29,7 +24,7 @@ export interface SVGExportContext {
   defs: SVGNode[]
   defIdCounter: number
   graph: SceneGraph
-  colorSpace: RenderColorSpace
+  colorSpace: ColorProfile
   /** Receives each effect the export leaves out because SVG cannot draw it. */
   onWarning?: (warning: ExportEffectWarning) => void
   /** Starts every def id, so SVGs inlined on one page cannot reference each other's defs. */
@@ -52,14 +47,10 @@ export function nextDefId(ctx: SVGExportContext, prefix: string): string {
   return id
 }
 
-export function formatColor(
-  color: Color,
-  opacity = 1,
-  colorSpace: RenderColorSpace = getDefaultRenderColorSpace()
-): string {
+export function formatColor(color: Color, opacity = 1, colorSpace: ColorProfile = 'srgb'): string {
   const alphaColor = { ...color, a: color.a * opacity }
   if (colorSpace === 'display-p3') {
-    return colorToDisplayCSS(alphaColor, { colorSpace })
+    return colorToProfileCSS(alphaColor, 'srgb', colorSpace)
   }
   // Hex has no alpha. Stops and shadows already emit theirs; solid fills use `solidFillOpacity`.
   return colorToHex(alphaColor)
@@ -70,11 +61,7 @@ export function formatColor(
  * replaces it, and `.pen` stores a hex alpha in both fields. Display P3 carries that painted
  * alpha in the color. sRGB hex cannot, so `solidFillOpacity` emits it beside the color.
  */
-export function formatSolidColor(
-  color: Color,
-  opacity: number,
-  colorSpace: RenderColorSpace
-): string {
+export function formatSolidColor(color: Color, opacity: number, colorSpace: ColorProfile): string {
   if (colorSpace === 'display-p3') {
     return formatColor({ ...color, a: 1 }, round(opacity), colorSpace)
   }
@@ -88,7 +75,7 @@ export function formatSolidColor(
  */
 export function solidFillOpacity(
   fill: Fill,
-  colorSpace: RenderColorSpace,
+  colorSpace: ColorProfile,
   separate = false
 ): number | undefined {
   if (fill.type !== 'SOLID' || (colorSpace === 'display-p3' && !separate)) return undefined

@@ -1,5 +1,11 @@
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
+import {
+  dismissWideGamutBanner,
+  focusWideGamutScene,
+  sceneBufferState,
+  showWideGamutScene
+} from '#tests/helpers/canvas/color-space/driver'
 import { readScenePixels } from '#tests/helpers/canvas/pixels'
 
 for (const colorSpace of ['srgb', 'display-p3'] as const) {
@@ -63,12 +69,48 @@ for (const colorSpace of ['srgb', 'display-p3'] as const) {
       { colorSpace, samples }
     )
     await canvas.waitForRender()
-    expect(
-      await readScenePixels(
-        page,
-        samples.map((_, index) => ({ x: 56 + index * 32, y: 56 }))
-      )
-    ).toEqual(samples.map((rgb) => [...rgb, 255]))
+    const shown = await readScenePixels(
+      page,
+      samples.map((_, index) => ({ x: 56 + index * 32, y: 56 }))
+    )
+    // A P3 document is drawn in 8-bit P3, as Figma draws it, so its sRGB bitmap comes back to the
+    // sRGB screen through P3 and may round a level either way.
+    const tolerance = colorSpace === 'srgb' ? 0 : 1
+    for (const [index, rgb] of samples.entries()) {
+      for (const [channel, value] of rgb.entries()) {
+        expect(Math.abs(shown[index][channel] - value)).toBeLessThanOrEqual(tolerance)
+      }
+      expect(shown[index][3]).toBe(255)
+    }
     canvas.assertNoErrors()
   })
 }
+
+test.describe('a Display P3 document on an sRGB display', () => {
+  test.use({ viewport: { width: 1200, height: 900 } })
+
+  test('draws text, gradients, shadows, noise, texture, and blends in its profile', async ({
+    page
+  }) => {
+    await page.goto('/?test&no-chrome&no-rulers')
+    const canvas = new CanvasHelper(page)
+    await canvas.waitForInit()
+    test.skip(
+      await page.evaluate(() => matchMedia('(color-gamut: p3)').matches),
+      'Requires an sRGB display'
+    )
+    const frameId = await showWideGamutScene(page, 'createP3RenderingScene')
+    await dismissWideGamutBanner(page)
+    await focusWideGamutScene(page, frameId)
+    expect(await sceneBufferState(page)).toEqual({
+      colorSpace: 'srgb',
+      documentColorSpace: 'display-p3',
+      error: 0
+    })
+    expect(await canvas.screenshotCanvas()).toMatchSnapshot('p3-rendering.png', {
+      maxDiffPixelRatio: 0,
+      threshold: 0
+    })
+    canvas.assertNoErrors()
+  })
+})

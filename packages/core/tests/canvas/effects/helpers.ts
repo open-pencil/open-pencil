@@ -5,6 +5,7 @@ import { asRenderer } from '#core-tests/canvas/helpers'
 import type { InputRect, Paint } from '@open-pencil/canvaskit'
 import { SceneGraph, type Fill, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
@@ -99,6 +100,8 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
         MakeMatrix: mock(() => ({ delete: () => undefined }))
       }
     },
+    documentColorSpace: 'srgb',
+    renderColor: (color: Color) => color,
     auxFill: {
       setColor: mock(() => undefined),
       setColorComponents: mock(() => undefined),
@@ -184,7 +187,6 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     drawNodeFill: mock(() => undefined),
     drawNodeStroke: mock(() => undefined),
     drawStrokeWithAlign: mock(() => undefined),
-    resolveStrokeColor: mock(() => ({ r: 0, g: 0, b: 0, a: 1 })),
     nodePictures: {
       get: mock(() => undefined),
       set: mock(() => undefined),
