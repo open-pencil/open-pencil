@@ -106,6 +106,8 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
   let refreshTimer: ReturnType<typeof setTimeout> | undefined
   let ticketExpiresAt = 0
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined
+  /** The latest connection attempt; one a later attempt overtook while it waited gives up. */
+  let connection = 0
 
   function send(frame: RelayClientFrame) {
     const current = socket
@@ -199,15 +201,17 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
   }
 
   async function connect() {
+    const current = ++connection
     let ticket: CloudRelayTicket | null
     try {
       ticket = await options.ticket(roomId)
     } catch (error) {
+      if (current !== connection) return
       report('Requesting a collaboration ticket failed:', error)
       reconnect()
       return
     }
-    if (left || suspended) return
+    if (left || suspended || current !== connection) return
     if (!ticket) {
       restored()
       return

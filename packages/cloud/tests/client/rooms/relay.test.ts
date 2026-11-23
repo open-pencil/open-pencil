@@ -72,6 +72,8 @@ async function settle() {
 function room(
   options: {
     failTicket?: (attempt: number) => boolean
+    /** Holds a ticket request until the promise it returns settles. */
+    holdTicket?: (attempt: number) => Promise<unknown> | undefined
     /** The document moved to another room by this ticket request. */
     movedAt?: number
     page?: EventTarget
@@ -87,9 +89,11 @@ function room(
     url: 'wss://cloud.example.com/api/collaboration/relay',
     ticket: async () => {
       tickets += 1
-      if (options.failTicket?.(tickets)) throw new Error('Ticket endpoint unavailable')
-      if (options.movedAt !== undefined && tickets >= options.movedAt) return null
-      return { token: `ticket-${tickets}`, expiresAt: new Date(Date.now() + 300_000).toISOString() }
+      const attempt = tickets
+      await options.holdTicket?.(attempt)
+      if (options.failTicket?.(attempt)) throw new Error('Ticket endpoint unavailable')
+      if (options.movedAt !== undefined && attempt >= options.movedAt) return null
+      return { token: `ticket-${attempt}`, expiresAt: new Date(Date.now() + 300_000).toISOString() }
     },
     createSocket: () => {
       const socket = new FakeSocket()
@@ -371,6 +375,28 @@ describe('Cloud relay transport', () => {
     sockets[1]?.receive({ type: 'welcome', peerId: 'me-again', peers: ['server', 'alice'] })
     expect(joined).toEqual(['server', 'alice', 'server', 'alice'])
     await transport.leave()
+  })
+
+  test('gives up a join whose ticket comes back after the page was hidden and shown again', async () => {
+    const page = new EventTarget()
+    const { promise: firstTicket, resolve: releaseFirstTicket } = Promise.withResolvers<undefined>()
+    const { transport, sockets } = room({
+      page,
+      holdTicket: (attempt) => (attempt === 1 ? firstTicket : undefined)
+    })
+    await settle()
+    page.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }))
+    page.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }))
+    await settle()
+    expect(sockets).toHaveLength(1)
+    sockets[0]?.open()
+    expect(sockets[0]?.sent).toEqual([{ type: 'auth', token: 'ticket-2' }])
+
+    releaseFirstTicket(undefined)
+    await settle()
+    expect(sockets).toHaveLength(1)
+    await transport.leave()
+    expect(sockets[0]?.readyState).toBe(WebSocket.CLOSED)
   })
 
   test('drops a ticket refresh that comes back while the page is hidden', async () => {
