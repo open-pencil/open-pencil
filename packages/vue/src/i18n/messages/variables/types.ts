@@ -1,5 +1,3 @@
-import { i18n } from '#vue/i18n/create'
-
 export const variableTypeMessageDefaults = {
   color: 'Color',
   colorHint: 'Paint values',
@@ -10,5 +8,3 @@ export const variableTypeMessageDefaults = {
   boolean: 'Boolean',
   booleanHint: 'True or false'
 } as const
-
-export const variableTypeMessages = i18n('variableTypes', variableTypeMessageDefaults)

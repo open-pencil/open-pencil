@@ -1,8 +1,8 @@
-import type { useFileMessages } from '@open-pencil/vue/i18n'
+import type { MessagesOf } from '@open-pencil/vue/i18n'
 
 import type { EditorPreparation, EditorPreparationProgress } from '@/app/editor/preparation/types'
 
-type FileMessages = ReturnType<typeof useFileMessages>['value']
+type FileMessages = MessagesOf<'files'>
 
 /** The message naming each preparation phase on the canvas's loading screen. */
 const PHASE_MESSAGES = {

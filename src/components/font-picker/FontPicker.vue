@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { WEB_FONT_PROVIDER_IDS } from '@open-pencil/core/text'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { FontPickerRoot, type FontPickerUI } from '@open-pencil/vue/primitives/FontPicker'
 
 import {
@@ -14,7 +14,8 @@ import {
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import { useSelectUI } from '@/components/ui/select/select'
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
+const pickerMessages = useMessages('panels/pickers')
 /** The placeholder shows while no family is set, such as Mixed for texts in different fonts. */
 const { label: labelProp, placeholder } = defineProps<{ label?: string; placeholder?: string }>()
 const label = computed(() => labelProp ?? panels.value.fontFamily)
@@ -62,10 +63,10 @@ function loadPreviewFont(family: string, source: string) {
     :list-families="listFamilies"
     :local-font-access="localFontAccess"
     :ui="ui"
-    :search-placeholder="panels.searchFonts"
-    :empty-search-text="panels.noFontsFound"
-    :empty-fonts-text="panels.noLocalFontsAvailable"
-    :empty-fonts-hint="panels.localFontsAccessHint"
+    :search-placeholder="pickerMessages.searchFonts"
+    :empty-search-text="pickerMessages.noFontsFound"
+    :empty-fonts-text="pickerMessages.noLocalFontsAvailable"
+    :empty-fonts-hint="pickerMessages.localFontsAccessHint"
     @select="emit('select', $event)"
   >
     <template #trigger>

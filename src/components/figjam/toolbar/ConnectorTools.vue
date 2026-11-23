@@ -9,7 +9,7 @@ import { colorToHex } from '@open-pencil/scene-graph/color'
 import { figJamColor } from '@open-pencil/scene-graph/figjam'
 import { generatedFrameText } from '@open-pencil/scene-graph/generated'
 import { useConnector } from '@open-pencil/vue/controls/connector'
-import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { useConnectorOptions } from '@/components/figjam/connector/options'
@@ -24,8 +24,8 @@ import ToolbarOptions, { type ToolbarOption } from './ToolbarOptions.vue'
 /** FigJam's connector toolbar: colour, line weight and dash, a label, its ends and its shape. */
 const store = useEditorStore()
 const connector = useConnector()
-const figjam = useFigJamMessages()
-const { panels } = useI18n()
+const figjam = useMessages('figjam')
+const panels = useMessages('panels')
 const { lineOptions, capOptions } = useConnectorOptions()
 const styles = tv(theme)()
 

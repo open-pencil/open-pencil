@@ -7,14 +7,14 @@ import {
   offersEyedropper,
   requestEyedropperSample
 } from '@open-pencil/vue/canvas/eyedropper'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import IconButton from '@/components/ui/button/IconButton.vue'
 
 const ctx = useColorPickerPanelContext()
 const editor = useEditor()
-const { tools } = useI18n()
+const tools = useMessages('tools')
 const offered = computed(() => offersEyedropper(editor))
 const sampling = ref(false)
 

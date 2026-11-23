@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import AppFormField from '@/components/ui/input/AppFormField.vue'
@@ -20,7 +20,7 @@ const { pending } = defineProps<{
 }>()
 const emit = defineEmits<{ confirm: [reason?: string]; cancel: [] }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const reason = ref('')
 const shown = useHeldContent(() => pending)
 const confirmation = computed(() =>

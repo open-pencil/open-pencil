@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { credentialsMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { settingsErrorMessage } from '@/app/settings/credentials/errors'
 import { CredentialStoreError } from '@/app/settings/credentials/types'
 
 describe('settingsErrorMessage', () => {
   test('explains a credential store the app cannot use instead of its backend text', () => {
-    const messages = credentialsMessages.get()
+    const messages = messageStores.credentials.get()
     const locked = new CredentialStoreError('locked', 'The system credential store is locked')
     const unavailable = new CredentialStoreError(
       'unavailable',

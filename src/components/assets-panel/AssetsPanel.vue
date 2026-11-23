@@ -13,7 +13,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { focusStyles } from '@open-pencil/theme'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { useLibraryService } from '@/app/libraries'
@@ -68,7 +68,9 @@ type AssetGroup = {
 const editor = useEditorStore()
 const libraryService = useLibraryService()
 const remoteAssets = libraryService.enabledAssets
-const { panels, commands } = useI18n()
+const panels = useMessages('panels')
+const libraryMessages = useMessages('panels/libraries')
+const commands = useMessages('commands')
 const query = ref('')
 const assetView = ref<AssetView>('grid')
 const detailsOpen = ref(false)
@@ -94,8 +96,8 @@ const primaryButton = { color: 'primary' as const, variant: 'solid' as const, si
 const dialog = useDialogUI()
 const contextMenu = useMenuUI({ content: 'min-w-44' })
 const viewOptions = computed(() => [
-  { value: 'grid', label: panels.value.gridView },
-  { value: 'list', label: panels.value.listView }
+  { value: 'grid', label: libraryMessages.value.gridView },
+  { value: 'list', label: libraryMessages.value.listView }
 ])
 const viewUI = { root: 'w-16', item: 'px-1' }
 
@@ -356,12 +358,16 @@ async function insertSelectedAsset() {
         data-test-id="assets-search"
         size="sm"
         class="min-w-0 flex-1"
-        :placeholder="panels.searchLocalComponents"
+        :placeholder="libraryMessages.searchLocalComponents"
       />
       <AppButton
         v-bind="insertButton"
         class="relative"
-        :aria-label="libraryUpdateCount > 0 ? panels.reviewLibraryUpdates : panels.manageLibraries"
+        :aria-label="
+          libraryUpdateCount > 0
+            ? libraryMessages.reviewLibraryUpdates
+            : libraryMessages.manageLibraries
+        "
         @click="openLibraries"
       >
         <icon-lucide-library class="size-3.5" />
@@ -376,7 +382,7 @@ async function insertSelectedAsset() {
         v-model="assetView"
         data-test-id="assets-view-toggle"
         :options="viewOptions"
-        :label="panels.assetView"
+        :label="libraryMessages.assetView"
         :ui="viewUI"
       >
         <template #option="{ option }">
@@ -442,7 +448,7 @@ async function insertSelectedAsset() {
                       data-test-id="asset-library-badge"
                       class="shrink-0 rounded bg-component/15 px-1 py-px text-4xs font-medium text-component uppercase"
                     >
-                      {{ panels.assetLibraryBadge }}
+                      {{ libraryMessages.assetLibraryBadge }}
                     </span>
                   </span>
                   <span
@@ -513,7 +519,7 @@ async function insertSelectedAsset() {
                     :class="contextMenu.item"
                     @select="void openDetails(asset)"
                   >
-                    {{ panels.viewDetails }}
+                    {{ libraryMessages.viewDetails }}
                   </ContextMenuItem>
                 </MenuScrollArea>
               </ContextMenuContent>
@@ -615,7 +621,7 @@ async function insertSelectedAsset() {
 
           <section v-if="shownAsset.sourceLibraryKey" class="mb-4">
             <h3 class="text-2xs font-semibold text-muted">
-              {{ panels.assetLibraryBadge }}
+              {{ libraryMessages.assetLibraryBadge }}
             </h3>
             <p data-test-id="asset-details-library" class="mt-1 break-all text-xs text-muted">
               {{ shownAsset.sourceLibraryKey }}

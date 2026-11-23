@@ -4,7 +4,7 @@ import { MotionConfig } from 'motion-v'
 import { TooltipProvider } from 'reka-ui'
 import { ref, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { lazy, STAGES } from './definitions'
 import { prepareEngine } from './engine-assets'
@@ -27,7 +27,7 @@ const emit = defineEmits<{ start: []; ready: [] }>()
 const definition = STAGES[kind]
 
 useDocsAppearance()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const { build, focus, ready } = useStageDocument(definition.scene)
 watch(ready, () => emit('ready'), { once: true })
 const { engage, disengage, guardWheel } = useWheelEngagement()

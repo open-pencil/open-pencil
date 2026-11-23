@@ -2,7 +2,7 @@
 import { createColumnHelper } from '@tanstack/vue-table'
 import { computed, h, ref } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   usePortalList,
@@ -35,7 +35,8 @@ const emit = defineEmits<{
   revoke: [id: string, note?: string]
 }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const requestMessages = useMessages('cloud/portal/requests')
 const name = (request: AccessRequest) => request.name ?? request.email
 const labels = computed(() => ({
   pending: messages.value.statusWaiting,
@@ -82,7 +83,7 @@ const requests = usePortalList<AccessRequestStatus, AccessRequest>({
                 name: request.reviewedBy
               })
             : null,
-          detail: request.note ? messages.value.noteDetail({ note: request.note }) : null
+          detail: request.note ? requestMessages.value.noteDetail({ note: request.note }) : null
         })
     }),
     column.display({
@@ -114,17 +115,17 @@ const confirmingShown = useHeldContent(confirming)
 const confirmation = computed(() => {
   const pending = confirmingShown.value
   if (!pending) return null
-  const words = messages.value
+  const requestWords = requestMessages.value
   return pending.kind === 'reject'
     ? {
-        heading: words.declineHeading({ name: name(pending.request) }),
-        description: words.declineDescription,
-        confirm: words.decline
+        heading: requestWords.declineHeading({ name: name(pending.request) }),
+        description: requestWords.declineDescription,
+        confirm: requestWords.decline
       }
     : {
-        heading: words.removeAccessHeading({ name: name(pending.request) }),
-        description: words.removeAccessDescription,
-        confirm: words.removeAccess
+        heading: requestWords.removeAccessHeading({ name: name(pending.request) }),
+        description: requestWords.removeAccessDescription,
+        confirm: requestWords.removeAccess
       }
 })
 function ask(kind: 'reject' | 'revoke', request: AccessRequest) {
@@ -151,9 +152,11 @@ defineExpose({ reload: requests.reload })
     :filters="filters"
     :hidden="hidden"
     :empty-label="
-      requests.filter.value === 'pending' ? messages.noOneWaiting : messages.nothingHere
+      requests.filter.value === 'pending'
+        ? requestMessages.noOneWaiting
+        : requestMessages.nothingHere
     "
-    :empty-description="messages.requestsEmptyDescription"
+    :empty-description="requestMessages.requestsEmptyDescription"
   >
     <template #icon><icon-lucide-inbox class="size-5" /></template>
   </PortalTable>
@@ -166,7 +169,7 @@ defineExpose({ reload: requests.reload })
     @update:open="(open) => !open && (confirming = null)"
     @confirm="confirm"
   >
-    <AppFormField :label="messages.reviewNote">
+    <AppFormField :label="requestMessages.reviewNote">
       <template #default="{ id }">
         <AppTextarea :id="id" v-model="note" :rows="2" maxlength="1000" />
       </template>

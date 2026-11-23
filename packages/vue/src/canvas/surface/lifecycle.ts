@@ -24,7 +24,7 @@ import { createCanvasRenderLoop } from '#vue/canvas/surface/render-loop'
 import { useCanvasResizeObserver } from '#vue/canvas/surface/resize-observer'
 import { createShaderRasterizer } from '#vue/canvas/surface/shader/rasterizer'
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
-import { editorMessages } from '#vue/i18n/messages/editor'
+import { messageStores } from '#vue/i18n'
 
 /**
  * The device's memory in bytes where the browser reports it. Browsers round it and stop at 8 GB,
@@ -75,9 +75,9 @@ export function createCanvasSurfaceManager({
   // empty connector label's while it is typed into, as the overlays draw the text being edited,
   // in the interface language, and draws them again when the language changes.
   const showsStickyPlaceholder = options?.layer !== 'overlays'
-  let stickyPlaceholder: string = editorMessages.get().stickyPlaceholder
-  let connectorLabelPlaceholder: string = editorMessages.get().connectorLabelPlaceholder
-  const stopPlaceholders = editorMessages.subscribe((messages) => {
+  let stickyPlaceholder: string = messageStores.editor.get().stickyPlaceholder
+  let connectorLabelPlaceholder: string = messageStores.editor.get().connectorLabelPlaceholder
+  const stopPlaceholders = messageStores.editor.subscribe((messages) => {
     if (
       messages.stickyPlaceholder === stickyPlaceholder &&
       messages.connectorLabelPlaceholder === connectorLabelPlaceholder

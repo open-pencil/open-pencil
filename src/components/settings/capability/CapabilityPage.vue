@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCommonMessages, useSettingsMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { AppDialogBody } from '@/components/ui/dialog'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -17,8 +17,8 @@ const { searchLabel } = defineProps<{ searchLabel: string }>()
 const search = defineModel<string>('search', { required: true })
 const show = defineModel<CapabilityFilter>('show', { required: true })
 
-const common = useCommonMessages()
-const settings = useSettingsMessages()
+const common = useMessages('common')
+const settings = useMessages('settings')
 const showOptions = computed(() => [
   { value: 'all' as const, label: settings.value.capabilityShowAll },
   { value: 'enabled' as const, label: common.value.enabled },

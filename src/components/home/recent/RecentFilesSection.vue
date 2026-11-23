@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useDateFormat } from '@/app/i18n/date'
 import { forgetRecentDocument, recentDocumentKind, type RecentDocument } from '@/app/recent-files'
@@ -26,7 +26,8 @@ const kindOptions = computed(() => [
   { value: 'design', label: files.value.createDesign },
   { value: 'board', label: files.value.createBoard }
 ])
-const { panels, files } = useI18n()
+const libraryMessages = useMessages('panels/libraries')
+const files = useMessages('files')
 const { isTouch } = useViewportKind()
 const dates = useDateFormat()
 const previewURL = workspace.previewURL
@@ -69,8 +70,8 @@ function formattedDate(updatedAt: string): string {
           :label="files.recentFiles"
           :size="isTouch ? 'touch' : 'md'"
           :options="[
-            { value: 'grid', label: panels.gridView },
-            { value: 'list', label: panels.listView }
+            { value: 'grid', label: libraryMessages.gridView },
+            { value: 'list', label: libraryMessages.listView }
           ]"
         >
           <template #option="{ option }">

@@ -4,7 +4,7 @@ import { nextTick, watch } from 'vue'
 
 import type { DocumentKind } from '@open-pencil/scene-graph'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { openFileDialog } from '@/app/shell/menu/use'
 import { activeTab } from '@/app/tabs'
@@ -29,7 +29,8 @@ const CREATE_CHOICES = [
   { kind: 'board', label: 'createBoard', icon: DOCUMENT_KIND_ICONS.board }
 ] as const satisfies ReadonlyArray<{ kind: DocumentKind; label: string; icon: unknown }>
 const query = defineModel<string>({ required: true })
-const { menu, files } = useI18n()
+const menu = useMessages('menu')
+const files = useMessages('files')
 const { isMobile, isTouch } = useViewportKind()
 const searchInput = templateRef<{ focus: (options?: FocusOptions) => void }>('searchInput')
 

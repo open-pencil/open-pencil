@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { CLOUD_SOCIAL_PROVIDER_NAMES } from '@open-pencil/cloud/contract'
-import { useCloudMessages, useCloudPortalMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   cloudAuthFailureMessage,
@@ -92,9 +92,9 @@ const emit = defineEmits<{
 
 const FORM_ID = 'cloud-connect-account'
 const ui = cloudConnect()
-const t = useCloudMessages()
-const portal = useCloudPortalMessages()
-const common = useCommonMessages()
+const t = useMessages('cloud/editor')
+const portal = useMessages('cloud/portal')
+const common = useMessages('common')
 const errors = computed<Record<CloudConnectError, { heading: string; description: string }>>(
   () => ({
     'invalid-address': {

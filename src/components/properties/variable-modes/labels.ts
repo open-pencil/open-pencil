@@ -1,7 +1,7 @@
 import type { VariableModeChoice } from '@open-pencil/vue/controls/variable-modes'
-import type { usePanelMessages } from '@open-pencil/vue/i18n'
+import type { MessagesOf } from '@open-pencil/vue/i18n'
 
-type PanelMessages = ReturnType<typeof usePanelMessages>['value']
+type PanelMessages = MessagesOf<'panels'>
 
 /** The value Auto stands for in the menu and the row select; mode ids never take this form. */
 export const AUTO_MODE = ':auto'

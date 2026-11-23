@@ -15,7 +15,7 @@ import {
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import { editorMessages } from '#vue/i18n/messages/editor'
+import { messageStores } from '#vue/i18n'
 import { isPastPointerDragThreshold } from '#vue/shared/input/drag-threshold'
 import type { DragShapeHandle, DragState } from '#vue/shared/input/types'
 
@@ -23,7 +23,7 @@ import type { DragShapeHandle, DragState } from '#vue/shared/input/types'
 const HANDLE_DRAG_THRESHOLD_PX = 5
 
 function handleLabel(handle: ShapeHandleKind | null): string {
-  const messages = editorMessages.get()
+  const messages = messageStores.editor.get()
   if (handle === 'arcStart') return messages.arcStart
   if (handle === 'arcEnd') return messages.arcSweep
   if (handle === 'arcRatio') return messages.arcRatio

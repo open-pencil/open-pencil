@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalAccountDeletion } from '@/app/cloud-portal/deletion'
@@ -19,7 +19,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
  * signs out, and leaving downloads its documents and deletes the account.
  */
 const portal = usePortal()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const route = useRoute()
 const router = useRouter()
 

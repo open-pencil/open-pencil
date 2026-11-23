@@ -1,7 +1,5 @@
 import { count, params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 /** Copy for OpenPencil Cloud inside the editor: connecting, sharing, syncing, and Home. */
 export const cloudMessageDefaults = {
   productName: 'OpenPencil Cloud',
@@ -469,5 +467,3 @@ export const cloudMessageDefaults = {
   reportEmailInvalid: 'Enter an email address, or leave it empty.',
   versionCopyName: params('{name} (copy)')
 } as const
-
-export const cloudMessages = i18n('cloud', cloudMessageDefaults)

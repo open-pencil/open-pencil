@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { useStore } from '@nanostores/vue'
 import { computed, ref, shallowRef, useTemplateRef } from 'vue'
 
-import { filesMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { openURLDialogOpen, submitOpenURL } from '@/app/document/io/url/dialog'
 import { parseWebAddress } from '@/app/document/io/url/open'
@@ -24,7 +23,7 @@ import { IS_TAURI } from '@/constants'
  * scripts run first; both are remembered for the next open. The dialog closes once the address
  * is read, and the new tab shows the rest of the open.
  */
-const files = useStore(filesMessages)
+const files = useMessages('files')
 const field = useTemplateRef('field')
 const address = ref('')
 const error = ref<string | null>(null)

@@ -4,7 +4,7 @@ import { computed, ref, useTemplateRef } from 'vue'
 
 import type { CommentThread } from '@open-pencil/scene-graph'
 import { liveReplies } from '@open-pencil/scene-graph/comments'
-import { useCommentMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { MentionPerson } from '@/app/comments/mentions/links'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -42,8 +42,8 @@ const emit = defineEmits<{
 
 defineSlots<{ menu?(): unknown }>()
 
-const messages = useCommentMessages()
-const common = useCommonMessages()
+const messages = useMessages('comments')
+const common = useMessages('common')
 const menuCls = useMenuUI({ content: 'min-w-40' })
 const ui = comments()
 const replyText = ref('')

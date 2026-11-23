@@ -5,7 +5,7 @@ import {
   CLOUD_ACCESS_TOKEN_NAME_MAX_LENGTH,
   type CloudAccessTokenCreate
 } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
@@ -37,7 +37,8 @@ const {
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ submit: [input: CloudAccessTokenCreate] }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const tokenMessages = useMessages('cloud/portal/tokens')
 // The section mounts the dialog afresh for each opening, so its fields start empty.
 const name = ref('')
 const days = ref('90')
@@ -49,9 +50,9 @@ function keepUncopied(event: Event) {
 }
 
 const expiries = computed(() => [
-  { value: '30', label: messages.value.accessTokenExpires30Days },
-  { value: '90', label: messages.value.accessTokenExpires90Days },
-  { value: '365', label: messages.value.accessTokenExpiresYear }
+  { value: '30', label: tokenMessages.value.accessTokenExpires30Days },
+  { value: '90', label: tokenMessages.value.accessTokenExpires90Days },
+  { value: '365', label: tokenMessages.value.accessTokenExpiresYear }
 ])
 
 function submit() {
@@ -70,8 +71,8 @@ function submit() {
     @pointer-down-outside="keepUncopied"
   >
     <AppDialogHeader
-      :heading="messages.accessTokenCreatedTitle"
-      :description="messages.accessTokenCreatedDescription"
+      :heading="tokenMessages.accessTokenCreatedTitle"
+      :description="tokenMessages.accessTokenCreatedDescription"
       :show-close="false"
     />
     <AppDialogBody>
@@ -101,11 +102,11 @@ function submit() {
     v-else
     v-model:open="open"
     size="sm"
-    :heading="messages.newAccessToken"
+    :heading="tokenMessages.newAccessToken"
     :error="error"
     @submit="submit"
   >
-    <AppFormField :label="messages.name" :hint="messages.accessTokenNameHint">
+    <AppFormField :label="messages.name" :hint="tokenMessages.accessTokenNameHint">
       <template #default="{ id, describedBy }">
         <AppInput
           :id="id"
@@ -117,8 +118,12 @@ function submit() {
         />
       </template>
     </AppFormField>
-    <AppFormField :label="messages.accessTokenExpiry">
-      <SegmentedControl v-model="days" :options="expiries" :label="messages.accessTokenExpiry" />
+    <AppFormField :label="tokenMessages.accessTokenExpiry">
+      <SegmentedControl
+        v-model="days"
+        :options="expiries"
+        :label="tokenMessages.accessTokenExpiry"
+      />
     </AppFormField>
     <template #footer>
       <AppDialogCancel size="md" />
@@ -130,7 +135,7 @@ function submit() {
         :loading="busy"
         :disabled="!name.trim()"
       >
-        {{ messages.createAccessToken }}
+        {{ tokenMessages.createAccessToken }}
       </AppButton>
     </template>
   </AppFormDialog>

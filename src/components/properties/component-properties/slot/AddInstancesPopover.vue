@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import type { SlotInstanceOption } from '@open-pencil/vue/controls/slots'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPicker, { type AppPickerItem } from '@/components/ui/select/AppPicker.vue'
@@ -17,7 +17,8 @@ const { options, preferredOnly = false } = defineProps<{
 }>()
 const emit = defineEmits<{ add: [id: string] }>()
 defineSlots<{ thumbnail?(props: { id: string }): unknown }>()
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 
 const items = computed<AppPickerItem[]>(() => {
   const toItem = (option: SlotInstanceOption, group?: string): AppPickerItem => ({

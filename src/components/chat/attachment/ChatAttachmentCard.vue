@@ -3,13 +3,13 @@ import { useObjectUrl } from '@vueuse/core'
 import { computed, ref, toRef } from 'vue'
 
 import { focusStyles } from '@open-pencil/theme'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
 import { AppDialogBody, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
 
 const { attachment } = defineProps<{ attachment: AttachmentPresentation }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const viewerOpen = ref(false)
 const previewURL = useObjectUrl(toRef(() => attachment.preview))
 const typeLabel = computed(() => {

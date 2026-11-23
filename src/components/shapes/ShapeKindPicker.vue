@@ -6,7 +6,7 @@ import {
   isShapeWithTextType,
   type ShapeWithTextType
 } from '@open-pencil/scene-graph/shape-with-text'
-import { useCommonMessages, useShapeMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { SHAPE_KIND_ICONS } from '@/components/icons/shapes'
 import AppPicker from '@/components/ui/select/AppPicker.vue'
@@ -38,8 +38,8 @@ const emit = defineEmits<{ select: [kind: ShapeWithTextType] }>()
 const open = defineModel<boolean>('open', { default: false })
 defineSlots<{ trigger(): unknown }>()
 
-const shapes = useShapeMessages()
-const common = useCommonMessages()
+const shapes = useMessages('shapes')
+const common = useMessages('common')
 const label = useShapeKindLabels()
 
 const items = computed<AppPickerItem[]>(() =>

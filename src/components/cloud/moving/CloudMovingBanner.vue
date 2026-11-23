@@ -2,7 +2,7 @@
 import { getLocalTimeZone } from '@internationalized/date'
 import { computed } from 'vue'
 
-import { useCloudMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useLocale, useMessages } from '@open-pencil/vue/i18n'
 
 import { CLOUD_MOVE_DAY, isMovingSite, movedURL } from '@/app/cloud/moving'
 import { formatDate } from '@/app/i18n/date'
@@ -14,8 +14,8 @@ import { OFFICIAL_CLOUD_URL } from '@/constants'
  * in this browser stay behind, and the same page opens there. It stays until the address
  * redirects, so nobody loses files to a notice they closed once.
  */
-const cloud = useCloudMessages()
-const { locale } = useI18n()
+const cloud = useMessages('cloud/editor')
+const { locale } = useLocale()
 const show = isMovingSite(window.location.origin)
 const host = new URL(OFFICIAL_CLOUD_URL).host
 const date = computed(() =>

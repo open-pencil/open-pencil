@@ -1,6 +1,6 @@
 import { params } from '@nanostores/i18n'
 
-/** Messages of the `cloudPortal` namespace for access requests: deciding each one. */
+/** Messages of the Cloud server's pages for access requests: deciding each one. */
 export const requestPortalMessageDefaults = {
   decline: 'Decline',
   removeAccess: 'Remove access',

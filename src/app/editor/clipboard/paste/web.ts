@@ -4,7 +4,7 @@ import type { ClipboardSnapshot, Editor, PastedTextLink } from '@open-pencil/cor
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 import { errorMessage } from '@open-pencil/std/errors'
-import { filesMessages, menuMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { loadHTMLImporter } from '@/app/document/io/importer'
 import { pageFetch } from '@/app/document/io/url/fetch'
@@ -189,11 +189,11 @@ export async function pasteHTMLAsLayers(
     snapshot = await prepareLayers(editor, markup)
   } catch (error) {
     const reason = errorMessage(error)
-    toast.error(filesMessages.get().htmlPasteFailed({ error: reason }))
+    toast.error(messageStores.files.get().htmlPasteFailed({ error: reason }))
     return true
   }
   if (!snapshot) {
-    toast.info(filesMessages.get().htmlPasteEmpty)
+    toast.info(messageStores.files.get().htmlPasteEmpty)
     return true
   }
   beforePaste?.()
@@ -265,8 +265,8 @@ async function offerLayers(
   const takeBackText = () => {
     if (isLastTextPaste(editor, step, pastedId)) editor.undoAction()
   }
-  toast.info(filesMessages.get().pastedAsText, {
-    label: menuMessages.get().pasteAsLayers,
+  toast.info(messageStores.files.get().pastedAsText, {
+    label: messageStores.menu.get().pasteAsLayers,
     run: (toastId) => {
       toast.remove(toastId)
       void pasteHTMLAsLayers(editor, markup, point, takeBackText)
@@ -286,7 +286,7 @@ export async function pasteClipboardAsLayers(editor: Editor, cursorPos?: Vector)
   }
   const markup = layerMarkup(clipboard)
   if (!markup) {
-    toast.info(filesMessages.get().noHTMLToPasteAsLayers)
+    toast.info(messageStores.files.get().noHTMLToPasteAsLayers)
     return
   }
   await pasteHTMLAsLayers(editor, markup, cursorPos)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -20,7 +20,7 @@ const variableCount = useSceneComputed(() => {
   return editor.getVariableCount()
 })
 const hasVariables = computed(() => variableCount.value > 0)
-const { panels } = useI18n()
+const panels = useMessages('panels')
 </script>
 
 <template>
