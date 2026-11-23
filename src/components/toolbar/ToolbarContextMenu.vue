@@ -10,7 +10,7 @@ import {
   ContextMenuSeparator
 } from 'reka-ui'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useToolbar } from '@open-pencil/vue/primitives/Toolbar'
 
 import { isToolbarAlign, isToolbarSide } from '@/app/editor/toolbar/dock'
@@ -31,7 +31,7 @@ const { disabled = false, dockable = false } = defineProps<{
   dockable?: boolean
 }>()
 
-const { settings } = useI18n()
+const settings = useMessages('settings')
 const { side, align, setSide, setAlign } = useToolbar()
 const sideOptions = useToolbarSideOptions()
 const alignOptions = useToolbarAlignOptions(side)

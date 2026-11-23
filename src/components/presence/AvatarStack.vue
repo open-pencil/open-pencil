@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import PersonAvatar from './PersonAvatar.vue'
 import type { PresencePersonRow } from './rows'
@@ -25,7 +25,7 @@ const {
   label?: string
 }>()
 
-const common = useCommonMessages()
+const common = useMessages('common')
 const ui = computed(() => avatarStack({ size }))
 const shown = computed(() => people.slice(0, max))
 const hidden = computed(() => people.length - shown.value.length)

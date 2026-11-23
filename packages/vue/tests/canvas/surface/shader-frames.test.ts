@@ -59,4 +59,28 @@ describe('shader frames', () => {
     canvases[1].publish(IMAGE, FRAME)
     expect(received.beside).toBe(2)
   })
+
+  test('a stopped player tells its islands to show the still frame again', async () => {
+    const editor = createEditor({ graph: new SceneGraph() })
+    const seen: (CanvasImageSource | null)[] = []
+    const canvases: ShaderFrames[] = []
+    const island = defineComponent({
+      setup() {
+        useShaderFrames(editor).listen(IMAGE, (source) => seen.push(source))
+        return () => null
+      }
+    })
+    const canvas = defineComponent({
+      setup() {
+        canvases.push(provideShaderFrames(editor))
+        return () => h(island)
+      }
+    })
+    await renderToString(createSSRApp({ render: () => h(canvas) }))
+    const [frames] = canvases
+    if (!frames) throw new Error('The canvas provided no frames')
+    frames.publish(IMAGE, FRAME)
+    frames.publish(IMAGE, null)
+    expect(seen).toEqual([FRAME, null])
+  })
 })

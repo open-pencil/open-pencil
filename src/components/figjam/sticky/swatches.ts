@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { STICKY_COLORS } from '@open-pencil/scene-graph/generated'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 export type StickyColorName = keyof typeof STICKY_COLORS
 
@@ -22,7 +22,7 @@ const COLOR_LABEL_KEYS = {
 
 /** FigJam's ten sticky note colours as swatches, and the one a note's colour is. */
 export function useStickySwatches(color: () => Color | null) {
-  const { panels } = useI18n()
+  const panels = useMessages('panels')
   const swatches = computed(() =>
     (Object.entries(STICKY_COLORS) as [StickyColorName, Color][]).map(([name, value]) => ({
       value: name,

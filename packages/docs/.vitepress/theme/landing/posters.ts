@@ -25,8 +25,10 @@ export const PHONE_MAX_WIDTH = 767
 /** The query parameter the generator opens pages with: stages start at once and stay still. */
 export const POSTER_CAPTURE_PARAM = 'poster-capture'
 
+/** The parts of a stage the posters show: the collaboration stage whole, a board its canvas alone. */
 export function posterParts(kind: FeatureKind): PosterPart[] {
-  return kind === 'collab' ? ['frame'] : ['canvas', 'panel']
+  if (kind === 'collab') return ['frame']
+  return kind === 'board' ? ['canvas'] : ['canvas', 'panel']
 }
 
 export interface PosterTarget {

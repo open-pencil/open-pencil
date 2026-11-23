@@ -40,7 +40,7 @@ export class TileSurfacePool {
   }
 
   clear(): void {
-    for (const surface of this.available) surface.delete()
+    for (const surface of this.available) surface.dispose()
     this.available.length = 0
   }
 

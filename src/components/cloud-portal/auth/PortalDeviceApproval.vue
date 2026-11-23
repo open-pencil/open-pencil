@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -30,7 +30,7 @@ const {
   error?: string | null
 }>()
 const emit = defineEmits<{ approve: []; deny: [] }>()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const ui = portalForm({ size: 'lg' })
 </script>
 

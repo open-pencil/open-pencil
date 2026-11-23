@@ -9,7 +9,7 @@ import {
   type CloudAdminUserFilter,
   type CloudAdminUserMethod
 } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   usePortalList,
@@ -42,7 +42,7 @@ const emit = defineEmits<{
   open: [personId: string]
 }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 
 /** What an account is on the server, as badges; an ordinary account has none. */
 function standing(person: PortalPerson) {

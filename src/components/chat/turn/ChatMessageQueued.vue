@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { QueuedMessage } from '@/app/ai/chat/queue'
 import ChatReferenceText from '@/components/chat/reference/ChatReferenceText.vue'
@@ -12,7 +12,7 @@ const { message, steers } = defineProps<{
   steers: boolean
 }>()
 const emit = defineEmits<{ remove: [] }>()
-const ai = useAIMessages()
+const ai = useMessages('ai')
 </script>
 
 <template>

@@ -1,8 +1,8 @@
 import { params } from '@nanostores/i18n'
 
 /**
- * Messages of the `panels` namespace for the behaviour section, which turns a component into a
- * control previewed as a real one.
+ * Messages for the behaviour section, which turns a component into a control previewed as a real
+ * one.
  */
 export const behaviourPanelMessageDefaults = {
   behaviour: 'Behaviour',

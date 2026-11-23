@@ -1,0 +1,34 @@
+{
+  "backToPeople": "Todas las personas",
+  "personAccount": "Cuenta",
+  "emailVerified": "Verificado",
+  "emailNotVerified": "Sin verificar",
+  "joinedRow": "Se unió",
+  "lastActiveRow": "Última actividad",
+  "signInMethods": "Formas de iniciar sesión",
+  "twoStepRow": "Verificación en dos pasos",
+  "twoStepNone": "Sin configurar",
+  "passkeyCount": {
+    "one": "{count} llave de acceso",
+    "many": "{count} llaves de acceso"
+  },
+  "personWorkspaces": "Espacios de trabajo",
+  "personWorkspacesEmpty": "No está en ningún espacio de trabajo.",
+  "workspaceMembers": {
+    "one": "{count} miembro",
+    "many": "{count} miembros"
+  },
+  "workspaceRoleAdmin": "Administrador",
+  "workspaceRoleEditor": "Editor",
+  "workspaceRoleViewer": "Lector",
+  "personSessions": "Sesiones",
+  "noSessions": "No tiene ninguna sesión iniciada.",
+  "personNotFound": "Esta cuenta no existe",
+  "personNotFoundDescription": "Puede que se haya eliminado. Vuelve a la lista de personas.",
+  "removeSignInMethod": "Quitar",
+  "removeSignInMethodHeading": "¿Quitar {provider} de las formas de iniciar sesión de {name}?",
+  "removeSignInMethodDescription": "No podrá volver a iniciar sesión con este método salvo que lo añada de nuevo, y recibirá un correo avisándole. Los dispositivos con la sesión iniciada siguen así hasta que cierres todas sus sesiones.",
+  "deletePersonAccount": "Eliminar cuenta",
+  "deletePersonAccountHeading": "¿Eliminar la cuenta de {name}?",
+  "deletePersonAccountDescription": "Su solicitud para unirse nunca se aprobó, así que se eliminan la cuenta, sus formas de iniciar sesión y su solicitud. El registro de actividad conserva su nombre y correo. Puede volver a registrarse."
+}

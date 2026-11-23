@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const collaborationMessageDefaults = {
   inThisRoom: 'In this room',
   onThisPage: 'On this page',
@@ -85,5 +83,3 @@ export const collaborationMessageDefaults = {
   voiceUnsupportedTitle: 'Voice calls aren’t available here',
   voiceUnsupportedDescription: 'This browser can’t use a microphone.'
 } as const
-
-export const collaborationMessages = i18n('collaboration', collaborationMessageDefaults)

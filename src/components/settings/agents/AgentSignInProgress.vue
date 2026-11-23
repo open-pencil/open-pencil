@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { AgentAccountView } from '@/app/ai/agents/setup/view'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
@@ -13,7 +13,7 @@ import theme from '@/theme/settings/agents'
 /** An agent's own login while it runs: the browser does the work, with a code as fallback. */
 const { account } = defineProps<{ account: AgentAccountView }>()
 const emit = defineEmits<{ submitCode: [code: string] }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const styles = tv(theme)()
 const code = ref('')
 

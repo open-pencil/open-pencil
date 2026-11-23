@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
 import SizeAxisField from '@/components/properties/layout/size/SizeAxisField.vue'
@@ -11,7 +11,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 
 const ctx = useLayoutControlsContext()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 
 const sizeLimits = computed<SizeLimitItem[]>(() => [
   {

@@ -1,4 +1,5 @@
-import { focusStyles } from '../focus/styles'
+import { focusStyles } from '@open-pencil/theme'
+
 import { motionStyles } from '../motion/styles'
 
 /**

@@ -8,7 +8,7 @@ import type {
   BehaviourPartControl,
   BehaviourValueControl
 } from '@open-pencil/vue/controls/behaviour'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
@@ -42,7 +42,8 @@ const emit = defineEmits<{
   createPart: [partId: string, name: string]
   createStates: []
 }>()
-const { panels, locale } = useI18n()
+const behaviourMessages = useMessages('panels/behaviours')
+const { locale } = useLocale()
 const labels = useBehaviourLabels()
 
 type Row = { part: BehaviourPartControl } | { value: BehaviourValueControl }
@@ -96,7 +97,7 @@ const kind = computed(() => (behaviour ? labels.value.kind(behaviour.kind) : nul
 /** The name of a missing row: a part, the states, or a value. */
 function missingName(control: BehaviourControl, id: string): string {
   if (control.parts.some((row) => row.id === id)) return labels.value.part(id)
-  if (id === 'states') return panels.value.behaviourStates
+  if (id === 'states') return behaviourMessages.value.behaviourStates
   return labels.value.valueOf(control.kind, id)
 }
 
@@ -105,15 +106,15 @@ const nextStep = computed(() => {
   if (!behaviour) return ''
   const names = behaviour.missing.map((id) => missingName(behaviour, id))
   const list = new Intl.ListFormat(locale.value, { type: 'conjunction' }).format(names)
-  return panels.value.behaviourNextStep({ names: list })
+  return behaviourMessages.value.behaviourNextStep({ names: list })
 })
 </script>
 
 <template>
-  <PanelSection :label="panels.behaviour" :empty="!behaviour">
+  <PanelSection :label="behaviourMessages.behaviour" :empty="!behaviour">
     <template #actions>
       <AddBehaviourPicker v-if="!behaviour" @add="emit('add', $event)" />
-      <IconButton v-else :label="panels.removeBehaviour" @click="emit('remove')">
+      <IconButton v-else :label="behaviourMessages.removeBehaviour" @click="emit('remove')">
         <icon-lucide-minus class="size-3.5" />
       </IconButton>
     </template>
@@ -127,7 +128,7 @@ const nextStep = computed(() => {
           class="flex h-5 shrink-0 items-center gap-1 rounded bg-panel-field px-1.5 text-3xs text-muted"
         >
           <icon-lucide-check class="size-3 text-success" />
-          {{ panels.behaviourComplete }}
+          {{ behaviourMessages.behaviourComplete }}
         </span>
       </div>
 
@@ -162,7 +163,7 @@ const nextStep = computed(() => {
       <AppCollapsible
         v-if="moreRows.length || !statesFirst"
         v-model:open="moreOpen"
-        :label="panels.behaviourMoreOptions"
+        :label="behaviourMessages.behaviourMoreOptions"
         :ui="{ trigger: 'text-2xs text-muted hover:text-surface', icon: 'size-3' }"
         data-property="behaviour-more"
       >

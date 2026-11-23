@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/vue",
-  "version": "0.17.0-beta.6",
+  "version": "0.17.0",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -443,8 +443,7 @@
       "types": "./dist/variables/index.d.ts",
       "import": "./dist/variables/index.js",
       "default": "./dist/variables/index.js"
-    },
-    "./theme/tokens.css": "./dist/theme/tokens.css"
+    }
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

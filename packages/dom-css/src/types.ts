@@ -37,6 +37,11 @@ export interface DesignElement {
   layout?: DesignLayout
   /** The picture an `<img>` shows, as the runtime that styled the page loaded it. */
   image?: DesignResource
+  /**
+   * The pictures its `background-image` layers show, as the runtime that styled the page loaded
+   * them, each by the address its computed `url()` names.
+   */
+  backgroundImages?: DesignResource[]
   sourceSceneNodeId?: string
   sourceSceneNode?: SceneNode
   /**

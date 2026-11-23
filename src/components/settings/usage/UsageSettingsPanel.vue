@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useDiagnosticsSettings } from '@/app/diagnostics/settings'
 import { useUsageSettings } from '@/app/usage/settings/use'
@@ -10,7 +10,8 @@ import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
-const { diagnostics: diagnosticMessages, settings } = useI18n()
+const diagnosticMessages = useMessages('diagnostics')
+const settings = useMessages('settings')
 
 function formatTokenValue(value: number | null): string {
   return value === null ? diagnosticMessages.value.usageNotReported : value.toLocaleString()

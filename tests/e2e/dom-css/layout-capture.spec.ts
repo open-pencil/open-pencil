@@ -112,6 +112,7 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
       `<style>body { margin: 0; font-size: 14px } input { width: 200px; padding: 8px; border: 1px solid #ccc }</style>
       <input type="email" placeholder="you@example.com">
       <input value="Night Drive">
+      <input value="Hidden" style="display: none">
       <input type="checkbox">`,
       VIEWPORT
     )
@@ -123,6 +124,52 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
       (layer) => layer.name === '::placeholder' || layer.name === '::value'
     )
     expect(fieldText.map((layer) => layer.paints)).toEqual([0, 0])
+  })
+
+  test('centers a field’s line of text however tall its box, as browsers do', async ({ page }) => {
+    const layers = await browserImportedLayerSummaries(
+      page,
+      `<style>body { margin: 0 } input { box-sizing: border-box; height: 41px; padding: 16px 12px; font: 16px/24px sans-serif }</style>
+      <input placeholder="Search articles">`,
+      VIEWPORT
+    )
+    const field = layers.find((layer) => layer.name === 'input')
+    const text = layers.find((layer) => layer.name === '::placeholder')
+
+    // The 24px line overflows the 9px content box, and sits centered on it rather than below.
+    expect(text?.height).toBe(24)
+    expect((text?.y ?? 0) + (text?.height ?? 0) / 2).toBeCloseTo(
+      (field?.y ?? 0) + (field?.height ?? 0) / 2,
+      0
+    )
+  })
+
+  test('breaks balanced text where the browser does', async ({ page }) => {
+    const title = 'About custom domains and GitHub Pages'
+    const layers = await browserImportedLayerSummaries(
+      page,
+      `<style>body { margin: 0 } h3 { width: 300px; margin: 0; font: 600 20px/24px sans-serif }</style>
+      <h3 style="text-wrap: balance">${title}</h3><h3>${title}</h3>`,
+      VIEWPORT
+    )
+    const [balanced, filled] = layers.filter((layer) => layer.type === 'TEXT')
+
+    // Two lines either way; balanced, the first breaks early, so its widest line is narrower.
+    expect(balanced?.height).toBe(filled?.height)
+    expect(balanced?.width).toBeLessThan((filled?.width ?? 0) - 20)
+  })
+
+  test('reads text a framework’s comment splits as one run', async ({ page }) => {
+    const layers = await browserImportedLayerSummaries(
+      page,
+      `<style>body { margin: 0 } .label { padding: 2px; background: #eee }</style>
+      <span class="label">Category<!-- -->:</span>`,
+      VIEWPORT
+    )
+
+    expect(layers.filter((layer) => layer.type === 'TEXT').map((layer) => layer.text)).toEqual([
+      'Category:'
+    ])
   })
 
   test('runs none of the page’s event handlers', async ({ page }) => {

@@ -137,4 +137,35 @@ describe('web fonts', () => {
       `${family}:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200`
     )
   })
+
+  test('tells a font file a provider serves for a family from a page’s own', async () => {
+    const { resolver } = await googleResolver([
+      { family: 'Served Sans', axes: [{ tag: 'wght', min: 100, max: 900 }] }
+    ])
+
+    // A page loading a subset of the family from Google loads the editor's own family.
+    expect(
+      await resolver.servesFontFile(
+        'Served Sans',
+        'https://fonts.gstatic.com/s/servedsans/v1/latin.woff2'
+      )
+    ).toBe(true)
+    expect(
+      await resolver.servesFontFile('Served Sans', 'https://site.example.test/fonts/served.woff2')
+    ).toBe(false)
+  })
+
+  test('serves no font file while the provider is turned off', async () => {
+    const { resolver } = await googleResolver([
+      { family: 'Off Sans', axes: [{ tag: 'wght', min: 100, max: 900 }] }
+    ])
+    resolver.setEnabled({})
+
+    expect(
+      await resolver.servesFontFile(
+        'Off Sans',
+        'https://fonts.gstatic.com/s/offsans/v1/latin.woff2'
+      )
+    ).toBe(false)
+  })
 })

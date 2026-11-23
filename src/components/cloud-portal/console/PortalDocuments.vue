@@ -4,7 +4,7 @@ import { compact } from 'es-toolkit'
 import { computed, h, ref } from 'vue'
 
 import type { CloudAdminDocumentFilter } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   usePortalList,
@@ -40,7 +40,7 @@ const emit = defineEmits<{
   act: [action: PortalContentAction, document: PortalDocumentRow, reason?: string]
 }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const pending = ref<{ action: PortalContentAction; document: PortalDocumentRow } | null>(null)
 function confirm(reason?: string) {
   const chosen = pending.value

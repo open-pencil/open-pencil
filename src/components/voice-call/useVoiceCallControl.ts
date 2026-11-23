@@ -1,6 +1,6 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 
-import { useCollaborationMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { activeRoom } from '@/app/collab/rooms'
 import { CAN_CHOOSE_SPEAKERS, SYSTEM_DEVICE, useVoiceCall } from '@/app/collab/voice/call'
@@ -17,7 +17,7 @@ export interface VoiceDeviceOption {
  * the devices to pick from, and joining it. `people` is everyone in the call, ourselves first.
  */
 export function useVoiceCallControl(people: MaybeRefOrGetter<readonly PresencePersonRow[]>) {
-  const messages = useCollaborationMessages()
+  const messages = useMessages('collaboration')
   const call = useVoiceCall()
 
   const inCall = computed(() => call.room.value !== null && call.room.value === activeRoom.value)

@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { CLOUD_SOCIAL_PROVIDER_NAMES, type CloudLegalDiscovery } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { portalForm } from '@/components/cloud-portal/ui'
 import CloudAccountForm from '@/components/cloud/account/CloudAccountForm.vue'
@@ -51,7 +51,7 @@ const emit = defineEmits<{
 }>()
 
 const ui = portalForm({ size: 'lg' })
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const signUp = computed(() => mode === 'sign-up')
 const label = (method: PortalSignInMethod) =>
   messages.value.continueWith({ provider: CLOUD_SOCIAL_PROVIDER_NAMES[method] })

@@ -1,4 +1,4 @@
-import type { CanvasKit, Canvas, Typeface } from '@open-pencil/canvaskit'
+import type { CanvasKit, Canvas, Font } from '@open-pencil/canvaskit'
 
 import { createCaptureSession, createFrameCapture } from './capture-session'
 import type { CaptureSession } from './capture-session'
@@ -155,8 +155,9 @@ export class RenderProfiler {
     else this.drawCallCounter.disable()
   }
 
-  setTypeface(typeface: Typeface): void {
-    this.hud.setTypeface(typeface)
+  /** Borrows `font` for the HUD's text; its owner deletes it. */
+  setFont(font: Font): void {
+    this.hud.setFont(font)
   }
 
   drawHUD(canvas: Canvas, showRulers: boolean): void {

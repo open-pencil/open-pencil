@@ -1,4 +1,6 @@
-import type { CanvasKit, Canvas, Paint, Font, Typeface } from '@open-pencil/canvaskit'
+import type { CanvasKit, Canvas, Paint, Font } from '@open-pencil/canvaskit'
+
+import { HUD_FONT_SIZE } from '#core/constants'
 
 import type { FrameStats } from './frame/stats'
 
@@ -31,6 +33,8 @@ export class HudRenderer {
   private gpuPaint: Paint
   private budgetLinePaint: Paint
   private graphBgPaint: Paint
+  /** Draws the HUD until the renderer lends it the chrome face. */
+  private readonly fallbackFont: Font
   private hudFont: Font
 
   constructor(private ck: CanvasKit) {
@@ -81,12 +85,12 @@ export class HudRenderer {
     this.graphBgPaint.setColor(ck.Color4f(0.05, 0.05, 0.05, 0.5))
     this.graphBgPaint.setAntiAlias(true)
 
-    this.hudFont = new ck.Font(null, 10)
+    this.fallbackFont = new ck.Font(null, HUD_FONT_SIZE)
+    this.hudFont = this.fallbackFont
   }
 
-  setTypeface(typeface: Typeface): void {
-    this.hudFont.delete()
-    this.hudFont = new this.ck.Font(typeface, 10)
+  setFont(font: Font): void {
+    this.hudFont = font
   }
 
   draw(canvas: Canvas, stats: FrameStats, phases: Map<string, number>, showRulers: boolean): void {
@@ -264,6 +268,6 @@ export class HudRenderer {
     this.gpuPaint.delete()
     this.budgetLinePaint.delete()
     this.graphBgPaint.delete()
-    this.hudFont.delete()
+    this.fallbackFont.delete()
   }
 }

@@ -3,7 +3,7 @@ import { mapValues } from 'es-toolkit'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { openExternalLink } from '@/app/shell/ui'
 import { updateFailureText } from '@/app/shell/updater/messages'
@@ -43,7 +43,8 @@ const emit = defineEmits<{
   dismiss: []
 }>()
 
-const { updates: t, common } = useI18n()
+const t = useMessages('updates')
+const common = useMessages('common')
 
 const release = computed(() => ('release' in state ? state.release : undefined))
 const progress = computed(() => {

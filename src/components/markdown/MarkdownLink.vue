@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 
@@ -11,7 +11,7 @@ import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.
  */
 const { href } = defineProps<{ href?: string }>()
 
-const common = useCommonMessages()
+const common = useMessages('common')
 const confirming = ref(false)
 
 function open() {

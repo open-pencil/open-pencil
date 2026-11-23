@@ -33,8 +33,12 @@ export interface RemoteFile {
   kind: RemoteFileKind
 }
 
-/** The most a file fetched from an address may hold. Well past any real page or design file. */
-export const MAX_REMOTE_FILE_BYTES = 64 * 1024 * 1024
+/**
+ * The most a file fetched from an address may hold, and the one cap every document transfer
+ * shares: URL opens, browser links, and the MCP server's `/files`. The body is counted as it
+ * streams and buffered whole, so this bounds what one response can take.
+ */
+export const MAX_REMOTE_FILE_BYTES = 256 * 1024 * 1024
 
 /**
  * How long one remote file may take to arrive, headers and body: a server that sends a byte now

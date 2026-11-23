@@ -1,7 +1,8 @@
+import { BOARD_NAME, BOARD_SECTION } from '@open-pencil/demo-tools/board/names'
 import { CHAPTERS, sectionName, type TourChapter } from '@open-pencil/demo-tools/chapters'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { fetchOfficialTour } from '@/app/cloud/community/tour'
+import { fetchOfficialExample, fetchOfficialTour } from '@/app/cloud/community/tour'
 import { followAppTheme } from '@/app/demo/theme'
 import type { EditorStore } from '@/app/editor/active-store'
 import { resolvedAppTheme } from '@/app/shell/theme'
@@ -186,10 +187,25 @@ async function figma(store: EditorStore): Promise<void> {
   revealLayers(store, 1)
 }
 
+/**
+ * The gallery's sprint board, opened as any `.jam` file is, so the stage is a board with
+ * FigJam's tools, its planning section filling the canvas above the toolbar.
+ */
+async function board(store: EditorStore): Promise<void> {
+  const bytes = await fetchOfficialExample(BOARD_NAME)
+  if (!bytes) throw new Error(`The gallery has no "${BOARD_NAME}"`)
+  await store.openFigFile(new File([Uint8Array.from(bytes)], `${BOARD_NAME}.jam`))
+  const section = findByName(store, BOARD_SECTION)
+  const node = section ? store.graph.getNode(section) : undefined
+  if (!node) throw new Error(`"${BOARD_NAME}" has no "${BOARD_SECTION}"`)
+  frameStage(store, node, { toolbar: true })
+}
+
 export type SceneBuilder = (store: EditorStore) => Promise<void>
 
 export const SCENES = {
   figma,
+  board,
   // The main player's cover selected: a rectangle large enough to show its corner handles on
   // hover, in a row of instances that each bring their own cover through the artwork slot.
   slots: (store) =>

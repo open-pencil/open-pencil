@@ -1,10 +1,10 @@
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import { saveDocument, THUMBNAIL_PNG } from '#cloud-tests/helpers/save'
-import { fetchCommunityTour } from '#cloud/client'
+import { fetchCommunityExample, fetchCommunityTour } from '#cloud/client'
 import { communityDocumentsSchema, communityDownloadSchema } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
@@ -35,12 +35,19 @@ const documentSchema = v.object({
 })
 const idSchema = v.object({ id: v.string() })
 
+/** Every gallery's database, closed after its test. */
+const opened: { close(): Promise<void> }[] = []
+afterEach(async () => {
+  for (const runtime of opened.splice(0)) await runtime.close()
+})
+
 /**
  * Alice's server with two workspaces: Community, which the deployment names as its gallery, and
  * Studio, which stays private. Requests to `community` come from nobody signed in.
  */
 async function gallery() {
   const runtime = await createCloudTestDatabase()
+  opened.push(runtime)
   const objects = createMemoryObjectStore()
   const app = (serverConfig: CloudServerConfig, signedIn: boolean) =>
     createCloudApp({
@@ -245,6 +252,57 @@ describe('community gallery', () => {
     ).toBe(404)
   })
 
+  test('serves a gallery document’s stored parts to any page, and nothing else in storage', async () => {
+    const server = await gallery()
+    const tour = await server.document(server.workspace.community, 'Tour')
+    const first = await server.save(tour, null, 'first')
+    const release = await server.nameVersion(tour, '0.17.0')
+    await server.save(tour, first, 'second')
+    const secret = await server.document(server.workspace.studio, 'Secret')
+    await server.save(secret, null, 'secret')
+    const checksumOf = async (documentId: string) =>
+      (
+        await responseJSON(
+          await server.owner.api.documents[':documentId'].$get({ param: { documentId } }),
+          v.object({ document: v.object({ checksum: v.string() }) })
+        )
+      ).document.checksum
+    const named = await responseJSON(
+      await server.visitor.api.community[':documentId'].document.$get({
+        param: { documentId: tour },
+        query: { version: release }
+      }),
+      communityDownloadSchema
+    )
+    const current = await checksumOf(tour)
+    const object = (documentId: string, checksum: string, version?: string) =>
+      server.request(
+        `/api/community/${documentId}/objects?${new URLSearchParams(version ? { checksum, version } : { checksum })}`,
+        { headers: { Origin: 'http://localhost:5173' } }
+      )
+    const contents = async (response: Response) =>
+      new TextDecoder().decode(
+        unzipSync(new Uint8Array(await response.arrayBuffer()))['canvas.fig']
+      )
+
+    const now = await object(tour, current)
+    expect(now.status).toBe(200)
+    expect(now.headers.get('access-control-allow-origin')).toBe('*')
+    // Cached only as long as the listing is, so a takedown reaches every copy within minutes.
+    expect(now.headers.get('cache-control')).toBe('public, max-age=300')
+    expect(now.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(await contents(now)).toBe('second')
+    const released = await object(tour, named.document.checksum, release)
+    expect(await contents(released)).toBe('first')
+
+    // Only the revision asked for: the release's file is not the current one's, nor the reverse.
+    expect((await object(tour, named.document.checksum)).status).toBe(404)
+    expect((await object(tour, current, release)).status).toBe(404)
+    // Nothing outside the gallery, whatever checksum is named.
+    expect((await object(secret, await checksumOf(secret))).status).toBe(404)
+    expect((await object(tour, 'not-a-checksum')).status).toBe(400)
+  })
+
   test('lets any page read the gallery and the discovery, without an account', async () => {
     const server = await gallery()
     const from = (origin: string, init: RequestInit = {}) => {
@@ -339,5 +397,40 @@ describe('community gallery', () => {
       return server.request(`${url.pathname}${url.search}`, init)
     }
     expect(await fetchCommunityTour('http://localhost:8787', { fetch: plain })).toBeNull()
+  })
+
+  test('hands any page a gallery document by its name, as the release it asks for', async () => {
+    const server = await gallery()
+    const board = await server.document(server.workspace.community, 'Sprint board')
+    const first = await server.save(board, null, 'first')
+    await server.nameVersion(board, '0.17.0')
+    await server.save(board, first, 'second')
+    // Storage answers only the deployment's own pages, so nothing is read from it directly.
+    let fromStorage = 0
+    const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(input instanceof Request ? input.url : String(input))
+      if (url.host !== 'objects.example.com') {
+        return server.request(`${url.pathname}${url.search}`, init)
+      }
+      fromStorage++
+      const bytes = await server.objects.store.read(url.pathname.slice(1))
+      return bytes ? new Response(Uint8Array.from(bytes)) : new Response(null, { status: 404 })
+    }
+    const contents = async (bytes: Uint8Array) =>
+      new TextDecoder().decode(unzipSync(bytes)['canvas.fig'])
+
+    const released = await fetchCommunityExample('http://localhost:8787', 'Sprint board', {
+      version: '0.17.0',
+      fetch
+    })
+    if (!released) throw new Error('The release of the board was not found')
+    expect(released).toMatchObject({ name: 'Sprint board', version: '0.17.0' })
+    expect(await contents(released.bytes)).toBe('first')
+    const current = await fetchCommunityExample('http://localhost:8787', 'Sprint board', { fetch })
+    if (!current) throw new Error('The board was not found')
+    expect(current.version).toBeNull()
+    expect(await contents(current.bytes)).toBe('second')
+    expect(await fetchCommunityExample('http://localhost:8787', 'Missing', { fetch })).toBeNull()
+    expect(fromStorage).toBe(0)
   })
 })

@@ -1,4 +1,4 @@
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { MAX_SKILL_DESCRIPTION_LENGTH, MAX_SKILL_NAME_LENGTH } from '@/app/ai/skills/parse'
 import type { SkillUploadFailure } from '@/app/ai/skills/sources/uploaded'
@@ -6,7 +6,7 @@ import type { SkillParseError, SkillWarning } from '@/app/ai/skills/types'
 
 /** What a skill's warnings, read errors, and upload failures say, in the user's language. */
 export function useSkillMessages() {
-  const ai = useAIMessages()
+  const ai = useMessages('ai')
 
   function warning(code: SkillWarning): string {
     const messages: Record<SkillWarning, string> = {
