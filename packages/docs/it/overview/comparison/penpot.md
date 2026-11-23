@@ -5,38 +5,37 @@ description: Le differenze tra OpenPencil e Penpot, due strumenti di design open
 
 # OpenPencil e Penpot a confronto
 
-OpenPencil e Penpot sono entrambi strumenti di design open source che puoi usare al posto di Figma. Partono però da presupposti diversi: Penpot è una piattaforma web costruita attorno al proprio formato di file e a un server per i team, mentre OpenPencil è un editor che apre i file Figma che hai già, funziona sul tuo dispositivo e può essere guidato da te, da script o da agenti AI. Questa pagina li confronta alle versioni Penpot 2.16 e OpenPencil 0.17.
+OpenPencil e Penpot sono entrambi strumenti di design open source che puoi usare al posto di Figma. Partono però da presupposti diversi: Penpot è una piattaforma web costruita attorno al proprio formato di file e a un server per i team, mentre OpenPencil è un editor che apre i file Figma che hai già, funziona sul tuo dispositivo e può essere guidato da te, da script o da agenti AI. Questa pagina li confronta alle versioni Penpot 2.19 e OpenPencil 0.17.
 
 ## In sintesi
 
 |                   | OpenPencil                                                                                             | Penpot                                                    |
 | ----------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
 | Licenza           | MIT (editor), Apache 2.0 (server Cloud)                                                                | MPL 2.0                                                   |
-| File Figma `.fig` | Li apre e li salva; copia e incolla con Figma in entrambe le direzioni                                 | Non li apre                                               |
+| File Figma `.fig` | Li apre e li salva; copia e incolla con Figma in entrambe le direzioni                                 | Convertiti da un plugin che gira in Figma                 |
 | Dove funziona     | App desktop per macOS, Windows e Linux, e browser                                                      | Browser                                                   |
 | Uso offline       | Sì; i documenti possono restare sul tuo dispositivo                                                    | Richiede il proprio server                                |
 | Account           | Non serve per modificare; facoltativo per Cloud                                                        | Obbligatorio                                              |
 | Collaborazione    | Stanze peer-to-peer senza server, oppure OpenPencil Cloud con condivisione, commenti e cronologia      | Basata su server, con condivisione, commenti e cronologia |
 | Self-hosting      | Server di OpenPencil Cloud                                                                             | Distribuzione con Docker                                  |
 | AI integrata      | Assistente in chat con oltre 100 strumenti di design; usa la chiave del tuo provider o i crediti Cloud | —                                                         |
-| Agenti e script   | Server MCP, CLI headless e scripting compatibile con la Figma Plugin API                               | Plugin API                                                |
+| Agenti e script   | Server MCP, CLI headless e scripting compatibile con la Figma Plugin API                               | Server MCP e Plugin API                                   |
 | Layout            | Disposizione automatica con Flexbox e CSS Grid                                                         | Layout flex e grid                                        |
 | Token di design   | Variabili con modalità; import ed export dei token di design W3C                                       | Token di design nativi                                    |
 | Export del codice | Design JSX, HTML, Vue e React con CSS o Tailwind                                                       | Ispezione di CSS, SVG e HTML                              |
 | Prototipazione    | Comportamenti dei componenti dal vivo; flussi e transizioni sono nella [roadmap](/development/roadmap) | Flussi, interazioni e modalità di visualizzazione         |
-| Rendering         | Skia (CanvasKit) su WebGL                                                                              | SVG predefinito; renderer WebGL in beta                   |
 
 ## File Figma
 
 OpenPencil apre direttamente i file `.fig` e salva di nuovo in `.fig`, così un team può passare senza convertire prima la propria libreria e chi usa ancora Figma può aprire il risultato. Copiando livelli in Figma e incollandoli in OpenPencil si conservano riempimenti, contorni, disposizione automatica, testo, effetti e reti vettoriali, e la copia funziona anche nella direzione opposta. Consulta [Compatibilità con Figma](/it/reference/figma-compatibility) per sapere cosa viene trasferito e cosa no.
 
-Penpot usa il proprio formato `.penpot`. Passare da Figma significa ricreare i design o convertirli con strumenti di terze parti.
+Penpot usa il proprio formato `.penpot` e non apre i file `.fig`. Passare da Figma significa eseguire il plugin di esportazione di Penpot dentro Figma e importare ciò che produce.
 
 ## AI e automazione
 
 OpenPencil è pensato per essere programmato. L’[assistente AI](/it/user-guide/ai-chat) crea e modifica livelli con gli stessi oltre 100 strumenti che il [server MCP](/developers/mcp-server) mette a disposizione di Claude Code, Cursor, Codex e altri agenti di programmazione, e l’app desktop può eseguire questi agenti all’interno dell’editor. La [CLI](/it/developers/cli/inspecting) ispeziona, verifica, converte ed esporta documenti senza aprire l’editor, e il suo [comando `eval`](/it/developers/cli/scripting) esegue script scritti per la Figma Plugin API.
 
-Penpot ha un sistema di plugin per estensioni che girano nell’editor. Non ha un assistente integrato, un server MCP né scripting headless.
+Penpot ha un server MCP ufficiale che permette agli agenti di programmazione di lavorare sui suoi file, e un sistema di plugin per estensioni che girano nell’editor. Non ha un assistente integrato né scripting headless.
 
 ## Collaborazione e hosting
 

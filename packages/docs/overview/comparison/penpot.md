@@ -5,38 +5,37 @@ description: How OpenPencil and Penpot, two open-source design tools, differ in 
 
 # OpenPencil vs Penpot
 
-OpenPencil and Penpot are both open-source design tools you can use instead of Figma. They start from different places: Penpot is a web platform built around its own file format and a team server, and OpenPencil is an editor that opens the Figma files you already have, runs on your device, and can be driven by you, scripts, or AI agents. This page compares them as of Penpot 2.16 and OpenPencil 0.17.
+OpenPencil and Penpot are both open-source design tools you can use instead of Figma. They start from different places: Penpot is a web platform built around its own file format and a team server, and OpenPencil is an editor that opens the Figma files you already have, runs on your device, and can be driven by you, scripts, or AI agents. This page compares them as of Penpot 2.19 and OpenPencil 0.17.
 
 ## At a Glance
 
 |                    | OpenPencil                                                                                  | Penpot                                              |
 | ------------------ | ------------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | License            | MIT (editor), Apache 2.0 (Cloud server)                                                     | MPL 2.0                                             |
-| Figma `.fig` files | Opens and saves them; copy and paste with Figma both ways                                   | Doesn't open them                                   |
+| Figma `.fig` files | Opens and saves them; copy and paste with Figma both ways                                   | Converted by a plugin that runs in Figma            |
 | Where it runs      | Desktop app for macOS, Windows, and Linux, and the browser                                  | Browser                                             |
 | Works offline      | Yes; documents can stay on your device                                                      | Needs its server                                    |
 | Accounts           | Not needed to edit; optional for Cloud                                                      | Needed                                              |
 | Collaboration      | Peer-to-peer rooms with no server, or OpenPencil Cloud with sharing, comments, and history | Server-based, with sharing, comments, and history   |
 | Self-hosting       | OpenPencil Cloud server                                                                     | Docker deployment                                   |
 | Built-in AI        | Chat assistant with 100+ design tools; bring your own provider key or use Cloud credits     | —                                                   |
-| Agents and scripts | MCP server, headless CLI, and Figma Plugin API–compatible scripting                         | Plugin API                                          |
+| Agents and scripts | MCP server, headless CLI, and Figma Plugin API–compatible scripting                         | MCP server and Plugin API                           |
 | Layout             | Auto layout with flexbox and CSS Grid                                                       | Flex and grid layout                                |
 | Design tokens      | Variables with modes; W3C design tokens import and export                                   | Native design tokens                                |
 | Code export        | Design JSX, HTML, Vue, and React with CSS or Tailwind                                       | CSS, SVG, and HTML inspection                       |
 | Prototyping        | Live component behaviours; flows and transitions are on the [roadmap](/development/roadmap) | Flows, interactions, and a view mode                |
-| Rendering          | Skia (CanvasKit) on WebGL                                                                   | SVG by default; WebGL renderer in beta              |
 
 ## Figma Files
 
 OpenPencil opens `.fig` files directly and saves back to `.fig`, so a team can move without converting its library first, and anyone still on Figma can open the result. Copying layers in Figma and pasting them into OpenPencil keeps fills, strokes, auto layout, text, effects, and vector networks, and copying the other way works too. See [Figma compatibility](/reference/figma-compatibility) for what is and isn't carried over.
 
-Penpot uses its own `.penpot` format. Moving from Figma means recreating designs or converting them with third-party tools.
+Penpot uses its own `.penpot` format and doesn't open `.fig` files. Moving from Figma means running Penpot's exporter plugin inside Figma and importing what it produces.
 
 ## AI and Automation
 
 OpenPencil is built to be programmed. The [AI assistant](/user-guide/ai-chat) creates and edits layers with the same 100+ tools the [MCP server](/developers/mcp-server) gives Claude Code, Cursor, Codex, and other coding agents, and the desktop app can run those agents inside the editor. The [CLI](/developers/cli/inspecting) inspects, lints, converts, and exports documents without opening the editor, and its [`eval` command](/developers/cli/scripting) runs scripts written against the Figma Plugin API.
 
-Penpot has a plugin system for extensions that run in the editor. It has no built-in assistant, MCP server, or headless scripting.
+Penpot has an official MCP server that lets coding agents work on its files, and a plugin system for extensions that run in the editor. It has no built-in assistant or headless scripting.
 
 ## Collaboration and Hosting
 

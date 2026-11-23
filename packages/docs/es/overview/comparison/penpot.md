@@ -5,38 +5,37 @@ description: En qué se diferencian OpenPencil y Penpot, dos herramientas de dis
 
 # OpenPencil vs Penpot
 
-OpenPencil y Penpot son herramientas de diseño de código abierto que puedes usar en lugar de Figma. Parten de lugares distintos: Penpot es una plataforma web construida en torno a su propio formato de archivo y un servidor de equipo, y OpenPencil es un editor que abre los archivos de Figma que ya tienes, se ejecuta en tu dispositivo y puede manejarse por ti, por scripts o por agentes de IA. Esta página los compara según Penpot 2.16 y OpenPencil 0.17.
+OpenPencil y Penpot son herramientas de diseño de código abierto que puedes usar en lugar de Figma. Parten de lugares distintos: Penpot es una plataforma web construida en torno a su propio formato de archivo y un servidor de equipo, y OpenPencil es un editor que abre los archivos de Figma que ya tienes, se ejecuta en tu dispositivo y puede manejarse por ti, por scripts o por agentes de IA. Esta página los compara según Penpot 2.19 y OpenPencil 0.17.
 
 ## De un vistazo
 
 |                          | OpenPencil                                                                                                     | Penpot                                                          |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | Licencia                 | MIT (editor), Apache 2.0 (servidor Cloud)                                                                      | MPL 2.0                                                         |
-| Archivos `.fig` de Figma | Los abre y los guarda; copiar y pegar con Figma en ambos sentidos                                              | No los abre                                                     |
+| Archivos `.fig` de Figma | Los abre y los guarda; copiar y pegar con Figma en ambos sentidos                                              | Convertidos con un plugin que se ejecuta en Figma               |
 | Dónde se ejecuta         | Aplicación de escritorio para macOS, Windows y Linux, y el navegador                                           | Navegador                                                       |
 | Sin conexión             | Sí; los documentos pueden quedarse en tu dispositivo                                                           | Necesita su servidor                                            |
 | Cuentas                  | No hacen falta para editar; opcionales para Cloud                                                              | Obligatorias                                                    |
 | Colaboración             | Salas peer-to-peer sin servidor, u OpenPencil Cloud con uso compartido, comentarios e historial                | Basada en servidor, con uso compartido, comentarios e historial |
 | Autoalojamiento          | Servidor de OpenPencil Cloud                                                                                   | Despliegue con Docker                                           |
 | IA integrada             | Asistente de chat con más de 100 herramientas de diseño; tu propia clave de proveedor o créditos de Cloud      | —                                                               |
-| Agentes y scripts        | Servidor MCP, CLI sin interfaz y scripts compatibles con la Figma Plugin API                                   | Plugin API                                                      |
+| Agentes y scripts        | Servidor MCP, CLI sin interfaz y scripts compatibles con la Figma Plugin API                                   | Servidor MCP y Plugin API                                       |
 | Maquetación              | Disposición automática con flexbox y CSS Grid                                                                  | Maquetación flex y grid                                         |
 | Tokens de diseño         | Variables con modos; importación y exportación de tokens de diseño W3C                                         | Tokens de diseño nativos                                        |
 | Exportación de código    | Design JSX, HTML, Vue y React con CSS o Tailwind                                                               | Inspección de CSS, SVG y HTML                                   |
 | Prototipado              | Comportamientos de componentes en vivo; flujos y transiciones están en la [hoja de ruta](/development/roadmap) | Flujos, interacciones y modo de visualización                   |
-| Renderizado              | Skia (CanvasKit) sobre WebGL                                                                                   | SVG por defecto; renderizador WebGL en beta                     |
 
 ## Archivos de Figma
 
 OpenPencil abre archivos `.fig` directamente y vuelve a guardar en `.fig`, así que un equipo puede cambiar sin convertir antes su biblioteca, y quien siga en Figma puede abrir el resultado. Copiar capas en Figma y pegarlas en OpenPencil conserva rellenos, contornos, disposición automática, texto, efectos y redes vectoriales, y también funciona en sentido contrario. Consulta [Compatibilidad con Figma](/es/reference/figma-compatibility) para saber qué se conserva y qué no.
 
-Penpot usa su propio formato `.penpot`. Pasar desde Figma implica recrear los diseños o convertirlos con herramientas de terceros.
+Penpot usa su propio formato `.penpot` y no abre archivos `.fig`. Pasar desde Figma implica ejecutar el plugin exportador de Penpot dentro de Figma e importar lo que genera.
 
 ## IA y automatización
 
 OpenPencil está hecho para programarse. El [asistente de IA](/es/user-guide/ai-chat) crea y edita capas con las mismas más de 100 herramientas que el [servidor MCP](/developers/mcp-server) ofrece a Claude Code, Cursor, Codex y otros agentes de código, y la aplicación de escritorio puede ejecutar esos agentes dentro del editor. La [CLI](/es/developers/cli/inspecting) inspecciona, revisa, convierte y exporta documentos sin abrir el editor, y su [comando `eval`](/es/developers/cli/scripting) ejecuta scripts escritos para la Figma Plugin API.
 
-Penpot tiene un sistema de plugins para extensiones que se ejecutan en el editor. No tiene asistente integrado, servidor MCP ni scripts sin interfaz.
+Penpot tiene un servidor MCP oficial que permite a los agentes de código trabajar con sus archivos, y un sistema de plugins para extensiones que se ejecutan en el editor. No tiene asistente integrado ni scripts sin interfaz.
 
 ## Colaboración y alojamiento
 
