@@ -94,6 +94,12 @@ const linkDetail = computed(() => {
   if (link.permission === 'edit' && links.guestView) return t.value.shareLinkGuestViewDetail
   return t.value.shareLinkSignInDetail
 })
+/** An embed opens the link without signing in, so it works only where guests may open it. */
+const guestsOpenLink = computed(
+  () =>
+    link.access === 'link' &&
+    (link.permission === 'edit' ? links.guestEdit || links.guestView : links.guestView)
+)
 const permissionLabel = (permission: SharePermission | 'owner') =>
   ({ owner: t.value.shareOwner, edit: t.value.canEdit, view: t.value.canView })[permission]
 
@@ -263,7 +269,10 @@ function submitInvite() {
           </template>
           {{ sendsLink ? t.shareSendLink : copied ? t.shareLinkCopied : t.shareCopyLink }}
         </AppButton>
-        <Tip v-if="link.access === 'link' && link.copyable && embeddable" :label="t.shareEmbedTip">
+        <Tip
+          v-if="link.access === 'link' && link.copyable && embeddable && guestsOpenLink"
+          :label="t.shareEmbedTip"
+        >
           <AppButton variant="outline" @click="emit('copyEmbed')">
             <template #leading>
               <icon-lucide-check v-if="embedCopied" class="size-3.5" />

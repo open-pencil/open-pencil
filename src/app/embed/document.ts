@@ -79,7 +79,11 @@ async function show(editor: Editor, bytes: Uint8Array, name: string, signal: Abo
     new File([Uint8Array.from(bytes)], `${name}.fig`, { type: 'application/octet-stream' }),
     { populate: 'none', signal }
   )
-  signal.throwIfAborted()
+  if (signal.aborted) {
+    // A graph nobody adopted still holds its population worker.
+    editor.releaseGraphResources(graph)
+    signal.throwIfAborted()
+  }
   const outgoing = editor.graph
   editor.replaceGraph(graph)
   editor.releaseGraphResources(outgoing)

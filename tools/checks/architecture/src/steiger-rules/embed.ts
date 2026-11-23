@@ -14,7 +14,8 @@ export function embedImportViolation(
   resolved: string | null
 ): string | null {
   if (!EMBED_SOURCES.some((prefix) => sourceRel.startsWith(prefix))) return null
-  const appCode = specifier.startsWith('@/') || specifier.startsWith('.')
+  // Vite resolves `/src/...` against the project root, as it does `@/`.
+  const appCode = ['@/', '.', '/'].some((prefix) => specifier.startsWith(prefix))
   if (!appCode) return null
   if (resolved && EMBED_SOURCES.some((prefix) => resolved.startsWith(prefix))) return null
   return 'An embed builds only on the public packages and its own modules (src/app/embed, src/views/embed); move what it needs from the app into the owning package.'

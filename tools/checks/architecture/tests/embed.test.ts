@@ -35,6 +35,13 @@ describe('embed imports', () => {
         'src/app/shell/ui/index.ts'
       )
     ).toContain('public packages')
+    expect(
+      embedImportViolation(
+        'src/app/embed/document.ts',
+        '/src/app/shell/ui/index.ts',
+        'src/app/shell/ui/index.ts'
+      )
+    ).toContain('public packages')
   })
 
   test('leave the rest of the app alone', () => {

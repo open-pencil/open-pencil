@@ -78,7 +78,7 @@ Links the server sends point at its own address: `/documents/<id>` for a documen
 
 ## Embedding in other sites
 
-Other sites can show documents shared by link, and community gallery documents, in a frame at `/embed/…`: read-only, live, and without the visitor's account. Self-hosted servers keep this off; turn it on under `[deployment.embedding]`, and list the sites that may embed documents, or leave the list out to let any site:
+Other sites can show documents shared by link, and community gallery documents, in a frame at `/embed/…`, read-only and without the visitor's account. A shared document keeps up with edits as they happen; a community document shows its latest version, or the one its address names. Self-hosted servers keep this off; turn it on under `[deployment.embedding]`, and list the sites that may embed documents, or leave the list out to let any site:
 
 ```toml
 [deployment.embedding]
