@@ -4,6 +4,10 @@
 
 OpenPencil läuft direkt im Browser und muss nicht installiert werden. Öffnen Sie [cloud.openpencil.dev](https://cloud.openpencil.dev), um mit der Gestaltung zu beginnen.
 
+::: tip Umgezogen von app.openpencil.dev
+Die Web-App ist von app.openpencil.dev nach cloud.openpencil.dev umgezogen. Dateien, die Sie dort im Browser gespeichert haben, bleiben unter [app.openpencil.dev](https://app.openpencil.dev), bis diese Adresse hierher weiterleitet: Öffnen Sie sie, um die Dateien in der Cloud zu speichern oder herunterzuladen.
+:::
+
 Wenn Sie ein eigenes Produkt auf OpenPencil aufbauen möchten, lesen Sie den Bereich [Automatisierung](/developers/) und die Dokumentation zum [Vue SDK](/developers/sdk/).
 
 ## Desktop-Anwendung
