@@ -66,8 +66,9 @@ swift-rs = "=1.0.9"
 objc2-core-foundation = { version = "0.3.2", default-features = false, features = ["std", "CFArray", "CFBase", "CFDictionary", "CFNotificationCenter", "CFSet", "CFString", "CFURL"] }
 objc2-core-text = { version = "0.3.2", default-features = false, features = ["std", "CTFontDescriptor", "CTFontManager"] }
 
-# Tauri's own copy, to read the WebKitGTK version before the webview starts (`explicit_sync`).
 [target.'cfg(target_os = "linux")'.dependencies]
+gtk = "0.18"
+# Tauri's own copy, to read the WebKitGTK version before the webview starts (`explicit_sync`).
 webkit2gtk-sys = "2"
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]

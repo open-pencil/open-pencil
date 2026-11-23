@@ -8,6 +8,8 @@ mod icons;
 mod launch;
 mod menu;
 mod network;
+#[cfg(target_os = "linux")]
+mod pinch;
 mod system;
 mod updates;
 
@@ -170,6 +172,8 @@ pub fn run() {
                     app.handle().clone(),
                 ))
                 .build()?;
+            #[cfg(target_os = "linux")]
+            pinch::install(&window)?;
             fonts::watch::start(app.handle(), &window);
 
             launch::queue_open_paths(app.handle(), args::startup_open_paths());

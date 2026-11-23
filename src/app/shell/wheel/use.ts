@@ -1,7 +1,28 @@
-import { useEventListener } from '@vueuse/core'
+import { listen } from '@tauri-apps/api/event'
+import { platform } from '@tauri-apps/plugin-os'
+import { tryOnScopeDispose, useEventListener } from '@vueuse/core'
+
+import { IS_TAURI } from '@/constants'
 
 import type { HorizontalScroller } from './history-swipe'
 import { startsHistorySwipe } from './history-swipe'
+
+type PinchWheel = Pick<WheelEvent, 'clientX' | 'clientY' | 'deltaY'>
+
+function useLinuxPinchWheel(): void {
+  if (!IS_TAURI || platform() !== 'linux') return
+
+  const subscription = listen<PinchWheel>('canvas-pinch-wheel', ({ payload }) => {
+    // Hit-test like a wheel event so the canvas under the pointer (including its overlays)
+    // handles the zoom, without sending pinches over a panel to the active canvas.
+    document
+      .elementFromPoint(payload.clientX, payload.clientY)
+      ?.dispatchEvent(
+        new WheelEvent('wheel', { ...payload, ctrlKey: true, bubbles: true, cancelable: true })
+      )
+  })
+  tryOnScopeDispose(() => void subscription.then((unlisten) => unlisten()))
+}
 
 function* scrollersUnder(event: WheelEvent): Generator<HorizontalScroller> {
   for (const target of event.composedPath()) {
@@ -23,6 +44,7 @@ function* scrollersUnder(event: WheelEvent): Generator<HorizontalScroller> {
  * the browser's history.
  */
 export function useEditorWheelGuard(): void {
+  useLinuxPinchWheel()
   useEventListener(
     document,
     'wheel',

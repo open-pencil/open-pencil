@@ -3771,6 +3771,7 @@ version = "0.17.0"
 dependencies = [
  "fix-path-env",
  "fontique 0.11.1",
+ "gtk",
  "httparse",
  "keyring",
  "notify",
