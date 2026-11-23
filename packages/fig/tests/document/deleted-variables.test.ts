@@ -71,7 +71,7 @@ test('a deleted collection and its variables are kept, out of every list', () =>
 })
 
 function paintVariable(extra: Partial<NodeChange> = {}): NodeChange {
-  // A paint value as Figma writes it; the pinned schema has no PAINT type or paint values.
+  // A paint value as Figma writes it; the codec's types have no PAINT type or paint values.
   const paint = (blendMode: string) => ({
     modeID: LIGHT,
     variableData: {

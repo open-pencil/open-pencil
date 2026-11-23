@@ -20,7 +20,7 @@ describe('bundled Figma Kiwi schema', () => {
   })
 
   test('keeps high-value Figma schema guards stable', () => {
-    expect(figmaSchema.definitions).toHaveLength(605)
+    expect(figmaSchema.definitions).toHaveLength(674)
     expect(figmaSchema.definitions.some((def) => def.name === 'NodeChange')).toBe(true)
     expect(
       figmaSchema.definitions.some((def) => def.name === 'InteractiveSlideElementChange')

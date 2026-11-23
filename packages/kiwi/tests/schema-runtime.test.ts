@@ -204,7 +204,7 @@ describe('Kiwi schema runtime', () => {
   })
 
   test('keeps the bundled schema aligned with a modern embedded Figma schema', () => {
-    expect(figSchema.definitions).toHaveLength(605)
+    expect(figSchema.definitions).toHaveLength(674)
     expect(figSchema.definitions.some((def) => def.name === 'NodeChange')).toBe(true)
     expect(figSchema.definitions.some((def) => def.name === 'InteractiveSlideElementChange')).toBe(
       true
