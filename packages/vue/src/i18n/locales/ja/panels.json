@@ -478,6 +478,7 @@
   "strokeDashGap": "間隔",
   "lineHeightMode": "行の高さモード",
   "unresolvedVariable": "変数の値を取得できません",
+  "variableDeleted": "変数は削除されました",
   "searchComponentProperties": "プロパティを検索",
   "noComponentProperties": "プロパティが見つかりません",
   "variableModeAuto": "自動（{mode}）",

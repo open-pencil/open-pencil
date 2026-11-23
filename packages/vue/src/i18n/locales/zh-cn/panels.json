@@ -478,6 +478,7 @@
   "strokeDashGap": "间距",
   "lineHeightMode": "行高模式",
   "unresolvedVariable": "变量值不可用",
+  "variableDeleted": "变量已删除",
   "searchComponentProperties": "搜索属性",
   "noComponentProperties": "未找到属性",
   "variableModeAuto": "自动（{mode}）",

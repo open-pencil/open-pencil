@@ -191,7 +191,7 @@ function resolverDocument(collections: readonly CollectionFiles[], stylesPath: s
  */
 export function exportDesignTokens(graph: SceneGraph): DesignTokenExport {
   const issues: DesignTokenIssue[] = []
-  const collections = [...graph.variableCollections.values()]
+  const collections = graph.getLiveCollections()
   const references = new Map<string, string[]>()
   const collectionOf = new Map<string, VariableCollection>()
   const placedByCollection = new Map<string, Array<{ variable: Variable; path: string[] }>>()

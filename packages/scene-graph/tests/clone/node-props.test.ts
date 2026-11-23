@@ -170,6 +170,7 @@ describe('cloneNodeProps fig import mode', () => {
           layout: null,
           symbolOverrides: [],
           componentPropAssignments: [],
+          hiddenSlotAssignments: [],
           derivedSymbolData: [],
           derivedSymbolDataLayoutVersion: null,
           uniformScaleFactor: null
@@ -236,6 +237,7 @@ describe('cloneNodeProps coverage guard', () => {
           layout: null,
           symbolOverrides: [],
           componentPropAssignments: [],
+          hiddenSlotAssignments: [],
           derivedSymbolData: [],
           derivedSymbolDataLayoutVersion: 1,
           uniformScaleFactor: 1

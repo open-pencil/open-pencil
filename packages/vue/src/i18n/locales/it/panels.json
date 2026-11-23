@@ -484,6 +484,7 @@
   "strokeDashGap": "Spazio",
   "lineHeightMode": "Modalità altezza riga",
   "unresolvedVariable": "Valore della variabile non disponibile",
+  "variableDeleted": "La variabile è stata eliminata",
   "searchComponentProperties": "Cerca proprietà",
   "noComponentProperties": "Nessuna proprietà trovata",
   "variableModeAuto": "Auto ({mode})",
