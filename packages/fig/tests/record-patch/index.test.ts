@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { parseFigBuffer, readStreamBytes, writeFigArchive, writeFigContainer } from '#fig/index'
 import {
+  figArchiveRecordInfo,
   figComponentUsePages,
   figRecordPages,
   patchFigArchive,
@@ -261,5 +262,61 @@ describe('writing the patched archive', () => {
 
     expect(written.nodeChanges.map((change) => change.name)).toEqual(['Doc'])
     expect(written.images).toEqual([['new', new Uint8Array([4, 5, 6])]])
+  })
+})
+
+describe('what the archive tells a save', () => {
+  const paint = (localID: number, extra: Partial<NodeChange>) =>
+    ({
+      guid: guid(localID),
+      type: 'VARIABLE',
+      variableResolvedType: 'PAINT',
+      ...extra
+    }) as NodeChange
+  const info = (extra: Partial<Parameters<typeof figArchiveRecordInfo>[0]>) =>
+    figArchiveRecordInfo({
+      records: [],
+      resources: [],
+      slotContent: [],
+      blobs: [],
+      imageHashes: [],
+      ...extra
+    })
+
+  test('names the variable records the reader leaves out, with the collection each names', () => {
+    const sets = [
+      { guid: guid(3), type: 'VARIABLE_SET', key: 'lib', version: '1' },
+      { guid: guid(4), type: 'VARIABLE_SET', key: 'lib', version: '2' }
+    ] as NodeChange[]
+    const byGuid = paint(5, { variableSetID: { guid: guid(3) } })
+    const byParent = paint(6, { parentIndex: { guid: guid(4), position: '0' } })
+    const byVersion = paint(7, { variableSetID: { assetRef: { key: 'lib', version: '2' } } })
+    const unknown = paint(8, { variableSetID: { assetRef: { key: 'other', version: '1' } } })
+    const color = { guid: guid(9), type: 'VARIABLE', variableResolvedType: 'COLOR' } as NodeChange
+    const { unreadVariables } = info({
+      resources: [...sets, byGuid, byParent, byVersion, unknown, color]
+    })
+    expect(unreadVariables).toEqual([
+      { record: byGuid, collectionId: '1:3' },
+      { record: byParent, collectionId: '1:4' },
+      { record: byVersion, collectionId: '1:4' },
+      { record: unknown }
+    ])
+  })
+
+  test('hands over slot content with the blobs it cites, numbered from the first', () => {
+    const geometry = (index: number) => [{ windingRule: 'NONZERO', commandsBlob: index }]
+    const frame = record(10, 1, { fillGeometry: geometry(4) } as Partial<NodeChange>)
+    const child = record(11, 10, {
+      fillGeometry: geometry(2),
+      strokeGeometry: geometry(4)
+    } as Partial<NodeChange>)
+    const blobs = [0, 1, 2, 3, 4].map((value) => new Uint8Array([value]))
+    const { slotContent } = info({ slotContent: [frame, child], blobs })
+    expect(slotContent.blobs).toEqual([new Uint8Array([4]), new Uint8Array([2])])
+    expect(slotContent.records).toEqual([
+      { ...frame, fillGeometry: geometry(0) },
+      { ...child, fillGeometry: geometry(1), strokeGeometry: geometry(0) }
+    ])
   })
 })

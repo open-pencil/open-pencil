@@ -164,6 +164,16 @@ test('numeric formulas can drive imported color opacity expressions', () => {
   expect(graph.resolveColorVariable(color.id)?.a).toBe(0.3)
 })
 
+test('a deleted variable is referenced by its ID, even beside a live one of its name', () => {
+  const { graph, collection, base, derived, mode, parse, set } = setup()
+  set('{base} * 2')
+  graph.addVariable({ ...base, deleted: true })
+  graph.createVariable('base', 'FLOAT', collection.id, 100)
+  const text = formatVariableFormula(graph, derived.valuesByMode[mode])
+  expect(text).toContain(`{#${base.id}}`)
+  expect(parse(text).resolved).toBe(8)
+})
+
 test('references with duplicate or reserved names retain editable ID fallbacks', () => {
   const { graph, base, derived, mode, parse, set } = setup()
   set('{base} * 2')
@@ -215,8 +225,11 @@ test('qualified names, missing dependencies, reference remapping and runtime val
   expect(graph.resolveVariable(derived.id)).toBeUndefined()
   expect(() => parse(formatVariableFormula(graph, definition))).toThrow()
   expect(
-    v.safeParse(variableFormulaSchema, { expression: 'FORMULA', type: 'FLOAT', value: Infinity })
-      .success
+    v.safeParse(variableFormulaSchema, {
+      expression: 'FORMULA',
+      type: 'FLOAT',
+      value: Infinity
+    }).success
   ).toBe(false)
 })
 
@@ -267,12 +280,19 @@ test('numeric schema and resolver reject invalid formula trees', () => {
     { operator: 'add', operands: [true, 1] },
     { operator: 'add', operands: [1] },
     { operator: 'not', operands: [true] },
-    { operator: 'multiply', operands: [1, { operator: 'or', operands: [false, true] }] },
+    {
+      operator: 'multiply',
+      operands: [1, { operator: 'or', operands: [false, true] }]
+    },
     { operator: 'divide', operands: [Infinity, 2] }
   ]
   const { graph, derived, mode } = setup()
   for (const value of values) {
-    const definition: VariableValue = { expression: 'FORMULA', type: 'FLOAT', value }
+    const definition: VariableValue = {
+      expression: 'FORMULA',
+      type: 'FLOAT',
+      value
+    }
     expect(v.safeParse(variableFormulaSchema, definition).success).toBe(false)
     derived.valuesByMode[mode] = definition
     expect(graph.resolveVariable(derived.id)).toBeUndefined()
@@ -280,7 +300,11 @@ test('numeric schema and resolver reject invalid formula trees', () => {
 })
 
 test('bounded schema rejects deeply nested and cyclic input', () => {
-  const value: VariableValue = { expression: 'FORMULA', type: 'FLOAT', value: 1 }
+  const value: VariableValue = {
+    expression: 'FORMULA',
+    type: 'FLOAT',
+    value: 1
+  }
   if (!('expression' in value) || value.expression !== 'FORMULA')
     throw new Error('Expected formula')
   for (let i = 0; i < 65; i++) value.value = { operator: 'negate', operands: [value.value] }
@@ -289,8 +313,11 @@ test('bounded schema rejects deeply nested and cyclic input', () => {
   const cyclic: VariableFormulaNode = { operator: 'negate', operands }
   operands[0] = cyclic
   expect(
-    v.safeParse(variableFormulaSchema, { expression: 'FORMULA', type: 'FLOAT', value: cyclic })
-      .success
+    v.safeParse(variableFormulaSchema, {
+      expression: 'FORMULA',
+      type: 'FLOAT',
+      value: cyclic
+    }).success
   ).toBe(false)
 })
 
@@ -299,7 +326,9 @@ test('a depth-limited batch lookup does not poison a later shallow lookup', () =
   let previous = base
   const chain = [base]
   for (let i = 0; i < 65; i++) {
-    previous = graph.createVariable(`alias${i}`, 'FLOAT', collection.id, { aliasId: previous.id })
+    previous = graph.createVariable(`alias${i}`, 'FLOAT', collection.id, {
+      aliasId: previous.id
+    })
     chain.push(previous)
   }
   const node = graph.createNode('FRAME', graph.getPages()[0].id)
@@ -376,7 +405,9 @@ test('a long formula breaks before its outermost and, or, + and -, and reads bac
   const shown = (id: string) => graph.variables.get(id)?.name ?? id
   expect(formatVariableFormula(graph, value, { width: 60, display: shown })).toBe(source)
   // A chain inside parentheses, or an operator that does not break, stays on its line.
-  expect(formatVariableFormula(graph, parse('{viewport} * 2 > 1000').value, { width: 5 })).toBe(
-    '{viewport} * 2 > 1000'
-  )
+  expect(
+    formatVariableFormula(graph, parse('{viewport} * 2 > 1000').value, {
+      width: 5
+    })
+  ).toBe('{viewport} * 2 > 1000')
 })

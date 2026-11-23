@@ -3,7 +3,8 @@ import { isEqual } from 'es-toolkit/predicate'
 import {
   figCheckpointRecords,
   type FigArchiveRecordInfo,
-  type FigRecordPatch
+  type FigRecordPatch,
+  type FigUnreadVariable
 } from '@open-pencil/fig'
 import {
   nameImagesForFigma,
@@ -403,7 +404,7 @@ function writeRecords(
 function variableRecords(
   setup: FigExportSetup,
   archiveInternalCanvas: boolean,
-  unread: readonly KiwiNodeChange[]
+  unread: readonly FigUnreadVariable[]
 ): KiwiNodeChange[] {
   const internal = setup.canvasEntries.find((entry) => entry.page.internalOnly)
   if (!internal) return []

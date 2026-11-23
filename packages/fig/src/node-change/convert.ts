@@ -17,6 +17,7 @@ import { pixelLength } from '@open-pencil/scene-graph/text'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 
+import { isBlobIndexField } from './blobs'
 import { importCanvasGuides } from './canvas-guides'
 import { convertFigmaDerivedTextGlyphs } from './derived-text/glyphs'
 import { convertFontFeatures } from './font/features'
@@ -1210,7 +1211,7 @@ function preserveFigmaPayloadBlobs(value: unknown, blobs: Uint8Array[]): unknown
   if (!value || typeof value !== 'object') return value
   const result: Record<string, unknown> = {}
   for (const [key, child] of Object.entries(value)) {
-    if ((key === 'commandsBlob' || key === 'vectorNetworkBlob') && typeof child === 'number') {
+    if (isBlobIndexField(key) && typeof child === 'number') {
       const blob: unknown = blobs[child]
       if (blob == null) {
         result[key] = child

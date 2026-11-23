@@ -1,3 +1,5 @@
+import { groupBy } from 'es-toolkit'
+
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
@@ -17,17 +19,16 @@ export function savedSlotContent(
         : []
     )
   )
-  const children = new Map<string, NodeChange[]>()
-  for (const header of headers) {
-    const parent = header.parentIndex?.guid && guidToString(header.parentIndex.guid)
-    if (parent) children.set(parent, [...(children.get(parent) ?? []), header])
-  }
+  // Records without a parent group under '', which no record's GUID spells.
+  const children = groupBy(headers, (header) =>
+    header.parentIndex ? guidToString(header.parentIndex.guid) : ''
+  )
   const subtree = (header: NodeChange): NodeChange[] => [
     whole(header),
-    ...(header.guid ? (children.get(guidToString(header.guid)) ?? []) : []).flatMap(subtree)
+    ...(header.guid ? (children[guidToString(header.guid)] ?? []) : []).flatMap(subtree)
   ]
   return [...internal].flatMap((canvas) =>
-    (children.get(canvas) ?? [])
+    (children[canvas] ?? [])
       .filter((header) => header.type === 'FRAME' && whole(header).isSlotContent === true)
       .flatMap(subtree)
   )

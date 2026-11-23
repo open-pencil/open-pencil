@@ -194,7 +194,7 @@ export function createFigDocumentSession(
         records: archive.records,
         resources: archive.reader.resources,
         slotContent: archive.reader.slotContent,
-        blobCount: archive.blobs.length,
+        blobs: archive.blobs,
         imageHashes: archive.images.map(([hash]) => hash)
       })
       return recordInfo

@@ -2,7 +2,7 @@ import { deflateSync, inflateSync } from 'fflate'
 import { toUint8Array } from 'js-base64'
 
 import type { CanvasKit } from '@open-pencil/canvaskit'
-import { figArchiveMetaJSON } from '@open-pencil/fig'
+import { figArchiveMetaJSON, type FigUnreadVariable } from '@open-pencil/fig'
 import {
   applyVariableModes,
   buildComponentPropIndex,
@@ -152,17 +152,15 @@ function assignOwnLayerGuids(
 }
 
 /**
- * The first local ID the counter can mint in sessions 0 and 1: past every saved GUID and every
- * ID that layers, collections, modes, variables, component properties, and variants' copies of
- * their sets' properties are saved under.
+ * The first local ID the counter can mint in sessions 0 and 1: past every reserved ID and every
+ * ID that layers, collections, modes, variables (deleted ones too), component properties, and
+ * variants' copies of their sets' properties are saved under.
  */
-export function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly string[]): number {
-  const ids = [...propertyIds, ...savedPropertyCopyIds(graph)]
+export function firstUnclaimedLocalId(graph: SceneGraph, reservedIds: Iterable<string>): number {
+  const ids = [...reservedIds, ...savedPropertyCopyIds(graph), ...graph.variables.keys()]
   for (const node of graph.nodes.values()) ids.push(node.source.id || node.id)
-  for (const [collectionId, collection] of graph.variableCollections) {
+  for (const [collectionId, collection] of graph.variableCollections)
     appendAll(ids, [collectionId, ...collection.modes.map((mode) => mode.modeId)])
-    appendAll(ids, collection.variableIds)
-  }
   let last = 0
   for (const id of ids) {
     const guid = parseGuidOrNull(id)
@@ -413,7 +411,7 @@ export interface FigExportSetupOptions {
   /** Writing into an archive: the variables, collections and modes it holds keep their GUIDs. */
   archiveResourceIds?: ReadonlySet<string>
   /** Records the document never read, which the write keeps, so nothing new takes their GUIDs. */
-  unreadVariables?: readonly KiwiNodeChange[]
+  unreadVariables?: readonly FigUnreadVariable[]
   /** Leaves the document's comments out of its record. */
   withoutComments?: boolean
 }
@@ -441,7 +439,9 @@ export async function prepareFigExport(
   const assignedGuidValues = new Set<string>()
   // No layer takes the document's GUID, which an imported "0:0" would, or an unread record's.
   assignedGuidValues.add(`${docGuid.sessionID}:${docGuid.localID}`)
-  for (const { guid } of options.unreadVariables ?? [])
+  for (const {
+    record: { guid }
+  } of options.unreadVariables ?? [])
     if (guid) assignedGuidValues.add(guidToString(guid))
   const varIdToGuid = new Map<string, GUID>()
   const modeIdToGuid = new Map<string, GUID>()
@@ -451,10 +451,10 @@ export async function prepareFigExport(
   const sourceOwners = layerSourceOwners(graph)
   const archiveRecordIds = new Set(options.archiveRecordIds)
   const propertyIds = collectComponentPropertyIds(graph)
-  // Before any canvas, variable or layer takes a counter GUID, so none collides.
+  // Before any canvas, variable or layer takes a counter GUID, so none collides with a reserved one.
   localIdCounter.value = Math.max(
     localIdCounter.value,
-    firstUnclaimedLocalId(graph, propertyIds),
+    firstUnclaimedLocalId(graph, [...propertyIds, ...assignedGuidValues]),
     options.nextLocalId ?? 0
   )
 

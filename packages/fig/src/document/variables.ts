@@ -273,13 +273,21 @@ export function createDocumentVariables(
   }
 }
 
+/** The collection a variable record names: by its reference, or else as its parent. */
+export function variableCollectionId(
+  variable: NodeChange,
+  resolve: ReturnType<typeof createResourceResolver>
+): string | undefined {
+  if (variable.variableSetID) return resolve(variable.variableSetID)
+  const parent = variable.parentIndex?.guid
+  return parent ? guidToString(parent) : undefined
+}
+
 function variableLinks(
   variable: NodeChange,
   resolve: ReturnType<typeof createResourceResolver>
 ): VariableLinks {
-  const collection = variable.variableSetID
-    ? resolve(variable.variableSetID)
-    : variable.parentIndex?.guid && guidToString(variable.parentIndex.guid)
+  const collection = variableCollectionId(variable, resolve)
   const aliases: string[] = []
   for (const entry of variable.variableDataValues?.entries ?? []) {
     visitVariableReferences(entry.variableData, (reference) => {
@@ -398,9 +406,7 @@ function addVariables(
       else report(resource, `unsupported type ${String(type)}`)
       continue
     }
-    const collectionId = resource.variableSetID
-      ? resolve(resource.variableSetID)
-      : resource.parentIndex?.guid && guidToString(resource.parentIndex.guid)
+    const collectionId = variableCollectionId(resource, resolve)
     const collection = collectionId && graph.variableCollections.get(collectionId)
     if (!resource.guid || !collection || !collectionId) {
       report(resource, 'unresolved collection or identity')

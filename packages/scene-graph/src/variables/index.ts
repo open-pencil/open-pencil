@@ -59,10 +59,13 @@ export function addVariable(graph: SceneGraph, variable: Variable): void {
   graph.willChangeVariable(variable.id)
   graph.variables.set(variable.id, variable)
   const collection = graph.variableCollections.get(variable.collectionId)
-  if (collection && !variable.deleted && !collection.variableIds.includes(variable.id)) {
-    graph.willChangeCollection(collection.id)
-    collection.variableIds.push(variable.id)
-  }
+  if (!collection) return
+  // A collection lists its live variables, so one replaced by its deleted record leaves the list.
+  if (collection.variableIds.includes(variable.id) === !variable.deleted) return
+  graph.willChangeCollection(collection.id)
+  collection.variableIds = variable.deleted
+    ? collection.variableIds.filter((id) => id !== variable.id)
+    : [...collection.variableIds, variable.id]
 }
 
 export function removeVariable(graph: SceneGraph, id: string): void {

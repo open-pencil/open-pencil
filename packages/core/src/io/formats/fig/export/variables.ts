@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import type { FigUnreadVariable } from '@open-pencil/fig'
 import {
   collectionPluginDataNodeChange,
   figmaFormulaFunction,
@@ -82,7 +83,11 @@ export function assignVariableGuids(
       )
       modeIdToGuid.set(mode.modeId, modeGuid)
     }
-    for (const varId of col.variableIds) {
+    // Deleted variables are written too, so they keep their GUIDs like the listed ones.
+    for (const varId of [
+      ...col.variableIds,
+      ...deletedVariablesOf(graph, colId).map((item) => item.id)
+    ]) {
       const varGuid = assignVariableGuid(
         varId,
         localIdCounter,
@@ -239,14 +244,6 @@ export function sequentialPositions(start = 0): () => string {
   return () => fractionalPosition(index++)
 }
 
-/** Whether the collection an unread variable record names is still in the document. */
-function keepsCollection(graph: SceneGraph, record: NodeChange): boolean {
-  const reference = record.variableSetID
-  if (reference?.guid) return graph.variableCollections.has(guidToString(reference.guid))
-  const key = reference?.assetRef?.key
-  return !key || [...graph.variableCollections.values()].some((item) => item.key === key)
-}
-
 /**
  * The document's collections and variables, deleted ones included, then the variable records it
  * never read, which go back as the file saved them unless their collection is gone.
@@ -258,7 +255,7 @@ export function appendVariableNodeChanges(
   ids: Map<string, GUID>,
   modes: Map<string, GUID>,
   nextPosition: () => string = sequentialPositions(),
-  unread: readonly NodeChange[] = []
+  unread: readonly FigUnreadVariable[] = []
 ): void {
   const modeKey = (modeId: string) => guidToString(modes.get(modeId) ?? stringToGuid(modeId))
   for (const collection of graph.variableCollections.values()) {
@@ -316,11 +313,13 @@ export function appendVariableNodeChanges(
       })
     }
   }
-  for (const record of unread) {
-    if (!keepsCollection(graph, record)) continue
-    changes.push({
-      ...structuredClone(record),
-      parentIndex: { guid: parent, position: nextPosition() }
-    })
+  for (const { record, collectionId } of unread) {
+    // One the file already left without a collection stays as it was.
+    if (collectionId && !graph.variableCollections.has(collectionId)) continue
+    const written = structuredClone(record)
+    // A record named its collection as its parent, which the internal canvas now is.
+    if (!written.variableSetID && collectionId)
+      written.variableSetID = { guid: stringToGuid(collectionId) }
+    changes.push({ ...written, parentIndex: { guid: parent, position: nextPosition() } })
   }
 }

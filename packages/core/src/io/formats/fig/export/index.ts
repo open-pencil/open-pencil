@@ -3,7 +3,8 @@ import {
   figCheckpointRecords,
   readStreamBytes,
   renameFigArchive,
-  streamFigArchive
+  streamFigArchive,
+  type FigUnreadVariable
 } from '@open-pencil/fig'
 import {
   nameImagesForFigma,
@@ -48,7 +49,7 @@ import { appendVariableNodeChanges, sequentialPositions, assignSharedStyleGuids 
 type InternalResourceContext = FigExportSetup & {
   nodeChanges: KiwiNodeChange[]
   /** Variable records of the opened file the document never read, written back as they are. */
-  unreadVariables: readonly KiwiNodeChange[]
+  unreadVariables: readonly FigUnreadVariable[]
 }
 
 /**
@@ -227,9 +228,10 @@ async function writeFigFile(
     let next = first + slotContentRecords.filter((record) => record.isSlotContent).length
     const saved = savedSlotContentFor(
       nodeChanges,
-      archived?.slotContent ?? [],
+      archived?.slotContent ?? { records: [], blobs: [] },
       internalCanvasGuid,
-      () => fractionalPosition(next++)
+      () => fractionalPosition(next++),
+      blobs
     )
     appendAll(nodeChanges, saved)
   }

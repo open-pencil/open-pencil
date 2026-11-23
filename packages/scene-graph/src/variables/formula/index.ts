@@ -38,7 +38,8 @@ function qualifiedName(graph: SceneGraph, id: string) {
 /** Qualified names disambiguate references; the stored formula uses stable IDs. */
 export function variableFormulaReference(graph: SceneGraph, id: string): string {
   const variable = graph.variables.get(id)
-  if (!variable) return `{#${id}}`
+  // A deleted variable's name no longer names it, so only its ID does.
+  if (!variable || variable.deleted) return `{#${id}}`
   const unique = (name: string, of: (id: string) => string | undefined) =>
     graph.getLiveVariables().filter((other) => of(other.id) === name).length === 1
   const plain = variable.name
