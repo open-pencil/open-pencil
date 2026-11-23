@@ -93,8 +93,12 @@ const {
       state.value = 'expired'
       return
     }
+    const picked = workspace.value
     show(value)
-    fail(decision === 'allow' ? appMessages.value.authorizeWorkspaceGone : failures.api(cause))
+    // An answer refused while the picked workspace is still listed was refused for another reason,
+    // such as the same browser answering another app at that moment.
+    const gone = decision === 'allow' && !value.workspaces.some((option) => option.id === picked)
+    fail(gone ? appMessages.value.authorizeWorkspaceGone : failures.api(cause))
   }
 })
 

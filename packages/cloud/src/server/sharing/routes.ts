@@ -57,7 +57,7 @@ export function createDocumentSharingRoutes(
     .get(
       '/documents/:documentId/users/:userId',
       documentUserParams,
-      tokenRoute.read.document,
+      tokenRoute.read.personal,
       (context) =>
         sharingRoute(context, async () =>
           context.json({
@@ -69,7 +69,7 @@ export function createDocumentSharingRoutes(
           })
         )
     )
-    .get('/documents/:documentId/shares', documentParams, tokenRoute.read.document, (context) =>
+    .get('/documents/:documentId/shares', documentParams, tokenRoute.read.personal, (context) =>
       sharingRoute(context, async () =>
         context.json({
           shares: await service.listShares(
@@ -142,7 +142,7 @@ export function createDocumentSharingRoutes(
           return context.body(null, 204)
         })
     )
-    .get('/documents/:documentId/grants', documentParams, tokenRoute.read.document, (context) =>
+    .get('/documents/:documentId/grants', documentParams, tokenRoute.read.personal, (context) =>
       sharingRoute(context, async () =>
         context.json({
           grants: await service.listGrants(
@@ -186,7 +186,7 @@ export function createDocumentSharingRoutes(
     .get(
       '/documents/:documentId/invitations',
       documentParams,
-      tokenRoute.read.document,
+      tokenRoute.read.personal,
       (context) =>
         sharingRoute(context, async () =>
           context.json({

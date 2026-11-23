@@ -21,22 +21,40 @@ export function createWorkspaceChoices(database: Kysely<CloudDatabase>) {
       .where('workspaceId', '=', workspaceId)
       .executeTakeFirst()
 
+  const fresh = () => new Date(Date.now() - WORKSPACE_CHOICE_SECONDS * 1000)
+
   return {
-    /** Records the pick, or answers false when the person is not in that workspace. */
-    async choose(sessionId: string, userId: string, workspaceId: string): Promise<boolean> {
-      if (!(await membership(userId, workspaceId))) return false
-      await database
+    /**
+     * Records the pick for one request. A session answers one request at a time: while another
+     * request's pick is fresh, this one is refused rather than handing that request its workspace.
+     */
+    async choose(
+      sessionId: string,
+      userId: string,
+      workspaceId: string
+    ): Promise<WorkspaceChoice | 'not-member' | 'in-progress'> {
+      if (!(await membership(userId, workspaceId))) return 'not-member'
+      const chosenAt = new Date()
+      const recorded = await database
         .insertInto('oauthWorkspaceChoice')
-        .values({ sessionId, userId, workspaceId, chosenAt: new Date() })
+        .values({ sessionId, userId, workspaceId, chosenAt })
         .onConflict((conflict) =>
-          conflict.column('sessionId').doUpdateSet({ userId, workspaceId, chosenAt: new Date() })
+          conflict
+            .column('sessionId')
+            .doUpdateSet({ userId, workspaceId, chosenAt })
+            .where('oauthWorkspaceChoice.chosenAt', '<=', fresh())
         )
-        .execute()
-      return true
+        .returning('sessionId')
+        .executeTakeFirst()
+      return recorded ? { sessionId, chosenAt } : 'in-progress'
     },
-    /** Forgets the session's pick once the request it was for is answered. */
-    async clear(sessionId: string): Promise<void> {
-      await database.deleteFrom('oauthWorkspaceChoice').where('sessionId', '=', sessionId).execute()
+    /** Forgets a pick once the request it was for is answered. */
+    async clear(choice: WorkspaceChoice): Promise<void> {
+      await database
+        .deleteFrom('oauthWorkspaceChoice')
+        .where('sessionId', '=', choice.sessionId)
+        .where('chosenAt', '=', choice.chosenAt)
+        .execute()
     },
     /** The session's recent pick, while its person still belongs to the workspace. */
     async current(sessionId: string, userId: string): Promise<string | undefined> {
@@ -50,15 +68,14 @@ export function createWorkspaceChoices(database: Kysely<CloudDatabase>) {
         .select('oauthWorkspaceChoice.workspaceId')
         .where('oauthWorkspaceChoice.sessionId', '=', sessionId)
         .where('oauthWorkspaceChoice.userId', '=', userId)
-        .where(
-          'oauthWorkspaceChoice.chosenAt',
-          '>',
-          new Date(Date.now() - WORKSPACE_CHOICE_SECONDS * 1000)
-        )
+        .where('oauthWorkspaceChoice.chosenAt', '>', fresh())
         .executeTakeFirst()
       return choice?.workspaceId
     }
   }
 }
+
+/** A pick recorded for one request, which that request alone clears. */
+export type WorkspaceChoice = { sessionId: string; chosenAt: Date }
 
 export type WorkspaceChoices = ReturnType<typeof createWorkspaceChoices>

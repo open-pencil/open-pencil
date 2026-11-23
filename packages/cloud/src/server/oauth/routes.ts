@@ -28,6 +28,13 @@ const requestQuerySchema = v.object({
   query: v.pipe(v.string(), v.minLength(1), v.maxLength(8192))
 })
 
+const FAILURE_STATUS = {
+  invalid_request: 400,
+  workspace_not_found: 404,
+  // Another request of the same session is being answered; this one can be sent again.
+  request_in_progress: 409
+} as const satisfies Record<OAuthRequestError['code'], number>
+
 /** The issuer's path, where clients that follow RFC 8414 look for its metadata. */
 const ISSUER_PATH = '/api/auth'
 
@@ -47,10 +54,7 @@ export function createOAuthRoutes(dependencies: OAuthRouteDependencies) {
   }
   const failure = (error: unknown) => {
     if (error instanceof OAuthRequestError) {
-      return Response.json(
-        { error: { code: error.code } },
-        { status: error.code === 'workspace_not_found' ? 404 : 400 }
-      )
+      return Response.json({ error: { code: error.code } }, { status: FAILURE_STATUS[error.code] })
     }
     throw error
   }

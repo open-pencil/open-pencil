@@ -31,7 +31,7 @@ export type OAuthProviderSteps = {
 }
 
 export class OAuthRequestError extends Error {
-  constructor(readonly code: 'invalid_request' | 'workspace_not_found') {
+  constructor(readonly code: 'invalid_request' | 'workspace_not_found' | 'request_in_progress') {
     super(code)
     this.name = 'OAuthRequestError'
   }
@@ -113,9 +113,9 @@ export function createOAuthService(options: {
       if (decision.decision === 'deny') {
         return (await steps.consent(request, decision.query, false)).url
       }
-      if (!(await choices.choose(session.id, session.userId, decision.workspaceId))) {
-        throw new OAuthRequestError('workspace_not_found')
-      }
+      const choice = await choices.choose(session.id, session.userId, decision.workspaceId)
+      if (choice === 'not-member') throw new OAuthRequestError('workspace_not_found')
+      if (choice === 'in-progress') throw new OAuthRequestError('request_in_progress')
       try {
         const next = (await steps.continue(request, decision.query)).url
         const url = new URL(next, options.publicURL)
@@ -129,7 +129,7 @@ export function createOAuthService(options: {
         return next
       } finally {
         // Each request asks again which workspace, so an app is never handed one unseen.
-        await choices.clear(session.id)
+        await choices.clear(choice)
       }
     },
 

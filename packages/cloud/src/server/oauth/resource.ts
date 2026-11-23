@@ -20,7 +20,7 @@ const isTokenScope = (scope: string): scope is CloudTokenScope =>
 /**
  * What an app's access token stands for: the account, the client, the workspace its grant
  * reaches, and its document scopes, while the token is live, its app enabled, its audience this
- * server's document API, and the account still in that workspace.
+ * server's document API, the account still in that workspace, and the app still connected to it.
  *
  * The plugin also ties a token to the browser session that approved it and stops it when that
  * session ends; Cloud checks tokens itself and leaves that out, so signing out of the browser does
@@ -66,6 +66,16 @@ export async function resolveAppAccessToken(
     .where('userId', '=', stored.userId)
     .executeTakeFirst()
   if (!member) return null
+  // The person's consent for this app and workspace: disconnecting deletes it, which also stops
+  // tokens the app gets afterwards for an authorization code issued before.
+  const consent = await database
+    .selectFrom('oauthConsent')
+    .select('id')
+    .where('clientId', '=', stored.clientId)
+    .where('userId', '=', stored.userId)
+    .where('referenceId', '=', stored.referenceId)
+    .executeTakeFirst()
+  if (!consent) return null
   return {
     userId: stored.userId,
     scopes: stored.scopes.filter(isTokenScope),
