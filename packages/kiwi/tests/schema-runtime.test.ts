@@ -7,7 +7,7 @@ import {
   validateSchema
 } from '@open-pencil/kiwi/schema-runtime'
 
-import { ByteBuffer, compileSchema, parseSchema } from '../src/schema-runtime'
+import { ByteBuffer, compileSchema, parseSchema, prettyPrintSchema } from '../src/schema-runtime'
 import type { RuntimeMessage } from '../src/schema-runtime/interpreter'
 
 test('rejects malformed byte fields without corrupting buffer length', () => {
@@ -37,6 +37,30 @@ message Item {
 `
 
 describe('Kiwi schema runtime', () => {
+  test('prints a schema as text that parses back to the same schema', () => {
+    const text = [
+      'package example;',
+      '',
+      'enum Kind {',
+      '  A = 0;',
+      '  B = 1;',
+      '}',
+      '',
+      'struct Point {',
+      '  float x;',
+      '  float y;',
+      '}',
+      '',
+      'message Shape {',
+      '  Kind kind = 1;',
+      '  Point[] points = 2;',
+      '  string label = 3 [deprecated];',
+      '}',
+      ''
+    ].join('\n')
+    expect(prettyPrintSchema(parseSchema(text))).toBe(text)
+  })
+
   test('parses and validates inline schemas', () => {
     const schema = parseSchema(schemaText)
     validateSchema(schema)
