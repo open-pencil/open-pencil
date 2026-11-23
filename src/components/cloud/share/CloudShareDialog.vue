@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { CloudLinkPolicy } from '@/app/cloud/sharing/document'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
@@ -61,8 +61,8 @@ const emit = defineEmits<{
 }>()
 
 const ui = cloudShare()
-const t = useCloudMessages()
-const common = useCommonMessages()
+const t = useMessages('cloud/editor')
+const common = useMessages('common')
 const email = ref('')
 const invitePermission = ref<SharePermission>('edit')
 const permissionOptions = computed(() => [

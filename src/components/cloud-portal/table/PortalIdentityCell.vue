@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { focusStyles } from '@open-pencil/theme'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 
@@ -30,7 +30,7 @@ const {
 }>()
 const emit = defineEmits<{ open: [] }>()
 const ui = portalTable()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 </script>
 
 <template>

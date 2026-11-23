@@ -10,7 +10,6 @@ import { applySolidStrokeColor, applyStrokePaint } from '@open-pencil/vue/contro
 import { MIXED, useNodeProps } from '@open-pencil/vue/controls/node-props'
 import { useOkHCL } from '@open-pencil/vue/controls/okhcl'
 import { useStrokeControls } from '@open-pencil/vue/controls/stroke'
-import { useI18n } from '@open-pencil/vue/i18n'
 import {
   BindableValueRoot,
   type BindableValueActions
@@ -45,6 +44,8 @@ const {
   update: updateStyle
 } = useSharedStylePicker('stroke')
 
+import { useMessages } from '@open-pencil/vue/i18n'
+
 import StrokeSettingsPopover from './StrokeSettingsPopover.vue'
 
 const strokeCtx = useStrokeControls()
@@ -69,7 +70,8 @@ function onPickerOpenChange(
   gradients.setOpen(gradients.target(nodeIds, 'strokes', index), open)
   if (!open) commitPaintMutation(binding)
 }
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 const expandedSides = ref(false)
 /** Figma strokes each side apart only on rectangles, frames, components, and instances. */
 const sidesOffered = computed(

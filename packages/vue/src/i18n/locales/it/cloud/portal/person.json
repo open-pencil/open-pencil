@@ -1,0 +1,34 @@
+{
+  "backToPeople": "Tutte le persone",
+  "personAccount": "Account",
+  "emailVerified": "Verificata",
+  "emailNotVerified": "Non verificata",
+  "joinedRow": "Iscrizione",
+  "lastActiveRow": "Ultima attività",
+  "signInMethods": "Metodi di accesso",
+  "twoStepRow": "Verifica in due passaggi",
+  "twoStepNone": "Non configurata",
+  "passkeyCount": {
+    "one": "{count} passkey",
+    "many": "{count} passkey"
+  },
+  "personWorkspaces": "Aree di lavoro",
+  "personWorkspacesEmpty": "Non è in nessuna area di lavoro.",
+  "workspaceMembers": {
+    "one": "{count} membro",
+    "many": "{count} membri"
+  },
+  "workspaceRoleAdmin": "Amministratore",
+  "workspaceRoleEditor": "Editor",
+  "workspaceRoleViewer": "Visualizzatore",
+  "personSessions": "Sessioni",
+  "noSessions": "Nessun accesso attivo.",
+  "personNotFound": "Questo account non esiste",
+  "personNotFoundDescription": "Potrebbe essere stato rimosso. Torna all’elenco delle persone.",
+  "removeSignInMethod": "Rimuovi",
+  "removeSignInMethodHeading": "Rimuovere {provider} dai metodi di accesso di {name}?",
+  "removeSignInMethodDescription": "Non potrà più accedere con questo metodo finché non lo aggiunge di nuovo e riceverà un’email che lo comunica. I dispositivi già connessi restano connessi finché non lo disconnetti ovunque.",
+  "deletePersonAccount": "Elimina account",
+  "deletePersonAccountHeading": "Eliminare l’account di {name}?",
+  "deletePersonAccountDescription": "La sua richiesta di accesso non è mai stata approvata, quindi l’account, i suoi metodi di accesso e la richiesta vengono eliminati. Il registro attività conserva nome ed email. Potrà registrarsi di nuovo."
+}

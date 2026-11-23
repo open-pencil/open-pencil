@@ -1,0 +1,36 @@
+{
+  "backToPeople": "Все пользователи",
+  "personAccount": "Аккаунт",
+  "emailVerified": "Подтверждена",
+  "emailNotVerified": "Не подтверждена",
+  "joinedRow": "Регистрация",
+  "lastActiveRow": "Последняя активность",
+  "signInMethods": "Способы входа",
+  "twoStepRow": "Двухэтапный вход",
+  "twoStepNone": "Не настроен",
+  "passkeyCount": {
+    "one": "{count} ключ доступа",
+    "few": "{count} ключа доступа",
+    "many": "{count} ключей доступа"
+  },
+  "personWorkspaces": "Рабочие пространства",
+  "personWorkspacesEmpty": "Не состоит ни в одном рабочем пространстве.",
+  "workspaceMembers": {
+    "one": "{count} участник",
+    "few": "{count} участника",
+    "many": "{count} участников"
+  },
+  "workspaceRoleAdmin": "Администратор",
+  "workspaceRoleEditor": "Редактор",
+  "workspaceRoleViewer": "Читатель",
+  "personSessions": "Сеансы",
+  "noSessions": "Нигде не выполнен вход.",
+  "personNotFound": "Такого аккаунта нет",
+  "personNotFoundDescription": "Возможно, его удалили. Вернитесь к списку пользователей.",
+  "removeSignInMethod": "Удалить",
+  "removeSignInMethodHeading": "Удалить способ входа {provider} у {name}?",
+  "removeSignInMethodDescription": "Войти этим способом больше не получится, пока его не добавят снова; человек получит об этом письмо. Устройства, на которых уже выполнен вход, остаются в системе, пока вы не завершите все сеансы.",
+  "deletePersonAccount": "Удалить аккаунт",
+  "deletePersonAccountHeading": "Удалить аккаунт {name}?",
+  "deletePersonAccountDescription": "Запрос на доступ так и не был одобрен, поэтому аккаунт, способы входа и запрос будут удалены. В журнале действий останутся имя и почта. Человек сможет зарегистрироваться снова."
+}

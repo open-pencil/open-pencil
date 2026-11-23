@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { formatNumber } from '@/app/i18n/number'
 import { formatStorageBytes } from '@/app/storage/format-bytes'
@@ -26,14 +26,14 @@ const {
 } = defineProps<{ plan: PortalPlan | null; sells?: boolean; busy?: boolean }>()
 const emit = defineEmits<{ openBilling: [] }>()
 
-const messages = useCloudPortalMessages()
+const planMessages = useMessages('cloud/portal/plan')
 
 const storageLabel = computed(() => {
   if (!plan) return ''
   const used = formatStorageBytes(plan.storage.usedBytes)
   return plan.storage.totalBytes === null
-    ? messages.value.planStorageUsed({ used })
-    : messages.value.planStorageOf({ used, total: formatStorageBytes(plan.storage.totalBytes) })
+    ? planMessages.value.planStorageUsed({ used })
+    : planMessages.value.planStorageOf({ used, total: formatStorageBytes(plan.storage.totalBytes) })
 })
 const full = computed(
   () =>
@@ -42,9 +42,9 @@ const full = computed(
     plan.storage.usedBytes >= plan.storage.totalBytes
 )
 const credits = computed(() => {
-  if (!plan?.services) return messages.value.planNoCredits
-  if (plan.monthlyCredits === null) return messages.value.planUnlimitedCredits
-  return messages.value.planCredits({ credits: formatNumber(plan.monthlyCredits) })
+  if (!plan?.services) return planMessages.value.planNoCredits
+  if (plan.monthlyCredits === null) return planMessages.value.planUnlimitedCredits
+  return planMessages.value.planCredits({ credits: formatNumber(plan.monthlyCredits) })
 })
 </script>
 
@@ -53,13 +53,13 @@ const credits = computed(() => {
     <AppAlert
       v-if="full"
       tone="warning"
-      :heading="messages.planStorageFull"
-      :description="messages.planStorageFullDescription"
+      :heading="planMessages.planStorageFull"
+      :description="planMessages.planStorageFullDescription"
     />
 
     <SettingsSection v-if="plan">
       <SettingsGroup>
-        <SettingsRow :label="messages.planStorage" :description="storageLabel">
+        <SettingsRow :label="planMessages.planStorage" :description="storageLabel">
           <AppProgress
             v-if="plan.storage.totalBytes !== null"
             :amount="{ value: plan.storage.usedBytes, max: plan.storage.totalBytes }"
@@ -67,13 +67,13 @@ const credits = computed(() => {
             :ui="{ root: 'w-32' }"
           />
         </SettingsRow>
-        <SettingsRow :label="messages.planMonthlyCredits" :description="credits" />
+        <SettingsRow :label="planMessages.planMonthlyCredits" :description="credits" />
       </SettingsGroup>
     </SettingsSection>
 
     <SettingsSection v-if="sells">
-      <template #title>{{ messages.planBilling }}</template>
-      <template #description>{{ messages.planBillingDescription }}</template>
+      <template #title>{{ planMessages.planBilling }}</template>
+      <template #description>{{ planMessages.planBillingDescription }}</template>
       <template #actions>
         <AppButton
           size="sm"
@@ -83,7 +83,7 @@ const credits = computed(() => {
           data-test-id="portal-plan-billing"
           @click="emit('openBilling')"
         >
-          {{ messages.planOpenBilling }}
+          {{ planMessages.planOpenBilling }}
           <template #trailing><icon-lucide-arrow-up-right class="size-3.5" /></template>
         </AppButton>
       </template>

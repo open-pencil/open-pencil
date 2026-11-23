@@ -1,0 +1,13 @@
+{
+  "decline": "Ablehnen",
+  "removeAccess": "Zugang entziehen",
+  "declineHeading": "{name} ablehnen?",
+  "declineDescription": "Die Person erhält eine E-Mail darüber und kann später erneut anfragen.",
+  "removeAccessHeading": "Zugang für {name} entziehen?",
+  "removeAccessDescription": "Die Person kann sich nicht mehr anmelden und erhält eine E-Mail darüber.",
+  "reviewNote": "Notiz für Administratoren (optional)",
+  "noteDetail": "Notiz: {note}",
+  "noOneWaiting": "Niemand wartet",
+  "nothingHere": "Noch nichts vorhanden",
+  "requestsEmptyDescription": "Neue Anfragen erscheinen hier, und Administratoren erhalten für jede eine E-Mail."
+}

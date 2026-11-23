@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { DEFAULT_SNAPPING_PREFERENCES } from '@open-pencil/core'
-import { useSettingsMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'
@@ -11,7 +11,7 @@ import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
-const settings = useSettingsMessages()
+const settings = useMessages('settings')
 
 const snapToGeometry = computed({
   get: () => appPreferences.value.editing.snapping.geometry,

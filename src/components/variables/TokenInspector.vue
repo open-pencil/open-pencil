@@ -23,7 +23,7 @@ import {
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { tokenNumberFromUnit, tokenNumberInUnit } from '@open-pencil/scene-graph/variables'
 import { randomHex } from '@open-pencil/std/random'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type {
   AliasCandidate,
@@ -79,7 +79,7 @@ const emit = defineEmits<{
   remove: []
 }>()
 
-const { variables } = useI18n()
+const variables = useMessages('variables/panel')
 const ui = computed(() => tv(inspectorTheme)({ layout }))
 /**
  * A copy per list refresh: the graph edits a variable in place, so the same object coming back

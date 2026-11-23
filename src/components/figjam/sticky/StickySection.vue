@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { useStickyNote } from '@open-pencil/vue/controls/sticky'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 import StickyControls from './StickyControls.vue'
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const {
   active,
   color,

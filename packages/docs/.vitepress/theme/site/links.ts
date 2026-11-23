@@ -5,7 +5,7 @@ export type FooterLink = { label: string; href: string }
 export type FooterColumn = { title: string; links: FooterLink[] }
 
 /** The editor on the web. */
-export const APP_URL = 'https://app.openpencil.dev'
+export const APP_URL = 'https://cloud.openpencil.dev'
 
 const SECURITY_POLICY = 'https://github.com/open-pencil/open-pencil/security/policy'
 const DISCORD = 'https://discord.gg/4wXc9fuZfm'

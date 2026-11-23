@@ -164,7 +164,6 @@
         "@wdio/mocha-framework": "9.30.1",
         "@wdio/spec-reporter": "9.30.1",
         "@wdio/tauri-service": "1.3.0",
-        "changelog-parser": "^4.1.0",
         "cloudflare-redirect-parser": "^1.0.0",
         "esbuild": "^0.27.7",
         "eslint-plugin-compat": "^7.0.2",
@@ -208,7 +207,7 @@
     },
     "packages/canvaskit": {
       "name": "@open-pencil/canvaskit",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@webgpu/types": "0.1.21",
       },
@@ -218,7 +217,7 @@
     },
     "packages/cli": {
       "name": "@open-pencil/cli",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "bin": {
         "openpencil": "./bin/openpencil.js",
       },
@@ -244,7 +243,7 @@
     },
     "packages/cloud": {
       "name": "@open-pencil/cloud",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "bin": {
         "openpencil-services": "./dist/bin/services.mjs",
         "openpencil-cloud": "./dist/bin/server.mjs",
@@ -319,7 +318,7 @@
     },
     "packages/collab": {
       "name": "@open-pencil/collab",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@open-pencil/scene-graph": "workspace:*",
         "@open-pencil/std": "workspace:*",
@@ -335,7 +334,7 @@
     },
     "packages/core": {
       "name": "@open-pencil/core",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@figma/plugin-typings": "^1.140.0",
         "@iconify/utils": "^3.1.4",
@@ -415,7 +414,7 @@
     },
     "packages/design-jsx": {
       "name": "@open-pencil/design-jsx",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@lezer/common": "^1.5.2",
         "@lezer/javascript": "^1.5.4",
@@ -478,7 +477,7 @@
     },
     "packages/dom-css": {
       "name": "@open-pencil/dom-css",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@acemir/cssom": "^0.9.31",
         "@open-pencil/emit": "workspace:*",
@@ -519,7 +518,7 @@
     },
     "packages/drawio": {
       "name": "@open-pencil/drawio",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@xmldom/xmldom": "^0.9.12",
         "fflate": "^0.8.3",
@@ -535,7 +534,7 @@
     },
     "packages/emit": {
       "name": "@open-pencil/emit",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@sveltejs/acorn-typescript": "^1.0.13",
         "acorn": "^8.18.0",
@@ -552,7 +551,7 @@
     },
     "packages/feedback": {
       "name": "@open-pencil/feedback",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@internationalized/date": "^3.12.3",
         "@open-pencil/cloud": "workspace:*",
@@ -580,7 +579,7 @@
     },
     "packages/fig": {
       "name": "@open-pencil/fig",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@noble/hashes": "^2.4.0",
         "@open-pencil/std": "workspace:*",
@@ -603,7 +602,7 @@
     },
     "packages/harness": {
       "name": "@open-pencil/harness",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "bin": {
         "openpencil-harness": "./dist/stdio.mjs",
       },
@@ -622,7 +621,7 @@
     },
     "packages/html-engine": {
       "name": "@open-pencil/html-engine",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@open-pencil/dom-css": "workspace:*",
         "@open-pencil/std": "workspace:*",
@@ -641,7 +640,7 @@
     },
     "packages/kiwi": {
       "name": "@open-pencil/kiwi",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@hpcc-js/wasm-zstd": "^1.16.2",
         "fflate": "^0.8.3",
@@ -655,7 +654,7 @@
     },
     "packages/mcp": {
       "name": "@open-pencil/mcp",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "bin": {
         "openpencil-mcp": "./dist/stdio.mjs",
         "openpencil-mcp-http": "./dist/index.mjs",
@@ -683,7 +682,7 @@
     },
     "packages/mermaid": {
       "name": "@open-pencil/mermaid",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "entities": "^8.0.0",
         "parse5": "^8.0.1",
@@ -699,7 +698,7 @@
     },
     "packages/oxlint-plugin": {
       "name": "@open-pencil/oxlint-plugin",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@oxlint/plugins": "1.57.0",
         "es-toolkit": "^1.52.0",
@@ -713,7 +712,7 @@
     },
     "packages/pen": {
       "name": "@open-pencil/pen",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@open-pencil/std": "workspace:*",
         "es-toolkit": "^1.52.0",
@@ -732,7 +731,7 @@
     },
     "packages/scene-graph": {
       "name": "@open-pencil/scene-graph",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@noble/hashes": "^2.4.0",
         "@open-pencil/std": "workspace:*",
@@ -757,7 +756,7 @@
     },
     "packages/std": {
       "name": "@open-pencil/std",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "devDependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
         "@types/bun": "^1.3.14",
@@ -767,7 +766,7 @@
     },
     "packages/taffy": {
       "name": "@open-pencil/taffy",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "devDependencies": {
         "@open-pencil/fork-releases-tools": "workspace:*",
       },
@@ -802,7 +801,7 @@
     },
     "packages/theme": {
       "name": "@open-pencil/theme",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "devDependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
         "@types/bun": "^1.3.14",
@@ -812,7 +811,7 @@
     },
     "packages/vue": {
       "name": "@open-pencil/vue",
-      "version": "0.17.0-beta.7",
+      "version": "0.17.0",
       "dependencies": {
         "@atlaskit/pragmatic-drag-and-drop": "^1.8.1",
         "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.2.0",
@@ -1053,6 +1052,7 @@
       "name": "@open-pencil/landing-posters-tools",
       "dependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
+        "@open-pencil/std": "workspace:*",
         "@playwright/test": "^1.63.0",
         "sharp": "0.34.5",
       },
@@ -3251,8 +3251,6 @@
 
     "chalk": ["chalk@4.1.2", "", { "dependencies": { "ansi-styles": "^4.1.0", "supports-color": "^7.1.0" } }, "sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA=="],
 
-    "changelog-parser": ["changelog-parser@4.1.0", "", { "dependencies": { "remove-markdown": "^0.6.4" }, "bin": { "changelog-parser": "dist/cli.js" } }, "sha512-FzpTTPllU+AhXrlR2R8kFjHeyz+c/htnK58GqpwBBtduFqjiRNA/fPg1rHKiJVGcMZDamWEuYMJZ93jyWVvd+A=="],
-
     "char-regex": ["char-regex@1.0.2", "", {}, "sha512-kWWXztvZ5SBQV+eRgKFeh8q5sLuZY2+8WUIzlxWVTg+oGwY14qylx1KbKzHd8P6ZYkAg0xyIDU9JMHhyJMZ1jw=="],
 
     "character-entities": ["character-entities@2.0.2", "", {}, "sha512-shx7oQ0Awen/BRIdkjkvz54PnEEI/EjwXDSIZp86/KKdbafHh1Df/RYGBhn4hbe2+uKC9FnT5UCEdyPz3ai9hQ=="],
@@ -4750,8 +4748,6 @@
     "remark-parse": ["remark-parse@11.0.0", "", { "dependencies": { "@types/mdast": "^4.0.0", "mdast-util-from-markdown": "^2.0.0", "micromark-util-types": "^2.0.0", "unified": "^11.0.0" } }, "sha512-FCxlKLNGknS5ba/1lmpYijMUzX2esxW5xQqjWxw2eHFfS2MSdaHVINFmhjo+qN1WhZhNimq0dZATN9pH0IDrpA=="],
 
     "remark-stringify": ["remark-stringify@11.0.0", "", { "dependencies": { "@types/mdast": "^4.0.0", "mdast-util-to-markdown": "^2.0.0", "unified": "^11.0.0" } }, "sha512-1OSmLd3awB/t8qdoEOMazZkNsfVTeY4fTsgzcQFdXNq8ToTN4ZGwrMnlda4K6smTFKD+GRV6O48i6Z4iKgPPpw=="],
-
-    "remove-markdown": ["remove-markdown@0.6.4", "", {}, "sha512-BompiLClzjfh46irZmzv+1Q61jZYlKN3iq/hzae9EOUwf7ctr/5wpD4qwgn/FWDAYE18RORO7z/yr+HXZJCY8Q=="],
 
     "repeat-string": ["repeat-string@1.6.1", "", {}, "sha512-PV0dzCYDNfRi1jCDbJzpW7jNNDRuCOG/jI5ctQcGKt/clZD+YcPS3yIlWuTJMmESC8aevCFmWJy5wjAFgNqN6w=="],
 

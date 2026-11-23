@@ -2,7 +2,7 @@
 import { reactive, watch } from 'vue'
 
 import { useSlotAuthoring } from '@open-pencil/vue/controls/slots'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -15,7 +15,7 @@ import SlotSettingsPopover from './SlotSettingsPopover.vue'
 /** Slots of the selected main component or slot frame, and Create slot for a plain frame. */
 const authoring = useSlotAuthoring()
 const { active, canCreate, slots } = authoring
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const names = reactive<Record<string, string>>({})
 /** Thumbnail edge in the preferred components picker, matching its 32px tile. */
 const THUMBNAIL_SIZE = 32

@@ -6,7 +6,7 @@ import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 import type { CommentThread } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
-import { useCommentMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { commentPreview } from '@/app/comments/format'
 import { useComments } from '@/app/comments/use'
@@ -55,7 +55,7 @@ function pinLabel(thread: CommentThread): string {
   const label = `${author.name(thread.author)}: ${commentPreview(thread.text)}`
   return comments.isUnread(thread.id) ? `${messages.value.unread}, ${label}` : label
 }
-const messages = useCommentMessages()
+const messages = useMessages('comments')
 const author = useCommentAuthor()
 const menuCls = useMenuUI({ content: 'min-w-40' })
 const ui = commentsTheme()

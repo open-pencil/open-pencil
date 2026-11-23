@@ -2,7 +2,7 @@
 import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { ref } from 'vue'
 
-import { useCollaborationMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useJoinRoom } from '@/app/collab/join'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -13,7 +13,7 @@ import { usePopoverUI } from '@/components/ui/overlay/popover'
 /** "Join room…" on Home: paste a room link or ID to open someone's shared file in a new tab. */
 const { size = 'md' } = defineProps<{ size?: 'md' | 'lg' }>()
 
-const messages = useCollaborationMessages()
+const messages = useMessages('collaboration')
 const joinRoomFromInput = useJoinRoom()
 const cls = usePopoverUI({ content: 'z-50 flex w-80 flex-col gap-2 p-3' })
 const open = ref(false)

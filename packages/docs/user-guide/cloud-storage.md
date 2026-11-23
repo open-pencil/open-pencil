@@ -41,14 +41,14 @@ Add a rule like this one, with the origins you open OpenPencil from:
   {
     "AllowedHeaders": ["*"],
     "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
-    "AllowedOrigins": ["https://app.openpencil.dev"],
+    "AllowedOrigins": ["https://cloud.openpencil.dev"],
     "ExposeHeaders": ["ETag", "Content-Range", "x-amz-request-id", "x-amz-id-2", "x-amz-version-id"],
     "MaxAgeSeconds": 3600
   }
 ]
 ```
 
-Set it in the AWS console under the bucket's **Permissions → Cross-origin resource sharing**, in the Cloudflare dashboard under the R2 bucket's **Settings → CORS policy**, or with your provider's CLI. When the rule is missing, **Test connection** says the browser could not reach the bucket from the current site.
+The web app is moving from app.openpencil.dev to cloud.openpencil.dev: a rule set up for the old address needs the new one added. Set it in the AWS console under the bucket's **Permissions → Cross-origin resource sharing**, in the Cloudflare dashboard under the R2 bucket's **Settings → CORS policy**, or with your provider's CLI. When the rule is missing, **Test connection** says the browser could not reach the bucket from the current site.
 
 ## Save a Document to Storage
 

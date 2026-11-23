@@ -5,7 +5,7 @@ import { computed } from 'vue'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { figJamColor } from '@open-pencil/scene-graph/figjam'
 import { useFigJamStyle } from '@open-pencil/vue/controls/figjam-style'
-import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import FigJamPalette from '@/components/figjam/FigJamPalette.vue'
@@ -24,8 +24,8 @@ const { ungroup = false } = defineProps<{
 }>()
 const store = useEditorStore()
 const toolbar = useFigJamStyle()
-const figjam = useFigJamMessages()
-const { commands } = useI18n()
+const figjam = useMessages('figjam')
+const commands = useMessages('commands')
 const styles = tv(theme)()
 
 const hex = computed(() =>

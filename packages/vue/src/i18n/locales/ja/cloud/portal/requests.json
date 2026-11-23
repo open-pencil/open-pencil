@@ -1,0 +1,13 @@
+{
+  "decline": "却下",
+  "removeAccess": "アクセスを削除",
+  "declineHeading": "{name}を却下しますか？",
+  "declineDescription": "本人にその旨のメールが届きます。後でもう一度リクエストできます。",
+  "removeAccessHeading": "{name}のアクセスを削除しますか？",
+  "removeAccessDescription": "サインインできなくなり、本人にその旨のメールが届きます。",
+  "reviewNote": "管理者向けのメモ（任意）",
+  "noteDetail": "メモ：{note}",
+  "noOneWaiting": "保留中のリクエストはありません",
+  "nothingHere": "まだ何もありません",
+  "requestsEmptyDescription": "新しいリクエストはここに表示され、そのたびに管理者にメールが届きます。"
+}

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   changeWorkspaceRole,
@@ -28,7 +28,7 @@ import { useHeldContent } from '@/components/ui/overlay/held'
 import CloudWorkspaceMembersDialog from './CloudWorkspaceMembersDialog.vue'
 
 /** The one Members dialog, for whichever workspace Home opened it from. */
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 // Leaving or deleting the workspace drops it; the dialog closes and keeps drawing it as it fades.
 const workspace = useHeldContent(membersWorkspace)
 watch(membersWorkspace, (current) => {

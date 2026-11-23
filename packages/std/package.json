@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/std",
-  "version": "0.17.0-beta.7",
+  "version": "0.17.0",
   "description": "OpenPencil's own standard library beside es-toolkit: deadlines and backoff, secure randomness, error and record guards, deferreds and a mutex, array helpers safe for large inputs, and JSON types. No dependencies, for browsers, Node, Bun, and Workers alike.",
   "license": "MIT",
   "repository": {

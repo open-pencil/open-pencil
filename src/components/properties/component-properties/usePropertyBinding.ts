@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 
 import { useComponentPropertyAuthoring } from '@open-pencil/vue/controls/component-props'
-import { usePanelMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 export type BindableField = 'TEXT' | 'VISIBLE' | 'INSTANCE_SWAP'
 
@@ -10,7 +10,7 @@ const FIELD_TYPES = { TEXT: 'TEXT', VISIBLE: 'BOOLEAN', INSTANCE_SWAP: 'INSTANCE
 /** How the selected component layer's field links to a property of its component. */
 export function usePropertyBinding(field: BindableField) {
   const authoring = useComponentPropertyAuthoring()
-  const panels = usePanelMessages()
+  const panels = useMessages('panels')
   const context = authoring.context
   const propertyId = computed(
     () =>

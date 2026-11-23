@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { foundSkills, refreshSkills } from '@/app/ai/skills/library'
 import {
@@ -19,7 +19,7 @@ import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
  * The skills coding agents installed, offered to the design chat one by one: most are coding
  * workflows, so none is picked unless it already was. Shown only when there are some.
  */
-const ai = useAIMessages()
+const ai = useMessages('ai')
 const offered = computed(() =>
   foundSkills.value.skills.filter((skill) => skill.source === 'agents' || skill.source === 'claude')
 )

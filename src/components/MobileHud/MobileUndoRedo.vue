@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import HudButton from '@/components/mobile-hud/HudButton.vue'
 import { useMobileHudContext } from '@/components/MobileHud/context'
 
-const { commands } = useI18n()
+const commands = useMessages('commands')
 
 const hud = useMobileHudContext()
 </script>

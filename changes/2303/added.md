@@ -1,0 +1,1 @@
+- `fetchCommunityExample(serverURL, name)` from `@open-pencil/cloud/client` fetches a document of a Cloud server's community gallery by its name, as the version named for a release when there is one, as `fetchCommunityTour` fetches the tour.

@@ -17,7 +17,7 @@ import {
   type EditorCommandId
 } from '@open-pencil/vue/editor/commands'
 import { AUTO_ARRANGE_GROUPS } from '@open-pencil/vue/editor/menu-model'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -26,7 +26,8 @@ import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
 const { getCommand, runCommand } = useEditorCommands()
-const { panels, menu } = useI18n()
+const panels = useMessages('panels')
+const menu = useMessages('menu')
 const { open: popupOpen, portalActive } = useRetainedPopup()
 
 // Figma's alignment row offers the first group; Pack and Auto Arrange follow it.

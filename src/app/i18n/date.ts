@@ -6,7 +6,7 @@ import {
 } from '@internationalized/date'
 import { createSharedComposable, useNow } from '@vueuse/core'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useLocale } from '@open-pencil/vue/i18n'
 
 /** How each kind of date in the interface reads, shown here in English. */
 const DATE_FORMATS = {
@@ -107,7 +107,7 @@ const useSharedNow = createSharedComposable(() => useNow({ interval: 30_000 }))
  * the template, they follow a change of language, and relative times follow the clock.
  */
 export function useDateFormat() {
-  const { locale } = useI18n()
+  const { locale } = useLocale()
   const now = useSharedNow()
   return {
     format: (value: DateInput, format: DateFormat) => formatDate(value, format, locale.value),

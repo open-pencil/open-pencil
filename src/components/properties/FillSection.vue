@@ -6,7 +6,7 @@ import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { useColorBindingProvider } from '@open-pencil/vue/controls/binding-provider'
 import { useFillControls } from '@open-pencil/vue/controls/fill'
 import { useOkHCL } from '@open-pencil/vue/controls/okhcl'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import {
   BindableValueRoot,
   type BindableValueActions
@@ -55,7 +55,8 @@ function onPickerOpenChange(
   if (!open) commitPaintMutation(binding)
 }
 const colorProvider = useColorBindingProvider()
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 const blendModeGroups = useBlendModeGroups()
 const {
   visible: stylesVisible,

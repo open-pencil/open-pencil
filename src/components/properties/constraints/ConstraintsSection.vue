@@ -4,7 +4,7 @@ import { computed } from 'vue'
 
 import type { ConstraintType } from '@open-pencil/scene-graph'
 import { MIXED } from '@open-pencil/vue/controls/node-props'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { ConstraintsControlRoot } from '@open-pencil/vue/primitives/ConstraintsControl'
 
 import ConstraintsPinControl from '@/components/properties/constraints/ConstraintsPinControl.vue'
@@ -13,7 +13,7 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import constraintsTheme from '@/theme/constraints'
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const styles = tv(constraintsTheme)()
 type ConstraintSelectValue = ConstraintType | 'MIXED'
 

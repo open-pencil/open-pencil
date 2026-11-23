@@ -6,7 +6,7 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import { useMenuMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import HudButton from '@/components/mobile-hud/HudButton.vue'
 import { useMobileHudContext } from '@/components/MobileHud/context'
@@ -14,7 +14,7 @@ import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
-const menuMessages = useMenuMessages()
+const menuMessages = useMessages('menu')
 const hud = useMobileHudContext()
 const menuCls = useMenuUI({ content: 'w-48 p-1.5' })
 const itemCls = menuItem({

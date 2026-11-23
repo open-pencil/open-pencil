@@ -20,3 +20,29 @@ export const remoteFetch: typeof fetch = IS_TAURI
 export function pageFetch(): DesignResourceFetch {
   return pageResourceFetch(networkResourceFetch(remoteFetch))
 }
+
+/**
+ * `fetch`, reporting after each file it is asked for and each it finishes how many of the distinct
+ * files asked for so far have finished, failed ones included.
+ */
+export function countedFetch(
+  fetch: DesignResourceFetch,
+  report: (completed: number, total: number) => void
+): DesignResourceFetch {
+  const asked = new Set<string>()
+  const finished = new Set<string>()
+  return async (url, signal) => {
+    if (!asked.has(url)) {
+      asked.add(url)
+      report(finished.size, asked.size)
+    }
+    try {
+      return await fetch(url, signal)
+    } finally {
+      if (!finished.has(url)) {
+        finished.add(url)
+        report(finished.size, asked.size)
+      }
+    }
+  }
+}

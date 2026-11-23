@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   ONBOARDING_SERVER_PRESETS,
@@ -22,7 +22,7 @@ const { state, vision = false } = defineProps<{
   vision?: boolean
 }>()
 const emit = defineEmits<{ update: [patch: OnboardingConnectionPatch]; vision: [value: boolean] }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 
 const preset = computed(() => serverPresetFor(state.customBaseURL))
 const presetOptions = computed(() => [

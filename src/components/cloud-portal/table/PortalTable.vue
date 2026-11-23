@@ -2,7 +2,7 @@
 import type { RowData } from '@tanstack/vue-table'
 import { computed } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { PortalList } from '@/app/cloud-portal/list'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
@@ -44,7 +44,7 @@ defineSlots<{
 }>()
 
 const ui = portalTable()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const { table, query, filter, counts, range, total, status, error, reload } = list
 /** What the table shows while the server answers. */
 const loading = computed(() => {

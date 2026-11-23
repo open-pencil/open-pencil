@@ -1,14 +1,8 @@
 import { count, params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-import { behaviourPanelMessageDefaults } from '#vue/i18n/messages/panels/behaviours'
-import { libraryPanelMessageDefaults } from '#vue/i18n/messages/panels/libraries'
-import { pickerPanelMessageDefaults } from '#vue/i18n/messages/panels/pickers'
-
 /**
- * The `panels` namespace: the side panels and the property sections. Messages of its larger
- * features live beside it in `panels/` and are spread in, so they keep one namespace and one
- * locale file.
+ * The side panels and the property sections. Their larger features have namespaces of their own in
+ * `panels/`.
  */
 export const panelMessageDefaults = {
   untitled: 'Untitled',
@@ -19,7 +13,6 @@ export const panelMessageDefaults = {
   code: 'Code',
   ai: 'AI',
   assets: 'Assets',
-  ...libraryPanelMessageDefaults,
   assetVariantSummary: params('{count} variants · {names}'),
   duplicateVariantValues: 'Duplicate variant values',
   addVariantProperty: 'Add variant property',
@@ -205,7 +198,6 @@ export const panelMessageDefaults = {
   resetSlot: 'Reset slot',
   deleteSlotContents: 'Delete contents',
   slotActions: params('{name} actions'),
-  ...behaviourPanelMessageDefaults,
   searchComponentProperties: 'Search properties',
   noComponentProperties: 'No properties found',
   slots: 'Slots',
@@ -509,8 +501,5 @@ export const panelMessageDefaults = {
   gridSummaryColumns: params('{count} columns'),
   gridSummaryRows: params('{count} rows'),
   gridSummaryGrid: params('Grid {size}px'),
-  gridSummaryFixed: params('{summary} ({size}px)'),
-  ...pickerPanelMessageDefaults
+  gridSummaryFixed: params('{summary} ({size}px)')
 } as const
-
-export const panelMessages = i18n('panels', panelMessageDefaults)

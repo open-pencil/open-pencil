@@ -146,6 +146,16 @@ describe('validateChangelog', () => {
 })
 
 describe('unreleasedContentLine', () => {
+  test('rejects a section too long for a GitHub release', () => {
+    const entries = Array.from({ length: 700 }, (_, n) => `- Change ${n} ${'x'.repeat(180)}.`)
+    const long = `${validChangelog}\n## 1.1.0 — 2026-08-01\n\n### Fixed\n\n${entries.join('\n')}\n`
+    expect(validateChangelog(long).errors).toEqual([
+      expect.stringMatching(
+        /^Line \d+: section "1\.1\.0 — 2026-08-01" is \d+ characters; a GitHub release takes 125000\. Consolidate it\.$/
+      )
+    ])
+  })
+
   test('finds the first entry under Unreleased, which belongs in a fragment', () => {
     expect(unreleasedContentLine(validChangelog)).toBe(5)
   })

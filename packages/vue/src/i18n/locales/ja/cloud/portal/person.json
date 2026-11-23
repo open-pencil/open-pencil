@@ -1,0 +1,32 @@
+{
+  "backToPeople": "すべてのユーザー",
+  "personAccount": "アカウント",
+  "emailVerified": "確認済み",
+  "emailNotVerified": "未確認",
+  "joinedRow": "参加日",
+  "lastActiveRow": "最終アクティブ",
+  "signInMethods": "サインイン方法",
+  "twoStepRow": "2段階認証",
+  "twoStepNone": "未設定",
+  "passkeyCount": {
+    "many": "パスキー {count} 件"
+  },
+  "personWorkspaces": "ワークスペース",
+  "personWorkspacesEmpty": "どのワークスペースにも参加していません。",
+  "workspaceMembers": {
+    "many": "メンバー {count} 人"
+  },
+  "workspaceRoleAdmin": "管理者",
+  "workspaceRoleEditor": "編集者",
+  "workspaceRoleViewer": "閲覧者",
+  "personSessions": "セッション",
+  "noSessions": "どこにもサインインしていません。",
+  "personNotFound": "このアカウントは存在しません",
+  "personNotFoundDescription": "削除された可能性があります。ユーザーの一覧に戻ってください。",
+  "removeSignInMethod": "削除",
+  "removeSignInMethodHeading": "{name}のサインイン方法から {provider} を削除しますか？",
+  "removeSignInMethodDescription": "再度追加されるまで、この方法ではサインインできなくなります。本人にはメールでお知らせします。サインイン済みのデバイスは、すべての場所からサインアウトさせるまでそのままです。",
+  "deletePersonAccount": "アカウントを削除",
+  "deletePersonAccountHeading": "{name} のアカウントを削除しますか？",
+  "deletePersonAccountDescription": "参加リクエストは一度も承認されていないため、アカウント、サインイン方法、リクエストが削除されます。アクティビティログには名前とメールアドレスが残ります。再登録は可能です。"
+}

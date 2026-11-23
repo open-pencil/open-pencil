@@ -1,6 +1,11 @@
 import { renderTransactionalEmail } from '#cloud/email'
 import type { EmailLocale, TransactionalEmailKind } from '#cloud/email'
-import type { CloudDatabase, TransactionalEmailStatus } from '#cloud/server/db'
+import {
+  isSendableEmailKind,
+  RETIRED_TRANSACTIONAL_EMAIL_KINDS,
+  type CloudDatabase,
+  type TransactionalEmailStatus
+} from '#cloud/server/db'
 import type { Kysely, Transaction } from 'kysely'
 
 import { backoffDelay, HOUR_MS, SECOND_MS, type Backoff } from '@open-pencil/std/timing'
@@ -170,6 +175,8 @@ export function createTransactionalEmailService(
             'attemptCount'
           ])
           .where('payloadEncrypted', 'is not', null)
+          // Retired kinds left pending stay as history; claiming them would take batch slots.
+          .where('kind', 'not in', RETIRED_TRANSACTIONAL_EMAIL_KINDS)
           .where((expression) =>
             expression.or([
               expression.and([
@@ -198,7 +205,8 @@ export function createTransactionalEmailService(
           )
           .execute()
         return candidates.filter(
-          (candidate): candidate is ClaimedTransactionalEmail => candidate.payloadEncrypted !== null
+          (candidate): candidate is ClaimedTransactionalEmail =>
+            candidate.payloadEncrypted !== null && isSendableEmailKind(candidate.kind)
         )
       })
 

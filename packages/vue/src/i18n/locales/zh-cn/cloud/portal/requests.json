@@ -1,0 +1,13 @@
+{
+  "decline": "拒绝",
+  "removeAccess": "移除访问权限",
+  "declineHeading": "拒绝 {name}？",
+  "declineDescription": "对方会收到邮件通知，之后可以再次申请。",
+  "removeAccessHeading": "移除 {name} 的访问权限？",
+  "removeAccessDescription": "对方将无法再登录，并会收到邮件通知。",
+  "reviewNote": "给管理员的备注（可选）",
+  "noteDetail": "备注：{note}",
+  "noOneWaiting": "没有待处理的申请",
+  "nothingHere": "暂无内容",
+  "requestsEmptyDescription": "新申请会显示在这里，每条申请都会通过邮件通知管理员。"
+}
