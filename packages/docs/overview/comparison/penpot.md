@@ -16,7 +16,7 @@ OpenPencil and Penpot are both open-source design tools you can use instead of F
 | Where it runs      | Desktop app for macOS, Windows, and Linux, and the browser                                  | Browser                                             |
 | Works offline      | Yes; documents can stay on your device                                                      | Needs its server                                    |
 | Accounts           | Not needed to edit; optional for Cloud                                                      | Needed                                              |
-| Collaboration      | Peer-to-peer rooms with no server, or OpenPencil Cloud with sharing, comments, and history | Server-based, with sharing, comments, and history   |
+| Collaboration      | Peer-to-peer rooms with no account, or OpenPencil Cloud with sharing, comments, and history | Server-based, with sharing, comments, and history   |
 | Self-hosting       | OpenPencil Cloud server                                                                     | Docker deployment                                   |
 | Built-in AI        | Chat assistant with 100+ design tools; bring your own provider key or use Cloud credits     | —                                                   |
 | Agents and scripts | MCP server, headless CLI, and Figma Plugin API–compatible scripting                         | MCP server and Plugin API                           |
@@ -27,7 +27,7 @@ OpenPencil and Penpot are both open-source design tools you can use instead of F
 
 ## Figma Files
 
-OpenPencil opens `.fig` files directly and saves back to `.fig`, so a team can move without converting its library first, and anyone still on Figma can open the result. Copying layers in Figma and pasting them into OpenPencil keeps fills, strokes, auto layout, text, effects, and vector networks, and copying the other way works too. See [Figma compatibility](/reference/figma-compatibility) for what is and isn't carried over.
+OpenPencil opens `.fig` files directly and saves back to `.fig`, so a team can move without converting its library first, and anyone still on Figma can open the result. Complex files can still look different when reopened in Figma, so keep the original until you've checked the result. Copying layers in Figma and pasting them into OpenPencil keeps fills, strokes, auto layout, text, effects, and vector networks, and copying the other way works too. See [Figma compatibility](/reference/figma-compatibility) for what is and isn't carried over.
 
 Penpot uses its own `.penpot` format and doesn't open `.fig` files. Moving from Figma means running Penpot's exporter plugin inside Figma and importing what it produces.
 
@@ -41,11 +41,11 @@ Penpot has an official MCP server that lets coding agents work on its files, and
 
 Penpot is a client and server: documents live on a Penpot instance, either the hosted one or one you deploy with Docker, and everyone signs in to it.
 
-OpenPencil keeps documents on your device by default. To edit together you can open a [peer-to-peer room](/user-guide/collaboration) with no server or account, with live cursors, follow mode, and voice calls. For shared storage, permissions, comments, and version history, use [OpenPencil Cloud](/cloud/): the hosted service or a [server your team runs](/cloud/self-hosting/) from the same open-source code.
+OpenPencil keeps documents on your device by default. To edit together you can open a [peer-to-peer room](/user-guide/collaboration) with no account and nothing to host, with live cursors, follow mode, and voice calls. For shared storage, permissions, comments, and version history, use [OpenPencil Cloud](/cloud/): the hosted service or a [server your team runs](/cloud/self-hosting/) from the same open-source code.
 
 ## Desktop App
 
-OpenPencil has a native desktop app for macOS, Windows, and Linux, about a 20 MB download, with native menus, offline editing, and autosave. It also runs in the browser at [cloud.openpencil.dev](https://cloud.openpencil.dev). Penpot runs in the browser.
+OpenPencil has a native desktop app for macOS, Windows, and Linux, with native menus, offline editing, and autosave. It also runs in the browser at [cloud.openpencil.dev](https://cloud.openpencil.dev). Penpot runs in the browser.
 
 ## Where Penpot Is Ahead
 

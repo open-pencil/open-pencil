@@ -17,8 +17,8 @@ description: How OpenPencil and Lunacy, two free desktop design editors that ope
 | Native format       | Figma `.fig`                                                                                | `.free` and Sketch `.sketch`                                              |
 | `.fig` files        | Opens and saves them; copy and paste with Figma both ways                                   | Opens them                                                                |
 | Works offline       | Yes                                                                                         | Yes, with local documents                                                 |
-| Collaboration       | Peer-to-peer rooms or OpenPencil Cloud, with comments and version history                   | Lunacy's cloud, with comments; private cloud for teams                    |
-| Self-hosting        | OpenPencil Cloud server                                                                     | —                                                                         |
+| Collaboration       | Peer-to-peer rooms, or OpenPencil Cloud with comments and version history                   | Lunacy's cloud or a private cloud, with comments                          |
+| Self-hosting        | OpenPencil Cloud server                                                                     | Private cloud on your own servers, with a paid license                    |
 | Built-in AI         | Chat assistant with 100+ design tools; your own provider keys or Cloud credits              | AI chat on Icons8's service, plus image tools                             |
 | Coding agents       | MCP server, plus Claude Code, Codex, Cursor, and others running inside the editor           | MCP server                                                                |
 | Scripting           | Headless CLI and Figma Plugin API–compatible scripting                                      | Plugins through its MCP API                                               |
@@ -28,11 +28,11 @@ description: How OpenPencil and Lunacy, two free desktop design editors that ope
 
 ## Working With Figma Files
 
-Lunacy opens `.fig` files and saves its own `.free` format or Sketch files, so a design that leaves Figma for Lunacy doesn't go back as a `.fig`. OpenPencil saves `.fig` itself: you can open a file from a colleague on Figma, change it, and send it back, and copy and paste layers between the two apps in either direction. See [Figma compatibility](/reference/figma-compatibility) for what is carried over.
+Lunacy opens `.fig` files and saves its own `.free` format or Sketch files, so a design that leaves Figma for Lunacy doesn't go back as a `.fig`. OpenPencil saves `.fig` itself: you can open a file from a colleague on Figma, change it, and send it back, and copy and paste layers between the two apps in either direction. Complex files can still look different when reopened in Figma, so keep the original until you've checked the result; see [Figma compatibility](/reference/figma-compatibility).
 
 ## Open Source and Hosting
 
-Lunacy is free to use, but closed: Icons8 decides what it does and runs its cloud. OpenPencil's code is open, and documents can stay on your device, in your own [storage bucket](/user-guide/cloud-storage), or on [OpenPencil Cloud](/cloud/), including a [server your team runs](/cloud/self-hosting/).
+Lunacy is free to use but closed source, and running its private cloud on your own servers takes a paid license. OpenPencil's code is open, and documents can stay on your device, in your own [storage bucket](/user-guide/cloud-storage), or on [OpenPencil Cloud](/cloud/), including a [server your team runs](/cloud/self-hosting/).
 
 ## AI and Automation
 

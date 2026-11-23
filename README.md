@@ -42,7 +42,7 @@ Official builds send one anonymous ping a day and share usage stats only if you 
 - **Real-time collaboration** — share a peer-to-peer room over WebRTC with no server or account, or edit Cloud documents together. Cursors, presence, follow mode, voice calls
 - **Optional Cloud** — keep documents on your team's own [OpenPencil Cloud](https://openpencil.dev/cloud/) server, or on the hosted service once it opens, and share them by invitation
 - **Auto layout & CSS Grid** — flex and grid layout via Taffy WASM, with gap, padding, alignment, track sizing
-- **~20 MB desktop app** — Tauri v2 for macOS, Windows, Linux. Also runs in the browser as a PWA
+- **~20 MB desktop installers** — Tauri v2 for macOS, Windows, Linux. Also runs in the browser as a PWA
 
 ## CLI
 

@@ -21,7 +21,7 @@ description: How OpenPencil, an open-source design editor, and Pencil (pen.dev),
 | Coding agents      | MCP server, plus Claude Code, Codex, Cursor, and others running inside the editor          | MCP server for Claude Code, Codex, Cursor, and others                        |
 | Scripting          | Headless CLI and Figma Plugin API–compatible scripting                                     | CLI                                                                          |
 | Code export        | Design JSX, HTML, Vue, and React with CSS or Tailwind                                      | HTML with CSS or Tailwind                                                    |
-| Collaboration      | Real-time editing in peer-to-peer rooms or on OpenPencil Cloud, with comments and history  | Share links, live shares, comments, and versions                             |
+| Collaboration      | Real-time editing in peer-to-peer rooms, or on OpenPencil Cloud with comments and history  | Share links, live shares, comments, and versions                             |
 | Self-hosting       | OpenPencil Cloud server                                                                    | —                                                                            |
 
 ## License and Files
@@ -38,7 +38,7 @@ OpenPencil's [AI assistant](/user-guide/ai-chat) works with your own key for Ant
 
 ## Collaboration
 
-OpenPencil edits together in real time: open a [peer-to-peer room](/user-guide/collaboration) with no server or account, or keep documents on [OpenPencil Cloud](/cloud/), hosted or on your own server, with sharing, comments, and version history. Pencil shares designs by link and live share, with comments and versions, on its own service.
+OpenPencil edits together in real time: open a [peer-to-peer room](/user-guide/collaboration) with no account and nothing to host, or keep documents on [OpenPencil Cloud](/cloud/), hosted or on your own server, with sharing, comments, and version history. Pencil shares designs by link and live share, with comments and versions, on its own service.
 
 ## Where Pencil Is Ahead
 
