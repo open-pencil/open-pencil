@@ -21,7 +21,7 @@ Die `openpencil`-CLI liest, prüft, exportiert und bearbeitet `.fig`- und `.pen`
 
 ## Einen AI-Agenten gestalten lassen
 
-Der MCP-Server stellt Claude Code, Cursor, Windsurf und jedem anderen MCP-Client die 90 Werkzeuge des integrierten Assistenten bereit, sodass ein Agent Designs lesen, erstellen und ändern kann. Agenten beschreiben Oberflächen als JSX, daraus entstehen echte Rahmen, Texte und automatische Anordnung.
+Der MCP-Server stellt Claude Code, Cursor, Windsurf und jedem anderen MCP-Client die mehr als 100 Werkzeuge des integrierten Assistenten bereit, sodass ein Agent Designs lesen, erstellen und ändern kann. Agenten beschreiben Oberflächen als JSX, daraus entstehen echte Rahmen, Texte und automatische Anordnung.
 
 <SdkCardGroup>
   <SdkCard title="MCP-Server" to="/developers/mcp-server" description="Einen Client über stdio oder HTTP verbinden." />

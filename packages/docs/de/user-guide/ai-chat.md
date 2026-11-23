@@ -1,6 +1,6 @@
 ---
 title: AI-Chat
-description: Integrierter AI-Assistent mit mehr als 90 Werkzeugen zum Erstellen und Bearbeiten von Designs.
+description: Integrierter AI-Assistent mit mehr als 100 Werkzeugen zum Erstellen und Bearbeiten von Designs.
 ---
 
 # AI-Chat
@@ -30,7 +30,7 @@ Token werden im Anmeldedatenspeicher und erst beim Start einer ACP-Sitzung geles
 
 ## Werkzeuge
 
-Der Assistent verfügt über mehr als 90 Werkzeuge für Erstellung, Gestaltung, Anordnung, Komponenten, Variablen, Suche, Prüfung, Analyse, Export und Vektorbearbeitung.
+Der Assistent verfügt über mehr als 100 Werkzeuge für Erstellung, Gestaltung, Anordnung, Komponenten, Variablen, Suche, Prüfung, Analyse, Export und Vektorbearbeitung.
 
 ## Skills
 

@@ -65,13 +65,13 @@ openpencil export design.fig -f jsx --style tailwind
 
 ## Chat AI
 
-Premi <kbd>⌘</kbd><kbd>J</kbd>. Più di 90 strumenti creano forme, cambiano stili e disposizione, lavorano con componenti e variabili, eseguono operazioni booleane, analizzano token di design ed esportano risorse. Sono supportati Anthropic, OpenAI, Google AI, OpenRouter ed endpoint compatibili.
+Premi <kbd>⌘</kbd><kbd>J</kbd>. Più di 100 strumenti creano forme, cambiano stili e disposizione, lavorano con componenti e variabili, eseguono operazioni booleane, analizzano token di design ed esportano risorse. Sono supportati Anthropic, OpenAI, Google AI, OpenRouter ed endpoint compatibili.
 
 Le chiamate degli strumenti appaiono in una sequenza comprimibile. Per la verifica visiva, l’assistente renderizza il risultato e lo confronta con la richiesta. Tutte le modifiche AI possono essere annullate.
 
 ## Server MCP
 
-Claude Code, Cursor, Windsurf e altri client MCP possono leggere e modificare `.fig` senza interfaccia. Sono disponibili più di 90 strumenti e i trasporti stdio e HTTP.
+Claude Code, Cursor, Windsurf e altri client MCP possono leggere e modificare `.fig` senza interfaccia. Sono disponibili più di 100 strumenti e i trasporti stdio e HTTP.
 
 ```sh
 npm install -g @open-pencil/mcp
@@ -96,7 +96,7 @@ La connessione peer-to-peer WebRTC non richiede un server centrale. Condividi un
 
 ## Desktop e Web
 
-**Desktop:** Tauri v2, circa 7 MB, per macOS, Windows e Linux, con menu nativi, uso senza rete e salvataggio automatico.
+**Desktop:** Tauri v2, circa 20 MB da scaricare, per macOS, Windows e Linux, con menu nativi, uso senza rete e salvataggio automatico.
 
 **Web:** [cloud.openpencil.dev](https://cloud.openpencil.dev), installabile come PWA e adattato agli schermi touch.
 

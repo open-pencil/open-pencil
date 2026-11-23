@@ -1,181 +1,59 @@
-# OpenPencil i Penpot: architektura oraz wydajność
+---
+title: OpenPencil a Penpot
+description: Czym różnią się OpenPencil i Penpot, dwa narzędzia projektowe o otwartym kodzie źródłowym, pod względem obsługi plików Figma, AI i automatyzacji, współpracy, własnego hostingu oraz aplikacji na komputer.
+---
 
-OpenPencil i Penpot to narzędzia projektowe o otwartym kodzie źródłowym, ale różnią się przeznaczeniem i architekturą.
+# OpenPencil a Penpot
 
-::: info Renderer WASM w Penpot
-Penpot 2.x zawiera renderer Rust/Skia WASM `render-wasm/v1`, włączany opcjami serwera albo parametrem `?wasm=true`. Domyślnie nadal działa renderer SVG. Poniżej uwzględniono oba warianty.
-:::
+OpenPencil i Penpot to narzędzia projektowe o otwartym kodzie źródłowym, których można używać zamiast Figmy. Wychodzą jednak z różnych założeń: Penpot to platforma webowa zbudowana wokół własnego formatu plików i serwera zespołowego, a OpenPencil to edytor, który otwiera posiadane już pliki Figma, działa na Twoim urządzeniu i może być sterowany przez Ciebie, skrypty lub agentów AI. Porównanie dotyczy wersji Penpot 2.16 i OpenPencil 0.17.
 
-## 1. Rozmiar bazy kodu
+## W skrócie
 
-| Wskaźnik | OpenPencil | Penpot |
-|----------|------------|--------|
-| Wiersze kodu | **około 26 000** | **około 299 000** |
-| Pliki źródłowe | około 143 | około 2 900 |
-| Języki | TypeScript, Vue | Clojure, ClojureScript, Rust, JavaScript, SQL, SCSS |
-| Kod renderera | około 3 200 wierszy, TypeScript | 22 000 wierszy, Rust/Skia WASM |
-| Interfejs | około 4 500 wierszy | około 175 000 wierszy, CLJS i SCSS |
-| Część serwerowa | Brak, architektura lokalna | 32 600 wierszy i 151 plików SQL |
-| Stosunek | **1×** | **około 11×** |
+|                    | OpenPencil                                                                                            | Penpot                                                        |
+| ------------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Licencja           | MIT (edytor), Apache 2.0 (serwer Cloud)                                                               | MPL 2.0                                                       |
+| Pliki Figma `.fig` | Otwiera je i zapisuje; kopiowanie i wklejanie z Figmą w obie strony                                   | Nie otwiera ich                                               |
+| Gdzie działa       | Aplikacja na macOS, Windows i Linux oraz przeglądarka                                                 | Przeglądarka                                                  |
+| Praca offline      | Tak; dokumenty mogą pozostać na Twoim urządzeniu                                                      | Wymaga swojego serwera                                        |
+| Konta              | Niepotrzebne do edycji; opcjonalne w Cloud                                                            | Wymagane                                                      |
+| Współpraca         | Pokoje peer-to-peer bez serwera albo OpenPencil Cloud z udostępnianiem, komentarzami i historią       | Oparta na serwerze, z udostępnianiem, komentarzami i historią |
+| Własny hosting     | Serwer OpenPencil Cloud                                                                               | Wdrożenie w Dockerze                                          |
+| Wbudowane AI       | Asystent w czacie z ponad 100 narzędziami projektowymi; własny klucz dostawcy lub kredyty Cloud       | —                                                             |
+| Agenci i skrypty   | Serwer MCP, CLI bez interfejsu i skrypty zgodne z Figma Plugin API                                    | Plugin API                                                    |
+| Układ              | Automatyczny układ z Flexbox i CSS Grid                                                               | Układ flex i grid                                             |
+| Tokeny projektu    | Zmienne z trybami; import i eksport tokenów projektu W3C                                              | Natywne tokeny projektu                                       |
+| Eksport kodu       | Design JSX, HTML, Vue i React z CSS lub Tailwind                                                      | Podgląd CSS, SVG i HTML                                       |
+| Prototypowanie     | Działające zachowania komponentów; przepływy i przejścia są w [planach rozwoju](/development/roadmap) | Przepływy, interakcje i tryb podglądu                         |
+| Renderowanie       | Skia (CanvasKit) na WebGL                                                                             | Domyślnie SVG; renderer WebGL w wersji beta                   |
 
-OpenPencil jest około jedenaście razy mniejszy. Wynika to przede wszystkim z innej architektury, a nie tylko z mniejszej liczby funkcji.
+## Pliki Figma
 
-## 2. Architektura
+OpenPencil otwiera pliki `.fig` bezpośrednio i zapisuje je z powrotem do `.fig`, więc zespół może się przenieść bez wcześniejszej konwersji biblioteki, a osoby, które wciąż pracują w Figmie, otworzą wynik. Warstwy skopiowane w Figmie i wklejone do OpenPencil zachowują zalewy, obwiednie, automatyczny układ, tekst, efekty i sieci wektorowe; kopiowanie w drugą stronę również działa. Co jest przenoszone, a co nie, opisuje strona [Zgodność z Figmą](/pl/reference/figma-compatibility).
 
-### OpenPencil: jeden proces klienta
+Penpot używa własnego formatu `.penpot`. Przejście z Figmy oznacza odtworzenie projektów od nowa albo konwersję narzędziami innych firm.
 
-```text
-┌─────────────────────────────────┐
-│         Tauri native shell      │
-│  ┌───────────────────────────┐  │
-│  │  Vue 3 + TypeScript       │  │
-│  │  Editor + Kiwi codec      │  │
-│  │  SceneGraph in TypeScript │  │
-│  │  CanvasKit + Taffy WASM   │  │
-│  └───────────────────────────┘  │
-└─────────────────────────────────┘
-```
+## AI i automatyzacja
 
-Edytor, SceneGraph, kodek plików i renderer działają w jednym procesie. Oddzielny serwer, baza danych i Docker nie są potrzebne. SceneGraph jest przechowywany jako `Map<string, SceneNode>`. TypeScript wywołuje CanvasKit bezpośrednio, a Taffy WASM synchronicznie oblicza układ.
+OpenPencil powstał z myślą o programowaniu. [Asystent AI](/pl/user-guide/ai-chat) tworzy i edytuje warstwy tymi samymi ponad 100 narzędziami, które [serwer MCP](/developers/mcp-server) udostępnia Claude Code, Cursorowi, Codexowi i innym agentom programistycznym, a aplikacja na komputer może uruchamiać tych agentów wewnątrz edytora. [CLI](/pl/developers/cli/inspecting) analizuje, sprawdza, konwertuje i eksportuje dokumenty bez otwierania edytora, a jego [polecenie `eval`](/pl/developers/cli/scripting) uruchamia skrypty napisane pod Figma Plugin API.
 
-### Penpot: platforma klient-serwer
+Penpot ma system wtyczek do rozszerzeń działających w edytorze. Nie ma wbudowanego asystenta, serwera MCP ani skryptów działających bez interfejsu.
 
-```text
-┌───────────────────────────────────────────────────────┐
-│                    Docker Compose                     │
-│  ClojureScript frontend │ Clojure/JVM backend        │
-│  Rust/Skia WASM         │ PostgreSQL, Valkey, MinIO  │
-│  Chromium exporter      │ MCP server                 │
-└───────────────────────────────────────────────────────┘
-```
+## Współpraca i hosting
 
-Pełna instalacja Penpota obejmuje interfejs, część serwerową JVM, PostgreSQL, Valkey, MinIO i eksporter oparty na Chromium bez interfejsu. Środowisko programistyczne wymaga Docker Compose, JVM, Node i zestawu narzędzi Rust.
+Penpot składa się z klienta i serwera: dokumenty są przechowywane w instancji Penpot — hostowanej przez twórców albo wdrożonej samodzielnie w Dockerze — a wszyscy logują się do niej.
 
-OpenPencil unika opóźnień sieciowych, serializacji między usługami, zarządzania kontenerami i zapytań do bazy danych podczas zwykłych operacji. Penpot jest przeznaczony do wieloosobowej pracy na serwerze, a OpenPencil — do lokalnej edycji z małym opóźnieniem.
+OpenPencil domyślnie przechowuje dokumenty na Twoim urządzeniu. Aby edytować wspólnie, możesz otworzyć [pokój peer-to-peer](/pl/user-guide/collaboration) bez serwera i konta, z kursorami na żywo, trybem śledzenia i rozmowami głosowymi. Wspólne przechowywanie, uprawnienia, komentarze i historię wersji zapewnia [OpenPencil Cloud](/cloud/): usługa hostowana albo [serwer utrzymywany przez Twój zespół](/cloud/self-hosting/), zbudowany z tego samego otwartego kodu.
 
-## 3. Potok renderowania
+## Aplikacja na komputer
 
-### OpenPencil: TypeScript → CanvasKit WASM
+OpenPencil ma natywną aplikację na macOS, Windows i Linux, do pobrania w około 20 MB, z natywnymi menu, edycją offline i automatycznym zapisywaniem. Działa też w przeglądarce pod adresem [cloud.openpencil.dev](https://cloud.openpencil.dev). Penpot działa w przeglądarce.
 
-```typescript
-renderSceneToCanvas(canvas, graph, pageId) {
-  this.fillPaint.setColor(...)
-  canvas.drawRRect(rrect, this.fillPaint)
-}
-```
+## Gdzie Penpot ma przewagę
 
-- Bezpośrednie przejście z TypeScript do WASM.
-- SceneGraph pozostaje w pamięci JavaScript i nie jest serializowany przed renderowaniem.
-- Renderer liczy około 3 200 wierszy podzielonych na wyspecjalizowane moduły.
+- **Dojrzałość.** Penpot od lat działa w produkcji w dużych zespołach; OpenPencil jest młodszy i wciąż ma niedopracowane miejsca.
+- **Prototypowanie.** Penpot ma przepływy, interakcje i tryb prezentacji. OpenPencil pokazuje komponenty jako działające kontrolki, ale nie ma jeszcze przepływów prototypu.
+- **Ekosystem wtyczek.** Penpot ma katalog wtyczek społeczności; punktami rozszerzeń OpenPencil są dziś skrypty, MCP i [Vue SDK](/pl/developers/sdk/).
 
-### Penpot: ClojureScript → Rust WASM → Skia
+## Co wybrać
 
-```text
-ClojureScript → JavaScript
-  → rozłożenie i pakowanie binarne w pamięci WASM
-  → Rust WASM przez Emscripten C FFI
-  → skia-safe
-  → Skia/WebGL
-```
-
-Bez WASM każdy kształt jest renderowany jako element SVG DOM przez React/Reagent. W trybie WASM identyfikatory UUID, transformacje, zalewy i obwiednie są pakowane do struktur binarnych. Renderer używa pamięci podręcznej kafelków, obszarów zainteresowania, jedenastu powierzchni i globalnego zmiennego stanu przez `unsafe`.
-
-Pamięć podręczna może przechowywać do 1024 tekstur. OpenPencil przerysowuje całą widoczną część dokumentu.
-
-| Aspekt | OpenPencil | Penpot |
-|--------|------------|--------|
-| JavaScript → WASM | Bezpośrednie wywołania z obiektami TypeScript | Struktury binarne |
-| Model | Pełne przerysowanie widoku | Pamięć podręczna kafelków |
-| Powierzchnie | 1 | 11 |
-| Dodatkowa pamięć | Brak kafelków | Do 1024 kafelków |
-| Rozmiar renderera | około 3 200 wierszy | 22 000 wierszy |
-| Kod niebezpieczny | Brak | Stan globalny przez `unsafe` |
-
-Bezpośredni potok CanvasKit wymaga mniej przetwarzania pośredniego w małych i średnich dokumentach. Kafelki Penpota mogą być korzystne przy ponad 100 000 kształtów, gdy widoczny jest tylko niewielki obszar.
-
-## 4. SceneGraph i model danych
-
-```typescript
-nodes: Map<string, SceneNode>
-```
-
-OpenPencil zapewnia wyszukiwanie po identyfikatorze w O(1), 29 typów obiektów ze schematu Kiwi, około 390 pól w `NodeChange`, ścisłe typy TypeScript i identyfikatory GUID w formacie Figma `sessionID:localID`.
-
-Penpot utrzymuje własne definicje typów w Clojure/ClojureScript i Rust. Oddzielne moduły odpowiadają za kolory, komponenty, kontenery, zalewy, siatkę, modyfikatory, strony i ścieżki. Malli sprawdza schematy podczas działania, a dane renderowania przekraczają granicę CLJS → Rust.
-
-## 5. Silnik układu
-
-OpenPencil synchronicznie korzysta z Taffy WASM:
-
-```typescript
-const root = createLayoutNode()
-setFlexFlow(root, frame)
-computeLayout(root)
-```
-
-Penpot utrzymuje własne implementacje Flex i Grid w ClojureScript i Rust WASM. Oba silniki muszą zwracać ten sam wynik. OpenPencil używa do Flex i Grid biblioteki Taffy, z której korzystają też Servo, Blitz, Bevy i Zed; Penpot utrzymuje tysiące wierszy własnego kodu układu w dwóch językach.
-
-## 6. Formaty i Figma
-
-OpenPencil używa binarnego formatu Kiwi Figma, bezpośrednio importuje `.fig`, odczytuje dane Kiwi ze schowka i jest zgodny z protokołem współpracy Figma.
-
-Plik `.penpot` to archiwum ZIP z manifestami JSON, danymi dokumentu, zasobami binarnymi i miniaturami. Penpot nie importuje `.fig` bezpośrednio i obsługuje kilka generacji formatu przez migracje.
-
-## 7. Stan i cofanie
-
-OpenPencil używa poleceń odwrotnych: funkcje wykonania i cofania przechowują tylko niezbędny stan, a kilka operacji można grupować.
-
-Penpot korzysta z Potok. `UpdateEvent` zmienia stan, `WatchEvent` wykonuje skutki uboczne przez RxJS, a historia przechowuje odwrotne zestawy zmian, ogranicza się do 50 wpisów i grupuje szybkie zmiany w transakcje.
-
-## 8. Programowanie
-
-| Wskaźnik | OpenPencil | Penpot |
-|----------|------------|--------|
-| Przygotowanie | `bun install && bun dev` | Docker Compose, JVM, Node i Rust |
-| Szybkie odświeżanie | Vite | shadow-cljs |
-| Typy | Ścisły TypeScript | Schematy Malli podczas działania |
-| Wersja komputerowa | Tauri v2 | Przeglądarka |
-| Główne technologie | TypeScript i Vue | Clojure, ClojureScript, Rust i Docker |
-
-## 9. Wydajność
-
-| Scenariusz | OpenPencil | Penpot |
-|------------|------------|--------|
-| Zimny start | poniżej 2 s z WASM | ponad 10 s dla serwera, klienta i WASM |
-| Zwykła operacja | W jednym procesie | Możliwa wymiana sieciowa |
-| Klatka | Bezpośrednie wywołanie Skia | CLJS → JS → WASM FFI → Skia |
-| Pamięć bazowa | około 50 MB w karcie | JVM, baza danych, pamięć podręczna i przeglądarka |
-| Praca bez sieci | Pełna | Wymaga serwera |
-| 10 000 kształtów | Jedno przejście | Renderer kafelkowy z 11 powierzchniami |
-
-## 10. Zalety Penpota
-
-1. **Współpraca przez serwer:** konta, kontrola dostępu i centralne przechowywanie.
-2. **System wtyczek:** wykonanie w izolacji i API wtyczek.
-3. **Tokeny projektu:** wbudowana obsługa.
-4. **CSS Grid:** własna implementacja; OpenPencil używa CSS Grid z Taffy.
-5. **Samodzielne wdrożenie:** platforma zespołowa uruchamiana przez Docker.
-6. **Dojrzałość:** wiele lat użycia produkcyjnego.
-
-## 11. Skrypty i rozszerzanie
-
-Polecenie [`eval`](/developers/cli/scripting) udostępnia API zgodne z Figma Plugin API dla skryptów bez interfejsu, operacji grupowych i automatycznych testów. AI Chat, serwer MCP i CLI oferują również 90 narzędzi do odczytu, tworzenia, modyfikacji, pracy ze strukturą, zmiennymi, ścieżkami wektorowymi, analizą, różnicami, operacjami logicznymi i rozmieszczaniem.
-
-Penpot oferuje wtyczki wykonywane w izolacji, ale nie ma porównywalnego API dla skryptów bez interfejsu ani integracji MCP.
-
-## Podsumowanie
-
-| Obszar | Przewaga | Powód |
-|--------|----------|-------|
-| Prostota | OpenPencil | Jeden proces zamiast wielu usług |
-| Renderowanie | OpenPencil | Bezpośredni potok CanvasKit |
-| Kod | OpenPencil | Około 26 000 wobec 299 000 wierszy |
-| Zgodność z Figmą | OpenPencil | Natywne Kiwi i `.fig` |
-| Programowanie | OpenPencil | TypeScript i Vue zamiast Clojure, Rust i Docker |
-| Aplikacja komputerowa | OpenPencil | Tauri |
-| Układ | OpenPencil | Taffy zamiast dwóch własnych implementacji |
-| Współpraca | Różne mocne strony | Penpot: serwer i kontrola dostępu; OpenPencil: P2P bez hostingu |
-| Samodzielne wdrożenie | Penpot | Docker |
-| Dojrzałość | Penpot | Wieloletnie użycie produkcyjne |
-
-OpenPencil to zwarty edytor działający w jednym procesie, z CanvasKit i natywną obsługą `.fig`. Penpot to pełna platforma klient-serwer wykorzystująca Clojure, ClojureScript, Rust, bazy danych i usługi Docker. Oba narzędzia obsługują współpracę, ale korzystają z innych modeli.
+Wybierz OpenPencil, jeśli chcesz dalej pracować z plikami Figma, potrzebujesz aplikacji na komputer działającej offline albo chcesz, aby agenci AI i skrypty pracowali nad Twoimi projektami. Wybierz Penpot, jeśli prototypowanie jest Ci potrzebne już teraz albo zależy Ci na platformie z dłuższą historią.

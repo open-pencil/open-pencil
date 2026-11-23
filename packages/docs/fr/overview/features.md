@@ -65,13 +65,13 @@ openpencil export design.fig -f jsx --style tailwind
 
 ## Chat AI
 
-<kbd>⌘</kbd><kbd>J</kbd> ouvre l’assistant. Plus de 90 outils créent des formes, modifient styles et dispositions, travaillent avec les composants et variables, exécutent des opérations booléennes, analysent les jetons de design et exportent des ressources. Anthropic, OpenAI, Google AI, OpenRouter et les points d’accès compatibles sont pris en charge.
+<kbd>⌘</kbd><kbd>J</kbd> ouvre l’assistant. Plus de 100 outils créent des formes, modifient styles et dispositions, travaillent avec les composants et variables, exécutent des opérations booléennes, analysent les jetons de design et exportent des ressources. Anthropic, OpenAI, Google AI, OpenRouter et les points d’accès compatibles sont pris en charge.
 
 Les appels d’outils apparaissent sur une chronologie repliable. Pour vérifier les modifications, l’assistant rend le résultat et le compare à la demande. Toutes les modifications réalisées par l’AI peuvent être annulées.
 
 ## Serveur MCP
 
-Claude Code, Cursor, Windsurf et les autres clients MCP peuvent lire et modifier des fichiers `.fig` grâce à plus de 90 outils. stdio et HTTP sont disponibles.
+Claude Code, Cursor, Windsurf et les autres clients MCP peuvent lire et modifier des fichiers `.fig` grâce à plus de 100 outils. stdio et HTTP sont disponibles.
 
 ```sh
 npm install -g @open-pencil/mcp
@@ -98,7 +98,7 @@ La collaboration fonctionne directement entre participants via WebRTC et ne néc
 
 ## Bureau et Web
 
-**Bureau :** Tauri v2, environ 7 Mo, pour macOS, Windows et Linux, avec menus natifs, fonctionnement hors ligne et enregistrement automatique.
+**Bureau :** Tauri v2, environ 20 Mo à télécharger, pour macOS, Windows et Linux, avec menus natifs, fonctionnement hors ligne et enregistrement automatique.
 
 **Web :** [cloud.openpencil.dev](https://cloud.openpencil.dev), installable comme PWA et adapté aux écrans tactiles.
 
