@@ -18,6 +18,7 @@ import {
   type CloudOAuthDecision
 } from '#cloud/contract'
 import { parseCloudServerConfig } from '#cloud/server'
+import { createOAuthService } from '#cloud/server/oauth'
 import { fromUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
@@ -323,6 +324,54 @@ describe('connecting an app', () => {
     }
   })
 
+  test('answers from the consent another approval of the same grant recorded first', async () => {
+    const fresh = await workspace('raced')
+    const page = await authorize(app, (await pkce()).challenge, person.sessionCookie)
+    const answered = new URL('?code=answered', callback).href
+    let continued = 0
+    // The other approval's consent lands between this one's check and its own, so the
+    // provider's write of this one breaks the one consent per grant.
+    const raced = async (record: boolean) => {
+      if (record) {
+        await fixture.database
+          .insertInto('oauthConsent')
+          .values({
+            id: crypto.randomUUID(),
+            clientId: app,
+            userId: person.userId,
+            referenceId: fresh,
+            scopes: ['documents:read', 'documents:write', 'offline_access'],
+            createdAt: new Date(),
+            updatedAt: new Date()
+          })
+          .execute()
+      }
+      throw new Error('duplicate key value violates unique constraint')
+    }
+    const service = (record: boolean) =>
+      createOAuthService({
+        database: fixture.database,
+        publicURL: config.publicURL,
+        secret: config.authSecret,
+        steps: {
+          continue: async () => ({
+            url: continued++ === 0 ? `/auth/authorize${page.search}` : answered
+          }),
+          consent: () => raced(record)
+        }
+      })
+    const decision = {
+      decision: 'allow',
+      query: page.search.slice(1),
+      workspaceId: fresh
+    } as const
+    const request = new Request(config.publicURL)
+
+    await expect(service(false).decide(request, person.userId, decision)).rejects.toThrow()
+    continued = 0
+    expect(await service(true).decide(request, person.userId, decision)).toBe(answered)
+  })
+
   test('refuses a workspace the person is not in', async () => {
     const page = await authorize(app, (await pkce()).challenge, person.sessionCookie)
     const response = await send('/api/oauth/decision', {
@@ -364,6 +413,24 @@ describe('connected apps', () => {
     })
     expect(revoked.status).toBe(200)
     expect((await send('/api/workspaces', { token })).status).toBe(401)
+  })
+
+  test('disconnect beside sign-in records that are not JSON', async () => {
+    await connect()
+    // A second sign-in step's challenge keeps the account's ID as plain text.
+    await fixture.database
+      .insertInto('verification')
+      .values({
+        id: crypto.randomUUID(),
+        identifier: 'two-factor-challenge',
+        value: person.userId,
+        expiresAt: new Date(Date.now() + 60_000),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .execute()
+    await disconnect()
+    expect(await connections()).toEqual([])
   })
 
   test('refuse a code issued before disconnecting', async () => {

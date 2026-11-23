@@ -14,9 +14,18 @@ export function checkColumnIn(column: string, values: readonly string[]): Expres
   return sql<boolean>`${sql.ref(column)} in (${sql.join(values.map((value) => sql.lit(value)))})`
 }
 
-/** Whether a text column holding JSON contains `value`, as Postgres's `@>` matches `jsonb`. */
-export function jsonTextContains(column: string, value: object): Expression<boolean> {
-  return sql<boolean>`${sql.ref(column)}::jsonb @> ${JSON.stringify(value)}::jsonb`
+/**
+ * Whether a text column holds JSON containing `value`, as Postgres's `@>` matches `jsonb`. Only
+ * text that starts with `prefix` is read as JSON, so rows of a shared column that hold other text,
+ * which the cast would reject, never fail the statement.
+ */
+export function jsonTextContains(
+  column: string,
+  prefix: string,
+  value: object
+): Expression<boolean> {
+  const text = sql.ref(column)
+  return sql<boolean>`case when starts_with(${text}, ${prefix}) then ${text}::jsonb @> ${JSON.stringify(value)}::jsonb else false end`
 }
 
 /**

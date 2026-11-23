@@ -106,7 +106,7 @@ export function createOAuthService(options: {
      * Either way the answer is where the browser goes next.
      */
     async decide(request: Request, userId: string, decision: CloudOAuthDecision): Promise<string> {
-      await readQuery(decision.query)
+      const params = await readQuery(decision.query)
       if (decision.decision === 'deny') {
         return (await steps.consent(request, decision.query, false)).url
       }
@@ -117,7 +117,7 @@ export function createOAuthService(options: {
         .where('workspaceId', '=', decision.workspaceId)
         .executeTakeFirst()
       if (!member) throw new OAuthRequestError('workspace_not_found')
-      return withWorkspace(decision.workspaceId, async () => {
+      const answer = async () => {
         const next = (await steps.continue(request, decision.query)).url
         const url = new URL(next, options.publicURL)
         // The provider asks for consent on the page the person just approved on.
@@ -128,6 +128,24 @@ export function createOAuthService(options: {
           return (await steps.consent(request, url.search.slice(1), true)).url
         }
         return next
+      }
+      const consented = () =>
+        database
+          .selectFrom('oauthConsent')
+          .select('id')
+          .where('clientId', '=', params.get('client_id') ?? '')
+          .where('userId', '=', userId)
+          .where('referenceId', '=', decision.workspaceId)
+          .executeTakeFirst()
+      return withWorkspace(decision.workspaceId, async () => {
+        try {
+          return await answer()
+        } catch (error) {
+          // Another approval of the same app and workspace recorded the consent first, and the
+          // grant holds one; answering again continues from that consent.
+          if (!(await consented())) throw error
+          return answer()
+        }
       })
     },
 
@@ -202,7 +220,8 @@ export function createOAuthService(options: {
         await transaction
           .deleteFrom('verification')
           .where(
-            jsonTextContains('value', {
+            // Other plugins keep plain text in the same table, such as a second sign-in step's.
+            jsonTextContains('value', '{"type":"authorization_code"', {
               type: 'authorization_code',
               userId,
               referenceId: consent.referenceId,

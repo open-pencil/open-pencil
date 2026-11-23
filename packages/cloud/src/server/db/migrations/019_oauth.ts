@@ -149,6 +149,12 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('scopes', 'jsonb', required)
     .addColumn('created_at', 'timestamptz', required)
     .addColumn('updated_at', 'timestamptz', required)
+    // One consent per app, account, and workspace, which a connection and its tokens follow.
+    .addUniqueConstraint('oauth_consent_client_id_user_id_reference_id_key', [
+      'client_id',
+      'user_id',
+      'reference_id'
+    ])
     .execute()
   await database.schema
     .createTable('oauth_client_assertion')
