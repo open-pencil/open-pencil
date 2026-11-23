@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, sep } from 'node:path'
 
-import { readReleaseNotes, releaseChangelogPath } from '#release/release-notes'
+import { readReleaseNotes, releaseChangelogPath } from '#release/release-notes/read'
 
 const changelog = `# Changelog
 
@@ -50,6 +50,29 @@ describe('readReleaseNotes', () => {
 - Corrected behavior.
 `
     )
+  })
+
+  test('keeps HTML comments and code spans as written', async () => {
+    const path = await changelogPath(`# Changelog
+
+## 2.0.0 — 2026-11-22
+
+### Changed
+
+- Paste no longer reads the \`<!--(openpencil)-->\` HTML format.
+<!-- A note for maintainers. -->
+
+## 1.9.0 — 2026-11-01
+
+### Fixed
+
+- Older.
+`)
+    expect(await readReleaseNotes(path, '2.0.0')).toBe(`### Changed
+
+- Paste no longer reads the \`<!--(openpencil)-->\` HTML format.
+<!-- A note for maintainers. -->
+`)
   })
 
   test('rejects missing and empty release sections', async () => {

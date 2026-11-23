@@ -1,7 +1,7 @@
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { readReleaseNotes, releaseChangelogPath } from '#release/release-notes'
+import { readReleaseNotes, releaseChangelogPath } from '#release/release-notes/read'
 import { sourceMapsAssetName } from '#release/sourcemaps/bundle'
 import { isEqual } from 'es-toolkit'
 import { decode } from 'js-base64'
