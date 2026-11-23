@@ -1,6 +1,7 @@
 import { useSessionStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { computed, ref, shallowRef } from 'vue'
+import type { Router } from 'vue-router'
 
 import { CloudAPIError, createCloudAPIClient } from '@open-pencil/cloud/client'
 import {
@@ -149,7 +150,7 @@ export async function signInForCloudInvitation(): Promise<void> {
  * server refuses another account's invitation the same way as a used one; right after a valid
  * preview, that means the account.
  */
-export async function acceptCloudInvitation(): Promise<void> {
+export async function acceptCloudInvitation(router: Router): Promise<void> {
   const invitation = pending.value
   const server = signedInServer()
   const discovery = server ? cloudConnection(server.id).discovery : null
@@ -168,7 +169,6 @@ export async function acceptCloudInvitation(): Promise<void> {
   if (accepted.kind === 'workspace') {
     await refreshCloudConnection(server)
     showCloudServerOnHome(server.id)
-    const router = (await import('@/router')).default
     openHomeLocation(router, { kind: 'workspace', id: accepted.workspaceId })
     return
   }

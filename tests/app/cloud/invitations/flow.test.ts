@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 
+import { createMemoryHistory, createRouter } from 'vue-router'
+
 import { fetchStub } from '@open-pencil/test-support/fetch'
 
 import {
@@ -83,7 +85,7 @@ describe('Cloud invitations', () => {
     await signedIn()
     beginCloudInvitation(INVITATION, ORIGIN, 'token'.repeat(8))
     await checkCloudInvitation()
-    await acceptCloudInvitation()
+    await acceptCloudInvitation(createRouter({ history: createMemoryHistory(), routes: [] }))
     expect(cloudInvitationState.value).toBe('wrong-account')
   })
 
