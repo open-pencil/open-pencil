@@ -59,6 +59,17 @@ export function materialSymbolsOptions(options: IconOptions = {}): Record<string
   return mapValues(resolveIconOptions(MATERIAL_SYMBOLS_OPTIONS, options), Number)
 }
 
+/** The names Material Symbols uses: lowercase letters, digits, and underscores. */
+const MATERIAL_SYMBOLS_NAME = /^[a-z0-9_]+$/
+
+/**
+ * Whether Google can be asked for `name`: it refuses a whole font request that names one icon
+ * outside the Material Symbols alphabet, which would leave every other icon in it undrawn.
+ */
+export function isMaterialSymbolsName(name: string): boolean {
+  return MATERIAL_SYMBOLS_NAME.test(name)
+}
+
 /** A Material Symbols font holding just `names`, every axis variable, as Google cuts it. */
 export async function fetchMaterialSymbolsFont(
   fetcher: typeof globalThis.fetch,

@@ -6,6 +6,7 @@ import {
 } from '#core/icons/material-symbols/catalogue'
 import {
   fetchMaterialSymbolsFont,
+  isMaterialSymbolsName,
   isMaterialSymbolsPrefix,
   MATERIAL_SYMBOLS_OPTIONS,
   MATERIAL_SYMBOLS_PREFIXES,
@@ -76,6 +77,10 @@ export function createMaterialSymbolsProvider(
     for (const name of names) {
       const parsed = parseIconName(name)
       if (!parsed || !isMaterialSymbolsPrefix(parsed.prefix) || loaded.has(name)) continue
+      if (!isMaterialSymbolsName(parsed.iconName)) {
+        loaded.set(name, null)
+        continue
+      }
       const request = pending.get(name)
       if (request) waiting.add(request)
       else wanted.set(parsed.prefix, [...(wanted.get(parsed.prefix) ?? []), parsed.iconName])
