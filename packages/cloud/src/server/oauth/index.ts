@@ -1,5 +1,5 @@
 export { cloudOAuthAuthentication, providerRequest } from './authentication'
-export { clientMetadataPlugins, closedOAuthPaths, cloudOAuthProviderOptions } from './provider'
+export { closedOAuthPaths, cloudOAuthProviderOptions } from './provider'
 export { bearerAppToken, resolveAppAccessToken, resourceChallenge } from './resource'
 export {
   createAgentPairingGrants,

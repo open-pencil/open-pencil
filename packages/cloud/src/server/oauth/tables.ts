@@ -14,6 +14,8 @@ export interface OAuthClientTable {
   icon: string | null
   tokenEndpointAuthMethod: string | null
   disabled: boolean | null
+  /** When an app known by its metadata document last had it fetched and valid. */
+  updatedAt: TimestampColumn | null
 }
 
 /** An app's access token, kept as its SHA-256 digest by the OAuth provider. */
