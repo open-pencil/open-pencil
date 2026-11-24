@@ -1,7 +1,7 @@
 import { createEventHook } from '@vueuse/core'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { errorMessage } from '@open-pencil/std/errors'
+import { errorMessage, isAbortError } from '@open-pencil/std/errors'
 import { nextShownFrame } from '@open-pencil/vue/shared/frame'
 
 import { applyImportedDocument } from '@/app/document/io/imported-document'
@@ -121,7 +121,7 @@ export async function showImportedGraph(
     load?.signal.throwIfAborted()
   } catch (error) {
     // The document and its source are already in the tab. The new page switch now presents it.
-    if (load?.supersededBy !== 'page-switch') throw error
+    if (load?.supersededBy !== 'page-switch' || !isAbortError(error)) throw error
   }
 }
 

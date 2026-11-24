@@ -384,12 +384,8 @@ describe('openFileInNewTab deduplication', () => {
 
     let stopWatching: (() => void) | undefined
     try {
-      const store = await Promise.race([
-        firstFrameHeld.promise,
-        opened.then((status) => {
-          throw new Error(`Open ended before the first frame was held: ${status}`)
-        })
-      ])
+      const store = await Promise.race([firstFrameHeld.promise, opening])
+      expect(store.state.preparation?.kind).toBe('document-open')
       const document = expectDefined(
         listAutomationDocuments(store).find((entry) => entry.name === 'follow-during-open'),
         'published document'
@@ -438,24 +434,31 @@ describe('openFileInNewTab deduplication', () => {
     }
   })
 
-  test('closes a newly opened tab when the user cancels its first frame wait', async () => {
-    const home = createHomeTab()
-    const count = tabCount()
-    const controller = new AbortController()
-    const opening = openFileInNewTab(new File([], 'cancelled.fig'), {
-      path: '/tmp/cancelled.fig',
-      signal: controller.signal
-    })
-
-    await expect(
-      settleFileOpen(opening, (store) => {
-        if (store.state.documentName === 'cancelled') controller.abort()
-        else acknowledgePresentation(store)
+  test.each([false, true])(
+    'closes the opening tab on user cancellation (page switch started: %s)',
+    async (switched) => {
+      const home = createHomeTab()
+      const count = tabCount()
+      const controller = new AbortController()
+      const opening = openFileInNewTab(new File([], 'cancelled.fig'), {
+        path: '/tmp/cancelled.fig',
+        signal: controller.signal
       })
-    ).rejects.toHaveProperty('name', 'AbortError')
-    expect(tabCount()).toBe(count)
-    expect(getActiveStore()).toBe(home.store)
-  })
+
+      await expect(
+        settleFileOpen(opening, (store) => {
+          if (store.state.documentName !== 'cancelled' || controller.signal.aborted) {
+            acknowledgePresentation(store)
+            return
+          }
+          if (switched) void store.switchPage(store.graph.addPage('Next').id)
+          controller.abort()
+        })
+      ).rejects.toHaveProperty('name', 'AbortError')
+      expect(tabCount()).toBe(count)
+      expect(getActiveStore()).toBe(home.store)
+    }
+  )
 
   test('activates the existing tab when the same path is opened again', async () => {
     const initialCount = tabCount()

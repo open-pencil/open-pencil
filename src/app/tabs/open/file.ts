@@ -153,6 +153,7 @@ export async function openFileInNewTab(
       load
     )
     if (isFig && path) refreshOpenedFigCover(path, store)
+    signal?.throwIfAborted()
     completion.resolve(undefined)
     succeeded = true
     return store
