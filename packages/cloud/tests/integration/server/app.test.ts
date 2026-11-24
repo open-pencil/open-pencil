@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { adminContractClient, contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import { CLOUD_PROTOCOL_VERSION } from '#cloud/contract'
 import {
   createCloudApp,
@@ -22,9 +22,6 @@ import {
   type Dialect,
   type QueryResult
 } from 'kysely'
-import * as v from 'valibot'
-
-const errorSchema = v.object({ error: v.object({ code: v.string() }) })
 
 function dummyPostgresDialect(): Dialect {
   return {
@@ -151,7 +148,9 @@ describe('createCloudApp', () => {
           .select(['emailNormalized', 'status'])
           .executeTakeFirstOrThrow()
       ).toEqual({ emailNormalized: 'pending@example.com', status: 'pending' })
-      expect((await client.api.admin.enrollments.$get({ query: {} })).status).toBe(401)
+      expect(await outcome(adminContractClient(app).enrollments({ query: {} }))).toMatchObject({
+        status: 401
+      })
     } finally {
       await runtime.close()
     }
@@ -178,11 +177,10 @@ describe('createCloudApp', () => {
           deploymentRole: 'admin'
         })
       })
-      const client = testClient(app)
-      expect((await client.api.session.$get()).status).toBe(200)
-      expect((await client.api.admin.operations.$get()).status).toBe(403)
-      expect(await responseJSON(await client.api.admin.operations.$get(), errorSchema)).toEqual({
-        error: { code: 'mfa_required' }
+      expect(await outcome(contractClient(app).session.session())).toBe('ok')
+      expect(await outcome(adminContractClient(app).operations())).toEqual({
+        status: 403,
+        code: 'mfa_required'
       })
     } finally {
       await runtime.close()
@@ -214,25 +212,19 @@ describe('createCloudApp', () => {
           deploymentRole: 'user'
         })
       })
-      const admin = testClient(adminApp)
       expect(
-        (
-          await testClient(userApp).api.admin.operations.$get(undefined, {
-            headers: { Origin: 'https://pencil.example.com' }
-          })
-        ).status
-      ).toBe(403)
+        await outcome(
+          adminContractClient(userApp, { Origin: 'https://pencil.example.com' }).operations()
+        )
+      ).toMatchObject({ status: 403 })
       expect(
-        (
-          await admin.api.admin.enrollments[':id'].approve.$post(
-            { param: { id: 'missing' }, json: {} },
-            { headers: { Origin: 'https://untrusted.example.com' } }
-          )
-        ).status
-      ).toBe(403)
-      const response = await admin.api.admin.operations.$get()
-      expect(response.status).toBe(200)
-      expect(await response.json()).toMatchObject({
+        await outcome(
+          adminContractClient(adminApp, {
+            Origin: 'https://untrusted.example.com'
+          }).approveEnrollment({ params: { id: 'missing' }, body: {} })
+        )
+      ).toMatchObject({ status: 403 })
+      expect(await adminContractClient(adminApp).operations()).toMatchObject({
         enrollmentMode: 'open',
         pendingEnrollment: 0
       })
@@ -267,12 +259,13 @@ describe('createCloudApp', () => {
         expect(response.status).toBe(400)
         expect(await response.json()).toEqual({ error: { code: 'invalid_request' } })
       }
-      const review = await testClient(adminApp).api.admin.enrollments[':id'].approve.$post(
-        { param: { id: crypto.randomUUID() }, json: {} },
-        { headers: { Origin: 'https://pencil.example.com' } }
-      )
-      expect(review.status).toBe(404)
-      expect(await review.json()).toEqual({ error: { code: 'not_found' } })
+      expect(
+        await outcome(
+          adminContractClient(adminApp, { Origin: 'https://pencil.example.com' }).approveEnrollment(
+            { params: { id: crypto.randomUUID() }, body: {} }
+          )
+        )
+      ).toEqual({ status: 404, code: 'not_found' })
     } finally {
       await runtime.close()
     }
@@ -306,8 +299,10 @@ describe('createCloudApp', () => {
         user: pendingIdentity,
         state: 'pending'
       })
-      expect((await client.api.session.$get()).status).toBe(401)
-      expect((await client.api.admin.enrollments.$get({ query: {} })).status).toBe(401)
+      expect(await outcome(contractClient(app).session.session())).toMatchObject({ status: 401 })
+      expect(await outcome(adminContractClient(app).enrollments({ query: {} }))).toMatchObject({
+        status: 401
+      })
     } finally {
       await runtime.close()
     }
@@ -354,10 +349,12 @@ describe('createCloudApp', () => {
 
     const allowedServices = services()
     allowedServices.config = { ...allowedServices.config, indexingPolicy: 'allow' }
-    const allowed = testClient(createCloudApp(allowedServices))
+    const allowedApp = createCloudApp(allowedServices)
+    const allowed = testClient(allowedApp)
     expect(await (await allowed['robots.txt'].$get()).text()).toContain('Disallow: /admin')
     expect((await allowed.health.$get()).headers.get('X-Robots-Tag')).toBeNull()
-    expect((await allowed.api.session.$get()).headers.get('X-Robots-Tag')).toBe(
+    // A response header, which the contract client does not expose.
+    expect((await allowedApp.request('/api/session')).headers.get('X-Robots-Tag')).toBe(
       'noindex, nofollow, noarchive'
     )
     expect(await (await allowed['robots.txt'].$get()).text()).toContain(
@@ -472,19 +469,16 @@ describe('createCloudApp', () => {
         auth: createBetterAuthAdapter(proxied, runtime.database)
       })
       const shareId = crypto.randomUUID()
-      const client = testClient(app)
-      const input = { param: { shareId }, json: { secret: 'a'.repeat(64) } }
-      const options = { headers: { 'x-forwarded-for': '203.0.113.7' } }
-      const ticket = await client.api.shares[':shareId']['collaboration-ticket'].$post(
-        input,
-        options
-      )
+      // The limits show in response headers, which the contract client does not expose.
+      const request = (path: string) =>
+        app.request(path, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.7' },
+          body: JSON.stringify({ secret: 'a'.repeat(64) })
+        })
+      const ticket = await request(`/api/shares/${shareId}/collaboration-ticket`)
       // No such route: only the share budget's limiter answers it.
-      const share = await app.request(`/api/shares/${shareId}`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', ...options.headers },
-        body: JSON.stringify(input.json)
-      })
+      const share = await request(`/api/shares/${shareId}`)
       expect(ticket.headers.get('ratelimit-policy')).toContain('60;w=60')
       expect(share.headers.get('ratelimit-policy')).toContain('30;w=60')
     } finally {

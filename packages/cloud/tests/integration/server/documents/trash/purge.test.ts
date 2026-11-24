@@ -61,10 +61,10 @@ describe('Deleting forever', () => {
       await context.remove(document)
       expect(await context.usage()).toBe(128)
 
-      expect((await context.purge(document)).status).toBe(204)
+      expect(await context.purge(document)).toBe('ok')
       expect(await context.trash()).toEqual([])
-      expect((await context.restore(document)).status).toBe(404)
-      expect((await context.purge(document)).status).toBe(404)
+      expect(await context.restore(document)).toMatchObject({ status: 404 })
+      expect(await context.purge(document)).toMatchObject({ status: 404 })
       expect(await context.usage()).toBe(0)
       expect(context.objects.deletedKeys).toEqual([])
       expect(await context.row(document)).toMatchObject({
@@ -97,7 +97,7 @@ describe('Deleting forever', () => {
       const document = await context.create('Old')
       await context.remove(document)
       await context.deletedAgo(document, 29 * DAY_MS)
-      expect((await context.purge(document)).status).toBe(204)
+      expect(await context.purge(document)).toBe('ok')
 
       const purgedAt = Date.now()
       expect(await cleanupAt(context, new Date(purgedAt + 2 * DAY_MS))).toMatchObject({
@@ -118,11 +118,11 @@ describe('Deleting forever', () => {
       const objectKey = await context.withRevision(document)
       await context.remove(document)
 
-      expect((await context.purge(document)).status).toBe(204)
+      expect(await context.purge(document)).toBe('ok')
       expect(context.objects.deletedKeys).toEqual([objectKey])
       expect(await context.row(document)).toBeUndefined()
       expect(await context.usage()).toBe(0)
-      expect((await context.restore(document)).status).toBe(404)
+      expect(await context.restore(document)).toMatchObject({ status: 404 })
     } finally {
       await context.runtime.close()
     }
@@ -146,8 +146,7 @@ describe('Deleting forever', () => {
         await remove(key)
       }
 
-      const response = await context.purge(document)
-      expect(response.status).toBe(503)
+      expect(await context.purge(document)).toMatchObject({ status: 503 })
       expect(reports).toHaveLength(1)
       expect(reports[0]?.error).toBe(failure)
       expect(reports[0]?.context).toEqual({
@@ -157,7 +156,7 @@ describe('Deleting forever', () => {
       })
       expect(context.objects.deletedKeys).toHaveLength(1)
       expect(await context.trash()).toEqual([])
-      expect((await context.restore(document)).status).toBe(404)
+      expect(await context.restore(document)).toMatchObject({ status: 404 })
       expect(await context.usage()).toBe(0)
 
       // The next pass finishes the job, taking nothing more off the usage.
@@ -293,7 +292,7 @@ describe('Deleting forever', () => {
       const document = await context.create('Alice’s')
       await context.remove(document)
       context.as('bob')
-      expect((await context.purge(document)).status).toBe(403)
+      expect(await context.purge(document)).toMatchObject({ status: 403 })
       expect(await context.row(document)).toMatchObject({ purgedAt: null })
     } finally {
       await context.runtime.close()

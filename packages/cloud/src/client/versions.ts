@@ -1,110 +1,63 @@
-import {
-  documentVersionDownloadSchema,
-  documentVersionResponseSchema,
-  documentVersionsSchema,
-  restoredDocumentSchema,
-  type DocumentSummary,
-  type DocumentVersion,
-  type DocumentVersionDownload,
-  type DocumentVersions,
-  type DuplicateDocumentVersionInput,
-  type SaveDocumentVersionInput,
-  type UpdateDocumentVersionInput
+import type {
+  DocumentSummary,
+  DocumentVersion,
+  DocumentVersionDownload,
+  DocumentVersions,
+  DuplicateDocumentVersionInput,
+  SaveDocumentVersionInput,
+  UpdateDocumentVersionInput
 } from '#cloud/contract'
-import type { CloudAPI } from '#cloud/server/api'
 import { pickBy } from 'es-toolkit/object'
-import type { hc } from 'hono/client'
 
-import { parseResponse, type CloudClientDiagnostic } from './response'
-import { documentResponseSchema } from './schema'
+import type { CloudContractClient } from './contract'
 
 /** A document’s version history: listing, naming, opening, restoring, and duplicating. */
-export function createVersionRequests(
-  client: ReturnType<typeof hc<CloudAPI>>,
-  onDiagnostic?: CloudClientDiagnostic
-) {
+export function createVersionRequests(contract: CloudContractClient['versions']) {
   return {
     /** A page of the document's version history, newest first. */
     async listDocumentVersions(
       documentId: string,
       page: { before?: string; limit?: number } = {}
     ): Promise<DocumentVersions> {
-      return parseResponse(
-        client.documents[':documentId'].versions.$get({
-          param: { documentId },
-          query: pickBy(
-            {
-              before: page.before,
-              limit: page.limit === undefined ? undefined : String(page.limit)
-            },
-            (value) => value !== undefined
-          )
-        }),
-        documentVersionsSchema,
-        onDiagnostic
-      )
+      return contract.list({
+        params: { documentId },
+        query: pickBy(
+          {
+            before: page.before,
+            limit: page.limit === undefined ? undefined : String(page.limit)
+          },
+          (value) => value !== undefined
+        )
+      })
     },
     async saveDocumentVersion(
       documentId: string,
       input: SaveDocumentVersionInput
     ): Promise<DocumentVersion> {
-      const response = await parseResponse(
-        client.documents[':documentId'].versions.$post({ param: { documentId }, json: input }),
-        documentVersionResponseSchema,
-        onDiagnostic
-      )
-      return response.version
+      return (await contract.save({ params: { documentId }, body: input })).version
     },
     async updateDocumentVersion(
       documentId: string,
       versionId: string,
       input: UpdateDocumentVersionInput
     ): Promise<DocumentVersion> {
-      const response = await parseResponse(
-        client.documents[':documentId'].versions[':versionId'].$patch({
-          param: { documentId, versionId },
-          json: input
-        }),
-        documentVersionResponseSchema,
-        onDiagnostic
-      )
-      return response.version
+      return (await contract.update({ params: { documentId, versionId }, body: input })).version
     },
     async getDocumentVersion(
       documentId: string,
       versionId: string
     ): Promise<DocumentVersionDownload> {
-      return parseResponse(
-        client.documents[':documentId'].versions[':versionId'].$get({
-          param: { documentId, versionId }
-        }),
-        documentVersionDownloadSchema,
-        onDiagnostic
-      )
+      return contract.download({ params: { documentId, versionId } })
     },
     async restoreDocumentVersion(documentId: string, versionId: string) {
-      return parseResponse(
-        client.documents[':documentId'].versions[':versionId'].restore.$post({
-          param: { documentId, versionId }
-        }),
-        restoredDocumentSchema,
-        onDiagnostic
-      )
+      return contract.restore({ params: { documentId, versionId } })
     },
     async duplicateDocumentVersion(
       documentId: string,
       versionId: string,
       input: DuplicateDocumentVersionInput
     ): Promise<DocumentSummary> {
-      const response = await parseResponse(
-        client.documents[':documentId'].versions[':versionId'].duplicate.$post({
-          param: { documentId, versionId },
-          json: input
-        }),
-        documentResponseSchema,
-        onDiagnostic
-      )
-      return response.document
+      return (await contract.duplicate({ params: { documentId, versionId }, body: input })).document
     }
   }
 }

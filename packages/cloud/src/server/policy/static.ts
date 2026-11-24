@@ -1,13 +1,10 @@
+import { staticEntitlementsSchema, type StaticEntitlements } from '#cloud/contract'
 import { pickBy } from 'es-toolkit/object'
 import { isNotNil } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 
 import { CLOUD_FEATURE_KEYS } from './keys'
-import {
-  staticEntitlementsSchema,
-  staticEntitlementsTOMLSchema,
-  type StaticEntitlements
-} from './schema'
+import { staticEntitlementsTOMLSchema } from './schema'
 
 /** Entitlements as a writer sends them, with any group left out. */
 export type StaticEntitlementsInput = v.InferInput<typeof staticEntitlementsSchema>

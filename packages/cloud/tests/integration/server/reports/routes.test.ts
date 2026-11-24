@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { adminContractClient, contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import { seedSharing } from '#cloud-tests/helpers/sharing'
-import { cloudAdminReportsResponseSchema } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
   createCloudApp,
@@ -11,7 +10,6 @@ import {
   DOCUMENT_REPORT_BUDGET,
   parseCloudServerConfig
 } from '#cloud/server'
-import { testClient } from 'hono/testing'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -50,53 +48,49 @@ describe('report routes', () => {
       const capability = await context.sharing.createShare('owner', context.documentId, {
         permission: 'view'
       })
-      const client = testClient(app)
       const sameOrigin = { headers: { Origin: config.publicURL } }
+      const api = contractClient(app, sameOrigin.headers)
       const report = (secret = capability.secret) =>
-        client.api.shares[':shareId'].reports.$post(
-          {
-            param: { shareId: capability.share.id },
-            json: {
-              secret,
-              guestId: 'guest-0123456789abcdef',
-              reason: 'spam-phishing',
-              description: 'A fake sign-in page'
-            }
-          },
-          sameOrigin
-        )
+        api.publicSharing.fileReport({
+          params: { shareId: capability.share.id },
+          body: {
+            secret,
+            guestId: 'guest-0123456789abcdef',
+            reason: 'spam-phishing',
+            description: 'A fake sign-in page'
+          }
+        })
 
-      const filed = await report()
-      expect(filed.status).toBe(201)
       // The answer says nothing about the document.
-      expect(await filed.json()).toEqual({ received: true })
-      expect((await report('f'.repeat(48))).status).toBe(404)
+      expect(await report()).toEqual({ received: true })
+      expect(await outcome(report('f'.repeat(48)))).toMatchObject({ status: 404 })
       for (let sent = 1; sent < DOCUMENT_REPORT_BUDGET.perReporter; sent++) {
-        expect((await report()).status).toBe(201)
+        expect(await outcome(report())).toBe('ok')
       }
-      expect((await report()).status).toBe(429)
+      expect(await outcome(report())).toMatchObject({ status: 429 })
 
       signedIn = true
-      const listed = await responseJSON(
-        await client.api.admin.reports.$get({ query: {} }),
-        cloudAdminReportsResponseSchema
-      )
+      const admin = adminContractClient(app, sameOrigin.headers)
+      const listed = await admin.reports({ query: {} })
       expect(listed.counts.open).toBe(DOCUMENT_REPORT_BUDGET.perReporter)
       expect(
-        (
-          await client.api.admin.documents[':id'].disable.$post(
-            { param: { id: context.documentId }, json: { reason: 'Phishing' } },
-            sameOrigin
-          )
-        ).status
-      ).toBe(200)
+        await outcome(
+          admin.disableDocument({
+            params: { id: context.documentId },
+            body: { reason: 'Phishing' }
+          })
+        )
+      ).toBe('ok')
 
       signedIn = false
-      const opened = await client.api.shares[':shareId'].resolve.$post(
-        { param: { shareId: capability.share.id }, json: { secret: capability.secret } },
-        sameOrigin
-      )
-      expect(opened.status).toBe(404)
+      expect(
+        await outcome(
+          api.publicSharing.resolveShare({
+            params: { shareId: capability.share.id },
+            body: { secret: capability.secret }
+          })
+        )
+      ).toMatchObject({ status: 404 })
     } finally {
       await context.runtime.close()
     }

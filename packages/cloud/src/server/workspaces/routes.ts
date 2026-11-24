@@ -1,78 +1,23 @@
-import {
-  createWorkspaceSchema,
-  createWorkspaceInvitationSchema,
-  updateWorkspaceSchema,
-  updateWorkspaceMemberSchema
-} from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
-import { InvitationLimitError } from '#cloud/server/invitations'
 import {
   CLOUD_RATE_LIMITS,
   createRouteRateLimiter,
   routeParamResource,
   createResourceRateLimiter
 } from '#cloud/server/rate-limit'
-import { tokenRoute } from '#cloud/server/tokens'
-import {
-  validatedJSON,
-  workspaceInvitationParams,
-  workspaceMemberParams,
-  workspaceParams
-} from '#cloud/server/validation'
-import {
-  WorkspaceAlreadyMemberError,
-  WorkspaceForbiddenError,
-  WorkspaceLastAdminError,
-  WorkspaceNotEmptyError,
-  WorkspaceNotFoundError,
-  type WorkspaceMemberService
-} from '#cloud/server/workspaces/members'
-import type { WorkspaceService } from '#cloud/server/workspaces/service'
-import { WorkspaceSlugConflictError } from '#cloud/server/workspaces/service'
-import { Hono, type Context } from 'hono'
+import { Hono } from 'hono'
 import type { Kysely } from 'kysely'
 
-export type WorkspaceRouteEnvironment = {
-  Variables: {
-    actor: CloudActor
-  }
-}
-
-/** Runs a membership action, answering its domain errors with their HTTP codes. */
-async function memberRoute<T>(context: Context, action: () => Promise<T>): Promise<T | Response> {
-  try {
-    return await action()
-  } catch (error) {
-    if (error instanceof WorkspaceNotFoundError) {
-      return context.json({ error: { code: 'not_found' as const } }, 404)
-    }
-    if (error instanceof WorkspaceForbiddenError) {
-      return context.json({ error: { code: 'forbidden' as const } }, 403)
-    }
-    if (error instanceof WorkspaceLastAdminError) {
-      return context.json({ error: { code: 'last_admin' as const } }, 409)
-    }
-    if (error instanceof WorkspaceNotEmptyError) {
-      const code = error.reason === 'documents' ? 'not_empty' : 'cleanup_pending'
-      return context.json({ error: { code } }, 409)
-    }
-    if (error instanceof WorkspaceAlreadyMemberError) {
-      return context.json({ error: { code: 'already_member' as const } }, 409)
-    }
-    if (error instanceof InvitationLimitError) {
-      return context.json({ error: { code: 'rate_limited' as const } }, 429)
-    }
-    throw error
-  }
-}
-
-export function createWorkspaceRoutes(
-  service: WorkspaceService,
-  members: WorkspaceMemberService,
-  rateLimit?: { database: Kysely<CloudDatabase>; secret: string }
-) {
-  const router = new Hono<WorkspaceRouteEnvironment>()
+/**
+ * The budgets for creating workspaces and inviting people to them. The workspace routes themselves
+ * are the contract's (`workspacesContract`).
+ */
+export function createWorkspaceRateLimits(rateLimit?: {
+  database: Kysely<CloudDatabase>
+  secret: string
+}) {
+  const router = new Hono<{ Variables: { actor: CloudActor } }>()
   if (rateLimit) {
     router.use(
       '/',
@@ -106,141 +51,4 @@ export function createWorkspaceRoutes(
     )
   }
   return router
-    .get('/', tokenRoute.read.grant, async (context) => {
-      const { userId, grant } = context.get('actor')
-      const workspaces = await service.list(userId)
-      // An app sees the one workspace its grant reaches.
-      return context.json({
-        workspaces: grant
-          ? workspaces.filter((workspace) => workspace.id === grant.workspaceId)
-          : workspaces
-      })
-    })
-    .post('/', tokenRoute.write.personal, validatedJSON(createWorkspaceSchema), async (context) => {
-      try {
-        const workspace = await service.create(
-          context.get('actor').userId,
-          context.req.valid('json')
-        )
-        return context.json({ workspace }, 201)
-      } catch (error) {
-        if (error instanceof WorkspaceSlugConflictError) {
-          return context.json({ error: { code: 'slug_conflict' as const } }, 409)
-        }
-        throw error
-      }
-    })
-    .get('/:workspaceId', workspaceParams, tokenRoute.read.workspace, async (context) => {
-      const workspace = await service.get(
-        context.get('actor').userId,
-        context.req.valid('param').workspaceId
-      )
-      if (!workspace) return context.json({ error: { code: 'not_found' as const } }, 404)
-      return context.json({ workspace })
-    })
-    .patch(
-      '/:workspaceId',
-      workspaceParams,
-      tokenRoute.write.personal,
-      validatedJSON(updateWorkspaceSchema),
-      (context) =>
-        memberRoute(context, async () =>
-          context.json({
-            workspace: await members.rename(
-              context.get('actor').userId,
-              context.req.valid('param').workspaceId,
-              context.req.valid('json').name
-            )
-          })
-        )
-    )
-    .delete('/:workspaceId', workspaceParams, tokenRoute.write.personal, (context) =>
-      memberRoute(context, async () => {
-        await members.delete(context.get('actor').userId, context.req.valid('param').workspaceId)
-        return context.body(null, 204)
-      })
-    )
-    .get('/:workspaceId/members', workspaceParams, tokenRoute.read.personal, (context) =>
-      memberRoute(context, async () =>
-        context.json(
-          await members.list(context.get('actor').userId, context.req.valid('param').workspaceId)
-        )
-      )
-    )
-    .post(
-      '/:workspaceId/invitations',
-      workspaceParams,
-      tokenRoute.write.personal,
-      validatedJSON(createWorkspaceInvitationSchema),
-      (context) =>
-        memberRoute(context, async () =>
-          context.json(
-            await members.invite(
-              context.get('actor').userId,
-              context.req.valid('param').workspaceId,
-              context.req.valid('json')
-            ),
-            201
-          )
-        )
-    )
-    .post(
-      '/:workspaceId/invitations/:invitationId/resend',
-      workspaceInvitationParams,
-      tokenRoute.write.personal,
-      (context) =>
-        memberRoute(context, async () =>
-          context.json(
-            await members.resendInvitation(
-              context.get('actor').userId,
-              context.req.valid('param').workspaceId,
-              context.req.valid('param').invitationId
-            )
-          )
-        )
-    )
-    .delete(
-      '/:workspaceId/invitations/:invitationId',
-      workspaceInvitationParams,
-      tokenRoute.write.personal,
-      (context) =>
-        memberRoute(context, async () => {
-          await members.revokeInvitation(
-            context.get('actor').userId,
-            context.req.valid('param').workspaceId,
-            context.req.valid('param').invitationId
-          )
-          return context.body(null, 204)
-        })
-    )
-    .patch(
-      '/:workspaceId/members/:userId',
-      workspaceMemberParams,
-      tokenRoute.write.personal,
-      validatedJSON(updateWorkspaceMemberSchema),
-      (context) =>
-        memberRoute(context, async () => {
-          await members.updateRole(
-            context.get('actor').userId,
-            context.req.valid('param').workspaceId,
-            context.req.valid('param').userId,
-            context.req.valid('json').role
-          )
-          return context.body(null, 204)
-        })
-    )
-    .delete(
-      '/:workspaceId/members/:userId',
-      workspaceMemberParams,
-      tokenRoute.write.personal,
-      (context) =>
-        memberRoute(context, async () => {
-          await members.remove(
-            context.get('actor').userId,
-            context.req.valid('param').workspaceId,
-            context.req.valid('param').userId
-          )
-          return context.body(null, 204)
-        })
-    )
 }

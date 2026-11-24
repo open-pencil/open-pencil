@@ -6,30 +6,3 @@ export const isUUID = (value: string) => v.is(uuidSchema, value)
 
 /** The most rows one admin list request returns. */
 export const ADMIN_LIST_MAXIMUM = 500
-
-export const enrollmentStatusSchema = v.picklist(['pending', 'approved', 'rejected', 'revoked'])
-export const enrollmentReviewSchema = v.object({
-  note: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(1000)))
-})
-export const userRoleMutationSchema = v.object({
-  userId: v.pipe(v.string(), v.trim(), v.minLength(1)),
-  enabled: v.boolean()
-})
-
-export const userMutationSchema = v.object({
-  userId: v.pipe(v.string(), v.trim(), v.minLength(1)),
-  reason: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(500)))
-})
-
-/** One of an account's sign-in methods, as the person's page lists them. */
-export const signInMethodMutationSchema = v.object({
-  userId: v.pipe(v.string(), v.trim(), v.minLength(1)),
-  methodId: v.pipe(v.string(), v.trim(), v.minLength(1))
-})
-
-/** Why an administrator takes a document down, which the audit log keeps. */
-export const documentTakedownSchema = v.object({
-  reason: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(500)))
-})
-
-export type EnrollmentReview = v.InferOutput<typeof enrollmentReviewSchema>

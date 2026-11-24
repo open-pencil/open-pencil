@@ -1,6 +1,6 @@
 export { ServicesNotEntitledError } from './errors'
 export { importServicesSigningKey, loadServicesSigningKey, type ServicesSigningKey } from './keys'
-export { createServicesRoutes, type ServicesRouteEnvironment } from './routes'
+export { createServicesRateLimits } from './routes'
 export {
   createServicesTokenService,
   type ServicesTokenService,

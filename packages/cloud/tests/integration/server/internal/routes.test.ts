@@ -4,13 +4,13 @@ import { unusedAuthAdapter } from '#cloud-tests/helpers/auth'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
+import type { setAccountEntitlementsSchema } from '#cloud/contract'
 import {
   CLOUD_FEATURE_KEYS,
   createCloudApp,
   DatabaseEntitlementSource,
   parseCloudServerConfig
 } from '#cloud/server'
-import { testClient } from 'hono/testing'
 import * as v from 'valibot'
 
 const SERVICE_TOKEN = 'billing-service-token-with-at-least-32-characters'
@@ -42,16 +42,17 @@ async function testApp() {
     objects: createMemoryObjectStore().store,
     resolveSession: async () => null
   })
-  const entitlements = testClient(app).api.internal.accounts[':userId'].entitlements
+  // Services call the internal API over plain HTTP, so the tests send what they would.
   const put = (
     userId: string,
-    json: Parameters<typeof entitlements.$put>[0]['json'],
+    json: v.InferInput<typeof setAccountEntitlementsSchema>,
     token = SERVICE_TOKEN
   ) =>
-    entitlements.$put(
-      { param: { userId }, json },
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
+    app.request(`/api/internal/accounts/${userId}/entitlements`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(json)
+    })
   const enabled = () =>
     new DatabaseEntitlementSource(runtime.database).boolean(
       { type: 'user', id: userId },
@@ -162,16 +163,13 @@ describe('internal entitlements API', () => {
         [context.userId, 'editor']
       ])
 
-      const seats = testClient(context.app).api.internal.accounts[':userId'].seats
-      const response = await seats.$get(
-        { param: { userId: context.userId } },
-        { headers: { Authorization: `Bearer ${SERVICE_TOKEN}` } }
-      )
+      const seats = (userId: string) =>
+        context.app.request(`/api/internal/accounts/${userId}/seats`, {
+          headers: { Authorization: `Bearer ${SERVICE_TOKEN}` }
+        })
+      const response = await seats(context.userId)
       expect(await responseJSON(response, v.object({ seats: v.number() }))).toEqual({ seats: 2 })
-      const unknown = await seats.$get(
-        { param: { userId: crypto.randomUUID() } },
-        { headers: { Authorization: `Bearer ${SERVICE_TOKEN}` } }
-      )
+      const unknown = await seats(crypto.randomUUID())
       expect(unknown.status).toBe(404)
     } finally {
       await context.runtime.close()

@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   createCloudApp,
   createBetterAuthAdapter,
@@ -10,7 +10,6 @@ import {
   parseCloudServerConfig,
   type CloudActor
 } from '#cloud/server'
-import { testClient } from 'hono/testing'
 import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
@@ -43,18 +42,14 @@ async function testApp(initialActor: CloudActor = actor) {
     objects: objects.store,
     resolveSession: async () => currentActor
   })
-  const client = testClient(app)
-  const workspaceResponse = await client.api.workspaces.$post({
-    json: { name: 'Documents', slug: 'documents-team' }
+  const api = contractClient(app)
+  const workspace = await api.workspaces.create({
+    body: { name: 'Documents', slug: 'documents-team' }
   })
-  const workspace = await responseJSON(
-    workspaceResponse,
-    v.object({ workspace: v.object({ id: v.string() }) })
-  )
   return {
     runtime,
     objects,
-    client,
+    api,
     workspaceId: workspace.workspace.id,
     setActor: (value: CloudActor) => {
       currentActor = value
@@ -78,32 +73,25 @@ describe('Cloud document routes', () => {
   test('creates and lists document metadata', async () => {
     const context = await testApp()
     try {
-      const create = await context.client.api.workspaces[':workspaceId'].documents.$post({
-        param: { workspaceId: context.workspaceId },
-        json: { name: 'Homepage' }
+      const created = await context.api.documents.create({
+        params: { workspaceId: context.workspaceId },
+        body: { name: 'Homepage' }
       })
-      expect(create.status).toBe(201)
-      const created = await responseJSON(
-        create,
-        v.object({ document: v.object({ id: v.string(), version: v.number() }) })
-      )
       expect(created.document.version).toBe(0)
 
-      const list = await context.client.api.workspaces[':workspaceId'].documents.$get({
-        param: { workspaceId: context.workspaceId }
-      })
-      expect(list.status).toBe(200)
-      expect(await list.json()).toMatchObject({
+      expect(
+        await context.api.documents.list({ params: { workspaceId: context.workspaceId } })
+      ).toMatchObject({
         documents: [
           { id: created.document.id, name: 'Homepage', kind: 'design', currentRevisionId: null }
         ]
       })
 
-      const board = await context.client.api.workspaces[':workspaceId'].documents.$post({
-        param: { workspaceId: context.workspaceId },
-        json: { name: 'Retro', kind: 'board' }
+      const board = await context.api.documents.create({
+        params: { workspaceId: context.workspaceId },
+        body: { name: 'Retro', kind: 'board' }
       })
-      expect(await board.json()).toMatchObject({ document: { name: 'Retro', kind: 'board' } })
+      expect(board).toMatchObject({ document: { name: 'Retro', kind: 'board' } })
     } finally {
       await context.runtime.close()
     }
@@ -114,49 +102,32 @@ describe('Cloud document routes', () => {
     async (directGrant) => {
       const context = await testApp()
       try {
-        const create = await context.client.api.workspaces[':workspaceId'].documents.$post({
-          param: { workspaceId: context.workspaceId },
-          json: { name: 'Homepage' }
+        const document = await context.api.documents.create({
+          params: { workspaceId: context.workspaceId },
+          body: { name: 'Homepage' }
         })
-        const document = await responseJSON(
-          create,
-          v.object({ document: v.object({ id: v.string() }) })
-        )
         if (directGrant) {
           await invitationGrant(context, document.document.id, 'bob')
-          const grant = await context.client.api.documents[':documentId'].grants[':userId'].$put({
-            param: { documentId: document.document.id, userId: 'bob' },
-            json: { permission: 'edit' }
+          await context.api.sharing.putGrant({
+            params: { documentId: document.document.id, userId: 'bob' },
+            body: { permission: 'edit' }
           })
-          expect(grant.status).toBe(200)
           context.setActor({ userId: 'bob', email: 'bob@example.com', name: 'Bob' })
-          const listing = await context.client.api.workspaces[':workspaceId'].documents.$get({
-            param: { workspaceId: context.workspaceId }
-          })
-          expect(listing.status).toBe(404)
+          expect(
+            await outcome(
+              context.api.documents.list({ params: { workspaceId: context.workspaceId } })
+            )
+          ).toMatchObject({ status: 404 })
         }
-        const uploadResponse = await context.client.api.documents[':documentId'].uploads.$post({
-          param: { documentId: document.document.id },
-          json: {
+        const upload = await context.api.documents.createUpload({
+          params: { documentId: document.document.id },
+          body: {
             baseRevisionId: null,
             byteSize: 128,
             checksum,
             contentType: 'application/octet-stream'
           }
         })
-        expect(uploadResponse.status).toBe(201)
-
-        const upload = await responseJSON(
-          uploadResponse,
-          v.object({
-            id: v.string(),
-            upload: v.object({
-              kind: v.string(),
-              url: v.string(),
-              headers: v.record(v.string(), v.string())
-            })
-          })
-        )
         const uploadRow = await context.runtime.database
           .selectFrom('upload')
           .select('objectKey')
@@ -169,33 +140,21 @@ describe('Cloud document routes', () => {
           contentType: 'application/octet-stream'
         })
 
-        const commit = await context.client.api.uploads[':uploadId'].commit.$post({
-          param: { uploadId: upload.id },
-          json: { checksum, name: 'Updated homepage', kind: 'board' }
+        const committed = await context.api.documents.commitUpload({
+          params: { uploadId: upload.id },
+          body: { checksum, name: 'Updated homepage', kind: 'board' }
         })
-        expect(commit.status).toBe(200)
-        const committed = await responseJSON(
-          commit,
-          v.object({
-            document: v.object({
-              currentRevisionId: v.string(),
-              version: v.number(),
-              name: v.string(),
-              kind: v.string()
-            })
-          })
-        )
         expect(committed.document.currentRevisionId).toBeString()
         expect(committed.document.version).toBe(1)
         expect(committed.document.name).toBe('Updated homepage')
         expect(committed.document.kind).toBe('board')
 
-        const repeatedCommit = await context.client.api.uploads[':uploadId'].commit.$post({
-          param: { uploadId: upload.id },
-          json: { checksum, name: 'Stale retry' }
-        })
-        expect(repeatedCommit.status).toBe(200)
-        expect(await repeatedCommit.json()).toMatchObject({
+        expect(
+          await context.api.documents.commitUpload({
+            params: { uploadId: upload.id },
+            body: { checksum, name: 'Stale retry' }
+          })
+        ).toMatchObject({
           document: {
             name: 'Updated homepage',
             currentRevisionId: committed.document.currentRevisionId,
@@ -204,19 +163,15 @@ describe('Cloud document routes', () => {
         })
 
         context.setActor(actor)
-        const usageResponse = await context.client.api.workspaces[':workspaceId'].usage.$get({
-          param: { workspaceId: context.workspaceId }
-        })
-        expect(usageResponse.status).toBe(200)
-        expect(await usageResponse.json()).toEqual({
+        expect(
+          await context.api.documents.usage({ params: { workspaceId: context.workspaceId } })
+        ).toEqual({
           usage: { bytesUsed: 128, objectCount: 1, documentCount: 1 }
         })
 
-        const downloadResponse = await context.client.api.documents[':documentId'].$get({
-          param: { documentId: document.document.id }
-        })
-        expect(downloadResponse.status).toBe(200)
-        expect(await downloadResponse.json()).toMatchObject({
+        expect(
+          await context.api.documents.download({ params: { documentId: document.document.id } })
+        ).toMatchObject({
           document: {
             document: { id: document.document.id, version: 1, name: 'Updated homepage' },
             revisionId: committed.document.currentRevisionId,
@@ -240,24 +195,19 @@ describe('Cloud document routes', () => {
   test('abandons and deletes expired pending uploads', async () => {
     const context = await testApp()
     try {
-      const create = await context.client.api.workspaces[':workspaceId'].documents.$post({
-        param: { workspaceId: context.workspaceId },
-        json: { name: 'Homepage' }
+      const document = await context.api.documents.create({
+        params: { workspaceId: context.workspaceId },
+        body: { name: 'Homepage' }
       })
-      const document = await responseJSON(
-        create,
-        v.object({ document: v.object({ id: v.string() }) })
-      )
-      const uploadResponse = await context.client.api.documents[':documentId'].uploads.$post({
-        param: { documentId: document.document.id },
-        json: {
+      const upload = await context.api.documents.createUpload({
+        params: { documentId: document.document.id },
+        body: {
           baseRevisionId: null,
           byteSize: 128,
           checksum,
           contentType: 'application/octet-stream'
         }
       })
-      const upload = await responseJSON(uploadResponse, v.object({ id: v.string() }))
       const row = await context.runtime.database
         .selectFrom('upload')
         .select('objectKey')
@@ -281,41 +231,41 @@ describe('Cloud document routes', () => {
   test('rejects stale base revisions and unverified uploads', async () => {
     const context = await testApp()
     try {
-      const create = await context.client.api.workspaces[':workspaceId'].documents.$post({
-        param: { workspaceId: context.workspaceId },
-        json: { name: 'Homepage' }
+      const document = await context.api.documents.create({
+        params: { workspaceId: context.workspaceId },
+        body: { name: 'Homepage' }
       })
-      const document = await responseJSON(
-        create,
-        v.object({ document: v.object({ id: v.string() }) })
-      )
-      const stale = await context.client.api.documents[':documentId'].uploads.$post({
-        param: { documentId: document.document.id },
-        json: {
-          baseRevisionId: crypto.randomUUID(),
-          byteSize: 128,
-          checksum,
-          contentType: 'application/octet-stream'
-        }
-      })
-      expect(stale.status).toBe(409)
+      expect(
+        await outcome(
+          context.api.documents.createUpload({
+            params: { documentId: document.document.id },
+            body: {
+              baseRevisionId: crypto.randomUUID(),
+              byteSize: 128,
+              checksum,
+              contentType: 'application/octet-stream'
+            }
+          })
+        )
+      ).toMatchObject({ status: 409 })
 
-      const pending = await context.client.api.documents[':documentId'].uploads.$post({
-        param: { documentId: document.document.id },
-        json: {
+      const upload = await context.api.documents.createUpload({
+        params: { documentId: document.document.id },
+        body: {
           baseRevisionId: null,
           byteSize: 128,
           checksum,
           contentType: 'application/octet-stream'
         }
       })
-      const upload = await responseJSON(pending, v.object({ id: v.string() }))
-      const commit = await context.client.api.uploads[':uploadId'].commit.$post({
-        param: { uploadId: upload.id },
-        json: { checksum }
-      })
-      expect(commit.status).toBe(422)
-      expect(await commit.json()).toEqual({ error: { code: 'invalid_upload' } })
+      expect(
+        await outcome(
+          context.api.documents.commitUpload({
+            params: { uploadId: upload.id },
+            body: { checksum }
+          })
+        )
+      ).toEqual({ status: 422, code: 'invalid_upload' })
       expect(
         await context.runtime.database
           .selectFrom('upload')
@@ -362,27 +312,19 @@ describe('documents shared with a person', () => {
           updatedAt: now
         })
         .execute()
-      const create = await context.client.api.workspaces[':workspaceId'].documents.$post({
-        param: { workspaceId: context.workspaceId },
-        json: { name: 'Brief', kind: 'board' }
+      const created = await context.api.documents.create({
+        params: { workspaceId: context.workspaceId },
+        body: { name: 'Brief', kind: 'board' }
       })
-      const created = await responseJSON(
-        create,
-        v.object({ document: v.object({ id: v.string() }) })
-      )
       const documentId = created.document.id
       await invitationGrant(context, documentId, 'bob')
-      const grant = await context.client.api.documents[':documentId'].grants[':userId'].$put({
-        param: { documentId: documentId, userId: 'bob' },
-        json: { permission: 'view' }
+      await context.api.sharing.putGrant({
+        params: { documentId, userId: 'bob' },
+        body: { permission: 'view' }
       })
-      expect(grant.status).toBe(200)
 
       context.setActor(bob)
-      const shared = await responseJSON(
-        await context.client.api['shared-documents'].$get(),
-        SharedDocuments
-      )
+      const shared = v.parse(SharedDocuments, await context.api.documents.listShared())
       expect(shared.documents).toEqual([
         {
           id: documentId,
@@ -398,10 +340,7 @@ describe('documents shared with a person', () => {
         .insertInto('workspaceMember')
         .values({ workspaceId: context.workspaceId, userId: 'bob', role: 'viewer' })
         .execute()
-      const asMember = await responseJSON(
-        await context.client.api['shared-documents'].$get(),
-        SharedDocuments
-      )
+      const asMember = await context.api.documents.listShared()
       expect(asMember.documents).toEqual([])
 
       await context.runtime.database
@@ -409,15 +348,11 @@ describe('documents shared with a person', () => {
         .where('userId', '=', 'bob')
         .execute()
       context.setActor({ ...actor, userId: aliceAccount })
-      const revoke = await context.client.api.documents[':documentId'].grants[':userId'].$delete({
-        param: { documentId, userId: 'bob' }
-      })
-      expect(revoke.status).toBeLessThan(300)
+      expect(
+        await outcome(context.api.sharing.revokeGrant({ params: { documentId, userId: 'bob' } }))
+      ).toBe('ok')
       context.setActor(bob)
-      const afterRevoke = await responseJSON(
-        await context.client.api['shared-documents'].$get(),
-        SharedDocuments
-      )
+      const afterRevoke = await context.api.documents.listShared()
       expect(afterRevoke.documents).toEqual([])
     } finally {
       await context.runtime.close()

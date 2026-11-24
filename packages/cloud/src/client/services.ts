@@ -1,20 +1,16 @@
+import { createContractClient } from '#cloud/client/contract'
 import type { CloudFetch } from '#cloud/client/discovery'
-import { serviceJSON } from '#cloud/client/response'
 import {
-  serviceCatalogSchema,
   serviceErrorSchema,
-  creditWalletSchema,
-  searchResponseSchema,
+  servicesContract,
   CLOUD_SERVICES_API_PATHS,
   sendsTokenSafely,
   type ServiceCatalog,
   type ServiceErrorCode,
   type CreditWallet,
   type SearchRequestInput,
-  type SearchResponse,
-  type CloudServicesAPI
+  type SearchResponse
 } from '#cloud/contract'
-import { hc } from 'hono/client'
 import { joinURL, withoutTrailingSlash } from 'ufo'
 import * as v from 'valibot'
 
@@ -78,10 +74,8 @@ export function cloudServicesFetch(
   }
 }
 
-const errorBodySchema = v.pipe(v.string(), v.parseJson(), serviceErrorSchema)
-
-function refused(status: number, body: string): CloudServiceError {
-  const error = v.safeParse(errorBodySchema, body)
+function refused(status: number, body: unknown): CloudServiceError {
+  const error = v.safeParse(serviceErrorSchema, body)
   return new CloudServiceError(status, error.success ? error.output.error.code : undefined)
 }
 
@@ -96,21 +90,27 @@ export type CloudServicesClientOptions = {
 export function createCloudServicesClient(options: CloudServicesClientOptions) {
   const endpoint = withoutTrailingSlash(options.endpoint)
   const fetch = cloudServicesFetch(options.tokens, options.fetch)
-  // Answers are parsed rather than trusted: the service is deployed apart from this client.
-  const { v1 } = hc<CloudServicesAPI>(endpoint, { fetch })
+  // Answers are checked against the contract rather than trusted: the service is deployed apart
+  // from this client, and takes no cookies, only the token.
+  const service = createContractClient(servicesContract, endpoint, {
+    fetch,
+    headers: {},
+    credentials: 'omit',
+    refusal: refused
+  })
   return {
     /** The base URL an OpenAI-compatible client sends chat completions below. */
     modelBaseURL: joinURL(endpoint, CLOUD_SERVICES_API_PATHS.base),
     fetch,
-    async catalog(): Promise<ServiceCatalog> {
-      return serviceJSON(await v1.catalog.$get(), serviceCatalogSchema, refused)
+    catalog(): Promise<ServiceCatalog> {
+      return service.catalog()
     },
-    async wallet(): Promise<CreditWallet> {
-      return serviceJSON(await v1.wallet.$get(), creditWalletSchema, refused)
+    wallet(): Promise<CreditWallet> {
+      return service.wallet()
     },
     /** A web search, charged to the workspace; only when the catalog lists `search`. */
-    async search(input: SearchRequestInput): Promise<SearchResponse> {
-      return serviceJSON(await v1.search.$post({ json: input }), searchResponseSchema, refused)
+    search(input: SearchRequestInput): Promise<SearchResponse> {
+      return service.search({ body: input })
     }
   }
 }
