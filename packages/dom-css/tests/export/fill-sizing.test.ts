@@ -96,3 +96,53 @@ describe('auto layout sizes in DOM/CSS export', () => {
     expect(style({ ...between, primaryAxisAlign: 'MIN' })).toMatchObject({ gap: '16px' })
   })
 })
+
+describe('canvas metrics, as preview projects', () => {
+  const stroke = {
+    type: 'SOLID',
+    color: { r: 0, g: 0, b: 0, a: 1 },
+    opacity: 1,
+    visible: true,
+    weight: 2,
+    align: 'INSIDE'
+  } as const
+  function padding(over: Partial<SceneNode>, exact = true) {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      name: 'Frame',
+      layoutMode: 'VERTICAL',
+      strokes: [stroke],
+      paddingTop: 1,
+      paddingRight: 24,
+      paddingBottom: 1,
+      paddingLeft: 24,
+      ...over
+    })
+    const canvasMetrics = exact ? { autoLineHeight: () => undefined } : undefined
+    return styleOf(sceneNodeToDesignDocument(graph, frame.id, { canvasMetrics }).children, 'Frame')
+  }
+
+  it('takes the room of a stroke the layout leaves out from the padding, down to none', () => {
+    const style = padding({})
+    expect(style).toMatchObject({ 'padding-inline': '22px' })
+    expect(style).not.toHaveProperty('padding-block')
+    expect(padding({ strokesIncludedInLayout: true })).toMatchObject({
+      'padding-block': '1px',
+      'padding-inline': '24px'
+    })
+    expect(padding({}, false)).toMatchObject({ 'padding-block': '1px', 'padding-inline': '24px' })
+  })
+
+  it('writes the measured line height of text with an automatic one, and only then', () => {
+    const graph = new SceneGraph()
+    const text = graph.createNode('TEXT', graph.getPages()[0].id, { name: 'Text', text: 'Hi' })
+    const lineHeight = (canvasMetrics?: { autoLineHeight: () => number }) =>
+      styleOf(sceneNodeToDesignDocument(graph, text.id, { canvasMetrics }).children, 'Text')?.[
+        'line-height'
+      ]
+    expect(lineHeight()).toBeUndefined()
+    expect(lineHeight({ autoLineHeight: () => 18 })).toBe('18px')
+    graph.updateNode(text.id, { lineHeight: { value: 30, unit: 'PIXELS' } })
+    expect(lineHeight({ autoLineHeight: () => 18 })).toBe('30px')
+  })
+})

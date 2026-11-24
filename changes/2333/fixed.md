@@ -1,1 +1,2 @@
 - Preview and exported code let auto layout layers overflow instead of shrinking them, and ignore the gap of a space-between layout, as the canvas does (#2333).
+- Preview measures frames and text as the canvas does: strokes left out of layout take no room where there is padding to absorb them, and automatic line heights match (#2333).

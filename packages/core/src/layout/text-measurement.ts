@@ -181,3 +181,20 @@ export function withTextMeasurer<T>(measurer: TextMeasurer, fn: () => T): T {
     globalTextMeasurer = previous
   }
 }
+
+/**
+ * The height the canvas gives each line of text whose line height is automatic, or `undefined`
+ * where its lines differ, as with runs of their own size, or nothing can measure it.
+ */
+export function autoLineHeight(node: SceneNode): number | undefined {
+  if (node.lineHeight !== null || node.styleRuns.length > 0) return undefined
+  const line: SceneNode = {
+    ...node,
+    text: node.text.split('\n').find((part) => part.trim()) ?? 'A',
+    textAutoResize: 'WIDTH_AND_HEIGHT',
+    leadingTrim: 'NONE',
+    textParagraphs: [],
+    paragraphSpacing: 0
+  }
+  return globalTextMeasurer?.(line)?.height
+}

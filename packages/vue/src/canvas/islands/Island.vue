@@ -3,6 +3,7 @@ import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 
 import { resolvePlayState } from '@open-pencil/core'
 import { vectorElement } from '@open-pencil/core/io'
+import { autoLineHeight } from '@open-pencil/core/layout'
 import {
   behaviourControls,
   controlRoles,
@@ -45,7 +46,10 @@ watch(
 const projection = computed(() => {
   void editor.state.sceneVersion
   const graph = resolvePlayState(editor.graph, rootId, instanceStates(controls.value, state.value))
-  const [root] = sceneNodeToDesignDocument(graph, rootId, { vectorElement }).children
+  const [root] = sceneNodeToDesignDocument(graph, rootId, {
+    vectorElement,
+    canvasMetrics: { autoLineHeight }
+  }).children
   return { graph, root }
 })
 

@@ -4,7 +4,7 @@ import type { ColorProfile, SceneGraph, SceneNode } from '@open-pencil/scene-gra
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { readIcon } from '@open-pencil/scene-graph/icons'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
-import { layoutSizingInParent, primaryAxisSpacingOf } from '@open-pencil/scene-graph/layout'
+import { layoutSizingInParent } from '@open-pencil/scene-graph/layout'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
@@ -22,6 +22,7 @@ import {
 import { addGridContainer, addGridPlacement } from './grid'
 import { addBackground, addImageStyle, addStroke, type FieldCSS } from './paint-style'
 import { addPositioning, constraintSizes, placement } from './position'
+import { addFlexGap, addPadding } from './spacing'
 import { textCaseToCSS, textElementContent, uniformLetterSpacing } from './text'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
@@ -40,8 +41,16 @@ export interface SceneGraphToDesignOptions {
   tokens?: boolean
   /** Vector, boolean, star, polygon, and icon layers as inline SVG; without it they project as boxes. */
   vectorElement?: VectorElementRenderer
+  /** Match the canvas to the pixel, as preview does, rather than write the CSS one would by hand. */
+  canvasMetrics?: CanvasMetrics
   /** Hidden layers to project as shown, such as the tab panels a component reveals itself. */
   shown?: ReadonlySet<string>
+}
+
+/** What the canvas measures and CSS would work out differently. */
+export interface CanvasMetrics {
+  /** The line height of text with an automatic one, in pixels, when it has one for every line. */
+  autoLineHeight: (node: SceneNode) => number | undefined
 }
 
 /** Layers whose shape only paths describe, which CSS boxes cannot draw. */
@@ -157,54 +166,6 @@ function addCornerRadii(style: DesignStyleDeclaration, node: SceneNode, css: Fie
   if (node.cornerRadius > 0) style['border-radius'] = css('cornerRadius', px(node.cornerRadius))
 }
 
-const PADDING_FIELDS = ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'] as const
-
-/** Sides compare by their CSS, so a token and a literal of the same size stay separate. */
-function addPadding(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
-  const [top, right, bottom, left] = PADDING_FIELDS.map((field) => css(field, px(node[field])))
-  const zero = px(0)
-  if ([top, right, bottom, left].every((value) => value === zero)) return
-
-  if (top === right && right === bottom && bottom === left) {
-    style.padding = top
-    return
-  }
-
-  if (top === bottom && right === left) {
-    if (top !== zero) style['padding-block'] = top
-    if (right !== zero) style['padding-inline'] = right
-    return
-  }
-
-  if (top !== zero) style['padding-top'] = top
-  if (right !== zero) style['padding-right'] = right
-  if (bottom !== zero) style['padding-bottom'] = bottom
-  if (left !== zero) style['padding-left'] = left
-}
-
-function addFlexGap(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
-  const spacing = primaryAxisSpacingOf(node)
-  const item = css('itemSpacing', px(node.itemSpacing))
-  const [along, across] =
-    node.layoutMode === 'HORIZONTAL'
-      ? (['column-gap', 'row-gap'] as const)
-      : (['row-gap', 'column-gap'] as const)
-  const counter = node.counterAxisSpacing ?? 0
-  if (counter > 0) {
-    if (spacing > 0) style[along] = item
-    style[across] = css('counterAxisSpacing', px(counter))
-  } else if (spacing > 0) {
-    style.gap = item
-  } else if (
-    node.itemSpacing > 0 &&
-    node.layoutWrap === 'WRAP' &&
-    node.counterAxisSpacing === null
-  ) {
-    // Space between drops the gap along the rows; the space between them still follows it.
-    style[across] = item
-  }
-}
-
 /**
  * The shader a layer's fill draws, which the projection keeps as the shader rather than the
  * image of its still frame: the shader of its first fill, as the projection reads one fill.
@@ -278,7 +239,8 @@ function styleFromSceneNode(
   node: SceneNode,
   parent: SceneNode | undefined,
   css: FieldCSS,
-  profile: ColorProfile
+  profile: ColorProfile,
+  metrics: CanvasMetrics | undefined
 ): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
   addSize(style, node, parent, css)
@@ -299,7 +261,7 @@ function styleFromSceneNode(
 
   if (node.layoutMode === 'GRID') {
     addGridContainer(style, node, css)
-    addPadding(style, node, css)
+    addPadding(style, node, css, metrics !== undefined)
   } else if (node.layoutMode !== 'NONE') {
     style.display = 'flex'
     // Row is the flexbox default.
@@ -310,7 +272,7 @@ function styleFromSceneNode(
     if (alignItems) style['align-items'] = alignItems
     if (node.layoutWrap === 'WRAP') style['flex-wrap'] = 'wrap'
     addFlexGap(style, node, css)
-    addPadding(style, node, css)
+    addPadding(style, node, css, metrics !== undefined)
   }
 
   addBoxSizing(style)
@@ -321,7 +283,8 @@ function styleFromTextNode(
   node: SceneNode,
   parent: SceneNode | undefined,
   css: FieldCSS,
-  profile: ColorProfile
+  profile: ColorProfile,
+  metrics: CanvasMetrics | undefined
 ): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
   addSize(style, node, parent, css)
@@ -336,6 +299,9 @@ function styleFromTextNode(
   if (node.italic) style['font-style'] = 'italic'
   if (node.lineHeight !== null) {
     style['line-height'] = css('lineHeight', lineHeightToCSS(node.lineHeight))
+  } else {
+    const auto = metrics?.autoLineHeight(node)
+    if (auto !== undefined) style['line-height'] = px(auto)
   }
   const spacing = css('letterSpacing', letterSpacingToCSS(node.letterSpacing))
   if (node.letterSpacing.value !== 0) style['letter-spacing'] = spacing
@@ -395,6 +361,7 @@ interface ProjectionContext {
   includeSourceIds: boolean
   tokens: DesignTokens | undefined
   vectorElement: VectorElementRenderer | undefined
+  canvasMetrics: CanvasMetrics | undefined
   shown: ReadonlySet<string> | undefined
 }
 
@@ -429,7 +396,7 @@ function sceneNodeToDesignNode(
   root: boolean
 ): DesignNode | null {
   if ((!node.visible && !context.shown?.has(node.id)) || node.internalOnly) return null
-  const { graph, includeSourceIds, tokens } = context
+  const { graph, includeSourceIds, tokens, canvasMetrics: metrics } = context
   const parent = node.parentId ? graph.getNode(node.parentId) : undefined
   const entered = tokens?.enter(node, inherited, root)
   const modes = entered?.modes ?? inherited
@@ -438,7 +405,11 @@ function sceneNodeToDesignNode(
   const profile = graph.documentColorSpace
 
   if (node.type === 'TEXT') {
-    const content = textElementContent(node, styleFromTextNode(node, parent, css, profile), profile)
+    const content = textElementContent(
+      node,
+      styleFromTextNode(node, parent, css, profile, metrics),
+      profile
+    )
     return {
       type: 'element',
       tagName: content.tagName,
@@ -456,7 +427,7 @@ function sceneNodeToDesignNode(
       context,
       node,
       attrs,
-      styleFromSceneNode(node, parent, css, profile)
+      styleFromSceneNode(node, parent, css, profile, metrics)
     )
     if (vector) return vector
   }
@@ -476,7 +447,7 @@ function sceneNodeToDesignNode(
     }
   }
 
-  const style = styleFromSceneNode(node, parent, css, profile)
+  const style = styleFromSceneNode(node, parent, css, profile, metrics)
   const shader = layerShader(graph, node)
   if (shader) addShaderLayerStyle(style)
   return {
@@ -493,13 +464,20 @@ function sceneNodeToDesignNode(
 
 function projectionContext(
   graph: SceneGraph,
-  { includeSourceIds = true, tokens = true, vectorElement, shown }: SceneGraphToDesignOptions
+  {
+    includeSourceIds = true,
+    tokens = true,
+    vectorElement,
+    canvasMetrics,
+    shown
+  }: SceneGraphToDesignOptions
 ): ProjectionContext {
   return {
     graph,
     includeSourceIds,
     tokens: tokens ? new DesignTokens(graph) : undefined,
     vectorElement,
+    canvasMetrics,
     shown
   }
 }

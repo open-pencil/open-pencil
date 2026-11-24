@@ -69,3 +69,69 @@ test('an overfull space-between row overflows in preview as it does on the canva
       .toEqual(box)
   }
 })
+
+test('a stroke left out of layout and an automatic line height measure in preview as on the canvas', async () => {
+  const card = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const graph = store.graph
+    const pageId = store.state.currentPageId
+    const button = graph.createNode('COMPONENT', pageId, { x: 600, y: 120, width: 80, height: 30 })
+    store.setBehaviour(button.id, {
+      kind: 'button',
+      booleans: {},
+      texts: {},
+      numbers: {},
+      parts: {}
+    })
+    const black = { r: 0, g: 0, b: 0, a: 1 }
+    const frame = graph.createNode('FRAME', pageId, {
+      name: 'Card',
+      x: 120,
+      y: 120,
+      width: 360,
+      layoutMode: 'VERTICAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'FIXED',
+      paddingTop: 24,
+      paddingRight: 24,
+      paddingBottom: 24,
+      paddingLeft: 24,
+      strokes: [
+        { type: 'SOLID', color: black, opacity: 1, visible: true, weight: 1, align: 'INSIDE' }
+      ]
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      name: 'Fill',
+      height: 20,
+      layoutAlignSelf: 'STRETCH'
+    })
+    graph.createNode('TEXT', frame.id, {
+      name: 'Lines',
+      text: 'One\nTwo',
+      fontFamily: 'Inter',
+      fontSize: 15,
+      textAutoResize: 'WIDTH_AND_HEIGHT'
+    })
+    graph.createInstance(button.id, frame.id, { name: 'Control' })
+    store.runLayoutForNode(frame.id)
+    const height = (name: string) =>
+      graph.getChildren(frame.id).find((child) => child.name === name)?.height
+    const fill = graph.getChildren(frame.id).find((child) => child.name === 'Fill')
+    return { id: frame.id, height: frame.height, fill: fill?.width, lines: height('Lines') }
+  })
+  expect(card.fill).toBe(312)
+  await editor.canvas.waitForRender()
+  await editor.page.keyboard.press('ControlOrMeta+Alt+Enter')
+  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
+
+  const island = editor.page.locator(`[data-island="${card.id}"]`)
+  const size = (selector: string, side: 'offsetWidth' | 'offsetHeight') =>
+    island
+      .locator(selector)
+      .first()
+      .evaluate((element: HTMLElement, key) => element[key], side)
+  await expect.poll(() => size('[data-layer$="Fill"]', 'offsetWidth')).toBe(card.fill)
+  await expect.poll(() => size('[data-layer$="Lines"]', 'offsetHeight')).toBe(card.lines)
+  await expect.poll(() => size('[data-layer]', 'offsetHeight')).toBe(card.height)
+})
