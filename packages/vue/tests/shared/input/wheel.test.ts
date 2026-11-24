@@ -107,7 +107,7 @@ describe('wheel steps', () => {
   test('scales each zoom by the zoom speed and still limits one event to 10x', () => {
     let speed = 0.25
     const step = createWheelSteps('other', () => speed)
-    // A Linux Ctrl+wheel notch reports deltaY 120 and zooms 2^(-120 / 50) at full speed.
+    // A pinch with deltaY 120 zooms by 2^(-120 / 50) at full speed.
     expect(zoomScale(step(event(120, { ctrlKey: true })))).toBeCloseTo(2 ** (-0.25 * 2.4))
     expect(zoomScale(step(event(10, { metaKey: true })))).toBeCloseTo(Math.exp(-0.0125))
     speed = 2
@@ -136,6 +136,24 @@ describe('wheel steps', () => {
   test('zooms a Ctrl+notch on Windows like a mouse wheel zoom', () => {
     const step = createWheelSteps('windows')
     expect(zoomScale(step(notch(0, { ctrlKey: true })))).toBeCloseTo(Math.exp(-0.04))
+  })
+
+  test('uses the WebKitGTK tick rather than the pixel delta for Ctrl+wheel zoom', () => {
+    const step = createWheelSteps('webkitgtk')
+    const down = event(72.0999984741211, { ctrlKey: true, wheelDeltaY: -84, isTrusted: true })
+    const up = { ...down, deltaY: -down.deltaY, wheelDeltaY: 84, timeStamp: 20 }
+    expect(zoomScale(step(down))).toBeCloseTo(0.9724, 4)
+    expect(zoomScale(step(up))).toBeCloseTo(1.0284, 4)
+    expect(zoomScale(step({ ...up, isTrusted: false, timeStamp: 100 }))).toBeCloseTo(1.0284, 4)
+  })
+
+  test('keeps synthetic WebKitGTK pinches and plain wheel panning unchanged', () => {
+    const step = createWheelSteps('webkitgtk')
+    const deltaY = -100 * Math.LN2
+    expect(zoomScale(step(event(deltaY, { ctrlKey: true })))).toBeCloseTo(2.61, 2)
+    // WebKitGTK fills in wheelDeltaY when the synthetic pinch only supplies deltaY.
+    expect(zoomScale(step(event(deltaY, { ctrlKey: true, wheelDeltaY: 69 })))).toBeCloseTo(2.61, 2)
+    expect(panY(step(event(40, { wheelDeltaY: -120, isTrusted: true })))).toBe(80)
   })
 
   test('treats fractional Windows deltas and other platforms as touchpad movement', () => {
