@@ -1,7 +1,8 @@
 import * as v from 'valibot'
 
+import type { CollabRoomConnection } from '@open-pencil/collab'
+
 import { createCanvasJSXPreview } from '@/app/ai/preview/canvas'
-import type { CollabRoomConnection } from '@/app/collab/room/connection'
 import type { EditorStore } from '@/app/editor/active-store'
 import { onAgentPreview, type AgentPreviewEvent } from '@/app/presence/preview-stream'
 

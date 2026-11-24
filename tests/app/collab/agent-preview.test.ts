@@ -3,7 +3,9 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { Awareness } from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
+import { connectCollabRoom } from '@open-pencil/collab'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { createMemoryRooms } from '@open-pencil/test-support/collab/memory-transport'
 
 import {
   createRemotePreviewRouter,
@@ -14,11 +16,8 @@ import {
   shareAgentPreviews,
   type RemotePreviewController
 } from '@/app/collab/agent-preview'
-import { connectCollabRoom } from '@/app/collab/room/connection'
 import { createEditorStore } from '@/app/editor/session'
 import { publishAgentPreview, type AgentPreviewEvent } from '@/app/presence/preview-stream'
-
-import { createMemoryRooms } from '#tests/helpers/collab/memory-transport'
 
 const ROOM = 'cccccccccccccccccccccccccccccccc'
 

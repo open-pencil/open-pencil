@@ -1,13 +1,12 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 
+import { connectCollabRoom } from '#collab/room/connection'
+import type { JoinCollabRoom } from '#collab/room/transport'
 import { deflateSync } from 'fflate'
 import { Awareness } from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
-import { connectCollabRoom } from '@/app/collab/room/connection'
-import type { JoinCollabRoom } from '@/app/collab/transport'
-
-import { createMemoryRooms } from '#tests/helpers/collab/memory-transport'
+import { createMemoryRooms } from '@open-pencil/test-support/collab/memory-transport'
 
 const ROOM = 'dddddddddddddddddddddddddddddddd'
 

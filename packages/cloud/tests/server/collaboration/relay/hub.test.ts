@@ -9,10 +9,11 @@ import {
   until,
   type RelayTicketOptions
 } from '#cloud-tests/helpers/relay'
-import { COLLAB_ACTIONS, encodeSyncReply, RELAY_SERVER_PEER } from '#cloud/contract'
 import { type CollaborationRelay } from '#cloud/server'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
+
+import { COLLAB_ACTIONS, encodeSyncReply, RELAY_SERVER_PEER } from '@open-pencil/collab'
 
 const documentId = crypto.randomUUID()
 

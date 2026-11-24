@@ -4,13 +4,12 @@ import { effectScope } from 'vue'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { createDeferred } from '@open-pencil/std/async'
+import { createMemoryRooms } from '@open-pencil/test-support/collab/memory-transport'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { openRoomSession } from '@/app/collab/session'
 import { createVoiceCall } from '@/app/collab/voice/call'
 import { createEditorStore } from '@/app/editor/session'
-
-import { createMemoryRooms } from '#tests/helpers/collab/memory-transport'
 const ROOM = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 
 /** A microphone whose prompt stays open until the test answers it. */

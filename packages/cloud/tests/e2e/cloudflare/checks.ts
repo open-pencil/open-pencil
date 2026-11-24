@@ -1,13 +1,10 @@
 import { textOfSyncReply, textUpdate } from '#cloud-tests/helpers/relay'
 import {
-  COLLAB_ACTIONS,
   createRelayServerAssembler,
   decodeRelayServerFrame,
   defaultRelayURL,
-  MAX_COLLAB_MESSAGE_BYTES,
   RELAY_CLOSE,
   RELAY_HEARTBEAT,
-  RELAY_SERVER_PEER,
   relayClientMessages,
   type RelayClientFrame,
   type RelayServerFrame
@@ -15,6 +12,8 @@ import {
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createCollaborationTicketService, createDocumentSharingService } from '#cloud/server'
 import * as Y from 'yjs'
+
+import { COLLAB_ACTIONS, MAX_COLLAB_MESSAGE_BYTES, RELAY_SERVER_PEER } from '@open-pencil/collab'
 
 // Checks a running Cloud Worker (see run.ts): the API, the editor, and the portal answer, and the relay's
 // Durable Object admits ticket holders, keeps the room, and saves it to PostgreSQL.
