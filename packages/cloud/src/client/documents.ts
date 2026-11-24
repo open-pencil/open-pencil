@@ -8,7 +8,8 @@ import type {
   DocumentDownload,
   DocumentSummary,
   SharedDocument,
-  TrashedDocument
+  TrashedDocument,
+  UpdateDocumentInput
 } from '#cloud/contract'
 
 import type { CloudContractClient } from './contract'
@@ -47,6 +48,10 @@ export function createDocumentRequests(
     /** Deletes a document in Trash for good. */
     async purgeDocument(documentId: string): Promise<void> {
       await contract.purge({ params: { documentId } })
+    },
+    /** Sets a document's description, or with null clears it. */
+    async updateDocument(documentId: string, input: UpdateDocumentInput): Promise<void> {
+      await contract.update({ params: { documentId }, body: input })
     },
     async deleteDocument(documentId: string): Promise<void> {
       await contract.remove({ params: { documentId } })

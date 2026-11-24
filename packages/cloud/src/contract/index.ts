@@ -133,6 +133,7 @@ export {
   type CloudListing
 } from './discovery'
 export {
+  CLOUD_DOCUMENT_DESCRIPTION_MAX_LENGTH,
   CLOUD_DOCUMENT_NAME_MAX_LENGTH,
   CLOUD_IMAGE_NAME_PATTERN,
   CLOUD_API_MAX_BODY_BYTES,
@@ -158,6 +159,8 @@ export {
   trashSchema,
   trashedDocumentSchema,
   type TrashedDocument,
+  updateDocumentSchema,
+  type UpdateDocumentInput,
   workspaceUsageSchema,
   isCloudChecksum,
   parseCommitImageUploads,
