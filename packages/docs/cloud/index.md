@@ -7,9 +7,9 @@ description: Keep documents on OpenPencil Cloud or your team's own server, share
 import CloudActions from '../.vitepress/theme/cloud/CloudActions.vue'
 </script>
 
-# Design Together in OpenPencil
+# OpenPencil Cloud
 
-OpenPencil Cloud keeps your files with you on every device. Share them with a link and edit them together live.
+Design together in OpenPencil. Cloud keeps your files with you on every device, so you can share them with a link and edit them together live.
 
 <CloudActions />
 
