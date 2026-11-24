@@ -1,5 +1,4 @@
 export {
-  adminErrorStatus,
   AdminDomainError,
   approveEnrollmentByEmail,
   createAdminAuditService,

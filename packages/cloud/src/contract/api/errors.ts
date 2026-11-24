@@ -20,6 +20,16 @@ export const CLOUD_API_ERROR_STATUS = {
   already_member: 409,
   slug_conflict: 409,
   invalid_upload: 422,
+  invalid_enrollment_transition: 409,
+  account_approved: 409,
+  document_not_restorable: 409,
+  workspace_gone: 409,
+  last_admin_required: 400,
+  self_admin_action_forbidden: 400,
+  last_authentication_method: 400,
+  email_regeneration_unavailable: 400,
+  mfa_required: 403,
+  two_step_unconfirmed: 403,
   rate_limited: 429,
   invitation_delivery_failed: 502,
   purge_failed: 503
@@ -62,4 +72,18 @@ export const WORKSPACE_ERRORS = {
   already_member: {},
   slug_conflict: {},
   rate_limited: {}
+} satisfies ErrorMap
+
+/** What an administration route may answer besides its result. */
+export const ADMIN_ERRORS = {
+  invalid_request: {},
+  not_found: {},
+  invalid_enrollment_transition: {},
+  account_approved: {},
+  document_not_restorable: {},
+  workspace_gone: {},
+  last_admin_required: {},
+  self_admin_action_forbidden: {},
+  last_authentication_method: {},
+  email_regeneration_unavailable: {}
 } satisfies ErrorMap

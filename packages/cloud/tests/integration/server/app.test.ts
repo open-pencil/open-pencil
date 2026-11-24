@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { contractClient, outcome } from '#cloud-tests/helpers/contract'
+import { adminContractClient, contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import { CLOUD_PROTOCOL_VERSION } from '#cloud/contract'
 import {
   createCloudApp,
@@ -23,9 +22,6 @@ import {
   type Dialect,
   type QueryResult
 } from 'kysely'
-import * as v from 'valibot'
-
-const errorSchema = v.object({ error: v.object({ code: v.string() }) })
 
 function dummyPostgresDialect(): Dialect {
   return {
@@ -152,7 +148,9 @@ describe('createCloudApp', () => {
           .select(['emailNormalized', 'status'])
           .executeTakeFirstOrThrow()
       ).toEqual({ emailNormalized: 'pending@example.com', status: 'pending' })
-      expect((await client.api.admin.enrollments.$get({ query: {} })).status).toBe(401)
+      expect(await outcome(adminContractClient(app).enrollments({ query: {} }))).toMatchObject({
+        status: 401
+      })
     } finally {
       await runtime.close()
     }
@@ -179,11 +177,10 @@ describe('createCloudApp', () => {
           deploymentRole: 'admin'
         })
       })
-      const client = testClient(app)
       expect(await outcome(contractClient(app).session.session())).toBe('ok')
-      expect((await client.api.admin.operations.$get()).status).toBe(403)
-      expect(await responseJSON(await client.api.admin.operations.$get(), errorSchema)).toEqual({
-        error: { code: 'mfa_required' }
+      expect(await outcome(adminContractClient(app).operations())).toEqual({
+        status: 403,
+        code: 'mfa_required'
       })
     } finally {
       await runtime.close()
@@ -215,25 +212,19 @@ describe('createCloudApp', () => {
           deploymentRole: 'user'
         })
       })
-      const admin = testClient(adminApp)
       expect(
-        (
-          await testClient(userApp).api.admin.operations.$get(undefined, {
-            headers: { Origin: 'https://pencil.example.com' }
-          })
-        ).status
-      ).toBe(403)
+        await outcome(
+          adminContractClient(userApp, { Origin: 'https://pencil.example.com' }).operations()
+        )
+      ).toMatchObject({ status: 403 })
       expect(
-        (
-          await admin.api.admin.enrollments[':id'].approve.$post(
-            { param: { id: 'missing' }, json: {} },
-            { headers: { Origin: 'https://untrusted.example.com' } }
-          )
-        ).status
-      ).toBe(403)
-      const response = await admin.api.admin.operations.$get()
-      expect(response.status).toBe(200)
-      expect(await response.json()).toMatchObject({
+        await outcome(
+          adminContractClient(adminApp, {
+            Origin: 'https://untrusted.example.com'
+          }).approveEnrollment({ params: { id: 'missing' }, body: {} })
+        )
+      ).toMatchObject({ status: 403 })
+      expect(await adminContractClient(adminApp).operations()).toMatchObject({
         enrollmentMode: 'open',
         pendingEnrollment: 0
       })
@@ -268,12 +259,13 @@ describe('createCloudApp', () => {
         expect(response.status).toBe(400)
         expect(await response.json()).toEqual({ error: { code: 'invalid_request' } })
       }
-      const review = await testClient(adminApp).api.admin.enrollments[':id'].approve.$post(
-        { param: { id: crypto.randomUUID() }, json: {} },
-        { headers: { Origin: 'https://pencil.example.com' } }
-      )
-      expect(review.status).toBe(404)
-      expect(await review.json()).toEqual({ error: { code: 'not_found' } })
+      expect(
+        await outcome(
+          adminContractClient(adminApp, { Origin: 'https://pencil.example.com' }).approveEnrollment(
+            { params: { id: crypto.randomUUID() }, body: {} }
+          )
+        )
+      ).toEqual({ status: 404, code: 'not_found' })
     } finally {
       await runtime.close()
     }
@@ -308,7 +300,9 @@ describe('createCloudApp', () => {
         state: 'pending'
       })
       expect(await outcome(contractClient(app).session.session())).toMatchObject({ status: 401 })
-      expect((await client.api.admin.enrollments.$get({ query: {} })).status).toBe(401)
+      expect(await outcome(adminContractClient(app).enrollments({ query: {} }))).toMatchObject({
+        status: 401
+      })
     } finally {
       await runtime.close()
     }

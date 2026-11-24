@@ -17,7 +17,7 @@ export function createCloudPortalClient(options: CloudPortalClientOptions = {}) 
   const routes = createPortalRouteClients(options)
   return {
     ...createAccountAPI(call, callContract, routes),
-    ...createAdministrationAPI(call, callContract, routes)
+    ...createAdministrationAPI(callContract, routes)
   }
 }
 

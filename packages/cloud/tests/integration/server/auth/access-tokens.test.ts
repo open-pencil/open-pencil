@@ -6,7 +6,7 @@ import {
   createVerifiedCredentialAccount,
   withCookie
 } from '#cloud-tests/helpers/account-authentication'
-import { contractClient, outcome } from '#cloud-tests/helpers/contract'
+import { adminContractClient, contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   CLOUD_ACCESS_TOKEN_PREFIX,
@@ -95,8 +95,8 @@ describe('personal access tokens', () => {
       ).status
     ).toBe(401)
     expect(
-      (await fixture.client.api.admin.users.$get({ query: {} }, withToken(token))).status
-    ).toBe(401)
+      await outcome(adminContractClient(fixture.app, withToken(token).headers).users({ query: {} }))
+    ).toMatchObject({ status: 401 })
     // Services tokens spend the account's credits, so they take a session.
     expect(
       await outcome(

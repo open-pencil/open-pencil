@@ -1,10 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { contractClient, outcome } from '#cloud-tests/helpers/contract'
+import { adminContractClient, contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import { seedSharing } from '#cloud-tests/helpers/sharing'
-import { cloudAdminReportsResponseSchema } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
   createCloudApp,
@@ -12,7 +10,6 @@ import {
   DOCUMENT_REPORT_BUDGET,
   parseCloudServerConfig
 } from '#cloud/server'
-import { testClient } from 'hono/testing'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -51,7 +48,6 @@ describe('report routes', () => {
       const capability = await context.sharing.createShare('owner', context.documentId, {
         permission: 'view'
       })
-      const client = testClient(app)
       const sameOrigin = { headers: { Origin: config.publicURL } }
       const api = contractClient(app, sameOrigin.headers)
       const report = (secret = capability.secret) =>
@@ -74,19 +70,17 @@ describe('report routes', () => {
       expect(await outcome(report())).toMatchObject({ status: 429 })
 
       signedIn = true
-      const listed = await responseJSON(
-        await client.api.admin.reports.$get({ query: {} }),
-        cloudAdminReportsResponseSchema
-      )
+      const admin = adminContractClient(app, sameOrigin.headers)
+      const listed = await admin.reports({ query: {} })
       expect(listed.counts.open).toBe(DOCUMENT_REPORT_BUDGET.perReporter)
       expect(
-        (
-          await client.api.admin.documents[':id'].disable.$post(
-            { param: { id: context.documentId }, json: { reason: 'Phishing' } },
-            sameOrigin
-          )
-        ).status
-      ).toBe(200)
+        await outcome(
+          admin.disableDocument({
+            params: { id: context.documentId },
+            body: { reason: 'Phishing' }
+          })
+        )
+      ).toBe('ok')
 
       signedIn = false
       expect(

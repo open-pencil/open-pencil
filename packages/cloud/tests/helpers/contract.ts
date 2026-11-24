@@ -1,4 +1,9 @@
-import { createCloudContractClient, type CloudContractClient } from '#cloud/client/contract'
+import {
+  createCloudAdminContractClient,
+  createCloudContractClient,
+  type CloudAdminContractClient,
+  type CloudContractClient
+} from '#cloud/client/contract'
 import { CloudAPIError } from '#cloud/client/response'
 
 /** Something that answers requests, as a Cloud app does in a test. */
@@ -14,6 +19,17 @@ export function contractClient(
   base = 'http://localhost/api'
 ): CloudContractClient {
   return createCloudContractClient(base, {
+    fetch: async (input, init) => app.request(new Request(input, init)),
+    headers
+  })
+}
+
+/** The administration contract's client, calling `app` directly, with `headers` on every request. */
+export function adminContractClient(
+  app: RequestHandler,
+  headers: Record<string, string> = {}
+): CloudAdminContractClient {
+  return createCloudAdminContractClient('http://localhost/api/admin', {
     fetch: async (input, init) => app.request(new Request(input, init)),
     headers
   })

@@ -5,6 +5,15 @@ import { publicSharingContract, sharingContract } from './sharing'
 import { versionsContract } from './versions'
 import { sessionContract, workspacesContract } from './workspaces'
 
+export {
+  adminContract,
+  documentTakedownSchema,
+  enrollmentReviewSchema,
+  signInMethodMutationSchema,
+  userMutationSchema,
+  userRoleMutationSchema,
+  type EnrollmentReview
+} from './admin'
 export { commentsContract, sharedCommentsContract } from './comments'
 export { communityContract } from './community'
 export { documentsContract } from './documents'

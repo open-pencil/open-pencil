@@ -1,5 +1,5 @@
 import type { CloudAdminRoutes } from '#cloud/admin/api/routes'
-import { createCloudContractClient } from '#cloud/client/contract'
+import { createCloudAdminContractClient, createCloudContractClient } from '#cloud/client/contract'
 import type { CloudFetch } from '#cloud/client/discovery'
 import { CloudAPIError } from '#cloud/client/response'
 import {
@@ -111,8 +111,12 @@ export function createCloudCall(options: CloudPortalClientOptions = {}): CloudCa
 }
 
 /** The portal's error for a refusal with `status` and `code`, as `createCloudCall` reads one. */
-function portalRefusal(status: number, code: string | undefined): CloudPortalAPIError {
+function portalRefusal(refusal: CloudAPIError): CloudPortalAPIError {
+  const { status, code } = refusal
   if (status === 401) return new CloudPortalAPIError('authentication-required')
+  if (refusal.unreadable) {
+    return new CloudPortalAPIError(status === 403 ? 'authorization-required' : 'protocol')
+  }
   const body = { error: { code } }
   const accountError = v.safeParse(accountSecurityErrorResponseSchema, body)
   const adminError = v.safeParse(adminErrorResponseSchema, body)
@@ -136,7 +140,7 @@ export function createCloudContractCall(options: CloudPortalClientOptions = {}):
     try {
       return await run({ signal: anySignal([callerSignal, timeout]) })
     } catch (cause) {
-      if (cause instanceof CloudAPIError) throw portalRefusal(cause.status, cause.code)
+      if (cause instanceof CloudAPIError) throw portalRefusal(cause)
       // An answer off the contract, as the client's response check reports one.
       if (cause instanceof ORPCError && cause.cause instanceof ValidationError) {
         throw new CloudPortalAPIError('protocol', undefined, { cause })
@@ -157,11 +161,17 @@ export function createPortalRouteClients(options: CloudPortalClientOptions = {})
     init: { credentials: 'include' as const }
   }
   return {
+    /** The server's own address, which every portal route is on. */
+    origin,
     account: hc<CloudAccountRoutes>(origin, clientOptions).api.account,
     tokens: hc<CloudAccessTokenRoutes>(origin, clientOptions).api.account.tokens,
     admin: hc<CloudAdminRoutes>(new URL('/api/admin', origin).href, clientOptions),
     api: hc<CloudAPI>(new URL('/api', origin).href, clientOptions),
     contract: createCloudContractClient(new URL('/api', origin).href, {
+      fetch: options.fetch ?? globalThis.fetch,
+      headers: { Accept: 'application/json' }
+    }),
+    adminContract: createCloudAdminContractClient(new URL('/api/admin', origin).href, {
       fetch: options.fetch ?? globalThis.fetch,
       headers: { Accept: 'application/json' }
     })

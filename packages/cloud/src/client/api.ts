@@ -1,18 +1,11 @@
 import type { CloudFetch } from '#cloud/client/discovery'
 import {
-  accountEntitlementsResponseSchema,
-  servicesTokenSchema,
-  billingTokenSchema,
-  cloudSessionSchema,
   sendsTokenSafely,
   type AccountEntitlements,
-  type ServicesToken,
   type BillingToken,
-  type CloudSession
+  type CloudSession,
+  type ServicesToken
 } from '#cloud/contract'
-import type { CloudAPI, PublicCloudAPI } from '#cloud/server/api'
-import { hc } from 'hono/client'
-import * as v from 'valibot'
 
 import { anySignal, DEADLINE_MS } from '@open-pencil/std/timing'
 
@@ -21,7 +14,7 @@ import { createCommunityRequests } from './community'
 import { createCloudContractClient } from './contract'
 import { createDocumentRequests } from './documents'
 import { createImageRequests } from './images'
-import { CloudAPIError, parseResponse, responseBody, type CloudClientDiagnostic } from './response'
+import { CloudAPIError } from './response'
 import { createSharingRequests } from './sharing'
 import { createVersionRequests } from './versions'
 import { createWorkspaceRequests } from './workspaces'
@@ -33,7 +26,6 @@ export type CloudRequestOptions = {
   fetch?: CloudFetch
   signal?: AbortSignal
   accessToken?: string
-  onDiagnostic?: CloudClientDiagnostic
 }
 
 function apiURL(baseURL: string): string {
@@ -68,22 +60,8 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
   if (options.accessToken && !sendsTokenSafely(apiURL(baseURL))) {
     throw new CloudAPIError('OpenPencil Cloud takes an access token only over HTTPS', 0)
   }
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : {})
-  }
-  const fetch = boundedFetch(options.fetch)
-  const client = hc<CloudAPI>(apiURL(baseURL), {
-    fetch,
-    init: { credentials: 'include', signal: options.signal, headers }
-  })
-  const publicClient = hc<PublicCloudAPI>(apiURL(baseURL), {
-    fetch,
-    init: { credentials: 'include', signal: options.signal, headers }
-  })
-  // The contract client sets the content type of what it sends itself.
   const contract = createCloudContractClient(apiURL(baseURL), {
-    fetch,
+    fetch: boundedFetch(options.fetch),
     headers: options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : {},
     signal: options.signal
   })

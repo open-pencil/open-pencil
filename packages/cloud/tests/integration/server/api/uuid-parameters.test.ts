@@ -1,9 +1,8 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 
-import { contractClient, outcome } from '#cloud-tests/helpers/contract'
+import { adminContractClient, contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   CLOUD_FEATURE_KEYS,
   createBetterAuthAdapter,
@@ -14,8 +13,6 @@ import {
   StaticEntitlementSource,
   type CloudActor
 } from '#cloud/server'
-import { testClient } from 'hono/testing'
-import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -35,8 +32,6 @@ const alice: CloudActor = {
   name: 'Alice',
   deploymentRole: 'admin'
 }
-
-const notFoundSchema = v.object({ error: v.object({ code: v.literal('not_found') }) })
 
 async function testApp() {
   const runtime = await createCloudTestDatabase()
@@ -58,14 +53,14 @@ async function testApp() {
     resolveSession: async () => alice
   })
   const headers = { Origin: config.publicURL }
-  const { api } = testClient(app, undefined, undefined, { headers })
   const contract = contractClient(app, headers)
+  const admin = adminContractClient(app, headers)
   const { workspace } = await contract.workspaces.create({ body: { name: 'Studio' } })
   const { document } = await contract.documents.create({
     params: { workspaceId: workspace.id },
     body: { name: 'Poster' }
   })
-  return { runtime, api, contract, workspaceId: workspace.id, documentId: document.id }
+  return { runtime, contract, admin, workspaceId: workspace.id, documentId: document.id }
 }
 
 describe('Cloud API route parameters', () => {
@@ -73,25 +68,15 @@ describe('Cloud API route parameters', () => {
     const context = await testApp()
     const logged = spyOn(console, 'error').mockImplementation(() => undefined)
     try {
-      const { api, contract, workspaceId, documentId } = context
+      const { contract, admin, workspaceId, documentId } = context
       const secret = 'a'.repeat(64)
       // One route per validated parameter; the others in its path name rows that exist.
-      const malformed: [
-        route: string,
-        request: () => Promise<Pick<Response, 'status' | 'text'>>
-      ][] = [
+      const malformedContract: [route: string, call: () => Promise<unknown>][] = [
         [
           'POST /admin/email/abc/regenerate',
-          () => api.admin.email[':id'].regenerate.$post({ param: { id: 'abc' } })
+          () => admin.regenerateEmail({ params: { id: 'abc' } })
         ],
-        ['GET /admin/users/abc', () => api.admin.users[':id'].$get({ param: { id: 'abc' } })]
-      ]
-      for (const [route, request] of malformed) {
-        const response = await request()
-        expect({ route, status: response.status }).toEqual({ route, status: 404 })
-        await responseJSON(response, notFoundSchema)
-      }
-      const malformedContract: [route: string, call: () => Promise<unknown>][] = [
+        ['GET /admin/users/abc', () => admin.user({ params: { id: 'abc' } })],
         [
           'GET /documents/abc',
           () => contract.documents.download({ params: { documentId: 'abc' } })

@@ -1,7 +1,12 @@
 import type { CloudFetch } from '#cloud/client/discovery'
-import { cloudAPIContract, cloudAPIErrorBodySchema, publicCloudAPIContract } from '#cloud/contract'
+import {
+  adminContract,
+  cloudAPIContract,
+  cloudAPIErrorBodySchema,
+  publicCloudAPIContract
+} from '#cloud/contract'
 import { createORPCClient } from '@orpc/client'
-import type { RouterContractClient } from '@orpc/contract'
+import type { RouterContract, RouterContractClient } from '@orpc/contract'
 import { ResponseValidationLinkPlugin } from '@orpc/contract/plugins'
 import type { JsonifiedClient } from '@orpc/openapi'
 import { OpenAPILink } from '@orpc/openapi/fetch'
@@ -22,21 +27,29 @@ function cloudAPIError(status: number, body: unknown): CloudAPIError {
   return new CloudAPIError(
     `OpenPencil Cloud request failed with HTTP ${status}`,
     status,
-    parsed.success ? parsed.output.error.code : undefined
+    parsed.success ? parsed.output.error.code : undefined,
+    typeof body !== 'object' || body === null
   )
 }
 
+type ContractClientOptions = {
+  fetch: CloudFetch
+  headers: Record<string, string>
+  signal?: AbortSignal
+}
+
 /**
- * The routes the contract describes, at the API `apiURL` names. Requests go through `fetch` with
- * the person's cookies, `headers`, and `signal` as well as each call's own; answers are checked against the contract, and
- * refusals throw `CloudAPIError` as every other call does.
+ * A client of `routes` at `baseURL`. Requests go through `fetch` with the person's cookies,
+ * `headers`, and `signal` as well as each call's own; answers are checked against the contract,
+ * and refusals throw `CloudAPIError` as every other call does.
  */
-export function createCloudContractClient(
-  apiURL: string,
-  options: { fetch: CloudFetch; headers: Record<string, string>; signal?: AbortSignal }
-): CloudContractClient {
-  const url = new URL(apiURL)
-  const link = new OpenAPILink(contract, {
+function contractClient<T extends RouterContract>(
+  routes: T,
+  baseURL: string,
+  options: ContractClientOptions
+): JsonifiedClient<RouterContractClient<T>> {
+  const url = new URL(baseURL)
+  const link = new OpenAPILink(routes, {
     origin: url.origin,
     url: `/${url.pathname.replace(/^\/+/, '')}`,
     headers: options.headers,
@@ -47,7 +60,25 @@ export function createCloudContractClient(
         signal: anySignal([init.signal, options.signal])
       }),
     errorResponseBodyDecoder: (body, response) => cloudAPIError(response.status, body),
-    plugins: [new ResponseValidationLinkPlugin(contract)]
+    plugins: [new ResponseValidationLinkPlugin(routes)]
   })
   return createORPCClient(link)
+}
+
+/** The Cloud API's routes at the API `apiURL` names. */
+export function createCloudContractClient(
+  apiURL: string,
+  options: ContractClientOptions
+): CloudContractClient {
+  return contractClient(contract, apiURL, options)
+}
+
+export type CloudAdminContractClient = JsonifiedClient<RouterContractClient<typeof adminContract>>
+
+/** The server's administration, at `adminURL`, such as `https://cloud.example/api/admin`. */
+export function createCloudAdminContractClient(
+  adminURL: string,
+  options: ContractClientOptions
+): CloudAdminContractClient {
+  return contractClient(adminContract, adminURL, options)
 }

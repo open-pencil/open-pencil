@@ -1,25 +1,14 @@
-import {
-  adminAuditResponseSchema,
-  adminEmailResponseSchema,
-  adminMutationResponseSchema,
-  adminOperationsResponseSchema,
-  cloudAdminDocumentsResponseSchema,
-  cloudAdminReportsResponseSchema,
-  cloudAdminUserDetailSchema,
-  cloudAdminUsersResponseSchema,
-  documentDownloadSchema,
-  enrollmentReviewResponseSchema,
-  enrollmentsResponseSchema,
-  type CloudAdminAuditFilter,
-  type CloudAdminDocumentFilter,
-  type CloudAdminReportFilter,
-  type CloudAdminEmailFilter,
-  type CloudAdminUserFilter,
-  type CloudAdminUserMethod,
-  type EnrollmentStatus
+import type {
+  CloudAdminAuditFilter,
+  CloudAdminDocumentFilter,
+  CloudAdminEmailFilter,
+  CloudAdminReportFilter,
+  CloudAdminUserFilter,
+  CloudAdminUserMethod,
+  EnrollmentStatus
 } from '#cloud/contract'
 
-import type { CloudCall, CloudContractCall, PortalRouteClients } from './request'
+import type { CloudContractCall, PortalRouteClients } from './request'
 
 /** A page of an admin list: words to search for, one of its filters, and where the page starts. */
 export type AdminListRequest<Filter extends string> = {
@@ -47,20 +36,15 @@ function listQuery<Filter extends string>(request: AdminListRequest<Filter>) {
 }
 
 export function createAdministrationAPI(
-  call: CloudCall,
   callContract: CloudContractCall,
-  { admin, contract }: PortalRouteClients
+  { origin, contract, adminContract: admin }: PortalRouteClients
 ) {
   return {
     session(signal?: AbortSignal) {
       return callContract((options) => contract.session.session(undefined, options), signal)
     },
     enrollments(request: AdminListRequest<EnrollmentStatus>, signal?: AbortSignal) {
-      return call(
-        (options) => admin.enrollments.$get(listQuery(request), options),
-        enrollmentsResponseSchema,
-        signal
-      )
+      return callContract((options) => admin.enrollments(listQuery(request), options), signal)
     },
     reviewEnrollment(
       id: string,
@@ -68,12 +52,12 @@ export function createAdministrationAPI(
       note?: string,
       signal?: AbortSignal
     ) {
-      return call(
-        (options) =>
-          admin.enrollments[':id'][action].$post({ param: { id }, json: { note } }, options),
-        enrollmentReviewResponseSchema,
-        signal
-      )
+      const review = {
+        approve: admin.approveEnrollment,
+        reject: admin.rejectEnrollment,
+        revoke: admin.revokeEnrollment
+      }[action]
+      return callContract((options) => review({ params: { id }, body: { note } }, options), signal)
     },
     /** A page of people; `method` narrows any filter to those who sign in that way. */
     users(
@@ -81,18 +65,13 @@ export function createAdministrationAPI(
       signal?: AbortSignal
     ) {
       const { query } = listQuery(request)
-      return call(
-        (options) => admin.users.$get({ query: { ...query, method: request.method } }, options),
-        cloudAdminUsersResponseSchema,
+      return callContract(
+        (options) => admin.users({ query: { ...query, method: request.method } }, options),
         signal
       )
     },
     user(id: string, signal?: AbortSignal) {
-      return call(
-        (options) => admin.users[':id'].$get({ param: { id } }, options),
-        cloudAdminUserDetailSchema,
-        signal
-      )
+      return callContract((options) => admin.user({ params: { id } }, options), signal)
     },
     userAction(
       action: 'ban' | 'unban' | 'revoke-sessions' | 'reset-two-step' | 'remove-picture' | 'delete',
@@ -100,87 +79,60 @@ export function createAdministrationAPI(
       reason?: string,
       signal?: AbortSignal
     ) {
-      return call(
-        (options) => admin.users[action].$post({ json: { userId, reason } }, options),
-        adminMutationResponseSchema,
-        signal
-      )
+      const act = {
+        ban: admin.ban,
+        unban: admin.unban,
+        'revoke-sessions': admin.revokeSessions,
+        'reset-two-step': admin.resetTwoStep,
+        'remove-picture': admin.removePicture,
+        delete: admin.deleteUser
+      }[action]
+      return callContract((options) => act({ body: { userId, reason } }, options), signal)
     },
     /** Removes one of an account's sign-in methods; the server keeps its last. */
     removeSignInMethod(userId: string, methodId: string, signal?: AbortSignal) {
-      return call(
-        (options) =>
-          admin.users['remove-sign-in-method'].$post({ json: { userId, methodId } }, options),
-        adminMutationResponseSchema,
+      return callContract(
+        (options) => admin.removeSignInMethod({ body: { userId, methodId } }, options),
         signal
       )
     },
     setAdmin(userId: string, enabled: boolean, signal?: AbortSignal) {
-      return call(
-        (options) => admin.users['set-admin'].$post({ json: { userId, enabled } }, options),
-        adminMutationResponseSchema,
+      return callContract(
+        (options) => admin.setAdmin({ body: { userId, enabled } }, options),
         signal
       )
     },
     email(request: AdminListRequest<CloudAdminEmailFilter>, signal?: AbortSignal) {
-      return call(
-        (options) => admin.email.$get(listQuery(request), options),
-        adminEmailResponseSchema,
-        signal
-      )
+      return callContract((options) => admin.email(listQuery(request), options), signal)
     },
     regenerateEmail(id: string, signal?: AbortSignal) {
-      return call(
-        (options) => admin.email[':id'].regenerate.$post({ param: { id } }, options),
-        adminMutationResponseSchema,
-        signal
-      )
+      return callContract((options) => admin.regenerateEmail({ params: { id } }, options), signal)
     },
     audit(request: AdminListRequest<CloudAdminAuditFilter>, signal?: AbortSignal) {
-      return call(
-        (options) => admin.audit.$get(listQuery(request), options),
-        adminAuditResponseSchema,
-        signal
-      )
+      return callContract((options) => admin.audit(listQuery(request), options), signal)
     },
     reports(request: AdminListRequest<CloudAdminReportFilter>, signal?: AbortSignal) {
-      return call(
-        (options) => admin.reports.$get(listQuery(request), options),
-        cloudAdminReportsResponseSchema,
-        signal
-      )
+      return callContract((options) => admin.reports(listQuery(request), options), signal)
     },
     /** Closes a report: dismissed, or acted on outside a takedown. */
     resolveReport(id: string, action: 'dismiss' | 'action', signal?: AbortSignal) {
-      return call(
-        (options) => admin.reports[':id'][action].$post({ param: { id } }, options),
-        adminMutationResponseSchema,
-        signal
-      )
+      const resolve = action === 'dismiss' ? admin.dismissReport : admin.actionReport
+      return callContract((options) => resolve({ params: { id } }, options), signal)
     },
     documents(request: AdminListRequest<CloudAdminDocumentFilter>, signal?: AbortSignal) {
-      return call(
-        (options) => admin.documents.$get(listQuery(request), options),
-        cloudAdminDocumentsResponseSchema,
-        signal
-      )
+      return callContract((options) => admin.documents(listQuery(request), options), signal)
     },
     /**
      * Where a document's thumbnail at `revisionId` is: an image the console shows on the server's
      * own address, so the administrator's session goes with it.
      */
     documentThumbnailURL(documentId: string, revisionId: string): string {
-      return admin.documents[':documentId'].thumbnails[':revisionId']
-        .$url({ param: { documentId, revisionId } })
-        .toString()
+      const path = `/api/admin/documents/${encodeURIComponent(documentId)}/thumbnails/${encodeURIComponent(revisionId)}`
+      return new URL(path, origin).href
     },
     /** Links to a document's file and images as it is now; the server records the download. */
     downloadDocument(id: string, signal?: AbortSignal) {
-      return call(
-        (options) => admin.documents[':id'].download.$post({ param: { id } }, options),
-        documentDownloadSchema,
-        signal
-      )
+      return callContract((options) => admin.downloadDocument({ params: { id } }, options), signal)
     },
     /** Takes a document down, or puts it back. */
     documentAction(
@@ -189,35 +141,19 @@ export function createAdministrationAPI(
       reason?: string,
       signal?: AbortSignal
     ) {
-      return call(
-        (options) => {
-          if (action === 'disable') {
-            return admin.documents[':id'].disable.$post(
-              { param: { id }, json: { reason } },
-              options
-            )
-          }
-          return action === 'enable'
-            ? admin.documents[':id'].enable.$post({ param: { id } }, options)
-            : admin.documents[':id'].undelete.$post({ param: { id } }, options)
-        },
-        adminMutationResponseSchema,
-        signal
-      )
+      return callContract((options) => {
+        if (action === 'disable') {
+          return admin.disableDocument({ params: { id }, body: { reason } }, options)
+        }
+        const act = action === 'enable' ? admin.enableDocument : admin.undeleteDocument
+        return act({ params: { id } }, options)
+      }, signal)
     },
     revokeShare(id: string, signal?: AbortSignal) {
-      return call(
-        (options) => admin.shares[':id'].revoke.$post({ param: { id } }, options),
-        adminMutationResponseSchema,
-        signal
-      )
+      return callContract((options) => admin.revokeShare({ params: { id } }, options), signal)
     },
     operations(signal?: AbortSignal) {
-      return call(
-        (options) => admin.operations.$get(undefined, options),
-        adminOperationsResponseSchema,
-        signal
-      )
+      return callContract((options) => admin.operations(undefined, options), signal)
     }
   }
 }

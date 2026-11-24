@@ -1,11 +1,9 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { contractClient } from '#cloud-tests/helpers/contract'
+import { adminContractClient, contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import { saveDocument, THUMBNAIL_PNG } from '#cloud-tests/helpers/save'
-import { cloudAdminDocumentsResponseSchema, documentDownloadSchema } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
   createCloudApp,
@@ -73,15 +71,23 @@ async function server() {
     )
   const community = await workspace('Community')
   const studio = await workspace('Studio')
+  const adminApp = app(admin, community)
+  const memberApp = app(member, community)
+  const thumbnails = (served: ReturnType<typeof app>) =>
+    testClient(served, undefined, undefined, { headers: trusted }).api.admin.documents[
+      ':documentId'
+    ].thumbnails[':revisionId']
   return {
     runtime,
     workspace: { community, studio },
     document,
     save,
     // The console's own address, which the server takes administrators' changes from.
-    admin: testClient(app(admin, community), undefined, undefined, { headers: trusted }).api.admin,
-    asMember: testClient(app(member, community), undefined, undefined, { headers: trusted }).api
-      .admin
+    admin: adminContractClient(adminApp, trusted),
+    asMember: adminContractClient(memberApp, trusted),
+    // Thumbnails stay a Hono route, read with their response headers.
+    thumbnail: thumbnails(adminApp),
+    memberThumbnail: thumbnails(memberApp)
   }
 }
 
@@ -106,10 +112,7 @@ describe('admin documents', () => {
       .where('id', '=', expired.share.id)
       .execute()
 
-    const listed = await responseJSON(
-      await admin.documents.$get({ query: {} }),
-      cloudAdminDocumentsResponseSchema
-    )
+    const listed = await admin.documents({ query: {} })
     const byName = new Map(listed.documents.map((row) => [row.name, row]))
     expect(byName.get('Tour')).toMatchObject({
       kind: 'design',
@@ -125,11 +128,10 @@ describe('admin documents', () => {
   })
 
   test('serve the current revision’s thumbnail to an administrator alone', async () => {
-    const { workspace, document, save, admin, asMember } = await server()
+    const { workspace, document, save, thumbnail, memberThumbnail } = await server()
     const brief = await document(workspace.studio, 'Brief')
     const first = await save(brief, null, 'first')
     const current = await save(brief, first, 'second')
-    const thumbnail = admin.documents[':documentId'].thumbnails[':revisionId']
 
     const shown = await thumbnail.$get({ param: { documentId: brief, revisionId: current } })
     expect(shown.status).toBe(200)
@@ -149,11 +151,7 @@ describe('admin documents', () => {
       404
     )
     expect(
-      (
-        await asMember.documents[':documentId'].thumbnails[':revisionId'].$get({
-          param: { documentId: brief, revisionId: current }
-        })
-      ).status
+      (await memberThumbnail.$get({ param: { documentId: brief, revisionId: current } })).status
     ).toBe(403)
   })
 
@@ -163,10 +161,7 @@ describe('admin documents', () => {
     const first = await save(brief, null, 'first')
     const current = await save(brief, first, 'second')
 
-    const downloaded = await responseJSON(
-      await admin.documents[':id'].download.$post({ param: { id: brief } }),
-      documentDownloadSchema
-    )
+    const downloaded = await admin.downloadDocument({ params: { id: brief } })
     expect(downloaded.revisionId).toBe(current)
     expect(
       await runtime.database
@@ -184,19 +179,17 @@ describe('admin documents', () => {
     ])
 
     // Taken down, it still downloads: looking at it is what moderating it takes.
-    const taken = await admin.documents[':id'].disable.$post({ param: { id: brief }, json: {} })
-    expect(taken.status).toBe(200)
-    const blocked = await responseJSON(
-      await admin.documents[':id'].download.$post({ param: { id: brief } }),
-      documentDownloadSchema
-    )
+    expect(await outcome(admin.disableDocument({ params: { id: brief }, body: {} }))).toBe('ok')
+    const blocked = await admin.downloadDocument({ params: { id: brief } })
     expect(blocked.revisionId).toBe(current)
 
     // Never saved, so there is no file; an ordinary account may not download anyone's.
     const draft = await document(workspace.studio, 'Draft')
-    expect((await admin.documents[':id'].download.$post({ param: { id: draft } })).status).toBe(404)
-    expect((await asMember.documents[':id'].download.$post({ param: { id: brief } })).status).toBe(
-      403
-    )
+    expect(await outcome(admin.downloadDocument({ params: { id: draft } }))).toMatchObject({
+      status: 404
+    })
+    expect(await outcome(asMember.downloadDocument({ params: { id: brief } }))).toMatchObject({
+      status: 403
+    })
   })
 })
