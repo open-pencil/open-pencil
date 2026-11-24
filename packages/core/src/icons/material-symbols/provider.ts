@@ -6,6 +6,7 @@ import {
 } from '#core/icons/material-symbols/catalogue'
 import {
   fetchMaterialSymbolsFont,
+  isMaterialSymbolsName,
   isMaterialSymbolsPrefix,
   MATERIAL_SYMBOLS_OPTIONS,
   MATERIAL_SYMBOLS_PREFIXES,
@@ -24,8 +25,6 @@ import type { IconCollection, IconData } from '#core/icons/types'
 const PREVIEW_SIZE = 24
 /** Names asked of Google at once, which its URL limit holds comfortably. */
 const NAMES_PER_FONT = 150
-/** The names Material Symbols uses: lowercase letters, digits, and underscores. */
-const MATERIAL_SYMBOLS_NAME = /^[a-z0-9_]+$/
 
 /** The sets a search looks in: the one asked for when it is ours, every one when none is. */
 function searchedSets(prefix: string | undefined): readonly MaterialSymbolsPrefix[] {
@@ -78,9 +77,7 @@ export function createMaterialSymbolsProvider(
     for (const name of names) {
       const parsed = parseIconName(name)
       if (!parsed || !isMaterialSymbolsPrefix(parsed.prefix) || loaded.has(name)) continue
-      // Google refuses a whole font request that names one icon outside its alphabet, which
-      // would leave every other icon in that request undrawn, so such a name is never asked for.
-      if (!MATERIAL_SYMBOLS_NAME.test(parsed.iconName)) {
+      if (!isMaterialSymbolsName(parsed.iconName)) {
         loaded.set(name, null)
         continue
       }
