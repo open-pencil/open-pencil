@@ -85,18 +85,26 @@ function linkedStylesheetImports(html: string): string | undefined {
   return stylesheetImportRules(sheets)
 }
 
+/** Everything that styles a page: its linked and embedded stylesheets, then `cssText`. */
+export function htmlStylesheet(
+  html: string,
+  options: Pick<HTMLToDesignDocumentOptions, 'cssText' | 'importLinkedStylesheets'> = {}
+): string | undefined {
+  // `@import` rules count only before every other rule, so the linked sheets come first.
+  return mergeCSSText(
+    options.importLinkedStylesheets ? linkedStylesheetImports(html) : undefined,
+    extractEmbeddedCSSText(html),
+    options.cssText
+  )
+}
+
 export async function htmlToDesignDocument(
   html: string,
   options: HTMLToDesignDocumentOptions = {}
 ): Promise<DesignDocument> {
   const runtime = runtimeForOptions(options.runtime)
   const document = runtime.parseHTML(html)
-  // `@import` rules count only before every other rule, so the linked sheets come first.
-  const cssText = mergeCSSText(
-    options.importLinkedStylesheets ? linkedStylesheetImports(html) : undefined,
-    extractEmbeddedCSSText(html),
-    options.cssText
-  )
+  const cssText = htmlStylesheet(html, options)
   return runtime.computeStyles(document, cssText, options.compute)
 }
 

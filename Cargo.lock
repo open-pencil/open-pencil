@@ -3762,6 +3762,8 @@ dependencies = [
  "parley",
  "serde_json",
  "stylo",
+ "stylo_static_prefs",
+ "stylo_traits",
  "url",
 ]
 

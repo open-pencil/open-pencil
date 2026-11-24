@@ -99,7 +99,7 @@ const CHARACTER_PROPERTIES = [
   'text-decoration-skip-ink'
 ]
 
-const DECORATION_PROPERTIES = new Set(
+export const DECORATION_PROPERTIES = new Set(
   CHARACTER_PROPERTIES.filter((property) => /^text-(decoration|underline)-/.test(property))
 )
 
@@ -188,7 +188,7 @@ export function characterStyleFromCSS(
   }
 }
 
-function decorates(style: DesignStyleDeclaration): boolean {
+export function decorates(style: DesignStyleDeclaration): boolean {
   const line = pickStyle(style, 'text-decoration-line')?.trim()
   return line !== undefined && line !== 'none'
 }

@@ -1,6 +1,7 @@
 import { dimension, splitCSSValue } from '@open-pencil/scene-graph/css'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
+import { hasBorder } from './box'
 import { mergedStyle, pickStyle } from './css-values'
 import { elementDisplay, type ParentFlow } from './flow'
 
@@ -13,11 +14,6 @@ const NO_BOX_VALUES: Record<string, readonly string[]> = {
   'aspect-ratio': ['auto'],
   background: ['none', 'transparent', 'rgba(0, 0, 0, 0)'],
   'background-color': ['transparent', 'rgba(0, 0, 0, 0)'],
-  'border-style': ['none', 'hidden'],
-  'border-top-style': ['none', 'hidden'],
-  'border-right-style': ['none', 'hidden'],
-  'border-bottom-style': ['none', 'hidden'],
-  'border-left-style': ['none', 'hidden'],
   'box-shadow': ['none'],
   height: ['auto'],
   width: ['auto'],
@@ -108,6 +104,8 @@ export function hasBoxStyle(
   const own = elementDisplay(element, {})
   const blockifies = parentFlow === 'flex' && shown === blockified(own)
   if (shown !== undefined && shown !== own && !blockifies) return true
+  // A border's style draws nothing without a width, as a reset such as `* { border: 0 solid }` sets.
+  if (hasBorder(style)) return true
   const layout = TAG_LAYOUT_PROPERTIES.get(element.tagName.toLowerCase())
   return BOX_PROPERTIES.some((property) => {
     if (layout?.has(property)) return false

@@ -40,6 +40,8 @@ export interface HTMLEngineLayoutOptions {
   fetch?: DesignResourceFetch
   /** How long one request may take before the layout goes on without it. */
   requestTimeoutMs?: number
+  /** Report which of the root's custom properties each element's styles come from. */
+  references?: boolean
 }
 
 /**
@@ -251,7 +253,7 @@ export class HTMLEngine {
     }
     const parsed = v.safeParse(
       v.pipe(v.string(), v.parseJson(), captureSchema),
-      this.#output(this.#exports.capture())
+      this.#output(this.#exports.capture(options.references ? 1 : 0))
     )
     if (!parsed.success) throw new Error('The HTML engine captured a document in an unknown shape')
     restoreImageKinds(parsed.output, rasters, options.baseURL)

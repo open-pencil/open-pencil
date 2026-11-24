@@ -18,6 +18,8 @@ blitz-html = { git = "https://github.com/open-pencil/blitz", rev = "72ca31a35031
 blitz-traits = { git = "https://github.com/open-pencil/blitz", rev = "72ca31a350317da83dbf8cfc74d34b3bf56cd214" }
 # Stylo as Blitz builds it, for computed values Blitz resolves to used ones; keep it at Blitz's version.
 style = { version = "0.24.0", package = "stylo" }
+style_traits = { version = "0.24.0", package = "stylo_traits" }
+style_prefs = { version = "0.24.0", package = "stylo_static_prefs" }
 parley = { version = "0.13", default-features = false, features = ["std"] }
 # The CSS tokenizer and URL parser Stylo uses, to report `url()` values as browsers do.
 cssparser = "0.38"

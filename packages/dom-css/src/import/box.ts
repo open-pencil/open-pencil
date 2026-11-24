@@ -102,6 +102,12 @@ function paintedSides(style: DesignStyleDeclaration): BorderSide[] {
   return BORDER_SIDES.filter((side) => paints(style, side))
 }
 
+/** The property that colors the first side whose border is drawn. */
+export function firstStrokeProperty(style: DesignStyleDeclaration): string | null {
+  const side = paintedSides(style).at(0)
+  return side ? `border-${side}-color` : null
+}
+
 /** The color of the first side whose border is drawn, or the shorthand's. */
 export function firstStrokeColor(style: DesignStyleDeclaration) {
   const side = paintedSides(style).at(0)

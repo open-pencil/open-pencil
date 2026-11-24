@@ -2,14 +2,17 @@ import type { DesignDocument, DesignViewport } from '@open-pencil/dom-css'
 import {
   applyCSSTransforms,
   applyStacking,
+  bindThemeVariables,
   designDocumentToLayers,
   placeBackgroundPictures,
-  placeLayersFromLayout
+  placeLayersFromLayout,
+  type HTMLTheme
 } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { WHITE } from '@open-pencil/scene-graph/constants'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { parseCSSColor } from '@open-pencil/scene-graph/css'
+import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { maxOf } from '@open-pencil/std/arrays'
 
@@ -19,6 +22,7 @@ import type { IconMatcher } from '#core/icons/match'
 import { layoutAuthoredNodes } from '#core/layout'
 import { prepareGraphFonts } from '#core/text/prepare'
 
+import { createMarkedComponents } from './components'
 import { resolvePageFontFamilies, type PageFontFamilies } from './fonts'
 import { drawInlineSVGs } from './svg'
 
@@ -28,6 +32,9 @@ import { drawInlineSVGs } from './svg'
  * The saved sites HTML import is measured on settle within seven.
  */
 const MAX_PLACEMENT_PASSES = 8
+
+/** Glyphs and antialiased edges may reach a little past the box that holds them. */
+const CLIP_TOLERANCE = 1
 
 /** The viewport HTML is laid out in when it is imported: a common laptop's, 1440 by 900. */
 export const HTML_IMPORT_VIEWPORT: DesignViewport = { width: 1440, height: 900 }
@@ -55,6 +62,10 @@ export async function sceneGraphFromStyledHTML(
      * the layers stay on the canvas as they are.
      */
     pageWindow?: DesignViewport
+    /** Imports the page's custom properties as variables, and binds the layers that use them. */
+    theme?: HTMLTheme
+    /** Makes components of the layers the page marks; see `createMarkedComponents`. */
+    components?: boolean
   } = {}
 ): Promise<SceneGraph> {
   // Text is set in the first family of its `font-family` list there is a font for, the page's own
@@ -62,12 +73,8 @@ export async function sceneGraphFromStyledHTML(
   // `Helvetica Neue` on a system without it. Families the HTML engine already resolved name a
   // single font that loads.
   await resolvePageFontFamilies(styled, options.pageFamilies)
-  const { graph, boxes, transforms, svgs, stackings, backgroundPictures } = designDocumentToLayers(
-    styled,
-    {
-      pageName: options.pageName
-    }
-  )
+  const layers = designDocumentToLayers(styled, { pageName: options.pageName })
+  const { graph, boxes, transforms, svgs, sources, stackings, backgroundPictures } = layers
   // The page shows what a browser paints behind the page: its own background, or white.
   const background = parseCSSColor(styled.background) ?? WHITE
   for (const page of graph.getPages()) {
@@ -85,12 +92,41 @@ export async function sceneGraphFromStyledHTML(
   // Once laid out, so each takes its layer's final size.
   placeBackgroundPictures(graph, backgroundPictures)
   applyStacking(graph, stackings)
+  clipSpreadShadows(graph, sources.keys())
   await drawInlineSVGs(graph, svgs, styled, options.matchIcon)
+  if (options.theme) bindThemeVariables(graph, options.theme, sources, svgs)
   applyCSSTransforms(graph, transforms)
+  if (options.components) createMarkedComponents(graph, sources)
   if (options.pageWindow) {
     for (const page of graph.getPages()) frameAsWindow(graph, page, options.pageWindow, background)
   }
   return graph
+}
+
+/**
+ * Clips the filled frames whose shadows spread, which Figma draws unspread otherwise, as a focus
+ * ring drawn with `box-shadow` is. A frame whose content reaches outside it stays unclipped.
+ */
+function clipSpreadShadows(graph: SceneGraph, nodeIds: Iterable<string>): void {
+  for (const id of nodeIds) {
+    const node = graph.getNode(id)
+    if (node?.type !== 'FRAME' || node.clipsContent) continue
+    if (!node.effects.some((effect) => effect.type === 'DROP_SHADOW' && effect.spread !== 0))
+      continue
+    const contained = graph.getChildren(id).every((child) => {
+      // Transforms come later, so a child is only moved within the frame.
+      const toFrame = Matrix.translated(child.x, child.y)
+      const bounds = subtreeRenderBounds(graph, child, toFrame, { reach: 'drawn' })
+      return (
+        !bounds ||
+        (bounds.minX >= -CLIP_TOLERANCE &&
+          bounds.minY >= -CLIP_TOLERANCE &&
+          bounds.maxX <= node.width + CLIP_TOLERANCE &&
+          bounds.maxY <= node.height + CLIP_TOLERANCE)
+      )
+    })
+    if (contained) graph.updateNode(id, { clipsContent: true })
+  }
 }
 
 /**

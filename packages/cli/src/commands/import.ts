@@ -3,10 +3,15 @@ import { basename, dirname, extname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 import { defineCommand } from 'citty'
+import { compact } from 'es-toolkit'
 
 import { createHeadlessIconMatcher } from '@open-pencil/core/icons/match'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { readHTMLDocument, type ReadHTMLResult } from '@open-pencil/core/io/formats/html/import'
+import {
+  readHTMLDocument,
+  type ReadHTMLMode,
+  type ReadHTMLResult
+} from '@open-pencil/core/io/formats/html/import'
 import { fetchRemoteFile, type RemoteFileKind } from '@open-pencil/core/io/remote'
 import { errorMessage } from '@open-pencil/std/errors'
 
@@ -27,6 +32,9 @@ interface ImportArgs {
   pageName: string
   json?: boolean
   'icon-names': boolean
+  variables?: boolean
+  modes?: string
+  components?: boolean
 }
 
 /** The HTML to import, where it came from, the address it resolves against, and its title. */
@@ -106,6 +114,25 @@ async function readInput(args: ImportArgs): Promise<ImportInput> {
   }
 }
 
+/** The attributes a mode's selector gives the root element: `.dark` or `[data-theme=dark]`. */
+function rootAttributes(selector: string): Record<string, string> {
+  if (/^\.[\w-]+$/.test(selector)) return { class: selector.slice(1) }
+  const attribute = /^\[([\w-]+)(?:=(["']?)([\w-]+)\2)?\]$/.exec(selector)
+  if (!attribute)
+    throw new Error(`Invalid mode selector "${selector}". Use .class or [name=value].`)
+  return { [attribute[1]]: attribute.at(3) ?? '' }
+}
+
+/** Modes as `Light, Dark=.dark` writes them: a name, and the root's selector in that mode. */
+function parseModes(modes: string | undefined): ReadHTMLMode[] {
+  return compact((modes ?? '').split(',').map((mode) => mode.trim())).map((mode) => {
+    const separator = mode.indexOf('=')
+    if (separator === -1) return { name: mode.trim() }
+    const selector = mode.slice(separator + 1).trim()
+    return { name: mode.slice(0, separator).trim(), rootAttributes: rootAttributes(selector) }
+  })
+}
+
 async function importHTML(
   args: ImportArgs,
   { html, baseURL, webPage }: ImportInput
@@ -116,7 +143,9 @@ async function importHTML(
     tailwind: await tailwindCandidatesForArgs(args),
     pageName: args.pageName,
     matchIcon: args['icon-names'] ? createHeadlessIconMatcher() : undefined,
-    framed: webPage
+    framed: webPage,
+    variables: args.variables || args.modes ? { modes: parseModes(args.modes) } : undefined,
+    components: args.components
   })
 }
 
@@ -183,6 +212,21 @@ export default defineCommand({
       description: 'Scene graph page name (default: DOM/CSS)',
       default: 'DOM/CSS'
     },
+    variables: {
+      type: 'boolean',
+      description:
+        "Import the page's CSS custom properties as variables and bind the layers that use them"
+    },
+    modes: {
+      type: 'string',
+      description:
+        'Variable modes and the root selector each is styled with, such as "Light, Dark=.dark"; implies --variables'
+    },
+    components: {
+      type: 'boolean',
+      description:
+        'Make components of elements marked with data-op-component and data-op-component-set'
+    },
     json: {
       type: 'boolean',
       description: 'Print a machine-readable summary to stdout'
@@ -208,7 +252,13 @@ export default defineCommand({
       printError(errorMessage(error))
       process.exit(1)
     }
-    const imported = await importHTML(args, input)
+    let imported: ReadHTMLResult
+    try {
+      imported = await importHTML(args, input)
+    } catch (error) {
+      printError(errorMessage(error))
+      process.exit(1)
+    }
     const output = await writeOutput(args, input.title, imported)
     const pages = imported.graph.getPages()
     const summary = {

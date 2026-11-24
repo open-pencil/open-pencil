@@ -631,6 +631,7 @@
       "dependencies": {
         "@open-pencil/dom-css": "workspace:*",
         "@open-pencil/std": "workspace:*",
+        "entities": "^8.0.0",
         "valibot": "^1.5.0",
       },
       "devDependencies": {

@@ -21,6 +21,11 @@ export interface DesignDocument {
    * root has none, as CSS paints it; none when neither has one, which a browser shows as white.
    */
   background?: string
+  /**
+   * The root element's custom properties as declared, such as `var(--primary)` for an alias, when
+   * the runtime was asked for references.
+   */
+  customProperties?: Record<string, string>
   sourceGraph?: SceneGraph
   /** Variable references the projection wrote, for Tailwind names and the token stylesheet. */
   tokens?: DesignTokens
@@ -35,6 +40,11 @@ export interface DesignElement {
   computedStyle?: DesignStyleDeclaration
   /** Where the engine that computed the styles laid the element out, when it was asked to. */
   layout?: DesignLayout
+  /**
+   * Properties whose values come from the root's custom properties, as the winning declaration
+   * writes them, when the runtime was asked for references.
+   */
+  references?: DesignStyleDeclaration
   /** The picture an `<img>` shows, as the runtime that styled the page loaded it. */
   image?: DesignResource
   /**
@@ -105,6 +115,10 @@ export interface CSSComputeOptions {
   /** Record where each element is laid out as well as its computed style. */
   layout?: boolean
   viewport?: DesignViewport
+  /** Report which of the root's custom properties styles come from; the HTML engine does. */
+  references?: boolean
+  /** Attributes of the root element, such as the class a theme is switched with. */
+  rootAttributes?: Record<string, string>
 }
 
 export interface CSSRuntime {

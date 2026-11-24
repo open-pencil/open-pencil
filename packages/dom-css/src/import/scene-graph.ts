@@ -21,7 +21,10 @@ import {
   strokeWeightFromStyle
 } from './box'
 import { hasBoxStyle } from './boxes'
+import { COMPONENT_ATTRIBUTES, isMarked } from './component-attributes'
 import { colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
+import { decoratedStyle } from './decoration'
+import { hasContent, isTextLikeElement, textContent } from './elements'
 import {
   alignBlocksInFlow,
   type FlowBlock,
@@ -75,6 +78,7 @@ import {
   type CSSCharacterStyle
 } from './text'
 import { cssTransform, type CSSTransforms } from './transform'
+import type { LayerSources } from './variables/bind'
 
 export interface DesignDocumentToSceneGraphOptions {
   pageName?: string
@@ -90,29 +94,6 @@ function cssShadows(value: string | undefined): Effect[] {
     ...effect,
     radius: blurRadiusForSigma(effect.radius / 2)
   }))
-}
-
-function textContent(node: DesignNode): string {
-  if (node.type === 'text') return node.text
-  return node.children.map(textContent).join('')
-}
-
-function isTextLikeElement(node: DesignElement): boolean {
-  return [
-    'span',
-    'p',
-    'label',
-    'strong',
-    'em',
-    'button',
-    'a',
-    'h1',
-    'h2',
-    'h3',
-    'h4',
-    'h5',
-    'h6'
-  ].includes(node.tagName.toLowerCase())
 }
 
 function applyElementStyle(
@@ -135,8 +116,13 @@ function applyElementStyle(
   applyImageFill(graph, node, element, style)
 
   // A border without a style is not drawn and takes no room.
+  // One a theme may color in another mode is kept while it is transparent.
   const strokes = hasBorder(style)
-    ? colorToStrokeFromCSS(firstStrokeColor(style), strokeWeightFromStyle(style)?.toString())
+    ? colorToStrokeFromCSS(
+        firstStrokeColor(style),
+        strokeWeightFromStyle(style)?.toString(),
+        element.references !== undefined
+      )
     : []
   if (strokes.length > 0) {
     const dashPattern = dashPatternFromCSS(style, strokes[0].weight)
@@ -232,11 +218,12 @@ function createRichTextNode(
 
 /** Whether an element draws nothing of its own, so its text can join the text around it. */
 function isPlainElement(element: DesignElement): boolean {
-  return !hasBoxStyle(element, mergedStyle(element))
+  return !isMarked(element) && !hasBoxStyle(element, mergedStyle(element))
 }
 
 function isInlineElement(element: DesignElement): boolean {
   const style = mergedStyle(element)
+  if (isMarked(element)) return false
   return elementDisplay(element, style) === 'inline' && !hasBoxStyle(element, style)
 }
 
@@ -269,10 +256,6 @@ function linkText(node: SceneNode, element: DesignElement): void {
   }
 }
 
-function hasContent(element: DesignElement): boolean {
-  return element.children.some((child) => child.type !== 'text' || child.text.trim().length > 0)
-}
-
 /** What building the layers records for laying them out: captured boxes and transforms. */
 interface Recorded {
   boxes: CapturedBoxes
@@ -282,6 +265,8 @@ interface Recorded {
    * laid out.
    */
   svgs: Map<string, DesignElement>
+  /** The element each layer was built from. */
+  sources: LayerSources
   /** Cells of tables with collapsed borders, until their table draws each shared border once. */
   collapsedCells: SceneNode[]
   /** Containers whose children paint in `z-index` order, for `applyStacking` once laid out. */
@@ -311,6 +296,7 @@ function recordElement(
   style: DesignStyleDeclaration
 ) {
   record(graph, recorded, node, capturedBox(element))
+  recorded.sources.set(node.id, element)
   const transform = cssTransform(style)
   if (transform) recorded.transforms.set(node.id, transform)
 }
@@ -320,9 +306,10 @@ function createElementNode(
   parentId: string,
   element: DesignElement,
   parentFlow: ParentFlow,
-  recorded: Recorded
+  recorded: Recorded,
+  around: DesignStyleDeclaration
 ): SceneNode | null {
-  const style = mergedStyle(element)
+  const style = decoratedStyle(element, around)
   const display = elementDisplay(element, style)
   if (display === 'none' || isTableColumn(display)) return null
   if (isInlineSVG(element) || isSVGArtwork(element))
@@ -436,9 +423,10 @@ function createTextChildLayers(
   const textDisplay = flow === 'inline' ? 'inline' : 'block'
   const text = createRichTextNode(graph, node.id, inFlow, textStyle, textDisplay, flow ?? 'none')
   record(graph, recorded, text, capturedTextBox(element))
+  recorded.sources.set(text.id, element)
   if (flow === 'block') alignBlockLines(graph, node, style, true)
   return outOfFlow.flatMap((box) => {
-    const layer = createDesignNode(graph, node.id, box, flow ?? 'none', recorded)
+    const layer = createDesignNode(graph, node.id, box, flow ?? 'none', recorded, style)
     return layer ? [{ layer, element: box, style: mergedStyle(box) }] : []
   })
 }
@@ -470,11 +458,11 @@ function createChildLayers(
   // A box hidden by `visibility` hides the text it holds itself, though a child may show again.
   const textHidden = hiddenByVisibility(style)
   for (const child of element.children) {
-    const inherited = inheritedTextStyle(style)
-    const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
+    const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, style)
     // Text the element holds directly sits in its lines; an element that became text has its own box.
     if (layer?.type === 'TEXT' && child.type === 'text') {
       record(graph, recorded, layer, textBox)
+      recorded.sources.set(layer.id, element)
       if (textHidden) layer.visible = false
     }
     if (child.type !== 'element' || !layer) continue
@@ -499,16 +487,23 @@ function createDesignNode(
   node: DesignNode,
   parentFlow: ParentFlow,
   recorded: Recorded,
-  inheritedStyle: DesignStyleDeclaration = {}
+  around: DesignStyleDeclaration = {}
 ): SceneNode | null {
   if (node.type === 'text') {
     if (node.text.trim().length === 0) return null
     // Text runs in block flow and flex containers are blocks of their own, as CSS boxes them.
     const display = parentFlow === 'inline' ? 'inline' : 'block'
-    return createTextNode(graph, parentId, node.text, inheritedStyle, display, parentFlow)
+    return createTextNode(
+      graph,
+      parentId,
+      node.text,
+      inheritedTextStyle(around),
+      display,
+      parentFlow
+    )
   }
 
-  const layer = createElementNode(graph, parentId, node, parentFlow, recorded)
+  const layer = createElementNode(graph, parentId, node, parentFlow, recorded, around)
   // A box CSS hides keeps its room and its layers, hidden, as a layer is hidden; one a child
   // shows inside paints nothing of its own.
   const hidden = layer ? hiddenPart(node) : 'none'
@@ -542,6 +537,8 @@ export interface DesignLayers {
    * style but none of its shapes, which the caller draws into it at the size layout gives it.
    */
   svgs: Map<string, DesignElement>
+  /** The element each layer was built from; a text layer's is the element that holds it. */
+  sources: LayerSources
   /** Containers whose children paint in `z-index` order, for `applyStacking` once laid out. */
   stackings: Stackings
   /** Background pictures to place once laid out, by `placeBackgroundPictures`. */
@@ -563,6 +560,7 @@ export function designDocumentToLayers(
     boxes: new Map(),
     transforms: new Map(),
     svgs: new Map(),
+    sources: new Map(),
     collapsedCells: [],
     stackings: [],
     backgroundPictures: []
@@ -576,8 +574,8 @@ export function designDocumentToLayers(
   placeTopLevelLayers(graph, page.id, recorded.boxes)
 
   fitPageToChildren(page, graph)
-  const { boxes, transforms, svgs, stackings, backgroundPictures } = recorded
-  return { graph, boxes, transforms, svgs, stackings, backgroundPictures }
+  const { boxes, transforms, svgs, sources, stackings, backgroundPictures } = recorded
+  return { graph, boxes, transforms, svgs, sources, stackings, backgroundPictures }
 }
 
 export function designDocumentToSceneGraph(
@@ -589,6 +587,9 @@ export function designDocumentToSceneGraph(
 
 export { elementSVG, imagePicture, type ElementSVG, type ImagePicture } from './pictures'
 export { placeLayersFromLayout, type CapturedBox, type CapturedBoxes } from './placement'
+export { COMPONENT_ATTRIBUTES }
+export { bindThemeVariables, type LayerSources } from './variables/bind'
+export type { HTMLTheme, ThemeMode } from './variables/theme'
 export { applyCSSTransforms, type CSSTransform, type CSSTransforms } from './transform'
 export { applyStacking, type Stacking, type Stackings } from './stacking'
 export { placeBackgroundPictures } from './background-placement'

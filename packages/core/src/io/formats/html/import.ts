@@ -1,13 +1,21 @@
+import { uniq } from 'es-toolkit'
+
 import {
+  compileTailwindCSS,
+  customPropertyValues,
+  htmlStylesheet,
   htmlToDesignDocument,
-  tailwindHTMLToDesignDocument,
   type DesignDocument,
   type DesignResource,
   type DesignResourceFetch,
   type DesignViewport,
   type HTMLToDesignDocumentOptions
 } from '@open-pencil/dom-css'
-import { designDocumentToLayers } from '@open-pencil/dom-css/scene-graph'
+import {
+  designDocumentToLayers,
+  type HTMLTheme,
+  type ThemeMode
+} from '@open-pencil/dom-css/scene-graph'
 import { createHTMLEngineRuntime, loadHTMLEngine } from '@open-pencil/html-engine'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -50,7 +58,27 @@ export interface ReadHTMLOptions {
    * opened as a document shows; see `sceneGraphFromStyledHTML`.
    */
   framed?: boolean
+  /** Imports the page's custom properties as variables, and binds the layers that use them. */
+  variables?: ReadHTMLVariables
+  /** Makes components of the layers the page marks; see `createMarkedComponents`. */
+  components?: boolean
 }
+
+/** A way to style the page: the attributes its root element has then, such as a theme's class. */
+export interface ReadHTMLMode {
+  name: string
+  rootAttributes?: Record<string, string>
+}
+
+export interface ReadHTMLVariables {
+  /** The name of the variables' collection. */
+  collection?: string
+  /** The page is imported as the first mode shows it; without any, in one mode as it is. */
+  modes?: readonly ReadHTMLMode[]
+}
+
+const DEFAULT_COLLECTION = 'Theme'
+const DEFAULT_MODES: readonly ReadHTMLMode[] = [{ name: 'Default' }]
 
 export interface ReadHTMLResult {
   /** The styled DOM the layers were built from. */
@@ -151,21 +179,47 @@ export async function readHTMLDocument(
     compute: { layout: true, viewport: options.viewport ?? HTML_IMPORT_VIEWPORT },
     importLinkedStylesheets: true
   }
-  const style = async () => {
-    const styled = options.tailwind
-      ? await tailwindHTMLToDesignDocument(html, options.tailwind, {
-          ...styleOptions,
-          css: options.cssText
-        })
-      : await htmlToDesignDocument(html, { ...styleOptions, cssText: options.cssText })
+  const cssText = options.tailwind
+    ? await compileTailwindCSS(options.tailwind, { css: options.cssText })
+    : options.cssText
+  const modes = options.variables?.modes?.length ? options.variables.modes : DEFAULT_MODES
+  const style = async (mode: ReadHTMLMode) => {
+    const styled = await htmlToDesignDocument(html, {
+      ...styleOptions,
+      cssText,
+      compute: {
+        ...styleOptions.compute,
+        rootAttributes: mode.rootAttributes,
+        references: options.variables !== undefined
+      }
+    })
     await resolvePageFontFamilies(styled, pageFamilies)
     return styled
   }
-  let styled = await style()
-  if (await registerLayerFonts(engine, designDocumentToLayers(styled).graph)) styled = await style()
+  let styled = await style(modes[0])
+  if (await registerLayerFonts(engine, designDocumentToLayers(styled).graph)) {
+    styled = await style(modes[0])
+  }
+  const readTheme = async (collection = DEFAULT_COLLECTION): Promise<HTMLTheme> => {
+    const pages = [styled]
+    for (const mode of modes.slice(1)) pages.push(await style(mode))
+    const names = uniq(pages.flatMap((page) => Object.keys(page.customProperties ?? {})))
+    const stylesheet = htmlStylesheet(html, { ...styleOptions, cssText }) ?? ''
+    const themed: ThemeMode[] = []
+    for (const [index, { name, rootAttributes }] of modes.entries()) {
+      const values = await customPropertyValues(runtime, stylesheet, names, {
+        viewport: styleOptions.compute?.viewport,
+        rootAttributes
+      })
+      themed.push({ name, styled: pages[index], values })
+    }
+    return { collection, modes: themed }
+  }
   const graph = await sceneGraphFromStyledHTML(styled, {
     pageName: options.pageName,
     matchIcon: options.matchIcon,
+    theme: options.variables && (await readTheme(options.variables.collection)),
+    components: options.components,
     pageWindow: options.framed ? (options.viewport ?? HTML_IMPORT_VIEWPORT) : undefined
   })
   return { styled, graph }

@@ -1,6 +1,10 @@
+import { escapeAttribute } from 'entities'
+
 import {
   attachImages,
   backgroundImageURLs,
+  FORCED_STATE_ATTRIBUTE,
+  forceStates,
   parseFontFaceRules,
   parseHTMLDocument,
   parseStylesheetImports,
@@ -229,10 +233,17 @@ function layoutOf(node: HTMLEngineNode): DesignLayout | undefined {
   return layout
 }
 
-function documentHTML(body: string, cssText: string): string {
+function documentHTML(
+  body: string,
+  cssText: string,
+  rootAttributes: Record<string, string> = {}
+): string {
   // `</style` would end the stylesheet early.
   const css = cssText.replaceAll(/<\/style/gi, '<\\/style')
-  return `<!doctype html><html><head><style>${css}</style></head><body>${body}</body></html>`
+  const attributes = Object.entries(rootAttributes)
+    .map(([name, value]) => ` ${name}="${escapeAttribute(value)}"`)
+    .join('')
+  return `<!doctype html><html${attributes}><head><style>${css}</style></head><body>${body}</body></html>`
 }
 
 /**
@@ -292,6 +303,7 @@ function showGeneratedContent(
         })
       }
       if (layout) child.layout = layoutOf(captured)
+      if (captured.references) child.references = captured.references
       if (captured.tag === '::after') element.children.push(child)
       else element.children.unshift(child)
       made.push(child)
@@ -323,6 +335,17 @@ function keepingFetch(
     const resource = await fetch(url, signal)
     if (resource) answered.set(url, resource).set(resource.url, resource)
     return resource
+  }
+}
+
+/** A fetch whose stylesheets also match elements forced into a state. */
+function forcingStates(fetch: DesignResourceFetch | undefined): DesignResourceFetch | undefined {
+  if (!fetch) return undefined
+  return async (url, signal) => {
+    const resource = await fetch(url, signal)
+    if (!resource || !isStylesheet(resource)) return resource
+    const css = forceStates(new TextDecoder().decode(resource.bytes))
+    return { ...resource, bytes: new TextEncoder().encode(css) }
   }
 }
 
@@ -360,10 +383,16 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       // they become show them without fetching them again.
       const answered = new Map<string, DesignResource>()
       const fetch = keepingFetch(options.fetch, answered)
-      const capture = await laidOut.layout(documentHTML(serializeHTML(document), cssText), {
+      const body = serializeHTML(document)
+      // Reading the stylesheet for states costs time only a document with forced states needs.
+      const forcesStates = body.includes(FORCED_STATE_ATTRIBUTE)
+      const css = forcesStates ? forceStates(cssText) : cssText
+      const pageFetch = fontFaceFetch(laidOut, cssText, { ...options, fetch })
+      const capture = await laidOut.layout(documentHTML(body, css, compute.rootAttributes), {
         baseURL: options.baseURL,
         viewport: compute.viewport ?? DEFAULT_VIEWPORT,
-        fetch: fontFaceFetch(laidOut, cssText, { ...options, fetch })
+        fetch: forcesStates ? forcingStates(pageFetch) : pageFetch,
+        references: compute.references
       })
       const styled = structuredClone(document)
       const pairs = pairElements(styled, capture)
@@ -378,6 +407,7 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
           ...node.computed
         })
         if (compute.layout) element.layout = layoutOf(node)
+        if (node.references) element.references = node.references
         const image = imageOf(element, answered, options.baseURL)
         if (image) element.image = image
       }
@@ -389,6 +419,7 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       )
       await attachImages([], loadedFirst(answered, options.fetch), backgrounds)
       styled.background = canvasBackground(capture)
+      if (capture.variables) styled.customProperties = capture.variables
       return styled
     }
   }
