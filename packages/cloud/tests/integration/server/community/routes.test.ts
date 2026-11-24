@@ -16,7 +16,6 @@ import {
 } from '#cloud/server'
 import { unzipSync } from 'fflate'
 import { testClient } from 'hono/testing'
-import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -31,7 +30,6 @@ const config = parseCloudServerConfig({
 })
 
 const alice: CloudActor = { userId: 'alice', email: 'alice@example.com', name: 'Alice' }
-const idSchema = v.object({ id: v.string() })
 
 /** Every gallery's database, closed after its test. */
 const opened: { close(): Promise<void> }[] = []
@@ -56,14 +54,10 @@ async function gallery() {
       resolveSession: async () => (signedIn ? alice : null)
     })
   const ownerApp = app(config, true)
-  const owner = testClient(ownerApp)
   const ownerAPI = contractClient(ownerApp)
 
   async function workspace(name: string) {
-    const created = await responseJSON(
-      await owner.api.workspaces.$post({ json: { name } }),
-      v.object({ workspace: idSchema })
-    )
+    const created = await ownerAPI.workspaces.create({ body: { name } })
     return created.workspace.id
   }
   async function document(workspaceId: string, name: string) {

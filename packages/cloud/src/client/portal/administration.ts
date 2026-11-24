@@ -5,7 +5,6 @@ import {
   adminOperationsResponseSchema,
   cloudAdminDocumentsResponseSchema,
   cloudAdminReportsResponseSchema,
-  cloudAdminSessionResponseSchema,
   cloudAdminUserDetailSchema,
   cloudAdminUsersResponseSchema,
   documentDownloadSchema,
@@ -20,7 +19,7 @@ import {
   type EnrollmentStatus
 } from '#cloud/contract'
 
-import type { CloudCall, PortalRouteClients } from './request'
+import type { CloudCall, CloudContractCall, PortalRouteClients } from './request'
 
 /** A page of an admin list: words to search for, one of its filters, and where the page starts. */
 export type AdminListRequest<Filter extends string> = {
@@ -47,14 +46,14 @@ function listQuery<Filter extends string>(request: AdminListRequest<Filter>) {
   }
 }
 
-export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalRouteClients) {
+export function createAdministrationAPI(
+  call: CloudCall,
+  callContract: CloudContractCall,
+  { admin, contract }: PortalRouteClients
+) {
   return {
     session(signal?: AbortSignal) {
-      return call(
-        (options) => api.session.$get(undefined, options),
-        cloudAdminSessionResponseSchema,
-        signal
-      )
+      return callContract((options) => contract.session.session(undefined, options), signal)
     },
     enrollments(request: AdminListRequest<EnrollmentStatus>, signal?: AbortSignal) {
       return call(

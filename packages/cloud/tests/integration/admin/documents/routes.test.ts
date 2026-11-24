@@ -14,7 +14,6 @@ import {
   type CloudActor
 } from '#cloud/server'
 import { testClient } from 'hono/testing'
-import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -35,7 +34,6 @@ const admin: CloudActor = {
   deploymentRole: 'admin'
 }
 const member: CloudActor = { userId: 'alice', email: 'alice@example.com', name: 'Alice' }
-const idSchema = v.object({ id: v.string() })
 const trusted = { Origin: config.publicURL }
 
 const opened: { close(): Promise<void> }[] = []
@@ -61,15 +59,9 @@ async function server() {
       resolveSession: async () => actor
     })
   const ownerApp = app(admin)
-  const owner = testClient(ownerApp)
   const ownerAPI = contractClient(ownerApp)
   const workspace = async (name: string) =>
-    (
-      await responseJSON(
-        await owner.api.workspaces.$post({ json: { name } }),
-        v.object({ workspace: idSchema })
-      )
-    ).workspace.id
+    (await ownerAPI.workspaces.create({ body: { name } })).workspace.id
   const document = async (workspaceId: string, name: string) =>
     (await ownerAPI.documents.create({ params: { workspaceId }, body: { name } })).document.id
   const save = (documentId: string, baseRevisionId: string | null, label: string) =>

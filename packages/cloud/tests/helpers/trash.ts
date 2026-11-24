@@ -1,7 +1,6 @@
 import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import type { WorkspaceRole } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
@@ -10,8 +9,6 @@ import {
   type CloudActor,
   type CloudErrorReporter
 } from '#cloud/server'
-import { testClient } from 'hono/testing'
-import * as v from 'valibot'
 
 export const DAY_MS = 24 * 60 * 60_000
 
@@ -61,7 +58,6 @@ export async function trashApp({ roles = {}, purgeGraceMs, reportError }: TrashA
     resolveSession: async () => actor,
     reportError
   })
-  const client = testClient(app)
   const api = contractClient(app)
   await runtime.database
     .insertInto('user')
@@ -74,10 +70,7 @@ export async function trashApp({ roles = {}, purgeGraceMs, reportError }: TrashA
       }))
     )
     .execute()
-  const workspace = await responseJSON(
-    await client.api.workspaces.$post({ json: { name: 'Studio', slug: 'studio' } }),
-    v.object({ workspace: v.object({ id: v.string() }) })
-  )
+  const workspace = await api.workspaces.create({ body: { name: 'Studio', slug: 'studio' } })
   const workspaceId = workspace.workspace.id
   for (const person of ['bob', 'carol'] as const) {
     const role = roles[person]

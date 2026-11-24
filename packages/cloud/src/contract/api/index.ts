@@ -2,11 +2,13 @@ import { commentsContract, sharedCommentsContract } from './comments'
 import { documentsContract } from './documents'
 import { publicSharingContract, sharingContract } from './sharing'
 import { versionsContract } from './versions'
+import { sessionContract, workspacesContract } from './workspaces'
 
 export { commentsContract, sharedCommentsContract } from './comments'
 export { documentsContract } from './documents'
 export { publicSharingContract, sharingContract } from './sharing'
 export { versionsContract } from './versions'
+export { sessionContract, workspacesContract } from './workspaces'
 export {
   CLOUD_API_ERROR_STATUS,
   DOCUMENT_ERRORS,
@@ -26,7 +28,9 @@ export const cloudAPIContract = {
   documents: documentsContract,
   versions: versionsContract,
   comments: commentsContract,
-  sharing: sharingContract
+  sharing: sharingContract,
+  workspaces: workspacesContract,
+  session: sessionContract
 }
 
 /** The Cloud API that anyone may call, through a share link or the community gallery. */

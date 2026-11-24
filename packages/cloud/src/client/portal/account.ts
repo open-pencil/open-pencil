@@ -1,6 +1,4 @@
 import {
-  accountEntitlementsResponseSchema,
-  billingTokenSchema,
   cloudAccessTokenCreatedResponseSchema,
   cloudAccessTokensResponseSchema,
   cloudAccountDeletionResponseSchema,
@@ -27,7 +25,7 @@ import type { CloudCall, CloudContractCall, PortalRouteClients } from './request
 export function createAccountAPI(
   call: CloudCall,
   callContract: CloudContractCall,
-  { account, tokens, api, contract }: PortalRouteClients
+  { account, tokens, contract }: PortalRouteClients
 ) {
   return {
     /** Which comments the account hears about by email. */
@@ -45,19 +43,14 @@ export function createAccountAPI(
     },
     /** The account's plan, and the storage its workspaces hold together. */
     entitlements(signal?: AbortSignal) {
-      return call(
-        (options) => api.account.entitlements.$get(undefined, options),
-        accountEntitlementsResponseSchema,
+      return callContract(
+        (options) => contract.session.accountEntitlements(undefined, options),
         signal
       )
     },
     /** A short-lived token for the deployment's billing, for this account. */
     billingToken(signal?: AbortSignal) {
-      return call(
-        (options) => api.billing.token.$post(undefined, options),
-        billingTokenSchema,
-        signal
-      )
+      return callContract((options) => contract.session.billingToken(undefined, options), signal)
     },
     accountStatus(signal?: AbortSignal) {
       return call(

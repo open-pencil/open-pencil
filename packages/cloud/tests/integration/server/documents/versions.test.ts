@@ -3,7 +3,6 @@ import { describe, expect, test } from 'bun:test'
 import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   CLOUD_FEATURE_KEYS,
   createBetterAuthAdapter,
@@ -16,8 +15,6 @@ import {
   StaticEntitlementSource,
   type CloudActor
 } from '#cloud/server'
-import { testClient } from 'hono/testing'
-import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -59,12 +56,8 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
     onDocumentRestored: (documentId) => restoredDocuments.push(documentId),
     onDocumentVersionsChanged: (documentId) => announcements.push(documentId)
   })
-  const client = testClient(app)
   const api = contractClient(app)
-  const workspace = await responseJSON(
-    await client.api.workspaces.$post({ json: { name: 'Studio' } }),
-    v.object({ workspace: v.object({ id: v.string() }) })
-  )
+  const workspace = await api.workspaces.create({ body: { name: 'Studio' } })
   const created = await api.documents.create({
     params: { workspaceId: workspace.workspace.id },
     body: { name: 'Poster' }

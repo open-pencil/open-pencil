@@ -3,7 +3,6 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import { MAX_COMMENT_THREADS_PER_DOCUMENT } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
@@ -13,8 +12,6 @@ import {
   type CloudActor
 } from '#cloud/server'
 import { chunk } from 'es-toolkit'
-import { testClient } from 'hono/testing'
-import * as v from 'valibot'
 
 const opened: { close(): Promise<void> }[] = []
 afterEach(async () => {
@@ -56,11 +53,8 @@ async function testApp() {
     resolveSession: async () => alice,
     onDocumentCommentsChanged: (_documentId, threadId) => announced.push(threadId)
   })
-  const workspace = await responseJSON(
-    await testClient(app).api.workspaces.$post({ json: { name: 'Studio' } }),
-    v.object({ workspace: v.object({ id: v.string() }) })
-  )
   const api = contractClient(app)
+  const workspace = await api.workspaces.create({ body: { name: 'Studio' } })
   const created = await api.documents.create({
     params: { workspaceId: workspace.workspace.id },
     body: { name: 'Poster' }

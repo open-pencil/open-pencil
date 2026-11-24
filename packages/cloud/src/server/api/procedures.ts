@@ -8,6 +8,10 @@ import {
   createPublicSharingProcedures,
   createSharingProcedures
 } from '#cloud/server/sharing/procedures'
+import {
+  createSessionProcedures,
+  createWorkspaceProcedures
+} from '#cloud/server/workspaces/procedures'
 
 import type { CloudAPIServices } from './router'
 
@@ -17,7 +21,13 @@ export function createCloudAPIProcedures(services: CloudAPIServices) {
     documents: createDocumentProcedures(services.documents),
     versions: createDocumentVersionProcedures(services.versions),
     comments: createCommentProcedures(services.comments),
-    sharing: createSharingProcedures(services.sharing, services.collaboration)
+    sharing: createSharingProcedures(services.sharing, services.collaboration),
+    workspaces: createWorkspaceProcedures({
+      workspaces: services.workspaces,
+      members: services.workspaceMembers,
+      entitlements: services.entitlements
+    }),
+    session: createSessionProcedures(services)
   }
 }
 

@@ -5,6 +5,12 @@ import { OpenAPIHandler } from '@orpc/openapi/fetch'
 import type { Context as ProcedureContext, Router } from '@orpc/server'
 import { RethrowHandlerPlugin } from '@orpc/server/plugins'
 import type { Context, Env, MiddlewareHandler } from 'hono'
+import { routePath } from 'hono/route'
+
+/** Whether `path` is one, rather than the empty path of a router mounted at the root. */
+function isPath(path: string): path is `/${string}` {
+  return path.startsWith('/')
+}
 
 /** Whether a schema issue is about a route parameter, which then names nothing. */
 function isParamIssue(issue: ValidationError['issues'][number]): boolean {
@@ -14,14 +20,13 @@ function isParamIssue(issue: ValidationError['issues'][number]): boolean {
 }
 
 /**
- * Answers the routes `router` implements, under `prefix`, for the signed-in actor, and lets every
+ * Answers the routes `router` implements, under the path this middleware is mounted at, and lets every
  * other request through. Errors travel as `{ "error": { "code": … } }`: input that fails its schema
  * is `invalid_request`, or `not_found` when a route parameter does, and anything a route did not
  * expect goes on to the app's error handler, which reports it.
  */
 export function contractRoutes<E extends Env, T extends ProcedureContext>(
   router: Router<T>,
-  prefix: `/${string}`,
   context: (c: Context<E>) => T
 ): MiddlewareHandler<E> {
   const handler = new OpenAPIHandler<T>(router, {
@@ -53,7 +58,12 @@ export function contractRoutes<E extends Env, T extends ProcedureContext>(
     ]
   })
   return async (c, next) => {
-    const result = await handler.handle(c.req.raw, { prefix, context: context(c) })
+    // Where this middleware is mounted, such as `/api/*`: the routes' paths start there.
+    const mount = routePath(c).replace(/\/\*$/, '')
+    const result = await handler.handle(c.req.raw, {
+      prefix: isPath(mount) ? mount : undefined,
+      context: context(c)
+    })
     if (!result.matched) return next()
     c.res = result.response
   }

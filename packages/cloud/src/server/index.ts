@@ -22,19 +22,17 @@ export {
   type EnrollmentStatus
 } from '#cloud/admin'
 export {
-  createBillingRoutes,
+  createBillingRateLimits,
   createBillingTokenService,
-  type BillingRouteEnvironment,
   type BillingTokenService,
   type BillingTokenServiceOptions
 } from '#cloud/server/billing'
 export {
   ServicesNotEntitledError,
-  createServicesRoutes,
+  createServicesRateLimits,
   createServicesTokenService,
   importServicesSigningKey,
   loadServicesSigningKey,
-  type ServicesRouteEnvironment,
   type ServicesSigningKey,
   type ServicesTokenService,
   type ServicesTokenServiceOptions
@@ -322,10 +320,11 @@ export {
   type RateLimitPolicy
 } from './rate-limit'
 export {
-  createWorkspaceRoutes,
+  createWorkspaceRateLimits,
+  createWorkspaceProcedures,
+  createSessionProcedures,
   createWorkspaceService,
   WorkspaceSlugConflictError,
-  type WorkspaceRouteEnvironment,
   type WorkspaceService
 } from './workspaces'
 export {

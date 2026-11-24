@@ -14,6 +14,11 @@ export const CLOUD_API_ERROR_STATUS = {
   storage_quota_exceeded: 409,
   comment_limit_reached: 409,
   comment_conflict: 409,
+  last_admin: 409,
+  not_empty: 409,
+  cleanup_pending: 409,
+  already_member: 409,
+  slug_conflict: 409,
   invalid_upload: 422,
   rate_limited: 429,
   invitation_delivery_failed: 502,
@@ -45,4 +50,16 @@ export const SHARE_ERRORS = {
   forbidden: {},
   rate_limited: {},
   invitation_delivery_failed: {}
+} satisfies ErrorMap
+
+/** What a workspace route may answer besides its result. */
+export const WORKSPACE_ERRORS = {
+  not_found: {},
+  forbidden: {},
+  last_admin: {},
+  not_empty: {},
+  cleanup_pending: {},
+  already_member: {},
+  slug_conflict: {},
+  rate_limited: {}
 } satisfies ErrorMap

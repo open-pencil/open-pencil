@@ -37,7 +37,6 @@ const alice: CloudActor = {
 }
 
 const notFoundSchema = v.object({ error: v.object({ code: v.literal('not_found') }) })
-const idSchema = v.object({ id: v.string() })
 
 async function testApp() {
   const runtime = await createCloudTestDatabase()
@@ -61,10 +60,7 @@ async function testApp() {
   const headers = { Origin: config.publicURL }
   const { api } = testClient(app, undefined, undefined, { headers })
   const contract = contractClient(app, headers)
-  const { workspace } = await responseJSON(
-    await api.workspaces.$post({ json: { name: 'Studio' } }),
-    v.object({ workspace: idSchema })
-  )
+  const { workspace } = await contract.workspaces.create({ body: { name: 'Studio' } })
   const { document } = await contract.documents.create({
     params: { workspaceId: workspace.id },
     body: { name: 'Poster' }
@@ -84,21 +80,6 @@ describe('Cloud API route parameters', () => {
         route: string,
         request: () => Promise<Pick<Response, 'status' | 'text'>>
       ][] = [
-        [
-          'GET /workspaces/abc',
-          () => api.workspaces[':workspaceId'].$get({ param: { workspaceId: 'abc' } })
-        ],
-        [
-          'GET /workspaces/abc/entitlements',
-          () => api.workspaces[':workspaceId'].entitlements.$get({ param: { workspaceId: 'abc' } })
-        ],
-        [
-          'POST /workspaces/:workspaceId/invitations/abc/resend',
-          () =>
-            api.workspaces[':workspaceId'].invitations[':invitationId'].resend.$post({
-              param: { workspaceId, invitationId: 'abc' }
-            })
-        ],
         [
           'POST /admin/email/abc/regenerate',
           () => api.admin.email[':id'].regenerate.$post({ param: { id: 'abc' } })
@@ -162,6 +143,16 @@ describe('Cloud API route parameters', () => {
               params: { invitationId: 'abc' },
               body: { token: secret }
             })
+        ],
+        ['GET /workspaces/abc', () => contract.workspaces.get({ params: { workspaceId: 'abc' } })],
+        [
+          'GET /workspaces/abc/entitlements',
+          () => contract.workspaces.entitlements({ params: { workspaceId: 'abc' } })
+        ],
+        [
+          'POST /workspaces/:workspaceId/invitations/abc/resend',
+          () =>
+            contract.workspaces.resendInvitation({ params: { workspaceId, invitationId: 'abc' } })
         ],
         [
           'GET /workspaces/abc/documents',

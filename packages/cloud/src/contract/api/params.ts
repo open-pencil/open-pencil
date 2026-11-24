@@ -48,3 +48,11 @@ export const documentInvitationParamsSchema = v.object({
 })
 export const invitationParamsSchema = v.object({ invitationId: uuidParamSchema })
 export const invitationContinuationParamsSchema = v.object({ continuationId: textParamSchema })
+export const workspaceInvitationParamsSchema = v.object({
+  workspaceId: uuidParamSchema,
+  invitationId: uuidParamSchema
+})
+export const workspaceMemberParamsSchema = v.object({
+  workspaceId: uuidParamSchema,
+  userId: textParamSchema
+})

@@ -6,22 +6,17 @@ import type { Kysely } from 'kysely'
 
 import type { BillingTokenService } from './tokens'
 
-export type BillingRouteEnvironment = { Variables: { actor: CloudActor } }
-
-/** Without a billing service, the deployment sells nothing and the token route is not found. */
-export function createBillingRoutes(
+/** The budget for asking for billing tokens, where the deployment sells anything at all. */
+export function createBillingRateLimits(
   service: BillingTokenService | undefined,
   rateLimit?: { database: Kysely<CloudDatabase>; secret: string }
 ) {
-  const router = new Hono<BillingRouteEnvironment>()
+  const router = new Hono<{ Variables: { actor: CloudActor } }>()
   if (service && rateLimit) {
     router.use(
       '/billing/token',
       createRouteRateLimiter(rateLimit.database, rateLimit.secret, CLOUD_RATE_LIMITS.billingToken)
     )
   }
-  return router.post('/billing/token', async (context) => {
-    if (!service) return context.json({ error: { code: 'not_found' as const } }, 404)
-    return context.json(await service.issue(context.get('actor')))
-  })
+  return router
 }

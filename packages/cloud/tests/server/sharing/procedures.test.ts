@@ -31,8 +31,8 @@ async function reportedOpening(signedIn: CloudActor | null): Promise<CloudErrorC
       })
     )
     .use(
-      '*',
-      contractRoutes(procedures, '/api', (context: Context<CloudAPIEnvironment>) => ({
+      '/api/*',
+      contractRoutes(procedures, (context: Context<CloudAPIEnvironment>) => ({
         request: context.req.raw,
         identify: (who) => context.set('actor', who)
       }))

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import { CLOUD_PROTOCOL_VERSION } from '#cloud/contract'
@@ -179,7 +180,7 @@ describe('createCloudApp', () => {
         })
       })
       const client = testClient(app)
-      expect((await client.api.session.$get()).status).toBe(200)
+      expect(await outcome(contractClient(app).session.session())).toBe('ok')
       expect((await client.api.admin.operations.$get()).status).toBe(403)
       expect(await responseJSON(await client.api.admin.operations.$get(), errorSchema)).toEqual({
         error: { code: 'mfa_required' }
@@ -306,7 +307,7 @@ describe('createCloudApp', () => {
         user: pendingIdentity,
         state: 'pending'
       })
-      expect((await client.api.session.$get()).status).toBe(401)
+      expect(await outcome(contractClient(app).session.session())).toMatchObject({ status: 401 })
       expect((await client.api.admin.enrollments.$get({ query: {} })).status).toBe(401)
     } finally {
       await runtime.close()
@@ -354,10 +355,12 @@ describe('createCloudApp', () => {
 
     const allowedServices = services()
     allowedServices.config = { ...allowedServices.config, indexingPolicy: 'allow' }
-    const allowed = testClient(createCloudApp(allowedServices))
+    const allowedApp = createCloudApp(allowedServices)
+    const allowed = testClient(allowedApp)
     expect(await (await allowed['robots.txt'].$get()).text()).toContain('Disallow: /admin')
     expect((await allowed.health.$get()).headers.get('X-Robots-Tag')).toBeNull()
-    expect((await allowed.api.session.$get()).headers.get('X-Robots-Tag')).toBe(
+    // A response header, which the contract client does not expose.
+    expect((await allowedApp.request('/api/session')).headers.get('X-Robots-Tag')).toBe(
       'noindex, nofollow, noarchive'
     )
   })

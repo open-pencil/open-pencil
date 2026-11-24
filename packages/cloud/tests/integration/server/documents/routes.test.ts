@@ -3,7 +3,6 @@ import { describe, expect, test } from 'bun:test'
 import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   createCloudApp,
   createBetterAuthAdapter,
@@ -11,7 +10,6 @@ import {
   parseCloudServerConfig,
   type CloudActor
 } from '#cloud/server'
-import { testClient } from 'hono/testing'
 import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
@@ -44,18 +42,14 @@ async function testApp(initialActor: CloudActor = actor) {
     objects: objects.store,
     resolveSession: async () => currentActor
   })
-  const client = testClient(app)
-  const workspaceResponse = await client.api.workspaces.$post({
-    json: { name: 'Documents', slug: 'documents-team' }
+  const api = contractClient(app)
+  const workspace = await api.workspaces.create({
+    body: { name: 'Documents', slug: 'documents-team' }
   })
-  const workspace = await responseJSON(
-    workspaceResponse,
-    v.object({ workspace: v.object({ id: v.string() }) })
-  )
   return {
     runtime,
     objects,
-    api: contractClient(app),
+    api,
     workspaceId: workspace.workspace.id,
     setActor: (value: CloudActor) => {
       currentActor = value

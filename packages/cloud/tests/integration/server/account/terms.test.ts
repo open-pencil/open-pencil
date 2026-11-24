@@ -182,10 +182,9 @@ describe('terms acceptance', () => {
       })
       const client = testClient(app)
       const api = contractClient(app)
-      const { workspace } = await responseJSON(
-        await client.api.workspaces.$post({ json: { name: 'Studio', slug: 'studio' } }),
-        v.object({ workspace: v.object({ id: v.string() }) })
-      )
+      const { workspace } = await api.workspaces.create({
+        body: { name: 'Studio', slug: 'studio' }
+      })
       const { document } = await api.documents.create({
         params: { workspaceId: workspace.id },
         body: { name: 'Homepage' }
@@ -241,7 +240,7 @@ describe('terms acceptance', () => {
       const documentParams = { params: { documentId: document.id } }
       expect(await outcome(api.documents.download(documentParams))).toBe('ok')
 
-      expect((await client.api.workspaces.$get()).status).toBe(401)
+      expect(await outcome(api.workspaces.list())).toMatchObject({ status: 401 })
       expect(await outcome(api.versions.list({ ...documentParams, query: {} }))).toMatchObject({
         status: 401
       })

@@ -90,32 +90,26 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
 
   return {
     async getSession(): Promise<CloudSession | null> {
-      const response = await client.session.$get()
-      if (response.status === 401) return null
-      return v.parse(cloudSessionSchema, await responseBody(response, options.onDiagnostic))
+      try {
+        return await contract.session.session()
+      } catch (error) {
+        if (error instanceof CloudAPIError && error.status === 401) return null
+        throw error
+      }
     },
     /** A short-lived token for the deployment's services, on the workspace's behalf. */
-    async requestServicesToken(workspaceId: string): Promise<ServicesToken> {
-      return parseResponse(
-        client.services.token.$post({ json: { workspaceId } }),
-        servicesTokenSchema,
-        options.onDiagnostic
-      )
+    requestServicesToken(workspaceId: string): Promise<ServicesToken> {
+      return contract.session.servicesToken({ body: { workspaceId } })
     },
     /** A short-lived token for the deployment's billing, for the signed-in person's own account. */
-    async requestBillingToken(): Promise<BillingToken> {
-      return parseResponse(client.billing.token.$post(), billingTokenSchema, options.onDiagnostic)
+    requestBillingToken(): Promise<BillingToken> {
+      return contract.session.billingToken()
     },
     /** The signed-in account's plan, and the storage its workspaces hold together. */
     async getAccountEntitlements(): Promise<AccountEntitlements> {
-      const response = await parseResponse(
-        client.account.entitlements.$get(),
-        accountEntitlementsResponseSchema,
-        options.onDiagnostic
-      )
-      return response.entitlements
+      return (await contract.session.accountEntitlements()).entitlements
     },
-    ...createWorkspaceRequests(client, contract.documents, options.onDiagnostic),
+    ...createWorkspaceRequests(contract.workspaces, contract.documents),
     ...createImageRequests(contract.documents, contract.publicSharing),
     ...createDocumentRequests(contract.documents, contract.sharing),
     ...createVersionRequests(contract.versions),

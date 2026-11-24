@@ -4,12 +4,16 @@ import { CloudAPIError } from '#cloud/client/response'
 /** Something that answers requests, as a Cloud app does in a test. */
 type RequestHandler = { request(request: Request): Response | Promise<Response> }
 
-/** The contract's client, calling `app` directly, with `headers` on every request. */
+/**
+ * The contract's client, calling `app` directly, with `headers` on every request, against the
+ * API mounted at `base`.
+ */
 export function contractClient(
   app: RequestHandler,
-  headers: Record<string, string> = {}
+  headers: Record<string, string> = {},
+  base = 'http://localhost/api'
 ): CloudContractClient {
-  return createCloudContractClient('http://localhost/api', {
+  return createCloudContractClient(base, {
     fetch: async (input, init) => app.request(new Request(input, init)),
     headers
   })

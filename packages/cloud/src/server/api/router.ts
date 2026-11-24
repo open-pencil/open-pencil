@@ -1,6 +1,6 @@
 import type { CloudAPIEnvironment } from '#cloud/server/api/types'
 import type { CloudSessionResolver } from '#cloud/server/auth'
-import { createBillingRoutes, type BillingTokenService } from '#cloud/server/billing'
+import { createBillingRateLimits, type BillingTokenService } from '#cloud/server/billing'
 import type { CollaborationTicketService } from '#cloud/server/collaboration'
 import { createCollaborationRateLimits } from '#cloud/server/collaboration'
 import type { CommentService } from '#cloud/server/comments'
@@ -11,12 +11,12 @@ import { createDocumentRateLimits, DocumentNotFoundError } from '#cloud/server/d
 import type { DocumentVersionService } from '#cloud/server/documents/versions'
 import type { EntitlementService } from '#cloud/server/policy'
 import type { DocumentReportService } from '#cloud/server/reports'
-import { createServicesRoutes, type ServicesTokenService } from '#cloud/server/services'
+import { createServicesRateLimits, type ServicesTokenService } from '#cloud/server/services'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import { createSharingRateLimits } from '#cloud/server/sharing'
 import { workspaceParams } from '#cloud/server/validation'
 import type { WorkspaceMemberService, WorkspaceService } from '#cloud/server/workspaces'
-import { createWorkspaceRoutes } from '#cloud/server/workspaces'
+import { createWorkspaceRateLimits } from '#cloud/server/workspaces'
 import { Hono, type Context } from 'hono'
 import type { Kysely } from 'kysely'
 
@@ -45,11 +45,7 @@ export type CloudAPIServices = {
   workspaceMembers: WorkspaceMemberService
 }
 
-/** The routes anyone may call, under `prefix`: `/api`, and `/api/public` inside the signed-in API. */
-export function createPublicCloudAPIRouter(
-  services: CloudAPIServices,
-  prefix: `/${string}` = '/api'
-) {
+export function createPublicCloudAPIRouter(services: CloudAPIServices) {
   return (
     new Hono<CloudAPIEnvironment>()
       .route('/', createCommunityRoutes(services.community))
@@ -58,7 +54,6 @@ export function createPublicCloudAPIRouter(
         '*',
         contractRoutes(
           createPublicCloudAPIProcedures(services),
-          prefix,
           (context: Context<CloudAPIEnvironment>) => ({
             request: context.req.raw,
             identify: (actor) => context.set('actor', actor)
@@ -71,35 +66,10 @@ export function createPublicCloudAPIRouter(
 export function createCloudAPIRouter(services: CloudAPIServices) {
   return (
     new Hono<CloudAPIEnvironment>()
-      .route('/public', createPublicCloudAPIRouter(services, '/api/public'))
-      .get('/account/entitlements', async (context) => {
-        if (!services.entitlements)
-          return context.json({ error: { code: 'not_found' as const } }, 404)
-        return context.json({
-          entitlements: await services.entitlements.account(context.get('actor').userId)
-        })
-      })
-      .get('/workspaces/:workspaceId/entitlements', workspaceParams, async (context) => {
-        if (!services.entitlements)
-          return context.json({ error: { code: 'not_found' as const } }, 404)
-        try {
-          return context.json({
-            entitlements: await services.entitlements.workspace(
-              context.get('actor').userId,
-              context.req.valid('param').workspaceId
-            )
-          })
-        } catch (error) {
-          // A workspace the account left, or one that has gone, since the editor listed it.
-          if (error instanceof DocumentNotFoundError)
-            return context.json({ error: { code: 'not_found' as const } }, 404)
-          throw error
-        }
-      })
-      .get('/session', (context) => context.json({ user: context.get('actor') }))
+      .route('/public', createPublicCloudAPIRouter(services))
       .route(
         '/',
-        createServicesRoutes(
+        createServicesRateLimits(
           services.servicesTokens,
           services.database && services.rateLimitSecret
             ? { database: services.database, secret: services.rateLimitSecret }
@@ -108,7 +78,7 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
       )
       .route(
         '/',
-        createBillingRoutes(
+        createBillingRateLimits(
           services.billingTokens,
           services.database && services.rateLimitSecret
             ? { database: services.database, secret: services.rateLimitSecret }
@@ -141,9 +111,7 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
       )
       .route(
         '/workspaces',
-        createWorkspaceRoutes(
-          services.workspaces,
-          services.workspaceMembers,
+        createWorkspaceRateLimits(
           services.database && services.rateLimitSecret
             ? { database: services.database, secret: services.rateLimitSecret }
             : undefined
@@ -154,7 +122,6 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
         '*',
         contractRoutes(
           createCloudAPIProcedures(services),
-          '/api',
           (context: Context<CloudAPIEnvironment>) => ({
             actor: context.get('actor')
           })
