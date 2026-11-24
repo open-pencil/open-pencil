@@ -1,0 +1,1 @@
+- Easing and timing variables, as in Figma: open, edit and save them in `.fig` files and through the Figma plugin API, edit timings in milliseconds and easings in an editor with Figma's curve and spring presets, draggable handles and spring physics, and export them as CSS timing functions, Tailwind `--ease-*` tokens and design token `duration` and `cubicBezier` values (#2326).
