@@ -8,6 +8,7 @@ import {
   cloudAdminSessionResponseSchema,
   cloudAdminUserDetailSchema,
   cloudAdminUsersResponseSchema,
+  documentDownloadSchema,
   enrollmentReviewResponseSchema,
   enrollmentsResponseSchema,
   type CloudAdminAuditFilter,
@@ -15,6 +16,7 @@ import {
   type CloudAdminReportFilter,
   type CloudAdminEmailFilter,
   type CloudAdminUserFilter,
+  type CloudAdminUserMethod,
   type EnrollmentStatus
 } from '#cloud/contract'
 
@@ -28,14 +30,19 @@ export type AdminListRequest<Filter extends string> = {
   offset?: number
 }
 
+/** A count as a query string carries it. */
+function countParameter(count: number | undefined): string | undefined {
+  return count === undefined ? undefined : String(count)
+}
+
 /** The query string for `request`; an empty search asks for everything. */
 function listQuery<Filter extends string>(request: AdminListRequest<Filter>) {
   return {
     query: {
       search: request.search || undefined,
       filter: request.filter,
-      limit: request.limit,
-      offset: request.offset
+      limit: countParameter(request.limit),
+      offset: countParameter(request.offset)
     }
   }
 }
@@ -69,9 +76,14 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
         signal
       )
     },
-    users(request: AdminListRequest<CloudAdminUserFilter>, signal?: AbortSignal) {
+    /** A page of people; `method` narrows any filter to those who sign in that way. */
+    users(
+      request: AdminListRequest<CloudAdminUserFilter> & { method?: CloudAdminUserMethod },
+      signal?: AbortSignal
+    ) {
+      const { query } = listQuery(request)
       return call(
-        (options) => admin.users.$get(listQuery(request), options),
+        (options) => admin.users.$get({ query: { ...query, method: request.method } }, options),
         cloudAdminUsersResponseSchema,
         signal
       )
@@ -84,13 +96,22 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
       )
     },
     userAction(
-      action: 'ban' | 'unban' | 'revoke-sessions' | 'reset-two-step' | 'remove-picture',
+      action: 'ban' | 'unban' | 'revoke-sessions' | 'reset-two-step' | 'remove-picture' | 'delete',
       userId: string,
       reason?: string,
       signal?: AbortSignal
     ) {
       return call(
         (options) => admin.users[action].$post({ json: { userId, reason } }, options),
+        adminMutationResponseSchema,
+        signal
+      )
+    },
+    /** Removes one of an account's sign-in methods; the server keeps its last. */
+    removeSignInMethod(userId: string, methodId: string, signal?: AbortSignal) {
+      return call(
+        (options) =>
+          admin.users['remove-sign-in-method'].$post({ json: { userId, methodId } }, options),
         adminMutationResponseSchema,
         signal
       )
@@ -142,6 +163,23 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
       return call(
         (options) => admin.documents.$get(listQuery(request), options),
         cloudAdminDocumentsResponseSchema,
+        signal
+      )
+    },
+    /**
+     * Where a document's thumbnail at `revisionId` is: an image the console shows on the server's
+     * own address, so the administrator's session goes with it.
+     */
+    documentThumbnailURL(documentId: string, revisionId: string): string {
+      return admin.documents[':documentId'].thumbnails[':revisionId']
+        .$url({ param: { documentId, revisionId } })
+        .toString()
+    },
+    /** Links to a document's file and images as it is now; the server records the download. */
+    downloadDocument(id: string, signal?: AbortSignal) {
+      return call(
+        (options) => admin.documents[':id'].download.$post({ param: { id } }, options),
+        documentDownloadSchema,
         signal
       )
     },

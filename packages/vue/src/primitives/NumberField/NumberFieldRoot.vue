@@ -92,6 +92,7 @@ let absoluteDraft: string | null = null
 let stopMove: (() => void) | undefined
 let stopUp: (() => void) | undefined
 let stopCancel: (() => void) | undefined
+let stopLost: (() => void) | undefined
 let scrubTarget: Element | undefined
 let scrubPointerId: number | undefined
 
@@ -226,9 +227,11 @@ function stopScrubListeners() {
   stopMove?.()
   stopUp?.()
   stopCancel?.()
+  stopLost?.()
   stopMove = undefined
   stopUp = undefined
   stopCancel = undefined
+  stopLost = undefined
   if (scrubTarget && scrubPointerId != null && scrubTarget.hasPointerCapture(scrubPointerId)) {
     scrubTarget.releasePointerCapture(scrubPointerId)
   }
@@ -238,7 +241,8 @@ function stopScrubListeners() {
 }
 
 function startScrub(event: PointerEvent) {
-  if (!canMutate()) return
+  // One pointer scrubs at a time; another's press leaves it alone.
+  if (scrubPointerId != null || !canMutate()) return
   event.preventDefault()
   beginInteraction()
 
@@ -292,6 +296,12 @@ function startScrub(event: PointerEvent) {
   })
   stopCancel = useEventListener(listenerTarget, 'pointercancel', (cancelEvent: PointerEvent) => {
     if (cancelEvent.pointerId === event.pointerId) finish(true)
+  })
+  // Taken away before the release, as Escape in a picker does, the scrub puts its value back:
+  // the release may land elsewhere and never reach the field. The document hears it too when
+  // the field was removed meanwhile.
+  stopLost = useEventListener(document, 'lostpointercapture', (lostEvent: PointerEvent) => {
+    if (lostEvent.pointerId === event.pointerId) finish(true)
   })
 }
 

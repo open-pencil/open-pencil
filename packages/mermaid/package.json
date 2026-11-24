@@ -1,12 +1,13 @@
 {
   "name": "@open-pencil/mermaid",
-  "version": "0.17.0-beta.4",
+  "version": "0.17.0",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/mermaid"
   },
+  "funding": "https://ko-fi.com/dannote",
   "files": [
     "dist",
     "src",

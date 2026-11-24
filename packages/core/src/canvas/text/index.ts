@@ -1,6 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
-import { textVerticalOffset } from '@open-pencil/scene-graph/text'
+import { textLanguageAt, textVerticalOffset } from '@open-pencil/scene-graph/text'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters, shownText } from '#core/text/case'
@@ -50,13 +50,6 @@ function requiredNodeFaces(node: SceneNode): Array<{ family: string; style: stri
     add(run.style.fontFamily ?? baseFamily, textFontFace(node, run.style).style)
   }
   return Array.from(faces.values())
-}
-
-function languageForCharacter(node: SceneNode, sourceIndex: number): string | null {
-  const run = node.styleRuns.find(
-    (item) => sourceIndex >= item.start && sourceIndex < item.start + item.length
-  )
-  return run?.style.textLanguage !== undefined ? run.style.textLanguage : node.textLanguage
 }
 
 function transformedSourceOffsets(node: SceneNode): number[] {
@@ -138,7 +131,7 @@ function observedGlyphReadiness(r: TextRenderer, node: SceneNode): NodeFontReadi
   }
 
   const charactersByScript = missingGlyphsByScript(missingOccurrences, (offset) =>
-    languageForCharacter(node, offset)
+    textLanguageAt(node, offset)
   )
 
   let pending = false
@@ -247,7 +240,15 @@ export function buildTextPicture(r: TextRenderer, node: SceneNode): Uint8Array |
   const layout = buildParagraph(r, node)
   const paint = new ck.Paint()
   try {
-    drawTextLayout(ck, recCanvas, node, { paragraph: layout }, 0, paint)
+    drawTextLayout(
+      ck,
+      recCanvas,
+      node,
+      { paragraph: layout },
+      0,
+      paint,
+      r.documentColorSpace ?? 'srgb'
+    )
   } finally {
     paint.delete()
     layout.delete()

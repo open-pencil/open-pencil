@@ -15,7 +15,7 @@ import {
   shaderPresetJSON,
   type ShaderEffect
 } from '@open-pencil/vue/controls/shader'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import ShaderEffectControls from '@/components/fill-picker/shader/ShaderEffectControls.vue'
@@ -34,9 +34,14 @@ import AppCombobox from '@/components/ui/select/AppCombobox.vue'
  * effects, top first, each with its type and settings, reordered by dragging; and the preset as
  * JSON, which also takes a preset copied from shaders.com.
  */
-const { preset } = defineProps<{ preset: ShaderPreset }>()
+const { preset, preview = null } = defineProps<{
+  preset: ShaderPreset
+  /** The shader's saved frame, shown above its effects as an image fill shows its image. */
+  preview?: string | null
+}>()
 const emit = defineEmits<{ update: [preset: ShaderPreset] }>()
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 // Each effect's preview toggles its settings, framed like an effect row's.
 const effectPreviewButton = fillSwatchTrigger({ size: 'md', framed: true }).root()
 
@@ -127,6 +132,13 @@ function applyJSON() {
 
 <template>
   <div class="flex flex-col gap-2" data-test-id="shader-fill-picker">
+    <div
+      class="flex aspect-square items-center justify-center overflow-hidden rounded border border-border bg-panel-secondary"
+      data-test-id="shader-preview"
+    >
+      <img v-if="preview" :src="preview" alt="" class="max-h-full max-w-full object-contain" />
+    </div>
+
     <AppAlert
       v-if="!canDrawShaders()"
       tone="warning"

@@ -90,6 +90,18 @@ describe('portal access rules', () => {
     expect(portalDestination(terms, account('pending'))).toBe('/account/pending')
   })
 
+  test('a session that has to prove its second step proves it first, then goes where it was going', () => {
+    const security = target('/account/security', { account: true })
+    expect(portalDestination(security, account('two-step'))).toEqual({
+      path: '/account/confirm',
+      query: { redirect: '/account/security' }
+    })
+    const confirm = target('/account/confirm', { account: true }, '/admin/people')
+    expect(portalDestination(confirm, account('two-step'))).toBe(true)
+    // An administrator whose proof aged proves it again from an active account.
+    expect(portalDestination(confirm, account('active', 'admin'))).toBe(true)
+  })
+
   test('console pages ask for a deployment administrator', () => {
     const adminPage = target('/admin/people', { account: true, admin: true })
     expect(portalDestination(adminPage, account('active'))).toBe('/account')

@@ -34,11 +34,11 @@ function counts() {
 
 describe('ping', () => {
   test('counts pings per day and build, never per install', async () => {
-    expect((await service.client.ping.$post({ json: BUILD })).status).toBe(204)
-    expect((await service.client.ping.$post({ json: BUILD })).status).toBe(204)
+    expect((await service.client.ping.$post({ json: BUILD })).status).toBe(200)
+    expect((await service.client.ping.$post({ json: BUILD })).status).toBe(200)
     expect(
       (await service.client.ping.$post({ json: { ...BUILD, version: '0.15.1' } })).status
-    ).toBe(204)
+    ).toBe(200)
 
     expect(await counts()).toEqual([
       {
@@ -183,5 +183,18 @@ describe('ping', () => {
     })
 
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('tauri://localhost')
+  })
+
+  test('answers the web app on the official Cloud site, where it moves', async () => {
+    const response = await service.request('/ping', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'https://cloud.openpencil.dev',
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'Content-Type'
+      }
+    })
+
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://cloud.openpencil.dev')
   })
 })

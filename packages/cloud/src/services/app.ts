@@ -3,7 +3,7 @@ import {
   servicesTokenClaimsSchema,
   CLOUD_SERVICES_API_PATHS,
   CLOUD_SERVICES_TOKEN_AUDIENCE,
-  parseUsageQuery,
+  usageQuerySchema,
   type ServiceError,
   type ServiceErrorCode,
   type ServicesTokenClaims
@@ -11,11 +11,14 @@ import {
 import { validatedQuery } from '#cloud/server/validation'
 import { pick } from 'es-toolkit'
 import { Hono, type Context } from 'hono'
+import { bearerAuth } from 'hono/bearer-auth'
 import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'
 import { jwtVerify, type JWTVerifyGetKey } from 'jose'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
+
+import { MINUTE_MS } from '@open-pencil/std/timing'
 
 import type { ServicesConfig } from './config'
 import type { ServicesDatabase } from './db'
@@ -73,7 +76,7 @@ const FORWARDED_FIELDS = [
 ] as const
 
 /** How long an upstream answer may take in all, streamed or not, so a stalled one cannot hold a request slot forever. */
-const DEFAULT_UPSTREAM_TIMEOUT_MS = 10 * 60_000
+const DEFAULT_UPSTREAM_TIMEOUT_MS = 10 * MINUTE_MS
 
 function aiError(
   context: Context,
@@ -111,6 +114,7 @@ function concurrencyLimiter(maximum: number) {
  * OpenAI-compatible upstream with one key, and holds each workspace to its monthly allowance.
  * A request is admitted while the workspace has credits left and charged once its usage is known,
  * so concurrent requests can overdraw the allowance by what they cost.
+ * `/health` answers without a token, for uptime checks; it says nothing about the upstream.
  */
 export function createServicesApp(services: ServicesAppDependencies) {
   const { config } = services
@@ -124,22 +128,28 @@ export function createServicesApp(services: ServicesAppDependencies) {
     services.onBackgroundError ??
     ((error: unknown) => console.error('[Services] Metering failed:', error))
 
-  const requireToken = async (context: Context<ServicesEnvironment>, next: () => Promise<void>) => {
-    const header = context.req.header('Authorization')
-    const token = header?.startsWith('Bearer ') ? header.slice('Bearer '.length) : undefined
-    if (!token) return aiError(context, 'unauthorized')
-    try {
-      const { payload } = await jwtVerify(token, services.keys, {
-        issuer: config.cloudURL,
-        audience: CLOUD_SERVICES_TOKEN_AUDIENCE,
-        algorithms: ['ES256']
-      })
-      context.set('claims', v.parse(servicesTokenClaimsSchema, payload))
-    } catch {
-      return aiError(context, 'unauthorized')
-    }
-    return next()
-  }
+  const unauthorized = { error: { code: 'unauthorized' as const } }
+  const requireToken = bearerAuth<ServicesEnvironment>({
+    async verifyToken(token, context) {
+      try {
+        const { payload } = await jwtVerify(token, services.keys, {
+          issuer: config.cloudURL,
+          audience: CLOUD_SERVICES_TOKEN_AUDIENCE,
+          algorithms: ['ES256']
+        })
+        const claims = v.safeParse(servicesTokenClaimsSchema, payload)
+        if (!claims.success) return false
+        context.set('claims', claims.output)
+        return true
+      } catch {
+        return false
+      }
+    },
+    noAuthenticationHeader: { message: unauthorized },
+    // A header that is not a bearer token is malformed, not a wrong token.
+    invalidAuthenticationHeader: { message: { error: { code: 'invalid_request' as const } } },
+    invalidToken: { message: unauthorized }
+  })
 
   return new Hono<ServicesEnvironment>()
     .use(
@@ -151,13 +161,14 @@ export function createServicesApp(services: ServicesAppDependencies) {
         maxAge: 600
       })
     )
+    .get('/health', (context) => context.json({ status: 'ok' as const }))
     .use(`${CLOUD_SERVICES_API_PATHS.base}/*`, requireToken)
     .get(CLOUD_SERVICES_API_PATHS.catalog, (context) => context.json(config.catalog))
     .get(CLOUD_SERVICES_API_PATHS.wallet, async (context) => {
       const claims = context.get('claims')
       return context.json(await usage.wallet(spender(claims), claims.monthlyCreditAllowance, now()))
     })
-    .get(CLOUD_SERVICES_API_PATHS.usage, validatedQuery(parseUsageQuery), async (context) => {
+    .get(CLOUD_SERVICES_API_PATHS.usage, validatedQuery(usageQuerySchema), async (context) => {
       try {
         return context.json(
           await usage.page(context.get('claims').workspaceId, context.req.valid('query').cursor)

@@ -1,5 +1,4 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import {
   interactionStatesOf,
   readBehaviour,
@@ -8,6 +7,7 @@ import {
 } from '@open-pencil/scene-graph/behaviours'
 import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 import { createSlotProperty } from '@open-pencil/scene-graph/slots'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { createVariantActions } from '#core/editor/components/variants'

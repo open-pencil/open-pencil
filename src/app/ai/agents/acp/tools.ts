@@ -13,17 +13,24 @@ import { linkChatAgent } from '@/app/integrations/mcp/link'
 import { isOwnToolCall, textFromContent } from './events'
 
 /**
- * Lets the agent use OpenPencil's own tools without asking each time: their edits are undoable
- * and stay in the document the chat works on. Claude's adapter passes these options to the
- * Claude Agent SDK, where a bare server name allows every tool on it; other agents ignore it.
+ * The options a chat's agent session opens with. Claude's adapter passes them to the Claude Agent
+ * SDK, and other agents ignore them. OpenPencil's own tools run without asking each time: their
+ * edits are undoable and stay in the document the chat works on, and a bare server name allows
+ * every tool on it. Claude Code omits its thinking unless asked, so the chat would show nothing
+ * while it thinks; summarized thinking arrives as thought chunks once each stretch of it ends.
  */
-export const OWN_TOOLS_ALLOWED = {
-  claudeCode: { options: { allowedTools: [`mcp__${OPEN_PENCIL_MCP_SERVER}`] } }
-}
+export const AGENT_SESSION_META = {
+  claudeCode: {
+    options: {
+      allowedTools: [`mcp__${OPEN_PENCIL_MCP_SERVER}`],
+      thinking: { type: 'adaptive', display: 'summarized' }
+    }
+  }
+} as const
 
 /**
  * Answers the permission requests of agents that ask before every MCP call, as Cursor does, for
- * OpenPencil's own tools, on the same grounds as `OWN_TOOLS_ALLOWED`. A request carries only the
+ * OpenPencil's own tools, on the same grounds as `AGENT_SESSION_META`. A request carries only the
  * call's id, so the updates that name the call's server are noted first. Each call is allowed
  * once, which leaves the agent's saved permissions alone.
  */
@@ -55,7 +62,7 @@ export interface OwnToolsLink {
   /** The id the agent's MCP session and tool calls carry, which ties them to this chat. */
   chat: string
   mcpServers: McpServer[]
-  meta: typeof OWN_TOOLS_ALLOWED
+  meta: typeof AGENT_SESSION_META
   /** Reads an update sent before any prompt, where a failed tool call is a server that failed. */
   noteUpdate(update: SessionUpdate): void
   /** Waits, once the session exists, for the agent to open its MCP session. */
@@ -78,7 +85,7 @@ export async function linkOwnTools(
   return {
     chat: link.chat,
     mcpServers: link.servers,
-    meta: OWN_TOOLS_ALLOWED,
+    meta: AGENT_SESSION_META,
     noteUpdate(update) {
       if (update.sessionUpdate !== 'tool_call' || update.status !== 'failed') return
       const text = textFromContent(update.content ?? undefined)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { designModelConnection } from '@/app/ai/models'
 import { useCloudCreditBalance } from '@/app/ai/providers/openpencil/balance'
@@ -15,7 +15,7 @@ import Tip from '@/components/ui/overlay/Tip.vue'
 import { chatProfileTheme } from './ui'
 
 const { replying } = defineProps<{ replying: boolean }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const dates = useDateFormat()
 const ui = chatProfileTheme()
 

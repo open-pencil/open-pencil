@@ -9,6 +9,9 @@
     "test": "bun test tests"
   },
   "dependencies": {
-    "@open-pencil/package-artifacts-tools": "workspace:*"
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@open-pencil/std": "workspace:*",
+    "es-toolkit": "^1.52.0",
+    "valibot": "^1.5.0"
   }
 }

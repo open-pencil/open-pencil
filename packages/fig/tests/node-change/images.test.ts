@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { bytesToHex, hexToBytes } from '#fig/node-change/bytes'
 import { figImageEntries, nameImagesForFigma } from '#fig/node-change/images'
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { computeImageHash } from '@open-pencil/scene-graph/images'

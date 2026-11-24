@@ -1,5 +1,5 @@
 import type { VectorRegion, VectorSegment } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 /**
  * Region loops renumbered after segments were removed or merged. A loop that lost a segment is

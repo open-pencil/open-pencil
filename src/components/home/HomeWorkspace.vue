@@ -3,8 +3,9 @@ import { useLocalStorage } from '@vueuse/core'
 import { computed, ref, shallowRef } from 'vue'
 
 import type { DocumentKind } from '@open-pencil/scene-graph'
+import { errorMessage } from '@open-pencil/std/errors'
 import { useDocumentWorkspace } from '@open-pencil/vue/document/workspace'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { CLOUD_INCLUDED, CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/integration'
 import { useHomeLocations } from '@/app/home/locations'
@@ -47,7 +48,12 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 
 const emit = defineEmits<{ 'new-document': [kind: DocumentKind] }>()
-const { locale, storage, files, common, settings, credentials } = useI18n()
+const storage = useMessages('storage')
+const files = useMessages('files')
+const common = useMessages('common')
+const settings = useMessages('settings')
+const credentials = useMessages('credentials')
+const { locale } = useLocale()
 const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'grid')
 /** Which kind of file Home lists, as Figma's file filter picks; a file of unknown kind shows in all. */
 const kindFilter = useLocalStorage<DocumentKindFilter>('open-pencil:home-files-kind', 'all')
@@ -58,6 +64,8 @@ const places = useHomeLocations()
 
 /** A new document lands in the place Home shows: a Cloud workspace, the bucket, or a local file. */
 function newDocument(kind: DocumentKind) {
+  // Until Cloud answers, the chosen workspace is unknown, and a local file is not what was meant.
+  if (places.settling.value) return
   const target = newDesignTarget.value
   if (target) void createStoredDocument(target.location, kind)
   else emit('new-document', kind)
@@ -93,7 +101,7 @@ async function retryCredentialAccess() {
 const storageError = computed(() => {
   const error = storageWorkspace.error.value
   if (error == null) return null
-  return error instanceof Error ? error.message : String(error)
+  return errorMessage(error)
 })
 const storageDescription = computed(() => {
   const provider = storageProviderRegistry.get(activeStorageProviderID.value)
@@ -195,7 +203,7 @@ async function openRecent(document: RecentDocument): Promise<void> {
     const listed = storageWorkspace.lastRefreshedAt.value ? storageDocuments.value : undefined
     await openRecentDocument(document, listed)
   } catch (error) {
-    openError.value = error instanceof Error ? error.message : String(error)
+    openError.value = errorMessage(error)
   }
 }
 
@@ -204,7 +212,7 @@ async function openStorageDocument(document: StorageDocument): Promise<void> {
   try {
     await openStorageDocumentInNewTab(document)
   } catch (error) {
-    openError.value = error instanceof Error ? error.message : String(error)
+    openError.value = errorMessage(error)
   }
 }
 
@@ -222,6 +230,7 @@ function formattedDate(updatedAt: string): string {
         :cloud="CLOUD_INCLUDED"
         :active="places.active.value"
         :account="places.account.value"
+        :checking="places.checking.value"
         :workspaces="places.workspaces.value"
         :storage="sidebarStorage"
         @select="places.select"
@@ -238,6 +247,7 @@ function formattedDate(updatedAt: string): string {
         :cloud="CLOUD_INCLUDED"
         :active="places.active.value"
         :account="places.account.value"
+        :checking="places.checking.value"
         :workspaces="places.workspaces.value"
         :storage="sidebarStorage"
         @select="places.select"
@@ -248,6 +258,7 @@ function formattedDate(updatedAt: string): string {
     <HomeSearchActions
       v-model="query"
       :destination="newDesignTarget?.label ?? null"
+      :creating-disabled="places.settling.value"
       @new-document="newDocument"
     />
 

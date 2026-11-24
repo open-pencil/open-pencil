@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useHead } from '@unhead/vue'
-import { computed, onMounted, onScopeDispose } from 'vue'
+import { computed, onMounted, onScopeDispose, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { APP_VERSION } from '@/app/runtime/version'
+import { appPreferences } from '@/app/settings/preferences/store'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
+import { resolveUpdateChannel } from '@/app/shell/updater/channel'
 import { createTauriUpdaterBackend, createUpdaterSession } from '@/app/shell/updater/session'
 import UpdatePrompt from '@/components/updater/UpdatePrompt.vue'
 
-const { updates, locale } = useI18n()
+const updates = useMessages('updates')
+const { locale } = useLocale()
 
 useHead({
   title: () => updates.value.windowTitle,
@@ -24,6 +27,12 @@ useAppTheme()
 
 const backend = createTauriUpdaterBackend()
 const session = createUpdaterSession(backend)
+// The editor's Settings can switch channels while this window offers the other channel's build;
+// preferences live in storage both windows read, so the change reaches this one too.
+watch(
+  () => resolveUpdateChannel(appPreferences.value.updates.channel),
+  () => void session.recheck()
+)
 
 let stopCloseGuard: (() => void) | undefined
 let disposed = false

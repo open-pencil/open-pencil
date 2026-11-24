@@ -9,6 +9,7 @@ import IconBookOpen from '~icons/lucide/book-open'
 import IconChartNoAxesCombined from '~icons/lucide/chart-no-axes-combined'
 import IconCloud from '~icons/lucide/cloud'
 import IconDatabase from '~icons/lucide/database'
+import IconMessageSquareText from '~icons/lucide/message-square-text'
 import IconPenTool from '~icons/lucide/pen-tool'
 import IconPlug from '~icons/lucide/plug'
 import IconSettings from '~icons/lucide/settings'
@@ -18,7 +19,7 @@ import IconSparkles from '~icons/lucide/sparkles'
 import IconType from '~icons/lucide/type'
 
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { CLOUD_INCLUDED } from '@/app/cloud/integration'
 import {
@@ -28,6 +29,7 @@ import {
   type SettingsSection
 } from '@/app/settings/dialog'
 import { provideSettingsNavigation } from '@/app/settings/navigation/use'
+import CampaignNoteHost from '@/components/campaigns/CampaignNoteHost.vue'
 import { CloudSettingsSection } from '@/components/cloud/integration'
 import ChatSettingsSection from '@/components/settings/chat/ChatSettingsSection.vue'
 import DiagnosticsSettingsPanel from '@/components/settings/diagnostics/DiagnosticsSettingsPanel.vue'
@@ -41,6 +43,7 @@ import MediaSettingsPanel from '@/components/settings/media/MediaSettingsPanel.v
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
 import NotificationSettingsSection from '@/components/settings/notifications/NotificationSettingsSection.vue'
 import PrivacySettingsPanel from '@/components/settings/privacy/PrivacySettingsPanel.vue'
+import PromptsSettingsPanel from '@/components/settings/prompts/PromptsSettingsPanel.vue'
 import SkillsSettingsPanel from '@/components/settings/skills/SkillsSettingsPanel.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
 import ToolAccessSettingsPanel from '@/components/settings/tool-access/ToolAccessSettingsPanel.vue'
@@ -62,7 +65,8 @@ import {
 } from '@/components/ui/tabs'
 
 const { isMobile } = useViewportKind()
-const { settings, common } = useI18n()
+const settings = useMessages('settings')
+const common = useMessages('common')
 const navigation = provideSettingsNavigation()
 tryOnScopeDispose(registerSettingsNavigation(navigation.request))
 const { editing, confirming, crumb } = navigation
@@ -93,6 +97,7 @@ const groups = computed<{ label: string; sections: SectionItem[] }[]>(() => [
       { value: 'ai', label: settings.value.models, icon: IconSparkles },
       { value: 'tools', label: settings.value.toolAccess, icon: IconSlidersHorizontal },
       { value: 'skills', label: settings.value.skills, icon: IconBookOpen },
+      { value: 'prompts', label: settings.value.prompts, icon: IconMessageSquareText },
       { value: 'services', label: settings.value.integrations, icon: IconBlocks },
       { value: 'mcp', label: settings.value.mcp, icon: IconPlug },
       { value: 'usage', label: settings.value.usage, icon: IconChartNoAxesCombined }
@@ -209,6 +214,7 @@ function onOpenChange(open: boolean): void {
       <AppTabsContent value="ai" as-child>
         <section class="flex min-h-0 min-w-0 flex-1 flex-col" data-test-id="settings-ai-panel">
           <ModelsPanel>
+            <template #campaign><CampaignNoteHost placement="settings-models" /></template>
             <ChatSettingsSection />
           </ModelsPanel>
         </section>
@@ -219,14 +225,23 @@ function onOpenChange(open: boolean): void {
       <AppTabsContent value="skills" as-child>
         <SkillsSettingsPanel />
       </AppTabsContent>
+      <AppTabsContent value="prompts" as-child>
+        <PromptsSettingsPanel />
+      </AppTabsContent>
       <AppTabsContent value="services" as-child>
-        <MediaSettingsPanel />
+        <MediaSettingsPanel>
+          <template #campaign><CampaignNoteHost placement="settings-integrations" /></template>
+        </MediaSettingsPanel>
       </AppTabsContent>
       <AppTabsContent value="mcp" as-child>
         <MCPWorkspacePanel />
       </AppTabsContent>
       <AppTabsContent value="usage" as-child>
-        <SettingsPage><UsageSettingsPanel /></SettingsPage>
+        <SettingsPage>
+          <UsageSettingsPanel>
+            <template #campaign><CampaignNoteHost placement="settings-usage" /></template>
+          </UsageSettingsPanel>
+        </SettingsPage>
       </AppTabsContent>
       <AppTabsContent value="privacy" as-child>
         <SettingsPage><PrivacySettingsPanel /></SettingsPage>

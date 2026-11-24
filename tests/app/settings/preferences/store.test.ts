@@ -113,8 +113,16 @@ describe('parseAppPreferences', () => {
     }
   })
 
+  test('follows the installed build’s update channel unless one was chosen', () => {
+    expect(parseAppPreferences({ updates: { channel: 'nightly' } }).updates.channel).toBe('nightly')
+    expect(parseAppPreferences({ updates: { channel: 'stable' } }).updates.channel).toBe('stable')
+    for (const channel of [undefined, 'beta', 1]) {
+      expect(parseAppPreferences({ updates: { channel } }).updates.channel).toBe('build')
+    }
+  })
+
   test('checks for updates on startup unless that switch is stored off', () => {
-    expect(DEFAULT_APP_PREFERENCES.updates).toEqual({ checkOnStartup: true })
+    expect(DEFAULT_APP_PREFERENCES.updates).toEqual({ checkOnStartup: true, channel: 'build' })
     expect(parseAppPreferences({}).updates.checkOnStartup).toBe(true)
     const storedOff = parseAppPreferences({
       updates: { checkOnStartup: false },

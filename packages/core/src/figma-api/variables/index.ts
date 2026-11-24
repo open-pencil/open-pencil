@@ -12,6 +12,10 @@ import {
 } from '@open-pencil/scene-graph/variables'
 
 import { boundEffectCopy, type FigmaEffect } from '#core/figma-api/effects'
+import type { FigmaRectangleNode } from '#core/figma-api/node-types'
+
+/** An effect as a layer's `effects` holds it, Figma's typings and OpenPencil's read-back alike. */
+type FigmaNodeEffect = FigmaRectangleNode['effects'][number]
 
 import { FIGMA_DEFAULT_VALUES, variableAlias, type FigmaVariableAlias } from './values'
 import { FigmaVariable, FigmaVariableCollection, assertVariableName } from './variable'
@@ -80,7 +84,8 @@ export class FigmaVariablesAPI {
 
   getLocalVariables(type?: FigmaVariableResolvedType): FigmaVariable[] {
     const wanted = type === undefined ? undefined : assertType('getLocalVariables', type)
-    return [...this.#graph.variables.values()]
+    return this.#graph
+      .getLiveVariables()
       .filter((variable) => wanted === undefined || variable.type === wanted)
       .map((variable) => new FigmaVariable(this.#graph, variable.id))
   }
@@ -90,9 +95,9 @@ export class FigmaVariablesAPI {
   }
 
   getLocalVariableCollections(): FigmaVariableCollection[] {
-    return [...this.#graph.variableCollections.keys()].map(
-      (id) => new FigmaVariableCollection(this.#graph, id)
-    )
+    return this.#graph
+      .getLiveCollections()
+      .map((collection) => new FigmaVariableCollection(this.#graph, collection.id))
   }
 
   async getLocalVariableCollectionsAsync(): Promise<FigmaVariableCollection[]> {
@@ -162,11 +167,12 @@ export class FigmaVariablesAPI {
    * layer. As in Figma, the copy's values are not resolved yet, a shadow's spread reads 0, and
    * `null` unbinds every property of the effect, not only `field`.
    */
-  setBoundVariableForEffect(
-    effect: PluginEffect,
+  setBoundVariableForEffect<E extends PluginEffect | FigmaEffect>(
+    effect: E,
     field: VariableBindableEffectField,
     variable: { readonly id: string } | null
-  ): FigmaEffect {
+  ): Extract<FigmaNodeEffect, { type: E['type'] }> {
+    // Typed as a layer's effects are, from Figma's typings, so the copy can be set on a layer.
     return boundEffectCopy('setBoundVariableForEffect', effect, (modelled) => {
       const property = assertEffectField(modelled.type, field)
       if (variable === null) return {}
@@ -180,7 +186,7 @@ export class FigmaVariablesAPI {
         )
       }
       return { ...modelled.boundVariables, [property]: variableAlias(variable.id) }
-    })
+    }) as Extract<FigmaNodeEffect, { type: E['type'] }>
   }
 }
 

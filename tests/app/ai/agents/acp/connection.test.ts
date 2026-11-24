@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { createDeferred } from '@open-pencil/std/async'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { connectAgent, withinDeadline } from '@/app/ai/agents/acp/connection'
-import { createDeferred } from '@/app/runtime/deferred'
 
 import { fakeOneOffAgent } from '#tests/helpers/ai/fake-acp-agent'
 
@@ -59,6 +59,22 @@ describe('connecting to an agent', () => {
     const waiting = connection.untilStopped(createDeferred<never>().promise)
     stop.abort()
     await expect(waiting).rejects.toThrow('Stopped by the test.')
+    await connection.close()
+  })
+
+  test('a later turn’s request outlives a stopped earlier turn, and ends on its own stop', async () => {
+    const fake = fakeOneOffAgent()
+    const firstTurn = new AbortController()
+    const connection = await connectAgent(agent, {
+      launch: fake.startup.launch,
+      signal: firstTurn.signal
+    })
+    firstTurn.abort()
+    expect(await connection.forTurn(Promise.resolve('answer'))).toBe('answer')
+    const laterTurn = new AbortController()
+    const waiting = connection.forTurn(createDeferred<never>().promise, laterTurn.signal)
+    laterTurn.abort()
+    await expect(waiting).rejects.toThrow('The request was stopped.')
     await connection.close()
   })
 

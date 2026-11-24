@@ -12,6 +12,8 @@ import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import {
+  INVITATION_LIFETIME_MS,
+  INVITATION_SECRET_BYTES,
   spendInvitationBudget,
   type DocumentInvitationMessage,
   type InvitationDelivery,
@@ -19,7 +21,7 @@ import {
 } from '#cloud/server/invitations'
 import type { Kysely } from 'kysely'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { requireSharingAccess } from '../access'
 import {
@@ -31,9 +33,6 @@ import {
 import { dateString, grantContract, invitationContract } from '../contracts'
 import { hashCapability } from '../crypto'
 import { DocumentShareInvalidError, InvitationDeliveryError } from '../errors'
-
-const INVITATION_SECRET_BYTES = 24
-const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60_000
 
 /** Workspace invitations share the invitation link; their ids are not document invitations. */
 export type WorkspaceInvitationResolver = {

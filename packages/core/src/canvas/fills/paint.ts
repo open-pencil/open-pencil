@@ -7,20 +7,20 @@ import { patternTileLayout, type PatternTileLayout } from '@open-pencil/scene-gr
 import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { setPaintBlendMode } from '#core/canvas/blend/modes'
+import { hasImageAdjustments, makeAdjustedImageShader } from '#core/canvas/images/adjustments'
 import { previewEdge } from '#core/canvas/images/previews'
 import {
   drawOffOutputGrid,
   landsOnOutputPixels,
   makeImageShader
 } from '#core/canvas/images/sampling'
-import { resolveGradientStopColor } from '#core/canvas/renderer/colors'
+import { drawnColor } from '#core/canvas/renderer/colors'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { drawOutline, withNodeOutline } from '#core/canvas/shapes'
 
 import { makeDiamondGradient } from './gradients/diamond'
 
 interface PaintFillsOptions {
-  readonly bindToNodeFills?: boolean
   readonly patternStack?: Set<string>
 }
 
@@ -32,13 +32,11 @@ export function paintFills(
   draw: (fill: Fill) => void,
   options: PaintFillsOptions = {}
 ): void {
-  for (let index = 0; index < fills.length; index++) {
-    const fill = fills[index]
+  for (const fill of fills) {
     if (!fill.visible) continue
-    const fillIndex = options.bindToNodeFills === false ? -1 : index
     const applied = options.patternStack
-      ? applyFill(r, fill, node, graph, fillIndex, options.patternStack)
-      : r.applyFill(fill, node, graph, fillIndex)
+      ? applyFill(r, fill, node, graph, options.patternStack)
+      : r.applyFill(fill, node, graph)
     if (!applied) continue
     r.fillPaint.setAlphaf(fill.opacity)
     const blends = fill.blendMode !== undefined && fill.blendMode !== 'NORMAL'
@@ -72,7 +70,7 @@ export function drawVectorMultiStyleFills(
       node,
       graph,
       () => canvas.drawPath(path, r.fillPaint),
-      { bindToNodeFills: !region.fills, patternStack }
+      { patternStack }
     )
   }
   return true
@@ -109,13 +107,12 @@ export function applyFill(
   fill: Fill,
   node: SceneNode,
   graph: SceneGraph,
-  fillIndex = 0,
   patternStack = new Set<string>()
 ): boolean {
   clearFillShader(r)
 
   if (fill.type === 'SOLID') {
-    const c = r.resolveFillColor(fill, fillIndex, node, graph)
+    const c = drawnColor(fill.color, graph)
     r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
     return true
   }
@@ -131,7 +128,7 @@ export function applyFill(
   if (fill.type === 'PATTERN' && applyPatternFill(r, fill, node, graph, patternStack)) return true
 
   if (fill.type === 'PATTERN' || fill.type === 'NOISE' || fill.type === 'CUSTOM') {
-    const c = r.resolveFillColor(fill, fillIndex, node, graph)
+    const c = drawnColor(fill.color, graph)
     r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
     return true
   }
@@ -250,7 +247,7 @@ export function applyGradientFill(
   const t = fill.gradientTransform
   if (!stops || !t) return false
   const colors = stops.map((s) => {
-    const c = resolveGradientStopColor(s.color, graph, r.presentationColorSpace)
+    const c = drawnColor(s.color, graph)
     return r.ck.Color4f(c.r, c.g, c.b, c.a)
   })
   const positions = stops.map((s) => s.position)
@@ -335,18 +332,21 @@ function setImageShader(
     imgH,
     preview && { width: preview.originalWidth, height: preview.originalHeight }
   )
-  const shader = makeImageShader(
+  const image = makeImageShader(
     r,
     img,
     scaleMode,
     localMatrix,
     landsOnOutputPixels(r, node, graph, localMatrix)
   )
+  let shader = image
   try {
+    if (hasImageAdjustments(fill.filters)) shader = makeAdjustedImageShader(r, image, fill.filters)
     paint.setShader(shader)
     markShaded(r, paint)
   } finally {
-    shader.delete()
+    if (shader !== image) shader.delete()
+    image.delete()
   }
   return true
 }

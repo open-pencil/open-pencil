@@ -2,7 +2,7 @@ import { designJSXProp } from '#design-jsx/definitions'
 import { STROKE_ALIGN, STROKE_CAP, STROKE_JOIN } from '#design-jsx/enums'
 import type { LayerProps } from '#design-jsx/schema'
 
-import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { ColorProfile, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -34,8 +34,8 @@ function dashValue(value: unknown): number[] | undefined {
   return dash.length > 0 ? dash : undefined
 }
 
-function toStroke(value: StrokeValue): Stroke {
-  const color = typeof value.color === 'string' ? parseColor(value.color) : value.color
+function toStroke(value: StrokeValue, profile: ColorProfile): Stroke {
+  const color = typeof value.color === 'string' ? parseColor(value.color, profile) : value.color
   const stroke: Stroke = {
     type: 'SOLID',
     color,
@@ -79,31 +79,37 @@ function applyStrokeWeights(value: unknown, o: Partial<SceneNode>): void {
 }
 
 /** `strokes` takes structured strokes; `stroke` and its sibling props describe a single one. */
-export function applyStrokeOverrides(props: LayerProps, o: Partial<SceneNode>): void {
+export function applyStrokeOverrides(
+  props: LayerProps,
+  o: Partial<SceneNode>,
+  profile: ColorProfile
+): void {
   applyStrokeWeights(props.strokeWeights, o)
   // Node-level cap and join, which strokes without their own use.
   const nodeCap = STROKE_CAP.parse(props.strokeCap)
   if (nodeCap) o.strokeCap = nodeCap
   const nodeJoin = STROKE_JOIN.parse(props.strokeJoin)
   if (nodeJoin) o.strokeJoin = nodeJoin
-  // The node's own dash pattern, separate from the stroke-local dash `strokeDash` sets.
+  // The node's dash, which strokes without their own dash take, as strokes take its cap and join.
   const nodeDash = dashValue(props.dashPattern)
   if (nodeDash) o.dashPattern = nodeDash
+  const strokes = strokeValues(props).map((value) =>
+    toStroke({ ...value, dash: value.dash ?? nodeDash }, profile)
+  )
+  if (strokes.length > 0) o.strokes = strokes
+}
 
-  if (Array.isArray(props.strokes)) {
-    const strokes = props.strokes.filter(isStrokeValue).map(toStroke)
-    if (strokes.length > 0) o.strokes = strokes
-    return
-  }
-
+/** The strokes `strokes` lists, or the one `stroke` and its sibling props describe. */
+function strokeValues(props: LayerProps): StrokeValue[] {
+  if (Array.isArray(props.strokes)) return props.strokes.filter(isStrokeValue)
   const color = designJSXProp(props, 'stroke')
-  if (typeof color !== 'string' && !isColor(color)) return
-  o.strokes = [
-    toStroke({
+  if (typeof color !== 'string' && !isColor(color)) return []
+  return [
+    {
       color,
       weight: props.strokeWidth ?? props.borderWidth,
       align: props.strokeAlign as string | undefined,
       dash: props.strokeDash as number[] | undefined
-    })
+    }
   ]
 }

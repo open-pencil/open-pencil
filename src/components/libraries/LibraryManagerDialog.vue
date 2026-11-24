@@ -2,7 +2,7 @@
 import { nextTick, watch } from 'vue'
 
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openLibraryReview, openPublishLibraryDialog, useLibraryService } from '@/app/libraries'
@@ -27,7 +27,7 @@ const open = defineModel<boolean>({ required: true })
 const editor = useEditorStore()
 const service = useLibraryService()
 const { isMobile } = useViewportKind()
-const { panels } = useI18n()
+const libraryMessages = useMessages('panels/libraries')
 
 async function openPublish() {
   open.value = false
@@ -75,24 +75,24 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
     @update:open="open = $event"
   >
     <AppDialogHeader
-      :heading="panels.manageLibraries"
-      :description="panels.manageLibrariesDescription"
+      :heading="libraryMessages.manageLibraries"
+      :description="libraryMessages.manageLibrariesDescription"
     >
       <template #actions>
         <AppButton color="primary" variant="link" class="ms-auto" @click="openPublish">
-          {{ panels.publishLibrary }}
+          {{ libraryMessages.publishLibrary }}
         </AppButton>
       </template>
     </AppDialogHeader>
     <AppTabsRoot v-model="section" :orientation="isMobile ? 'horizontal' : 'vertical'">
-      <AppTabsList :label="panels.manageLibraries">
+      <AppTabsList :label="libraryMessages.manageLibraries">
         <AppTabsTrigger value="browse">
           <template #leading><icon-lucide-library class="size-3.5" /></template>
-          {{ panels.browseLibraries }}
+          {{ libraryMessages.browseLibraries }}
         </AppTabsTrigger>
         <AppTabsTrigger value="updates">
           <template #leading><icon-lucide-refresh-cw class="size-3.5" /></template>
-          {{ panels.libraryUpdates }}
+          {{ libraryMessages.libraryUpdates }}
           <template v-if="visibleUpdateGroups.length" #trailing>
             <span class="rounded-full bg-accent px-1.5 text-3xs text-on-accent">{{
               visibleUpdateGroups.length
@@ -106,10 +106,10 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
             required
             class="mb-4"
             :model-value="service.catalogSource"
-            :label="panels.browseLibraries"
+            :label="libraryMessages.browseLibraries"
             :options="[
-              { value: 'local', label: panels.localLibraries },
-              { value: 'storage', label: panels.storageLibraries }
+              { value: 'local', label: libraryMessages.localLibraries },
+              { value: 'storage', label: libraryMessages.storageLibraries }
             ]"
             @update:model-value="selectSource"
           />
@@ -122,12 +122,12 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
             <div class="min-w-0 flex-1">
               <p class="truncate text-xs text-surface">{{ library.name }}</p>
               <p class="text-3xs text-muted">
-                {{ panels.libraryAssetCount({ count: library.assetCount }) }}
+                {{ libraryMessages.libraryAssetCount({ count: library.assetCount }) }}
               </p>
             </div>
             <IconButton
               v-if="editor.graph.enabledLibraries.get(library.libraryId)?.enabled"
-              :label="panels.preferLibrary"
+              :label="libraryMessages.preferLibrary"
               @click="preferLibrary(library.libraryId)"
             >
               <icon-lucide-star class="size-4" />
@@ -135,21 +135,23 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
             <AppButton variant="outline" @click="toggleLibrary(library.libraryId)">
               {{
                 editor.graph.enabledLibraries.get(library.libraryId)?.enabled
-                  ? panels.disableLibrary
-                  : panels.enableLibrary
+                  ? libraryMessages.disableLibrary
+                  : libraryMessages.enableLibrary
               }}
             </AppButton>
           </div>
           <AppPlaceholder
             v-if="!loading && service.summaries.value.length === 0"
-            :label="panels.noLibraries"
+            :label="libraryMessages.noLibraries"
             size="compact"
           />
         </AppDialogBody>
       </AppTabsContent>
       <AppTabsContent value="updates" class="flex flex-col overflow-hidden">
         <AppDialogBody>
-          <h3 class="mb-3 text-sm font-semibold text-surface">{{ panels.libraryUpdates }}</h3>
+          <h3 class="mb-3 text-sm font-semibold text-surface">
+            {{ libraryMessages.libraryUpdates }}
+          </h3>
           <div
             v-for="asset in visibleUpdateGroups"
             :key="`${asset.libraryId}:${asset.assetKey}`"
@@ -160,23 +162,23 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
               <button type="button" class="block w-full text-start" @click="reviewUpdate(asset)">
                 <p class="truncate text-xs text-surface">{{ asset.name }}</p>
                 <p data-test-id="library-update-instance-count" class="text-3xs text-muted">
-                  {{ panels.libraryInstanceCount({ count: asset.instanceIds.length }) }}
+                  {{ libraryMessages.libraryInstanceCount({ count: asset.instanceIds.length }) }}
                 </p>
               </button>
             </div>
             <AppButton variant="outline" :disabled="applying !== null" @click="updateAsset(asset)">
-              {{ panels.updateLibraryAsset }}
+              {{ libraryMessages.updateLibraryAsset }}
             </AppButton>
           </div>
           <AppPlaceholder
             v-if="visibleUpdateGroups.length === 0"
-            :label="panels.noLibraryUpdates"
+            :label="libraryMessages.noLibraryUpdates"
             size="compact"
           />
         </AppDialogBody>
         <AppDialogFooter>
           <template #start>
-            <AppSwitch v-model="showAllPages" :label="panels.showUpdatesForAllPages" />
+            <AppSwitch v-model="showAllPages" :label="libraryMessages.showUpdatesForAllPages" />
           </template>
           <AppButton
             color="primary"
@@ -184,7 +186,7 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
             :disabled="visibleUpdateGroups.length === 0 || applying !== null"
             @click="updateAll"
           >
-            {{ panels.updateAll }}
+            {{ libraryMessages.updateAll }}
           </AppButton>
         </AppDialogFooter>
       </AppTabsContent>

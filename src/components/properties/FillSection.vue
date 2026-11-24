@@ -6,7 +6,7 @@ import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { useColorBindingProvider } from '@open-pencil/vue/controls/binding-provider'
 import { useFillControls } from '@open-pencil/vue/controls/fill'
 import { useOkHCL } from '@open-pencil/vue/controls/okhcl'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import {
   BindableValueRoot,
   type BindableValueActions
@@ -28,6 +28,7 @@ import {
   commitPaintMutation,
   paintBindingTargets
 } from '@/components/properties/paint/binding'
+import DeletedVariableMark from '@/components/properties/paint/DeletedVariableMark.vue'
 import { useGradientEditing } from '@/components/properties/paint/gradient-edit'
 import { createFillOkhclAdapter } from '@/components/properties/paint/okhcl'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
@@ -54,7 +55,8 @@ function onPickerOpenChange(
   if (!open) commitPaintMutation(binding)
 }
 const colorProvider = useColorBindingProvider()
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 const blendModeGroups = useBlendModeGroups()
 const {
   visible: stylesVisible,
@@ -80,6 +82,15 @@ function updatePickerFill(
   update: (fill: Fill) => void
 ) {
   applyPaintMutation(binding, flush, () => update(nextFill))
+}
+
+/**
+ * A shader joins the picker's paint edit, so a drag in its colour is one step. It replaces the
+ * paint, so a binding that refuses the edit, such as an unresolved one, does not stop it: the
+ * shader is then written as a step of its own.
+ */
+function updateShader(binding: BindableValueActions<Color>, flush: () => void, write: () => void) {
+  if (!applyPaintMutation(binding, flush, write)) write()
 }
 
 function updateSolidColor(
@@ -154,9 +165,18 @@ function updateSolidColor(
               @update:opacity="actions.patch(index, { opacity: $event })"
             >
               <template #preview>
+                <DeletedVariableMark
+                  v-if="binding.variable?.deleted"
+                  :label="panels.variableDeleted"
+                />
                 <FillPicker
+                  v-else
                   :fill="displayFill(fill, binding.resolvedValue)"
-                  :okhcl="createFillOkhclAdapter(okhcl, activeNode, index)"
+                  :okhcl="
+                    createFillOkhclAdapter(okhcl, activeNode, index, (update) =>
+                      applyPaintMutation(binding.actions, flush, update)
+                    )
+                  "
                   :shader="fillShader(activeNode, fill)"
                   :layer-size="selectedNodeIds.length === 1 ? activeNode : null"
                   :keep-open="gradients.pressesHandle"
@@ -169,8 +189,13 @@ function updateSolidColor(
                       actions.update(index, next)
                     )
                   "
-                  @update-shader="store.setShaderPaint(selectedNodeIds, 'fills', index, $event)"
+                  @update-shader="
+                    updateShader(binding.actions, flush, () =>
+                      store.setShaderPaint(selectedNodeIds, 'fills', index, $event)
+                    )
+                  "
                   @open-change="onPickerOpenChange(selectedNodeIds, index, $event, binding.actions)"
+                  @commit="commitPaintMutation(binding.actions)"
                   @cancel="cancelPaintMutation(binding.actions)"
                 />
               </template>

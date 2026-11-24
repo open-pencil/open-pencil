@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { ReplyUsage } from '@/app/ai/chat/metadata'
 import { tokenUsageDisplay } from '@/app/ai/chat/preferences'
@@ -36,7 +36,7 @@ const {
   usage?: ReplyUsage | null
 }>()
 const emit = defineEmits<{ regenerate: []; revert: []; restore: [] }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 
 const turn = computed(() => turnEdits(messageId))
 const revertable = computed(() => turn.value?.revertable === true)

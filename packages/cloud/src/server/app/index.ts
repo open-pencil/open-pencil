@@ -13,9 +13,9 @@ import { cloudRequestId } from '#cloud/server/logging'
 import { createPictureRoutes } from '#cloud/server/pictures'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
-import { cors } from 'hono/cors'
 
 import { createRequestChecks, createRequestResolvers } from './checks'
+import { createCloudCORS } from './cors'
 import { requireMinimumEditor } from './editors'
 import { robotsText, shouldPreventIndexing } from './indexing'
 import { createAppRateLimiters } from './limiters'
@@ -39,90 +39,92 @@ export function createCloudApp(services: CloudServices) {
   const allowedOrigins = new Set(
     [config.publicURL, ...config.trustedOrigins].map((origin) => new URL(origin).origin)
   )
-  const cloudCORS = cors({
-    origin: (origin) => (allowedOrigins.has(origin) ? origin : null),
-    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    maxAge: 600
-  })
+  // Billing's pages sign a visitor in with their Cloud session as they open (`CLOUD_BILLING_TOKEN_PATH`).
+  const billingOrigin = config.billingEndpoint && new URL(config.billingEndpoint).origin
+  const cloudCORS = createCloudCORS(allowedOrigins, billingOrigin || undefined)
   const app = createAppServices(services)
   const resolvers = createRequestResolvers(services)
   const checks = createRequestChecks(services, resolvers)
   const limiters = createAppRateLimiters(services.database, config)
   const routers = createAppRouters(services, app, resolvers, checks, limiters, allowedOrigins)
 
-  return new Hono<CloudAPIEnvironment>()
-    .onError(cloudErrorHandler(services.reportError))
-    .use('*', cloudRequestId(services.forwardedRequestId))
-    .use(CLOUD_DISCOVERY_PATH, cloudCORS)
-    .use('/api/*', cloudCORS)
-    .use('/api/*', requireMinimumEditor(config.minimumEditorVersion))
-    .use(
-      '/api/*',
-      bodyLimit({
-        maxSize: CLOUD_API_MAX_BODY_BYTES,
-        onError: (context) => context.json({ error: { code: 'invalid_request' as const } }, 413)
-      })
-    )
-    .use('*', async (context, next) => {
-      await next()
-      if (shouldPreventIndexing(context.req.path, config.indexingPolicy)) {
-        context.header('X-Robots-Tag', 'noindex, nofollow, noarchive')
-      }
-    })
-    .get('/robots.txt', (context) => {
-      context.header('Content-Type', 'text/plain; charset=utf-8')
-      return context.body(robotsText(config.indexingPolicy))
-    })
-    .get('/health', (context) =>
-      context.json({
-        status: 'ok' as const,
-        protocolVersion: CLOUD_PROTOCOL_VERSION
-      })
-    )
-    .get('/ready', async (context) => {
-      try {
-        await services.database.selectFrom('workspace').select('id').limit(1).execute()
-        const objects = await services.objects.checkReadiness()
-        if (!objects.ok) {
-          return context.json(
-            { status: 'unavailable' as const, dependency: 'object_storage' as const },
-            503
-          )
-        }
-        return context.json({
-          status: 'ready' as const,
-          objectStorage: {
-            checksumVerification: objects.checksumVerification,
-            multipartUpload: services.objects.capabilities.multipartUpload
-          }
+  return (
+    new Hono<CloudAPIEnvironment>()
+      .onError(cloudErrorHandler(services.reportError))
+      .use('*', cloudRequestId(services.forwardedRequestId))
+      // Discovery is public, so any editor's page may read it without credentials: an editor on
+      // another address learns whether the server lists it before it signs in.
+      .use(CLOUD_DISCOVERY_PATH, cloudCORS)
+      .use('/api/*', cloudCORS)
+      .use('/api/*', requireMinimumEditor(config.minimumEditorVersion))
+      .use(
+        '/api/*',
+        bodyLimit({
+          maxSize: CLOUD_API_MAX_BODY_BYTES,
+          onError: (context) => context.json({ error: { code: 'invalid_request' as const } }, 413)
         })
-      } catch {
-        return context.json({ status: 'unavailable' as const }, 503)
-      }
-    })
-    .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
-    .get(CLOUD_SERVICES_JWKS_PATH, async (context) =>
-      app.servicesTokens ? context.json(app.servicesTokens.jwks()) : context.notFound()
-    )
-    .on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, (context) => services.auth.handler(context.req.raw))
-    .route('/', routers.account)
-    .route('/', routers.accessTokens)
-    .route('/', createPictureRoutes(app.pictures))
-    .use('/api/shares/:shareId/collaboration-ticket', limiters.publicCollaborationLimiter)
-    .use('/api/public/*', limiters.publicRateLimiter)
-    .use('/api/shares/*', limiters.publicRateLimiter)
-    .use('/api/invitations/*', limiters.publicRateLimiter)
-    .use('/api/community/*', limiters.communityLimiter, limiters.publicRateLimiter)
-    .route('/', createCommunityThumbnailRoutes(app.community))
-    .route('/api', routers.publicCloudAPI)
-    .route('/api/internal', routers.internalAPI)
-    .use('/api/documents/:documentId', checks.allowLeavingRead)
-    .use('/api/*', checks.requireActiveActor)
-    .route(ADMIN_API_PATH, routers.admin)
-    .use('/api/*', limiters.authenticatedMutationLimiter)
-    .route('/api', routers.cloudAPI)
+      )
+      .use('*', async (context, next) => {
+        await next()
+        if (shouldPreventIndexing(context.req.path, config.indexingPolicy)) {
+          context.header('X-Robots-Tag', 'noindex, nofollow, noarchive')
+        }
+      })
+      .get('/robots.txt', (context) => {
+        context.header('Content-Type', 'text/plain; charset=utf-8')
+        return context.body(robotsText(config.indexingPolicy))
+      })
+      .get('/health', (context) =>
+        context.json({
+          status: 'ok' as const,
+          protocolVersion: CLOUD_PROTOCOL_VERSION
+        })
+      )
+      .get('/ready', async (context) => {
+        try {
+          await services.database.selectFrom('workspace').select('id').limit(1).execute()
+          const objects = await services.objects.checkReadiness()
+          if (!objects.ok) {
+            return context.json(
+              { status: 'unavailable' as const, dependency: 'object_storage' as const },
+              503
+            )
+          }
+          return context.json({
+            status: 'ready' as const,
+            objectStorage: {
+              checksumVerification: objects.checksumVerification,
+              multipartUpload: services.objects.capabilities.multipartUpload
+            }
+          })
+        } catch {
+          return context.json({ status: 'unavailable' as const }, 503)
+        }
+      })
+      .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
+      .get(CLOUD_SERVICES_JWKS_PATH, async (context) =>
+        app.servicesTokens ? context.json(app.servicesTokens.jwks()) : context.notFound()
+      )
+      .on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, (context) =>
+        services.auth.handler(context.req.raw)
+      )
+      .route('/', routers.account)
+      .route('/', routers.accessTokens)
+      .route('/', createPictureRoutes(app.pictures))
+      .use('/api/shares/:shareId/collaboration-ticket', limiters.publicCollaborationLimiter)
+      .use('/api/public/*', limiters.publicRateLimiter)
+      .use('/api/shares/*', limiters.publicRateLimiter)
+      .use('/api/invitations/*', limiters.publicRateLimiter)
+      .use('/api/community/*', limiters.communityLimiter, limiters.publicRateLimiter)
+      .route('/', createCommunityThumbnailRoutes(app.community))
+      .route('/api', routers.publicCloudAPI)
+      .route('/api/internal', routers.internalAPI)
+      .use('/api/documents/:documentId', checks.allowLeavingRead)
+      .use('/api/*', checks.requireActiveActor)
+      .route(ADMIN_API_PATH, routers.admin)
+      .use('/api/*', limiters.authenticatedMutationLimiter)
+      .route('/api', routers.cloudAPI)
+  )
 }
 
 export type CloudApp = ReturnType<typeof createCloudApp>

@@ -63,6 +63,7 @@
     "unicorn/prefer-string-starts-ends-with": "error",
     "unicorn/consistent-existence-index-check": "error",
     "@open-pencil/types/no-import-type-annotations": "error",
+    "@open-pencil/runtime/no-inline-delay": "error",
     "@open-pencil/runtime/no-math-random": "error",
     "@open-pencil/runtime/no-silent-catch": "error",
     "@open-pencil/imports/no-deep-parent-relative-imports": "error",

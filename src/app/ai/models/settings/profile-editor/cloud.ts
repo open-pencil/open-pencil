@@ -1,17 +1,12 @@
-import { computed, ref, watch, type Ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
-import type { CloudServicesClient } from '@open-pencil/cloud/client'
 import type { ModelOption } from '@open-pencil/core/constants'
 
 import type { AIModelProfileDraft } from '@/app/ai/models'
 import { cloudCatalogModels } from '@/app/ai/providers/openpencil/catalog'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
-import {
-  cloudAIClient,
-  cloudAIIdentity,
-  cloudAIWorkspaces,
-  type CloudAIWorkspace
-} from '@/app/cloud/integration'
+import { HOME_CLOUD_AI, type CloudAISource } from '@/app/ai/providers/openpencil/source'
+import type { CloudAIWorkspace } from '@/app/cloud/integration'
 
 /**
  * Where a draft for Cloud's AI service stands: the Home server is signed out or has no service,
@@ -28,19 +23,6 @@ export type CloudModelSelectionState =
 
 type WorkspaceListState = Exclude<CloudModelSelectionState, 'ready' | 'catalog-failed'> | 'listed'
 
-/** The Home server's AI service as the selection reads it. */
-export interface CloudModelSource {
-  identity: Readonly<Ref<string | null>>
-  workspaces: () => Promise<CloudAIWorkspace[]>
-  client: (workspaceId: string) => Pick<CloudServicesClient, 'catalog'> | null
-}
-
-const HOME_CLOUD: CloudModelSource = {
-  identity: cloudAIIdentity,
-  workspaces: cloudAIWorkspaces,
-  client: cloudAIClient
-}
-
 /**
  * The workspaces and models Cloud's AI service offers while a draft uses it. The first workspace
  * whose plan includes AI is chosen unless the draft names another, and the catalog's default model
@@ -49,7 +31,7 @@ const HOME_CLOUD: CloudModelSource = {
 export function useCloudModelSelection(
   draft: AIModelProfileDraft,
   chooseModel: (modelID: string) => void,
-  cloud: CloudModelSource = HOME_CLOUD
+  cloud: CloudAISource = HOME_CLOUD_AI
 ) {
   const isCloud = computed(() => draft.providerID === OPENPENCIL_AI_PROVIDER)
   const workspaces = ref<CloudAIWorkspace[]>([])

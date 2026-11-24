@@ -13,6 +13,7 @@ import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defau
 import { EFFECT_BINDING_PROPERTIES, effectBindingField } from '@open-pencil/scene-graph/variables'
 
 import { nodeChangeToProps } from '../node-change'
+import { modeledEffectIndexes } from '../node-change/paint'
 import { numericVariableBindingScales } from '../node-change/variable/bindings'
 import { EFFECT_VARIABLE_FIELDS } from '../node-change/variable/effects'
 import { variableModeLayer } from '../node-change/variable/maps'
@@ -330,7 +331,10 @@ function recordVariableModeClaims(owner: SceneNode, target: SceneNode, claim: No
 function recordEffectBindingClaims(owner: SceneNode, target: SceneNode, effects: unknown): void {
   if (!Array.isArray(effects)) return
   let declared = false
-  for (const [index, effect] of (effects as KiwiEffect[]).entries()) {
+  const indexes = modeledEffectIndexes(effects as KiwiEffect[])
+  for (const [rawIndex, effect] of (effects as KiwiEffect[]).entries()) {
+    const index = indexes[rawIndex]
+    if (index === null) continue
     for (const property of EFFECT_BINDING_PROPERTIES) {
       if (!effect[EFFECT_VARIABLE_FIELDS[property]]?.value?.alias) continue
       const path = effectBindingField(index, property)

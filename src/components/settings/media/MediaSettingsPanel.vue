@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { useMediaMessages, useSettingsMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { vectorizeProviderID, VECTORIZE_PROVIDER_DEFINITIONS } from '@/app/editor/vectorize'
 import { exaKeyStatus, pexelsKeyStatus, unsplashKeyStatus } from '@/app/settings/credentials/media'
@@ -18,8 +18,8 @@ import MediaCredentialEditor from './MediaCredentialEditor.vue'
 const editing = ref<MediaSettingsService | null>(null)
 // The editor keeps its service while it slides away.
 const editedService = useHeldContent(editing)
-const settings = useSettingsMessages()
-const media = useMediaMessages()
+const settings = useMessages('settings')
+const media = useMessages('media')
 const stockServices = computed(() => [
   { id: 'pexels' as const, name: 'Pexels', status: pexelsKeyStatus.value },
   { id: 'unsplash' as const, name: 'Unsplash', status: unsplashKeyStatus.value }
@@ -41,6 +41,8 @@ const vectorProvider = computed(() =>
     </template>
     <SettingsPage>
       <div class="flex flex-col gap-6">
+        <!-- A campaign's note, such as web search coming with Cloud. -->
+        <slot name="campaign" />
         <SettingsSection>
           <template #title>{{ media.stockPhotos }}</template>
           <AppActionRow

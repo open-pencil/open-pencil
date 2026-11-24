@@ -16,10 +16,15 @@ export function useImageFill(
   const url = useObjectUrl(blob)
   const size = shallowRef<{ width: number; height: number } | null>(null)
 
+  // The bytes, not just the name: a shader's frame is drawn again under the same name, and its
+  // layer's update bumps the scene.
   watch(
-    () => toValue(hash),
-    (name) => {
-      const data = name ? store.getImage(name) : undefined
+    () => {
+      void store.state.sceneVersion
+      const name = toValue(hash)
+      return name ? store.getImage(name) : undefined
+    },
+    (data) => {
       // A copy owns a plain ArrayBuffer, which a Blob takes where shared memory is not allowed.
       blob.value = data ? new Blob([data.slice()]) : null
     },

@@ -7,11 +7,11 @@ import type {
   TextFontFeatures,
   TextFontVariations
 } from '@open-pencil/canvaskit'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
+import type { CharacterStyleOverride, ColorProfile, SceneNode } from '@open-pencil/scene-graph'
+import { normalizeColor, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import { faceStyleKey, type NamedFace } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
-import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
+import { lineHeightPixels, styleRunPieces, textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import {
@@ -118,12 +118,22 @@ function drawnFontStyle(
 export function styleRunColor(
   ck: CanvasKit,
   style: SceneNode['styleRuns'][number]['style'],
-  baseColor: Float32Array
+  baseColor: Float32Array,
+  space: ColorProfile
 ): Float32Array {
   const visibleFill = style.fills?.find((fill) => fill.visible && fill.type === 'SOLID')
   if (!visibleFill) return baseColor
-  const color = resolveRGBAForPreview(visibleFill.color).color
+  const color = toExtendedSRGB(normalizeColor(visibleFill.color), space)
   return ck.Color4f(color.r, color.g, color.b, color.a * visibleFill.opacity)
+}
+
+/**
+ * A text style's color. CanvasKit keeps `color` in 8-bit sRGB, which clips a wide-gamut color, and
+ * draws `foregroundColor` with float components, so both carry it; a pushed foreground paint, as
+ * a gradient fill draws with, still takes their place.
+ */
+function textColor(color: Float32Array) {
+  return { color, foregroundColor: color }
 }
 
 function styleRunLanguage(
@@ -137,7 +147,7 @@ function pushStyleRun(
   r: TextRenderer,
   builder: ParagraphBuilder,
   node: ParagraphNode,
-  run: SceneNode['styleRuns'][number],
+  style: CharacterStyleOverride,
   baseColor: Float32Array,
   baseFontSize: number,
   fontFamilies: (primary: string, face: NamedFace) => string[],
@@ -145,7 +155,6 @@ function pushStyleRun(
   paintStyle?: ParagraphPaintStyle
 ): void {
   const ck = r.ck
-  const style = run.style
   const runFontSize = style.fontSize ?? baseFontSize
   // A percent follows the run's own font size, as in Figma.
   const runLineHeight = lineHeightPixels(
@@ -163,8 +172,9 @@ function pushStyleRun(
   const runKey = faceStyleKey(runFace)
   const runLoaded = loadedFace(runFamily, runWeight, runItalic, runKey)
 
+  const runColor = styleRunColor(ck, style, baseColor, r.documentColorSpace ?? 'srgb')
   const textStyle = new ck.TextStyle({
-    color: styleRunColor(ck, style, baseColor),
+    ...textColor(runColor),
     fontFamilies: fontFamilies(runFamily, runFace),
     fontSize: runFontSize,
     locale: styleRunLanguage(style, node),
@@ -210,27 +220,46 @@ function addStyledRuns(
   paintStyle?: ParagraphPaintStyle
 ): void {
   const text = node.text
-  let pos = 0
-
-  for (const run of node.styleRuns) {
-    if (pos < run.start) addParagraphText(builder, node, pos, run.start)
+  // A run that starts or ends inside a surrogate pair moves to its end, as Skia would shape each
+  // half on its own.
+  const boundary = (index: number) => codePointBoundary(text, index)
+  for (const { start, end, style } of styleRunPieces(node.styleRuns, text.length, boundary)) {
+    if (!style) {
+      addParagraphText(builder, node, start, end)
+      continue
+    }
     pushStyleRun(
       r,
       builder,
       node,
-      run,
+      style,
       baseColor,
       baseFontSize,
       fontFamilies,
       halfLeading,
       paintStyle
     )
-    addParagraphText(builder, node, run.start, run.start + run.length)
+    addParagraphText(builder, node, start, end)
     builder.pop()
-    pos = run.start + run.length
   }
+}
 
-  if (pos < text.length) addParagraphText(builder, node, pos, text.length)
+function isHighSurrogate(code: number): boolean {
+  return code >= 0xd800 && code <= 0xdbff
+}
+
+function isLowSurrogate(code: number): boolean {
+  return code >= 0xdc00 && code <= 0xdfff
+}
+
+/** `index`, or the end of the surrogate pair it splits. */
+function codePointBoundary(text: string, index: number): number {
+  const splitsPair =
+    index > 0 &&
+    index < text.length &&
+    isLowSurrogate(text.charCodeAt(index)) &&
+    isHighSurrogate(text.charCodeAt(index - 1))
+  return splitsPair ? index + 1 : index
 }
 
 /** What a paragraph that is one block of a longer text needs beyond its node's own style. */
@@ -279,7 +308,7 @@ export function buildSkParagraph(
   const nodeLoaded = loadedFace(nodeFamily, node.fontWeight, node.italic, nodeKey)
 
   const baseTextStyle = {
-    color: baseColor,
+    ...textColor(baseColor),
     fontFamilies: fontFamilies(nodeFamily, node),
     fontSize: baseFontSize,
     locale: node.textLanguage ?? undefined,
@@ -305,7 +334,10 @@ export function buildSkParagraph(
     textAlign: getParagraphTextAlign(ck, node),
     textDirection: textDirection === 'RTL' ? ck.TextDirection.RTL : ck.TextDirection.LTR,
     ...truncateOpts,
-    textStyle: baseTextStyle
+    textStyle: baseTextStyle,
+    // Figma fits and sizes lines by their glyphs, and starts them at their first glyph.
+    trimLetterSpacing: true,
+    applyRoundingHack: false
   })
 
   if (!r.fontProvider) throw new Error('Font provider not initialized')

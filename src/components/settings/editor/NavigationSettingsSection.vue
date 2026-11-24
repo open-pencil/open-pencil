@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import {
   appPreferences,
@@ -14,9 +14,10 @@ import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
+import { settingsSelectUI } from '@/theme/settings/controls'
 
-const { locale, settings } = useI18n()
-const selectUI = { trigger: 'w-full sm:w-52' }
+const settings = useMessages('settings')
+const { locale } = useLocale()
 
 const zoomSpeed = computed<ZoomSpeed>({
   get: () => appPreferences.value.navigation.zoomSpeed,
@@ -47,7 +48,7 @@ const zoomSpeedOptions = computed(() => {
           v-model="zoomSpeed"
           :label="settings.zoomSpeed"
           :options="zoomSpeedOptions"
-          :ui="selectUI"
+          :ui="settingsSelectUI"
           data-test-id="settings-zoom-speed"
         />
       </SettingsRow>

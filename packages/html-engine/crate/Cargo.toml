@@ -10,12 +10,16 @@ publish.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 # Blitz from open-pencil/blitz's `openpencil/blitz`, which carries DioxusLabs/blitz#1370 (tables on
-# Taffy's table layout) and #1279 (atomic inline baselines) until they merge upstream.
+# Taffy's table layout), #1279 (atomic inline baselines), #1563 (relative `@import` without a base
+# URL) and #1396 (the table `border` attribute) until they merge upstream.
 [dependencies]
-blitz-dom = { git = "https://github.com/open-pencil/blitz", rev = "eabcebd1c4906a49fad3de54bf268d8ffba666a2", default-features = false, features = ["svg", "woff", "floats"] }
-blitz-html = { git = "https://github.com/open-pencil/blitz", rev = "eabcebd1c4906a49fad3de54bf268d8ffba666a2" }
-blitz-traits = { git = "https://github.com/open-pencil/blitz", rev = "eabcebd1c4906a49fad3de54bf268d8ffba666a2" }
+blitz-dom = { git = "https://github.com/open-pencil/blitz", rev = "72ca31a350317da83dbf8cfc74d34b3bf56cd214", default-features = false, features = ["svg", "woff", "floats"] }
+blitz-html = { git = "https://github.com/open-pencil/blitz", rev = "72ca31a350317da83dbf8cfc74d34b3bf56cd214" }
+blitz-traits = { git = "https://github.com/open-pencil/blitz", rev = "72ca31a350317da83dbf8cfc74d34b3bf56cd214" }
 # Stylo as Blitz builds it, for computed values Blitz resolves to used ones; keep it at Blitz's version.
 style = { version = "0.24.0", package = "stylo" }
 parley = { version = "0.13", default-features = false, features = ["std"] }
+# The CSS tokenizer and URL parser Stylo uses, to report `url()` values as browsers do.
+cssparser = "0.38"
+url = "2"
 serde_json = "1"

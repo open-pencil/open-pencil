@@ -3,7 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import {
   accountAuthenticationRequest,
   createAccountAuthenticationFixture,
-  createVerifiedCredentialAccount
+  createVerifiedCredentialAccount,
+  withCookie
 } from '#cloud-tests/helpers/account-authentication'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
@@ -56,15 +57,13 @@ async function document(
 const deletion = async (fixture: Fixture, cookie: string) =>
   (
     await responseJSON(
-      await fixture.app.fetch(
-        accountAuthenticationRequest('/api/account/deletion', undefined, cookie)
-      ),
+      await fixture.client.api.account.deletion.$get(undefined, withCookie(cookie)),
       cloudAccountDeletionResponseSchema
     )
   ).deletion
 
 const remove = (fixture: Fixture, cookie: string, body: { password?: string } = {}) =>
-  fixture.app.fetch(accountAuthenticationRequest('/api/account/delete', body, cookie))
+  fixture.client.api.account.delete.$post({ json: body }, withCookie(cookie))
 
 describe('account deletion', () => {
   test('waits for another admin, then takes the account’s own workspaces and leaves the rest', async () => {

@@ -1,7 +1,5 @@
 import { count, params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 /** Copy for OpenPencil Cloud inside the editor: connecting, sharing, syncing, and Home. */
 export const cloudMessageDefaults = {
   productName: 'OpenPencil Cloud',
@@ -58,14 +56,18 @@ export const cloudMessageDefaults = {
     '{host} needs a newer version of OpenPencil. Update to keep working with your files there.'
   ),
   updateOpenPencil: 'Update OpenPencil',
+  movingBanner: params(
+    'OpenPencil is moving to {host} on {date}. Files kept in this browser stay here: save them to Cloud or download them first.'
+  ),
+  movingOpen: 'Open in Cloud',
   errorDeniedHeading: 'Sign-in was denied',
   errorDeniedDescription: 'The request was turned down in the browser. Start again to sign in.',
   errorExpiredHeading: 'The code expired',
   errorExpiredDescription: 'It wasn’t approved in time. Start again to get a new one.',
   errorSignInFailedHeading: 'Couldn’t sign in',
   errorSignInFailedDescription: 'The server didn’t finish signing you in. Try again in a moment.',
-  continueWithGoogle: 'Continue with Google',
-  continueWithApple: 'Continue with Apple',
+  /** A sign-in provider's button; `provider` is its name, such as Google. */
+  continueWith: params('Continue with {provider}'),
   continueWithEmail: 'Continue with email',
   signInNoteDesktop: 'Your browser opens to finish signing in, then you come back here.',
   signInNoteBrowser: 'You come back to this tab after signing in.',
@@ -197,6 +199,11 @@ export const cloudMessageDefaults = {
   statusStorageFullDetail:
     'The owner of this file has used all their storage, so it’s view only until space is freed or their plan grows. It can still be opened, downloaded, and deleted.',
   statusManagePlan: 'Manage plan',
+  storageFullTitle: params('“{name}” is view only'),
+  notifyConflict: 'Cloud conflicts',
+  notifyConflictHint: 'An open Cloud file was changed in two places and needs you to choose.',
+  notifyStorageFull: 'Cloud storage full',
+  notifyStorageFullHint: 'An open Cloud file became view only because its owner’s storage is full.',
   // Keeping a file without an account
   draftHeading: 'Keep this file',
   draftDescription: params<{ host: string }>(
@@ -307,6 +314,8 @@ export const cloudMessageDefaults = {
   settingsSignedOut: 'Signed out',
   settingsWaitingForApproval: 'Waiting for an administrator to approve your account',
   settingsAccessClosed: 'An administrator declined or removed your access',
+  settingsConfirmTwoStep: 'Confirm it’s you with your second step to keep using this server',
+  settingsConfirm: 'Confirm',
   settingsAcceptTerms: 'Accept this server’s terms to keep using it',
   settingsReviewTerms: 'Review terms',
   settingsOptionsFor: params('Options for {host}'),
@@ -398,11 +407,17 @@ export const cloudMessageDefaults = {
   communityLinkFailed: 'This document isn’t in the gallery any more.',
   communityBanner: 'A community example, open read-only.',
   communitySaveCopy: 'Save a copy',
+  creditsLowBanner: 'Your AI credits are running low.',
+  creditsOutBanner: 'You’re out of AI credits.',
+  creditsOutUntilBanner: params('You’re out of AI credits until {date}.'),
+  creditsBuy: 'Buy credits',
+  creditsAskOwner: 'Ask the workspace owner to buy more.',
   savePublicLabel: 'Public',
   savePublicHeading: 'Anyone can open what you save here',
   savePublicDescription:
     'This workspace is the server’s community gallery, so saving to it publishes the document.',
   documentLinkFailed: 'Couldn’t open this document. Ask its owner for access.',
+  commentLinkFailed: 'Couldn’t find this comment. It may have been deleted.',
   documentLinkUnknownServer: params('Sign in to {host} first to open this link.'),
   shareOpenedInBrowser: 'Opened in the browser',
   openInDesktopApp: 'Open in the desktop app',
@@ -452,5 +467,3 @@ export const cloudMessageDefaults = {
   reportEmailInvalid: 'Enter an email address, or leave it empty.',
   versionCopyName: params('{name} (copy)')
 } as const
-
-export const cloudMessages = i18n('cloud', cloudMessageDefaults)

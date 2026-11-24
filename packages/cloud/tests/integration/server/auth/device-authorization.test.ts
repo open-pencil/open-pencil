@@ -83,32 +83,46 @@ test('email-only desktop authorization stays on its issuing instance', async () 
       .executeTakeFirst()
     expect(stored?.userId).toBe(user.userId)
     expect(new Date(stored?.expiresAt ?? 0).getTime()).toBeGreaterThan(Date.now())
-    const discoveryResponse = await fixture.app.fetch(
-      accountAuthenticationRequest('/.well-known/openpencil')
-    )
+    const discoveryResponse = await fixture.client['.well-known'].openpencil.$get()
     const discovery = parseCloudDiscovery(await discoveryResponse.json())
-    const session = await fixture.app.fetch(
-      new Request('https://cloud.example.com/api/session', {
-        headers: { Authorization: `Bearer ${tokenBody.access_token}` }
-      })
-    )
+    const session = await fixture.client.api.session.$get(undefined, {
+      headers: { Authorization: `Bearer ${tokenBody.access_token}` }
+    })
     expect(session.status).toBe(200)
-    const invalid = await fixture.app.fetch(
-      new Request('https://cloud.example.com/api/session', {
-        headers: { Authorization: `Bearer ${crypto.randomUUID()}` }
-      })
-    )
+    const invalid = await fixture.client.api.session.$get(undefined, {
+      headers: { Authorization: `Bearer ${crypto.randomUUID()}` }
+    })
     expect(invalid.status).toBe(401)
     await signOutFromCloud(discovery, {
       accessToken: tokenBody.access_token,
       fetch: async (input, init) => fixture.app.fetch(new Request(input, init))
     })
-    const revoked = await fixture.app.fetch(
-      new Request('https://cloud.example.com/api/session', {
-        headers: { Authorization: `Bearer ${tokenBody.access_token}` }
+    const revoked = await fixture.client.api.session.$get(undefined, {
+      headers: { Authorization: `Bearer ${tokenBody.access_token}` }
+    })
+    expect(revoked.status).toBe(401)
+  } finally {
+    await fixture.close()
+  }
+})
+
+test('reopening the desktop sign-in page keeps looking its code up', async () => {
+  const fixture = await createAccountAuthenticationFixture()
+  try {
+    const issued = await fixture.app.fetch(
+      accountAuthenticationRequest('/api/auth/device/code', {
+        client_id: 'openpencil-desktop:test-connection'
       })
     )
-    expect(revoked.status).toBe(401)
+    const { user_code: userCode } = await responseJSON(issued, v.object({ user_code: v.string() }))
+    const statuses: number[] = []
+    for (let page = 0; page < 10; page++) {
+      const lookup = await fixture.app.fetch(
+        accountAuthenticationRequest(`/api/auth/device?user_code=${userCode}`)
+      )
+      statuses.push(lookup.status)
+    }
+    expect(statuses).toEqual(Array.from({ length: 10 }, () => 200))
   } finally {
     await fixture.close()
   }

@@ -5,7 +5,7 @@ import type { PanInfo } from 'motion-v'
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { useMotionTransition } from '@/app/shell/motion/transitions'
@@ -29,7 +29,8 @@ type Snap = 'closed' | 'half' | 'full'
 type DrawerTab = 'layers' | 'design' | 'code' | 'ai'
 
 const store = useEditorStore()
-const { settings, panels } = useI18n()
+const settings = useMessages('settings')
+const panels = useMessages('panels')
 
 const headerRef = ref<HTMLElement | null>(null)
 

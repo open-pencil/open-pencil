@@ -7,7 +7,7 @@ import {
   PostgresRateLimitStore
 } from '#cloud/server'
 
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 
 describe('Cloud enrollment integration', () => {
   test('deduplicates requests and applies audited reviews', async () => {
@@ -117,6 +117,28 @@ describe('Cloud enrollment integration', () => {
         requestCount: 20,
         keyHash: expect.not.stringContaining('person@example.com')
       })
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('refuses to decide a request another administrator decided meanwhile', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const service = createEnrollmentService(runtime.database, {
+        publicURL: 'https://cloud.example.com',
+        adminRecipients: []
+      })
+      await service.request({ email: 'linus@example.com', name: 'Linus' })
+      const [request] = (await service.list({ search: 'linus' })).enrollments
+      if (!request) throw new Error('Expected the request')
+      await service.review('admin-user', request.id, 'rejected', {})
+
+      // This reviewer still saw it waiting.
+      await expect(
+        service.review('admin-user', request.id, 'approved', { expectedStatus: 'pending' })
+      ).rejects.toMatchObject({ code: 'invalid_enrollment_transition' })
+      expect(await service.statusForEmail('linus@example.com')).toBe('rejected')
     } finally {
       await runtime.close()
     }

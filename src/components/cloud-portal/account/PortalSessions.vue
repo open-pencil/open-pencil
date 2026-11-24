@@ -5,16 +5,21 @@ import IconAppWindow from '~icons/lucide/app-window'
 import IconGlobe from '~icons/lucide/globe'
 import IconLogIn from '~icons/lucide/log-in'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortalDeviceLabels } from '@/app/cloud-portal/devices'
-import { usePortalRows, type PortalTableFeatures } from '@/app/cloud-portal/list'
+import {
+  usePortalRows,
+  type PortalTableFeatures,
+  type PortalColumnMeta
+} from '@/app/cloud-portal/list'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 import AppDataTable from '@/components/ui/table/AppDataTable.vue'
 
+import { portalColumnMeta } from '../table/columns'
 import PortalTextCell from '../table/PortalTextCell.vue'
 import type { PortalDevice, PortalSession, PortalSignIn } from '../types'
 
@@ -40,7 +45,8 @@ const {
 }>()
 const emit = defineEmits<{ revoke: [sessionId: string]; revokeOthers: [] }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const personMessages = useMessages('cloud/portal/person')
 const labels = usePortalDeviceLabels()
 const others = computed(() => sessions.filter((session) => !session.current))
 const confirming = ref<{ kind: 'one'; session: PortalSession } | { kind: 'others' } | null>(null)
@@ -67,7 +73,7 @@ const signedInWith = (device: PortalDevice) =>
 
 const address = {
   header: () => messages.value.columnAddress,
-  meta: { class: 'hidden w-36 whitespace-nowrap text-muted tabular-nums @xl/table:table-cell' }
+  meta: { role: 'tag' } satisfies PortalColumnMeta
 }
 /** A device a session or sign-in came from, with how it signed in under it. */
 function device(entry: PortalDevice, icon: Component, current = false) {
@@ -93,16 +99,16 @@ const sessionTable = usePortalRows(() => sessions, {
     sessionColumn.accessor('ipAddress', { id: 'address', ...address }),
     sessionColumn.accessor('signedInOn', {
       header: () => messages.value.columnSignedIn,
-      meta: { class: 'hidden w-32 whitespace-nowrap text-muted @2xl/table:table-cell' }
+      meta: { role: 'date' }
     }),
     sessionColumn.accessor('lastActive', {
       header: () => messages.value.columnLastActive,
-      meta: { class: 'w-32 whitespace-nowrap text-muted' }
+      meta: { role: 'date', always: true }
     }),
     sessionColumn.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px text-right', actions: true },
+      meta: { role: 'actions' },
       cell: ({ row: { original: session } }) =>
         session.current
           ? null
@@ -133,7 +139,7 @@ const signInTable = usePortalRows(() => signIns, {
     signInColumn.accessor('ipAddress', { id: 'address', ...address }),
     signInColumn.accessor('when', {
       header: () => messages.value.columnWhen,
-      meta: { class: 'w-44 whitespace-nowrap text-muted' }
+      meta: { role: 'date', always: true }
     })
   ])
 })
@@ -163,13 +169,14 @@ function confirm() {
       </template>
       <AppDataTable
         :table="sessionTable"
+        :column-meta="portalColumnMeta"
         :label="messages.activeSessions"
         :loading="loading"
         :loading-label="messages.loading"
         :hidden="manage ? [] : ['actions']"
       >
         <template #empty>
-          <p class="text-center text-xs text-muted">{{ messages.noSessions }}</p>
+          <p class="text-center text-xs text-muted">{{ personMessages.noSessions }}</p>
         </template>
       </AppDataTable>
     </SettingsSection>
@@ -179,6 +186,7 @@ function confirm() {
       <template v-if="manage" #description>{{ messages.recentSignInsDescription }}</template>
       <AppDataTable
         :table="signInTable"
+        :column-meta="portalColumnMeta"
         :label="messages.recentSignIns"
         :loading="loading"
         :loading-label="messages.loading"

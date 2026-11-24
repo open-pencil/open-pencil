@@ -7,7 +7,7 @@ import {
   RELAY_SERVER_PEER,
   type CollaborationTicket
 } from '@open-pencil/cloud/contract'
-import { minOf } from '@open-pencil/scene-graph/arrays'
+import { minOf } from '@open-pencil/std/arrays'
 
 import type { RoomImageStore } from '@/app/collab/images'
 import { leaveRoom, openDocumentRoom, roomForStore } from '@/app/collab/rooms'
@@ -26,6 +26,7 @@ import {
 import { onStorageWorkspaceEvent } from '@/app/storage/workspace/events'
 import { allTabs, getTabForStore, getTabsSnapshot, reloadStorageDocumentInTab } from '@/app/tabs'
 
+import { cloudCommentsChanged } from '../comments/followers'
 import { isCloudBinding } from '../documents/status'
 import { cloudConnection, cloudConnections, type CloudSessionState } from '../sessions/connection'
 import { cloudShareTarget } from '../sharing/document'
@@ -258,6 +259,8 @@ export function openCloudDocumentRoom(
     followRelay(store, session)
     // Someone named, renamed, or saved a checkpoint anywhere: an open history loads it again.
     onScopeDispose(session.onVersionsChanged(() => versionsChanged(store)))
+    // Someone changed a comment thread: the tab fetches it from the server, which keeps them.
+    onScopeDispose(session.onCommentsChanged((threadId) => cloudCommentsChanged(store, threadId)))
     const stopSynced = session.onSynced((peerId) => {
       if (peerId !== RELAY_SERVER_PEER) return
       stopSynced()
@@ -514,7 +517,13 @@ async function rejoinCloudRoom(store: EditorStore): Promise<void> {
  * Sessions that ended for good, unlike a check in progress or a server out of reach for now; one
  * whose terms changed ends until they are accepted, and its rooms with it.
  */
-const ENDED: ReadonlySet<CloudSessionState> = new Set(['signed-out', 'expired', 'closed', 'terms'])
+const ENDED: ReadonlySet<CloudSessionState> = new Set([
+  'signed-out',
+  'expired',
+  'closed',
+  'two-step',
+  'terms'
+])
 
 /**
  * Whether the tab's room was joined as someone the server no longer has signed in here: a session

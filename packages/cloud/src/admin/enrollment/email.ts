@@ -59,10 +59,11 @@ export async function enqueueEnrollmentReview(
   }
 ): Promise<void> {
   if (!options.email) return
+  const kind = `enrollment-${input.status}` as const
   await options.email.enqueue(
     {
-      idempotencyKey: `enrollment-${input.status}/${input.enrollmentId}/${input.reviewedAt.toISOString()}`,
-      kind: `enrollment-${input.status}`,
+      idempotencyKey: `${kind}/${input.enrollmentId}/${input.reviewedAt.toISOString()}`,
+      kind,
       recipientEmail: input.recipientEmail,
       payload: {
         name: input.name,

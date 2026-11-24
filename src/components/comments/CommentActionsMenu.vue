@@ -9,7 +9,7 @@ import {
 import { computed } from 'vue'
 
 import type { CommentThread } from '@open-pencil/scene-graph'
-import { useCommentMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useComments } from '@/app/comments/use'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
@@ -32,8 +32,8 @@ const {
 }>()
 
 const comments = useComments()
-const messages = useCommentMessages()
-const common = useCommonMessages()
+const messages = useMessages('comments')
+const common = useMessages('common')
 const { copy } = useClipboard({ legacy: true })
 const { showActionToast } = useActionToast()
 const menuCls = useMenuUI({ item: 'justify-start gap-2' })
@@ -74,9 +74,10 @@ async function copyText() {
     <icon-lucide-copy :class="menuCls.icon" />
     <span>{{ messages.copyText }}</span>
   </component>
-  <component :is="Separator" :class="menuCls.separator" />
+  <component v-if="comments.canDelete(thread.id)" :is="Separator" :class="menuCls.separator" />
   <component
     :is="Item"
+    v-if="comments.canDelete(thread.id)"
     :class="menuCls.item"
     data-command="comment-delete"
     @select="comments.requestDelete(thread.id)"

@@ -58,7 +58,11 @@ export interface NodeChangeObserver {
   resume?: () => void
 }
 
-export type DocumentColorSpace = 'srgb' | 'display-p3'
+/**
+ * A color profile: the one a document's colors are stored in, or the one they are shown or
+ * exported in. Figma files are sRGB or Display P3.
+ */
+export type ColorProfile = 'srgb' | 'display-p3'
 
 /** What a document is for, as Figma keeps design files and FigJam boards apart. */
 export type DocumentKind = 'design' | 'board'
@@ -70,6 +74,11 @@ export interface FigmaSourcePayload {
   layout: FigmaLayoutMetadata | null
   symbolOverrides: unknown[]
   componentPropAssignments: unknown[]
+  /**
+   * An instance's saved assignments of slot content that no layer shows, as when its variant
+   * has no frame for the slot. Figma keeps them, and the content, for a variant that does.
+   */
+  hiddenSlotAssignments: unknown[]
   derivedSymbolData: unknown[]
   derivedSymbolDataLayoutVersion: number | null
   uniformScaleFactor: number | null
@@ -186,6 +195,17 @@ export interface GradientStop {
 
 export type GradientTransform = Matrix
 
+/** Figma's adjustments of an image paint, each from -1 to 1; 0 leaves the image as it is. */
+export interface ImageFilters {
+  exposure?: number
+  contrast?: number
+  saturation?: number
+  temperature?: number
+  tint?: number
+  highlights?: number
+  shadows?: number
+}
+
 export interface Fill {
   type: FillType
   color: Color
@@ -203,6 +223,8 @@ export interface Fill {
   imageTransform?: GradientTransform
   /** Clockwise turn of a Fill, Fit or Tile image, in multiples of 90°; a crop holds its own. */
   imageRotation?: number
+  /** An image's adjustments, in Figma's plugin API units. */
+  filters?: ImageFilters
   sourceNodeId?: string
   scale?: number
   spacing?: number
@@ -287,6 +309,33 @@ export interface ProgressiveBlur {
   endOffset: Vector
 }
 
+/**
+ * A Noise effect's grain, in Figma's plugin terms: `MONOTONE` grains in the effect's colour,
+ * `DUOTONE` in it and `secondaryColor`, `MULTITONE` in many colours at `opacity`. `noiseSize` is a
+ * grain's size in px, which Figma keeps within 0 to 100, and `density` how much of the layer the
+ * grains cover, 0 to 1. `seed` picks the pattern; Figma's plugin API neither shows nor sets it.
+ */
+export interface NoiseEffectParams {
+  noiseType: NoiseType
+  noiseSize: Vector
+  density: number
+  secondaryColor?: Color
+  opacity?: number
+  seed?: number
+}
+
+/**
+ * A Texture effect's grain, which roughens the layer's edges: `noiseSize` is the grain's size in
+ * px, within 0 to 100 as Figma keeps it, and `clipToShape` keeps the roughened layer inside its
+ * own outline. The effect's `radius` is how far the grain moves the edges. `.fig` files name the
+ * effect `GRAIN`.
+ */
+export interface TextureEffectParams {
+  noiseSize: Vector
+  clipToShape: boolean
+  seed?: number
+}
+
 export interface Effect {
   type:
     | 'DROP_SHADOW'
@@ -295,6 +344,8 @@ export interface Effect {
     | 'BACKGROUND_BLUR'
     | 'FOREGROUND_BLUR'
     | 'GLASS'
+    | 'NOISE'
+    | 'TEXTURE'
   color: Color
   offset: Vector
   radius: number
@@ -306,6 +357,10 @@ export interface Effect {
   glass?: GlassEffectParams
   /** Set on a layer or background blur that is progressive, and only there. */
   progressive?: ProgressiveBlur
+  /** Set on a `NOISE` effect, and only there. */
+  noise?: NoiseEffectParams
+  /** Set on a `TEXTURE` effect, and only there. */
+  texture?: TextureEffectParams
 }
 
 export type ConstraintType = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'SCALE'
@@ -654,6 +709,8 @@ export interface CommentReply {
   author: string
   /** The author's collaboration color when they wrote it, for their avatar. */
   authorColor?: Color
+  /** The agent that wrote it, for `author` or as itself. */
+  agent?: string
   /** Markdown: bold, italic, strikethrough, links and lists. */
   text: string
   createdAt: string
@@ -678,6 +735,8 @@ export interface CommentThread {
   author: string
   /** The author's collaboration color when they wrote it, for their avatar. */
   authorColor?: Color
+  /** The agent that wrote it, for `author` or as itself. */
+  agent?: string
   /** Markdown: bold, italic, strikethrough, links and lists. */
   text: string
   createdAt: string
@@ -1133,6 +1192,11 @@ export interface Variable {
   key?: string
   /** Published library version (from NodeChange.version). Used for assetRef resolution in colorVar. */
   version?: string
+  /**
+   * Deleted as Figma deletes a variable: gone from its collection's `variableIds` and from every
+   * list of variables, while layers bound to it still resolve it and the file keeps it.
+   */
+  deleted?: true
 }
 
 /** Scalar numeric node fields accepted by numeric property controls; some may also be null. */
@@ -1147,6 +1211,12 @@ export type NumericNodeProperty = {
 export interface VariableCollectionMode {
   modeId: string
   name: string
+  /**
+   * The library mode this one came from, for a mode of a collection copied from a library. A
+   * library that renames its mode renames this one with it, so the layers and the document set
+   * to it keep following the library.
+   */
+  libraryModeId?: string
   /**
    * Where the mode applies in CSS: a selector (`[data-theme="dark"]`, `.compact`) or an
    * at-rule prelude (`@media (max-width: 640px)`). Absent means the default for its axis.
@@ -1176,6 +1246,11 @@ export interface VariableCollection {
   key?: string
   /** Published library version, which references by key carry with it. */
   version?: string
+  /**
+   * Deleted as Figma deletes a collection: gone from every list of collections, with its variables
+   * deleted too, while layers bound to them still resolve them and the file keeps them.
+   */
+  deleted?: true
 }
 
 /** Whether a collection is a library's copy, which takes no variables or modes of the file's. */

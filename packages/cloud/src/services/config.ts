@@ -67,6 +67,20 @@ const servicesConfigSchema = v.object({
   }),
   catalog: v.object({
     default_model: textSchema,
+    /**
+     * The model for each of the editor's roles. Design left out is the default model; Review and
+     * Fast left out follow Design, and Vision left out does too when Design reads images.
+     */
+    // Strict, so a misspelled role fails at start instead of quietly following Design.
+    roles: v.optional(
+      v.strictObject({
+        design: v.optional(textSchema),
+        review: v.optional(textSchema),
+        fast: v.optional(textSchema),
+        vision: v.optional(textSchema)
+      }),
+      {}
+    ),
     models: v.pipe(v.array(modelSchema), v.minLength(1))
   })
 })
@@ -88,16 +102,41 @@ function catalogFrom(input: v.InferOutput<typeof servicesConfigSchema>['catalog'
   if (!ids.has(input.default_model)) {
     throw new ServicesConfigError(`Default model ${input.default_model} is not in the catalog`)
   }
+  const models = input.models.map((model) => ({
+    id: model.id,
+    label: model.label,
+    creditsPerMillionInputTokens: model.credits_per_million_input_tokens,
+    creditsPerMillionOutputTokens: model.credits_per_million_output_tokens,
+    contextTokens: model.context_tokens,
+    capabilities: { reasoning: model.reasoning, vision: model.vision, tools: model.tools }
+  }))
+  const byID = new Map(input.models.map((model) => [model.id, model]))
+  const role = (name: string, id: string, needs: 'tools' | 'vision' | null) => {
+    const model = byID.get(id)
+    if (!model) throw new ServicesConfigError(`The ${name} model ${id} is not in the catalog`)
+    if (needs && !model[needs]) {
+      throw new ServicesConfigError(`The ${name} model ${id} has no ${needs}`)
+    }
+    return id
+  }
+  // A catalog from before roles, whose default model can't run the chat, recommends nothing
+  // rather than refusing to start; roles named explicitly are always checked.
+  const namesRoles = Object.keys(input.roles).length > 0
+  if (!namesRoles && !byID.get(input.default_model)?.tools) {
+    return v.parse(serviceCatalogSchema, { defaultModelID: input.default_model, models })
+  }
+  const design = role('design', input.roles.design ?? input.default_model, 'tools')
+  // Vision falls back to the design model when it reads images, and is left out when none can.
+  const visionID = input.roles.vision ?? (byID.get(design)?.vision ? design : undefined) ?? null
   return v.parse(serviceCatalogSchema, {
     defaultModelID: input.default_model,
-    models: input.models.map((model) => ({
-      id: model.id,
-      label: model.label,
-      creditsPerMillionInputTokens: model.credits_per_million_input_tokens,
-      creditsPerMillionOutputTokens: model.credits_per_million_output_tokens,
-      contextTokens: model.context_tokens,
-      capabilities: { reasoning: model.reasoning, vision: model.vision, tools: model.tools }
-    }))
+    roleModels: {
+      design,
+      review: role('review', input.roles.review ?? design, null),
+      fast: role('fast', input.roles.fast ?? design, 'tools'),
+      vision: visionID === null ? null : role('vision', visionID, 'vision')
+    },
+    models
   })
 }
 

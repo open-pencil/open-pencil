@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const commentMessageDefaults = {
   comment: 'Comment',
   comments: 'Comments',
@@ -28,8 +26,13 @@ export const commentMessageDefaults = {
   empty: 'No comments yet. Click the canvas to leave one.',
   noMatches: 'No comments match.',
   replyCount: params('Replies: {count}'),
+  clusterCount: params('Comments: {count}'),
   commentDeleted: 'Comment deleted',
-  hideComments: 'Hide comments'
+  hideComments: 'Hide comments',
+  mentionPeople: 'People to mention',
+  unread: 'Unread',
+  notifyMention: 'Mentions in comments',
+  notifyReply: 'Replies to your comments',
+  notifyReplyHint: 'Someone replies in a comment thread you wrote in.',
+  notifyTitle: params('{author} · {document}')
 } as const
-
-export const commentMessages = i18n('comments', commentMessageDefaults)

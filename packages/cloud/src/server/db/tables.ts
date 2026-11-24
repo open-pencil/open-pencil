@@ -1,5 +1,10 @@
 import type { EnrollmentStatus } from '#cloud/admin/enrollment/service'
-import type { CloudSignInMethod, DocumentPermission, WorkspaceRole } from '#cloud/contract'
+import type {
+  CloudSignInMethod,
+  CommentEmailSetting,
+  DocumentPermission,
+  WorkspaceRole
+} from '#cloud/contract'
 import type {
   EmailLocale,
   TransactionalEmailKind,
@@ -112,6 +117,66 @@ export interface DocumentTable {
 }
 
 /** A report someone filed about a document shared with them by link; see migration 032. */
+/** A comment pin on a document: where it sits, and whether it is resolved. */
+export interface CommentThreadTable {
+  id: string
+  documentId: string
+  pageId: string
+  pageName: string | null
+  nodeId: string | null
+  nodeName: string | null
+  offsetX: number | null
+  offsetY: number | null
+  x: number
+  y: number
+  createdBy: string
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
+  resolvedAt: TimestampColumn | null
+  resolvedBy: string | null
+}
+
+/** A thread's first message or a reply to it. */
+export interface CommentTable {
+  id: string
+  threadId: string
+  /** Null only for a comment brought in from a file, which has `importedAuthorName` instead. */
+  authorId: string | null
+  importedAuthorName: string | null
+  agent: string | null
+  body: string
+  createdAt: TimestampColumn
+  editedAt: TimestampColumn | null
+}
+
+/** Someone a comment names, by account. */
+export interface CommentMentionTable {
+  commentId: string
+  userId: string
+  createdAt: TimestampColumn
+}
+
+/** How far an account has read a thread. */
+export interface CommentReadTable {
+  userId: string
+  threadId: string
+  readAt: TimestampColumn
+}
+
+/** An email sent about a comment, counted against each day's budget. */
+export interface CommentEmailTable {
+  id: string
+  senderId: string
+  recipientId: string
+  sentAt: TimestampColumn
+}
+
+export interface NotificationSettingTable {
+  userId: string
+  commentEmails: CommentEmailSetting
+  updatedAt: TimestampColumn
+}
+
 export interface DocumentReportTable {
   id: string
   documentId: string
@@ -253,11 +318,27 @@ export interface PasskeyTable {
   aaguid: string | null
 }
 
+/**
+ * How a session proved its second step: a code, a recovery code, a passkey, or for a desktop app,
+ * a device sign-in that only a session which proved it could approve.
+ */
+export type MFAAssuranceMethod = 'totp' | 'recovery-code' | 'passkey' | 'device'
+
 export interface MFAAssuranceTable {
   sessionId: string
   userId: string
-  method: 'totp' | 'recovery-code' | 'passkey'
+  method: MFAAssuranceMethod
   verifiedAt: TimestampColumn
+}
+
+/** Better Auth's keyed values, which also hold an administrator's sign-in blocks. */
+export interface VerificationTable {
+  id: string
+  identifier: string
+  value: string
+  expiresAt: TimestampColumn
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
 }
 
 export interface SignInTable {
@@ -356,10 +437,24 @@ export interface UploadStorageReservationTable {
 
 export type TransactionalEmailStatus = 'pending' | 'sending' | 'accepted' | 'failed' | 'suppressed'
 
+/**
+ * Kinds that rows may still hold although nothing sends them now: the beta's invitation letter,
+ * which approved the official deployment's waitlist. Delivered ones stay in the outbox as history.
+ */
+export const RETIRED_TRANSACTIONAL_EMAIL_KINDS = ['enrollment-invited'] as const
+export type RetiredTransactionalEmailKind = (typeof RETIRED_TRANSACTIONAL_EMAIL_KINDS)[number]
+
+/** Whether a stored email is one Cloud still sends, rather than a retired kind kept as history. */
+export function isSendableEmailKind(
+  kind: TransactionalEmailKind | RetiredTransactionalEmailKind
+): kind is TransactionalEmailKind {
+  return !(RETIRED_TRANSACTIONAL_EMAIL_KINDS as readonly string[]).includes(kind)
+}
+
 export interface TransactionalEmailTable {
   id: string
   idempotencyKey: string
-  kind: TransactionalEmailKind
+  kind: TransactionalEmailKind | RetiredTransactionalEmailKind
   recipientEmailNormalized: string
   payloadEncrypted: string | null
   /** The language the email is written in. */
@@ -391,6 +486,8 @@ export interface EnrollmentTable {
   reviewNote: string | null
   requestRevision: Generated<number>
   approvedUserId: string | null
+  /** `waitlist` on the requests recorded from openpencil.dev's waitlist for the beta; nothing sets it now. */
+  source: ColumnType<'waitlist' | null, 'waitlist' | null | undefined, 'waitlist' | null>
 }
 
 export interface APIRateLimitTable {
@@ -431,6 +528,7 @@ export interface CloudDatabase {
   passkey: PasskeyTable
   mfaAssurance: MFAAssuranceTable
   signIn: SignInTable
+  verification: VerificationTable
   userPicture: UserPictureTable
   user: AuthUserTable
   apikey: AccessTokenTable
@@ -462,6 +560,12 @@ export interface CloudDatabase {
   upload: UploadTable
   invitationSend: InvitationSendTable
   documentReport: DocumentReportTable
+  commentThread: CommentThreadTable
+  comment: CommentTable
+  commentMention: CommentMentionTable
+  commentRead: CommentReadTable
+  commentEmail: CommentEmailTable
+  notificationSetting: NotificationSettingTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

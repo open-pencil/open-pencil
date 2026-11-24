@@ -8,7 +8,7 @@ import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { resolveEditorProfile } from '@open-pencil/core'
 import { formatShortcut } from '@open-pencil/vue/editor/commands'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { floatingChatOpen } from '@/app/ai/chat/panel'
 import { provideTabEditorStore } from '@/app/editor/active-store'
@@ -133,7 +133,8 @@ const showPanels = computed(() => store.state.showUI && !canvasAlone.value)
  * Reka (2.11) attaches a resize handle's arrow-key listener in an effect that runs before a
  * handle mounted into an existing splitter is in the document, and never again, so handles that
  * come back with the panels could not be resized from the keyboard. They start disabled and are
- * enabled once rendered, which runs that effect again.
+ * enabled once rendered, which runs that effect again. Remove once
+ * https://github.com/unovue/reka-ui/issues/3160 is fixed.
  */
 const handlesReady = ref(false)
 watch(
@@ -144,7 +145,7 @@ watch(
   },
   { immediate: true }
 )
-const { editor } = useI18n()
+const editor = useMessages('editor')
 // Until a room's document arrives there is nothing to edit, so its screen replaces the editor.
 const { pending: roomPending } = useRoomActions()
 </script>

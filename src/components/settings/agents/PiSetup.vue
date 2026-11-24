@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { piSetupView, type CompanionCheck, type PiSetupState } from '@/app/ai/agents/setup/view'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
@@ -17,7 +17,8 @@ import { useSetupProblemMessage } from './problem'
 
 const { setup } = defineProps<{ setup: PiSetupState }>()
 const emit = defineEmits<{ check: []; installCompanion: []; installBridge: [] }>()
-const { ai, common } = useI18n()
+const ai = useMessages('ai')
+const common = useMessages('common')
 const styles = tv(theme)()
 const setupProblemMessage = useSetupProblemMessage()
 

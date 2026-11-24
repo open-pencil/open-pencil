@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useModelRoleAssignments } from '@/app/ai/models/settings/assignments'
 import { AI_MODEL_ROLES, isModelRoleInUse } from '@/app/ai/models/types'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
+import { SETTINGS_SELECT_WIDTH } from '@/theme/settings/controls'
 
 import { useModelRoleLabels } from './role-labels'
 
-const { ai } = useI18n()
+const ai = useMessages('ai')
 
 const roleLabel = useModelRoleLabels()
 const roleDefinitions = computed(() =>
@@ -33,7 +34,7 @@ const { assignmentValue, optionsForRole, updateAssignment } = useModelRoleAssign
     >
       <AppSelect
         v-if="definition.inUse"
-        class="w-full sm:w-52"
+        :class="SETTINGS_SELECT_WIDTH"
         :model-value="assignmentValue(definition.role)"
         :options="optionsForRole(definition.role)"
         :label="definition.label"

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, ref } from 'vue'
 
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { errorMessage, isAbortError } from '@open-pencil/std/errors'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { ChatReference } from '@/app/ai/chat/references/link'
 import { openReference, resolveReference } from '@/app/ai/chat/references/resolve'
@@ -24,7 +25,7 @@ const { reference, interactive: clickable = true } = defineProps<{
 }>()
 const interactive = computed(() => clickable && reference.kind !== 'command')
 
-const ai = useAIMessages()
+const ai = useMessages('ai')
 const ui = chatReferenceTheme()
 const live = inject(CHAT_NODES_LIVE, ref(true))
 const activeStore = useActiveEditorStoreRef()
@@ -60,10 +61,10 @@ async function open() {
     await openReference(store, reference)
   } catch (error) {
     // A newer page switch supersedes this one.
-    if (error instanceof Error && error.name === 'AbortError') return
+    if (isAbortError(error)) return
     toast.error(
       notificationMessages.get().operationFailed({
-        error: error instanceof Error ? error.message : String(error)
+        error: errorMessage(error)
       })
     )
   }

@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
+import { mcpClientToken } from '@open-pencil/mcp/tools'
 import { fetchStub } from '@open-pencil/test-support/fetch'
 
+import { getMCPClientToken } from '@/app/automation/mcp/client-token'
 import { getAutomationHealthFailure } from '@/app/automation/mcp/health'
 import {
   getAutomationAuthToken,
@@ -191,6 +193,30 @@ describe('Tauri MCP spawning', () => {
     expect(String(error)).not.toContain('@open-pencil/mcp@0.15.1')
   })
 
+  test('reports a server of the same minor without client tokens as outdated', async () => {
+    installTauriMockWindow()
+    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: { platform: 'MacIntel', userAgent: 'Macintosh' }
+    })
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      fetchStub(async () => Response.json({ status: 'ok', version: '0.0.0-beta.1' }))
+    )
+    await mockTauriIPC((cmd) => {
+      if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
+      if (cmd === 'plugin:fs|exists') return true
+      return null
+    })
+
+    // Its /mcp would refuse the client token agents get, so the user is told to update it.
+    expect(await spawnMCPIfNeeded()).toBeNull()
+    expect(getAutomationStartupFailure()).toEqual({ code: 'outdated', detail: '0.0.0-beta.1' })
+    const error = await getAutomationAuthToken().catch((reason: unknown) => reason)
+    expect(String(error)).toContain('npm i -g @open-pencil/mcp@0.0.0-test')
+  })
+
   test('spawns MCP server with shell plugin when health check is missing', async () => {
     installTauriMockWindow()
     Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
@@ -209,7 +235,8 @@ describe('Tauri MCP spawning', () => {
             status: 'ok',
             version: '0.0.0-test',
             authRequired: true,
-            discoveryPath: DISCOVERY_PATH
+            discoveryPath: DISCOVERY_PATH,
+            clientTokens: true
           }),
           { status: 200 }
         )
@@ -261,6 +288,8 @@ describe('Tauri MCP spawning', () => {
 
     const handle = await spawnMCPIfNeeded({ earlyExitMs: 5, healthPollMs: 5 })
     await expect(getAutomationAuthToken()).resolves.toBe('discovery-token')
+    // An agent gets the client token derived from the server's, never the server's own.
+    await expect(getMCPClientToken()).resolves.toBe(await mcpClientToken('discovery-token'))
     spawned.onEvent?.({ event: 'Stderr', payload: [119, 97, 114, 110] })
     handle?.disconnect()
     await Promise.resolve()
@@ -296,7 +325,8 @@ describe('Tauri MCP spawning', () => {
             status: 'ok',
             version: '0.0.0-test',
             authRequired: true,
-            discoveryPath: DISCOVERY_PATH
+            discoveryPath: DISCOVERY_PATH,
+            clientTokens: true
           }),
           { status: 200 }
         )

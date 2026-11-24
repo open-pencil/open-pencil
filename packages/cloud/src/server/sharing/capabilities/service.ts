@@ -14,7 +14,7 @@ import { workspacePolicyContext } from '#cloud/server/policy/workspace'
 import type { Kysely, UpdateObject } from 'kysely'
 import * as v from 'valibot'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { advanceCollaborationEpoch, requireSharingAccess } from '../access'
 import { shareContract } from '../contracts'

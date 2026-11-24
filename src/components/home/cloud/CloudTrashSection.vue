@@ -3,7 +3,8 @@ import { useAsyncState, useNow } from '@vueuse/core'
 import { computed, ref, shallowRef, watch } from 'vue'
 
 import type { TrashedDocument } from '@open-pencil/cloud/contract'
-import { useCloudMessages, useI18n } from '@open-pencil/vue/i18n'
+import { DAY_MS } from '@open-pencil/std/timing'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { findCloudServer } from '@/app/cloud/servers/store'
 import { cloudAPIClient, cloudConnection } from '@/app/cloud/sessions/connection'
@@ -14,8 +15,6 @@ import { AppConfirmationDialog } from '@/components/ui/dialog'
 import CloudTrashView from './CloudTrashView.vue'
 import type { CloudTrashRow } from './types'
 
-const DAY_MS = 24 * 60 * 60_000
-
 /** Trash of the server Home shows: what the person may restore, across their workspaces. */
 const { serverId, query = '' } = defineProps<{
   serverId: string
@@ -23,8 +22,8 @@ const { serverId, query = '' } = defineProps<{
   query?: string
 }>()
 
-const { locale } = useI18n()
-const t = useCloudMessages()
+const { locale } = useLocale()
+const t = useMessages('cloud/editor')
 const dates = useDateFormat()
 const now = useNow({ interval: 60_000 })
 

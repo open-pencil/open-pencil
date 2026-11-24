@@ -1,1 +1,0 @@
-- PNG, JPG and WebP exports no longer blur an image placed at its own size on whole pixels (#1859).

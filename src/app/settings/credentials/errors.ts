@@ -1,4 +1,5 @@
-import { credentialsMessages } from '@open-pencil/vue/i18n'
+import { errorMessage } from '@open-pencil/std/errors'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { CredentialStoreError } from '@/app/settings/credentials/types'
 
@@ -8,9 +9,9 @@ import { CredentialStoreError } from '@/app/settings/credentials/types'
  */
 export function settingsErrorMessage(cause: unknown): string {
   if (cause instanceof CredentialStoreError) {
-    const messages = credentialsMessages.get()
+    const messages = messageStores.credentials.get()
     if (cause.code === 'locked') return messages.storeLocked
     if (cause.code === 'unavailable') return messages.storeUnavailable
   }
-  return cause instanceof Error ? cause.message : String(cause)
+  return errorMessage(cause)
 }

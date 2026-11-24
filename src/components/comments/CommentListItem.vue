@@ -4,14 +4,14 @@ import { computed } from 'vue'
 
 import type { CommentThread } from '@open-pencil/scene-graph'
 import { liveReplies } from '@open-pencil/scene-graph/comments'
-import { useCommentMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { commentPreview } from '@/app/comments/format'
+import RelativeTime from '@/components/date/RelativeTime.vue'
 import AvatarStack from '@/components/presence/AvatarStack.vue'
 import type { PresencePersonRow } from '@/components/presence/rows'
 
 import { useCommentAuthor } from './author'
-import CommentTime from './CommentTime.vue'
 import { comments } from './ui'
 
 /** A thread in the comments list: who took part, where it is, and how it starts. */
@@ -19,20 +19,23 @@ const {
   thread,
   number,
   pageName = '',
-  active = false
+  active = false,
+  unread = false
 } = defineProps<{
   thread: CommentThread
   /** Its place among the document's threads, as Figma numbers them. */
   number: number
   pageName?: string
   active?: boolean
+  /** Someone else wrote in it since this account read it. */
+  unread?: boolean
 }>()
 
 const emit = defineEmits<{ select: [] }>()
 
 defineSlots<{ actions?(): unknown }>()
 
-const messages = useCommentMessages()
+const messages = useMessages('comments')
 const author = useCommentAuthor()
 const ui = comments()
 
@@ -53,6 +56,7 @@ const people = computed<PresencePersonRow[]>(() =>
     data-slot="comment-list-item"
     :data-active="active || undefined"
     :data-resolved="thread.resolved || undefined"
+    :data-unread="unread || undefined"
     :class="ui.item()"
   >
     <button type="button" :class="ui.itemButton()" @click="emit('select')">
@@ -65,8 +69,11 @@ const people = computed<PresencePersonRow[]>(() =>
         <span :class="ui.itemPlace()">#{{ number }} · {{ pageName }}</span>
       </span>
       <span :class="ui.itemMeta()">
+        <span v-if="unread" :class="ui.unreadDot({ inline: true })">
+          <span class="sr-only">{{ messages.unread }}</span>
+        </span>
         <span :class="ui.messageAuthor()">{{ author.name(thread.author) }}</span>
-        <CommentTime :at="thread.createdAt" :class="ui.messageTime()" />
+        <RelativeTime :at="thread.createdAt" :class="ui.messageTime()" />
       </span>
       <span :class="ui.itemText()">{{ commentPreview(thread.text) }}</span>
       <span v-if="replies.length" :class="ui.itemReplies()">

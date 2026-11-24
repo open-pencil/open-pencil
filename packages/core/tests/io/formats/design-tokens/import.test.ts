@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type ColorProfile } from '@open-pencil/scene-graph'
 
 import {
   defaultTokenImportOptions,
@@ -16,8 +16,9 @@ function files(entries: Record<string, unknown>): DesignTokenSourceFile[] {
   }))
 }
 
-function plan(input: DesignTokenSourceFile[]) {
+function plan(input: DesignTokenSourceFile[], profile: ColorProfile = 'srgb') {
   const graph = new SceneGraph()
+  graph.documentColorSpace = profile
   const bundle = readDesignTokens(input)
   return { bundle, plan: planTokenImport(graph, bundle, defaultTokenImportOptions(graph, bundle)) }
 }
@@ -190,6 +191,30 @@ describe('planning an import', () => {
     expect(byName.weight).toMatchObject({ values: [{ value: 600 }], scopes: ['FONT_STYLE'] })
     expect(byName.quick).toMatchObject({ unit: 'ms', values: [{ value: 150 }] })
     expect(byName.brand.values[0]).toMatchObject({ kind: 'literal' })
+  })
+
+  test("colors keep sRGB numbers and convert other spaces into the document's profile", () => {
+    const tokens = files({
+      'Tokens/Default.tokens.json': {
+        hex: { $type: 'color', $value: '#ff0000' },
+        vivid: { $type: 'color', $value: { colorSpace: 'display-p3', components: [1, 0, 0] } }
+      }
+    })
+    const values = (profile: ColorProfile) =>
+      Object.fromEntries(
+        plan(tokens, profile).plan.collections[0].variables.map((variable) => [
+          variable.name,
+          variable.values[0]
+        ])
+      )
+    const p3 = values('display-p3')
+    // Hex is the document's own numbers, as Figma takes it; a P3 color is P3 red in a P3 document.
+    expect(p3.hex).toMatchObject({ value: { r: 1, g: 0, b: 0 } })
+    expect(p3.vivid).toMatchObject({ value: { r: 1, g: 0, b: 0 } })
+    // An sRGB document cannot show it, so it takes the nearest red sRGB can, in range.
+    const srgb = values('srgb').vivid as { value: { r: number; g: number; b: number } }
+    expect(srgb.value.r).toBeLessThanOrEqual(1)
+    expect(srgb.value.g).toBeGreaterThanOrEqual(0)
   })
 
   test('an untyped alias takes the type of what it points at', () => {

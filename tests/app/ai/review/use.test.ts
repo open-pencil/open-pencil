@@ -4,6 +4,7 @@ import type { UIMessage } from 'ai'
 import { shallowRef } from 'vue'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { createDeferred } from '@open-pencil/std/async'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 import { localeSetting } from '@open-pencil/vue/i18n'
@@ -15,7 +16,6 @@ import type { ReviewDependencies } from '@/app/ai/review/run'
 import { interfaceLanguage, useChatReview } from '@/app/ai/review/use'
 import { clearToolChanges, setToolChange } from '@/app/ai/tools/changes/store'
 import type { EditorStore } from '@/app/editor/session/create'
-import { createDeferred } from '@/app/runtime/deferred'
 
 function editor() {
   const graph = new SceneGraph()

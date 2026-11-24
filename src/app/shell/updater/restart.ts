@@ -2,9 +2,8 @@ import { emitTo, listen, TauriEvent } from '@tauri-apps/api/event'
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
 import * as v from 'valibot'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
-
-import { createDeferred } from '@/app/runtime/deferred'
+import { createDeferred } from '@open-pencil/std/async'
+import { randomHex } from '@open-pencil/std/random'
 
 import { restartReplySchema } from './schema'
 

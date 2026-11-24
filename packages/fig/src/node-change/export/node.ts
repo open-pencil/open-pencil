@@ -1,9 +1,11 @@
 import { variantSet } from '#fig/document/component/links'
 import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/source-metadata'
+/* eslint-disable max-lines */
+import { bytesToHex } from '@noble/hashes/utils.js'
 import { compact } from 'es-toolkit/array'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { Effect as KiwiEffect, NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReferenceField,
@@ -12,7 +14,6 @@ import type {
   SceneNode,
   VariantPropSpec
 } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { variantOptions } from '@open-pencil/scene-graph/components'
 import {
   DEFAULT_STROKE_MITER_LIMIT,
@@ -28,11 +29,11 @@ import {
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
+import { appendAll } from '@open-pencil/std/arrays'
 
-/* eslint-disable max-lines */
-import { bytesToHex } from '../bytes'
 import { exportCanvasGuides } from '../canvas-guides'
 import { instanceExportAddress, snapshotInstanceGeometry } from '../instance/geometry'
+import { modeledEffectIndexes } from '../paint'
 import {
   applyExportSettingsPluginData,
   applyLibrarySourcePluginData,
@@ -67,7 +68,7 @@ import { writeOwnInstanceName } from './instance-name'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
 import { boundPropertyGuid, variantPropertyCopies, writtenSetProperties } from './property-copies'
 import { exportedNode } from './resolved-bindings'
-import { slotDefinitionFields } from './slots'
+import { hiddenSlotAssignments, slotDefinitionFields } from './slots'
 import { serializeText } from './text'
 import { applyVariableModes } from './variable-modes'
 
@@ -742,11 +743,15 @@ function applyComponentMetadata(
   }
 
   applyParameterReferences(nc, parameterRefs)
-  const componentPropAssignments = compact(
+  const shownAssignments = compact(
     Object.entries(node.componentPropertyAssignments).map(([propertyId, value]) =>
       componentPropAssignment(context, node, propertyId, value, localIdCounter)
     )
   )
+  const componentPropAssignments = [
+    ...shownAssignments,
+    ...hiddenSlotAssignments(node, shownAssignments)
+  ]
   if (
     shouldSerializeRawBackedField(
       node,
@@ -804,7 +809,9 @@ const SUPPORTED_NORMALIZED_EFFECT_TYPES = new Set([
   'LAYER_BLUR',
   'BACKGROUND_BLUR',
   'FOREGROUND_BLUR',
-  'GLASS'
+  'GLASS',
+  'NOISE',
+  'GRAIN'
 ])
 
 function hasRawUnsupportedEffects(node: SceneNode): boolean {
@@ -819,6 +826,36 @@ function hasRawUnsupportedEffects(node: SceneNode): boolean {
         !SUPPORTED_NORMALIZED_EFFECT_TYPES.has(String(effect.type))
     )
   )
+}
+
+/**
+ * `effects` with the record's own effects the scene graph does not model, such as a repeat, put
+ * back where they sat among the modeled ones. Editing a layer's effects makes its raw list stale,
+ * but those entries were never part of the edit.
+ */
+function withUnmodeledRawEffects(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  effects: KiwiEffect[]
+): KiwiEffect[] {
+  const raw = node.source.fig.rawNodeFields.effects
+  if (!Array.isArray(raw)) return effects
+  const recorded = (
+    materializeFigmaPayload({ effects: raw }, context.blobs, {
+      blobIndexByHex: context.blobIndexByHex,
+      includePaintVariables: true
+    }) as Partial<KiwiNodeChange>
+  ).effects
+  if (!recorded) return effects
+  const indexes = modeledEffectIndexes(recorded)
+  if (!indexes.includes(null)) return effects
+  const merged: KiwiEffect[] = []
+  let next = 0
+  recorded.forEach((effect, index) => {
+    if (indexes[index] === null) merged.push(effect)
+    else if (next < effects.length) merged.push(effects[next++])
+  })
+  return merged.concat(effects.slice(next))
 }
 
 function nodeForGeometryExport(node: SceneNode): SceneNode {
@@ -866,6 +903,15 @@ function applySharedStyleProps(
   if (node.guides.length > 0) nc.guides = exportCanvasGuides(node.guides)
 }
 
+/**
+ * The dash a record writes: a layer's strokes draw with their own pattern, as they do with their
+ * weight and alignment, and a layer without strokes keeps its pattern for the next stroke.
+ */
+function nodeDashPattern(node: SceneNode): number[] {
+  if (node.strokes.length === 0) return node.dashPattern
+  return node.strokes[0].dashPattern ?? []
+}
+
 function applyNodeVisualProps(
   context: SceneNodeToKiwiContext,
   node: SceneNode,
@@ -886,8 +932,13 @@ function applyNodeVisualProps(
   if (node.type === 'POLYGON' || node.type === 'STAR') nc.count = node.pointCount
   if (node.type === 'STAR') nc.starInnerScale = node.starInnerRadius
 
-  if (node.effects.length > 0 && !hasRawUnsupportedEffects(node)) {
-    nc.effects = createEffects(context, node)
+  if (!hasRawUnsupportedEffects(node)) {
+    const effects = withUnmodeledRawEffects(
+      context,
+      node,
+      node.effects.length > 0 ? createEffects(context, node) : []
+    )
+    if (effects.length > 0) nc.effects = effects
   }
 
   if (node.type === 'TEXT') serializeText(context, node, nc)
@@ -904,7 +955,8 @@ function applyNodeVisualProps(
   if (node.strokeMiterLimit !== DEFAULT_STROKE_MITER_LIMIT || 'miterLimit' in rawNodeFields) {
     nc.miterLimit = node.strokeMiterLimit
   }
-  if (node.dashPattern.length > 0) nc.dashPattern = node.dashPattern
+  const dashPattern = nodeDashPattern(node)
+  if (dashPattern.length > 0 || 'dashPattern' in rawNodeFields) nc.dashPattern = dashPattern
   if (node.arcData) {
     nc.arcData = {
       startingAngle: node.arcData.startingAngle,

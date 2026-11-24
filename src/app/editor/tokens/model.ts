@@ -334,7 +334,7 @@ export function cssReferenceCandidates(
   variable: Variable
 ): CSSReferenceCandidate[] {
   const names = variableCSSNames(collectionVariables(graph))
-  return [...graph.variables.values()].flatMap((candidate) => {
+  return graph.getLiveVariables().flatMap((candidate) => {
     const cssName = names.get(candidate.id)
     if (candidate.id === variable.id || candidate.type !== 'FLOAT' || !cssName) return []
     const number = graph.resolveNumberVariable(candidate.id)
@@ -392,7 +392,7 @@ function referenceCandidates(
   variable: Variable,
   types: readonly Variable['type'][]
 ): AliasCandidate[] {
-  return [...graph.variables.values()].flatMap((candidate) => {
+  return graph.getLiveVariables().flatMap((candidate) => {
     if (!types.includes(candidate.type) || aliasesTo(graph, candidate.id, variable.id)) return []
     const number =
       candidate.type === 'FLOAT' ? graph.resolveNumberVariable(candidate.id) : undefined

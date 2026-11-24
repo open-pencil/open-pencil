@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue'
 
-import { useCloudPortalMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import type { PortalListRequest } from '@/app/cloud-portal/list'
@@ -14,8 +14,8 @@ import type { AccessRequestStatus } from '../types'
 
 const emit = defineEmits<{ changed: [] }>()
 const portal = usePortal()
-const messages = useCloudPortalMessages()
-const { locale } = useI18n()
+const messages = useMessages('cloud/portal')
+const { locale } = useLocale()
 const requests = useTemplateRef('requests')
 
 async function load(request: PortalListRequest<AccessRequestStatus>) {

@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const settingsMessageDefaults = {
   appearance: 'Appearance',
   interfaceScale: 'Interface size',
@@ -72,6 +70,11 @@ export const settingsMessageDefaults = {
   snapToPixelGridDescription:
     'Align vector points, moved layers, and resized edges to whole pixels.',
   temporaryDisableSnappingHint: 'Hold Control while dragging to temporarily disable snapping.',
+  importing: 'Import',
+  importingDescription: 'Control how HTML and other files become layers.',
+  nameImportedIcons: 'Name icons in imported HTML',
+  nameImportedIconsDescription:
+    'Inline SVG that draws an Iconify icon becomes that icon, which you can swap and recolor. Downloads an icon index and asks Iconify for the candidate icons by name; the SVG itself is never sent.',
   navigation: 'Navigation',
   navigationDescription: 'Control how the canvas moves when you scroll and zoom.',
   zoomSpeed: 'Zoom speed',
@@ -83,6 +86,7 @@ export const settingsMessageDefaults = {
   media: 'Media',
   mcp: 'MCP',
   toolAccess: 'Tool access',
+  prompts: 'Prompts',
   capabilityShow: 'Show',
   capabilityShowAll: 'All',
   skills: 'Skills',
@@ -111,5 +115,3 @@ export const settingsMessageDefaults = {
   mobilePanelNavigation: 'Mobile panel navigation',
   notifications: 'Notifications'
 } as const
-
-export const settingsMessages = i18n('settings', settingsMessageDefaults)

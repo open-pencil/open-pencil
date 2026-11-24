@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
@@ -11,7 +11,7 @@ import { skeleton } from '@/components/ui/feedback/skeleton'
  */
 const { avatar = false, groups } = defineProps<{ avatar?: boolean; groups: readonly number[] }>()
 const placeholders = skeleton()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 </script>
 
 <template>

@@ -2,12 +2,13 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { effectScope, nextTick, reactive, ref, type EffectScope } from 'vue'
 
+import { createDeferred, type Deferred } from '@open-pencil/std/async'
+
 import type { AgentOffer } from '@/app/ai/agents/acp/oneoff'
 import type { AIModelProfileDraft } from '@/app/ai/models'
 import type { AgentModelSource } from '@/app/ai/models/settings/profile-editor/agent'
 import { useProfileModelSelection } from '@/app/ai/models/settings/profile-editor/selection'
 import { createModelProfileDraft } from '@/app/ai/models/store'
-import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
 const labels = ref({
   recommendedModels: 'Recommended',
@@ -16,7 +17,8 @@ const labels = ref({
   latest: 'Latest',
   customModelGroup: 'Custom',
   customModel: 'Custom model…',
-  agentDefaultModel: 'Agent default'
+  agentDefaultModel: 'Agent default',
+  thinkingLevel: 'Thinking level'
 })
 
 const claudeCode: AgentOffer = {
@@ -25,7 +27,8 @@ const claudeCode: AgentOffer = {
     { id: 'default', name: 'Default' },
     { id: 'opus', name: 'Opus' },
     { id: 'sonnet', name: 'Sonnet' }
-  ]
+  ],
+  choices: {}
 }
 
 const scopes: EffectScope[] = []
@@ -150,5 +153,99 @@ describe('the model of a coding agent’s profile in the editor', () => {
 
   test('shows the agent’s default for a profile that names none', () => {
     expect(editor({ providerID: 'acp:claude-code' }).shown()).toBe('Agent default')
+  })
+})
+
+describe('the effort and modes of a coding agent’s profile in the editor', () => {
+  const withChoices: AgentOffer = {
+    ...claudeCode,
+    choices: {
+      '': {
+        thought_level: {
+          name: 'Effort',
+          current: 'default',
+          values: [
+            { id: 'default', name: 'Default' },
+            { id: 'max', name: 'Max' }
+          ]
+        },
+        mode: {
+          name: 'Mode',
+          current: 'auto',
+          values: [
+            { id: 'auto', name: 'Auto' },
+            { id: 'plan', name: 'Plan' }
+          ]
+        }
+      }
+    }
+  }
+
+  /** The values each select lists, by its option's category. */
+  function listed(profile: ReturnType<typeof editor>) {
+    return profile.selection.agentOptionControls.value.map((control) => [
+      control.category,
+      control.options.map((option) => option.value)
+    ])
+  }
+
+  test('lists the agent’s own pick first, then each option’s values by the agent’s names', async () => {
+    const profile = editor()
+    await profile.choose('acp:claude-code')
+    await profile.answer(withChoices)
+    const [effort, mode] = profile.selection.agentOptionControls.value
+    const agentDefault = effort.options[0].value
+    expect(listed(profile)).toEqual([
+      ['thought_level', [agentDefault, 'default', 'max']],
+      ['mode', [agentDefault, 'auto', 'plan']]
+    ])
+    expect(mode.options.slice(1).map((option) => option.label)).toEqual(
+      (withChoices.choices['']?.mode?.values ?? []).map((value) => value.name)
+    )
+    profile.selection.setAgentOption('mode', 'plan')
+    expect(profile.draft.agentChoices.mode).toBe('plan')
+    expect(profile.selection.agentOptionValue('mode')).toBe('plan')
+    profile.selection.setAgentOption('mode', agentDefault)
+    expect(profile.draft.agentChoices).toEqual({})
+  })
+
+  test('goes back to the agent’s effort when another model is chosen, and keeps the mode', async () => {
+    const profile = editor()
+    await profile.choose('acp:claude-code')
+    await profile.answer(withChoices)
+    profile.selection.setAgentOption('thought_level', 'max')
+    profile.selection.setAgentOption('mode', 'plan')
+    profile.pick('Opus')
+    expect(profile.draft.agentChoices.thought_level).toBeUndefined()
+    expect(profile.draft.agentChoices.mode).toBe('plan')
+  })
+
+  test('offers none for a custom model, whose options are never read', async () => {
+    const profile = editor()
+    await profile.choose('acp:claude-code')
+    await profile.answer(withChoices)
+    profile.pick('Custom model…')
+    expect(profile.selection.agentOptionControls.value).toEqual([])
+  })
+
+  test('keeps a saved value the model no longer offers, so it can be cleared', async () => {
+    const profile = editor({
+      providerID: 'acp:claude-code',
+      agentChoices: { thought_level: 'ultra' }
+    })
+    await profile.answer({ ...claudeCode, choices: { '': {} } })
+    const [effort] = profile.selection.agentOptionControls.value
+    const [agentDefault, ...saved] = effort.options
+    expect(saved.map((option) => option.value)).toEqual(['ultra'])
+    expect(profile.selection.agentOptionValue('thought_level')).toBe('ultra')
+    profile.selection.setAgentOption('thought_level', agentDefault.value)
+    expect(profile.draft.agentChoices.thought_level).toBeUndefined()
+  })
+
+  test('offers nothing while the model’s options are unknown or the model has none', async () => {
+    const profile = editor()
+    await profile.choose('acp:claude-code')
+    await profile.answer(claudeCode)
+    expect(profile.selection.agentOptionControls.value).toEqual([])
   })
 })

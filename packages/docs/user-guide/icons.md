@@ -1,11 +1,11 @@
 ---
 title: Icons
-description: Search open-source icon sets, insert icons, and swap or recolor them in OpenPencil.
+description: Search open-source icon sets and SF Symbols, insert icons, and swap, recolor, or restyle them in OpenPencil.
 ---
 
 # Icons
 
-OpenPencil searches the open-source icon sets published through [Iconify](https://iconify.design), such as Lucide, Material Symbols, Tabler, and Phosphor. A placed icon remembers which icon it is, so you can swap it for another or change its color later, and exports write it as that icon.
+OpenPencil searches the open-source icon sets published through [Iconify](https://iconify.design), such as Lucide, Material Symbols, Tabler, and Phosphor, and, in the app for Mac, Apple's SF Symbols. A placed icon remembers which icon it is, so you can swap it for another or change its color later, and exports write it as that icon.
 
 Searching and placing icons needs a network connection to the Iconify API.
 
@@ -34,9 +34,37 @@ Selecting a placed icon adds an **Icon** section to the Design panel.
 - **Swap icon** opens the picker and draws the chosen icon in place of the current one. The icon keeps its size, position, and color.
 - **Icon color** changes the color of the icon's own paths. Icons drawn in several fixed colors, such as brand logos, keep those colors and don't show this field.
 
-Each swap or color change is one undo step; dragging in the color picker undoes as a single change.
+- **Options** appear for icons from Material Symbols and SF Symbols, which OpenPencil draws itself; see below. Changing one draws the icon again.
+
+Each swap, color, or option change is one undo step; dragging in the color picker undoes as a single change.
 
 An icon is a frame of vector paths, named after the icon, such as `cat`, and marked with a smiley in the layer tree. Unlike other frames on the page, it has no title on the canvas, and resizing it scales its paths. Its layers, constraints, effects, and the rest of the Design panel work as they do for any frame.
+
+## Material Symbols
+
+Material Symbols Outlined, Rounded, and Sharp are drawn from Google's variable fonts, so their options in the Icon section are the fonts' own axes:
+
+- **Weight**, from 100 to 700.
+- **Fill**, 0 for outlined or 1 for filled.
+- **Grade**, from −50 to 200, which thickens strokes slightly without changing the icon's size, such as to balance light icons on a dark background.
+- **Optical size**, from 20 to 48. A placed icon starts at the optical size of its size, as Google recommends, so a 24 × 24 icon uses 24; set it yourself to draw a small icon with a large icon's detail or the other way round.
+
+## SF Symbols
+
+SF Symbols are Apple's icons. Apple licenses them for its own platforms only, so OpenPencil never ships them: macOS draws them, and they are offered only in the [OpenPencil app for Mac](/download) on **macOS 14 Sonoma or later**. In the browser, on Windows and Linux, and on older versions of macOS, the icon picker lists SF Symbols under Apple and says what they need instead of showing them.
+
+To use them:
+
+1. [Download OpenPencil](/download) for macOS and open it. If your Mac runs an older macOS, update it in **System Settings → General → Software Update** first.
+2. Open the icon picker, choose **SF Symbols** in the set menu, and search by name or keyword, such as `heart` or `weather`.
+
+The Icon section then offers:
+
+- **Weight**, from Ultralight to Black, and **Scale**, small, medium, or large, as in Apple's apps.
+- **Rendering**: **Monochrome** in the icon color; **Hierarchical**, the icon color at a few opacities; **Palette**, the icon color plus a **Secondary color** and a **Tertiary color** for the symbol's other layers; or **Multicolor**, the symbol's own colors, where the parts that follow the foreground take the icon color.
+- **Variable value**, from 0 to 1, for symbols that fill in steps, such as `wifi` or `speaker.wave.3`; other symbols don't change.
+
+A document keeps the outlines of its SF Symbols, so they draw everywhere it opens. Changing or swapping one needs the Mac app again; elsewhere the Icon section says so in place of its options.
 
 ## Editing an Icon's Paths
 
@@ -52,8 +80,18 @@ Resizing the icon or changing its color doesn't count as an edit.
 
 ## Icons in Exports
 
-- **Design JSX** writes a placed icon as `<Icon name="lucide:heart" size={24} color="#…" />`.
+- **Design JSX** writes a placed icon as `<Icon name="lucide:heart" size={24} color="#…" />`. Material Symbols and SF Symbols export as the paths they draw, since their names alone don't say how they were drawn; to place one by name, give `<Icon>` its `options`, such as <code v-pre>options={{ wght: 600, FILL: 1 }}</code>.
 - **HTML** writes it as inline SVG marked with `data-icon`, with its paths painted in `currentColor` and the icon's color set on the `<svg>`, so changing that one `color` recolors it.
 - **SVG and images** draw it like any other vector.
+
+## Icons in Imported HTML
+
+Importing HTML keeps the icons a page draws as icons, in the page's own paths and color:
+
+- Inline SVG marked with `data-icon`, as OpenPencil's HTML export writes it, becomes that icon.
+- Other inline SVG becomes the icon from a popular Iconify set it draws, when it draws one closely enough: it's compared with the icons whose shapes come closest, drawn the same way.
+- Anything else stays artwork.
+
+Matching downloads an index of the popular sets, about 2 MB, and asks Iconify for the icons it compares with by name; the SVG itself is never sent. Without a connection, inline SVG without `data-icon` stays artwork. Turn it off with **Name icons in imported HTML** in **Settings → Editor**, or with `--no-icon-names` in `openpencil import`.
 
 Icons placed by AI agents, MCP clients, and design JSX are icons in the same way, so the Icon section works on them too.

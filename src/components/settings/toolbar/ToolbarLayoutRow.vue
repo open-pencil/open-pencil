@@ -9,7 +9,7 @@ import {
 import { tv } from 'tailwind-variants'
 import { useTemplateRef, watchPostEffect, type Component } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
@@ -64,7 +64,7 @@ const emit = defineEmits<{
   focused: []
 }>()
 
-const { settings } = useI18n()
+const settings = useMessages('settings')
 const styles = tv(theme)
 const menu = useMenuUI({ content: 'min-w-44', item: 'justify-start gap-2' })
 const controls = {

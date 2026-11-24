@@ -22,7 +22,7 @@ import { sdkSidebar } from '#docs-config/sdk/sidebar'
 import { developersSidebar, docsSidebar } from '#docs-config/sidebars'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import { checkGuideMap } from './guides'
 import { checkDocsIntegrity } from './integrity'

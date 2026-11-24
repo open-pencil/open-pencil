@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalFailureMessages } from '@/app/cloud-portal/failure'
@@ -14,21 +14,31 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 const portal = usePortal()
 const route = useRoute()
 const router = useRouter()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const { failure } = usePortalFailureMessages()
 const code = computed(() =>
   typeof route.query.user_code === 'string' ? route.query.user_code.trim().toUpperCase() : ''
 )
-const state = ref<'checking' | 'pending' | 'approved' | 'denied' | 'expired'>('checking')
+const state = ref<'checking' | 'pending' | 'approved' | 'denied' | 'expired' | 'failed'>('checking')
+const lookupError = ref('')
 
-onMounted(async () => {
+async function look() {
   if (!code.value) {
     state.value = 'expired'
     return
   }
+  state.value = 'checking'
   const result = await portal.auth.deviceRequest(code.value)
-  state.value = result.ok ? result.value : 'expired'
-})
+  if (result.ok) state.value = result.value
+  // Only a refused code ends the sign-in; a busy or unreachable server leaves it to look again.
+  else if (result.failure === 'invalid-code') state.value = 'expired'
+  else {
+    lookupError.value = failure(result.failure)
+    state.value = 'failed'
+  }
+}
+
+onMounted(look)
 
 const {
   busy: deciding,
@@ -79,6 +89,19 @@ const {
         @click="router.push({ name: 'security' })"
       >
         {{ messages.accountSettings }}
+      </AppButton>
+    </template>
+  </PortalNotice>
+  <PortalNotice
+    v-else-if="state === 'failed'"
+    :host="portal.host"
+    :heading="messages.errorTitle"
+    :description="lookupError"
+  >
+    <template #icon><icon-lucide-cloud-off class="size-6" /></template>
+    <template #actions>
+      <AppButton size="lg" variant="outline" class="w-full" @click="look">
+        {{ messages.tryAgain }}
       </AppButton>
     </template>
   </PortalNotice>

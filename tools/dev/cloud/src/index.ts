@@ -2,8 +2,10 @@ import { existsSync } from 'node:fs'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
+import { fromUint8Array } from 'js-base64'
+
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { composeProjectName, localCloudDeploymentTOML } from './config'
 
@@ -12,6 +14,8 @@ const composeFile = join(root, 'packages/cloud/deploy/compose.yml')
 const generatedDirectory = join(root, 'packages/cloud/deploy/generated')
 const generatedConfig = join(generatedDirectory, 'openpencil-cloud.local.toml')
 const generatedSecret = join(generatedDirectory, 'auth-secret')
+const generatedSigningKey = join(generatedDirectory, 'services-signing-key.pem')
+const generatedServiceToken = join(generatedDirectory, 'service-token')
 
 // Development-only credentials shared with compose.yml defaults.
 const POSTGRES_PASSWORD = 'openpencil-development-password'
@@ -75,6 +79,41 @@ async function authSecret(): Promise<string> {
   return secret
 }
 
+/** A secret kept in the generated directory, made once, so a restart keeps signed-in sessions. */
+async function keptSecret(path: string, make: () => Promise<string>): Promise<string> {
+  if (existsSync(path)) return (await readFile(path, 'utf8')).trim()
+  const secret = await make()
+  await writeFile(path, `${secret}\n`, { mode: 0o600 })
+  return secret
+}
+
+/** An ES256 key in PKCS #8 PEM, as `[services] signing_key` takes it. */
+async function signingKeyPEM(): Promise<string> {
+  const { privateKey } = await crypto.subtle.generateKey(
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    true,
+    ['sign', 'verify']
+  )
+  const der = new Uint8Array(await crypto.subtle.exportKey('pkcs8', privateKey))
+  const lines = fromUint8Array(der).match(/.{1,64}/g) ?? []
+  return ['-----BEGIN PRIVATE KEY-----', ...lines, '-----END PRIVATE KEY-----'].join('\n')
+}
+
+/**
+ * A billing service to sell plans through, when `OPENPENCIL_CLOUD_DEV_BILLING_URL` names one, such
+ * as the official one on 127.0.0.1, with its secrets.
+ */
+async function localBilling() {
+  const endpoint = process.env.OPENPENCIL_CLOUD_DEV_BILLING_URL
+  if (!endpoint) return null
+  return {
+    endpoint,
+    servicesEndpoint: process.env.OPENPENCIL_CLOUD_DEV_SERVICES_URL || 'http://127.0.0.1:8788',
+    signingKey: await keptSecret(generatedSigningKey, signingKeyPEM),
+    serviceToken: await keptSecret(generatedServiceToken, async () => randomHex(32))
+  }
+}
+
 async function start(project: string): Promise<void> {
   const [cloudURL, siteURL, mailURL, objectStorageURL, editorURL] = await Promise.all([
     portlessURL('cloud.open-pencil'),
@@ -105,6 +144,7 @@ async function start(project: string): Promise<void> {
   ])
 
   await mkdir(generatedDirectory, { recursive: true })
+  const billing = await localBilling()
   await writeFile(
     generatedConfig,
     localCloudDeploymentTOML({
@@ -114,7 +154,8 @@ async function start(project: string): Promise<void> {
       objectStorageURL,
       smtpPort,
       // A workspace of this local server to show as its community gallery.
-      communityWorkspace: process.env.OPENPENCIL_CLOUD_DEV_COMMUNITY_WORKSPACE || undefined
+      communityWorkspace: process.env.OPENPENCIL_CLOUD_DEV_COMMUNITY_WORKSPACE || undefined,
+      billing: billing ?? undefined
     }),
     { mode: 0o600 }
   )
@@ -139,8 +180,29 @@ async function start(project: string): Promise<void> {
   console.warn(`OpenPencil Cloud: ${cloudURL}`)
   console.warn(`Captured email:  ${mailURL}`)
   console.warn('Stop the services with `bun run cloud:dev:down`; their data is kept.')
+  if (billing) {
+    console.warn(`Billing:         ${billing.endpoint}`)
+    console.warn(`The internal API token billing presents is in ${generatedServiceToken}`)
+  }
+
+  const serverEnvironment: Record<string, string | undefined> = {
+    ...process.env,
+    HOST: '127.0.0.1',
+    OPENPENCIL_CLOUD_CONFIG: generatedConfig,
+    OPENPENCIL_CLOUD_DEV_SITE_URL: siteURL,
+    DATABASE_URL: `postgresql://openpencil:${POSTGRES_PASSWORD}@127.0.0.1:${postgresPort}/openpencil`,
+    BETTER_AUTH_SECRET: betterAuthSecret,
+    S3_ACCESS_KEY_ID,
+    S3_SECRET_ACCESS_KEY
+  }
+  if (billing) {
+    serverEnvironment.OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY = billing.signingKey
+    serverEnvironment.OPENPENCIL_CLOUD_SERVICE_TOKEN = billing.serviceToken
+  }
 
   try {
+    // The Cloud package's own `dev` script, which loads its Vue email templates; plain `bun` reads
+    // a `.vue` import as its file path, and every email went out empty.
     process.exitCode = await execute(
       [
         'bunx',
@@ -149,21 +211,14 @@ async function start(project: string): Promise<void> {
         '--name',
         'cloud.open-pencil',
         'bun',
-        '--watch',
-        'packages/cloud/src/runtime/node/main.ts'
+        'run',
+        '--cwd',
+        'packages/cloud',
+        'dev'
       ],
       {
         allowFailure: true,
-        environment: {
-          ...process.env,
-          HOST: '127.0.0.1',
-          OPENPENCIL_CLOUD_CONFIG: generatedConfig,
-          OPENPENCIL_CLOUD_DEV_SITE_URL: siteURL,
-          DATABASE_URL: `postgresql://openpencil:${POSTGRES_PASSWORD}@127.0.0.1:${postgresPort}/openpencil`,
-          BETTER_AUTH_SECRET: betterAuthSecret,
-          S3_ACCESS_KEY_ID,
-          S3_SECRET_ACCESS_KEY
-        }
+        environment: serverEnvironment
       }
     )
   } finally {

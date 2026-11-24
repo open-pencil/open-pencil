@@ -1,14 +1,8 @@
 import { count, params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-import { behaviourPanelMessageDefaults } from '#vue/i18n/messages/panels/behaviours'
-import { libraryPanelMessageDefaults } from '#vue/i18n/messages/panels/libraries'
-import { pickerPanelMessageDefaults } from '#vue/i18n/messages/panels/pickers'
-
 /**
- * The `panels` namespace: the side panels and the property sections. Messages of its larger
- * features live beside it in `panels/` and are spread in, so they keep one namespace and one
- * locale file.
+ * The side panels and the property sections. Their larger features have namespaces of their own in
+ * `panels/`.
  */
 export const panelMessageDefaults = {
   untitled: 'Untitled',
@@ -19,7 +13,6 @@ export const panelMessageDefaults = {
   code: 'Code',
   ai: 'AI',
   assets: 'Assets',
-  ...libraryPanelMessageDefaults,
   assetVariantSummary: params('{count} variants · {names}'),
   duplicateVariantValues: 'Duplicate variant values',
   addVariantProperty: 'Add variant property',
@@ -134,6 +127,14 @@ export const panelMessageDefaults = {
   swapEditedIconDescription: params(
     'Swapping draws {name} in place of this icon and discards the changes made to its paths.'
   ),
+  iconSetMacAppOnly: 'Mac app',
+  iconSetNeedsNewerMacOS: 'macOS 14+',
+  sfSymbolsNeedMacApp:
+    'SF Symbols are drawn by macOS, so they are offered in the OpenPencil app for Mac.',
+  sfSymbolsNeedNewerMacOS: 'SF Symbols need macOS 14 or later, which draws them as outlines.',
+  redrawIcon: 'Redraw icon',
+  redrawEditedIconDescription:
+    'Drawing this icon with another option discards the changes made to its paths.',
   export: 'Export',
   typography: 'Typography',
   fontFamily: 'Font family',
@@ -141,6 +142,7 @@ export const panelMessageDefaults = {
   fontSize: 'Font size',
   lineHeightMode: 'Line height mode',
   unresolvedVariable: 'Variable value unavailable',
+  variableDeleted: 'Variable was deleted',
   lineHeight: 'Line height',
   letterSpacing: 'Letter spacing',
   textAlignment: 'Text alignment',
@@ -196,7 +198,6 @@ export const panelMessageDefaults = {
   resetSlot: 'Reset slot',
   deleteSlotContents: 'Delete contents',
   slotActions: params('{name} actions'),
-  ...behaviourPanelMessageDefaults,
   searchComponentProperties: 'Search properties',
   noComponentProperties: 'No properties found',
   slots: 'Slots',
@@ -251,6 +252,18 @@ export const panelMessageDefaults = {
   glassDepth: 'Depth',
   glassDispersion: 'Dispersion',
   glassFrost: 'Frost',
+  noise: 'Noise',
+  texture: 'Texture',
+  noiseType: 'Noise type',
+  noiseMono: 'Mono',
+  noiseDuo: 'Duo',
+  noiseMulti: 'Multi',
+  noiseSize: 'Noise size',
+  grainSize: 'Size',
+  density: 'Density',
+  noiseColors: 'Colors',
+  noiseSecondColor: 'Second color',
+  clipToShape: 'Clip to shape',
 
   maskType: 'Mask type',
   maskTypeAlpha: 'Alpha',
@@ -261,6 +274,14 @@ export const panelMessageDefaults = {
   compressionFast: 'Fast',
   compressionSmaller: 'Smaller',
   compressionSmallest: 'Smallest',
+  colorProfile: 'Color profile',
+  colorProfileSRGB: 'sRGB',
+  colorProfileDisplayP3: 'Display P3',
+  colorProfileChange: params('Change the color profile to {profile}?'),
+  colorProfileChangeDescription:
+    'Assign keeps every color value and shows it in the new profile, so colors change. Convert rewrites the values so colors look the same; colors the new profile cannot show become the nearest ones it can.',
+  colorProfileAssign: 'Assign',
+  colorProfileConvert: 'Convert',
 
   sticky: 'Sticky note',
   stickyColor: 'Color',
@@ -323,6 +344,13 @@ export const panelMessageDefaults = {
   flipVertical: 'Flip vertical',
   rotate90: 'Rotate 90°',
   imageTileScale: 'Tile scale',
+  imageExposure: 'Exposure',
+  imageContrast: 'Contrast',
+  imageSaturation: 'Saturation',
+  imageTemperature: 'Temperature',
+  imageTint: 'Tint',
+  imageHighlights: 'Highlights',
+  imageShadows: 'Shadows',
   mixedFillsHelp: 'Click + to replace mixed fills',
   mixedStrokesHelp: 'Click + to replace mixed strokes',
   mixedEffectsHelp: 'Click + to replace mixed effects',
@@ -383,8 +411,7 @@ export const panelMessageDefaults = {
   gap: 'Gap',
 
   solid: 'Solid',
-  linearGradient: 'Linear',
-  radialGradient: 'Radial',
+  gradient: 'Gradient',
   image: 'Image',
   shader: 'Shader',
   addShaderEffect: 'Add effect',
@@ -482,8 +509,5 @@ export const panelMessageDefaults = {
   gridSummaryColumns: params('{count} columns'),
   gridSummaryRows: params('{count} rows'),
   gridSummaryGrid: params('Grid {size}px'),
-  gridSummaryFixed: params('{summary} ({size}px)'),
-  ...pickerPanelMessageDefaults
+  gridSummaryFixed: params('{summary} ({size}px)')
 } as const
-
-export const panelMessages = i18n('panels', panelMessageDefaults)

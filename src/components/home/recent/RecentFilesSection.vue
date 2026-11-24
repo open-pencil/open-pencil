@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useDateFormat } from '@/app/i18n/date'
 import { forgetRecentDocument, recentDocumentKind, type RecentDocument } from '@/app/recent-files'
@@ -26,7 +26,8 @@ const kindOptions = computed(() => [
   { value: 'design', label: files.value.createDesign },
   { value: 'board', label: files.value.createBoard }
 ])
-const { panels, files } = useI18n()
+const libraryMessages = useMessages('panels/libraries')
+const files = useMessages('files')
 const { isTouch } = useViewportKind()
 const dates = useDateFormat()
 const previewURL = workspace.previewURL
@@ -53,7 +54,7 @@ function formattedDate(updatedAt: string): string {
     <div class="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2">
       <div class="col-span-2 min-w-0 sm:col-span-1">
         <h1 class="text-base font-semibold">{{ files.recentFiles }}</h1>
-        <p class="mt-0.5 text-pretty text-xs text-muted">{{ files.recentFilesDescription }}</p>
+        <p class="mt-0.5 text-xs text-muted">{{ files.recentFilesDescription }}</p>
       </div>
       <div class="col-span-2 flex items-center justify-end gap-1 sm:col-span-1">
         <AppSelect
@@ -69,8 +70,8 @@ function formattedDate(updatedAt: string): string {
           :label="files.recentFiles"
           :size="isTouch ? 'touch' : 'md'"
           :options="[
-            { value: 'grid', label: panels.gridView },
-            { value: 'list', label: panels.listView }
+            { value: 'grid', label: libraryMessages.gridView },
+            { value: 'list', label: libraryMessages.listView }
           ]"
         >
           <template #option="{ option }">

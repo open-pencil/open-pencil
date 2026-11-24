@@ -17,13 +17,31 @@ import {
   cloudProfileResponseSchema,
   cloudSignInsResponseSchema,
   cloudSocialLinkResponseSchema,
-  type CloudAccessTokenCreate
+  notificationSettingsSchema,
+  type CloudAccessTokenCreate,
+  type CloudSocialProvider,
+  type NotificationSettings
 } from '#cloud/contract'
 
 import type { CloudCall, PortalRouteClients } from './request'
 
 export function createAccountAPI(call: CloudCall, { account, tokens, api }: PortalRouteClients) {
   return {
+    /** Which comments the account hears about by email. */
+    notificationSettings(signal?: AbortSignal) {
+      return call(
+        (options) => api.account.notifications.$get(undefined, options),
+        notificationSettingsSchema,
+        signal
+      )
+    },
+    setNotificationSettings(settings: NotificationSettings, signal?: AbortSignal) {
+      return call(
+        (options) => api.account.notifications.$put({ json: settings }, options),
+        notificationSettingsSchema,
+        signal
+      )
+    },
     /** The account's plan, and the storage its workspaces hold together. */
     entitlements(signal?: AbortSignal) {
       return call(
@@ -129,7 +147,7 @@ export function createAccountAPI(call: CloudCall, { account, tokens, api }: Port
         signal
       )
     },
-    linkSocial(provider: 'google' | 'apple', callbackURL: string, signal?: AbortSignal) {
+    linkSocial(provider: CloudSocialProvider, callbackURL: string, signal?: AbortSignal) {
       return call(
         (options) =>
           account.authentication['link-social'].$post({ json: { provider, callbackURL } }, options),

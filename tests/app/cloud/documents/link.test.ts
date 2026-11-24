@@ -12,9 +12,12 @@ describe('Cloud document links', () => {
     expect(readCloudDocumentLink(new URL(base))).toEqual({
       documentId: DOCUMENT,
       server: SERVER,
-      versionId: null
+      versionId: null,
+      threadId: null
     })
     expect(readCloudDocumentLink(new URL(`${base}?version=v1`))?.versionId).toBe('v1')
+    // An email about a comment links to its thread.
+    expect(readCloudDocumentLink(new URL(`${base}?comment=t1`))?.threadId).toBe('t1')
   })
 
   test('another address or a broken escape is no link', () => {

@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { styleRunAt } from '@open-pencil/scene-graph/text'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import {
@@ -42,7 +43,7 @@ function styleForCharacter(
   let family = baseFamily
   let language = node.textLanguage
 
-  const run = node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
+  const run = styleRunAt(node.styleRuns, index)
   if (run) {
     family = run.style.fontFamily ?? family
     if (run.style.textLanguage !== undefined) language = run.style.textLanguage

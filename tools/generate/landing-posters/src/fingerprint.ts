@@ -4,7 +4,9 @@ import { join, relative } from 'node:path'
 
 /**
  * What a stage's pixels depend on: the landing and the docs theme around it, the app
- * components it mounts, the engine that draws them, the demo document, and this generator.
+ * components it mounts, every package they reach, the engine builds that draw and lay them out,
+ * the demo document, and this generator. CI reuses the stills of a fingerprint across deploys, so
+ * an input left out here deploys stills of the old one.
  * Imported by the VitePress config, so it uses Node built-ins only.
  */
 export const LANDING_POSTER_INPUTS = {
@@ -12,6 +14,8 @@ export const LANDING_POSTER_INPUTS = {
     'packages/docs/.vitepress/theme',
     'src',
     'packages/core/src',
+    // The fonts Core bundles, which its source imports by path only.
+    'packages/core/assets',
     'packages/scene-graph/src',
     'packages/vue/src',
     'packages/design-jsx/src',
@@ -19,6 +23,15 @@ export const LANDING_POSTER_INPUTS = {
     'packages/emit/src',
     'packages/fig/src',
     'packages/kiwi/src',
+    'packages/theme/src',
+    'packages/std/src',
+    'packages/collab/src',
+    'packages/pen/src',
+    'packages/drawio/src',
+    'packages/mermaid/src',
+    'packages/html-engine/src',
+    'packages/html-engine/crate/src',
+    'packages/cloud/src',
     'tools/generate/demo/src',
     'tools/generate/landing-posters/src'
   ],
@@ -26,6 +39,10 @@ export const LANDING_POSTER_INPUTS = {
     'package.json',
     'bun.lock',
     'packages/docs/.vitepress/config.ts',
+    // The CanvasKit and Taffy builds the stages draw and lay out with, pinned by release.
+    'packages/canvaskit/release.json',
+    'packages/taffy/release.json',
+    'packages/html-engine/crate/Cargo.toml',
     // Its locale prefixes are the pages the stills are captured on.
     'packages/docs/.vitepress/seo.ts'
   ]

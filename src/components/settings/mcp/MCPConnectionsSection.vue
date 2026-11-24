@@ -2,11 +2,7 @@
 import { AlertDialogAction, AlertDialogCancel } from 'reka-ui'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
-import {
-  useAutomationMessages,
-  useCommonMessages,
-  useSettingsMessages
-} from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { mcpConnectionSettings } from '@/app/integrations/mcp'
 import { useMCPConnectionForm } from '@/app/integrations/mcp/settings/form'
@@ -24,13 +20,13 @@ import { MCP_CONNECTIONS_DOCS_URL } from '@/constants'
 
 import MCPConnectionEditor from './MCPConnectionEditor.vue'
 
-const automation = useAutomationMessages()
-const common = useCommonMessages()
+const automation = useMessages('automation')
+const common = useMessages('common')
 const editing = ref(false)
 const tokenDraft = ref('')
 const deleteOpen = ref(false)
 
-const settings = useSettingsMessages()
+const settings = useMessages('settings')
 const editorElement = useTemplateRef('editorElement')
 const form = useMCPConnectionForm(settings, automation)
 const { draft, errors: fieldErrors } = form

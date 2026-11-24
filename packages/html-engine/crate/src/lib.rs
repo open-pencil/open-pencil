@@ -7,15 +7,22 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use blitz_dom::node::SpecialElementData;
 use blitz_dom::{BaseDocument, DocumentConfig, Node, StyleThreading};
 use blitz_html::HtmlDocument;
 use blitz_traits::net::{Bytes, NetHandler, NetProvider, Request};
 use blitz_traits::shell::{ColorScheme, Viewport};
+use cssparser::{ParseError, Parser, ToCss, Token, serialize_string};
 use parley::fontique::{Blob, FontInfoOverride, GenericFamily};
 use parley::{FontContext, PositionedLayoutItem};
 use serde_json::{Map, Value, json};
+use style::computed_values::border_collapse::T as BorderCollapse;
 use style::properties::{LonghandId, PropertyDeclarationId};
+use style::servo_arc::Arc as ServoArc;
+use style::stylesheets::{CssRule, Stylesheet};
 use style::values::generics::font::LineHeight;
+use style::values::specified::box_::DisplayInside;
+use url::{Position, Url};
 
 /// Computed properties the importer reads. Everything else is left out to keep captures small.
 /// Those in `default_styles` are reported only when they differ from their initial value; the
@@ -54,6 +61,8 @@ const PROPERTIES: &[&str] = &[
     "flex-shrink",
     "flex-basis",
     "justify-content",
+    "justify-items",
+    "justify-self",
     "align-items",
     "align-self",
     "align-content",
@@ -61,12 +70,19 @@ const PROPERTIES: &[&str] = &[
     "column-gap",
     "grid-template-columns",
     "grid-template-rows",
+    "grid-column-start",
+    "grid-column-end",
+    "grid-row-start",
+    "grid-row-end",
     "background-color",
     "background-image",
     "background-size",
     "background-position",
     "background-repeat",
     "background-clip",
+    "background-origin",
+    "mask-image",
+    "isolation",
     "border-top-width",
     "border-right-width",
     "border-bottom-width",
@@ -106,6 +122,7 @@ const PROPERTIES: &[&str] = &[
     "font-weight",
     "font-style",
     "font-stretch",
+    "font-optical-sizing",
     "line-height",
     "letter-spacing",
     "word-spacing",
@@ -120,12 +137,24 @@ const PROPERTIES: &[&str] = &[
     "text-indent",
     "white-space",
     "text-wrap-mode",
+    "text-wrap-style",
     "text-overflow",
     "vertical-align",
     "list-style-type",
     "content",
     "border-collapse",
     "border-spacing",
+    "caption-side",
+    "fill",
+    "fill-opacity",
+    "fill-rule",
+    "stroke",
+    "stroke-width",
+    "stroke-opacity",
+    "stroke-linecap",
+    "stroke-linejoin",
+    "stroke-dasharray",
+    "text-anchor",
 ];
 
 /// Properties reported as their computed values too, where the used values `style` reports lose
@@ -141,6 +170,9 @@ const COMPUTED_PROPERTIES: &[LonghandId] = &[
     LonghandId::MaxHeight,
     LonghandId::FlexBasis,
     LonghandId::LineHeight,
+    // `auto` side margins center or end-align a block, which their used lengths don't say.
+    LonghandId::MarginLeft,
+    LonghandId::MarginRight,
 ];
 
 // ---------------------------------------------------------------------------------------------
@@ -324,11 +356,11 @@ fn computed(node: &Node) -> Option<Value> {
     Some(Value::Object(out))
 }
 
-fn styles(doc: &BaseDocument, node: &Node) -> Value {
+fn styles(doc: &BaseDocument, node: &Node, local: &[Url]) -> Value {
     let defaults = default_styles();
     let mut out = Map::new();
     for property in PROPERTIES {
-        let value = doc.resolved_style_value(node.id, property);
+        let value = local_urls(doc.resolved_style_value(node.id, property), local);
         // Stylo answers a property it does not implement with an empty value.
         if value.is_empty() {
             continue;
@@ -340,6 +372,95 @@ fn styles(doc: &BaseDocument, node: &Node) -> Value {
         out.insert((*property).into(), value.into());
     }
     Value::Object(out)
+}
+
+/// `value` with each `url()` that points into the document itself written as its fragment,
+/// `url("#fade")`, as browsers report a local reference such as `fill: url(#fade)`. Stylo
+/// resolves it against the document's base URL, which reads as a link to another file.
+fn local_urls(value: String, local: &[Url]) -> String {
+    if !value.contains("url(") {
+        return value;
+    }
+    let mut out = String::new();
+    write_local_urls(&mut Parser::new(&value), local, &mut out);
+    out
+}
+
+fn write_local_urls(input: &mut Parser<'_>, local: &[Url], out: &mut String) {
+    while let Ok(token) = input.next_including_whitespace_and_comments() {
+        let token = token.clone();
+        let closing = match &token {
+            Token::UnquotedUrl(url) => {
+                write_url(url, local, out);
+                continue;
+            }
+            Token::Function(name) if name.eq_ignore_ascii_case("url") => {
+                let quoted = input.parse_nested_block(|block| {
+                    block
+                        .expect_string()
+                        .map(|url| url.as_ref().to_owned())
+                        .map_err(ParseError::<()>::from)
+                });
+                if let Ok(url) = quoted {
+                    write_url(&url, local, out);
+                    continue;
+                }
+                ")"
+            }
+            Token::Function(_) | Token::ParenthesisBlock => ")",
+            Token::SquareBracketBlock => "]",
+            Token::CurlyBracketBlock => "}",
+            _ => {
+                let _ = token.to_css(out);
+                continue;
+            }
+        };
+        let _ = token.to_css(out);
+        let _ = input.parse_nested_block(|block| {
+            write_local_urls(block, local, out);
+            Ok::<(), ParseError<()>>(())
+        });
+        out.push_str(closing);
+    }
+}
+
+/// `url("…")`, as a fragment when `raw` points into the document, its base being one in `local`.
+fn write_url(raw: &str, local: &[Url], out: &mut String) {
+    let fragment = Url::parse(raw)
+        .ok()
+        .filter(|url| {
+            let base = &url[..Position::AfterQuery];
+            local.iter().any(|own| own[..Position::AfterQuery] == *base)
+        })
+        .and_then(|url| url.fragment().map(|fragment| format!("#{fragment}")));
+    out.push_str("url(");
+    let _ = serialize_string(fragment.as_deref().unwrap_or(raw), out);
+    out.push(')');
+}
+
+/// What a `url()` resolves against when it points into the document: the document's base URL,
+/// and each author stylesheet's, imported ones included. A fragment-only `url(#fade)` refers to
+/// the document whichever stylesheet holds it, but Stylo resolves it against that stylesheet's
+/// URL and keeps only the result; a stylesheet itself is never what a paint or clip points at.
+fn local_bases(doc: &BaseDocument) -> Vec<Url> {
+    let guard = doc.guard().read();
+    let mut bases = vec![doc.base_url().clone()];
+    let mut sheets: Vec<ServoArc<Stylesheet>> = doc
+        .author_stylesheets()
+        .map(|sheet| sheet.0.clone())
+        .collect();
+    while let Some(sheet) = sheets.pop() {
+        let contents = sheet.contents.read_with(&guard);
+        bases.push((*contents.url_data.0).clone());
+        for rule in contents.rules(&guard) {
+            if let CssRule::Import(import) = rule
+                && let Some(imported) = import.read_with(&guard).stylesheet.as_sheet()
+            {
+                sheets.push(imported.clone());
+            }
+        }
+    }
+    bases
 }
 
 /// Initial values of the captured properties that are not inherited. An inherited property is
@@ -364,6 +485,9 @@ fn default_styles() -> &'static HashMap<&'static str, String> {
             ("background-position", "0% 0%"),
             ("background-repeat", "repeat"),
             ("background-clip", "border-box"),
+            ("background-origin", "padding-box"),
+            ("mask-image", "none"),
+            ("isolation", "auto"),
             ("border-top-style", "none"),
             ("border-right-style", "none"),
             ("border-bottom-style", "none"),
@@ -482,7 +606,53 @@ fn lines(node: &Node, origin: (f32, f32)) -> Option<Value> {
     Some(Value::Array(lines))
 }
 
-fn capture_node(doc: &BaseDocument, node: &Node, out: &mut Vec<Value>, parent: Option<usize>) {
+/// Half the gutter a table with collapsed borders lays its borders out in, across and down, when
+/// it lays them out between its cells, as Blitz does for cells with a border.
+fn collapsed_half_gutter(el: &blitz_dom::node::ElementData) -> Option<(f32, f32)> {
+    let SpecialElementData::TableRoot(table) = &el.special_data else {
+        return None;
+    };
+    let collapsed =
+        table.border_collapse == BorderCollapse::Collapse && table.border_style.is_some();
+    collapsed.then(|| {
+        (
+            table.collapsed_gutter.width / 2.0,
+            table.collapsed_gutter.height / 2.0,
+        )
+    })
+}
+
+fn display_inside(node: &Node) -> Option<DisplayInside> {
+    node.primary_styles()
+        .map(|styles| styles.get_box().display.inside())
+}
+
+/// Whether a box is one of a table's rows, row groups, or cells, which collapsed borders split.
+fn is_table_part(node: &Node) -> bool {
+    display_inside(node).is_some_and(|inside| {
+        matches!(
+            inside,
+            DisplayInside::TableRowGroup
+                | DisplayInside::TableHeaderGroup
+                | DisplayInside::TableFooterGroup
+                | DisplayInside::TableRow
+                | DisplayInside::TableCell
+        )
+    })
+}
+
+/// Captures a node and its subtree. `half_gutter` is half the collapsed-border gutter of the
+/// table a row, row group, or cell belongs to: Blitz lays collapsed borders out between the
+/// cells, where CSS gives each cell half of every border it shares (CSS 2.1 §17.6.2), so those
+/// boxes grow by it on each side to be the boxes a browser reports.
+fn capture_node(
+    doc: &BaseDocument,
+    local: &[Url],
+    node: &Node,
+    out: &mut Vec<Value>,
+    parent: Option<usize>,
+    half_gutter: Option<(f32, f32)>,
+) {
     let index = out.len();
     let mut entry = Map::new();
     entry.insert("id".into(), node.id.as_u64().into());
@@ -498,13 +668,18 @@ fn capture_node(doc: &BaseDocument, node: &Node, out: &mut Vec<Value>, parent: O
     let Some(el) = node.element_data() else {
         // Document, comment, or doctype: walk its children only.
         for &child in &node.children {
-            capture_node(doc, &doc.tree()[child], out, parent);
+            capture_node(doc, local, &doc.tree()[child], out, parent, None);
         }
         return;
     };
 
+    let part_gutter = half_gutter.filter(|_| is_table_part(node));
+    let (gx, gy) = part_gutter.unwrap_or((0.0, 0.0));
     let pos = node.absolute_position(0.0, 0.0);
     let size = node.final_layout().size;
+    // A table's rows and cells pass its gutter on; a cell's content belongs to no table.
+    let is_cell = display_inside(node) == Some(DisplayInside::TableCell);
+    let child_gutter = collapsed_half_gutter(el).or(part_gutter.filter(|_| !is_cell));
     entry.insert("tag".into(), el.name.local.to_string().into());
     let attrs: Map<String, Value> = el
         .attrs()
@@ -521,7 +696,15 @@ fn capture_node(doc: &BaseDocument, node: &Node, out: &mut Vec<Value>, parent: O
     if !attrs.is_empty() {
         entry.insert("attrs".into(), Value::Object(attrs));
     }
-    entry.insert("box".into(), rect(pos.x, pos.y, size.width, size.height));
+    entry.insert(
+        "box".into(),
+        rect(
+            pos.x - gx,
+            pos.y - gy,
+            size.width + 2.0 * gx,
+            size.height + 2.0 * gy,
+        ),
+    );
     if let Some(image) = el.image_data() {
         let kind = match image {
             blitz_dom::node::ImageData::Raster(r) => format!("raster {}x{}", r.width, r.height),
@@ -530,7 +713,7 @@ fn capture_node(doc: &BaseDocument, node: &Node, out: &mut Vec<Value>, parent: O
         };
         entry.insert("image".into(), kind.into());
     }
-    entry.insert("style".into(), styles(doc, node));
+    entry.insert("style".into(), styles(doc, node, local));
     if let Some(computed) = computed(node) {
         entry.insert("computed".into(), computed);
     }
@@ -545,26 +728,56 @@ fn capture_node(doc: &BaseDocument, node: &Node, out: &mut Vec<Value>, parent: O
             .collect();
         entry.insert("fragments".into(), Value::Array(rects));
     }
-    if let Some(lines) = lines(node, (pos.x, pos.y)) {
-        entry.insert("lines".into(), lines);
+    // Text a flex container or a grid holds among its items is laid out in anonymous blocks, which
+    // live outside the DOM; their lines are the element's own text's, as a browser reports them.
+    let mut own_lines = match lines(node, (pos.x, pos.y)) {
+        Some(Value::Array(own)) => own,
+        _ => Vec::new(),
+    };
+    for anonymous in node
+        .anonymous_blocks
+        .iter()
+        .filter_map(|&id| doc.get_node(id))
+    {
+        let at = anonymous.absolute_position(0.0, 0.0);
+        if let Some(Value::Array(block)) = lines(anonymous, (at.x, at.y)) {
+            own_lines.extend(block);
+        }
+    }
+    if !own_lines.is_empty() {
+        entry.insert("lines".into(), Value::Array(own_lines));
     }
     out.push(Value::Object(entry));
 
     let pseudo = |id: Option<blitz_traits::node_id::NodeId>| id.and_then(|id| doc.get_node(id));
     if let Some(before) = pseudo(el.before) {
-        capture_pseudo(doc, before, "::before", out, index);
+        capture_pseudo(doc, local, before, "::before", out, index);
     }
     for &child in &node.children {
-        capture_node(doc, &doc.tree()[child], out, Some(index));
+        capture_node(
+            doc,
+            local,
+            &doc.tree()[child],
+            out,
+            Some(index),
+            child_gutter,
+        );
     }
     if let Some(after) = pseudo(el.after) {
-        capture_pseudo(doc, after, "::after", out, index);
+        capture_pseudo(doc, local, after, "::after", out, index);
     }
 }
 
-fn capture_pseudo(doc: &BaseDocument, node: &Node, tag: &str, out: &mut Vec<Value>, parent: usize) {
+fn capture_pseudo(
+    doc: &BaseDocument,
+    local: &[Url],
+    node: &Node,
+    tag: &str,
+    out: &mut Vec<Value>,
+    parent: usize,
+) {
     let before = out.len();
-    capture_node(doc, node, out, Some(parent));
+    capture_node(doc, local, node, out, Some(parent), None);
     if let Some(Value::Object(entry)) = out.get_mut(before) {
         entry.insert("tag".into(), tag.into());
     }
@@ -576,7 +789,8 @@ pub fn capture() -> String {
         s.doc.resolve(0.0);
         let doc = &s.doc;
         let mut nodes = Vec::new();
-        capture_node(doc, doc.root_node(), &mut nodes, None);
+        let local = local_bases(doc);
+        capture_node(doc, &local, doc.root_node(), &mut nodes, None, None);
         let (w, h) = doc.viewport().window_size;
         // Values the nodes leave out are these; the host fills them back in.
         let initial: Map<String, Value> = default_styles()

@@ -3,7 +3,7 @@ import { mean, sumBy } from 'es-toolkit'
 
 import type { AnalyzeClustersResult } from '@open-pencil/core/rpc'
 import { calcClusterConfidence } from '@open-pencil/core/tools'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import { appTargetOptions } from '#cli/app/target'
 import { bold, fmtList, fmtSummary } from '#cli/format'

@@ -6,13 +6,14 @@ import { ConfigProvider, TooltipProvider } from 'reka-ui'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { provideEditor } from '@open-pencil/vue'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
+import { watchCloudAISetup } from '@/app/ai/providers/openpencil/setup'
 import { startCloud } from '@/app/cloud/integration'
+import { useAutosaveFeedback } from '@/app/document/autosave/feedback'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { endRecoverySession, startRecoverySession } from '@/app/document/recovery/session'
-import { useFollowingEditorStore } from '@/app/editor/active-store'
+import { provideEditorStore, useFollowingEditorStore } from '@/app/editor/active-store'
 import { useInterfaceDirection } from '@/app/i18n/direction'
 import { offerCrashReports } from '@/app/reports/crash'
 import { interfaceScalePreference } from '@/app/shell/interface-scale'
@@ -25,9 +26,10 @@ import { useWebUpdates } from '@/app/shell/updater/web'
 import { openSaveTo } from '@/app/storage/save-to/session'
 import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
+import CampaignPromptHost from '@/components/campaigns/CampaignPromptHost.vue'
 import { CloudHosts } from '@/components/cloud/integration'
+import OpenURLDialog from '@/components/document/open-url/OpenURLDialog.vue'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
-import DonationPrompt from '@/components/donation/DonationPrompt.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
 import ReportDialogHost from '@/components/reports/ReportDialogHost.vue'
@@ -39,7 +41,8 @@ import AppShell from '@/components/shell/AppShell.vue'
 import AppToaster from '@/components/shell/AppToaster.vue'
 import VoiceCallAudio from '@/components/voice-call/VoiceCallAudio.vue'
 
-const { updates, locale } = useI18n()
+const updates = useMessages('updates')
+const { locale } = useLocale()
 const router = useRouter()
 const dir = useInterfaceDirection()
 
@@ -53,9 +56,10 @@ useHead({
   }
 })
 
-provideEditor(useFollowingEditorStore())
+provideEditorStore(useFollowingEditorStore())
 useAppTheme()
 useDocumentCloseProtection()
+useAutosaveFeedback()
 useRestartApprovals()
 useWebUpdates()
 startRecoverySession()
@@ -79,6 +83,8 @@ onMounted(() => {
       saveTo: (store, serverId) => openSaveTo(store, { profileId: serverId })
     })
   )
+  // Signing in to a Cloud plan with AI sets the models up, so nobody has to choose one.
+  onUnmounted(watchCloudAISetup())
 })
 </script>
 
@@ -94,10 +100,11 @@ onMounted(() => {
         <SaveToHost />
         <CloudHosts />
         <UnsavedChangesDialog />
+        <OpenURLDialog />
         <PublishLibraryDialog />
         <LibraryUpdateReviewDialog />
         <UsageStatsPrompt />
-        <DonationPrompt />
+        <CampaignPromptHost />
         <ReportDialogHost />
         <AppToaster />
         <VoiceCallAudio />

@@ -1,4 +1,11 @@
-import { bytesStream, readStreamBytes, renameFigArchive, streamFigArchive } from '@open-pencil/fig'
+import {
+  bytesStream,
+  figCheckpointRecords,
+  readStreamBytes,
+  renameFigArchive,
+  streamFigArchive,
+  type FigUnreadVariable
+} from '@open-pencil/fig'
 import {
   nameImagesForFigma,
   placeSlotContent,
@@ -8,16 +15,19 @@ import {
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { readComments } from '@open-pencil/scene-graph/comments'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
+import { figArchive } from '#core/kiwi/fig/session/archive/access'
 import {
   hasPendingReaderPages,
   populateFigInternalPages,
-  populateReaderExport
+  populateReaderExport,
+  readerCheckpoint
 } from '#core/kiwi/fig/session/document-state'
 import { originalFigArchive } from '#core/kiwi/fig/session/original-archive'
 
@@ -33,9 +43,14 @@ import {
   type KiwiNodeChange,
   prepareFigExport
 } from './setup'
+import { savedSlotContentFor } from './slot-content'
 import { appendVariableNodeChanges, sequentialPositions, assignSharedStyleGuids } from './variables'
 
-type InternalResourceContext = FigExportSetup & { nodeChanges: KiwiNodeChange[] }
+type InternalResourceContext = FigExportSetup & {
+  nodeChanges: KiwiNodeChange[]
+  /** Variable records of the opened file the document never read, written back as they are. */
+  unreadVariables: readonly FigUnreadVariable[]
+}
 
 /**
  * Children already written under a canvas. Shared styles, variables and the canvas's own
@@ -89,14 +104,15 @@ function appendInternalResources(context: InternalResourceContext): void {
       )
     )
   }
-  if (graph.variableCollections.size > 0) {
+  if (graph.variableCollections.size > 0 || context.unreadVariables.length > 0) {
     appendVariableNodeChanges(
       graph,
       nodeChanges,
       internalCanvasGuid,
       context.varIdToGuid,
       context.modeIdToGuid,
-      sequentialPositions(written + sharedStyleNodes.length)
+      sequentialPositions(written + sharedStyleNodes.length),
+      context.unreadVariables
     )
   }
 }
@@ -114,7 +130,13 @@ export async function exportFigFileStream(
 ): Promise<ReadableStream<Uint8Array>> {
   // An archive whose images Figma cannot read is written whole rather than reused.
   const reuseArchive = await archiveImagesNamedForFigma(sourceGraph)
-  const originalArchive = reuseArchive ? await originalFigArchive(sourceGraph) : null
+  // The document's comments may be in the opened archive, and this write leaves them out.
+  const dropsComments = !!options.withoutComments && readComments(sourceGraph).length > 0
+  // A read that left out an instance whose component would contain itself changed the document,
+  // and the archive still holds that instance.
+  const repairedLoops = (readerCheckpoint(sourceGraph)?.droppedRecordIds?.length ?? 0) > 0
+  const originalArchive =
+    reuseArchive && !dropsComments && !repairedLoops ? await originalFigArchive(sourceGraph) : null
   if (originalArchive) {
     const reused = options.documentName
       ? renameFigArchive(originalArchive, options.documentName)
@@ -148,17 +170,30 @@ async function writeFigFile(
   // The export reads the document itself and writes nothing to it. Only pages still in the
   // archive need a copy, which they load into instead of the document.
   let graph = sourceGraph
+  let checkpoint = readerCheckpoint(sourceGraph)
   if (hasPendingReaderPages(sourceGraph)) {
     graph = cloneSceneGraphForFigExport(sourceGraph)
-    populateReaderExport(sourceGraph, graph)
+    checkpoint = populateReaderExport(sourceGraph, graph) ?? checkpoint
   }
-  const setup = await prepareFigExport(graph, runtime)
+  const archived = await figArchive(sourceGraph)?.info()
+  const setup = await prepareFigExport(graph, runtime, {
+    withoutComments: options.withoutComments,
+    // Records read from the file keep their GUIDs, slot content among them, and new ones start
+    // past every GUID the file holds.
+    recordOwners: checkpoint && figCheckpointRecords(checkpoint),
+    nextLocalId: archived?.nextLocalId,
+    unreadVariables: archived?.unreadVariables
+  })
   const { compiled, schemaDeflated } = exportSchema(graph)
   const { canvasEntries, internalCanvasGuid, localIdCounter, blobs } = setup
   const nodeChanges: KiwiNodeChange[] = [setup.documentNc]
   for (const entry of canvasEntries) nodeChanges.push(entry.canvasNc)
 
-  appendInternalResources({ ...setup, nodeChanges })
+  appendInternalResources({
+    ...setup,
+    nodeChanges,
+    unreadVariables: archived?.unreadVariables ?? []
+  })
 
   const orderedCanvasEntries = [
     ...canvasEntries.filter((entry) => entry.page.internalOnly),
@@ -190,6 +225,15 @@ async function writeFigFile(
     const first = countCanvasChildren(nodeChanges, internalCanvasGuid)
     placeSlotContent(slotContentRecords, internalCanvasGuid, first, fractionalPosition)
     appendAll(nodeChanges, slotContentRecords)
+    let next = first + slotContentRecords.filter((record) => record.isSlotContent).length
+    const saved = savedSlotContentFor(
+      nodeChanges,
+      archived?.slotContent ?? { records: [], blobs: [] },
+      internalCanvasGuid,
+      () => fractionalPosition(next++),
+      blobs
+    )
+    appendAll(nodeChanges, saved)
   }
 
   const msg: Record<string, unknown> = {

@@ -1,7 +1,7 @@
 import { useDocumentVisibility, useEventListener, useIntervalFn, whenever } from '@vueuse/core'
 import { watch } from 'vue'
 
-import { updatesMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 import { useOpenOverlays } from '@open-pencil/vue/lifecycle/overlays'
 
 import { confirmAppExit } from '@/app/document/close/exit'
@@ -51,7 +51,7 @@ export function offerWebUpdate(options: WebUpdateOptions = {}): void {
   }
 
   function offer() {
-    const messages = updatesMessages.get()
+    const messages = messageStores.updates.get()
     toast.info(messages.webUpdateReady, {
       label: messages.reload,
       run: () => {
@@ -123,7 +123,7 @@ export type WaitingUpdate = {
   /** Whether a service worker controls this page, as `navigator.serviceWorker.controller` says. */
   controlled: boolean
   /** The installed version waiting to take over, if any. */
-  waiting: (EventTarget & { readonly state: ServiceWorkerState }) | null
+  waiting: ServiceWorkerLike | null
   /** Asks the waiting version to take over, reloading a controlled page once it does. */
   activate: () => void
   reload: () => void

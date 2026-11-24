@@ -2,18 +2,38 @@ import * as v from 'valibot'
 import { shallowRef } from 'vue'
 
 import type { ACPAgentDef, ACPAgentID } from '@open-pencil/core/constants'
+import { DAY_MS } from '@open-pencil/std/timing'
 
 import { readCacheJSON, writeCacheJSON } from '@/app/cache'
 
 import type { AgentOffer } from './oneoff'
+import type { AgentModelChoices } from './options'
 
+const valueSchema = v.object({ id: v.string(), name: v.string() })
+const choiceSchema = v.object({
+  name: v.string(),
+  current: v.string(),
+  values: v.array(
+    v.object({ id: v.string(), name: v.string(), description: v.optional(v.string()) })
+  )
+})
 const offerSchema = v.object({
-  models: v.array(v.object({ id: v.string(), name: v.string() })),
-  imageInput: v.boolean()
+  models: v.array(valueSchema),
+  imageInput: v.boolean(),
+  choices: v.record(
+    v.string(),
+    v.partial(
+      v.object({
+        thought_level: choiceSchema,
+        mode: choiceSchema,
+        collaboration_mode: choiceSchema
+      })
+    )
+  )
 }) satisfies v.GenericSchema<unknown, AgentOffer>
 
 /** How long a remembered offer stands in for starting the agent, as a provider's catalog does. */
-const AGENT_OFFER_MAX_AGE_MS = 24 * 60 * 60 * 1000
+const AGENT_OFFER_MAX_AGE_MS = DAY_MS
 
 function offerKey(agent: ACPAgentDef): string {
   return `agents/${agent.id}/offer`
@@ -49,12 +69,8 @@ function note(agent: ACPAgentDef, offer: AgentOffer): void {
   known.value = new Map(known.value).set(agent.id, offer)
 }
 
-/**
- * The name an agent gives one of its models, such as "Opus 5.5" for `opus`, from the offer it
- * gave last; null until that is read, or for a model it does not list. Reactive: a name appears
- * once the remembered offer has loaded.
- */
-export function agentModelName(agent: ACPAgentDef, modelID: string): string | null {
+/** The offer an agent gave last, loading the remembered one the first time it is asked for. */
+function knownOffer(agent: ACPAgentDef): AgentOffer | null {
   if (!known.value.has(agent.id) && !looked.has(agent.id)) {
     looked.add(agent.id)
     void rememberedAgentOffer(agent).then((remembered) => {
@@ -62,7 +78,27 @@ export function agentModelName(agent: ACPAgentDef, modelID: string): string | nu
       return undefined
     })
   }
-  return known.value.get(agent.id)?.models.find((model) => model.id === modelID)?.name ?? null
+  return known.value.get(agent.id) ?? null
+}
+
+/**
+ * The name an agent gives one of its models, such as "Opus 5.5" for `opus`, from the offer it
+ * gave last; null until that is read, or for a model it does not list. Reactive: a name appears
+ * once the remembered offer has loaded.
+ */
+export function agentModelName(agent: ACPAgentDef, modelID: string): string | null {
+  return knownOffer(agent)?.models.find((model) => model.id === modelID)?.name ?? null
+}
+
+/**
+ * What one of an agent's models offered to choose besides it when a profile chose it, `''` being
+ * the agent's own model; null until read. Reactive, as `agentModelName` is.
+ */
+export function agentModelChoicesOffered(
+  agent: ACPAgentDef,
+  modelID: string
+): AgentModelChoices | null {
+  return knownOffer(agent)?.choices[modelID] ?? null
 }
 
 /** Keeps an agent's offer for the next time a profile of it opens; a failed write is skipped. */

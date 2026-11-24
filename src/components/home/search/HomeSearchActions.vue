@@ -4,7 +4,7 @@ import { nextTick, watch } from 'vue'
 
 import type { DocumentKind } from '@open-pencil/scene-graph'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { openFileDialog } from '@/app/shell/menu/use'
 import { activeTab } from '@/app/tabs'
@@ -15,8 +15,12 @@ import Tip from '@/components/ui/overlay/Tip.vue'
 
 import HomeJoinRoom from './HomeJoinRoom.vue'
 
-/** The place a new design is created in, when it is not a local file. */
-const { destination = null } = defineProps<{ destination?: string | null }>()
+const { destination = null, creatingDisabled = false } = defineProps<{
+  /** The place a new design is created in, when it is not a local file. */
+  destination?: string | null
+  /** Home does not know yet where a new design would go, as while Cloud checks the session. */
+  creatingDisabled?: boolean
+}>()
 const emit = defineEmits<{ 'new-document': [kind: DocumentKind] }>()
 
 /** What Home offers to create, side by side, as Figma's Home and New file tab offer theirs. */
@@ -25,7 +29,8 @@ const CREATE_CHOICES = [
   { kind: 'board', label: 'createBoard', icon: DOCUMENT_KIND_ICONS.board }
 ] as const satisfies ReadonlyArray<{ kind: DocumentKind; label: string; icon: unknown }>
 const query = defineModel<string>({ required: true })
-const { menu, files } = useI18n()
+const menu = useMessages('menu')
+const files = useMessages('files')
 const { isMobile, isTouch } = useViewportKind()
 const searchInput = templateRef<{ focus: (options?: FocusOptions) => void }>('searchInput')
 
@@ -95,6 +100,7 @@ watch(
           :size="isTouch ? 'lg' : 'md'"
           variant="outline"
           :data-test-id="`home-new-${choice.kind}`"
+          :disabled="creatingDisabled"
           @click="emit('new-document', choice.kind)"
         >
           <template #leading><component :is="choice.icon" class="size-3.5" /></template>

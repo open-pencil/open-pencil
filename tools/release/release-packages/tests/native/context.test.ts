@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 
 import { desktopBuilds, desktopTargets } from '#release/native/catalog'
 import { ARTIFACT_TRANSFER_TIMEOUT_MS, releaseCommands } from '#release/native/commands'
-import { createReleaseContext, releaseVersion } from '#release/native/context'
+import { buildVersion, createReleaseContext, releaseVersion } from '#release/native/context'
 import { releasePaths } from '#release/workflow'
 
 import type { CommandRequest } from '@open-pencil/package-artifacts-tools'
@@ -80,4 +80,19 @@ test('command adapters delegate argument arrays and deadlines to shared tooling'
       timeoutMs: ARTIFACT_TRANSFER_TIMEOUT_MS
     }
   ])
+})
+
+test('a nightly carries the version its plan computed, a release only its tag’s', () => {
+  expect(buildVersion('nightly', '0.17.0-nightly.20261116')).toBe('0.17.0-nightly.20261116')
+  expect(buildVersion('v0.17.0', undefined)).toBe('0.17.0')
+  expect(buildVersion('v0.17.0', '0.17.0')).toBe('0.17.0')
+  expect(() => buildVersion('nightly', undefined)).toThrow()
+  expect(() => buildVersion('nightly', '0.17.0')).toThrow()
+  expect(() => buildVersion('v0.17.0', '0.17.0-nightly.20261116')).toThrow()
+  const nightly = createReleaseContext(
+    { ...environment, RELEASE_TAG: 'nightly', RELEASE_VERSION: '0.17.0-nightly.20261116' },
+    resolve('fixture')
+  )
+  expect(nightly.version).toBe('0.17.0-nightly.20261116')
+  expect(nightly.identity.version).toBe('0.17.0-nightly.20261116')
 })

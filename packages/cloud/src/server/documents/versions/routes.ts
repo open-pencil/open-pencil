@@ -1,7 +1,7 @@
 import {
-  parseDuplicateDocumentVersion,
-  parseSaveDocumentVersion,
-  parseUpdateDocumentVersion
+  duplicateDocumentVersionSchema,
+  saveDocumentVersionSchema,
+  updateDocumentVersionSchema
 } from '#cloud/contract'
 import { documentDomainError, type DocumentRouteEnvironment } from '#cloud/server/documents/routes'
 import {
@@ -19,7 +19,6 @@ const pageSchema = v.object({
   before: v.optional(v.pipe(v.string(), v.uuid())),
   limit: v.optional(v.pipe(v.string(), v.toNumber(), v.integer(), v.minValue(1)))
 })
-const parsePage = (input: unknown) => v.parse(pageSchema, input)
 
 async function answer(context: Context, run: () => Promise<Response>): Promise<Response> {
   try {
@@ -34,7 +33,7 @@ async function answer(context: Context, run: () => Promise<Response>): Promise<R
 /** A document's version history: listing, naming, opening, restoring, and duplicating versions. */
 export function createDocumentVersionRoutes(service: DocumentVersionService) {
   return new Hono<DocumentRouteEnvironment>()
-    .get('/documents/:documentId/versions', documentParams, validatedQuery(parsePage), (context) =>
+    .get('/documents/:documentId/versions', documentParams, validatedQuery(pageSchema), (context) =>
       answer(context, async () =>
         context.json(
           await service.list(
@@ -48,7 +47,7 @@ export function createDocumentVersionRoutes(service: DocumentVersionService) {
     .post(
       '/documents/:documentId/versions',
       documentParams,
-      validatedJSON(parseSaveDocumentVersion),
+      validatedJSON(saveDocumentVersionSchema),
       (context) =>
         answer(context, async () =>
           context.json(
@@ -66,7 +65,7 @@ export function createDocumentVersionRoutes(service: DocumentVersionService) {
     .patch(
       '/documents/:documentId/versions/:versionId',
       documentVersionParams,
-      validatedJSON(parseUpdateDocumentVersion),
+      validatedJSON(updateDocumentVersionSchema),
       (context) =>
         answer(context, async () =>
           context.json({
@@ -104,7 +103,7 @@ export function createDocumentVersionRoutes(service: DocumentVersionService) {
     .post(
       '/documents/:documentId/versions/:versionId/duplicate',
       documentVersionParams,
-      validatedJSON(parseDuplicateDocumentVersion),
+      validatedJSON(duplicateDocumentVersionSchema),
       (context) =>
         answer(context, async () =>
           context.json(

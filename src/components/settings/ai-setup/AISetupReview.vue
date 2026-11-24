@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { OnboardingPlan } from '@/app/ai/models/settings/onboarding/plan'
 import { AI_MODEL_ROLES, isModelRoleInUse } from '@/app/ai/models/types'
@@ -9,7 +9,7 @@ import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import { useRoleLabels } from './role-label'
 
 const { plan } = defineProps<{ plan: OnboardingPlan }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const { choiceLabel, roleLabel } = useRoleLabels()
 </script>
 

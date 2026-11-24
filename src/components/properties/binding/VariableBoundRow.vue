@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { variableText } from '@open-pencil/scene-graph/variables'
 import { useEditor } from '@open-pencil/vue'
 import type { BindingProvider } from '@open-pencil/vue/controls/binding-provider'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { BindableValueRoot } from '@open-pencil/vue/primitives/BindableValue'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -23,7 +23,7 @@ const { nodeId, field, label } = defineProps<{
 }>()
 
 const editor = useEditor()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const config = BOUND_LAYER_FIELDS[field]
 // The row reads the binding alone, never the field's value, so any field's provider fits.
 const provider: BindingProvider<unknown> = config.useProvider()

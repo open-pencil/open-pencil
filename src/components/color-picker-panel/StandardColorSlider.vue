@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { ColorSliderRoot, ColorSliderThumb, ColorSliderTrack } from 'reka-ui'
 import type { Color as RekaColor, ColorChannel, ColorSpace } from 'reka-ui'
+import { computed } from 'vue'
 
+import { useColorSpaces } from '@open-pencil/vue/controls/color-model'
+
+import { sliderTrackBackground } from '@/components/color-picker-panel/backgrounds'
 import type { ColorSliderUI } from '@/components/color-picker-panel/ui'
 import { useColorSliderUI } from '@/components/color-picker-panel/ui'
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -9,13 +13,15 @@ import LeftToRight from '@/components/ui/direction/LeftToRight.vue'
 
 interface StandardColorSliderProps {
   label: string
+  /** Only the slider, labelled for assistive technology, as Figma's hue and alpha are. */
+  bare?: boolean
   modelValue: RekaColor
   channel: ColorChannel
   colorSpace?: ColorSpace
   step?: number
-  numberValue: number
-  numberMin: number
-  numberMax: number
+  numberValue?: number
+  numberMin?: number
+  numberMax?: number
   numberStep?: number
   suffix?: string
   checkerboard?: boolean
@@ -25,6 +31,7 @@ interface StandardColorSliderProps {
 
 const {
   label,
+  bare = false,
   modelValue,
   channel,
   colorSpace = 'hsl',
@@ -44,6 +51,12 @@ const emit = defineEmits<{
   updateNumber: [value: number]
 }>()
 
+const spaces = useColorSpaces()
+// Reka writes its track in sRGB; in another profile the track shows the colors the canvas draws.
+const trackBackground = computed(() =>
+  sliderTrackBackground(modelValue, channel, colorSpace, spaces.value)
+)
+
 const styles = useColorSliderUI(
   () => checkerboard,
   () => ui
@@ -52,7 +65,7 @@ const styles = useColorSliderUI(
 
 <template>
   <div :class="styles.root.value">
-    <span :class="styles.label.value">{{ label }}</span>
+    <span v-if="!bare" :class="styles.label.value">{{ label }}</span>
     <LeftToRight>
       <ColorSliderRoot
         :class="styles.slider.value"
@@ -63,11 +76,19 @@ const styles = useColorSliderUI(
         data-slot="slider"
         @update:color="emit('update', $event)"
       >
-        <ColorSliderTrack :class="styles.track.value" />
-        <ColorSliderThumb :class="styles.thumb.value" :style="{ background: thumbFill }" />
+        <ColorSliderTrack
+          :class="styles.track.value"
+          :style="trackBackground ? { background: trackBackground } : undefined"
+        />
+        <ColorSliderThumb
+          :class="styles.thumb.value"
+          :aria-label="label"
+          :style="{ background: thumbFill }"
+        />
       </ColorSliderRoot>
     </LeftToRight>
     <NumberField
+      v-if="!bare && numberValue !== undefined"
       :class="styles.input.value"
       :aria-label="label"
       :model-value="numberValue"

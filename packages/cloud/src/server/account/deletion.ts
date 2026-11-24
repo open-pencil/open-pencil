@@ -157,13 +157,33 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
     /**
      * Removes everything Cloud keeps about the account, in one transaction, or refuses with
      * `AccountDeletionBlockedError` and changes nothing. Its workspaces are locked first, so nobody
-     * joins one, changes a role in one, or adds a document to one while it decides.
+     * joins one, changes a role in one, or adds a document to one while it decides. `before` runs
+     * first in that transaction, with the account's row locked and read again, as an
+     * administrator's check and audit entry do; a throw from it changes nothing. The address is the
+     * locked one, so a change that lands meanwhile cannot leave another address's request behind.
      */
-    async remove(user: { id: string; email: string }): Promise<void> {
+    async remove(
+      account: { id: string },
+      options: {
+        before?: (
+          transaction: Transaction<CloudDatabase>,
+          user: { id: string; email: string; name: string; role: string | null }
+        ) => Promise<void>
+      } = {}
+    ): Promise<void> {
       await database.transaction().execute(async (transaction) => {
-        if (await lastAdministrator(transaction, user.id, true)) {
+        // The administrators' rows lock first, in one order for every deletion, so two
+        // administrators deleting themselves at once wait for each other rather than deadlock.
+        if (await lastAdministrator(transaction, account.id, true)) {
           throw new AccountLastAdministratorError()
         }
+        const user = await transaction
+          .selectFrom('user')
+          .select(['id', 'email', 'name', 'role'])
+          .where('id', '=', account.id)
+          .forUpdate()
+          .executeTakeFirstOrThrow()
+        await options.before?.(transaction, user)
         const workspaceIds = await transaction
           .selectFrom('workspaceMember')
           .select('workspaceId')
@@ -256,10 +276,24 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
           'termsAcceptance',
           'userPicture',
           'signIn',
-          'mfaAssurance'
+          'mfaAssurance',
+          'notificationSetting',
+          'commentRead',
+          'commentMention'
         ] as const) {
           await transaction.deleteFrom(table).where('userId', '=', user.id).execute()
         }
+        // Comments the account wrote stay, nameless, in the threads others keep; what it was
+        // emailed about them goes.
+        await transaction
+          .deleteFrom('commentEmail')
+          .where((expression) =>
+            expression.or([
+              expression('senderId', '=', user.id),
+              expression('recipientId', '=', user.id)
+            ])
+          )
+          .execute()
         // Personal access tokens have no key to cascade from, since Cloud builds their table.
         await transaction.deleteFrom('apikey').where('referenceId', '=', user.id).execute()
         await transaction

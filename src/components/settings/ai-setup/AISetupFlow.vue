@@ -2,11 +2,13 @@
 import { tv } from 'tailwind-variants'
 import { computed, ref, useTemplateRef } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
+import { designModelConnection } from '@/app/ai/models'
 import type { AISetupEntry } from '@/app/ai/models/settings/onboarding/dialog'
 import type { OnboardingAccess } from '@/app/ai/models/settings/onboarding/plan'
 import { AI_SETUP_STEPS, useAIOnboarding } from '@/app/ai/models/settings/onboarding/use'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { canRunHostProcesses } from '@/app/tauri/capabilities'
 import { isTauri } from '@/app/tauri/env'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
@@ -41,7 +43,8 @@ const {
   subscriptionsAvailable?: boolean
 }>()
 const emit = defineEmits<{ close: []; advanced: []; tour: [] }>()
-const { ai, common } = useI18n()
+const ai = useMessages('ai')
+const common = useMessages('common')
 const styles = tv(theme)()
 
 const onboarding = useAIOnboarding({ agentsAvailable, subscriptionsAvailable })
@@ -60,6 +63,10 @@ const {
 } = onboarding
 const { isRecommended } = roles
 const phase = ref<'welcome' | 'wizard' | 'saved'>(entry === 'welcome' ? 'welcome' : 'wizard')
+// The welcome opens before sign-in, and signing in to Cloud sets AI up while it shows.
+const cloudReady = computed(
+  () => designModelConnection.value?.providerID === OPENPENCIL_AI_PROVIDER
+)
 
 const goals = computed(() => [
   {
@@ -134,6 +141,7 @@ async function finish(): Promise<void> {
         :offers-tour="offersTour"
         :tour-opening="tourOpening"
         :tour-failed="tourFailed"
+        :cloud-ready="cloudReady"
         @tour="emit('tour')"
       />
 
@@ -240,10 +248,15 @@ async function finish(): Promise<void> {
 
   <AppDialogFooter>
     <template v-if="phase === 'welcome'">
-      <AppButton variant="outline" @click="emit('close')">{{ ai.aiSetupSkip }}</AppButton>
-      <AppButton color="primary" variant="solid" @click="phase = 'wizard'">
-        {{ ai.aiSetupStart }}
+      <AppButton v-if="cloudReady" color="primary" variant="solid" @click="emit('close')">
+        {{ ai.aiSetupSkip }}
       </AppButton>
+      <template v-else>
+        <AppButton variant="outline" @click="emit('close')">{{ ai.aiSetupSkip }}</AppButton>
+        <AppButton color="primary" variant="solid" @click="phase = 'wizard'">
+          {{ ai.aiSetupStart }}
+        </AppButton>
+      </template>
     </template>
     <template v-else-if="phase === 'saved'">
       <AppButton color="primary" variant="solid" @click="emit('close')">

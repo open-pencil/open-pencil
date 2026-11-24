@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 
-import { useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -17,7 +17,7 @@ const { expected } = defineProps<{ expected: string }>()
 const matched = defineModel<boolean>('matched', { default: false })
 const emit = defineEmits<{ enter: [] }>()
 
-const common = useCommonMessages()
+const common = useMessages('common')
 const typed = ref('')
 watch(
   [typed, () => expected],

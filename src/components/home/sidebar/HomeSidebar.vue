@@ -9,10 +9,11 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
 import { sideList } from '@/components/ui/list/side-list'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menu } from '@/components/ui/menu/menu'
@@ -30,11 +31,14 @@ const {
   workspaces = [],
   sharedCount = 0,
   storage = null,
-  cloud = true
+  cloud = true,
+  checking = false
 } = defineProps<{
   active: HomeLocation
   /** The build has Cloud, so its sign-in and workspaces have a place. */
   cloud?: boolean
+  /** Cloud has yet to say whether this app is signed in, so neither its places nor sign-in show. */
+  checking?: boolean
   account?: HomeCloudAccount | null
   workspaces?: {
     id: string
@@ -61,7 +65,7 @@ const emit = defineEmits<{
 
 const ui = sideList()
 const menuUI = menu()
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const isActive = (location: HomeLocation) =>
   active.kind === location.kind && active.id === location.id
 const workspaceLocations = computed(() =>
@@ -188,6 +192,10 @@ const workspaceLocations = computed(() =>
             <span :class="ui.label()">{{ t.homeTrash }}</span>
           </button>
         </template>
+        <div v-else-if="checking" :class="ui.item()" role="status" :aria-label="t.checkingServer">
+          <AppSkeleton class="size-3.5 shrink-0" />
+          <AppSkeleton class="w-28" />
+        </div>
         <button v-else type="button" :class="ui.item()" @click="emit('connect')">
           <icon-lucide-log-in :class="ui.icon()" />
           <span :class="ui.label()">{{ t.homeSignIn }}</span>

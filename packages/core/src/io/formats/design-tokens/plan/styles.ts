@@ -1,12 +1,20 @@
 import { isEqual, isPlainObject } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 
-import type { Effect, SceneGraph, SceneNode, TextLength } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import type {
+  ColorProfile,
+  Effect,
+  SceneGraph,
+  SceneNode,
+  TextLength
+} from '@open-pencil/scene-graph'
+import { colorProfileSchema } from '@open-pencil/scene-graph/color'
+import { mapEffectColors } from '@open-pencil/scene-graph/copy'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 import { percentLength, pixelLength, textLengthSchema } from '@open-pencil/scene-graph/text'
 import { effectBindingField, effectBindingTarget } from '@open-pencil/scene-graph/variables'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { tryParseFigmaEffects } from '#core/figma-api/effects'
 import {
@@ -14,6 +22,7 @@ import {
   decodeDimension,
   decodeFontFamily,
   decodeFontWeight,
+  importedColor,
   referencePath
 } from '#core/io/formats/design-tokens/decode'
 import { tokenReference } from '#core/io/formats/design-tokens/paths'
@@ -83,6 +92,8 @@ const ownTextSchema = v.object({
 })
 const ownEffectsSchema = v.object({
   effects: v.optional(v.array(v.unknown())),
+  /** The profile `effects` were written in; files from before profiles were written in sRGB. */
+  colorSpace: v.optional(v.fallback(colorProfileSchema, 'srgb'), 'srgb'),
   bindings: v.optional(v.record(v.string(), v.string())),
   aliasData: v.optional(v.fallback(aliasDataSchema, {}))
 })
@@ -216,17 +227,26 @@ function shadowReferences(raw: Record<string, unknown>): Record<string, string[]
  * One shadow of a shadow token, or the shadows a referenced shadow token holds; those reference a
  * whole shadow, not a variable, so they bind nothing.
  */
-function shadowEffects(raw: unknown, resolve: Resolve, depth = 0): ReadShadows | null {
+function shadowEffects(
+  raw: unknown,
+  resolve: Resolve,
+  profile: ColorProfile,
+  depth = 0
+): ReadShadows | null {
   const path = referencePath(raw)
   if (path) {
     const resolved = depth < 16 ? resolve(path) : undefined
     const shadows =
-      resolved?.kind === 'token' ? shadowList(resolved.token.value, resolve, depth + 1) : null
+      resolved?.kind === 'token'
+        ? shadowList(resolved.token.value, resolve, profile, depth + 1)
+        : null
     return shadows && { effects: shadows.effects, references: shadows.effects.map(() => ({})) }
   }
   if (!isPlainObject(raw)) return null
   const color = fieldValue<Color>(raw.color, resolve, (value) =>
-    isPlainObject(value) && typeof value.r === 'number' ? (value as Color) : decodeColor(value)
+    isPlainObject(value) && typeof value.r === 'number'
+      ? (value as Color)
+      : decodeColor(value, profile)
   )
   // A missing length is 0; one that names a token which does not resolve makes the shadow invalid.
   const length = (key: string) =>
@@ -246,11 +266,16 @@ function shadowEffects(raw: unknown, resolve: Resolve, depth = 0): ReadShadows |
   return { effects: [effect], references: [shadowReferences(raw)] }
 }
 
-function shadowList(value: unknown, resolve: Resolve, depth = 0): ReadShadows | null {
+function shadowList(
+  value: unknown,
+  resolve: Resolve,
+  profile: ColorProfile,
+  depth = 0
+): ReadShadows | null {
   const entries = Array.isArray(value) ? value : [value]
   const list: ReadShadows = { effects: [], references: [] }
   for (const entry of entries) {
-    const shadows = shadowEffects(entry, resolve, depth)
+    const shadows = shadowEffects(entry, resolve, profile, depth)
     if (!shadows) return null
     appendAll(list.effects, shadows.effects)
     appendAll(list.references, shadows.references)
@@ -289,25 +314,36 @@ function replaceShadows(
   return { effects, positions, kept }
 }
 
+/** `effects` from a file written in `source`, their colors read into `profile`. */
+function importedEffects(effects: Effect[], source: ColorProfile, profile: ColorProfile): Effect[] {
+  return mapEffectColors(effects, (color) => importedColor(color, source, profile))
+}
+
 /** A shadow token as effect style fields and the fields its references bind. */
 function effectStyle(
   token: ReadToken,
   resolve: Resolve,
-  alias: Alias
+  alias: Alias,
+  profile: ColorProfile
 ): Pick<PlannedStyle, 'fields' | 'bindings'> | null {
   const parsed = v.safeParse(ownEffectsSchema, token.extensions[OPENPENCIL_EXTENSION])
   const own = parsed.success ? parsed.output : null
   const ownBindings = own?.bindings ?? {}
   // Extension effects that do not read fall back to the token's own shadows.
-  const exact = own?.effects ? tryParseFigmaEffects(own.effects) : null
-  if (exact && isEqual(token.value, shadowTokenValue(exact, ownBindings))) {
+  const recorded = own?.effects ? tryParseFigmaEffects(own.effects) : null
+  // The token is current when it is what its own file would write; its effects are then read
+  // into this document as its colors are, from the profile the file recorded them in.
+  const source = own?.colorSpace ?? 'srgb'
+  if (recorded && isEqual(token.value, shadowTokenValue(recorded, ownBindings, source))) {
     return {
-      fields: { effects: exact },
+      fields: { effects: importedEffects(recorded, source, profile) },
       bindings: aliasedBindings(ownBindings, own?.aliasData ?? {}, alias)
     }
   }
-  const shadows = shadowList(token.value, resolve)
+  const shadows = shadowList(token.value, resolve, profile)
   if (!shadows) return null
+  // Edited shadows replace the recorded ones; the rest, such as blurs, are kept in this profile.
+  const exact = recorded && importedEffects(recorded, source, profile)
   const placed = exact
     ? replaceShadows(exact, shadows.effects)
     : { effects: shadows.effects, positions: shadows.effects.map((_, index) => index), kept: null }
@@ -384,7 +420,9 @@ export function planStyles(
       continue
     }
     const style =
-      kind === 'TEXT' ? textStyle(token, resolve, alias) : effectStyle(token, resolve, alias)
+      kind === 'TEXT'
+        ? textStyle(token, resolve, alias)
+        : effectStyle(token, resolve, alias, graph.documentColorSpace)
     if (!style) {
       skipped.push({ name: token.name, collection: undefined, reason: 'invalid-value' })
       continue

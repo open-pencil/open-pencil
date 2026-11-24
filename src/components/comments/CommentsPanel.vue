@@ -2,7 +2,6 @@
 import {
   ContextMenuContent,
   ContextMenuPortal,
-  ContextMenuTrigger,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItemIndicator,
@@ -15,7 +14,7 @@ import {
 import { computed } from 'vue'
 
 import { commentThreadNumbers, listCommentThreads } from '@open-pencil/scene-graph/comments'
-import { useCommentMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useComments } from '@/app/comments/use'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -24,6 +23,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppContextMenuTrigger from '@/components/ui/menu/AppContextMenuTrigger.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -36,7 +36,7 @@ import { comments as commentsTheme } from './ui'
 /** The comments list that takes over the right sidebar while the Comment tool is active. */
 const store = useEditorStore()
 const comments = useComments()
-const messages = useCommentMessages()
+const messages = useMessages('comments')
 const menuCls = useMenuUI({ content: 'min-w-52' })
 const itemCls = menuItem({ justify: 'start', class: 'relative pl-7' })
 const ui = commentsTheme()
@@ -143,12 +143,13 @@ function setSort(value: unknown) {
     />
     <ul v-else :class="ui.list()" :aria-label="messages.comments">
       <AppContextMenuRoot v-for="thread in listed" :key="thread.id" :modal="false">
-        <ContextMenuTrigger as-child>
+        <AppContextMenuTrigger as-child>
           <CommentListItem
             :thread="thread"
             :number="numbers.get(thread.id) ?? 0"
             :page-name="pageName(thread.pageId, thread.pageName)"
             :active="comments.activeThreadId.value === thread.id"
+            :unread="comments.isUnread(thread.id)"
             @select="comments.focusThread(thread.id)"
           >
             <template #actions>
@@ -177,7 +178,7 @@ function setSort(value: unknown) {
               </IconButton>
             </template>
           </CommentListItem>
-        </ContextMenuTrigger>
+        </AppContextMenuTrigger>
         <ContextMenuPortal>
           <ContextMenuContent :class="menuCls.content">
             <MenuScrollArea>

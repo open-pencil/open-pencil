@@ -5,7 +5,7 @@ import {
   selectionToJSXWithLayers,
   type DesignJSXElement
 } from '@open-pencil/design-jsx'
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { GeneratedCode } from '@/app/code/generated'
 import type { DesignJSXLayerLine } from '@/app/code/live-preview'
@@ -21,7 +21,7 @@ import type { LayerLinkSource } from './links'
  */
 export function useCodeLayers(source: Readonly<Ref<CodeSource>>) {
   const store = useEditorStore()
-  const messages = useDesignCheckMessages()
+  const messages = useMessages('design-check')
   const links = shallowRef<LayerLinkSource | null>(null)
 
   const issues = computed(() => {

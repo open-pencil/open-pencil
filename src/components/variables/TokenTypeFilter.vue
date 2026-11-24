@@ -9,7 +9,7 @@ import {
 import { computed } from 'vue'
 
 import type { VariableType } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
@@ -20,7 +20,8 @@ import { VARIABLE_TYPE_ICONS, VARIABLE_TYPES } from '@/components/variables/type
 /** The variable types the list shows; none checked shows every type. */
 const types = defineModel<VariableType[]>({ default: () => [] })
 
-const { variables, variableTypes: text } = useI18n()
+const variables = useMessages('variables/panel')
+const text = useMessages('variables/types')
 const menu = useMenuUI({ content: 'w-44', item: 'justify-start gap-2' })
 
 const labels = computed<Record<VariableType, string>>(() => ({

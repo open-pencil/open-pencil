@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import { parseColor } from '@open-pencil/scene-graph/color'
+import { iconOptionsSchema } from '@open-pencil/scene-graph/icons'
 
 import { graphOf } from '#core/figma-api/graph'
 import { prepareSlotInsertion } from '#core/figma-api/slots'
@@ -61,7 +62,15 @@ export const insertIcon = defineTool({
     color: v.optional(
       v.pipe(v.string(), v.description('Icon color hex (replaces currentColor). Default: #000000'))
     ),
-    parent_id: v.optional(v.pipe(v.string(), v.description('Parent node ID for all icons')))
+    parent_id: v.optional(v.pipe(v.string(), v.description('Parent node ID for all icons'))),
+    options: v.optional(
+      v.pipe(
+        iconOptionsSchema,
+        v.description(
+          'How sets drawn from their own sources draw the icons; other sets ignore it. Material Symbols (material-symbols-outlined, -rounded, -sharp): wght 100–700, FILL 0 or 1, GRAD -50–200, opsz 20–48 (follows size when left out). SF Symbols (sf-symbols, macOS desktop only): weight ultralight…black, scale small|medium|large, rendering monochrome|hierarchical|palette|multicolor, variable 0–1 for symbols with variable color, and secondary and tertiary as #rrggbb for palette. E.g. {"wght":600,"FILL":1}'
+        )
+      )
+    )
   }),
   execute: async (figma, args) => {
     const names = args.names ?? (args.name ? [args.name] : [])
@@ -69,11 +78,10 @@ export const insertIcon = defineTool({
 
     const size = args.size ?? 24
     const color = args.color ?? '#000000'
-    const parsedColor = parseColor(color)
 
     let icons
     try {
-      icons = await graphOf(figma).waitOutsideEdit(figma.icons.icons(names, size))
+      icons = await graphOf(figma).waitOutsideEdit(figma.icons.icons(names, size, args.options))
     } catch (e) {
       return { error: (e as Error).message }
     }
@@ -81,6 +89,8 @@ export const insertIcon = defineTool({
     const inserted: { id: string; name: string; icon: string }[] = []
     const notFound: string[] = []
 
+    // Read after the lookup, beside the inserts, so a profile changed meanwhile is the one used.
+    const parsedColor = parseColor(color, graphOf(figma).documentColorSpace)
     const parentId = args.parent_id ?? figma.currentPage.id
     prepareSlotInsertion(graphOf(figma), parentId, 'insert_icon')
     for (const name of names) {

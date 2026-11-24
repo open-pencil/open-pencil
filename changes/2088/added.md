@@ -1,1 +1,0 @@
-- When an administrator blocks a shared document, its workspace's owner gets an email with the reason given and where to contest it, and another when it's restored (#2088).

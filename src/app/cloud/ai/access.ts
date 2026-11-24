@@ -3,15 +3,16 @@ import { joinURL } from 'ufo'
 import { computed } from 'vue'
 
 import {
+  CloudAPIError,
   createCloudServicesClient,
-  type CloudServicesClient,
-  type CloudServicesTokenSource
+  type CloudAPIClient,
+  type CloudServicesClient
 } from '@open-pencil/cloud/client'
 import { CLOUD_ACCOUNT_PLAN_PATH, type WorkspaceSummary } from '@open-pencil/cloud/contract'
 
 import { homeCloudServer } from '../servers/store'
 import { cloudAPIClient, cloudConnection, cloudFetch } from '../sessions/connection'
-import { createCloudTokenCache } from '../tokens'
+import { createCloudTokenCache, type CloudTokenCache } from '../tokens'
 
 export type CloudAIWorkspace = Pick<WorkspaceSummary, 'id' | 'name'>
 
@@ -40,7 +41,7 @@ export const cloudBillingURL = computed(() => {
 })
 
 // Keyed by account too, so a token signed for one person is never sent for another.
-const tokenSources = new Map<string, CloudServicesTokenSource>()
+const tokenSources = new Map<string, CloudTokenCache>()
 
 /** The Home server's services on a workspace's behalf, or `null` while it is unavailable. */
 export function cloudAIClient(workspaceId: string): CloudServicesClient | null {
@@ -57,6 +58,19 @@ export function cloudAIClient(workspaceId: string): CloudServicesClient | null {
 }
 
 /**
+ * Whether a workspace's plan includes AI. A workspace the server no longer finds, one the account
+ * left or that was deleted since the workspace list was read, has none.
+ */
+async function includesAI(api: CloudAPIClient, workspaceId: string): Promise<boolean> {
+  try {
+    return (await api.getWorkspaceEntitlements(workspaceId)).features.cloudServices
+  } catch (error) {
+    if (error instanceof CloudAPIError && error.status === 404) return false
+    throw error
+  }
+}
+
+/**
  * The Home server's workspaces whose plan includes AI, in the order the server lists them. Rejects
  * when any check fails, since the failed workspace may be the one a profile already uses.
  */
@@ -65,12 +79,62 @@ export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
   if (!home) return []
   const api = cloudAPIClient(home.server, home.discovery)
   const checks = await Promise.allSettled(
-    home.connection.workspaces.map(async (workspace) => {
-      const entitlements = await api.getWorkspaceEntitlements(workspace.id)
-      return entitlements.features.cloudServices ? { id: workspace.id, name: workspace.name } : null
-    })
+    home.connection.workspaces.map(async (workspace) =>
+      (await includesAI(api, workspace.id)) ? { id: workspace.id, name: workspace.name } : null
+    )
   )
   const failure = checks.find((check) => check.status === 'rejected')
   if (failure) throw failure.reason
   return compact(checks.map((check) => (check.status === 'fulfilled' ? check.value : null)))
+}
+
+/**
+ * The first of the Home server's workspaces, in the order it lists them, whose plan includes AI,
+ * or `null` with none. It checks them one at a time and stops at the first, so a later workspace
+ * that can't be checked never hides it; it rejects when one before it can't be.
+ */
+export async function firstCloudAIWorkspace(): Promise<CloudAIWorkspace | null> {
+  const home = homeAI.value
+  if (!home) return null
+  const api = cloudAPIClient(home.server, home.discovery)
+  // A sign-in or a connection refreshed meanwhile has a workspace list of its own, so stop
+  // working through this one.
+  const replaced = () => homeAI.value?.connection !== home.connection
+  for (const workspace of home.connection.workspaces) {
+    const included = await includesAI(api, workspace.id)
+    if (replaced()) return null
+    if (included) return { id: workspace.id, name: workspace.name }
+  }
+  return null
+}
+
+/**
+ * Whether the signed-in account owns a workspace on the Home server, and so pays for its credits,
+ * or `null` when unknown: a server too old to say, or a workspace it doesn't list.
+ */
+export function cloudOwnsWorkspace(workspaceId: string): boolean | null {
+  const workspace = homeAI.value?.connection.workspaces.find(({ id }) => id === workspaceId)
+  return workspace?.owner ?? null
+}
+
+/**
+ * Drops the services token held for a workspace, so the next request signs one with the plan as
+ * it is now: a token carries the allowance it was signed with.
+ */
+export function renewCloudAIToken(workspaceId: string): void {
+  // Reset in place, since clients made earlier, such as a chat's, keep this same source.
+  tokenSources.get(`${cloudAIIdentity.value}:${workspaceId}`)?.reset()
+}
+
+/**
+ * The credits a workspace's plan grants each month, or `null` when it grants none, sets no limit,
+ * or the server can't say.
+ */
+export async function cloudMonthlyAllowance(workspaceId: string): Promise<number | null> {
+  const home = homeAI.value
+  if (!home || !workspaceId) return null
+  const entitlements = await cloudAPIClient(home.server, home.discovery)
+    .getWorkspaceEntitlements(workspaceId)
+    .catch(() => null)
+  return entitlements?.features.cloudServices ? entitlements.limits.monthlyCreditAllowance : null
 }

@@ -7,17 +7,17 @@ import {
   ContextMenuPortal,
   ContextMenuRadioGroup,
   ContextMenuRadioItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger
+  ContextMenuSeparator
 } from 'reka-ui'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useToolbar } from '@open-pencil/vue/primitives/Toolbar'
 
 import { isToolbarAlign, isToolbarSide } from '@/app/editor/toolbar/dock'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { useToolbarAlignOptions, useToolbarSideOptions } from '@/components/toolbar/dock'
 import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppContextMenuTrigger from '@/components/ui/menu/AppContextMenuTrigger.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
@@ -31,7 +31,7 @@ const { disabled = false, dockable = false } = defineProps<{
   dockable?: boolean
 }>()
 
-const { settings } = useI18n()
+const settings = useMessages('settings')
 const { side, align, setSide, setAlign } = useToolbar()
 const sideOptions = useToolbarSideOptions()
 const alignOptions = useToolbarAlignOptions(side)
@@ -48,9 +48,9 @@ function alignTo(value: unknown) {
 
 <template>
   <AppContextMenuRoot>
-    <ContextMenuTrigger as-child :disabled="disabled">
+    <AppContextMenuTrigger as-child :disabled="disabled">
       <slot />
-    </ContextMenuTrigger>
+    </AppContextMenuTrigger>
     <ContextMenuPortal>
       <ContextMenuContent :class="menu.content">
         <MenuScrollArea>

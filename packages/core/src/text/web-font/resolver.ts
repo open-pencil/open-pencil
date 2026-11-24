@@ -1,8 +1,9 @@
 import { uniq } from 'es-toolkit'
 import type { FontFaceData, RemoteFontSource, ResolveFontResult } from 'unifont'
 
-import { minOf } from '@open-pencil/scene-graph/arrays'
 import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
+import { minOf } from '@open-pencil/std/arrays'
+import { toError } from '@open-pencil/std/errors'
 
 import { IS_BROWSER } from '#core/constants'
 import {
@@ -111,6 +112,37 @@ function faceWeights(weight: FontFaceData['weight']): number[] {
   return STANDARD_WEIGHTS.filter((value) => value >= min && value <= max)
 }
 
+/**
+ * Where a font file lives, as far as telling one provider's files from a page's own: its origin
+ * and first path segment, as `https://cdn.jsdelivr.net/fontsource` tells Fontsource's files from
+ * other packages on the same CDN.
+ */
+function fontFileHome(url: string): string | null {
+  if (!URL.canParse(url)) return null
+  const { origin, pathname } = new URL(url)
+  return `${origin}/${pathname.split('/')[1] ?? ''}`
+}
+
+/** Where a provider's answer for a family serves its files. */
+function fileHomesOf(result: ResolveFontResult): Set<string> {
+  const homes = new Set<string>()
+  for (const font of result.fonts) {
+    for (const source of font.src) {
+      const home = isRemoteFontSource(source) ? fontFileHome(source.url) : null
+      if (home) homes.add(home)
+    }
+  }
+  return homes
+}
+
+/** A family as the first enabled provider that serves it answers: its faces and file homes. */
+interface ProviderFamily {
+  faces: FamilyFace[]
+  fileHomes: Set<string>
+}
+
+const NO_PROVIDER_FAMILY: ProviderFamily = { faces: [], fileHomes: new Set() }
+
 function familyFacesOf(result: ResolveFontResult): FamilyFace[] {
   const faces = new Map<string, FamilyFace>()
   for (const font of result.fonts) {
@@ -182,7 +214,7 @@ function waitForFontOperation<T>(operation: Promise<T>, signal?: AbortSignal): P
       try {
         signal.throwIfAborted()
       } catch (error) {
-        reject(error instanceof Error ? error : new Error(String(error)))
+        reject(toError(error))
       }
     }
     signal.addEventListener('abort', abort, { once: true })
@@ -194,7 +226,7 @@ function waitForFontOperation<T>(operation: Promise<T>, signal?: AbortSignal): P
       },
       (error: unknown) => {
         signal.removeEventListener('abort', abort)
-        reject(error instanceof Error ? error : new Error(String(error)))
+        reject(toError(error))
         return undefined
       }
     )
@@ -212,7 +244,7 @@ export class WebFontResolver {
   )
   private unifontPromises = new Map<WebFontProviderId, Promise<WebUnifont>>()
   private familiesCache = new Map<WebFontProviderId, string[]>()
-  private facesCache = new Map<string, Promise<FamilyFace[]>>()
+  private familyCache = new Map<string, Promise<ProviderFamily>>()
   private familiesPromises = new Map<WebFontProviderId, Promise<string[]>>()
   private failedFonts = new Set<string>()
   private fontPromises = new Map<string, Promise<ArrayBuffer[]>>()
@@ -222,7 +254,7 @@ export class WebFontResolver {
   setEnabled(settings: Partial<Record<WebFontProviderId, boolean>>): void {
     this.enabled = new Set(WEB_FONT_PROVIDER_IDS.filter((provider) => settings[provider] === true))
     this.failedFonts.clear()
-    this.facesCache.clear()
+    this.familyCache.clear()
   }
 
   setRemoteFetch(fetcher: WebFontFetch | null): void {
@@ -230,7 +262,7 @@ export class WebFontResolver {
     this.unifontPromises.clear()
     this.familiesPromises.clear()
     this.familiesCache.clear()
-    this.facesCache.clear()
+    this.familyCache.clear()
     this.failedFonts.clear()
   }
 
@@ -257,17 +289,31 @@ export class WebFontResolver {
    * provider does. Asking a provider for every weight in both slants returns only the faces it
    * has, without downloading them.
    */
-  familyFaces(family: string): Promise<FamilyFace[]> {
-    let faces = this.facesCache.get(family)
-    if (!faces) {
-      faces = this.loadFamilyFaces(family)
-      this.facesCache.set(family, faces)
-    }
-    return faces
+  async familyFaces(family: string): Promise<FamilyFace[]> {
+    return (await this.providerFamily(family)).faces
   }
 
-  private async loadFamilyFaces(family: string): Promise<FamilyFace[]> {
-    if (typeof fetch === 'undefined' || (IS_BROWSER && !this.remoteFetch)) return []
+  /**
+   * Whether `url` is one of a family's files as an enabled provider serves it: a page that loads a
+   * font from Google Fonts loads the same family the editor fetches from there, while a file the
+   * page serves itself may be another design under the same name.
+   */
+  async servesFontFile(family: string, url: string): Promise<boolean> {
+    const home = fontFileHome(url)
+    return home !== null && (await this.providerFamily(family)).fileHomes.has(home)
+  }
+
+  private providerFamily(family: string): Promise<ProviderFamily> {
+    let answer = this.familyCache.get(family)
+    if (!answer) {
+      answer = this.loadProviderFamily(family)
+      this.familyCache.set(family, answer)
+    }
+    return answer
+  }
+
+  private async loadProviderFamily(family: string): Promise<ProviderFamily> {
+    if (typeof fetch === 'undefined' || (IS_BROWSER && !this.remoteFetch)) return NO_PROVIDER_FAMILY
     for (const provider of this.enabledProviders()) {
       try {
         const unifont = await this.unifont(provider)
@@ -279,13 +325,13 @@ export class WebFontResolver {
           })
         )
         const faces = familyFacesOf(result)
-        if (faces.length > 0) return faces
+        if (faces.length > 0) return { faces, fileHomes: fileHomesOf(result) }
       } catch (error) {
         // The next provider may serve the family.
         console.warn(`[fonts] ${provider} could not list the faces of ${family}:`, error)
       }
     }
-    return []
+    return NO_PROVIDER_FAMILY
   }
 
   async listFamilies(provider: WebFontProviderId): Promise<string[]> {

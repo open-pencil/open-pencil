@@ -9,6 +9,9 @@ import { collectionAssetKey, styleAssetKey } from '@open-pencil/scene-graph/asse
 import { assertLibraryAssetKey, isValidLibraryAssetKey } from './identity'
 import type { LibraryAssetDescriptor, LibraryAssetType, LibraryComponentAssetType } from './types'
 
+/** A component or component set, which a library publishes. */
+export type LibraryRootNode = SceneNode & { type: LibraryComponentAssetType }
+
 export interface AssetKeyAssignment {
   nodeId: string
   assetKey: string
@@ -29,17 +32,13 @@ function normalizeAssetKey(name: string): string {
   return normalized || 'component'
 }
 
-export function publishableLibraryRoots(
-  graph: SceneGraph
-): Array<SceneNode & { type: 'COMPONENT' | 'COMPONENT_SET' }> {
-  return [...graph.getAllNodes()].filter(
-    (node): node is SceneNode & { type: 'COMPONENT' | 'COMPONENT_SET' } => {
-      if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return false
-      if (node.librarySource?.readOnly) return false
-      const parent = node.parentId ? graph.getNode(node.parentId) : undefined
-      return parent?.type !== 'COMPONENT_SET'
-    }
-  )
+export function publishableLibraryRoots(graph: SceneGraph): Array<LibraryRootNode> {
+  return [...graph.getAllNodes()].filter((node): node is LibraryRootNode => {
+    if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return false
+    if (node.librarySource?.readOnly) return false
+    const parent = node.parentId ? graph.getNode(node.parentId) : undefined
+    return parent?.type !== 'COMPONENT_SET'
+  })
 }
 
 /** The document's own shared styles; a style a library brought in stays that library's. */
@@ -52,9 +51,7 @@ export function publishableLibraryStyles(graph: SceneGraph): SceneNode[] {
 
 /** The document's own variable collections; one a library brought in stays that library's. */
 export function publishableLibraryCollections(graph: SceneGraph): VariableCollection[] {
-  return [...graph.variableCollections.values()].filter(
-    (collection) => !isLibraryCollection(collection)
-  )
+  return graph.getLiveCollections().filter((collection) => !isLibraryCollection(collection))
 }
 
 function publishedRoots(graph: SceneGraph, assetIds?: string[]): SceneNode[] {

@@ -1,11 +1,11 @@
 import type { CanvasKit } from '@open-pencil/canvaskit'
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
+import type { SceneGraph, ColorProfile } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { IconProvider } from '#core/icons'
 
 import type { RasterExportFormat } from './formats/raster'
+import type { ExportEffectWarning } from './formats/svg/effects'
 
 export type IOFormatRole = 'native-document' | 'interchange-document' | 'derived-export'
 
@@ -87,13 +87,15 @@ export interface FigWriteOptions {
 export interface RasterExportOptions {
   scale?: number
   quality?: number
-  colorSpace?: RenderColorSpace
+  colorSpace?: ColorProfile
   format: RasterExportFormat
 }
 
 export interface SVGExportOptions {
   xmlDeclaration?: boolean
-  colorSpace?: RenderColorSpace
+  colorSpace?: ColorProfile
+  /** Receives each effect the export leaves out because SVG cannot draw it. */
+  onWarning?: (warning: ExportEffectWarning) => void
 }
 
 /** A file written next to an export's main file, at a path relative to it. */
@@ -108,6 +110,8 @@ export interface ExportResult {
   extension: string
   data: IOData
   encoding?: IOTextEncoding
+  /** Effects the format cannot draw, which the export left out. */
+  warnings?: ExportEffectWarning[]
   /** Extra files the main file refers to, such as external images and fonts. */
   assets?: ExportAsset[]
 }

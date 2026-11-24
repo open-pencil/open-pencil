@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -31,8 +31,13 @@ const emit = defineEmits<{
 }>()
 
 const ui = portalForm({ size: 'lg' })
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const code = ref('')
+// Nothing to check until a code is typed: an empty one would only come back as an error.
+const entered = computed(() => code.value.trim() !== '')
+function submit() {
+  if (entered.value) emit('verify', code.value.trim())
+}
 </script>
 
 <template>
@@ -44,7 +49,7 @@ const code = ref('')
     "
   >
     <AppAlert v-if="error" tone="error" :heading="error" />
-    <form :class="ui.form()" novalidate @submit.prevent="emit('verify', code)">
+    <form :class="ui.form()" novalidate @submit.prevent="submit">
       <AppInput
         v-model="code"
         size="lg"
@@ -63,6 +68,7 @@ const code = ref('')
         variant="solid"
         :class="ui.submit()"
         :loading="verifying"
+        :disabled="!entered"
       >
         {{ messages.continue }}
       </AppButton>

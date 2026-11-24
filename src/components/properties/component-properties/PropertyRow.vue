@@ -7,7 +7,7 @@ import type {
   ComponentBinding,
   ComponentBindingGroup
 } from '@open-pencil/vue/controls/component-props'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -51,7 +51,8 @@ const emit = defineEmits<{
   select: [id: string]
   unbind: [binding: ComponentBinding]
 }>()
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 const { open, portalActive } = useRetainedPopup()
 const styles = usePopoverUI({
   content: 'w-64 max-w-[calc(100vw-1rem)]',

@@ -4,6 +4,7 @@ export {
   type CloudAdminRoutes,
   type CloudAdminServices
 } from './api/routes'
+export { approveEnrollmentByEmail, grantDeploymentAdminByEmail } from './bootstrap'
 export { createAdminAuditService, type AdminAuditService } from './audit/service'
 export { createAdminEmailService, type AdminEmailService } from './email/service'
 export { PostgresRateLimitStore } from '#cloud/server/rate-limit'

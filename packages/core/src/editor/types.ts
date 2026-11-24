@@ -1,6 +1,6 @@
 import type { CanvasKit } from '@open-pencil/canvaskit'
 import type {
-  DocumentColorSpace,
+  ColorProfile,
   DocumentKind,
   SceneGraph,
   SceneGraphEvents,
@@ -268,7 +268,7 @@ export interface EditorEvents extends SceneGraphEvents {
    */
   'render:progressed': (versions: RenderVersions) => void
   'graph:replaced': (graph: SceneGraph) => void
-  'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
+  'document:color-space-changed': (colorSpace: ColorProfile) => void
   'document:libraries-changed': () => void
   'document:read-only-changed': (readOnly: boolean) => void
   /** The host's restrictions changed (`setHostRestrictions`); read them from the profile. */
@@ -376,6 +376,7 @@ export interface EditorContext {
   setActiveTool: (tool: Tool) => void
   setNavigationPhase: (phase: NavigationPhase, inputAt?: number) => void
   runLayoutForNode: (id: string) => void
+  runLayoutForParents: (parentIds: Iterable<string>) => void
   runMutationWithLayout: <T>(
     operation: () => T | Promise<T>,
     fallbackId?: string

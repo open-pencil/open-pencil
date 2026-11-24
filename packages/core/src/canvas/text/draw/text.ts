@@ -37,7 +37,7 @@ function drawPaintedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): bool
     },
     (paragraph, prepared) => {
       const y = textVerticalOffset(node, paragraph.getHeight())
-      drawTextLayout(r.ck, canvas, node, prepared, y, r.fillPaint)
+      drawTextLayout(r.ck, canvas, node, prepared, y, r.fillPaint, r.documentColorSpace)
       return true
     }
   )
@@ -173,7 +173,7 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
       { halfLeading: true },
       (paragraph, prepared) => {
         const paragraphY = textVerticalOffset(node, paragraph.getHeight())
-        drawTextLayout(r.ck, canvas, node, prepared, paragraphY, r.fillPaint)
+        drawTextLayout(r.ck, canvas, node, prepared, paragraphY, r.fillPaint, r.documentColorSpace)
       }
     )
   } else if (r.chromeFonts.text) {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
+import { responseJSON } from '#cloud-tests/helpers/response'
 import { CLOUD_PROTOCOL_VERSION } from '#cloud/contract'
 import {
   createCloudApp,
@@ -9,6 +10,7 @@ import {
   parseCloudServerConfig,
   type CloudDatabase
 } from '#cloud/server'
+import { testClient } from 'hono/testing'
 import {
   DummyDriver,
   Kysely,
@@ -20,6 +22,9 @@ import {
   type Dialect,
   type QueryResult
 } from 'kysely'
+import * as v from 'valibot'
+
+const errorSchema = v.object({ error: v.object({ code: v.string() }) })
 
 function dummyPostgresDialect(): Dialect {
   return {
@@ -129,8 +134,10 @@ describe('createCloudApp', () => {
           name: 'Pending User'
         })
       })
+      const client = testClient(app)
+      // No such route: the API answers unauthenticated callers before routing.
       expect((await app.request('/api/enrollment/request', { method: 'POST' })).status).toBe(401)
-      expect(await (await app.request('/api/account/status')).json()).toEqual({
+      expect(await (await client.api.account.status.$get()).json()).toEqual({
         user: {
           userId: 'pending-user',
           email: 'pending@example.com',
@@ -144,7 +151,7 @@ describe('createCloudApp', () => {
           .select(['emailNormalized', 'status'])
           .executeTakeFirstOrThrow()
       ).toEqual({ emailNormalized: 'pending@example.com', status: 'pending' })
-      expect((await app.request('/api/admin/enrollments')).status).toBe(401)
+      expect((await client.api.admin.enrollments.$get({ query: {} })).status).toBe(401)
     } finally {
       await runtime.close()
     }
@@ -171,9 +178,10 @@ describe('createCloudApp', () => {
           deploymentRole: 'admin'
         })
       })
-      expect((await app.request('/api/session')).status).toBe(200)
-      expect((await app.request('/api/admin/operations')).status).toBe(403)
-      expect(await (await app.request('/api/admin/operations')).json()).toEqual({
+      const client = testClient(app)
+      expect((await client.api.session.$get()).status).toBe(200)
+      expect((await client.api.admin.operations.$get()).status).toBe(403)
+      expect(await responseJSON(await client.api.admin.operations.$get(), errorSchema)).toEqual({
         error: { code: 'mfa_required' }
       })
     } finally {
@@ -206,26 +214,23 @@ describe('createCloudApp', () => {
           deploymentRole: 'user'
         })
       })
+      const admin = testClient(adminApp)
       expect(
         (
-          await userApp.request('/api/admin/operations', {
+          await testClient(userApp).api.admin.operations.$get(undefined, {
             headers: { Origin: 'https://pencil.example.com' }
           })
         ).status
       ).toBe(403)
       expect(
         (
-          await adminApp.request('/api/admin/enrollments/missing/approve', {
-            method: 'POST',
-            headers: {
-              Origin: 'https://untrusted.example.com',
-              'Content-Type': 'application/json'
-            },
-            body: '{}'
-          })
+          await admin.api.admin.enrollments[':id'].approve.$post(
+            { param: { id: 'missing' }, json: {} },
+            { headers: { Origin: 'https://untrusted.example.com' } }
+          )
         ).status
       ).toBe(403)
-      const response = await adminApp.request('/api/admin/operations')
+      const response = await admin.api.admin.operations.$get()
       expect(response.status).toBe(200)
       expect(await response.json()).toMatchObject({
         enrollmentMode: 'open',
@@ -262,13 +267,9 @@ describe('createCloudApp', () => {
         expect(response.status).toBe(400)
         expect(await response.json()).toEqual({ error: { code: 'invalid_request' } })
       }
-      const review = await adminApp.request(
-        `/api/admin/enrollments/${crypto.randomUUID()}/approve`,
-        {
-          method: 'POST',
-          headers: { Origin: 'https://pencil.example.com', 'Content-Type': 'application/json' },
-          body: '{}'
-        }
+      const review = await testClient(adminApp).api.admin.enrollments[':id'].approve.$post(
+        { param: { id: crypto.randomUUID() }, json: {} },
+        { headers: { Origin: 'https://pencil.example.com' } }
       )
       expect(review.status).toBe(404)
       expect(await review.json()).toEqual({ error: { code: 'not_found' } })
@@ -299,13 +300,14 @@ describe('createCloudApp', () => {
         email: pendingIdentity.email,
         name: pendingIdentity.name
       })
+      const client = testClient(app)
 
-      expect(await (await app.request('/api/account/status')).json()).toEqual({
+      expect(await (await client.api.account.status.$get()).json()).toEqual({
         user: pendingIdentity,
         state: 'pending'
       })
-      expect((await app.request('/api/session')).status).toBe(401)
-      expect((await app.request('/api/admin/enrollments')).status).toBe(401)
+      expect((await client.api.session.$get()).status).toBe(401)
+      expect((await client.api.admin.enrollments.$get({ query: {} })).status).toBe(401)
     } finally {
       await runtime.close()
     }
@@ -343,25 +345,25 @@ describe('createCloudApp', () => {
   })
 
   test('serves indexing policy through robots and response headers', async () => {
-    const denied = createCloudApp(services())
-    const robots = await denied.request('/robots.txt')
+    const denied = testClient(createCloudApp(services()))
+    const robots = await denied['robots.txt'].$get()
     expect(await robots.text()).toBe('User-agent: *\nDisallow: /\n')
-    expect((await denied.request('/health')).headers.get('X-Robots-Tag')).toBe(
+    expect((await denied.health.$get()).headers.get('X-Robots-Tag')).toBe(
       'noindex, nofollow, noarchive'
     )
 
     const allowedServices = services()
     allowedServices.config = { ...allowedServices.config, indexingPolicy: 'allow' }
-    const allowed = createCloudApp(allowedServices)
-    expect(await (await allowed.request('/robots.txt')).text()).toContain('Disallow: /admin')
-    expect((await allowed.request('/health')).headers.get('X-Robots-Tag')).toBeNull()
-    expect((await allowed.request('/api/session')).headers.get('X-Robots-Tag')).toBe(
+    const allowed = testClient(createCloudApp(allowedServices))
+    expect(await (await allowed['robots.txt'].$get()).text()).toContain('Disallow: /admin')
+    expect((await allowed.health.$get()).headers.get('X-Robots-Tag')).toBeNull()
+    expect((await allowed.api.session.$get()).headers.get('X-Robots-Tag')).toBe(
       'noindex, nofollow, noarchive'
     )
   })
 
   test('serves a health response without starting a listener', async () => {
-    const response = await createCloudApp(services()).request('/health')
+    const response = await testClient(createCloudApp(services())).health.$get()
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
@@ -371,7 +373,7 @@ describe('createCloudApp', () => {
   })
 
   test('derives discovery from validated server capabilities', async () => {
-    const response = await createCloudApp(services()).request('/.well-known/openpencil')
+    const response = await testClient(createCloudApp(services()))['.well-known'].openpencil.$get()
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
@@ -393,15 +395,17 @@ describe('createCloudApp', () => {
     })
   })
 
-  test('allows credentialed CORS for trusted origins only', async () => {
-    const cloud = createCloudApp(services())
-    const trustedDiscovery = await cloud.request('/.well-known/openpencil', {
-      headers: { Origin: 'https://app.example.com' }
+  test('lets any editor read discovery, without credentials', async () => {
+    const cloud = testClient(createCloudApp(services()))
+    const discovery = await cloud['.well-known'].openpencil.$get(undefined, {
+      headers: { Origin: 'https://editor.example.org' }
     })
-    expect(trustedDiscovery.headers.get('access-control-allow-origin')).toBe(
-      'https://app.example.com'
-    )
+    expect(discovery.status).toBe(200)
+    expect(discovery.headers.get('access-control-allow-origin')).toBe('*')
+    expect(discovery.headers.get('access-control-allow-credentials')).toBeNull()
+  })
 
+  test('allows credentialed CORS for trusted origins only', async () => {
     const trusted = await createCloudApp(services()).request('/api/session', {
       method: 'OPTIONS',
       headers: {
@@ -431,7 +435,7 @@ describe('createCloudApp', () => {
     try {
       const available = services()
       available.database = runtime.database
-      const response = await createCloudApp(available).request('/ready')
+      const response = await testClient(createCloudApp(available)).ready.$get()
       expect(response.status).toBe(200)
       expect(await response.json()).toEqual({
         status: 'ready',
@@ -445,7 +449,7 @@ describe('createCloudApp', () => {
   test('reports unavailable readiness when the database cannot execute', async () => {
     const unavailable = services()
     unavailable.database = new Kysely<CloudDatabase>({ dialect: failingPostgresDialect() })
-    const response = await createCloudApp(unavailable).request('/ready')
+    const response = await testClient(createCloudApp(unavailable)).ready.$get()
     expect(response.status).toBe(503)
     expect(await response.json()).toEqual({ status: 'unavailable' })
   })
@@ -464,16 +468,18 @@ describe('createCloudApp', () => {
         auth: createBetterAuthAdapter(proxied, runtime.database)
       })
       const shareId = crypto.randomUUID()
-      const headers = { 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.7' }
-      const ticket = await app.request(`/api/shares/${shareId}/collaboration-ticket`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ secret: 'a'.repeat(64) })
-      })
+      const client = testClient(app)
+      const input = { param: { shareId }, json: { secret: 'a'.repeat(64) } }
+      const options = { headers: { 'x-forwarded-for': '203.0.113.7' } }
+      const ticket = await client.api.shares[':shareId']['collaboration-ticket'].$post(
+        input,
+        options
+      )
+      // No such route: only the share budget's limiter answers it.
       const share = await app.request(`/api/shares/${shareId}`, {
         method: 'POST',
-        headers,
-        body: JSON.stringify({ secret: 'a'.repeat(64) })
+        headers: { 'content-type': 'application/json', ...options.headers },
+        body: JSON.stringify(input.json)
       })
       expect(ticket.headers.get('ratelimit-policy')).toContain('60;w=60')
       expect(share.headers.get('ratelimit-policy')).toContain('30;w=60')

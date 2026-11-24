@@ -72,6 +72,8 @@ export interface RoomSession {
   onPeerLeave(handler: (peerId: string) => void): () => void
   /** Follow the server saying the document's version history changed; returns the unsubscribe. */
   onVersionsChanged(handler: () => void): () => void
+  /** Follow the server saying a comment thread changed, by its ID; returns the unsubscribe. */
+  onCommentsChanged(handler: (threadId: string) => void): () => void
   /** The awareness states of everyone in the room, this tab included. */
   presence(): ReadonlyMap<number, Record<string, unknown>>
   /** This tab's awareness client. */
@@ -112,6 +114,8 @@ export interface RoomSessionOptions {
   leavable?: boolean
   /** Where the room keeps its images instead of in its document, as a Cloud room does. */
   images?: RoomImageStore
+  /** Whether the document's server keeps its comments, as Cloud does, so the room leaves them out. */
+  commentsOnServer?: boolean
 }
 
 function openIndexedDBCopy(roomId: string, ydoc: Y.Doc): RoomSavedCopy {
@@ -131,7 +135,8 @@ export function openRoomSession({
   tickMs = ROOM_STATUS_TICK_MS,
   holdsDocument = false,
   leavable = true,
-  images
+  images,
+  commentsOnServer = false
 }: RoomSessionOptions): RoomSession {
   const ydoc = new Y.Doc()
   const awareness = new awarenessProtocol.Awareness(ydoc)
@@ -164,7 +169,13 @@ export function openRoomSession({
     documentData.settings
   ])
   const editor = collabEditor(store)
-  const documentSync = bindDocumentSync({ editor, ydoc, data: documentData, meta })
+  const documentSync = bindDocumentSync({
+    editor,
+    ydoc,
+    data: documentData,
+    meta,
+    comments: !commentsOnServer
+  })
   const adopt = (apply: () => void) => (holdsDocument ? store.adoptChanges(apply) : apply())
 
   const peers = shallowRef<RemotePeer[]>([])
@@ -341,6 +352,7 @@ export function openRoomSession({
     onSynced: (handler) => connection.onSynced(handler),
     onPeerLeave: (handler) => connection.onPeerLeave(handler),
     onVersionsChanged: (handler) => connection.onVersionsChanged(handler),
+    onCommentsChanged: (handler) => connection.onCommentsChanged(handler),
     presence: () => awareness.getStates(),
     clientId: awareness.clientID,
     peerForClient: (clientId) => connection.peerForClient(clientId),

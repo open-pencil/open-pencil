@@ -26,6 +26,23 @@ import type {
   SVGExportOptions
 } from './types'
 
+/** `graph` with its colors brought into sRGB, loaded on first use: most sessions never need it. */
+async function documentInSRGB(graph: SceneGraph) {
+  const { graphInSRGB } = await import('./srgb')
+  return graphInSRGB(graph)
+}
+
+/**
+ * The request with its document's colors brought into sRGB, for a format that holds no other,
+ * and whether that took a copy, which only a renderer that has not drawn the document may draw.
+ */
+async function inSRGB(
+  request: ExportRequest
+): Promise<{ request: ExportRequest; copied: boolean }> {
+  const { graph, copied } = await documentInSRGB(request.graph)
+  return { request: { ...request, graph }, copied }
+}
+
 /** Formats that export a document, page, selection, or single node alike. */
 const EXPORT_EVERY_TARGET: IOFormatSupport = {
   exportDocument: true,
@@ -176,12 +193,15 @@ export const drawioFormat: IOFormatAdapter<'drawio'> = {
     )
     return { graph, sourceFormat: 'drawio' }
   },
-  async writeDocument(graph) {
+  async writeDocument(source) {
+    // draw.io holds sRGB colors only.
+    const { graph } = await documentInSRGB(source)
     const pageIds = graph.getPages().map((page) => page.id)
     return writeDrawIO(graph, { pageIds })
   },
   // A page or a selection goes as a one-page diagram; the document, every page.
-  async exportContent(request) {
+  async exportContent(source) {
+    const { request } = await inSRGB(source)
     if (request.target.scope === 'document') {
       const pageIds = request.graph.getPages().map((page) => page.id)
       return writeDrawIO(request.graph, { pageIds })
@@ -221,12 +241,17 @@ export const mermaidFormat: IOFormatAdapter<'mermaid'> = {
 async function writeDrawIO(graph: SceneGraph, target: DrawIOExportTarget): Promise<ExportResult> {
   const { writeDrawIOFile } = await import('@open-pencil/drawio')
   const { sceneGraphToDrawIO } = await import('./formats/drawio')
+  const warnings: NonNullable<ExportResult['warnings']> = []
+  const diagram = sceneGraphToDrawIO(graph, target, {
+    onWarning: (warning) => warnings.push(warning)
+  })
   return {
     format: 'drawio',
     mimeType: 'application/vnd.jgraph.mxfile',
     extension: 'drawio',
-    data: writeDrawIOFile(sceneGraphToDrawIO(graph, target)),
-    encoding: 'utf8'
+    data: writeDrawIOFile(diagram),
+    encoding: 'utf8',
+    ...(warnings.length > 0 ? { warnings } : {})
   }
 }
 
@@ -247,19 +272,22 @@ export const svgFormat: IOFormatAdapter<'svg'> = {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
     const { renderNodesToLaidOutSVG } = await import('./formats/svg/text/layout')
-    const data = await renderNodesToLaidOutSVG(
-      request.graph,
-      target.pageId,
-      target.nodeIds,
-      options
-    )
+    const warnings: NonNullable<ExportResult['warnings']> = []
+    const data = await renderNodesToLaidOutSVG(request.graph, target.pageId, target.nodeIds, {
+      ...options,
+      onWarning: (warning) => {
+        warnings.push(warning)
+        options?.onWarning?.(warning)
+      }
+    })
     if (!data) throw new Error('Nothing to export')
     return {
       format: 'svg',
       mimeType: 'image/svg+xml',
       extension: 'svg',
       data,
-      encoding: 'utf8'
+      encoding: 'utf8',
+      ...(warnings.length > 0 ? { warnings } : {})
     }
   }
 }
@@ -309,13 +337,16 @@ export const pptxFormat: IOFormatAdapter<'pptx'> = {
   mimeTypes: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
   support: EXPORT_EVERY_TARGET,
   exportOptions: FIXED_SIZE_EXPORT,
-  async exportContent(request, options?: PPTXExportOptions, context?: IOContext) {
+  async exportContent(source, options?: PPTXExportOptions, context?: IOContext) {
+    // PowerPoint holds sRGB colors only.
+    const { request, copied } = await inSRGB(source)
     const target = resolvePPTXExportNodes(request)
     if (!target) throw new Error('Nothing to export')
     const { renderNodesToPPTX } = await import('./formats/pptx')
+    // A copy's fallback images are drawn by the headless renderer, not the host's.
     const data = await renderNodesToPPTX(request.graph, target.pageId, target.nodeIds, {
       ...options,
-      context: options?.context ?? context
+      context: copied ? undefined : (options?.context ?? context)
     })
     if (!data) throw new Error('Nothing to export')
     return {

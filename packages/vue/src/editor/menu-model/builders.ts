@@ -1,4 +1,4 @@
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import type { EditorCommandId } from '#vue/editor/commands/types'
 import type { useEditorCommands } from '#vue/editor/commands/use'

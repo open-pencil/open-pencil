@@ -124,7 +124,9 @@ export function createEditor(options?: EditorOptions) {
   void prefetchFigmaSchema()
 
   const graphReads = createGraphReadActions(() => _graph)
-  const { runLayoutForNode, runMutationWithLayout } = createLayoutRunner(() => _graph)
+  const { runLayoutForNode, runLayoutForParents, runMutationWithLayout } = createLayoutRunner(
+    () => _graph
+  )
   const pendingTextLayout = createPendingTextLayout({
     getGraph: () => _graph,
     getRenderer: canvas.getRenderer,
@@ -133,7 +135,7 @@ export function createEditor(options?: EditorOptions) {
     requestRender,
     onEditorEvent
   })
-  const { scheduleComponentSync, flushComponentSync, isSyncingComponents } =
+  const { scheduleComponentSync, flushComponentSync, isSyncingComponents, withoutComponentSync } =
     createComponentSyncScheduler(() => _graph, requestRender)
 
   const { subscribeToGraph, unsubscribeFromGraph } = createGraphEventSubscription({
@@ -187,6 +189,7 @@ export function createEditor(options?: EditorOptions) {
     setActiveTool,
     setNavigationPhase,
     runLayoutForNode,
+    runLayoutForParents,
     runMutationWithLayout,
     subscribeToGraph
   }
@@ -201,7 +204,11 @@ export function createEditor(options?: EditorOptions) {
   const structure = createStructureActions(ctx)
   const components = createComponentActions(ctx)
   const clipboard = createClipboardActions(ctx)
-  const colorSpace = createColorSpaceActions(ctx)
+  const colorSpace = createColorSpaceActions(ctx, {
+    loadPageNodes: pages.loadPageNodes,
+    withoutComponentSync,
+    refusal: (profile, mode) => readOnly.refusal('setDocumentColorSpace', [profile, mode])
+  })
   const documentSettings = createDocumentSettingsActions(ctx)
   const undoActions = createUndoActions(ctx)
   const text = createTextActions(ctx)

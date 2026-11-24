@@ -8,6 +8,8 @@ import {
 import { logCloud, loggedError } from '#cloud/server/logging'
 import * as Y from 'yjs'
 
+import { DEADLINE_MS, SECOND_MS } from '@open-pencil/std/timing'
+
 import type { RelayAuthorization } from './authorize'
 import { stampAwareness } from './awareness'
 import {
@@ -33,7 +35,25 @@ import {
   type RoomContent
 } from './room'
 
+/** How long a room waits after an edit before saving, so a burst of edits saves once. */
+const PERSIST_DELAY_MS = 2 * SECOND_MS
+/** How long a room waits to save again after a save failed. */
+const PERSIST_RETRY_MS = 30 * SECOND_MS
+/** How long a new socket has to present its ticket before the room closes it. */
+const AUTH_TIMEOUT_MS = DEADLINE_MS.request
+
 export type { RelayConnection, RelaySocket } from './connection'
+
+/**
+ * What a relay failure names: the room's document, and the user whose message met it. A peer
+ * that failed to be admitted names only the document a single-document relay serves.
+ */
+export type RelayErrorIds = { documentId?: string; userId?: string }
+
+/** A verified ticket's document, and its person when they signed in rather than came as a guest. */
+function ticketIds({ documentId, principal }: RelayAuthorization): RelayErrorIds {
+  return principal.kind === 'user' ? { documentId, userId: principal.userId } : { documentId }
+}
 
 export type CollaborationRelayOptions = {
   authSecret: string
@@ -73,7 +93,8 @@ export type CollaborationRelayOptions = {
   persistRetryMs?: number
   /** How long a socket may stay open without presenting a ticket. */
   authTimeoutMs?: number
-  onError?: (message: string, error: unknown) => void
+  /** Told of each failure, with the document and, when one asked, the signed-in user. */
+  onError?: (message: string, error: unknown, ids?: RelayErrorIds) => void
 }
 
 /** Messages a viewer may send; their document writes never leave the relay. */
@@ -93,8 +114,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   const closing = new Map<string, Promise<void>>()
   /** Set by `close()`: a failed save then drops the room instead of retrying. */
   let shuttingDown = false
-  const persistDelayMs = options.persistDelayMs ?? 2_000
-  const persistRetryMs = options.persistRetryMs ?? 30_000
+  const persistDelayMs = options.persistDelayMs ?? PERSIST_DELAY_MS
+  const persistRetryMs = options.persistRetryMs ?? PERSIST_RETRY_MS
   const logLimits = {
     updates: options.compactAfterUpdates ?? 500,
     bytes: options.compactAfterBytes ?? 4 * 1024 * 1024
@@ -103,10 +124,11 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     options.maximumRoomBytes ?? MAX_COLLAB_MESSAGE_BYTES,
     MAX_COLLAB_MESSAGE_BYTES
   )
-  const authTimeoutMs = options.authTimeoutMs ?? 10_000
+  const authTimeoutMs = options.authTimeoutMs ?? AUTH_TIMEOUT_MS
   const report =
     options.onError ??
-    ((message, error) => logCloud('error', message, { source: 'relay', error: loggedError(error) }))
+    ((message, error, ids) =>
+      logCloud('error', message, { source: 'relay', ...ids, error: loggedError(error) }))
 
   async function openRoom(authorization: RelayAuthorization): Promise<Room> {
     const existing = rooms.get(authorization.roomId)
@@ -168,7 +190,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
       await log.save({ closing })
       return true
     } catch (error) {
-      report('Saving a collaboration room failed', error)
+      report('Saving a collaboration room failed', error, { documentId: room.identity.documentId })
       // The room holds edits the store doesn't have; save again without waiting for another edit.
       // A closing room retries through `saveAndClose`.
       if (!closing && rooms.get(room.id) === room) {
@@ -206,8 +228,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   ) {
     const readOnly = peer.authorization.permission === 'view'
     if (readOnly && !VIEWER_ACTIONS.has(namespace)) return
-    // Only the server says the history changed.
-    if (namespace === COLLAB_ACTIONS.versions) return
+    // Only the server says the history or the comments changed.
+    if (namespace === COLLAB_ACTIONS.versions || namespace === COLLAB_ACTIONS.comments) return
 
     let forwarded = payload
     if (namespace === COLLAB_ACTIONS.awareness) {
@@ -252,6 +274,19 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     return [...peers].filter(current).map((peer) => peer.socket)
   }
 
+  /** Sends a server message to every peer in the document's rooms. */
+  function announce(documentId: string, namespace: string, payload: Uint8Array) {
+    const frame: RelayServerFrame = { type: 'message', namespace, from: RELAY_SERVER_PEER, payload }
+    sendAll(
+      deliverable(
+        [...rooms.values()]
+          .filter((room) => room.identity.documentId === documentId)
+          .flatMap((room) => [...room.peers.values()])
+      ),
+      frame
+    )
+  }
+
   function remember(peer: RelayPeer) {
     peer.socket.remember?.({
       peerId: peer.id,
@@ -281,7 +316,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         return undefined
       },
       (error: unknown) => {
-        report('Loading a collaboration room failed', error)
+        report('Loading a collaboration room failed', error, ticketIds(peer.authorization))
         peer.socket.close(RELAY_CLOSE.protocol, 'Could not open the collaboration room')
       }
     )
@@ -386,7 +421,11 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     refreshed: remember,
     deliver,
     depart,
-    report
+    report: (message, error, authorization) => {
+      // Before a ticket verified, only the document a per-document relay serves is known.
+      const configured = options.documentId === undefined ? {} : { documentId: options.documentId }
+      report(message, error, authorization ? ticketIds(authorization) : configured)
+    }
   }
 
   return {
@@ -456,20 +495,12 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
 
     /** Tells everyone in a document's rooms that its version history changed. */
     announceVersions(documentId: string) {
-      const frame: RelayServerFrame = {
-        type: 'message',
-        namespace: COLLAB_ACTIONS.versions,
-        from: RELAY_SERVER_PEER,
-        payload: new Uint8Array()
-      }
-      sendAll(
-        deliverable(
-          [...rooms.values()]
-            .filter((room) => room.identity.documentId === documentId)
-            .flatMap((room) => [...room.peers.values()])
-        ),
-        frame
-      )
+      announce(documentId, COLLAB_ACTIONS.versions, new Uint8Array())
+    },
+
+    /** Tells everyone in a document's rooms that one of its comment threads changed. */
+    announceComments(documentId: string, threadId: string) {
+      announce(documentId, COLLAB_ACTIONS.comments, new TextEncoder().encode(threadId))
     },
 
     /** Saves every open room and closes its sockets, as the runtime shuts down. */

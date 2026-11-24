@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import type { CloudLegalDiscovery } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { portalPublic } from '@/components/cloud-portal/ui'
 
@@ -17,7 +17,7 @@ import { legalLinks, legalSentence } from './legal'
 const { legal } = defineProps<{ legal?: CloudLegalDiscovery }>()
 
 const ui = portalPublic()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const consent = computed(() => (legal ? legalSentence(messages.value, legal) : null))
 const age = computed(() =>
   legal?.minimumAge ? messages.value.minimumAge({ age: String(legal.minimumAge) }) : null

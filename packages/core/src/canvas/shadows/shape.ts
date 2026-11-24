@@ -12,10 +12,15 @@ import { paintShows } from '@open-pencil/scene-graph/paints'
 
 import { setPaintBlendMode } from '#core/canvas/blend/modes'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
-import { drawOutline, makeNodeShapePath, withNodeOutline } from '#core/canvas/shapes'
+import {
+  drawOutline,
+  makeNodeShapePath,
+  unitedOutlinePath,
+  withNodeOutline,
+  type NodeOutline
+} from '#core/canvas/shapes'
 import { sideStrokeRRects } from '#core/canvas/strokes/sides'
-
-import { fillsCastShadow } from './silhouette'
+import { fillsCastShadow } from '#core/geometry/shadows'
 
 /** Whether every region of a vector casts a shadow, from its own paints or the layer's. */
 function regionsCastShadow(node: SceneNode): boolean {
@@ -140,7 +145,8 @@ function drawMaskShadow(
   blendMode: BlendMode | undefined,
   draw: () => void
 ): void {
-  r.auxFill.setColor(r.color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a))
+  const color = r.renderColor(effect.color)
+  r.auxFill.setColor(r.color4f(color.r, color.g, color.b, color.a))
   r.auxFill.setMaskFilter(r.getCachedMaskBlur(blurSigma(effect.radius)))
   r.auxFill.setImageFilter(null)
   setPaintBlendMode(r, r.auxFill, blendMode)
@@ -165,8 +171,28 @@ export function drawShapeDropShadow(
   blendMode: BlendMode | undefined
 ): void {
   drawMaskShadow(r, canvas, effect, blendMode, () =>
-    withNodeOutline(r, node, (outline) => drawOutline(canvas, outline, r.auxFill), spread)
+    withNodeOutline(
+      r,
+      node,
+      (outline) => drawUnitedOutline(r, canvas, node, outline, spread),
+      spread
+    )
   )
+}
+
+function drawUnitedOutline(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  outline: NodeOutline,
+  spread: number
+): void {
+  const united = unitedOutlinePath(r, node, outline, spread)
+  if (!united) {
+    drawOutline(canvas, outline, r.auxFill)
+    return
+  }
+  canvas.drawPath(united, r.auxFill)
 }
 
 /** Whether the stroke reaches past the shape on any side, so it grows the shadow. */
@@ -253,7 +279,8 @@ export function drawShapeInnerShadow(
   isolated = false
 ): void {
   const sp = spread
-  r.auxFill.setColorComponents(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
+  const color = r.renderColor(effect.color)
+  r.auxFill.setColorComponents(color.r, color.g, color.b, color.a)
   r.auxFill.setImageFilter(r.getCachedDecalBlur(blurSigma(effect.radius)))
 
   canvas.save()

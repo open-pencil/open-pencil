@@ -2,6 +2,8 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { effectScope, nextTick, reactive, type EffectScope } from 'vue'
 
+import { createDeferred, type Deferred } from '@open-pencil/std/async'
+
 import type { AgentOffer } from '@/app/ai/agents/acp/oneoff'
 import type { AIModelProfileDraft } from '@/app/ai/models'
 import {
@@ -9,7 +11,6 @@ import {
   type AgentModelSource
 } from '@/app/ai/models/settings/profile-editor/agent'
 import { createModelProfileDraft } from '@/app/ai/models/store'
-import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
 const CLAUDE = 'acp:claude-code'
 const CODEX = 'acp:codex'
@@ -19,7 +20,8 @@ const claudeModels: AgentOffer = {
   models: [
     { id: 'default', name: 'Default' },
     { id: 'opus', name: 'Opus' }
-  ]
+  ],
+  choices: {}
 }
 
 /** Agents that answer when the test says so, and the agents each read asked about. */
@@ -101,7 +103,7 @@ describe('the models of the agent a draft uses', () => {
     const { draft, selection } = selectionFor(CLAUDE, source)
     draft.providerID = CODEX
     await nextTick()
-    answers[1]?.resolve({ imageInput: false, models: [] })
+    answers[1]?.resolve({ imageInput: false, models: [], choices: {} })
     answers[0]?.resolve(claudeModels)
     await nextTick()
     await nextTick()
@@ -128,7 +130,8 @@ describe('the models of the agent a draft uses', () => {
   describe('when the agent’s last offer is remembered', () => {
     const olderModels: AgentOffer = {
       imageInput: false,
-      models: [{ id: 'default', name: 'Default' }]
+      models: [{ id: 'default', name: 'Default' }],
+      choices: {}
     }
     /** Agents whose last offer is `offer`, and the offers kept for next time. */
     function remembering(offer: AgentOffer, fresh: boolean) {
@@ -197,5 +200,77 @@ describe('the models of the agent a draft uses', () => {
       await retried
       expect(selection.models.value).toEqual(claudeModels.models)
     })
+  })
+})
+
+describe('the effort and modes of the model a draft uses', () => {
+  const opusChoices = {
+    thought_level: {
+      name: 'Effort',
+      current: 'default',
+      values: [
+        { id: 'default', name: 'Default' },
+        { id: 'max', name: 'Max' }
+      ]
+    },
+    mode: { name: 'Mode', current: 'default', values: [{ id: 'plan', name: 'Plan' }] }
+  }
+
+  /** An agent whose offer lists models only, and that answers each model's read at once. */
+  function choicesAgent() {
+    const asked: string[] = []
+    const kept: AgentOffer[] = []
+    const source: AgentModelSource = {
+      available: () => true,
+      read: async () => ({ ...claudeModels, choices: { '': opusChoices } }),
+      readChoices: async (_agent, model) => {
+        asked.push(model)
+        return opusChoices
+      },
+      remember: async (_agent, offer) => {
+        kept.push(offer)
+      }
+    }
+    return { source, asked, kept }
+  }
+
+  async function settled(): Promise<void> {
+    for (let i = 0; i < 4; i++) await nextTick()
+  }
+
+  test('come with the offer for the agent’s own model, without another read', async () => {
+    const { source, asked } = choicesAgent()
+    const { selection } = selectionFor(CLAUDE, source)
+    await settled()
+    expect(selection.choices.value).toEqual(opusChoices)
+    expect(asked).toEqual([])
+  })
+
+  test('are read once for a chosen model, and kept with the agent’s offer', async () => {
+    const { source, asked, kept } = choicesAgent()
+    const { draft, selection } = selectionFor(CLAUDE, source)
+    await settled()
+    draft.modelID = 'opus'
+    await settled()
+    expect(asked).toEqual(['opus'])
+    expect(selection.choices.value).toEqual(opusChoices)
+    expect(selection.choicesState.value).toBe('ready')
+    expect(kept.at(-1)?.choices).toEqual({ '': opusChoices, opus: opusChoices })
+
+    draft.modelID = ''
+    await settled()
+    draft.modelID = 'opus'
+    await settled()
+    expect(asked).toEqual(['opus'])
+  })
+
+  test('are not read for a model ID the person types', async () => {
+    const { source, asked } = choicesAgent()
+    const { draft, selection } = selectionFor(CLAUDE, source)
+    await settled()
+    draft.customModelID = 'opus-preview'
+    await settled()
+    expect(asked).toEqual([])
+    expect(selection.choices.value).toBeNull()
   })
 })

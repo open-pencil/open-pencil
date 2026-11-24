@@ -6,16 +6,27 @@ import { ref } from 'vue'
 import { acpAgentFor, AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { AIProviderID } from '@open-pencil/core/constants'
 
+import { agentOwnChoices, type AgentChoices } from '@/app/ai/agents/acp/options'
 import { readPiAccount } from '@/app/ai/agents/pi/settings'
 import { agentWorkspace } from '@/app/ai/agents/setup/native'
 import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/setup/readiness'
 import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
 import { notifyReplyEnded } from '@/app/ai/chat/notifications'
 import { hasSteeringMessage } from '@/app/ai/chat/queue'
-import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
-import { chatThinkingLevel } from '@/app/ai/chat/thinking'
-import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
-import { resolveLanguageModelID } from '@/app/ai/models/language-model'
+import { systemPrompt } from '@/app/ai/chat/system-prompt'
+import {
+  agentSessionChoices,
+  chatAgentChoices,
+  chatThinkingLevel,
+  chooseAgentOptions
+} from '@/app/ai/chat/thinking'
+import {
+  createAIModelRuntime,
+  designModelProfile,
+  resolveModelConnectionAPIKey,
+  type AIModelProfileId
+} from '@/app/ai/models'
+import { profileModelID, resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { settleMessage } from '@/app/ai/reply/settle'
@@ -53,13 +64,21 @@ type ChatSessionOptions = {
   getActiveEditorStore: () => EditorStore
 }
 
+/** The effort and modes of the profile a chat's agent session starts from. */
+export interface AgentChoicesLink {
+  profileId: AIModelProfileId
+  /** The effort and modes the next prompt runs on; absent ones keep the agent's. */
+  wanted: () => AgentChoices
+}
+
 export async function createACPTransport(
   providerID: AIProviderID,
   store?: EditorStore,
   onUsage?: (usage: AgentTurnUsage) => void,
   agentSession?: AgentSessionLink,
   onAgentError?: (error: unknown) => void,
-  model?: string
+  model?: string,
+  choices?: AgentChoicesLink
 ) {
   const agentDef = acpAgentFor(providerID)
   if (!agentDef) throw new Error(`Unknown ACP agent: ${providerID}`)
@@ -76,7 +95,31 @@ export async function createACPTransport(
       agentSession &&
       ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id })),
     onAgentError,
-    model
+    model,
+    choices: choices?.wanted,
+    onChoices: (offered) => {
+      if (!choices || !offered) {
+        agentSessionChoices.value = null
+        return
+      }
+      const previous = agentSessionChoices.value
+      const modelID = model ?? ''
+      // The first report of a session: the options the chat left to the agent are its own values.
+      const defaults =
+        previous?.profileId === choices.profileId && previous.modelID === modelID
+          ? previous.defaults
+          : agentOwnChoices(offered, choices.wanted())
+      agentSessionChoices.value = {
+        profileId: choices.profileId,
+        modelID,
+        choices: offered,
+        defaults
+      }
+    },
+    // Approving a plan can move the agent off Plan mode; the chat follows while it runs that profile.
+    onAgentChoices: (moved) => {
+      if (choices && designModelProfile.value?.id === choices.profileId) chooseAgentOptions(moved)
+    }
   })
 }
 
@@ -192,10 +235,9 @@ export function createChatSessionManager({
     await destroyAgentTransports()
     await assertAgentReady('acp')
     const runtime = await starting
-    const profileModel =
-      runtime?.kind === 'acp' && runtime.role.connection.providerID === provider
-        ? runtime.model
-        : ''
+    const profileRuns = runtime?.kind === 'acp' && runtime.role.connection.providerID === provider
+    const profileModel = profileRuns ? runtime.model : ''
+    const profileId = profileRuns ? runtime.role.profile.id : null
     // An agent's turn counts as one step of the model it names, or of the agent itself.
     const transport = await createACPTransport(
       provider,
@@ -204,7 +246,19 @@ export function createChatSessionManager({
         recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context),
       agentSession,
       captureAgentError,
-      profileModel
+      profileModel,
+      // The profile's effort and modes, or the composer's, while the chat still runs that profile
+      // on that model; another profile's or model's may not be ones this agent offers.
+      profileId === null
+        ? undefined
+        : {
+            profileId,
+            wanted: () => {
+              const profile = designModelProfile.value
+              const same = profile?.id === profileId && profileModelID(profile) === profileModel
+              return same ? chatAgentChoices.value : {}
+            }
+          }
     )
     acpTransportInstance = transport
     return transport
@@ -233,7 +287,7 @@ export function createChatSessionManager({
           }),
           permissionMode: runtime.role.profile.harnessPermissionMode ?? 'allow-edits'
         },
-        instructions: SYSTEM_PROMPT,
+        instructions: systemPrompt(),
         mcpServers: await buildPiMCPServers(),
         skills: await harnessSkills()
       },

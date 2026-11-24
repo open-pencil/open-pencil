@@ -4,7 +4,16 @@ import { deduplicateNodeChangePluginData } from '@open-pencil/kiwi/fig/parse'
 import { decodeWhole } from '@open-pencil/kiwi/schema-runtime'
 
 import { parseFigBuffer } from '../archive'
-import { createIndexedOccurrenceInterpreter } from '../instance-overrides/interpret'
+import {
+  createDocumentComponentLoops,
+  createIndexedOccurrenceInterpreter
+} from '../instance-overrides/interpret'
+import type { ComponentLoops } from '../instance-overrides/loops'
+import {
+  createReferenceGraph,
+  loopReferences,
+  type LoopReferences
+} from '../instance-overrides/loops/references'
 import type { InterpretInstanceOptions } from '../instance-overrides/occurrence/types'
 import {
   bySavedPosition,
@@ -37,6 +46,7 @@ import {
   inheritFromAncestors,
   linkedPropertyCopies
 } from './property-inheritance'
+import { savedSlotContent } from './slot-content'
 import { vectorStyleTable } from './style-dependencies'
 import { createDocumentVariables, type DocumentVariables } from './variables'
 
@@ -99,8 +109,13 @@ interface ReaderRecords {
   scope(): WholeRecord
   /** Whole records kept for the document: components the interpreter reads, and styles. */
   shared: WholeRecord
-  /** Indexes whole records, for the interpreter that reads components on demand. */
-  interpreterIndex(): InterpreterIndex
+  /** Records from which a read could reach a component loop (none in most documents), and slot assigners. */
+  loopReferences(): LoopReferences
+  /**
+   * Indexes whole records, for the interpreter that reads components on demand: the shared ones,
+   * or those `whole` decodes, as a component loop repair reads them without keeping them.
+   */
+  interpreterIndex(whole?: WholeRecord): InterpreterIndex
   readonly variables: DocumentVariables
   readonly textStyle: TextStyleLookup
 }
@@ -145,6 +160,7 @@ function wholeRecords(source: readonly NodeChange[]): ReaderRecords {
   const assets = assetIdsByKey(records)
   for (const node of records) resolveStyleFields(index.sources, node, assets)
   const same: WholeRecord = (record) => record
+  let references: LoopReferences | undefined
   const variables = createDocumentVariables(records)
   const textStyle = createTextStyleLookup(index.sources, assets)
   return {
@@ -153,6 +169,7 @@ function wholeRecords(source: readonly NodeChange[]): ReaderRecords {
     bindingDiagnostics,
     scope: () => same,
     shared: same,
+    loopReferences: () => (references ??= loopReferences(index)),
     interpreterIndex: () => ({
       ...createSourceIndex(records.filter((record) => !isResource(record))),
       variables,
@@ -187,8 +204,20 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
   const normalize = createBindingNormalizer(records)
   const assets = assetIdsByKey(records)
   const bindingDiagnostics: BindingReferenceDiagnostic[] = []
-  for (const header of records)
-    normalize(decodeRecord(header), (diagnostic) => bindingDiagnostics.push(diagnostic))
+  // Every record is decoded once here, so the document's component loops are found with it.
+  const references = createReferenceGraph((id) => {
+    const header = index.sources.get(id)
+    return header && parentIdOf(header)
+  })
+  for (const header of records) {
+    const record = decodeRecord(header)
+    normalize(record, (diagnostic) => bindingDiagnostics.push(diagnostic))
+    references.add(record)
+  }
+  const found: LoopReferences = {
+    reaching: references.reaching(),
+    slotAssigners: references.slotAssigners()
+  }
 
   const kept = new Map<NodeChange, NodeChange>()
   /** Styles resolve against style records kept whole; other records only need their header. */
@@ -227,17 +256,17 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
   }
   const variables = createDocumentVariables(records, decodeRecord)
   const textStyle = createTextStyleLookup(styles, assets)
-  const interpreterIndex = (): InterpreterIndex => {
+  const interpreterIndex = (decode: WholeRecord = shared): InterpreterIndex => {
     const { sources, children } = createSourceIndex(records.filter((record) => !isResource(record)))
     const lists = new WeakMap<readonly NodeChange[], NodeChange[]>()
     return {
       variables,
       textStyle,
-      sources: new DecodedMap(sources, shared),
+      sources: new DecodedMap(sources, decode),
       children: new DecodedMap(children, (list) => {
         let whole = lists.get(list)
         if (!whole) {
-          whole = list.map(shared)
+          whole = list.map(decode)
           lists.set(list, whole)
         }
         return whole
@@ -248,6 +277,7 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
     records,
     index,
     bindingDiagnostics,
+    loopReferences: () => found,
     scope: () => {
       const decoded = new Map<NodeChange, NodeChange>()
       const whole: WholeRecord = (header) => {
@@ -273,6 +303,10 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
 interface SharedReaderState {
   records: ReaderRecords
   sourceInterpreter: ReturnType<typeof createIndexedOccurrenceInterpreter>
+  /** The document's component loops, which every read of its pages shares. */
+  componentLoops: ComponentLoops
+  /** Instances repaired out of their definitions so far, without looking for loops to find them. */
+  droppedRecords: () => ReadonlySet<string>
   componentSetVariants: ReadonlyMap<string, readonly string[]>
 }
 
@@ -286,12 +320,30 @@ function indexComponentSets(records: ReaderRecords): Map<string, string[]> {
 }
 
 function createSharedReaderState(records: ReaderRecords): SharedReaderState {
+  let componentLoops: ComponentLoops | undefined
   let sourceInterpreter: SharedReaderState['sourceInterpreter'] | undefined
   let componentSetVariants: SharedReaderState['componentSetVariants'] | undefined
+  const loops = (): ComponentLoops => {
+    // A repair decodes the definitions it walks for itself, so pages nobody opened stay unread.
+    componentLoops ??= createDocumentComponentLoops({
+      order: records.index,
+      references: () => records.loopReferences(),
+      whole: () => records.interpreterIndex(records.scope())
+    })
+    return componentLoops
+  }
   return {
     records,
+    get componentLoops() {
+      return loops()
+    },
+    droppedRecords: () => componentLoops?.dropped() ?? new Set(),
     get sourceInterpreter() {
-      sourceInterpreter ??= createIndexedOccurrenceInterpreter(records.interpreterIndex())
+      const componentLoops = loops()
+      sourceInterpreter ??= createIndexedOccurrenceInterpreter({
+        ...records.interpreterIndex(),
+        componentLoops
+      })
       return sourceInterpreter
     },
     get componentSetVariants() {
@@ -329,7 +381,9 @@ function createScopedReader(
   const interpreter = createIndexedOccurrenceInterpreter({
     ...createSourceIndex(sceneChanges),
     variables: shared.records.variables,
-    textStyle: shared.records.textStyle
+    textStyle: shared.records.textStyle,
+    // The page's records lack the definitions elsewhere that decide which instance a loop loses.
+    componentLoops: shared.componentLoops
   })
   const pages = changes
     .filter((change) => change.type === 'CANVAS')
@@ -356,6 +410,8 @@ function createScopedReader(
     get componentSetVariants(): ReadonlyMap<string, readonly string[]> {
       return shared.componentSetVariants
     },
+    /** Instances a component loop repair left out, which never became layers. */
+    droppedRecords: shared.droppedRecords,
     recordHeader(id: string): NodeChange | undefined {
       return index.sources.get(id)
     },
@@ -381,6 +437,10 @@ function createScopedReader(
     pages,
     get resources() {
       return structuredClone(resources.map(whole))
+    },
+    /** Slot content frames on the internal canvas and the records below them, whole. */
+    get slotContent() {
+      return structuredClone(savedSlotContent(changes, whole))
     },
     bindingDiagnostics,
     /** A record's copies of its set's properties, each by its own id to the set property's. */

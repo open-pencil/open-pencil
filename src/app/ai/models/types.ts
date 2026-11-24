@@ -1,5 +1,7 @@
 import type { AIProviderID } from '@open-pencil/core/constants'
 
+import type { AgentChoices } from '@/app/ai/agents/acp/options'
+
 export const AI_MODEL_ROLES = ['design', 'review', 'fast', 'vision'] as const
 /**
  * The roles something reads: Design runs the chat, Review writes the design reviews the person
@@ -58,6 +60,11 @@ export type AIModelProfile = {
   customModelID: string
   maxOutputTokens: number
   thinkingLevel: ThinkingLevel
+  /**
+   * The effort and modes an ACP agent runs the model on, by the agent's own values, since each
+   * agent and model names its own; absent ones keep the agent's.
+   */
+  agentChoices?: AgentChoices
   harnessPermissionMode?: HarnessPermissionMode
   capabilities: AIModelCapability[]
 }
@@ -88,6 +95,8 @@ export type AIModelProfileDraft = {
   cloudWorkspaceId?: string
   maxOutputTokens: number
   thinkingLevel: ThinkingLevel
+  /** Absent ones keep the agent's own. */
+  agentChoices: AgentChoices
   harnessPermissionMode: HarnessPermissionMode
   capabilities: AIModelCapability[]
 }

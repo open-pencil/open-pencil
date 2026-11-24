@@ -11,7 +11,7 @@ OpenPencil Cloud keeps documents on a server so they follow you across devices a
 
 There are two ways to use Cloud, and the editor works the same with both:
 
-- **The hosted service** at `cloud.openpencil.dev`, which the OpenPencil team runs. Its database, files, and collaboration rooms are in the European Union, and its [Terms of Service](./legal/terms), [Privacy Policy](./legal/privacy), and [subprocessors](./legal/subprocessors) are on this site. Until it opens, **Settings → Cloud** takes your email for the waitlist.
+- **The hosted service** at `cloud.openpencil.dev`, which the OpenPencil team runs. Its database, files, and collaboration rooms are in the European Union, and its [Terms of Service](./legal/terms), [Privacy Policy](./legal/privacy), and [subprocessors](./legal/subprocessors) are on this site. Sign up at [cloud.openpencil.dev](https://cloud.openpencil.dev), or from **Settings → Cloud** in OpenPencil 0.17 or later; the free plan includes 300 MB, and [plans](https://billing.openpencil.dev/pricing) add storage, editors, and AI credits.
 - **A server your team runs itself**, from the same open-source code ([self-hosting guide](./self-hosting/)). Its operator decides who can sign up, what plans and limits apply, and which terms and privacy policy you accept; this site's legal pages don't cover it.
 
 | Page                                | What it covers                                                      |
@@ -26,10 +26,10 @@ There are two ways to use Cloud, and the editor works the same with both:
 
 Open **Settings → Cloud**. **Your team's server** asks for the address your team uses. OpenPencil checks that the address answers as an OpenPencil Cloud server before asking you to sign in, and says when nothing answers, when the address belongs to something else, or when the server runs a version this app doesn't support.
 
-The ways to sign in come from the server: Google, Apple, or email and password.
+The ways to sign in come from the server: Google, Apple, GitHub, or email and password.
 
 - Email and password work right in the dialog, in the desktop app and in the web app at the server's own editor address. **Create an account** asks for your name, email, and a password of at least 8 characters, twice. The server emails you a link; open it, come back to OpenPencil, and signing in finishes by itself.
-- Google and Apple, and accounts with two-step sign-in, finish in your browser: in the web app at the server's own editor address you come back to the same tab, and the desktop app shows a code to check against the browser's before you approve it.
+- Google, Apple, and GitHub, and accounts with two-step sign-in, finish in your browser: in the web app at the server's own editor address you come back to the same tab, and the desktop app shows a code to check against the browser's before you approve it.
 
 Servers that review new accounts say so before you sign up. Until an administrator approves you, Settings shows that your account is waiting.
 

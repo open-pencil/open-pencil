@@ -1,9 +1,10 @@
 import { omitBy, range } from 'es-toolkit'
+import * as v from 'valibot'
 
 import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { parseCSSNumber } from '@open-pencil/scene-graph/css'
-import { centerGlyph } from '@open-pencil/scene-graph/icons'
+import { centerGlyph, iconOptionsSchema, readIconTint } from '@open-pencil/scene-graph/icons'
 import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import type { RekaScope } from '../behaviours'
@@ -58,7 +59,12 @@ function renderOwnLayerElement(
   const parentLayout = graph.getNode(parentId)?.layoutMode ?? 'NONE'
   const layer = omitBy(
     {
-      ...propsToOverrides(readElementProps(element.layer, props), false, parentLayout),
+      ...propsToOverrides(
+        readElementProps(element.layer, props),
+        false,
+        parentLayout,
+        graph.documentColorSpace
+      ),
       ...layerMetadata(modes, bound.references)
     },
     (value) => value === undefined
@@ -71,7 +77,8 @@ function renderOwnLayerElement(
       propsToOverrides(
         preparePropsForRender(graph, spanProps, true, { parentId, modes }).props,
         true,
-        'NONE'
+        'NONE',
+        graph.documentColorSpace
       )
     graph.updateNode(textLayer.id, textContentFields(tree, {}, textLayer, spanOverrides))
   }
@@ -139,7 +146,10 @@ async function renderIconNode<Artwork>(
   // An icon is square, so it fits the smaller side of its box and sits in the middle of the other.
   const box = artworkBox(props)
   const size = Math.min(box.width, box.height)
-  const artwork = await graph.waitOutsideEdit(services.icon(iconName, size))
+  const options = v.safeParse(iconOptionsSchema, props.options ?? {})
+  if (!options.success)
+    throw new Error('<Icon> options map option names to numbers or strings (e.g. { wght: 600 })')
+  const artwork = await graph.waitOutsideEdit(services.icon(iconName, size, options.output))
   if (!artwork) throw new Error(`Icon "${iconName}" not found`)
   const node = placeArtwork(services, graph, artwork, props, size, parentId)
   centerGlyph(graph, node.id, size)
@@ -167,15 +177,24 @@ function placeArtwork<Artwork>(
   const color =
     typeof resolved === 'object'
       ? resolved
-      : parseColor(typeof props.color === 'string' ? props.color : '#000000')
+      : parseColor(
+          typeof props.color === 'string' ? props.color : '#000000',
+          graph.documentColorSpace
+        )
   const node = services.createArtwork(graph, artwork, { parentId, size, color, overrides })
   if (variableId) bindSolidPaints(graph, node, variableId)
   return node
 }
 
-/** Bind every solid paint of an artwork's paths, so it follows the variable it was drawn in. */
+/**
+ * Bind the solid paints of an artwork's paths that take its color, so they follow the variable it
+ * was drawn in. Paints of their own, such as a multicolor icon's or a palette's other colors, keep
+ * theirs.
+ */
 function bindSolidPaints(graph: SceneGraph, node: SceneNode, variableId: string): void {
+  const tint = readIconTint(node)
   for (const field of ['fills', 'strokes'] as const) {
+    if (!tint.includes(field === 'fills' ? 'fill' : 'stroke')) continue
     node[field].forEach((paint, index) => {
       if (paint.type === 'SOLID') graph.bindVariable(node.id, `${field}/${index}/color`, variableId)
     })
@@ -264,7 +283,7 @@ export function elementOverrides(
   const layer = { parentId, modes }
   const { props, bindings } = preparePropsForRender(graph, bound.props, isText, layer)
   const overrides = {
-    ...propsToOverrides(props, isText, parentLayout),
+    ...propsToOverrides(props, isText, parentLayout, graph.documentColorSpace),
     ...shapeOverrides(nodeType, props),
     ...layerMetadata(modes, bound.references)
   }
@@ -272,7 +291,12 @@ export function elementOverrides(
   if (isText) {
     // A span's variables give their values; characters keep no bindings of their own.
     const spanOverrides = (spanProps: Record<string, unknown>) =>
-      propsToOverrides(preparePropsForRender(graph, spanProps, true, layer).props, true, 'NONE')
+      propsToOverrides(
+        preparePropsForRender(graph, spanProps, true, layer).props,
+        true,
+        'NONE',
+        graph.documentColorSpace
+      )
     Object.assign(overrides, textContentFields(tree, props, overrides, spanOverrides, markdown))
   }
   return { overrides, bindings }

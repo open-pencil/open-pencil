@@ -12,7 +12,7 @@ import { computed } from 'vue'
 
 import type { TokenStylesheetFormat } from '@open-pencil/dom-css/export'
 import { useEditor } from '@open-pencil/vue'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import { variablesStylesheet } from '@/app/editor/tokens/stylesheet'
@@ -30,7 +30,7 @@ const { collectionId, layout = 'side' } = defineProps<{
 }>()
 const emit = defineEmits<{ copy: [format: TokenStylesheetFormat]; export: [] }>()
 
-const { variables } = useI18n()
+const variables = useMessages('variables/panel')
 const ui = computed(() => tv(outputTheme)({ layout }))
 const menu = useMenuUI({ content: 'w-60', item: 'justify-start gap-2' })
 const editor = useEditor()

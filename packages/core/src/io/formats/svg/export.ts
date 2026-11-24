@@ -1,4 +1,5 @@
-import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
+import { compact } from 'es-toolkit'
+
 import {
   getNodeRotationOrigin,
   getWorldMatrix,
@@ -15,14 +16,13 @@ import { exportBounds } from '#core/io/formats/raster'
 
 import {
   nextDefId,
-  formatSolidColor,
-  createFilterDef,
   drawnFills,
   resolveFill,
   solidFillOpacity,
-  SVG_STROKE_CAP,
-  SVG_STROKE_JOIN
+  svgStrokeAttrs,
+  type SVGExportContext
 } from './defs'
+import { layerEffects, withLayerEffects, type ExportEffectWarning } from './effects'
 import {
   round,
   geometryBlobToSVGPath,
@@ -35,17 +35,23 @@ import {
 
 export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
-import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import type {
+  ColorProfile,
+  Fill,
+  SceneGraph,
+  SceneNode,
+  Stroke,
+  VectorNetwork
+} from '@open-pencil/scene-graph'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import {
   hasRegionFills,
   looseSegments,
   regionSVGPaths
 } from '@open-pencil/scene-graph/vector-network'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
-import type { SVGExportContext } from './defs'
 import { svg, svgElement, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
@@ -262,12 +268,6 @@ function buildGroupAttrs(
     attrs.style = `mix-blend-mode: ${blend}`
   }
 
-  const filterDef = createFilterDef(node.effects, ctx)
-  if (filterDef) {
-    ctx.defs.push(filterDef.node)
-    attrs.filter = `url(#${filterDef.id})`
-  }
-
   let clipId: string | undefined
   if (clipsChildren(node) && node.childIds.length > 0) {
     clipId = nextDefId(ctx, 'clip')
@@ -275,31 +275,6 @@ function buildGroupAttrs(
   }
 
   return { attrs, clipId }
-}
-
-function buildSVGStrokeAttrs(
-  visibleStrokes: Stroke[],
-  colorSpace: 'srgb' | 'display-p3',
-  nodeCap: SceneNode['strokeCap']
-): Record<string, string | number | undefined> {
-  if (visibleStrokes.length === 0) return {}
-  const stroke = visibleStrokes[0]
-  const cap = stroke.cap ?? nodeCap
-  const attrs: Record<string, string | number | undefined> = {
-    // Opacity 1 keeps the color opaque. Display P3 must not also keep color alpha here, or a
-    // viewer multiplies it by stroke-opacity; the canvas paints stroke.opacity alone.
-    stroke: formatSolidColor(stroke.color, 1, colorSpace),
-    'stroke-width': round(stroke.weight)
-  }
-  if (stroke.opacity < 1) attrs['stroke-opacity'] = round(stroke.opacity)
-  if (cap !== 'NONE') attrs['stroke-linecap'] = SVG_STROKE_CAP[cap] ?? 'butt'
-  if (stroke.join && stroke.join !== 'MITER') {
-    attrs['stroke-linejoin'] = SVG_STROKE_JOIN[stroke.join] ?? 'miter'
-  }
-  if (stroke.dashPattern && stroke.dashPattern.length > 0) {
-    attrs['stroke-dasharray'] = stroke.dashPattern.map((n) => round(n)).join(' ')
-  }
-  return attrs
 }
 
 function hasPathLevelFills(node: SceneNode): boolean {
@@ -361,7 +336,7 @@ function fillAndStrokeElements(
       nodeShapeElements(
         node,
         paint,
-        solidFillOpacity(fill, ctx.colorSpace),
+        solidFillOpacity(fill, ctx.colors),
         index === drawn.length - 1 ? strokeAttrs : {},
         ctx
       )
@@ -388,7 +363,7 @@ function exportedFill(
   if (!fill) return { color: null, opacity: undefined }
   return {
     color: resolveFill(fill, node, ctx),
-    opacity: solidFillOpacity(fill, ctx.colorSpace)
+    opacity: solidFillOpacity(fill, ctx.colors)
   }
 }
 
@@ -422,6 +397,7 @@ function layerId(name: string, ids: NonNullable<SVGExportContext['layerIds']>): 
 }
 
 function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
+  const effects = layerEffects(node, ctx)
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
   if (node.type === 'TEXT') {
@@ -430,7 +406,8 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
       node,
       ctx
     )
-    return svg('g', groupAttrs, renderTextNode(node, fill.color, ctx, fill.opacity))
+    const text = renderTextNode(node, fill.color, ctx, fill.opacity)
+    return svgElement('g', groupAttrs, withLayerEffects([text], effects, groupAttrs))
   }
 
   const visibleFills = node.fills.filter((f) => f.visible)
@@ -442,8 +419,8 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   const fillAttr = tintedFill ? CURRENT_COLOR : fill.color
   // `currentColor` has no alpha. Display P3 normally bakes solid opacity into the color, which a
   // tint throws away, so a tinted solid keeps `fill-opacity` in every color space.
-  const fillOpacity = ownFill ? solidFillOpacity(ownFill, ctx.colorSpace, tintedFill) : fill.opacity
-  const ownStrokes = buildSVGStrokeAttrs(visibleStrokes, ctx.colorSpace, node.strokeCap)
+  const fillOpacity = ownFill ? solidFillOpacity(ownFill, ctx.colors, tintedFill) : fill.opacity
+  const ownStrokes = svgStrokeAttrs(visibleStrokes, ctx.colors, node.strokeCap)
   const strokeAttrs =
     ownStrokes.stroke && tint.includes('stroke')
       ? { ...ownStrokes, stroke: CURRENT_COLOR }
@@ -472,7 +449,7 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     appendAll(children, childContent)
   }
 
-  const validChildren = children.filter((c): c is SVGNode => c !== null)
+  const validChildren = withLayerEffects(compact(children), effects, groupAttrs)
 
   if (validChildren.length === 0 && Object.keys(groupAttrs).length === 0) {
     return null
@@ -494,8 +471,10 @@ function isGroupLike(node: SceneNode): boolean {
 export interface SVGExportOptions {
   /** Include XML declaration (default: true) */
   xmlDeclaration?: boolean
-  /** Target export color space (default: srgb) */
-  colorSpace?: 'srgb' | 'display-p3'
+  /** The profile the SVG writes colors in; the document's own unless given. */
+  colorSpace?: ColorProfile
+  /** Receives each effect the export leaves out because SVG cannot draw it, such as glass. */
+  onWarning?: (warning: ExportEffectWarning) => void
   /**
    * Line breaks of text nodes as the editor laid them out, wraps included. Without them, only
    * explicit newlines start a new baseline, which renderers that do not wrap SVG text keep.
@@ -524,7 +503,11 @@ export function renderNodesToSVG(
     defs: [],
     defIdCounter: 0,
     graph,
-    colorSpace: options.colorSpace ?? 'srgb',
+    colors: {
+      from: graph.documentColorSpace,
+      to: options.colorSpace ?? graph.documentColorSpace
+    },
+    onWarning: options.onWarning,
     textLayout: options.textLayout,
     layerIds: options.layerIds ? { names: new Map(), taken: new Set() } : undefined
   }
@@ -579,11 +562,15 @@ export function renderNodeSVGElement(
   node: SceneNode,
   {
     idPrefix,
-    colorSpace = 'srgb',
+    colorSpace = graph.documentColorSpace,
     tint
-  }: Pick<SVGExportContext, 'tint'> & { idPrefix: string; colorSpace?: RenderColorSpace }
+  }: Pick<SVGExportOptions, 'colorSpace'> &
+    Partial<Pick<SVGExportContext, 'tint'>> & {
+      idPrefix: string
+    }
 ): SVGNode | null {
-  const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colorSpace, idPrefix, tint }
+  const colors = { from: graph.documentColorSpace, to: colorSpace }
+  const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colors, idPrefix, tint }
   const drawn = renderNode({ ...node, x: 0, y: 0, rotation: 0, opacity: 1 }, ctx)
   if (!drawn) return null
   // A straight line has no height or width, but its stroke still needs a viewport to draw in.

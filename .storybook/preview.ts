@@ -1,5 +1,6 @@
 import { withThemeByDataAttribute } from '@storybook/addon-themes'
-import type { Preview, Renderer } from '@storybook/vue3-vite'
+import { setup, type Preview, type Renderer } from '@storybook/vue3-vite'
+import { createHead } from '@unhead/vue/client'
 import { useTextDirection } from '@vueuse/core'
 import { ConfigProvider } from 'reka-ui'
 import { computed, watch, watchEffect } from 'vue'
@@ -11,6 +12,11 @@ import { useAppTheme } from '@/app/shell/theme'
 import '@/app.css'
 
 registerInterfaceFont()
+
+// As src/boot.ts does: pages such as the Cloud portal's set their title through useHead.
+setup((app) => {
+  app.use(createHead())
+})
 
 const preview: Preview = {
   globalTypes: {

@@ -13,6 +13,7 @@ import {
   inspectTarball,
   type TarballInspection
 } from '@open-pencil/package-artifacts-tools/tarball'
+import { toError } from '@open-pencil/std/errors'
 
 export interface PackedPackageSet {
   inspections: TarballInspection[]
@@ -57,7 +58,7 @@ export async function packPublicPackages(
           ? tarballFromOutput(result.stdout, outputDirectory)
           : npmTarballFromOutput(result.stdout, outputDirectory)
       } catch (error) {
-        return error instanceof Error ? error : new Error(String(error))
+        return toError(error)
       }
     },
     { concurrency: availableParallelism() }

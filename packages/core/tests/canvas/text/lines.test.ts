@@ -2,8 +2,8 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import { SceneGraph, type SceneNode, type StyleRun } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import { maxOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import type { TextLayout } from '#core/canvas/text/layout'

@@ -29,13 +29,11 @@ import type { AuthenticationEmailService } from './email'
 import { AUTH_BASE_PATH, CORE_AUTH_PATHS, authRequestPath } from './endpoints'
 import { enrollmentOptions } from './enrollment'
 import { betterAuthLogger } from './logger'
-import {
-  createMFAAssuranceService,
-  recordResponseAssurance,
-  verifySecondFactor
-} from './mfa-assurance'
+import { removeSignInMethod, signInMethodHooks, signInProviders } from './methods'
+import { createMFAAssuranceService, createProofRecorder, verifySecondFactor } from './mfa-assurance'
 import { passwordOptions } from './passwords'
-import { APPLE_AUDIENCE, socialProviders } from './social-providers'
+import { authRateLimit } from './rate-limit'
+import { APPLE_AUDIENCE, socialProviders, TRUSTED_SOCIAL_PROVIDERS } from './social-providers'
 
 const BETTER_AUTH_SCHEMA_VERSION = '1.7.7+mfa.1'
 const DAY_SECONDS = 24 * 60 * 60
@@ -66,6 +64,7 @@ export function createBetterAuthAdapter(
   const activity = createSignInActivity(database, authenticationEmail)
   // A new address is confirmed through a link sent to it, so changing one needs email delivery.
   const emailChangeAvailable = Boolean(config.emailPasswordEnabled && authenticationEmail)
+  const providers = signInProviders(config)
   // The plugins are built first, so the options below name their endpoints by the paths they declare.
   const twoStep = twoFactor({
     issuer: 'OpenPencil Cloud',
@@ -98,24 +97,32 @@ export function createBetterAuthAdapter(
     rateLimit: { enabled: false },
     enableSessionForAPIKeys: false
   })
+  const joining = enrollmentOptions(
+    config,
+    database,
+    enrollment,
+    authenticationEmail,
+    emailChangeAvailable
+  )
   const auth = betterAuth({
     appName: 'OpenPencil Cloud',
     logger: betterAuthLogger,
     baseURL: config.publicURL,
     basePath: AUTH_BASE_PATH,
-    // Clients never reach Better Auth's own administration, which `/api/admin` replaces with MFA,
-    // origin, last-administrator, and audit checks, nor the endpoints Cloud's policy manages
-    // through its account routes; the server still calls them itself.
+    // Clients never reach Better Auth's administration, which `/api/admin` replaces with its own
+    // checks, nor the endpoints Cloud's account routes manage; the server still calls them itself.
     disabledPaths: [
       ...Object.values(administration.endpoints).map((endpoint) => endpoint.path),
       // Tokens are made, listed, and revoked through `/api/account/tokens`, with a fresh session.
       ...Object.values(accessTokens.endpoints).map((endpoint) => endpoint.path),
       passkeys.endpoints.deletePasskey.path,
       twoStep.endpoints.disableTwoFactor.path,
-      // Accounts are deleted through `/api/account/delete`, which an account awaiting approval
-      // cannot reach either.
+      // Accounts are deleted through `/api/account/delete`, closed to accounts awaiting approval.
       CORE_AUTH_PATHS.deleteUser,
-      CORE_AUTH_PATHS.deleteUserCallback
+      CORE_AUTH_PATHS.deleteUserCallback,
+      // Linking and unlinking go through `/api/account/authentication`, with a fresh session.
+      CORE_AUTH_PATHS.linkSocialAccount,
+      CORE_AUTH_PATHS.unlinkAccount
     ],
     secret: config.authSecret,
     database: {
@@ -128,7 +135,7 @@ export function createBetterAuthAdapter(
       accountLinking: {
         enabled: true,
         disableImplicitLinking: false,
-        trustedProviders: ['google', 'apple'],
+        trustedProviders: TRUSTED_SOCIAL_PROVIDERS,
         allowDifferentEmails: false,
         allowUnlinkingAll: false,
         requireLocalEmailVerified: true
@@ -143,24 +150,9 @@ export function createBetterAuthAdapter(
       },
       ...(runtime.runInBackground ? { backgroundTasks: { handler: runtime.runInBackground } } : {})
     },
-    rateLimit: {
-      enabled: true,
-      storage: 'database',
-      window: 60,
-      max: 100,
-      customRules: {
-        [devices.endpoints.deviceCode.path]: { window: 60, max: 10 },
-        [devices.endpoints.deviceToken.path]: { window: 60, max: 60 },
-        [devices.endpoints.deviceApprove.path]: { window: 60, max: 10 },
-        [devices.endpoints.deviceDeny.path]: { window: 60, max: 10 },
-        [CORE_AUTH_PATHS.signInEmail]: { window: 10, max: 3 },
-        [CORE_AUTH_PATHS.signUpEmail]: { window: 10, max: 3 },
-        [CORE_AUTH_PATHS.requestPasswordReset]: { window: 60, max: 3 },
-        [CORE_AUTH_PATHS.sendVerificationEmail]: { window: 60, max: 3 }
-      }
-    },
+    rateLimit: authRateLimit(devices.endpoints),
     emailAndPassword: passwordOptions(config, authenticationEmail),
-    ...enrollmentOptions(config, database, enrollment, authenticationEmail, emailChangeAvailable),
+    ...joining,
     plugins: [
       ...(config.captchaProvider && config.captchaSecretKey
         ? [
@@ -193,6 +185,7 @@ export function createBetterAuthAdapter(
       accessTokens
     ],
     socialProviders: socialProviders(config),
+    databaseHooks: { ...joining.databaseHooks, ...signInMethodHooks },
     trustedOrigins: [
       config.publicURL,
       ...config.trustedOrigins,
@@ -204,16 +197,33 @@ export function createBetterAuthAdapter(
   const deploymentRole = (user: { id: string; role?: string | null }) =>
     user.role === 'admin' ? ('admin' as const) : ('user' as const)
 
-  const resolveIdentity = async (headers: Headers) => {
+  /** The signed-in person, and the session they are signed in with. */
+  async function signedIn(headers: Headers) {
     const session = await auth.api.getSession({ headers })
     if (!session) return null
     return {
-      userId: session.user.id,
-      email: session.user.email,
-      name: session.user.name,
-      image: session.user.image ?? null,
-      deploymentRole: deploymentRole(session.user)
+      identity: {
+        userId: session.user.id,
+        email: session.user.email,
+        name: session.user.name,
+        image: session.user.image ?? null,
+        deploymentRole: deploymentRole(session.user)
+      },
+      sessionId: session.session.id,
+      twoFactorEnabled: 'twoFactorEnabled' in session.user && session.user.twoFactorEnabled === true
     }
+  }
+
+  const resolveIdentity = async (headers: Headers) => (await signedIn(headers))?.identity ?? null
+
+  async function twoStepConfirmed(headers: Headers): Promise<boolean> {
+    const signed = await signedIn(headers)
+    if (!signed) return false
+    return assurance.confirmed({
+      sessionId: signed.sessionId,
+      userId: signed.identity.userId,
+      twoFactorEnabled: signed.twoFactorEnabled
+    })
   }
 
   /** The signed-in person, read past the cookie cache, for changes about their own account. */
@@ -259,14 +269,23 @@ export function createBetterAuthAdapter(
     return identity
   }
 
-  /** The signed-in person while their account is approved, before or after accepting the terms. */
+  /**
+   * The signed-in person while their account is approved and their session proved its second step,
+   * before or after accepting the terms.
+   */
   async function resolveAccountSession(headers: Headers) {
-    const identity = await resolveIdentity(headers)
-    if (!identity) return null
+    const signed = await signedIn(headers)
+    if (!signed) return null
+    const { identity } = signed
     if (config.enrollmentMode === 'approval' && !(await enrollment.isApproved(identity.email))) {
       return null
     }
-    return identity
+    const confirmed = await assurance.confirmed({
+      sessionId: signed.sessionId,
+      userId: identity.userId,
+      twoFactorEnabled: signed.twoFactorEnabled
+    })
+    return confirmed ? identity : null
   }
 
   /** The account a personal access token in `Authorization: Bearer` stands for. */
@@ -294,6 +313,9 @@ export function createBetterAuthAdapter(
    */
   const activeAccountPaths = new Set(
     [
+      // The desktop session it grants counts as two-step proved; only a proved session may grant one.
+      auth.api.deviceApprove,
+      auth.api.deviceDeny,
       auth.api.generatePasskeyRegistrationOptions,
       auth.api.listPasskeys,
       auth.api.updatePasskey,
@@ -316,12 +338,13 @@ export function createBetterAuthAdapter(
       auth.api.unlinkAccount
     ].map((endpoint) => authRequestPath(endpoint.path))
   )
-  /** The second factor a request proves, by the endpoint it is for. */
-  const assuranceMethods = new Map<string, 'totp' | 'recovery-code' | 'passkey'>([
-    [authRequestPath(twoStep.endpoints.verifyTOTP.path), 'totp'],
-    [authRequestPath(twoStep.endpoints.verifyBackupCode.path), 'recovery-code'],
-    [authRequestPath(passkeys.endpoints.verifyPasskeyAuthentication.path), 'passkey']
-  ])
+  const recordProof = createProofRecorder(database, assurance, {
+    totp: authRequestPath(twoStep.endpoints.verifyTOTP.path),
+    recoveryCode: authRequestPath(twoStep.endpoints.verifyBackupCode.path),
+    passkeySignIn: authRequestPath(passkeys.endpoints.verifyPasskeyAuthentication.path),
+    passkeyRegistration: authRequestPath(passkeys.endpoints.verifyPasskeyRegistration.path),
+    deviceToken: authRequestPath(devices.endpoints.deviceToken.path)
+  })
 
   return {
     handler: async (request) => {
@@ -330,14 +353,13 @@ export function createBetterAuthAdapter(
         return Response.json({ error: { code: 'unauthorized' } }, { status: 401 })
       }
       const response = await auth.handler(request)
-      const method = assuranceMethods.get(path)
-      if (response.ok && method)
-        await recordResponseAssurance(response, method, database, assurance)
+      if (response.ok) await recordProof(path, response, () => currentSession(request.headers))
       return response
     },
     resolveIdentity,
     resolveSession,
     resolveAccountSession,
+    twoStepConfirmed,
     resolveAccessToken,
     async listAccessTokens(headers) {
       const session = await currentSession(headers)
@@ -386,16 +408,13 @@ export function createBetterAuthAdapter(
     },
     async startSocialLink(headers, input) {
       await freshSession(headers)
-      const response = await auth.api.linkSocialAccount({
-        headers,
-        body: {
-          provider: input.provider,
-          callbackURL: input.callbackURL,
-          errorCallbackURL: input.callbackURL,
-          disableRedirect: true
-        }
-      })
-      return response.url
+      const body = { ...input, errorCallbackURL: input.callbackURL, disableRedirect: true }
+      const link = await auth.api.linkSocialAccount({ headers, body, returnHeaders: true })
+      return { url: link.response.url, headers: link.headers }
+    },
+    async unlinkAuthenticationMethod(headers, methodId) {
+      const session = await freshSession(headers)
+      await removeSignInMethod(database, { userId: session.user.id, methodId, providers })
     },
     async deleteAccount(headers, password) {
       const { headers: answer } = await auth.api.deleteUser({
@@ -404,9 +423,6 @@ export function createBetterAuthAdapter(
         returnHeaders: true
       })
       return answer
-    },
-    async unlinkAuthenticationMethod(headers, methodId) {
-      await auth.api.unlinkAccount({ headers, body: { accountId: methodId } })
     },
     async banUser(headers, userId, reason) {
       await auth.api.banUser({ headers, body: { userId, banReason: reason } })
@@ -451,7 +467,8 @@ export function createBetterAuthAdapter(
         headers,
         code,
         'totp',
-        twoStep.endpoints.verifyTOTP
+        twoStep.endpoints.verifyTOTP,
+        before ? { id: before.session.id, userId: before.user.id } : null
       )
       // The first code from a new authenticator is what turns it on.
       if (before && !('twoFactorEnabled' in before.user && before.user.twoFactorEnabled === true)) {
@@ -460,6 +477,7 @@ export function createBetterAuthAdapter(
       return response
     },
     async verifyRecoveryCode(headers, code) {
+      const current = await currentSession(headers)
       return verifySecondFactor(
         auth,
         config,
@@ -468,7 +486,8 @@ export function createBetterAuthAdapter(
         headers,
         code,
         'recovery-code',
-        twoStep.endpoints.verifyBackupCode
+        twoStep.endpoints.verifyBackupCode,
+        current ? { id: current.session.id, userId: current.user.id } : null
       )
     },
     async generateRecoveryCodes(headers, password) {

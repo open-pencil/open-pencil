@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { LanguageModel } from 'ai'
 
-import { AI_PROVIDERS } from '@open-pencil/core/constants'
+import { AI_PROVIDERS, providerKind } from '@open-pencil/core/constants'
 import type { AIProviderID } from '@open-pencil/core/constants'
 
 import { resolveLanguageModelID } from '@/app/ai/models/language-model'
@@ -138,18 +138,25 @@ describe('model provider registry', () => {
       ],
       [
         'google',
-        'gemini-3.1-pro-preview',
+        'gemini-4-carbon',
         { generationConfig: { thinkingConfig: { thinkingLevel: 'low' } } }
       ],
+      ['openai', 'gpt-6.2-sol', { reasoning: { effort: 'low' } }],
+      ['openai', 'gpt-6.2-astra', { reasoning: { effort: 'low' } }],
+      // Saved before the list dropped them, they still send the lowest effort they accept.
       ['openai', 'gpt-6.1-sol', { reasoning: { effort: 'low' } }],
-      ['openai', 'gpt-6-astra', { reasoning: { effort: 'low' } }]
+      [
+        'google',
+        'gemini-3.1-pro-preview',
+        { generationConfig: { thinkingConfig: { thinkingLevel: 'low' } } }
+      ]
     ] as const)('%s %s sends the lowest thinking it accepts', async (providerID, modelID, sent) => {
       expect(await thinkingRequestBody(providerID, modelID, level)).toMatchObject(sent)
     })
   })
 
   test('registers every direct provider without handling agent runtimes as models', () => {
-    for (const provider of AI_PROVIDERS.filter((entry) => entry.id !== 'harness:pi')) {
+    for (const provider of AI_PROVIDERS.filter((entry) => providerKind(entry.id) === 'api')) {
       expect(modelProviderAdapter(provider.id).create).toBeFunction()
     }
     expect(() => modelProviderAdapter('harness:pi')).toThrow('Harness agents')

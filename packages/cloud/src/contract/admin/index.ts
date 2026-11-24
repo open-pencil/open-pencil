@@ -2,11 +2,13 @@ import { zipObject } from 'es-toolkit'
 import * as v from 'valibot'
 
 import {
+  CLOUD_SOCIAL_PROVIDERS,
   cloudIdentitySchema,
   cloudAccountSessionSchema,
   cloudPersonSchema,
   cloudSignInSchema
 } from '../account'
+import { documentKindSchema } from '../documents'
 import { documentReportReasonSchema } from '../reports'
 import { workspaceRoleSchema } from '../workspaces'
 
@@ -39,8 +41,14 @@ export const adminErrorCodeSchema = v.picklist([
   'invalid_enrollment_transition',
   'last_admin_required',
   'self_admin_action_forbidden',
+  // The sign-in method is the account's last, so removing it would lock its owner out.
+  'last_authentication_method',
+  // Only an account whose request was never approved can be deleted from the console.
+  'account_approved',
   'email_regeneration_unavailable',
   'mfa_required',
+  // Two-step is on, but this session has not proved it lately; confirming it lets it back in.
+  'two_step_unconfirmed',
   'document_not_restorable',
   'workspace_gone'
 ])
@@ -84,7 +92,14 @@ export const cloudAdminUserSchema = v.object({
   twoStep: v.boolean(),
   /** When one of the account's sessions was last used, or null when none is left. */
   lastActiveAt: nullableTimestampSchema,
-  workspaceCount: countSchema
+  workspaceCount: countSchema,
+  /** How the account signs in: `credential` for a password, or a provider such as `google`. */
+  methods: v.array(v.string()),
+  /**
+   * On a server that approves people, where this account's request to join stands: an account
+   * exists from its first sign-in, before anyone approved it. Absent where everyone may join.
+   */
+  request: v.optional(v.nullable(enrollmentStatusSchema))
 })
 
 /** Which accounts a list of people shows. */
@@ -94,6 +109,8 @@ export const cloudAdminUserFilterSchema = v.picklist([
   'suspended',
   'without-two-step'
 ])
+/** Narrows a list of people, under any filter, to those who sign in a given way. */
+export const cloudAdminUserMethodSchema = v.picklist(['password', ...CLOUD_SOCIAL_PROVIDERS])
 export const cloudAdminUsersResponseSchema = v.object({
   users: v.array(cloudAdminUserSchema),
   ...listTotals(cloudAdminUserFilterSchema.options)
@@ -104,7 +121,15 @@ export const cloudAdminUserDetailSchema = v.object({
     ...cloudAdminUserSchema.entries,
     emailVerified: v.boolean()
   }),
-  methods: v.array(v.object({ provider: v.string(), createdAt: timestampSchema })),
+  /** `canRemove`: the account keeps a way in that still works without it. */
+  methods: v.array(
+    v.object({
+      id: v.string(),
+      provider: v.string(),
+      createdAt: timestampSchema,
+      canRemove: v.boolean()
+    })
+  ),
   authenticator: v.boolean(),
   passkeyCount: countSchema,
   sessions: v.array(cloudAccountSessionSchema),
@@ -172,6 +197,8 @@ export const adminAuditResponseSchema = v.object({
 export const cloudAdminDocumentSchema = v.object({
   id: v.string(),
   name: v.string(),
+  /** A design or a board. Servers from before send none, and had only designs. */
+  kind: v.optional(documentKindSchema, 'design'),
   workspace: v.object({ id: v.string(), name: v.string() }),
   /** Who made it, while the server knows them. */
   owner: v.nullable(v.object({ id: v.string(), name: v.string(), email: v.string() })),
@@ -186,7 +213,20 @@ export const cloudAdminDocumentSchema = v.object({
    * can still restore it. Servers from before Trash send neither.
    */
   purgedAt: v.optional(nullableTimestampSchema, null),
-  destroyedAt: v.optional(nullableTimestampSchema, null)
+  destroyedAt: v.optional(nullableTimestampSchema, null),
+  /**
+   * The saved revision whose thumbnail previews it; null before its first save. Servers from
+   * before previews send none.
+   */
+  revisionId: v.optional(v.nullable(v.string()), null),
+  /**
+   * Who beyond its workspace can open it: anyone, in the community gallery, and whoever holds one
+   * of its live share links, `editLinks` of which let them edit. Servers from before send none.
+   */
+  exposure: v.optional(
+    v.object({ community: v.boolean(), links: countSchema, editLinks: countSchema }),
+    { community: false, links: 0, editLinks: 0 }
+  )
 })
 /** Which documents a list shows: live ones, or those deleted forever an administrator can restore. */
 export const cloudAdminDocumentFilterSchema = v.picklist(['all', 'reported', 'disabled', 'purged'])
@@ -236,6 +276,7 @@ export type Enrollment = v.InferOutput<typeof enrollmentSchema>
 export type CloudAdminSessionResponse = v.InferOutput<typeof cloudAdminSessionResponseSchema>
 export type CloudAdminUser = v.InferOutput<typeof cloudAdminUserSchema>
 export type CloudAdminUserFilter = v.InferOutput<typeof cloudAdminUserFilterSchema>
+export type CloudAdminUserMethod = v.InferOutput<typeof cloudAdminUserMethodSchema>
 export type CloudAdminEmailFilter = v.InferOutput<typeof cloudAdminEmailFilterSchema>
 export type CloudAdminAuditFilter = v.InferOutput<typeof cloudAdminAuditFilterSchema>
 export type EnrollmentStatus = v.InferOutput<typeof enrollmentStatusSchema>

@@ -7,6 +7,7 @@ import {
   transformDesignJSXProgram,
   type DesignJSXProgram
 } from '@open-pencil/design-jsx'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { sandboxDocument } from '@/app/code/sandbox/document'
 import frameScript from '@/app/code/sandbox/frame.ts?script'
@@ -46,7 +47,7 @@ export async function evaluateDesignJSX(
   try {
     program = transformDesignJSXProgram(source)
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+    return { ok: false, error: errorMessage(error) }
   }
 
   const validationLimits = resolveDesignJSXValidationLimits(limits)
@@ -106,7 +107,7 @@ export async function evaluateDesignJSX(
         const roots = validateDesignJSXOutput(message.value, validationLimits, collections)
         finish({ ok: true, roots, collections, lineOffset: program.lineOffset })
       } catch (error) {
-        finish({ ok: false, error: error instanceof Error ? error.message : String(error) })
+        finish({ ok: false, error: errorMessage(error) })
       }
     }
     timer = setTimeout(

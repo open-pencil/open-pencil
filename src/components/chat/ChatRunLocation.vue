@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 
 const { agent, page } = defineProps<{ agent: string; page: string }>()
 const emit = defineEmits<{ open: [] }>()
 
-const { ai } = useI18n()
+const ai = useMessages('ai')
 </script>
 
 <template>

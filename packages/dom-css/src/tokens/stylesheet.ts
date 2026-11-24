@@ -1,12 +1,13 @@
 import type {
+  ColorProfile,
   SceneGraph,
   Variable,
   VariableCollection,
   VariableCollectionMode,
   VariableValue
 } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { variableValueReferences } from '@open-pencil/scene-graph/variables'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { cssColor } from '../export/css'
 import { formulaToCSS } from './formula'
@@ -43,7 +44,9 @@ type ModeScope = {
   declarations: Declaration[]
 }
 
-type TokenSource = Pick<SceneGraph, 'variables' | 'variableCollections'>
+/** The variables a stylesheet writes, and the profile their colors are in, sRGB unless given. */
+type TokenSource = Pick<SceneGraph, 'variables' | 'variableCollections'> &
+  Partial<Pick<SceneGraph, 'documentColorSpace'>>
 
 function isAtRuleCondition(condition: string): boolean {
   return condition.trim().startsWith('@')
@@ -104,7 +107,8 @@ function modeValue(
   value: VariableValue | undefined,
   modeId: string,
   names: ReadonlyMap<string, string>,
-  variables: ReadonlyMap<string, Variable>
+  variables: ReadonlyMap<string, Variable>,
+  profile: ColorProfile
 ): string | { issue: string } {
   const expression = variable.expressions?.[modeId]
   if (expression) return expression.css
@@ -119,7 +123,7 @@ function modeValue(
     const target = names.get(value.aliasId)
     return target ? `var(--${target})` : { issue: 'aliases a variable that does not exist' }
   }
-  if (variable.type === 'COLOR' && typeof value === 'object') return cssColor(value)
+  if (variable.type === 'COLOR' && typeof value === 'object') return cssColor(value, profile)
   if (variable.type === 'FLOAT' && typeof value === 'number')
     return tokenNumberToCSS(value, variableUnit(variable))
   if (variable.type === 'STRING' && typeof value === 'string')
@@ -182,7 +186,14 @@ export function buildTokenStylesheet(
     value: VariableValue | undefined
   ): Declaration | undefined {
     const name = names.get(variable.id) ?? variable.id
-    const css = modeValue(variable, value, modeId, names, source.variables)
+    const css = modeValue(
+      variable,
+      value,
+      modeId,
+      names,
+      source.variables,
+      source.documentColorSpace ?? 'srgb'
+    )
     if (typeof css !== 'string') {
       issues.push({ message: `${variable.name} ${css.issue}`, variableId: variable.id, modeId })
       return undefined

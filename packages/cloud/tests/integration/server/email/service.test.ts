@@ -47,6 +47,7 @@ describe('transactional email outbox', () => {
       const email = createTransactionalEmailService(runtime.database, {
         encryptionSecret: secret,
         from: 'OpenPencil <cloud@example.com>',
+        replyTo: 'hello@example.com',
         transport: {
           id: 'memory',
           async send(message) {
@@ -71,6 +72,7 @@ describe('transactional email outbox', () => {
       expect(sent).toHaveLength(1)
       expect(sent[0]).toMatchObject({
         to: 'person@example.com',
+        replyTo: 'hello@example.com',
         subject: 'Alice invited you to view “Homepage”'
       })
       expect(
@@ -146,6 +148,55 @@ describe('transactional email outbox', () => {
       expect(language('guest@example.com')).toBe('fr')
       expect(language('stranger@example.com')).toBe('en')
       expect(language('signing-up@example.com')).toBe('ja')
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('leaves retired kinds pending without taking batch slots', async () => {
+    const runtime = await createCloudTestDatabase()
+    const sent: string[] = []
+    try {
+      const email = createTransactionalEmailService(runtime.database, {
+        encryptionSecret: secret,
+        from: 'OpenPencil <cloud@example.com>',
+        transport: {
+          id: 'memory',
+          async send(message) {
+            sent.push(message.to)
+            return {
+              transportMessageId: message.deliveryId,
+              acceptedAt: '2026-01-01T00:00:00.000Z'
+            }
+          }
+        }
+      })
+      const enqueue = (recipientEmail: string) =>
+        email.enqueue({
+          idempotencyKey: `document-invitation/${recipientEmail}`,
+          kind: 'document-invitation',
+          recipientEmail,
+          payload: invitation
+        })
+      const retired = await enqueue('retired@example.com')
+      await runtime.database
+        .updateTable('transactionalEmail')
+        .set({ kind: 'enrollment-invited', nextAttemptAt: new Date(0) })
+        .where('id', '=', retired)
+        .execute()
+      await enqueue('person@example.com')
+      expect(await email.deliverPending({ batchSize: 1, leaseDurationMs: 60_000 })).toMatchObject({
+        claimed: 1,
+        accepted: 1
+      })
+      expect(sent).toEqual(['person@example.com'])
+      expect(
+        await runtime.database
+          .selectFrom('transactionalEmail')
+          .select(['status', 'claimId'])
+          .where('id', '=', retired)
+          .executeTakeFirstOrThrow()
+      ).toEqual({ status: 'pending', claimId: null })
     } finally {
       await runtime.close()
     }

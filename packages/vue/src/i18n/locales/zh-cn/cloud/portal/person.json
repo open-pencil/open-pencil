@@ -1,0 +1,32 @@
+{
+  "backToPeople": "所有成员",
+  "personAccount": "账号",
+  "emailVerified": "已验证",
+  "emailNotVerified": "未验证",
+  "joinedRow": "加入时间",
+  "lastActiveRow": "最近活跃",
+  "signInMethods": "登录方式",
+  "twoStepRow": "两步验证",
+  "twoStepNone": "未设置",
+  "passkeyCount": {
+    "many": "{count} 个通行密钥"
+  },
+  "personWorkspaces": "工作区",
+  "personWorkspacesEmpty": "未加入任何工作区。",
+  "workspaceMembers": {
+    "many": "{count} 名成员"
+  },
+  "workspaceRoleAdmin": "管理员",
+  "workspaceRoleEditor": "编辑者",
+  "workspaceRoleViewer": "查看者",
+  "personSessions": "会话",
+  "noSessions": "未在任何地方登录。",
+  "personNotFound": "没有这个账号",
+  "personNotFoundDescription": "它可能已被移除。请返回成员列表。",
+  "removeSignInMethod": "移除",
+  "removeSignInMethodHeading": "从 {name} 的登录方式中移除 {provider}？",
+  "removeSignInMethodDescription": "除非重新添加，否则对方将无法再用这种方式登录，并会收到一封邮件告知。已登录的设备会保持登录，直到你让对方退出所有设备。",
+  "deletePersonAccount": "删除账户",
+  "deletePersonAccountHeading": "要删除 {name} 的账户吗？",
+  "deletePersonAccountDescription": "其加入请求从未获批，因此账户、登录方式和请求都会删除。活动记录会保留其姓名和邮箱。对方可以重新注册。"
+}

@@ -1,0 +1,88 @@
+import { onScopeDispose, watch } from 'vue'
+
+import { errorMessage } from '@open-pencil/std/errors'
+
+import { saveDocument } from '@/app/cloud/integration'
+import {
+  claimFailureNotice,
+  clearSaveFailure,
+  saveWithFeedback,
+  showSaveFailure
+} from '@/app/document/io/save/feedback'
+import type { EditorStore } from '@/app/editor/session'
+import { notificationMessages } from '@/app/i18n/notifications'
+import { notify } from '@/app/shell/notifications'
+import { allTabs, getTabForStore, getTabsSnapshot, switchTab, type Tab } from '@/app/tabs'
+
+/**
+ * Reports the automatic saves of `tab`'s document that fail, which nobody waits on: a failure
+ * stays shown until the document has no unsaved changes, however they were saved, and Retry saves
+ * it as Save does. While the person is away the first failure of a run also sends a system
+ * notification, whose click brings the tab forward; a run ends once the failure is cleared.
+ */
+function reportAutosaves({ id, store }: Tab): () => void {
+  const options = {
+    key: store,
+    isOpen: () => getTabForStore(store) !== undefined,
+    hasUnsavedChanges: () => store.hasUnsavedChanges(),
+    failureMessage: (error: unknown) =>
+      notificationMessages
+        .get()
+        .autosaveFailed({ name: store.state.documentName, error: errorMessage(error) })
+  }
+  // Save, Save to, a retry, or an autosave: whatever wrote the edits ends the failure.
+  const stopSaved = watch(
+    () => store.hasUnsavedChanges(),
+    (unsaved) => {
+      if (!unsaved) clearSaveFailure(store)
+    }
+  )
+  const failed = store.onAutosaveFailed((error) => {
+    // Shown even when an undo made the document clean meanwhile: a write that failed partway, such
+    // as through a symbolic link, may have changed the file, and Retry writes it again.
+    showSaveFailure(
+      options.failureMessage(error),
+      () => saveWithFeedback(() => saveDocument(store), options),
+      options
+    )
+    const messages = notificationMessages.get()
+    const name = store.state.documentName
+    if (!claimFailureNotice(store)) return
+    notify({
+      event: 'saveFailed',
+      title: messages.saveFailedTitle({ name }),
+      body: errorMessage(error),
+      tabId: id,
+      tag: `save:${id}`,
+      open: () => void switchTab(id)
+    })
+  })
+  return () => {
+    stopSaved()
+    failed.off()
+    clearSaveFailure(store)
+  }
+}
+
+/** Reports the failed automatic saves of each open document, for as long as the app runs. */
+export function useAutosaveFeedback(): void {
+  const reported = new Map<EditorStore, () => void>()
+  watch(
+    allTabs,
+    () => {
+      const documents = getTabsSnapshot().filter((tab) => tab.kind === 'document')
+      for (const tab of documents)
+        if (!reported.has(tab.store)) reported.set(tab.store, reportAutosaves(tab))
+      for (const [store, stop] of reported) {
+        if (documents.some((tab) => tab.store === store)) continue
+        stop()
+        reported.delete(store)
+      }
+    },
+    { immediate: true }
+  )
+  onScopeDispose(() => {
+    for (const stop of reported.values()) stop()
+    reported.clear()
+  })
+}

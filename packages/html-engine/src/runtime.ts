@@ -1,4 +1,6 @@
 import {
+  attachImages,
+  backgroundImageURLs,
   parseFontFaceRules,
   parseHTMLDocument,
   parseStylesheetImports,
@@ -8,15 +10,18 @@ import {
   type DesignDocument,
   type DesignElement,
   type DesignLayout,
+  type DesignResource,
+  type DesignResourceFetch,
   type DesignStyleDeclaration,
   type DesignViewport
 } from '@open-pencil/dom-css'
 import { serializeHTML } from '@open-pencil/dom-css/export'
-import { insertAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { parseCSSColor } from '@open-pencil/scene-graph/css'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { insertAll, maxOf, minOf } from '@open-pencil/std/arrays'
 
-import type { HTMLEngine, HTMLEngineFetch, HTMLEngineResource } from './engine'
+import type { HTMLEngine } from './engine'
 import { loadHTMLEngine } from './load'
 import type { HTMLEngineCapture, HTMLEngineLine, HTMLEngineNode } from './schema'
 
@@ -41,7 +46,7 @@ export interface HTMLEngineRuntimeOptions {
    * Answers the stylesheets, fonts, and images the document asks for. A stylesheet is read for
    * its `@font-face` rules when it comes with a CSS content type.
    */
-  fetch?: HTMLEngineFetch
+  fetch?: DesignResourceFetch
   /**
    * Receives each font the page's `@font-face` rules load, as the engine lays text out in it, so
    * a host can draw that text in the same font. The layout waits for it.
@@ -49,7 +54,7 @@ export interface HTMLEngineRuntimeOptions {
   onFontFace?: (face: HTMLEngineFontFace) => void | Promise<void>
 }
 
-function isStylesheet(resource: HTMLEngineResource): boolean {
+function isStylesheet(resource: DesignResource): boolean {
   return resource.contentType?.split(';')[0]?.trim().toLowerCase() === 'text/css'
 }
 
@@ -61,7 +66,7 @@ function fontFaceFetch(
   engine: HTMLEngine,
   cssText: string,
   options: HTMLEngineRuntimeOptions
-): HTMLEngineFetch | undefined {
+): DesignResourceFetch | undefined {
   const { fetch, onFontFace } = options
   if (!fetch || !onFontFace) return fetch
   const rules = new Map<string, CSSFontFaceRule[]>()
@@ -235,6 +240,114 @@ function documentHTML(body: string, cssText: string): string {
  * without one: computed styles and, when asked, the boxes, inline fragments, and text lines a
  * browser runtime records, before transforms. Documents are parsed and serialized by dom-css.
  */
+/** The `::before` and `::after` nodes of each captured element, by the element's index. */
+function generatedChildren(capture: HTMLEngineCapture): Map<number, number[]> {
+  const generated = new Map<number, number[]>()
+  for (const [index, node] of capture.nodes.entries()) {
+    if (node.parent === undefined || !node.tag?.startsWith('::')) continue
+    generated.set(node.parent, [...(generated.get(node.parent) ?? []), index])
+  }
+  return generated
+}
+
+/** The text a captured node holds directly, as a pseudo-element's generated content. */
+/** Each captured node's own text, its text children's joined in order, by the node's index. */
+function ownTexts(capture: HTMLEngineCapture): Map<number, string> {
+  const texts = new Map<number, string>()
+  for (const node of capture.nodes) {
+    if (node.text === undefined || node.parent === undefined) continue
+    texts.set(node.parent, (texts.get(node.parent) ?? '') + node.text)
+  }
+  return texts
+}
+
+/**
+ * Shows each element's `::before` and `::after` as elements of their own, first and last among its
+ * children, with the style, box, and text the engine generated for them, so they are imported as
+ * any element is. Returns the elements it made.
+ */
+function showGeneratedContent(
+  capture: HTMLEngineCapture,
+  pairs: readonly [DesignElement, HTMLEngineNode][],
+  layout: boolean
+): DesignElement[] {
+  const made: DesignElement[] = []
+  const indexes = new Map(capture.nodes.map((node, index) => [node, index]))
+  const generated = generatedChildren(capture)
+  const texts = ownTexts(capture)
+  for (const [element, node] of pairs) {
+    const index = indexes.get(node)
+    for (const pseudo of (index === undefined ? undefined : generated.get(index)) ?? []) {
+      const captured = capture.nodes[pseudo]
+      const text = texts.get(pseudo) ?? ''
+      const child: DesignElement = {
+        type: 'element',
+        tagName: captured.tag ?? '::before',
+        attrs: {},
+        children: text ? [{ type: 'text', text }] : [],
+        computedStyle: withShorthands({
+          ...capture.initial,
+          ...captured.style,
+          ...captured.computed
+        })
+      }
+      if (layout) child.layout = layoutOf(captured)
+      if (captured.tag === '::after') element.children.push(child)
+      else element.children.unshift(child)
+      made.push(child)
+    }
+  }
+  return made
+}
+
+/**
+ * The color the page's canvas is painted, as CSS takes it: the root element's background, or the
+ * body's when the root has none.
+ */
+function canvasBackground(capture: HTMLEngineCapture): string | undefined {
+  const background = (tag: string) => {
+    const node = capture.nodes.find((candidate) => candidate.tag === tag)
+    const color = node?.style?.['background-color']
+    return color && parseCSSColor(color) ? color : undefined
+  }
+  return background('html') ?? background('body')
+}
+
+/** A fetch that also keeps what it answered, by the URL asked for and the one it came from. */
+function keepingFetch(
+  fetch: DesignResourceFetch | undefined,
+  answered: Map<string, DesignResource>
+): DesignResourceFetch | undefined {
+  if (!fetch) return undefined
+  return async (url, signal) => {
+    const resource = await fetch(url, signal)
+    if (resource) answered.set(url, resource).set(resource.url, resource)
+    return resource
+  }
+}
+
+/** A fetch that answers from what the engine already loaded before it asks `fetch`. */
+function loadedFirst(
+  answered: ReadonlyMap<string, DesignResource>,
+  fetch: DesignResourceFetch | undefined
+): DesignResourceFetch | undefined {
+  if (!fetch) return undefined
+  return async (url, signal) => answered.get(url) ?? fetch(url, signal)
+}
+
+/** What an `<img>` loaded, by its `src` resolved against the page's address. */
+function imageOf(
+  element: DesignElement,
+  answered: ReadonlyMap<string, DesignResource>,
+  baseURL: string | undefined
+): DesignResource | undefined {
+  const { src } = element.attrs
+  if (element.tagName.toLowerCase() !== 'img' || !src || !URL.canParse(src, baseURL)) {
+    return undefined
+  }
+  return answered.get(new URL(src, baseURL).href)
+}
+
 export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}): CSSRuntime {
   const engine = options.engine ?? loadHTMLEngine
   return {
@@ -243,13 +356,18 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
     serializeHTML,
     async computeStyles(document, cssText = '', compute: CSSComputeOptions = {}) {
       const laidOut = await engine()
+      // The pictures the engine loads to lay images out go with their elements, so the layers
+      // they become show them without fetching them again.
+      const answered = new Map<string, DesignResource>()
+      const fetch = keepingFetch(options.fetch, answered)
       const capture = await laidOut.layout(documentHTML(serializeHTML(document), cssText), {
         baseURL: options.baseURL,
         viewport: compute.viewport ?? DEFAULT_VIEWPORT,
-        fetch: fontFaceFetch(laidOut, cssText, options)
+        fetch: fontFaceFetch(laidOut, cssText, { ...options, fetch })
       })
       const styled = structuredClone(document)
-      for (const [element, node] of pairElements(styled, capture)) {
+      const pairs = pairElements(styled, capture)
+      for (const [element, node] of pairs) {
         // Every captured property's computed value, so none falls back to a stale inline one, with
         // sizes and line heights as the page set them rather than as layout resolved them, so the
         // importer tells a size the page fixed from one that fills or hugs and keeps a line height
@@ -260,7 +378,17 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
           ...node.computed
         })
         if (compute.layout) element.layout = layoutOf(node)
+        const image = imageOf(element, answered, options.baseURL)
+        if (image) element.image = image
       }
+      const generated = showGeneratedContent(capture, pairs, compute.layout === true)
+      // Background pictures the engine loaded are kept; any it did not are read as images are.
+      // Generated content draws them too.
+      const backgrounds = [...pairs.map(([element]) => element), ...generated].filter(
+        (element) => backgroundImageURLs(element).length > 0
+      )
+      await attachImages([], loadedFirst(answered, options.fetch), backgrounds)
+      styled.background = canvasBackground(capture)
       return styled
     }
   }

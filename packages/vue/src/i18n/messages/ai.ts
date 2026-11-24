@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const aiMessageDefaults = {
   jumpToLatest: 'Jump to latest',
   chatSettings: 'Chat',
@@ -185,6 +183,8 @@ export const aiMessageDefaults = {
   modelSignedOut: 'Signed out',
   modelToolsUnreachable: 'Tools unreachable',
   thinkingLevel: 'Thinking level',
+  /** What a coding agent may do outside OpenPencil without asking, such as Codex's Full access. */
+  agentAccess: 'Access',
   thinkingLevelDescription:
     'How much the model reasons before answering. You can change it for each message in the chat.',
   thinkingDefault: 'Default',
@@ -290,6 +290,9 @@ export const aiMessageDefaults = {
   aiSetupWelcomeAITitle: 'Design with AI',
   aiSetupWelcomeAIDescription:
     'Connect the AI you already use to edit the canvas and review designs. You can change it later in Settings.',
+  aiSetupWelcomeCloudReadyTitle: 'AI is ready',
+  aiSetupWelcomeCloudReadyDescription:
+    'Your OpenPencil Cloud plan includes AI, so the chat works now with the models it recommends. You can change them later in Settings.',
   aiSetupWelcomeTourTitle: 'Take the tour',
   aiSetupWelcomeTourDescription:
     'A short file that walks through components and slots, working controls, modes, shaders, code, and lint, with a card on each that says what to try.',
@@ -540,6 +543,36 @@ export const aiMessageDefaults = {
     'The Review model cannot read images, so it cannot compare the design with an attached image.',
   reviewEmpty: 'There is nothing on this page to review.',
   reviewUnsupported: 'Pi cannot review designs. Assign another model to Review in Settings.',
+  promptDesignDescription:
+    'Your own instructions for the chat, after OpenPencil’s or in their place. The design JSX reference always follows.',
+  promptDesignMode: 'Your instructions',
+  promptDesignPlaceholder:
+    'For example: Use our 8px spacing scale and the brand colors from the Tokens page.',
+  promptDesignAdd: 'Add to OpenPencil’s',
+  promptDesignReplace: 'Replace OpenPencil’s',
+  promptDesignStart: 'Start from OpenPencil’s',
+  promptDesignReplaced: 'OpenPencil’s instructions are off',
+  promptDesignReplaceWarning:
+    'Without them the model may use its tools poorly. Reset brings them back.',
+  promptReviewDescription: 'What the Review model is told for /review and Review this change.',
+  promptTitle: 'Chat titles',
+  promptTitleDescription: 'What the Fast tasks model is asked to name a conversation.',
+  promptSummary: 'Compaction summaries',
+  promptSummaryDescription:
+    'What the model is told when it summarizes a conversation to compact it.',
+  promptVariablesAndPreview: 'Variables and preview',
+  promptVariableLanguage: 'The language to write in when the request names none',
+  promptVariableFocus: 'What the person asked the review to look at, or empty',
+  promptVariableSeesImages: 'Whether the model is shown images of the design',
+  promptVariableReferences: 'How many reference images follow the design',
+  promptVariableEdit: 'Whether this reviews the agent’s own last change, not a whole design',
+  promptVariableRequest: 'The conversation’s first request',
+  promptVariableReply: 'The beginning of the first reply',
+  promptPreview: 'Preview with sample values',
+  promptUnknownVariable: params('{name} is not a variable of this prompt, so it stays empty.'),
+  promptErrors: 'This prompt has errors',
+  promptErrorsHint: 'OpenPencil’s is used until they are fixed.',
+  promptErrorAt: params('Line {line}: {message}.'),
   tokenUsage: 'Token usage',
   tokenUsageHint: "Shows each reply's tokens.",
   tokenUsageHover: 'On hover',
@@ -550,5 +583,3 @@ export const aiMessageDefaults = {
   skillErrorNoDescription: 'The SKILL.md frontmatter has no description.',
   skillErrorNoName: 'The SKILL.md frontmatter has no name.'
 } as const
-
-export const aiMessages = i18n('ai', aiMessageDefaults)

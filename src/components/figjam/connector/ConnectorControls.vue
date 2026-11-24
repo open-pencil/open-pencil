@@ -4,7 +4,7 @@ import { computed } from 'vue'
 
 import type { ConnectorLineType, StrokeCap } from '@open-pencil/scene-graph'
 import type { FigJamColorName } from '@open-pencil/scene-graph/figjam'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useConnectorOptions } from '@/components/figjam/connector/options'
 import FigJamPalette from '@/components/figjam/FigJamPalette.vue'
@@ -43,7 +43,7 @@ const emit = defineEmits<{
   'update:dashed': [value: boolean]
 }>()
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const styles = tv(theme)()
 
 const { lineOptions, capOptions } = useConnectorOptions()

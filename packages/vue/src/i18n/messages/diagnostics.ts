@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const diagnosticsMessageDefaults = {
   usageDescription: 'Local usage summaries from recorded AI requests.',
   usageRequests: 'Requests',
@@ -100,6 +98,8 @@ export const diagnosticsMessageDefaults = {
     'Enjoying OpenPencil? It’s free and open source, and a donation helps speed up its development and covers the servers and services it runs on.',
   supportNotNow: 'Not now',
   supportDonate: 'Donate',
+  /** Puts off a message from OpenPencil, such as an offer or a donation ask, until later. */
+  campaignNotNow: 'Not now',
   sharingLocalData:
     'Usage and Diagnostics keep their records on this device. Diagnostics leave it only in a report you choose to send.',
   reportError: 'Report…',
@@ -131,5 +131,3 @@ export const diagnosticsMessageDefaults = {
   reportCrashed: 'OpenPencil closed unexpectedly after an error.',
   reportUnexpectedError: 'Something went wrong in OpenPencil.'
 } as const
-
-export const diagnosticsMessages = i18n('diagnostics', diagnosticsMessageDefaults)

@@ -1,21 +1,23 @@
-// The app's tour, prebuilt from `tools/generate/demo`; the docs config ensures it exists.
-import demoFigURL from '#app-public/demo.fig?url'
-
+import { BOARD_NAME, BOARD_SECTION } from '@open-pencil/demo-tools/board/names'
 import { CHAPTERS, sectionName, type TourChapter } from '@open-pencil/demo-tools/chapters'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { fetchOfficialExample, fetchOfficialTour } from '@/app/cloud/community/tour'
 import { followAppTheme } from '@/app/demo/theme'
 import type { EditorStore } from '@/app/editor/active-store'
 import { resolvedAppTheme } from '@/app/shell/theme'
 
-/** One download of the tour for every stage that shows a chapter of it. */
-let tourBytes: Promise<ArrayBuffer> | null = null
+/**
+ * One download of the tour, from OpenPencil Cloud's gallery as the app opens it, for every stage
+ * that shows a chapter of it.
+ */
+let tourBytes: Promise<Uint8Array> | null = null
 
-function fetchTour(): Promise<ArrayBuffer> {
+function fetchTour(): Promise<Uint8Array> {
   if (tourBytes) return tourBytes
-  const request = fetch(demoFigURL).then((response) => {
-    if (!response.ok) throw new Error(`The tour is unavailable (${response.status})`)
-    return response.arrayBuffer()
+  const request = fetchOfficialTour().then((bytes) => {
+    if (!bytes) throw new Error('The tour is unavailable')
+    return bytes
   })
   // A failed download is tried again by the next stage rather than shared.
   request.catch(() => {
@@ -28,7 +30,7 @@ function fetchTour(): Promise<ArrayBuffer> {
 /** Opens the tour like any `.fig` file, in the theme the docs site shows, as `/demo` does. */
 async function openTour(store: EditorStore): Promise<void> {
   // A File copies the bytes, so every stage decodes its own.
-  await store.openFigFile(new File([await fetchTour()], 'Demo.fig'))
+  await store.openFigFile(new File([Uint8Array.from(await fetchTour())], 'Demo.fig'))
   followAppTheme(store, resolvedAppTheme)
 }
 
@@ -185,10 +187,25 @@ async function figma(store: EditorStore): Promise<void> {
   revealLayers(store, 1)
 }
 
+/**
+ * The gallery's sprint board, opened as any `.jam` file is, so the stage is a board with
+ * FigJam's tools, its planning section filling the canvas above the toolbar.
+ */
+async function board(store: EditorStore): Promise<void> {
+  const bytes = await fetchOfficialExample(BOARD_NAME)
+  if (!bytes) throw new Error(`The gallery has no "${BOARD_NAME}"`)
+  await store.openFigFile(new File([Uint8Array.from(bytes)], `${BOARD_NAME}.jam`))
+  const section = findByName(store, BOARD_SECTION)
+  const node = section ? store.graph.getNode(section) : undefined
+  if (!node) throw new Error(`"${BOARD_NAME}" has no "${BOARD_SECTION}"`)
+  frameStage(store, node, { toolbar: true })
+}
+
 export type SceneBuilder = (store: EditorStore) => Promise<void>
 
 export const SCENES = {
   figma,
+  board,
   // The main player's cover selected: a rectangle large enough to show its corner handles on
   // hover, in a row of instances that each bring their own cover through the artwork slot.
   slots: (store) =>

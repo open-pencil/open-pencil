@@ -15,6 +15,10 @@ const HOST_PROCESSES_ENV: &str = "OPENPENCIL_HOST_PROCESSES";
 /// Shell spawn permissions, left out of `app.security.capabilities` and granted at startup.
 const HOST_PROCESSES_CAPABILITY: &str = include_str!("../capabilities/host-processes.json");
 
+/// The main window's capability, for tests that check what it allows.
+#[cfg(test)]
+pub(crate) const DEFAULT_CAPABILITY: &str = include_str!("../capabilities/default.json");
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DesktopCapabilities {

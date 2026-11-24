@@ -2,8 +2,10 @@ import { createDeepSeek } from '@ai-sdk/deepseek'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 
+import { providerKind } from '@open-pencil/core/constants'
 import type { AIProviderID } from '@open-pencil/core/constants'
 
+import { profileModelID } from '@/app/ai/models/language-model'
 import { chatGPTAdapter } from '@/app/ai/providers/chatgpt/adapter'
 import {
   createAnthropicCompatibleAdapter,
@@ -24,7 +26,7 @@ const MODEL_PROVIDER_ADAPTERS = {
           'HTTP-Referer': 'https://github.com/open-pencil/open-pencil'
         }
       })
-      return provider(config.customModelID.trim() || config.modelID)
+      return provider(profileModelID(config))
     }
   },
   anthropic: createAnthropicCompatibleAdapter(),
@@ -59,7 +61,7 @@ const MODEL_PROVIDER_ADAPTERS = {
 } satisfies Record<DirectProviderID, ModelProviderAdapter>
 
 function isDirectProviderID(providerID: AIProviderID): providerID is DirectProviderID {
-  return !providerID.startsWith('acp:') && providerID !== 'harness:pi'
+  return providerKind(providerID) === 'api'
 }
 
 export function modelProviderAdapter(providerID: AIProviderID): ModelProviderAdapter {

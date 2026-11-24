@@ -2,7 +2,7 @@
 import { isEqual } from 'es-toolkit'
 import { computed } from 'vue'
 
-import { type Locale, useI18n } from '@open-pencil/vue/i18n'
+import { type Locale, useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { recoveryEnabled, setRecoveryEnabled } from '@/app/document/recovery/preferences'
 import { isRightToLeftLocale, mirrorInterfacePreference } from '@/app/i18n/direction'
@@ -31,8 +31,12 @@ import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import PresetNumberField from '@/components/ui/input/PresetNumberField.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
+import { settingsSelectUI } from '@/theme/settings/controls'
 
-const { availableLocales, locale, localeLabels, menu, recovery, setLocale, settings } = useI18n()
+const menu = useMessages('menu')
+const recovery = useMessages('recovery')
+const settings = useMessages('settings')
+const { availableLocales, locale, localeLabels, setLocale } = useLocale()
 
 const showRecentFiles = recentFilesAvailable()
 const recentFilesPresets = [10, 25, 50, 100]
@@ -41,7 +45,6 @@ const recentFilesRangeMessage = computed(() =>
 )
 
 const { theme } = useAppTheme()
-const selectUI = { trigger: 'w-full sm:w-52' }
 
 const language = computed<Locale>({
   get: () => locale.value,
@@ -82,7 +85,7 @@ const interfaceScaleOptions = computed(() => {
             v-model="language"
             :label="menu.language"
             :options="languageOptions"
-            :ui="selectUI"
+            :ui="settingsSelectUI"
             data-test-id="settings-language"
           />
         </SettingsRow>
@@ -117,7 +120,7 @@ const interfaceScaleOptions = computed(() => {
             v-model="interfaceScalePreference"
             :label="settings.interfaceScale"
             :options="interfaceScaleOptions"
-            :ui="selectUI"
+            :ui="settingsSelectUI"
             data-test-id="settings-interface-scale"
           />
         </SettingsRow>
@@ -135,7 +138,7 @@ const interfaceScaleOptions = computed(() => {
               { value: 'light', label: menu.themeLight },
               { value: 'dark', label: menu.themeDark }
             ]"
-            :ui="selectUI"
+            :ui="settingsSelectUI"
           />
         </SettingsRow>
         <SettingsRow
@@ -159,7 +162,7 @@ const interfaceScaleOptions = computed(() => {
               { value: 'system', label: settings.animationsSystem },
               { value: 'off', label: settings.animationsOff }
             ]"
-            :ui="selectUI"
+            :ui="settingsSelectUI"
           />
         </SettingsRow>
       </SettingsGroup>

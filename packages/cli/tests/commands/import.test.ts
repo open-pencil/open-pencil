@@ -9,7 +9,7 @@ import { runCLI } from '#cli-tests/helpers/run'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { parseFigFile } from '@open-pencil/core/io/formats/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/paths'
+import { FIXTURES, uint8ArrayToArrayBuffer } from '@open-pencil/test-support/paths'
 
 setDefaultTimeout(60_000)
 
@@ -52,6 +52,85 @@ describe('import CLI', () => {
 
     const { width, height } = figThumbnailSize(await readFile(figPath))
     expect(width / height).toBeCloseTo(100 / 400, 2)
+  })
+})
+
+describe('import CLI from a web address', () => {
+  test('imports a page with the stylesheet and picture it links', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const files: Record<string, Response> = {
+      '/': new Response(
+        '<link rel="stylesheet" href="site.css"><div class="box"></div><img src="img/photo.png">',
+        {
+          headers: { 'content-type': 'text/html' }
+        }
+      ),
+      '/site.css': new Response('.box { width: 120px; height: 40px }', {
+        headers: { 'content-type': 'text/css' }
+      }),
+      '/img/photo.png': new Response(png, { headers: { 'content-type': 'image/png' } })
+    }
+    using server = Bun.serve({
+      port: 0,
+      fetch: (request) =>
+        files[new URL(request.url).pathname]?.clone() ?? new Response('', { status: 404 })
+    })
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-'))
+    const figPath = join(dir, 'site.fig')
+
+    const imported = await runCLI(['import', server.url.href, '-o', figPath, '--no-icon-names'])
+    expect(imported.stderr).toBe('')
+    expect(imported.exitCode).toBe(0)
+
+    const { graph } = await io.readDocument({
+      name: figPath,
+      data: new Uint8Array(await readFile(figPath))
+    })
+    // A web page imports in a frame the size of the window it was laid out in.
+    const [window] = graph.getChildren(graph.getPages()[0].id)
+    expect(window).toMatchObject({ type: 'FRAME', width: 1440, clipsContent: true })
+    const [box, image] = graph.getChildren(window?.id ?? '')
+    expect(box).toMatchObject({ width: 120, height: 40 })
+    expect(image?.fills[0]?.type).toBe('IMAGE')
+  })
+
+  test('names the output after the page, and a home page after its host', async () => {
+    using server = Bun.serve({
+      port: 0,
+      fetch: () => new Response('<p>Hi</p>', { headers: { 'content-type': 'text/html' } })
+    })
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-'))
+    const home = new URL(server.url)
+    home.hostname = 'localhost'
+
+    expect((await runCLI(['import', home.href, '--no-icon-names'], { cwd: dir })).exitCode).toBe(0)
+    expect(
+      (
+        await runCLI(['import', new URL('/docs/card.html', home).href, '--no-icon-names'], {
+          cwd: dir
+        })
+      ).exitCode
+    ).toBe(0)
+
+    expect(await Bun.file(join(dir, 'localhost.fig')).exists()).toBe(true)
+    expect(await Bun.file(join(dir, 'card.fig')).exists()).toBe(true)
+  })
+
+  test('imports nothing from an address that holds no page', async () => {
+    using server = Bun.serve({ port: 0, fetch: () => new Response('%PDF-1.7\n') })
+
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-'))
+    const figPath = join(dir, 'report.fig')
+
+    const imported = await runCLI([
+      'import',
+      new URL('/report.pdf', server.url).href,
+      '-o',
+      figPath
+    ])
+
+    expect(imported.exitCode).toBe(1)
+    expect(await Bun.file(figPath).exists()).toBe(false)
   })
 })
 

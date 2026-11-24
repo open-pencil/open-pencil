@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import type { MixedValue } from '@open-pencil/vue/controls/node-props'
 import type { TypographyAxis } from '@open-pencil/vue/controls/typography'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -26,7 +26,7 @@ const emit = defineEmits<{
   cancel: []
   'update:opticalSizeAuto': [auto: boolean]
 }>()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const { open: popupOpen, portalActive } = useRetainedPopup()
 const opticalSize = computed(() => axis.tag === 'opsz')
 const automatic = computed(() => opticalSize.value && opticalSizeAuto === true)

@@ -9,6 +9,7 @@ import {
   type CloudActor,
   type CloudErrorReporter
 } from '#cloud/server'
+import { testClient } from 'hono/testing'
 import * as v from 'valibot'
 
 export const DAY_MS = 24 * 60 * 60_000
@@ -62,6 +63,7 @@ export async function trashApp({ roles = {}, purgeGraceMs, reportError }: TrashA
     resolveSession: async () => actor,
     reportError
   })
+  const client = testClient(app)
   await runtime.database
     .insertInto('user')
     .values(
@@ -74,11 +76,7 @@ export async function trashApp({ roles = {}, purgeGraceMs, reportError }: TrashA
     )
     .execute()
   const workspace = await responseJSON(
-    await app.request('/api/workspaces', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Studio', slug: 'studio' })
-    }),
+    await client.api.workspaces.$post({ json: { name: 'Studio', slug: 'studio' } }),
     v.object({ workspace: v.object({ id: v.string() }) })
   )
   const workspaceId = workspace.workspace.id
@@ -100,31 +98,32 @@ export async function trashApp({ roles = {}, purgeGraceMs, reportError }: TrashA
     },
     async create(name: string): Promise<string> {
       const created = await responseJSON(
-        await app.request(`/api/workspaces/${workspaceId}/documents`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
+        await client.api.workspaces[':workspaceId'].documents.$post({
+          param: { workspaceId },
+          json: { name }
         }),
         CreatedDocument
       )
       return created.document.id
     },
     async remove(documentId: string) {
-      const response = await app.request(`/api/documents/${documentId}`, { method: 'DELETE' })
+      const response = await client.api.documents[':documentId'].$delete({ param: { documentId } })
       if (response.status !== 204) throw new Error(`Deleting answered ${response.status}`)
     },
     async trash() {
-      return (await responseJSON(await app.request('/api/trash'), trashSchema)).documents
+      return (await responseJSON(await client.api.trash.$get(), trashSchema)).documents
     },
     async listed() {
-      const response = await app.request(`/api/workspaces/${workspaceId}/documents`)
+      const response = await client.api.workspaces[':workspaceId'].documents.$get({
+        param: { workspaceId }
+      })
       return (await responseJSON(response, ListedDocuments)).documents.map((entry) => entry.id)
     },
     restore(documentId: string) {
-      return app.request(`/api/trash/${documentId}/restore`, { method: 'POST' })
+      return client.api.trash[':documentId'].restore.$post({ param: { documentId } })
     },
     purge(documentId: string) {
-      return app.request(`/api/trash/${documentId}`, { method: 'DELETE' })
+      return client.api.trash[':documentId'].$delete({ param: { documentId } })
     },
     /** The workspace's recorded storage usage, in bytes. */
     async usage(): Promise<number> {

@@ -3,7 +3,7 @@ import { createColumnHelper } from '@tanstack/vue-table'
 import { computed, h } from 'vue'
 
 import type { CloudAdminAuditFilter } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   usePortalList,
@@ -24,7 +24,7 @@ const { load } = defineProps<{
   ) => Promise<PortalListPage<CloudAdminAuditFilter, PortalActivityEntry>>
 }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const actions = computed<Record<string, string>>(() => ({
   'enrollment.approved': messages.value.activityApproved,
   'enrollment.rejected': messages.value.activityRejected,
@@ -37,9 +37,12 @@ const actions = computed<Record<string, string>>(() => ({
   'email.regenerated': messages.value.activityEmailRetried,
   'user.two-step-reset': messages.value.activityTwoStepReset,
   'user.picture-removed': messages.value.activityPictureRemoved,
+  'user.deleted': messages.value.activityAccountDeleted,
+  'user.sign-in-method-removed': messages.value.activitySignInMethodRemoved,
   'document.disabled': messages.value.activityTookDown,
   'document.enabled': messages.value.activityRestoredDocument,
   'document.undeleted': messages.value.activityUndeletedDocument,
+  'document.downloaded': messages.value.activityDownloadedDocument,
   'document-share.revoked': messages.value.activityRevokedLink,
   'document-report.dismissed': messages.value.activityDismissedReport,
   'document-report.actioned': messages.value.activityActionedReport
@@ -54,7 +57,7 @@ const activity = usePortalList<CloudAdminAuditFilter, PortalActivityEntry>({
     column.display({
       id: 'administrator',
       header: () => messages.value.columnAdministrator,
-      meta: { class: 'w-1/4' },
+      meta: { role: 'subject', always: true },
       cell: ({ row: { original: entry } }) =>
         h(PortalIdentityCell, { id: entry.actor.id, name: entry.actor.name, size: 'sm' })
     }),
@@ -71,11 +74,11 @@ const activity = usePortalList<CloudAdminAuditFilter, PortalActivityEntry>({
     }),
     column.accessor('target', {
       header: () => messages.value.columnSubject,
-      meta: { class: 'hidden w-1/4 @xl/table:table-cell' }
+      meta: { role: 'text' }
     }),
     column.accessor('when', {
       header: () => messages.value.columnWhen,
-      meta: { class: 'hidden w-44 whitespace-nowrap text-muted @2xl/table:table-cell' }
+      meta: { role: 'date' }
     })
   ])
 })

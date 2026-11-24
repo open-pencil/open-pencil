@@ -1,4 +1,5 @@
 import { arrowCapOverflow } from './arrow-caps'
+import { joinedSegmentPairs, leavingDirection } from './paths/network'
 import type { Rect, Vector } from './primitives'
 import type {
   ArcData,
@@ -204,6 +205,9 @@ type SideStrokeNode = Pick<
   | 'borderLeftWeight'
 >
 
+/** What deciding on per-side strokes reads: the side weights, and the node's type when known. */
+type StrokeSidesInput = Partial<SideStrokeNode> & { type?: string }
+
 /** The layers the canvas strokes side by side when their sides have weights of their own. */
 const SIDE_STROKE_TYPES: ReadonlySet<string> = new Set<SceneNode['type']>([
   'FRAME',
@@ -219,7 +223,7 @@ const SIDE_STROKE_TYPES: ReadonlySet<string> = new Set<SceneNode['type']>([
  * Whether `node` strokes each side by its own weight. A line or vector keeps one weight whatever
  * the flag says, since its outline has no sides.
  */
-export function drawsStrokeSides(node: Partial<SideStrokeNode> & { type?: string }): boolean {
+export function drawsStrokeSides(node: StrokeSidesInput): boolean {
   return node.independentStrokeWeights === true && (!node.type || SIDE_STROKE_TYPES.has(node.type))
 }
 
@@ -250,10 +254,7 @@ export function strokeSideWeights(
 }
 
 /** A stroke's weight, or with sides of their own the widest side, for what is not drawn per side. */
-export function strokeWeightOf(
-  node: Partial<SideStrokeNode> & { type?: string },
-  stroke: Pick<Stroke, 'weight'>
-): number {
+export function strokeWeightOf(node: StrokeSidesInput, stroke: Pick<Stroke, 'weight'>): number {
   if (!drawsStrokeSides(node)) return stroke.weight
   return Math.max(
     node.borderTopWeight ?? 0,
@@ -335,35 +336,16 @@ export function strokeOverflow(
   return Math.max(overflow, heads > 0 && line ? heads + overflow / 2 : heads)
 }
 
-/** The direction a segment leaves `vertex` in, along its handle when it has one. */
-function leaving(network: VectorNetwork, index: number, vertex: number): Vector {
-  const segment = network.segments[index]
-  const atStart = segment.start === vertex
-  const handle = atStart ? segment.tangentStart : segment.tangentEnd
-  if (handle.x !== 0 || handle.y !== 0) return handle
-  const from = network.vertices[vertex]
-  const to = network.vertices[atStart ? segment.end : segment.start]
-  return { x: to.x - from.x, y: to.y - from.y }
-}
-
 /**
  * How far past half the stroke the sharpest mitered corner reaches, as a multiple: a corner of
  * angle θ mitres out to 1/sin(θ/2), unless that passes the miter limit and it bevels instead.
- * Corners are the vertices exactly two segments meet at, as the stroke joins them.
  */
 function miterRatio(network: VectorNetwork, join: StrokeJoin | undefined, limit = 4): number {
-  const meeting = new Map<number, number[]>()
-  for (const [index, segment] of network.segments.entries()) {
-    for (const vertex of new Set([segment.start, segment.end])) {
-      meeting.set(vertex, [...(meeting.get(vertex) ?? []), index])
-    }
-  }
   let ratio = 1
-  for (const [vertex, indices] of meeting) {
-    if (indices.length !== 2) continue
+  for (const [vertex, first, second] of joinedSegmentPairs(network)) {
     if ((network.vertices[vertex].strokeJoin ?? join ?? 'MITER') !== 'MITER') continue
-    const a = leaving(network, indices[0], vertex)
-    const b = leaving(network, indices[1], vertex)
+    const a = leavingDirection(network, first, vertex)
+    const b = leavingDirection(network, second, vertex)
     const lengths = Math.hypot(a.x, a.y) * Math.hypot(b.x, b.y)
     if (lengths === 0) continue
     const angle = Math.acos(Math.max(-1, Math.min(1, (a.x * b.x + a.y * b.y) / lengths)))

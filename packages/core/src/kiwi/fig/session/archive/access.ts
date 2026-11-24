@@ -8,7 +8,7 @@ import {
 } from '@open-pencil/fig'
 import { loadFigDataCompressor } from '@open-pencil/kiwi/fig/container'
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { receiveStream } from '#core/kiwi/fig/session/port-stream'
 import type { FigSessionRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'

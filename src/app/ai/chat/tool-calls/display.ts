@@ -5,17 +5,16 @@ import { isValid } from 'js-base64'
 import * as v from 'valibot'
 
 import { searchResponseSchema, type SearchResult } from '@open-pencil/cloud/contract'
+import { isRecord } from '@open-pencil/std/records'
 
 export type ChatMessagePart = UIMessagePart<UIDataTypes, UITools>
 export type ToolCallPart = Extract<ChatMessagePart, { toolCallId: string }>
 
-const MCP_PREFIX = /^mcp__[^_]+__/
+// `mcp__<server>__`. The server name may hold single underscores, as Pi writes `open-pencil` as
+// `open_pencil`, so the prefix ends at the first double one.
+const MCP_PREFIX = /^mcp__.+?__/
 const SUMMARY_LENGTH = 60
 const IMAGE_MEDIA_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
 
 function truncate(text: string): string {
   const line = text.trim().split('\n')[0]?.trim() ?? ''

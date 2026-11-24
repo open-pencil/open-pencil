@@ -4,6 +4,7 @@ import { createServer, type Server } from 'node:http'
 
 import { WebSocket, WebSocketServer } from 'ws'
 
+import { createMCPAccess } from '#mcp/auth'
 import { createBrowserRPCBridge } from '#mcp/browser-rpc'
 
 const AUTH_TOKEN = 'test-bridge-token'
@@ -143,7 +144,7 @@ describe('BrowserRpcBridge reconnection', () => {
     track(pairB)
 
     const bridge = createBrowserRPCBridge({
-      authToken: AUTH_TOKEN,
+      access: createMCPAccess(AUTH_TOKEN, null),
       onConnectionChange: () => undefined
     })
 
@@ -171,7 +172,7 @@ describe('BrowserRpcBridge reconnection', () => {
     track(pair)
 
     const bridge = createBrowserRPCBridge({
-      authToken: AUTH_TOKEN,
+      access: createMCPAccess(AUTH_TOKEN, null),
       onConnectionChange: () => undefined
     })
 
@@ -218,7 +219,7 @@ describe('BrowserRpcBridge reconnection', () => {
     track(pairA)
 
     const bridge = createBrowserRPCBridge({
-      authToken: AUTH_TOKEN,
+      access: createMCPAccess(AUTH_TOKEN, null),
       onConnectionChange: () => undefined
     })
 
@@ -284,7 +285,7 @@ describe('BrowserRpcBridge reconnection', () => {
 
   test('sendRPC rejects after timeout when browser never connects', async () => {
     const bridge = createBrowserRPCBridge({
-      authToken: AUTH_TOKEN,
+      access: createMCPAccess(AUTH_TOKEN, null),
       onConnectionChange: () => undefined,
       appWaitTimeoutMs: 50
     })
@@ -302,7 +303,7 @@ describe('BrowserRpcBridge reconnection', () => {
     track(clientPair)
 
     const bridge = createBrowserRPCBridge({
-      authToken: AUTH_TOKEN,
+      access: createMCPAccess(AUTH_TOKEN, null),
       onConnectionChange: () => undefined
     })
 
@@ -376,7 +377,7 @@ describe('BrowserRpcBridge reconnection', () => {
     track(attackerPair)
 
     const bridge = createBrowserRPCBridge({
-      authToken: AUTH_TOKEN,
+      access: createMCPAccess(AUTH_TOKEN, null),
       onConnectionChange: () => undefined
     })
 
@@ -443,7 +444,7 @@ describe('BrowserRpcBridge reconnection', () => {
     const pair = await setupWsPair()
     track(pair)
     const bridge = createBrowserRPCBridge({
-      authToken: AUTH_TOKEN,
+      access: createMCPAccess(AUTH_TOKEN, null),
       onConnectionChange: () => undefined,
       rpcTimeoutMs: 50
     })
@@ -464,7 +465,7 @@ describe('BrowserRpcBridge reconnection', () => {
 
   test('ignores malformed JSON but closes sockets that send malformed messages', async () => {
     const bridge = createBrowserRPCBridge({
-      authToken: AUTH_TOKEN,
+      access: createMCPAccess(AUTH_TOKEN, null),
       onConnectionChange: () => undefined
     })
     const closed = (ws: WebSocket) =>

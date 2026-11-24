@@ -56,6 +56,13 @@ describe('Cloud server', () => {
     }
   })
 
+  test('names only its origin to other sites, so a form posted to one still has an Origin', async () => {
+    // `no-referrer` or `same-origin` would send `Origin: null` with billing's sign-in form.
+    for (const path of ['/account/plan', '/share/abc']) {
+      expect((await navigate(path)).headers.get('Referrer-Policy')).toBe('strict-origin')
+    }
+  })
+
   test('leaves other paths and methods to the API', async () => {
     expect(await (await navigate('/api/session')).json()).toEqual({ ok: true })
     expect((await request('/account', { method: 'POST' })).status).toBe(404)

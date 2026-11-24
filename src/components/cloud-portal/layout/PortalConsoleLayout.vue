@@ -4,17 +4,18 @@ import { uniq } from 'es-toolkit'
 import { tv } from 'tailwind-variants'
 import { useTemplateRef, watch } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { portalLayoutTheme } from '@open-pencil/theme'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import BrandMark from '@/components/brand/BrandMark.vue'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
+import { provideSettingsSectionHeading } from '@/components/settings/layout/heading'
 import { useAppButtonUI } from '@/components/ui/button/button'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
 import { skeleton } from '@/components/ui/feedback/skeleton'
 import { sideList } from '@/components/ui/list/side-list'
 import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
-import portalLayoutTheme from '@/theme/cloud-portal/layout'
 
 import type { PortalSection } from '../types'
 
@@ -39,7 +40,9 @@ useHead({ title: () => heading })
 const emit = defineEmits<{ select: [id: string]; signOut: [] }>()
 
 const ui = portalLayout()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+// The page's title is its h1, so the sections under it are h2.
+provideSettingsSectionHeading('h2')
 const side = sideList()
 const groups = () => uniq(sections.map((section) => section.group))
 const editorLink = useAppButtonUI({ variant: 'outline', size: 'sm' })

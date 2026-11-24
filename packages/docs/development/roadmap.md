@@ -10,155 +10,123 @@ OpenPencil is moving toward production-grade Figma compatibility while keeping d
 ## Current focus
 
 - Improve `.fig` import/export fidelity against real Figma files and Figma's own rendering.
-- Make saves, recovery, storage synchronization, and automation resilient to crashes, interrupted writes, expired credentials, and temporary provider failures.
+- Make OpenPencil Cloud dependable for teams: sync, rooms, sharing, version history, billing, and self-hosted operation that recover from interrupted writes, expired credentials, and provider failures.
 - Keep large design systems responsive in the browser and desktop app.
-- Make international text reliable across platforms, starting with non-Latin font discovery, Arabic/Persian shaping, RTL layout, and broader CJK fixtures.
+- Bring OpenPencil to phones and tablets, starting with a companion app for Cloud documents.
+- Add presentations as a third kind of document beside designs and boards.
 - Treat the scene graph as a programmable design document: every important read, write, export, diff, and validation operation should be reachable through UI, CLI, MCP, and SDK surfaces.
-- Keep local files and local-first workflows first-class while making an optional OpenPencil Cloud backend and self-hosted deployments practical.
+- Keep local files and local-first workflows first-class beside OpenPencil Cloud and self-hosted servers.
 
 ## Recently delivered
 
-v0.15.0 and v0.15.1 shipped work that earlier versions of this roadmap listed as in development:
+v0.17.0 (November 2026) shipped:
 
-- Editable ruler guides, snapping to geometry and guides, and Option/Alt distance measurements.
-- Multidimensional component variants and published component libraries with revision review and linked-instance updates.
-- Local recovery of unsaved documents, saved AI conversations, and CLI font diagnostics.
-- Opt-in browser WebMCP access, separate controls for the local MCP server and remote connections, and per-tool permissions.
-- `openpencil://` and web links that open a document and select a layer.
+- OpenPencil Cloud: workspaces, live rooms, sharing, comments, version history, Trash, plans and AI credits, an admin console, a community gallery, and a self-hosted server under the Apache License 2.0.
+- Boards: FigJam's sticky notes, shapes, connectors, and sections, saved as `.jam`, with draw.io and Mermaid import, Tidy Up, and Auto Arrange.
+- Opening web pages from a URL as editable layers, laid out by the same engine as HTML import.
+- Agent Skills that load when a request matches, coding-agent subagents that each work as their own agent on the canvas, and chat compaction for long sessions.
+- Variable formulas, variable fonts with Material Symbols and SF Symbols, Figma's glass, progressive blur, noise, and texture effects, image adjustments, the Scale tool, and multi-layer transforms.
+- A much faster progressive canvas, auto layout on Taffy, and PDF export through Skia.
 
-### Current development version
+v0.16.0 (October 2026) shipped comments, shared rooms with voice calls, slots, component properties and behaviours with a live preview, shader fills, the Lint tab, variable modes on layers, the pencil tool, W3C design tokens, and Vue and React code in the Code tab.
 
-Since v0.15.1, the development branch adds:
-
-- Behaviours and preview mode: components that run as Reka UI controls, with a Controls page in the demo and Storybook controls for them.
-- Variables modelled as design tokens, edited as tokens, imported and exported as W3C design tokens, written as a CSS token stylesheet, and used by name in exported code.
-- Live design checks: a Lint panel with canvas markers and one-click fixes.
-- AI agents shown on the canvas and to collaborators, with follow mode for people and agents, per-page presence, and MCP agents in rooms.
-- AI chat turns that can be reverted, regenerated, and edited, with tool calls summarised by what they changed and a thinking level per message.
-- The Code tab linked to canvas layers both ways, and visual diff and patch tools, including `openpencil diff`.
-- Collaboration rooms that sync layer trees as a CRDT and open in their own tab.
-- Slots, progressive canvas previews while an AI provider streams JSX, Storybook export, HTML and Tailwind JSX export, and a faster occurrence-scoped `.fig` reader with wider override and variable export.
-- Comments pinned to layers and voice calls in shared rooms, with collaborators watching the AI chat's streamed JSX as it builds.
-- Vue and React components of the selection in the Code tab, with variants as props and Reka UI or Radix behaviour.
-- SVG and HTML imported as editable layers, with HTML and CSS laid out as a browser lays them out.
-- Shader fills from the open-source `shaders` library, on-canvas gradient and corner-radius handles, multi-selection editing, and accent colours with a customizable toolbar.
-
-These changes are not part of v0.15.1; they ship with the next release.
-
-See [AI chat](../user-guide/ai-chat), [exporting](../user-guide/exporting), and [components and libraries](../user-guide/components).
-
-### In development
-
-Work with open pull requests. It may change before it merges:
-
-- Storybook stories generated as Reka UI components for Vue and Radix UI components for React.
-- Component authoring: variant editing and canvas selection inside components.
-- The OpenPencil Cloud foundation.
+See the [changelog](https://github.com/open-pencil/open-pencil/blob/master/CHANGELOG.md) for everything in each release.
 
 ## Near-term work
+
+### Mobile
+
+- A companion app for iOS and Android: open Cloud and local documents, view and present them, follow a room live, reply to comments and mentions, and get the notifications the desktop app sends, such as an agent waiting for permission.
+- Mirror the desktop selection or a frame on a phone, as a device preview while designing for mobile.
+- Design on phones and tablets: the editor on Android (in progress, [#1593](https://github.com/open-pencil/open-pencil/pull/1593)) and iPadOS, with touch and pencil input, panels laid out for small screens, and saving through the system's document picker.
+- Share the editor, document model, and Cloud client with the desktop and web apps through Tauri's mobile targets rather than building a separate native editor.
+
+### Presentations
+
+- Slides as a third kind of document beside designs and boards: a slide grid, a filmstrip, presenter view with speaker notes, and full-screen presenting from the app and a browser link.
+- Slides built from the same layers, components, variables, and libraries as designs, so a deck uses the team's design system.
+- Templates and themes, slide transitions, and live presenting in a Cloud room with a follow mode for the audience.
+- Import and export Figma Slides (`.deck`) files, and export to PDF and PowerPoint.
+- AI and MCP tools that draft a deck from an outline, a document, or a design, and keep it in the deck's theme.
+
+### Website import
+
+- Bring pages opened from a URL closer to the browser: text that wraps around floats, scaled and skewed elements, and the layout differences still measured against real sites.
+- Open a page at several window sizes at once, Desktop, Tablet, and Mobile, as frames side by side ([#107](https://github.com/open-pencil/open-pencil/issues/107)).
+- Open more sites in the browser app, which today opens only sites that allow it; the desktop app and `openpencil import` open any address.
 
 ### Figma fidelity
 
 - Preserve and round-trip more Figma metadata safely.
 - Add visual regression coverage for full multi-page `.fig` documents. `bun tools/generate/visual-oracles/src/cli.ts export-fixtures` exports current smoke fixture pages to `/tmp` for manual comparison without committing large images; `tests/fixtures/figma-oracles/visual-comparison-report.json` records the current Figma-vs-OpenPencil oracle diff findings.
-- Close high-impact renderer gaps: remaining mask edge cases, blend isolation, pattern fills, and broader variable-font fixtures.
+- Close high-impact renderer gaps: remaining mask edge cases, blend isolation, pattern fills, and Display P3 documents.
 - Improve boolean operation editing/export now that imported Figma `BOOLEAN_OPERATION` nodes remain boolean operations.
 
 ### Editor depth
 
 - Complete variable inspector coverage for common numeric/text/layout fields.
-- Extend component and instance authoring with deeper override inspection and slots. Multidimensional variant definitions, text, boolean, and instance-swap property authoring, exposed nested instances, instance property editing, and component-library publish/update workflows are already supported.
+- Extend component and instance authoring with deeper override inspection.
 - Treat variables, styles, components, and libraries as governed design-system assets with proposal, review, publish, update, migration, and conformance workflows.
 - Complete layout-grid style parity beyond existing grid geometry controls and editable page/frame guides.
-- Extend inspection aids beyond the existing Option/Alt measurements between selected and hovered layers.
 - Expand vector editing workflows without regressing imported vector fidelity.
 
 ### Reliability and international text
 
-- Make document saves atomic and recoverable, including unsaved documents created through MCP and interrupted local or remote writes.
-- Surface provider, model-budget, renderer, and automation failures with actionable recovery paths instead of silent stalls.
 - Make desktop automation recover from orphaned processes and renderer crashes without manual cleanup.
-- Prevent non-Latin font discovery and rendering crashes across platforms; add Arabic/Persian shaping and RTL layout, then broaden CJK and mixed-script visual fixtures.
-- Build a portable-font strategy for reproducible documents across machines on top of existing substitution visibility and agent-readable font status, including curated redistributable fonts, embedded or linked document fonts, and licensing metadata ([#502](https://github.com/open-pencil/open-pencil/issues/502), [#503](https://github.com/open-pencil/open-pencil/issues/503)).
+- Surface provider, model-budget, renderer, and automation failures with actionable recovery paths instead of silent stalls.
+- Broaden right-to-left, CJK, and mixed-script visual fixtures beyond Arabic.
+- Build a portable-font strategy for reproducible documents across machines, including curated redistributable fonts, embedded or linked document fonts, and licensing metadata ([#502](https://github.com/open-pencil/open-pencil/issues/502), [#503](https://github.com/open-pencil/open-pencil/issues/503)).
 
 ### Cloud and self-hosting
 
-- Provide an optional OpenPencil Cloud backend for account-based workspace sync, sharing, collaboration, comments, and managed team libraries without making cloud accounts mandatory for the editor.
-- Support organizations and teams with invitations, viewer/editor/admin roles, link-sharing policies, service accounts, API tokens, and enterprise identity through standard OIDC/SSO integrations.
-- Publish documented backend APIs and webhooks for workspace, document, membership, comment, version, and automation events so Cloud and self-hosted deployments integrate with existing developer workflows.
-- Add workspace organization for projects, folders, templates, search, indexing, and server-generated previews while preserving stable document identity.
-- Add version history with automatic snapshots, named checkpoints, restore, retention controls, and an auditable record of important document and membership changes.
-- Provide a durable collaboration relay for deterministic initial sync, presence, reconnects, and restricted-network environments while keeping direct local/P2P workflows available where practical.
-- Publish a production-ready self-hosted deployment for teams that need their own storage, identity, network boundary, data location, and retention policy.
-- Make self-hosting maintainable with guided deployment, upgrades, backups, health monitoring, observability, and documented recovery procedures.
-- Provide explicit data-governance controls for export, deletion, encryption, retention, auditability, and deployment-region or residency requirements.
-- Keep AI and media capabilities BYOK so Cloud and self-hosted users connect and control their own model and provider credentials.
+- Enterprise identity through standard OIDC/SSO, service accounts, and documented webhooks for workspace, document, membership, comment, and version events.
+- Workspace organization with projects, folders, templates, and search, while preserving stable document identity.
+- Retention controls, audit logs, and data-residency options for Cloud and self-hosted servers.
+- Guided self-hosted upgrades, backups, and health monitoring.
 - Let documents move between device-only, OpenPencil Cloud, self-hosted, and user-owned storage without losing identity or history.
-- Add explicit conflict, offline, sync-health, migration, backup, quota, and recovery UX for every remote deployment mode.
+- Keep bring-your-own-key AI available beside OpenPencil services' credits, for Cloud and self-hosted users alike.
 
 ### Agent workflows
 
 - Polish the official `SKILL.md` guidance for OpenPencil so agents use the full inspect → act → render/measure → compare → iterate loop instead of relying on one-shot prompting.
 - Publish tested AI workflow recipes for common tasks: create from prompt, edit a selected design, compare against a screenshot or Figma reference, fix visual regressions, extract tokens, and batch-migrate files.
-- Accept screenshots and reference images as first-class agent inputs, and return selection/page/viewport renders as native image content to vision-capable MCP and chat clients.
-- Support opt-in web retrieval, external MCP connectors, and sandboxed code execution through explicit capability and permission boundaries rather than granting every model ambient access.
 - Make structured node-tree diffs a first-class, Git-friendly review artifact for UI, CLI, MCP, SDK, and CI edits instead of relying only on screenshot comparisons.
 - Expand design lint findings with expected/actual evidence and safe autofixes; measure rule precision before enabling lint rules as blocking gates.
-- Keep deterministic golden renders and replayable edit-operation histories so regressions can be reproduced from document state and actions, not only from final pixels.
-- Make agent workflows measurable by default: every substantial operation should be able to produce a render, structured diff, lint result, or comparison artifact.
 - Keep MCP, CLI, and SDK operations aligned so agent skills can run the same workflow in desktop, browser, CI, or headless file mode.
 
 ### Tooling and API parity
 
 - Maintain a public tool/API reference that maps editor operations to CLI commands, MCP tools, SDK APIs, and Figma Plugin API-compatible eval usage.
 - Add coverage tests that detect when a core editor capability exists in the UI but is missing from CLI/MCP/SDK, or vice versa.
-- Keep tool outputs structured enough for agents to chain safely: node IDs, bounds, diffs, render artifacts, diagnostics, and machine-readable error details.
-- Improve deterministic CLI/MCP export and comparison tools for CI.
-- Add more design linting and migration helpers for batch `.fig` and `.pen` workflows.
 - Make `.pen` a first-class editable save target across app, CLI, MCP, and SDK workflows rather than an import-only or automation-specific format.
-- Extend HTML, CSS, Tailwind, and JSX support from editable import toward URL-based website capture, direct JSX paste/edit workflows, and component-aware design↔code updates that preserve intentional code structure instead of regenerating whole files.
+- Extend HTML, CSS, Tailwind, and JSX support toward component-aware design↔code updates that preserve intentional code structure instead of regenerating whole files.
 - Provide an adapter contract for additional design sources such as Stitch and Pixso, prioritizing formats with documented or testable semantics over brittle UI scraping.
-- Package desktop-side MCP integration so local agent workflows do not require global installs.
 
 ### Performance and scale
 
-- Incremental layout and render invalidation for large documents.
+- Keep canvas navigation and editing responsive on the largest design systems.
 - Better renderer profiling surfaces for slow nodes, effects, masks, and imported files.
-- Smarter raster/retained caching that preserves fidelity during zoom and pan.
-
-### Interactive shader layers
-
-- Add Unicorn Studio-style shader scenes as first-class design layers: animated gradients, particles, noise fields, metaballs, lighting, displacement, and pointer-reactive backgrounds.
-- Provide a preset-first editor for common generative visuals before exposing raw shader code.
-- Support timeline and interaction inputs such as time, pointer position, scroll, layer bounds, colors, variables, and imported image textures.
-- Render shader layers through CanvasKit/WebGL while keeping deterministic raster export for PNG/JPG/WEBP and thumbnails.
-- Store shader layer configuration in OpenPencil documents and export graceful fallbacks when a target format cannot preserve the live effect.
 
 ## Later
 
 ### SDK and embedded editor
 
 - Expand the documented Vue SDK and core package platform with complete example applications for custom editor shells, embedded design surfaces, and automation-specific UIs.
-- Provide maintained examples for read-only previews, editable canvases, design review surfaces, and agent-controlled editors.
-- Ship an official VS Code/Cursor extension ([#81](https://github.com/open-pencil/open-pencil/issues/81)) for previewing and opening `.fig`/`.pen` documents, connecting to the running editor, invoking CLI/MCP workflows, handing selections between code and canvas, and navigating between generated code and design nodes. Reuse the app, SDK, and automation bridge rather than implementing a second editor inside the extension.
+- Ship an official VS Code/Cursor extension ([#81](https://github.com/open-pencil/open-pencil/issues/81)) for previewing and opening `.fig`/`.pen` documents, connecting to the running editor, invoking CLI/MCP workflows, and handing selections between code and canvas.
 - Define public API stability and migration expectations across the reusable npm packages.
-- Keep the renderer, editor core, and tool registry framework-agnostic enough for headless and embedded use.
 
 ### Product depth
 
-- Prototyping: frame connections, triggers, overlays, transitions, preview mode, and AI/JSX-authorable interaction definitions.
+- Prototyping: frame connections, triggers, overlays, transitions, and AI/JSX-authorable interaction definitions on top of the existing component preview.
 - Motion: reusable code-authored animation presets, timelines, easing, and deterministic playback/export that compose with prototype interactions and shader inputs.
-- Tables and data grids: structured rows, columns, headers, resizing, merged cells, and normal scene nodes inside cells instead of drawing tables as unrelated rectangles.
-- Comments: pins, threads, resolution state, and collaboration-aware display.
-- Extend shared libraries beyond the existing publish/consume/update workflow for components, styles, and variable collections to governance, usage analytics, and inserting styles and variables without a component.
-- Platform asset libraries: use licensed system-native and third-party icon sources, including SF Symbols where platform and redistribution rules allow, alongside the existing Iconify/Lucide workflow.
-- Figma Slides (`.deck`) interoperability: import/export, slide editing, presentation, speaker notes, and filmstrip workflows. This ranks below core Figma Design fidelity, reliability, Cloud/self-hosting, and international-text work.
-- Platform polish: Windows code signing, PWA support, packaged updater improvements, and desktop-side MCP bundling.
+- Interactive shader layers: animated, pointer-reactive generative backgrounds as layers, with deterministic raster export.
+- Tables and data grids: structured rows, columns, headers, resizing, merged cells, and normal scene nodes inside cells.
+- Platform polish: Windows code signing and PWA support.
 
 ## Non-goals
 
 - Mandatory accounts or a cloud-only document model. OpenPencil Cloud, self-hosted backends, and user-owned remote storage must remain optional alongside local files.
-- A hosted service that requires OpenPencil to proxy users' AI provider keys; AI and media integrations remain BYOK even when a backend provides identity, sync, or collaboration.
+- A hosted service that requires OpenPencil to proxy users' AI provider keys: bring-your-own-key AI stays available, with OpenPencil services' credits as an option rather than the only path.
 - Read-only automation surfaces that cannot modify documents.
 - Feature work that sacrifices `.fig` import/export fidelity for convenience.
 
@@ -216,7 +184,7 @@ Figma's design documentation groups features into these areas:
 | FigJam / Slides / Code / CMS / Buzz node families    |      ↩ |      — |       — |                 ↩ |       — | Current Kiwi schema recognizes many newer Figma node families (`TABLE`, `SLIDE`, `CODE_COMPONENT`, `CMS_RICH_TEXT`, `REPEATER`, `WEBPAGE`, etc.), but OpenPencil only preserves/round-trips them where safe; they are not first-class scene nodes. |
 | Solid fills                                          |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Color variables supported for common fill cases.                                                                                                                                                                                                   |
 | Gradients                                            |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Linear/radial/angular/diamond support; Figma edge cases may differ.                                                                                                                                                                                |
-| Image fills                                          |     ✅ |     ✅ |       ◐ |                ✅ |      ✅ | Fill/fit/crop/tile support exists; imported crop/tile affine transforms are applied, but exact Figma parity is still partial.                                                                                                                      |
+| Image fills                                          |     ✅ |     ✅ |       ◐ |                ✅ |      ✅ | Fill/fit/crop/tile support exists; imported crop/tile affine transforms are applied, but exact Figma parity is still partial. Adjustments (exposure, contrast, saturation, temperature, tint, highlights, shadows) round-trip, draw, and have sliders in the fill picker.                                                                                                                      |
 | Pattern / noise / custom fills                       |     ✅ |      ◐ |       — |                ✅ |       — | Schema metadata imports/exports; Figma pattern fills with a referenced source node render as repeated source tiles with scale, spacing, alignment, and basic hex offsets. Noise/custom paints still render with a solid fallback pending real paint payload samples; Figma-authored noise/texture/glass effect payloads are captured separately. |
 | Video/GIF/media fills                                |      ↩ |      — |       — |                 ↩ |       — | Kiwi schema includes media paint/export enums, but OpenPencil has no video/GIF playback or media layer support.                                                                                                                                    |
 | Layer/fill/effect blend modes                        |     ✅ |      ◐ |      ✅ |                ✅ |      ✅ | Appearance, fill, and effect controls are exposed; Canvas applies common modes, while Figma isolation edge cases remain partial.                                                                                                                                        |
@@ -224,6 +192,7 @@ Figma's design documentation groups features into these areas:
 | Strokes                                              |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Weight, alignment, dashes, and side weights are supported.                                                                                                                                                                                         |
 | Stroke caps / joins / miter limit                    |     ✅ |     ✅ |       ✅ |                ✅ |      ✅ | Inspector controls support mixed cap/join/miter editing; CanvasKit rendering and `.fig` roundtrips preserve miter limits.                                                                                                                                                                                    |
 | Effects: shadows and blurs                           |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | `showShadowBehindNode` is rendered but not exposed in UI.                                                                                                                                                                                          |
+| Effects: noise and texture                           |     ✅ |      ◐ |      ✅ |                ✅ |      ✅ | Noise draws with Figma's measured statistics, as its generator is not public: exact at grain size 1, close at larger sizes, darker than Figma's for large grains at partial density. SVG export matches Figma's own SVG. |
 | Fill / stroke / effect styles                        |     ✅ |     ✅ |       ◐ |                ✅ |      ✅ | Imported local definitions are modeled and selectable with undo-safe detach; creating and publishing styles still needs a style manager.                                                                                                                                                                                                            |
 | Corner radius                                        |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Uniform and independent radii supported.                                                                                                                                                                                                           |
 | Corner smoothing                                     |     ✅ |     ✅ |       ✅ |                ✅ |      ✅ | The inspector supports mixed smoothing percentages with undo; uniform and independent-radius corners render, while exact Figma parity still needs broader fixture tuning.                                                                                                         |

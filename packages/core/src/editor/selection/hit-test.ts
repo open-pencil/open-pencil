@@ -64,9 +64,16 @@ export function createSelectionHitTestActions(
    * one included, or else the frame or section whose empty area is under the point, which a click
    * leaves for a marquee. A name above a frame, section, or component is part of that layer, read
    * from `renderer` (the pane's overlay canvas; the editor's current canvas when omitted). The
-   * entered container follows the selection, as it does after a press.
+   * entered container follows the selection, as it does after a press. Returns the layer it hit.
+   * `keepSelectionOnMiss` leaves the selection alone when nothing is hit, as the Comment tool's
+   * right-click does in Figma.
    */
-  function selectAtPoint(cx: number, cy: number, renderer?: SkiaRenderer | null) {
+  function selectAtPoint(
+    cx: number,
+    cy: number,
+    renderer?: SkiaRenderer | null,
+    { keepSelectionOnMiss = false }: { keepSelectionOnMiss?: boolean } = {}
+  ): SceneNode | null {
     // Each pane hit-tests names with its own page, zoom, viewport, and label cache.
     const labels = renderer === undefined ? ctx.getRenderer() : renderer
     const hit =
@@ -78,9 +85,10 @@ export function createSelectionHitTestActions(
         select([hit.id])
         enterContainerOf(hit.id)
       }
-    } else {
+    } else if (!keepSelectionOnMiss) {
       clearSelection()
     }
+    return hit
   }
 
   return { hitTestAtPoint, selectAtPoint }

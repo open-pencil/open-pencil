@@ -11,6 +11,7 @@
 import { readGeometryBlob } from './geometry'
 import { cloneInstanceOverrideState } from './instances/overrides'
 import { createDefaultSourceMetadata } from './node-defaults'
+import type { Color } from './primitives'
 import type {
   ArcData,
   ComponentPropertyDefinition,
@@ -36,6 +37,7 @@ export function copyFill<T extends Fill>(f: T): T {
   if (f.gradientStops) copy.gradientStops = f.gradientStops.map(copyGradientStop)
   if (f.gradientTransform) copy.gradientTransform = { ...f.gradientTransform }
   if (f.imageTransform) copy.imageTransform = { ...f.imageTransform }
+  if (f.filters) copy.filters = { ...f.filters }
   if (f.patternSpacing) copy.patternSpacing = { ...f.patternSpacing }
   if (f.noiseSize) copy.noiseSize = { ...f.noiseSize }
   return copy
@@ -52,6 +54,8 @@ export function copyStroke(s: Stroke): Stroke {
 export function copyEffect(e: Effect): Effect {
   const copy: Effect = { ...e, color: { ...e.color }, offset: { ...e.offset } }
   if (e.glass) copy.glass = { ...e.glass }
+  if (e.noise) copy.noise = structuredClone(e.noise)
+  if (e.texture) copy.texture = structuredClone(e.texture)
   if (e.progressive) {
     copy.progressive = {
       startRadius: e.progressive.startRadius,
@@ -110,6 +114,26 @@ export function copyStrokes(strokes: Stroke[]): Stroke[] {
 
 export function copyEffects(effects: Effect[]): Effect[] {
   return effects.map(copyEffect)
+}
+
+/**
+ * Copies of `effects` with every color they hold passed through `map`: each effect's own and a
+ * duotone noise's second color. `map` is told where each sits, `0` or `0.noise` for the first.
+ */
+export function mapEffectColors(
+  effects: Effect[],
+  map: (color: Color, slot: string) => Color
+): Effect[] {
+  return copyEffects(effects).map((effect, index) => {
+    const next = { ...effect, color: map(effect.color, `${index}`) }
+    if (effect.noise?.secondaryColor) {
+      next.noise = {
+        ...effect.noise,
+        secondaryColor: map(effect.noise.secondaryColor, `${index}.noise`)
+      }
+    }
+    return next
+  })
 }
 
 export function copyLayoutGrids(grids: LayoutGrid[]): LayoutGrid[] {
