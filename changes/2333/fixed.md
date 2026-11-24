@@ -1,0 +1,1 @@
+- Preview and exported code let auto layout layers overflow instead of shrinking them, and ignore the gap of a space-between layout, as the canvas does (#2333).
