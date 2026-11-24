@@ -52,6 +52,8 @@ fn is_public_v6(ip: Ipv6Addr) -> bool {
         || (first & 0xfe00) == 0xfc00
         // Link-local unicast.
         || (first & 0xffc0) == 0xfe80
+        // Site-local, deprecated but still in use on some networks.
+        || (first & 0xffc0) == 0xfec0
         // Local-use IPv4/IPv6 translation (RFC 8215), which can reach private IPv4 addresses.
         || (first == 0x64 && ip.segments()[1] == 0xff9b && ip.segments()[2] == 1)
         // Documentation.
@@ -171,6 +173,8 @@ mod tests {
             "64:ff9b::a9fe:a9fe",
             "2002:c0a8:0101::1",
             "64:ff9b:1::c0a8:101",
+            "fec0::1",
+            "feff:ffff::1",
         ] {
             assert!(!public(address), "{address} counted as public");
         }
