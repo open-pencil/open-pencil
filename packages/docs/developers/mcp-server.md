@@ -30,7 +30,7 @@ On a Cloud server that allows it, a coding agent can design in OpenPencil in you
 1. Add the server's `/mcp` address to your agent, for example `claude mcp add --transport http openpencil https://cloud.example.com/mcp`.
 2. Sign in from the agent, as with `/mcp` in Claude Code. In the browser, choose **Use without an account**, then **Allow**. OpenPencil opens beside it, paired with the agent.
 
-This takes a server that accepts [connected apps](/cloud/apps) too, and an agent that registers without a client secret, as command-line agents do. For any other agent, open **Settings → MCP → Agent in this tab** and choose **Connect an agent**: it gives a pairing token three ways, as instructions to paste into the agent, a `claude mcp add` command, and an `mcpServers` entry.
+This takes a server that accepts [connected apps](/cloud/apps) too, and an agent that registers without a client secret, as command-line agents do. For any other agent, open **Settings → MCP → Agent in this browser** and choose **Connect an agent**: it gives a pairing token three ways, as instructions to paste into the agent, a `claude mcp add` command, and an `mcpServers` entry.
 
 The agent gets the design tools of the [MCP server](#tools) and can list, create, and switch the documents open in that browser; files and settings stay out of its reach. Designs stay on your device: save them, or sign in and use **Save to** to keep them in Cloud. The server carries the agent's calls and keeps no design. Closing OpenPencil pauses the agent until you open it again in that browser; **Disconnect** ends it. Anyone with the token can change what you have open, so treat it as a password.
 

@@ -11,8 +11,8 @@ export function pairsAgents({ capabilities, localEditor }: CloudDiscovery): bool
 
 /** The pairing page for the app's request that signing in goes on to, or null for anything else. */
 export function pairingPathFor(redirect: string): string | null {
-  const url = new URL(redirect, globalThis.location.origin)
-  return url.pathname === CLOUD_OAUTH_AUTHORIZE_PAGE && url.search
-    ? `${CLOUD_AGENT_PAIRING_PAGE}${url.search}`
+  const [path, query] = redirect.split('?', 2)
+  return path === CLOUD_OAUTH_AUTHORIZE_PAGE && query
+    ? `${CLOUD_AGENT_PAIRING_PAGE}?${query}`
     : null
 }
