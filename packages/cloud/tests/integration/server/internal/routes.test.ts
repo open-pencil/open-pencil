@@ -4,7 +4,8 @@ import { unusedAuthAdapter } from '#cloud-tests/helpers/auth'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
-import type { setAccountEntitlementsSchema } from '#cloud/contract'
+import { createContractClient } from '#cloud/client'
+import { internalContract, type setAccountEntitlementsSchema } from '#cloud/contract'
 import {
   CLOUD_FEATURE_KEYS,
   createCloudApp,
@@ -111,6 +112,38 @@ describe('internal entitlements API', () => {
       expect((await context.put(crypto.randomUUID(), body)).status).toBe(404)
       expect((await context.put('not-a-uuid', body)).status).toBe(404)
       expect((await context.put(context.userId, { ...body, externalVersion: -1 })).status).toBe(400)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test("answers a service's contract client, which reads refusals as it chooses", async () => {
+    const context = await testApp()
+    try {
+      const client = (token: string) =>
+        createContractClient(internalContract, 'http://localhost:8787/api/internal', {
+          fetch: async (input, init) => context.app.request(new Request(input, init)),
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'omit',
+          refusal: (status, body) => new Error(`HTTP ${status} ${JSON.stringify(body)}`)
+        })
+      const billing = client(SERVICE_TOKEN)
+      const set = (userId: string) =>
+        billing.setAccountEntitlements({
+          params: { userId },
+          body: { values: { services: { enabled: true } }, source: 'billing', externalVersion: 1 }
+        })
+      expect(await set(context.userId)).toEqual({ applied: true })
+      expect(await context.enabled()).toBe(true)
+      expect(await billing.accountSeats({ params: { userId: context.userId } })).toEqual({
+        seats: 0
+      })
+      await expect(set(crypto.randomUUID())).rejects.toThrow(
+        'HTTP 404 {"error":{"code":"not_found"'
+      )
+      await expect(
+        client('x'.repeat(48)).accountSeats({ params: { userId: context.userId } })
+      ).rejects.toThrow('HTTP 401 {"error":{"code":"unauthorized"}}')
     } finally {
       await context.runtime.close()
     }

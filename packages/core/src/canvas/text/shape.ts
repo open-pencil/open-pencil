@@ -91,8 +91,8 @@ function savedOutline(
  * Lay a text node out as the renderer draws it and pair each shaped glyph with the outline of
  * the glyph ID CanvasKit chose, so ligatures and contextual forms keep their shapes. An emoji the
  * layout gives the emoji metrics font is saved as Figma saves one: a placeholder square with its
- * code points. When a run's font cannot be told, no glyph gets an outline: the layout still
- * stands and OpenPencil lays the text out again on reading, but Figma draws it blank.
+ * code points. When a run's font cannot be told, no glyph gets an outline, as outlines from some
+ * runs only would draw the text with characters missing.
  * Returns `null` for text saved glyphs cannot represent at all.
  */
 export function shapeText(
