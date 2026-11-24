@@ -1,8 +1,8 @@
 import type {
   VariableAlias,
   VariableFormulaNode,
-  VariableFormulaOperation,
-  VariableLiteral
+  VariableFormulaLiteral,
+  VariableFormulaOperation
 } from '#scene-graph/types'
 
 export const MAX_FORMULA_DEPTH = 64
@@ -22,7 +22,7 @@ export function isFormulaReference(node: VariableFormulaNode): node is VariableA
 
 /** What a fold makes of each kind of node; an operation gets its operands' results. */
 export interface FormulaFold<T> {
-  literal: (value: VariableLiteral) => T
+  literal: (value: VariableFormulaLiteral) => T
   reference: (id: string) => T
   operation: (node: VariableFormulaOperation, operands: T[]) => T
 }

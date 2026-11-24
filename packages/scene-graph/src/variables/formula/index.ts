@@ -1,5 +1,11 @@
 import type { SceneGraph } from '#scene-graph/graph'
-import type { VariableLiteral, VariableValue } from '#scene-graph/types'
+import { isEasing } from '../easing'
+import type {
+  Variable,
+  VariableLiteral,
+  VariableType,
+  VariableValue
+} from '#scene-graph/types'
 
 import { resolveVariableInModes } from '../resolution'
 import { parseFormulaSyntax, type FormulaReference } from './parse'
@@ -64,7 +70,9 @@ export function formatVariableFormula(
   options?: PrintFormulaOptions
 ): string {
   const reference = (id: string) => variableFormulaReference(graph, id)
-  const typed = { type: (id: string) => graph.variables.get(id)?.type, ...options }
+  const typed = { type: (id: string) => formulaTypeOf(graph.variables.get(id)?.type), ...options }
+  // An easing is no formula's value and has no source text.
+  if (isEasing(value)) return ''
   if (typeof value !== 'object' || !('expression' in value))
     return printFormula(value, reference, typed)
   return value.expression === 'FORMULA' ? printFormula(value.value, reference, typed) : ''
@@ -78,7 +86,7 @@ function resolveReference(graph: SceneGraph, collectionId: string, name: string)
   // An ID names its variable before any name does; a deleted variable is reached only by it, as
   // a formula saved before the deletion names it.
   const byId = name.startsWith('#') ? graph.variables.get(name.slice(1)) : undefined
-  if (byId) return { id: byId.id, type: byId.type }
+  if (byId) return { id: byId.id, type: formulaType(byId) }
   const candidates = graph
     .getLiveVariables()
     .filter((candidate) => name === qualifiedName(graph, candidate.id) || name === candidate.name)
@@ -88,7 +96,18 @@ function resolveReference(graph: SceneGraph, collectionId: string, name: string)
   if (!match) throw new VariableFormulaError(`No variable named ${name}`)
   if (matches.length !== 1)
     throw new VariableFormulaError(`More than one variable is named ${name}`)
-  return { id: match.id, type: match.type }
+  return { id: match.id, type: formulaType(match) }
+}
+
+/** The type a formula computes a variable's value as; easings and timings have none. */
+export function formulaTypeOf(type: VariableType | undefined): FormulaValueType | undefined {
+  return type === 'EASING' || type === 'TIMING' ? undefined : type
+}
+
+function formulaType(variable: Variable): FormulaValueType {
+  const type = formulaTypeOf(variable.type)
+  if (!type) throw new VariableFormulaError(`Formulas cannot use ${variable.name}`)
+  return type
 }
 
 const TYPE_NAMES: Record<FormulaValueType, string> = {
@@ -110,15 +129,16 @@ export function parseVariableFormula(
   const collection = graph.variableCollections.get(variable.collectionId)
   if (!collection?.modes.some((mode) => mode.modeId === modeId))
     throw new VariableFormulaError('Unknown variable mode')
+  const holds = formulaType(variable)
   const { node, type } = parseFormulaSyntax(source, (name) =>
     resolveReference(graph, variable.collectionId, name)
   )
-  if (type !== variable.type)
+  if (type !== holds)
     throw new VariableFormulaError(
-      `This gives ${TYPE_NAMES[type]}, but ${variable.name} holds ${TYPE_NAMES[variable.type]}`
+      `This gives ${TYPE_NAMES[type]}, but ${variable.name} holds ${TYPE_NAMES[holds]}`
     )
   const value: VariableValue = isFormulaOperation(node)
-    ? { expression: 'FORMULA', type: variable.type, value: node }
+    ? { expression: 'FORMULA', type: holds, value: node }
     : node
   const resolved = resolveVariableInModes(
     graph,

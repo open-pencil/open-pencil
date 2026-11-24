@@ -4,16 +4,17 @@ import type {
   Variable,
   VariableCollection,
   VariableCollectionMode,
+  VariableLiteral,
   VariableValue
 } from '@open-pencil/scene-graph'
-import { variableValueReferences } from '@open-pencil/scene-graph/variables'
+import { isEasing, variableValueReferences } from '@open-pencil/scene-graph/variables'
 import { appendAll } from '@open-pencil/std/arrays'
 
 import { cssColor } from '../export/css'
 import { formulaToCSS } from './formula'
 import { collectionVariables, tokenSlug, variableCSSNames, variableNamespace } from './names'
 import { createTokenValidator, parseWithBrowser, type TokenValidator } from './validate'
-import { tokenNumberToCSS, variableUnit } from './values'
+import { easingToCSS, timingToCSS, tokenNumberToCSS, variableUnit } from './values'
 
 export type TokenStylesheetFormat = 'css' | 'tailwind'
 
@@ -123,7 +124,19 @@ function modeValue(
     const target = names.get(value.aliasId)
     return target ? `var(--${target})` : { issue: 'aliases a variable that does not exist' }
   }
+  return literalCSS(variable, value, profile)
+}
+
+/** A value the variable holds as it is, as CSS, or why it has none. */
+function literalCSS(
+  variable: Variable,
+  value: VariableLiteral,
+  profile: ColorProfile
+): string | { issue: string } {
+  if (isEasing(value))
+    return easingToCSS(value) ?? { issue: 'is a spring, which CSS has no timing function for' }
   if (variable.type === 'COLOR' && typeof value === 'object') return cssColor(value, profile)
+  if (variable.type === 'TIMING' && typeof value === 'number') return timingToCSS(value)
   if (variable.type === 'FLOAT' && typeof value === 'number')
     return tokenNumberToCSS(value, variableUnit(variable))
   if (variable.type === 'STRING' && typeof value === 'string')

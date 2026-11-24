@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import { colorSchema } from '../color/schema'
 import { finiteNumberSchema } from '../primitives/schema'
+import { EASING_CURVES } from '../types'
 
 export const variableAliasSchema = v.object({ aliasId: v.string() })
 export const variableColorExpressionSchema = v.object({
@@ -28,4 +29,27 @@ export const variableCollectionSchema = v.looseObject({
   defaultModeId: v.string(),
   modes: v.array(v.unknown()),
   variableIds: v.array(v.unknown())
+})
+
+export const cubicBezierSchema = v.object({
+  x1: finiteNumberSchema,
+  y1: finiteNumberSchema,
+  x2: finiteNumberSchema,
+  y2: finiteNumberSchema
+})
+
+const positiveSchema = v.pipe(finiteNumberSchema, v.minValue(0))
+
+export const springSchema = v.object({
+  stiffness: positiveSchema,
+  damping: positiveSchema,
+  mass: positiveSchema,
+  type: v.optional(v.picklist(['NORMALIZED', 'PHYSICAL'])),
+  platform: v.optional(v.picklist(['IOS_WEB', 'ANDROID']))
+})
+
+export const easingSchema = v.object({
+  easing: v.picklist(EASING_CURVES),
+  bezier: v.optional(cubicBezierSchema),
+  spring: v.optional(springSchema)
 })

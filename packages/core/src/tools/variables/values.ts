@@ -1,25 +1,42 @@
 import * as v from 'valibot'
 
-import type { ColorProfile, VariableType } from '@open-pencil/scene-graph'
+import { VARIABLE_TYPES, type ColorProfile, type VariableType } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { parseCSSEasing, parseCSSTime } from '@open-pencil/scene-graph/css'
 
 import type { FigmaVariableValue } from '#core/figma-api'
+import { figmaEasing, isFigmaEasingType } from '#core/figma-api/variables/easing'
 import { graphOf } from '#core/figma-api/graph'
 import { defineTool } from '#core/tools/schema'
 
-/** A parsed value as `setValueForMode` takes it; a colour gets a copy of its own. */
-function figmaValue(value: ToolValue): FigmaVariableValue {
-  return typeof value === 'object' ? { ...value } : value
-}
+const VALUE_FORMATS =
+  'hex for COLOR, a number for FLOAT, true or false for BOOLEAN, 250ms or 0.25s for TIMING, and for EASING a preset (EASE_IN, EASE_OUT, EASE_IN_AND_OUT, LINEAR, EASE_IN_BACK, EASE_OUT_BACK, EASE_IN_AND_OUT_BACK, GENTLE, QUICK, BOUNCY, SLOW, HOLD) or a CSS cubic-bezier()'
 
-type ToolValue = Color | number | string | boolean
-
-function parseVariableValue(type: VariableType, value: string, profile: ColorProfile): ToolValue {
-  if (type === 'COLOR') return parseColor(value, profile)
-  if (type === 'FLOAT') return Number(value)
-  if (type === 'BOOLEAN') return value === 'true'
-  return value
+/** A tool's text as the value `setValueForMode` takes for this type, or why it is not one. */
+function parseVariableValue(
+  type: VariableType,
+  value: string,
+  profile: ColorProfile
+): { value: FigmaVariableValue } | { error: string } {
+  if (type === 'COLOR') return { value: parseColor(value, profile) }
+  if (type === 'BOOLEAN') return { value: value === 'true' }
+  if (type === 'STRING') return { value }
+  if (type === 'FLOAT') {
+    const number = Number(value)
+    return Number.isFinite(number) ? { value: number } : { error: `"${value}" is not a number` }
+  }
+  if (type === 'TIMING') {
+    const seconds = parseCSSTime(value)
+    return seconds === null
+      ? { error: `"${value}" is not a time such as 250ms or 0.25s` }
+      : { value: seconds }
+  }
+  const name = value.trim().toUpperCase()
+  if (isFigmaEasingType(name)) return { value: { type: name } }
+  const easing = parseCSSEasing(value)
+  return easing
+    ? { value: figmaEasing(easing) }
+    : { error: `"${value}" is not an easing preset or a CSS cubic-bezier()` }
 }
 
 export const createVariable = defineTool({
@@ -30,27 +47,25 @@ export const createVariable = defineTool({
   input: v.strictObject({
     name: v.pipe(v.string(), v.description('Variable name')),
     type: v.pipe(
-      v.picklist(['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']),
+      v.picklist(VARIABLE_TYPES),
       v.description('Variable type')
     ),
     collection_id: v.pipe(v.string(), v.description('Collection ID')),
     value: v.optional(
-      v.pipe(v.string(), v.description('Initial value (hex for COLOR, number for FLOAT, etc.)'))
+      v.pipe(v.string(), v.description(`Initial value: ${VALUE_FORMATS}`))
     )
   }),
   execute: (figma, args) => {
-    const type = args.type
     // The value is checked first, so a value the variable cannot hold creates nothing.
-    const value =
+    const parsed =
       args.value === undefined
         ? undefined
-        : parseVariableValue(type, args.value, graphOf(figma).documentColorSpace)
-    if (typeof value === 'number' && !Number.isFinite(value))
-      return { error: `"${args.value}" is not a number` }
-    const variable = figma.variables.createVariable(args.name, args.collection_id, type)
-    if (value !== undefined) {
+        : parseVariableValue(args.type, args.value, graphOf(figma).documentColorSpace)
+    if (parsed && 'error' in parsed) return parsed
+    const variable = figma.variables.createVariable(args.name, args.collection_id, args.type)
+    if (parsed) {
       for (const modeId of Object.keys(variable.valuesByMode))
-        variable.setValueForMode(modeId, figmaValue(value))
+        variable.setValueForMode(modeId, parsed.value)
     }
     return graphOf(figma).variables.get(variable.id)
   }
@@ -64,18 +79,19 @@ export const setVariable = defineTool({
   input: v.strictObject({
     id: v.pipe(v.string(), v.description('Variable ID')),
     mode: v.pipe(v.string(), v.description('Mode ID')),
-    value: v.pipe(v.string(), v.description('Value (hex for COLOR, number for FLOAT, etc.)'))
+    value: v.pipe(v.string(), v.description(`Value: ${VALUE_FORMATS}`))
   }),
   execute: (figma, args) => {
     const variable = figma.variables.getVariableById(args.id)
     if (!variable) return { error: `Variable "${args.id}" not found` }
-    const parsedValue = parseVariableValue(
+    const parsed = parseVariableValue(
       variable.resolvedType,
       args.value,
       graphOf(figma).documentColorSpace
     )
-    variable.setValueForMode(args.mode, figmaValue(parsedValue))
-    return { id: args.id, mode: args.mode, value: parsedValue }
+    if ('error' in parsed) return parsed
+    variable.setValueForMode(args.mode, parsed.value)
+    return { id: args.id, mode: args.mode, value: parsed.value }
   }
 })
 

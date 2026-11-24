@@ -1,6 +1,8 @@
 import type { Component } from 'vue'
+import IconClock from '~icons/lucide/clock'
 import IconHash from '~icons/lucide/hash'
 import IconPalette from '~icons/lucide/palette'
+import IconSpline from '~icons/lucide/spline'
 import IconToggleLeft from '~icons/lucide/toggle-left'
 import IconType from '~icons/lucide/type'
 
@@ -11,7 +13,7 @@ export const VARIABLE_TYPE_ICONS: Record<VariableType, Component> = {
   COLOR: IconPalette,
   FLOAT: IconHash,
   STRING: IconType,
-  BOOLEAN: IconToggleLeft
+  BOOLEAN: IconToggleLeft,
+  EASING: IconSpline,
+  TIMING: IconClock
 }
-
-export const VARIABLE_TYPES: readonly VariableType[] = ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']

@@ -7,7 +7,7 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import type { VariableType } from '@open-pencil/scene-graph'
+import { VARIABLE_TYPES, type VariableType } from '@open-pencil/scene-graph'
 import { useMessages } from '@open-pencil/vue/i18n'
 import { variablesAddTestId, vTestId } from '@open-pencil/vue/testing'
 
@@ -16,7 +16,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
-import { VARIABLE_TYPE_ICONS, VARIABLE_TYPES } from '@/components/variables/type-icons'
+import { VARIABLE_TYPE_ICONS } from '@/components/variables/type-icons'
 
 /** `labelled` spells out "Create variable" where the toolbar has room for it. */
 const { labelled = false } = defineProps<{ labelled?: boolean }>()
@@ -31,7 +31,9 @@ const items = computed(() => {
     COLOR: { label: text.value.color, hint: text.value.colorHint },
     FLOAT: { label: text.value.number, hint: text.value.numberHint },
     STRING: { label: text.value.text, hint: text.value.textHint },
-    BOOLEAN: { label: text.value.boolean, hint: text.value.booleanHint }
+    BOOLEAN: { label: text.value.boolean, hint: text.value.booleanHint },
+    EASING: { label: text.value.easing, hint: text.value.easingHint },
+    TIMING: { label: text.value.timing, hint: text.value.timingHint }
   }
   return VARIABLE_TYPES.map((type) => ({ type, icon: VARIABLE_TYPE_ICONS[type], ...labels[type] }))
 })

@@ -168,7 +168,7 @@ describe('planning an import', () => {
     expect(spacing.target).toEqual({ kind: 'existing', collectionId: own.id })
   })
 
-  test('values from other tools convert into canvas units and sRGB', () => {
+  test('values from other tools convert into canvas units, sRGB and seconds', () => {
     const { plan: result } = plan(
       files({
         'Tokens/Default.tokens.json': {
@@ -189,7 +189,7 @@ describe('planning an import', () => {
       values: [{ value: 24 }]
     })
     expect(byName.weight).toMatchObject({ values: [{ value: 600 }], scopes: ['FONT_STYLE'] })
-    expect(byName.quick).toMatchObject({ unit: 'ms', values: [{ value: 150 }] })
+    expect(byName.quick).toMatchObject({ type: 'TIMING', values: [{ value: 0.15 }] })
     expect(byName.brand.values[0]).toMatchObject({ kind: 'literal' })
   })
 

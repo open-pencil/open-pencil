@@ -6,5 +6,9 @@
   "text": "Testo",
   "textHint": "Testi ed etichette",
   "boolean": "Booleano",
-  "booleanHint": "Vero o falso"
+  "booleanHint": "Vero o falso",
+  "easing": "Easing",
+  "easingHint": "Curve e molle",
+  "timing": "Tempo",
+  "timingHint": "Durate e ritardi"
 }

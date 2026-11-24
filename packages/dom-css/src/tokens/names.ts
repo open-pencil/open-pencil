@@ -64,6 +64,9 @@ export function tokenSlug(text: string): string {
 /** The Tailwind namespace a token belongs to, from its type, its scopes, then its leading name segment. */
 export function variableNamespace(variable: Variable): ThemeNamespace | undefined {
   if (variable.type === 'COLOR') return 'color'
+  if (variable.type === 'EASING') return 'ease'
+  // Tailwind keeps no durations in its theme; a timing is a plain custom property.
+  if (variable.type === 'TIMING') return undefined
   const fromScopes = new Set((variable.scopes ?? []).map((scope) => SCOPE_NAMESPACES[scope]))
   const [only] = fromScopes
   if (fromScopes.size === 1 && only) return only

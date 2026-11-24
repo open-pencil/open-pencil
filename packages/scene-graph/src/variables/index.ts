@@ -31,6 +31,7 @@ import {
   TEXT_CONTENT_VARIABLE_TYPES,
   VISIBILITY_VARIABLE_TYPES
 } from './fields'
+import { easingPreset } from './easing'
 import { applyBoundPaintColor } from './paints'
 
 export * from './resolution'
@@ -109,11 +110,13 @@ export function addCollection(graph: SceneGraph, collection: VariableCollection)
   graph.variableCollections.set(collection.id, collection)
 }
 
-function defaultVariableValue(type: VariableType, value?: VariableValue): VariableValue {
+/** The value a new variable of this type starts with, unless it is given one. */
+export function defaultVariableValue(type: VariableType, value?: VariableValue): VariableValue {
   if (value !== undefined) return value
   if (type === 'COLOR') return { ...BLACK }
-  if (type === 'FLOAT') return 0
+  if (type === 'FLOAT' || type === 'TIMING') return 0
   if (type === 'BOOLEAN') return false
+  if (type === 'EASING') return easingPreset('EASE_IN')
   return ''
 }
 
@@ -427,6 +430,7 @@ function markBoundVariablesOverrideOnInstance(
 
 export * from './bindings'
 export * from './corners'
+export * from './easing'
 export * from './formula'
 export * from './formula/schema'
 export * from './lookup'

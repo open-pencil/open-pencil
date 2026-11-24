@@ -8,6 +8,7 @@ export {
   parseCSSJustifyContent,
   type CSSAspectRatio
 } from './layout'
+export { parseCSSEasing, parseCSSTime } from './motion'
 export { parseCSSShadows } from './shadows'
 export {
   CSS_GENERIC_FONT_FAMILIES,

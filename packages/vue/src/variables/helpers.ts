@@ -1,8 +1,8 @@
 import type { Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
-import { BLACK } from '@open-pencil/core/constants'
 import type { VariableCollection, VariableType, VariableValue } from '@open-pencil/scene-graph'
+import { defaultVariableValue } from '@open-pencil/scene-graph/variables'
 import { randomHex } from '@open-pencil/std/random'
 
 export function createVariableCollectionActions(editor: Editor, activeCollectionId: Ref<string>) {
@@ -80,17 +80,12 @@ export function createVariableValueActions(
   editor: Editor,
   getActiveCollection: () => VariableCollection | null
 ) {
-  function defaultVariableValue(type: VariableType): VariableValue {
-    if (type === 'COLOR') return { ...BLACK }
-    if (type === 'FLOAT') return 0
-    if (type === 'BOOLEAN') return false
-    return ''
-  }
-
   function defaultVariableName(type: VariableType): string {
     if (type === 'COLOR') return 'New color'
     if (type === 'FLOAT') return 'New number'
     if (type === 'BOOLEAN') return 'New boolean'
+    if (type === 'EASING') return 'New easing'
+    if (type === 'TIMING') return 'New timing'
     return 'New text'
   }
 

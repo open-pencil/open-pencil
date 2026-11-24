@@ -2,7 +2,7 @@ import { appendAll } from '@open-pencil/std/arrays'
 
 import type { SceneGraph } from '../graph'
 import type { Color } from '../primitives'
-import type { Variable, VariableLiteral, VariableValue } from '../types'
+import type { Variable, VariableLiteral, VariableType, VariableValue } from '../types'
 import { MAX_FORMULA_DEPTH, VariableFormulaError } from './formula/tree'
 import { resolveVariableValue, variableValueReferences } from './value'
 
@@ -91,7 +91,14 @@ export class VariableResolutionError extends VariableFormulaError {
   }
 }
 
-const RESULT_TYPES = { FLOAT: 'number', BOOLEAN: 'boolean', STRING: 'string', COLOR: 'object' }
+/** Whether a resolved value is one a variable of this type gives. */
+function fitsType(value: VariableValue, type: VariableType): value is VariableLiteral {
+  if (type === 'COLOR') return typeof value === 'object' && 'r' in value
+  if (type === 'EASING') return typeof value === 'object' && 'easing' in value
+  if (type === 'BOOLEAN') return typeof value === 'boolean'
+  if (type === 'STRING') return typeof value === 'string'
+  return typeof value === 'number'
+}
 
 /**
  * Resolve a draft or saved definition with identical mode, dependency and error semantics. A
@@ -146,7 +153,7 @@ function evaluateDefinition(
     const result = resolveVariableValue(value, (id) =>
       resolveVariableInModes(graph, id, modeFor, visiting, memo, overrides)
     )
-    if (result === undefined || typeof result !== RESULT_TYPES[variable.type])
+    if (result === undefined || !fitsType(result, variable.type))
       throw new VariableResolutionError('type', variableId, `Wrong result type: ${variable.name}`)
     if (typeof result === 'number' && !Number.isFinite(result))
       throw new VariableResolutionError(
@@ -221,8 +228,7 @@ function resolveExpression(
 
 /** A resolved value the canvas can draw for a variable of this type, or nothing. */
 function drawable(value: VariableValue | undefined, type: Variable['type']) {
-  if (value === undefined || typeof value !== RESULT_TYPES[type]) return undefined
-  if (typeof value === 'object' && !('r' in value)) return undefined
+  if (value === undefined || !fitsType(value, type)) return undefined
   return typeof value === 'number' && !Number.isFinite(value) ? undefined : value
 }
 

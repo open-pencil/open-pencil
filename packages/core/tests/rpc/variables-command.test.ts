@@ -37,7 +37,7 @@ describe('tokens command', () => {
       'Unknown token format: scss. Use css, tailwind, or dtcg.'
     )
     expect(() => executeRPCCommand(graphWithTokens(), 'tokens', { type: 'shadow' })).toThrow(
-      'Unknown variable type: shadow. Use COLOR, FLOAT, STRING, BOOLEAN.'
+      'Unknown variable type: shadow. Use COLOR, FLOAT, STRING, BOOLEAN, EASING, TIMING.'
     )
   })
 })

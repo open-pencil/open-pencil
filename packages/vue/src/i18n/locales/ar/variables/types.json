@@ -6,5 +6,9 @@
   "text": "نص",
   "textHint": "النصوص والتسميات",
   "boolean": "منطقي",
-  "booleanHint": "صحيح أو خطأ"
+  "booleanHint": "صحيح أو خطأ",
+  "easing": "تسهيل",
+  "easingHint": "منحنيات ونوابض",
+  "timing": "توقيت",
+  "timingHint": "المدد والتأخيرات"
 }

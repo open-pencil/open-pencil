@@ -3,7 +3,7 @@ import type {
   VariableBindableEffectField
 } from '@figma/plugin-typings/plugin-api-standalone'
 
-import type { Effect, SceneGraph, VariableType } from '@open-pencil/scene-graph'
+import type { Effect, SceneGraph } from '@open-pencil/scene-graph'
 import {
   EFFECT_BINDING_PROPERTIES,
   effectBindableProperties,
@@ -32,7 +32,7 @@ export {
   type FigmaBindableField
 } from './bindings'
 
-/** Figma's variable types, including the motion types OpenPencil does not model. */
+/** Figma's variable types. */
 const FIGMA_TYPES = ['BOOLEAN', 'COLOR', 'FLOAT', 'STRING', 'EASING', 'TIMING'] as const
 export type FigmaVariableResolvedType = (typeof FIGMA_TYPES)[number]
 
@@ -44,10 +44,6 @@ function assertType(method: string, type: unknown): FigmaVariableResolvedType {
     )
   }
   return type as FigmaVariableResolvedType
-}
-
-function isModelledType(type: FigmaVariableResolvedType): type is VariableType {
-  return Object.hasOwn(FIGMA_DEFAULT_VALUES, type)
 }
 
 /** A solid paint as `setBoundVariableForPaint` takes and returns it. */
@@ -111,8 +107,6 @@ export class FigmaVariablesAPI {
     resolvedType: FigmaVariableResolvedType
   ): FigmaVariable {
     const type = assertType('createVariable', resolvedType)
-    if (!isModelledType(type))
-      throw new Error(`in createVariable: OpenPencil does not support ${type} variables`)
     const collectionId = typeof collection === 'string' ? collection : collection.id
     if (!this.#graph.variableCollections.has(collectionId)) {
       throw new Error('in createVariable: Could not find variable collection')

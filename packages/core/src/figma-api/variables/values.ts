@@ -6,8 +6,10 @@ import type {
   VariableValue
 } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { variableValueReferences } from '@open-pencil/scene-graph/variables'
+import { isEasing, variableValueReferences } from '@open-pencil/scene-graph/variables'
 import { appendAll } from '@open-pencil/std/arrays'
+
+import { figmaEasing, storedEasing, type FigmaEasing } from './easing'
 
 /** A reference to a variable, as Figma's plugin API writes one. */
 export interface FigmaVariableAlias {
@@ -29,6 +31,7 @@ export type FigmaVariableValue =
   | Omit<Color, 'a'>
   | FigmaVariableAlias
   | FigmaComposedColor
+  | FigmaEasing
 
 export function variableAlias(id: string): FigmaVariableAlias {
   return { type: 'VARIABLE_ALIAS', id }
@@ -39,7 +42,10 @@ export const FIGMA_DEFAULT_VALUES: Record<VariableType, VariableLiteral> = {
   FLOAT: 0,
   STRING: 'String value',
   BOOLEAN: false,
-  COLOR: { r: 1, g: 1, b: 1, a: 1 }
+  COLOR: { r: 1, g: 1, b: 1, a: 1 },
+  // Figma starts an easing with no curve of its own, which reads back as a custom curve.
+  EASING: { easing: 'IN_CUBIC' },
+  TIMING: 0
 }
 
 function isAlias(value: unknown): value is FigmaVariableAlias {
@@ -66,7 +72,9 @@ function storedColor(color: FigmaColorInput): Color {
   return { r: color.r, g: color.g, b: color.b, a: color.a ?? 1 }
 }
 
-function literal(value: VariableLiteral): FigmaVariableValue {
+/** A resolved value as the plugin API reads it. */
+export function figmaLiteral(value: VariableLiteral): FigmaVariableValue {
+  if (isEasing(value)) return figmaEasing(value)
   return typeof value === 'object' ? { ...value } : value
 }
 
@@ -85,13 +93,13 @@ export function figmaVariableValue(
   if ('expression' in value) {
     if (value.expression === 'COMPOSE_COLOR') {
       const ref = (part: Color | number | { aliasId: string }) =>
-        typeof part === 'object' && 'aliasId' in part ? variableAlias(part.aliasId) : literal(part)
+        typeof part === 'object' && 'aliasId' in part ? variableAlias(part.aliasId) : figmaLiteral(part)
       return { color: ref(value.color), opacity: ref(value.opacity) } as FigmaComposedColor
     }
     const resolved = graph.resolveVariable(variable.id, modeId)
-    return resolved === undefined ? FIGMA_DEFAULT_VALUES[variable.type] : literal(resolved)
+    return figmaLiteral(resolved ?? FIGMA_DEFAULT_VALUES[variable.type])
   }
-  return literal(value)
+  return figmaLiteral(value)
 }
 
 /** Whether a variable reads `id`, directly or through the variables it reads. */
@@ -160,7 +168,14 @@ export function storedVariableValue(
     if (color === undefined) throw mismatch()
     return color
   }
-  const expected = { FLOAT: 'number', STRING: 'string', BOOLEAN: 'boolean' }[variable.type]
+  if (variable.type === 'EASING') {
+    const easing = storedEasing(value)
+    if (!easing) throw mismatch()
+    return easing
+  }
+  const expected = { FLOAT: 'number', TIMING: 'number', STRING: 'string', BOOLEAN: 'boolean' }[
+    variable.type
+  ]
   if (typeof value !== expected) throw mismatch()
   return value as VariableLiteral
 }

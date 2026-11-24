@@ -18,5 +18,7 @@ export const SCOPES_BY_TYPE: Record<VariableType, readonly VariableScope[]> = {
     'PARAGRAPH_INDENT'
   ],
   STRING: ['TEXT_CONTENT', 'FONT_FAMILY', 'FONT_STYLE'],
-  BOOLEAN: []
+  BOOLEAN: [],
+  EASING: [],
+  TIMING: []
 }

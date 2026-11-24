@@ -8,7 +8,11 @@ import type {
   VariableCollection,
   VariableCollectionMode
 } from '@open-pencil/scene-graph'
-import { printFormula, variableValueReferences } from '@open-pencil/scene-graph/variables'
+import {
+  formulaTypeOf,
+  printFormula,
+  variableValueReferences
+} from '@open-pencil/scene-graph/variables'
 import { appendAll } from '@open-pencil/std/arrays'
 
 import { fileSegment, placeTokens, tokenPath, tokenReference, tokenTree } from './paths'
@@ -102,7 +106,7 @@ function variableToken(
       return undefined
     }
     formula = printFormula(value.value, (id) => tokenReference(context.references.get(id) ?? []), {
-      type: (id) => context.graph.variables.get(id)?.type
+      type: (id) => formulaTypeOf(context.graph.variables.get(id)?.type)
     })
     $value = literalTokenValue(variable, resolved, context.graph.documentColorSpace)
   } else if (typeof value === 'object' && 'expression' in value) {
@@ -124,6 +128,10 @@ function variableToken(
       }
   } else {
     $value = literalTokenValue(variable, value, context.graph.documentColorSpace)
+    if ($value === undefined) {
+      context.issues.push({ kind: 'unsupported-easing', ...where })
+      return undefined
+    }
   }
   if (variable.type === 'BOOLEAN') figma['com.figma.type'] = 'boolean'
   const $extensions = { ...figma, ...openPencilFields(variable, mode.modeId, formula) }

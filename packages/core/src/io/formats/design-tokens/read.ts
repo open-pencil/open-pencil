@@ -56,8 +56,7 @@ const COMPOSITE_TYPES = new Set([
   'border',
   'gradient',
   'transition',
-  'strokeStyle',
-  'cubicBezier'
+  'strokeStyle'
 ])
 
 const documentSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))

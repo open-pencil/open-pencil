@@ -6,5 +6,9 @@
   "text": "Tekst",
   "textHint": "Tekst i etykiety",
   "boolean": "Boolowski",
-  "booleanHint": "Prawda lub fałsz"
+  "booleanHint": "Prawda lub fałsz",
+  "easing": "Wygładzanie",
+  "easingHint": "Krzywe i sprężyny",
+  "timing": "Czas",
+  "timingHint": "Czasy trwania i opóźnienia"
 }

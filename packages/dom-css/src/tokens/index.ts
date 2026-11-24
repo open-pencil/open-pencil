@@ -31,4 +31,10 @@ export {
   type TokenStylesheetOptions
 } from './stylesheet'
 export { createTokenValidator, type TokenValidator } from './validate'
-export { TOKEN_UNIT_PROPERTY, tokenNumberToCSS, variableUnit } from './values'
+export {
+  easingToCSS,
+  TOKEN_UNIT_PROPERTY,
+  timingToCSS,
+  tokenNumberToCSS,
+  variableUnit
+} from './values'

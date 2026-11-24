@@ -4,11 +4,13 @@ import {
   collectionVariables,
   defaultModeCondition,
   modeAttribute,
+  timingToCSS,
   tokenNumberToCSS,
   variableCSSNames,
   variableUnit
 } from '@open-pencil/dom-css/export'
 import type {
+  Easing,
   SceneGraph,
   Variable,
   VariableCollection,
@@ -20,6 +22,9 @@ import type {
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
+  easingText,
+  formulaTypeOf,
+  isEasing,
   tokenNumberFromUnit,
   tokenNumberInUnit,
   variableValueReferences,
@@ -32,6 +37,8 @@ export interface TokenModeValue {
   modeId: string
   css: string
   color?: Color
+  /** An easing's curve or spring, which the panel draws beside its name. */
+  easing?: Easing
   /** A formula as it reads, with variable names; `css` holds what it gives in this mode. */
   formula?: string
   /** The aliased variable's name, when the value points at another token. */
@@ -73,7 +80,7 @@ function colorExpressionMode(
   value: VariableColorExpression
 ): TokenModeValue {
   const resolved = graph.resolveVariable(variable.id, modeId)
-  const color = typeof resolved === 'object' ? resolved : undefined
+  const color = typeof resolved === 'object' && 'r' in resolved ? resolved : undefined
   const base =
     'aliasId' in value.color
       ? (graph.variables.get(value.color.aliasId)?.name ?? value.color.aliasId)
@@ -86,8 +93,15 @@ function colorExpressionMode(
   return { modeId, css: label, alias: label, color }
 }
 
+/** A literal as the table writes it: a number in its unit, a timing in ms, an easing by name. */
+function literalText(variable: Variable, value: number | Easing): string {
+  if (isEasing(value)) return easingText(value)
+  if (variable.type === 'TIMING') return timingToCSS(value)
+  return tokenNumberToCSS(value, variableUnit(variable))
+}
+
 function aliasResult(variable: Variable, resolved: VariableValue | undefined) {
-  if (typeof resolved === 'number') return tokenNumberToCSS(resolved, variableUnit(variable))
+  if (typeof resolved === 'number' || isEasing(resolved)) return literalText(variable, resolved)
   if (typeof resolved === 'boolean' || typeof resolved === 'string') return String(resolved)
   return undefined
 }
@@ -106,7 +120,7 @@ function formulaMode(
     css: (color ? colorToHex(color) : aliasResult(variable, resolved)) ?? '',
     color,
     formula: printFormula(value.value, (id) => graph.variables.get(id)?.name ?? id, {
-      type: (id) => graph.variables.get(id)?.type
+      type: (id) => formulaTypeOf(graph.variables.get(id)?.type)
     })
   }
 }
@@ -135,12 +149,13 @@ function modeValue(
       alias: target?.name,
       result: aliasResult(variable, resolved),
       color,
+      easing: isEasing(resolved) ? resolved : undefined,
       expression
     }
   }
+  if (isEasing(value)) return { modeId, css: literalText(variable, value), easing: value }
   if (typeof value === 'object') return { modeId, css: colorToHex(value), color: value, expression }
-  if (typeof value === 'number')
-    return { modeId, css: tokenNumberToCSS(value, variableUnit(variable)), expression }
+  if (typeof value === 'number') return { modeId, css: literalText(variable, value), expression }
   return { modeId, css: value === undefined ? '' : String(value), expression }
 }
 

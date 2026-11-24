@@ -8,14 +8,14 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import type { VariableType } from '@open-pencil/scene-graph'
+import { VARIABLE_TYPES, type VariableType } from '@open-pencil/scene-graph'
 import { useMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
-import { VARIABLE_TYPE_ICONS, VARIABLE_TYPES } from '@/components/variables/type-icons'
+import { VARIABLE_TYPE_ICONS } from '@/components/variables/type-icons'
 
 /** The variable types the list shows; none checked shows every type. */
 const types = defineModel<VariableType[]>({ default: () => [] })
@@ -28,7 +28,9 @@ const labels = computed<Record<VariableType, string>>(() => ({
   COLOR: text.value.color,
   FLOAT: text.value.number,
   STRING: text.value.text,
-  BOOLEAN: text.value.boolean
+  BOOLEAN: text.value.boolean,
+  EASING: text.value.easing,
+  TIMING: text.value.timing
 }))
 
 function toggle(type: VariableType, on: boolean) {
