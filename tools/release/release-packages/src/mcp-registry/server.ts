@@ -22,7 +22,13 @@ const serverSchema = v.looseObject({
   )
 })
 
-const jsonText = <T extends v.GenericSchema>(schema: T) => v.pipe(v.string(), v.parseJson(), schema)
+function parseFile<T extends v.GenericSchema>(schema: T, text: string, file: string) {
+  const result = v.safeParse(v.pipe(v.string(), v.parseJson(), schema), text)
+  if (!result.success) {
+    throw new Error(`${file} is invalid: ${result.issues.map((issue) => issue.message).join('; ')}`)
+  }
+  return result.output
+}
 
 /**
  * The registry entry for one npm release. `server.json` holds everything but the version, which
@@ -30,8 +36,8 @@ const jsonText = <T extends v.GenericSchema>(schema: T) => v.pipe(v.string(), v.
  * the entry always names the npm version it starts.
  */
 export function releaseServer(serverText: string, manifestText: string) {
-  const server = v.parse(jsonText(serverSchema), serverText)
-  const manifest = v.parse(jsonText(manifestSchema), manifestText)
+  const server = parseFile(serverSchema, serverText, 'server.json')
+  const manifest = parseFile(manifestSchema, manifestText, 'package.json')
   const [npmPackage] = server.packages
   if (manifest.mcpName !== server.name) {
     throw new Error(`mcpName ${manifest.mcpName} does not match the registry name ${server.name}`)

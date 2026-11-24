@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 
+import { existsSync } from 'node:fs'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -9,6 +10,7 @@ import { isPrerelease } from '#release/version'
 import { defineCommand, runMain } from 'citty'
 
 import { resolveWorkspaceRoot, runCommand } from '@open-pencil/package-artifacts-tools'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import {
   MCP_PACKAGE_DIRECTORY,
@@ -32,7 +34,7 @@ async function installPublisher(directory: string): Promise<string> {
     )
   }
   const url = `https://github.com/modelcontextprotocol/registry/releases/download/${PUBLISHER.release}/${PUBLISHER.asset}`
-  const response = await fetch(url)
+  const response = await fetch(url, { signal: AbortSignal.timeout(DEADLINE_MS.transfer) })
   if (!response.ok) throw new Error(`Could not download ${url}: HTTP ${response.status}`)
   const archivePath = join(directory, PUBLISHER.asset)
   await writeFile(archivePath, new Uint8Array(await response.arrayBuffer()))
@@ -55,8 +57,16 @@ async function installPublisher(directory: string): Promise<string> {
  */
 export async function publishMCPRegistry(root: string): Promise<void> {
   const directory = join(root, MCP_PACKAGE_DIRECTORY)
+  const serverPath = join(directory, 'server.json')
+  // A recovery run of a tag from before the registry entry existed has nothing to list.
+  if (!existsSync(serverPath)) {
+    console.log(
+      `${MCP_PACKAGE_DIRECTORY}/server.json is absent; nothing to list in the MCP Registry`
+    )
+    return
+  }
   const server = releaseServer(
-    await readFile(join(directory, 'server.json'), 'utf8'),
+    await readFile(serverPath, 'utf8'),
     await readFile(join(directory, 'package.json'), 'utf8')
   )
   if (isPrerelease(server.version)) {
@@ -69,7 +79,9 @@ export async function publishMCPRegistry(root: string): Promise<void> {
     )
     return
   }
-  const existing = await fetch(serverVersionURL(server.name, server.version))
+  const existing = await fetch(serverVersionURL(server.name, server.version), {
+    signal: AbortSignal.timeout(DEADLINE_MS.request)
+  })
   if (existing.ok) {
     console.log(`The MCP Registry already lists ${server.name} ${server.version}`)
     return
@@ -83,8 +95,8 @@ export async function publishMCPRegistry(root: string): Promise<void> {
   const work = await mkdtemp(join(tmpdir(), 'mcp-registry-'))
   try {
     const publisher = await installPublisher(work)
-    const serverPath = join(work, 'server.json')
-    await writeFile(serverPath, `${JSON.stringify(server, null, 2)}\n`)
+    const entryPath = join(work, 'server.json')
+    await writeFile(entryPath, `${JSON.stringify(server, null, 2)}\n`)
     const run = (...args: string[]) =>
       runCommand({
         command: publisher,
@@ -93,9 +105,9 @@ export async function publishMCPRegistry(root: string): Promise<void> {
         output: 'inherit',
         timeoutMs: PUBLISHER_TIMEOUT_MS
       })
-    await run('validate', serverPath)
+    await run('validate', entryPath)
     await run('login', 'dns', '--domain', MCP_REGISTRY_DOMAIN)
-    await run('publish', serverPath)
+    await run('publish', entryPath)
   } finally {
     await rm(work, { recursive: true, force: true })
   }

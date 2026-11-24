@@ -38,6 +38,13 @@ describe('releaseServer', () => {
     ).toThrow('not @open-pencil/cli')
   })
 
+  test('names the file that is not valid', () => {
+    expect(() => releaseServer('{', json(manifest))).toThrow('server.json is invalid')
+    expect(() => releaseServer(json(server), json({ name: '@open-pencil/mcp' }))).toThrow(
+      'package.json is invalid'
+    )
+  })
+
   test('accepts the committed server.json with the MCP package manifest', async () => {
     const directory = join(await resolveWorkspaceRoot(import.meta.dir), MCP_PACKAGE_DIRECTORY)
     const packageText = await readFile(join(directory, 'package.json'), 'utf8')
