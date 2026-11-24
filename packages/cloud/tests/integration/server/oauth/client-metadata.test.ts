@@ -6,6 +6,7 @@ import {
   createVerifiedCredentialAccount,
   withCookie
 } from '#cloud-tests/helpers/account-authentication'
+import { contractClient } from '#cloud-tests/helpers/contract'
 import { OAUTH_CALLBACK, oauthTestApp, pkce } from '#cloud-tests/helpers/oauth'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import { cloudMCPResource, cloudOAuthRequestResponseSchema } from '#cloud/contract'
@@ -16,8 +17,6 @@ const config = parseCloudServerConfig({ ...accountAuthenticationConfig, oauthEna
 const resource = cloudMCPResource(config.publicURL)
 /** The app's client ID: the address of the metadata document it serves. */
 const clientId = 'https://agent.example.com/oauth/client.json'
-
-const workspaceSchema = v.object({ workspace: v.object({ id: v.string() }) })
 
 let fixture: Awaited<ReturnType<typeof createAccountAuthenticationFixture>>
 let oauth: ReturnType<typeof oauthTestApp>
@@ -53,11 +52,9 @@ beforeAll(async () => {
     password: 'designer-password-long-enough',
     approved: true
   })
-  const created = await fixture.client.api.workspaces.$post(
-    { json: { name: 'Studio', slug: 'studio' } },
-    withCookie(person.sessionCookie)
-  )
-  workspaceId = (await responseJSON(created, workspaceSchema)).workspace.id
+  const api = contractClient(fixture.app, withCookie(person.sessionCookie).headers)
+  workspaceId = (await api.workspaces.create({ body: { name: 'Studio', slug: 'studio' } }))
+    .workspace.id
 })
 
 afterAll(async () => {

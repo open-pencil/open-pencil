@@ -1,5 +1,6 @@
 import {
   MAX_AGENT_TOOL_NAME_LENGTH,
+  presenceName,
   type AgentToolCall,
   type AgentToolCaller,
   type AgentToolOutcome
@@ -7,9 +8,10 @@ import {
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { canEditDocument } from '#cloud/server/documents/access'
-import { DocumentForbiddenError } from '#cloud/server/documents/errors'
+import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
 import type { DocumentService } from '#cloud/server/documents/service'
-import { designTool } from '#cloud/server/mcp/catalog'
+import { designTool, takesPath } from '#cloud/server/mcp/catalog'
+import { omit } from 'es-toolkit/object'
 import type { Kysely } from 'kysely'
 
 /**
@@ -24,14 +26,6 @@ export type CallDocumentTool = (
 
 /** What a tool call may do: read the document, or change it as well. */
 export type DocumentToolEffect = 'read' | 'write'
-
-/** A tool the catalog does not have, or one called through the route for the other effect. */
-export class UnknownDocumentToolError extends Error {
-  constructor(readonly tool: string) {
-    super(`No ${tool} tool through this route`)
-    this.name = 'UnknownDocumentToolError'
-  }
-}
 
 /** The name an app goes by on the approval page, which the editor shows on the agent. */
 async function appName(database: Kysely<CloudDatabase>, clientId: string): Promise<string | null> {
@@ -62,7 +56,7 @@ export function createDocumentToolService(options: {
       const name = await appName(options.database, actor.grant.clientId)
       return {
         session: bounded(`app:${actor.grant.clientId}`),
-        ...(name ? { client: bounded(name) } : {})
+        ...(name ? { client: presenceName(name) } : {})
       }
     }
     return { session: bounded(`${actor.credential ?? 'session'}:${actor.userId}`) }
@@ -77,12 +71,18 @@ export function createDocumentToolService(options: {
     ): Promise<AgentToolOutcome> {
       const tool = designTool(call.name)
       if (!tool || tool.mutates !== (effect === 'write')) {
-        throw new UnknownDocumentToolError(call.name)
+        throw new DocumentNotFoundError()
       }
       const access = await options.documents.access(actor.userId, documentId)
       if (effect === 'write' && !canEditDocument(access)) throw new DocumentForbiddenError()
       if (!options.callTool) return { ok: false, failure: 'editor_not_open' }
-      return options.callTool(documentId, actor.userId, { ...call, agent: await caller(actor) })
+      // Local MCP writes a `path` to disk itself; here it would only change what the tool answers.
+      const args = takesPath(tool) ? call.args : omit(call.args, ['path'])
+      return options.callTool(documentId, actor.userId, {
+        name: call.name,
+        args,
+        agent: await caller(actor)
+      })
     }
   }
 }

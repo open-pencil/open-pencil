@@ -1,16 +1,11 @@
-import {
-  CLOUD_DOCUMENT_TOOL_FAILURES,
-  cloudDocumentToolResultSchema,
-  type AgentToolCall,
-  type AgentToolOutcome
-} from '#cloud/contract'
+import type { AgentToolCall, AgentToolOutcome } from '#cloud/contract'
 import { scopesAllow } from '#cloud/server/tokens'
 import type { McpServer } from '@modelcontextprotocol/server'
 import * as v from 'valibot'
 
 import { DESIGN_TOOLS, type DesignTool } from './catalog'
-import { apiFailure, documentLink, type MCPCaller } from './context'
-import { apiError, designToolResult, errorResult } from './results'
+import { answering, documentLink, type MCPCaller } from './context'
+import { designToolResult, errorResult } from './results'
 import { jsonToolInput } from './schema'
 
 const PAGE_PROPERTY = {
@@ -56,8 +51,6 @@ function outcomeResult(tool: DesignTool, outcome: AgentToolOutcome, notOpen: str
   )
 }
 
-const failureSchema = v.picklist(CLOUD_DOCUMENT_TOOL_FAILURES)
-
 /**
  * Registers Core's design tools on Cloud documents, as far as the token's scopes go. The server
  * holds no editor: each call goes to an editor tab where the person who connected the app has the
@@ -75,25 +68,20 @@ export function registerDesignTools(server: McpServer, caller: MCPCaller) {
           `document:${tool.name}`,
           targetedSchema(tool, DOCUMENT_PROPERTIES, ['document_id'])
         ),
-        annotations: { readOnlyHint: !tool.mutates, openWorldHint: false }
+        annotations: { readOnlyHint: tool.readOnly, openWorldHint: false }
       },
       async (args) => {
         const { document_id: documentId, ...toolArgs } = args
         if (typeof documentId !== 'string') return errorResult('Name the document_id to work on.')
-        const { status, body } = await caller.api(
-          'POST',
-          `/api/documents/${documentId}/tools/${tool.mutates ? 'write' : 'read'}`,
-          { name: tool.name, args: toolArgs }
-        )
-        const answered = v.safeParse(cloudDocumentToolResultSchema, body)
-        if (status === 200 && answered.success) return designToolResult(answered.output.result)
-        const error = apiError(body)
-        const failure = v.safeParse(failureSchema, error?.code)
-        if (!failure.success) return apiFailure(status, body)
-        return outcomeResult(
-          tool,
-          { ok: false, failure: failure.output, message: error?.message },
-          `Design tools run in OpenPencil, in an editor where you have the document open, and none has it open now. Ask the person to open ${documentLink(caller, documentId)} and keep it open, then call again.`
+        return answering(async () =>
+          outcomeResult(
+            tool,
+            await caller.api.documentTools[tool.mutates ? 'write' : 'read']({
+              params: { documentId },
+              body: { name: tool.name, args: toolArgs }
+            }),
+            `Design tools run in OpenPencil, in an editor where you have the document open, and none has it open now. Ask the person to open ${documentLink(caller, documentId)} and keep it open, then call again.`
+          )
         )
       }
     )
@@ -114,7 +102,7 @@ export function registerPairedDesignTools(server: McpServer, run: RunPairedTool)
       {
         description: tool.description,
         inputSchema: jsonToolInput(`tab:${tool.name}`, targetedSchema(tool, PAGE_PROPERTY, [])),
-        annotations: { readOnlyHint: !tool.mutates, openWorldHint: false }
+        annotations: { readOnlyHint: tool.readOnly, openWorldHint: false }
       },
       async (args) =>
         outcomeResult(

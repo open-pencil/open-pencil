@@ -1,11 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import { saveDocument, THUMBNAIL_PNG } from '#cloud-tests/helpers/save'
 import { fetchCommunityExample, fetchCommunityTour } from '#cloud/client'
-import { communityDocumentsSchema, communityDownloadSchema } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
   createCloudApp,
@@ -15,7 +14,6 @@ import {
 } from '#cloud/server'
 import { unzipSync } from 'fflate'
 import { testClient } from 'hono/testing'
-import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -30,10 +28,6 @@ const config = parseCloudServerConfig({
 })
 
 const alice: CloudActor = { userId: 'alice', email: 'alice@example.com', name: 'Alice' }
-const documentSchema = v.object({
-  document: v.object({ id: v.string(), currentRevisionId: v.nullable(v.string()) })
-})
-const idSchema = v.object({ id: v.string() })
 
 /** Every gallery's database, closed after its test. */
 const opened: { close(): Promise<void> }[] = []
@@ -57,40 +51,29 @@ async function gallery() {
       objects: objects.store,
       resolveSession: async () => (signedIn ? alice : null)
     })
-  const owner = testClient(app(config, true))
+  const ownerApp = app(config, true)
+  const ownerAPI = contractClient(ownerApp)
 
   async function workspace(name: string) {
-    const created = await responseJSON(
-      await owner.api.workspaces.$post({ json: { name } }),
-      v.object({ workspace: idSchema })
-    )
+    const created = await ownerAPI.workspaces.create({ body: { name } })
     return created.workspace.id
   }
   async function document(workspaceId: string, name: string) {
-    const created = await responseJSON(
-      await owner.api.workspaces[':workspaceId'].documents.$post({
-        param: { workspaceId },
-        json: { name }
-      }),
-      documentSchema
-    )
+    const created = await ownerAPI.documents.create({ params: { workspaceId }, body: { name } })
     return created.document.id
   }
   const save = (documentId: string, baseRevisionId: string | null, label: string) =>
     saveDocument(
-      { client: owner, database: runtime.database, objects: objects.store },
+      { api: ownerAPI, database: runtime.database, objects: objects.store },
       documentId,
       baseRevisionId,
       label
     )
   async function nameVersion(documentId: string, name: string, description = '') {
-    const named = await responseJSON(
-      await owner.api.documents[':documentId'].versions.$post({
-        param: { documentId },
-        json: { name, description }
-      }),
-      v.object({ version: idSchema })
-    )
+    const named = await ownerAPI.versions.save({
+      params: { documentId },
+      body: { name, description }
+    })
     return named.version.id
   }
 
@@ -99,19 +82,20 @@ async function gallery() {
   const community = app({ ...config, community: { workspaceId: communityId } }, false)
   return {
     runtime,
-    owner,
+    ownerAPI,
     workspace: { community: communityId, studio: studioId },
     document,
     save,
     nameVersion,
     objects,
     visitor: testClient(community),
+    visitorAPI: contractClient(community),
     /** A request to the gallery's server as a page sends it, headers and all. */
     request: (path: string, init?: RequestInit) => community.request(path, init),
     /** The gallery's server, naming `tour` as the tour editors open. */
     withTour: (tour: string) =>
       app({ ...config, community: { workspaceId: communityId, tourDocumentId: tour } }, false),
-    withoutGallery: testClient(app(config, false))
+    withoutGalleryAPI: contractClient(app(config, false))
   }
 }
 
@@ -126,7 +110,7 @@ describe('community gallery', () => {
     await server.document(server.workspace.community, 'Draft')
     const trashed = await server.document(server.workspace.community, 'Old')
     await server.save(trashed, null, 'old')
-    await server.owner.api.documents[':documentId'].$delete({ param: { documentId: trashed } })
+    await server.ownerAPI.documents.remove({ params: { documentId: trashed } })
     const removed = await server.document(server.workspace.community, 'Removed')
     await server.save(removed, null, 'removed')
     await server.runtime.database
@@ -155,10 +139,7 @@ describe('community gallery', () => {
       .where('id', '=', spam)
       .execute()
 
-    const listed = await responseJSON(
-      await server.visitor.api.community.$get(),
-      communityDocumentsSchema
-    )
+    const listed = (await server.visitorAPI.community.list()).body
 
     expect(listed.documents).toEqual([
       {
@@ -181,14 +162,11 @@ describe('community gallery', () => {
       }
     ])
     expect(
-      (
-        await server.visitor.api.community[':documentId'].document.$get({
-          param: { documentId: spam },
-          query: {}
-        })
-      ).status
-    ).toBe(404)
-    expect((await server.withoutGallery.api.community.$get()).status).toBe(404)
+      await outcome(
+        server.visitorAPI.community.document({ params: { documentId: spam }, query: {} })
+      )
+    ).toMatchObject({ status: 404 })
+    expect(await outcome(server.withoutGalleryAPI.community.list())).toMatchObject({ status: 404 })
   })
 
   test('opens a document as it is now or as a named version, and nothing outside it', async () => {
@@ -200,56 +178,47 @@ describe('community gallery', () => {
     const secret = await server.document(server.workspace.studio, 'Secret')
     await server.save(secret, null, 'secret')
 
-    const latest = await responseJSON(
-      await server.visitor.api.community[':documentId'].document.$get({
-        param: { documentId: tour },
-        query: {}
-      }),
-      communityDownloadSchema
-    )
+    const latest = await server.visitorAPI.community.document({
+      params: { documentId: tour },
+      query: {}
+    })
     expect(latest.document.revisionId).toBe(current)
     expect(latest.version).toBeNull()
 
-    const named = await responseJSON(
-      await server.visitor.api.community[':documentId'].document.$get({
-        param: { documentId: tour },
-        query: { version: release }
-      }),
-      communityDownloadSchema
-    )
+    const named = await server.visitorAPI.community.document({
+      params: { documentId: tour },
+      query: { version: release }
+    })
     expect(named.document.revisionId).toBe(first)
     expect(named.version).toMatchObject({ id: release, name: '0.17.0', description: null })
 
     // A checkpoint is not a published version; a private document does not exist here.
     const unnamed = await server.nameVersion(tour, 'Draft')
-    await server.owner.api.documents[':documentId'].versions[':versionId'].$patch({
-      param: { documentId: tour, versionId: unnamed },
-      json: { name: null }
+    await server.ownerAPI.versions.update({
+      params: { documentId: tour, versionId: unnamed },
+      body: { name: null }
     })
     expect(
-      (
-        await server.visitor.api.community[':documentId'].document.$get({
-          param: { documentId: tour },
+      await outcome(
+        server.visitorAPI.community.document({
+          params: { documentId: tour },
           query: { version: unnamed }
         })
-      ).status
-    ).toBe(404)
+      )
+    ).toMatchObject({ status: 404 })
     expect(
-      (
-        await server.visitor.api.community[':documentId'].document.$get({
-          param: { documentId: secret },
-          query: {}
-        })
-      ).status
-    ).toBe(404)
+      await outcome(
+        server.visitorAPI.community.document({ params: { documentId: secret }, query: {} })
+      )
+    ).toMatchObject({ status: 404 })
     expect(
-      (
-        await server.visitor.api.community[':documentId'].images.$post({
-          param: { documentId: secret },
-          json: { checksums: [`${'A'.repeat(43)}=`] }
+      await outcome(
+        server.visitorAPI.community.imageLinks({
+          params: { documentId: secret },
+          body: { checksums: [`${'A'.repeat(43)}=`] }
         })
-      ).status
-    ).toBe(404)
+      )
+    ).toMatchObject({ status: 404 })
   })
 
   test('serves a gallery document’s stored parts to any page, and nothing else in storage', async () => {
@@ -261,19 +230,11 @@ describe('community gallery', () => {
     const secret = await server.document(server.workspace.studio, 'Secret')
     await server.save(secret, null, 'secret')
     const checksumOf = async (documentId: string) =>
-      (
-        await responseJSON(
-          await server.owner.api.documents[':documentId'].$get({ param: { documentId } }),
-          v.object({ document: v.object({ checksum: v.string() }) })
-        )
-      ).document.checksum
-    const named = await responseJSON(
-      await server.visitor.api.community[':documentId'].document.$get({
-        param: { documentId: tour },
-        query: { version: release }
-      }),
-      communityDownloadSchema
-    )
+      (await server.ownerAPI.documents.download({ params: { documentId } })).document.checksum
+    const named = await server.visitorAPI.community.document({
+      params: { documentId: tour },
+      query: { version: release }
+    })
     const current = await checksumOf(tour)
     const object = (documentId: string, checksum: string, version?: string) =>
       server.request(

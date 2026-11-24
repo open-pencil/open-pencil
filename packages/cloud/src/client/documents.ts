@@ -1,170 +1,74 @@
-import {
-  cloudUserProfileSchema,
-  documentAccessSchema,
-  documentDownloadSchema,
-  objectUploadSchema,
-  documentSummarySchema,
-  sharedDocumentSchema,
-  trashSchema,
-  type CloudUserProfile,
-  type CollaborationTicket,
-  type CommitUploadRequest,
-  type CreateDocumentRequest,
-  type CreateUploadInput,
-  type DocumentAccess,
-  type DocumentDownload,
-  type DocumentSummary,
-  type SharedDocument,
-  type TrashedDocument
+import type {
+  CloudUserProfile,
+  CollaborationTicket,
+  CommitUploadRequest,
+  CreateDocumentRequest,
+  CreateUploadInput,
+  DocumentAccess,
+  DocumentDownload,
+  DocumentSummary,
+  SharedDocument,
+  TrashedDocument
 } from '#cloud/contract'
-import type { CloudAPI } from '#cloud/server/api'
-import type { hc } from 'hono/client'
-import * as v from 'valibot'
 
-import { parseResponse, responseBody, type CloudClientDiagnostic } from './response'
-import { collaborationTicketResponseSchema, documentResponseSchema } from './schema'
+import type { CloudContractClient } from './contract'
 
-const documentsResponseSchema = v.object({ documents: v.array(documentSummarySchema) })
-const sharedDocumentsResponseSchema = v.object({ documents: v.array(sharedDocumentSchema) })
-const downloadResponseSchema = v.object({ document: documentDownloadSchema })
-const accessResponseSchema = v.object({ access: documentAccessSchema })
-const summaryResponseSchema = v.object({ document: documentSummarySchema })
-const userLookupResponseSchema = v.object({ user: v.nullable(cloudUserProfileSchema) })
-const uploadResponseSchema = v.object({
-  id: v.pipe(v.string(), v.uuid()),
-  upload: objectUploadSchema
-})
-
-export type CloudUpload = v.InferOutput<typeof uploadResponseSchema>
+export type CloudUpload = Awaited<ReturnType<CloudContractClient['documents']['createUpload']>>
 
 /** Documents: listing and creating them, Trash, downloads, uploads, and collaboration tickets. */
 export function createDocumentRequests(
-  client: ReturnType<typeof hc<CloudAPI>>,
-  onDiagnostic?: CloudClientDiagnostic
+  contract: CloudContractClient['documents'],
+  sharing: CloudContractClient['sharing']
 ) {
   return {
     async getUserProfile(documentId: string, userId: string): Promise<CloudUserProfile | null> {
-      const response = await parseResponse(
-        client.documents[':documentId'].users[':userId'].$get({
-          param: { documentId, userId }
-        }),
-        userLookupResponseSchema,
-        onDiagnostic
-      )
-      return response.user
+      return (await sharing.userProfile({ params: { documentId, userId } })).user
     },
     /** Documents shared with the person directly, outside their workspaces. */
     async listSharedDocuments(): Promise<SharedDocument[]> {
-      const response = await parseResponse(
-        client['shared-documents'].$get(),
-        sharedDocumentsResponseSchema,
-        onDiagnostic
-      )
-      return response.documents
+      return (await contract.listShared()).documents
     },
     async listDocuments(workspaceId: string): Promise<DocumentSummary[]> {
-      const response = await parseResponse(
-        client.workspaces[':workspaceId'].documents.$get({
-          param: { workspaceId }
-        }),
-        documentsResponseSchema,
-        onDiagnostic
-      )
-      return response.documents
+      return (await contract.list({ params: { workspaceId } })).documents
     },
     async createDocument(
       workspaceId: string,
       input: CreateDocumentRequest
     ): Promise<DocumentSummary> {
-      const response = await parseResponse(
-        client.workspaces[':workspaceId'].documents.$post({
-          param: { workspaceId },
-          json: { ...input, kind: input.kind ?? 'design' }
-        }),
-        documentResponseSchema,
-        onDiagnostic
-      )
-      return response.document
+      return (await contract.create({ params: { workspaceId }, body: input })).document
     },
     /** Documents in Trash the person may restore, across their workspaces, newest first. */
     async listTrash(): Promise<TrashedDocument[]> {
-      const response = await parseResponse(client.trash.$get(), trashSchema, onDiagnostic)
-      return response.documents
+      return (await contract.listTrash()).documents
     },
     async restoreDocument(documentId: string): Promise<void> {
-      await responseBody(
-        await client.trash[':documentId'].restore.$post({ param: { documentId } }),
-        onDiagnostic
-      )
+      await contract.restore({ params: { documentId } })
     },
     /** Deletes a document in Trash for good. */
     async purgeDocument(documentId: string): Promise<void> {
-      await responseBody(
-        await client.trash[':documentId'].$delete({ param: { documentId } }),
-        onDiagnostic
-      )
+      await contract.purge({ params: { documentId } })
     },
     async deleteDocument(documentId: string): Promise<void> {
-      await responseBody(
-        await client.documents[':documentId'].$delete({ param: { documentId } }),
-        onDiagnostic
-      )
+      await contract.remove({ params: { documentId } })
     },
     async getDocument(documentId: string): Promise<DocumentDownload> {
-      const response = await parseResponse(
-        client.documents[':documentId'].$get({ param: { documentId } }),
-        downloadResponseSchema,
-        onDiagnostic
-      )
-      return response.document
+      return (await contract.download({ params: { documentId } })).document
     },
     /** What a document is, without its file; one nobody has saved yet has no revision. */
     async getDocumentSummary(documentId: string): Promise<DocumentSummary> {
-      const response = await parseResponse(
-        client.documents[':documentId'].summary.$get({ param: { documentId } }),
-        summaryResponseSchema,
-        onDiagnostic
-      )
-      return response.document
+      return (await contract.summary({ params: { documentId } })).document
     },
     async getDocumentAccess(documentId: string): Promise<DocumentAccess> {
-      const response = await parseResponse(
-        client.documents[':documentId'].access.$get({ param: { documentId } }),
-        accessResponseSchema,
-        onDiagnostic
-      )
-      return response.access
+      return (await contract.access({ params: { documentId } })).access
     },
     async getCollaborationTicket(documentId: string): Promise<CollaborationTicket> {
-      const response = await parseResponse(
-        client.documents[':documentId']['collaboration-ticket'].$post({
-          param: { documentId }
-        }),
-        collaborationTicketResponseSchema,
-        onDiagnostic
-      )
-      return response.ticket
+      return (await sharing.collaborationTicket({ params: { documentId } })).ticket
     },
     async createUpload(documentId: string, input: CreateUploadInput): Promise<CloudUpload> {
-      return parseResponse(
-        client.documents[':documentId'].uploads.$post({
-          param: { documentId },
-          json: input
-        }),
-        uploadResponseSchema,
-        onDiagnostic
-      )
+      return contract.createUpload({ params: { documentId }, body: input })
     },
     async commitUpload(uploadId: string, input: CommitUploadRequest): Promise<DocumentSummary> {
-      const response = await parseResponse(
-        client.uploads[':uploadId'].commit.$post({
-          param: { uploadId },
-          json: { ...input, images: input.images ?? [] }
-        }),
-        documentResponseSchema,
-        onDiagnostic
-      )
-      return response.document
+      return (await contract.commitUpload({ params: { uploadId }, body: input })).document
     }
   }
 }

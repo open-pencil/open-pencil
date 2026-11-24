@@ -1,6 +1,4 @@
 import {
-  accountEntitlementsResponseSchema,
-  billingTokenSchema,
   cloudAccessTokenCreatedResponseSchema,
   cloudAccessTokensResponseSchema,
   cloudAccountDeletionResponseSchema,
@@ -20,50 +18,43 @@ import {
   cloudProfileResponseSchema,
   cloudSignInsResponseSchema,
   cloudSocialLinkResponseSchema,
-  notificationSettingsSchema,
   type CloudAccessTokenCreate,
   type CloudOAuthDecision,
   type CloudSocialProvider,
   type NotificationSettings
 } from '#cloud/contract'
 
-import type { CloudCall, PortalRouteClients } from './request'
+import type { CloudCall, CloudContractCall, PortalRouteClients } from './request'
 
 export function createAccountAPI(
   call: CloudCall,
-  { account, tokens, apps, api }: PortalRouteClients
+  callContract: CloudContractCall,
+  { account, tokens, apps, contract }: PortalRouteClients
 ) {
   return {
     /** Which comments the account hears about by email. */
     notificationSettings(signal?: AbortSignal) {
-      return call(
-        (options) => api.account.notifications.$get(undefined, options),
-        notificationSettingsSchema,
+      return callContract(
+        (options) => contract.comments.notificationSettings(undefined, options),
         signal
       )
     },
     setNotificationSettings(settings: NotificationSettings, signal?: AbortSignal) {
-      return call(
-        (options) => api.account.notifications.$put({ json: settings }, options),
-        notificationSettingsSchema,
+      return callContract(
+        (options) => contract.comments.setNotificationSettings({ body: settings }, options),
         signal
       )
     },
     /** The account's plan, and the storage its workspaces hold together. */
     entitlements(signal?: AbortSignal) {
-      return call(
-        (options) => api.account.entitlements.$get(undefined, options),
-        accountEntitlementsResponseSchema,
+      return callContract(
+        (options) => contract.session.accountEntitlements(undefined, options),
         signal
       )
     },
     /** A short-lived token for the deployment's billing, for this account. */
     billingToken(signal?: AbortSignal) {
-      return call(
-        (options) => api.billing.token.$post(undefined, options),
-        billingTokenSchema,
-        signal
-      )
+      return callContract((options) => contract.session.billingToken(undefined, options), signal)
     },
     accountStatus(signal?: AbortSignal) {
       return call(

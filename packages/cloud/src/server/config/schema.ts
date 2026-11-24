@@ -2,9 +2,9 @@ import {
   CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
   cloudEditorVersionSchema,
   RELAY_MINIMUM_MESSAGE_BYTES,
-  sendsTokenSafely
+  sendsTokenSafely,
+  staticEntitlementsSchema
 } from '#cloud/contract'
-import { staticEntitlementsSchema } from '#cloud/server/policy/schema'
 import * as v from 'valibot'
 
 import {

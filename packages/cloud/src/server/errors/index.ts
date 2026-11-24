@@ -1,3 +1,4 @@
+import { uuidParamSchema } from '#cloud/contract'
 import type { ErrorReportContext, ErrorReporter } from '#cloud/errors'
 import { loggedError, writeJSONLine, type CloudLogWriter } from '#cloud/server/logging'
 import type { Context, ErrorHandler } from 'hono'
@@ -90,6 +91,28 @@ const RECORD_PARAMETERS = [
 
 const validatedParametersSchema = v.record(v.string(), v.unknown())
 
+/** A route a request reached that Hono's router did not, such as a contract's, as reports name it. */
+type NamedRoute = { route: string; resources: Record<string, string> }
+const namedRoutes = new WeakMap<Context, NamedRoute>()
+
+/**
+ * Names the contract route a request reached for its error report: `route` as its pattern, and the
+ * record IDs among `parameters` that are UUIDs, since nothing validated the path for Hono.
+ */
+export function nameContractRoute(
+  context: Context,
+  route: string,
+  parameters: Partial<Record<string, string>>
+): void {
+  const resources = Object.fromEntries(
+    RECORD_PARAMETERS.flatMap((name) => {
+      const id = v.safeParse(uuidParamSchema, parameters[name])
+      return id.success ? [[name, id.output]] : []
+    })
+  )
+  namedRoutes.set(context, { route, resources })
+}
+
 /**
  * The record IDs the request's path named, as its route's parameter validator accepted them: a
  * path no validator checked names none, so what a caller typed never reaches a report.
@@ -108,7 +131,8 @@ function requestResources(context: Context): Record<string, string> {
 function requestContext(context: Context): CloudErrorContext {
   const requestId: unknown = context.get('requestId')
   const actor: unknown = context.get('actor')
-  const resources = requestResources(context)
+  const named = namedRoutes.get(context)
+  const resources = named?.resources ?? requestResources(context)
   const userId =
     actor && typeof actor === 'object' && 'userId' in actor && typeof actor.userId === 'string'
       ? actor.userId
@@ -116,7 +140,7 @@ function requestContext(context: Context): CloudErrorContext {
   return {
     source: 'request',
     method: context.req.method,
-    route: routePath(context),
+    route: named?.route ?? routePath(context),
     ...(Object.keys(resources).length > 0 && { resources }),
     ...(typeof requestId === 'string' && { requestId }),
     ...(userId && { userId })

@@ -48,20 +48,22 @@ export const cloudDocumentToolCallSchema = v.object({
 })
 export type CloudDocumentToolCall = v.InferOutput<typeof cloudDocumentToolCallSchema>
 
-/** What a tool answered, as the document API returns it. */
-export const cloudDocumentToolResultSchema = v.object({ result: v.unknown() })
-
 /**
  * Why a call got no answer: nobody who may run it has the document open, the editor that took it
  * failed it or left, or it took too long.
  */
-export const CLOUD_DOCUMENT_TOOL_FAILURES = ['editor_not_open', 'tool_failed', 'timeout'] as const
-export type CloudDocumentToolFailure = (typeof CLOUD_DOCUMENT_TOOL_FAILURES)[number]
+const agentToolFailureSchema = v.picklist(['editor_not_open', 'tool_failed', 'timeout'])
 
-/** What the relay hands back for a call it carried to an editor, or why it could not. */
-export type AgentToolOutcome =
-  | { ok: true; result: unknown }
-  | { ok: false; failure: CloudDocumentToolFailure; message?: string }
+/** What came of a call carried to an editor: what the tool answered, or why there is no answer. */
+export const agentToolOutcomeSchema = v.variant('ok', [
+  v.object({ ok: v.literal(true), result: v.unknown() }),
+  v.object({
+    ok: v.literal(false),
+    failure: agentToolFailureSchema,
+    message: v.optional(v.string())
+  })
+])
+export type AgentToolOutcome = v.InferOutput<typeof agentToolOutcomeSchema>
 
 const callIdSchema = v.pipe(v.string(), v.uuid())
 
@@ -100,7 +102,12 @@ const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
 export function encodeAgentToolMessage(message: AgentToolMessage): Uint8Array {
-  return encoder.encode(JSON.stringify(message))
+  // A tool that answers nothing still answers: JSON drops an undefined result.
+  const sent =
+    message.type === 'result' && message.ok
+      ? { ...message, result: message.result ?? null }
+      : message
+  return encoder.encode(JSON.stringify(sent))
 }
 
 /** The message a room payload carries, or null when it is not one. */

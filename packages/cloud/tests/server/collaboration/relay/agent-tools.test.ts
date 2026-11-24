@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import {
   joinTestRelay,
+  relayTicket,
   startTestRelay,
   until,
   user,
@@ -148,6 +149,24 @@ describe('agent tools through the relay', () => {
     const handed = await nextCall(editor)
     expect(await outcome).toEqual({ ok: false, failure: 'timeout' })
     expect(heard(editor)).toContainEqual({ type: 'cancel', id: handed.id })
+    await hub.close()
+  })
+
+  test('passes over an editor whose refreshed ticket only lets it view', async () => {
+    const { relay: hub } = startTestRelay()
+    const editor = await hosting(hub)
+    const lowered = await hosting(hub)
+    lowered.send({
+      type: 'auth',
+      token: await relayTicket({ documentId, permission: 'view', principal: alice })
+    })
+    await new Promise((resolve) => {
+      setTimeout(resolve, 20)
+    })
+    const outcome = hub.callTool(documentId, 'alice', call)
+    const handed = await nextCall(editor)
+    say(editor, { type: 'result', id: handed.id, ok: true, result: undefined })
+    expect(await outcome).toEqual({ ok: true, result: null })
     await hub.close()
   })
 })

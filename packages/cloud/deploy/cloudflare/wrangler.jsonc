@@ -7,7 +7,7 @@
   "name": "openpencil-cloud",
   "main": "worker.ts",
   "compatibility_date": "2026-10-01",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   // The deployment TOML is bundled as text and parsed when the Worker starts.
   "rules": [{ "type": "Text", "globs": ["**/*.toml"], "fallthrough": false }],
   "observability": { "enabled": true },

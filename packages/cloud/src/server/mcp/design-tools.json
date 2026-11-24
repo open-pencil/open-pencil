@@ -3,6 +3,7 @@
     "name": "get_selection",
     "description": "Get the selected nodes: the place to start when the user points at layers. Returns each selected node with its direct children by default; children past the depth are counted as childCount. Use get_node or describe for deeper branches.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -18,6 +19,7 @@
     "name": "get_node",
     "description": "Get detailed properties of a node by ID. Use depth to limit child recursion (0 = node only, 1 = direct children, etc). Default: unlimited.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -38,6 +40,7 @@
     "name": "find_nodes",
     "description": "Find nodes by name pattern and/or type.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -70,16 +73,12 @@
     "name": "get_jsx",
     "description": "Get JSX representation of a node and its children. Compact round-trip format — same syntax as the render tool. JSX longer than 12000 characters is outlined: layers below the depth that fits are written with keepChildren and a comment naming their id, to read with get_jsx; render the JSX with replace_id on this node and those layers keep their children.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string"
-        },
-        "path": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Write the complete JSX to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)"
         }
       },
       "required": [
@@ -91,6 +90,7 @@
     "name": "render",
     "description": "Render JSX to design nodes. Draw a shape of your own as one layer with <Vector d=\"M2 12 L22 12\" stroke=\"#000\" />, styled like any layer; inline <svg> is for artwork copied from elsewhere and draws its shapes, without its text. Use replace_id to replace a placeholder while preserving its position, or to edit a layer in place from its get_jsx: it keeps its id, and layers written with keepChildren keep their children.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -132,6 +132,7 @@
     "name": "update_node",
     "description": "Update properties of an existing node: position, size, rotation, opacity, corner radius, visibility, lock, name, text, font.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -236,6 +237,7 @@
     "name": "set_layout",
     "description": "Set auto-layout (flexbox) on a frame. Direction, alignment, spacing, padding.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -314,6 +316,7 @@
     "name": "set_layout_child",
     "description": "Configure auto-layout child: sizing (FIXED/HUG/FILL), grow, alignment, absolute positioning.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -375,6 +378,7 @@
     "name": "set_radius",
     "description": "Set corner radius. Use individual corners for independent values.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -421,6 +425,7 @@
     "name": "set_fill",
     "description": "Set fill on a node. Solid: color=\"#ff0000\". Linear gradient: gradient=\"top-bottom\" or \"left-right\" with color (start) and color_end (end).",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -456,6 +461,7 @@
     "name": "set_stroke",
     "description": "Set the stroke (border) of a node.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -493,6 +499,7 @@
     "name": "set_text",
     "description": "Set text content of a text node. With markdown, the text is Markdown: # and ## headings, **bold**, *italic*, ~~strike~~, `code`, [links](url), lists, and > quotes become styled ranges and paragraphs over the text's own style.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -518,6 +525,7 @@
     "name": "set_text_properties",
     "description": "Set text layout properties: alignment, auto-resize, text case, decoration, truncation.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -582,6 +590,7 @@
     "name": "delete_nodes",
     "description": "Delete nodes by ID. Nothing is deleted unless every node exists.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -603,6 +612,7 @@
     "name": "reparent_node",
     "description": "Move a node into a different parent.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -625,6 +635,7 @@
     "name": "batch_update",
     "description": "Execute multiple modifications in one call, all or nothing: if any operation names a missing node or an invalid prop, nothing changes. Each operation is {id, props} where props can include: spacing, padding, padding_horizontal, padding_vertical, align, counter_align, sizing_horizontal, sizing_vertical, grow, name, visible, corner_radius, opacity, auto_resize, direction. Runs all updates with one layout recompute.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -642,6 +653,7 @@
     "name": "search_stock_photos",
     "description": "Search stock photos and apply to leaf image placeholders or closed area geometry. Pass a JSON array; each item is {id, query, index?, orientation?}. Containers with content, text, lines, and structural nodes are rejected.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -656,34 +668,10 @@
     }
   },
   {
-    "name": "search_web",
-    "description": "Search the web for current facts, references, examples, or real copy a design needs. Returns pages with their title, URL, date, author, and an excerpt. Each search costs money, so search only for what the conversation and document do not already answer.",
-    "mutates": false,
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "query": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 1000,
-          "description": "What to look for, in natural language, up to 1000 characters"
-        },
-        "numResults": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 10,
-          "description": "Pages to return, up to 10; 5 by default"
-        }
-      },
-      "required": [
-        "query"
-      ]
-    }
-  },
-  {
     "name": "describe",
     "description": "Semantic description of one or more nodes. Pass `id` for a single node, or `ids` for multiple nodes in one call. Omit depth for auto — adapts to subtree size (small block → deeper, large page → shallower).",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -714,6 +702,7 @@
     "name": "diff_nodes",
     "description": "Patch that turns one node tree into another, as JSX attribute changes per node plus moved, added, and removed children. Children are matched by name. Apply it to the first tree with apply_patch.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -741,6 +730,7 @@
     "name": "diff_pixels",
     "description": "Pixel diff between two rendered nodes. Returns a PNG with changed pixels in red over a faded copy of the source, the changed pixel ratio, and the changed region in source-node coordinates. Use it to confirm an edit only touched the intended area.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -784,6 +774,7 @@
     "name": "zoom_to_fit",
     "description": "Scroll and zoom the view so the given layers fit in it, zooming in no further than 100%. The layers must be on the current page.",
     "mutates": false,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -805,6 +796,7 @@
     "name": "get_page_tree",
     "description": "Get the node tree of the current page. Returns lightweight hierarchy: id, type, name, size, and text for TEXT nodes. Use depth, root_id, or node_types to keep large pages small. Use get_node for full properties of a specific node.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -832,6 +824,7 @@
     "name": "get_current_page",
     "description": "Get the current page name and ID.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {}
@@ -841,6 +834,7 @@
     "name": "list_pages",
     "description": "List all pages in the document.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {}
@@ -850,6 +844,7 @@
     "name": "set_selection",
     "description": "Select one or more nodes by ID.",
     "mutates": false,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -871,6 +866,7 @@
     "name": "query_nodes",
     "description": "Query nodes using XPath selectors. Returns id, name, and type, plus text for TEXT nodes. Node types are element names (FRAME, TEXT, RECTANGLE, ELLIPSE, etc.). Attributes: id, name, width, height, x, y, visible, opacity, cornerRadius, fontSize, fontFamily, fontWeight, layoutMode, itemSpacing, paddingTop/Right/Bottom/Left, strokeWeight, rotation, locked, blendMode, text, lineHeight, letterSpacing.\n\nExamples:\n//FRAME[@width < 300] — frames narrower than 300px\n//COMPONENT[starts-with(@name, 'Button')] — components starting with \"Button\"\n//SECTION//TEXT — all text nodes inside sections\n//TEXT[contains(@text, 'Hello')] — text nodes containing \"Hello\"\n//*[@id='1:2']//TEXT[not(ancestor-or-self::*[@visible='false'])] — visible text inside a frame, in layer order",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -896,6 +892,7 @@
     "name": "list_components",
     "description": "List reusable components from the document and enabled component libraries, optionally filtered by name.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -926,18 +923,10 @@
     }
   },
   {
-    "name": "list_libraries",
-    "description": "List available published component libraries.",
-    "mutates": false,
-    "inputSchema": {
-      "type": "object",
-      "properties": {}
-    }
-  },
-  {
     "name": "insert_library_component",
     "description": "Insert a reusable component from an enabled library by stable library and asset identity.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -980,6 +969,7 @@
     "name": "switch_page",
     "description": "Switch to a different page by name or ID.",
     "mutates": false,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -997,6 +987,7 @@
     "name": "get_bounds",
     "description": "Get a node's absolute bounding box, or without an ID the box around everything on the current page.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1011,6 +1002,7 @@
     "name": "list_comments",
     "description": "Read the comments people left on the canvas, oldest first: each thread with its text, author, page, the layer it is pinned to, its position, replies, and whether it is resolved. Open threads only unless includeResolved is set. Use it to find review feedback to act on, then reply_to_comment and resolve_comment.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1033,6 +1025,7 @@
     "name": "add_comment",
     "description": "Leave a comment on the canvas, as a person does with the Comment tool: pinned on a layer by ID, which it then follows, or at x, y on a page. Text may use Markdown: **bold**, *italic*, ~~strikethrough~~, [links](https://…), and - or 1. lists.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1071,6 +1064,7 @@
     "name": "reply_to_comment",
     "description": "Answer a comment thread by ID from list_comments, for example to say what you changed. A reply reopens a resolved thread. Text may use Markdown, as in add_comment.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1098,6 +1092,7 @@
     "name": "resolve_comment",
     "description": "Mark a comment thread by ID as resolved once its feedback is addressed, which hides it from the canvas and the open list; pass resolved: false to reopen it.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1119,6 +1114,7 @@
     "name": "list_statuses",
     "description": "Read the document’s statuses, such as Draft, In review or Ready for dev, and the layers that show one: sections, frames, components and instances, with their page. Use it to find what is ready to build or still in review, and set_status to change one.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1133,6 +1129,7 @@
     "name": "set_status",
     "description": "Give a section, frame, component or instance one of the document’s statuses by name, as list_statuses lists them, or clear its status with null. Only layers directly on a page or in a section take one.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1162,6 +1159,7 @@
     "name": "get_font_status",
     "description": "Report whether fonts used on the current page are faithfully available. Returns requested faces, their loaded source, active substitutions, why an installed face could not be loaded, and affected nodes.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1176,6 +1174,7 @@
     "name": "list_available_fonts",
     "description": "List font families the host can render: installed, bundled, and online families. Use this to discover what fonts are available to set on a text node — distinct from get_font_status, which reports the faces used on the page.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1190,6 +1189,7 @@
     "name": "create_shape",
     "description": "Create a shape on the canvas. Use FRAME for containers/cards, RECTANGLE for solid blocks, ELLIPSE for circles, TEXT for labels, LINE for rules and dividers, STAR for starbursts and badges, POLYGON for triangles and regular polygons, and SECTION for page sections. Use create_vector with an SVG path for arbitrary shapes.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1253,6 +1253,7 @@
     "name": "search_icons",
     "description": "Search Iconify for icons by keyword. Accepts multiple queries — all searched in parallel. Returns results keyed by query.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1284,6 +1285,7 @@
     "name": "insert_icon",
     "description": "Insert one or more vector icons onto the canvas. Pass a single name or multiple names to batch-insert into the same parent. If already cached by get_icons — instant, no network request.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1337,6 +1339,7 @@
     "name": "get_icons",
     "description": "Pre-fetch icons from Iconify into cache. Batches by prefix (one HTTP request per set). Call this once with all needed icons, then use insert_icon to place them instantly. Popular sets: lucide (outline), mdi (filled), heroicons, tabler, solar, mingcute, ri (remix).",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1364,6 +1367,7 @@
     "name": "combine_as_variants",
     "description": "Combine components sharing a parent into a component set (variant set). Components named as Figma names variants, \"State=On, Size=Large\", get those variant properties; names like \"Button/Primary\" derive a Variant property from the segments after the first slash.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1385,6 +1389,7 @@
     "name": "create_instance",
     "description": "Create an instance of a component.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1410,6 +1415,7 @@
     "name": "expose_instance_swap",
     "description": "Expose nested instances as an instance-swap slot on their component.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1444,6 +1450,7 @@
     "name": "create_slot",
     "description": "Make a frame inside a main component a slot, as Create slot does: instances can then hold their own content in it, and a behaviour can bind it as a part. Returns the slot name.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1461,6 +1468,7 @@
     "name": "get_behaviour",
     "description": "Read the behaviour of a main component, component set, or variant by property and slot names, with the required values and parts still missing. Without an ID, list every behaviour kind with the values and parts it binds.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1475,6 +1483,7 @@
     "name": "set_behaviour",
     "description": "Make a main component or set behave as a Reka UI control in preview and code, by its own property and slot names: e.g. { kind: \"switch\", values: { value: \"State\" }, parts: { thumb: \"Thumb\" }, states: \"Interaction\" }. On/off variant values are guessed from names like On and Off unless given as { property, on, off }. null removes it. Returns the behaviour and what it still misses; get_behaviour lists every kind.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1628,6 +1637,7 @@
     "name": "create_page",
     "description": "Create a new page.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1645,6 +1655,7 @@
     "name": "create_vector",
     "description": "Create a vector node from SVG path data or a VectorNetwork.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1697,6 +1708,7 @@
     "name": "create_slice",
     "description": "Create a slice (export region) on the canvas.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1745,6 +1757,7 @@
     "name": "create_connector",
     "description": "Create a FigJam-style connector between two layers, or from or to a point on the page; it follows the layers it joins and is deleted with them. Give each end a node id (and optionally a magnet), or x/y for a free end.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1864,6 +1877,7 @@
     "name": "import_svg",
     "description": "Import SVG markup as editable layers, as pasting it into Figma does: a frame (a group without width, height, or viewBox) with a group per <g>, a vector per shape, a text per <text>, named by id, and mask groups for clipping. Supports shapes, <tspan> styles, inherited attributes, opacity, transforms, gradients, clip paths, and internal <use>.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1901,6 +1915,7 @@
     "name": "import_mermaid",
     "description": "Import a Mermaid flowchart (`flowchart` or `graph`) as FigJam layers laid out without overlaps: nodes as shapes with text, subgraphs as sections, edges as elbowed connectors with their arrowheads, line style, and label. classDef, class, and style colours carry over. Without x and y it goes to the right of what the parent holds. Returns the layer id of every node, subgraph, and edge by Mermaid id.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1930,6 +1945,7 @@
     "name": "set_effects",
     "description": "Set effects on a node (drop shadow, inner shadow, blur). Pass an array or a single effect.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1982,6 +1998,7 @@
     "name": "set_font",
     "description": "Set font properties of a text node.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2024,6 +2041,7 @@
     "name": "set_constraints",
     "description": "Set resize constraints for a node within its parent.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2062,6 +2080,7 @@
     "name": "set_size_limits",
     "description": "Set min/max width and height constraints on a node.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2102,6 +2121,7 @@
     "name": "set_text_range",
     "description": "Set font properties for a text range.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2160,6 +2180,7 @@
     "name": "set_blend_mode",
     "description": "Set blend mode of a node.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2201,6 +2222,7 @@
     "name": "set_image_fill",
     "description": "Set an image fill on a node from Base64-encoded image data or a data URL.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2233,6 +2255,7 @@
     "name": "clone_nodes",
     "description": "Clone (duplicate) nodes, each beside its original.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2254,6 +2277,7 @@
     "name": "group_nodes",
     "description": "Group selected nodes.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2275,6 +2299,7 @@
     "name": "ungroup_nodes",
     "description": "Ungroup groups, keeping their children in place.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2296,6 +2321,7 @@
     "name": "flatten_nodes",
     "description": "Flatten nodes into a single vector.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2317,6 +2343,7 @@
     "name": "convert_to_components",
     "description": "Convert one or more frames/groups into components.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2338,6 +2365,7 @@
     "name": "get_ancestors",
     "description": "Get the ancestor chain from a node to the page root.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2358,6 +2386,7 @@
     "name": "get_bindings",
     "description": "Get variable bindings for a node.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2374,6 +2403,7 @@
     "name": "replace_node",
     "description": "Replace a node with JSX content.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2396,6 +2426,7 @@
     "name": "arrange",
     "description": "Arrange layers so they stop overlapping or follow a structure. Modes:\n- spread (default): push overlapping layers apart, each staying near where it was.\n- compact: spread, then close the gaps.\n- pack: rows in order, like a page of screens or components.\n- grid, row, column: in order from the first layer; grid takes cols.\n- flow: ranks along connectors, rerouting elbowed ones; flowcharts, pipelines, state machines.\n- tree: from its roots along connectors; sitemaps, org charts.\n- radial: a tree in rings; mind maps.\n- network: joined layers near each other; relationship maps.\nConnectors between the layers are found automatically. A section given with all its children is laid out inside; a section alone moves as one box. Layers outside chosen sections must share a parent. The top-left corner stays put.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2451,6 +2482,7 @@
     "name": "list_variables",
     "description": "List design variables (colors, numbers, strings, booleans), optionally by name.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2475,6 +2507,7 @@
     "name": "list_collections",
     "description": "List all variable collections.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {}
@@ -2484,6 +2517,7 @@
     "name": "get_variable",
     "description": "Get a variable by ID.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2501,6 +2535,7 @@
     "name": "create_variable",
     "description": "Create a new variable in a collection.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2538,6 +2573,7 @@
     "name": "set_variable",
     "description": "Set the value of a variable for a specific mode.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2565,6 +2601,7 @@
     "name": "delete_variable",
     "description": "Delete a variable.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2582,6 +2619,7 @@
     "name": "bind_variable",
     "description": "Bind a variable to a node property, or unbind it with a null variable_id.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2615,6 +2653,7 @@
     "name": "set_variable_mode",
     "description": "Show layers in a mode of a variable collection, such as a frame in the Dark mode of a \"Theme\" collection, as the Appearance panel does. Children inherit the mode unless they set their own. Pass mode null to clear it, so the layers inherit their parent’s mode again.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2653,6 +2692,7 @@
     "name": "get_variable_modes",
     "description": "Get the mode a layer shows for each variable collection, such as its theme: its own, or inherited from its parent or the page when inherited is true.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2669,6 +2709,7 @@
     "name": "get_collection",
     "description": "Get a variable collection by ID.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2686,6 +2727,7 @@
     "name": "create_collection",
     "description": "Create a new variable collection.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2703,6 +2745,7 @@
     "name": "delete_collection",
     "description": "Delete a variable collection and all its variables.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2720,6 +2763,7 @@
     "name": "boolean",
     "description": "Combine two or more nodes into a boolean group: union, subtract (the first minus the rest), intersect, or exclude.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2752,6 +2796,7 @@
     "name": "get_path",
     "description": "Get vector path data of a node.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2768,6 +2813,7 @@
     "name": "set_path",
     "description": "Set vector path data on a node. Provide a VectorNetwork JSON.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2789,6 +2835,7 @@
     "name": "transform_path",
     "description": "Scale, flip, or move a vector node's path points, in that order, without changing the node's box.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2833,6 +2880,7 @@
     "name": "get_viewport",
     "description": "Get current viewport position and zoom level.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {}
@@ -2842,6 +2890,7 @@
     "name": "set_viewport",
     "description": "Set viewport position and zoom.",
     "mutates": false,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2870,6 +2919,7 @@
     "name": "export_svg",
     "description": "Export nodes as SVG markup. Returns the SVG string, and `warnings` naming each effect SVG cannot draw, such as glass, which the SVG leaves out.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2880,10 +2930,6 @@
           },
           "minItems": 1,
           "description": "Node IDs to export. Omit to export all top-level nodes on the current page."
-        },
-        "path": {
-          "type": "string",
-          "description": "Write exported data to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)"
         }
       }
     }
@@ -2892,6 +2938,7 @@
     "name": "export_pdf",
     "description": "Export nodes as a vector PDF document, with selectable text and sharp paths. Returns base64-encoded PDF data and the size of each PDF page. Pages are drawn as the canvas draws them, with the fonts the text uses embedded; blurs, shadows, and shader fills are drawn as images.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2902,10 +2949,6 @@
           },
           "minItems": 1,
           "description": "Node IDs to export. Omit to export all top-level nodes on the current page."
-        },
-        "path": {
-          "type": "string",
-          "description": "Write exported data to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)"
         },
         "mode": {
           "enum": [
@@ -2931,6 +2974,7 @@
     "name": "export_image",
     "description": "Export nodes as a raster image (PNG, JPG, or WEBP). Returns base64-encoded image data. Use to visually verify designs.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2941,10 +2985,6 @@
           },
           "minItems": 1,
           "description": "Node IDs to export. Omit to export all top-level nodes on the current page."
-        },
-        "path": {
-          "type": "string",
-          "description": "Write exported data to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)"
         },
         "format": {
           "enum": [
@@ -2977,6 +3017,7 @@
     "name": "analyze_colors",
     "description": "Analyze color palette usage across the current page. Shows frequency, variable bindings, and optionally clusters similar colors.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3000,6 +3041,7 @@
     "name": "analyze_typography",
     "description": "Analyze typography usage across the current page. Shows font families, sizes, weights, and their frequencies.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3024,6 +3066,7 @@
     "name": "lint",
     "description": "Check the design for accessibility and consistency issues: low text contrast, small touch targets and text, off-scale spacing and radius, colors that match a variable but are not bound, and structure hygiene. Findings are sorted by severity. A `fix` is safe to apply with lint_fix; `suggestions` change values and need judgment.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3082,6 +3125,7 @@
     "name": "lint_fix",
     "description": "Apply lint fixes: bind colors to the variable they match and round geometry to whole pixels. With suggestions: true, also apply each finding’s first suggestion (snap radius and spacing to the scale, raise text to the minimum size, convert groups to frames, delete hidden layers). Returns what was applied and what remains.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3140,6 +3184,7 @@
     "name": "analyze_spacing",
     "description": "Analyze spacing values (gap, padding) across the current page. Checks grid compliance.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3155,6 +3200,7 @@
     "name": "analyze_clusters",
     "description": "Find repeated design patterns (potential components). Groups nodes by structural signature — type, size, and child structure.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3177,6 +3223,7 @@
     "name": "analyze_overlaps",
     "description": "Detect visual overlaps and layout overflows on the current page, such as content covering a footer, text bleeding out of its frame, or siblings overlapping by accident.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3251,6 +3298,7 @@
     "name": "preview_patch",
     "description": "Preview setting JSX attributes on a node, without changing it. Returns the patch, which apply_patch applies.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3272,6 +3320,7 @@
     "name": "apply_patch",
     "description": "Apply a patch from diff_nodes, preview_patch, or diff_changes. Each node must still have the patch's old values unless force is set, and nothing changes unless every hunk applies. Use dryRun to check first.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3299,6 +3348,7 @@
     "name": "export_design_tokens",
     "description": "Write the document variables as CSS custom properties: defaults in :root, other modes under their selector or @media query, aliases as var(). tailwind puts Tailwind v4 namespaces (--color-*, --spacing-*, …) in @theme with a @custom-variant per mode. dtcg returns W3C design token files instead, one per collection mode with text and effect styles and a resolver; collection and type filters do not apply. Issues lists what could not be written.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3333,6 +3383,7 @@
     "name": "import_design_tokens",
     "description": "Import W3C design token (DTCG) files as variables, and typography and shadow tokens as text and effect styles. Pass each file with its path: a file per mode in folders (as Figma exports), a .resolver.json with its files, or a Tokens Studio file with $themes. Same-named collections, modes, and variables are updated; nothing is deleted. Returns what was added, updated, and skipped and why.",
     "mutates": true,
+    "readOnly": false,
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3376,6 +3427,7 @@
     "name": "export_component_map",
     "description": "Analyze the document and return a structured component decomposition: components (with variants, props, instance counts), screens, and a dependency overview.",
     "mutates": false,
+    "readOnly": true,
     "inputSchema": {
       "type": "object",
       "properties": {

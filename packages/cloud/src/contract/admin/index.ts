@@ -12,7 +12,14 @@ import { documentKindSchema } from '../documents'
 import { documentReportReasonSchema } from '../reports'
 import { workspaceRoleSchema } from '../workspaces'
 
-const timestampSchema = v.pipe(v.string(), v.isoTimestamp())
+/**
+ * A moment as the API sends it, an ISO timestamp. The server's own records hold dates, which it
+ * sends the same way, so a server's answer may give either.
+ */
+const timestampSchema = v.pipe(
+  v.union([v.date(), v.pipe(v.string(), v.isoTimestamp())]),
+  v.transform((moment) => (moment instanceof Date ? moment.toISOString() : moment))
+)
 const nullableTimestampSchema = v.nullable(timestampSchema)
 const countSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
 

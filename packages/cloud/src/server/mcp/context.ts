@@ -1,11 +1,12 @@
 import { cloudDocumentURL, type CloudTokenScope } from '#cloud/contract'
+import type { CallToolResult } from '@modelcontextprotocol/server'
 
-import type { MCPAPIRequest } from './api'
-import { apiError, errorResult } from './results'
+import { MCPAPIError, type MCPAPI } from './api'
+import { errorResult } from './results'
 
 /** Who an MCP request comes from, as the document API knows the token, and how to reach it. */
 export type MCPCaller = {
-  api: MCPAPIRequest
+  api: MCPAPI
   publicURL: string
   scopes: readonly CloudTokenScope[]
   /** The workspace an app's grant reaches, which its tools work in unless told otherwise. */
@@ -17,24 +18,27 @@ export function documentLink(caller: MCPCaller, documentId: string): string {
   return cloudDocumentURL(caller.publicURL, documentId)
 }
 
-/** A document API failure in words the model can act on. */
-export function apiFailure(status: number, body: unknown) {
-  const error = apiError(body)
-  if (status === 401) {
-    return errorResult('The connection to OpenPencil Cloud ended. Connect the app again.')
+/** An API refusal in words the model can act on. */
+function refusal(error: MCPAPIError): string {
+  if (error.status === 401) {
+    return 'The connection to OpenPencil Cloud ended. Connect the app again.'
   }
-  if (error?.code === 'insufficient_scope') {
-    return errorResult(
-      'This connection may only read documents. To change them, connect the app again and choose Read and write.'
-    )
+  if (error.code === 'insufficient_scope') {
+    return 'This connection may only read documents. To change them, connect the app again and choose Read and write.'
   }
-  if (status === 403) return errorResult('You may only view this document, not change it.')
-  if (status === 404) {
-    return errorResult(
-      'Not found: it does not exist, is in Trash, or is outside the workspace this connection reaches.'
-    )
+  if (error.status === 403) return 'You may not do this with this document.'
+  if (error.status === 404) {
+    return 'Not found: it does not exist, is in Trash, or is outside the workspace this connection reaches.'
   }
-  return errorResult(
-    `OpenPencil Cloud answered ${status}${error ? ` (${error.code}${error.message ? `: ${error.message}` : ''})` : ''}.`
-  )
+  return `OpenPencil Cloud answered ${error.status}${error.code ? ` (${error.code})` : ''}.`
+}
+
+/** Runs a tool's API calls, answering a refusal with what the model can do about it. */
+export async function answering(run: () => Promise<CallToolResult>): Promise<CallToolResult> {
+  try {
+    return await run()
+  } catch (error) {
+    if (error instanceof MCPAPIError) return errorResult(refusal(error))
+    throw error
+  }
 }
