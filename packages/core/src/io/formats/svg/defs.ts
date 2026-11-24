@@ -1,10 +1,5 @@
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import {
-  colorToHex,
-  colorToDisplayCSS,
-  getDefaultRenderColorSpace,
-  type RenderColorSpace
-} from '@open-pencil/scene-graph/color'
+import type { ColorProfile, Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { colorToProfileCSS, colorToSRGBHex } from '@open-pencil/scene-graph/color'
 import { computeBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import {
   gradientPoint,
@@ -29,7 +24,8 @@ export interface SVGExportContext {
   defs: SVGNode[]
   defIdCounter: number
   graph: SceneGraph
-  colorSpace: RenderColorSpace
+  /** The profile the document's colors are in, and the one the SVG writes them in. */
+  colors: SVGColorProfiles
   /** Receives each effect the export leaves out because SVG cannot draw it. */
   onWarning?: (warning: ExportEffectWarning) => void
   /** Starts every def id, so SVGs inlined on one page cannot reference each other's defs. */
@@ -62,17 +58,26 @@ export function defRegion(bounds: VisualBounds): Record<'x' | 'y' | 'width' | 'h
   }
 }
 
-export function formatColor(
-  color: Color,
-  opacity = 1,
-  colorSpace: RenderColorSpace = getDefaultRenderColorSpace()
-): string {
+/** The profile an export's colors are stored in, and the one it writes them in. */
+export interface SVGColorProfiles {
+  from: ColorProfile
+  to: ColorProfile
+}
+
+/** Colors stored and written in sRGB, as an interface color is. */
+export const SRGB_COLORS: SVGColorProfiles = { from: 'srgb', to: 'srgb' }
+
+/**
+ * A color as SVG writes it in `colors.to`: `color(display-p3 …)` for Display P3, hex for sRGB,
+ * where a color sRGB cannot show is brought inside it by reducing chroma.
+ */
+export function formatColor(color: Color, opacity = 1, colors = SRGB_COLORS): string {
   const alphaColor = { ...color, a: color.a * opacity }
-  if (colorSpace === 'display-p3') {
-    return colorToDisplayCSS(alphaColor, { colorSpace })
+  if (colors.to === 'display-p3') {
+    return colorToProfileCSS(alphaColor, colors.from, colors.to)
   }
   // Hex has no alpha. Stops and shadows already emit theirs; solid fills use `solidFillOpacity`.
-  return colorToHex(alphaColor)
+  return colorToSRGBHex(alphaColor, colors.from)
 }
 
 /**
@@ -80,15 +85,11 @@ export function formatColor(
  * replaces it, and `.pen` stores a hex alpha in both fields. Display P3 carries that painted
  * alpha in the color. sRGB hex cannot, so `solidFillOpacity` emits it beside the color.
  */
-export function formatSolidColor(
-  color: Color,
-  opacity: number,
-  colorSpace: RenderColorSpace
-): string {
-  if (colorSpace === 'display-p3') {
-    return formatColor({ ...color, a: 1 }, round(opacity), colorSpace)
+export function formatSolidColor(color: Color, opacity: number, colors: SVGColorProfiles): string {
+  if (colors.to === 'display-p3') {
+    return formatColor({ ...color, a: 1 }, round(opacity), colors)
   }
-  return formatColor(color, 1, colorSpace)
+  return formatColor(color, 1, colors)
 }
 
 /**
@@ -98,10 +99,10 @@ export function formatSolidColor(
  */
 export function solidFillOpacity(
   fill: Fill,
-  colorSpace: RenderColorSpace,
+  colors: SVGColorProfiles,
   separate = false
 ): number | undefined {
-  if (fill.type !== 'SOLID' || (colorSpace === 'display-p3' && !separate)) return undefined
+  if (fill.type !== 'SOLID' || (colors.to === 'display-p3' && !separate)) return undefined
   const alpha = round(fill.opacity)
   return alpha < 1 ? alpha : undefined
 }
@@ -118,7 +119,8 @@ function createGradientDef(
   const stopNodes = stops.map((s) =>
     svg('stop', {
       offset: `${round(s.position * 100)}%`,
-      'stop-color': formatColor(s.color, 1, ctx.colorSpace),
+      // Alpha goes in stop-opacity alone; a P3 stop-color would carry it too, and SVG multiplies.
+      'stop-color': formatColor({ ...s.color, a: 1 }, 1, ctx.colors),
       'stop-opacity': s.color.a < 1 ? round(s.color.a) : undefined
     })
   )
@@ -262,7 +264,7 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
   if (!fill.visible) return null
 
   if (fill.type === 'SOLID') {
-    return formatSolidColor(fill.color, fill.opacity, ctx.colorSpace)
+    return formatSolidColor(fill.color, fill.opacity, ctx.colors)
   }
 
   if (fill.type.startsWith('GRADIENT')) {
@@ -306,4 +308,30 @@ export const SVG_STROKE_JOIN: Record<string, string> = {
   MITER: 'miter',
   ROUND: 'round',
   BEVEL: 'bevel'
+}
+
+/** A layer's first visible stroke as SVG attributes, its color in `colors.to`. */
+export function svgStrokeAttrs(
+  visibleStrokes: Stroke[],
+  colors: SVGColorProfiles,
+  nodeCap: SceneNode['strokeCap']
+): Record<string, string | number | undefined> {
+  if (visibleStrokes.length === 0) return {}
+  const stroke = visibleStrokes[0]
+  const cap = stroke.cap ?? nodeCap
+  const attrs: Record<string, string | number | undefined> = {
+    // Opacity 1 keeps the color opaque. Display P3 must not also keep color alpha here, or a
+    // viewer multiplies it by stroke-opacity; the canvas paints stroke.opacity alone.
+    stroke: formatSolidColor(stroke.color, 1, colors),
+    'stroke-width': round(stroke.weight)
+  }
+  if (stroke.opacity < 1) attrs['stroke-opacity'] = round(stroke.opacity)
+  if (cap !== 'NONE') attrs['stroke-linecap'] = SVG_STROKE_CAP[cap] ?? 'butt'
+  if (stroke.join && stroke.join !== 'MITER') {
+    attrs['stroke-linejoin'] = SVG_STROKE_JOIN[stroke.join] ?? 'miter'
+  }
+  if (stroke.dashPattern && stroke.dashPattern.length > 0) {
+    attrs['stroke-dasharray'] = stroke.dashPattern.map((n) => round(n)).join(' ')
+  }
+  return attrs
 }

@@ -4,6 +4,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { populateFigPage } from '#core/io/formats/fig'
+import { graphInSRGB } from '#core/io/srgb'
 import { withTextInkMeasurer } from '#core/text/ink'
 
 import { renderPagesToPDF, type PDFExportOptions, type PDFExportResult } from './export'
@@ -32,10 +33,13 @@ export interface PDFDocumentOptions extends PDFExportOptions {
  * taken by the ink of its text. Null when no page shows anything.
  */
 export async function exportPDFDocument(
-  graph: SceneGraph,
+  source: SceneGraph,
   specs: readonly PDFPageSpec[],
   { renderer: hostRenderer, ...options }: PDFDocumentOptions = {}
 ): Promise<PDFExportResult | null> {
+  // A PDF holds sRGB colors: a Display P3 document's are brought inside sRGB first.
+  const { graph, copied } = await graphInSRGB(source)
+  const sharedRenderer = copied ? null : hostRenderer
   const draw = async (renderer: SkiaRenderer) => {
     const byPage = groupBy(specs, (spec) => spec.pageId)
     for (const [pageId, pageSpecs] of Object.entries(byPage)) {
@@ -50,7 +54,7 @@ export async function exportPDFDocument(
       () => renderPagesToPDF(renderer, graph, specs, options)
     )
   }
-  if (hostRenderer) return draw(hostRenderer)
+  if (sharedRenderer) return draw(sharedRenderer)
   const { withHeadlessExport } = await import('#core/io/formats/raster/headless')
   return withHeadlessExport(draw)
 }

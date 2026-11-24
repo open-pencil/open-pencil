@@ -189,7 +189,9 @@ export function drawPencilOverlay(
   path.moveTo(worldXToScreen(r, first.x), worldYToScreen(r, first.y))
   if (rest.length === 0) path.lineTo(worldXToScreen(r, first.x), worldYToScreen(r, first.y))
   for (const point of rest) path.lineTo(worldXToScreen(r, point.x), worldYToScreen(r, point.y))
-  const { color, weight } = pencilState.preview
+  const { weight } = pencilState.preview
+  // The stroke's own color, in the document's profile, as the committed stroke draws.
+  const color = r.renderColor(pencilState.preview.color)
   const paint = r.pencilStrokePaint
   paint.setColorComponents(color.r, color.g, color.b, color.a)
   paint.setStrokeWidth(weight * r.zoom)

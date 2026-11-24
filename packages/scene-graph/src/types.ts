@@ -58,7 +58,11 @@ export interface NodeChangeObserver {
   resume?: () => void
 }
 
-export type DocumentColorSpace = 'srgb' | 'display-p3'
+/**
+ * A color profile: the one a document's colors are stored in, or the one they are shown or
+ * exported in. Figma files are sRGB or Display P3.
+ */
+export type ColorProfile = 'srgb' | 'display-p3'
 
 /** What a document is for, as Figma keeps design files and FigJam boards apart. */
 export type DocumentKind = 'design' | 'board'
@@ -70,6 +74,11 @@ export interface FigmaSourcePayload {
   layout: FigmaLayoutMetadata | null
   symbolOverrides: unknown[]
   componentPropAssignments: unknown[]
+  /**
+   * An instance's saved assignments of slot content that no layer shows, as when its variant
+   * has no frame for the slot. Figma keeps them, and the content, for a variant that does.
+   */
+  hiddenSlotAssignments: unknown[]
   derivedSymbolData: unknown[]
   derivedSymbolDataLayoutVersion: number | null
   uniformScaleFactor: number | null
@@ -1183,6 +1192,11 @@ export interface Variable {
   key?: string
   /** Published library version (from NodeChange.version). Used for assetRef resolution in colorVar. */
   version?: string
+  /**
+   * Deleted as Figma deletes a variable: gone from its collection's `variableIds` and from every
+   * list of variables, while layers bound to it still resolve it and the file keeps it.
+   */
+  deleted?: true
 }
 
 /** Scalar numeric node fields accepted by numeric property controls; some may also be null. */
@@ -1232,6 +1246,11 @@ export interface VariableCollection {
   key?: string
   /** Published library version, which references by key carry with it. */
   version?: string
+  /**
+   * Deleted as Figma deletes a collection: gone from every list of collections, with its variables
+   * deleted too, while layers bound to them still resolve them and the file keeps them.
+   */
+  deleted?: true
 }
 
 /** Whether a collection is a library's copy, which takes no variables or modes of the file's. */

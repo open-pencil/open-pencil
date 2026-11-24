@@ -68,7 +68,7 @@ import { writeOwnInstanceName } from './instance-name'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
 import { boundPropertyGuid, variantPropertyCopies, writtenSetProperties } from './property-copies'
 import { exportedNode } from './resolved-bindings'
-import { slotDefinitionFields } from './slots'
+import { hiddenSlotAssignments, slotDefinitionFields } from './slots'
 import { serializeText } from './text'
 import { applyVariableModes } from './variable-modes'
 
@@ -743,11 +743,15 @@ function applyComponentMetadata(
   }
 
   applyParameterReferences(nc, parameterRefs)
-  const componentPropAssignments = compact(
+  const shownAssignments = compact(
     Object.entries(node.componentPropertyAssignments).map(([propertyId, value]) =>
       componentPropAssignment(context, node, propertyId, value, localIdCounter)
     )
   )
+  const componentPropAssignments = [
+    ...shownAssignments,
+    ...hiddenSlotAssignments(node, shownAssignments)
+  ]
   if (
     shouldSerializeRawBackedField(
       node,

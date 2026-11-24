@@ -125,9 +125,9 @@ export function defaultTokenImportOptions(
   bundle: DesignTokenBundle
 ): TokenImportOptions {
   // A library's collections belong to it, so tokens of the same name make one of the file's.
-  const existing = [...graph.variableCollections.values()].filter(
-    (collection) => !isLibraryCollection(collection)
-  )
+  const existing = graph
+    .getLiveCollections()
+    .filter((collection) => !isLibraryCollection(collection))
   const claimed = new Set<string>()
   return {
     collections: bundle.collections.map((collection): CollectionImportChoice => {
@@ -193,7 +193,7 @@ interface PlannerIndexes {
 function indexesOf(planner: Planner): PlannerIndexes {
   if (planner.indexes) return planner.indexes
   const variables = new Map<string, Variable[]>()
-  for (const variable of planner.graph.variables.values())
+  for (const variable of planner.graph.getLiveVariables())
     variables.set(variable.name, [...(variables.get(variable.name) ?? []), variable])
   const planned = new Map<string, { index: number; variables: Map<string, number> }>()
   planner.collections.forEach((collection, index) => {
@@ -325,7 +325,8 @@ function planVariables(
   const rows: Array<{ variable: PlannedVariable; decoded: Array<DecodedVariable | undefined> }> = []
   const existingByName = variablesByName(planner.graph, planner.existingByCollection[index])
   for (const [name, tokens] of tokensByName(collection, modeIndexes)) {
-    const decoded = tokens.map((token) => (token ? decodeVariableToken(token) : undefined))
+    const profile = planner.graph.documentColorSpace
+    const decoded = tokens.map((token) => (token ? decodeVariableToken(token, profile) : undefined))
     const failure = decoded.find((entry) => typeof entry === 'string')
     const usable = decoded.map((entry) => (typeof entry === 'string' ? undefined : entry))
     if (usable.every((entry) => entry === undefined)) {

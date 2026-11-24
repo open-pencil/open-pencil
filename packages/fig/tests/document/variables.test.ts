@@ -115,7 +115,7 @@ test('modes sharing a sort position keep their saved order', () => {
 test('a saved collection lists its modes in the order Figma shows them', () => {
   const { nodeChanges } = parseFigBuffer(readFixtureArrayBuffer('gold-preview.fig'))
   const graph = new SceneGraph()
-  materializeVariableResources(graph, nodeChanges, () => undefined)
+  materializeVariableResources(graph, nodeChanges, { onUnsupported: () => undefined })
   const tokens = [...graph.variableCollections.values()].find((c) => c.name === 'Tokens')
   expect(tokens?.modes.map((mode) => mode.name)).toEqual([
     'Default',

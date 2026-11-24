@@ -4,7 +4,7 @@ import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { texture } from '@open-pencil/design-jsx'
-import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
+import { SceneGraph, type ColorProfile, type Fill } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { withLeafTexture } from '#core/canvas/texture/render'
@@ -14,11 +14,12 @@ const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
 afterAll(() => renderer.destroy())
 
 /**
- * How many pixels of a 120 px blue square inside a 160 px white frame lie outside the square, and
- * how many inside it are missing, with `clipToShape` set as given.
+ * The red channel of a 120 px blue square inside a 160 px white frame, with `clipToShape` set as
+ * given, exported from a document in `space`: 0 where the square shows and 255 where it does not.
  */
-function roughened(clipToShape: boolean) {
+function texturedSquare(clipToShape: boolean, space: ColorProfile = 'srgb'): number[] {
   const graph = new SceneGraph()
+  graph.documentColorSpace = space
   const page = graph.getPages()[0].id
   const host = graph.createNode('FRAME', page, {
     width: 160,
@@ -45,20 +46,29 @@ function roughened(clipToShape: boolean) {
         colorSpace: ck.ColorSpace.SRGB
       })
     )
-    let outside = 0
-    let missing = 0
-    for (let y = 0; y < 160; y++) {
-      for (let x = 0; x < 160; x++) {
-        const blue = 1 - pixels[(y * 160 + x) * 4] / 255
-        const inSquare = x >= 20 && x < 140 && y >= 20 && y < 140
-        if (inSquare) missing += 1 - blue
-        else outside += blue
-      }
-    }
-    return { outside, missing }
+    return Array.from({ length: 160 * 160 }, (_, i) => pixels[i * 4])
   } finally {
     image.delete()
   }
+}
+
+/**
+ * How many pixels of the square lie outside it, and how many inside it are missing, with
+ * `clipToShape` set as given.
+ */
+function roughened(clipToShape: boolean) {
+  const red = texturedSquare(clipToShape)
+  let outside = 0
+  let missing = 0
+  for (let y = 0; y < 160; y++) {
+    for (let x = 0; x < 160; x++) {
+      const blue = 1 - red[y * 160 + x] / 255
+      const inSquare = x >= 20 && x < 140 && y >= 20 && y < 140
+      if (inSquare) missing += 1 - blue
+      else outside += blue
+    }
+  }
+  return { outside, missing }
 }
 
 // Figma 126 exports of the same square, texture of size 2 and radius 4: unclipped, about 200 px
@@ -71,6 +81,16 @@ describe('texture effects', () => {
     const clipped = roughened(true)
     expect(clipped.outside).toBeLessThan(40)
     expect(clipped.missing).toBeLessThan(40)
+  })
+
+  test('roughen a Display P3 document as an sRGB one', () => {
+    // The noise is data: drawn into a P3 document, it must move the same pixels by as much. Skia
+    // holds the converted noise in 8 bits, which can tip an edge pixel or two; unconverted, it
+    // moves about 200.
+    const srgb = texturedSquare(false)
+    const p3 = texturedSquare(false, 'display-p3')
+    const moved = srgb.filter((value, index) => Math.abs(value - p3[index]) > 1).length
+    expect(moved).toBeLessThanOrEqual(8)
   })
 
   test('let a textured mask show what it masks', () => {

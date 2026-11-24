@@ -1,7 +1,7 @@
 import { uniqBy } from 'es-toolkit'
 import * as v from 'valibot'
 
-import type { Fill, SceneNode, TextLength } from '@open-pencil/scene-graph'
+import type { ColorProfile, Fill, SceneNode, TextLength } from '@open-pencil/scene-graph'
 import { clampLayoutPosition, MAX_TEXT_LENGTH } from '@open-pencil/scene-graph/layout'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
@@ -78,7 +78,8 @@ function autoLength(value: number | typeof AUTO): number | null {
  */
 export function applyTextDetailOverrides(
   props: Record<string, unknown>,
-  o: Partial<SceneNode>
+  o: Partial<SceneNode>,
+  profile: ColorProfile
 ): void {
   const parsed = parseScriptInput('Invalid <Text> props', textPropsSchema, props)
   const color = parsed.textDecorationColor
@@ -88,7 +89,7 @@ export function applyTextDetailOverrides(
     o.textDecorationFills =
       typeof color === 'string' && color.toLowerCase() === CURRENT_COLOR.toLowerCase()
         ? []
-        : [fillFromValue(color)]
+        : [fillFromValue(color, profile)]
   }
   if (parsed.textDecorationThickness !== undefined)
     o.textDecorationThickness = autoLength(parsed.textDecorationThickness)

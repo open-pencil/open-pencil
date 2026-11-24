@@ -1,0 +1,1 @@
+- The CLI reads standard input for a `-` argument wherever it stands, so `openpencil tool call <tool> --args-file -` and `openpencil diff apply - <file>` take piped JSON and patches instead of failing with missing arguments.
