@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { CommunityDocument } from '#cloud/contract'
+import { communityDocumentDescription } from '#cloud/runtime/site/community/content'
 import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
 
 const DOCUMENT_ID = '0b6f4f9e-3c1a-4d7e-9a52-6f1c2d3e4f50'
@@ -198,5 +200,31 @@ describe('community pages', () => {
     expect(limited.status).toBe(429)
     expect(limited.headers.get('Retry-After')).toBe('30')
     expect((await server(false).request('https://cloud.example/sitemap.xml')).status).toBe(404)
+  })
+
+  test('say what a file is from its description, else its newest version’s notes', () => {
+    const document: CommunityDocument = {
+      id: DOCUMENT_ID,
+      name: 'Tour',
+      description: 'A tour of the editor.',
+      kind: 'design',
+      updatedAt: '2026-11-14T00:00:00.000Z',
+      revisionId: REVISION_ID,
+      thumbnailPath: '',
+      versions: [
+        {
+          id: VERSION_ID,
+          name: '0.17.0',
+          description: 'What changed',
+          createdAt: '2026-11-14T00:00:00.000Z',
+          current: true
+        }
+      ]
+    }
+    expect(communityDocumentDescription(document)).toBe('A tour of the editor.')
+    expect(communityDocumentDescription({ ...document, description: null })).toBe('What changed')
+    expect(communityDocumentDescription({ ...document, description: null, versions: [] })).toBe(
+      'Tour, a file to open in OpenPencil and copy into your own workspace.'
+    )
   })
 })

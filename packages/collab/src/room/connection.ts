@@ -8,17 +8,15 @@ import {
   decodeRoomUpdate,
   MAX_COLLAB_MESSAGE_BYTES,
   RELAY_SERVER_PEER
-} from '@open-pencil/cloud/contract'
+} from './protocol'
+import type { CollabAction, JoinCollabRoom } from './transport'
 
-import { joinCollabRoom, type JoinCollabRoom } from '@/app/collab/transport'
-import type { CollabAction } from '@/app/collab/transport/types'
-
-export type CollabRoomOptions = {
+export type CollabConnectionOptions = {
   roomId: string
   ydoc: Y.Doc
   awareness: awarenessProtocol.Awareness
   updatePeersList: () => void
-  joinRoom?: JoinCollabRoom
+  joinRoom: JoinCollabRoom
   /** The most a peer's update may decode to; `MAX_COLLAB_MESSAGE_BYTES` unless a test lowers it. */
   maxMessageBytes?: number
 }
@@ -28,9 +26,9 @@ export type CollabRoomConnection = {
   sendYjsUpdate: (data: Uint8Array, peerId?: string) => void
   sendAwareness: (data: Uint8Array, peerId?: string) => void
   sendSyncStep1: (data: Uint8Array, peerId?: string) => void
-  /** What agents preview while they stream, apart from presence (`app/collab/agent-preview.ts`). */
+  /** What agents preview while they stream, apart from presence. */
   agentPreview: CollabAction
-  /** Asking whoever saves the room's document to upload it now (`app/cloud/rooms/upload.ts`). */
+  /** Asking whoever saves the room's document to upload it now. */
   upload: CollabAction
   /** Follow peers leaving the room; returns the unsubscribe. */
   onPeerLeave: (handler: (peerId: string) => void) => () => void
@@ -91,9 +89,9 @@ export function connectCollabRoom({
   ydoc,
   awareness,
   updatePeersList,
-  joinRoom = joinCollabRoom,
+  joinRoom,
   maxMessageBytes = MAX_COLLAB_MESSAGE_BYTES
-}: CollabRoomOptions): CollabRoomConnection {
+}: CollabConnectionOptions): CollabRoomConnection {
   const room = joinRoom(roomId)
   const [sendYjsUpdate, getUpdate] = room.makeAction(COLLAB_ACTIONS.yjsUpdate)
   const [sendAwareness, getAwareness] = room.makeAction(COLLAB_ACTIONS.awareness)

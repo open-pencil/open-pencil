@@ -43,6 +43,7 @@ export function createCommunityService(
       .select([
         'document.id',
         'document.name',
+        'document.description',
         'document.kind',
         'document.updatedAt',
         'document.currentRevisionId as revisionId',
@@ -90,6 +91,7 @@ export function createCommunityService(
       return rows.map((row) => ({
         id: row.id,
         name: row.name,
+        description: row.description,
         kind: row.kind,
         updatedAt: new Date(row.updatedAt).toISOString(),
         revisionId: row.revisionId,

@@ -3,7 +3,7 @@ import type * as Y from 'yjs'
 
 import { BACKOFF, backoffDelay } from '@open-pencil/std/timing'
 
-import type { EditorStore } from '@/app/editor/active-store'
+import type { CollabEditor } from '../editor'
 
 /**
  * Where a room keeps its images instead of in its document, as a Cloud room keeps them in its
@@ -27,22 +27,22 @@ export function imageRetryDelayMs(attempt: number): number {
 }
 
 /**
- * Images a tab's closed room was still storing, by name, for the tab's next room to store and
- * name. A room closes while an upload is in flight when it starts over, as after a restore or a
- * refused join. The bytes go along, not the reference: the next room may be another workspace's,
- * and storing what its workspace already holds uploads nothing.
+ * Images an owner's closed room was still storing, by name, for the owner's next room to store
+ * and name. A room closes while an upload is in flight when it starts over, as after a restore or
+ * a refused join. The bytes go along, not the reference: the next room may be another
+ * workspace's, and storing what its workspace already holds uploads nothing.
  */
-const handedOver = new WeakMap<EditorStore, Map<string, Uint8Array>>()
-/** Each tab's open room, so an upload that ends after its room closed reaches the next one. */
-const openRooms = new WeakMap<EditorStore, { take: (images: Map<string, Uint8Array>) => void }>()
+const handedOver = new WeakMap<object, Map<string, Uint8Array>>()
+/** Each owner's open room, so an upload that ends after its room closed reaches the next one. */
+const openRooms = new WeakMap<object, { take: (images: Map<string, Uint8Array>) => void }>()
 
-/** Gives the tab's next room the images a closed room was still storing. */
-function handOver(store: EditorStore, images: Iterable<readonly [string, Uint8Array]>) {
-  const pending = handedOver.get(store) ?? new Map<string, Uint8Array>()
+/** Gives the owner's next room the images a closed room was still storing. */
+function handOver(owner: object, images: Iterable<readonly [string, Uint8Array]>) {
+  const pending = handedOver.get(owner) ?? new Map<string, Uint8Array>()
   for (const [name, bytes] of images) pending.set(name, bytes)
-  const room = openRooms.get(store)
+  const room = openRooms.get(owner)
   if (room) room.take(pending)
-  else handedOver.set(store, pending)
+  else handedOver.set(owner, pending)
 }
 
 /** The room's image references by name, beside the `images` map of bytes. */
@@ -65,7 +65,8 @@ export function bindRoomImages({
   ydoc,
   yimages,
   yrefs,
-  store,
+  editor,
+  owner,
   images,
   report,
   retryDelayMs = imageRetryDelayMs
@@ -73,7 +74,12 @@ export function bindRoomImages({
   ydoc: Y.Doc
   yimages: Y.Map<Uint8Array>
   yrefs: YImageRefs
-  store: EditorStore
+  editor: Pick<CollabEditor, 'graph' | 'requestRender'>
+  /**
+   * What outlives one room, as a tab outlives the rooms its document joins: images a closed room
+   * was still storing go to the owner's next room.
+   */
+  owner: object
   images: RoomImageStore
   report: (message: string, error: unknown) => void
   retryDelayMs?: (attempt: number) => number
@@ -106,7 +112,7 @@ export function bindRoomImages({
       const refs = await images.store(batch)
       if (disposed) {
         handOver(
-          store,
+          owner,
           batch.map((image) => [image.name, image.bytes] as const)
         )
         return
@@ -120,7 +126,7 @@ export function bindRoomImages({
     } catch (error) {
       if (disposed) {
         handOver(
-          store,
+          owner,
           batch.map((image) => [image.name, image.bytes] as const)
         )
         return
@@ -151,8 +157,8 @@ export function bindRoomImages({
     try {
       loaded = await images.load(batch)
       if (disposed) return
-      for (const [name, bytes] of loaded) store.graph.images.set(name, bytes)
-      if (loaded.size > 0) store.requestRender()
+      for (const [name, bytes] of loaded) editor.graph.images.set(name, bytes)
+      if (loaded.size > 0) editor.requestRender()
     } catch (error) {
       report('Loading room images failed', error)
     } finally {
@@ -180,7 +186,7 @@ export function bindRoomImages({
   }
 
   function wantLoad(name: string) {
-    if (busy.has(name) || store.graph.images.has(name)) return
+    if (busy.has(name) || editor.graph.images.has(name)) return
     toLoad.add(name)
     soon()
   }
@@ -207,7 +213,7 @@ export function bindRoomImages({
 
   /** Stores and names the images a closed room was still storing. */
   function take(pending: Map<string, Uint8Array>) {
-    handedOver.delete(store)
+    handedOver.delete(owner)
     for (const [name, bytes] of pending) {
       if (images.canStore) wantStore(name, bytes)
       // A room this peer cannot store in carries the bytes, as a guest's images travel.
@@ -217,8 +223,8 @@ export function bindRoomImages({
 
   yrefs.observe(onRefs)
   yimages.observe(onImages)
-  openRooms.set(store, { take })
-  const pending = handedOver.get(store)
+  openRooms.set(owner, { take })
+  const pending = handedOver.get(owner)
   if (pending) take(pending)
   for (const name of yrefs.keys()) wantLoad(name)
   for (const [name, bytes] of yimages) wantStore(name, bytes)
@@ -232,9 +238,9 @@ export function bindRoomImages({
     hasRef: (name) => yrefs.has(name),
     dispose() {
       disposed = true
-      if (openRooms.get(store)?.take === take) openRooms.delete(store)
-      // Images queued but not yet sent to the store go to the tab's next room.
-      if (toStore.size > 0) handOver(store, toStore)
+      if (openRooms.get(owner)?.take === take) openRooms.delete(owner)
+      // Images queued but not yet sent to the store go to the owner's next room.
+      if (toStore.size > 0) handOver(owner, toStore)
       toStore.clear()
       for (const timer of retries) clearTimeout(timer)
       retries.clear()
