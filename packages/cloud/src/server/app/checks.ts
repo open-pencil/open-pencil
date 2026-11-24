@@ -1,5 +1,5 @@
-import { cloudAPIResourceMetadataURL } from '#cloud/contract'
 import { createCloudIdentityResolver, createCloudSessionResolver } from '#cloud/server/auth'
+import { resourceChallenge } from '#cloud/server/oauth'
 import {
   declaredTokenRoute,
   grantReaches,
@@ -36,26 +36,24 @@ export function createRequestChecks(
 ) {
   const { resolveSession, resolveAccountSession } = resolvers
   const oauth = services.config.oauthEnabled
-  const resourceMetadata = cloudAPIResourceMetadataURL(services.config.publicURL)
+  const challenge = (context: Context, missingScope?: string) => {
+    const header = resourceChallenge(services.config.publicURL, missingScope)
+    if (header) context.header('WWW-Authenticate', header)
+  }
   /** A personal access token, or else an app's access token where apps may connect. */
   const resolveToken = async (headers: Headers) =>
     (await services.auth.resolveAccessToken(headers)) ??
     (oauth ? await services.auth.resolveAppToken(headers) : null)
   /** Apps learn where to get a token from the challenge (RFC 9728 §5.1). */
   const unauthorized = (context: Context) => {
-    if (oauth) {
-      context.header('WWW-Authenticate', `Bearer resource_metadata="${resourceMetadata}"`)
-    }
+    if (oauth) challenge(context)
     return context.json({ error: { code: 'unauthorized' as const } }, 401)
   }
   const refused = (context: Context, refusal: TokenRouteRefusal, scope: string | undefined) => {
     if (refusal === 'not-declared') return unauthorized(context)
     if (refusal === 'insufficient-scope') {
-      // RFC 6750 §3.1, so an app can ask the person for the scope it lacks.
-      context.header(
-        'WWW-Authenticate',
-        `Bearer error="insufficient_scope", scope="${scope}", resource_metadata="${resourceMetadata}"`
-      )
+      // So an app can ask the person for the scope it lacks.
+      if (scope) challenge(context, scope)
       return context.json({ error: { code: 'insufficient_scope' as const } }, 403)
     }
     return context.json({ error: { code: 'forbidden' as const } }, 403)

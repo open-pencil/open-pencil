@@ -15,20 +15,6 @@ export function checkColumnIn(column: string, values: readonly string[]): Expres
 }
 
 /**
- * Whether a text column holds JSON containing `value`, as Postgres's `@>` matches `jsonb`. Only
- * text that starts with `prefix` is read as JSON, so rows of a shared column that hold other text,
- * which the cast would reject, never fail the statement.
- */
-export function jsonTextContains(
-  column: string,
-  prefix: string,
-  value: object
-): Expression<boolean> {
-  const text = sql.ref(column)
-  return sql<boolean>`case when starts_with(${text}, ${prefix}) then ${text}::jsonb @> ${JSON.stringify(value)}::jsonb else false end`
-}
-
-/**
  * Holds a lock named `key` until the transaction ends, for a check and a write that must not
  * interleave with another transaction's, such as reserving storage from an account's allowance,
  * which spans rows no single one of which could be locked for it.

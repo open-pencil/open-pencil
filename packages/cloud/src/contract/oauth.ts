@@ -27,10 +27,6 @@ export const CLOUD_AUTHORIZATION_SERVER_METADATA_PATH = '/.well-known/oauth-auth
 /** The document API as a protected resource: what apps name in `resource`, and tokens' audience. */
 export const cloudAPIResource = (publicURL: string) => new URL('/api', publicURL).href
 
-/** The document API's protected resource metadata, which a 401 points apps to. */
-export const cloudAPIResourceMetadataURL = (publicURL: string) =>
-  new URL(`${CLOUD_PROTECTED_RESOURCE_METADATA_PATH}/api`, publicURL).href
-
 const appSchema = v.object({
   clientId: v.string(),
   name: v.string(),

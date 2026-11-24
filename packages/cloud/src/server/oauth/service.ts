@@ -7,7 +7,6 @@ import {
   type CloudTokenScope
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
-import { jsonTextContains } from '#cloud/server/db/expressions'
 import { verifyOAuthQueryParams } from '@better-auth/oauth-provider'
 import { compact, uniq } from 'es-toolkit'
 import type { Kysely } from 'kysely'
@@ -193,8 +192,10 @@ export function createOAuthService(options: {
     },
 
     /**
-     * Disconnects an app from a workspace: its consent goes, so connecting again asks again, every
-     * token of the grant is revoked at once, and codes the app has not exchanged yet go too.
+     * Disconnects an app from a workspace: its consent goes, so connecting again asks again, and
+     * every token of the grant is revoked at once. A code the app has not exchanged yet still gets a
+     * token, which counts only if issued after the person connects the app again
+     * (`resolveAppAccessToken`).
      */
     async revoke(userId: string, connectionId: string): Promise<boolean> {
       return database.transaction().execute(async (transaction) => {
@@ -216,19 +217,6 @@ export function createOAuthService(options: {
             .where('revoked', 'is', null)
             .execute()
         }
-        // The provider keeps a pending code as JSON text, naming its client, account, and workspace.
-        await transaction
-          .deleteFrom('verification')
-          .where(
-            // Other plugins keep plain text in the same table, such as a second sign-in step's.
-            jsonTextContains('value', '{"type":"authorization_code"', {
-              type: 'authorization_code',
-              userId,
-              referenceId: consent.referenceId,
-              query: { client_id: consent.clientId }
-            })
-          )
-          .execute()
         return true
       })
     }

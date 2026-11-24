@@ -8,6 +8,7 @@ import {
 } from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
 import { validatedJSON, validatedQuery } from '#cloud/server/validation'
+import type { ResourceServerMetadata } from '@better-auth/oauth-provider'
 import { Hono, type MiddlewareHandler } from 'hono'
 import * as v from 'valibot'
 
@@ -41,7 +42,7 @@ const ISSUER_PATH = '/api/auth'
  */
 export function createOAuthRoutes(dependencies: OAuthRouteDependencies) {
   const { service } = dependencies
-  const resourceMetadata = {
+  const resourceMetadata: ResourceServerMetadata = {
     resource: cloudAPIResource(dependencies.publicURL),
     authorization_servers: [new URL(ISSUER_PATH, dependencies.publicURL).href],
     scopes_supported: [...CLOUD_OAUTH_SCOPES],

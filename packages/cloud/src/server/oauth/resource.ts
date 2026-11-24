@@ -6,12 +6,29 @@ import {
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
 import { hashCapability } from '#cloud/server/sharing/crypto'
+import { createResourceServerChallenge } from '@better-auth/oauth-provider'
+import { APIError } from 'better-auth'
+import { createInsufficientScopeError, parseAccessTokenAuthorization } from 'better-auth/oauth2'
 import type { Kysely } from 'kysely'
 
 /** An app's access token in `Authorization: Bearer`, when the header carries one of Cloud's. */
 export function bearerAppToken(headers: Headers): string | null {
-  const token = headers.get('authorization')?.match(/^Bearer\s+(\S+)$/i)?.[1]
-  return token?.startsWith(CLOUD_APP_ACCESS_TOKEN_PREFIX) ? token : null
+  const authorization = parseAccessTokenAuthorization(headers.get('authorization') ?? undefined)
+  if (authorization?.scheme !== 'Bearer') return null
+  return authorization.token.startsWith(CLOUD_APP_ACCESS_TOKEN_PREFIX) ? authorization.token : null
+}
+
+/**
+ * The `WWW-Authenticate` challenge for the document API, as the OAuth provider builds it: without
+ * a scope, a request lacking a valid token learns where to get one (RFC 9728 §5.1); with one, a
+ * token lacking that scope learns what to ask the person for (RFC 6750 §3.1).
+ */
+export function resourceChallenge(publicURL: string, missingScope?: string): string | null {
+  const error = missingScope
+    ? createInsufficientScopeError([missingScope])
+    : new APIError('UNAUTHORIZED')
+  const challenge = createResourceServerChallenge(error, cloudAPIResource(publicURL))
+  return challenge ? new Headers(challenge.headers).get('WWW-Authenticate') : null
 }
 
 const isTokenScope = (scope: string): scope is CloudTokenScope =>

@@ -415,29 +415,12 @@ describe('connected apps', () => {
     expect((await send('/api/workspaces', { token })).status).toBe(401)
   })
 
-  test('disconnect beside sign-in records that are not JSON', async () => {
-    await connect()
-    // A second sign-in step's challenge keeps the account's ID as plain text.
-    await fixture.database
-      .insertInto('verification')
-      .values({
-        id: crypto.randomUUID(),
-        identifier: 'two-factor-challenge',
-        value: person.userId,
-        expiresAt: new Date(Date.now() + 60_000),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      .execute()
-    await disconnect()
-    expect(await connections()).toEqual([])
-  })
-
-  test('refuse a code issued before disconnecting', async () => {
+  test('stop working from a code issued before disconnecting', async () => {
     await connect()
     const { code, verifier } = await approve()
     await disconnect()
-    expect((await redeem(app, code, verifier)).status).toBe(400)
+    const late = await exchange(app, code, verifier)
+    expect((await send('/api/session', { token: late.access_token })).status).toBe(401)
   })
 
   test('keep a token from before the app connected again out, and follow the scopes approved', async () => {
