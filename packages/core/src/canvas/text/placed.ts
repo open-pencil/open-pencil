@@ -4,7 +4,10 @@ import { isEqual } from 'es-toolkit/predicate'
 import type { Paragraph } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { styleRunAt, textLengthPixels } from '@open-pencil/scene-graph/text'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+import {
+  resolveNodeTextDirection,
+  resolveTextDirection
+} from '@open-pencil/scene-graph/text/direction'
 import { appendAll, maxOf, minOf } from '@open-pencil/std/arrays'
 
 import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
@@ -301,11 +304,21 @@ function lineRunBoundaries(
 }
 
 /**
- * The run at the end of a line, where truncation adds its ellipsis: runs come in visual order, so
- * it is the leftmost of text that reads right to left.
+ * The run at the end of the last line, where truncation adds its ellipsis: runs come in visual
+ * order, so it is the leftmost of a paragraph that reads right to left. Paragraphs laid out apart
+ * each read in the direction of their own text.
  */
-function endRun(node: SceneNode, line: ShapedLine): GlyphRun | undefined {
-  return resolveNodeTextDirection(node) === 'RTL' ? line.runs.at(0) : line.runs.at(-1)
+function endRun(
+  node: SceneNode,
+  layout: TextLayout,
+  text: string,
+  line: ShapedLine
+): GlyphRun | undefined {
+  const block = layout.blocks.findLast(({ visible }) => visible)
+  if (!block) return undefined
+  const paragraph = text.slice(block.start, block.start + block.length)
+  const rtl = resolveTextDirection(node.textDirection, paragraph) === 'RTL'
+  return line.runs.at(rtl ? 0 : -1)
 }
 
 /**
@@ -468,7 +481,7 @@ export function laidOutGlyphs(
     if (marker) appendAll(glyphs, markerGlyphs(marker, offsetY))
     const { left, baseline, endIndex } = metrics[lineIndex]
     const lineBoundaries = lineRunBoundaries(line, endIndex, characterAt)
-    const ending = lineIndex === lines.length - 1 ? endRun(node, line) : undefined
+    const ending = lineIndex === lines.length - 1 ? endRun(node, layout, text, line) : undefined
     // Run positions round the baseline to whole pixels; line metrics keep it exact.
     const place = { lineLeft: left, y: baseline + offsetY, runBaseline: line.baseline }
     for (const run of line.runs) {

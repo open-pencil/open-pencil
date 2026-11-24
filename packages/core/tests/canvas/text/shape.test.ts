@@ -359,6 +359,33 @@ describe('text shaping for saved glyphs', () => {
     }
   })
 
+  test.each([
+    { text: 'שלום\nHello world Hello world', end: 'right' },
+    { text: 'Hello\nשלום עולם שלום עולם', end: 'left' }
+  ])(
+    'saves the ellipsis at the $end of a last paragraph in its own direction',
+    async ({ text, end }) => {
+      const shaped = expectDefined(
+        await shape({
+          text,
+          width: 60,
+          height: 50,
+          textTruncation: 'ENDING',
+          maxLines: 2,
+          paragraphSpacing: 4
+        }),
+        'shaped text'
+      )
+      const lastY = maxOf(shaped.glyphs.map((glyph) => glyph.y))
+      const line = shaped.glyphs.filter((glyph) => glyph.y === lastY)
+      const ellipsis = line.filter((glyph) => glyph.firstCharacter === undefined)
+      const xs = line.map((glyph) => glyph.x)
+
+      expect(shaped.glyphs.every((glyph) => glyph.commands !== null)).toBe(true)
+      expect(ellipsis.map((glyph) => glyph.x)).toEqual([end === 'left' ? minOf(xs) : maxOf(xs)])
+    }
+  )
+
   test('outlines characters a fallback font draws from that font', async () => {
     const fallbackFamilies = fontManager.getCJKFallbackFamilies()
     const originalFallbacks = [...fallbackFamilies]
