@@ -26,6 +26,8 @@ export interface OAuthAccessTokenTable {
   scopes: string[]
   expiresAt: TimestampColumn
   revoked: TimestampColumn | null
+  /** The key a DPoP-bound token is bound to (RFC 9449 `cnf`). */
+  confirmation: unknown
   createdAt: TimestampColumn
 }
 

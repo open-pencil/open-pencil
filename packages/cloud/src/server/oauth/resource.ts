@@ -61,6 +61,7 @@ export async function resolveAppAccessToken(
       'oauthAccessToken.expiresAt',
       'oauthAccessToken.revoked',
       'oauthAccessToken.createdAt',
+      'oauthAccessToken.confirmation',
       'oauthClient.disabled'
     ])
     .where(
@@ -71,6 +72,9 @@ export async function resolveAppAccessToken(
     .executeTakeFirst()
   if (!stored?.userId || !stored.referenceId) return null
   if (stored.revoked || stored.disabled) return null
+  // A token bound to a key (DPoP, RFC 9449) is good only with a proof of that key, which this
+  // Bearer-only check does not take; the token endpoint binds one whenever the app sends a proof.
+  if (stored.confirmation != null) return null
   if (new Date(stored.expiresAt).getTime() <= Date.now()) return null
   // A token for another resource is not for the document API (RFC 8707). One whose request named
   // none reaches this API, the only resource the server has.

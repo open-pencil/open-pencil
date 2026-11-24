@@ -19,6 +19,7 @@ import {
 } from '#cloud/contract'
 import { parseCloudServerConfig } from '#cloud/server'
 import { createOAuthService } from '#cloud/server/oauth'
+import { hashCapability } from '#cloud/server/sharing/crypto'
 import { fromUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
@@ -201,6 +202,7 @@ describe('OAuth discovery', () => {
     expect(server.code_challenge_methods_supported).toEqual(['S256'])
     expect(server.scopes_supported).toContain('documents:write')
     expect(server).not.toHaveProperty('introspection_endpoint')
+    expect(server).not.toHaveProperty('dpop_signing_alg_values_supported')
   })
 
   test('registers a desktop app that listens on a loopback address', async () => {
@@ -445,6 +447,19 @@ describe('connected apps', () => {
     await consent({ createdAt: new Date(Date.now() + 60_000) })
     expect((await send('/api/session', { token })).status).toBe(401)
     await disconnect()
+  })
+
+  test('refuse a token bound to a key, which a Bearer request cannot prove', async () => {
+    const { tokens } = await connect()
+    const token = tokens.access_token
+    expect((await send('/api/session', { token })).status).toBe(200)
+    // As the token endpoint stores it for an app that sent a DPoP proof.
+    await fixture.database
+      .updateTable('oauthAccessToken')
+      .set({ confirmation: JSON.stringify({ jkt: 'bound-key-thumbprint' }) })
+      .where('token', '=', hashCapability(token.slice(CLOUD_APP_ACCESS_TOKEN_PREFIX.length)))
+      .execute()
+    expect((await send('/api/session', { token })).status).toBe(401)
   })
 
   test('stop reaching a workspace the person left', async () => {

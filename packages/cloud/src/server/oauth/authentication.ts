@@ -53,10 +53,14 @@ export function cloudOAuthAuthentication(api: ProviderAPI): CloudOAuthAuthentica
           })
         )
     },
-    // Introspection stays closed (`closedOAuthPaths`), so the metadata does not offer it.
+    // Introspection stays closed (`closedOAuthPaths`), and the document API takes Bearer tokens
+    // alone (`resolveAppAccessToken`), so the metadata offers neither introspection nor DPoP.
     serverMetadata: async () => {
       const metadata = v.parse(v.record(v.string(), v.unknown()), await api.getOAuthServerConfig())
-      return omitBy(metadata, (_value, key) => key.startsWith('introspection_'))
+      return omitBy(
+        metadata,
+        (_value, key) => key.startsWith('introspection_') || key.startsWith('dpop_')
+      )
     }
   }
 }
