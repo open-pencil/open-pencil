@@ -4,7 +4,7 @@ import type { ColorProfile, SceneGraph, SceneNode } from '@open-pencil/scene-gra
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { readIcon } from '@open-pencil/scene-graph/icons'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
-import { layoutSizingInParent } from '@open-pencil/scene-graph/layout'
+import { layoutSizingInParent, primaryAxisSpacingOf } from '@open-pencil/scene-graph/layout'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
@@ -183,23 +183,26 @@ function addPadding(style: DesignStyleDeclaration, node: SceneNode, css: FieldCS
 }
 
 function addFlexGap(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
-  const counterAxisSpacing = node.counterAxisSpacing ?? 0
-  if (node.itemSpacing <= 0 && counterAxisSpacing <= 0) return
+  const spacing = primaryAxisSpacingOf(node)
   const item = css('itemSpacing', px(node.itemSpacing))
-  if (counterAxisSpacing <= 0) {
+  const [along, across] =
+    node.layoutMode === 'HORIZONTAL'
+      ? (['column-gap', 'row-gap'] as const)
+      : (['row-gap', 'column-gap'] as const)
+  const counter = node.counterAxisSpacing ?? 0
+  if (counter > 0) {
+    if (spacing > 0) style[along] = item
+    style[across] = css('counterAxisSpacing', px(counter))
+  } else if (spacing > 0) {
     style.gap = item
-    return
+  } else if (
+    node.itemSpacing > 0 &&
+    node.layoutWrap === 'WRAP' &&
+    node.counterAxisSpacing === null
+  ) {
+    // Space between drops the gap along the rows; the space between them still follows it.
+    style[across] = item
   }
-
-  const counter = css('counterAxisSpacing', px(counterAxisSpacing))
-  if (node.layoutMode === 'HORIZONTAL') {
-    if (node.itemSpacing > 0) style['column-gap'] = item
-    style['row-gap'] = counter
-    return
-  }
-
-  if (node.itemSpacing > 0) style['row-gap'] = item
-  style['column-gap'] = counter
 }
 
 /**
@@ -228,6 +231,21 @@ function addShaderLayerStyle(style: DesignStyleDeclaration): void {
   style.isolation = 'isolate'
 }
 
+/**
+ * Whether flexbox could shrink a layer where auto layout lets it overflow: auto layout shrinks
+ * only layers that fill. A column that hugs its height never runs out of it, so its children
+ * need no say.
+ */
+function keepsSize(node: SceneNode, parent: SceneNode): boolean {
+  if (parent.layoutMode !== 'HORIZONTAL' && parent.layoutMode !== 'VERTICAL') return false
+  if (node.layoutPositioning === 'ABSOLUTE' || node.layoutGrow > 0) return false
+  return (
+    parent.layoutMode === 'HORIZONTAL' ||
+    parent.primaryAxisSizing !== 'HUG' ||
+    parent.maxHeight !== null
+  )
+}
+
 /** Styles a node takes from its parent's layout, and its own rotation. */
 function addLayoutChild(
   style: DesignStyleDeclaration,
@@ -236,6 +254,7 @@ function addLayoutChild(
 ): void {
   if (parent?.layoutMode === 'GRID') addGridPlacement(style, node)
   else if (parent && parent.layoutMode !== 'NONE' && node.layoutGrow > 0) style['flex-grow'] = '1'
+  if (parent && keepsSize(node, parent)) style['flex-shrink'] = '0'
   if (node.rotation !== 0) style.transform = `rotate(${node.rotation}deg)`
 }
 

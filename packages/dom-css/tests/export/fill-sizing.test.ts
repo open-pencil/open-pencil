@@ -59,3 +59,40 @@ describe('fill sizing in DOM/CSS export', () => {
     expect(styleOf(doc, 'Tall')?.height).toBeUndefined()
   })
 })
+
+describe('auto layout sizes in DOM/CSS export', () => {
+  const child = { name: 'Child', width: 40, height: 50 }
+  const shrink = (layout: Partial<SceneNode>, over: Partial<SceneNode> = {}) =>
+    styleOf(exportParent(layout, [{ ...child, ...over }]), 'Child')?.['flex-shrink']
+
+  it('keeps a layer that does not fill from shrinking, so it overflows as auto layout lets it', () => {
+    expect(shrink({ layoutMode: 'HORIZONTAL' })).toBe('0')
+    expect(shrink({ layoutMode: 'VERTICAL', primaryAxisSizing: 'FIXED' })).toBe('0')
+    expect(shrink({ layoutMode: 'VERTICAL', primaryAxisSizing: 'HUG', maxHeight: 40 })).toBe('0')
+  })
+
+  it('says nothing of a layer that fills, is placed, or has a column that hugs it', () => {
+    expect(shrink({ layoutMode: 'HORIZONTAL' }, { layoutGrow: 1 })).toBeUndefined()
+    expect(shrink({ layoutMode: 'HORIZONTAL' }, { layoutPositioning: 'ABSOLUTE' })).toBeUndefined()
+    expect(shrink({ layoutMode: 'VERTICAL', primaryAxisSizing: 'HUG' })).toBeUndefined()
+    expect(shrink({ layoutMode: 'NONE' })).toBeUndefined()
+  })
+
+  it('drops the gap space between takes the place of, keeping the space between wrapped lines', () => {
+    const between = {
+      layoutMode: 'HORIZONTAL',
+      primaryAxisAlign: 'SPACE_BETWEEN',
+      itemSpacing: 16
+    } as const
+    const style = (layout: Partial<SceneNode>) => styleOf(exportParent(layout, [child]), 'Parent')
+    expect(style(between)).not.toHaveProperty('gap')
+    expect(style(between)).not.toHaveProperty('row-gap')
+    const wrapped = style({ ...between, layoutWrap: 'WRAP', counterAxisSpacing: 8 })
+    expect(wrapped).toMatchObject({ 'row-gap': '8px' })
+    expect(wrapped).not.toHaveProperty('column-gap')
+    expect(style({ ...between, layoutWrap: 'WRAP', counterAxisSpacing: null })).toMatchObject({
+      'row-gap': '16px'
+    })
+    expect(style({ ...between, primaryAxisAlign: 'MIN' })).toMatchObject({ gap: '16px' })
+  })
+})
