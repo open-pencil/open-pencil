@@ -1,1 +1,2 @@
 - `@open-pencil/cloud/contract` no longer exports the room protocol: import `COLLAB_ACTIONS`, `MAX_COLLAB_MESSAGE_BYTES`, `RELAY_SERVER_PEER`, `encodeSyncReply`, and `decodeRoomUpdate` from `@open-pencil/collab`.
+- `@open-pencil/cloud/server` replaces `shouldPreventIndexing` and `withIndexingPolicy` with `preventIndexing(policy)`, a Hono middleware.

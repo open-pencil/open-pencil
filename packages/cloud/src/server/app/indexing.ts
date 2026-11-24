@@ -1,43 +1,51 @@
-import { CLOUD_DISCOVERY_PATH, CLOUD_EMBED_PATH } from '#cloud/contract'
+import { CLOUD_EMBED_PATH } from '#cloud/contract'
+import type { MiddlewareHandler } from 'hono'
+import { METHOD_NAME_ALL } from 'hono/router'
+import { TrieRouter } from 'hono/router/trie-router'
 
-export function shouldPreventIndexing(path: string, policy: 'allow' | 'deny'): boolean {
-  return (
-    policy === 'deny' ||
-    path.startsWith('/api/') ||
-    path.startsWith('/admin') ||
-    path.startsWith('/auth') ||
-    path.startsWith('/account') ||
-    path === '/app' ||
-    path === '/sign-in' ||
-    path === '/sign-up' ||
-    path === '/join' ||
-    path === CLOUD_DISCOVERY_PATH ||
-    // A document inside another site's page; the page around it is the one to index.
-    path === CLOUD_EMBED_PATH ||
-    path.startsWith(`${CLOUD_EMBED_PATH}/`) ||
-    // A community document in the editor; its page at `/community/:id` is the one to index.
-    /^\/community\/[^/]+\/open\/?$/.test(path)
-  )
+export type IndexingPolicy = 'allow' | 'deny'
+
+/**
+ * The server's own sections, which search engines never list: each path and everything under it.
+ * An embed is one, as the page around its frame is the one to index.
+ */
+const PRIVATE_SECTIONS = [
+  '/admin',
+  '/account',
+  '/app',
+  '/api',
+  '/auth',
+  '/sign-in',
+  '/sign-up',
+  '/join',
+  CLOUD_EMBED_PATH,
+  '/.well-known'
+]
+
+/** A community document in the editor; its page at `/community/:id` is the one to index. */
+const UNLISTED_PAGES = ['/community/:documentId/open', '/community/:documentId/open/']
+
+/**
+ * Tells search engines to leave responses out: all of them under `deny`, otherwise the server's
+ * own sections and unlisted pages, matched by Hono's router as routes are. A response passed on
+ * from `fetch` has headers nobody may change, so the header goes on a copy.
+ */
+export function preventIndexing(policy: IndexingPolicy): MiddlewareHandler {
+  const router = new TrieRouter<true>()
+  const routes =
+    policy === 'deny' ? ['*'] : [...PRIVATE_SECTIONS.map((path) => `${path}/*`), ...UNLISTED_PAGES]
+  for (const route of routes) router.add(METHOD_NAME_ALL, route, true)
+  return async (context, next) => {
+    await next()
+    if (router.match(METHOD_NAME_ALL, context.req.path)[0].length === 0) return
+    const response = new Response(context.res.body, context.res)
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive')
+    context.res = response
+  }
 }
 
-export function withIndexingPolicy(
-  response: Response,
-  path: string,
-  policy: 'allow' | 'deny'
-): Response {
-  if (!shouldPreventIndexing(path, policy)) return response
-  const headers = new Headers(response.headers)
-  headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive')
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers
-  })
-}
-
-/** What `/robots.txt` answers: everything closed, or only the server's own pages and API. */
-export function robotsText(policy: 'allow' | 'deny'): string {
-  return policy === 'deny'
-    ? 'User-agent: *\nDisallow: /\n'
-    : 'User-agent: *\nDisallow: /admin\nDisallow: /account\nDisallow: /app\nDisallow: /api\nDisallow: /auth\nDisallow: /sign-in\nDisallow: /sign-up\nDisallow: /join\nDisallow: /embed\nDisallow: /.well-known\n'
+/** What `/robots.txt` answers: everything closed, or only the server's own sections. */
+export function robotsText(policy: IndexingPolicy): string {
+  const closed = policy === 'deny' ? ['/'] : PRIVATE_SECTIONS
+  return ['User-agent: *', ...closed.map((path) => `Disallow: ${path}`), ''].join('\n')
 }

@@ -75,10 +75,10 @@ export {
 } from './api'
 export {
   createCloudApp,
-  shouldPreventIndexing,
-  withIndexingPolicy,
+  preventIndexing,
   type CloudApp,
-  type CloudServices
+  type CloudServices,
+  type IndexingPolicy
 } from './app'
 export {
   cleanupPassOptions,
