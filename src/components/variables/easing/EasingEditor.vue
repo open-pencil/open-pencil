@@ -198,8 +198,10 @@ const physicsFields = computed(() => {
           <component :is="easingThumbnail(easing)" :class="ui.presetThumbnail()" />
         </template>
         <template #option="{ option }">
-          <component :is="thumbnail(option.value)" :class="ui.presetThumbnail()" />
-          {{ option.label }}
+          <span :class="ui.presetOption()">
+            <component :is="thumbnail(option.value)" :class="ui.presetOptionThumbnail()" />
+            {{ option.label }}
+          </span>
         </template>
       </AppSelect>
       <IconButton :label="text.close" @click="emit('close')">

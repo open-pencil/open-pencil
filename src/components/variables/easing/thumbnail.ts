@@ -4,18 +4,28 @@ import type { Easing } from '@open-pencil/scene-graph'
 
 import { maskIcon } from '@/components/icons/mask'
 
-import { easingDrawing, GRAPH_SIZE } from './graph'
+import { easingLine, GRAPH_SIZE, type EasingPlacement } from './graph'
 
-/** The dotted square Figma draws behind an easing's thumbnail, as a fraction of the box. */
-const FRAME = { start: 14, size: 72 }
+/**
+ * The dotted square an easing's thumbnail is drawn in, as Figma's list and menus draw it: a curve
+ * fills it from corner to corner, and a spring runs from its bottom to its top over its settling
+ * time. What goes past 0 or 1, a back curve or a spring's bounce, has the margin around it.
+ */
+const FRAME = { start: 18, size: 64 }
 
-/** An easing's line in a dotted square, as Figma's list and menus show it, in the text color. */
+const inFrame = (x: number, y: number) => ({
+  x: FRAME.start + x * FRAME.size,
+  y: FRAME.start + (1 - y) * FRAME.size
+})
+const THUMBNAIL_PLACEMENT: EasingPlacement = { curve: inFrame, spring: inFrame }
+
+/** An easing's line in its dotted square, in the text color. */
 export function easingThumbnailSVG(easing: Easing): string {
-  const { line } = easingDrawing(easing)
+  const line = easingLine(easing, THUMBNAIL_PLACEMENT)
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${GRAPH_SIZE} ${GRAPH_SIZE}">`,
-    `<rect x="${FRAME.start}" y="${FRAME.start}" width="${FRAME.size}" height="${FRAME.size}" fill="none" stroke="black" stroke-opacity="0.45" stroke-width="5" stroke-dasharray="2 10"/>`,
-    `<path d="${line}" fill="none" stroke="black" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>`,
+    `<rect x="${FRAME.start}" y="${FRAME.start}" width="${FRAME.size}" height="${FRAME.size}" fill="none" stroke="black" stroke-opacity="0.4" stroke-width="5" stroke-dasharray="1 8" stroke-linecap="round"/>`,
+    `<path d="${line}" fill="none" stroke="black" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`,
     '</svg>'
   ].join('')
 }

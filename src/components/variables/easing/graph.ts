@@ -1,4 +1,4 @@
-import type { CubicBezier, Easing, Spring } from '@open-pencil/scene-graph'
+import type { Easing, Spring } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import {
   easingBezier,
@@ -55,30 +55,47 @@ function path(points: readonly GraphPoint[]): string {
     .join(' ')
 }
 
-function bezierPath(bezier: CubicBezier): string {
-  const start = curvePoint(0, 0)
-  const first = curvePoint(bezier.x1, bezier.y1)
-  const second = curvePoint(bezier.x2, bezier.y2)
-  const end = curvePoint(1, 1)
-  const at = (point: GraphPoint) => `${round(point.x)} ${round(point.y)}`
-  return `M${at(start)} C${at(first)} ${at(second)} ${at(end)}`
+/**
+ * Where a drawing puts an easing's points: `x` from 0 to 1 across the curve's square or the
+ * spring's settling time, `y` its value, 0 at the start and 1 at the target.
+ */
+export interface EasingPlacement {
+  curve: (x: number, y: number) => GraphPoint
+  spring: (x: number, y: number) => GraphPoint
 }
 
-/** Where a spring's graph puts the moment `seconds` of `duration` and the value there. */
-function springPoint(seconds: number, value: number, duration: number): GraphPoint {
-  return {
-    x: SPRING_START + (seconds / duration) * (SPRING_END - SPRING_START),
-    y: SPRING_ZERO - value * SPRING_UNIT
-  }
-}
-
-function springPath(spring: Spring): string {
-  const duration = springSettleTime(spring)
-  const points = Array.from({ length: SPRING_SAMPLES + 1 }, (_, index) => {
-    const seconds = (index / SPRING_SAMPLES) * duration
-    return springPoint(seconds, springPosition(spring, seconds), duration)
+/** Where the graph puts an easing: a curve in its unit square, a spring with room to overshoot. */
+const GRAPH_PLACEMENT: EasingPlacement = {
+  curve: curvePoint,
+  spring: (x, y) => ({
+    x: SPRING_START + x * (SPRING_END - SPRING_START),
+    y: SPRING_ZERO - y * SPRING_UNIT
   })
-  return path(points)
+}
+
+/** An easing's line, placed: a curve, a spring over the time it takes to settle, or a hold. */
+export function easingLine(easing: Easing, place: EasingPlacement): string {
+  const spring = easingSpring(easing)
+  if (spring) {
+    const duration = springSettleTime(spring)
+    return path(
+      Array.from({ length: SPRING_SAMPLES + 1 }, (_, index) => {
+        const x = index / SPRING_SAMPLES
+        return place.spring(x, springPosition(spring, x * duration))
+      })
+    )
+  }
+  const bezier = easingBezier(easing)
+  if (!bezier) return path([place.curve(0, 0), place.curve(1, 0), place.curve(1, 1)])
+  const at = (point: GraphPoint) => `${round(point.x)} ${round(point.y)}`
+  return `M${at(place.curve(0, 0))} C${at(place.curve(bezier.x1, bezier.y1))} ${at(
+    place.curve(bezier.x2, bezier.y2)
+  )} ${at(place.curve(1, 1))}`
+}
+
+/** Where the graph puts the moment `seconds` of `duration` and a spring's value there. */
+function springPoint(seconds: number, value: number, duration: number): GraphPoint {
+  return GRAPH_PLACEMENT.spring(seconds / duration, value)
 }
 
 /** What the graph draws for an easing: its line, the guides behind it, and a curve's handle arms. */
@@ -90,11 +107,11 @@ export interface EasingDrawing {
 
 /** An easing's drawing: a curve in its unit square, a spring over the time it takes to settle. */
 export function easingDrawing(easing: Easing): EasingDrawing {
-  const spring = easingSpring(easing)
-  if (spring) {
-    const target = springPoint(0, 1, 1).y
+  const line = easingLine(easing, GRAPH_PLACEMENT)
+  if (easingSpring(easing)) {
+    const target = GRAPH_PLACEMENT.spring(0, 1).y
     return {
-      line: springPath(spring),
+      line,
       guides: path([
         { x: SPRING_START, y: target },
         { x: SPRING_END, y: target }
@@ -107,10 +124,9 @@ export function easingDrawing(easing: Easing): EasingDrawing {
     path([curvePoint(0, 1), curvePoint(1, 1)])
   ].join(' ')
   const bezier = easingBezier(easing)
-  if (!bezier)
-    return { line: path([curvePoint(0, 0), curvePoint(1, 0), curvePoint(1, 1)]), guides, arms: '' }
+  if (!bezier) return { line, guides, arms: '' }
   return {
-    line: bezierPath(bezier),
+    line,
     guides,
     arms: [
       path([curvePoint(0, 0), curvePoint(bezier.x1, bezier.y1)]),

@@ -9,11 +9,15 @@ export default {
      */
     trigger:
       'flex h-full min-w-0 flex-1 items-center text-start text-xs text-surface outline-hidden',
-    thumbnail: 'size-3.5 shrink-0 text-muted',
+    thumbnail: 'size-4 shrink-0 text-muted',
     name: 'truncate',
     editor: 'flex w-56 flex-col gap-3 p-3',
     header: 'flex items-center gap-1',
-    presetThumbnail: 'size-3.5 shrink-0 text-muted',
+    /** The chosen preset's thumbnail before its name in the select. */
+    presetThumbnail: 'me-1.5 size-4 shrink-0 text-muted',
+    /** A preset's row in the menu: its thumbnail and name on one centre line. */
+    presetOption: 'flex items-center gap-1.5',
+    presetOptionThumbnail: 'size-4 shrink-0 text-muted',
     graph: 'relative aspect-square w-full touch-none rounded-md bg-panel-secondary select-none',
     guides: 'absolute inset-0 size-full text-muted/60',
     arms: 'absolute inset-0 size-full text-accent',
