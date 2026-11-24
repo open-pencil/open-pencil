@@ -73,7 +73,8 @@ function galleryPage(documents: CommunityDocument[], description: string) {
  */
 export function communityContent({ documents, document, description }: CommunityContent) {
   const app = createSSRApp({
-    render: () => (document ? documentPage(document, description) : galleryPage(documents, description))
+    render: () =>
+      document ? documentPage(document, description) : galleryPage(documents, description)
   })
   return renderToString(app)
 }

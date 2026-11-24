@@ -60,17 +60,19 @@ const NOT_FOUND: CommunityPageFailure = { status: 404, retryAfter: null }
 export const COMMUNITY_DESCRIPTION = 'Files to open, explore, and copy into your own workspace.'
 
 /**
- * The gallery's page, or one of its documents' when `documentId` names one, or why there is none:
- * no gallery or no such document, or an API that could not answer.
+ * The gallery's page, or one of its documents' when `documentId` names one, with its addresses on
+ * the deployment's public `origin`, or why there is none: no gallery or no such document, or an
+ * API that could not answer.
  */
 export async function communityPage(
   api: API,
   page: Request,
+  origin: string,
   documentId: string | undefined
 ): Promise<CommunityPage | CommunityPageFailure> {
   const documents = await communityDocuments(api, page)
   if (!Array.isArray(documents)) return documents
-  const { origin, host } = new URL(page.url)
+  const { host } = new URL(origin)
   if (documentId === undefined) {
     const first = documents.at(0)
     return {

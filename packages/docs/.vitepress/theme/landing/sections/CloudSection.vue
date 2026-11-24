@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import IconArrowRight from '~icons/lucide/arrow-right'
 import IconHistory from '~icons/lucide/history'
+import IconLayoutGrid from '~icons/lucide/layout-grid'
 import IconMessageSquare from '~icons/lucide/message-square'
 import IconRefreshCw from '~icons/lucide/refresh-cw'
 import IconServer from '~icons/lucide/server'
 import IconSparkles from '~icons/lucide/sparkles'
-import IconLayoutGrid from '~icons/lucide/layout-grid'
 import IconTag from '~icons/lucide/tag'
 
 import { LINKS } from '../content/links'

@@ -1,4 +1,8 @@
-import { CLOUD_DISCOVERY_PATH, COMMUNITY_SITEMAP_PATH, COMMUNITY_THUMBNAIL_PATH } from '#cloud/contract'
+import {
+  CLOUD_DISCOVERY_PATH,
+  COMMUNITY_SITEMAP_PATH,
+  COMMUNITY_THUMBNAIL_PATH
+} from '#cloud/contract'
 
 export function shouldPreventIndexing(path: string, policy: 'allow' | 'deny'): boolean {
   return (
@@ -47,7 +51,9 @@ export function robotsText(policy: 'allow' | 'deny', sitemapOrigin: string | nul
       (path) => `Disallow: ${path}`
     ),
     'Disallow: /.well-known',
-    ...(sitemapOrigin ? ['', `Sitemap: ${new URL(COMMUNITY_SITEMAP_PATH, sitemapOrigin).href}`] : [])
+    ...(sitemapOrigin
+      ? ['', `Sitemap: ${new URL(COMMUNITY_SITEMAP_PATH, sitemapOrigin).href}`]
+      : [])
   ]
   return `${rules.join('\n')}\n`
 }

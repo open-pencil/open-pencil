@@ -53,7 +53,7 @@ function server(
       })
     }
   }
-  return createCloudServer(api, { site, indexingPolicy })
+  return createCloudServer(api, { site, indexingPolicy, publicURL: 'https://cloud.example' })
 }
 
 const visit = (app: ReturnType<typeof server>, path: string) =>
@@ -179,5 +179,24 @@ describe('community pages', () => {
     )
     const denied = server(true, 'Tour', 'deny')
     expect((await denied.request('https://cloud.example/sitemap.xml')).status).toBe(404)
+  })
+
+  test('name addresses from the public URL, not a host a proxy forwards to', async () => {
+    const internal = new Request(`http://10.0.0.5:3000/community/${DOCUMENT_ID}`, {
+      headers: { Accept: 'text/html' }
+    })
+    const head = await headOf(await server(true).request(internal))
+    expect(head.canonical).toBe(`https://cloud.example/community/${DOCUMENT_ID}`)
+    expect(head.meta['og:image']).toStartWith('https://cloud.example/api/community/thumbnails/')
+    const xml = await (await server(true).request('http://10.0.0.5:3000/sitemap.xml')).text()
+    expect(xml).not.toContain('10.0.0.5')
+    expect(xml).toContain('<loc>https://cloud.example/community</loc>')
+  })
+
+  test('keep the API’s status and retry advice for the sitemap, and 404 without a gallery', async () => {
+    const limited = await server('limited').request('https://cloud.example/sitemap.xml')
+    expect(limited.status).toBe(429)
+    expect(limited.headers.get('Retry-After')).toBe('30')
+    expect((await server(false).request('https://cloud.example/sitemap.xml')).status).toBe(404)
   })
 })
