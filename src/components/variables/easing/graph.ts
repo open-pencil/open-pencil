@@ -123,7 +123,8 @@ export function easingDrawing(easing: Easing): EasingDrawing {
 export function springHandle(spring: Spring): GraphPoint {
   const duration = springSettleTime(spring)
   const peak = springPeak(spring)
-  if (peak) return springPoint(peak.seconds, peak.value, duration)
+  // A spring damped close to critical peaks too little, too late, to draw: it sits at the end.
+  if (peak && peak.seconds <= duration) return springPoint(peak.seconds, peak.value, duration)
   return springPoint(duration, 1, duration)
 }
 

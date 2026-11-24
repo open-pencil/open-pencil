@@ -1,17 +1,11 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import { seedMotionVariables, storedVariableValue } from '#tests/helpers/variables/motion'
 
 const editor = useEditorSetup()
 
 /** A Motion collection with one timing and one easing, and the variables dialog open on it. */
 test.beforeAll(async () => {
-  await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const collection = store.graph.createCollection('Motion')
-    store.graph.createVariable('fast', 'TIMING', collection.id, 0.15)
-    store.graph.createVariable('standard', 'EASING', collection.id, { easing: 'INOUT_CUBIC' })
-    store.state.sceneVersion++
-  })
+  await seedMotionVariables(editor.page)
   await editor.page
     .getByRole('region', { name: 'Variables' })
     .getByRole('button', { name: 'Open variables' })
@@ -20,13 +14,7 @@ test.beforeAll(async () => {
 })
 
 function stored(name: string) {
-  return editor.page.evaluate((variableName) => {
-    const graph = window.openPencil?.getStore?.().graph
-    const variable = [...(graph?.variables.values() ?? [])].find(
-      (candidate) => candidate.name === variableName
-    )
-    return variable && Object.values(variable.valuesByMode)[0]
-  }, name)
+  return storedVariableValue(editor.page, name)
 }
 
 function row(name: string) {

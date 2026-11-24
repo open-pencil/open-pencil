@@ -181,10 +181,33 @@ export function springPosition(spring: Spring, seconds: number): number {
 export function springSettleTime(spring: Spring): number {
   const { natural, ratio } = springMotion(spring)
   if (!(natural > 0) || !(ratio > 0)) return MAX_SPRING_SECONDS
-  const rate = ratio <= 1 ? ratio * natural : natural * (ratio - Math.sqrt(ratio * ratio - 1))
-  const seconds = Math.log(1 / SETTLED) / rate
-  // A critically damped spring's polynomial term needs a little longer than its decay.
-  return Math.min(MAX_SPRING_SECONDS, ratio === 1 ? seconds * 1.5 : seconds)
+  return Math.min(MAX_SPRING_SECONDS, settleBound(natural, ratio))
+}
+
+/**
+ * When the response's bound, its decay times the largest its oscillation or second term can add,
+ * falls under `SETTLED`: the decay alone undershoots for a spring damped close to critical.
+ */
+function settleBound(natural: number, ratio: number): number {
+  const tolerance = Math.log(1 / SETTLED)
+  if (ratio < 1) {
+    // The oscillation's amplitude is 1 / sqrt(1 - ratio²) of the decay.
+    const amplitude = 1 / Math.sqrt(1 - ratio * ratio)
+    return (tolerance + Math.log(amplitude)) / (ratio * natural)
+  }
+  if (ratio > 1) {
+    const spread = natural * Math.sqrt(ratio * ratio - 1)
+    const slow = -ratio * natural + spread
+    const fast = -ratio * natural - spread
+    // Both terms decay at least as fast as the slow root; their weights add at most this much.
+    const weight = (Math.abs(fast) + Math.abs(slow)) / (slow - fast)
+    return (tolerance + Math.log(weight)) / -slow
+  }
+  // Critically damped: 1 - x = (1 + ωt) e^(-ωt); a few fixed-point steps solve it for SETTLED.
+  let seconds = tolerance / natural
+  for (let step = 0; step < 8; step++)
+    seconds = (tolerance + Math.log(1 + natural * seconds)) / natural
+  return seconds
 }
 
 /** The first overshoot of a bouncing spring: when it comes, and how far past 1 it goes. */

@@ -1,9 +1,10 @@
 import { expect, test } from 'bun:test'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type Easing } from '@open-pencil/scene-graph'
+
+import { exportFigFile, parseFigFile } from '#core/io/formats/fig'
 
 const SPRING: Easing = {
   easing: 'CUSTOM_SPRING',

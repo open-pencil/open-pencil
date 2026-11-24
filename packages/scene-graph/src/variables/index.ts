@@ -20,7 +20,6 @@ import {
   variableBindingOwner,
   assignVariableBindingUnits
 } from './bindings'
-import { easingPreset } from './easing'
 import {
   BOOLEAN_BINDING_FIELDS,
   effectBindableProperties,
@@ -116,7 +115,8 @@ export function defaultVariableValue(type: VariableType, value?: VariableValue):
   if (type === 'COLOR') return { ...BLACK }
   if (type === 'FLOAT' || type === 'TIMING') return 0
   if (type === 'BOOLEAN') return false
-  if (type === 'EASING') return easingPreset('EASE_IN')
+  // Figma starts an easing as IN_CUBIC with no numbers, which it shows as Ease in.
+  if (type === 'EASING') return { easing: 'IN_CUBIC' }
   return ''
 }
 

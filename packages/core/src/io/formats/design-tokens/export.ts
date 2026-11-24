@@ -10,6 +10,7 @@ import type {
 } from '@open-pencil/scene-graph'
 import {
   formulaTypeOf,
+  isEasing,
   printFormula,
   variableValueReferences
 } from '@open-pencil/scene-graph/variables'
@@ -24,7 +25,7 @@ import {
   type DesignTokenFile,
   type DesignTokenIssue
 } from './types'
-import { literalTokenValue, variableTokenType } from './values'
+import { cubicBezierTokenValue, literalTokenValue, variableTokenType } from './values'
 
 export interface DesignTokenExport {
   files: DesignTokenFile[]
@@ -78,6 +79,48 @@ function openPencilFields(variable: Variable, modeId: string, formula?: string) 
   return isEmptyObject(fields) ? {} : { [OPENPENCIL_EXTENSION]: fields }
 }
 
+/** Whether an easing resolves, in this mode, to a curve a `cubicBezier` token holds. */
+function exportableEasing(
+  context: ExportContext,
+  variable: Variable,
+  mode: VariableCollectionMode
+): boolean {
+  const resolved = context.graph.resolveVariable(variable.id, mode.modeId)
+  return isEasing(resolved) && cubicBezierTokenValue(resolved) !== undefined
+}
+
+/**
+ * An alias as a `{group.token}` reference, with the target's names for Figma when it is in another
+ * collection; or why it has none. A spring or hold has no token, so an alias to one would name a
+ * token that is not there.
+ */
+function aliasTokenValue(
+  context: ExportContext,
+  collection: VariableCollection,
+  mode: VariableCollectionMode,
+  variable: Variable,
+  aliasId: string
+):
+  | { value: string; figma: Record<string, unknown> }
+  | { issue: 'unsupported-easing' | 'missing-alias' } {
+  if (variable.type === 'EASING' && !exportableEasing(context, variable, mode))
+    return { issue: 'unsupported-easing' }
+  const path = context.references.get(aliasId)
+  const target = context.graph.variables.get(aliasId)
+  const targetCollection = context.collectionOf.get(aliasId)
+  if (!path || !target || !targetCollection) return { issue: 'missing-alias' }
+  const figma =
+    targetCollection.id === collection.id
+      ? {}
+      : {
+          'com.figma.aliasData': {
+            targetVariableName: target.name,
+            targetVariableSetName: targetCollection.name
+          }
+        }
+  return { value: tokenReference(path), figma }
+}
+
 /**
  * A variable's value in one mode as a token. An alias is a `{group.token}` reference; one to
  * another collection also names its target in `com.figma.aliasData`, the way Figma resolves it.
@@ -113,19 +156,13 @@ function variableToken(
     context.issues.push({ kind: 'unsupported-expression', ...where })
     return undefined
   } else if (typeof value === 'object' && 'aliasId' in value) {
-    const path = context.references.get(value.aliasId)
-    const target = context.graph.variables.get(value.aliasId)
-    const targetCollection = context.collectionOf.get(value.aliasId)
-    if (!path || !target || !targetCollection) {
-      context.issues.push({ kind: 'missing-alias', ...where })
+    const alias = aliasTokenValue(context, collection, mode, variable, value.aliasId)
+    if ('issue' in alias) {
+      context.issues.push({ kind: alias.issue, ...where })
       return undefined
     }
-    $value = tokenReference(path)
-    if (targetCollection.id !== collection.id)
-      figma['com.figma.aliasData'] = {
-        targetVariableName: target.name,
-        targetVariableSetName: targetCollection.name
-      }
+    $value = alias.value
+    Object.assign(figma, alias.figma)
   } else {
     $value = literalTokenValue(variable, value, context.graph.documentColorSpace)
     if ($value === undefined) {

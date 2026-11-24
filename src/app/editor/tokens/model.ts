@@ -239,7 +239,7 @@ function parseTimingText(text: string): number | undefined {
 /** A number or text value as it is typed back, numbers in the token's unit and timings in ms. */
 export function tokenValueText(variable: Variable, value: VariableValue | undefined): string {
   if (variable.type === 'TIMING' && typeof value === 'number')
-    return String(Number((value * 1000).toFixed(3)))
+    return String(Number((value * 1000).toFixed(2)))
   if (typeof value === 'number')
     return String(Number(tokenNumberInUnit(value, variableUnit(variable)).toFixed(6)))
   return typeof value === 'object' ? '' : String(value ?? '')

@@ -43,9 +43,13 @@ export function tokenNumberToCSS(value: number, unit: TokenUnit): string {
   return `${number}${unit}`
 }
 
-/** A timing, which is held in seconds, in milliseconds as Figma shows it: 0.25 is `250ms`. */
+/**
+ * A timing, which is held in seconds, in milliseconds as Figma shows it: 0.25 is `250ms`. Files
+ * keep 32-bit floats, so 0.2 comes back as 0.200000003; a hundredth of a millisecond is as fine
+ * as a timing goes. CSS takes no time without its unit, so 0 is `0ms`.
+ */
 export function timingToCSS(seconds: number): string {
-  return tokenNumberToCSS(seconds * 1000, 'ms')
+  return `${Number((seconds * 1000).toFixed(2))}ms`
 }
 
 /** The curves CSS has a keyword for, by their numbers. */

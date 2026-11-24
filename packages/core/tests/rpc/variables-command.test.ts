@@ -37,8 +37,19 @@ describe('tokens command', () => {
       'Unknown token format: scss. Use css, tailwind, or dtcg.'
     )
     expect(() => executeRPCCommand(graphWithTokens(), 'tokens', { type: 'shadow' })).toThrow(
-      'Unknown variable type: shadow. Use COLOR, FLOAT, STRING, BOOLEAN, EASING, TIMING.'
+      'Unknown variable type: shadow'
     )
+  })
+
+  test('filters timings and easings by their type', async () => {
+    const graph = graphWithTokens()
+    const collection = [...graph.variableCollections.values()][0]
+    graph.createVariable('Fast', 'TIMING', collection.id, 0.15)
+    graph.createVariable('Out', 'EASING', collection.id, { easing: 'OUT_CUBIC' })
+    const css = async (type: string) =>
+      ((await executeRPCCommand(graph, 'tokens', { format: 'css', type })) as TokensResult).css
+    expect(await css('timing')).toBe(':root {\n  --fast: 150ms;\n}\n')
+    expect(await css('easing')).toBe(':root {\n  --ease-out: ease-out;\n}\n')
   })
 })
 
@@ -58,5 +69,16 @@ describe('variables command', () => {
     const result = (await executeRPCCommand(graph, 'variables', {})) as VariablesResult
     const values = result.collections.flatMap((entry) => entry.variables)
     expect(values.find((variable) => variable.name === 'Large')?.value).toBe('{Gap} * 2 = 16')
+  })
+
+  test('lists a timing in milliseconds and an easing by name', async () => {
+    const graph = graphWithTokens()
+    const collection = [...graph.variableCollections.values()][0]
+    graph.createVariable('Fast', 'TIMING', collection.id, 0.15)
+    graph.createVariable('Out', 'EASING', collection.id, { easing: 'OUT_CUBIC' })
+    const result = (await executeRPCCommand(graph, 'variables', {})) as VariablesResult
+    const values = result.collections.flatMap((entry) => entry.variables)
+    expect(values.find((variable) => variable.name === 'Fast')?.value).toBe('150ms')
+    expect(values.find((variable) => variable.name === 'Out')?.value).toBe('Ease out')
   })
 })

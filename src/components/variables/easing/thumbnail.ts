@@ -20,16 +20,20 @@ export function easingThumbnailSVG(easing: Easing): string {
   ].join('')
 }
 
-/** Each drawing's icon, built once: an easing draws the same however often it is listed. */
+/** The most drawings kept: a list's easings and some to spare, not every step of every edit. */
+const KEPT_THUMBNAILS = 256
+
+/** Recent drawings' icons, so an easing draws the same however often it is listed. */
 const thumbnails = new Map<string, FunctionalComponent>()
 
 /** An easing's thumbnail as an icon component; the caller's class sizes it. */
 export function easingThumbnail(easing: Easing): FunctionalComponent {
   const svg = easingThumbnailSVG(easing)
-  let icon = thumbnails.get(svg)
-  if (!icon) {
-    icon = maskIcon(svg)
-    thumbnails.set(svg, icon)
-  }
+  const icon = thumbnails.get(svg) ?? maskIcon(svg)
+  // Most recently used last, so the first is the one to let go.
+  thumbnails.delete(svg)
+  thumbnails.set(svg, icon)
+  const oldest = thumbnails.keys().next()
+  if (thumbnails.size > KEPT_THUMBNAILS && !oldest.done) thumbnails.delete(oldest.value)
   return icon
 }

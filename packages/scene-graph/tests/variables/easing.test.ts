@@ -63,3 +63,17 @@ test('a spring starts at 0, settles at 1, and peaks where its overshoot says', (
   expect(springPeak(slow)).toBeUndefined()
   expect(springPosition(slow, springSettleTime(slow))).toBeCloseTo(1, 2)
 })
+
+test('a spring damped close to critical is settled by the time it is said to be', () => {
+  for (const spring of [
+    { stiffness: 100, damping: 19.8, mass: 1 },
+    { stiffness: 100, damping: 20, mass: 1 },
+    { stiffness: 100, damping: 60, mass: 1 },
+    springWithBounce(0.4)
+  ]) {
+    const settled = springSettleTime(spring)
+    for (const later of [settled, settled * 1.2, settled * 2])
+      // A critically damped spring reaches the bound exactly, give or take rounding.
+      expect(Math.abs(springPosition(spring, later) - 1)).toBeLessThanOrEqual(0.001 + 1e-9)
+  }
+})

@@ -37,10 +37,14 @@ export function parseCSSEasing(value: string): Easing | null {
     return curve ? easingPreset(curve) : null
   }
   if (node.type !== 'function' || node.value.toLowerCase() !== 'cubic-bezier') return null
-  const numbers = node.nodes
-    .filter((argument) => argument.type === 'word')
-    .map((argument) => dimension(argument.value))
-  if (numbers.length !== 4 || numbers.some((number) => number?.unit !== '')) return null
+  // Exactly four numbers between commas: nothing else, such as a fifth argument or a function.
+  const parts = node.nodes.filter((part) => part.type !== 'space')
+  const separated = parts.every((part, index) =>
+    index % 2 === 0 ? part.type === 'word' : part.type === 'div' && part.value === ','
+  )
+  if (parts.length !== 7 || !separated) return null
+  const numbers = parts.filter((_, index) => index % 2 === 0).map((part) => dimension(part.value))
+  if (numbers.some((number) => number?.unit !== '')) return null
   const [x1, y1, x2, y2] = numbers.map((number) => number?.number ?? 0)
   if (x1 < 0 || x1 > 1 || x2 < 0 || x2 > 1) return null
   return easingForBezier({ x1, y1, x2, y2 })

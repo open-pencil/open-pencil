@@ -124,3 +124,27 @@ test('an easing of a kind OpenPencil does not know is reported, not invented', (
   expect(graph.variables.has('1:8')).toBe(false)
   expect(reported.map((resource) => resource.name)).toEqual(['future'])
 })
+
+test('a formula on a timing is kept as the file wrote it, not refused', () => {
+  const sum = {
+    dataType: 'EXPRESSION',
+    resolvedDataType: 'FLOAT',
+    value: {
+      expressionValue: {
+        expressionFunction: 'ADDITION',
+        expressionArguments: [seconds(0.1), seconds(0.15)]
+      }
+    }
+  }
+  const unsupported: string[] = []
+  const { graph } = materializeDocument(
+    [...records(), variable(9, 'sum', 'TIMING', sum, seconds(0))],
+    [],
+    { onUnsupportedVariableExpression: (diagnostic) => unsupported.push(diagnostic.sourceId) }
+  )
+  expect(graph.variables.get('1:9')?.valuesByMode['1:10']).toMatchObject({
+    expression: 'UNSUPPORTED',
+    function: 'ADDITION'
+  })
+  expect(unsupported).toEqual(['1:9'])
+})

@@ -5,6 +5,7 @@ import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type {
   SceneGraph,
+  VariableFormula,
   VariableFormulaNode,
   VariableType,
   VariableValue,
@@ -156,6 +157,13 @@ function modeValues(
     let value: VariableValue
     try {
       value = valueOf(entry.variableData, resolve)
+      // Formulas compute colors, numbers, text and booleans; one held by a timing or an easing is
+      // kept as the file wrote it.
+      const type = resource.variableResolvedType
+      if (isFormula(value) && (type === 'TIMING' || type === 'EASING'))
+        throw new UnsupportedExpressionError(
+          `A formula cannot give ${resource.variableResolvedType}`
+        )
     } catch (error) {
       if (!(error instanceof UnsupportedExpressionError) || !onUnsupportedExpression) throw error
       const data = structuredClone(entry.variableData)
@@ -185,16 +193,15 @@ function modeValues(
         reason: 'unsupported-variable-expression'
       })
     }
-    if (
-      typeof value === 'object' &&
-      'expression' in value &&
-      value.expression === 'FORMULA' &&
-      value.type !== resource.variableResolvedType
-    )
+    if (isFormula(value) && value.type !== resource.variableResolvedType)
       throw new Error(`Expression result type does not match ${resource.variableResolvedType}`)
     values[modeId] = value
   }
   return values
+}
+
+function isFormula(value: VariableValue): value is VariableFormula {
+  return typeof value === 'object' && 'expression' in value && value.expression === 'FORMULA'
 }
 
 type SavedMode = NonNullable<NodeChange['variableSetModes']>[number]

@@ -19,19 +19,29 @@ function motion() {
   graph.createVariable('Fast', 'TIMING', collection.id, 0.15)
   graph.createVariable('Out', 'EASING', collection.id, easingPreset('OUT_CUBIC'))
   graph.createVariable('Custom', 'EASING', collection.id, { easing: 'CUSTOM_CUBIC', bezier: CURVE })
-  graph.createVariable('Gentle', 'EASING', collection.id, easingPreset('GENTLE_SPRING'))
+  const gentle = graph.createVariable(
+    'Gentle',
+    'EASING',
+    collection.id,
+    easingPreset('GENTLE_SPRING')
+  )
+  graph.createVariable('Card', 'EASING', collection.id, { aliasId: gentle.id })
   return graph
 }
 
-test('timings are durations in seconds and curves are cubicBezier; springs are left out', () => {
+test('timings are durations in seconds and curves are cubicBezier; springs and aliases of them are left out', () => {
   const { files, issues } = exportDesignTokens(motion())
-  expect(files.find((file) => file.path === 'Motion/Mode 1.tokens.json')?.content).toMatchObject({
+  const tokens = files.find((file) => file.path === 'Motion/Mode 1.tokens.json')?.content
+  expect(tokens).not.toHaveProperty('Gentle')
+  expect(tokens).not.toHaveProperty('Card')
+  expect(tokens).toMatchObject({
     Fast: { $type: 'duration', $value: { value: 0.15, unit: 's' } },
     Out: { $type: 'cubicBezier', $value: [0, 0, 0.58, 1] },
     Custom: { $type: 'cubicBezier', $value: [0.1, 0.2, 0.3, 0.9] }
   })
   expect(issues).toEqual([
-    { kind: 'unsupported-easing', collection: 'Motion', mode: 'Mode 1', token: 'Gentle' }
+    { kind: 'unsupported-easing', collection: 'Motion', mode: 'Mode 1', token: 'Gentle' },
+    { kind: 'unsupported-easing', collection: 'Motion', mode: 'Mode 1', token: 'Card' }
   ])
 })
 

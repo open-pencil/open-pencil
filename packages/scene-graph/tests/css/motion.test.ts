@@ -40,6 +40,8 @@ describe('parseCSSEasing', () => {
   test('refuses a curve whose x leaves 0 to 1, and anything else', () => {
     expect(parseCSSEasing('cubic-bezier(1.2, 0, 0.3, 1)')).toBeNull()
     expect(parseCSSEasing('cubic-bezier(0.1, 0, 0.3)')).toBeNull()
+    expect(parseCSSEasing('cubic-bezier(0, 0, 1, 1, garbage())')).toBeNull()
+    expect(parseCSSEasing('cubic-bezier(0 0 1 1)')).toBeNull()
     expect(parseCSSEasing('steps(4)')).toBeNull()
     expect(parseCSSEasing('ease-in ease-out')).toBeNull()
   })

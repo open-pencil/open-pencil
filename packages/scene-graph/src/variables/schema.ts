@@ -43,7 +43,8 @@ const positiveSchema = v.pipe(finiteNumberSchema, v.minValue(0))
 export const springSchema = v.object({
   stiffness: positiveSchema,
   damping: positiveSchema,
-  mass: positiveSchema,
+  // A spring without mass has no motion to compute.
+  mass: v.pipe(finiteNumberSchema, v.gtValue(0)),
   type: v.optional(v.picklist(['NORMALIZED', 'PHYSICAL'])),
   platform: v.optional(v.picklist(['IOS_WEB', 'ANDROID']))
 })

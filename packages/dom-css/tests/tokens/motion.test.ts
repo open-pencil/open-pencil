@@ -4,9 +4,11 @@ import { easingToCSS, timingToCSS, tokenStylesheet } from '@open-pencil/dom-css/
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { easingPreset } from '@open-pencil/scene-graph/variables'
 
-test('a timing is written in milliseconds', () => {
+test('a timing is written in milliseconds, without a file’s float noise, and with its unit at 0', () => {
   expect(timingToCSS(0.25)).toBe('250ms')
-  expect(timingToCSS(0)).toBe('0')
+  expect(timingToCSS(Math.fround(0.2))).toBe('200ms')
+  expect(timingToCSS(0.0005)).toBe('0.5ms')
+  expect(timingToCSS(0)).toBe('0ms')
 })
 
 test('an easing is a keyword where CSS has one, else cubic-bezier(), and a hold steps', () => {
