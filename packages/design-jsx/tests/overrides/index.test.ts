@@ -21,7 +21,8 @@ describe('property names', () => {
     const overrides = propsToOverrides(
       { width: 100, style: { width: '200px', height: '50px', borderRadius: 8 } },
       false,
-      'NONE'
+      'NONE',
+      'srgb'
     )
 
     expect(overrides).toMatchObject({ width: 100, height: 50, cornerRadius: 8 })
@@ -31,20 +32,26 @@ describe('property names', () => {
 describe('stack alignment', () => {
   test('CSS justify and align keywords mean what the short names do', () => {
     expect(
-      propsToOverrides({ flex: 'row', justifyContent: 'space-between' }, false, 'NONE')
+      propsToOverrides({ flex: 'row', justifyContent: 'space-between' }, false, 'NONE', 'srgb')
     ).toMatchObject({
       primaryAxisAlign: 'SPACE_BETWEEN'
     })
-    expect(propsToOverrides({ flex: 'row', justify: 'between' }, false, 'NONE')).toMatchObject({
+    expect(
+      propsToOverrides({ flex: 'row', justify: 'between' }, false, 'NONE', 'srgb')
+    ).toMatchObject({
       primaryAxisAlign: 'SPACE_BETWEEN'
     })
-    expect(propsToOverrides({ flex: 'row', alignItems: 'flex-end' }, false, 'NONE')).toMatchObject({
+    expect(
+      propsToOverrides({ flex: 'row', alignItems: 'flex-end' }, false, 'NONE', 'srgb')
+    ).toMatchObject({
       counterAxisAlign: 'MAX'
     })
   })
 
   test('items can align children by their baseline', () => {
-    expect(propsToOverrides({ flex: 'row', items: 'baseline' }, false, 'NONE')).toMatchObject({
+    expect(
+      propsToOverrides({ flex: 'row', items: 'baseline' }, false, 'NONE', 'srgb')
+    ).toMatchObject({
       counterAxisAlign: 'BASELINE'
     })
   })
@@ -52,66 +59,73 @@ describe('stack alignment', () => {
 
 describe('grid placement', () => {
   test('places a child by its start line, under either name', () => {
-    expect(propsToOverrides({ colStart: 2, rowStart: 3 }, false, 'GRID')).toMatchObject({
+    expect(propsToOverrides({ colStart: 2, rowStart: 3 }, false, 'GRID', 'srgb')).toMatchObject({
       gridPosition: { column: 2, row: 3, columnSpan: 1, rowSpan: 1 }
     })
-    expect(propsToOverrides({ col: 4, row: 5 }, false, 'GRID')).toMatchObject({
+    expect(propsToOverrides({ col: 4, row: 5 }, false, 'GRID', 'srgb')).toMatchObject({
       gridPosition: { column: 4, row: 5, columnSpan: 1, rowSpan: 1 }
     })
   })
 
   test('spans the tracks a child names, and at least one', () => {
-    expect(propsToOverrides({ colStart: 1, colSpan: 3, rowSpan: 2 }, false, 'GRID')).toMatchObject({
+    expect(
+      propsToOverrides({ colStart: 1, colSpan: 3, rowSpan: 2 }, false, 'GRID', 'srgb')
+    ).toMatchObject({
       gridPosition: { columnSpan: 3, rowSpan: 2 }
     })
-    expect(propsToOverrides({ colStart: 1, colSpan: 0 }, false, 'GRID')).toMatchObject({
+    expect(propsToOverrides({ colStart: 1, colSpan: 0 }, false, 'GRID', 'srgb')).toMatchObject({
       gridPosition: { columnSpan: 1 }
     })
   })
 
   test('refuses a track count layout would allocate one entry per track for', () => {
     expect(
-      propsToOverrides({ grid: true, columns: 1_000_000_000 }, false, 'NONE').gridTemplateColumns
+      propsToOverrides({ grid: true, columns: 1_000_000_000 }, false, 'NONE', 'srgb')
+        .gridTemplateColumns
     ).toBeUndefined()
   })
 
   test('keeps a track list to the tracks layout can place', () => {
     const columns = Array.from({ length: MAX_GRID_TRACKS + 5 }, () => '1fr').join(' ')
-    const overrides = propsToOverrides({ grid: true, columns }, false, 'NONE')
+    const overrides = propsToOverrides({ grid: true, columns }, false, 'NONE', 'srgb')
     expect(overrides.gridTemplateColumns).toHaveLength(MAX_GRID_TRACKS)
   })
 
   test('keeps a size within what layout can draw', () => {
-    expect(propsToOverrides({ w: 1_000_000_000 }, false, 'NONE').width).toBe(MAX_LAYOUT_LENGTH)
+    expect(propsToOverrides({ w: 1_000_000_000 }, false, 'NONE', 'srgb').width).toBe(
+      MAX_LAYOUT_LENGTH
+    )
   })
 })
 
 describe('layout bounds', () => {
   test('keeps a negative gap and padding, which overlap children', () => {
-    expect(propsToOverrides({ flex: 'row', gap: -8, p: -4 }, false, 'NONE')).toMatchObject({
+    expect(propsToOverrides({ flex: 'row', gap: -8, p: -4 }, false, 'NONE', 'srgb')).toMatchObject({
       itemSpacing: -8,
       paddingTop: -4
     })
-    expect(propsToOverrides({ grid: true, gap: -1e9 }, false, 'NONE').gridColumnGap).toBe(
+    expect(propsToOverrides({ grid: true, gap: -1e9 }, false, 'NONE', 'srgb').gridColumnGap).toBe(
       -MAX_LAYOUT_SPACING
     )
   })
 
   test('leaves a layer in the flow when its position is not a number layout can use', () => {
-    const overrides = propsToOverrides({ x: Number.POSITIVE_INFINITY }, false, 'HORIZONTAL')
+    const overrides = propsToOverrides({ x: Number.POSITIVE_INFINITY }, false, 'HORIZONTAL', 'srgb')
     expect(overrides.x).toBeUndefined()
     expect(overrides.layoutPositioning).toBeUndefined()
-    expect(propsToOverrides({ x: 10 }, false, 'HORIZONTAL').layoutPositioning).toBe('ABSOLUTE')
+    expect(propsToOverrides({ x: 10 }, false, 'HORIZONTAL', 'srgb').layoutPositioning).toBe(
+      'ABSOLUTE'
+    )
   })
 
   test('sizes a layer as if a size layout cannot use were never given', () => {
     const infinite = Number.POSITIVE_INFINITY
-    const frame = propsToOverrides({ flex: 'row', w: infinite, h: infinite }, false, 'NONE')
-    const hugging = propsToOverrides({ flex: 'row' }, false, 'NONE')
+    const frame = propsToOverrides({ flex: 'row', w: infinite, h: infinite }, false, 'NONE', 'srgb')
+    const hugging = propsToOverrides({ flex: 'row' }, false, 'NONE', 'srgb')
     expect(frame.primaryAxisSizing).toBe(hugging.primaryAxisSizing)
     expect(frame.counterAxisSizing).toBe(hugging.counterAxisSizing)
-    expect(propsToOverrides({ w: infinite }, true, 'NONE').textAutoResize).toBe(
-      propsToOverrides({}, true, 'NONE').textAutoResize
+    expect(propsToOverrides({ w: infinite }, true, 'NONE', 'srgb').textAutoResize).toBe(
+      propsToOverrides({}, true, 'NONE', 'srgb').textAutoResize
     )
   })
 
@@ -141,7 +155,7 @@ describe('paints written as objects', () => {
   const crop = { m00: 0.5, m01: 0, m02: 0.25, m10: 0, m11: 0.5, m12: 0.25 }
 
   function fills(...paints: object[]) {
-    return propsToOverrides({ fills: paints }, false, 'NONE').fills
+    return propsToOverrides({ fills: paints }, false, 'NONE', 'srgb').fills
   }
 
   test("read a transform given as Figma's rows or as the matrix fields", () => {

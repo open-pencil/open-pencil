@@ -85,7 +85,8 @@ export interface DesignDocumentToSceneGraphOptions {
  * by half its blur length, which the canvas draws from the radius that gives that sigma.
  */
 function cssShadows(value: string | undefined): Effect[] {
-  return parseCSSShadows(value).map((effect) => ({
+  // Imported HTML is read as sRGB, as its colors are written for the web.
+  return parseCSSShadows(value, 'srgb').map((effect) => ({
     ...effect,
     radius: blurRadiusForSigma(effect.radius / 2)
   }))

@@ -112,7 +112,8 @@ export function drawLayoutGrids(r: SkiaRenderer, canvas: Canvas, node: SceneNode
   for (const rawGrid of rawLayoutGrids(node)) {
     const grid = gridGeometry(rawGrid)
     if (!grid) continue
-    r.auxFill.setColorComponents(grid.color.r, grid.color.g, grid.color.b, grid.color.a)
+    const color = r.renderColor(grid.color)
+    r.auxFill.setColorComponents(color.r, color.g, color.b, color.a)
     if (grid.pattern === 'GRID') drawSquareGrid(r, canvas, node, grid)
     else if (grid.pattern === 'ROWS') drawRowGrid(r, canvas, node, grid)
     else drawColumnGrid(r, canvas, node, grid)

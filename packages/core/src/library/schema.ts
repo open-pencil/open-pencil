@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import type { SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
+import { colorProfileSchema } from '@open-pencil/scene-graph/color'
 
 import { decodeStoredLibraryValue } from './serialization'
 import type { SerializedComponentLibraryRevision } from './serialization'
@@ -70,7 +71,7 @@ export const serializedLibraryRevisionSchema = v.object({
     images: v.array(v.tuple([v.string(), serializedBytesSchema])),
     variables: v.array(v.tuple([v.string(), serializedVariableSchema])),
     variableCollections: v.array(v.tuple([v.string(), serializedCollectionSchema])),
-    documentColorSpace: v.picklist(['srgb', 'display-p3'])
+    documentColorSpace: colorProfileSchema
   })
 }) satisfies v.GenericSchema<unknown, SerializedComponentLibraryRevision>
 

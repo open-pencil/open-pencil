@@ -82,14 +82,16 @@ export const createVector = defineTool({
       graphOf(figma).updateNode(node.id, { vectorNetwork: parsedPath.network })
     }
     if (args.fill) {
-      node.fills = [{ type: 'SOLID', color: parseColor(args.fill) }]
+      node.fills = [
+        { type: 'SOLID', color: parseColor(args.fill, graphOf(figma).documentColorSpace) }
+      ]
     }
     if (args.stroke) {
       graphOf(figma).updateNode(node.id, {
         strokes: [
           {
             type: 'SOLID',
-            color: parseColor(args.stroke),
+            color: parseColor(args.stroke, graphOf(figma).documentColorSpace),
             weight: args.stroke_weight ?? 1,
             opacity: 1,
             visible: true,

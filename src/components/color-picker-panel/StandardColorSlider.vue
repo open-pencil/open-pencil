@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { ColorSliderRoot, ColorSliderThumb, ColorSliderTrack } from 'reka-ui'
 import type { Color as RekaColor, ColorChannel, ColorSpace } from 'reka-ui'
+import { computed } from 'vue'
 
+import { useColorSpaces } from '@open-pencil/vue/controls/color-model'
+
+import { sliderTrackBackground } from '@/components/color-picker-panel/backgrounds'
 import type { ColorSliderUI } from '@/components/color-picker-panel/ui'
 import { useColorSliderUI } from '@/components/color-picker-panel/ui'
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -47,6 +51,12 @@ const emit = defineEmits<{
   updateNumber: [value: number]
 }>()
 
+const spaces = useColorSpaces()
+// Reka writes its track in sRGB; in another profile the track shows the colors the canvas draws.
+const trackBackground = computed(() =>
+  sliderTrackBackground(modelValue, channel, colorSpace, spaces.value)
+)
+
 const styles = useColorSliderUI(
   () => checkerboard,
   () => ui
@@ -66,7 +76,10 @@ const styles = useColorSliderUI(
         data-slot="slider"
         @update:color="emit('update', $event)"
       >
-        <ColorSliderTrack :class="styles.track.value" />
+        <ColorSliderTrack
+          :class="styles.track.value"
+          :style="trackBackground ? { background: trackBackground } : undefined"
+        />
         <ColorSliderThumb
           :class="styles.thumb.value"
           :aria-label="label"

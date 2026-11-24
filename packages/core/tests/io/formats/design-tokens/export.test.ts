@@ -1,9 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type ColorProfile } from '@open-pencil/scene-graph'
+import { convertColor } from '@open-pencil/scene-graph/color'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 
-import { exportDesignTokens, RESOLVER_FILE, STYLES_FILE } from '#core/io/formats/design-tokens'
+import {
+  defaultTokenImportOptions,
+  exportDesignTokens,
+  planTokenImport,
+  readDesignTokens,
+  RESOLVER_FILE,
+  STYLES_FILE
+} from '#core/io/formats/design-tokens'
 
 const blue = { r: 0, g: 0.4, b: 0.8, a: 1 }
 const white = { r: 1, g: 1, b: 1, a: 1 }
@@ -226,5 +234,127 @@ describe('design token publishing flag', () => {
       $extensions: { 'dev.openpencil': { hiddenFromPublishing: true } }
     })
     expect(file(graph, 'Library/Mode 1.tokens.json').Shared).not.toHaveProperty('$extensions')
+  })
+})
+
+describe('color tokens of a document in a color profile', () => {
+  test('a Display P3 document writes its colors as P3 with an sRGB hex, and reads them back', () => {
+    const graph = new SceneGraph()
+    graph.documentColorSpace = 'display-p3'
+    const collection = graph.createCollection('Theme')
+    graph.createVariable('Brand', 'COLOR', collection.id, { r: 1, g: 0, b: 0, a: 1 })
+    const exported = exportDesignTokens(graph)
+    const brand = exported.files
+      .map((entry) => (entry.content as Record<string, { $value?: unknown }>).Brand)
+      .find((token) => token !== undefined)
+    expect(brand?.$value).toMatchObject({ colorSpace: 'display-p3', components: [1, 0, 0] })
+    // The hex is the nearest sRGB red, inside sRGB, not the P3 numbers read as sRGB.
+    expect(brand?.$value).not.toMatchObject({ hex: '#ff0000' })
+
+    const target = new SceneGraph()
+    target.documentColorSpace = 'display-p3'
+    const bundle = readDesignTokens(
+      exported.files.map((entry) => ({ path: entry.path, text: JSON.stringify(entry.content) }))
+    )
+    const plan = planTokenImport(target, bundle, defaultTokenImportOptions(target, bundle))
+    expect(plan.collections[0].variables[0].values[0]).toMatchObject({
+      value: { r: 1, g: 0, b: 0 }
+    })
+  })
+
+  describe('a shadow style imported into a document in another profile', () => {
+    /** The effects an effect style with a multiplied P3-red shadow plans to in `to`. */
+    function importedShadow(from: ColorProfile, to: ColorProfile) {
+      const graph = new SceneGraph()
+      graph.documentColorSpace = from
+      const style = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
+        name: 'Elevation/Glow',
+        sharedStyleType: 'EFFECT',
+        internalOnly: true,
+        effects: [
+          {
+            type: 'DROP_SHADOW',
+            color: { r: 1, g: 0, b: 0, a: 0.5 },
+            offset: { x: 0, y: 4 },
+            radius: 12,
+            spread: 0,
+            visible: true,
+            blendMode: 'MULTIPLY',
+            showShadowBehindNode: true
+          }
+        ]
+      })
+      style.source.id = 'style:glow'
+      const target = new SceneGraph()
+      target.documentColorSpace = to
+      const bundle = readDesignTokens(
+        exportDesignTokens(graph).files.map((entry) => ({
+          path: entry.path,
+          text: JSON.stringify(entry.content)
+        }))
+      )
+      const plan = planTokenImport(target, bundle, defaultTokenImportOptions(target, bundle))
+      return plan.styles[0]?.fields.effects?.[0]
+    }
+
+    test('keeps what only the recorded effects hold, such as the blend mode', () => {
+      for (const [from, to] of [
+        ['srgb', 'display-p3'],
+        ['display-p3', 'srgb']
+      ] as const) {
+        expect(importedShadow(from, to)).toMatchObject({
+          blendMode: 'MULTIPLY',
+          showShadowBehindNode: true
+        })
+      }
+    })
+
+    test('an edited shadow color leaves the recorded ones in the profile they were written in', () => {
+      const graph = new SceneGraph()
+      const shadow = {
+        type: 'DROP_SHADOW' as const,
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        offset: { x: 0, y: 4 },
+        radius: 12,
+        spread: 0,
+        visible: true
+      }
+      const style = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
+        name: 'Elevation/Glow',
+        sharedStyleType: 'EFFECT',
+        internalOnly: true,
+        effects: [shadow, { ...shadow, color: { r: 1, g: 0, b: 0, a: 1 }, visible: false }]
+      })
+      style.source.id = 'style:glow'
+      const files = exportDesignTokens(graph).files.map((entry) => {
+        const text = JSON.stringify(entry.content)
+        // The visible shadow's color edited in the file, to Display P3 green.
+        return {
+          path: entry.path,
+          text: text.replace(
+            '"colorSpace":"srgb","components":[0,0,0]',
+            '"colorSpace":"display-p3","components":[0,1,0]'
+          )
+        }
+      })
+      // Read into an sRGB document, where a color taken for P3 would be converted.
+      const target = new SceneGraph()
+      const bundle = readDesignTokens(files)
+      const plan = planTokenImport(target, bundle, defaultTokenImportOptions(target, bundle))
+      const effects = plan.styles[0]?.fields.effects
+      // The edited P3 green is brought inside sRGB.
+      const green = convertColor({ r: 0, g: 1, b: 0, a: 1 }, 'display-p3', 'srgb', 'map')
+      expect(effects?.[0]?.color.b).toBeCloseTo(green.b, 4)
+      // The hidden sRGB red keeps its numbers, not converted as if it were P3.
+      expect(effects?.[1]).toMatchObject({ visible: false, color: { r: 1, g: 0, b: 0, a: 1 } })
+    })
+
+    test('reads the colors as the token does: sRGB numbers kept, P3 converted', () => {
+      expect(importedShadow('srgb', 'display-p3')?.color).toEqual({ r: 1, g: 0, b: 0, a: 0.5 })
+      const mapped = importedShadow('display-p3', 'srgb')?.color
+      expect(mapped?.r).toBeCloseTo(1, 1)
+      expect(mapped?.g).toBeLessThan(0.2)
+      expect(mapped?.g).toBeGreaterThan(0)
+    })
   })
 })

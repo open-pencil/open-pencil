@@ -274,6 +274,14 @@ export const panelMessageDefaults = {
   compressionFast: 'Fast',
   compressionSmaller: 'Smaller',
   compressionSmallest: 'Smallest',
+  colorProfile: 'Color profile',
+  colorProfileSRGB: 'sRGB',
+  colorProfileDisplayP3: 'Display P3',
+  colorProfileChange: params('Change the color profile to {profile}?'),
+  colorProfileChangeDescription:
+    'Assign keeps every color value and shows it in the new profile, so colors change. Convert rewrites the values so colors look the same; colors the new profile cannot show become the nearest ones it can.',
+  colorProfileAssign: 'Assign',
+  colorProfileConvert: 'Convert',
 
   sticky: 'Sticky note',
   stickyColor: 'Color',

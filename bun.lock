@@ -229,7 +229,7 @@
         "@open-pencil/scene-graph": "workspace:*",
         "@open-pencil/std": "workspace:*",
         "agentfmt": "^0.1.3",
-        "citty": "^0.1.6",
+        "citty": "^0.2.2",
         "es-toolkit": "^1.52.0",
         "js-base64": "^3.9.3",
         "valibot": "^1.5.0",
@@ -912,7 +912,7 @@
       "dependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
         "@open-pencil/std": "workspace:*",
-        "citty": "^0.1.6",
+        "citty": "^0.2.2",
         "es-toolkit": "^1.52.0",
         "typescript": "npm:@typescript/typescript6@^6.0.2",
       },
@@ -1086,7 +1086,7 @@
     "tools/generate/visual-oracles": {
       "name": "@open-pencil/visual-oracles-tools",
       "dependencies": {
-        "citty": "^0.1.6",
+        "citty": "^0.2.2",
       },
     },
     "tools/release/fork-releases": {
@@ -1097,7 +1097,7 @@
       },
       "dependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
-        "citty": "^0.1.6",
+        "citty": "^0.2.2",
         "valibot": "^1.5.0",
       },
     },
@@ -1123,7 +1123,7 @@
         "@open-pencil/package-quality-tools": "workspace:*",
         "@posthog/cli": "0.18.12",
         "@sigstore/bundle": "^5.0.0",
-        "citty": "^0.1.6",
+        "citty": "^0.2.2",
         "es-toolkit": "^1.52.0",
         "js-base64": "^3.9.3",
         "sigstore": "^5.0.0",
@@ -3275,7 +3275,7 @@
 
     "ci-info": ["ci-info@4.4.0", "", {}, "sha512-77PSwercCZU2Fc4sX94eF8k8Pxte6JAwL4/ICZLFjJLqegs7kCuAsqqj/70NQF6TvDpgFjkubQB2FW2ZZddvQg=="],
 
-    "citty": ["citty@0.1.6", "", { "dependencies": { "consola": "^3.2.3" } }, "sha512-tskPPKEs8D2KPafUypv2gxwJP8h/OaJmC82QQGGDQcHvXX43xF2VDACcJVmZ0EuSxkpO9Kc4MlrA3q0+FG58AQ=="],
+    "citty": ["citty@0.2.2", "", {}, "sha512-+6vJA3L98yv+IdfKGZHBNiGW5KHn22e/JwID0Strsz8h4S/csAu/OuICwxrg44k5MRiZHWIo8XXuJgQTriRP4w=="],
 
     "cjs-module-lexer": ["cjs-module-lexer@1.4.3", "", {}, "sha512-9z8TZaGM1pfswYeXrUpzPrkx8UnWYdhJclsiYMm6x/w5+nN+8Tf/LnAgfLGQCm59qAOxU8WwHEq2vNwF6i4j+Q=="],
 
@@ -3324,8 +3324,6 @@
     "confbox": ["confbox@0.2.4", "", {}, "sha512-ysOGlgTFbN2/Y6Cg3Iye8YKulHw+R2fNXHrgSmXISQdMnomY6eNDprVdW9R5xBguEqI954+S6709UyiO7B+6OQ=="],
 
     "config-chain": ["config-chain@1.1.13", "", { "dependencies": { "ini": "^1.3.4", "proto-list": "~1.2.1" } }, "sha512-qj+f8APARXHrM0hraqXYb2/bOVSV4PvJQlNZ/DVj0QrmNM2q2euizkeuVckQ57J+W0mRH6Hvi+k50M4Jul2VRQ=="],
-
-    "consola": ["consola@3.4.2", "", {}, "sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA=="],
 
     "constantinople": ["constantinople@4.0.1", "", { "dependencies": { "@babel/parser": "^7.6.0", "@babel/types": "^7.6.1" } }, "sha512-vCrqcSIq4//Gx74TXXCGnHpulY1dskqLTFGDmhrGxzeXL8lF8kvXv6mpNWlJj1uD4DW23D4ljAqbY4RRaaUZIw=="],
 
@@ -6016,8 +6014,6 @@
     "webdriver/undici": ["undici@6.28.1", "", {}, "sha512-zWpdTVD54H48CIybL0rWQ3ukpb9d23wM7eH5RtfdmeP70cWHNjtfo7P4vZX+5CoDcO53J4Pu5uXp7lNfjc6DRA=="],
 
     "webdriverio/@types/node": ["@types/node@20.19.43", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA=="],
-
-    "whaticon/citty": ["citty@0.2.2", "", {}, "sha512-+6vJA3L98yv+IdfKGZHBNiGW5KHn22e/JwID0Strsz8h4S/csAu/OuICwxrg44k5MRiZHWIo8XXuJgQTriRP4w=="],
 
     "which-builtin-type/isarray": ["isarray@2.0.5", "", {}, "sha512-xHjhDr3cNBK0BzdUJSPXZntQUx/mwMS5Rw4A7lPJ90XGAO6ISP/ePDNuo0vhqOZU+UD5JoodwCAAoZQd3FeAKw=="],
 

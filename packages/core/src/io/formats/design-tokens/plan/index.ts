@@ -325,7 +325,8 @@ function planVariables(
   const rows: Array<{ variable: PlannedVariable; decoded: Array<DecodedVariable | undefined> }> = []
   const existingByName = variablesByName(planner.graph, planner.existingByCollection[index])
   for (const [name, tokens] of tokensByName(collection, modeIndexes)) {
-    const decoded = tokens.map((token) => (token ? decodeVariableToken(token) : undefined))
+    const profile = planner.graph.documentColorSpace
+    const decoded = tokens.map((token) => (token ? decodeVariableToken(token, profile) : undefined))
     const failure = decoded.find((entry) => typeof entry === 'string')
     const usable = decoded.map((entry) => (typeof entry === 'string' ? undefined : entry))
     if (usable.every((entry) => entry === undefined)) {

@@ -1,11 +1,11 @@
-import { converter, toGamut } from 'culori'
+import { converter } from 'culori'
 
 import { copyFill, copyStroke } from '../copy'
 import { readAllPluginData, withAllPluginData } from '../plugin-data/field'
 import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
 import type { Color } from '../primitives'
-import type { PluginDataEntry, SceneNode } from '../types'
-import { normalizeColor } from './normalize'
+import type { ColorProfile, PluginDataEntry, SceneNode } from '../types'
+import { fitIntoProfile } from './management'
 
 export interface OkHCLColor {
   h: number
@@ -21,14 +21,7 @@ export interface OkHCLPayload {
   color: OkHCLColor
 }
 
-const toRGB = converter('rgb')
-const toP3 = converter('p3')
 const toOkHCL = converter('oklch')
-const toDisplayableRGB = toGamut('rgb', 'oklch')
-const toDisplayableP3 = toGamut('p3', 'oklch')
-
-/** Colour spaces a document's stored numbers can be in. */
-export type OkHCLColorSpace = 'srgb' | 'display-p3'
 
 function clampUnit(value: number): number {
   if (value < 0) return 0
@@ -50,38 +43,28 @@ function normalizeOkHCLColor(color: OkHCLColor): OkHCLColor {
   }
 }
 
-/** Coordinates in `colorSpace`, so callers can store colours in the document's profile. */
-export function okhclToRGBA(color: OkHCLColor, colorSpace: OkHCLColorSpace = 'srgb'): Color {
-  const normalized = normalizeOkHCLColor(color)
-  const oklch = {
-    mode: 'oklch' as const,
-    l: normalized.l,
-    c: normalized.c,
-    h: normalized.h,
-    alpha: normalized.a
-  }
-  if (colorSpace === 'display-p3') {
-    const p3 = toP3(toDisplayableP3(oklch))
-    return normalizeColor({
-      r: p3.r,
-      g: p3.g,
-      b: p3.b,
-      a: p3.alpha ?? normalized.a
-    })
-  }
-  const rgb = toRGB(toDisplayableRGB(oklch))
-  return normalizeColor({
-    r: rgb.r,
-    g: rgb.g,
-    b: rgb.b,
-    a: rgb.alpha ?? normalized.a
-  })
+/**
+ * `color` as components in `profile`, and whether the profile could not show it: a color past the
+ * gamut is brought inside by reducing chroma, keeping lightness and hue, as {@link fitIntoProfile}
+ * brings any color inside.
+ */
+export function okhclInProfile(
+  color: OkHCLColor,
+  profile: ColorProfile
+): { color: Color; clipped: boolean } {
+  const { l, c, h, a } = normalizeOkHCLColor(color)
+  return fitIntoProfile({ mode: 'oklch', l, c, h, alpha: a ?? 1 }, profile)
 }
 
-/** Reads `color` as coordinates in `colorSpace`, the inverse of {@link okhclToRGBA}. */
-export function rgbaToOkHCL(color: Color, colorSpace: OkHCLColorSpace = 'srgb'): OkHCLColor {
+/** Coordinates in `profile`, so callers can store colours in the document's profile. */
+export function okhclToRGBA(color: OkHCLColor, profile: ColorProfile = 'srgb'): Color {
+  return okhclInProfile(color, profile).color
+}
+
+/** Reads `color` as coordinates in `profile`, the inverse of {@link okhclToRGBA}. */
+export function rgbaToOkHCL(color: Color, profile: ColorProfile = 'srgb'): OkHCLColor {
   const oklch = toOkHCL(
-    colorSpace === 'display-p3'
+    profile === 'display-p3'
       ? { mode: 'p3', r: color.r, g: color.g, b: color.b, alpha: color.a }
       : { mode: 'rgb', r: color.r, g: color.g, b: color.b, alpha: color.a }
   )
@@ -132,12 +115,12 @@ export function setNodeFillOkHCL(
   node: SceneNode,
   index: number,
   color: OkHCLColor,
-  colorSpace: OkHCLColorSpace = 'srgb'
+  profile: ColorProfile = 'srgb'
 ): Partial<SceneNode> {
   const fills = node.fills.map(copyFill)
   if (index < 0 || index >= fills.length) throw new Error(`Fill ${index} not found`)
   const fill = fills[index]
-  const rgba = okhclToRGBA(color, colorSpace)
+  const rgba = okhclToRGBA(color, profile)
   fills[index] = {
     ...fill,
     color: rgba,
@@ -154,12 +137,12 @@ export function setNodeStrokeOkHCL(
   node: SceneNode,
   index: number,
   color: OkHCLColor,
-  colorSpace: OkHCLColorSpace = 'srgb'
+  profile: ColorProfile = 'srgb'
 ): Partial<SceneNode> {
   const strokes = node.strokes.map(copyStroke)
   if (index < 0 || index >= strokes.length) throw new Error(`Stroke ${index} not found`)
   const stroke = strokes[index]
-  const rgba = okhclToRGBA(color, colorSpace)
+  const rgba = okhclToRGBA(color, profile)
   strokes[index] = {
     ...stroke,
     color: rgba,
@@ -198,4 +181,40 @@ export function getStrokeOkHCL(node: SceneNode, index: number): OkHCLPayload | n
       (payload) => payload.kind === 'stroke' && payload.index === index
     ) ?? null
   )
+}
+
+/** Whether two colors differ by less than half a step of 8 bits in every component. */
+function sameColor(left: Color, right: Color): boolean {
+  const step = 1 / 510
+  return (['r', 'g', 'b', 'a'] as const).every((key) => Math.abs(left[key] - right[key]) <= step)
+}
+
+/**
+ * The OkHCL color a paint was last edited in, while it still makes the paint's stored color. The
+ * stored color is what draws and what files keep; any other edit to it, such as a hex value, the
+ * eyedropper, a plugin, or a new color profile, leaves the OkHCL value describing an older color.
+ */
+export function paintOkHCL(
+  node: SceneNode,
+  kind: 'fill' | 'stroke',
+  index: number,
+  profile: ColorProfile
+): OkHCLColor | null {
+  const payload = kind === 'fill' ? getFillOkHCL(node, index) : getStrokeOkHCL(node, index)
+  const paint = index < 0 ? undefined : (kind === 'fill' ? node.fills : node.strokes).at(index)
+  if (!payload || !paint) return null
+  return sameColor(okhclToRGBA(payload.color, profile), paint.color) ? payload.color : null
+}
+
+/**
+ * Keeps `color` as the OkHCL color a paint is edited in without changing the paint, for picking
+ * the OkHCL format: the paint keeps its exact stored color.
+ */
+export function rememberPaintOkHCL(
+  node: SceneNode,
+  kind: 'fill' | 'stroke',
+  index: number,
+  color: OkHCLColor
+): Partial<SceneNode> {
+  return { pluginData: withOkHCLPayload(node, kind, index, color) }
 }
