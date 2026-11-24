@@ -283,43 +283,42 @@ function shapeOrNull(node: SceneNode, context: DerivedTextBuildContext): ShapedT
   try {
     return context.shapeText(node)
   } catch (error) {
-    console.warn(`Writing "${node.name}" without its text layout; text shaping failed:`, error)
+    console.warn(`Writing "${node.name}" without glyphs; text shaping failed:`, error)
     return null
   }
 }
 
 /**
  * The `derivedTextData` a text node is written with. Glyphs the node already has (from Figma,
- * or placed along a path) are kept; other text is shaped at the node's width. Text the shaper
- * cannot outline in full gets none: Figma draws a layout without outlines, or with no glyphs,
- * as blank text, and lays the text out itself only when the layer has no `derivedTextData`.
- * A partial set of outlines would draw the text with gaps, so it is all or none.
+ * or placed along a path) are kept; other text is shaped at the node's width. Text that cannot
+ * be shaped gets no glyphs and no baselines, so readers lay it out themselves instead of drawing
+ * a guess. Text shaped without every outline gets no `derivedTextData`: Figma draws lines without
+ * outlines as blank text. A partial set would draw gaps, so it is all or none.
  */
 export function buildNodeDerivedTextData(
   node: SceneNode,
   context: DerivedTextBuildContext
 ): NodeChange['derivedTextData'] {
-  const fonts = () =>
-    fontMetaData(node, context.digestMap, context.fontStyleName ?? standardStyleNamer)
+  const fonts = fontMetaData(node, context.digestMap, context.fontStyleName ?? standardStyleNamer)
   const saved = node.derivedTextGlyphs ?? []
   if (saved.length > 0) {
     return buildDerivedTextData({
       node,
       glyphs: savedGlyphRecords(node, saved, context),
       decorations: node.textPathData ? undefined : derivedDecorations(node, saved, context),
-      fontMetaData: fonts(),
+      fontMetaData: fonts,
       ...savedGlyphLayout(node, saved)
     })
   }
   const shaped = node.textPathData ? null : shapeOrNull(node, context)
   const outlined = shaped?.glyphs.filter(isOutlined) ?? []
-  if (!shaped || outlined.length < shaped.glyphs.length) return undefined
+  if (shaped && outlined.length < shaped.glyphs.length) return undefined
   return buildDerivedTextData({
     node,
     glyphs: shapedGlyphRecords(outlined, context),
-    decorations: derivedDecorations(node, shaped.glyphs, context),
-    fontMetaData: fonts(),
-    baselines: shaped.baselines,
-    logicalIndexToCharacterOffsetMap: shaped.logicalIndexToCharacterOffsetMap
+    decorations: shaped ? derivedDecorations(node, shaped.glyphs, context) : undefined,
+    fontMetaData: fonts,
+    baselines: shaped?.baselines ?? [],
+    logicalIndexToCharacterOffsetMap: shaped?.logicalIndexToCharacterOffsetMap ?? []
   })
 }

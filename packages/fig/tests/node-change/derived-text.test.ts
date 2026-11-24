@@ -100,8 +100,8 @@ describe('derived text writer', () => {
   })
 
   test('writes no derived text when any shaped glyph has no outline', () => {
-    // Figma draws a layer whose glyphs lack outlines, or whose glyph list is empty, as blank
-    // text; it lays the text out itself only when the layer has no derivedTextData.
+    // Figma draws baselines without outlines as blank text, whether the glyphs lack outlines or
+    // are left out; without derivedTextData it lays the text out itself.
     const shaped = twoLines(SQUARE)
     shaped.glyphs[1] = { ...shaped.glyphs[1], commands: null }
     const writer = context(shaped)
@@ -129,18 +129,24 @@ describe('derived text writer', () => {
     ])
   })
 
-  test('writes no derived text for text that could not be shaped', () => {
-    expect(buildNodeDerivedTextData(textNode(), context(null))).toBeUndefined()
+  test('writes no glyphs for text that could not be shaped', () => {
+    const data = expectDefined(buildNodeDerivedTextData(textNode(), context(null)), 'derived')
+
+    expect(data.glyphs).toEqual([])
+    expect(data.baselines).toEqual([])
+    expect(data.layoutSize).toEqual({ x: 20, y: 32 })
   })
 
-  test('writes no derived text, rather than failing, when the shaper throws', () => {
+  test('writes no glyphs, rather than failing, when the shaper throws', () => {
     const writer = context(null)
     writer.shapeText = () => {
       throw new Error('shaper failed')
     }
     const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
     try {
-      expect(buildNodeDerivedTextData(textNode(), writer)).toBeUndefined()
+      const data = expectDefined(buildNodeDerivedTextData(textNode(), writer), 'derived text')
+
+      expect(data.glyphs).toEqual([])
       expect(warn).toHaveBeenCalledTimes(1)
     } finally {
       warn.mockRestore()
@@ -211,7 +217,7 @@ describe('derived text writer', () => {
   test('names font styles as Figma does', () => {
     const data = buildNodeDerivedTextData(
       textNode({ fontFamily: 'Inter', fontWeight: 600 }),
-      context(twoLines(SQUARE))
+      context(null)
     )
 
     expect(data?.fontMetaData?.[0].key.style).toBe('Semi Bold')

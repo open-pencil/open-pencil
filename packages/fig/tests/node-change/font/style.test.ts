@@ -50,16 +50,7 @@ test('keeps the names a file gives its ranges', () => {
     []
   )
   expect(props.styleRuns).toMatchObject([{ start: 6, length: 4, style: { fontStyle: 'Book' } }])
-  // Text is written with derivedTextData, which names its fonts, only once it is outlined.
-  const outlined = {
-    ...EMPTY_EXPORT_RUNTIME,
-    shapeText: () => ({
-      glyphs: [{ commands: [], x: 0, y: 12, fontSize: 16, firstCharacter: 0, advance: 8 }],
-      baselines: [],
-      logicalIndexToCharacterOffsetMap: []
-    })
-  }
-  const written = write(props, outlined)
+  const written = write(props)
   expect(written.fontName?.style).toBe('Roman')
   expect(written.textData?.styleOverrideTable?.[0]?.fontName?.style).toBe('Book')
   expect(written.derivedTextData?.fontMetaData?.map((meta) => meta.key?.style)).toEqual([
