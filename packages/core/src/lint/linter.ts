@@ -197,6 +197,7 @@ export class Linter {
         rule,
         context: {
           variables: this.variables,
+          colorProfile: this.graph?.documentColorSpace ?? 'srgb',
           isSharedStyle: (kind, id) =>
             id !== null && this.sharedStyleTypes.get(id) === sharedStyleTypeForKind(kind),
           report: ({ node, message, suggest, data, fix, suggestions }) => {

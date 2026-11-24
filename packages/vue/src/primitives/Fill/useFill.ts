@@ -2,9 +2,16 @@ import { computed } from 'vue'
 import type { Ref } from 'vue'
 
 import type { Fill, GradientStop } from '@open-pencil/scene-graph'
-import { colorToCSS } from '@open-pencil/scene-graph/color'
 import { DEFAULT_GRADIENT_TRANSFORM, defaultGradientStops } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+
+import {
+  colorCSS,
+  linearGradientCSS,
+  SRGB_SPACES,
+  useColorSpaces,
+  type ColorSpaces
+} from '#vue/controls/color-model/space'
 
 import type { FillCategory } from './types'
 
@@ -21,10 +28,12 @@ function effectiveColor(color: Color, opacity: number): Color {
   return { ...color, a: color.a * opacity }
 }
 
-function gradientCSS(stops: GradientStop[], opacity: number): string {
-  return stops
-    .map((stop) => `${colorToCSS(effectiveColor(stop.color, opacity))} ${stop.position * 100}%`)
-    .join(', ')
+function gradientCSS(stops: GradientStop[], opacity: number, spaces: ColorSpaces): string {
+  return linearGradientCSS(
+    'to right',
+    stops.map((stop) => ({ color: effectiveColor(stop.color, opacity), position: stop.position })),
+    spaces
+  )
 }
 
 export function fillCategory(fill: Fill): FillCategory {
@@ -38,17 +47,19 @@ export function fillIsTransparent(fill: Fill): boolean {
   return fill.color.a < 1
 }
 
-export function fillSwatchBackground(fill: Fill): string {
+/** A swatch's CSS background for `fill`, whose colors are stored and shown in `spaces`. */
+export function fillSwatchBackground(fill: Fill, spaces: ColorSpaces = SRGB_SPACES): string {
   if (fillCategory(fill) === 'GRADIENT' && fill.gradientStops?.length) {
-    return `linear-gradient(to right, ${gradientCSS(fill.gradientStops, fill.opacity)})`
+    return gradientCSS(fill.gradientStops, fill.opacity, spaces)
   }
-  return colorToCSS(effectiveColor(fill.color, fill.opacity))
+  return colorCSS(effectiveColor(fill.color, fill.opacity), spaces)
 }
 
 /** Fill category state and immutable conversion actions without picker or popover behavior. */
 export function useFill(fill: Ref<Fill>, onUpdate: (fill: Fill) => void) {
   const category = computed(() => fillCategory(fill.value))
-  const swatchBackground = computed(() => fillSwatchBackground(fill.value))
+  const spaces = useColorSpaces()
+  const swatchBackground = computed(() => fillSwatchBackground(fill.value, spaces.value))
   const transparent = computed(() => fillIsTransparent(fill.value))
 
   function toSolid() {

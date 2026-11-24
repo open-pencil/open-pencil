@@ -6,7 +6,6 @@ import { ConfigProvider, TooltipProvider } from 'reka-ui'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { provideEditor } from '@open-pencil/vue'
 import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { watchCloudAISetup } from '@/app/ai/providers/openpencil/setup'
@@ -14,7 +13,7 @@ import { startCloud } from '@/app/cloud/integration'
 import { useAutosaveFeedback } from '@/app/document/autosave/feedback'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { endRecoverySession, startRecoverySession } from '@/app/document/recovery/session'
-import { useFollowingEditorStore } from '@/app/editor/active-store'
+import { provideEditorStore, useFollowingEditorStore } from '@/app/editor/active-store'
 import { useInterfaceDirection } from '@/app/i18n/direction'
 import { offerCrashReports } from '@/app/reports/crash'
 import { interfaceScalePreference } from '@/app/shell/interface-scale'
@@ -57,7 +56,7 @@ useHead({
   }
 })
 
-provideEditor(useFollowingEditorStore())
+provideEditorStore(useFollowingEditorStore())
 useAppTheme()
 useDocumentCloseProtection()
 useAutosaveFeedback()

@@ -29,7 +29,7 @@ import { strokeLineChanges } from './strokes'
 import { textCacheInvalidationChanges } from './text/picture'
 import { remapCopiedReferences } from './transfer/copied'
 import type {
-  DocumentColorSpace,
+  ColorProfile,
   DocumentKind,
   EnabledLibraryBinding,
   NodeChangeObserver,
@@ -63,7 +63,7 @@ export class SceneGraph {
   figKiwiVersion: number | null = null
   /** Deflated kiwi schema bytes from the original .fig file, preserved for roundtrip fidelity. */
   figSchemaDeflated: Uint8Array | null = null
-  documentColorSpace: DocumentColorSpace = 'srgb'
+  documentColorSpace: ColorProfile = 'srgb'
   documentKind: DocumentKind = 'design'
   enabledLibraries = new Map<string, EnabledLibraryBinding>()
   readonly emitter = new BufferedSceneEmitter()

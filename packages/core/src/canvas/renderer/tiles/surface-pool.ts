@@ -1,5 +1,7 @@
 import type { ImageInfo, Surface } from '@open-pencil/canvaskit'
+import type { ColorProfile } from '@open-pencil/scene-graph'
 
+import { documentImageInfo } from '#core/canvas/renderer/colors'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
 import { TILE_DEVICE_SIZE } from './geometry'
@@ -17,21 +19,27 @@ export function makeOffscreenSurface(renderer: SkiaRenderer, info: ImageInfo): S
   }
 }
 
-/** A square surface `size` device pixels across, like the ones tiles render on. */
+/**
+ * A square surface `size` device pixels across, like the ones tiles render on, in the document's
+ * color space, so the document's colors blend there as on the screen.
+ */
 export function makeTileSurface(renderer: SkiaRenderer, size: number): Surface | null {
-  return makeOffscreenSurface(renderer, {
-    width: size,
-    height: size,
-    colorType: renderer.ck.ColorType.RGBA_8888,
-    alphaType: renderer.ck.AlphaType.Premul,
-    colorSpace: renderer.ck.ColorSpace.SRGB
-  })
+  return makeOffscreenSurface(
+    renderer,
+    documentImageInfo(renderer.ck, renderer.documentColorSpace, size, size)
+  )
 }
 
 export class TileSurfacePool {
   private readonly available: Surface[] = []
+  private space: ColorProfile = 'srgb'
 
   acquire(renderer: SkiaRenderer): Surface | null {
+    // Surfaces of another document color space would convert what tiles draw into it.
+    if (renderer.documentColorSpace !== this.space) {
+      this.clear()
+      this.space = renderer.documentColorSpace
+    }
     return this.available.pop() ?? makeTileSurface(renderer, TILE_DEVICE_SIZE)
   }
 
