@@ -7,8 +7,8 @@ import { homeLocation } from '@/app/home/location'
  * not the editor, such as an embed, never loads the editor's services, dialogs, or panels. Every
  * editor address shares one workspace component, which moving between them keeps.
  */
-const EditorLayout = () => import('./views/EditorLayout.vue')
-const WorkspaceView = () => import('./views/WorkspaceView.vue')
+const EditorLayout = () => import('./views/editor').then((views) => views.EditorLayout)
+const WorkspaceView = () => import('./views/editor').then((views) => views.WorkspaceView)
 const EmbedView = () => import('./views/embed/EmbedView.vue')
 
 const router = createRouter({
