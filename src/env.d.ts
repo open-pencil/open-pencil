@@ -29,3 +29,12 @@ declare module '*?script' {
   const source: string
   export default source
 }
+
+/**
+ * The same script for a page to load: its own file in a build, its text in development
+ * (`vite/inline-script.ts`).
+ */
+declare module '*?script-file' {
+  const script: { src: string } | { text: string }
+  export default script
+}

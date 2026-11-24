@@ -1,0 +1,36 @@
+{
+  "backToPeople": "Wszyscy użytkownicy",
+  "personAccount": "Konto",
+  "emailVerified": "Potwierdzony",
+  "emailNotVerified": "Niepotwierdzony",
+  "joinedRow": "Dołączył(a)",
+  "lastActiveRow": "Ostatnia aktywność",
+  "signInMethods": "Metody logowania",
+  "twoStepRow": "Logowanie dwuetapowe",
+  "twoStepNone": "Nieskonfigurowane",
+  "passkeyCount": {
+    "one": "{count} klucz dostępu",
+    "few": "{count} klucze dostępu",
+    "many": "{count} kluczy dostępu"
+  },
+  "personWorkspaces": "Obszary robocze",
+  "personWorkspacesEmpty": "Nie należy do żadnego obszaru roboczego.",
+  "workspaceMembers": {
+    "one": "{count} osoba",
+    "few": "{count} osoby",
+    "many": "{count} osób"
+  },
+  "workspaceRoleAdmin": "Administrator",
+  "workspaceRoleEditor": "Edytujący",
+  "workspaceRoleViewer": "Przeglądający",
+  "personSessions": "Sesje",
+  "noSessions": "Nigdzie niezalogowany.",
+  "personNotFound": "Nie ma takiego konta",
+  "personNotFoundDescription": "Mogło zostać usunięte. Wróć do listy użytkowników.",
+  "removeSignInMethod": "Usuń",
+  "removeSignInMethodHeading": "Usunąć metodę logowania {provider} (użytkownik: {name})?",
+  "removeSignInMethodDescription": "Ta osoba nie zaloguje się już tą metodą, dopóki jej ponownie nie doda, i dostanie o tym e-mail. Zalogowane urządzenia pozostaną zalogowane, dopóki nie wylogujesz jej ze wszystkich urządzeń.",
+  "deletePersonAccount": "Usuń konto",
+  "deletePersonAccountHeading": "Usunąć konto użytkownika {name}?",
+  "deletePersonAccountDescription": "Prośba o dołączenie nigdy nie została zatwierdzona, więc konto, sposoby logowania i prośba zostaną usunięte. Dziennik aktywności zachowa imię i adres e-mail. Ta osoba może zarejestrować się ponownie."
+}

@@ -1,7 +1,8 @@
 import type { Color as RekaColor } from 'reka-ui'
 import type { MaybeRefOrGetter } from 'vue'
 
-import type { OkHCLColor, RenderColorSpace } from '@open-pencil/scene-graph/color'
+import type { ColorProfile } from '@open-pencil/scene-graph'
+import type { OkHCLColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export type BuiltInColorFormat = 'hex' | 'rgb' | 'hsl' | 'hsb' | 'okhcl'
@@ -21,7 +22,7 @@ export interface OkHCLControls {
   fieldFormat: ColorFieldFormat
   fieldOptions: ColorFieldOption[]
   okhcl: OkHCLColor | null
-  previewColorSpace?: RenderColorSpace
+  previewColorSpace?: ColorProfile
   clipped?: boolean
   setFieldFormat: (format: ColorFieldFormat) => void
   updateOkHCL: (patch: Partial<OkHCLColor>) => void

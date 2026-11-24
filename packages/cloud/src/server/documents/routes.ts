@@ -22,6 +22,7 @@ import {
   routeParamResource,
   createResourceRateLimiter
 } from '#cloud/server/rate-limit'
+import { tokenRoute } from '#cloud/server/tokens'
 import {
   documentParams,
   uploadParams,
@@ -113,13 +114,13 @@ export function createDocumentRoutes(
     )
   }
   return router
-    .get('/shared-documents', async (context) =>
+    .get('/shared-documents', tokenRoute.read.account, async (context) =>
       context.json({ documents: await service.listShared(context.get('actor').userId) })
     )
-    .get('/trash', async (context) =>
+    .get('/trash', tokenRoute.read.account, async (context) =>
       context.json({ documents: await service.trash.list(context.get('actor').userId) })
     )
-    .post('/trash/:documentId/restore', documentParams, (context) =>
+    .post('/trash/:documentId/restore', documentParams, tokenRoute.write.document, (context) =>
       documentResponse(context, async () => {
         await service.trash.restore(
           context.get('actor').userId,
@@ -128,7 +129,7 @@ export function createDocumentRoutes(
         return context.body(null, 204)
       })
     )
-    .delete('/trash/:documentId', documentParams, (context) =>
+    .delete('/trash/:documentId', documentParams, tokenRoute.write.document, (context) =>
       documentResponse(context, async () => {
         await service.trash.purge(
           context.get('actor').userId,
@@ -137,31 +138,42 @@ export function createDocumentRoutes(
         return context.body(null, 204)
       })
     )
-    .get('/workspaces/:workspaceId/documents', workspaceParams, async (context) => {
-      const documents = await service.list(
-        context.get('actor').userId,
-        context.req.valid('param').workspaceId
-      )
-      if (!documents) return context.json({ error: { code: 'not_found' as const } }, 404)
-      return context.json({ documents })
-    })
-    .get('/workspaces/:workspaceId/usage', workspaceParams, async (context) => {
-      try {
-        return context.json({
-          usage: await service.usage(
-            context.get('actor').userId,
-            context.req.valid('param').workspaceId
-          )
-        })
-      } catch (error) {
-        const response = documentDomainError(context, error)
-        if (response) return response
-        throw error
+    .get(
+      '/workspaces/:workspaceId/documents',
+      workspaceParams,
+      tokenRoute.read.workspace,
+      async (context) => {
+        const documents = await service.list(
+          context.get('actor').userId,
+          context.req.valid('param').workspaceId
+        )
+        if (!documents) return context.json({ error: { code: 'not_found' as const } }, 404)
+        return context.json({ documents })
       }
-    })
+    )
+    .get(
+      '/workspaces/:workspaceId/usage',
+      workspaceParams,
+      tokenRoute.read.workspace,
+      async (context) => {
+        try {
+          return context.json({
+            usage: await service.usage(
+              context.get('actor').userId,
+              context.req.valid('param').workspaceId
+            )
+          })
+        } catch (error) {
+          const response = documentDomainError(context, error)
+          if (response) return response
+          throw error
+        }
+      }
+    )
     .post(
       '/workspaces/:workspaceId/documents',
       workspaceParams,
+      tokenRoute.write.workspace,
       validatedJSON(createDocumentSchema),
       async (context) => {
         try {
@@ -178,17 +190,22 @@ export function createDocumentRoutes(
         }
       }
     )
-    .delete('/documents/:documentId', documentParams, async (context) => {
-      try {
-        await service.remove(context.get('actor').userId, context.req.valid('param').documentId)
-        return context.body(null, 204)
-      } catch (error) {
-        const response = documentDomainError(context, error)
-        if (response) return response
-        throw error
+    .delete(
+      '/documents/:documentId',
+      documentParams,
+      tokenRoute.write.document,
+      async (context) => {
+        try {
+          await service.remove(context.get('actor').userId, context.req.valid('param').documentId)
+          return context.body(null, 204)
+        } catch (error) {
+          const response = documentDomainError(context, error)
+          if (response) return response
+          throw error
+        }
       }
-    })
-    .get('/documents/:documentId/access', documentParams, (context) =>
+    )
+    .get('/documents/:documentId/access', documentParams, tokenRoute.read.document, (context) =>
       documentResponse(context, async () =>
         context.json({
           access: await service.access(
@@ -198,7 +215,7 @@ export function createDocumentRoutes(
         })
       )
     )
-    .get('/documents/:documentId', documentParams, (context) =>
+    .get('/documents/:documentId', documentParams, tokenRoute.read.document, (context) =>
       documentResponse(context, async () =>
         context.json({
           document: await service.download(
@@ -211,6 +228,7 @@ export function createDocumentRoutes(
     .post(
       '/documents/:documentId/uploads',
       documentParams,
+      tokenRoute.write.document,
       validatedJSON(createUploadSchema),
       (context) =>
         documentResponse(context, async () =>
@@ -227,6 +245,7 @@ export function createDocumentRoutes(
     .post(
       '/documents/:documentId/images/commit',
       documentParams,
+      tokenRoute.write.document,
       validatedJSON(commitImageUploadsSchema),
       (context) =>
         documentResponse(context, async () => {
@@ -241,6 +260,7 @@ export function createDocumentRoutes(
     .post(
       '/documents/:documentId/images/links',
       documentParams,
+      tokenRoute.read.document,
       validatedJSON(requestImageLinksSchema),
       (context) =>
         documentResponse(context, async () =>
@@ -256,6 +276,7 @@ export function createDocumentRoutes(
     .post(
       '/documents/:documentId/images',
       documentParams,
+      tokenRoute.write.document,
       validatedJSON(requestImageUploadsSchema),
       (context) =>
         documentResponse(context, async () =>
@@ -272,6 +293,7 @@ export function createDocumentRoutes(
     .post(
       '/uploads/:uploadId/commit',
       uploadParams,
+      tokenRoute.write.upload,
       validatedJSON(commitUploadSchema),
       async (context) => {
         try {

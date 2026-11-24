@@ -5,11 +5,12 @@ import {
   TOKEN_UNITS,
   VARIABLE_SCOPES,
   type CodeSyntaxPlatform,
+  type ColorProfile,
   type TokenUnit,
   type VariableScope,
   type VariableType
 } from '@open-pencil/scene-graph'
-import { parseDisplayableColor } from '@open-pencil/scene-graph/color'
+import { convertColor, tryParseColor } from '@open-pencil/scene-graph/color'
 import { parseCSSNumber } from '@open-pencil/scene-graph/css'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { ROOT_FONT_SIZE_PX } from '@open-pencil/scene-graph/variables'
@@ -53,12 +54,13 @@ const colorObjectSchema = v.object({
 })
 
 /**
- * A DTCG color in sRGB. The 2025.10 object form names its space; it is written as CSS and read
- * by culori, then mapped into sRGB. Earlier drafts wrote any CSS color string, which reads the
- * same way.
+ * A DTCG color as components in `profile`, the importing document's. The 2025.10 object form
+ * names its space; it is written as CSS and read as CSS colors are: an sRGB one keeps its numbers,
+ * as Figma takes hex, and one in another space, such as Display P3, is converted into `profile`.
+ * Earlier drafts wrote any CSS color string, which reads the same way.
  */
-export function decodeColor(value: unknown): Color | null {
-  if (typeof value === 'string') return parseDisplayableColor(value)
+export function decodeColor(value: unknown, profile: ColorProfile): Color | null {
+  if (typeof value === 'string') return tryParseColor(value, profile)
   const parsed = v.safeParse(colorObjectSchema, value)
   if (!parsed.success) return null
   const { colorSpace, components, alpha = 1, hex } = parsed.output
@@ -66,8 +68,16 @@ export function decodeColor(value: unknown): Color | null {
   const open = PREDEFINED_SPACES.has(colorSpace)
     ? `color(${colorSpace} ${parts.join(' ')}`
     : FUNCTION_SPACES[colorSpace]?.(parts)
-  if (!open) return hex ? parseDisplayableColor(hex) : null
-  return parseDisplayableColor(`${open} / ${alpha})`)
+  if (!open) return hex ? tryParseColor(hex, profile) : null
+  return tryParseColor(`${open} / ${alpha})`, profile)
+}
+
+/**
+ * A color a token file wrote in `source` as an import into `profile` reads it, as `decodeColor`
+ * reads that color's token: sRGB keeps its numbers, as hex does, and Display P3 is converted.
+ */
+export function importedColor(color: Color, source: ColorProfile, profile: ColorProfile): Color {
+  return source === 'srgb' ? color : convertColor(color, source, profile, 'map')
 }
 
 const dimensionSchema = v.object({ value: v.number(), unit: v.picklist(['px', 'rem']) })
@@ -210,11 +220,11 @@ function valueInUnit(literal: Literal, unit: TokenUnit | undefined): Literal['va
 }
 
 /** A literal in the shape its type takes, with the unit it was written in. */
-function decodeLiteral(token: ReadToken): Literal | null {
+function decodeLiteral(token: ReadToken, profile: ColorProfile): Literal | null {
   const { value } = token
   switch (token.type) {
     case 'color': {
-      const color = decodeColor(value)
+      const color = decodeColor(value, profile)
       return color && { value: color }
     }
     case 'dimension':
@@ -250,7 +260,10 @@ function impliedScopes(token: ReadToken): VariableScope[] | undefined {
 }
 
 /** A token as a variable value and OpenPencil's own token fields. */
-export function decodeVariableToken(token: ReadToken): DecodedVariable | DecodeFailure {
+export function decodeVariableToken(
+  token: ReadToken,
+  profile: ColorProfile
+): DecodedVariable | DecodeFailure {
   const type = variableTypeOf(token)
   if (type === 'unsupported-type' || type === 'invalid-value') return type
   const own = v.safeParse(ownFieldsSchema, token.extensions[OPENPENCIL_EXTENSION])
@@ -267,7 +280,7 @@ export function decodeVariableToken(token: ReadToken): DecodedVariable | DecodeF
       name: figma.success ? figma.output.targetVariableName : undefined
     }
   } else {
-    const literal = decodeLiteral(token)
+    const literal = decodeLiteral(token, profile)
     if (!literal) return 'invalid-value'
     unit ??= literal.unit === 'px' ? undefined : literal.unit
     value = { kind: 'literal', value: valueInUnit(literal, unit) }

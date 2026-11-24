@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const variablesMessageDefaults = {
   createCollection: 'Create collection',
   renameCollection: 'Rename collection',
@@ -144,5 +142,3 @@ export const variablesMessageDefaults = {
   formulaTruthy: 'value as true or false',
   unsupportedExpression: params('OpenPencil can’t evaluate {name} yet. Saving keeps it as it is.')
 } as const
-
-export const variablesMessages = i18n('variables', variablesMessageDefaults)

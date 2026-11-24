@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
-import { computed } from 'vue'
 
-import { colorToHex } from '@open-pencil/scene-graph/color'
-import { figJamColor } from '@open-pencil/scene-graph/figjam'
 import { useFigJamStyle } from '@open-pencil/vue/controls/figjam-style'
-import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { useFigJamColorCSS } from '@/components/figjam/color'
 import FigJamPalette from '@/components/figjam/FigJamPalette.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import theme from '@/theme/figjam/toolbar'
@@ -25,8 +23,8 @@ const { single, locked } = defineProps<{
 const emit = defineEmits<{ rename: [] }>()
 const store = useEditorStore()
 const toolbar = useFigJamStyle()
-const figjam = useFigJamMessages()
-const { menu } = useI18n()
+const figjam = useMessages('figjam')
+const menu = useMessages('menu')
 const styles = tv(theme)()
 
 /** Locks or unlocks every selected section alike, a mixed selection included. */
@@ -39,15 +37,13 @@ function setLocked(value: boolean) {
   )
 }
 
-const hex = computed(() =>
-  toolbar.color.value ? colorToHex(figJamColor(toolbar.color.value)) : undefined
-)
+const dotColor = useFigJamColorCSS(() => toolbar.color.value)
 </script>
 
 <template>
   <ToolbarMenu :label="figjam.changeColor" property="toolbar-color">
     <template #trigger>
-      <span :class="styles.dot()" :style="{ backgroundColor: hex }" />
+      <span :class="styles.dot()" :style="{ backgroundColor: dotColor }" />
     </template>
     <FigJamPalette
       :label="figjam.changeColor"

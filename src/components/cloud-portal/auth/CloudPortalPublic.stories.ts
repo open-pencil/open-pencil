@@ -9,6 +9,7 @@ import IconMonitorX from '~icons/lucide/monitor-x'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
 import { PORTAL_LEGAL } from '../layout/legal'
+import PortalAppApproval from './PortalAppApproval.vue'
 import PortalDeviceApproval from './PortalDeviceApproval.vue'
 import PortalNotice from './PortalNotice.vue'
 import PortalResetPassword from './PortalResetPassword.vue'
@@ -19,6 +20,7 @@ import PortalTwoFactor from './PortalTwoFactor.vue'
 const host = 'cloud.studio.example'
 const frame = (inner: string) => `<div class="h-180">${inner}</div>`
 const components = {
+  PortalAppApproval,
   PortalDeviceApproval,
   PortalNotice,
   PortalResetPassword,
@@ -118,6 +120,40 @@ export const ApproveDesktopSignIn: Story = {
     await expect(canvas.getByText('WDJB-MJHT')).toBeVisible()
     await expect(canvas.getByText('Check that the app shows this code')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Approve' })).toBeEnabled()
+  }
+}
+export const ConnectApp: Story = {
+  ...story(`<PortalAppApproval
+    :host="host"
+    :app="{ name: 'Studio Assistant', host: 'assistant.studio.example' }"
+    access="write"
+    offline
+    email="ana@studio.example"
+    :workspaces="[{ id: 'workspace-1', name: 'Studio' }]"
+    workspace="workspace-1"
+  />`),
+  /** One workspace is chosen already, so Allow is one click; the app's own address is text. */
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('It says it comes from assistant.studio.example.')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Allow' })).toBeEnabled()
+  }
+}
+export const ConnectAppWithoutWorkspace: Story = {
+  ...story(`<PortalAppApproval
+    :host="host"
+    :app="{ name: 'Studio Assistant', host: null }"
+    access="read"
+    :offline="false"
+    email="ana@studio.example"
+    :workspaces="[]"
+    workspace=""
+  />`),
+  /** An account in no workspace has nothing to give the app, so it can only deny. */
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('You need a workspace first')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Allow' })).toBeDisabled()
   }
 }
 export const DesktopSignInApproved = story(`

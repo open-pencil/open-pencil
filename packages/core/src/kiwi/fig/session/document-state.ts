@@ -143,12 +143,19 @@ export function hasPendingReaderPages(graph: SceneGraph): boolean {
   return !session || !session.pages.every((page) => session.loadedPageIds.has(page.id))
 }
 
-export function populateReaderExport(source: SceneGraph, target: SceneGraph): boolean {
+/**
+ * Load the pages the document has not loaded into `target`, a copy of it, for an export. Returns
+ * where that reader stands, which names the record each layer of the copy came from.
+ */
+export function populateReaderExport(
+  source: SceneGraph,
+  target: SceneGraph
+): FigSessionCheckpoint | undefined {
   const state = states.get(source)
-  if (!state || state.complete) return false
+  if (!state || state.complete) return undefined
   const live = state.session
   // Every page is already in the graph the target was copied from.
-  if (live?.pages.every((page) => live.loadedPageIds.has(page.id))) return false
+  if (live?.pages.every((page) => live.loadedPageIds.has(page.id))) return undefined
   const checkpoint = live?.checkpoint() ?? state.checkpoint
   if (!checkpoint || !state.bytes) throw new Error('Missing reader checkpoint')
   const session = createFigDocumentSession(state.bytes, readerSessionOptions(state.diagnostics), {
@@ -158,7 +165,7 @@ export function populateReaderExport(source: SceneGraph, target: SceneGraph): bo
   // Export must include internal content too, not just the dependency closure needed
   // for visible pages. Loading happens on the isolated target, never the live graph.
   for (const page of session.pages) session.loadPage(page.id)
-  return true
+  return session.checkpoint()
 }
 
 export function updateReaderRecovery(graph: SceneGraph, checkpoint: FigSessionCheckpoint): void {

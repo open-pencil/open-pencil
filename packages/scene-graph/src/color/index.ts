@@ -1,35 +1,25 @@
 export * from './contrast'
 export * from './management'
 export { normalizeColor } from './normalize'
+export { colorProfileSchema, EXPORT_COLOR_PROFILE_NAMES, exportColorProfileSchema } from './schema'
 export * from './okhcl'
 
-import { parse, formatHex, formatHex8, formatRgb, converter, differenceEuclidean } from 'culori'
+import { formatHex, formatHex8, formatRgb, differenceEuclidean } from 'culori'
 
-import { BLACK } from '../constants'
 import type { Color } from '../primitives'
-
-const toRGB = converter('rgb')
-
-/** A CSS color, or null when `input` is not one. */
-export function tryParseColor(input: string): Color | null {
-  const parsed = parse(input)
-  if (!parsed) return null
-  const rgb = toRGB(parsed)
-  return {
-    r: rgb.r,
-    g: rgb.g,
-    b: rgb.b,
-    a: parsed.alpha ?? 1
-  }
-}
-
-/** A CSS color, or black when `input` is not one. */
-export function parseColor(input: string): Color {
-  return tryParseColor(input) ?? { ...BLACK }
-}
+import type { ColorProfile } from '../types'
+import { convertColor, parseColor } from './management'
 
 export function colorToHex(color: Color): string {
   return formatHex({ mode: 'rgb', r: color.r, g: color.g, b: color.b }).toUpperCase()
+}
+
+/**
+ * `color`, whose components are in `profile`, as the sRGB hex code tools display: hex holds sRGB
+ * only, so a color outside it is brought inside by reducing chroma, not clipped.
+ */
+export function colorToSRGBHex(color: Color, profile: ColorProfile): string {
+  return colorToHex(convertColor(color, profile, 'srgb', 'map'))
 }
 
 export function colorToHex8(color: Color, alpha?: number): string {
@@ -66,8 +56,9 @@ export function rgba255ToColor(r: number, g: number, b: number, a = 1): Color {
   return { r: r / 255, g: g / 255, b: b / 255, a }
 }
 
-export function colorToFill(color: string | Color) {
-  const rgba = typeof color === 'string' ? parseColor(color) : color
+/** A solid paint of `color`, a CSS color read into `profile` or components already in it. */
+export function colorToFill(color: string | Color, profile: ColorProfile = 'srgb') {
+  const rgba = typeof color === 'string' ? parseColor(color, profile) : color
   return {
     type: 'SOLID' as const,
     color: { r: rgba.r, g: rgba.g, b: rgba.b, a: rgba.a },

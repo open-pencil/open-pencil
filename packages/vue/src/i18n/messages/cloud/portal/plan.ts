@@ -1,6 +1,6 @@
 import { params } from '@nanostores/i18n'
 
-/** Messages of the `cloudPortal` namespace for an account's plan, storage and credits. */
+/** Messages of the Cloud server's pages for an account's plan, storage and credits. */
 export const planPortalMessageDefaults = {
   plan: 'Plan',
   planDescription: 'What your account includes, and what you pay for.',

@@ -1,0 +1,1 @@
+- Design JSX export keeps the alpha of translucent sticky note colors, connector strokes, and icon colors instead of writing them opaque.

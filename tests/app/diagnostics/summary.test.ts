@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { diagnosticsMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { summarizeDiagnosticEvent } from '@/app/diagnostics'
 import type { DiagnosticEvent } from '@/app/diagnostics/types'
@@ -18,7 +18,7 @@ function event(fields: Partial<DiagnosticEvent>): DiagnosticEvent {
 }
 
 const summarize = (fields: Partial<DiagnosticEvent>) =>
-  summarizeDiagnosticEvent(event(fields), diagnosticsMessages.get())
+  summarizeDiagnosticEvent(event(fields), messageStores.diagnostics.get())
 
 describe('diagnostic event summaries', () => {
   test.each([

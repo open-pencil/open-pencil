@@ -121,12 +121,17 @@ abuse_email = "abuse@openpencil.dev"
 minimum_age = 16
 
 # The community gallery: everything saved in this workspace is public. The Publish gallery examples
-# workflow saves the tour there.
+# workflow saves the tour there, and editors open it as their tour.
 [community]
 workspace = "4c07f641-7478-44c8-a5b9-fa5632d6d472"
+tour = "d7cf3185-cc2a-450c-bc37-63ed06ec100b"
 
 # Server errors go to the OpenPencil PostHog project; the key is the POSTHOG_PROJECT_API_KEY secret.
 [error_tracking]
 provider = "posthog"
 host = "https://eu.i.posthog.com"
 include_ids = true
+
+# Apps such as ChatGPT, Claude, and Grok connect to staging accounts through OAuth.
+[oauth]
+enabled = true

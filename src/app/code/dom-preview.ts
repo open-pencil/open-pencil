@@ -1,12 +1,8 @@
-import { sceneGraphFromStyledHTML } from '@open-pencil/core/io/formats/html/layers'
-import {
-  browserHTMLToDesignDocument,
-  browserTailwindHTMLToDesignDocument
-} from '@open-pencil/dom-css/browser'
 import type { ComponentStyling } from '@open-pencil/dom-css/export'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { errorMessage } from '@open-pencil/std/errors'
 
+import { loadHTMLImporter } from '@/app/document/io/importer'
 import type { EditorStore } from '@/app/editor/active-store'
 
 export type DOMCodeSession = {
@@ -38,6 +34,8 @@ async function loadTailwindStylesheet(): Promise<string> {
 }
 
 async function designDocument(source: string, styling: ComponentStyling) {
+  const { browserHTMLToDesignDocument, browserTailwindHTMLToDesignDocument } =
+    await loadHTMLImporter()
   if (styling === 'css') return browserHTMLToDesignDocument(source)
   return browserTailwindHTMLToDesignDocument(source, classNames(source), {
     loadStylesheet: loadTailwindStylesheet
@@ -51,6 +49,7 @@ export async function previewDOMCode(
   styling: ComponentStyling
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
+    const { sceneGraphFromStyledHTML } = await loadHTMLImporter()
     const graph = await sceneGraphFromStyledHTML(await designDocument(source, styling), {
       pageName: 'Code preview'
     })

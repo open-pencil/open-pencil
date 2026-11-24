@@ -1,8 +1,8 @@
-import type { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import type { MessagesOf } from '@open-pencil/vue/i18n'
 
 import type { PortalContentAction, PortalDocumentRow, PortalReportRow } from '../types'
 
-type Messages = ReturnType<typeof useCloudPortalMessages>['value']
+type Messages = MessagesOf<'cloud/portal'>
 
 /** The actions a document's row menu offers; a report adds its link and its own decision. */
 export function contentActions(

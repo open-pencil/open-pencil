@@ -2,7 +2,7 @@
 import { ToggleGroupItem, ToggleGroupRoot } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   DESIGN_ISSUE_SEVERITIES,
@@ -18,7 +18,7 @@ const { counts } = defineProps<{ counts: DesignIssueCounts }>()
 /** Severities whose issues are listed; toggling one hides or shows its issues. */
 const visible = defineModel<DesignIssueSeverity[]>({ required: true })
 
-const messages = useDesignCheckMessages()
+const messages = useMessages('design-check')
 const styles = designCheck()
 
 const labels = computed<Record<DesignIssueSeverity, string>>(() => ({

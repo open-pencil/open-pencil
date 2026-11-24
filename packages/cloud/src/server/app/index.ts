@@ -39,7 +39,9 @@ export function createCloudApp(services: CloudServices) {
   const allowedOrigins = new Set(
     [config.publicURL, ...config.trustedOrigins].map((origin) => new URL(origin).origin)
   )
-  const cloudCORS = createCloudCORS(allowedOrigins)
+  // Billing's pages sign a visitor in with their Cloud session as they open (`CLOUD_BILLING_TOKEN_PATH`).
+  const billingOrigin = config.billingEndpoint && new URL(config.billingEndpoint).origin
+  const cloudCORS = createCloudCORS(allowedOrigins, billingOrigin || undefined)
   const app = createAppServices(services)
   const resolvers = createRequestResolvers(services)
   const checks = createRequestChecks(services, resolvers)
@@ -70,7 +72,9 @@ export function createCloudApp(services: CloudServices) {
       })
       .get('/robots.txt', (context) => {
         context.header('Content-Type', 'text/plain; charset=utf-8')
-        return context.body(robotsText(config.indexingPolicy))
+        return context.body(
+          robotsText(config.indexingPolicy, app.community.enabled ? config.publicURL : null)
+        )
       })
       .get('/health', (context) =>
         context.json({
@@ -108,6 +112,7 @@ export function createCloudApp(services: CloudServices) {
       )
       .route('/', routers.account)
       .route('/', routers.accessTokens)
+      .route('/', routers.appConnections)
       .route('/', createPictureRoutes(app.pictures))
       .use('/api/shares/:shareId/collaboration-ticket', limiters.publicCollaborationLimiter)
       .use('/api/public/*', limiters.publicRateLimiter)

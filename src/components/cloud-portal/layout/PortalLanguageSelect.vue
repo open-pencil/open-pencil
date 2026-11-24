@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { type Locale, useI18n } from '@open-pencil/vue/i18n'
+import { focusStyles } from '@open-pencil/theme'
+import { type Locale, useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { focusStyles } from '@/theme/focus/styles'
 
 /**
  * The language of a Cloud page, as Settings sets it in the editor: the same list and names, and
  * the same saved choice, which the editor on this server's address shares. It sits among the
  * footer's links, so it looks like one, as the chat's thinking level does among its controls.
  */
-const { availableLocales, locale, localeLabels, menu, setLocale } = useI18n()
+const menu = useMessages('menu')
+const { availableLocales, locale, localeLabels, setLocale } = useLocale()
 const language = computed<Locale>({
   get: () => locale.value,
   set: setLocale

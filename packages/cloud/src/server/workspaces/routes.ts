@@ -13,6 +13,7 @@ import {
   routeParamResource,
   createResourceRateLimiter
 } from '#cloud/server/rate-limit'
+import { tokenRoute } from '#cloud/server/tokens'
 import {
   validatedJSON,
   workspaceInvitationParams,
@@ -105,11 +106,17 @@ export function createWorkspaceRoutes(
     )
   }
   return router
-    .get('/', async (context) => {
-      const workspaces = await service.list(context.get('actor').userId)
-      return context.json({ workspaces })
+    .get('/', tokenRoute.read.grant, async (context) => {
+      const { userId, grant } = context.get('actor')
+      const workspaces = await service.list(userId)
+      // An app sees the one workspace its grant reaches.
+      return context.json({
+        workspaces: grant
+          ? workspaces.filter((workspace) => workspace.id === grant.workspaceId)
+          : workspaces
+      })
     })
-    .post('/', validatedJSON(createWorkspaceSchema), async (context) => {
+    .post('/', tokenRoute.write.personal, validatedJSON(createWorkspaceSchema), async (context) => {
       try {
         const workspace = await service.create(
           context.get('actor').userId,
@@ -123,7 +130,7 @@ export function createWorkspaceRoutes(
         throw error
       }
     })
-    .get('/:workspaceId', workspaceParams, async (context) => {
+    .get('/:workspaceId', workspaceParams, tokenRoute.read.workspace, async (context) => {
       const workspace = await service.get(
         context.get('actor').userId,
         context.req.valid('param').workspaceId
@@ -131,24 +138,29 @@ export function createWorkspaceRoutes(
       if (!workspace) return context.json({ error: { code: 'not_found' as const } }, 404)
       return context.json({ workspace })
     })
-    .patch('/:workspaceId', workspaceParams, validatedJSON(updateWorkspaceSchema), (context) =>
-      memberRoute(context, async () =>
-        context.json({
-          workspace: await members.rename(
-            context.get('actor').userId,
-            context.req.valid('param').workspaceId,
-            context.req.valid('json').name
-          )
-        })
-      )
+    .patch(
+      '/:workspaceId',
+      workspaceParams,
+      tokenRoute.write.personal,
+      validatedJSON(updateWorkspaceSchema),
+      (context) =>
+        memberRoute(context, async () =>
+          context.json({
+            workspace: await members.rename(
+              context.get('actor').userId,
+              context.req.valid('param').workspaceId,
+              context.req.valid('json').name
+            )
+          })
+        )
     )
-    .delete('/:workspaceId', workspaceParams, (context) =>
+    .delete('/:workspaceId', workspaceParams, tokenRoute.write.personal, (context) =>
       memberRoute(context, async () => {
         await members.delete(context.get('actor').userId, context.req.valid('param').workspaceId)
         return context.body(null, 204)
       })
     )
-    .get('/:workspaceId/members', workspaceParams, (context) =>
+    .get('/:workspaceId/members', workspaceParams, tokenRoute.read.personal, (context) =>
       memberRoute(context, async () =>
         context.json(
           await members.list(context.get('actor').userId, context.req.valid('param').workspaceId)
@@ -158,6 +170,7 @@ export function createWorkspaceRoutes(
     .post(
       '/:workspaceId/invitations',
       workspaceParams,
+      tokenRoute.write.personal,
       validatedJSON(createWorkspaceInvitationSchema),
       (context) =>
         memberRoute(context, async () =>
@@ -171,30 +184,39 @@ export function createWorkspaceRoutes(
           )
         )
     )
-    .post('/:workspaceId/invitations/:invitationId/resend', workspaceInvitationParams, (context) =>
-      memberRoute(context, async () =>
-        context.json(
-          await members.resendInvitation(
+    .post(
+      '/:workspaceId/invitations/:invitationId/resend',
+      workspaceInvitationParams,
+      tokenRoute.write.personal,
+      (context) =>
+        memberRoute(context, async () =>
+          context.json(
+            await members.resendInvitation(
+              context.get('actor').userId,
+              context.req.valid('param').workspaceId,
+              context.req.valid('param').invitationId
+            )
+          )
+        )
+    )
+    .delete(
+      '/:workspaceId/invitations/:invitationId',
+      workspaceInvitationParams,
+      tokenRoute.write.personal,
+      (context) =>
+        memberRoute(context, async () => {
+          await members.revokeInvitation(
             context.get('actor').userId,
             context.req.valid('param').workspaceId,
             context.req.valid('param').invitationId
           )
-        )
-      )
-    )
-    .delete('/:workspaceId/invitations/:invitationId', workspaceInvitationParams, (context) =>
-      memberRoute(context, async () => {
-        await members.revokeInvitation(
-          context.get('actor').userId,
-          context.req.valid('param').workspaceId,
-          context.req.valid('param').invitationId
-        )
-        return context.body(null, 204)
-      })
+          return context.body(null, 204)
+        })
     )
     .patch(
       '/:workspaceId/members/:userId',
       workspaceMemberParams,
+      tokenRoute.write.personal,
       validatedJSON(updateWorkspaceMemberSchema),
       (context) =>
         memberRoute(context, async () => {
@@ -207,14 +229,18 @@ export function createWorkspaceRoutes(
           return context.body(null, 204)
         })
     )
-    .delete('/:workspaceId/members/:userId', workspaceMemberParams, (context) =>
-      memberRoute(context, async () => {
-        await members.remove(
-          context.get('actor').userId,
-          context.req.valid('param').workspaceId,
-          context.req.valid('param').userId
-        )
-        return context.body(null, 204)
-      })
+    .delete(
+      '/:workspaceId/members/:userId',
+      workspaceMemberParams,
+      tokenRoute.write.personal,
+      (context) =>
+        memberRoute(context, async () => {
+          await members.remove(
+            context.get('actor').userId,
+            context.req.valid('param').workspaceId,
+            context.req.valid('param').userId
+          )
+          return context.body(null, 204)
+        })
     )
 }

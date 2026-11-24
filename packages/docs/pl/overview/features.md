@@ -36,7 +36,7 @@ Zawartość kart „Design”, „Kod”, „AI” i „Sprawdź” zależy od z
 OpenPencil używa Skia przez CanvasKit WASM — tego samego silnika graficznego co Figma:
 
 - gradienty liniowe, radialne, kątowe i diamentowe;
-- zalewy obrazami z różnymi trybami skalowania;
+- zalewy obrazami z różnymi trybami skalowania i korektami (ekspozycja, kontrast, nasycenie, temperatura, odcień, światła, cienie);
 - pamięć podręczna efektów osobnych obiektów;
 - łuki, częściowe elipsy i pierścienie;
 - pomijanie obiektów poza widokiem i ponowne użycie pędzli;
@@ -98,7 +98,7 @@ Połączenie równorzędne WebRTC nie wymaga centralnego serwera. Udostępnij od
 
 **Komputer:** Tauri v2, około 7 MB, dla macOS, Windows i Linux, z menu systemowymi, pracą bez sieci i automatycznym zapisem.
 
-**Internet:** [app.openpencil.dev](https://app.openpencil.dev), możliwość instalacji jako PWA i interfejs dotykowy.
+**Internet:** [cloud.openpencil.dev](https://cloud.openpencil.dev), możliwość instalacji jako PWA i interfejs dotykowy.
 
 ## Zastępcze ładowanie Google Fonts
 

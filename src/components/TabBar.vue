@@ -3,7 +3,7 @@ import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, useTemplateRef, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { animationsEnabled } from '@/app/shell/motion'
 import { openNewFileTab, useTabsStore } from '@/app/tabs'
@@ -13,7 +13,7 @@ import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import tabBarTheme from '@/theme/tabs/bar'
 
-const { files } = useI18n()
+const files = useMessages('files')
 
 const { tabs, activeTabId, switchTab, closeTab } = useTabsStore()
 const tabBarStyles = tv(tabBarTheme)

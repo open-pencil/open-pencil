@@ -1,9 +1,10 @@
 import { compact } from 'es-toolkit'
-import valueParser from 'postcss-value-parser'
+import valueParser, { type Node } from 'postcss-value-parser'
 import { decode, parsePath } from 'ufo'
 
 import { tryParseColor } from '../color'
 import type { Color } from '../primitives'
+import type { ColorProfile } from '../types'
 
 /** A CSS dimension's number and lowercase unit, or null. */
 export function dimension(value: string): { number: number; unit: string } | null {
@@ -37,11 +38,40 @@ export function parseCSSNumber(value: string | undefined): number | null {
   }
 }
 
-/** A CSS color that paints something; null for an invalid or fully transparent one. */
-export function parseCSSColor(value: string | undefined): Color | null {
+/** A CSS color that paints something, as components in `profile`; null for an invalid or transparent one. */
+export function parseCSSColor(
+  value: string | undefined,
+  profile: ColorProfile = 'srgb'
+): Color | null {
   if (!value) return null
-  const color = tryParseColor(value.trim())
+  const color = tryParseColor(value.trim(), profile)
   return color && color.a > 0 ? color : null
+}
+
+/**
+ * The layers of a comma-separated CSS list, such as `box-shadow` or `background-image`, split at
+ * its top-level commas, each without its spaces and comments.
+ */
+export function cssLayerNodes(nodes: readonly Node[]): Node[][] {
+  const layers: Node[][] = []
+  let current: Node[] = []
+  for (const node of nodes) {
+    if (node.type === 'div' && node.value === ',') {
+      layers.push(current)
+      current = []
+    } else if (node.type !== 'space' && node.type !== 'comment') {
+      current.push(node)
+    }
+  }
+  layers.push(current)
+  return layers
+}
+
+/** The layers of a comma-separated CSS list as text, each its parts joined by single spaces. */
+export function splitCSSLayers(value: string): string[] {
+  return cssLayerNodes(valueParser(value).nodes).map((layer) =>
+    layer.map((node) => valueParser.stringify(node)).join(' ')
+  )
 }
 
 /** The space-separated parts of a CSS value, keeping functions such as `rgb(0, 0, 0)` whole. */

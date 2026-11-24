@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { useShapeWithText } from '@open-pencil/vue/controls/shape-with-text'
-import { useShapeMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 import ShapeWithTextControls from './ShapeWithTextControls.vue'
 
-const shapes = useShapeMessages()
+const shapes = useMessages('shapes')
 const {
   active,
   kind,

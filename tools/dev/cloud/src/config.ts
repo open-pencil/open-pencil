@@ -9,11 +9,16 @@ export type LocalCloudEndpoints = {
   smtpPort: number
   /** The workspace the server shows as its community gallery, if any. */
   communityWorkspace?: string
+  /**
+   * A billing service to sell plans through, such as the official one run locally, with the
+   * services endpoint whose key signs its tokens.
+   */
+  billing?: { endpoint: string; servicesEndpoint: string }
 }
 
 /** Deployment settings for one worktree's local Cloud, with open sign-up and captured mail. */
 export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeploymentInput {
-  return {
+  const deployment: CloudDeploymentInput = {
     schema_version: 2,
     deployment: {
       mode: 'self-hosted',
@@ -52,6 +57,8 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
     },
     collaboration: { maximum_message_bytes: 1_048_576, maximum_connections_per_room: 1000 },
     documents: { retention_days: 30 },
+    // Apps can connect, so a worktree exercises the approval page and connected apps.
+    oauth: { enabled: true },
     email: {
       transport: 'smtp',
       from: 'OpenPencil Cloud <cloud@openpencil.localhost>',
@@ -67,9 +74,12 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
       }
     },
     entitlements: {
-      source: 'static',
+      // Billing keeps the plans it sells in the database, which static entitlements would hide.
+      source: endpoints.billing ? 'database' : 'static',
       documents: { maximum_file_bytes: 1_073_741_824, revision_history: true },
-      storage: { maximum_bytes: 1_099_511_627_776 },
+      // With billing, the free plan Cloud publishes is what its pricing page shows, so it is the
+      // official Cloud's 300 MB and not room to develop in.
+      storage: { maximum_bytes: endpoints.billing ? 314_572_800 : 1_099_511_627_776 },
       sharing: {
         links: true,
         guest_view: true,
@@ -77,10 +87,25 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
         guest_presence: true
       },
       collaboration: { enabled: true, maximum_participants: 100 }
-    },
-    ...(endpoints.communityWorkspace
-      ? { community: { workspace: endpoints.communityWorkspace } }
-      : {})
+    }
+  }
+  if (endpoints.communityWorkspace) {
+    deployment.community = { workspace: endpoints.communityWorkspace }
+  }
+  if (endpoints.billing) Object.assign(deployment, billingTables(endpoints.billing))
+  return deployment
+}
+
+/**
+ * What a billing service needs from Cloud: the services' key to sign its tokens, the internal API
+ * to set the plans it sells, and entitlements in the database, where those plans are kept; their
+ * secrets come from the environment `cloud:dev` sets.
+ */
+function billingTables(billing: { endpoint: string; servicesEndpoint: string }) {
+  return {
+    services: { endpoint: billing.servicesEndpoint },
+    billing: { endpoint: billing.endpoint },
+    internal_api: {}
   }
 }
 

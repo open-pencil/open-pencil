@@ -7,7 +7,7 @@ import type { Variable, VariableLiteral, VariableValue } from '@open-pencil/scen
 import { colorToHex8 } from '@open-pencil/scene-graph/color'
 import { formulaSymbol } from '@open-pencil/scene-graph/variables'
 import { errorMessage } from '@open-pencil/std/errors'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   referencePillName,
@@ -49,7 +49,7 @@ const emit = defineEmits<{
   addExpression: []
   removeExpression: []
 }>()
-const { variables } = useI18n()
+const variables = useMessages('variables/panel')
 const ui = computed(() => tv(valueEditorTheme)({ heading }))
 const fieldId = useId()
 const field = useTemplateRef<InstanceType<typeof TokenFormulaField>>('field')

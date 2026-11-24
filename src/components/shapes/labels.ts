@@ -1,9 +1,9 @@
 import { computed } from 'vue'
 
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import { useShapeMessages } from '@open-pencil/vue/i18n'
+import { useMessages, type MessagesOf } from '@open-pencil/vue/i18n'
 
-type ShapeMessages = ReturnType<typeof useShapeMessages>['value']
+type ShapeMessages = MessagesOf<'shapes'>
 
 /** Each kind's name as FigJam's Shapes panel gives it. */
 const KIND_LABEL_KEYS = {
@@ -41,6 +41,6 @@ const KIND_LABEL_KEYS = {
 
 /** Each kind's name in the interface language. */
 export function useShapeKindLabels() {
-  const shapes = useShapeMessages()
+  const shapes = useMessages('shapes')
   return computed(() => (kind: ShapeWithTextType) => shapes.value[KIND_LABEL_KEYS[kind]])
 }

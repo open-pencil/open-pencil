@@ -16,6 +16,7 @@ import type { CloudSessionResolver } from '#cloud/server/auth'
 import { documentDomainError, type DocumentRouteEnvironment } from '#cloud/server/documents'
 import { shareActor } from '#cloud/server/sharing/actor'
 import { sharingDomainError } from '#cloud/server/sharing/http'
+import { tokenRoute } from '#cloud/server/tokens'
 import {
   documentCommentParams,
   documentParams,
@@ -95,12 +96,18 @@ export function createCommentRoutes(service: CommentService) {
         )
       )
     )
-    .get('/documents/:documentId/threads/people', documentParams, (context) =>
-      run(context, async () =>
-        context.json(await service.people(await as(context, context.req.valid('param').documentId)))
-      )
+    .get(
+      '/documents/:documentId/threads/people',
+      documentParams,
+      tokenRoute.read.document,
+      (context) =>
+        run(context, async () =>
+          context.json(
+            await service.people(await as(context, context.req.valid('param').documentId))
+          )
+        )
     )
-    .get('/documents/:documentId/threads', documentParams, (context) =>
+    .get('/documents/:documentId/threads', documentParams, tokenRoute.read.document, (context) =>
       run(context, async () =>
         context.json(await service.list(await as(context, context.req.valid('param').documentId)))
       )
@@ -108,6 +115,7 @@ export function createCommentRoutes(service: CommentService) {
     .post(
       '/documents/:documentId/threads',
       documentParams,
+      tokenRoute.write.document,
       validatedJSON(createCommentThreadSchema),
       (context) =>
         run(context, async () => {
@@ -119,6 +127,7 @@ export function createCommentRoutes(service: CommentService) {
     .post(
       '/documents/:documentId/threads/import',
       documentParams,
+      tokenRoute.write.document,
       validatedJSON(importCommentThreadsSchema),
       (context) =>
         run(context, async () => {
@@ -126,22 +135,33 @@ export function createCommentRoutes(service: CommentService) {
           return context.json(await service.importThreads(actor, context.req.valid('json')), 201)
         })
     )
-    .get('/documents/:documentId/threads/:threadId', documentThreadParams, (context) =>
-      run(context, async () => {
-        const { documentId, threadId } = context.req.valid('param')
-        return context.json({ thread: await service.get(await as(context, documentId), threadId) })
-      })
+    .get(
+      '/documents/:documentId/threads/:threadId',
+      documentThreadParams,
+      tokenRoute.read.document,
+      (context) =>
+        run(context, async () => {
+          const { documentId, threadId } = context.req.valid('param')
+          return context.json({
+            thread: await service.get(await as(context, documentId), threadId)
+          })
+        })
     )
-    .post('/documents/:documentId/threads/:threadId/read', documentThreadParams, (context) =>
-      run(context, async () => {
-        const { documentId, threadId } = context.req.valid('param')
-        await service.markRead(await as(context, documentId), threadId)
-        return context.body(null, 204)
-      })
+    .post(
+      '/documents/:documentId/threads/:threadId/read',
+      documentThreadParams,
+      tokenRoute.write.document,
+      (context) =>
+        run(context, async () => {
+          const { documentId, threadId } = context.req.valid('param')
+          await service.markRead(await as(context, documentId), threadId)
+          return context.body(null, 204)
+        })
     )
     .patch(
       '/documents/:documentId/threads/:threadId',
       documentThreadParams,
+      tokenRoute.write.document,
       validatedJSON(updateCommentThreadSchema),
       (context) =>
         run(context, async () => {
@@ -152,16 +172,21 @@ export function createCommentRoutes(service: CommentService) {
           })
         })
     )
-    .delete('/documents/:documentId/threads/:threadId', documentThreadParams, (context) =>
-      run(context, async () => {
-        const { documentId, threadId } = context.req.valid('param')
-        await service.deleteThread(await as(context, documentId), threadId)
-        return context.body(null, 204)
-      })
+    .delete(
+      '/documents/:documentId/threads/:threadId',
+      documentThreadParams,
+      tokenRoute.write.document,
+      (context) =>
+        run(context, async () => {
+          const { documentId, threadId } = context.req.valid('param')
+          await service.deleteThread(await as(context, documentId), threadId)
+          return context.body(null, 204)
+        })
     )
     .post(
       '/documents/:documentId/threads/:threadId/comments',
       documentThreadParams,
+      tokenRoute.write.document,
       validatedJSON(createCommentSchema),
       (context) =>
         run(context, async () => {
@@ -174,6 +199,7 @@ export function createCommentRoutes(service: CommentService) {
     .patch(
       '/documents/:documentId/threads/:threadId/comments/:commentId',
       documentCommentParams,
+      tokenRoute.write.document,
       validatedJSON(updateCommentSchema),
       (context) =>
         run(context, async () => {
@@ -192,6 +218,7 @@ export function createCommentRoutes(service: CommentService) {
     .delete(
       '/documents/:documentId/threads/:threadId/comments/:commentId',
       documentCommentParams,
+      tokenRoute.write.document,
       (context) =>
         run(context, async () => {
           const { documentId, threadId, commentId } = context.req.valid('param')

@@ -115,6 +115,7 @@ export function normalizeSourceMetadata(source: unknown): SourceMetadata {
         : null,
       symbolOverrides: arrayOrEmpty(fig.symbolOverrides),
       componentPropAssignments: arrayOrEmpty(fig.componentPropAssignments),
+      hiddenSlotAssignments: arrayOrEmpty(fig.hiddenSlotAssignments),
       derivedSymbolData: arrayOrEmpty(fig.derivedSymbolData),
       derivedSymbolDataLayoutVersion: numberOrNull(fig.derivedSymbolDataLayoutVersion),
       uniformScaleFactor: numberOrNull(fig.uniformScaleFactor)

@@ -45,7 +45,7 @@ export interface NumberFieldSlots {
 import { tv } from 'tailwind-variants'
 import { computed, normalizeClass, useAttrs } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import {
   NumberFieldRoot,
   NumberFieldInput,
@@ -56,7 +56,7 @@ import theme from '@/theme/input/number-field'
 
 const attrs = useAttrs()
 const slots = defineSlots<NumberFieldSlots>()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 
 const {
   modelValue,

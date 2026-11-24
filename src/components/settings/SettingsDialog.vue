@@ -19,7 +19,7 @@ import IconSparkles from '~icons/lucide/sparkles'
 import IconType from '~icons/lucide/type'
 
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { CLOUD_INCLUDED } from '@/app/cloud/integration'
 import {
@@ -65,7 +65,8 @@ import {
 } from '@/components/ui/tabs'
 
 const { isMobile } = useViewportKind()
-const { settings, common } = useI18n()
+const settings = useMessages('settings')
+const common = useMessages('common')
 const navigation = provideSettingsNavigation()
 tryOnScopeDispose(registerSettingsNavigation(navigation.request))
 const { editing, confirming, crumb } = navigation

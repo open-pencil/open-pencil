@@ -107,7 +107,7 @@ jobs:
           POSTHOG_CLI_HOST: https://eu.posthog.com
         run: bun .pipeline/tools/release/release-packages/src/sourcemaps/publish.ts --archive
       # The licenses of the Rust crates compiled into shipped binaries, which their packages carry.
-      - uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
+      - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
         with:
           tool: cargo-about@0.9.3
       - name: Write third-party notices
@@ -123,7 +123,7 @@ jobs:
         if: needs.plan.outputs.kind == 'release'
         env:
           RELEASE_VERSION: ${{ needs.plan.outputs.version }}
-        run: bun .pipeline/tools/release/release-packages/src/extract-release-notes.ts "$RELEASE_VERSION" release-notes.md
+        run: bun .pipeline/tools/release/release-packages/src/release-notes/extract.ts "$RELEASE_VERSION" release-notes.md
       - name: Write the nightly's notes
         if: needs.plan.outputs.kind == 'nightly'
         env:

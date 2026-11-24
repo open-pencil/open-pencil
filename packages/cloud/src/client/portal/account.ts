@@ -7,11 +7,14 @@ import {
   cloudAccountMutationResponseSchema,
   cloudAccountSessionsResponseSchema,
   cloudAccountStatusResponseSchema,
+  cloudAppConnectionsResponseSchema,
   cloudAuthenticationMethodsResponseSchema,
   cloudMFAEnableResponseSchema,
   cloudMFARecoveryCodesResponseSchema,
   cloudMFAStatusResponseSchema,
   cloudMFAVerifyResponseSchema,
+  cloudOAuthDecisionResponseSchema,
+  cloudOAuthRequestResponseSchema,
   cloudPasskeysResponseSchema,
   cloudPictureResponseSchema,
   cloudProfileResponseSchema,
@@ -19,13 +22,17 @@ import {
   cloudSocialLinkResponseSchema,
   notificationSettingsSchema,
   type CloudAccessTokenCreate,
+  type CloudOAuthDecision,
   type CloudSocialProvider,
   type NotificationSettings
 } from '#cloud/contract'
 
 import type { CloudCall, PortalRouteClients } from './request'
 
-export function createAccountAPI(call: CloudCall, { account, tokens, api }: PortalRouteClients) {
+export function createAccountAPI(
+  call: CloudCall,
+  { account, tokens, apps, api }: PortalRouteClients
+) {
   return {
     /** Which comments the account hears about by email. */
     notificationSettings(signal?: AbortSignal) {
@@ -219,6 +226,37 @@ export function createAccountAPI(call: CloudCall, { account, tokens, api }: Port
     revokeAccessToken(id: string, signal?: AbortSignal) {
       return call(
         (options) => tokens.revoke.$post({ json: { id } }, options),
+        cloudAccountMutationResponseSchema,
+        signal
+      )
+    },
+    /** The app asking to connect, from the signed request the approval page was sent. */
+    oauthRequest(query: string, signal?: AbortSignal) {
+      return call(
+        (options) => apps.oauth.request.$get({ query: { query } }, options),
+        cloudOAuthRequestResponseSchema,
+        signal
+      )
+    },
+    /** Allows the app into a workspace, or refuses it; answers where the browser goes next. */
+    decideOAuth(decision: CloudOAuthDecision, signal?: AbortSignal) {
+      return call(
+        (options) => apps.oauth.decision.$post({ json: decision }, options),
+        cloudOAuthDecisionResponseSchema,
+        signal
+      )
+    },
+    /** The apps the account connected, each with the workspace it reaches. */
+    appConnections(signal?: AbortSignal) {
+      return call(
+        (options) => apps.account.connections.$get(undefined, options),
+        cloudAppConnectionsResponseSchema,
+        signal
+      )
+    },
+    revokeAppConnection(id: string, signal?: AbortSignal) {
+      return call(
+        (options) => apps.account.connections.revoke.$post({ json: { id } }, options),
         cloudAccountMutationResponseSchema,
         signal
       )

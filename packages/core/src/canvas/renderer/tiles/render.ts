@@ -151,7 +151,7 @@ export function renderTile(
   } finally {
     canvas.restore()
     renderer.images.detailScale = previousDetail
-    if (margin > 0) surface.delete()
+    if (margin > 0) surface.dispose()
     else surfacePool.release(surface)
   }
 }
@@ -203,14 +203,8 @@ export function downsampleTile(
   const paint = renderer.opacityPaint
   canvas.save()
   try {
-    canvas.clear(
-      renderer.ck.Color4f(
-        renderer.pageColor.r,
-        renderer.pageColor.g,
-        renderer.pageColor.b,
-        renderer.pageColor.a
-      )
-    )
+    const background = renderer.renderColor(renderer.pageColor)
+    canvas.clear(renderer.ck.Color4f(background.r, background.g, background.b, background.a))
     paint.setAlphaf(1)
     paint.setBlendMode(renderer.ck.BlendMode.Src)
     const drawStartedAt = rendererNow()

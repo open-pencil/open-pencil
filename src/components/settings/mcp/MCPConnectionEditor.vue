@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue'
 
-import {
-  useAutomationMessages,
-  useCommonMessages,
-  useCredentialMessages,
-  useSettingsMessages
-} from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { MCPConnectionDraft } from '@/app/integrations/mcp'
 import type { MCPConnectionFieldErrors } from '@/app/integrations/mcp/settings/form'
@@ -45,10 +40,10 @@ defineEmits<{
   clear: []
   blurField: [field: 'name' | 'url' | 'credential']
 }>()
-const automation = useAutomationMessages()
-const common = useCommonMessages()
-const credentials = useCredentialMessages()
-const settings = useSettingsMessages()
+const automation = useMessages('automation')
+const common = useMessages('common')
+const credentials = useMessages('credentials')
+const settings = useMessages('settings')
 const formElement = useTemplateRef<HTMLFormElement>('formElement')
 defineExpose({ focusInvalid: () => focusInvalidField(formElement.value) })
 </script>

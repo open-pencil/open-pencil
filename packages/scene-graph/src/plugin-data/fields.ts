@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import { behaviourSchema } from '../behaviours/schema'
 import type { OkHCLPayload } from '../color/okhcl'
+import { exportColorProfileSchema } from '../color/schema'
 import { commentThreadsSchema } from '../comments/schema'
 import { isExportFormatId, type ExportFormatId } from '../export-format'
 import { clampExportScale } from '../export-scale'
@@ -70,7 +71,7 @@ const exportSettingsSchema: v.GenericSchema<unknown, ExportSetting[]> = v.array(
       ),
       contentsOnly: v.optional(v.boolean()),
       useAbsoluteBounds: v.optional(v.boolean()),
-      colorProfile: v.optional(v.picklist(['DOCUMENT', 'SRGB', 'DISPLAY_P3_V4'])),
+      colorProfile: v.optional(exportColorProfileSchema),
       svgOutlineText: v.optional(v.boolean()),
       svgIdAttribute: v.optional(v.boolean()),
       svgSimplifyStroke: v.optional(v.boolean())

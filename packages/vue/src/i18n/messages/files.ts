@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const filesMessageDefaults = {
   importLabel: 'Import',
   importHTMLCSS: 'Import HTML/CSS',
@@ -11,6 +9,8 @@ export const filesMessageDefaults = {
   importing: 'Importing…',
   preparing: 'Loading…',
   preparationReading: 'Reading document',
+  preparationRenderingPage: 'Running the page’s scripts',
+  preparationLoadingFiles: 'Loading stylesheets and pictures',
   preparationDecoding: 'Decoding document',
   preparationStyling: 'Laying out the page',
   preparationNamingIcons: 'Naming icons',
@@ -26,6 +26,11 @@ export const filesMessageDefaults = {
   openURLDescription: 'A web page opens as layers; an image or a design file opens as it is.',
   openURLAddress: 'Address',
   openURLSubmit: 'Open',
+  openURLSize: 'Window size',
+  openURLSizeDesktop: 'Desktop',
+  openURLSizeTablet: 'Tablet',
+  openURLSizeMobile: 'Mobile',
+  openURLRunScripts: 'Run the page’s scripts',
   openURLInvalid: 'Enter a web address, such as https://example.com.',
   openURLBlocked:
     'The site does not let other sites read it, so the browser cannot open it. The desktop app can.',
@@ -80,5 +85,3 @@ export const filesMessageDefaults = {
   browserFileAPINotSupported:
     "Your browser doesn't support the local file API. Files will be downloaded instead of saved in place."
 } as const
-
-export const filesMessages = i18n('files', filesMessageDefaults)

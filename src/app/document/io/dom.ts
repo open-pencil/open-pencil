@@ -1,19 +1,17 @@
 import { basename, extname } from 'pathe'
 
 import { resolveEditorProfile } from '@open-pencil/core'
-import {
-  HTML_IMPORT_VIEWPORT,
-  loadPageFontFaces,
-  sceneGraphFromStyledHTML
-} from '@open-pencil/core/io/formats/html/layers'
-import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
+import { remoteFileTitle } from '@open-pencil/core/io/remote'
+import type { DesignViewport } from '@open-pencil/dom-css'
 import { errorMessage } from '@open-pencil/std/errors'
 import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
+import { loadHTMLImporter } from '@/app/document/io/importer'
 import type { OpenFileOptions } from '@/app/document/io/state'
-import { pageFetch } from '@/app/document/io/url/fetch'
+import { countedFetch, pageFetch } from '@/app/document/io/url/fetch'
+import type { RenderedWebPage } from '@/app/document/io/url/render/page'
 import { importIconMatcher } from '@/app/editor/icons/provider'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
@@ -35,6 +33,49 @@ type DOMTextImportOptions = {
   documentName?: string
   /** The web address the page came from, which its stylesheets and images resolve against. */
   baseURL?: string
+  /** The window a web page is laid out in. */
+  viewport?: DesignViewport
+}
+
+/**
+ * The page as its scripts build it, rendered by the desktop app, or null when it cannot be,
+ * including when the renderer fails to load; the HTML its server sent then stands in. The renderer
+ * and the scripts it runs in the page are loaded only when a page is rendered.
+ */
+async function renderedPage(
+  webPage: OpenedWebPage,
+  load: EditorPreparationHandle
+): Promise<RenderedWebPage | null> {
+  load.update({ phase: 'rendering-page', detail: webPage.title })
+  try {
+    const { renderWebPage } = await import('@/app/document/io/url/render/page')
+    const viewport = webPage.viewport ?? (await loadHTMLImporter()).HTML_IMPORT_VIEWPORT
+    return await renderWebPage(webPage.url, viewport, load.signal)
+  } catch {
+    load.signal.throwIfAborted()
+    return null
+  }
+}
+
+/**
+ * The HTML to import, what its document is called, and the address its links resolve against: a
+ * web page's as its scripts built it when it is rendered, or else the file's own.
+ */
+async function pageSource(
+  file: File,
+  webPage: OpenedWebPage | undefined,
+  load: EditorPreparationHandle
+): Promise<{ html: string; title: string; url: string | undefined }> {
+  const rendered = webPage?.render ? await renderedPage(webPage, load) : null
+  if (rendered) {
+    // A page its scripts sent elsewhere is named after where it ended up.
+    return { html: rendered.html, title: remoteFileTitle(new URL(rendered.url)), url: rendered.url }
+  }
+  return {
+    html: await file.text(),
+    title: webPage?.title ?? documentNameFor(file),
+    url: webPage?.url
+  }
 }
 
 /** A page file's name without its extension, as `card.html` is the page `card`. */
@@ -56,14 +97,26 @@ export function createDOMOpenActions({
   ) {
     await nextFrame()
     const pageName = options.documentName ?? 'DOM Import'
-    load.update({ phase: 'styling', detail: pageName })
+    const {
+      HTML_IMPORT_VIEWPORT,
+      loadPageFontFaces,
+      sceneGraphFromStyledHTML,
+      browserHTMLToDesignDocument
+    } = await loadHTMLImporter()
+    const { baseURL, viewport = HTML_IMPORT_VIEWPORT } = options
+    const webPage = baseURL !== undefined
+    // A web page counts the files it loads as it lays out: its stylesheets, pictures, and fonts.
+    const phase = webPage ? 'loading-files' : 'styling'
+    load.update({ phase, detail: pageName })
+    let counting = true
+    const fetch = countedFetch(pageFetch(baseURL), (completed, total) => {
+      if (counting) load.update({ phase, detail: pageName, completed, total, unit: 'files' })
+    })
     // Laid out as a browser would, so layers land where the page put its elements.
-    const { baseURL } = options
-    const fetch = pageFetch()
     const styled = await browserHTMLToDesignDocument(html, {
       cssText: options.cssText,
       signal: load.signal,
-      compute: { layout: true, viewport: HTML_IMPORT_VIEWPORT },
+      compute: { layout: true, viewport },
       // A page brings its stylesheets and pictures from where it lives; a local file, those it
       // links by full address.
       baseURL,
@@ -71,14 +124,18 @@ export function createDOMOpenActions({
       fetch
     })
     load.signal.throwIfAborted()
-    load.update({ phase: 'layout', detail: pageName })
-    const matcher = importIconMatcher(editor, load.signal)
     // The page's own fonts, icon fonts among them, before its text is set in them.
     const pageFamilies = await loadPageFontFaces(styled, fetch, load.signal)
     load.signal.throwIfAborted()
+    counting = false
+    load.update({ phase: 'layout', detail: pageName })
+    const matcher = importIconMatcher(editor, load.signal)
     const graph = await sceneGraphFromStyledHTML(styled, {
       pageName,
       pageFamilies,
+      // A web page sits in a frame the size of the window it was laid out in; a file's HTML,
+      // often a snippet, stays loose layers.
+      pageWindow: webPage ? viewport : undefined,
       // Asked only when the page draws SVG it does not name, which the index may be loading for.
       matchIcon:
         matcher &&
@@ -138,18 +195,19 @@ export function createDOMOpenActions({
     const ownsLoad = options.preparation === undefined
     let succeeded = false
     try {
-      const html = await file.text()
+      const page = await pageSource(file, options.webPage, load)
       await applyDOMText(
-        html,
+        page.html,
         {
           cssText: options.cssText,
-          documentName: options.webPage?.title ?? documentNameFor(file),
-          baseURL: options.webPage?.url
+          documentName: page.title,
+          baseURL: page.url,
+          viewport: options.webPage?.viewport
         },
         load
       )
       // A web page is the HTML file its title names, so a save downloads `<title>.fig`.
-      const sourceName = options.webPage ? `${options.webPage.title}.html` : file.name
+      const sourceName = options.webPage ? `${page.title}.html` : file.name
       setDocumentSource(sourceName, 'html', options.handle, options.path)
       succeeded = true
     } catch (e) {

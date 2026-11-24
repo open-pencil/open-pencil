@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { IS_TAURI, type AIProviderID } from '@open-pencil/core/constants'
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { aiModelSettings, modelConnection } from '@/app/ai/models'
 import { modelProviderName } from '@/app/ai/models/provider-name'
@@ -27,7 +27,7 @@ import AppActionRow from '@/components/ui/list/AppActionRow.vue'
  * subscriptions on the desktop, API accounts, servers, and Cloud's models while it offers them.
  */
 const emit = defineEmits<{ choose: [providerID: AIProviderID] }>()
-const ai = useAIMessages()
+const ai = useMessages('ai')
 const agentsAvailable = canRunHostProcesses()
 
 /** Providers a model in the list already runs on; choosing one again adds another model. */

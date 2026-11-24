@@ -1,5 +1,3 @@
-import { i18n } from '#vue/i18n/create'
-
 /** The shape-with-text picker: its search, FigJam's groups, and each kind as FigJam names it. */
 export const shapeMessageDefaults = {
   search: 'Search shapes',
@@ -44,5 +42,3 @@ export const shapeMessageDefaults = {
   or: 'Or',
   summingJunction: 'Summing junction'
 } as const
-
-export const shapeMessages = i18n('shapes', shapeMessageDefaults)

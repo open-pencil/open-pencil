@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import type { ComputedRef } from 'vue'
+import type { ComputedRef, Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
 import type {
@@ -25,7 +25,7 @@ import {
 import { useNodePreview } from '#vue/controls/node-preview/use'
 import { usePanelSize } from '#vue/controls/panel-size/use'
 import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'
-import type { useI18n } from '#vue/i18n'
+import type { MessagesOf } from '#vue/i18n'
 
 export type AlignCell = { primary: LayoutAlign; counter: LayoutCounterAlign }
 
@@ -66,10 +66,7 @@ export const ALIGN_VERTICAL: AlignCell[] = [
   { primary: 'MAX', counter: 'MAX' }
 ]
 
-export function createLayoutSelectionState(
-  editor: Editor,
-  panels: ReturnType<typeof useI18n>['panels']
-) {
+export function createLayoutSelectionState(editor: Editor, panels: Ref<MessagesOf<'panels'>>) {
   const { node } = useSelectedNodeState(editor)
   const layoutDirection = computed<SceneNode['layoutDirection']>(
     () => node.value?.layoutDirection ?? 'AUTO'
@@ -83,7 +80,7 @@ export function createLayoutSelectionState(
   return { node, layoutDirection, gapAuto, alignGrid, ...sizingState }
 }
 
-export function createTrackSizingOptions(panels: ReturnType<typeof useI18n>['panels']['value']) {
+export function createTrackSizingOptions(panels: MessagesOf<'panels'>) {
   return [
     { value: 'FR' as const, label: panels.sizingFillFr },
     { value: 'FIXED' as const, label: panels.sizingFixedPx },

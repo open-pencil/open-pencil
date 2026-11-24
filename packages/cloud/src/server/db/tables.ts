@@ -10,6 +10,7 @@ import type {
   TransactionalEmailKind,
   TransactionalEmailPayloadByKind
 } from '#cloud/email'
+import type * as OAuth from '#cloud/server/oauth/tables'
 import type { Account, Session } from 'better-auth'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
 
@@ -437,10 +438,24 @@ export interface UploadStorageReservationTable {
 
 export type TransactionalEmailStatus = 'pending' | 'sending' | 'accepted' | 'failed' | 'suppressed'
 
+/**
+ * Kinds that rows may still hold although nothing sends them now: the beta's invitation letter,
+ * which approved the official deployment's waitlist. Delivered ones stay in the outbox as history.
+ */
+export const RETIRED_TRANSACTIONAL_EMAIL_KINDS = ['enrollment-invited'] as const
+export type RetiredTransactionalEmailKind = (typeof RETIRED_TRANSACTIONAL_EMAIL_KINDS)[number]
+
+/** Whether a stored email is one Cloud still sends, rather than a retired kind kept as history. */
+export function isSendableEmailKind(
+  kind: TransactionalEmailKind | RetiredTransactionalEmailKind
+): kind is TransactionalEmailKind {
+  return !(RETIRED_TRANSACTIONAL_EMAIL_KINDS as readonly string[]).includes(kind)
+}
+
 export interface TransactionalEmailTable {
   id: string
   idempotencyKey: string
-  kind: TransactionalEmailKind
+  kind: TransactionalEmailKind | RetiredTransactionalEmailKind
   recipientEmailNormalized: string
   payloadEncrypted: string | null
   /** The language the email is written in. */
@@ -472,7 +487,7 @@ export interface EnrollmentTable {
   reviewNote: string | null
   requestRevision: Generated<number>
   approvedUserId: string | null
-  /** `waitlist` for someone an administrator recorded from openpencil.dev's waitlist. */
+  /** `waitlist` on the requests recorded from openpencil.dev's waitlist for the beta; nothing sets it now. */
   source: ColumnType<'waitlist' | null, 'waitlist' | null | undefined, 'waitlist' | null>
 }
 
@@ -552,6 +567,10 @@ export interface CloudDatabase {
   commentRead: CommentReadTable
   commentEmail: CommentEmailTable
   notificationSetting: NotificationSettingTable
+  oauthClient: OAuth.OAuthClientTable
+  oauthAccessToken: OAuth.OAuthAccessTokenTable
+  oauthRefreshToken: OAuth.OAuthRefreshTokenTable
+  oauthConsent: OAuth.OAuthConsentTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

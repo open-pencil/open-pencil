@@ -74,6 +74,7 @@ function classifySchemaOnlyField(
   const type = field.type ?? ''
 
   if (name.endsWith('Tag')) return 'schemaTag'
+  if (name === 'width' || name === 'height') return 'visualGeometryMetadata'
 
   if (
     includesAny(lower, [
@@ -161,7 +162,11 @@ function classifySchemaOnlyField(
       'locked',
       'lockmode',
       'rotation',
-      'absolutebounds'
+      'absolutebounds',
+      'geobundle',
+      'webcompatiblerendering',
+      'cmyk',
+      'forprint'
     ])
   ) {
     return 'visualGeometryMetadata'
@@ -180,7 +185,8 @@ function classifySchemaOnlyField(
       'breakpoint',
       'contracted',
       'readingdirection',
-      'readingindex'
+      'readingindex',
+      'frameunits'
     ])
   ) {
     return 'layoutMetadata'
@@ -269,7 +275,8 @@ function classifySchemaOnlyField(
       'backingnode',
       'mime',
       'blobref',
-      'artifact'
+      'artifact',
+      'previewraster'
     ])
   ) {
     return 'codeCmsAiMetadata'
@@ -291,7 +298,11 @@ function classifySchemaOnlyField(
       'animation',
       'tools',
       'customeffects',
-      'smartanimate'
+      'smartanimate',
+      'audio',
+      'track',
+      'weave',
+      'behaviorattachments'
     ])
   ) {
     return 'mediaMotionMetadata'
@@ -377,17 +388,17 @@ describe('Figma Kiwi schema coverage', () => {
       schemaTag: 60,
       internalBookkeeping: 16,
       rawPreserved: 46,
-      styleLibraryMetadata: 38,
-      componentInstanceMetadata: 32,
-      textMetadata: 18,
-      slideFigjamMetadata: 39,
-      visualGeometryMetadata: 37,
-      layoutMetadata: 29,
-      prototypeConnectorMetadata: 32,
+      styleLibraryMetadata: 39,
+      componentInstanceMetadata: 33,
+      textMetadata: 20,
+      slideFigjamMetadata: 41,
+      visualGeometryMetadata: 46,
+      layoutMetadata: 36,
+      prototypeConnectorMetadata: 34,
       variableDevMetadata: 14,
       widgetMetadata: 11,
-      codeCmsAiMetadata: 67,
-      mediaMotionMetadata: 23
+      codeCmsAiMetadata: 73,
+      mediaMotionMetadata: 34
     })
   })
 

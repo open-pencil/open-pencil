@@ -31,7 +31,11 @@ const api = {
       : new Response('Not found', { status: 404 })
 }
 
-const server = createCloudServer(api, { site, indexingPolicy: 'deny' })
+const server = createCloudServer(api, {
+  site,
+  indexingPolicy: 'deny',
+  publicURL: 'https://cloud.example'
+})
 const request = (path: string, init: RequestInit = {}) =>
   server.request(new Request(`https://cloud.example${path}`, init))
 const navigate = (path: string) => request(path, { headers: { Accept: 'text/html' } })
@@ -53,6 +57,13 @@ describe('Cloud server', () => {
       expect(await page.text()).toContain('Editor')
       expect(page.headers.get('Content-Security-Policy')).toBe(SITE_CONTENT_SECURITY_POLICY)
       expect(page.headers.get('Cache-Control')).toBe('no-cache')
+    }
+  })
+
+  test('names only its origin to other sites, so a form posted to one still has an Origin', async () => {
+    // `no-referrer` or `same-origin` would send `Origin: null` with billing's sign-in form.
+    for (const path of ['/account/plan', '/share/abc']) {
+      expect((await navigate(path)).headers.get('Referrer-Policy')).toBe('strict-origin')
     }
   })
 
@@ -81,7 +92,10 @@ describe('Cloud server', () => {
   })
 
   test('answers only the API without a site build', async () => {
-    const bare = createCloudServer(api, { indexingPolicy: 'allow' })
+    const bare = createCloudServer(api, {
+      indexingPolicy: 'allow',
+      publicURL: 'https://cloud.example'
+    })
     expect((await bare.request('https://cloud.example/account')).status).toBe(404)
     expect(
       (await bare.request('https://cloud.example/', { headers: { Accept: 'text/html' } })).status
@@ -98,6 +112,7 @@ describe('Cloud server', () => {
           throw failure
         },
         indexingPolicy: 'deny',
+        publicURL: 'https://cloud.example',
         reportError: async (error, context) => {
           reported.push({ error, context })
         }

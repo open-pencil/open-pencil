@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useChatEditor } from '@/components/chat/composer/useChatEditor'
 import { useComposerCompletions } from '@/components/chat/composer/useComposerCompletions'
@@ -9,7 +9,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 
 const { text: initial } = defineProps<{ text: string }>()
 const emit = defineEmits<{ save: [text: string]; cancel: [] }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 
 /** The composer's field, so a sent message edits with the same chips and completions. */
 const host = useTemplateRef<HTMLDivElement>('host')

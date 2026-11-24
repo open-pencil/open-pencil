@@ -16,7 +16,7 @@ but master or a release tag, or the commit is not on master (`tools/ci/cloud-dep
 ## Billing
 
 A deployment whose `openpencil-cloud.toml` names `[billing]` sets plans through `[internal_api]`,
-with database entitlements whose values are the free plan; staging does. Its GitHub environment
+with database entitlements whose values are the free plan; staging and production do. Its GitHub environment
 then holds `OPENPENCIL_CLOUD_SERVICE_TOKEN`, which the workflow passes on only where it is set,
 and the billing Worker holds the same token as `CLOUD_SERVICE_TOKEN`. Make it once and give it to
 both in your own terminal, so it is never shown:
@@ -24,9 +24,13 @@ both in your own terminal, so it is never shown:
 ```sh
 token=$(openssl rand -base64 32)
 printf %s "$token" | gh secret set OPENPENCIL_CLOUD_SERVICE_TOKEN --env cloud-staging
-printf %s "$token" | bunx wrangler secret put CLOUD_SERVICE_TOKEN -c wrangler.billing.jsonc   # in openpencil-commerce
+printf %s "$token" | bunx wrangler secret put CLOUD_SERVICE_TOKEN -c packages/billing/wrangler.jsonc   # in openpencil-commerce
 unset token
 ```
+
+Production takes a token of its own, the same way, with `--env cloud-production` for the GitHub
+secret and `--env production` for the billing Worker's. Set it before production first deploys
+with `[billing]`: until the billing Worker holds it too, its plans can't reach Cloud.
 
 ## Before production's first deploy
 

@@ -310,6 +310,12 @@ export const cloudDeploymentConfigSchema = v.strictObject({
       tour: v.optional(v.pipe(v.string(), v.uuid()))
     })
   ),
+  /**
+   * Optional: lets people connect apps such as ChatGPT, Claude, or Grok to their account through
+   * OAuth. Apps register themselves (RFC 7591), so anyone may register one; each grant still takes
+   * the person's approval and reaches one workspace. Leave it out, or off, to accept no apps.
+   */
+  oauth: v.optional(v.strictObject({ enabled: v.boolean() })),
   /** Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. */
   error_tracking: v.optional(
     v.strictObject({

@@ -2,7 +2,7 @@
 import { useTextareaAutosize } from '@vueuse/core'
 import { computed, nextTick, ref, shallowRef, useId, useTemplateRef, watch } from 'vue'
 
-import { useCommentMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { fuzzySearch } from '@open-pencil/vue/shared/search'
 
 import {
@@ -52,7 +52,7 @@ const text = defineModel<string>({ default: '' })
 const input = useTemplateRef<HTMLTextAreaElement>('input')
 useTextareaAutosize({ element: input, input: text })
 
-const messages = useCommentMessages()
+const messages = useMessages('comments')
 const ui = computed(() => comments({ bare }))
 const menu = useMenuUI({ item: 'justify-start gap-2' })
 const who = useCommentAuthor()

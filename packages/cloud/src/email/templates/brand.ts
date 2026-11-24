@@ -3,11 +3,6 @@
 /** The ivory app-icon tile, served as PNG because mail clients do not draw SVG. */
 export const LOGO_URL = 'https://openpencil.dev/brand/app-icon-1024.png'
 export const SITE_URL = 'https://openpencil.dev'
-/** The download page's beta section, with the newest desktop beta's installers. */
-export const DESKTOP_BETA_URL = 'https://openpencil.dev/download#beta'
-/** The repository's bug report form. */
-export const BUG_REPORT_URL =
-  'https://github.com/open-pencil/open-pencil/issues/new?template=bug_report.yml'
 
 const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 const INK = '#171717'
@@ -45,7 +40,6 @@ export const styles = {
     padding: '12px 22px',
     textDecoration: 'none'
   },
-  signature: { color: '#404040', fontSize: '15px', lineHeight: '1.6', margin: '28px 0 0' },
   note: { color: MUTED, fontSize: '13px', lineHeight: '1.6', margin: '28px 0 0' },
   link: { color: TEAL, textDecoration: 'underline' },
   footer: {

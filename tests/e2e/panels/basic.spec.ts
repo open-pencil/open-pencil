@@ -86,6 +86,22 @@ test('Cmd+Backslash shows panels again and keeps the canvas', async () => {
   editor.canvas.assertNoErrors()
 })
 
+test('hiding and showing the panels keeps the drawing where it is on screen', async () => {
+  const layer = { x: 120, y: 140 }
+  await editor.canvas.setView({ panX: 57, panY: -23, zoom: 1.75 })
+  await expect(editor.page.getByTestId('layers-panel')).toBeVisible()
+  const shown = await editor.canvas.screenPositionOf(layer)
+
+  await editor.page.keyboard.press('ControlOrMeta+\\')
+  await expect(editor.page.getByTestId('layers-panel')).not.toBeVisible()
+  await expect.poll(() => editor.canvas.screenPositionOf(layer)).toEqual(shown)
+
+  await editor.page.keyboard.press('ControlOrMeta+\\')
+  await expect(editor.page.getByTestId('layers-panel')).toBeVisible()
+  await expect.poll(() => editor.canvas.screenPositionOf(layer)).toEqual(shown)
+  editor.canvas.assertNoErrors()
+})
+
 // The right panel opens at one width on any window, rather than as a share that grows with it.
 test('the properties panel reopens at one width on a narrow and a wide window', async ({
   browser,

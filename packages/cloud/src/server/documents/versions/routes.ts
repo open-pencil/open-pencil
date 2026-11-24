@@ -4,6 +4,7 @@ import {
   updateDocumentVersionSchema
 } from '#cloud/contract'
 import { documentDomainError, type DocumentRouteEnvironment } from '#cloud/server/documents/routes'
+import { tokenRoute } from '#cloud/server/tokens'
 import {
   documentParams,
   documentVersionParams,
@@ -33,20 +34,26 @@ async function answer(context: Context, run: () => Promise<Response>): Promise<R
 /** A document's version history: listing, naming, opening, restoring, and duplicating versions. */
 export function createDocumentVersionRoutes(service: DocumentVersionService) {
   return new Hono<DocumentRouteEnvironment>()
-    .get('/documents/:documentId/versions', documentParams, validatedQuery(pageSchema), (context) =>
-      answer(context, async () =>
-        context.json(
-          await service.list(
-            context.get('actor').userId,
-            context.req.valid('param').documentId,
-            context.req.valid('query')
+    .get(
+      '/documents/:documentId/versions',
+      documentParams,
+      tokenRoute.read.document,
+      validatedQuery(pageSchema),
+      (context) =>
+        answer(context, async () =>
+          context.json(
+            await service.list(
+              context.get('actor').userId,
+              context.req.valid('param').documentId,
+              context.req.valid('query')
+            )
           )
         )
-      )
     )
     .post(
       '/documents/:documentId/versions',
       documentParams,
+      tokenRoute.write.document,
       validatedJSON(saveDocumentVersionSchema),
       (context) =>
         answer(context, async () =>
@@ -65,6 +72,7 @@ export function createDocumentVersionRoutes(service: DocumentVersionService) {
     .patch(
       '/documents/:documentId/versions/:versionId',
       documentVersionParams,
+      tokenRoute.write.document,
       validatedJSON(updateDocumentVersionSchema),
       (context) =>
         answer(context, async () =>
@@ -78,31 +86,40 @@ export function createDocumentVersionRoutes(service: DocumentVersionService) {
           })
         )
     )
-    .get('/documents/:documentId/versions/:versionId', documentVersionParams, (context) =>
-      answer(context, async () =>
-        context.json(
-          await service.download(
-            context.get('actor').userId,
-            context.req.valid('param').documentId,
-            context.req.valid('param').versionId
+    .get(
+      '/documents/:documentId/versions/:versionId',
+      documentVersionParams,
+      tokenRoute.read.document,
+      (context) =>
+        answer(context, async () =>
+          context.json(
+            await service.download(
+              context.get('actor').userId,
+              context.req.valid('param').documentId,
+              context.req.valid('param').versionId
+            )
           )
         )
-      )
     )
-    .post('/documents/:documentId/versions/:versionId/restore', documentVersionParams, (context) =>
-      answer(context, async () =>
-        context.json(
-          await service.restore(
-            context.get('actor').userId,
-            context.req.valid('param').documentId,
-            context.req.valid('param').versionId
+    .post(
+      '/documents/:documentId/versions/:versionId/restore',
+      documentVersionParams,
+      tokenRoute.write.document,
+      (context) =>
+        answer(context, async () =>
+          context.json(
+            await service.restore(
+              context.get('actor').userId,
+              context.req.valid('param').documentId,
+              context.req.valid('param').versionId
+            )
           )
         )
-      )
     )
     .post(
       '/documents/:documentId/versions/:versionId/duplicate',
       documentVersionParams,
+      tokenRoute.write.document,
       validatedJSON(duplicateDocumentVersionSchema),
       (context) =>
         answer(context, async () =>
