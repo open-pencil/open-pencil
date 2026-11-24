@@ -55,6 +55,9 @@ export function cloudOAuthProviderOptions(publicURL: string): OAuthOptions<Scope
     refreshTokenExpiresIn: REFRESH_TOKEN_SECONDS,
     allowDynamicClientRegistration: true,
     allowUnauthenticatedClientRegistration: true,
+    // A registration naming no type is a desktop app's when it redirects to loopback HTTP, as MCP
+    // clients derive it (SEP-837), so those predating that derivation can register too.
+    clientRegistrationDefaultApplicationType: 'infer',
     clientRegistrationDefaultScopes: [...CLOUD_OAUTH_SCOPES],
     resources: [{ identifier: resource, name: 'OpenPencil Cloud API' }],
     resourceSeedMode: 'merge',

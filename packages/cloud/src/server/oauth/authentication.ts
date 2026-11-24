@@ -61,63 +61,20 @@ export function cloudOAuthAuthentication(api: ProviderAPI): CloudOAuthAuthentica
   }
 }
 
-const registrationSchema = v.looseObject({
-  redirect_uris: v.array(v.string()),
-  application_type: v.optional(v.string())
-})
-
-/** The redirect hosts RFC 8252 lets a native app listen on over plain HTTP. */
-const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]'])
-
-const isLoopbackRedirect = (uri: string) => {
-  const url = URL.parse(uri)
-  return url?.protocol === 'http:' && LOOPBACK_HOSTS.has(url.hostname)
-}
-
 /**
- * A registration that names no `application_type` and redirects to loopback HTTP alone is a
- * native app's, as MCP clients derive it (SEP-837); the provider would take it as a web app's,
- * which must redirect over HTTPS, and refuse the desktop clients that predate that derivation.
- */
-async function withNativeApplicationType(request: Request): Promise<Request> {
-  const parsed = v.safeParse(
-    v.pipe(v.string(), v.parseJson(), registrationSchema),
-    await request.clone().text()
-  )
-  if (!parsed.success) return request
-  const registration = parsed.output
-  if (
-    registration.application_type !== undefined ||
-    registration.redirect_uris.length === 0 ||
-    !registration.redirect_uris.every(isLoopbackRedirect)
-  ) {
-    return request
-  }
-  return new Request(request, {
-    method: 'POST',
-    body: JSON.stringify({ ...registration, application_type: 'native' })
-  })
-}
-
-/**
- * Prepares a request for the OAuth provider:
- *
- * - An authorization request from a person whose session may not use the server yet, such as one
- *   waiting for its second step or for approval, goes on as if signed out: the approval page then
- *   sends them through signing in, and the provider never issues a code for such a session.
- * - A registration gets the application type its loopback redirects imply.
+ * Prepares a request for the OAuth provider: an authorization request from a person whose
+ * session may not use the server yet, such as one waiting for its second step or for approval,
+ * goes on as if signed out. The approval page then sends them through signing in, and the
+ * provider never issues a code for such a session.
  */
 export function providerRequest(
-  endpoints: { oauth2Authorize: { path: string }; registerOAuthClient: { path: string } },
+  endpoints: { oauth2Authorize: { path: string } },
   served: (endpointPath: string) => string,
   active: (headers: Headers) => Promise<unknown>
 ) {
   const authorize = served(endpoints.oauth2Authorize.path)
-  const register = served(endpoints.registerOAuthClient.path)
   return async (request: Request): Promise<Request> => {
-    const path = new URL(request.url).pathname
-    if (path === register && request.method === 'POST') return withNativeApplicationType(request)
-    if (path !== authorize) return request
+    if (new URL(request.url).pathname !== authorize) return request
     if (await active(request.headers)) return request
     const headers = new Headers(request.headers)
     headers.delete('cookie')
