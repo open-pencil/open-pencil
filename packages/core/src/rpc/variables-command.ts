@@ -1,10 +1,10 @@
+import { timingToCSS } from '@open-pencil/dom-css/export'
 import {
   VARIABLE_TYPES,
   type SceneGraph,
   type Variable,
   type VariableType
 } from '@open-pencil/scene-graph'
-import { timingToCSS } from '@open-pencil/dom-css/export'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { easingText, formatVariableFormula, isEasing } from '@open-pencil/scene-graph/variables'
 

@@ -1,11 +1,6 @@
 import { uniq } from 'es-toolkit'
 
-import type {
-  SceneGraph,
-  SceneNode,
-  SharedStyleType,
-  VariableType
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, SharedStyleType, VariableType } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { GENERATED_FRAME_TYPES, generatedFrameOwner } from '@open-pencil/scene-graph/generated'
 import { sharedStyleLayers, sharedStyleTypeForKind } from '@open-pencil/scene-graph/shared-styles'

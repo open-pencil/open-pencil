@@ -5,8 +5,8 @@ import { parseColor } from '@open-pencil/scene-graph/color'
 import { parseCSSEasing, parseCSSTime } from '@open-pencil/scene-graph/css'
 
 import type { FigmaVariableValue } from '#core/figma-api'
-import { figmaEasing, isFigmaEasingType } from '#core/figma-api/variables/easing'
 import { graphOf } from '#core/figma-api/graph'
+import { figmaEasing, isFigmaEasingType } from '#core/figma-api/variables/easing'
 import { defineTool } from '#core/tools/schema'
 
 const VALUE_FORMATS =
@@ -46,14 +46,9 @@ export const createVariable = defineTool({
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     name: v.pipe(v.string(), v.description('Variable name')),
-    type: v.pipe(
-      v.picklist(VARIABLE_TYPES),
-      v.description('Variable type')
-    ),
+    type: v.pipe(v.picklist(VARIABLE_TYPES), v.description('Variable type')),
     collection_id: v.pipe(v.string(), v.description('Collection ID')),
-    value: v.optional(
-      v.pipe(v.string(), v.description(`Initial value: ${VALUE_FORMATS}`))
-    )
+    value: v.optional(v.pipe(v.string(), v.description(`Initial value: ${VALUE_FORMATS}`)))
   }),
   execute: (figma, args) => {
     // The value is checked first, so a value the variable cannot hold creates nothing.

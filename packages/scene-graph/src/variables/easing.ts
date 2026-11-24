@@ -1,19 +1,14 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type {
-  CubicBezier,
-  Easing,
-  EasingCurve,
-  Spring,
-  VariableValue
-} from '../types'
+import type { CubicBezier, Easing, EasingCurve, Spring, VariableValue } from '../types'
 
 const EASE_IN_AND_OUT: CubicBezier = { x1: 0.42, y1: 0, x2: 0.58, y2: 1 }
 
 /** The curve each cubic preset eases along, as Figma writes it beside the preset's name. */
 const PRESET_BEZIERS: Partial<Record<EasingCurve, CubicBezier>> = {
-  // A new easing variable in Figma holds `IN_CUBIC` with no numbers and reads back this curve.
-  IN_CUBIC: { x1: 0.5, y1: 0, x2: 0.5, y2: 1 },
+  // A new easing variable in Figma holds `IN_CUBIC` with no numbers, which its editor draws and
+  // names as Ease in.
+  IN_CUBIC: { x1: 0.42, y1: 0, x2: 1, y2: 1 },
   EASE_IN: { x1: 0.42, y1: 0, x2: 1, y2: 1 },
   OUT_CUBIC: { x1: 0, y1: 0, x2: 0.58, y2: 1 },
   INOUT_CUBIC: EASE_IN_AND_OUT,
@@ -145,4 +140,68 @@ export function easingText(easing: Easing): string {
   const bezier = easingBezier(easing)
   if (!bezier) return easing.easing
   return `cubic-bezier(${[bezier.x1, bezier.y1, bezier.x2, bezier.y2].map((value) => round(value)).join(', ')})`
+}
+
+/** How close to its target a spring counts as settled. */
+const SETTLED = 0.001
+/** The longest a spring is followed, for one that barely damps. */
+const MAX_SPRING_SECONDS = 10
+
+function springMotion(spring: Spring) {
+  const natural = Math.sqrt(spring.stiffness / spring.mass)
+  const ratio = spring.damping / (2 * Math.sqrt(spring.stiffness * spring.mass))
+  return { natural, ratio }
+}
+
+/** Where a spring released at rest from 0 towards 1 is after `seconds`. */
+export function springPosition(spring: Spring, seconds: number): number {
+  const { natural, ratio } = springMotion(spring)
+  if (!(natural > 0)) return 1
+  if (ratio < 1) {
+    const damped = natural * Math.sqrt(1 - ratio * ratio)
+    const decay = Math.exp(-ratio * natural * seconds)
+    return (
+      1 -
+      decay *
+        (Math.cos(damped * seconds) + ((ratio * natural) / damped) * Math.sin(damped * seconds))
+    )
+  }
+  if (ratio === 1) return 1 - (1 + natural * seconds) * Math.exp(-natural * seconds)
+  const spread = natural * Math.sqrt(ratio * ratio - 1)
+  const slow = -ratio * natural + spread
+  const fast = -ratio * natural - spread
+  return (
+    1 +
+    (-fast / (fast - slow)) * Math.exp(slow * seconds) +
+    (slow / (fast - slow)) * Math.exp(fast * seconds)
+  )
+}
+
+/** How long a spring takes to come within a thousandth of its target and stay there. */
+export function springSettleTime(spring: Spring): number {
+  const { natural, ratio } = springMotion(spring)
+  if (!(natural > 0) || !(ratio > 0)) return MAX_SPRING_SECONDS
+  const rate = ratio <= 1 ? ratio * natural : natural * (ratio - Math.sqrt(ratio * ratio - 1))
+  const seconds = Math.log(1 / SETTLED) / rate
+  // A critically damped spring's polynomial term needs a little longer than its decay.
+  return Math.min(MAX_SPRING_SECONDS, ratio === 1 ? seconds * 1.5 : seconds)
+}
+
+/** The first overshoot of a bouncing spring: when it comes, and how far past 1 it goes. */
+export function springPeak(spring: Spring): { seconds: number; value: number } | undefined {
+  const { natural, ratio } = springMotion(spring)
+  if (!(natural > 0) || ratio >= 1) return undefined
+  const root = Math.sqrt(1 - ratio * ratio)
+  return {
+    seconds: Math.PI / (natural * root),
+    value: 1 + Math.exp((-ratio * Math.PI) / root)
+  }
+}
+
+/** The bounce whose spring overshoots its target by `overshoot` (0 to 1) at its first peak. */
+export function bounceForOvershoot(overshoot: number): number {
+  if (overshoot <= 0) return 0
+  if (overshoot >= 1) return 1
+  const log = Math.log(overshoot)
+  return 1 - -log / Math.hypot(Math.PI, log)
 }

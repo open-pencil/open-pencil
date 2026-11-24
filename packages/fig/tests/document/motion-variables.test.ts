@@ -8,7 +8,13 @@ import { guid } from '@open-pencil/test-support/fig/guid'
 const LIGHT = guid(10)
 const DARK = guid(11)
 
-function variable(localID: number, name: string, type: string, light: VariableDataEntry, dark: VariableDataEntry): NodeChange {
+function variable(
+  localID: number,
+  name: string,
+  type: string,
+  light: VariableDataEntry,
+  dark: VariableDataEntry
+): NodeChange {
   return {
     guid: guid(localID),
     type: 'VARIABLE',
@@ -68,7 +74,13 @@ function records(): NodeChange[] {
         easingValue: { springEasing: { stiffness: 100, damping: 12, mass: 1 } }
       })
     ),
-    variable(7, 'new easing', 'EASING', easing({ easingType: 'IN_CUBIC' }), easing({ easingType: 'HOLD' }))
+    variable(
+      7,
+      'new easing',
+      'EASING',
+      easing({ easingType: 'IN_CUBIC' }),
+      easing({ easingType: 'HOLD' })
+    )
   ]
 }
 
@@ -78,7 +90,10 @@ test('timing variables read as seconds, aliases included', () => {
     type: 'TIMING',
     valuesByMode: { '1:10': 0.25, '1:11': 1.5 }
   })
-  expect(graph.variables.get('1:5')?.valuesByMode).toEqual({ '1:10': { aliasId: '1:4' }, '1:11': 0 })
+  expect(graph.variables.get('1:5')?.valuesByMode).toEqual({
+    '1:10': { aliasId: '1:4' },
+    '1:11': 0
+  })
   expect(graph.resolveVariable('1:5', '1:10')).toBe(0.25)
 })
 
@@ -96,7 +111,13 @@ test('easing variables read as their curve or spring and the numbers saved with 
 
 test('an easing of a kind OpenPencil does not know is reported, not invented', () => {
   const reported: NodeChange[] = []
-  const unknown = variable(8, 'future', 'EASING', easing({ easingType: 'WOBBLE' }), easing({ easingType: 'HOLD' }))
+  const unknown = variable(
+    8,
+    'future',
+    'EASING',
+    easing({ easingType: 'WOBBLE' }),
+    easing({ easingType: 'HOLD' })
+  )
   const { graph } = materializeDocument([...records(), unknown], [], {
     onUnsupportedResource: (resource) => reported.push(resource)
   })

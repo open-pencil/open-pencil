@@ -68,12 +68,7 @@ export const designToTokens = defineTool({
     collection: v.optional(
       v.pipe(v.string(), v.description('Filter by collection name (substring, case-insensitive)'))
     ),
-    type: v.optional(
-      v.pipe(
-        v.picklist(VARIABLE_TYPES),
-        v.description('Filter by variable type')
-      )
-    )
+    type: v.optional(v.pipe(v.picklist(VARIABLE_TYPES), v.description('Filter by variable type')))
   }),
   execute: async (figma, args) => {
     if (args.format === 'dtcg') {

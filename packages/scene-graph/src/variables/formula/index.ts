@@ -1,12 +1,7 @@
 import type { SceneGraph } from '#scene-graph/graph'
-import { isEasing } from '../easing'
-import type {
-  Variable,
-  VariableLiteral,
-  VariableType,
-  VariableValue
-} from '#scene-graph/types'
+import type { Variable, VariableLiteral, VariableType, VariableValue } from '#scene-graph/types'
 
+import { isEasing } from '../easing'
 import { resolveVariableInModes } from '../resolution'
 import { parseFormulaSyntax, type FormulaReference } from './parse'
 import { printFormula, type PrintFormulaOptions } from './print'

@@ -38,6 +38,7 @@ import { statusMessageDefaults } from '#vue/i18n/messages/statuses'
 import { storageMessageDefaults } from '#vue/i18n/messages/storage'
 import { toolMessageDefaults } from '#vue/i18n/messages/tools'
 import { updatesMessageDefaults } from '#vue/i18n/messages/updates'
+import { variableEasingMessageDefaults } from '#vue/i18n/messages/variables/easing'
 import { variablesMessageDefaults } from '#vue/i18n/messages/variables/panel'
 import { variableTypeMessageDefaults } from '#vue/i18n/messages/variables/types'
 
@@ -82,6 +83,7 @@ export const messageDefaults = {
   storage: storageMessageDefaults,
   tools: toolMessageDefaults,
   updates: updatesMessageDefaults,
+  'variables/easing': variableEasingMessageDefaults,
   'variables/panel': variablesMessageDefaults,
   'variables/types': variableTypeMessageDefaults
 } as const

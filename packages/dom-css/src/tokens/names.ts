@@ -44,7 +44,9 @@ const NAMESPACE_WORDS: Record<string, ThemeNamespace> = {
   fonts: 'font',
   'font-family': 'font',
   weight: 'font-weight',
-  shadows: 'shadow'
+  shadows: 'shadow',
+  easing: 'ease',
+  easings: 'ease'
 }
 
 /**

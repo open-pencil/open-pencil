@@ -5,7 +5,7 @@ description: Design variables, collections, modes, and fill bindings in OpenPenc
 
 # Variables
 
-Variables store reusable design tokens — colors, spacing values, and other properties — that can be bound to nodes. Change a variable's value and every node using it updates.
+Variables store reusable design tokens: colors, numbers, text, true/false values, easings, and timings. Colors, numbers, text, and true/false values can be bound to nodes; change a variable's value and every node using it updates.
 
 ## Opening the Variables Dialog
 
@@ -81,6 +81,17 @@ Selecting a variable edits:
 - **Scopes** — which properties the variable is offered for
 - **Description**
 - **Hide from publishing** — files that use this one as a library do not see the variable
+
+## Easing and Timing Variables
+
+Easing and timing variables hold motion values, as Figma's do, and keep them through `.fig` files, the clipboard, and the Figma plugin API. Nothing in OpenPencil plays them yet; they are for design tokens and for files shared with Figma.
+
+- **Timing** — a duration, shown and typed in milliseconds (`250ms`) and stored in seconds. Type `0.25s` to give seconds
+- **Easing** — a curve or a spring. The list shows its shape and name, such as *Ease in*, `cubic-bezier(0.1, 0.2, 0.3, 0.9)` or `spring(0.4)`. Click it on the right side to open the editor:
+  - **Curve** — pick Hold, Linear, an ease, a back ease, or Custom bezier; drag the two handles, type the four numbers, or **Flip curve** to play it backwards
+  - **Spring** — pick Gentle, Quick, Bouncy, Slow, or Custom spring. Under **Time**, drag the handle on the first overshoot or type the bounce; under **Physics**, set stiffness, damping, and mass for iOS and web or for Android
+
+In the stylesheet a timing is written in milliseconds and a curve as a CSS timing function, such as `ease-in` or `cubic-bezier(0.45, 1.45, 0.8, 1)`, under Tailwind's `--ease-*` names; springs have no CSS timing function and are left out. Design token files write timings as `duration` and curves as `cubicBezier`, and read both back.
 
 ## Stylesheet
 

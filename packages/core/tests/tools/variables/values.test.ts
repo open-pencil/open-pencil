@@ -28,7 +28,9 @@ describe('variable value tools', () => {
     const mode = collection.defaultModeId
     const create = (name: string, type: 'TIMING' | 'EASING', value: string) =>
       createVariable.execute(figma, { name, type, collection_id: collection.id, value })
-    expect(await create('fast', 'TIMING', '250ms')).toMatchObject({ valuesByMode: { [mode]: 0.25 } })
+    expect(await create('fast', 'TIMING', '250ms')).toMatchObject({
+      valuesByMode: { [mode]: 0.25 }
+    })
     expect(await create('gentle', 'EASING', 'gentle')).toMatchObject({
       valuesByMode: { [mode]: { easing: 'GENTLE_SPRING' } }
     })

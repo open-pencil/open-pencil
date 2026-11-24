@@ -53,8 +53,16 @@ function figmaEasingType(easing: Easing): FigmaEasingType {
   return TYPES[easing.easing] ?? (easingSpring(easing) ? 'CUSTOM_SPRING' : 'CUSTOM_CUBIC_BEZIER')
 }
 
+/** The curve the plugin API reads a new variable's `IN_CUBIC` back as, though Figma draws Ease in. */
+const NEW_VARIABLE_CURVE: CubicBezier = { x1: 0.5, y1: 0, x2: 0.5, y2: 1 }
+
 /** An easing as the plugin API reads it: a preset's own numbers, a custom one's, a spring's bounce. */
 export function figmaEasing(easing: Easing): FigmaEasing {
+  if (easing.easing === 'IN_CUBIC')
+    return {
+      type: 'CUSTOM_CUBIC_BEZIER',
+      easingFunctionCubicBezier: { ...(easing.bezier ?? NEW_VARIABLE_CURVE) }
+    }
   const type = figmaEasingType(easing)
   const spring = easingSpring(easing)
   if (spring) return { type, easingFunctionSpring: { bounce: springBounce(spring) } }

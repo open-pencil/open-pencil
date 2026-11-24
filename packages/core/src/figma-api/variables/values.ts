@@ -93,7 +93,9 @@ export function figmaVariableValue(
   if ('expression' in value) {
     if (value.expression === 'COMPOSE_COLOR') {
       const ref = (part: Color | number | { aliasId: string }) =>
-        typeof part === 'object' && 'aliasId' in part ? variableAlias(part.aliasId) : figmaLiteral(part)
+        typeof part === 'object' && 'aliasId' in part
+          ? variableAlias(part.aliasId)
+          : figmaLiteral(part)
       return { color: ref(value.color), opacity: ref(value.opacity) } as FigmaComposedColor
     }
     const resolved = graph.resolveVariable(variable.id, modeId)

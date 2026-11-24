@@ -1,8 +1,8 @@
 import { variableUnit } from '@open-pencil/dom-css/export'
 import type { ColorProfile, Easing, TokenUnit, Variable } from '@open-pencil/scene-graph'
 import { colorToSRGBHex } from '@open-pencil/scene-graph/color'
-import { easingBezier, isEasing } from '@open-pencil/scene-graph/variables'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { easingBezier, isEasing } from '@open-pencil/scene-graph/variables'
 
 import type { DesignTokenType } from './types'
 

@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { createAPI } from '#core-tests/helpers/figma-api'
 
 import { graphOf } from '#core/figma-api/graph'
+import type { FigmaEasing, FigmaEasingType } from '#core/figma-api/variables/easing'
 
 // Expected values were recorded by running the same calls in Figma desktop.
 
@@ -16,20 +17,20 @@ function motion() {
 }
 
 /** What Figma reads back after `setValueForMode` with only the type, as a preset is set. */
-const PRESETS = {
-  EASE_IN: { easingFunctionCubicBezier: { x1: 0.42, y1: 0, x2: 1, y2: 1 } },
-  EASE_OUT: { easingFunctionCubicBezier: { x1: 0, y1: 0, x2: 0.58, y2: 1 } },
-  EASE_IN_AND_OUT: { easingFunctionCubicBezier: { x1: 0.42, y1: 0, x2: 0.58, y2: 1 } },
-  LINEAR: { easingFunctionCubicBezier: { x1: 0, y1: 0, x2: 1, y2: 1 } },
-  EASE_IN_BACK: { easingFunctionCubicBezier: { x1: 0.3, y1: -0.05, x2: 0.7, y2: -0.5 } },
-  EASE_OUT_BACK: { easingFunctionCubicBezier: { x1: 0.45, y1: 1.45, x2: 0.8, y2: 1 } },
-  EASE_IN_AND_OUT_BACK: { easingFunctionCubicBezier: { x1: 0.7, y1: -0.4, x2: 0.4, y2: 1.4 } },
-  GENTLE: { easingFunctionSpring: { bounce: 0.25 } },
-  QUICK: { easingFunctionSpring: { bounce: 0.42264973081037427 } },
-  BOUNCY: { easingFunctionSpring: { bounce: 0.6938137821521027 } },
-  SLOW: { easingFunctionSpring: { bounce: 0 } },
-  HOLD: {}
-} as const
+const PRESETS: Array<[FigmaEasingType, Omit<FigmaEasing, 'type'>]> = [
+  ['EASE_IN', { easingFunctionCubicBezier: { x1: 0.42, y1: 0, x2: 1, y2: 1 } }],
+  ['EASE_OUT', { easingFunctionCubicBezier: { x1: 0, y1: 0, x2: 0.58, y2: 1 } }],
+  ['EASE_IN_AND_OUT', { easingFunctionCubicBezier: { x1: 0.42, y1: 0, x2: 0.58, y2: 1 } }],
+  ['LINEAR', { easingFunctionCubicBezier: { x1: 0, y1: 0, x2: 1, y2: 1 } }],
+  ['EASE_IN_BACK', { easingFunctionCubicBezier: { x1: 0.3, y1: -0.05, x2: 0.7, y2: -0.5 } }],
+  ['EASE_OUT_BACK', { easingFunctionCubicBezier: { x1: 0.45, y1: 1.45, x2: 0.8, y2: 1 } }],
+  ['EASE_IN_AND_OUT_BACK', { easingFunctionCubicBezier: { x1: 0.7, y1: -0.4, x2: 0.4, y2: 1.4 } }],
+  ['GENTLE', { easingFunctionSpring: { bounce: 0.25 } }],
+  ['QUICK', { easingFunctionSpring: { bounce: 0.42264973081037427 } }],
+  ['BOUNCY', { easingFunctionSpring: { bounce: 0.6938137821521027 } }],
+  ['SLOW', { easingFunctionSpring: { bounce: 0 } }],
+  ['HOLD', {}]
+]
 
 describe('timing variables', () => {
   test('start at 0 and hold seconds', () => {
@@ -70,7 +71,7 @@ describe('easing variables', () => {
 
   test('read each preset back with its own numbers', () => {
     const { mode, easing } = motion()
-    for (const [type, numbers] of Object.entries(PRESETS)) {
+    for (const [type, numbers] of PRESETS) {
       easing.setValueForMode(mode, { type })
       expect(easing.valuesByMode[mode]).toEqual({ type, ...numbers })
     }
@@ -100,7 +101,9 @@ describe('easing variables', () => {
     const { mode, easing } = motion()
     const message = `in setValueForMode: Mismatched variable resolved type for mode ${mode}`
     expect(() => easing.setValueForMode(mode, 0.25)).toThrow(message)
-    expect(() => easing.setValueForMode(mode, { type: 'WOBBLE' })).toThrow(message)
+    // A value from a plugin is not checked by its types; the call checks it.
+    const wobble: unknown = JSON.parse('{"type":"WOBBLE"}')
+    expect(() => easing.setValueForMode(mode, wobble as FigmaEasing)).toThrow(message)
   })
 
   test('resolve for a layer as the API reads them', () => {

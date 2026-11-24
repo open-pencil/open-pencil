@@ -6,6 +6,7 @@ import { computed, ref, useTemplateRef, type ComponentPublicInstance } from 'vue
 import {
   isLibraryCollection,
   type VariableCollection,
+  type VariableType,
   type VariableValue
 } from '@open-pencil/scene-graph'
 import { useMessages } from '@open-pencil/vue/i18n'
@@ -20,6 +21,8 @@ import {
 import BindingPill from '@/components/ui/binding/BindingPill.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
+import { easingLabel } from '@/components/variables/easing/presets'
+import { easingThumbnail } from '@/components/variables/easing/thumbnail'
 import TokenCellInput from '@/components/variables/TokenCellInput.vue'
 import TokenRowMenu from '@/components/variables/TokenRowMenu.vue'
 import { VARIABLE_TYPE_ICONS } from '@/components/variables/type-icons'
@@ -48,6 +51,7 @@ const emit = defineEmits<{
 }>()
 
 const variables = useMessages('variables/panel')
+const easingText = useMessages('variables/easing')
 const ui = tv(tableTheme)()
 /** Figma does not show a variable the file adds to a library's collection; such a row says so. */
 const libraryCollection = computed(() => isLibraryCollection(collection))
@@ -118,6 +122,8 @@ function onSelect(event: CustomEvent<{ originalEvent: Event }>, id: string) {
 /** A cell being edited in place: a token's name, or one mode's number or text value. */
 const editing = ref<{ id: string; modeId?: string } | null>(null)
 
+const INLINE_TYPES = new Set<VariableType>(['FLOAT', 'TIMING', 'STRING'])
+
 function isEditing(id: string, modeId?: string) {
   return editing.value?.id === id && editing.value.modeId === modeId
 }
@@ -134,11 +140,11 @@ function commitName(row: TokenRow, text: string) {
   if (path + label !== row.variable.name) emit('rename', row.variable.id, path + label)
 }
 
-/** Numbers and text edit in place; colors, booleans and aliases open the inspector instead. */
+/** Numbers, timings and text edit in place; other values and aliases open the inspector instead. */
 function editableValue(row: TokenRow, modeId: string) {
   const value = row.variable.valuesByMode[modeId]
   const aliased = typeof value === 'object' && ('aliasId' in value || 'expression' in value)
-  return !aliased && (row.variable.type === 'FLOAT' || row.variable.type === 'STRING')
+  return !aliased && INLINE_TYPES.has(row.variable.type)
 }
 
 function startValueEdit(row: TokenRow, modeId: string) {
@@ -289,6 +295,11 @@ function dropEdge(id: string) {
                   }"
                   :ui="{ root: 'size-3.5 shrink-0 rounded-sm' }"
                 />
+                <component
+                  :is="easingThumbnail(value.easing)"
+                  v-if="value.easing && !value.alias"
+                  :class="ui.icon()"
+                />
                 <template v-if="value.formula">
                   <Tip :label="value.formula">
                     <icon-lucide-square-function
@@ -308,7 +319,9 @@ function dropEdge(id: string) {
                   <BindingPill :class="ui.aliasPill()" :label="value.alias" />
                   <span v-if="value.result" :class="ui.aliasResult()">{{ value.result }}</span>
                 </template>
-                <span v-else class="truncate">{{ value.css }}</span>
+                <span v-else class="truncate">{{
+                  value.easing ? easingLabel(value.easing, easingText) : value.css
+                }}</span>
                 <!-- CSS writes the expression instead; the canvas, and this list, show the value. -->
                 <Tip v-if="value.expression" :label="value.expression">
                   <span :class="ui.expressionBadge()" :aria-label="variables.expression">CSS</span>

@@ -3,9 +3,12 @@ import { expect, test } from 'bun:test'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type Easing } from '@open-pencil/scene-graph'
 
-const SPRING = { easing: 'CUSTOM_SPRING', spring: { stiffness: 100, damping: 12, mass: 1 } } as const
+const SPRING: Easing = {
+  easing: 'CUSTOM_SPRING',
+  spring: { stiffness: 100, damping: 12, mass: 1 }
+}
 
 function motionGraph() {
   const graph = new SceneGraph()
@@ -70,7 +73,7 @@ test('timings and easings read back as they were', async () => {
   const timing = [...graph.variables.values()].find((variable) => variable.name === 'timing')
   expect(values).toEqual({
     timing: 0.25,
-    'timing alias': { aliasId: timing?.id },
+    'timing alias': { aliasId: timing?.id ?? 'missing' },
     easing: SPRING,
     hold: { easing: 'HOLD' }
   })

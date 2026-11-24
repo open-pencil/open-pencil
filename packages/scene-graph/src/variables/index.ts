@@ -20,6 +20,7 @@ import {
   variableBindingOwner,
   assignVariableBindingUnits
 } from './bindings'
+import { easingPreset } from './easing'
 import {
   BOOLEAN_BINDING_FIELDS,
   effectBindableProperties,
@@ -31,7 +32,6 @@ import {
   TEXT_CONTENT_VARIABLE_TYPES,
   VISIBILITY_VARIABLE_TYPES
 } from './fields'
-import { easingPreset } from './easing'
 import { applyBoundPaintColor } from './paints'
 
 export * from './resolution'

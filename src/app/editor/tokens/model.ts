@@ -20,6 +20,7 @@ import type {
   VariableLiteral
 } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
+import { parseCSSTime } from '@open-pencil/scene-graph/css'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
   easingText,
@@ -215,6 +216,7 @@ export function modeAttributeText(collection: VariableCollection, modeId: string
  */
 export function parseTokenValueText(variable: Variable, text: string): VariableValue | undefined {
   if (variable.type === 'STRING') return text
+  if (variable.type === 'TIMING') return parseTimingText(text)
   if (variable.type !== 'FLOAT') return undefined
   const number = Number(text)
   return text.trim() && Number.isFinite(number)
@@ -222,8 +224,22 @@ export function parseTokenValueText(variable: Variable, text: string): VariableV
     : undefined
 }
 
-/** A number or text value as it is typed back, numbers in the token's unit. */
+/**
+ * A timing as typed, in seconds: a plain number is milliseconds, as the list shows timings, and
+ * `0.25s` or `250ms` say their unit.
+ */
+function parseTimingText(text: string): number | undefined {
+  const trimmed = text.trim()
+  if (!trimmed) return undefined
+  const ms = Number(trimmed)
+  const seconds = Number.isFinite(ms) ? ms / 1000 : parseCSSTime(trimmed)
+  return seconds === null || seconds < 0 ? undefined : seconds
+}
+
+/** A number or text value as it is typed back, numbers in the token's unit and timings in ms. */
 export function tokenValueText(variable: Variable, value: VariableValue | undefined): string {
+  if (variable.type === 'TIMING' && typeof value === 'number')
+    return String(Number((value * 1000).toFixed(3)))
   if (typeof value === 'number')
     return String(Number(tokenNumberInUnit(value, variableUnit(variable)).toFixed(6)))
   return typeof value === 'object' ? '' : String(value ?? '')

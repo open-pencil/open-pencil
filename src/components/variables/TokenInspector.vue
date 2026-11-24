@@ -14,6 +14,7 @@ import {
 } from '@open-pencil/dom-css/export'
 import {
   TOKEN_UNITS,
+  type Easing,
   type TokenExpression,
   type Variable,
   type VariableCollection,
@@ -21,17 +22,23 @@ import {
   type VariableValue
 } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { tokenNumberFromUnit, tokenNumberInUnit } from '@open-pencil/scene-graph/variables'
+import {
+  isEasing,
+  tokenNumberFromUnit,
+  tokenNumberInUnit
+} from '@open-pencil/scene-graph/variables'
 import { randomHex } from '@open-pencil/std/random'
 import { useMessages } from '@open-pencil/vue/i18n'
 
-import type {
-  AliasCandidate,
-  CSSReferenceCandidate,
-  TokenFormulaActions,
-  TokenRow
+import {
+  parseTokenValueText,
+  tokenValueText,
+  type AliasCandidate,
+  type CSSReferenceCandidate,
+  type TokenFormulaActions,
+  type TokenRow
 } from '@/app/editor/tokens/model'
-import { SCOPES_BY_TYPE } from '@/app/editor/tokens/scopes'
+import { scopeLabel, SCOPES_BY_TYPE } from '@/app/editor/tokens/scopes'
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import PaintField from '@/components/inputs/PaintField.vue'
 import { BindingPill, VariablePicker } from '@/components/ui/binding'
@@ -47,6 +54,8 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 import inspectorTheme from '@/theme/variables/inspector'
 
+import EasingField from './easing/EasingField.vue'
+import { easingThumbnail } from './easing/thumbnail'
 import TokenCSSExpression from './TokenCSSExpression.vue'
 import TokenValueEditor from './TokenValueEditor.vue'
 
@@ -87,35 +96,18 @@ const ui = computed(() => tv(inspectorTheme)({ layout }))
  */
 const variable = computed(() => ({ ...row.variable }))
 
-const SCOPE_MESSAGES: Partial<Record<VariableScope, () => string>> = {
-  ALL_FILLS: () => variables.value.scopeAllFills,
-  FRAME_FILL: () => variables.value.scopeFrameFill,
-  SHAPE_FILL: () => variables.value.scopeShapeFill,
-  TEXT_FILL: () => variables.value.scopeTextFill,
-  STROKE: () => variables.value.scopeStroke,
-  EFFECT_COLOR: () => variables.value.scopeEffectColor,
-  CORNER_RADIUS: () => variables.value.scopeCornerRadius,
-  WIDTH_HEIGHT: () => variables.value.scopeWidthHeight,
-  GAP: () => variables.value.scopeGap,
-  STROKE_FLOAT: () => variables.value.scopeStrokeFloat,
-  OPACITY: () => variables.value.scopeOpacity,
-  EFFECT_FLOAT: () => variables.value.scopeEffectFloat,
-  FONT_STYLE: () => variables.value.scopeFontStyle,
-  FONT_SIZE: () => variables.value.scopeFontSize,
-  LINE_HEIGHT: () => variables.value.scopeLineHeight,
-  LETTER_SPACING: () => variables.value.scopeLetterSpacing,
-  PARAGRAPH_SPACING: () => variables.value.scopeParagraphSpacing,
-  PARAGRAPH_INDENT: () => variables.value.scopeParagraphIndent,
-  TEXT_CONTENT: () => variables.value.scopeTextContent,
-  FONT_FAMILY: () => variables.value.scopeFontFamily
-}
-
 const scopes = computed(() => SCOPES_BY_TYPE[variable.value.type])
 
 /** Numbers are edited in the token's unit, `1.5` for a 24px `rem` token, and stored as pixels. */
 const numberUnit = computed(() => variableUnit(variable.value))
+/** The unit a plain value's field shows: a number's, or milliseconds for a timing. */
+const valueUnit = computed(() => {
+  if (variable.value.type === 'TIMING') return 'ms'
+  return variable.value.type === 'FLOAT' && numberUnit.value !== 'none' ? numberUnit.value : ''
+})
 
 function displayValue(value: VariableValue | undefined): string {
+  if (variable.value.type === 'TIMING') return tokenValueText(variable.value, value)
   if (typeof value === 'number')
     return String(Number(tokenNumberInUnit(value, numberUnit.value).toFixed(6)))
   return typeof value === 'object' ? '' : String(value ?? '')
@@ -209,7 +201,14 @@ function commitDescription() {
 }
 
 function commitValue(modeId: string) {
-  const text = draft.values[modeId] ?? ''
+  // A number field's model holds a number once typed in.
+  const text = String(draft.values[modeId] ?? '')
+  if (variable.value.type === 'TIMING') {
+    const seconds = parseTokenValueText(variable.value, text)
+    if (seconds === undefined) resetDraft(variable.value)
+    else emit('updateValue', modeId, seconds)
+    return
+  }
   if (variable.value.type === 'FLOAT') {
     const number = Number(text)
     if (text.trim() && Number.isFinite(number))
@@ -264,7 +263,7 @@ function clearExpression(modeId: string) {
  * variable keeps its pill and a composed color its swatch.
  */
 function usesValueEditor(modeId: string) {
-  if (!formula) return false
+  if (!formula || variable.value.type === 'EASING' || variable.value.type === 'TIMING') return false
   if (variable.value.type === 'FLOAT' || variable.value.type === 'BOOLEAN') return true
   const value = variable.value.valuesByMode[modeId]
   if (value === undefined || typeof value !== 'object') return value !== undefined
@@ -344,6 +343,13 @@ const singleMode = computed(() => collection.modes.length === 1)
 function color(modeId: string): Color | undefined {
   const value = variable.value.valuesByMode[modeId]
   return typeof value === 'object' && 'r' in value ? value : undefined
+}
+
+/** A mode's own easing, or the one its alias gives, for the field and the alias's thumbnail. */
+function easing(modeId: string, own = true): Easing | undefined {
+  if (!own) return row.values.find((value) => value.modeId === modeId)?.easing
+  const value = variable.value.valuesByMode[modeId]
+  return isEasing(value) ? value : undefined
 }
 
 /** Enter commits the field and hands the keyboard back to the list, so undo reaches the document. */
@@ -471,6 +477,11 @@ function cssNameDone(event: KeyboardEvent) {
                 :fill="solidFill(aliasColor(mode.modeId) ?? { r: 0, g: 0, b: 0, a: 1 })"
                 :ui="{ root: 'size-4 rounded-sm' }"
               />
+              <component
+                :is="easingThumbnail(easing(mode.modeId, false) ?? { easing: 'LINEAR' })"
+                v-else-if="easing(mode.modeId, false)"
+                class="size-3.5 text-muted"
+              />
             </template>
             <template #value>
               <BindingPill class="min-w-0 flex-1" :label="alias(mode.modeId) ?? ''" />
@@ -479,6 +490,16 @@ function cssNameDone(event: KeyboardEvent) {
               <VariablePicker v-bind="aliasPicker(mode.modeId, mode.name)" />
             </template>
           </PaintField>
+          <EasingField
+            v-else-if="easing(mode.modeId)"
+            :easing="easing(mode.modeId) ?? { easing: 'LINEAR' }"
+            :label="mode.name"
+            @update="(next, gesture) => emit('updateValue', mode.modeId, next, gesture)"
+          >
+            <template #binding>
+              <VariablePicker v-bind="aliasPicker(mode.modeId, mode.name)" />
+            </template>
+          </EasingField>
           <ColorInput
             v-else-if="color(mode.modeId)"
             :color="color(mode.modeId) ?? { r: 0, g: 0, b: 0, a: 1 }"
@@ -500,15 +521,13 @@ function cssNameDone(event: KeyboardEvent) {
           <AppInput
             v-else
             v-model="draft.values[mode.modeId]"
-            :type="variable.type === 'FLOAT' ? 'number' : 'text'"
+            :type="variable.type === 'FLOAT' || variable.type === 'TIMING' ? 'number' : 'text'"
             size="sm"
             @change="commitValue(mode.modeId)"
             @enter="done"
           >
             <template #trailing>
-              <span v-if="variable.type === 'FLOAT' && numberUnit !== 'none'" :class="ui.hint()">{{
-                numberUnit
-              }}</span>
+              <span v-if="valueUnit" :class="ui.hint()">{{ valueUnit }}</span>
               <VariablePicker v-bind="aliasPicker(mode.modeId, mode.name)" />
             </template>
           </AppInput>
@@ -527,10 +546,10 @@ function cssNameDone(event: KeyboardEvent) {
       <label v-for="scope in scopes" :key="scope" :class="ui.scope()">
         <AppCheckbox
           :model-value="hasScope(scope)"
-          :ariaLabel="SCOPE_MESSAGES[scope]?.() ?? scope"
+          :ariaLabel="scopeLabel(scope, variables)"
           @update:model-value="toggleScope(scope, $event)"
         />
-        {{ SCOPE_MESSAGES[scope]?.() ?? scope }}
+        {{ scopeLabel(scope, variables) }}
       </label>
     </section>
 

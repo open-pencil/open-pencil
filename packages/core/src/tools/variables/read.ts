@@ -16,16 +16,12 @@ function documentVariables(figma: FigmaAPI, type?: VariableType) {
 
 export const listVariables = defineTool({
   name: 'list_variables',
-  description: 'List design variables (colors, numbers, strings, booleans, easings, timings), optionally by name.',
+  description:
+    'List design variables (colors, numbers, strings, booleans, easings, timings), optionally by name.',
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({
     query: v.optional(v.pipe(v.string(), v.description('Name substring (case-insensitive)'))),
-    type: v.optional(
-      v.pipe(
-        v.picklist(VARIABLE_TYPES),
-        v.description('Filter by variable type')
-      )
-    )
+    type: v.optional(v.pipe(v.picklist(VARIABLE_TYPES), v.description('Filter by variable type')))
   }),
   execute: (figma, args) => {
     const query = args.query?.toLowerCase()

@@ -1,11 +1,15 @@
 import { expect, test } from 'bun:test'
 
 import {
+  bounceForOvershoot,
   easingBezier,
   easingPreset,
   easingSpring,
   easingText,
   springBounce,
+  springPeak,
+  springPosition,
+  springSettleTime,
   springWithBounce
 } from '#scene-graph/variables/easing'
 
@@ -35,9 +39,7 @@ test('a preset gives its own curve or spring when it has none of its own saved',
 test('an easing reads as Figma’s table writes it', () => {
   expect(easingText({ easing: 'IN_CUBIC' })).toBe('Ease in')
   expect(easingText(easingPreset('SPRING_PRESET_ONE'))).toBe('Quick')
-  expect(easingText({ easing: 'CUSTOM_SPRING', spring: springWithBounce(0.4) })).toBe(
-    'spring(0.4)'
-  )
+  expect(easingText({ easing: 'CUSTOM_SPRING', spring: springWithBounce(0.4) })).toBe('spring(0.4)')
   expect(
     easingText({
       easing: 'CUSTOM_SPRING',
@@ -47,4 +49,17 @@ test('an easing reads as Figma’s table writes it', () => {
   expect(
     easingText({ easing: 'CUSTOM_CUBIC', bezier: { x1: 0.1, y1: 0.2, x2: 0.3, y2: 0.9 } })
   ).toBe('cubic-bezier(0.1, 0.2, 0.3, 0.9)')
+})
+
+test('a spring starts at 0, settles at 1, and peaks where its overshoot says', () => {
+  const spring = springWithBounce(0.4)
+  expect(springPosition(spring, 0)).toBeCloseTo(0, 10)
+  expect(springPosition(spring, springSettleTime(spring))).toBeCloseTo(1, 2)
+  const peak = springPeak(spring)
+  expect(peak && springPosition(spring, peak.seconds)).toBeCloseTo(peak?.value ?? 0, 10)
+  expect(bounceForOvershoot((peak?.value ?? 1) - 1)).toBeCloseTo(0.4, 10)
+  // An overdamped spring creeps up without passing 1.
+  const slow = { stiffness: 80, damping: 20, mass: 1 }
+  expect(springPeak(slow)).toBeUndefined()
+  expect(springPosition(slow, springSettleTime(slow))).toBeCloseTo(1, 2)
 })
