@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { matchesKeyboardEvent, type HotkeyChord } from '@tanstack/hotkeys'
 import { tv } from 'tailwind-variants'
-import { computed, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 
 import type { CubicBezier, Easing } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
@@ -19,12 +19,14 @@ import { maskIcon } from '@/components/icons/mask'
 import theme from '@/theme/variables/easing'
 
 import {
+  curveFrame,
   curvePoint,
   curveValue,
   easingDrawing,
   graphSVG,
   springHandle,
   springOvershoot,
+  type CurveFrame,
   type GraphPoint
 } from './graph'
 
@@ -47,7 +49,13 @@ const graph = useTemplateRef('graph')
 
 type HandleKind = 'first' | 'second' | 'bounce'
 
-const drawing = computed(() => easingDrawing(easing))
+/**
+ * The curve's frame, fitted to its handles; a drag keeps the one it started with, so the curve
+ * does not rescale under the pointer.
+ */
+const dragFrame = ref<CurveFrame | null>(null)
+const frame = computed(() => dragFrame.value ?? curveFrame(bezier.value))
+const drawing = computed(() => easingDrawing(easing, frame.value))
 const guides = computed(() => maskIcon(graphSVG(drawing.value.guides, 0.6)))
 const arms = computed(() => maskIcon(graphSVG(drawing.value.arms, 0.6)))
 const line = computed(() => maskIcon(graphSVG(drawing.value.line, 1.2)))
@@ -59,8 +67,16 @@ const handles = computed<Array<{ kind: HandleKind; point: GraphPoint; label: str
   const curve = bezier.value
   if (curve)
     return [
-      { kind: 'first', point: curvePoint(curve.x1, curve.y1), label: text.value.firstHandle },
-      { kind: 'second', point: curvePoint(curve.x2, curve.y2), label: text.value.secondHandle }
+      {
+        kind: 'first',
+        point: curvePoint(curve.x1, curve.y1, frame.value),
+        label: text.value.firstHandle
+      },
+      {
+        kind: 'second',
+        point: curvePoint(curve.x2, curve.y2, frame.value),
+        label: text.value.secondHandle
+      }
     ]
   const current = spring.value
   if (!current || current.type === 'PHYSICAL') return []
@@ -88,7 +104,7 @@ function withBounce(bounce: number): Easing {
 /** The easing with a handle moved to a point of the graph. */
 function movedTo(kind: HandleKind, point: GraphPoint): Easing | undefined {
   if (kind === 'bounce') return withBounce(bounceForOvershoot(springOvershoot(point)))
-  const { x, y } = curveValue(point)
+  const { x, y } = curveValue(point, frame.value)
   return withHandle(kind, x, y)
 }
 
@@ -106,6 +122,7 @@ function startDrag(kind: HandleKind, event: PointerEvent) {
   const handle = event.currentTarget
   handle.setPointerCapture(event.pointerId)
   handle.focus()
+  dragFrame.value = frame.value
   let moved: Easing | undefined
   const move = (moveEvent: PointerEvent) => {
     const point = graphPoint(moveEvent)
@@ -116,6 +133,7 @@ function startDrag(kind: HandleKind, event: PointerEvent) {
   }
   const end = () => {
     if (moved) emit('update', moved)
+    dragFrame.value = null
     handle.removeEventListener('pointermove', move)
     handle.removeEventListener('pointerup', end)
     handle.removeEventListener('pointercancel', end)
