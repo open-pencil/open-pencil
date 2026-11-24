@@ -69,6 +69,10 @@ describe('auto layout sizes in DOM/CSS export', () => {
     expect(shrink({ layoutMode: 'HORIZONTAL' })).toBe('0')
     expect(shrink({ layoutMode: 'VERTICAL', primaryAxisSizing: 'FIXED' })).toBe('0')
     expect(shrink({ layoutMode: 'VERTICAL', primaryAxisSizing: 'HUG', maxHeight: 40 })).toBe('0')
+    const hugs = { layoutMode: 'VERTICAL', primaryAxisSizing: 'HUG' } as const
+    expect(shrink({ ...hugs, layoutGrow: 1 })).toBe('0')
+    expect(shrink({ ...hugs, layoutAlignSelf: 'STRETCH' })).toBe('0')
+    expect(shrink({ ...hugs, verticalConstraint: 'STRETCH' })).toBe('0')
   })
 
   it('says nothing of a layer that fills, is placed, or has a column that hugs it', () => {
@@ -93,7 +97,16 @@ describe('auto layout sizes in DOM/CSS export', () => {
     expect(style({ ...between, layoutWrap: 'WRAP', counterAxisSpacing: null })).toMatchObject({
       'row-gap': '16px'
     })
-    expect(style({ ...between, primaryAxisAlign: 'MIN' })).toMatchObject({ gap: '16px' })
+    const packed = { ...between, primaryAxisAlign: 'MIN' } as const
+    expect(style(packed)).toMatchObject({ gap: '16px' })
+    // A spacing of none between wrapped lines is one, where an unset spacing follows the items'.
+    const joined = style({ ...packed, layoutWrap: 'WRAP', counterAxisSpacing: 0 })
+    expect(joined).toMatchObject({ 'column-gap': '16px' })
+    expect(joined).not.toHaveProperty('gap')
+    expect(joined).not.toHaveProperty('row-gap')
+    expect(style({ ...packed, layoutWrap: 'WRAP', counterAxisSpacing: null })).toMatchObject({
+      gap: '16px'
+    })
   })
 })
 

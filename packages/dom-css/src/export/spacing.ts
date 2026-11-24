@@ -62,18 +62,16 @@ export function addFlexGap(style: DesignStyleDeclaration, node: SceneNode, css: 
     node.layoutMode === 'HORIZONTAL'
       ? (['column-gap', 'row-gap'] as const)
       : (['row-gap', 'column-gap'] as const)
-  const counter = node.counterAxisSpacing ?? 0
-  if (counter > 0) {
-    if (spacing > 0) style[along] = item
-    style[across] = css('counterAxisSpacing', px(counter))
-  } else if (spacing > 0) {
+  // Between wrapped lines a set spacing holds, none included, and an unset one follows the items'.
+  const wraps = node.layoutWrap === 'WRAP'
+  const set = node.counterAxisSpacing
+  const follows = set === null || (!wraps && set <= 0)
+  if (follows && spacing > 0) {
     style.gap = item
-  } else if (
-    node.itemSpacing > 0 &&
-    node.layoutWrap === 'WRAP' &&
-    node.counterAxisSpacing === null
-  ) {
-    // Space between drops the gap along the rows; the space between them still follows it.
-    style[across] = item
+    return
   }
+  if (spacing > 0) style[along] = item
+  if (set !== null && set > 0) style[across] = css('counterAxisSpacing', px(set))
+  // Space between drops the gap along the rows; the space between them still follows it.
+  else if (set === null && wraps && node.itemSpacing > 0) style[across] = item
 }

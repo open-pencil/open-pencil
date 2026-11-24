@@ -192,19 +192,27 @@ function addShaderLayerStyle(style: DesignStyleDeclaration): void {
   style.isolation = 'isolate'
 }
 
+/** Whether something other than its children may set the height of a column. */
+function heightIsLimited(column: SceneNode): boolean {
+  return (
+    column.primaryAxisSizing !== 'HUG' ||
+    column.maxHeight !== null ||
+    column.layoutGrow > 0 ||
+    column.layoutAlignSelf === 'STRETCH' ||
+    column.verticalConstraint === 'STRETCH' ||
+    column.verticalConstraint === 'SCALE'
+  )
+}
+
 /**
  * Whether flexbox could shrink a layer where auto layout lets it overflow: auto layout shrinks
- * only layers that fill. A column that hugs its height never runs out of it, so its children
- * need no say.
+ * only layers that fill. A column as tall as its children never runs out of height, so they need
+ * no say.
  */
 function keepsSize(node: SceneNode, parent: SceneNode): boolean {
-  if (parent.layoutMode !== 'HORIZONTAL' && parent.layoutMode !== 'VERTICAL') return false
   if (node.layoutPositioning === 'ABSOLUTE' || node.layoutGrow > 0) return false
-  return (
-    parent.layoutMode === 'HORIZONTAL' ||
-    parent.primaryAxisSizing !== 'HUG' ||
-    parent.maxHeight !== null
-  )
+  if (parent.layoutMode === 'HORIZONTAL') return true
+  return parent.layoutMode === 'VERTICAL' && heightIsLimited(parent)
 }
 
 /** Styles a node takes from its parent's layout, and its own rotation. */
