@@ -20,7 +20,7 @@ const discovery = {
   apiURL: 'https://cloud.example.com/api',
   authURL: 'https://cloud.example.com/api/auth',
   authentication: { socialProviders: [], enterpriseSSO: false },
-  capabilities: { documents: true, workspaces: true, collaboration: true }
+  capabilities: { documents: true, workspaces: true, collaboration: true, embedding: false }
 }
 
 describe('Cloud services contract', () => {

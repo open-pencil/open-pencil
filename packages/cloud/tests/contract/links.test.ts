@@ -5,8 +5,11 @@ import {
   cloudCommunityURL,
   cloudDesktopLinkURL,
   cloudDocumentURL,
+  cloudEmbedCommunityURL,
+  cloudEmbedShareURL,
   cloudInvitationURL,
   cloudShareURL,
+  parseCloudEmbedPath,
   parseCloudLinkPath
 } from '#cloud/contract'
 
@@ -89,4 +92,29 @@ test('community desktop links carry the editor link and the version it asks for'
     'https://company.example/community/doc-id/open?version=v1'
   )
   expect(url.hash).toBe('')
+})
+
+test('embeds keep a shared link’s secret in the fragment and a community version in the query', () => {
+  expect(cloudEmbedShareURL(`${server}/editor`, 's 1', 'secret')).toBe(
+    'https://company.example/embed/share/s%201#secret'
+  )
+  expect(cloudEmbedCommunityURL(server, 'doc', 'v1')).toBe(
+    'https://company.example/embed/community/doc?version=v1'
+  )
+  expect(cloudEmbedCommunityURL(server, 'doc')).toBe('https://company.example/embed/community/doc')
+})
+
+test('embed paths name their kind and decoded ID, and nothing else is one', () => {
+  expect(parseCloudEmbedPath('/embed/share/s%201')).toEqual({ kind: 'share', id: 's 1' })
+  expect(parseCloudEmbedPath('/embed/community/abc')).toEqual({ kind: 'community', id: 'abc' })
+  for (const path of [
+    '/embed',
+    '/embed/documents/abc',
+    '/embed/invitations/abc',
+    '/embed/share/abc/more',
+    '/embed/share/%E0%A4',
+    '/share/abc'
+  ]) {
+    expect(parseCloudEmbedPath(path)).toBeNull()
+  }
 })

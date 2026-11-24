@@ -64,6 +64,7 @@ export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscov
       documents: true,
       workspaces: true,
       collaboration: true,
+      embedding: config.embeddingEnabled,
       apps: config.oauthEnabled
     },
     listing: config.listingMinimumEditorVersion

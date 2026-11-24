@@ -24,6 +24,13 @@ local_editor = true
 # logo_url = "https://acme.example/logo.svg"
 # help_url = "https://intranet.acme.example/design-help"
 
+# Other sites may show documents shared by link, and community gallery documents, in a frame at
+# /embed/…, read-only and without the visitor's account. Off unless enabled; with no origins
+# listed, any site may embed them.
+# [deployment.embedding]
+# enabled = true
+# allowed_origins = ["https://intranet.acme.example"]
+
 # Defaults to DATABASE_URL.
 [database]
 

@@ -1,10 +1,9 @@
-import type { CollabEditor } from '@open-pencil/collab'
-import { isAbortError } from '@open-pencil/std/errors'
+import type { RoomEditor } from '@open-pencil/collab'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
 /** A tab's editor as its room sees it. */
-export function collabEditor(store: EditorStore): CollabEditor {
+export function collabEditor(store: EditorStore): RoomEditor {
   return {
     get graph() {
       return store.graph
@@ -13,30 +12,18 @@ export function collabEditor(store: EditorStore): CollabEditor {
     onEditorEvent: store.onEditorEvent,
     requestRender: () => store.requestRender(),
     refreshVariables: (scope) => store.refreshVariables(scope),
-    refreshDocumentSettings: () => store.refreshDocumentSettings()
-  }
-}
-
-/**
- * Moves the tab to one of the room's pages when the page it shows is gone, as after a peer deleted
- * it or the tab dropped its file's own pages for the room's.
- */
-export function followRoomPages(store: EditorStore): () => void {
-  let pending: string | undefined
-  return () => {
-    const pages = store.graph.getPages()
-    if (pages.length === 0 || pages.some((page) => page.id === store.state.currentPageId)) return
-    const pageId = pages[0].id
-    if (pending === pageId) return
-    pending = pageId
-    void store
-      .switchPage(pageId)
-      .catch((error: unknown) => {
-        if (isAbortError(error)) return
-        console.error('[Collab] Failed to switch to a synced page:', error)
-      })
-      .finally(() => {
-        if (pending === pageId) pending = undefined
-      })
+    refreshDocumentSettings: () => store.refreshDocumentSettings(),
+    adoptChanges: (apply) => store.adoptChanges(apply),
+    get currentPageId() {
+      return store.state.currentPageId
+    },
+    switchPage: (pageId) => store.switchPage(pageId),
+    get documentName() {
+      return store.state.documentName
+    },
+    setDocumentName: (name) => {
+      store.state.documentName = name
+    },
+    onDocumentRenamed: (handler) => store.onDocumentRenamed(handler).off
   }
 }
