@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createDocumentGraph } from '@open-pencil/core'
-import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { createDocumentGraph } from '#core/editor/document-settings'
+import { FigmaAPI } from '#core/figma-api'
 
 function deck(): FigmaAPI {
   const api = new FigmaAPI(createDocumentGraph('slides', 'light'))

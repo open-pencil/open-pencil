@@ -484,7 +484,7 @@ function dropRules(options: DropTargetOptions): DropRules {
     takes: (node) =>
       COMPONENT_TARGETS.has(node.type) ||
       (node.type === 'COMPONENT_SET' && componentSetIds.has(node.id)),
-    passThrough: new Set(['GROUP'])
+    passThrough: new Set([...SLIDE_HOLDER_TYPES, 'GROUP'])
   }
 }
 

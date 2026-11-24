@@ -62,7 +62,11 @@ export function withGeneratedFrameSize(
 }
 
 /** A deck's slides, and the rows and grid that lay them out: their size and place are the deck's. */
-const DECK_TYPES: ReadonlySet<NodeType> = new Set<NodeType>(['SLIDE', 'SLIDE_ROW', 'SLIDE_GRID'])
+export const DECK_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
+  'SLIDE',
+  'SLIDE_ROW',
+  'SLIDE_GRID'
+])
 
 /** Whether a layer turns: any layer but a generated frame that stays upright, or a deck's slides. */
 export function layerRotates(node: Pick<SceneNode, 'type'>): boolean {

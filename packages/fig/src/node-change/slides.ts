@@ -1,3 +1,4 @@
+import { partition } from 'es-toolkit/array'
 import * as v from 'valibot'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
@@ -79,12 +80,15 @@ function notesText(node: NotesNode): string {
   return node.text ?? (node.children ?? []).map(notesText).join('')
 }
 
-/** Notes as plain text, a line for each block; a list's items are blocks of their own. */
+/** Notes as plain text, a line for each block; a list's items, nested ones too, are blocks. */
 function notesLines(node: NotesNode): string[] {
-  const children = node.children ?? []
-  return children.flatMap((child) =>
-    child.type === 'list' ? notesLines(child) : [notesText(child)]
-  )
+  return (node.children ?? []).flatMap((child) => {
+    if (child.type === 'list') return notesLines(child)
+    const [lists, inline] = partition(child.children ?? [], ({ type }) => type === 'list')
+    if (lists.length === 0) return [notesText(child)]
+    const text = inline.map(notesText).join('')
+    return [...(text ? [text] : []), ...lists.flatMap(notesLines)]
+  })
 }
 
 function extractNotes(value: unknown): string {

@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { layerResizes, layerRotates } from '@open-pencil/scene-graph/generated'
-import { hitTestSelectable } from '@open-pencil/scene-graph/hit-test'
-import { createSlide, createSlideGrid, createSlideRow } from '@open-pencil/scene-graph/slides'
+import { layerResizes, layerRotates } from '#scene-graph/generated'
+import { SceneGraph } from '#scene-graph/graph'
+import { type DropTargetOptions, hitTestDropTarget, hitTestSelectable } from '#scene-graph/hit-test'
+import { createSlide, createSlideGrid, createSlideRow } from '#scene-graph/slides'
 
 function deck() {
   const graph = new SceneGraph()
@@ -21,8 +21,16 @@ function deck() {
     fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
   })
   const click = (x: number, y: number) => hitTestSelectable(graph, x, y, page.id, new Set())
-  return { box, grid, row, slide, click }
+  const drop = (options?: DropTargetOptions) =>
+    hitTestDropTarget(graph, 1000, 1000, new Set(), page.id, options)?.id
+  return { box, grid, row, slide, click, drop }
 }
+
+test('a slide takes dropped layers, main components among them', () => {
+  const { drop, slide } = deck()
+  expect(drop()).toBe(slide.id)
+  expect(drop({ componentSetIds: new Set() })).toBe(slide.id)
+})
 
 describe('clicking in a deck', () => {
   test('a click takes a layer on a slide, and nothing on its empty area', () => {

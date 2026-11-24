@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { open } from '#core-tests/helpers/fig/archive'
+import { recordsOf } from '#core-tests/helpers/fig/patch'
+import { isEqual } from 'es-toolkit/predicate'
 import { unzipSync } from 'fflate'
+import * as v from 'valibot'
 
 import { createDocumentGraph } from '@open-pencil/core'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
@@ -50,6 +54,55 @@ async function reopen(graph: SceneGraph): Promise<SceneGraph> {
   const bytes = await exportFigFile(graph)
   return parseFigFile(bytes.slice().buffer)
 }
+
+/** Four slides in one row, the first with a transition. */
+async function fourSlides(): Promise<Uint8Array> {
+  const graph = createDocumentGraph('slides', 'light')
+  const [first] = slidesOf(graph)
+  const row = first.parentId ?? ''
+  for (let count = 0; count < 3; count++) createSlide(graph, row)
+  graph.updateNode(first.id, { slide: { skipped: false, notes: '', transition: SMART } })
+  for (const [index, slide] of slidesOf(graph).entries())
+    graph.updateNode(slide.id, { name: `S${index + 1}` })
+  return exportFigFile(graph)
+}
+
+const interactionsSchema = v.tuple([
+  v.object({ actions: v.tuple([v.object({ transitionNodeID: v.unknown() })]) })
+])
+
+/** The name of the slide the first slide's saved transition goes to. */
+function savedTarget(bytes: Uint8Array): string | undefined {
+  const records = [...recordsOf(bytes).values()]
+  const from = records.find((record) => record.name === 'S1')
+  const [interaction] = v.parse(interactionsSchema, from?.prototypeInteractions)
+  const target = interaction.actions[0].transitionNodeID
+  return records.find(({ guid }) => isEqual(guid, target))?.name
+}
+
+describe('a transition follows the slide after it into the saved file', () => {
+  const edits: [string, (graph: SceneGraph, slides: SceneNode[]) => void, string][] = [
+    ['deleted', (graph, [, second]) => graph.deleteNode(second.id), 'S3'],
+    [
+      'skipped',
+      (graph, [, second]) =>
+        graph.updateNode(second.id, { slide: { skipped: true, notes: '', transition: null } }),
+      'S3'
+    ],
+    [
+      'moved to the end',
+      (graph, [, second]) => graph.insertChildAt(second.id, second.parentId ?? '', 4),
+      'S3'
+    ]
+  ]
+  test.each(edits)('when that slide is %s', async (_name, edit, expected) => {
+    const bytes = await fourSlides()
+    expect(savedTarget(bytes)).toBe('S2')
+    const graph = await open(bytes)
+    edit(graph, slidesOf(graph))
+    expect(savedTarget(await exportFigFile(graph))).toBe(expected)
+  })
+})
 
 describe('Slides decks', () => {
   test('a deck saves as a .deck canvas and opens as slides again', async () => {

@@ -63,6 +63,12 @@ function open(document: CommunityDocument) {
   void router.push(cloudCommunityPagePath(document.id))
 }
 
+const emptyKind = computed(() => {
+  if (kind.value === 'board') return communityMessages.value.communityNoBoards
+  if (kind.value === 'slides') return communityMessages.value.communityNoSlides
+  return communityMessages.value.communityNoDesigns
+})
+
 useHead({ title: () => communityMessages.value.communityTitle })
 </script>
 
@@ -158,9 +164,7 @@ useHead({ title: () => communityMessages.value.communityTitle })
             ? files.noMatchingFiles({ query: query.trim() })
             : documents.length === 0
               ? communityMessages.communityEmpty
-              : kind === 'board'
-                ? communityMessages.communityNoBoards
-                : communityMessages.communityNoDesigns
+              : emptyKind
         }}
       </p>
     </section>
