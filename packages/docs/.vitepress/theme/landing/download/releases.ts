@@ -79,18 +79,13 @@ export function filesFor(release: Release, platform: Platform): ReleaseFile[] {
     )
 }
 
-/** The rolling nightly pre-release (`tools/release/release-packages/src/nightly`). */
-const NIGHTLY_TAG = 'nightly'
-
 /**
- * The newest stable release and the rolling nightly. Releases are drafted before they are
- * published, so stable ones are compared by when they were published. Beta tags stay on GitHub.
+ * The newest stable release. Releases are drafted before they are published, so they are
+ * compared by when they were published; betas and the nightly are pre-releases.
  */
-export function latestReleases<
-  T extends { tag_name: string; prerelease: boolean; published_at: string }
->(published: readonly T[]): { stable: T | null; nightly: T | null } {
+export function latestStable<T extends { prerelease: boolean; published_at: string }>(
+  published: readonly T[]
+): T | null {
   const stables = published.filter((release) => !release.prerelease)
-  const stable = maxBy(stables, (release) => Date.parse(release.published_at)) ?? null
-  const nightly = published.find((release) => release.tag_name === NIGHTLY_TAG) ?? null
-  return { stable, nightly }
+  return maxBy(stables, (release) => Date.parse(release.published_at)) ?? null
 }

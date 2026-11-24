@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { fill } from '#docs-config/theme/landing/content/messages/fill'
 import { formatSize } from '#docs-config/theme/landing/download/format'
-import { latestReleases } from '#docs-config/theme/landing/download/releases'
+import { latestStable } from '#docs-config/theme/landing/download/releases'
 import { platformOf } from '#docs-config/theme/landing/download/visitor'
 
 const AGENTS = {
@@ -45,7 +45,7 @@ describe('download copy', () => {
   })
 })
 
-describe('the releases a build shows', () => {
+describe('the stable release a build shows', () => {
   const release = (version: string, published: string, prerelease = false) => ({
     tag_name: `v${version}`,
     published_at: published,
@@ -53,28 +53,23 @@ describe('the releases a build shows', () => {
   })
 
   test('pick the latest stable release by when it was published, not listed', () => {
-    const { stable } = latestReleases([
+    const stable = latestStable([
       release('0.15.0', '2026-09-01T00:00:00Z'),
       release('0.15.1', '2026-09-18T00:00:00Z')
     ])
     expect(stable?.tag_name).toBe('v0.15.1')
   })
 
-  test('offer the rolling nightly, but no beta', () => {
-    const { stable, nightly } = latestReleases([
+  test('never pick a beta or the nightly, though they are newer', () => {
+    const stable = latestStable([
       release('0.17.0-beta.5', '2026-11-15T00:00:00Z', true),
       { tag_name: 'nightly', published_at: '2026-11-16T03:30:00Z', prerelease: true },
       release('0.16.2', '2026-11-01T00:00:00Z')
     ])
     expect(stable?.tag_name).toBe('v0.16.2')
-    expect(nightly?.tag_name).toBe('nightly')
   })
 
-  test('a newer beta is never the stable release', () => {
-    const { stable } = latestReleases([
-      release('0.16.0', '2026-10-12T00:00:00Z'),
-      release('0.17.0-beta.1', '2026-11-02T00:00:00Z', true)
-    ])
-    expect(stable?.tag_name).toBe('v0.16.0')
+  test('without a stable release there is none to pick', () => {
+    expect(latestStable([release('0.1.0-beta.1', '2026-01-01T00:00:00Z', true)])).toBeNull()
   })
 })
