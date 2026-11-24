@@ -1,0 +1,3389 @@
+[
+  {
+    "name": "get_selection",
+    "description": "Get the selected nodes: the place to start when the user points at layers. Returns each selected node with its direct children by default; children past the depth are counted as childCount. Use get_node or describe for deeper branches.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "depth": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Levels of children to include (0 = selected nodes only). Default: 1"
+        }
+      }
+    }
+  },
+  {
+    "name": "get_node",
+    "description": "Get detailed properties of a node by ID. Use depth to limit child recursion (0 = node only, 1 = direct children, etc). Default: unlimited.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "depth": {
+          "type": "number",
+          "description": "Max depth of children to include (0 = no children). Default: unlimited"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "find_nodes",
+    "description": "Find nodes by name pattern and/or type.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name substring to match (case-insensitive)"
+        },
+        "type": {
+          "enum": [
+            "FRAME",
+            "RECTANGLE",
+            "ELLIPSE",
+            "TEXT",
+            "LINE",
+            "STAR",
+            "POLYGON",
+            "SECTION",
+            "GROUP",
+            "COMPONENT",
+            "INSTANCE",
+            "VECTOR"
+          ],
+          "type": "string",
+          "description": "Node type filter"
+        }
+      }
+    }
+  },
+  {
+    "name": "get_jsx",
+    "description": "Get JSX representation of a node and its children. Compact round-trip format — same syntax as the render tool. JSX longer than 12000 characters is outlined: layers below the depth that fits are written with keepChildren and a comment naming their id, to read with get_jsx; render the JSX with replace_id on this node and those layers keep their children.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Write the complete JSX to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "render",
+    "description": "Render JSX to design nodes. Draw a shape of your own as one layer with <Vector d=\"M2 12 L22 12\" stroke=\"#000\" />, styled like any layer; inline <svg> is for artwork copied from elsewhere and draws its shapes, without its text. Use replace_id to replace a placeholder while preserving its position, or to edit a layer in place from its get_jsx: it keeps its id, and layers written with keepChildren keep their children.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "replace_id": {
+          "type": "string",
+          "description": "Node ID to replace — new node takes its position in parent, old node is deleted"
+        },
+        "parent_id": {
+          "type": "string",
+          "description": "Parent node ID to render into"
+        },
+        "insert_index": {
+          "type": "number",
+          "description": "Position among siblings (0 = first child). Omit to append at end."
+        },
+        "x": {
+          "type": "number",
+          "minimum": -1000000,
+          "maximum": 1000000,
+          "description": "X position of the root node (-1000000 to 1000000)"
+        },
+        "y": {
+          "type": "number",
+          "minimum": -1000000,
+          "maximum": 1000000,
+          "description": "Y position of the root node (-1000000 to 1000000)"
+        },
+        "jsx": {
+          "type": "string",
+          "description": "JSX string to render"
+        }
+      },
+      "required": [
+        "jsx"
+      ]
+    }
+  },
+  {
+    "name": "update_node",
+    "description": "Update properties of an existing node: position, size, rotation, opacity, corner radius, visibility, lock, name, text, font.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "x": {
+          "type": "number",
+          "minimum": -1000000,
+          "maximum": 1000000,
+          "description": "X position (-1000000 to 1000000)"
+        },
+        "y": {
+          "type": "number",
+          "minimum": -1000000,
+          "maximum": 1000000,
+          "description": "Y position (-1000000 to 1000000)"
+        },
+        "width": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000000,
+          "description": "Width (1 to 1000000)"
+        },
+        "height": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000000,
+          "description": "Height (1 to 1000000)"
+        },
+        "rotation": {
+          "type": "number",
+          "minimum": -360000,
+          "maximum": 360000,
+          "description": "Rotation in degrees (-360000 to 360000)"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Opacity (0-1)"
+        },
+        "corner_radius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Corner radius (0 to 1000000)"
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "Visibility"
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Locked"
+        },
+        "text": {
+          "type": "string",
+          "description": "Text content (TEXT nodes)"
+        },
+        "text_direction": {
+          "enum": [
+            "AUTO",
+            "LTR",
+            "RTL"
+          ],
+          "type": "string",
+          "description": "Text direction for TEXT nodes"
+        },
+        "flow_direction": {
+          "enum": [
+            "AUTO",
+            "LTR",
+            "RTL"
+          ],
+          "type": "string",
+          "description": "Auto-layout flow direction for FRAME nodes"
+        },
+        "font_size": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10000,
+          "description": "Font size (1 to 10000)"
+        },
+        "font_weight": {
+          "type": "number",
+          "minimum": 100,
+          "maximum": 900,
+          "description": "Font weight (100-900)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Layer name"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "set_layout",
+    "description": "Set auto-layout (flexbox) on a frame. Direction, alignment, spacing, padding.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Frame node ID"
+        },
+        "direction": {
+          "enum": [
+            "HORIZONTAL",
+            "VERTICAL"
+          ],
+          "type": "string",
+          "description": "Layout direction (keeps current if omitted)"
+        },
+        "spacing": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100000,
+          "description": "Gap between items (only changes if provided) (0 to 100000)"
+        },
+        "padding": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100000,
+          "description": "Equal padding on all sides (only changes if provided) (0 to 100000)"
+        },
+        "padding_horizontal": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100000,
+          "description": "Horizontal padding (0 to 100000)"
+        },
+        "padding_vertical": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100000,
+          "description": "Vertical padding (0 to 100000)"
+        },
+        "align": {
+          "enum": [
+            "MIN",
+            "CENTER",
+            "MAX",
+            "SPACE_BETWEEN"
+          ],
+          "type": "string",
+          "description": "Primary axis alignment (only changes if provided)"
+        },
+        "counter_align": {
+          "enum": [
+            "MIN",
+            "CENTER",
+            "MAX",
+            "STRETCH"
+          ],
+          "type": "string",
+          "description": "Cross axis alignment (only changes if provided)"
+        },
+        "flow_direction": {
+          "enum": [
+            "AUTO",
+            "LTR",
+            "RTL"
+          ],
+          "type": "string",
+          "description": "Child flow direction for auto-layout. AUTO inherits from parent."
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "set_layout_child",
+    "description": "Configure auto-layout child: sizing (FIXED/HUG/FILL), grow, alignment, absolute positioning.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Child node ID"
+        },
+        "sizing_horizontal": {
+          "enum": [
+            "FIXED",
+            "HUG",
+            "FILL"
+          ],
+          "type": "string",
+          "description": "Horizontal sizing mode"
+        },
+        "sizing_vertical": {
+          "enum": [
+            "FIXED",
+            "HUG",
+            "FILL"
+          ],
+          "type": "string",
+          "description": "Vertical sizing mode"
+        },
+        "grow": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "Flex grow factor (0 = fixed, 1 = grow) (0 to 1000)"
+        },
+        "align_self": {
+          "enum": [
+            "INHERIT",
+            "MIN",
+            "CENTER",
+            "MAX",
+            "STRETCH",
+            "BASELINE"
+          ],
+          "type": "string",
+          "description": "Self alignment override (cross-axis)"
+        },
+        "positioning": {
+          "enum": [
+            "AUTO",
+            "ABSOLUTE"
+          ],
+          "type": "string",
+          "description": "ABSOLUTE to take node out of auto-layout flow"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "set_radius",
+    "description": "Set corner radius. Use individual corners for independent values.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Corner radius for all corners (0 to 1000000)"
+        },
+        "top_left": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Top-left radius (0 to 1000000)"
+        },
+        "top_right": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Top-right radius (0 to 1000000)"
+        },
+        "bottom_right": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Bottom-right radius (0 to 1000000)"
+        },
+        "bottom_left": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Bottom-left radius (0 to 1000000)"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "set_fill",
+    "description": "Set fill on a node. Solid: color=\"#ff0000\". Linear gradient: gradient=\"top-bottom\" or \"left-right\" with color (start) and color_end (end).",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "description": "Color (hex). For gradient: start color."
+        },
+        "color_end": {
+          "type": "string",
+          "description": "End color for gradient (if omitted, solid fill)"
+        },
+        "gradient": {
+          "enum": [
+            "top-bottom",
+            "bottom-top",
+            "left-right",
+            "right-left"
+          ],
+          "type": "string",
+          "description": "Gradient direction"
+        }
+      },
+      "required": [
+        "id",
+        "color"
+      ]
+    }
+  },
+  {
+    "name": "set_stroke",
+    "description": "Set the stroke (border) of a node.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "description": "Stroke color (hex)"
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0.1,
+          "description": "Stroke weight",
+          "default": 1
+        },
+        "align": {
+          "enum": [
+            "INSIDE",
+            "CENTER",
+            "OUTSIDE"
+          ],
+          "type": "string",
+          "description": "Stroke alignment",
+          "default": "INSIDE"
+        }
+      },
+      "required": [
+        "id",
+        "color"
+      ]
+    }
+  },
+  {
+    "name": "set_text",
+    "description": "Set text content of a text node. With markdown, the text is Markdown: # and ## headings, **bold**, *italic*, ~~strike~~, `code`, [links](url), lists, and > quotes become styled ranges and paragraphs over the text's own style.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string",
+          "description": "Text content"
+        },
+        "markdown": {
+          "type": "boolean",
+          "description": "Read the text as Markdown"
+        }
+      },
+      "required": [
+        "id",
+        "text"
+      ]
+    }
+  },
+  {
+    "name": "set_text_properties",
+    "description": "Set text layout properties: alignment, auto-resize, text case, decoration, truncation.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Text node ID"
+        },
+        "align_horizontal": {
+          "enum": [
+            "LEFT",
+            "CENTER",
+            "RIGHT",
+            "JUSTIFIED"
+          ],
+          "type": "string",
+          "description": "Horizontal text alignment"
+        },
+        "align_vertical": {
+          "enum": [
+            "TOP",
+            "CENTER",
+            "BOTTOM"
+          ],
+          "type": "string",
+          "description": "Vertical text alignment"
+        },
+        "auto_resize": {
+          "enum": [
+            "NONE",
+            "WIDTH_AND_HEIGHT",
+            "HEIGHT",
+            "TRUNCATE"
+          ],
+          "type": "string",
+          "description": "Text auto-resize mode"
+        },
+        "direction": {
+          "enum": [
+            "AUTO",
+            "LTR",
+            "RTL"
+          ],
+          "type": "string",
+          "description": "Text direction"
+        },
+        "text_decoration": {
+          "enum": [
+            "NONE",
+            "UNDERLINE",
+            "STRIKETHROUGH"
+          ],
+          "type": "string",
+          "description": "Text decoration"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "delete_nodes",
+    "description": "Delete nodes by ID. Nothing is deleted unless every node exists.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Node IDs to delete"
+        }
+      },
+      "required": [
+        "ids"
+      ]
+    }
+  },
+  {
+    "name": "reparent_node",
+    "description": "Move a node into a different parent.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Node ID to move"
+        },
+        "parent_id": {
+          "type": "string",
+          "description": "New parent node ID"
+        }
+      },
+      "required": [
+        "id",
+        "parent_id"
+      ]
+    }
+  },
+  {
+    "name": "batch_update",
+    "description": "Execute multiple modifications in one call, all or nothing: if any operation names a missing node or an invalid prop, nothing changes. Each operation is {id, props} where props can include: spacing, padding, padding_horizontal, padding_vertical, align, counter_align, sizing_horizontal, sizing_vertical, grow, name, visible, corner_radius, opacity, auto_resize, direction. Runs all updates with one layout recompute.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "operations": {
+          "type": "string",
+          "description": "JSON array: [{\"id\":\"0:5\",\"props\":{\"spacing\":8}},{\"id\":\"0:6\",\"props\":{\"sizing_horizontal\":\"FILL\",\"grow\":1}}]"
+        }
+      },
+      "required": [
+        "operations"
+      ]
+    }
+  },
+  {
+    "name": "search_stock_photos",
+    "description": "Search stock photos and apply to leaf image placeholders or closed area geometry. Pass a JSON array; each item is {id, query, index?, orientation?}. Containers with content, text, lines, and structural nodes are rejected.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "requests": {
+          "type": "string",
+          "description": "JSON array: [{\"id\":\"0:5\",\"query\":\"mountain sunset\"},{\"id\":\"0:8\",\"query\":\"business team\",\"orientation\":\"square\"}]"
+        }
+      },
+      "required": [
+        "requests"
+      ]
+    }
+  },
+  {
+    "name": "search_web",
+    "description": "Search the web for current facts, references, examples, or real copy a design needs. Returns pages with their title, URL, date, author, and an excerpt. Each search costs money, so search only for what the conversation and document do not already answer.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000,
+          "description": "What to look for, in natural language, up to 1000 characters"
+        },
+        "numResults": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Pages to return, up to 10; 5 by default"
+        }
+      },
+      "required": [
+        "query"
+      ]
+    }
+  },
+  {
+    "name": "describe",
+    "description": "Semantic description of one or more nodes. Pass `id` for a single node, or `ids` for multiple nodes in one call. Omit depth for auto — adapts to subtree size (small block → deeper, large page → shallower).",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Node ID (single node)"
+        },
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Node IDs (multiple nodes in one call)"
+        },
+        "depth": {
+          "type": "number",
+          "description": "Override depth (auto if omitted, max: 5)"
+        },
+        "grid": {
+          "type": "number",
+          "description": "Grid size for alignment checks (default: 8)"
+        }
+      }
+    }
+  },
+  {
+    "name": "diff_nodes",
+    "description": "Patch that turns one node tree into another, as JSX attribute changes per node plus moved, added, and removed children. Children are matched by name. Apply it to the first tree with apply_patch.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Source node ID"
+        },
+        "to": {
+          "type": "string",
+          "description": "Target node ID"
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Max tree depth (default: 10)"
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ]
+    }
+  },
+  {
+    "name": "diff_pixels",
+    "description": "Pixel diff between two rendered nodes. Returns a PNG with changed pixels in red over a faded copy of the source, the changed pixel ratio, and the changed region in source-node coordinates. Use it to confirm an edit only touched the intended area.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Source node ID"
+        },
+        "to": {
+          "type": "string",
+          "description": "Target node ID"
+        },
+        "scale": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 4,
+          "description": "Export scale multiplier before the maximum-edge limit is applied (default: 1)",
+          "default": 1
+        },
+        "maxEdge": {
+          "type": "number",
+          "minimum": 64,
+          "maximum": 4096,
+          "description": "Maximum output width or height in pixels. Preserves aspect ratio and never upscales. Defaults to 1280 for bounded model input.",
+          "default": 1280
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Per-pixel color tolerance from 0 to 1; smaller is stricter (default: 0.1)",
+          "default": 0.1
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ]
+    }
+  },
+  {
+    "name": "zoom_to_fit",
+    "description": "Scroll and zoom the view so the given layers fit in it, zooming in no further than 100%. The layers must be on the current page.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Node IDs to fit in view"
+        }
+      },
+      "required": [
+        "ids"
+      ]
+    }
+  },
+  {
+    "name": "get_page_tree",
+    "description": "Get the node tree of the current page. Returns lightweight hierarchy: id, type, name, size, and text for TEXT nodes. Use depth, root_id, or node_types to keep large pages small. Use get_node for full properties of a specific node.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "depth": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Max nesting depth to return (1 = returned root nodes only). Default: unlimited"
+        },
+        "root_id": {
+          "type": "string",
+          "description": "Return only this node subtree instead of the whole current page"
+        },
+        "node_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Keep only these node types and their ancestors, for example FRAME or TEXT"
+        }
+      }
+    }
+  },
+  {
+    "name": "get_current_page",
+    "description": "Get the current page name and ID.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "list_pages",
+    "description": "List all pages in the document.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "set_selection",
+    "description": "Select one or more nodes by ID.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Node IDs to select"
+        }
+      },
+      "required": [
+        "ids"
+      ]
+    }
+  },
+  {
+    "name": "query_nodes",
+    "description": "Query nodes using XPath selectors. Returns id, name, and type, plus text for TEXT nodes. Node types are element names (FRAME, TEXT, RECTANGLE, ELLIPSE, etc.). Attributes: id, name, width, height, x, y, visible, opacity, cornerRadius, fontSize, fontFamily, fontWeight, layoutMode, itemSpacing, paddingTop/Right/Bottom/Left, strokeWeight, rotation, locked, blendMode, text, lineHeight, letterSpacing.\n\nExamples:\n//FRAME[@width < 300] — frames narrower than 300px\n//COMPONENT[starts-with(@name, 'Button')] — components starting with \"Button\"\n//SECTION//TEXT — all text nodes inside sections\n//TEXT[contains(@text, 'Hello')] — text nodes containing \"Hello\"\n//*[@id='1:2']//TEXT[not(ancestor-or-self::*[@visible='false'])] — visible text inside a frame, in layer order",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "selector": {
+          "type": "string",
+          "description": "XPath selector"
+        },
+        "page": {
+          "type": "string",
+          "description": "Page name (default: current page)"
+        },
+        "limit": {
+          "type": "number",
+          "description": "Max results (default: 1000)"
+        }
+      },
+      "required": [
+        "selector"
+      ]
+    }
+  },
+  {
+    "name": "list_components",
+    "description": "List reusable components from the document and enabled component libraries, optionally filtered by name.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Filter by name (case-insensitive substring)"
+        },
+        "source": {
+          "enum": [
+            "all",
+            "document",
+            "libraries"
+          ],
+          "type": "string",
+          "description": "Component source",
+          "default": "all"
+        },
+        "library_id": {
+          "type": "string",
+          "description": "Filter library components by library ID"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Max results (default: 50)"
+        }
+      }
+    }
+  },
+  {
+    "name": "list_libraries",
+    "description": "List available published component libraries.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "insert_library_component",
+    "description": "Insert a reusable component from an enabled library by stable library and asset identity.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "library_id": {
+          "type": "string",
+          "description": "Library ID"
+        },
+        "revision_id": {
+          "type": "string",
+          "description": "Pinned revision ID"
+        },
+        "asset_key": {
+          "type": "string",
+          "description": "Stable asset key"
+        },
+        "parent_id": {
+          "type": "string",
+          "description": "Optional parent node ID"
+        },
+        "x": {
+          "type": "number",
+          "description": "X position"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y position"
+        },
+        "variant_values": {
+          "type": "string",
+          "description": "Optional JSON object of variant property values"
+        }
+      },
+      "required": [
+        "library_id",
+        "asset_key"
+      ]
+    }
+  },
+  {
+    "name": "switch_page",
+    "description": "Switch to a different page by name or ID.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string",
+          "description": "Page name or ID"
+        }
+      },
+      "required": [
+        "page"
+      ]
+    }
+  },
+  {
+    "name": "get_bounds",
+    "description": "Get a node's absolute bounding box, or without an ID the box around everything on the current page.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Node ID; the current page when left out"
+        }
+      }
+    }
+  },
+  {
+    "name": "list_comments",
+    "description": "Read the comments people left on the canvas, oldest first: each thread with its text, author, page, the layer it is pinned to, its position, replies, and whether it is resolved. Open threads only unless includeResolved is set. Use it to find review feedback to act on, then reply_to_comment and resolve_comment.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "includeResolved": {
+          "type": "boolean",
+          "description": "Also list resolved threads"
+        },
+        "page": {
+          "type": "string",
+          "description": "Only threads on this page ID"
+        },
+        "author": {
+          "type": "string",
+          "description": "Only threads this person started or replied to"
+        }
+      }
+    }
+  },
+  {
+    "name": "add_comment",
+    "description": "Leave a comment on the canvas, as a person does with the Comment tool: pinned on a layer by ID, which it then follows, or at x, y on a page. Text may use Markdown: **bold**, *italic*, ~~strikethrough~~, [links](https://…), and - or 1. lists.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The comment, in Markdown"
+        },
+        "node": {
+          "type": "string",
+          "description": "Layer ID to pin the comment on"
+        },
+        "page": {
+          "type": "string",
+          "description": "Page ID without a layer; the current page if omitted"
+        },
+        "x": {
+          "type": "number",
+          "description": "Canvas X, or offset from the layer’s left edge"
+        },
+        "y": {
+          "type": "number",
+          "description": "Canvas Y, or offset from the layer’s top edge"
+        },
+        "author": {
+          "type": "string",
+          "description": "Name shown as the author, such as your agent's name; \"Agent\" if omitted"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    }
+  },
+  {
+    "name": "reply_to_comment",
+    "description": "Answer a comment thread by ID from list_comments, for example to say what you changed. A reply reopens a resolved thread. Text may use Markdown, as in add_comment.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Comment thread ID"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The reply, in Markdown"
+        },
+        "author": {
+          "type": "string",
+          "description": "Name shown as the author, such as your agent's name; \"Agent\" if omitted"
+        }
+      },
+      "required": [
+        "id",
+        "text"
+      ]
+    }
+  },
+  {
+    "name": "resolve_comment",
+    "description": "Mark a comment thread by ID as resolved once its feedback is addressed, which hides it from the canvas and the open list; pass resolved: false to reopen it.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Comment thread ID"
+        },
+        "resolved": {
+          "type": "boolean",
+          "description": "false reopens the thread; true by default"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "list_statuses",
+    "description": "Read the document’s statuses, such as Draft, In review or Ready for dev, and the layers that show one: sections, frames, components and instances, with their page. Use it to find what is ready to build or still in review, and set_status to change one.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Only layers with this status name"
+        }
+      }
+    }
+  },
+  {
+    "name": "set_status",
+    "description": "Give a section, frame, component or instance one of the document’s statuses by name, as list_statuses lists them, or clear its status with null. Only layers directly on a page or in a section take one.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "type": "string",
+          "description": "Layer ID"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "A status name from list_statuses, or null to clear it"
+        }
+      },
+      "required": [
+        "node",
+        "status"
+      ]
+    }
+  },
+  {
+    "name": "get_font_status",
+    "description": "Report whether fonts used on the current page are faithfully available. Returns requested faces, their loaded source, active substitutions, why an installed face could not be loaded, and affected nodes.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "family": {
+          "type": "string",
+          "description": "Filter by family name (substring)"
+        }
+      }
+    }
+  },
+  {
+    "name": "list_available_fonts",
+    "description": "List font families the host can render: installed, bundled, and online families. Use this to discover what fonts are available to set on a text node — distinct from get_font_status, which reports the faces used on the page.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "family": {
+          "type": "string",
+          "description": "Filter by family name (substring, case-insensitive)"
+        }
+      }
+    }
+  },
+  {
+    "name": "create_shape",
+    "description": "Create a shape on the canvas. Use FRAME for containers/cards, RECTANGLE for solid blocks, ELLIPSE for circles, TEXT for labels, LINE for rules and dividers, STAR for starbursts and badges, POLYGON for triangles and regular polygons, and SECTION for page sections. Use create_vector with an SVG path for arbitrary shapes.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "FRAME",
+            "RECTANGLE",
+            "ELLIPSE",
+            "TEXT",
+            "LINE",
+            "STAR",
+            "POLYGON",
+            "SECTION"
+          ],
+          "type": "string",
+          "description": "Node type"
+        },
+        "x": {
+          "type": "number",
+          "minimum": -1000000,
+          "maximum": 1000000,
+          "description": "X position in the parent, or on the page (-1000000 to 1000000)"
+        },
+        "y": {
+          "type": "number",
+          "minimum": -1000000,
+          "maximum": 1000000,
+          "description": "Y position in the parent, or on the page (-1000000 to 1000000)"
+        },
+        "width": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000000,
+          "description": "Width in pixels (1 to 1000000)"
+        },
+        "height": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000000,
+          "description": "Height in pixels (1 to 1000000)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Node name shown in layers panel"
+        },
+        "parent_id": {
+          "type": "string",
+          "description": "Parent node ID to nest inside"
+        }
+      },
+      "required": [
+        "type",
+        "x",
+        "y",
+        "width",
+        "height"
+      ]
+    }
+  },
+  {
+    "name": "search_icons",
+    "description": "Search Iconify for icons by keyword. Accepts multiple queries — all searched in parallel. Returns results keyed by query.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "queries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Search keywords (e.g. [\"heart\", \"arrow\", \"settings\"])"
+        },
+        "limit": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Max results per query (default: 5)"
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Filter by icon set prefix (e.g. \"lucide\", \"mdi\")"
+        }
+      },
+      "required": [
+        "queries"
+      ]
+    }
+  },
+  {
+    "name": "insert_icon",
+    "description": "Insert one or more vector icons onto the canvas. Pass a single name or multiple names to batch-insert into the same parent. If already cached by get_icons — instant, no network request.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Icon names as prefix:name (e.g. [\"lucide:heart\"] or [\"lucide:heart\",\"lucide:home\",\"lucide:star\"])"
+        },
+        "name": {
+          "type": "string",
+          "description": "Single icon name (shorthand for names with one icon)"
+        },
+        "size": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000000,
+          "description": "Icon size in pixels (default: 24) (1 to 1000000)"
+        },
+        "color": {
+          "type": "string",
+          "description": "Icon color hex (replaces currentColor). Default: #000000"
+        },
+        "parent_id": {
+          "type": "string",
+          "description": "Parent node ID for all icons"
+        },
+        "options": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "description": "How sets drawn from their own sources draw the icons; other sets ignore it. Material Symbols (material-symbols-outlined, -rounded, -sharp): wght 100–700, FILL 0 or 1, GRAD -50–200, opsz 20–48 (follows size when left out). SF Symbols (sf-symbols, macOS desktop only): weight ultralight…black, scale small|medium|large, rendering monochrome|hierarchical|palette|multicolor, variable 0–1 for symbols with variable color, and secondary and tertiary as #rrggbb for palette. E.g. {\"wght\":600,\"FILL\":1}"
+        }
+      }
+    }
+  },
+  {
+    "name": "get_icons",
+    "description": "Pre-fetch icons from Iconify into cache. Batches by prefix (one HTTP request per set). Call this once with all needed icons, then use insert_icon to place them instantly. Popular sets: lucide (outline), mdi (filled), heroicons, tabler, solar, mingcute, ri (remix).",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Icon names as prefix:name (e.g. [\"lucide:heart\", \"lucide:home\", \"mdi:star\"])"
+        },
+        "size": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000000,
+          "description": "Icon size in pixels (default: 24) (1 to 1000000)"
+        }
+      },
+      "required": [
+        "names"
+      ]
+    }
+  },
+  {
+    "name": "combine_as_variants",
+    "description": "Combine components sharing a parent into a component set (variant set). Components named as Figma names variants, \"State=On, Size=Large\", get those variant properties; names like \"Button/Primary\" derive a Variant property from the segments after the first slash.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Component node IDs to combine"
+        }
+      },
+      "required": [
+        "ids"
+      ]
+    }
+  },
+  {
+    "name": "create_instance",
+    "description": "Create an instance of a component.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "component_id": {
+          "type": "string",
+          "description": "Component node ID"
+        },
+        "x": {
+          "type": "number",
+          "description": "X position"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y position"
+        }
+      },
+      "required": [
+        "component_id"
+      ]
+    }
+  },
+  {
+    "name": "expose_instance_swap",
+    "description": "Expose nested instances as an instance-swap slot on their component.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "instance_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Instance node IDs"
+        },
+        "candidate_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Candidate component node IDs"
+        },
+        "property_name": {
+          "type": "string",
+          "description": "Property name"
+        }
+      },
+      "required": [
+        "instance_ids",
+        "candidate_ids"
+      ]
+    }
+  },
+  {
+    "name": "create_slot",
+    "description": "Make a frame inside a main component a slot, as Create slot does: instances can then hold their own content in it, and a behaviour can bind it as a part. Returns the slot name.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Frame ID inside a main component"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "get_behaviour",
+    "description": "Read the behaviour of a main component, component set, or variant by property and slot names, with the required values and parts still missing. Without an ID, list every behaviour kind with the values and parts it binds.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Component, set, or variant ID"
+        }
+      }
+    }
+  },
+  {
+    "name": "set_behaviour",
+    "description": "Make a main component or set behave as a Reka UI control in preview and code, by its own property and slot names: e.g. { kind: \"switch\", values: { value: \"State\" }, parts: { thumb: \"Thumb\" }, states: \"Interaction\" }. On/off variant values are guessed from names like On and Off unless given as { property, on, off }. null removes it. Returns the behaviour and what it still misses; get_behaviour lists every kind.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Main component or component set ID; a variant uses its set"
+        },
+        "behaviour": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "button",
+                    "textField",
+                    "textarea",
+                    "numberField",
+                    "toggle",
+                    "switch",
+                    "checkbox",
+                    "radio",
+                    "radioGroup",
+                    "toggleGroup",
+                    "slider",
+                    "progress",
+                    "tabs",
+                    "tab",
+                    "collapsible",
+                    "accordion"
+                  ],
+                  "type": "string"
+                },
+                "values": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "property": {
+                            "type": "string"
+                          },
+                          "on": {
+                            "type": "string"
+                          },
+                          "off": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "property"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "numbers": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "min": {
+                        "type": "number"
+                      },
+                      "max": {
+                        "type": "number"
+                      },
+                      "step": {
+                        "type": "number"
+                      },
+                      "default": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                },
+                "parts": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "states": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "property": {
+                          "type": "string"
+                        },
+                        "rest": {
+                          "type": "string"
+                        },
+                        "hover": {
+                          "type": "string"
+                        },
+                        "pressed": {
+                          "type": "string"
+                        },
+                        "focus": {
+                          "type": "string"
+                        },
+                        "disabled": {
+                          "type": "string"
+                        },
+                        "invalid": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "property"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The behaviour by property and slot names, or null to remove it"
+        }
+      },
+      "required": [
+        "id",
+        "behaviour"
+      ]
+    }
+  },
+  {
+    "name": "create_page",
+    "description": "Create a new page.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Page name"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "create_vector",
+    "description": "Create a vector node from SVG path data or a VectorNetwork.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": -1000000,
+          "maximum": 1000000,
+          "description": "X position in the parent, or on the page (-1000000 to 1000000)"
+        },
+        "y": {
+          "type": "number",
+          "minimum": -1000000,
+          "maximum": 1000000,
+          "description": "Y position in the parent, or on the page (-1000000 to 1000000)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Node name"
+        },
+        "path": {
+          "type": "string",
+          "description": "SVG path data (preferred, e.g. \"M0 0 L100 0 L50 80 Z\") or VectorNetwork JSON, e.g. {\"vertices\":[{\"x\":0,\"y\":0},{\"x\":10,\"y\":0}],\"segments\":[{\"start\":0,\"end\":1}],\"regions\":[]}"
+        },
+        "fill": {
+          "type": "string",
+          "description": "Fill color (hex)"
+        },
+        "stroke": {
+          "type": "string",
+          "description": "Stroke color (hex)"
+        },
+        "stroke_weight": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1000000,
+          "description": "Stroke weight (0.1 to 1000000)"
+        },
+        "parent_id": {
+          "type": "string",
+          "description": "Parent node ID"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ]
+    }
+  },
+  {
+    "name": "create_slice",
+    "description": "Create a slice (export region) on the canvas.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": -1000000,
+          "maximum": 1000000,
+          "description": "X position in the parent, or on the page (-1000000 to 1000000)"
+        },
+        "y": {
+          "type": "number",
+          "minimum": -1000000,
+          "maximum": 1000000,
+          "description": "Y position in the parent, or on the page (-1000000 to 1000000)"
+        },
+        "width": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000000,
+          "description": "Width (1 to 1000000)"
+        },
+        "height": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000000,
+          "description": "Height (1 to 1000000)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Slice name"
+        },
+        "parent_id": {
+          "type": "string",
+          "description": "Parent node ID"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ]
+    }
+  },
+  {
+    "name": "create_connector",
+    "description": "Create a FigJam-style connector between two layers, or from or to a point on the page; it follows the layers it joins and is deleted with them. Give each end a node id (and optionally a magnet), or x/y for a free end.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Node ID the start attaches to"
+            },
+            "magnet": {
+              "enum": [
+                "AUTO",
+                "TOP",
+                "RIGHT",
+                "BOTTOM",
+                "LEFT",
+                "CENTER"
+              ],
+              "type": "string",
+              "description": "AUTO picks the nearest side; straight lines use CENTER"
+            },
+            "x": {
+              "type": "number",
+              "minimum": -1000000,
+              "maximum": 1000000,
+              "description": "Page X of a free end (-1000000 to 1000000)"
+            },
+            "y": {
+              "type": "number",
+              "minimum": -1000000,
+              "maximum": 1000000,
+              "description": "Page Y of a free end (-1000000 to 1000000)"
+            }
+          },
+          "default": {}
+        },
+        "end": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Node ID the end attaches to"
+            },
+            "magnet": {
+              "enum": [
+                "AUTO",
+                "TOP",
+                "RIGHT",
+                "BOTTOM",
+                "LEFT",
+                "CENTER"
+              ],
+              "type": "string",
+              "description": "AUTO picks the nearest side; straight lines use CENTER"
+            },
+            "x": {
+              "type": "number",
+              "minimum": -1000000,
+              "maximum": 1000000,
+              "description": "Page X of a free end (-1000000 to 1000000)"
+            },
+            "y": {
+              "type": "number",
+              "minimum": -1000000,
+              "maximum": 1000000,
+              "description": "Page Y of a free end (-1000000 to 1000000)"
+            }
+          },
+          "default": {}
+        },
+        "line_type": {
+          "enum": [
+            "ELBOWED",
+            "STRAIGHT",
+            "CURVED"
+          ],
+          "type": "string",
+          "description": "Path shape"
+        },
+        "start_cap": {
+          "enum": [
+            "NONE",
+            "ARROW_LINES",
+            "ARROW_EQUILATERAL",
+            "TRIANGLE_FILLED",
+            "DIAMOND_FILLED",
+            "CIRCLE_FILLED"
+          ],
+          "type": "string",
+          "description": "Cap at the start"
+        },
+        "end_cap": {
+          "enum": [
+            "NONE",
+            "ARROW_LINES",
+            "ARROW_EQUILATERAL",
+            "TRIANGLE_FILLED",
+            "DIAMOND_FILLED",
+            "CIRCLE_FILLED"
+          ],
+          "type": "string",
+          "description": "Cap at the end; an arrow by default"
+        },
+        "label": {
+          "type": "string",
+          "description": "Text on the line"
+        },
+        "name": {
+          "type": "string",
+          "description": "Layer name"
+        }
+      }
+    }
+  },
+  {
+    "name": "import_svg",
+    "description": "Import SVG markup as editable layers, as pasting it into Figma does: a frame (a group without width, height, or viewBox) with a group per <g>, a vector per shape, a text per <text>, named by id, and mask groups for clipping. Supports shapes, <tspan> styles, inherited attributes, opacity, transforms, gradients, clip paths, and internal <use>.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "svg": {
+          "type": "string",
+          "description": "SVG markup string (e.g. '<svg viewBox=\"0 0 24 24\"><path d=\"M...\"/></svg>')"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name for the created frame or group (default: the root <svg> id, else \"Frame\" or \"Group\")"
+        },
+        "color": {
+          "type": "string",
+          "description": "Default color for currentColor fills/strokes (default: #000000)"
+        },
+        "parent_id": {
+          "type": "string",
+          "description": "Parent node ID"
+        },
+        "x": {
+          "type": "number",
+          "description": "X position"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y position"
+        }
+      },
+      "required": [
+        "svg"
+      ]
+    }
+  },
+  {
+    "name": "import_mermaid",
+    "description": "Import a Mermaid flowchart (`flowchart` or `graph`) as FigJam layers laid out without overlaps: nodes as shapes with text, subgraphs as sections, edges as elbowed connectors with their arrowheads, line style, and label. classDef, class, and style colours carry over. Without x and y it goes to the right of what the parent holds. Returns the layer id of every node, subgraph, and edge by Mermaid id.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "mermaid": {
+          "type": "string",
+          "description": "Mermaid flowchart source (e.g. \"flowchart LR\\n  A[Start] --> B{Ready?}\")"
+        },
+        "parent_id": {
+          "type": "string",
+          "description": "Parent node ID (default: the page)"
+        },
+        "x": {
+          "type": "number",
+          "description": "X of the diagram’s left edge"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y of the diagram’s top edge"
+        }
+      },
+      "required": [
+        "mermaid"
+      ]
+    }
+  },
+  {
+    "name": "set_effects",
+    "description": "Set effects on a node (drop shadow, inner shadow, blur). Pass an array or a single effect.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "DROP_SHADOW",
+            "INNER_SHADOW",
+            "FOREGROUND_BLUR",
+            "BACKGROUND_BLUR"
+          ],
+          "type": "string",
+          "description": "Effect type"
+        },
+        "color": {
+          "type": "string",
+          "description": "Shadow color (hex). Ignored for blur."
+        },
+        "offset_x": {
+          "type": "number",
+          "description": "Shadow X offset",
+          "default": 0
+        },
+        "offset_y": {
+          "type": "number",
+          "description": "Shadow Y offset",
+          "default": 4
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Blur radius",
+          "default": 4
+        },
+        "spread": {
+          "type": "number",
+          "description": "Shadow spread",
+          "default": 0
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ]
+    }
+  },
+  {
+    "name": "set_font",
+    "description": "Set font properties of a text node.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "family": {
+          "type": "string",
+          "description": "Font family name"
+        },
+        "size": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10000,
+          "description": "Font size (1 to 10000)"
+        },
+        "style": {
+          "type": "string",
+          "description": "Font style (e.g. \"Bold\", \"Regular\", \"Bold Italic\")"
+        },
+        "variations": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 4
+          },
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Variable font axis values by OpenType tag (e.g. {\"wght\": 550, \"wdth\": 75}); axes left out keep the style's values. Without a style, the nearest named style is picked."
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "set_constraints",
+    "description": "Set resize constraints for a node within its parent.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "horizontal": {
+          "enum": [
+            "MIN",
+            "CENTER",
+            "MAX",
+            "STRETCH",
+            "SCALE"
+          ],
+          "type": "string",
+          "description": "Horizontal constraint"
+        },
+        "vertical": {
+          "enum": [
+            "MIN",
+            "CENTER",
+            "MAX",
+            "STRETCH",
+            "SCALE"
+          ],
+          "type": "string",
+          "description": "Vertical constraint"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "set_size_limits",
+    "description": "Set min/max width and height constraints on a node.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "min_width": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Minimum width (0 to 1000000)"
+        },
+        "max_width": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Maximum width (0 to 1000000)"
+        },
+        "min_height": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Minimum height (0 to 1000000)"
+        },
+        "max_height": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Maximum height (0 to 1000000)"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "set_text_range",
+    "description": "Set font properties for a text range.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "start": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Start character index"
+        },
+        "end": {
+          "type": "number",
+          "minimum": 0,
+          "description": "End character index"
+        },
+        "family": {
+          "type": "string",
+          "description": "Font family name"
+        },
+        "size": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10000,
+          "description": "Font size (1 to 10000)"
+        },
+        "style": {
+          "type": "string",
+          "description": "Font style"
+        },
+        "variations": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 4
+          },
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Variable font axis values by OpenType tag (e.g. {\"wght\": 550, \"wdth\": 75}); axes left out keep the style's values. Without a style, the nearest named style is picked."
+        },
+        "color": {
+          "type": "string",
+          "description": "Text color (hex)"
+        }
+      },
+      "required": [
+        "id",
+        "start",
+        "end"
+      ]
+    }
+  },
+  {
+    "name": "set_blend_mode",
+    "description": "Set blend mode of a node.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "NORMAL",
+            "DARKEN",
+            "MULTIPLY",
+            "LINEAR_BURN",
+            "COLOR_BURN",
+            "LIGHTEN",
+            "SCREEN",
+            "LINEAR_DODGE",
+            "COLOR_DODGE",
+            "OVERLAY",
+            "SOFT_LIGHT",
+            "HARD_LIGHT",
+            "DIFFERENCE",
+            "EXCLUSION",
+            "HUE",
+            "SATURATION",
+            "COLOR",
+            "LUMINOSITY"
+          ],
+          "type": "string",
+          "description": "Blend mode"
+        }
+      },
+      "required": [
+        "id",
+        "mode"
+      ]
+    }
+  },
+  {
+    "name": "set_image_fill",
+    "description": "Set an image fill on a node from Base64-encoded image data or a data URL.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "image_data": {
+          "type": "string",
+          "description": "Image bytes (PNG, JPEG, or WEBP) as Base64 or a data URL"
+        },
+        "scale_mode": {
+          "enum": [
+            "FILL",
+            "FIT",
+            "CROP",
+            "TILE"
+          ],
+          "type": "string",
+          "description": "Image scale mode",
+          "default": "FILL"
+        }
+      },
+      "required": [
+        "id",
+        "image_data"
+      ]
+    }
+  },
+  {
+    "name": "clone_nodes",
+    "description": "Clone (duplicate) nodes, each beside its original.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Node IDs to clone"
+        }
+      },
+      "required": [
+        "ids"
+      ]
+    }
+  },
+  {
+    "name": "group_nodes",
+    "description": "Group selected nodes.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "description": "Node IDs to group"
+        }
+      },
+      "required": [
+        "ids"
+      ]
+    }
+  },
+  {
+    "name": "ungroup_nodes",
+    "description": "Ungroup groups, keeping their children in place.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Group node IDs"
+        }
+      },
+      "required": [
+        "ids"
+      ]
+    }
+  },
+  {
+    "name": "flatten_nodes",
+    "description": "Flatten nodes into a single vector.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Node IDs to flatten"
+        }
+      },
+      "required": [
+        "ids"
+      ]
+    }
+  },
+  {
+    "name": "convert_to_components",
+    "description": "Convert one or more frames/groups into components.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Node IDs to convert"
+        }
+      },
+      "required": [
+        "ids"
+      ]
+    }
+  },
+  {
+    "name": "get_ancestors",
+    "description": "Get the ancestor chain from a node to the page root.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "depth": {
+          "type": "number",
+          "description": "Max depth to traverse"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "get_bindings",
+    "description": "Get variable bindings for a node.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "replace_node",
+    "description": "Replace a node with JSX content.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Node ID to replace"
+        },
+        "jsx": {
+          "type": "string",
+          "description": "JSX string for the replacement"
+        }
+      },
+      "required": [
+        "id",
+        "jsx"
+      ]
+    }
+  },
+  {
+    "name": "arrange",
+    "description": "Arrange layers so they stop overlapping or follow a structure. Modes:\n- spread (default): push overlapping layers apart, each staying near where it was.\n- compact: spread, then close the gaps.\n- pack: rows in order, like a page of screens or components.\n- grid, row, column: in order from the first layer; grid takes cols.\n- flow: ranks along connectors, rerouting elbowed ones; flowcharts, pipelines, state machines.\n- tree: from its roots along connectors; sitemaps, org charts.\n- radial: a tree in rings; mind maps.\n- network: joined layers near each other; relationship maps.\nConnectors between the layers are found automatically. A section given with all its children is laid out inside; a section alone moves as one box. Layers outside chosen sections must share a parent. The top-left corner stays put.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Layer IDs to arrange (default: every top-level layer on the current page)"
+        },
+        "mode": {
+          "enum": [
+            "spread",
+            "compact",
+            "pack",
+            "grid",
+            "row",
+            "column",
+            "flow",
+            "tree",
+            "radial",
+            "network"
+          ],
+          "type": "string",
+          "description": "How to arrange them",
+          "default": "spread"
+        },
+        "direction": {
+          "enum": [
+            "TB",
+            "BT",
+            "LR",
+            "RL"
+          ],
+          "type": "string",
+          "description": "Direction of a flow or tree: top to bottom (default), bottom to top, left to right, right to left"
+        },
+        "gap": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Spacing between layers (default: 40)"
+        },
+        "cols": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Column count for grid mode (default: auto)"
+        }
+      }
+    }
+  },
+  {
+    "name": "list_variables",
+    "description": "List design variables (colors, numbers, strings, booleans), optionally by name.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Name substring (case-insensitive)"
+        },
+        "type": {
+          "enum": [
+            "COLOR",
+            "FLOAT",
+            "STRING",
+            "BOOLEAN"
+          ],
+          "type": "string",
+          "description": "Filter by variable type"
+        }
+      }
+    }
+  },
+  {
+    "name": "list_collections",
+    "description": "List all variable collections.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "get_variable",
+    "description": "Get a variable by ID.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Variable ID"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "create_variable",
+    "description": "Create a new variable in a collection.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Variable name"
+        },
+        "type": {
+          "enum": [
+            "COLOR",
+            "FLOAT",
+            "STRING",
+            "BOOLEAN"
+          ],
+          "type": "string",
+          "description": "Variable type"
+        },
+        "collection_id": {
+          "type": "string",
+          "description": "Collection ID"
+        },
+        "value": {
+          "type": "string",
+          "description": "Initial value (hex for COLOR, number for FLOAT, etc.)"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "collection_id"
+      ]
+    }
+  },
+  {
+    "name": "set_variable",
+    "description": "Set the value of a variable for a specific mode.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Variable ID"
+        },
+        "mode": {
+          "type": "string",
+          "description": "Mode ID"
+        },
+        "value": {
+          "type": "string",
+          "description": "Value (hex for COLOR, number for FLOAT, etc.)"
+        }
+      },
+      "required": [
+        "id",
+        "mode",
+        "value"
+      ]
+    }
+  },
+  {
+    "name": "delete_variable",
+    "description": "Delete a variable.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Variable ID"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "bind_variable",
+    "description": "Bind a variable to a node property, or unbind it with a null variable_id.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "type": "string"
+        },
+        "field": {
+          "type": "string",
+          "description": "Field path. COLOR: \"fills/0/color\", \"strokes/0/color\", \"effects/0/color\". FLOAT: opacity, width, height, x, y, rotation, cornerRadius, topLeftRadius, topRightRadius, bottomLeftRadius, bottomRightRadius, fontSize, letterSpacing, lineHeight, itemSpacing, counterAxisSpacing, paddingLeft/Right/Top/Bottom, strokeWeight, borderTopWeight, borderBottomWeight, borderLeftWeight, borderRightWeight, minWidth, maxWidth, minHeight, maxHeight, gridRowGap, gridColumnGap, \"effects/0/radius\", \"effects/0/spread\", \"effects/0/offsetX\", \"effects/0/offsetY\" (a blur binds only radius). STRING: fontFamily. STRING or FLOAT: text, a number shown as text. BOOLEAN or STRING: visible, where text shows the layer unless empty, \"false\", \"no\", or \"off\"."
+        },
+        "variable_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Variable ID, or null to unbind"
+        }
+      },
+      "required": [
+        "node_id",
+        "field",
+        "variable_id"
+      ]
+    }
+  },
+  {
+    "name": "set_variable_mode",
+    "description": "Show layers in a mode of a variable collection, such as a frame in the Dark mode of a \"Theme\" collection, as the Appearance panel does. Children inherit the mode unless they set their own. Pass mode null to clear it, so the layers inherit their parent’s mode again.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Layer or page IDs"
+        },
+        "collection": {
+          "type": "string",
+          "description": "Variable collection ID or name, such as \"Theme\""
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Mode ID or name, such as \"Dark\"; null inherits the parent’s mode"
+        }
+      },
+      "required": [
+        "ids",
+        "collection",
+        "mode"
+      ]
+    }
+  },
+  {
+    "name": "get_variable_modes",
+    "description": "Get the mode a layer shows for each variable collection, such as its theme: its own, or inherited from its parent or the page when inherited is true.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "get_collection",
+    "description": "Get a variable collection by ID.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Collection ID"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "create_collection",
+    "description": "Create a new variable collection.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Collection name"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "delete_collection",
+    "description": "Delete a variable collection and all its variables.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Collection ID"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "boolean",
+    "description": "Combine two or more nodes into a boolean group: union, subtract (the first minus the rest), intersect, or exclude.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "enum": [
+            "union",
+            "subtract",
+            "intersect",
+            "exclude"
+          ],
+          "type": "string",
+          "description": "Boolean operation"
+        },
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "description": "Node IDs, first one on top"
+        }
+      },
+      "required": [
+        "op",
+        "ids"
+      ]
+    }
+  },
+  {
+    "name": "get_path",
+    "description": "Get vector path data of a node.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "set_path",
+    "description": "Set vector path data on a node. Provide a VectorNetwork JSON.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string",
+          "description": "VectorNetwork JSON"
+        }
+      },
+      "required": [
+        "id",
+        "path"
+      ]
+    }
+  },
+  {
+    "name": "transform_path",
+    "description": "Scale, flip, or move a vector node's path points, in that order, without changing the node's box.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "scale": {
+          "type": "number",
+          "description": "Scale factor from the centre, e.g. 2"
+        },
+        "flip": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ],
+          "type": "string",
+          "description": "Flip axis"
+        },
+        "move": {
+          "type": "object",
+          "properties": {
+            "dx": {
+              "type": "number"
+            },
+            "dy": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "dx",
+            "dy"
+          ],
+          "description": "Offset for every point"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "get_viewport",
+    "description": "Get current viewport position and zoom level.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "set_viewport",
+    "description": "Set viewport position and zoom.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "Center X"
+        },
+        "y": {
+          "type": "number",
+          "description": "Center Y"
+        },
+        "zoom": {
+          "type": "number",
+          "minimum": 0.01,
+          "description": "Zoom level"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "zoom"
+      ]
+    }
+  },
+  {
+    "name": "export_svg",
+    "description": "Export nodes as SVG markup. Returns the SVG string, and `warnings` naming each effect SVG cannot draw, such as glass, which the SVG leaves out.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Node IDs to export. Omit to export all top-level nodes on the current page."
+        },
+        "path": {
+          "type": "string",
+          "description": "Write exported data to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)"
+        }
+      }
+    }
+  },
+  {
+    "name": "export_pdf",
+    "description": "Export nodes as a vector PDF document, with selectable text and sharp paths. Returns base64-encoded PDF data and the size of each PDF page. Pages are drawn as the canvas draws them, with the fonts the text uses embedded; blurs, shadows, and shader fills are drawn as images.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Node IDs to export. Omit to export all top-level nodes on the current page."
+        },
+        "path": {
+          "type": "string",
+          "description": "Write exported data to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)"
+        },
+        "mode": {
+          "enum": [
+            "single",
+            "frames",
+            "pages"
+          ],
+          "type": "string",
+          "description": "single: one PDF page for all ids. frames: one per id, or per top-level frame of the current page. pages: one per design page",
+          "default": "single"
+        },
+        "page_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "mode \"pages\": the design pages to export, in order (default: all pages)"
+        }
+      }
+    }
+  },
+  {
+    "name": "export_image",
+    "description": "Export nodes as a raster image (PNG, JPG, or WEBP). Returns base64-encoded image data. Use to visually verify designs.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Node IDs to export. Omit to export all top-level nodes on the current page."
+        },
+        "path": {
+          "type": "string",
+          "description": "Write exported data to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)"
+        },
+        "format": {
+          "enum": [
+            "PNG",
+            "JPG",
+            "WEBP"
+          ],
+          "type": "string",
+          "description": "Image format",
+          "default": "PNG"
+        },
+        "scale": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 4,
+          "description": "Export scale multiplier before the maximum-edge limit is applied (default: 1)",
+          "default": 1
+        },
+        "maxEdge": {
+          "type": "number",
+          "minimum": 64,
+          "maximum": 4096,
+          "description": "Maximum output width or height in pixels. Preserves aspect ratio and never upscales. Defaults to 1280 for bounded model input.",
+          "default": 1280
+        }
+      }
+    }
+  },
+  {
+    "name": "analyze_colors",
+    "description": "Analyze color palette usage across the current page. Shows frequency, variable bindings, and optionally clusters similar colors.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "number",
+          "description": "Maximum results to return (default: 30)",
+          "default": 30
+        },
+        "show_similar": {
+          "type": "boolean",
+          "description": "Include similar-color clusters for potential merging"
+        },
+        "threshold": {
+          "type": "number",
+          "description": "Distance threshold for clustering (0-50, default: 15)"
+        }
+      }
+    }
+  },
+  {
+    "name": "analyze_typography",
+    "description": "Analyze typography usage across the current page. Shows font families, sizes, weights, and their frequencies.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "number",
+          "description": "Maximum results to return (default: 30)",
+          "default": 30
+        },
+        "group_by": {
+          "enum": [
+            "family",
+            "size",
+            "weight"
+          ],
+          "type": "string",
+          "description": "Group results by a property"
+        }
+      }
+    }
+  },
+  {
+    "name": "lint",
+    "description": "Check the design for accessibility and consistency issues: low text contrast, small touch targets and text, off-scale spacing and radius, colors that match a variable but are not bound, and structure hygiene. Findings are sorted by severity. A `fix` is safe to apply with lint_fix; `suggestions` change values and need judgment.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Layers to check, with their descendants (default: the current page)"
+        },
+        "preset": {
+          "enum": [
+            "recommended",
+            "strict",
+            "accessibility"
+          ],
+          "type": "string",
+          "description": "Rule preset: recommended (default), strict, or accessibility (contrast, touch targets, text size)",
+          "default": "recommended"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "no-hardcoded-colors",
+              "no-default-names",
+              "prefer-auto-layout",
+              "consistent-spacing",
+              "consistent-radius",
+              "color-contrast",
+              "touch-target-size",
+              "text-style-required",
+              "min-text-size",
+              "no-hidden-layers",
+              "no-deeply-nested",
+              "no-empty-frames",
+              "pixel-perfect",
+              "no-groups",
+              "effect-style-required",
+              "no-mixed-styles",
+              "no-detached-instances"
+            ],
+            "type": "string"
+          },
+          "description": "Check only these rules of the preset"
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum results to return (default: 30)",
+          "default": 30
+        }
+      }
+    }
+  },
+  {
+    "name": "lint_fix",
+    "description": "Apply lint fixes: bind colors to the variable they match and round geometry to whole pixels. With suggestions: true, also apply each finding’s first suggestion (snap radius and spacing to the scale, raise text to the minimum size, convert groups to frames, delete hidden layers). Returns what was applied and what remains.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Layers to check, with their descendants (default: the current page)"
+        },
+        "preset": {
+          "enum": [
+            "recommended",
+            "strict",
+            "accessibility"
+          ],
+          "type": "string",
+          "description": "Rule preset: recommended (default), strict, or accessibility (contrast, touch targets, text size)",
+          "default": "recommended"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "no-hardcoded-colors",
+              "no-default-names",
+              "prefer-auto-layout",
+              "consistent-spacing",
+              "consistent-radius",
+              "color-contrast",
+              "touch-target-size",
+              "text-style-required",
+              "min-text-size",
+              "no-hidden-layers",
+              "no-deeply-nested",
+              "no-empty-frames",
+              "pixel-perfect",
+              "no-groups",
+              "effect-style-required",
+              "no-mixed-styles",
+              "no-detached-instances"
+            ],
+            "type": "string"
+          },
+          "description": "Check only these rules of the preset"
+        },
+        "suggestions": {
+          "type": "boolean",
+          "description": "Also apply the first suggestion of each finding",
+          "default": false
+        }
+      }
+    }
+  },
+  {
+    "name": "analyze_spacing",
+    "description": "Analyze spacing values (gap, padding) across the current page. Checks grid compliance.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "grid": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Base grid size to check against (default: 8)"
+        }
+      }
+    }
+  },
+  {
+    "name": "analyze_clusters",
+    "description": "Find repeated design patterns (potential components). Groups nodes by structural signature — type, size, and child structure.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "min_count": {
+          "type": "number",
+          "description": "Min instances to form a cluster (default: 2)"
+        },
+        "min_size": {
+          "type": "number",
+          "description": "Min node size in px (default: 30)"
+        },
+        "limit": {
+          "type": "number",
+          "description": "Max clusters to return (default: 20)"
+        }
+      }
+    }
+  },
+  {
+    "name": "analyze_overlaps",
+    "description": "Detect visual overlaps and layout overflows on the current page, such as content covering a footer, text bleeding out of its frame, or siblings overlapping by accident.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "enum": [
+            "all",
+            "same-parent",
+            "cross-parent",
+            "top-level",
+            "inside-parent"
+          ],
+          "type": "string",
+          "description": "Which pairs to inspect",
+          "default": "all"
+        },
+        "category": {
+          "type": "string",
+          "description": "Comma-separated categories: sibling-overlap, parent-overflow, overlay (default: all)"
+        },
+        "severity": {
+          "enum": [
+            "critical",
+            "major",
+            "minor",
+            "info"
+          ],
+          "type": "string",
+          "description": "Minimum severity to include",
+          "default": "info"
+        },
+        "min_area": {
+          "type": "number",
+          "description": "Minimum overlap area in square pixels (default: 0)"
+        },
+        "min_ratio": {
+          "type": "number",
+          "description": "Minimum overlap ratio relative to the smaller node, 0.0–1.0 (default: 0)"
+        },
+        "include_hidden": {
+          "type": "boolean",
+          "description": "Include hidden nodes in the analysis"
+        },
+        "include_locked": {
+          "type": "boolean",
+          "description": "Include locked nodes in the analysis"
+        },
+        "include_absolute": {
+          "type": "boolean",
+          "description": "Include absolutely-positioned nodes in the analysis"
+        },
+        "page": {
+          "type": "string",
+          "description": "Limit analysis to nodes on the named page"
+        },
+        "page_id": {
+          "type": "string",
+          "description": "Limit analysis to nodes on the page with this stable ID (takes precedence over page)"
+        },
+        "type": {
+          "type": "string",
+          "description": "Comma-separated node types to analyze, e.g. FRAME,TEXT"
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum overlap findings to return (default: 100)",
+          "default": 100
+        }
+      }
+    }
+  },
+  {
+    "name": "preview_patch",
+    "description": "Preview setting JSX attributes on a node, without changing it. Returns the patch, which apply_patch applies.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "string",
+          "description": "JSX attributes to set, named as the JSX export writes them. Example: w={200} bg=\"#FF0000\" opacity={0.5}"
+        }
+      },
+      "required": [
+        "id",
+        "attributes"
+      ]
+    }
+  },
+  {
+    "name": "apply_patch",
+    "description": "Apply a patch from diff_nodes, preview_patch, or diff_changes. Each node must still have the patch's old values unless force is set, and nothing changes unless every hunk applies. Use dryRun to check first.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "patch": {
+          "type": "string",
+          "description": "Patch text from diff_nodes, preview_patch, or diff_changes"
+        },
+        "dryRun": {
+          "type": "boolean",
+          "description": "Check and report changes without applying",
+          "default": false
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Apply even when current values differ from the patch",
+          "default": false
+        }
+      },
+      "required": [
+        "patch"
+      ]
+    }
+  },
+  {
+    "name": "export_design_tokens",
+    "description": "Write the document variables as CSS custom properties: defaults in :root, other modes under their selector or @media query, aliases as var(). tailwind puts Tailwind v4 namespaces (--color-*, --spacing-*, …) in @theme with a @custom-variant per mode. dtcg returns W3C design token files instead, one per collection mode with text and effect styles and a resolver; collection and type filters do not apply. Issues lists what could not be written.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "enum": [
+            "css",
+            "tailwind",
+            "dtcg"
+          ],
+          "type": "string",
+          "description": "css: :root and mode scopes; tailwind: @theme, mode scopes and variants; dtcg: W3C design token files",
+          "default": "css"
+        },
+        "collection": {
+          "type": "string",
+          "description": "Filter by collection name (substring, case-insensitive)"
+        },
+        "type": {
+          "enum": [
+            "COLOR",
+            "FLOAT",
+            "STRING",
+            "BOOLEAN"
+          ],
+          "type": "string",
+          "description": "Filter by variable type"
+        }
+      }
+    }
+  },
+  {
+    "name": "import_design_tokens",
+    "description": "Import W3C design token (DTCG) files as variables, and typography and shadow tokens as text and effect styles. Pass each file with its path: a file per mode in folders (as Figma exports), a .resolver.json with its files, or a Tokens Studio file with $themes. Same-named collections, modes, and variables are updated; nothing is deleted. Returns what was added, updated, and skipped and why.",
+    "mutates": true,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "text"
+            ]
+          },
+          "minItems": 1,
+          "description": "Token files, each with its path (folders name collections) and JSON text"
+        },
+        "add_missing": {
+          "type": "boolean",
+          "description": "Add tokens that match no variable",
+          "default": true
+        },
+        "styles": {
+          "type": "boolean",
+          "description": "Make text and effect styles",
+          "default": true
+        }
+      },
+      "required": [
+        "files"
+      ]
+    }
+  },
+  {
+    "name": "export_component_map",
+    "description": "Analyze the document and return a structured component decomposition: components (with variants, props, instance counts), screens, and a dependency overview.",
+    "mutates": false,
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string",
+          "description": "Page name to analyze (default: current page)"
+        }
+      }
+    }
+  }
+]

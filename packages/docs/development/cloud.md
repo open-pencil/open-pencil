@@ -298,6 +298,25 @@ it, and presence updates are rewritten so others see the ticket's name and a `cl
 verified identity and permission. A peer cannot claim presence clients another peer owns. Voice is
 not carried over the relay yet; the transport reports no media.
 
+### Apps' design tools
+
+The MCP endpoint at `/mcp` serves where `[oauth]` is on. It is stateless and holds no rights of its own: it
+answers a request without a valid token with a challenge naming its own protected resource
+metadata, and turns each tool call into a request to the document API with the caller's token, so
+every scope, workspace, and rate limit applies there unchanged. Its document tools are plain API
+calls. Its design tools are Core's, listed from `server/mcp/design-tools.json`, which
+`bun run generate:mcp-catalog` writes from Core and `check:mcp-catalog` keeps current, since the
+server holds no Core.
+
+The server has no editor to run them in, so `POST /api/documents/:id/tools/{read,write}` hands each
+call to the document's relay (`callDocumentTool`). A signed-in editor tab offers to run tools on the
+room's `agent-tools` channel each time it joins; the relay gives the call to the newest such tab of
+the person whose token made it, waits for that tab's answer alone, and cancels the call after 30
+seconds. The tab runs it as the local MCP server's calls run, showing the app as an agent and making
+the edit the person's own. With nobody's tab open the call answers `409 editor_not_open`, and the
+tool gives the model the document's link to pass on. Running tools on a graph the server decodes
+itself, without an open editor, is a later step.
+
 ## Enrollment and administration
 
 Enrollment is `open`, `approval`, or `closed`. In approval mode a verified identity creates a

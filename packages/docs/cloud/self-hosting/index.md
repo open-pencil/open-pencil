@@ -132,6 +132,8 @@ enabled = true
 
 Apps register themselves, so anyone can register one, but each connection takes the person's approval and reaches one workspace they pick. Connected apps then read, and with the person's approval change, that workspace's documents, so say so in your privacy notice. Without the table, the server accepts no apps and its account pages have no **Connected apps**.
 
+The table also opens the MCP endpoint at `/mcp`, which apps such as ChatGPT, Claude, and Grok connect to, and lets apps name a client ID metadata document instead of registering: the server then fetches that document from the app's address, refusing private, loopback, and link-local addresses and redirects.
+
 ## Community gallery
 
 Add a `[community]` table with a workspace's ID to make that workspace a public gallery:

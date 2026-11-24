@@ -184,6 +184,17 @@ export function createDocumentService(
       return imageLinksOf(documentId, checksums)
     },
 
+    /**
+     * What a document is, without its file: also for one created through the API and not yet
+     * saved by an editor, which has no revision to download.
+     */
+    async summary(userId: string, documentId: string): Promise<DocumentSummary> {
+      const access = await resolveDocumentAccess(database, userId, documentId)
+      const row = access ? await getDocumentSummaryRow(database, documentId) : null
+      if (!row) throw new DocumentNotFoundError()
+      return documentSummary(row)
+    },
+
     async download(userId: string, documentId: string): Promise<DocumentDownload> {
       const access = await resolveDocumentAccess(database, userId, documentId)
       if (!access) throw new DocumentNotFoundError()

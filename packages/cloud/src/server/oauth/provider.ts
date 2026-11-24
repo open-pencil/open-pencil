@@ -4,10 +4,12 @@ import {
   CLOUD_APP_REFRESH_TOKEN_PREFIX,
   CLOUD_OAUTH_AUTHORIZE_PAGE,
   CLOUD_OAUTH_SCOPES,
-  cloudAPIResource
+  cloudAPIResource,
+  cloudMCPResource
 } from '#cloud/contract'
 import { hashCapability } from '#cloud/server/sharing/crypto'
-import type { OAuthOptions, Scope } from '@better-auth/oauth-provider'
+import { cimd } from '@better-auth/cimd'
+import type { ClientMetadataResourceFetch, OAuthOptions, Scope } from '@better-auth/oauth-provider'
 import { APIError } from 'better-auth'
 
 import { chosenWorkspace } from './choices'
@@ -29,7 +31,8 @@ const REFRESH_TOKEN_SECONDS = 30 * 24 * 60 * 60
  *   Cloud checks them itself (`resolveAppAccessToken`).
  */
 export function cloudOAuthProviderOptions(publicURL: string): OAuthOptions<Scope[]> {
-  const resource = cloudAPIResource(publicURL)
+  const api = cloudAPIResource(publicURL)
+  const mcp = cloudMCPResource(publicURL)
   return {
     scopes: [...CLOUD_OAUTH_SCOPES],
     grantTypes: ['authorization_code', 'refresh_token'],
@@ -59,9 +62,13 @@ export function cloudOAuthProviderOptions(publicURL: string): OAuthOptions<Scope
     // clients derive it (SEP-837), so those predating that derivation can register too.
     clientRegistrationDefaultApplicationType: 'infer',
     clientRegistrationDefaultScopes: [...CLOUD_OAUTH_SCOPES],
-    resources: [{ identifier: resource, name: 'OpenPencil Cloud API' }],
+    // The document API, and the MCP endpoint that reaches the same documents for MCP clients.
+    resources: [
+      { identifier: api, name: 'OpenPencil Cloud API' },
+      { identifier: mcp, name: 'OpenPencil Cloud MCP' }
+    ],
     resourceSeedMode: 'merge',
-    clientRegistrationDefaultResources: [resource],
+    clientRegistrationDefaultResources: [api, mcp],
     // Apps are registered by themselves alone; nobody manages them through the plugin's endpoints.
     clientPrivileges: () => false,
     resourcePrivileges: () => false,
@@ -72,6 +79,20 @@ export function cloudOAuthProviderOptions(publicURL: string): OAuthOptions<Scope
       clientSecret: CLOUD_APP_CLIENT_SECRET_PREFIX
     }
   }
+}
+
+/**
+ * Lets apps name the address of a metadata document they serve as their client ID instead of
+ * registering, as MCP clients do (draft-ietf-oauth-client-id-metadata-document, MCP 2026-07-28),
+ * where the runtime fetches those documents safely.
+ */
+export function clientMetadataPlugins(
+  fetchClientMetadata: ClientMetadataResourceFetch | undefined
+): ReturnType<typeof cimd>[] {
+  if (!fetchClientMetadata) return []
+  return [
+    cimd({ fetchClientMetadataResource: fetchClientMetadata, metadataProfile: 'mcp-2026-07-28' })
+  ]
 }
 
 type ProviderEndpoint = { path: string }

@@ -11,13 +11,15 @@ const peerStateSchema = v.object({
     principal: collaborationPrincipalSchema,
     expiresAt: v.number()
   }),
-  presenceClients: v.array(v.pipe(v.number(), v.integer()))
+  presenceClients: v.array(v.pipe(v.number(), v.integer())),
+  /** Absent from what a relay kept before editors ran tools for apps. */
+  toolHost: v.optional(v.boolean(), false)
 })
 
 /**
  * What a runtime keeps with each admitted socket so the relay can resume its peer after the
  * runtime set the relay aside, as a hibernating Durable Object does: who it is, what its ticket
- * allows, and the presence clients it speaks for.
+ * allows, the presence clients it speaks for, and whether it runs tools for apps.
  */
 export type RelayPeerState = v.InferOutput<typeof peerStateSchema>
 

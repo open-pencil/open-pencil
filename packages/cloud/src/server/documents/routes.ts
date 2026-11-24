@@ -215,6 +215,16 @@ export function createDocumentRoutes(
         })
       )
     )
+    .get('/documents/:documentId/summary', documentParams, tokenRoute.read.document, (context) =>
+      documentResponse(context, async () =>
+        context.json({
+          document: await service.summary(
+            context.get('actor').userId,
+            context.req.valid('param').documentId
+          )
+        })
+      )
+    )
     .get('/documents/:documentId', documentParams, tokenRoute.read.document, (context) =>
       documentResponse(context, async () =>
         context.json({

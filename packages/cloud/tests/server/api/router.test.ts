@@ -24,6 +24,11 @@ function services() {
         throw new Error('not used')
       }
     },
+    documentTools: {
+      run: async () => {
+        throw new Error('not used')
+      }
+    },
     documents: {
       cleanupExpiredUploads: async () => 0,
       list: async () => [],
@@ -39,6 +44,9 @@ function services() {
         throw new Error('not used')
       },
       downloadRetained: async () => {
+        throw new Error('not used')
+      },
+      summary: async () => {
         throw new Error('not used')
       },
       download: async () => {

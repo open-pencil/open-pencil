@@ -2,8 +2,10 @@ import {
   CLOUD_AUTHORIZATION_SERVER_METADATA_PATH,
   CLOUD_OAUTH_SCOPES,
   CLOUD_PROTECTED_RESOURCE_METADATA_PATH,
+  CLOUD_MCP_PATH,
   cloudAPIResource,
   cloudAppConnectionRevokeSchema,
+  cloudMCPResource,
   cloudOAuthDecisionSchema
 } from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
@@ -36,19 +38,21 @@ const FAILURE_STATUS = {
 const ISSUER_PATH = '/api/auth'
 
 /**
- * What a server that accepts apps answers: the document API's protected resource metadata
- * (RFC 9728) and the authorization server's (RFC 8414) at the addresses clients look, the
- * approval page's routes, and the account's connected apps.
+ * What a server that accepts apps answers: the protected resource metadata (RFC 9728) of the
+ * document API and the MCP endpoint and the authorization server's (RFC 8414) at the addresses
+ * clients look, the approval page's routes, and the account's connected apps.
  */
 export function createOAuthRoutes(dependencies: OAuthRouteDependencies) {
   const { service } = dependencies
-  const resourceMetadata: ResourceServerMetadata = {
-    resource: cloudAPIResource(dependencies.publicURL),
+  const metadataFor = (resource: string): ResourceServerMetadata => ({
+    resource,
     authorization_servers: [new URL(ISSUER_PATH, dependencies.publicURL).href],
     scopes_supported: [...CLOUD_OAUTH_SCOPES],
     bearer_methods_supported: ['header'],
     resource_name: 'OpenPencil Cloud'
-  }
+  })
+  const resourceMetadata = metadataFor(cloudAPIResource(dependencies.publicURL))
+  const mcpMetadata = metadataFor(cloudMCPResource(dependencies.publicURL))
   const failure = (error: unknown) => {
     if (error instanceof OAuthRequestError) {
       return Response.json({ error: { code: error.code } }, { status: FAILURE_STATUS[error.code] })
@@ -58,6 +62,9 @@ export function createOAuthRoutes(dependencies: OAuthRouteDependencies) {
   return new Hono<CloudAPIEnvironment>()
     .get(`${CLOUD_PROTECTED_RESOURCE_METADATA_PATH}/api`, (context) =>
       context.json(resourceMetadata)
+    )
+    .get(`${CLOUD_PROTECTED_RESOURCE_METADATA_PATH}${CLOUD_MCP_PATH}`, (context) =>
+      context.json(mcpMetadata)
     )
     .get(CLOUD_PROTECTED_RESOURCE_METADATA_PATH, (context) => context.json(resourceMetadata))
     .get(`${CLOUD_AUTHORIZATION_SERVER_METADATA_PATH}${ISSUER_PATH}`, async (context) =>

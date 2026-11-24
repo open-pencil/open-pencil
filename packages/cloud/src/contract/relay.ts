@@ -33,7 +33,12 @@ export const COLLAB_ACTIONS = {
   /** From the server only: the document's version history changed, so open lists load it again. */
   versions: 'versions',
   /** From the server only: a comment thread changed; the payload is its ID as UTF-8. */
-  comments: 'comments'
+  comments: 'comments',
+  /**
+   * Between an editor and the server only: design tools apps run through the editor that has the
+   * document open (`agent-tools.ts`).
+   */
+  agentTools: 'agent-tools'
 } as const
 
 /**

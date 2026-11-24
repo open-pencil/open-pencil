@@ -82,6 +82,10 @@ export interface RoomSession {
   peerForClient(clientId: number): string | undefined
   /** The room's channel for asking whoever saves its document to upload it now. */
   readonly upload: CollabAction
+  /** The room's channel for design tools apps run through this tab, with the relay. */
+  readonly agentTools: CollabAction
+  /** Follow peers joining the room, the relay each time this tab reaches it; returns the unsubscribe. */
+  onPeerJoin(handler: (peerId: string) => void): () => void
   /** Leaves the room and releases its connection, presence, and saved-copy handle. */
   dispose(): void
 }
@@ -357,6 +361,8 @@ export function openRoomSession({
     clientId: awareness.clientID,
     peerForClient: (clientId) => connection.peerForClient(clientId),
     upload: connection.upload,
+    agentTools: connection.agentTools,
+    onPeerJoin: (handler) => connection.onPeerJoin(handler),
     dispose() {
       if (disposed) return
       stopName()

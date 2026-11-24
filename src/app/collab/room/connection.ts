@@ -32,6 +32,10 @@ export type CollabRoomConnection = {
   agentPreview: CollabAction
   /** Asking whoever saves the room's document to upload it now (`app/cloud/rooms/upload.ts`). */
   upload: CollabAction
+  /** Design tools apps run through this tab, between it and the relay (`app/cloud/rooms/agent-tools.ts`). */
+  agentTools: CollabAction
+  /** Follow peers joining the room, the relay each time this tab reaches it; returns the unsubscribe. */
+  onPeerJoin: (handler: (peerId: string) => void) => () => void
   /** Follow peers leaving the room; returns the unsubscribe. */
   onPeerLeave: (handler: (peerId: string) => void) => () => void
   /** The peer whose awareness carries a presence client, so media reaches the right person. */
@@ -101,9 +105,11 @@ export function connectCollabRoom({
   const [sendSyncReply, getSyncReply] = room.makeAction(COLLAB_ACTIONS.syncReply)
   const agentPreview = room.makeAction(COLLAB_ACTIONS.agentPreview)
   const upload = room.makeAction(COLLAB_ACTIONS.upload)
+  const agentTools = room.makeAction(COLLAB_ACTIONS.agentTools)
   const [, getVersions] = room.makeAction(COLLAB_ACTIONS.versions)
   const [, getComments] = room.makeAction(COLLAB_ACTIONS.comments)
-  // A transport keeps one leave handler, so the connection shares it with its users.
+  // A transport keeps one join and one leave handler, so the connection shares them with its users.
+  const joinHandlers = new Set<(peerId: string) => void>()
   const leaveHandlers = new Set<(peerId: string) => void>()
   const syncedHandlers = new Set<(peerId: string) => void>()
   const versionsHandlers = new Set<() => void>()
@@ -166,6 +172,7 @@ export function connectCollabRoom({
   room.onPeerJoin((peerId) => {
     sendSyncStep1(Y.encodeStateVector(ydoc), peerId)
     sendAwareness(awarenessProtocol.encodeAwarenessUpdate(awareness, [awareness.clientID]), peerId)
+    for (const handler of joinHandlers) handler(peerId)
   })
 
   room.onPeerLeave((peerId) => {
@@ -183,6 +190,11 @@ export function connectCollabRoom({
     sendSyncStep1,
     agentPreview,
     upload,
+    agentTools,
+    onPeerJoin(handler) {
+      joinHandlers.add(handler)
+      return () => joinHandlers.delete(handler)
+    },
     onPeerLeave(handler) {
       leaveHandlers.add(handler)
       return () => leaveHandlers.delete(handler)

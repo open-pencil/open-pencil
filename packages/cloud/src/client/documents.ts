@@ -28,6 +28,7 @@ const documentsResponseSchema = v.object({ documents: v.array(documentSummarySch
 const sharedDocumentsResponseSchema = v.object({ documents: v.array(sharedDocumentSchema) })
 const downloadResponseSchema = v.object({ document: documentDownloadSchema })
 const accessResponseSchema = v.object({ access: documentAccessSchema })
+const summaryResponseSchema = v.object({ document: documentSummarySchema })
 const userLookupResponseSchema = v.object({ user: v.nullable(cloudUserProfileSchema) })
 const uploadResponseSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
@@ -113,6 +114,15 @@ export function createDocumentRequests(
       const response = await parseResponse(
         client.documents[':documentId'].$get({ param: { documentId } }),
         downloadResponseSchema,
+        onDiagnostic
+      )
+      return response.document
+    },
+    /** What a document is, without its file; one nobody has saved yet has no revision. */
+    async getDocumentSummary(documentId: string): Promise<DocumentSummary> {
+      const response = await parseResponse(
+        client.documents[':documentId'].summary.$get({ param: { documentId } }),
+        summaryResponseSchema,
         onDiagnostic
       )
       return response.document

@@ -1,6 +1,6 @@
 ---
 title: Connected Apps
-description: Let apps reach one OpenPencil Cloud workspace through OAuth, see what each app may do, and disconnect it.
+description: Let apps such as ChatGPT, Claude, and Grok reach one OpenPencil Cloud workspace through OAuth and MCP, see what each app may do, and disconnect it.
 ---
 
 # Connected Apps
@@ -19,6 +19,17 @@ When an app asks to connect, it sends you to the server's **Connect an app** pag
 
 An app reaches the workspace's documents, with their versions, images, and comments. It can't make workspaces, share documents or invite people, see who else is in the workspace, reach documents shared with you from elsewhere, or change anything about your account.
 
+## Use Cloud in ChatGPT, Claude, and Grok
+
+Apps that work with remote MCP servers can manage your Cloud documents and work on their designs. Add the server's MCP address, your server's address followed by `/mcp` (for example `https://cloud.example.com/mcp`), as a custom connector, keep OAuth as its sign-in, and connect: the app sends you to the **Connect an app** page above.
+
+The app then has two kinds of tools:
+
+- **Documents**: list the workspace's documents, create one, move one to Trash and back, and list or save versions. These work whether or not the document is open anywhere.
+- **Design**: the tools OpenPencil's own [MCP server](../developers/mcp-server) has, such as reading the page tree, building layers from JSX, and changing them. They run in OpenPencil, in an editor where you have the document open and signed in as you, so open the document first; when it isn't open, the app gets its link to give you. You see the app at work on the canvas, everyone in the document sees its edits as yours, and you undo them as your own.
+
+An app that may only read gets the reading tools alone.
+
 ## Disconnect an App
 
 **Account → Connected apps** lists each app, the workspace it reaches, what it may do, and when you connected it. **Disconnect** stops it at once. An app also stops when you leave the workspace it reaches, or when your account is deleted.
@@ -33,3 +44,6 @@ The server is an OAuth 2.1 authorization server, and its document API at `/api` 
 - `/.well-known/oauth-authorization-server/api/auth` has the authorization server's metadata (RFC 8414), including its registration endpoint. Apps register themselves (RFC 7591) and use the authorization code flow with PKCE (`S256`).
 - Scopes are `documents:read`, `documents:write` (which includes reading), and `offline_access` for a refresh token. Send the API's address as `resource` (RFC 8707).
 - Access tokens start with `opa_`, last an hour, and are sent as `Authorization: Bearer <token>`. A route the token's scopes don't cover answers `403` with `insufficient_scope`; anything outside the granted workspace answers `404`.
+- Instead of registering, an app may use the address of a client ID metadata document it serves as its `client_id` (`client_id_metadata_document_supported`), as MCP clients do. The server fetches it only from public addresses and never follows redirects.
+- The MCP endpoint at `/mcp` (Streamable HTTP, stateless) is a protected resource too, described at `/.well-known/oauth-protected-resource/mcp`. A token for either resource reaches both, and each MCP tool is a request to the document API with the caller's token, so it reaches exactly what the token does. Personal access tokens work there as well.
+- Design tools also run through the document API: `POST /api/documents/<id>/tools/read` and `/tools/write` take `{ "name": "<tool>", "args": { … } }`, and answer `409` with `editor_not_open` when nobody who may run the call has the document open.

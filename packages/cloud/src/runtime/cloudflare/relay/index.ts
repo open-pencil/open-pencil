@@ -1,4 +1,9 @@
-import { RELAY_DOCUMENT_PARAM, RELAY_HEARTBEAT } from '#cloud/contract'
+import {
+  RELAY_DOCUMENT_PARAM,
+  RELAY_HEARTBEAT,
+  type AgentToolCall,
+  type AgentToolOutcome
+} from '#cloud/contract'
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
@@ -28,6 +33,8 @@ export interface CollaborationRelayRPC extends DurableObject<CloudflareCloudEnvi
   announceVersions(documentId: string): Promise<void>
   /** Tells the document's live rooms one of its comment threads changed. */
   announceComments(documentId: string, threadId: string): Promise<void>
+  /** Runs an app's design tool through an editor of the person that has the document open. */
+  callTool(documentId: string, userId: string, call: AgentToolCall): Promise<AgentToolOutcome>
 }
 
 /** The Durable Object class a Worker exports for collaboration rooms. */
@@ -192,6 +199,16 @@ export function createCloudflareRelayObject(
     async announceComments(documentId: string, threadId: string) {
       if (!this.#sockets.active) return
       ;(await this.#sockets.open(documentId)).announceComments(documentId, threadId)
+    }
+
+    async callTool(
+      documentId: string,
+      userId: string,
+      call: AgentToolCall
+    ): Promise<AgentToolOutcome> {
+      // Nobody is connected, so no editor has the document open.
+      if (!this.#sockets.active) return { ok: false, failure: 'editor_not_open' }
+      return (await this.#sockets.open(documentId)).callTool(documentId, userId, call)
     }
   }
 }

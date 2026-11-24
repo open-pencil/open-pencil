@@ -20,6 +20,7 @@ import {
 } from '#cloud/server'
 import { Hono } from 'hono'
 
+import { fetchClientMetadataOnCloudflare } from './client-metadata'
 import { createCloudflareEmailTransport } from './email'
 import {
   cloudflareCloudSetup,
@@ -183,7 +184,8 @@ export function createCloudflareCloud(
       try {
         const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email, {
           runInBackground,
-          validateSchema: false
+          validateSchema: false,
+          fetchClientMetadata: fetchClientMetadataOnCloudflare
         })
         const app = createCloudApp({
           config,
@@ -203,6 +205,8 @@ export function createCloudflareCloud(
             runInBackground(relay(c.env, documentId).announceVersions(documentId)),
           onDocumentCommentsChanged: (documentId, threadId) =>
             runInBackground(relay(c.env, documentId).announceComments(documentId, threadId)),
+          callDocumentTool: (documentId, userId, call) =>
+            relay(c.env, documentId).callTool(documentId, userId, call),
           runInBackground,
           reportError: services.reporter,
           forwardedRequestId: cloudflareRayId

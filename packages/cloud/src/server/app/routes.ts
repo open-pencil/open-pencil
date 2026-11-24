@@ -117,6 +117,7 @@ export function createAppRouters(
   const shared = {
     collaboration: app.collaboration,
     documents: app.documents,
+    documentTools: app.documentTools,
     versions: app.versions,
     comments: app.comments,
     community: app.community,

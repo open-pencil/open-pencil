@@ -11,13 +11,14 @@ import {
   bearerAppToken,
   closedOAuthPaths,
   cloudOAuthAuthentication,
+  clientMetadataPlugins,
   cloudOAuthProviderOptions,
   providerRequest,
   resolveAppAccessToken
 } from '#cloud/server/oauth'
 import { createUserPictures, providerPictures } from '#cloud/server/pictures'
 import { apiKey } from '@better-auth/api-key'
-import { oauthProvider } from '@better-auth/oauth-provider'
+import { oauthProvider, type ClientMetadataResourceFetch } from '@better-auth/oauth-provider'
 import { passkey } from '@better-auth/passkey'
 import { APIError, betterAuth } from 'better-auth'
 import { getMigrations } from 'better-auth/db/migration'
@@ -65,6 +66,8 @@ export type CloudAuthRuntimeOptions = {
    * adapter turns it on.
    */
   validateSchema?: boolean
+  /** How the runtime fetches apps' client metadata documents safely (`clientMetadataPlugins`). */
+  fetchClientMetadata?: ClientMetadataResourceFetch
 }
 
 export function createBetterAuthAdapter(
@@ -203,7 +206,7 @@ export function createBetterAuthAdapter(
       ),
       providerPictures(createUserPictures(database, { publicURL: config.publicURL })),
       accessTokens,
-      ...(appProvider ? [appProvider] : [])
+      ...(appProvider ? [appProvider, ...clientMetadataPlugins(runtime.fetchClientMetadata)] : [])
     ],
     socialProviders: socialProviders(config),
     databaseHooks: { ...joining.databaseHooks, ...signInMethodHooks },

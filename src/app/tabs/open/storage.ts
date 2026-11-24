@@ -1,3 +1,4 @@
+import { createDocumentGraph } from '@open-pencil/core'
 import { errorMessage } from '@open-pencil/std/errors'
 
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
@@ -16,6 +17,7 @@ import {
   type StorageLocation
 } from '@/app/integrations/storage'
 import { rememberRecentStorageDocument } from '@/app/recent-files'
+import { resolvedAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
 import { getLocalCanvasStore, type LocalCanvasMeta } from '@/app/storage/local-store'
 import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
@@ -91,6 +93,17 @@ async function showStorageDocument(
   load: EditorPreparationHandle,
   given?: Uint8Array
 ): Promise<void> {
+  // A document an app created through the API holds nothing yet: it opens empty, as a document
+  // made here starts, and its first save gives it its first revision.
+  if (!given && document.revision === null) {
+    await showImportedGraph(
+      store,
+      createDocumentGraph(document.kind ?? 'design', resolvedAppTheme.value),
+      () => store.setStorageDocumentSource(binding, document.name),
+      load
+    )
+    return
+  }
   const bytes = given ?? (await readStorageDocument(binding, document, load))
   const file = figFile(bytes, document.name)
   load.update({ phase: 'decoding', detail: document.name })

@@ -1,5 +1,6 @@
 export * from './account'
 export * from './locale'
+export * from './agent-tools'
 export * from './oauth'
 export {
   SERVICE_ERROR_STATUS,
@@ -153,6 +154,7 @@ export {
   documentPermissionSchema,
   imageUploadOfferSchema,
   objectUploadSchema,
+  documentKindSchema,
   documentSummarySchema,
   sharedDocumentSchema,
   type SharedDocument,

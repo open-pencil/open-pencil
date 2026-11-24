@@ -2,41 +2,34 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import {
   accountAuthenticationConfig,
-  accountAuthenticationRequest,
   createAccountAuthenticationFixture,
   createVerifiedCredentialAccount,
   withCookie
 } from '#cloud-tests/helpers/account-authentication'
+import { OAUTH_CALLBACK, oauthTestApp, oauthTokenSchema, pkce } from '#cloud-tests/helpers/oauth'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   CLOUD_APP_ACCESS_TOKEN_PREFIX,
   CLOUD_APP_REFRESH_TOKEN_PREFIX,
   cloudAPIResource,
   cloudAppConnectionsResponseSchema,
-  cloudOAuthDecisionResponseSchema,
   cloudOAuthRequestResponseSchema,
   type CloudOAuthDecision
 } from '#cloud/contract'
 import { parseCloudServerConfig } from '#cloud/server'
 import { createOAuthService } from '#cloud/server/oauth'
 import { hashCapability } from '#cloud/server/sharing/crypto'
-import { fromUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
 const config = parseCloudServerConfig({ ...accountAuthenticationConfig, oauthEnabled: true })
 const resource = cloudAPIResource(config.publicURL)
-const callback = 'https://app.example.com/callback'
+const callback = OAUTH_CALLBACK
 
-const registrationSchema = v.object({ client_id: v.string() })
-const tokenSchema = v.object({
-  access_token: v.string(),
-  refresh_token: v.string(),
-  scope: v.string()
-})
 const workspaceSchema = v.object({ workspace: v.object({ id: v.string() }) })
 const workspacesSchema = v.object({ workspaces: v.array(v.object({ id: v.string() })) })
 
 let fixture: Awaited<ReturnType<typeof createAccountAuthenticationFixture>>
+let oauth: ReturnType<typeof oauthTestApp>
 let person: { userId: string; sessionCookie: string }
 let granted: string
 let other: string
@@ -44,11 +37,7 @@ let other: string
 let app: string
 
 const send = (path: string, init: { body?: object; cookie?: string; token?: string } = {}) =>
-  fixture.app.fetch(
-    accountAuthenticationRequest(path, init.body, init.cookie, {
-      headers: init.token ? { Authorization: `Bearer ${init.token}` } : {}
-    })
-  )
+  oauth.send(path, init)
 
 async function workspace(slug: string) {
   const response = await fixture.client.api.workspaces.$post(
@@ -58,88 +47,20 @@ async function workspace(slug: string) {
   return (await responseJSON(response, workspaceSchema)).workspace.id
 }
 
-async function pkce() {
-  const verifier = fromUint8Array(crypto.getRandomValues(new Uint8Array(32)), true)
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))
-  return { verifier, challenge: fromUint8Array(new Uint8Array(digest), true) }
-}
-
-async function register() {
-  const response = await send('/api/auth/oauth2/register', {
-    body: {
-      client_name: 'Example app',
-      redirect_uris: [callback],
-      token_endpoint_auth_method: 'none',
-      grant_types: ['authorization_code', 'refresh_token'],
-      response_types: ['code']
-    }
-  })
-  expect(response.status).toBe(201)
-  return (await responseJSON(response, registrationSchema)).client_id
-}
+const register = () => oauth.register()
 
 /** Where the authorization endpoint sends the browser, as a path and query on this server. */
-async function authorize(clientId: string, challenge: string, cookie?: string) {
-  const query = new URLSearchParams({
-    response_type: 'code',
-    client_id: clientId,
-    redirect_uri: callback,
-    scope: 'documents:read documents:write offline_access',
-    state: 'kept',
-    code_challenge: challenge,
-    code_challenge_method: 'S256',
-    resource
-  })
-  const response = await send(`/api/auth/oauth2/authorize?${query}`, { cookie })
-  const location = response.headers.get('location')
-  if (!location) throw new Error(`Authorization did not redirect: ${response.status}`)
-  return new URL(location, config.publicURL)
-}
+const authorize = (clientId: string, challenge: string, cookie?: string) =>
+  oauth.authorize({ clientId, challenge, cookie, resource })
 
-async function decide(decision: CloudOAuthDecision) {
-  const response = await send('/api/oauth/decision', {
-    body: decision,
-    cookie: person.sessionCookie
-  })
-  expect(response.status).toBe(200)
-  return new URL((await responseJSON(response, cloudOAuthDecisionResponseSchema)).redirect)
-}
+const decide = (decision: CloudOAuthDecision) => oauth.decide(person.sessionCookie, decision)
 
-const redeem = (clientId: string, code: string, verifier: string) =>
-  fixture.app.fetch(
-    new Request(new URL('/api/auth/oauth2/token', config.publicURL), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: callback,
-        client_id: clientId,
-        code_verifier: verifier,
-        resource
-      })
-    })
-  )
-
-async function exchange(clientId: string, code: string, verifier: string) {
-  const response = await redeem(clientId, code, verifier)
-  expect(response.status).toBe(200)
-  return responseJSON(response, tokenSchema)
-}
+const exchange = (clientId: string, code: string, verifier: string) =>
+  oauth.exchange({ clientId, code, verifier, resource })
 
 /** An authorization code for a workspace, the granted one unless named, with its verifier. */
-async function approve(workspaceId = granted) {
-  const { verifier, challenge } = await pkce()
-  const page = await authorize(app, challenge, person.sessionCookie)
-  const redirect = await decide({
-    decision: 'allow',
-    query: page.search.slice(1),
-    workspaceId
-  })
-  const code = redirect.searchParams.get('code')
-  if (!code) throw new Error('No code')
-  return { code, verifier }
-}
+const approve = (workspaceId = granted) =>
+  oauth.approve({ clientId: app, cookie: person.sessionCookie, workspaceId, resource })
 
 async function connections() {
   const response = await send('/api/account/connections', { cookie: person.sessionCookie })
@@ -165,6 +86,7 @@ async function connect() {
 
 beforeAll(async () => {
   fixture = await createAccountAuthenticationFixture({ config })
+  oauth = oauthTestApp(fixture, config.publicURL)
   person = await createVerifiedCredentialAccount(fixture, {
     email: 'designer@example.com',
     name: 'Designer',
@@ -400,7 +322,7 @@ describe('connected apps', () => {
       })
     )
     expect(refreshed.status).toBe(200)
-    const token = (await responseJSON(refreshed, tokenSchema)).access_token
+    const token = (await responseJSON(refreshed, oauthTokenSchema)).access_token
     expect((await send('/api/workspaces', { token })).status).toBe(200)
 
     const connection = (await connections()).find(

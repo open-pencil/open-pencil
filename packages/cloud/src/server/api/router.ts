@@ -15,6 +15,7 @@ import { createCommunityRoutes, type CommunityService } from '#cloud/server/comm
 import type { CloudDatabase } from '#cloud/server/db'
 import type { DocumentService } from '#cloud/server/documents'
 import { createDocumentRoutes, DocumentNotFoundError } from '#cloud/server/documents'
+import { createDocumentToolRoutes, type DocumentToolService } from '#cloud/server/documents/tools'
 import {
   createDocumentVersionRoutes,
   type DocumentVersionService
@@ -40,6 +41,8 @@ export type CloudAPIServices = {
   rateLimitSecret?: string
   collaboration: CollaborationTicketService
   documents: DocumentService
+  /** Design tools apps run on documents through the editor that has one open. */
+  documentTools: DocumentToolService
   versions: DocumentVersionService
   comments: CommentService
   /** The community gallery, which anyone may read. */
@@ -142,6 +145,7 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
       )
     )
     .route('/', createDocumentVersionRoutes(services.versions))
+    .route('/', createDocumentToolRoutes(services.documentTools))
     .route('/', createCommentRoutes(services.comments))
     .route(
       '/',

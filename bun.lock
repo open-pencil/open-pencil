@@ -252,6 +252,7 @@
         "@aws-sdk/client-s3": "^3.1149.0",
         "@aws-sdk/s3-request-presigner": "^3.1149.0",
         "@better-auth/api-key": "1.7.27",
+        "@better-auth/cimd": "1.7.27",
         "@better-auth/core": "1.7.27",
         "@better-auth/oauth-provider": "1.7.27",
         "@better-auth/passkey": "1.7.27",
@@ -259,6 +260,7 @@
         "@hono/node-server": "^1.19.17",
         "@hono/standard-validator": "^0.4.1",
         "@internationalized/date": "^3.12.3",
+        "@modelcontextprotocol/server": "^2.0.0",
         "@nanostores/i18n": "^1.3.3",
         "@noble/hashes": "^2.4.0",
         "@open-pencil/fig": "workspace:*",
@@ -266,6 +268,7 @@
         "@open-pencil/scene-graph": "workspace:*",
         "@open-pencil/std": "workspace:*",
         "@openfeature/server-sdk": "^1.23.0",
+        "@valibot/to-json-schema": "^1.8.0",
         "@vue-email/components": "^0.0.21",
         "@vue-email/render": "^0.0.9",
         "@xmldom/xmldom": "^0.9.12",
@@ -299,6 +302,7 @@
       "devDependencies": {
         "@cloudflare/workers-types": "^5.20261011.1",
         "@electric-sql/pglite": "0.4.1",
+        "@modelcontextprotocol/client": "^2.0.0",
         "@open-pencil/test-support": "workspace:*",
         "@types/bun": "^1.3.14",
         "@types/nodemailer": "^8.0.1",
@@ -1073,6 +1077,16 @@
         "typescript": "npm:@typescript/typescript6@^6.0.2",
       },
     },
+    "tools/generate/mcp-catalog": {
+      "name": "@open-pencil/mcp-catalog-tools",
+      "dependencies": {
+        "@open-pencil/core": "workspace:*",
+        "@open-pencil/mcp": "workspace:*",
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "dedent": "^1.7.2",
+        "valibot": "^1.5.0",
+      },
+    },
     "tools/generate/mermaid-sources": {
       "name": "@open-pencil/mermaid-sources-tools",
       "dependencies": {
@@ -1445,6 +1459,8 @@
     "@babel/types": ["@babel/types@7.29.8", "", { "dependencies": { "@babel/helper-string-parser": "^7.29.7", "@babel/helper-validator-identifier": "^7.29.7" } }, "sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg=="],
 
     "@better-auth/api-key": ["@better-auth/api-key@1.7.27", "", { "dependencies": { "zod": "^4.5.4" }, "peerDependencies": { "@better-auth/core": "^1.7.27", "@better-auth/utils": "^0.4.2 || ^0.5.0", "better-auth": "^1.7.27", "better-call": "~1.4.5" } }, "sha512-8YNUI3c3armRmFwMmbuR9JREtfabN2VNl+NaBBmoHHSm+eiEd3OnUuIoxQtoxpjolvZWrxu4X6HOkHLbEtCFHw=="],
+
+    "@better-auth/cimd": ["@better-auth/cimd@1.7.27", "", { "peerDependencies": { "@better-auth/core": "^1.7.27", "@better-auth/oauth-provider": "^1.7.27", "better-auth": "^1.7.27", "better-call": "~1.4.5" } }, "sha512-rmz/P5njGsSbWX6N+9SjgcqxCE5FWrlqqy146NL4sqMgV/xcm0Xk/RanHWO+HoPIpTuCd3+hFk6tifqewM+1GA=="],
 
     "@better-auth/core": ["@better-auth/core@1.7.27", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "zod": "^4.5.4" }, "peerDependencies": { "@better-auth/utils": "^0.4.2 || ^0.5.0", "@better-fetch/fetch": "1.3.3", "@opentelemetry/api": "^1.9.0", "better-call": "~1.4.5", "jose": "^6.1.0", "kysely": "^0.28.5 || ^0.29.0", "nanostores": "^1.0.1" }, "optionalPeers": ["@opentelemetry/api"] }, "sha512-g66vJqg82xUM6kIsY2Sb03UnbcIuFojUoe+tuBh7eyHOCgHXWBcoI/ZLEIUPo0DVTrCwFzZ9PUPoSxm6fmJXig=="],
 
@@ -1983,6 +1999,8 @@
     "@open-pencil/lint-tools": ["@open-pencil/lint-tools@workspace:tools/checks/lint"],
 
     "@open-pencil/mcp": ["@open-pencil/mcp@workspace:packages/mcp"],
+
+    "@open-pencil/mcp-catalog-tools": ["@open-pencil/mcp-catalog-tools@workspace:tools/generate/mcp-catalog"],
 
     "@open-pencil/mermaid": ["@open-pencil/mermaid@workspace:packages/mermaid"],
 

@@ -187,7 +187,8 @@ describe('resuming collaboration peers', () => {
         principal: user('alice'),
         expiresAt: Date.now() - 1
       },
-      presenceClients: []
+      presenceClients: [],
+      toolHost: false
     }
     const resumed = connectTestClient((socket) => hub.resume(socket, state))
     await until(() => resumed.closed !== null)
@@ -220,7 +221,8 @@ describe('resuming collaboration peers', () => {
         principal: user('alice'),
         expiresAt: Date.now() + 500
       },
-      presenceClients: []
+      presenceClients: [],
+      toolHost: false
     }
     const resumed = connectTestClient((socket) => hub.resume(socket, state))
     resumed.send({

@@ -126,6 +126,9 @@ jobs:
       - name: Build the editor without Cloud
         run: bun run check:cloud-off
 
+      - name: Keep Cloud's MCP tool list current
+        run: bun run check:mcp-catalog
+
       - name: Keep workflow steps to one line of shell
         run: bun run check:workflows
 
