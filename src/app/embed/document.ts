@@ -60,7 +60,8 @@ export type OpenedEmbed = {
  */
 const guestFetch: CloudFetch = (input, init) => fetch(input, { ...init, credentials: 'omit' })
 
-const unavailableStatuses = new Set([401, 403, 404, 410])
+/** A link the server won't open: refused, gone, or, as 400, malformed, such as a secret cut short. */
+const unavailableStatuses = new Set([400, 401, 403, 404, 410])
 
 async function unlessUnavailable<T>(request: Promise<T>): Promise<T> {
   try {
