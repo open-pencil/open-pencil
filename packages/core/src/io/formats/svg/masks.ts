@@ -2,6 +2,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import { asMaskShape, isVisibleMask, maskRuns } from '@open-pencil/scene-graph/masks'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 
 import { subtreeRenderBounds } from '#core/geometry/render-bounds'
 
@@ -37,16 +38,24 @@ function luminanceAsAlpha(
 }
 
 /**
- * One mask of a run, drawn as the canvas draws it (`renderMaskNodeContent`): an outline mask with
- * its own fills opaque, its layers as they are, and its opacity and blur but not its blend mode.
+ * What a mask masks with: an outline mask its shape alone, without its blend mode, and a container
+ * without its own shadows, which the canvas leaves out of a mask.
  */
+function maskSource(mask: SceneNode): SceneNode {
+  const effects = isLayerContainer(mask)
+    ? mask.effects.filter((e) => e.type !== 'DROP_SHADOW' && e.type !== 'INNER_SHADOW')
+    : mask.effects
+  return asMaskShape({ ...mask, blendMode: 'PASS_THROUGH', effects })
+}
+
+/** One mask of a run (`maskSource`), as the alpha it masks with. */
 function renderMask(
   mask: SceneNode,
   bounds: VisualBounds | null,
   ctx: SVGExportContext,
   renderNode: RenderSVGChild
 ): SVGNode | null {
-  const rendered = renderNode(asMaskShape({ ...mask, blendMode: 'PASS_THROUGH' }), ctx)
+  const rendered = renderNode(mask, ctx)
   if (!rendered) return null
   return mask.maskType === 'LUMINANCE' ? luminanceAsAlpha(rendered, bounds, ctx) : rendered
 }
@@ -77,7 +86,7 @@ export function renderMaskedChildren(
     // Masks come first, so a repeated name counts in layer order.
     let runBounds: VisualBounds | null = null
     const maskElements: SVGNode[] = []
-    for (const mask of childNodes.slice(run.start, run.maskedStart)) {
+    for (const mask of childNodes.slice(run.start, run.maskedStart).map(maskSource)) {
       const bounds = maskBounds(mask, ctx)
       runBounds = unionVisualBounds(runBounds, bounds)
       const rendered = renderMask(mask, bounds, ctx, renderNode)
