@@ -25,10 +25,12 @@ test('a transition added in the Behaviour section eases the switch’s states in
   await addSwitchBehaviour(editor.page)
   const section = propertySection(editor.page, 'Behaviour')
   await section.getByRole('button', { name: 'Animate state changes' }).click()
-  const duration = section.getByTestId('behaviour-transition-duration')
-  await expect(duration).toHaveValue('300')
+  const duration = section.getByRole('spinbutton', { name: 'Duration' })
+  await expect(section.getByTestId('behaviour-transition-duration')).toContainText('300')
+  await duration.dblclick()
   await duration.fill('250')
   await duration.press('Enter')
+  await expect(section.getByTestId('behaviour-transition-duration')).toContainText('250')
 
   await startPreview(editor.page)
   await expect

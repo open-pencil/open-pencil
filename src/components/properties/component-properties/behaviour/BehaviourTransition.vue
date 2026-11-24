@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 
 import type { Easing } from '@open-pencil/scene-graph'
 import { isEasing } from '@open-pencil/scene-graph/variables'
@@ -9,12 +9,12 @@ import type {
 } from '@open-pencil/vue/controls/behaviour'
 import { useMessages } from '@open-pencil/vue/i18n'
 
+import NumberField from '@/components/inputs/NumberField.vue'
 import PaintField from '@/components/inputs/PaintField.vue'
 import { BindingPill, VariablePicker } from '@/components/ui/binding'
 import type { VariablePickerItem } from '@/components/ui/binding/picker'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useInlineSide } from '@/components/ui/direction/inline-side'
-import AppInput from '@/components/ui/input/AppInput.vue'
 import EasingField from '@/components/variables/easing/EasingField.vue'
 import { easingLabel } from '@/components/variables/easing/presets'
 import { easingThumbnail } from '@/components/variables/easing/thumbnail'
@@ -36,24 +36,24 @@ const variables = useMessages('variables/panel')
 const easingMessages = useMessages('variables/easing')
 const side = useInlineSide('start')
 
-/** The duration as typed, in milliseconds, committed on change as one undo step. */
-const draft = ref('')
-const milliseconds = (seconds: number) => String(Number((seconds * 1000).toFixed(2)))
-watch(
-  () => transition?.duration,
-  (seconds) => (draft.value = seconds === undefined ? '' : milliseconds(seconds)),
-  { immediate: true }
+/**
+ * The duration in milliseconds, as the field shows it: the bound variable's value, or the
+ * transition's own, following a scrub live; only the commit changes the document.
+ */
+/** Milliseconds to the hundredth, so a file's single-precision 0.15 reads 150. */
+const toMs = (seconds: number) => Number((seconds * 1000).toFixed(2))
+const durationVariableMs = computed(() => {
+  const value = transition?.durationVariable?.value
+  return typeof value === 'number' ? toMs(value) : undefined
+})
+const live = ref<number | null>(null)
+const durationMs = computed(
+  () => live.value ?? durationVariableMs.value ?? (transition ? toMs(transition.duration) : 0)
 )
-function commitDuration() {
-  // A number field's model holds a number once typed in.
-  const text = String(draft.value).trim()
-  const ms = Number(text)
-  if (text && Number.isFinite(ms) && ms >= 0) emit('set', { duration: ms / 1000 })
-  else if (transition) draft.value = milliseconds(transition.duration)
-}
-/** Enter commits the duration and leaves the field, so the editor's shortcuts work again. */
-function done(event: KeyboardEvent) {
-  if (event.target instanceof HTMLElement) event.target.blur()
+const milliseconds = (seconds: number) => String(toMs(seconds))
+function commitDuration(ms: number) {
+  live.value = null
+  emit('set', { duration: Math.max(0, ms) / 1000 })
 }
 
 function timingText(variable: BehaviourTransitionVariable): string | undefined {
@@ -130,31 +130,25 @@ const boundEasing = computed(() => {
       </IconButton>
     </div>
     <template v-if="transition && durationPicker && easingPicker">
-      <PaintField v-if="transition.durationVariable" tone="form">
-        <template #preview><icon-lucide-clock class="size-3.5 text-muted" /></template>
-        <template #value>
-          <BindingPill class="min-w-0 flex-1" :label="transition.durationVariable.name" />
-        </template>
-        <template #binding><VariablePicker v-bind="durationPicker" /></template>
-      </PaintField>
-      <AppInput
-        v-else
-        v-model="draft"
-        type="number"
-        size="sm"
+      <!-- A bound duration reads like any bound number: its value, the variable named by the
+           variable button's tooltip; editing it lets go of the variable. -->
+      <NumberField
+        :model-value="durationMs"
         :min="0"
+        :step="10"
+        suffix="ms"
+        :inherit-binding="false"
+        :bound="Boolean(transition.durationVariable)"
         :aria-label="behaviourMessages.transitionDuration"
         data-test-id="behaviour-transition-duration"
-        @change="commitDuration"
-        @enter="done"
+        @update:model-value="live = $event"
+        @commit="commitDuration"
+        @cancel="live = null"
       >
-        <template #leading><icon-lucide-clock class="size-3.5 text-muted" /></template>
-        <template #trailing>
-          <span class="text-3xs text-muted">ms</span>
-          <VariablePicker v-bind="durationPicker" />
-        </template>
-      </AppInput>
-      <PaintField v-if="transition.easingVariable" tone="form">
+        <template #icon><icon-lucide-clock class="size-3.5" /></template>
+        <template #suffix><VariablePicker v-bind="durationPicker" /></template>
+      </NumberField>
+      <PaintField v-if="transition.easingVariable">
         <template #preview>
           <component
             :is="easingThumbnail(boundEasing ?? transition.easing)"
@@ -169,6 +163,7 @@ const boundEasing = computed(() => {
       <EasingField
         v-else
         :easing="transition.easing"
+        tone="panel"
         :label="behaviourMessages.transitionEasing"
         @update="emit('set', { easing: $event })"
       >
