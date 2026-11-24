@@ -6,6 +6,7 @@ import {
   createVerifiedCredentialAccount,
   withCookie
 } from '#cloud-tests/helpers/account-authentication'
+import { contractClient } from '#cloud-tests/helpers/contract'
 import { oauthTestApp } from '#cloud-tests/helpers/oauth'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
@@ -21,7 +22,6 @@ import * as v from 'valibot'
 const config = parseCloudServerConfig({ ...accountAuthenticationConfig, oauthEnabled: true })
 const resource = cloudMCPResource(config.publicURL)
 
-const workspaceSchema = v.object({ workspace: v.object({ id: v.string() }) })
 const documentSchema = v.object({ document: v.object({ id: v.string(), url: v.string() }) })
 const textSchema = v.object({
   content: v.tuple([v.object({ type: v.literal('text'), text: v.string() })])
@@ -40,11 +40,8 @@ const calls: ToolCall[] = []
 let answer: AgentToolOutcome = { ok: true, result: null }
 
 async function workspace(slug: string) {
-  const response = await fixture.client.api.workspaces.$post(
-    { json: { name: slug, slug } },
-    withCookie(person.sessionCookie)
-  )
-  return (await responseJSON(response, workspaceSchema)).workspace.id
+  const api = contractClient(fixture.app, withCookie(person.sessionCookie).headers)
+  return (await api.workspaces.create({ body: { name: slug, slug } })).workspace.id
 }
 
 async function personalToken(access: 'read' | 'write') {

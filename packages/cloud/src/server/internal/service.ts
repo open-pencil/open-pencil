@@ -1,10 +1,9 @@
+import { setAccountEntitlementsSchema } from '#cloud/contract'
 import { accountSeats } from '#cloud/server/billing/seats'
 import type { CloudDatabase } from '#cloud/server/db'
 import { createAccountEntitlementRepository } from '#cloud/server/policy'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
-
-import { setAccountEntitlementsSchema } from './schema'
 
 export type SetAccountEntitlementsInput = v.InferInput<typeof setAccountEntitlementsSchema>
 

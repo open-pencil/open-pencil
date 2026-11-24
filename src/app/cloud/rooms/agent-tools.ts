@@ -5,9 +5,11 @@ import {
   type AgentToolCall,
   type AgentToolMessage
 } from '@open-pencil/cloud/contract'
+import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { errorMessage } from '@open-pencil/std/errors'
 import { isRecord } from '@open-pencil/std/records'
 
+import { isToolError } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { resolveAutomationTarget } from '@/app/automation/bridge/target'
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
@@ -32,8 +34,14 @@ let handleTool: ReturnType<typeof createAutomationToolHandler> | null = null
  */
 export const runAgentTool: RunAgentTool = async (store, call, signal) => {
   handleTool ??= createAutomationToolHandler(makeFigmaFromStore)
-  const { page_id: pageId, ...args } = call.args
+  const { page_id: pageId, ...rest } = call.args
   const target = resolveAutomationTarget(store, { page_id: pageId })
+  // A tool that takes a page itself, such as analyze_overlaps, works on the one the call named.
+  const tool = ALL_TOOLS.find((each) => each.name === call.name)
+  const args =
+    pageId !== undefined && tool && 'page_id' in tool.input.entries
+      ? { ...rest, page_id: pageId }
+      : rest
   const response = await handleTool(
     target,
     {
@@ -43,7 +51,10 @@ export const runAgentTool: RunAgentTool = async (store, call, signal) => {
     },
     signal
   )
-  return isRecord(response) ? response.result : response
+  const result = isRecord(response) ? response.result : response
+  // A tool may answer with its error rather than throw it.
+  if (isToolError(result)) throw new Error(errorMessage(result.error))
+  return result
 }
 
 /**

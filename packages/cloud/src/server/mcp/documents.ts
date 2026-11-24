@@ -1,9 +1,9 @@
-import { documentKindSchema, documentSummarySchema, type CloudTokenScope } from '#cloud/contract'
+import { documentKindSchema, type CloudTokenScope, type DocumentSummary } from '#cloud/contract'
 import { scopesAllow } from '#cloud/server/tokens'
 import type { CallToolResult, McpServer } from '@modelcontextprotocol/server'
 import * as v from 'valibot'
 
-import { apiFailure, documentLink, type MCPCaller } from './context'
+import { answering, documentLink, type MCPCaller } from './context'
 import { errorResult, jsonResult } from './results'
 import { toolInput } from './schema'
 
@@ -14,9 +14,6 @@ const workspaceIdSchema = v.optional(
     'The workspace, as list_workspaces names it. An app connected to one workspace works there when this is left out.'
   )
 )
-
-const documentsResponseSchema = v.object({ documents: v.array(documentSummarySchema) })
-const documentResponseSchema = v.object({ document: documentSummarySchema })
 
 type DocumentTool = {
   name: string
@@ -37,7 +34,7 @@ function workspaceOf(caller: MCPCaller, named: unknown): string | null {
 const NO_WORKSPACE = errorResult('Name the workspace: list_workspaces lists them.')
 
 /** What a document is, with where its person opens it. */
-function withLink(caller: MCPCaller, document: v.InferOutput<typeof documentSummarySchema>) {
+function withLink(caller: MCPCaller, document: DocumentSummary) {
   return { ...document, url: documentLink(caller, document.id) }
 }
 
@@ -47,10 +44,7 @@ const DOCUMENT_TOOLS: DocumentTool[] = [
     description: 'List the OpenPencil Cloud workspaces this connection reaches.',
     scope: 'documents:read',
     input: v.object({}),
-    async run(caller) {
-      const { status, body } = await caller.api('GET', '/api/workspaces')
-      return status === 200 ? jsonResult(body) : apiFailure(status, body)
-    }
+    run: async (caller) => jsonResult(await caller.api.workspaces.list())
   },
   {
     name: 'list_documents',
@@ -64,12 +58,10 @@ const DOCUMENT_TOOLS: DocumentTool[] = [
     async run(caller, args) {
       const workspace = workspaceOf(caller, args.workspace_id)
       if (!workspace) return NO_WORKSPACE
-      const { status, body } = await caller.api('GET', `/api/workspaces/${workspace}/documents`)
-      const listed = v.safeParse(documentsResponseSchema, body)
-      if (status !== 200 || !listed.success) return apiFailure(status, body)
+      const { documents } = await caller.api.documents.list({ params: { workspaceId: workspace } })
       const query = typeof args.query === 'string' ? args.query.toLocaleLowerCase() : ''
       return jsonResult({
-        documents: listed.output.documents
+        documents: documents
           .filter((document) => document.name.toLocaleLowerCase().includes(query))
           .map((document) => withLink(caller, document))
       })
@@ -90,13 +82,14 @@ const DOCUMENT_TOOLS: DocumentTool[] = [
     async run(caller, args) {
       const workspace = workspaceOf(caller, args.workspace_id)
       if (!workspace) return NO_WORKSPACE
-      const { status, body } = await caller.api('POST', `/api/workspaces/${workspace}/documents`, {
-        name: args.name,
-        ...(args.kind ? { kind: args.kind } : {})
+      const { document } = await caller.api.documents.create({
+        params: { workspaceId: workspace },
+        body: {
+          name: v.parse(v.string(), args.name),
+          kind: v.parse(v.optional(documentKindSchema), args.kind)
+        }
       })
-      const created = v.safeParse(documentResponseSchema, body)
-      if (status !== 201 || !created.success) return apiFailure(status, body)
-      return jsonResult({ document: withLink(caller, created.output.document) })
+      return jsonResult({ document: withLink(caller, document) })
     }
   },
   {
@@ -105,13 +98,9 @@ const DOCUMENT_TOOLS: DocumentTool[] = [
     scope: 'documents:write',
     input: v.object({ document_id: documentIdSchema }),
     async run(caller, args) {
-      const { status, body } = await caller.api(
-        'DELETE',
-        `/api/documents/${idOf(args.document_id)}`
-      )
-      return status === 204
-        ? jsonResult({ trashed: idOf(args.document_id) })
-        : apiFailure(status, body)
+      const id = idOf(args.document_id)
+      await caller.api.documents.remove({ params: { documentId: id } })
+      return jsonResult({ trashed: id })
     }
   },
   {
@@ -120,13 +109,9 @@ const DOCUMENT_TOOLS: DocumentTool[] = [
     scope: 'documents:write',
     input: v.object({ document_id: documentIdSchema }),
     async run(caller, args) {
-      const { status, body } = await caller.api(
-        'POST',
-        `/api/trash/${idOf(args.document_id)}/restore`
-      )
-      return status === 204
-        ? jsonResult({ restored: idOf(args.document_id) })
-        : apiFailure(status, body)
+      const id = idOf(args.document_id)
+      await caller.api.documents.restore({ params: { documentId: id } })
+      return jsonResult({ restored: id })
     }
   },
   {
@@ -134,18 +119,18 @@ const DOCUMENT_TOOLS: DocumentTool[] = [
     description: "List a document's version history: named versions and checkpoints.",
     scope: 'documents:read',
     input: v.object({ document_id: documentIdSchema }),
-    async run(caller, args) {
-      const { status, body } = await caller.api(
-        'GET',
-        `/api/documents/${idOf(args.document_id)}/versions`
+    run: async (caller, args) =>
+      jsonResult(
+        await caller.api.versions.list({
+          params: { documentId: idOf(args.document_id) },
+          query: {}
+        })
       )
-      return status === 200 ? jsonResult(body) : apiFailure(status, body)
-    }
   },
   {
     name: 'save_version',
     description:
-      'Save the document as it is now to its version history under a name, as Save to version history does, so it can be restored later.',
+      'Name the document as last saved to Cloud in its version history, so it can be restored later. Edits an open editor has not uploaded yet are not in it.',
     scope: 'documents:write',
     // The document API trims and checks the name and description as Save to version history does.
     input: v.object({
@@ -153,15 +138,16 @@ const DOCUMENT_TOOLS: DocumentTool[] = [
       name: v.pipe(v.string(), v.minLength(1), v.description('The version name.')),
       description: v.optional(v.pipe(v.string(), v.description('What changed in this version.')))
     }),
-    async run(caller, args) {
-      const { document_id: document, ...version } = args
-      const { status, body } = await caller.api(
-        'POST',
-        `/api/documents/${idOf(document)}/versions`,
-        version
+    run: async (caller, args) =>
+      jsonResult(
+        await caller.api.versions.save({
+          params: { documentId: idOf(args.document_id) },
+          body: {
+            name: v.parse(v.string(), args.name),
+            description: v.parse(v.optional(v.string()), args.description)
+          }
+        })
       )
-      return status === 201 || status === 200 ? jsonResult(body) : apiFailure(status, body)
-    }
   }
 ]
 
@@ -179,7 +165,7 @@ export function registerDocumentTools(server: McpServer, caller: MCPCaller) {
           openWorldHint: false
         }
       },
-      (args) => tool.run(caller, args)
+      (args) => answering(() => tool.run(caller, args))
     )
   }
 }

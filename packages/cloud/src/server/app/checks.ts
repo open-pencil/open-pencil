@@ -1,3 +1,4 @@
+import { declaredContractTokenRoute } from '#cloud/server/api/tokens'
 import { createCloudIdentityResolver, createCloudSessionResolver } from '#cloud/server/auth'
 import { resourceChallenge } from '#cloud/server/oauth'
 import {
@@ -79,7 +80,7 @@ export function createRequestChecks(
         context.set('actor', session)
         return next()
       }
-      const route = declaredTokenRoute(context)
+      const route = declaredTokenRoute(context) ?? declaredContractTokenRoute(context)
       const actor = route ? await resolveToken(context.req.raw.headers) : null
       if (!actor) return unauthorized(context)
       const refusal = refuseTokenRoute(actor, route)

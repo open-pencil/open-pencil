@@ -133,6 +133,7 @@ export function createCloudApp(services: CloudServices) {
     .route('/api', routers.publicCloudAPI)
     .route('/api/internal', routers.internalAPI)
     .use('/api/documents/:documentId', checks.allowLeavingRead)
+    .use('/api/documents/:documentId/summary', checks.allowLeavingRead)
     .use('/api/*', checks.requireActiveActor)
     .route(ADMIN_API_PATH, routers.admin)
     .use('/api/*', limiters.authenticatedMutationLimiter)

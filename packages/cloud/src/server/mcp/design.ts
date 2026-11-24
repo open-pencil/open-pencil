@@ -1,11 +1,10 @@
-import { cloudDocumentToolResultSchema } from '#cloud/contract'
 import { scopesAllow } from '#cloud/server/tokens'
 import type { McpServer } from '@modelcontextprotocol/server'
 import * as v from 'valibot'
 
 import { DESIGN_TOOLS, type DesignTool } from './catalog'
-import { apiFailure, documentLink, type MCPCaller } from './context'
-import { apiError, designToolResult, errorResult } from './results'
+import { answering, documentLink, type MCPCaller } from './context'
+import { designToolResult, errorResult } from './results'
 import { jsonToolInput } from './schema'
 
 /** What every design tool takes besides its own input: the document, and a page in it. */
@@ -46,32 +45,29 @@ export function registerDesignTools(server: McpServer, caller: MCPCaller) {
       {
         description: tool.description,
         inputSchema: jsonToolInput(tool.name, targetedSchema(tool)),
-        annotations: { readOnlyHint: !tool.mutates, openWorldHint: false }
+        annotations: { readOnlyHint: tool.readOnly, openWorldHint: false }
       },
       async (args) => {
         const { document_id: documentId, ...toolArgs } = args
         if (typeof documentId !== 'string') return errorResult('Name the document_id to work on.')
-        const { status, body } = await caller.api(
-          'POST',
-          `/api/documents/${documentId}/tools/${tool.mutates ? 'write' : 'read'}`,
-          { name: tool.name, args: toolArgs }
-        )
-        const answered = v.safeParse(cloudDocumentToolResultSchema, body)
-        if (status === 200 && answered.success) return designToolResult(answered.output.result)
-        const error = apiError(body)
-        if (error?.code === 'editor_not_open') {
-          return errorResult(
-            `Design tools run in OpenPencil, in an editor where you have the document open, and none has it open now. Ask the person to open ${documentLink(caller, documentId)} and keep it open, then call again.`
-          )
-        }
-        if (error?.code === 'tool_failed')
-          return errorResult(error.message ?? `${tool.name} failed.`)
-        if (error?.code === 'timeout') {
+        return answering(async () => {
+          const outcome = await caller.api.documentTools[tool.mutates ? 'write' : 'read']({
+            params: { documentId },
+            body: { name: tool.name, args: toolArgs }
+          })
+          if (outcome.ok) return designToolResult(outcome.result)
+          if (outcome.failure === 'editor_not_open') {
+            return errorResult(
+              `Design tools run in OpenPencil, in an editor where you have the document open, and none has it open now. Ask the person to open ${documentLink(caller, documentId)} and keep it open, then call again.`
+            )
+          }
+          if (outcome.failure === 'tool_failed') {
+            return errorResult(outcome.message ?? `${tool.name} failed.`)
+          }
           return errorResult(
             `The editor did not answer ${tool.name} in time. Try a smaller change, or check that OpenPencil is still open.`
           )
-        }
-        return apiFailure(status, body)
+        })
       }
     )
   }

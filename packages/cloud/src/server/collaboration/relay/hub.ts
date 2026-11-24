@@ -524,6 +524,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         .filter(
           (peer) =>
             peer.toolHost &&
+            // A refreshed ticket may have lowered the permission it offered with.
+            mayHostTools(peer) &&
             peer.authorization.principal.kind === 'user' &&
             peer.authorization.principal.userId === userId &&
             current(peer)

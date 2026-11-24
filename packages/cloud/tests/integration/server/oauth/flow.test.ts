@@ -6,6 +6,7 @@ import {
   createVerifiedCredentialAccount,
   withCookie
 } from '#cloud-tests/helpers/account-authentication'
+import { contractClient } from '#cloud-tests/helpers/contract'
 import { OAUTH_CALLBACK, oauthTestApp, oauthTokenSchema, pkce } from '#cloud-tests/helpers/oauth'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
@@ -25,7 +26,6 @@ const config = parseCloudServerConfig({ ...accountAuthenticationConfig, oauthEna
 const resource = cloudAPIResource(config.publicURL)
 const callback = OAUTH_CALLBACK
 
-const workspaceSchema = v.object({ workspace: v.object({ id: v.string() }) })
 const workspacesSchema = v.object({ workspaces: v.array(v.object({ id: v.string() })) })
 
 let fixture: Awaited<ReturnType<typeof createAccountAuthenticationFixture>>
@@ -40,11 +40,8 @@ const send = (path: string, init: { body?: object; cookie?: string; token?: stri
   oauth.send(path, init)
 
 async function workspace(slug: string) {
-  const response = await fixture.client.api.workspaces.$post(
-    { json: { name: slug, slug } },
-    withCookie(person.sessionCookie)
-  )
-  return (await responseJSON(response, workspaceSchema)).workspace.id
+  const api = contractClient(fixture.app, withCookie(person.sessionCookie).headers)
+  return (await api.workspaces.create({ body: { name: slug, slug } })).workspace.id
 }
 
 const register = () => oauth.register()
@@ -202,6 +199,19 @@ describe('connecting an app', () => {
     const listed = await responseJSON(await send('/api/workspaces', { token }), workspacesSchema)
     expect(listed.workspaces.map((each) => each.id)).toEqual([granted])
     expect((await send(`/api/workspaces/${granted}/documents`, { token })).status).toBe(200)
+    // The grant holds whatever case the ID is spelled in, and an ID that is not one names nothing.
+    expect(
+      (await send(`/api/workspaces/${granted.toUpperCase()}/documents`, { token })).status
+    ).toBe(200)
+    expect((await send('/api/workspaces/not-a-uuid/documents', { token })).status).toBe(404)
+    // HEAD takes the token GET does.
+    const head = await fixture.app.fetch(
+      new Request(`http://localhost:8787/api/workspaces/${granted}/documents`, {
+        method: 'HEAD',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    )
+    expect(head.status).toBe(200)
     expect((await send(`/api/workspaces/${other}/documents`, { token })).status).toBe(404)
     expect((await send('/api/session', { token })).status).toBe(200)
     // Apps work on documents: they never make workspaces, share, or manage people.

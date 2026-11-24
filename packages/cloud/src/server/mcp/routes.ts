@@ -16,7 +16,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import * as v from 'valibot'
 
-import { createMCPAPIRequest } from './api'
+import { createMCPAPI, MCPAPIError, type MCPAPI } from './api'
 import type { MCPCaller } from './context'
 import { registerDesignTools } from './design'
 import { registerDocumentTools } from './documents'
@@ -28,14 +28,18 @@ const INSTRUCTIONS = [
   'Edits made through these tools are the person’s own, so they appear for everyone in the document and can be undone there.'
 ].join('\n')
 
-/** Who the token stands for, as the document API answers `/api/session` for it. */
-const sessionSchema = v.object({
-  user: v.object({
-    credential: v.picklist(['token', 'app']),
-    scopes: v.array(cloudTokenScopeSchema),
-    grant: v.optional(v.object({ clientId: v.string(), workspaceId: v.string() }))
-  })
-})
+/** Whom a token stands for and what it may do, or null for one the API refuses. */
+async function tokenUser(api: MCPAPI) {
+  try {
+    const { user } = await api.session.session()
+    const { credential, scopes, grant } = user
+    if ((credential !== 'token' && credential !== 'app') || !scopes) return null
+    return { scopes, grant }
+  } catch (error) {
+    if (error instanceof MCPAPIError && (error.status === 401 || error.status === 403)) return null
+    throw error
+  }
+}
 
 const BEARER = /^Bearer\s+(\S+)$/i
 
@@ -69,7 +73,7 @@ export function createMCPRoutes(dependencies: MCPRouteDependencies) {
       if (!authInfo) return server
       const workspaceId = v.safeParse(v.string(), authInfo.extra?.workspaceId)
       const caller: MCPCaller = {
-        api: createMCPAPIRequest(dependencies.fetchAPI, publicURL, `Bearer ${authInfo.token}`),
+        api: createMCPAPI(dependencies.fetchAPI, publicURL, `Bearer ${authInfo.token}`),
         publicURL,
         scopes: v.parse(v.array(cloudTokenScopeSchema), authInfo.scopes),
         ...(workspaceId.success ? { workspaceId: workspaceId.output } : {})
@@ -95,14 +99,9 @@ export function createMCPRoutes(dependencies: MCPRouteDependencies) {
       const authorization = context.req.header('authorization')
       const token = authorization?.match(BEARER)?.[1]
       if (!authorization || !token) return unauthorized()
-      const { status, body } = await createMCPAPIRequest(
-        dependencies.fetchAPI,
-        publicURL,
-        authorization
-      )('GET', '/api/session')
-      const session = v.safeParse(sessionSchema, body)
-      if (status !== 200 || !session.success) return unauthorized()
-      const { grant, scopes } = session.output.user
+      const user = await tokenUser(createMCPAPI(dependencies.fetchAPI, publicURL, authorization))
+      if (!user) return unauthorized()
+      const { grant, scopes } = user
       const authInfo: AuthInfo = {
         token,
         clientId: grant?.clientId ?? 'personal-access-token',

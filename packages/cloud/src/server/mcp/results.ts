@@ -29,13 +29,3 @@ export function designToolResult(result: unknown): CallToolResult {
   }
   return jsonResult(result)
 }
-
-const errorBodySchema = v.object({
-  error: v.object({ code: v.string(), message: v.optional(v.string()) })
-})
-
-/** The error code and message the document API answered with, if it named one. */
-export function apiError(body: unknown): { code: string; message?: string } | null {
-  const parsed = v.safeParse(errorBodySchema, body)
-  return parsed.success ? parsed.output.error : null
-}

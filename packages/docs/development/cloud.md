@@ -25,11 +25,11 @@ flowchart LR
 
 | Subpath                           | Contents                                                                   |
 | --------------------------------- | -------------------------------------------------------------------------- |
-| `@open-pencil/cloud/contract`     | Valibot schemas and types shared by every side of the network              |
-| `@open-pencil/cloud/client`       | Discovery, authentication, device authorization, and the typed Hono client |
+| `@open-pencil/cloud/contract`     | Valibot schemas and the API's oRPC contract, shared by every side          |
+| `@open-pencil/cloud/client`       | Discovery, authentication, device authorization, and the contract's client |
 | `@open-pencil/cloud/email`        | Vue Email rendering for transactional mail                                 |
 | `@open-pencil/cloud/errors`       | The PostHog error reporter, for services beside Cloud; only `posthog-node` |
-| `@open-pencil/cloud/server`       | Hono routes and services; every dependency is injected                     |
+| `@open-pencil/cloud/server`       | The contract's procedures, Hono routes, and services; all injected         |
 | `@open-pencil/cloud/runtime/node` | PostgreSQL, S3, SMTP, the HTTP listener, workers, and operator commands    |
 
 The Cloudflare runtime, `src/runtime/cloudflare`, isn't a subpath: Wrangler bundles it from

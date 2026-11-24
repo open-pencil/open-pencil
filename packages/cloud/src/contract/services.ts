@@ -1,8 +1,4 @@
-import type { Hono } from 'hono'
-import type { BlankEnv, BlankInput } from 'hono/types'
 import * as v from 'valibot'
-
-import type { JSONRoute } from './routes'
 
 /**
  * The contract between editors, Cloud, and the services Cloud advertises: AI models today, and
@@ -239,28 +235,6 @@ export const SERVICE_ERROR_STATUS = {
   capability_unavailable: 404,
   rate_limited: 429
 } as const satisfies Record<ServiceErrorCode, number>
-
-/**
- * Every route a service answers besides chat completions, which OpenAI-compatible clients call
- * themselves. Editors build a typed client from it with Hono's `hc`; a service's own app must
- * match it, so the two cannot drift apart.
- */
-export type CloudServicesSchema = JSONRoute<
-  'get',
-  typeof CLOUD_SERVICES_API_PATHS.catalog,
-  BlankInput,
-  ServiceCatalog
-> &
-  JSONRoute<'get', typeof CLOUD_SERVICES_API_PATHS.wallet, BlankInput, CreditWallet> &
-  JSONRoute<'get', typeof CLOUD_SERVICES_API_PATHS.usage, { query: UsageQuery }, UsagePage> &
-  JSONRoute<
-    'post',
-    typeof CLOUD_SERVICES_API_PATHS.search,
-    { json: SearchRequestInput },
-    SearchResponse
-  >
-
-export type CloudServicesAPI = Hono<BlankEnv, CloudServicesSchema>
 
 /**
  * Whether a bearer token may travel to `url`: over HTTPS, or in the clear only to a loopback
