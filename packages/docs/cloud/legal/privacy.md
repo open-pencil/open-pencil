@@ -22,6 +22,9 @@ The Service's database, file storage, and live collaboration run in the European
 | Workspaces, members, sharing links, invitations, and the email addresses you invite | To share documents | Until removed, or the workspace is deleted |
 | Sign-in history: time, method, IP address, and browser | To show you your sessions and warn you of new sign-ins | Until you delete your account |
 | Which version of the terms you accepted, and when | To show you agreed | Until you delete your account |
+| Apps you connect: which app, the workspace and access you gave it, and when | To let the app work with your documents and show you what you connected | Until you disconnect it or delete your account |
+| Connected apps' tokens, as digests we can't turn back into tokens | To recognize the app, and refuse it once disconnected | Until you delete your account |
+| Apps' registrations: the name and addresses an app gives for itself | To show you who asks and send you back to it | As long as we run the Service |
 | Reports about shared documents, and what administrators did about them | To handle abuse | 1 year after the report is closed |
 | Rate-limit counters, by IP address or account | To protect the Service | Up to a day |
 | Usage of services credits | To apply your monthly allowance | 12 months |
@@ -29,6 +32,10 @@ The Service's database, file storage, and live collaboration run in the European
 | Payment records: what you bought, when, and for how much | To meet tax and accounting law | 5 years from the filing of the tax return they belong to, as Mexican tax law requires, or longer while a tax audit or claim needs them |
 
 We don't sell your data, show ads, or use your documents to train models.
+
+## Connected apps
+
+You can connect apps, such as an AI assistant, to one of your workspaces. The app then reads, and if you allow it changes, that workspace's documents, and whoever runs the app receives what it reads, under their own terms and privacy policy. We share nothing with an app you haven't connected. Disconnecting an app in your account settings stops it at once; what it already received stays with whoever runs it.
 
 ## Deleting
 
