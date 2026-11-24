@@ -1,3 +1,5 @@
+import { escapeAttribute } from 'entities'
+
 /** The frame's script: its own file in a build, its text in development (`?script-file`). */
 export type SandboxFrameScript = { src: string } | { text: string }
 
@@ -22,9 +24,6 @@ function contentSecurityPolicy(scriptSource: string): string {
     "form-action 'none'"
   ].join('; ')
 }
-
-const escapeAttribute = (value: string) =>
-  value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;')
 
 /**
  * The sandbox frame's document: the bundled frame script (`frame.ts?script-file`) under a strict
