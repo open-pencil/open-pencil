@@ -25,6 +25,7 @@
     "#cloud/admin": "./src/admin/index.ts",
     "#cloud/services": "./src/services/index.ts",
     "#cloud/client": "./src/client/index.ts",
+    "#cloud/client/contract": "./src/client/contract/index.ts",
     "#cloud/contract": "./src/contract/index.ts",
     "#cloud/email": "./src/email/index.ts",
     "#cloud/errors": "./src/errors/index.ts",

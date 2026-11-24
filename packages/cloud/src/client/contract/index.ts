@@ -10,7 +10,7 @@ import type { RouterContract, RouterContractClient } from '@orpc/contract'
 import type { JsonifiedClient } from '@orpc/openapi'
 import * as v from 'valibot'
 
-import { CloudAPIError } from './response'
+import { CloudAPIError } from '../response'
 
 /** The whole contract the Cloud API answers: the signed-in routes, and those anyone may call. */
 const contract = { ...cloudAPIContract, ...publicCloudAPIContract }
@@ -56,7 +56,7 @@ export function createContractClient<T extends RouterContract>(
   let link: Promise<ClientLink<ClientContext>> | undefined
   return createORPCClient(
     new DynamicLink(() => {
-      link ??= import('./contract-link').then(({ createContractLink }) =>
+      link ??= import('./link').then(({ createContractLink }) =>
         createContractLink(routes, baseURL, options)
       )
       return link

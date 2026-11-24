@@ -4,7 +4,7 @@ import { OpenAPILink } from '@orpc/openapi/fetch'
 
 import { anySignal } from '@open-pencil/std/timing'
 
-import type { ServiceContractClientOptions } from './contract'
+import type { ServiceContractClientOptions } from '.'
 
 /**
  * The link a contract's client sends requests through: the routes' paths at `baseURL`, answers
