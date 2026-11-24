@@ -40,7 +40,7 @@ Choose **File → Place**, or drag the file onto the canvas. You can place image
 - **Save** with <Keys mac="⌘ S" other="Ctrl S" /> updates the file you opened. Browsers that can't write to your files, such as Firefox and Safari, download it instead.
 - **Save as** with <Keys mac="⇧ ⌘ S" other="Ctrl Shift S" /> lets you choose a new name or place.
 
-Saved files open in Figma.
+Files in other formats, such as `.pen`, are saved as a new `.fig` file, and the original stays as it was. Saved files open in Figma.
 
 ## Make a File Smaller
 
