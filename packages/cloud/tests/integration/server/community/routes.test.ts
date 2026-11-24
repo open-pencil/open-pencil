@@ -1,12 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { contractClient } from '#cloud-tests/helpers/contract'
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import { saveDocument, THUMBNAIL_PNG } from '#cloud-tests/helpers/save'
 import { fetchCommunityExample, fetchCommunityTour } from '#cloud/client'
-import { communityDocumentsSchema, communityDownloadSchema } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
   createCloudApp,
@@ -91,12 +89,13 @@ async function gallery() {
     nameVersion,
     objects,
     visitor: testClient(community),
+    visitorAPI: contractClient(community),
     /** A request to the gallery's server as a page sends it, headers and all. */
     request: (path: string, init?: RequestInit) => community.request(path, init),
     /** The gallery's server, naming `tour` as the tour editors open. */
     withTour: (tour: string) =>
       app({ ...config, community: { workspaceId: communityId, tourDocumentId: tour } }, false),
-    withoutGallery: testClient(app(config, false))
+    withoutGalleryAPI: contractClient(app(config, false))
   }
 }
 
@@ -140,10 +139,7 @@ describe('community gallery', () => {
       .where('id', '=', spam)
       .execute()
 
-    const listed = await responseJSON(
-      await server.visitor.api.community.$get(),
-      communityDocumentsSchema
-    )
+    const listed = (await server.visitorAPI.community.list()).body
 
     expect(listed.documents).toEqual([
       {
@@ -166,14 +162,11 @@ describe('community gallery', () => {
       }
     ])
     expect(
-      (
-        await server.visitor.api.community[':documentId'].document.$get({
-          param: { documentId: spam },
-          query: {}
-        })
-      ).status
-    ).toBe(404)
-    expect((await server.withoutGallery.api.community.$get()).status).toBe(404)
+      await outcome(
+        server.visitorAPI.community.document({ params: { documentId: spam }, query: {} })
+      )
+    ).toMatchObject({ status: 404 })
+    expect(await outcome(server.withoutGalleryAPI.community.list())).toMatchObject({ status: 404 })
   })
 
   test('opens a document as it is now or as a named version, and nothing outside it', async () => {
@@ -185,23 +178,17 @@ describe('community gallery', () => {
     const secret = await server.document(server.workspace.studio, 'Secret')
     await server.save(secret, null, 'secret')
 
-    const latest = await responseJSON(
-      await server.visitor.api.community[':documentId'].document.$get({
-        param: { documentId: tour },
-        query: {}
-      }),
-      communityDownloadSchema
-    )
+    const latest = await server.visitorAPI.community.document({
+      params: { documentId: tour },
+      query: {}
+    })
     expect(latest.document.revisionId).toBe(current)
     expect(latest.version).toBeNull()
 
-    const named = await responseJSON(
-      await server.visitor.api.community[':documentId'].document.$get({
-        param: { documentId: tour },
-        query: { version: release }
-      }),
-      communityDownloadSchema
-    )
+    const named = await server.visitorAPI.community.document({
+      params: { documentId: tour },
+      query: { version: release }
+    })
     expect(named.document.revisionId).toBe(first)
     expect(named.version).toMatchObject({ id: release, name: '0.17.0', description: null })
 
@@ -212,29 +199,26 @@ describe('community gallery', () => {
       body: { name: null }
     })
     expect(
-      (
-        await server.visitor.api.community[':documentId'].document.$get({
-          param: { documentId: tour },
+      await outcome(
+        server.visitorAPI.community.document({
+          params: { documentId: tour },
           query: { version: unnamed }
         })
-      ).status
-    ).toBe(404)
+      )
+    ).toMatchObject({ status: 404 })
     expect(
-      (
-        await server.visitor.api.community[':documentId'].document.$get({
-          param: { documentId: secret },
-          query: {}
-        })
-      ).status
-    ).toBe(404)
+      await outcome(
+        server.visitorAPI.community.document({ params: { documentId: secret }, query: {} })
+      )
+    ).toMatchObject({ status: 404 })
     expect(
-      (
-        await server.visitor.api.community[':documentId'].images.$post({
-          param: { documentId: secret },
-          json: { checksums: [`${'A'.repeat(43)}=`] }
+      await outcome(
+        server.visitorAPI.community.imageLinks({
+          params: { documentId: secret },
+          body: { checksums: [`${'A'.repeat(43)}=`] }
         })
-      ).status
-    ).toBe(404)
+      )
+    ).toMatchObject({ status: 404 })
   })
 
   test('serves a gallery document’s stored parts to any page, and nothing else in storage', async () => {
@@ -247,13 +231,10 @@ describe('community gallery', () => {
     await server.save(secret, null, 'secret')
     const checksumOf = async (documentId: string) =>
       (await server.ownerAPI.documents.download({ params: { documentId } })).document.checksum
-    const named = await responseJSON(
-      await server.visitor.api.community[':documentId'].document.$get({
-        param: { documentId: tour },
-        query: { version: release }
-      }),
-      communityDownloadSchema
-    )
+    const named = await server.visitorAPI.community.document({
+      params: { documentId: tour },
+      query: { version: release }
+    })
     const current = await checksumOf(tour)
     const object = (documentId: string, checksum: string, version?: string) =>
       server.request(

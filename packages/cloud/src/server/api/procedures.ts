@@ -2,6 +2,7 @@ import {
   createCommentProcedures,
   createSharedCommentProcedures
 } from '#cloud/server/comments/procedures'
+import { createCommunityProcedures } from '#cloud/server/community/procedures'
 import { createDocumentProcedures } from '#cloud/server/documents/procedures'
 import { createDocumentVersionProcedures } from '#cloud/server/documents/versions/procedures'
 import {
@@ -35,6 +36,7 @@ export function createCloudAPIProcedures(services: CloudAPIServices) {
 export function createPublicCloudAPIProcedures(services: CloudAPIServices) {
   return {
     sharedComments: createSharedCommentProcedures(services.comments, services.resolveSession),
-    publicSharing: createPublicSharingProcedures(services)
+    publicSharing: createPublicSharingProcedures(services),
+    community: createCommunityProcedures(services.community)
   }
 }

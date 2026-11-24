@@ -4,7 +4,7 @@ import { createBillingRateLimits, type BillingTokenService } from '#cloud/server
 import type { CollaborationTicketService } from '#cloud/server/collaboration'
 import { createCollaborationRateLimits } from '#cloud/server/collaboration'
 import type { CommentService } from '#cloud/server/comments'
-import { createCommunityRoutes, type CommunityService } from '#cloud/server/community'
+import { createCommunityObjectRoutes, type CommunityService } from '#cloud/server/community'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { DocumentService } from '#cloud/server/documents'
 import { createDocumentRateLimits, DocumentNotFoundError } from '#cloud/server/documents'
@@ -48,7 +48,7 @@ export type CloudAPIServices = {
 export function createPublicCloudAPIRouter(services: CloudAPIServices) {
   return (
     new Hono<CloudAPIEnvironment>()
-      .route('/', createCommunityRoutes(services.community))
+      .route('/', createCommunityObjectRoutes(services.community))
       // The public routes the contract describes, for whoever sent the request.
       .use(
         '*',
