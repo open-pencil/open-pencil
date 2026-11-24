@@ -129,7 +129,7 @@ defineOptions({ inheritAttrs: false })
       <template #trailing="{ item }">
         <span
           v-if="items.find((entry) => entry.id === item.value)?.text"
-          class="shrink-0 text-muted tabular-nums"
+          class="shrink-0 text-2xs text-muted tabular-nums"
         >
           {{ items.find((entry) => entry.id === item.value)?.text }}
         </span>
