@@ -6,6 +6,7 @@ import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 import {
+  BrowserCheckError,
   fetchRemoteFile,
   MAX_REMOTE_FILE_BYTES,
   remoteFileKind,
@@ -112,6 +113,24 @@ describe('fetchRemoteFile', () => {
 
     await expect(fetchRemoteFile(url, { fetch: missing, io })).rejects.toThrow('404 Not Found')
     await expect(fetchRemoteFile(url, { fetch: empty, io })).rejects.toThrow('carried no body')
+  })
+
+  test('tells a bot check apart from other refusals', async () => {
+    const challenge = fetchStub(
+      async () =>
+        new Response('Just a moment...', {
+          status: 403,
+          headers: { 'cf-mitigated': 'challenge', 'content-type': 'text/html' }
+        })
+    )
+    const forbidden = fetchStub(async () => new Response('no', { status: 403 }))
+    const url = new URL('https://example.com/')
+
+    const refusal = await fetchRemoteFile(url, { fetch: challenge, io }).catch((e: unknown) => e)
+    expect(refusal).toBeInstanceOf(BrowserCheckError)
+    expect(refusal instanceof BrowserCheckError && refusal.url.href).toBe(url.href)
+    const other = await fetchRemoteFile(url, { fetch: forbidden, io }).catch((e: unknown) => e)
+    expect(other).not.toBeInstanceOf(BrowserCheckError)
   })
 
   test('ends the body of a response it refuses', async () => {

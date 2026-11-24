@@ -35,6 +35,7 @@
   "openURLRunScripts": "Exécuter les scripts de la page",
   "openURLInvalid": "Saisissez une adresse web, comme https://example.com.",
   "openURLBlocked": "Le site n’autorise pas d’autres sites à le lire, le navigateur ne peut donc pas l’ouvrir. L’app de bureau le peut.",
+  "openURLBrowserCheck": "Le site ne laisse qu’un navigateur lire cette page. L’application de bureau peut l’ouvrir en exécutant les scripts de la page.",
   "openURLPDF": "Cette adresse contient un PDF, qu’OpenPencil ne peut pas encore ouvrir.",
   "openURLUnsupported": "Cette adresse contient un fichier qu’OpenPencil ne peut pas ouvrir.",
   "newTab": "Nouvel onglet",

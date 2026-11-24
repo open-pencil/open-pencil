@@ -4,6 +4,7 @@ import { resolveEditorProfile } from '@open-pencil/core'
 import { remoteFileTitle } from '@open-pencil/core/io/remote'
 import type { DesignViewport } from '@open-pencil/dom-css'
 import { errorMessage } from '@open-pencil/std/errors'
+import { messageStores } from '@open-pencil/vue/i18n'
 import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
@@ -71,6 +72,7 @@ async function pageSource(
     // A page its scripts sent elsewhere is named after where it ended up.
     return { html: rendered.html, title: remoteFileTitle(new URL(rendered.url)), url: rendered.url }
   }
+  if (webPage?.rendersOnly) throw new Error(messageStores.files.get().openURLBrowserCheck)
   return {
     html: await file.text(),
     title: webPage?.title ?? documentNameFor(file),

@@ -35,6 +35,7 @@
   "openURLRunScripts": "ページのスクリプトを実行",
   "openURLInvalid": "https://example.com のような Web アドレスを入力してください。",
   "openURLBlocked": "このサイトはほかのサイトからの読み取りを許可していないため、ブラウザでは開けません。デスクトップアプリなら開けます。",
+  "openURLBrowserCheck": "このサイトはブラウザにしかこのページの読み取りを許可していません。デスクトップアプリなら、ページのスクリプトを実行して開けます。",
   "openURLPDF": "このアドレスは PDF です。OpenPencil はまだ PDF を開けません。",
   "openURLUnsupported": "このアドレスは OpenPencil で開けないファイルです。",
   "newTab": "新しいタブ",

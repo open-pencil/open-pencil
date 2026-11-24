@@ -1,5 +1,6 @@
 export { readBoundedBody, type BoundedBodyOptions } from './body'
 export {
+  BrowserCheckError,
   fetchRemoteFile,
   mediaTypeOfName,
   MAX_REMOTE_FILE_BYTES,

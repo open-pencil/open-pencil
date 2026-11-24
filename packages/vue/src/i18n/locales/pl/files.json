@@ -35,6 +35,7 @@
   "openURLRunScripts": "Uruchom skrypty strony",
   "openURLInvalid": "Wpisz adres internetowy, np. https://example.com.",
   "openURLBlocked": "Witryna nie pozwala innym witrynom jej odczytywać, więc przeglądarka nie może jej otworzyć. Aplikacja desktopowa może.",
+  "openURLBrowserCheck": "Witryna pozwala odczytać tę stronę tylko przeglądarce. Aplikacja desktopowa może ją otworzyć z uruchomionymi skryptami strony.",
   "openURLPDF": "Pod tym adresem jest plik PDF, którego OpenPencil nie potrafi jeszcze otworzyć.",
   "openURLUnsupported": "Pod tym adresem jest plik, którego OpenPencil nie potrafi otworzyć.",
   "newTab": "Nowa karta",
