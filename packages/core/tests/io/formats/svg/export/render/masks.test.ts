@@ -184,4 +184,127 @@ describe('SVG export of masks', () => {
     expect(maskDef(svg, maskId)).toContain('id="Item"')
     expect(body(svg)).toContain('id="Item_2"')
   })
+
+  test('rolls back reserved layerIds when a mask run has no masked output', () => {
+    const graph = makeSceneGraph('Page 1')
+    const pageId = firstPageId(graph)
+    const root = graph.createNode('FRAME', pageId, { name: 'Root', width: 200, height: 200 })
+
+    const discarded = graph.createNode('FRAME', root.id, {
+      name: 'Discarded',
+      width: 100,
+      height: 100
+    })
+    graph.createNode('RECTANGLE', discarded.id, {
+      name: 'Item',
+      width: 10,
+      height: 10,
+      fills: [BLUE]
+    })
+    graph.createNode('RECTANGLE', discarded.id, {
+      name: 'FreshMask',
+      width: 20,
+      height: 20,
+      isMask: true,
+      fills: [BLACK]
+    })
+    graph.createNode('RECTANGLE', discarded.id, {
+      name: 'Item',
+      width: 20,
+      height: 20,
+      isMask: true,
+      fills: [BLACK]
+    })
+    graph.createNode('RECTANGLE', discarded.id, {
+      name: 'Ghost',
+      width: 30,
+      height: 30,
+      visible: false,
+      fills: [RED]
+    })
+
+    const kept = graph.createNode('FRAME', root.id, { name: 'Kept', width: 100, height: 100 })
+    graph.createNode('RECTANGLE', kept.id, { name: 'Item', width: 20, height: 20, fills: [RED] })
+    graph.createNode('RECTANGLE', kept.id, {
+      name: 'FreshMask',
+      width: 20,
+      height: 20,
+      fills: [BLUE]
+    })
+
+    const svg = renderNodesToSVGOrThrow(graph, pageId, [root.id], {
+      layerIds: true,
+      xmlDeclaration: false
+    })
+    expect(maskRefs(svg)).toEqual([])
+    expect(svg).toContain('id="Item"')
+    expect(svg).toContain('id="Item_2"')
+    expect(svg).not.toContain('id="Item_3"')
+    expect(svg).toContain('id="FreshMask"')
+    expect(svg).not.toContain('id="FreshMask_2"')
+  })
+
+  test('propagates nested committed mask layerIds for outer rollback', () => {
+    const graph = makeSceneGraph('Page 1')
+    const pageId = firstPageId(graph)
+    const root = graph.createNode('FRAME', pageId, { name: 'Root', width: 200, height: 200 })
+
+    graph.createNode('RECTANGLE', root.id, { name: 'Shared', width: 10, height: 10, fills: [BLUE] })
+
+    const outer = graph.createNode('FRAME', root.id, { name: 'Outer', width: 100, height: 100 })
+    const maskFrame = graph.createNode('FRAME', outer.id, {
+      name: 'MaskBox',
+      width: 50,
+      height: 50,
+      isMask: true
+    })
+    graph.createNode('RECTANGLE', maskFrame.id, {
+      name: 'Shared',
+      width: 20,
+      height: 20,
+      isMask: true,
+      fills: [BLACK]
+    })
+    graph.createNode('RECTANGLE', maskFrame.id, {
+      name: 'NestedOnly',
+      width: 30,
+      height: 30,
+      fills: [RED]
+    })
+    graph.createNode('RECTANGLE', outer.id, {
+      name: 'HiddenTarget',
+      width: 40,
+      height: 40,
+      visible: false,
+      fills: [BLUE]
+    })
+
+    const after = graph.createNode('FRAME', root.id, { name: 'After', width: 100, height: 100 })
+    graph.createNode('RECTANGLE', after.id, { name: 'Shared', width: 20, height: 20, fills: [RED] })
+    graph.createNode('RECTANGLE', after.id, {
+      name: 'MaskBox',
+      width: 20,
+      height: 20,
+      fills: [BLUE]
+    })
+    graph.createNode('RECTANGLE', after.id, {
+      name: 'NestedOnly',
+      width: 20,
+      height: 20,
+      fills: [BLUE]
+    })
+
+    const svg = renderNodesToSVGOrThrow(graph, pageId, [root.id], {
+      layerIds: true,
+      xmlDeclaration: false
+    })
+    expect(maskRefs(svg)).toEqual([])
+    expect(svg).toContain('id="Shared"')
+    expect(svg).toContain('id="Shared_2"')
+    expect(svg).not.toContain('id="Shared_3"')
+    expect(svg).toContain('id="MaskBox"')
+    expect(svg).not.toContain('id="MaskBox_2"')
+    expect(svg).toContain('id="NestedOnly"')
+    expect(svg).not.toContain('id="NestedOnly_2"')
+  })
 })

@@ -5,7 +5,14 @@ import { asMaskShape, isVisibleMask, maskRuns } from '@open-pencil/scene-graph/m
 
 import { subtreeRenderBounds } from '#core/geometry/render-bounds'
 
-import { defRegion, nextDefId, type SVGExportContext } from './defs'
+import {
+  commitLayerIdCheckpoint,
+  defRegion,
+  nextDefId,
+  pushLayerIdCheckpoint,
+  rollbackLayerIdCheckpoint,
+  type SVGExportContext
+} from './defs'
 import type { ExportEffectWarning } from './effects'
 import { svg, svgElement, type SVGNode } from './node'
 
@@ -81,8 +88,7 @@ export function renderMaskedChildren(
 
     const prevDefsLen = ctx.defs.length
     const prevDefIdCounter = ctx.defIdCounter
-    const prevLayerNames = ctx.layerIds ? new Map(ctx.layerIds.names) : null
-    const prevLayerTaken = ctx.layerIds ? new Set(ctx.layerIds.taken) : null
+    if (ctx.layerIds) pushLayerIdCheckpoint(ctx.layerIds)
     const stagedWarnings: ExportEffectWarning[] = []
     const stagedCtx: SVGExportContext = ctx.onWarning
       ? { ...ctx, onWarning: (warning) => stagedWarnings.push(warning) }
@@ -106,15 +112,11 @@ export function renderMaskedChildren(
     if (maskElements.length === 0 || masked.length === 0) {
       ctx.defs.length = prevDefsLen
       ctx.defIdCounter = prevDefIdCounter
-      if (ctx.layerIds && prevLayerNames && prevLayerTaken) {
-        ctx.layerIds.names.clear()
-        for (const [key, count] of prevLayerNames) ctx.layerIds.names.set(key, count)
-        ctx.layerIds.taken.clear()
-        for (const id of prevLayerTaken) ctx.layerIds.taken.add(id)
-      }
+      if (ctx.layerIds) rollbackLayerIdCheckpoint(ctx.layerIds)
       continue
     }
 
+    if (ctx.layerIds) commitLayerIdCheckpoint(ctx.layerIds)
     for (const warning of stagedWarnings) ctx.onWarning?.(warning)
 
     const id = nextDefId(ctx, 'mask')

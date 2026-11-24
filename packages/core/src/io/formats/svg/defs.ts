@@ -20,6 +20,17 @@ import { svg, type SVGNode } from './node'
 import { round } from './paths'
 import type { SVGTextLayout } from './text/lines'
 
+export interface LayerIdJournalEntry {
+  prevNames: Map<string, number | undefined>
+  addedTaken: string[]
+}
+
+export interface LayerIdRegistry {
+  names: Map<string, number>
+  taken: Set<string>
+  journal?: LayerIdJournalEntry[]
+}
+
 export interface SVGExportContext {
   defs: SVGNode[]
   defIdCounter: number
@@ -38,13 +49,58 @@ export interface SVGExportContext {
    * When layers are written with their names as ids: how many have taken each name, and every id
    * given out so far, defs included, so no two elements share one.
    */
-  layerIds?: { names: Map<string, number>; taken: Set<string> }
+  layerIds?: LayerIdRegistry
+}
+
+export function setLayerNameCount(ids: LayerIdRegistry, name: string, count: number): void {
+  const top = ids.journal?.at(-1)
+  if (top && !top.prevNames.has(name)) {
+    top.prevNames.set(name, ids.names.get(name))
+  }
+  ids.names.set(name, count)
+}
+
+export function reserveTakenId(ids: LayerIdRegistry, id: string): void {
+  if (ids.taken.has(id)) return
+  const top = ids.journal?.at(-1)
+  if (top) top.addedTaken.push(id)
+  ids.taken.add(id)
+}
+
+export function pushLayerIdCheckpoint(ids: LayerIdRegistry): void {
+  ids.journal ??= []
+  ids.journal.push({ prevNames: new Map(), addedTaken: [] })
+}
+
+export function commitLayerIdCheckpoint(ids: LayerIdRegistry): void {
+  const top = ids.journal?.pop()
+  if (!top) return
+  const parent = ids.journal?.at(-1)
+  if (!parent) return
+  for (const [name, prev] of top.prevNames) {
+    if (!parent.prevNames.has(name)) parent.prevNames.set(name, prev)
+  }
+  for (const id of top.addedTaken) {
+    parent.addedTaken.push(id)
+  }
+}
+
+export function rollbackLayerIdCheckpoint(ids: LayerIdRegistry): void {
+  const top = ids.journal?.pop()
+  if (!top) return
+  for (const [name, prev] of top.prevNames) {
+    if (prev === undefined) ids.names.delete(name)
+    else ids.names.set(name, prev)
+  }
+  for (const id of top.addedTaken) {
+    ids.taken.delete(id)
+  }
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {
   let id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
   while (ctx.layerIds?.taken.has(id)) id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
-  ctx.layerIds?.taken.add(id)
+  if (ctx.layerIds) reserveTakenId(ctx.layerIds, id)
   return id
 }
 
