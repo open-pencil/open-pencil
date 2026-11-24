@@ -1048,6 +1048,16 @@
         "@open-pencil/package-artifacts-tools": "workspace:*",
       },
     },
+    "tools/generate/fig-schema": {
+      "name": "@open-pencil/fig-schema-tools",
+      "dependencies": {
+        "@open-pencil/fig": "workspace:*",
+        "@open-pencil/kiwi": "workspace:*",
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "es-toolkit": "^1.52.0",
+        "fflate": "^0.8.3",
+      },
+    },
     "tools/generate/landing-posters": {
       "name": "@open-pencil/landing-posters-tools",
       "dependencies": {
@@ -1952,6 +1962,8 @@
     "@open-pencil/feedback": ["@open-pencil/feedback@workspace:packages/feedback"],
 
     "@open-pencil/fig": ["@open-pencil/fig@workspace:packages/fig"],
+
+    "@open-pencil/fig-schema-tools": ["@open-pencil/fig-schema-tools@workspace:tools/generate/fig-schema"],
 
     "@open-pencil/fork-releases-tools": ["@open-pencil/fork-releases-tools@workspace:tools/release/fork-releases"],
 
