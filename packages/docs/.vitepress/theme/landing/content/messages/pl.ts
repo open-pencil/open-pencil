@@ -349,16 +349,16 @@ export const pl: LandingMessages = {
         action: 'Instrukcja budowania'
       }
     },
-    beta: {
-      badge: 'Beta',
+    nightly: {
+      badge: 'Nightly',
       title: 'Wypróbuj to, co nadchodzi',
-      lede: 'Bety dają wcześniej funkcje następnej wersji, zanim trafią do wszystkich.',
+      lede: 'Wersje nightly powstają każdej nocy z najnowszego kodu, więc nowe funkcje trafiają do nich od razu.',
       caveats: [
-        'Aplikacja w wersji stabilnej nie aktualizuje się do bety; zainstaluj betę, aby ją wypróbować.',
-        'Na Linuksie usuń betę zainstalowaną z .deb lub .rpm przed instalacją wersji finalnej.',
-        'Bety CLI i SDK są w npm pod tagiem next.'
+        'Wersja nightly nie przechodzi testów wydania i może nie działać; rób kopie swojej pracy.',
+        'Masz już aplikację? Zamiast pobierać, wybierz Nightly w Ustawienia → Aktualizacje → Kanał aktualizacji.',
+        'Wersja nightly aktualizuje się do kompilacji z następnej nocy. Aby wrócić, wybierz tam Stabilna.'
       ],
-      notes: 'Co nowego'
+      onGitHub: 'Najnowsza wersja nightly na GitHubie'
     }
   }
 }

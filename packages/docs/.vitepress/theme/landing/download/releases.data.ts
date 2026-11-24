@@ -1,5 +1,4 @@
 import * as v from 'valibot'
-import { createMarkdownRenderer } from 'vitepress'
 
 import { classifyAsset, latestReleases, type Release, type Releases } from './releases'
 
@@ -14,7 +13,6 @@ const ReleaseSchema = v.object({
   published_at: v.nullable(v.string()),
   draft: v.boolean(),
   prerelease: v.boolean(),
-  body: v.nullable(v.string()),
   assets: v.array(
     v.object({ name: v.string(), browser_download_url: v.string(), size: v.number() })
   )
@@ -50,24 +48,20 @@ async function fetchReleases(): Promise<GitHubRelease[] | null> {
 }
 
 /**
- * The latest stable release and any newer beta, read from GitHub when the site is built, so the
+ * The latest stable release and the nightly, read from GitHub when the site is built, so the
  * download page is static: no request leaves the visitor's browser. A build that cannot reach
  * GitHub gives a page that links to the releases there instead.
  */
 export default {
   async load(): Promise<Releases> {
     const releases = await fetchReleases()
-    if (!releases) return { stable: null, beta: null }
+    if (!releases) return { stable: null, nightly: null }
     const published = releases.filter(
       (release): release is GitHubRelease & { published_at: string } =>
         !release.draft && release.published_at !== null
     )
-    const { stable, beta } = latestReleases(published)
-    const markdown = await createMarkdownRenderer(process.cwd())
-    const toRelease = (
-      release: GitHubRelease & { published_at: string },
-      notes = false
-    ): Release => ({
+    const { stable, nightly } = latestReleases(published)
+    const toRelease = (release: GitHubRelease & { published_at: string }): Release => ({
       version: release.tag_name.replace(/^v/, ''),
       date: release.published_at,
       url: release.html_url,
@@ -80,13 +74,11 @@ export default {
         return file ? [file] : []
       }),
       checksums:
-        release.assets.find((asset) => asset.name === 'SHA256SUMS')?.browser_download_url ?? null,
-      // Only the beta shows its notes; the stable release links to them on GitHub.
-      notes: notes ? markdown.render(release.body ?? '') : ''
+        release.assets.find((asset) => asset.name === 'SHA256SUMS')?.browser_download_url ?? null
     })
     return {
       stable: stable ? toRelease(stable) : null,
-      beta: beta ? toRelease(beta, true) : null
+      nightly: nightly ? toRelease(nightly) : null
     }
   }
 }

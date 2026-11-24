@@ -1,4 +1,4 @@
-import { maxBy, partition } from 'es-toolkit/array'
+import { maxBy } from 'es-toolkit/array'
 
 export const PLATFORMS = ['mac', 'windows', 'linux'] as const
 export type Platform = (typeof PLATFORMS)[number]
@@ -26,14 +26,12 @@ export interface Release {
   files: ReleaseFile[]
   /** `SHA256SUMS`, when the release has it. */
   checksums: string | null
-  /** The release notes, the changelog section of the version, as HTML; empty when not shown. */
-  notes: string
 }
 
 export interface Releases {
   stable: Release | null
-  /** The newest pre-release, when it is newer than the stable release. */
-  beta: Release | null
+  /** The rolling nightly build of master, whose files keep their links from night to night. */
+  nightly: Release | null
 }
 
 /**
@@ -81,22 +79,18 @@ export function filesFor(release: Release, platform: Platform): ReleaseFile[] {
     )
 }
 
-/** The rolling nightly pre-release, which the update channel offers but the page never does. */
+/** The rolling nightly pre-release (`tools/release/release-packages/src/nightly`). */
 const NIGHTLY_TAG = 'nightly'
 
 /**
- * The newest stable release, and the newest pre-release when it came out after it. Releases are
- * drafted before they are published, so they are compared by when they were published.
+ * The newest stable release and the rolling nightly. Releases are drafted before they are
+ * published, so stable ones are compared by when they were published. Beta tags stay on GitHub.
  */
 export function latestReleases<
   T extends { tag_name: string; prerelease: boolean; published_at: string }
->(published: readonly T[]): { stable: T | null; beta: T | null } {
-  const [betas, stables] = partition(
-    published.filter((release) => release.tag_name !== NIGHTLY_TAG),
-    (release) => release.prerelease
-  )
+>(published: readonly T[]): { stable: T | null; nightly: T | null } {
+  const stables = published.filter((release) => !release.prerelease)
   const stable = maxBy(stables, (release) => Date.parse(release.published_at)) ?? null
-  const beta = maxBy(betas, (release) => Date.parse(release.published_at)) ?? null
-  const newer = beta && (!stable || Date.parse(beta.published_at) > Date.parse(stable.published_at))
-  return { stable, beta: newer ? beta : null }
+  const nightly = published.find((release) => release.tag_name === NIGHTLY_TAG) ?? null
+  return { stable, nightly }
 }

@@ -351,16 +351,16 @@ export const es: LandingMessages = {
         action: 'Instrucciones de compilación'
       }
     },
-    beta: {
-      badge: 'Beta',
+    nightly: {
+      badge: 'Nocturna',
       title: 'Prueba lo que viene',
-      lede: 'Las betas traen antes las funciones de la próxima versión, antes de que lleguen a todos.',
+      lede: 'Las versiones nocturnas se compilan cada noche con el código más reciente, así que las novedades llegan en cuanto están listas.',
       caveats: [
-        'Una app con la versión estable no se actualiza a una beta; instala la beta para probarla.',
-        'En Linux, quita una beta instalada con .deb o .rpm antes de instalar la versión final.',
-        'Las betas de la CLI y el SDK están en npm con la etiqueta next.'
+        'Una versión nocturna no pasa las pruebas de una versión final y puede fallar; guarda copia de tu trabajo.',
+        '¿Ya tienes la app? Elige Nocturna en Ajustes → Actualizaciones → Canal de actualizaciones en lugar de descargarla.',
+        'Una versión nocturna se actualiza a la compilación de la noche siguiente. Para volver, elige Estable allí.'
       ],
-      notes: 'Novedades'
+      onGitHub: 'Última nocturna en GitHub'
     }
   }
 }

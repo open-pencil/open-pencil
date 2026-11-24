@@ -354,16 +354,16 @@ export const de: LandingMessages = {
         action: 'Build-Anleitung'
       }
     },
-    beta: {
-      badge: 'Beta',
+    nightly: {
+      badge: 'Nightly',
       title: 'Probieren Sie, was kommt',
-      lede: 'Betas bringen die Funktionen der nächsten Version früher, bevor sie alle erreichen.',
+      lede: 'Nightlies entstehen jede Nacht aus dem neuesten Code, sodass neue Funktionen ankommen, sobald sie fertig sind.',
       caveats: [
-        'Eine App mit der stabilen Version aktualisiert sich nicht auf eine Beta; installieren Sie die Beta, um sie zu testen.',
-        'Entfernen Sie unter Linux eine mit .deb oder .rpm installierte Beta, bevor Sie die finale Version installieren.',
-        'Die Betas von CLI und SDK liegen auf npm unter dem Tag next.'
+        'Eine Nightly hat keine Release-Tests durchlaufen und kann fehlerhaft sein; sichern Sie Ihre Arbeit.',
+        'Haben Sie die App schon? Wählen Sie Nightly unter Einstellungen → Aktualisierungen → Update-Kanal, statt herunterzuladen.',
+        'Eine Nightly aktualisiert sich auf den Build der nächsten Nacht. Wählen Sie dort Stabil, um zurückzukehren.'
       ],
-      notes: 'Was ist neu'
+      onGitHub: 'Neueste Nightly auf GitHub'
     }
   }
 }

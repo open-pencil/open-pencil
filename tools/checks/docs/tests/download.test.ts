@@ -60,32 +60,21 @@ describe('the releases a build shows', () => {
     expect(stable?.tag_name).toBe('v0.15.1')
   })
 
-  test('show a beta only when it came out after the stable release', () => {
-    const newer = latestReleases([
-      release('0.16.0-beta.1', '2026-10-01T00:00:00Z', true),
-      release('0.16.0-beta.2', '2026-10-10T00:00:00Z', true),
-      release('0.15.1', '2026-09-18T00:00:00Z')
-    ])
-    expect(newer.beta?.tag_name).toBe('v0.16.0-beta.2')
-    const older = latestReleases([
-      release('0.16.0-beta.2', '2026-10-10T00:00:00Z', true),
-      release('0.16.0', '2026-10-12T00:00:00Z')
-    ])
-    expect(older.beta).toBeNull()
-  })
-
-  test('never offer the rolling nightly, though it is the newest pre-release', () => {
-    const { beta } = latestReleases([
+  test('offer the rolling nightly, but no beta', () => {
+    const { stable, nightly } = latestReleases([
       release('0.17.0-beta.5', '2026-11-15T00:00:00Z', true),
       { tag_name: 'nightly', published_at: '2026-11-16T03:30:00Z', prerelease: true },
       release('0.16.2', '2026-11-01T00:00:00Z')
     ])
-    expect(beta?.tag_name).toBe('v0.17.0-beta.5')
+    expect(stable?.tag_name).toBe('v0.16.2')
+    expect(nightly?.tag_name).toBe('nightly')
   })
 
-  test('show a beta without any stable release', () => {
-    const { stable, beta } = latestReleases([release('0.1.0-beta.1', '2026-01-01T00:00:00Z', true)])
-    expect(stable).toBeNull()
-    expect(beta?.tag_name).toBe('v0.1.0-beta.1')
+  test('a newer beta is never the stable release', () => {
+    const { stable } = latestReleases([
+      release('0.16.0', '2026-10-12T00:00:00Z'),
+      release('0.17.0-beta.1', '2026-11-02T00:00:00Z', true)
+    ])
+    expect(stable?.tag_name).toBe('v0.16.0')
   })
 })
