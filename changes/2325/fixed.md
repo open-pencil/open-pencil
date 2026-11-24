@@ -1,0 +1,1 @@
+- Documents stay open with their edits when following an agent changes pages during opening.
