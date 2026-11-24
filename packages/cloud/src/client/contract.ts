@@ -38,15 +38,23 @@ type ContractClientOptions = {
   signal?: AbortSignal
 }
 
+/** How a client of a service other than Cloud's API sends requests and reads refusals. */
+export type ServiceContractClientOptions = ContractClientOptions & {
+  /** Whether requests carry the person's cookies, as only Cloud's own API wants. */
+  credentials: RequestCredentials
+  /** The error a refusal's status and body stand for. */
+  refusal: (status: number, body: unknown) => Error
+}
+
 /**
- * A client of `routes` at `baseURL`. Requests go through `fetch` with the person's cookies,
- * `headers`, and `signal` as well as each call's own; answers are checked against the contract,
- * and refusals throw `CloudAPIError` as every other call does.
+ * A client of `routes` at `baseURL`. Requests go through `fetch` with `headers`, and `signal` as
+ * well as each call's own; answers are checked against the contract, and refusals throw what
+ * `refusal` makes of them.
  */
-function contractClient<T extends RouterContract>(
+export function createContractClient<T extends RouterContract>(
   routes: T,
   baseURL: string,
-  options: ContractClientOptions
+  options: ServiceContractClientOptions
 ): JsonifiedClient<RouterContractClient<T>> {
   const url = new URL(baseURL)
   const link = new OpenAPILink(routes, {
@@ -56,10 +64,10 @@ function contractClient<T extends RouterContract>(
     fetch: (request, init) =>
       options.fetch(request, {
         ...init,
-        credentials: 'include',
+        credentials: options.credentials,
         signal: anySignal([init.signal, options.signal])
       }),
-    errorResponseBodyDecoder: (body, response) => cloudAPIError(response.status, body),
+    errorResponseBodyDecoder: (body, response) => options.refusal(response.status, body),
     plugins: [new ResponseValidationLinkPlugin(routes)]
   })
   return createORPCClient(link)
@@ -70,7 +78,11 @@ export function createCloudContractClient(
   apiURL: string,
   options: ContractClientOptions
 ): CloudContractClient {
-  return contractClient(contract, apiURL, options)
+  return createContractClient(contract, apiURL, {
+    ...options,
+    credentials: 'include',
+    refusal: cloudAPIError
+  })
 }
 
 export type CloudAdminContractClient = JsonifiedClient<RouterContractClient<typeof adminContract>>
@@ -80,5 +92,9 @@ export function createCloudAdminContractClient(
   adminURL: string,
   options: ContractClientOptions
 ): CloudAdminContractClient {
-  return contractClient(adminContract, adminURL, options)
+  return createContractClient(adminContract, adminURL, {
+    ...options,
+    credentials: 'include',
+    refusal: cloudAPIError
+  })
 }

@@ -65,10 +65,8 @@ export { configuredSocialProviders } from './auth/social-providers'
 export {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
-  type CloudAPI,
   type CloudAPIEnvironment,
-  type CloudAPIServices,
-  type PublicCloudAPI
+  type CloudAPIServices
 } from './api'
 export {
   createCloudApp,

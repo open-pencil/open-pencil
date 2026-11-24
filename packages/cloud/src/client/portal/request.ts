@@ -1,4 +1,3 @@
-import type { CloudAdminRoutes } from '#cloud/admin/api/routes'
 import { createCloudAdminContractClient, createCloudContractClient } from '#cloud/client/contract'
 import type { CloudFetch } from '#cloud/client/discovery'
 import { CloudAPIError } from '#cloud/client/response'
@@ -10,7 +9,6 @@ import {
 } from '#cloud/contract'
 import type { CloudAccountRoutes } from '#cloud/server/account/routes'
 import type { CloudAccessTokenRoutes } from '#cloud/server/account/tokens'
-import type { CloudAPI } from '#cloud/server/api'
 import { ORPCError } from '@orpc/client'
 import { ValidationError } from '@orpc/contract'
 import { hc } from 'hono/client'
@@ -165,8 +163,6 @@ export function createPortalRouteClients(options: CloudPortalClientOptions = {})
     origin,
     account: hc<CloudAccountRoutes>(origin, clientOptions).api.account,
     tokens: hc<CloudAccessTokenRoutes>(origin, clientOptions).api.account.tokens,
-    admin: hc<CloudAdminRoutes>(new URL('/api/admin', origin).href, clientOptions),
-    api: hc<CloudAPI>(new URL('/api', origin).href, clientOptions),
     contract: createCloudContractClient(new URL('/api', origin).href, {
       fetch: options.fetch ?? globalThis.fetch,
       headers: { Accept: 'application/json' }

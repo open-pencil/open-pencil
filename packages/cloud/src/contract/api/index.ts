@@ -17,6 +17,7 @@ export {
 export { commentsContract, sharedCommentsContract } from './comments'
 export { communityContract } from './community'
 export { documentsContract } from './documents'
+export { billingContract, servicesContract } from './services'
 export { internalContract, setAccountEntitlementsSchema } from './internal'
 export { publicSharingContract, sharingContract } from './sharing'
 export { versionsContract } from './versions'

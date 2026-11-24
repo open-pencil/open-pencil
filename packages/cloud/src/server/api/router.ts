@@ -128,6 +128,3 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
       )
   )
 }
-
-export type CloudAPI = ReturnType<typeof createCloudAPIRouter>
-export type PublicCloudAPI = ReturnType<typeof createPublicCloudAPIRouter>

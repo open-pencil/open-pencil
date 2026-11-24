@@ -124,6 +124,3 @@ export function createCloudAdminRoutes(
       )
   )
 }
-
-/** The administration routes' types, for the portal's typed client. */
-export type CloudAdminRoutes = ReturnType<typeof createCloudAdminRoutes>

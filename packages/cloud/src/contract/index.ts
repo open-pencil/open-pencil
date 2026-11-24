@@ -49,8 +49,6 @@ export {
   type SearchResponse,
   type CloudServicesDiscovery,
   type CreateServicesTokenInput,
-  type CloudServicesAPI,
-  type CloudServicesSchema,
   sendsTokenSafely
 } from './services'
 export {
@@ -86,9 +84,7 @@ export {
   type BillingToken,
   type BillingTokenClaims,
   type CheckoutRequest,
-  type CloudBillingAPI,
   type CloudBillingDiscovery,
-  type CloudBillingSchema,
   type CreditPack
 } from './billing'
 export * from './admin'

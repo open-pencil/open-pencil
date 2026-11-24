@@ -19,7 +19,7 @@ import { createSharingRequests } from './sharing'
 import { createVersionRequests } from './versions'
 import { createWorkspaceRequests } from './workspaces'
 
-export { CloudAPIError, type CloudClientDiagnostic } from './response'
+export { CloudAPIError } from './response'
 export type { CloudUpload } from './documents'
 
 export type CloudRequestOptions = {
