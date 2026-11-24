@@ -490,11 +490,13 @@ function cssNameDone(event: KeyboardEvent) {
               <VariablePicker v-bind="aliasPicker(mode.modeId, mode.name)" />
             </template>
           </PaintField>
+          <!-- Keyed by the variable, so a drag under way ends with it rather than writing to the next one. -->
           <EasingField
             v-else-if="easing(mode.modeId)"
+            :key="`${variable.id}:${mode.modeId}`"
             :easing="easing(mode.modeId) ?? { easing: 'LINEAR' }"
             :label="mode.name"
-            @update="(next, gesture) => emit('updateValue', mode.modeId, next, gesture)"
+            @update="emit('updateValue', mode.modeId, $event)"
           >
             <template #binding>
               <VariablePicker v-bind="aliasPicker(mode.modeId, mode.name)" />
@@ -522,6 +524,7 @@ function cssNameDone(event: KeyboardEvent) {
             v-else
             v-model="draft.values[mode.modeId]"
             :type="variable.type === 'FLOAT' || variable.type === 'TIMING' ? 'number' : 'text'"
+            :ariaLabel="singleMode ? variables.value : mode.name"
             size="sm"
             @change="commitValue(mode.modeId)"
             @enter="done"

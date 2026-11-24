@@ -22,7 +22,7 @@ import { easingThumbnail } from './thumbnail'
  */
 const { easing, label } = defineProps<{ easing: Easing; label: string }>()
 defineSlots<{ binding?(): unknown }>()
-const emit = defineEmits<{ update: [easing: Easing, gesture?: string] }>()
+const emit = defineEmits<{ update: [easing: Easing] }>()
 
 const text = useMessages('variables/easing')
 const ui = tv(theme)()
@@ -49,11 +49,7 @@ const thumbnail = computed(() => easingThumbnail(easing))
         </PopoverTrigger>
         <PopoverPortal>
           <PopoverContent :class="popover.content" :side="side" align="start" :side-offset="8">
-            <EasingEditor
-              :easing="easing"
-              @update="(next, gesture) => emit('update', next, gesture)"
-              @close="open = false"
-            />
+            <EasingEditor :easing="easing" @update="emit('update', $event)" @close="open = false" />
           </PopoverContent>
         </PopoverPortal>
       </AppPopoverRoot>

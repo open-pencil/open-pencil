@@ -31,8 +31,21 @@ import { easingThumbnail } from './thumbnail'
  * numbers, or a spring's bounce, or its stiffness, damping and mass where it is edited by its
  * physics. Any edit of a preset's numbers makes it a custom curve or spring.
  */
-const { easing } = defineProps<{ easing: Easing }>()
-const emit = defineEmits<{ update: [easing: Easing, gesture?: string]; close: [] }>()
+const { easing: saved } = defineProps<{ easing: Easing }>()
+const emit = defineEmits<{ update: [easing: Easing]; close: [] }>()
+
+/** The easing a handle drag shows until it is released; the saved one otherwise. */
+const preview = ref<Easing | null>(null)
+const easing = computed(() => preview.value ?? saved)
+watch(
+  () => saved,
+  () => (preview.value = null)
+)
+
+/** The drag's last easing; the preview stays until the saved value comes back changed. */
+function commitDrag(next: Easing) {
+  emit('update', next)
+}
 
 const text = useMessages('variables/easing')
 const ui = tv(theme)()
@@ -40,15 +53,18 @@ const ui = tv(theme)()
 /** The curve a curve starts as when the spring tab is left, as Figma's editor starts it. */
 const FIRST_CURVE: CubicBezier = { x1: 0, y1: 0, x2: 0.58, y2: 1 }
 
-const isSpring = computed(() => isSpringCurve(easing.easing))
-const spring = computed(() => easingSpring(easing))
-const bezier = computed(() => easingBezier(easing))
+const isSpring = computed(() => isSpringCurve(easing.value.easing))
+const spring = computed(() => easingSpring(easing.value))
+const bezier = computed(() => easingBezier(easing.value))
 
 const presetOptions = computed(() =>
-  presetsFor(easing).map(({ curve, message }) => ({ value: curve, label: text.value[message] }))
+  presetsFor(easing.value).map(({ curve, message }) => ({
+    value: curve,
+    label: text.value[message]
+  }))
 )
 const preset = computed({
-  get: () => listedCurve(easing),
+  get: () => listedCurve(easing.value),
   set: (curve: EasingCurve) => emit('update', chosen(curve))
 })
 
@@ -62,7 +78,7 @@ function chosen(curve: EasingCurve): Easing {
 }
 
 function thumbnail(curve: EasingCurve) {
-  return easingThumbnail(curve === listedCurve(easing) ? easing : easingPreset(curve))
+  return easingThumbnail(curve === listedCurve(easing.value) ? easing.value : easingPreset(curve))
 }
 
 const kind = computed({
@@ -191,7 +207,7 @@ const physicsFields = computed(() => {
       </IconButton>
     </div>
     <SegmentedControl v-model="kind" :label="text.kind" :options="kindOptions" />
-    <EasingGraph :easing="easing" @update="(next, gesture) => emit('update', next, gesture)" />
+    <EasingGraph :easing="easing" @preview="preview = $event" @update="commitDrag" />
     <div v-if="bezier" :class="ui.row()">
       <AppInput
         v-model="bezierDraft"

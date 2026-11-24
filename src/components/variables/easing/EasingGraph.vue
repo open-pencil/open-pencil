@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { matchesKeyboardEvent, type HotkeyChord } from '@tanstack/hotkeys'
 import { tv } from 'tailwind-variants'
 import { computed, useTemplateRef } from 'vue'
 
@@ -11,7 +12,6 @@ import {
   springBounce,
   springWithBounce
 } from '@open-pencil/scene-graph/variables'
-import { randomHex } from '@open-pencil/std/random'
 import { useMessages } from '@open-pencil/vue/i18n'
 import { vTestId } from '@open-pencil/vue/testing'
 
@@ -35,8 +35,11 @@ import {
  * takes its numbers from the fields instead.
  */
 const { easing } = defineProps<{ easing: Easing }>()
-/** `gesture` is shared by every change one drag makes, so the drag is one undo step. */
-const emit = defineEmits<{ update: [easing: Easing, gesture?: string] }>()
+/**
+ * A drag previews each move and updates once, on release, so the document and everything drawn
+ * from it change once per drag rather than on every pointer move.
+ */
+const emit = defineEmits<{ update: [easing: Easing]; preview: [easing: Easing] }>()
 
 const text = useMessages('variables/easing')
 const ui = tv(theme)()
@@ -101,15 +104,18 @@ function graphPoint(event: PointerEvent): GraphPoint | undefined {
 function startDrag(kind: HandleKind, event: PointerEvent) {
   if (event.button !== 0 || !(event.currentTarget instanceof HTMLElement)) return
   const handle = event.currentTarget
-  const gesture = `easing:${randomHex(8)}`
   handle.setPointerCapture(event.pointerId)
   handle.focus()
+  let moved: Easing | undefined
   const move = (moveEvent: PointerEvent) => {
     const point = graphPoint(moveEvent)
     const next = point && movedTo(kind, point)
-    if (next) emit('update', next, gesture)
+    if (!next) return
+    moved = next
+    emit('preview', next)
   }
   const end = () => {
+    if (moved) emit('update', moved)
     handle.removeEventListener('pointermove', move)
     handle.removeEventListener('pointerup', end)
     handle.removeEventListener('pointercancel', end)
@@ -119,19 +125,24 @@ function startDrag(kind: HandleKind, event: PointerEvent) {
   handle.addEventListener('pointercancel', end)
 }
 
-const NUDGES: Partial<Record<string, Vector>> = {
-  ArrowLeft: { x: -1, y: 0 },
-  ArrowRight: { x: 1, y: 0 },
-  ArrowUp: { x: 0, y: 1 },
-  ArrowDown: { x: 0, y: -1 }
-}
+/** The keys that nudge a handle: arrows move it a hundredth, ten times as far with Shift. */
+const NUDGES: ReadonlyArray<{ chord: HotkeyChord; direction: Vector; step: number }> = [
+  { chord: 'ArrowLeft', direction: { x: -1, y: 0 }, step: 0.01 },
+  { chord: 'ArrowRight', direction: { x: 1, y: 0 }, step: 0.01 },
+  { chord: 'ArrowUp', direction: { x: 0, y: 1 }, step: 0.01 },
+  { chord: 'ArrowDown', direction: { x: 0, y: -1 }, step: 0.01 },
+  { chord: 'Shift+ArrowLeft', direction: { x: -1, y: 0 }, step: 0.1 },
+  { chord: 'Shift+ArrowRight', direction: { x: 1, y: 0 }, step: 0.1 },
+  { chord: 'Shift+ArrowUp', direction: { x: 0, y: 1 }, step: 0.1 },
+  { chord: 'Shift+ArrowDown', direction: { x: 0, y: -1 }, step: 0.1 }
+]
 
-/** Arrow keys move a handle a hundredth, ten with Shift; a bounce handle moves up and down. */
+/** A bounce handle moves only up and down. */
 function nudge(kind: HandleKind, event: KeyboardEvent) {
-  const direction = NUDGES[event.code]
-  if (!direction) return
+  const nudged = NUDGES.find(({ chord }) => matchesKeyboardEvent(event, chord))
+  if (!nudged) return
   event.preventDefault()
-  const step = event.shiftKey ? 0.1 : 0.01
+  const { direction, step } = nudged
   let next: Easing | undefined
   if (kind === 'bounce') {
     const current = spring.value
