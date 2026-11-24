@@ -111,7 +111,7 @@ export function createDOMOpenActions({
     const phase = webPage ? 'loading-files' : 'styling'
     load.update({ phase, detail: pageName })
     let counting = true
-    const fetch = countedFetch(pageFetch(), (completed, total) => {
+    const fetch = countedFetch(pageFetch(baseURL), (completed, total) => {
       if (counting) load.update({ phase, detail: pageName, completed, total, unit: 'files' })
     })
     // Laid out as a browser would, so layers land where the page put its elements.

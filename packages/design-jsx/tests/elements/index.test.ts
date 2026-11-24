@@ -6,25 +6,14 @@ import {
   elementSchema,
   elementTag
 } from '#design-jsx/elements/index'
-import { createDesignJSXRenderer } from '#design-jsx/index'
 import { elementPropWarnings } from '#design-jsx/schema'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { GENERATED_FRAME_TYPES } from '@open-pencil/scene-graph/generated'
 
-const renderer = createDesignJSXRenderer<never>({
-  icon: () => Promise.resolve(null),
-  svg: () => null,
-  createArtwork: () => {
-    throw new Error('No artwork in these tests')
-  },
-  layout: () => {
-    // Element types do not depend on layout.
-  },
-  vectorBounds: () => {
-    throw new Error('No vectors in these tests')
-  }
-})
+import { createPlainRenderer } from '../renderer'
+
+const renderer = createPlainRenderer()
 
 const LAYER_ELEMENTS = DESIGN_JSX_ELEMENTS.filter((element) => element.nodeType !== undefined)
 

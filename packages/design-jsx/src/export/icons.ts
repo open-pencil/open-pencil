@@ -1,5 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
+import { colorToHex8 } from '@open-pencil/scene-graph/color'
 import {
   isIconModified,
   isPlacedIconName,
@@ -17,7 +17,7 @@ function tintColor(graph: SceneGraph, frame: SceneNode): string | null {
     const paint = tint.includes('fill') ? path.fills[0] : undefined
     const stroke = tint.includes('stroke') ? path.strokes[0] : undefined
     const color = paint?.color ?? stroke?.color
-    if (color) return colorToHex(color)
+    if (color) return colorToHex8(color)
   }
   return null
 }
