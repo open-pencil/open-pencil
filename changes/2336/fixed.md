@@ -1,0 +1,1 @@
+- Imported HTML keeps text as text under resets such as `* { border: 0 solid }`, underlines a link's flex items, moves layers by `translate: calc()`, and draws spread shadows such as focus rings on filled boxes whose content fits inside.
