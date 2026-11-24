@@ -4,6 +4,7 @@ import ai from './ai.json'
 import automation from './automation.json'
 import cloudEditor from './cloud/editor.json'
 import cloudPortal from './cloud/portal.json'
+import cloudPortalApps from './cloud/portal/apps.json'
 import cloudPortalCommunity from './cloud/portal/community.json'
 import cloudPortalPerson from './cloud/portal/person.json'
 import cloudPortalPlan from './cloud/portal/plan.json'
@@ -44,6 +45,7 @@ export default {
   automation,
   'cloud/editor': cloudEditor,
   'cloud/portal': cloudPortal,
+  'cloud/portal/apps': cloudPortalApps,
   'cloud/portal/community': cloudPortalCommunity,
   'cloud/portal/person': cloudPortalPerson,
   'cloud/portal/plan': cloudPortalPlan,

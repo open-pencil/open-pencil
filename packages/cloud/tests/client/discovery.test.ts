@@ -26,7 +26,8 @@ const discovery = {
   capabilities: {
     documents: true,
     workspaces: true,
-    collaboration: false
+    collaboration: false,
+    apps: false
   }
 }
 

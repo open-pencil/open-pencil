@@ -30,7 +30,8 @@ function portalToken(token: CloudAccessToken): PortalAccessToken {
     created: dates.format(token.createdAt, 'date'),
     lastUsed: token.lastUsedAt ? dates.relative(token.lastUsedAt) : null,
     expires: token.expiresAt ? dates.format(token.expiresAt, 'date') : '—',
-    expired
+    expired,
+    access: token.access
   }
 }
 const tokens = computed(() => (list.data.value ?? []).map(portalToken))

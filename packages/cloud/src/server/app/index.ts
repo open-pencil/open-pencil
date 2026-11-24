@@ -110,6 +110,7 @@ export function createCloudApp(services: CloudServices) {
       )
       .route('/', routers.account)
       .route('/', routers.accessTokens)
+      .route('/', routers.appConnections)
       .route('/', createPictureRoutes(app.pictures))
       .use('/api/shares/:shareId/collaboration-ticket', limiters.publicCollaborationLimiter)
       .use('/api/public/*', limiters.publicRateLimiter)
