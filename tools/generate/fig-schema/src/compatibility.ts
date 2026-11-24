@@ -1,80 +1,100 @@
-import { isEqual } from 'es-toolkit'
+import { isEqual, keyBy } from 'es-toolkit'
 
 import type { Definition, Field, Schema } from '@open-pencil/kiwi/schema-runtime'
 
-/** What a definition's field is written as: its type, and for enums and messages its number. */
-function signature(definition: Definition, field: Field): string {
-  const type = definition.kind === 'ENUM' ? '' : `${field.type}${field.isArray ? '[]' : ''} `
-  return definition.kind === 'STRUCT' ? type : `${type}= ${field.value}`
-}
-
-/** The name each value of an enum decodes as: its last member, as Kiwi's decoder names it. */
-function decodedNames(definition: Definition): Map<number, string> {
-  return new Map(definition.fields.map((field) => [field.value, field.name]))
-}
-
 /**
- * How `next` would break what `current` writes: a definition or field it drops, a definition
- * whose kind changed, a field whose type or number changed, and a struct whose fields changed,
- * since a struct's layout is its field list. Additions are not listed; they break nothing.
+ * How `next` would break files `current` reads and writes, one message per change. Additions are
+ * not listed; they break nothing.
  */
 export function incompatibleChanges(current: Schema, next: Schema): string[] {
-  const nextDefinitions = new Map(
-    next.definitions.map((definition) => [definition.name, definition])
+  const nextByName = keyBy(next.definitions, (definition) => definition.name)
+  return current.definitions.flatMap((definition) =>
+    definitionChanges(definition, nextByName[definition.name])
   )
-  return current.definitions.flatMap((definition) => {
-    const updated = nextDefinitions.get(definition.name)
-    if (!updated) return [`${definition.name} was removed`]
-    if (updated.kind !== definition.kind)
-      return [`${definition.name} changed from ${definition.kind} to ${updated.kind}`]
-    if (definition.kind === 'STRUCT') {
-      const fields = (item: Definition) =>
-        item.fields.map((field) => `${signature(item, field)}${field.name}`)
-      return isEqual(fields(updated), fields(definition))
-        ? []
-        : [`${definition.name} changed its struct fields`]
-    }
-    const fields = new Map(updated.fields.map((field) => [field.name, field]))
-    const changes = definition.fields.flatMap((field) => {
-      const changed = fields.get(field.name)
-      const name = `${definition.name}.${field.name}`
-      if (!changed) return [`${name} was removed`]
-      const before = signature(definition, field)
-      const after = signature(updated, changed)
-      return before === after ? [] : [`${name} changed from ${before} to ${after}`]
-    })
-    // Kiwi allows enum aliases and a value decodes as its last member, so every value must keep
-    // the name it decodes as; messages refuse a number used twice.
-    if (definition.kind !== 'ENUM') return changes
-    const before = decodedNames(definition)
-    const after = decodedNames(updated)
-    const renamed = [...before].flatMap(([value, name]) => {
-      const now = after.get(value)
-      return now === undefined || now === name
-        ? []
-        : [`${definition.name} ${value} would read as ${now} instead of ${name}`]
-    })
-    return [...changes, ...renamed]
-  })
 }
 
-/** The definitions and fields `next` adds to `current`, by definition. */
+/** The definitions and fields `next` adds to `current`. */
 export function additions(
   current: Schema,
   next: Schema
 ): { definitions: string[]; fields: string[] } {
-  const known = new Map(current.definitions.map((definition) => [definition.name, definition]))
+  const currentByName = keyBy(current.definitions, (definition) => definition.name)
   const definitions: string[] = []
   const fields: string[] = []
   for (const definition of next.definitions) {
-    const existing = known.get(definition.name)
+    const existing = currentByName[definition.name]
     if (!existing) {
       definitions.push(definition.name)
       continue
     }
-    const names = new Set(existing.fields.map((field) => field.name))
-    for (const field of definition.fields)
-      if (!names.has(field.name)) fields.push(`${definition.name}.${field.name}`)
+    const known = new Set(existing.fields.map((field) => field.name))
+    for (const field of definition.fields) {
+      if (!known.has(field.name)) fields.push(`${definition.name}.${field.name}`)
+    }
   }
   return { definitions, fields }
+}
+
+function definitionChanges(before: Definition, after: Definition | undefined): string[] {
+  if (!after) return [`${before.name} was removed`]
+  if (after.kind !== before.kind) {
+    return [`${before.name} changed from ${before.kind} to ${after.kind}`]
+  }
+  switch (before.kind) {
+    case 'STRUCT':
+      return structChanges(before, after)
+    case 'MESSAGE':
+      return fieldChanges(before, after)
+    case 'ENUM':
+      return [...fieldChanges(before, after), ...enumValueChanges(before, after)]
+  }
+}
+
+/** A struct is encoded as its fields in order, so any change to that list breaks it. */
+function structChanges(before: Definition, after: Definition): string[] {
+  const layout = (definition: Definition) =>
+    definition.fields.map((field) => `${typeName(field)} ${field.name}`)
+  return isEqual(layout(before), layout(after)) ? [] : [`${before.name} changed its struct fields`]
+}
+
+/** Every existing enum member or message field must keep its number, and its type. */
+function fieldChanges(before: Definition, after: Definition): string[] {
+  const afterByName = keyBy(after.fields, (field) => field.name)
+  return before.fields.flatMap((field) => {
+    const name = `${before.name}.${field.name}`
+    const updated = afterByName[field.name]
+    if (!updated) return [`${name} was removed`]
+    const was = signature(before, field)
+    const now = signature(after, updated)
+    return was === now ? [] : [`${name} changed from ${was} to ${now}`]
+  })
+}
+
+/**
+ * Kiwi lets enum members share a value, and a shared value decodes as the last of them, so every
+ * value must keep the name it decodes as: a new alias or a reordering would rename it.
+ */
+function enumValueChanges(before: Definition, after: Definition): string[] {
+  const was = decodedNames(before)
+  const now = decodedNames(after)
+  return [...was].flatMap(([value, name]) => {
+    const renamed = now.get(value)
+    return renamed === undefined || renamed === name
+      ? []
+      : [`${before.name} ${value} would read as ${renamed} instead of ${name}`]
+  })
+}
+
+/** Each enum value and the member it decodes as; later members overwrite earlier ones. */
+function decodedNames(definition: Definition): Map<number, string> {
+  return new Map(definition.fields.map((field) => [field.value, field.name]))
+}
+
+/** `= 1` for an enum member, `Color[] = 1` for a message field. */
+function signature(definition: Definition, field: Field): string {
+  return definition.kind === 'ENUM' ? `= ${field.value}` : `${typeName(field)} = ${field.value}`
+}
+
+function typeName(field: Field): string {
+  return field.isArray ? `${field.type}[]` : `${field.type}`
 }
