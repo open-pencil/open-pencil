@@ -153,4 +153,35 @@ describe('SVG export of masks', () => {
     const ids = Array.from(svg.matchAll(/ id="([^"]+)"/g), ([, id]) => id)
     expect(new Set(ids).size).toBe(ids.length)
   })
+
+  test('preserves bottom-to-top layer order for layerIds across masks and masked siblings', () => {
+    const graph = makeSceneGraph('Page 1')
+    const pageId = firstPageId(graph)
+    const frame = graph.createNode('FRAME', pageId, {
+      name: 'Frame',
+      width: 100,
+      height: 100
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      name: 'Item',
+      width: 20,
+      height: 20,
+      isMask: true,
+      fills: [BLACK]
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      name: 'Item',
+      width: 40,
+      height: 40,
+      fills: [RED]
+    })
+
+    const svg = renderNodesToSVGOrThrow(graph, pageId, [frame.id], {
+      layerIds: true,
+      xmlDeclaration: false
+    })
+    const [maskId] = maskRefs(svg)
+    expect(maskDef(svg, maskId)).toContain('id="Item"')
+    expect(body(svg)).toContain('id="Item_2"')
+  })
 })

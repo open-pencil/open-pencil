@@ -6,6 +6,7 @@ import { asMaskShape, isVisibleMask, maskRuns } from '@open-pencil/scene-graph/m
 import { subtreeRenderBounds } from '#core/geometry/render-bounds'
 
 import { defRegion, nextDefId, type SVGExportContext } from './defs'
+import type { ExportEffectWarning } from './effects'
 import { svg, svgElement, type SVGNode } from './node'
 
 type RenderSVGChild = (node: SceneNode, ctx: SVGExportContext) => SVGNode | null
@@ -62,31 +63,59 @@ export function renderMaskedChildren(
   renderNode: RenderSVGChild
 ): SVGNode[] {
   const out: SVGNode[] = []
-  const renderInto = (target: SVGNode[], nodes: readonly SceneNode[]) => {
+  const renderInto = (
+    target: SVGNode[],
+    nodes: readonly SceneNode[],
+    renderCtx: SVGExportContext
+  ) => {
     for (const node of nodes) {
-      const rendered = renderNode(node, ctx)
+      const rendered = renderNode(node, renderCtx)
       if (rendered) target.push(rendered)
     }
   }
   let next = 0
   for (const run of maskRuns(childNodes, isVisibleMask)) {
-    renderInto(out, childNodes.slice(next, run.start))
+    renderInto(out, childNodes.slice(next, run.start), ctx)
     next = run.end
     if (run.maskedStart === run.end) continue
 
-    const masked: SVGNode[] = []
-    renderInto(masked, childNodes.slice(run.maskedStart, run.end))
-    if (masked.length === 0) continue
+    const prevDefsLen = ctx.defs.length
+    const prevDefIdCounter = ctx.defIdCounter
+    const prevLayerNames = ctx.layerIds ? new Map(ctx.layerIds.names) : null
+    const prevLayerTaken = ctx.layerIds ? new Set(ctx.layerIds.taken) : null
+    const stagedWarnings: ExportEffectWarning[] = []
+    const stagedCtx: SVGExportContext = ctx.onWarning
+      ? { ...ctx, onWarning: (warning) => stagedWarnings.push(warning) }
+      : ctx
 
     let runBounds: VisualBounds | null = null
     const maskElements: SVGNode[] = []
     for (const mask of childNodes.slice(run.start, run.maskedStart)) {
-      const bounds = maskBounds(mask, ctx)
+      const bounds = maskBounds(mask, stagedCtx)
       runBounds = unionVisualBounds(runBounds, bounds)
-      const rendered = renderMask(mask, bounds, ctx, renderNode)
+      const rendered = renderMask(mask, bounds, stagedCtx, renderNode)
       if (rendered) maskElements.push(rendered)
     }
-    if (maskElements.length === 0) continue
+
+    const masked: SVGNode[] = []
+    if (maskElements.length > 0) {
+      renderInto(masked, childNodes.slice(run.maskedStart, run.end), stagedCtx)
+    }
+    ctx.defIdCounter = stagedCtx.defIdCounter
+
+    if (maskElements.length === 0 || masked.length === 0) {
+      ctx.defs.length = prevDefsLen
+      ctx.defIdCounter = prevDefIdCounter
+      if (ctx.layerIds && prevLayerNames && prevLayerTaken) {
+        ctx.layerIds.names.clear()
+        for (const [key, count] of prevLayerNames) ctx.layerIds.names.set(key, count)
+        ctx.layerIds.taken.clear()
+        for (const id of prevLayerTaken) ctx.layerIds.taken.add(id)
+      }
+      continue
+    }
+
+    for (const warning of stagedWarnings) ctx.onWarning?.(warning)
 
     const id = nextDefId(ctx, 'mask')
     const region = runBounds ? defRegion(runBounds) : {}
@@ -99,6 +128,6 @@ export function renderMaskedChildren(
     )
     out.push(svgElement('g', { mask: `url(#${id})` }, masked))
   }
-  renderInto(out, childNodes.slice(next))
+  renderInto(out, childNodes.slice(next), ctx)
   return out
 }
