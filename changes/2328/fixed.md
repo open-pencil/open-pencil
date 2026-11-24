@@ -1,1 +1,1 @@
-- On desktop, opening a page from a URL works on sites that refuse the app's request as a bot's, such as producthunt.com: the page is loaded by the app's built-in browser instead.
+- On desktop, opening a page from a URL works on sites whose bot protection refuses the app's request: the page is loaded by the app's built-in browser instead.

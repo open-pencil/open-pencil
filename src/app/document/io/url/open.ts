@@ -122,8 +122,7 @@ export async function openRemoteFile(
   switch (remote.kind) {
     case 'html': {
       const render = IS_TAURI && runScripts
-      if (remote.rendersOnly && !render)
-        throw new Error(messageStores.files.get().openURLRefused)
+      if (remote.rendersOnly && !render) throw new Error(messageStores.files.get().openURLRefused)
       await openFileInNewTab(new File([remote.bytes], remote.name || remote.title), {
         path: remote.url,
         webPage: {
