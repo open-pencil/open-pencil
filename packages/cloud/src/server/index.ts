@@ -228,7 +228,6 @@ export {
   createInternalRoutes,
   createInternalService,
   parseSetAccountEntitlements,
-  setAccountEntitlementsSchema,
   type InternalService,
   type SetAccountEntitlementsInput
 } from './internal'
@@ -285,12 +284,10 @@ export {
   StaticEntitlementSource,
   parseStaticEntitlementsTOML,
   staticEntitlementValues,
-  staticEntitlementsSchema,
   type CloudPolicyContext,
   type EntitlementSource,
   type EntitlementService,
   type EntitlementSubject,
-  type StaticEntitlements,
   type StaticEntitlementsInput
 } from './policy'
 export {

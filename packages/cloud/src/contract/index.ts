@@ -104,8 +104,10 @@ export * from './relay'
 export {
   accountEntitlementsResponseSchema,
   accountEntitlementsSchema,
+  staticEntitlementsSchema,
   workspaceEntitlementsSchema,
   type AccountEntitlements,
+  type StaticEntitlements,
   type WorkspaceEntitlements
 } from './entitlements'
 export {

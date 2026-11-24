@@ -1,9 +1,9 @@
+import { staticEntitlementsSchema } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
 import type { EntitlementSource, EntitlementSubject } from './entitlements'
-import { staticEntitlementsSchema } from './schema'
 import { staticEntitlementValues, type StaticEntitlementsInput } from './static'
 
 /**
