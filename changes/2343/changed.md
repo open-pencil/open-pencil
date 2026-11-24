@@ -1,0 +1,1 @@
+- `create_shape` makes text that fits its content when given no size, and text that wraps when given only a width, instead of requiring a fixed box; other shapes given no width or height are refused with the one to add.
