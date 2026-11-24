@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { createSVGNodes, renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { svgDataURL } from '@open-pencil/scene-graph/images'
@@ -130,3 +131,65 @@ test('exported masks reveal what the canvas reveals', async ({ page }) => {
   expectRGB(alpha, [255, 0, 0])
   expectRGB(dark, [255, 255, 255])
 })
+
+test('a group mask leaves its own shadow out', async ({ page }) => {
+  const svg = exportedSVG((graph, pageId) => {
+    const frame = graph.createNode('FRAME', pageId, { width: 60, height: 20, fills: [WHITE] })
+    const mask = graph.createNode('GROUP', frame.id, {
+      width: 20,
+      height: 20,
+      isMask: true,
+      maskType: 'ALPHA',
+      effects: [
+        {
+          type: 'DROP_SHADOW',
+          radius: 0,
+          spread: 0,
+          offset: { x: 30, y: 0 },
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          visible: true
+        }
+      ]
+    })
+    graph.createNode('RECTANGLE', mask.id, { width: 20, height: 20, fills: [RED] })
+    graph.createNode('RECTANGLE', frame.id, { width: 60, height: 20, fills: [RED] })
+    return [frame.id]
+  })
+  const [inside, shadow] = await pixels(page, svg, [
+    [10, 10],
+    [40, 10]
+  ])
+  expectRGB(inside, [255, 0, 0])
+  expectRGB(shadow, [255, 255, 255])
+})
+
+for (const isMask of [false, true]) {
+  test(`a subtracted ${isMask ? 'mask' : 'shape'} keeps its hole`, async ({ page }) => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const frame = graph.createNode('FRAME', pageId, { width: 60, height: 60, fills: [WHITE] })
+    const boolean = graph.createNode('BOOLEAN_OPERATION', frame.id, {
+      width: 40,
+      height: 40,
+      booleanOperation: 'SUBTRACT',
+      isMask,
+      fills: [RED]
+    })
+    graph.createNode('RECTANGLE', boolean.id, { width: 40, height: 40, fills: [RED] })
+    graph.createNode('RECTANGLE', boolean.id, { x: 10, y: 10, width: 20, height: 20, fills: [RED] })
+    if (isMask) graph.createNode('RECTANGLE', frame.id, { width: 60, height: 60, fills: [RED] })
+    const { data } = await new IORegistry(BUILTIN_IO_FORMATS).exportContent('svg', {
+      graph,
+      target: { scope: 'node', nodeId: frame.id }
+    })
+    if (typeof data !== 'string') throw new Error('expected SVG markup')
+    const [ring, hole, outside] = await pixels(page, data, [
+      [5, 5],
+      [20, 20],
+      [50, 50]
+    ])
+    expectRGB(ring, [255, 0, 0])
+    expectRGB(hole, [255, 255, 255])
+    expectRGB(outside, [255, 255, 255])
+  })
+}

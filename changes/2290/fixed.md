@@ -1,1 +1,2 @@
 - SVG export now writes mask layers and imported clip paths as SVG `<mask>` definitions instead of drawing the mask shape visibly over unclipped content.
+- SVG export draws boolean operations as their combined shape, with their own paint, instead of painting their operands over a box.

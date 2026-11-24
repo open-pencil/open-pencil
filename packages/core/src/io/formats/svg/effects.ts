@@ -7,6 +7,7 @@ import { maxOf } from '@open-pencil/std/arrays'
 import { subtreeRenderBounds } from '#core/geometry/render-bounds'
 import { shadowSpread } from '#core/geometry/shadows'
 
+import { booleanOutlines } from './boolean/outline'
 import { defRegion, nextDefId, type SVGExportContext } from './defs'
 import { FilterBuilder, HARD_ALPHA } from './filter'
 import { noiseFilter, textureFilter } from './grain'
@@ -118,7 +119,7 @@ function backdropBlur(node: SceneNode, effects: Effect[], ctx: SVGExportContext)
     svgElement(
       'clipPath',
       { id: clipId, transform: `translate(${round(pad)} ${round(pad)})` },
-      fillClip(node)
+      fillClip(node, ctx)
     )
   )
   const opacity = node.opacity < 1 ? `opacity:${round(node.opacity)};` : ''
@@ -138,8 +139,8 @@ function backdropBlur(node: SceneNode, effects: Effect[], ctx: SVGExportContext)
 }
 
 /** What the layer fills, as clip paths: its fill outlines with their winding, or its outline. */
-function fillClip(node: SceneNode): SVGNode[] {
-  const outlines = fillOutlines(node)?.outlines ?? []
+function fillClip(node: SceneNode, ctx: SVGExportContext): SVGNode[] {
+  const outlines = booleanOutlines(node, ctx) ?? fillOutlines(node)?.outlines ?? []
   if (outlines.length === 0) {
     return [svg('path', { d: nodeOutlinePath(node) ?? boxOutlinePath(node) })]
   }

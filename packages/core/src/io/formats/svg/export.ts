@@ -52,6 +52,7 @@ import {
 import { appendAll } from '@open-pencil/std/arrays'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
+import { booleanOutlines, type SVGBooleanOutlines } from './boolean/outline'
 import { renderMaskedChildren } from './masks'
 import { svg, svgElement, renderSVGNode } from './node'
 import type { SVGNode } from './node'
@@ -194,6 +195,13 @@ function nodeShapeElements(
     case 'SHAPE_WITH_TEXT':
       return shapeWithTextElements(node, common, strokeAttrs, ctx)
 
+    case 'BOOLEAN_OPERATION': {
+      const outlines = booleanOutlines(node, ctx)
+      return outlines
+        ? outlineElements(node, outlines, common, ctx, undefined)
+        : [boxOutlineElement(node, common)]
+    }
+
     default:
       return [boxOutlineElement(node, common)]
   }
@@ -291,7 +299,7 @@ function buildShapeChildren(
   visibleStrokes: Stroke[],
   ctx: SVGExportContext
 ): SVGNode[] {
-  const aligned = hasPathLevelFills(node) ? null : alignedStroke(node, visibleStrokes[0])
+  const aligned = hasPathLevelFills(node) ? null : alignedStroke(node, visibleStrokes[0], ctx)
   if (!aligned) {
     return fillAndStrokeElements(
       node,
@@ -437,7 +445,8 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     ctx
   )
 
-  const childNodes = ctx.graph.getChildren(node.id)
+  // A boolean operation draws its combined shape, not its operands.
+  const childNodes = booleanOutlines(node, ctx) ? [] : ctx.graph.getChildren(node.id)
   const childContent = renderMaskedChildren(childNodes, ctx, renderNode)
 
   if (clipId && childContent.length > 0) {
@@ -477,6 +486,8 @@ export interface SVGExportOptions {
    * explicit newlines start a new baseline, which renderers that do not wrap SVG text keep.
    */
   textLayout?: SVGTextLayout
+  /** Combined shapes of boolean operations. Without them, saved fill geometry stands in. */
+  booleanOutlines?: SVGBooleanOutlines
   /** Each layer's name as its element's `id`, as Figma's "Include id attribute" writes it. */
   layerIds?: boolean
   /** Size the drawing to the layers' boxes rather than to everything they draw. */
@@ -506,6 +517,7 @@ export function renderNodesToSVG(
     },
     onWarning: options.onWarning,
     textLayout: options.textLayout,
+    booleanOutlines: options.booleanOutlines,
     layerIds: options.layerIds ? { names: new Map(), taken: new Set() } : undefined
   }
 
