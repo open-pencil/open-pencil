@@ -101,8 +101,9 @@ writes them for `.fig` export and the Figma clipboard alike:
 - When the shaper cannot tell which font drew a run, the layer is written without
   `derivedTextData`: Figma draws baselines without outlines as blank text. A partial set of
   outlines would draw the text with gaps, so it is all or none.
-- Text that cannot be shaped is written with neither glyphs nor baselines, which Figma lays out
-  itself.
+- Text that cannot be shaped is written with neither glyphs nor baselines.
+- Figma lays out text without saved glyphs when it imports a `.fig` file, but draws it blank when
+  it is pasted, so clipboard text depends on every glyph having an outline.
 - Advances are em units, and `logicalIndexToCharacterOffsetMap` has one entry per character,
   measured from the start of its line, as in Figma's own files.
 

@@ -355,13 +355,14 @@ function buildMarker(
   color: Float32Array | undefined,
   options: ParagraphBuildOptions
 ): TextLayoutMarker {
-  const paragraph = buildSkParagraph(r, markerNode(node, item, list), color, options)
+  const marker = markerNode(node, item, list)
+  const paragraph = buildSkParagraph(r, marker, color, options)
   paragraph.layout(1e6)
   return {
     paragraph,
     kind: item.listType === 'ORDERED' ? 'number' : 'bullet',
     em: list.em,
-    face: { family: list.family, style: list.style },
+    node: marker,
     x: 0,
     y: 0,
     lineNumber: 0
