@@ -1,13 +1,17 @@
 import { versionsContract } from '#cloud/contract'
-import type { CloudActor } from '#cloud/server/auth'
+import { versionTokenRoutes } from '#cloud/server/api/tokens'
 import { documentErrors } from '#cloud/server/documents/procedures'
+import { grantReach, type SignedInProcedureContext } from '#cloud/server/tokens'
 import { implement } from '@orpc/server'
 
 import type { DocumentVersionService } from './service'
 
 /** A document's version history, as the contract describes it, for the signed-in actor. */
 export function createDocumentVersionProcedures(service: DocumentVersionService) {
-  const versions = implement(versionsContract).$context<{ actor: CloudActor }>().use(documentErrors)
+  const versions = implement(versionsContract)
+    .$context<SignedInProcedureContext>()
+    .use(grantReach(versionTokenRoutes))
+    .use(documentErrors)
   return versions.router({
     list: versions.list.handler(async ({ context, input }) =>
       service.list(context.actor.userId, input.params.documentId, input.query)

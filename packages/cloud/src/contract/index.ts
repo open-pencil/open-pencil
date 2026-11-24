@@ -1,6 +1,7 @@
 export * from './account'
 export * from './locale'
 export * from './api'
+export * from './oauth'
 export {
   SERVICE_ERROR_STATUS,
   roleModelsSchema,

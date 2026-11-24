@@ -1,7 +1,7 @@
 import { oc } from '@orpc/contract'
 import * as v from 'valibot'
 
-import { cloudIdentitySchema } from '../account'
+import { cloudIdentitySchema, cloudTokenScopeSchema } from '../account'
 import { billingTokenSchema } from '../billing'
 import { accountEntitlementsResponseSchema, workspaceEntitlementsSchema } from '../entitlements'
 import { createServicesTokenSchema, servicesTokenSchema } from '../services'
@@ -78,7 +78,19 @@ export const workspacesContract = {
  * deployment's services and billing act for them.
  */
 export const sessionContract = {
-  session: route.meta(at('GET', '/session')).output(v.object({ user: cloudIdentitySchema })),
+  session: route.meta(at('GET', '/session')).output(
+    v.object({
+      user: v.object({
+        ...cloudIdentitySchema.entries,
+        /** How the request proved who it is: a session, a personal access token, or an app's. */
+        credential: v.optional(v.picklist(['session', 'token', 'app'])),
+        /** What a token may do; a session may do anything its account may. */
+        scopes: v.optional(v.array(cloudTokenScopeSchema)),
+        /** An app's grant, which reaches one workspace alone. */
+        grant: v.optional(v.object({ clientId: v.string(), workspaceId: v.string() }))
+      })
+    })
+  ),
   accountEntitlements: route
     .meta(at('GET', '/account/entitlements'))
     .output(accountEntitlementsResponseSchema),

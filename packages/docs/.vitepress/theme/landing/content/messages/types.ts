@@ -133,13 +133,14 @@ export interface LandingMessages {
       cli: TitledDetail
       source: TitledDetail & { action: string }
     }
-    beta: {
+    nightly: {
       badge: string
       title: string
       lede: string
-      /** What to know before installing a beta. */
+      /** What to know before installing a nightly. */
       caveats: string[]
-      notes: string
+      /** Links to the nightly release, with its commit, version, and checksums. */
+      onGitHub: string
     }
   }
 }

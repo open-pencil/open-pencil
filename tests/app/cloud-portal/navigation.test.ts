@@ -49,6 +49,26 @@ describe('portal access rules', () => {
     })
   })
 
+  test('an app’s approval page keeps its signed query through sign-in and the terms', () => {
+    const query = 'client_id=app&scope=documents%3Aread+offline_access&exp=1&sig=abc'
+    const authorize: PortalRouteTarget = {
+      meta: { account: true },
+      path: '/auth/authorize',
+      fullPath: `/auth/authorize?${query}`,
+      query: {}
+    }
+    expect(portalDestination(authorize, null)).toEqual({
+      name: 'sign-in',
+      query: { redirect: `/auth/authorize?${query}` }
+    })
+    expect(portalDestination(authorize, account('terms'))).toEqual({
+      path: '/account/terms',
+      query: { redirect: `/auth/authorize?${query}` }
+    })
+    const signIn = target('/auth/sign-in', { signedOut: true }, `/auth/authorize?${query}`)
+    expect(portalDestination(signIn, account('active'))).toBe(`/auth/authorize?${query}`)
+  })
+
   test('an account waiting for review or declined only reaches its standing page', () => {
     const security = target('/account', { account: true })
     expect(portalDestination(security, account('pending'))).toBe('/account/pending')

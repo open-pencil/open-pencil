@@ -1,5 +1,5 @@
 import { documentsContract, type CloudAPIErrorCode } from '#cloud/contract'
-import type { CloudActor } from '#cloud/server/auth'
+import { documentTokenRoutes } from '#cloud/server/api/tokens'
 import {
   DocumentConflictError,
   DocumentForbiddenError,
@@ -9,6 +9,7 @@ import {
 } from '#cloud/server/documents/errors'
 import type { DocumentService } from '#cloud/server/documents/service'
 import { StorageQuotaExceededError } from '#cloud/server/quota'
+import { grantReach, type SignedInProcedureContext } from '#cloud/server/tokens'
 import { ORPCError } from '@orpc/client'
 import { implement } from '@orpc/server'
 
@@ -38,7 +39,8 @@ export async function documentErrors<T>(options: { next: () => Promise<T> }): Pr
 /** The documents routes, as the contract describes them, for the signed-in actor. */
 export function createDocumentProcedures(service: DocumentService) {
   const documents = implement(documentsContract)
-    .$context<{ actor: CloudActor }>()
+    .$context<SignedInProcedureContext>()
+    .use(grantReach(documentTokenRoutes))
     .use(documentErrors)
   return documents.router({
     listShared: documents.listShared.handler(async ({ context }) => ({

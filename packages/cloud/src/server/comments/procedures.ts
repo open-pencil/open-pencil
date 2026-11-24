@@ -1,9 +1,11 @@
 import { commentsContract, sharedCommentsContract, type CloudAPIErrorCode } from '#cloud/contract'
+import { commentTokenRoutes } from '#cloud/server/api/tokens'
 import type { CloudActor, CloudSessionResolver } from '#cloud/server/auth'
 import { documentErrors } from '#cloud/server/documents/procedures'
 import { shareActor } from '#cloud/server/sharing/actor'
 import { sharingErrors } from '#cloud/server/sharing/http'
 import type { PublicProcedureContext } from '#cloud/server/sharing/procedures'
+import { grantReach, type SignedInProcedureContext } from '#cloud/server/tokens'
 import { ORPCError } from '@orpc/client'
 import { implement } from '@orpc/server'
 
@@ -34,7 +36,8 @@ function threadOrGone(thread: Awaited<ReturnType<CommentService['get']>> | null)
 /** A document's comments, as the contract describes them, for the signed-in actor. */
 export function createCommentProcedures(service: CommentService) {
   const comments = implement(commentsContract)
-    .$context<{ actor: CloudActor }>()
+    .$context<SignedInProcedureContext>()
+    .use(grantReach(commentTokenRoutes))
     .use(documentErrors)
     .use(commentErrors)
   const as = (actor: CloudActor, documentId: string) => service.forMember(actor.userId, documentId)

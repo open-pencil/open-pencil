@@ -1,0 +1,2 @@
+- Cloud lets people connect apps to one workspace over OAuth 2.1, with apps that register themselves, an approval page, read or read-and-write access, and a Connected apps page to disconnect them; servers turn it on with the `[oauth]` table.
+- Cloud access tokens are read only or read and write; tokens made before keep full access.

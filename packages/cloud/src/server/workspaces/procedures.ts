@@ -1,10 +1,11 @@
 import { sessionContract, workspacesContract, type CloudAPIErrorCode } from '#cloud/contract'
-import type { CloudActor } from '#cloud/server/auth'
+import { workspaceTokenRoutes } from '#cloud/server/api/tokens'
 import type { BillingTokenService } from '#cloud/server/billing'
 import { DocumentNotFoundError } from '#cloud/server/documents'
 import { InvitationLimitError } from '#cloud/server/invitations'
 import type { EntitlementService } from '#cloud/server/policy'
 import { ServicesNotEntitledError, type ServicesTokenService } from '#cloud/server/services'
+import { grantReach, type SignedInProcedureContext } from '#cloud/server/tokens'
 import { ORPCError } from '@orpc/client'
 import { implement } from '@orpc/server'
 
@@ -54,12 +55,20 @@ export function createWorkspaceProcedures(services: {
 }) {
   const { workspaces, members, entitlements } = services
   const routes = implement(workspacesContract)
-    .$context<{ actor: CloudActor }>()
+    .$context<SignedInProcedureContext>()
+    .use(grantReach(workspaceTokenRoutes))
     .use(workspaceErrors)
   return routes.router({
-    list: routes.list.handler(async ({ context }) => ({
-      workspaces: await workspaces.list(context.actor.userId)
-    })),
+    list: routes.list.handler(async ({ context }) => {
+      const { userId, grant } = context.actor
+      const listed = await workspaces.list(userId)
+      // An app sees the one workspace its grant reaches.
+      return {
+        workspaces: grant
+          ? listed.filter((workspace) => workspace.id === grant.workspaceId)
+          : listed
+      }
+    }),
     create: routes.create.handler(async ({ context, input }) => ({
       workspace: await workspaces.create(context.actor.userId, input.body)
     })),
@@ -128,9 +137,14 @@ export function createSessionProcedures(services: {
   billingTokens?: BillingTokenService
 }) {
   const { entitlements, servicesTokens, billingTokens } = services
-  const routes = implement(sessionContract).$context<{ actor: CloudActor }>().use(workspaceErrors)
+  const routes = implement(sessionContract)
+    .$context<SignedInProcedureContext>()
+    .use(workspaceErrors)
   return routes.router({
-    session: routes.session.handler(({ context }) => ({ user: context.actor })),
+    session: routes.session.handler(({ context }) => {
+      const { scopes, ...actor } = context.actor
+      return { user: { ...actor, ...(scopes ? { scopes: [...scopes] } : {}) } }
+    }),
     accountEntitlements: routes.accountEntitlements.handler(async ({ context, errors }) => {
       if (!entitlements) throw errors.not_found()
       return { entitlements: await entitlements.account(context.actor.userId) }

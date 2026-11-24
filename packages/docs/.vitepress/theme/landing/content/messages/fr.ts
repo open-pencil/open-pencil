@@ -356,16 +356,16 @@ export const fr: LandingMessages = {
         action: 'Instructions de compilation'
       }
     },
-    beta: {
-      badge: 'Bêta',
+    nightly: {
+      badge: 'Nightly',
       title: 'Essayez la suite',
-      lede: 'Les bêtas apportent les fonctions de la prochaine version en avance, avant qu’elles n’arrivent à tous.',
+      lede: 'Les nightlies sont compilées chaque nuit à partir du code le plus récent : les nouveautés arrivent dès qu’elles sont prêtes.',
       caveats: [
-        'Une app en version stable ne passe pas à une bêta ; installez la bêta pour l’essayer.',
-        'Sous Linux, supprimez une bêta installée avec .deb ou .rpm avant d’installer la version finale.',
-        'Les bêtas de la CLI et du SDK sont sur npm sous l’étiquette next.'
+        'Une nightly ne passe pas les tests d’une version et peut casser ; sauvegardez votre travail.',
+        'Vous avez déjà l’app ? Choisissez Nightly dans Paramètres → Mises à jour → Canal de mise à jour au lieu de la télécharger.',
+        'Une nightly se met à jour vers la compilation de la nuit suivante. Pour revenir, choisissez Stable au même endroit.'
       ],
-      notes: 'Nouveautés'
+      onGitHub: 'Dernière nightly sur GitHub'
     }
   }
 }

@@ -177,7 +177,7 @@ describe('createCloudAPIRouter', () => {
 
     // Mounted at the root, so the contract's paths start there too.
     const api = contractClient(app, {}, 'http://localhost')
-    expect(await api.session.session()).toEqual({ user: actor })
+    expect(await api.session.session()).toEqual({ user: { ...actor, scopes: undefined } })
     expect(await api.workspaces.list()).toEqual({ workspaces: [] })
   })
 })

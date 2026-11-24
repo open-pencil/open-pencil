@@ -213,6 +213,7 @@ export function parseCloudDeploymentConfig(
     ...workerConfig(config),
     ...serviceConfig(config, environment),
     legal: legalConfig(config),
+    oauthEnabled: config.oauth?.enabled ?? false,
     community: config.community
       ? { workspaceId: config.community.workspace, tourDocumentId: config.community.tour }
       : undefined,

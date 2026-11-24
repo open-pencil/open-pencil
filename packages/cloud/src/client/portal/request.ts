@@ -9,6 +9,7 @@ import {
 } from '#cloud/contract'
 import type { CloudAccountRoutes } from '#cloud/server/account/routes'
 import type { CloudAccessTokenRoutes } from '#cloud/server/account/tokens'
+import type { CloudOAuthRoutes } from '#cloud/server/oauth/routes'
 import { ORPCError } from '@orpc/client'
 import { ValidationError } from '@orpc/contract'
 import { hc } from 'hono/client'
@@ -163,6 +164,7 @@ export function createPortalRouteClients(options: CloudPortalClientOptions = {})
     origin,
     account: hc<CloudAccountRoutes>(origin, clientOptions).api.account,
     tokens: hc<CloudAccessTokenRoutes>(origin, clientOptions).api.account.tokens,
+    apps: hc<CloudOAuthRoutes>(origin, clientOptions).api,
     contract: createCloudContractClient(new URL('/api', origin).href, {
       fetch: options.fetch ?? globalThis.fetch,
       headers: { Accept: 'application/json' }

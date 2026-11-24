@@ -145,6 +145,17 @@ export const cloudPasskeyDeleteSchema = v.object({ id: v.string() })
  * changes how the account is reached, makes other tokens, or reaches administration.
  */
 export const CLOUD_ACCESS_TOKEN_PREFIX = 'opc_'
+
+/**
+ * What a token may do with documents, for personal access tokens and apps alike: `read` lists
+ * and downloads, `write` also creates, saves, shares, and deletes. Writing includes reading.
+ */
+export const CLOUD_TOKEN_SCOPES = ['documents:read', 'documents:write'] as const
+export type CloudTokenScope = (typeof CLOUD_TOKEN_SCOPES)[number]
+export const cloudTokenScopeSchema = v.picklist(CLOUD_TOKEN_SCOPES)
+/** The scopes a personal access token is made with: reading alone, or reading and writing. */
+export const CLOUD_ACCESS_TOKEN_ACCESS = ['read', 'write'] as const
+export type CloudAccessTokenAccess = (typeof CLOUD_ACCESS_TOKEN_ACCESS)[number]
 export const CLOUD_ACCESS_TOKEN_NAME_MAX_LENGTH = 64
 export const CLOUD_ACCESS_TOKEN_MAX_DAYS = 365
 export const cloudAccessTokenSchema = v.object({
@@ -154,7 +165,8 @@ export const cloudAccessTokenSchema = v.object({
   start: v.nullable(v.string()),
   createdAt: v.string(),
   expiresAt: v.nullable(v.string()),
-  lastUsedAt: v.nullable(v.string())
+  lastUsedAt: v.nullable(v.string()),
+  access: v.picklist(CLOUD_ACCESS_TOKEN_ACCESS)
 })
 export const cloudAccessTokensResponseSchema = v.object({
   tokens: v.array(cloudAccessTokenSchema)
@@ -171,7 +183,8 @@ export const cloudAccessTokenCreateSchema = v.object({
     v.integer(),
     v.minValue(1),
     v.maxValue(CLOUD_ACCESS_TOKEN_MAX_DAYS)
-  )
+  ),
+  access: v.picklist(CLOUD_ACCESS_TOKEN_ACCESS)
 })
 /** A new token, the only time the whole of it is shown. */
 export const cloudAccessTokenCreatedResponseSchema = v.object({

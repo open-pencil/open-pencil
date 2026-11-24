@@ -57,6 +57,8 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
     },
     collaboration: { maximum_message_bytes: 1_048_576, maximum_connections_per_room: 1000 },
     documents: { retention_days: 30 },
+    // Apps can connect, so a worktree exercises the approval page and connected apps.
+    oauth: { enabled: true },
     email: {
       transport: 'smtp',
       from: 'OpenPencil Cloud <cloud@openpencil.localhost>',

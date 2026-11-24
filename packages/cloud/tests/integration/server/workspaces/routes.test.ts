@@ -95,7 +95,9 @@ describe('Cloud workspace routes', () => {
   test('returns the resolved session actor', async () => {
     const { app, runtime } = await testApp(alice)
     try {
-      expect(await contractClient(app).session.session()).toEqual({ user: alice })
+      expect(await contractClient(app).session.session()).toEqual({
+        user: { ...alice, scopes: undefined }
+      })
     } finally {
       await runtime.close()
     }

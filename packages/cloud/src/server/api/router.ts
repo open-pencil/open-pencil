@@ -122,7 +122,8 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
         contractRoutes(
           createCloudAPIProcedures(services),
           (context: Context<CloudAPIEnvironment>) => ({
-            actor: context.get('actor')
+            actor: context.get('actor'),
+            grantReach: context.get('grantReach')
           })
         )
       )

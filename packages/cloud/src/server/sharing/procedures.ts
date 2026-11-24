@@ -1,10 +1,12 @@
 import { publicSharingContract, sharingContract } from '#cloud/contract'
 import { acceptedLocale } from '#cloud/email'
+import { sharingTokenRoutes } from '#cloud/server/api/tokens'
 import type { CloudActor, CloudSessionResolver } from '#cloud/server/auth'
 import type { CollaborationTicketService } from '#cloud/server/collaboration/service'
 import type { DocumentService } from '#cloud/server/documents'
 import { DocumentReportLimitError, type DocumentReportService } from '#cloud/server/reports/service'
 import { sharingErrors } from '#cloud/server/sharing/http'
+import { grantReach, type SignedInProcedureContext } from '#cloud/server/tokens'
 import { implement } from '@orpc/server'
 
 import { shareActor } from './actor'
@@ -15,7 +17,10 @@ export function createSharingProcedures(
   sharing: DocumentSharingService,
   collaboration: CollaborationTicketService
 ) {
-  const routes = implement(sharingContract).$context<{ actor: CloudActor }>().use(sharingErrors)
+  const routes = implement(sharingContract)
+    .$context<SignedInProcedureContext>()
+    .use(grantReach(sharingTokenRoutes))
+    .use(sharingErrors)
   return routes.router({
     userProfile: routes.userProfile.handler(async ({ context, input }) => ({
       user: await sharing.userProfile(

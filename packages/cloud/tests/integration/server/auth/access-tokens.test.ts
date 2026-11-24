@@ -43,9 +43,9 @@ const byToken = (token: string) => contractClient(fixture.app, withToken(token).
 /** The contract's client, signed in with the session `cookie`. */
 const byCookie = (cookie: string) => contractClient(fixture.app, withCookie(cookie).headers)
 
-async function createToken(name = 'CI') {
+async function createToken(name = 'CI', access: 'read' | 'write' = 'write') {
   const response = await fixture.client.api.account.tokens.create.$post(
-    { json: { name, expiresInDays: 30 } },
+    { json: { name, expiresInDays: 30, access } },
     withCookie(person.sessionCookie)
   )
   expect(response.status).toBe(201)
@@ -81,6 +81,20 @@ describe('personal access tokens', () => {
     expect(JSON.stringify(workspaces)).toContain('examples-by-token')
   })
 
+  test('that may only read list and download, and change nothing', async () => {
+    const created = await createToken('Reader', 'read')
+    expect(created.accessToken.access).toBe('read')
+    const { token } = created
+    expect(await outcome(byToken(token).workspaces.list())).toBe('ok')
+    const refused = await send('/api/workspaces', {
+      body: { name: 'Refused', slug: 'refused-by-reader' },
+      token
+    })
+    expect(refused.status).toBe(403)
+    expect(await refused.text()).toContain('insufficient_scope')
+    expect(refused.headers.get('www-authenticate')).toContain('scope="documents:write"')
+  })
+
   test('never reach account management, administration, or Better Auth', async () => {
     const { token } = await createToken()
     expect((await fixture.client.api.account.tokens.$get(undefined, withToken(token))).status).toBe(
@@ -89,7 +103,7 @@ describe('personal access tokens', () => {
     expect(
       (
         await fixture.client.api.account.tokens.create.$post(
-          { json: { name: 'More', expiresInDays: 1 } },
+          { json: { name: 'More', expiresInDays: 1, access: 'write' } },
           withToken(token)
         )
       ).status
@@ -159,7 +173,7 @@ describe('personal access tokens', () => {
       approved: true
     })
     const created = await fixture.client.api.account.tokens.create.$post(
-      { json: { name: 'Old CI', expiresInDays: 30 } },
+      { json: { name: 'Old CI', expiresInDays: 30, access: 'write' } },
       withCookie(leaving.sessionCookie)
     )
     const { token } = await responseJSON(created, cloudAccessTokenCreatedResponseSchema)
@@ -185,7 +199,7 @@ describe('personal access tokens', () => {
       .where('userId', '=', person.userId)
       .execute()
     const stale = await fixture.client.api.account.tokens.create.$post(
-      { json: { name: 'Late', expiresInDays: 30 } },
+      { json: { name: 'Late', expiresInDays: 30, access: 'write' } },
       withCookie(person.sessionCookie)
     )
     expect(stale.status).toBe(403)
