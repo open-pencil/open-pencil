@@ -1,24 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createDesignJSXRenderer } from '#design-jsx/index'
-
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { colorToFill } from '@open-pencil/scene-graph/color'
 import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
-const renderer = createDesignJSXRenderer<never>({
-  icon: () => Promise.resolve(null),
-  svg: () => null,
-  createArtwork: () => {
-    throw new Error('No artwork in these tests')
-  },
-  layout: () => {
-    // Text content does not depend on layout.
-  },
-  vectorBounds: () => {
-    throw new Error('No vectors in these tests')
-  }
-})
+import { createPlainRenderer } from './renderer'
+
+const renderer = createPlainRenderer()
 
 async function renderText(source: string): Promise<{ node: SceneNode; warnings: string[] }> {
   const graph = new SceneGraph()
