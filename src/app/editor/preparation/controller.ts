@@ -10,6 +10,7 @@ import type {
   EditorPreparationCancelReason,
   EditorPreparationFailure,
   EditorPreparationHandle,
+  EditorPreparationKind,
   EditorPreparationUpdate
 } from '@/app/editor/preparation/types'
 import type { AppEditorState } from '@/app/editor/session/types'
@@ -75,7 +76,9 @@ export function createEditorPreparationController(
   const presentationTimeoutMs = options.presentationTimeoutMs ?? PRESENTATION_TIMEOUT_MS
   let nextId = 0
   let activeAbort: AbortController | null = null
-  let activeCancel: ((reason: EditorPreparationCancelReason) => void) | null = null
+  let activeCancel:
+    | ((reason: EditorPreparationCancelReason, replacingKind?: EditorPreparationKind) => void)
+    | null = null
   /** The newest frame shown; its two versions came together, so one frame meets a wait. */
   let presented: RenderVersions = { renderVersion: -1, sceneVersion: -1 }
   const covers = (frame: RenderVersions, versions: RenderVersions) =>
@@ -146,11 +149,12 @@ export function createEditorPreparationController(
 
   return {
     begin(options) {
-      activeCancel?.('superseded')
+      activeCancel?.('superseded', options.kind)
       const abort = new AbortController()
       activeAbort = abort
       const id = ++nextId
       const kind = options.kind
+      let supersededBy: EditorPreparationKind | undefined
       state.preparation = {
         id,
         kind,
@@ -169,8 +173,12 @@ export function createEditorPreparationController(
         if (activeCancel === cancel) activeCancel = null
       }
 
-      const cancel = (reason: EditorPreparationCancelReason = 'user') => {
-        if (!isActive(id)) return
+      const cancel = (
+        reason: EditorPreparationCancelReason = 'user',
+        replacingKind?: EditorPreparationKind
+      ) => {
+        if (!isActive(id) || abort.signal.aborted) return
+        supersededBy = replacingKind
         abort.abort()
         clear()
         events?.emit('preparation:finished', { id, kind, status: 'cancelled', reason })
@@ -180,6 +188,9 @@ export function createEditorPreparationController(
       return {
         id,
         signal: abort.signal,
+        get supersededBy() {
+          return supersededBy
+        },
         update(update: EditorPreparationUpdate) {
           if (!isActive(id) || abort.signal.aborted) return
           const hasProgress =

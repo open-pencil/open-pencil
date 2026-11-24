@@ -92,6 +92,8 @@ export type EditorPreparationResult =
 export interface EditorPreparationHandle {
   readonly id: number
   readonly signal: AbortSignal
+  /** The kind of the next preparation, when it cancelled this one. */
+  readonly supersededBy: EditorPreparationKind | undefined
   update(update: EditorPreparationUpdate): void
   complete(): void
   fail(failure: Omit<EditorPreparationFailure, 'id' | 'kind'>): void

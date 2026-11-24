@@ -98,26 +98,31 @@ export async function showImportedGraph(
   void documentReplaced.trigger(store)
   load?.signal.throwIfAborted()
   await prepare?.()
-  load?.signal.throwIfAborted()
-  // A document opens where it was left; a new one on its first page, fitted.
-  const remembered = rememberedDocumentView(store)
-  const firstPageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
-  const pageId = remembered?.pageId ?? firstPageId
-  load?.update({ phase: 'populating-page', detail: store.graph.getNode(pageId)?.name ?? null })
-  // The view is placed before the first frame counts as shown, so the loader gives way to the
-  // page drawn where it opens rather than one that then moves and fills in.
-  await store.switchPage(pageId, {
-    preparation: load,
-    beforePresentation: async () => {
-      if (remembered) {
-        await nextShownFrame({ signal: load?.signal })
-        store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
-      } else {
-        await store.fitCurrentPageToViewport(load?.signal)
+  try {
+    load?.signal.throwIfAborted()
+    // A document opens where it was left; a new one on its first page, fitted.
+    const remembered = rememberedDocumentView(store)
+    const firstPageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
+    const pageId = remembered?.pageId ?? firstPageId
+    load?.update({ phase: 'populating-page', detail: store.graph.getNode(pageId)?.name ?? null })
+    // The view is placed before the first frame counts as shown, so the loader gives way to the
+    // page drawn where it opens rather than one that then moves and fills in.
+    await store.switchPage(pageId, {
+      preparation: load,
+      beforePresentation: async () => {
+        if (remembered) {
+          await nextShownFrame({ signal: load?.signal })
+          store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
+        } else {
+          await store.fitCurrentPageToViewport(load?.signal)
+        }
       }
-    }
-  })
-  load?.signal.throwIfAborted()
+    })
+    load?.signal.throwIfAborted()
+  } catch (error) {
+    // The document and its source are already in the tab. The new page switch now presents it.
+    if (load?.supersededBy !== 'page-switch') throw error
+  }
 }
 
 /** Reports a failed open on its preparation, unless the open was cancelled. */

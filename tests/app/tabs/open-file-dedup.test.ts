@@ -5,10 +5,14 @@ import * as layoutModule from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
+import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
+import { listAutomationDocuments } from '@/app/automation/bridge/target'
 import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { getRecoveryStore, resetRecoveryStoreForTests } from '@/app/document/recovery'
 import { createMemoryRecoveryStore } from '@/app/document/recovery/memory'
+import { appPreferences } from '@/app/settings/preferences/store'
 import { toast } from '@/app/shell/ui'
 import {
   closeTab,
@@ -350,6 +354,107 @@ describe('openFileInNewTab deduplication', () => {
     expect(tabCount()).toBe(count + 1)
     expect(getActiveStore()).toBe(store)
     expect(store.state.documentName).toBe('slow')
+  })
+
+  test('keeps cross-page edits when following an agent takes over an opening tab', async () => {
+    createHomeTab()
+    const { handleRequest } = createAutomationCommandHandlers(makeFigmaFromStore)
+    const agent = { session: 'opening-page-move', kind: 'mcp', client: 'codex' }
+    const following = appPreferences.value.chat.followAgents
+    const animations = appPreferences.value.appearance.animations
+    appPreferences.value.chat.followAgents = true
+    appPreferences.value.appearance.animations = 'off'
+
+    const file = new File(
+      [JSON.stringify({ children: [{ type: 'frame', id: 'card', width: 80, height: 60 }] })],
+      'follow-during-open.pen'
+    )
+    const cancel = new AbortController()
+    const firstFrameHeld = Promise.withResolvers<Tab['store']>()
+    const opening = openFileInNewTab(file, {
+      path: '/tmp/follow-during-open.pen',
+      signal: cancel.signal
+    })
+    const opened = settleFileOpen(opening, (store) => {
+      if (store.state.documentName === 'follow-during-open') firstFrameHeld.resolve(store)
+    }).then(
+      () => 'opened',
+      (error: unknown) => (error instanceof Error ? error.name : String(error))
+    )
+
+    let stopWatching: (() => void) | undefined
+    try {
+      const store = await Promise.race([
+        firstFrameHeld.promise,
+        opened.then((status) => {
+          throw new Error(`Open ended before the first frame was held: ${status}`)
+        })
+      ])
+      const document = expectDefined(
+        listAutomationDocuments(store).find((entry) => entry.name === 'follow-during-open'),
+        'published document'
+      )
+      const card = expectDefined(store.graph.getChildren(document.current_page_id)[0], 'card')
+      const target = { document_id: document.id }
+      const followedPageShown = Promise.withResolvers<undefined>()
+      stopWatching = store.onPreparationEvent('preparation:finished', (result) => {
+        if (result.kind === 'page-switch' && result.status === 'completed') {
+          followedPageShown.resolve(undefined)
+        }
+      })
+      await handleRequest(store, 'tool', {
+        ...target,
+        name: 'create_page',
+        args: { name: 'Next' }
+      })
+      const page = expectDefined(
+        store.graph.getPages().find((entry) => entry.name === 'Next'),
+        'page'
+      )
+      expect(
+        await handleRequest(store, 'tool', {
+          ...target,
+          agent,
+          name: 'reparent_node',
+          args: { id: card.id, parent_id: page.id }
+        })
+      ).toMatchObject({ ok: true, result: { id: card.id, parent_id: page.id } })
+
+      expect({
+        status: await opened,
+        listed: listAutomationDocuments(store).some((entry) => entry.id === document.id)
+      }).toEqual({ status: 'opened', listed: true })
+      expect(store.state.preparation?.kind).toBe('page-switch')
+      await settleFileOpen(followedPageShown.promise)
+      expect(store.state.currentPageId).toBe(page.id)
+      expect(store.graph.getNode(card.id)?.parentId).toBe(page.id)
+      expect(store.hasUnsavedChanges()).toBe(true)
+    } finally {
+      stopWatching?.()
+      cancel.abort()
+      appPreferences.value.chat.followAgents = following
+      appPreferences.value.appearance.animations = animations
+      await handleRequest(getActiveStore(), 'agent_session_closed', { session: agent.session })
+    }
+  })
+
+  test('closes a newly opened tab when the user cancels its first frame wait', async () => {
+    const home = createHomeTab()
+    const count = tabCount()
+    const controller = new AbortController()
+    const opening = openFileInNewTab(new File([], 'cancelled.fig'), {
+      path: '/tmp/cancelled.fig',
+      signal: controller.signal
+    })
+
+    await expect(
+      settleFileOpen(opening, (store) => {
+        if (store.state.documentName === 'cancelled') controller.abort()
+        else acknowledgePresentation(store)
+      })
+    ).rejects.toHaveProperty('name', 'AbortError')
+    expect(tabCount()).toBe(count)
+    expect(getActiveStore()).toBe(home.store)
   })
 
   test('activates the existing tab when the same path is opened again', async () => {
