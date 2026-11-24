@@ -163,6 +163,70 @@ test('a group mask leaves its own shadow out', async ({ page }) => {
   expectRGB(shadow, [255, 255, 255])
 })
 
+for (const align of ['INSIDE', 'OUTSIDE'] as const) {
+  test(`a boolean's ${align} stroke follows its nonzero winding`, async ({ page }) => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      width: 80,
+      height: 80,
+      fills: [WHITE]
+    })
+    const boolean = graph.createNode('BOOLEAN_OPERATION', frame.id, {
+      x: 20,
+      y: 20,
+      width: 40,
+      height: 40,
+      fills: [RED],
+      strokes: [{ ...solid(0, 0, 1), type: 'SOLID', weight: 4, align }]
+    })
+    const square = (from: number, to: number) => [
+      { x: from, y: from },
+      { x: to, y: from },
+      { x: to, y: to },
+      { x: from, y: to }
+    ]
+    const still = { x: 0, y: 0 }
+    const loops = [
+      [0, 1, 2, 3],
+      [4, 5, 6, 7]
+    ]
+    graph.createNode('VECTOR', boolean.id, {
+      width: 40,
+      height: 40,
+      fills: [RED],
+      vectorNetwork: {
+        vertices: [...square(0, 40), ...square(10, 30)],
+        segments: loops.flatMap((loop) =>
+          loop.map((start, index) => ({
+            start,
+            end: loop[(index + 1) % loop.length],
+            tangentStart: still,
+            tangentEnd: still
+          }))
+        ),
+        regions: [{ windingRule: 'NONZERO', loops }]
+      }
+    })
+    const { data } = await new IORegistry(BUILTIN_IO_FORMATS).exportContent('svg', {
+      graph,
+      target: { scope: 'node', nodeId: frame.id }
+    })
+    if (typeof data !== 'string') throw new Error('expected SVG markup')
+    // Outside the edge, inside it, and within the filled inner contour's edge.
+    const [outer, edge, inner, center] = await pixels(page, data, [
+      [18, 40],
+      [22, 40],
+      [32, 40],
+      [40, 40]
+    ])
+    const inside = align === 'INSIDE'
+    expectRGB(outer, inside ? [255, 255, 255] : [0, 0, 255])
+    expectRGB(edge, inside ? [0, 0, 255] : [255, 0, 0])
+    expectRGB(inner, inside ? [0, 0, 255] : [255, 0, 0])
+    expectRGB(center, [255, 0, 0])
+  })
+}
+
 for (const isMask of [false, true]) {
   test(`a subtracted ${isMask ? 'mask' : 'shape'} keeps its hole`, async ({ page }) => {
     const graph = new SceneGraph()

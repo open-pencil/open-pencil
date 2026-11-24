@@ -3,7 +3,7 @@ import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { booleanOutlines } from './boolean/outline'
 import type { SVGExportContext } from './defs'
 import { nextDefId } from './defs'
-import { svg, type SVGNode } from './node'
+import { svg, svgElement, type SVGNode } from './node'
 import {
   boxOutlinePath,
   nodeOutlinePath,
@@ -11,6 +11,7 @@ import {
   shapeWithTextDetailsPath,
   shapeWithTextOutlinePath
 } from './paths'
+import { outlineClips } from './regions'
 
 type Attrs = Record<string, string | number | undefined>
 
@@ -65,10 +66,11 @@ export function alignedStrokeElement(
   const outline = closedOutlinePath(node, ctx)
   if (!outline) return []
   const clipId = nextDefId(ctx, 'clip')
+  const combined = booleanOutlines(node, ctx)
+  let keptBy = 'clip-path'
   if (stroke.align === 'INSIDE') {
-    // A boolean's holes are contours of their own, which only the even-odd rule leaves out.
-    const rule = node.type === 'BOOLEAN_OPERATION' ? 'evenodd' : undefined
-    ctx.defs.push(svg('clipPath', { id: clipId }, svg('path', { d: outline, 'clip-rule': rule })))
+    const clips = combined ? outlineClips(combined) : [svg('path', { d: outline })]
+    ctx.defs.push(svgElement('clipPath', { id: clipId }, clips))
   } else {
     // A box wide enough for the stroke, its mitred tips included, with the outline cut out of it.
     // The doubled stroke mitres out to its weight times the miter limit.
@@ -78,9 +80,31 @@ export function alignedStrokeElement(
     const right = round(node.width + margin)
     const bottom = round(node.height + margin)
     const around = `M${left} ${top}H${right}V${bottom}H${left}Z`
-    ctx.defs.push(
-      svg('clipPath', { id: clipId }, svg('path', { d: around + outline, 'clip-rule': 'evenodd' }))
-    )
+    if (combined) {
+      // Cutting by even-odd would reopen what an outline fills by nonzero winding, so a mask cuts.
+      keptBy = 'mask'
+      const region = { x: left, y: top, width: right - left, height: bottom - top }
+      ctx.defs.push(
+        svgElement('mask', { id: clipId, maskUnits: 'userSpaceOnUse', ...region }, [
+          svg('path', { d: around, fill: '#fff' }),
+          ...combined.map(({ d, windingRule }) =>
+            svg('path', {
+              d,
+              fill: '#000',
+              'fill-rule': windingRule === 'EVENODD' ? 'evenodd' : undefined
+            })
+          )
+        ])
+      )
+    } else {
+      ctx.defs.push(
+        svg(
+          'clipPath',
+          { id: clipId },
+          svg('path', { d: around + outline, 'clip-rule': 'evenodd' })
+        )
+      )
+    }
   }
   return [
     svg('path', {
@@ -88,7 +112,7 @@ export function alignedStrokeElement(
       fill: 'none',
       ...strokeAttrs,
       'stroke-width': round(stroke.weight * 2),
-      'clip-path': `url(#${clipId})`
+      [keptBy]: `url(#${clipId})`
     })
   ]
 }

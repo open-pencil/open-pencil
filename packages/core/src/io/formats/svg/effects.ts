@@ -13,7 +13,7 @@ import { FilterBuilder, HARD_ALPHA } from './filter'
 import { noiseFilter, textureFilter } from './grain'
 import { svg, svgElement, type SVGNode } from './node'
 import { boxOutlinePath, nodeOutlinePath, round } from './paths'
-import { fillOutlines } from './regions'
+import { fillOutlines, outlineClips } from './regions'
 
 /** An effect an export left out because its format cannot draw it. */
 export interface ExportEffectWarning {
@@ -113,13 +113,15 @@ function backdropBlur(node: SceneNode, effects: Effect[], ctx: SVGExportContext)
   if (blurs.length === 0) return null
   const blur = maxOf(blurs.map((e) => e.radius))
   if (!(blur > 0)) return null
+  const clip = fillClip(node, ctx)
+  if (clip.length === 0) return null
   const pad = maxOf(blurs.map(widestBlurRadius))
   const clipId = nextDefId(ctx, 'bgblur')
   ctx.defs.push(
     svgElement(
       'clipPath',
       { id: clipId, transform: `translate(${round(pad)} ${round(pad)})` },
-      fillClip(node, ctx)
+      clip
     )
   )
   const opacity = node.opacity < 1 ? `opacity:${round(node.opacity)};` : ''
@@ -138,15 +140,18 @@ function backdropBlur(node: SceneNode, effects: Effect[], ctx: SVGExportContext)
   )
 }
 
-/** What the layer fills, as clip paths: its fill outlines with their winding, or its outline. */
+/**
+ * What the layer fills, as clip paths: its fill outlines with their winding, or its outline. A
+ * boolean operation with nothing left of it fills nothing.
+ */
 function fillClip(node: SceneNode, ctx: SVGExportContext): SVGNode[] {
-  const outlines = booleanOutlines(node, ctx) ?? fillOutlines(node)?.outlines ?? []
+  const combined = booleanOutlines(node, ctx)
+  if (combined) return outlineClips(combined)
+  const outlines = fillOutlines(node)?.outlines ?? []
   if (outlines.length === 0) {
     return [svg('path', { d: nodeOutlinePath(node) ?? boxOutlinePath(node) })]
   }
-  return outlines.map(({ d, windingRule }) =>
-    svg('path', { d, 'clip-rule': windingRule === 'EVENODD' ? 'evenodd' : undefined })
-  )
+  return outlineClips(outlines)
 }
 
 /** An SVG `feBlend` mode for a shadow's blend mode; SVG has no plus-lighter or plus-darker. */
