@@ -1,12 +1,10 @@
 //! Which addresses a request a web page asks for may reach. A page on the public internet reaches
 //! only public addresses, as browsers keep public sites from reaching private networks: an imported
-//! page cannot make the app fetch from the user's own machine or local network. A page the app
-//! loaded from a private address, such as a development server, reaches both.
+//! page cannot make the app fetch from the user's own machine or local network. A page whose
+//! own address is local, such as a development server's, reaches both.
 
-use std::collections::BTreeSet;
 use std::io;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
-use std::sync::Mutex;
 
 use reqwest::dns::{Addrs, Name, Resolve, Resolving};
 use reqwest::Url;
@@ -91,31 +89,21 @@ pub fn literal_ip(url: &Url) -> Option<IpAddr> {
     }
 }
 
-/// Origins whose pages the app last fetched from a private address, such as a development server.
-static PRIVATE_ORIGINS: Mutex<BTreeSet<String>> = Mutex::new(BTreeSet::new());
-
-fn private_origins() -> std::sync::MutexGuard<'static, BTreeSet<String>> {
-    PRIVATE_ORIGINS
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner())
-}
-
-/// Records the address the app's own request for `url` was answered from. A page is judged by the
-/// address it was actually loaded from, not by a later lookup of its name, which the page's owner
-/// could point anywhere.
-pub fn record_origin(url: &Url, address: Option<SocketAddr>) {
-    let origin = url.origin().ascii_serialization();
-    if address.is_some_and(|address| !is_public(address.ip())) {
-        private_origins().insert(origin);
-    } else {
-        private_origins().remove(&origin);
+/// Whether a page at `url` counts as on this machine or the local network: its address is written
+/// as a private IP, or its host is `localhost` or a name under it, which browsers always resolve to
+/// this machine. A page is judged by its address alone, never by looking its name up, which the
+/// page's owner could point anywhere; a development server reached by another name counts as on
+/// the internet.
+pub fn is_local_page(url: &Url) -> bool {
+    match url.host() {
+        Some(url::Host::Domain(host)) => {
+            let host = host.trim_end_matches('.');
+            host.eq_ignore_ascii_case("localhost")
+                || host.to_ascii_lowercase().ends_with(".localhost")
+        }
+        Some(_) => literal_ip(url).is_some_and(|ip| !is_public(ip)),
+        None => false,
     }
-}
-
-/// Whether the app last loaded a page of `url`'s origin from a private address. One it never
-/// loaded, such as an address in a page's `<base>`, is not.
-pub fn is_private_origin(url: &Url) -> bool {
-    private_origins().contains(&url.origin().ascii_serialization())
 }
 
 /// The error for a request to an address a page may not reach.
@@ -218,16 +206,26 @@ mod tests {
     }
 
     #[test]
-    fn a_page_counts_as_private_only_when_loaded_from_a_private_address() {
-        let page = Url::parse("http://rebinding.test:8080/index.html").unwrap();
-        let other_path = Url::parse("http://rebinding.test:8080/other/").unwrap();
-        assert!(!is_private_origin(&page));
-        record_origin(&page, Some("127.0.0.1:8080".parse().unwrap()));
-        assert!(is_private_origin(&other_path));
-        record_origin(&page, Some("93.184.216.34:8080".parse().unwrap()));
-        assert!(!is_private_origin(&page));
-        record_origin(&page, Some("192.168.1.10:8080".parse().unwrap()));
-        record_origin(&page, None);
-        assert!(!is_private_origin(&page));
+    fn a_page_is_local_only_by_its_written_address() {
+        let local = |text: &str| is_local_page(&Url::parse(text).unwrap());
+        for page in [
+            "http://localhost:3000/",
+            "http://LOCALHOST./",
+            "https://open-pencil.localhost/",
+            "http://127.0.0.1:8080/",
+            "http://192.168.1.10/",
+            "http://[::1]/",
+        ] {
+            assert!(local(page), "{page}");
+        }
+        for page in [
+            "https://example.com/",
+            "https://localhost.example.com/",
+            "https://notlocalhost/",
+            "http://93.184.216.34/",
+            "data:text/html,hi",
+        ] {
+            assert!(!local(page), "{page}");
+        }
     }
 }

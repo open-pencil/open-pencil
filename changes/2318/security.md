@@ -1,1 +1,1 @@
-- On desktop, an imported web page, HTML file, or pasted page loads its files only from public addresses, so it cannot make the app read from this computer or the local network; a page on a private address, such as a development server, still loads its own.
+- On desktop, an imported web page, HTML file, or pasted page loads its files only from public addresses, so it cannot make the app read from this computer or the local network; a page at `localhost` or a private IP address, such as a development server, still loads its own.
