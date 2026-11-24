@@ -468,19 +468,16 @@ describe('createCloudApp', () => {
         auth: createBetterAuthAdapter(proxied, runtime.database)
       })
       const shareId = crypto.randomUUID()
-      const client = testClient(app)
-      const input = { param: { shareId }, json: { secret: 'a'.repeat(64) } }
-      const options = { headers: { 'x-forwarded-for': '203.0.113.7' } }
-      const ticket = await client.api.shares[':shareId']['collaboration-ticket'].$post(
-        input,
-        options
-      )
+      // The limits show in response headers, which the contract client does not expose.
+      const request = (path: string) =>
+        app.request(path, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.7' },
+          body: JSON.stringify({ secret: 'a'.repeat(64) })
+        })
+      const ticket = await request(`/api/shares/${shareId}/collaboration-ticket`)
       // No such route: only the share budget's limiter answers it.
-      const share = await app.request(`/api/shares/${shareId}`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', ...options.headers },
-        body: JSON.stringify(input.json)
-      })
+      const share = await request(`/api/shares/${shareId}`)
       expect(ticket.headers.get('ratelimit-policy')).toContain('60;w=60')
       expect(share.headers.get('ratelimit-policy')).toContain('30;w=60')
     } finally {

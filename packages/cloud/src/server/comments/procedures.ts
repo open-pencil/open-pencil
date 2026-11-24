@@ -3,6 +3,7 @@ import type { CloudActor, CloudSessionResolver } from '#cloud/server/auth'
 import { documentErrors } from '#cloud/server/documents/procedures'
 import { shareActor } from '#cloud/server/sharing/actor'
 import { sharingErrors } from '#cloud/server/sharing/http'
+import type { PublicProcedureContext } from '#cloud/server/sharing/procedures'
 import { ORPCError } from '@orpc/client'
 import { implement } from '@orpc/server'
 
@@ -120,7 +121,7 @@ export function createSharedCommentProcedures(
   resolveSession?: CloudSessionResolver
 ) {
   const comments = implement(sharedCommentsContract)
-    .$context<{ request: Request }>()
+    .$context<PublicProcedureContext>()
     .use(sharingErrors)
     .use(commentErrors)
   const as = async (request: Request, shareId: string, secret: string) =>

@@ -2,10 +2,7 @@ import type { CloudAPIEnvironment } from '#cloud/server/api/types'
 import type { CloudSessionResolver } from '#cloud/server/auth'
 import { createBillingRoutes, type BillingTokenService } from '#cloud/server/billing'
 import type { CollaborationTicketService } from '#cloud/server/collaboration'
-import {
-  createCollaborationRoutes,
-  createPublicCollaborationRoutes
-} from '#cloud/server/collaboration'
+import { createCollaborationRateLimits } from '#cloud/server/collaboration'
 import type { CommentService } from '#cloud/server/comments'
 import { createCommunityRoutes, type CommunityService } from '#cloud/server/community'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -13,14 +10,10 @@ import type { DocumentService } from '#cloud/server/documents'
 import { createDocumentRateLimits, DocumentNotFoundError } from '#cloud/server/documents'
 import type { DocumentVersionService } from '#cloud/server/documents/versions'
 import type { EntitlementService } from '#cloud/server/policy'
-import { createPublicReportRoutes, type DocumentReportService } from '#cloud/server/reports'
+import type { DocumentReportService } from '#cloud/server/reports'
 import { createServicesRoutes, type ServicesTokenService } from '#cloud/server/services'
 import type { DocumentSharingService } from '#cloud/server/sharing'
-import {
-  createDocumentSharingRoutes,
-  createPublicDocumentRoutes,
-  createPublicSharingRoutes
-} from '#cloud/server/sharing'
+import { createSharingRateLimits } from '#cloud/server/sharing'
 import { workspaceParams } from '#cloud/server/validation'
 import type { WorkspaceMemberService, WorkspaceService } from '#cloud/server/workspaces'
 import { createWorkspaceRoutes } from '#cloud/server/workspaces'
@@ -52,24 +45,24 @@ export type CloudAPIServices = {
   workspaceMembers: WorkspaceMemberService
 }
 
-export function createPublicCloudAPIRouter(services: CloudAPIServices) {
+/** The routes anyone may call, under `prefix`: `/api`, and `/api/public` inside the signed-in API. */
+export function createPublicCloudAPIRouter(
+  services: CloudAPIServices,
+  prefix: `/${string}` = '/api'
+) {
   return (
     new Hono<CloudAPIEnvironment>()
-      .route('/', createPublicReportRoutes(services.reports, services.resolveSession))
-      .route('/', createPublicSharingRoutes(services.sharing, services.resolveSession))
-      .route(
-        '/',
-        createPublicDocumentRoutes(services.sharing, services.documents, services.resolveSession)
-      )
-      .route('/', createPublicCollaborationRoutes(services.collaboration, services.resolveSession))
       .route('/', createCommunityRoutes(services.community))
       // The public routes the contract describes, for whoever sent the request.
       .use(
         '*',
         contractRoutes(
           createPublicCloudAPIProcedures(services),
-          '/api',
-          (context: Context<CloudAPIEnvironment>) => ({ request: context.req.raw })
+          prefix,
+          (context: Context<CloudAPIEnvironment>) => ({
+            request: context.req.raw,
+            identify: (actor) => context.set('actor', actor)
+          })
         )
       )
   )
@@ -78,7 +71,7 @@ export function createPublicCloudAPIRouter(services: CloudAPIServices) {
 export function createCloudAPIRouter(services: CloudAPIServices) {
   return (
     new Hono<CloudAPIEnvironment>()
-      .route('/public', createPublicCloudAPIRouter(services))
+      .route('/public', createPublicCloudAPIRouter(services, '/api/public'))
       .get('/account/entitlements', async (context) => {
         if (!services.entitlements)
           return context.json({ error: { code: 'not_found' as const } }, 404)
@@ -124,8 +117,7 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
       )
       .route(
         '/',
-        createCollaborationRoutes(
-          services.collaboration,
+        createCollaborationRateLimits(
           services.database && services.rateLimitSecret
             ? { database: services.database, secret: services.rateLimitSecret }
             : undefined
@@ -141,8 +133,7 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
       )
       .route(
         '/',
-        createDocumentSharingRoutes(
-          services.sharing,
+        createSharingRateLimits(
           services.database && services.rateLimitSecret
             ? { database: services.database, secret: services.rateLimitSecret }
             : undefined

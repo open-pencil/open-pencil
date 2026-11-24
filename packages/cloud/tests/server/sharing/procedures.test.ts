@@ -1,30 +1,42 @@
 import { expect, test } from 'bun:test'
 
+import { asDouble } from '#cloud-tests/helpers/doubles'
+import { contractRoutes } from '#cloud/server/api/contract'
+import type { CloudAPIEnvironment } from '#cloud/server/api/types'
 import type { CloudActor } from '#cloud/server/auth'
-import { createPublicCollaborationRoutes } from '#cloud/server/collaboration'
 import { cloudErrorHandler, type CloudErrorContext } from '#cloud/server/errors'
-import { Hono } from 'hono'
+import { createPublicSharingProcedures } from '#cloud/server/sharing'
+import { Hono, type Context } from 'hono'
 
 const shareId = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
 const actor: CloudActor = { userId: 'user-1', email: 'jane@example.com', name: 'Jane' }
 
 async function reportedOpening(signedIn: CloudActor | null): Promise<CloudErrorContext[]> {
   const reported: CloudErrorContext[] = []
-  const routes = createPublicCollaborationRoutes(
-    {
+  const procedures = createPublicSharingProcedures({
+    sharing: asDouble({}),
+    documents: asDouble({}),
+    reports: asDouble({}),
+    collaboration: {
       issueShareTicket: async () => {
         throw new Error('database unavailable')
       }
     },
-    async () => signedIn
-  )
-  const app = new Hono()
+    resolveSession: async () => signedIn
+  })
+  const app = new Hono<CloudAPIEnvironment>()
     .onError(
       cloudErrorHandler(async (_error, context) => {
         reported.push(context)
       })
     )
-    .route('/api', routes)
+    .use(
+      '*',
+      contractRoutes(procedures, '/api', (context: Context<CloudAPIEnvironment>) => ({
+        request: context.req.raw,
+        identify: (who) => context.set('actor', who)
+      }))
+    )
   const response = await app.request(`/api/shares/${shareId}/collaboration-ticket`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

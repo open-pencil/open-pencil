@@ -55,7 +55,6 @@ async function testApp(initialActor: CloudActor = actor) {
   return {
     runtime,
     objects,
-    client,
     api: contractClient(app),
     workspaceId: workspace.workspace.id,
     setActor: (value: CloudActor) => {
@@ -115,11 +114,10 @@ describe('Cloud document routes', () => {
         })
         if (directGrant) {
           await invitationGrant(context, document.document.id, 'bob')
-          const grant = await context.client.api.documents[':documentId'].grants[':userId'].$put({
-            param: { documentId: document.document.id, userId: 'bob' },
-            json: { permission: 'edit' }
+          await context.api.sharing.putGrant({
+            params: { documentId: document.document.id, userId: 'bob' },
+            body: { permission: 'edit' }
           })
-          expect(grant.status).toBe(200)
           context.setActor({ userId: 'bob', email: 'bob@example.com', name: 'Bob' })
           expect(
             await outcome(
@@ -326,11 +324,10 @@ describe('documents shared with a person', () => {
       })
       const documentId = created.document.id
       await invitationGrant(context, documentId, 'bob')
-      const grant = await context.client.api.documents[':documentId'].grants[':userId'].$put({
-        param: { documentId: documentId, userId: 'bob' },
-        json: { permission: 'view' }
+      await context.api.sharing.putGrant({
+        params: { documentId, userId: 'bob' },
+        body: { permission: 'view' }
       })
-      expect(grant.status).toBe(200)
 
       context.setActor(bob)
       const shared = v.parse(SharedDocuments, await context.api.documents.listShared())
@@ -357,10 +354,9 @@ describe('documents shared with a person', () => {
         .where('userId', '=', 'bob')
         .execute()
       context.setActor({ ...actor, userId: aliceAccount })
-      const revoke = await context.client.api.documents[':documentId'].grants[':userId'].$delete({
-        param: { documentId, userId: 'bob' }
-      })
-      expect(revoke.status).toBeLessThan(300)
+      expect(
+        await outcome(context.api.sharing.revokeGrant({ params: { documentId, userId: 'bob' } }))
+      ).toBe('ok')
       context.setActor(bob)
       const afterRevoke = await context.api.documents.listShared()
       expect(afterRevoke.documents).toEqual([])

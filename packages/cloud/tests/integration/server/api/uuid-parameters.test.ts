@@ -4,7 +4,6 @@ import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
-import { collaborationTicketSchema } from '#cloud/contract'
 import {
   CLOUD_FEATURE_KEYS,
   createBetterAuthAdapter,
@@ -86,20 +85,6 @@ describe('Cloud API route parameters', () => {
         request: () => Promise<Pick<Response, 'status' | 'text'>>
       ][] = [
         [
-          'DELETE /documents/:documentId/shares/abc',
-          () =>
-            api.documents[':documentId'].shares[':shareId'].$delete({
-              param: { documentId, shareId: 'abc' }
-            })
-        ],
-        [
-          'DELETE /documents/:documentId/invitations/abc',
-          () =>
-            api.documents[':documentId'].invitations[':invitationId'].$delete({
-              param: { documentId, invitationId: 'abc' }
-            })
-        ],
-        [
           'GET /workspaces/abc',
           () => api.workspaces[':workspaceId'].$get({ param: { workspaceId: 'abc' } })
         ],
@@ -112,42 +97,6 @@ describe('Cloud API route parameters', () => {
           () =>
             api.workspaces[':workspaceId'].invitations[':invitationId'].resend.$post({
               param: { workspaceId, invitationId: 'abc' }
-            })
-        ],
-        [
-          'POST /documents/abc/collaboration-ticket',
-          () =>
-            api.documents[':documentId']['collaboration-ticket'].$post({
-              param: { documentId: 'abc' }
-            })
-        ],
-        [
-          'POST /shares/abc/collaboration-ticket',
-          () =>
-            api.shares[':shareId']['collaboration-ticket'].$post({
-              param: { shareId: 'abc' },
-              json: { secret }
-            })
-        ],
-        [
-          'POST /shares/abc/document',
-          () =>
-            api.shares[':shareId'].document.$post({ param: { shareId: 'abc' }, json: { secret } })
-        ],
-        [
-          'POST /invitations/abc/preview',
-          () =>
-            api.invitations[':invitationId'].preview.$post({
-              param: { invitationId: 'abc' },
-              json: { token: secret }
-            })
-        ],
-        [
-          'POST /invitations/abc/accept',
-          () =>
-            api.invitations[':invitationId'].accept.$post({
-              param: { invitationId: 'abc' },
-              json: { token: secret }
             })
         ],
         [
@@ -173,6 +122,46 @@ describe('Cloud API route parameters', () => {
         [
           'GET /documents/:documentId/versions/abc',
           () => contract.versions.download({ params: { documentId, versionId: 'abc' } })
+        ],
+        [
+          'DELETE /documents/:documentId/shares/abc',
+          () => contract.sharing.revokeShare({ params: { documentId, shareId: 'abc' } })
+        ],
+        [
+          'DELETE /documents/:documentId/invitations/abc',
+          () => contract.sharing.revokeInvitation({ params: { documentId, invitationId: 'abc' } })
+        ],
+        [
+          'POST /documents/abc/collaboration-ticket',
+          () => contract.sharing.collaborationTicket({ params: { documentId: 'abc' } })
+        ],
+        [
+          'POST /shares/abc/collaboration-ticket',
+          () =>
+            contract.publicSharing.collaborationTicket({
+              params: { shareId: 'abc' },
+              body: { secret }
+            })
+        ],
+        [
+          'POST /shares/abc/document',
+          () => contract.publicSharing.document({ params: { shareId: 'abc' }, body: { secret } })
+        ],
+        [
+          'POST /invitations/abc/preview',
+          () =>
+            contract.publicSharing.previewInvitation({
+              params: { invitationId: 'abc' },
+              body: { token: secret }
+            })
+        ],
+        [
+          'POST /invitations/abc/accept',
+          () =>
+            contract.sharing.acceptInvitation({
+              params: { invitationId: 'abc' },
+              body: { token: secret }
+            })
         ],
         [
           'GET /workspaces/abc/documents',
@@ -203,18 +192,18 @@ describe('Cloud API route parameters', () => {
   test('pass a well-formed ID through to the route', async () => {
     const context = await testApp()
     try {
-      const share = await responseJSON(
-        await context.api.documents[':documentId'].shares.$post({
-          param: { documentId: context.documentId },
-          json: { permission: 'view' }
-        }),
-        v.object({ share: idSchema, secret: v.string() })
-      )
-      const resolved = await context.api.shares[':shareId'].resolve.$post({
-        param: { shareId: share.share.id },
-        json: { secret: share.secret }
+      const share = await context.contract.sharing.createShare({
+        params: { documentId: context.documentId },
+        body: { permission: 'view' }
       })
-      expect(resolved.status).toBe(200)
+      expect(
+        await outcome(
+          context.contract.publicSharing.resolveShare({
+            params: { shareId: share.share.id },
+            body: { secret: share.secret }
+          })
+        )
+      ).toBe('ok')
       expect(
         await outcome(
           context.contract.documents.access({ params: { documentId: context.documentId } })
@@ -228,12 +217,9 @@ describe('Cloud API route parameters', () => {
   test('give an ID one spelling, so a document has one relay', async () => {
     const context = await testApp()
     try {
-      const { ticket } = await responseJSON(
-        await context.api.documents[':documentId']['collaboration-ticket'].$post({
-          param: { documentId: context.documentId.toUpperCase() }
-        }),
-        v.object({ ticket: collaborationTicketSchema })
-      )
+      const { ticket } = await context.contract.sharing.collaborationTicket({
+        params: { documentId: context.documentId.toUpperCase() }
+      })
       expect(ticket.documentId).toBe(context.documentId)
       expect(ticket.roomId).toContain(context.documentId)
     } finally {

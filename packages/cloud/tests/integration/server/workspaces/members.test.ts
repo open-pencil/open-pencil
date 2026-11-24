@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
@@ -59,6 +60,11 @@ async function testApp() {
     as(person: CloudActor) {
       actor = person
       return testClient(app, undefined, undefined, { headers: { Origin: config.publicURL } })
+    },
+    /** The contract's client, acting as `person`. */
+    contractAs(person: CloudActor) {
+      actor = person
+      return contractClient(app, { Origin: config.publicURL })
     }
   }
 }
@@ -74,7 +80,7 @@ const membersSchema = v.object({
 
 describe('workspace members', () => {
   test('invites by email, joins through the invitation link, and keeps an administrator', async () => {
-    const { runtime, as } = await testApp()
+    const { runtime, as, contractAs } = await testApp()
     try {
       const created = await responseJSON(
         await as(people.alice).api.workspaces.$post({ json: { name: 'Studio' } }),
@@ -105,11 +111,12 @@ describe('workspace members', () => {
       expect(listed.members.map((member) => member.email)).toEqual(['alice@example.com'])
       expect(listed.invitations.map((invitation) => invitation.email)).toEqual(['bob@example.com'])
 
-      const preview = await as(people.bob).api.public.invitations[':invitationId'].preview.$post({
-        param: { invitationId: invited.invitation.id },
-        json: { token }
-      })
-      expect(await preview.json()).toMatchObject({
+      expect(
+        await contractAs(people.bob).publicSharing.previewInvitation({
+          params: { invitationId: invited.invitation.id },
+          body: { token }
+        })
+      ).toMatchObject({
         invitation: {
           kind: 'workspace',
           workspaceName: 'Studio',
@@ -118,17 +125,21 @@ describe('workspace members', () => {
         }
       })
 
-      const wrongAccount = await as(people.carol).api.invitations[':invitationId'].accept.$post({
-        param: { invitationId: invited.invitation.id },
-        json: { token }
-      })
-      expect(wrongAccount.status).toBe(404)
+      expect(
+        await outcome(
+          contractAs(people.carol).sharing.acceptInvitation({
+            params: { invitationId: invited.invitation.id },
+            body: { token }
+          })
+        )
+      ).toMatchObject({ status: 404 })
 
-      const accepted = await as(people.bob).api.invitations[':invitationId'].accept.$post({
-        param: { invitationId: invited.invitation.id },
-        json: { token }
-      })
-      expect(await accepted.json()).toEqual({
+      expect(
+        await contractAs(people.bob).sharing.acceptInvitation({
+          params: { invitationId: invited.invitation.id },
+          body: { token }
+        })
+      ).toEqual({
         accepted: { kind: 'workspace', workspaceId, role: 'editor' }
       })
       const bobsWorkspaces = await responseJSON(
@@ -266,7 +277,7 @@ describe('workspace members', () => {
   })
 
   test('replaces an earlier invitation to the same address and lets an administrator withdraw it', async () => {
-    const { runtime, as } = await testApp()
+    const { runtime, as, contractAs } = await testApp()
     try {
       const created = await responseJSON(
         await as(people.alice).api.workspaces.$post({ json: { name: 'Studio' } }),
@@ -281,11 +292,14 @@ describe('workspace members', () => {
       const first = await responseJSON(await invite('viewer'), createdSchema)
       const second = await responseJSON(await invite('editor'), createdSchema)
 
-      const stale = await as(people.bob).api.invitations[':invitationId'].accept.$post({
-        param: { invitationId: first.invitation.id },
-        json: { token: new URL(first.acceptanceURL).hash.slice(1) }
-      })
-      expect(stale.status).toBe(404)
+      expect(
+        await outcome(
+          contractAs(people.bob).sharing.acceptInvitation({
+            params: { invitationId: first.invitation.id },
+            body: { token: new URL(first.acceptanceURL).hash.slice(1) }
+          })
+        )
+      ).toMatchObject({ status: 404 })
 
       const withdrawn = await as(people.alice).api.workspaces[':workspaceId'].invitations[
         ':invitationId'
@@ -303,7 +317,7 @@ describe('workspace members', () => {
     }
   })
   test('resends a waiting invitation under a new link and names who sent it', async () => {
-    const { runtime, as } = await testApp()
+    const { runtime, as, contractAs } = await testApp()
     try {
       const created = await responseJSON(
         await as(people.alice).api.workspaces.$post({ json: { name: 'Studio' } }),
@@ -342,16 +356,22 @@ describe('workspace members', () => {
         { id: resent.invitation.id, invitedBy: { id: people.alice.userId, name: 'Alice' } }
       ])
 
-      const stale = await as(people.bob).api.invitations[':invitationId'].accept.$post({
-        param: { invitationId: first.invitation.id },
-        json: { token: new URL(first.acceptanceURL).hash.slice(1) }
-      })
-      expect(stale.status).toBe(404)
-      const accepted = await as(people.bob).api.invitations[':invitationId'].accept.$post({
-        param: { invitationId: resent.invitation.id },
-        json: { token: new URL(resent.acceptanceURL).hash.slice(1) }
-      })
-      expect(accepted.status).toBe(200)
+      expect(
+        await outcome(
+          contractAs(people.bob).sharing.acceptInvitation({
+            params: { invitationId: first.invitation.id },
+            body: { token: new URL(first.acceptanceURL).hash.slice(1) }
+          })
+        )
+      ).toMatchObject({ status: 404 })
+      expect(
+        await outcome(
+          contractAs(people.bob).sharing.acceptInvitation({
+            params: { invitationId: resent.invitation.id },
+            body: { token: new URL(resent.acceptanceURL).hash.slice(1) }
+          })
+        )
+      ).toBe('ok')
 
       const gone = await as(people.alice).api.workspaces[':workspaceId'].invitations[
         ':invitationId'

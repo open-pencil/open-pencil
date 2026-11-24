@@ -1,25 +1,17 @@
-import {
-  documentImageLinkSchema,
-  type CommitImageUploadsInput,
-  type DocumentImageLink,
-  type ImageUploadOffer,
-  type RequestImageUploadsInput,
-  type ResolveDocumentShareInput
+import type {
+  CommitImageUploadsInput,
+  DocumentImageLink,
+  ImageUploadOffer,
+  RequestImageUploadsInput,
+  ResolveDocumentShareInput
 } from '#cloud/contract'
-import type { PublicCloudAPI } from '#cloud/server/api'
-import type { hc } from 'hono/client'
-import * as v from 'valibot'
 
 import type { CloudContractClient } from './contract'
-import { parseResponse, type CloudClientDiagnostic } from './response'
-
-const imageLinksResponseSchema = v.object({ images: v.array(documentImageLinkSchema) })
 
 /** The images a save uploads apart from the document, and the links a live room loads them by. */
 export function createImageRequests(
-  publicClient: ReturnType<typeof hc<PublicCloudAPI>>,
   contract: CloudContractClient['documents'],
-  onDiagnostic?: CloudClientDiagnostic
+  publicSharing: CloudContractClient['publicSharing']
 ) {
   return {
     /** Uploads for the images a save will name that the document's workspace lacks. */
@@ -46,15 +38,9 @@ export function createImageRequests(
       input: ResolveDocumentShareInput,
       checksums: string[]
     ): Promise<DocumentImageLink[]> {
-      const response = await parseResponse(
-        publicClient.shares[':shareId'].images.$post({
-          param: { shareId },
-          json: { ...input, checksums }
-        }),
-        imageLinksResponseSchema,
-        onDiagnostic
-      )
-      return response.images
+      return (
+        await publicSharing.imageLinks({ params: { shareId }, body: { ...input, checksums } })
+      ).images
     }
   }
 }

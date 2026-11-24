@@ -9,6 +9,9 @@ export const uuidParamSchema = v.pipe(v.string(), v.uuid(), v.toLowerCase())
 
 export const documentParamsSchema = v.object({ documentId: uuidParamSchema })
 export const workspaceParamsSchema = v.object({ workspaceId: uuidParamSchema })
+/** A route parameter the server takes as text, such as a user ID, which is not a UUID column. */
+const textParamSchema = v.pipe(v.string(), v.minLength(1))
+
 export const uploadParamsSchema = v.object({ uploadId: uuidParamSchema })
 export const documentVersionParamsSchema = v.object({
   documentId: uuidParamSchema,
@@ -31,3 +34,17 @@ export const shareCommentParamsSchema = v.object({
   ...shareThreadParamsSchema.entries,
   commentId: uuidParamSchema
 })
+export const documentUserParamsSchema = v.object({
+  documentId: uuidParamSchema,
+  userId: textParamSchema
+})
+export const documentShareParamsSchema = v.object({
+  documentId: uuidParamSchema,
+  shareId: uuidParamSchema
+})
+export const documentInvitationParamsSchema = v.object({
+  documentId: uuidParamSchema,
+  invitationId: uuidParamSchema
+})
+export const invitationParamsSchema = v.object({ invitationId: uuidParamSchema })
+export const invitationContinuationParamsSchema = v.object({ continuationId: textParamSchema })

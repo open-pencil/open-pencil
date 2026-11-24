@@ -1,43 +1,28 @@
-import {
-  cloudUserProfileSchema,
-  type CloudUserProfile,
-  type CollaborationTicket,
-  type CommitUploadRequest,
-  type CreateDocumentRequest,
-  type CreateUploadInput,
-  type DocumentAccess,
-  type DocumentDownload,
-  type DocumentSummary,
-  type SharedDocument,
-  type TrashedDocument
+import type {
+  CloudUserProfile,
+  CollaborationTicket,
+  CommitUploadRequest,
+  CreateDocumentRequest,
+  CreateUploadInput,
+  DocumentAccess,
+  DocumentDownload,
+  DocumentSummary,
+  SharedDocument,
+  TrashedDocument
 } from '#cloud/contract'
-import type { CloudAPI } from '#cloud/server/api'
-import type { hc } from 'hono/client'
-import * as v from 'valibot'
 
 import type { CloudContractClient } from './contract'
-import { parseResponse, type CloudClientDiagnostic } from './response'
-import { collaborationTicketResponseSchema } from './schema'
 
-const userLookupResponseSchema = v.object({ user: v.nullable(cloudUserProfileSchema) })
 export type CloudUpload = Awaited<ReturnType<CloudContractClient['documents']['createUpload']>>
 
 /** Documents: listing and creating them, Trash, downloads, uploads, and collaboration tickets. */
 export function createDocumentRequests(
-  client: ReturnType<typeof hc<CloudAPI>>,
   contract: CloudContractClient['documents'],
-  onDiagnostic?: CloudClientDiagnostic
+  sharing: CloudContractClient['sharing']
 ) {
   return {
     async getUserProfile(documentId: string, userId: string): Promise<CloudUserProfile | null> {
-      const response = await parseResponse(
-        client.documents[':documentId'].users[':userId'].$get({
-          param: { documentId, userId }
-        }),
-        userLookupResponseSchema,
-        onDiagnostic
-      )
-      return response.user
+      return (await sharing.userProfile({ params: { documentId, userId } })).user
     },
     /** Documents shared with the person directly, outside their workspaces. */
     async listSharedDocuments(): Promise<SharedDocument[]> {
@@ -73,14 +58,7 @@ export function createDocumentRequests(
       return (await contract.access({ params: { documentId } })).access
     },
     async getCollaborationTicket(documentId: string): Promise<CollaborationTicket> {
-      const response = await parseResponse(
-        client.documents[':documentId']['collaboration-ticket'].$post({
-          param: { documentId }
-        }),
-        collaborationTicketResponseSchema,
-        onDiagnostic
-      )
-      return response.ticket
+      return (await sharing.collaborationTicket({ params: { documentId } })).ticket
     },
     async createUpload(documentId: string, input: CreateUploadInput): Promise<CloudUpload> {
       return contract.createUpload({ params: { documentId }, body: input })

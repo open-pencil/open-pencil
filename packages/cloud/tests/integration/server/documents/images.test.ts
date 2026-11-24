@@ -177,7 +177,6 @@ async function testApp() {
   return {
     runtime,
     objects,
-    client,
     api,
     documentId,
     uploadImages,
@@ -356,24 +355,23 @@ describe('Cloud document images', () => {
       const other = await context.createDocument('Flyer')
       expect((await context.links([photo.checksum], other)).images).toHaveLength(1)
 
-      const created = await context.client.api.documents[':documentId'].shares.$post({
-        param: { documentId: context.documentId },
-        json: { permission: 'view' }
+      const share = await context.api.sharing.createShare({
+        params: { documentId: context.documentId },
+        body: { permission: 'view' }
       })
-      const share = await responseJSON(
-        created,
-        v.object({ share: v.object({ id: v.string() }), secret: v.string() })
+      expect(
+        await context.api.publicSharing.imageLinks({
+          params: { shareId: share.share.id },
+          body: { secret: share.secret, checksums: [photo.checksum] }
+        })
+      ).toMatchObject({ images: [{ checksum: photo.checksum }] })
+      const wrongSecret = await outcome(
+        context.api.publicSharing.imageLinks({
+          params: { shareId: share.share.id },
+          body: { secret: 'f'.repeat(48), checksums: [photo.checksum] }
+        })
       )
-      const guest = await context.client.api.shares[':shareId'].images.$post({
-        param: { shareId: share.share.id },
-        json: { secret: share.secret, checksums: [photo.checksum] }
-      })
-      expect(guest.status).toBe(200)
-      expect(await guest.json()).toMatchObject({ images: [{ checksum: photo.checksum }] })
-      const wrongSecret = await context.client.api.shares[':shareId'].images.$post({
-        param: { shareId: share.share.id },
-        json: { secret: 'f'.repeat(48), checksums: [photo.checksum] }
-      })
+      if (wrongSecret === 'ok') throw new Error('Expected the wrong secret to be refused')
       expect(wrongSecret.status).toBeGreaterThanOrEqual(400)
     } finally {
       await context.runtime.close()

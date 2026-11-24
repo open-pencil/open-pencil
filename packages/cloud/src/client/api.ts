@@ -116,12 +116,12 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return response.entitlements
     },
     ...createWorkspaceRequests(client, contract.documents, options.onDiagnostic),
-    ...createImageRequests(publicClient, contract.documents, options.onDiagnostic),
-    ...createDocumentRequests(client, contract.documents, options.onDiagnostic),
+    ...createImageRequests(contract.documents, contract.publicSharing),
+    ...createDocumentRequests(contract.documents, contract.sharing),
     ...createVersionRequests(contract.versions),
     ...createCommentRequests(contract.comments),
     ...createSharedCommentRequests(contract.sharedComments),
-    ...createSharingRequests(client, publicClient, options.onDiagnostic),
+    ...createSharingRequests(contract.sharing, contract.publicSharing),
     ...createCommunityRequests(publicClient, options.onDiagnostic)
   }
 }

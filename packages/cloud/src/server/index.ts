@@ -117,12 +117,10 @@ export {
   type RelayAuthorization,
   type RelayConnection,
   type RelaySocket,
-  createCollaborationRoutes,
+  createCollaborationRateLimits,
   createCollaborationTicketService,
   signCollaborationTicket,
   type CollaborationTicketClaims,
-  createPublicCollaborationRoutes,
-  type CollaborationRouteEnvironment,
   type CollaborationTicketService
 } from './collaboration'
 export {
@@ -263,10 +261,10 @@ export type {
 } from './objects'
 export {
   capabilityHashMatches,
-  createDocumentSharingRoutes,
+  createSharingRateLimits,
+  createSharingProcedures,
+  createPublicSharingProcedures,
   createDocumentSharingService,
-  createPublicDocumentRoutes,
-  createPublicSharingRoutes,
   decryptContinuationToken,
   DocumentShareInvalidError,
   DocumentShareSignInRequiredError,
@@ -276,7 +274,7 @@ export {
   type DocumentSharingService,
   type ResolvedDocumentShare,
   type ResolvedSharePrincipal,
-  type SharingRouteEnvironment
+  type PublicProcedureContext
 } from './sharing'
 export {
   CLOUD_FEATURE_KEYS,
@@ -332,7 +330,6 @@ export {
 } from './workspaces'
 export {
   createDocumentReportService,
-  createPublicReportRoutes,
   DOCUMENT_REPORT_BUDGET,
   DocumentReportLimitError,
   type DocumentReportService,
