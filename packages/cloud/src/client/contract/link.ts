@@ -17,12 +17,15 @@ export function createContractLink(
   options: ServiceContractClientOptions
 ) {
   const url = new URL(baseURL)
+  // Called on its own, never as a method of `options`: a browser's `fetch` refuses any receiver
+  // but the window.
+  const send = options.fetch
   return new OpenAPILink(routes, {
     origin: url.origin,
     url: `/${url.pathname.replace(/^\/+/, '')}`,
     headers: options.headers,
     fetch: (request, init) =>
-      options.fetch(request, {
+      send(request, {
         ...init,
         credentials: options.credentials,
         signal: anySignal([init.signal, options.signal])

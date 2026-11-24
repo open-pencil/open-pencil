@@ -159,6 +159,7 @@ export {
 } from './db'
 export {
   canEditDocument,
+  createDocumentProcedures,
   createDocumentRateLimits,
   createDocumentService,
   DocumentConflictError,

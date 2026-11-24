@@ -1,4 +1,4 @@
-import type { CloudTokenScope } from '#cloud/contract'
+import { uuidParamSchema, type CloudTokenScope } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { ORPCError } from '@orpc/client'
@@ -6,6 +6,7 @@ import type { Context, MiddlewareHandler } from 'hono'
 import { matchedRoutes } from 'hono/route'
 import { TrieRouter } from 'hono/router/trie-router'
 import type { Kysely } from 'kysely'
+import * as v from 'valibot'
 
 /**
  * What a route works on, which decides how far an app's grant reaches into it: a workspace, a
@@ -181,8 +182,10 @@ export function grantReach(routes: Partial<Record<string, TokenRoute>>) {
       return options.next()
     }
     const reach = options.context.grantReach
-    const id = routeParameters(input)[PARAMETERS[route.target]]
-    if (!reach || typeof id !== 'string' || !(await reach(route.target, id))) {
+    // Middleware runs before the input is validated, so the ID is checked and spelled as the
+    // route's own schema would: one that is not a UUID names nothing and never reaches a query.
+    const id = v.safeParse(uuidParamSchema, routeParameters(input)[PARAMETERS[route.target]])
+    if (!reach || !id.success || !(await reach(route.target, id.output))) {
       throw new ORPCError('not_found')
     }
     return options.next()

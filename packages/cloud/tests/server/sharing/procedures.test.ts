@@ -50,3 +50,9 @@ test('names a signed-in caller of a share link in its error report, and no guest
   expect((await reportedOpening(actor)).map((context) => context.userId)).toEqual(['user-1'])
   expect((await reportedOpening(null)).map((context) => context.userId)).toEqual([undefined])
 })
+
+test('names the route and the share in the error report, as Hono routes do', async () => {
+  const [report] = await reportedOpening(null)
+  expect(report?.route).toBe('/api/shares/:shareId/collaboration-ticket')
+  expect(report?.resources).toEqual({ shareId })
+})

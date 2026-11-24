@@ -4,6 +4,7 @@ export {
   resolveDocumentAccess,
   type AccessDatabase
 } from './access'
+export { createDocumentProcedures, documentErrors } from './procedures'
 export {
   createDocumentRateLimits,
   documentDomainError,

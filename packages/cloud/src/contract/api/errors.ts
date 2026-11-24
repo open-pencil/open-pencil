@@ -28,8 +28,10 @@ export const CLOUD_API_ERROR_STATUS = {
   self_admin_action_forbidden: 400,
   last_authentication_method: 400,
   email_regeneration_unavailable: 400,
-  mfa_required: 403,
-  two_step_unconfirmed: 403,
+  // The account an administrator acts on lacks a second step; the console's own check, for the
+  // administrator, answers 403 before any contract route.
+  mfa_required: 400,
+  two_step_unconfirmed: 400,
   rate_limited: 429,
   invitation_delivery_failed: 502,
   purge_failed: 503

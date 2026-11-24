@@ -277,6 +277,11 @@ describe('connecting an app', () => {
     const listed = await responseJSON(await send('/api/workspaces', { token }), workspacesSchema)
     expect(listed.workspaces.map((each) => each.id)).toEqual([granted])
     expect((await send(`/api/workspaces/${granted}/documents`, { token })).status).toBe(200)
+    // The grant holds whatever case the ID is spelled in, and an ID that is not one names nothing.
+    expect(
+      (await send(`/api/workspaces/${granted.toUpperCase()}/documents`, { token })).status
+    ).toBe(200)
+    expect((await send('/api/workspaces/not-a-uuid/documents', { token })).status).toBe(404)
     expect((await send(`/api/workspaces/${other}/documents`, { token })).status).toBe(404)
     expect((await send('/api/session', { token })).status).toBe(200)
     // Apps work on documents: they never make workspaces, share, or manage people.

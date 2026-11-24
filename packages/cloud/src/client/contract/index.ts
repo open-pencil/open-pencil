@@ -10,6 +10,8 @@ import type { RouterContract, RouterContractClient } from '@orpc/contract'
 import type { JsonifiedClient } from '@orpc/openapi'
 import * as v from 'valibot'
 
+import { untilAborted } from '@open-pencil/std/timing'
+
 import { CloudAPIError } from '../response'
 
 /** The whole contract the Cloud API answers: the signed-in routes, and those anyone may call. */
@@ -52,14 +54,18 @@ export function createContractClient<T extends RouterContract>(
   baseURL: string,
   options: ServiceContractClientOptions
 ): JsonifiedClient<RouterContractClient<T>> {
-  // The link and its serializer load with the first request, off the editor's startup.
+  // The link and its serializer load with the first request, off the editor's startup. A load
+  // that failed is tried again by the next request; each call stops waiting when it is cancelled.
   let link: Promise<ClientLink<ClientContext>> | undefined
+  const load = () =>
+    import('./link').then(({ createContractLink }) => createContractLink(routes, baseURL, options))
   return createORPCClient(
-    new DynamicLink(() => {
-      link ??= import('./link').then(({ createContractLink }) =>
-        createContractLink(routes, baseURL, options)
-      )
-      return link
+    new DynamicLink(({ signal }) => {
+      link ??= load().catch((error: unknown) => {
+        link = undefined
+        throw error
+      })
+      return signal ? untilAborted(link, signal) : link
     })
   )
 }
