@@ -1,0 +1,1 @@
+- On Linux desktop, Ctrl+mouse-wheel zoom uses smaller steps without changing trackpad pinch zoom.
