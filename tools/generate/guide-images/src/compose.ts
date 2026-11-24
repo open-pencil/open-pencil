@@ -1,13 +1,15 @@
 import type { Page } from '@playwright/test'
-import { fromUint8Array } from 'js-base64'
 
-import type { Box, Point, Theme } from './app.ts'
+import { imageDataURL } from '@open-pencil/scene-graph/images'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+
+import type { Theme } from './app.ts'
 
 export interface Callout {
   number: number
   side: 'left' | 'right'
   /** Where its line meets the control, from the picture's corner. */
-  at: Point
+  at: Vector
 }
 
 export interface Picture {
@@ -17,7 +19,7 @@ export interface Picture {
   radius: number
   callouts?: Callout[]
   /** Where to draw the pointer, which screenshots leave out. */
-  pointer?: Point
+  pointer?: Vector
 }
 
 /** How far a callout's number stands from the picture. */
@@ -37,7 +39,7 @@ function calloutMarkup({ number, side, at }: Callout, width: number): string {
     <b style="left:${badge}px;top:${at.y - 10}px">${number}</b>`
 }
 
-const pointerMarkup = ({ x, y }: Point) => `
+const pointerMarkup = ({ x, y }: Vector) => `
   <svg style="left:${x}px;top:${y}px" width="20" height="22" viewBox="0 0 20 22">
     <path d="M1 1v16l4.2-4 2.7 6.2 2.8-1.2-2.7-6H14z" fill="#111" stroke="#fff" stroke-width="1.4" />
   </svg>`
@@ -63,7 +65,7 @@ export async function composePicture(
       svg { filter: drop-shadow(0 1px 2px #0006) }
     </style>
     <div id="sheet"><div id="card">
-      <img width="${width}" height="${height}" src="data:image/png;base64,${fromUint8Array(png)}" />
+      <img width="${width}" height="${height}" src="${imageDataURL(png)}" />
       ${callouts.map((callout) => calloutMarkup(callout, width)).join('')}
       ${pointer ? pointerMarkup(pointer) : ''}
     </div></div>`)
@@ -72,4 +74,4 @@ export async function composePicture(
 }
 
 /** A point on screen, from the corner of the picture that shows `clip`. */
-export const inside = (clip: Box, { x, y }: Point): Point => ({ x: x - clip.x, y: y - clip.y })
+export const inside = (clip: Rect, { x, y }: Vector): Vector => ({ x: x - clip.x, y: y - clip.y })

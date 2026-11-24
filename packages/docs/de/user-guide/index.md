@@ -28,7 +28,8 @@ Die Dokumentation verwendet die macOS-Schreibweise: <kbd>⌘</kbd> entspricht <k
 
 - [Ebenen und Seiten](./layers-and-pages) — Ebenenbaum, Seiten und Eigenschaften;
 - [Kontextmenü](./context-menu) — Zwischenablage, Gruppen, Komponenten und weitere Aktionen;
-- [Export](/user-guide/exporting) — Bilder, SVG und `.fig`-Dateien exportieren.
+- [Öffnen und speichern](/user-guide/files) — Dokumente und Webseiten.
+- [Export](/user-guide/exporting) — Bilder und SVG exportieren.
 
 ## Erweiterte Funktionen
 

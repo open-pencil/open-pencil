@@ -18,6 +18,8 @@ const IMAGES = 'packages/docs/public/guide'
 const SIZES = 'packages/docs/.vitepress/theme/guide/sizes.json'
 /** Pictures for high-density screens. */
 const PIXEL_RATIO = 2
+/** A laptop's window, tall enough for the Design panel's longest pictured section. */
+const VIEWPORT = { width: 1280, height: 900 }
 const THEMES: Theme[] = ['light', 'dark']
 
 const USER_AGENTS: Record<Keyboard, { platform: string; userAgent: string }> = {
@@ -37,7 +39,7 @@ async function shoot(browser: Browser, name: string, theme: Theme): Promise<Buff
   const { keyboard = 'mac', take } = SHOTS[name]
   const { platform, userAgent } = USER_AGENTS[keyboard]
   const context = await browser.newContext({
-    viewport: { width: 1280, height: 900 },
+    viewport: VIEWPORT,
     deviceScaleFactor: PIXEL_RATIO,
     userAgent
   })

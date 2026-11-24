@@ -1068,8 +1068,8 @@
       "name": "@open-pencil/guide-images-tools",
       "dependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
+        "@open-pencil/scene-graph": "workspace:*",
         "@playwright/test": "^1.63.0",
-        "js-base64": "^3.9.3",
         "sharp": "0.34.5",
       },
       "devDependencies": {

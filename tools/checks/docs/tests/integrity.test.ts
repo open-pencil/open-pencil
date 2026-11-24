@@ -48,6 +48,7 @@ describe('checkDocsIntegrity', () => {
     await write(join(docsRoot, 'public/guide/half-light.webp'))
     await write(join(docsRoot, 'page.md'), '<GuideImage name="whole" other="half" alt="A menu" />')
     await write(join(docsRoot, 'silent.md'), '<GuideImage name="whole" />')
+    await write(join(docsRoot, 'example.md'), '```md\n<GuideImage name="none" />\n```')
 
     expect(check(docsRoot).errors.toSorted()).toEqual([
       "page.md shows missing 'public/guide/half-dark.webp'.",

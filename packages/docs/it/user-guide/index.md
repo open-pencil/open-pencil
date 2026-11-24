@@ -24,7 +24,8 @@ OpenPencil è un editor di design locale e open source, compatibile con Figma, c
 
 - [Livelli e pagine](./layers-and-pages) — albero dei livelli, pagine e proprietà;
 - [Menu contestuale](./context-menu) — appunti, gruppi, componenti e altre azioni;
-- [Esportare](/user-guide/exporting) — immagini, SVG e file `.fig`.
+- [Aprire e salvare](/user-guide/files) — documenti e pagine web.
+- [Esportare](/user-guide/exporting) — immagini e SVG.
 
 ## Funzioni avanzate
 

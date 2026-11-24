@@ -267,7 +267,12 @@ function validateGuideImages(docsRoot: string, markdownFiles: readonly string[])
   const errors: string[] = []
   for (const file of markdownFiles) {
     const page = relative(docsRoot, file)
-    for (const [tag] of readFileSync(file, 'utf8').matchAll(GUIDE_IMAGE)) {
+    // The tags the page renders, not those its code examples show.
+    const markup: string[] = []
+    visit(fromMarkdown(readFileSync(file, 'utf8')) as Root, 'html', (node) =>
+      markup.push(node.value)
+    )
+    for (const [tag] of markup.join('\n').matchAll(GUIDE_IMAGE)) {
       if (!/\salt="[^"]+"/.test(tag)) errors.push(`${page} has a guide picture without alt text.`)
       for (const [, name] of tag.matchAll(/\s(?:name|other)="([^"]+)"/g)) {
         for (const theme of ['light', 'dark']) {

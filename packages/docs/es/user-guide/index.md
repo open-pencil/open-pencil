@@ -24,7 +24,8 @@ OpenPencil es un editor de diseño local y de código abierto, compatible con Fi
 
 - [Capas y páginas](./layers-and-pages) — árbol de capas, páginas y propiedades;
 - [Menú contextual](./context-menu) — portapapeles, grupos, componentes y otras acciones;
-- [Exportar](/user-guide/exporting) — imágenes, SVG y archivos `.fig`.
+- [Abrir y guardar](/user-guide/files) — documentos y páginas web.
+- [Exportar](/user-guide/exporting) — imágenes y SVG.
 
 ## Funciones avanzadas
 

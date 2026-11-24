@@ -28,7 +28,8 @@ W podręczniku używane są oznaczenia z macOS: <kbd>⌘</kbd> oznacza <kbd>Comm
 
 - [Warstwy i strony](./layers-and-pages) — drzewo warstw, strony i panel właściwości;
 - [Menu kontekstowe](./context-menu) — schowek, grupowanie, komponenty i inne operacje;
-- [Eksport](/user-guide/exporting) — eksport obrazów i praca z plikami `.fig`.
+- [Otwieranie i zapisywanie](/user-guide/files) — dokumenty i strony internetowe.
+- [Eksport](/user-guide/exporting) — eksport obrazów.
 
 ## Funkcje zaawansowane
 

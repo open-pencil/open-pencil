@@ -1,5 +1,7 @@
 import type { Locator, Page } from '@playwright/test'
 
+import type { Rect } from '@open-pencil/scene-graph/primitives'
+
 import {
   boxOf,
   buildScene,
@@ -8,7 +10,6 @@ import {
   settle,
   showPlain,
   within,
-  type Box,
   type Keyboard
 } from './app.ts'
 import { inside, type Callout, type Picture } from './compose.ts'
@@ -20,18 +21,21 @@ export interface Shot {
   take: (page: Page) => Promise<Picture>
 }
 
-/** The Design panel's width on screen and where it starts, inside its border. */
-const PANEL = { x: 1026, width: 252 }
 const PANEL_RADIUS = 10
 /** Cards shown in pairs, at a size where two fit side by side. */
 const PAIR_ZOOM = 0.86
 
 async function picture(
   page: Page,
-  clip: Box,
+  clip: Rect,
   radius: number,
   extra: Partial<Picture> = {}
 ): Promise<Picture> {
+  // Playwright cuts a clip at the window's edge, which would stretch the picture.
+  const window = page.viewportSize()
+  if (!window || clip.y < 0 || clip.y + clip.height > window.height) {
+    throw new Error('The picture does not fit the window')
+  }
   const png = await page.screenshot({ clip })
   return { png, width: clip.width, height: clip.height, radius, ...extra }
 }
@@ -45,14 +49,16 @@ async function plainFrame(page: Page, jsx: string, name: string, zoom: number): 
 const panelText = (page: Page, text: string) => page.getByText(text, { exact: true }).last()
 
 /** The Design panel from a heading down to `bottom`. */
-async function panelClip(page: Page, heading: string, bottom: Box): Promise<Box> {
+async function panelClip(page: Page, heading: string, bottom: Rect): Promise<Rect> {
+  // Inside the border the panel shares with the canvas, and the scrollbar's edge.
+  const panel = await boxOf(page.getByTestId('properties-panel'))
   const y = (await boxOf(panelText(page, heading))).y - 7
-  return { ...PANEL, y, height: bottom.y + bottom.height + 8 - y }
+  return { x: panel.x + 2, y, width: panel.width - 4, height: bottom.y + bottom.height + 8 - y }
 }
 
 /** A callout on a control's near edge; `down` moves it off the middle, past a neighbor. */
 async function callout(
-  clip: Box,
+  clip: Rect,
   number: number,
   side: Callout['side'],
   control: Locator,
@@ -175,6 +181,8 @@ export const SHOTS: Record<string, Shot> = {
       await toggle.click()
       const preview = page.locator('img[src^="blob:"]').last()
       await preview.waitFor()
+      // The preview's section slides open, and scrolling must wait for its full height.
+      await settle(page)
       await preview.evaluate((image) => image.scrollIntoView({ block: 'center' }))
       await page.mouse.move(700, 120)
       await settle(page)

@@ -1,19 +1,10 @@
 import type { Locator, Page } from '@playwright/test'
 
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+
 export type Theme = 'light' | 'dark'
 /** Whose keyboard the app's menus show. */
 export type Keyboard = 'mac' | 'other'
-
-export interface Box {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-export interface Point {
-  x: number
-  y: number
-}
 
 const SETTLE_MS = 500
 
@@ -79,7 +70,7 @@ function layerId(page: Page, path: string[]): Promise<string> {
 }
 
 /** A layer's box on screen. */
-export async function layerBox(page: Page, path: string[]): Promise<Box> {
+export async function layerBox(page: Page, path: string[]): Promise<Rect> {
   return page.evaluate(
     (id) => {
       const store = window.openPencil?.getStore?.()
@@ -115,14 +106,14 @@ export async function showPlain(page: Page) {
   await settle(page)
 }
 
-export async function boxOf(locator: Locator): Promise<Box> {
+export async function boxOf(locator: Locator): Promise<Rect> {
   const box = await locator.boundingBox()
   if (!box) throw new Error(`${locator} is not on screen`)
   return box
 }
 
 /** A point of a box, by fractions of its size. */
-export const within = (box: Box, across: number, down: number): Point => ({
+export const within = (box: Rect, across: number, down: number): Vector => ({
   x: box.x + box.width * across,
   y: box.y + box.height * down
 })
