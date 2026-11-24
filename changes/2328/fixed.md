@@ -1,1 +1,1 @@
-- On desktop, opening a page from a URL works on sites whose bot protection refuses the app's request: the page is loaded by the app's built-in browser instead.
+- On desktop, a page whose site refuses the app's request, as bot protection does, is loaded in the app's built-in browser instead, which many such sites let through.

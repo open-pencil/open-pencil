@@ -129,6 +129,7 @@ describe('fetchRemoteFile', () => {
       expect(refusal).toBeInstanceOf(RefusedPageError)
       expect(refusal instanceof RefusedPageError && refusal.status).toBe(status)
     }
+    expect(await failure(403, 'application/xhtml+xml')).toBeInstanceOf(RefusedPageError)
     // A missing page, a server failure, or a refusal that is no page stay plain failures.
     expect(await failure(404)).not.toBeInstanceOf(RefusedPageError)
     expect(await failure(500)).not.toBeInstanceOf(RefusedPageError)

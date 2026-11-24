@@ -183,7 +183,7 @@ async function fetchOnce(
         // Ends the body the server may still be sending; on desktop that ends the native request.
         controller.abort()
         const type = mediaType(response.headers.get('content-type'))
-        if (BOT_REFUSAL_STATUSES.has(response.status) && type === 'text/html') {
+        if (BOT_REFUSAL_STATUSES.has(response.status) && type && KIND_BY_TYPE[type] === 'html') {
           throw new RefusedPageError(url, response.status)
         }
         throw new Error(`Failed to fetch ${url.href}: ${response.status} ${response.statusText}`)

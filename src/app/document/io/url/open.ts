@@ -100,7 +100,10 @@ export async function fetchWebAddress(url: URL, signal?: AbortSignal): Promise<O
   try {
     remote = await fetchRemoteFile(url, { fetch: remoteFetch, signal, io })
   } catch (error) {
-    if (error instanceof RefusedPageError && IS_TAURI) return refusedPage(error.url)
+    if (error instanceof RefusedPageError && IS_TAURI) {
+      signal?.throwIfAborted()
+      return refusedPage(error.url)
+    }
     throw new Error(fetchFailure(error), { cause: error })
   }
   signal?.throwIfAborted()
