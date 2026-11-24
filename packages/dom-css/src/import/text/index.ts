@@ -1,3 +1,4 @@
+import type { DesignElement, DesignNode, DesignStyleDeclaration } from '#dom-css/types'
 import { countBy } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
@@ -20,9 +21,8 @@ import {
 import { appendStyleRun } from '@open-pencil/scene-graph/text'
 import { appendAll } from '@open-pencil/std/arrays'
 
-import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
-import { colorToFillFromCSS, mergedStyle, pickStyle } from './css-values'
-import { elementDisplay } from './flow'
+import { colorToFillFromCSS, mergedStyle, pickStyle } from '../css-values'
+import { elementDisplay } from '../flow'
 
 /** The character styles a text layer and its runs take from CSS. */
 export type CSSCharacterStyle = Pick<

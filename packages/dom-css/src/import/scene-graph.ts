@@ -6,6 +6,7 @@ import { blurRadiusForSigma } from '@open-pencil/scene-graph/geometry'
 import { maxOf } from '@open-pencil/std/arrays'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
+import { COMPONENT_ATTRIBUTES, isMarked } from './attributes/component'
 import {
   applyBoxSizing,
   applyCornerRadii,
@@ -21,10 +22,7 @@ import {
   strokeWeightFromStyle
 } from './box'
 import { hasBoxStyle } from './boxes'
-import { COMPONENT_ATTRIBUTES, isMarked } from './component-attributes'
 import { colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
-import { decoratedStyle } from './decoration'
-import { hasContent, isTextLikeElement, textContent } from './elements'
 import {
   alignBlocksInFlow,
   type FlowBlock,
@@ -33,6 +31,7 @@ import {
   applyFlowSizing,
   elementDisplay,
   flowOf,
+  hasContent,
   inheritedTextStyle,
   isInlineLevel,
   hiddenByVisibility,
@@ -77,8 +76,10 @@ import {
   applyParagraphs,
   type CSSCharacterStyle
 } from './text'
+import { decoratedStyle } from './text/decoration'
+import { isTextLikeElement, textContent } from './text/elements'
 import { cssTransform, type CSSTransforms } from './transform'
-import type { LayerSources } from './variables/bind'
+import type { LayerSources } from './variables/bindings'
 
 export interface DesignDocumentToSceneGraphOptions {
   pageName?: string
@@ -588,7 +589,7 @@ export function designDocumentToSceneGraph(
 export { elementSVG, imagePicture, type ElementSVG, type ImagePicture } from './pictures'
 export { placeLayersFromLayout, type CapturedBox, type CapturedBoxes } from './placement'
 export { COMPONENT_ATTRIBUTES }
-export { bindThemeVariables, type LayerSources } from './variables/bind'
+export { bindThemeVariables, type LayerSources } from './variables/bindings'
 export type { HTMLTheme, ThemeMode } from './variables/theme'
 export { applyCSSTransforms, type CSSTransform, type CSSTransforms } from './transform'
 export { applyStacking, type Stacking, type Stackings } from './stacking'

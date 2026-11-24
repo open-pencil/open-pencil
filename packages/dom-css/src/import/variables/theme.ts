@@ -5,7 +5,7 @@ import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { expressionLabel, referencedProperty } from './expression'
-import type { CustomPropertyValue } from './probe'
+import type { CustomPropertyValue } from './values'
 
 /** One mode of an imported theme: the page styled in it, and its custom properties' values. */
 export interface ThemeMode {

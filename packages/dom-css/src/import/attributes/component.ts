@@ -1,4 +1,4 @@
-import type { DesignElement } from '../types'
+import type { DesignElement } from '#dom-css/types'
 
 /**
  * The attributes a page marks components with. An element with `component` becomes a main

@@ -1,4 +1,4 @@
-import type { DesignElement, DesignNode } from '../types'
+import type { DesignElement, DesignNode } from '#dom-css/types'
 
 export function textContent(node: DesignNode): string {
   if (node.type === 'text') return node.text
@@ -21,8 +21,4 @@ export function isTextLikeElement(node: DesignElement): boolean {
     'h5',
     'h6'
   ].includes(node.tagName.toLowerCase())
-}
-
-export function hasContent(element: DesignElement): boolean {
-  return element.children.some((child) => child.type !== 'text' || child.text.trim().length > 0)
 }

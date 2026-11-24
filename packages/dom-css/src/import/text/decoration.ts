@@ -1,7 +1,8 @@
-import type { DesignElement, DesignStyleDeclaration } from '../types'
-import { mergedStyle, pickStyle } from './css-values'
-import { elementDisplay } from './flow'
-import { decorates, DECORATION_PROPERTIES } from './text'
+import type { DesignElement, DesignStyleDeclaration } from '#dom-css/types'
+
+import { decorates, DECORATION_PROPERTIES } from '.'
+import { mergedStyle, pickStyle } from '../css-values'
+import { elementDisplay } from '../flow'
 
 /** Boxes CSS does not draw the decoration of what contains them through. */
 function isolatesDecoration(element: DesignElement, style: DesignStyleDeclaration): boolean {

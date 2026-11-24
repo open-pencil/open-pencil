@@ -4,7 +4,7 @@ export { exportStorybook, STORY_MODES, STORYBOOK_FRAMEWORKS } from './export/sto
 export { createBrowserCSSRuntime, createCSSRuntime } from './runtime'
 export { attachImages, backgroundImageURLs } from './runtime/resources'
 export { parseHTMLDocument } from './import/markup'
-export { customPropertyValues, type CustomPropertyValue } from './import/variables/probe'
+export { customPropertyValues, type CustomPropertyValue } from './import/variables/values'
 export {
   htmlStylesheet,
   htmlToDesignDocument,
@@ -12,7 +12,7 @@ export {
   tailwindHTMLToDesignDocument,
   tailwindHTMLToSceneGraph
 } from './import/html'
-export { forceStates, FORCED_STATE_ATTRIBUTE } from './import/forced-states'
+export { forceStates, FORCED_STATE_ATTRIBUTE } from './import/states'
 export { compileTailwindCSS } from './import/tailwind'
 export {
   parseFontFaceRules,
