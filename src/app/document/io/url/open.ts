@@ -1,7 +1,7 @@
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import {
-  BrowserCheckError,
   fetchRemoteFile,
+  RefusedPageError,
   remoteFileTitle,
   type RemoteFile
 } from '@open-pencil/core/io/remote'
@@ -56,7 +56,7 @@ function fetchFailure(error: unknown): string {
   const files = messageStores.files.get()
   // The browser reports a site that refuses to be read by other sites as a bare network error.
   if (error instanceof TypeError && !IS_TAURI) return files.openURLBlocked
-  if (error instanceof BrowserCheckError) return files.openURLBrowserCheck
+  if (error instanceof RefusedPageError) return files.openURLRefused
   return errorMessage(error)
 }
 
@@ -64,14 +64,14 @@ function fetchFailure(error: unknown): string {
 export type OpenableRemoteFile = RemoteFile & {
   kind: 'html' | 'document' | 'svg' | 'image'
   /**
-   * The site's bot check let only a browser read the page, so it has no HTML of its own here and
-   * opens only as the desktop app renders it, loading the page itself.
+   * The site refused the app's request for the page, as one it took for a bot, so it has no HTML
+   * of its own here and opens only as the desktop app renders it, loading the page as a browser.
    */
   rendersOnly?: boolean
 }
 
-/** A page behind a bot check, to be loaded by the desktop app's render window. */
-function browserCheckedPage(url: URL): OpenableRemoteFile {
+/** A page its site refused the app, to be loaded by the desktop app's render window. */
+function refusedPage(url: URL): OpenableRemoteFile {
   return {
     url: url.href,
     name: '',
@@ -100,7 +100,7 @@ export async function fetchWebAddress(url: URL, signal?: AbortSignal): Promise<O
   try {
     remote = await fetchRemoteFile(url, { fetch: remoteFetch, signal, io })
   } catch (error) {
-    if (error instanceof BrowserCheckError && IS_TAURI) return browserCheckedPage(error.url)
+    if (error instanceof RefusedPageError && IS_TAURI) return refusedPage(error.url)
     throw new Error(fetchFailure(error), { cause: error })
   }
   signal?.throwIfAborted()
@@ -123,7 +123,7 @@ export async function openRemoteFile(
     case 'html': {
       const render = IS_TAURI && runScripts
       if (remote.rendersOnly && !render)
-        throw new Error(messageStores.files.get().openURLBrowserCheck)
+        throw new Error(messageStores.files.get().openURLRefused)
       await openFileInNewTab(new File([remote.bytes], remote.name || remote.title), {
         path: remote.url,
         webPage: {

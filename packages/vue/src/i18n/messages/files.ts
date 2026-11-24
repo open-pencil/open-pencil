@@ -34,7 +34,7 @@ export const filesMessageDefaults = {
   openURLInvalid: 'Enter a web address, such as https://example.com.',
   openURLBlocked:
     'The site does not let other sites read it, so the browser cannot open it. The desktop app can.',
-  openURLBrowserCheck:
+  openURLRefused:
     'The site lets only a browser read this page. The desktop app can open it with the page’s scripts running.',
   openURLPDF: 'This address holds a PDF, which OpenPencil cannot open yet.',
   openURLUnsupported: 'This address holds a file OpenPencil cannot open.',

@@ -72,7 +72,7 @@ async function pageSource(
     // A page its scripts sent elsewhere is named after where it ended up.
     return { html: rendered.html, title: remoteFileTitle(new URL(rendered.url)), url: rendered.url }
   }
-  if (webPage?.rendersOnly) throw new Error(messageStores.files.get().openURLBrowserCheck)
+  if (webPage?.rendersOnly) throw new Error(messageStores.files.get().openURLRefused)
   return {
     html: await file.text(),
     title: webPage?.title ?? documentNameFor(file),

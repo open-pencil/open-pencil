@@ -81,6 +81,11 @@ export interface TauriFetchOptions {
   maxResponseBytes?: number
   nativeFetch?: FetchFunction
   pageResource?: PageResource
+  /**
+   * The `User-Agent` sent when the request names none, as a site that refuses clients without a
+   * browser's name reads it. A page can set no `User-Agent` of its own.
+   */
+  userAgent?: string
 }
 
 const nativeFetch: typeof fetch = globalThis.fetch.bind(globalThis)
@@ -93,7 +98,7 @@ export function createTauriFetch(options: TauriFetchOptions = {}): FetchFunction
       init,
       options.maxResponseBytes,
       options.timeoutMs,
-      options.pageResource
+      { pageResource: options.pageResource, userAgent: options.userAgent }
     )
 }
 
@@ -112,7 +117,7 @@ async function executeTauriFetch(
   init?: RequestInit,
   maxResponseBytes?: number,
   timeoutMs?: number,
-  pageResource?: PageResource
+  { pageResource, userAgent }: Pick<TauriFetchOptions, 'pageResource' | 'userAgent'> = {}
 ): Promise<Response> {
   const parsedURL = new URL(input instanceof Request ? input.url : input.toString())
   const isIpcURL =
@@ -129,6 +134,9 @@ async function executeTauriFetch(
 
   // Capture generated multipart headers before consuming the Request body.
   const headers = headersToProxyHeaders(request.headers)
+  if (userAgent && !headers.some(({ name }) => name.toLowerCase() === 'user-agent')) {
+    headers.push({ name: 'user-agent', value: userAgent })
+  }
   let bodyData: Uint8Array | undefined
   if (request.body != null) {
     const buffer = await request.arrayBuffer()
