@@ -11,7 +11,7 @@ use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::Manager;
 use tokio::sync::oneshot;
 
-use super::address::{is_public, is_public_url, literal_ip, PublicResolver};
+use super::address::{is_private_origin, is_public, literal_ip, record_origin, PublicResolver};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct ProxyHttpHeader {
@@ -147,14 +147,14 @@ fn request_method(method: Option<String>) -> Result<Method, ProxyHttpError> {
     Method::from_bytes(raw.as_bytes()).map_err(|e| ProxyHttpError::request(e.to_string()))
 }
 
-/// Whether a request for a page's file may reach only public addresses: when the page is on the
-/// internet, or has no web address of its own.
-async fn public_only(resource: Option<&PageResource>) -> bool {
+/// Whether a request for a page's file may reach only public addresses: unless the app loaded the
+/// page itself from a private address, such as a development server.
+fn public_only(resource: Option<&PageResource>) -> bool {
     let Some(resource) = resource else {
         return false;
     };
     match resource.page_url.as_deref().map(reqwest::Url::parse) {
-        Some(Ok(page)) if matches!(page.scheme(), "http" | "https") => is_public_url(&page).await,
+        Some(Ok(page)) => !is_private_origin(&page),
         _ => true,
     }
 }
@@ -186,7 +186,8 @@ async fn send(request: ProxyHttpRequest) -> Result<reqwest::Response, ProxyHttpE
             "Only HTTP(S) requests are supported",
         ));
     }
-    let public_only = public_only(request.page_resource.as_ref()).await;
+    let public_only = public_only(request.page_resource.as_ref());
+    let app_request = request.page_resource.is_none();
     if public_only && literal_ip(&parsed).is_some_and(|ip| !is_public(ip)) {
         return Err(ProxyHttpError::request(
             "A page on the internet cannot load files from a private network address",
@@ -221,7 +222,11 @@ async fn send(request: ProxyHttpRequest) -> Result<reqwest::Response, ProxyHttpE
         }
         builder = builder.timeout(Duration::from_millis(timeout_ms));
     }
-    builder.send().await.map_err(ProxyHttpError::network)
+    let response = builder.send().await.map_err(ProxyHttpError::network)?;
+    if app_request {
+        record_origin(response.url(), response.remote_addr());
+    }
+    Ok(response)
 }
 
 fn size_limit_error() -> ProxyHttpError {
@@ -412,11 +417,17 @@ mod tests {
     async fn a_page_on_this_machine_and_the_app_itself_reach_it() {
         let port = local_server(OK);
         let url = format!("http://localhost:{port}/style.css");
-        let local_page = Some(PageResource {
-            page_url: Some(format!("http://localhost:{port}/")),
-        });
+        let page_url = format!("http://localhost:{port}/");
+        let local_page = || {
+            Some(PageResource {
+                page_url: Some(page_url.clone()),
+            })
+        };
+        // Until the app has loaded the page from this machine, it counts as on the internet.
+        assert!(send(get(url.clone(), local_page())).await.is_err());
+        send(get(page_url.clone(), None)).await.ok().unwrap();
         assert_eq!(
-            send(get(url.clone(), local_page))
+            send(get(url.clone(), local_page()))
                 .await
                 .ok()
                 .unwrap()

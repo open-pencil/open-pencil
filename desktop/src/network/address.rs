@@ -1,10 +1,12 @@
 //! Which addresses a request a web page asks for may reach. A page on the public internet reaches
 //! only public addresses, as browsers keep public sites from reaching private networks: an imported
-//! page cannot make the app fetch from the user's own machine or local network. A page on a private
-//! address, such as a development server, reaches both.
+//! page cannot make the app fetch from the user's own machine or local network. A page the app
+//! loaded from a private address, such as a development server, reaches both.
 
+use std::collections::BTreeSet;
 use std::io;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::sync::Mutex;
 
 use reqwest::dns::{Addrs, Name, Resolve, Resolving};
 use reqwest::Url;
@@ -52,6 +54,8 @@ fn is_public_v6(ip: Ipv6Addr) -> bool {
         || (first & 0xfe00) == 0xfc00
         // Link-local unicast.
         || (first & 0xffc0) == 0xfe80
+        // Local-use IPv4/IPv6 translation (RFC 8215), which can reach private IPv4 addresses.
+        || (first == 0x64 && ip.segments()[1] == 0xff9b && ip.segments()[2] == 1)
         // Documentation.
         || (first == 0x2001 && ip.segments()[1] == 0x0db8))
 }
@@ -87,29 +91,31 @@ pub fn literal_ip(url: &Url) -> Option<IpAddr> {
     }
 }
 
-/// Whether `url` names a public address; a host name counts as public when every address it
-/// resolves to is, so a name that also points inside the network does not.
-pub async fn is_public_url(url: &Url) -> bool {
-    if let Some(ip) = literal_ip(url) {
-        return is_public(ip);
+/// Origins whose pages the app last fetched from a private address, such as a development server.
+static PRIVATE_ORIGINS: Mutex<BTreeSet<String>> = Mutex::new(BTreeSet::new());
+
+fn private_origins() -> std::sync::MutexGuard<'static, BTreeSet<String>> {
+    PRIVATE_ORIGINS
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// Records the address the app's own request for `url` was answered from. A page is judged by the
+/// address it was actually loaded from, not by a later lookup of its name, which the page's owner
+/// could point anywhere.
+pub fn record_origin(url: &Url, address: Option<SocketAddr>) {
+    let origin = url.origin().ascii_serialization();
+    if address.is_some_and(|address| !is_public(address.ip())) {
+        private_origins().insert(origin);
+    } else {
+        private_origins().remove(&origin);
     }
-    let Some(host) = url.host_str() else {
-        return false;
-    };
-    match tokio::net::lookup_host((host, 0)).await {
-        Ok(addresses) => {
-            let mut any = false;
-            for address in addresses {
-                if !is_public(address.ip()) {
-                    return false;
-                }
-                any = true;
-            }
-            any
-        }
-        // A page whose name does not resolve was not fetched from a private address either.
-        Err(_) => true,
-    }
+}
+
+/// Whether the app last loaded a page of `url`'s origin from a private address. One it never
+/// loaded, such as an address in a page's `<base>`, is not.
+pub fn is_private_origin(url: &Url) -> bool {
+    private_origins().contains(&url.origin().ascii_serialization())
 }
 
 /// The error for a request to an address a page may not reach.
@@ -176,6 +182,7 @@ mod tests {
             "::127.0.0.1",
             "64:ff9b::a9fe:a9fe",
             "2002:c0a8:0101::1",
+            "64:ff9b:1::c0a8:101",
         ] {
             assert!(!public(address), "{address} counted as public");
         }
@@ -210,10 +217,17 @@ mod tests {
         assert_eq!(ip("https://example.com/"), None);
     }
 
-    #[tokio::test]
-    async fn local_names_are_not_public() {
-        assert!(!is_public_url(&Url::parse("http://localhost:3000/").unwrap()).await);
-        assert!(!is_public_url(&Url::parse("http://[::1]/").unwrap()).await);
-        assert!(is_public_url(&Url::parse("https://1.1.1.1/").unwrap()).await);
+    #[test]
+    fn a_page_counts_as_private_only_when_loaded_from_a_private_address() {
+        let page = Url::parse("http://rebinding.test:8080/index.html").unwrap();
+        let other_path = Url::parse("http://rebinding.test:8080/other/").unwrap();
+        assert!(!is_private_origin(&page));
+        record_origin(&page, Some("127.0.0.1:8080".parse().unwrap()));
+        assert!(is_private_origin(&other_path));
+        record_origin(&page, Some("93.184.216.34:8080".parse().unwrap()));
+        assert!(!is_private_origin(&page));
+        record_origin(&page, Some("192.168.1.10:8080".parse().unwrap()));
+        record_origin(&page, None);
+        assert!(!is_private_origin(&page));
     }
 }
