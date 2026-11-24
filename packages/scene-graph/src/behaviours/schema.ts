@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { easingSchema } from '../variables/schema'
 import { BEHAVIOUR_KINDS, hasInvalidState, type InteractionState } from './kinds'
 
 const booleanBindingSchema = v.object({
@@ -39,6 +40,18 @@ export const interactionStateValues = {
 
 const interactionStatesSchema = v.object({ propertyId: v.string(), ...interactionStateValues })
 
+/**
+ * How a control moves between its states: a duration in seconds and an easing, each its own value
+ * or, while the variable exists, a TIMING or EASING variable's, as Figma keeps a transition's
+ * duration and easing beside the variables they follow.
+ */
+const transitionSchema = v.object({
+  duration: v.pipe(v.number(), v.finite(), v.minValue(0)),
+  easing: easingSchema,
+  durationVariableId: v.optional(v.string()),
+  easingVariableId: v.optional(v.string())
+})
+
 const storedBehaviourSchema = v.object({
   kind: v.picklist(BEHAVIOUR_KINDS),
   /** Boolean values, by value id, bound to component properties. */
@@ -49,7 +62,8 @@ const storedBehaviourSchema = v.object({
   numbers: v.record(v.string(), numberSettingsSchema),
   /** Parts, by part id, bound to slot properties. */
   parts: v.record(v.string(), v.string()),
-  states: v.optional(interactionStatesSchema)
+  states: v.optional(interactionStatesSchema),
+  transition: v.optional(transitionSchema)
 })
 
 type StoredBehaviour = v.InferOutput<typeof storedBehaviourSchema>
@@ -72,6 +86,10 @@ export type Behaviour = StoredBehaviour
 export type BehaviourBooleanBinding = v.InferOutput<typeof booleanBindingSchema>
 export type BehaviourNumberSettings = v.InferOutput<typeof numberSettingsSchema>
 export type BehaviourInteractionStates = v.InferOutput<typeof interactionStatesSchema>
+export type BehaviourTransition = v.InferOutput<typeof transitionSchema>
+
+/** A transition's duration or easing as a spec writes it: a value, or a variable by name or ID. */
+const variableReferenceSchema = v.object({ variable: v.string() })
 
 /**
  * A behaviour as scripts, tools, and JSX write it: component properties and slots by name, not
@@ -103,6 +121,18 @@ export const behaviourSpecSchema = v.object({
   parts: v.optional(v.record(v.string(), v.string())),
   states: v.optional(
     v.union([v.string(), v.object({ property: v.string(), ...interactionStateValues })])
+  ),
+  /**
+   * Seconds or a TIMING variable; a CSS easing such as `ease-out` or `cubic-bezier(…)`, an easing
+   * name such as `GENTLE_SPRING`, an easing as stored, or an EASING variable.
+   */
+  transition: v.optional(
+    v.object({
+      duration: v.optional(
+        v.union([v.pipe(v.number(), v.finite(), v.minValue(0)), variableReferenceSchema])
+      ),
+      easing: v.optional(v.union([v.string(), variableReferenceSchema, easingSchema]))
+    })
   )
 })
 

@@ -1,8 +1,10 @@
 import { isNumber } from 'es-toolkit'
+import * as v from 'valibot'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   behaviourFromSpec,
+  behaviourSpecSchema,
   withBehaviour,
   type BehaviourKind,
   type BehaviourSpec
@@ -204,6 +206,7 @@ export const BEHAVIOUR_PROPS = [
   'invalid',
   'filled',
   'states',
+  'transition',
   'min',
   'max',
   'step',
@@ -253,7 +256,11 @@ export function finishRoot(
 ): void {
   const owner = graph.getNode(scope.ownerId)
   if (!owner) return
-  const behaviour = behaviourFromSpec(graph, owner, rootSpec(scope.kind, props))
+  const spec = rootSpec(scope.kind, props)
+  // `transition={{ duration: 0.2, easing: 'ease-out' }}`, either one a `{ variable }` by name.
+  if (props.transition !== undefined)
+    spec.transition = v.parse(behaviourSpecSchema.entries.transition, props.transition)
+  const behaviour = behaviourFromSpec(graph, owner, spec)
   behaviour.parts = { ...behaviour.parts, ...Object.fromEntries(scope.slots) }
   behaviour.texts = {
     ...behaviour.texts,

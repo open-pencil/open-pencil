@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
+import { withBehaviour } from '@open-pencil/scene-graph/behaviours'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 import { layerDependencies } from '@open-pencil/scene-graph/transfer'
 
@@ -28,6 +29,28 @@ function fillStyle(graph: SceneGraph, id: string, props: Parameters<SceneGraph['
 }
 
 describe('layerDependencies', () => {
+  test('brings the variables a behaviour’s transition follows', () => {
+    const graph = new SceneGraph()
+    const motion = graph.createCollection('Motion')
+    const fast = graph.createVariable('fast', 'TIMING', motion.id, 0.15)
+    const set = graph.createNode('COMPONENT_SET', graph.getPages()[0].id, {
+      pluginData: withBehaviour(
+        { pluginData: [] },
+        {
+          kind: 'button',
+          booleans: {},
+          texts: {},
+          numbers: {},
+          parts: {},
+          transition: { duration: 0.15, easing: { easing: 'LINEAR' }, durationVariableId: fast.id }
+        }
+      )
+    })
+    const dependencies = layerDependencies(graph, [set])
+    expect([...dependencies.variables]).toEqual([fast.id])
+    expect([...dependencies.collections]).toEqual([motion.id])
+  })
+
   test('follows a bound variable through its aliases to their collections', () => {
     const graph = new SceneGraph()
     const primitives = graph.createCollection('Primitives')

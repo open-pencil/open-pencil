@@ -82,5 +82,10 @@
   "behaviourStateDisabled": "Wyłączony",
   "behaviourStateInvalid": "Nieprawidłowy",
   "behaviourStateUnset": "Brak",
-  "behaviourStateField": "Stan {state}"
+  "behaviourStateField": "Stan {state}",
+  "transition": "Przejście",
+  "addTransition": "Animuj zmiany stanu",
+  "removeTransition": "Zmieniaj stan od razu",
+  "transitionDuration": "Czas trwania",
+  "transitionEasing": "Wygładzanie"
 }

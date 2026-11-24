@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { readBehaviour, withBehaviour } from '@open-pencil/scene-graph/behaviours'
 import { variableModeOverrideField } from '@open-pencil/scene-graph/instances/overrides'
 import { prepareNodeTransfer, type NodeTransferReferences } from '@open-pencil/scene-graph/transfer'
 
@@ -65,4 +66,32 @@ test('node preparation remaps the collection a mode override is keyed by', () =>
   expect(result.instanceOverrides?.self).toEqual(
     new Map<string, unknown>([[variableModeOverrideField('new-set'), true]])
   )
+})
+
+test('node preparation remaps the variables a behaviour’s transition follows', () => {
+  const graph = new SceneGraph()
+  const behaviour = {
+    kind: 'button' as const,
+    booleans: {},
+    texts: {},
+    numbers: {},
+    parts: {},
+    transition: {
+      duration: 0.15,
+      easing: { easing: 'OUT_CUBIC' as const },
+      durationVariableId: 'token',
+      easingVariableId: 'left-behind'
+    }
+  }
+  const set = graph.createNode('COMPONENT_SET', graph.getPages()[0].id, {
+    pluginData: withBehaviour({ pluginData: [] }, behaviour)
+  })
+  const result = prepareNodeTransfer(set, references())
+  // A variable the copy leaves behind is let go; the transition keeps its own value.
+  expect(readBehaviour({ pluginData: result.pluginData ?? [] })?.transition).toEqual({
+    duration: 0.15,
+    easing: { easing: 'OUT_CUBIC' },
+    durationVariableId: 'new-token'
+  })
+  expect(readBehaviour(set)?.transition?.durationVariableId).toBe('token')
 })

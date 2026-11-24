@@ -82,5 +82,10 @@
   "behaviourStateDisabled": "無効",
   "behaviourStateInvalid": "エラー",
   "behaviourStateUnset": "なし",
-  "behaviourStateField": "{state} 状態"
+  "behaviourStateField": "{state} 状態",
+  "transition": "トランジション",
+  "addTransition": "状態の変化をアニメーション",
+  "removeTransition": "状態をすぐに変える",
+  "transitionDuration": "長さ",
+  "transitionEasing": "イージング"
 }

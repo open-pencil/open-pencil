@@ -6,7 +6,8 @@ import {
   behaviourToSpec,
   readBehaviour,
   textBinding,
-  type BehaviourKind
+  type BehaviourKind,
+  type BehaviourSpec
 } from '@open-pencil/scene-graph/behaviours'
 import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
@@ -84,7 +85,41 @@ function rootProps(graph: SceneGraph, owner: SceneNode): JSXProp[] {
   }
   if (spec.states)
     props.push(['states', typeof spec.states === 'string' ? spec.states : spec.states.property])
+  if (spec.transition) props.push(['transition', transitionProp(spec.transition)])
   return props
+}
+
+type TransitionSpec = NonNullable<BehaviourSpec['transition']>
+
+/**
+ * A transition as the `transition` prop writes it: variables by name, a preset easing by its
+ * name, a custom curve as CSS, and a custom spring as its physics.
+ */
+function transitionProp(transition: TransitionSpec): JSXValue {
+  const { duration, easing } = transition
+  return {
+    duration: typeof duration === 'object' ? { variable: duration.variable } : duration,
+    easing: easingProp(easing)
+  }
+}
+
+function easingProp(easing: TransitionSpec['easing']): JSXValue | undefined {
+  if (easing === undefined || typeof easing === 'string') return easing
+  if ('variable' in easing) return { variable: easing.variable }
+  const { bezier, spring } = easing
+  if (easing.easing === 'CUSTOM_CUBIC' && bezier)
+    return `cubic-bezier(${bezier.x1}, ${bezier.y1}, ${bezier.x2}, ${bezier.y2})`
+  if (!spring || easing.easing !== 'CUSTOM_SPRING') return easing.easing
+  return {
+    easing: easing.easing,
+    spring: {
+      stiffness: spring.stiffness,
+      damping: spring.damping,
+      mass: spring.mass,
+      type: spring.type,
+      platform: spring.platform
+    }
+  }
 }
 
 /** A part's slot frame as its element, and its children as the repeated parts or items. */

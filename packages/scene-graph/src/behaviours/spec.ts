@@ -5,6 +5,7 @@ import type { ComponentPropertyDefinition, SceneNode } from '../types'
 import { behaviourContract, hasInvalidState } from './kinds'
 import { behaviourProperties, emptyBehaviour, guessInteractionStates, textBinding } from './model'
 import { isNumberRange, type Behaviour, type BehaviourSpec } from './schema'
+import { transitionFromSpec, transitionToSpec } from './transition'
 
 /** Variant values that usually mean on, compared case-insensitively. */
 const ON_NAMES = ['on', 'true', 'yes', 'checked', 'pressed', 'open', 'selected', 'active']
@@ -138,6 +139,7 @@ export function behaviourFromSpec(
     behaviour.parts[partId] = id
   }
   if (spec.states !== undefined) resolveStates(behaviour, properties, spec.states)
+  if (spec.transition) behaviour.transition = transitionFromSpec(graph, spec.transition)
   return behaviour
 }
 
@@ -180,5 +182,6 @@ export function behaviourToSpec(
       ...stripUndefined({ ...behaviour.states, propertyId: undefined }),
       property: statesName
     }
+  if (behaviour.transition) spec.transition = transitionToSpec(graph, behaviour.transition)
   return spec
 }

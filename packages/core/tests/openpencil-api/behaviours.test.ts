@@ -27,6 +27,22 @@ async function run(code: string) {
 }
 
 describe('openpencil scripting API', () => {
+  test('a script sets a transition by values or variable names, and clears it', async () => {
+    const { set, result } = await run(`
+      const motion = figma.variables.createVariableCollection('Motion')
+      figma.variables.createVariable('Easing/Standard', motion, 'EASING')
+      const set = figma.currentPage.findOne((node) => node.name === 'Switch')
+      const behaviour = openpencil.setBehaviour(set, 'switch')
+      behaviour.transition = { duration: 0.2, easing: { variable: 'Easing/Standard' } }
+      const read = behaviour.transition
+      return { read }
+    `)
+    expect(result).toEqual({
+      read: { duration: 0.2, easing: { variable: 'Easing/Standard' } }
+    })
+    expect(readBehaviour(set)?.transition?.duration).toBe(0.2)
+  })
+
   test('a script gives a component set a behaviour by property and slot names', async () => {
     const { graph, set, result } = await run(`
       const set = figma.currentPage.findOne((node) => node.name === 'Switch')

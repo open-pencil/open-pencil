@@ -24,5 +24,9 @@ const behaviour = useBehaviour()
     @create-variant="behaviour.createVariant"
     @create-part="behaviour.createPart"
     @create-states="behaviour.createStates"
+    @add-transition="behaviour.addTransition"
+    @remove-transition="behaviour.removeTransition"
+    @set-transition="behaviour.setTransition"
+    @bind-transition="behaviour.bindTransition"
   />
 </template>

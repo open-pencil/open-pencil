@@ -1,5 +1,11 @@
-import type { Easing, TokenUnit, Variable, VariableScope } from '@open-pencil/scene-graph'
-import { easingBezier, tokenNumberInUnit } from '@open-pencil/scene-graph/variables'
+import type { Easing, Spring, TokenUnit, Variable, VariableScope } from '@open-pencil/scene-graph'
+import {
+  easingBezier,
+  easingSpring,
+  springPosition,
+  springSettleTime,
+  tokenNumberInUnit
+} from '@open-pencil/scene-graph/variables'
 
 import { variableNamespace } from './names'
 
@@ -60,14 +66,32 @@ const EASING_KEYWORDS: Record<string, string> = {
   '0.42,0,0.58,1': 'ease-in-out'
 }
 
+/** How many points a spring's `linear()` has: enough that its bounce reads smoothly. */
+const SPRING_POINTS = 40
+
 /**
- * An easing as a CSS timing function: a keyword where CSS has one, else `cubic-bezier()`, and a
- * hold as `step-end`. A spring has no CSS timing function and gives nothing.
+ * A spring as CSS `linear()`: its position at evenly spaced moments of the time it takes to
+ * settle, ending on 1. `linear()` needs Chrome 113, Firefox 112 or Safari 17.2; an older browser
+ * drops it and eases with `ease`.
  */
-export function easingToCSS(easing: Easing): string | undefined {
+export function springToCSS(spring: Spring): string {
+  const duration = springSettleTime(spring)
+  const points = Array.from({ length: SPRING_POINTS }, (_, index) =>
+    String(Number(springPosition(spring, (index / SPRING_POINTS) * duration).toFixed(3)))
+  )
+  return `linear(${[...points, '1'].join(', ')})`
+}
+
+/**
+ * An easing as a CSS timing function: a keyword where CSS has one, else `cubic-bezier()`, a hold
+ * as `step-end`, and a spring as `linear()`.
+ */
+export function easingToCSS(easing: Easing): string {
   if (easing.easing === 'HOLD') return 'step-end'
+  const spring = easingSpring(easing)
+  if (spring) return springToCSS(spring)
   const bezier = easingBezier(easing)
-  if (!bezier) return undefined
+  if (!bezier) return 'linear'
   const numbers = [bezier.x1, bezier.y1, bezier.x2, bezier.y2].map(trimNumber).join(', ')
   return EASING_KEYWORDS[numbers.replaceAll(' ', '')] ?? `cubic-bezier(${numbers})`
 }

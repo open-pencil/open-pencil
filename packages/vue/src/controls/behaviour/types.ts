@@ -1,3 +1,4 @@
+import type { Easing, VariableValue } from '@open-pencil/scene-graph'
 import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph/behaviours'
 
 import type { VariantDefinitionControl } from '#vue/controls/variants'
@@ -61,11 +62,35 @@ export interface BehaviourStatesControl {
   options: VariantDefinitionControl[]
 }
 
+/** A variable a transition's duration or easing can follow. */
+export interface BehaviourTransitionVariable {
+  id: string
+  name: string
+  collection: string
+  /** Its value in its collection's default mode. */
+  value: VariableValue | undefined
+}
+
+/**
+ * How the control moves between states: its duration in seconds and its easing, each its own
+ * value or a variable's, and the variables each can follow.
+ */
+export interface BehaviourTransitionControl {
+  duration: number
+  easing: Easing
+  durationVariable: BehaviourTransitionVariable | null
+  easingVariable: BehaviourTransitionVariable | null
+  timingVariables: BehaviourTransitionVariable[]
+  easingVariables: BehaviourTransitionVariable[]
+}
+
 export interface BehaviourControl {
   kind: BehaviourKind
   values: BehaviourValueControl[]
   parts: BehaviourPartControl[]
   states: BehaviourStatesControl
+  /** Null until a transition is added: the control changes state at once. */
+  transition: BehaviourTransitionControl | null
   /** Ids of required values and parts that are still unbound, in contract order. */
   missing: string[]
 }

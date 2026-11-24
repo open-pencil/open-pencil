@@ -24,6 +24,7 @@ import type { VariantDefinitionControl } from '#vue/controls/variants'
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
+import { behaviourTransitionControl, createTransitionActions } from './transition'
 import type { BehaviourControl, BehaviourValueControl } from './types'
 
 /**
@@ -113,6 +114,7 @@ export function useBehaviour() {
         ),
         options: options(['VARIANT'])
       },
+      transition: behaviourTransitionControl(editor.graph, current),
       missing: missingBindings(editor.graph, target, current)
     }
   })
@@ -206,6 +208,7 @@ export function useBehaviour() {
           )
         return current
       }),
+    ...createTransitionActions(editor.graph, update),
     /** Choose the variant value of one interaction state; an empty value unsets it. */
     mapState: (state: InteractionState, value: string) =>
       update((current) => {

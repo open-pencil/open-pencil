@@ -16,9 +16,25 @@ const interactionProperty = {
 const thumbSlot = { id: 'thumb', name: 'Thumb', values: [] }
 const trackSlot = { id: 'track', name: 'Track', values: [] }
 
+const fast = { id: 'fast', name: 'Duration/Fast', collection: 'Motion', value: 0.15 }
+const standard = {
+  id: 'standard',
+  name: 'Easing/Standard',
+  collection: 'Motion',
+  value: { easing: 'INOUT_CUBIC' as const }
+}
+
 const switchComplete = ref<BehaviourControl>({
   kind: 'switch',
   missing: [],
+  transition: {
+    duration: 0.15,
+    easing: { easing: 'INOUT_CUBIC' },
+    durationVariable: fast,
+    easingVariable: null,
+    timingVariables: [fast],
+    easingVariables: [standard]
+  },
   values: [
     {
       id: 'value',
@@ -48,6 +64,7 @@ const switchComplete = ref<BehaviourControl>({
 const sliderIncomplete = ref<BehaviourControl>({
   kind: 'slider',
   missing: ['thumb'],
+  transition: null,
   values: [
     { id: 'value', type: 'number', min: 0, max: 100, step: 1, default: 50 },
     {
@@ -74,6 +91,7 @@ const sliderIncomplete = ref<BehaviourControl>({
 const textareaBare = ref<BehaviourControl>({
   kind: 'textarea',
   missing: ['value'],
+  transition: null,
   values: [
     { id: 'value', type: 'text', required: true, propertyId: null, options: [] },
     {

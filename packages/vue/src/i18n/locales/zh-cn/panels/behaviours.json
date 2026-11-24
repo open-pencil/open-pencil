@@ -82,5 +82,10 @@
   "behaviourStateDisabled": "禁用",
   "behaviourStateInvalid": "无效",
   "behaviourStateUnset": "无",
-  "behaviourStateField": "{state}状态"
+  "behaviourStateField": "{state}状态",
+  "transition": "过渡",
+  "addTransition": "为状态变化添加动画",
+  "removeTransition": "立即切换状态",
+  "transitionDuration": "时长",
+  "transitionEasing": "缓动"
 }

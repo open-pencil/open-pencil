@@ -74,13 +74,13 @@ export function behaviourOwner(graph: SceneGraph, node: SceneNode): SceneNode | 
 }
 
 /** The behaviour a component or component set keeps, or null when it has none or it is unreadable. */
-export function readBehaviour(owner: SceneNode): Behaviour | null {
+export function readBehaviour(owner: Pick<SceneNode, 'pluginData'>): Behaviour | null {
   return readPluginData(owner.pluginData, OPEN_PENCIL_PLUGIN_DATA.behaviour) ?? null
 }
 
 /** The owner's plugin data with the behaviour set, or removed when null. */
 export function withBehaviour(
-  owner: SceneNode,
+  owner: Pick<SceneNode, 'pluginData'>,
   behaviour: Behaviour | null
 ): SceneNode['pluginData'] {
   return withPluginData(owner.pluginData, OPEN_PENCIL_PLUGIN_DATA.behaviour, behaviour ?? undefined)

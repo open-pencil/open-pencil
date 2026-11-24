@@ -9,3 +9,9 @@ export {
 export { BUTTON_RESET, INPUT_RESET } from './reset'
 export { controlRoles, groupOf, type ControlRole } from './roles'
 export * from './states'
+export {
+  behaviourTransitionCSS,
+  transitionCSS,
+  transitionDeclarations,
+  type TransitionCSS
+} from './transition'

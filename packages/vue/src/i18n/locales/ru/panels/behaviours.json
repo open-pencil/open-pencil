@@ -82,5 +82,10 @@
   "behaviourStateDisabled": "Отключена",
   "behaviourStateInvalid": "Ошибка",
   "behaviourStateUnset": "Нет",
-  "behaviourStateField": "Состояние «{state}»"
+  "behaviourStateField": "Состояние «{state}»",
+  "transition": "Переход",
+  "addTransition": "Анимировать смену состояний",
+  "removeTransition": "Менять состояние сразу",
+  "transitionDuration": "Длительность",
+  "transitionEasing": "Сглаживание"
 }

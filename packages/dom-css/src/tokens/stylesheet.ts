@@ -133,8 +133,7 @@ function literalCSS(
   value: VariableLiteral,
   profile: ColorProfile
 ): string | { issue: string } {
-  if (isEasing(value))
-    return easingToCSS(value) ?? { issue: 'is a spring, which CSS has no timing function for' }
+  if (isEasing(value)) return easingToCSS(value)
   if (variable.type === 'COLOR' && typeof value === 'object') return cssColor(value, profile)
   if (variable.type === 'TIMING' && typeof value === 'number') return timingToCSS(value)
   if (variable.type === 'FLOAT' && typeof value === 'number')

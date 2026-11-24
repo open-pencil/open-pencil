@@ -184,6 +184,26 @@ describe('Reka UI elements in JSX export', () => {
     expect(Object.keys(again?.parts ?? {})).toEqual(Object.keys(before?.parts ?? {}))
   })
 
+  test('a transition exports as its prop, its variable by name, and renders back the same', async () => {
+    const graph = new SceneGraph()
+    const motion = graph.createCollection('Motion')
+    graph.createVariable('Duration/Fast', 'TIMING', motion.id, 0.15)
+    const [first] = await renderJSX(
+      graph,
+      `<Switch.Root name="Switch" modelValue="State" transition={{ duration: { variable: "Duration/Fast" }, easing: "cubic-bezier(0.2, 0, 0, 1)" }}>
+        <Component name="State=Off" w={44} h={24}><Switch.Thumb x={2} y={2} w={20} h={20} /></Component>
+        <Component name="State=On" w={44} h={24}><Switch.Thumb x={22} y={2} w={20} h={20} /></Component>
+      </Switch.Root>`
+    )
+    const code = sceneNodeToJSX(first.id, graph)
+    expect(code).toContain('duration: { variable: "Duration/Fast" }')
+    expect(code).toContain('easing: "cubic-bezier(0.2, 0, 0, 1)"')
+    const [second] = await renderJSX(graph, code)
+    expect(readBehaviour(getNodeOrThrow(graph, second.id))?.transition).toEqual(
+      readBehaviour(getNodeOrThrow(graph, first.id))?.transition
+    )
+  })
+
   test('a checkbox keeps its invalid value and invalid state through export', async () => {
     const graph = new SceneGraph()
     const [first] = await renderJSX(

@@ -1,118 +1,29 @@
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import {
+  addSwitchBehaviour,
+  createSwitch,
+  island,
+  startPreview
+} from '#tests/helpers/components/behaviours'
 import { propertySection } from '#tests/helpers/properties'
 
 const editor = useEditorSetupWithClear('/?test&no-rulers')
 
-/** The live island a previewing canvas runs for a top-level layer. */
-function island(layerId: string) {
-  return editor.page.locator(`[data-island="${layerId}"]`)
-}
-
-async function startPreview() {
-  await editor.page.keyboard.press('ControlOrMeta+Alt+Enter')
-  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
-}
-
-/**
- * A Switch set whose State=On and State=Off variants differ, and an Off instance below it,
- * either on the page or inside a frame, as a settings row holds one.
- */
-async function createSwitch({ nested = false } = {}) {
-  return editor.page.evaluate((inFrame) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const graph = store.graph
-    const pageId = store.state.currentPageId
-    const solid = (r: number, g: number, b: number) => [
-      { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }
-    ]
-    const set = graph.createNode('COMPONENT_SET', pageId, {
-      name: 'Switch',
-      x: 120,
-      y: 120,
-      width: 200,
-      height: 80,
-      componentPropertyDefinitions: [
-        {
-          id: 'state',
-          name: 'State',
-          type: 'VARIANT',
-          defaultValue: 'Off',
-          variantOptions: ['On', 'Off']
-        }
-      ]
-    })
-    const variant = (value: string, index: number, on: boolean) => {
-      const component = graph.createNode('COMPONENT', set.id, {
-        name: `State=${value}`,
-        x: 20 + index * 90,
-        y: 20,
-        width: 56,
-        height: 32,
-        cornerRadius: 16,
-        fills: on ? solid(0.2, 0.6, 1) : solid(0.8, 0.8, 0.85),
-        componentPropertyValues: { State: value }
-      })
-      graph.createNode('ELLIPSE', component.id, {
-        name: 'Knob',
-        x: on ? 28 : 4,
-        y: 4,
-        width: 24,
-        height: 24,
-        fills: solid(1, 1, 1)
-      })
-      return component
-    }
-    variant('On', 0, true)
-    const off = variant('Off', 1, false)
-    const row = inFrame
-      ? graph.createNode('FRAME', pageId, {
-          name: 'Settings',
-          x: 120,
-          y: 260,
-          width: 200,
-          height: 60
-        })
-      : undefined
-    const instance = row
-      ? graph.createInstance(off.id, row.id, { x: 12, y: 12 })
-      : graph.createInstance(off.id, pageId, { x: 120, y: 260 })
-    if (!instance) throw new Error('Instance not created')
-    store.select([set.id])
-    return {
-      setId: set.id,
-      offId: off.id,
-      instanceId: instance.id,
-      islandId: row?.id ?? instance.id
-    }
-  }, nested)
-}
-
-/** Adds the Switch behaviour to the selected set, binding its value to State. */
-async function addSwitchBehaviour() {
-  const section = propertySection(editor.page, 'Behaviour')
-  await section.getByRole('button', { name: 'Add behaviour' }).click()
-  await editor.page.getByRole('option', { name: /Switch/ }).click()
-  await section.getByRole('combobox', { name: 'Checked' }).click()
-  await editor.page.getByRole('option', { name: 'State' }).click()
-  await expect(section.getByText('Ready', { exact: true })).toBeVisible()
-}
-
 test('a Switch behaviour flips in preview and leaves the document alone', async () => {
-  const ids = await createSwitch()
+  const ids = await createSwitch(editor.page)
   await editor.canvas.waitForRender()
-  await addSwitchBehaviour()
+  await addSwitchBehaviour(editor.page)
 
-  await startPreview()
+  await startPreview(editor.page)
   // The instance runs as Reka UI's Switch, drawn by the set's variants.
-  const control = island(ids.instanceId).getByRole('switch')
+  const control = island(editor.page, ids.instanceId).getByRole('switch')
   await expect(control).toHaveAttribute('aria-checked', 'false')
   await control.click()
   await expect(control).toHaveAttribute('aria-checked', 'true')
   await editor.page.mouse.move(4, 400)
-  await expect(island(ids.instanceId)).toHaveScreenshot('switch-island-on.png')
+  await expect(island(editor.page, ids.instanceId)).toHaveScreenshot('switch-island-on.png')
   await control.press('Space')
   await expect(control).toHaveAttribute('aria-checked', 'false')
   await control.click()
@@ -131,12 +42,12 @@ test('a Switch behaviour flips in preview and leaves the document alone', async 
 
 test('a switch inside a frame, named after its variant, toggles both ways in preview', async () => {
   // Its layer path includes its name, which a variant switch used to rename to State=On.
-  const ids = await createSwitch({ nested: true })
+  const ids = await createSwitch(editor.page, { nested: true })
   await editor.canvas.waitForRender()
-  await addSwitchBehaviour()
+  await addSwitchBehaviour(editor.page)
 
-  await startPreview()
-  const control = island(ids.islandId).getByRole('switch')
+  await startPreview(editor.page)
+  const control = island(editor.page, ids.islandId).getByRole('switch')
   for (const checked of ['true', 'false', 'true']) {
     await control.click()
     await expect(control).toHaveAttribute('aria-checked', checked)
@@ -212,10 +123,10 @@ async function createSlider() {
 test('a slider instance in preview moves the range inside its track', async () => {
   const instanceId = await createSlider()
   await editor.canvas.waitForRender()
-  await startPreview()
+  await startPreview(editor.page)
 
-  const control = island(instanceId).getByRole('slider')
-  const range = island(instanceId).locator('[data-layer$="Range"]')
+  const control = island(editor.page, instanceId).getByRole('slider')
+  const range = island(editor.page, instanceId).locator('[data-layer$="Range"]')
   const width = async () => (await range.boundingBox())?.width ?? 0
   await expect(control).toHaveAttribute('aria-valuenow', '20')
   // A range that shows, so twice its width is a real change.
@@ -338,9 +249,9 @@ test('tabs whose triggers are Tab instances show the chosen one and skip a disab
     return { instanceId: instance.id }
   })
   await editor.canvas.waitForRender()
-  await startPreview()
+  await startPreview(editor.page)
 
-  const triggers = island(ids.instanceId).getByRole('tab')
+  const triggers = island(editor.page, ids.instanceId).getByRole('tab')
   await expect(triggers).toHaveCount(3)
   const [account, password, billing] = [triggers.nth(0), triggers.nth(1), triggers.nth(2)]
   const fill = (trigger: typeof account) =>
@@ -365,11 +276,11 @@ test('tabs whose triggers are Tab instances show the chosen one and skip a disab
 })
 
 test('preview islands move with the frames the canvas draws, not ahead of them', async () => {
-  const ids = await createSwitch({ nested: true })
+  const ids = await createSwitch(editor.page, { nested: true })
   await editor.canvas.waitForRender()
-  await addSwitchBehaviour()
-  await startPreview()
-  await expect(island(ids.islandId).getByRole('switch')).toBeVisible()
+  await addSwitchBehaviour(editor.page)
+  await startPreview(editor.page)
+  await expect(island(editor.page, ids.islandId).getByRole('switch')).toBeVisible()
 
   const layer = editor.page.getByTestId('play-islands').locator(':scope > div')
   const placed = await layer.evaluate((element) => element.style.transform)
@@ -468,11 +379,11 @@ test('a Button behaviour maps its states and shows them in preview', async () =>
   // Only a form control has an invalid state.
   await expect(section.getByRole('combobox', { name: 'Invalid state' })).toHaveCount(0)
 
-  await startPreview()
+  await startPreview(editor.page)
   // Each state shows its variant's fill: the components are filled by index, as created above.
   const fill = (index: number) =>
     colorToCSS({ r: 0.2 + index * 0.15, g: 0.4, b: 0.9 - index * 0.15, a: 1 })
-  const button = island(ids.instanceId).getByRole('button')
+  const button = island(editor.page, ids.instanceId).getByRole('button')
   await expect(button).toHaveCSS('background-color', fill(0))
   await button.hover()
   await expect(button).toHaveCSS('background-color', fill(1))
@@ -528,9 +439,9 @@ test('a Text field takes typing in preview without triggering shortcuts', async 
   })
   await editor.canvas.waitForRender()
 
-  await startPreview()
+  await startPreview(editor.page)
   // A real input: typing, the caret, and selection are the browser's.
-  const input = island(instanceId).locator('input')
+  const input = island(editor.page, instanceId).locator('input')
   await expect(input).toHaveValue('Name')
   await input.click()
   await editor.page.keyboard.press('End')
@@ -544,7 +455,7 @@ test('a Text field takes typing in preview without triggering shortcuts', async 
     'SELECT'
   )
   await editor.page.getByRole('button', { name: /Leave preview/ }).click()
-  await expect(island(instanceId)).toHaveCount(0)
+  await expect(island(editor.page, instanceId)).toHaveCount(0)
 })
 
 test('a rectangle made a Textarea gets its text layer from the panel and takes typing', async () => {
@@ -583,8 +494,8 @@ test('a rectangle made a Textarea gets its text layer from the panel and takes t
     const instance = store?.graph.createInstance(id, store.state.currentPageId, { x: 120, y: 300 })
     return instance?.id ?? ''
   }, componentId)
-  await startPreview()
-  const field = island(instanceId).locator('textarea')
+  await startPreview(editor.page)
+  const field = island(editor.page, instanceId).locator('textarea')
   await field.click()
   await editor.page.keyboard.press('End')
   await editor.page.keyboard.type(' typed')

@@ -18,6 +18,7 @@ import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { PluginDataEntry, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
+  mapTransitionVariables,
   readBehaviour,
   renameBehaviourProperties,
   withBehaviour
@@ -168,22 +169,28 @@ function assignComponentPropertyGuids(
 }
 
 /**
- * Behaviours bind component properties by id, so they follow the ids' new GUIDs. The renamed
- * plugin data is written in place of the node's own; the document keeps its ids.
+ * Behaviours bind component properties and, for a transition, variables by id, so they follow the
+ * ids' new GUIDs. The renamed plugin data is written in place of the node's own; the document
+ * keeps its ids.
  */
 function renamedBehaviourPluginData(
   graph: SceneGraph,
-  propertyIdToGuid: Map<string, GUID>
+  propertyIdToGuid: Map<string, GUID>,
+  varIdToGuid: Map<string, GUID>
 ): Map<string, PluginDataEntry[]> {
-  const rename = (propertyId: string) => {
-    const guid = propertyIdToGuid.get(propertyId)
-    return guid ? `${guid.sessionID}:${guid.localID}` : propertyId
+  const renameBy = (guids: Map<string, GUID>) => (id: string) => {
+    const guid = guids.get(id)
+    return guid ? guidToString(guid) : id
   }
   const renamed = new Map<string, PluginDataEntry[]>()
   for (const node of graph.getAllNodes()) {
     const behaviour = readBehaviour(node)
-    if (behaviour)
-      renamed.set(node.id, withBehaviour(node, renameBehaviourProperties(behaviour, rename)))
+    if (!behaviour) continue
+    const properties = renameBehaviourProperties(behaviour, renameBy(propertyIdToGuid))
+    renamed.set(
+      node.id,
+      withBehaviour(node, mapTransitionVariables(properties, renameBy(varIdToGuid)))
+    )
   }
   return renamed
 }
@@ -444,7 +451,7 @@ export async function prepareFigExport(
     const node = graph.getNode(page.id)
     if (node) applyVariableModes({ graph, varIdToGuid, modeIdToGuid }, node, canvasNc)
   }
-  const pluginDataOverrides = renamedBehaviourPluginData(graph, propertyIdToGuid)
+  const pluginDataOverrides = renamedBehaviourPluginData(graph, propertyIdToGuid, varIdToGuid)
   assignOwnLayerGuids(graph, sourceOwners, nodeIdToGuid, assignedGuidValues)
 
   return {
