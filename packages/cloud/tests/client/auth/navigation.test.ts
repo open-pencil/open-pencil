@@ -10,7 +10,13 @@ const discovery: CloudDiscovery = {
   authURL: 'https://cloud.example/api/auth',
   localEditor: true,
   authentication: { socialProviders: [], enterpriseSSO: false, enrollmentMode: 'open' },
-  capabilities: { documents: true, workspaces: true, collaboration: true, embedding: false }
+  capabilities: {
+    documents: true,
+    workspaces: true,
+    collaboration: true,
+    embedding: false,
+    apps: false
+  }
 }
 
 test('email-only instance owns sign-in and preserves an opaque invitation continuation', () => {

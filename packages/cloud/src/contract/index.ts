@@ -1,5 +1,7 @@
 export * from './account'
 export * from './locale'
+export * from './api'
+export * from './oauth'
 export {
   SERVICE_ERROR_STATUS,
   roleModelsSchema,
@@ -48,8 +50,6 @@ export {
   type SearchResponse,
   type CloudServicesDiscovery,
   type CreateServicesTokenInput,
-  type CloudServicesAPI,
-  type CloudServicesSchema,
   sendsTokenSafely
 } from './services'
 export {
@@ -85,9 +85,7 @@ export {
   type BillingToken,
   type BillingTokenClaims,
   type CheckoutRequest,
-  type CloudBillingAPI,
   type CloudBillingDiscovery,
-  type CloudBillingSchema,
   type CreditPack
 } from './billing'
 export * from './admin'
@@ -103,8 +101,10 @@ export * from './relay'
 export {
   accountEntitlementsResponseSchema,
   accountEntitlementsSchema,
+  staticEntitlementsSchema,
   workspaceEntitlementsSchema,
   type AccountEntitlements,
+  type StaticEntitlements,
   type WorkspaceEntitlements
 } from './entitlements'
 export {

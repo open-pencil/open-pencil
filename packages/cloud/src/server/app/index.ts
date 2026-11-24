@@ -67,7 +67,9 @@ export function createCloudApp(services: CloudServices) {
       .use('*', preventIndexing(config.indexingPolicy))
       .get('/robots.txt', (context) => {
         context.header('Content-Type', 'text/plain; charset=utf-8')
-        return context.body(robotsText(config.indexingPolicy))
+        return context.body(
+          robotsText(config.indexingPolicy, app.community.enabled ? config.publicURL : null)
+        )
       })
       .get('/health', (context) =>
         context.json({
@@ -105,6 +107,7 @@ export function createCloudApp(services: CloudServices) {
       )
       .route('/', routers.account)
       .route('/', routers.accessTokens)
+      .route('/', routers.appConnections)
       .route('/', createPictureRoutes(app.pictures))
       .use('/api/shares/:shareId/collaboration-ticket', limiters.publicCollaborationLimiter)
       .use('/api/public/*', limiters.publicRateLimiter)

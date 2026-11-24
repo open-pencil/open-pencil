@@ -13,9 +13,8 @@ import { readerSessionOptions, type FigReaderDiagnostic } from '#core/kiwi/fig/s
  * variables whose `variableResolvedType` is PAINT, with a full paint (including its blend
  * mode) per mode. See https://github.com/open-pencil/open-pencil/issues/2261
  *
- * The pinned fig.kiwi schema predates PAINT variables, so a PAINT fixture cannot be
- * encoded into a `.fig` archive; these records are materialized directly, which is where
- * the reader session's options decide whether the document opens.
+ * The records are materialized directly, which is where the reader session's options decide
+ * whether the document opens.
  */
 /**
  * A paint value as Figma writes it; the codec does not model paint values yet. The

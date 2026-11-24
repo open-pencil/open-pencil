@@ -1,0 +1,1 @@
+- The download page offers the nightly build in place of the beta, with links that stay current from night to night.

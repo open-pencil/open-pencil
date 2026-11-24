@@ -57,7 +57,9 @@ export const cloudCapabilitiesSchema = v.object({
    * Whether other sites may show this server's shared and community documents in a frame, at
    * `/embed/…`; servers from before embeds leave it out.
    */
-  embedding: v.optional(v.boolean(), false)
+  embedding: v.optional(v.boolean(), false),
+  /** Whether people may connect apps such as ChatGPT through OAuth; servers before it accept none. */
+  apps: v.optional(v.boolean(), false)
 })
 export type CloudCapabilities = v.InferOutput<typeof cloudCapabilitiesSchema>
 

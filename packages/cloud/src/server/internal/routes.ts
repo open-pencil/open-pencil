@@ -1,10 +1,28 @@
+import { internalContract } from '#cloud/contract'
+import { contractRoutes } from '#cloud/server/api/contract'
 import { capabilityHashMatches, hashCapability } from '#cloud/server/sharing/crypto'
-import { accountParams, validatedJSON } from '#cloud/server/validation'
+import { implement } from '@orpc/server'
 import { Hono } from 'hono'
 import { bearerAuth } from 'hono/bearer-auth'
 
-import { setAccountEntitlementsSchema } from './schema'
 import type { InternalService } from './service'
+
+/** The internal API's routes, as the contract describes them. */
+function createInternalProcedures(service: InternalService) {
+  const routes = implement(internalContract)
+  return routes.router({
+    setAccountEntitlements: routes.setAccountEntitlements.handler(async ({ input, errors }) => {
+      const result = await service.setAccountEntitlements(input.params.userId, input.body)
+      if (!result.found) throw errors.not_found()
+      return { applied: result.applied }
+    }),
+    accountSeats: routes.accountSeats.handler(async ({ input, errors }) => {
+      const seats = await service.accountSeats(input.params.userId)
+      if (seats === null) throw errors.not_found()
+      return { seats }
+    })
+  })
+}
 
 /** The internal API on HTTP, for runtimes without a private transport to their services. */
 export function createInternalRoutes(service: InternalService, serviceToken: string) {
@@ -20,20 +38,8 @@ export function createInternalRoutes(service: InternalService, serviceToken: str
         invalidToken: { message: unauthorized }
       })
     )
-    .put(
-      '/accounts/:userId/entitlements',
-      accountParams,
-      validatedJSON(setAccountEntitlementsSchema),
-      async (context) => {
-        const { userId } = context.req.valid('param')
-        const result = await service.setAccountEntitlements(userId, context.req.valid('json'))
-        if (!result.found) return context.json({ error: { code: 'not_found' as const } }, 404)
-        return context.json({ applied: result.applied })
-      }
+    .use(
+      '*',
+      contractRoutes(createInternalProcedures(service), () => ({}))
     )
-    .get('/accounts/:userId/seats', accountParams, async (context) => {
-      const seats = await service.accountSeats(context.req.valid('param').userId)
-      if (seats === null) return context.json({ error: { code: 'not_found' as const } }, 404)
-      return context.json({ seats })
-    })
 }

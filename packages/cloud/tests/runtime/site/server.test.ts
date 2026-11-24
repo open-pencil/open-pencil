@@ -27,7 +27,11 @@ const api = {
       : new Response('Not found', { status: 404 })
 }
 
-const server = createCloudServer(api, { site, indexingPolicy: 'deny' })
+const server = createCloudServer(api, {
+  site,
+  indexingPolicy: 'deny',
+  publicURL: 'https://cloud.example'
+})
 const request = (path: string, init: RequestInit = {}) =>
   server.request(new Request(`https://cloud.example${path}`, init))
 const navigate = (path: string) => request(path, { headers: { Accept: 'text/html' } })
@@ -101,8 +105,21 @@ describe('Cloud server', () => {
     }
   })
 
+  test('keeps gallery thumbnails open to crawlers where indexing is allowed', async () => {
+    const path = 'https://cloud.example/api/community/thumbnails/document/revision'
+    const allowed = createCloudServer(api, {
+      indexingPolicy: 'allow',
+      publicURL: 'https://cloud.example'
+    })
+    expect((await allowed.request(path)).headers.get('X-Robots-Tag')).toBeNull()
+    expect((await server.request(path)).headers.get('X-Robots-Tag')).toContain('noindex')
+  })
+
   test('answers only the API without a site build', async () => {
-    const bare = createCloudServer(api, { indexingPolicy: 'allow' })
+    const bare = createCloudServer(api, {
+      indexingPolicy: 'allow',
+      publicURL: 'https://cloud.example'
+    })
     expect((await bare.request('https://cloud.example/account')).status).toBe(404)
     expect(
       (await bare.request('https://cloud.example/', { headers: { Accept: 'text/html' } })).status
@@ -119,6 +136,7 @@ describe('Cloud server', () => {
           throw failure
         },
         indexingPolicy: 'deny',
+        publicURL: 'https://cloud.example',
         reportError: async (error, context) => {
           reported.push({ error, context })
         }
@@ -152,6 +170,7 @@ describe('Cloud server', () => {
     const anySite = createCloudServer(api, {
       site,
       indexingPolicy: 'allow',
+      publicURL: 'https://cloud.example',
       embedding: { allowedOrigins: [] }
     })
     const page = await anySite.request('https://cloud.example/embed/share/abc', {
@@ -168,6 +187,7 @@ describe('Cloud server', () => {
     const listed = createCloudServer(api, {
       site,
       indexingPolicy: 'deny',
+      publicURL: 'https://cloud.example',
       embedding: { allowedOrigins: ['https://intranet.example/wiki/'] }
     })
     const framed = await listed.request('https://cloud.example/embed/community/abc')
@@ -183,6 +203,7 @@ describe('Cloud server', () => {
     const embedding = createCloudServer(api, {
       site,
       indexingPolicy: 'deny',
+      publicURL: 'https://cloud.example',
       embedding: { allowedOrigins: ['https://a.example'] }
     })
     const embed = await embedding.request('https://cloud.example/embed/share/abc')

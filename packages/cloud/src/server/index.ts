@@ -1,5 +1,4 @@
 export {
-  adminErrorStatus,
   AdminDomainError,
   approveEnrollmentByEmail,
   createAdminAuditService,
@@ -22,19 +21,17 @@ export {
   type EnrollmentStatus
 } from '#cloud/admin'
 export {
-  createBillingRoutes,
+  createBillingRateLimits,
   createBillingTokenService,
-  type BillingRouteEnvironment,
   type BillingTokenService,
   type BillingTokenServiceOptions
 } from '#cloud/server/billing'
 export {
   ServicesNotEntitledError,
-  createServicesRoutes,
+  createServicesRateLimits,
   createServicesTokenService,
   importServicesSigningKey,
   loadServicesSigningKey,
-  type ServicesRouteEnvironment,
   type ServicesSigningKey,
   type ServicesTokenService,
   type ServicesTokenServiceOptions
@@ -68,10 +65,8 @@ export { configuredSocialProviders } from './auth/social-providers'
 export {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
-  type CloudAPI,
   type CloudAPIEnvironment,
-  type CloudAPIServices,
-  type PublicCloudAPI
+  type CloudAPIServices
 } from './api'
 export {
   createCloudApp,
@@ -117,12 +112,10 @@ export {
   type RelayAuthorization,
   type RelayConnection,
   type RelaySocket,
-  createCollaborationRoutes,
+  createCollaborationRateLimits,
   createCollaborationTicketService,
   signCollaborationTicket,
   type CollaborationTicketClaims,
-  createPublicCollaborationRoutes,
-  type CollaborationRouteEnvironment,
   type CollaborationTicketService
 } from './collaboration'
 export {
@@ -166,7 +159,8 @@ export {
 } from './db'
 export {
   canEditDocument,
-  createDocumentRoutes,
+  createDocumentProcedures,
+  createDocumentRateLimits,
   createDocumentService,
   DocumentConflictError,
   DocumentForbiddenError,
@@ -179,7 +173,7 @@ export {
 } from './documents'
 export {
   CHECKPOINT_INTERVAL_MS,
-  createDocumentVersionRoutes,
+  createDocumentVersionProcedures,
   createDocumentVersionService,
   LIMITED_HISTORY_DAYS,
   type DocumentVersionService
@@ -188,9 +182,9 @@ export {
   COMMENT_EMAIL_BUDGET,
   CommentConflictError,
   CommentLimitError,
-  createCommentRoutes,
+  createCommentProcedures,
   createCommentService,
-  createSharedCommentRoutes,
+  createSharedCommentProcedures,
   type CommentActor,
   type CommentService
 } from './comments'
@@ -233,7 +227,6 @@ export {
   createInternalRoutes,
   createInternalService,
   parseSetAccountEntitlements,
-  setAccountEntitlementsSchema,
   type InternalService,
   type SetAccountEntitlementsInput
 } from './internal'
@@ -263,10 +256,10 @@ export type {
 } from './objects'
 export {
   capabilityHashMatches,
-  createDocumentSharingRoutes,
+  createSharingRateLimits,
+  createSharingProcedures,
+  createPublicSharingProcedures,
   createDocumentSharingService,
-  createPublicDocumentRoutes,
-  createPublicSharingRoutes,
   decryptContinuationToken,
   DocumentShareInvalidError,
   DocumentShareSignInRequiredError,
@@ -276,7 +269,7 @@ export {
   type DocumentSharingService,
   type ResolvedDocumentShare,
   type ResolvedSharePrincipal,
-  type SharingRouteEnvironment
+  type PublicProcedureContext
 } from './sharing'
 export {
   CLOUD_FEATURE_KEYS,
@@ -290,12 +283,10 @@ export {
   StaticEntitlementSource,
   parseStaticEntitlementsTOML,
   staticEntitlementValues,
-  staticEntitlementsSchema,
   type CloudPolicyContext,
   type EntitlementSource,
   type EntitlementService,
   type EntitlementSubject,
-  type StaticEntitlements,
   type StaticEntitlementsInput
 } from './policy'
 export {
@@ -324,15 +315,15 @@ export {
   type RateLimitPolicy
 } from './rate-limit'
 export {
-  createWorkspaceRoutes,
+  createWorkspaceRateLimits,
+  createWorkspaceProcedures,
+  createSessionProcedures,
   createWorkspaceService,
   WorkspaceSlugConflictError,
-  type WorkspaceRouteEnvironment,
   type WorkspaceService
 } from './workspaces'
 export {
   createDocumentReportService,
-  createPublicReportRoutes,
   DOCUMENT_REPORT_BUDGET,
   DocumentReportLimitError,
   type DocumentReportService,

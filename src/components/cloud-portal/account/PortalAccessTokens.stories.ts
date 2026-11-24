@@ -13,7 +13,8 @@ const TOKENS: PortalAccessToken[] = [
     created: 'Nov 11, 2026',
     lastUsed: '2 hours ago',
     expires: 'Nov 11, 2027',
-    expired: false
+    expired: false,
+    access: 'write'
   },
   {
     id: 'token-2',
@@ -22,7 +23,8 @@ const TOKENS: PortalAccessToken[] = [
     created: 'Aug 2, 2026',
     lastUsed: null,
     expires: 'Oct 31, 2026',
-    expired: true
+    expired: true,
+    access: 'read'
   }
 ]
 
@@ -45,14 +47,17 @@ export const List: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Publish examples')).toBeVisible()
     await expect(canvas.getByText('Expired')).toBeVisible()
+    await expect(canvas.getByText('Read and write')).toBeVisible()
   }
 }
 
-/** Naming a new token and choosing how long it lasts. */
+const onSubmit = fn()
+
+/** Naming a new token, choosing what it may do and how long it lasts. */
 export const Create: Story = {
   render: () => ({
     components: { PortalAccessTokenDialog },
-    setup: () => ({ onSubmit: fn() }),
+    setup: () => ({ onSubmit }),
     template: `<PortalAccessTokenDialog :open="true" @submit="onSubmit" />`
   }),
   play: async () => {
@@ -61,6 +66,13 @@ export const Create: Story = {
     await expect(create).toBeDisabled()
     await userEvent.type(page.getByRole('textbox', { name: 'Name' }), 'Publish examples')
     await expect(create).toBeEnabled()
+    await userEvent.click(page.getByRole('button', { name: 'Read and write' }))
+    await userEvent.click(create)
+    await expect(onSubmit).toHaveBeenCalledWith({
+      name: 'Publish examples',
+      expiresInDays: 90,
+      access: 'write'
+    })
   }
 }
 

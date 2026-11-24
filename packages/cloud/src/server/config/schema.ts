@@ -2,9 +2,9 @@ import {
   CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
   cloudEditorVersionSchema,
   RELAY_MINIMUM_MESSAGE_BYTES,
-  sendsTokenSafely
+  sendsTokenSafely,
+  staticEntitlementsSchema
 } from '#cloud/contract'
-import { staticEntitlementsSchema } from '#cloud/server/policy/schema'
 import * as v from 'valibot'
 
 import {
@@ -179,6 +179,8 @@ const rawCloudServerConfigSchema = v.object({
   billingEndpoint: v.optional(httpURLSchema),
   /** The bearer token services such as billing present to the internal API. */
   internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32))),
+  /** Whether people may connect apps through OAuth, with this server as their authorization server. */
+  oauthEnabled: v.optional(v.boolean(), false),
   /**
    * The operator's own terms, privacy policy, abuse contact, and minimum age; without it the
    * server shows none. With `requireAcceptance`, an account uses the server only once it accepted

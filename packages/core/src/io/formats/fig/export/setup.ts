@@ -1,7 +1,5 @@
 import { deflateSync, inflateSync } from 'fflate'
-import { toUint8Array } from 'js-base64'
 
-import type { CanvasKit } from '@open-pencil/canvaskit'
 import { figArchiveMetaJSON, type FigUnreadVariable } from '@open-pencil/fig'
 import {
   applyVariableModes,
@@ -25,27 +23,18 @@ import {
   withBehaviour
 } from '@open-pencil/scene-graph/behaviours'
 import { orderKeyBetween, siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
-import type { GUID, Rect, Size } from '@open-pencil/scene-graph/primitives'
+import type { GUID } from '@open-pencil/scene-graph/primitives'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
 import { appendAll } from '@open-pencil/std/arrays'
 
-import type { SkiaRenderer } from '#core/canvas'
-import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
+import { CANVAS_BG_COLOR } from '#core/constants'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { applyDocumentPluginData } from '#core/io/formats/fig/document-metadata'
 import { figThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
-import { renderThumbnail, thumbnailFrame } from '#core/io/formats/raster'
 import { settleFontDigestMap } from '#core/kiwi/fig/node-change/serialize'
 
+import { renderFigThumbnail, type FigThumbnailOptions } from './thumbnail'
 import { assignVariableGuid, assignVariableGuids } from './variables'
-
-/**
- * What a `.fig` write shares however many records it writes: the GUID maps, caches and
- * canvases, the schema, and the thumbnail and images beside the records.
- */
-const THUMBNAIL_1X1 = toUint8Array(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
-)
 
 export type KiwiNodeChange = NodeChange & Record<string, unknown>
 
@@ -57,56 +46,8 @@ export interface CanvasExportEntry {
   canvasNc: KiwiNodeChange
 }
 
-const THUMBNAIL_WIDTH = 512
-const THUMBNAIL_HEIGHT = 512
 /** The name Figma gives a file it was not told the name of. */
 const UNTITLED_FILE_NAME = 'Untitled'
-
-interface FigThumbnail {
-  png: Uint8Array
-  size: Size
-  /** The page-space rectangle the thumbnail shows; empty for the 1×1 placeholder. */
-  region: Rect
-}
-
-function placeholderThumbnail(): FigThumbnail {
-  return {
-    png: THUMBNAIL_1X1,
-    size: { width: 1, height: 1 },
-    region: { x: 0, y: 0, width: 0, height: 0 }
-  }
-}
-
-async function renderFigThumbnailPNG(
-  graph: SceneGraph,
-  pageId: string,
-  options: FigFileExtrasOptions
-): Promise<Uint8Array | null> {
-  const { ck, renderer } = options
-  if (ck && renderer) {
-    return renderThumbnail(ck, renderer, graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)
-  }
-  if (!options.renderHeadlessThumbnail || IS_BROWSER || IS_TAURI) return null
-  const { headlessRenderThumbnail } = await import('#core/io/formats/raster')
-  return headlessRenderThumbnail(graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)
-}
-
-async function renderFigThumbnail(
-  graph: SceneGraph,
-  pageId: string | undefined,
-  options: FigFileExtrasOptions
-): Promise<FigThumbnail> {
-  const frame = pageId ? thumbnailFrame(graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT) : null
-  if (!pageId || !frame) return placeholderThumbnail()
-  const png = await renderFigThumbnailPNG(graph, pageId, options)
-  if (!png) return placeholderThumbnail()
-  const { minX, minY, maxX, maxY } = frame.bounds
-  return {
-    png,
-    size: { width: frame.width, height: frame.height },
-    region: { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
-  }
-}
 
 /**
  * The GUID a layer without a `source.id` is saved under: its graph ID, which has Figma's
@@ -556,12 +497,9 @@ export interface FigFileExtras {
   images: Array<{ name: string; data: Uint8Array }>
 }
 
-export interface FigFileExtrasOptions {
-  ck?: CanvasKit
-  renderer?: SkiaRenderer
+export interface FigFileExtrasOptions extends FigThumbnailOptions {
   /** The page the thumbnail shows; the cover page when absent. */
   pageId?: string
-  renderHeadlessThumbnail?: boolean
   /** The name `meta.json` records for the file. */
   documentName?: string
   /**

@@ -1,0 +1,1 @@
+- Saving an editable .fig layer no longer fails when drawing the file preview throws; the preview falls back to the 1×1 placeholder.

@@ -6,6 +6,7 @@ import {
   createVerifiedCredentialAccount,
   withCookie
 } from '#cloud-tests/helpers/account-authentication'
+import { adminContractClient, contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   CLOUD_ACCESS_TOKEN_PREFIX,
@@ -37,10 +38,14 @@ const send = (path: string, init: { body?: object; cookie?: string; token?: stri
     })
   )
 const withToken = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } })
+/** The contract's client, signed in with `token`. */
+const byToken = (token: string) => contractClient(fixture.app, withToken(token).headers)
+/** The contract's client, signed in with the session `cookie`. */
+const byCookie = (cookie: string) => contractClient(fixture.app, withCookie(cookie).headers)
 
-async function createToken(name = 'CI') {
+async function createToken(name = 'CI', access: 'read' | 'write' = 'write') {
   const response = await fixture.client.api.account.tokens.create.$post(
-    { json: { name, expiresInDays: 30 } },
+    { json: { name, expiresInDays: 30, access } },
     withCookie(person.sessionCookie)
   )
   expect(response.status).toBe(201)
@@ -65,16 +70,29 @@ describe('personal access tokens', () => {
 
   test('act as their account on the document API', async () => {
     const { token } = await createToken()
-    const created = await fixture.client.api.workspaces.$post(
-      { json: { name: 'Examples', slug: 'examples-by-token' } },
-      withToken(token)
-    )
-    expect(created.status).toBe(201)
-    const workspaces = await fixture.client.api.workspaces.$get(
-      undefined,
-      withCookie(person.sessionCookie)
-    )
-    expect(await workspaces.text()).toContain('examples-by-token')
+    expect(
+      await outcome(
+        byToken(token).workspaces.create({
+          body: { name: 'Examples', slug: 'examples-by-token' }
+        })
+      )
+    ).toBe('ok')
+    const workspaces = await byCookie(person.sessionCookie).workspaces.list()
+    expect(JSON.stringify(workspaces)).toContain('examples-by-token')
+  })
+
+  test('that may only read list and download, and change nothing', async () => {
+    const created = await createToken('Reader', 'read')
+    expect(created.accessToken.access).toBe('read')
+    const { token } = created
+    expect(await outcome(byToken(token).workspaces.list())).toBe('ok')
+    const refused = await send('/api/workspaces', {
+      body: { name: 'Refused', slug: 'refused-by-reader' },
+      token
+    })
+    expect(refused.status).toBe(403)
+    expect(await refused.text()).toContain('insufficient_scope')
+    expect(refused.headers.get('www-authenticate')).toContain('scope="documents:write"')
   })
 
   test('never reach account management, administration, or Better Auth', async () => {
@@ -85,24 +103,21 @@ describe('personal access tokens', () => {
     expect(
       (
         await fixture.client.api.account.tokens.create.$post(
-          { json: { name: 'More', expiresInDays: 1 } },
+          { json: { name: 'More', expiresInDays: 1, access: 'write' } },
           withToken(token)
         )
       ).status
     ).toBe(401)
     expect(
-      (await fixture.client.api.admin.users.$get({ query: {} }, withToken(token))).status
-    ).toBe(401)
+      await outcome(adminContractClient(fixture.app, withToken(token).headers).users({ query: {} }))
+    ).toMatchObject({ status: 401 })
     // Services tokens spend the account's credits, so they take a session.
     expect(
-      (
-        await fixture.client.api.services.token.$post(
-          { json: { workspaceId: crypto.randomUUID() } },
-          withToken(token)
-        )
-      ).status
-    ).toBe(401)
-    expect((await fixture.client.api.session.$get(undefined, withToken(token))).status).toBe(200)
+      await outcome(
+        byToken(token).session.servicesToken({ body: { workspaceId: crypto.randomUUID() } })
+      )
+    ).toMatchObject({ status: 401 })
+    expect(await outcome(byToken(token).session.session())).toBe('ok')
     expect((await send('/api/auth/api-key/list', { token })).status).toBe(404)
     expect(
       (
@@ -121,9 +136,7 @@ describe('personal access tokens', () => {
       withCookie(person.sessionCookie)
     )
     expect(revoke.status).toBe(200)
-    expect(
-      (await fixture.client.api.workspaces.$get(undefined, withToken(revoked.token))).status
-    ).toBe(401)
+    expect(await outcome(byToken(revoked.token).workspaces.list())).toMatchObject({ status: 401 })
 
     const expired = await createToken()
     await fixture.database
@@ -131,9 +144,7 @@ describe('personal access tokens', () => {
       .set({ expiresAt: new Date(Date.now() - 1000) })
       .where('id', '=', expired.accessToken.id)
       .execute()
-    expect(
-      (await fixture.client.api.workspaces.$get(undefined, withToken(expired.token))).status
-    ).toBe(401)
+    expect(await outcome(byToken(expired.token).workspaces.list())).toMatchObject({ status: 401 })
 
     const banned = await createToken()
     await fixture.database
@@ -142,9 +153,9 @@ describe('personal access tokens', () => {
       .where('id', '=', person.userId)
       .execute()
     try {
-      expect(
-        (await fixture.client.api.workspaces.$get(undefined, withToken(banned.token))).status
-      ).toBe(401)
+      expect(await outcome(byToken(banned.token).workspaces.list())).toMatchObject({
+        status: 401
+      })
     } finally {
       await fixture.database
         .updateTable('user')
@@ -162,7 +173,7 @@ describe('personal access tokens', () => {
       approved: true
     })
     const created = await fixture.client.api.account.tokens.create.$post(
-      { json: { name: 'Old CI', expiresInDays: 30 } },
+      { json: { name: 'Old CI', expiresInDays: 30, access: 'write' } },
       withCookie(leaving.sessionCookie)
     )
     const { token } = await responseJSON(created, cloudAccessTokenCreatedResponseSchema)
@@ -172,7 +183,7 @@ describe('personal access tokens', () => {
     )
     expect(deleted.status).toBe(200)
 
-    expect((await fixture.client.api.workspaces.$get(undefined, withToken(token))).status).toBe(401)
+    expect(await outcome(byToken(token).workspaces.list())).toMatchObject({ status: 401 })
     const left = await fixture.database
       .selectFrom('apikey')
       .select('id')
@@ -188,7 +199,7 @@ describe('personal access tokens', () => {
       .where('userId', '=', person.userId)
       .execute()
     const stale = await fixture.client.api.account.tokens.create.$post(
-      { json: { name: 'Late', expiresInDays: 30 } },
+      { json: { name: 'Late', expiresInDays: 30, access: 'write' } },
       withCookie(person.sessionCookie)
     )
     expect(stale.status).toBe(403)

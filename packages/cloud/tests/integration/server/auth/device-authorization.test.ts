@@ -6,6 +6,7 @@ import {
   createAccountAuthenticationFixture,
   createVerifiedCredentialAccount
 } from '#cloud-tests/helpers/account-authentication'
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import { signOutFromCloud } from '#cloud/client'
 import { parseCloudDiscovery } from '#cloud/contract'
@@ -85,22 +86,15 @@ test('email-only desktop authorization stays on its issuing instance', async () 
     expect(new Date(stored?.expiresAt ?? 0).getTime()).toBeGreaterThan(Date.now())
     const discoveryResponse = await fixture.client['.well-known'].openpencil.$get()
     const discovery = parseCloudDiscovery(await discoveryResponse.json())
-    const session = await fixture.client.api.session.$get(undefined, {
-      headers: { Authorization: `Bearer ${tokenBody.access_token}` }
-    })
-    expect(session.status).toBe(200)
-    const invalid = await fixture.client.api.session.$get(undefined, {
-      headers: { Authorization: `Bearer ${crypto.randomUUID()}` }
-    })
-    expect(invalid.status).toBe(401)
+    const session = (token: string) =>
+      outcome(contractClient(fixture.app, { Authorization: `Bearer ${token}` }).session.session())
+    expect(await session(tokenBody.access_token)).toBe('ok')
+    expect(await session(crypto.randomUUID())).toMatchObject({ status: 401 })
     await signOutFromCloud(discovery, {
       accessToken: tokenBody.access_token,
       fetch: async (input, init) => fixture.app.fetch(new Request(input, init))
     })
-    const revoked = await fixture.client.api.session.$get(undefined, {
-      headers: { Authorization: `Bearer ${tokenBody.access_token}` }
-    })
-    expect(revoked.status).toBe(401)
+    expect(await session(tokenBody.access_token)).toMatchObject({ status: 401 })
   } finally {
     await fixture.close()
   }

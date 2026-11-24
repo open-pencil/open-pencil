@@ -4,6 +4,7 @@ export {
   mediaTypeOfName,
   MAX_REMOTE_FILE_BYTES,
   remoteFileKind,
+  RefusedPageError,
   remoteFileTitle,
   type FetchRemoteFileOptions,
   type RemoteFile,

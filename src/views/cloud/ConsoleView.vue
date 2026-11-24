@@ -17,6 +17,7 @@ import AdminPeopleSection from '@/components/cloud-portal/sections/AdminPeopleSe
 import AdminPersonSection from '@/components/cloud-portal/sections/AdminPersonSection.vue'
 import AdminReportsSection from '@/components/cloud-portal/sections/AdminReportsSection.vue'
 import AdminRequestsSection from '@/components/cloud-portal/sections/AdminRequestsSection.vue'
+import ConnectedAppsSection from '@/components/cloud-portal/sections/ConnectedAppsSection.vue'
 import NotificationsSection from '@/components/cloud-portal/sections/NotificationsSection.vue'
 import PlanSection from '@/components/cloud-portal/sections/PlanSection.vue'
 import ProfileSection from '@/components/cloud-portal/sections/ProfileSection.vue'
@@ -30,10 +31,11 @@ const ACCOUNT_SECTIONS = [
   'notifications',
   'security',
   'sessions',
-  'tokens'
+  'tokens',
+  'apps'
 ] as const
 /** Every section, and a few people's pages, stay loaded while others are shown. */
-const SECTIONS_KEPT = 12
+const SECTIONS_KEPT = 14
 const ADMIN_SECTIONS = [
   'overview',
   'requests',
@@ -61,6 +63,7 @@ const router = useRouter()
 const messages = useMessages('cloud/portal')
 const planMessages = useMessages('cloud/portal/plan')
 const tokenMessages = useMessages('cloud/portal/tokens')
+const appMessages = useMessages('cloud/portal/apps')
 const waiting = ref(0)
 const openReports = ref(0)
 const peopleTotal = ref<number | null>(null)
@@ -120,7 +123,18 @@ const sections = computed<PortalSection[]>(() => {
       icon: PORTAL_SECTION_ICONS.tokens,
       label: tokenMessages.value.accessTokens,
       group: value.sectionAccount
-    }
+    },
+    // Only a server that accepts apps has any connected.
+    ...(portal.discovery.capabilities.apps
+      ? [
+          {
+            id: 'apps',
+            icon: PORTAL_SECTION_ICONS.apps,
+            label: appMessages.value.connectedApps,
+            group: value.sectionAccount
+          }
+        ]
+      : [])
   ]
   if (!admin.value) return account
   return [
@@ -185,6 +199,7 @@ const description = computed(() => {
     notifications: value.notificationsDescription,
     sessions: value.sessionsDescription,
     tokens: tokenMessages.value.accessTokensDescription,
+    apps: appMessages.value.connectedAppsDescription,
     overview: portal.host,
     requests: value.accessRequestsDescription,
     reports: value.reportsDescription,
@@ -268,6 +283,7 @@ watch(
       <NotificationsSection v-else-if="active === 'notifications'" />
       <SessionsSection v-else-if="active === 'sessions'" />
       <AccessTokensSection v-else-if="active === 'tokens'" />
+      <ConnectedAppsSection v-else-if="active === 'apps'" />
       <AdminOverviewSection v-else-if="active === 'overview'" @open="select" />
       <AdminRequestsSection v-else-if="active === 'requests'" @changed="refreshWaiting" />
       <AdminReportsSection v-else-if="active === 'reports'" @changed="refreshWaiting" />

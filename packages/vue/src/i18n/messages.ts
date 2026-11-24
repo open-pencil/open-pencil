@@ -7,6 +7,7 @@ import { automationMessageDefaults } from '#vue/i18n/messages/automation'
 import { cloudMessageDefaults } from '#vue/i18n/messages/cloud/editor'
 import { cloudEmbedMessageDefaults } from '#vue/i18n/messages/cloud/embed'
 import { cloudPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal'
+import { appPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/apps'
 import { communityPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/community'
 import { personPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/person'
 import { planPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/plan'
@@ -52,6 +53,7 @@ export const messageDefaults = {
   'cloud/editor': cloudMessageDefaults,
   'cloud/embed': cloudEmbedMessageDefaults,
   'cloud/portal': cloudPortalMessageDefaults,
+  'cloud/portal/apps': appPortalMessageDefaults,
   'cloud/portal/community': communityPortalMessageDefaults,
   'cloud/portal/person': personPortalMessageDefaults,
   'cloud/portal/plan': planPortalMessageDefaults,

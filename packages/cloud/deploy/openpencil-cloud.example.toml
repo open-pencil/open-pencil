@@ -167,6 +167,13 @@ transport = "none"
 # and openpencil.dev take theirs from the official server, whatever this one names.
 # tour = "7c6939c0-dedc-4fbe-80b2-80919621de10"
 
+# Optional: lets people connect apps such as ChatGPT, Claude, or Grok to their account. Apps
+# register themselves, so anyone may register one, but each connection takes the person's approval
+# and reaches one workspace they choose. The apps then read and change that workspace's documents,
+# so say so in your privacy notice. Leave the table out to accept no apps.
+# [oauth]
+# enabled = true
+
 # Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. The host
 # defaults to https://eu.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY. Reports
 # name no account unless include_ids is set; then they carry the user's account ID and the IDs of

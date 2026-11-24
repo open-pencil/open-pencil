@@ -1,7 +1,8 @@
 import {
   CLOUD_EMBED_PATH,
   CLOUD_PORTAL_COMMUNITY_PAGES,
-  CLOUD_PORTAL_PAGE_ROOTS
+  CLOUD_PORTAL_PAGE_ROOTS,
+  COMMUNITY_SITEMAP_PATH
 } from '#cloud/contract'
 import {
   cloudErrorHandler,
@@ -14,7 +15,8 @@ import {
 import { Hono, type MiddlewareHandler } from 'hono'
 import { secureHeaders } from 'hono/secure-headers'
 
-import { communityPageMeta, withPageMeta } from './community'
+import { communityPage, renderCommunityPage } from './community/page'
+import { communitySitemap } from './community/sitemap'
 
 /** A file of the Cloud site (`bun run build:cloud`): the editor and the portal. */
 export type SiteFile = {
@@ -87,6 +89,12 @@ export type CloudServerOptions = {
   /** The built site; without it, the server answers only its API. */
   site?: SiteFiles
   indexingPolicy: IndexingPolicy
+  /**
+   * Where visitors reach the deployment: the gallery's canonical addresses, preview images, and
+   * sitemap entries are named from it, never from the request, whose host may be one a proxy
+   * forwards to.
+   */
+  publicURL: string
   /** Reports errors reading the site's files, when the deployment configures error tracking. */
   reportError?: CloudErrorReporter
   /** The request ID the runtime trusts from what stands in front of it; see `cloudRequestId`. */
@@ -110,12 +118,20 @@ function cacheControl(path: string): string {
  */
 export function createCloudServer(
   api: { fetch(request: Request): Response | Promise<Response> },
-  { site, indexingPolicy, reportError, forwardedRequestId, embedding }: CloudServerOptions
+  {
+    site,
+    indexingPolicy,
+    publicURL,
+    reportError,
+    forwardedRequestId,
+    embedding
+  }: CloudServerOptions
 ) {
   const server = new Hono()
     .onError(cloudErrorHandler(reportError))
     .use(cloudRequestId(forwardedRequestId))
   server.use(preventIndexing(indexingPolicy))
+  const { origin } = new URL(publicURL)
   if (site) {
     const pages = CLOUD_PORTAL_PAGE_ROOTS.flatMap((root) => [root, `${root}/*`])
     server.on(['GET', 'HEAD'], pages, sitePageSecurity, async (c) => {
@@ -127,14 +143,16 @@ export function createCloudServer(
     server.on(['GET', 'HEAD'], [...CLOUD_PORTAL_COMMUNITY_PAGES], sitePageSecurity, async (c) => {
       const page = await site(PORTAL_PAGE, c.req.raw)
       if (!page) return c.notFound()
-      const meta = await communityPageMeta(api, c.req.raw, c.req.param('documentId'))
+      const community = await communityPage(api, c.req.raw, origin, c.req.param('documentId'))
       const html = await new Response(page.body).text()
-      if ('title' in meta) return c.body(await withPageMeta(html, meta), 200, PAGE_HEADERS)
+      if ('meta' in community) {
+        return c.body(await renderCommunityPage(html, community), 200, PAGE_HEADERS)
+      }
       // The page still loads and says what went wrong; the status and retry advice stay the API's.
-      const headers = meta.retryAfter
-        ? { ...PAGE_HEADERS, 'Retry-After': meta.retryAfter }
+      const headers = community.retryAfter
+        ? { ...PAGE_HEADERS, 'Retry-After': community.retryAfter }
         : PAGE_HEADERS
-      return new Response(html, { status: meta.status, headers })
+      return new Response(html, { status: community.status, headers })
     })
     const embedPages = [CLOUD_EMBED_PATH, `${CLOUD_EMBED_PATH}/*`]
     if (embedding) {
@@ -145,6 +163,23 @@ export function createCloudServer(
       })
     } else {
       server.on(['GET', 'HEAD'], embedPages, (c) => c.notFound())
+    }
+    // The gallery's pages for search engines, on a deployment that lets them index it.
+    if (indexingPolicy === 'allow') {
+      server.get(COMMUNITY_SITEMAP_PATH, async (c) => {
+        const sitemap = await communitySitemap(api, c.req.raw, origin)
+        if (typeof sitemap === 'string') {
+          return c.body(sitemap, 200, {
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Cache-Control': 'public, max-age=300'
+          })
+        }
+        // No gallery answers 404; a limited or failed read keeps the API's status and retry advice.
+        const headers: Record<string, string> = sitemap.retryAfter
+          ? { 'Retry-After': sitemap.retryAfter }
+          : {}
+        return new Response(null, { status: sitemap.status, headers })
+      })
     }
     server.on(['GET', 'HEAD'], '*', async (c, next) => {
       await next()

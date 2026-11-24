@@ -2,6 +2,7 @@ import type { ShapedTextGlyph } from '@open-pencil/fig/node-change'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { getCanvasKit } from '#core/canvaskit'
+import { withBooleanOutlines } from '#core/io/formats/svg/boolean/combine'
 import { renderNodesToSVG, type SVGExportOptions } from '#core/io/formats/svg/export'
 import type {
   SVGCharacterEdges,
@@ -16,7 +17,8 @@ import { prepareGraphFonts } from '#core/text/prepare'
 
 /**
  * Layers as SVG with their text set as the canvas sets it: the fonts it draws with loaded, each
- * line on the baseline the canvas gives it, and wrapped paragraphs kept wrapped.
+ * line on the baseline the canvas gives it, and wrapped paragraphs kept wrapped. Boolean
+ * operations draw as their combined shapes.
  */
 export async function renderNodesToLaidOutSVG(
   graph: SceneGraph,
@@ -26,7 +28,9 @@ export async function renderNodesToLaidOutSVG(
 ): Promise<string | null> {
   await prepareGraphFonts(graph, nodeIds)
   return withCanvasTextLayout(async (textLayout) =>
-    renderNodesToSVG(graph, pageId, nodeIds, { textLayout, ...options })
+    withBooleanOutlines(graph, nodeIds, async (booleanOutlines) =>
+      renderNodesToSVG(graph, pageId, nodeIds, { textLayout, booleanOutlines, ...options })
+    )
   )
 }
 

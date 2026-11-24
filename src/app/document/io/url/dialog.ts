@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 
 import { errorMessage, isAbortError } from '@open-pencil/std/errors'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { notificationMessages } from '@/app/i18n/notifications'
 import { appPreferences } from '@/app/settings/preferences/store'
@@ -20,8 +21,8 @@ export function showOpenURLDialog(): void {
  * Reads the address the dialog was given, and once it holds something OpenPencil opens, opens it
  * in a tab of its own with the size and scripts setting the dialog last chose; that tab shows how
  * far the open has got, and closing it cancels the open. Resolves with why the address could not
- * be read, for the dialog to show, or null once the open has started. When `signal` aborts, as
- * closing the dialog does, it stops before opening anything and resolves with null.
+ * be read or opened, for the dialog to show, or null once the open has started. When `signal`
+ * aborts, as closing the dialog does, it stops before opening anything and resolves with null.
  */
 export async function submitOpenURL(text: string, signal: AbortSignal): Promise<string | null> {
   const url = parseWebAddress(text)
@@ -35,6 +36,8 @@ export async function submitOpenURL(text: string, signal: AbortSignal): Promise<
   }
   if (signal.aborted) return null
   const { webPageSize, runPageScripts } = appPreferences.value.import
+  // Kept in the dialog, so its scripts setting can be turned on and the address tried again.
+  if (remote.rendersOnly && !runPageScripts) return messageStores.files.get().openURLRefused
   void openRemoteFile(remote, {
     viewport: WEB_PAGE_VIEWPORTS[webPageSize],
     runScripts: runPageScripts

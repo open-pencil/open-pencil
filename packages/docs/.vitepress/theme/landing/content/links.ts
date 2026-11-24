@@ -10,5 +10,7 @@ export const LINKS = {
   /** The official Cloud's editor, where a visitor signs up. */
   cloud: 'https://cloud.openpencil.dev',
   /** Cloud's plans, on its billing service. */
-  pricing: 'https://billing.openpencil.dev/pricing'
+  pricing: 'https://billing.openpencil.dev/pricing',
+  /** Files anyone may open and copy, from the official Cloud's gallery. */
+  community: 'https://cloud.openpencil.dev/community'
 } as const
