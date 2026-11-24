@@ -130,7 +130,7 @@ function storedValue(
   if (literalType(value) !== type)
     throw new Error(`Variable ${name} mixes ${type} with ${literalType(value)} values`)
   if (typeof value !== 'string') return value
-  const color = tryParseColor(value)
+  const color = tryParseColor(value, graph.documentColorSpace)
   if (!color) throw new Error(`Variable ${name} has "${value}", which is not a color`)
   return color
 }
@@ -179,7 +179,7 @@ export function resolveVariableId(graph: SceneGraph, variable: DesignVariable): 
     return collection && variableNamed(graph, collection, variable.name)?.id
   }
   if (graph.variables.has(variable.name)) return variable.name
-  const matches = [...graph.variables.values()].filter((item) => item.name === variable.name)
+  const matches = graph.getLiveVariables().filter((item) => item.name === variable.name)
   if (matches.length > 1) {
     const [first] = matches
     const collection = graph.variableCollections.get(first.collectionId)?.name ?? ''

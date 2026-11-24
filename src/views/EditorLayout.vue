@@ -3,7 +3,6 @@ import { useEventListener } from '@vueuse/core'
 import { onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { provideEditor } from '@open-pencil/vue'
 import { useMessages } from '@open-pencil/vue/i18n'
 
 import { watchCloudAISetup } from '@/app/ai/providers/openpencil/setup'
@@ -11,7 +10,7 @@ import { startCloud } from '@/app/cloud/integration'
 import { useAutosaveFeedback } from '@/app/document/autosave/feedback'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { endRecoverySession, startRecoverySession } from '@/app/document/recovery/session'
-import { useFollowingEditorStore } from '@/app/editor/active-store'
+import { provideEditorStore, useFollowingEditorStore } from '@/app/editor/active-store'
 import { offerCrashReports } from '@/app/reports/crash'
 import { useAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
@@ -43,7 +42,7 @@ import VoiceCallAudio from '@/components/voice-call/VoiceCallAudio.vue'
 const updates = useMessages('updates')
 const router = useRouter()
 
-provideEditor(useFollowingEditorStore())
+provideEditorStore(useFollowingEditorStore())
 useAppTheme()
 useDocumentCloseProtection()
 useAutosaveFeedback()

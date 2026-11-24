@@ -105,6 +105,7 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
     const messages: Array<{ message: string }> = []
     const context = {
       variables: GRAY_VARIABLES,
+      colorProfile: 'srgb' as const,
       isSharedStyle: () => false,
       report: (issue: { message: string }) => messages.push(issue),
       getConfig: () => ({}),
@@ -158,6 +159,7 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
     const messages: Array<{ message: string }> = []
     const context = {
       variables: GRAY_VARIABLES,
+      colorProfile: 'srgb' as const,
       isSharedStyle: () => false,
       report: (issue: { message: string }) => messages.push(issue),
       getConfig: () => ({}),

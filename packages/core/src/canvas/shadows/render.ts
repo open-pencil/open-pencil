@@ -90,7 +90,8 @@ function drawSilhouetteDropShadow(
   draw: () => void
 ): void {
   const ck = r.ck
-  const color = ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
+  const shadow = r.renderColor(effect.color)
+  const color = ck.Color4f(shadow.r, shadow.g, shadow.b, shadow.a)
   const sigma = blurSigma(effect.radius)
   const morphology = spreadFilter(r, spread)
   const filter = morphology
@@ -280,8 +281,9 @@ function drawSilhouetteInnerShadow(
     draw()
 
     r.effectLayerPaint.setBlendMode(ck.BlendMode.SrcIn)
+    const tint = r.renderColor(effect.color)
     tintFilter = ck.ColorFilter.MakeBlend(
-      ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a),
+      ck.Color4f(tint.r, tint.g, tint.b, tint.a),
       ck.BlendMode.SrcIn
     )
     r.effectLayerPaint.setColorFilter(tintFilter)
