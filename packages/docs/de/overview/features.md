@@ -100,7 +100,7 @@ Die Zusammenarbeit erfolgt direkt zwischen den Teilnehmern 체ber WebRTC und ben�
 
 **Desktop:** Tauri v2, rund 7 MB, f체r macOS, Windows und Linux, mit nativen Men체s, Offlinebetrieb und automatischem Speichern.
 
-**Web:** [app.openpencil.dev](https://app.openpencil.dev), als PWA installierbar und f체r Touch-Bedienung optimiert.
+**Web:** [cloud.openpencil.dev](https://cloud.openpencil.dev), als PWA installierbar und f체r Touch-Bedienung optimiert.
 
 ## Ersatzweise Google Fonts laden
 

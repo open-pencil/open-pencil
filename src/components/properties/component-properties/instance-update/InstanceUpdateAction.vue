@@ -8,7 +8,7 @@ import {
 import { toRef } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import type { EditorStore } from '@/app/editor/session'
@@ -25,7 +25,7 @@ const { node, editor, service } = defineProps<{
   service: LibraryService
 }>()
 const emit = defineEmits<{ review: [] }>()
-const { panels } = useI18n()
+const libraryMessages = useMessages('panels/libraries')
 const { open: popupOpen, portalActive } = useRetainedPopup()
 const menu = useMenuUI({ content: 'min-w-48' })
 const { available, updating, updateSelectedInstance } = useInstanceUpdate(
@@ -37,14 +37,14 @@ const { available, updating, updateSelectedInstance } = useInstanceUpdate(
 
 <template>
   <AppDropdownMenuRoot v-if="available" v-model:open="popupOpen">
-    <Tip :label="panels.updateSelectedInstance">
+    <Tip :label="libraryMessages.updateSelectedInstance">
       <DropdownMenuTrigger as-child>
         <button
           type="button"
           data-test-id="instance-update-action"
           class="flex size-7 items-center justify-center rounded bg-accent/10 text-primary hover:bg-accent/20 data-[state=open]:bg-accent/20 disabled:opacity-50"
           :disabled="updating"
-          :aria-label="panels.updateSelectedInstance"
+          :aria-label="libraryMessages.updateSelectedInstance"
         >
           <icon-lucide-refresh-cw
             :data-loading="updating"
@@ -62,14 +62,14 @@ const { available, updating, updateSelectedInstance } = useInstanceUpdate(
             :disabled="updating"
             @select="updateSelectedInstance"
           >
-            {{ panels.updateSelectedInstance }}
+            {{ libraryMessages.updateSelectedInstance }}
           </DropdownMenuItem>
           <DropdownMenuItem
             data-test-id="instance-review-update"
             :class="menu.item"
             @select="emit('review')"
           >
-            {{ panels.reviewLibraryUpdate }}
+            {{ libraryMessages.reviewLibraryUpdate }}
           </DropdownMenuItem>
         </MenuScrollArea>
       </DropdownMenuContent>

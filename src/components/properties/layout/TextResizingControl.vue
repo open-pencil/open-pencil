@@ -3,14 +3,14 @@ import { computed } from 'vue'
 
 import { MIXED } from '@open-pencil/vue/controls/node-props'
 import { useSelectionLayout, type TextResizeMode } from '@open-pencil/vue/controls/selection-layout'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
 const layout = useSelectionLayout()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 
 // Texts resizing differently leave every option off.
 const mode = computed(() => {

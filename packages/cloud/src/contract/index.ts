@@ -60,6 +60,7 @@ export {
   CLOUD_BILLING_PAGE_PATHS,
   CLOUD_BILLING_CONTRACT_VERSION,
   CLOUD_BILLING_TOKEN_AUDIENCE,
+  CLOUD_BILLING_TOKEN_PATH,
   billingAccountSchema,
   billingCatalogSchema,
   billingErrorCodeSchema,

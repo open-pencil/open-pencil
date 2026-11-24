@@ -20,6 +20,7 @@ import {
   clearFillShader,
   clearStrokeShader
 } from '#core/canvas/fills/paint'
+import { drawnColor } from '#core/canvas/renderer/colors'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   clipNodeShape,
@@ -295,13 +296,12 @@ export function forVisibleStrokes(
   graph: SceneGraph,
   draw: (stroke: Stroke, color: Color) => void
 ): void {
-  for (let index = 0; index < node.strokes.length; index++) {
-    const stroke = node.strokes[index]
+  for (const stroke of node.strokes) {
     if (!stroke.visible) continue
     const draws = applyStrokeShader(r, stroke, node, graph)
     setStrokeBlendMode(r, stroke.blendMode)
     try {
-      if (draws) draw(stroke, r.resolveStrokeColor(stroke, index, node, graph))
+      if (draws) draw(stroke, drawnColor(stroke.color, graph))
     } finally {
       clearStrokeShader(r)
       clearFillShader(r)

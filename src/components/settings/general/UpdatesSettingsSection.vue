@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useUpdateMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   appPreferences,
@@ -18,7 +18,7 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import { settingsSelectUI } from '@/theme/settings/controls'
 
-const updates = useUpdateMessages()
+const updates = useMessages('updates')
 // A package whose store delivers updates has no built-in check to switch.
 const offered = canSelfUpdate()
 const defaultCheckOnStartup = DEFAULT_APP_PREFERENCES.updates.checkOnStartup

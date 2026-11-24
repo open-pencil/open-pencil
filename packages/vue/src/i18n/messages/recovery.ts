@@ -1,5 +1,3 @@
-import { i18n } from '#vue/i18n/create'
-
 export const recoveryMessageDefaults = {
   sectionTitle: 'Unsaved work',
   sectionDescription:
@@ -14,5 +12,3 @@ export const recoveryMessageDefaults = {
     'Store local recovery copies so documents can be restored after an unexpected shutdown.',
   discard: 'Discard'
 } as const
-
-export const recoveryMessages = i18n('recovery', recoveryMessageDefaults)

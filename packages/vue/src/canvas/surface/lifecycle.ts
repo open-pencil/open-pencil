@@ -5,11 +5,9 @@ import type { Ref } from 'vue'
 import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { Editor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
+import type { ColorProfile } from '@open-pencil/scene-graph'
 
-import {
-  supportsWideGamutPresentation,
-  type PresentationColorSpace
-} from '#vue/canvas/surface/color-space'
+import { supportsWideGamutPresentation } from '#vue/canvas/surface/color-space'
 import {
   makeGLSurface,
   releaseWebGLContext,
@@ -19,11 +17,12 @@ import {
 } from '#vue/canvas/surface/gl-surface'
 import { createImagePreviewDecoder } from '#vue/canvas/surface/image-preview'
 import { useCanvasKitLoader } from '#vue/canvas/surface/kit-loader'
+import { createCanvasOriginTracker } from '#vue/canvas/surface/origin'
 import { createCanvasRenderLoop } from '#vue/canvas/surface/render-loop'
 import { useCanvasResizeObserver } from '#vue/canvas/surface/resize-observer'
 import { createShaderRasterizer } from '#vue/canvas/surface/shader/rasterizer'
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
-import { editorMessages } from '#vue/i18n/messages/editor'
+import { messageStores } from '#vue/i18n'
 
 /**
  * The device's memory in bytes where the browser reports it. Browsers round it and stop at 8 GB,
@@ -42,7 +41,7 @@ type SurfaceManagerState = {
   glHandle: CanvasGLHandle | null
   /** The canvas the WebGL context belongs to, kept until the context is released. */
   glCanvas: HTMLCanvasElement | null
-  presentation: PresentationColorSpace | null
+  presentation: ColorProfile | null
 }
 
 export function createCanvasSurfaceManager({
@@ -68,13 +67,15 @@ export function createCanvasSurfaceManager({
     presentation: null
   }
 
+  const origin = createCanvasOriginTracker(options?.onViewportMove)
+
   // The scene of an editing canvas shows an empty sticky note's placeholder, and every layer an
   // empty connector label's while it is typed into, as the overlays draw the text being edited,
   // in the interface language, and draws them again when the language changes.
   const showsStickyPlaceholder = options?.layer !== 'overlays'
-  let stickyPlaceholder: string = editorMessages.get().stickyPlaceholder
-  let connectorLabelPlaceholder: string = editorMessages.get().connectorLabelPlaceholder
-  const stopPlaceholders = editorMessages.subscribe((messages) => {
+  let stickyPlaceholder: string = messageStores.editor.get().stickyPlaceholder
+  let connectorLabelPlaceholder: string = messageStores.editor.get().connectorLabelPlaceholder
+  const stopPlaceholders = messageStores.editor.subscribe((messages) => {
     if (
       messages.stickyPlaceholder === stickyPlaceholder &&
       messages.connectorLabelPlaceholder === connectorLabelPlaceholder
@@ -125,7 +126,7 @@ export function createCanvasSurfaceManager({
     state.renderer = null
     releaseGLContext()
 
-    sizeCanvas(canvas, editor, options?.onViewportResize)
+    origin.place(sizeCanvas(canvas, editor, options?.onViewportResize))
 
     const result = makeGLSurface(
       ck,
@@ -251,7 +252,7 @@ export function createCanvasSurfaceManager({
       return
     }
 
-    sizeCanvas(canvas, editor, options?.onViewportResize)
+    origin.place(sizeCanvas(canvas, editor, options?.onViewportResize))
 
     const result = makeGLSurface(
       ck,
@@ -269,13 +270,10 @@ export function createCanvasSurfaceManager({
       createSurface(canvas, { reloadFonts: true })
       return
     }
-    // Tiles keep the colours they were recorded in, so a resize that changes the presentation
-    // color space starts them over like a new context.
-    const presentation = result.presentation ?? 'srgb'
-    const sameContext =
-      result.glHandle === null && state.renderer.presentationColorSpace === presentation
-    state.renderer.presentationColorSpace = presentation
-    state.renderer.replaceSurface(surface, { sameContext })
+    // Tiles are drawn in the document's color space, whatever the screen presents, so only a new
+    // context starts them over.
+    state.renderer.presentationColorSpace = result.presentation ?? 'srgb'
+    state.renderer.replaceSurface(surface, { sameContext: result.glHandle === null })
     renderNow()
   }
 

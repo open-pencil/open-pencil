@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { isTauri } from '@/app/tauri/env'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
@@ -14,7 +14,7 @@ const { sandboxed = isTauri() } = defineProps<{
   /** A desktop install that cannot start agents rather than the browser. */
   sandboxed?: boolean
 }>()
-const ai = useAIMessages()
+const ai = useMessages('ai')
 </script>
 
 <template>

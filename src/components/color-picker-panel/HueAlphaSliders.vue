@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { colorToCSS } from '@open-pencil/scene-graph/color'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useColorCSS } from '@open-pencil/vue/controls/color-model'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import EyedropperButton from '@/components/color-picker-panel/EyedropperButton.vue'
 import StandardColorSlider from '@/components/color-picker-panel/StandardColorSlider.vue'
 
 const ctx = useColorPickerPanelContext()
-const { panels } = useI18n()
+const colorCSS = useColorCSS()
+const pickerMessages = useMessages('panels/pickers')
 </script>
 
 <template>
@@ -17,23 +18,23 @@ const { panels } = useI18n()
     <div class="flex min-w-0 flex-1 flex-col gap-3">
       <StandardColorSlider
         bare
-        :label="panels.hue"
+        :label="pickerMessages.hue"
         :model-value="ctx.rekaColor"
         channel="hue"
         color-space="hsl"
-        :thumb-fill="colorToCSS(ctx.sliderPreview.hue)"
+        :thumb-fill="colorCSS(ctx.sliderPreview.hue)"
         data-test-id="color-slider-hue"
         @update="ctx.updateRGBAHue($event.space === 'hsl' ? $event.h : 0)"
       />
       <StandardColorSlider
         bare
-        :label="panels.alpha"
+        :label="pickerMessages.alpha"
         :model-value="ctx.rekaColor"
         channel="alpha"
         color-space="rgb"
         :step="0.1"
         checkerboard
-        :thumb-fill="colorToCSS(ctx.color)"
+        :thumb-fill="colorCSS(ctx.color)"
         data-test-id="color-slider-alpha"
         @update="ctx.updateRGBAAlpha($event.alpha)"
       />

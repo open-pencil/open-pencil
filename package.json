@@ -1,6 +1,6 @@
 {
   "name": "open-pencil-app",
-  "version": "0.17.0-beta.6",
+  "version": "0.17.0",
   "private": true,
   "license": "MIT",
   "workspaces": [
@@ -55,6 +55,7 @@
     "tools/generate/brand",
     "tools/generate/demo",
     "tools/generate/emoji-metrics",
+    "tools/generate/fig-schema",
     "tools/generate/landing-posters",
     "tools/generate/mermaid-sources",
     "tools/generate/tauri-menu",
@@ -95,6 +96,7 @@
     "check:docs": "bun --filter @open-pencil/docs check && bun run check:authoring-reference",
     "check:authoring-reference": "bun tools/generate/authoring-reference/src/check.ts",
     "generate:authoring-reference": "bun tools/generate/authoring-reference/src/generate.ts",
+    "generate:fig-schema": "bun tools/generate/fig-schema/src/generate.ts",
     "check:audit": "bun audit --audit-level=critical",
     "check:secrets": "bun tools/checks/secret-scan/src/index.ts",
     "check:monorepo": "sherif --ignore-rule root-package-dependencies",
@@ -303,7 +305,6 @@
     "@wdio/mocha-framework": "9.30.1",
     "@wdio/spec-reporter": "9.30.1",
     "@wdio/tauri-service": "1.3.0",
-    "changelog-parser": "^4.1.0",
     "cloudflare-redirect-parser": "^1.0.0",
     "esbuild": "^0.27.7",
     "eslint-plugin-compat": "^7.0.2",

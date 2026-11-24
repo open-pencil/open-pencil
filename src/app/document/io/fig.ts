@@ -20,7 +20,8 @@ export async function readFigDocument(file: File, signal?: AbortSignal) {
 
 /** Names the variables whose expressions OpenPencil cannot evaluate, which draw as saved. */
 function warnUnsupportedVariableExpressions(graph: SceneGraph) {
-  const names = [...graph.variables.values()]
+  const names = graph
+    .getLiveVariables()
     .filter((variable) => Object.values(variable.valuesByMode).some(isUnsupportedVariableValue))
     .map((variable) => variable.name)
   if (names.length === 0) return

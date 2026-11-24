@@ -78,6 +78,11 @@ export class FontManager {
    * between the two by the weight each declares.
    */
   private replacedFileData = new Map<string, Set<ArrayBuffer>>()
+  /**
+   * Faces drawn from a variable file loaded for another style of their family, rather than a file
+   * of their own: a document's later variable file replaces these, never a face it registered.
+   */
+  private inferredFaces = new Set<string>()
   private remoteCoverage = new Map<string, Set<string>>()
   private instanceVariations = new WeakMap<ArrayBuffer, Map<string, FontVariation[] | null>>()
   private variations = new WeakMap<
@@ -269,6 +274,14 @@ export class FontManager {
    */
   familyFaces(family: string): Promise<FamilyFace[] | null> {
     return this.faces.faces(family)
+  }
+
+  /**
+   * Whether a font file is one an enabled web font provider serves for the family, so the
+   * editor's own copy of it is the same design; see `WebFontResolver.servesFontFile`.
+   */
+  servesFontFile(family: string, url: string): Promise<boolean> {
+    return this.webFonts.servesFontFile(family, url)
   }
 
   /** The faces `familyFaces` found for a family, once it has; `undefined` before. */
@@ -517,8 +530,12 @@ export class FontManager {
       this.registerFontInCanvasKit(family, loaded)
       return this.withRemoteCoverage(family, style, loaded, characters, signal)
     }
-    // An installed face of the style comes first; otherwise a variable file the family already
-    // loaded draws it.
+    // A variable file the document brought itself, such as a web page's own font, draws its
+    // family's other weights before an installed font of that name, which may be another design.
+    const own = this.sharedVariableFace(family, style, 'registered')
+    if (own) return this.withRemoteCoverage(family, style, own, characters, signal)
+    // An installed face of the style comes next; otherwise a variable file the family already
+    // loaded from elsewhere draws it.
     const installed = await this.loadInstalledFont(family, style)
     if (installed) return installed
     const shared = this.sharedVariableFace(family, style)
@@ -584,20 +601,26 @@ export class FontManager {
   /**
    * A variable font the family loaded for another style in the same slant whose weight axis
    * reaches this style's weight, registered for this style too: one file draws every weight.
+   * With `source`, only a file loaded from there.
    */
-  private sharedVariableFace(family: string, style: string): ArrayBuffer | null {
+  private sharedVariableFace(
+    family: string,
+    style: string,
+    source?: FontLoadedSource
+  ): ArrayBuffer | null {
     const { weight, italic } = parseFontStyle(style)
     // A face named apart from its weight ("Condensed Bold") is drawn by a file that has it.
     const named = !namesWeight(style)
     for (const [key, data] of this.loadedFamilies) {
       if (!key.startsWith(`${family}|`)) continue
+      if (source && this.loadedFamilySources.get(key) !== source) continue
       if (parseFontStyle(key.slice(family.length + 1)).italic !== italic) continue
       if (named && !hasNamedInstance(data, style)) continue
       const wght = fontAxes(data)?.find((axis) => axis.tag === 'wght')
       if (!wght || (!named && (weight < wght.min || weight > wght.max))) continue
       const coverage = this.remoteCoverage.get(key)
       if (coverage) this.remoteCoverage.set(`${family}|${style}`, new Set(coverage))
-      return this.registerAndCache(family, style, data, this.loadedFamilySources.get(key))
+      return this.registerInferred(family, style, data, key, this.loadedFamilySources.get(key))
     }
     return null
   }
@@ -606,7 +629,12 @@ export class FontManager {
     await this.loadFont(family, faceLoadKey(weight))
   }
 
-  /** Registers a font the caller already has, resolving once its outlines can be read. */
+  /**
+   * Registers a font the caller already has, resolving once its outlines can be read. A font a
+   * document brings (`registered`, the default) is the face's own file from then on: nothing a
+   * provider fetched for it earlier is fetched again, and a variable file takes over the weights
+   * of its slant its axis reaches that came from anywhere but the document.
+   */
   async markLoaded(
     family: string,
     style: string,
@@ -614,6 +642,75 @@ export class FontManager {
     source: FontLoadedSource = 'registered'
   ): Promise<void> {
     this.registerAndCache(family, style, data, source)
+    if (source === 'registered') {
+      this.inferredFaces.delete(`${family}|${style}`)
+      this.remoteCoverage.delete(`${family}|${style}`)
+      this.takeOverCoveredFaces(family, style, data)
+    }
+    await loadHarfBuzz()
+  }
+
+  /**
+   * Registers `data`, the variable file of the face `sourceKey` names, for `style` too, with that
+   * face's own subsets, as a face drawn from it rather than one of its own.
+   */
+  private registerInferred(
+    family: string,
+    style: string,
+    data: ArrayBuffer,
+    sourceKey: string,
+    source?: FontLoadedSource
+  ): ArrayBuffer | null {
+    const buffer = this.registerAndCache(family, style, data, source)
+    this.inferredFaces.add(`${family}|${style}`)
+    for (const shard of this.ownShards(sourceKey)) {
+      this.registerSupplemental(family, style, shard, source)
+    }
+    return buffer
+  }
+
+  /** A face's files after its own that split it, leaving out files it replaced. */
+  private ownShards(key: string): ArrayBuffer[] {
+    const replaced = this.replacedFileData.get(key)
+    return (this.supplementalFamilyData.get(key) ?? []).filter((file) => !replaced?.has(file))
+  }
+
+  /**
+   * Registers a document's variable file for the faces of its family and slant it reaches that
+   * were loaded from elsewhere, such as an installed font, so they draw from the document's file
+   * as a weight loaded after it does; the faces the document registered itself stay its own.
+   */
+  private takeOverCoveredFaces(family: string, style: string, data: ArrayBuffer): void {
+    const wght = fontAxes(data)?.find((axis) => axis.tag === 'wght')
+    if (!wght) return
+    const { italic } = parseFontStyle(style)
+    const sourceKey = `${family}|${style}`
+    for (const key of this.loadedFamilies.keys()) {
+      if (!key.startsWith(`${family}|`) || key === sourceKey) continue
+      const own = this.loadedFamilySources.get(key) === 'registered' && !this.inferredFaces.has(key)
+      if (own) continue
+      const faceStyle = key.slice(family.length + 1)
+      const face = parseFontStyle(faceStyle)
+      if (face.italic !== italic || !namesWeight(faceStyle)) continue
+      if (face.weight < wght.min || face.weight > wght.max) continue
+      this.remoteCoverage.delete(key)
+      this.registerInferred(family, faceStyle, data, sourceKey, 'registered')
+    }
+  }
+
+  /**
+   * Adds a file that covers more of a face's characters than the file loaded for it, such as one
+   * of the subsets a web page splits a font into by `unicode-range`; text draws what the face's
+   * own file lacks from it.
+   */
+  async addFaceShard(family: string, style: string, data: ArrayBuffer): Promise<void> {
+    this.registerSupplemental(family, style, data, 'registered')
+    // The weights drawn from this face's file draw what it lacks from the same subsets.
+    const file = this.loadedFamilies.get(`${family}|${style}`)
+    for (const key of this.inferredFaces) {
+      if (!key.startsWith(`${family}|`) || !file || this.loadedFamilies.get(key) !== file) continue
+      this.registerSupplemental(family, key.slice(family.length + 1), data, 'registered')
+    }
     await loadHarfBuzz()
   }
 

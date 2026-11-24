@@ -67,7 +67,7 @@ function paintedOutline(
     svg('path', {
       ...attrs,
       fill: paint,
-      'fill-opacity': solidFillOpacity(fill, ctx.colorSpace),
+      'fill-opacity': solidFillOpacity(fill, ctx.colors),
       stroke: index === drawn.length - 1 ? attrs.stroke : 'none'
     })
   )

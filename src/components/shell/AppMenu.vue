@@ -17,7 +17,7 @@ import { shallowRef, useTemplateRef, watch } from 'vue'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
 import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { vTestId } from '@open-pencil/vue/testing'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -58,7 +58,8 @@ watch(nameInput, (input) => {
   if (input) void rename.focusInput(input)
 })
 
-const { menu: t, settings } = useI18n()
+const t = useMessages('menu')
+const settings = useMessages('settings')
 
 const { topMenus } = useAppMenu()
 const menuCls = useMenuUI()

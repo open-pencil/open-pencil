@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { GroupEntry } from '@/app/editor/tokens/model'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -25,7 +25,7 @@ const activeCollectionId = defineModel<string>('collectionId', { required: true 
 const activeGroup = defineModel<string | null>('group', { default: null })
 const emit = defineEmits<{ addCollection: [] }>()
 
-const { variables } = useI18n()
+const variables = useMessages('variables/panel')
 const ui = tv(sidebarTheme)()
 </script>
 

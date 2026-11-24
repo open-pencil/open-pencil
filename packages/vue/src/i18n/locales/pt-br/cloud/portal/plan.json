@@ -1,0 +1,16 @@
+{
+  "plan": "Plano",
+  "planDescription": "O que sua conta inclui e pelo que você paga.",
+  "planStorage": "Armazenamento",
+  "planStorageOf": "{used} de {total} usados, nos espaços de trabalho que você possui",
+  "planStorageUsed": "{used} usados, nos espaços de trabalho que você possui",
+  "planStorageFull": "Seus arquivos estão somente leitura",
+  "planStorageFullDescription": "Eles usam todo o armazenamento que seu plano inclui. Exclua arquivos ou obtenha mais armazenamento para voltar a editar.",
+  "planMonthlyCredits": "Créditos por mês",
+  "planCredits": "{credits} créditos",
+  "planNoCredits": "Não incluído",
+  "planUnlimitedCredits": "Sem limite mensal",
+  "planBilling": "Planos e cobrança",
+  "planBillingDescription": "Mude de plano, compre mais créditos e veja suas faturas.",
+  "planOpenBilling": "Abrir cobrança"
+}

@@ -133,4 +133,4 @@ useCanvas(canvasRef, editor, {
 - [Référence de l'API](./api/)
 - [useEditor](./api/composables/use-editor)
 - [useCanvas](./api/composables/use-canvas)
-- [useI18n](./api/composables/use-i18n)
+- [useMessages](/developers/sdk/api/composables/use-messages)

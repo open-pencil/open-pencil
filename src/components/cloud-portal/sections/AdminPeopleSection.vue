@@ -2,7 +2,7 @@
 import { computed, useTemplateRef } from 'vue'
 
 import type { CloudAdminUserFilter, CloudAdminUserMethod } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import type { PortalListRequest } from '@/app/cloud-portal/list'
@@ -16,7 +16,7 @@ import { personAction, portalPerson } from './people'
 /** The accounts on this server, a page at a time, and what administrators do about them. */
 const emit = defineEmits<{ total: [count: number]; open: [personId: string] }>()
 const portal = usePortal()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const dates = useDateFormat()
 const people = useTemplateRef('people')
 

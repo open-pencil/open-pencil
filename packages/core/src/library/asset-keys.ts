@@ -51,9 +51,7 @@ export function publishableLibraryStyles(graph: SceneGraph): SceneNode[] {
 
 /** The document's own variable collections; one a library brought in stays that library's. */
 export function publishableLibraryCollections(graph: SceneGraph): VariableCollection[] {
-  return [...graph.variableCollections.values()].filter(
-    (collection) => !isLibraryCollection(collection)
-  )
+  return graph.getLiveCollections().filter((collection) => !isLibraryCollection(collection))
 }
 
 function publishedRoots(graph: SceneGraph, assetIds?: string[]): SceneNode[] {

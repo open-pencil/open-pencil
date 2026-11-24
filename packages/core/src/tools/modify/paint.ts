@@ -33,10 +33,10 @@ export const setFill = defineTool({
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
 
-    const c = parseColor(color)
+    const c = parseColor(color, graphOf(figma).documentColorSpace)
 
     if (gradient && color_end) {
-      const cEnd = parseColor(color_end)
+      const cEnd = parseColor(color_end, graphOf(figma).documentColorSpace)
       // Edge middles of the layer's unit square that each direction runs between.
       const ends: Record<string, [Vector, Vector]> = {
         'top-bottom': [
@@ -97,7 +97,7 @@ export const setStroke = defineTool({
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
 
-    const c = parseColor(color)
+    const c = parseColor(color, graphOf(figma).documentColorSpace)
     node.strokes = [{ type: 'SOLID', color: c }]
     node.strokeWeight = weight
     node.strokeAlign = align

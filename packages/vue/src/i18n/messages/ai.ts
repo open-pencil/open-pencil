@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const aiMessageDefaults = {
   jumpToLatest: 'Jump to latest',
   chatSettings: 'Chat',
@@ -585,5 +583,3 @@ export const aiMessageDefaults = {
   skillErrorNoDescription: 'The SKILL.md frontmatter has no description.',
   skillErrorNoName: 'The SKILL.md frontmatter has no name.'
 } as const
-
-export const aiMessages = i18n('ai', aiMessageDefaults)

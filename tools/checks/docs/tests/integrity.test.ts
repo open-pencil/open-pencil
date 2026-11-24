@@ -134,6 +134,29 @@ describe('checkDocsIntegrity', () => {
     ])
   })
 
+  test('sends a page to another site only by HTTPS, and never over a page of its own', async () => {
+    const docsRoot = await fixture()
+    await write(join(docsRoot, 'kept.md'))
+    await write(join(docsRoot, 'guide/start.md'))
+    await writeFile(
+      join(docsRoot, 'public/_redirects'),
+      [
+        '/pricing https://billing.example/pricing 302',
+        '/plain http://billing.example/pricing 302',
+        '/kept https://billing.example/kept 302',
+        '/guide/* https://billing.example/:splat 302',
+        '/moved/* https://billing.example/:splat 302'
+      ].join('\n'),
+      'utf8'
+    )
+
+    expect(check(docsRoot).errors).toEqual([
+      "Redirect '/plain' must use root-relative paths.",
+      "Redirect source '/guide/*' still has pages and would shadow them.",
+      "Redirect source '/kept' still has a page and would shadow it."
+    ])
+  })
+
   test('reports invalid, duplicate, shadowing, and missing redirect targets', async () => {
     const docsRoot = await fixture()
     await write(join(docsRoot, 'old.md'))

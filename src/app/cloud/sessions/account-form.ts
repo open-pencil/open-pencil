@@ -3,14 +3,14 @@ import { useForm } from 'vee-validate'
 import { computed, type Ref } from 'vue'
 
 import type { CloudAuthFailure } from '@open-pencil/cloud/client'
-import type { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import type { MessagesOf } from '@open-pencil/vue/i18n'
 
 import { validateAfterFirstError } from '@/app/settings/validation/use'
 
 export type CloudAccountFormMode = 'sign-in' | 'sign-up'
 export type CloudAccountCredentials = { name: string; email: string; password: string }
 
-type Messages = ReturnType<typeof useCloudPortalMessages>['value']
+type Messages = MessagesOf<'cloud/portal'>
 
 /**
  * Signing in to or joining a Cloud server with an email and password: what the server would turn

@@ -1,12 +1,5 @@
 import { count, params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-import { communityPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/community'
-import { personPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/person'
-import { planPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/plan'
-import { requestPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/requests'
-import { accessTokenPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/tokens'
-
 /** Copy for the pages a Cloud server shows on its own address. */
 export const cloudPortalMessageDefaults = {
   productName: 'OpenPencil Cloud',
@@ -165,11 +158,6 @@ export const cloudPortalMessageDefaults = {
   commentEmailsOffDescription:
     'No email about comments. You still see them, and new ones, in the editor.',
   notificationsSaved: 'Notification settings saved',
-  ...accessTokenPortalMessageDefaults,
-  ...requestPortalMessageDefaults,
-  ...communityPortalMessageDefaults,
-  ...planPortalMessageDefaults,
-  ...personPortalMessageDefaults,
   overview: 'Overview',
   accessRequests: 'Access requests',
   accessRequestsDescription:
@@ -582,5 +570,3 @@ export const cloudPortalMessageDefaults = {
   errorPictureInvalid: 'The server can’t use this picture. Choose another image.',
   passwordResetSent: 'We emailed you a link to set a password.'
 } as const
-
-export const cloudPortalMessages = i18n('cloudPortal', cloudPortalMessageDefaults)

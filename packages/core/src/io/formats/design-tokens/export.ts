@@ -104,7 +104,7 @@ function variableToken(
     formula = printFormula(value.value, (id) => tokenReference(context.references.get(id) ?? []), {
       type: (id) => context.graph.variables.get(id)?.type
     })
-    $value = literalTokenValue(variable, resolved)
+    $value = literalTokenValue(variable, resolved, context.graph.documentColorSpace)
   } else if (typeof value === 'object' && 'expression' in value) {
     context.issues.push({ kind: 'unsupported-expression', ...where })
     return undefined
@@ -123,7 +123,7 @@ function variableToken(
         targetVariableSetName: targetCollection.name
       }
   } else {
-    $value = literalTokenValue(variable, value)
+    $value = literalTokenValue(variable, value, context.graph.documentColorSpace)
   }
   if (variable.type === 'BOOLEAN') figma['com.figma.type'] = 'boolean'
   const $extensions = { ...figma, ...openPencilFields(variable, mode.modeId, formula) }
@@ -191,7 +191,7 @@ function resolverDocument(collections: readonly CollectionFiles[], stylesPath: s
  */
 export function exportDesignTokens(graph: SceneGraph): DesignTokenExport {
   const issues: DesignTokenIssue[] = []
-  const collections = [...graph.variableCollections.values()]
+  const collections = graph.getLiveCollections()
   const references = new Map<string, string[]>()
   const collectionOf = new Map<string, VariableCollection>()
   const placedByCollection = new Map<string, Array<{ variable: Variable; path: string[] }>>()

@@ -10,7 +10,7 @@ import {
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { FollowTarget } from '@/app/presence/types'
 import AvatarStack from '@/components/presence/AvatarStack.vue'
@@ -47,7 +47,8 @@ const emit = defineEmits<{
   leave: []
 }>()
 
-const { common, collaboration: messages } = useI18n()
+const common = useMessages('common')
+const messages = useMessages('collaboration')
 const ui = presenceAvatars()
 
 function personTarget(clientId: number): FollowTarget {

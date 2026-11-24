@@ -2,7 +2,7 @@
 import { compact } from 'es-toolkit'
 
 import type { SearchResult } from '@open-pencil/cloud/contract'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useDateFormat } from '@/app/i18n/date'
 import { openExternalLink } from '@/app/shell/ui'
@@ -11,7 +11,7 @@ import { chatToolSourcesTheme } from './ui'
 
 /** The pages a web search found: each title opens the page, under its site and date. */
 const { results } = defineProps<{ results: SearchResult[] }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const dates = useDateFormat()
 const ui = chatToolSourcesTheme()
 

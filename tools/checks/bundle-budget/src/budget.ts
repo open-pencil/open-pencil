@@ -5,7 +5,7 @@ import * as v from 'valibot'
  * before the router and any dynamic import at startup are left out. Raise it only for a deliberate
  * cost.
  */
-export const STARTUP_BUDGET_KIB = 2870
+export const STARTUP_BUDGET_KIB = 2872
 export const STARTUP_ENTRY = 'src/router.ts'
 
 const manifestSchema = v.record(

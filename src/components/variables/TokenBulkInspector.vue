@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed, onMounted, ref, useId, useTemplateRef, type ComponentPublicInstance } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -23,7 +23,7 @@ const {
 }>()
 const emit = defineEmits<{ moveToGroup: [group: string]; duplicate: []; remove: [] }>()
 
-const { variables } = useI18n()
+const variables = useMessages('variables/panel')
 const ui = computed(() => tv(inspectorTheme)({ layout }))
 const group = ref('')
 const groupId = `${useId()}-group`

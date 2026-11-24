@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, useTemplateRef } from 'vue'
+import { useTemplateRef } from 'vue'
 
-import { useCloudPortalMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import type { PortalListRequest } from '@/app/cloud-portal/list'
@@ -14,22 +14,12 @@ import type { AccessRequestStatus } from '../types'
 
 const emit = defineEmits<{ changed: [] }>()
 const portal = usePortal()
-const messages = useCloudPortalMessages()
-const { locale } = useI18n()
+const messages = useMessages('cloud/portal')
+const { locale } = useLocale()
 const requests = useTemplateRef('requests')
-
-/** The official server approves everyone waiting at once, each with the founder's letter. */
-const official = portal.discovery.deployment === 'official'
-const waiting = ref(0)
-const invited = ref(false)
-const invitation = computed(() => {
-  if (invited.value) return 'sent'
-  return official && waiting.value > 0 ? 'offered' : null
-})
 
 async function load(request: PortalListRequest<AccessRequestStatus>) {
   const { enrollments, total, counts } = await portal.api.enrollments(request)
-  waiting.value = counts.pending
   const rows = enrollments.map((enrollment) => ({
     id: enrollment.id,
     name: enrollment.name,
@@ -54,37 +44,18 @@ const {
   emit('changed')
   await requests.value?.reload()
 })
-
-const {
-  busy: inviting,
-  error: inviteError,
-  run: invite
-} = usePortalAction(async () => {
-  await portal.api.inviteEnrollments()
-  invited.value = true
-  emit('changed')
-  await requests.value?.reload()
-})
 </script>
 
 <template>
   <div class="flex flex-col gap-3">
-    <AppAlert
-      v-if="error ?? inviteError"
-      tone="error"
-      :heading="messages.errorTitle"
-      :description="error ?? inviteError ?? undefined"
-    />
+    <AppAlert v-if="error" tone="error" :heading="messages.errorTitle" :description="error" />
     <PortalAccessRequests
       ref="requests"
       :load="load"
       :busy="busy"
-      :invitation="invitation"
-      :inviting="inviting"
       @approve="(id) => review(id, 'approve')"
       @reject="(id, note) => review(id, 'reject', note)"
       @revoke="(id, note) => review(id, 'revoke', note)"
-      @invite="invite()"
     />
   </div>
 </template>

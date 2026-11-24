@@ -3,7 +3,7 @@ import { omit } from 'es-toolkit'
 import { ref, type ComponentPublicInstance } from 'vue'
 
 import type { VariantMutationResult } from '@open-pencil/core'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -33,7 +33,7 @@ const {
   add: (value: string) => boolean | undefined
   remove: (value: string, replacement?: string) => VariantMutationResult | undefined
 }>()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const drafts = ref<Record<string, string>>({})
 const newValue = ref('')
 const replacing = ref<string | null>(null)

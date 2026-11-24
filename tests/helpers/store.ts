@@ -8,11 +8,17 @@ export function getSelectedIds(page: Page) {
   })
 }
 
-export function getPageChildren(page: Page) {
-  return page.evaluate(() => {
+/**
+ * The layers on the page in view, or with `inFrame`, the layers inside its first one, as a web
+ * page opens in a frame the size of its window.
+ */
+export function getPageChildren(page: Page, { inFrame = false }: { inFrame?: boolean } = {}) {
+  return page.evaluate((intoFrame) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
-    return store.graph.getChildren(store.state.currentPageId).map((n) => ({
+    const [frame] = store.graph.getChildren(store.state.currentPageId)
+    const parentId = intoFrame ? frame.id : store.state.currentPageId
+    return store.graph.getChildren(parentId).map((n) => ({
       id: n.id,
       type: n.type,
       x: n.x,
@@ -24,7 +30,7 @@ export function getPageChildren(page: Page) {
       vectorNetwork: n.vectorNetwork,
       fillTypes: n.fills.map((fill) => fill.type)
     }))
-  })
+  }, inFrame)
 }
 
 /** The background color of the page in view, as the canvas shows it. */

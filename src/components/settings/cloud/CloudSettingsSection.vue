@@ -2,7 +2,7 @@
 import { joinURL } from 'ufo'
 import { computed, ref } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { cloudOfficialListed } from '@/app/cloud/availability'
 import { openCloudConnect } from '@/app/cloud/connect/flow'
@@ -28,7 +28,7 @@ import CloudWaitlist from './CloudWaitlist.vue'
 import type { CloudServerEntry } from './types'
 
 /** The Cloud section of Settings: the saved servers with their live sessions, and their actions. */
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const entries = computed<CloudServerEntry[]>(() =>
   cloudServers.value.map((server) => {
     const connection = cloudConnection(server.id)
