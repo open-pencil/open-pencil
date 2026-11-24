@@ -12,8 +12,6 @@ import { isZstdCompressed, getKiwiMessageType } from './protocol'
 import figmaSchema from './schema'
 import type { Color, EasingDataValue, GUID, Matrix, PaintFilter, Vector } from './types'
 
-export type { EasingDataValue }
-
 interface CompiledSchema {
   encodeMessage(message: unknown): Uint8Array
   decodeMessage(data: Uint8Array): unknown

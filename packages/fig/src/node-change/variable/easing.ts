@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import type { EasingDataValue } from '@open-pencil/kiwi/fig/codec'
+import type { EasingDataValue } from '@open-pencil/kiwi/fig'
 import type { Easing } from '@open-pencil/scene-graph'
 import { easingSchema } from '@open-pencil/scene-graph/variables'
 
