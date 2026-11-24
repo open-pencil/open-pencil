@@ -1,3 +1,4 @@
+export { createContractClient, type ServiceContractClientOptions } from './contract'
 export {
   CloudServiceError,
   CloudServiceInsecureEndpointError,
