@@ -4,7 +4,6 @@ import {
   workspaceListSchema,
   workspaceMembersSchema,
   workspaceSummarySchema,
-  workspaceUsageSchema,
   type CreatedWorkspaceInvitation,
   type CreateWorkspaceInvitationInput,
   type WorkspaceEntitlements,
@@ -18,15 +17,16 @@ import type { CloudAPI } from '#cloud/server/api'
 import type { hc } from 'hono/client'
 import * as v from 'valibot'
 
+import type { CloudContractClient } from './contract'
 import { parseResponse, responseBody, type CloudClientDiagnostic } from './response'
 
 const workspaceResponseSchema = v.object({ workspace: workspaceSummarySchema })
-const usageResponseSchema = v.object({ usage: workspaceUsageSchema })
 const entitlementResponseSchema = v.object({ entitlements: workspaceEntitlementsSchema })
 
 /** Workspaces, their members, invitations, entitlements, and storage use. */
 export function createWorkspaceRequests(
   client: ReturnType<typeof hc<CloudAPI>>,
+  contract: CloudContractClient['documents'],
   onDiagnostic?: CloudClientDiagnostic
 ) {
   return {
@@ -129,14 +129,7 @@ export function createWorkspaceRequests(
       return response.entitlements
     },
     async getUsage(workspaceId: string): Promise<WorkspaceUsage> {
-      const response = await parseResponse(
-        client.workspaces[':workspaceId'].usage.$get({
-          param: { workspaceId }
-        }),
-        usageResponseSchema,
-        onDiagnostic
-      )
-      return response.usage
+      return (await contract.usage({ params: { workspaceId } })).usage
     }
   }
 }

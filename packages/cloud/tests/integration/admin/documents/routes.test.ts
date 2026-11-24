@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { contractClient } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
@@ -59,7 +60,9 @@ async function server() {
       objects: objects.store,
       resolveSession: async () => actor
     })
-  const owner = testClient(app(admin))
+  const ownerApp = app(admin)
+  const owner = testClient(ownerApp)
+  const ownerAPI = contractClient(ownerApp)
   const workspace = async (name: string) =>
     (
       await responseJSON(
@@ -68,18 +71,10 @@ async function server() {
       )
     ).workspace.id
   const document = async (workspaceId: string, name: string) =>
-    (
-      await responseJSON(
-        await owner.api.workspaces[':workspaceId'].documents.$post({
-          param: { workspaceId },
-          json: { name }
-        }),
-        v.object({ document: idSchema })
-      )
-    ).document.id
+    (await ownerAPI.documents.create({ params: { workspaceId }, body: { name } })).document.id
   const save = (documentId: string, baseRevisionId: string | null, label: string) =>
     saveDocument(
-      { client: owner, database: runtime.database, objects: objects.store },
+      { api: ownerAPI, database: runtime.database, objects: objects.store },
       documentId,
       baseRevisionId,
       label

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { contractClient } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
@@ -30,9 +31,6 @@ const config = parseCloudServerConfig({
 })
 
 const alice: CloudActor = { userId: 'alice', email: 'alice@example.com', name: 'Alice' }
-const documentSchema = v.object({
-  document: v.object({ id: v.string(), currentRevisionId: v.nullable(v.string()) })
-})
 const idSchema = v.object({ id: v.string() })
 
 /** Every gallery's database, closed after its test. */
@@ -57,7 +55,9 @@ async function gallery() {
       objects: objects.store,
       resolveSession: async () => (signedIn ? alice : null)
     })
-  const owner = testClient(app(config, true))
+  const ownerApp = app(config, true)
+  const owner = testClient(ownerApp)
+  const ownerAPI = contractClient(ownerApp)
 
   async function workspace(name: string) {
     const created = await responseJSON(
@@ -67,18 +67,12 @@ async function gallery() {
     return created.workspace.id
   }
   async function document(workspaceId: string, name: string) {
-    const created = await responseJSON(
-      await owner.api.workspaces[':workspaceId'].documents.$post({
-        param: { workspaceId },
-        json: { name }
-      }),
-      documentSchema
-    )
+    const created = await ownerAPI.documents.create({ params: { workspaceId }, body: { name } })
     return created.document.id
   }
   const save = (documentId: string, baseRevisionId: string | null, label: string) =>
     saveDocument(
-      { client: owner, database: runtime.database, objects: objects.store },
+      { api: ownerAPI, database: runtime.database, objects: objects.store },
       documentId,
       baseRevisionId,
       label
@@ -100,6 +94,7 @@ async function gallery() {
   return {
     runtime,
     owner,
+    ownerAPI,
     workspace: { community: communityId, studio: studioId },
     document,
     save,
@@ -126,7 +121,7 @@ describe('community gallery', () => {
     await server.document(server.workspace.community, 'Draft')
     const trashed = await server.document(server.workspace.community, 'Old')
     await server.save(trashed, null, 'old')
-    await server.owner.api.documents[':documentId'].$delete({ param: { documentId: trashed } })
+    await server.ownerAPI.documents.remove({ params: { documentId: trashed } })
     const removed = await server.document(server.workspace.community, 'Removed')
     await server.save(removed, null, 'removed')
     await server.runtime.database
@@ -261,12 +256,7 @@ describe('community gallery', () => {
     const secret = await server.document(server.workspace.studio, 'Secret')
     await server.save(secret, null, 'secret')
     const checksumOf = async (documentId: string) =>
-      (
-        await responseJSON(
-          await server.owner.api.documents[':documentId'].$get({ param: { documentId } }),
-          v.object({ document: v.object({ checksum: v.string() }) })
-        )
-      ).document.checksum
+      (await server.ownerAPI.documents.download({ params: { documentId } })).document.checksum
     const named = await responseJSON(
       await server.visitor.api.community[':documentId'].document.$get({
         param: { documentId: tour },

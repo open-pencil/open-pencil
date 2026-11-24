@@ -1,7 +1,8 @@
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
-import { trashSchema, type WorkspaceRole } from '#cloud/contract'
+import type { WorkspaceRole } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
   createCloudApp,
@@ -32,9 +33,6 @@ export const people = {
   carol: { userId: crypto.randomUUID(), email: 'carol@example.com', name: 'Carol' }
 } satisfies Record<string, CloudActor>
 
-const CreatedDocument = v.object({ document: v.object({ id: v.string() }) })
-const ListedDocuments = v.object({ documents: v.array(v.object({ id: v.string() })) })
-
 export type TrashAppOptions = {
   /** Bob and Carol join the workspace with these roles. */
   roles?: Partial<Record<'bob' | 'carol', WorkspaceRole>>
@@ -64,6 +62,7 @@ export async function trashApp({ roles = {}, purgeGraceMs, reportError }: TrashA
     reportError
   })
   const client = testClient(app)
+  const api = contractClient(app)
   await runtime.database
     .insertInto('user')
     .values(
@@ -97,33 +96,26 @@ export async function trashApp({ roles = {}, purgeGraceMs, reportError }: TrashA
       actor = people[person]
     },
     async create(name: string): Promise<string> {
-      const created = await responseJSON(
-        await client.api.workspaces[':workspaceId'].documents.$post({
-          param: { workspaceId },
-          json: { name }
-        }),
-        CreatedDocument
-      )
-      return created.document.id
+      return (await api.documents.create({ params: { workspaceId }, body: { name } })).document.id
     },
     async remove(documentId: string) {
-      const response = await client.api.documents[':documentId'].$delete({ param: { documentId } })
-      if (response.status !== 204) throw new Error(`Deleting answered ${response.status}`)
+      await api.documents.remove({ params: { documentId } })
     },
     async trash() {
-      return (await responseJSON(await client.api.trash.$get(), trashSchema)).documents
+      return (await api.documents.listTrash()).documents
     },
     async listed() {
-      const response = await client.api.workspaces[':workspaceId'].documents.$get({
-        param: { workspaceId }
-      })
-      return (await responseJSON(response, ListedDocuments)).documents.map((entry) => entry.id)
+      return (await api.documents.list({ params: { workspaceId } })).documents.map(
+        (entry) => entry.id
+      )
     },
+    /** How restoring the document ended: `'ok'`, or the refusal's status and code. */
     restore(documentId: string) {
-      return client.api.trash[':documentId'].restore.$post({ param: { documentId } })
+      return outcome(api.documents.restore({ params: { documentId } }))
     },
+    /** How deleting the document for good ended. */
     purge(documentId: string) {
-      return client.api.trash[':documentId'].$delete({ param: { documentId } })
+      return outcome(api.documents.purge({ params: { documentId } }))
     },
     /** The workspace's recorded storage usage, in bytes. */
     async usage(): Promise<number> {

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { contractClient } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
@@ -64,13 +65,10 @@ async function testApp() {
     await client.workspaces.$post({ json: { name: 'Studio' } }),
     v.object({ workspace: v.object({ id: v.string() }) })
   )
-  const created = await responseJSON(
-    await client.workspaces[':workspaceId'].documents.$post({
-      param: { workspaceId: workspace.workspace.id },
-      json: { name: 'Poster' }
-    }),
-    v.object({ document: v.object({ id: v.string() }) })
-  )
+  const created = await contractClient(app).documents.create({
+    params: { workspaceId: workspace.workspace.id },
+    body: { name: 'Poster' }
+  })
   return { app, runtime, client, announced, documentId: created.document.id }
 }
 

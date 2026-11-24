@@ -1,5 +1,6 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
@@ -58,21 +59,18 @@ async function testApp() {
     ),
     resolveSession: async () => alice
   })
-  const { api } = testClient(app, undefined, undefined, {
-    headers: { Origin: config.publicURL }
-  })
+  const headers = { Origin: config.publicURL }
+  const { api } = testClient(app, undefined, undefined, { headers })
+  const contract = contractClient(app, headers)
   const { workspace } = await responseJSON(
     await api.workspaces.$post({ json: { name: 'Studio' } }),
     v.object({ workspace: idSchema })
   )
-  const { document } = await responseJSON(
-    await api.workspaces[':workspaceId'].documents.$post({
-      param: { workspaceId: workspace.id },
-      json: { name: 'Poster' }
-    }),
-    v.object({ document: idSchema })
-  )
-  return { runtime, api, workspaceId: workspace.id, documentId: document.id }
+  const { document } = await contract.documents.create({
+    params: { workspaceId: workspace.id },
+    body: { name: 'Poster' }
+  })
+  return { runtime, api, contract, workspaceId: workspace.id, documentId: document.id }
 }
 
 describe('Cloud API route parameters', () => {
@@ -80,17 +78,13 @@ describe('Cloud API route parameters', () => {
     const context = await testApp()
     const logged = spyOn(console, 'error').mockImplementation(() => undefined)
     try {
-      const { api, workspaceId, documentId } = context
+      const { api, contract, workspaceId, documentId } = context
       const secret = 'a'.repeat(64)
       // One route per validated parameter; the others in its path name rows that exist.
       const malformed: [
         route: string,
         request: () => Promise<Pick<Response, 'status' | 'text'>>
       ][] = [
-        [
-          'GET /documents/abc',
-          () => api.documents[':documentId'].$get({ param: { documentId: 'abc' } })
-        ],
         [
           'GET /documents/abc/versions',
           () =>
@@ -122,10 +116,6 @@ describe('Cloud API route parameters', () => {
           () => api.workspaces[':workspaceId'].$get({ param: { workspaceId: 'abc' } })
         ],
         [
-          'GET /workspaces/abc/documents',
-          () => api.workspaces[':workspaceId'].documents.$get({ param: { workspaceId: 'abc' } })
-        ],
-        [
           'GET /workspaces/abc/entitlements',
           () => api.workspaces[':workspaceId'].entitlements.$get({ param: { workspaceId: 'abc' } })
         ],
@@ -134,14 +124,6 @@ describe('Cloud API route parameters', () => {
           () =>
             api.workspaces[':workspaceId'].invitations[':invitationId'].resend.$post({
               param: { workspaceId, invitationId: 'abc' }
-            })
-        ],
-        [
-          'POST /uploads/abc/commit',
-          () =>
-            api.uploads[':uploadId'].commit.$post({
-              param: { uploadId: 'abc' },
-              json: { checksum: `${'A'.repeat(43)}=` }
             })
         ],
         [
@@ -191,6 +173,30 @@ describe('Cloud API route parameters', () => {
         expect({ route, status: response.status }).toEqual({ route, status: 404 })
         await responseJSON(response, notFoundSchema)
       }
+      const malformedContract: [route: string, call: () => Promise<unknown>][] = [
+        [
+          'GET /documents/abc',
+          () => contract.documents.download({ params: { documentId: 'abc' } })
+        ],
+        [
+          'GET /workspaces/abc/documents',
+          () => contract.documents.list({ params: { workspaceId: 'abc' } })
+        ],
+        [
+          'POST /uploads/abc/commit',
+          () =>
+            contract.documents.commitUpload({
+              params: { uploadId: 'abc' },
+              body: { checksum: `${'A'.repeat(43)}=` }
+            })
+        ]
+      ]
+      for (const [route, call] of malformedContract) {
+        expect({ route, outcome: await outcome(call()) }).toEqual({
+          route,
+          outcome: { status: 404, code: 'not_found' }
+        })
+      }
       expect(logged).not.toHaveBeenCalled()
     } finally {
       logged.mockRestore()
@@ -213,10 +219,11 @@ describe('Cloud API route parameters', () => {
         json: { secret: share.secret }
       })
       expect(resolved.status).toBe(200)
-      const access = await context.api.documents[':documentId'].access.$get({
-        param: { documentId: context.documentId }
-      })
-      expect(access.status).toBe(200)
+      expect(
+        await outcome(
+          context.contract.documents.access({ params: { documentId: context.documentId } })
+        )
+      ).toBe('ok')
     } finally {
       await context.runtime.close()
     }

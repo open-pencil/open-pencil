@@ -18,6 +18,7 @@ import { anySignal, DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { createCommentRequests, createSharedCommentRequests } from './comments'
 import { createCommunityRequests } from './community'
+import { createCloudContractClient } from './contract'
 import { createDocumentRequests } from './documents'
 import { createImageRequests } from './images'
 import { CloudAPIError, parseResponse, responseBody, type CloudClientDiagnostic } from './response'
@@ -80,6 +81,12 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
     fetch,
     init: { credentials: 'include', signal: options.signal, headers }
   })
+  // The contract client sets the content type of what it sends itself.
+  const contract = createCloudContractClient(apiURL(baseURL), {
+    fetch,
+    headers: options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : {},
+    signal: options.signal
+  })
 
   return {
     async getSession(): Promise<CloudSession | null> {
@@ -108,9 +115,9 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       )
       return response.entitlements
     },
-    ...createWorkspaceRequests(client, options.onDiagnostic),
-    ...createImageRequests(client, publicClient, options.onDiagnostic),
-    ...createDocumentRequests(client, options.onDiagnostic),
+    ...createWorkspaceRequests(client, contract.documents, options.onDiagnostic),
+    ...createImageRequests(publicClient, contract.documents, options.onDiagnostic),
+    ...createDocumentRequests(client, contract.documents, options.onDiagnostic),
     ...createVersionRequests(client, options.onDiagnostic),
     ...createCommentRequests(client, options.onDiagnostic),
     ...createSharedCommentRequests(publicClient, options.onDiagnostic),

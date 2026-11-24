@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { contractClient } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
@@ -77,17 +78,15 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
     onDocumentVersionsChanged: (documentId) => announcements.push(documentId)
   })
   const client = testClient(app)
+  const api = contractClient(app)
   const workspace = await responseJSON(
     await client.api.workspaces.$post({ json: { name: 'Studio' } }),
     v.object({ workspace: v.object({ id: v.string() }) })
   )
-  const created = await responseJSON(
-    await client.api.workspaces[':workspaceId'].documents.$post({
-      param: { workspaceId: workspace.workspace.id },
-      json: { name: 'Poster' }
-    }),
-    documentSchema
-  )
+  const created = await api.documents.create({
+    params: { workspaceId: workspace.workspace.id },
+    body: { name: 'Poster' }
+  })
   const documentId = created.document.id
   let saves = 0
   let current: string | null = null
@@ -96,18 +95,15 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
   async function save(): Promise<string> {
     saves++
     const checksum = `${String.fromCharCode(64 + saves).repeat(43)}=`
-    const upload = await responseJSON(
-      await client.api.documents[':documentId'].uploads.$post({
-        param: { documentId },
-        json: {
-          baseRevisionId: current,
-          byteSize: FILE_BYTES,
-          checksum,
-          contentType: 'application/octet-stream'
-        }
-      }),
-      v.object({ id: v.string() })
-    )
+    const upload = await api.documents.createUpload({
+      params: { documentId },
+      body: {
+        baseRevisionId: current,
+        byteSize: FILE_BYTES,
+        checksum,
+        contentType: 'application/octet-stream'
+      }
+    })
     const row = await runtime.database
       .selectFrom('upload')
       .select('objectKey')
@@ -119,13 +115,10 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
       checksumVerification: 'native',
       contentType: 'application/octet-stream'
     })
-    const committed = await responseJSON(
-      await client.api.uploads[':uploadId'].commit.$post({
-        param: { uploadId: upload.id },
-        json: { checksum }
-      }),
-      documentSchema
-    )
+    const committed = await api.documents.commitUpload({
+      params: { uploadId: upload.id },
+      body: { checksum }
+    })
     current = committed.document.currentRevisionId
     if (!current) throw new Error('The save left no revision')
     return current
@@ -160,6 +153,7 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
     objects,
     policy,
     client,
+    api,
     workspaceId: workspace.workspace.id,
     documentId,
     save,
@@ -347,9 +341,7 @@ describe('Cloud version history', () => {
       await context.save()
       const [version] = (await context.history()).versions
       if (!version) throw new Error('No version')
-      await context.client.api.documents[':documentId'].$delete({
-        param: { documentId: context.documentId }
-      })
+      await context.api.documents.remove({ params: { documentId: context.documentId } })
       const copy = await context.client.api.documents[':documentId'].versions[
         ':versionId'
       ].duplicate.$post({
