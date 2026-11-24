@@ -40,6 +40,21 @@ describe('checkDocsIntegrity', () => {
     expect(result.localeMissingPages.ru).toEqual(['legacy.md', 'page.md'])
   })
 
+  test('rejects guide pictures without alt text or a file for each theme', async () => {
+    const docsRoot = await fixture()
+    await writeFile(join(docsRoot, 'public/_redirects'), '', 'utf8')
+    await write(join(docsRoot, 'public/guide/whole-light.webp'))
+    await write(join(docsRoot, 'public/guide/whole-dark.webp'))
+    await write(join(docsRoot, 'public/guide/half-light.webp'))
+    await write(join(docsRoot, 'page.md'), '<GuideImage name="whole" other="half" alt="A menu" />')
+    await write(join(docsRoot, 'silent.md'), '<GuideImage name="whole" />')
+
+    expect(check(docsRoot).errors.toSorted()).toEqual([
+      "page.md shows missing 'public/guide/half-dark.webp'.",
+      'silent.md has a guide picture without alt text.'
+    ])
+  })
+
   test('rejects pages copied identically into every locale', async () => {
     const docsRoot = await fixture()
     await write(join(docsRoot, 'index.md'), '# English')

@@ -23,3 +23,30 @@
   --vp-c-brand-2: var(--color-accent);
   --vp-c-brand-3: var(--color-accent);
 }
+
+/* Key caps. */
+.vp-doc kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--vp-c-divider);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  font-family: var(--vp-font-family-base);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.vp-doc kbd + kbd {
+  margin-left: 3px;
+}
+
+/* Guide pages have many short sections, which headings alone set apart. */
+.guide .vp-doc h2 {
+  margin-top: 40px;
+  padding-top: 0;
+  border-top: 0;
+}

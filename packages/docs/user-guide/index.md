@@ -28,7 +28,8 @@ Throughout this guide, keyboard shortcuts use Mac notation: <kbd>⌘</kbd> = <kb
 
 - [Layers & Pages](./layers-and-pages) — the layers panel, pages, and properties panel
 - [Context Menu](./context-menu) — right-click actions for clipboard, grouping, components, and more
-- [Exporting](./exporting) — image export and .fig file operations
+- [Opening and Saving](./files) — documents, web pages, and placed files
+- [Exporting](./exporting) — images, PDF, slides, and copying into other apps
 - [OpenPencil Cloud](/cloud/) — documents on OpenPencil Cloud or your team's server, shared and edited together
 - [Cloud Storage](./cloud-storage) — documents and libraries in your own S3-compatible bucket
 
