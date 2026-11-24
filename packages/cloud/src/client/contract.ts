@@ -5,14 +5,10 @@ import {
   cloudAPIErrorBodySchema,
   publicCloudAPIContract
 } from '#cloud/contract'
-import { createORPCClient } from '@orpc/client'
+import { createORPCClient, DynamicLink, type ClientContext, type ClientLink } from '@orpc/client'
 import type { RouterContract, RouterContractClient } from '@orpc/contract'
-import { ResponseValidationLinkPlugin } from '@orpc/contract/plugins'
 import type { JsonifiedClient } from '@orpc/openapi'
-import { OpenAPILink } from '@orpc/openapi/fetch'
 import * as v from 'valibot'
-
-import { anySignal } from '@open-pencil/std/timing'
 
 import { CloudAPIError } from './response'
 
@@ -56,21 +52,16 @@ export function createContractClient<T extends RouterContract>(
   baseURL: string,
   options: ServiceContractClientOptions
 ): JsonifiedClient<RouterContractClient<T>> {
-  const url = new URL(baseURL)
-  const link = new OpenAPILink(routes, {
-    origin: url.origin,
-    url: `/${url.pathname.replace(/^\/+/, '')}`,
-    headers: options.headers,
-    fetch: (request, init) =>
-      options.fetch(request, {
-        ...init,
-        credentials: options.credentials,
-        signal: anySignal([init.signal, options.signal])
-      }),
-    errorResponseBodyDecoder: (body, response) => options.refusal(response.status, body),
-    plugins: [new ResponseValidationLinkPlugin(routes)]
-  })
-  return createORPCClient(link)
+  // The link and its serializer load with the first request, off the editor's startup.
+  let link: Promise<ClientLink<ClientContext>> | undefined
+  return createORPCClient(
+    new DynamicLink(() => {
+      link ??= import('./contract-link').then(({ createContractLink }) =>
+        createContractLink(routes, baseURL, options)
+      )
+      return link
+    })
+  )
 }
 
 /** The Cloud API's routes at the API `apiURL` names. */
