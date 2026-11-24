@@ -1,1 +1,1 @@
-- Cloud's community pages show their files to search engines and link previews without running a script, with structured data, a sitemap, and preview images crawlers may fetch (#2314).
+- Cloud's community pages show their files to search engines and link previews without running a script, each with the description its editors set, structured data, a sitemap, and preview images crawlers may fetch (#2314, #2335).
