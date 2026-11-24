@@ -1,1 +1,1 @@
-- Fixed `.fig` export saving text layers with glyph records that have no outline, which Figma drew as blank text; such layers are now saved without glyphs so Figma lays the text out itself.
+- `.fig` export saves text that cannot be fully outlined, such as a character drawn by a fallback font, without its text layout, so Figma lays the text out itself instead of showing it blank.

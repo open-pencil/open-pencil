@@ -102,25 +102,24 @@ function fontMetaData(
   return fonts
 }
 
+type OutlinedGlyph = ShapedTextGlyph & { commands: OutlineCommand[] }
+
+function isOutlined(glyph: ShapedTextGlyph): glyph is OutlinedGlyph {
+  return glyph.commands !== null
+}
+
 function shapedGlyphRecords(
-  shaped: ShapedText,
+  glyphs: OutlinedGlyph[],
   context: DerivedTextBuildContext
 ): DerivedTextGlyphRecord[] {
-  // A glyph the shaper could not outline would be saved with no commandsBlob, and
-  // Figma draws nothing for it instead of laying the text out itself (#1760): leave
-  // the node's glyphs out altogether, so readers lay the text out themselves. A
-  // partial set of outlines would draw the text with gaps, so it is all or none.
-  if (shaped.glyphs.some((glyph) => glyph.commands === null)) return []
-  return shaped.glyphs.map((glyph) => ({
-    commandsBlob: glyph.commands
-      ? appendGlyphBlob(
-          context,
-          encodePathCommandsBlob(
-            glyph.commands.length > 0 ? glyph.commands : EMPTY_GLYPH_COMMANDS,
-            glyph.fontSize
-          )
-        )
-      : undefined,
+  return glyphs.map((glyph) => ({
+    commandsBlob: appendGlyphBlob(
+      context,
+      encodePathCommandsBlob(
+        glyph.commands.length > 0 ? glyph.commands : EMPTY_GLYPH_COMMANDS,
+        glyph.fontSize
+      )
+    ),
     position: { x: glyph.x, y: glyph.y },
     fontSize: glyph.fontSize,
     firstCharacter: glyph.firstCharacter,
@@ -284,38 +283,43 @@ function shapeOrNull(node: SceneNode, context: DerivedTextBuildContext): ShapedT
   try {
     return context.shapeText(node)
   } catch (error) {
-    console.warn(`Writing "${node.name}" without glyphs; text shaping failed:`, error)
+    console.warn(`Writing "${node.name}" without its text layout; text shaping failed:`, error)
     return null
   }
 }
 
 /**
  * The `derivedTextData` a text node is written with. Glyphs the node already has (from Figma,
- * or placed along a path) are kept; other text is shaped at the node's width. Text that cannot
- * be shaped gets no glyphs, so readers lay it out themselves instead of drawing a guess.
+ * or placed along a path) are kept; other text is shaped at the node's width. Text the shaper
+ * cannot outline in full gets none: Figma draws a layout without outlines, or with no glyphs,
+ * as blank text, and lays the text out itself only when the layer has no `derivedTextData`.
+ * A partial set of outlines would draw the text with gaps, so it is all or none.
  */
 export function buildNodeDerivedTextData(
   node: SceneNode,
   context: DerivedTextBuildContext
 ): NodeChange['derivedTextData'] {
-  const fonts = fontMetaData(node, context.digestMap, context.fontStyleName ?? standardStyleNamer)
+  const fonts = () =>
+    fontMetaData(node, context.digestMap, context.fontStyleName ?? standardStyleNamer)
   const saved = node.derivedTextGlyphs ?? []
   if (saved.length > 0) {
     return buildDerivedTextData({
       node,
       glyphs: savedGlyphRecords(node, saved, context),
       decorations: node.textPathData ? undefined : derivedDecorations(node, saved, context),
-      fontMetaData: fonts,
+      fontMetaData: fonts(),
       ...savedGlyphLayout(node, saved)
     })
   }
   const shaped = node.textPathData ? null : shapeOrNull(node, context)
+  const outlined = shaped?.glyphs.filter(isOutlined) ?? []
+  if (!shaped || outlined.length < shaped.glyphs.length) return undefined
   return buildDerivedTextData({
     node,
-    glyphs: shaped ? shapedGlyphRecords(shaped, context) : [],
-    decorations: shaped ? derivedDecorations(node, shaped.glyphs, context) : undefined,
-    fontMetaData: fonts,
-    baselines: shaped?.baselines ?? [],
-    logicalIndexToCharacterOffsetMap: shaped?.logicalIndexToCharacterOffsetMap ?? []
+    glyphs: shapedGlyphRecords(outlined, context),
+    decorations: derivedDecorations(node, shaped.glyphs, context),
+    fontMetaData: fonts(),
+    baselines: shaped.baselines,
+    logicalIndexToCharacterOffsetMap: shaped.logicalIndexToCharacterOffsetMap
   })
 }

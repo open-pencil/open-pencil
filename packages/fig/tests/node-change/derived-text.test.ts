@@ -92,26 +92,21 @@ describe('derived text writer', () => {
     expect(writer.blobs).toHaveLength(2)
   })
 
-  test('writes the layout without outlines when the shaper has none', () => {
+  test('writes no derived text when the shaper has no outlines', () => {
     const writer = context(twoLines(null))
-    const data = expectDefined(buildNodeDerivedTextData(textNode(), writer), 'derived text')
 
-    expect(data.baselines).toHaveLength(2)
-    expect(data.glyphs).toEqual([])
+    expect(buildNodeDerivedTextData(textNode(), writer)).toBeUndefined()
     expect(writer.blobs).toHaveLength(0)
   })
 
-  test('writes no glyphs when any shaped glyph has no outline (#1760)', () => {
-    // One glyph the shaper could not outline (an Arabic-script character in a
-    // substituted face, as in 0.17.0-beta.1) must not leave outline-less records
-    // behind: Figma draws nothing for them instead of laying the text out itself.
+  test('writes no derived text when any shaped glyph has no outline', () => {
+    // Figma draws a layer whose glyphs lack outlines, or whose glyph list is empty, as blank
+    // text; it lays the text out itself only when the layer has no derivedTextData.
     const shaped = twoLines(SQUARE)
     shaped.glyphs[1] = { ...shaped.glyphs[1], commands: null }
     const writer = context(shaped)
-    const data = expectDefined(buildNodeDerivedTextData(textNode(), writer), 'derived text')
 
-    expect(data.baselines).toHaveLength(2)
-    expect(data.glyphs).toEqual([])
+    expect(buildNodeDerivedTextData(textNode(), writer)).toBeUndefined()
     expect(writer.blobs).toHaveLength(0)
   })
 
@@ -134,24 +129,18 @@ describe('derived text writer', () => {
     ])
   })
 
-  test('writes no glyphs for text that could not be shaped', () => {
-    const data = expectDefined(buildNodeDerivedTextData(textNode(), context(null)), 'derived')
-
-    expect(data.glyphs).toEqual([])
-    expect(data.baselines).toEqual([])
-    expect(data.layoutSize).toEqual({ x: 20, y: 32 })
+  test('writes no derived text for text that could not be shaped', () => {
+    expect(buildNodeDerivedTextData(textNode(), context(null))).toBeUndefined()
   })
 
-  test('writes no glyphs, rather than failing, when the shaper throws', () => {
+  test('writes no derived text, rather than failing, when the shaper throws', () => {
     const writer = context(null)
     writer.shapeText = () => {
       throw new Error('shaper failed')
     }
     const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
     try {
-      const data = expectDefined(buildNodeDerivedTextData(textNode(), writer), 'derived text')
-
-      expect(data.glyphs).toEqual([])
+      expect(buildNodeDerivedTextData(textNode(), writer)).toBeUndefined()
       expect(warn).toHaveBeenCalledTimes(1)
     } finally {
       warn.mockRestore()
@@ -222,7 +211,7 @@ describe('derived text writer', () => {
   test('names font styles as Figma does', () => {
     const data = buildNodeDerivedTextData(
       textNode({ fontFamily: 'Inter', fontWeight: 600 }),
-      context(null)
+      context(twoLines(SQUARE))
     )
 
     expect(data?.fontMetaData?.[0].key.style).toBe('Semi Bold')
