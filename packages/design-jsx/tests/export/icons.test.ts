@@ -33,6 +33,13 @@ describe('icons in design JSX export', () => {
     )
   })
 
+  test('keep the alpha of a translucent color', () => {
+    const { graph, frame } = iconFrame({ r: 79 / 255, g: 70 / 255, b: 229 / 255, a: 128 / 255 })
+    expect(sceneNodeToJSX(frame.id, graph)).toBe(
+      '<Icon name="lucide:home" size={20} color="#4F46E580" />'
+    )
+  })
+
   test('leave out black, the default color, and keep a layer name someone gave it', () => {
     const { graph, frame } = iconFrame({ r: 0, g: 0, b: 0, a: 1 }, 'Home')
     expect(sceneNodeToJSX(frame.id, graph)).toBe(

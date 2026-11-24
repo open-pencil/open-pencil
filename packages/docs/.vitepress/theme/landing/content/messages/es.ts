@@ -238,6 +238,7 @@ export const es: LandingMessages = {
     lede: 'El espacio de diseño de tu equipo, alojado por nosotros. Todos editan los mismos archivos en directo, los comparten con un enlace y diseñan con IA pagada con los créditos del plan, sin nada que instalar ni mantener. Empieza gratis con 300 MB y exporta tus archivos como .fig cuando quieras.',
     signUp: 'Prueba OpenPencil Cloud',
     plans: 'Ver planes',
+    community: 'Ver archivos de la comunidad',
     features: [
       {
         title: 'Sincronización en tiempo real',

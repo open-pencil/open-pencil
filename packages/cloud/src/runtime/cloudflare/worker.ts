@@ -214,6 +214,7 @@ export function createCloudflareCloud(
         return await createCloudServer(app, {
           site: assetSiteFiles(c.env.ASSETS),
           indexingPolicy: config.indexingPolicy,
+          publicURL: config.publicURL,
           reportError: services.reporter
         }).fetch(c.req.raw)
       } finally {

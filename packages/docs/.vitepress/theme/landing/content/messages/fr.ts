@@ -242,6 +242,7 @@ export const fr: LandingMessages = {
     lede: 'L’espace de design de votre équipe, hébergé pour vous. Tout le monde modifie les mêmes fichiers en direct, les partage par un lien et designe avec l’IA payée par les crédits du forfait, sans rien installer ni administrer. Commencez gratuitement avec 300 Mo et exportez vos fichiers en .fig quand vous voulez.',
     signUp: 'Essayer OpenPencil Cloud',
     plans: 'Voir les forfaits',
+    community: 'Parcourir les fichiers de la communauté',
     features: [
       {
         title: 'Synchronisation en temps réel',

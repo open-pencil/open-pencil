@@ -113,6 +113,21 @@ describe('tauriFetch', () => {
     expect(received).toEqual(urls)
   })
 
+  test('names the page a requested file belongs to, and none for other requests', async () => {
+    const sent: Array<ProxyHttpRequest['page_resource']> = []
+    await mockTauriIPC((command, args) => {
+      expect(command).toBe('proxy_http_request')
+      sent.push((args as InvokeArgs).request.page_resource)
+      return respond(args, { status: 204 })
+    })
+    await createTauriFetch({ pageResource: { page_url: 'https://example.test/' } })(
+      'https://cdn.example.test/style.css'
+    )
+    await createTauriFetch({ pageResource: {} })('https://cdn.example.test/picture.png')
+    await tauriFetch('https://api.example.test/models')
+    expect(sent).toEqual([{ page_url: 'https://example.test/' }, {}, undefined])
+  })
+
   test('passes request timeout metadata to the desktop HTTP command', async () => {
     const captured: { value: InvokeArgs | null } = { value: null }
     await mockTauriIPC((command, args) => {

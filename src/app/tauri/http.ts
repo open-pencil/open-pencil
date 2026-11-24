@@ -20,6 +20,17 @@ export interface ProxyHttpRequest {
   max_response_bytes?: number
   follow_redirects?: boolean
   timeout_ms?: number
+  /** Set when a web page asks for the file; see `PageResource`. */
+  page_resource?: PageResource
+}
+
+/**
+ * The page a requested file belongs to. A page on the internet, or one with no address (opened from
+ * a file or pasted), loads files only from public addresses, never from this computer or its
+ * network; a page on a private address, such as a development server, loads from both.
+ */
+export interface PageResource {
+  page_url?: string
 }
 
 /** Status and headers; the body streams over the request's channel. */
@@ -69,6 +80,7 @@ export interface TauriFetchOptions {
   timeoutMs?: number
   maxResponseBytes?: number
   nativeFetch?: FetchFunction
+  pageResource?: PageResource
 }
 
 const nativeFetch: typeof fetch = globalThis.fetch.bind(globalThis)
@@ -80,7 +92,8 @@ export function createTauriFetch(options: TauriFetchOptions = {}): FetchFunction
       input,
       init,
       options.maxResponseBytes,
-      options.timeoutMs
+      options.timeoutMs,
+      options.pageResource
     )
 }
 
@@ -98,7 +111,8 @@ async function executeTauriFetch(
   input: RequestInfo | URL,
   init?: RequestInit,
   maxResponseBytes?: number,
-  timeoutMs?: number
+  timeoutMs?: number,
+  pageResource?: PageResource
 ): Promise<Response> {
   const parsedURL = new URL(input instanceof Request ? input.url : input.toString())
   const isIpcURL =
@@ -172,7 +186,8 @@ async function executeTauriFetch(
     body: bodyData ? Array.from(bodyData) : undefined,
     max_response_bytes: maxResponseBytes,
     follow_redirects: request.redirect === 'follow',
-    timeout_ms: timeoutMs
+    timeout_ms: timeoutMs,
+    page_resource: pageResource
   }
   let head: ProxyHttpHead
   try {
