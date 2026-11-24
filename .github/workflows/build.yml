@@ -328,6 +328,12 @@ jobs:
       - name: Publish verified npm artifacts with provenance
         if: needs.plan.outputs.kind == 'release'
         run: bun .pipeline/tools/release/release-packages/src/cli.ts publish
+      # After npm has the version the entry names; skips betas and an unset key.
+      - name: List the MCP server in the MCP Registry
+        if: needs.plan.outputs.kind == 'release'
+        env:
+          MCP_PRIVATE_KEY: ${{ secrets.MCP_REGISTRY_PRIVATE_KEY }}
+        run: bun .pipeline/tools/release/release-packages/src/mcp-registry/publish.ts
       - name: Replace and verify the entire draft asset set
         if: needs.plan.outputs.kind == 'release'
         run: bun .pipeline/tools/release/release-packages/src/native/publish.ts upload

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "dev.openpencil/mcp",
+  "title": "OpenPencil",
+  "description": "Read, create, and edit designs in the running OpenPencil editor, and export them.",
+  "websiteUrl": "https://openpencil.dev/developers/mcp-server",
+  "repository": {
+    "url": "https://github.com/open-pencil/open-pencil",
+    "source": "github",
+    "subfolder": "packages/mcp"
+  },
+  "icons": [
+    {
+      "src": "https://openpencil.dev/brand/favicon.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": ["any"]
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@open-pencil/mcp",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "OPENPENCIL_MCP_ROOT",
+          "description": "Directory that file tools may read and write. Defaults to the current working directory, or the home directory on Windows.",
+          "format": "filepath",
+          "isRequired": false
+        },
+        {
+          "name": "OPENPENCIL_MCP_SCOPE",
+          "description": "Set to \"selection\" to let the client read only the selected layers. Defaults to the app setting.",
+          "format": "string",
+          "isRequired": false,
+          "choices": ["document", "selection"]
+        }
+      ]
+    }
+  ]
+}

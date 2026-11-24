@@ -1,6 +1,7 @@
 {
   "name": "@open-pencil/mcp",
   "version": "0.17.0",
+  "mcpName": "dev.openpencil/mcp",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -9,6 +10,7 @@
   },
   "funding": "https://ko-fi.com/dannote",
   "bin": {
+    "mcp": "./dist/stdio.mjs",
     "openpencil-mcp": "./dist/stdio.mjs",
     "openpencil-mcp-http": "./dist/index.mjs"
   },
