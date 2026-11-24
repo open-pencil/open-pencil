@@ -39,7 +39,7 @@ Figma hat keinen Offline-Modus: Ohne Verbindung lassen sich nur bereits geöffne
 
 Die KI-Funktionen von Figma nutzen die Modelle, die Figma bereitstellt, und werden auf ein monatliches Guthaben pro Platz angerechnet, und über den MCP-Server von Figma können Coding-Agenten Designs lesen und bearbeiten, innerhalb von Aufruflimits, die vom Platz abhängen.
 
-Der [KI-Assistent](/de/user-guide/ai-chat) von OpenPencil arbeitet mit einem eigenen Schlüssel für Anthropic, OpenAI, Google AI, OpenRouter oder einen beliebigen kompatiblen Endpunkt, ohne Limits von unserer Seite, oder mit dem Guthaben, das ein OpenPencil-Cloud-Tarif enthält. Coding-Agenten wie Claude Code, Codex und Cursor erhalten über den [MCP-Server](/developers/mcp-server) dieselben über 100 Werkzeuge und können Designs erstellen und ändern. Die [CLI](/de/developers/cli/inspecting) untersucht, prüft und exportiert `.fig`-Dateien, ohne den Editor zu öffnen, und [`eval`](/de/developers/cli/scripting) führt darauf Skripte aus, die gegen die Figma Plugin API geschrieben sind.
+Der [KI-Assistent](/de/user-guide/ai-chat) von OpenPencil arbeitet mit einem eigenen Schlüssel für Anthropic, OpenAI, Google AI, OpenRouter oder einen beliebigen kompatiblen Endpunkt, ohne Limits von unserer Seite, oder mit dem Guthaben, das ein OpenPencil-Cloud-Tarif enthält. Coding-Agenten wie Claude Code, Codex und Cursor erhalten über den [MCP-Server](/developers/mcp-server) mehr als 100 Werkzeuge und können Designs erstellen und ändern. Die [CLI](/de/developers/cli/inspecting) untersucht, prüft und exportiert `.fig`-Dateien, ohne den Editor zu öffnen, und [`eval`](/de/developers/cli/scripting) führt darauf Skripte aus, die gegen die Figma Plugin API geschrieben sind.
 
 ## Wo Figma voraus ist
 

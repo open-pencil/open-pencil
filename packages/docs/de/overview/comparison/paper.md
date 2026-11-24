@@ -30,9 +30,9 @@ Paper speichert Designs in seinem eigenen Dienst. OpenPencil speichert gewöhnli
 
 ## KI und Agenten
 
-Beide sind für Agenten gemacht. Paper hat keinen integrierten Assistenten: Man designt von Hand oder verbindet einen externen Agenten wie Claude Code oder Cursor über seinen MCP-Server, und der kostenlose Tarif erlaubt 100 MCP-Aufrufe pro Woche.
+Beide sind für Agenten gemacht. Paper bindet externe Agenten wie Claude Code oder Cursor über seinen MCP-Server an, und der kostenlose Tarif erlaubt 100 MCP-Aufrufe pro Woche.
 
-OpenPencil hat einen [KI-Assistenten](/de/user-guide/ai-chat) im Editor, der einen eigenen Anbieterschlüssel oder Cloud-Guthaben nutzt, und dieselben über 100 Werkzeuge stehen externen Agenten über den [MCP-Server](/developers/mcp-server) ohne Aufruflimits offen. Die Desktop-App kann außerdem [Coding-Agenten](/user-guide/coding-agents) direkt im Editor ausführen, jeden mit eigenem Cursor auf der Arbeitsfläche. Die [CLI](/de/developers/cli/inspecting) und [`eval`](/de/developers/cli/scripting) arbeiten mit Dokumenten, ganz ohne den Editor zu öffnen.
+OpenPencil hat einen [KI-Assistenten](/de/user-guide/ai-chat) im Editor, der einen eigenen Anbieterschlüssel oder Cloud-Guthaben nutzt, und über 100 Werkzeuge stehen externen Agenten über den [MCP-Server](/developers/mcp-server) ohne Aufruflimits offen. Die Desktop-App kann außerdem [Coding-Agenten](/user-guide/coding-agents) direkt im Editor ausführen, jeden mit eigenem Cursor auf der Arbeitsfläche. Die [CLI](/de/developers/cli/inspecting) und [`eval`](/de/developers/cli/scripting) arbeiten mit Dokumenten, ganz ohne den Editor zu öffnen.
 
 ## Wo Paper voraus ist
 

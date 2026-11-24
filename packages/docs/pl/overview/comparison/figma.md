@@ -39,7 +39,7 @@ Figma nie ma trybu offline: bez połączenia można dalej edytować tylko pliki,
 
 Funkcje AI w Figmie korzystają z modeli udostępnianych przez Figmę i zużywają miesięczne kredyty przypisane do stanowiska, a serwer MCP Figmy pozwala agentom programistycznym odczytywać i edytować projekty w ramach limitów wywołań zależnych od stanowiska.
 
-[Asystent AI](/pl/user-guide/ai-chat) OpenPencil działa z Twoim własnym kluczem do Anthropic, OpenAI, Google AI, OpenRouter lub dowolnego zgodnego punktu końcowego, bez naszych limitów, albo z kredytami zawartymi w planie OpenPencil Cloud. Agenci programistyczni, tacy jak Claude Code, Codex i Cursor, dostają te same ponad 100 narzędzi przez [serwer MCP](/developers/mcp-server) i mogą tworzyć oraz zmieniać projekty. [CLI](/pl/developers/cli/inspecting) analizuje, sprawdza i eksportuje pliki `.fig` bez otwierania edytora, a [`eval`](/pl/developers/cli/scripting) uruchamia na nich skrypty napisane pod Figma Plugin API.
+[Asystent AI](/pl/user-guide/ai-chat) OpenPencil działa z Twoim własnym kluczem do Anthropic, OpenAI, Google AI, OpenRouter lub dowolnego zgodnego punktu końcowego, bez naszych limitów, albo z kredytami zawartymi w planie OpenPencil Cloud. Agenci programistyczni, tacy jak Claude Code, Codex i Cursor, dostają ponad 100 narzędzi przez [serwer MCP](/developers/mcp-server) i mogą tworzyć oraz zmieniać projekty. [CLI](/pl/developers/cli/inspecting) analizuje, sprawdza i eksportuje pliki `.fig` bez otwierania edytora, a [`eval`](/pl/developers/cli/scripting) uruchamia na nich skrypty napisane pod Figma Plugin API.
 
 ## Gdzie Figma ma przewagę
 

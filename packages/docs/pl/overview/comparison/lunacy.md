@@ -28,7 +28,7 @@ description: Czym różnią się OpenPencil i Lunacy, dwa darmowe edytory projek
 
 ## Praca z plikami Figma
 
-Lunacy otwiera pliki `.fig` i zapisuje we własnym formacie `.free` albo jako pliki Sketch, więc projekt, który trafił z Figmy do Lunacy, nie wraca jako `.fig`. OpenPencil sam zapisuje `.fig`: możesz otworzyć plik od kolegi pracującego w Figmie, zmienić go i odesłać, a także kopiować i wklejać warstwy między obiema aplikacjami w dowolnym kierunku. Złożone pliki mogą po ponownym otwarciu w Figmie wyglądać inaczej, więc zachowaj oryginał, dopóki nie sprawdzisz wyniku; zobacz [Zgodność z Figmą](/pl/reference/figma-compatibility).
+Lunacy otwiera pliki `.fig` i zapisuje we własnym formacie `.free` albo jako pliki Sketch, więc projekt, który trafił z Figmy do Lunacy, nie może wrócić jako `.fig`; drogą powrotną jest plik Sketch, który Figma importuje, stosując własną konwersję. OpenPencil sam zapisuje `.fig`: możesz otworzyć plik od kolegi pracującego w Figmie, zmienić go i odesłać, a także kopiować i wklejać warstwy między obiema aplikacjami w dowolnym kierunku. Złożone pliki mogą po ponownym otwarciu w Figmie wyglądać inaczej, więc zachowaj oryginał, dopóki nie sprawdzisz wyniku; zobacz [Zgodność z Figmą](/pl/reference/figma-compatibility).
 
 ## Otwarty kod i hosting
 
@@ -36,7 +36,7 @@ Lunacy jest darmowy, ale ma zamknięty kod, a uruchomienie jego prywatnej chmury
 
 ## AI i automatyzacja
 
-Czat AI w Lunacy działa w usłudze Icons8 i nie wymaga klucza API. [Asystent AI](/pl/user-guide/ai-chat) OpenPencil korzysta z Twojego klucza dostawcy lub kredytów Cloud, a te same ponad 100 narzędzi jest dostępnych dla agentów programistycznych przez [serwer MCP](/developers/mcp-server). [CLI](/pl/developers/cli/inspecting) analizuje, sprawdza i eksportuje dokumenty bez otwierania edytora, a [`eval`](/pl/developers/cli/scripting) uruchamia skrypty napisane pod Figma Plugin API.
+Czat AI w Lunacy działa w usłudze Icons8 i nie wymaga klucza API. [Asystent AI](/pl/user-guide/ai-chat) OpenPencil korzysta z Twojego klucza dostawcy lub kredytów Cloud, a ponad 100 narzędzi jest dostępnych dla agentów programistycznych przez [serwer MCP](/developers/mcp-server). [CLI](/pl/developers/cli/inspecting) analizuje, sprawdza i eksportuje dokumenty bez otwierania edytora, a [`eval`](/pl/developers/cli/scripting) uruchamia skrypty napisane pod Figma Plugin API.
 
 ## Gdzie Lunacy ma przewagę
 

@@ -39,7 +39,7 @@ Figma non ha una modalità offline: senza connessione puoi continuare a modifica
 
 Le funzioni AI di Figma usano i modelli forniti da Figma e consumano crediti mensili per postazione, e il server MCP di Figma permette agli agenti di programmazione di leggere e modificare i design entro limiti di chiamate che dipendono dalla postazione.
 
-L’[assistente AI](/it/user-guide/ai-chat) di OpenPencil funziona con la tua chiave per Anthropic, OpenAI, Google AI, OpenRouter o qualsiasi endpoint compatibile, senza limiti da parte nostra, oppure con i crediti inclusi in un piano OpenPencil Cloud. Agenti di programmazione come Claude Code, Codex e Cursor ottengono gli stessi oltre 100 strumenti tramite il [server MCP](/developers/mcp-server) e possono creare e modificare design. La [CLI](/it/developers/cli/inspecting) ispeziona, verifica ed esporta file `.fig` senza aprire l’editor, e [`eval`](/it/developers/cli/scripting) esegue su di essi script scritti per la Figma Plugin API.
+L’[assistente AI](/it/user-guide/ai-chat) di OpenPencil funziona con la tua chiave per Anthropic, OpenAI, Google AI, OpenRouter o qualsiasi endpoint compatibile, senza limiti da parte nostra, oppure con i crediti inclusi in un piano OpenPencil Cloud. Agenti di programmazione come Claude Code, Codex e Cursor ottengono oltre 100 strumenti tramite il [server MCP](/developers/mcp-server) e possono creare e modificare design. La [CLI](/it/developers/cli/inspecting) ispeziona, verifica ed esporta file `.fig` senza aprire l’editor, e [`eval`](/it/developers/cli/scripting) esegue su di essi script scritti per la Figma Plugin API.
 
 ## Dove Figma è avanti
 

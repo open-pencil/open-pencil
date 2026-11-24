@@ -30,9 +30,9 @@ Paper keeps designs on its own service. OpenPencil saves ordinary `.fig` files t
 
 ## AI and Agents
 
-Both are made for agents. Paper has no built-in assistant: you design by hand, or connect an external agent such as Claude Code or Cursor over its MCP server, and its free plan allows 100 MCP calls a week.
+Both are made for agents. Paper connects external agents such as Claude Code or Cursor over its MCP server, and its free plan allows 100 MCP calls a week.
 
-OpenPencil has an [AI assistant](/user-guide/ai-chat) inside the editor, using your own provider key or Cloud credits, and the same 100+ tools are open to external agents through the [MCP server](/developers/mcp-server) without call limits. The desktop app can also run [coding agents](/user-guide/coding-agents) inside the editor, each with its own cursor on the canvas. The [CLI](/developers/cli/inspecting) and [`eval`](/developers/cli/scripting) work on documents without opening the editor at all.
+OpenPencil has an [AI assistant](/user-guide/ai-chat) inside the editor, using your own provider key or Cloud credits, and more than 100 tools are open to external agents through the [MCP server](/developers/mcp-server) without call limits. The desktop app can also run [coding agents](/user-guide/coding-agents) inside the editor, each with its own cursor on the canvas. The [CLI](/developers/cli/inspecting) and [`eval`](/developers/cli/scripting) work on documents without opening the editor at all.
 
 ## Where Paper Is Ahead
 

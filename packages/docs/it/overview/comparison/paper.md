@@ -30,9 +30,9 @@ Paper conserva i design sul proprio servizio. OpenPencil salva normali file `.fi
 
 ## AI e agenti
 
-Entrambi sono pensati per gli agenti. Paper non ha un assistente integrato: progetti a mano oppure colleghi un agente esterno come Claude Code o Cursor tramite il suo server MCP, e il piano gratuito consente 100 chiamate MCP a settimana.
+Entrambi sono pensati per gli agenti. Paper collega agenti esterni come Claude Code o Cursor tramite il suo server MCP, e il piano gratuito consente 100 chiamate MCP a settimana.
 
-OpenPencil ha un [assistente AI](/it/user-guide/ai-chat) dentro l’editor, che usa la chiave del tuo provider o i crediti Cloud, e gli stessi oltre 100 strumenti sono aperti agli agenti esterni tramite il [server MCP](/developers/mcp-server) senza limiti di chiamate. L’app desktop può anche eseguire [agenti di programmazione](/user-guide/coding-agents) dentro l’editor, ognuno con il proprio cursore sul canvas. La [CLI](/it/developers/cli/inspecting) ed [`eval`](/it/developers/cli/scripting) lavorano sui documenti senza aprire affatto l’editor.
+OpenPencil ha un [assistente AI](/it/user-guide/ai-chat) dentro l’editor, che usa la chiave del tuo provider o i crediti Cloud, e oltre 100 strumenti sono aperti agli agenti esterni tramite il [server MCP](/developers/mcp-server) senza limiti di chiamate. L’app desktop può anche eseguire [agenti di programmazione](/user-guide/coding-agents) dentro l’editor, ognuno con il proprio cursore sul canvas. La [CLI](/it/developers/cli/inspecting) ed [`eval`](/it/developers/cli/scripting) lavorano sui documenti senza aprire affatto l’editor.
 
 ## Dove Paper è avanti
 

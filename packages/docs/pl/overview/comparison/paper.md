@@ -30,9 +30,9 @@ Paper przechowuje projekty we własnej usłudze. OpenPencil zapisuje zwykłe pli
 
 ## AI i agenci
 
-Oba narzędzia są stworzone dla agentów. Paper nie ma wbudowanego asystenta: projektujesz w nim ręcznie albo podłączasz zewnętrznego agenta, takiego jak Claude Code lub Cursor, przez jego serwer MCP, a darmowy plan pozwala na 100 wywołań MCP tygodniowo.
+Oba narzędzia są stworzone dla agentów. Paper podłącza zewnętrznych agentów, takich jak Claude Code lub Cursor, przez swój serwer MCP, a darmowy plan pozwala na 100 wywołań MCP tygodniowo.
 
-OpenPencil ma [asystenta AI](/pl/user-guide/ai-chat) wewnątrz edytora, korzystającego z Twojego klucza dostawcy lub kredytów Cloud, a te same ponad 100 narzędzi jest dostępnych dla zewnętrznych agentów przez [serwer MCP](/developers/mcp-server) bez limitów wywołań. Aplikacja na komputer może też uruchamiać [agentów programistycznych](/user-guide/coding-agents) wewnątrz edytora, każdego z własnym kursorem na obszarze roboczym. [CLI](/pl/developers/cli/inspecting) i [`eval`](/pl/developers/cli/scripting) działają na dokumentach w ogóle bez otwierania edytora.
+OpenPencil ma [asystenta AI](/pl/user-guide/ai-chat) wewnątrz edytora, korzystającego z Twojego klucza dostawcy lub kredytów Cloud, a ponad 100 narzędzi jest dostępnych dla zewnętrznych agentów przez [serwer MCP](/developers/mcp-server) bez limitów wywołań. Aplikacja na komputer może też uruchamiać [agentów programistycznych](/user-guide/coding-agents) wewnątrz edytora, każdego z własnym kursorem na obszarze roboczym. [CLI](/pl/developers/cli/inspecting) i [`eval`](/pl/developers/cli/scripting) działają na dokumentach w ogóle bez otwierania edytora.
 
 ## Gdzie Paper ma przewagę
 

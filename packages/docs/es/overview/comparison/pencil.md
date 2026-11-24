@@ -34,7 +34,7 @@ OpenPencil guarda en el formato `.fig` de Figma, que también abren Figma y otra
 
 Ambos editores están hechos para trabajar con IA. Pencil ejecuta varios agentes a la vez en el lienzo, genera imágenes y SVG, y descuenta el uso de IA de los límites del plan salvo que traigas tu propia clave o suscripción.
 
-El [asistente de IA](/es/user-guide/ai-chat) de OpenPencil funciona con tu propia clave de Anthropic, OpenAI, Google AI, OpenRouter y otros proveedores, sin límite de uso por nuestra parte, o con los créditos que incluye un plan de Cloud. Las mismas más de 100 herramientas están abiertas a los agentes de código a través del [servidor MCP](/developers/mcp-server), y la aplicación de escritorio ejecuta [agentes de código](/user-guide/coding-agents) como Claude Code y Codex dentro del editor, cada uno con su propio cursor en el lienzo.
+El [asistente de IA](/es/user-guide/ai-chat) de OpenPencil funciona con tu propia clave de Anthropic, OpenAI, Google AI, OpenRouter y otros proveedores, sin límite de uso por nuestra parte, o con los créditos que incluye un plan de Cloud. Más de 100 herramientas están abiertas a los agentes de código a través del [servidor MCP](/developers/mcp-server), y la aplicación de escritorio ejecuta [agentes de código](/user-guide/coding-agents) como Claude Code y Codex dentro del editor, cada uno con su propio cursor en el lienzo.
 
 ## Colaboración
 

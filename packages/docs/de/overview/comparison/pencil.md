@@ -34,7 +34,7 @@ OpenPencil speichert im `.fig`-Format von Figma, das auch Figma und andere Werkz
 
 Beide Editoren sind für die Arbeit mit KI gebaut. Pencil lässt mehrere Agenten gleichzeitig auf der Arbeitsfläche laufen, erzeugt Bilder und SVGs und rechnet die KI-Nutzung auf Tariflimits an, sofern kein eigener Schlüssel und kein eigenes Abo verwendet wird.
 
-Der [KI-Assistent](/de/user-guide/ai-chat) von OpenPencil arbeitet mit einem eigenen Schlüssel für Anthropic, OpenAI, Google AI, OpenRouter und andere Anbieter, ohne Nutzungslimit von unserer Seite, oder mit dem Guthaben, das ein Cloud-Tarif enthält. Dieselben über 100 Werkzeuge stehen Coding-Agenten über den [MCP-Server](/developers/mcp-server) offen, und die Desktop-App führt [Coding-Agenten](/user-guide/coding-agents) wie Claude Code und Codex direkt im Editor aus, jeden mit eigenem Cursor auf der Arbeitsfläche.
+Der [KI-Assistent](/de/user-guide/ai-chat) von OpenPencil arbeitet mit einem eigenen Schlüssel für Anthropic, OpenAI, Google AI, OpenRouter und andere Anbieter, ohne Nutzungslimit von unserer Seite, oder mit dem Guthaben, das ein Cloud-Tarif enthält. Über 100 Werkzeuge stehen Coding-Agenten über den [MCP-Server](/developers/mcp-server) offen, und die Desktop-App führt [Coding-Agenten](/user-guide/coding-agents) wie Claude Code und Codex direkt im Editor aus, jeden mit eigenem Cursor auf der Arbeitsfläche.
 
 ## Zusammenarbeit
 

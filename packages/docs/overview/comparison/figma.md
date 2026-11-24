@@ -39,7 +39,7 @@ Figma has no offline mode: without a connection you can keep editing files that 
 
 Figma's AI features use the models Figma provides and count against monthly credits per seat, and Figma's MCP server lets coding agents read and edit designs within call limits that depend on the seat.
 
-OpenPencil's [AI assistant](/user-guide/ai-chat) works with your own key for Anthropic, OpenAI, Google AI, OpenRouter, or any compatible endpoint, with no limits of ours, or with the credits an OpenPencil Cloud plan includes. Coding agents such as Claude Code, Codex, and Cursor get the same 100+ tools through the [MCP server](/developers/mcp-server) and can create and change designs. The [CLI](/developers/cli/inspecting) inspects, lints, and exports `.fig` files without opening the editor, and [`eval`](/developers/cli/scripting) runs scripts written against the Figma Plugin API on them.
+OpenPencil's [AI assistant](/user-guide/ai-chat) works with your own key for Anthropic, OpenAI, Google AI, OpenRouter, or any compatible endpoint, with no limits of ours, or with the credits an OpenPencil Cloud plan includes. Coding agents such as Claude Code, Codex, and Cursor get more than 100 tools through the [MCP server](/developers/mcp-server) and can create and change designs. The [CLI](/developers/cli/inspecting) inspects, lints, and exports `.fig` files without opening the editor, and [`eval`](/developers/cli/scripting) runs scripts written against the Figma Plugin API on them.
 
 ## Where Figma Is Ahead
 

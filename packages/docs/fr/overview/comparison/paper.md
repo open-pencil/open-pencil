@@ -30,9 +30,9 @@ Paper conserve les designs sur son propre service. OpenPencil enregistre des fic
 
 ## IA et agents
 
-Les deux sont conçus pour les agents. Paper n’a pas d’assistant intégré : vous designez à la main, ou connectez un agent externe comme Claude Code ou Cursor à son serveur MCP, et son offre gratuite autorise 100 appels MCP par semaine.
+Les deux sont conçus pour les agents. Paper connecte des agents externes comme Claude Code ou Cursor via son serveur MCP, et son offre gratuite autorise 100 appels MCP par semaine.
 
-OpenPencil dispose d’un [assistant IA](/fr/user-guide/ai-chat) dans l’éditeur, avec votre propre clé de fournisseur ou des crédits Cloud, et les mêmes 100+ outils sont ouverts aux agents externes via le [serveur MCP](/developers/mcp-server) sans limite d’appels. L’application de bureau peut aussi exécuter des [agents de code](/user-guide/coding-agents) dans l’éditeur, chacun avec son propre curseur sur le canevas. La [CLI](/fr/developers/cli/inspecting) et [`eval`](/fr/developers/cli/scripting) travaillent sur les documents sans ouvrir l’éditeur du tout.
+OpenPencil dispose d’un [assistant IA](/fr/user-guide/ai-chat) dans l’éditeur, avec votre propre clé de fournisseur ou des crédits Cloud, et plus de 100 outils sont ouverts aux agents externes via le [serveur MCP](/developers/mcp-server) sans limite d’appels. L’application de bureau peut aussi exécuter des [agents de code](/user-guide/coding-agents) dans l’éditeur, chacun avec son propre curseur sur le canevas. La [CLI](/fr/developers/cli/inspecting) et [`eval`](/fr/developers/cli/scripting) travaillent sur les documents sans ouvrir l’éditeur du tout.
 
 ## Là où Paper a l’avantage
 

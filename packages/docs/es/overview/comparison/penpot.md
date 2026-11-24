@@ -33,7 +33,7 @@ Penpot usa su propio formato `.penpot` y no abre archivos `.fig`. Pasar desde Fi
 
 ## IA y automatización
 
-OpenPencil está hecho para programarse. El [asistente de IA](/es/user-guide/ai-chat) crea y edita capas con las mismas más de 100 herramientas que el [servidor MCP](/developers/mcp-server) ofrece a Claude Code, Cursor, Codex y otros agentes de código, y la aplicación de escritorio puede ejecutar esos agentes dentro del editor. La [CLI](/es/developers/cli/inspecting) inspecciona, revisa, convierte y exporta documentos sin abrir el editor, y su [comando `eval`](/es/developers/cli/scripting) ejecuta scripts escritos para la Figma Plugin API.
+OpenPencil está hecho para programarse. El [asistente de IA](/es/user-guide/ai-chat) crea y edita capas con más de 100 herramientas; el [servidor MCP](/developers/mcp-server) ofrece a Claude Code, Cursor, Codex y otros agentes de código un conjunto parecido, y la aplicación de escritorio puede ejecutar esos agentes dentro del editor. La [CLI](/es/developers/cli/inspecting) inspecciona, revisa, convierte y exporta documentos sin abrir el editor, y su [comando `eval`](/es/developers/cli/scripting) ejecuta scripts escritos para la Figma Plugin API.
 
 Penpot tiene un servidor MCP oficial que permite a los agentes de código trabajar con sus archivos, y un sistema de plugins para extensiones que se ejecutan en el editor. No tiene asistente integrado ni scripts sin interfaz.
 
@@ -41,7 +41,7 @@ Penpot tiene un servidor MCP oficial que permite a los agentes de código trabaj
 
 Penpot es cliente y servidor: los documentos viven en una instancia de Penpot, la alojada o una que despliegues con Docker, y todos inician sesión en ella.
 
-OpenPencil guarda los documentos en tu dispositivo por defecto. Para editar en equipo puedes abrir una [sala peer-to-peer](/es/user-guide/collaboration) sin cuenta y sin nada que alojar, con cursores en vivo, modo seguimiento y llamadas de voz. Para almacenamiento compartido, permisos, comentarios e historial de versiones, usa [OpenPencil Cloud](/cloud/): el servicio alojado o un [servidor gestionado por tu equipo](/cloud/self-hosting/) a partir del mismo código abierto.
+OpenPencil no necesita servidor ni cuenta: los documentos pueden quedarse en tu dispositivo. Para editar en equipo puedes abrir una [sala peer-to-peer](/es/user-guide/collaboration) sin cuenta y sin nada que alojar, con cursores en vivo, modo seguimiento y llamadas de voz. Para almacenamiento compartido, permisos, comentarios e historial de versiones, usa [OpenPencil Cloud](/cloud/): el servicio alojado o un [servidor gestionado por tu equipo](/cloud/self-hosting/) a partir del mismo código abierto.
 
 ## Aplicación de escritorio
 

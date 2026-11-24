@@ -33,7 +33,7 @@ Penpot uses its own `.penpot` format and doesn't open `.fig` files. Moving from 
 
 ## AI and Automation
 
-OpenPencil is built to be programmed. The [AI assistant](/user-guide/ai-chat) creates and edits layers with the same 100+ tools the [MCP server](/developers/mcp-server) gives Claude Code, Cursor, Codex, and other coding agents, and the desktop app can run those agents inside the editor. The [CLI](/developers/cli/inspecting) inspects, lints, converts, and exports documents without opening the editor, and its [`eval` command](/developers/cli/scripting) runs scripts written against the Figma Plugin API.
+OpenPencil is built to be programmed. The [AI assistant](/user-guide/ai-chat) creates and edits layers with more than 100 tools, and the [MCP server](/developers/mcp-server) gives a similar set to Claude Code, Cursor, Codex, and other coding agents, and the desktop app can run those agents inside the editor. The [CLI](/developers/cli/inspecting) inspects, lints, converts, and exports documents without opening the editor, and its [`eval` command](/developers/cli/scripting) runs scripts written against the Figma Plugin API.
 
 Penpot has an official MCP server that lets coding agents work on its files, and a plugin system for extensions that run in the editor. It has no built-in assistant or headless scripting.
 
@@ -41,7 +41,7 @@ Penpot has an official MCP server that lets coding agents work on its files, and
 
 Penpot is a client and server: documents live on a Penpot instance, either the hosted one or one you deploy with Docker, and everyone signs in to it.
 
-OpenPencil keeps documents on your device by default. To edit together you can open a [peer-to-peer room](/user-guide/collaboration) with no account and nothing to host, with live cursors, follow mode, and voice calls. For shared storage, permissions, comments, and version history, use [OpenPencil Cloud](/cloud/): the hosted service or a [server your team runs](/cloud/self-hosting/) from the same open-source code.
+OpenPencil needs no server or account: documents can stay on your device. To edit together you can open a [peer-to-peer room](/user-guide/collaboration) with no account and nothing to host, with live cursors, follow mode, and voice calls. For shared storage, permissions, comments, and version history, use [OpenPencil Cloud](/cloud/): the hosted service or a [server your team runs](/cloud/self-hosting/) from the same open-source code.
 
 ## Desktop App
 

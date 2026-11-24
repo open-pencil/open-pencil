@@ -34,7 +34,7 @@ OpenPencil saves in Figma's `.fig` format, which Figma and other tools open too.
 
 Both editors are built for working with AI. Pencil runs several agents on the canvas at once, generates images and SVGs, and counts AI use against plan limits unless you bring your own key or subscription.
 
-OpenPencil's [AI assistant](/user-guide/ai-chat) works with your own key for Anthropic, OpenAI, Google AI, OpenRouter, and other providers, with no usage limit of ours, or with the credits a Cloud plan includes. The same 100+ tools are open to coding agents through the [MCP server](/developers/mcp-server), and the desktop app runs [coding agents](/user-guide/coding-agents) such as Claude Code and Codex inside the editor, each with its own cursor on the canvas.
+OpenPencil's [AI assistant](/user-guide/ai-chat) works with your own key for Anthropic, OpenAI, Google AI, OpenRouter, and other providers, with no usage limit of ours, or with the credits a Cloud plan includes. More than 100 tools are open to coding agents through the [MCP server](/developers/mcp-server), and the desktop app runs [coding agents](/user-guide/coding-agents) such as Claude Code and Codex inside the editor, each with its own cursor on the canvas.
 
 ## Collaboration
 

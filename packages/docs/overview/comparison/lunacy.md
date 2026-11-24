@@ -28,7 +28,7 @@ description: How OpenPencil and Lunacy, two free desktop design editors that ope
 
 ## Working With Figma Files
 
-Lunacy opens `.fig` files and saves its own `.free` format or Sketch files, so a design that leaves Figma for Lunacy doesn't go back as a `.fig`. OpenPencil saves `.fig` itself: you can open a file from a colleague on Figma, change it, and send it back, and copy and paste layers between the two apps in either direction. Complex files can still look different when reopened in Figma, so keep the original until you've checked the result; see [Figma compatibility](/reference/figma-compatibility).
+Lunacy opens `.fig` files and saves its own `.free` format or Sketch files, so a design that leaves Figma for Lunacy can't go back as a `.fig`; the way back is a Sketch file, which Figma imports with its own conversion. OpenPencil saves `.fig` itself: you can open a file from a colleague on Figma, change it, and send it back, and copy and paste layers between the two apps in either direction. Complex files can still look different when reopened in Figma, so keep the original until you've checked the result; see [Figma compatibility](/reference/figma-compatibility).
 
 ## Open Source and Hosting
 
@@ -36,7 +36,7 @@ Lunacy is free to use but closed source, and running its private cloud on your o
 
 ## AI and Automation
 
-Lunacy's AI chat runs on Icons8's service without needing an API key. OpenPencil's [AI assistant](/user-guide/ai-chat) uses your own provider key or Cloud credits, and the same 100+ tools are open to coding agents through the [MCP server](/developers/mcp-server). The [CLI](/developers/cli/inspecting) inspects, lints, and exports documents without opening the editor, and [`eval`](/developers/cli/scripting) runs scripts written against the Figma Plugin API.
+Lunacy's AI chat runs on Icons8's service without needing an API key. OpenPencil's [AI assistant](/user-guide/ai-chat) uses your own provider key or Cloud credits, and more than 100 tools are open to coding agents through the [MCP server](/developers/mcp-server). The [CLI](/developers/cli/inspecting) inspects, lints, and exports documents without opening the editor, and [`eval`](/developers/cli/scripting) runs scripts written against the Figma Plugin API.
 
 ## Where Lunacy Is Ahead
 

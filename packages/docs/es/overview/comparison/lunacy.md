@@ -28,7 +28,7 @@ description: En qué se diferencian OpenPencil y Lunacy, dos editores de diseño
 
 ## Trabajar con archivos de Figma
 
-Lunacy abre archivos `.fig` y guarda en su propio formato `.free` o en archivos de Sketch, así que un diseño que sale de Figma hacia Lunacy no vuelve como `.fig`. OpenPencil guarda `.fig` directamente: puedes abrir un archivo de un compañero que usa Figma, cambiarlo y devolvérselo, y copiar y pegar capas entre las dos aplicaciones en cualquier sentido. Los archivos complejos pueden verse distintos al reabrirlos en Figma, así que conserva el original hasta comprobar el resultado; consulta [Compatibilidad con Figma](/es/reference/figma-compatibility).
+Lunacy abre archivos `.fig` y guarda en su propio formato `.free` o en archivos de Sketch, así que un diseño que sale de Figma hacia Lunacy no puede volver como `.fig`; el camino de vuelta es un archivo de Sketch, que Figma importa con su propia conversión. OpenPencil guarda `.fig` directamente: puedes abrir un archivo de un compañero que usa Figma, cambiarlo y devolvérselo, y copiar y pegar capas entre las dos aplicaciones en cualquier sentido. Los archivos complejos pueden verse distintos al reabrirlos en Figma, así que conserva el original hasta comprobar el resultado; consulta [Compatibilidad con Figma](/es/reference/figma-compatibility).
 
 ## Código abierto y alojamiento
 
@@ -36,7 +36,7 @@ Lunacy es gratis pero de código cerrado, y ejecutar su nube privada en tus prop
 
 ## IA y automatización
 
-El chat de IA de Lunacy funciona en el servicio de Icons8 sin necesidad de clave de API. El [asistente de IA](/es/user-guide/ai-chat) de OpenPencil usa tu propia clave de proveedor o créditos de Cloud, y las mismas más de 100 herramientas están abiertas a los agentes de código a través del [servidor MCP](/developers/mcp-server). La [CLI](/es/developers/cli/inspecting) inspecciona, revisa y exporta documentos sin abrir el editor, y [`eval`](/es/developers/cli/scripting) ejecuta scripts escritos para la Figma Plugin API.
+El chat de IA de Lunacy funciona en el servicio de Icons8 sin necesidad de clave de API. El [asistente de IA](/es/user-guide/ai-chat) de OpenPencil usa tu propia clave de proveedor o créditos de Cloud, y más de 100 herramientas están abiertas a los agentes de código a través del [servidor MCP](/developers/mcp-server). La [CLI](/es/developers/cli/inspecting) inspecciona, revisa y exporta documentos sin abrir el editor, y [`eval`](/es/developers/cli/scripting) ejecuta scripts escritos para la Figma Plugin API.
 
 ## Dónde va por delante Lunacy
 
