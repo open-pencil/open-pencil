@@ -43,7 +43,7 @@ const bindingSchema = v.object({
   revisionId: v.string(),
   enabled: v.boolean()
 })
-const kindSchema = v.picklist(['design', 'board'] satisfies DocumentKind[])
+const kindSchema = v.picklist(['design', 'board', 'slides'] satisfies DocumentKind[])
 
 /**
  * The room's maps for what the document holds outside its layers: the document node's plugin

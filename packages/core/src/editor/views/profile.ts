@@ -65,6 +65,21 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
     rulers: true,
     panelsOpen: true
   },
+  slides: {
+    edits: true,
+    tools: null,
+    pathEdits: 'all',
+    layerEdits: 'all',
+    toolKeys: TOOL_SHORTCUTS,
+    snapGrid: 1,
+    dotGrid: null,
+    pixelGrid: true,
+    framesOpen: true,
+    sectionTitles: 'fill',
+    lint: true,
+    rulers: true,
+    panelsOpen: true
+  },
   board: {
     edits: true,
     tools: BOARD_TOOLS,

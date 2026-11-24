@@ -39,7 +39,8 @@ const view = ref<'grid' | 'list'>('grid')
 const kindOptions = computed(() => [
   { value: 'all', label: files.value.allFiles },
   { value: 'design', label: files.value.createDesign },
-  { value: 'board', label: files.value.createBoard }
+  { value: 'board', label: files.value.createBoard },
+  { value: 'slides', label: files.value.createSlides }
 ])
 
 const documents = computed(() => (state.value.status === 'ready' ? state.value.documents : []))

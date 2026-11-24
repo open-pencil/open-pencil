@@ -10,7 +10,8 @@ import { documentFileName } from '@/app/document/io/names'
 /** What the save dialog calls a document's file type. */
 const FILE_TYPE_NAMES: Readonly<Record<DocumentKind, string>> = {
   design: 'Figma file',
-  board: 'FigJam board'
+  board: 'FigJam board',
+  slides: 'Figma Slides deck'
 }
 
 export async function chooseTauriFigSavePath(kind: DocumentKind) {

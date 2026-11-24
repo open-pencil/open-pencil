@@ -216,7 +216,8 @@ const SIDE_STROKE_TYPES: ReadonlySet<string> = new Set<SceneNode['type']>([
   'COMPONENT',
   'INSTANCE',
   'SECTION',
-  'GROUP'
+  'GROUP',
+  'SLIDE'
 ])
 
 /**

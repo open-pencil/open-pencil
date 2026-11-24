@@ -5,6 +5,7 @@ import type { CanvasGuide } from './guides'
 import type { InstanceOverrideState } from './instances/overrides'
 import type { Color, Matrix, Rect, Vector } from './primitives'
 import type { ShapeWithTextType } from './shape-with-text/kinds'
+import type { SlideSettings } from './slides/types'
 
 export interface SceneGraphEvents {
   'node:created': (node: SceneNode) => void
@@ -64,8 +65,8 @@ export interface NodeChangeObserver {
  */
 export type ColorProfile = 'srgb' | 'display-p3'
 
-/** What a document is for, as Figma keeps design files and FigJam boards apart. */
-export type DocumentKind = 'design' | 'board'
+/** What a document is for, as Figma keeps design files, FigJam boards and Slides decks apart. */
+export type DocumentKind = 'design' | 'board' | 'slides'
 
 export interface FigmaSourcePayload {
   rawSize: Vector | null
@@ -151,6 +152,9 @@ export type NodeType =
   | 'CONNECTOR'
   | 'SHAPE_WITH_TEXT'
   | 'STICKY'
+  | 'SLIDE'
+  | 'SLIDE_ROW'
+  | 'SLIDE_GRID'
 
 export type FillType =
   | 'SOLID'
@@ -943,6 +947,8 @@ export interface SceneNode {
   starInnerRadius: number
   /** The FigJam kind a SHAPE_WITH_TEXT draws; its label is the node's own text. */
   shapeWithTextType: ShapeWithTextType
+  /** What a slide keeps besides its layers; null on other layers. */
+  slide: SlideSettings | null
   /** The height a shape with text was given; it grows past it to fit its label. 0 is unset. */
   shapeUserHeight: number
   /**

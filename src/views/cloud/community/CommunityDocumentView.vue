@@ -122,7 +122,14 @@ useHead({ title: () => document.value?.name ?? communityMessages.value.community
               <span class="truncate">{{ document.name }}</span>
             </h1>
             <p class="mt-0.5 text-xs text-muted">
-              {{ document.kind === 'board' ? files.createBoard : files.createDesign }} ·
+              {{
+                {
+                  design: files.createDesign,
+                  board: files.createBoard,
+                  slides: files.createSlides
+                }[document.kind ?? 'design']
+              }}
+              ·
               {{ dates.format(document.updatedAt, 'date') }}
             </p>
           </div>
