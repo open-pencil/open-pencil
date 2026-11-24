@@ -14,6 +14,8 @@ import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { createCloudRelayJoin, relayReconnectDelay } from '@/app/collab/transport/cloud'
 
+import { until } from '#tests/helpers/collab/cloud'
+
 /** A socket the test opens, feeds, and closes by hand. */
 class FakeSocket extends EventTarget {
   readyState: number = WebSocket.CONNECTING
@@ -67,15 +69,6 @@ class FakeSocket extends EventTarget {
 
 async function settle() {
   for (let index = 0; index < 5; index++) await Promise.resolve()
-}
-
-/** Resolves once the transport has opened `count` sockets. */
-async function waitForSocket(sockets: readonly unknown[], count: number) {
-  while (sockets.length < count) {
-    await new Promise((resolve) => {
-      setTimeout(resolve, 0)
-    })
-  }
 }
 
 function room(
@@ -269,7 +262,7 @@ describe('Cloud relay transport', () => {
     test(behaviour, async () => {
       const { transport, sockets, attempts } = room({ stableConnectionMs })
       for (let lost = 1; lost <= expected.length; lost++) {
-        await waitForSocket(sockets, lost)
+        await until(() => sockets.length >= lost)
         const socket = sockets[lost - 1]
         socket?.open()
         socket?.receive({ type: 'welcome', peerId: 'me', peers: ['server'] })
