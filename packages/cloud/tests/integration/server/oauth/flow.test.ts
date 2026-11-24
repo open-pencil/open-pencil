@@ -282,6 +282,14 @@ describe('connecting an app', () => {
       (await send(`/api/workspaces/${granted.toUpperCase()}/documents`, { token })).status
     ).toBe(200)
     expect((await send('/api/workspaces/not-a-uuid/documents', { token })).status).toBe(404)
+    // HEAD takes the token GET does.
+    const head = await fixture.app.fetch(
+      new Request(`http://localhost:8787/api/workspaces/${granted}/documents`, {
+        method: 'HEAD',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    )
+    expect(head.status).toBe(200)
     expect((await send(`/api/workspaces/${other}/documents`, { token })).status).toBe(404)
     expect((await send('/api/session', { token })).status).toBe(200)
     // Apps work on documents: they never make workspaces, share, or manage people.

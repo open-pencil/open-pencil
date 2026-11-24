@@ -152,8 +152,11 @@ export function contractTokenRoutes(routes: readonly ContractTokenRoute[]) {
   for (const { method, path, route } of routes) {
     router.add(method, path.replace(/\{(\+?)(\w+)\}/g, ':$2'), route)
   }
-  return (context: Context): TokenRoute | undefined =>
-    router.match(context.req.method, context.req.path)[0][0]?.[0]
+  // HEAD takes what GET declares, as Hono routes HEAD through GET.
+  return (context: Context): TokenRoute | undefined => {
+    const method = context.req.method === 'HEAD' ? 'GET' : context.req.method
+    return router.match(method, context.req.path)[0][0]?.[0]
+  }
 }
 
 /** Whether `input` carries route parameters, as a contract route's input does. */
