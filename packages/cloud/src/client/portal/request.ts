@@ -1,5 +1,7 @@
 import type { CloudAdminRoutes } from '#cloud/admin/api/routes'
+import { createCloudContractClient } from '#cloud/client/contract'
 import type { CloudFetch } from '#cloud/client/discovery'
+import { CloudAPIError } from '#cloud/client/response'
 import {
   accountSecurityErrorResponseSchema,
   adminErrorResponseSchema,
@@ -9,6 +11,8 @@ import {
 import type { CloudAccountRoutes } from '#cloud/server/account/routes'
 import type { CloudAccessTokenRoutes } from '#cloud/server/account/tokens'
 import type { CloudAPI } from '#cloud/server/api'
+import { ORPCError } from '@orpc/client'
+import { ValidationError } from '@orpc/contract'
 import { hc } from 'hono/client'
 import * as v from 'valibot'
 
@@ -46,6 +50,12 @@ type PortalResponse = Pick<Response, 'ok' | 'status' | 'json'>
 
 /** Sends one request with the call's `init` (its signal); the typed Hono clients fit this shape. */
 export type CloudSend = (options: { init: RequestInit }) => Promise<PortalResponse>
+
+/** Runs a call of the contract's client with the call's signal, reading its refusal as any call's. */
+export type CloudContractCall = <Output>(
+  run: (options: { signal: AbortSignal }) => Promise<Output>,
+  signal?: AbortSignal
+) => Promise<Output>
 
 export type CloudCall = <Output>(
   send: CloudSend,
@@ -100,6 +110,44 @@ export function createCloudCall(options: CloudPortalClientOptions = {}): CloudCa
   }
 }
 
+/** The portal's error for a refusal with `status` and `code`, as `createCloudCall` reads one. */
+function portalRefusal(status: number, code: string | undefined): CloudPortalAPIError {
+  if (status === 401) return new CloudPortalAPIError('authentication-required')
+  const body = { error: { code } }
+  const accountError = v.safeParse(accountSecurityErrorResponseSchema, body)
+  const adminError = v.safeParse(adminErrorResponseSchema, body)
+  let known: AdminErrorCode | AccountSecurityErrorCode | undefined
+  if (accountError.success) known = accountError.output.error.code
+  else if (adminError.success) known = adminError.output.error.code
+  if (status === 403 && (!known || known === 'forbidden')) {
+    return new CloudPortalAPIError('authorization-required')
+  }
+  return new CloudPortalAPIError('domain', known)
+}
+
+/**
+ * Runs a call of the contract's client the way `createCloudCall` sends any other: within the same
+ * deadline, with refusals, transport failures, and answers off the contract read the same way.
+ */
+export function createCloudContractCall(options: CloudPortalClientOptions = {}): CloudContractCall {
+  const timeoutMs = options.timeoutMs ?? DEADLINE_MS.request
+  return async (run, callerSignal) => {
+    const timeout = AbortSignal.timeout(timeoutMs)
+    try {
+      return await run({ signal: anySignal([callerSignal, timeout]) })
+    } catch (cause) {
+      if (cause instanceof CloudAPIError) throw portalRefusal(cause.status, cause.code)
+      // An answer off the contract, as the client's response check reports one.
+      if (cause instanceof ORPCError && cause.cause instanceof ValidationError) {
+        throw new CloudPortalAPIError('protocol', undefined, { cause })
+      }
+      if (callerSignal?.aborted) throw new CloudPortalAPIError('cancelled', undefined, { cause })
+      if (timeout.aborted) throw new CloudPortalAPIError('timeout', undefined, { cause })
+      throw new CloudPortalAPIError('network', undefined, { cause })
+    }
+  }
+}
+
 /** Typed clients for the routes the portal calls, all on the server's own address. */
 export function createPortalRouteClients(options: CloudPortalClientOptions = {}) {
   const origin = options.baseURL ?? globalThis.location.origin
@@ -112,7 +160,11 @@ export function createPortalRouteClients(options: CloudPortalClientOptions = {})
     account: hc<CloudAccountRoutes>(origin, clientOptions).api.account,
     tokens: hc<CloudAccessTokenRoutes>(origin, clientOptions).api.account.tokens,
     admin: hc<CloudAdminRoutes>(new URL('/api/admin', origin).href, clientOptions),
-    api: hc<CloudAPI>(new URL('/api', origin).href, clientOptions)
+    api: hc<CloudAPI>(new URL('/api', origin).href, clientOptions),
+    contract: createCloudContractClient(new URL('/api', origin).href, {
+      fetch: options.fetch ?? globalThis.fetch,
+      headers: { Accept: 'application/json' }
+    })
   }
 }
 

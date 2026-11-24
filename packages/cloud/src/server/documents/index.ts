@@ -4,7 +4,11 @@ export {
   resolveDocumentAccess,
   type AccessDatabase
 } from './access'
-export { createDocumentRoutes, documentDomainError, type DocumentRouteEnvironment } from './routes'
+export {
+  createDocumentRateLimits,
+  documentDomainError,
+  type DocumentRouteEnvironment
+} from './routes'
 export {
   DocumentConflictError,
   DocumentForbiddenError,

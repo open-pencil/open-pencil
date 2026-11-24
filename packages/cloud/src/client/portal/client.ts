@@ -1,6 +1,11 @@
 import { createAccountAPI } from './account'
 import { createAdministrationAPI } from './administration'
-import { createCloudCall, createPortalRouteClients, type CloudPortalClientOptions } from './request'
+import {
+  createCloudCall,
+  createCloudContractCall,
+  createPortalRouteClients,
+  type CloudPortalClientOptions
+} from './request'
 
 export { CloudPortalAPIError, type CloudPortalAPIErrorKind } from './request'
 export type { CloudPortalClientOptions } from './request'
@@ -8,9 +13,10 @@ export type { CloudPortalClientOptions } from './request'
 /** The account and administration routes Cloud's own web pages use, validated against the contract. */
 export function createCloudPortalClient(options: CloudPortalClientOptions = {}) {
   const call = createCloudCall(options)
+  const callContract = createCloudContractCall(options)
   const routes = createPortalRouteClients(options)
   return {
-    ...createAccountAPI(call, routes),
+    ...createAccountAPI(call, callContract, routes),
     ...createAdministrationAPI(call, routes)
   }
 }

@@ -294,19 +294,19 @@ describe('Cloud document images', () => {
       await context.uploadImages([photo])
       await context.save([photo])
       await context.save()
-      const history = await responseJSON(
-        await context.client.api.documents[':documentId'].versions.$get({
-          param: { documentId: context.documentId },
-          query: {}
-        }),
-        v.object({ versions: v.array(v.object({ id: v.string(), current: v.boolean() })) })
-      )
+      const history = await context.api.versions.list({
+        params: { documentId: context.documentId },
+        query: {}
+      })
       const first = history.versions.find((version) => !version.current)
       if (!first) throw new Error('Expected the first save in the history')
-      const restored = await context.client.api.documents[':documentId'].versions[
-        ':versionId'
-      ].restore.$post({ param: { documentId: context.documentId, versionId: first.id } })
-      expect(restored.status).toBe(200)
+      expect(
+        await outcome(
+          context.api.versions.restore({
+            params: { documentId: context.documentId, versionId: first.id }
+          })
+        )
+      ).toBe('ok')
       expect((await context.download()).images.map((image) => image.name)).toEqual([photo.name])
     } finally {
       await context.runtime.close()

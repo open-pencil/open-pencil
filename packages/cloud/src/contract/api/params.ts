@@ -10,3 +10,24 @@ export const uuidParamSchema = v.pipe(v.string(), v.uuid(), v.toLowerCase())
 export const documentParamsSchema = v.object({ documentId: uuidParamSchema })
 export const workspaceParamsSchema = v.object({ workspaceId: uuidParamSchema })
 export const uploadParamsSchema = v.object({ uploadId: uuidParamSchema })
+export const documentVersionParamsSchema = v.object({
+  documentId: uuidParamSchema,
+  versionId: uuidParamSchema
+})
+export const documentThreadParamsSchema = v.object({
+  documentId: uuidParamSchema,
+  threadId: uuidParamSchema
+})
+export const documentCommentParamsSchema = v.object({
+  ...documentThreadParamsSchema.entries,
+  commentId: uuidParamSchema
+})
+export const shareParamsSchema = v.object({ shareId: uuidParamSchema })
+export const shareThreadParamsSchema = v.object({
+  shareId: uuidParamSchema,
+  threadId: uuidParamSchema
+})
+export const shareCommentParamsSchema = v.object({
+  ...shareThreadParamsSchema.entries,
+  commentId: uuidParamSchema
+})

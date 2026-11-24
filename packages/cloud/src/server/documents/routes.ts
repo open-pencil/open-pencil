@@ -1,4 +1,3 @@
-import { contractRoutes } from '#cloud/server/api/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import {
@@ -8,8 +7,6 @@ import {
   DocumentPurgeFailedError,
   UploadInvalidError
 } from '#cloud/server/documents/errors'
-import { createDocumentProcedures } from '#cloud/server/documents/procedures'
-import type { DocumentService } from '#cloud/server/documents/service'
 import { StorageQuotaExceededError } from '#cloud/server/quota'
 import {
   CLOUD_RATE_LIMITS,
@@ -49,10 +46,14 @@ export function documentDomainError(context: Context, error: unknown): Response 
   return null
 }
 
-export function createDocumentRoutes(
-  service: DocumentService,
-  rateLimit?: { database: Kysely<CloudDatabase>; secret: string }
-) {
+/**
+ * The budgets of the document routes that create things: documents in a workspace, and uploads
+ * and image uploads for a document. The routes themselves are the contract's (`documentsContract`).
+ */
+export function createDocumentRateLimits(rateLimit?: {
+  database: Kysely<CloudDatabase>
+  secret: string
+}) {
   const router = new Hono<DocumentRouteEnvironment>()
   if (rateLimit) {
     router.use(
@@ -86,13 +87,5 @@ export function createDocumentRoutes(
       )
     )
   }
-  // The routes themselves are the contract's (`documentsContract`).
-  return router.use(
-    '*',
-    contractRoutes(
-      createDocumentProcedures(service),
-      '/api',
-      (c: Context<DocumentRouteEnvironment>) => ({ actor: c.get('actor') })
-    )
-  )
+  return router
 }

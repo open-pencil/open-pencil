@@ -78,13 +78,10 @@ async function gallery() {
       label
     )
   async function nameVersion(documentId: string, name: string, description = '') {
-    const named = await responseJSON(
-      await owner.api.documents[':documentId'].versions.$post({
-        param: { documentId },
-        json: { name, description }
-      }),
-      v.object({ version: idSchema })
-    )
+    const named = await ownerAPI.versions.save({
+      params: { documentId },
+      body: { name, description }
+    })
     return named.version.id
   }
 
@@ -93,7 +90,6 @@ async function gallery() {
   const community = app({ ...config, community: { workspaceId: communityId } }, false)
   return {
     runtime,
-    owner,
     ownerAPI,
     workspace: { community: communityId, studio: studioId },
     document,
@@ -217,9 +213,9 @@ describe('community gallery', () => {
 
     // A checkpoint is not a published version; a private document does not exist here.
     const unnamed = await server.nameVersion(tour, 'Draft')
-    await server.owner.api.documents[':documentId'].versions[':versionId'].$patch({
-      param: { documentId: tour, versionId: unnamed },
-      json: { name: null }
+    await server.ownerAPI.versions.update({
+      params: { documentId: tour, versionId: unnamed },
+      body: { name: null }
     })
     expect(
       (

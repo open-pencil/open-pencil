@@ -17,28 +17,29 @@ import {
   cloudProfileResponseSchema,
   cloudSignInsResponseSchema,
   cloudSocialLinkResponseSchema,
-  notificationSettingsSchema,
   type CloudAccessTokenCreate,
   type CloudSocialProvider,
   type NotificationSettings
 } from '#cloud/contract'
 
-import type { CloudCall, PortalRouteClients } from './request'
+import type { CloudCall, CloudContractCall, PortalRouteClients } from './request'
 
-export function createAccountAPI(call: CloudCall, { account, tokens, api }: PortalRouteClients) {
+export function createAccountAPI(
+  call: CloudCall,
+  callContract: CloudContractCall,
+  { account, tokens, api, contract }: PortalRouteClients
+) {
   return {
     /** Which comments the account hears about by email. */
     notificationSettings(signal?: AbortSignal) {
-      return call(
-        (options) => api.account.notifications.$get(undefined, options),
-        notificationSettingsSchema,
+      return callContract(
+        (options) => contract.comments.notificationSettings(undefined, options),
         signal
       )
     },
     setNotificationSettings(settings: NotificationSettings, signal?: AbortSignal) {
-      return call(
-        (options) => api.account.notifications.$put({ json: settings }, options),
-        notificationSettingsSchema,
+      return callContract(
+        (options) => contract.comments.setNotificationSettings({ body: settings }, options),
         signal
       )
     },

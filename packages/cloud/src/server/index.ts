@@ -166,7 +166,7 @@ export {
 } from './db'
 export {
   canEditDocument,
-  createDocumentRoutes,
+  createDocumentRateLimits,
   createDocumentService,
   DocumentConflictError,
   DocumentForbiddenError,
@@ -179,7 +179,7 @@ export {
 } from './documents'
 export {
   CHECKPOINT_INTERVAL_MS,
-  createDocumentVersionRoutes,
+  createDocumentVersionProcedures,
   createDocumentVersionService,
   LIMITED_HISTORY_DAYS,
   type DocumentVersionService
@@ -188,9 +188,9 @@ export {
   COMMENT_EMAIL_BUDGET,
   CommentConflictError,
   CommentLimitError,
-  createCommentRoutes,
+  createCommentProcedures,
   createCommentService,
-  createSharedCommentRoutes,
+  createSharedCommentProcedures,
   type CommentActor,
   type CommentService
 } from './comments'

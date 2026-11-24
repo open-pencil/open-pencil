@@ -24,19 +24,22 @@ function documentErrorCode(error: unknown): CloudAPIErrorCode | null {
   return null
 }
 
+/** Answers a document domain error with its code, and lets every other error through. */
+export async function documentErrors<T>(options: { next: () => Promise<T> }): Promise<T> {
+  try {
+    return await options.next()
+  } catch (error) {
+    const code = documentErrorCode(error)
+    if (code) throw new ORPCError(code, { cause: error })
+    throw error
+  }
+}
+
 /** The documents routes, as the contract describes them, for the signed-in actor. */
 export function createDocumentProcedures(service: DocumentService) {
   const documents = implement(documentsContract)
     .$context<{ actor: CloudActor }>()
-    .use(async (options) => {
-      try {
-        return await options.next()
-      } catch (error) {
-        const code = documentErrorCode(error)
-        if (code) throw new ORPCError(code, { cause: error })
-        throw error
-      }
-    })
+    .use(documentErrors)
   return documents.router({
     listShared: documents.listShared.handler(async ({ context }) => ({
       documents: await service.listShared(context.actor.userId)

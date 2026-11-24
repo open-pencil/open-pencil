@@ -242,14 +242,9 @@ describe('terms acceptance', () => {
       expect(await outcome(api.documents.download(documentParams))).toBe('ok')
 
       expect((await client.api.workspaces.$get()).status).toBe(401)
-      expect(
-        (
-          await client.api.documents[':documentId'].versions.$get({
-            param: { documentId: document.id },
-            query: {}
-          })
-        ).status
-      ).toBe(401)
+      expect(await outcome(api.versions.list({ ...documentParams, query: {} }))).toMatchObject({
+        status: 401
+      })
       expect(await outcome(api.documents.remove(documentParams))).toMatchObject({ status: 401 })
       expect(
         await outcome(

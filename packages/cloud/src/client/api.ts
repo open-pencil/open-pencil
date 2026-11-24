@@ -118,9 +118,9 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
     ...createWorkspaceRequests(client, contract.documents, options.onDiagnostic),
     ...createImageRequests(publicClient, contract.documents, options.onDiagnostic),
     ...createDocumentRequests(client, contract.documents, options.onDiagnostic),
-    ...createVersionRequests(client, options.onDiagnostic),
-    ...createCommentRequests(client, options.onDiagnostic),
-    ...createSharedCommentRequests(publicClient, options.onDiagnostic),
+    ...createVersionRequests(contract.versions),
+    ...createCommentRequests(contract.comments),
+    ...createSharedCommentRequests(contract.sharedComments),
     ...createSharingRequests(client, publicClient, options.onDiagnostic),
     ...createCommunityRequests(publicClient, options.onDiagnostic)
   }

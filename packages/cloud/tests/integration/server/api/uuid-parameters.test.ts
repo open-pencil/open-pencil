@@ -86,18 +86,6 @@ describe('Cloud API route parameters', () => {
         request: () => Promise<Pick<Response, 'status' | 'text'>>
       ][] = [
         [
-          'GET /documents/abc/versions',
-          () =>
-            api.documents[':documentId'].versions.$get({ param: { documentId: 'abc' }, query: {} })
-        ],
-        [
-          'GET /documents/:documentId/versions/abc',
-          () =>
-            api.documents[':documentId'].versions[':versionId'].$get({
-              param: { documentId, versionId: 'abc' }
-            })
-        ],
-        [
           'DELETE /documents/:documentId/shares/abc',
           () =>
             api.documents[':documentId'].shares[':shareId'].$delete({
@@ -177,6 +165,14 @@ describe('Cloud API route parameters', () => {
         [
           'GET /documents/abc',
           () => contract.documents.download({ params: { documentId: 'abc' } })
+        ],
+        [
+          'GET /documents/abc/versions',
+          () => contract.versions.list({ params: { documentId: 'abc' }, query: {} })
+        ],
+        [
+          'GET /documents/:documentId/versions/abc',
+          () => contract.versions.download({ params: { documentId, versionId: 'abc' } })
         ],
         [
           'GET /workspaces/abc/documents',

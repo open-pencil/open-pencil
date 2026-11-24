@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { contractClient } from '#cloud-tests/helpers/contract'
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
@@ -34,24 +34,6 @@ const config = parseCloudServerConfig({
 const alice: CloudActor = { userId: 'alice', email: 'alice@example.com', name: 'Alice' }
 const DAY_MS = 24 * 60 * 60_000
 const FILE_BYTES = 128
-
-const versionSchema = v.object({
-  id: v.string(),
-  revisionId: v.string(),
-  kind: v.picklist(['checkpoint', 'named']),
-  name: v.nullable(v.string()),
-  description: v.nullable(v.string()),
-  current: v.boolean(),
-  restoredFromVersionId: v.nullable(v.string()),
-  createdBy: v.object({ id: v.string(), name: v.nullable(v.string()) })
-})
-const versionsSchema = v.object({
-  versions: v.array(versionSchema),
-  nextCursor: v.nullable(v.string())
-})
-const documentSchema = v.object({
-  document: v.object({ id: v.string(), currentRevisionId: v.nullable(v.string()) })
-})
 
 async function testApp(options: { fullHistory?: boolean } = {}) {
   const runtime = await createCloudTestDatabase()
@@ -140,10 +122,7 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
   }
 
   async function history() {
-    return responseJSON(
-      await client.api.documents[':documentId'].versions.$get({ param: { documentId }, query: {} }),
-      versionsSchema
-    )
+    return api.versions.list({ params: { documentId }, query: {} })
   }
 
   return {
@@ -152,7 +131,6 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
     announcements,
     objects,
     policy,
-    client,
     api,
     workspaceId: workspace.workspace.id,
     documentId,
@@ -195,13 +173,10 @@ describe('Cloud version history', () => {
     try {
       await context.save()
       const current = await context.save()
-      const named = await responseJSON(
-        await context.client.api.documents[':documentId'].versions.$post({
-          param: { documentId: context.documentId },
-          json: { name: 'Hand-off', description: 'Ready for review' }
-        }),
-        v.object({ version: versionSchema })
-      )
+      const named = await context.api.versions.save({
+        params: { documentId: context.documentId },
+        body: { name: 'Hand-off', description: 'Ready for review' }
+      })
       expect(named.version).toMatchObject({
         revisionId: current,
         kind: 'named',
@@ -211,23 +186,23 @@ describe('Cloud version history', () => {
         createdBy: { id: 'alice' }
       })
 
-      const cleared = await responseJSON(
-        await context.client.api.documents[':documentId'].versions[':versionId'].$patch({
-          param: { documentId: context.documentId, versionId: named.version.id },
-          json: { name: null }
-        }),
-        v.object({ version: versionSchema })
-      )
+      const cleared = await context.api.versions.update({
+        params: { documentId: context.documentId, versionId: named.version.id },
+        body: { name: null }
+      })
       expect(cleared.version).toMatchObject({ kind: 'checkpoint', name: null, description: null })
       expect((await context.history()).versions).toHaveLength(2)
       // The first save's checkpoint, the name, and taking it away.
       expect(context.announcements).toHaveLength(3)
 
-      const empty = await context.client.api.documents[':documentId'].versions.$post({
-        param: { documentId: context.documentId },
-        json: { name: '   ' }
-      })
-      expect(empty.status).toBe(400)
+      expect(
+        await outcome(
+          context.api.versions.save({
+            params: { documentId: context.documentId },
+            body: { name: '   ' }
+          })
+        )
+      ).toMatchObject({ status: 400 })
     } finally {
       await context.runtime.close()
     }
@@ -251,19 +226,15 @@ describe('Cloud version history', () => {
       await rooms.compact(room, 0, Uint8Array.from([1]))
       await rooms.append(room, 1, Uint8Array.from([2]))
 
-      const restored = await responseJSON(
-        await context.client.api.documents[':documentId'].versions[':versionId'].restore.$post({
-          param: { documentId: context.documentId, versionId: original.id }
-        }),
-        v.object({
-          document: v.object({ currentRevisionId: v.string() }),
-          version: versionSchema
-        })
-      )
+      const restored = await context.api.versions.restore({
+        params: { documentId: context.documentId, versionId: original.id }
+      })
       expect(restored.version).toMatchObject({ current: true, restoredFromVersionId: original.id })
-      expect([first, replaced]).not.toContain(restored.document.currentRevisionId)
+      const restoredRevision = restored.document.currentRevisionId
+      if (!restoredRevision) throw new Error('The restore left no revision')
+      expect([first, replaced]).not.toContain(restoredRevision)
       expect((await context.history()).versions.map((version) => version.revisionId)).toEqual([
-        restored.document.currentRevisionId,
+        restoredRevision,
         replaced,
         first
       ])
@@ -281,16 +252,10 @@ describe('Cloud version history', () => {
 
       // The restored state is the same stored file, so it opens as the original and costs nothing.
       const [restoredDownload, originalDownload] = await Promise.all(
-        [restored.version.id, original.id].map(async (versionId) =>
-          responseJSON(
-            await context.client.api.documents[':documentId'].versions[':versionId'].$get({
-              param: { documentId: context.documentId, versionId }
-            }),
-            v.object({
-              document: v.object({ download: v.object({ url: v.string() }) }),
-              version: v.object({ id: v.string() })
-            })
-          )
+        [restored.version.id, original.id].map((versionId) =>
+          context.api.versions.download({
+            params: { documentId: context.documentId, versionId }
+          })
         )
       )
       expect(restoredDownload?.document.download.url).toBe(originalDownload?.document.download.url)
@@ -313,21 +278,15 @@ describe('Cloud version history', () => {
       await context.save()
       const [version] = (await context.history()).versions
       if (!version) throw new Error('No version')
-      const copy = await responseJSON(
-        await context.client.api.documents[':documentId'].versions[':versionId'].duplicate.$post({
-          param: { documentId: context.documentId, versionId: version.id },
-          json: { name: 'Poster copy' }
-        }),
-        documentSchema
-      )
+      const copy = await context.api.versions.duplicate({
+        params: { documentId: context.documentId, versionId: version.id },
+        body: { name: 'Poster copy' }
+      })
       expect(copy.document.id).not.toBe(context.documentId)
-      const copied = await responseJSON(
-        await context.client.api.documents[':documentId'].versions.$get({
-          param: { documentId: copy.document.id },
-          query: {}
-        }),
-        versionsSchema
-      )
+      const copied = await context.api.versions.list({
+        params: { documentId: copy.document.id },
+        query: {}
+      })
       expect(copied.versions).toHaveLength(1)
       expect(copied.versions[0]?.current).toBe(true)
     } finally {
@@ -342,13 +301,14 @@ describe('Cloud version history', () => {
       const [version] = (await context.history()).versions
       if (!version) throw new Error('No version')
       await context.api.documents.remove({ params: { documentId: context.documentId } })
-      const copy = await context.client.api.documents[':documentId'].versions[
-        ':versionId'
-      ].duplicate.$post({
-        param: { documentId: context.documentId, versionId: version.id },
-        json: { name: 'Poster copy' }
-      })
-      expect(copy.status).toBe(404)
+      expect(
+        await outcome(
+          context.api.versions.duplicate({
+            params: { documentId: context.documentId, versionId: version.id },
+            body: { name: 'Poster copy' }
+          })
+        )
+      ).toMatchObject({ status: 404 })
     } finally {
       await context.runtime.close()
     }
@@ -361,22 +321,16 @@ describe('Cloud version history', () => {
         await context.save()
         await context.age(31 * 60_000)
       }
-      const first = await responseJSON(
-        await context.client.api.documents[':documentId'].versions.$get({
-          param: { documentId: context.documentId },
-          query: { limit: '2' }
-        }),
-        versionsSchema
-      )
+      const first = await context.api.versions.list({
+        params: { documentId: context.documentId },
+        query: { limit: '2' }
+      })
       expect(first.versions).toHaveLength(2)
       if (!first.nextCursor) throw new Error('Expected another page')
-      const second = await responseJSON(
-        await context.client.api.documents[':documentId'].versions.$get({
-          param: { documentId: context.documentId },
-          query: { limit: '2', before: first.nextCursor }
-        }),
-        versionsSchema
-      )
+      const second = await context.api.versions.list({
+        params: { documentId: context.documentId },
+        query: { limit: '2', before: first.nextCursor }
+      })
       const all = (await context.history()).versions.map((version) => version.id)
       expect([...first.versions, ...second.versions].map((version) => version.id)).toEqual(
         all.slice(0, first.versions.length + second.versions.length)
