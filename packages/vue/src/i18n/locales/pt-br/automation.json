@@ -38,7 +38,7 @@
   "agentPairingInstructions": "Cole no seu agente",
   "agentPairingClaudeCode": "Ou execute em um terminal, para o Claude Code",
   "agentPairingConfig": "Ou adicione a uma configuração MCP, como no Cursor",
-  "agentPairingNote": "Qualquer pessoa com esta conexão pode alterar o que esta aba mostra. Ela para de funcionar quando você desconecta ou fecha a aba; o design fica neste dispositivo até você salvá-lo.",
+  "agentPairingNote": "Qualquer pessoa com esta conexão pode alterar os designs abertos neste navegador. Ela pausa enquanto o OpenPencil está fechado e termina quando você desconecta; os designs ficam neste dispositivo até você salvá-los.",
   "webmcpDescription": "Permita que agentes do navegador usem este documento diretamente, sem servidor MCP local nem bearer token. As configurações do servidor local não se aplicam aqui.",
   "browserAccess": "Acesso de agentes do navegador",
   "accessOff": "Desativado",
@@ -97,5 +97,6 @@
   "statusStarting": "Iniciando",
   "statusRunning": "Em execução",
   "statusStopped": "Parado",
-  "statusError": "Erro"
+  "statusError": "Erro",
+  "agentPairingSignIn": "Adicione ao seu agente, para o Claude Code; depois entre por ele e escolha usar sem conta"
 }

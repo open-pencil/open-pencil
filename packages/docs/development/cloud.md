@@ -323,8 +323,17 @@ SHA-256 as `?pairing=` and presents the token in its first frame; `createAgentPa
 the tab's socket and nothing else, and `/mcp` turns a call with that token into the same
 `agent-tools` call the relay makes, to the tab that offered last. On Cloudflare a pairing's tabs
 meet on the relay object named `pairing:<id>`, tagged so the object tells them from collaboration
-peers when it wakes. Pairing tokens get the design tools alone, on the active tab's document, and
-their calls are limited per address.
+peers when it wakes. Pairing tokens get the design tools
+and the editor's open documents, and their calls are limited per address. A browser keeps its
+pairing in local storage, and one of its windows serves it at a time under a Web Lock.
+
+An agent that signs in reaches the same pairing at `/auth/pair`, which the sign-in page offers as
+going on without an account. Better Auth's provider has checked the app, its return address, and
+PKCE before it signs the query that page starts from, but issues codes to accounts alone, so
+`createAgentPairingGrants` issues its own `opgc_` code and answers it ahead of Better Auth's token
+endpoint. The code's row holds the browser's token for a minute, encrypted with a key derived from
+the code, and an exchange deletes the row before checking anything, so a code works once. Only apps
+without a client secret pair, since nothing here checks one, and no account is ever made.
 
 ## Enrollment and administration
 

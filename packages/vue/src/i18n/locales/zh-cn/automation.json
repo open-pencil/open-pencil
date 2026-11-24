@@ -60,7 +60,7 @@
   "agentPairingInstructions": "粘贴到你的智能体",
   "agentPairingClaudeCode": "或在终端中运行（适用于 Claude Code）",
   "agentPairingConfig": "或添加到 MCP 配置（如 Cursor）",
-  "agentPairingNote": "拥有此连接的任何人都可以更改此标签页显示的内容。断开连接或关闭标签页后它将失效；在你保存之前，设计会保留在此设备上。",
+  "agentPairingNote": "拥有此连接的任何人都可以更改此浏览器中打开的设计。编辑器关闭时它会暂停，断开连接后结束；在你保存之前，设计会保留在此设备上。",
   "webmcpDescription": "允许浏览器代理直接使用此文档，无需本地 MCP 服务器或 Bearer 令牌。本地服务器设置不适用于此处。",
   "webmcpFailed": "WebMCP 无法启动",
   "browserAccess": "浏览器代理访问权限",
@@ -97,5 +97,6 @@
   "mcpFailureUnknown": "无法启动 MCP 服务器",
   "mcpFailureUnknownHint": "请重新启动，或查看下方的技术细节。",
   "mcpFailureDetails": "详细信息",
-  "mcpFailureCopy": "复制详细信息"
+  "mcpFailureCopy": "复制详细信息",
+  "agentPairingSignIn": "添加到你的智能体（适用于 Claude Code），然后从中登录并选择不使用账号"
 }

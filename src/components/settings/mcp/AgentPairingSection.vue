@@ -3,8 +3,13 @@ import { computed } from 'vue'
 
 import { useMessages } from '@open-pencil/vue/i18n'
 
-import { agentPairing, startAgentPairing, stopAgentPairing } from '@/app/cloud/pairing/session'
-import { agentPairingSetup } from '@/app/cloud/pairing/setup'
+import {
+  agentPairing,
+  agentPairingServer,
+  startAgentPairing,
+  stopAgentPairing
+} from '@/app/cloud/pairing/session'
+import { agentPairingSetup, agentSignInCommand } from '@/app/cloud/pairing/setup'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -19,6 +24,9 @@ import AppCopyField from '@/components/ui/input/AppCopyField.vue'
 const automation = useMessages('automation')
 const common = useMessages('common')
 
+const signInCommand = computed(() =>
+  agentPairingServer.value?.signIn ? agentSignInCommand(agentPairingServer.value.url) : null
+)
 const state = computed(() => agentPairing.value)
 const setup = computed(() =>
   state.value.status === 'paired' ? agentPairingSetup(state.value.mcpURL, state.value.token) : null
@@ -50,6 +58,17 @@ const working = computed(() => state.value.status === 'paired' && state.value.la
         >{{ automation.agentPairingConnect }}</AppButton
       >
     </template>
+    <SettingsGroup v-if="signInCommand && !active" data-slot="agent-pairing-sign-in">
+      <div class="flex flex-col gap-1.5 px-3 py-2.5">
+        <p class="text-2xs text-muted">{{ automation.agentPairingSignIn }}</p>
+        <AppCopyField
+          :value="signInCommand"
+          :copy-label="common.copy"
+          :copied-label="common.copied"
+          :ui="{ value: 'break-normal [overflow-wrap:anywhere]' }"
+        />
+      </div>
+    </SettingsGroup>
     <AppAlert
       v-if="state.status === 'failed'"
       tone="error"

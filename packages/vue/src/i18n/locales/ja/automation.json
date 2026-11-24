@@ -60,7 +60,7 @@
   "agentPairingInstructions": "エージェントに貼り付け",
   "agentPairingClaudeCode": "または Claude Code ならターミナルで実行",
   "agentPairingConfig": "または Cursor などの MCP 設定に追加",
-  "agentPairingNote": "この接続を持つ人は、このタブに表示されている内容を変更できます。切断するかタブを閉じると使えなくなります。デザインは保存するまでこのデバイスに残ります。",
+  "agentPairingNote": "この接続を持つ人は、このブラウザーで開いているデザインを変更できます。エディターを閉じている間は一時停止し、切断すると終了します。デザインは保存するまでこのデバイスに残ります。",
   "webmcpDescription": "ローカルMCPサーバーやBearerトークンを使わずに、ブラウザーエージェントがこのドキュメントを直接操作できるようにします。ローカルサーバーの設定はここには適用されません。",
   "webmcpFailed": "WebMCP を開始できませんでした",
   "browserAccess": "ブラウザーエージェントのアクセス",
@@ -97,5 +97,6 @@
   "mcpFailureUnknown": "MCP サーバーを起動できませんでした",
   "mcpFailureUnknownHint": "もう一度起動するか、以下の技術的な詳細を確認してください。",
   "mcpFailureDetails": "詳細",
-  "mcpFailureCopy": "詳細をコピー"
+  "mcpFailureCopy": "詳細をコピー",
+  "agentPairingSignIn": "Claude Code ならエージェントに追加し、そこからサインインしてアカウントなしを選択"
 }

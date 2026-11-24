@@ -26,6 +26,18 @@ export type RunAgentTool = (
   signal: AbortSignal
 ) => Promise<unknown>
 
+/** A tool's arguments, with the page a call named where the tool takes one itself (analyze_overlaps). */
+export function withOwnPage(
+  name: string,
+  args: Record<string, unknown>,
+  pageId: unknown
+): Record<string, unknown> {
+  const tool = ALL_TOOLS.find((each) => each.name === name)
+  return pageId !== undefined && tool && 'page_id' in tool.input.entries
+    ? { ...args, page_id: pageId }
+    : args
+}
+
 let handleTool: ReturnType<typeof createAutomationToolHandler> | null = null
 
 /**
@@ -36,12 +48,7 @@ export const runAgentTool: RunAgentTool = async (store, call, signal) => {
   handleTool ??= createAutomationToolHandler(makeFigmaFromStore)
   const { page_id: pageId, ...rest } = call.args
   const target = resolveAutomationTarget(store, { page_id: pageId })
-  // A tool that takes a page itself, such as analyze_overlaps, works on the one the call named.
-  const tool = ALL_TOOLS.find((each) => each.name === call.name)
-  const args =
-    pageId !== undefined && tool && 'page_id' in tool.input.entries
-      ? { ...rest, page_id: pageId }
-      : rest
+  const args = withOwnPage(call.name, rest, pageId)
   const response = await handleTool(
     target,
     {

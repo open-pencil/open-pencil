@@ -127,6 +127,9 @@ export function decodeAgentToolMessage(payload: Uint8Array): AgentToolMessage | 
  */
 export const CLOUD_AGENT_PAIRING_TOKEN_PREFIX = 'opg_'
 
+/** A whole pairing token, as a browser makes one. */
+export const agentPairingTokenSchema = v.pipe(v.string(), v.regex(/^opg_[0-9a-f]{64}$/))
+
 /** Where a paired tab connects, on the API origin, with its pairing's ID as `pairing`. */
 export const AGENT_PAIRING_PATH = '/api/agent-pairing'
 export const AGENT_PAIRING_PARAM = 'pairing'

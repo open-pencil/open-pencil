@@ -23,11 +23,16 @@ Turn on **Share only the selection** in **Settings → MCP → Local server** to
 
 The server enforces this on every call it sends to the app, including `POST /rpc` and stdio clients, so a client cannot widen it. Restart the MCP server to apply the change. For a server you start yourself, set `OPENPENCIL_MCP_SCOPE=selection`; a stdio client can also set it to limit itself while the server shares the whole document.
 
-## Pair a browser tab with your agent {#agent-pairing}
+## Pair your agent with the browser editor {#agent-pairing}
 
-In the editor on a Cloud server that allows it, such as the hosted one, a coding agent can design in a browser tab with nothing installed and no account. Open **Settings → MCP → Agent in this tab** and choose **Connect an agent**. The panel gives you the connection three ways: instructions to paste into the agent, a `claude mcp add` command for Claude Code, and an `mcpServers` entry for clients such as Cursor. Each names the server's `/mcp` address and a pairing token, sent as `Authorization: Bearer opg_…`.
+On a Cloud server that allows it, a coding agent can design in OpenPencil in your browser with nothing installed and no account:
 
-The agent then gets the design tools of the [MCP server](#tools), working on the document the active tab shows; you see it at work on the canvas. The design stays on your device: save it, or sign in and use **Save to** to keep it in Cloud. The server keeps neither the token nor the design, and only carries the agent's calls to the tab. Anyone with the token can change what the tab shows, so treat it as a password; **Disconnect** or closing the tab ends it at once.
+1. Add the server's `/mcp` address to your agent, for example `claude mcp add --transport http openpencil https://cloud.example.com/mcp`.
+2. Sign in from the agent, as with `/mcp` in Claude Code. In the browser, choose **Use without an account**, then **Allow**. OpenPencil opens beside it, paired with the agent.
+
+This takes a server that accepts [connected apps](/cloud/apps) too, and an agent that registers without a client secret, as command-line agents do. For any other agent, open **Settings → MCP → Agent in this tab** and choose **Connect an agent**: it gives a pairing token three ways, as instructions to paste into the agent, a `claude mcp add` command, and an `mcpServers` entry.
+
+The agent gets the design tools of the [MCP server](#tools) and can list, create, and switch the documents open in that browser; files and settings stay out of its reach. Designs stay on your device: save them, or sign in and use **Save to** to keep them in Cloud. The server carries the agent's calls and keeps no design. Closing OpenPencil pauses the agent until you open it again in that browser; **Disconnect** ends it. Anyone with the token can change what you have open, so treat it as a password.
 
 ## Browser-native WebMCP (experimental) {#webmcp}
 

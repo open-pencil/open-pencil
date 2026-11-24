@@ -60,7 +60,7 @@
   "agentPairingInstructions": "In deinen Agenten einfügen",
   "agentPairingClaudeCode": "Oder im Terminal ausführen, für Claude Code",
   "agentPairingConfig": "Oder zu einer MCP-Konfiguration hinzufügen, etwa in Cursor",
-  "agentPairingNote": "Wer diese Verbindung hat, kann ändern, was dieser Tab zeigt. Sie funktioniert nicht mehr, sobald du trennst oder den Tab schließt; das Design bleibt auf diesem Gerät, bis du es speicherst.",
+  "agentPairingNote": "Wer diese Verbindung hat, kann die in diesem Browser geöffneten Designs ändern. Sie pausiert, solange OpenPencil geschlossen ist, und endet, wenn du trennst; Designs bleiben auf diesem Gerät, bis du sie speicherst.",
   "webmcpDescription": "Browser-Agenten können dieses Dokument direkt verwenden, ohne lokalen MCP-Server oder Bearer-Token. Die Einstellungen des lokalen Servers gelten hier nicht.",
   "webmcpFailed": "WebMCP konnte nicht starten",
   "browserAccess": "Zugriff für Browser-Agenten",
@@ -97,5 +97,6 @@
   "mcpFailureUnknown": "MCP-Server konnte nicht gestartet werden",
   "mcpFailureUnknownHint": "Erneut starten oder die technischen Details unten prüfen.",
   "mcpFailureDetails": "Details",
-  "mcpFailureCopy": "Details kopieren"
+  "mcpFailureCopy": "Details kopieren",
+  "agentPairingSignIn": "Für Claude Code zum Agenten hinzufügen, dann dort anmelden und die Nutzung ohne Konto wählen"
 }

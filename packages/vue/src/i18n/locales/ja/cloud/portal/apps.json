@@ -27,5 +27,9 @@
   "authorizeWarningDescription": "アプリの名前はアプリ自身が決めます。「接続済みのアプリ」で接続を解除するまで、ワークスペースであなたとして操作します。",
   "allow": "許可",
   "authorizeExpiredTitle": "このリクエストは期限切れです",
-  "authorizeExpiredDescription": "アプリに戻って、もう一度接続してください。"
+  "authorizeExpiredDescription": "アプリに戻って、もう一度接続してください。",
+  "pairDescription": "アカウントなしで、このブラウザーのエディターでデザインすることを求めています。",
+  "pairAccess": "このブラウザーで開いているデザインの表示と変更",
+  "pairReturns": "{host} に戻ります",
+  "pairWarning": "アプリの名前はアプリ自身が決めたものです。設定で切断するまで、開いているすべてのデザインを変更できます。"
 }

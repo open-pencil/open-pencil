@@ -12,6 +12,7 @@ export interface OAuthClientTable {
   name: string | null
   uri: string | null
   icon: string | null
+  tokenEndpointAuthMethod: string | null
   disabled: boolean | null
 }
 

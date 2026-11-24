@@ -53,7 +53,9 @@ export const automationMessageDefaults = {
   agentPairingClaudeCode: 'Or run in a terminal, for Claude Code',
   agentPairingConfig: 'Or add to an MCP configuration, as in Cursor',
   agentPairingNote:
-    'Anyone with this connection can change what this tab shows. It stops working when you disconnect or close the tab; the design stays on this device until you save it.',
+    'Anyone with this connection can change the designs open in this browser. It pauses while OpenPencil is closed and ends when you disconnect; designs stay on this device until you save them.',
+  agentPairingSignIn:
+    'Add to your agent, for Claude Code, then sign in from it and choose Use without an account',
   webmcpDescription:
     'Let browser agents use this document directly, without a local MCP server or bearer token. Local server settings do not apply here.',
   browserAccess: 'Browser agent access',

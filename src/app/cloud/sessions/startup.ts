@@ -1,6 +1,8 @@
 import { ref } from 'vue'
 
+import { followAgentPairing } from '@/app/cloud/pairing/session'
 import { appRuntimeConfig } from '@/app/runtime/config'
+import { isTauri } from '@/app/tauri/env'
 import { IS_BROWSER, IS_CLOUD_SITE } from '@/constants'
 
 import { checkCloudAvailability } from '../availability'
@@ -93,6 +95,7 @@ export async function startCloudSessions(options: {
       forgetCloudDocumentLink()
       forgetCloudLink()
     }
+    if (IS_BROWSER && !isTauri()) followAgentPairing()
     await startCloudDrafts({ returnedFrom: pending, saveTo: options.saveTo })
     // Later sign-ins, as in the connect dialog, open what they were for once they finish.
     resumeCloudDocumentLink()

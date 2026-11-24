@@ -27,5 +27,9 @@
   "authorizeWarningDescription": "Aplikacja sama wybiera swoją nazwę. Działa w Twoim imieniu w obszarze roboczym, dopóki nie odłączysz jej w sekcji Połączone aplikacje.",
   "allow": "Zezwól",
   "authorizeExpiredTitle": "To żądanie wygasło",
-  "authorizeExpiredDescription": "Wróć do aplikacji i połącz ją ponownie."
+  "authorizeExpiredDescription": "Wróć do aplikacji i połącz ją ponownie.",
+  "pairDescription": "Chce projektować w OpenPencil w tej przeglądarce, bez konta.",
+  "pairAccess": "Wyświetlanie i zmienianie projektów otwartych w OpenPencil w tej przeglądarce",
+  "pairReturns": "Wraca do {host}",
+  "pairWarning": "Aplikacja sama wybiera swoją nazwę. Może zmieniać każdy otwarty projekt, dopóki jej nie rozłączysz w Ustawienia → MCP."
 }

@@ -27,5 +27,9 @@
   "authorizeWarningDescription": "应用的名称由它自己设定。在你于“已连接的应用”中断开它之前，它会以你的身份在工作区中操作。",
   "allow": "允许",
   "authorizeExpiredTitle": "此请求已过期",
-  "authorizeExpiredDescription": "请返回该应用并重新连接。"
+  "authorizeExpiredDescription": "请返回该应用并重新连接。",
+  "pairDescription": "它请求无需账号即可在此浏览器的编辑器中设计。",
+  "pairAccess": "查看和更改此浏览器中打开的设计",
+  "pairReturns": "返回 {host}",
+  "pairWarning": "应用的名称由其自行选择。在你于设置中断开之前，它可以更改任何打开的设计。"
 }

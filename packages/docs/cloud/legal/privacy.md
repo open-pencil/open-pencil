@@ -37,6 +37,8 @@ We don't sell your data, show ads, or use your documents to train models.
 
 You can connect apps, such as an AI assistant, to one of your workspaces. The app then reads, and if you allow it changes, that workspace's documents, and whoever runs the app receives what it reads, under their own terms and privacy policy. We share nothing with an app you haven't connected. Disconnecting an app in your account settings stops it at once; what it already received stays with whoever runs it.
 
+You can also pair an agent with the editor in your browser without an account. Its calls and their answers pass through our servers, and we don't store them or your designs. While the agent connects we hold its connection token, encrypted so that only the agent can release it, and the agent has one minute to collect it.
+
 ## Deleting
 
 - A deleted document stays in Trash for 30 days, where you or a workspace admin can restore it.

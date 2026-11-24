@@ -27,6 +27,7 @@ const {
   error = null,
   submitting = false,
   returnsTo = null,
+  withoutAccount = false,
   legal
 } = defineProps<{
   host: string
@@ -39,6 +40,8 @@ const {
   submitting?: boolean
   /** Where the person goes after signing in. */
   returnsTo?: 'desktop' | 'editor' | null
+  /** Whether what the person came for can go on without an account, as pairing an agent does. */
+  withoutAccount?: boolean
   /** The server's terms and privacy policy, which continuing agrees to. */
   legal?: CloudLegalDiscovery
 }>()
@@ -48,6 +51,7 @@ const emit = defineEmits<{
   submit: [credentials: { name: string; email: string; password: string }]
   forgotPassword: []
   switchMode: []
+  withoutAccount: []
 }>()
 
 const ui = portalForm({ size: 'lg' })
@@ -132,6 +136,16 @@ const showForm = computed(() => !!emailPassword && (!signUp.value || emailPasswo
       </AppButton>
     </div>
 
+    <AppButton
+      v-if="withoutAccount && !signUp"
+      size="lg"
+      variant="outline"
+      class="w-full"
+      data-test-id="sign-in-without-account"
+      @click="emit('withoutAccount')"
+    >
+      {{ messages.useWithoutAccount }}
+    </AppButton>
     <PortalLegalNote :legal="legal" />
 
     <template v-if="emailPassword?.signUp || signUp" #aside>

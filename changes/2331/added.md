@@ -1,1 +1,1 @@
-- On Cloud servers that allow it, a coding agent such as Claude Code, Codex, or Cursor can design in your browser tab without an account: Settings → MCP → Agent in this tab gives it the connection, and Disconnect ends it.
+- On Cloud servers that allow it, a coding agent such as Claude Code can design in OpenPencil in your browser without an account: add the server's `/mcp` address to the agent, sign in from it, and choose Use without an account. Agents that can't sign in get a token from Settings → MCP → Agent in this tab.

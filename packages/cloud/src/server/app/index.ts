@@ -123,10 +123,11 @@ export function createCloudApp(services: CloudServices) {
     .get(CLOUD_SERVICES_JWKS_PATH, async (context) =>
       app.servicesTokens ? context.json(app.servicesTokens.jwks()) : context.notFound()
     )
+    // Before Better Auth, whose token endpoint knows nothing of a pairing's codes.
+    .route('/', routers.appConnections)
     .on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, (context) => services.auth.handler(context.req.raw))
     .route('/', routers.account)
     .route('/', routers.accessTokens)
-    .route('/', routers.appConnections)
     .use(CLOUD_MCP_PATH, limiters.agentPairingLimiter)
     .route('/', mcp)
     .route('/', createPictureRoutes(app.pictures))

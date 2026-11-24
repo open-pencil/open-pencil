@@ -36,6 +36,10 @@ export function createAppRateLimiters(database: Kysely<CloudDatabase>, config: C
       // Guests refresh collaboration tickets on their own budget, `publicCollaborationLimiter`.
       skip: routeHasOwnBudget
     }),
+    // The pairing page and its answer, for people without an account.
+    agentPairingPageLimiter: publicLimiter(CLOUD_RATE_LIMITS.publicCapability, {
+      resource: () => 'agent-pairing-page'
+    }),
     // An agent paired with an editor tab has no account to count it by.
     agentPairingLimiter: createTrustedIPRateLimiter(
       database,

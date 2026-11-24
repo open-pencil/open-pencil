@@ -27,5 +27,9 @@
   "authorizeWarningDescription": "يختار التطبيق اسمه بنفسه. ويعمل باسمك في مساحة العمل حتى تقطع اتصاله من التطبيقات المتصلة.",
   "allow": "سماح",
   "authorizeExpiredTitle": "انتهت صلاحية هذا الطلب",
-  "authorizeExpiredDescription": "ارجع إلى التطبيق ووصّله مجددًا."
+  "authorizeExpiredDescription": "ارجع إلى التطبيق ووصّله مجددًا.",
+  "pairDescription": "يطلب التصميم في OpenPencil في هذا المتصفح، دون حساب.",
+  "pairAccess": "عرض وتغيير التصاميم المفتوحة في OpenPencil في هذا المتصفح",
+  "pairReturns": "يعود إلى {host}",
+  "pairWarning": "يختار التطبيق اسمه بنفسه. يمكنه تغيير أي تصميم مفتوح حتى تفصله من الإعدادات ← MCP."
 }

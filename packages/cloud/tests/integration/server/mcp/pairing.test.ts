@@ -102,8 +102,9 @@ describe('MCP for an agent paired with an editor tab', () => {
     await withAgent(token, async (client) => {
       const names = (await client.listTools()).tools.map((tool) => tool.name)
       expect(names).toEqual(expect.arrayContaining(['get_page_tree', 'render']))
-      expect(names).not.toContain('list_documents')
-      expect(names).not.toContain('create_document')
+      expect(names).toEqual(expect.arrayContaining(['list_documents', 'create_document']))
+      expect(names).not.toContain('list_workspaces')
+      expect(names).not.toContain('save_version')
     })
   })
 
@@ -128,7 +129,7 @@ describe('MCP for an agent paired with an editor tab', () => {
     await withAgent(`opg_${'77'.repeat(32)}`, async (client) => {
       const result = await client.callTool({ name: 'get_page_tree', arguments: {} })
       expect(result.isError).toBe(true)
-      expect(v.parse(textSchema, result).content[0].text).toContain('connect an agent again')
+      expect(v.parse(textSchema, result).content[0].text).toContain('OpenPencil is not open')
     })
   })
 })

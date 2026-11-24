@@ -27,5 +27,9 @@
   "authorizeWarningDescription": "Un’app sceglie il proprio nome. Agisce a tuo nome nell’area di lavoro finché non la scolleghi in App collegate.",
   "allow": "Consenti",
   "authorizeExpiredTitle": "Questa richiesta è scaduta",
-  "authorizeExpiredDescription": "Torna all’app e ricollegala."
+  "authorizeExpiredDescription": "Torna all’app e ricollegala.",
+  "pairDescription": "Chiede di progettare in OpenPencil in questo browser, senza account.",
+  "pairAccess": "Vedere e modificare i design aperti in OpenPencil in questo browser",
+  "pairReturns": "Torna a {host}",
+  "pairWarning": "Un’app sceglie il proprio nome. Può modificare qualsiasi design aperto finché non la disconnetti in Impostazioni → MCP."
 }

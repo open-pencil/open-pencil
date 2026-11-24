@@ -27,5 +27,9 @@
   "authorizeWarningDescription": "Eine App wählt ihren Namen selbst. Sie handelt im Arbeitsbereich in deinem Namen, bis du sie unter Verbundene Apps trennst.",
   "allow": "Erlauben",
   "authorizeExpiredTitle": "Diese Anfrage ist abgelaufen",
-  "authorizeExpiredDescription": "Kehre zur App zurück und verbinde sie erneut."
+  "authorizeExpiredDescription": "Kehre zur App zurück und verbinde sie erneut.",
+  "pairDescription": "Es möchte in OpenPencil in diesem Browser gestalten, ohne Konto.",
+  "pairAccess": "Die in OpenPencil in diesem Browser geöffneten Designs sehen und ändern",
+  "pairReturns": "Kehrt zu {host} zurück",
+  "pairWarning": "Eine App wählt ihren Namen selbst. Sie kann jedes geöffnete Design ändern, bis du sie unter Einstellungen → MCP trennst."
 }

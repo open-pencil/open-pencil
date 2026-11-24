@@ -34,9 +34,14 @@ const localEditor = useLocalStorage('open-pencil:cloud-site-local', false, {
   writeDefaults: false
 })
 
+/** Remembers that this browser uses the server's editor without an account. */
+export function chooseLocalEditor(): void {
+  localEditor.value = true
+}
+
 /** Opens the server's editor without an account, now and on later visits from this browser. */
 export function openLocalEditor(location: Pick<Location, 'assign'> = globalThis.location): void {
-  localEditor.value = true
+  chooseLocalEditor()
   location.assign('/')
 }
 

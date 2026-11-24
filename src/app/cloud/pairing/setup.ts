@@ -1,3 +1,5 @@
+import { cloudMCPResource } from '@open-pencil/cloud/contract'
+
 /** The name an agent gives the connection, which its tools appear under. */
 const SERVER_NAME = 'openpencil'
 
@@ -24,4 +26,9 @@ export function agentPairingSetup(mcpURL: string, token: string) {
       2
     )
   }
+}
+
+/** Adds the server to Claude Code with no token: the agent signs in, where the person may skip an account. */
+export function agentSignInCommand(serverURL: string): string {
+  return `claude mcp add --transport http ${SERVER_NAME} ${cloudMCPResource(serverURL)}`
 }

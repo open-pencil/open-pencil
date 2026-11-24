@@ -93,6 +93,7 @@ ja:automation.agentPairingClaudeCode
 ja:automation.agentPairingConfig
 ja:automation.agentPairingDescription
 ja:automation.agentPairingFailed
+ja:automation.agentPairingSignIn
 ja:automation.aiToolAccessDescription
 ja:automation.authenticationDescription
 ja:automation.bearerAuthentication
@@ -335,6 +336,7 @@ zh-cn:automation.agentPairingClaudeCode
 zh-cn:automation.agentPairingConfig
 zh-cn:automation.agentPairingDescription
 zh-cn:automation.agentPairingFailed
+zh-cn:automation.agentPairingSignIn
 zh-cn:automation.aiToolAccessDescription
 zh-cn:automation.authenticationDescription
 zh-cn:automation.bearerAuthentication

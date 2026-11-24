@@ -60,7 +60,7 @@
   "agentPairingInstructions": "Pégalo en tu agente",
   "agentPairingClaudeCode": "O ejecútalo en una terminal, para Claude Code",
   "agentPairingConfig": "O añádelo a una configuración MCP, como en Cursor",
-  "agentPairingNote": "Cualquiera con esta conexión puede cambiar lo que muestra esta pestaña. Deja de funcionar cuando te desconectas o cierras la pestaña; el diseño se queda en este dispositivo hasta que lo guardes.",
+  "agentPairingNote": "Cualquiera con esta conexión puede cambiar los diseños abiertos en este navegador. Se pausa mientras OpenPencil está cerrado y termina cuando te desconectas; los diseños se quedan en este dispositivo hasta que los guardes.",
   "webmcpDescription": "Permite a los agentes del navegador usar este documento directamente, sin servidor MCP local ni token de portador. La configuración del servidor local no se aplica aquí.",
   "webmcpFailed": "WebMCP no pudo iniciarse",
   "browserAccess": "Acceso de agentes del navegador",
@@ -97,5 +97,6 @@
   "mcpFailureUnknown": "No se pudo iniciar el servidor MCP",
   "mcpFailureUnknownHint": "Vuelve a iniciarlo o revisa los detalles técnicos de abajo.",
   "mcpFailureDetails": "Detalles",
-  "mcpFailureCopy": "Copiar detalles"
+  "mcpFailureCopy": "Copiar detalles",
+  "agentPairingSignIn": "Añádelo a tu agente, para Claude Code; luego inicia sesión desde él y elige usarlo sin cuenta"
 }

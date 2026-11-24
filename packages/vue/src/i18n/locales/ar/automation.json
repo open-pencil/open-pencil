@@ -38,7 +38,7 @@
   "agentPairingInstructions": "الصقه في وكيلك",
   "agentPairingClaudeCode": "أو شغّله في الطرفية، لـ Claude Code",
   "agentPairingConfig": "أو أضفه إلى إعدادات MCP، كما في Cursor",
-  "agentPairingNote": "يمكن لأي شخص لديه هذا الاتصال تغيير ما يعرضه هذا التبويب. يتوقف عن العمل عند قطع الاتصال أو إغلاق التبويب، ويبقى التصميم على هذا الجهاز حتى تحفظه.",
+  "agentPairingNote": "يمكن لأي شخص لديه هذا الاتصال تغيير التصاميم المفتوحة في هذا المتصفح. يتوقف مؤقتًا أثناء إغلاق OpenPencil وينتهي عند قطع الاتصال، وتبقى التصاميم على هذا الجهاز حتى تحفظها.",
   "webmcpDescription": "اسمح لوكلاء المتصفح باستخدام هذا المستند مباشرةً، دون خادم MCP محلي أو رمز Bearer. لا تنطبق إعدادات الخادم المحلي هنا.",
   "browserAccess": "وصول وكلاء المتصفح",
   "accessOff": "إيقاف",
@@ -97,5 +97,6 @@
   "statusStarting": "بدء التشغيل",
   "statusRunning": "يعمل",
   "statusStopped": "متوقف",
-  "statusError": "خطأ"
+  "statusError": "خطأ",
+  "agentPairingSignIn": "أضفه إلى وكيلك، لـ Claude Code، ثم سجّل الدخول منه واختر الاستخدام دون حساب"
 }

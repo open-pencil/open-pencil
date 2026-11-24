@@ -34,9 +34,9 @@ const INSTRUCTIONS = [
 
 /** What the endpoint tells an agent paired with an editor tab, which has no account behind it. */
 const PAIRED_INSTRUCTIONS = [
-  'These tools work on the design open in the OpenPencil tab this connection is paired with, as the person watches.',
+  'These tools work on the documents open in the OpenPencil this connection is paired with, as the person watches. With none open, call create_document.',
   'Read with get_page_tree, get_node, and describe; build layers from JSX with render, and change them with update_node and the set_* tools.',
-  'The design stays in that tab until the person saves it; nothing is kept on the server.'
+  'Designs stay on the person’s device until they save them; nothing is kept on the server.'
 ].join('\n')
 
 /** Whom a token stands for and what it may do, or null for one the API refuses. */

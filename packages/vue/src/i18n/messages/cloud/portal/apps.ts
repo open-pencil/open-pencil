@@ -31,6 +31,11 @@ export const appPortalMessageDefaults = {
   authorizeWarningDescription:
     'An app chooses its own name. It works as you in the workspace until you disconnect it under Connected apps.',
   allow: 'Allow',
+  pairDescription: 'It asks to design in OpenPencil in this browser, without an account.',
+  pairAccess: 'See and change the designs open in OpenPencil in this browser',
+  pairReturns: params('Goes back to {host}'),
+  pairWarning:
+    'An app chooses its own name. It can change any design you have open until you disconnect it in Settings → MCP.',
   authorizeExpiredTitle: 'This request has expired',
   authorizeExpiredDescription: 'Go back to the app and connect it again.'
 }
