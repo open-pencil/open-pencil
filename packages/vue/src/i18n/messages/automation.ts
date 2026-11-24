@@ -40,6 +40,20 @@ export const automationMessageDefaults = {
   localServer: 'Local server',
   localServerDesktopOnly:
     'The local MCP server runs with the OpenPencil desktop app. In the browser, use WebMCP below.',
+  agentPairing: 'Agent in this tab',
+  agentPairingDescription:
+    'Let a coding agent such as Claude Code, Codex, or Cursor design in this tab, without an account. It works on the document the tab shows, and you watch it work.',
+  agentPairingConnect: 'Connect an agent',
+  agentPairingDisconnect: 'Disconnect',
+  agentPairingConnecting: 'Connecting…',
+  agentPairingWaiting: 'Waiting for your agent',
+  agentPairingWorking: 'Your agent is working in this tab',
+  agentPairingFailed: 'OpenPencil Cloud refused the connection. Connect again.',
+  agentPairingInstructions: 'Paste into your agent',
+  agentPairingClaudeCode: 'Or run in a terminal, for Claude Code',
+  agentPairingConfig: 'Or add to an MCP configuration, as in Cursor',
+  agentPairingNote:
+    'Anyone with this connection can change what this tab shows. It stops working when you disconnect or close the tab; the design stays on this device until you save it.',
   webmcpDescription:
     'Let browser agents use this document directly, without a local MCP server or bearer token. Local server settings do not apply here.',
   browserAccess: 'Browser agent access',

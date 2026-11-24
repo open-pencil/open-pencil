@@ -16,6 +16,7 @@ import {
   type CollaborationRelayOptions,
   type CollaborationRoomIdentity,
   type CollaborationStateStore,
+  type PairingSocket,
   type RelayConnection,
   type RelaySocket
 } from '#cloud/server'
@@ -217,4 +218,9 @@ export function textOfSyncReply(reply: Uint8Array) {
   const update = decodeRoomUpdate(reply, { limit: MAX_COLLAB_MESSAGE_BYTES, compressed: true })
   if (update) Y.applyUpdateV2(document, update)
   return document.getText('t').toString()
+}
+
+/** A test client's socket as the agent pairing hub takes it, which keeps no relay peer state. */
+export function pairingSocket(socket: RelaySocket): PairingSocket {
+  return { send: (data) => socket.send(data), close: (code, reason) => socket.close(code, reason) }
 }

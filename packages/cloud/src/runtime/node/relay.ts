@@ -1,8 +1,8 @@
 import type { IncomingMessage, Server } from 'node:http'
 import type { Duplex } from 'node:stream'
 
-import { RELAY_HEARTBEAT, RELAY_PATH } from '#cloud/contract'
-import type { CollaborationRelay } from '#cloud/server'
+import { AGENT_PAIRING_PATH, RELAY_HEARTBEAT, RELAY_PATH } from '#cloud/contract'
+import type { AgentPairingHub, CollaborationRelay, RelayConnection } from '#cloud/server'
 import { WebSocketServer, type RawData } from 'ws'
 
 function bytes(data: RawData): Uint8Array {
@@ -12,25 +12,29 @@ function bytes(data: RawData): Uint8Array {
 
 /**
  * Accepts WebSocket upgrades on the relay path of an HTTP server and hands each socket to the
- * relay. Other upgrade requests are refused.
+ * relay, and those on the agent pairing path to the pairing hub when the server pairs tabs.
+ * Other upgrade requests are refused.
  */
 export function attachCollaborationRelay(
   server: Pick<Server, 'on' | 'off'>,
   relay: CollaborationRelay,
-  maximumMessageBytes: number
+  maximumMessageBytes: number,
+  pairing?: AgentPairingHub
 ) {
   // ws enforces the limit before buffering; the relay checks again for other runtimes.
   const sockets = new WebSocketServer({ noServer: true, maxPayload: maximumMessageBytes })
 
   function upgrade(request: IncomingMessage, socket: Duplex, head: Buffer) {
     const path = new URL(request.url ?? '/', 'http://relay').pathname
-    if (path !== RELAY_PATH) {
+    const hubs = { [RELAY_PATH]: relay, [AGENT_PAIRING_PATH]: pairing }
+    const hub = path === RELAY_PATH || path === AGENT_PAIRING_PATH ? hubs[path] : undefined
+    if (!hub) {
       socket.destroy()
       return
     }
     sockets.handleUpgrade(request, socket, head, (webSocket) => {
       webSocket.binaryType = 'nodebuffer'
-      const connection = relay.connect({
+      const connection: RelayConnection = hub.connect({
         send: (data) => webSocket.send(data),
         close: (code, reason) => webSocket.close(code, reason)
       })
@@ -50,6 +54,7 @@ export function attachCollaborationRelay(
   return {
     async close() {
       server.off('upgrade', upgrade)
+      pairing?.close()
       await relay.close()
       for (const client of sockets.clients) client.terminate()
       await new Promise<void>((resolve) => {

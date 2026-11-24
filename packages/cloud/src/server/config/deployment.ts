@@ -162,6 +162,7 @@ export function parseCloudDeploymentConfig(
     indexingPolicy: config.deployment.indexing,
     trustedOrigins: config.deployment.trusted_origins,
     localEditor: config.deployment.local_editor,
+    agentPairing: config.deployment.agent_pairing,
     listingMinimumEditorVersion: config.deployment.listing?.minimum_editor_version,
     minimumEditorVersion: config.deployment.minimum_editor_version,
     databaseURL: requiredSecret(environment, config.database.url),

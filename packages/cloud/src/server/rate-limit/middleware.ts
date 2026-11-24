@@ -23,6 +23,8 @@ export type ResourceRateLimitPolicy = RateLimitPolicy & { actorLimit: number }
 
 export const CLOUD_RATE_LIMITS = {
   publicCapability: { namespace: 'public-capability', windowMs: 60_000, limit: 30 },
+  // What one address's paired agents call: an agent at work makes a call every second or so.
+  agentPairing: { namespace: 'agent-pairing', windowMs: 60_000, limit: 300 },
   // Everything one visitor reads of the community gallery, across its paths: a page of thumbnails
   // fits, made-up addresses do not each get a fresh budget.
   communityRead: { namespace: 'community-read', windowMs: 60_000, limit: 300 },

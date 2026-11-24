@@ -10,14 +10,17 @@ import {
 
 import { DEADLINE_MS } from '@open-pencil/std/timing'
 
-import type { RelayPeer } from './connection'
+import type { RelayPeer, RelaySocket } from './connection'
 import { send } from './room'
 
 /** How long the relay waits for an editor to answer a call before it cancels it. */
 export const AGENT_TOOL_TIMEOUT_MS = DEADLINE_MS.slowRequest
 
-type PendingCall = {
-  peer: RelayPeer
+/** A peer that may run calls: its socket, and whether it offered to. */
+export type AgentToolHost = { socket: Pick<RelaySocket, 'send' | 'close'>; toolHost: boolean }
+
+type PendingCall<P extends AgentToolHost> = {
+  peer: P
   settle: (outcome: AgentToolOutcome) => void
   timer: ReturnType<typeof setTimeout>
 }
@@ -30,7 +33,7 @@ export function mayHostTools(peer: Pick<RelayPeer, 'authorization'>): boolean {
   return peer.authorization.permission === 'edit' && peer.authorization.principal.kind === 'user'
 }
 
-function deliver(peer: RelayPeer, message: AgentToolMessage) {
+function deliver(peer: AgentToolHost, message: AgentToolMessage) {
   send(peer.socket, {
     type: 'message',
     namespace: COLLAB_ACTIONS.agentTools,
@@ -44,13 +47,15 @@ function deliver(peer: RelayPeer, message: AgentToolMessage) {
  * editor and waits only for that editor: another peer's answer is ignored, and the call fails when
  * that editor leaves or does not answer in time, when the relay also cancels it there.
  */
-export function createAgentToolCalls(options: {
+export function createAgentToolCalls<P extends AgentToolHost>(options: {
   timeoutMs?: number
+  /** Whether a peer may offer to run calls. */
+  mayHost: (peer: P) => boolean
   /** Keeps a peer's state after it starts running tools, for a relay that can be set aside. */
-  remember: (peer: RelayPeer) => void
+  remember: (peer: P) => void
 }) {
   const timeoutMs = options.timeoutMs ?? AGENT_TOOL_TIMEOUT_MS
-  const pending = new Map<string, PendingCall>()
+  const pending = new Map<string, PendingCall<P>>()
 
   function finish(id: string, outcome: AgentToolOutcome) {
     const call = pending.get(id)
@@ -62,11 +67,11 @@ export function createAgentToolCalls(options: {
 
   return {
     /** Takes an `agent-tools` message a peer sent the relay. */
-    receive(peer: RelayPeer, payload: Uint8Array) {
+    receive(peer: P, payload: Uint8Array) {
       const message = decodeAgentToolMessage(payload)
       if (!message) return
       if (message.type === 'host') {
-        if (!mayHostTools(peer) || peer.toolHost) return
+        if (!options.mayHost(peer) || peer.toolHost) return
         peer.toolHost = true
         options.remember(peer)
         return
@@ -81,7 +86,7 @@ export function createAgentToolCalls(options: {
     },
 
     /** Hands a call to `host` and waits for its answer. */
-    call(host: RelayPeer, call: AgentToolCall): Promise<AgentToolOutcome> {
+    call(host: P, call: AgentToolCall): Promise<AgentToolOutcome> {
       const id = crypto.randomUUID()
       return new Promise((settle) => {
         const timer = setTimeout(() => {
@@ -95,7 +100,7 @@ export function createAgentToolCalls(options: {
     },
 
     /** Fails every call waiting on a peer that left or whose room ended. */
-    abandon(left: (peer: RelayPeer) => boolean) {
+    abandon(left: (peer: P) => boolean) {
       for (const [id, call] of pending) {
         if (left(call.peer)) {
           finish(id, {

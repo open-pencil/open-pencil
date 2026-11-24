@@ -14,7 +14,7 @@ import type { CollabActionReceiver } from '@/app/collab/transport/types'
 import type { EditorStore } from '@/app/editor/session'
 
 const agent = { session: 'app:claude', client: 'Claude' }
-const store = asDouble<EditorStore>({})
+const store = () => asDouble<EditorStore>({})
 
 /** A tab's tool channel, with what it sent and a way to deliver what peers send it. */
 function channel() {

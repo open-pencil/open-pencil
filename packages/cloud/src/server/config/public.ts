@@ -64,7 +64,8 @@ export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscov
       documents: true,
       workspaces: true,
       collaboration: true,
-      apps: config.oauthEnabled
+      apps: config.oauthEnabled,
+      agents: config.agentPairing
     },
     listing: config.listingMinimumEditorVersion
       ? { minimumEditorVersion: config.listingMinimumEditorVersion }

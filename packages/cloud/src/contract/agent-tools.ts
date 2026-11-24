@@ -1,3 +1,4 @@
+import { bytesToHex } from '@noble/hashes/utils.js'
 import * as v from 'valibot'
 
 /**
@@ -110,3 +111,40 @@ export function decodeAgentToolMessage(payload: Uint8Array): AgentToolMessage | 
   )
   return parsed.success ? parsed.output : null
 }
+
+/**
+ * A tab of a server's editor can pair itself with a coding agent without an account: the tab makes
+ * a pairing token, the person gives it to their agent as its MCP bearer token, and the server
+ * carries the agent's design tool calls to the tab holding it. The server keeps neither the token
+ * nor anything the tab sends; a pairing ends when its tab disconnects.
+ */
+export const CLOUD_AGENT_PAIRING_TOKEN_PREFIX = 'opg_'
+
+/** Where a paired tab connects, on the API origin, with its pairing's ID as `pairing`. */
+export const AGENT_PAIRING_PATH = '/api/agent-pairing'
+export const AGENT_PAIRING_PARAM = 'pairing'
+
+/** Whether a bearer token is a pairing token rather than an account's. */
+export function isAgentPairingToken(token: string): boolean {
+  return token.startsWith(CLOUD_AGENT_PAIRING_TOKEN_PREFIX)
+}
+
+/**
+ * A pairing's ID: its token's SHA-256 in hex. It names where the tab connects without the token
+ * itself appearing in an address; the tab still proves it holds the token once connected.
+ */
+export async function agentPairingId(token: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))
+  return bytesToHex(new Uint8Array(digest))
+}
+
+/** The WebSocket address a tab of pairing `pairingId` connects to on the server at `publicURL`. */
+export function agentPairingURL(publicURL: string, pairingId: string): string {
+  const url = new URL(AGENT_PAIRING_PATH, publicURL)
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+  url.searchParams.set(AGENT_PAIRING_PARAM, pairingId)
+  return url.href
+}
+
+/** A pairing ID as it appears in an address. */
+export const agentPairingIdSchema = v.pipe(v.string(), v.regex(/^[0-9a-f]{64}$/))

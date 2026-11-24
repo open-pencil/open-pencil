@@ -11,7 +11,13 @@ const discovery: CloudDiscovery = {
   authURL: 'https://cloud.example.com/api/auth',
   localEditor: true,
   authentication: { socialProviders: [], enterpriseSSO: false, enrollmentMode: 'open' },
-  capabilities: { documents: true, workspaces: true, collaboration: true, apps: false }
+  capabilities: {
+    documents: true,
+    workspaces: true,
+    collaboration: true,
+    apps: false,
+    agents: false
+  }
 }
 
 function authorization(expiresIn = 600): CloudDeviceAuthorization {

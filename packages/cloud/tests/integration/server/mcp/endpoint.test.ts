@@ -137,6 +137,20 @@ describe('MCP endpoint', () => {
     expect(metadata.resource).toBe(resource)
   })
 
+  test('refuses pairing tokens where the server pairs no tabs', async () => {
+    const response = await fixture.app.fetch(
+      new Request(resource, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer opg_${'ab'.repeat(32)}`,
+          'Content-Type': 'application/json'
+        },
+        body: '{}'
+      })
+    )
+    expect(response.status).toBe(401)
+  })
+
   test('refuses a token it does not know, as it refuses none', async () => {
     const response = await fixture.app.fetch(
       new Request(resource, {

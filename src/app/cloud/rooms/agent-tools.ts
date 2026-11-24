@@ -55,7 +55,8 @@ export const runAgentTool: RunAgentTool = async (store, call, signal) => {
 export function serveRoomAgentTools(
   [send, receive]: CollabAction,
   options: {
-    store: EditorStore
+    /** The tab a call works in: the room's own, or for a paired tab whichever is active. */
+    store: () => EditorStore
     /** Follows peers joining the room; returns the unsubscribe. */
     onPeerJoin: (handler: (peerId: string) => void) => () => void
     run?: RunAgentTool
@@ -75,7 +76,7 @@ export function serveRoomAgentTools(
       // A call cancelled while it waited for its turn stops here, unanswered, like one cancelled
       // while it ran.
       controller.signal.throwIfAborted()
-      const result = await run(options.store, call, controller.signal)
+      const result = await run(options.store(), call, controller.signal)
       if (!controller.signal.aborted) answer({ type: 'result', id, ok: true, result })
     } catch (error) {
       if (controller.signal.aborted) return

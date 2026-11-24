@@ -130,8 +130,9 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     MAX_COLLAB_MESSAGE_BYTES
   )
   const authTimeoutMs = options.authTimeoutMs ?? AUTH_TIMEOUT_MS
-  const agentTools = createAgentToolCalls({
+  const agentTools = createAgentToolCalls<RelayPeer>({
     timeoutMs: options.agentToolTimeoutMs,
+    mayHost: mayHostTools,
     remember: (peer) => remember(peer)
   })
   const report =

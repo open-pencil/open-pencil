@@ -317,6 +317,15 @@ the edit the person's own. With nobody's tab open the call answers `409 editor_n
 tool gives the model the document's link to pass on. Running tools on a graph the server decodes
 itself, without an open editor, is a later step.
 
+Where `deployment.agent_pairing` is on, a tab of the server's editor can pair with a coding agent
+without an account. The tab makes an `opg_` token, connects to `/api/agent-pairing` with its
+SHA-256 as `?pairing=` and presents the token in its first frame; `createAgentPairingHub` holds
+the tab's socket and nothing else, and `/mcp` turns a call with that token into the same
+`agent-tools` call the relay makes, to the tab that offered last. On Cloudflare a pairing's tabs
+meet on the relay object named `pairing:<id>`, tagged so the object tells them from collaboration
+peers when it wakes. Pairing tokens get the design tools alone, on the active tab's document, and
+their calls are limited per address.
+
 ## Enrollment and administration
 
 Enrollment is `open`, `approval`, or `closed`. In approval mode a verified identity creates a

@@ -44,7 +44,7 @@ export function newRoom(id: string, identity: Room['identity']): Room {
 }
 
 /** Sends a frame to one socket, split into fragments as the relay sends every frame. */
-export function send(socket: RelaySocket, frame: RelayServerFrame) {
+export function send(socket: Pick<RelaySocket, 'send'>, frame: RelayServerFrame) {
   for (const message of relayServerMessages(frame)) socket.send(message)
 }
 

@@ -1,5 +1,6 @@
 import {
   CLOUD_API_MAX_BODY_BYTES,
+  CLOUD_MCP_PATH,
   CLOUD_DISCOVERY_PATH,
   CLOUD_PROTOCOL_VERSION,
   CLOUD_SERVICES_JWKS_PATH
@@ -48,17 +49,21 @@ export function createCloudApp(services: CloudServices) {
   const checks = createRequestChecks(services, resolvers)
   const limiters = createAppRateLimiters(services.database, config)
   const routers = createAppRouters(services, app, resolvers, checks, limiters, allowedOrigins)
-  // Apps reach the MCP endpoint where they may connect; its tools call this app with their token.
-  const mcp = services.auth.oauth
-    ? createMCPRoutes({
-        publicURL: config.publicURL,
-        fetchAPI: (request: Request): Response | Promise<Response> => cloudApp.fetch(request),
-        onError: (error) =>
-          void reportCloudError(services.reportError, 'MCP request failed', error, {
-            source: 'request'
-          })
-      })
-    : new Hono<CloudAPIEnvironment>()
+  // Apps reach the MCP endpoint where they may connect, and agents where tabs pair with them; its
+  // tools call this app with the caller's token, or the paired tab.
+  const mcp =
+    services.auth.oauth || services.callPairedTool
+      ? createMCPRoutes({
+          publicURL: config.publicURL,
+          fetchAPI: (request: Request): Response | Promise<Response> => cloudApp.fetch(request),
+          oauth: Boolean(services.auth.oauth),
+          callPairedTool: services.callPairedTool,
+          onError: (error) =>
+            void reportCloudError(services.reportError, 'MCP request failed', error, {
+              source: 'request'
+            })
+        })
+      : new Hono<CloudAPIEnvironment>()
 
   const cloudApp = new Hono<CloudAPIEnvironment>()
     .onError(cloudErrorHandler(services.reportError))
@@ -122,6 +127,7 @@ export function createCloudApp(services: CloudServices) {
     .route('/', routers.account)
     .route('/', routers.accessTokens)
     .route('/', routers.appConnections)
+    .use(CLOUD_MCP_PATH, limiters.agentPairingLimiter)
     .route('/', mcp)
     .route('/', createPictureRoutes(app.pictures))
     .use('/api/shares/:shareId/collaboration-ticket', limiters.publicCollaborationLimiter)

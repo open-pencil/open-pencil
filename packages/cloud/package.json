@@ -31,6 +31,7 @@
     "#cloud/runtime/cloudflare": "./src/runtime/cloudflare/index.ts",
     "#cloud/runtime/node": "./src/runtime/node/index.ts",
     "#cloud/server": "./src/server/index.ts",
+    "#cloud/server/agent-pairing": "./src/server/agent-pairing/index.ts",
     "#cloud/server/api": "./src/server/api/index.ts",
     "#cloud/server/auth": "./src/server/auth/index.ts",
     "#cloud/server/billing": "./src/server/billing/index.ts",

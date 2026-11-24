@@ -14,6 +14,12 @@ export function cloudDiscoveryFixture(origin = 'https://cloud.example.com'): Clo
       enrollmentMode: 'approval',
       emailPassword: { signIn: true, signUp: true, minimumPasswordLength: 8 }
     },
-    capabilities: { documents: true, workspaces: true, collaboration: true, apps: false }
+    capabilities: {
+      documents: true,
+      workspaces: true,
+      collaboration: true,
+      apps: false,
+      agents: false
+    }
   }
 }

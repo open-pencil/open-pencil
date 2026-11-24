@@ -23,6 +23,12 @@ Turn on **Share only the selection** in **Settings → MCP → Local server** to
 
 The server enforces this on every call it sends to the app, including `POST /rpc` and stdio clients, so a client cannot widen it. Restart the MCP server to apply the change. For a server you start yourself, set `OPENPENCIL_MCP_SCOPE=selection`; a stdio client can also set it to limit itself while the server shares the whole document.
 
+## Pair a browser tab with your agent {#agent-pairing}
+
+In the editor on a Cloud server that allows it, such as the hosted one, a coding agent can design in a browser tab with nothing installed and no account. Open **Settings → MCP → Agent in this tab** and choose **Connect an agent**. The panel gives you the connection three ways: instructions to paste into the agent, a `claude mcp add` command for Claude Code, and an `mcpServers` entry for clients such as Cursor. Each names the server's `/mcp` address and a pairing token, sent as `Authorization: Bearer opg_…`.
+
+The agent then gets the design tools of the [MCP server](#tools), working on the document the active tab shows; you see it at work on the canvas. The design stays on your device: save it, or sign in and use **Save to** to keep it in Cloud. The server keeps neither the token nor the design, and only carries the agent's calls to the tab. Anyone with the token can change what the tab shows, so treat it as a password; **Disconnect** or closing the tab ends it at once.
+
 ## Browser-native WebMCP (experimental) {#webmcp}
 
 WebMCP is **off by default**. Open **Settings → MCP → WebMCP** and choose **Inspect** for read-only access or **Edit** to also allow scoped, undoable changes. **Off** unregisters all browser tools; changing modes revokes the previous registrations immediately. This preference is independent of local MCP authentication, tool switches, and outbound connections.

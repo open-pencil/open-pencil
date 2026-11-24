@@ -77,6 +77,8 @@ const rawCloudServerConfigSchema = v.object({
   trustedOrigins: v.optional(v.array(httpURLSchema), []),
   /** The server's editor works with files on this device without signing in to the server. */
   localEditor: v.optional(v.boolean(), true),
+  /** The server's editor pairs a tab with a coding agent over MCP, without an account. */
+  agentPairing: v.optional(v.boolean(), false),
   authTrustedIPHeaders: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   authTrustedProxies: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   enrollmentMode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open'),

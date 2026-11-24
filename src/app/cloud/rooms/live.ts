@@ -291,7 +291,7 @@ export function openCloudDocumentRoom(
     // Apps the person connected run design tools through a tab where they edit, signed in.
     if (canSave) {
       const tools = serveRoomAgentTools(session.agentTools, {
-        store,
+        store: () => store,
         onPeerJoin: (handler) => session.onPeerJoin(handler)
       })
       onScopeDispose(() => tools.stop())

@@ -89,6 +89,10 @@ ja:ai.chatPiModel
 ja:ai.piModelHint
 ja:ai.changePreviewHint
 ja:automation.addServerConnection
+ja:automation.agentPairingClaudeCode
+ja:automation.agentPairingConfig
+ja:automation.agentPairingDescription
+ja:automation.agentPairingFailed
 ja:automation.aiToolAccessDescription
 ja:automation.authenticationDescription
 ja:automation.bearerAuthentication
@@ -327,6 +331,10 @@ zh-cn:ai.chatPiModel
 zh-cn:ai.piModelHint
 zh-cn:ai.changePreviewHint
 zh-cn:automation.addServerConnection
+zh-cn:automation.agentPairingClaudeCode
+zh-cn:automation.agentPairingConfig
+zh-cn:automation.agentPairingDescription
+zh-cn:automation.agentPairingFailed
 zh-cn:automation.aiToolAccessDescription
 zh-cn:automation.authenticationDescription
 zh-cn:automation.bearerAuthentication

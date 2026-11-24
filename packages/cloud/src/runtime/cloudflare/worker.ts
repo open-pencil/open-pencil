@@ -1,4 +1,4 @@
-import { defaultRelayURL, RELAY_PATH } from '#cloud/contract'
+import { AGENT_PAIRING_PATH, defaultRelayURL, RELAY_PATH } from '#cloud/contract'
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import { createCloudServer } from '#cloud/runtime/site/server'
@@ -29,7 +29,13 @@ import {
 } from './environment'
 import { cloudflareRayId } from './logging'
 import { inMaintenance, maintenanceResponse } from './maintenance'
-import { createCloudflareRelayObject, relayFor, relayRoute } from './relay'
+import {
+  createCloudflareRelayObject,
+  pairingFor,
+  pairingRoute,
+  relayFor,
+  relayRoute
+} from './relay'
 import { assetSiteFiles } from './site'
 import { provideXMLParser } from './xml'
 
@@ -177,6 +183,10 @@ export function createCloudflareCloud(
     .onError((error, c) => cloudErrorHandler(keptAlive(reporter(), c.executionCtx))(error, c))
     .use('*', cloudRequestId(cloudflareRayId))
     .get(RELAY_PATH, relayRoute(relayJurisdiction))
+    .get(
+      AGENT_PAIRING_PATH,
+      pairingRoute(async (env) => (await prepare(env)).config.agentPairing, relayJurisdiction)
+    )
     .all('*', async (c) => {
       const prepared = await prepare(c.env)
       const services = cloudServices(prepared, c.env, c.executionCtx)
@@ -207,6 +217,10 @@ export function createCloudflareCloud(
             runInBackground(relay(c.env, documentId).announceComments(documentId, threadId)),
           callDocumentTool: (documentId, userId, call) =>
             relay(c.env, documentId).callTool(documentId, userId, call),
+          callPairedTool: config.agentPairing
+            ? (pairing, call) =>
+                pairingFor(c.env, pairing, relayJurisdiction).callPairedTool(pairing, call)
+            : undefined,
           runInBackground,
           reportError: services.reporter,
           forwardedRequestId: cloudflareRayId

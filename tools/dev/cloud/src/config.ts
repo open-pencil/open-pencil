@@ -24,7 +24,9 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
       mode: 'self-hosted',
       public_url: endpoints.cloudURL,
       indexing: 'deny',
-      trusted_origins: [endpoints.editorURL, endpoints.cloudURL]
+      trusted_origins: [endpoints.editorURL, endpoints.cloudURL],
+      // A worktree's editor pairs tabs with coding agents, as the hosted one may.
+      agent_pairing: true
     },
     database: {},
     authentication: {
