@@ -102,20 +102,24 @@ function fontMetaData(
   return fonts
 }
 
+type OutlinedGlyph = ShapedTextGlyph & { commands: OutlineCommand[] }
+
+function isOutlined(glyph: ShapedTextGlyph): glyph is OutlinedGlyph {
+  return glyph.commands !== null
+}
+
 function shapedGlyphRecords(
-  shaped: ShapedText,
+  glyphs: OutlinedGlyph[],
   context: DerivedTextBuildContext
 ): DerivedTextGlyphRecord[] {
-  return shaped.glyphs.map((glyph) => ({
-    commandsBlob: glyph.commands
-      ? appendGlyphBlob(
-          context,
-          encodePathCommandsBlob(
-            glyph.commands.length > 0 ? glyph.commands : EMPTY_GLYPH_COMMANDS,
-            glyph.fontSize
-          )
-        )
-      : undefined,
+  return glyphs.map((glyph) => ({
+    commandsBlob: appendGlyphBlob(
+      context,
+      encodePathCommandsBlob(
+        glyph.commands.length > 0 ? glyph.commands : EMPTY_GLYPH_COMMANDS,
+        glyph.fontSize
+      )
+    ),
     position: { x: glyph.x, y: glyph.y },
     fontSize: glyph.fontSize,
     firstCharacter: glyph.firstCharacter,
@@ -287,7 +291,9 @@ function shapeOrNull(node: SceneNode, context: DerivedTextBuildContext): ShapedT
 /**
  * The `derivedTextData` a text node is written with. Glyphs the node already has (from Figma,
  * or placed along a path) are kept; other text is shaped at the node's width. Text that cannot
- * be shaped gets no glyphs, so readers lay it out themselves instead of drawing a guess.
+ * be shaped gets no glyphs and no baselines, so readers lay it out themselves instead of drawing
+ * a guess. Text shaped without every outline gets no `derivedTextData`: Figma draws lines without
+ * outlines as blank text. A partial set would draw gaps, so it is all or none.
  */
 export function buildNodeDerivedTextData(
   node: SceneNode,
@@ -305,9 +311,11 @@ export function buildNodeDerivedTextData(
     })
   }
   const shaped = node.textPathData ? null : shapeOrNull(node, context)
+  const outlined = shaped?.glyphs.filter(isOutlined) ?? []
+  if (shaped && outlined.length < shaped.glyphs.length) return undefined
   return buildDerivedTextData({
     node,
-    glyphs: shaped ? shapedGlyphRecords(shaped, context) : [],
+    glyphs: shapedGlyphRecords(outlined, context),
     decorations: shaped ? derivedDecorations(node, shaped.glyphs, context) : undefined,
     fontMetaData: fonts,
     baselines: shaped?.baselines ?? [],

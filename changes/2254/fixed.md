@@ -1,0 +1,1 @@
+- `.fig` export saves text that cannot be fully outlined, such as a character drawn by a fallback font, without its text layout, so Figma lays the text out itself instead of showing it blank.

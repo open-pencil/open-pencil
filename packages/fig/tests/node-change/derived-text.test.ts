@@ -92,12 +92,21 @@ describe('derived text writer', () => {
     expect(writer.blobs).toHaveLength(2)
   })
 
-  test('writes the layout without outlines when the shaper has none', () => {
+  test('writes no derived text when the shaper has no outlines', () => {
     const writer = context(twoLines(null))
-    const data = expectDefined(buildNodeDerivedTextData(textNode(), writer), 'derived text')
 
-    expect(data.baselines).toHaveLength(2)
-    expect(data.glyphs?.every((glyph) => glyph.commandsBlob === undefined)).toBe(true)
+    expect(buildNodeDerivedTextData(textNode(), writer)).toBeUndefined()
+    expect(writer.blobs).toHaveLength(0)
+  })
+
+  test('writes no derived text when any shaped glyph has no outline', () => {
+    // Figma draws baselines without outlines as blank text, whether the glyphs lack outlines or
+    // are left out; without derivedTextData it lays the text out itself.
+    const shaped = twoLines(SQUARE)
+    shaped.glyphs[1] = { ...shaped.glyphs[1], commands: null }
+    const writer = context(shaped)
+
+    expect(buildNodeDerivedTextData(textNode(), writer)).toBeUndefined()
     expect(writer.blobs).toHaveLength(0)
   })
 

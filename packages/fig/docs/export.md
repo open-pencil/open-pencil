@@ -98,9 +98,11 @@ writes them for `.fig` export and the Figma clipboard alike:
 - Other text is shaped by the export runtime's `shapeText`, which Core implements with the
   renderer's paragraph: lines, alignment, and baselines match what OpenPencil draws, and each
   outline belongs to the glyph ID the shaper chose, so ligatures and contextual forms survive.
-- When the shaper cannot tell which font drew a run (a missing, variable, or fallback font), the
-  layout is written without outlines and readers lay the text out themselves. A partial set of
+- When the shaper cannot tell which font drew a run, the layer is written without
+  `derivedTextData`: Figma draws baselines without outlines as blank text. A partial set of
   outlines would draw the text with gaps, so it is all or none.
+- Text that cannot be shaped is written with neither glyphs nor baselines, which Figma lays out
+  itself.
 - Advances are em units, and `logicalIndexToCharacterOffsetMap` has one entry per character,
   measured from the start of its line, as in Figma's own files.
 
