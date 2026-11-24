@@ -35,6 +35,8 @@
   "openURLRunScripts": "Skripte der Seite ausführen",
   "openURLInvalid": "Gib eine Webadresse ein, etwa https://example.com.",
   "openURLBlocked": "Die Website erlaubt anderen Websites nicht, sie zu lesen, daher kann der Browser sie nicht öffnen. Die Desktop-App kann es.",
+  "openURLRefused": "Die Website hat die Anfrage der App nach dieser Seite abgelehnt. Die Desktop-App kann sie möglicherweise öffnen, indem sie die Seite mit ihren Skripten lädt.",
+  "openURLRenderRefused": "Die Website hat die Anfrage der App nach dieser Seite abgelehnt, und auch das Laden im Browser der App ist fehlgeschlagen.",
   "openURLPDF": "Diese Adresse enthält ein PDF, das OpenPencil noch nicht öffnen kann.",
   "openURLUnsupported": "Diese Adresse enthält eine Datei, die OpenPencil nicht öffnen kann.",
   "newTab": "Neuer Tab",

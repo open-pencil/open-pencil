@@ -1,5 +1,10 @@
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { fetchRemoteFile, type RemoteFile } from '@open-pencil/core/io/remote'
+import {
+  fetchRemoteFile,
+  RefusedPageError,
+  remoteFileTitle,
+  type RemoteFile
+} from '@open-pencil/core/io/remote'
 import type { DesignViewport } from '@open-pencil/dom-css'
 import { imageMimeType } from '@open-pencil/scene-graph/images'
 import { errorMessage } from '@open-pencil/std/errors'
@@ -51,11 +56,32 @@ function fetchFailure(error: unknown): string {
   const files = messageStores.files.get()
   // The browser reports a site that refuses to be read by other sites as a bare network error.
   if (error instanceof TypeError && !IS_TAURI) return files.openURLBlocked
+  if (error instanceof RefusedPageError) return files.openURLRefused
   return errorMessage(error)
 }
 
 /** What a web address holds that OpenPencil opens: a page, a design document, or a picture. */
-export type OpenableRemoteFile = RemoteFile & { kind: 'html' | 'document' | 'svg' | 'image' }
+export type OpenableRemoteFile = RemoteFile & {
+  kind: 'html' | 'document' | 'svg' | 'image'
+  /**
+   * The site refused the app's request for the page, as one it took for a bot, so it has no HTML
+   * of its own here and opens only as the desktop app renders it, loading the page as a browser.
+   */
+  rendersOnly?: boolean
+}
+
+/** A page its site refused the app, to be loaded by the desktop app's render window. */
+function refusedPage(url: URL): OpenableRemoteFile {
+  return {
+    url: url.href,
+    name: '',
+    title: remoteFileTitle(url),
+    contentType: 'text/html',
+    bytes: new Uint8Array(),
+    kind: 'html',
+    rendersOnly: true
+  }
+}
 
 /** How a web page is opened: the window it is laid out in, and whether its scripts run first. */
 export interface WebPageOpenOptions {
@@ -74,6 +100,10 @@ export async function fetchWebAddress(url: URL, signal?: AbortSignal): Promise<O
   try {
     remote = await fetchRemoteFile(url, { fetch: remoteFetch, signal, io })
   } catch (error) {
+    if (error instanceof RefusedPageError && IS_TAURI) {
+      signal?.throwIfAborted()
+      return refusedPage(error.url)
+    }
     throw new Error(fetchFailure(error), { cause: error })
   }
   signal?.throwIfAborted()
@@ -93,12 +123,21 @@ export async function openRemoteFile(
   { viewport, runScripts = true }: WebPageOpenOptions = {}
 ): Promise<void> {
   switch (remote.kind) {
-    case 'html':
+    case 'html': {
+      const render = IS_TAURI && runScripts
+      if (remote.rendersOnly && !render) throw new Error(messageStores.files.get().openURLRefused)
       await openFileInNewTab(new File([remote.bytes], remote.name || remote.title), {
         path: remote.url,
-        webPage: { url: remote.url, title: remote.title, viewport, render: IS_TAURI && runScripts }
+        webPage: {
+          url: remote.url,
+          title: remote.title,
+          viewport,
+          render,
+          rendersOnly: remote.rendersOnly
+        }
       })
       return
+    }
     case 'document':
       // Opened as a picked file is: its address is no file path a save could write back to.
       await openFileInNewTab(new File([remote.bytes], remote.name))

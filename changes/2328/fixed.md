@@ -1,0 +1,1 @@
+- On desktop, a page whose site refuses the app's request, as bot protection does, is loaded in the app's built-in browser instead, which many such sites let through.

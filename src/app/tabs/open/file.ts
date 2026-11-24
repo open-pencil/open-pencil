@@ -38,6 +38,8 @@ export interface OpenedWebPage {
   viewport?: DesignViewport
   /** Renders the page in the desktop app first, so its scripts build it. */
   render?: boolean
+  /** The page has no HTML but what rendering it gives, as when its site let only a browser in. */
+  rendersOnly?: boolean
 }
 
 export interface OpenInTabOptions {
