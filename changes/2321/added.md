@@ -1,0 +1,1 @@
+- `npx -y @open-pencil/mcp` starts the MCP server, and each release is listed in the official MCP Registry as `dev.openpencil/mcp`.
