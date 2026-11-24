@@ -16,8 +16,6 @@ import { exportBounds } from '#core/io/formats/raster'
 
 import {
   nextDefId,
-  reserveTakenId,
-  setLayerNameCount,
   drawnFills,
   resolveFill,
   solidFillOpacity,
@@ -394,8 +392,8 @@ function layerId(name: string, ids: NonNullable<SVGExportContext['layerIds']>): 
     count += 1
     id = count === 1 ? name : `${name}_${count}`
   } while (ids.taken.has(id))
-  setLayerNameCount(ids, name, count)
-  reserveTakenId(ids, id)
+  ids.names.set(name, count)
+  ids.taken.add(id)
   return id
 }
 
