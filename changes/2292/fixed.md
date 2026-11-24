@@ -1,1 +1,1 @@
-- Sticky JSX export now keeps the color alpha channel for translucent fills instead of dropping it or mapping them to opaque palette names.
+- Design JSX export keeps the alpha of translucent sticky note colors, connector strokes, and icon colors instead of writing them opaque.

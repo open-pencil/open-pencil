@@ -1,14 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  createDesignJSXRenderer,
-  sceneNodeAttributes,
-  sceneNodeToJSX,
-  selectionToJSX
-} from '#design-jsx/index'
+import { sceneNodeAttributes, sceneNodeToJSX, selectionToJSX } from '#design-jsx/index'
 
 import { createSticky } from '@open-pencil/scene-graph/generated'
 
+import { createPlainRenderer } from '../renderer'
 import { makeGraph, pageId } from './helpers'
 
 describe('sceneNodeToJSX', () => {
@@ -399,20 +395,8 @@ describe('selectionToJSX', () => {
   })
 })
 
-describe('sticky export color alpha', () => {
-  const renderer = createDesignJSXRenderer<never>({
-    icon: () => Promise.resolve(null),
-    svg: () => null,
-    createArtwork: () => {
-      throw new Error('No artwork in these tests')
-    },
-    layout: () => {
-      // Sticky color props do not depend on layout.
-    },
-    vectorBounds: () => {
-      throw new Error('No vectors in these tests')
-    }
-  })
+describe('FigJam export color alpha', () => {
+  const renderer = createPlainRenderer()
 
   test('preserves alpha on translucent colors and reserves palette names for opaque matches', async () => {
     const graph = makeGraph()
@@ -450,5 +434,17 @@ describe('sticky export color alpha', () => {
     const [whiteResult] = await renderer.renderJSX(reimported, whiteAlphaJSX)
     const roundTrippedWhiteFill = reimported.getNode(whiteResult.id)?.fills.at(0)
     expect(roundTrippedWhiteFill?.color.a).toBeCloseTo(128 / 255, 4)
+  })
+
+  test('keeps alpha on a translucent connector stroke', async () => {
+    const graph = makeGraph()
+    await renderer.renderJSX(
+      graph,
+      '<Frame><Rectangle name="A" /><Rectangle name="B" /><Connector from="A" to="B" stroke="#12345680" /></Frame>'
+    )
+    const connector = [...graph.getAllNodes()].find((node) => node.type === 'CONNECTOR')
+    if (!connector) throw new Error('The connector is missing')
+    const jsx = sceneNodeToJSX(connector.id, graph)
+    expect(jsx).toContain('stroke="#12345680"')
   })
 })
