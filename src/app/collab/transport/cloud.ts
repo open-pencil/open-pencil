@@ -25,6 +25,11 @@ const MINIMUM_REFRESH_MS = 5_000
  * way without closing; one that stays silent for an interval after being asked is given up.
  */
 const HEARTBEAT_INTERVAL_MS = 20_000
+/**
+ * How long a welcomed connection lasts before its loss starts the reconnect steps over. A relay that
+ * welcomes a peer and then fails on its room would otherwise be joined again at once, every time.
+ */
+const STABLE_CONNECTION_MS = 60_000
 
 /** A collaboration ticket the relay accepts, as the Cloud API issues it. */
 export type CloudRelayTicket = { token: string; expiresAt: string }
@@ -51,6 +56,8 @@ export type CloudRelayOptions = {
   page?: Window
   /** How long to wait before reconnection attempt `attempt`, counting from zero. */
   reconnectDelayMs?: (attempt: number) => number
+  /** How long a welcomed connection lasts before the reconnect steps start over. */
+  stableConnectionMs?: number
   onError?: (message: string, error: unknown) => void
 }
 
@@ -81,6 +88,7 @@ export function createCloudRelayJoin(options: CloudRelayOptions): JoinCollabRoom
 function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabRoomTransport {
   const createSocket = options.createSocket ?? ((url: string) => new WebSocket(url))
   const reconnectDelay = options.reconnectDelayMs ?? relayReconnectDelay
+  const stableMs = options.stableConnectionMs ?? STABLE_CONNECTION_MS
   const report =
     options.onError ?? ((message, error) => console.error(`[Collab] ${message}`, error))
   const actions = createActionRegistry((namespace, payload, target) => {
@@ -101,6 +109,7 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
    */
   let suspended = false
   let attempt = 0
+  let welcomedAt: number | null = null
   let refreshTimer: ReturnType<typeof setTimeout> | undefined
   let ticketExpiresAt = 0
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined
@@ -162,7 +171,7 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     switch (frame.type) {
       case 'welcome':
         welcomed = true
-        attempt = 0
+        welcomedAt = Date.now()
         for (const peerId of frame.peers) addPeer(peerId)
         return
       case 'join':
@@ -178,6 +187,7 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
 
   function reconnect() {
     if (left || suspended) return
+    if (welcomedAt !== null && Date.now() - welcomedAt >= stableMs) attempt = 0
     reconnectTimer = setTimeout(() => void connect(), reconnectDelay(attempt))
     attempt += 1
   }
@@ -197,6 +207,7 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
   }
 
   async function connect() {
+    welcomedAt = null
     let ticket: CloudRelayTicket | null
     try {
       ticket = await options.ticket(roomId)

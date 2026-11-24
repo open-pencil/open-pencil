@@ -69,6 +69,15 @@ async function settle() {
   for (let index = 0; index < 5; index++) await Promise.resolve()
 }
 
+/** Resolves once the transport has opened `count` sockets. */
+async function waitForSocket(sockets: readonly unknown[], count: number) {
+  while (sockets.length < count) {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0)
+    })
+  }
+}
+
 function room(
   options: {
     failTicket?: (attempt: number) => boolean
@@ -77,8 +86,10 @@ function room(
     page?: EventTarget
     /** Whether the relay answers the heartbeat, as its tickets say. */
     heartbeat?: boolean
+    stableConnectionMs?: number
   } = {}
 ) {
+  const attempts: number[] = []
   const sockets: FakeSocket[] = []
   let tickets = 0
   let restored = 0
@@ -96,7 +107,11 @@ function room(
       sockets.push(socket)
       return asDouble<WebSocket>(socket)
     },
-    reconnectDelayMs: () => 0,
+    reconnectDelayMs: (attempt) => {
+      attempts.push(attempt)
+      return 0
+    },
+    stableConnectionMs: options.stableConnectionMs,
     page: options.page ? asDouble<Window>(options.page) : undefined,
     heartbeat: options.heartbeat,
     onError: (_message, error) => errors.push(error),
@@ -115,6 +130,7 @@ function room(
     joined,
     left,
     errors,
+    attempts,
     tickets: () => tickets,
     restored: () => restored
   }
@@ -245,6 +261,24 @@ describe('Cloud relay transport', () => {
       expect(errors).toEqual(['refused'])
     }
   })
+
+  for (const [behaviour, stableConnectionMs, expected] of [
+    ['keeps backing off from a relay that fails soon after its welcome', 60_000, [0, 1, 2]],
+    ['starts its reconnect steps over after a connection that lasted', 0, [0, 0, 0]]
+  ] as const) {
+    test(behaviour, async () => {
+      const { transport, sockets, attempts } = room({ stableConnectionMs })
+      for (let lost = 1; lost <= expected.length; lost++) {
+        await waitForSocket(sockets, lost)
+        const socket = sockets[lost - 1]
+        socket?.open()
+        socket?.receive({ type: 'welcome', peerId: 'me', peers: ['server'] })
+        socket?.close(1006)
+      }
+      expect(attempts).toEqual([...expected])
+      await transport.leave()
+    })
+  }
 
   test('moves on, without reconnecting, once the relay says the document was restored', async () => {
     const { sockets, restored, errors } = room()
