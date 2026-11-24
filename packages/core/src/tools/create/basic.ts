@@ -1,15 +1,48 @@
 import * as v from 'valibot'
 
+import { DEFAULT_FONT_FAMILY } from '@open-pencil/scene-graph/constants'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
+
 import type { FigmaNodeProxy } from '#core/figma-api'
 import { graphOf } from '#core/figma-api/graph'
 import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { layoutLength, positionInputs, defineTool, nodeSummary } from '#core/tools/schema'
 
+interface ShapeSize {
+  width?: number
+  height?: number
+}
+
+/** Why a shape of `type` cannot be made with the sizes given, naming the argument to change. */
+function shapeSizeError(type: string, { width, height }: ShapeSize): string | null {
+  if (type === 'TEXT') {
+    return width === undefined && height !== undefined
+      ? 'TEXT with a height needs a width. Add width for fixed-size text, or leave out height for text that sizes to its content.'
+      : null
+  }
+  if (width === undefined) return `${type} needs a width. Add width in pixels.`
+  if (height === undefined) return `${type} needs a height. Add height in pixels.`
+  return null
+}
+
+/** Whether new text wraps in a given width, which lays it out in its font. */
+function wrapsInWidth(type: string, { width, height }: ShapeSize): boolean {
+  return type === 'TEXT' && width !== undefined && height === undefined
+}
+
+/** Sizes a new shape: text given no width stays auto width, and given only a width wraps in it. */
+function sizeShape(node: FigmaNodeProxy, size: ShapeSize): void {
+  const { width, height } = size
+  if (width === undefined) return
+  node.resize(width, height ?? node.height)
+  if (wrapsInWidth(node.type, size)) node.textAutoResize = 'HEIGHT'
+}
+
 export const createShape = defineTool({
   name: 'create_shape',
 
   description:
-    'Create a shape on the canvas. Use FRAME for containers/cards, RECTANGLE for solid blocks, ELLIPSE for circles, TEXT for labels, LINE for rules and dividers, STAR for starbursts and badges, POLYGON for triangles and regular polygons, and SECTION for page sections. Use create_vector with an SVG path for arbitrary shapes.',
+    'Create a shape on the canvas. Use FRAME for containers/cards, RECTANGLE for solid blocks, ELLIPSE for circles, TEXT for labels (leave out width and height to fit the text, or pass only width to wrap it), LINE for rules and dividers, STAR for starbursts and badges, POLYGON for triangles and regular polygons, and SECTION for page sections. Use create_vector with an SVG path for arbitrary shapes.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     type: v.pipe(
@@ -17,12 +50,16 @@ export const createShape = defineTool({
       v.description('Node type')
     ),
     ...positionInputs,
-    width: layoutLength('Width in pixels', 1),
-    height: layoutLength('Height in pixels', 1),
+    width: v.optional(layoutLength('Width in pixels, required except for TEXT', 1)),
+    height: v.optional(layoutLength('Height in pixels, required except for TEXT', 1)),
     name: v.optional(v.pipe(v.string(), v.description('Node name shown in layers panel'))),
     parent_id: v.optional(v.pipe(v.string(), v.description('Parent node ID to nest inside')))
   }),
+  fonts: (_figma, args) =>
+    wrapsInWidth(args.type, args) ? [{ family: DEFAULT_FONT_FAMILY, style: faceLoadKey(400) }] : [],
   execute: (figma, args) => {
+    const sizeError = shapeSizeError(args.type, args)
+    if (sizeError) return { error: sizeError }
     const parentId = args.parent_id
     const parent = parentId ? figma.getNodeById(parentId) : null
     // Refuse before creating, so a refused parent leaves no layer behind on the page.
@@ -40,7 +77,7 @@ export const createShape = defineTool({
     const node = createMap[args.type]()
     node.x = args.x
     node.y = args.y
-    node.resize(args.width, args.height)
+    sizeShape(node, args)
     if (args.name) node.name = args.name
     if (parent) parent.appendChild(node)
     return nodeSummary(node)
