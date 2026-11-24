@@ -72,7 +72,9 @@ export function createCloudApp(services: CloudServices) {
       })
       .get('/robots.txt', (context) => {
         context.header('Content-Type', 'text/plain; charset=utf-8')
-        return context.body(robotsText(config.indexingPolicy))
+        return context.body(
+          robotsText(config.indexingPolicy, app.community.enabled ? config.publicURL : null)
+        )
       })
       .get('/health', (context) =>
         context.json({

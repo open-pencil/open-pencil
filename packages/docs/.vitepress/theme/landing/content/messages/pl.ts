@@ -237,6 +237,7 @@ export const pl: LandingMessages = {
     lede: 'Przestrzeń projektowa twojego zespołu, hostowana za ciebie. Wszyscy edytują te same pliki na żywo, udostępniają je linkiem i projektują z AI opłacaną kredytami planu, bez instalowania i utrzymywania czegokolwiek. Zacznij za darmo z 300 MB i eksportuj pliki jako .fig, kiedy chcesz.',
     signUp: 'Wypróbuj OpenPencil Cloud',
     plans: 'Zobacz plany',
+    community: 'Pliki społeczności',
     features: [
       {
         title: 'Synchronizacja na żywo',

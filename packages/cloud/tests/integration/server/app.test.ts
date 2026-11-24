@@ -360,6 +360,9 @@ describe('createCloudApp', () => {
     expect((await allowed.api.session.$get()).headers.get('X-Robots-Tag')).toBe(
       'noindex, nofollow, noarchive'
     )
+    expect(await (await allowed['robots.txt'].$get()).text()).toContain(
+      'Allow: /api/community/thumbnails/'
+    )
   })
 
   test('serves a health response without starting a listener', async () => {
