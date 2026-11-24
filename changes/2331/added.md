@@ -1,0 +1,1 @@
+- On Cloud servers that allow it, a coding agent such as Claude Code, Codex, or Cursor can design in your browser tab without an account: Settings → MCP → Agent in this tab gives it the connection, and Disconnect ends it.
