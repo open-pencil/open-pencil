@@ -1,0 +1,1 @@
+- `@open-pencil/cloud/contract` exports the Cloud API as oRPC contracts (`cloudAPIContract`, `publicCloudAPIContract`, `adminContract`, `internalContract`), so a client or service can call Cloud with routes, answers, and error codes checked against the same Valibot schemas the server uses.
