@@ -91,7 +91,14 @@ export function createMCPRoutes(dependencies: MCPRouteDependencies) {
       // Clients in a browser send the token themselves; no cookie ever reaches the endpoint.
       cors({
         origin: '*',
-        allowHeaders: ['Authorization', 'Content-Type', 'Mcp-Protocol-Version', 'Mcp-Session-Id'],
+        allowHeaders: [
+          'Authorization',
+          'Content-Type',
+          'Mcp-Method',
+          'Mcp-Name',
+          'Mcp-Protocol-Version',
+          'Mcp-Session-Id'
+        ],
         exposeHeaders: ['WWW-Authenticate', 'Mcp-Session-Id']
       })
     )

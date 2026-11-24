@@ -17,6 +17,7 @@ import {
   type CollaborationRoomIdentity,
   type CollaborationStateStore,
   type RelayConnection,
+  type RelayPeerState,
   type RelaySocket
 } from '#cloud/server'
 import { SignJWT } from 'jose'
@@ -62,6 +63,8 @@ export function guest(guestId: string, name = guestId): CollaborationPrincipal {
 export type TestRelayClient = {
   frames: RelayServerFrame[]
   closed: { code: number; reason: string } | null
+  /** What the relay last kept about the peer, as a resumed connection would read it. */
+  remembered: RelayPeerState | null
   connection: RelayConnection
   /** Sends the frame in one message, as a peer that never splits frames would. */
   send(frame: RelayClientFrame): void
@@ -78,6 +81,7 @@ export function connectTestClient(connect: (socket: RelaySocket) => RelayConnect
   const client: Omit<TestRelayClient, 'connection'> = {
     frames: [],
     closed: null,
+    remembered: null,
     received: 0,
     send(frame) {
       connection.receive(encodeRelayClientFrame(frame))
@@ -102,6 +106,9 @@ export function connectTestClient(connect: (socket: RelaySocket) => RelayConnect
       const assembled = assembler.push(data)
       const frame = assembled.type === 'frame' ? decodeRelayServerFrame(assembled.data) : null
       if (frame) client.frames.push(frame)
+    },
+    remember(state) {
+      client.remembered = state
     },
     close(code, reason) {
       if (client.closed) return

@@ -160,9 +160,7 @@ describe('agent tools through the relay', () => {
       type: 'auth',
       token: await relayTicket({ documentId, permission: 'view', principal: alice })
     })
-    await new Promise((resolve) => {
-      setTimeout(resolve, 20)
-    })
+    await until(() => lowered.remembered?.authorization.permission === 'view')
     const outcome = hub.callTool(documentId, 'alice', call)
     const handed = await nextCall(editor)
     say(editor, { type: 'result', id: handed.id, ok: true, result: undefined })

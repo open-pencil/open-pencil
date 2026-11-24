@@ -1,5 +1,6 @@
 import {
   CLOUD_API_MAX_BODY_BYTES,
+  CLOUD_MCP_PATH,
   CLOUD_DISCOVERY_PATH,
   CLOUD_PROTOCOL_VERSION,
   CLOUD_SERVICES_JWKS_PATH
@@ -60,6 +61,10 @@ export function createCloudApp(services: CloudServices) {
       })
     : new Hono<CloudAPIEnvironment>()
 
+  const limitBody = bodyLimit({
+    maxSize: CLOUD_API_MAX_BODY_BYTES,
+    onError: (context) => context.json({ error: { code: 'invalid_request' as const } }, 413)
+  })
   const cloudApp = new Hono<CloudAPIEnvironment>()
     .onError(cloudErrorHandler(services.reportError))
     .use('*', cloudRequestId(services.forwardedRequestId))
@@ -68,13 +73,8 @@ export function createCloudApp(services: CloudServices) {
     .use(CLOUD_DISCOVERY_PATH, cloudCORS)
     .use('/api/*', cloudCORS)
     .use('/api/*', requireMinimumEditor(config.minimumEditorVersion))
-    .use(
-      '/api/*',
-      bodyLimit({
-        maxSize: CLOUD_API_MAX_BODY_BYTES,
-        onError: (context) => context.json({ error: { code: 'invalid_request' as const } }, 413)
-      })
-    )
+    .use('/api/*', limitBody)
+    .use(CLOUD_MCP_PATH, limitBody)
     .use('*', async (context, next) => {
       await next()
       if (shouldPreventIndexing(context.req.path, config.indexingPolicy)) {
