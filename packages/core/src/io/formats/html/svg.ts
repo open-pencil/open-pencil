@@ -207,7 +207,8 @@ function drawNamedIcon(
   const paths = svgIconPaths(content, space, box, svgViewportAttributes(markup))
   if (paths.length === 0) return true
   // A mask icon takes the background that shows through it; other SVG, the text color.
-  const color = parseCSSColor(paint ?? element.computedStyle?.color) ?? BLACK
+  const color =
+    parseCSSColor(paint ?? element.computedStyle?.color, graph.documentColorSpace) ?? BLACK
   drawIcon(graph, frameId, { ...named, ...box, paths }, Math.max(box.width, box.height), color)
   // A layer the page gave no id or class, named only by its tag, takes the icon's name, as an
   // icon placed from the picker does, so swapping it renames it too.

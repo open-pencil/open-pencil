@@ -6,7 +6,7 @@ import {
   useExposedInstances
 } from '@open-pencil/vue/controls/component-props'
 import { useSlotProperties } from '@open-pencil/vue/controls/slots'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
@@ -25,7 +25,7 @@ const visible = computed(
 )
 /** Thumbnail edge in the Add instances list, matching the picker's 32px tile. */
 const SLOT_THUMBNAIL_SIZE = 32
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const componentSectionUI = { title: 'text-component' }
 
 const sectionLabel = computed(() =>

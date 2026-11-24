@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const designCheckMessageDefaults = {
   tab: 'Lint',
   tabCount: params('errors and warnings: {count}'),
@@ -104,5 +102,3 @@ export const designCheckMessageDefaults = {
   ruleNoDetachedInstances: 'Looks like a component',
   ruleNoDetachedInstancesHelp: 'This frame looks like a reusable element. Use a component instance.'
 } as const
-
-export const designCheckMessages = i18n('designCheck', designCheckMessageDefaults)

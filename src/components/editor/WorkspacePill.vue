@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { resolvedAppTheme } from '@/app/shell/theme'
 import BrandMark from '@/components/brand/BrandMark.vue'
@@ -24,7 +24,7 @@ const {
   chatOpen?: boolean
 }>()
 const emit = defineEmits<{ showUi: []; toggleChat: []; reset: []; leave: [] }>()
-const { editor } = useI18n()
+const editor = useMessages('editor')
 </script>
 
 <template>

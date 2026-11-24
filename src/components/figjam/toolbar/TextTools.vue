@@ -10,7 +10,7 @@ import type { FigJamTextSize, FigJamTypeface } from '@open-pencil/scene-graph/fi
 import { useFigJamStyle } from '@open-pencil/vue/controls/figjam-style'
 import { MIXED } from '@open-pencil/vue/controls/node-props'
 import { useTypography } from '@open-pencil/vue/controls/typography'
-import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { loadFont } from '@/app/editor/fonts'
 import { useFigJamTextOptions } from '@/components/figjam/text-options'
@@ -28,8 +28,9 @@ const { align = false } = defineProps<{ align?: boolean }>()
 
 const toolbar = useFigJamStyle()
 const typography = useTypography({ fontLoader: { load: loadFont } })
-const figjam = useFigJamMessages()
-const { menu, panels } = useI18n()
+const figjam = useMessages('figjam')
+const menu = useMessages('menu')
+const panels = useMessages('panels')
 const { sizeOptions, typefaceOptions } = useFigJamTextOptions()
 const styles = tv(theme)()
 

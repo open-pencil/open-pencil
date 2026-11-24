@@ -4,6 +4,7 @@ import { figJamSectionTitleColors } from '@open-pencil/scene-graph/figjam'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
+import { drawnColor } from '#core/canvas/renderer/colors'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import type { RotationPreview, SceneGeometry } from '#core/geometry'
 
@@ -22,7 +23,7 @@ export function sectionLabelColors(r: SkiaRenderer, graph: SceneGraph, node: Sce
     const outline = node.strokes[figJam.strokeIndex]
     return {
       // The outline's colour as drawn, in the canvas's colour space; the pill itself is opaque.
-      background: { ...r.resolveStrokeColor(outline, figJam.strokeIndex, node, graph), a: 1 },
+      background: { ...drawnColor(outline.color, graph), a: 1 },
       border: r.ck.Color4f(0, 0, 0, FIGJAM_TITLE_EDGE),
       hover: r.ck.Color4f(text, text, text, 0.08),
       foreground: r.ck.Color4f(text, text, text, 1)
@@ -30,7 +31,7 @@ export function sectionLabelColors(r: SkiaRenderer, graph: SceneGraph, node: Sce
   }
   const background: Color =
     node.fills.length > 0 && node.fills[0].visible
-      ? r.resolveFillColor(node.fills[0], 0, node, graph)
+      ? drawnColor(node.fills[0].color, graph)
       : { r: 0.37, g: 0.37, b: 0.37, a: 1 }
   const foreground = canvasLabelForeground(background, r.pageColor)
   return {
@@ -100,9 +101,8 @@ function frameTitleBackground(
   }
   let background = r.pageColor
   for (const section of sections) {
-    for (const [index, fill] of section.fills.entries()) {
-      if (fill.visible)
-        background = compositeOver(r.resolveFillColor(fill, index, section, graph), background)
+    for (const fill of section.fills) {
+      if (fill.visible) background = compositeOver(drawnColor(fill.color, graph), background)
     }
   }
   return background

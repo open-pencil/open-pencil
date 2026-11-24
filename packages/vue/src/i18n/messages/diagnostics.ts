@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const diagnosticsMessageDefaults = {
   usageDescription: 'Local usage summaries from recorded AI requests.',
   usageRequests: 'Requests',
@@ -133,5 +131,3 @@ export const diagnosticsMessageDefaults = {
   reportCrashed: 'OpenPencil closed unexpectedly after an error.',
   reportUnexpectedError: 'Something went wrong in OpenPencil.'
 } as const
-
-export const diagnosticsMessages = i18n('diagnostics', diagnosticsMessageDefaults)

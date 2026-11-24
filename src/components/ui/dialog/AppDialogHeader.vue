@@ -2,7 +2,7 @@
 import { DialogClose, DialogDescription, DialogTitle } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useDialogUI, type DialogUI } from '@/components/ui/dialog/ui'
 
@@ -23,7 +23,7 @@ const {
 }>()
 
 const cls = useDialogUI(ui)
-const common = useCommonMessages()
+const common = useMessages('common')
 /** Close, unless the dialog names its close button otherwise. */
 const closeName = computed(() => closeLabel ?? common.value.close)
 </script>

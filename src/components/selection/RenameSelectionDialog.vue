@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch, useTemplateRef } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/dialog'
 
 const store = useEditorStore()
-const { rename, common } = useI18n()
+const rename = useMessages('rename')
+const common = useMessages('common')
 const match = ref('')
 const replacement = ref('')
 const startNumber = ref(1)

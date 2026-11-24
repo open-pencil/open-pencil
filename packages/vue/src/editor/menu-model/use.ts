@@ -1,4 +1,3 @@
-import { useStore } from '@nanostores/vue'
 import { computed } from 'vue'
 
 import { useEditorCommands } from '#vue/editor/commands/use'
@@ -6,11 +5,11 @@ import { useEditor } from '#vue/editor/context'
 import { buildEditMenu, buildObjectMenu, buildViewMenu } from '#vue/editor/menu-model/builders'
 import { buildCanvasContextMenu } from '#vue/editor/menu-model/canvas'
 import { useSelectionState } from '#vue/editor/selection-state/use'
-import { menuMessages } from '#vue/i18n'
 
 export type { MenuActionNode, MenuEntry, MenuSeparatorNode } from '#vue/editor/menu-model/types'
 
 import type { MenuEntry } from '#vue/editor/menu-model/types'
+import { useMessages } from '#vue/i18n'
 
 /**
  * Returns ready-to-render menu models derived from the current editor state.
@@ -24,7 +23,7 @@ export function useMenuModel() {
   const { menuItem: commandMenuItem, otherPages, moveSelectionToPage } = useEditorCommands()
   const selection = useSelectionState()
 
-  const t = useStore(menuMessages)
+  const t = useMessages('menu')
 
   const editMenu = computed<MenuEntry[]>(() => buildEditMenu(commandMenuItem))
 

@@ -41,6 +41,13 @@ enum NodePhase {
   REMOVED = 1;
 }
 
+enum FrameUnits {
+  PIXELS = 0;
+  INCHES = 1;
+  MM = 2;
+  CM = 3;
+}
+
 enum WindingRule {
   NONZERO = 0;
   ODD = 1;
@@ -167,6 +174,7 @@ enum BlendMode {
   SATURATION = 16;
   COLOR = 17;
   LUMINOSITY = 18;
+  UNSET = 19;
 }
 
 enum PaintType {
@@ -327,6 +335,69 @@ enum DashMode {
   STRETCH = 1;
 }
 
+message GeoBundleParam {
+  uint key = 1;
+  float number = 2;
+  Vector vector = 3;
+  Color color = 4;
+  GUID node = 5;
+  float[] numbers = 6;
+  uint integer = 7;
+  uint64 big = 8;
+  bool flag = 9;
+  string text = 10;
+}
+
+message GeoBundleColumn {
+  uint key = 1;
+  float[] numbers = 2;
+  uint[] integers = 3;
+  GUID[] guids = 4;
+}
+
+message GeoBundleOpRow {
+  uint kind = 1;
+  uint[] inputs = 2;
+  GUID id = 3;
+  bool disabled = 4;
+  GeoBundleParam[] params = 5;
+  GeoBundleColumn[] columns = 6;
+}
+
+message GeoBundleHead {
+  GUID id = 1;
+  GeoBundleParam[] params = 2;
+}
+
+message GeoBundleLayerRow {
+  uint kind = 1;
+  GUID id = 2;
+  uint geoIndex = 3;
+  uint paintIndex = 4;
+  GeoBundleParam[] params = 5;
+  GeoBundleHead[] heads = 6;
+  GeoBundleColumn[] records = 7;
+}
+
+message GeoBundleTable {
+  uint kind = 1;
+  GUID id = 2;
+  GeoBundleColumn[] columns = 3;
+}
+
+message GeoBundle {
+  GeoBundleOpRow[] ops = 1;
+  GeoBundleLayerRow[] layers = 2;
+  GeoBundleTable[] tables = 3;
+}
+
+message GeoBundleParamBinding {
+  GUID targetId = 1;
+  uint paramKey = 2;
+  uint component = 3;
+  VariableData varValue = 4;
+}
+
 enum ImageType {
   PNG = 0;
   JPEG = 1;
@@ -334,6 +405,9 @@ enum ImageType {
   PDF = 3;
   MP4 = 4;
   GIF = 5;
+  WEBM = 6;
+  LOTTIE = 7;
+  DOTLOTTIE = 8;
 }
 
 enum ExportConstraintType {
@@ -363,6 +437,12 @@ enum TextAutoResize {
 enum TextTruncation {
   DISABLED = 0;
   ENDING = 1;
+}
+
+enum TextWrapStyle {
+  AUTO = 0;
+  BALANCE = 1;
+  PRETTY = 2;
 }
 
 enum StyleSetType {
@@ -408,6 +488,8 @@ enum StackJustify {
   MAX = 2;
   SPACE_EVENLY = 3;
   SPACE_BETWEEN = 4;
+  SPACE_AROUND = 5;
+  SPACE_EVENLY_CSS = 6;
 }
 
 enum GridChildAlign {
@@ -441,6 +523,7 @@ enum StackWrap {
 enum StackCounterAlignContent {
   AUTO = 0;
   SPACE_BETWEEN = 1;
+  STRETCH = 2;
 }
 
 enum ConnectionType {
@@ -521,6 +604,30 @@ enum EasingType {
   SPRING_PRESET_TWO = 12;
   SPRING_PRESET_THREE = 13;
   HOLD = 14;
+  EASE_IN = 15;
+}
+
+enum TextElementGrouping {
+  CHARACTER = 0;
+  CHARACTER_NO_WHITESPACE = 1;
+  WORD = 2;
+  LINE = 3;
+  PARAGRAPH = 4;
+}
+
+enum TextElementDelayOrder {
+  LEFT_RIGHT = 0;
+  RIGHT_LEFT = 1;
+  CENTER_OUT = 2;
+  RANDOM = 3;
+}
+
+enum TextElementTransformOriginMode {
+  MATCH = 0;
+  CHARACTER = 1;
+  WORD = 2;
+  LINE = 3;
+  PARAGRAPH = 4;
 }
 
 enum ScrollDirection {
@@ -568,6 +675,33 @@ message ColorStopVar {
   Color color = 1;
   VariableData colorVar = 2;
   float position = 3;
+  AuthoredColor authoredColor = 4;
+}
+
+enum ColorSpace {
+  DEFAULT = 0;
+  SRGB = 1;
+  DISPLAY_P3 = 2;
+  HSL = 3;
+  HSB = 4;
+  OKLAB = 5;
+  OKLCH = 6;
+  CMYK = 7;
+}
+
+message AuthoredColor {
+  ColorSpace space = 1;
+  float c0 = 2;
+  float c1 = 3;
+  float c2 = 4;
+  float c3 = 5;
+  float c4 = 6;
+  AuthoredColor spotFallbackColor = 7;
+}
+
+message AuthoredColorStop {
+  AuthoredColor authoredColor = 1;
+  float position = 2;
 }
 
 struct Matrix {
@@ -650,6 +784,16 @@ enum CodeSnapshotState {
   OK = 2;
   SNAPSHOT_ERROR = 3;
   LLM_IN_PROGRESS = 4;
+  STALE = 5;
+  BUILD_ERROR = 6;
+}
+
+enum CachedPreviewStatus {
+  UNKNOWN = 0;
+  PENDING = 1;
+  COMPLETE = 2;
+  FAILED = 3;
+  ERROR = 4;
 }
 
 enum SnapshotCaptureMode {
@@ -953,6 +1097,16 @@ message PasteSource {
   GUID srcNode = 2;
 }
 
+message WeaveConnection {
+  string workflowId = 1;
+  string nodeId = 2;
+}
+
+message WeaveLayerConnection {
+  string weaveVariableId = 1;
+  string paintId = 2;
+}
+
 struct FilterColorAdjust {
   float tint;
   float shadows;
@@ -997,12 +1151,15 @@ message Paint {
   PaintFilterMessage paintFilter = 14;
   uint[] emojiCodePoints = 15;
   Video video = 18;
+  VideoFillPlayback videoFillPlayback = 47;
   uint originalImageWidth = 19;
   uint originalImageHeight = 20;
   VariableData opacityVar = 38;
   VariableData colorVar = 21;
   VariableData imageVar = 31;
   ColorStopVar[] stopsVar = 23;
+  VariableData gradientVar = 43;
+  VariableData paintVar = 46;
   string thumbHashBase64 = 24;
   byte[] thumbHash = 25;
   GUID sourceNodeId = 26;
@@ -1018,6 +1175,26 @@ message Paint {
   Vector noiseSize = 36;
   CodeComponentId customEffectId = 39;
   ComponentPropAssignment[] componentPropAssignments = 40;
+  TimingInfo timingInfo = 48;
+  InterpolationColorSpace interpolationColorSpace = 41;
+  InterpolationHueMethod interpolationHueMethod = 42;
+  AuthoredColor authoredColor = 44;
+  AuthoredColorStop[] authoredStops = 45;
+}
+
+enum InterpolationColorSpace {
+  DEFAULT = 0;
+  OKLAB = 1;
+  OKLCH = 2;
+  HSL = 3;
+  SRGB_LINEAR = 4;
+}
+
+enum InterpolationHueMethod {
+  SHORTER = 0;
+  LONGER = 1;
+  INCREASING = 2;
+  DECREASING = 3;
 }
 
 enum NoiseType {
@@ -1074,6 +1251,11 @@ message TextData {
   DerivedTextLineData[] derivedLines = 19;
 }
 
+message DerivedLayoutData {
+  float width = 1;
+  float height = 2;
+}
+
 message DerivedTextData {
   Vector layoutSize = 1;
   Baseline[] baselines = 2;
@@ -1087,6 +1269,7 @@ message DerivedTextData {
   float[] logicalIndexToCharacterOffsetMap = 10;
   MentionBox[] mentionBoxes = 11;
   DerivedTextLineData[] derivedLines = 12;
+  ChecklistMarker[] checklistMarkers = 13;
 }
 
 message HyperlinkBox {
@@ -1138,6 +1321,13 @@ message Blockquote {
   Rect verticalBar = 1;
   Rect quoteMarkBounds = 2;
   uint styleID = 3;
+}
+
+message ChecklistMarker {
+  Rect bounds = 1;
+  uint styleID = 2;
+  uint lineIndex = 3;
+  bool isChecked = 4;
 }
 
 message VectorData {
@@ -1330,6 +1520,9 @@ message CollaborativePlainText {
   CollaborativeTextStrippedOpRunWithLoc[] historyOpsWithLoc = 2;
   byte[] historyStringContentBuffer = 3;
   CollaborativeTextOpRun[] changesToAppend = 4;
+  string snapshotText = 5;
+  CollaborativeTextOpID[] snapshotVersion = 6;
+  string resolvedDiscoveryPipelineText = 7;
 }
 
 message CollaborativeTextSelection {
@@ -1466,6 +1659,8 @@ message Effect {
   float startRadius = 21;
   Color color = 2;
   Color secondaryColor = 24;
+  AuthoredColor authoredColor = 56;
+  AuthoredColor secondaryAuthoredColor = 57;
   Vector noiseSize = 22;
   uint seed = 29;
   bool clipToShape = 23;
@@ -1487,6 +1682,8 @@ message Effect {
   VariableData refractionIntensityVar = 42;
   CodeComponentId customEffectId = 43;
   ComponentPropAssignment[] componentPropAssignments = 44;
+  TimingInfo timingInfo = 58;
+  bool customEffectUseBackdrop = 59;
   VariableData startRadiusVar = 45;
   VariableData startOffsetXVar = 46;
   VariableData startOffsetYVar = 47;
@@ -1583,6 +1780,7 @@ message Transform3d {
   TransformSchemaType type = 1;
   TransformSchemaValue value = 2;
   bool backfaceHidden = 3;
+  bool visible = 4;
 }
 
 struct NumberVector2D {
@@ -1594,6 +1792,7 @@ message Scene3d {
   float perspective = 1;
   NumberVector2D perspectiveOrigin = 2;
   bool preserve3d = 3;
+  bool visible = 4;
 }
 
 message TransformOrigin {
@@ -1613,6 +1812,11 @@ enum PrototypeDeviceType {
   PRESENTATION = 3;
 }
 
+enum CodePreviewDevice {
+  BROWSER = 0;
+  IOS_SIMULATOR = 1;
+}
+
 enum DeviceRotation {
   NONE = 0;
   CCW_90 = 1;
@@ -1623,6 +1827,7 @@ message PrototypeDevice {
   Vector size = 2;
   string presetIdentifier = 3;
   DeviceRotation rotation = 4;
+  CodePreviewDevice device = 5;
 }
 
 enum OverlayPositionType {
@@ -1672,6 +1877,12 @@ enum ExportBackgroundType {
   GRID = 2;
 }
 
+enum ExportMp4VideoCodecFamily {
+  H264 = 0;
+  AV1 = 1;
+  VP9 = 2;
+}
+
 message ExportSettings {
   string suffix = 1;
   ImageType imageType = 2;
@@ -1688,6 +1899,11 @@ message ExportSettings {
   int frameRate = 13;
   int loopCount = 14;
   ExportBackgroundType backgroundType = 15;
+  float duration = 16;
+  bool svgAnimated = 17;
+  bool pdfPrint = 18;
+  ExportMp4VideoCodecFamily mp4VideoCodecFamily = 19;
+  FrameRate frameRateRatio = 20;
 }
 
 enum ExportSVGIDMode {
@@ -1974,6 +2190,7 @@ message Annotation {
   AnnotationProperty[] properties = 2;
   string labelV2 = 3;
   GUID categoryId = 4;
+  Vector offset = 5;
 }
 
 enum AnnotationMeasurementNodeSide {
@@ -2016,11 +2233,26 @@ message WidgetPointer {
   GUID nodeId = 1;
 }
 
+enum AttributionRole {
+  UNKNOWN = 0;
+  EDITOR = 1;
+  FIGMA_AGENT = 2;
+  EXTERNAL_AGENT = 3;
+  INTERNAL_OPERATION = 4;
+}
+
+message ChangeAttribution {
+  AttributionRole role = 1;
+}
+
 message EditInfo {
   string timestampIso8601 = 1;
   string userId = 2;
   uint lastEditedAt = 3;
   uint createdAt = 4;
+  string createdUserId = 5;
+  ChangeAttribution createAttribution = 6;
+  ChangeAttribution lastEditAttribution = 7;
 }
 
 enum EditorType {
@@ -2112,6 +2344,7 @@ message NodeChange {
   uint typeTag = 56;
   string name = 5;
   uint nameTag = 57;
+  bool webCompatibleRendering = 627;
   bool isPublishable = 174;
   string description = 318;
   LibraryMoveInfo libraryMoveInfo = 256;
@@ -2217,6 +2450,7 @@ message NodeChange {
   FontVariantNumericFraction fontVariantNumericFraction = 135;
   FontVariantCaps fontVariantCaps = 136;
   FontVariantPosition fontVariantPosition = 137;
+  string textLanguage = 626;
   Number letterSpacing = 165;
   string fontVersion = 202;
   LeadingTrim leadingTrim = 322;
@@ -2236,6 +2470,7 @@ message NodeChange {
   FontVariation[] fontVariations = 260;
   uint textBidiVersion = 279;
   TextTruncation textTruncation = 280;
+  TextWrapStyle textWrapStyle = 594;
   bool hasHadRTLText = 292;
   EmojiImageSet emojiImageSet = 391;
   string slideThumbnailHash = 392;
@@ -2250,6 +2485,9 @@ message NodeChange {
   uint blendModeTag = 61;
   Vector size = 11;
   uint sizeTag = 63;
+  float width = 628;
+  float height = 629;
+  DerivedLayoutData derivedLayoutData = 630;
   Matrix transform = 12;
   uint transformTag = 64;
   float[] dashPattern = 13;
@@ -2277,10 +2515,17 @@ message NodeChange {
   uint fillPaintsTag = 90;
   Paint[] strokePaints = 39;
   uint strokePaintsTag = 91;
+  GeoBundle geoBundleGeometry = 617;
+  Paint[] geoBundlePaints = 618;
+  GeoBundleParamBinding[] geoBundleParamBindings = 619;
   Effect[] effects = 43;
   uint effectsTag = 95;
+  AudioFill[] audioFills = 603;
+  AudioTrack[] audioTracks = 605;
+  AudioBeatAnalysis[] audioBeatAnalyses = 613;
   Color backgroundColor = 50;
   uint backgroundColorTag = 102;
+  string cmykIccProfile = 622;
   Path[] fillGeometry = 51;
   uint fillGeometryTag = 103;
   Path[] strokeGeometry = 52;
@@ -2346,6 +2591,10 @@ message NodeChange {
   StackCounterAlignContent stackCounterAlignContent = 343;
   int[] sortedMovingChildIndices = 406;
   uint stackLayoutVersion = 574;
+  float stackChildMarginTop = 606;
+  float stackChildMarginRight = 607;
+  float stackChildMarginBottom = 608;
+  float stackChildMarginLeft = 609;
   GUIDPositionMap gridRows = 435;
   GUIDPositionMap gridColumns = 436;
   float gridRowGap = 437;
@@ -2477,6 +2726,8 @@ message NodeChange {
   uint frameMaskDisabledTag = 116;
   bool resizeToFit = 117;
   uint resizeToFitTag = 118;
+  FrameUnits frameUnits = 620;
+  bool forPrint = 625;
   BooleanOperation booleanOperation = 36;
   uint booleanOperationTag = 88;
   VectorMirror handleMirroring = 44;
@@ -2574,6 +2825,7 @@ message NodeChange {
   SemanticWeight semanticWeight = 374;
   SemanticItalic semanticItalic = 375;
   bool areSlidesManuallyIndented = 403;
+  bool isAuthoredAnimationPlaybackEnabled = 621;
   bool isResponsiveSet = 387;
   DerivedBreakpointData derivedBreakpointData = 500;
   GUID defaultResponsiveSetId = 398;
@@ -2596,13 +2848,16 @@ message NodeChange {
   string sourceCodeLibraryKey = 504;
   string[] sourceCodeLibraryKeys = 515;
   UsedMakeLibrary[] usedMakeLibraries = 524;
+  CodeSource[] attachedCodeSources = 615;
   string makeLibraryComponentId = 518;
   bool shouldHidePreviewForMakeKitCreation = 520;
   bool isMakeKit = 551;
   PrototypeDevice codePreviewSettings = 531;
+  CodePreviewState codePreviewState = 612;
   CodeExample[] codeExamples = 525;
   CodeFileId exportedFromCodeFileId = 428;
   string codeExportName = 430;
+  string codeExportPath = 631;
   string codeComponentDescription = 547;
   CodeComponentId backingCodeComponentId = 429;
   bool isMainCodeComponent = 487;
@@ -2613,6 +2868,7 @@ message NodeChange {
   string codeChatMessagesKey = 484;
   CodeSnapshot codeSnapshot = 459;
   CodeSnapshotLayers codeSnapshotLayers = 589;
+  string nativeCodeSlotId = 614;
   uint codeSnapshotInvalidatedAt = 480;
   bool isCodeBehavior = 465;
   bool autoForkCode = 469;
@@ -2652,17 +2908,25 @@ message NodeChange {
   CanvasNodeId backingNodeId = 499;
   string pageStatus = 548;
   TRSSTransform2D motionTransform = 523;
+  bool linkMotionScaleAspectRatio = 597;
+  TextElementDelayBehaviour textElementDelayBehaviour = 610;
   int64 timelinePosition = 506;
   KeyframeValueData keyframeValue = 507;
   VariableData keyframeValueRef = 586;
   InterpolationType interpolationType = 505;
   BezierHandles bezierHandles = 508;
   EasingData easingData = 535;
+  BezierHandles motionPathBezierHandles = 598;
+  InterpolationColorSpace interpolationColorSpace = 599;
+  InterpolationHueMethod interpolationHueMethod = 600;
   KeyframeOperation keyframeOperation = 509;
   TimelinePositionType timelinePositionType = 510;
+  TrackLoopMode trackLoopMode = 591;
   bool isClip = 545;
   GUID clipId = 511;
   uint64 timelineDuration = 512;
+  FrameRate timelineKeyframeSnappingFps = 601;
+  bool quantizeTimelinePlayback = 602;
   int64 timelineOffset = 513;
   bool timelineDisabled = 543;
   PlaybackStyle playbackStyle = 514;
@@ -2676,10 +2940,13 @@ message NodeChange {
   TransitionOverrideData transitionOverrides = 526;
   bool useLegacySmartAnimate = 544;
   SourceControlConfig sourceControlConfig = 557;
+  MakeContentState makeContentState = 595;
   SpecBlockType specBlockType = 559;
   CollaborativePlainText specBlockContent = 560;
   string specCodeBlockLanguage = 561;
   string specBlockTableAlignment = 562;
+  int specBlockTableCellRowSpan = 623;
+  int specBlockTableCellColumnSpan = 624;
   int specBlockIndentLevel = 563;
   string specImageHash = 575;
   int specWidth = 576;
@@ -2687,11 +2954,17 @@ message NodeChange {
   TableRowColumnSizeMap specBlockTableRowHeights = 578;
   TableRowColumnSizeMap specBlockTableColumnWidths = 579;
   string specEmbedUrl = 590;
+  bool specCanvasScrollEnabled = 604;
+  PreviewRasterSnapshot previewRasterSnapshot = 611;
   bool placeholder = 565;
   string placeholderClientLifecycleId = 584;
   int placeholderInvalidateAt = 585;
+  BehaviorAttachment[] behaviorAttachments = 616;
   bool disableJitDst = 567;
   CustomToolArtifactRef customToolArtifactRef = 588;
+  WeaveConnection weaveConnection = 592;
+  WeaveLayerConnection[] weaveLayerConnections = 593;
+  string weaveLayerId = 596;
 }
 
 enum GitRepoRefProvider {
@@ -2704,6 +2977,7 @@ message GitRepoRef {
   GitRepoRefProvider provider = 1;
   string gitRepo = 2;
   string gitRef = 3;
+  string gitBaseRef = 4;
 }
 
 message SourceControlConfig {
@@ -2711,9 +2985,23 @@ message SourceControlConfig {
   GitRepoRef upstream = 2;
 }
 
+enum MakeContentState {
+  UNKNOWN = 0;
+  EMPTY = 1;
+  POPULATED = 2;
+  SEEDED = 3;
+}
+
+message CodePreviewState {
+  string route = 1;
+}
+
 message CodeSnapshot {
   CodeSnapshotState state = 6;
   uint invalidatedAt = 7;
+  CachedPreviewStatus cachedPreviewStatus = 8;
+  string commitSha = 9;
+  string capturedRoute = 10;
   Paint[] paints = 1;
   Vector offset = 2;
   Vector layoutSize = 3;
@@ -2721,13 +3009,22 @@ message CodeSnapshot {
   uint devicePixelRatio = 4;
 }
 
+message PreviewRasterSnapshot {
+  Paint paint = 1;
+  Vector size = 2;
+  string contentKey = 3;
+}
+
 message CodeOutputLayer {
   NodeChange node = 1;
+  GUID sourceNodeId = 2;
 }
 
 message CodeSnapshotLayers {
   CodeSnapshotState state = 1;
   uint invalidatedAt = 2;
+  CachedPreviewStatus cachedPreviewStatus = 4;
+  string commitSha = 5;
   CodeOutputLayer[] layers = 3;
 }
 
@@ -2746,6 +3043,11 @@ message CodeExample {
 
 message UsedMakeLibrary {
   string makeLibraryId = 1;
+}
+
+message CodeSource {
+  string id = 1;
+  string type = 2;
 }
 
 message CookieBannerText {
@@ -3019,6 +3321,25 @@ message VideoPlayback {
   bool showControls = 4;
   uint startTimeMs = 5;
   uint endTimeMs = 6;
+  float playbackRate = 7;
+}
+
+message VideoFillPlayback {
+  uint startTimeMs = 1;
+  uint endTimeMs = 2;
+  int64 timelineOffsetUs = 3;
+  int64 playbackDurationUs = 4;
+  int64 loopPhaseOffsetUs = 5;
+  float volume = 6;
+  bool mute = 7;
+  VariableData volumeVar = 8;
+  uint sourceVideoDurationMs = 9;
+}
+
+message TimingInfo {
+  int64 timelineOffsetUs = 1;
+  int64 playbackDurationUs = 2;
+  int64 startTimeUs = 3;
 }
 
 enum MediaAction {
@@ -3141,6 +3462,21 @@ enum VariableField {
   ARC_DATA_STARTING_ANGLE = 65;
   ARC_DATA_ENDING_ANGLE = 66;
   ARC_DATA_INNER_RADIUS = 67;
+  KEYFRAME_VALUE = 68;
+  MOTION_TRANSLATION_XY = 69;
+  MOTION_SCALE_XY = 70;
+  SCENE_3D_PERSPECTIVE = 71;
+  STAR_INNER_SCALE = 72;
+  MOTION_TRANSFORM_ORIGIN_XY = 73;
+  MOTION_TRANSFORM_ORIGIN_X = 74;
+  MOTION_TRANSFORM_ORIGIN_Y = 75;
+  TEXT_ELEMENT_DELAY = 76;
+  TRANSFORM_3D_ROTATION_XYZ = 77;
+  STACK_CHILD_MARGIN_TOP = 78;
+  STACK_CHILD_MARGIN_RIGHT = 79;
+  STACK_CHILD_MARGIN_BOTTOM = 80;
+  STACK_CHILD_MARGIN_LEFT = 81;
+  TIMELINE_DURATION = 82;
 }
 
 message VariableModeBySetMap {
@@ -3331,6 +3667,7 @@ message ComponentPropDef {
   string description = 11;
   SlotPropConfig slotPropConfig = 12;
   ColorArrayConfig colorArrayConfig = 13;
+  ComponentPropVisibilityClause[] visibleWhen = 14;
 }
 
 message ComponentPropValue {
@@ -3346,6 +3683,8 @@ message ComponentPropValue {
   CirclePoint circlePointValue = 10;
   Gradient gradientValue = 11;
   ColorPoint colorPointValue = 12;
+  ColorArray colorArrayValue = 13;
+  Paint paintValue = 14;
 }
 
 message TimelineData {
@@ -3353,6 +3692,10 @@ message TimelineData {
   bool defaultTimeline = 2;
   GUID parentTimelineDefId = 3;
   PlaybackStyle playbackStyle = 4;
+  bool autoplay = 5;
+  FrameRate keyframeSnappingFps = 6;
+  bool quantizePlayback = 7;
+  VariableData durationUsVar = 8;
 }
 
 message TimelineDefinitionsMap {
@@ -3372,6 +3715,8 @@ message TimelineAssignmentKey {
 message TimelineBindingData {
   int64 offsetUs = 1;
   bool disabled = 2;
+  bool autoplay = 3;
+  PlaybackStyleData playbackStyleInParent = 4;
 }
 
 message TimelineAssignmentsMap {
@@ -3401,11 +3746,29 @@ enum ComponentPropType {
   CIRCLE_POINT = 14;
   GRADIENT = 15;
   COLOR_POINT = 16;
+  PAINT = 17;
+  NODE = 18;
 }
 
 message ComponentPropPreferredValues {
   string[] stringValues = 1;
   InstanceSwapPreferredValue[] instanceSwapValues = 2;
+  VariableData[] parameterValues = 3;
+}
+
+message ComponentPropVisibilityClause {
+  ComponentPropSiblingMatch[] siblingPropDefMatches = 1;
+}
+
+message ComponentPropSiblingMatch {
+  string propName = 1;
+  ComponentPropVisibilityValue[] anyOf = 2;
+}
+
+message ComponentPropVisibilityValue {
+  string stringValue = 1;
+  float floatValue = 2;
+  bool boolValue = 3;
 }
 
 message ParameterConfig {
@@ -3435,6 +3798,7 @@ message InputConfig {
   VariableData unit = 1;
   VariableData min = 2;
   VariableData max = 3;
+  string icon = 4;
 }
 
 message SliderConfig {
@@ -3522,9 +3886,16 @@ message GradientStop {
   VariableData color = 2;
 }
 
+message GradientParameterValue {
+  ColorStop[] stops = 1;
+  Matrix transform = 2;
+  float opacity = 3;
+}
+
 message SelectOption {
   VariableData value = 1;
   string label = 2;
+  string icon = 3;
 }
 
 message SelectConfig {
@@ -3667,6 +4038,9 @@ enum SpecBlockType {
   TODO_LIST_ITEM_CHECKED = 18;
   IMAGE = 19;
   EMBED = 20;
+  EMBEDDED_CANVAS = 21;
+  VIDEO = 22;
+  CODE_LAYER = 23;
 }
 
 enum InternalEnumForTest {
@@ -3693,6 +4067,7 @@ message PartialPasteAnnotation {
   bool isPartial = 1;
   uint64 annotatedAt = 2;
   BackfillError errorState = 3;
+  bool upserted = 4;
 }
 
 message VariantPropSpec {
@@ -3725,6 +4100,7 @@ message TextLineData {
   int consistencyStyleId = 6;
   int listStartOffset = 7;
   bool isFirstLineOfList = 8;
+  bool isLineChecked = 11;
 }
 
 message DerivedTextLineData {
@@ -3737,6 +4113,7 @@ enum LineType {
   UNORDERED_LIST = 2;
   BLOCKQUOTE = 3;
   HEADER = 4;
+  CHECKLIST = 5;
 }
 
 enum SourceDirectionality {
@@ -3771,6 +4148,7 @@ message PrototypeEvent {
   string voiceEventPhrase = 5;
   float transitionTimeout = 6;
   float mediaHitTime = 7;
+  VariableData transitionTimeoutVar = 8;
 }
 
 message PrototypeVariableTarget {
@@ -3788,8 +4166,13 @@ message PrototypeAction {
   TransitionType transitionType = 2;
   float transitionDuration = 3;
   EasingType easingType = 4;
+  VariableData transitionDurationVar = 46;
+  VariableData easingVar = 47;
   float transitionTimeout = 5;
   bool transitionShouldSmartAnimate = 6;
+  bool enableJitSmartAnimate = 43;
+  InterpolationColorSpace interpolationColorSpace = 44;
+  InterpolationHueMethod interpolationHueMethod = 45;
   ConnectionType connectionType = 7;
   Vector overlayRelativePosition = 9;
   NavigationType navigationType = 10;
@@ -3989,6 +4372,22 @@ message VideoStateChangeData {
   bool isPlayingSound = 3;
   uint[] currentTimes = 4;
   uint actionTakenTimestamp = 5;
+  float playbackRate = 6;
+  bool hasMuteOverride = 7;
+  uint64 timelinePositionUs = 8;
+  uint64[] nativeSourceTimesUs = 9;
+  TimelinePlaybackStateData sharedTimelineState = 10;
+}
+
+message TimelinePlaybackStateData {
+  uint status = 1;
+  uint64 playbackTimeUs = 2;
+  GUID timelineRootId = 3;
+  GUID timelineDefId = 4;
+  GUID focusedSubtimelineRootId = 5;
+  bool reversing = 6;
+  bool timelinePlaybackUnboundFromParent = 7;
+  bool timelinePlaybackOverridesAutoplay = 8;
 }
 
 message EmbeddedPrototypeData {
@@ -4094,6 +4493,10 @@ message AprilFunFigPal {
   string name = 2;
 }
 
+message SanrioCharacter {
+  string character = 1;
+}
+
 enum Heartbeat {
   FOREGROUND = 0;
   BACKGROUND = 1;
@@ -4118,6 +4521,17 @@ message AgentInfo {
   string name = 1;
   string logo = 2;
   string oauthClientId = 3;
+}
+
+enum AgentActivityStatus {
+  RUNNING = 1;
+  COMPLETED = 2;
+}
+
+message AgentCanvasActivity {
+  GUID[] nodeIds = 1;
+  AgentActivityStatus status = 2;
+  string triggeringUserId = 3;
 }
 
 message UserChange {
@@ -4167,6 +4581,10 @@ message UserChange {
   NodeChatExchange[] nodeChatExchanges = 42;
   DesignFullPageViewState designFullPageViewState = 45;
   AgentInfo agentInfo = 46;
+  TimelinePlaybackStateData[] timelinePlaybackState = 47;
+  AgentCanvasActivity agentCanvasActivity = 48;
+  string assistantThreadId = 49;
+  SanrioCharacter sanrioCharacter = 50;
 }
 
 message InteractiveSlideElementChange {
@@ -4265,6 +4683,17 @@ enum PasteAssetType {
   STYLE_PROPERTIES_EFFECT = 5;
 }
 
+enum NodeChangeOrder {
+  GUID = 0;
+  PREORDER = 1;
+  TOPOLOGICAL = 2;
+}
+
+message ChangeSetIdentifiers {
+  string clientLifecycleId = 1;
+  string toolCallId = 2;
+}
+
 message Message {
   MessageType type = 1;
   uint sessionID = 2;
@@ -4311,6 +4740,10 @@ message Message {
   PasteAssetType pasteAssetType = 41;
   ObjectAnimationList objectAnimations = 43;
   SceneGraphQueryMode sceneGraphQueryMode = 45;
+  GUID[] undoBatchPageIds = 46;
+  string originFileKey = 47;
+  NodeChangeOrder nodeChangeOrder = 48;
+  ChangeSetIdentifiers changeSetIdentifiers = 49;
 }
 
 message EncodedOffsetsIndex {
@@ -4364,6 +4797,30 @@ message RichMediaData {
   RichMediaType richMediaType = 2;
 }
 
+enum LengthUnit {
+  AUTO = 0;
+  PIXELS = 1;
+  PERCENT = 2;
+  REM = 3;
+}
+
+message Length {
+  float value = 1;
+  LengthUnit unit = 2;
+}
+
+enum Unit {
+  AUTO = 0;
+  PIXELS = 1;
+  PERCENT = 2;
+  REM = 3;
+}
+
+message UnitNumber {
+  float value = 1;
+  Unit unit = 2;
+}
+
 enum VariableDataType {
   BOOLEAN = 0;
   FLOAT = 1;
@@ -4397,6 +4854,11 @@ enum VariableDataType {
   CIRCLE_POINT = 29;
   GRADIENT = 30;
   COLOR_POINT = 31;
+  GRADIENT_PAINT = 32;
+  PAINT = 33;
+  LENGTH = 34;
+  TRANSITION_PARAMETER_DATA = 35;
+  UNIT_NUMBER = 36;
 }
 
 enum VariableResolvedDataType {
@@ -4424,6 +4886,11 @@ enum VariableResolvedDataType {
   CIRCLE_POINT = 22;
   GRADIENT = 23;
   COLOR_POINT = 24;
+  GRADIENT_PAINT = 25;
+  PAINT = 26;
+  LENGTH = 27;
+  TRANSITION_PARAMETER_DATA = 28;
+  UNIT_NUMBER = 29;
 }
 
 message VariableAnyValue {
@@ -4456,6 +4923,11 @@ message VariableAnyValue {
   CirclePoint circlePointValue = 27;
   Gradient gradientValue = 28;
   ColorPoint colorPointValue = 29;
+  GradientParameterValue gradientParameterValue = 30;
+  Paint paintValue = 31;
+  Length lengthValue = 32;
+  TransitionParameterValue transitionParameterValue = 33;
+  UnitNumber unitNumberValue = 34;
 }
 
 enum ExpressionFunction {
@@ -4480,6 +4952,9 @@ enum ExpressionFunction {
   IS_TRUTHY = 18;
   KEYFRAME = 19;
   COMPOSE_COLOR = 20;
+  PAINT_TO_COLOR = 21;
+  RESOLVE_LENGTH = 22;
+  TRANSITION = 23;
 }
 
 message Expression {
@@ -4600,6 +5075,16 @@ message TRSSTransform2D {
   float shearX = 4;
 }
 
+message TextElementDelayBehaviour {
+  bool enabled = 1;
+  TextElementGrouping grouping = 2;
+  float delayMs = 3;
+  TextElementDelayOrder order = 4;
+  bool clipContent = 5;
+  TextElementTransformOriginMode transformOriginMode = 6;
+  Vector transformOrigin = 7;
+}
+
 message VariableData {
   VariableAnyValue value = 1;
   VariableDataType dataType = 2;
@@ -4647,6 +5132,7 @@ enum VariableScope {
   PARAGRAPH_INDENT = 20;
   FONT_VARIATIONS = 21;
   TRANSFORM = 22;
+  COLOR_OPACITY = 23;
 }
 
 message KeyframeAnyValue {
@@ -4654,6 +5140,15 @@ message KeyframeAnyValue {
   Color colorValue = 2;
   TextData textDataValue = 3;
   Vector vectorValue = 4;
+  bool boolValue = 5;
+  Circle circleValue = 6;
+  Line lineValue = 7;
+  CirclePoint circlePointValue = 8;
+  ColorPoint colorPointValue = 9;
+  GradientParameterValue gradientParameterValue = 10;
+  Paint paintValue = 11;
+  Rotation3D rotation3DValue = 12;
+  UnitNumber unitNumberValue = 13;
 }
 
 enum KeyframeValueType {
@@ -4662,6 +5157,15 @@ enum KeyframeValueType {
   COLOR = 2;
   TEXT_DATA = 3;
   VECTOR = 4;
+  BOOL = 5;
+  CIRCLE = 6;
+  LINE = 7;
+  CIRCLE_POINT = 8;
+  COLOR_POINT = 9;
+  GRADIENT_PAINT = 10;
+  PAINT = 11;
+  ROTATION_3D = 12;
+  UNIT_NUMBER = 13;
 }
 
 message KeyframeValueData {
@@ -4701,6 +5205,16 @@ message KeyframeTrackParameterValue {
   KeyframeTrackParameter[] parameters = 1;
 }
 
+message TransitionParameterValue {
+  KeyframeValueData startValue = 1;
+  KeyframeValueData endValue = 2;
+  EasingData easing = 3;
+  int64 offsetUs = 4;
+  int64 durationUs = 5;
+  GUID timelineDefId = 6;
+  KeyframeOperation operation = 7;
+}
+
 message AnimationPresets {
   AnimationPresetData[] presets = 1;
 }
@@ -4708,6 +5222,7 @@ message AnimationPresets {
 message AnimationPresetData {
   AnimationPresetId animationPresetId = 1;
   GUID timelineDefId = 2;
+  string sortPosition = 3;
 }
 
 message StyleAnimation {
@@ -4719,30 +5234,47 @@ message StyleIdForAnimation {
   GUID timelineDefId = 2;
   StyleId animationStyleId = 3;
   int64 timelineOffset = 4;
+  GeneratedAnimationPreset[] generatedAnimationPresets = 5;
+  string sortPosition = 6;
+  VariableData timelineOffsetVar = 7;
+}
+
+message GeneratedAnimationPreset {
+  AnimationPresetId animationPresetId = 1;
 }
 
 message Tools {
   ToolData[] tools = 1;
 }
 
+message ToolNodePropAssignment {
+  GUID defId = 1;
+  GUID nodeId = 2;
+}
+
 message ToolData {
   ToolId toolId = 1;
   CodeComponentId backingCodeComponentId = 2;
   ComponentPropAssignment[] componentPropAssignments = 3;
+  ToolNodePropAssignment[] nodePropAssignments = 4;
 }
 
-message CustomEffects {
-  CustomEffectData[] customEffects = 1;
+enum SpringType {
+  NORMALIZED = 0;
+  PHYSICAL = 1;
 }
 
-message CustomEffectData {
-  CustomEffectId customEffectId = 1;
+enum SpringPlatform {
+  IOS_WEB = 0;
+  ANDROID = 1;
 }
 
 message SpringParams {
   float stiffness = 1;
   float damping = 2;
   float mass = 3;
+  SpringType springType = 4;
+  SpringPlatform springPlatform = 5;
 }
 
 message TransitionEasingAnyValue {
@@ -4787,6 +5319,23 @@ enum TransitionOverrideBindingTopLevelField {
   EFFECT_DATA = 2;
   FILL_PAINT_DATA = 3;
   STROKE_PAINT_DATA = 4;
+  AUDIO_FILLS = 6;
+  GEO_BUNDLE_DATA = 7;
+}
+
+enum AudioParametrizedField {
+  MISSING = 0;
+  GAIN = 1;
+  TIMELINE_OFFSET = 2;
+}
+
+enum KeyframeBindingPaintParametrizedField {
+  MISSING = 0;
+  COLOR = 1;
+  OPACITY = 2;
+  GRADIENT = 3;
+  VIDEO_VOLUME = 4;
+  PAINT = 5;
 }
 
 message TransitionOverrideBindingLocation {
@@ -4794,6 +5343,8 @@ message TransitionOverrideBindingLocation {
   int parameterFieldValue = 2;
   int index = 3;
   int effectParametrizedFieldValue = 4;
+  AudioParametrizedField audioParametrizedField = 5;
+  KeyframeBindingPaintParametrizedField paintParametrizedField = 6;
 }
 
 enum KeyframeBindingEffectParametrizedField {
@@ -4826,6 +5377,12 @@ message NodeContentsKeyframeBindingLocation {
   VariableField parameterFieldValue = 2;
   int index = 3;
   KeyframeBindingEffectParametrizedField effectParametrizedFieldValue = 4;
+  AudioParametrizedField audioParametrizedField = 5;
+  GUID geoTargetId = 6;
+  uint geoParamKey = 7;
+  uint geoComponent = 8;
+  KeyframeBindingPaintParametrizedField paintParametrizedField = 9;
+  uint axisTag = 10;
 }
 
 message TransitionOverridePropMap {
@@ -5116,6 +5673,8 @@ message EditScope {
   EditScopeType type = 1;
   string label = 2;
   EditorType editorType = 3;
+  bool isAction = 4;
+  string actionId = 5;
 }
 
 enum EditScopeType {
@@ -5153,12 +5712,18 @@ message SectionPresetInfo {
   SectionPresetState state = 4;
 }
 
+message ClipboardTextRange {
+  int start = 1;
+  int end = 2;
+}
+
 message ClipboardSelectionRegion {
   GUID parent = 1;
   GUID[] nodes = 2;
   Vector enclosingFrameOffset = 3;
   bool pasteIsPartiallyOutsideEnclosingFrame = 4;
   SelectionRegionFocusType focusType = 5;
+  ClipboardTextRange textRange = 6;
 }
 
 enum FirstDraftKitType {
@@ -5327,11 +5892,52 @@ message CodeBehavior {
   bool isDeleted = 3;
 }
 
+message BehaviorTimelineReference {
+  GUID timelineRootId = 1;
+  GUID timelineDefId = 2;
+}
+
+message BehaviorTimingValue {
+  float durationMs = 1;
+}
+
+message BehaviorPropAssignment {
+  string propId = 1;
+  BehaviorTimelineReference timelineReference = 2;
+  string enumValue = 3;
+  GUID nodeReference = 4;
+  float numberValue = 5;
+  string stringValue = 6;
+  bool booleanValue = 7;
+  Color colorValue = 8;
+  BehaviorTimingValue timingValue = 9;
+  EasingData easingValue = 10;
+  VariableData variableBinding = 11;
+  Vector vec2Value = 12;
+}
+
+message BehaviorAttachment {
+  GUID attachmentId = 1;
+  string behaviorId = 2;
+  string revision = 3;
+  BehaviorPropAssignment[] propAssignments = 4;
+  bool enabled = 5;
+  bool isDeleted = 6;
+}
+
 message ClientRenderedMetadata {
   string loadID = 1;
   string trackingSessionId = 2;
   uint trackingSessionSequenceId = 3;
   string reconnectID = 4;
+}
+
+message CustomEffects {
+  CustomEffectData[] customEffects = 1;
+}
+
+message CustomEffectData {
+  CustomEffectId customEffectId = 1;
 }
 
 enum LinkBehaviorType {
@@ -5468,6 +6074,7 @@ message NodeChatExchange {
   NodeChatMessage[] messages = 2;
   bool isTyping = 3;
   FileUpdate[] fileUpdates = 4;
+  string sessionId = 5;
 }
 
 message NodeChatCompressionState {
@@ -5597,6 +6204,11 @@ message ImageImport {
   Image image = 2;
 }
 
+message FrameRate {
+  uint numerator = 1;
+  uint denominator = 2;
+}
+
 enum InterpolationType {
   HOLD = 0;
   BEZIER = 1;
@@ -5625,4 +6237,66 @@ enum PlaybackStyle {
   ONCE = 0;
   LOOP = 1;
   BOOMERANG = 2;
+}
+
+message PlaybackLoopStyle {
+  uint count = 1;
+}
+
+message PlaybackPingPongStyle {
+  uint count = 1;
+}
+
+message PlaybackStyleAnyValue {
+  PlaybackLoopStyle loopValue = 1;
+  PlaybackPingPongStyle pingPongValue = 2;
+}
+
+message PlaybackStyleData {
+  PlaybackStyle styleType = 1;
+  PlaybackStyleAnyValue value = 2;
+}
+
+enum TrackLoopMode {
+  NONE = 0;
+  LOOP = 1;
+}
+
+message AudioFill {
+  GUID id = 1;
+  string mediaHash = 2;
+  int64 timelineOffsetUs = 3;
+  int64 startTimeUs = 4;
+  int64 durationUs = 5;
+  float volume = 6;
+  bool mute = 7;
+  string displayName = 8;
+  bool loopEnabled = 9;
+  int64 playbackDurationUs = 10;
+  GUID trackId = 11;
+  int64 loopPhaseOffsetUs = 12;
+  int64 sourceDurationUs = 13;
+  float bpm = 14;
+  int64 beatOffsetUs = 15;
+  uint timeSignatureNumerator = 16;
+  uint timeSignatureDenominator = 17;
+  float beatConfidence = 18;
+  VariableData volumeVar = 19;
+  VariableData timelineOffsetVar = 20;
+}
+
+message AudioBeatAnalysis {
+  string mediaHash = 1;
+  float bpm = 2;
+  int64 beatOffsetUs = 3;
+  float beatConfidence = 4;
+  uint timeSignatureNumerator = 5;
+  uint timeSignatureDenominator = 6;
+}
+
+message AudioTrack {
+  GUID id = 1;
+  string name = 2;
+  float gain = 3;
+  bool mute = 4;
 }

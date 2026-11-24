@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 import { useShapeWithText } from '@open-pencil/vue/controls/shape-with-text'
-import { useToolMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { toolbarPopupSide } from '@open-pencil/vue/primitives/Toolbar'
 import type { ToolbarAlign, ToolbarSide } from '@open-pencil/vue/primitives/Toolbar'
 import { toolbarToolTestId } from '@open-pencil/vue/testing'
@@ -30,7 +30,7 @@ const {
   /** Where along its edge the toolbar sits; the picker lines up with the same end. */
   align?: ToolbarAlign
 }>()
-const tools = useToolMessages()
+const tools = useMessages('tools')
 const { toolKind, toolActive, drawKind } = useShapeWithText()
 const open = ref(false)
 

@@ -1,4 +1,5 @@
 export * from './basics'
+export * from './blobs'
 export * from './canvas-guides'
 export * from './convert'
 export * from './derived-text/build'

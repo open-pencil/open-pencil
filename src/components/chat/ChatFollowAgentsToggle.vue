@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useActiveEditorStoreRef, type EditorStore } from '@/app/editor/active-store'
 import { followWorkingAgents } from '@/app/presence/registry'
@@ -11,7 +11,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
  * the active tab unless a surface showing several documents names the one it belongs to.
  */
 const { store } = defineProps<{ store?: EditorStore }>()
-const ai = useAIMessages()
+const ai = useMessages('ai')
 const tabStore = useActiveEditorStoreRef()
 
 function toggle() {

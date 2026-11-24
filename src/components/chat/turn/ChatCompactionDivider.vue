@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { Compaction } from '@/app/ai/chat/compaction/marker'
 import { formatCompactNumber } from '@/app/i18n/number'
@@ -19,7 +19,7 @@ const { compaction, tokensAfter = null } = defineProps<{
   /** What the first reply after the compaction reported its request held, once there is one. */
   tokensAfter?: number | null
 }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const ui = chatCompactionTheme()
 </script>
 

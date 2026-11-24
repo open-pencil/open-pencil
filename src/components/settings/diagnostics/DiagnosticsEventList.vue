@@ -2,7 +2,7 @@
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { summarizeDiagnosticEvent, type DiagnosticCategory } from '@/app/diagnostics'
 import { useRecentDiagnostics } from '@/app/diagnostics/settings/recent'
@@ -14,7 +14,7 @@ import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
 const { refreshStats } = defineProps<{ refreshStats: () => Promise<void> }>()
-const { diagnostics: messages } = useI18n()
+const messages = useMessages('diagnostics')
 const dates = useDateFormat()
 
 const { visible, total, hasMore, showMore, level, category, categories } = useRecentDiagnostics(

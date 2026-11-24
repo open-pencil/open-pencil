@@ -1,5 +1,5 @@
 import type {
-  DocumentColorSpace,
+  ColorProfile,
   SceneNode,
   Variable,
   VariableCollection
@@ -11,5 +11,5 @@ export interface PortableSceneGraphData {
   images: Array<[string, Uint8Array]>
   variables: Array<[string, Variable]>
   variableCollections: Array<[string, VariableCollection]>
-  documentColorSpace: DocumentColorSpace
+  documentColorSpace: ColorProfile
 }

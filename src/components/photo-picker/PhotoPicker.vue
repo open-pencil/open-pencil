@@ -2,7 +2,7 @@
 import { computed, watch } from 'vue'
 
 import type { StockPhotoResult } from '@open-pencil/core/tools'
-import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { PHOTO_SERVICES, usePhotoSearch, type PhotoService } from '@/app/editor/photos/search'
 import { refreshMediaCredentials } from '@/app/settings/credentials/media'
@@ -34,8 +34,8 @@ const emit = defineEmits<{
 }>()
 const open = defineModel<boolean>('open', { default: false })
 
-const panels = usePanelMessages()
-const common = useCommonMessages()
+const pickerMessages = useMessages('panels/pickers')
+const common = useMessages('common')
 const search = usePhotoSearch()
 const { query, service, photos, loading, failed, hasMore, hasKey } = search
 
@@ -51,18 +51,21 @@ const serviceName = computed(() => serviceInfo.value?.name ?? service.value)
 const serviceOptions = PHOTO_SERVICES.map((item) => ({ value: item.id, label: item.name }))
 
 function credit(photo: StockPhotoResult) {
-  return panels.value.photoCredit({ photographer: photo.photographer, service: serviceName.value })
+  return pickerMessages.value.photoCredit({
+    photographer: photo.photographer,
+    service: serviceName.value
+  })
 }
 const items = computed<AppPickerItem[]>(() =>
   photos.value.map((photo) => ({ value: photo.sourceId, label: credit(photo) }))
 )
 
 const emptyLabel = computed(() => {
-  if (failed.value) return panels.value.photoSearchFailed({ service: serviceName.value })
-  if (loading.value) return panels.value.searchingIcons
+  if (failed.value) return pickerMessages.value.photoSearchFailed({ service: serviceName.value })
+  if (loading.value) return pickerMessages.value.searchingIcons
   return query.value.trim()
-    ? panels.value.noPhotosFound
-    : panels.value.photoSearchHint({ service: serviceName.value })
+    ? pickerMessages.value.noPhotosFound
+    : pickerMessages.value.photoSearchHint({ service: serviceName.value })
 })
 
 /** The keys are set where every service's are, in Settings, with room to read and paste. */
@@ -96,7 +99,7 @@ function pick(id: string) {
     :tooltip="tooltip"
     :side="side"
     :align="align"
-    :search-placeholder="panels.searchPhotos"
+    :search-placeholder="pickerMessages.searchPhotos"
     :empty-label="emptyLabel"
     :close-label="common.close"
     @select="pick"
@@ -112,7 +115,7 @@ function pick(id: string) {
       <AppSelect
         v-model="service"
         :options="serviceOptions"
-        :label="panels.photoService"
+        :label="pickerMessages.photoService"
         :ui="{
           trigger: 'h-6 w-auto shrink-0 border-0 bg-transparent px-1.5 hover:bg-hover',
           value: 'text-muted'
@@ -121,14 +124,14 @@ function pick(id: string) {
     </template>
     <template v-if="!hasKey" #setup>
       <AppPlaceholder
-        :label="panels.photoKeyHeading({ service: serviceName })"
-        :description="panels.photoKeyDescription({ service: serviceName })"
+        :label="pickerMessages.photoKeyHeading({ service: serviceName })"
+        :description="pickerMessages.photoKeyDescription({ service: serviceName })"
         data-test-id="photo-picker-key-needed"
       >
         <template #icon><icon-lucide-key-round class="size-5" /></template>
         <template #action>
           <AppButton color="primary" variant="solid" @click="openKeySettings">{{
-            panels.photoKeyAction
+            pickerMessages.photoKeyAction
           }}</AppButton>
         </template>
       </AppPlaceholder>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { cloudCommunityTabs } from '@/app/cloud/community/link'
 import { openSaveTo } from '@/app/storage/save-to/session'
@@ -13,7 +13,7 @@ import AppBanner from '@/components/ui/feedback/AppBanner.vue'
  * offers Save to for a copy the visitor can edit, signing in first when there is nowhere to save
  * yet. The tab becomes that copy (`cloudCommunityTabs`).
  */
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const store = computed(() => {
   const shown = activeTab.value?.store
   return shown && cloudCommunityTabs.value.has(shown) ? shown : null

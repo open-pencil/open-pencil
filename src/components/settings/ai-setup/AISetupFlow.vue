@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed, ref, useTemplateRef } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { designModelConnection } from '@/app/ai/models'
 import type { AISetupEntry } from '@/app/ai/models/settings/onboarding/dialog'
@@ -43,7 +43,8 @@ const {
   subscriptionsAvailable?: boolean
 }>()
 const emit = defineEmits<{ close: []; advanced: []; tour: [] }>()
-const { ai, common } = useI18n()
+const ai = useMessages('ai')
+const common = useMessages('common')
 const styles = tv(theme)()
 
 const onboarding = useAIOnboarding({ agentsAvailable, subscriptionsAvailable })

@@ -6,7 +6,7 @@ import { isGeneratedFrame, layerResizes } from '@open-pencil/scene-graph/generat
 import { readIcon } from '@open-pencil/scene-graph/icons'
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -100,7 +100,7 @@ const supportsLayoutGuides = useSceneComputed(() => {
 const freeStyle = useSceneComputed(() =>
   store.getSelectedNodes().every((selected) => !isGeneratedFrame(selected))
 )
-const { panels } = useI18n()
+const panels = useMessages('panels')
 </script>
 
 <template>

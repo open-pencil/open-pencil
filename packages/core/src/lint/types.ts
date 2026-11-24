@@ -1,4 +1,4 @@
-import type { SharedStyleKind } from '@open-pencil/scene-graph'
+import type { ColorProfile, SharedStyleKind } from '@open-pencil/scene-graph'
 
 export type Severity = 'error' | 'warning' | 'info' | 'off'
 
@@ -143,6 +143,8 @@ export interface LintVariables {
 
 export interface RuleContext {
   variables: LintVariables
+  /** The profile the document's colors are in, which color rules read them in. */
+  colorProfile: ColorProfile
   /** Whether `id`, a layer's style link, names a shared style of that kind in the document. */
   isSharedStyle(kind: SharedStyleKind, id: string | null): boolean
   report(issue: {

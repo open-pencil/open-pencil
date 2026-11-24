@@ -99,6 +99,7 @@ function services() {
       list: notUsed,
       download: notUsed,
       imageLinks: notUsed,
+      object: notUsed,
       thumbnail: notUsed
     },
     reports: { file: notUsed },

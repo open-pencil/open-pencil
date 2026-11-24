@@ -22,6 +22,12 @@ export const en: LandingMessages = {
         'Auto layout, constraints, fills, strokes, effects, and typography, with the controls where you expect them. Components take slots, so an instance keeps the design and brings its own content. Everything is undoable, and nothing waits on a server.',
       hint: 'Hover the selected cover and drag a corner to round it. The other players bring their own covers through the Artwork slot.'
     },
+    board: {
+      title: 'Plan on boards',
+      detail:
+        'Boards bring FigJam’s sticky notes, shapes, connectors, and sections, and open and save the .jam files Figma reads. Paste a Mermaid flowchart or open a draw.io diagram and it becomes shapes you can move, and agents sketch boards with the same tools.',
+      hint: 'Drag a sticky note or a shape: its connectors follow. Pick a tool from the toolbar to add your own.'
+    },
     interactive: {
       title: 'Components that work',
       detail:
@@ -114,68 +120,97 @@ export const en: LandingMessages = {
     shipped: {
       label: 'Shipped',
       entries: [
-        { title: 'Interactive components and preview' },
-        { title: 'Variables as design tokens' },
-        { title: 'Linting with one-click fixes' },
-        { title: 'AI agents as collaborators, with follow mode' },
-        { title: 'Revert, regenerate, and edit AI turns' },
-        { title: 'Code linked to canvas layers' },
-        { title: 'Visual diff and patch' },
+        { title: 'OpenPencil Cloud, also self-hosted' },
+        { title: 'FigJam-style boards' },
+        { title: 'Web pages from a URL as layers' },
+        { title: 'Agent Skills and subagents' },
+        { title: 'Variable formulas' },
+        { title: 'Variable fonts, Material Symbols, and SF Symbols' },
+        { title: 'Glass, progressive blur, noise, and texture' },
+        { title: 'Image adjustments' },
+        { title: 'The Scale tool' },
+        { title: 'A faster canvas' },
         { title: 'Comments and voice calls in shared rooms' },
-        { title: 'Vue and React components in the Code tab' },
-        { title: 'SVG and HTML import as editable layers' },
-        { title: 'Shader fills' },
-        { title: 'W3C design tokens' },
-        { title: 'A guided tour of the editor' },
-        { title: 'Lists and styles for any range of text' }
+        { title: 'Interactive components and preview' },
+        { title: 'Linting with one-click fixes' }
       ]
     },
     now: {
       label: 'Now',
       entries: [
         {
-          title: 'Storybook from real components',
-          detail: 'Stories that render Reka UI for Vue and Radix UI for React.'
+          title: 'Display P3 color',
+          detail: 'Documents drawn and exported in their color profile, as in Figma.'
         },
         {
-          title: 'Component authoring',
-          detail: 'Faster variant editing and canvas selection inside components.'
+          title: 'Website import',
+          detail: 'Pages from a URL drawn closer to the browser, at several window sizes.'
+        },
+        {
+          title: 'OpenPencil on Android',
+          detail: 'The editor on Android phones, tablets, and foldables.'
         }
       ]
     },
     next: {
       label: 'Next',
-      lead: {
-        title: 'Self-hosted OpenPencil',
-        detail:
-          'The whole workspace inside your own network: sync, sharing, comments, and team libraries without sending a file to anyone else.',
-        features: [
-          { title: 'Your storage', detail: 'Documents stay in your bucket, in your region.' },
-          {
-            title: 'Your identity',
-            detail: 'Sign-in through your OIDC or SSO provider, with roles.'
-          },
-          {
-            title: 'Your network',
-            detail: 'A collaboration relay that works behind your firewall.'
-          },
-          {
-            title: 'Your operations',
-            detail: 'Guided deployment, upgrades, backups, and retention.'
-          }
-        ]
-      },
-      entries: [
+      leads: [
         {
-          title: 'Version history',
-          detail: 'Automatic snapshots, named checkpoints, and restore.'
+          title: 'OpenPencil on your phone',
+          detail:
+            'A companion app for iOS and Android, and the editor itself on phones and tablets.',
+          features: [
+            {
+              title: 'Companion app',
+              detail: 'Open Cloud files, follow a room live, and answer comments and agents.'
+            },
+            {
+              title: 'Device preview',
+              detail: 'Mirror a frame from your desktop onto your phone while you design.'
+            },
+            {
+              title: 'Design on tablets',
+              detail: 'Touch and pencil input, with panels laid out for small screens.'
+            },
+            {
+              title: 'Same documents',
+              detail: 'The editor and Cloud you already use, not a separate app.'
+            }
+          ]
+        },
+        {
+          title: 'Presentations',
+          detail: 'Slide decks beside designs and boards, built from your design system.',
+          features: [
+            {
+              title: 'Your components',
+              detail: 'Decks use the same components, variables, and libraries as your designs.'
+            },
+            {
+              title: 'Presenter view',
+              detail: 'Speaker notes, full-screen presenting, and an audience that follows live.'
+            },
+            {
+              title: 'Figma Slides files',
+              detail: 'Open and save .deck files, and export to PDF and PowerPoint.'
+            },
+            {
+              title: 'Decks from AI',
+              detail: 'Draft a deck from an outline or a document, in the deck’s theme.'
+            }
+          ]
         }
       ],
-      cloud: {
-        title: 'OpenPencil Cloud',
-        detail:
-          'The hosted workspace for teams: live sync, sharing, libraries, and AI, with nothing to run.'
-      }
+      entries: [
+        {
+          title: 'Single sign-on',
+          detail: 'OIDC and SSO for teams, with service accounts and webhooks.'
+        },
+        {
+          title: 'Projects and folders',
+          detail: 'Organize Cloud workspaces, with templates and search.'
+        }
+      ]
     },
     later: {
       label: 'Later',
@@ -184,14 +219,17 @@ export const en: LandingMessages = {
         {
           title: 'Embeddable editor',
           detail: 'Put the editor on this page into your own product.'
-        }
+        },
+        { title: 'Prototyping', detail: 'Connections, transitions, and overlays between frames.' }
       ]
     }
   },
   cloud: {
-    badge: 'Early access',
+    badge: 'Now open',
     title: 'OpenPencil Cloud',
-    lede: "Your team's design workspace, hosted for you. Everyone edits the same files live, shares them with a link, and designs with AI, with nothing to install or run. Your files stay open: export them as .fig whenever you like.",
+    lede: 'Your team’s design workspace, hosted for you. Everyone edits the same files live, shares them with a link, and designs with AI paid from the plan’s credits, with nothing to install or run. Start free with 300 MB, and export your files as .fig whenever you like.',
+    signUp: 'Try OpenPencil Cloud',
+    plans: 'See plans',
     features: [
       {
         title: 'Real-time team sync',
@@ -202,35 +240,25 @@ export const en: LandingMessages = {
         detail: 'Send a link to review a design and discuss it right on the canvas.'
       },
       {
-        title: 'Team libraries',
-        detail: 'Publish components, styles, and tokens once and use them in every file.'
+        title: 'Version history',
+        detail: 'Named versions and autosaves to look at, restore, or copy.'
       },
-      { title: 'Hosted AI', detail: 'Agents that design with you, with no API keys to manage.' },
       {
-        title: 'SSO and admin controls',
-        detail: 'Single sign-on, roles, and control over who sees what.'
+        title: 'AI from your plan',
+        detail:
+          'Agents that design with you, paid from your plan’s credits, with no API keys to manage.'
+      },
+      {
+        title: 'Self-host it',
+        detail: 'Run the same server on your own infrastructure, under the Apache License 2.0.'
       }
     ]
-  },
-  waitlist: {
-    label: 'Email address',
-    placeholder: 'you@example.com',
-    submit: 'Join the waitlist',
-    confirmHuman: 'Confirm you’re human',
-    invalid: 'Enter a valid email address.',
-    joined: 'Check your inbox',
-    joinedDetail: 'Open the link we sent to confirm your address.',
-    failed: 'Couldn’t reach the waitlist. Check your connection and try again.',
-    privacy: 'We only email you about OpenPencil Cloud.',
-    refused: 'We couldn’t confirm you’re not a bot. Try again.',
-    limited: 'Too many attempts. Try again in a minute.',
-    unavailable: 'You can’t join from here. Join on openpencil.dev instead.'
   },
   closing: {
     title: 'Take your designs with you.',
     download: 'Download OpenPencil',
     docs: 'Read the docs',
-    cloud: 'Join the Cloud waitlist'
+    cloud: 'Try OpenPencil Cloud'
   },
   clipboard: {
     copy: 'Copy',
@@ -302,7 +330,7 @@ export const en: LandingMessages = {
       },
       web: {
         title: 'In the browser',
-        detail: 'The same editor at app.openpencil.dev, with nothing to install.',
+        detail: 'The same editor at cloud.openpencil.dev, with nothing to install.',
         action: 'Open the web app'
       },
       cli: {

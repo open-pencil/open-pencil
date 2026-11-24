@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import {
-  useAIMessages,
-  useCommonMessages,
-  useCredentialMessages,
-  useMediaMessages,
-  useSettingsMessages
-} from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useMediaSettingsEditor, type MediaSettingsService } from '@/app/settings/media/use'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
@@ -24,11 +18,11 @@ const emit = defineEmits<{ done: [] }>()
 const editor = useMediaSettingsEditor(service)
 const { key, providerID, keyStatus, keyCheck, error, dirty, busy, clearCredential, checkKey } =
   editor
-const ai = useAIMessages()
-const common = useCommonMessages()
-const credentials = useCredentialMessages()
-const media = useMediaMessages()
-const settings = useSettingsMessages()
+const ai = useMessages('ai')
+const common = useMessages('common')
+const credentials = useMessages('credentials')
+const media = useMessages('media')
+const settings = useMessages('settings')
 const provider = computed(() => editor.vector?.provider.value)
 const providerOptions = editor.vector?.providerOptions ?? []
 const SERVICE_NAMES = { pexels: 'Pexels', unsplash: 'Unsplash', exa: 'Exa' }

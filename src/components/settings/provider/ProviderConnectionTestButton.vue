@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { ProviderConnectionTestFailureReason } from '@/app/ai/models/connection-test'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -23,7 +23,8 @@ const {
   disabled = false
 } = defineProps<ProviderConnectionTestButtonProps>()
 const emit = defineEmits<{ test: [] }>()
-const { ai, common } = useI18n()
+const ai = useMessages('ai')
+const common = useMessages('common')
 
 const resultMessage = computed(() => {
   if (status !== 'success' && status !== 'error') return null

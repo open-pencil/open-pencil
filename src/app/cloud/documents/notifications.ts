@@ -1,6 +1,6 @@
 import { watch } from 'vue'
 
-import { cloudMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import type { EditorStore } from '@/app/editor/session'
 import { notify } from '@/app/shell/notifications'
@@ -26,7 +26,7 @@ function lostEditingToStorageLimit(before: RoomAccess | undefined, after: RoomAc
 function notifyStorageFull(store: EditorStore): void {
   const tabId = getTabForStore(store)?.id
   if (!tabId) return
-  const messages = cloudMessages.get()
+  const messages = messageStores['cloud/editor'].get()
   notify({
     event: 'cloudStorageFull',
     title: messages.storageFullTitle({ name: store.state.documentName }),
@@ -40,7 +40,7 @@ function notifyStorageFull(store: EditorStore): void {
 function notifyConflict(store: EditorStore, documentId: string): void {
   const tabId = getTabForStore(store)?.id
   if (!tabId) return
-  const messages = cloudMessages.get()
+  const messages = messageStores['cloud/editor'].get()
   notify({
     event: 'cloudConflict',
     title: messages.changedInTwoPlaces({ name: store.state.documentName }),

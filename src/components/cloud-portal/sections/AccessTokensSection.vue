@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 
 import type { CloudAccessToken, CloudAccessTokenCreate } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
@@ -16,7 +16,7 @@ import type { PortalAccessToken } from '../types'
 
 /** The signed-in person's personal access tokens: making, listing, and revoking them. */
 const portal = usePortal()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const dates = useDateFormat()
 
 const list = usePortalLoad(async () => (await portal.api.accessTokens()).tokens, [])

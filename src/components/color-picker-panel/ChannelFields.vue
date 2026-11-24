@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { fromPercent, toPercent } from '@open-pencil/vue/controls/color-model'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -15,11 +15,11 @@ interface Channel {
 }
 
 const ctx = useColorPickerPanelContext()
-const { panels } = useI18n()
+const pickerMessages = useMessages('panels/pickers')
 
 /** The format's three channels, which Figma lists beside the format with the alpha last. */
 const channels = computed<Channel[]>(() => {
-  const p = panels.value
+  const p = pickerMessages.value
   const okhcl = ctx.isOkHCLFormat ? ctx.okhcl?.okhcl : undefined
   if (okhcl)
     return [
@@ -140,7 +140,7 @@ const field = {
       @update:model-value="channel.set"
     />
     <NumberField
-      :aria-label="panels.alpha"
+      :aria-label="pickerMessages.alpha"
       :model-value="Math.round(alpha.value)"
       :min="0"
       :max="100"

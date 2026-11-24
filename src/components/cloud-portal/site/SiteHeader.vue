@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { CLOUD_COMMUNITY_PATH } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { useSiteIdentity } from '@/app/cloud-portal/identity'
@@ -24,7 +24,8 @@ import { siteHeader } from './ui'
 const portal = usePortal()
 const site = useSiteIdentity()
 const route = useRoute()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const communityMessages = useMessages('cloud/portal/community')
 const ui = siteHeader()
 const signInButton = useAppButtonUI({ variant: 'ghost', size: 'md', shape: 'pill' })
 const editorButton = useAppButtonUI({
@@ -51,13 +52,13 @@ const onCommunity = computed(() => route.path.startsWith(CLOUD_COMMUNITY_PATH))
           place="nav"
           :current="onCommunity"
         >
-          {{ messages.communityTitle }}
+          {{ communityMessages.communityTitle }}
         </SiteLink>
         <SiteLink :href="site.helpURL" external place="nav">
-          {{ site.official ? messages.siteDocs : messages.help }}
+          {{ site.official ? communityMessages.siteDocs : messages.help }}
         </SiteLink>
         <SiteLink v-if="site.official" :href="DESKTOP_DOWNLOAD_URL" external place="nav">
-          {{ messages.siteDownload }}
+          {{ communityMessages.siteDownload }}
         </SiteLink>
       </nav>
       <div :class="ui.actions()">

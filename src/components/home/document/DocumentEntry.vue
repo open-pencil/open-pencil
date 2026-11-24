@@ -12,7 +12,7 @@ import { tv } from 'tailwind-variants'
 import { computed, normalizeClass, type HTMLAttributes } from 'vue'
 
 import type { DocumentKind } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
 import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
@@ -52,7 +52,7 @@ const {
 }>()
 const emit = defineEmits<{ open: []; delete: [] }>()
 const styles = computed(() => documentEntry({ view, kind }))
-const { files } = useI18n()
+const files = useMessages('files')
 const kindLabel = computed(() =>
   kind ? { design: files.value.createDesign, board: files.value.createBoard }[kind] : null
 )

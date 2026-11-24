@@ -1,33 +1,34 @@
 <script setup lang="ts">
-import { colorToCSS } from '@open-pencil/scene-graph/color'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useColorCSS } from '@open-pencil/vue/controls/color-model'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import StandardColorSlider from '@/components/color-picker-panel/StandardColorSlider.vue'
 
 const ctx = useColorPickerPanelContext()
-const { panels } = useI18n()
+const colorCSS = useColorCSS()
+const pickerMessages = useMessages('panels/pickers')
 </script>
 
 <template>
   <StandardColorSlider
-    :label="panels.saturation"
+    :label="pickerMessages.saturation"
     :model-value="ctx.rekaColor"
     channel="saturation"
     color-space="hsb"
     :step="0.1"
-    :thumb-fill="colorToCSS(ctx.sliderPreview.hsbSaturation)"
+    :thumb-fill="colorCSS(ctx.sliderPreview.hsbSaturation)"
     data-test-id="color-slider-hsb-s"
     @update="ctx.onRekaColorUpdate"
   />
 
   <StandardColorSlider
-    :label="panels.brightness"
+    :label="pickerMessages.brightness"
     :model-value="ctx.rekaColor"
     channel="brightness"
     color-space="hsb"
     :step="0.1"
-    :thumb-fill="colorToCSS(ctx.sliderPreview.hsbBrightness)"
+    :thumb-fill="colorCSS(ctx.sliderPreview.hsbBrightness)"
     data-test-id="color-slider-hsb-b"
     @update="ctx.onRekaColorUpdate"
   />

@@ -46,6 +46,7 @@ import {
   inheritFromAncestors,
   linkedPropertyCopies
 } from './property-inheritance'
+import { savedSlotContent } from './slot-content'
 import { vectorStyleTable } from './style-dependencies'
 import { createDocumentVariables, type DocumentVariables } from './variables'
 
@@ -436,6 +437,10 @@ function createScopedReader(
     pages,
     get resources() {
       return structuredClone(resources.map(whole))
+    },
+    /** Slot content frames on the internal canvas and the records below them, whole. */
+    get slotContent() {
+      return structuredClone(savedSlotContent(changes, whole))
     },
     bindingDiagnostics,
     /** A record's copies of its set's properties, each by its own id to the set property's. */

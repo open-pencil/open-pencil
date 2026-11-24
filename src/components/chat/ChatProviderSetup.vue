@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { openSettingsDialog } from '@/app/settings/dialog'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 
-const { ai } = useI18n()
+const ai = useMessages('ai')
 </script>
 
 <template>

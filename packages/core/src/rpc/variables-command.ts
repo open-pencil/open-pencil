@@ -63,11 +63,11 @@ export const variablesCommand: RPCCommand<VariablesArgs, VariablesResult> = {
 
     const result: VariablesResult = {
       collections: [],
-      totalVariables: graph.variables.size,
-      totalCollections: graph.variableCollections.size
+      totalVariables: graph.getLiveVariables().length,
+      totalCollections: graph.getLiveCollections().length
     }
 
-    for (const coll of graph.variableCollections.values()) {
+    for (const coll of graph.getLiveCollections()) {
       if (collFilter && !coll.name.toLowerCase().includes(collFilter)) continue
 
       const collVars = graph
@@ -119,7 +119,7 @@ async function designTokenFiles(graph: SceneGraph): Promise<TokensResult> {
   const { files, issues } = exportDesignTokens(graph)
   return {
     css: '',
-    tokenCount: graph.variables.size,
+    tokenCount: graph.getLiveVariables().length,
     issues: issues.map(designTokenIssueMessage),
     files
   }

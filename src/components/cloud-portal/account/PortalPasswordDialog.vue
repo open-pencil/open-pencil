@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'
@@ -27,7 +27,7 @@ const {
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ submit: [passwords: { current: string; next: string }] }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const fields = useTemplateRef('fields')
 </script>
 

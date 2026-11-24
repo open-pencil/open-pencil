@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createLinter, type LintMessage } from '@open-pencil/core/lint'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type ColorProfile, type SceneNode } from '@open-pencil/scene-graph'
 
 const WHITE = { r: 1, g: 1, b: 1, a: 1 }
 const BLUE = { r: 0.23, g: 0.51, b: 0.96, a: 1 }
@@ -88,6 +88,27 @@ describe('color-contrast', () => {
       foreground: '#CCCCCC',
       background: '#FFFFFF'
     })
+  })
+
+  test("measures a Display P3 document's colors as the colors they are", () => {
+    const ratioIn = (profile: ColorProfile) => {
+      const graph = new SceneGraph()
+      graph.documentColorSpace = profile
+      const pageId = graph.getPages()[0].id
+      const card = graph.createNode('FRAME', pageId, { name: 'Card', fills: solid(WHITE) })
+      graph.createNode('TEXT', card.id, {
+        name: 'Label',
+        text: 'Hello',
+        fills: solid({ r: 1, g: 0.4, b: 0.4, a: 1 })
+      })
+      return lint(graph, 'color-contrast')[0]?.data?.ratio
+    }
+    // The same numbers are a more saturated, darker-reading red in P3, so the ratio differs.
+    const srgb = ratioIn('srgb')
+    const p3 = ratioIn('display-p3')
+    expect(srgb).toBeDefined()
+    expect(p3).toBeDefined()
+    expect(p3).not.toBe(srgb)
   })
 
   test('large text needs 3:1, as WCAG AA asks of it', () => {

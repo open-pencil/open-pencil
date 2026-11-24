@@ -11,7 +11,7 @@ import IconTrash2 from '~icons/lucide/trash-2'
 import IconUngroup from '~icons/lucide/ungroup'
 
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import type { ToolbarActionItem } from '@/components/toolbar/types'
@@ -20,7 +20,7 @@ import type { ToolbarActionItem } from '@/components/toolbar/types'
 export function useToolbarActions() {
   const store = useEditorStore()
   const { getCommand } = useEditorCommands()
-  const { menu } = useI18n()
+  const menu = useMessages('menu')
   const editActions = computed<ToolbarActionItem[]>(() => [
     { icon: IconCopy, label: menu.value.copy, action: () => void store.mobileCopy() },
     { icon: IconClipboard, label: menu.value.paste, action: () => void store.mobilePaste() },

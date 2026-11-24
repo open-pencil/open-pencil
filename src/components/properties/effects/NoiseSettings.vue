@@ -10,7 +10,7 @@ import {
   noiseTypeChange,
   type NoiseType
 } from '@open-pencil/vue/controls/effects'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -30,7 +30,7 @@ const emit = defineEmits<{
   patch: [changes: EffectChange]
 }>()
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const noise = computed(() => effect.noise ?? UNSET_NOISE)
 const typeOptions = computed(() => [
   { value: 'MONOTONE', label: panels.value.noiseMono },

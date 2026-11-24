@@ -3,7 +3,7 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { vTestId } from '@open-pencil/vue/testing'
 
 import AppMenu from '@/components/shell/AppMenu.vue'
@@ -14,7 +14,8 @@ import AssetsPanel from './assets-panel/AssetsPanel.vue'
 import LayerTree from './LayerTree/LayerTree.vue'
 import PagesPanel from './PagesPanel.vue'
 
-const { menu, panels } = useI18n()
+const menu = useMessages('menu')
+const panels = useMessages('panels')
 const activePanel = ref<'file' | 'assets'>('file')
 const panelModel = computed({
   get: () => activePanel.value,

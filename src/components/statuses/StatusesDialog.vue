@@ -3,7 +3,7 @@ import { computed, nextTick, ref, useTemplateRef, watch, type ComponentPublicIns
 
 import type { StatusWorkflowPreset } from '@open-pencil/scene-graph/statuses'
 import { useDocumentShortcuts } from '@open-pencil/vue/editor/keyboard'
-import { useCommonMessages, useStatusMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -26,8 +26,8 @@ import { statusRows } from './ui'
  * is one undo step; undo works from inside the dialog.
  */
 const store = useEditorStore()
-const messages = useStatusMessages()
-const common = useCommonMessages()
+const messages = useMessages('statuses')
+const common = useMessages('common')
 const onKeydown = useDocumentShortcuts()
 const editor = useStatusWorkflowDraft()
 const rows = statusRows()

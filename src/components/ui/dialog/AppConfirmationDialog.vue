@@ -2,7 +2,7 @@
 import { AlertDialogCancel, AlertDialogDescription, AlertDialogTitle } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
 
-import { useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 
@@ -37,7 +37,7 @@ const {
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
 const open = defineModel<boolean>('open', { default: false })
 const cls = useDialogUI()
-const common = useCommonMessages()
+const common = useMessages('common')
 const typedMatches = ref(false)
 /** Counts openings, so the typed field starts empty each time, even mid close animation. */
 const openings = ref(0)
