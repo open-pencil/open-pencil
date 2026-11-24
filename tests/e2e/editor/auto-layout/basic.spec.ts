@@ -81,6 +81,25 @@ test('direction controls switch between vertical grid and horizontal layout', as
   canvas.assertNoErrors()
 })
 
+test('a grid track shows its size and takes a typed one', async () => {
+  await selectFrame()
+  const layout = propertySection(page, 'Auto layout')
+  await layout.getByRole('button', { name: 'Grid layout' }).click()
+
+  const track = layout.getByRole('spinbutton', { name: 'C1', exact: true })
+  const room = expectDefined(await track.boundingBox(), 'track field')
+  expect(room.width).toBeGreaterThan(60)
+
+  await track.click()
+  await page.keyboard.type('3')
+  await page.keyboard.press('Enter')
+  await expect(track).toHaveAttribute('aria-valuenow', '3')
+
+  await layout.getByRole('button', { name: 'Vertical layout' }).click()
+  await canvas.waitForRender()
+  canvas.assertNoErrors()
+})
+
 test('gap NumberField sets itemSpacing', async () => {
   await selectFrame()
   const before = await getNodeById(page, frameId)
