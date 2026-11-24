@@ -17,6 +17,7 @@ import {
   requestImageUploadsSchema,
   sharedDocumentSchema,
   trashSchema,
+  updateDocumentSchema,
   workspaceUsageSchema
 } from '../documents'
 import { DOCUMENT_ERRORS } from './errors'
@@ -51,6 +52,9 @@ export const documentsContract = {
     .meta(at('POST', '/workspaces/{workspaceId}/documents', { successStatus: 201 }))
     .input(v.object({ params: workspaceParamsSchema, body: createDocumentSchema }))
     .output(documentResultSchema),
+  update: route
+    .meta(at('PATCH', '/documents/{documentId}', { successStatus: 204 }))
+    .input(v.object({ params: documentParamsSchema, body: updateDocumentSchema })),
   remove: route
     .meta(at('DELETE', '/documents/{documentId}', { successStatus: 204 }))
     .input(v.object({ params: documentParamsSchema })),

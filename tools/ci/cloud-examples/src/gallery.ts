@@ -16,6 +16,7 @@ export type GalleryClient = Pick<
   CloudAPIClient,
   | 'listDocuments'
   | 'createDocument'
+  | 'updateDocument'
   | 'getDocument'
   | 'listDocumentVersions'
   | 'saveDocumentVersion'
@@ -34,6 +35,8 @@ export type ExampleOutcome = {
   documentId: string
   created: boolean
   uploaded: boolean
+  /** Whether its description changed now. */
+  described: boolean
   /** Whether the release was named now, already was, or none was given. */
   version: 'named' | 'existing' | null
 }
@@ -114,13 +117,15 @@ async function storedMatches(
 
 /**
  * Publishes one example to the gallery workspace as the editor saves a document: created on its
- * first run, a new revision only when the file changed, and, for a release, its current state
- * named after it once. Running it again with the same file and release changes nothing.
+ * first run, a new revision only when the file changed, its description set when it differs, and,
+ * for a release, its current state named after it once. Running it again with the same file,
+ * description, and release changes nothing.
  */
 export async function publishExample(input: {
   cloud: GalleryClient
   workspaceId: string
   name: string
+  description: string
   bytes: Uint8Array
   release?: GalleryRelease
   objectFetch: CloudObjectFetch
@@ -144,6 +149,8 @@ export async function publishExample(input: {
       objectFetch: input.objectFetch
     })
   }
+  const described = document.description !== input.description
+  if (described) await cloud.updateDocument(document.id, { description: input.description })
   let version: ExampleOutcome['version'] = null
   if (input.release) {
     if (await hasNamedVersion(cloud, document.id, input.release.name)) version = 'existing'
@@ -152,7 +159,7 @@ export async function publishExample(input: {
       version = 'named'
     }
   }
-  return { name, documentId: document.id, created: !existing, uploaded, version }
+  return { name, documentId: document.id, created: !existing, uploaded, described, version }
 }
 
 /** One line for the log: what happened to an example's document. */
@@ -160,6 +167,7 @@ export function describeOutcome(outcome: ExampleOutcome): string {
   const steps = [
     outcome.created ? 'created' : null,
     outcome.uploaded ? 'uploaded a new revision' : 'unchanged',
+    outcome.described ? 'described' : null,
     outcome.version === 'named' ? 'named the release' : null,
     outcome.version === 'existing' ? 'release already named' : null
   ].filter((step) => step !== null)

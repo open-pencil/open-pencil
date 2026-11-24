@@ -145,6 +145,7 @@ describe('community gallery', () => {
       {
         id: tour,
         name: 'Tour',
+        description: null,
         kind: 'design',
         updatedAt: expect.any(String),
         revisionId: current,
@@ -167,6 +168,42 @@ describe('community gallery', () => {
       )
     ).toMatchObject({ status: 404 })
     expect(await outcome(server.withoutGalleryAPI.community.list())).toMatchObject({ status: 404 })
+  })
+
+  test('lists the description its editors set, which is not a change to the file', async () => {
+    const server = await gallery()
+    const tour = await server.document(server.workspace.community, 'Tour')
+    await server.save(tour, null, 'first')
+    const listed = async () => {
+      const [document] = (await server.visitorAPI.community.list()).body.documents
+      if (!document) throw new Error('The gallery lists nothing')
+      return document
+    }
+    const before = await listed()
+
+    await server.ownerAPI.documents.update({
+      params: { documentId: tour },
+      body: { description: '  A tour of the editor.  ' }
+    })
+    expect(await listed()).toEqual({ ...before, description: 'A tour of the editor.' })
+    const { documents } = await server.ownerAPI.documents.list({
+      params: { workspaceId: server.workspace.community }
+    })
+    expect(documents[0]).toMatchObject({ description: 'A tour of the editor.' })
+
+    await server.ownerAPI.documents.update({
+      params: { documentId: tour },
+      body: { description: '' }
+    })
+    expect(await listed()).toEqual(before)
+    expect(
+      await outcome(
+        server.visitorAPI.documents.update({
+          params: { documentId: tour },
+          body: { description: 'Spam' }
+        })
+      )
+    ).toMatchObject({ status: 401 })
   })
 
   test('opens a document as it is now or as a named version, and nothing outside it', async () => {

@@ -433,8 +433,14 @@ token of that account.
 The tool builds each example in its manifest (`src/examples.ts`; the tour is the editor's demo
 document) and saves it as the editor does, through `saveCloudDocument` in
 `@open-pencil/cloud/client`: the document is created the first time, gets a new revision only when
-its file changed, and, given a version, has its current state named after the release once. A run
-with the same files and version changes nothing.
+its file changed, takes the manifest's description when it differs, and, given a version, has its
+current state named after the release once. A run with the same files, descriptions, and version
+changes nothing.
+
+A document's description says what the file is, and editors set it with `PATCH
+/api/documents/:id`; it is not a change to the file, so the document's last change stays. The
+gallery's pages show it and give it to search engines and link previews, falling back to the newest
+named version's notes, which say what changed in that release.
 
 `[community] tour` names the gallery document editors open as their tour: discovery advertises it as
 `community.tourDocumentId`, and the editor and the docs landing download it with `fetchCommunityTour`

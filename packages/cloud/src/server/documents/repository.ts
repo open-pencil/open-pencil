@@ -6,7 +6,7 @@ import type { Kysely, Transaction } from 'kysely'
 import * as v from 'valibot'
 
 import { resolveDocumentAccess } from './access'
-import { documentSummary, getDocumentSummaryRow } from './summary'
+import { documentSummary, getDocumentSummaryRow, SUMMARY_COLUMNS } from './summary'
 
 const uuidSchema = v.pipe(v.string(), v.uuid())
 
@@ -39,16 +39,7 @@ export async function listDocuments(
   if (!(await workspaceRole(database, userId, workspaceId))) return undefined
   const rows = await database
     .selectFrom('document')
-    .select([
-      'id',
-      'workspaceId',
-      'name',
-      'kind',
-      'currentRevisionId',
-      'version',
-      'createdAt',
-      'updatedAt'
-    ])
+    .select(SUMMARY_COLUMNS)
     .where('workspaceId', '=', workspaceId)
     .where('deletedAt', 'is', null)
     .where('disabledAt', 'is', null)
@@ -70,6 +61,7 @@ export async function listSharedDocuments(
       'document.id',
       'document.workspaceId',
       'document.name',
+      'document.description',
       'document.kind',
       'document.currentRevisionId',
       'document.version',

@@ -28,6 +28,7 @@ export const documentTokenRoutes = {
   list: read.workspace,
   usage: read.workspace,
   create: write.workspace,
+  update: write.document,
   remove: write.document,
   access: read.document,
   download: read.document,

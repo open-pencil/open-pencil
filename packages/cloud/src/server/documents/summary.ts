@@ -1,10 +1,12 @@
 import type { DocumentSummary } from '#cloud/contract'
 import type { DocumentDatabase, DocumentSummaryRow } from '#cloud/server/documents/repository'
 
-const SUMMARY_COLUMNS = [
+/** The columns a document summary reads. */
+export const SUMMARY_COLUMNS = [
   'id',
   'workspaceId',
   'name',
+  'description',
   'kind',
   'currentRevisionId',
   'version',

@@ -66,6 +66,9 @@ export function createDocumentProcedures(service: DocumentService) {
     create: documents.create.handler(async ({ context, input }) => ({
       document: await service.create(context.actor.userId, input.params.workspaceId, input.body)
     })),
+    update: documents.update.handler(async ({ context, input }) => {
+      await service.update(context.actor.userId, input.params.documentId, input.body)
+    }),
     remove: documents.remove.handler(async ({ context, input }) => {
       await service.remove(context.actor.userId, input.params.documentId)
     }),

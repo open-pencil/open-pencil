@@ -5,9 +5,13 @@ import { renderToString } from 'vue/server-renderer'
 import CommunityDocumentPage from './CommunityDocumentPage.vue'
 import CommunityGalleryPage from './CommunityGalleryPage.vue'
 
-/** What a document says it is: its newest named version's notes, or else a plain sentence. */
+/**
+ * What a document says it is: its own description, else its newest named version's notes, else a
+ * plain sentence.
+ */
 export function communityDocumentDescription(document: CommunityDocument): string {
   return (
+    document.description ??
     document.versions.at(0)?.description ??
     `${document.name}, a file to open in OpenPencil and copy into your own workspace.`
   )

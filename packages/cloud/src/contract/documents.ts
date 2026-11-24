@@ -78,6 +78,8 @@ export const documentSummarySchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   workspaceId: v.pipe(v.string(), v.uuid()),
   name: v.string(),
+  /** What the file is, as its editors put it; servers from before descriptions list none. */
+  description: v.optional(v.nullable(v.string()), null),
   /** A design unless said otherwise; servers from before boards list no kind. */
   kind: v.optional(documentKindSchema, 'design'),
   currentRevisionId: v.nullable(v.pipe(v.string(), v.uuid())),
@@ -156,6 +158,17 @@ export const createDocumentSchema = v.object({
 export type CreateDocumentInput = v.InferOutput<typeof createDocumentSchema>
 /** A new document as a client sends it, which may leave out its kind to make a design. */
 export type CreateDocumentRequest = v.InferInput<typeof createDocumentSchema>
+
+/** The longest description a document keeps: a few sentences, as a search result shows. */
+export const CLOUD_DOCUMENT_DESCRIPTION_MAX_LENGTH = 500
+
+/** What an editor may change about a document besides its file: its description, or null for none. */
+export const updateDocumentSchema = v.object({
+  description: v.nullable(
+    v.pipe(v.string(), v.trim(), v.maxLength(CLOUD_DOCUMENT_DESCRIPTION_MAX_LENGTH))
+  )
+})
+export type UpdateDocumentInput = v.InferOutput<typeof updateDocumentSchema>
 
 export const createUploadSchema = v.object({
   baseRevisionId: v.nullable(v.pipe(v.string(), v.uuid())),

@@ -28,11 +28,14 @@ export type CommunityVersion = v.InferOutput<typeof communityVersionSchema>
 
 /**
  * A document in the deployment's community workspace, which anyone may open read-only: its name,
- * when it last changed, its thumbnail's path on the server, and its named versions, newest first.
+ * what it is, when it last changed, its thumbnail's path on the server, and its named versions,
+ * newest first.
  */
 export const communityDocumentSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   name: v.string(),
+  /** What the file is, as its editors put it; servers from before descriptions list none. */
+  description: v.optional(v.nullable(v.string()), null),
   kind: documentKindSchema,
   updatedAt: v.string(),
   revisionId: v.pipe(v.string(), v.uuid()),
