@@ -11,7 +11,6 @@ import {
   bearerAppToken,
   closedOAuthPaths,
   cloudOAuthAuthentication,
-  clientMetadataPlugins,
   cloudOAuthProviderOptions,
   providerRequest,
   resolveAppAccessToken
@@ -66,7 +65,7 @@ export type CloudAuthRuntimeOptions = {
    * adapter turns it on.
    */
   validateSchema?: boolean
-  /** How the runtime fetches apps' client metadata documents safely (`clientMetadataPlugins`). */
+  /** How the runtime fetches apps' client metadata documents safely (`cloudClientDiscovery`). */
   fetchClientMetadata?: ClientMetadataResourceFetch
 }
 
@@ -117,7 +116,7 @@ export function createBetterAuthAdapter(
   })
   // Apps connected through OAuth, where the deployment accepts them (`[oauth]`).
   const appProvider = config.oauthEnabled
-    ? oauthProvider(cloudOAuthProviderOptions(config.publicURL))
+    ? oauthProvider(cloudOAuthProviderOptions(config, database, runtime.fetchClientMetadata))
     : undefined
   const joining = enrollmentOptions(
     config,
@@ -206,7 +205,7 @@ export function createBetterAuthAdapter(
       ),
       providerPictures(createUserPictures(database, { publicURL: config.publicURL })),
       accessTokens,
-      ...(appProvider ? [appProvider, ...clientMetadataPlugins(runtime.fetchClientMetadata)] : [])
+      ...(appProvider ? [appProvider] : [])
     ],
     socialProviders: socialProviders(config),
     databaseHooks: { ...joining.databaseHooks, ...signInMethodHooks },

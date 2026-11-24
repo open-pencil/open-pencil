@@ -7,12 +7,15 @@ import {
   cloudAPIResource,
   cloudMCPResource
 } from '#cloud/contract'
+import type { CloudServerConfig } from '#cloud/server/config'
+import type { CloudDatabase } from '#cloud/server/db'
 import { hashCapability } from '#cloud/server/sharing/crypto'
-import { cimd } from '@better-auth/cimd'
 import type { ClientMetadataResourceFetch, OAuthOptions, Scope } from '@better-auth/oauth-provider'
 import { APIError } from 'better-auth'
+import type { Kysely } from 'kysely'
 
 import { chosenWorkspace } from './choices'
+import { cloudClientDiscovery } from './client-metadata'
 
 /** An access token's life; an app that asked for `offline_access` refreshes it. */
 const ACCESS_TOKEN_SECONDS = 60 * 60
@@ -30,7 +33,12 @@ const REFRESH_TOKEN_SECONDS = 30 * 24 * 60 * 60
  * - Access tokens are opaque and kept as digests, so revoking a connection stops them at once;
  *   Cloud checks them itself (`resolveAppAccessToken`).
  */
-export function cloudOAuthProviderOptions(publicURL: string): OAuthOptions<Scope[]> {
+export function cloudOAuthProviderOptions(
+  { publicURL, authSecret }: Pick<CloudServerConfig, 'publicURL' | 'authSecret'>,
+  database: Kysely<CloudDatabase>,
+  /** How the runtime fetches the metadata documents apps are known by, where it does safely. */
+  fetchClientMetadata?: ClientMetadataResourceFetch
+): OAuthOptions<Scope[]> {
   const api = cloudAPIResource(publicURL)
   const mcp = cloudMCPResource(publicURL)
   return {
@@ -53,6 +61,17 @@ export function cloudOAuthProviderOptions(publicURL: string): OAuthOptions<Scope
         return workspaceId
       }
     },
+    extensions: fetchClientMetadata
+      ? [
+          {
+            clientDiscovery: cloudClientDiscovery({
+              database,
+              secret: authSecret,
+              fetchClientMetadata
+            })
+          }
+        ]
+      : [],
     disableJwtPlugin: true,
     accessTokenExpiresIn: ACCESS_TOKEN_SECONDS,
     refreshTokenExpiresIn: REFRESH_TOKEN_SECONDS,
@@ -79,20 +98,6 @@ export function cloudOAuthProviderOptions(publicURL: string): OAuthOptions<Scope
       clientSecret: CLOUD_APP_CLIENT_SECRET_PREFIX
     }
   }
-}
-
-/**
- * Lets apps name the address of a metadata document they serve as their client ID instead of
- * registering, as MCP clients do (draft-ietf-oauth-client-id-metadata-document, MCP 2026-07-28),
- * where the runtime fetches those documents safely.
- */
-export function clientMetadataPlugins(
-  fetchClientMetadata: ClientMetadataResourceFetch | undefined
-): ReturnType<typeof cimd>[] {
-  if (!fetchClientMetadata) return []
-  return [
-    cimd({ fetchClientMetadataResource: fetchClientMetadata, metadataProfile: 'mcp-2026-07-28' })
-  ]
 }
 
 type ProviderEndpoint = { path: string }
