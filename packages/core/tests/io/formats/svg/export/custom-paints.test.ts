@@ -38,3 +38,25 @@ test('a text whose only fill is a Figma shader exports no visible glyphs', () =>
   ])
   expect(svg).toMatch(/<text [^>]*fill="none"/)
 })
+
+test('a text whose first drawn fill SVG cannot write keeps its glyphs in the default fill', () => {
+  const noise: Fill = { ...solid(1, 0, 0, 1, 1), type: 'NOISE' }
+  const svg = svgOf((graph, pageId) => [
+    graph.createNode('TEXT', pageId, { text: 'Hi', width: 40, height: 20, fills: [noise] }).id
+  ])
+  expect(svg).toMatch(/<text (?![^>]*fill=)[^>]*>Hi<\/text>/)
+})
+
+test('a shape takes its fill opacity from its first drawn fill', () => {
+  const svg = svgOf(
+    (graph, pageId) => [
+      graph.createNode('RECTANGLE', pageId, {
+        width: 40,
+        height: 40,
+        fills: [{ ...SHADER, opacity: 0.5 }, solid(1, 0, 0, 1, 0.25)]
+      }).id
+    ],
+    { colorSpace: 'srgb' }
+  )
+  expect(rects(svg)).toEqual(['<rect width="40" height="40" fill="#FF0000" fill-opacity="0.25"/>'])
+})

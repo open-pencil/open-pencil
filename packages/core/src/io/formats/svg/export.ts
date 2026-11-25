@@ -206,12 +206,13 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
   if (node.type === 'TEXT') {
-    const fill = exportedFill(node.fills.find(isDrawnPaint), node, ctx)
-    const text = renderTextNode(node, fill.color ?? 'none', ctx, fill.opacity)
+    const drawnFill = node.fills.find(isDrawnPaint)
+    const fill = exportedFill(drawnFill, node, ctx)
+    const text = renderTextNode(node, drawnFill ? fill.color : 'none', ctx, fill.opacity)
     return svgElement('g', groupAttrs, withLayerEffects([text], effects, groupAttrs))
   }
 
-  const visibleFills = node.fills.filter(isDrawnPaint)
+  const visibleFills = node.fills.filter((f) => f.visible)
   const visibleStrokes = node.strokes.filter(isDrawnPaint)
   const tint = ctx.tint?.(node) ?? []
   const ownFill = visibleFills.length > 0 && !hasPathLevelFills(node) ? visibleFills[0] : undefined
