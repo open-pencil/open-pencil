@@ -36,7 +36,7 @@ describe('Figma paint schema field export', () => {
           color: { r: 0.1, g: 0.1, b: 0.1, a: 1 },
           opacity: 1,
           visible: true,
-          customEffectId: '56:78'
+          customEffectId: { guid: '56:78' }
         }
       ]
     })

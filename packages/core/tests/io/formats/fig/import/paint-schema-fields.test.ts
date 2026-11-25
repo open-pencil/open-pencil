@@ -71,6 +71,6 @@ describe('Figma paint schema field import', () => {
       density: 0.42,
       noiseSize: { x: 16, y: 16 }
     })
-    expect(props.fills?.[1]).toMatchObject({ type: 'CUSTOM', customEffectId: '56:78' })
+    expect(props.fills?.[1]).toMatchObject({ type: 'CUSTOM', customEffectId: { guid: '56:78' } })
   })
 })

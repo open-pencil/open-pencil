@@ -199,13 +199,9 @@ export interface GradientStop {
 
 export type GradientTransform = Matrix
 
-export interface LibraryAssetRef {
-  key: string
-  version?: string
-}
-
-/** The shader a CUSTOM paint runs: a node ID in the document, or one from a library. */
-export type CustomEffectReference = string | LibraryAssetRef
+export type CustomEffectReference =
+  | { guid: string; key?: never; version?: never }
+  | { guid?: never; key: string; version?: string }
 
 /** Figma's adjustments of an image paint, each from -1 to 1; 0 leaves the image as it is. */
 export interface ImageFilters {
@@ -248,7 +244,6 @@ export interface Fill {
   density?: number
   noiseSize?: Vector
   customEffectId?: CustomEffectReference
-  /** A CUSTOM paint's shader parameters, kept as the `.fig` stores them. */
   componentPropAssignments?: unknown[]
 }
 

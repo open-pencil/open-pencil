@@ -152,3 +152,36 @@ describe('convertEffects', () => {
     expect(duotone.noise?.secondaryColor).toEqual(red)
   })
 })
+
+describe('Figma shader paints', () => {
+  const ASSIGNMENTS = [
+    { defID: { sessionID: 7, localID: 8 }, varValue: { value: { floatValue: 0.25 } } }
+  ]
+  const LIBRARY: Paint = {
+    type: 'CUSTOM',
+    opacity: 0.5,
+    visible: true,
+    blendMode: 'NORMAL',
+    customEffectId: { assetRef: { key: 'abc', version: 'v1' } },
+    componentPropAssignments: ASSIGNMENTS
+  }
+  const LOCAL: Paint = { ...LIBRARY, customEffectId: { guid: { sessionID: 5, localID: 6 } } }
+
+  test('reads a library shader by its key and version, and its parameters', () => {
+    expect(convertFills([LIBRARY])[0]).toMatchObject({
+      type: 'CUSTOM',
+      customEffectId: { key: 'abc', version: 'v1' },
+      componentPropAssignments: ASSIGNMENTS
+    })
+  })
+
+  test('reads a shader in the file by its node ID', () => {
+    expect(convertFills([LOCAL])[0].customEffectId).toEqual({ guid: '5:6' })
+  })
+
+  test('writes either reference back as it was read, with no colour', () => {
+    for (const paint of [LIBRARY, LOCAL]) {
+      expect(fillToKiwiPaint(convertFills([paint])[0])).toEqual(paint)
+    }
+  })
+})

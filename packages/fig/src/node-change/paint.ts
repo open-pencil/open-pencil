@@ -90,16 +90,20 @@ function writeMediaPaintFields(paint: Paint, fill: Fill): void {
 }
 
 function codeComponentId(reference: CustomEffectReference): CodeComponentId {
-  return typeof reference === 'string'
-    ? { guid: stringToGuid(reference) }
-    : { assetRef: { ...reference } }
+  if (reference.guid !== undefined) {
+    return { guid: stringToGuid(reference.guid) }
+  }
+  return { assetRef: { ...reference } }
 }
 
 function customEffectReference(id: CodeComponentId | undefined): CustomEffectReference | undefined {
   if (id?.guid) {
-    return guidToString(id.guid)
+    return { guid: guidToString(id.guid) }
   }
-  return id?.assetRef ? { ...id.assetRef } : undefined
+  if (id?.assetRef) {
+    return { ...id.assetRef }
+  }
+  return undefined
 }
 
 export function fillToKiwiPaint(fill: Fill): Paint {
@@ -130,7 +134,9 @@ export function fillToKiwiPaint(fill: Fill): Paint {
   if (fill.noiseType) paint.noiseType = fill.noiseType
   if (fill.density !== undefined) paint.density = fill.density
   if (fill.noiseSize) paint.noiseSize = fill.noiseSize
-  if (fill.customEffectId) paint.customEffectId = codeComponentId(fill.customEffectId)
+  if (fill.customEffectId) {
+    paint.customEffectId = codeComponentId(fill.customEffectId)
+  }
   if (fill.componentPropAssignments) {
     paint.componentPropAssignments = structuredClone(fill.componentPropAssignments)
   }
@@ -242,9 +248,11 @@ function applySchemaPaintFields(fill: Fill, p: Paint): void {
   if (p.density !== undefined) fill.density = p.density
   if (p.noiseSize) fill.noiseSize = p.noiseSize
   const customEffectId = customEffectReference(p.customEffectId)
-  if (customEffectId) fill.customEffectId = customEffectId
+  if (customEffectId) {
+    fill.customEffectId = customEffectId
+  }
   if (p.componentPropAssignments) {
-    fill.componentPropAssignments = structuredClone(p.componentPropAssignments)
+    fill.componentPropAssignments = p.componentPropAssignments
   }
 }
 

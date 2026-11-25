@@ -189,10 +189,7 @@ export interface AssetRef {
 
 export type StyleReference = { guid: GUID; assetRef?: never } | { guid?: never; assetRef: AssetRef }
 
-export interface CodeComponentId {
-  guid?: GUID
-  assetRef?: AssetRef
-}
+export type CodeComponentId = StyleReference
 
 /** One paragraph of a text: whether it is a list item, and how deeply it nests. */
 export interface TextLineData {
