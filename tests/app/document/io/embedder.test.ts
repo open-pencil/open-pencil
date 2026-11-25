@@ -139,4 +139,14 @@ describe('startEmbedderBridge', () => {
     stop()
     expect(listeners.size).toBe(0)
   })
+
+  test('stays quiet about a file that finishes opening after it stopped', async () => {
+    const { sent, edited, receive, stop, settle } = harness()
+    receive({ type: 'openpencil:open', name: 'design.fig', data: new ArrayBuffer(4) })
+    stop()
+    await settle()
+    edited.value = true
+    await settle()
+    expect(sent.map(({ message }) => message.type)).toEqual(['openpencil:ready'])
+  })
 })

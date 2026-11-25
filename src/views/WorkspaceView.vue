@@ -263,6 +263,7 @@ async function bindAssociatedFileOpen(): Promise<void> {
 
 let stopWebMCP: (() => void) | undefined
 let stopEmbedderBridge: (() => void) | undefined
+let unmounted = false
 
 onMounted(async () => {
   stopWebMCP = startWebMCP(getActiveStore)
@@ -294,13 +295,14 @@ onMounted(async () => {
       console.error('[Web link]', error)
     }
     const embedder = parseEmbedderOrigin(window.location.search)
-    if (embedder && window.parent !== window) {
+    if (embedder && window.parent !== window && !unmounted) {
       stopEmbedderBridge = startEmbedderBridge(embedder, window, { open: openFileInNewTab })
     }
   }
 })
 
 onUnmounted(() => {
+  unmounted = true
   stopEmbedderBridge?.()
   stopWebMCP?.()
   void stopMCPRuntime()

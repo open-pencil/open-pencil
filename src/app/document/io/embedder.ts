@@ -66,11 +66,13 @@ export function parseEmbedderOrigin(search: string): string | null {
 export function startEmbedderBridge(origin: string, frame: EmbedderFrame, io: EmbedderIo) {
   let document: EmbeddedDocument | null = null
   let stopWatching: (() => void) | null = null
+  let stopped = false
   const post = (message: EmbedderMessage, transfer: Transferable[] = []) =>
     frame.parent.postMessage(message, origin, transfer)
 
   async function open(name: string, data: ArrayBuffer) {
     const opened = await io.open(new File([data], name, { type: 'application/octet-stream' }))
+    if (stopped) return
     stopWatching?.()
     document = opened
     stopWatching = watch(
@@ -108,6 +110,7 @@ export function startEmbedderBridge(origin: string, frame: EmbedderFrame, io: Em
   frame.addEventListener('message', onMessage)
   post({ type: 'openpencil:ready' })
   return () => {
+    stopped = true
     frame.removeEventListener('message', onMessage)
     stopWatching?.()
   }
