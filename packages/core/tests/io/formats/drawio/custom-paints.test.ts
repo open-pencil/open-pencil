@@ -24,7 +24,9 @@ const RED: Fill = { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1
 
 async function write(graph: SceneGraph): Promise<string> {
   const result = expectDefined(await expectDefined(io.getFormat('drawio')).writeDocument?.(graph))
-  if (typeof result.data !== 'string') throw new Error('Expected draw.io XML')
+  if (typeof result.data !== 'string') {
+    throw new TypeError('Expected draw.io XML')
+  }
   return result.data
 }
 

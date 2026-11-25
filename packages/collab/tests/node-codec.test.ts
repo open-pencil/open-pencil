@@ -43,7 +43,9 @@ describe('node codec', () => {
     Y.applyUpdate(peer, Y.encodeStateAsUpdate(room))
 
     const ynode = peer.getMap<Y.Map<unknown>>('nodes').get('rect:1')
-    if (!ynode) throw new Error('Expected the layer in the room')
+    if (!ynode) {
+      throw new Error('Expected the layer in the room')
+    }
 
     expect(decodeNodeFromYjs(ynode).fills).toEqual(fills)
   })
