@@ -51,6 +51,14 @@ describe('components a page marks', () => {
     expect(named(graph, 'Size=S')).toMatchObject({ x: 10, y: 10 })
   })
 
+  test('paint nothing behind text they wrap', async () => {
+    const { graph } = await readHTMLDocument(
+      '<p data-op-component="Label" style="color:white">Hi</p>',
+      { components: true }
+    )
+    expect(named(graph, 'Label')).toMatchObject({ type: 'COMPONENT', fills: [] })
+  })
+
   test('refuse a mark on a word inside a sentence', async () => {
     await expect(
       readHTMLDocument('<p>A <b data-op-text="Label">B</b> C</p>', { components: true })

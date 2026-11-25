@@ -167,10 +167,12 @@ export function createMarkedComponents(
   for (const { node, name } of components) {
     if (!node.parentId) continue
     const component = componentFromNode(graph, node, node.parentId)
-    graph.updateNode(component.id, { name })
+    // A layer that cannot become a component is wrapped in one, which paints nothing itself.
+    const wrapped = graph.getNode(node.id) !== undefined
+    graph.updateNode(component.id, wrapped ? { name, fills: [] } : { name })
     // The layer an element became may have been replaced or wrapped, so its marks follow it.
     const element = sources.get(node.id)
-    if (element && !graph.getNode(node.id)) {
+    if (element && !wrapped) {
       sources.delete(node.id)
       sources.set(component.id, element)
     }

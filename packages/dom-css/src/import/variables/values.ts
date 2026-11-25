@@ -71,8 +71,12 @@ export async function customPropertyValues(
   const values = new Map<string, CustomPropertyValue>()
   if (root?.type !== 'element') return values
   const notAColor = root.computedStyle?.color
+  // A page's `*::before` rules give the holder children of their own.
+  const probes = root.children.filter(
+    (child) => child.type === 'element' && child.tagName === PROBE_TAG
+  )
   for (const [index, name] of names.entries()) {
-    const child = root.children.at(index)
+    const child = probes.at(index)
     if (child?.type !== 'element') continue
     const { color: text, width, 'line-height': lineHeight } = child.computedStyle ?? {}
     const color = text === notAColor ? null : anyCSSColor(text)

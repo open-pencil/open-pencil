@@ -1,4 +1,5 @@
 import type { DesignDocument } from '#dom-css/types'
+import { isEqual } from 'es-toolkit/predicate'
 
 import type { SceneGraph, Variable, VariableValue } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
@@ -117,9 +118,17 @@ export class ThemeVariables {
     return name
   }
 
+  /** Whether a variable is a color in a mode, which one that is no color there is not. */
+  #holds(variable: Variable, mode: number, color: Color): boolean {
+    return isEqual(this.#graph.resolveVariable(variable.id, this.#modeIds[mode]), color)
+  }
+
   /** A color's variable: its property's, or one that holds what it is in each mode. */
   forColors(colors: readonly ModeColor[]): Variable {
-    const direct = colors.map(({ expression }) => this.named(referencedProperty(expression ?? '')))
+    const direct = colors.map(({ expression, color }, index) => {
+      const variable = this.named(referencedProperty(expression ?? ''))
+      return variable && this.#holds(variable, index, color) ? variable : undefined
+    })
     const [first] = direct
     if (first && direct.every((variable) => variable?.id === first.id)) return first
     const labels = colors.map(({ expression, color }) =>

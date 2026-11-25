@@ -110,6 +110,41 @@ describe('variables from custom properties', () => {
     expect(values(graph, 'a')).toMatchObject([{ r: 0, g: 0, b: 1 }])
   })
 
+  test('read each value past generated content', async () => {
+    const { graph } = await readHTMLDocument('<p>x</p>', {
+      cssText: ':root { --a: red; --b: blue } *::before { content: "x"; color: green }',
+      variables: {}
+    })
+    expect(values(graph, 'a')).toMatchObject([{ r: 1, g: 0, b: 0 }])
+    expect(values(graph, 'b')).toMatchObject([{ r: 0, g: 0, b: 1 }])
+  })
+
+  test('hold the color a mode shows where the property is no color in it', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div id="box" style="width:9px;height:9px;background-color:var(--paint)"></div>',
+      {
+        cssText: ':root { --paint: red } .dark { --paint: 12px }',
+        variables: VARIABLES
+      }
+    )
+    const name = bound(graph, named(graph, 'box'), 'fills/0/color')
+    expect(values(graph, name ?? '')).toMatchObject([{ aliasId: expect.any(String) }, { a: 0 }])
+  })
+
+  test('leave inline SVG that names another property of the same color unbound', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div style="color:var(--ink)"><svg id="art" width="20" height="20" viewBox="0 0 20 20"><path style="fill:var(--accent)" d="M0 0h9v9z"/></svg></div>',
+      {
+        cssText:
+          ':root { --ink: #112233; --accent: #112233 } .dark { --ink: white; --accent: red }',
+        variables: VARIABLES
+      }
+    )
+    const [path] = graph.getChildren(named(graph, 'art').id)
+    expect(path.fills).toHaveLength(1)
+    expect(path.boundVariables).toEqual({})
+  })
+
   test('bind a line height only when its variable is its pixels in every mode', async () => {
     const { graph } = await readHTMLDocument(
       `<p style="font-size:16px;line-height:var(--mixed)">Mixed</p>

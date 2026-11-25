@@ -93,12 +93,13 @@ function isSameNumber(value: number | undefined, other: number | null): boolean 
 }
 
 /**
- * Whether inline SVG paints a shape in its own color without naming `currentColor`, as a black
- * shape in black text does, so its layers' paints do not tell which follow the color.
+ * Whether inline SVG paints a shape in the artwork's color without following it, as a black shape
+ * in black text or one that names another custom property does, so its layers' paints do not tell which follow the color.
  */
 function holdsFixedPaint(
   element: DesignElement,
   color: string | undefined,
+  reference: string | undefined,
   inherited: Record<string, string> = { fill: 'black' }
 ): boolean {
   const paints = { ...inherited }
@@ -107,11 +108,14 @@ function holdsFixedPaint(
       ...Object.entries(element.attrs),
       ...Object.entries(element.inlineStyle ?? {})
     ])
-    const paint = element.references?.[property] ? 'currentcolor' : declared.get(property)
+    const own = element.references?.[property]
+    const named = own === reference ? 'currentcolor' : mergedStyle(element)[property]
+    const paint = own ? named : declared.get(property)
     if (paint !== undefined) paints[property] = paint.trim().toLowerCase()
   }
   const children = elementsOf(element)
-  if (children.length > 0) return children.some((child) => holdsFixedPaint(child, color, paints))
+  if (children.length > 0)
+    return children.some((child) => holdsFixedPaint(child, color, reference, paints))
   return Object.values(paints).some(
     (paint) => paint !== 'currentcolor' && isEqual(anyCSSColor(paint), anyCSSColor(color))
   )
@@ -222,7 +226,8 @@ class Binder {
   bindArtwork(frameId: string, element: DesignElement): void {
     const property = maskSVG(element) ? 'background-color' : 'color'
     const colors = this.#colors(element, property)
-    if (!colors || holdsFixedPaint(element, mergedStyle(element).color)) return
+    if (!colors) return
+    if (holdsFixedPaint(element, mergedStyle(element).color, element.references?.color)) return
     for (const child of this.#graph.getChildren(frameId)) this.#bindPaintsIn(child, colors)
   }
 
