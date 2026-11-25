@@ -25,17 +25,14 @@ function shapeSizeError(type: string, { width, height }: ShapeSize): string | nu
   return null
 }
 
-/** Whether new text wraps in a given width, which lays it out in its font. */
-function wrapsInWidth(type: string, { width, height }: ShapeSize): boolean {
-  return type === 'TEXT' && width !== undefined && height === undefined
-}
-
-/** Sizes a new shape: text given no width stays auto width, and given only a width wraps in it. */
-function sizeShape(node: FigmaNodeProxy, size: ShapeSize): void {
-  const { width, height } = size
+/**
+ * Sizes a new shape: text given no width stays auto width, given only a width wraps in it, and given
+ * both is fixed. The mode is set outright because `resize` infers it from which sides changed.
+ */
+function sizeShape(node: FigmaNodeProxy, { width, height }: ShapeSize): void {
   if (width === undefined) return
   node.resize(width, height ?? node.height)
-  if (wrapsInWidth(node.type, size)) node.textAutoResize = 'HEIGHT'
+  if (node.type === 'TEXT') node.textAutoResize = height === undefined ? 'HEIGHT' : 'NONE'
 }
 
 export const createShape = defineTool({
@@ -55,8 +52,11 @@ export const createShape = defineTool({
     name: v.optional(v.pipe(v.string(), v.description('Node name shown in layers panel'))),
     parent_id: v.optional(v.pipe(v.string(), v.description('Parent node ID to nest inside')))
   }),
-  fonts: (_figma, args) =>
-    wrapsInWidth(args.type, args) ? [{ family: DEFAULT_FONT_FAMILY, style: faceLoadKey(400) }] : [],
+  // Setting a sizing mode on text needs its font.
+  fonts: (_figma, { type, width }) =>
+    type === 'TEXT' && width !== undefined
+      ? [{ family: DEFAULT_FONT_FAMILY, style: faceLoadKey(400) }]
+      : [],
   execute: (figma, args) => {
     const sizeError = shapeSizeError(args.type, args)
     if (sizeError) return { error: sizeError }

@@ -63,6 +63,15 @@ describe('create_shape', () => {
     expect(created.node.height).toBe(height)
   })
 
+  test('text given its initial height keeps that height', async () => {
+    const { height } = setupToolTest().figma.createText()
+    const created = await createText({ width: 80, height })
+    expect(created.node.textAutoResize).toBe('NONE')
+    await setLabel(created, LONG_LABEL)
+    expect(created.node.width).toBe(80)
+    expect(created.node.height).toBe(height)
+  })
+
   test('text with only a width wraps in it', async () => {
     const created = await createText({ width: 120 })
     expect(created.node.textAutoResize).toBe('HEIGHT')
