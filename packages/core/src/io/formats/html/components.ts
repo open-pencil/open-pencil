@@ -1,4 +1,7 @@
-import { COMPONENT_ATTRIBUTES, type LayerSources } from '@open-pencil/dom-css/scene-graph'
+import { pick } from 'es-toolkit'
+
+import type { DesignDocument, DesignElement } from '@open-pencil/dom-css'
+import { COMPONENT_ATTRIBUTES, isMarked, type LayerSources } from '@open-pencil/dom-css/scene-graph'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReference,
@@ -79,6 +82,24 @@ function bindSlot(graph: SceneGraph, node: SceneNode, name: string): void {
   }
 }
 
+/** What a set takes from the element that held its variants; its layout stays its own. */
+const SET_LOOK = [
+  'x',
+  'y',
+  'width',
+  'height',
+  'fills',
+  'strokes',
+  'effects',
+  'cornerRadius',
+  'independentCorners',
+  'topLeftRadius',
+  'topRightRadius',
+  'bottomRightRadius',
+  'bottomLeftRadius',
+  'opacity'
+] as const satisfies readonly (keyof SceneNode)[]
+
 function createSet(graph: SceneGraph, { node, name }: Marked): void {
   const variants = graph.getChildren(node.id).filter((child) => child.type === 'COMPONENT')
   const { parentId } = node
@@ -95,8 +116,33 @@ function createSet(graph: SceneGraph, { node, name }: Marked): void {
     parentId,
     index
   )
-  graph.updateNode(set.id, { name })
+  // The set keeps the box and look of the element that held its variants.
+  for (const { id } of variants) {
+    const variant = graph.getNode(id)
+    if (!variant) continue
+    const { x, y } = variant
+    graph.updateNode(id, { x: x + set.x - node.x, y: y + set.y - node.y })
+  }
+  const look = pick(node, SET_LOOK)
+  graph.updateNode(set.id, { ...structuredClone(look), name })
   graph.deleteNode(node.id)
+}
+
+/** Refuses a marked element that became no layer of its own, such as a word inside a sentence. */
+function requireLayers(sources: LayerSources, page: DesignDocument): void {
+  const layered = new Set(sources.values())
+  const visit = (parent: DesignDocument | DesignElement) => {
+    for (const child of parent.children) {
+      if (child.type !== 'element') continue
+      const hidden = child.computedStyle?.display === 'none'
+      if (hidden) continue
+      if (isMarked(child) && !layered.has(child)) {
+        throw new Error(`The marked <${child.tagName}> is part of other text and has no layer`)
+      }
+      visit(child)
+    }
+  }
+  visit(page)
 }
 
 /**
@@ -104,7 +150,12 @@ function createSet(graph: SceneGraph, { node, name }: Marked): void {
  * page marks with `COMPONENT_ATTRIBUTES`. A property several variants mark is one property of
  * their set, with the first variant's value as its default.
  */
-export function createMarkedComponents(graph: SceneGraph, sources: LayerSources): void {
+export function createMarkedComponents(
+  graph: SceneGraph,
+  sources: LayerSources,
+  page: DesignDocument
+): void {
+  requireLayers(sources, page)
   const sets = marked(graph, sources, COMPONENT_ATTRIBUTES.set)
   // Inner components first, so an outer one takes them as they end up.
   const components = marked(graph, sources, COMPONENT_ATTRIBUTES.component).toReversed()
@@ -112,6 +163,12 @@ export function createMarkedComponents(graph: SceneGraph, sources: LayerSources)
     if (!node.parentId) continue
     const component = componentFromNode(graph, node, node.parentId)
     graph.updateNode(component.id, { name })
+    // The layer an element became may have been replaced or wrapped, so its marks follow it.
+    const element = sources.get(node.id)
+    if (element && !graph.getNode(node.id)) {
+      sources.delete(node.id)
+      sources.set(component.id, element)
+    }
   }
   for (const set of sets) createSet(graph, set)
 

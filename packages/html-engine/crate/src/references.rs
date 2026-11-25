@@ -2,6 +2,7 @@
 //! cascade for a property, when it is written with `var()`, with the custom properties the root
 //! element declares left as references and every other one replaced by what it was set to.
 
+use std::cell::Cell;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
@@ -26,25 +27,32 @@ const CURRENT_COLOR: &str = "currentcolor";
 pub struct Scope {
     /// Winning declarations of inherited properties, expanded.
     inherited: Rc<HashMap<LonghandId, String>>,
-    /// Custom properties as declared, expanded, by name without the dashes.
-    custom: Rc<HashMap<Atom, String>>,
+    /// Custom properties elements below the root declare, expanded, by name without the dashes;
+    /// none when only the computed value is known.
+    custom: Rc<HashMap<Atom, Option<String>>>,
 }
 
 /// The custom properties the root element declares: what references are left pointing at.
 pub struct Root {
+    node: NodeId,
     computed: HashMap<Atom, String>,
     declared: HashMap<Atom, String>,
 }
 
 impl Root {
     pub fn of(doc: &BaseDocument, guard: &SharedRwLockReadGuard) -> Option<Self> {
-        let styles = doc.try_root_element()?.primary_styles()?;
+        let element = doc.try_root_element()?;
+        let styles = element.primary_styles()?;
         let declared = winners(&styles, guard).custom;
-        let computed = computed_custom(&styles)
-            .into_iter()
-            .filter(|(name, _)| declared.contains_key(name))
+        let computed = declared
+            .keys()
+            .filter_map(|name| Some((name.clone(), custom_value(&styles, name)?)))
             .collect();
-        Some(Self { computed, declared })
+        Some(Self {
+            node: element.id,
+            computed,
+            declared,
+        })
     }
 
     /// Each property as the root declares it, such as `var(--primary)`, by its full name.
@@ -53,22 +61,25 @@ impl Root {
             .declared
             .iter()
             .filter(|(name, _)| self.computed.contains_key(*name))
-            .map(|(name, text)| (format!("--{name}"), text.trim().into()))
+            .map(|(name, text)| {
+                let mut property = String::from("--");
+                let _ = serialize_name(name, &mut property);
+                (property, text.trim().into())
+            })
             .collect();
         Value::Object(out)
     }
 }
 
-fn computed_custom(styles: &ComputedValues) -> HashMap<Atom, String> {
-    let custom = styles.custom_properties();
-    let count = custom.inherited.len() + custom.non_inherited.len();
-    (0..count)
-        .filter_map(|index| custom.property_at(index))
-        .filter_map(|(name, value)| {
-            let value = value.as_ref()?;
-            Some((name.clone(), value.to_css_string().trim().to_owned()))
-        })
-        .collect()
+/// A custom property's computed value on an element.
+fn custom_value(styles: &ComputedValues, name: &Atom) -> Option<String> {
+    let value = styles.custom_properties().get_for_cssom(name)?;
+    Some(value.to_css_string().trim().to_owned())
+}
+
+/// A custom property's name, without its dashes, as CSS writes it.
+fn serialize_name(name: &Atom, out: &mut String) -> std::fmt::Result {
+    cssparser::serialize_name(name, out)
 }
 
 /// What the cascade picked for an element: a longhand's text when it is written with `var()` or
@@ -77,7 +88,9 @@ fn computed_custom(styles: &ComputedValues) -> HashMap<Atom, String> {
 struct Winners {
     longhands: HashMap<LonghandId, Option<String>>,
     custom: HashMap<Atom, String>,
-    /// Longhands and custom properties that take the parent's value.
+    /// Custom properties set back to their initial value.
+    reset: HashSet<Atom>,
+    /// Longhands that take the parent's value.
     inherits: HashSet<LonghandId>,
 }
 
@@ -109,7 +122,12 @@ fn winners(styles: &ComputedValues, guard: &SharedRwLockReadGuard) -> Winners {
                                 .custom
                                 .insert(custom.name.clone(), value.to_css_string());
                         }
-                        CustomDeclarationValue::CSSWideKeyword(_) => {}
+                        CustomDeclarationValue::CSSWideKeyword(
+                            CSSWideKeyword::Inherit | CSSWideKeyword::Unset,
+                        ) => {}
+                        CustomDeclarationValue::CSSWideKeyword(_) => {
+                            found.reset.insert(custom.name.clone());
+                        }
                     }
                 }
                 PropertyDeclaration::WithVariables(_) => {
@@ -171,17 +189,24 @@ fn variable_text(
     })
 }
 
+/// A page can write properties that double at every step, so expansion has limits far past what
+/// design systems write; a value over them is left without a reference.
+const EXPANSIONS: u32 = 20_000;
+const MAX_EXPANDED: usize = 64 * 1024;
+
 /// Replaces `var()` in a value: one that names a custom property the element takes from the root
 /// unchanged stays, one set nearer by becomes what it was set to, and one set nowhere its fallback.
 struct Expander<'a> {
     doc: &'a BaseDocument,
     node: NodeId,
     root: &'a Root,
-    /// The element's custom properties' computed values.
-    computed: HashMap<Atom, String>,
-    /// Those the element declares itself, as written.
-    own: &'a HashMap<Atom, String>,
-    inherited: &'a HashMap<Atom, String>,
+    is_root: bool,
+    /// How many more `var()` the element's values may expand.
+    budget: Cell<u32>,
+    styles: &'a ComputedValues,
+    /// What the cascade picked for the element itself.
+    won: &'a Winners,
+    inherited: &'a HashMap<Atom, Option<String>>,
 }
 
 impl Expander<'_> {
@@ -212,12 +237,19 @@ impl Expander<'_> {
                         return false;
                     };
                     out.push_str(&text);
+                    if out.len() > MAX_EXPANDED {
+                        return false;
+                    }
                     continue;
                 }
                 Token::Function(_) | Token::ParenthesisBlock => ")",
                 Token::SquareBracketBlock => "]",
                 Token::CurlyBracketBlock => "}",
-                Token::Comment(_) => continue,
+                // A comment can be all that keeps two tokens apart.
+                Token::Comment(_) => {
+                    out.push(' ');
+                    continue;
+                }
                 _ => {
                     let _ = cssparser::ToCss::to_css(&token, out);
                     continue;
@@ -243,29 +275,43 @@ impl Expander<'_> {
         fallback: Option<&str>,
         visiting: &mut Vec<Atom>,
     ) -> Option<String> {
-        let Some(value) = self.computed.get(name) else {
+        self.budget.set(self.budget.get().checked_sub(1)?);
+        let Some(value) = custom_value(self.styles, name) else {
             // One registered with `@property` has its initial value.
-            let initial = self
-                .doc
-                .resolved_style_value(self.node, &format!("--{name}"));
+            let mut property = String::from("--");
+            let _ = serialize_name(name, &mut property);
+            let initial = self.doc.resolved_style_value(self.node, &property);
             return match (initial.trim(), fallback) {
                 ("", fallback) => self.expand(fallback?, visiting),
                 (initial, _) => Some(initial.to_owned()),
             };
         };
-        if self.root.computed.get(name) == Some(value) {
-            return Some(format!("var(--{name})"));
+        // What the element or one between it and the root declares is its own, even when it
+        // holds the root's value.
+        if !self.is_root {
+            if let Some(declared) = self.won.custom.get(name) {
+                if visiting.contains(name) {
+                    return None;
+                }
+                visiting.push(name.clone());
+                let expanded = self.expand(declared, visiting);
+                visiting.pop();
+                return expanded;
+            }
+            if self.won.reset.contains(name) {
+                return Some(value);
+            }
+            if let Some(text) = self.inherited.get(name) {
+                return Some(text.clone().unwrap_or(value));
+            }
         }
-        if visiting.contains(name) {
-            return None;
+        if self.root.computed.get(name) == Some(&value) {
+            let mut reference = String::from("var(--");
+            let _ = serialize_name(name, &mut reference);
+            reference.push(')');
+            return Some(reference);
         }
-        if let Some(declared) = self.own.get(name) {
-            visiting.push(name.clone());
-            let expanded = self.expand(declared, visiting);
-            visiting.pop();
-            return expanded;
-        }
-        Some(self.inherited.get(name).unwrap_or(value).clone())
+        Some(value)
     }
 }
 
@@ -287,8 +333,10 @@ pub fn of(
         doc,
         node: node.id,
         root,
-        computed: computed_custom(&styles),
-        own: &won.custom,
+        is_root: node.id == root.node,
+        budget: Cell::new(EXPANSIONS),
+        styles: &styles,
+        won: &won,
         inherited: &scope.custom,
     };
     let mut inherited = (*scope.inherited).clone();
@@ -345,25 +393,41 @@ pub fn of(
         }
     }
 
-    let passed_on: HashMap<Atom, String> = {
-        let mut custom = (*scope.custom).clone();
-        for name in won.custom.keys() {
-            custom.remove(name);
-            // A registered property may not inherit.
-            if styles.custom_properties().inherited.get(name).is_none() {
-                continue;
-            }
-            if let Some(text) = expander.expand(&won.custom[name], &mut vec![name.clone()]) {
-                custom.insert(name.clone(), text);
-            }
-        }
-        custom
-    };
     let passed = Scope {
-        inherited: Rc::new(inherited),
-        custom: Rc::new(passed_on),
+        inherited: if inherited == *scope.inherited {
+            scope.inherited.clone()
+        } else {
+            Rc::new(inherited)
+        },
+        custom: passed_custom(&expander, scope),
     };
     (Value::Object(out), passed)
+}
+
+/// The custom properties an element passes on: those it inherits, with what it declares itself.
+fn passed_custom(expander: &Expander, scope: &Scope) -> Rc<HashMap<Atom, Option<String>>> {
+    let won = expander.won;
+    if expander.is_root || (won.custom.is_empty() && won.reset.is_empty()) {
+        return scope.custom.clone();
+    }
+    let mut custom = (*scope.custom).clone();
+    for name in &won.reset {
+        custom.insert(name.clone(), None);
+    }
+    for (name, declared) in &won.custom {
+        // A registered property may not inherit, and leaves what children see as it was.
+        if expander
+            .styles
+            .custom_properties()
+            .inherited
+            .get(name)
+            .is_some()
+        {
+            let text = expander.expand(declared, &mut vec![name.clone()]);
+            custom.insert(name.clone(), text);
+        }
+    }
+    Rc::new(custom)
 }
 
 /// Colors that are the element's `color` until something sets them.

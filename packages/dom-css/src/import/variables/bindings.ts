@@ -72,6 +72,40 @@ function numberSlots(node: SceneNode): [field: string, property: string][] {
 /** Layout rounds and the engine keeps single precision. */
 const NUMBER_TOLERANCE = 0.01
 
+/** A field's number, in pixels for a text length. */
+function numberIn(node: SceneNode, field: string): number | null {
+  const value: unknown = node[field as keyof SceneNode]
+  if (typeof value === 'number') return value
+  const length = field === 'lineHeight' ? node.lineHeight : node.letterSpacing
+  if (field !== 'lineHeight' && field !== 'letterSpacing') return null
+  return length?.unit === 'PIXELS' ? length.value : null
+}
+
+/**
+ * Whether inline SVG paints a shape in its own color without naming `currentColor`, as a black
+ * shape in black text does, so its layers' paints do not tell which follow the color.
+ */
+function holdsFixedPaint(
+  element: DesignElement,
+  color: string | undefined,
+  inherited: Record<string, string> = { fill: 'black' }
+): boolean {
+  const paints = { ...inherited }
+  for (const property of ['fill', 'stroke']) {
+    const declared = new Map([
+      ...Object.entries(element.attrs),
+      ...Object.entries(element.inlineStyle ?? {})
+    ])
+    const paint = element.references?.[property] ? 'currentcolor' : declared.get(property)
+    if (paint !== undefined) paints[property] = paint.trim().toLowerCase()
+  }
+  const children = elementsOf(element)
+  if (children.length > 0) return children.some((child) => holdsFixedPaint(child, color, paints))
+  return Object.values(paints).some(
+    (paint) => paint !== 'currentcolor' && isEqual(anyCSSColor(paint), anyCSSColor(color))
+  )
+}
+
 class Binder {
   readonly #graph: SceneGraph
   readonly #theme: HTMLTheme
@@ -132,7 +166,7 @@ class Binder {
       const variable = this.#variables.named(names.at(0) ?? null)
       if (variable?.type !== 'FLOAT' || names.some((name) => name !== names[0])) continue
       const value = this.#graph.resolveNumberVariable(variable.id)
-      const current = node[field as keyof SceneNode]
+      const current = numberIn(node, field)
       if (typeof value !== 'number' || typeof current !== 'number') continue
       if (Math.abs(value - current) <= NUMBER_TOLERANCE)
         this.#graph.bindVariable(node.id, field, variable.id)
@@ -176,15 +210,17 @@ class Binder {
   bindArtwork(frameId: string, element: DesignElement): void {
     const property = maskSVG(element) ? 'background-color' : 'color'
     const colors = this.#colors(element, property)
-    if (!colors) return
+    if (!colors || holdsFixedPaint(element, mergedStyle(element).color)) return
     for (const child of this.#graph.getChildren(frameId)) this.#bindPaintsIn(child, colors)
   }
 
   #bindPaintsIn(node: SceneNode, colors: ModeColor[]): void {
-    const own = { ...colors[0].color, a: 1 }
+    const { a: alpha, ...rgb } = colors[0].color
+    const own = { ...rgb, a: 1 }
     for (const list of ['fills', 'strokes'] as const) {
       for (const [index, paint] of node[list].entries()) {
-        if (paint.type === 'SOLID' && isEqual({ ...paint.color, a: 1 }, own))
+        const sameOpacity = Math.abs(paint.opacity - alpha) <= NUMBER_TOLERANCE
+        if (paint.type === 'SOLID' && sameOpacity && isEqual({ ...paint.color, a: 1 }, own))
           this.#bindColor(node, `${list}/${index}/color`, colors)
       }
     }

@@ -83,6 +83,47 @@ describe('variables from custom properties', () => {
     expect(named(graph, 'own').boundVariables).toEqual({})
   })
 
+  test('leave a property set nearer to the root value unbound', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div id="same" style="--primary:blue;width:9px;height:9px;background:var(--primary)"></div><div id="root" style="width:9px;height:9px;background:var(--primary)"></div>',
+      { cssText: ':root { --primary: blue } div { --other: 1px }', variables: {} }
+    )
+    expect(named(graph, 'same').boundVariables).toEqual({})
+    expect(bound(graph, named(graph, 'root'), 'fills/0/color')).toBe('primary')
+  })
+
+  test('take the root value whatever the page sets on its elements', async () => {
+    const { graph } = await readHTMLDocument('<p>x</p>', {
+      cssText: ':root { --a: blue; --none: transparent } div { --a: red } * { --a: green }',
+      variables: {}
+    })
+    expect(values(graph, 'a')).toMatchObject([{ r: 0, g: 0, b: 1 }])
+    expect(values(graph, 'none')).toMatchObject([{ a: 0 }])
+  })
+
+  test('bind letter spacing, and inline SVG only where it follows the color', async () => {
+    const { graph } = await readHTMLDocument(
+      `<p style="letter-spacing:var(--track);color:var(--ink)">Spaced</p>
+       <div style="color:var(--ink)"><svg id="follows" width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M0 0h9v9z"/></svg>
+       <svg id="fixed" width="20" height="20" viewBox="0 0 20 20"><path fill="#000000" d="M0 0h9v9z"/></svg></div>`,
+      { cssText: ':root { --track: 2px; --ink: #000000 }', variables: {} }
+    )
+    expect(bound(graph, named(graph, 'Spaced'), 'letterSpacing')).toBe('track')
+    const paints = (id: string) =>
+      graph.getChildren(named(graph, id).id).map((layer) => bound(graph, layer, 'fills/0/color'))
+    expect(paints('follows')).toEqual(['ink'])
+    expect(paints('fixed')).toEqual([undefined])
+  })
+
+  test('stop expanding properties that double at every step', async () => {
+    const steps = Array.from({ length: 18 }, (_, i) => `--s${i + 1}: var(--s${i}) var(--s${i})`)
+    const { graph } = await readHTMLDocument(
+      `<div id="bomb" style="--s0:;${steps.join(';')};width:9px;height:9px;background:var(--s18) red"></div>`,
+      { variables: {} }
+    )
+    expect(named(graph, 'bomb').boundVariables).toEqual({})
+  })
+
   test('tell apart properties that hold one color', async () => {
     const { graph } = await readHTMLDocument(
       '<div id="a" style="width:9px;height:9px;background:var(--a)"></div><div id="b" style="width:9px;height:9px;background:var(--b)"></div>',

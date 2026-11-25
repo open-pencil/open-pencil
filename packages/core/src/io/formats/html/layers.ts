@@ -10,9 +10,8 @@ import {
 } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { WHITE } from '@open-pencil/scene-graph/constants'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { parseCSSColor } from '@open-pencil/scene-graph/css'
-import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { maxOf } from '@open-pencil/std/arrays'
 
@@ -92,11 +91,11 @@ export async function sceneGraphFromStyledHTML(
   // Once laid out, so each takes its layer's final size.
   placeBackgroundPictures(graph, backgroundPictures)
   applyStacking(graph, stackings)
-  clipSpreadShadows(graph, sources.keys())
   await drawInlineSVGs(graph, svgs, styled, options.matchIcon)
   if (options.theme) bindThemeVariables(graph, options.theme, sources, svgs)
   applyCSSTransforms(graph, transforms)
-  if (options.components) createMarkedComponents(graph, sources)
+  clipSpreadShadows(graph, sources.keys())
+  if (options.components) createMarkedComponents(graph, sources, styled)
   if (options.pageWindow) {
     for (const page of graph.getPages()) frameAsWindow(graph, page, options.pageWindow, background)
   }
@@ -114,8 +113,7 @@ function clipSpreadShadows(graph: SceneGraph, nodeIds: Iterable<string>): void {
     if (!node.effects.some((effect) => effect.type === 'DROP_SHADOW' && effect.spread !== 0))
       continue
     const contained = graph.getChildren(id).every((child) => {
-      // Transforms come later, so a child is only moved within the frame.
-      const toFrame = Matrix.translated(child.x, child.y)
+      const toFrame = getNodeLocalMatrix(child)
       const bounds = subtreeRenderBounds(graph, child, toFrame, { reach: 'drawn' })
       return (
         !bounds ||

@@ -1,5 +1,8 @@
 // eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { parse, walk, type CssNode as CSSNode } from 'css-tree'
+import { compact } from 'es-toolkit'
+
+import type { DesignDocument, DesignElement } from '../types'
 
 /**
  * The attribute that shows an element in states a static page cannot be in, such as
@@ -7,25 +10,51 @@ import { parse, walk, type CssNode as CSSNode } from 'css-tree'
  */
 export const FORCED_STATE_ATTRIBUTE = 'data-force-state'
 
-const forced = (state: string) => `[${FORCED_STATE_ATTRIBUTE}~="${state}"]`
+/** The states CSS implies from each on the element itself: keyboard focus is focus. */
+const IMPLIED = new Map([
+  ['focus', ['focus-within']],
+  ['focus-visible', ['focus', 'focus-within']]
+])
 
-/**
- * What else matches each pseudo-class: an element forced into the state, and the states CSS implies
- * from it, as an element shown as focused by keyboard is focused. A pseudo-class that holds for an
- * element when it holds for one inside it also matches its containers.
- */
-const FORCED_STATES: Partial<Record<string, { matches: string; contains: boolean }>> = {
-  hover: { matches: forced('hover'), contains: true },
-  active: { matches: forced('active'), contains: true },
-  focus: { matches: `${forced('focus')},${forced('focus-visible')}`, contains: false },
-  'focus-visible': { matches: forced('focus-visible'), contains: false },
-  'focus-within': { matches: `${forced('focus')},${forced('focus-visible')}`, contains: true }
+/** The states that hold for what contains an element in them. */
+const CONTAINED = new Set(['hover', 'active', 'focus-within'])
+
+const STATES = new Set(['hover', 'active', 'focus', 'focus-visible', 'focus-within'])
+
+function statesOf(element: DesignElement): string[] {
+  const named = compact((element.attrs[FORCED_STATE_ATTRIBUTE] ?? '').split(/\s+/))
+  return named.flatMap((state) => [state, ...(IMPLIED.get(state) ?? [])])
 }
 
-interface Replacement {
-  start: number
-  end: number
-  text: string
+/** Marks an element and what holds it with the states they are in; returns those it passes up. */
+function markElement(element: DesignElement): Set<string> {
+  const states = new Set(statesOf(element))
+  for (const child of element.children) {
+    if (child.type !== 'element') continue
+    for (const state of markElement(child)) states.add(state)
+  }
+  if (states.size > 0) element.attrs[FORCED_STATE_ATTRIBUTE] = [...states].join(' ')
+  return new Set([...states].filter((state) => CONTAINED.has(state)))
+}
+
+/**
+ * The document with each forced state written on every element it holds for, as `:hover` holds for
+ * what contains a hovered element, or null when it forces none.
+ */
+export function withForcedStates(document: DesignDocument): DesignDocument | null {
+  const marked = structuredClone(document)
+  let forces = false
+  for (const child of marked.children) {
+    if (child.type !== 'element') continue
+    markElement(child)
+    forces ||= holdsForcedState(child)
+  }
+  return forces ? marked : null
+}
+
+function holdsForcedState(element: DesignElement): boolean {
+  if (Object.hasOwn(element.attrs, FORCED_STATE_ATTRIBUTE)) return true
+  return element.children.some((child) => child.type === 'element' && holdsForcedState(child))
 }
 
 /**
@@ -33,32 +62,24 @@ interface Replacement {
  * `data-force-state`, with the specificity they had. Everything else is left as written.
  */
 export function forceStates(cssText: string): string {
-  const replacements: Replacement[] = []
-  // `:has()` may not hold another `:has()`.
-  let relational = 0
-  walk(parse(cssText, { positions: true, parseValue: false, parseCustomProperty: false }), {
-    enter(node: CSSNode) {
-      if (node.type !== 'PseudoClassSelector') return
-      const name = node.name.toLowerCase()
-      if (name === 'has') relational++
-      const state = Object.hasOwn(FORCED_STATES, name) ? FORCED_STATES[name] : undefined
-      if (!state || node.children || !node.loc) return
-      const containers = state.contains && relational === 0 ? `,:has(${state.matches})` : ''
-      replacements.push({
-        start: node.loc.start.offset,
-        end: node.loc.end.offset,
-        text: `:is(:${name},${state.matches}${containers})`
-      })
-    },
-    leave(node: CSSNode) {
-      if (node.type === 'PseudoClassSelector' && node.name.toLowerCase() === 'has') relational--
-    }
+  const pseudoClasses: { name: string; start: number; end: number }[] = []
+  const sheet = parse(cssText, {
+    positions: true,
+    parseValue: false,
+    parseCustomProperty: false,
+    onParseError: () => undefined
   })
-  let forcedText = ''
+  walk(sheet, (node: CSSNode) => {
+    if (node.type !== 'PseudoClassSelector' || node.children || !node.loc) return
+    const name = node.name.toLowerCase()
+    if (!STATES.has(name)) return
+    pseudoClasses.push({ name, start: node.loc.start.offset, end: node.loc.end.offset })
+  })
+  let text = ''
   let end = 0
-  for (const replacement of replacements.sort((a, b) => a.start - b.start)) {
-    forcedText += cssText.slice(end, replacement.start) + replacement.text
-    end = replacement.end
+  for (const { name, start, end: after } of pseudoClasses.sort((a, b) => a.start - b.start)) {
+    text += `${cssText.slice(end, start)}:is(:${name},[${FORCED_STATE_ATTRIBUTE}~="${name}"])`
+    end = after
   }
-  return forcedText + cssText.slice(end)
+  return text + cssText.slice(end)
 }

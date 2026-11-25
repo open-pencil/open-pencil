@@ -224,7 +224,6 @@ function isPlainElement(element: DesignElement): boolean {
 
 function isInlineElement(element: DesignElement): boolean {
   const style = mergedStyle(element)
-  if (isMarked(element)) return false
   return elementDisplay(element, style) === 'inline' && !hasBoxStyle(element, style)
 }
 
@@ -588,7 +587,7 @@ export function designDocumentToSceneGraph(
 
 export { elementSVG, imagePicture, type ElementSVG, type ImagePicture } from './pictures'
 export { placeLayersFromLayout, type CapturedBox, type CapturedBoxes } from './placement'
-export { COMPONENT_ATTRIBUTES }
+export { COMPONENT_ATTRIBUTES, isMarked }
 export { bindThemeVariables, type LayerSources } from './variables/bindings'
 export type { HTMLTheme, ThemeMode } from './variables/theme'
 export { applyCSSTransforms, type CSSTransform, type CSSTransforms } from './transform'

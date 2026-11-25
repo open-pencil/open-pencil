@@ -12,7 +12,7 @@ export {
   tailwindHTMLToDesignDocument,
   tailwindHTMLToSceneGraph
 } from './import/html'
-export { forceStates, FORCED_STATE_ATTRIBUTE } from './import/states'
+export { forceStates, withForcedStates } from './import/states'
 export { compileTailwindCSS } from './import/tailwind'
 export {
   parseFontFaceRules,

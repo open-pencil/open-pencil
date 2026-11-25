@@ -1,5 +1,3 @@
-import { uniq } from 'es-toolkit'
-
 import {
   compileTailwindCSS,
   customPropertyValues,
@@ -203,14 +201,18 @@ export async function readHTMLDocument(
   const readTheme = async (collection = DEFAULT_COLLECTION): Promise<HTMLTheme> => {
     const pages = [styled]
     for (const mode of modes.slice(1)) pages.push(await style(mode))
-    const names = uniq(pages.flatMap((page) => Object.keys(page.customProperties ?? {})))
     const stylesheet = htmlStylesheet(html, { ...styleOptions, cssText }) ?? ''
     const themed: ThemeMode[] = []
     for (const [index, { name, rootAttributes }] of modes.entries()) {
-      const values = await customPropertyValues(runtime, stylesheet, names, {
-        viewport: styleOptions.compute?.viewport,
-        rootAttributes
-      })
+      const values = await customPropertyValues(
+        runtime,
+        stylesheet,
+        pages[index].customProperties ?? {},
+        {
+          viewport: styleOptions.compute?.viewport,
+          rootAttributes
+        }
+      )
       themed.push({ name, styled: pages[index], values })
     }
     return { collection, modes: themed }

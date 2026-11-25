@@ -5,9 +5,16 @@ import { mergedStyle, pickStyle } from '../css-values'
 import { elementDisplay } from '../flow'
 
 /** Boxes CSS does not draw the decoration of what contains them through. */
-function isolatesDecoration(element: DesignElement, style: DesignStyleDeclaration): boolean {
+function isolatesDecoration(
+  element: DesignElement,
+  style: DesignStyleDeclaration,
+  around: DesignStyleDeclaration
+): boolean {
   const position = pickStyle(style, 'position')
   if (position === 'absolute' || position === 'fixed') return true
+  // A flex or grid item does not float.
+  const float = pickStyle(style, 'float') ?? 'none'
+  if (float !== 'none' && !/flex|grid/.test(pickStyle(around, 'display') ?? '')) return true
   return elementDisplay(element, style).startsWith('inline-')
 }
 
@@ -20,7 +27,8 @@ export function decoratedStyle(
   around: DesignStyleDeclaration
 ): DesignStyleDeclaration {
   const style = mergedStyle(element)
-  if (!decorates(around) || decorates(style) || isolatesDecoration(element, style)) return style
+  if (!decorates(around) || decorates(style) || isolatesDecoration(element, style, around))
+    return style
   const decoration = Object.entries(around).filter(([property]) =>
     DECORATION_PROPERTIES.has(property)
   )

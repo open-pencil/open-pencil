@@ -40,6 +40,22 @@ describe('components a page marks', () => {
     expect(bound(graph, named(graph, 'State=Rest'), 'fills/0/color')).toBe('primary')
   })
 
+  test('keep the look of the element that held a set', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div data-op-component-set="Dot" style="padding:10px;background:#ff0000"><i data-op-component="Size=S" style="display:block;width:9px;height:9px;background:blue"></i></div>',
+      { components: true }
+    )
+    const set = named(graph, 'Dot')
+    expect(set.fills).toHaveLength(1)
+    expect(named(graph, 'Size=S')).toMatchObject({ x: 10, y: 10 })
+  })
+
+  test('refuse a mark on a word inside a sentence', async () => {
+    await expect(
+      readHTMLDocument('<p>A <b data-op-text="Label">B</b> C</p>', { components: true })
+    ).rejects.toThrow('has no layer')
+  })
+
   test('refuse a property marked outside a component', async () => {
     await expect(
       readHTMLDocument('<p data-op-text="Label">Hi</p>', { components: true })

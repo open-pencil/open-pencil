@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { forceStates, htmlToDesignDocument } from '@open-pencil/dom-css'
+import { htmlToDesignDocument } from '@open-pencil/dom-css'
 
 import { engineRuntime } from '../helpers/engine'
 
@@ -28,6 +28,10 @@ describe('forced states', () => {
     expect(await opacities(css + html)).toEqual(['0.1', '0.2', '0.3', '0.4', '0.5', '0.5'])
   })
 
+  test('ignore states that do not exist', async () => {
+    expect(await opacities('<i data-force-state="constructor">x</i>')).toEqual(['1'])
+  })
+
   test('hold for what contains the element where CSS says so', async () => {
     const css = `<style>div:hover{opacity:.2} p:focus-within{opacity:.3} section:focus{opacity:.4}</style>`
     const html = `<div><b data-force-state="hover">x</b></div><p><b data-force-state="focus-visible">x</b></p><section><b data-force-state="focus">x</b></section>`
@@ -35,18 +39,13 @@ describe('forced states', () => {
   })
 
   test('reach nested rules, media queries, :has(), and linked stylesheets', async () => {
-    const css = `@media (hover: hover) { i { &:hover { opacity: .2 } } } b:has(u:hover) { opacity: .3 }`
+    const css = `@media (hover: hover) { i { &:hover { opacity: .2 } } } b:has(> u:hover) { opacity: .3 }`
     expect(
       await opacities(
-        `<link rel="stylesheet" href="a.css"><i data-force-state="hover">x</i><b><u data-force-state="hover">x</u></b>`,
+        `<link rel="stylesheet" href="a.css"><i data-force-state="hover">x</i><b><u><em data-force-state="hover">x</em></u></b>`,
         css
       )
     ).toEqual(['0.2', '0.3'])
-  })
-
-  test('leave everything but state pseudo-classes as written', () => {
-    const css = `a[title=":hover"]::before { content: ":hover" } /* :hover */ a:not(.x) { color: red }`
-    expect(forceStates(css)).toBe(css)
   })
 })
 

@@ -28,10 +28,11 @@ describe('what CSS draws', () => {
   test('a decoration draws through flex items but not inline blocks or absolute boxes', async () => {
     const layer = await layers(
       `<div style="display:flex;text-decoration:underline"><span>Item</span></div>
-       <div style="text-decoration:underline;position:relative;height:50px"><b style="display:inline-block;padding:2px">Block</b><u style="position:absolute;top:20px;text-decoration:none">Out</u></div>`
+       <div style="text-decoration:underline;position:relative;height:50px"><b style="display:inline-block;padding:2px">Block</b><u style="position:absolute;top:20px;text-decoration:none">Out</u><p style="float:left;padding:1px">Float</p></div>`
     )
     expect(layer('Item').textDecoration).toBe('UNDERLINE')
     expect(layer('Block').textDecoration).toBe('NONE')
+    expect(layer('Float').textDecoration).toBe('NONE')
     expect(layer('Out').textDecoration).toBe('NONE')
   })
 

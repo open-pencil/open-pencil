@@ -3,11 +3,11 @@ import { escapeAttribute } from 'entities'
 import {
   attachImages,
   backgroundImageURLs,
-  FORCED_STATE_ATTRIBUTE,
   forceStates,
   parseFontFaceRules,
   parseHTMLDocument,
   parseStylesheetImports,
+  withForcedStates,
   type CSSFontFaceRule,
   type CSSComputeOptions,
   type CSSRuntime,
@@ -241,7 +241,10 @@ function documentHTML(
   // `</style` would end the stylesheet early.
   const css = cssText.replaceAll(/<\/style/gi, '<\\/style')
   const attributes = Object.entries(rootAttributes)
-    .map(([name, value]) => ` ${name}="${escapeAttribute(value)}"`)
+    .map(([name, value]) => {
+      if (!/^[^\s"'<>/=]+$/.test(name)) throw new Error(`Invalid root attribute name "${name}"`)
+      return ` ${name}="${escapeAttribute(value)}"`
+    })
     .join('')
   return `<!doctype html><html${attributes}><head><style>${css}</style></head><body>${body}</body></html>`
 }
@@ -339,13 +342,20 @@ function keepingFetch(
 }
 
 /** A fetch whose stylesheets also match elements forced into a state. */
-function forcingStates(fetch: DesignResourceFetch | undefined): DesignResourceFetch | undefined {
+function forcingStates(
+  fetch: DesignResourceFetch | undefined,
+  cssText: string,
+  baseURL: string | undefined
+): DesignResourceFetch | undefined {
   if (!fetch) return undefined
+  // What CSS imports is a stylesheet whatever type it is served as.
+  const imported = new Set(parseStylesheetImports(cssText, baseURL))
   return async (url, signal) => {
     const resource = await fetch(url, signal)
-    if (!resource || !isStylesheet(resource)) return resource
-    const css = forceStates(new TextDecoder().decode(resource.bytes))
-    return { ...resource, bytes: new TextEncoder().encode(css) }
+    if (!resource || !(isStylesheet(resource) || imported.has(url))) return resource
+    const css = new TextDecoder().decode(resource.bytes)
+    for (const address of parseStylesheetImports(css, resource.url)) imported.add(address)
+    return { ...resource, bytes: new TextEncoder().encode(forceStates(css)) }
   }
 }
 
@@ -383,15 +393,14 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       // they become show them without fetching them again.
       const answered = new Map<string, DesignResource>()
       const fetch = keepingFetch(options.fetch, answered)
-      const body = serializeHTML(document)
-      // Reading the stylesheet for states costs time only a document with forced states needs.
-      const forcesStates = body.includes(FORCED_STATE_ATTRIBUTE)
-      const css = forcesStates ? forceStates(cssText) : cssText
+      const forced = withForcedStates(document)
+      const body = serializeHTML(forced ?? document)
+      const css = forced ? forceStates(cssText) : cssText
       const pageFetch = fontFaceFetch(laidOut, cssText, { ...options, fetch })
       const capture = await laidOut.layout(documentHTML(body, css, compute.rootAttributes), {
         baseURL: options.baseURL,
         viewport: compute.viewport ?? DEFAULT_VIEWPORT,
-        fetch: forcesStates ? forcingStates(pageFetch) : pageFetch,
+        fetch: forced ? forcingStates(pageFetch, css, options.baseURL) : pageFetch,
         references: compute.references
       })
       const styled = structuredClone(document)
@@ -407,7 +416,7 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
           ...node.computed
         })
         if (compute.layout) element.layout = layoutOf(node)
-        if (node.references) element.references = node.references
+        element.references = node.references
         const image = imageOf(element, answered, options.baseURL)
         if (image) element.image = image
       }
@@ -419,7 +428,7 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       )
       await attachImages([], loadedFirst(answered, options.fetch), backgrounds)
       styled.background = canvasBackground(capture)
-      if (capture.variables) styled.customProperties = capture.variables
+      styled.customProperties = capture.variables
       return styled
     }
   }
