@@ -5,6 +5,7 @@ import { BLACK } from '@open-pencil/scene-graph/constants'
 import { readIcon } from '@open-pencil/scene-graph/icons'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
 import { layoutSizingInParent } from '@open-pencil/scene-graph/layout'
+import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
@@ -299,8 +300,9 @@ function styleFromTextNode(
   addPositioning(style, node, parent)
   addLayoutChild(style, node, parent)
   if (resolveNodeTextDirection(node) === 'RTL') style.direction = 'rtl'
-  const color = fillToCSS(node.fills.at(0), profile)
-  style.color = color ? css('fills/0/color', color) : cssColor(BLACK, profile)
+  const colorIndex = node.fills.findIndex(isDrawnPaint)
+  const color = colorIndex === -1 ? undefined : fillToCSS(node.fills[colorIndex], profile)
+  style.color = color ? css(`fills/${colorIndex}/color`, color) : cssColor(BLACK, profile)
   style['font-family'] = node.fontFamily
   style['font-size'] = css('fontSize', px(node.fontSize))
   style['font-weight'] = String(node.fontWeight)
