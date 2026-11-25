@@ -1,0 +1,1 @@
+- Text using automatic direction follows the first strong character after Arabic-Indic numbers, so labels such as `١٬٢٣٤ Invoice` start on the left.
