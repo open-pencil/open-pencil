@@ -25,6 +25,8 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
       public_url: endpoints.cloudURL,
       indexing: 'deny',
       trusted_origins: [endpoints.editorURL, endpoints.cloudURL],
+      // Any page may frame documents, so embeds can be tried from a local HTML file.
+      embedding: { enabled: true },
       // A worktree's editor pairs tabs with coding agents, as the hosted one may.
       agent_pairing: true
     },

@@ -1,8 +1,4 @@
-import type {
-  CollabActionReceiver,
-  CollabRoomTransport,
-  JoinCollabRoom
-} from '@/app/collab/transport'
+import type { CollabActionReceiver, CollabRoomTransport, JoinCollabRoom } from '@open-pencil/collab'
 
 interface LocalPeer {
   id: string

@@ -10,6 +10,7 @@ import {
 } from '@better-auth/cimd'
 import type { ClientDiscovery, ClientMetadataResourceFetch } from '@better-auth/oauth-provider'
 import { APIError } from 'better-auth'
+import { isAPIError } from 'better-auth/api'
 import type { Kysely } from 'kysely'
 
 import { HOUR_MS, MINUTE_MS, SECOND_MS } from '@open-pencil/std/timing'
@@ -49,7 +50,7 @@ function createFetchBudget(
  *
  * The plugin keeps its cache and fetch budgets in its instance, which a Worker makes for each
  * request, so both live in the database here: a client's `updatedAt` is when its document was last
- * fetched and valid, and fetches are counted there.
+ * fetched and valid, null once a later fetch failed, and fetches are counted there.
  */
 export function cloudClientDiscovery(options: ClientMetadataOptions): ClientDiscovery {
   const discovery = createCIMDClientDiscovery({
@@ -60,6 +61,17 @@ export function cloudClientDiscovery(options: ClientMetadataOptions): ClientDisc
   })
   const mayFetchDocument = createFetchBudget(options, CLOUD_RATE_LIMITS.clientMetadata)
   const mayFetchKeys = createFetchBudget(options, CLOUD_RATE_LIMITS.clientKeys)
+
+  /** Ends what a client's last valid document allows, unless it was fetched and valid since. */
+  async function distrust(clientId: string, validated: Date) {
+    await options.database
+      .updateTable('oauthClient')
+      .set({ updatedAt: null })
+      .where('clientId', '=', clientId)
+      .where('updatedAt', '<=', validated)
+      .execute()
+  }
+
   return {
     ...discovery,
     async resolve(context, clientId, existing) {
@@ -75,7 +87,14 @@ export function cloudClientDiscovery(options: ClientMetadataOptions): ClientDisc
             'Too many client metadata documents were fetched. Try again in a minute.'
         })
       }
-      return discovery.resolve(context, clientId, existing)
+      try {
+        return await discovery.resolve(context, clientId, existing)
+      } catch (error) {
+        // The plugin's own limits say nothing about the document.
+        const limited = isAPIError(error) && error.status === 'TOO_MANY_REQUESTS'
+        if (existing?.updatedAt && !limited) await distrust(clientId, new Date(existing.updatedAt))
+        throw error
+      }
     },
     // The plugin fetches an app's `jwks_uri` through this, outside its own budgets.
     async fetchClientMetadataResource(input, init) {

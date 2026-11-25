@@ -15,6 +15,7 @@ const MOVED_SECTIONS: Record<string, Record<string, string>> = {
   ...URL_SCHEME,
   // Was /user-guide/openpencil-cloud.
   '/cloud/': {
+    'connect-a-server': '/cloud/connect',
     'your-account': '/cloud/account',
     'find-documents-on-home': '/cloud/documents#find-documents-on-home',
     'restore-a-deleted-document': '/cloud/documents#restore-a-deleted-document',

@@ -22,6 +22,7 @@ const document = {
   id: documentId,
   workspaceId,
   name: 'Homepage',
+  description: null,
   kind: 'board' as const,
   currentRevisionId: revisionId,
   version: 1,

@@ -10,16 +10,12 @@ import {
   until,
   type TestRelayClient
 } from '#cloud-tests/helpers/relay'
-import {
-  cloudMCPResource,
-  COLLAB_ACTIONS,
-  decodeAgentToolMessage,
-  encodeAgentToolMessage,
-  RELAY_SERVER_PEER
-} from '#cloud/contract'
+import { cloudMCPResource, decodeAgentToolMessage, encodeAgentToolMessage } from '#cloud/contract'
 import { createAgentPairingHub, parseCloudServerConfig } from '#cloud/server'
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 import * as v from 'valibot'
+
+import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
 
 const config = parseCloudServerConfig({ ...accountAuthenticationConfig, agentPairing: true })
 const token = `opg_${'5e'.repeat(32)}`

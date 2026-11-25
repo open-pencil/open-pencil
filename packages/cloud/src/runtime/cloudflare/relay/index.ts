@@ -1,7 +1,6 @@
 import {
   AGENT_PAIRING_PARAM,
   agentPairingIdSchema,
-  MAX_COLLAB_MESSAGE_BYTES,
   RELAY_DOCUMENT_PARAM,
   RELAY_HEARTBEAT,
   type AgentToolCall,
@@ -22,6 +21,8 @@ import {
 import { DurableObject } from 'cloudflare:workers'
 import type { Context } from 'hono'
 import * as v from 'valibot'
+
+import { MAX_COLLAB_MESSAGE_BYTES } from '@open-pencil/collab'
 
 import type { CloudflareCloudEnvironment, PreparedCloudflareCloud } from '../environment'
 import { inMaintenance, MAINTENANCE_CLOSE_CODE, maintenanceResponse } from '../maintenance'

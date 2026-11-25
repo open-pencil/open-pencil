@@ -8,14 +8,14 @@ import {
 } from '#cloud-tests/helpers/relay'
 import {
   agentPairingId,
-  COLLAB_ACTIONS,
   decodeAgentToolMessage,
   encodeAgentToolMessage,
   RELAY_CLOSE,
-  RELAY_SERVER_PEER,
   type AgentToolMessage
 } from '#cloud/contract'
 import { createAgentPairingHub, type AgentPairingHubOptions } from '#cloud/server'
+
+import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
 
 const token = `opg_${'ab'.repeat(32)}`
 const call = { name: 'get_page_tree', args: {}, agent: { session: 'pairing:test' } }

@@ -1,15 +1,13 @@
 import {
-  COLLAB_ACTIONS,
-  MAX_COLLAB_MESSAGE_BYTES,
   type AgentToolCall,
   type AgentToolOutcome,
   RELAY_CLOSE,
-  RELAY_SERVER_PEER,
   type RelayServerFrame
 } from '#cloud/contract'
 import { logCloud, loggedError } from '#cloud/server/logging'
 import * as Y from 'yjs'
 
+import { COLLAB_ACTIONS, MAX_COLLAB_MESSAGE_BYTES, RELAY_SERVER_PEER } from '@open-pencil/collab'
 import { DEADLINE_MS, SECOND_MS } from '@open-pencil/std/timing'
 
 import { createAgentToolCalls, mayHostTools } from './agent-tools'

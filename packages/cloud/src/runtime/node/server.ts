@@ -1,4 +1,4 @@
-import { defaultRelayURL, MAX_COLLAB_MESSAGE_BYTES } from '#cloud/contract'
+import { defaultRelayURL } from '#cloud/contract'
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createCloudErrorReporter } from '#cloud/runtime/posthog/errors'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
@@ -23,6 +23,8 @@ import {
   type CloudServerConfig
 } from '#cloud/server'
 import { fetchClientMetadataResource } from '@better-auth/cimd/node'
+
+import { MAX_COLLAB_MESSAGE_BYTES } from '@open-pencil/collab'
 
 import { migratedNodeCloudDatabase } from './bootstrap'
 import { loadNodeCloudServerConfig } from './config'
@@ -177,6 +179,7 @@ async function startConfiguredServer(
     site: siteFiles(environment),
     indexingPolicy: config.indexingPolicy,
     publicURL: config.publicURL,
+    embedding: config.embeddingEnabled ? { allowedOrigins: config.embeddingOrigins } : undefined,
     reportError,
     forwardedRequestId: proxyRequestId
   })

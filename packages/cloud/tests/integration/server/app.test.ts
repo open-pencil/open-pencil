@@ -391,6 +391,7 @@ describe('createCloudApp', () => {
         documents: true,
         workspaces: true,
         collaboration: true,
+        embedding: false,
         apps: false,
         agents: false
       }

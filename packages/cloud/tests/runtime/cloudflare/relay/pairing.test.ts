@@ -3,16 +3,16 @@ import { describe, expect, test } from 'bun:test'
 import { asDouble } from '#cloud-tests/helpers/doubles'
 import {
   agentPairingId,
-  COLLAB_ACTIONS,
   decodeAgentToolMessage,
   decodeRelayServerFrame,
   encodeAgentToolMessage,
   encodeRelayClientFrame,
-  RELAY_SERVER_PEER,
   type RelayServerFrame
 } from '#cloud/contract'
 import { createPairingSockets } from '#cloud/runtime/cloudflare/relay/pairing'
 import { createAgentPairingHub, type PairedTabState } from '#cloud/server'
+
+import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
 
 const token = `opg_${'9f'.repeat(32)}`
 const call = { name: 'get_page_tree', args: {}, agent: { session: 'pairing:test' } }

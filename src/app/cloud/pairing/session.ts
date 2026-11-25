@@ -1,11 +1,8 @@
 import { computed, shallowRef, watch } from 'vue'
 
-import {
-  agentPairingId,
-  agentPairingURL,
-  cloudMCPResource,
-  COLLAB_ACTIONS
-} from '@open-pencil/cloud/contract'
+import { createCloudRelayJoin, type CloudRelayOptions } from '@open-pencil/cloud/client'
+import { agentPairingId, agentPairingURL, cloudMCPResource } from '@open-pencil/cloud/contract'
+import { COLLAB_ACTIONS } from '@open-pencil/collab'
 import { HOUR_MS } from '@open-pencil/std/timing'
 
 import { serveRoomAgentTools } from '@/app/cloud/rooms/agent-tools'
@@ -16,7 +13,6 @@ import {
   isCloudSiteServer
 } from '@/app/cloud/servers/store'
 import { cloudConnections } from '@/app/cloud/sessions/connection'
-import { createCloudRelayJoin, type CloudRelayOptions } from '@/app/collab/transport/cloud'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import { isTauri } from '@/app/tauri/env'
 

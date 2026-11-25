@@ -1,11 +1,9 @@
 import {
   agentPairingId,
-  COLLAB_ACTIONS,
   createRelayClientAssembler,
   decodeRelayClientFrame,
   isAgentPairingToken,
   RELAY_CLOSE,
-  RELAY_SERVER_PEER,
   type AgentToolCall,
   type AgentToolOutcome
 } from '#cloud/contract'
@@ -14,6 +12,7 @@ import type { RelayConnection, RelaySocket } from '#cloud/server/collaboration/r
 import { send } from '#cloud/server/collaboration/relay/room'
 import * as v from 'valibot'
 
+import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
 import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 /** What a runtime keeps with a paired tab's socket, to resume it after setting the hub aside. */

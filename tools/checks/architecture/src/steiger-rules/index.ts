@@ -6,6 +6,7 @@ import {
   noDynamicTailwindStateClasses,
   noVueTemplateUIHooksOrSVG
 } from './dynamic-tailwind-classes.ts'
+import { sdkOnlyImportsInEmbed } from './embed.ts'
 import { noGraphBuildersInFrontEnds } from './graph-builders.ts'
 import { noNativeTitleAttributesInVue } from './native-titles.ts'
 import {
@@ -314,12 +315,13 @@ const noNonUIImportsInSharedUI = createImportRule(
   }
 )
 
-// The editor's root and router, the desktop Software Update window's page entry, the Cloud
+// The editor's root, router, and the views its routes load together, the desktop Software Update window's page entry, the Cloud
 // portal's entry and router, and the metrics dashboard's entry.
 const VIEW_ENTRYPOINTS = new Set([
   'src/App.vue',
   'src/main.ts',
   'src/router.ts',
+  'src/views/editor.ts',
   'src/updater.ts',
   'src/cloud/main.ts',
   'src/cloud/router.ts',
@@ -515,6 +517,7 @@ export const openPencilArchitecturePlugin = {
     noComponentsImportViews,
     noViewsImportedOutsideEntry,
     noEditorImportsInCloudPortal,
+    sdkOnlyImportsInEmbed,
     noTailwindVariantsInThemes,
     noNonUIImportsInSharedUI,
     noAppImportsInSharedUI,
