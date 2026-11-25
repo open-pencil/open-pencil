@@ -17,6 +17,8 @@ export function defineAppDatabase<Database extends DBSchema>(
 export interface AppDatabase<Database extends DBSchema> {
   /** An open connection: the one in use while it still takes transactions, or a new one. */
   open(): Promise<IDBPDatabase<Database>>
+  /** Close the live connection and forget it; a later `open` connects again. */
+  close(): Promise<void>
 }
 
 /**
@@ -68,6 +70,24 @@ export function connectAppDatabase<Database extends DBSchema>(
       if (takesTransactions(database)) return database
       drop(current)
       return connection ?? connect()
+    },
+    async close() {
+      const current = connection
+      connection = undefined
+      if (current) {
+        const database = await current.catch(() => undefined)
+        database?.close()
+      }
     }
   }
+}
+
+/** Delete an app database by name. Callers close their connections first. */
+export function deleteAppDatabase(name: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(name)
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error ?? new Error(`Failed to delete ${name}`))
+    request.onblocked = () => reject(new Error(`Deleting ${name} is blocked by an open connection`))
+  })
 }

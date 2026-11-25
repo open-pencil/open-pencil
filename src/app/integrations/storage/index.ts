@@ -5,6 +5,8 @@ export {
   writeStoragePreference
 } from './preferences'
 export type { StoragePreferences } from './preferences'
+export { latestKey, LIBRARY_PREFIX, parseLibraryKey, revisionKey } from './library-keys'
+export type { ParsedLibraryKey } from './library-keys'
 export { S3_STORAGE_PROVIDER, storageKeepsComments, storageProviderRegistry } from './providers'
 export { defineStorageProvider, StorageProviderRegistry } from './registry'
 export { createS3StorageAdapter } from './s3/adapter'
