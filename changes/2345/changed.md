@@ -1,0 +1,2 @@
+- Library updates group instances by asset with per-page and all-pages counts, and update review previews each instance side-by-side or overlaid before applying.
+- Selective publishing diffs the document against the revision it was last published from, so a publish can carry a chosen subset of changed assets.
