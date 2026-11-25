@@ -1,0 +1,14 @@
+{
+  "slides": "スライド",
+  "newSlide": "新規スライド",
+  "noSlides": "スライドはまだありません",
+  "slideNumber": "スライド {number}",
+  "skippedSlide": "スキップしたスライド",
+  "slideView": "スライド表示",
+  "gridView": "グリッド表示",
+  "duplicate": "複製",
+  "skip": "スライドをスキップ",
+  "unskip": "スライドを含める",
+  "moveToNewSection": "新しいセクションに移動",
+  "delete": "削除"
+}

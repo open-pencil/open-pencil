@@ -182,13 +182,10 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
       rest.splice(at === -1 ? rest.length : at, 0, { id: newSection(), slides: [...ids] })
       return rest
     }
-    const section = target.find(({ slides }) => slides.includes(placement.slideId))
-    const into = rest.find(({ id }) => id === section?.id)
-    if (!section || !into) return target
-    // Beside a slide that moves itself: where it stood among those that stay.
-    const index = section.slides.indexOf(placement.slideId) + (placement.side === 'after' ? 1 : 0)
-    const staying = section.slides.slice(0, index).filter((slide) => !moving.has(slide)).length
-    into.slides.splice(staying, 0, ...ids)
+    const into = rest.find(({ slides }) => slides.includes(placement.slideId))
+    if (!into) return target
+    const at = into.slides.indexOf(placement.slideId) + (placement.side === 'after' ? 1 : 0)
+    into.slides = [...into.slides.slice(0, at), ...ids, ...into.slides.slice(at)]
     return rest
   }
 
@@ -274,6 +271,8 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
     const moving = inOrder(ids)
     const gridId = grid()?.id
     if (moving.length === 0 || !gridId) return
+    // Dropped on one of themselves, they stay.
+    if (placement.type === 'beside' && moving.includes(placement.slideId)) return
     const prior = sections()
     editDeck(
       'Move slides',

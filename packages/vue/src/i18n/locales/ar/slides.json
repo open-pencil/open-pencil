@@ -1,0 +1,14 @@
+{
+  "slides": "الشرائح",
+  "newSlide": "شريحة جديدة",
+  "noSlides": "لا توجد شرائح بعد",
+  "slideNumber": "الشريحة {number}",
+  "skippedSlide": "شريحة متخطاة",
+  "slideView": "عرض الشريحة",
+  "gridView": "عرض الشبكة",
+  "duplicate": "تكرار",
+  "skip": "تخطي الشريحة",
+  "unskip": "تضمين الشريحة",
+  "moveToNewSection": "نقل إلى قسم جديد",
+  "delete": "حذف"
+}

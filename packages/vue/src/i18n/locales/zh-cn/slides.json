@@ -1,0 +1,14 @@
+{
+  "slides": "幻灯片",
+  "newSlide": "新建幻灯片",
+  "noSlides": "还没有幻灯片",
+  "slideNumber": "幻灯片 {number}",
+  "skippedSlide": "已跳过的幻灯片",
+  "slideView": "幻灯片视图",
+  "gridView": "网格视图",
+  "duplicate": "复制",
+  "skip": "跳过幻灯片",
+  "unskip": "包含幻灯片",
+  "moveToNewSection": "移到新节",
+  "delete": "删除"
+}

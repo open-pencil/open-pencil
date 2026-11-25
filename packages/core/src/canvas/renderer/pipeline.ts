@@ -111,7 +111,7 @@ export function renderFromEditorState(
   r.setRulerTheme(state.rulerTheme ?? null)
   r.setSelectionTheme(state.selectionTheme)
   r.pageId = state.currentPageId
-  r.stagedSlideId = stagedSlide(graph, state)?.id ?? null
+  stageSlide(r, state, graph)
   r.navigationPhase = state.navigation.phase
   r.navigationGeneration = state.navigation.generation
   const profile = resolveEditorProfile(state)
@@ -391,6 +391,11 @@ export function render(
     nodes: r.drawCounts.nodes,
     culledNodes: r.drawCounts.culled
   })
+}
+
+/** Takes the slide on the stage for the frame about to be drawn. */
+function stageSlide(r: SkiaRenderer, state: EditorState, graph: SceneGraph): void {
+  r.stagedSlideId = stagedSlide(graph, state)?.id ?? null
 }
 
 /** Leaves only the slide on the stage, if there is one, to what is drawn next. */

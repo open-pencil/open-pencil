@@ -1,0 +1,17 @@
+import { params } from '@nanostores/i18n'
+
+/** A deck's filmstrip and the views of its slides. */
+export const slideMessageDefaults = {
+  slides: 'Slides',
+  newSlide: 'New slide',
+  noSlides: 'No slides yet',
+  slideNumber: params('Slide {number}'),
+  skippedSlide: 'Skipped slide',
+  slideView: 'Slide view',
+  gridView: 'Grid view',
+  duplicate: 'Duplicate',
+  skip: 'Skip slide',
+  unskip: 'Include slide',
+  moveToNewSection: 'Move to new section',
+  delete: 'Delete'
+} as const

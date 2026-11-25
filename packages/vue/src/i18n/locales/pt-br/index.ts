@@ -34,6 +34,7 @@ import recovery from './recovery.json'
 import rename from './rename.json'
 import settings from './settings.json'
 import shapes from './shapes.json'
+import slides from './slides.json'
 import statuses from './statuses.json'
 import storage from './storage.json'
 import tools from './tools.json'
@@ -76,6 +77,7 @@ export default {
   rename,
   settings,
   shapes,
+  slides,
   statuses,
   storage,
   tools,

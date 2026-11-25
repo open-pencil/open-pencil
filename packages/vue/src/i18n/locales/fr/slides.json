@@ -1,0 +1,14 @@
+{
+  "slides": "Diapositives",
+  "newSlide": "Nouvelle diapositive",
+  "noSlides": "Aucune diapositive pour le moment",
+  "slideNumber": "Diapositive {number}",
+  "skippedSlide": "Diapositive ignorée",
+  "slideView": "Vue diapositive",
+  "gridView": "Vue grille",
+  "duplicate": "Dupliquer",
+  "skip": "Ignorer la diapositive",
+  "unskip": "Inclure la diapositive",
+  "moveToNewSection": "Déplacer vers une nouvelle section",
+  "delete": "Supprimer"
+}

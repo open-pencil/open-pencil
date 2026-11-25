@@ -1,0 +1,14 @@
+{
+  "slides": "Todos os slides",
+  "newSlide": "Novo slide",
+  "noSlides": "Ainda não há slides",
+  "slideNumber": "Slide nº {number}",
+  "skippedSlide": "Slide ignorado",
+  "slideView": "Visualização de slide",
+  "gridView": "Visualização em grade",
+  "duplicate": "Duplicar",
+  "skip": "Ignorar slide",
+  "unskip": "Incluir slide",
+  "moveToNewSection": "Mover para uma nova seção",
+  "delete": "Excluir"
+}

@@ -9,7 +9,7 @@ import {
 } from '@open-pencil/scene-graph/slides'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { createEditor } from '#core/editor'
+import { canvasRootId, createEditor } from '#core/editor'
 import { createDocumentGraph } from '#core/editor/document-settings'
 
 /** A deck of three slides in two sections: A and B, then C. */
@@ -110,7 +110,9 @@ describe('slides', () => {
     expect(slides(editor)).toEqual([[b, a, c]])
     editor.moveSlides([c], { type: 'section', before: expectDefined(rowOf(editor, b)) })
     expect(slides(editor)).toEqual([[c], [b, a]])
-    for (let step = 0; step < 4; step++) editor.undo.undo()
+    editor.moveSlides([c, b], { type: 'beside', slideId: b, side: 'after' })
+    expect(slides(editor)).toEqual([[c], [b, a]])
+    for (let step = 0; step < 3; step++) editor.undo.undo()
     expect(slides(editor)).toEqual([[a, b], [c]])
   })
 
@@ -160,3 +162,17 @@ describe('slides', () => {
 function rowOf(editor: Editor, id: string): string | null | undefined {
   return editor.graph.getNode(id)?.parentId
 }
+
+test('arrow keys leave slides where the deck lays them out', () => {
+  const { editor, a, b, c } = setup()
+  editor.select([a])
+  editor.nudgeSelected(1, 0)
+  expect(slides(editor)).toEqual([[a, b], [c]])
+})
+
+test('clicks and new layers on the stage belong to the slide it shows', () => {
+  const { editor, a } = setup()
+  expect(canvasRootId(editor.graph, editor.state)).toBe(editor.state.currentPageId)
+  editor.focusSlide(a)
+  expect(canvasRootId(editor.graph, editor.state)).toBe(a)
+})

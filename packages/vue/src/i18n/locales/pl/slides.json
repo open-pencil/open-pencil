@@ -1,0 +1,14 @@
+{
+  "slides": "Slajdy",
+  "newSlide": "Nowy slajd",
+  "noSlides": "Nie ma jeszcze slajdów",
+  "slideNumber": "Slajd {number}",
+  "skippedSlide": "Pominięty slajd",
+  "slideView": "Widok slajdu",
+  "gridView": "Widok siatki",
+  "duplicate": "Duplikuj",
+  "skip": "Pomiń slajd",
+  "unskip": "Uwzględnij slajd",
+  "moveToNewSection": "Przenieś do nowej sekcji",
+  "delete": "Usuń"
+}
