@@ -167,18 +167,29 @@ function fitsStrokeShorthand(node: SceneNode, stroke: StrokeValue): boolean {
   return (stroke.cap ?? nodeCap) === nodeCap && (stroke.join ?? nodeJoin) === nodeJoin
 }
 
+function exportedStroke(stroke: Stroke): JSXValue {
+  return isFigmaShaderPaint(stroke) ? plainValue({ ...stroke }) : strokeValue(stroke)
+}
+
+function shorthandStroke(node: SceneNode): StrokeValue | undefined {
+  const [first] = node.strokes
+  if (node.strokes.length !== 1 || isFigmaShaderPaint(first)) {
+    return undefined
+  }
+  const only = strokeValue(first)
+  return fitsStrokeShorthand(node, only) ? only : undefined
+}
+
 export function collectStrokeProps(node: SceneNode, props: JSXProp[]): void {
-  const strokes = node.strokes.filter((stroke) => !isFigmaShaderPaint(stroke)).map(strokeValue)
-  const [only] = strokes
-  const shorthand = strokes.length === 1 && fitsStrokeShorthand(node, only)
-  if (shorthand) {
+  const only = shorthandStroke(node)
+  if (only) {
     for (const [key, value] of Object.entries(only)) {
       if (value !== undefined && key !== 'cap' && key !== 'join') {
         props.push([STROKE_SHORTHAND[key], value])
       }
     }
-  } else if (strokes.length > 0) {
-    props.push(['strokes', strokes])
+  } else if (node.strokes.length > 0) {
+    props.push(['strokes', node.strokes.map(exportedStroke)])
   }
   if (node.strokeCap !== DEFAULT_STROKE_CAP)
     props.push(['strokeCap', STROKE_CAP.print(node.strokeCap)])
