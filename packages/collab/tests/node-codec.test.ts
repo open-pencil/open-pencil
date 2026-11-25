@@ -3,6 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { decodeNodeFromYjs } from '#collab/node-codec'
 import * as Y from 'yjs'
 
+import type { Fill } from '@open-pencil/scene-graph'
+
 describe('node codec', () => {
   test('copies a byte array from the room to its own bytes, not the update it arrived in', () => {
     const room = new Y.Doc()
@@ -23,8 +25,13 @@ describe('node codec', () => {
     expect(glyph?.commandsBlob.buffer.byteLength).toBe(commandsBlob.byteLength)
   })
   test("keeps a Figma shader paint's reference in either form a peer writes", () => {
-    const shader = { type: 'CUSTOM', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
-    const fills = [
+    const shader: Fill = {
+      type: 'CUSTOM',
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      opacity: 1,
+      visible: true
+    }
+    const fills: Fill[] = [
       { ...shader, customEffectId: '5:6' },
       { ...shader, customEffectAssetRef: { key: 'abc', version: 'v1' } }
     ]
