@@ -20,7 +20,7 @@ const SHADER_STROKE: Stroke = { ...SHADER, weight: 3, align: 'INSIDE' }
 
 const RED: Fill = { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
 
-function shaderStrokedFrame() {
+function shaderStrokedFrame(fills: Fill[] = [SHADER, RED]) {
   const graph = new SceneGraph()
   const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
     name: 'Frame',
@@ -31,7 +31,7 @@ function shaderStrokedFrame() {
     name: 'Stroked',
     width: 40,
     height: 40,
-    fills: [SHADER, RED],
+    fills,
     strokes: [SHADER_STROKE]
   })
   return { graph, frame }
@@ -67,7 +67,7 @@ describe('Figma shader paints in exports', () => {
   })
 
   test('PPTX draws no black outline', async () => {
-    const { graph, frame } = shaderStrokedFrame()
+    const { graph, frame } = shaderStrokedFrame([RED])
     const data = expectDefined(
       await renderNodesToPPTX(graph, graph.getPages()[0].id, [frame.id], {
         rasterize: stubRasterize
