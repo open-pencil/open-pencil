@@ -1,22 +1,15 @@
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { withBehaviour } from '@open-pencil/scene-graph/behaviours'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { solid } from '../paints'
 
-/** A layer's box as the canvas lays it out, in its parent. */
-export interface LayoutBox {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
-/** The frame to preview, with its height and its layers' boxes by name. */
+/** The frame to preview, with its height and its layers' boxes in their parents by name. */
 export interface PreviewLayoutScene {
   id: string
   height: number
-  boxes: Record<string, LayoutBox>
+  boxes: Record<string, Rect>
 }
 
 /** A button, so the frame that holds an instance of it runs as a preview island. */

@@ -1,9 +1,9 @@
 import type { Page } from '@playwright/test'
 
-import type { LayoutBox } from './scene'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 /** Where a top-level layer's preview island puts one of its layers, without the canvas zoom. */
-export function previewBox(page: Page, islandId: string, name: string): Promise<LayoutBox> {
+export function previewBox(page: Page, islandId: string, name: string): Promise<Rect> {
   return page
     .locator(`[data-island="${islandId}"] [data-layer$="${name}"]`)
     .evaluate((element: HTMLElement) => {
