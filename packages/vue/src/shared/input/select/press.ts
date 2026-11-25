@@ -1,4 +1,5 @@
 import {
+  canvasRootId,
   editedBlurRamp,
   editedGradient,
   resolveEditorProfile,
@@ -42,7 +43,11 @@ function startMarquee(cx: number, cy: number, editor: Editor, setDrag: (d: DragS
   const selectsSection = editor.state.selectedIds.size === 0
   editor.exitContainers()
   editor.clearSelection()
-  const container = editor.graph.hitTestOpenContainer(cx, cy, editor.state.currentPageId)
+  const container = editor.graph.hitTestOpenContainer(
+    cx,
+    cy,
+    canvasRootId(editor.graph, editor.state)
+  )
   setDrag({ type: 'marquee', startX: cx, startY: cy, containerId: container?.id, selectsSection })
 }
 

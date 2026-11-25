@@ -6,6 +6,7 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { acceptingParent } from '#core/editor/components/slots'
 import type { EditorContext } from '#core/editor/types'
+import { canvasRootId } from '#core/editor/views'
 
 /**
  * Where ordinary paste and file drops insert; replacement paste uses its target's parent.
@@ -17,12 +18,13 @@ export function resolvePasteTarget(ctx: Pick<EditorContext, 'graph' | 'state'>):
 
 function pasteTargetCandidate(ctx: Pick<EditorContext, 'graph' | 'state'>): string {
   if (ctx.state.enteredContainerId) return ctx.state.enteredContainerId
+  const root = canvasRootId(ctx.graph, ctx.state)
   const ids = [...ctx.state.selectedIds]
-  if (ids.length !== 1) return ctx.state.currentPageId
+  if (ids.length !== 1) return root
   const node = ctx.graph.getNode(ids[0])
-  if (!node) return ctx.state.currentPageId
+  if (!node) return root
   if (CONTAINER_TYPES.has(node.type) && node.type !== 'CANVAS') return node.id
-  return node.parentId ?? ctx.state.currentPageId
+  return node.parentId ?? root
 }
 
 /**

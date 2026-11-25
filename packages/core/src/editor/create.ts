@@ -229,7 +229,7 @@ export function createEditor(options?: EditorOptions) {
   const figJamText = createFigJamTextActions(ctx, nodes, { ...stickies, ...shapesWithText })
   const figJamColors = createFigJamColorActions(ctx, nodes)
   const statuses = createStatusActions(ctx)
-  const slides = createSlideActions(ctx)
+  const slides = createSlideActions(ctx, viewport.zoomToFit)
   const figCompression = createFigCompressionActions(ctx)
   createConnectorRouting(ctx)
   const connectorDrawing = createConnectorDrawActions(ctx)

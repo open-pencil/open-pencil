@@ -5,6 +5,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { ZOOM_DIVISOR, ZOOM_MAX, ZOOM_MIN, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
 import type { EditorContext } from '#core/editor/types'
+import { stagedSlide } from '#core/editor/views/stage'
 import type { ViewportTransform } from '#core/geometry/types'
 import { screenToWorld, worldRectToScreen } from '#core/geometry/viewport'
 import { emitNavigationTrace } from '#core/profiler'
@@ -183,9 +184,12 @@ export function createViewportActions(ctx: EditorContext) {
     emitViewportChanged(previous)
   }
 
-  /** Figma's Shift+1: every layer of the page fitted; an empty page shows its origin at 100%. */
+  /** Figma's Shift+1: every layer of the page fitted, or the slide on the stage; an empty page shows its origin at 100%. */
   function zoomToFit() {
-    const b = pageContentBounds(ctx.graph, ctx.state.currentPageId)
+    const slide = stagedSlide(ctx.graph, ctx.state)
+    const b = slide
+      ? getAxisAlignedWorldBounds(slide, ctx.graph)
+      : pageContentBounds(ctx.graph, ctx.state.currentPageId)
     if (!b) {
       centerOn(0, 0, 1)
       return

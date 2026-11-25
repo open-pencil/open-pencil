@@ -3,7 +3,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { LAYER_HIT_PAD } from '#core/constants'
 import type { EditorContext } from '#core/editor/types'
-import { resolveEditorProfile } from '#core/editor/views'
+import { canvasRootId, resolveEditorProfile } from '#core/editor/views'
 
 export function createSelectionHitTestActions(
   ctx: EditorContext,
@@ -24,7 +24,7 @@ export function createSelectionHitTestActions(
     const renderer = ctx.getRenderer()
     if (!renderer) return null
     const pad = LAYER_HIT_PAD / ctx.state.zoom
-    const scope = ctx.state.currentPageId
+    const scope = canvasRootId(ctx.graph, ctx.state)
     if (ctx.state.enteredContainerId && !ctx.graph.getNode(ctx.state.enteredContainerId)) {
       ctx.state.enteredContainerId = null
     }
@@ -79,7 +79,7 @@ export function createSelectionHitTestActions(
     const hit =
       (labels ? labelAt(labels, cx, cy) : null) ??
       hitAt(cx, cy, false, true) ??
-      ctx.graph.hitTestOpenContainer(cx, cy, ctx.state.currentPageId)
+      ctx.graph.hitTestOpenContainer(cx, cy, canvasRootId(ctx.graph, ctx.state))
     if (hit) {
       if (!ctx.state.selectedIds.has(hit.id)) {
         select([hit.id])

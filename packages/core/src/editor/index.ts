@@ -52,7 +52,13 @@ export { pastedPropertyChanges } from './clipboard/paste/properties'
 export { resolvePasteTarget } from './clipboard/paste/target'
 export { playIslandRoots } from './play/islands'
 export { resolvePlayState, type InstanceState } from './play/states'
-export { EDIT_VIEW, NO_HOST_RESTRICTIONS, resolveEditorProfile } from './views'
+export {
+  canvasRootId,
+  EDIT_VIEW,
+  NO_HOST_RESTRICTIONS,
+  resolveEditorProfile,
+  stagedSlide
+} from './views'
 export type {
   CanvasView,
   EditorProfile,

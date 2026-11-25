@@ -29,7 +29,7 @@ export type SlidePlacement =
  * Commands on a deck's slides. Each is one undo step that puts the deck's sections and slides back
  * in their order; a section never stays empty, as in Figma.
  */
-export function createSlideActions(ctx: EditorContext) {
+export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
   function grid(): SceneNode | undefined {
     return slideGrid(ctx.graph, ctx.state.currentPageId)
   }
@@ -152,7 +152,8 @@ export function createSlideActions(ctx: EditorContext) {
   function setFocus(id: string | null): void {
     ctx.state.focusedSlideId = id
     ctx.state.hoveredNodeId = null
-    ctx.requestRepaint()
+    // A slide fills the stage, and leaving it shows the whole deck.
+    zoomToFit()
   }
 
   /** The slide new ones follow: the last selected one, the one on the stage, or the deck's last. */
@@ -337,8 +338,11 @@ export function createSlideActions(ctx: EditorContext) {
       }
     })
   })
-  ctx.onEditorEvent('graph:replaced', () => setFocus(null))
-  ctx.onEditorEvent('page:changed', () => setFocus(null))
+  const leaveStage = () => {
+    ctx.state.focusedSlideId = null
+  }
+  ctx.onEditorEvent('graph:replaced', leaveStage)
+  ctx.onEditorEvent('page:changed', leaveStage)
 
   return {
     addSlide,
