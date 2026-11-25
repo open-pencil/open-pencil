@@ -12,7 +12,6 @@ import type {
 } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
-  CustomEffectReference,
   Fill,
   Stroke,
   Effect,
@@ -89,21 +88,22 @@ function writeMediaPaintFields(paint: Paint, fill: Fill): void {
   if (paintFilter) paint.paintFilter = paintFilter
 }
 
-function codeComponentId(reference: CustomEffectReference): CodeComponentId {
-  if (reference.guid !== undefined) {
-    return { guid: stringToGuid(reference.guid) }
+function codeComponentId(fill: Fill): CodeComponentId | undefined {
+  if (fill.customEffectId) {
+    return { guid: stringToGuid(fill.customEffectId) }
   }
-  return { assetRef: { ...reference } }
-}
-
-function customEffectReference(id: CodeComponentId | undefined): CustomEffectReference | undefined {
-  if (id?.guid) {
-    return { guid: guidToString(id.guid) }
-  }
-  if (id?.assetRef) {
-    return { ...id.assetRef }
+  if (fill.customEffectAssetRef) {
+    return { assetRef: { ...fill.customEffectAssetRef } }
   }
   return undefined
+}
+
+function applyCustomEffectId(fill: Fill, id: CodeComponentId | undefined): void {
+  if (id?.guid) {
+    fill.customEffectId = guidToString(id.guid)
+  } else if (id?.assetRef) {
+    fill.customEffectAssetRef = { ...id.assetRef }
+  }
 }
 
 export function fillToKiwiPaint(fill: Fill): Paint {
@@ -134,8 +134,9 @@ export function fillToKiwiPaint(fill: Fill): Paint {
   if (fill.noiseType) paint.noiseType = fill.noiseType
   if (fill.density !== undefined) paint.density = fill.density
   if (fill.noiseSize) paint.noiseSize = fill.noiseSize
-  if (fill.customEffectId) {
-    paint.customEffectId = codeComponentId(fill.customEffectId)
+  const customEffectId = codeComponentId(fill)
+  if (customEffectId) {
+    paint.customEffectId = customEffectId
   }
   if (fill.componentPropAssignments) {
     paint.componentPropAssignments = structuredClone(fill.componentPropAssignments)
@@ -247,10 +248,7 @@ function applySchemaPaintFields(fill: Fill, p: Paint): void {
   if (p.noiseType) fill.noiseType = p.noiseType as Fill['noiseType']
   if (p.density !== undefined) fill.density = p.density
   if (p.noiseSize) fill.noiseSize = p.noiseSize
-  const customEffectId = customEffectReference(p.customEffectId)
-  if (customEffectId) {
-    fill.customEffectId = customEffectId
-  }
+  applyCustomEffectId(fill, p.customEffectId)
   if (p.componentPropAssignments) {
     fill.componentPropAssignments = p.componentPropAssignments
   }

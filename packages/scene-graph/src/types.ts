@@ -199,9 +199,10 @@ export interface GradientStop {
 
 export type GradientTransform = Matrix
 
-export type CustomEffectReference =
-  | { guid: string; key?: never; version?: never }
-  | { guid?: never; key: string; version?: string }
+export interface LibraryAssetRef {
+  key: string
+  version?: string
+}
 
 /** Figma's adjustments of an image paint, each from -1 to 1; 0 leaves the image as it is. */
 export interface ImageFilters {
@@ -243,7 +244,8 @@ export interface Fill {
   noiseType?: NoiseType
   density?: number
   noiseSize?: Vector
-  customEffectId?: CustomEffectReference
+  customEffectId?: string
+  customEffectAssetRef?: LibraryAssetRef
   componentPropAssignments?: unknown[]
 }
 

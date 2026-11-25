@@ -57,7 +57,7 @@ test('a shader paint pasted from Figma keeps its library shader and parameters',
   const { plate } = await pasted(figmaCopy())
   expect(plate.fills[0]).toMatchObject({
     type: 'CUSTOM',
-    customEffectId: { key: 'abc', version: 'v1' },
+    customEffectAssetRef: { key: 'abc', version: 'v1' },
     componentPropAssignments: ASSIGNMENTS
   })
 })

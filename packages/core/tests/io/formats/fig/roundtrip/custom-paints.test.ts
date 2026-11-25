@@ -11,7 +11,7 @@ import {
   type NodeChange,
   type Paint
 } from '@open-pencil/kiwi/fig/codec'
-import type { Fill, SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { guid } from '@open-pencil/test-support/fig/guid'
 import { collectAllNodes } from '@open-pencil/test-support/fig/traversal'
@@ -158,4 +158,30 @@ describe('Figma shader paints through a .fig archive', () => {
     const [solid] = await savedPaints(graph)
     expect(solid.color).toEqual(RECOLORED)
   })
+  const DRAWN_SHADER: Fill = {
+    type: 'CUSTOM',
+    color: { r: 0, g: 0, b: 0, a: 1 },
+    opacity: 1,
+    visible: true
+  }
+
+  for (const [form, fill, written] of [
+    ['node ID', { ...DRAWN_SHADER, customEffectId: '5:6' }, { guid: { sessionID: 5, localID: 6 } }],
+    [
+      'library key',
+      { ...DRAWN_SHADER, customEffectAssetRef: { key: 'abc', version: 'v1' } },
+      { assetRef: { key: 'abc', version: 'v1' } }
+    ]
+  ] as const) {
+    test(`a shader paint made in OpenPencil saves its ${form}`, async () => {
+      const graph = new SceneGraph()
+      graph.createNode('RECTANGLE', graph.getPages()[0].id, {
+        name: 'Plate',
+        width: 4,
+        height: 4,
+        fills: [fill]
+      })
+      expect(shaderOf(await savedPaints(graph)).customEffectId).toEqual(written)
+    })
+  }
 })

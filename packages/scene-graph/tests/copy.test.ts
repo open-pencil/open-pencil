@@ -69,18 +69,29 @@ describe('copy helpers — mutation isolation', () => {
     expect(original.filters).toEqual({ exposure: 0.5, saturation: -0.25 })
   })
 
+  test('copyFill: a shader paint keeps the node ID earlier versions wrote', () => {
+    const original: Fill = {
+      type: 'CUSTOM',
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      opacity: 1,
+      visible: true,
+      customEffectId: '5:6'
+    }
+    expect(copyFill(original)).toEqual(original)
+  })
+
   test("copyFill: a shader paint's reference and parameters are independent", () => {
     const original: Fill = {
       type: 'CUSTOM',
       color: { r: 0, g: 0, b: 0, a: 1 },
       opacity: 1,
       visible: true,
-      customEffectId: { key: 'abc', version: 'v1' },
+      customEffectAssetRef: { key: 'abc', version: 'v1' },
       componentPropAssignments: [{ varValue: { value: { floatValue: 0.5 } } }]
     }
     const copy = copyFill(original)
     expect(copy).toEqual(original)
-    expect(copy.customEffectId).not.toBe(original.customEffectId)
+    expect(copy.customEffectAssetRef).not.toBe(original.customEffectAssetRef)
     expect(copy.componentPropAssignments?.[0]).not.toBe(original.componentPropAssignments?.[0])
   })
 

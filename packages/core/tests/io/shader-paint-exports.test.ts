@@ -13,7 +13,7 @@ const SHADER: Fill = {
   color: { r: 0, g: 0, b: 0, a: 1 },
   opacity: 1,
   visible: true,
-  customEffectId: { key: 'abc', version: 'v1' }
+  customEffectAssetRef: { key: 'abc', version: 'v1' }
 }
 
 const SHADER_STROKE: Stroke = { ...SHADER, weight: 3, align: 'INSIDE' }

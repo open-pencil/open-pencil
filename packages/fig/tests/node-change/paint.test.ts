@@ -170,13 +170,13 @@ describe('Figma shader paints', () => {
   test('reads a library shader by its key and version, and its parameters', () => {
     expect(convertFills([LIBRARY])[0]).toMatchObject({
       type: 'CUSTOM',
-      customEffectId: { key: 'abc', version: 'v1' },
+      customEffectAssetRef: { key: 'abc', version: 'v1' },
       componentPropAssignments: ASSIGNMENTS
     })
   })
 
   test('reads a shader in the file by its node ID', () => {
-    expect(convertFills([LOCAL])[0].customEffectId).toEqual({ guid: '5:6' })
+    expect(convertFills([LOCAL])[0].customEffectId).toBe('5:6')
   })
 
   test('writes either reference back as it was read, with no colour', () => {

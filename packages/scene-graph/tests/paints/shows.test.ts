@@ -30,7 +30,7 @@ test('a paint shows when it is visible and not wholly transparent', () => {
 })
 
 test('OpenPencil draws a visible paint unless it is a Figma shader', () => {
-  const shader = solid({ type: 'CUSTOM', customEffectId: { key: 'abc', version: 'v1' } })
+  const shader = solid({ type: 'CUSTOM', customEffectAssetRef: { key: 'abc', version: 'v1' } })
   expect(isFigmaShaderPaint(shader)).toBe(true)
   expect(isFigmaShaderPaint(solid())).toBe(false)
   expect(isDrawnPaint(solid())).toBe(true)

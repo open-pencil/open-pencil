@@ -9,7 +9,7 @@ const SHADER: Fill = {
   color: { r: 0, g: 0, b: 0, a: 1 },
   opacity: 1,
   visible: true,
-  customEffectId: { key: 'abc', version: 'v1' }
+  customEffectAssetRef: { key: 'abc', version: 'v1' }
 }
 
 test('a Figma shader paint exports nothing, as fill or as stroke', () => {
