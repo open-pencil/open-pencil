@@ -131,6 +131,18 @@ describe('variables from custom properties', () => {
     expect(values(graph, name ?? '')).toMatchObject([{ aliasId: expect.any(String) }, { a: 0 }])
   })
 
+  test('bind a mask whose element has black text', async () => {
+    const svg = encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M0 0h9v9z"/></svg>'
+    )
+    const { graph } = await readHTMLDocument(
+      `<div id="mask" style="width:20px;height:20px;background:var(--ink);mask:url('data:image/svg+xml,${svg}')"></div>`,
+      { cssText: ':root { --ink: #112233 } .dark { --ink: white }', variables: VARIABLES }
+    )
+    const [shape] = graph.getChildren(named(graph, 'mask').id)
+    expect(bound(graph, shape, 'fills/0/color')).toBe('ink')
+  })
+
   test('leave inline SVG that names another property of the same color unbound', async () => {
     const { graph } = await readHTMLDocument(
       '<div style="color:var(--ink)"><svg id="art" width="20" height="20" viewBox="0 0 20 20"><path style="fill:var(--accent)" d="M0 0h9v9z"/></svg></div>',

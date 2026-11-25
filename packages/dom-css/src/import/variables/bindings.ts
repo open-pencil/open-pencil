@@ -224,10 +224,12 @@ class Binder {
 
   /** Binds the paints inline SVG draws in its element's color, which `currentColor` stands for. */
   bindArtwork(frameId: string, element: DesignElement): void {
-    const property = maskSVG(element) ? 'background-color' : 'color'
+    const mask = maskSVG(element)
+    const property = mask ? 'background-color' : 'color'
     const colors = this.#colors(element, property)
     if (!colors) return
-    if (holdsFixedPaint(element, mergedStyle(element).color, element.references?.color)) return
+    const { color } = mergedStyle(element)
+    if (!mask && holdsFixedPaint(element, color, element.references?.color)) return
     for (const child of this.#graph.getChildren(frameId)) this.#bindPaintsIn(child, colors)
   }
 
