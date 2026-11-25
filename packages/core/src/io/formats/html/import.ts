@@ -26,6 +26,7 @@ import {
 } from '#core/io/remote'
 import type { IOFormatAdapter } from '#core/io/types'
 
+import { createMarkedComponents } from './components'
 import {
   registerFallbackFont,
   registerLayerFonts,
@@ -221,7 +222,7 @@ export async function readHTMLDocument(
     pageName: options.pageName,
     matchIcon: options.matchIcon,
     theme: options.variables && (await readTheme(options.variables.collection)),
-    components: options.components,
+    createComponents: options.components ? createMarkedComponents : undefined,
     pageWindow: options.framed ? (options.viewport ?? HTML_IMPORT_VIEWPORT) : undefined
   })
   return { styled, graph }

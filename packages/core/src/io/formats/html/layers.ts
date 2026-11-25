@@ -6,7 +6,8 @@ import {
   designDocumentToLayers,
   placeBackgroundPictures,
   placeLayersFromLayout,
-  type HTMLTheme
+  type HTMLTheme,
+  type LayerSources
 } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { WHITE } from '@open-pencil/scene-graph/constants'
@@ -21,7 +22,6 @@ import type { IconMatcher } from '#core/icons/match'
 import { layoutAuthoredNodes } from '#core/layout'
 import { prepareGraphFonts } from '#core/text/prepare'
 
-import { createMarkedComponents } from './components'
 import { resolvePageFontFamilies, type PageFontFamilies } from './fonts'
 import { drawInlineSVGs } from './svg'
 
@@ -63,8 +63,11 @@ export async function sceneGraphFromStyledHTML(
     pageWindow?: DesignViewport
     /** Imports the page's custom properties as variables, and binds the layers that use them. */
     theme?: HTMLTheme
-    /** Makes components of the layers the page marks; see `createMarkedComponents`. */
-    components?: boolean
+    /**
+     * Makes components of the layers the page marks, as `createMarkedComponents` does. Passed in
+     * because only `readHTMLDocument` makes them, which keeps their code out of the editor.
+     */
+    createComponents?: (graph: SceneGraph, sources: LayerSources, page: DesignDocument) => void
   } = {}
 ): Promise<SceneGraph> {
   // Text is set in the first family of its `font-family` list there is a font for, the page's own
@@ -95,7 +98,7 @@ export async function sceneGraphFromStyledHTML(
   if (options.theme) bindThemeVariables(graph, options.theme, sources, svgs)
   applyCSSTransforms(graph, transforms)
   clipSpreadShadows(graph, sources.keys())
-  if (options.components) createMarkedComponents(graph, sources, styled)
+  options.createComponents?.(graph, sources, styled)
   if (options.pageWindow) {
     for (const page of graph.getPages()) frameAsWindow(graph, page, options.pageWindow, background)
   }
