@@ -9,7 +9,7 @@ use std::rc::Rc;
 
 use blitz_dom::{BaseDocument, Node};
 use blitz_traits::node_id::NodeId;
-use cssparser::{ParseError, Parser, Token};
+use cssparser::{ParseError, Parser, Token, TokenSerializationType};
 use serde_json::{Map, Value};
 use style::Atom;
 use style::properties::{
@@ -194,6 +194,31 @@ fn variable_text(
 const EXPANSIONS: u32 = 20_000;
 const MAX_EXPANDED: usize = 64 * 1024;
 
+/// Keeps two tokens from reading as one.
+fn separate(out: &mut String, previous: TokenSerializationType, next: TokenSerializationType) {
+    if previous.needs_separator_when_before(next) {
+        out.push(' ');
+    }
+}
+
+/// How the first and the last token of a value join with what is around them.
+fn outer_tokens(text: &str) -> Option<(TokenSerializationType, TokenSerializationType)> {
+    let mut input = Parser::new(text);
+    let mut ends = None;
+    while let Ok(token) = input.next_including_whitespace_and_comments() {
+        let first = token.serialization_type();
+        let last = match token {
+            Token::Function(_)
+            | Token::ParenthesisBlock
+            | Token::SquareBracketBlock
+            | Token::CurlyBracketBlock => TokenSerializationType::Other,
+            _ => first,
+        };
+        ends = Some((ends.map_or(first, |(first, _)| first), last));
+    }
+    ends
+}
+
 /// Replaces `var()` in a value: one that names a custom property the element takes from the root
 /// unchanged stays, one set nearer by becomes what it was set to, and one set nowhere its fallback.
 struct Expander<'a> {
@@ -217,6 +242,7 @@ impl Expander<'_> {
     }
 
     fn write(&self, input: &mut Parser<'_>, out: &mut String, visiting: &mut Vec<Atom>) -> bool {
+        let mut previous = TokenSerializationType::Nothing;
         while let Ok(token) = input.next_including_whitespace_and_comments() {
             let token = token.clone();
             let closing = match &token {
@@ -236,6 +262,11 @@ impl Expander<'_> {
                     let Some(text) = self.variable(&name, fallback.as_deref(), visiting) else {
                         return false;
                     };
+                    // Substituted tokens stay apart from those around them.
+                    if let Some((first, last)) = outer_tokens(&text) {
+                        separate(out, previous, first);
+                        previous = last;
+                    }
                     out.push_str(&text);
                     if out.len() > MAX_EXPANDED {
                         return false;
@@ -248,13 +279,18 @@ impl Expander<'_> {
                 // A comment can be all that keeps two tokens apart.
                 Token::Comment(_) => {
                     out.push(' ');
+                    previous = TokenSerializationType::WhiteSpace;
                     continue;
                 }
                 _ => {
+                    separate(out, previous, token.serialization_type());
+                    previous = token.serialization_type();
                     let _ = cssparser::ToCss::to_css(&token, out);
                     continue;
                 }
             };
+            separate(out, previous, token.serialization_type());
+            previous = TokenSerializationType::Other;
             let _ = cssparser::ToCss::to_css(&token, out);
             let mut complete = true;
             let _ = input.parse_nested_block(|block| {

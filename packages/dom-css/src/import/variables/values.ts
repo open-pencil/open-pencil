@@ -13,27 +13,30 @@ export type CustomPropertyValue =
 /** A color no page writes, which a probe keeps when its custom property is not a color. */
 const NOT_A_COLOR = 'rgb(1 2 3 / 0.0039)'
 
-/** A tag no page styles, so none of its rules sets the custom properties being read. */
+/** A tag no page styles by name. */
 const PROBE_TAG = 'open-pencil-probe'
 
 function probe(name: string): DesignElement {
   const value = `var(${name}) !important`
+  // Rules such as `* { --primary: red !important }` reach probes too; an inline declaration wins.
+  const own = `${name}: inherit !important`
   return {
     type: 'element',
     tagName: PROBE_TAG,
     attrs: {
-      style: `color: ${value}; width: ${value}; line-height: ${value}; display: block !important`
+      style: `${own}; color: ${value}; width: ${value}; line-height: ${value}; display: block !important`
     },
     children: []
   }
 }
 
-function holder(children: DesignElement[]): DesignElement {
-  const style = `display: block !important; color: ${NOT_A_COLOR} !important; width: auto !important; line-height: normal !important`
+function holder(children: DesignElement[], rootValues: string): DesignElement {
+  const style = `${rootValues}; display: block !important; color: ${NOT_A_COLOR} !important; width: auto !important; line-height: normal !important`
   return { type: 'element', tagName: PROBE_TAG, attrs: { style }, children }
 }
 
-function lengthOf(value: string | undefined): number | null {
+/** A computed length in pixels. */
+export function lengthOf(value: string | undefined): number | null {
   return value?.endsWith('px') ? parseCSSNumber(value) : null
 }
 
@@ -53,13 +56,14 @@ export async function customPropertyValues(
   compute: CSSComputeOptions
 ): Promise<Map<string, CustomPropertyValue>> {
   const names = Object.keys(declared)
-  // A rule such as `* { --primary: red }` reaches the probes too, so they take the root's own.
-  const declarations = Object.entries(declared).map(
-    ([name, value]) => `${name}:${value} !important`
-  )
-  const rootValues = `${PROBE_TAG}{${declarations.join(';')}}`
-  const document: DesignDocument = { type: 'document', children: [holder(names.map(probe))] }
-  const styled = await runtime.computeStyles(document, `${cssText}\n${rootValues}`, {
+  const rootValues = Object.entries(declared)
+    .map(([name, value]) => `${name}: ${value} !important`)
+    .join('; ')
+  const document: DesignDocument = {
+    type: 'document',
+    children: [holder(names.map(probe), rootValues)]
+  }
+  const styled = await runtime.computeStyles(document, cssText, {
     ...compute,
     references: false
   })

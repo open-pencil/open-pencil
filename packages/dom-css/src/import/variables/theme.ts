@@ -100,6 +100,14 @@ export class ThemeVariables {
     return property ? this.#byProperty.get(property) : undefined
   }
 
+  /** A number variable's value in each mode. */
+  numbers(variable: Variable): (number | undefined)[] {
+    return this.#modeIds.map((modeId) => {
+      const value = this.#graph.resolveVariable(variable.id, modeId)
+      return typeof value === 'number' ? value : undefined
+    })
+  }
+
   #unusedName(label: string): string {
     const taken = new Set(
       [...this.#byProperty.values(), ...this.#combined.values()].map(({ name }) => name)

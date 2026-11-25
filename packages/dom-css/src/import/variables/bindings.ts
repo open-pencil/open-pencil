@@ -2,7 +2,7 @@ import type { DesignDocument, DesignElement } from '#dom-css/types'
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { parseCSSShadows, splitCSSLayers } from '@open-pencil/scene-graph/css'
+import { parseCSSNumber, parseCSSShadows, splitCSSLayers } from '@open-pencil/scene-graph/css'
 import { effectBindingField } from '@open-pencil/scene-graph/variables'
 
 import { firstStrokeProperty } from '../box'
@@ -10,6 +10,7 @@ import { anyCSSColor, mergedStyle } from '../css-values'
 import { maskSVG } from '../pictures'
 import { colorPart, referencedProperty } from './expression'
 import { ThemeVariables, type HTMLTheme, type ModeColor } from './theme'
+import { lengthOf } from './values'
 
 /** The element each layer was built from; its text layers come from the element that holds them. */
 export type LayerSources = Map<string, DesignElement>
@@ -79,6 +80,16 @@ function numberIn(node: SceneNode, field: string): number | null {
   const length = field === 'lineHeight' ? node.lineHeight : node.letterSpacing
   if (field !== 'lineHeight' && field !== 'letterSpacing') return null
   return length?.unit === 'PIXELS' ? length.value : null
+}
+
+/** A property's number in an element's styles, in pixels unless it is an opacity. */
+function styledNumber(element: DesignElement, property: string): number | null {
+  const value = mergedStyle(element)[property]
+  return property === 'opacity' ? parseCSSNumber(value) : lengthOf(value)
+}
+
+function isSameNumber(value: number | undefined, other: number | null): boolean {
+  return value !== undefined && other !== null && Math.abs(value - other) <= NUMBER_TOLERANCE
 }
 
 /**
@@ -158,17 +169,18 @@ class Binder {
     if (paint?.type === 'SOLID') this.#bindColor(node, `${list}/0/color`, colors)
   }
 
-  /** Binds numbers a single property gives and that hold its value still. */
+  /** Binds numbers a single property gives and that hold its value still, in every mode. */
   #bindNumbers(node: SceneNode, element: DesignElement): void {
     for (const [field, property] of numberSlots(node)) {
       const same = this.#counterparts.get(element)
       const names = same?.map((other) => referencedProperty(other.references?.[property])) ?? []
       const variable = this.#variables.named(names.at(0) ?? null)
       if (variable?.type !== 'FLOAT' || names.some((name) => name !== names[0])) continue
-      const value = this.#graph.resolveNumberVariable(variable.id)
-      const current = numberIn(node, field)
-      if (typeof value !== 'number' || typeof current !== 'number') continue
-      if (Math.abs(value - current) <= NUMBER_TOLERANCE)
+      const others = (same ?? []).slice(1).map((other) => styledNumber(other, property))
+      const expected = [numberIn(node, field), ...others]
+      const values = this.#variables.numbers(variable)
+      if (expected.length !== values.length) continue
+      if (values.every((value, index) => isSameNumber(value, expected[index])))
         this.#graph.bindVariable(node.id, field, variable.id)
     }
   }

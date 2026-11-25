@@ -38,6 +38,23 @@ describe('forced states', () => {
     expect(await opacities(css + html)).toEqual(['0.2', '0.3', '1'])
   })
 
+  test('hold on the root, with the states they imply', async () => {
+    const runtime = engineRuntime()
+    const document = runtime.parseHTML('<i>x</i>')
+    const css = 'html:hover i{opacity:.2} html:focus-visible i{opacity:.3} html:focus i{color:red}'
+    const styled = async (state: string) => {
+      const { children } = await runtime.computeStyles(document, css, {
+        rootAttributes: { 'data-force-state': state }
+      })
+      const [element] = children
+      const style = element.type === 'element' ? element.computedStyle : undefined
+      return [style?.opacity, style?.color]
+    }
+    expect(await styled('hover')).toEqual(['0.2', 'rgb(0, 0, 0)'])
+    expect(await styled('focus-visible')).toEqual(['0.3', 'rgb(255, 0, 0)'])
+    expect(await styled('')).toEqual(['1', 'rgb(0, 0, 0)'])
+  })
+
   test('reach nested rules, media queries, :has(), and linked stylesheets', async () => {
     const css = `@media (hover: hover) { i { &:hover { opacity: .2 } } } b:has(> u:hover) { opacity: .3 }`
     expect(

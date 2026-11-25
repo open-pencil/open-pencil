@@ -101,6 +101,28 @@ describe('variables from custom properties', () => {
     expect(values(graph, 'none')).toMatchObject([{ a: 0 }])
   })
 
+  test('take the root value over important rules that reach every element', async () => {
+    const { graph } = await readHTMLDocument('<p>x</p>', {
+      cssText:
+        ':root { --a: blue } body > :not(#x) { --a: red !important } body :not(#x) { --a: green !important }',
+      variables: {}
+    })
+    expect(values(graph, 'a')).toMatchObject([{ r: 0, g: 0, b: 1 }])
+  })
+
+  test('bind a line height only when its variable is its pixels in every mode', async () => {
+    const { graph } = await readHTMLDocument(
+      `<p style="font-size:16px;line-height:var(--mixed)">Mixed</p>
+       <p style="font-size:16px;line-height:var(--pixels)">Pixels</p>`,
+      {
+        cssText: ':root { --mixed: 32px; --pixels: 32px } .dark { --mixed: 2; --pixels: 40px }',
+        variables: VARIABLES
+      }
+    )
+    expect(bound(graph, named(graph, 'Mixed'), 'lineHeight')).toBeUndefined()
+    expect(bound(graph, named(graph, 'Pixels'), 'lineHeight')).toBe('pixels')
+  })
+
   test('bind letter spacing, and inline SVG only where it follows the color', async () => {
     const { graph } = await readHTMLDocument(
       `<p style="letter-spacing:var(--track);color:var(--ink)">Spaced</p>

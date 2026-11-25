@@ -7,6 +7,7 @@ import {
   parseFontFaceRules,
   parseHTMLDocument,
   parseStylesheetImports,
+  rootForcedStates,
   withForcedStates,
   type CSSFontFaceRule,
   type CSSComputeOptions,
@@ -395,12 +396,15 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       const fetch = keepingFetch(options.fetch, answered)
       const forced = withForcedStates(document)
       const body = serializeHTML(forced ?? document)
-      const css = forced ? forceStates(cssText) : cssText
+      const forcedRoot = rootForcedStates(compute.rootAttributes)
+      const forces = forced !== null || forcedRoot !== null
+      const css = forces ? forceStates(cssText) : cssText
       const pageFetch = fontFaceFetch(laidOut, cssText, { ...options, fetch })
-      const capture = await laidOut.layout(documentHTML(body, css, compute.rootAttributes), {
+      const rootAttributes = forcedRoot ?? compute.rootAttributes
+      const capture = await laidOut.layout(documentHTML(body, css, rootAttributes), {
         baseURL: options.baseURL,
         viewport: compute.viewport ?? DEFAULT_VIEWPORT,
-        fetch: forced ? forcingStates(pageFetch, css, options.baseURL) : pageFetch,
+        fetch: forces ? forcingStates(pageFetch, css, options.baseURL) : pageFetch,
         references: compute.references
       })
       const styled = structuredClone(document)

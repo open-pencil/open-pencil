@@ -1,6 +1,6 @@
 // eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { parse, walk, type CssNode as CSSNode } from 'css-tree'
-import { compact } from 'es-toolkit'
+import { compact, uniq } from 'es-toolkit'
 
 import type { DesignDocument, DesignElement } from '../types'
 
@@ -21,14 +21,14 @@ const CONTAINED = new Set(['hover', 'active', 'focus-within'])
 
 const STATES = new Set(['hover', 'active', 'focus', 'focus-visible', 'focus-within'])
 
-function statesOf(element: DesignElement): string[] {
-  const named = compact((element.attrs[FORCED_STATE_ATTRIBUTE] ?? '').split(/\s+/))
+function statesOf(attrs: Readonly<Record<string, string>>): string[] {
+  const named = compact((attrs[FORCED_STATE_ATTRIBUTE] ?? '').split(/\s+/))
   return named.flatMap((state) => [state, ...(IMPLIED.get(state) ?? [])])
 }
 
 /** Marks an element and what holds it with the states they are in; returns those it passes up. */
 function markElement(element: DesignElement): Set<string> {
-  const states = new Set(statesOf(element))
+  const states = new Set(statesOf(element.attrs))
   for (const child of element.children) {
     if (child.type !== 'element') continue
     for (const state of markElement(child)) states.add(state)
@@ -55,6 +55,15 @@ export function withForcedStates(document: DesignDocument): DesignDocument | nul
 function holdsForcedState(element: DesignElement): boolean {
   if (Object.hasOwn(element.attrs, FORCED_STATE_ATTRIBUTE)) return true
   return element.children.some((child) => child.type === 'element' && holdsForcedState(child))
+}
+
+/** The root's attributes with the states its own imply, or null when they force none. */
+export function rootForcedStates(
+  attributes: Readonly<Record<string, string>> = {}
+): Record<string, string> | null {
+  const states = statesOf(attributes)
+  if (states.length === 0) return null
+  return { ...attributes, [FORCED_STATE_ATTRIBUTE]: uniq(states).join(' ') }
 }
 
 /**
