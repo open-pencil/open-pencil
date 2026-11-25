@@ -23,6 +23,7 @@ import { useJoinRoom } from '@/app/collab/join'
 import { bindDesktopRoomLinks } from '@/app/collab/room/links'
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
 import { openDemoDocument } from '@/app/demo/document'
+import { parseEmbedderOrigin, startEmbedderBridge } from '@/app/document/io/embedder'
 import type { PendingOpenFile } from '@/app/document/io/pending-open'
 import { openPendingFiles } from '@/app/document/io/pending-open'
 import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io/web-link'
@@ -43,6 +44,7 @@ import {
   createTab,
   getActiveStore,
   getTabsSnapshot,
+  openFileInNewTab,
   tabCount,
   type Tab
 } from '@/app/tabs'
@@ -260,6 +262,7 @@ async function bindAssociatedFileOpen(): Promise<void> {
 }
 
 let stopWebMCP: (() => void) | undefined
+let stopEmbedderBridge: (() => void) | undefined
 
 onMounted(async () => {
   stopWebMCP = startWebMCP(getActiveStore)
@@ -290,10 +293,15 @@ onMounted(async () => {
     } catch (error) {
       console.error('[Web link]', error)
     }
+    const embedder = parseEmbedderOrigin(window.location.search)
+    if (embedder && window.parent !== window) {
+      stopEmbedderBridge = startEmbedderBridge(embedder, window, { open: openFileInNewTab })
+    }
   }
 })
 
 onUnmounted(() => {
+  stopEmbedderBridge?.()
   stopWebMCP?.()
   void stopMCPRuntime()
   fileAssociationCleanup.value?.()
