@@ -41,6 +41,7 @@ import {
   mergePluginData,
   serializePluginRelaunchData
 } from '../plugin-data'
+import { serializeSlide } from '../slides'
 import { serializeNodeStatus } from '../status'
 import {
   componentPropAssignment,
@@ -1111,6 +1112,7 @@ export function sceneNodeToKiwiWithContext(
   applyExportSettingsPluginData(node)
   applyLibrarySourcePluginData(node)
   serializeNodeStatus(node, nc)
+  serializeSlide(context, node, nc, localIdCounter)
   applyTextPathBoxPluginData(node, savedInFigmaBox(node))
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData

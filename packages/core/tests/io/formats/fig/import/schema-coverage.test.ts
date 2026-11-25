@@ -387,18 +387,18 @@ describe('Figma Kiwi schema coverage', () => {
       modeled: 128,
       schemaTag: 60,
       internalBookkeeping: 16,
-      rawPreserved: 46,
+      rawPreserved: 48,
       styleLibraryMetadata: 39,
       componentInstanceMetadata: 33,
       textMetadata: 20,
-      slideFigjamMetadata: 41,
+      slideFigjamMetadata: 40,
       visualGeometryMetadata: 46,
       layoutMetadata: 36,
       prototypeConnectorMetadata: 34,
       variableDevMetadata: 14,
       widgetMetadata: 11,
       codeCmsAiMetadata: 73,
-      mediaMotionMetadata: 34
+      mediaMotionMetadata: 33
     })
   })
 

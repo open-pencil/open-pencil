@@ -78,6 +78,14 @@
         "rank": "Alternate"
       },
       {
+        "ext": ["deck"],
+        "name": "Figma Slides Deck",
+        "description": "Figma Slides deck",
+        "role": "Editor",
+        "mimeType": "application/x-figma-slides",
+        "rank": "Alternate"
+      },
+      {
         "ext": ["drawio", "dio"],
         "name": "draw.io Diagram",
         "description": "draw.io diagram",

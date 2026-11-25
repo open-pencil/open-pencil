@@ -10,7 +10,7 @@ pub fn file_association_path(path: PathBuf) -> Option<PathBuf> {
     let ext = path.extension()?.to_string_lossy().to_lowercase();
     matches!(
         ext.as_str(),
-        "fig" | "jam" | "pen" | "drawio" | "dio" | "mmd" | "mermaid"
+        "fig" | "jam" | "deck" | "pen" | "drawio" | "dio" | "mmd" | "mermaid"
     )
     .then_some(path)
 }

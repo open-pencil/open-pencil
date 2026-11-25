@@ -29,7 +29,7 @@ pub async fn compress_fig_canvas(request: Request<'_>) -> Result<Response, Strin
         .unwrap_or(DEFAULT_FIG_KIWI_VERSION);
     let compression_level =
         header("x-fig-compression-level").and_then(|value| value.parse::<i32>().ok());
-    let board = header("x-fig-board") == Some("true");
+    let kind_header = canvas_header(header("x-fig-kind"))?;
     let schema_deflated = body[..schema_len].to_vec();
     let kiwi_data = body[schema_len..].to_vec();
 
@@ -39,7 +39,7 @@ pub async fn compress_fig_canvas(request: Request<'_>) -> Result<Response, Strin
             kiwi_data,
             version,
             compression_level,
-            board,
+            kind_header,
         )
     })
     .await
@@ -47,13 +47,23 @@ pub async fn compress_fig_canvas(request: Request<'_>) -> Result<Response, Strin
     .map(Response::new)
 }
 
-/// The `fig-kiwi` container Figma reads as a design's or board's document data.
+/// The header a canvas of this kind starts with; a `.fig`, `.jam` and `.deck` differ only in it.
+fn canvas_header(kind: Option<&str>) -> Result<&'static [u8; 8], String> {
+    match kind {
+        Some("design") => Ok(b"fig-kiwi"),
+        Some("board") => Ok(b"fig-jam."),
+        Some("slides") => Ok(b"fig-deck"),
+        _ => Err("missing or unknown x-fig-kind".into()),
+    }
+}
+
+/// The `fig-kiwi` container Figma reads as a document's data.
 fn write_fig_canvas(
     schema_deflated: Vec<u8>,
     kiwi_data: Vec<u8>,
     version: u32,
     compression_level: Option<i32>,
-    board: bool,
+    kind_header: &'static [u8; 8],
 ) -> Result<Vec<u8>, String> {
     let levels = zstd::compression_level_range();
     let level = compression_level
@@ -72,8 +82,7 @@ fn write_fig_canvas(
 
     let fig_kiwi_len = 8 + 4 + 4 + schema_deflated.len() + 4 + zstd_data.len();
     let mut fig_kiwi = Vec::with_capacity(fig_kiwi_len);
-    // A FigJam board's `.jam` differs from a design's `.fig` only in this header.
-    fig_kiwi.extend_from_slice(if board { b"fig-jam." } else { b"fig-kiwi" });
+    fig_kiwi.extend_from_slice(kind_header);
     fig_kiwi.extend_from_slice(&version.to_le_bytes());
     fig_kiwi.extend_from_slice(&(schema_deflated.len() as u32).to_le_bytes());
     fig_kiwi.extend_from_slice(&schema_deflated);
@@ -84,14 +93,20 @@ fn write_fig_canvas(
 
 #[cfg(test)]
 mod tests {
-    use super::write_fig_canvas;
+    use super::{canvas_header, write_fig_canvas};
 
     #[test]
     fn names_the_document_kind_in_its_header() {
-        let design = write_fig_canvas(Vec::new(), vec![1, 2, 3], 101, Some(3), false).unwrap();
-        assert_eq!(&design[..8], b"fig-kiwi");
-
-        let board = write_fig_canvas(Vec::new(), vec![1, 2, 3], 101, Some(3), true).unwrap();
-        assert_eq!(&board[..8], b"fig-jam.");
+        for (kind, expected) in [
+            ("design", b"fig-kiwi"),
+            ("board", b"fig-jam."),
+            ("slides", b"fig-deck"),
+        ] {
+            let header = canvas_header(Some(kind)).unwrap();
+            let canvas = write_fig_canvas(Vec::new(), vec![1, 2, 3], 101, Some(3), header).unwrap();
+            assert_eq!(&canvas[..8], expected);
+        }
+        assert!(canvas_header(Some("spreadsheet")).is_err());
+        assert!(canvas_header(None).is_err());
     }
 }

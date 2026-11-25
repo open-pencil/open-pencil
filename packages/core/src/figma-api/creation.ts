@@ -1,5 +1,8 @@
+import type { SlideNode } from '@figma/plugin-typings/plugin-api-standalone'
+
 import type { NodeType } from '@open-pencil/scene-graph'
 import { createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
+import { slideRows } from '@open-pencil/scene-graph/slides'
 
 import type { InterfaceTheme } from '#core/constants'
 import { layerTheme, newLayerDefaults } from '#core/editor/shapes/defaults'
@@ -17,6 +20,8 @@ import type {
   FigmaRectangleNode,
   FigmaSectionNode,
   FigmaShapeWithTextNode,
+  FigmaSlideNode,
+  FigmaSlideRowNode,
   FigmaStarNode,
   FigmaTextNode,
   FigmaVectorNode
@@ -24,6 +29,7 @@ import type {
 import { setDefaultPageBackground } from './page-backgrounds'
 import type { FigmaNodeProxy } from './proxy'
 import { newShapeWithText } from './shape-with-text'
+import { arrangeSlides, newSlide, newSlideRow } from './slides'
 import { FigmaStyleMethods } from './styles/api'
 
 /**
@@ -121,6 +127,31 @@ export abstract class FigmaCreateMethods extends FigmaStyleMethods {
 
   createSection(): FigmaSectionNode {
     return this.#createNode('SECTION') as FigmaSectionNode
+  }
+
+  createSlide(row?: number, col?: number): FigmaSlideNode {
+    const slide = newSlide(graphOf(this), this.currentPageId, row, col)
+    return this.wrapNode(slide.id) as FigmaSlideNode
+  }
+
+  createSlideRow(row?: number): FigmaSlideRowNode {
+    return this.wrapNode(
+      newSlideRow(graphOf(this), this.currentPageId, row).id
+    ) as FigmaSlideRowNode
+  }
+
+  getSlideGrid(): FigmaSlideNode[][] {
+    return slideRows(graphOf(this), this.currentPageId).map((row) =>
+      row.map((slide) => this.wrapNode(slide.id) as FigmaSlideNode)
+    )
+  }
+
+  setSlideGrid(slideGrid: SlideNode[][]): void {
+    arrangeSlides(
+      graphOf(this),
+      this.currentPageId,
+      slideGrid.map((row) => row.map((slide) => slide.id))
+    )
   }
 
   createPage(): FigmaNodeProxy {
