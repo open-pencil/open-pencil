@@ -4,9 +4,15 @@ import { invert, mapValues, pickBy } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
 import type { PaintFilter } from '@open-pencil/kiwi/fig'
-import type { Effect as KiwiEffect, Paint, VariableAliasValue } from '@open-pencil/kiwi/fig/codec'
+import type {
+  CodeComponentId,
+  Effect as KiwiEffect,
+  Paint,
+  VariableAliasValue
+} from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
+  CustomEffectReference,
   Fill,
   Stroke,
   Effect,
@@ -22,6 +28,7 @@ import type {
   StrokeJoin
 } from '@open-pencil/scene-graph'
 import { BLACK, UNSET_GLASS, UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
+import { isFigmaShaderPaint } from '@open-pencil/scene-graph/paints'
 import type { Color, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 /**
@@ -82,13 +89,28 @@ function writeMediaPaintFields(paint: Paint, fill: Fill): void {
   if (paintFilter) paint.paintFilter = paintFilter
 }
 
+function codeComponentId(reference: CustomEffectReference): CodeComponentId {
+  return typeof reference === 'string'
+    ? { guid: stringToGuid(reference) }
+    : { assetRef: { ...reference } }
+}
+
+function customEffectReference(id: CodeComponentId | undefined): CustomEffectReference | undefined {
+  if (id?.guid) {
+    return guidToString(id.guid)
+  }
+  return id?.assetRef ? { ...id.assetRef } : undefined
+}
+
 export function fillToKiwiPaint(fill: Fill): Paint {
   const paint: Paint = {
     type: fill.type,
-    color: safeColor(fill.color),
     opacity: fill.opacity,
     visible: fill.visible,
     blendMode: fill.blendMode ?? 'NORMAL'
+  }
+  if (!isFigmaShaderPaint(fill)) {
+    paint.color = safeColor(fill.color)
   }
   if (fill.gradientStops) {
     paint.stops = fill.gradientStops.map((stop) => ({
@@ -108,7 +130,10 @@ export function fillToKiwiPaint(fill: Fill): Paint {
   if (fill.noiseType) paint.noiseType = fill.noiseType
   if (fill.density !== undefined) paint.density = fill.density
   if (fill.noiseSize) paint.noiseSize = fill.noiseSize
-  if (fill.customEffectId) paint.customEffectId = { guid: stringToGuid(fill.customEffectId) }
+  if (fill.customEffectId) paint.customEffectId = codeComponentId(fill.customEffectId)
+  if (fill.componentPropAssignments) {
+    paint.componentPropAssignments = structuredClone(fill.componentPropAssignments)
+  }
   return paint
 }
 
@@ -216,7 +241,11 @@ function applySchemaPaintFields(fill: Fill, p: Paint): void {
   if (p.noiseType) fill.noiseType = p.noiseType as Fill['noiseType']
   if (p.density !== undefined) fill.density = p.density
   if (p.noiseSize) fill.noiseSize = p.noiseSize
-  if (p.customEffectId?.guid) fill.customEffectId = guidToString(p.customEffectId.guid)
+  const customEffectId = customEffectReference(p.customEffectId)
+  if (customEffectId) fill.customEffectId = customEffectId
+  if (p.componentPropAssignments) {
+    fill.componentPropAssignments = structuredClone(p.componentPropAssignments)
+  }
 }
 
 /** One Figma paint as a Scene Graph paint, whether it ends up a fill or a stroke. */

@@ -11,6 +11,7 @@ import {
 import { nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import { strokeAlignShare } from '@open-pencil/scene-graph/geometry'
 import { drawnImageHash } from '@open-pencil/scene-graph/images'
+import { isFigmaShaderPaint } from '@open-pencil/scene-graph/paints'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { setPaintBlendMode } from '#core/canvas/blend/modes'
@@ -251,8 +252,8 @@ function fillHead(
  * Both paints get it: a vector stroke's outline and an arrowhead are filled shapes drawn with
  * `fillPaint`, so the shader has to be on whichever paint the draw helper reaches for.
  * Returns whether the stroke draws: a solid one paints through the paint's color, while a gradient
- * CanvasKit cannot build, as for a transform that holds no numbers, or an image not yet decoded is
- * skipped rather than drawn in that color, the way a fill is.
+ * CanvasKit cannot build, as for a transform that holds no numbers, an image not yet decoded, or a
+ * shader paint is skipped rather than drawn in that color, the way a fill is.
  */
 export function applyStrokeShader(
   r: SkiaRenderer,
@@ -276,7 +277,7 @@ export function applyStrokeShader(
     }
     return applied
   }
-  return true
+  return !isFigmaShaderPaint(stroke)
 }
 
 export function setStrokeBlendMode(r: SkiaRenderer, mode: BlendMode | undefined): void {
