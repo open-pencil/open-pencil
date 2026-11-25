@@ -233,15 +233,15 @@ function addTransitionSlides(
   changes: ArchiveChangeSummary,
   add: (id: string) => unknown
 ): void {
-  const pages = new Set<string>()
-  for (const id of changes.touched) {
-    const node = graph.getNode(id)
-    if (!node || !DECK_TYPES.has(node.type)) continue
-    const page = graph.closest(id, ({ type }) => type === 'CANVAS')
-    if (page) pages.add(page.id)
-  }
-  for (const pageId of pages)
-    for (const slide of slideRows(graph, pageId).flat())
+  const before = archiveBaseline(graph)?.before
+  // A slide that left its page, or was deleted after it did, shows only in what it was.
+  const deckChanged = [...changes.touched].some((id) => {
+    const node = graph.getNode(id) ?? before?.get(id)
+    return node !== undefined && DECK_TYPES.has(node.type)
+  })
+  if (!deckChanged) return
+  for (const page of graph.getPages())
+    for (const slide of slideRows(graph, page.id).flat())
       if (slideSettings(slide)?.transition) add(slide.id)
 }
 

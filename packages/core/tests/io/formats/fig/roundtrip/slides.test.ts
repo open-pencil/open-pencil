@@ -11,6 +11,7 @@ import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   createSlide,
+  createSlideGrid,
   createSlideRow,
   nextSlide,
   slideGrid,
@@ -92,6 +93,22 @@ describe('a transition follows the slide after it into the saved file', () => {
     [
       'moved to the end',
       (graph, [, second]) => graph.insertChildAt(second.id, second.parentId ?? '', 4),
+      'S3'
+    ],
+    [
+      'moved to another page',
+      (graph, [, second]) => {
+        const grid = createSlideGrid(graph, graph.addPage('Other').id)
+        graph.reparentNode(second.id, createSlideRow(graph, grid.id).id)
+      },
+      'S3'
+    ],
+    [
+      'moved to another page and deleted',
+      (graph, [, second]) => {
+        graph.reparentNode(second.id, graph.addPage('Other').id)
+        graph.deleteNode(second.id)
+      },
       'S3'
     ]
   ]
