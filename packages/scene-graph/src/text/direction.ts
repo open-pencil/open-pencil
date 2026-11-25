@@ -3,6 +3,8 @@ import type { LayoutDirection, SceneNode, TextDirection } from '../types'
 const RTL_CHAR_RE =
   /\p{Script=Arabic}|\p{Script=Hebrew}|\p{Script=Syriac}|\p{Script=Thaana}|\p{Script=Nko}|\p{Script=Adlam}/u
 const LTR_CHAR_RE = /\p{Script=Latin}|\p{Script=Cyrillic}|\p{Script=Greek}/u
+// Arabic-Indic digits and their numeric signs are weak bidi characters (UAX #9).
+const ARABIC_NUMERIC_RE = /[\u0660-\u066c\u06f0-\u06f9]/u
 
 /** Whether the text has a letter of a right-to-left script, such as Arabic or Hebrew. */
 export function containsRTLText(text: string): boolean {
@@ -11,7 +13,7 @@ export function containsRTLText(text: string): boolean {
 
 export function detectTextDirection(text: string): Exclude<TextDirection, 'AUTO'> {
   for (const char of text) {
-    if (RTL_CHAR_RE.test(char)) return 'RTL'
+    if (RTL_CHAR_RE.test(char) && !ARABIC_NUMERIC_RE.test(char)) return 'RTL'
     if (LTR_CHAR_RE.test(char)) return 'LTR'
   }
   return 'LTR'
