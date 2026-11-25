@@ -12,6 +12,7 @@ export { default as CloudCreditsBanner } from '../credits/CloudCreditsBanner.vue
 export { default as CloudCommunityBanner } from '../community/CloudCommunityBanner.vue'
 export { default as CloudEditorUpdateBanner } from '../update/CloudEditorUpdateBanner.vue'
 export { default as CloudMovingBanner } from '../moving/CloudMovingBanner.vue'
+export { default as CloudAgentPairingSection } from '../pairing/CloudAgentPairingSection.vue'
 export { default as CloudShareButton } from '../share/CloudShareButton.vue'
 export { default as CloudDocumentStatusHost } from '../status/CloudDocumentStatusHost.vue'
 export { default as CloudReportButton } from '../report/CloudReportButton.vue'

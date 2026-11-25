@@ -32,6 +32,11 @@ export const storedPairing = useLocalStorage<StoredPairing | null>(
   }
 )
 
+/** Whether this browser keeps a pairing with an agent. */
+export function pairedWithAgent(): boolean {
+  return storedPairing.value !== null
+}
+
 /** A fresh pairing token. */
 export function newPairingToken(): string {
   return `opg_${randomHex(32)}`

@@ -19,7 +19,7 @@ import AppCopyField from '@/components/ui/input/AppCopyField.vue'
 
 /**
  * Pairs this window with a coding agent through the Cloud server that serves the editor, without
- * an account: the setup the person gives their agent, whether it is at work, and Disconnect.
+ * an account, where that server does: the setup the person gives their agent, whether it is at work, and Disconnect.
  */
 const automation = useMessages('automation')
 const common = useMessages('common')
@@ -38,7 +38,7 @@ const working = computed(() => state.value.status === 'paired' && state.value.la
 </script>
 
 <template>
-  <SettingsSection data-test-id="settings-agent-pairing">
+  <SettingsSection v-if="agentPairingServer" data-test-id="settings-agent-pairing">
     <template #title>{{ automation.agentPairing }}</template>
     <template #description>{{ automation.agentPairingDescription }}</template>
     <template #actions>

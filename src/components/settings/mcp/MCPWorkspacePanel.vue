@@ -6,13 +6,12 @@ import { useMessages } from '@open-pencil/vue/i18n'
 import { mcpToolAccessOpen } from '@/app/automation/tool-access/settings/use'
 import { webmcpMode } from '@/app/automation/webmcp/preferences'
 import { webmcpRuntime } from '@/app/automation/webmcp/runtime'
-import { agentPairingServer } from '@/app/cloud/pairing/session'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
 import { isTauri } from '@/app/tauri/env'
+import { CloudAgentPairingSection } from '@/components/cloud/integration'
 import ToolAccessSettingsPanel from '@/components/settings/tool-access/ToolAccessSettingsPanel.vue'
 import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 
-import AgentPairingSection from './AgentPairingSection.vue'
 import MCPConnectionsSection from './MCPConnectionsSection.vue'
 import MCPSettingsPanel from './MCPSettingsPanel.vue'
 import WebMCPSettingsPanel from './WebMCPSettingsPanel.vue'
@@ -43,7 +42,7 @@ onUnmounted(() => {
       <MCPConnectionsSection>
         <MCPSettingsPanel />
         <!-- Where the editor's Cloud server pairs tabs with agents, which needs no account. -->
-        <AgentPairingSection v-if="agentPairingServer" />
+        <CloudAgentPairingSection />
         <!-- WebMCP serves agents built into a browser; the desktop webview has neither the API nor an agent. -->
         <WebMCPSettingsPanel v-if="!isTauri()" v-model="webmcpMode" :state="webmcpRuntime" />
       </MCPConnectionsSection>

@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 
 import { aiModelSettings } from '@/app/ai/models/store'
-import { storedPairing } from '@/app/cloud/pairing/stored'
+import { pairedWithAgent } from '@/app/cloud/integration'
 import { appPreferences, updateAISetupState } from '@/app/settings/preferences/store'
 
 import { isUnconfiguredModelSettings } from './apply'
@@ -36,7 +36,7 @@ export function offerAISetupOnFirstRun({ inTour }: { inTour: boolean }): boolean
   if (appPreferences.value.onboarding.aiSetup === 'done') return false
   // Someone who came through their agent is here to watch it design; the welcome waits for a visit
   // without one.
-  if (storedPairing.value) return false
+  if (pairedWithAgent()) return false
   if (!isUnconfiguredModelSettings(aiModelSettings.value)) {
     updateAISetupState('done')
     return false
