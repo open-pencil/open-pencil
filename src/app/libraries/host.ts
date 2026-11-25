@@ -1,5 +1,5 @@
 import { watchDebounced } from '@vueuse/core'
-import { watch } from 'vue'
+import { effectScope, watch } from 'vue'
 
 import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 import { MirroredLibraryCatalog } from '@/app/libraries/catalog/mirrored'
@@ -11,7 +11,7 @@ import { librarySyncRemote, librarySyncResolution } from '@/app/libraries/sync/s
 const RESOLUTION_REFRESH_DEBOUNCE_MS = 300
 
 let service: LibraryService | undefined
-let stopWatches: (() => void)[] = []
+let serviceScope: ReturnType<typeof effectScope> | null = null
 
 export function useLibraryService(): LibraryService {
   if (!service) {
@@ -19,8 +19,11 @@ export function useLibraryService(): LibraryService {
     service = instance
     // Follow the sync engine's remote: every rebuild produces a fresh mirror with a catalog
     // already assembled. The engine cannot import the service — the service already consumes
-    // its status — so the wiring lives here.
-    stopWatches = [
+    // its status — so the wiring lives here. The watches join a detached scope bound to the
+    // singleton's own lifetime: in the caller's scope they would die with that component's
+    // unmount while the cached service lives on, and the remote never reaches attachCatalog.
+    serviceScope = effectScope(true)
+    serviceScope.run(() => {
       watch(
         librarySyncRemote,
         (remote) => {
@@ -29,7 +32,7 @@ export function useLibraryService(): LibraryService {
           instance.attachCatalog(catalog)
         },
         { immediate: true }
-      ),
+      )
       // A pull landing or failing changes what enabledAssets and updates can show.
       watchDebounced(
         librarySyncResolution,
@@ -39,14 +42,14 @@ export function useLibraryService(): LibraryService {
         },
         { debounce: RESOLUTION_REFRESH_DEBOUNCE_MS }
       )
-    ]
+    })
   }
   return service
 }
 
 /** Test seam: drops the singleton and its engine watches between runs. */
 export function resetLibraryServiceForTests(): void {
-  for (const stop of stopWatches) stop()
-  stopWatches = []
+  serviceScope?.stop()
+  serviceScope = null
   service = undefined
 }

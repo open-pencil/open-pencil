@@ -12,6 +12,7 @@ import { MANIFEST_FETCH_CONCURRENCY, StorageLibraryCatalog } from '@/app/librari
 import { LibraryContentInvalidError, LibraryRevisionMissingError } from '@/app/libraries/errors'
 import { computeNeeds, type NeedsFlags, type RevisionNeed } from '@/app/libraries/sync/needs'
 import {
+  currentResolutionsEpoch,
   failSyncingResolutions,
   librarySyncResolution,
   type LibraryResolutionState,
@@ -29,13 +30,13 @@ export interface PassOutcome {
 }
 
 export interface PassRequest extends NeedsFlags {
-  /** List the remote and refresh the summaries of libraries whose keys changed. */
+  /** List the remote and refresh the summaries of libraries whose manifest etag moved. */
   probe: boolean
 }
 
 interface ListedLibrary {
-  manifest: boolean
-  revisions: Set<string>
+  /** The manifest object's etag, or null when the provider's listing does not carry one. */
+  manifestEtag: string | null
 }
 
 /** Content a retry cannot repair: absent, unreadable, or failing its integrity checks. */
@@ -58,8 +59,12 @@ export class LibrarySyncSession implements LibrarySyncRemote {
   readonly dbName: string
   readonly #openObjects: () => Promise<LibraryObjectStore | null>
   readonly #abort = new AbortController()
-  /** Per library, the revision keys a manifest read accounted for: all known means no publish. */
-  readonly #known = new Map<string, ReadonlySet<string>>()
+  /**
+   * Per library, the etag of the manifest the mirror's `latest` row was cached from. The row
+   * projects that object, so the object itself is what tells the projection is stale — not
+   * the revision keys listed beside it, which a publish in flight makes untruthful.
+   */
+  readonly #manifestEtags = new Map<string, string | null>()
   #failures: PassOutcome = {}
 
   constructor(
@@ -112,49 +117,53 @@ export class LibrarySyncSession implements LibrarySyncRemote {
     this.#failures[isPermanentError(error) ? 'permanent' : 'transient'] ??= error
   }
 
-  /** One listing, then a manifest read per library whose keys changed; vanished libraries are dropped. */
+  /** One listing, then a manifest read per library whose etag changed; vanished libraries are dropped. */
   async #probe(objects: LibraryObjectStore, remote: StorageLibraryCatalog): Promise<void> {
     const listed = await objects.listObjects(`${LIBRARY_PREFIX}/`)
     this.#assertOpen()
     const listing = new Map<string, ListedLibrary>()
-    for (const { key } of listed) {
+    for (const { key, etag } of listed) {
       const parsed = parseLibraryKey(key)
-      if (!parsed) continue
-      const entry = listing.get(parsed.libraryId) ?? { manifest: false, revisions: new Set() }
-      if (parsed.kind === 'latest') entry.manifest = true
-      else entry.revisions.add(parsed.revisionId)
-      listing.set(parsed.libraryId, entry)
+      if (parsed?.kind === 'latest') listing.set(parsed.libraryId, { manifestEtag: etag })
     }
     const rows = await this.mirror.listLibraries()
     this.#assertOpen()
     for (const { libraryId } of rows) {
       // Revision keys without a manifest are debris, not a library.
-      if (listing.get(libraryId)?.manifest) continue
-      this.#known.delete(libraryId)
+      if (listing.has(libraryId)) continue
+      this.#manifestEtags.delete(libraryId)
       await this.mirror.deleteLibrary(libraryId).catch((error: unknown) => this.#record(error))
     }
-    const changed = [...listing].filter(([libraryId, entry]) => {
-      const known = this.#known.get(libraryId)
-      return entry.manifest && (!known || [...entry.revisions].some((id) => !known.has(id)))
-    })
-    const syncLibrary = limitAsync(async ([libraryId, { revisions }]: [string, ListedLibrary]) => {
-      try {
-        const summary = await remote.getSummary(libraryId)
-        this.#assertOpen()
-        // A manifest this version cannot read is left out; it is read again once its keys change.
-        if (!summary) return
-        await this.mirror.cacheSummaries([summary])
-        const known = this.#known.get(libraryId)
-        // A publish writes its revision before its manifest, so the listing counts only when
-        // the manifest names a revision the listing showed (a new one, once seen before).
-        const accountedFor =
-          revisions.has(summary.latestRevisionId) &&
-          (!known || !known.has(summary.latestRevisionId))
-        if (accountedFor) this.#known.set(libraryId, revisions)
-      } catch (error) {
-        this.#record(error)
-      }
-    }, MANIFEST_FETCH_CONCURRENCY)
+    // An unrecorded or changed etag means a manifest read is owed: a publish in flight left
+    // it untouched, a completed one changed it. A listing that cannot produce etags reads
+    // every probe — the conservative correct fallback for an incomplete adapter.
+    const changed = [...listing].filter(
+      ([libraryId, { manifestEtag }]) =>
+        manifestEtag === null || this.#manifestEtags.get(libraryId) !== manifestEtag
+    )
+    const syncLibrary = limitAsync(
+      async ([libraryId, { manifestEtag }]: [string, ListedLibrary]) => {
+        try {
+          const { summary, etag } = await remote.getSummaryValue(libraryId)
+          this.#assertOpen()
+          if (!summary) {
+            // A manifest this version cannot read stays unknown, so the next probe retries.
+            this.#manifestEtags.delete(libraryId)
+            return
+          }
+          await this.mirror.cacheSummaries([summary])
+          // The record is the etag of the object actually read — a publish between the
+          // listing and this read may already have moved it past `manifestEtag`; a read
+          // without an etag falls back on the listed one.
+          this.#manifestEtags.set(libraryId, etag ?? manifestEtag)
+        } catch (error) {
+          // A failed read records nothing, so the next probe retries.
+          this.#manifestEtags.delete(libraryId)
+          this.#record(error)
+        }
+      },
+      MANIFEST_FETCH_CONCURRENCY
+    )
     await Promise.all(changed.map((entry) => syncLibrary(entry)))
   }
 
@@ -173,6 +182,12 @@ export class LibrarySyncSession implements LibrarySyncRemote {
     })
     this.#assertOpen()
     const latestByLibrary = new Map(rows.map((row) => [row.libraryId, row.latestRevisionId]))
+    // A resume while this pass runs voids the `failed` verdicts the snapshot below reads;
+    // publishing them back would re-skip what the resume retried, so publishes past an
+    // epoch bump filter `failed` entries out. `syncing` entries stay — they are this
+    // pass's own work — and landings stay unconditional, since revision content cannot go
+    // stale.
+    const publishEpoch = currentResolutionsEpoch()
     const resolution = new Map<string, LibraryResolutionState>()
     const toPull: RevisionNeed[] = []
     for (const [key, need] of computeNeeds(stores, latestByLibrary, request)) {
@@ -192,11 +207,14 @@ export class LibrarySyncSession implements LibrarySyncRemote {
       resolution.set(key, 'syncing')
       toPull.push(need)
     }
-    librarySyncResolution.value = resolution
-
     const publish = () => {
-      if (!this.#abort.signal.aborted) librarySyncResolution.value = new Map(resolution)
+      if (this.#abort.signal.aborted) return
+      librarySyncResolution.value =
+        publishEpoch === currentResolutionsEpoch()
+          ? new Map(resolution)
+          : new Map([...resolution].filter(([, state]) => state === 'syncing'))
     }
+    publish()
     const markFailed = (key: string) => {
       resolution.set(key, 'failed')
       publish()

@@ -302,7 +302,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
         return (await listObjects(await resolveConfig(runtime), prefix)).map((object) => ({
           key: object.key,
           size: object.size,
-          etag: null
+          etag: object.etag
         }))
       }
     }

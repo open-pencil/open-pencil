@@ -5,7 +5,7 @@ import { until } from '@vueuse/core'
 
 import { materializeLibraryAsset } from '@open-pencil/core/library'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { sleep } from '@open-pencil/std/timing'
+import { DEADLINE_MS, sleep, withDeadline } from '@open-pencil/std/timing'
 
 import { createEditorStore } from '@/app/editor/session'
 import { writeStoragePreference } from '@/app/integrations/storage/preferences'
@@ -35,6 +35,9 @@ import {
 
 let objects: MemoryObjects
 const mirrorsToDelete: string[] = []
+
+// Every wait here settles on local IndexedDB/memory work, so the request tier bounds them all.
+const SYNC_SETTLE_DEADLINE_MS = DEADLINE_MS.request
 
 beforeEach(() => {
   objects = new MemoryObjects()
@@ -74,10 +77,11 @@ describe('library sync flag intent', () => {
     objects.listFailure = null
     await kickLibrarySync({ probe: false, includeInstanceRevs: true })
     await whenLibrarySyncIdle()
-    for (let waited = 0; waited < 10_000; waited += 100) {
-      if (await remote.mirror.hasRevision('design-system', first)) break
-      await sleep(100)
-    }
+    await withDeadline(SYNC_SETTLE_DEADLINE_MS, async (signal) => {
+      while (!(await remote.mirror.hasRevision('design-system', first))) {
+        await sleep(100, signal)
+      }
+    })
     expect(await remote.mirror.hasRevision('design-system', first)).toBe(true)
     // Keep the provider alive through the backoff: needs come from live stores only.
     expect(editor.graph.enabledLibraries.has('design-system')).toBe(true)
@@ -105,9 +109,11 @@ describe('library sync flag intent', () => {
 
     const previous = librarySyncRemote.value
     writeStoragePreference('s3-compatible', 'bucket', 'other-bucket')
-    const rebuilt = await until(
-      () => librarySyncRemote.value !== null && librarySyncRemote.value !== previous
-    ).toBe(true)
+    const rebuilt = await withDeadline(SYNC_SETTLE_DEADLINE_MS, () =>
+      until(
+        () => librarySyncRemote.value !== null && librarySyncRemote.value !== previous
+      ).toBe(true)
+    )
     expect(rebuilt).toBe(true)
     await track()
     await flush()

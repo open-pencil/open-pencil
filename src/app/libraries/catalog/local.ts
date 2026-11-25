@@ -1,4 +1,4 @@
-import type { DBSchema } from 'idb'
+import type { DBSchema, IDBPTransaction } from 'idb'
 
 import type {
   ComponentLibraryManifest,
@@ -128,18 +128,32 @@ export class LocalLibraryCatalog implements LibraryCatalog {
       revision: serializeLibraryRevision(revision)
     })
     if (updateLatest) {
-      await transaction.objectStore('latest').put(
-        {
-          libraryId: manifest.libraryId,
-          name: manifest.name,
-          latestRevisionId: manifest.revisionId,
-          publishedAt: manifest.publishedAt,
-          assetCount: manifest.assets.length
-        },
-        manifest.libraryId
-      )
+      await this.#putSummaryIfNotOlder(transaction, {
+        libraryId: manifest.libraryId,
+        name: manifest.name,
+        latestRevisionId: manifest.revisionId,
+        publishedAt: manifest.publishedAt,
+        assetCount: manifest.assets.length
+      })
     }
     await transaction.done
+  }
+
+  /**
+   * Writes a `latest` row only when it is at least as new as the stored one, compared by
+   * `publishedAt` inside the transaction the write belongs to. A stale row can arrive after
+   * a newer one — a probe's summary racing a publish's mirror write — and must not roll
+   * `latest` back. A tie keeps the stored row: a same-`publishedAt` rewrite carries no new
+   * information, and the clock skew it would cover is bounded by back-to-back publishes in
+   * the same millisecond.
+   */
+  async #putSummaryIfNotOlder<Stores extends ('latest' | 'revisions')[]>(
+    transaction: IDBPTransaction<LocalLibraryDatabase, Stores, 'readwrite'>,
+    summary: LibrarySummary
+  ): Promise<void> {
+    const stored = await transaction.objectStore('latest').get(summary.libraryId)
+    if (stored && stored.publishedAt >= summary.publishedAt) return
+    await transaction.objectStore('latest').put(summary, summary.libraryId)
   }
 
   async publishRevision(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
@@ -200,7 +214,7 @@ export class LocalLibraryCatalog implements LibraryCatalog {
     const database = await this.#database.open()
     const transaction = database.transaction('latest', 'readwrite')
     for (const summary of summaries) {
-      await transaction.store.put(summary, summary.libraryId)
+      await this.#putSummaryIfNotOlder(transaction, summary)
     }
     await transaction.done
   }

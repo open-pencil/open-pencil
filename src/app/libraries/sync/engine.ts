@@ -26,6 +26,7 @@ import {
 } from '@/app/libraries/sync/needs'
 import { LibrarySyncSession, type PassRequest } from '@/app/libraries/sync/session'
 import {
+  clearFailedResolutions,
   failSyncingResolutions,
   librarySyncRemote,
   librarySyncResolution
@@ -195,6 +196,11 @@ async function pullOnce(probe: boolean): Promise<void> {
       { probe, includeInstanceRevs: wantsInstanceRevs, includePublication: wantsPublication },
       currentNeedsProviders()
     )
+    // A pass whose remote was replaced while it ran must not write its outcome — a park,
+    // the backoff, or a clean slate — onto the live remote. The session object is the
+    // generation: `close()` can only stop checkpoints, but a pass has outcome paths that
+    // return past the last one, so the identity check goes here instead.
+    if (current !== session) return
     if (outcome.permanent !== undefined) {
       parked = true
       failSyncingResolutions()
@@ -278,9 +284,7 @@ export async function resumeLibrarySync(): Promise<void> {
   parked = false
   attempts = 0
   nextAttemptAt = 0
-  librarySyncResolution.value = new Map(
-    [...librarySyncResolution.value].filter(([, state]) => state === 'syncing')
-  )
+  clearFailedResolutions()
   await kickLibrarySync()
 }
 

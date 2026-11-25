@@ -27,6 +27,31 @@ export function failSyncingResolutions(): void {
   librarySyncResolution.value = next
 }
 
+/**
+ * How many resumes have voided the `failed` verdicts. A pull pass captures it when its
+ * resolution snapshot is built and drops `failed` entries on publish once it moved, since
+ * a resume judged every pre-resume failure void. `failSyncingResolutions` stays out of it:
+ * a park verdict is not a resume.
+ */
+let resolutionsEpoch = 0
+
+/** The resume generation a pass compares its captured epoch against. */
+export function currentResolutionsEpoch(): number {
+  return resolutionsEpoch
+}
+
+/**
+ * A resume voids every `failed` verdict — the next pass re-derives those needs — and bumps
+ * the epoch so a pass in flight does not republish the pre-resume failures its snapshot
+ * still holds. `syncing` rows survive: they are work the pass is doing, not a verdict.
+ */
+export function clearFailedResolutions(): void {
+  resolutionsEpoch += 1
+  librarySyncResolution.value = new Map(
+    [...librarySyncResolution.value].filter(([, state]) => state === 'syncing')
+  )
+}
+
 /** What `librarySyncRemote` publishes: the mirror the engine fills and the catalog that reads it. */
 export interface LibrarySyncRemote {
   mirror: LocalLibraryCatalog

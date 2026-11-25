@@ -49,14 +49,14 @@ export function nextSyncWakeDelay(jobs: OutboxJob[], now = Date.now()): number |
 }
 
 /**
- * Whether a storage failure cannot heal by retrying: any S3 4xx (credentials, 412 refusals);
- * 5xx and network failures stay retryable. The Cloud adapter's `CloudAPIError` is matched
- * structurally, since a build without Cloud may not bundle the class. Shared with the
- * library sync engine.
+ * Whether a storage failure cannot heal by retrying: any S3 4xx (credentials, 412 refusals)
+ * except 429, which is rate limiting that heals through the regular backoff; 5xx and network
+ * failures stay retryable. The Cloud adapter's `CloudAPIError` is matched structurally,
+ * since a build without Cloud may not bundle the class. Shared with the library sync engine.
  */
 export function isPermanentError(error: unknown): boolean {
   if (error instanceof S3HttpError) {
-    return error.status >= 400 && error.status < 500
+    return error.status >= 400 && error.status < 500 && error.status !== 429
   }
   // CloudAPIError and other status-bearing API errors: only credential refusals are
   // permanent; their 404s and 409s stay retryable.

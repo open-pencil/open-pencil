@@ -2,6 +2,7 @@ import { until } from '@vueuse/core'
 import { nextTick } from 'vue'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { DEADLINE_MS, withDeadline } from '@open-pencil/std/timing'
 
 import type { LibraryObjectStore } from '@/app/integrations/storage'
 import {
@@ -109,7 +110,9 @@ export async function useObjects(store: MemoryObjects): Promise<void> {
 
 /** Waits for the rebuilt remote and records its mirror database for cleanup. */
 export async function trackMirror(mirrorsToDelete: string[]) {
-  await until(librarySyncRemote).toBeTruthy()
+  // The remote comes up on local IndexedDB/memory work, so the request tier bounds the
+  // wait; on timeout the pending until() keeps polling in the background harmlessly.
+  await withDeadline(DEADLINE_MS.request, () => until(librarySyncRemote).toBeTruthy())
   const remote = librarySyncRemote.value
   if (!remote) throw new Error('Library sync remote did not come up')
   if (!mirrorsToDelete.includes(remote.dbName)) mirrorsToDelete.push(remote.dbName)
