@@ -64,5 +64,8 @@ export const libraryPanelMessageDefaults = {
   storageLibraries: 'Storage',
   storageNotConfigured: 'Storage is not configured',
   storageLibrariesUnavailable: 'This storage provider does not support libraries',
-  preferLibrary: 'Prefer this library'
+  preferLibrary: 'Prefer this library',
+  librarySyncing: 'Syncing…',
+  librarySyncFailed: 'Sync failed',
+  retryLibrarySync: 'Retry sync'
 } as const

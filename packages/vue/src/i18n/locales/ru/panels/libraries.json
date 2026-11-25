@@ -59,5 +59,8 @@
   "storageLibraries": "Хранилище",
   "storageNotConfigured": "Хранилище не настроено",
   "storageLibrariesUnavailable": "Этот поставщик хранилища не поддерживает библиотеки",
-  "preferLibrary": "Предпочитать эту библиотеку"
+  "preferLibrary": "Предпочитать эту библиотеку",
+  "librarySyncing": "Синхронизация…",
+  "librarySyncFailed": "Ошибка синхронизации",
+  "retryLibrarySync": "Повторить синхронизацию"
 }

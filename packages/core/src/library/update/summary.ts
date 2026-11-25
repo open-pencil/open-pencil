@@ -3,7 +3,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { findLibraryDefinition } from '#core/library/definitions'
 import { diffLibraryManifests } from '#core/library/diff'
 import type {
-  ComponentLibraryRevision,
+  ComponentLibraryManifest,
   LibraryAssetChange,
   LibraryAssetDescriptor
 } from '#core/library/types'
@@ -29,18 +29,18 @@ export interface LibraryInstanceUpdate {
 }
 
 export function summarizeLibraryUpdate(
-  current: ComponentLibraryRevision,
-  latest: ComponentLibraryRevision
+  current: ComponentLibraryManifest,
+  latest: ComponentLibraryManifest
 ): LibraryUpdateSummary | null {
-  if (current.manifest.libraryId !== latest.manifest.libraryId) {
+  if (current.libraryId !== latest.libraryId) {
     throw new Error('Cannot compare revisions from different libraries')
   }
-  if (current.manifest.revisionId === latest.manifest.revisionId) return null
+  if (current.revisionId === latest.revisionId) return null
   return {
-    libraryId: current.manifest.libraryId,
-    currentRevisionId: current.manifest.revisionId,
-    latestRevisionId: latest.manifest.revisionId,
-    changes: diffLibraryManifests(current.manifest, latest.manifest)
+    libraryId: current.libraryId,
+    currentRevisionId: current.revisionId,
+    latestRevisionId: latest.revisionId,
+    changes: diffLibraryManifests(current, latest)
   }
 }
 

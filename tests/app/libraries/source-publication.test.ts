@@ -10,7 +10,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('source library publication identity', () => {
   test('survives a FIG export and reimport', async () => {
-    initCodec()
+    await initCodec()
     const graph = new SceneGraph()
     writeSourceLibraryPublication(graph, {
       libraryId: 'design-system',

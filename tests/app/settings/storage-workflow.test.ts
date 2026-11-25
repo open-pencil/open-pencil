@@ -46,6 +46,10 @@ function fixture() {
         return { ok: true, message: 'Connected' }
       },
       resume: async () => undefined,
+      resumeLibraries: async () => undefined,
+      clearLibraryMirror: async () => {
+        writes.push('clearLibraryMirror')
+      },
       changed: (provider: string) => {
         changed.push(provider)
       }
@@ -88,6 +92,8 @@ test('credential clearing is staged until Save', async () => {
     expect(state.dirty.value).toBe(true)
     expect(await state.save()).toBe('saved')
     expect(f.writes).toContain('clear:secret-access-key')
+    // Removing credentials drops the library mirror of the remote they reached.
+    expect(f.writes).toContain('clearLibraryMirror')
     expect(f.changed).toEqual(['s3-compatible'])
     expect(state.dirty.value).toBe(false)
   } finally {

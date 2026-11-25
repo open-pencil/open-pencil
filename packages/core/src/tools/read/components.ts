@@ -29,30 +29,70 @@ interface LibraryComponentResult {
   priority: number
 }
 
-/** The enabled library components the document's catalog has, matching `name` and `libraryId`. */
+/**
+ * A library the catalog knows but cannot enumerate components for — still syncing, or enabled
+ * at a revision whose manifest has not arrived. It reports only library identity; callers that
+ * want its components retry after the mirror fills.
+ */
+interface LibraryStubResult {
+  libraryId: string
+  libraryName: string
+  source: 'library'
+}
+
+type ListedComponent = LibraryComponentResult | LibraryStubResult | DocumentComponentResult
+
+const isAssetRow = (item: ListedComponent): item is LibraryComponentResult => 'priority' in item
+const priorityOf = (item: ListedComponent): number => (isAssetRow(item) ? item.priority : -1)
+const nameOf = (item: ListedComponent): string => {
+  if (item.source === 'document' || isAssetRow(item)) return item.name
+  return item.libraryName
+}
+
+/**
+ * The library components the document's catalog has, matching `name` and `libraryId`.
+ * An enabled library with no component rows — still syncing, or empty — keeps a stub entry
+ * instead of disappearing from the list; libraries the document never enabled do not.
+ */
 async function listLibraryComponents(
   figma: FigmaAPI,
   args: { name?: string; library_id?: string }
-): Promise<LibraryComponentResult[]> {
-  const catalog = getComponentCatalog(graphOf(figma))
+): Promise<(LibraryComponentResult | LibraryStubResult)[]> {
+  const graph = graphOf(figma)
+  const catalog = getComponentCatalog(graph)
   if (!catalog) return []
-  const assets = await catalog.listComponents({
-    name: args.name,
-    libraryId: args.library_id,
-    enabledOnly: true
-  })
-  return assets.map(({ libraryId, libraryName, revisionId, enabled, priority, asset }) => ({
-    libraryId,
-    libraryName,
-    revisionId,
-    assetKey: asset.key,
-    name: asset.name,
-    type: asset.type,
-    description: asset.description,
-    source: 'library',
-    enabled,
-    priority
-  }))
+  const [summaries, assets] = await Promise.all([
+    catalog.listLibraries(),
+    catalog.listComponents({
+      name: args.name,
+      libraryId: args.library_id,
+      enabledOnly: true
+    })
+  ])
+  const covered = new Set(assets.map((asset) => asset.libraryId))
+  const results: (LibraryComponentResult | LibraryStubResult)[] = assets.map(
+    ({ libraryId, libraryName, revisionId, enabled, priority, asset }) => ({
+      libraryId,
+      libraryName,
+      revisionId,
+      assetKey: asset.key,
+      name: asset.name,
+      type: asset.type,
+      description: asset.description,
+      source: 'library',
+      enabled,
+      priority
+    })
+  )
+  for (const summary of summaries) {
+    // Stub rows represent a library that could not enumerate components only when the
+    // document asked for it: enabled but still syncing, not merely mirrored.
+    if (args.library_id && args.library_id !== summary.libraryId) continue
+    if (!graph.enabledLibraries.get(summary.libraryId)?.enabled) continue
+    if (covered.has(summary.libraryId)) continue
+    results.push({ libraryId: summary.libraryId, libraryName: summary.name, source: 'library' })
+  }
+  return results
 }
 
 export const getComponents = defineTool({
@@ -84,7 +124,8 @@ export const getComponents = defineTool({
     const documentComponents: DocumentComponentResult[] = []
     const libraryComponents = source === 'document' ? [] : await listLibraryComponents(figma, args)
     // Library components sort ahead of the document's, so when they fill the list no page loads.
-    const libraryFilled = libraryComponents.filter(({ priority }) => priority > -1).length >= limit
+    const libraryFilled =
+      libraryComponents.filter((item) => isAssetRow(item) && item.priority > -1).length >= limit
 
     if (source !== 'libraries' && !libraryFilled) {
       for (const page of figma.root.children) {
@@ -114,11 +155,10 @@ export const getComponents = defineTool({
     }
 
     const components = [...libraryComponents, ...documentComponents]
-      .sort((left, right) => {
-        const leftPriority = 'priority' in left ? left.priority : -1
-        const rightPriority = 'priority' in right ? right.priority : -1
-        return rightPriority - leftPriority || left.name.localeCompare(right.name)
-      })
+      .sort(
+        (left, right) =>
+          priorityOf(right) - priorityOf(left) || nameOf(left).localeCompare(nameOf(right))
+      )
       .slice(0, limit)
     return { count: components.length, components }
   }

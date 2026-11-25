@@ -59,5 +59,8 @@
   "storageLibraries": "ストレージ",
   "storageNotConfigured": "ストレージが構成されていません",
   "storageLibrariesUnavailable": "このストレージ プロバイダーはライブラリをサポートしていません",
-  "preferLibrary": "このライブラリを優先"
+  "preferLibrary": "このライブラリを優先",
+  "librarySyncing": "同期中…",
+  "librarySyncFailed": "同期に失敗しました",
+  "retryLibrarySync": "同期を再試行"
 }

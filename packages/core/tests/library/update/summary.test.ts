@@ -58,7 +58,7 @@ describe('library updates', () => {
       previousRevisionId: first.manifest.revisionId,
       publishedAt: '2026-01-02T00:00:00.000Z'
     })
-    expect(summarizeLibraryUpdate(first, next)).toMatchObject({
+    expect(summarizeLibraryUpdate(first.manifest, next.manifest)).toMatchObject({
       currentRevisionId: first.manifest.revisionId,
       latestRevisionId: next.manifest.revisionId,
       changes: [{ kind: 'modified' }]

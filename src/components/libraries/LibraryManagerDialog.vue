@@ -6,6 +6,7 @@ import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openLibraryReview, openPublishLibraryDialog, useLibraryService } from '@/app/libraries'
+import { kickLibrarySync } from '@/app/libraries/sync'
 import { useLibraryManager } from '@/components/libraries/useLibraryManager'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -45,10 +46,15 @@ const {
   toggleLibrary,
   preferLibrary,
   updateAsset,
-  updateAll
+  updateAll,
+  rows,
+  retryLibrarySync
 } = useLibraryManager(open, editor, service)
 watch(open, (isOpen) => {
-  if (isOpen) section.value = initialSection
+  if (!isOpen) return
+  section.value = initialSection
+  // Opening probes the remote once; rows show their own state while it lands.
+  void kickLibrarySync()
 })
 function selectSource(value: string) {
   if (value === 'local' || value === 'storage') void setSource(value)
@@ -114,34 +120,48 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
             @update:model-value="selectSource"
           />
           <div
-            v-for="library in service.summaries.value"
-            :key="library.libraryId"
+            v-for="row in rows"
+            :key="row.library.libraryId"
             class="flex items-center gap-3 border-b border-border py-3"
           >
             <icon-lucide-library class="size-4 text-component" />
             <div class="min-w-0 flex-1">
-              <p class="truncate text-xs text-surface">{{ library.name }}</p>
+              <p class="truncate text-xs text-surface">{{ row.library.name }}</p>
               <p class="text-3xs text-muted">
-                {{ libraryMessages.libraryAssetCount({ count: library.assetCount }) }}
+                {{ libraryMessages.libraryAssetCount({ count: row.library.assetCount }) }}
               </p>
             </div>
+            <span v-if="row.resolution === 'syncing'" class="shrink-0 text-3xs text-muted">
+              {{ libraryMessages.librarySyncing }}
+            </span>
+            <span v-else-if="row.resolution === 'failed'" class="shrink-0 text-3xs text-error">
+              {{ libraryMessages.librarySyncFailed }}
+            </span>
+            <AppButton
+              v-if="row.resolution === 'failed'"
+              variant="outline"
+              @click="retryLibrarySync()"
+            >
+              {{ libraryMessages.retryLibrarySync }}
+            </AppButton>
             <IconButton
-              v-if="editor.graph.enabledLibraries.get(library.libraryId)?.enabled"
+              v-if="row.enabled"
               :label="libraryMessages.preferLibrary"
-              @click="preferLibrary(library.libraryId)"
+              :disabled="row.resolution !== null"
+              @click="preferLibrary(row.library.libraryId)"
             >
               <icon-lucide-star class="size-4" />
             </IconButton>
-            <AppButton variant="outline" @click="toggleLibrary(library.libraryId)">
-              {{
-                editor.graph.enabledLibraries.get(library.libraryId)?.enabled
-                  ? libraryMessages.disableLibrary
-                  : libraryMessages.enableLibrary
-              }}
+            <AppButton
+              variant="outline"
+              :disabled="row.resolution !== null"
+              @click="toggleLibrary(row.library.libraryId)"
+            >
+              {{ row.enabled ? libraryMessages.disableLibrary : libraryMessages.enableLibrary }}
             </AppButton>
           </div>
           <AppPlaceholder
-            v-if="!loading && service.summaries.value.length === 0"
+            v-if="!loading && rows.length === 0"
             :label="libraryMessages.noLibraries"
             size="compact"
           />

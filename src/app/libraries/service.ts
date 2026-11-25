@@ -16,8 +16,8 @@ import {
   discoverPublishableLibraryChanges,
   readSourceLibraryPublication,
   writeSourceLibraryPublication,
+  type ComponentLibraryManifest,
   type ComponentLibraryRevision,
-  type LibraryCatalog,
   type LibrarySummary,
   type LibraryUpdateImpact,
   type LibraryUpdateSummary,
@@ -25,33 +25,43 @@ import {
   type LibraryAssetChange,
   type LibraryThumbnailRenderer
 } from '@open-pencil/core/library'
-import type {
-  ComponentCatalog,
-  ComponentCatalogInsertInput,
-  ComponentCatalogLibraryAsset
-} from '@open-pencil/core/tools'
+import type { ComponentCatalog } from '@open-pencil/core/tools'
 import { appendAll } from '@open-pencil/std/arrays'
 
 import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/session'
-import { LocalLibraryCatalog } from '@/app/libraries/catalog/local'
-import { RoutedLibraryCatalog, type LibraryCatalogSource } from '@/app/libraries/catalog/routed'
+import { MirroredLibraryCatalog, type LibraryCatalogSource } from '@/app/libraries/catalog/mirrored'
+import {
+  componentCatalogForEditor,
+  type EnabledLibraryAsset
+} from '@/app/libraries/component-catalog'
+import {
+  LibraryContentFailedError,
+  LibraryContentSyncingError,
+  LibraryRevisionMissingError
+} from '@/app/libraries/errors'
 import {
   readLibraryPriority,
   writeLibraryCatalogSource,
   writeLibraryPriority
 } from '@/app/libraries/preferences'
+import { kickLibrarySync, whenLibrarySyncReady } from '@/app/libraries/sync/engine'
+import { registerNeedsProvider } from '@/app/libraries/sync/needs'
+import { libraryResolutionKey, librarySyncResolution } from '@/app/libraries/sync/status'
 import {
   applyLibraryInstancePlans,
-  updateLibraryDefinitionsInPlace
+  updateLibraryDefinitionsInPlace,
+  type LibraryRevisionReader
 } from '@/app/libraries/updates/apply'
 import {
   collectLibraryUpdateGroups,
-  type LibraryAssetUpdateGroup,
-  type LibraryRevisionReader
+  type LibraryAssetUpdateGroup
 } from '@/app/libraries/updates/groups'
 
-export type EnabledLibraryAsset = ComponentCatalogLibraryAsset
+export type { EnabledLibraryAsset }
+
+/** In-memory cap on revisions held by `#getRevision`. */
+const REVISION_CACHE_LIMIT = 200
 
 /** Draws published components with the editor's canvas renderer, once it has one. */
 function libraryThumbnailRenderer(editor: EditorStore): LibraryThumbnailRenderer | undefined {
@@ -64,41 +74,41 @@ function libraryThumbnailRenderer(editor: EditorStore): LibraryThumbnailRenderer
   )
 }
 
-export class LibraryService implements ComponentCatalog {
-  readonly #catalog: LibraryCatalog
-  readonly #routedCatalog: RoutedLibraryCatalog | null
+export class LibraryService {
+  #catalog: MirroredLibraryCatalog
   readonly #summaries = shallowRef<LibrarySummary[]>([])
   readonly #enabledAssets = shallowRef<EnabledLibraryAsset[]>([])
   readonly #updates = shallowRef<LibraryUpdateSummary[]>([])
   readonly #watched = new WeakSet<EditorStore>()
-  /** Counts reads of a document's libraries, so one finishing after a newer one is dropped. */
+  /** Read counter so a stale read finishing after a newer one is dropped. */
   #reads = 0
   readonly #updateImpacts = shallowRef(new Map<string, LibraryUpdateImpact>())
   readonly #revisionCache = new Map<string, ComponentLibraryRevision>()
-  #activeEditor: EditorStore | null = null
 
-  constructor(catalog?: LibraryCatalog) {
-    if (catalog) {
-      this.#catalog = markRaw(catalog)
-      this.#routedCatalog = catalog instanceof RoutedLibraryCatalog ? catalog : null
-    } else {
-      const routed = new RoutedLibraryCatalog(new LocalLibraryCatalog())
-      this.#catalog = markRaw(routed)
-      this.#routedCatalog = routed
-    }
+  constructor(catalog = MirroredLibraryCatalog.placeholder()) {
+    this.#catalog = markRaw(catalog)
+  }
+
+  /** Follows the sync engine's remote: each remote identity has its own mirror. */
+  attachCatalog(catalog: MirroredLibraryCatalog): void {
+    this.#catalog = markRaw(catalog)
+    // Revisions cached from one mirror's rows do not describe the next one's.
+    this.#revisionCache.clear()
   }
 
   get catalogSource(): LibraryCatalogSource {
-    return this.#routedCatalog?.source ?? 'local'
+    return this.#catalog.source
   }
 
   useLocalCatalog(): void {
-    this.#routedCatalog?.useLocal()
+    this.#catalog.useLocal()
     writeLibraryCatalogSource('local')
   }
 
-  useStorageCatalog(catalog: LibraryCatalog): void {
-    this.#routedCatalog?.useStorage(catalog)
+  /** Switches to storage once the engine's first remote rebuild settled, so the mirror is its own. */
+  async useStorageCatalog(): Promise<void> {
+    await whenLibrarySyncReady()
+    this.#catalog.useStorage()
     writeLibraryCatalogSource('storage')
   }
 
@@ -123,68 +133,35 @@ export class LibraryService implements ComponentCatalog {
     return this.#summaries.value
   }
 
-  async listComponents(input: {
-    name?: string
-    libraryId?: string
-    enabledOnly?: boolean
-  }): Promise<EnabledLibraryAsset[]> {
-    const normalizedName = input.name?.trim().toLowerCase()
-    const libraries = await this.#catalog.listLibraries()
-    const assets: EnabledLibraryAsset[] = []
-    for (const summary of libraries) {
-      if (input.libraryId && input.libraryId !== summary.libraryId) continue
-      const revision = await this.#getRevision(summary.libraryId, summary.latestRevisionId)
-      const binding = this.#activeEditor?.graph.enabledLibraries.get(summary.libraryId)
-      if (input.enabledOnly && !binding?.enabled) continue
-      appendAll(
-        assets,
-        revision.manifest.assets
-          .filter(isLibraryComponentAsset)
-          .filter((asset) => !normalizedName || asset.name.toLowerCase().includes(normalizedName))
-          .map((asset) => ({
-            libraryId: summary.libraryId,
-            libraryName: summary.name,
-            revisionId: revision.manifest.revisionId,
-            asset,
-            enabled: binding?.enabled ?? false,
-            priority: readLibraryPriority(summary.libraryId)
-          }))
-      )
-    }
-    return assets.sort((left, right) => right.priority - left.priority)
+  /** The `ComponentCatalog` view of `store`'s document (see `component-catalog.ts`). */
+  forEditor(store: EditorStore): ComponentCatalog {
+    return componentCatalogForEditor(this, store)
+  }
+
+  /**
+   * The tolerant manifest read the UI surfaces use: a revision still syncing or parked failed
+   * reads as `null`, so the caller skips that library instead of failing the whole list.
+   */
+  async readManifest(
+    libraryId: string,
+    revisionId?: string
+  ): Promise<ComponentLibraryManifest | null> {
+    return this.#readManifest(libraryId, revisionId).catch((error: unknown) => {
+      if (
+        error instanceof LibraryContentSyncingError ||
+        error instanceof LibraryContentFailedError
+      ) {
+        return null
+      }
+      throw error
+    })
   }
 
   setPriority(libraryId: string, priority: number): void {
     writeLibraryPriority(libraryId, priority)
   }
 
-  bindEditor(editor: EditorStore): void {
-    this.#activeEditor = editor
-  }
-
-  async insertComponent(
-    input: ComponentCatalogInsertInput
-  ): Promise<{ id: string; componentId: string }> {
-    const editor = this.#activeEditor
-    if (!editor) throw new Error('No active editor is bound to the library catalog')
-    const revisionId =
-      input.revisionId ?? editor.graph.enabledLibraries.get(input.libraryId)?.revisionId
-    if (!revisionId) throw new Error(`Library is not enabled: ${input.libraryId}`)
-    const materialized = await this.materialize(editor, input.libraryId, revisionId, input.assetKey)
-    let componentId = materialized.componentId
-    if (input.variantValues && materialized.componentSetId) {
-      const match = editor.findVariantByValues(materialized.componentSetId, input.variantValues)
-      if (match) componentId = match.id
-    }
-    const parentId = input.parentId ?? editor.state.currentPageId
-    const id = editor.createInstanceFromComponent(componentId, input.x, input.y, parentId)
-    if (!id) throw new Error(`Failed to insert library component: ${input.assetKey}`)
-    editor.requestRender()
-    return { id, componentId }
-  }
-
   async refresh(editor: EditorStore): Promise<void> {
-    this.#activeEditor = editor
     this.#watch(editor)
     const read = ++this.#reads
     const summaries = await this.#catalog.listLibraries()
@@ -193,12 +170,15 @@ export class LibraryService implements ComponentCatalog {
     const assets: EnabledLibraryAsset[] = []
     for (const binding of editor.graph.enabledLibraries.values()) {
       if (!binding.enabled) continue
-      const revision = await this.#getRevision(binding.libraryId, binding.revisionId)
+      // A bound revision still syncing contributes no assets yet; its row state surfaces
+      // through `librarySyncResolution`, not a failed refresh.
+      const manifest = await this.readManifest(binding.libraryId, binding.revisionId)
+      if (!manifest) continue
       appendAll(
         assets,
-        revision.manifest.assets.filter(isLibraryComponentAsset).map((asset) => ({
+        manifest.assets.filter(isLibraryComponentAsset).map((asset) => ({
           libraryId: binding.libraryId,
-          libraryName: revision.manifest.name,
+          libraryName: manifest.name,
           revisionId: binding.revisionId,
           asset,
           enabled: true,
@@ -214,9 +194,11 @@ export class LibraryService implements ComponentCatalog {
   /**
    * Keeps what the service holds of `editor`'s libraries current when they change outside it, as
    * undo and redo of an update change them; an insert would otherwise take the revision undone.
-   * The service shows one document, so a tab in the background does not replace it.
+   * The service shows one document, so a tab in the background does not replace it — but every
+   * store it watches still registers with the sync engine, whose needs cover all documents.
    */
   #watch(editor: EditorStore): void {
+    registerNeedsProvider(editor)
     if (this.#watched.has(editor)) return
     this.#watched.add(editor)
     editor.onEditorEvent('document:libraries-changed', () => {
@@ -237,13 +219,18 @@ export class LibraryService implements ComponentCatalog {
       if (!binding.enabled) continue
       const latestId = summariesById.get(binding.libraryId)?.latestRevisionId
       if (!latestId || latestId === binding.revisionId) continue
-      const current = await this.#getRevision(binding.libraryId, binding.revisionId)
-      const latest = await this.#getRevision(binding.libraryId, latestId)
+      // Either revision still syncing means the update pair is incomplete; the library keeps
+      // its syncing row state instead of failing the whole refresh.
+      const [current, latest] = await Promise.all([
+        this.readManifest(binding.libraryId, binding.revisionId),
+        this.readManifest(binding.libraryId, latestId)
+      ])
+      if (!current || !latest) continue
       const summary = summarizeLibraryUpdate(current, latest)
       if (summary) {
         updates.push(summary)
-        const commonAssets = latest.manifest.assets.filter((asset) =>
-          current.manifest.assets.some((previous) => previous.key === asset.key)
+        const commonAssets = latest.assets.filter((asset) =>
+          current.assets.some((previous) => previous.key === asset.key)
         )
         const plans = planLibraryInstanceUpdates(
           editor.graph,
@@ -290,7 +277,11 @@ export class LibraryService implements ComponentCatalog {
   }
 
   async getUpdateGroups(editor: EditorStore): Promise<LibraryAssetUpdateGroup[]> {
-    return collectLibraryUpdateGroups(editor, this.#summaries.value, this.#readRevision)
+    // Update review needs the revisions instances came from, not only the bound ones.
+    void kickLibrarySync({ probe: false, includeInstanceRevs: true })
+    return collectLibraryUpdateGroups(editor, this.#summaries.value, (libraryId, revisionId) =>
+      this.readManifest(libraryId, revisionId)
+    )
   }
 
   async applyAllUpdates(editor: EditorStore): Promise<void> {
@@ -336,7 +327,9 @@ export class LibraryService implements ComponentCatalog {
     libraries: ReadonlyMap<string, ReadonlySet<string> | undefined>,
     label: string
   ): Promise<void> {
-    if (await updateLibraryDefinitionsInPlace(editor, libraries, label, this.#readRevision)) {
+    const readRevision: LibraryRevisionReader = (libraryId, revisionId) =>
+      this.#getRevision(libraryId, revisionId)
+    if (await updateLibraryDefinitionsInPlace(editor, libraries, label, readRevision)) {
       await this.refresh(editor)
     }
   }
@@ -437,12 +430,16 @@ export class LibraryService implements ComponentCatalog {
     return revision
   }
 
+  /** Binds the library at `revisionId` or its summary's latest, without reading any content. */
   async enable(editor: EditorStore, libraryId: string, revisionId?: string): Promise<void> {
-    const revision = await this.#getRevision(libraryId, revisionId)
+    // A library the mirror never listed cannot be enabled: the binding would pin a revision
+    // nothing can fetch.
+    const resolvedRevisionId = revisionId ?? (await this.#findSummary(libraryId))?.latestRevisionId
+    if (!resolvedRevisionId) throw new LibraryRevisionMissingError(libraryId)
     editor.updateEnabledLibraries((bindings) =>
       bindings.set(libraryId, {
         libraryId,
-        revisionId: revision.manifest.revisionId,
+        revisionId: resolvedRevisionId,
         enabled: true
       })
     )
@@ -475,35 +472,61 @@ export class LibraryService implements ComponentCatalog {
     )
   }
 
-  #revisionCacheKey(libraryId: string, revisionId: string): string {
-    return `${libraryId}\u0000${revisionId}`
+  /** The library's summary row: the service's summaries first, a mirror list as fallback. */
+  async #findSummary(libraryId: string): Promise<LibrarySummary | undefined> {
+    return (
+      this.#summaries.value.find((item) => item.libraryId === libraryId) ??
+      (await this.#catalog.listLibraries()).find((item) => item.libraryId === libraryId)
+    )
+  }
+
+  /**
+   * A mirror miss means the engine is still pulling, unless it already marked the revision
+   * failed. A miss without an id resolves the summary's latest first.
+   */
+  async #failedOrRethrow(error: unknown): Promise<never> {
+    if (!(error instanceof LibraryContentSyncingError)) throw error
+    const revisionId =
+      error.revisionId ?? (await this.#findSummary(error.libraryId))?.latestRevisionId
+    if (!revisionId) throw error
+    const key = libraryResolutionKey(error.libraryId, revisionId)
+    if (librarySyncResolution.value.get(key) === 'failed') {
+      throw new LibraryContentFailedError(error.libraryId, revisionId)
+    }
+    throw new LibraryContentSyncingError(error.libraryId, revisionId)
   }
 
   async #getRevision(libraryId: string, revisionId?: string): Promise<ComponentLibraryRevision> {
     if (revisionId) {
-      const cached = this.#revisionCache.get(this.#revisionCacheKey(libraryId, revisionId))
+      const cached = this.#revisionCache.get(libraryResolutionKey(libraryId, revisionId))
       if (cached) return cached
     }
-    const revision = await this.#catalog.getRevision(libraryId, revisionId)
-    this.#cacheRevision(revision)
-    return revision
+    try {
+      const revision = await this.#catalog.getRevision(libraryId, revisionId)
+      this.#cacheRevision(revision)
+      return revision
+    } catch (error) {
+      return this.#failedOrRethrow(error)
+    }
+  }
+
+  /** Reads a manifest without building the graph; a mirror miss throws the syncing/failed error. */
+  async #readManifest(libraryId: string, revisionId?: string): Promise<ComponentLibraryManifest> {
+    try {
+      return await this.#catalog.getManifest(libraryId, revisionId)
+    } catch (error) {
+      return this.#failedOrRethrow(error)
+    }
   }
 
   #cacheRevision(revision: ComponentLibraryRevision): void {
     this.#revisionCache.set(
-      this.#revisionCacheKey(revision.manifest.libraryId, revision.manifest.revisionId),
+      libraryResolutionKey(revision.manifest.libraryId, revision.manifest.revisionId),
       revision
     )
+    if (this.#revisionCache.size > REVISION_CACHE_LIMIT) {
+      const oldest = this.#revisionCache.keys().next().value
+      if (oldest !== undefined) this.#revisionCache.delete(oldest)
+    }
   }
-
-  /** `#getRevision` bound to this service, for the update modules that read revisions. */
-  readonly #readRevision: LibraryRevisionReader = (libraryId, revisionId) =>
-    this.#getRevision(libraryId, revisionId)
-}
-
-let service: LibraryService | undefined
-
-export function useLibraryService(): LibraryService {
-  service ??= new LibraryService()
-  return service
 }

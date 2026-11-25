@@ -10,6 +10,8 @@ import { useMessages } from '@open-pencil/vue/i18n'
 import { useEditorStore } from '@/app/editor/active-store'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { closeLibraryReview, libraryReviewRequest, useLibraryService } from '@/app/libraries'
+import { LibraryContentFailedError, LibraryContentSyncingError } from '@/app/libraries/errors'
+import { kickLibrarySync, librarySyncResolution, resumeLibrarySync } from '@/app/libraries/sync'
 import { toast } from '@/app/shell/ui'
 import LibraryComparisonPreview from '@/components/libraries/review/LibraryComparisonPreview.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -33,6 +35,8 @@ const mode = ref<'side-by-side' | 'overlay'>('side-by-side')
 const opacity = ref([50])
 const loading = ref(false)
 const applying = ref(false)
+/** The revision the preview is waiting on, while the mirror catches up or after it failed. */
+const loadError = ref<'syncing' | 'failed' | null>(null)
 interface ReviewOrigin {
   pageId: string
   selectedIds: string[]
@@ -63,20 +67,10 @@ const modeOptions = computed(() => [
 const request = useHeldContent(libraryReviewRequest)
 const currentInstanceId = computed(() => request.value?.instanceIds[instanceIndex.value] ?? null)
 
-function pageIdForNode(nodeId: string): string | null {
-  let node = editor.graph.getNode(nodeId)
-  while (node?.parentId) {
-    const parent = editor.graph.getNode(node.parentId)
-    if (parent?.type === 'CANVAS') return parent.id
-    node = parent
-  }
-  return null
-}
-
 async function focusCurrentInstance(currentRequest: number) {
   const instanceId = currentInstanceId.value
   if (!instanceId) return
-  const pageId = pageIdForNode(instanceId)
+  const pageId = editor.graph.pageOf(instanceId)
   if (pageId && pageId !== editor.state.currentPageId) await editor.switchPage(pageId)
   if (currentRequest !== requestId) return
   editor.select([instanceId])
@@ -94,15 +88,38 @@ async function loadPreview() {
     const next = createLibraryUpdatePreview(editor.graph, instanceId, revision)
     if (currentRequest === requestId) {
       preview.value = next
+      loadError.value = null
       focusing = focusCurrentInstance(currentRequest)
       await focusing
     }
   } catch (cause) {
-    if (currentRequest === requestId) toast.error(operationFailed(cause))
+    if (currentRequest !== requestId) return
+    // Mirror misses are engine states, not operation errors: the dialog shows the revision
+    // as syncing until it lands, or as failed with a retry once the engine parks it.
+    if (cause instanceof LibraryContentSyncingError) {
+      loadError.value = 'syncing'
+    } else if (cause instanceof LibraryContentFailedError) {
+      loadError.value = 'failed'
+    } else {
+      toast.error(operationFailed(cause))
+    }
   } finally {
     if (currentRequest === requestId) loading.value = false
   }
 }
+
+/**
+ * A failed revision retry clears its mark and resumes the engine — permanent failures park the
+ * pump, which a bare kick would not wake — then the preview reloads.
+ */
+function retrySync() {
+  void resumeLibrarySync().then(() => void loadPreview())
+}
+
+// A pull settling reloads the preview without a click; a revision still missing stays syncing.
+watch(librarySyncResolution, () => {
+  if (loadError.value === 'syncing') void loadPreview()
+})
 
 async function restoreOrigin() {
   const value = origin
@@ -178,6 +195,9 @@ watch(libraryReviewRequest, (value, previous) => {
   mode.value = 'side-by-side'
   opacity.value = [50]
   preview.value = null
+  loadError.value = null
+  // Reviewing instances needs the revisions they came from, not just the pinned ones.
+  void kickLibrarySync({ includeInstanceRevs: true, probe: false })
 })
 watch([request, currentInstanceId], () => void loadPreview(), { immediate: true })
 </script>
@@ -272,8 +292,22 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
         </span>
       </div>
     </div>
-    <div v-else class="flex min-h-0 flex-1 items-center justify-center text-xs text-muted">
-      {{ loading ? libraryMessages.loadingUpdatePreview : libraryMessages.noLibraryUpdates }}
+    <div
+      v-else
+      class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-xs text-muted"
+    >
+      <template v-if="loadError === 'failed'">
+        <p class="text-error">{{ libraryMessages.librarySyncFailed }}</p>
+        <AppButton variant="outline" size="sm" @click="retrySync">
+          {{ libraryMessages.retryLibrarySync }}
+        </AppButton>
+      </template>
+      <template v-else-if="loadError === 'syncing'">
+        {{ libraryMessages.librarySyncing }}
+      </template>
+      <template v-else>
+        {{ loading ? libraryMessages.loadingUpdatePreview : libraryMessages.noLibraryUpdates }}
+      </template>
     </div>
     <AppDialogFooter>
       <template #start>

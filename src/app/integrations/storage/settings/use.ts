@@ -9,6 +9,7 @@ import {
   storageProviderRegistry,
   writeStoragePreference
 } from '@/app/integrations/storage'
+import { clearLibraryMirror, resumeLibrarySync } from '@/app/libraries/sync'
 import { appCredentialServices } from '@/app/settings/credentials/app'
 import { credentialRef } from '@/app/settings/credentials/reference'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
@@ -24,6 +25,8 @@ const storageSettingsServices = {
   manager: appCredentialServices.manager,
   test: testStorageDraft,
   resume: resumeStorageSync,
+  resumeLibraries: resumeLibrarySync,
+  clearLibraryMirror,
   changed: (providerId: StorageProviderID) =>
     emitStorageWorkspaceEvent({ providerId, kind: 'changed' })
 }
@@ -141,12 +144,19 @@ export function useStorageSettings(
         if (replacement || removals.has(field.id)) persisted = true
       }
       if (!current(request)) return persisted ? 'partial' : 'failed'
+      // Credentials the save removed leave the library mirror mirroring a remote nothing can
+      // reach; dropping it forces a rebuild onto whatever is configured now.
+      if (removals.size > 0) {
+        await services
+          .clearLibraryMirror()
+          .catch((error) =>
+            console.warn('[Storage] Could not clear the library mirror after saving:', error)
+          )
+      }
       reset()
-      void services
-        .resume()
-        .catch(() =>
-          console.warn('[Storage] Could not resume synchronization after saving settings')
-        )
+      void Promise.all([services.resume(), services.resumeLibraries()]).catch((cause) =>
+        console.warn('[Storage] Could not resume synchronization after saving settings:', cause)
+      )
       saveResult.value = 'saved'
       return 'saved'
     } catch (cause) {

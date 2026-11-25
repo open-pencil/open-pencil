@@ -1,6 +1,6 @@
 export { LocalLibraryCatalog } from './catalog/local'
-export { RoutedLibraryCatalog } from './catalog/routed'
-export type { LibraryCatalogSource } from './catalog/routed'
+export { MirroredLibraryCatalog } from './catalog/mirrored'
+export type { LibraryCatalogSource, RemoteLibraryCatalogProvider } from './catalog/mirrored'
 export { StorageLibraryCatalog } from './catalog/storage'
 export { openPublishLibraryDialog, publishLibraryDialogOpen } from './publish/dialog'
 export {
@@ -11,5 +11,6 @@ export {
 } from './preferences'
 export { closeLibraryReview, libraryReviewRequest, openLibraryReview } from './review'
 export type { LibraryReviewRequest } from './review'
-export { LibraryService, useLibraryService } from './service'
+export { useLibraryService } from './host'
+export { LibraryService } from './service'
 export type { EnabledLibraryAsset } from './service'

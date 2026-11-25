@@ -11,6 +11,8 @@ import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'
+import { LibraryContentSyncingError } from '@/app/libraries/errors'
+import { kickLibrarySync, librarySyncResolution } from '@/app/libraries/sync'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import {
   AppDialogFooter,
@@ -34,6 +36,8 @@ const query = ref('')
 const publishing = ref(false)
 const loading = ref(false)
 const error = ref('')
+/** The baseline revision is still syncing; the dialog waits rather than failing. */
+const syncing = ref(false)
 const changes = ref<LibraryAssetChange[]>([])
 const selectedKeys = ref(new Set<string>())
 const changeLabels = computed(() => ({
@@ -56,32 +60,59 @@ const selectionState = computed<boolean | 'indeterminate'>(() => {
   return selectedVisible === visibleKeys.length ? true : 'indeterminate'
 })
 
-watch(publishLibraryDialogOpen, async (open) => {
-  if (!open) return
+async function loadChanges() {
   error.value = ''
-  query.value = ''
   loading.value = true
-  const existing = publication.value
-  libraryId.value = existing?.libraryId ?? libraryId.value
-  libraryName.value = existing?.name ?? editor.graph.getNode(editor.graph.rootId)?.name ?? ''
   try {
-    if (existing) {
-      const discovered = await service.discoverPublicationChanges(editor)
-      changes.value = discovered.changes
-    } else {
-      ensureLibraryAssetKeys(editor.graph)
-      changes.value = publishableLibraryAssets(editor.graph).map((asset) => ({
-        kind: 'added' as const,
-        asset: { ...asset, contentHash: '' }
-      }))
-    }
+    const discovered = await service.discoverPublicationChanges(editor)
+    changes.value = discovered.changes
     selectedKeys.value = new Set(changes.value.map((change) => change.asset.key))
+    syncing.value = false
   } catch (cause) {
-    error.value =
-      cause instanceof Error ? cause.message : libraryMessages.value.libraryPublishFailed
+    // A baseline revision still pulling shows the syncing row, not an error: the engine
+    // lands it and the resolution watch retries the discovery.
+    if (cause instanceof LibraryContentSyncingError) {
+      syncing.value = true
+    } else {
+      error.value =
+        cause instanceof Error ? cause.message : libraryMessages.value.libraryPublishFailed
+    }
   } finally {
     loading.value = false
   }
+}
+
+watch(publishLibraryDialogOpen, async (open) => {
+  if (!open) return
+  // Selective publishing diffs against the publication's baseline revision; ask the engine
+  // to mirror it while the change list computes.
+  void kickLibrarySync({ includePublication: true, probe: false })
+  error.value = ''
+  syncing.value = false
+  query.value = ''
+  const existing = publication.value
+  libraryId.value = existing?.libraryId ?? libraryId.value
+  libraryName.value = existing?.name ?? editor.graph.getNode(editor.graph.rootId)?.name ?? ''
+  if (existing) {
+    await loadChanges()
+    return
+  }
+  loading.value = true
+  try {
+    ensureLibraryAssetKeys(editor.graph)
+    changes.value = publishableLibraryAssets(editor.graph).map((asset) => ({
+      kind: 'added' as const,
+      asset: { ...asset, contentHash: '' }
+    }))
+    selectedKeys.value = new Set(changes.value.map((change) => change.asset.key))
+  } finally {
+    loading.value = false
+  }
+})
+
+// A baseline revision that lands while the dialog waits retries the discovery.
+watch(librarySyncResolution, () => {
+  if (syncing.value && publishLibraryDialogOpen.value) void loadChanges()
 })
 
 function toggleAll(value: boolean) {
@@ -176,6 +207,9 @@ async function publish() {
         </div>
         <div v-if="loading" class="px-3 py-6 text-center text-xs text-muted">
           {{ libraryMessages.loading }}
+        </div>
+        <div v-else-if="syncing" class="px-3 py-6 text-center text-xs text-muted">
+          {{ libraryMessages.librarySyncing }}
         </div>
         <AppPlaceholder
           v-else-if="changes.length === 0"

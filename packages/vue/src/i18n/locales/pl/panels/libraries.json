@@ -59,5 +59,8 @@
   "storageLibraries": "Przechowywanie",
   "storageNotConfigured": "Magazyn nie jest skonfigurowany",
   "storageLibrariesUnavailable": "Ten dostawca pamięci masowej nie obsługuje bibliotek",
-  "preferLibrary": "Preferuj tę bibliotekę"
+  "preferLibrary": "Preferuj tę bibliotekę",
+  "librarySyncing": "Synchronizowanie…",
+  "librarySyncFailed": "Synchronizacja nie powiodła się",
+  "retryLibrarySync": "Ponów synchronizację"
 }

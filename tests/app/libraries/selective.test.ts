@@ -3,13 +3,13 @@ import { describe, expect, test } from 'bun:test'
 import {
   createLibraryRevision,
   createSelectiveLibraryRevision,
-  discoverPublishableLibraryChanges,
-  MemoryLibraryCatalog
+  discoverPublishableLibraryChanges
 } from '@open-pencil/core/library'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { createEditorStore } from '@/app/editor/session'
-import { LibraryService } from '@/app/libraries/service'
+
+import { newLocalCatalog, serviceOn } from '#tests/helpers/libraries/local-service'
 
 function source(buttonWidth: number, includeCard = true) {
   const graph = new SceneGraph()
@@ -212,7 +212,7 @@ describe('selective library publication keeps layer identities', () => {
   test('in the revision the library service publishes', async () => {
     const { graph, button } = iconLibrary()
     const editor = createEditorStore(graph)
-    const service = new LibraryService(new MemoryLibraryCatalog())
+    const service = serviceOn(newLocalCatalog())
     const input = { libraryId: 'library', name: 'Library' }
     const previous = await service.publishSelected(editor, {
       ...input,

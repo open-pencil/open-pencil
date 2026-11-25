@@ -9,7 +9,13 @@ import {
 import { captureGraphCheckpoint } from '@open-pencil/scene-graph/checkpoint'
 
 import type { EditorStore } from '@/app/editor/session'
-import type { LibraryRevisionReader } from '@/app/libraries/updates/groups'
+import { LibraryContentFailedError, LibraryContentSyncingError } from '@/app/libraries/errors'
+
+/** Reads a whole library revision — graph included — or the latest one when omitted. */
+export type LibraryRevisionReader = (
+  libraryId: string,
+  revisionId?: string
+) => Promise<ComponentLibraryRevision>
 
 type InstanceSwap = { instanceId: string; componentId: string }
 
@@ -67,9 +73,22 @@ async function withUnchanged(
       keys.add(identity.assetKey)
       continue
     }
-    const previous = await getRevision(identity.libraryId, identity.revisionId)
-    const asset = previous.manifest.assets.find((entry) => entry.key === identity.assetKey)
-    if (asset?.contentHash === hash) keys.add(identity.assetKey)
+    try {
+      const previous = await getRevision(identity.libraryId, identity.revisionId)
+      const asset = previous.manifest.assets.find((entry) => entry.key === identity.assetKey)
+      if (asset?.contentHash === hash) keys.add(identity.assetKey)
+    } catch (error) {
+      // A revision the mirror has not resolved gets the conservative answer — the asset
+      // counts as changed — the same way an asset with no hash in latest does.
+      if (
+        error instanceof LibraryContentSyncingError ||
+        error instanceof LibraryContentFailedError
+      ) {
+        keys.add(identity.assetKey)
+        continue
+      }
+      throw error
+    }
   }
   return keys
 }
