@@ -28,8 +28,8 @@ export function isStrokeValue(value: unknown): value is StrokeValue {
   return typeof value.color === 'string' || isColor(value.color)
 }
 
-function isStrokePaint(value: StrokeValue): value is StrokeValue & Stroke {
-  return 'type' in value && typeof value.type === 'string' && isColor(value.color)
+function isShaderStroke(value: StrokeValue): value is StrokeValue & Stroke {
+  return 'type' in value && value.type === 'CUSTOM' && isColor(value.color)
 }
 
 function dashValue(value: unknown): number[] | undefined {
@@ -98,7 +98,7 @@ export function applyStrokeOverrides(
   const nodeDash = dashValue(props.dashPattern)
   if (nodeDash) o.dashPattern = nodeDash
   const strokes = strokeValues(props).map((value) =>
-    isStrokePaint(value)
+    isShaderStroke(value)
       ? structuredClone(value)
       : toStroke({ ...value, dash: value.dash ?? nodeDash }, profile)
   )

@@ -27,4 +27,15 @@ describe('stroke props', () => {
       [6, 3]
     ])
   })
+  test('a stroke written with a paint type reads as an untyped one, unless it is a shader', () => {
+    const red = { r: 1, g: 0, b: 0, a: 1 }
+    const untyped = strokeOverrides({ strokes: [{ color: red, weight: 4, align: 'center' }] })
+    expect(
+      strokeOverrides({ strokes: [{ type: 'SOLID', color: red, weight: 4, align: 'center' }] })
+    ).toEqual(untyped)
+    expect(
+      strokeOverrides({ strokes: [{ type: 'GARBAGE', color: red, weight: 4, align: 'center' }] })
+    ).toEqual(untyped)
+    expect(untyped.strokes?.[0]).toMatchObject({ type: 'SOLID', align: 'CENTER', visible: true })
+  })
 })

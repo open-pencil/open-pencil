@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { deflateSync } from 'fflate'
 
+import { renderJSX } from '@open-pencil/core/design-jsx'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer, writeFigArchive } from '@open-pencil/fig'
 import {
@@ -109,6 +110,15 @@ async function savedPaints(graph: SceneGraph): Promise<Paint[]> {
   return expectDefined(plate.fillPaints, 'saved fill paints')
 }
 
+async function savedStrokes(graph: SceneGraph): Promise<Paint[]> {
+  const saved = parseFigBuffer((await exportFigFile(graph)).slice().buffer as ArrayBuffer)
+  const plate = expectDefined(
+    saved.nodeChanges.find((change) => change.name === 'Plate'),
+    'saved plate'
+  )
+  return expectDefined(plate.strokePaints, 'saved stroke paints')
+}
+
 function shaderOf(paints: Paint[]): Paint {
   return expectDefined(
     paints.find((paint) => paint.type === 'CUSTOM'),
@@ -184,4 +194,14 @@ describe('Figma shader paints through a .fig archive', () => {
       expect(shaderOf(await savedPaints(graph)).customEffectId).toEqual(written)
     })
   }
+  test('a design JSX layer whose strokes name a paint type saves', async () => {
+    const graph = new SceneGraph()
+    const red = '{ r: 1, g: 0, b: 0, a: 1 }'
+    await renderJSX(
+      graph,
+      `<Rectangle name="Plate" w={40} h={40} strokes={[{ type: 'SOLID', color: ${red}, align: 'center' }, { type: 'GARBAGE', color: ${red} }]} />`
+    )
+    const saved = await savedStrokes(graph)
+    expect(saved.map((paint) => paint.type)).toEqual(['SOLID', 'SOLID'])
+  })
 })
