@@ -42,11 +42,15 @@ test.describe('browser support gate', () => {
       Object.defineProperty(window, 'history', {
         configurable: true,
         get() {
+          performance.mark('support-test:fault-injected')
           throw new TypeError('history is unavailable')
         }
       })
     })
     await page.goto('/')
+    await page.waitForFunction(
+      () => performance.getEntriesByName('support-test:fault-injected').length
+    )
 
     const notice = page.getByRole('alert')
     await expect(notice.getByRole('heading', { level: 1 })).toHaveText("OpenPencil couldn't start")
@@ -57,20 +61,23 @@ test.describe('browser support gate', () => {
 
   test('reports a component that fails while rendering the first route', async ({ page }) => {
     await page.addInitScript(() => {
-      // The editor store mints node ids inside component setup, so this
-      // fails through Vue's error handler rather than module evaluation.
-      Object.defineProperty(crypto, 'getRandomValues', {
+      // The editor layout reads this controller during setup, while starting web updates.
+      Object.defineProperty(navigator.serviceWorker, 'controller', {
         configurable: true,
-        value() {
-          throw new TypeError('getRandomValues is unavailable')
+        get() {
+          performance.mark('support-test:fault-injected')
+          throw new TypeError('serviceWorker.controller is unavailable')
         }
       })
     })
     await page.goto('/')
+    await page.waitForFunction(
+      () => performance.getEntriesByName('support-test:fault-injected').length
+    )
 
     const notice = page.getByRole('alert')
     await expect(notice.getByRole('heading', { level: 1 })).toHaveText("OpenPencil couldn't start")
     await notice.getByText('Details', { exact: true }).click()
-    await expect(notice.locator('pre')).toContainText('getRandomValues is unavailable')
+    await expect(notice.locator('pre')).toContainText('serviceWorker.controller is unavailable')
   })
 })

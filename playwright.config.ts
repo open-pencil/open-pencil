@@ -20,8 +20,8 @@ if (reuse !== undefined && reuse !== '0' && reuse !== '1') {
 }
 
 const server = process.env.OPENPENCIL_TEST_SERVER ?? 'all'
-if (!['app', 'storybook', 'all'].includes(server)) {
-  throw new Error('OPENPENCIL_TEST_SERVER must be app, storybook, or all')
+if (!['app', 'storybook', 'production', 'all'].includes(server)) {
+  throw new Error('OPENPENCIL_TEST_SERVER must be app, storybook, production, or all')
 }
 const storybookPort = 6017
 if (server === 'all' && [appPort, mcpPort].some((port) => Number(port) === storybookPort)) {
@@ -66,7 +66,7 @@ const appDefaults = {
   }
 } satisfies Pick<PlaywrightTestConfig, 'expect' | 'use'>
 
-export default defineConfig({
+const developmentConfig = defineConfig({
   testDir: './tests',
   timeout: 15_000,
   workers: 1,
@@ -142,3 +142,25 @@ export default defineConfig({
         ])
   ]
 })
+
+export default server === 'production'
+  ? defineConfig({
+      ...developmentConfig,
+      projects: [
+        {
+          ...appDefaults,
+          name: 'openpencil-production',
+          testDir: './tests/e2e/app',
+          testMatch: '**/support-gate.spec.ts'
+        }
+      ],
+      webServer: {
+        command: `bun run build && bun run preview --port ${appPort} --strictPort`,
+        cwd: import.meta.dirname,
+        url: origin,
+        reuseExistingServer: false,
+        // The build includes the HTML engine's Rust-to-Wasm compilation on a cold checkout.
+        timeout: 15 * 60_000
+      }
+    })
+  : developmentConfig
