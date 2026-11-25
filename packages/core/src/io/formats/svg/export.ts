@@ -25,7 +25,7 @@ export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './path
 
 import type { ColorProfile, Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
-import { isFigmaShaderPaint } from '@open-pencil/scene-graph/paints'
+import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import { hasRegionFills } from '@open-pencil/scene-graph/vector-network'
 import { appendAll } from '@open-pencil/std/arrays'
 
@@ -159,10 +159,6 @@ function fillAndStrokeElements(
 /** The paint CSS `color` sets, for a tinted icon path. */
 const CURRENT_COLOR = 'currentColor'
 
-function drawsInSVG(paint: Fill): boolean {
-  return paint.visible && !isFigmaShaderPaint(paint)
-}
-
 /** A paint's SVG color and, for an sRGB solid, the `fill-opacity` beside it. */
 function exportedFill(
   fill: Fill | undefined,
@@ -210,13 +206,13 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
   if (node.type === 'TEXT') {
-    const fill = exportedFill(node.fills.find(drawsInSVG), node, ctx)
-    const text = renderTextNode(node, fill.color, ctx, fill.opacity)
+    const fill = exportedFill(node.fills.find(isDrawnPaint), node, ctx)
+    const text = renderTextNode(node, fill.color ?? 'none', ctx, fill.opacity)
     return svgElement('g', groupAttrs, withLayerEffects([text], effects, groupAttrs))
   }
 
-  const visibleFills = node.fills.filter(drawsInSVG)
-  const visibleStrokes = node.strokes.filter(drawsInSVG)
+  const visibleFills = node.fills.filter(isDrawnPaint)
+  const visibleStrokes = node.strokes.filter(isDrawnPaint)
   const tint = ctx.tint?.(node) ?? []
   const ownFill = visibleFills.length > 0 && !hasPathLevelFills(node) ? visibleFills[0] : undefined
   const fill = exportedFill(ownFill, node, ctx)

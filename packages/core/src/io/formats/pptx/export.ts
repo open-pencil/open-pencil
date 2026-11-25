@@ -5,6 +5,7 @@ import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
 import TransformMatrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
+import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import { lineHeightPixels, styleRunPieces, textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import {
@@ -211,7 +212,7 @@ async function addSlideFramePaint(ctx: ExportCtx, root: SceneNode): Promise<void
   const bg = firstVisibleFill(root)
   const plainBackground =
     ctx.contentFillsSlide &&
-    !root.strokes.some((s) => s.visible) &&
+    !root.strokes.some(isDrawnPaint) &&
     !root.effects.some((e) => e.visible && e.type === 'INNER_SHADOW') &&
     effectiveRadius(root) === 0
   if (bg?.type === 'SOLID' && plainBackground) {
@@ -248,8 +249,8 @@ function rootRasterReason(root: SceneNode): string | null {
   const shadowReason = getShadowFallbackReason(root)
   if (shadowReason) return shadowReason
   if (hasAsymmetricCorners(root)) return 'asymmetric corners'
-  if (root.strokes.filter((stroke) => stroke.visible).length > 1) return 'multiple strokes'
-  const fills = root.fills.filter((f) => f.visible)
+  if (root.strokes.filter(isDrawnPaint).length > 1) return 'multiple strokes'
+  const fills = root.fills.filter(isDrawnPaint)
   if (fills.length > 1) return 'multiple fills'
   if (fills[0] && fills[0].type !== 'SOLID') return 'non-solid frame background'
   return null
@@ -286,7 +287,7 @@ function getCommonFallbackReason(ctx: ExportCtx, node: SceneNode): string | null
   const shadowReason = getShadowFallbackReason(node)
   if (shadowReason) return shadowReason
   if (hasAsymmetricCorners(node)) return 'asymmetric corners'
-  if (node.strokes.filter((stroke) => stroke.visible).length > 1) return 'multiple strokes'
+  if (node.strokes.filter(isDrawnPaint).length > 1) return 'multiple strokes'
   if (node.childIds.some((id) => graph.getNode(id)?.isMask)) return 'contains mask'
   if (clipsOverflowingContent(graph, node)) return 'clipped content'
   if (isVectorOnlyContainer(graph, node)) return 'vector graphics'
@@ -294,10 +295,10 @@ function getCommonFallbackReason(ctx: ExportCtx, node: SceneNode): string | null
 }
 
 function getTextFallbackReason(node: SceneNode): string | null {
-  const fills = node.fills.filter((fill) => fill.visible)
+  const fills = node.fills.filter(isDrawnPaint)
   if (fills.length > 1) return 'multiple text fills'
   if (fills[0] && fills[0].type !== 'SOLID') return 'non-solid text fill'
-  if (node.strokes.some((stroke) => stroke.visible)) return 'text stroke'
+  if (node.strokes.some(isDrawnPaint)) return 'text stroke'
   for (const run of node.styleRuns) {
     const runFills = run.style.fills?.filter((fill) => fill.visible) ?? []
     if (runFills.length > 1 || runFills.some((fill) => fill.type !== 'SOLID')) {
@@ -308,7 +309,7 @@ function getTextFallbackReason(node: SceneNode): string | null {
 }
 
 function getShapeFallbackReason(node: SceneNode): string | null {
-  const visibleFills = node.fills.filter((fill) => fill.visible)
+  const visibleFills = node.fills.filter(isDrawnPaint)
   if (visibleFills.some((fill) => fill.type.startsWith('GRADIENT'))) return 'gradient fill'
   if (visibleFills.length > 1) return 'multiple fills'
   // Image-fill leaves become native pictures at the call site; containers

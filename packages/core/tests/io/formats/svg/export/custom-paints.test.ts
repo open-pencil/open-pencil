@@ -31,3 +31,10 @@ test('a Figma shader paint exports nothing, as fill or as stroke', () => {
     '<rect width="40" height="40" fill="#FF0000" stroke="#0000FF" stroke-width="2"/>'
   ])
 })
+
+test('a text whose only fill is a Figma shader exports no visible glyphs', () => {
+  const svg = svgOf((graph, pageId) => [
+    graph.createNode('TEXT', pageId, { text: 'Hi', width: 40, height: 20, fills: [SHADER] }).id
+  ])
+  expect(svg).toMatch(/<text [^>]*fill="none"/)
+})

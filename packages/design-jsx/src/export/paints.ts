@@ -4,6 +4,7 @@ import {
   gradientTransformRows,
   isIdentityGradientTransform
 } from '@open-pencil/scene-graph/gradient'
+import { isFigmaShaderPaint } from '@open-pencil/scene-graph/paints'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { appendAll } from '@open-pencil/std/arrays'
@@ -167,7 +168,7 @@ function fitsStrokeShorthand(node: SceneNode, stroke: StrokeValue): boolean {
 }
 
 export function collectStrokeProps(node: SceneNode, props: JSXProp[]): void {
-  const strokes = node.strokes.map(strokeValue)
+  const strokes = node.strokes.filter((stroke) => !isFigmaShaderPaint(stroke)).map(strokeValue)
   const [only] = strokes
   const shorthand = strokes.length === 1 && fitsStrokeShorthand(node, only)
   if (shorthand) {

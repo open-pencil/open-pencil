@@ -24,6 +24,7 @@ import {
   stickySublayers
 } from '@open-pencil/scene-graph/generated'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { styleRunPieces } from '@open-pencil/scene-graph/text'
 
@@ -48,7 +49,7 @@ function style(names: string[], values: Record<string, string | undefined>): Dra
 
 /** A layer's first visible solid fill, or the first stop of a gradient, as draw.io's colour. */
 function fillColor(node: SceneNode): string {
-  const fill = node.fills.find((paint) => paint.visible)
+  const fill = node.fills.find(isDrawnPaint)
   if (!fill) return 'none'
   if (fill.type === 'SOLID') return colorToHex(fill.color)
   const stop = fill.gradientStops?.at(0)
@@ -57,7 +58,7 @@ function fillColor(node: SceneNode): string {
 
 /** A layer's fill, outline, dash, and opacity as style pairs. */
 function paintValues(node: SceneNode): Record<string, string | undefined> {
-  const stroke = node.strokes.find((paint) => paint.visible)
+  const stroke = node.strokes.find(isDrawnPaint)
   const weight = stroke?.weight ?? node.strokeWeight
   const dash = stroke?.dashPattern ?? node.dashPattern
   return {
@@ -129,7 +130,7 @@ function labelHTML(text: SceneNode): string {
 
 /** A connector line's colour, width, and dash as an edge's style pairs. */
 function lineValues(line: SceneNode): Record<string, string | undefined> {
-  const stroke = line.strokes.find((paint) => paint.visible)
+  const stroke = line.strokes.find(isDrawnPaint)
   const weight = stroke?.weight ?? 1
   const dash = stroke?.dashPattern ?? []
   return {

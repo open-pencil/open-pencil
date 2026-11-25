@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import type { Fill } from '@open-pencil/scene-graph'
-import { paintShows } from '@open-pencil/scene-graph/paints'
+import { isDrawnPaint, isFigmaShaderPaint, paintShows } from '@open-pencil/scene-graph/paints'
 
 const red = { r: 1, g: 0, b: 0, a: 1 }
 const solid = (patch: Partial<Fill> = {}): Fill => ({
@@ -27,4 +27,13 @@ test('a paint shows when it is visible and not wholly transparent', () => {
   ]
   expect(paintShows(solid({ type: 'GRADIENT_LINEAR', gradientStops: stops(0) }))).toBe(false)
   expect(paintShows(solid({ type: 'GRADIENT_LINEAR', gradientStops: stops(0.5) }))).toBe(true)
+})
+
+test('OpenPencil draws a visible paint unless it is a Figma shader', () => {
+  const shader = solid({ type: 'CUSTOM', customEffectId: { key: 'abc', version: 'v1' } })
+  expect(isFigmaShaderPaint(shader)).toBe(true)
+  expect(isFigmaShaderPaint(solid())).toBe(false)
+  expect(isDrawnPaint(solid())).toBe(true)
+  expect(isDrawnPaint(solid({ visible: false }))).toBe(false)
+  expect(isDrawnPaint(shader)).toBe(false)
 })

@@ -16,3 +16,7 @@ export function paintShows(paint: Fill): boolean {
 export function isFigmaShaderPaint(paint: Fill): boolean {
   return paint.type === 'CUSTOM'
 }
+
+export function isDrawnPaint(paint: Fill): boolean {
+  return paint.visible && !isFigmaShaderPaint(paint)
+}
