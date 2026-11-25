@@ -17,7 +17,7 @@ Save a layer as a file, or copy it straight into another app. To keep working on
 
 <GuideLegend>
 
-<GuideImage name="exporting-panel" alt="The Export settings with four numbered controls" />
+<GuideImage name="exporting/panel" alt="The Export settings with four numbered controls" />
 
 1. **Scale** sets the image size. Pick one or type your own, such as `2.5`.
 2. **Format** sets the file type.
@@ -50,7 +50,7 @@ Right-click a layer and choose **Copy/Paste as**.
 
 <GuideLegend>
 
-<GuideImage name="exporting-copy-as" other="exporting-copy-as-other" alt="The Copy/Paste as menu" />
+<GuideImage name="exporting/copy-as" other="exporting/copy-as-other" alt="The Copy/Paste as menu" />
 
 - **Copy as PNG** is for chats and documents. Press <Keys mac="⇧ ⌘ C" other="Ctrl Shift C" />.
 - **Copy as SVG** is for code and vector editors.

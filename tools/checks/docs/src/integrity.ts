@@ -276,7 +276,7 @@ function validateGuideImages(docsRoot: string, markdownFiles: readonly string[])
       if (!/\salt="[^"]+"/.test(tag)) errors.push(`${page} has a guide picture without alt text.`)
       for (const [, name] of tag.matchAll(/\s(?:name|other)="([^"]+)"/g)) {
         for (const theme of ['light', 'dark']) {
-          const image = `public/guide/${name}-${theme}.webp`
+          const image = `public/guide/${name}/${theme}.webp`
           if (!existsSync(join(docsRoot, image))) errors.push(`${page} shows missing '${image}'.`)
         }
       }

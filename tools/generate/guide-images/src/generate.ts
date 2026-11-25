@@ -67,15 +67,16 @@ async function main(): Promise<void> {
   if (unknown.length > 0) throw new Error(`No such picture: ${unknown.join(', ')}`)
 
   selectors.setTestIdAttribute('data-test-id')
-  await mkdir(join(root, IMAGES), { recursive: true })
   const browser = await chromium.launch()
   try {
     for (const name of names.length > 0 ? names : Object.keys(SHOTS)) {
+      const folder = join(root, IMAGES, name)
+      await mkdir(folder, { recursive: true })
       for (const theme of THEMES) {
         const png = await shoot(browser, name, theme)
         await sharp(png)
           .webp({ lossless: true })
-          .toFile(join(root, IMAGES, `${name}-${theme}.webp`))
+          .toFile(join(folder, `${theme}.webp`))
       }
       console.log(name)
     }
@@ -85,7 +86,7 @@ async function main(): Promise<void> {
 
   const sizes: Record<string, { width: number; height: number }> = {}
   for (const name of Object.keys(SHOTS).toSorted()) {
-    const { width, height } = await sharp(join(root, IMAGES, `${name}-light.webp`)).metadata()
+    const { width, height } = await sharp(join(root, IMAGES, name, 'light.webp')).metadata()
     sizes[name] = { width: width / PIXEL_RATIO, height: height / PIXEL_RATIO }
   }
   await writeFile(join(root, SIZES), `${JSON.stringify(sizes, null, 2)}\n`)

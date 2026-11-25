@@ -34,7 +34,7 @@ const shown = computed(() => (platform.value === 'other' && other) || name)
       v-for="theme in THEMES"
       :key="theme"
       :class="theme"
-      :src="withBase(`/guide/${shown}-${theme}.webp`)"
+      :src="withBase(`/guide/${shown}/${theme}.webp`)"
       :alt="alt"
       :width="sizes[shown].width"
       :height="sizes[shown].height"

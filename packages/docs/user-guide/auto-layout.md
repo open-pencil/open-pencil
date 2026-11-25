@@ -10,8 +10,8 @@ Auto layout makes a frame arrange the layers inside it. Edit some text, add a ro
 
 <GuidePair>
 
-<GuideImage name="auto-layout-before" alt="A playlist card with two songs" caption="Two songs" />
-<GuideImage name="auto-layout-after" alt="A taller playlist card with three songs" caption="Add one, and the card grows" />
+<GuideImage name="auto-layout/before" alt="A playlist card with two songs" caption="Two songs" />
+<GuideImage name="auto-layout/after" alt="A taller playlist card with three songs" caption="Add one, and the card grows" />
 
 </GuidePair>
 
@@ -28,7 +28,7 @@ Select the frame and look for **Auto layout** in the Design panel.
 
 <GuideLegend>
 
-<GuideImage name="auto-layout-panel" alt="The Auto layout settings with six numbered controls" />
+<GuideImage name="auto-layout/panel" alt="The Auto layout settings with six numbered controls" />
 
 1. **Flow** arranges layers freely, vertically, horizontally, or in a grid.
 2. **Wrap** moves layers to a new line when they run out of room.
@@ -49,7 +49,7 @@ Select a layer, then open the menu in its **W** or **H** field.
 
 <GuideLegend>
 
-<GuideImage name="auto-layout-sizing" alt="The width menu open, with Fixed, Hug, and Fill" />
+<GuideImage name="auto-layout/sizing" alt="The width menu open, with Fixed, Hug, and Fill" />
 
 - **Fixed** keeps the size you set.
 - **Hug** fits the content.
@@ -65,8 +65,8 @@ Drag a layer to a new place in the frame. The blue line shows where it will land
 
 <GuidePair>
 
-<GuideImage name="auto-layout-drag" alt="The pointer dragging Low Tide, with a blue line above Paper Lanterns" caption="Drag Low Tide up" />
-<GuideImage name="auto-layout-drop" alt="Low Tide between Slow Morning and Paper Lanterns" caption="Let go, and it moves into place" />
+<GuideImage name="auto-layout/drag" alt="The pointer dragging Low Tide, with a blue line above Paper Lanterns" caption="Drag Low Tide up" />
+<GuideImage name="auto-layout/drop" alt="Low Tide between Slow Morning and Paper Lanterns" caption="Let go, and it moves into place" />
 
 </GuidePair>
 
@@ -74,13 +74,13 @@ Drag a layer to a new place in the frame. The blue line shows where it will land
 
 Turn on **Wrap** for content such as tags, where the number of items changes. A second gap field sets the space between lines.
 
-<GuideImage name="auto-layout-wrap" alt="Seven tags flowing over three lines" />
+<GuideImage name="auto-layout/wrap" alt="Seven tags flowing over three lines" />
 
 ## Build a Grid
 
 <GuideLegend>
 
-<GuideImage name="auto-layout-grid-panel" alt="Column and row settings for a grid" />
+<GuideImage name="auto-layout/grid-panel" alt="Column and row settings for a grid" />
 
 1. Select the frame and choose **Grid** in **Flow**.
 2. Use **+** beside **Columns** and **Rows** to add tracks.
@@ -89,7 +89,7 @@ Turn on **Wrap** for content such as tags, where the number of items changes. A 
 
 </GuideLegend>
 
-<GuideImage name="auto-layout-grid" alt="Six album covers in three columns and two rows" />
+<GuideImage name="auto-layout/grid" alt="Six album covers in three columns and two rows" />
 
 ## Place a Layer Freely
 

@@ -16,7 +16,7 @@ Published VitePress site. `bun run docs:dev`, `bun run docs:build` for fast chec
 Rewritten guide pages (`pageClass: guide`) are for people learning the app; `user-guide/auto-layout.md` is the model.
 
 - One page answers one need, with a section per task named by its verb, numbered steps for anything with an order, and paragraphs of at most three sentences. Leave out internals, and describe what the app shows today, tried in the running app.
-- Pictures come from the app through `bun run generate:guide-images` (`tools/generate/guide-images`), never by hand, and go in with `GuideImage`: `GuideLegend` sets one beside the list that explains it, and `GuidePair` shows a before and after. `check:docs` fails on a picture without alt text or a file for each theme.
+- Pictures come from the app through `bun run generate:guide-images` (`tools/generate/guide-images`), never by hand, sit at `public/guide/<page>/<picture>/{light,dark}.webp`, and go in with `GuideImage name="<page>/<picture>"`: `GuideLegend` sets one beside the list that explains it, and `GuidePair` shows a before and after. `check:docs` fails on a picture without alt text or a file for each theme.
 - Write shortcuts with `<Keys mac="⇧ A" other="Shift A" />`, which shows the reader's own keyboard; the choice is at the end of the sidebar (`theme/site/ShortcutsSetting.vue`).
 - A rewritten page drops its stale translations: remove them, link the locales to the English page, and redirect the old addresses in `public/_redirects`.
 

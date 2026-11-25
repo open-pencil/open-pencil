@@ -93,15 +93,15 @@ async function copyMenu(page: Page): Promise<Picture> {
   return picture(page, clip, PANEL_RADIUS)
 }
 
-/** Every picture in the guide, by the name its page uses. */
+/** Every picture in the guide, by its page and name. */
 export const SHOTS: Record<string, Shot> = {
-  'auto-layout-before': {
+  'auto-layout/before': {
     take: (page) => plainFrame(page, playlist(2), 'Playlist', PAIR_ZOOM)
   },
-  'auto-layout-after': {
+  'auto-layout/after': {
     take: (page) => plainFrame(page, playlist(), 'Playlist', PAIR_ZOOM)
   },
-  'auto-layout-panel': {
+  'auto-layout/panel': {
     async take(page) {
       await buildScene(page, playlist())
       await page.mouse.move(700, 120)
@@ -122,7 +122,7 @@ export const SHOTS: Record<string, Shot> = {
       return picture(page, clip, PANEL_RADIUS, { callouts })
     }
   },
-  'auto-layout-sizing': {
+  'auto-layout/sizing': {
     async take(page) {
       await buildScene(page, playlist())
       await selectLayer(page, ['Playlist', 'Slow Morning'])
@@ -133,7 +133,7 @@ export const SHOTS: Record<string, Shot> = {
       return picture(page, { ...clip, y: clip.y + 2, height: clip.height - 6 }, PANEL_RADIUS)
     }
   },
-  'auto-layout-drag': {
+  'auto-layout/drag': {
     async take(page) {
       // Drawn large and shown small, so the selection's labels stay inside the card.
       await buildScene(page, playlist())
@@ -151,7 +151,7 @@ export const SHOTS: Record<string, Shot> = {
       }
     }
   },
-  'auto-layout-drop': {
+  'auto-layout/drop': {
     async take(page) {
       await buildScene(page, playlist(), PAIR_ZOOM)
       await dragSong(page)
@@ -160,9 +160,9 @@ export const SHOTS: Record<string, Shot> = {
       return picture(page, await layerBox(page, ['Playlist']), SCENE_RADIUS * PAIR_ZOOM)
     }
   },
-  'auto-layout-wrap': { take: (page) => plainFrame(page, tags(), 'Tags', 1.4) },
-  'auto-layout-grid': { take: (page) => plainFrame(page, gallery(), 'Gallery', 1.1) },
-  'auto-layout-grid-panel': {
+  'auto-layout/wrap': { take: (page) => plainFrame(page, tags(), 'Tags', 1.4) },
+  'auto-layout/grid': { take: (page) => plainFrame(page, gallery(), 'Gallery', 1.1) },
+  'auto-layout/grid-panel': {
     async take(page) {
       await buildScene(page, gallery())
       await page.mouse.move(700, 120)
@@ -171,7 +171,7 @@ export const SHOTS: Record<string, Shot> = {
       return picture(page, { ...clip, height: clip.height - 4 }, PANEL_RADIUS)
     }
   },
-  'exporting-panel': {
+  'exporting/panel': {
     async take(page) {
       await buildScene(page, playlist())
       const add = page.getByRole('button', { name: 'Add export' })
@@ -199,9 +199,9 @@ export const SHOTS: Record<string, Shot> = {
       return picture(page, clip, PANEL_RADIUS, { callouts })
     }
   },
-  'exporting-copy-as': { take: copyMenu },
-  'exporting-copy-as-other': { keyboard: 'other', take: copyMenu },
-  'files-open-url': {
+  'exporting/copy-as': { take: copyMenu },
+  'exporting/copy-as-other': { keyboard: 'other', take: copyMenu },
+  'files/open-url': {
     async take(page) {
       await page.getByRole('menuitem', { name: 'File', exact: true }).click()
       await page.getByRole('menuitem', { name: 'Open from URL…' }).click()

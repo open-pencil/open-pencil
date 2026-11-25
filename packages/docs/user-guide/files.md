@@ -16,7 +16,7 @@ Press <Keys mac="⌘ O" other="Ctrl O" /> and choose a file, or drag one onto th
 
 <GuideLegend>
 
-<GuideImage name="files-open-url" alt="The Open from URL dialog with an address and three window sizes" />
+<GuideImage name="files/open-url" alt="The Open from URL dialog with an address and three window sizes" />
 
 1. Choose **File → Open from URL**.
 2. Enter the address.
