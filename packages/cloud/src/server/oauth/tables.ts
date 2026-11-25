@@ -13,7 +13,7 @@ export interface OAuthClientTable {
   uri: string | null
   icon: string | null
   disabled: boolean | null
-  /** When an app known by its metadata document last had it fetched and valid. */
+  /** When an app known by its metadata document last had it fetched and valid; null once a fetch since failed. */
   updatedAt: TimestampColumn | null
 }
 

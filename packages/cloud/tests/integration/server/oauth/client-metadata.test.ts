@@ -36,11 +36,14 @@ let person: { userId: string; sessionCookie: string }
 let workspaceId: string
 /** The addresses the server fetched metadata from. */
 const fetched: string[] = []
+/** The documents their sites no longer serve. */
+const withdrawn = new Set<string>()
 
 async function fetchMetadata(input: RequestInfo | URL) {
   const url = input instanceof Request ? input.url : input.toString()
   fetched.push(url)
-  if (!url.endsWith('/client.json')) return new Response(null, { status: 404 })
+  if (!url.endsWith('/client.json') || withdrawn.has(url))
+    return new Response(null, { status: 404 })
   return Response.json(
     {
       client_id: url,
@@ -194,6 +197,21 @@ describe('apps named by a client metadata document', () => {
       expect(await authorizeAfresh(known)).toBe(false)
       expect(fetched).toHaveLength(before)
       expect(await authorizeAfresh('https://quiet.example.com/client.json')).toBe(true)
+    })
+
+    test('that fail end what a known app’s last valid document allowed, until one succeeds', async () => {
+      const id = 'https://withdrawn.example.com/client.json'
+      expect(await authorizeAfresh(id)).toBe(true)
+      await age(id, HOUR_MS)
+      withdrawn.add(id)
+      expect(await authorizeAfresh(id)).toBe(false)
+      withdrawn.delete(id)
+      expect(await authorizeAfresh(id)).toBe(true)
+      await age(id, HOUR_MS)
+      withdrawn.add(id)
+      expect(await authorizeAfresh(id)).toBe(false)
+      await spend('https://withdrawn.example.com')
+      expect(await authorizeAfresh(id)).toBe(false)
     })
   })
 })
