@@ -184,4 +184,11 @@ describe('Figma shader paints', () => {
       expect(fillToKiwiPaint(convertFills([paint])[0])).toEqual(paint)
     }
   })
+  test('writes the node ID when a paint names both forms', () => {
+    const both: Fill = {
+      ...convertFills([LIBRARY])[0],
+      customEffectId: '5:6'
+    }
+    expect(fillToKiwiPaint(both).customEffectId).toEqual({ guid: { sessionID: 5, localID: 6 } })
+  })
 })

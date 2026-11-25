@@ -6,6 +6,8 @@ import { sceneNodesToTailwindJSX } from '#dom-css/export/tailwind-jsx'
 
 import { SceneGraph, type Fill, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
 
+import { BLUE_500, designSystem } from './token-fixtures'
+
 const SHADER: Fill = {
   type: 'CUSTOM',
   color: { r: 0, g: 0, b: 0, a: 1 },
@@ -36,5 +38,24 @@ describe('Figma shader paints in HTML and Tailwind', () => {
     const { html, tailwind } = exported('TEXT', { text: 'Hi', fills: [SHADER, RED] })
     expect(html).toContain('color: #FF0000')
     expect(tailwind).toContain('text-[#FF0000]')
+  })
+  test("a text's colour binding is the one on its first drawn fill", () => {
+    const colour = (boundVariables: Record<string, string>) => {
+      const graph = designSystem()
+      const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+        text: 'Hi',
+        width: 40,
+        height: 20,
+        fills: [SHADER, { ...RED, color: BLUE_500 }],
+        boundVariables
+      })
+      return sceneNodeToDesignDocument(graph, node.id, {}).children[0]
+    }
+    expect(colour({ 'fills/1/color': 'primary' })).toMatchObject({
+      inlineStyle: { color: 'var(--color-primary)' }
+    })
+    expect(colour({ 'fills/0/color': 'primary' })).not.toMatchObject({
+      inlineStyle: { color: 'var(--color-primary)' }
+    })
   })
 })
