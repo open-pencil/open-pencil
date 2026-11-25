@@ -55,7 +55,9 @@ export async function collectLibraryUpdateGroups(
     const latest = await getManifest(summary.libraryId, summary.latestRevisionId)
     if (!latest) continue
     const assets = new Map(latest.assets.map((asset) => [asset.key, asset]))
-    const previousAssetsByRevision = new Map<string, Map<string, string>>()
+    // `null` caches a revision whose manifest could not be read, so instances sharing it cost
+    // one read per pass; `has` tells "not read yet" from "read, unavailable".
+    const previousAssetsByRevision = new Map<string, Map<string, string> | null>()
     const instancesByAsset = new Map<string, string[]>()
     for (const node of editor.graph.getAllNodes()) {
       if (node.type !== 'INSTANCE' || !node.componentId) continue
@@ -65,13 +67,15 @@ export async function collectLibraryUpdateGroups(
       const { assetKey } = identity
       const latestAsset = assets.get(assetKey)
       if (!latestAsset) continue
-      let previousAssets = previousAssetsByRevision.get(identity.revisionId)
-      if (!previousAssets) {
+      if (!previousAssetsByRevision.has(identity.revisionId)) {
         const previous = await getManifest(summary.libraryId, identity.revisionId)
-        if (!previous) continue
-        previousAssets = new Map(previous.assets.map((asset) => [asset.key, asset.contentHash]))
-        previousAssetsByRevision.set(identity.revisionId, previousAssets)
+        previousAssetsByRevision.set(
+          identity.revisionId,
+          previous ? new Map(previous.assets.map((asset) => [asset.key, asset.contentHash])) : null
+        )
       }
+      const previousAssets = previousAssetsByRevision.get(identity.revisionId)
+      if (!previousAssets) continue
       if (previousAssets.get(assetKey) === latestAsset.contentHash) continue
       const ids = instancesByAsset.get(assetKey) ?? []
       ids.push(node.id)

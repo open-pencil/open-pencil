@@ -436,6 +436,12 @@ export class LibraryService {
     // nothing can fetch.
     const resolvedRevisionId = revisionId ?? (await this.#findSummary(libraryId))?.latestRevisionId
     if (!resolvedRevisionId) throw new LibraryRevisionMissingError(libraryId)
+    // A local publish is complete on write, so a revision the local catalog cannot read must
+    // fail before the binding lands — a bad binding would make every later refresh throw.
+    // Storage stays content-free: a still-syncing revision binds now and fills in on arrival.
+    if (this.catalogSource === 'local') {
+      await this.#readManifest(libraryId, resolvedRevisionId)
+    }
     editor.updateEnabledLibraries((bindings) =>
       bindings.set(libraryId, {
         libraryId,
@@ -502,8 +508,11 @@ export class LibraryService {
       if (cached) return cached
     }
     try {
-      const revision = await this.#catalog.getRevision(libraryId, revisionId)
-      this.#cacheRevision(revision)
+      const catalog = this.#catalog
+      const revision = await catalog.getRevision(libraryId, revisionId)
+      // A catalog swap mid-read makes this another mirror's revision: the caller still gets
+      // it, but it must not enter the new catalog's cache.
+      if (this.#catalog === catalog) this.#cacheRevision(revision)
       return revision
     } catch (error) {
       return this.#failedOrRethrow(error)

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { COMPONENT_LIBRARY_SCHEMA_VERSION } from '@open-pencil/core/library'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import {
   getInstanceOverride,
@@ -271,6 +272,75 @@ describe('storage library catalog', () => {
     expect((await catalog.listLibraries()).map((library) => library.latestRevisionId)).toEqual([
       revision.manifest.revisionId
     ])
+  })
+
+  test('republishes over a manifest whose bytes cannot be decoded', async () => {
+    const objects = new MemoryObjects()
+    const catalog = new StorageLibraryCatalog(objects)
+    const manifestKey = 'open-pencil/libraries/design-system/manifest.json'
+    objects.values.set(manifestKey, new TextEncoder().encode('{not json'))
+    objects.etags.set(manifestKey, 'etag-manifest')
+
+    const revision = await catalog.publishRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph: sourceGraph()
+    })
+
+    expect(await catalog.getSummary('design-system')).toMatchObject({
+      libraryId: 'design-system',
+      latestRevisionId: revision.manifest.revisionId
+    })
+  })
+
+  test('republishes over a manifest that names another library', async () => {
+    const objects = new MemoryObjects()
+    const catalog = new StorageLibraryCatalog(objects)
+    const manifestKey = 'open-pencil/libraries/design-system/manifest.json'
+    objects.values.set(
+      manifestKey,
+      new TextEncoder().encode(
+        JSON.stringify({
+          schemaVersion: COMPONENT_LIBRARY_SCHEMA_VERSION,
+          summary: {
+            libraryId: 'other-library',
+            name: 'Other',
+            latestRevisionId: 'b'.repeat(64),
+            publishedAt: '2026-01-01T00:00:00.000Z',
+            assetCount: 1
+          }
+        })
+      )
+    )
+    objects.etags.set(manifestKey, 'etag-manifest')
+
+    const revision = await catalog.publishRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph: sourceGraph()
+    })
+
+    expect(await catalog.getSummary('design-system')).toMatchObject({
+      libraryId: 'design-system',
+      latestRevisionId: revision.manifest.revisionId
+    })
+  })
+
+  test('still refuses an update when an unreadable manifest has no etag to lock on', async () => {
+    const objects = new MemoryObjects()
+    const catalog = new StorageLibraryCatalog(objects)
+    objects.values.set(
+      'open-pencil/libraries/design-system/manifest.json',
+      new TextEncoder().encode('{not json')
+    )
+
+    await expect(
+      catalog.publishRevision({
+        libraryId: 'design-system',
+        name: 'Design system',
+        graph: sourceGraph()
+      })
+    ).rejects.toThrow('does not support conditional library publication')
   })
 
   test('rejects stale publication pointers', async () => {

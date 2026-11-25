@@ -78,13 +78,13 @@ async function withUnchanged(
       const asset = previous.manifest.assets.find((entry) => entry.key === identity.assetKey)
       if (asset?.contentHash === hash) keys.add(identity.assetKey)
     } catch (error) {
-      // A revision the mirror has not resolved gets the conservative answer — the asset
-      // counts as changed — the same way an asset with no hash in latest does.
+      // A revision the mirror has not resolved leaves the asset as the document has it —
+      // redrawing an unselected asset is not authorized. Only once its baseline lands does
+      // a comparison answer whether it needs the update.
       if (
         error instanceof LibraryContentSyncingError ||
         error instanceof LibraryContentFailedError
       ) {
-        keys.add(identity.assetKey)
         continue
       }
       throw error

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
 import 'fake-indexeddb/auto'
-import { nextTick } from 'vue'
+import { effectScope, nextTick } from 'vue'
 
 import {
   materializeLibraryAsset,
@@ -12,6 +12,7 @@ import {
   type PublishLibraryInput
 } from '@open-pencil/core/library'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { createDeferred } from '@open-pencil/std/async'
 
 import { createEditorStore } from '@/app/editor/session'
 import { LocalLibraryCatalog } from '@/app/libraries/catalog/local'
@@ -161,7 +162,7 @@ describe('local-first library service', () => {
     expect(remote.calls.publishRevision).toBe(0)
     expect(providerCalls()).toBe(0)
     // Watching the document registered it with the sync engine's needs providers.
-    expect(currentNeedsProviders()).toContain(editor)
+    expect(currentNeedsProviders().includes(editor)).toBe(true)
   })
 
   test('enable resolves the bound revision from the manifest without reading the graph', async () => {
@@ -304,6 +305,116 @@ describe('local-first library service', () => {
 
     await mirrorA.close()
     await mirrorB.close()
+  })
+
+  test('the singleton keeps following the remote after the caller’s scope is disposed', async () => {
+    writeLibraryCatalogSource('storage')
+    const callerScope = effectScope()
+    const service = callerScope.run(() => useLibraryService())
+    if (!service) throw new Error('caller scope was inactive')
+    // The component that first asked for the service unmounted; the cached singleton lives on.
+    callerScope.stop()
+
+    const origin = new MemoryLibraryCatalog()
+    const mirror = new LocalLibraryCatalog(`mirror-scope-${crypto.randomUUID()}`)
+    await mirror.cacheRevision(await publish(origin, 'gamma', 80))
+    librarySyncRemote.value = remoteView(mirror, 'remote-after-dispose')
+    await nextTick()
+
+    expect((await service.listLibraries()).map((row) => row.libraryId)).toEqual(['gamma'])
+
+    await mirror.close()
+  })
+
+  test('a revision read that lands after a catalog swap stays out of the new cache', async () => {
+    const localA = new LocalLibraryCatalog(`local-a-${crypto.randomUUID()}`)
+    const revisionA = await localA.publishRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph: libraryGraph(80)
+    })
+    const held = createDeferred<undefined>()
+    const getRevisionA = localA.getRevision.bind(localA)
+    localA.getRevision = async (libraryId, revisionId) => {
+      await held.promise
+      return getRevisionA(libraryId, revisionId)
+    }
+    const service = new LibraryService(
+      new MirroredLibraryCatalog(
+        localA,
+        async () => null,
+        new LocalLibraryCatalog(`mirror-a-${crypto.randomUUID()}`)
+      )
+    )
+    const pending = service.getRevision('design-system', revisionA.manifest.revisionId)
+
+    const localB = new LocalLibraryCatalog(`local-b-${crypto.randomUUID()}`)
+    let bReads = 0
+    const getRevisionB = localB.getRevision.bind(localB)
+    localB.getRevision = async (libraryId, revisionId) => {
+      bReads += 1
+      return getRevisionB(libraryId, revisionId)
+    }
+    service.attachCatalog(
+      new MirroredLibraryCatalog(
+        localB,
+        async () => null,
+        new LocalLibraryCatalog(`mirror-b-${crypto.randomUUID()}`)
+      )
+    )
+    held.resolve(undefined)
+
+    // The caller still gets the revision its read returned.
+    await expect(pending).resolves.toMatchObject({
+      manifest: { revisionId: revisionA.manifest.revisionId }
+    })
+
+    // The same key on the new catalog is a miss there, so it was read, not served stale.
+    await expect(
+      service.getRevision('design-system', revisionA.manifest.revisionId)
+    ).rejects.toThrow(LibraryRevisionMissingError)
+    expect(bReads).toBe(1)
+  })
+
+  test('enable on the local catalog rejects a revision it cannot read and writes no binding', async () => {
+    const local = new LocalLibraryCatalog(`local-${crypto.randomUUID()}`)
+    const service = new LibraryService(
+      new MirroredLibraryCatalog(
+        local,
+        async () => null,
+        new LocalLibraryCatalog(`mirror-${crypto.randomUUID()}`)
+      )
+    )
+    const editor = createEditorStore(new SceneGraph())
+
+    await expect(service.enable(editor, 'design-system', 'rev-missing')).rejects.toThrow(
+      LibraryRevisionMissingError
+    )
+    expect(editor.graph.enabledLibraries.has('design-system')).toBe(false)
+  })
+
+  test('enable on the local catalog binds a revision it can read', async () => {
+    const local = new LocalLibraryCatalog(`local-${crypto.randomUUID()}`)
+    const revision = await local.publishRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph: libraryGraph(80)
+    })
+    const service = new LibraryService(
+      new MirroredLibraryCatalog(
+        local,
+        async () => null,
+        new LocalLibraryCatalog(`mirror-${crypto.randomUUID()}`)
+      )
+    )
+    const editor = createEditorStore(new SceneGraph())
+
+    await service.enable(editor, 'design-system', revision.manifest.revisionId)
+
+    expect(editor.graph.enabledLibraries.get('design-system')).toMatchObject({
+      revisionId: revision.manifest.revisionId,
+      enabled: true
+    })
   })
 
   test('useStorageCatalog waits for nothing when the engine never started', async () => {

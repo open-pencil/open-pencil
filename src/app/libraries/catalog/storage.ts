@@ -31,6 +31,12 @@ export const MANIFEST_FETCH_CONCURRENCY = 16
 
 const textEncoder = new TextEncoder()
 
+/** A summary read and the etag of the manifest object it came from. */
+export interface LibrarySummaryValue {
+  summary: LibrarySummary | null
+  etag: string | null
+}
+
 function encodeRevision(revision: ComponentLibraryRevision): Uint8Array {
   return textEncoder.encode(JSON.stringify(encodeStoredLibraryRevision(revision)))
 }
@@ -65,11 +71,21 @@ export class StorageLibraryCatalog implements LibraryCatalog {
    * again, which replaces it.
    */
   async getSummary(libraryId: string): Promise<LibrarySummary | null> {
+    return (await this.getSummaryValue(libraryId)).summary
+  }
+
+  /**
+   * `getSummary` together with the etag of the manifest object it was read from, so a
+   * caller mirroring the manifest can record the version of the content it actually
+   * cached — a listing fetched moments earlier may name an older etag. The etag is `null`
+   * when the store surfaces none.
+   */
+  async getSummaryValue(libraryId: string): Promise<LibrarySummaryValue> {
     try {
-      const summary = await this.#latest(libraryId)
-      return summary?.libraryId === libraryId ? summary : null
+      const { summary, etag } = await this.#latestValue(libraryId)
+      return { summary: summary?.libraryId === libraryId ? summary : null, etag }
     } catch (error) {
-      if (error instanceof LibraryContentInvalidError) return null
+      if (error instanceof LibraryContentInvalidError) return { summary: null, etag: null }
       throw error
     }
   }
@@ -98,9 +114,20 @@ export class StorageLibraryCatalog implements LibraryCatalog {
     const latestValue = this.#objects.getObjectValue
       ? await this.#objects.getObjectValue(manifestKey)
       : { bytes: await this.#objects.getObject(manifestKey), etag: null }
-    const latest = latestValue.bytes
-      ? (decodeLatestManifest(latestValue.bytes)?.summary ?? null)
-      : null
+    // Only a manifest that decodes and names this library is a usable baseline: an unreadable
+    // or foreign one leaves the library republishable, which replaces it. The etag conditional
+    // write below stays the real optimistic lock either way.
+    let latest: LibrarySummary | null = null
+    if (latestValue.bytes) {
+      try {
+        const decoded = decodeLatestManifest(latestValue.bytes)
+        if (decoded && decoded.summary.libraryId === input.libraryId) {
+          latest = decoded.summary
+        }
+      } catch (error) {
+        if (!(error instanceof LibraryContentInvalidError)) throw error
+      }
+    }
     if ((input.previousRevisionId ?? null) !== (latest?.latestRevisionId ?? null)) {
       throw new Error('Library revision conflict: latest revision has changed')
     }
@@ -138,7 +165,16 @@ export class StorageLibraryCatalog implements LibraryCatalog {
   }
 
   async #latest(libraryId: string): Promise<LibrarySummary | null> {
-    const bytes = await this.#objects.getObject(latestKey(libraryId))
-    return bytes ? (decodeLatestManifest(bytes)?.summary ?? null) : null
+    return (await this.#latestValue(libraryId)).summary
+  }
+
+  async #latestValue(libraryId: string): Promise<LibrarySummaryValue> {
+    const value = this.#objects.getObjectValue
+      ? await this.#objects.getObjectValue(latestKey(libraryId))
+      : { bytes: await this.#objects.getObject(latestKey(libraryId)), etag: null }
+    return {
+      summary: value.bytes ? (decodeLatestManifest(value.bytes)?.summary ?? null) : null,
+      etag: value.bytes ? value.etag : null
+    }
   }
 }

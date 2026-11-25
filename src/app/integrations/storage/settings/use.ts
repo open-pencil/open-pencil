@@ -153,6 +153,7 @@ export function useStorageSettings(
             console.warn('[Storage] Could not clear the library mirror after saving:', error)
           )
       }
+      if (!current(request)) return persisted ? 'partial' : 'failed'
       reset()
       void Promise.all([services.resume(), services.resumeLibraries()]).catch((cause) =>
         console.warn('[Storage] Could not resume synchronization after saving settings:', cause)

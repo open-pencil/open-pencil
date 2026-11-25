@@ -53,7 +53,7 @@ describe('updateLibraryDefinitionsInPlace', () => {
     ['still syncing', new LibraryContentSyncingError('library', 'r-stale')],
     ['marked failed', new LibraryContentFailedError('library', 'r-stale')]
   ] as const) {
-    test(`an asset whose origin revision is ${label} counts as changed`, async () => {
+    test(`an asset whose origin revision is ${label} stays out of the update`, async () => {
       const catalog = new MemoryLibraryCatalog()
       const first = await catalog.publishRevision({
         libraryId: 'library',
@@ -71,8 +71,10 @@ describe('updateLibraryDefinitionsInPlace', () => {
         previousRevisionId: first.manifest.revisionId
       })
       const graph = new SceneGraph()
+      const componentIds = new Map<string, string>()
       for (const key of ['button', 'badge']) {
         const { componentId } = materializeLibraryAsset(graph, first, key)
+        componentIds.set(key, componentId)
         graph.createInstance(componentId, graph.getPages()[0].id)
       }
       // The badge's origin revision is one the mirror never resolved.
@@ -95,10 +97,18 @@ describe('updateLibraryDefinitionsInPlace', () => {
         read
       )
 
-      // The unreadable origin counted as changed, so every asset updated and the binding
-      // moved onto the latest revision instead of staying pinned behind.
+      // The unreadable origin is not redrawn: the badge's definition keeps its stale
+      // revision and the document stays pinned while a definition is left behind. The
+      // selected asset still updates.
       expect(updated).toBe(true)
-      expect(graph.enabledLibraries.get('library')?.revisionId).toBe(latest.manifest.revisionId)
+      const badgeId = componentIds.get('badge')
+      const buttonId = componentIds.get('button')
+      if (!badgeId || !buttonId) throw new Error('Expected the components')
+      expect(graph.getNode(badgeId)?.librarySource?.identity.revisionId).toBe('r-stale')
+      expect(graph.getNode(buttonId)?.librarySource?.identity.revisionId).toBe(
+        latest.manifest.revisionId
+      )
+      expect(graph.enabledLibraries.get('library')?.revisionId).toBe(first.manifest.revisionId)
     })
   }
 })
