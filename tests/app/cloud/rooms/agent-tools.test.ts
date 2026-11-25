@@ -3,14 +3,13 @@ import { describe, expect, test } from 'bun:test'
 import {
   decodeAgentToolMessage,
   encodeAgentToolMessage,
-  RELAY_SERVER_PEER,
   type AgentToolCall,
   type AgentToolMessage
 } from '@open-pencil/cloud/contract'
+import { RELAY_SERVER_PEER, type CollabActionReceiver } from '@open-pencil/collab'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { serveRoomAgentTools, type RunAgentTool } from '@/app/cloud/rooms/agent-tools'
-import type { CollabActionReceiver } from '@/app/collab/transport/types'
 import type { EditorStore } from '@/app/editor/session'
 
 const agent = { session: 'app:claude', client: 'Claude' }
