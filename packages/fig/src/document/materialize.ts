@@ -28,6 +28,7 @@ import { applyDocumentEffectBindings } from './bindings/effects'
 import { applyDocumentLayoutBindings } from './bindings/layout'
 import { applyDocumentPaintBindings } from './bindings/paint'
 import type { BindingReferenceDiagnostic } from './bindings/references'
+import { applyDocumentTextStyleBindings } from './bindings/style'
 import { applyDocumentValueBindings } from './bindings/values'
 import { foldVariantPropertyCopies, type PropertyCopies } from './component/links'
 import { linkComponentPropertyValues, resolveVariantPropertyValues } from './component/values'
@@ -447,6 +448,7 @@ function materializeReaderInto(
   graph.preserveSourceMetadataDuring(() => {
     resolveVariantPropertyValues(graph, materialized)
     applyDocumentLayoutBindings(graph, savedSizeNodes, materialized, layoutScales)
+    applyDocumentTextStyleBindings(graph, materialized)
     applyDocumentPaintBindings(graph, materialized)
     applyDocumentEffectBindings(graph, materialized)
     applyDocumentValueBindings(graph, materialized)

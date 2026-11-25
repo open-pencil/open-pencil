@@ -201,6 +201,39 @@ describe('design token import', () => {
     expect(graph.getNode(layer.id)).toMatchObject({ fontSize: 40, textStyleId: style.id })
   })
 
+  test('a variable an import binds on a text style reaches the layers using the style', () => {
+    function withHeadingSize(graph: SceneGraph) {
+      const theme = [...graph.variableCollections.values()].find((item) => item.name === 'Theme')
+      const dark = theme?.modes.find((mode) => mode.name === 'Dark')
+      if (!theme || !dark) {
+        throw new Error('missing Theme/Dark')
+      }
+      const size = graph.createVariable('Type/H1', 'FLOAT', theme.id, 32)
+      size.valuesByMode[dark.modeId] = 40
+      return { theme, dark, size }
+    }
+    const source = designSystem()
+    const { size } = withHeadingSize(source)
+    const [sourceStyle] = getSharedStyles(source, 'text')
+    source.bindVariable(sourceStyle.nodeId, 'fontSize', size.id)
+    const graph = designSystem()
+    const { theme, dark } = withHeadingSize(graph)
+    const [style] = getSharedStyles(graph, 'text')
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      variableModes: { [theme.id]: dark.modeId }
+    })
+    const layer = graph.createNode('TEXT', frame.id, {
+      text: 'Title',
+      fontFamily: 'Inter',
+      fontSize: 32,
+      textStyleId: style.id
+    })
+
+    importInto(graph, exported(source))
+
+    expect(graph.getNode(layer.id)).toMatchObject({ fontSize: 40, textStyleId: style.id })
+  })
+
   test('a style token as OpenPencil wrote it keeps the exact fields its value cannot hold', () => {
     const graph = new SceneGraph()
     const source = designSystem()
