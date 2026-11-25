@@ -42,11 +42,12 @@ describe('components a page marks', () => {
 
   test('keep the look of the element that held a set', async () => {
     const { graph } = await readHTMLDocument(
-      '<div data-op-component-set="Dot" style="padding:10px;background:#ff0000"><i data-op-component="Size=S" style="display:block;width:9px;height:9px;background:blue"></i></div>',
-      { components: true }
+      '<div data-op-component-set="Dot" style="padding:10px;background:var(--brand)"><i data-op-component="Size=S" style="display:block;width:9px;height:9px;background:blue"></i></div>',
+      { cssText: ':root { --brand: #ff0000 }', variables: {}, components: true }
     )
     const set = named(graph, 'Dot')
     expect(set.fills).toHaveLength(1)
+    expect(bound(graph, set, 'fills/0/color')).toBe('brand')
     expect(named(graph, 'Size=S')).toMatchObject({ x: 10, y: 10 })
   })
 

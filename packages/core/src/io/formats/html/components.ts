@@ -125,6 +125,11 @@ function createSet(graph: SceneGraph, { node, name }: Marked): void {
   }
   const look = pick(node, SET_LOOK)
   graph.updateNode(set.id, { ...structuredClone(look), name })
+  const kept = new Set<string>(SET_LOOK)
+  for (const [field, variableId] of Object.entries(node.boundVariables)) {
+    // `fills/0/color` is of `fills`.
+    if (kept.has(field.split('/')[0])) graph.bindVariable(set.id, field, variableId)
+  }
   graph.deleteNode(node.id)
 }
 
