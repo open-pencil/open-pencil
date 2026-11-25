@@ -54,6 +54,7 @@ import { createShapeActions } from './shapes'
 import { createPenResumeActions } from './shapes/pen/resume'
 import { createShapeWithTextActions } from './shapes/with-text'
 import { createEditorSignals } from './signals'
+import { createSlideActions } from './slides'
 import { createDefaultEditorState } from './state'
 import { createStatusActions } from './statuses'
 import { createStickyActions } from './stickies'
@@ -228,6 +229,7 @@ export function createEditor(options?: EditorOptions) {
   const figJamText = createFigJamTextActions(ctx, nodes, { ...stickies, ...shapesWithText })
   const figJamColors = createFigJamColorActions(ctx, nodes)
   const statuses = createStatusActions(ctx)
+  const slides = createSlideActions(ctx)
   const figCompression = createFigCompressionActions(ctx)
   createConnectorRouting(ctx)
   const connectorDrawing = createConnectorDrawActions(ctx)
@@ -242,7 +244,7 @@ export function createEditor(options?: EditorOptions) {
   const shaders = createShaderActions(ctx, nodes)
   const alignment = createAlignmentActions(ctx)
   const canvasViews = createCanvasViewActions(ctx)
-  const clipboardBridge = createClipboardBridge(clipboard, selection)
+  const clipboardBridge = createClipboardBridge(clipboard, selection, slides)
   const componentBridge = createComponentBridge(components, selection, structure, pages)
   const structureBridge = createStructureBridge(structure, selection)
   const frameNavigation = createFrameNavigationBridge(ctx, selection, viewport)
@@ -446,6 +448,7 @@ export function createEditor(options?: EditorOptions) {
     // Bitmap-to-vector replacement
     ...vectorize,
     ...icons,
+    ...slides,
     ...stickies,
     ...shapesWithText,
     ...figJamText,
