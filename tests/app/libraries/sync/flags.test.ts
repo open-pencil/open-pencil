@@ -110,9 +110,9 @@ describe('library sync flag intent', () => {
     const previous = librarySyncRemote.value
     writeStoragePreference('s3-compatible', 'bucket', 'other-bucket')
     const rebuilt = await withDeadline(SYNC_SETTLE_DEADLINE_MS, () =>
-      until(
-        () => librarySyncRemote.value !== null && librarySyncRemote.value !== previous
-      ).toBe(true)
+      until(() => librarySyncRemote.value !== null && librarySyncRemote.value !== previous).toBe(
+        true
+      )
     )
     expect(rebuilt).toBe(true)
     await track()

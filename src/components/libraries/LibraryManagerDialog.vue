@@ -154,7 +154,7 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
             </IconButton>
             <AppButton
               variant="outline"
-              :disabled="row.resolution !== null"
+              :disabled="!row.enabled && row.resolution !== null"
               @click="toggleLibrary(row.library.libraryId)"
             >
               {{ row.enabled ? libraryMessages.disableLibrary : libraryMessages.enableLibrary }}

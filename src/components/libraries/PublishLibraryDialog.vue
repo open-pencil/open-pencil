@@ -11,8 +11,8 @@ import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'
-import { LibraryContentSyncingError } from '@/app/libraries/errors'
-import { kickLibrarySync, librarySyncResolution } from '@/app/libraries/sync'
+import { LibraryContentFailedError, LibraryContentSyncingError } from '@/app/libraries/errors'
+import { kickLibrarySync, librarySyncResolution, resumeLibrarySync } from '@/app/libraries/sync'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import {
   AppDialogFooter,
@@ -36,8 +36,8 @@ const query = ref('')
 const publishing = ref(false)
 const loading = ref(false)
 const error = ref('')
-/** The baseline revision is still syncing; the dialog waits rather than failing. */
-const syncing = ref(false)
+/** The baseline revision's mirror state: syncing while it pulls, failed once it parks. */
+const baselineState = ref<'syncing' | 'failed' | null>(null)
 const changes = ref<LibraryAssetChange[]>([])
 const selectedKeys = ref(new Set<string>())
 const changeLabels = computed(() => ({
@@ -67,13 +67,17 @@ async function loadChanges() {
     const discovered = await service.discoverPublicationChanges(editor)
     changes.value = discovered.changes
     selectedKeys.value = new Set(changes.value.map((change) => change.asset.key))
-    syncing.value = false
+    baselineState.value = null
   } catch (cause) {
     // A baseline revision still pulling shows the syncing row, not an error: the engine
-    // lands it and the resolution watch retries the discovery.
+    // lands it and the resolution watch retries the discovery. A baseline the engine has
+    // parked shows the failed row with a retry instead of the syncing row.
     if (cause instanceof LibraryContentSyncingError) {
-      syncing.value = true
+      baselineState.value = 'syncing'
+    } else if (cause instanceof LibraryContentFailedError) {
+      baselineState.value = 'failed'
     } else {
+      baselineState.value = null
       error.value =
         cause instanceof Error ? cause.message : libraryMessages.value.libraryPublishFailed
     }
@@ -88,7 +92,7 @@ watch(publishLibraryDialogOpen, async (open) => {
   // to mirror it while the change list computes.
   void kickLibrarySync({ includePublication: true, probe: false })
   error.value = ''
-  syncing.value = false
+  baselineState.value = null
   query.value = ''
   const existing = publication.value
   libraryId.value = existing?.libraryId ?? libraryId.value
@@ -110,10 +114,25 @@ watch(publishLibraryDialogOpen, async (open) => {
   }
 })
 
-// A baseline revision that lands while the dialog waits retries the discovery.
+// A baseline revision that lands while the dialog waits retries the discovery. The watch
+// fires in the failed state too: a retry clears the marks, and an engine retry landing
+// resolves the baseline on its own.
 watch(librarySyncResolution, () => {
-  if (syncing.value && publishLibraryDialogOpen.value) void loadChanges()
+  if (
+    (baselineState.value === 'syncing' || baselineState.value === 'failed') &&
+    publishLibraryDialogOpen.value
+  ) {
+    void loadChanges()
+  }
 })
+
+/**
+ * A failed baseline retry clears its mark and resumes the engine — permanent failures park
+ * the pump, which a bare kick would not wake — then the discovery reloads.
+ */
+function retrySync() {
+  void resumeLibrarySync().then(() => void loadChanges())
+}
 
 function toggleAll(value: boolean) {
   const visibleKeys = visibleChanges.value.map((change) => change.asset.key)
@@ -208,8 +227,20 @@ async function publish() {
         <div v-if="loading" class="px-3 py-6 text-center text-xs text-muted">
           {{ libraryMessages.loading }}
         </div>
-        <div v-else-if="syncing" class="px-3 py-6 text-center text-xs text-muted">
+        <div
+          v-else-if="baselineState === 'syncing'"
+          class="px-3 py-6 text-center text-xs text-muted"
+        >
           {{ libraryMessages.librarySyncing }}
+        </div>
+        <div
+          v-else-if="baselineState === 'failed'"
+          class="flex flex-col items-center gap-2 px-3 py-6 text-xs"
+        >
+          <p class="text-error">{{ libraryMessages.librarySyncFailed }}</p>
+          <AppButton variant="outline" size="sm" @click="retrySync">
+            {{ libraryMessages.retryLibrarySync }}
+          </AppButton>
         </div>
         <AppPlaceholder
           v-else-if="changes.length === 0"

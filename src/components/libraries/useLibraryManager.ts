@@ -1,3 +1,4 @@
+import { watchDebounced } from '@vueuse/core'
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 
 import { maxOf } from '@open-pencil/std/arrays'
@@ -16,6 +17,9 @@ import {
 import type { LibraryAssetUpdateGroup } from '@/app/libraries/updates/groups'
 import { scopeLibraryUpdateGroups } from '@/app/libraries/updates/groups'
 import { toast } from '@/app/shell/ui'
+
+/** Resolution rows flip in bursts during a pull; one refresh per settle. */
+const RESOLUTION_REFRESH_DEBOUNCE_MS = 300
 
 export function useLibraryManager(
   open: Ref<boolean>,
@@ -146,6 +150,16 @@ export function useLibraryManager(
       if (isOpen) void refresh()
     },
     { immediate: true }
+  )
+
+  // A pull landing or failing changes what the updates tab lists while the manager is
+  // open; `refresh()`'s request guard keeps a stale read from covering a newer one.
+  watchDebounced(
+    librarySyncResolution,
+    () => {
+      if (open.value) void refresh()
+    },
+    { debounce: RESOLUTION_REFRESH_DEBOUNCE_MS }
   )
 
   // A collaborator's change to the document's libraries shows while the manager is open.

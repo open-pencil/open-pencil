@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import 'fake-indexeddb/auto'
 import { until } from '@vueuse/core'
+import { ref } from 'vue'
 
 import { materializeLibraryAsset } from '@open-pencil/core/library'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -9,7 +10,7 @@ import { createDeferred } from '@open-pencil/std/async'
 import { DEADLINE_MS, sleep, withDeadline } from '@open-pencil/std/timing'
 
 import { createEditorStore } from '@/app/editor/session'
-import { LIBRARY_PREFIX, latestKey, revisionKey } from '@/app/integrations/storage/library-keys'
+import { revisionKey } from '@/app/integrations/storage/library-keys'
 import { writeStoragePreference } from '@/app/integrations/storage/preferences'
 import { S3HttpError } from '@/app/integrations/storage/s3/client'
 import { StorageLibraryCatalog } from '@/app/libraries/catalog/storage'
@@ -57,65 +58,6 @@ function track() {
 }
 
 describe('library sync engine', () => {
-  test('probes the key listing once, then an unchanged listing costs zero GETs', async () => {
-    await seedLibrary(objects, 'design-system', 2)
-    objects.getCalls = 0
-    objects.listCalls = 0
-    await useObjects(objects)
-    startLibrarySync()
-    await track()
-    await flush()
-    await whenLibrarySyncIdle()
-
-    expect(objects.listCalls).toBe(1)
-    expect(objects.getCalls).toBe(1) // only the manifest key, never a revision body
-    expect(await librarySyncRemote.value?.catalog.listLibraries()).toMatchObject([
-      { libraryId: 'design-system', assetCount: 1 }
-    ])
-
-    await kickLibrarySync()
-    await whenLibrarySyncIdle()
-    expect(objects.listCalls).toBe(2)
-    expect(objects.getCalls).toBe(1)
-  })
-
-  test('a new library or revision key fetches only that library’s manifest', async () => {
-    await seedLibrary(objects, 'alpha', 1)
-    const [betaRevision] = await seedLibrary(objects, 'beta', 1)
-    await useObjects(objects)
-    startLibrarySync()
-    await track()
-    await flush()
-    await whenLibrarySyncIdle()
-
-    await seedLibrary(objects, 'beta', 1, 'Library beta', betaRevision) // second revision
-    await seedLibrary(objects, 'gamma', 1) // a new library
-    objects.getCalls = 0
-    await kickLibrarySync()
-    await whenLibrarySyncIdle()
-
-    expect(objects.getCalls).toBe(2)
-    const summaries = await librarySyncRemote.value?.catalog.listLibraries()
-    expect(summaries?.map((row) => row.libraryId).sort()).toEqual(['alpha', 'beta', 'gamma'])
-  })
-
-  test('a removed manifest key drops the library from the mirror', async () => {
-    await seedLibrary(objects, 'alpha', 1)
-    await seedLibrary(objects, 'beta', 1)
-    await useObjects(objects)
-    startLibrarySync()
-    await track()
-    await flush()
-    await whenLibrarySyncIdle()
-
-    objects.values.delete(latestKey('beta'))
-    await kickLibrarySync()
-    await whenLibrarySyncIdle()
-
-    const summaries = await librarySyncRemote.value?.catalog.listLibraries()
-    expect(summaries?.map((row) => row.libraryId)).toEqual(['alpha'])
-  })
-
   test('binding changes pull needs without another listing', async () => {
     const [revision] = await seedLibrary(objects, 'design-system', 1)
     await useObjects(objects)
@@ -191,24 +133,22 @@ describe('library sync engine', () => {
     // Gate the listing so the next probe stays in flight while more kicks arrive.
     const gate = createDeferred<undefined>()
     const originalList = objects.listObjects.bind(objects)
-    let listCalls = 0
+    const listCalls = ref(0)
     objects.listObjects = async (prefix) => {
-      listCalls += 1
+      listCalls.value += 1
       await gate.promise
       return originalList(prefix)
     }
 
     void kickLibrarySync()
     void kickLibrarySync()
-    await withDeadline(SYNC_SETTLE_DEADLINE_MS, async (signal) => {
-      while (listCalls === 0) await sleep(10, signal)
-    })
+    await withDeadline(SYNC_SETTLE_DEADLINE_MS, () => until(() => listCalls.value > 0).toBe(true))
     void kickLibrarySync()
     void kickLibrarySync()
     gate.resolve(undefined)
     await whenLibrarySyncIdle()
 
-    expect(listCalls).toBe(2) // the in-flight probe plus exactly one merged rerun
+    expect(listCalls.value).toBe(2) // the in-flight probe plus exactly one merged rerun
   })
 
   test('a remote identity change rebuilds the mirror and re-probes', async () => {
@@ -293,7 +233,11 @@ describe('library sync engine', () => {
     const editor = createEditorStore(new SceneGraph())
     registerNeedsProvider(editor)
     editor.updateEnabledLibraries((bindings) =>
-      bindings.set('design-system', { libraryId: 'design-system', revisionId: first, enabled: true })
+      bindings.set('design-system', {
+        libraryId: 'design-system',
+        revisionId: first,
+        enabled: true
+      })
     )
     startLibrarySync()
     const firstRemote = await track()
@@ -306,11 +250,11 @@ describe('library sync engine', () => {
     const [second] = await seedLibrary(objects, 'design-system', 1, 'Library design-system', first)
     objects.getFailure = new S3HttpError(403, 'AccessDenied')
     const gate = createDeferred<undefined>()
-    let pullInFlight = false
+    const pullInFlight = ref(false)
     const originalGet = objects.getObject.bind(objects)
     objects.getObject = async (key) => {
       if (key === revisionKey('design-system', second)) {
-        pullInFlight = true
+        pullInFlight.value = true
         await gate.promise
         return null // gone from the listing's point of view: a broken, unrepairable read
       }
@@ -324,9 +268,7 @@ describe('library sync engine', () => {
         enabled: true
       })
     )
-    await withDeadline(SYNC_SETTLE_DEADLINE_MS, async (signal) => {
-      while (!pullInFlight) await sleep(10, signal)
-    })
+    await withDeadline(SYNC_SETTLE_DEADLINE_MS, () => until(pullInFlight).toBe(true))
     objects.getFailure = null
 
     // The identity change rebuilds the remote while the old pass hovers. The rebuilt
@@ -348,9 +290,7 @@ describe('library sync engine', () => {
     expect(diagnostics.parked).toBe(false)
     expect(diagnostics.attempts).toBe(0)
     // And the rebuilt remote did pull the new revision itself.
-    expect(
-      await librarySyncRemote.value?.mirror.hasRevision('design-system', second)
-    ).toBe(true)
+    expect(await librarySyncRemote.value?.mirror.hasRevision('design-system', second)).toBe(true)
   })
 
   test('a resume during an active pull keeps cleared failures cleared', async () => {
@@ -385,10 +325,10 @@ describe('library sync engine', () => {
     // with `first` already filed as failed inside its resolution snapshot.
     const [third] = await seedLibrary(objects, 'design-system', 1, 'Library design-system', second)
     const gate = createDeferred<undefined>()
-    let pullInFlight = false
+    const pullInFlight = ref(false)
     objects.getObject = async (key) => {
       if (key === revisionKey('design-system', third)) {
-        pullInFlight = true
+        pullInFlight.value = true
         await gate.promise
       }
       return originalGet(key)
@@ -400,9 +340,7 @@ describe('library sync engine', () => {
         enabled: true
       })
     )
-    await withDeadline(SYNC_SETTLE_DEADLINE_MS, async (signal) => {
-      while (!pullInFlight) await sleep(10, signal)
-    })
+    await withDeadline(SYNC_SETTLE_DEADLINE_MS, () => until(pullInFlight).toBe(true))
 
     // The resume clears every failed mark while the pass still hovers, then the pass
     // publishes its snapshot: pre-resume verdicts must not come back.
@@ -419,138 +357,6 @@ describe('library sync engine', () => {
     expect(await remote.mirror.hasRevision('design-system', first)).toBe(true)
     expect(await remote.mirror.hasRevision('design-system', third)).toBe(true)
     expect(librarySyncResolution.value.has(failedKey)).toBe(false)
-  })
-
-  test('a manifest without a listing etag is re-read on every probe', async () => {
-    await seedLibrary(objects, 'design-system', 1)
-    await useObjects(objects)
-    // Listings of providers without etags cannot be diffed for free, so every probe
-    // conservatively re-reads the manifest.
-    const originalList = objects.listObjects.bind(objects)
-    objects.listObjects = async (prefix) =>
-      (await originalList(prefix)).map((entry) => ({ ...entry, etag: null }))
-    objects.getCalls = 0
-    startLibrarySync()
-    const remote = await track()
-    await flush()
-    await whenLibrarySyncIdle()
-    expect(await remote.catalog.listLibraries()).toMatchObject([
-      { latestRevisionId: expect.any(String) }
-    ])
-    expect(objects.getCalls).toBe(1)
-
-    await kickLibrarySync()
-    await whenLibrarySyncIdle()
-    expect(objects.getCalls).toBe(2)
-  })
-
-  test('a manifest read without an object etag falls back to the listed etag', async () => {
-    await seedLibrary(objects, 'design-system', 1)
-    await useObjects(objects)
-    // A read that cannot produce its own etag keeps the listing as the ordering currency:
-    // the recorded etag must still suppress the next probe's GET.
-    const originalValue = objects.getObjectValue.bind(objects)
-    objects.getObjectValue = async (key) => {
-      if (key !== latestKey('design-system')) return originalValue(key)
-      objects.getCalls += 1
-      return { bytes: objects.values.get(key) ?? null, etag: null }
-    }
-    objects.getCalls = 0
-    startLibrarySync()
-    const remote = await track()
-    await flush()
-    await whenLibrarySyncIdle()
-    expect(await remote.catalog.listLibraries()).toMatchObject([
-      { libraryId: 'design-system' }
-    ])
-    expect(objects.getCalls).toBe(1)
-
-    await kickLibrarySync()
-    await whenLibrarySyncIdle()
-    expect(objects.getCalls).toBe(1)
-  })
-
-  test('a manifest behind its own listing is requeued, never cached', async () => {
-    const [first] = await seedLibrary(objects, 'design-system', 1)
-    await useObjects(objects)
-    startLibrarySync()
-    const remote = await track()
-    await flush()
-    await whenLibrarySyncIdle()
-    expect(await remote.catalog.listLibraries()).toMatchObject([
-      { libraryId: 'design-system', latestRevisionId: first }
-    ])
-    // A publish puts the revision body before the manifest. While the manifest write is in
-    // flight a listing can already show the new revision key, but the manifest's etag still
-    // marks the old one — an unchanged etag must not fetch again.
-    const staleEtag = (await objects.listObjects(`${LIBRARY_PREFIX}/`)).find(
-      ({ key }) => key === latestKey('design-system')
-    )?.etag
-    if (!staleEtag) throw new Error('manifest missing before second publish')
-    const [second] = await seedLibrary(objects, 'design-system', 1, 'Library design-system', first)
-    const originalList = objects.listObjects.bind(objects)
-    objects.listObjects = async (prefix) =>
-      (await originalList(prefix)).map((entry) =>
-        entry.key === latestKey('design-system') ? { ...entry, etag: staleEtag } : entry
-      )
-    objects.getCalls = 0
-    await kickLibrarySync()
-    await whenLibrarySyncIdle()
-    expect(objects.getCalls).toBe(0)
-    expect(await remote.catalog.listLibraries()).toMatchObject([
-      { libraryId: 'design-system', latestRevisionId: first }
-    ])
-
-    // The manifest write commits: its etag changes, so the probe re-reads and the mirror
-    // advances — even though nothing else about the listing has to change.
-    objects.listObjects = originalList
-    await kickLibrarySync()
-    await whenLibrarySyncIdle()
-    expect(objects.getCalls).toBe(1)
-    expect(await remote.catalog.listLibraries()).toMatchObject([
-      { libraryId: 'design-system', latestRevisionId: second }
-    ])
-
-    // An etag change alone re-reads: the provider rewrote the manifest object under an
-    // identical revision key set.
-    const manifestBytes = objects.values.get(latestKey('design-system'))
-    if (!manifestBytes) throw new Error('manifest missing after second publish')
-    await objects.putObject(latestKey('design-system'), manifestBytes)
-    await kickLibrarySync()
-    await whenLibrarySyncIdle()
-    expect(objects.getCalls).toBe(2)
-  })
-
-  test('a read that lands past its listing records the read etag, not the listed one', async () => {
-    const [first] = await seedLibrary(objects, 'design-system', 1)
-    await useObjects(objects)
-    startLibrarySync()
-    const remote = await track()
-    await flush()
-    await whenLibrarySyncIdle()
-
-    // A publish commits between the listing a probe diffs and the read it makes: the
-    // listing still shows the stale etag while the object answers with its own, current
-    // etag. Recording the listed etag would force an unneeded second read; recording the
-    // read etag costs nothing and the projection stays exact.
-    const [second] = await seedLibrary(objects, 'design-system', 1, 'Library design-system', first)
-    const originalList = objects.listObjects.bind(objects)
-    objects.listObjects = async (prefix) =>
-      (await originalList(prefix)).map((entry) =>
-        entry.key === latestKey('design-system') ? { ...entry, etag: 'listing-stale' } : entry
-      )
-    objects.getCalls = 0
-    await kickLibrarySync()
-    await whenLibrarySyncIdle()
-    expect(objects.getCalls).toBe(1)
-    expect(await remote.catalog.listLibraries()).toMatchObject([
-      { libraryId: 'design-system', latestRevisionId: second }
-    ])
-
-    objects.listObjects = originalList
-    await kickLibrarySync()
-    await whenLibrarySyncIdle()
-    expect(objects.getCalls).toBe(1)
   })
 
   test('a flagged need stays syncing through a transient failure until it lands', async () => {

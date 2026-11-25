@@ -129,20 +129,25 @@ export function useStorageSettings(
     const preferences = { ...preferenceDrafts.value }
     const credentials = { ...credentialDrafts.value }
     const removals = new Set(cleared.value)
-    try {
-      // Persistence spans preferences and the native credential store; it is not atomic.
-      for (const field of target.preferenceFields) {
-        services.writePreference(target.id, field.id, preferences[field.id] ?? '')
-        persisted = true
-      }
+    /** Writes each staged credential; `false` means the request went stale mid-write. */
+    async function persistCredentials(): Promise<boolean> {
       for (const field of target.credentialFields) {
-        if (!current(request)) return persisted ? 'partial' : 'failed'
+        if (!current(request)) return false
         const reference = credentialRef(target.id, field.id)
         const replacement = credentials[field.id]?.trim()
         if (replacement) await services.manager.set(reference, replacement)
         else if (removals.has(field.id)) await services.manager.clear(reference)
         if (replacement || removals.has(field.id)) persisted = true
       }
+      return true
+    }
+    try {
+      // Persistence spans preferences and the native credential store; it is not atomic.
+      for (const field of target.preferenceFields) {
+        services.writePreference(target.id, field.id, preferences[field.id] ?? '')
+        persisted = true
+      }
+      if (!(await persistCredentials())) return persisted ? 'partial' : 'failed'
       if (!current(request)) return persisted ? 'partial' : 'failed'
       // Credentials the save removed leave the library mirror mirroring a remote nothing can
       // reach; dropping it forces a rebuild onto whatever is configured now.

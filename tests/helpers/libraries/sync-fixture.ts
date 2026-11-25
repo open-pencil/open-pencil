@@ -93,12 +93,21 @@ export function yieldEventLoop(): Promise<void> {
   })
 }
 
-/** The storage preferences every sync test starts from: S3 provider, one configured bucket. */
+/**
+ * The storage preferences every sync test starts from: S3 provider, one configured bucket.
+ * The endpoint carries a unique fragment per test so the mirror database's name — which
+ * digests the preferences — never repeats across tests. In a shard process every file shares
+ * fake-indexeddb's global factory, where a connection leaked past one test's cleanup (a stale
+ * debounced refresh through the library service singleton re-opens the retired mirror mid-close)
+ * blocks the delete and jams the database's connection queue for good: every later open of the
+ * same name queues behind the never-settling delete and every sync test hangs on its rebuild.
+ * A unique name per test confines that jam to the test that leaked it.
+ */
 export function configureStorageFixture(): void {
   writeLibraryCatalogSource('storage')
   activeStorageProviderID.value = 's3-compatible'
   storedPreferences.value = {}
-  writeStoragePreference('s3-compatible', 'endpoint', 'https://example.test')
+  writeStoragePreference('s3-compatible', 'endpoint', `https://example.test/${crypto.randomUUID()}`)
   writeStoragePreference('s3-compatible', 'bucket', 'libraries')
   writeStoragePreference('s3-compatible', 'region', 'auto')
 }

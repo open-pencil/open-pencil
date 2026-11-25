@@ -22,6 +22,7 @@ import {
   AppDialogRoot,
   useDialogUI
 } from '@/components/ui/dialog'
+import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
@@ -78,6 +79,9 @@ async function focusCurrentInstance(currentRequest: number) {
 }
 
 async function loadPreview() {
+  // The live request, not the held one: a review that already closed must not restart a load
+  // while the dialog animates out.
+  if (!libraryReviewRequest.value) return
   const value = request.value
   const instanceId = currentInstanceId.value
   if (!value || !instanceId) return
@@ -296,12 +300,18 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
       v-else
       class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-xs text-muted"
     >
-      <template v-if="loadError === 'failed'">
-        <p class="text-error">{{ libraryMessages.librarySyncFailed }}</p>
-        <AppButton variant="outline" size="sm" @click="retrySync">
-          {{ libraryMessages.retryLibrarySync }}
-        </AppButton>
-      </template>
+      <AppAlert
+        v-if="loadError === 'failed'"
+        tone="error"
+        :heading="libraryMessages.librarySyncFailed"
+        class="w-full max-w-md"
+      >
+        <template #actions>
+          <AppButton size="xs" variant="outline" @click="retrySync">
+            {{ libraryMessages.retryLibrarySync }}
+          </AppButton>
+        </template>
+      </AppAlert>
       <template v-else-if="loadError === 'syncing'">
         {{ libraryMessages.librarySyncing }}
       </template>

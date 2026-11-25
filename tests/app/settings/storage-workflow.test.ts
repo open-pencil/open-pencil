@@ -1,7 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { createDeferred } from '@open-pencil/std/async'
 import { effectScope, nextTick, ref } from 'vue'
+
+import { createDeferred } from '@open-pencil/std/async'
 
 import { activeStorageProviderID } from '@/app/integrations/storage'
 import { useStorageSettings } from '@/app/integrations/storage/settings/use'
