@@ -107,3 +107,6 @@ packages/html-engine/wasm/
 
 # The release .deb a snap is packed from (packaging/snap/snapcraft.yaml)
 /packaging/snap/*.deb
+
+# Working notes and task reports, never shipped
+/tmp
