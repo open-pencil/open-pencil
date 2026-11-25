@@ -1,10 +1,10 @@
 import {
   decodeAgentToolMessage,
   encodeAgentToolMessage,
-  RELAY_SERVER_PEER,
   type AgentToolCall,
   type AgentToolMessage
 } from '@open-pencil/cloud/contract'
+import { RELAY_SERVER_PEER, type CollabAction } from '@open-pencil/collab'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { errorMessage } from '@open-pencil/std/errors'
 import { isRecord } from '@open-pencil/std/records'
@@ -13,7 +13,6 @@ import { isToolError } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { resolveAutomationTarget } from '@/app/automation/bridge/target'
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
-import type { CollabAction } from '@/app/collab/transport/types'
 import type { EditorStore } from '@/app/editor/session'
 
 /** The longest failure the relay passes on to the app. */

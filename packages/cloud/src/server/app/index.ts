@@ -19,12 +19,12 @@ import { bodyLimit } from 'hono/body-limit'
 import { createRequestChecks, createRequestResolvers } from './checks'
 import { createCloudCORS } from './cors'
 import { requireMinimumEditor } from './editors'
-import { robotsText, shouldPreventIndexing } from './indexing'
+import { preventIndexing, robotsText } from './indexing'
 import { createAppRateLimiters } from './limiters'
 import { createAppRouters } from './routes'
 import { createAppServices, type CloudServices } from './services'
 
-export { shouldPreventIndexing, withIndexingPolicy } from './indexing'
+export { preventIndexing, type IndexingPolicy } from './indexing'
 export type { CloudServices } from './services'
 
 /** Where administration is mounted. */
@@ -75,12 +75,7 @@ export function createCloudApp(services: CloudServices) {
     .use('/api/*', requireMinimumEditor(config.minimumEditorVersion))
     .use('/api/*', limitBody)
     .use(CLOUD_MCP_PATH, limitBody)
-    .use('*', async (context, next) => {
-      await next()
-      if (shouldPreventIndexing(context.req.path, config.indexingPolicy)) {
-        context.header('X-Robots-Tag', 'noindex, nofollow, noarchive')
-      }
-    })
+    .use('*', preventIndexing(config.indexingPolicy))
     .get('/robots.txt', (context) => {
       context.header('Content-Type', 'text/plain; charset=utf-8')
       return context.body(

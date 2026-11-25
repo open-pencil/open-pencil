@@ -52,6 +52,7 @@ function services() {
       download: async () => {
         throw new Error('not used')
       },
+      update: async () => undefined,
       remove: async () => undefined,
       create: async () => {
         throw new Error('not used')

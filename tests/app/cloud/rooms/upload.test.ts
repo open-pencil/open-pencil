@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import * as v from 'valibot'
 
 import { CloudAPIError } from '@open-pencil/cloud/client'
+import type { CollabAction, CollabActionReceiver } from '@open-pencil/collab'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { onceOnServer, shareRoomUploads, uploadStoredDocument } from '@/app/cloud/rooms/upload'
-import type { CollabAction, CollabActionReceiver } from '@/app/collab/transport/types'
 import type { EditorStore } from '@/app/editor/session'
 import { createMemoryLocalCanvasStore, type LocalCanvasStore } from '@/app/storage/local-store'
 import { resetLocalCanvasStoreForTests } from '@/app/storage/local-store/store'

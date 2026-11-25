@@ -8,6 +8,8 @@ interface ImportMetaEnv {
 }
 
 declare const __OPENPENCIL_APP_VERSION__: string
+/** Whether the build includes OpenPencil Cloud; `VITE_OPENPENCIL_CLOUD=off` leaves it out. */
+declare const __OPENPENCIL_CLOUD__: boolean
 /** Whether this is the editor a Cloud server serves on its own address (`bun run build:cloud`). */
 declare const __OPENPENCIL_CLOUD_SITE__: boolean
 /** `VITE_OPENPENCIL_OFFICIAL_CLOUD_URL`: the official Cloud server an official deployment's build names. */

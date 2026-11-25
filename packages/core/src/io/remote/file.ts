@@ -124,10 +124,31 @@ export async function remoteFileKind(
 const MAX_REFRESHES = 5
 
 /**
+ * The statuses a site refuses a client with when it takes it for a bot: forbidden, too many
+ * requests, and unavailable, which Cloudflare, Vercel, Akamai, and others answer with in place of a
+ * page. A browser loading the page itself is often let through, as the checks judge how the
+ * connection looks as much as what it asks.
+ */
+const BOT_REFUSAL_STATUSES = new Set([403, 429, 503])
+
+/** The site refused a client it took for a bot, answering with a page of its own. */
+export class RefusedPageError extends Error {
+  constructor(
+    readonly url: URL,
+    readonly status: number
+  ) {
+    super(`Failed to fetch ${url.href}: the site refused it (${status})`)
+    this.name = 'RefusedPageError'
+  }
+}
+
+/**
  * Fetches the file at an address, following redirects, and says what it is. A page that sends a
  * browser elsewhere at once with `<meta http-equiv="refresh" content="0; url=…">` is followed
  * too, as a browser follows it, so the page opened is the one a visitor sees. A response that is
- * not OK, has no body, or runs past `maxBytes` fails with a message that says which.
+ * not OK, has no body, or runs past `maxBytes` fails with a message that says which;
+ * an HTML refusal a
+ * browser may get past fails with `RefusedPageError`.
  */
 export async function fetchRemoteFile(
   url: URL,
@@ -161,6 +182,10 @@ async function fetchOnce(
       if (!response.ok) {
         // Ends the body the server may still be sending; on desktop that ends the native request.
         controller.abort()
+        const type = mediaType(response.headers.get('content-type'))
+        if (BOT_REFUSAL_STATUSES.has(response.status) && type && KIND_BY_TYPE[type] === 'html') {
+          throw new RefusedPageError(url, response.status)
+        }
         throw new Error(`Failed to fetch ${url.href}: ${response.status} ${response.statusText}`)
       }
       const bytes = await readBoundedBody(response, maxBytes, {

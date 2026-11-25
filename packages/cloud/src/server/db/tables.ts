@@ -91,6 +91,8 @@ export interface DocumentTable {
   id: string
   workspaceId: string
   name: string
+  /** What the file is, in a few sentences, for the community gallery; see migration 020. */
+  description: Generated<string | null>
   /** A design or a board; see migration 027. */
   kind: Generated<'design' | 'board'>
   currentRevisionId: string | null

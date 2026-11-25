@@ -1,13 +1,12 @@
 import {
-  COLLAB_ACTIONS,
   decodeAgentToolMessage,
   encodeAgentToolMessage,
-  RELAY_SERVER_PEER,
   type AgentToolCall,
   type AgentToolMessage,
   type AgentToolOutcome
 } from '#cloud/contract'
 
+import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
 import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import type { RelayPeer } from './connection'

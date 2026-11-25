@@ -11,9 +11,11 @@ import {
   user,
   type RelayTicketOptions
 } from '#cloud-tests/helpers/relay'
-import { COLLAB_ACTIONS, RELAY_CLOSE, RELAY_SERVER_PEER } from '#cloud/contract'
+import { RELAY_CLOSE } from '#cloud/contract'
 import { type CollaborationRelay } from '#cloud/server'
 import * as Y from 'yjs'
+
+import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
 
 const documentId = crypto.randomUUID()
 

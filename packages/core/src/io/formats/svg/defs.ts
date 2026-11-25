@@ -1,6 +1,6 @@
 import type { ColorProfile, Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { colorToProfileCSS, colorToSRGBHex } from '@open-pencil/scene-graph/color'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
+import { computeBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import {
   gradientPoint,
   invertGradientTransform,
@@ -15,6 +15,7 @@ import {
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import type { SVGBooleanOutlines } from './boolean/outline'
 import type { ExportEffectWarning } from './effects'
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
@@ -34,6 +35,8 @@ export interface SVGExportContext {
   tint?: (node: SceneNode) => readonly ('fill' | 'stroke')[]
   /** Measured line breaks. Without them, only explicit newlines start a new baseline. */
   textLayout?: SVGTextLayout
+  /** Combined shapes of boolean operations. Without them, saved fill geometry stands in. */
+  booleanOutlines?: SVGBooleanOutlines
   /**
    * When layers are written with their names as ids: how many have taken each name, and every id
    * given out so far, defs included, so no two elements share one.
@@ -46,6 +49,16 @@ export function nextDefId(ctx: SVGExportContext, prefix: string): string {
   while (ctx.layerIds?.taken.has(id)) id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
   ctx.layerIds?.taken.add(id)
   return id
+}
+
+/** The `x`, `y`, `width`, and `height` of a filter or mask region around `bounds`. */
+export function defRegion(bounds: VisualBounds): Record<'x' | 'y' | 'width' | 'height', number> {
+  return {
+    x: round(bounds.minX),
+    y: round(bounds.minY),
+    width: round(Math.max(0, bounds.maxX - bounds.minX)),
+    height: round(Math.max(0, bounds.maxY - bounds.minY))
+  }
 }
 
 /** The profile an export's colors are stored in, and the one it writes them in. */

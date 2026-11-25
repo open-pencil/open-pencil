@@ -11,13 +11,13 @@ import {
   type TestRelayClient
 } from '#cloud-tests/helpers/relay'
 import {
-  COLLAB_ACTIONS,
   decodeAgentToolMessage,
   encodeAgentToolMessage,
-  RELAY_SERVER_PEER,
   type AgentToolMessage
 } from '#cloud/contract'
 import type { CollaborationRelay } from '#cloud/server'
+
+import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
 
 const documentId = crypto.randomUUID()
 const alice = user('alice')
