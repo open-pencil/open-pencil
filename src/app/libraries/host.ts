@@ -37,8 +37,14 @@ export function useLibraryService(): LibraryService {
       watchDebounced(
         librarySyncResolution,
         () => {
+          // VueUse does not cancel an armed debounce timer when the watch stops, so this can
+          // fire after the singleton's teardown — in a test, through `resetLibraryServiceForTests`.
+          // The instance identity is the generation: a fire that no longer belongs to the live
+          // service is a no-op rather than a refresh of a catalog its engine already retired.
+          if (service !== instance) return
           const store = getActiveEditorStoreOrNull()
-          if (store) void instance.refresh(store)
+          // A read that fails here is reported by the next one the manager makes.
+          if (store) void instance.refresh(store).catch(() => undefined)
         },
         { debounce: RESOLUTION_REFRESH_DEBOUNCE_MS }
       )

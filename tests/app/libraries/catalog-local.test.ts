@@ -7,6 +7,7 @@ import { createLibraryRevision } from '@open-pencil/core/library'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { LocalLibraryCatalog } from '@/app/libraries/catalog/local'
+import { AppDatabaseClosedError } from '@/app/storage/idb'
 
 function isolatedCatalog(): LocalLibraryCatalog {
   return new LocalLibraryCatalog(`library-cache-${crypto.randomUUID()}`)
@@ -101,5 +102,20 @@ describe('local catalog latest ordering', () => {
     expect(await catalog.listLibraries()).toMatchObject([
       { latestRevisionId: stored.manifest.revisionId }
     ])
+  })
+})
+
+describe('local catalog retirement', () => {
+  test('a read through a closed catalog rejects instead of connecting again', async () => {
+    const catalog = isolatedCatalog()
+    await catalog.cacheRevision(await revision('design-system', 80, '2026-01-01T00:00:00.000Z'))
+    await catalog.close()
+
+    await expect(catalog.listLibraries()).rejects.toBeInstanceOf(AppDatabaseClosedError)
+    await expect(catalog.getRevision('design-system')).rejects.toBeInstanceOf(
+      AppDatabaseClosedError
+    )
+    // Closing twice joins the same close: the engine and the test seam can both retire it.
+    await expect(catalog.close()).resolves.toBeUndefined()
   })
 })

@@ -219,7 +219,11 @@ export class LocalLibraryCatalog implements LibraryCatalog {
     await transaction.done
   }
 
-  /** Close the underlying connection so the database can be deleted or replaced. */
+  /**
+   * Retire the catalog: the connection closes so the database can be deleted or replaced, and
+   * every later read rejects rather than connecting again — a replacement catalog is a new
+   * instance, since a connection leaking past a delete blocks it for good.
+   */
   async close(): Promise<void> {
     this.#manifests.clear()
     await this.#database.close()
