@@ -15,7 +15,7 @@ pub mod program;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use serde::Serialize;
@@ -58,8 +58,10 @@ pub enum HostEvent {
         code: Option<i32>,
         signal: Option<i32>,
     },
-    /// The agent waits on the person in the permission window, or no longer does.
+    /// The agent waits on the person in the permission window, or no longer does; `id` tells
+    /// one question from another with the same title.
     Permission {
+        id: u64,
         title: String,
         waiting: bool,
     },
@@ -73,8 +75,13 @@ enum Gate {
     Plain,
 }
 
+/// A program's standard input, written apart from the process table so a program that stops
+/// reading blocks only its own writes, never a Stop or another program.
+type Input = Arc<Mutex<Option<CommandChild>>>;
+
 struct Running {
-    child: CommandChild,
+    child: Input,
+    pid: u32,
     gate: Gate,
     /// The agent's name, which the permission window shows.
     agent: &'static str,
@@ -90,6 +97,8 @@ pub struct HostProcesses {
     running: Mutex<HashMap<u32, Running>>,
     /// The MCP server the app runs: its handle, what it was started with, and its tokens.
     mcp: Mutex<Option<McpRun>>,
+    /// Held across a start of the MCP server, so two starts never run two servers.
+    mcp_start: tokio::sync::Mutex<()>,
 }
 
 struct McpRun {
@@ -122,8 +131,69 @@ impl HostProcesses {
         };
         for (id, running) in stopped {
             app.state::<Permissions>().cancel(app, id, None);
-            let _ = running.child.kill();
+            stop(&running);
         }
+    }
+}
+
+/// Ends a program. One blocked on a write cannot give up its handle, so it ends by its pid.
+fn stop(running: &Running) {
+    let taken = match running.child.try_lock() {
+        Ok(mut child) => child.take(),
+        Err(_) => None,
+    };
+    match taken {
+        Some(child) => {
+            let _ = child.kill();
+        }
+        None => kill_pid(running.pid),
+    }
+}
+
+fn kill_pid(pid: u32) {
+    #[cfg(unix)]
+    let _ = std::process::Command::new("kill")
+        .args(["-9", &pid.to_string()])
+        .status();
+    #[cfg(windows)]
+    let _ = std::process::Command::new("taskkill")
+        .args(["/PID", &pid.to_string(), "/T", "/F"])
+        .status();
+}
+
+/// Writes whole lines to a program on a thread of their own, in order.
+fn write_lines(child: &Input, lines: Vec<String>) {
+    if lines.is_empty() {
+        return;
+    }
+    let child = Arc::clone(child);
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut child = child
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let Some(child) = child.as_mut() else {
+            return;
+        };
+        for line in lines {
+            let mut bytes = line.into_bytes();
+            bytes.push(b'\n');
+            if child.write(&bytes).is_err() {
+                return;
+            }
+        }
+    });
+}
+
+/// The editor's origin, which the MCP server lets call it. A `tauri://localhost` page has an
+/// opaque origin by the URL standard, which serializes as `null`, so it is spelled out.
+fn editor_origin(url: &url::Url) -> String {
+    match url.scheme() {
+        "http" | "https" => url.origin().ascii_serialization(),
+        scheme => match (url.host_str(), url.port()) {
+            (Some(host), Some(port)) => format!("{scheme}://{host}:{port}"),
+            (Some(host), None) => format!("{scheme}://{host}"),
+            (None, _) => format!("{scheme}://"),
+        },
     }
 }
 
@@ -176,32 +246,25 @@ pub async fn host_start<R: Runtime>(
 ) -> Result<u32, String> {
     from_editor(&webview, &capabilities)?;
     let processes = app.state::<HostProcesses>();
-    let mut tokens = None;
-    if matches!(program, ProgramRequest::McpServer { .. }) {
+    let is_mcp = matches!(program, ProgramRequest::McpServer { .. });
+    // Held until the server is recorded, so a second start reuses it or waits for it.
+    let _starting = if is_mcp {
+        Some(processes.mcp_start.lock().await)
+    } else {
+        None
+    };
+    if is_mcp {
         // A reloaded page takes over the server it left running, when nothing about it changed.
-        let previous = processes.mcp_lock().take();
-        if let Some(run) = previous {
-            let mut running = processes.lock();
-            if run.request == program {
-                if let Some(process) = running.get_mut(&run.id) {
-                    process.events = events;
-                    let id = run.id;
-                    drop(running);
-                    *processes.mcp_lock() = Some(run);
-                    return Ok(id);
-                }
-            } else if let Some(process) = running.remove(&run.id) {
-                let _ = process.child.kill();
+        let mcp = processes.mcp_lock();
+        if let Some(run) = mcp.as_ref().filter(|run| run.request == program) {
+            if let Some(process) = processes.lock().get_mut(&run.id) {
+                process.events = events;
+                return Ok(run.id);
             }
         }
-        tokens = Some(mcp::McpTokens::generate()?);
     }
     let workspace = agent_workspace_dir(&app)?;
-    let origin = webview
-        .url()
-        .map_err(|e| e.to_string())?
-        .origin()
-        .ascii_serialization();
+    let origin = editor_origin(&webview.url().map_err(|e| e.to_string())?);
     let launch = program.launch(&LaunchContext {
         workspace: &workspace,
         origin: &origin,
@@ -216,9 +279,29 @@ pub async fn host_start<R: Runtime>(
     // place, as `cmd` would find one there first on Windows.
     let executable = which::which_in(launch.program, Some(&search_path), &cwd)
         .map_err(|_| format!("{} is not installed.", launch.program))?;
-    let mut command = app
-        .shell()
-        .command(executable)
+    let tokens = if is_mcp {
+        Some(mcp::McpTokens::generate()?)
+    } else {
+        None
+    };
+    // Only a request that can start replaces the server running now, which its clients use.
+    if is_mcp {
+        let previous = processes.mcp_lock().take();
+        if let Some(run) = previous {
+            if let Some(process) = processes.lock().remove(&run.id) {
+                app.state::<Permissions>().cancel(&app, run.id, None);
+                stop(&process);
+            }
+        }
+    }
+    let mut command = app.shell().command(executable);
+    if is_mcp {
+        // The server reads its settings from the environment: only the app's may reach it.
+        command = command
+            .env_clear()
+            .envs(std::env::vars().filter(|(key, _)| !key.starts_with("OPENPENCIL_MCP_")));
+    }
+    let mut command = command
         .args(&launch.args)
         .env("PATH", &search_path)
         .envs(launch.env.iter().map(|(key, value)| (*key, value.as_str())))
@@ -251,10 +334,12 @@ pub async fn host_start<R: Runtime>(
         Protocol::Plain => (Gate::Plain, ""),
     };
     let id = processes.next.fetch_add(1, Ordering::Relaxed);
+    let pid = child.pid();
     processes.lock().insert(
         id,
         Running {
-            child,
+            child: Arc::new(Mutex::new(Some(child))),
+            pid,
             gate,
             agent,
             events,
@@ -270,6 +355,7 @@ pub async fn host_start<R: Runtime>(
         });
     }
 
+    let app = app.clone();
     tauri::async_runtime::spawn(async move {
         while let Some(event) = output.recv().await {
             match event {
@@ -306,7 +392,7 @@ pub async fn host_start<R: Runtime>(
 
 /// Sends a program what the editor wrote. A JSON-lines program gets whole lines once checked.
 #[tauri::command]
-pub fn host_write<R: Runtime>(
+pub async fn host_write<R: Runtime>(
     app: AppHandle<R>,
     webview: tauri::Webview<R>,
     capabilities: tauri::State<'_, DesktopCapabilities>,
@@ -314,53 +400,32 @@ pub fn host_write<R: Runtime>(
     data: String,
 ) -> Result<(), String> {
     from_editor(&webview, &capabilities)?;
-    let processes = app.state::<HostProcesses>();
-    let mut running = processes.lock();
-    let process = running.get_mut(&id).ok_or("The program has stopped.")?;
-    match process.gate {
-        Gate::Plain => {
-            return process
-                .child
+    let checked = check_editor_input(&app, id, &data)?;
+    let Checked::Lines {
+        child,
+        out,
+        later,
+        agent,
+    } = checked
+    else {
+        let Checked::Raw(child) = checked else {
+            unreachable!("matched above")
+        };
+        // A login reads what the person pasted as it is.
+        return tauri::async_runtime::spawn_blocking(move || {
+            let mut child = child
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            child
+                .as_mut()
+                .ok_or_else(|| "The program has stopped.".to_owned())?
                 .write(data.as_bytes())
                 .map_err(|e| e.to_string())
-        }
-        // Only the app answers the server's questions on its standard input.
-        Gate::Mcp => return Err("The MCP server takes no input from the editor.".to_owned()),
-        _ => {}
-    }
-    let lines = process.from_editor.push(data.as_bytes());
-    let mut later = Vec::new();
-    for line in lines {
-        match &mut process.gate {
-            Gate::Acp(gate) => match gate.editor_wrote(line) {
-                FromEditor::Forward(line) => write_line(&mut process.child, &line)?,
-                FromEditor::Refuse(answer) => {
-                    if let Some(answer) = answer {
-                        let _ = process.events.send(HostEvent::Stdout {
-                            data: answer + "\n",
-                        });
-                    }
-                }
-                FromEditor::Cancel { session_id, line } => {
-                    write_line(&mut process.child, &line)?;
-                    later.push(Later::Cancel(session_id));
-                }
-                FromEditor::Confirm(change) => later.push(Later::Confirm(change)),
-            },
-            Gate::Harness => match harness::from_editor(line) {
-                Ok(line) => write_line(&mut process.child, &line)?,
-                Err(Some(answer)) => {
-                    let _ = process.events.send(HostEvent::Stdout {
-                        data: answer + "\n",
-                    });
-                }
-                Err(None) => {}
-            },
-            Gate::Plain | Gate::Mcp => unreachable!("answered above"),
-        }
-    }
-    let agent = process.agent;
-    drop(running);
+        })
+        .await
+        .map_err(|e| e.to_string())?;
+    };
+    write_lines(&child, out);
     for step in later {
         match step {
             Later::Cancel(session) => app.state::<Permissions>().cancel(&app, id, Some(&session)),
@@ -368,6 +433,77 @@ pub fn host_write<R: Runtime>(
         }
     }
     Ok(())
+}
+
+/// What the editor's input becomes once checked.
+enum Checked {
+    /// Bytes a plain program reads as they are.
+    Raw(Input),
+    /// Whole lines for the program, and what the app does besides.
+    Lines {
+        child: Input,
+        out: Vec<String>,
+        later: Vec<Later>,
+        agent: &'static str,
+    },
+}
+
+/// Cuts the editor's input into lines and checks each one, under the process table's lock;
+/// nothing here waits on the program.
+fn check_editor_input<R: Runtime>(
+    app: &AppHandle<R>,
+    id: u32,
+    data: &str,
+) -> Result<Checked, String> {
+    let processes = app.state::<HostProcesses>();
+    let mut running = processes.lock();
+    let process = running.get_mut(&id).ok_or("The program has stopped.")?;
+    let child = Arc::clone(&process.child);
+    let mut out = Vec::new();
+    let mut later = Vec::new();
+    match &mut process.gate {
+        Gate::Plain => return Ok(Checked::Raw(child)),
+        // Only the app answers the server's questions on its standard input.
+        Gate::Mcp => return Err("The MCP server takes no input from the editor.".to_owned()),
+        Gate::Acp(gate) => {
+            for line in process.from_editor.push(data.as_bytes()).lines {
+                match gate.editor_wrote(line) {
+                    FromEditor::Forward(line) => out.push(line),
+                    FromEditor::Refuse(answer) => {
+                        if let Some(answer) = answer {
+                            let _ = process.events.send(HostEvent::Stdout {
+                                data: answer + "\n",
+                            });
+                        }
+                    }
+                    FromEditor::Cancel { session_id, line } => {
+                        out.push(line);
+                        later.push(Later::Cancel(session_id));
+                    }
+                    FromEditor::Confirm(change) => later.push(Later::Confirm(change)),
+                }
+            }
+        }
+        Gate::Harness => {
+            for line in process.from_editor.push(data.as_bytes()).lines {
+                match harness::from_editor(line) {
+                    Ok(line) => out.push(line),
+                    Err(Some(answer)) => {
+                        let _ = process.events.send(HostEvent::Stdout {
+                            data: answer + "\n",
+                        });
+                    }
+                    Err(None) => {}
+                }
+            }
+        }
+    }
+    Ok(Checked::Lines {
+        child,
+        out,
+        later,
+        agent: process.agent,
+    })
 }
 
 enum Later {
@@ -393,20 +529,13 @@ pub fn host_kill<R: Runtime>(
     drop(mcp);
     let running = processes.lock().remove(&id);
     if let Some(running) = running {
-        running.child.kill().map_err(|e| e.to_string())?;
+        stop(&running);
         let _ = running.events.send(HostEvent::Close {
             code: None,
             signal: None,
         });
     }
     Ok(())
-}
-
-fn write_line(child: &mut CommandChild, line: &str) -> Result<(), String> {
-    let mut bytes = Vec::with_capacity(line.len() + 1);
-    bytes.extend_from_slice(line.as_bytes());
-    bytes.push(b'\n');
-    child.write(&bytes).map_err(|e| e.to_string())
 }
 
 fn send<R: Runtime>(app: &AppHandle<R>, id: u32, event: HostEvent) {
@@ -421,63 +550,63 @@ fn from_program<R: Runtime>(app: &AppHandle<R>, id: u32, bytes: &[u8]) {
     let Some(process) = running.get_mut(&id) else {
         return;
     };
-    if matches!(process.gate, Gate::Mcp) {
-        let mut asks = Vec::new();
-        let mut shown = String::new();
-        for line in process.from_program.push(bytes) {
-            match mcp::consent_request(&line) {
-                Some(request) => asks.push(request),
-                None => shown.push_str(&(line + "\n")),
-            }
-        }
-        if !shown.is_empty() {
-            let _ = process.events.send(HostEvent::Stdout { data: shown });
-        }
-        drop(running);
-        for request in asks {
-            ask_about_file(app, id, request);
-        }
+    if matches!(process.gate, Gate::Plain) {
+        let data = String::from_utf8_lossy(bytes).into_owned();
+        let _ = process.events.send(HostEvent::Stdout { data });
         return;
     }
-    let Gate::Acp(gate) = &mut process.gate else {
-        let data = match process.gate {
-            // Harness lines pass whole, so the editor reads one message at a time.
-            Gate::Harness => process
-                .from_program
-                .push(bytes)
-                .into_iter()
-                .map(|line| line + "\n")
-                .collect(),
-            _ => String::from_utf8_lossy(bytes).into_owned(),
-        };
-        if !data.is_empty() {
-            let _ = process.events.send(HostEvent::Stdout { data });
+    let read = process.from_program.push(bytes);
+    if read.dropped {
+        let _ = process.events.send(HostEvent::Stderr {
+            data: format!(
+                "Dropped a message longer than {} bytes.",
+                lines::MAX_LINE_BYTES
+            ),
+        });
+    }
+    let child = Arc::clone(&process.child);
+    let mut to_program = Vec::new();
+    let mut tools = Vec::new();
+    let mut files = Vec::new();
+    let mut shown = String::new();
+    match &mut process.gate {
+        Gate::Mcp => {
+            for line in read.lines {
+                match mcp::consent_request(&line) {
+                    Some(request) => files.push(request),
+                    None => shown.push_str(&(line + "\n")),
+                }
+            }
         }
-        return;
-    };
-    let mut asks = Vec::new();
-    for line in process.from_program.push(bytes) {
-        match gate.agent_wrote(line) {
-            FromAgent::Forward(line) => {
-                let _ = process.events.send(HostEvent::Stdout { data: line + "\n" });
+        // Harness lines pass whole, so the editor reads one message at a time.
+        Gate::Harness => {
+            for line in read.lines {
+                shown.push_str(&(line + "\n"));
             }
-            FromAgent::Answer(answer) => {
-                let _ = write_line(&mut process.child, &answer);
-            }
-            FromAgent::Ask(ask) => asks.push(ask),
-            FromAgent::ForwardAndSend { forward, to_agent } => {
-                let _ = process.events.send(HostEvent::Stdout {
-                    data: forward + "\n",
-                });
-                let _ = write_line(&mut process.child, &to_agent);
-            }
-            FromAgent::Drop => {}
         }
+        Gate::Acp(gate) => {
+            for line in read.lines {
+                match gate.agent_wrote(line) {
+                    FromAgent::Forward(line) => shown.push_str(&(line + "\n")),
+                    FromAgent::Answer(answer) | FromAgent::Send(answer) => to_program.push(answer),
+                    FromAgent::Ask(ask) => tools.push(ask),
+                    FromAgent::Drop => {}
+                }
+            }
+        }
+        Gate::Plain => unreachable!("passed on above"),
+    }
+    if !shown.is_empty() {
+        let _ = process.events.send(HostEvent::Stdout { data: shown });
     }
     let agent = process.agent;
     drop(running);
-    for ask in asks {
+    write_lines(&child, to_program);
+    for ask in tools {
         ask_about_tool(app, id, agent, ask);
+    }
+    for request in files {
+        ask_about_file(app, id, request);
     }
 }
 
@@ -503,10 +632,25 @@ fn ask_about_tool<R: Runtime>(
     let (question_id, reply) =
         app.state::<Permissions>()
             .ask(app, question, id, ask.session_id.clone());
+    // A Stop that came between the agent's request and this question already cancelled the
+    // questions it found, so this one is cancelled too.
+    let stopped = {
+        let processes = app.state::<HostProcesses>();
+        let running = processes.lock();
+        match running.get(&id).map(|process| &process.gate) {
+            Some(Gate::Acp(gate)) => gate.turn(&ask.session_id) != ask.turn,
+            _ => true,
+        }
+    };
+    if stopped {
+        app.state::<Permissions>()
+            .settle(app, question_id, Reply::Cancelled);
+    }
     send(
         app,
         id,
         HostEvent::Permission {
+            id: question_id,
             title: title.clone(),
             waiting: true,
         },
@@ -519,6 +663,7 @@ fn ask_about_tool<R: Runtime>(
         let Some(process) = running.get_mut(&id) else {
             return;
         };
+        let child = Arc::clone(&process.child);
         let Gate::Acp(gate) = &mut process.gate else {
             return;
         };
@@ -528,11 +673,13 @@ fn ask_about_tool<R: Runtime>(
             Reply::Cancelled => None,
         };
         let answer = gate.answer(&ask.id, option);
-        let _ = write_line(&mut process.child, &answer);
         let _ = process.events.send(HostEvent::Permission {
+            id: question_id,
             title,
             waiting: false,
         });
+        drop(running);
+        write_lines(&child, vec![answer]);
     });
 }
 
@@ -550,29 +697,40 @@ fn ask_about_file<R: Runtime>(app: &AppHandle<R>, id: u32, request: mcp::Consent
         .ask(app, question, id, String::new());
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
-        let allowed = matches!(wait(&app, question_id, reply).await, Reply::Chose(_));
+        let mut allowed = matches!(wait(&app, question_id, reply).await, Reply::Chose(_));
         if allowed && mcp::editor_opens(&request.tool) {
-            use tauri_plugin_fs::FsExt;
-            // A save to a new folder inside the MCP root needs the folder, which the editor,
-            // given the file alone, cannot make.
-            if request.access == mcp::Access::Write {
-                if let Some(parent) = std::path::Path::new(&request.path).parent() {
-                    let _ = std::fs::create_dir_all(parent);
-                }
-            }
-            if let Err(error) = app.fs_scope().allow_file(&request.path) {
-                eprintln!("[mcp] could not allow {}: {error}", request.path);
+            // The editor opens or saves the file itself, so the answer is yes only once it can.
+            if let Err(error) = give_editor(&app, &request) {
+                eprintln!("[mcp] could not give the editor {}: {error}", request.path);
+                allowed = false;
             }
         }
-        let processes = app.state::<HostProcesses>();
-        let mut running = processes.lock();
-        if let Some(process) = running.get_mut(&id) {
-            let _ = write_line(
-                &mut process.child,
-                &mcp::consent_answer(request.id, allowed),
-            );
+        let child = app
+            .state::<HostProcesses>()
+            .lock()
+            .get(&id)
+            .map(|process| Arc::clone(&process.child));
+        if let Some(child) = child {
+            write_lines(&child, vec![mcp::consent_answer(request.id, allowed)]);
         }
     });
+}
+
+/// Gives the editor a file a document tool was allowed, with the folder a save into a new one
+/// needs, which the editor, given the file alone, cannot make.
+fn give_editor<R: Runtime>(
+    app: &AppHandle<R>,
+    request: &mcp::ConsentRequest,
+) -> Result<(), String> {
+    use tauri_plugin_fs::FsExt;
+    if request.access == mcp::Access::Write {
+        if let Some(parent) = std::path::Path::new(&request.path).parent() {
+            std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+    }
+    app.fs_scope()
+        .allow_file(&request.path)
+        .map_err(|e| e.to_string())
 }
 
 /// The tokens the editor connects to the app's MCP server with, while it runs.
@@ -616,12 +774,14 @@ fn confirm_mode<R: Runtime>(
     tauri::async_runtime::spawn(async move {
         let reply = wait(&app, question_id, reply).await;
         let processes = app.state::<HostProcesses>();
-        let mut running = processes.lock();
-        let Some(process) = running.get_mut(&id) else {
+        let running = processes.lock();
+        let Some(process) = running.get(&id) else {
             return;
         };
         if reply == Reply::Chose(ALLOW_MODE.to_owned()) {
-            let _ = write_line(&mut process.child, &change.line);
+            let child = Arc::clone(&process.child);
+            drop(running);
+            write_lines(&child, vec![change.line]);
         } else if let Some(request) = &change.id {
             let answer = acp::mode_refused(request);
             let _ = process.events.send(HostEvent::Stdout {
@@ -645,5 +805,21 @@ async fn wait<R: Runtime>(
                 .settle(app, question, Reply::Refused);
             Reply::Refused
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn spells_out_the_origin_of_an_app_page() {
+        let origin = |url: &str| editor_origin(&url::Url::parse(url).unwrap());
+        assert_eq!(origin("tauri://localhost/index.html"), "tauri://localhost");
+        assert_eq!(origin("http://tauri.localhost/"), "http://tauri.localhost");
+        assert_eq!(
+            origin("http://localhost:1421/editor"),
+            "http://localhost:1421"
+        );
     }
 }

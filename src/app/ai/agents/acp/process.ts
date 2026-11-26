@@ -1,5 +1,6 @@
 import type { ACPAgentID } from '@open-pencil/core/constants'
 
+import type { PermissionNotice } from '@/app/tauri/host'
 import { spawnAgentProcess, type AgentChild } from '@/app/ai/agents/process'
 
 /** A started agent: its process, and the pipes the ACP connection reads and writes. */
@@ -17,7 +18,7 @@ export type ACPProcessOptions = {
   destroying: () => boolean
   onUnexpectedClose: () => void
   /** The agent waits on the person in the desktop app's permission window, or stopped waiting. */
-  onPermission?: (event: { title: string; waiting: boolean }) => void
+  onPermission?: (event: PermissionNotice) => void
 }
 
 /**

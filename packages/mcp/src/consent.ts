@@ -33,6 +33,18 @@ export function askPath(consent: PathConsent | undefined, client: () => string |
   }
 }
 
+/**
+ * The tools whose files the app itself opens or saves, so allowing one also gives the app the
+ * file; `EDITOR_FILE_TOOLS` in `desktop/src/host/mcp.rs`. An answer for another tool does not
+ * stand in for theirs.
+ */
+const DOCUMENT_TOOLS = new Set([
+  'open_document',
+  'save_document',
+  'create_document',
+  'close_document'
+])
+
 const answerSchema = v.pipe(
   v.string(),
   v.parseJson(),
@@ -60,8 +72,12 @@ export function stdioPathConsent(
     waiting.delete(answer.output.id)
   })
   return async (request) => {
-    const key = `${request.access}:${request.path}`
-    if (allowed.has(key) || (request.access === 'read' && allowed.has(`write:${request.path}`))) {
+    const kind = DOCUMENT_TOOLS.has(request.tool) ? 'document' : 'file'
+    const key = `${kind}:${request.access}:${request.path}`
+    if (
+      allowed.has(key) ||
+      (request.access === 'read' && allowed.has(`${kind}:write:${request.path}`))
+    ) {
       return
     }
     const id = next++

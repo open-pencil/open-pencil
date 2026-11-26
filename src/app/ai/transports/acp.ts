@@ -415,6 +415,12 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       try {
         await session.connection.forTurn(request, signal)
       } catch (error) {
+        // A Stop while the person is asked takes the question off the desktop app's window.
+        if (signal?.aborted) {
+          void session.connection.agent.notify(methods.agent.session.cancel, {
+            sessionId: session.sessionId
+          })
+        }
         if (!isModeRefusal(error)) throw error
         // The person kept the agent asking: the turn goes on in the mode it had, and the
         // composer shows that mode again.
@@ -588,6 +594,16 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
     sessionRef = session
     this.noteChoices(session, openedChoices)
+    // The person kept the agent asking, or it opened in the mode that asks: the composer shows
+    // the mode the session is in rather than the one the chat named.
+    const wanted = this.choices()
+    const kept: AgentChoices = {}
+    for (const category of AGENT_CHOICE_CATEGORIES) {
+      // What the session opened on: a move the agent made since is reported as it came.
+      const current = opened.choices[category]?.current
+      if (wanted[category] && current && current !== wanted[category]) kept[category] = current
+    }
+    if (!isEmptyObject(kept)) this.onAgentChoices?.(kept)
     return session
   }
 }

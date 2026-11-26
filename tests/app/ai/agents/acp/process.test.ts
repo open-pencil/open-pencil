@@ -83,9 +83,9 @@ describe('ACP agent process', () => {
       onUnexpectedClose: vi.fn(),
       onPermission
     })
-    host.emit({ type: 'permission', title: 'Run tests', waiting: true })
+    host.emit({ type: 'permission', id: 7, title: 'Run tests', waiting: true })
     expect(onPermission).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Run tests', waiting: true })
+      expect.objectContaining({ id: 7, title: 'Run tests', waiting: true })
     )
   })
 })

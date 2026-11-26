@@ -6,6 +6,7 @@ import {
   type SessionNotification
 } from '@agentclientprotocol/sdk/unstable'
 
+import type { PermissionNotice } from '@/app/tauri/host'
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 import { createDeferred } from '@open-pencil/std/async'
 import { isDeadline, withDeadline } from '@open-pencil/std/timing'
@@ -80,7 +81,7 @@ export interface AgentConnectionOptions {
    * The agent waits on the person in the desktop app's permission window, or stopped waiting. The
    * app answers its permission requests itself, so none reach the connection.
    */
-  onPermission?: (event: { title: string; waiting: boolean }) => void
+  onPermission?: (event: PermissionNotice) => void
   /** What the agent reports about its sessions. */
   onSessionUpdate?: (params: SessionNotification) => void
   /** The login the agent reports, as Claude Code's and Codex's adapters do after they start. */

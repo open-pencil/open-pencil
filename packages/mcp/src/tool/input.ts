@@ -55,6 +55,8 @@ export async function readFileInput(
     throw new Error(`Pass ${input.path} or ${input.data}`)
   }
   if (hasData) throw new Error(`Pass ${input.path} or ${input.data}, not both`)
-  if (consent) await consent((await resolveSafePath(path, root)).realPath)
-  return { ...rest, [input.data]: fromUint8Array(await readInsideRoot(path, root)) }
+  // The file read is the one asked about, even if a link inside the root changes meanwhile.
+  const { realPath } = await resolveSafePath(path, root)
+  await consent?.(realPath)
+  return { ...rest, [input.data]: fromUint8Array(await readInsideRoot(realPath, root)) }
 }

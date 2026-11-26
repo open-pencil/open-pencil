@@ -39,10 +39,17 @@ const hostEventSchema = v.variant('type', [
     code: v.nullable(v.number()),
     signal: v.nullable(v.number())
   }),
-  v.object({ type: v.literal('permission'), title: v.string(), waiting: v.boolean() })
+  v.object({
+    type: v.literal('permission'),
+    id: v.number(),
+    title: v.string(),
+    waiting: v.boolean()
+  })
 ])
 
 export type HostEvent = v.InferOutput<typeof hostEventSchema>
+/** An agent waits on the person in the permission window, or stopped waiting. */
+export type PermissionNotice = Omit<Extract<HostEvent, { type: 'permission' }>, 'type'>
 export type HostClose = Extract<HostEvent, { type: 'close' }>
 
 export interface HostHandlers {
@@ -54,7 +61,7 @@ export interface HostHandlers {
    * An agent waits on the person in the permission window, which the desktop app opens and
    * answers, or no longer does.
    */
-  onPermission?: (event: { title: string; waiting: boolean }) => void
+  onPermission?: (event: PermissionNotice) => void
 }
 
 /** A program the desktop app runs for the editor. */

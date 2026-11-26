@@ -159,4 +159,17 @@ describe('stdioPathConsent', () => {
     app.answer(question.id, true)
     await expect(pending).resolves.toBeUndefined()
   })
+
+  test('asks again for a document tool after another tool was allowed the same file', async () => {
+    const app = desktop()
+    const exporting = app.consent({ tool: 'export_svg', access: 'write', path: '/work/out.fig' })
+    app.answer((await app.question(0)).id, true)
+    await exporting
+    // Allowing a document tool also gives the app the file, which the export's answer did not.
+    const saving = app.consent({ tool: 'save_document', access: 'write', path: '/work/out.fig' })
+    const asked = await app.question(1)
+    expect(asked.tool).toBe('save_document')
+    app.answer(asked.id, true)
+    await expect(saving).resolves.toBeUndefined()
+  })
 })

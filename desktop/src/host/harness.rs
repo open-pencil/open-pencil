@@ -18,7 +18,11 @@ pub fn from_editor(line: String) -> Result<String, Option<String>> {
         .and_then(Value::as_object);
     let local = servers.and_then(|servers| {
         servers.iter().find(|(_, server)| {
-            server.get("command").is_some() || !server.get("url").is_some_and(Value::is_string)
+            server.get("command").is_some()
+                || !server
+                    .get("url")
+                    .and_then(Value::as_str)
+                    .is_some_and(|url| url.starts_with("http://") || url.starts_with("https://"))
         })
     });
     match local {
@@ -67,5 +71,9 @@ mod tests {
         assert_eq!(answer["id"], "r1");
         assert!(answer["error"].as_str().unwrap().contains("evil"));
         assert_eq!(from_editor("not json".to_owned()), Err(None));
+        // Only a server reached over HTTP: another scheme is refused, HTTPS passes.
+        assert!(from_editor(create(json!({ "files": { "url": "ftp://host/mcp" } }))).is_err());
+        let https = create(json!({ "remote": { "url": "https://mcp.example.com/mcp" } }));
+        assert_eq!(from_editor(https.clone()), Ok(https));
     }
 }

@@ -68,6 +68,9 @@ pub struct PermissionAsk {
     /// The request's JSON-RPC id, which the answer carries back to the agent.
     pub id: Value,
     pub session_id: String,
+    /// The session's turn when the agent asked; a question from a turn stopped since is
+    /// answered cancelled (`AcpGate::turn`).
+    pub turn: u64,
     /// The request's `toolCall` and `options`, as the window shows them.
     pub params: Value,
 }
@@ -91,8 +94,9 @@ pub enum FromAgent {
     Answer(String),
     /// Ask the person.
     Ask(PermissionAsk),
-    /// Pass a changed line to the editor, and send the agent a request of the app's own.
-    ForwardAndSend { forward: String, to_agent: String },
+    /// Send the agent a request of the app's own, holding back what the editor gets until it
+    /// answers.
+    Send(String),
     /// An answer to the app's own request, which the editor never sent.
     Drop,
 }
@@ -113,17 +117,21 @@ pub enum FromEditor {
 pub struct AcpGate {
     agent: Agent,
     workspace: String,
-    /// Tool calls the agent reported as calls to OpenPencil's tools.
-    own_calls: HashSet<String>,
+    /// Tool calls the agent reported as calls to OpenPencil's tools, by session and call id:
+    /// ACP makes a call's id unique within its session only.
+    own_calls: HashSet<(String, String)>,
     /// Permission requests the app holds, by id, so the editor cannot answer them.
     held: HashSet<String>,
     /// Refuses whatever the person would be asked, for a connection in which nothing may run.
     refuses_tools: bool,
     /// The editor's session openers waiting for an answer, by id, with the session they name.
     opening: HashMap<String, Option<String>>,
-    /// The app's own requests to the agent waiting for an answer.
-    own_requests: HashSet<String>,
+    /// The app's own requests to the agent waiting for an answer, with the opener's id and the
+    /// answer the editor gets once the agent took the request.
+    own_requests: HashMap<String, Option<(Value, String)>>,
     next_request: u64,
+    /// How many turns of each session the editor stopped.
+    turns: HashMap<String, u64>,
 }
 
 impl AcpGate {
@@ -135,8 +143,9 @@ impl AcpGate {
             held: HashSet::new(),
             refuses_tools,
             opening: HashMap::new(),
-            own_requests: HashSet::new(),
+            own_requests: HashMap::new(),
             next_request: 0,
+            turns: HashMap::new(),
         }
     }
 
@@ -146,23 +155,32 @@ impl AcpGate {
         };
         if message.get("method").is_none() {
             let id = message.get("id").map(Value::to_string).unwrap_or_default();
-            if self.own_requests.remove(&id) {
-                return FromAgent::Drop;
+            if let Some(held) = self.own_requests.remove(&id) {
+                let Some((opener, answer)) = held else {
+                    return FromAgent::Drop;
+                };
+                // The session opens only once it asks: if the agent would not switch, the
+                // editor's request fails rather than show a mode the session is not in.
+                return FromAgent::Forward(if message.contains_key("result") {
+                    answer
+                } else {
+                    error_response(&opener, "The session could not start in a mode that asks.")
+                });
             }
             if let Some(named) = self.opening.remove(&id) {
+                let opener = message.get("id").cloned().unwrap_or(Value::Null);
                 if let Some(Value::Object(result)) = message.get_mut("result") {
                     let session = result
                         .get("sessionId")
                         .and_then(Value::as_str)
                         .map(str::to_owned)
                         .or(named);
-                    if let Some(to_agent) =
+                    if let Some((request_id, to_agent)) =
                         session.and_then(|s| self.ask_from_the_start(result, &s))
                     {
-                        return FromAgent::ForwardAndSend {
-                            forward: Value::Object(message).to_string(),
-                            to_agent,
-                        };
+                        let answer = Value::Object(message).to_string();
+                        self.own_requests.insert(request_id, Some((opener, answer)));
+                        return FromAgent::Send(to_agent);
                     }
                 }
             }
@@ -170,8 +188,10 @@ impl AcpGate {
         }
         match message.get("method").and_then(Value::as_str) {
             Some("session/update") => {
-                if let Some(update) = message.get("params").and_then(|p| p.get("update")) {
-                    self.note_update(update);
+                if let Some(params) = message.get("params") {
+                    if let Some(update) = params.get("update") {
+                        self.note_update(str_at(params, "sessionId"), update);
+                    }
                 }
                 FromAgent::Forward(line)
             }
@@ -190,8 +210,10 @@ impl AcpGate {
                     });
                 }
                 self.held.insert(id.to_string());
+                let session_id = str_at(&params, "sessionId").to_owned();
                 FromAgent::Ask(PermissionAsk {
-                    session_id: str_at(&params, "sessionId").to_owned(),
+                    turn: self.turn(&session_id),
+                    session_id,
                     id,
                     params,
                 })
@@ -263,12 +285,19 @@ impl AcpGate {
                     FromEditor::Forward(line)
                 }
             }
-            "session/cancel" => FromEditor::Cancel {
-                session_id: str_at(&params, "sessionId").to_owned(),
-                line,
-            },
+            "session/cancel" => {
+                let session_id = str_at(&params, "sessionId").to_owned();
+                *self.turns.entry(session_id.clone()).or_default() += 1;
+                FromEditor::Cancel { session_id, line }
+            }
             _ => FromEditor::Forward(line),
         }
+    }
+
+    /// How many turns of `session` the editor stopped, which tells a question asked before a
+    /// Stop from one asked after it.
+    pub fn turn(&self, session: &str) -> u64 {
+        self.turns.get(session).copied().unwrap_or_default()
     }
 
     /// The answer to a held request, which the app writes to the agent.
@@ -292,7 +321,7 @@ impl AcpGate {
         &mut self,
         result: &mut Map<String, Value>,
         session: &str,
-    ) -> Option<String> {
+    ) -> Option<(String, String)> {
         let safe = asking_mode(self.agent)?;
         let agent = self.agent;
         let mut request = None;
@@ -328,9 +357,9 @@ impl AcpGate {
         let (method, params) = request?;
         let id = format!("{OWN_REQUEST_PREFIX}{}", self.next_request);
         self.next_request += 1;
-        self.own_requests
-            .insert(Value::String(id.clone()).to_string());
-        Some(json!({ "jsonrpc": "2.0", "id": id, "method": method, "params": params }).to_string())
+        let request =
+            json!({ "jsonrpc": "2.0", "id": id, "method": method, "params": params }).to_string();
+        Some((Value::String(id).to_string(), request))
     }
 
     fn pin_session(&self, params: &mut Map<String, Value>) -> Result<(), String> {
@@ -354,14 +383,14 @@ impl AcpGate {
         Ok(())
     }
 
-    fn note_update(&mut self, update: &Value) {
+    fn note_update(&mut self, session: &str, update: &Value) {
         let kind = str_at(update, "sessionUpdate");
         if kind != "tool_call" && kind != "tool_call_update" {
             return;
         }
         if is_own_tool_call(update) {
             self.own_calls
-                .insert(str_at(update, "toolCallId").to_owned());
+                .insert((session.to_owned(), str_at(update, "toolCallId").to_owned()));
         }
     }
 
@@ -370,8 +399,11 @@ impl AcpGate {
     /// call's server are noted first.
     fn own_call_answer(&self, params: &Value) -> Option<String> {
         let call = params.get("toolCall")?;
-        let id = str_at(call, "toolCallId");
-        if !self.own_calls.contains(id) && !is_own_tool_call(call) {
+        let key = (
+            str_at(params, "sessionId").to_owned(),
+            str_at(call, "toolCallId").to_owned(),
+        );
+        if !self.own_calls.contains(&key) && !is_own_tool_call(call) {
             return None;
         }
         params
@@ -668,26 +700,44 @@ mod tests {
                 "modes": { "currentModeId": "auto", "availableModes": [{ "id": "default" }, { "id": "auto" }] }
             }
         });
-        let FromAgent::ForwardAndSend { forward, to_agent } = gate.agent_wrote(opened.to_string())
-        else {
-            panic!("the app moves the session to Manual")
+        let FromAgent::Send(to_agent) = gate.agent_wrote(opened.to_string()) else {
+            panic!("the app moves the session to Manual first")
         };
-        let forward: Value = serde_json::from_str(&forward).unwrap();
-        assert_eq!(
-            forward["result"]["configOptions"][0]["currentValue"],
-            "default"
-        );
-        assert_eq!(forward["result"]["modes"]["currentModeId"], "default");
         let request: Value = serde_json::from_str(&to_agent).unwrap();
         assert_eq!(request["method"], "session/set_config_option");
         assert_eq!(
             request["params"],
             json!({ "sessionId": "s9", "configId": "mode", "value": "default" })
         );
-        // Its answer is the app's, not the editor's.
-        let answer =
+        // The editor hears of the session once the agent took the switch, in the mode it took.
+        let took =
             json!({ "jsonrpc": "2.0", "id": request["id"], "result": { "configOptions": [] } });
-        assert_eq!(gate.agent_wrote(answer.to_string()), FromAgent::Drop);
+        let FromAgent::Forward(forward) = gate.agent_wrote(took.to_string()) else {
+            panic!("the opener's answer goes on")
+        };
+        let forward: Value = serde_json::from_str(&forward).unwrap();
+        assert_eq!(forward["id"], 4);
+        assert_eq!(
+            forward["result"]["configOptions"][0]["currentValue"],
+            "default"
+        );
+        assert_eq!(forward["result"]["modes"]["currentModeId"], "default");
+        // An agent that will not switch fails the opener instead.
+        let again = json!({ "jsonrpc": "2.0", "id": 6, "method": "session/new", "params": { "cwd": "/", "mcpServers": [] } });
+        gate.editor_wrote(again.to_string());
+        let mut auto = opened.clone();
+        auto["id"] = json!(6);
+        let FromAgent::Send(to_agent) = gate.agent_wrote(auto.to_string()) else {
+            panic!("the app moves the session to Manual first")
+        };
+        let request: Value = serde_json::from_str(&to_agent).unwrap();
+        let refused = json!({ "jsonrpc": "2.0", "id": request["id"], "error": { "code": -32602, "message": "no" } });
+        let FromAgent::Forward(failed) = gate.agent_wrote(refused.to_string()) else {
+            panic!("the opener fails")
+        };
+        let failed: Value = serde_json::from_str(&failed).unwrap();
+        assert_eq!(failed["id"], 6);
+        assert!(failed.get("error").is_some());
         // A session that already asks is passed on as it is.
         let again = json!({ "jsonrpc": "2.0", "id": 5, "method": "session/new", "params": { "cwd": "/", "mcpServers": [] } });
         gate.editor_wrote(again.to_string());
@@ -696,6 +746,42 @@ mod tests {
             gate.agent_wrote(asking.to_string()),
             FromAgent::Forward(asking.to_string())
         );
+    }
+
+    #[test]
+    fn approves_own_calls_only_in_the_session_that_made_them() {
+        let mut gate = gate(Agent::Cursor);
+        let reported = update(json!({
+            "sessionUpdate": "tool_call",
+            "toolCallId": "c1",
+            "rawInput": { "providerIdentifier": "open-pencil", "toolName": "get_selection" }
+        }));
+        gate.agent_wrote(reported);
+        // Another session reuses the id for a call of its own.
+        let mut other =
+            serde_json::from_str::<Value>(&permission(10, json!({ "toolCallId": "c1" }))).unwrap();
+        other["params"]["sessionId"] = json!("s2");
+        assert!(matches!(
+            gate.agent_wrote(other.to_string()),
+            FromAgent::Ask(_)
+        ));
+    }
+
+    #[test]
+    fn counts_the_turns_a_stop_ends() {
+        let mut gate = gate(Agent::ClaudeCode);
+        let FromAgent::Ask(before) = gate.agent_wrote(permission(
+            11,
+            json!({ "toolCallId": "c4", "title": "Bash" }),
+        )) else {
+            panic!("the person decides")
+        };
+        let cancel = json!({ "jsonrpc": "2.0", "method": "session/cancel", "params": { "sessionId": "s1" } });
+        assert!(matches!(
+            gate.editor_wrote(cancel.to_string()),
+            FromEditor::Cancel { .. }
+        ));
+        assert_ne!(gate.turn("s1"), before.turn);
     }
 
     #[test]

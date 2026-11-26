@@ -240,9 +240,11 @@ impl ProgramRequest {
                     ("OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE", "1".to_owned()),
                     ("OPENPENCIL_MCP_DISABLED_TOOLS", disabled_tools.join(",")),
                 ]);
-                if *tokenless_clients {
-                    env.insert("OPENPENCIL_MCP_TOKENLESS_CLIENTS", "1".to_owned());
-                }
+                // Set either way, so a value the app was started with never reaches the server.
+                env.insert(
+                    "OPENPENCIL_MCP_TOKENLESS_CLIENTS",
+                    if *tokenless_clients { "1" } else { "0" }.to_owned(),
+                );
                 env.insert(
                     "OPENPENCIL_MCP_SCOPE",
                     match scope {
@@ -476,7 +478,7 @@ mod tests {
         );
         assert_eq!(launch.env["OPENPENCIL_MCP_SCOPE"], "selection");
         assert_eq!(launch.env["OPENPENCIL_MCP_CONSENT"], "stdio");
-        assert!(!launch.env.contains_key("OPENPENCIL_MCP_TOKENLESS_CLIENTS"));
+        assert_eq!(launch.env["OPENPENCIL_MCP_TOKENLESS_CLIENTS"], "0");
         assert_eq!(
             server(true, &[]).unwrap().env["OPENPENCIL_MCP_TOKENLESS_CLIENTS"],
             "1"

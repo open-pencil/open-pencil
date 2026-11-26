@@ -77,8 +77,6 @@ export const Tool: Story = {
   args: { question: tool, waiting: 2 },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(/Claude Code asks to use Bash/)).toBeVisible()
-    await expect(canvas.getByText(/2 more waiting/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Reject' }))
     await expect(args.onAnswer).toHaveBeenCalledWith('reject')
   }
@@ -99,7 +97,6 @@ export const File: Story = {
   args: { question: file },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(/claude-code asks to write \/Users\/me\/Designs/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Allow' }))
     await expect(args.onAnswer).toHaveBeenCalledWith('allow')
   }

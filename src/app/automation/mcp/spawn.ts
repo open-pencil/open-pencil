@@ -133,10 +133,14 @@ function rememberStartupError(error: unknown): null {
   return null
 }
 
+/**
+ * The server's health. When the desktop app runs the server, the editor reads it with the client
+ * token, which sees the tools, as its own app token only registers it.
+ */
 export async function readAutomationHealth(
   authToken: string | null = runtimeAutomationAuthToken
 ): Promise<AutomationHealth | null> {
-  return probeAutomationHealth(authToken)
+  return probeAutomationHealth(runtimeClientToken ?? authToken)
 }
 
 /**
@@ -258,9 +262,13 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
   return launchMCPServer(timing)
 }
 
-function forgetDesktopTokens() {
-  runtimeAutomationAuthToken = null
-  runtimeClientToken = null
+type EditorTokens = NonNullable<v.InferOutput<typeof editorTokensSchema>>
+
+/** Forgets the tokens of a server that ended, unless a later server's replaced them already. */
+function forgetDesktopTokens(tokens: EditorTokens | null) {
+  if (!tokens) return
+  if (runtimeAutomationAuthToken === tokens.appToken) runtimeAutomationAuthToken = null
+  if (runtimeClientToken === tokens.clientToken) runtimeClientToken = null
 }
 
 async function launchMCPServer(timing: MCPStartupTiming): Promise<AutomationServerHandle | null> {
@@ -272,9 +280,11 @@ async function launchMCPServer(timing: MCPStartupTiming): Promise<AutomationServ
   // used as a safe fallback for open_document, save_document, or export tools.
   const mcpRoot = mcpRootDirectory.value.trim() || (await resolveTauriHomeDir())
   let startupStderr = ''
+  // The tokens this launch stored, which its server's end forgets.
+  let owned: EditorTokens | null = null
   const closed = createDeferred<HostClose>()
   const childClosed = closed.promise.then(({ code, signal }) => {
-    forgetDesktopTokens()
+    forgetDesktopTokens(owned)
     return { code, signal }
   })
   let child: HostChild
@@ -332,6 +342,7 @@ async function launchMCPServer(timing: MCPStartupTiming): Promise<AutomationServ
       assertCompatibleMCPVersion(health)
       runtimeAutomationAuthToken = tokens.appToken
       runtimeClientToken = tokens.clientToken
+      owned = tokens
       runtimeAutomationStartupError = null
       runtimeAutomationStartupFailure = null
       return {
@@ -339,14 +350,14 @@ async function launchMCPServer(timing: MCPStartupTiming): Promise<AutomationServ
           await child.kill().catch((e) => {
             console.error('[MCP] Failed to kill server:', e)
           })
-          forgetDesktopTokens()
+          forgetDesktopTokens(tokens)
         },
         authToken: tokens.appToken,
         managed: true
       }
     } catch (err) {
       await child.kill().catch(() => undefined)
-      forgetDesktopTokens()
+      forgetDesktopTokens(tokens)
       throw err
     }
   }

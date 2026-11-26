@@ -8,9 +8,10 @@ use tauri::{AppHandle, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
 const UPDATER: &str = "updater";
 const UPDATER_SIZE: (f64, f64) = (560.0, 520.0);
 
-/// Shows the Software Update window, focusing it when it is already open.
+/// Shows the Software Update window, focusing it when it is already open. Asynchronous, as a
+/// synchronous command that builds a window deadlocks on Windows.
 #[tauri::command]
-pub fn open_updater_window<R: Runtime>(
+pub async fn open_updater_window<R: Runtime>(
     app: AppHandle<R>,
     webview: tauri::Webview<R>,
     title: String,

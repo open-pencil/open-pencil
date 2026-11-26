@@ -1,4 +1,4 @@
-import { startHostProgram, type HostChild, type HostProgram } from '@/app/tauri/host'
+import { startHostProgram, type HostChild, type HostProgram, type PermissionNotice } from '@/app/tauri/host'
 
 /** A running agent process: its end. */
 export type AgentChild = Pick<HostChild, 'kill'>
@@ -23,7 +23,7 @@ export interface AgentProcessOptions {
   /** The process closed, whoever ended it. */
   onClose: () => void
   /** The agent waits on the person in the desktop app's permission window, or stopped waiting. */
-  onPermission?: (event: { title: string; waiting: boolean }) => void
+  onPermission?: (event: PermissionNotice) => void
 }
 
 /**
