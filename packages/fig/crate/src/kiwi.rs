@@ -52,6 +52,8 @@ impl Schema {
         let mut reader = Reader::new(bytes);
         let count = reader.varuint()?;
         let mut definitions = Vec::new();
+        // Lookup entries every message table holds together, against `MAX_LOOKUP_ENTRIES`.
+        let mut lookup_entries = 0usize;
         for _ in 0..count {
             let name = reader.string()?.to_owned();
             let kind = match reader.byte()? {
@@ -77,7 +79,8 @@ impl Schema {
             let by_id = if kind == DefinitionKind::Message {
                 let largest = fields.iter().map(|field| field.id).max().unwrap_or(0);
                 // Field ids are small; a larger one would size the lookup table from bad input.
-                if largest > MAX_FIELD_ID {
+                lookup_entries += largest as usize + 1;
+                if largest > MAX_FIELD_ID || lookup_entries > MAX_LOOKUP_ENTRIES {
                     return Err(Malformed);
                 }
                 let mut by_id = vec![0; largest as usize + 1];
@@ -179,8 +182,12 @@ impl Schema {
 /// The largest message field id a schema may declare.
 const MAX_FIELD_ID: u32 = 1 << 16;
 
-/// How deeply messages may nest. Figma's nest a few levels; the bound keeps a damaged message
-/// from exhausting the stack.
+/// The most lookup entries all of a schema's messages may hold together: 4 MiB of tables,
+/// several times what Figma's schema needs, so many sparse messages cannot add up to gigabytes.
+const MAX_LOOKUP_ENTRIES: usize = 1 << 20;
+
+/// How deeply messages and structs may nest. Figma's nest a few levels; the bound keeps a
+/// damaged message from exhausting the stack.
 const MAX_DEPTH: u32 = 64;
 
 /// A cursor over an encoded message.
@@ -328,9 +335,14 @@ impl<'a> Reader<'a> {
                         self.varuint()?;
                     }
                     DefinitionKind::Struct => {
-                        for field in &definition.fields {
-                            self.skip_field(schema, field)?;
-                        }
+                        // A struct may hold an array of itself, each level one count byte deep.
+                        self.enter()?;
+                        let skipped = definition
+                            .fields
+                            .iter()
+                            .try_for_each(|field| self.skip_field(schema, field));
+                        self.depth -= 1;
+                        skipped?;
                     }
                     DefinitionKind::Message => {
                         self.message(schema, ty as usize, |_, _| Ok(false))?
@@ -360,6 +372,15 @@ impl<'a> Reader<'a> {
         Ok(())
     }
 
+    /// Goes one level deeper, failing past `MAX_DEPTH`; the caller steps back out.
+    fn enter(&mut self) -> Result<()> {
+        if self.depth >= MAX_DEPTH {
+            return Err(Malformed);
+        }
+        self.depth += 1;
+        Ok(())
+    }
+
     /// Walks a message's fields. `visit` gets each field's index in the definition and returns
     /// whether it read the value; a value it leaves is skipped.
     pub fn message(
@@ -369,10 +390,7 @@ impl<'a> Reader<'a> {
         mut visit: impl FnMut(&mut Reader<'a>, usize) -> Result<bool>,
     ) -> Result<()> {
         let definition = &schema.definitions[definition];
-        if self.depth >= MAX_DEPTH {
-            return Err(Malformed);
-        }
-        self.depth += 1;
+        self.enter()?;
         let result = loop {
             let id = self.varuint()?;
             if id == 0 {
@@ -484,6 +502,27 @@ mod tests {
         message.extend(vec![0u8; MAX_DEPTH as usize + 2]);
         assert_eq!(Reader::new(&message).skip(&schema, 0), Err(Malformed));
         let shallow = [1, 1, 0, 0, 0];
+        let mut reader = Reader::new(&shallow);
+        assert_eq!(reader.skip(&schema, 0), Ok(()));
+        assert_eq!(reader.position, shallow.len());
+    }
+
+    #[test]
+    fn limits_lookup_tables_and_struct_nesting() {
+        // 20 messages, each with one field at id 65,536: each table alone is allowed, together
+        // they pass the budget.
+        let mut many = vec![20];
+        for index in 0..20u8 {
+            many.extend([b'A' + index, 0, 2, 1, b'x', 0, 7, 0, 0x80, 0x80, 0x04]);
+        }
+        assert_eq!(Schema::parse(&many).unwrap_err(), Malformed);
+
+        // struct S { S[] inner; }, then arrays of one S nested past the bound.
+        let schema = Schema::parse(&[1, b'S', 0, 1, 1, b'i', 0, 0, 1, 0]).unwrap();
+        let mut nested = vec![1u8; MAX_DEPTH as usize + 1];
+        nested.push(0);
+        assert_eq!(Reader::new(&nested).skip(&schema, 0), Err(Malformed));
+        let shallow = [1, 1, 0];
         let mut reader = Reader::new(&shallow);
         assert_eq!(reader.skip(&schema, 0), Ok(()));
         assert_eq!(reader.position, shallow.len());
