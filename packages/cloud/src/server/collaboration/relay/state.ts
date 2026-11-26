@@ -15,11 +15,17 @@ export type RoomState = {
   /** The encoded size of what the room holds, which only a compaction shrinks. */
   readonly bytes: number
   /**
-   * Whether `update` is a V2 update the relay can read, and whether it adds to the room: one that
-   * only deletes what the room holds adds nothing, so it may always join a room at its limit,
-   * while deletions of what the room never received wait in it, and count like any other update.
+   * Whether `update` is a V2 update the relay can read, and whether it adds structures or only
+   * deletes. The relay reads the whole update once, so one cut short is turned away here rather
+   * than failing every merge after it.
    */
   read(update: Uint8Array): { adds: boolean } | null
+  /**
+   * Whether a delete-only update deletes only what the room holds, measured on the merged room:
+   * such an update may join a room at its limit, while deletions of what the room never received
+   * wait in it and count like any other update.
+   */
+  deletesOnlyHeld(update: Uint8Array): boolean
   /** Takes a peer's V2 update, which `read` must already have accepted. */
   add(update: Uint8Array): void
   /** Everything the room holds, as one V2 update. */
@@ -51,11 +57,6 @@ export function createRoomState(initial: Uint8Array): RoomState {
   let base = initial
   let recent: Uint8Array[] = []
   let bytes = initial.byteLength
-  /**
-   * How far the room holds each client's updates without a gap, as a state vector counts them,
-   * kept as updates arrive; an update past a gap leaves it until a compaction measures again.
-   */
-  let held = heldClocks(initial)
 
   function encode(): Uint8Array {
     if (recent.length > 0) {
@@ -73,29 +74,25 @@ export function createRoomState(initial: Uint8Array): RoomState {
     read(update) {
       try {
         const { from, to } = Y.parseUpdateMetaV2(update)
-        if ([...to].some(([client, clock]) => from.get(client) !== clock)) {
-          // Reading an update's structures stops short of its deletions, which the room's later
-          // merges read, so the whole update is read once here and a cut-off one turned away.
-          Y.convertUpdateFormatV2ToV1(update)
-          return { adds: true }
-        }
-        const { ds } = Y.decodeUpdateV2(update)
-        const known = [...ds.clients].every(([client, deletions]) =>
-          deletions.every((deletion) => deletion.clock + deletion.len <= (held.get(client) ?? 0))
-        )
-        return { adds: !known }
+        // Reading an update's structures stops short of its deletions, which a conversion reads.
+        Y.convertUpdateFormatV2ToV1(update)
+        return { adds: [...to].some(([client, clock]) => from.get(client) !== clock) }
       } catch {
         return null
       }
     },
+    deletesOnlyHeld(update) {
+      // A state vector counts each client's updates from its first without a gap, so it names
+      // only what the room holds.
+      const held = Y.decodeStateVector(Y.encodeStateVectorFromUpdateV2(encode()))
+      const { ds } = Y.decodeUpdateV2(update)
+      return [...ds.clients].every(([client, deletions]) =>
+        deletions.every((deletion) => deletion.clock + deletion.len <= (held.get(client) ?? 0))
+      )
+    },
     add(update) {
       recent.push(update)
       bytes += update.byteLength
-      const { from, to } = Y.parseUpdateMetaV2(update)
-      for (const [client, clock] of to) {
-        const known = held.get(client) ?? 0
-        if ((from.get(client) ?? 0) <= known && clock > known) held.set(client, clock)
-      }
     },
     encode,
     stateVector: () => Y.encodeStateVectorFromUpdateV2(encode()),
@@ -107,15 +104,10 @@ export function createRoomState(initial: Uint8Array): RoomState {
       if (next.byteLength >= current.byteLength) return false
       base = next
       bytes = next.byteLength
-      held = heldClocks(next)
       return true
     }
   }
 }
-
-/** How far an encoded document holds each client's updates. */
-const heldClocks = (state: Uint8Array) =>
-  Y.decodeStateVector(Y.encodeStateVectorFromUpdateV2(state))
 
 /** A room's state as its store saves it: one V1 update, the format rooms were always saved in. */
 export const savedState = (state: RoomState) => Y.convertUpdateFormatV2ToV1(state.encode())

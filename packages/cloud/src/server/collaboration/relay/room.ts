@@ -82,7 +82,7 @@ export function applyToRoom(
 ): boolean {
   const update = readPeerUpdate(content.state, peer, namespace, payload, limit)
   if (!update) return false
-  if (update.adds && !fits(content.state, update.data, limit)) {
+  if (!fits(content.state, update, limit)) {
     peer.socket.close(RELAY_CLOSE.messageTooLarge, 'Collaboration update is too large')
     return false
   }
@@ -93,12 +93,14 @@ export function applyToRoom(
 /**
  * Whether `update` leaves the room within `limit`. The room counts each update whole until it
  * merges them, which shares their bookkeeping, so a room past its limit by that count is merged
- * and measured before an update is turned away.
+ * and measured before an update is turned away; one that only deletes what the room holds always
+ * fits. Both measures read the whole room, so they run only at the limit.
  */
-function fits(state: RoomState, update: Uint8Array, limit: number): boolean {
-  if (state.bytes + update.byteLength <= limit) return true
+function fits(state: RoomState, update: { data: Uint8Array; adds: boolean }, limit: number) {
+  if (state.bytes + update.data.byteLength <= limit) return true
   state.encode()
-  return state.bytes + update.byteLength <= limit
+  if (state.bytes + update.data.byteLength <= limit) return true
+  return !update.adds && state.deletesOnlyHeld(update.data)
 }
 
 /** A peer's update as the relay reads it, or null once the peer's socket was closed for it. */

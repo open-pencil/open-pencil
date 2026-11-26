@@ -16,18 +16,25 @@ function client() {
 }
 
 describe('room state', () => {
-  test('counts deletions of what a gap left out as additions', () => {
+  test('knows deletions of what a gap left out from those of what it holds', () => {
     const state = roomStateFromSaved(null, [])
     const alice = client()
     const first = alice.edit((text) => text.insert(0, 'ab'))
     const second = alice.edit((text) => text.insert(2, 'cd'))
-    // Only Alice's later edit reached the room, so it holds none of her clocks without a gap.
+    // Only Alice's later edit reached the room, so it holds none of her text without a gap.
     state.add(second)
-    const deletion = alice.edit((text) => text.delete(0, 1))
-    expect(state.read(deletion)).toEqual({ adds: true })
-    // Once the gap is filled, deleting what the room holds adds nothing.
+    const deletion = alice.edit((text) => text.delete(3, 1))
+    expect(state.read(deletion)).toEqual({ adds: false })
+    expect(state.deletesOnlyHeld(deletion)).toBe(false)
+    // Once the gap is filled, the room holds everything the deletion names.
     state.add(first)
-    const again = alice.edit((text) => text.delete(0, 1))
-    expect(state.read(again)).toEqual({ adds: false })
+    expect(state.deletesOnlyHeld(deletion)).toBe(true)
+  })
+
+  test('turns away an update cut short before its deletions', () => {
+    const state = roomStateFromSaved(null, [])
+    const update = client().edit((text) => text.insert(0, 'hello'))
+    expect(state.read(update)).toEqual({ adds: true })
+    expect(state.read(update.subarray(0, -1))).toBeNull()
   })
 })
