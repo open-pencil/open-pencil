@@ -612,7 +612,6 @@ function handleStop() {
         @interrupt="handleStop"
         @error="toast.error"
       />
-
     </template>
   </div>
 </template>

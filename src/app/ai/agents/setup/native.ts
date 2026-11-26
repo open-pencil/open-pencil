@@ -6,7 +6,12 @@ import { createDeferred } from '@open-pencil/std/async'
 import { MINUTE_MS } from '@open-pencil/std/timing'
 
 import { APP_VERSION } from '@/app/runtime/version'
-import { startHostProgram, type HostChild, type HostClose, type HostPackage } from '@/app/tauri/host'
+import {
+  startHostProgram,
+  type HostChild,
+  type HostClose,
+  type HostPackage
+} from '@/app/tauri/host'
 
 import type { PackageManager } from './companions'
 
@@ -60,7 +65,10 @@ async function installPackage(pkg: HostPackage, manager: PackageManager = 'npm')
       { onClose: (event) => closed.resolve(event) }
     )
     const timedOut = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error('Adapter installation timed out.')), INSTALL_TIMEOUT_MS)
+      timer = setTimeout(
+        () => reject(new Error('Adapter installation timed out.')),
+        INSTALL_TIMEOUT_MS
+      )
     })
     const { code } = await Promise.race([closed.promise, timedOut])
     finished = true

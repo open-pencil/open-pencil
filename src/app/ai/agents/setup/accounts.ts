@@ -56,10 +56,7 @@ export function createAgentAccounts(options: {
     methodId: string,
     signal: AbortSignal
   ) => Promise<AgentAuthStatus | null>
-  startTerminalSignIn: (
-    agent: ACPAgentDef,
-    onURL: (url: string) => void
-  ) => Promise<TerminalSignIn>
+  startTerminalSignIn: (agent: ACPAgentDef, onURL: (url: string) => void) => Promise<TerminalSignIn>
 }) {
   const accounts = ref<Accounts>({})
   const methods = new Map<ACPAgentID, AgentAuthMethod[]>()

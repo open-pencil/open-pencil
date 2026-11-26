@@ -52,7 +52,10 @@ export function usePermissionQuestions() {
   const questions = shallowRef<PermissionQuestion[]>([])
 
   async function refresh() {
-    const listed = v.safeParse(v.array(questionSchema), await invoke<unknown>('permission_questions'))
+    const listed = v.safeParse(
+      v.array(questionSchema),
+      await invoke<unknown>('permission_questions')
+    )
     questions.value = listed.success ? listed.output : []
   }
 
