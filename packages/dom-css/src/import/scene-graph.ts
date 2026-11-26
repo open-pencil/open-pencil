@@ -10,6 +10,7 @@ import { COMPONENT_ATTRIBUTES, isMarked } from './attributes/component'
 import {
   applyBoxSizing,
   applyCornerRadii,
+  applyRing,
   applyFlexGap,
   applyPadding,
   applyPositioning,
@@ -137,7 +138,7 @@ function applyElementStyle(
     node.strokesIncludedInLayout = true
   }
 
-  const effects = cssShadows(pickStyle(style, 'box-shadow'))
+  const effects = applyRing(node, style, cssShadows(pickStyle(style, 'box-shadow')))
   if (effects.length > 0) node.effects = effects
 
   const opacity = parseCSSNumber(pickStyle(style, 'opacity'))

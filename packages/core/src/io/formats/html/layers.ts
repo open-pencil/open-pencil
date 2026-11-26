@@ -11,7 +11,7 @@ import {
 } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { WHITE } from '@open-pencil/scene-graph/constants'
-import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { parseCSSColor } from '@open-pencil/scene-graph/css'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { maxOf } from '@open-pencil/std/arrays'
@@ -31,9 +31,6 @@ import { drawInlineSVGs } from './svg'
  * The saved sites HTML import is measured on settle within seven.
  */
 const MAX_PLACEMENT_PASSES = 8
-
-/** Glyphs and antialiased edges may reach a little past the box that holds them. */
-const CLIP_TOLERANCE = 1
 
 /** The viewport HTML is laid out in when it is imported: a common laptop's, 1440 by 900. */
 export const HTML_IMPORT_VIEWPORT: DesignViewport = { width: 1440, height: 900 }
@@ -97,37 +94,11 @@ export async function sceneGraphFromStyledHTML(
   const tinted = await drawInlineSVGs(graph, svgs, styled, options.matchIcon)
   if (options.theme) bindThemeVariables(graph, options.theme, sources, svgs, tinted)
   applyCSSTransforms(graph, transforms)
-  clipSpreadShadows(graph, sources.keys())
   options.createComponents?.(graph, sources, styled)
   if (options.pageWindow) {
     for (const page of graph.getPages()) frameAsWindow(graph, page, options.pageWindow, background)
   }
   return graph
-}
-
-/**
- * Clips the filled frames whose shadows spread, which Figma draws unspread otherwise, as a focus
- * ring drawn with `box-shadow` is. A frame whose content reaches outside it stays unclipped.
- */
-function clipSpreadShadows(graph: SceneGraph, nodeIds: Iterable<string>): void {
-  for (const id of nodeIds) {
-    const node = graph.getNode(id)
-    if (node?.type !== 'FRAME' || node.clipsContent) continue
-    if (!node.effects.some((effect) => effect.type === 'DROP_SHADOW' && effect.spread !== 0))
-      continue
-    const contained = graph.getChildren(id).every((child) => {
-      const toFrame = getNodeLocalMatrix(child)
-      const bounds = subtreeRenderBounds(graph, child, toFrame, { reach: 'drawn' })
-      return (
-        !bounds ||
-        (bounds.minX >= -CLIP_TOLERANCE &&
-          bounds.minY >= -CLIP_TOLERANCE &&
-          bounds.maxX <= node.width + CLIP_TOLERANCE &&
-          bounds.maxY <= node.height + CLIP_TOLERANCE)
-      )
-    })
-    if (contained) graph.updateNode(id, { clipsContent: true })
-  }
 }
 
 /**

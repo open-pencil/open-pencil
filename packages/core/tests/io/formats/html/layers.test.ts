@@ -14,15 +14,21 @@ async function layers(html: string) {
 const RING = 'background:white;width:60px;height:30px;box-shadow:0 0 0 3px red'
 
 describe('what CSS draws', () => {
-  test('a spread shadow clips a box that holds its content, so it draws spread', async () => {
+  test('a ring around a box without a border is its outside stroke', async () => {
     const layer = await layers(
-      `<div id="held" style="${RING}"><i id="in" style="display:block;width:9px;height:9px;background:blue"></i></div>
-       <div id="overflows" style="${RING}"><i style="display:block;width:90px;height:9px;background:blue"></i></div>
-       <div id="plain" style="background:white;width:60px;height:30px"></div>`
+      `<div id="ring" style="${RING}, 0 2px 4px black"></div>
+       <div id="bordered" style="${RING};border:1px solid blue"></div>
+       <div id="rings" style="${RING}, 0 0 0 6px blue"></div>`
     )
-    expect(layer('held').clipsContent).toBe(true)
-    expect(layer('overflows').clipsContent).toBe(false)
-    expect(layer('plain').clipsContent).toBe(false)
+    expect(layer('ring')).toMatchObject({
+      clipsContent: false,
+      strokes: [{ color: { r: 1, g: 0, b: 0 }, weight: 3, align: 'OUTSIDE' }],
+      effects: [{ type: 'DROP_SHADOW', offset: { x: 0, y: 2 } }]
+    })
+    expect(layer('bordered').strokes).toMatchObject([{ align: 'INSIDE' }])
+    expect(layer('bordered').effects).toMatchObject([{ spread: 3 }])
+    expect(layer('rings').strokes).toEqual([])
+    expect(layer('rings').effects).toHaveLength(2)
   })
 
   test('a decoration draws through flex items but not inline blocks or absolute boxes', async () => {

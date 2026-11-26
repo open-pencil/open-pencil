@@ -6,7 +6,7 @@ import { parseCSSNumber, parseCSSShadows, splitCSSLayers } from '@open-pencil/sc
 import { ICON_PAINTS, type IconPaint } from '@open-pencil/scene-graph/icons'
 import { effectBindingField } from '@open-pencil/scene-graph/variables'
 
-import { firstStrokeProperty } from '../box'
+import { firstStrokeProperty, hasBorder, isRing } from '../box'
 import { anyCSSColor, mergedStyle } from '../css-values'
 import { maskSVG } from '../pictures'
 import { colorPart, referencedProperty } from './expression'
@@ -145,7 +145,10 @@ class Binder {
     }
   }
 
-  /** Binds each shadow's color, matching the page's shadow list with the effects it became. */
+  /**
+   * Binds each shadow's color, matching the page's shadow list with the effects it became, and a
+   * ring that became the outside stroke of a box without a border with that stroke.
+   */
   #bindShadows(node: SceneNode, element: DesignElement, property: 'box-shadow' | 'text-shadow') {
     const modes = inModes(element, this.#theme.modes.length)
     if (!modes) return
@@ -153,15 +156,20 @@ class Binder {
       computed: splitCSSLayers(other.computedStyle[property] ?? ''),
       written: splitCSSLayers(other.references[property] ?? '')
     }))
+    const first = lists[0].computed.map((layer) => parseCSSShadows(layer, 'srgb').at(0))
+    const rings = first.filter((shadow) => shadow !== undefined && isRing(shadow))
+    const stroked =
+      property === 'box-shadow' && rings.length === 1 && !hasBorder(modes[0].computedStyle)
     let effect = 0
-    for (const index of lists[0].computed.keys()) {
+    for (const [index, initial] of first.entries()) {
+      if (!initial) continue
       const shadows = lists.map(({ computed, written }) => {
         const shadow = parseCSSShadows(computed.at(index), 'srgb').at(0)
         const own = written.length === computed.length ? written[index] : ''
         return shadow && { expression: colorPart(own, this.#isColor), color: shadow.color }
       })
-      if (!shadows[0]) continue
-      const field = effectBindingField(effect++, 'color')
+      const field =
+        stroked && initial === rings[0] ? 'strokes/0/color' : effectBindingField(effect++, 'color')
       const colors = shadows.filter((shadow) => shadow !== undefined)
       if (colors.length === shadows.length && this.#worthBinding(colors))
         this.#bindColor(node, field, colors)
@@ -173,8 +181,7 @@ class Binder {
     this.#bindPaint(node, 'fills', this.#colors(element, isText ? 'color' : 'background-color'))
     const stroke = isText ? null : firstStrokeProperty(mergedStyle(element))
     if (stroke) this.#bindPaint(node, 'strokes', this.#colors(element, stroke))
-    if (node.effects.length > 0)
-      this.#bindShadows(node, element, isText ? 'text-shadow' : 'box-shadow')
+    this.#bindShadows(node, element, isText ? 'text-shadow' : 'box-shadow')
     this.#bindNumbers(node, element)
   }
 

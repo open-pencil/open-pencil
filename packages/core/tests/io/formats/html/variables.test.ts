@@ -210,6 +210,14 @@ describe('variables from custom properties', () => {
     expect(bound(graph, named(graph, 'Pixels'), 'lineHeight')).toBe('pixels')
   })
 
+  test('bind a ring that became an outside stroke', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div id="ring" style="width:9px;height:9px;box-shadow:0 0 #0000, 0 0 0 3px var(--ring)"></div>',
+      { cssText: ':root { --ring: #112233 } .dark { --ring: white }', variables: VARIABLES }
+    )
+    expect(bound(graph, named(graph, 'ring'), 'strokes/0/color')).toBe('ring')
+  })
+
   test('bind letter spacing, and inline SVG only where it follows the color', async () => {
     const { graph } = await readHTMLDocument(
       `<p style="letter-spacing:var(--track);color:var(--ink)">Spaced</p>

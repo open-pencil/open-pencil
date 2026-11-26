@@ -1,4 +1,4 @@
-import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import {
   dimension,
   parseCSSAspectRatio,
@@ -130,6 +130,34 @@ export function strokeWeightFromStyle(style: DesignStyleDeclaration) {
   ].filter((weight): weight is number => weight !== null)
   if (sideWeights.length === 0) return null
   return maxOf(sideWeights)
+}
+
+/**
+ * Whether a shadow is a ring around its box, as a focus ring drawn with `box-shadow: 0 0 0 3px`
+ * is: outside it, with a spread and neither an offset nor a blur.
+ */
+export function isRing(effect: Effect): boolean {
+  const { type, offset, radius, spread } = effect
+  return type === 'DROP_SHADOW' && offset.x === 0 && offset.y === 0 && radius === 0 && spread > 0
+}
+
+/**
+ * Makes the one ring around a box without a border, as a focus ring is, its outside stroke,
+ * since Figma spreads a shadow only on a filled frame that clips; returns the shadows left.
+ */
+export function applyRing(
+  node: SceneNode,
+  style: DesignStyleDeclaration,
+  shadows: Effect[]
+): Effect[] {
+  const rings = hasBorder(style) ? [] : shadows.filter(isRing)
+  if (rings.length !== 1) return shadows
+  const [ring] = rings
+  const { color, spread: weight } = ring
+  node.strokes = [
+    { type: 'SOLID', color, weight, opacity: color.a, visible: true, align: 'OUTSIDE' }
+  ]
+  return shadows.filter((shadow) => shadow !== ring)
 }
 
 /**
