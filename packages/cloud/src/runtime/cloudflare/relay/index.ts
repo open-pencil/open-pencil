@@ -1,5 +1,6 @@
 import {
   AGENT_PAIRING_PARAM,
+  AGENT_PAIRING_PATH,
   agentPairingIdSchema,
   RELAY_DOCUMENT_PARAM,
   RELAY_HEARTBEAT,
@@ -203,8 +204,10 @@ export function createCloudflareRelayObject(
     /** Accepts a socket that `relayRoute` or `pairingRoute` sent here. */
     override async fetch(request: Request): Promise<Response> {
       if (inMaintenance(this.env)) return maintenanceResponse(request)
-      const pairing = new URL(request.url).searchParams.get(AGENT_PAIRING_PARAM)
-      if (pairing !== null) {
+      const url = new URL(request.url)
+      // Only `pairingRoute` sends the pairing path, and only where the deployment pairs tabs.
+      if (url.pathname === AGENT_PAIRING_PATH) {
+        const pairing = url.searchParams.get(AGENT_PAIRING_PARAM)
         if (!v.is(agentPairingIdSchema, pairing)) return new Response(null, { status: 400 })
         const hub = await this.#pairing.open(pairing)
         const { 0: tab, 1: socket } = new WebSocketPair()
@@ -212,7 +215,7 @@ export function createCloudflareRelayObject(
         this.#pairing.accept(socket, hub)
         return new Response(null, { status: 101, webSocket: tab })
       }
-      const documentId = new URL(request.url).searchParams.get(RELAY_DOCUMENT_PARAM)
+      const documentId = url.searchParams.get(RELAY_DOCUMENT_PARAM)
       if (!v.is(documentIdSchema, documentId)) return new Response(null, { status: 400 })
       const relay = await this.#sockets.open(documentId)
       const { 0: client, 1: server } = new WebSocketPair()
