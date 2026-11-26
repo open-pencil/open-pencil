@@ -12,6 +12,7 @@ import { exportFigFile, parseFigFile } from './formats/fig'
 import { readPenDocument } from './formats/pen/read'
 import type { PPTXExportOptions } from './formats/pptx'
 import { rasterFormat } from './formats/raster/adapter'
+import { withBooleanOutlines } from './formats/svg/boolean/combine'
 import { extractExportGraph } from './subgraph'
 import { resolveExportNodes, singleExportNode, type ExportNodes } from './targets'
 import type {
@@ -242,7 +243,6 @@ export const mermaidFormat: IOFormatAdapter<'mermaid'> = {
 async function writeDrawIO(graph: SceneGraph, target: DrawIOExportTarget): Promise<ExportResult> {
   const { writeDrawIOFile } = await import('@open-pencil/drawio')
   const { sceneGraphToDrawIO } = await import('./formats/drawio')
-  const { withBooleanOutlines } = await import('./formats/svg/boolean/combine')
   const warnings: NonNullable<ExportResult['warnings']> = []
   const rootIds = 'pageIds' in target ? target.pageIds : target.nodeIds
   const diagram = await withBooleanOutlines(graph, rootIds, async (booleanOutlines) =>
@@ -439,7 +439,6 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
     if (!target) throw new Error('Nothing to export')
     const { sceneNodesToTailwindJSX } = await import('@open-pencil/dom-css/export')
     const { vectorElementWith } = await import('#core/io/formats/html/vectors')
-    const { withBooleanOutlines } = await import('#core/io/formats/svg/boolean/combine')
     const data = await withBooleanOutlines(request.graph, target.nodeIds, async (outlines) =>
       sceneNodesToTailwindJSX(request.graph, target.nodeIds, {
         vectorElement: vectorElementWith(outlines)
