@@ -236,6 +236,20 @@ describe('style ranges', () => {
     expect(text.getRangeFontSize(0, 11)).toBe(12)
   })
 
+  test('drop the bindings a range holds itself for the fields of a style it takes', () => {
+    const { api, text } = styledText()
+    const graph = graphOf(api)
+    const collection = graph.createCollection('Type scale')
+    const caption = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
+    textStyle(api, '1:20', { fontSize: 20 })
+    text.setRangeBoundVariable(0, 5, 'fontSize', api.variables.getVariableById(caption.id))
+
+    text.setRangeTextStyleId(0, 5, '1:20')
+
+    expect(text.getRangeBoundVariable(0, 5, 'fontSize')).toBeNull()
+    expect(text.getRangeFontSize(0, 5)).toBe(20)
+  })
+
   test('give a range a fill style and its paints, and detach it when filled', async () => {
     const { api, text } = styledText()
     fillStyle(api, '1:30')
