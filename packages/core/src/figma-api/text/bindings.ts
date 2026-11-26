@@ -1,4 +1,5 @@
 import { mapValues, omit, pick } from 'es-toolkit/object'
+import { isEmptyObject } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 
 import {
@@ -183,6 +184,26 @@ export function rangeBindingChanges(
       ? Math.max(0, resolved)
       : null
   return { styleRuns, paragraphValue }
+}
+
+export function runsUnboundFrom(
+  runs: readonly StyleRun[],
+  field: TextBindableField
+): StyleRun[] | null {
+  if (!runs.some((run) => run.style.boundVariables?.[field])) {
+    return null
+  }
+  return runs.flatMap((run) => {
+    const own = run.style.boundVariables
+    if (!own?.[field]) {
+      return [run]
+    }
+    const kept = omit(own, [field])
+    const style = isEmptyObject(kept)
+      ? omit(run.style, ['boundVariables'])
+      : { ...run.style, boundVariables: kept }
+    return isEmptyObject(style) ? [] : [{ ...run, style }]
+  })
 }
 
 /** The variable `field` of every character of the range is bound to, `null`, or `mixed`. */

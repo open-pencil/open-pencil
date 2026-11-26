@@ -10,6 +10,7 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessors/utils'
 import { graphOf } from '#core/figma-api/graph'
+import { runsUnboundFrom } from '#core/figma-api/text/bindings'
 import { getTextStyle } from '#core/figma-api/text/style'
 import {
   type FigmaBindableField,
@@ -132,6 +133,10 @@ export function installVariableModeNodeProxyAccessors(
           // does text one style covers: Figma keeps the style, which wins while attached.
           const style = getTextStyle(node, 'textStyleId', MIXED_STYLE)
           const styled = typeof style === 'string' && style !== '' && isLayerTextField(name)
+          const runs = styled ? runsUnboundFrom(node.styleRuns, name) : null
+          if (runs) {
+            updateNode(this, internals, { styleRuns: runs })
+          }
           if (node.text === '' || styled) setLayerTextBinding(sceneGraph, node, name, bound)
           else this.setRangeBoundVariable(0, node.text.length, name, bound)
           return

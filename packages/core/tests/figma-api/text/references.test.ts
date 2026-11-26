@@ -270,6 +270,29 @@ describe('style ranges', () => {
     expect(text.getRangeFontSize(0, 5)).toBe(20)
   })
 
+  test('let a whole styled text binding replace and clear the bindings its characters hold', async () => {
+    const { api, text } = styledText()
+    const graph = graphOf(api)
+    const collection = graph.createCollection('Type scale')
+    const size = graph.createVariable('Body size', 'FLOAT', collection.id, 16)
+    const caption = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
+    textStyle(api, '1:21', { fontSize: 16 })
+    text.setRangeBoundVariable(0, 5, 'fontSize', api.variables.getVariableById(size.id))
+    await text.setTextStyleIdAsync('1:21')
+
+    text.setBoundVariable('fontSize', caption.id)
+
+    expect(text.getRangeBoundVariable(0, 11, 'fontSize')).toEqual({
+      type: 'VARIABLE_ALIAS',
+      id: caption.id
+    })
+    expect(text.getRangeTextStyleId(0, 11)).toBe('1:21')
+
+    text.setBoundVariable('fontSize', null)
+
+    expect(text.getRangeBoundVariable(0, 11, 'fontSize')).toBeNull()
+  })
+
   test('give a range a fill style and its paints, and detach it when filled', async () => {
     const { api, text } = styledText()
     fillStyle(api, '1:30')
