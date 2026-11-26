@@ -1,0 +1,1 @@
+- Automatic text direction follows the first character with a strong direction, as the Unicode bidi algorithm does, so numbers, number signs, and marks before it no longer make text right to left.
