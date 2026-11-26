@@ -3,6 +3,7 @@ import * as v from 'valibot'
 import type { FigUnreadVariable } from '@open-pencil/fig'
 import {
   collectionPluginDataNodeChange,
+  easingToKiwi,
   figmaFormulaFunction,
   parseGuidOrNull,
   mapUnsupportedExpressionReferences,
@@ -27,6 +28,8 @@ import {
   modesDefaultFirst,
   isUnsupportedVariableValue,
   foldFormula,
+  formulaTypeOf,
+  isEasing,
   formulaValueType,
   inferFormulaType,
   variableFormulaSchema,
@@ -205,7 +208,14 @@ function variableValueToKiwi(
       dataType: type,
       resolvedDataType: type
     }
-  return { value: { floatValue: Number(value) }, dataType: 'FLOAT', resolvedDataType: 'FLOAT' }
+  if (type === 'EASING' && isEasing(value))
+    return { value: { easingValue: easingToKiwi(value) }, dataType: type, resolvedDataType: type }
+  // A timing is a number of seconds, written as one, as Figma writes it.
+  return {
+    value: { floatValue: Number(value) },
+    dataType: 'FLOAT',
+    resolvedDataType: type === 'TIMING' ? type : 'FLOAT'
+  }
 }
 
 function formulaToKiwi(
@@ -214,6 +224,7 @@ function formulaToKiwi(
   ids: Map<string, GUID>
 ): VariableDataEntry {
   const typeOf = (id: string) => graph.variables.get(id)?.type
+  const formulaTypeOfId = (id: string) => formulaTypeOf(typeOf(id))
   const known = <T>(type: T | undefined) => {
     if (!type) throw new Error('Formula references a missing variable')
     return type
@@ -223,7 +234,7 @@ function formulaToKiwi(
     reference: (id) => variableValueToKiwi(graph, { aliasId: id }, known(typeOf(id)), ids),
     operation: (operation, operands) => ({
       dataType: 'EXPRESSION',
-      resolvedDataType: known(inferFormulaType(operation, typeOf)),
+      resolvedDataType: known(inferFormulaType(operation, formulaTypeOfId)),
       value: {
         expressionValue: {
           expressionFunction: figmaFormulaFunction(operation.operator),

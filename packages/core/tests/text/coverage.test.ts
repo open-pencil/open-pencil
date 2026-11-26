@@ -19,6 +19,24 @@ describe('font fallback coverage indexing', () => {
     expect(collectGraphFontRequirements(graph, [node.id]).characters).toBe('ABC')
   })
 
+  test('collects the list markers and the ellipsis a layout adds to the text', () => {
+    const graph = new SceneGraph()
+    const item = (listType: 'ORDERED' | 'UNORDERED') => ({ listType, indentation: 1 })
+    const list = graph.createNode('TEXT', pageId(graph), {
+      text: 'a\nb',
+      textParagraphs: [item('UNORDERED'), item('ORDERED')]
+    })
+    const truncated = graph.createNode('TEXT', pageId(graph), {
+      text: 'c',
+      textTruncation: 'ENDING'
+    })
+
+    expect(new Set(collectGraphFontRequirements(graph, [list.id]).characters)).toEqual(
+      new Set('a\nb•1.')
+    )
+    expect(collectGraphFontRequirements(graph, [truncated.id]).characters).toBe('c…')
+  })
+
   test('detects supplementary-plane Han code points', async () => {
     const family = `SupplementaryHan_${Date.now()}`
     const data = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()

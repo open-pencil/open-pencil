@@ -42,6 +42,8 @@ export function jsonPluginDataField<T>(
     key,
     role,
     decode(value) {
+      // Most layers carry no entry at all; validating that absence builds an issue per read.
+      if (value == null) return undefined
       const parsed = v.safeParse(stored, value)
       return parsed.success ? parsed.output : undefined
     },
@@ -60,6 +62,7 @@ export function textPluginDataField<const T extends string>(
     key,
     role,
     decode(value) {
+      if (value == null) return undefined
       const parsed = v.safeParse(schema, value)
       return parsed.success ? parsed.output : undefined
     },

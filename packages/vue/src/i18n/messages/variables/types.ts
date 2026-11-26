@@ -6,5 +6,9 @@ export const variableTypeMessageDefaults = {
   text: 'Text',
   textHint: 'Copy and labels',
   boolean: 'Boolean',
-  booleanHint: 'True or false'
+  booleanHint: 'True or false',
+  easing: 'Easing',
+  easingHint: 'Curves and springs',
+  timing: 'Timing',
+  timingHint: 'Durations and delays'
 } as const

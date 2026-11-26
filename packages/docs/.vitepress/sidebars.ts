@@ -43,15 +43,17 @@ export const userGuideSidebar = (
     text: labels.organizing,
     items: [
       { text: labels.layers, link: `${prefix}/user-guide/layers-and-pages` },
-      { text: labels.exporting, link: `${prefix}/user-guide/exporting` },
       // English only until translated; locales link to the canonical page.
+      { text: labels.files, link: '/user-guide/files' },
+      { text: labels.exporting, link: '/user-guide/exporting' },
       { text: labels.cloudStorage, link: '/user-guide/cloud-storage' }
     ]
   },
   {
     text: labels.advanced,
     items: [
-      { text: labels.autoLayout, link: `${prefix}/user-guide/auto-layout` },
+      // English only until translated; locales link to the canonical page.
+      { text: labels.autoLayout, link: '/user-guide/auto-layout' },
       { text: labels.components, link: `${prefix}/user-guide/components` },
       { text: labels.variables, link: `${prefix}/user-guide/variables` },
       // English only until translated; locales link to the canonical page.

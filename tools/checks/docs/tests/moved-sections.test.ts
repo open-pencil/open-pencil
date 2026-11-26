@@ -8,6 +8,7 @@ describe('moved sections', () => {
     expect(movedSection('/cloud/', '#your-account')).toBe('/cloud/account')
     expect(movedSection('/cloud/', '#connect-a-server')).toBe('/cloud/connect')
     expect(movedSection('/de/developers/', '#url-scheme')).toBe('/de/developers/url-scheme')
+    expect(movedSection('/user-guide/exporting', '#saving-files')).toBe('/user-guide/files#save')
     expect(movedSection('/cloud', '#version-history')).toBe('/cloud/documents#version-history')
     expect(movedSection('/cloud/self-hosting/', '#cloudflare-workers')).toBe(
       '/cloud/self-hosting/cloudflare'

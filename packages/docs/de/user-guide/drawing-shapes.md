@@ -43,6 +43,6 @@ Schlagschatten, innerer Schatten sowie Ebenen-, Hintergrund- und Vordergrundunsc
 
 ## Rahmen und Sektionen
 
-Ein Rahmen ist ein Container. Hineingezogene Objekte werden untergeordnet. Das Beschneiden ist standardmäßig ausgeschaltet. Rahmen unterstützen [automatische Anordnung](./auto-layout).
+Ein Rahmen ist ein Container. Hineingezogene Objekte werden untergeordnet. Das Beschneiden ist standardmäßig ausgeschaltet. Rahmen unterstützen [automatische Anordnung](/user-guide/auto-layout).
 
 Eine Sektion ist ein Container der obersten Ebene und übernimmt beim Zeichnen überlappende Nachbarobjekte.

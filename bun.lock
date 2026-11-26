@@ -1071,6 +1071,20 @@
         "fflate": "^0.8.3",
       },
     },
+    "tools/generate/guide-images": {
+      "name": "@open-pencil/guide-images-tools",
+      "dependencies": {
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "@open-pencil/scene-graph": "workspace:*",
+        "@playwright/test": "^1.63.0",
+        "sharp": "0.34.5",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.14",
+        "@types/node": "^25.9.9",
+        "typescript": "npm:@typescript/typescript6@^6.0.2",
+      },
+    },
     "tools/generate/landing-posters": {
       "name": "@open-pencil/landing-posters-tools",
       "dependencies": {
@@ -1981,6 +1995,8 @@
     "@open-pencil/fig-schema-tools": ["@open-pencil/fig-schema-tools@workspace:tools/generate/fig-schema"],
 
     "@open-pencil/fork-releases-tools": ["@open-pencil/fork-releases-tools@workspace:tools/release/fork-releases"],
+
+    "@open-pencil/guide-images-tools": ["@open-pencil/guide-images-tools@workspace:tools/generate/guide-images"],
 
     "@open-pencil/harness": ["@open-pencil/harness@workspace:packages/harness"],
 
