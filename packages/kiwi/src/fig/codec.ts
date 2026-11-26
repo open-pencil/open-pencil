@@ -10,7 +10,7 @@ import { compileSchema, encodeBinarySchema } from '../schema-runtime'
 import { decompressFigKiwiData, loadFigDataDecompressor } from './container'
 import { isZstdCompressed, getKiwiMessageType } from './protocol'
 import figmaSchema from './schema'
-import type { Color, GUID, Matrix, PaintFilter, Vector } from './types'
+import type { Color, EasingDataValue, GUID, Matrix, PaintFilter, Vector } from './types'
 
 interface CompiledSchema {
   encodeMessage(message: unknown): Uint8Array
@@ -246,6 +246,7 @@ export interface VariableAnyValue {
     expressionFunction?: string
     expressionArguments?: VariableDataEntry[]
   }
+  easingValue?: EasingDataValue
 }
 
 export interface VariableDataEntry {
