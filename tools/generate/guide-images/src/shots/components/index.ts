@@ -139,7 +139,15 @@ export const SHOTS: Record<string, Shot> = {
       await panel
         .getByText('Behaviour', { exact: true })
         .first()
-        .evaluate((heading) => heading.scrollIntoView({ block: 'start' }))
+        .evaluate((heading) => {
+          // Near the top of the panel, with room above for the clip: the tabs stay out of it.
+          heading.scrollIntoView({ block: 'start' })
+          let scroller = heading.parentElement
+          while (scroller && scroller.scrollHeight <= scroller.clientHeight) {
+            scroller = scroller.parentElement
+          }
+          scroller?.scrollBy(0, -48)
+        })
       await settle(page)
       const next = await boxOf(panel.getByText('Position', { exact: true }).first())
       const clip = await panelClip(page, 'Behaviour', {
@@ -148,8 +156,7 @@ export const SHOTS: Record<string, Shot> = {
         width: 0,
         height: 0
       })
-      // Below the tabs' underline, which the scroll leaves at the top.
-      return picture(page, { ...clip, y: clip.y + 4, height: clip.height - 4 }, PANEL_RADIUS)
+      return picture(page, clip, PANEL_RADIUS)
     }
   }
 }
