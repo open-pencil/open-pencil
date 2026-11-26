@@ -294,6 +294,25 @@ describe('text alignment export', () => {
     }
   )
 
+  // Width and text-align apply only to a box that holds lines, which an inline span is not.
+  test('gives text on the canvas a box for its width and alignment', () => {
+    const { html } = text({ text: 'Hello', textAlignHorizontal: 'RIGHT' })
+    expect(html).toContain('display: inline-block')
+    expect(html).toContain('width: 200px')
+    expect(html).toContain('text-align: right')
+  })
+
+  test('leaves text in a frame to the frame layout', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, { width: 300, height: 100 })
+    graph.createNode('TEXT', frame.id, { text: 'Hello', width: 200, height: 40 })
+    const html = serializeHTML(
+      sceneNodeToDesignDocument(graph, frame.id, { includeSourceIds: false })
+    )
+    expect(html).toContain('position: absolute')
+    expect(html).not.toContain('inline-block')
+  })
+
   // A frame that flows right to left exports `direction: rtl`, which its text would inherit.
   test('keeps left-to-right text in a right-to-left frame left to right', () => {
     const graph = new SceneGraph()

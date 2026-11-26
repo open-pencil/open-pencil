@@ -298,6 +298,25 @@ function insideRightToLeftFrame(graph: SceneGraph, node: SceneNode): boolean {
   return false
 }
 
+/** The box text lines up in: its display, direction, and the side it aligns to. */
+function addTextBox(
+  style: DesignStyleDeclaration,
+  node: SceneNode,
+  parent: SceneNode | undefined,
+  inheritsRightToLeft: boolean
+): void {
+  // Nothing lays out text on the canvas, and an inline box would ignore its width and alignment.
+  if (!parent || parent.type === 'CANVAS') style.display = 'inline-block'
+  const rtl = resolveNodeTextDirection(node) === 'RTL'
+  // Text says its own direction where a frame around it flows right to left, which it inherits.
+  if (rtl) style.direction = 'rtl'
+  else if (inheritsRightToLeft) style.direction = 'ltr'
+  // Alignment names a side whatever the direction; right-to-left text starts at the right.
+  if (node.textAlignHorizontal !== 'LEFT' || rtl)
+    style['text-align'] =
+      node.textAlignHorizontal === 'JUSTIFIED' ? 'justify' : node.textAlignHorizontal.toLowerCase()
+}
+
 function styleFromTextNode(
   node: SceneNode,
   parent: SceneNode | undefined,
@@ -310,10 +329,7 @@ function styleFromTextNode(
   addSize(style, node, parent, css)
   addPositioning(style, node, parent)
   addLayoutChild(style, node, parent)
-  const rtl = resolveNodeTextDirection(node) === 'RTL'
-  // Text says its own direction where a frame around it flows right to left, which it inherits.
-  if (rtl) style.direction = 'rtl'
-  else if (inheritsRightToLeft) style.direction = 'ltr'
+  addTextBox(style, node, parent, inheritsRightToLeft)
   const color = fillToCSS(node.fills.at(0), profile)
   style.color = color ? css('fills/0/color', color) : cssColor(BLACK, profile)
   style['font-family'] = node.fontFamily
@@ -334,10 +350,6 @@ function styleFromTextNode(
     const written = isEqual(ending, node.letterSpacing) ? spacing : letterSpacingToCSS(ending)
     Object.assign(style, letterSpacingRoomCSS(ending, written, style.width))
   }
-  // Alignment names a side whatever the direction; right-to-left text starts at the right.
-  if (node.textAlignHorizontal !== 'LEFT' || rtl)
-    style['text-align'] =
-      node.textAlignHorizontal === 'JUSTIFIED' ? 'justify' : node.textAlignHorizontal.toLowerCase()
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
   Object.assign(style, textEffectsToCSS(node.effects, css, profile))
   if (node.textDecoration !== 'NONE') {
