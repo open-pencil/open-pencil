@@ -72,6 +72,16 @@ export function cloudClientDiscovery(options: ClientMetadataOptions): ClientDisc
       .execute()
   }
 
+  /** Whether a client was fetched and valid within `STALE_MS`, as stored now rather than when read. */
+  async function validatedLately(clientId: string): Promise<boolean> {
+    const stored = await options.database
+      .selectFrom('oauthClient')
+      .select('updatedAt')
+      .where('clientId', '=', clientId)
+      .executeTakeFirst()
+    return stored?.updatedAt != null && Date.now() - new Date(stored.updatedAt).getTime() < STALE_MS
+  }
+
   return {
     ...discovery,
     async resolve(context, clientId, existing) {
@@ -80,7 +90,8 @@ export function cloudClientDiscovery(options: ClientMetadataOptions): ClientDisc
         : Number.POSITIVE_INFINITY
       if (existing && age < FRESH_MS) return existing
       if (!(await mayFetchDocument(clientId))) {
-        if (existing && age < STALE_MS) return existing
+        // Read again: a fetch that failed while this one waited may have ended its standing.
+        if (existing && age < STALE_MS && (await validatedLately(clientId))) return existing
         throw new APIError('TOO_MANY_REQUESTS', {
           error: 'temporarily_unavailable',
           error_description:
