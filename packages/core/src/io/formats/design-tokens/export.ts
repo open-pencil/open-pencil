@@ -79,20 +79,42 @@ function openPencilFields(variable: Variable, modeId: string, formula?: string) 
   return isEmptyObject(fields) ? {} : { [OPENPENCIL_EXTENSION]: fields }
 }
 
-/** Whether an easing resolves, in this mode, to a curve a `cubicBezier` token holds. */
-function exportableEasing(
+/**
+ * Whether an easing gives a `cubicBezier` token in each of these modes of its collection. An alias
+ * follows its target: in the same collection, in the same mode; in another, in every mode of the
+ * target's, since a resolver picks each collection's mode on its own.
+ */
+function easingTokenInModes(
   context: ExportContext,
-  variable: Variable,
-  mode: VariableCollectionMode
+  variableId: string,
+  modeIds: readonly string[],
+  seen: ReadonlySet<string> = new Set()
 ): boolean {
-  const resolved = context.graph.resolveVariable(variable.id, mode.modeId)
-  return isEasing(resolved) && cubicBezierTokenValue(resolved) !== undefined
+  const variable = context.graph.variables.get(variableId)
+  const collection = context.collectionOf.get(variableId)
+  if (!variable || !collection) return false
+  return modeIds.every((modeId) => {
+    const key = `${variableId}:${modeId}`
+    if (seen.has(key) || !Object.hasOwn(variable.valuesByMode, modeId)) return false
+    const value = variable.valuesByMode[modeId]
+    if (typeof value === 'object' && 'aliasId' in value) {
+      const target = context.collectionOf.get(value.aliasId)
+      if (!target) return false
+      const targetModes =
+        target.id === collection.id ? [modeId] : target.modes.map((mode) => mode.modeId)
+      return easingTokenInModes(context, value.aliasId, targetModes, new Set(seen).add(key))
+    }
+    if (typeof value === 'object' && 'expression' in value && value.expression !== 'FORMULA')
+      return false
+    const resolved = context.graph.resolveVariable(variableId, modeId)
+    return isEasing(resolved) && cubicBezierTokenValue(resolved) !== undefined
+  })
 }
 
 /**
  * An alias as a `{group.token}` reference, with the target's names for Figma when it is in another
- * collection; or why it has none. A spring or hold has no token, so an alias to one would name a
- * token that is not there.
+ * collection; or why it has none. A spring or hold has no token, so an alias that can reach one
+ * would name a token that is not there.
  */
 function aliasTokenValue(
   context: ExportContext,
@@ -103,7 +125,7 @@ function aliasTokenValue(
 ):
   | { value: string; figma: Record<string, unknown> }
   | { issue: 'unsupported-easing' | 'missing-alias' } {
-  if (variable.type === 'EASING' && !exportableEasing(context, variable, mode))
+  if (variable.type === 'EASING' && !easingTokenInModes(context, variable.id, [mode.modeId]))
     return { issue: 'unsupported-easing' }
   const path = context.references.get(aliasId)
   const target = context.graph.variables.get(aliasId)

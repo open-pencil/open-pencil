@@ -178,7 +178,7 @@ export async function openFileDialog() {
           {
             description: 'Design file',
             accept: {
-              'application/octet-stream': ['.fig', '.jam'],
+              'application/octet-stream': ['.fig', '.jam', '.deck'],
               'application/json': ['.pen'],
               'text/html': ['.html', '.htm'],
               'application/xhtml+xml': ['.xhtml'],

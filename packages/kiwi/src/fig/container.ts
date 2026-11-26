@@ -6,10 +6,14 @@ import { isZstdCompressed } from './protocol'
 export const FIG_KIWI_DEFAULT_VERSION = 101
 
 /**
- * The header a canvas starts with. Figma's design files and FigJam boards differ only here:
- * a board's `.jam` archive holds the same records under `fig-jam.`.
+ * The header a canvas starts with. Figma's design files, FigJam boards and Slides decks differ only
+ * here: a `.jam` archive holds the same records under `fig-jam.` and a `.deck` under `fig-deck`.
  */
-export const FIG_FILE_HEADERS = { design: 'fig-kiwi', board: 'fig-jam.' } as const
+export const FIG_FILE_HEADERS = {
+  design: 'fig-kiwi',
+  board: 'fig-jam.',
+  slides: 'fig-deck'
+} as const
 
 /** What a canvas is for, by its header. */
 export type FigFileKind = keyof typeof FIG_FILE_HEADERS
@@ -19,6 +23,7 @@ export function figFileKind(binary: Uint8Array): FigFileKind | null {
   const header = new TextDecoder().decode(binary.slice(0, 8))
   if (header === FIG_FILE_HEADERS.design) return 'design'
   if (header === FIG_FILE_HEADERS.board) return 'board'
+  if (header === FIG_FILE_HEADERS.slides) return 'slides'
   return null
 }
 

@@ -7,6 +7,7 @@ import {
   createVerifiedCredentialAccount,
   withCookie
 } from '#cloud-tests/helpers/account-authentication'
+import { adminContractClient, outcome } from '#cloud-tests/helpers/contract'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import { accountSecurityErrorResponseSchema } from '#cloud/contract'
 import { parseCloudServerConfig } from '#cloud/server'
@@ -59,10 +60,9 @@ describe('deployment administrator MFA assurance', () => {
         })
       )
       const sessionCookie = authenticationCookie(signIn)
-      expect(
-        (await fixture.client.api.admin.operations.$get(undefined, withCookie(sessionCookie)))
-          .status
-      ).toBe(403)
+      const operations = (cookie: string) =>
+        outcome(adminContractClient(fixture.app, withCookie(cookie).headers).operations())
+      expect(await operations(sessionCookie)).toMatchObject({ status: 403 })
 
       const enabled = await fixture.client.api.account.mfa.totp.enable.$post(
         { json: { password: 'a sufficiently long password' } },
@@ -93,10 +93,7 @@ describe('deployment administrator MFA assurance', () => {
       const cookieMatch = setCookie.match(/(?:^|,\s*)([^;,]*better-auth\.session_token=[^;]+)/)
       const verifiedCookie = cookieMatch?.[1]
       if (!verifiedCookie) throw new Error('Expected a verified MFA session cookie')
-      expect(
-        (await fixture.client.api.admin.operations.$get(undefined, withCookie(verifiedCookie)))
-          .status
-      ).toBe(200)
+      expect(await operations(verifiedCookie)).toBe('ok')
 
       expect(
         (

@@ -49,22 +49,26 @@ type DocumentBehaviour = Pick<
 /** What the canvas's view decides: how the pointer, keys, chrome, and panels behave. */
 type ViewBehaviour = Omit<EditorProfile, keyof DocumentBehaviour>
 
+const DESIGN_BEHAVIOUR: DocumentBehaviour = {
+  edits: true,
+  tools: null,
+  pathEdits: 'all',
+  layerEdits: 'all',
+  toolKeys: TOOL_SHORTCUTS,
+  snapGrid: 1,
+  dotGrid: null,
+  pixelGrid: true,
+  framesOpen: true,
+  sectionTitles: 'fill',
+  lint: true,
+  rulers: true,
+  panelsOpen: true
+}
+
 const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
-  design: {
-    edits: true,
-    tools: null,
-    pathEdits: 'all',
-    layerEdits: 'all',
-    toolKeys: TOOL_SHORTCUTS,
-    snapGrid: 1,
-    dotGrid: null,
-    pixelGrid: true,
-    framesOpen: true,
-    sectionTitles: 'fill',
-    lint: true,
-    rulers: true,
-    panelsOpen: true
-  },
+  design: DESIGN_BEHAVIOUR,
+  // A slide is drawn with everything a design is.
+  slides: DESIGN_BEHAVIOUR,
   board: {
     edits: true,
     tools: BOARD_TOOLS,

@@ -55,7 +55,14 @@ interface RenderBoundsOptions {
   measured?: MeasuredSubtrees
 }
 
-const PAINTING_CONTAINERS = new Set(['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE', 'SECTION'])
+const PAINTING_CONTAINERS = new Set([
+  'FRAME',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE',
+  'SECTION',
+  'SLIDE'
+])
 
 /** The axis-aligned box around `bounds` once `matrix` maps it. */
 export function mapVisualBounds(matrix: Mat3, bounds: VisualBounds): VisualBounds {

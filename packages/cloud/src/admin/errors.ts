@@ -19,14 +19,3 @@ export class AdminDomainError extends Error {
     super(message)
   }
 }
-
-const CONFLICTS = new Set<AdminErrorCode>([
-  'invalid_enrollment_transition',
-  'account_approved',
-  'document_not_restorable',
-  'workspace_gone'
-])
-
-export function adminErrorStatus(error: AdminDomainError): 400 | 409 {
-  return CONFLICTS.has(error.code) ? 409 : 400
-}

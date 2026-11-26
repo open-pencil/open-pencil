@@ -767,3 +767,4 @@ pl:panels.colorProfileSRGB
 pl:panels.colorProfileDisplayP3
 pl:variables/easing.iosWeb
 pl:variables/easing.android
+fr:cloud/embed.pages

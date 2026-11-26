@@ -59,3 +59,103 @@ describe('fill sizing in DOM/CSS export', () => {
     expect(styleOf(doc, 'Tall')?.height).toBeUndefined()
   })
 })
+
+describe('auto layout sizes in DOM/CSS export', () => {
+  const child = { name: 'Child', width: 40, height: 50 }
+  const shrink = (layout: Partial<SceneNode>, over: Partial<SceneNode> = {}) =>
+    styleOf(exportParent(layout, [{ ...child, ...over }]), 'Child')?.['flex-shrink']
+
+  it('keeps a layer that does not fill from shrinking, so it overflows as auto layout lets it', () => {
+    expect(shrink({ layoutMode: 'HORIZONTAL' })).toBe('0')
+    expect(shrink({ layoutMode: 'VERTICAL', primaryAxisSizing: 'FIXED' })).toBe('0')
+    expect(shrink({ layoutMode: 'VERTICAL', primaryAxisSizing: 'HUG', maxHeight: 40 })).toBe('0')
+    const hugs = { layoutMode: 'VERTICAL', primaryAxisSizing: 'HUG' } as const
+    expect(shrink({ ...hugs, layoutGrow: 1 })).toBe('0')
+    expect(shrink({ ...hugs, layoutAlignSelf: 'STRETCH' })).toBe('0')
+    expect(shrink({ ...hugs, verticalConstraint: 'STRETCH' })).toBe('0')
+  })
+
+  it('says nothing of a layer that fills, is placed, or has a column that hugs it', () => {
+    expect(shrink({ layoutMode: 'HORIZONTAL' }, { layoutGrow: 1 })).toBeUndefined()
+    expect(shrink({ layoutMode: 'HORIZONTAL' }, { layoutPositioning: 'ABSOLUTE' })).toBeUndefined()
+    expect(shrink({ layoutMode: 'VERTICAL', primaryAxisSizing: 'HUG' })).toBeUndefined()
+    expect(shrink({ layoutMode: 'NONE' })).toBeUndefined()
+  })
+
+  it('drops the gap space between takes the place of, keeping the space between wrapped lines', () => {
+    const between = {
+      layoutMode: 'HORIZONTAL',
+      primaryAxisAlign: 'SPACE_BETWEEN',
+      itemSpacing: 16
+    } as const
+    const style = (layout: Partial<SceneNode>) => styleOf(exportParent(layout, [child]), 'Parent')
+    expect(style(between)).not.toHaveProperty('gap')
+    expect(style(between)).not.toHaveProperty('row-gap')
+    const wrapped = style({ ...between, layoutWrap: 'WRAP', counterAxisSpacing: 8 })
+    expect(wrapped).toMatchObject({ 'row-gap': '8px' })
+    expect(wrapped).not.toHaveProperty('column-gap')
+    expect(style({ ...between, layoutWrap: 'WRAP', counterAxisSpacing: null })).toMatchObject({
+      'row-gap': '16px'
+    })
+    const packed = { ...between, primaryAxisAlign: 'MIN' } as const
+    expect(style(packed)).toMatchObject({ gap: '16px' })
+    // A spacing of none between wrapped lines is one, where an unset spacing follows the items'.
+    const joined = style({ ...packed, layoutWrap: 'WRAP', counterAxisSpacing: 0 })
+    expect(joined).toMatchObject({ 'column-gap': '16px' })
+    expect(joined).not.toHaveProperty('gap')
+    expect(joined).not.toHaveProperty('row-gap')
+    expect(style({ ...packed, layoutWrap: 'WRAP', counterAxisSpacing: null })).toMatchObject({
+      gap: '16px'
+    })
+  })
+})
+
+describe('canvas metrics, as preview projects', () => {
+  const stroke = {
+    type: 'SOLID',
+    color: { r: 0, g: 0, b: 0, a: 1 },
+    opacity: 1,
+    visible: true,
+    weight: 2,
+    align: 'INSIDE'
+  } as const
+  function padding(over: Partial<SceneNode>, exact = true) {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      name: 'Frame',
+      layoutMode: 'VERTICAL',
+      strokes: [stroke],
+      paddingTop: 1,
+      paddingRight: 24,
+      paddingBottom: 1,
+      paddingLeft: 24,
+      ...over
+    })
+    const canvasMetrics = exact ? { autoLineHeight: () => undefined } : undefined
+    return styleOf(sceneNodeToDesignDocument(graph, frame.id, { canvasMetrics }).children, 'Frame')
+  }
+
+  it('takes the room of a stroke the layout leaves out from the padding, down to none', () => {
+    const style = padding({})
+    expect(style).toMatchObject({ 'padding-inline': '22px' })
+    expect(style).not.toHaveProperty('padding-block')
+    expect(padding({ strokesIncludedInLayout: true })).toMatchObject({
+      'padding-block': '1px',
+      'padding-inline': '24px'
+    })
+    expect(padding({}, false)).toMatchObject({ 'padding-block': '1px', 'padding-inline': '24px' })
+  })
+
+  it('writes the measured line height of text with an automatic one, and only then', () => {
+    const graph = new SceneGraph()
+    const text = graph.createNode('TEXT', graph.getPages()[0].id, { name: 'Text', text: 'Hi' })
+    const lineHeight = (canvasMetrics?: { autoLineHeight: () => number }) =>
+      styleOf(sceneNodeToDesignDocument(graph, text.id, { canvasMetrics }).children, 'Text')?.[
+        'line-height'
+      ]
+    expect(lineHeight()).toBeUndefined()
+    expect(lineHeight({ autoLineHeight: () => 18 })).toBe('18px')
+    graph.updateNode(text.id, { lineHeight: { value: 30, unit: 'PIXELS' } })
+    expect(lineHeight({ autoLineHeight: () => 18 })).toBe('30px')
+  })
+})

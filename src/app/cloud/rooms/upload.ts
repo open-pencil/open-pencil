@@ -1,9 +1,9 @@
 import * as v from 'valibot'
 
 import { CloudAPIError } from '@open-pencil/cloud/client'
+import type { CollabAction } from '@open-pencil/collab'
 import { DEADLINE_MS } from '@open-pencil/std/timing'
 
-import type { CollabAction } from '@/app/collab/transport/types'
 import type { EditorStore } from '@/app/editor/session'
 import { followUpload, kickSyncEngine } from '@/app/storage/sync'
 

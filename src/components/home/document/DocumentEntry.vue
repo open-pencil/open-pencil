@@ -54,7 +54,13 @@ const emit = defineEmits<{ open: []; delete: [] }>()
 const styles = computed(() => documentEntry({ view, kind }))
 const files = useMessages('files')
 const kindLabel = computed(() =>
-  kind ? { design: files.value.createDesign, board: files.value.createBoard }[kind] : null
+  kind
+    ? {
+        design: files.value.createDesign,
+        board: files.value.createBoard,
+        slides: files.value.createSlides
+      }[kind]
+    : null
 )
 const menuUI = computed(() =>
   useMenuUI({

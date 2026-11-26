@@ -15,6 +15,16 @@ Select **Share** on a Cloud document.
 
 The server keeps only a fingerprint of each link, so a link can be copied only on the device that created it. On other devices, **Reset link** makes a new one you can copy; the old link stops working.
 
+## Embed a Document in Another Site
+
+Where the server allows it, which the hosted service does, a document shared with **Anyone with the link** can appear inside another site's page, such as a wiki, a blog post, or documentation. In **Share**, choose **Copy embed code** and paste the frame it copies into the page's HTML. The frame starts at 800 by 450 pixels; change its `width` and `height` to fit the page.
+
+The frame shows the document read-only, with its pages, **Zoom to fit**, and **Open in OpenPencil**, which opens the document in a tab of its own. It keeps up with edits as people make them, and nobody in the document sees who is looking at it. It never uses the visitor's account, so a document whose link needs signing in to the server does not show. Add `?theme=light` or `?theme=dark` to the frame's address before the `#` to choose its colors; otherwise it follows the visitor's system.
+
+The embed code carries the link itself, so anyone who can read the page can open the document. **Reset link** or **Restricted** stops every embed of the old link, as it stops the link.
+
+Community gallery documents embed the same way at `/embed/community/<id>` on their server, with `?version=<id>` for a named version.
+
 ## Open an Invitation
 
 An invitation link opens OpenPencil with who invited you, to which document, and on which server. If you have never used that server, OpenPencil warns you to sign in only if you trust it. Sign in with the address the invitation was sent to; if you are signed in as someone else, choose **Use another account**. Once you accept, the document opens and stays under **Shared with you** on Home.

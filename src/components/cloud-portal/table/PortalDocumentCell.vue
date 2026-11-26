@@ -39,7 +39,12 @@ const table = portalTable()
 const documentCell = tv(documentCellTheme)
 const ui = computed(() => documentCell({ kind }))
 const kindLabel = computed(
-  () => ({ design: files.value.createDesign, board: files.value.createBoard })[kind]
+  () =>
+    ({
+      design: files.value.createDesign,
+      board: files.value.createBoard,
+      slides: files.value.createSlides
+    })[kind]
 )
 const failed = ref(false)
 watch(

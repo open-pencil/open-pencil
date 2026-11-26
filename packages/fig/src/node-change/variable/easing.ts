@@ -4,6 +4,9 @@ import type { EasingDataValue } from '@open-pencil/kiwi/fig'
 import type { Easing } from '@open-pencil/scene-graph'
 import { easingSchema } from '@open-pencil/scene-graph/variables'
 
+/** The mass of every spring Figma writes; a record that leaves it out has this one. */
+const SPRING_MASS = 1
+
 /** An EASING value as a file stores it; one of a kind OpenPencil does not know is refused. */
 export function easingFromKiwi(data: EasingDataValue): Easing {
   const { bezierEasing: bezier, springEasing: spring } = data.easingValue ?? {}
@@ -16,7 +19,7 @@ export function easingFromKiwi(data: EasingDataValue): Easing {
       spring: {
         stiffness: spring.stiffness ?? 0,
         damping: spring.damping ?? 0,
-        mass: spring.mass ?? 0,
+        mass: spring.mass ?? SPRING_MASS,
         ...(spring.springType && { type: spring.springType }),
         ...(spring.springPlatform && { platform: spring.springPlatform })
       }

@@ -210,6 +210,10 @@ export function createCloudflareCloud(
         return await createCloudServer(app, {
           site: assetSiteFiles(c.env.ASSETS),
           indexingPolicy: config.indexingPolicy,
+          publicURL: config.publicURL,
+          embedding: config.embeddingEnabled
+            ? { allowedOrigins: config.embeddingOrigins }
+            : undefined,
           reportError: services.reporter
         }).fetch(c.req.raw)
       } finally {
