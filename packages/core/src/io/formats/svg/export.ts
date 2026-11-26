@@ -21,6 +21,7 @@ import {
   resolveFill,
   solidFillOpacity,
   svgStrokeAttrs,
+  withDrawnStrokes,
   type SVGExportContext
 } from './defs'
 import { layerEffects, withLayerEffects, type ExportEffectWarning } from './effects'
@@ -104,7 +105,9 @@ function vectorShapeElements(
   // Traced regions leave the open segments, which the canvas strokes, to add here.
   else if (network && filled?.traced && looseSegments(network).length > 0)
     appendAll(elements, openPathElements(node, network, common, looseSegments))
-  if (stroked) appendAll(elements, strokeGeometryElements(node, strokeAttrs))
+  if (stroked) {
+    appendAll(elements, strokeGeometryElements(node, strokeAttrs))
+  }
   if (node.vectorNetwork)
     appendAll(elements, vectorArrowHeads(node, node.vectorNetwork, strokeAttrs))
   return elements.length > 0
@@ -397,7 +400,8 @@ function layerId(name: string, ids: NonNullable<SVGExportContext['layerIds']>): 
   return id
 }
 
-function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
+function drawNode(layer: SceneNode, ctx: SVGExportContext): SVGNode | null {
+  const node = withDrawnStrokes(layer, ctx.graph)
   const effects = layerEffects(node, ctx)
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
@@ -429,7 +433,6 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     ownStrokes.stroke && tint.includes('stroke')
       ? { ...ownStrokes, stroke: CURRENT_COLOR }
       : ownStrokes
-  const drawnStrokes = ownStrokes.stroke ? visibleStrokes : []
 
   const children: (SVGNode | null)[] = buildShapeChildren(
     node,
@@ -437,7 +440,7 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     fillAttr,
     fillOpacity,
     strokeAttrs,
-    drawnStrokes,
+    visibleStrokes,
     ctx
   )
 

@@ -3,19 +3,9 @@ import { describe, expect, test } from 'bun:test'
 import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 
-const HASH = 'svg-export-image'
+import { pngHeader } from './helpers'
 
-/** A PNG's signature and header for a 40 × 20 image: all the export reads of its size. */
-function pngHeader(width: number, height: number): Uint8Array {
-  const bytes = new Uint8Array(33)
-  bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-  const view = new DataView(bytes.buffer)
-  view.setUint32(8, 13)
-  bytes.set([0x49, 0x48, 0x44, 0x52], 12)
-  view.setUint32(16, width)
-  view.setUint32(20, height)
-  return bytes
-}
+const HASH = 'svg-export-image'
 
 function exported(fill: Partial<Fill>): { pattern: string; image: string } {
   const graph = new SceneGraph()

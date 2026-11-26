@@ -2,7 +2,7 @@ import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 
 import { booleanOutlines } from './boolean/outline'
 import type { SVGExportContext } from './defs'
-import { nextDefId, svgStrokeAttrs } from './defs'
+import { nextDefId, strokeReach, svgStrokeAttrs } from './defs'
 import { svg, svgElement, type SVGNode } from './node'
 import {
   boxOutlinePath,
@@ -75,7 +75,7 @@ export function alignedStrokeElement(
   } else {
     // A box wide enough for the stroke, its mitred tips included, with the outline cut out of it.
     // The doubled stroke mitres out to its weight times the miter limit.
-    const margin = stroke.weight * Math.max(2, node.strokeMiterLimit)
+    const margin = strokeReach(stroke, node)
     const left = round(-margin)
     const top = round(-margin)
     const right = round(node.width + margin)
@@ -134,7 +134,6 @@ export function shapeWithTextDetailElements(
   return [svg('path', { d: details, fill: 'none', ...strokeAttrs, 'clip-path': `url(#${clipId})` })]
 }
 
-/** A layer's saved stroke outlines, filled in its stroke's paint as the canvas fills them. */
 export function strokeGeometryElements(
   node: SceneNode,
   strokeAttrs: Attrs,
@@ -150,10 +149,6 @@ export function strokeGeometryElements(
   })
 }
 
-/**
- * A text's saved stroke outlines as the canvas draws them over its glyphs, an inside stroke kept to
- * the text box.
- */
 export function textStrokeElements(
   node: SceneNode,
   visibleStrokes: Stroke[],
@@ -166,7 +161,8 @@ export function textStrokeElements(
   if (!strokeAttrs.stroke) {
     return []
   }
-  if (visibleStrokes[0].align !== 'INSIDE') {
+  const clippedToTextBox = visibleStrokes[0].align === 'INSIDE'
+  if (!clippedToTextBox) {
     return strokeGeometryElements(node, strokeAttrs)
   }
   const clipId = nextDefId(ctx, 'clip')

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { Fill, SceneGraph, Stroke } from '@open-pencil/scene-graph'
 
-import { BLACK_STROKE, moveTo, paths, rects, svgOf } from './helpers'
+import { BLACK_STROKE, moveTo, paths, pngHeader, rects, svgOf } from './helpers'
 
 const IMAGE_HASH = 'svg-stroke-paint-image'
 
@@ -23,18 +23,6 @@ const IMAGE_STROKE: Stroke = {
   weight: 4,
   imageHash: IMAGE_HASH,
   imageScaleMode: 'FILL'
-}
-
-/** A PNG's signature and header for a 4 × 4 image: all the export reads of its size. */
-function pngHeader(): Uint8Array {
-  const bytes = new Uint8Array(33)
-  bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-  const view = new DataView(bytes.buffer)
-  view.setUint32(8, 13)
-  bytes.set([0x49, 0x48, 0x44, 0x52], 12)
-  view.setUint32(16, 4)
-  view.setUint32(20, 4)
-  return bytes
 }
 
 function strokedRect(strokes: Stroke[], fills: Fill[] = []) {
@@ -184,6 +172,28 @@ describe('a gradient stroke exports as the gradient the canvas strokes with', ()
     expect(onlyGradient(svg)).toContain('gradientTransform="matrix(20 0 0 20 0 0)"')
   })
 
+  test('on text along a path, under the glyphs, as the canvas strokes it first', () => {
+    const svg = svgOf((graph, pageId) => [
+      graph.createNode('TEXT', pageId, {
+        text: 'A',
+        width: 20,
+        height: 20,
+        strokes: [RED_TO_BLUE],
+        strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: moveTo(2, 3) }],
+        derivedTextGlyphs: [{ commandsBlob: moveTo(0, 0), x: 0, y: 0, fontSize: 14 }],
+        textPathData: {
+          network: { vertices: [], segments: [], regions: [] },
+          normalizedSize: { x: 20, y: 20 },
+          tValue: 0,
+          forward: true
+        }
+      }).id
+    ])
+    const stroke = svg.indexOf('<path d="M2 3" fill="url(#grad0)"')
+    expect(stroke).toBeGreaterThan(-1)
+    expect(stroke).toBeLessThan(svg.indexOf('<text'))
+  })
+
   test('on text without saved stroke geometry, leaves no unused gradient behind', () => {
     const svg = svgOf((graph, pageId) => [
       graph.createNode('TEXT', pageId, { text: 'A', width: 20, height: 20, strokes: [RED_TO_BLUE] })
@@ -211,22 +221,60 @@ describe('a gradient stroke exports as the gradient the canvas strokes with', ()
 })
 
 describe('an image stroke', () => {
-  test('exports as the pattern an image fill uses', () => {
-    const svg = svgOf((graph, pageId) => {
-      graph.images.set(IMAGE_HASH, pngHeader())
-      return strokedRect([{ ...IMAGE_STROKE, opacity: 0.5 }])(graph, pageId)
+  function imageStroked(stroke: Stroke, build = strokedRect([stroke])) {
+    return svgOf((graph, pageId) => {
+      graph.images.set(IMAGE_HASH, pngHeader(4, 4))
+      return build(graph, pageId)
     })
+  }
+
+  test('exports as the image pattern fills use, reaching as far as the stroke paints', () => {
+    const svg = imageStroked({ ...IMAGE_STROKE, opacity: 0.5 })
     expect(rects(svg)).toEqual([
       '<rect width="40" height="20" fill="none" stroke="url(#img0)" stroke-width="4" stroke-opacity="0.5"/>'
     ])
     expect(elements(svg, 'pattern')).toEqual([
-      '<pattern id="img0" patternUnits="userSpaceOnUse" width="40" height="20">'
+      '<pattern id="img0" patternUnits="userSpaceOnUse" x="-16" y="-16" width="72" height="52">'
     ])
+    expect(elements(svg, 'g')[0]).toBe('<g transform="matrix(10 0 0 10 16 6)">')
+  })
+
+  test('fill stretches its edge pixels past the image, as the canvas clamps it', () => {
+    const svg = imageStroked(IMAGE_STROKE)
+    expect(elements(svg, 'image')[0]).toContain('id="imgsrc1"')
+    const edges = elements(svg, 'svg').slice(1)
+    expect(edges).toHaveLength(8)
+    expect(edges[0]).toBe(
+      '<svg x="-2" y="-2" width="2" height="2" viewBox="0 0 0.5 0.5" preserveAspectRatio="none">'
+    )
+    expect(elements(svg, 'use')).toEqual(Array.from({ length: 8 }, () => '<use href="#imgsrc1"/>'))
+  })
+
+  test('fit draws the image once and nothing past it', () => {
+    const svg = imageStroked({ ...IMAGE_STROKE, imageScaleMode: 'FIT' })
+    expect(elements(svg, 'svg')).toHaveLength(1)
+    expect(elements(svg, 'use')).toEqual([])
+    expect(elements(svg, 'image')).toHaveLength(1)
+  })
+
+  test('on a straight line, still covers the stroke', () => {
+    const line = (graph: SceneGraph, pageId: string) => [
+      graph.createNode('LINE', pageId, { width: 100, height: 0, strokes: [IMAGE_STROKE] }).id
+    ]
+    const svg = imageStroked(IMAGE_STROKE, line)
+    expect(elements(svg, 'pattern')[0]).toContain('width="132" height="32"')
   })
 
   test('draws nothing while its image is missing, as on the canvas', () => {
     const svg = svgOf(strokedRect([IMAGE_STROKE], [{ ...BLACK_STROKE, type: 'SOLID' }]))
     expect(rects(svg)).toEqual(['<rect width="40" height="20" fill="#000000"/>'])
+  })
+
+  test('leaves the next stroke to draw while its image is missing', () => {
+    const svg = svgOf(strokedRect([IMAGE_STROKE, { ...BLACK_STROKE, weight: 3 }]))
+    expect(rects(svg)).toEqual([
+      '<rect width="40" height="20" fill="none" stroke="#000000" stroke-width="3"/>'
+    ])
   })
 })
 

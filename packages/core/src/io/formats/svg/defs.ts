@@ -214,7 +214,8 @@ function svgMatrix(m: Mat3): string {
 function createImagePattern(
   fill: Fill,
   node: SceneNode,
-  ctx: SVGExportContext
+  ctx: SVGExportContext,
+  strokeReach = 0
 ): { id: string; node: SVGNode } | null {
   const imageHash = drawnImageHash(fill)
   if (!imageHash) {
@@ -242,6 +243,10 @@ function createImagePattern(
     }
   }
   const matrix = imageFillMatrix(fill, node, size.width, size.height)
+  if (strokeReach > 0 && fill.imageScaleMode !== 'TILE') {
+    const image = { href, width: size.width, height: size.height }
+    return { id, node: strokeImagePattern(id, image, fill, node, matrix, strokeReach, ctx) }
+  }
   const tile =
     fill.imageScaleMode === 'TILE'
       ? computeBounds(
@@ -275,6 +280,113 @@ function createImagePattern(
   }
 }
 
+/** How far past its layer's box a stroke can paint, its mitred corners included. */
+export function strokeReach(stroke: Stroke, node: SceneNode): number {
+  return stroke.weight * Math.max(2, node.strokeMiterLimit)
+}
+
+/** Half a pixel, so a stretched edge samples that pixel alone. */
+const EDGE_SLIVER = 0.5
+
+const CLAMP_SIDES = [-1, 0, 1] as const
+
+interface PatternImage {
+  href: string
+  width: number
+  height: number
+}
+
+/**
+ * An image stroke's pattern, one copy of the image over all the stroke reaches past the layer's
+ * box: beyond the image, Fit draws nothing and Fill and Crop stretch its edge pixels, as the canvas
+ * samples them.
+ */
+function strokeImagePattern(
+  id: string,
+  image: PatternImage,
+  fill: Fill,
+  node: SceneNode,
+  matrix: Mat3,
+  reach: number,
+  ctx: SVGExportContext
+): SVGNode {
+  const region = {
+    id,
+    patternUnits: 'userSpaceOnUse',
+    x: round(-reach, 6),
+    y: round(-reach, 6),
+    width: round(node.width + 2 * reach, 6),
+    height: round(node.height + 2 * reach, 6)
+  }
+  const placed = svgMatrix(Matrix.multiply(Matrix.translated(reach, reach), matrix))
+  const unstretched = { ...image, preserveAspectRatio: 'none' }
+  if (fill.imageScaleMode === 'FIT') {
+    return svg('pattern', region, svg('image', { ...unstretched, transform: placed }))
+  }
+  const sourceId = nextDefId(ctx, 'imgsrc')
+  const edges = clampedEdges(image, clampExtent(image, node, matrix, reach), sourceId)
+  return svg(
+    'pattern',
+    region,
+    svg('g', { transform: placed }, svg('image', { id: sourceId, ...unstretched }), ...edges)
+  )
+}
+
+/** Each side and corner around an image, its nearest half pixel stretched `extent` pixels out. */
+function clampedEdges(image: PatternImage, extent: number, sourceId: string): SVGNode[] {
+  const span = (side: number, length: number) => {
+    if (side < 0) {
+      return { at: -extent, length: extent, from: 0, sliver: EDGE_SLIVER }
+    }
+    if (side > 0) {
+      return { at: length, length: extent, from: length - EDGE_SLIVER, sliver: EDGE_SLIVER }
+    }
+    return { at: 0, length, from: 0, sliver: length }
+  }
+  return CLAMP_SIDES.flatMap((sideX) =>
+    CLAMP_SIDES.filter((sideY) => sideX !== 0 || sideY !== 0).map((sideY) => {
+      const x = span(sideX, image.width)
+      const y = span(sideY, image.height)
+      const viewBox = [x.from, y.from, x.sliver, y.sliver].map((value) => round(value, 6))
+      return svg(
+        'svg',
+        {
+          x: round(x.at, 6),
+          y: round(y.at, 6),
+          width: round(x.length, 6),
+          height: round(y.length, 6),
+          viewBox: viewBox.join(' '),
+          preserveAspectRatio: 'none'
+        },
+        svg('use', { href: `#${sourceId}` })
+      )
+    })
+  )
+}
+
+/** How many of the image's pixels the stroke's reach goes past its farthest edge. */
+function clampExtent(image: PatternImage, node: SceneNode, matrix: Mat3, reach: number): number {
+  const toImage = Matrix.invert(matrix)
+  if (!toImage) {
+    return 0
+  }
+  const corners = [
+    { x: -reach, y: -reach },
+    { x: node.width + reach, y: -reach },
+    { x: node.width + reach, y: node.height + reach },
+    { x: -reach, y: node.height + reach }
+  ].map((corner) => ({ ...Matrix.mapPoint(toImage, corner), width: 0, height: 0 }))
+  const bounds = computeBounds(corners)
+  const beyond = Math.max(
+    0,
+    -bounds.x,
+    -bounds.y,
+    bounds.x + bounds.width - image.width,
+    bounds.y + bounds.height - image.height
+  )
+  return Math.ceil(beyond)
+}
+
 function paintServer(def: { id: string; node: SVGNode } | null, ctx: SVGExportContext) {
   if (!def) {
     return null
@@ -290,7 +402,7 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
     return formatSolidColor(fill.color, fill.opacity, ctx.colors)
   }
 
-  if (fill.type.startsWith('GRADIENT')) {
+  if (isGradientFill(fill.type)) {
     const grad = paintServer(createGradientDef(fill, node, ctx, 'bounding-box'), ctx)
     if (grad) {
       return grad
@@ -304,19 +416,28 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
   return null
 }
 
-/**
- * A stroke's SVG paint as the canvas strokes it: a gradient on the layer's box, an image as its
- * fill would be, nothing while that image is missing, and otherwise its color at full opacity, as
- * Display P3 must not keep color alpha a viewer would multiply by `stroke-opacity`.
- */
 function resolveStroke(stroke: Stroke, node: SceneNode, ctx: SVGExportContext): string | null {
   if (isGradientFill(stroke.type) && stroke.gradientStops && stroke.gradientTransform) {
     return paintServer(createGradientDef(stroke, node, ctx, 'layer-box'), ctx)
   }
   if (drawnImageHash(stroke)) {
-    return paintServer(createImagePattern(stroke, node, ctx), ctx)
+    return paintServer(createImagePattern(stroke, node, ctx, strokeReach(stroke, node)), ctx)
   }
+  // Opaque: in Display P3 a viewer would multiply a color's alpha by `stroke-opacity`.
   return formatSolidColor(stroke.color, 1, ctx.colors)
+}
+
+function skippedStroke(stroke: Stroke, graph: SceneGraph): boolean {
+  const imageHash = stroke.visible ? drawnImageHash(stroke) : undefined
+  return imageHash !== undefined && !graph.images.has(imageHash)
+}
+
+/** The layer without the visible strokes the canvas skips: image strokes whose image is missing. */
+export function withDrawnStrokes(node: SceneNode, graph: SceneGraph): SceneNode {
+  if (!node.strokes.some((stroke) => skippedStroke(stroke, graph))) {
+    return node
+  }
+  return { ...node, strokes: node.strokes.filter((stroke) => !skippedStroke(stroke, graph)) }
 }
 
 /** The paints SVG can draw, each with its fill attribute: a stroke goes on the last of them. */
@@ -343,10 +464,7 @@ export const SVG_STROKE_JOIN: Record<string, string> = {
   BEVEL: 'bevel'
 }
 
-/**
- * A layer's first visible stroke as SVG attributes, its paint in `colors.to`, or none when that
- * paint draws nothing.
- */
+/** A layer's first visible stroke as SVG attributes, its paint in `colors.to`. */
 export function svgStrokeAttrs(
   visibleStrokes: Stroke[],
   node: SceneNode,
