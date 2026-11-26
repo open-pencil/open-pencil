@@ -38,23 +38,3 @@ export function resolveNodeLayoutDirection(
     ? inheritedDirection
     : node.layoutDirection
 }
-
-export function isLogicalTextAlignStart(
-  node: Pick<SceneNode, 'textAlignHorizontal' | 'textDirection' | 'text'>
-): boolean {
-  const direction = resolveNodeTextDirection(node)
-  return (
-    (direction === 'LTR' && node.textAlignHorizontal === 'LEFT') ||
-    (direction === 'RTL' && node.textAlignHorizontal === 'RIGHT')
-  )
-}
-
-export function isLogicalTextAlignEnd(
-  node: Pick<SceneNode, 'textAlignHorizontal' | 'textDirection' | 'text'>
-): boolean {
-  const direction = resolveNodeTextDirection(node)
-  return (
-    (direction === 'LTR' && node.textAlignHorizontal === 'RIGHT') ||
-    (direction === 'RTL' && node.textAlignHorizontal === 'LEFT')
-  )
-}

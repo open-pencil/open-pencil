@@ -276,3 +276,21 @@ describe('letter-spaced text export', () => {
     expect(style({ textAutoResize: 'HEIGHT' })).not.toHaveProperty('margin-right')
   })
 })
+
+describe('text alignment export', () => {
+  // Alignment names a side whatever the direction, so right-to-left text aligned left says so:
+  // a browser starts it at the right otherwise.
+  test.each([
+    { textDirection: 'LTR', textAlignHorizontal: 'LEFT', css: undefined },
+    { textDirection: 'RTL', textAlignHorizontal: 'LEFT', css: 'left' },
+    { textDirection: 'RTL', textAlignHorizontal: 'RIGHT', css: 'right' },
+    { textDirection: 'LTR', textAlignHorizontal: 'JUSTIFIED', css: 'justify' }
+  ] as const)(
+    'writes $textDirection text aligned $textAlignHorizontal as text-align $css',
+    ({ textDirection, textAlignHorizontal, css }) => {
+      const { html } = text({ text: 'Hello', textDirection, textAlignHorizontal })
+      if (css) expect(html).toContain(`text-align: ${css}`)
+      else expect(html).not.toContain('text-align')
+    }
+  )
+})

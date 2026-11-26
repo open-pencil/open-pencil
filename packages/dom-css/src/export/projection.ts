@@ -298,7 +298,8 @@ function styleFromTextNode(
   addSize(style, node, parent, css)
   addPositioning(style, node, parent)
   addLayoutChild(style, node, parent)
-  if (resolveNodeTextDirection(node) === 'RTL') style.direction = 'rtl'
+  const rtl = resolveNodeTextDirection(node) === 'RTL'
+  if (rtl) style.direction = 'rtl'
   const color = fillToCSS(node.fills.at(0), profile)
   style.color = color ? css('fills/0/color', color) : cssColor(BLACK, profile)
   style['font-family'] = node.fontFamily
@@ -319,8 +320,10 @@ function styleFromTextNode(
     const written = isEqual(ending, node.letterSpacing) ? spacing : letterSpacingToCSS(ending)
     Object.assign(style, letterSpacingRoomCSS(ending, written, style.width))
   }
-  if (node.textAlignHorizontal !== 'LEFT')
-    style['text-align'] = node.textAlignHorizontal.toLowerCase()
+  // Alignment names a side whatever the direction; right-to-left text starts at the right.
+  if (node.textAlignHorizontal !== 'LEFT' || rtl)
+    style['text-align'] =
+      node.textAlignHorizontal === 'JUSTIFIED' ? 'justify' : node.textAlignHorizontal.toLowerCase()
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
   Object.assign(style, textEffectsToCSS(node.effects, css, profile))
   if (node.textDecoration !== 'NONE') {
