@@ -78,18 +78,21 @@ async function capture(
 ): Promise<Findings> {
   const page = await browser.newPage({
     viewport: { width: view.width, height: 900 },
-    colorScheme: view.scheme
+    colorScheme: view.scheme,
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: new URL(ORIGIN).origin,
+          localStorage: [
+            { name: APPEARANCE_SETTING, value: view.scheme },
+            { name: KEYS_SETTING, value: view.keys }
+          ]
+        }
+      ]
+    }
   })
   try {
-    await page.addInitScript(
-      (settings) => {
-        for (const [key, value] of Object.entries(settings)) localStorage.setItem(key, value)
-      },
-      {
-        [APPEARANCE_SETTING]: view.scheme,
-        [KEYS_SETTING]: view.keys
-      }
-    )
     const response = await page.goto(`${ORIGIN}${route}`)
     if (!response?.ok()) throw new Error(`${route} answered ${response?.status() ?? 'nothing'}`)
     await page.waitForTimeout(LOAD_MS)
