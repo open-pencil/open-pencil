@@ -162,6 +162,38 @@ test('a text whose style binds only its spacing drops the saved layout, which ca
   expect(label.derivedTextGlyphs).toBeNull()
 })
 
+test('a text drops a saved layout when its size matches but its style bound leading changes', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const types = graph.createCollection('Type scale')
+  const roomy = graph.createMode(types.id, 'Roomy') ?? ''
+  const bodySize = graph.createVariable('Body size', 'FLOAT', types.id, 20)
+  const leading = graph.createVariable('Body leading', 'FLOAT', types.id, 18)
+  leading.valuesByMode[roomy] = 26
+  graph.createNode('TEXT', page, {
+    sharedStyleType: 'TEXT',
+    fontSize: 20,
+    lineHeight: { value: 18, unit: 'PIXELS' },
+    boundVariables: { fontSize: bodySize.id, lineHeight: leading.id },
+    source: { ...createDefaultSourceMetadata(), id: 'style:body' }
+  })
+  const label = graph.createNode('TEXT', page, {
+    text: 'A',
+    fontSize: 20,
+    lineHeight: { value: 18, unit: 'PIXELS' },
+    textStyleId: 'style:body',
+    variableModes: { [types.id]: roomy },
+    derivedLayout: { width: 12, height: 18 },
+    derivedTextGlyphs: [{ commandsBlob: new Uint8Array(), x: 0, y: 14, fontSize: 20 }]
+  })
+
+  applyDocumentTextStyleBindings(graph, [label])
+
+  expect(label.lineHeight).toEqual({ value: 26, unit: 'PIXELS' })
+  expect(label.derivedLayout).toBeNull()
+  expect(label.derivedTextGlyphs).toBeNull()
+})
+
 test('a text in a scaled instance keeps the layout Figma saved at the scaled size', () => {
   const label = savedText(60, 3)
 

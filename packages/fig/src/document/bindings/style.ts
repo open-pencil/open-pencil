@@ -8,6 +8,10 @@ import {
   type TextStyleLookup
 } from '@open-pencil/scene-graph/variables'
 
+function changesOnlyFontSize(updates: Partial<SceneNode>): boolean {
+  return Object.keys(updates).every((field) => field === 'fontSize')
+}
+
 function shapedInResolvedMode(
   node: SceneNode,
   updates: Partial<SceneNode>,
@@ -15,7 +19,9 @@ function shapedInResolvedMode(
 ): boolean {
   const sizeIsBound = 'fontSize' in inheritedTextStyleBindings(node, styles)
   return (
-    sizeIsBound && node.derivedTextGlyphs?.[0]?.fontSize === (updates.fontSize ?? node.fontSize)
+    sizeIsBound &&
+    changesOnlyFontSize(updates) &&
+    node.derivedTextGlyphs?.[0]?.fontSize === (updates.fontSize ?? node.fontSize)
   )
 }
 
