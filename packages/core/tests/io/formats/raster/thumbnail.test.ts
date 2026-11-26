@@ -64,3 +64,36 @@ test('a letterboxed thumbnail fills its size with the whole content centred', ()
   expect(boxed.bounds.minX).toBeCloseTo(-388.89, 2)
   expect(boxed.bounds.maxX).toBeCloseTo(1388.89, 2)
 })
+
+test('a thumbnail of chosen layers leaves out the layers over them', async () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const solid = (r: number, g: number, b: number) => [
+    { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }
+  ]
+  const cover = graph.createNode('FRAME', page.id, {
+    width: 100,
+    height: 100,
+    fills: solid(0, 0, 1)
+  })
+  graph.createNode('RECTANGLE', page.id, {
+    x: 25,
+    y: 25,
+    width: 50,
+    height: 50,
+    fills: solid(1, 0, 0)
+  })
+  const codec = createCanvasKitRasterCodec(await getCanvasKit())
+  const centre = async (nodeIds?: readonly string[]) => {
+    const png = expectDefined(
+      await headlessRenderThumbnail(graph, page.id, 100, 100, nodeIds),
+      'thumbnail'
+    )
+    const image = expectDefined(codec.decode(png))
+    const offset = (50 * image.width + 50) * 4
+    return [...image.data.subarray(offset, offset + 4)]
+  }
+
+  expect(await centre([cover.id])).toEqual([0, 0, 255, 255])
+  expect(await centre()).toEqual([255, 0, 0, 255])
+})

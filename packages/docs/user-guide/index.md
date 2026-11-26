@@ -37,5 +37,6 @@ Some pages show the shortcuts for your keyboard, which you can change at the end
 
 - [Auto Layout](./auto-layout) — flexbox-based automatic positioning
 - [Components](./components) — reusable components, instances, and overrides
+- [Component Libraries](./component-libraries) — share components, styles, and variables between files
 - [Variables](./variables) — design variables, collections, modes, and fill bindings
 - [Checking Designs](./checking-designs) — the Check panel, canvas issue markers, and lint rules

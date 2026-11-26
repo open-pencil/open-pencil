@@ -1,6 +1,7 @@
 import type { GridTrack, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   enforcedAspectRatio,
+  heldHugAxes,
   includedStrokeWeights,
   layoutSizingInParent
 } from '@open-pencil/scene-graph/layout'
@@ -10,8 +11,6 @@ import {
   type GridTrack as LayoutTrack,
   LayoutNode
 } from '@open-pencil/taffy'
-
-import { heldHugAxes } from './axis-sizing'
 
 /**
  * A layout node with auto layout's defaults where they differ from CSS's, as Figma lays layers
