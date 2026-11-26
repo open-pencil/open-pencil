@@ -1,4 +1,5 @@
 import { getAxisAlignedBoundsInParent, getNodeLocalMatrix } from './coordinate'
+import { geometryBlobBounds } from './geometry'
 import type { SceneGraph } from './graph'
 import { isVisibleMask, maskRuns } from './masks'
 import Matrix from './matrix'
@@ -71,24 +72,34 @@ function fittedAncestors(graph: SceneGraph, parentIds: Iterable<string>): SceneN
   return [...found.values()].sort((a, b) => b.depth - a.depth).map(({ node }) => node)
 }
 
-function hasNoOperands(node: SceneNode): boolean {
-  return node.type === 'BOOLEAN_OPERATION' && node.childIds.length === 0
+function hasFiniteSavedFill(node: SceneNode): boolean {
+  const box = geometryBlobBounds(node.fillGeometry)
+  return box !== null && [box.x, box.y, box.width, box.height].every(Number.isFinite)
+}
+
+function drawsNothing(node: SceneNode): boolean {
+  return (
+    node.type === 'BOOLEAN_OPERATION' && node.childIds.length === 0 && !hasFiniteSavedFill(node)
+  )
 }
 
 /**
  * The layers a group's box covers, bottom to top. Hidden layers do not count, as in Figma, nor do
- * booleans with no operands, which Figma saves with no box. A mask hides the layers above it
- * outside its shape, so they count only through the mask: the box is the layers below it and the
- * masks.
+ * booleans with neither operands nor a finite saved fill, which draw nothing. A mask hides the
+ * layers above it outside its shape, so they count only through the mask: the box is the layers
+ * below it and the masks.
  */
 function groupBoundingLayers(children: readonly SceneNode[]): SceneNode[] {
-  const shown = children.filter((child) => child.visible && !hasNoOperands(child))
+  const shown = children.filter((child) => child.visible)
   const runs = maskRuns(shown, isVisibleMask)
-  if (runs.length === 0) return shown
-  return [
-    ...shown.slice(0, runs[0].start),
-    ...runs.flatMap((run) => shown.slice(run.start, run.maskedStart))
-  ]
+  const covered =
+    runs.length === 0
+      ? shown
+      : [
+          ...shown.slice(0, runs[0].start),
+          ...runs.flatMap((run) => shown.slice(run.start, run.maskedStart))
+        ]
+  return covered.filter((layer) => !drawsNothing(layer))
 }
 
 /**
