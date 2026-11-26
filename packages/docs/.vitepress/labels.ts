@@ -1,9 +1,10 @@
 export interface SidebarLabels {
-  aiAndCollaboration: string
-  gettingAround: string
-  creatingContent: string
-  organizing: string
-  advanced: string
+  getStarted: string
+  draw: string
+  designSystem: string
+  designWithAI: string
+  checkAndShare: string
+  about: string
   canvasNav: string
   selection: string
   shapes: string
@@ -22,7 +23,6 @@ export interface SidebarLabels {
   files: string
   componentLibraries: string
   cloudStorage: string
-  overview: string
   gettingStarted: string
   features: string
   architecture: string
@@ -200,11 +200,12 @@ export const RU_PROG: ProgrammableLabels = {
 }
 
 export const EN: SidebarLabels = {
-  aiAndCollaboration: 'AI and Collaboration',
-  gettingAround: 'Getting Around',
-  creatingContent: 'Creating Content',
-  organizing: 'Organizing & Managing',
-  advanced: 'Advanced Features',
+  getStarted: 'Get Started',
+  draw: 'Draw',
+  designSystem: 'Build a Design System',
+  designWithAI: 'Design with AI',
+  checkAndShare: 'Check and Share',
+  about: 'About OpenPencil',
   canvasNav: 'Canvas Navigation',
   selection: 'Selection & Manipulation',
   shapes: 'Drawing Shapes',
@@ -223,7 +224,6 @@ export const EN: SidebarLabels = {
   cloudStorage: 'Cloud Storage',
   icons: 'Icons',
   photos: 'Photos',
-  overview: 'Overview',
   gettingStarted: 'Getting Started',
   features: 'Features',
   architecture: 'Architecture',
@@ -233,11 +233,12 @@ export const EN: SidebarLabels = {
   figmaMatrix: 'Figma Feature Matrix'
 }
 export const DE: SidebarLabels = {
-  aiAndCollaboration: 'KI und Zusammenarbeit',
-  gettingAround: 'Erste Schritte',
-  creatingContent: 'Inhalte erstellen',
-  organizing: 'Organisieren',
-  advanced: 'Erweitert',
+  getStarted: 'Loslegen',
+  draw: 'Zeichnen',
+  designSystem: 'Designsystem aufbauen',
+  designWithAI: 'Mit KI gestalten',
+  checkAndShare: 'Prüfen und teilen',
+  about: 'Über OpenPencil',
   canvasNav: 'Canvas-Navigation',
   selection: 'Auswahl & Bearbeitung',
   shapes: 'Formen zeichnen',
@@ -256,7 +257,6 @@ export const DE: SidebarLabels = {
   cloudStorage: 'Cloud-Speicher',
   icons: 'Symbole',
   photos: 'Fotos',
-  overview: 'Überblick',
   gettingStarted: 'Erste Schritte',
   features: 'Funktionen',
   architecture: 'Architektur',
@@ -266,11 +266,12 @@ export const DE: SidebarLabels = {
   figmaMatrix: 'Figma-Funktionsmatrix'
 }
 export const IT: SidebarLabels = {
-  aiAndCollaboration: 'IA e collaborazione',
-  gettingAround: 'Orientamento',
-  creatingContent: 'Creazione contenuti',
-  organizing: 'Organizzazione',
-  advanced: 'Avanzate',
+  getStarted: 'Primi passi',
+  draw: 'Disegnare',
+  designSystem: 'Creare un design system',
+  designWithAI: 'Progettare con l’IA',
+  checkAndShare: 'Verificare e condividere',
+  about: 'Informazioni su OpenPencil',
   canvasNav: 'Navigazione canvas',
   selection: 'Selezione e manipolazione',
   shapes: 'Disegno forme',
@@ -289,7 +290,6 @@ export const IT: SidebarLabels = {
   cloudStorage: 'Archiviazione cloud',
   icons: 'Icone',
   photos: 'Foto',
-  overview: 'Panoramica',
   gettingStarted: 'Per iniziare',
   features: 'Funzionalità',
   architecture: 'Architettura',
@@ -299,11 +299,12 @@ export const IT: SidebarLabels = {
   figmaMatrix: 'Matrice funzionalità Figma'
 }
 export const FR: SidebarLabels = {
-  aiAndCollaboration: 'IA et collaboration',
-  gettingAround: 'Prise en main',
-  creatingContent: 'Création de contenu',
-  organizing: 'Organisation',
-  advanced: 'Avancé',
+  getStarted: 'Bien démarrer',
+  draw: 'Dessiner',
+  designSystem: 'Créer un design system',
+  designWithAI: 'Concevoir avec l’IA',
+  checkAndShare: 'Vérifier et partager',
+  about: 'À propos d’OpenPencil',
   canvasNav: 'Navigation sur le canevas',
   selection: 'Sélection et manipulation',
   shapes: 'Dessiner des formes',
@@ -322,7 +323,6 @@ export const FR: SidebarLabels = {
   cloudStorage: 'Stockage cloud',
   icons: 'Icônes',
   photos: 'Photos',
-  overview: 'Vue d’ensemble',
   gettingStarted: 'Premiers pas',
   features: 'Fonctionnalités',
   architecture: 'Architecture',
@@ -332,11 +332,12 @@ export const FR: SidebarLabels = {
   figmaMatrix: 'Matrice des fonctionnalités Figma'
 }
 export const ES: SidebarLabels = {
-  aiAndCollaboration: 'IA y colaboración',
-  gettingAround: 'Orientación',
-  creatingContent: 'Crear contenido',
-  organizing: 'Organizar',
-  advanced: 'Avanzado',
+  getStarted: 'Primeros pasos',
+  draw: 'Dibujar',
+  designSystem: 'Crear un sistema de diseño',
+  designWithAI: 'Diseñar con IA',
+  checkAndShare: 'Revisar y compartir',
+  about: 'Acerca de OpenPencil',
   canvasNav: 'Navegación del lienzo',
   selection: 'Selección y manipulación',
   shapes: 'Dibujar formas',
@@ -355,7 +356,6 @@ export const ES: SidebarLabels = {
   cloudStorage: 'Almacenamiento en la nube',
   icons: 'Iconos',
   photos: 'Fotos',
-  overview: 'Resumen',
   gettingStarted: 'Primeros pasos',
   features: 'Características',
   architecture: 'Arquitectura',
@@ -365,11 +365,12 @@ export const ES: SidebarLabels = {
   figmaMatrix: 'Matriz de funcionalidades Figma'
 }
 export const PL: SidebarLabels = {
-  aiAndCollaboration: 'AI i współpraca',
-  gettingAround: 'Nawigacja',
-  creatingContent: 'Tworzenie treści',
-  organizing: 'Organizacja',
-  advanced: 'Zaawansowane',
+  getStarted: 'Pierwsze kroki',
+  draw: 'Rysowanie',
+  designSystem: 'Budowanie systemu projektowego',
+  designWithAI: 'Projektowanie z AI',
+  checkAndShare: 'Sprawdzanie i udostępnianie',
+  about: 'O OpenPencil',
   canvasNav: 'Nawigacja po płótnie',
   selection: 'Zaznaczanie i edycja',
   shapes: 'Rysowanie kształtów',
@@ -388,7 +389,6 @@ export const PL: SidebarLabels = {
   cloudStorage: 'Przechowywanie w chmurze',
   icons: 'Ikony',
   photos: 'Zdjęcia',
-  overview: 'Przegląd',
   gettingStarted: 'Rozpoczęcie pracy',
   features: 'Funkcje',
   architecture: 'Architektura',
@@ -398,11 +398,12 @@ export const PL: SidebarLabels = {
   figmaMatrix: 'Matryca funkcji Figma'
 }
 export const RU: SidebarLabels = {
-  aiAndCollaboration: 'ИИ и совместная работа',
-  gettingAround: 'Навигация',
-  creatingContent: 'Создание контента',
-  organizing: 'Организация',
-  advanced: 'Продвинутые функции',
+  getStarted: 'Начало работы',
+  draw: 'Рисование',
+  designSystem: 'Дизайн-система',
+  designWithAI: 'Дизайн с ИИ',
+  checkAndShare: 'Проверка и публикация',
+  about: 'Об OpenPencil',
   canvasNav: 'Навигация по холсту',
   selection: 'Выделение и редактирование',
   shapes: 'Рисование фигур',
@@ -421,7 +422,6 @@ export const RU: SidebarLabels = {
   cloudStorage: 'Облачное хранилище',
   icons: 'Иконки',
   photos: 'Фото',
-  overview: 'Обзор',
   gettingStarted: 'Начало работы',
   features: 'Возможности',
   architecture: 'Архитектура',
