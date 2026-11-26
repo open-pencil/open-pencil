@@ -1,8 +1,10 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
+import { join } from 'node:path'
 
 import type { ShapedText, ShapedTextGlyph } from '@open-pencil/fig/node-change'
 import { SceneGraph, type SceneNode, type TextParagraphStyle } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { buildParagraph } from '#core/canvas/text/layout/build'
 import { getCanvasKit } from '#core/canvaskit'
@@ -167,6 +169,21 @@ describe('text lists', () => {
       textParagraphs: [plain, { ...plain, paragraphIndent: 30 }]
     })
     expect(lineStarts(shaped)).toEqual([8, 30, 8])
+  })
+
+  test('outlines markers from the font that draws them when the list font lacks them', async () => {
+    const cjk = await Bun.file(join(FIXTURES, 'fonts', 'NotoSansCJK-Test.otf')).arrayBuffer()
+    await fontManager.markLoaded('List Test CJK', 'Regular', cjk)
+    const markersIn = async (fontFamily: string, list: TextParagraphStyle) => {
+      const shaped = await shape({ text: '你好', fontFamily, textParagraphs: [list] })
+      return markersOn(shaped, 0).map((glyph) => glyph.commands)
+    }
+    for (const list of [ul(), ol()]) {
+      const markers = await markersIn('List Test CJK', list)
+
+      expect(markers.every((commands) => commands !== null)).toBe(true)
+      expect(markers).toEqual(await markersIn('Inter', list))
+    }
   })
 
   test('hangs markers outside the box for a hanging list', async () => {

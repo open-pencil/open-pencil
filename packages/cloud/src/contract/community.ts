@@ -8,6 +8,9 @@ import { documentDownloadSchema, documentKindSchema, isCloudChecksum } from './d
  */
 export const COMMUNITY_THUMBNAIL_PATH = '/api/community/thumbnails'
 
+/** Where a deployment that lets search engines index it lists its gallery's pages for them. */
+export const COMMUNITY_SITEMAP_PATH = '/sitemap.xml'
+
 export function communityThumbnailPath(documentId: string, revisionId: string): string {
   return `${COMMUNITY_THUMBNAIL_PATH}/${documentId}/${revisionId}`
 }
@@ -25,11 +28,14 @@ export type CommunityVersion = v.InferOutput<typeof communityVersionSchema>
 
 /**
  * A document in the deployment's community workspace, which anyone may open read-only: its name,
- * when it last changed, its thumbnail's path on the server, and its named versions, newest first.
+ * what it is, when it last changed, its thumbnail's path on the server, and its named versions,
+ * newest first.
  */
 export const communityDocumentSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   name: v.string(),
+  /** What the file is, as its editors put it; servers from before descriptions list none. */
+  description: v.optional(v.nullable(v.string()), null),
   kind: documentKindSchema,
   updatedAt: v.string(),
   revisionId: v.pipe(v.string(), v.uuid()),

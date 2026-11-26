@@ -54,6 +54,20 @@ function holdsCollections(value: unknown): boolean {
 }
 
 /**
+ * Component layer values already found free of maps and sets. Every copy of a layer is compared
+ * with the same component layer, so its values are walked once rather than once per copy.
+ */
+const shareable = new WeakSet<object>()
+
+/** Whether a value equal to `original` may be replaced by it. */
+function isShareable(original: object): boolean {
+  if (shareable.has(original)) return true
+  if (holdsCollections(original)) return false
+  shareable.add(original)
+  return true
+}
+
+/**
  * A layer inside an instance holds what its component's layer holds unless an override changed
  * it. Each equal value is the component layer's own object rather than a copy, so a design kit's
  * many instances do not each repeat their components' paints, glyphs, and defaults. Values are
@@ -65,7 +79,12 @@ function shareUnchanged(node: SceneNode, source: SceneNode): void {
     const value: unknown = Reflect.get(node, field)
     const original: unknown = Reflect.get(source, field)
     if (value === original || value === null || typeof value !== 'object') continue
-    if (holdsCollections(value) || !isEqual(value, original)) continue
+    if (original === null || typeof original !== 'object') continue
+    // Most of a layer's lists are empty, and two empty lists need no deep comparison.
+    const bothEmpty =
+      Array.isArray(value) && Array.isArray(original) && value.length + original.length === 0
+    // An equal value holds a map or set exactly where the component layer's does.
+    if (!bothEmpty && (!isEqual(value, original) || !isShareable(original))) continue
     Reflect.set(node, field, original)
   }
   // The layer's source metadata is its own, but the layout Figma saved for it is replaced whole,
@@ -200,8 +219,8 @@ export function materializeInstance(
     const { nodeType, ...props } = converted
     assertMaterializableType(nodeType)
     const metadata = occurrenceMetadata(current, converted)
-    const propsWithIdentity = {
-      ...props,
+    // `props` is this call's own copy, so the occurrence's identity is written onto it.
+    const propsWithIdentity = Object.assign(props, {
       variableAssignmentScales: occurrenceAssignmentScales(current),
       componentScale: occurrenceScale(current),
       variableBindingScales: numericVariableBindingScales(
@@ -214,7 +233,7 @@ export function materializeInstance(
           ? (sourceChildren.get(current) ?? null)
           : components.get(current.mainComponentId),
       source: metadata
-    }
+    })
     const existing = existingNodes.get(current)
     if (existing && existing.parentId !== parent) {
       throw new Error(`Preallocated occurrence has wrong parent ${current.sourceId}`)

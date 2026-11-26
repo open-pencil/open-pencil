@@ -15,8 +15,13 @@ const CONTAINER_TYPES = new Set<NodeType>([
   'SECTION',
   'COMPONENT',
   'COMPONENT_SET',
-  'INSTANCE'
+  'INSTANCE',
+  'SLIDE',
+  'SLIDE_ROW',
+  'SLIDE_GRID'
 ])
+/** What holds a deck's slides: never selected from the canvas, and no target of a drop. */
+const SLIDE_HOLDER_TYPES = new Set<NodeType>(['SLIDE_ROW', 'SLIDE_GRID'])
 const OPAQUE_CONTAINER_TYPES = new Set<NodeType>(['COMPONENT', 'INSTANCE'])
 
 /** Whether a container's own paints show, so its empty area is drawn (`paintShows`). */
@@ -292,13 +297,13 @@ export function hitTestDeep(
 
 /**
  * A container a click looks into by itself, as in Figma: a top-level frame (on the page or in a
- * section) or a section that holds layers, and a component set. On a FigJam board frames stay
+ * section), section, or slide that holds layers, a component set, and what holds a deck's slides. On a FigJam board frames stay
  * closed (`framesOpen` false): a click inside one selects the frame.
  */
 function opensByItself(graph: SceneGraph, node: SceneNode, framesOpen = true): boolean {
-  if (node.type === 'COMPONENT_SET') return true
+  if (node.type === 'COMPONENT_SET' || SLIDE_HOLDER_TYPES.has(node.type)) return true
   if (node.childIds.length === 0) return false
-  if (node.type === 'SECTION') return true
+  if (node.type === 'SECTION' || node.type === 'SLIDE') return true
   return framesOpen && node.type === 'FRAME' && isTopLevel(graph, node)
 }
 
@@ -463,15 +468,15 @@ interface DropRules {
   passThrough: ReadonlySet<NodeType>
 }
 
-const LAYER_TARGETS = new Set<NodeType>(['FRAME', 'SECTION', 'COMPONENT', 'INSTANCE'])
-const COMPONENT_TARGETS = new Set<NodeType>(['FRAME', 'SECTION', 'INSTANCE'])
+const LAYER_TARGETS = new Set<NodeType>(['FRAME', 'SECTION', 'COMPONENT', 'INSTANCE', 'SLIDE'])
+const COMPONENT_TARGETS = new Set<NodeType>(['FRAME', 'SECTION', 'INSTANCE', 'SLIDE'])
 
 function dropRules(options: DropTargetOptions): DropRules {
   const { componentSetIds } = options
   if (!componentSetIds) {
     return {
       takes: (node) => LAYER_TARGETS.has(node.type),
-      passThrough: new Set(['GROUP', 'COMPONENT_SET'])
+      passThrough: new Set([...SLIDE_HOLDER_TYPES, 'GROUP', 'COMPONENT_SET'])
     }
   }
   // Components never go into other components, and a set only takes back its own variants.
@@ -479,7 +484,7 @@ function dropRules(options: DropTargetOptions): DropRules {
     takes: (node) =>
       COMPONENT_TARGETS.has(node.type) ||
       (node.type === 'COMPONENT_SET' && componentSetIds.has(node.id)),
-    passThrough: new Set(['GROUP'])
+    passThrough: new Set([...SLIDE_HOLDER_TYPES, 'GROUP'])
   }
 }
 

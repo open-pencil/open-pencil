@@ -269,8 +269,8 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     'save_document',
     {
       description: resolvedRoot
-        ? 'Save the current document to a .fig file, or a .jam file for a board. If path is provided, it must be inside the configured MCP root.'
-        : 'Save the current document to a .fig file, or a .jam file for a board. Saves to the file the document is open from, and fails when it has none.',
+        ? 'Save the current document to a .fig file, a .jam file for a board, or a .deck file for slides. If path is provided, it must be inside the configured MCP root.'
+        : 'Save the current document to a .fig file, a .jam file for a board, or a .deck file for slides. Saves to the file the document is open from, and fails when it has none.',
       inputSchema: resolvedRoot
         ? v.strictObject({
             path: v.optional(
@@ -278,7 +278,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
                 v.string(),
                 v.minLength(1),
                 v.description(
-                  'Path for the .fig file, or .jam for a board, absolute or relative to the MCP root'
+                  'Path for the .fig file, .jam for a board, or .deck for slides, absolute or relative to the MCP root'
                 )
               )
             ),

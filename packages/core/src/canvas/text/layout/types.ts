@@ -1,6 +1,7 @@
 import type { LineMetrics, Paragraph } from '@open-pencil/canvaskit'
 
 import type { TextLayoutBlockLines } from '#core/canvas/text/layout/lines'
+import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 
 /** A list item's number or bullet, laid out on its own. */
 export interface TextLayoutMarker {
@@ -8,8 +9,8 @@ export interface TextLayoutMarker {
   kind: 'bullet' | 'number'
   /** Font size of the list's first character, which sets the marker's distance from the text. */
   em: number
-  /** The face the marker is set in, for its glyph outlines. */
-  face: { family: string; style: string }
+  /** The marker's text in its list's style, for the fonts its glyphs come from. */
+  node: ParagraphNode
   /** Where the marker is drawn and the line of the item it marks, set by layout. */
   x: number
   y: number

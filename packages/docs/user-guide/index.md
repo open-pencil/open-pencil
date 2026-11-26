@@ -8,8 +8,8 @@ description: Learn how to use OpenPencil — canvas navigation, drawing, text, c
 
 OpenPencil is an open-source, Figma-compatible design editor — fully local, AI-native, and programmable. This guide covers everything you need to know to use the editor effectively.
 
-::: tip Cross-platform shortcuts
-Throughout this guide, keyboard shortcuts use Mac notation: <kbd>⌘</kbd> = <kbd>Command</kbd> (<kbd>Ctrl</kbd> on Windows/Linux), <kbd>⌥</kbd> = <kbd>Option</kbd> (<kbd>Alt</kbd>), <kbd>⇧</kbd> = <kbd>Shift</kbd>.
+::: tip Shortcuts
+Some pages show the shortcuts for your keyboard, which you can change at the end of the sidebar. The others use Mac keys: <kbd>⌘</kbd> is <kbd>Ctrl</kbd> on Windows and Linux, <kbd>⌥</kbd> is <kbd>Alt</kbd>, and <kbd>⇧</kbd> is <kbd>Shift</kbd>.
 :::
 
 ## Getting Around
@@ -28,7 +28,8 @@ Throughout this guide, keyboard shortcuts use Mac notation: <kbd>⌘</kbd> = <kb
 
 - [Layers & Pages](./layers-and-pages) — the layers panel, pages, and properties panel
 - [Context Menu](./context-menu) — right-click actions for clipboard, grouping, components, and more
-- [Exporting](./exporting) — image export and .fig file operations
+- [Opening and Saving](./files) — documents, web pages, and placed files
+- [Exporting](./exporting) — images, PDF, slides, and copying into other apps
 - [OpenPencil Cloud](/cloud/) — documents on OpenPencil Cloud or your team's server, shared and edited together
 - [Cloud Storage](./cloud-storage) — documents and libraries in your own S3-compatible bucket
 

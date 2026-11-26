@@ -209,6 +209,7 @@ export function createDefaultNode(
     // Figma's: the golden-ratio star, whose inner points line up with its outer ones.
     starInnerRadius: (3 - Math.sqrt(5)) / 2,
     shapeWithTextType: 'SQUARE',
+    slide: null,
     shapeUserHeight: 0,
     shapeTruncates: false,
     componentId: null,
@@ -265,7 +266,8 @@ export const SIDE_STROKE_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
   'FRAME',
   'COMPONENT',
   'COMPONENT_SET',
-  'INSTANCE'
+  'INSTANCE',
+  'SLIDE'
 ])
 
 /** The kinds that hold layers of their own on the canvas: what a shadow or a clip encloses. */
@@ -275,7 +277,10 @@ export const LAYER_CONTAINER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
   'SECTION',
   'COMPONENT',
   'COMPONENT_SET',
-  'INSTANCE'
+  'INSTANCE',
+  'SLIDE',
+  'SLIDE_ROW',
+  'SLIDE_GRID'
 ])
 
 export function isLayerContainer(node: Pick<SceneNode, 'type'>): boolean {
@@ -287,7 +292,8 @@ export const CLIPPING_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
   'FRAME',
   'COMPONENT',
   'COMPONENT_SET',
-  'INSTANCE'
+  'INSTANCE',
+  'SLIDE'
 ])
 
 /**
@@ -307,5 +313,8 @@ export const CONTAINER_TYPES = new Set<NodeType>([
   'SECTION',
   'COMPONENT',
   'COMPONENT_SET',
-  'INSTANCE'
+  'INSTANCE',
+  'SLIDE',
+  'SLIDE_ROW',
+  'SLIDE_GRID'
 ])

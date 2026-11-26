@@ -24,7 +24,9 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
       mode: 'self-hosted',
       public_url: endpoints.cloudURL,
       indexing: 'deny',
-      trusted_origins: [endpoints.editorURL, endpoints.cloudURL]
+      trusted_origins: [endpoints.editorURL, endpoints.cloudURL],
+      // Any page may frame documents, so embeds can be tried from a local HTML file.
+      embedding: { enabled: true }
     },
     database: {},
     authentication: {
@@ -57,6 +59,8 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
     },
     collaboration: { maximum_message_bytes: 1_048_576, maximum_connections_per_room: 1000 },
     documents: { retention_days: 30 },
+    // Apps can connect, so a worktree exercises the approval page and connected apps.
+    oauth: { enabled: true },
     email: {
       transport: 'smtp',
       from: 'OpenPencil Cloud <cloud@openpencil.localhost>',

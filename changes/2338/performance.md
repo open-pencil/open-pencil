@@ -1,0 +1,1 @@
+- Opening a page of a large `.fig` file builds its layers with less copying and comparing; a 25,000-layer Material 3 page loads with roughly 15–20% less CPU time (#2338).

@@ -5,6 +5,7 @@ import type { CanvasGuide } from './guides'
 import type { InstanceOverrideState } from './instances/overrides'
 import type { Color, Matrix, Rect, Vector } from './primitives'
 import type { ShapeWithTextType } from './shape-with-text/kinds'
+import type { SlideSettings } from './slides/types'
 
 export interface SceneGraphEvents {
   'node:created': (node: SceneNode) => void
@@ -64,8 +65,8 @@ export interface NodeChangeObserver {
  */
 export type ColorProfile = 'srgb' | 'display-p3'
 
-/** What a document is for, as Figma keeps design files and FigJam boards apart. */
-export type DocumentKind = 'design' | 'board'
+/** What a document is for, as Figma keeps design files, FigJam boards and Slides decks apart. */
+export type DocumentKind = 'design' | 'board' | 'slides'
 
 export interface FigmaSourcePayload {
   rawSize: Vector | null
@@ -151,6 +152,9 @@ export type NodeType =
   | 'CONNECTOR'
   | 'SHAPE_WITH_TEXT'
   | 'STICKY'
+  | 'SLIDE'
+  | 'SLIDE_ROW'
+  | 'SLIDE_GRID'
 
 export type FillType =
   | 'SOLID'
@@ -943,6 +947,8 @@ export interface SceneNode {
   starInnerRadius: number
   /** The FigJam kind a SHAPE_WITH_TEXT draws; its label is the node's own text. */
   shapeWithTextType: ShapeWithTextType
+  /** What a slide keeps besides its layers; null on other layers. */
+  slide: SlideSettings | null
   /** The height a shape with text was given; it grows past it to fit its label. 0 is unset. */
   shapeUserHeight: number
   /**
@@ -1054,7 +1060,62 @@ export interface ComponentPropertyDefinition {
   slotSettings?: SlotSettings
 }
 
-export type VariableType = 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN'
+/** A TIMING variable holds a duration in seconds; an EASING one, an `Easing`. */
+export const VARIABLE_TYPES = ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN', 'EASING', 'TIMING'] as const
+export type VariableType = (typeof VARIABLE_TYPES)[number]
+
+/**
+ * The curves and springs an easing can be, by the names `.fig` files give them. `CUSTOM_CUBIC`
+ * and `CUSTOM_SPRING` hold the curve or spring they were given; the rest are presets, and
+ * `HOLD` jumps to the end without easing.
+ */
+export const EASING_CURVES = [
+  'IN_CUBIC',
+  'OUT_CUBIC',
+  'INOUT_CUBIC',
+  'LINEAR',
+  'IN_BACK_CUBIC',
+  'OUT_BACK_CUBIC',
+  'INOUT_BACK_CUBIC',
+  'CUSTOM_CUBIC',
+  'SPRING',
+  'GENTLE_SPRING',
+  'CUSTOM_SPRING',
+  'SPRING_PRESET_ONE',
+  'SPRING_PRESET_TWO',
+  'SPRING_PRESET_THREE',
+  'HOLD',
+  'EASE_IN'
+] as const
+export type EasingCurve = (typeof EASING_CURVES)[number]
+
+/** A CSS `cubic-bezier()`: the two control points between (0, 0) and (1, 1). */
+export interface CubicBezier {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+}
+
+/**
+ * A spring as its physics. `type` says how it is edited: by its bounce (`NORMALIZED`, the
+ * default) or by these three numbers (`PHYSICAL`), whose meaning `platform` sets.
+ */
+export interface Spring {
+  stiffness: number
+  damping: number
+  mass: number
+  type?: 'NORMALIZED' | 'PHYSICAL'
+  platform?: 'IOS_WEB' | 'ANDROID'
+}
+
+/** An EASING variable's value: a curve or spring, and the numbers it holds as a file saves them. */
+export interface Easing {
+  easing: EasingCurve
+  bezier?: CubicBezier
+  spring?: Spring
+}
+
 export interface VariableAlias {
   aliasId: string
 }
@@ -1066,7 +1127,10 @@ export interface VariableColorExpression {
   opacity: number | VariableAlias
 }
 
-export type VariableLiteral = Color | number | string | boolean
+export type VariableLiteral = Color | number | string | boolean | Easing
+/** The types a formula computes with and gives; easings and timings are not among them. */
+export type VariableFormulaType = 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN'
+export type VariableFormulaLiteral = Color | number | string | boolean
 /** The arithmetic, comparison, logic and conversions a formula combines values with. */
 export const VARIABLE_FORMULA_OPERATORS = [
   'add',
@@ -1092,10 +1156,10 @@ export interface VariableFormulaOperation {
   operator: VariableFormulaOperator
   operands: VariableFormulaNode[]
 }
-export type VariableFormulaNode = VariableLiteral | VariableAlias | VariableFormulaOperation
+export type VariableFormulaNode = VariableFormulaLiteral | VariableAlias | VariableFormulaOperation
 export interface VariableFormula {
   expression: 'FORMULA'
-  type: VariableType
+  type: VariableFormulaType
   value: VariableFormulaNode
 }
 /**

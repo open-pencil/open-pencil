@@ -10,7 +10,7 @@ import { filesFor, PLATFORMS, type Platform, type Release } from './releases'
 
 /**
  * Every installer of a release, a column per platform. `compact` leaves out what each format is
- * for, as the beta lists its files under the stable release's.
+ * for, as the nightly lists its files under the stable release's.
  */
 const {
   release,

@@ -38,7 +38,7 @@ Karta pokazuje właściwości zaznaczonych obiektów:
 - **Obwiednia:** kolor, grubość, zakończenia, połączenia i kreskowanie;
 - **Efekty:** cień zewnętrzny i wewnętrzny oraz rozmycie warstwy, tła i pierwszego planu;
 - **Typografia:** rodzina, rozmiar i odmiana czcionki oraz przyciski B/I/U/S;
-- **Układ:** ustawienia [automatycznego układu](./auto-layout);
+- **Układ:** ustawienia [automatycznego układu](/user-guide/auto-layout);
 - **Eksport:** skala, format i przycisk eksportu.
 
 Jeśli nic nie jest zaznaczone, karta pokazuje właściwości strony.

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { ignoredSecurityNotices } from '#cloud-tests/helpers/account-authentication'
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
@@ -180,31 +181,25 @@ describe('terms acceptance', () => {
         resolveAccountSession: async () => person
       })
       const client = testClient(app)
-      const { workspace } = await responseJSON(
-        await client.api.workspaces.$post({ json: { name: 'Studio', slug: 'studio' } }),
-        v.object({ workspace: v.object({ id: v.string() }) })
-      )
-      const { document } = await responseJSON(
-        await client.api.workspaces[':workspaceId'].documents.$post({
-          param: { workspaceId: workspace.id },
-          json: { name: 'Homepage' }
-        }),
-        v.object({ document: v.object({ id: v.string() }) })
-      )
+      const api = contractClient(app)
+      const { workspace } = await api.workspaces.create({
+        body: { name: 'Studio', slug: 'studio' }
+      })
+      const { document } = await api.documents.create({
+        params: { workspaceId: workspace.id },
+        body: { name: 'Homepage' }
+      })
       // One save, as the editor makes it: an upload, then its commit.
       const checksum = `${'A'.repeat(43)}=`
-      const upload = await responseJSON(
-        await client.api.documents[':documentId'].uploads.$post({
-          param: { documentId: document.id },
-          json: {
-            baseRevisionId: null,
-            byteSize: 16,
-            checksum,
-            contentType: 'application/octet-stream'
-          }
-        }),
-        v.object({ id: v.string() })
-      )
+      const upload = await api.documents.createUpload({
+        params: { documentId: document.id },
+        body: {
+          baseRevisionId: null,
+          byteSize: 16,
+          checksum,
+          contentType: 'application/octet-stream'
+        }
+      })
       const { objectKey } = await runtime.database
         .selectFrom('upload')
         .select('objectKey')
@@ -217,13 +212,10 @@ describe('terms acceptance', () => {
         contentType: 'application/octet-stream'
       })
       expect(
-        (
-          await client.api.uploads[':uploadId'].commit.$post({
-            param: { uploadId: upload.id },
-            json: { checksum }
-          })
-        ).status
-      ).toBe(200)
+        await outcome(
+          api.documents.commitUpload({ params: { uploadId: upload.id }, body: { checksum } })
+        )
+      ).toBe('ok')
 
       // Someone else joins, so this account is the workspace's only admin: deleting it waits for
       // a handover, and the plan must still list what it made there.
@@ -245,23 +237,19 @@ describe('terms acceptance', () => {
       )
       expect(deletion.deletion.blockedBy.map((entry) => entry.id)).toEqual([workspace.id])
       expect(deletion.deletion.documents.map((entry) => entry.id)).toEqual([document.id])
-      const documentParam = { param: { documentId: document.id } }
-      expect((await client.api.documents[':documentId'].$get(documentParam)).status).toBe(200)
+      const documentParams = { params: { documentId: document.id } }
+      expect(await outcome(api.documents.download(documentParams))).toBe('ok')
 
-      expect((await client.api.workspaces.$get()).status).toBe(401)
+      expect(await outcome(api.workspaces.list())).toMatchObject({ status: 401 })
+      expect(await outcome(api.versions.list({ ...documentParams, query: {} }))).toMatchObject({
+        status: 401
+      })
+      expect(await outcome(api.documents.remove(documentParams))).toMatchObject({ status: 401 })
       expect(
-        (await client.api.documents[':documentId'].versions.$get({ ...documentParam, query: {} }))
-          .status
-      ).toBe(401)
-      expect((await client.api.documents[':documentId'].$delete(documentParam)).status).toBe(401)
-      expect(
-        (
-          await client.api.workspaces[':workspaceId'].documents.$post({
-            param: { workspaceId: workspace.id },
-            json: { name: 'Other' }
-          })
-        ).status
-      ).toBe(401)
+        await outcome(
+          api.documents.create({ params: { workspaceId: workspace.id }, body: { name: 'Other' } })
+        )
+      ).toMatchObject({ status: 401 })
     } finally {
       await runtime.close()
     }

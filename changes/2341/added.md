@@ -1,0 +1,1 @@
+- Open, edit, and save Figma Slides decks (`.deck`), keeping their sections, slide sizes, notes, skipped slides, and transitions, with Figma's slide methods in the plugin API.

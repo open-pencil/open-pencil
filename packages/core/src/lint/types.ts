@@ -1,4 +1,4 @@
-import type { ColorProfile, SharedStyleKind } from '@open-pencil/scene-graph'
+import type { ColorProfile, SharedStyleKind, VariableType } from '@open-pencil/scene-graph'
 
 export type Severity = 'error' | 'warning' | 'info' | 'off'
 
@@ -136,7 +136,7 @@ export interface LintNode {
 /** The document's variables, which decide whether a rule suggesting a binding is actionable. */
 export interface LintVariables {
   /** Number of local variables by type; a rule suggesting a binding needs a candidate to bind. */
-  counts: Readonly<Record<'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN', number>>
+  counts: Readonly<Record<VariableType, number>>
   /** Color variables by their resolved `#RRGGBB` value, for suggesting an exact match. */
   colorsByHex: ReadonlyMap<string, { id: string; name: string }>
 }

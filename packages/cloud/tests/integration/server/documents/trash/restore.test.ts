@@ -25,7 +25,7 @@ describe('Cloud Trash', () => {
       if (!entry) throw new Error('Expected the deleted document in Trash')
       expect(Date.parse(entry.purgeAt) - Date.parse(entry.deletedAt)).toBe(30 * DAY_MS)
 
-      expect((await context.restore(deleted)).status).toBe(204)
+      expect(await context.restore(deleted)).toBe('ok')
       expect(await context.trash()).toEqual([])
       expect((await context.listed()).toSorted()).toEqual([kept, deleted].toSorted())
       const restored = await context.runtime.database
@@ -54,8 +54,8 @@ describe('Cloud Trash', () => {
         .execute()
 
       expect(await context.trash()).toEqual([])
-      expect((await context.restore(expired)).status).toBe(404)
-      expect((await context.restore(claimed)).status).toBe(404)
+      expect(await context.restore(expired)).toMatchObject({ status: 404 })
+      expect(await context.restore(claimed)).toMatchObject({ status: 404 })
       expect(await context.listed()).toEqual([])
     } finally {
       await context.runtime.close()
@@ -70,14 +70,14 @@ describe('Cloud Trash', () => {
 
       context.as('carol')
       expect(await context.trash()).toEqual([])
-      expect((await context.restore(document)).status).toBe(404)
-      expect((await context.purge(document)).status).toBe(404)
+      expect(await context.restore(document)).toMatchObject({ status: 404 })
+      expect(await context.purge(document)).toMatchObject({ status: 404 })
 
       context.as('bob')
       const [seen] = await context.trash()
       expect(seen).toMatchObject({ id: document, canPurge: false })
-      expect((await context.purge(document)).status).toBe(403)
-      expect((await context.restore(document)).status).toBe(204)
+      expect(await context.purge(document)).toMatchObject({ status: 403 })
+      expect(await context.restore(document)).toBe('ok')
 
       // An editor's own document is theirs to delete for good.
       const own = await context.create('Bob’s draft')
@@ -85,7 +85,7 @@ describe('Cloud Trash', () => {
       expect(await context.trash()).toMatchObject([
         { id: own, deletedBy: { name: 'Bob' }, canPurge: true }
       ])
-      expect((await context.purge(own)).status).toBe(204)
+      expect(await context.purge(own)).toBe('ok')
 
       // Someone removed from the workspace sees nothing of its Trash.
       await context.remove(document)
@@ -94,7 +94,7 @@ describe('Cloud Trash', () => {
         .where('userId', '=', people.bob.userId)
         .execute()
       expect(await context.trash()).toEqual([])
-      expect((await context.restore(document)).status).toBe(404)
+      expect(await context.restore(document)).toMatchObject({ status: 404 })
     } finally {
       await context.runtime.close()
     }
@@ -104,8 +104,8 @@ describe('Cloud Trash', () => {
     const context = await trashApp()
     try {
       const document = await context.create('Live')
-      expect((await context.purge(document)).status).toBe(404)
-      expect((await context.restore(document)).status).toBe(404)
+      expect(await context.purge(document)).toMatchObject({ status: 404 })
+      expect(await context.restore(document)).toMatchObject({ status: 404 })
       expect(await context.listed()).toEqual([document])
     } finally {
       await context.runtime.close()

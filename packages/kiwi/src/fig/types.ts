@@ -37,3 +37,18 @@ export interface PaintFilter {
   contrast?: number
   brightness?: number
 }
+
+/** fig.kiwi EasingData: a curve or spring by name, and the numbers it holds. */
+export interface EasingDataValue {
+  easingType?: string
+  easingValue?: {
+    bezierEasing?: { p1x?: number; p1y?: number; p2x?: number; p2y?: number }
+    springEasing?: {
+      stiffness?: number
+      damping?: number
+      mass?: number
+      springType?: string
+      springPlatform?: string
+    }
+  }
+}
