@@ -5,7 +5,7 @@ import {
   regionSVGPaths
 } from '@open-pencil/scene-graph/vector-network'
 
-import { drawnFills, solidFillOpacity, type SVGExportContext } from './defs'
+import { drawnFills, paintFillOpacity, type SVGExportContext } from './defs'
 import { svg, type SVGNode } from './node'
 import { geometryBlobToSVGPath } from './paths'
 
@@ -74,7 +74,7 @@ function paintedOutline(
     svg('path', {
       ...attrs,
       fill: paint,
-      'fill-opacity': solidFillOpacity(fill, ctx.colors),
+      'fill-opacity': paintFillOpacity(fill, ctx.colors),
       stroke: index === drawn.length - 1 ? attrs.stroke : 'none'
     })
   )

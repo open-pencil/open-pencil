@@ -79,14 +79,14 @@ export function formatColor(color: Color, opacity = 1, colors = SRGB_COLORS): st
   if (colors.to === 'display-p3') {
     return colorToProfileCSS(alphaColor, colors.from, colors.to)
   }
-  // Hex has no alpha. Stops and shadows already emit theirs; solid fills use `solidFillOpacity`.
+  // Hex has no alpha. Stops and shadows already emit theirs; solid fills use `paintFillOpacity`.
   return colorToSRGBHex(alphaColor, colors.from)
 }
 
 /**
  * A solid paint's SVG color. The canvas paints `opacity` and drops color alpha: `setAlphaf`
  * replaces it, and `.pen` stores a hex alpha in both fields. Display P3 carries that painted
- * alpha in the color. sRGB hex cannot, so `solidFillOpacity` emits it beside the color.
+ * alpha in the color. sRGB hex cannot, so `paintFillOpacity` emits it beside the color.
  */
 export function formatSolidColor(color: Color, opacity: number, colors: SVGColorProfiles): string {
   if (colors.to === 'display-p3') {
@@ -96,16 +96,18 @@ export function formatSolidColor(color: Color, opacity: number, colors: SVGColor
 }
 
 /**
- * `fill-opacity` for a solid paint. Omitted at full opacity so an opaque export stays unchanged.
- * Display P3 already carries the same alpha in the color `formatSolidColor` returns, unless
- * `separate` is set because that color was replaced and can no longer carry it.
+ * `fill-opacity` for a paint, which the canvas draws at its opacity over a gradient's stop alpha
+ * and an image's own alpha, as SVG multiplies a paint server by it. Omitted at full opacity so an
+ * opaque export stays unchanged. Display P3 already carries a solid paint's alpha in the color
+ * `formatSolidColor` returns, unless `separate` is set because that color was replaced and can no
+ * longer carry it.
  */
-export function solidFillOpacity(
+export function paintFillOpacity(
   fill: Fill,
   colors: SVGColorProfiles,
   separate = false
 ): number | undefined {
-  if (fill.type !== 'SOLID' || (colors.to === 'display-p3' && !separate)) return undefined
+  if (fill.type === 'SOLID' && colors.to === 'display-p3' && !separate) return undefined
   const alpha = round(fill.opacity)
   return alpha < 1 ? alpha : undefined
 }
