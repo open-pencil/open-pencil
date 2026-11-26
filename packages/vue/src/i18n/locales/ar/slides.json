@@ -26,5 +26,18 @@
   "present": "عرض",
   "presentFromStart": "العرض من البداية",
   "exitPresentation": "إنهاء العرض",
-  "presentedSlide": "{number} من {total}"
+  "presentedSlide": "{number} من {total}",
+  "presentWithNotes": "العرض مع ملاحظات المتحدث",
+  "presenterView": "عرض المقدّم",
+  "nextSlide": "الشريحة التالية",
+  "endOfPresentation": "نهاية العرض",
+  "noNotes": "لا توجد ملاحظات لهذه الشريحة",
+  "buildStep": "الخطوة {played} من {steps}",
+  "restartTimer": "إعادة تشغيل المؤقت",
+  "previous": "السابق",
+  "next": "التالي",
+  "smallerNotes": "تصغير الملاحظات",
+  "largerNotes": "تكبير الملاحظات",
+  "presentationEnded": "انتهى العرض",
+  "waitingForPresentation": "في انتظار العرض"
 }

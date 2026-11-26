@@ -26,5 +26,18 @@
   "present": "Präsentieren",
   "presentFromStart": "Von Anfang an präsentieren",
   "exitPresentation": "Präsentation beenden",
-  "presentedSlide": "{number} von {total}"
+  "presentedSlide": "{number} von {total}",
+  "presentWithNotes": "Mit Sprechernotizen präsentieren",
+  "presenterView": "Referentenansicht",
+  "nextSlide": "Nächste Folie",
+  "endOfPresentation": "Ende der Präsentation",
+  "noNotes": "Keine Notizen zu dieser Folie",
+  "buildStep": "Schritt {played} von {steps}",
+  "restartTimer": "Timer neu starten",
+  "previous": "Zurück",
+  "next": "Weiter",
+  "smallerNotes": "Notizen kleiner",
+  "largerNotes": "Notizen größer",
+  "presentationEnded": "Die Präsentation ist beendet",
+  "waitingForPresentation": "Warten auf die Präsentation"
 }

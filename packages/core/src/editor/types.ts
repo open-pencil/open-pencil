@@ -85,6 +85,8 @@ export interface ShapeHandleHover {
 
 /** Where a presentation is, for what shows around it: the presenter's view, the slide count. */
 export interface PresentationStatus {
+  /** Names this presentation, as a presenter's window looks for it. */
+  id: string
   /** The slides presented, in order, skipped ones left out. */
   slideIds: readonly string[]
   /** The slide on show, by its place among them. */

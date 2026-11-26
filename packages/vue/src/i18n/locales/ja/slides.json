@@ -26,5 +26,18 @@
   "present": "プレゼンテーション",
   "presentFromStart": "最初からプレゼンテーション",
   "exitPresentation": "プレゼンテーションを終了",
-  "presentedSlide": "{number} / {total}"
+  "presentedSlide": "{number} / {total}",
+  "presentWithNotes": "スピーカーノート付きでプレゼンテーション",
+  "presenterView": "発表者ビュー",
+  "nextSlide": "次のスライド",
+  "endOfPresentation": "プレゼンテーションの終わり",
+  "noNotes": "このスライドにはノートがありません",
+  "buildStep": "ステップ {played} / {steps}",
+  "restartTimer": "タイマーをリセット",
+  "previous": "前へ",
+  "next": "次へ",
+  "smallerNotes": "ノートを小さく",
+  "largerNotes": "ノートを大きく",
+  "presentationEnded": "プレゼンテーションは終了しました",
+  "waitingForPresentation": "プレゼンテーションを待っています"
 }

@@ -9,6 +9,7 @@ import {
 import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { openPresenterWindow } from '@/app/editor/present/window'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menu } from '@/components/ui/menu/menu'
@@ -23,6 +24,13 @@ function currentSlide(): string | null {
   if (store.state.focusedSlideId) return store.state.focusedSlideId
   for (const id of store.state.selectedIds) if (store.graph.getNode(id)?.type === 'SLIDE') return id
   return null
+}
+
+/** Presents from the current slide with the presenter's window beside the deck. */
+function presentWithNotes() {
+  if (!store.present(currentSlide())) return
+  const presentation = store.state.presentation
+  if (presentation) openPresenterWindow(presentation.id, messages.value.presenterView)
 }
 </script>
 
@@ -50,6 +58,14 @@ function currentSlide(): string | null {
         >
           <icon-lucide-skip-back :class="menuUI.icon()" />
           {{ messages.presentFromStart }}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          :class="menuUI.item({ justify: 'start' })"
+          data-test-id="slides-present-notes"
+          @select="presentWithNotes"
+        >
+          <icon-lucide-notebook-text :class="menuUI.icon()" />
+          {{ messages.presentWithNotes }}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenuPortal>

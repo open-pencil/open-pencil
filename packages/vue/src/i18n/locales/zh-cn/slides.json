@@ -26,5 +26,18 @@
   "present": "演示",
   "presentFromStart": "从头开始演示",
   "exitPresentation": "退出演示",
-  "presentedSlide": "{number} / {total}"
+  "presentedSlide": "{number} / {total}",
+  "presentWithNotes": "带演讲者备注演示",
+  "presenterView": "演讲者视图",
+  "nextSlide": "下一张幻灯片",
+  "endOfPresentation": "演示结束",
+  "noNotes": "此幻灯片没有备注",
+  "buildStep": "第 {played} 步，共 {steps} 步",
+  "restartTimer": "重新计时",
+  "previous": "上一个",
+  "next": "下一个",
+  "smallerNotes": "缩小备注",
+  "largerNotes": "放大备注",
+  "presentationEnded": "演示已结束",
+  "waitingForPresentation": "正在等待演示"
 }

@@ -8,6 +8,7 @@ import { useCanvas } from '@open-pencil/vue/canvas/surface'
 import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { usePresenterLink } from '@/app/editor/present/link'
 
 /**
  * A deck being presented, filling the screen: its own canvas draws the slide on show and the
@@ -22,6 +23,8 @@ const canvasRef = useTemplateRef<HTMLCanvasElement>('canvas')
 const view: CanvasView = { id: 'present', scene: () => store.presentationScene() }
 /** The editor's state with this canvas's view; its pan and zoom go unused. */
 const getRenderState = (): EditorState => ({ ...store.state, canvasView: view })
+
+usePresenterLink(store)
 
 // The canvas sizes only itself: the editor's own viewport stays as it was.
 useCanvas(canvasRef, store, { showRulers: false, getRenderState, onViewportResize: noop })

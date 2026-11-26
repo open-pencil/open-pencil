@@ -26,5 +26,18 @@
   "present": "Prezentuj",
   "presentFromStart": "Prezentuj od początku",
   "exitPresentation": "Zakończ prezentację",
-  "presentedSlide": "{number} z {total}"
+  "presentedSlide": "{number} z {total}",
+  "presentWithNotes": "Prezentuj z notatkami prelegenta",
+  "presenterView": "Widok prezentera",
+  "nextSlide": "Następny slajd",
+  "endOfPresentation": "Koniec prezentacji",
+  "noNotes": "Brak notatek do tego slajdu",
+  "buildStep": "Krok {played} z {steps}",
+  "restartTimer": "Uruchom stoper od nowa",
+  "previous": "Wstecz",
+  "next": "Dalej",
+  "smallerNotes": "Mniejsze notatki",
+  "largerNotes": "Większe notatki",
+  "presentationEnded": "Prezentacja się zakończyła",
+  "waitingForPresentation": "Oczekiwanie na prezentację"
 }

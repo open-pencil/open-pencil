@@ -29,5 +29,18 @@ export const slideMessageDefaults = {
   present: 'Present',
   presentFromStart: 'Present from start',
   exitPresentation: 'Exit presentation',
-  presentedSlide: params('{number} of {total}')
+  presentedSlide: params('{number} of {total}'),
+  presentWithNotes: 'Present with speaker notes',
+  presenterView: 'Presenter view',
+  nextSlide: 'Next slide',
+  endOfPresentation: 'End of presentation',
+  noNotes: 'No notes for this slide',
+  buildStep: params('Step {played} of {steps}'),
+  restartTimer: 'Restart timer',
+  previous: 'Previous',
+  next: 'Next',
+  smallerNotes: 'Smaller notes',
+  largerNotes: 'Larger notes',
+  presentationEnded: 'The presentation has ended',
+  waitingForPresentation: 'Waiting for the presentation'
 } as const

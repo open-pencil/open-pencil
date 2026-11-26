@@ -1,4 +1,5 @@
 import { slideRows } from '@open-pencil/scene-graph/slides'
+import { randomHex } from '@open-pencil/std/random'
 
 import type { EditorContext } from '#core/editor/types'
 import {
@@ -91,6 +92,7 @@ export function createPresentActions(ctx: EditorContext) {
     player = createSlidePlayer(ctx.graph, slides, start)
     player.start(seconds())
     ctx.state.presentation = {
+      id: randomHex(8),
       slideIds: slides,
       index: player.index,
       played: player.played,
