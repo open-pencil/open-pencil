@@ -177,6 +177,10 @@ function detachedStyles(
   )
 }
 
+const STYLE_BINDABLE_FIELDS = TEXT_BINDABLE_FIELDS.filter((field) =>
+  (SHARED_TEXT_STYLE_FIELDS as readonly string[]).includes(field)
+)
+
 function withoutBindingsStyleTakesOver(
   node: SceneNode,
   before: CharacterStyleOverride,
@@ -188,7 +192,7 @@ function withoutBindingsStyleTakesOver(
   if (!own || !tookStyle) {
     return after
   }
-  const kept = omit(own, SHARED_TEXT_STYLE_FIELDS)
+  const kept = omit(own, STYLE_BINDABLE_FIELDS)
   return isEmptyObject(kept) ? omit(after, ['boundVariables']) : { ...after, boundVariables: kept }
 }
 
