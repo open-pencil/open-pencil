@@ -3,7 +3,6 @@ import { describe, expect, test } from 'bun:test'
 import type { CommunityDocument } from '#cloud/contract'
 import { communityDocumentDescription } from '#cloud/runtime/site/community/content'
 import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
-import { fromUint8Array } from 'js-base64'
 
 const DOCUMENT_ID = '0b6f4f9e-3c1a-4d7e-9a52-6f1c2d3e4f50'
 const REVISION_ID = '5d4c3b2a-1f0e-4d9c-8b7a-6f5e4d3c2b1a'
@@ -92,6 +91,17 @@ async function headOf(page: Response) {
   return head
 }
 
+/** A page's one structured data block: its nonce, and its graph as parsed JSON. */
+function structuredData(html: string) {
+  const blocks = [
+    ...html.matchAll(/<script type="application\/ld\+json" nonce="([^"]+)">([\s\S]*?)<\/script>/g)
+  ]
+  expect(blocks).toHaveLength(1)
+  const [, nonce = '', json = ''] = blocks[0] ?? []
+  const graph: unknown = JSON.parse(json)
+  return { nonce, graph }
+}
+
 describe('community pages', () => {
   test('describe a document to link previews, escaped, with its preview as the image', async () => {
     const page = await visit(server(true), `/community/${DOCUMENT_ID}`)
@@ -152,43 +162,57 @@ describe('community pages', () => {
 
   test('describe the document as structured data that cannot close its script', async () => {
     const html = await (await visit(server(true), `/community/${DOCUMENT_ID}`)).text()
-    const scripts = html.match(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)
-    expect(scripts).toHaveLength(1)
-    const json = (scripts?.[0] ?? '').replace(/^<script[^>]*>/, '').replace(/<\/script>$/, '')
-    const data: unknown = JSON.parse(json)
-    expect(data).toMatchObject({
-      '@type': 'CreativeWork',
-      name: 'Tour <of> "OpenPencil"',
-      description: 'Notes </script><b>bold</b>',
-      url: `https://cloud.example/community/${DOCUMENT_ID}`,
-      version: '0.17.0'
+    const { graph } = structuredData(html)
+    const url = `https://cloud.example/community/${DOCUMENT_ID}`
+    expect(graph).toMatchObject({
+      '@graph': expect.arrayContaining([
+        expect.objectContaining({ '@type': 'WebPage', url, dateModified: expect.any(String) }),
+        expect.objectContaining({
+          '@type': 'CreativeWork',
+          name: 'Tour <of> "OpenPencil"',
+          description: 'Notes </script><b>bold</b>',
+          url,
+          version: '0.17.0'
+        })
+      ])
     })
   })
 
-  test('allow exactly the served structured data in the page policy, and no other inline script', async () => {
+  test('let only the structured data carrying this response’s nonce run inline', async () => {
+    const app = server(true)
+    const nonces = []
     for (const path of [`/community/${DOCUMENT_ID}`, '/community']) {
-      const page = await visit(server(true), path)
+      const page = await visit(app, path)
       const policy = page.headers.get('Content-Security-Policy') ?? ''
-      const html = await page.text()
-      const json = /<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/.exec(html)?.[1]
-      if (json === undefined) throw new Error(`${path} has no structured data`)
-      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(json))
-      const scriptSrc = policy
-        .split(';')
-        .find((directive) => directive.trim().startsWith('script-src'))
-      expect(scriptSrc).toContain(`'sha256-${fromUint8Array(new Uint8Array(digest))}'`)
-      expect(scriptSrc).not.toContain('unsafe-inline')
+      const { nonce } = structuredData(await page.text())
+      expect(policy).toContain(`'nonce-${nonce}'`)
+      expect(policy).not.toContain('unsafe-inline')
       expect(policy).toContain("frame-ancestors 'none'")
+      nonces.push(nonce)
     }
-    // A page that could not be drawn carries no block, so its policy allows none.
-    const limited = await visit(server('limited'), `/community/${DOCUMENT_ID}`)
-    expect(limited.headers.get('Content-Security-Policy')).not.toContain('sha256-')
+    expect(new Set(nonces).size).toBe(2)
   })
 
   test('list the gallery’s files with links to their pages', async () => {
     const html = await (await visit(server(true), '/community')).text()
     expect(html).toContain(`href="/community/${DOCUMENT_ID}"`)
-    expect(html).toContain('"@type":"CollectionPage"')
+    expect(structuredData(html).graph).toMatchObject({
+      '@graph': expect.arrayContaining([
+        expect.objectContaining({
+          '@type': ['WebPage', 'CollectionPage'],
+          url: 'https://cloud.example/community'
+        }),
+        expect.objectContaining({
+          '@type': 'ItemList',
+          itemListElement: [
+            expect.objectContaining({
+              position: 1,
+              item: `https://cloud.example/community/${DOCUMENT_ID}`
+            })
+          ]
+        })
+      ])
+    })
   })
 
   test('list the gallery’s pages in a sitemap where indexing is allowed', async () => {

@@ -4,7 +4,13 @@ import {
   communityDocumentsSchema,
   type CommunityDocument
 } from '#cloud/contract'
-import { fromUint8Array } from 'js-base64'
+import {
+  defineItemList,
+  defineListItem,
+  defineWebPage,
+  UnheadSchemaOrg,
+  useSchemaOrg
+} from '@unhead/schema-org'
 // eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { createHead, transformHtmlTemplate as transformHTMLTemplate } from 'unhead/server'
 import * as v from 'valibot'
@@ -103,55 +109,36 @@ export async function communityPage(
   }
 }
 
-/** What the page is, as schema.org data for search engines. */
+/** What the page is, as schema.org nodes for search engines. */
 function structuredData({ meta, origin, documents, document }: CommunityPage) {
+  const page = { name: meta.title, url: meta.url, description: meta.description }
   if (document) {
-    return {
-      '@context': 'https://schema.org',
-      '@type': 'CreativeWork',
-      name: document.name,
-      description: meta.description,
-      url: meta.url,
-      image: meta.image,
-      dateModified: document.updatedAt,
-      ...(document.versions[0] ? { version: document.versions[0].name } : {}),
-      isAccessibleForFree: true
-    }
+    return [
+      defineWebPage({ ...page, dateModified: document.updatedAt, primaryImageOfPage: meta.image }),
+      {
+        '@type': 'CreativeWork',
+        name: document.name,
+        description: meta.description,
+        url: meta.url,
+        image: meta.image,
+        dateModified: document.updatedAt,
+        ...(document.versions[0] ? { version: document.versions[0].name } : {}),
+        isAccessibleForFree: true
+      }
+    ]
   }
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: meta.title,
-    description: meta.description,
-    url: meta.url,
-    mainEntity: {
-      '@type': 'ItemList',
-      itemListElement: documents.map((entry, index) => ({
-        '@type': 'ListItem',
-        position: index + 1,
-        name: entry.name,
-        url: new URL(cloudCommunityPagePath(entry.id), origin).href
-      }))
-    }
-  }
+  return [
+    defineWebPage({ ...page, '@type': 'CollectionPage' }),
+    defineItemList({
+      itemListElement: documents.map((entry) =>
+        defineListItem({
+          name: entry.name,
+          item: new URL(cloudCommunityPagePath(entry.id), origin).href
+        })
+      )
+    })
+  ]
 }
-
-/**
- * The structured data as its script's text. `<` is written as `\u003c`, which JSON reads the same,
- * so the text holds nothing that could close its script and is served exactly as it is hashed.
- */
-function structuredDataText(page: CommunityPage): string {
-  return JSON.stringify(structuredData(page)).replaceAll('<', '\\u003c')
-}
-
-/** A Content Security Policy source that allows a script with exactly this text. */
-async function scriptHashSource(text: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
-  return `'sha256-${fromUint8Array(new Uint8Array(digest))}'`
-}
-
-/** A community page as served, with the hashes of the inline scripts its policy must allow. */
-export type RenderedCommunityPage = { html: string; scriptHashes: string[] }
 
 const APP_ROOT = '<div id="app"></div>'
 
@@ -163,11 +150,13 @@ const APP_ROOT = '<div id="app"></div>'
  */
 export async function renderCommunityPage(
   html: string,
-  page: CommunityPage
-): Promise<RenderedCommunityPage> {
+  page: CommunityPage,
+  scriptNonce: string
+): Promise<string> {
   const { meta } = page
-  const structured = structuredDataText(page)
-  const head = createHead()
+  // Minified: registered first, so `useSchemaOrg` keeps it rather than one that decides by
+  // `process.env`, which a Worker may not have.
+  const head = createHead({ plugins: [UnheadSchemaOrg({ minify: true })] })
   head.push({
     title: meta.title,
     meta: [
@@ -183,8 +172,11 @@ export async function renderCommunityPage(
           ]
         : [])
     ],
-    link: [{ rel: 'canonical', href: meta.url }],
-    script: [{ type: 'application/ld+json', textContent: structured }]
+    link: [{ rel: 'canonical', href: meta.url }]
+  })
+  // The policy lets this response's nonce alone run inline, so the graph's block carries it.
+  useSchemaOrg(head, {
+    script: [{ type: 'application/ld+json', nodes: structuredData(page), nonce: scriptNonce }]
   })
   // Vue's server renderer escapes every value it writes; a function replacement keeps `$`
   // patterns in names as they are.
@@ -194,9 +186,5 @@ export async function renderCommunityPage(
     description: meta.description
   })
   const filled = html.replace(APP_ROOT, () => `<div id="app">${content}</div>`)
-  return {
-    html: await transformHTMLTemplate(head, filled),
-    // The block is data that never runs, yet a browser checks it against the policy like a script.
-    scriptHashes: [await scriptHashSource(structured)]
-  }
+  return transformHTMLTemplate(head, filled)
 }
