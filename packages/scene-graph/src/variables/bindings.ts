@@ -442,25 +442,16 @@ function styleOwnValues(
   }
 }
 
-function hasEntries(record: object): boolean {
-  for (const key in record) {
-    if (Object.hasOwn(record, key)) {
-      return true
-    }
-  }
-  return false
-}
-
 function runReadsVariables({ style }: StyleRun): boolean {
   return (
     Boolean(style.textStyleId) ||
-    (style.boundVariables !== undefined && hasEntries(style.boundVariables))
+    (style.boundVariables !== undefined && !isEmptyObject(style.boundVariables))
   )
 }
 
 function readsVariables(node: SceneNode): boolean {
   return (
-    hasEntries(node.boundVariables) ||
+    !isEmptyObject(node.boundVariables) ||
     Boolean(node.textStyleId) ||
     node.styleRuns.some(runReadsVariables)
   )
