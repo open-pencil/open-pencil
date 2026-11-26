@@ -65,6 +65,8 @@ export function useSelectionCapabilities() {
     canGoToMainComponent: computed(() => selection.isInstance.value),
     canCreateInstance: computed(() => selectedNode.value?.type === 'COMPONENT'),
     canCreateSlot: selection.canCreateSlot,
+    canSetAsThumbnail: computed(() => selection.thumbnailAction.value === 'set'),
+    canRestoreDefaultThumbnail: computed(() => selection.thumbnailAction.value === 'restore'),
     canMoveToPage: useSceneComputed(() => hasSelection.value && editor.graph.getPages().length > 1),
     canSelectAll: useSceneComputed(
       () => editor.graph.getChildren(editor.state.currentPageId).length > 0

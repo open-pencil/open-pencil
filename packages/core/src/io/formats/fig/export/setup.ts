@@ -31,7 +31,7 @@ import { appendAll } from '@open-pencil/std/arrays'
 import { CANVAS_BG_COLOR } from '#core/constants'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { applyDocumentPluginData } from '#core/io/formats/fig/document-metadata'
-import { figThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
+import { documentThumbnailSubject, figThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
 import { settleFontDigestMap } from '#core/kiwi/fig/node-change/serialize'
 
 import { renderFigThumbnail, type FigThumbnailOptions } from './thumbnail'
@@ -526,11 +526,14 @@ export async function figFileExtras(
   options: FigFileExtrasOptions
 ): Promise<FigFileExtras> {
   // Internal pages hold library data, not anything a person drew, so the thumbnail skips them.
-  const thumbnailPageId = options.pageId ?? figThumbnailPageId(graph.getPages())
-  const thumbnail = await renderFigThumbnail(graph, thumbnailPageId, options)
+  const subject = documentThumbnailSubject(
+    graph,
+    options.pageId ?? figThumbnailPageId(graph.getPages())
+  )
+  const thumbnail = await renderFigThumbnail(graph, subject, options)
   const metaJSON = figArchiveMetaJSON({
     fileName: options.documentName || UNTITLED_FILE_NAME,
-    backgroundColor: getPageColor(thumbnailPageId ? graph.getNode(thumbnailPageId) : undefined),
+    backgroundColor: getPageColor(subject ? graph.getNode(subject.pageId) : undefined),
     thumbnailSize: thumbnail.size,
     renderCoordinates: thumbnail.region,
     exportedAt: new Date()

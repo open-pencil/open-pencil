@@ -381,6 +381,12 @@
       "import": "./dist/text/picture.js",
       "default": "./dist/text/picture.js"
     },
+    "./thumbnail": {
+      "types": "./dist/thumbnail.d.ts",
+      "bun": "./src/thumbnail.ts",
+      "import": "./dist/thumbnail.js",
+      "default": "./dist/thumbnail.js"
+    },
     "./transfer": {
       "types": "./dist/transfer/index.d.ts",
       "bun": "./src/transfer/index.ts",

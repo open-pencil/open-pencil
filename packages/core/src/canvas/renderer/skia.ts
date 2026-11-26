@@ -718,6 +718,11 @@ export class SkiaRenderer {
     return unionVisualBounds(laidOut, savedTextInk(this, node))
   }
 
+  /** How far down `node`'s box its first baseline is drawn, as `measureTextBaseline` finds it. */
+  measureTextBaseline(node: SceneNode): number | undefined {
+    return RenderText.measureTextBaseline(this, node)
+  }
+
   measureTextAsDrawn(node: SceneNode, maxWidth?: number): { width: number; height: number } | null {
     return RenderText.measureTextAsDrawn(this, node, maxWidth)
   }

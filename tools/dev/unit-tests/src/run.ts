@@ -43,14 +43,16 @@ if (lightGroups.length === 0 && heavyFiles.length === 0) {
 
 /**
  * Modules packages build from another language, with the shard groups whose tests load them:
- * Core and its front ends read HTML with the HTML engine. Each script checks a current module
- * without its compiler, so only a stale one needs Rust.
+ * Core and its front ends read HTML with the HTML engine, and the `.fig` reader crate is checked
+ * against the TypeScript reader. Each script checks a current module without its compiler, so
+ * only a stale one needs Rust.
  */
 const MODULE_BUILDS: { script: string; groups: readonly UnitTestGroup[] }[] = [
   {
     script: 'packages/html-engine/scripts/wasm.ts',
     groups: ['all', 'core', 'dom', 'cli', 'mcp', 'app']
-  }
+  },
+  { script: 'packages/fig/scripts/wasm.ts', groups: ['all', 'fig'] }
 ]
 
 async function buildModules(): Promise<void> {

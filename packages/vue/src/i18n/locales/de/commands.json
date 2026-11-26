@@ -12,6 +12,8 @@
   "createInstance": "Instanz erstellen",
   "detachInstance": "Instanz lösen",
   "detachIcon": "Symbol lösen",
+  "setAsThumbnail": "Als Miniaturansicht festlegen",
+  "restoreDefaultThumbnail": "Standard-Miniaturansicht wiederherstellen",
   "goToMainComponent": "Zur Hauptkomponente",
   "addAutoLayout": "Auto-Layout hinzufügen",
   "bringToFront": "In den Vordergrund",
