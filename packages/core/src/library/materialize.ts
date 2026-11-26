@@ -66,7 +66,12 @@ export function copyLibraryTree(
   if (mappedIds.has(sourceId)) return
   const node = source.getNode(sourceId)
   if (!node) return
-  const created = target.createNode(node.type, parentId, cloneNodeProps(node, node.componentId))
+  const props = cloneNodeProps(node, node.componentId)
+  // A layer's saved FIG ID names a record in the library's file, not in the document copying it.
+  // Shared styles keep theirs: exports reference a style by its saved ID.
+  if (props.source && !node.sharedStyleType)
+    props.source = { ...props.source, id: null, orderKey: null }
+  const created = target.createNode(node.type, parentId, props)
   mappedIds.set(sourceId, created.id)
   for (const childId of node.childIds)
     copyLibraryTree(source, target, childId, created.id, mappedIds)

@@ -107,3 +107,40 @@ export async function focusNodesByName(
   }
   return 'missing'
 }
+
+export type FocusByIdentityResult = FocusByNameResult | 'ambiguous'
+
+/** Persisted FIG GUIDs survive renames and graph-handle reassignment on reopen. */
+export async function focusNodeBySourceId(
+  store: FocusStore,
+  sourceId: string,
+  isCurrent: () => boolean = () => true
+): Promise<FocusByIdentityResult> {
+  const switches = store.pageSwitchCount()
+  const found: string[] = []
+  const visit = (parentId: string) => {
+    for (const node of store.graph.getChildren(parentId)) {
+      if (node.source.id === sourceId) found.push(node.id)
+      visit(node.id)
+    }
+  }
+  for (const page of store.graph.getPages()) {
+    await store.loadPageNodes(page.id)
+    if (!isCurrent() || store.pageSwitchCount() !== switches) return 'superseded'
+    visit(page.id)
+  }
+  if (found.length > 1) return 'ambiguous'
+  if (!found.length) return 'missing'
+  const pageId = pageIdOf(store.graph, found[0])
+  if (!pageId) return 'missing'
+  if (pageId !== store.state.currentPageId) {
+    await store.switchPage(pageId)
+    if (
+      !isCurrent() ||
+      store.pageSwitchCount() !== switches + 1 ||
+      store.state.currentPageId !== pageId
+    )
+      return 'superseded'
+  }
+  return isCurrent() && focusNodes(store, found) ? 'found' : 'superseded'
+}

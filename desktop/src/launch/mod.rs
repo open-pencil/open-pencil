@@ -16,6 +16,10 @@ pub struct PendingOpenFile {
     path: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     node: Option<String>,
+    #[serde(rename = "nodeId", skip_serializing_if = "Option::is_none")]
+    node_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    revision: Option<String>,
     /// Which producer queued this entry: a `openpencil://` link (true) or a file
     /// association / argv path (false). The frontend cannot tell them apart from
     /// the path alone — a canonicalized Windows path is verbatim (`\\?\C:\…`).
@@ -93,6 +97,8 @@ pub fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec
             PendingOpenFile {
                 path: path.to_string_lossy().into_owned(),
                 node: None,
+                node_id: None,
+                revision: None,
                 deep_link: false,
             }
         })
@@ -117,6 +123,8 @@ pub fn queue_deep_links<R: tauri::Runtime>(app: &tauri::AppHandle<R>, urls: Vec<
             Ok(links::DeepLink::Open(open)) => files.push(PendingOpenFile {
                 path: open.file,
                 node: open.node,
+                node_id: open.node_id,
+                revision: open.revision,
                 deep_link: true,
             }),
             Ok(links::DeepLink::Join(join)) => rooms.push(join.room),

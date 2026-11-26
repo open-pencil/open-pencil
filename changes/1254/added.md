@@ -1,0 +1,1 @@
+- Link saved design components to existing Storybook implementations with explicit prop and state mappings, revision-pinned design references, and navigation between stories and saved designs.

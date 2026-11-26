@@ -12,7 +12,7 @@ import { writeFileAtomic } from '@open-pencil/core/node/fs'
 export const MANIFEST_FILE = '.openpencil-stories.json'
 
 /** Files the export writes directly in the output folder: stories and generated components. */
-const OWN_FILE = /^[^/]+\.(stories\.ts|vue|tsx|module\.css)$/
+const OWN_FILE = /^[^/]+\.(stories\.ts|design\.ts|vue|tsx|module\.css)$/
 /** A variant's design image, in its story's `<Name>.design/` folder. */
 const DESIGN_IMAGE = /^[^/]+\.design\/[^/]+\.png$/
 /** A document's shared files in `openpencil/<document>/`: its fonts and design tokens. */
