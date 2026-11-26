@@ -64,6 +64,7 @@
       "@open-pencil/pen/*": ["./packages/pen/src/*"]
     }
   },
+  "exclude": ["src/service-worker/sw.ts"],
   "include": [
     "src/**/*.ts",
     "src/**/*.vue",
