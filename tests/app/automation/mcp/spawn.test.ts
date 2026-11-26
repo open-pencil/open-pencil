@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import { mcpClientToken } from '@open-pencil/mcp/tools'
 import { fetchStub } from '@open-pencil/test-support/fetch'
 
 import { getMCPClientToken } from '@/app/automation/mcp/client-token'
@@ -14,24 +13,66 @@ import {
 
 import {
   clearTauriMocks,
-  hostStart,
   installTauriMockWindow,
-  mockTauriIPC,
-  type HostStart
+  mockHost,
+  mockTauriIPC
 } from '#tests/helpers/tauri/mocks'
 
 const DISCOVERY_PATH = '/mock/home/.openpencil/mcp.json'
-const DISCOVERY_JSON = JSON.stringify({
-  pid: 1234,
-  socketPath: '/mock/home/.openpencil/mcp.sock',
-  httpPort: 7600,
-  authRequired: true,
-  authToken: 'discovery-token',
-  version: '0.0.0-test',
-  startedAt: new Date().toISOString()
-})
+/** The tokens the desktop app makes for the server it runs (`mcp_tokens`). */
+const DESKTOP_TOKENS = { appToken: 'app-token', clientToken: 'client-token' }
+const MCP_LOOKUP = {
+  available: true,
+  path: '/mock/bin/openpencil-mcp-http',
+  searched: ['/mock/bin']
+}
+
+function installDesktop(platform: string, userAgent = platform) {
+  installTauriMockWindow()
+  Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true,
+    value: { platform, userAgent }
+  })
+}
+
+/** A desktop package that may not start host programs, so it only finds a server the user runs. */
+function forbidHostProcesses() {
+  Object.defineProperty(globalThis.window, '__OPENPENCIL_DESKTOP_CAPABILITIES__', {
+    configurable: true,
+    value: { selfUpdate: false, hostProcesses: false }
+  })
+}
+
+/** Answers the commands a desktop MCP launch makes besides the host's own. */
+function desktopLaunch(tokens: unknown = DESKTOP_TOKENS) {
+  return (cmd: string) => {
+    if (cmd === 'mcp_lookup') return MCP_LOOKUP
+    if (cmd === 'mcp_tokens') return tokens
+    if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
+    if (cmd === 'plugin:fs|exists') return false
+    return null
+  }
+}
+
+function healthyResponse() {
+  return Response.json({
+    status: 'ok',
+    version: '0.0.0-test',
+    authRequired: true,
+    discoveryPath: DISCOVERY_PATH,
+    clientTokens: true
+  })
+}
+
+function bearer(init: RequestInit | undefined): string | null {
+  return new Headers(init?.headers).get('authorization')
+}
 
 afterEach(async () => {
+  if ('window' in globalThis) {
+    Reflect.deleteProperty(globalThis.window, '__OPENPENCIL_DESKTOP_CAPABILITIES__')
+  }
   await clearTauriMocks()
   vi.restoreAllMocks()
   Reflect.deleteProperty(globalThis, 'window')
@@ -80,28 +121,15 @@ describe('MCP health probe diagnostics', () => {
 
 describe('Tauri MCP spawning', () => {
   test('retains an early startup failure for MCP-dependent features', async () => {
-    installTauriMockWindow()
-    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
-    Object.defineProperty(globalThis, 'navigator', {
-      configurable: true,
-      value: { platform: 'Win32', userAgent: 'Windows' }
-    })
-
+    installDesktop('Win32', 'Windows')
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
-    await mockTauriIPC((cmd, args) => {
-      if (cmd === 'mcp_lookup')
-        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
-      if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
-      if (cmd === 'plugin:fs|exists') return false
-      if (cmd === 'host_start') {
-        const { emit } = hostStart(args)
+    await mockHost({
+      onStart: ({ emit }) =>
         queueMicrotask(() => {
           emit({ type: 'stderr', data: 'El sistema no puede encontrar el archivo especificado.' })
           emit({ type: 'close', code: 1, signal: null })
-        })
-        return 88
-      }
-      return null
+        }),
+      otherwise: desktopLaunch()
     })
 
     expect(await spawnMCPIfNeeded()).toBeNull()
@@ -113,21 +141,13 @@ describe('Tauri MCP spawning', () => {
   })
 
   test('retains unexpected spawn errors for MCP-dependent features', async () => {
-    installTauriMockWindow()
-    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
-    Object.defineProperty(globalThis, 'navigator', {
-      configurable: true,
-      value: { platform: 'MacIntel', userAgent: 'Macintosh' }
-    })
-
+    installDesktop('MacIntel', 'Macintosh')
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
-    await mockTauriIPC((cmd) => {
-      if (cmd === 'mcp_lookup')
-        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
-      if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
-      if (cmd === 'plugin:fs|exists') return false
-      if (cmd === 'host_start') throw new Error('host permission denied')
-      return null
+    await mockHost({
+      onStart: () => {
+        throw new Error('host permission denied')
+      },
+      otherwise: desktopLaunch()
     })
 
     expect(await spawnMCPIfNeeded()).toBeNull()
@@ -136,13 +156,7 @@ describe('Tauri MCP spawning', () => {
   })
 
   test('retains a language-independent missing executable diagnostic', async () => {
-    installTauriMockWindow()
-    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
-    Object.defineProperty(globalThis, 'navigator', {
-      configurable: true,
-      value: { platform: 'MacIntel', userAgent: 'Macintosh' }
-    })
-
+    installDesktop('MacIntel', 'Macintosh')
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
     await mockTauriIPC((cmd) => {
       if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
@@ -162,13 +176,8 @@ describe('Tauri MCP spawning', () => {
   })
 
   test('reports an older running server as outdated with the install command for this app', async () => {
-    installTauriMockWindow()
-    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
-    Object.defineProperty(globalThis, 'navigator', {
-      configurable: true,
-      value: { platform: 'MacIntel', userAgent: 'Macintosh' }
-    })
-
+    installDesktop('MacIntel', 'Macintosh')
+    forbidHostProcesses()
     vi.spyOn(globalThis, 'fetch').mockImplementation(
       fetchStub(async () =>
         Response.json({
@@ -194,13 +203,8 @@ describe('Tauri MCP spawning', () => {
   })
 
   test('reports a server of the same minor without client tokens as outdated', async () => {
-    installTauriMockWindow()
-    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
-    Object.defineProperty(globalThis, 'navigator', {
-      configurable: true,
-      value: { platform: 'MacIntel', userAgent: 'Macintosh' }
-    })
-
+    installDesktop('MacIntel', 'Macintosh')
+    forbidHostProcesses()
     vi.spyOn(globalThis, 'fetch').mockImplementation(
       fetchStub(async () => Response.json({ status: 'ok', version: '0.0.0-beta.1' }))
     )
@@ -217,123 +221,71 @@ describe('Tauri MCP spawning', () => {
     expect(String(error)).toContain('npm i -g @open-pencil/mcp@0.0.0-test')
   })
 
-  test('starts the MCP server through the desktop app when health check is missing', async () => {
-    installTauriMockWindow()
-    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
-    Object.defineProperty(globalThis, 'navigator', {
-      configurable: true,
-      value: { platform: 'MacIntel' }
-    })
-
-    let healthChecks = 0
+  test('starts the MCP server through the desktop app and uses the tokens it hands over', async () => {
+    installDesktop('MacIntel')
+    const healthTokens: Array<string | null> = []
     vi.spyOn(globalThis, 'fetch').mockImplementation(
-      fetchStub(async () => {
-        healthChecks += 1
-        if (healthChecks === 1) return new Response('', { status: 404 })
-        return new Response(
-          JSON.stringify({
-            status: 'ok',
-            version: '0.0.0-test',
-            authRequired: true,
-            discoveryPath: DISCOVERY_PATH,
-            clientTokens: true
-          }),
-          { status: 200 }
-        )
+      fetchStub(async (_input, init) => {
+        healthTokens.push(bearer(init))
+        if (healthTokens.length === 1) return new Response('', { status: 404 })
+        return healthyResponse()
       })
     )
-
-    const spawned: { emit: HostStart['emit'] | null } = { emit: null }
-    const calls: Array<{ cmd: string; args: unknown }> = []
-    await mockTauriIPC((cmd, args) => {
-      calls.push({ cmd, args })
-      if (cmd === 'mcp_lookup')
-        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
-      if (cmd === 'host_start') {
-        const start = hostStart(args)
-        expect(start.program).toEqual({
-          kind: 'mcpServer',
-          authToken: expect.any(String),
-          root: '/mock/home',
-          disabledTools: expect.any(Array),
-          scope: expect.stringMatching(/^(document|selection)$/)
-        })
-        spawned.emit = start.emit
-        return 77
-      }
-      const pathArg = (args as { path?: string })?.path
-      if (cmd === 'plugin:fs|exists') {
-        return pathArg === DISCOVERY_PATH
-      }
-      if (cmd === 'plugin:fs|read_text_file') {
-        // Only return discovery data when reading the expected discovery path
-        if (pathArg === DISCOVERY_PATH) return new TextEncoder().encode(DISCOVERY_JSON)
-        return null
-      }
-      // Handle homeDir() IPC call from resolveTauriHomeDir
-      if (cmd === 'plugin:path|resolve_directory') {
-        return '/mock/home'
-      }
-      return null
-    })
+    const host = await mockHost({ otherwise: desktopLaunch() })
 
     const handle = await spawnMCPIfNeeded({ earlyExitMs: 5, healthPollMs: 5 })
-    await expect(getAutomationAuthToken()).resolves.toBe('discovery-token')
-    // An agent gets the client token derived from the server's, never the server's own.
-    await expect(getMCPClientToken()).resolves.toBe(await mcpClientToken('discovery-token'))
-    spawned.emit?.({ type: 'stderr', data: 'warn' })
-    handle?.disconnect()
-    await Promise.resolve()
 
-    expect(handle?.authToken).toBe('discovery-token')
-    expect(calls.some((c) => c.cmd === 'host_start')).toBe(true)
-    expect(
-      calls.some(
-        (c) =>
-          c.cmd === 'plugin:fs|read_text_file' &&
-          (c.args as { path?: string })?.path === DISCOVERY_PATH
-      )
-    ).toBe(true)
-    expect(calls.at(-1)).toEqual({ cmd: 'host_kill', args: { id: 77 } })
+    // The editor asks for the server alone; the desktop app makes its tokens.
+    expect(host.started.map((start) => start.program)).toEqual([
+      {
+        kind: 'mcpServer',
+        tokenlessClients: expect.any(Boolean),
+        root: '/mock/home',
+        disabledTools: expect.any(Array),
+        scope: expect.stringMatching(/^(document|selection)$/)
+      }
+    ])
+    // Health is read with the client token, never the server's own.
+    expect(healthTokens).toEqual(['Bearer client-token', 'Bearer client-token'])
+    // The app token registers the editor, and agents connect with the client token.
+    expect(handle?.authToken).toBe('app-token')
+    expect(handle?.managed).toBe(true)
+    await expect(getAutomationAuthToken()).resolves.toBe('app-token')
+    await expect(getMCPClientToken()).resolves.toBe('client-token')
+    // The discovery file of a server the desktop app runs holds its own token; it is not read.
+    expect(host.calls.some((call) => call.cmd === 'plugin:fs|read_text_file')).toBe(false)
+
+    host.emit({ type: 'stderr', data: 'warn' })
+    await handle?.disconnect()
+    expect(host.calls.at(-1)).toEqual({ cmd: 'host_kill', args: { id: 1 } })
+  })
+
+  test('stops the server and reports a failure when the desktop app hands over no tokens', async () => {
+    installDesktop('MacIntel')
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(fetchStub(async () => healthyResponse()))
+    const host = await mockHost({ otherwise: desktopLaunch(null) })
+
+    expect(await spawnMCPIfNeeded({ earlyExitMs: 5, healthPollMs: 5 })).toBeNull()
+
+    expect(host.calls).toContainEqual({ cmd: 'host_kill', args: { id: 1 } })
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(getAutomationStartupFailure()).toMatchObject({ code: 'unknown' })
   })
 
   test('keeps waiting for a server that is slow to answer while its child runs', async () => {
-    installTauriMockWindow()
-    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
-    Object.defineProperty(globalThis, 'navigator', {
-      configurable: true,
-      value: { platform: 'Win32', userAgent: 'Windows' }
-    })
-
+    installDesktop('Win32', 'Windows')
     let healthChecks = 0
     vi.spyOn(globalThis, 'fetch').mockImplementation(
       fetchStub(async () => {
         healthChecks += 1
         // Slower than the five fixed tries the app used to allow.
         if (healthChecks <= 9) return new Response('', { status: 404 })
-        return new Response(
-          JSON.stringify({
-            status: 'ok',
-            version: '0.0.0-test',
-            authRequired: true,
-            discoveryPath: DISCOVERY_PATH,
-            clientTokens: true
-          }),
-          { status: 200 }
-        )
+        return healthyResponse()
       })
     )
-    await mockTauriIPC((cmd, args) => {
-      if (cmd === 'mcp_lookup')
-        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
-      if (cmd === 'host_start') return 77
-      const pathArg = (args as { path?: string })?.path
-      if (cmd === 'plugin:fs|exists') return pathArg === DISCOVERY_PATH
-      if (cmd === 'plugin:fs|read_text_file')
-        return pathArg === DISCOVERY_PATH ? new TextEncoder().encode(DISCOVERY_JSON) : null
-      if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
-      return null
-    })
+    await mockHost({ otherwise: desktopLaunch() })
 
     const handle = await spawnMCPIfNeeded({
       earlyExitMs: 5,
@@ -342,29 +294,16 @@ describe('Tauri MCP spawning', () => {
     })
     expect(handle?.managed).toBe(true)
     expect(healthChecks).toBeGreaterThan(9)
+    await handle?.disconnect()
   })
 
   test('reports a child that exits while the app waits as exited, not as a timeout', async () => {
-    installTauriMockWindow()
-    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
-    Object.defineProperty(globalThis, 'navigator', {
-      configurable: true,
-      value: { platform: 'MacIntel', userAgent: 'Macintosh' }
-    })
-
+    installDesktop('MacIntel', 'Macintosh')
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
-    await mockTauriIPC((cmd, args) => {
-      if (cmd === 'mcp_lookup')
-        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
-      if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
-      if (cmd === 'plugin:fs|exists') return false
-      if (cmd === 'host_start') {
-        const { emit } = hostStart(args)
-        // Past the early-exit window, before the deadline.
-        setTimeout(() => emit({ type: 'close', code: 3, signal: null }), 40)
-        return 88
-      }
-      return null
+    await mockHost({
+      // Past the early-exit window, before the deadline.
+      onStart: ({ emit }) => setTimeout(() => emit({ type: 'close', code: 3, signal: null }), 40),
+      otherwise: desktopLaunch()
     })
 
     const handle = await spawnMCPIfNeeded({

@@ -305,7 +305,10 @@ async function launchMCPServer(timing: MCPStartupTiming): Promise<AutomationServ
   if (!tokens) {
     await child.kill().catch(() => undefined)
     return rememberStartupError(
-      new MCPStartupError('The desktop app did not hand over the MCP server’s tokens.', mcpFailure('unknown'))
+      new MCPStartupError(
+        'The desktop app did not hand over the MCP server’s tokens.',
+        mcpFailure('unknown')
+      )
     )
   }
   const earlyExit = await Promise.race([
