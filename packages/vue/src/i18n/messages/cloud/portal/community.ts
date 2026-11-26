@@ -11,6 +11,7 @@ export const communityPortalMessageDefaults = {
   communityAllFiles: 'All files',
   communityOpenInBrowser: 'Open in browser',
   communityOpenInDesktop: 'Open in desktop app',
+  communityUpdated: params('Updated {date}'),
   communityOpenNote: 'Files open read-only. Save a copy to edit one.',
   communityLatestVersion: params('{name} · Latest'),
   communityMore: 'More from the community',

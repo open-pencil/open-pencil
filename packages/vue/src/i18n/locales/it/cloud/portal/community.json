@@ -8,6 +8,7 @@
   "communityAllFiles": "Tutti i file",
   "communityOpenInBrowser": "Apri nel browser",
   "communityOpenInDesktop": "Apri nell’app desktop",
+  "communityUpdated": "Aggiornato il {date}",
   "communityOpenNote": "I file si aprono in sola lettura. Salva una copia per modificarli.",
   "communityLatestVersion": "{name} · Più recente",
   "communityMore": "Altro dalla community",

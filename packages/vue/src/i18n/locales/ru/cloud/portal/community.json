@@ -8,6 +8,7 @@
   "communityAllFiles": "Все файлы",
   "communityOpenInBrowser": "Открыть в браузере",
   "communityOpenInDesktop": "Открыть в приложении",
+  "communityUpdated": "Обновлено {date}",
   "communityOpenNote": "Файлы открываются только для чтения. Сохраните копию, чтобы редактировать.",
   "communityLatestVersion": "{name} · Последняя",
   "communityMore": "Ещё из сообщества",

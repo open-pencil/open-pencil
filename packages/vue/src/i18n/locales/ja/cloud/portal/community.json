@@ -8,6 +8,7 @@
   "communityAllFiles": "すべてのファイル",
   "communityOpenInBrowser": "ブラウザで開く",
   "communityOpenInDesktop": "デスクトップアプリで開く",
+  "communityUpdated": "{date} に更新",
   "communityOpenNote": "ファイルは読み取り専用で開きます。編集するにはコピーを保存してください。",
   "communityLatestVersion": "{name} · 最新",
   "communityMore": "コミュニティのほかのファイル",

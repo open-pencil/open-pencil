@@ -8,6 +8,7 @@
   "communityAllFiles": "所有文件",
   "communityOpenInBrowser": "在浏览器中打开",
   "communityOpenInDesktop": "在桌面应用中打开",
+  "communityUpdated": "更新于 {date}",
   "communityOpenNote": "文件以只读方式打开。保存副本即可编辑。",
   "communityLatestVersion": "{name} · 最新",
   "communityMore": "更多社区文件",
