@@ -26,13 +26,15 @@ import { OAuthRequestError } from './service'
 const CODE_LIFETIME_MS = MINUTE_MS
 const CODE_SALT = utf8ToBytes('openpencil-cloud-agent-pairing-code')
 const CODE_HEADER = { alg: 'dir', enc: 'A256GCM' } as const
+/** What a pairing token reaches: the open designs, to read and change, whatever the app asked. */
+const PAIRING_SCOPE = CLOUD_TOKEN_SCOPES.join(' ')
+const CODE_IDENTIFIER_PREFIX = 'agent-pairing:'
 
 const codePayloadSchema = v.object({
   token: v.string(),
   clientId: v.string(),
   redirectURI: v.string(),
-  challenge: v.string(),
-  scope: v.string()
+  challenge: v.string()
 })
 type CodePayload = v.InferOutput<typeof codePayloadSchema>
 
@@ -42,7 +44,7 @@ export type PairingTokenAnswer =
   | { error: 'invalid_request' | 'invalid_grant' | 'invalid_client' }
 
 const codeKey = (code: string) => hkdf(sha256, utf8ToBytes(code), CODE_SALT, new Uint8Array(), 32)
-const codeIdentifier = (code: string) => `agent-pairing:${hashCapability(code)}`
+const codeIdentifier = (code: string) => `${CODE_IDENTIFIER_PREFIX}${hashCapability(code)}`
 
 async function seal(code: string, payload: CodePayload): Promise<string> {
   return new CompactEncrypt(utf8ToBytes(JSON.stringify(payload)))
@@ -138,7 +140,6 @@ export function createAgentPairingGrants(options: {
         return returnTo(redirectURI, params, { error: 'access_denied' })
       }
       const code = `${CLOUD_AGENT_PAIRING_CODE_PREFIX}${randomHex(32)}`
-      const requested = (params.get('scope') ?? '').split(' ')
       const now = new Date()
       await database
         .insertInto('verification')
@@ -149,8 +150,7 @@ export function createAgentPairingGrants(options: {
             token: decision.token,
             clientId: app.clientId,
             redirectURI,
-            challenge,
-            scope: CLOUD_TOKEN_SCOPES.filter((scope) => requested.includes(scope)).join(' ')
+            challenge
           }),
           expiresAt: new Date(now.getTime() + CODE_LIFETIME_MS),
           createdAt: now,
@@ -185,9 +185,23 @@ export function createAgentPairingGrants(options: {
       ) {
         return { error: 'invalid_grant' }
       }
-      return { access_token: payload.token, token_type: 'Bearer', scope: payload.scope }
+      return { access_token: payload.token, token_type: 'Bearer', scope: PAIRING_SCOPE }
     }
   }
 }
 
 export type AgentPairingGrants = ReturnType<typeof createAgentPairingGrants>
+
+/** Deletes the pairing codes no agent exchanged in time, with the tokens they hold. */
+export function createPairingCodeCleanupService(database: Kysely<CloudDatabase>) {
+  return {
+    async cleanupExpired(now: Date): Promise<number> {
+      const deleted = await database
+        .deleteFrom('verification')
+        .where('identifier', 'like', `${CODE_IDENTIFIER_PREFIX}%`)
+        .where('expiresAt', '<=', now)
+        .executeTakeFirst()
+      return Number(deleted.numDeletedRows)
+    }
+  }
+}

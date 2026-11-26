@@ -3,6 +3,7 @@ export { closedOAuthPaths, cloudOAuthProviderOptions } from './provider'
 export { bearerAppToken, resolveAppAccessToken, resourceChallenge } from './resource'
 export {
   createAgentPairingGrants,
+  createPairingCodeCleanupService,
   type AgentPairingGrants,
   type PairingTokenAnswer
 } from './pairing'

@@ -2,6 +2,7 @@ import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email'
 import type { CloudErrorReporter } from '#cloud/server/errors'
+import { createPairingCodeCleanupService } from '#cloud/server/oauth'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import { createStorageLimitNoticeService } from '#cloud/server/quota'
@@ -35,6 +36,7 @@ export function createCleanupServices(
       reportError
     }),
     rateLimits: createRateLimitCleanupService(database),
+    pairingCodes: createPairingCodeCleanupService(database),
     storageLimits: email
       ? createStorageLimitNoticeService(database, {
           policy,

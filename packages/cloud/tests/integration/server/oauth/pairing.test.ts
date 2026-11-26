@@ -14,6 +14,7 @@ import {
   type CloudAgentPairingDecision
 } from '#cloud/contract'
 import { parseCloudServerConfig } from '#cloud/server'
+import { createPairingCodeCleanupService } from '#cloud/server/oauth'
 import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
@@ -50,9 +51,9 @@ const decide = (decision: CloudAgentPairingDecision) =>
   oauth.send('/api/agent-pairing/decision', { body: decision })
 
 /** A signed-out browser's request as the pairing page has it, with the agent's verifier. */
-async function arrive(target = resource) {
+async function arrive(target = resource, scope?: string) {
   const { verifier, challenge } = await pkce()
-  const page = await oauth.authorize({ clientId, challenge, resource: target })
+  const page = await oauth.authorize({ clientId, challenge, resource: target, scope })
   return { verifier, query: page.search.slice(1) }
 }
 
@@ -113,6 +114,51 @@ describe('pairing an agent through its sign-in, without an account', () => {
       expect((await oauth.redeem({ ...request, ...changed })).status).toBe(400)
       expect((await oauth.redeem(request)).status).toBe(400)
     }
+  })
+
+  test('answers read and write to an app that asked to read only, which is what pairing gives', async () => {
+    const { verifier, query } = await arrive(resource, 'documents:read')
+    const answer = await responseJSON(
+      await decide({ decision: 'allow', query, token }),
+      cloudOAuthDecisionResponseSchema
+    )
+    const code = new URL(answer.redirect).searchParams.get('code')
+    if (!code) throw new Error('No code')
+    const exchanged = await oauth.redeem({ clientId, code, verifier, resource })
+    expect((await responseJSON(exchanged, tokenAnswerSchema)).scope).toBe(
+      'documents:read documents:write'
+    )
+  })
+
+  test('deletes codes no agent exchanged in time, and leaves waiting ones', async () => {
+    await fixture.database.deleteFrom('verification').execute()
+    await approved()
+    await approved()
+    const [expired] = await fixture.database.selectFrom('verification').select('id').execute()
+    if (!expired) throw new Error('No code stored')
+    await fixture.database
+      .updateTable('verification')
+      .set({ expiresAt: new Date(Date.now() - 1000) })
+      .where('id', '=', expired.id)
+      .execute()
+    const now = new Date()
+    await fixture.database
+      .insertInto('verification')
+      .values({
+        id: crypto.randomUUID(),
+        identifier: 'email-verification:someone',
+        value: 'kept',
+        expiresAt: new Date(Date.now() - 1000),
+        createdAt: now,
+        updatedAt: now
+      })
+      .execute()
+    expect(await createPairingCodeCleanupService(fixture.database).cleanupExpired(new Date())).toBe(
+      1
+    )
+    const left = await fixture.database.selectFrom('verification').select('id').execute()
+    expect(left.map((row) => row.id)).not.toContain(expired.id)
+    expect(left).toHaveLength(2)
   })
 
   test('refuses an expired code', async () => {
