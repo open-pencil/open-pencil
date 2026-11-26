@@ -28,11 +28,12 @@ Die Dokumentation verwendet die macOS-Schreibweise: <kbd>⌘</kbd> entspricht <k
 
 - [Ebenen und Seiten](./layers-and-pages) — Ebenenbaum, Seiten und Eigenschaften;
 - [Kontextmenü](./context-menu) — Zwischenablage, Gruppen, Komponenten und weitere Aktionen;
-- [Export](./exporting) — Bilder, SVG und `.fig`-Dateien exportieren.
+- [Öffnen und speichern](/user-guide/files) — Dokumente und Webseiten.
+- [Export](/user-guide/exporting) — Bilder und SVG exportieren.
 
 ## Erweiterte Funktionen
 
-- [Automatische Anordnung](./auto-layout) — Anordnung mit Flexbox und CSS Grid;
+- [Automatische Anordnung](/user-guide/auto-layout) — Anordnung mit Flexbox und CSS Grid;
 - [Komponenten](./components) — wiederverwendbare Komponenten, Instanzen und Überschreibungen;
 - [Variablen](./variables) — Designvariablen, Sammlungen, Modi und Bindungen.
 - [Designs prüfen](/user-guide/checking-designs) — das Prüfen-Panel, Problemmarkierungen auf der Arbeitsfläche und Lint-Regeln.

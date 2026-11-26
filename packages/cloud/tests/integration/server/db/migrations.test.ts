@@ -79,4 +79,26 @@ describe('Cloud migrations', () => {
       await context.close()
     }
   })
+
+  test('keep a document as a deck, and a rollback keeps it as a design', async () => {
+    const context = await createCloudTestDatabase()
+    try {
+      const { database } = context
+      const migrator = new Migrator({ db: database, provider: new CloudMigrationProvider() })
+      const kinds = async () =>
+        (await sql<{ kind: string }>`select kind from document`.execute(database)).rows
+      await sql`set session_replication_role = replica`.execute(database)
+      await sql`
+        insert into document (id, workspace_id, name, kind, created_by)
+        values (gen_random_uuid(), gen_random_uuid(), 'Pitch', 'slides', 'someone')`.execute(
+        database
+      )
+      expect(await kinds()).toEqual([{ kind: 'slides' }])
+      expect((await migrator.migrateTo('020_document_description')).error).toBeUndefined()
+      expect(await kinds()).toEqual([{ kind: 'design' }])
+      expect((await migrator.migrateToLatest()).error).toBeUndefined()
+    } finally {
+      await context.close()
+    }
+  })
 })

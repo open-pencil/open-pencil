@@ -6,6 +6,7 @@ import {
   VARIABLE_SCOPES,
   type CodeSyntaxPlatform,
   type ColorProfile,
+  type Easing,
   type TokenUnit,
   type VariableScope,
   type VariableType
@@ -13,7 +14,7 @@ import {
 import { convertColor, tryParseColor } from '@open-pencil/scene-graph/color'
 import { parseCSSNumber } from '@open-pencil/scene-graph/css'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { ROOT_FONT_SIZE_PX } from '@open-pencil/scene-graph/variables'
+import { easingForBezier, ROOT_FONT_SIZE_PX } from '@open-pencil/scene-graph/variables'
 
 import type { ReadToken } from './read'
 import { OPENPENCIL_EXTENSION } from './types'
@@ -145,7 +146,7 @@ const figmaAliasSchema = v.object({
 
 /** A value that is the variable's own, or one it points at in another token. */
 export type DecodedValue =
-  | { kind: 'literal'; value: Color | number | string | boolean }
+  | { kind: 'literal'; value: Color | number | string | boolean | Easing }
   | { kind: 'alias'; path: readonly string[]; collection?: string; name?: string }
 
 /** What a token makes of a variable. An alias without a type takes its target's. */
@@ -177,6 +178,8 @@ export function variableTypeOf(token: ReadToken): VariableType | DecodeFailure |
   switch (token.type) {
     case 'color':
       return 'COLOR'
+    case 'cubicBezier':
+      return 'EASING'
     case 'dimension':
     case 'duration':
     case 'fontWeight':
@@ -195,7 +198,15 @@ export function variableTypeOf(token: ReadToken): VariableType | DecodeFailure |
   }
 }
 
-type Literal = { value: Color | number | string | boolean; unit?: TokenUnit }
+type Literal = { value: Color | number | string | boolean | Easing; unit?: TokenUnit }
+
+/** DTCG's curve: x between 0 and 1, y free, as CSS `cubic-bezier()` takes it. */
+const cubicBezierSchema = v.tuple([
+  v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
+  v.pipe(v.number(), v.finite()),
+  v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
+  v.pipe(v.number(), v.finite())
+])
 
 /** A `number` token's value, or a boolean Figma writes as a number or as `true`/`false`. */
 function decodeNumber(token: ReadToken): Literal | null {
@@ -226,6 +237,12 @@ function decodeLiteral(token: ReadToken, profile: ColorProfile): Literal | null 
     case 'color': {
       const color = decodeColor(value, profile)
       return color && { value: color }
+    }
+    case 'cubicBezier': {
+      const parsed = v.safeParse(cubicBezierSchema, value)
+      if (!parsed.success) return null
+      const [x1, y1, x2, y2] = parsed.output
+      return { value: easingForBezier({ x1, y1, x2, y2 }) }
     }
     case 'dimension':
       return decodeDimension(value)
@@ -264,10 +281,12 @@ export function decodeVariableToken(
   token: ReadToken,
   profile: ColorProfile
 ): DecodedVariable | DecodeFailure {
-  const type = variableTypeOf(token)
-  if (type === 'unsupported-type' || type === 'invalid-value') return type
+  const tokenType = variableTypeOf(token)
+  if (tokenType === 'unsupported-type' || tokenType === 'invalid-value') return tokenType
   const own = v.safeParse(ownFieldsSchema, token.extensions[OPENPENCIL_EXTENSION])
   const fields = own.success ? own.output : {}
+  // A duration is a timing, unless OpenPencil wrote it for a number kept in ms or s.
+  const type = token.type === 'duration' && !fields.unit ? 'TIMING' : tokenType
   const reference = referencePath(token.value)
   let value: DecodedValue
   let unit = fields.unit
@@ -283,7 +302,7 @@ export function decodeVariableToken(
     const literal = decodeLiteral(token, profile)
     if (!literal) return 'invalid-value'
     unit ??= literal.unit === 'px' ? undefined : literal.unit
-    value = { kind: 'literal', value: valueInUnit(literal, unit) }
+    value = { kind: 'literal', value: valueInUnit(literal, type === 'TIMING' ? 's' : unit) }
   }
   return {
     type,

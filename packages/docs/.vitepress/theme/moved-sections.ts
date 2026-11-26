@@ -13,6 +13,13 @@ const URL_SCHEME = Object.fromEntries(
  */
 const MOVED_SECTIONS: Record<string, Record<string, string>> = {
   ...URL_SCHEME,
+  // Opening and saving became a page of their own.
+  '/user-guide/exporting/': {
+    'fig-file-operations': '/user-guide/files',
+    'opening-files': '/user-guide/files#open-a-document',
+    'saving-files': '/user-guide/files#save',
+    'round-trip-compatibility': '/user-guide/files#save'
+  },
   // Was /user-guide/openpencil-cloud.
   '/cloud/': {
     'connect-a-server': '/cloud/connect',

@@ -71,7 +71,7 @@ export const documentAccessSchema = v.object({
 export type DocumentAccess = v.InferOutput<typeof documentAccessSchema>
 
 /** What a document is: a Figma design or a FigJam board, which the file it stores says too. */
-export const documentKindSchema = v.picklist(['design', 'board'])
+export const documentKindSchema = v.picklist(['design', 'board', 'slides'])
 export type CloudDocumentKind = v.InferOutput<typeof documentKindSchema>
 
 export const documentSummarySchema = v.object({

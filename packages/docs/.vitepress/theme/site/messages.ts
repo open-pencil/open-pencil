@@ -23,6 +23,9 @@ export interface SiteMessages {
   darkTheme: string
   /** The header's GitHub button; `{stars}` is replaced. */
   githubStars: string
+  /** The sidebar's choice of the keyboard whose shortcuts pages show. */
+  shortcuts: string
+  automatic: string
 }
 
 const en: SiteMessages = {
@@ -43,7 +46,9 @@ const en: SiteMessages = {
   license: 'Released under the MIT License.',
   lightTheme: 'Switch to light theme',
   darkTheme: 'Switch to dark theme',
-  githubStars: 'OpenPencil on GitHub, {stars} stars'
+  githubStars: 'OpenPencil on GitHub, {stars} stars',
+  shortcuts: 'Shortcuts',
+  automatic: 'Automatic'
 }
 
 const de: SiteMessages = {
@@ -64,7 +69,9 @@ const de: SiteMessages = {
   license: 'Veröffentlicht unter der MIT-Lizenz.',
   lightTheme: 'Zum hellen Design wechseln',
   darkTheme: 'Zum dunklen Design wechseln',
-  githubStars: 'OpenPencil auf GitHub, {stars} Sterne'
+  githubStars: 'OpenPencil auf GitHub, {stars} Sterne',
+  shortcuts: 'Tastenkürzel',
+  automatic: 'Automatisch'
 }
 
 const es: SiteMessages = {
@@ -85,7 +92,9 @@ const es: SiteMessages = {
   license: 'Publicado bajo la licencia MIT.',
   lightTheme: 'Cambiar al tema claro',
   darkTheme: 'Cambiar al tema oscuro',
-  githubStars: 'OpenPencil en GitHub, {stars} estrellas'
+  githubStars: 'OpenPencil en GitHub, {stars} estrellas',
+  shortcuts: 'Atajos',
+  automatic: 'Automático'
 }
 
 const fr: SiteMessages = {
@@ -106,7 +115,9 @@ const fr: SiteMessages = {
   license: 'Publié sous licence MIT.',
   lightTheme: 'Passer au thème clair',
   darkTheme: 'Passer au thème sombre',
-  githubStars: 'OpenPencil sur GitHub, {stars} étoiles'
+  githubStars: 'OpenPencil sur GitHub, {stars} étoiles',
+  shortcuts: 'Raccourcis',
+  automatic: 'Automatique'
 }
 
 const it: SiteMessages = {
@@ -127,7 +138,9 @@ const it: SiteMessages = {
   license: 'Rilasciato con licenza MIT.',
   lightTheme: 'Passa al tema chiaro',
   darkTheme: 'Passa al tema scuro',
-  githubStars: 'OpenPencil su GitHub, {stars} stelle'
+  githubStars: 'OpenPencil su GitHub, {stars} stelle',
+  shortcuts: 'Scorciatoie',
+  automatic: 'Automatico'
 }
 
 const pl: SiteMessages = {
@@ -148,7 +161,9 @@ const pl: SiteMessages = {
   license: 'Udostępniono na licencji MIT.',
   lightTheme: 'Przełącz na jasny motyw',
   darkTheme: 'Przełącz na ciemny motyw',
-  githubStars: 'OpenPencil na GitHubie, gwiazdki: {stars}'
+  githubStars: 'OpenPencil na GitHubie, gwiazdki: {stars}',
+  shortcuts: 'Skróty',
+  automatic: 'Automatycznie'
 }
 
 const ru: SiteMessages = {
@@ -169,7 +184,9 @@ const ru: SiteMessages = {
   license: 'Распространяется по лицензии MIT.',
   lightTheme: 'Включить светлую тему',
   darkTheme: 'Включить тёмную тему',
-  githubStars: 'OpenPencil на GitHub, звёзд: {stars}'
+  githubStars: 'OpenPencil на GitHub, звёзд: {stars}',
+  shortcuts: 'Сочетания клавиш',
+  automatic: 'Автоматически'
 }
 
 /** Keyed by the docs locale index, as `useData().localeIndex` gives it; `root` is English. */

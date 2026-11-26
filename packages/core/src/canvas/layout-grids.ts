@@ -104,7 +104,14 @@ function drawSquareGrid(
   }
 }
 
-const GRID_CONTAINER_TYPES = new Set(['FRAME', 'COMPONENT', 'INSTANCE', 'COMPONENT_SET', 'SECTION'])
+const GRID_CONTAINER_TYPES = new Set([
+  'FRAME',
+  'COMPONENT',
+  'INSTANCE',
+  'COMPONENT_SET',
+  'SECTION',
+  'SLIDE'
+])
 
 export function drawLayoutGrids(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
   // Only containers carry grids; every other layer skips the raw field read.

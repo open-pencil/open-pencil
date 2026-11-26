@@ -255,8 +255,9 @@ sequenceDiagram
 The relay joins every room as a peer named `server`. It holds the room's Yjs document, saved by
 document and collaboration epoch, so a newcomer gets the document even when nobody else is online.
 A save logs what changed since the last one in PostgreSQL as a single update, a few bytes for a
-typical edit, rather than rewriting the room; once the log reaches 500 updates or 4 MiB, and when
-the room closes, a fresh snapshot replaces it. Snapshots are files in the object store beside the
+typical edit, rather than rewriting the room. Once the log reaches 500 updates, or both 4 MiB and a
+quarter of the snapshot, a fresh snapshot replaces it; a closing room writes one only when at least
+a quarter of its snapshot changed, since encoding a large document takes memory it may not have. Snapshots are files in the object store beside the
 documents' revisions, which a room's row names, so the database holds only the updates since the
 last one. A compaction records its file before writing it and points the room at it last, so a
 replaced or abandoned snapshot is one nothing refers to, which the object sweep removes once it is

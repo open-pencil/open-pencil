@@ -260,6 +260,31 @@ function localeSuspectPages(
   )
 }
 
+const GUIDE_IMAGE = /<GuideImage\b[^>]*>/g
+
+/** Guide pictures need alt text, and a file for each theme of every picture they name. */
+function validateGuideImages(docsRoot: string, markdownFiles: readonly string[]): string[] {
+  const errors: string[] = []
+  for (const file of markdownFiles) {
+    const page = relative(docsRoot, file)
+    // The tags the page renders, not those its code examples show.
+    const markup: string[] = []
+    visit(fromMarkdown(readFileSync(file, 'utf8')) as Root, 'html', (node) =>
+      markup.push(node.value)
+    )
+    for (const [tag] of markup.join('\n').matchAll(GUIDE_IMAGE)) {
+      if (!/\salt="[^"]+"/.test(tag)) errors.push(`${page} has a guide picture without alt text.`)
+      for (const [, name] of tag.matchAll(/\s(?:name|other)="([^"]+)"/g)) {
+        for (const theme of ['light', 'dark']) {
+          const image = `public/guide/${name}/${theme}.webp`
+          if (!existsSync(join(docsRoot, image))) errors.push(`${page} shows missing '${image}'.`)
+        }
+      }
+    }
+  }
+  return errors
+}
+
 function validateSidebarLinks(docsRoot: string, sidebarLinks: readonly string[]): string[] {
   const errors: string[] = []
   for (const link of new Set(sidebarLinks)) {
@@ -292,6 +317,7 @@ export function checkDocsIntegrity(options: DocsIntegrityOptions): DocsIntegrity
     ...validateMarkdownLinks(docsRoot, markdownFiles),
     ...validateSidebarLinks(docsRoot, options.sidebarLinks),
     ...validateRedirects(docsRoot, options.redirectsPath),
+    ...validateGuideImages(docsRoot, markdownFiles),
     ...placeholderErrors,
     ...suspectErrors
   ].sort()

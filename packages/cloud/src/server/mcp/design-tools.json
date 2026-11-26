@@ -1187,7 +1187,7 @@
   },
   {
     "name": "create_shape",
-    "description": "Create a shape on the canvas. Use FRAME for containers/cards, RECTANGLE for solid blocks, ELLIPSE for circles, TEXT for labels, LINE for rules and dividers, STAR for starbursts and badges, POLYGON for triangles and regular polygons, and SECTION for page sections. Use create_vector with an SVG path for arbitrary shapes.",
+    "description": "Create a shape on the canvas. Use FRAME for containers/cards, RECTANGLE for solid blocks, ELLIPSE for circles, TEXT for labels (leave out width and height to fit the text, or pass only width to wrap it), LINE for rules and dividers, STAR for starbursts and badges, POLYGON for triangles and regular polygons, and SECTION for page sections. Use create_vector with an SVG path for arbitrary shapes.",
     "mutates": true,
     "readOnly": false,
     "inputSchema": {
@@ -1223,13 +1223,13 @@
           "type": "number",
           "minimum": 1,
           "maximum": 1000000,
-          "description": "Width in pixels (1 to 1000000)"
+          "description": "Width in pixels, required except for TEXT (1 to 1000000)"
         },
         "height": {
           "type": "number",
           "minimum": 1,
           "maximum": 1000000,
-          "description": "Height in pixels (1 to 1000000)"
+          "description": "Height in pixels, required except for TEXT (1 to 1000000)"
         },
         "name": {
           "type": "string",
@@ -1243,9 +1243,7 @@
       "required": [
         "type",
         "x",
-        "y",
-        "width",
-        "height"
+        "y"
       ]
     }
   },
@@ -2480,7 +2478,7 @@
   },
   {
     "name": "list_variables",
-    "description": "List design variables (colors, numbers, strings, booleans), optionally by name.",
+    "description": "List design variables (colors, numbers, strings, booleans, easings, timings), optionally by name.",
     "mutates": false,
     "readOnly": true,
     "inputSchema": {
@@ -2495,7 +2493,9 @@
             "COLOR",
             "FLOAT",
             "STRING",
-            "BOOLEAN"
+            "BOOLEAN",
+            "EASING",
+            "TIMING"
           ],
           "type": "string",
           "description": "Filter by variable type"
@@ -2548,7 +2548,9 @@
             "COLOR",
             "FLOAT",
             "STRING",
-            "BOOLEAN"
+            "BOOLEAN",
+            "EASING",
+            "TIMING"
           ],
           "type": "string",
           "description": "Variable type"
@@ -2559,7 +2561,7 @@
         },
         "value": {
           "type": "string",
-          "description": "Initial value (hex for COLOR, number for FLOAT, etc.)"
+          "description": "Initial value: hex for COLOR, a number for FLOAT, true or false for BOOLEAN, 250ms or 0.25s for TIMING, and for EASING a preset (EASE_IN, EASE_OUT, EASE_IN_AND_OUT, LINEAR, EASE_IN_BACK, EASE_OUT_BACK, EASE_IN_AND_OUT_BACK, GENTLE, QUICK, BOUNCY, SLOW, HOLD) or a CSS cubic-bezier()"
         }
       },
       "required": [
@@ -2587,7 +2589,7 @@
         },
         "value": {
           "type": "string",
-          "description": "Value (hex for COLOR, number for FLOAT, etc.)"
+          "description": "Value: hex for COLOR, a number for FLOAT, true or false for BOOLEAN, 250ms or 0.25s for TIMING, and for EASING a preset (EASE_IN, EASE_OUT, EASE_IN_AND_OUT, LINEAR, EASE_IN_BACK, EASE_OUT_BACK, EASE_IN_AND_OUT_BACK, GENTLE, QUICK, BOUNCY, SLOW, HOLD) or a CSS cubic-bezier()"
         }
       },
       "required": [
@@ -3371,7 +3373,9 @@
             "COLOR",
             "FLOAT",
             "STRING",
-            "BOOLEAN"
+            "BOOLEAN",
+            "EASING",
+            "TIMING"
           ],
           "type": "string",
           "description": "Filter by variable type"

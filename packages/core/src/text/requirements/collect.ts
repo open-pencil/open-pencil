@@ -3,10 +3,11 @@ import { uniqBy } from 'es-toolkit/array'
 import type { CharacterStyleOverride, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
-import { textLanguageAt } from '@open-pencil/scene-graph/text'
+import { textLanguageAt, textListItems } from '@open-pencil/scene-graph/text'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters } from '#core/text/case'
+import { ELLIPSIS } from '#core/text/ellipsis'
 import { fontFallbackScriptForCharacter, type FontFallbackScript } from '#core/text/fallbacks'
 import type { FontFaceRef } from '#core/text/font/faces'
 
@@ -64,6 +65,12 @@ export interface GraphFontRequirements {
   scripts: FontFallbackScript[]
 }
 
+/** The characters a layout adds to a text's own: its list markers and the ellipsis that truncates it. */
+function addedCharacters(node: SceneNode): string {
+  const markers = textListItems(node.text, node.textParagraphs).map((item) => item.marker)
+  return markers.join('') + (node.textTruncation === 'ENDING' ? ELLIPSIS : '')
+}
+
 /** What the text of `nodes` needs to measure and draw: its characters and the scripts among them. */
 export function collectFontRequirements(nodes: readonly SceneNode[]): GraphFontRequirements {
   const characters = new Set<string>()
@@ -75,6 +82,7 @@ export function collectFontRequirements(nodes: readonly SceneNode[]): GraphFontR
       const script = fontFallbackScriptForCharacter(character, textLanguageAt(node, sourceIndex))
       if (script) scripts.add(script)
     }
+    for (const character of addedCharacters(node)) characters.add(character)
   }
   return {
     characters: Array.from(characters).join(''),

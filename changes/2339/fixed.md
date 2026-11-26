@@ -1,0 +1,1 @@
+- Columns and rows of a grid show their size in the Design panel, in fields wide enough to edit.

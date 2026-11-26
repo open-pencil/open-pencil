@@ -94,7 +94,7 @@ export interface DocumentTable {
   /** What the file is, in a few sentences, for the community gallery; see migration 020. */
   description: Generated<string | null>
   /** A design or a board; see migration 027. */
-  kind: Generated<'design' | 'board'>
+  kind: Generated<'design' | 'board' | 'slides'>
   currentRevisionId: string | null
   collaborationEpoch: Generated<number>
   version: Generated<number>
