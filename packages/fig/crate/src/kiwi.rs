@@ -116,33 +116,13 @@ impl Schema {
         Ok(schema)
     }
 
-    /// Whether a struct encodes to no bytes: it is empty, or holds only such structs. Every
-    /// other value takes at least a byte, which bounds skipping by the message's length.
+    /// Whether a struct encodes to no bytes. Every other value takes at least a byte, which
+    /// bounds skipping by the message's length. Structs hold no cycles, so a struct holding only
+    /// such structs ends at one with no fields, and checking for that is enough.
     fn has_empty_struct(&self) -> bool {
-        let is_struct = |ty: i32| {
-            usize::try_from(ty).is_ok_and(|ty| self.definitions[ty].kind == DefinitionKind::Struct)
-        };
-        let mut empty: Vec<bool> = self
-            .definitions
-            .iter()
-            .map(|definition| definition.kind == DefinitionKind::Struct)
-            .collect();
-        // Structs hold no cycles, so this settles within one pass per definition.
-        let mut changed = true;
-        while changed {
-            changed = false;
-            for (at, definition) in self.definitions.iter().enumerate() {
-                if empty[at]
-                    && !definition.fields.iter().all(|field| {
-                        !field.is_array && is_struct(field.ty) && empty[field.ty as usize]
-                    })
-                {
-                    empty[at] = false;
-                    changed = true;
-                }
-            }
-        }
-        empty.contains(&true)
+        self.definitions.iter().any(|definition| {
+            definition.kind == DefinitionKind::Struct && definition.fields.is_empty()
+        })
     }
 
     /// Whether a struct holds itself by value, which no message could encode and skipping
