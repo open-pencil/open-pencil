@@ -30,6 +30,10 @@ const MOVED_SECTIONS: Record<string, Record<string, string>> = {
     'saving-consumer-documents': '/user-guide/component-libraries#where-libraries-live',
     'behaviours-and-preview': '/user-guide/components#make-a-component-work-like-a-control'
   },
+  // Provider sign-ins moved to Models and Providers when AI Chat was rewritten.
+  '/user-guide/ai-chat/': {
+    'supported-providers': '/user-guide/models-and-providers#providers'
+  },
   // Was /user-guide/openpencil-cloud.
   '/cloud/': {
     'connect-a-server': '/cloud/connect',

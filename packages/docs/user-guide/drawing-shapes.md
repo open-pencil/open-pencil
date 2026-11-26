@@ -1,111 +1,106 @@
 ---
+pageClass: guide
 title: Drawing Shapes
-description: Creating rectangles, ellipses, lines, frames, sections, polygons, and stars in OpenPencil.
+description: Draw rectangles, ellipses, lines, polygons, stars, frames, and sections, then color them and add outlines, shadows, and blurs.
 ---
 
 # Drawing Shapes
 
-The bottom toolbar provides tools for creating shapes, frames, and sections. Select a tool, then click and drag on the canvas to draw.
-## Toolbar Tools
+The shape tools are in the toolbar at the bottom of the window. Pick one, then drag on the canvas.
 
-| Tool | Shortcut | Description |
-|------|----------|-------------|
-| Rectangle | <kbd>R</kbd> | Draws a rectangle |
-| Ellipse | <kbd>O</kbd> | Draws an ellipse |
-| Line | <kbd>L</kbd> | Draws a line |
-| Frame | <kbd>F</kbd> or <kbd>A</kbd> | Draws a frame (container for other nodes) |
-| Section | <kbd>Shift</kbd> + <kbd>S</kbd> | Draws a section (takes in the siblings it fully covers) |
+## Draw a Shape
 
-## Shapes Flyout
+1. Press <Keys mac="R" other="R" /> for a rectangle, <Keys mac="O" other="O" /> for an ellipse, or <Keys mac="L" other="L" /> for a line. Polygons and stars are in the shape menu: click the arrow next to the rectangle.
+2. Drag on the canvas. Hold <Keys mac="⇧" other="Shift" /> to draw a square or a circle, or to keep a line at steps of 45°.
+3. Let go. The new shape stays selected, and the toolbar goes back to **Move**.
 
-The shapes flyout (accessible from the toolbar) includes additional shapes:
+<GuideImage name="drawing-shapes/tools" alt="The shape menu open in the toolbar, listing Rectangle, Line, Ellipse, Polygon, and Star" />
 
-- **Polygon** — creates a polygon with 3 sides by default (triangle)
-- **Star** — creates a 5-pointed star with 0.38 inner radius
+A click without a drag makes a 100 × 100 shape, or a line 100 long. Start inside a frame to draw the shape into it.
 
-Polygon and Star have no keyboard shortcut — access them from the shapes flyout in the toolbar.
+## Round the Corners
 
-## Customizing the Toolbar
+Hover a selected rectangle: a dot shows inside each corner. Drag one to round all the corners. Hold <Keys mac="⌥" other="Alt" /> to round only that corner, and <Keys mac="⇧" other="Shift" /> to go in steps of 10.
 
-Right-click the toolbar and choose **Customize toolbar…**, or open **Settings → Editor**, to change it:
+To type a radius, use **Radius** in the Design panel. The button next to it sets each corner on its own. **Corner smoothing** starts the curve earlier, as on an app icon.
 
-- Turn a tool's switch off to hide it. Hidden tools keep their keyboard shortcuts. **Move** is always shown.
-- Drag a tool to reorder it. Dropped inside a box it joins that flyout; dropped in the gap between boxes it becomes a button of its own; dropped onto another tool, the two share a flyout.
-- A tool's **⋯** menu moves it up or down, groups it with the tool above, or ungroups it from its flyout. Its grip also moves it with <kbd>↑</kbd> and <kbd>↓</kbd>.
-- **Insert icon** runs a command rather than picking a tool, so it can move and hide but not join a flyout.
+A polygon or star has one radius dot, below its top point, and two more:
 
-**Reset to default** restores the original layout. Tools added in later versions join their default flyout, so a customized toolbar still gets them.
+- Drag the dot on the next point around the center to change the number of points.
+- Drag a star's dot on its first inner point in or out to make the star thinner or fuller.
 
-## Constrained Drawing
+**Count** and **Ratio** in the Design panel do the same. The dots hide while the shape is smaller than about 108 pixels on screen: zoom in to reach them.
 
-Hold <kbd>Shift</kbd> while dragging to constrain the shape:
+<GuidePair>
 
-- Rectangle → square (equal width and height)
-- Ellipse → circle
-- Line → snaps to 0°/45°/90° angles
+<GuideImage name="drawing-shapes/corners" alt="A selected rectangle with a dot inside each corner" caption="Corner dots on a rectangle" />
+<GuideImage name="drawing-shapes/star" alt="A selected star with dots for its radius, point count, and ratio" caption="Radius, point, and ratio dots on a star" />
 
-## Shape Properties
+</GuidePair>
 
-After drawing a shape, select it to edit its properties in the Design tab of the properties panel.
+## Color a Shape
 
-### Fill
+Click the color square under **Fill**. The buttons at the top of the picker, from left to right, choose the kind of fill:
 
-Every shape can have a fill. The fill section supports:
+<GuideLegend>
 
-- **Solid color** — pick via the HSV color picker or type a hex value
-- **Gradient** — Linear, Radial, Angular, or Diamond with editable gradient stops. While the gradient's picker is open, the canvas shows its handles: drag an end or a radius dot to move it, hold <kbd>Shift</kbd> to turn it in 15° steps, and drag a stop's square to slide the stop along the line
-- **Image** — select an image file as the fill
+<GuideImage name="drawing-shapes/fill" alt="The fill picker on its gradient button, with a purple linear gradient and its two stops" />
 
-### Stroke
+- **Solid**: one color. Type a hex value in the panel, or use the eyedropper to take a color from the canvas.
+- **Gradient**: linear, radial, angular, or diamond. While the picker is open, the canvas shows the gradient's handles. Drag an end to move it, with <Keys mac="⇧" other="Shift" /> to turn it in steps of 15°, and drag a stop's square to slide the stop.
+- **Image**: a picture from your computer or a [stock photo](./photos). It can **Fill**, **Fit**, **Crop**, or **Tile** the shape, and the sliders adjust exposure, contrast, and more.
+- **Shader**: a moving effect, such as **Aurora**. The canvas shows a still frame, and it plays in preview: click **▷** at the top right of the window, or press <Keys mac="⌘ ⌥ Enter" other="Ctrl Alt Enter" />. Click **{ }** to paste a preset copied from shaders.com.
 
-Add an outline to any shape. Stroke properties include:
+</GuideLegend>
 
-- **Width** — uniform or per-side (Top/Right/Bottom/Left) via the side selector dropdown
-- **Color** — solid color with opacity
-- **Alignment** — Inside, Center, or Outside the shape boundary (clip-based rendering matches Figma behavior)
-- **Cap style** — None, Round, Square, Arrow Lines, Arrow Equilateral (for open paths)
-- **Join style** — Miter, Bevel, Round
-- **Dash pattern** — dash-on/dash-off
+Click **+** next to **Fill** to add another fill on top. The eye hides a fill, and **−** removes it.
 
-### Corner Radius
+## Add an Outline
 
-Available for rectangles, frames, components, instances, polygons, and stars. Click the independent corners toggle to set each corner (top-left, top-right, bottom-left, bottom-right) separately; a polygon's or star's corners share one radius, which rounds its inner corners too.
+Click **+** next to **Stroke**. Then:
 
-On the canvas, hover a selected rectangle to show a handle inside each corner and drag one to round the corners. Equal corners change together and differing ones one at a time; hold <kbd>⌥</kbd> to swap the two and <kbd>⇧</kbd> to round to tens. A polygon or star has one radius handle, below its top point, which rounds all of its corners; drag the handle on its next point around the centre to change the point count, and a star's handle on its first inner point towards or away from the centre to change its ratio. The handles hide while the shape is under 108 pixels across on screen; zoom in to reach them.
+- **Inside**, **Center**, or **Outside** sets where the line sits on the edge.
+- **W** sets the width. The button with four squares sets each side's width on its own.
+- The settings button next to it turns on a dashed line and sets how the line's ends and corners look. An open path can end in an arrow.
 
-### Effects
+## Add Shadows and Blurs
 
-Add visual effects from the Effects section:
+Click **+** next to **Effects**, then choose the kind of effect:
 
-- **Drop Shadow** — offset, blur radius, spread, color
-- **Inner Shadow** — same controls, rendered inside the shape
-- **Layer Blur** — blurs the entire node
-- **Background Blur** — blurs content behind the node
-- **Foreground Blur** — blurs content in front
+<GuideLegend>
 
-Click **+** to add an effect. Each effect row is collapsible with inline controls. Toggle the eye icon to enable/disable an effect.
+<GuideImage name="drawing-shapes/effects" alt="The list of effects: drop shadow, inner shadow, layer blur, background blur, foreground blur, noise, texture, and glass" />
 
-## Frames and Sections
+- **Drop shadow** and **Inner shadow**: a shadow outside or inside the shape.
+- **Layer blur** blurs the shape, **Background blur** what's behind it, as frosted glass does, and **Foreground blur** what's in front. A blur is **Uniform**, or **Progressive** to fade from sharp to blurred.
+- **Noise** and **Texture**: grain over the shape.
+- **Glass**: bends and lights what's behind the shape, like a lens.
 
-**Frames** are containers. Drag shapes into a frame to make them children, or start drawing inside one: a new shape goes into the frame under the point where you start, except locked frames, and joins the end of an auto-layout flow. Drawing a frame over existing nodes puts the unlocked ones it fully covers inside it. New frames clip their content, as in Figma (turn off **Clip content** to let children show outside), and frames support [auto layout](./auto-layout).
+</GuideLegend>
 
-Select the Frame tool to browse collapsible presets for phones, tablets, desktops, presentations, watches, paper, social media, Figma Community assets, and archived devices in the Design panel. Choosing a preset creates a named frame centered in the viewport and returns to the Select tool. With an existing frame selected, use its Frame preset dropdown to resize it without changing its name.
+Click the square next to an effect to change its settings. A shape can have several effects, but only one glass and one texture.
 
-**Sections** are top-level containers that take in the sibling nodes they fully cover when drawn, moved, or resized. They're useful for organizing large canvases into logical areas. Sections display a title pill that you can drag.
+## Draw a Frame
 
-## Keyboard Shortcuts
+A frame holds other layers: a screen, a card, or a button. Press <Keys mac="F" other="F" /> or <Keys mac="A" other="A" /> and drag.
 
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Rectangle tool | <kbd>R</kbd> | <kbd>R</kbd> |
-| Ellipse tool | <kbd>O</kbd> | <kbd>O</kbd> |
-| Line tool | <kbd>L</kbd> | <kbd>L</kbd> |
-| Frame tool | <kbd>F</kbd> or <kbd>A</kbd> | <kbd>F</kbd> or <kbd>A</kbd> |
-| Section tool | <kbd>⇧</kbd><kbd>S</kbd> | <kbd>Shift</kbd> + <kbd>S</kbd> |
-| Constrain to square/circle | <kbd>Shift</kbd> + drag | <kbd>Shift</kbd> + drag |
+- Layers the new frame fully covers go into it.
+- For a frame the size of a phone, tablet, or desktop screen, pick a size in the Design panel while the Frame tool is on. With a frame selected, **Frame** in the Design panel resizes it the same way.
+- A frame hides what sticks out of it. Turn off **Clip content** to show it.
+- To place what's inside a frame in rows or columns, use [auto layout](./auto-layout).
 
-## Tips
+## Group Areas With Sections
 
-- Sections can only exist at the top level — they can't be nested inside frames.
-- Use frames with [auto layout](./auto-layout) to build responsive layouts.
-- [Export](./exporting) individual shapes or groups as images via the properties panel or context menu.
+A section marks an area of the page, such as a flow or a set of screens. Press <Keys mac="⇧ S" other="Shift S" /> and drag around the layers.
+
+Layers a section fully covers go into it, also when you move or resize the section later. Sections stay at the top of the page: they can't go into a frame. Drag a section's name to move it.
+
+## Arrange the Toolbar
+
+Right-click the toolbar and choose **Customize toolbar…**. The same settings are in **Settings → Editor**.
+
+- Turn a tool off to hide it. Its shortcut still works.
+- Drag a tool to move it. Drop it into a box to put it in that menu, between boxes to give it its own button, or onto another tool to put both in one menu.
+- **Reset to default** puts everything back.
+
+Tools added in a later version go to their usual place, also in a toolbar you've changed.
