@@ -261,7 +261,9 @@ describe('collaboration relay', () => {
       second.text.delete(0, 10)
     })
     expect(first.copyRequests()).toHaveLength(2)
-    const request = alice.frames.lastIndexOf(first.copyRequests()[1] ?? alice.frames[0])
+    const request = alice.frames.findLastIndex(
+      (frame) => frame.type === 'message' && frame.namespace === COLLAB_ACTIONS.syncStep1
+    )
     const deletion = alice.frames.findLastIndex(
       (frame) => frame.type === 'message' && frame.namespace === COLLAB_ACTIONS.yjsUpdate
     )
