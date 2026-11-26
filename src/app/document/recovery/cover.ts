@@ -15,7 +15,7 @@ export function createRecoveryCover(editor: Editor, draw: () => Uint8Array | nul
     if (!subject) return null
     const { pageId } = subject
     // Choosing another thumbnail changes what the cover shows without changing its page.
-    const nodeIds = subject.nodeIds.join()
+    const nodeIds = subject.nodeIds?.join(',') ?? ''
     if (last?.pageId === pageId && last.nodeIds === nodeIds && coverPages.isCurrent(pageId))
       return last.bytes
     const bytes = draw()

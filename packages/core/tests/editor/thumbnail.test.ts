@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { documentThumbnailId, setDocumentThumbnail } from '@open-pencil/scene-graph/thumbnail'
+
 import { createEditor, ReadOnlyDocumentError, type Editor } from '#core/editor'
 
 let editor: Editor
@@ -25,6 +27,16 @@ describe('Set as thumbnail', () => {
     expect(editor.getDocumentThumbnail()).toBe(cover.id)
     expect(editor.setDocumentThumbnailNode(null)).toBe(true)
     expect(editor.getDocumentThumbnail()).toBeNull()
+  })
+
+  test('undo puts back a choice whose layer is not loaded', () => {
+    const { cover } = withFrames()
+    // A frame on a page not loaded yet: stored, but not in the graph.
+    setDocumentThumbnail(editor.graph, '99:1')
+    expect(editor.getDocumentThumbnail()).toBeNull()
+    editor.setDocumentThumbnailNode(cover.id)
+    editor.undoAction()
+    expect(documentThumbnailId(editor.graph)).toBe('99:1')
   })
 
   test('refuses a layer that cannot be a thumbnail, and the one already chosen', () => {

@@ -25,11 +25,19 @@ export function canBeDocumentThumbnail(graph: SceneGraph, node: SceneNode): bool
 }
 
 /**
+ * The id stored as the document's thumbnail, whether or not that layer is loaded or can still be
+ * one: what undo restores.
+ */
+export function documentThumbnailId(graph: SceneGraph): string | null {
+  return readPluginData(graph.getNode(graph.rootId)?.pluginData, thumbnail) ?? null
+}
+
+/**
  * The layer chosen as the document's thumbnail, or null when there is none or it can no longer
  * be one, such as after it was deleted or moved into another frame.
  */
 export function documentThumbnail(graph: SceneGraph): SceneNode | null {
-  const id = readPluginData(graph.getNode(graph.rootId)?.pluginData, thumbnail)
+  const id = documentThumbnailId(graph)
   const node = id ? graph.getNode(id) : undefined
   return node && canBeDocumentThumbnail(graph, node) ? node : null
 }

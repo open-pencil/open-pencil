@@ -96,10 +96,12 @@ export async function headlessRenderThumbnail(
   pageId: string,
   width: number,
   height: number,
-  nodeIds: readonly string[] = graph.getNode(pageId)?.childIds ?? []
+  nodeIds?: readonly string[]
 ): Promise<Uint8Array | null> {
   return withHeadlessExport(async (renderer, ck) => {
-    await renderer.prepareForExport(graph, pageId, [...nodeIds])
+    await renderer.prepareForExport(graph, pageId, [
+      ...(nodeIds ?? graph.getNode(pageId)?.childIds ?? [])
+    ])
     return withTextInkMeasurer(
       (node) => renderer.measureTextInk(node),
       () => renderThumbnail(ck, renderer, graph, pageId, width, height, 'contain', nodeIds)

@@ -294,6 +294,17 @@ function inPaintOrder(source: SceneGraph, pageId: string, nodeIds: readonly stri
   return ordered
 }
 
+/** A copy of `graph` whose page holds only `nodeIds`, placed where they are, to draw them alone. */
+function selectionRenderGraph(
+  graph: SceneGraph,
+  nodeIds: readonly string[]
+): { graph: SceneGraph; pageId: string } | null {
+  const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds: [...nodeIds] })
+  if (!extracted.pageId) return null
+  prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, [...nodeIds])
+  return { graph: extracted.graph, pageId: extracted.pageId }
+}
+
 export function prepareSelectionRenderGraph(
   source: SceneGraph,
   renderGraph: SceneGraph,
@@ -445,7 +456,7 @@ export type ThumbnailFit = 'contain' | 'letterbox'
 
 /**
  * The page region a thumbnail of `width` by `height` pixels shows, and its size: `nodeIds` whole,
- * by default everything on the page.
+ * by default everything on the page. `renderThumbnail` then draws only those layers.
  */
 export function thumbnailFrame(
   graph: SceneGraph,
@@ -508,10 +519,14 @@ export function renderThumbnail(
   const { bounds, scale, width: pixelW, height: pixelH } = frame
   // The page's own background, which the editor's page colour matches only while it is open.
   const background = toExtendedSRGB(getPageColor(graph.getNode(pageId)), graph.documentColorSpace)
+  // Given layers are drawn alone, as Figma draws a frame set as thumbnail, without the layers
+  // around or over it that its bounds also cover.
+  const drawn = nodeIds ? selectionRenderGraph(graph, nodeIds) : { graph, pageId }
+  if (!drawn) return null
 
   return renderToSurface(ck, renderer, {
-    graph,
-    pageId,
+    graph: drawn.graph,
+    pageId: drawn.pageId,
     width: pixelW,
     height: pixelH,
     format: 'PNG',

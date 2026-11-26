@@ -24,10 +24,10 @@ export function figThumbnailPageId(pages: readonly ThumbnailPage[]): string | un
   )
 }
 
-/** What a document's thumbnail draws: layers of one page, framed whole. */
+/** What a document's thumbnail draws: one page, whole or only `nodeIds` of it. */
 export interface ThumbnailSubject {
   pageId: string
-  nodeIds: readonly string[]
+  nodeIds?: readonly string[]
 }
 
 /**
@@ -42,5 +42,5 @@ export function documentThumbnailSubject(
   const chosenPageId = chosen ? graph.pageOf(chosen.id) : null
   if (chosen && chosenPageId) return { pageId: chosenPageId, nodeIds: [chosen.id] }
   const page = pageId ? graph.getNode(pageId) : undefined
-  return page ? { pageId: page.id, nodeIds: page.childIds } : null
+  return page ? { pageId: page.id } : null
 }

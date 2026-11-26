@@ -22,7 +22,7 @@ function menuIds(isIcon: boolean) {
       canCreateSlot: ref(false),
       canUngroup: ref(false),
       canAutoArrange: ref(false),
-      thumbnailAction: ref(null)
+      thumbnailAction: ref<'set' | 'restore' | null>(null)
     } as CanvasMenuOptions['selection'],
     t: { moveToPage: 'Move to page', autoArrange: 'Auto arrange' }
   })

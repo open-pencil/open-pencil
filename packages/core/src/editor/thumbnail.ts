@@ -1,6 +1,7 @@
 import {
   canBeDocumentThumbnail,
   documentThumbnail,
+  documentThumbnailId,
   setDocumentThumbnail
 } from '@open-pencil/scene-graph/thumbnail'
 
@@ -19,7 +20,8 @@ export function createThumbnailActions(ctx: EditorContext) {
    */
   function setDocumentThumbnailNode(nodeId: string | null): boolean {
     const graph = ctx.graph
-    const previous = getDocumentThumbnail()
+    // What is stored, even a layer on a page not loaded yet, so undo puts that choice back.
+    const previous = documentThumbnailId(graph)
     if (previous === nodeId) return false
     if (nodeId !== null) {
       const node = graph.getNode(nodeId)
