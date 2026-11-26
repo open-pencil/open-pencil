@@ -12,7 +12,12 @@ import {
   parseCSSURLReferences,
   parseFragmentReference
 } from '@open-pencil/scene-graph/css'
-import { ICON_NAME, iconLayerName } from '@open-pencil/scene-graph/icons'
+import {
+  ICON_NAME,
+  iconLayerName,
+  readIconTint,
+  type IconPaint
+} from '@open-pencil/scene-graph/icons'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { drawIcon, parseIconName } from '#core/icons'
@@ -99,36 +104,63 @@ const TEXT_PROPERTIES = ['font-family', 'font-size', 'font-weight', 'font-style'
 
 const SVG_STYLE_PROPERTIES = [...Object.keys(INITIAL_PAINT), ...TEXT_PROPERTIES]
 
+/** A paint's computed value when it is the element's color, as the HTML engine reports it. */
+const CURRENT_COLOR_KEYWORD = 'currentcolor'
+
+/** The color an SVG's artwork is drawn in, and the declaration it comes from when it names one. */
+interface ArtworkColor {
+  color: string | undefined
+  reference: string | undefined
+}
+
+function artworkColor(element: DesignElement): ArtworkColor {
+  return { color: element.computedStyle?.color, reference: element.references?.color }
+}
+
+/** Whether an element takes the artwork's color, from the same declaration, so it tints it. */
+function takesArtworkColor(element: DesignElement, artwork: ArtworkColor): boolean {
+  const own = artworkColor(element)
+  return own.color === artwork.color && own.reference === artwork.reference
+}
+
 /**
  * An SVG element with the paint its page's CSS gives it written into its `style`, and its
  * children likewise. A runtime computes the CSS cascade, which may leave out presentation
  * attributes such as `fill="green"`, as the HTML engine does; so only a value that differs from
- * what the element inherits is CSS's own, and the markup draws the rest. A paint in the
- * element's own color is `currentColor`, so the artwork follows it.
+ * what the element inherits is CSS's own, and the markup draws the rest. A paint the runtime
+ * computes to `currentcolor`, as the HTML engine reports it, stays `currentColor`, and an element
+ * whose color is not the color the markup gives it has that color written, so only the
+ * artwork's tints it. `inherited.color` is the color the markup gives, unset for the artwork's.
  */
 function withComputedPaint(
   element: DesignElement,
   inherited: Readonly<Partial<Record<string, string>>>,
-  rootColor: string | undefined
+  artwork: ArtworkColor
 ): DesignElement {
   const style = element.computedStyle
-  const color = style?.color
   const own: Partial<Record<string, string>> = {}
   const paint: Record<string, string> = {}
   for (const property of SVG_STYLE_PROPERTIES) {
-    const value = style?.[property]?.trim()
+    const computed = style?.[property]?.trim()
+    const current = computed === CURRENT_COLOR_KEYWORD
+    const value = current ? 'currentColor' : computed
     const parent = inherited[property]
     own[property] = value ?? parent
     if (value === undefined || value === parent) continue
-    // The artwork's color tints `currentColor`, so only paint in that color follows it; a shape
-    // with a color of its own keeps the paint it resolved to.
-    const isColor = property === 'fill' || property === 'stroke'
-    paint[property] = isColor && value === color && color === rootColor ? 'currentColor' : value
+    paint[property] = value
   }
+  // An element with a color of its own, even one of the same value, paints `currentColor` in it,
+  // which the markup's `color` says, so only the artwork's color tints the artwork. Inside an
+  // element the markup gives another color, the artwork's color is written too, as the markup
+  // cannot hand the artwork's back; such a paint no longer tints. `own.color` is the color the
+  // markup gives the element, unset while that is the artwork's.
+  const tints = takesArtworkColor(element, artwork) && inherited.color === undefined
+  own.color = tints ? undefined : (style?.color ?? inherited.color)
+  if (!tints && style?.color && style.color !== inherited.color) paint.color = style.color
   return {
     ...withStyle(element, paint),
     children: element.children.map((child) =>
-      child.type === 'element' ? withComputedPaint(child, own, rootColor) : child
+      child.type === 'element' ? withComputedPaint(child, own, artwork) : child
     )
   }
 }
@@ -152,9 +184,9 @@ function svgMarkup(
   byId: ReadonlyMap<string, DesignElement>,
   box: { width: number; height: number }
 ): string {
-  const color = element.computedStyle?.color
+  const artwork = artworkColor(element)
   const outside = outsideReferences(element, byId).map((target) =>
-    withComputedPaint(target, INITIAL_PAINT, color)
+    withComputedPaint(target, INITIAL_PAINT, artwork)
   )
   const defs: DesignElement = { type: 'element', tagName: 'defs', attrs: {}, children: outside }
   // A shape nothing paints is black, as in a browser, rather than in the icon's color. The
@@ -173,7 +205,7 @@ function svgMarkup(
     inlineStyle: element.inlineStyle && omit(element.inlineStyle, ['opacity']),
     computedStyle: element.computedStyle && omit(element.computedStyle, ['opacity'])
   }
-  const painted = withComputedPaint(root, INITIAL_PAINT, color)
+  const painted = withComputedPaint(root, INITIAL_PAINT, artwork)
   const children = outside.length > 0 ? [defs, ...painted.children] : painted.children
   return serializeNode({ ...painted, children })
 }
@@ -290,9 +322,16 @@ function elementSVGMarkup(
  * Draws artwork as SVG import draws a file, with its groups, clips, masks, and text, into its
  * frame: the import's own frame is dropped and its layers moved into this one.
  */
-function drawArtwork(graph: SceneGraph, frameId: string, element: DesignElement, markup: string) {
+function drawArtwork(
+  graph: SceneGraph,
+  frameId: string,
+  element: DesignElement,
+  markup: string,
+  tinted: Map<string, readonly IconPaint[]>
+) {
   const defaultColor = element.computedStyle?.color
-  const imported = createSVGNodes(graph, frameId, markup, defaultColor ? { defaultColor } : {})
+  const onTint = (nodeId: string, tint: readonly IconPaint[]) => tinted.set(nodeId, tint)
+  const imported = createSVGNodes(graph, frameId, markup, { defaultColor, onTint })
   if (!imported) return
   for (const layer of graph.getChildren(imported.id)) graph.reparentNode(layer.id, frameId)
   graph.deleteNode(imported.id)
@@ -306,15 +345,17 @@ function drawArtwork(graph: SceneGraph, frameId: string, element: DesignElement,
  * is an icon, because the page names it, as `data-icon="lucide:save"`, or because `matchIcon`
  * finds the Iconify icon it draws, becomes that icon: its own paths drawn through the pipeline
  * Iconify icons use, so it can be swapped, recolored, and exported by name. Other SVG is artwork,
- * drawn as SVG import draws it.
+ * drawn as SVG import draws it. Returns the paints of each layer drawn in the element's color,
+ * `currentColor` in artwork and the tint of an icon's paths.
  */
 export async function drawInlineSVGs(
   graph: SceneGraph,
   svgs: ReadonlyMap<string, DesignElement>,
   page: DesignDocument,
   matchIcon?: IconMatcher
-): Promise<void> {
-  if (svgs.size === 0) return
+): Promise<Map<string, readonly IconPaint[]>> {
+  const tinted = new Map<string, readonly IconPaint[]>()
+  if (svgs.size === 0) return tinted
   const byId = new Map(
     designElements(page.children).flatMap((element) =>
       element.attrs.id ? [[element.attrs.id, element] as const] : []
@@ -335,8 +376,11 @@ export async function drawInlineSVGs(
     const name = found.get(frameId)
     const parsed = name ? parseIconName(name) : null
     const icon = iconName(element) ?? (parsed && { prefix: parsed.prefix, name: parsed.iconName })
-    if (!icon || !drawNamedIcon(graph, frameId, element, icon, markup, box, paint)) {
-      drawArtwork(graph, frameId, element, markup)
+    if (icon && drawNamedIcon(graph, frameId, element, icon, markup, box, paint)) {
+      for (const path of graph.getChildren(frameId)) tinted.set(path.id, readIconTint(path))
+    } else {
+      drawArtwork(graph, frameId, element, markup, tinted)
     }
   }
+  return tinted
 }

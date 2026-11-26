@@ -1,0 +1,1 @@
+- Text whose font is missing and that draws in a substitute face no longer loses descenders and overflowing lines at reduced opacity, with a blend mode or a layer blur, or in PNG export bounds (#2117).

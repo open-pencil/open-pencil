@@ -402,20 +402,27 @@ describe('SVG text lines without a measured layout', () => {
     expect(right).toContain('<tspan x="100" y="40">Second line</tspan>')
   })
 
-  test('a right-to-left paragraph keeps the logical anchor on every line', () => {
-    const svg = exportText({
-      text: 'أول\nثان',
-      fontSize: 16,
-      lineHeight: pixelLength(24),
-      width: 180,
-      textDirection: 'RTL',
-      textAlignHorizontal: 'LEFT'
-    })
-    expect(svg).toContain('direction="rtl"')
-    expect(svg).toContain('text-anchor="end"')
-    expect(svg).toContain('<tspan x="180" y="16">أول</tspan>')
-    expect(svg).toContain('<tspan x="180" y="40">ثان</tspan>')
-  })
+  test.each([
+    { align: 'LEFT', anchor: 'end', x: 0 },
+    { align: 'RIGHT', anchor: undefined, x: 180 }
+  ] as const)(
+    'a right-to-left paragraph aligned $align stands against that side on every line',
+    ({ align, anchor, x }) => {
+      const svg = exportText({
+        text: 'أول\nثان',
+        fontSize: 16,
+        lineHeight: pixelLength(24),
+        width: 180,
+        textDirection: 'RTL',
+        textAlignHorizontal: align
+      })
+      expect(svg).toContain('direction="rtl"')
+      if (anchor) expect(svg).toContain(`text-anchor="${anchor}"`)
+      else expect(svg).not.toContain('text-anchor')
+      expect(svg).toContain(`<tspan x="${x}" y="16">أول</tspan>`)
+      expect(svg).toContain(`<tspan x="${x}" y="40">ثان</tspan>`)
+    }
+  )
 
   test('style runs are cut at newlines and a blank line still advances the baseline', () => {
     const styled = exportText({
