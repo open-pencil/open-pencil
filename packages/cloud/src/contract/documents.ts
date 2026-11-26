@@ -126,7 +126,9 @@ export const documentDownloadSchema = v.object({
   contentType: v.string(),
   download: objectDownloadSchema,
   /** The images the stored file leaves out, which a client puts back under their names. */
-  images: v.pipe(v.array(documentImageDownloadSchema), v.maxLength(CLOUD_MAX_DOCUMENT_IMAGES))
+  images: v.pipe(v.array(documentImageDownloadSchema), v.maxLength(CLOUD_MAX_DOCUMENT_IMAGES)),
+  /** The checksum of the cover the revision's save drew; null for none, or from older servers. */
+  cover: v.optional(v.nullable(checksumSchema), null)
 })
 export type DocumentDownload = v.InferOutput<typeof documentDownloadSchema>
 
@@ -161,6 +163,12 @@ export type CreateDocumentRequest = v.InferInput<typeof createDocumentSchema>
 
 /** The longest description a document keeps: a few sentences, as a search result shows. */
 export const CLOUD_DOCUMENT_DESCRIPTION_MAX_LENGTH = 500
+
+/**
+ * The size of the cover a save draws of its file for the community gallery and link previews: the
+ * 2:1 shape a large link card shows, wide enough to stay sharp on a high-density screen.
+ */
+export const CLOUD_COVER_SIZE = { width: 1920, height: 960 } as const
 
 /** What an editor may change about a document besides its file: its description, or null for none. */
 export const updateDocumentSchema = v.object({
@@ -251,6 +259,11 @@ export const commitUploadSchema = v.object({
       parts: v.pipe(v.array(completedUploadPartSchema), v.minLength(1), v.maxLength(10_000))
     })
   ),
+  /**
+   * The revision's cover, a PNG of at most `CLOUD_COVER_SIZE` stored in the workspace as its images
+   * are; omitted when the save drew none.
+   */
+  cover: v.optional(checksumSchema),
   /** The images the uploaded file leaves out, each stored in the workspace or uploaded before. */
   images: v.optional(
     v.pipe(

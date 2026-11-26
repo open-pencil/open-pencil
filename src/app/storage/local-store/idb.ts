@@ -21,7 +21,7 @@ import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/storage/local
 
 const localCanvasDatabase = defineAppDatabase<LocalCanvasDatabase>({
   name: APP_DATABASE_NAMES.localCanvas,
-  version: 1,
+  version: 2,
   callbacks: {
     upgrade(database) {
       if (!database.objectStoreNames.contains('meta')) {
@@ -29,6 +29,7 @@ const localCanvasDatabase = defineAppDatabase<LocalCanvasDatabase>({
       }
       if (!database.objectStoreNames.contains('fig')) database.createObjectStore('fig')
       if (!database.objectStoreNames.contains('thumb')) database.createObjectStore('thumb')
+      if (!database.objectStoreNames.contains('cover')) database.createObjectStore('cover')
     }
   }
 })
@@ -46,6 +47,10 @@ interface LocalCanvasDatabase extends DBSchema {
     key: string
     value: StoredBinary
   }
+  cover: {
+    key: string
+    value: StoredBinary
+  }
 }
 
 function connectDatabase(): AppDatabase<LocalCanvasDatabase> {
@@ -56,7 +61,10 @@ function connectDatabase(): AppDatabase<LocalCanvasDatabase> {
 export function createIdbLocalCanvasStore(): LocalCanvasStore {
   const database = connectDatabase()
 
-  async function readBinary(storeName: 'fig' | 'thumb', id: string): Promise<Uint8Array | null> {
+  async function readBinary(
+    storeName: 'fig' | 'thumb' | 'cover',
+    id: string
+  ): Promise<Uint8Array | null> {
     return readStoredBinary(await (await database.open()).get(storeName, id))
   }
 
@@ -77,10 +85,17 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
       return readBinary('thumb', id)
     },
 
+    async readCover(id: string) {
+      return readBinary('cover', id)
+    },
+
     async writeCanvas(input: LocalCanvasWriteInput) {
       const storeBinary = await binaryStorage()
       const fig = await storedBinary(input.figBytes)
-      const transaction = (await database.open()).transaction(['meta', 'fig', 'thumb'], 'readwrite')
+      const transaction = (await database.open()).transaction(
+        ['meta', 'fig', 'thumb', 'cover'],
+        'readwrite'
+      )
       const figStore = transaction.objectStore('fig')
       const thumbStore = transaction.objectStore('thumb')
       const metaStore = transaction.objectStore('meta')
@@ -98,6 +113,11 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
           hasThumb = false
         }
       }
+
+      const coverStore = transaction.objectStore('cover')
+      if (input.coverBytes?.byteLength)
+        await coverStore.put(storeBinary(input.coverBytes), input.id)
+      else await coverStore.delete(input.id)
 
       const meta = buildWriteMeta(input, existing, hasThumb)
       await metaStore.put(meta)
@@ -174,7 +194,10 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
     },
 
     async remove(id: string, options) {
-      const transaction = (await database.open()).transaction(['meta', 'fig', 'thumb'], 'readwrite')
+      const transaction = (await database.open()).transaction(
+        ['meta', 'fig', 'thumb', 'cover'],
+        'readwrite'
+      )
       const expected = options?.unchangedFrom
       if (expected) {
         const existing = await transaction.objectStore('meta').get(id)
@@ -186,18 +209,23 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
       await Promise.all([
         transaction.objectStore('meta').delete(id),
         transaction.objectStore('fig').delete(id),
-        transaction.objectStore('thumb').delete(id)
+        transaction.objectStore('thumb').delete(id),
+        transaction.objectStore('cover').delete(id)
       ])
       await transaction.done
       return true
     },
 
     async clearAll() {
-      const transaction = (await database.open()).transaction(['meta', 'fig', 'thumb'], 'readwrite')
+      const transaction = (await database.open()).transaction(
+        ['meta', 'fig', 'thumb', 'cover'],
+        'readwrite'
+      )
       await Promise.all([
         transaction.objectStore('meta').clear(),
         transaction.objectStore('fig').clear(),
-        transaction.objectStore('thumb').clear()
+        transaction.objectStore('thumb').clear(),
+        transaction.objectStore('cover').clear()
       ])
       await transaction.done
     }

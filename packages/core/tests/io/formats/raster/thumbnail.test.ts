@@ -3,6 +3,7 @@ import { expect, setDefaultTimeout, test } from 'bun:test'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import {
+  coverFrame,
   createCanvasKitRasterCodec,
   headlessRenderThumbnail,
   thumbnailFrame
@@ -96,4 +97,18 @@ test('a thumbnail of chosen layers leaves out the layers over them', async () =>
 
   expect(await centre([cover.id])).toEqual([0, 0, 255, 255])
   expect(await centre()).toEqual([255, 0, 0, 255])
+})
+
+test('a cover of a tall page shows its top at the page’s width, a chosen frame whole', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const tall = graph.createNode('FRAME', page.id, { x: 0, y: 0, width: 400, height: 2000 })
+
+  const top = expectDefined(coverFrame(graph, page.id, 1920, 960), 'top of the page')
+  expect([top.width, top.height, top.scale]).toEqual([1920, 960, 1920 / 400])
+  expect(top.bounds).toEqual({ minX: 0, minY: 0, maxX: 400, maxY: 200 })
+
+  const chosen = expectDefined(coverFrame(graph, page.id, 1920, 960, [tall.id]), 'chosen frame')
+  expect([chosen.width, chosen.height]).toEqual([1920, 960])
+  expect(chosen.bounds.maxY - chosen.bounds.minY).toBeCloseTo(2000)
 })

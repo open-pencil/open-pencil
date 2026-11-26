@@ -5,6 +5,7 @@ import { randomHex } from '@open-pencil/std/random'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { storageLocationOf } from '@/app/integrations/storage/location'
+import { storageShowsCovers } from '@/app/integrations/storage/providers'
 import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
 import { persistStorageCanvasLocally } from '@/app/storage/sync/persist'
 import { isTauri } from '@/app/tauri/env'
@@ -18,6 +19,8 @@ type DocumentWriterOptions = {
   getStorageBinding: () => StorageDocumentBinding | null
   setSavedVersion: (version: number) => void
   setLastWriteTime: (time: number) => void
+  /** The cover of the document as it is saved, for storage that shows covers; null for none. */
+  buildCover?: () => Uint8Array | null
   /** A desktop save replaced the file, which a watcher on the old one may no longer see. */
   onFileReplaced?: () => void
   onWriteSuccess?: (version: number) => void | Promise<void>
@@ -92,6 +95,7 @@ export function createDocumentWriter({
   getStorageBinding,
   setSavedVersion,
   setLastWriteTime,
+  buildCover,
   onFileReplaced,
   onWriteSuccess
 }: DocumentWriterOptions) {
@@ -120,7 +124,8 @@ export function createDocumentWriter({
           ...storageLocationOf(storage),
           canvasId: storage.documentId,
           name: state.documentName || 'Untitled',
-          figBytes: await new Response(stream).blob()
+          figBytes: await new Response(stream).blob(),
+          coverBytes: storageShowsCovers(storage.providerId) ? buildCover?.() : null
         })
         return await finishWrite(version)
       }

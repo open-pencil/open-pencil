@@ -24,6 +24,13 @@ export const storageProviderRegistry = new StorageProviderRegistry([
   ...CLOUD_STORAGE_PROVIDERS
 ])
 
+/** Whether documents stored with this provider get a cover drawn with each save. */
+export function storageShowsCovers(providerId: string | undefined): boolean {
+  return storageProviderRegistry
+    .list()
+    .some((provider) => provider.id === providerId && provider.showsCovers === true)
+}
+
 /** Whether documents stored with this provider leave their comments to it. */
 export function storageKeepsComments(providerId: string | undefined): boolean {
   return storageProviderRegistry

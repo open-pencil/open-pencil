@@ -17,6 +17,7 @@ export const CLOUD_STORAGE_PROVIDERS: readonly StorageProviderRegistration[] = [
     preferenceFields: [],
     credentialFields: [{ id: CLOUD_SESSION_FIELD, label: 'Session' }],
     keepsComments: true,
+    showsCovers: true,
     createAdapter: (runtime) => createCloudStorageAdapter(runtime)
   })
 ]

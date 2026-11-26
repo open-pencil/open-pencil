@@ -105,3 +105,30 @@ describe('local canvas store (IndexedDB)', () => {
     expect((await store.getMeta(id))?.revision).toBe(2)
   })
 })
+
+describe.each([
+  ['memory', createMemoryLocalCanvasStore],
+  ['IndexedDB', createIdbLocalCanvasStore]
+] as const)('local canvas covers (%s)', (_kind, createStore) => {
+  test('keeps the cover a write drew until a write without one, and drops it with the copy', async () => {
+    const store = createStore()
+    const write = (coverBytes?: Uint8Array) =>
+      store.writeCanvas({
+        id: 'covered',
+        providerId: 'openpencil-cloud',
+        name: 'Covered',
+        figBytes: new Uint8Array([1]),
+        coverBytes
+      })
+
+    await write(new Uint8Array([7, 7]))
+    expect([...expectDefined(await store.readCover('covered'))]).toEqual([7, 7])
+    // A later file without a cover must not go up with the earlier file's.
+    await write()
+    expect(await store.readCover('covered')).toBeNull()
+
+    await write(new Uint8Array([8]))
+    await store.remove('covered')
+    expect(await store.readCover('covered')).toBeNull()
+  })
+})

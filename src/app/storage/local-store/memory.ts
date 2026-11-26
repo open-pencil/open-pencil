@@ -12,6 +12,7 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
   const metas = new Map<string, LocalCanvasMeta>()
   const figs = new Map<string, Uint8Array>()
   const thumbs = new Map<string, Uint8Array>()
+  const covers = new Map<string, Uint8Array>()
 
   return {
     async listMetas(includeTombstones = false) {
@@ -29,6 +30,11 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
 
     async readThumb(id: string) {
       const bytes = thumbs.get(id)
+      return bytes ? new Uint8Array(bytes) : null
+    },
+
+    async readCover(id: string) {
+      const bytes = covers.get(id)
       return bytes ? new Uint8Array(bytes) : null
     },
 
@@ -51,6 +57,9 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
           hasThumb = false
         }
       }
+
+      if (input.coverBytes?.byteLength) covers.set(input.id, new Uint8Array(input.coverBytes))
+      else covers.delete(input.id)
 
       const meta = buildWriteMeta(input, existing, hasThumb)
       metas.set(input.id, meta)
@@ -119,6 +128,7 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
       metas.delete(id)
       figs.delete(id)
       thumbs.delete(id)
+      covers.delete(id)
       return true
     },
 
@@ -126,6 +136,7 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
       metas.clear()
       figs.clear()
       thumbs.clear()
+      covers.clear()
     }
   }
 }

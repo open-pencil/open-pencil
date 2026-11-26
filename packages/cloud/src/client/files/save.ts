@@ -35,7 +35,7 @@ function invalidUpload(error: unknown): boolean {
 
 /**
  * Saves a document as a new revision on top of `baseRevision`, or as its first: the images the
- * workspace lacks, then the file, committed together. An image released between asking and
+ * workspace lacks, with the cover the save drew, if any, then the file, committed together. An image released between asking and
  * committing is uploaded again by a second try. A save on top of a revision that is no longer the
  * latest fails with a `revision_conflict` `CloudAPIError`.
  */
@@ -49,12 +49,23 @@ export async function saveCloudDocument(input: {
   name: string
   kind: DocumentSummary['kind']
   baseRevision: string | null
+  /** A PNG of the file at `CLOUD_COVER_SIZE` for the gallery and link previews; null for none. */
+  cover?: Uint8Array | null
   objectFetch: CloudObjectFetch
   onProgress?: (progress: CloudTransferProgress) => void
 }): Promise<DocumentSummary> {
   const { cloud, documentId, document, objectFetch } = input
+  // The workspace stores a cover as it stores images, once for its bytes.
+  const cover = input.cover
+    ? { bytes: input.cover, checksum: await cloudChecksum(input.cover) }
+    : null
   const save = async () => {
-    await uploadCloudImages({ cloud, documentId, images: document.images, objectFetch })
+    await uploadCloudImages({
+      cloud,
+      documentId,
+      images: cover ? [...document.images, cover] : document.images,
+      objectFetch
+    })
     const upload = await uploadCloudObject({
       cloud,
       documentId,
@@ -69,6 +80,7 @@ export async function saveCloudDocument(input: {
       name: input.name,
       kind: input.kind,
       multipart: upload.multipart,
+      cover: cover?.checksum,
       images: document.images.map((image) => ({ name: image.name, checksum: image.checksum }))
     })
   }

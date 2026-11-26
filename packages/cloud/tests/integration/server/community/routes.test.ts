@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { saveDocument, THUMBNAIL_PNG } from '#cloud-tests/helpers/save'
+import { COVER_PNG, saveDocument, THUMBNAIL_PNG } from '#cloud-tests/helpers/save'
 import { fetchCommunityExample, fetchCommunityTour } from '#cloud/client'
 import {
   createBetterAuthAdapter,
@@ -62,12 +62,18 @@ async function gallery() {
     const created = await ownerAPI.documents.create({ params: { workspaceId }, body: { name } })
     return created.document.id
   }
-  const save = (documentId: string, baseRevisionId: string | null, label: string) =>
+  const save = (
+    documentId: string,
+    baseRevisionId: string | null,
+    label: string,
+    cover?: Uint8Array
+  ) =>
     saveDocument(
       { api: ownerAPI, database: runtime.database, objects: objects.store },
       documentId,
       baseRevisionId,
-      label
+      label,
+      cover
     )
   async function nameVersion(documentId: string, name: string, description = '') {
     const named = await ownerAPI.versions.save({
@@ -355,6 +361,38 @@ describe('community gallery', () => {
         })
       ).status
     ).toBe(404)
+  })
+
+  test('serves the cover a save drew in place of the thumbnail inside the file', async () => {
+    const server = await gallery()
+    const tour = await server.document(server.workspace.community, 'Tour')
+    const covered = await server.save(tour, null, 'covered', COVER_PNG)
+    const picture = async (revisionId: string) =>
+      new Uint8Array(
+        await (
+          await server.visitor.api.community.thumbnails[':documentId'][':revisionId'].$get({
+            param: { documentId: tour, revisionId }
+          })
+        ).arrayBuffer()
+      )
+    expect([...(await picture(covered))]).toEqual([...COVER_PNG])
+
+    // A revision saved without one, as a collaborative room writes it, shows the file's own.
+    const plain = await server.save(tour, covered, 'plain')
+    expect([...(await picture(plain))]).toEqual([...THUMBNAIL_PNG])
+  })
+
+  test('refuses a cover that is not a PNG within the cover size', async () => {
+    const server = await gallery()
+    const tour = await server.document(server.workspace.community, 'Tour')
+    // A PNG header that declares a picture wider than a cover.
+    const wide = Uint8Array.from(COVER_PNG)
+    new DataView(wide.buffer).setUint32(16, 4000)
+    for (const cover of [new TextEncoder().encode('not a picture'), wide]) {
+      expect(await outcome(server.save(tour, null, 'refused', cover))).toMatchObject({
+        code: 'invalid_upload'
+      })
+    }
   })
 
   test('hands any page the tour as the release it asks for, else as it is now', async () => {

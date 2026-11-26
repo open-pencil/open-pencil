@@ -133,6 +133,7 @@ export {
   type CloudListing
 } from './discovery'
 export {
+  CLOUD_COVER_SIZE,
   CLOUD_DOCUMENT_DESCRIPTION_MAX_LENGTH,
   CLOUD_DOCUMENT_NAME_MAX_LENGTH,
   CLOUD_IMAGE_NAME_PATTERN,

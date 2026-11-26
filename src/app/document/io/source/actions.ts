@@ -22,6 +22,7 @@ import { storageLocationOf } from '@/app/integrations/storage/location'
 import { storageKeepsComments } from '@/app/integrations/storage/providers'
 import type { StorageDocumentBinding, StorageLocation } from '@/app/integrations/storage/types'
 import { cacheRecentFileCover, drawHomeCardCover } from '@/app/recent-files'
+import { drawStorageCover } from '@/app/storage/cover'
 import { createCanvasId } from '@/app/storage/id'
 import { isTauri } from '@/app/tauri/env'
 import { trackDocumentFormat } from '@/app/telemetry'
@@ -146,6 +147,10 @@ export function createDocumentSourceActions({
     setSourceIdentity,
     setSavedVersion,
     setLastWriteTime,
+    buildCover: () => {
+      const renderer = getRenderer()
+      return renderer ? drawStorageCover(editor.graph, renderer, state.currentPageId) : null
+    },
     startWatchingFile: () => {
       void startWatchingFile()
     },

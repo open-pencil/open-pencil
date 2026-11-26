@@ -129,6 +129,7 @@ export function createDocumentVersionService(
       .innerJoin('storageObject', 'storageObject.id', 'documentRevision.storageObjectId')
       .select([
         'documentRevision.storageObjectId',
+        'documentRevision.coverChecksum',
         'storageObject.objectKey',
         'storageObject.byteSize',
         'storageObject.checksum',
@@ -169,7 +170,8 @@ export function createDocumentVersionService(
         checksum: stored.checksum,
         contentType: stored.contentType,
         download: await objects.createDownload({ key: stored.objectKey, expiresAt }),
-        images: await revisionImageDownloads(database, objects, version.revisionId, expiresAt)
+        images: await revisionImageDownloads(database, objects, version.revisionId, expiresAt),
+        cover: stored.coverChecksum
       },
       version: versionOf(version, document.currentRevisionId)
     }
@@ -363,6 +365,7 @@ export function createDocumentVersionService(
             documentId,
             parentRevisionId: locked.currentRevisionId,
             storageObjectId: stored.storageObjectId,
+            coverChecksum: stored.coverChecksum,
             createdBy: userId
           })
           .execute()
@@ -449,6 +452,7 @@ export function createDocumentVersionService(
             documentId: copyId,
             parentRevisionId: null,
             storageObjectId: stored.storageObjectId,
+            coverChecksum: stored.coverChecksum,
             createdBy: userId
           })
           .execute()

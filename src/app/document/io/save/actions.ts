@@ -18,6 +18,8 @@ type SaveActionsOptions = Omit<DocumentSourceAccess, 'getSavedVersion'> & {
   /** The `.fig`, encoded and compressed, streaming as its target writes it. */
   buildFigStream: () => Promise<ReadableStream<Uint8Array>>
   startWatchingFile: () => void
+  /** The cover of the document as it is saved, for storage that shows covers. */
+  buildCover?: () => Uint8Array | null
   onWriteSuccess?: (version: number) => void | Promise<void>
   onDownloadSuccess?: (version: number) => void | Promise<void>
 }
@@ -39,6 +41,7 @@ export function createSaveActions({
   setSavedVersion,
   setLastWriteTime,
   startWatchingFile,
+  buildCover,
   onWriteSuccess,
   onDownloadSuccess
 }: SaveActionsOptions) {
@@ -49,6 +52,7 @@ export function createSaveActions({
     getStorageBinding,
     setSavedVersion,
     setLastWriteTime,
+    buildCover,
     onFileReplaced: startWatchingFile,
     onWriteSuccess
   })

@@ -96,7 +96,7 @@ async function runJob(job: OutboxJob): Promise<void> {
       ({ transferredBytes, totalBytes }) => {
         if (totalBytes) setUploadProgress(job.canvasId, transferredBytes / totalBytes)
       },
-      { baseRevision: meta.remoteRevision ?? null }
+      { baseRevision: meta.remoteRevision ?? null, cover: await store.readCover(job.canvasId) }
     )
   } finally {
     setUploadProgress(job.canvasId, null)

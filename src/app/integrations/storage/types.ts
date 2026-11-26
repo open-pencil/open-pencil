@@ -54,6 +54,8 @@ export type StoragePutOptions = {
    * the write with `StorageRevisionConflictError` when the stored revision has moved on.
    */
   baseRevision?: string | null
+  /** The cover the save drew, which a provider that shows covers, as Cloud does, stores with it. */
+  cover?: Uint8Array | null
 }
 
 export type StoragePutResult = {
@@ -155,6 +157,11 @@ export type StorageProviderRegistration = {
    * then leave them out, and the app reads them from the provider.
    */
   keepsComments?: boolean
+  /**
+   * Whether the provider shows a cover of each saved file, as Cloud's gallery and link previews
+   * do: a save then draws one for it.
+   */
+  showsCovers?: boolean
   createAdapter(runtime: StorageProviderRuntime): StorageAdapter
 }
 

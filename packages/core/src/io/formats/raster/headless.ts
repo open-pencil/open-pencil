@@ -6,7 +6,8 @@ import { createOffscreenRenderer } from '#core/canvas/renderer/offscreen'
 import { getCanvasKit } from '#core/canvaskit'
 import { withTextInkMeasurer } from '#core/text/ink'
 
-import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render'
+import { renderNodesToImage, type ExportFormat } from './render'
+import { renderCover, renderThumbnail } from './thumbnail'
 
 let cachedRenderer: Promise<SkiaRenderer> | null = null
 /** The headless export holding the renderer, which the next one waits for. */
@@ -105,6 +106,25 @@ export async function headlessRenderThumbnail(
     return withTextInkMeasurer(
       (node) => renderer.measureTextInk(node),
       () => renderThumbnail(ck, renderer, graph, pageId, width, height, 'contain', nodeIds)
+    )
+  })
+}
+
+/** Draws a cover of `pageId` headless, as `renderCover` frames it: `nodeIds` alone, or the top of the page. */
+export async function headlessRenderCover(
+  graph: SceneGraph,
+  pageId: string,
+  width: number,
+  height: number,
+  nodeIds?: readonly string[]
+): Promise<Uint8Array | null> {
+  return withHeadlessExport(async (renderer, ck) => {
+    await renderer.prepareForExport(graph, pageId, [
+      ...(nodeIds ?? graph.getNode(pageId)?.childIds ?? [])
+    ])
+    return withTextInkMeasurer(
+      (node) => renderer.measureTextInk(node),
+      () => renderCover(ck, renderer, graph, pageId, width, height, nodeIds)
     )
   })
 }
