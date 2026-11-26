@@ -14,6 +14,8 @@ export const slideMessageDefaults = {
   unskip: 'Include slide',
   moveToNewSection: 'Move to new section',
   delete: 'Delete',
+  collapseSection: 'Collapse section',
+  expandSection: 'Expand section',
   notes: 'Speaker notes',
   notesPlaceholder: 'Add speaker notes',
   notesPickSlide: 'Select one slide to see its speaker notes',

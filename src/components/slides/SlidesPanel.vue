@@ -6,7 +6,7 @@ import {
   ContextMenuSeparator
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed, nextTick, useTemplateRef, watch, type ComponentPublicInstance } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch, type ComponentPublicInstance } from 'vue'
 
 import { resolveEditorProfile } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -59,8 +59,37 @@ function dropPosition(id: string): 'before' | 'after' | undefined {
   return reorder.instruction.value ? 'after' : undefined
 }
 
-function rowStyles(slide: SceneNode) {
+/** Sections folded down to their first slide; a view of the deck only, not part of it. */
+const collapsed = ref(new Set<string>())
+const sectionOf = (slide: SceneNode) => slide.parentId ?? ''
+
+function setCollapsed(section: string, value: boolean) {
+  const next = new Set(collapsed.value)
+  if (value) next.add(section)
+  else next.delete(section)
+  collapsed.value = next
+}
+
+/** A slide after the first of a folded section. */
+function folded(slide: SceneNode, column: number): boolean {
+  return column > 0 && collapsed.value.has(sectionOf(slide))
+}
+
+// A slide picked elsewhere, as on the canvas or with the arrows, opens the section that hides it.
+watch(
+  () => [store.state.focusedSlideId, ...store.state.selectedIds],
+  (ids) => {
+    for (const row of rows.value) {
+      if (row.slice(1).some((slide) => ids.includes(slide.id))) {
+        setCollapsed(sectionOf(row[0]), false)
+      }
+    }
+  }
+)
+
+function rowStyles(slide: SceneNode, column = 0) {
   return styles({
+    indented: column > 0,
     selected: isSelected(slide.id),
     skipped: slideSettings(slide)?.skipped ?? false,
     dragging: reorder.draggingId.value === slide.id,
@@ -104,8 +133,10 @@ function pick(event: MouseEvent, id: string) {
 function step(event: KeyboardEvent, by: 1 | -1) {
   event.preventDefault()
   event.stopPropagation()
-  const index = slides.value.findIndex((slide) => store.state.selectedIds.has(slide.id))
-  const next = slides.value.at(Math.max(0, index + by))
+  // The arrows pass over the slides a folded section hides, as a tree's rows do.
+  const shown = rows.value.flatMap((row) => row.filter((slide, column) => !folded(slide, column)))
+  const index = shown.findIndex((slide) => store.state.selectedIds.has(slide.id))
+  const next = shown.at(Math.max(0, index + by))
   if (!next) return
   store.select([next.id])
   show(next.id)
@@ -189,95 +220,129 @@ function label(slide: SceneNode): string {
       @keydown.up="step($event, -1)"
     >
       <div v-for="(row, index) in rows" :key="index" role="group" :class="base.section()">
-        <AppContextMenuRoot v-for="slide in row" :key="slide.id" :modal="false">
-          <AppContextMenuTrigger as-child>
-            <div
-              :ref="(value) => setupRow(value, slide)"
-              role="treeitem"
-              :tabindex="isSelected(slide.id) ? 0 : -1"
-              :aria-selected="isSelected(slide.id)"
-              :aria-label="label(slide)"
-              :data-slide-id="slide.id"
-              :data-dragging="reorder.draggingId.value === slide.id || undefined"
-              :class="rowStyles(slide).row()"
-              @click="pick($event, slide.id)"
-              @contextmenu="beforeMenu(slide.id)"
-            >
-              <div v-if="dropPosition(slide.id)" :class="rowStyles(slide).dropIndicator()" />
-              <span :class="rowStyles(slide).number()">{{ numbers.get(slide.id) ?? '–' }}</span>
-              <div :class="rowStyles(slide).frame()">
-                <SlidesPanelThumbnail
-                  :url="urls.get(slide.id)"
-                  :width="slide.width"
-                  :height="slide.height"
-                  :class="rowStyles(slide).image()"
-                  @visible="want(slide.id, $event)"
-                />
-                <span :class="rowStyles(slide).marks()">
-                  <icon-lucide-eye-off
-                    v-if="slideSettings(slide)?.skipped"
-                    :class="rowStyles(slide).mark()"
-                  />
-                  <icon-lucide-sticky-note
-                    v-if="slideSettings(slide)?.notes"
-                    :class="rowStyles(slide).mark()"
-                  />
-                  <icon-lucide-chevrons-right
-                    v-if="slideSettings(slide)?.transition"
-                    data-direction="reading"
-                    :class="rowStyles(slide).mark()"
-                  />
-                </span>
-              </div>
-            </div>
-          </AppContextMenuTrigger>
-          <ContextMenuPortal>
-            <ContextMenuContent :class="menuCls.content" :side-offset="2" align="start">
-              <MenuScrollArea>
-                <ContextMenuItem
-                  :class="menuCls.item"
-                  :disabled="!canEdit"
-                  @select="store.addSlide(slide.id)"
-                >
-                  <icon-lucide-plus :class="menuCls.icon" />
-                  <span>{{ messages.newSlide }}</span>
-                </ContextMenuItem>
-                <ContextMenuItem
-                  :class="menuCls.item"
-                  :disabled="!canEdit"
-                  @select="store.duplicateSlides(store.state.selectedIds)"
-                >
-                  <icon-lucide-copy :class="menuCls.icon" />
-                  <span>{{ messages.duplicate }}</span>
-                </ContextMenuItem>
-                <ContextMenuItem :class="menuCls.item" :disabled="!canEdit" @select="toggleSkipped">
-                  <icon-lucide-eye-off v-if="!allSkipped" :class="menuCls.icon" />
-                  <icon-lucide-eye v-else :class="menuCls.icon" />
-                  <span>{{ allSkipped ? messages.unskip : messages.skip }}</span>
-                </ContextMenuItem>
-                <ContextMenuItem
-                  :class="menuCls.item"
-                  :disabled="!canEdit"
-                  @select="
-                    store.moveSlides(store.state.selectedIds, { type: 'section', before: null })
+        <template v-for="(slide, column) in row" :key="slide.id">
+          <AppContextMenuRoot v-if="!folded(slide, column)" :modal="false">
+            <AppContextMenuTrigger as-child>
+              <div
+                :ref="(value) => setupRow(value, slide)"
+                role="treeitem"
+                :tabindex="isSelected(slide.id) ? 0 : -1"
+                :aria-selected="isSelected(slide.id)"
+                :aria-label="label(slide)"
+                :data-slide-id="slide.id"
+                :data-dragging="reorder.draggingId.value === slide.id || undefined"
+                :aria-expanded="
+                  column === 0 && row.length > 1 ? !collapsed.has(sectionOf(slide)) : undefined
+                "
+                :class="rowStyles(slide, column).row()"
+                @click="pick($event, slide.id)"
+                @contextmenu="beforeMenu(slide.id)"
+                @keydown.right="
+                  column === 0 && row.length > 1 && setCollapsed(sectionOf(slide), false)
+                "
+                @keydown.left="
+                  column === 0 && row.length > 1 && setCollapsed(sectionOf(slide), true)
+                "
+              >
+                <button
+                  v-if="column === 0 && row.length > 1"
+                  type="button"
+                  tabindex="-1"
+                  data-test-id="slides-section-toggle"
+                  :aria-expanded="!collapsed.has(sectionOf(slide))"
+                  :aria-label="
+                    collapsed.has(sectionOf(slide))
+                      ? messages.expandSection
+                      : messages.collapseSection
                   "
+                  :class="base.disclosure()"
+                  @click.stop="setCollapsed(sectionOf(slide), !collapsed.has(sectionOf(slide)))"
                 >
-                  <icon-lucide-separator-horizontal :class="menuCls.icon" />
-                  <span>{{ messages.moveToNewSection }}</span>
-                </ContextMenuItem>
-                <ContextMenuSeparator :class="menuCls.separator" />
-                <ContextMenuItem
-                  :class="menuCls.item"
-                  :disabled="!canEdit"
-                  @select="store.deleteSlides(store.state.selectedIds)"
-                >
-                  <icon-lucide-trash-2 :class="menuCls.icon" />
-                  <span>{{ messages.delete }}</span>
-                </ContextMenuItem>
-              </MenuScrollArea>
-            </ContextMenuContent>
-          </ContextMenuPortal>
-        </AppContextMenuRoot>
+                  <icon-lucide-chevron-right
+                    data-direction="reading"
+                    :class="base.disclosureIcon()"
+                  />
+                </button>
+                <div v-if="dropPosition(slide.id)" :class="rowStyles(slide).dropIndicator()" />
+                <span :class="rowStyles(slide).number()">{{ numbers.get(slide.id) ?? '–' }}</span>
+                <div :class="rowStyles(slide).frame()">
+                  <SlidesPanelThumbnail
+                    :url="urls.get(slide.id)"
+                    :width="slide.width"
+                    :height="slide.height"
+                    :class="rowStyles(slide).image()"
+                    @visible="want(slide.id, $event)"
+                  />
+                  <span :class="rowStyles(slide).marks()">
+                    <icon-lucide-eye-off
+                      v-if="slideSettings(slide)?.skipped"
+                      :class="rowStyles(slide).mark()"
+                    />
+                    <icon-lucide-sticky-note
+                      v-if="slideSettings(slide)?.notes"
+                      :class="rowStyles(slide).mark()"
+                    />
+                    <icon-lucide-chevrons-right
+                      v-if="slideSettings(slide)?.transition"
+                      data-direction="reading"
+                      :class="rowStyles(slide).mark()"
+                    />
+                  </span>
+                </div>
+              </div>
+            </AppContextMenuTrigger>
+            <ContextMenuPortal>
+              <ContextMenuContent :class="menuCls.content" :side-offset="2" align="start">
+                <MenuScrollArea>
+                  <ContextMenuItem
+                    :class="menuCls.item"
+                    :disabled="!canEdit"
+                    @select="store.addSlide(slide.id)"
+                  >
+                    <icon-lucide-plus :class="menuCls.icon" />
+                    <span>{{ messages.newSlide }}</span>
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    :class="menuCls.item"
+                    :disabled="!canEdit"
+                    @select="store.duplicateSlides(store.state.selectedIds)"
+                  >
+                    <icon-lucide-copy :class="menuCls.icon" />
+                    <span>{{ messages.duplicate }}</span>
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    :class="menuCls.item"
+                    :disabled="!canEdit"
+                    @select="toggleSkipped"
+                  >
+                    <icon-lucide-eye-off v-if="!allSkipped" :class="menuCls.icon" />
+                    <icon-lucide-eye v-else :class="menuCls.icon" />
+                    <span>{{ allSkipped ? messages.unskip : messages.skip }}</span>
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    :class="menuCls.item"
+                    :disabled="!canEdit"
+                    @select="
+                      store.moveSlides(store.state.selectedIds, { type: 'section', before: null })
+                    "
+                  >
+                    <icon-lucide-separator-horizontal :class="menuCls.icon" />
+                    <span>{{ messages.moveToNewSection }}</span>
+                  </ContextMenuItem>
+                  <ContextMenuSeparator :class="menuCls.separator" />
+                  <ContextMenuItem
+                    :class="menuCls.item"
+                    :disabled="!canEdit"
+                    @select="store.deleteSlides(store.state.selectedIds)"
+                  >
+                    <icon-lucide-trash-2 :class="menuCls.icon" />
+                    <span>{{ messages.delete }}</span>
+                  </ContextMenuItem>
+                </MenuScrollArea>
+              </ContextMenuContent>
+            </ContextMenuPortal>
+          </AppContextMenuRoot>
+        </template>
       </div>
     </div>
   </div>

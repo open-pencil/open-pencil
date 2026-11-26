@@ -13,6 +13,12 @@ const slidesPanelTheme = {
       focusStyles.ring
     ],
     number: 'w-4 shrink-0 pt-0.5 text-end text-3xs tabular-nums',
+    disclosure: [
+      'group absolute inset-s-0.5 top-1.5 flex size-4 items-center justify-center rounded text-muted hover:text-surface',
+      focusStyles.ring
+    ],
+    disclosureIcon:
+      'size-3 transition-transform motion-reduce:transition-none group-aria-expanded:rotate-90 rtl:group-aria-expanded:-rotate-90',
     frame:
       'relative min-w-0 flex-1 overflow-hidden rounded border border-border bg-white shadow-sm',
     image: 'block size-full',
@@ -38,12 +44,16 @@ const slidesPanelTheme = {
       true: { row: 'opacity-60' },
       false: {}
     },
+    indented: {
+      true: { row: 'ps-8' },
+      false: { row: 'ps-5' }
+    },
     dropPosition: {
       before: { dropIndicator: '-top-px' },
       after: { dropIndicator: '-bottom-px' }
     }
   },
-  defaultVariants: { selected: false, skipped: false, dragging: false }
+  defaultVariants: { selected: false, skipped: false, dragging: false, indented: false }
 }
 
 export default slidesPanelTheme

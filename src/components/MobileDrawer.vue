@@ -5,6 +5,7 @@ import type { PanInfo } from 'motion-v'
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -24,11 +25,13 @@ import CommentsPanel from './comments/CommentsPanel.vue'
 import DesignPanel from './DesignPanel.vue'
 import LayerTree from './LayerTree/LayerTree.vue'
 import PagesPanel from './PagesPanel.vue'
+import SlidesPanel from './slides/SlidesPanel.vue'
 
 type Snap = 'closed' | 'half' | 'full'
 type DrawerTab = 'layers' | 'design' | 'code' | 'ai'
 
 const store = useEditorStore()
+const filmstrip = computed(() => resolveEditorProfile(store.state).filmstrip)
 const settings = useMessages('settings')
 const panels = useMessages('panels')
 
@@ -182,7 +185,8 @@ const drawerTransition = useMotionTransition({
       <div data-test-id="mobile-drawer-content" class="min-h-0 flex-1 overflow-y-auto">
         <TabsContent value="layers" class="mt-0 h-full data-[state=inactive]:hidden">
           <div data-test-id="mobile-drawer-layers" class="flex h-full flex-col">
-            <PagesPanel />
+            <SlidesPanel v-if="filmstrip" />
+            <PagesPanel v-else />
             <div class="border-t border-border" />
             <header class="shrink-0 px-3 py-2 text-2xs font-semibold text-muted">
               {{ panels.layers }}

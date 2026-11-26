@@ -11,6 +11,8 @@
   "unskip": "تضمين الشريحة",
   "moveToNewSection": "نقل إلى قسم جديد",
   "delete": "حذف",
+  "collapseSection": "طي القسم",
+  "expandSection": "توسيع القسم",
   "notes": "ملاحظات المتحدث",
   "notesPlaceholder": "أضف ملاحظات المتحدث",
   "notesPickSlide": "حدّد شريحة واحدة لعرض ملاحظات المتحدث الخاصة بها",

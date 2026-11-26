@@ -11,6 +11,8 @@
   "unskip": "Folie einbeziehen",
   "moveToNewSection": "In neuen Abschnitt verschieben",
   "delete": "Löschen",
+  "collapseSection": "Abschnitt einklappen",
+  "expandSection": "Abschnitt ausklappen",
   "notes": "Vortragsnotizen",
   "notesPlaceholder": "Vortragsnotizen hinzufügen",
   "notesPickSlide": "Wähle eine Folie aus, um ihre Vortragsnotizen zu sehen",

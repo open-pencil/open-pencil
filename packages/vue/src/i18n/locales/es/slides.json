@@ -11,6 +11,8 @@
   "unskip": "Incluir diapositiva",
   "moveToNewSection": "Mover a una sección nueva",
   "delete": "Eliminar",
+  "collapseSection": "Contraer sección",
+  "expandSection": "Expandir sección",
   "notes": "Notas del orador",
   "notesPlaceholder": "Añadir notas del orador",
   "notesPickSlide": "Selecciona una diapositiva para ver sus notas del orador",

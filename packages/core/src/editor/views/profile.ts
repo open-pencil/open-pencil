@@ -3,7 +3,12 @@ import { pickBy } from 'es-toolkit'
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
 import { BOARD_GRID } from '#core/constants'
-import { BOARD_TOOL_SHORTCUTS, BOARD_TOOLS, TOOL_SHORTCUTS } from '#core/editor/tool-registry'
+import {
+  BOARD_TOOL_SHORTCUTS,
+  BOARD_TOOLS,
+  DECK_TOOL_SHORTCUTS,
+  TOOL_SHORTCUTS
+} from '#core/editor/tool-registry'
 import type { Tool } from '#core/editor/types'
 
 import {
@@ -70,7 +75,7 @@ const DESIGN_BEHAVIOUR: DocumentBehaviour = {
 const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
   design: DESIGN_BEHAVIOUR,
   // A slide is drawn with everything a design is.
-  slides: { ...DESIGN_BEHAVIOUR, filmstrip: true },
+  slides: { ...DESIGN_BEHAVIOUR, toolKeys: DECK_TOOL_SHORTCUTS, filmstrip: true },
   board: {
     edits: true,
     tools: BOARD_TOOLS,
