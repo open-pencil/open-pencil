@@ -306,6 +306,12 @@ jobs:
         working-directory: packages/fig
         run: bun run check:rust
 
+      - name: Check the open-pencil crate's formatting and lints
+        run: cargo fmt -p open-pencil --check && cargo clippy -p open-pencil --all-targets -- -D warnings
+
+      - name: Check the crates published to crates.io package and build from their contents
+        run: cargo package -p open-pencil-fig -p open-pencil
+
       - name: Check the HTML engine's dependency licenses
         working-directory: packages/html-engine
         run: bun run check:licenses

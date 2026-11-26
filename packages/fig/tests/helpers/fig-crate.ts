@@ -41,7 +41,7 @@ export interface CrateDocument {
 
 let compiled: Promise<WebAssembly.Module> | undefined
 
-/** The module `bun run build:wasm` in `packages/fig` builds; the unit test runner builds it first. */
+/** The module `bun run build:wasm` in `packages/fig` builds; the package's `test` script and the unit test runner build it first. */
 function module(): Promise<WebAssembly.Module> {
   compiled ??= Bun.file(repoPath('packages/fig/wasm/fig.wasm'))
     .arrayBuffer()
@@ -66,7 +66,8 @@ export async function openWithCrate(file: Uint8Array): Promise<CrateDocument> {
   }
   const pageIds = Array.from(
     { length: crate.page_count() },
-    (_, page) => `${crate.page_guid(page, 0)}:${crate.page_guid(page, 1)}`
+    // WebAssembly returns `u32` results as signed numbers; a GUID's halves are unsigned.
+    (_, page) => `${crate.page_guid(page, 0) >>> 0}:${crate.page_guid(page, 1) >>> 0}`
   )
   return {
     pageIds,

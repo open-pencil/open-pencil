@@ -76,6 +76,10 @@ impl Schema {
             }
             let by_id = if kind == DefinitionKind::Message {
                 let largest = fields.iter().map(|field| field.id).max().unwrap_or(0);
+                // Field ids are small; a larger one would size the lookup table from bad input.
+                if largest > MAX_FIELD_ID {
+                    return Err(Malformed);
+                }
                 let mut by_id = vec![0; largest as usize + 1];
                 for (index, field) in fields.iter().enumerate() {
                     by_id[field.id as usize] = index as u32 + 1;
@@ -102,7 +106,50 @@ impl Schema {
                 return Err(Malformed);
             }
         }
-        Ok(Schema { definitions })
+        let schema = Schema { definitions };
+        if schema.has_struct_cycle() {
+            return Err(Malformed);
+        }
+        Ok(schema)
+    }
+
+    /// Whether a struct holds itself by value, which no message could encode and skipping
+    /// would recurse into without reading a byte.
+    fn has_struct_cycle(&self) -> bool {
+        // 0 unvisited, 1 on the current path, 2 done.
+        let mut state = vec![0u8; self.definitions.len()];
+        let mut stack: Vec<(usize, usize)> = Vec::new();
+        for start in 0..self.definitions.len() {
+            if state[start] != 0 || self.definitions[start].kind != DefinitionKind::Struct {
+                continue;
+            }
+            state[start] = 1;
+            stack.push((start, 0));
+            while let Some((definition, next)) = stack.last_mut() {
+                let fields = &self.definitions[*definition].fields;
+                let Some(field) = fields.get(*next) else {
+                    state[*definition] = 2;
+                    stack.pop();
+                    continue;
+                };
+                *next += 1;
+                let Ok(inner) = usize::try_from(field.ty) else {
+                    continue;
+                };
+                if field.is_array || self.definitions[inner].kind != DefinitionKind::Struct {
+                    continue;
+                }
+                match state[inner] {
+                    1 => return true,
+                    0 => {
+                        state[inner] = 1;
+                        stack.push((inner, 0));
+                    }
+                    _ => {}
+                }
+            }
+        }
+        false
     }
 
     pub fn definition(&self, name: &str) -> Option<usize> {
@@ -129,19 +176,31 @@ impl Schema {
     }
 }
 
+/// The largest message field id a schema may declare.
+const MAX_FIELD_ID: u32 = 1 << 16;
+
+/// How deeply messages may nest. Figma's nest a few levels; the bound keeps a damaged message
+/// from exhausting the stack.
+const MAX_DEPTH: u32 = 64;
+
 /// A cursor over an encoded message.
 pub struct Reader<'a> {
     data: &'a [u8],
     pub position: usize,
+    depth: u32,
 }
 
 impl<'a> Reader<'a> {
     pub fn new(data: &'a [u8]) -> Self {
-        Reader { data, position: 0 }
+        Reader::at(data, 0)
     }
 
     pub fn at(data: &'a [u8], position: usize) -> Self {
-        Reader { data, position }
+        Reader {
+            data,
+            position,
+            depth: 0,
+        }
     }
 
     #[inline]
@@ -310,17 +369,23 @@ impl<'a> Reader<'a> {
         mut visit: impl FnMut(&mut Reader<'a>, usize) -> Result<bool>,
     ) -> Result<()> {
         let definition = &schema.definitions[definition];
-        loop {
+        if self.depth >= MAX_DEPTH {
+            return Err(Malformed);
+        }
+        self.depth += 1;
+        let result = loop {
             let id = self.varuint()?;
             if id == 0 {
-                return Ok(());
+                break Ok(());
             }
             let index = *definition.by_id.get(id as usize).ok_or(Malformed)?;
             let index = index.checked_sub(1).ok_or(Malformed)? as usize;
             if !visit(self, index)? {
                 self.skip_field(schema, &definition.fields[index])?;
             }
-        }
+        };
+        self.depth -= 1;
+        result
     }
 
     /// Reads an array of values, handing the cursor to `each` once per element.
@@ -395,5 +460,32 @@ mod tests {
             Reader::new(&message[..4]).skip(&schema, point as i32),
             Err(Malformed)
         );
+    }
+
+    #[test]
+    fn rejects_schemas_that_could_not_be_read_safely() {
+        // struct S { S inner; }: a struct holding itself by value.
+        assert_eq!(
+            Schema::parse(&[1, b'S', 0, 1, 1, b'i', 0, 0, 0, 0]).unwrap_err(),
+            Malformed
+        );
+        // message M { uint x = 2^20; }: a field id that would size a huge lookup table.
+        assert_eq!(
+            Schema::parse(&[1, b'M', 0, 2, 1, b'x', 0, 7, 0, 0x80, 0x80, 0x40]).unwrap_err(),
+            Malformed
+        );
+    }
+
+    #[test]
+    fn stops_at_messages_nested_too_deeply() {
+        // message M { M inner = 1; }, then M nested past the bound.
+        let schema = Schema::parse(&[1, b'M', 0, 2, 1, b'i', 0, 0, 0, 1]).unwrap();
+        let mut message = vec![1u8; MAX_DEPTH as usize + 1];
+        message.extend(vec![0u8; MAX_DEPTH as usize + 2]);
+        assert_eq!(Reader::new(&message).skip(&schema, 0), Err(Malformed));
+        let shallow = [1, 1, 0, 0, 0];
+        let mut reader = Reader::new(&shallow);
+        assert_eq!(reader.skip(&schema, 0), Ok(()));
+        assert_eq!(reader.position, shallow.len());
     }
 }

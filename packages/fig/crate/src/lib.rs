@@ -2,15 +2,25 @@
 //! decoding it, and pages with their instances expanded into occurrences that refer to the
 //! records they place.
 //!
-//! This follows the TypeScript reader in `packages/fig/src/document/` and
+//! This follows the TypeScript reader in OpenPencil's `packages/fig/src/document/` and
 //! `packages/fig/src/instance-overrides/`, which stays the reference: `packages/fig/tests/crate/`
 //! compares the two on the repository's fixtures.
+//!
+//! ```no_run
+//! let file = std::fs::read("design.fig")?;
+//! let document = open_pencil_fig::Document::open(&file)?;
+//! for page in 0..document.index.pages.len() {
+//!     let expansion = document.expand_page(page).expect("the page exists");
+//!     println!("page {page}: {} layers", expansion.occurrences.len());
+//! }
+//! # Ok::<(), Box<dyn std::error::Error>>(())
+//! ```
 
 pub mod container;
 pub mod expand;
 pub mod index;
 pub mod kiwi;
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "exports"))]
 mod wasm;
 
 pub use container::{Canvas, Kind};
@@ -30,10 +40,15 @@ pub enum Error {
     Truncated,
     /// A chunk that does not inflate or decode as Zstandard.
     Decompress,
+    /// A chunk or archive entry that decompresses past what the reader accepts: more than its
+    /// declared size, or more than 4 GiB.
+    TooLarge,
     /// A schema that does not parse, or lacks a definition, field, or member the reader needs.
     Schema(&'static str),
     /// A message that ends early or holds a value its schema does not allow.
     Message,
+    /// A record that is its own ancestor.
+    ParentCycle,
 }
 
 impl core::fmt::Display for Error {
@@ -44,8 +59,10 @@ impl core::fmt::Display for Error {
             Error::NoCanvas => f.write_str("the archive holds no canvas"),
             Error::Truncated => f.write_str("the canvas ends early"),
             Error::Decompress => f.write_str("a canvas chunk does not decompress"),
+            Error::TooLarge => f.write_str("a canvas chunk decompresses past its limit"),
             Error::Schema(name) => write!(f, "the schema lacks {name}"),
             Error::Message => f.write_str("the message does not match its schema"),
+            Error::ParentCycle => f.write_str("a layer is its own ancestor"),
         }
     }
 }

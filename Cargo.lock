@@ -3752,8 +3752,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "open-pencil"
+version = "0.1.0"
+dependencies = [
+ "open-pencil-fig",
+]
+
+[[package]]
 name = "open-pencil-fig"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "miniz_oxide 0.9.1",
  "rawzip",

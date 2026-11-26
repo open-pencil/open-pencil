@@ -161,6 +161,26 @@ impl<'a> Expansion<'a> {
         }
     }
 
+    /// The override key of the component an instance finally expands, following components that
+    /// are themselves instances: the reader's `mainComponentOverrideKey`, which also addresses the
+    /// root.
+    fn final_override_key(&self, component: u64) -> Option<u64> {
+        let mut record = self.index.find(component)?;
+        // A chain of instances ends at a component; a damaged one may loop.
+        for _ in 0..64 {
+            let current = &self.index.records[record as usize];
+            if current.ty != self.index.ids.instance {
+                break;
+            }
+            match self.index.find(current.component) {
+                Some(inner) => record = inner,
+                None => break,
+            }
+        }
+        let key = self.index.records[record as usize].override_key;
+        (key != NO_GUID).then_some(key)
+    }
+
     /// Whether expanding `component`, chosen by the owner at `chosen_at`, would put it inside
     /// itself: it is being expanded already, and nothing chosen since came from further out.
     fn closes_loop(&self, component: u64, chosen_at: u32) -> bool {
@@ -390,6 +410,11 @@ impl<'a> Expansion<'a> {
         let mut root_keys: Vec<u64> = Vec::new();
         self.component_keys(effective, &mut root_keys);
         self.component_keys(r.component, &mut root_keys);
+        if let Some(key) = self.final_override_key(effective)
+            && !root_keys.contains(&key)
+        {
+            root_keys.push(key);
+        }
         for at in r.overrides.range() {
             let entry = &index.overrides[at];
             if !entry.has_properties || entry.path.length == 0 {

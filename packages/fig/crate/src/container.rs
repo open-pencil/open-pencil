@@ -60,8 +60,9 @@ fn parse_canvas(bytes: &[u8]) -> Result<Canvas, Error> {
         chunks.push(&bytes[at..end.ok_or(Error::Truncated)?]);
         at += length;
     }
+    // A recognized header with fewer than two chunks ends before its message.
     let [schema, message] = chunks[..] else {
-        return Err(Error::NotFig);
+        return Err(Error::Truncated);
     };
     Ok(Canvas {
         kind,
@@ -73,22 +74,46 @@ fn parse_canvas(bytes: &[u8]) -> Result<Canvas, Error> {
 
 const ZSTD_MAGIC: [u8; 4] = [0x28, 0xb5, 0x2f, 0xfd];
 
+/// The most a chunk may decompress to: the index addresses the message with 32-bit offsets, and
+/// a damaged or hostile chunk must not grow its output until allocation fails.
+const MAX_DECOMPRESSED: u64 = u32::MAX as u64;
+
 fn decompress(chunk: &[u8]) -> Result<Vec<u8>, Error> {
     if !chunk.starts_with(&ZSTD_MAGIC) {
         return inflate(chunk);
     }
-    let mut decoder =
-        ruzstd::decoding::StreamingDecoder::new(chunk).map_err(|_| Error::Decompress)?;
+    // A chunk may hold several frames; each decoder reads one and leaves the slice after it.
+    let mut rest = chunk;
     let mut message = Vec::new();
-    decoder
-        .read_to_end(&mut message)
-        .map_err(|_| Error::Decompress)?;
+    while !rest.is_empty() {
+        let decoder =
+            ruzstd::decoding::StreamingDecoder::new(&mut rest).map_err(|_| Error::Decompress)?;
+        let budget = MAX_DECOMPRESSED - message.len() as u64;
+        decoder
+            .take(budget + 1)
+            .read_to_end(&mut message)
+            .map_err(|_| Error::Decompress)?;
+        if message.len() as u64 > MAX_DECOMPRESSED {
+            return Err(Error::TooLarge);
+        }
+    }
     Ok(message)
 }
 
 /// Raw deflate, without a zlib header.
 fn inflate(chunk: &[u8]) -> Result<Vec<u8>, Error> {
-    miniz_oxide::inflate::decompress_to_vec(chunk).map_err(|_| Error::Decompress)
+    inflate_within(chunk, u32::MAX as usize)
+}
+
+fn inflate_within(chunk: &[u8], limit: usize) -> Result<Vec<u8>, Error> {
+    use miniz_oxide::inflate::TINFLStatus;
+    miniz_oxide::inflate::decompress_to_vec_with_limit(chunk, limit).map_err(|error| {
+        if error.status == TINFLStatus::HasMoreOutput {
+            Error::TooLarge
+        } else {
+            Error::Decompress
+        }
+    })
 }
 
 /// The archive entry that holds the canvas: `canvas.fig`, or `canvas` in older files, or else the
@@ -127,9 +152,8 @@ fn canvas_entry(file: &[u8]) -> Result<Vec<u8>, Error> {
         rawzip::CompressionMethod::STORE => Ok(data.to_vec()),
         rawzip::CompressionMethod::DEFLATE => {
             // The directory's size bounds what the entry may inflate to.
-            let limit = usize::try_from(chosen.size).map_err(|_| Error::Archive)?;
-            miniz_oxide::inflate::decompress_to_vec_with_limit(data, limit)
-                .map_err(|_| Error::Decompress)
+            let limit = usize::try_from(chosen.size).map_err(|_| Error::TooLarge)?;
+            inflate_within(data, limit)
         }
         _ => Err(Error::Archive),
     }

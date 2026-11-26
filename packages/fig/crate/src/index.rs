@@ -134,6 +134,46 @@ impl Value {
     fn is_set(&self) -> bool {
         self.boolean.is_some() || self.has_text || self.component != NO_GUID
     }
+
+    /// An assignment's variable value as the reader takes it: one kind, a component first, then
+    /// a boolean, then text, then slot content (`assignmentValue` in
+    /// `packages/fig/src/instance-overrides/bindings/properties.ts`).
+    fn one_kind(self) -> Value {
+        if self.component != NO_GUID {
+            Value {
+                component: self.component,
+                ..Value::EMPTY
+            }
+        } else if self.boolean.is_some() {
+            Value {
+                boolean: self.boolean,
+                ..Value::EMPTY
+            }
+        } else if self.has_text {
+            Value {
+                has_text: true,
+                ..Value::EMPTY
+            }
+        } else {
+            Value {
+                slot: self.slot,
+                ..Value::EMPTY
+            }
+        }
+    }
+
+    /// A definition's typed default as the reader takes it: a component alone, or every other
+    /// kind it holds (`normalizeDefaults` in `packages/fig/src/document/property-records.ts`).
+    fn as_default(self) -> Value {
+        if self.component != NO_GUID {
+            Value {
+                component: self.component,
+                ..Value::EMPTY
+            }
+        } else {
+            self
+        }
+    }
 }
 
 /// A component property assignment.
@@ -351,6 +391,38 @@ struct Pools {
     derived: Vec<Derived>,
 }
 
+impl Pools {
+    fn lengths(&self) -> [usize; 6] {
+        [
+            self.overrides.len(),
+            self.guids.len(),
+            self.assignments.len(),
+            self.definitions.len(),
+            self.references.len(),
+            self.derived.len(),
+        ]
+    }
+
+    fn truncate(
+        &mut self,
+        [
+            overrides,
+            guids,
+            assignments,
+            definitions,
+            references,
+            derived,
+        ]: [usize; 6],
+    ) {
+        self.overrides.truncate(overrides);
+        self.guids.truncate(guids);
+        self.assignments.truncate(assignments);
+        self.definitions.truncate(definitions);
+        self.references.truncate(references);
+        self.derived.truncate(derived);
+    }
+}
+
 /// What one record's walk found.
 struct Parsed {
     guid: u64,
@@ -425,7 +497,7 @@ impl<'a> Walk<'a> {
         Ok(value)
     }
 
-    /// The value a variable-form assignment or default holds, in the order the reader prefers.
+    /// Every kind of value a variable-form assignment or default holds.
     fn variable_value(&self, reader: &mut Reader) -> Result<Option<Value>> {
         let ids = self.ids;
         let mut found = Value::EMPTY;
@@ -450,30 +522,11 @@ impl<'a> Walk<'a> {
             })?;
             Ok(true)
         })?;
-        // One kind of value wins: a component, then a boolean, then text, then slot content.
-        Ok(if found.component != NO_GUID {
-            Some(Value {
-                component: found.component,
-                ..Value::EMPTY
-            })
-        } else if found.boolean.is_some() {
-            Some(Value {
-                boolean: found.boolean,
-                ..Value::EMPTY
-            })
-        } else if found.has_text {
-            Some(Value {
-                has_text: true,
-                ..Value::EMPTY
-            })
-        } else if found.slot != NO_GUID {
-            Some(Value {
-                slot: found.slot,
-                ..Value::EMPTY
-            })
-        } else {
-            None
-        })
+        let empty = found.boolean.is_none()
+            && !found.has_text
+            && found.component == NO_GUID
+            && found.slot == NO_GUID;
+        Ok(if empty { None } else { Some(found) })
     }
 
     fn assignments(&mut self, reader: &mut Reader) -> Result<Run> {
@@ -489,7 +542,7 @@ impl<'a> Walk<'a> {
                 } else if field == ids.cpa_value {
                     direct = Some(self.prop_value(reader)?);
                 } else if field == ids.cpa_variable {
-                    variable = self.variable_value(reader)?;
+                    variable = self.variable_value(reader)?.map(Value::one_kind);
                 } else {
                     return Ok(false);
                 }
@@ -522,7 +575,7 @@ impl<'a> Walk<'a> {
                 } else if field == ids.cpd_parent {
                     definition.parent = reader.guid()?;
                 } else if field == ids.cpd_variable {
-                    variable = self.variable_value(reader)?;
+                    variable = self.variable_value(reader)?.map(Value::as_default);
                 } else {
                     return Ok(false);
                 }
@@ -697,6 +750,30 @@ impl<'a> Walk<'a> {
     }
 }
 
+/// Whether a record is its own ancestor, which would make expanding it endless.
+fn has_parent_cycle(records: &[Record], by_guid: &GuidMap<u64, u32>) -> bool {
+    // 0 not seen, 1 on the chain being walked, 2 known to reach a root.
+    let mut state = vec![0u8; records.len()];
+    let mut chain: Vec<u32> = Vec::new();
+    for start in 0..records.len() as u32 {
+        let mut at = Some(start);
+        while let Some(record) = at {
+            match state[record as usize] {
+                1 => return true,
+                2 => break,
+                _ => {}
+            }
+            state[record as usize] = 1;
+            chain.push(record);
+            at = by_guid.get(&records[record as usize].parent).copied();
+        }
+        for record in chain.drain(..) {
+            state[record as usize] = 2;
+        }
+    }
+    false
+}
+
 impl Index {
     pub fn build(schema: &Schema, message: &[u8]) -> crate::Result<Index> {
         let ids = Ids::resolve(schema).map_err(crate::Error::Schema)?;
@@ -716,11 +793,15 @@ impl Index {
                 }
                 reader.array(|reader| {
                     let start = reader.position;
+                    let pooled = walk.pools.lengths();
                     let parsed = walk.record(reader)?;
+                    // A record left out keeps nothing in the pools.
                     if parsed.removed || parsed.guid == NO_GUID {
+                        walk.pools.truncate(pooled);
                         return Ok(());
                     }
                     if by_guid.contains_key(&parsed.guid) {
+                        walk.pools.truncate(pooled);
                         duplicates += 1;
                         return Ok(());
                     }
@@ -777,6 +858,9 @@ impl Index {
                 at += 1;
             }
             records[links[start].0 as usize].children = Run::between(start, at);
+        }
+        if has_parent_cycle(&records, &by_guid) {
+            return Err(crate::Error::ParentCycle);
         }
 
         let mut pages: Vec<u32> = (0..records.len() as u32)

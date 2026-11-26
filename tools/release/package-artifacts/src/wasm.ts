@@ -2,11 +2,12 @@
 // sources it was built from are unchanged: the crate, the workspace manifest and lockfile, and
 // the pinned toolchain. Their hash is written beside the module, so CI can restore both from a
 // cache and skip Cargo.
-import { existsSync } from 'node:fs'
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, join, relative } from 'node:path'
+import { join, relative } from 'node:path'
 
 import * as v from 'valibot'
+
+import { resolveWorkspaceRoot } from './workspace/root'
 
 const TARGET = 'wasm32-unknown-unknown'
 
@@ -19,6 +20,8 @@ export interface WasmModule {
   library: string
   /** The module's file name in `wasm/`. */
   output: string
+  /** Cargo features the module is built with. */
+  features?: readonly string[]
 }
 
 async function cargo(cwd: string, args: string[]): Promise<string> {
@@ -28,14 +31,6 @@ async function cargo(cwd: string, args: string[]): Promise<string> {
   return stdout
 }
 
-/** The Cargo workspace root, found by its lockfile, so a current module needs no Cargo. */
-function workspaceRoot(from: string): string {
-  for (let dir = from; ; dir = dirname(dir)) {
-    if (existsSync(join(dir, 'Cargo.lock'))) return dir
-    if (dirname(dir) === dir) throw new Error(`No Cargo.lock above ${from}`)
-  }
-}
-
 async function targetDirectory(cwd: string): Promise<string> {
   const text = await cargo(cwd, ['metadata', '--format-version', '1', '--no-deps'])
   const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), metadataSchema), text)
@@ -43,8 +38,15 @@ async function targetDirectory(cwd: string): Promise<string> {
   return parsed.output.target_directory
 }
 
-/** A hash of every file the module is built from, by path relative to the workspace root. */
-async function sourcesHash(root: string, packageDir: string): Promise<string> {
+/**
+ * A hash of every file the module is built from, by path relative to the workspace root, and of
+ * the features it is built with.
+ */
+async function sourcesHash(
+  root: string,
+  packageDir: string,
+  features: readonly string[]
+): Promise<string> {
   const files = [
     join(root, 'Cargo.toml'),
     join(root, 'Cargo.lock'),
@@ -59,6 +61,8 @@ async function sourcesHash(root: string, packageDir: string): Promise<string> {
     .map((file) => ({ file, name: relative(root, file).replaceAll('\\', '/') }))
     .toSorted((a, b) => a.name.localeCompare(b.name))
   const hasher = new Bun.CryptoHasher('sha256')
+  // A module built without features keeps the hash it had before features were hashed.
+  if (features.length > 0) hasher.update(`features:${features.toSorted().join(',')}\0`)
   for (const { file, name } of sources) {
     hasher.update(name)
     hasher.update('\0')
@@ -82,13 +86,14 @@ async function builtHash(output: string, stamp: string): Promise<string | null> 
  * an error instead.
  */
 export async function buildWasmModule(
-  { packageDir, library, output: name }: WasmModule,
+  { packageDir, library, output: name, features = [] }: WasmModule,
   { check = false } = {}
 ): Promise<void> {
   const output = join(packageDir, 'wasm', name)
   const stamp = `${output}.sha256`
-  const root = workspaceRoot(packageDir)
-  const hash = await sourcesHash(root, packageDir)
+  // The Cargo workspace shares the Bun workspace's root, with `Cargo.toml` and `Cargo.lock`.
+  const root = await resolveWorkspaceRoot(packageDir)
+  const hash = await sourcesHash(root, packageDir, features)
   if ((await builtHash(output, stamp)) === hash) {
     process.stdout.write(`${name} is up to date\n`)
     return
@@ -109,7 +114,8 @@ export async function buildWasmModule(
     '--target',
     TARGET,
     '--manifest-path',
-    'crate/Cargo.toml'
+    'crate/Cargo.toml',
+    ...(features.length > 0 ? ['--features', features.join(',')] : [])
   ])
   await mkdir(join(packageDir, 'wasm'), { recursive: true })
   const target = await targetDirectory(packageDir)
