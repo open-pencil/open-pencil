@@ -6,14 +6,16 @@ import type { SceneGraph } from '../graph'
 import { findInstanceAncestor } from '../instances'
 import { bindingOverrideField, setInstanceOverride } from '../instances/overrides'
 import { siblingOrderKeys } from '../order-keys'
-import type {
-  Effect,
-  SceneNode,
-  Variable,
-  VariableCollection,
-  VariableCollectionMode,
-  VariableType,
-  VariableValue
+import {
+  TEXT_BINDABLE_FIELDS,
+  type Effect,
+  type SceneNode,
+  type TextBindableField,
+  type Variable,
+  type VariableCollection,
+  type VariableCollectionMode,
+  type VariableType,
+  type VariableValue
 } from '../types'
 import {
   isNumericVariableBindingField,
@@ -323,6 +325,12 @@ function preparePaintBinding(
   }
 }
 
+const TEXT_BINDABLE: ReadonlySet<string> = new Set(TEXT_BINDABLE_FIELDS)
+
+function isTextBindableField(field: string): field is TextBindableField {
+  return TEXT_BINDABLE.has(field)
+}
+
 export function bindVariable(
   graph: SceneGraph,
   nodeId: string,
@@ -361,10 +369,19 @@ export function bindVariable(
     throw new Error(`Cannot bind ${variable.type} variable to boolean field "${field}"`)
   }
 
+  // A text style binds every field a range of characters can, its face by style or by weight.
+  const styleField = node.sharedStyleType === 'TEXT' && isTextBindableField(field)
+  if (styleField) {
+    const type: VariableType = field === 'fontFamily' || field === 'fontStyle' ? 'STRING' : 'FLOAT'
+    if (variable.type !== type)
+      throw new Error(`Cannot bind ${variable.type} variable to text style field "${field}"`)
+  }
+
   const isKnownField =
     isNumericVariableBindingField(field) ||
     STRING_BINDING_FIELDS.has(field) ||
     BOOLEAN_BINDING_FIELDS.has(field) ||
+    styleField ||
     paint !== null ||
     effect !== null
 

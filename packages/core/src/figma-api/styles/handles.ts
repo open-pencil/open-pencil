@@ -3,16 +3,30 @@ import type {
   StyleType,
   TextStyle
 } from '@figma/plugin-typings/plugin-api-standalone'
+import { isEqual } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 
-import type { SceneGraph, SceneNode, SharedStyleType } from '@open-pencil/scene-graph'
+import {
+  TEXT_BINDABLE_FIELDS,
+  type SceneGraph,
+  type SceneNode,
+  type SharedStyleType,
+  type TextBindableField,
+  type Variable
+} from '@open-pencil/scene-graph'
+import { boundNumberValue, reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
 
 import { figmaFills } from '#core/figma-api/accessors/visual'
 import { parseFigmaPaints, withVideoPosters, type FigmaPaint } from '#core/figma-api/paints'
 import type { FigmaNodeProxy } from '#core/figma-api/proxy'
 import { parseFigma } from '#core/figma-api/validation'
-import { figmaBoundVariables, setPaintBindings } from '#core/figma-api/variables/bindings'
-import type { FigmaVariableAlias } from '#core/figma-api/variables/values'
+import {
+  bindingVariableType,
+  figmaBoundVariables,
+  isTextBindableField,
+  setPaintBindings
+} from '#core/figma-api/variables/bindings'
+import { variableAlias, type FigmaVariableAlias } from '#core/figma-api/variables/values'
 
 import { releaseUsers, restyleUsers, styleConsumers, type LayerUpdate } from './apply'
 
@@ -52,10 +66,9 @@ function hostOf(style: FigmaBaseStyle): StyleHost {
 
 /** The node holding the style's values, or Figma's refusal once the style is gone. */
 function styleNode(style: FigmaBaseStyle, method: string): SceneNode {
-  const type = STYLE_TYPES[style.type]
-  for (const node of hostOf(style).graph.getAllNodes())
-    if (node.sharedStyleType === type && node.source.id === style.id) return node
-  throw new Error(`in ${method}: The style with id "${style.id}" does not exist`)
+  const node = hostOf(style).graph.getSharedStyleNode(style.id, STYLE_TYPES[style.type])
+  if (!node) throw new Error(`in ${method}: The style with id "${style.id}" does not exist`)
+  return node
 }
 
 /** The style's node as a layer, whose setters check and store its values. */
@@ -84,8 +97,10 @@ export abstract class FigmaBaseStyle {
     this.id = id
   }
 
-  /** The variables the style's values use; only an effect style lists any. */
-  get boundVariables(): Readonly<Record<string, readonly FigmaVariableAlias[]>> {
+  /** The variables the style's values use: an effect style lists them, a text style one per field. */
+  get boundVariables(): Readonly<
+    Record<string, FigmaVariableAlias | readonly FigmaVariableAlias[]>
+  > {
     return Object.freeze({})
   }
 
@@ -218,6 +233,58 @@ export const TEXT_STYLE_PROPERTIES = [
 
 type TextStyleProperty = (typeof TEXT_STYLE_PROPERTIES)[number]
 
+/** A text style's own field for a bindable one; a face binds by style or by weight. */
+const FACE_FIELDS: readonly TextBindableField[] = ['fontStyle', 'fontWeight']
+
+/** Lengths a text style takes from a bound number, as Figma writes the default mode's value. */
+const BOUND_LENGTHS: ReadonlySet<TextBindableField> = new Set([
+  'fontSize',
+  'letterSpacing',
+  'lineHeight',
+  'paragraphSpacing',
+  'paragraphIndent'
+])
+
+/** Figma's check on the field a text style binds. */
+function textStyleField(field: unknown): TextBindableField {
+  if (typeof field === 'string' && isTextBindableField(field)) return field
+  throw new Error(
+    'in setBoundVariable: Property "field" failed validation: Invalid option: expected one of ' +
+      TEXT_BINDABLE_FIELDS.map((name) => `"${name}"`).join('|')
+  )
+}
+
+const VariableReference = v.object({ id: v.string() })
+
+/** The variable a text style binds, checked as Figma checks it: by object only. */
+function textStyleVariable(
+  graph: SceneGraph,
+  field: TextBindableField,
+  variable: unknown
+): Variable {
+  if (typeof variable !== 'object' || variable === null) {
+    throw new TypeError(`in setBoundVariable: Expected node, got ${typeof variable}`)
+  }
+  const { id } = parseFigma(VariableReference, variable, 'setBoundVariable', 'variable')
+  const found = graph.variables.get(id)
+  if (!found) throw new Error(`in setBoundVariable: The variable with id "${id}" does not exist`)
+  if (found.type !== bindingVariableType(field)) {
+    throw new Error(
+      `in setBoundVariable: variable of resolved type '${found.type}' cannot be bound to '${field}'`
+    )
+  }
+  return found
+}
+
+/** The bindable fields whose values a change to the style moved; a new face moves both. */
+function movedFields(before: SceneNode, after: SceneNode): TextBindableField[] {
+  const moved = TEXT_BINDABLE_FIELDS.filter(
+    (field) => !FACE_FIELDS.includes(field) && !isEqual(before[field], after[field])
+  )
+  const face = before.fontStyle !== after.fontStyle || before.fontWeight !== after.fontWeight
+  return face ? [...moved, ...FACE_FIELDS] : moved
+}
+
 export class FigmaTextStyle extends FigmaBaseStyle {
   readonly type = 'TEXT'
   declare fontName: TextStyle['fontName']
@@ -236,6 +303,43 @@ export class FigmaTextStyle extends FigmaBaseStyle {
   declare paragraphIndent: TextStyle['paragraphIndent']
   declare listSpacing: TextStyle['listSpacing']
   declare hangingList: TextStyle['hangingList']
+
+  /** The variables the style's fields use, one per field, as Figma lists a text style's. */
+  override get boundVariables(): Readonly<Record<string, FigmaVariableAlias>> {
+    const node = styleNode(this, 'get_boundVariables')
+    const bound: Record<string, FigmaVariableAlias> = {}
+    for (const field of TEXT_BINDABLE_FIELDS) {
+      const id = node.boundVariables[field]
+      if (id) bound[field] = variableAlias(id)
+    }
+    return Object.freeze(bound)
+  }
+
+  /**
+   * Binds a field to a variable, or unbinds it for `null`, as Figma's text styles do: the style
+   * takes the variable's value in the default mode and keeps it when unbound, a face binds by
+   * style or by weight, and what uses the style follows it in its own mode.
+   */
+  setBoundVariable(field: TextBindableField, variable: { readonly id: string } | null): void {
+    const name = textStyleField(field)
+    const node = styleNode(this, 'setBoundVariable')
+    const graph = hostOf(this).graph
+    if (variable === null) {
+      graph.unbindVariable(node.id, name)
+    } else {
+      const bound = textStyleVariable(graph, name, variable)
+      if (FACE_FIELDS.includes(name))
+        for (const face of FACE_FIELDS) graph.unbindVariable(node.id, face)
+      graph.bindVariable(node.id, name, bound.id)
+      const value = BOUND_LENGTHS.has(name)
+        ? graph.resolveNumberVariableForNode(node.id, bound.id)
+        : undefined
+      if (value !== undefined && Number.isFinite(value))
+        graph.updateNode(node.id, { [name]: boundNumberValue(name, value) })
+    }
+    restyle(this)
+    reconcileVariableBindings(graph, { subtrees: [node.id] })
+  }
 }
 
 // Each field is read from, and written to, the text that keeps the style, which checks it as a
@@ -247,7 +351,12 @@ for (const property of TEXT_STYLE_PROPERTIES satisfies readonly TextStylePropert
       return styleLayer(this, `get_${property}`)[property]
     },
     set(this: FigmaTextStyle, value: never) {
+      const before = { ...styleNode(this, `set_${property}`) }
       styleLayer(this, `set_${property}`)[property] = value
+      // A value set on the style replaces the variable that gave it, as in Figma.
+      const after = styleNode(this, `set_${property}`)
+      for (const field of movedFields(before, after))
+        hostOf(this).graph.unbindVariable(after.id, field)
       restyle(this)
     }
   })
