@@ -222,6 +222,8 @@ openpencil eval design.fig -w -c 'openpencil.setStatus(figma.currentPage.findOne
 
 `openpencil.getStatus(node)` reads one. Over MCP the same is `list_statuses` and `set_status`.
 
+A deck (`.deck`) is slides in sections. Over MCP, `get_deck` outlines it, `create_slides` and `move_slides` build its order, `set_slides` sets notes, skipping, and transitions, and `set_animations` makes layers steps of a slide's build; a slide's ID is the parent for what you draw on it. A duration or easing takes a value or a variable by name, as `{ "duration": { "variable": "Motion/Slow" } }`.
+
 ### Diff
 
 Compare nodes and documents, and apply patches:

@@ -4,7 +4,7 @@ import {
   createSlideGrid,
   createSlideRow,
   slideGrid,
-  slideNumbers,
+  renumberSlides,
   slideSettings,
   type SlidePlacement
 } from '@open-pencil/scene-graph/slides'
@@ -63,10 +63,7 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
   function renumber(gridId: string | undefined = grid()?.id): void {
     const pageId = gridId ? ctx.graph.getNode(gridId)?.parentId : undefined
     if (!gridId || !pageId) return
-    for (const [id, number] of slideNumbers(ctx.graph, pageId)) {
-      const name = number === null ? '-' : String(number)
-      if (ctx.graph.getNode(id)?.name !== name) ctx.graph.updateNode(id, { name })
-    }
+    renumberSlides(ctx.graph, pageId)
     ctx.runLayoutForNode(gridId)
     ctx.requestRender()
   }

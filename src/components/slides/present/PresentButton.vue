@@ -5,7 +5,6 @@ import {
   DropdownMenuPortal,
   DropdownMenuTrigger
 } from 'reka-ui'
-
 import { computed } from 'vue'
 
 import { resolveEditorProfile } from '@open-pencil/core'

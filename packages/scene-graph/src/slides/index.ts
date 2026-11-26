@@ -73,6 +73,14 @@ export function slideNumbers(graph: SceneGraph, pageId: string): Map<string, num
   )
 }
 
+/** Names a page's slides by their numbers, and a skipped one `-`, as Figma does. */
+export function renumberSlides(graph: SceneGraph, pageId: string): void {
+  for (const [id, number] of slideNumbers(graph, pageId)) {
+    const name = number === null ? '-' : String(number)
+    if (graph.getNode(id)?.name !== name) graph.updateNode(id, { name })
+  }
+}
+
 /** Adds the grid a deck's slides sit in to a page. */
 export function createSlideGrid(graph: SceneGraph, pageId: string): SceneNode {
   return graph.createNode('SLIDE_GRID', pageId, {

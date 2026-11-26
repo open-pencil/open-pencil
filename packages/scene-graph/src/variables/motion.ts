@@ -1,8 +1,10 @@
 import { compact } from 'es-toolkit/array'
 
+import { parseCSSEasing } from '../css/motion'
 import type { SceneGraph } from '../graph'
-import type { Easing, Variable } from '../types'
-import { isEasing } from './easing'
+import { EASING_CURVES, type Easing, type EasingCurve, type Variable } from '../types'
+import { easingPreset, isEasing } from './easing'
+import type { MotionSpec } from './schema'
 
 /**
  * A duration in seconds and an easing, each its own value or, while the variable exists, a TIMING
@@ -77,4 +79,66 @@ export function mapMotionVariables<T extends Motion>(
   if (duration !== undefined) mapped.durationVariableId = duration
   if (easing !== undefined) mapped.easingVariableId = easing
   return mapped
+}
+
+/** A live variable of `type`, by its ID or its name; a spec names one either way. */
+function namedVariable(graph: SceneGraph, name: string, type: Variable['type']): Variable {
+  const variable =
+    graph.variables.get(name) ?? graph.getLiveVariables().find((item) => item.name === name)
+  if (!variable || variable.deleted) throw new Error(`No variable named "${name}"`)
+  if (variable.type !== type)
+    throw new Error(`"${variable.name}" holds ${variable.type}; this needs a ${type} variable`)
+  return variable
+}
+
+function isEasingCurve(name: string): name is EasingCurve {
+  return (EASING_CURVES as readonly string[]).includes(name)
+}
+
+function easingOfSpec(easing: string): Easing {
+  if (isEasingCurve(easing)) return easingPreset(easing)
+  const parsed = parseCSSEasing(easing)
+  if (!parsed)
+    throw new Error(`"${easing}" is not an easing: use a CSS easing or a name such as OUT_CUBIC`)
+  return parsed
+}
+
+/**
+ * `base` with what a spec sets: values as given, and variables, which keep their value in their
+ * collection's default mode beside them, for when they are gone.
+ */
+export function motionFromSpec<T extends Motion>(graph: SceneGraph, spec: MotionSpec, base: T): T {
+  const motion = structuredClone(base)
+  if (typeof spec.duration === 'number') {
+    motion.duration = spec.duration
+    delete motion.durationVariableId
+  } else if (spec.duration) {
+    const variable = namedVariable(graph, spec.duration.variable, 'TIMING')
+    const value = graph.resolveVariable(variable.id)
+    motion.durationVariableId = variable.id
+    if (typeof value === 'number') motion.duration = value
+  }
+  if (typeof spec.easing === 'string') {
+    motion.easing = easingOfSpec(spec.easing)
+    delete motion.easingVariableId
+  } else if (spec.easing && 'variable' in spec.easing) {
+    const variable = namedVariable(graph, spec.easing.variable, 'EASING')
+    const value = graph.resolveVariable(variable.id)
+    motion.easingVariableId = variable.id
+    if (isEasing(value)) motion.easing = value
+  } else if (spec.easing) {
+    motion.easing = structuredClone(spec.easing)
+    delete motion.easingVariableId
+  }
+  return motion
+}
+
+/** A motion as a spec reads it: variables by name, while they exist, else values. */
+export function motionToSpec(graph: SceneGraph, motion: Motion): Required<MotionSpec> {
+  const timing = liveVariable(graph, motion.durationVariableId, 'TIMING')
+  const easing = liveVariable(graph, motion.easingVariableId, 'EASING')
+  return {
+    duration: timing ? { variable: timing.name } : motion.duration,
+    easing: easing ? { variable: easing.name } : structuredClone(motion.easing)
+  }
 }
