@@ -162,6 +162,75 @@ test('a text whose style binds only its spacing drops the saved layout, which ca
   expect(label.derivedTextGlyphs).toBeNull()
 })
 
+function typeScale() {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const types = graph.createCollection('Type scale')
+  const roomy = graph.createMode(types.id, 'Roomy') ?? ''
+  const bodySize = graph.createVariable('Body size', 'FLOAT', types.id, 14)
+  bodySize.valuesByMode[roomy] = 20
+  const leading = graph.createVariable('Body leading', 'FLOAT', types.id, 18)
+  leading.valuesByMode[roomy] = 26
+  graph.createNode('TEXT', page, {
+    sharedStyleType: 'TEXT',
+    fontSize: 14,
+    lineHeight: { value: 18, unit: 'PIXELS' },
+    boundVariables: { fontSize: bodySize.id, lineHeight: leading.id },
+    source: { ...createDefaultSourceMetadata(), id: 'style:body' }
+  })
+  return { graph, page, modes: { [types.id]: roomy } }
+}
+
+function savedGlyphs(fontSize: number) {
+  return {
+    derivedLayout: { width: 12, height: 26 },
+    derivedTextGlyphs: [{ commandsBlob: new Uint8Array(), x: 0, y: 20, fontSize }]
+  }
+}
+
+test('a text keeps the layout Figma saved in its mode when its style binds size and leading', () => {
+  const { graph, page, modes } = typeScale()
+  const label = graph.createNode('TEXT', page, {
+    text: 'A',
+    fontSize: 14,
+    lineHeight: { value: 18, unit: 'PIXELS' },
+    textStyleId: 'style:body',
+    variableModes: modes,
+    ...savedGlyphs(20)
+  })
+
+  applyDocumentTextStyleBindings(graph, [label])
+
+  expect(label).toMatchObject({ fontSize: 20, lineHeight: { value: 26, unit: 'PIXELS' } })
+  expect(label.derivedLayout).toEqual({ width: 12, height: 26 })
+})
+
+test('characters on a style keep the layout Figma saved in their mode', () => {
+  const { graph, page, modes } = typeScale()
+  const label = graph.createNode('TEXT', page, {
+    text: 'AB',
+    fontSize: 10,
+    styleRuns: [
+      {
+        start: 0,
+        length: 1,
+        style: {
+          textStyleId: 'style:body',
+          fontSize: 14,
+          lineHeight: { value: 18, unit: 'PIXELS' }
+        }
+      }
+    ],
+    variableModes: modes,
+    ...savedGlyphs(20)
+  })
+
+  applyDocumentTextStyleBindings(graph, [label])
+
+  expect(label.styleRuns[0].style.fontSize).toBe(20)
+  expect(label.derivedLayout).toEqual({ width: 12, height: 26 })
+})
+
 test('a text drops a saved layout when its size matches but its style bound leading changes', () => {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id

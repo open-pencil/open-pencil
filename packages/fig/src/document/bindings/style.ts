@@ -3,34 +3,24 @@ import { isEmptyObject } from 'es-toolkit/predicate'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   createStyleBindingLookup,
-  inheritedTextStyleBindings,
-  resolvedTextStyleBindings,
-  type TextStyleLookup
+  resolvedTextStyleBindings
 } from '@open-pencil/scene-graph/variables'
 
-function changesOnlyFontSize(updates: Partial<SceneNode>): boolean {
-  return Object.keys(updates).every((field) => field === 'fontSize')
+type SizedText = Pick<SceneNode, 'fontSize' | 'styleRuns'>
+
+function firstCharacterSize(text: SizedText): number {
+  const firstRun = text.styleRuns.find((run) => run.start === 0)
+  return firstRun?.style.fontSize ?? text.fontSize
 }
 
-function shapedInResolvedMode(
-  node: SceneNode,
-  updates: Partial<SceneNode>,
-  styles: TextStyleLookup
-): boolean {
-  const sizeIsBound = 'fontSize' in inheritedTextStyleBindings(node, styles)
-  return (
-    sizeIsBound &&
-    changesOnlyFontSize(updates) &&
-    node.derivedTextGlyphs?.[0]?.fontSize === (updates.fontSize ?? node.fontSize)
-  )
+function shapedInResolvedMode(node: SceneNode, updates: Partial<SceneNode>): boolean {
+  const resolvedSize = firstCharacterSize({ ...node, ...updates })
+  const sizeMoved = resolvedSize !== firstCharacterSize(node)
+  return sizeMoved && node.derivedTextGlyphs?.[0]?.fontSize === resolvedSize
 }
 
-function keepingSavedTextLayout(
-  node: SceneNode,
-  updates: Partial<SceneNode>,
-  styles: TextStyleLookup
-): Partial<SceneNode> {
-  if (!shapedInResolvedMode(node, updates, styles)) {
+function keepingSavedTextLayout(node: SceneNode, updates: Partial<SceneNode>): Partial<SceneNode> {
+  if (!shapedInResolvedMode(node, updates)) {
     return updates
   }
   return {
@@ -48,7 +38,7 @@ export function applyDocumentTextStyleBindings(
   for (const node of materialized) {
     const updates = resolvedTextStyleBindings(graph, node, styles)
     if (!isEmptyObject(updates)) {
-      graph.updateNode(node.id, keepingSavedTextLayout(node, updates, styles))
+      graph.updateNode(node.id, keepingSavedTextLayout(node, updates))
     }
   }
 }
