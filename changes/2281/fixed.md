@@ -1,0 +1,1 @@
+- `.pen` line and path layers that fill their card, such as sparklines in a metric card, draw at the card's width instead of collapsing to nothing.
