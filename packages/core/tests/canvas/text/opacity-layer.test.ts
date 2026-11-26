@@ -16,6 +16,7 @@ import { repoPath } from '@open-pencil/test-support/paths'
 import { buildParagraph } from '#core/canvas/text'
 import { savedTextInk } from '#core/canvas/text/ink-bounds'
 import { laidOutGlyphs } from '#core/canvas/text/placed'
+import { renderPagesToPDF } from '#core/io/formats/pdf/export'
 import { exportBounds, renderNodesToImage } from '#core/io/formats/raster/render'
 import { shownText } from '#core/text/case'
 import { fontManager } from '#core/text/font/manager'
@@ -161,7 +162,7 @@ function dropShadow(drop: number): Effect {
   }
 }
 
-function exportedSize(editing: boolean) {
+function exportedSize(format: 'PNG' | 'PDF', editing: boolean) {
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
   const node = graph.createNode('TEXT', page.id, {
@@ -175,6 +176,14 @@ function exportedSize(editing: boolean) {
   })
   loaded.editingTextId = editing ? node.id : null
   try {
+    if (format === 'PDF') {
+      const pdf = withTextInkMeasurer(
+        (measured) => loaded.measureTextInk(measured),
+        () => renderPagesToPDF(loaded, graph, [{ pageId: page.id, nodeIds: [node.id] }])
+      )
+      const [{ width, height }] = expectDefined(pdf, 'pdf').pages
+      return { width, height }
+    }
     const png = withTextInkMeasurer(
       (measured) => loaded.measureTextInk(measured),
       () => renderNodesToImage(ck, loaded, graph, page.id, [node.id], { scale: 1, format: 'PNG' })
@@ -351,11 +360,14 @@ describe('text ink', () => {
     expect(inkedExtent(target, props, 0.5)).toEqual(opaque)
   })
 
-  test('exports a text being edited as whole as one that is not', () => {
-    const unedited = exportedSize(false)
-    expect(unedited.height).toBeGreaterThan(BOX.height)
-    expect(exportedSize(true)).toEqual(unedited)
-  })
+  test.each(['PNG', 'PDF'] as const)(
+    'exports a text being edited to %s as whole as one that is not',
+    (format) => {
+      const unedited = exportedSize(format, false)
+      expect(unedited.height).toBeGreaterThan(BOX.height)
+      expect(exportedSize(format, true)).toEqual(unedited)
+    }
+  )
 
   test('exports descenders drawn live in a substitute face', () => {
     const drawn = inkedExtent(loaded, drawnLiveWithoutItsFont, 1)
@@ -373,6 +385,6 @@ describe('text ink', () => {
       'export bounds'
     )
     expect(drawn.maxY).toBeGreaterThan(BOX.y + BOX.height)
-    expect(bounds.maxY).toBeGreaterThan(drawn.maxY)
+    expect(bounds.maxY).toBeGreaterThanOrEqual(drawn.maxY)
   })
 })

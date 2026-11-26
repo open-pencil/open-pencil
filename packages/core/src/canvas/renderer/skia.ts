@@ -658,6 +658,11 @@ export class SkiaRenderer {
     RenderPipeline.renderSceneToCanvas(this, canvas, graph, pageId)
   }
 
+  /** Runs `fn`, an export's bounds and drawing, with the text being edited taken as it is saved. */
+  withoutTextEdit<T>(fn: () => T): T {
+    return RenderPipeline.withoutTextEdit(this, fn)
+  }
+
   renderFromEditorState(
     state: EditorState,
     graph: SceneGraph,
@@ -707,9 +712,7 @@ export class SkiaRenderer {
       return savedTextInk(this, node)
     }
     const laidOut = RenderText.measureTextInkAsDrawn(this, node)
-    if (laidOut === undefined || !TextRender.drawsSomeSavedGlyphsUnedited(this, node)) {
-      return laidOut
-    }
+    if (laidOut === undefined || !TextRender.drawsSomeSavedGlyphs(this, node)) return laidOut
     return unionVisualBounds(laidOut, savedTextInk(this, node))
   }
 

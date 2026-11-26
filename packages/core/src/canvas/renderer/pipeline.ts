@@ -16,6 +16,27 @@ import { drawChromePass, drawLabelPass, drawOverlayPass } from './overlay-pass'
 import { hasTransientPreviews, renderPageWithPreviews } from './transient-previews'
 import { computeContentBounds } from './visual-bounds'
 
+/**
+ * Runs `fn` as an export or thumbnail sees the document: saved glyphs included, whatever is being
+ * edited. Its bounds and its drawing both take the text as it is saved, so neither crops the other;
+ * the edited text's picture is of its live layout, so it is dropped on the way in and out.
+ */
+export function withoutTextEdit<T>(
+  r: Pick<SkiaRenderer, 'editingTextId' | 'invalidateNodePicture'>,
+  fn: () => T
+): T {
+  const editing = r.editingTextId
+  if (!editing) return fn()
+  r.editingTextId = null
+  r.invalidateNodePicture(editing)
+  try {
+    return fn()
+  } finally {
+    r.editingTextId = editing
+    r.invalidateNodePicture(editing)
+  }
+}
+
 export function renderSceneToCanvas(
   r: Pick<
     SkiaRenderer,
@@ -35,25 +56,20 @@ export function renderSceneToCanvas(
   r.nodePaths.releaseUncached()
   const prevViewport = r.worldViewport
   const previewMode = r.viewportImageRendering
-  const editing = r.editingTextId
   const colorSpace = r.documentColorSpace
   r.useDocumentColorSpace(graph.documentColorSpace)
   r.viewportImageRendering = false
-  // An export or thumbnail shows the document, saved glyphs included, whatever is being edited;
-  // the edited text's picture is of its live layout, so it is dropped on the way in and out.
-  r.editingTextId = null
-  if (editing) r.invalidateNodePicture(editing)
   r.worldViewport = { x: -1e9, y: -1e9, w: 2e9, h: 2e9 }
   try {
-    const pageNode = graph.getNode(pageId)
-    if (pageNode) {
-      for (const childId of pageNode.childIds) r.renderNode(canvas, graph, childId, {})
-    }
+    withoutTextEdit(r, () => {
+      const pageNode = graph.getNode(pageId)
+      if (pageNode) {
+        for (const childId of pageNode.childIds) r.renderNode(canvas, graph, childId, {})
+      }
+    })
   } finally {
     r.worldViewport = prevViewport
     r.viewportImageRendering = previewMode
-    r.editingTextId = editing
-    if (editing) r.invalidateNodePicture(editing)
     r.useDocumentColorSpace(colorSpace)
   }
 }
