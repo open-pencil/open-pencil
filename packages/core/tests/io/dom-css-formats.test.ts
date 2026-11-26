@@ -127,6 +127,10 @@ describe('Tailwind JSX export format', () => {
 
     expect(String(result.data)).not.toMatch(/#0000ff/i)
     expect(String(result.data).match(/<path /g)).toHaveLength(1)
-    expect(String(result.data).match(/ d="([^"]*)"/)?.[1].match(/M/g)).toHaveLength(2)
+    expect(
+      String(result.data)
+        .match(/ d="([^"]*)"/)?.[1]
+        .match(/M/g)
+    ).toHaveLength(2)
   })
 })
