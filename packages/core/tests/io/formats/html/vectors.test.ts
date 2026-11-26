@@ -44,6 +44,7 @@ describe('vector layers in HTML export', () => {
     const svg = expectDefined(/<svg[\s\S]*<\/svg>/.exec(html))[0]
     expect(svg).not.toMatch(/#0000ff/i)
     expect(svg.match(/<path /g)).toHaveLength(1)
+    expect(svg.match(/ d="([^"]*)"/)?.[1].match(/M/g)).toHaveLength(2)
   })
 
   test('draw their paths as inline SVG with def ids of their own', async () => {

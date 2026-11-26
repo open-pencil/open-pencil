@@ -179,6 +179,7 @@ describe('saving a draw.io file', () => {
     const svg = decode(image.slice('data:image/svg+xml,'.length))
     expect(svg).not.toContain('#0000FF')
     expect(svg.match(/<path /g)).toHaveLength(1)
+    expect(svg.match(/ d="([^"]*)"/)?.[1].match(/M/g)).toHaveLength(2)
   })
 
   test('a layer drawn as an SVG picture reports its background blur and what SVG cannot draw', async () => {
