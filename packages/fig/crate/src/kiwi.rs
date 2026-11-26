@@ -1,5 +1,9 @@
-//! Kiwi's binary schema and a cursor over a message encoded with it. Nothing is decoded into
-//! values here: callers read the fields they need and the cursor skips the rest.
+//! Kiwi's binary schema and a cursor over a message encoded with it. Callers read the fields
+//! they need and the cursor skips the rest; [`Reader::value`] decodes one field whole.
+
+mod value;
+
+pub use value::Value;
 
 /// A message, or a schema, ended early or holds a value its schema does not allow.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -256,7 +260,7 @@ impl<'a> Reader<'a> {
     }
 
     #[inline]
-    fn varuint64(&mut self) -> Result<u64> {
+    pub fn varuint64(&mut self) -> Result<u64> {
         let mut shift = 0;
         let mut value = 0u64;
         loop {

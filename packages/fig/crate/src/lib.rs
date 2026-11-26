@@ -1,6 +1,6 @@
 //! Reads Figma `.fig` files: the canvas inside the archive, its Kiwi message indexed without
-//! decoding it, and pages with their instances expanded into occurrences that refer to the
-//! records they place.
+//! decoding it, pages with their instances expanded into occurrences that refer to the records
+//! they place, and the field values each occurrence ends up with.
 //!
 //! This follows the TypeScript reader in OpenPencil's `packages/fig/src/document/` and
 //! `packages/fig/src/instance-overrides/`, which stays the reference: `packages/fig/tests/crate/`
@@ -11,7 +11,11 @@
 //! let document = open_pencil_fig::Document::open(&file)?;
 //! for page in 0..document.index.pages.len() {
 //!     let expansion = document.expand_page(page).expect("the page exists");
-//!     println!("page {page}: {} layers", expansion.occurrences.len());
+//!     let values = document.properties(&expansion)?;
+//!     for layer in 0..expansion.occurrences.len() as u32 {
+//!         let fields = values.of(layer)?;
+//!         println!("{:?}", fields.get("name"));
+//!     }
 //! }
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
@@ -20,13 +24,15 @@ pub mod container;
 pub mod expand;
 pub mod index;
 pub mod kiwi;
+pub mod properties;
 #[cfg(all(target_arch = "wasm32", feature = "exports"))]
 mod wasm;
 
 pub use container::{Canvas, Kind};
 pub use expand::Expansion;
 pub use index::Index;
-pub use kiwi::Schema;
+pub use kiwi::{Schema, Value};
+pub use properties::Properties;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
@@ -98,5 +104,10 @@ impl Document {
     /// Expands the page at `page` in saved page order.
     pub fn expand_page(&self, page: usize) -> Option<Expansion<'_>> {
         Some(Expansion::page(&self.index, *self.index.pages.get(page)?))
+    }
+
+    /// The field values of an expanded page's occurrences.
+    pub fn properties<'a>(&'a self, expansion: &'a Expansion<'a>) -> Result<Properties<'a>> {
+        Properties::new(expansion, &self.index, &self.schema, &self.message)
     }
 }

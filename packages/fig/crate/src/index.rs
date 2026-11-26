@@ -70,6 +70,8 @@ impl Run {
 
 /// A frame the document keeps as slot content, placed only through the instance assigning it.
 pub const SLOT_CONTENT: u8 = 1;
+/// A variant set, whose name an instance of one of its variants takes by default.
+pub const STATE_GROUP: u8 = 2;
 
 /// One live record.
 pub struct Record {
@@ -86,6 +88,8 @@ pub struct Record {
     /// Its `NodeType` value.
     pub ty: u32,
     pub flags: u8,
+    /// The uniform scale an instance is placed at (`symbolData.uniformScaleFactor`), else 1.
+    pub scale: f32,
     pub overrides: Run,
     pub assignments: Run,
     pub definitions: Run,
@@ -121,6 +125,8 @@ pub struct Value {
     pub slot: u64,
     /// Whether the value carries text.
     pub has_text: bool,
+    /// The characters of the text it carries, where it has them.
+    pub text: Option<Span>,
 }
 
 impl Value {
@@ -129,6 +135,7 @@ impl Value {
         component: NO_GUID,
         slot: NO_GUID,
         has_text: false,
+        text: None,
     };
 
     fn is_set(&self) -> bool {
@@ -152,6 +159,7 @@ impl Value {
         } else if self.has_text {
             Value {
                 has_text: true,
+                text: self.text,
                 ..Value::EMPTY
             }
         } else {
@@ -215,9 +223,13 @@ pub struct Ids {
     nc_guid_path: usize,
     nc_swap: usize,
     nc_slot_content: usize,
+    nc_state_group: usize,
     symbol_data: usize,
     sd_symbol: usize,
     sd_overrides: usize,
+    sd_scale: usize,
+    text_data: usize,
+    td_characters: usize,
     guid_path: usize,
     gp_guids: usize,
     assignment: usize,
@@ -263,6 +275,8 @@ pub struct Ids {
     variable_set: u32,
     pub field_symbol: u32,
     pub field_slot: u32,
+    pub field_visible: u32,
+    pub field_text: u32,
 }
 
 /// Unwraps what a schema must have, naming what it lacks.
@@ -282,6 +296,7 @@ impl Ids {
         let message = def("Message")?;
         let node_change = def("NodeChange")?;
         let symbol_data = def("SymbolData")?;
+        let text_data = def("TextData")?;
         let guid_path = def("GUIDPath")?;
         let assignment = def("ComponentPropAssignment")?;
         let prop_value = def("ComponentPropValue")?;
@@ -312,9 +327,13 @@ impl Ids {
             nc_guid_path: field(node_change, "guidPath")?,
             nc_swap: field(node_change, "overriddenSymbolID")?,
             nc_slot_content: field(node_change, "isSlotContent")?,
+            nc_state_group: field(node_change, "isStateGroup")?,
             symbol_data,
             sd_symbol: field(symbol_data, "symbolID")?,
             sd_overrides: field(symbol_data, "symbolOverrides")?,
+            sd_scale: field(symbol_data, "uniformScaleFactor")?,
+            text_data,
+            td_characters: field(text_data, "characters")?,
             guid_path,
             gp_guids: field(guid_path, "guids")?,
             assignment,
@@ -360,6 +379,8 @@ impl Ids {
             variable_set: member(node_type, "VARIABLE_SET")?,
             field_symbol: member(variable_field, "OVERRIDDEN_SYMBOL_ID")?,
             field_slot: member(variable_field, "SLOT_CONTENT_ID")?,
+            field_visible: member(variable_field, "VISIBLE")?,
+            field_text: member(variable_field, "TEXT_DATA")?,
         })
     }
 }
@@ -433,6 +454,8 @@ struct Parsed {
     ty: u32,
     removed: bool,
     slot_content: bool,
+    state_group: bool,
+    scale: f32,
     overrides: Run,
     assignments: Run,
     definitions: Run,
@@ -478,6 +501,20 @@ impl<'a> Walk<'a> {
         Ok(guid)
     }
 
+    /// The characters of a `TextData`, as the span of their bytes.
+    fn characters(&self, reader: &mut Reader) -> Result<Option<Span>> {
+        let ids = self.ids;
+        let mut characters = None;
+        reader.message(self.schema, ids.text_data, |reader, field| {
+            if field != ids.td_characters {
+                return Ok(false);
+            }
+            characters = Some(reader.span()?);
+            Ok(true)
+        })?;
+        Ok(characters)
+    }
+
     fn prop_value(&self, reader: &mut Reader) -> Result<Value> {
         let ids = self.ids;
         let mut value = Value::EMPTY;
@@ -488,7 +525,7 @@ impl<'a> Walk<'a> {
                 value.component = reader.guid()?;
             } else if field == ids.cpv_text {
                 value.has_text = true;
-                return Ok(false);
+                value.text = self.characters(reader)?;
             } else {
                 return Ok(false);
             }
@@ -512,9 +549,12 @@ impl<'a> Walk<'a> {
                     found.component = self.guid_of(reader, ids.symbol_id, ids.symbol_id_guid)?;
                 } else if field == ids.vav_slot {
                     found.slot = self.guid_of(reader, ids.slot_id, ids.slot_id_guid)?;
-                } else if field == ids.vav_text || field == ids.vav_text_data {
+                } else if field == ids.vav_text {
                     found.has_text = true;
-                    return Ok(false);
+                    found.text = Some(reader.span()?);
+                } else if field == ids.vav_text_data {
+                    found.has_text = true;
+                    found.text = self.characters(reader)?;
                 } else {
                     return Ok(false);
                 }
@@ -683,6 +723,8 @@ impl<'a> Walk<'a> {
             ty: NONE,
             removed: false,
             slot_content: false,
+            state_group: false,
+            scale: 1.0,
             overrides: Run::default(),
             assignments: Run::default(),
             definitions: Run::default(),
@@ -704,10 +746,14 @@ impl<'a> Walk<'a> {
                 out.override_key = reader.guid()?;
             } else if field == ids.nc_slot_content {
                 out.slot_content = reader.bool()?;
+            } else if field == ids.nc_state_group {
+                out.state_group = reader.bool()?;
             } else if field == ids.nc_symbol_data {
                 reader.message(self.schema, ids.symbol_data, |reader, field| {
                     if field == ids.sd_symbol {
                         out.component = reader.guid()?;
+                    } else if field == ids.sd_scale {
+                        out.scale = reader.float()?;
                     } else if field == ids.sd_overrides {
                         let mut entries = Vec::new();
                         reader.array(|reader| {
@@ -817,7 +863,9 @@ impl Index {
                             length: (reader.position - start) as u32,
                         },
                         ty: parsed.ty,
-                        flags: if parsed.slot_content { SLOT_CONTENT } else { 0 },
+                        flags: if parsed.slot_content { SLOT_CONTENT } else { 0 }
+                            | if parsed.state_group { STATE_GROUP } else { 0 },
+                        scale: parsed.scale,
                         overrides: parsed.overrides,
                         assignments: parsed.assignments,
                         definitions: parsed.definitions,
