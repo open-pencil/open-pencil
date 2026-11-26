@@ -112,11 +112,19 @@ export async function communityPage(
 /** What the page is, as schema.org nodes for search engines. */
 function structuredData({ meta, origin, documents, document }: CommunityPage) {
   const page = { name: meta.title, url: meta.url, description: meta.description }
+  // What the page is about: the file it shows, or the gallery's list.
+  const mainEntity = `${meta.url}#main-entity`
   if (document) {
     return [
-      defineWebPage({ ...page, dateModified: document.updatedAt, primaryImageOfPage: meta.image }),
+      defineWebPage({
+        ...page,
+        dateModified: document.updatedAt,
+        primaryImageOfPage: meta.image,
+        mainEntity: { '@id': mainEntity }
+      }),
       {
         '@type': 'CreativeWork',
+        '@id': mainEntity,
         name: document.name,
         description: meta.description,
         url: meta.url,
@@ -128,8 +136,9 @@ function structuredData({ meta, origin, documents, document }: CommunityPage) {
     ]
   }
   return [
-    defineWebPage({ ...page, '@type': 'CollectionPage' }),
+    defineWebPage({ ...page, '@type': 'CollectionPage', mainEntity: { '@id': mainEntity } }),
     defineItemList({
+      '@id': mainEntity,
       itemListElement: documents.map((entry) =>
         defineListItem({
           name: entry.name,

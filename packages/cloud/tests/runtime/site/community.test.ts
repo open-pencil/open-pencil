@@ -166,8 +166,14 @@ describe('community pages', () => {
     const url = `https://cloud.example/community/${DOCUMENT_ID}`
     expect(graph).toMatchObject({
       '@graph': expect.arrayContaining([
-        expect.objectContaining({ '@type': 'WebPage', url, dateModified: expect.any(String) }),
         expect.objectContaining({
+          '@type': 'WebPage',
+          url,
+          dateModified: expect.any(String),
+          mainEntity: { '@id': `${url}#main-entity` }
+        }),
+        expect.objectContaining({
+          '@id': `${url}#main-entity`,
           '@type': 'CreativeWork',
           name: 'Tour <of> "OpenPencil"',
           description: 'Notes </script><b>bold</b>',
@@ -215,9 +221,11 @@ describe('community pages', () => {
       '@graph': expect.arrayContaining([
         expect.objectContaining({
           '@type': ['WebPage', 'CollectionPage'],
-          url: 'https://cloud.example/community'
+          url: 'https://cloud.example/community',
+          mainEntity: { '@id': 'https://cloud.example/community#main-entity' }
         }),
         expect.objectContaining({
+          '@id': 'https://cloud.example/community#main-entity',
           '@type': 'ItemList',
           itemListElement: [
             expect.objectContaining({
