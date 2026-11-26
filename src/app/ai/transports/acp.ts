@@ -591,10 +591,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
 
     sessionRef = session
-    this.noteChoices(session, openedChoices)
-    // The person kept the agent asking, or it opened in the mode that asks.
+    // The person kept the agent asking, or it opened in the mode that asks; a change the agent
+    // reported while the tools were checked comes after, so the chat ends on the latest.
     const kept = choicesKept(this.choices(), opened.choices)
     if (!isEmptyObject(kept)) this.onAgentChoices?.(kept)
+    this.noteChoices(session, openedChoices)
     return session
   }
 }

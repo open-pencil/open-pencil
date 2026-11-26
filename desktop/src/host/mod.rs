@@ -7,6 +7,7 @@
 
 mod acp;
 mod harness;
+mod input;
 mod lines;
 mod mcp;
 pub mod permission;
@@ -15,18 +16,19 @@ pub mod program;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::time::Duration;
 
 use serde::Serialize;
 use serde_json::Value;
 use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager, Runtime};
-use tauri_plugin_shell::process::{CommandChild, CommandEvent};
+use tauri_plugin_shell::process::CommandEvent;
 use tauri_plugin_shell::ShellExt;
 
 use crate::capabilities::DesktopCapabilities;
 use acp::{AcpGate, FromAgent, FromEditor};
+use input::Input;
 use lines::Lines;
 use permission::{Permissions, Question, Reply};
 use program::{LaunchContext, ProgramRequest, Protocol};
@@ -74,10 +76,6 @@ enum Gate {
     Mcp,
     Plain,
 }
-
-/// A program's standard input, written apart from the process table so a program that stops
-/// reading blocks only its own writes, never a Stop or another program.
-type Input = Arc<Mutex<Option<CommandChild>>>;
 
 struct Running {
     child: Input,
@@ -138,11 +136,7 @@ impl HostProcesses {
 
 /// Ends a program. One blocked on a write cannot give up its handle, so it ends by its pid.
 fn stop(running: &Running) {
-    let taken = match running.child.try_lock() {
-        Ok(mut child) => child.take(),
-        Err(_) => None,
-    };
-    match taken {
+    match running.child.take() {
         Some(child) => {
             let _ = child.kill();
         }
@@ -159,29 +153,6 @@ fn kill_pid(pid: u32) {
     let _ = std::process::Command::new("taskkill")
         .args(["/PID", &pid.to_string(), "/T", "/F"])
         .status();
-}
-
-/// Writes whole lines to a program on a thread of their own, in order.
-fn write_lines(child: &Input, lines: Vec<String>) {
-    if lines.is_empty() {
-        return;
-    }
-    let child = Arc::clone(child);
-    tauri::async_runtime::spawn_blocking(move || {
-        let mut child = child
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        let Some(child) = child.as_mut() else {
-            return;
-        };
-        for line in lines {
-            let mut bytes = line.into_bytes();
-            bytes.push(b'\n');
-            if child.write(&bytes).is_err() {
-                return;
-            }
-        }
-    });
 }
 
 /// The editor's origin, which the MCP server lets call it. A `tauri://localhost` page has an
@@ -338,7 +309,7 @@ pub async fn host_start<R: Runtime>(
     processes.lock().insert(
         id,
         Running {
-            child: Arc::new(Mutex::new(Some(child))),
+            child: Input::new(child),
             pid,
             gate,
             agent,
@@ -400,69 +371,34 @@ pub async fn host_write<R: Runtime>(
     data: String,
 ) -> Result<(), String> {
     from_editor(&webview, &capabilities)?;
-    let checked = check_editor_input(&app, id, &data)?;
-    let Checked::Lines {
-        child,
-        out,
-        later,
-        agent,
-    } = checked
-    else {
-        let Checked::Raw(child) = checked else {
-            unreachable!("matched above")
-        };
-        // A login reads what the person pasted as it is.
-        return tauri::async_runtime::spawn_blocking(move || {
-            let mut child = child
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
-            child
-                .as_mut()
-                .ok_or_else(|| "The program has stopped.".to_owned())?
-                .write(data.as_bytes())
-                .map_err(|e| e.to_string())
-        })
-        .await
-        .map_err(|e| e.to_string())?;
-    };
-    write_lines(&child, out);
+    let (written, later, agent) = check_editor_input(&app, id, &data)?;
     for step in later {
         match step {
             Later::Cancel(session) => app.state::<Permissions>().cancel(&app, id, Some(&session)),
             Later::Confirm(change) => confirm_mode(&app, id, agent, change),
         }
     }
-    Ok(())
+    input::written(written).await
 }
 
-/// What the editor's input becomes once checked.
-enum Checked {
-    /// Bytes a plain program reads as they are.
-    Raw(Input),
-    /// Whole lines for the program, and what the app does besides.
-    Lines {
-        child: Input,
-        out: Vec<String>,
-        later: Vec<Later>,
-        agent: &'static str,
-    },
-}
-
-/// Cuts the editor's input into lines and checks each one, under the process table's lock;
-/// nothing here waits on the program.
+/// Cuts the editor's input into lines, checks each one, and queues what passes, under the process
+/// table's lock so two writes reach the program in the order the editor made them; nothing here
+/// waits on the program. A login reads what the person pasted as it is.
 fn check_editor_input<R: Runtime>(
     app: &AppHandle<R>,
     id: u32,
     data: &str,
-) -> Result<Checked, String> {
+) -> Result<(input::Written, Vec<Later>, &'static str), String> {
     let processes = app.state::<HostProcesses>();
     let mut running = processes.lock();
     let process = running.get_mut(&id).ok_or("The program has stopped.")?;
-    let child = Arc::clone(&process.child);
     let mut out = Vec::new();
     let mut later = Vec::new();
     match &mut process.gate {
-        Gate::Plain => return Ok(Checked::Raw(child)),
+        Gate::Plain => {
+            let written = process.child.bytes(data.as_bytes().to_vec());
+            return Ok((written, later, process.agent));
+        }
         // Only the app answers the server's questions on its standard input.
         Gate::Mcp => return Err("The MCP server takes no input from the editor.".to_owned()),
         Gate::Acp(gate) => {
@@ -498,12 +434,7 @@ fn check_editor_input<R: Runtime>(
             }
         }
     }
-    Ok(Checked::Lines {
-        child,
-        out,
-        later,
-        agent: process.agent,
-    })
+    Ok((process.child.lines(out), later, process.agent))
 }
 
 enum Later {
@@ -564,7 +495,6 @@ fn from_program<R: Runtime>(app: &AppHandle<R>, id: u32, bytes: &[u8]) {
             ),
         });
     }
-    let child = Arc::clone(&process.child);
     let mut to_program = Vec::new();
     let mut tools = Vec::new();
     let mut files = Vec::new();
@@ -599,9 +529,9 @@ fn from_program<R: Runtime>(app: &AppHandle<R>, id: u32, bytes: &[u8]) {
     if !shown.is_empty() {
         let _ = process.events.send(HostEvent::Stdout { data: shown });
     }
+    process.child.send(to_program);
     let agent = process.agent;
     drop(running);
-    write_lines(&child, to_program);
     for ask in tools {
         ask_about_tool(app, id, agent, ask);
     }
@@ -634,36 +564,38 @@ fn ask_about_tool<R: Runtime>(
             .ask(app, question, id, ask.session_id.clone());
     // A Stop that came between the agent's request and this question already cancelled the
     // questions it found, so this one is cancelled too.
-    let stopped = {
-        let processes = app.state::<HostProcesses>();
-        let running = processes.lock();
-        match running.get(&id).map(|process| &process.gate) {
-            Some(Gate::Acp(gate)) => gate.turn(&ask.session_id) != ask.turn,
-            _ => true,
-        }
-    };
-    if stopped {
+    if !asked_this_turn(app, id, &ask.session_id, ask.turn) {
         app.state::<Permissions>()
             .settle(app, question_id, Reply::Cancelled);
     }
-    send(
-        app,
-        id,
-        HostEvent::Permission {
-            id: question_id,
-            title: title.clone(),
-            waiting: true,
-        },
-    );
+    // Kept apart from the process, so the editor hears the question ended even when the agent
+    // was stopped while it waited.
+    let Some(events) = app
+        .state::<HostProcesses>()
+        .lock()
+        .get(&id)
+        .map(|process| process.events.clone())
+    else {
+        return;
+    };
+    let _ = events.send(HostEvent::Permission {
+        id: question_id,
+        title: title.clone(),
+        waiting: true,
+    });
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         let reply = wait(&app, question_id, reply).await;
+        let _ = events.send(HostEvent::Permission {
+            id: question_id,
+            title,
+            waiting: false,
+        });
         let processes = app.state::<HostProcesses>();
         let mut running = processes.lock();
         let Some(process) = running.get_mut(&id) else {
             return;
         };
-        let child = Arc::clone(&process.child);
         let Gate::Acp(gate) = &mut process.gate else {
             return;
         };
@@ -673,13 +605,7 @@ fn ask_about_tool<R: Runtime>(
             Reply::Cancelled => None,
         };
         let answer = gate.answer(&ask.id, option);
-        let _ = process.events.send(HostEvent::Permission {
-            id: question_id,
-            title,
-            waiting: false,
-        });
-        drop(running);
-        write_lines(&child, vec![answer]);
+        process.child.send(vec![answer]);
     });
 }
 
@@ -705,13 +631,10 @@ fn ask_about_file<R: Runtime>(app: &AppHandle<R>, id: u32, request: mcp::Consent
                 allowed = false;
             }
         }
-        let child = app
-            .state::<HostProcesses>()
-            .lock()
-            .get(&id)
-            .map(|process| Arc::clone(&process.child));
-        if let Some(child) = child {
-            write_lines(&child, vec![mcp::consent_answer(request.id, allowed)]);
+        if let Some(process) = app.state::<HostProcesses>().lock().get(&id) {
+            process
+                .child
+                .send(vec![mcp::consent_answer(request.id, allowed)]);
         }
     });
 }
@@ -748,28 +671,25 @@ pub fn mcp_tokens<R: Runtime>(
         .map(|run| run.tokens.for_editor()))
 }
 
-/// Puts a mode that never asks to the person; the editor's request goes on only if they allow it.
+/// Puts a mode that never asks to the person; the editor's request goes on only if they allow it,
+/// and only while the turn it was made in still runs.
 fn confirm_mode<R: Runtime>(
     app: &AppHandle<R>,
     id: u32,
     agent: &'static str,
     change: acp::ModeChange,
 ) {
-    let session = serde_json::from_str::<Value>(&change.line)
-        .ok()
-        .and_then(|message| {
-            message
-                .get("params")
-                .and_then(|params| params.get("sessionId"))
-                .and_then(Value::as_str)
-                .map(str::to_owned)
-        })
-        .unwrap_or_default();
     let question = Question::Mode {
         agent: agent.to_owned(),
         mode: change.mode.clone(),
     };
-    let (question_id, reply) = app.state::<Permissions>().ask(app, question, id, session);
+    let (question_id, reply) =
+        app.state::<Permissions>()
+            .ask(app, question, id, change.session_id.clone());
+    if !asked_this_turn(app, id, &change.session_id, change.turn) {
+        app.state::<Permissions>()
+            .settle(app, question_id, Reply::Cancelled);
+    }
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         let reply = wait(&app, question_id, reply).await;
@@ -778,10 +698,12 @@ fn confirm_mode<R: Runtime>(
         let Some(process) = running.get(&id) else {
             return;
         };
-        if reply == Reply::Chose(ALLOW_MODE.to_owned()) {
-            let child = Arc::clone(&process.child);
-            drop(running);
-            write_lines(&child, vec![change.line]);
+        let current = match &process.gate {
+            Gate::Acp(gate) => gate.turn(&change.session_id) == change.turn,
+            _ => false,
+        };
+        if current && reply == Reply::Chose(ALLOW_MODE.to_owned()) {
+            process.child.send(vec![change.line]);
         } else if let Some(request) = &change.id {
             let answer = acp::mode_refused(request);
             let _ = process.events.send(HostEvent::Stdout {
@@ -789,6 +711,16 @@ fn confirm_mode<R: Runtime>(
             });
         }
     });
+}
+
+/// Whether the editor has not stopped `session` since a question of `turn` was put.
+fn asked_this_turn<R: Runtime>(app: &AppHandle<R>, id: u32, session: &str, turn: u64) -> bool {
+    let processes = app.state::<HostProcesses>();
+    let running = processes.lock();
+    match running.get(&id).map(|process| &process.gate) {
+        Some(Gate::Acp(gate)) => gate.turn(session) == turn,
+        _ => false,
+    }
 }
 
 /// The person's reply, or a refusal once the question has waited too long.

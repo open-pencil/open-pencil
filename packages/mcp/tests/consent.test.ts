@@ -50,6 +50,9 @@ function desktop() {
     },
     send(line: string) {
       input.write(`${line}\n`)
+    },
+    close() {
+      input.end()
     }
   }
 }
@@ -158,6 +161,15 @@ describe('stdioPathConsent', () => {
 
     app.answer(question.id, true)
     await expect(pending).resolves.toBeUndefined()
+  })
+
+  test('refuses what waits, and what comes later, once the answers stop', async () => {
+    const app = desktop()
+    const pending = app.consent(request('write', '/root/a.fig'))
+    await app.question(0)
+    app.close()
+    await expect(pending).rejects.toThrow('closed')
+    await expect(app.consent(request('read', '/root/b.png'))).rejects.toThrow('closed')
   })
 
   test('asks again for a document tool after another tool was allowed the same file', async () => {

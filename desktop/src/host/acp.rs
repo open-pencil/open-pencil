@@ -83,6 +83,9 @@ pub struct ModeChange {
     /// Its JSON-RPC id, which a refusal answers.
     pub id: Option<Value>,
     pub mode: String,
+    pub session_id: String,
+    /// The session's turn when the editor asked; a change from a turn stopped since is refused.
+    pub turn: u64,
 }
 
 /// What to do with a line the agent wrote.
@@ -242,6 +245,17 @@ impl AcpGate {
                 FromEditor::Forward(line)
             };
         };
+        // The agent's answer to such a request would pass for the answer to the app's own.
+        if id
+            .as_ref()
+            .and_then(Value::as_str)
+            .is_some_and(|id| id.starts_with(OWN_REQUEST_PREFIX))
+        {
+            return refuse(
+                id,
+                "Request ids starting with openpencil- are the app's own.",
+            );
+        }
         if method == "session/options" {
             if let Some(Value::Object(params)) = message.get_mut("params") {
                 params.insert("cwd".to_owned(), Value::String(self.workspace.clone()));
@@ -276,10 +290,13 @@ impl AcpGate {
                     .and_then(Value::as_str)
                     .unwrap_or_default();
                 if never_asks(self.agent, mode) {
+                    let session_id = str_at(&params, "sessionId").to_owned();
                     FromEditor::Confirm(ModeChange {
                         line,
                         id,
                         mode: mode.to_owned(),
+                        turn: self.turn(&session_id),
+                        session_id,
                     })
                 } else {
                     FromEditor::Forward(line)
@@ -463,11 +480,13 @@ fn selected(id: &Value, option: &str) -> String {
     .to_string()
 }
 
-/// Whether a list of options holds one whose `key` is `value`.
+/// Whether a list of options holds one whose `key` is `value`, in it or in a group of it.
 fn offers(options: Option<&Value>, key: &str, value: &str) -> bool {
-    options
-        .and_then(Value::as_array)
-        .is_some_and(|options| options.iter().any(|option| str_at(option, key) == value))
+    options.and_then(Value::as_array).is_some_and(|options| {
+        options
+            .iter()
+            .any(|option| str_at(option, key) == value || offers(option.get("options"), key, value))
+    })
 }
 
 fn str_at<'a>(value: &'a Value, key: &str) -> &'a str {
@@ -669,6 +688,14 @@ mod tests {
         };
         assert_eq!(change.mode, "agent-full-access");
         assert_eq!(change.id, Some(json!(3)));
+        assert_eq!((change.session_id.as_str(), change.turn), ("s1", 0));
+        // A change asked after a Stop carries the turn that follows it.
+        let cancel = json!({ "jsonrpc": "2.0", "method": "session/cancel", "params": { "sessionId": "s1" } });
+        gate.editor_wrote(cancel.to_string());
+        let FromEditor::Confirm(later) = gate.editor_wrote(set("agent-full-access")) else {
+            panic!("the person confirms full access")
+        };
+        assert_eq!(later.turn, 1);
         // The same name means nothing to another agent.
         assert!(matches!(
             AcpGate::new(Agent::Cursor, String::new(), false)
@@ -746,6 +773,44 @@ mod tests {
             gate.agent_wrote(asking.to_string()),
             FromAgent::Forward(asking.to_string())
         );
+    }
+
+    #[test]
+    fn finds_the_asking_mode_in_a_group_of_options() {
+        let mut gate = gate(Agent::ClaudeCode);
+        let open = json!({ "jsonrpc": "2.0", "id": 4, "method": "session/new", "params": { "cwd": "/", "mcpServers": [] } });
+        gate.editor_wrote(open.to_string());
+        let opened = json!({
+            "jsonrpc": "2.0",
+            "id": 4,
+            "result": {
+                "sessionId": "s9",
+                "configOptions": [{
+                    "id": "mode",
+                    "category": "mode",
+                    "type": "select",
+                    "currentValue": "auto",
+                    "options": [{ "group": "asks", "name": "Asks", "options": [{ "value": "default", "name": "Manual" }] }, { "value": "auto", "name": "Auto" }]
+                }]
+            }
+        });
+        let FromAgent::Send(to_agent) = gate.agent_wrote(opened.to_string()) else {
+            panic!("the app moves the session to Manual first")
+        };
+        let request: Value = serde_json::from_str(&to_agent).unwrap();
+        assert_eq!(request["params"]["value"], "default");
+    }
+
+    #[test]
+    fn refuses_editor_requests_with_the_apps_own_ids() {
+        let mut gate = gate(Agent::ClaudeCode);
+        let spoof = json!({ "jsonrpc": "2.0", "id": "openpencil-0", "method": "session/set_mode", "params": { "sessionId": "s1", "modeId": "default" } });
+        let FromEditor::Refuse(Some(answer)) = gate.editor_wrote(spoof.to_string()) else {
+            panic!("the editor may not use the app's ids")
+        };
+        let answer: Value = serde_json::from_str(&answer).unwrap();
+        assert_eq!(answer["id"], "openpencil-0");
+        assert!(answer.get("error").is_some());
     }
 
     #[test]

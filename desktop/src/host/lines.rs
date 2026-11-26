@@ -1,6 +1,10 @@
 /// The longest line a program may send, past which what it wrote is dropped: a program that
 /// never ends a line must not hold the app's memory.
 pub const MAX_LINE_BYTES: usize = 256 * 1024 * 1024;
+/// The room kept for the next line once one ends. Most messages are far smaller; a rare large one,
+/// such as an image a tool returned, gives its memory back rather than holding it for the
+/// program's life, twice over with a buffer each way.
+const KEPT_CAPACITY: usize = 1024 * 1024;
 
 /// Bytes cut into the lines JSON-lines protocols send, each without its `\n`. A line split across
 /// reads waits for its end.
@@ -37,13 +41,13 @@ impl Lines {
                 read.lines
                     .push(String::from_utf8_lossy(&self.partial).into_owned());
             }
-            self.partial.clear();
+            self.reset();
             start = index + 1;
         }
         let rest = &bytes[start..];
         if !self.overflowed {
             if self.partial.len() + rest.len() > MAX_LINE_BYTES {
-                self.partial.clear();
+                self.reset();
                 self.overflowed = true;
                 read.dropped = true;
             } else {
@@ -51,6 +55,11 @@ impl Lines {
             }
         }
         read
+    }
+
+    fn reset(&mut self) {
+        self.partial.clear();
+        self.partial.shrink_to(KEPT_CAPACITY);
     }
 }
 
@@ -80,5 +89,17 @@ mod tests {
         let read = lines.push(b"tail\n{\"ok\":1}\n");
         assert_eq!(read.lines, ["{\"ok\":1}"]);
         assert!(!read.dropped);
+        assert!(lines.partial.capacity() <= KEPT_CAPACITY);
+    }
+
+    #[test]
+    fn gives_back_the_room_a_long_line_took() {
+        let mut lines = Lines::default();
+        let mut long = vec![b'x'; KEPT_CAPACITY * 4];
+        lines.push(&long);
+        long.truncate(1);
+        long.push(b'\n');
+        assert_eq!(lines.push(&long).lines.len(), 1);
+        assert!(lines.partial.capacity() <= KEPT_CAPACITY);
     }
 }

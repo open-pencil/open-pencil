@@ -85,7 +85,9 @@ describe('close_document and save_document never prompt', () => {
     expect(tab.store.hasUnsavedChanges()).toBe(true)
   })
 
-  test('a native save to a .fig path writes the file, in a folder the desktop app made', async () => {
+  test('a native save to a .fig path writes the file without making its folder', async () => {
+    // The desktop app makes the folder when the person allows the save (`give_editor` in
+    // desktop/src/host/mod.rs), before the MCP server asks the editor to write.
     const commands = recordNativeFs()
     const tab = dirtyTab()
     await request('save_document', { document_id: tab.id, path: '/tmp/nested/saved.fig' })

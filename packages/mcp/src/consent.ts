@@ -62,15 +62,25 @@ export function stdioPathConsent(
   input: NodeJS.ReadableStream,
   output: NodeJS.WritableStream
 ): PathConsent {
-  const waiting = new Map<number, (allowed: boolean) => void>()
+  const waiting = new Map<number, ReturnType<typeof createDeferred<boolean>>>()
   const allowed = new Set<string>()
   let next = 0
-  createInterface({ input }).on('line', (line) => {
-    const answer = v.safeParse(answerSchema, line)
-    if (!answer.success) return
-    waiting.get(answer.output.id)?.(answer.output.allowed)
-    waiting.delete(answer.output.id)
-  })
+  let closed = false
+  const closedError = () =>
+    new Error("The app that answers file questions closed the server's standard input.")
+  createInterface({ input })
+    .on('line', (line) => {
+      const answer = v.safeParse(answerSchema, line)
+      if (!answer.success) return
+      waiting.get(answer.output.id)?.resolve(answer.output.allowed)
+      waiting.delete(answer.output.id)
+    })
+    // No answer can come any more: what waits fails, and so does every later question.
+    .on('close', () => {
+      closed = true
+      for (const question of waiting.values()) question.reject(closedError())
+      waiting.clear()
+    })
   return async (request) => {
     const kind = DOCUMENT_TOOLS.has(request.tool) ? 'document' : 'file'
     const key = `${kind}:${request.access}:${request.path}`
@@ -80,9 +90,10 @@ export function stdioPathConsent(
     ) {
       return
     }
+    if (closed) throw closedError()
     const id = next++
     const answer = createDeferred<boolean>()
-    waiting.set(id, answer.resolve)
+    waiting.set(id, answer)
     output.write(`${JSON.stringify({ type: 'consent', id, ...request })}\n`)
     if (!(await answer.promise)) {
       const verb = request.access === 'read' ? 'read' : 'write'
