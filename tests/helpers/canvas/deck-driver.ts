@@ -124,17 +124,11 @@ export function deckDriver(page: () => Page) {
 
     /** The deck's slide names by section, which are their numbers. */
     async names(): Promise<string[][]> {
-      return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) return []
-        const grid = store.graph
-          .getChildren(store.state.currentPageId)
-          .find((node) => node.type === 'SLIDE_GRID')
-        if (!grid) return []
-        return store.graph
-          .getChildren(grid.id)
-          .map((row) => store.graph.getChildren(row.id).map((slide) => slide.name))
-      })
+      const order = await this.order()
+      return page().evaluate((order) => {
+        const graph = window.openPencil?.getStore?.().graph
+        return order.map((row) => row.map((id) => graph?.getNode(id)?.name ?? ''))
+      }, order)
     }
   }
 }
