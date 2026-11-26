@@ -18,7 +18,7 @@ const localePath = useLocalePath()
       <ActionButton :href="localePath(LINKS.downloadPage)" :icon="IconDownload" primary>
         {{ messages.closing.download }}
       </ActionButton>
-      <ActionButton :href="localePath(LINKS.docs)" :icon="IconBookOpen">
+      <ActionButton :href="LINKS.docs" :icon="IconBookOpen">
         {{ messages.closing.docs }}
       </ActionButton>
       <ActionButton href="#cloud" :icon="IconCloud">{{ messages.closing.cloud }}</ActionButton>

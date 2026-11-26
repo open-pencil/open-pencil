@@ -10,8 +10,8 @@ OpenPencil es un editor de diseño local y de código abierto, compatible con Fi
 
 ## Primeros pasos
 
-- [Navegación por el lienzo](./canvas-navigation) — mover la vista, ampliar y usar la herramienta Mano;
-- [Seleccionar y transformar](./selection-and-manipulation) — seleccionar, mover, redimensionar, rotar y ordenar objetos.
+- [Navegación por el lienzo](/user-guide/canvas-navigation) — mover la vista, ampliar y usar la herramienta Mano;
+- [Seleccionar y transformar](/user-guide/selection-and-manipulation) — seleccionar, mover, redimensionar, rotar y ordenar objetos.
 
 ## Crear contenido
 
@@ -22,7 +22,7 @@ OpenPencil es un editor de diseño local y de código abierto, compatible con Fi
 
 ## Organizar el documento
 
-- [Capas y páginas](./layers-and-pages) — árbol de capas, páginas y propiedades;
+- [Capas y páginas](/user-guide/layers-and-pages) — árbol de capas, páginas y propiedades;
 - [Menú contextual](./context-menu) — portapapeles, grupos, componentes y otras acciones;
 - [Abrir y guardar](/user-guide/files) — documentos y páginas web.
 - [Exportar](/user-guide/exporting) — imágenes y SVG.

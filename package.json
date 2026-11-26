@@ -141,6 +141,7 @@
     "generate:emoji-metrics": "bun tools/generate/emoji-metrics/src/generate.ts",
     "generate:mermaid-sources": "bun tools/generate/mermaid-sources/src/generate.ts",
     "generate:guide-images": "bun tools/generate/guide-images/src/generate.ts",
+    "preview:guide-pages": "bun tools/generate/guide-images/src/preview.ts",
     "generate:landing-posters": "bun tools/generate/landing-posters/src/generate.ts --force",
     "generate:icons": "bun tools/generate/brand/src/cli.ts generate",
     "check:icons": "bun tools/generate/brand/src/cli.ts check",

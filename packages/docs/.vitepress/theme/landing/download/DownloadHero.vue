@@ -5,7 +5,7 @@ import IconArrowDown from '~icons/lucide/arrow-down'
 import IconGithub from '~icons/lucide/github'
 
 import { LINKS } from '../content/links'
-import { useLandingMessages, useLocalePath } from '../content/messages'
+import { useLandingMessages } from '../content/messages'
 import ActionButton from '../ui/ActionButton.vue'
 import StageFrame from '../ui/StageFrame.vue'
 import DownloadSplitButton from './DownloadSplitButton.vue'
@@ -19,7 +19,6 @@ const { release, system } = defineProps<{
 }>()
 
 const messages = useLandingMessages()
-const localePath = useLocalePath()
 const { lang } = useData()
 
 /**
@@ -67,9 +66,7 @@ const choice = computed<{ main: ReleaseFile; files: ReleaseFile[] } | null>(() =
           {{ versionLine(messages.download, release, lang) }}
           <span class="links">
             <a :href="release.url">{{ messages.download.releaseNotes }}</a>
-            <a :href="localePath('/getting-started') + '#system-requirements'">{{
-              messages.download.requirements
-            }}</a>
+            <a href="/getting-started#system-requirements">{{ messages.download.requirements }}</a>
           </span>
         </p>
       </template>
