@@ -423,6 +423,7 @@ describe('text style values in a scaled instance', () => {
 
     expect(graph.getChildren(instance.id)[1].fontSize).toBe(60)
   })
+
   test('a style the component layer takes alone reaches the synced copy in its mode and scale', () => {
     const { graph, component, frame, toRoomy } = scaledInstance()
     const source = graph.createNode('TEXT', component.id, { text: 'Hi', fontSize: 10 })
