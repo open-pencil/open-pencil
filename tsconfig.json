@@ -64,6 +64,8 @@
       "@open-pencil/pen/*": ["./packages/pen/src/*"]
     }
   },
+  // The service worker has its own program: it runs with worker globals, not the DOM.
+  "exclude": ["src/service-worker/sw.ts"],
   "include": [
     "src/**/*.ts",
     "src/**/*.vue",
