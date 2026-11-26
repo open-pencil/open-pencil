@@ -1,6 +1,7 @@
 import { designJSXProp } from '#design-jsx/definitions'
 import { STROKE_ALIGN, STROKE_CAP, STROKE_JOIN } from '#design-jsx/enums'
 import type { LayerProps } from '#design-jsx/schema'
+import { omit } from 'es-toolkit'
 
 import type { ColorProfile, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
@@ -28,8 +29,13 @@ export function isStrokeValue(value: unknown): value is StrokeValue {
   return typeof value.color === 'string' || isColor(value.color)
 }
 
-function isShaderStroke(value: StrokeValue): value is StrokeValue & Stroke {
-  return 'type' in value && value.type === 'CUSTOM' && isColor(value.color)
+interface ShaderStrokeValue extends StrokeValue {
+  type: string
+  dashPattern?: unknown
+}
+
+function isShaderStroke(value: StrokeValue): value is ShaderStrokeValue {
+  return 'type' in value && typeof value.type === 'string' && value.type.toUpperCase() === 'CUSTOM'
 }
 
 function dashValue(value: unknown): number[] | undefined {
@@ -55,6 +61,30 @@ function toStroke(value: StrokeValue, profile: ColorProfile): Stroke {
   const join = STROKE_JOIN.parse(value.join)
   if (join) stroke.join = join
   return stroke
+}
+
+const READ_STROKE_KEYS = [
+  'color',
+  'opacity',
+  'weight',
+  'align',
+  'dash',
+  'dashPattern',
+  'cap',
+  'join',
+  'visible'
+] as const satisfies readonly (keyof ShaderStrokeValue)[]
+
+function toShaderStroke(
+  value: ShaderStrokeValue,
+  dash: number[] | undefined,
+  profile: ColorProfile
+): Stroke {
+  const lines = toStroke(
+    { ...value, dash: value.dash ?? dashValue(value.dashPattern) ?? dash },
+    profile
+  )
+  return { ...structuredClone(omit(value, READ_STROKE_KEYS)), ...lines, type: 'CUSTOM' }
 }
 
 /** `strokeWeights` names each side; a side it leaves out has no stroke. */
@@ -99,7 +129,7 @@ export function applyStrokeOverrides(
   if (nodeDash) o.dashPattern = nodeDash
   const strokes = strokeValues(props).map((value) =>
     isShaderStroke(value)
-      ? structuredClone(value)
+      ? toShaderStroke(value, nodeDash, profile)
       : toStroke({ ...value, dash: value.dash ?? nodeDash }, profile)
   )
   if (strokes.length > 0) o.strokes = strokes
