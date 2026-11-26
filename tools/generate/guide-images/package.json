@@ -1,0 +1,19 @@
+{
+  "name": "@open-pencil/guide-images-tools",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#guide-images/*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@open-pencil/scene-graph": "workspace:*",
+    "@playwright/test": "^1.63.0",
+    "sharp": "0.34.5"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "@types/node": "^25.9.9",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}
