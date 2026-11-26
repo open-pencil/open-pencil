@@ -1,0 +1,1 @@
+- Right-to-left text aligned left or right stands at that side, as in Figma, on the canvas and in SVG and HTML exports; HTML import keeps a page's right-to-left direction and reads `text-align: start` and `end` in it.
