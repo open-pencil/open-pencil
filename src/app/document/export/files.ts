@@ -32,12 +32,18 @@ export interface ExportedFile {
   mime: string
 }
 
-export function getExportBaseName(graph: SceneGraph, target: ExportRequest['target']): string {
+/** The name an export's file takes: the layer's or page's, or for a whole document, `documentName`. */
+export function getExportBaseName(
+  graph: SceneGraph,
+  target: ExportRequest['target'],
+  documentName = ''
+): string {
   if (target.scope === 'node') return graph.getNode(target.nodeId)?.name ?? 'Export'
   if (target.scope === 'selection' && target.nodeIds.length === 1) {
     return graph.getNode(target.nodeIds[0])?.name ?? 'Export'
   }
   if (target.scope === 'page') return graph.getNode(target.pageId)?.name ?? 'Page'
+  if (target.scope === 'document' && documentName.trim()) return documentName.trim()
   return 'Export'
 }
 

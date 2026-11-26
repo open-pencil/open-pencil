@@ -9,11 +9,17 @@ import { prepareGraphFonts } from '#core/text/prepare'
 
 import type { DrawIOExportTarget } from './formats/drawio/export'
 import { exportFigFile, parseFigFile } from './formats/fig'
+import { planExportPDFPages } from './formats/pdf/plan'
 import { readPenDocument } from './formats/pen/read'
 import type { PPTXExportOptions } from './formats/pptx'
 import { rasterFormat } from './formats/raster/adapter'
 import { extractExportGraph } from './subgraph'
-import { resolveExportNodes, singleExportNode, type ExportNodes } from './targets'
+import {
+  resolveExportNodes,
+  resolveExportSlides,
+  singleExportNode,
+  type ExportNodes
+} from './targets'
 import type {
   ExportRequest,
   ExportResult,
@@ -303,10 +309,10 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
   support: EXPORT_EVERY_TARGET,
   exportOptions: FIXED_SIZE_EXPORT,
   async exportContent(request, _options, context?: IOContext) {
-    const target = resolveExportNodes(request)
-    if (!target) throw new Error('Nothing to export')
+    const specs = planExportPDFPages(request)
+    if (!specs) throw new Error('Nothing to export')
     const { exportPDFDocument } = await import('./formats/pdf/document')
-    const data = (await exportPDFDocument(request.graph, [target], { renderer: context?.renderer }))
+    const data = (await exportPDFDocument(request.graph, specs, { renderer: context?.renderer }))
       ?.data
     if (!data) throw new Error('Nothing to export')
     return {
@@ -323,6 +329,10 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
  * pages — the shared resolver only reaches the first one.
  */
 function resolvePPTXExportNodes(request: ExportRequest): ExportNodes | null {
+  // A deck's slides each become a slide, in the deck's order, skipped ones hidden.
+  const slides = resolveExportSlides(request)
+  const first = slides?.at(0)
+  if (slides && first) return { pageId: first.pageId, nodeIds: slides.map(({ slide }) => slide.id) }
   if (request.target.scope !== 'document') return resolveExportNodes(request)
   const pages = request.graph.getPages()
   if (!pages.length) return null

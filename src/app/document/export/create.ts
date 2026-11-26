@@ -48,7 +48,7 @@ export function createDocumentExportActions(
       editor.renderer ? { canvasKit: editor.renderer.ck, renderer: editor.renderer } : undefined
     )
 
-    const baseName = getExportBaseName(editor.graph, target)
+    const baseName = getExportBaseName(editor.graph, target, state.documentName)
     return {
       bytes: getExportBytes(result.data),
       fileName: getExportFileName(baseName, format, result.extension, options),
@@ -89,7 +89,9 @@ export function createDocumentExportActions(
       files.push(await renderExportFile(request.target, request.formatId, request.options))
     }
 
-    const baseNames = new Set(requests.map((r) => getExportBaseName(editor.graph, r.target)))
+    const baseNames = new Set(
+      requests.map((r) => getExportBaseName(editor.graph, r.target, state.documentName))
+    )
     const zipBaseName = baseNames.size === 1 ? [...baseNames][0] : 'export'
     const saved =
       files.length === 1

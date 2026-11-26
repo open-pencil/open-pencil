@@ -97,6 +97,21 @@
         ]
       },
       {
+        "id": "export-deck",
+        "label": "Export Deck",
+        "feature": "deck",
+        "sub": [
+          {
+            "id": "export-deck-pdf",
+            "label": "PDF"
+          },
+          {
+            "id": "export-deck-pptx",
+            "label": "PowerPoint"
+          }
+        ]
+      },
+      {
         "type": "separator"
       },
       {

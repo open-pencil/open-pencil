@@ -1,6 +1,8 @@
 import { invoke } from '@tauri-apps/api/core'
 import { computed, watch } from 'vue'
 
+import { resolveEditorProfile } from '@open-pencil/core'
+
 import { isCloudBinding } from '@/app/cloud/integration'
 import { DONATION_URL } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -15,6 +17,7 @@ const store = useEditorStore()
 const available: Record<AppMenuFeature, () => boolean> = {
   // Home and a New file tab hold no document, so they leave out what edits or shows one.
   document: () => showsDocument(),
+  deck: () => showsDocument() && resolveEditorProfile(store.state).filmstrip,
   // Cloud and storage documents always save; auto-save is a choice only for a file on disk.
   'local-file': () => store.hasWritableSource() && !store.getStorageBinding(),
   // Version history lives on the Cloud server that keeps the document.
