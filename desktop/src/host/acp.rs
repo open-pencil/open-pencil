@@ -2,9 +2,11 @@
 //! permission requests never reach the editor: calls to OpenPencil's own tools are allowed here,
 //! and every other request goes to the permission window, which only the app opens. Sessions the
 //! editor opens get the app's working folder, the app's own session options, and only HTTP MCP
-//! servers, and a mode that never asks before running tools waits for the person to confirm it.
+//! servers, and a mode that never asks before running tools waits for the person to confirm it. A
+//! session that opens in such a mode, as Claude Code's open in Auto, is moved to one that asks
+//! before the editor hears of it.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use serde_json::{json, Map, Value};
 
@@ -14,18 +16,37 @@ use super::program::Agent;
 const OWN_SERVER: &str = "open-pencil";
 
 /// Methods that open a session, and so name its folder, options, and MCP servers.
-const SESSION_OPENERS: &[&str] = &["session/new", "session/load", "session/resume", "session/fork"];
+const SESSION_OPENERS: &[&str] = &[
+    "session/new",
+    "session/load",
+    "session/resume",
+    "session/fork",
+];
 
-/// The modes in which an agent runs tools without asking, by the values its sessions offer:
-/// Claude Code's `bypassPermissions`, Codex's `agent-full-access`, and Gemini CLI's `yolo`.
+/// The modes in which an agent runs tools without asking the person, by the values its sessions
+/// offer: Claude Code's `bypassPermissions`, and `auto`, where Claude's own classifier decides;
+/// Codex's `agent-full-access`; and Gemini CLI's `yolo`.
 fn never_asks(agent: Agent, value: &str) -> bool {
     matches!(
         (agent, value),
-        (Agent::ClaudeCode, "bypassPermissions")
+        (Agent::ClaudeCode, "bypassPermissions" | "auto")
             | (Agent::Codex, "agent-full-access")
             | (Agent::GeminiCli, "yolo")
     )
 }
+
+/// The mode a session that opened in one that never asks is moved to: the agent's own default
+/// that asks, or Codex's sandboxed agent mode.
+fn asking_mode(agent: Agent) -> Option<&'static str> {
+    match agent {
+        Agent::ClaudeCode | Agent::GeminiCli => Some("default"),
+        Agent::Codex => Some("agent"),
+        _ => None,
+    }
+}
+
+/// The ids of the app's own requests to an agent, apart from any the editor uses.
+const OWN_REQUEST_PREFIX: &str = "openpencil-";
 
 /// The options every session opens with. Claude's adapter passes them to the Claude Agent SDK,
 /// and other agents ignore them: OpenPencil's own tools run without asking, as their edits are
@@ -70,6 +91,10 @@ pub enum FromAgent {
     Answer(String),
     /// Ask the person.
     Ask(PermissionAsk),
+    /// Pass a changed line to the editor, and send the agent a request of the app's own.
+    ForwardAndSend { forward: String, to_agent: String },
+    /// An answer to the app's own request, which the editor never sent.
+    Drop,
 }
 
 /// What to do with a line the editor wrote.
@@ -94,6 +119,11 @@ pub struct AcpGate {
     held: HashSet<String>,
     /// Refuses whatever the person would be asked, for a connection in which nothing may run.
     refuses_tools: bool,
+    /// The editor's session openers waiting for an answer, by id, with the session they name.
+    opening: HashMap<String, Option<String>>,
+    /// The app's own requests to the agent waiting for an answer.
+    own_requests: HashSet<String>,
+    next_request: u64,
 }
 
 impl AcpGate {
@@ -104,13 +134,40 @@ impl AcpGate {
             own_calls: HashSet::new(),
             held: HashSet::new(),
             refuses_tools,
+            opening: HashMap::new(),
+            own_requests: HashSet::new(),
+            next_request: 0,
         }
     }
 
-    pub fn from_agent(&mut self, line: String) -> FromAgent {
-        let Ok(Value::Object(message)) = serde_json::from_str::<Value>(&line) else {
+    pub fn agent_wrote(&mut self, line: String) -> FromAgent {
+        let Ok(Value::Object(mut message)) = serde_json::from_str::<Value>(&line) else {
             return FromAgent::Forward(line);
         };
+        if message.get("method").is_none() {
+            let id = message.get("id").map(Value::to_string).unwrap_or_default();
+            if self.own_requests.remove(&id) {
+                return FromAgent::Drop;
+            }
+            if let Some(named) = self.opening.remove(&id) {
+                if let Some(Value::Object(result)) = message.get_mut("result") {
+                    let session = result
+                        .get("sessionId")
+                        .and_then(Value::as_str)
+                        .map(str::to_owned)
+                        .or(named);
+                    if let Some(to_agent) =
+                        session.and_then(|s| self.ask_from_the_start(result, &s))
+                    {
+                        return FromAgent::ForwardAndSend {
+                            forward: Value::Object(message).to_string(),
+                            to_agent,
+                        };
+                    }
+                }
+            }
+            return FromAgent::Forward(line);
+        }
         match message.get("method").and_then(Value::as_str) {
             Some("session/update") => {
                 if let Some(update) = message.get("params").and_then(|p| p.get("update")) {
@@ -143,14 +200,20 @@ impl AcpGate {
         }
     }
 
-    pub fn from_editor(&mut self, line: String) -> FromEditor {
+    pub fn editor_wrote(&mut self, line: String) -> FromEditor {
         let Ok(Value::Object(mut message)) = serde_json::from_str::<Value>(&line) else {
             return FromEditor::Refuse(None);
         };
         let id = message.get("id").cloned();
-        let Some(method) = message.get("method").and_then(Value::as_str).map(str::to_owned) else {
+        let Some(method) = message
+            .get("method")
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+        else {
             // An answer to one of the agent's requests: never to one the app holds.
-            let held = id.as_ref().is_some_and(|id| self.held.contains(&id.to_string()));
+            let held = id
+                .as_ref()
+                .is_some_and(|id| self.held.contains(&id.to_string()));
             return if held {
                 FromEditor::Refuse(None)
             } else {
@@ -170,13 +233,24 @@ impl AcpGate {
             if let Err(reason) = self.pin_session(params) {
                 return refuse(id, &reason);
             }
+            let named = params
+                .get("sessionId")
+                .and_then(Value::as_str)
+                .map(str::to_owned);
+            if let Some(id) = &id {
+                self.opening.insert(id.to_string(), named);
+            }
             return FromEditor::Forward(Value::Object(message).to_string());
         }
         let params = message.get("params").cloned().unwrap_or(Value::Null);
         match method.as_str() {
             "session/set_mode" | "session/set_config_option" => {
                 let mode = params
-                    .get(if method == "session/set_mode" { "modeId" } else { "value" })
+                    .get(if method == "session/set_mode" {
+                        "modeId"
+                    } else {
+                        "value"
+                    })
                     .and_then(Value::as_str)
                     .unwrap_or_default();
                 if never_asks(self.agent, mode) {
@@ -211,11 +285,62 @@ impl AcpGate {
         }
     }
 
+    /// Moves a session that opened in a mode that never asks to one that asks: the answer the
+    /// editor gets shows that mode, and the request that sets it goes to the agent. None when the
+    /// session already asks, or the agent offers no mode that does.
+    fn ask_from_the_start(
+        &mut self,
+        result: &mut Map<String, Value>,
+        session: &str,
+    ) -> Option<String> {
+        let safe = asking_mode(self.agent)?;
+        let agent = self.agent;
+        let mut request = None;
+        if let Some(Value::Array(options)) = result.get_mut("configOptions") {
+            let mode = options.iter_mut().find(|option| {
+                str_at(option, "category") == "mode"
+                    && never_asks(agent, str_at(option, "currentValue"))
+                    && offers(option.get("options"), "value", safe)
+            });
+            if let Some(mode) = mode {
+                mode["currentValue"] = Value::String(safe.to_owned());
+                request = Some((
+                    "session/set_config_option",
+                    json!({
+                        "sessionId": session,
+                        "configId": str_at(mode, "id"),
+                        "value": safe
+                    }),
+                ));
+            }
+        }
+        if let Some(modes) = result.get_mut("modes") {
+            if never_asks(agent, str_at(modes, "currentModeId"))
+                && offers(modes.get("availableModes"), "id", safe)
+            {
+                modes["currentModeId"] = Value::String(safe.to_owned());
+                request.get_or_insert((
+                    "session/set_mode",
+                    json!({ "sessionId": session, "modeId": safe }),
+                ));
+            }
+        }
+        let (method, params) = request?;
+        let id = format!("{OWN_REQUEST_PREFIX}{}", self.next_request);
+        self.next_request += 1;
+        self.own_requests
+            .insert(Value::String(id.clone()).to_string());
+        Some(json!({ "jsonrpc": "2.0", "id": id, "method": method, "params": params }).to_string())
+    }
+
     fn pin_session(&self, params: &mut Map<String, Value>) -> Result<(), String> {
         if let Some(Value::Array(servers)) = params.get("mcpServers") {
             // A server with a command is one the agent would start.
             let local = servers.iter().find(|server| {
-                !matches!(server.get("type").and_then(Value::as_str), Some("http" | "sse"))
+                !matches!(
+                    server.get("type").and_then(Value::as_str),
+                    Some("http" | "sse")
+                )
             });
             if let Some(server) = local {
                 return Err(format!(
@@ -235,7 +360,8 @@ impl AcpGate {
             return;
         }
         if is_own_tool_call(update) {
-            self.own_calls.insert(str_at(update, "toolCallId").to_owned());
+            self.own_calls
+                .insert(str_at(update, "toolCallId").to_owned());
         }
     }
 
@@ -303,6 +429,13 @@ fn selected(id: &Value, option: &str) -> String {
         "result": { "outcome": { "outcome": "selected", "optionId": option } }
     })
     .to_string()
+}
+
+/// Whether a list of options holds one whose `key` is `value`.
+fn offers(options: Option<&Value>, key: &str, value: &str) -> bool {
+    options
+        .and_then(Value::as_array)
+        .is_some_and(|options| options.iter().any(|option| str_at(option, key) == value))
 }
 
 fn str_at<'a>(value: &'a Value, key: &str) -> &'a str {
@@ -387,8 +520,12 @@ mod tests {
             "toolCallId": "c1",
             "rawInput": { "providerIdentifier": "open-pencil", "toolName": "get_selection" }
         }));
-        assert_eq!(gate.from_agent(reported.clone()), FromAgent::Forward(reported));
-        let FromAgent::Answer(answer) = gate.from_agent(permission(7, json!({ "toolCallId": "c1" })))
+        assert_eq!(
+            gate.agent_wrote(reported.clone()),
+            FromAgent::Forward(reported)
+        );
+        let FromAgent::Answer(answer) =
+            gate.agent_wrote(permission(7, json!({ "toolCallId": "c1" })))
         else {
             panic!("the app answers a call to its own tools")
         };
@@ -405,14 +542,17 @@ mod tests {
             "title": "Run mcp.open-pencil.get_selection",
             "_meta": { "claudeCode": { "toolName": "Bash" } }
         });
-        let FromAgent::Ask(ask) = gate.from_agent(permission(8, call)) else {
+        let FromAgent::Ask(ask) = gate.agent_wrote(permission(8, call)) else {
             panic!("the person decides")
         };
         assert_eq!(ask.id, json!(8));
         assert_eq!(ask.session_id, "s1");
         // The editor cannot answer a request the app holds, guessed id or not.
         let forged = json!({ "jsonrpc": "2.0", "id": 8, "result": { "outcome": { "outcome": "selected", "optionId": "always" } } });
-        assert_eq!(gate.from_editor(forged.to_string()), FromEditor::Refuse(None));
+        assert_eq!(
+            gate.editor_wrote(forged.to_string()),
+            FromEditor::Refuse(None)
+        );
         let answered: Value = serde_json::from_str(&gate.answer(&ask.id, Some("no"))).unwrap();
         assert_eq!(answered["result"]["outcome"]["optionId"], "no");
     }
@@ -420,8 +560,10 @@ mod tests {
     #[test]
     fn refuses_without_asking_on_a_connection_where_nothing_runs() {
         let mut gate = AcpGate::new(Agent::ClaudeCode, String::new(), true);
-        let FromAgent::Answer(answer) = gate.from_agent(permission(9, json!({ "toolCallId": "c3", "title": "Bash" })))
-        else {
+        let FromAgent::Answer(answer) = gate.agent_wrote(permission(
+            9,
+            json!({ "toolCallId": "c3", "title": "Bash" }),
+        )) else {
             panic!("the app refuses at once")
         };
         let answer: Value = serde_json::from_str(&answer).unwrap();
@@ -441,7 +583,7 @@ mod tests {
                 "_meta": { "claudeCode": { "options": { "permissionMode": "bypassPermissions", "allowedTools": ["Bash"] } } }
             }
         });
-        let FromEditor::Forward(sent) = gate.from_editor(request.to_string()) else {
+        let FromEditor::Forward(sent) = gate.editor_wrote(request.to_string()) else {
             panic!("the session opens")
         };
         let sent: Value = serde_json::from_str(&sent).unwrap();
@@ -463,12 +605,15 @@ mod tests {
                 "mcpServers": [{ "name": "evil", "command": "sh", "args": ["-c", "x"], "env": [] }]
             }
         });
-        let FromEditor::Refuse(Some(answer)) = gate.from_editor(request.to_string()) else {
+        let FromEditor::Refuse(Some(answer)) = gate.editor_wrote(request.to_string()) else {
             panic!("the session is refused")
         };
         let answer: Value = serde_json::from_str(&answer).unwrap();
         assert_eq!(answer["id"], 2);
-        assert!(answer["error"]["message"].as_str().unwrap().contains("evil"));
+        assert!(answer["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("evil"));
     }
 
     #[test]
@@ -484,19 +629,73 @@ mod tests {
             .to_string()
         };
         assert_eq!(
-            gate.from_editor(set("read-only")),
+            gate.editor_wrote(set("read-only")),
             FromEditor::Forward(set("read-only"))
         );
-        let FromEditor::Confirm(change) = gate.from_editor(set("agent-full-access")) else {
+        let FromEditor::Confirm(change) = gate.editor_wrote(set("agent-full-access")) else {
             panic!("the person confirms full access")
         };
         assert_eq!(change.mode, "agent-full-access");
         assert_eq!(change.id, Some(json!(3)));
         // The same name means nothing to another agent.
         assert!(matches!(
-            AcpGate::new(Agent::Cursor, String::new(), false).from_editor(set("agent-full-access")),
+            AcpGate::new(Agent::Cursor, String::new(), false)
+                .editor_wrote(set("agent-full-access")),
             FromEditor::Forward(_)
         ));
+    }
+
+    #[test]
+    fn moves_a_session_that_opens_in_auto_to_asking() {
+        let mut gate = gate(Agent::ClaudeCode);
+        let open = json!({ "jsonrpc": "2.0", "id": 4, "method": "session/new", "params": { "cwd": "/", "mcpServers": [] } });
+        assert!(matches!(
+            gate.editor_wrote(open.to_string()),
+            FromEditor::Forward(_)
+        ));
+        let opened = json!({
+            "jsonrpc": "2.0",
+            "id": 4,
+            "result": {
+                "sessionId": "s9",
+                "configOptions": [{
+                    "id": "mode",
+                    "category": "mode",
+                    "type": "select",
+                    "currentValue": "auto",
+                    "options": [{ "value": "default", "name": "Manual" }, { "value": "auto", "name": "Auto" }]
+                }],
+                "modes": { "currentModeId": "auto", "availableModes": [{ "id": "default" }, { "id": "auto" }] }
+            }
+        });
+        let FromAgent::ForwardAndSend { forward, to_agent } = gate.agent_wrote(opened.to_string())
+        else {
+            panic!("the app moves the session to Manual")
+        };
+        let forward: Value = serde_json::from_str(&forward).unwrap();
+        assert_eq!(
+            forward["result"]["configOptions"][0]["currentValue"],
+            "default"
+        );
+        assert_eq!(forward["result"]["modes"]["currentModeId"], "default");
+        let request: Value = serde_json::from_str(&to_agent).unwrap();
+        assert_eq!(request["method"], "session/set_config_option");
+        assert_eq!(
+            request["params"],
+            json!({ "sessionId": "s9", "configId": "mode", "value": "default" })
+        );
+        // Its answer is the app's, not the editor's.
+        let answer =
+            json!({ "jsonrpc": "2.0", "id": request["id"], "result": { "configOptions": [] } });
+        assert_eq!(gate.agent_wrote(answer.to_string()), FromAgent::Drop);
+        // A session that already asks is passed on as it is.
+        let again = json!({ "jsonrpc": "2.0", "id": 5, "method": "session/new", "params": { "cwd": "/", "mcpServers": [] } });
+        gate.editor_wrote(again.to_string());
+        let asking = json!({ "jsonrpc": "2.0", "id": 5, "result": { "sessionId": "s10", "modes": { "currentModeId": "default", "availableModes": [] } } });
+        assert_eq!(
+            gate.agent_wrote(asking.to_string()),
+            FromAgent::Forward(asking.to_string())
+        );
     }
 
     #[test]

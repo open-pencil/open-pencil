@@ -91,7 +91,11 @@ pub enum McpScope {
 
 /// A program the editor asks for, with the values it may choose.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
-#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 pub enum ProgramRequest {
     /// An ACP agent, talking ACP over its standard streams. One that `refuses_tools` has every
     /// permission request refused without asking, for a connection in which nothing may run;
@@ -202,7 +206,10 @@ impl ProgramRequest {
                     PackageManager::Npm => "npm",
                     PackageManager::Bun => "bun",
                 };
-                Ok(plain(program, args.into_iter().map(str::to_owned).collect()))
+                Ok(plain(
+                    program,
+                    args.into_iter().map(str::to_owned).collect(),
+                ))
             }
             ProgramRequest::McpServer {
                 tokenless_clients,
@@ -224,7 +231,10 @@ impl ProgramRequest {
                     ("OPENPENCIL_MCP_CORS_ORIGIN", context.origin.to_owned()),
                     ("OPENPENCIL_MCP_TCP", "1".to_owned()),
                     ("OPENPENCIL_MCP_ROOT", root.to_string_lossy().into_owned()),
-                    ("OPENPENCIL_MCP_APP_TIMEOUT_MS", MCP_APP_TIMEOUT_MS.to_string()),
+                    (
+                        "OPENPENCIL_MCP_APP_TIMEOUT_MS",
+                        MCP_APP_TIMEOUT_MS.to_string(),
+                    ),
                     // Killing a Windows shim leaves the server it started; it exits when its
                     // standard input closes with the app's end of the pipe.
                     ("OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE", "1".to_owned()),
@@ -249,7 +259,9 @@ impl ProgramRequest {
             }
             ProgramRequest::Harness { api_key, agent_dir } => {
                 let env = match (api_key, agent_dir) {
-                    (Some(key), None) => BTreeMap::from([("OPENPENCIL_HARNESS_API_KEY", key.clone())]),
+                    (Some(key), None) => {
+                        BTreeMap::from([("OPENPENCIL_HARNESS_API_KEY", key.clone())])
+                    }
                     (None, Some(dir)) if dir.is_absolute() => BTreeMap::from([(
                         "OPENPENCIL_HARNESS_AGENT_DIR",
                         dir.to_string_lossy().into_owned(),
@@ -300,7 +312,8 @@ fn package_name(package: &Package) -> Result<String, String> {
 /// A companion pinned to a release version, `1.2.3` or `1.2.3-beta.4`, so the install cannot
 /// name a tag, a range, a path, or another registry.
 fn companion(name: &str, version: &str) -> Result<String, String> {
-    let parsed = semver::Version::parse(version).map_err(|_| format!("{version:?} is not a version."))?;
+    let parsed =
+        semver::Version::parse(version).map_err(|_| format!("{version:?} is not a version."))?;
     let release = parsed.build.is_empty()
         && (parsed.pre.is_empty()
             || parsed
@@ -371,36 +384,71 @@ mod tests {
             .launch(&context(Path::new("/w")))
             .unwrap();
         assert_eq!(launch.args, ["--cli", "auth", "login", "--claudeai"]);
-        assert!(request(serde_json::json!({ "kind": "signIn", "agent": "codex" }))
-            .launch(&context(Path::new("/w")))
-            .is_err());
+        assert!(
+            request(serde_json::json!({ "kind": "signIn", "agent": "codex" }))
+                .launch(&context(Path::new("/w")))
+                .is_err()
+        );
     }
 
     #[test]
     fn installs_only_adapters_and_released_companions() {
         let install = |package: serde_json::Value, manager: &str| {
-            request(serde_json::json!({ "kind": "install", "manager": manager, "package": package }))
-                .launch(&context(Path::new("/w")))
+            request(
+                serde_json::json!({ "kind": "install", "manager": manager, "package": package }),
+            )
+            .launch(&context(Path::new("/w")))
         };
         assert_eq!(
-            install(serde_json::json!({ "kind": "adapter", "agent": "codex" }), "npm")
-                .unwrap()
-                .args,
-            ["install", "--global", "@agentclientprotocol/codex-acp", PUBLIC_REGISTRY]
+            install(
+                serde_json::json!({ "kind": "adapter", "agent": "codex" }),
+                "npm"
+            )
+            .unwrap()
+            .args,
+            [
+                "install",
+                "--global",
+                "@agentclientprotocol/codex-acp",
+                PUBLIC_REGISTRY
+            ]
         );
         assert_eq!(
-            install(serde_json::json!({ "kind": "mcp", "version": "0.16.0-beta.2" }), "bun")
-                .unwrap()
-                .args,
-            ["add", "--global", "@open-pencil/mcp@0.16.0-beta.2", PUBLIC_REGISTRY]
+            install(
+                serde_json::json!({ "kind": "mcp", "version": "0.16.0-beta.2" }),
+                "bun"
+            )
+            .unwrap()
+            .args,
+            [
+                "add",
+                "--global",
+                "@open-pencil/mcp@0.16.0-beta.2",
+                PUBLIC_REGISTRY
+            ]
         );
-        for version in ["latest", "^1.0.0", "1.0.0-beta.0", "1.0.0-rc.1", "file:../x", "1.0.0+x"] {
+        for version in [
+            "latest",
+            "^1.0.0",
+            "1.0.0-beta.0",
+            "1.0.0-rc.1",
+            "file:../x",
+            "1.0.0+x",
+        ] {
             assert!(
-                install(serde_json::json!({ "kind": "harness", "version": version }), "npm").is_err(),
+                install(
+                    serde_json::json!({ "kind": "harness", "version": version }),
+                    "npm"
+                )
+                .is_err(),
                 "{version}"
             );
         }
-        assert!(install(serde_json::json!({ "kind": "adapter", "agent": "gemini-cli" }), "npm").is_err());
+        assert!(install(
+            serde_json::json!({ "kind": "adapter", "agent": "gemini-cli" }),
+            "npm"
+        )
+        .is_err());
     }
 
     #[test]
@@ -418,12 +466,21 @@ mod tests {
         };
         let launch = server(false, &["eval", "export_image"]).unwrap();
         assert_eq!(launch.env["PORT"], "7600");
-        assert_eq!(launch.env["OPENPENCIL_MCP_CORS_ORIGIN"], "tauri://localhost");
-        assert_eq!(launch.env["OPENPENCIL_MCP_DISABLED_TOOLS"], "eval,export_image");
+        assert_eq!(
+            launch.env["OPENPENCIL_MCP_CORS_ORIGIN"],
+            "tauri://localhost"
+        );
+        assert_eq!(
+            launch.env["OPENPENCIL_MCP_DISABLED_TOOLS"],
+            "eval,export_image"
+        );
         assert_eq!(launch.env["OPENPENCIL_MCP_SCOPE"], "selection");
         assert_eq!(launch.env["OPENPENCIL_MCP_CONSENT"], "stdio");
         assert!(!launch.env.contains_key("OPENPENCIL_MCP_TOKENLESS_CLIENTS"));
-        assert_eq!(server(true, &[]).unwrap().env["OPENPENCIL_MCP_TOKENLESS_CLIENTS"], "1");
+        assert_eq!(
+            server(true, &[]).unwrap().env["OPENPENCIL_MCP_TOKENLESS_CLIENTS"],
+            "1"
+        );
         assert!(server(false, &["a,b"]).is_err());
     }
 
@@ -431,11 +488,14 @@ mod tests {
     fn signs_the_harness_in_one_way() {
         let harness = |value: serde_json::Value| {
             let mut json = serde_json::json!({ "kind": "harness" });
-            json.as_object_mut().unwrap().extend(value.as_object().unwrap().clone());
+            json.as_object_mut()
+                .unwrap()
+                .extend(value.as_object().unwrap().clone());
             request(json).launch(&context(Path::new("/w")))
         };
         assert_eq!(
-            harness(serde_json::json!({ "apiKey": "k" })).unwrap().env["OPENPENCIL_HARNESS_API_KEY"],
+            harness(serde_json::json!({ "apiKey": "k" })).unwrap().env
+                ["OPENPENCIL_HARNESS_API_KEY"],
             "k"
         );
         assert!(harness(serde_json::json!({ "agentDir": "relative" })).is_err());

@@ -47,19 +47,26 @@ const ALLOW_MODE: &str = "allow";
 )]
 pub enum HostEvent {
     /// Output, with each line of a JSON-lines protocol whole and ending in `\n`.
-    Stdout { data: String },
-    Stderr { data: String },
+    Stdout {
+        data: String,
+    },
+    Stderr {
+        data: String,
+    },
     /// The program ended.
     Close {
         code: Option<i32>,
         signal: Option<i32>,
     },
     /// The agent waits on the person in the permission window, or no longer does.
-    Permission { title: String, waiting: bool },
+    Permission {
+        title: String,
+        waiting: bool,
+    },
 }
 
 enum Gate {
-    Acp(AcpGate),
+    Acp(Box<AcpGate>),
     Harness,
     /// The MCP server: its questions about files go to the permission window.
     Mcp,
@@ -93,7 +100,9 @@ struct McpRun {
 
 impl HostProcesses {
     fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<u32, Running>> {
-        self.running.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+        self.running
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
     /// Stops every program, as when the app quits; a reload keeps the MCP server, which the
@@ -102,7 +111,11 @@ impl HostProcesses {
         let kept = if keep_mcp { self.mcp_id() } else { None };
         let stopped: Vec<(u32, Running)> = {
             let mut running = self.lock();
-            let ids: Vec<u32> = running.keys().copied().filter(|id| Some(*id) != kept).collect();
+            let ids: Vec<u32> = running
+                .keys()
+                .copied()
+                .filter(|id| Some(*id) != kept)
+                .collect();
             ids.into_iter()
                 .filter_map(|id| running.remove(&id).map(|process| (id, process)))
                 .collect()
@@ -122,13 +135,16 @@ pub fn agent_workspace_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, St
         .app_data_dir()
         .map_err(|e| format!("Could not find the app data folder: {e}"))?
         .join("agent-workspace");
-    std::fs::create_dir_all(&dir).map_err(|e| format!("Could not create the agent workspace: {e}"))?;
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("Could not create the agent workspace: {e}"))?;
     Ok(dir)
 }
 
 impl HostProcesses {
     fn mcp_lock(&self) -> std::sync::MutexGuard<'_, Option<McpRun>> {
-        self.mcp.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+        self.mcp
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
     fn mcp_id(&self) -> Option<u32> {
@@ -223,11 +239,11 @@ pub async fn host_start<R: Runtime>(
 
     let (gate, agent) = match launch.protocol {
         Protocol::Acp(agent, refuses_tools) => (
-            Gate::Acp(AcpGate::new(
+            Gate::Acp(Box::new(AcpGate::new(
                 agent,
                 workspace.to_string_lossy().into_owned(),
                 refuses_tools,
-            )),
+            ))),
             agent.name(),
         ),
         Protocol::Harness => (Gate::Harness, "Pi"),
@@ -258,9 +274,13 @@ pub async fn host_start<R: Runtime>(
         while let Some(event) = output.recv().await {
             match event {
                 CommandEvent::Stdout(bytes) => from_program(&app, id, &bytes),
-                CommandEvent::Stderr(bytes) => send(&app, id, HostEvent::Stderr {
-                    data: String::from_utf8_lossy(&bytes).into_owned(),
-                }),
+                CommandEvent::Stderr(bytes) => send(
+                    &app,
+                    id,
+                    HostEvent::Stderr {
+                        data: String::from_utf8_lossy(&bytes).into_owned(),
+                    },
+                ),
                 CommandEvent::Terminated(payload) => {
                     app.state::<Permissions>().cancel(&app, id, None);
                     let processes = app.state::<HostProcesses>();
@@ -298,7 +318,12 @@ pub fn host_write<R: Runtime>(
     let mut running = processes.lock();
     let process = running.get_mut(&id).ok_or("The program has stopped.")?;
     match process.gate {
-        Gate::Plain => return process.child.write(data.as_bytes()).map_err(|e| e.to_string()),
+        Gate::Plain => {
+            return process
+                .child
+                .write(data.as_bytes())
+                .map_err(|e| e.to_string())
+        }
         // Only the app answers the server's questions on its standard input.
         Gate::Mcp => return Err("The MCP server takes no input from the editor.".to_owned()),
         _ => {}
@@ -307,11 +332,13 @@ pub fn host_write<R: Runtime>(
     let mut later = Vec::new();
     for line in lines {
         match &mut process.gate {
-            Gate::Acp(gate) => match gate.from_editor(line) {
+            Gate::Acp(gate) => match gate.editor_wrote(line) {
                 FromEditor::Forward(line) => write_line(&mut process.child, &line)?,
                 FromEditor::Refuse(answer) => {
                     if let Some(answer) = answer {
-                        let _ = process.events.send(HostEvent::Stdout { data: answer + "\n" });
+                        let _ = process.events.send(HostEvent::Stdout {
+                            data: answer + "\n",
+                        });
                     }
                 }
                 FromEditor::Cancel { session_id, line } => {
@@ -323,7 +350,9 @@ pub fn host_write<R: Runtime>(
             Gate::Harness => match harness::from_editor(line) {
                 Ok(line) => write_line(&mut process.child, &line)?,
                 Err(Some(answer)) => {
-                    let _ = process.events.send(HostEvent::Stdout { data: answer + "\n" });
+                    let _ = process.events.send(HostEvent::Stdout {
+                        data: answer + "\n",
+                    });
                 }
                 Err(None) => {}
             },
@@ -428,7 +457,7 @@ fn from_program<R: Runtime>(app: &AppHandle<R>, id: u32, bytes: &[u8]) {
     };
     let mut asks = Vec::new();
     for line in process.from_program.push(bytes) {
-        match gate.from_agent(line) {
+        match gate.agent_wrote(line) {
             FromAgent::Forward(line) => {
                 let _ = process.events.send(HostEvent::Stdout { data: line + "\n" });
             }
@@ -436,6 +465,13 @@ fn from_program<R: Runtime>(app: &AppHandle<R>, id: u32, bytes: &[u8]) {
                 let _ = write_line(&mut process.child, &answer);
             }
             FromAgent::Ask(ask) => asks.push(ask),
+            FromAgent::ForwardAndSend { forward, to_agent } => {
+                let _ = process.events.send(HostEvent::Stdout {
+                    data: forward + "\n",
+                });
+                let _ = write_line(&mut process.child, &to_agent);
+            }
+            FromAgent::Drop => {}
         }
     }
     let agent = process.agent;
@@ -446,7 +482,12 @@ fn from_program<R: Runtime>(app: &AppHandle<R>, id: u32, bytes: &[u8]) {
 }
 
 /// Puts a tool request to the person, and writes their answer to the agent.
-fn ask_about_tool<R: Runtime>(app: &AppHandle<R>, id: u32, agent: &'static str, ask: acp::PermissionAsk) {
+fn ask_about_tool<R: Runtime>(
+    app: &AppHandle<R>,
+    id: u32,
+    agent: &'static str,
+    ask: acp::PermissionAsk,
+) {
     let title = ask
         .params
         .get("toolCall")
@@ -459,13 +500,17 @@ fn ask_about_tool<R: Runtime>(app: &AppHandle<R>, id: u32, agent: &'static str, 
         agent: agent.to_owned(),
         params: ask.params.clone(),
     };
-    let (question_id, reply) = app
-        .state::<Permissions>()
-        .ask(app, question, id, ask.session_id.clone());
-    send(app, id, HostEvent::Permission {
-        title: title.clone(),
-        waiting: true,
-    });
+    let (question_id, reply) =
+        app.state::<Permissions>()
+            .ask(app, question, id, ask.session_id.clone());
+    send(
+        app,
+        id,
+        HostEvent::Permission {
+            title: title.clone(),
+            waiting: true,
+        },
+    );
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         let reply = wait(&app, question_id, reply).await;
@@ -522,7 +567,10 @@ fn ask_about_file<R: Runtime>(app: &AppHandle<R>, id: u32, request: mcp::Consent
         let processes = app.state::<HostProcesses>();
         let mut running = processes.lock();
         if let Some(process) = running.get_mut(&id) {
-            let _ = write_line(&mut process.child, &mcp::consent_answer(request.id, allowed));
+            let _ = write_line(
+                &mut process.child,
+                &mcp::consent_answer(request.id, allowed),
+            );
         }
     });
 }
@@ -543,7 +591,12 @@ pub fn mcp_tokens<R: Runtime>(
 }
 
 /// Puts a mode that never asks to the person; the editor's request goes on only if they allow it.
-fn confirm_mode<R: Runtime>(app: &AppHandle<R>, id: u32, agent: &'static str, change: acp::ModeChange) {
+fn confirm_mode<R: Runtime>(
+    app: &AppHandle<R>,
+    id: u32,
+    agent: &'static str,
+    change: acp::ModeChange,
+) {
     let session = serde_json::from_str::<Value>(&change.line)
         .ok()
         .and_then(|message| {
@@ -571,7 +624,9 @@ fn confirm_mode<R: Runtime>(app: &AppHandle<R>, id: u32, agent: &'static str, ch
             let _ = write_line(&mut process.child, &change.line);
         } else if let Some(request) = &change.id {
             let answer = acp::mode_refused(request);
-            let _ = process.events.send(HostEvent::Stdout { data: answer + "\n" });
+            let _ = process.events.send(HostEvent::Stdout {
+                data: answer + "\n",
+            });
         }
     });
 }
@@ -586,7 +641,8 @@ async fn wait<R: Runtime>(
         Ok(Ok(reply)) => reply,
         Ok(Err(_)) => Reply::Cancelled,
         Err(_) => {
-            app.state::<Permissions>().settle(app, question, Reply::Refused);
+            app.state::<Permissions>()
+                .settle(app, question, Reply::Refused);
             Reply::Refused
         }
     }

@@ -28,7 +28,10 @@ mod tests {
     fn keeps_a_line_until_it_ends() {
         let mut lines = Lines::default();
         assert!(lines.push(b"{\"a\":").is_empty());
-        assert_eq!(lines.push(b"1}\n{\"b\":2}\n{\"c\""), ["{\"a\":1}", "{\"b\":2}"]);
+        assert_eq!(
+            lines.push(b"1}\n{\"b\":2}\n{\"c\""),
+            ["{\"a\":1}", "{\"b\":2}"]
+        );
         assert_eq!(lines.push(b":3}\n"), ["{\"c\":3}"]);
         assert_eq!(lines.push("é\n".as_bytes()), ["é"]);
     }

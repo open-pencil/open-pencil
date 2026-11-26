@@ -17,7 +17,11 @@ const CHANGED_EVENT: &str = "permission:changed";
 
 /// What an agent asks.
 #[derive(Clone, Debug, Serialize)]
-#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 pub enum Question {
     /// To run a tool: the request's `toolCall` and `options`, as ACP sends them.
     Tool { agent: String, params: Value },
@@ -127,11 +131,16 @@ impl Permissions {
     }
 
     fn shown(&self) -> Vec<Shown> {
-        self.lock().iter().map(|pending| pending.shown.clone()).collect()
+        self.lock()
+            .iter()
+            .map(|pending| pending.shown.clone())
+            .collect()
     }
 
     fn lock(&self) -> std::sync::MutexGuard<'_, Vec<Pending>> {
-        self.pending.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+        self.pending
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 }
 

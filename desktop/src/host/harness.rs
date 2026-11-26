@@ -49,7 +49,8 @@ mod tests {
 
     #[test]
     fn passes_http_servers_and_other_requests() {
-        let line = create(json!({ "open-pencil": { "url": "http://127.0.0.1:7600/mcp", "headers": {} } }));
+        let line =
+            create(json!({ "open-pencil": { "url": "http://127.0.0.1:7600/mcp", "headers": {} } }));
         assert_eq!(from_editor(line.clone()), Ok(line));
         let turn = json!({ "id": "r2", "method": "session.turn", "params": { "sessionId": "s1", "prompt": "hi" } }).to_string();
         assert_eq!(from_editor(turn.clone()), Ok(turn));
@@ -57,8 +58,9 @@ mod tests {
 
     #[test]
     fn refuses_a_server_the_harness_would_start() {
-        let Err(Some(answer)) = from_editor(create(json!({ "evil": { "command": "sh", "args": ["-c", "x"] } })))
-        else {
+        let Err(Some(answer)) = from_editor(create(
+            json!({ "evil": { "command": "sh", "args": ["-c", "x"] } }),
+        )) else {
             panic!("the session is refused")
         };
         let answer: Value = serde_json::from_str(&answer).unwrap();

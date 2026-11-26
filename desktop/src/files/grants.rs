@@ -20,8 +20,8 @@ const SAVING_SUFFIX: &str = ".saving";
 /// documents it imports, and a page's pictures, stylesheets, and fonts. Anything else beside it
 /// stays out of reach.
 const ASSET_EXTENSIONS: &[&str] = &[
-    "png", "jpg", "jpeg", "gif", "webp", "avif", "bmp", "ico", "svg", "ttf", "otf", "woff", "woff2",
-    "css", "pen",
+    "png", "jpg", "jpeg", "gif", "webp", "avif", "bmp", "ico", "svg", "ttf", "otf", "woff",
+    "woff2", "css", "pen",
 ];
 
 #[derive(Default)]
@@ -30,7 +30,10 @@ pub struct FileGrants {
 }
 
 fn grants_file<R: Runtime>(app: &AppHandle<R>) -> Option<PathBuf> {
-    app.path().app_data_dir().ok().map(|dir| dir.join(GRANTS_FILE))
+    app.path()
+        .app_data_dir()
+        .ok()
+        .map(|dir| dir.join(GRANTS_FILE))
 }
 
 /// Gives the editor the files granted before, and keeps every new grant.
@@ -48,7 +51,10 @@ pub fn restore<R: Runtime>(app: &AppHandle<R>) {
             scope.allow_file(path)
         };
     }
-    *app.state::<FileGrants>().paths.lock().unwrap_or_else(|p| p.into_inner()) = saved;
+    *app.state::<FileGrants>()
+        .paths
+        .lock()
+        .unwrap_or_else(|p| p.into_inner()) = saved;
 
     let handle = app.clone();
     scope.listen(move |event| {
@@ -185,9 +191,18 @@ mod tests {
             std::fs::write(dir.join(file), b"x").unwrap();
         }
         let document = dir.join("design.pen");
-        assert_eq!(asset_path(&document, "images/a.png"), Some(dir.join("images/a.png")));
+        assert_eq!(
+            asset_path(&document, "images/a.png"),
+            Some(dir.join("images/a.png"))
+        );
         assert_eq!(asset_path(&document, "./c.PNG"), Some(dir.join("c.PNG")));
-        for refused in ["notes.txt", ".hidden/b.png", "../a.png", "/etc/hosts", "images/missing.png"] {
+        for refused in [
+            "notes.txt",
+            ".hidden/b.png",
+            "../a.png",
+            "/etc/hosts",
+            "images/missing.png",
+        ] {
             assert_eq!(asset_path(&document, refused), None, "{refused}");
         }
         #[cfg(unix)]

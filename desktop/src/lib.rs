@@ -42,10 +42,22 @@ fn discovery_for_sandbox<R: tauri::Runtime>(
         return;
     }
     let paths = [
-        app.path().home_dir().ok().map(|home| home.join("Library/Application Support/OpenPencil/mcp.json")),
-        app.path().local_data_dir().ok().map(|dir| dir.join("OpenPencil/mcp.json")),
-        app.path().runtime_dir().ok().map(|dir| dir.join("openpencil/mcp.json")),
-        app.path().home_dir().ok().map(|home| home.join(".openpencil/mcp.json")),
+        app.path()
+            .home_dir()
+            .ok()
+            .map(|home| home.join("Library/Application Support/OpenPencil/mcp.json")),
+        app.path()
+            .local_data_dir()
+            .ok()
+            .map(|dir| dir.join("OpenPencil/mcp.json")),
+        app.path()
+            .runtime_dir()
+            .ok()
+            .map(|dir| dir.join("openpencil/mcp.json")),
+        app.path()
+            .home_dir()
+            .ok()
+            .map(|home| home.join(".openpencil/mcp.json")),
     ];
     for path in paths.into_iter().flatten() {
         let _ = app.fs_scope().allow_file(path);

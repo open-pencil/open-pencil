@@ -150,7 +150,10 @@ mod tests {
         );
         assert_eq!(consent_request("OpenPencil MCP server"), None);
         assert_eq!(consent_request(r#"{"type":"other","id":1}"#), None);
-        assert_eq!(consent_answer(3, true), r#"{"allowed":true,"id":3,"type":"consent"}"#);
+        assert_eq!(
+            consent_answer(3, true),
+            r#"{"allowed":true,"id":3,"type":"consent"}"#
+        );
         assert!(editor_opens("save_document") && !editor_opens("export_image"));
     }
 }
