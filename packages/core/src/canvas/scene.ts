@@ -573,7 +573,7 @@ export function paintShapeContent(
   const isolated = afterFills !== undefined && isolatesInnerShadows(node)
   if (isolated) canvas.saveLayer()
   if (!drawVectorMultiStyleFills(r, canvas, node, graph)) {
-    drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, fill))
+    drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, graph, fill))
   }
   if (node.type === 'TEXT') drawTextEmoji(r, canvas, node)
   afterFills?.()

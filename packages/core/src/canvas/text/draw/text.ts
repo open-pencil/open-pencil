@@ -1,11 +1,13 @@
-import type { Canvas } from '@open-pencil/canvaskit'
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+import type { Canvas, Paint } from '@open-pencil/canvaskit'
+import type { CharacterStyleOverride, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { textVerticalOffset } from '@open-pencil/scene-graph/text'
 
+import { makeFillPaint } from '#core/canvas/fills/paint'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { withTextParagraph } from '#core/canvas/text'
 import { canDrawSavedText, drawDerivedText, drawsSavedText } from '#core/canvas/text/derived'
 import { drawLaidOutEmoji, drawSavedEmoji } from '#core/canvas/text/emoji'
+import type { ParagraphBuildOptions } from '#core/canvas/text/paint'
 import { DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownText } from '#core/text/case'
 import { mayHoldEmoji } from '#core/text/emoji'
@@ -24,21 +26,142 @@ function hasComplexTextFill(fill?: Fill): boolean {
   return fill !== undefined && fill.type !== 'SOLID'
 }
 
-function drawPaintedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {
-  if (!r.fontsLoaded || !r.fontProvider) return false
+/** A style run's own visible fills, which its characters draw in place of the layer's. */
+function ownFills(style: CharacterStyleOverride): Fill[] | undefined {
+  const fills = style.fills?.filter((fill) => fill.visible)
+  return fills?.length ? fills : undefined
+}
+
+function isPlainSolid(fill: Fill): boolean {
+  return fill.type === 'SOLID' && (!fill.blendMode || fill.blendMode === 'NORMAL')
+}
+
+/**
+ * Whether the text's style runs with fills of their own draw them apart from the layer's fills,
+ * once, as Figma paints a range's fills in place of every fill of the layer. A run of one plain
+ * solid fill on a text of one solid fill takes its colour in the layer's paragraph instead.
+ */
+function drawsRangesApart(node: SceneNode): boolean {
+  let ownsFills = false
+  for (const run of node.styleRuns) {
+    const fills = ownFills(run.style)
+    if (!fills) continue
+    if (fills.length > 1 || !fills.every(isPlainSolid)) return true
+    ownsFills = true
+  }
+  if (!ownsFills) return false
+  const layerFills = node.fills.filter((fill) => fill.visible)
+  return layerFills.length !== 1 || layerFills.some((fill) => fill.type !== 'SOLID')
+}
+
+/** A paint that draws nothing, for the characters a pass leaves to another. */
+function clearPaint(r: SkiaRenderer): Paint {
+  const paint = new r.ck.Paint()
+  paint.setColor(r.ck.TRANSPARENT)
+  return paint
+}
+
+/**
+ * Draws the characters of the style runs with fills of their own, one pass per fill, so a run's
+ * fills stack as a layer's do; a gradient or an image spans the layer, as in Figma.
+ */
+function drawRangeFills(r: SkiaRenderer, canvas: Canvas, node: SceneNode, graph: SceneGraph): void {
+  let passes = 0
+  for (const run of node.styleRuns) passes = Math.max(passes, ownFills(run.style)?.length ?? 0)
+  const clear = clearPaint(r)
+  const paints = new Map<Fill, Paint | null>()
+  const paintOf = (fill: Fill): Paint | null => {
+    let paint = paints.get(fill)
+    if (paint === undefined) {
+      paint = makeFillPaint(r, fill, node, graph)
+      paints.set(fill, paint)
+    }
+    return paint
+  }
+  try {
+    for (let pass = 0; pass < passes; pass++) {
+      const rangePaint = (style: CharacterStyleOverride) => {
+        const fill = ownFills(style)?.[pass]
+        return (fill && paintOf(fill)) ?? clear
+      }
+      withTextParagraph(
+        r,
+        node,
+        r.ck.Color4f(0, 0, 0, 1),
+        { halfLeading: true, foregroundPaint: clear, rangePaint },
+        (paragraph) => paragraph.draw(canvas, 0, textVerticalOffset(node, paragraph.getHeight()))
+      )
+    }
+  } finally {
+    for (const paint of paints.values()) paint?.delete()
+    clear.delete()
+  }
+}
+
+/**
+ * Draws the text in one fill of the layer: all of it, or, when its ranges draw apart, the
+ * characters without fills of their own, then those ranges once, with the first fill.
+ */
+function drawLaidOutText(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph,
+  fill: Fill | undefined,
+  draw: (options: ParagraphBuildOptions) => void
+): void {
+  if (!drawsRangesApart(node)) {
+    draw({})
+    return
+  }
+  const clear = clearPaint(r)
+  try {
+    draw({ rangePaint: (style) => (ownFills(style) ? clear : undefined) })
+  } finally {
+    clear.delete()
+  }
+  if (fill === undefined || fill === node.fills.find((layerFill) => layerFill.visible)) {
+    drawRangeFills(r, canvas, node, graph)
+  }
+}
+
+function drawPaintedText(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  options: ParagraphBuildOptions
+): void {
   // Apply the shader directly to native glyphs: coverage layers add another rounding pass.
-  return withTextParagraph(
+  withTextParagraph(
     r,
     node,
     r.ck.Color4f(0, 0, 0, 1),
     {
       halfLeading: true,
-      foregroundPaint: r.fillPaint
+      foregroundPaint: r.fillPaint,
+      ...options
     },
     (paragraph, prepared) => {
       const y = textVerticalOffset(node, paragraph.getHeight())
       drawTextLayout(r.ck, canvas, node, prepared, y, r.fillPaint, r.documentColorSpace)
-      return true
+    }
+  )
+}
+
+function drawColoredText(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  options: ParagraphBuildOptions
+): void {
+  withTextParagraph(
+    r,
+    node,
+    r.fillPaint.getColor(),
+    { halfLeading: true, ...options },
+    (paragraph, prepared) => {
+      const paragraphY = textVerticalOffset(node, paragraph.getHeight())
+      drawTextLayout(r.ck, canvas, node, prepared, paragraphY, r.fillPaint, r.documentColorSpace)
     }
   )
 }
@@ -122,7 +245,13 @@ function drawSavedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: 
   )
 }
 
-export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
+export function renderText(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph,
+  fill?: Fill
+): void {
   const text = node.text
   if (!text) return
 
@@ -158,20 +287,12 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
     canvas.restore()
     return
   }
-  if (hasComplexTextFill(fill) && drawPaintedText(r, canvas, node)) {
-    canvas.restore()
-    return
-  }
   if (r.fontsLoaded && r.fontProvider) {
-    withTextParagraph(
-      r,
-      node,
-      r.fillPaint.getColor(),
-      { halfLeading: true },
-      (paragraph, prepared) => {
-        const paragraphY = textVerticalOffset(node, paragraph.getHeight())
-        drawTextLayout(r.ck, canvas, node, prepared, paragraphY, r.fillPaint, r.documentColorSpace)
-      }
+    const painted = hasComplexTextFill(fill)
+    drawLaidOutText(r, canvas, node, graph, fill, (options) =>
+      painted
+        ? drawPaintedText(r, canvas, node, options)
+        : drawColoredText(r, canvas, node, options)
     )
   } else if (r.chromeFonts.text) {
     const fontSize = node.fontSize || DEFAULT_FONT_SIZE
