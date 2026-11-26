@@ -43,6 +43,8 @@ export interface HTMLEngineLayoutOptions {
   requestTimeoutMs?: number
   /** Report which of the root's custom properties each element's styles come from. */
   references?: boolean
+  /** Attributes of the root element, such as the class a theme is switched with. */
+  rootAttributes?: Readonly<Record<string, string>>
   /** The root attributes of further modes to restyle the laid-out document in and capture again. */
   modes?: readonly Record<string, string>[]
 }
@@ -249,6 +251,7 @@ export class HTMLEngine {
         this.#exports.open(htmlPointer, htmlLength, urlPointer, urlLength, width, height)
       )
     )
+    if (options.rootAttributes) this.#restyle(options.rootAttributes)
     // Answers can ask for more, such as a stylesheet's fonts, so pump until nothing is waiting.
     const rasters = new Map<string, string>()
     for (let requests = this.#pump(); requests.length > 0; requests = this.#pump()) {
@@ -260,12 +263,17 @@ export class HTMLEngine {
     const capture = this.#capture(options)
     restoreImageKinds(capture, rasters, options.baseURL)
     const modes = (options.modes ?? []).map((attributes) => {
-      this.#withText(JSON.stringify(attributes), (pointer, length) =>
-        this.#exports.restyle(pointer, length)
-      )
+      this.#restyle(attributes)
       return this.#capture(options)
     })
     return { ...capture, modes }
+  }
+
+  /** Gives the root element exactly these attributes and restyles the document. */
+  #restyle(attributes: Readonly<Record<string, string>>): void {
+    this.#withText(JSON.stringify(attributes), (pointer, length) =>
+      this.#exports.restyle(pointer, length)
+    )
   }
 
   #capture(options: HTMLEngineLayoutOptions): HTMLEngineCapture {

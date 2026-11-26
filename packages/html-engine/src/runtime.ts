@@ -1,5 +1,3 @@
-import { escapeAttribute } from 'entities'
-
 import {
   attachImages,
   backgroundImageURLs,
@@ -231,20 +229,10 @@ function layoutOf(node: HTMLEngineNode): DesignLayout | undefined {
   return layout
 }
 
-function documentHTML(
-  body: string,
-  cssText: string,
-  rootAttributes: Record<string, string> = {}
-): string {
+function documentHTML(body: string, cssText: string): string {
   // `</style` would end the stylesheet early.
   const css = cssText.replaceAll(/<\/style/gi, '<\\/style')
-  const attributes = Object.entries(rootAttributes)
-    .map(([name, value]) => {
-      if (!/^[^\s"'<>/=]+$/.test(name)) throw new Error(`Invalid root attribute name "${name}"`)
-      return ` ${name}="${escapeAttribute(value)}"`
-    })
-    .join('')
-  return `<!doctype html><html${attributes}><head><style>${css}</style></head><body>${body}</body></html>`
+  return `<!doctype html><html><head><style>${css}</style></head><body>${body}</body></html>`
 }
 
 /**
@@ -375,7 +363,8 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       const fetch = keepingFetch(options.fetch, answered)
       const body = serializeHTML(document)
       const pageFetch = fontFaceFetch(laidOut, cssText, { ...options, fetch })
-      const capture = await laidOut.layout(documentHTML(body, cssText, compute.rootAttributes), {
+      const capture = await laidOut.layout(documentHTML(body, cssText), {
+        rootAttributes: compute.rootAttributes,
         baseURL: options.baseURL,
         viewport: compute.viewport ?? DEFAULT_VIEWPORT,
         fetch: pageFetch,

@@ -405,12 +405,15 @@ fn computed(node: &Node) -> Option<Value> {
     Some(Value::Object(out))
 }
 
-/// A `translate` that mixes lengths with percentages of the element's box, in pixels.
+/// A `translate` that takes a percentage of the element's box, in pixels.
 fn translate_in_pixels(node: &Node) -> Option<String> {
     let styles = node.primary_styles()?;
     let Translate::Translate(x, y, z) = &styles.get_box().translate else {
         return None;
     };
+    if !x.has_percentage() && !y.has_percentage() {
+        return None;
+    }
     let size = node.final_layout().size;
     let x = x.resolve(Length::new(size.width)).px();
     let y = y.resolve(Length::new(size.height)).px();
@@ -422,7 +425,7 @@ fn styles(doc: &BaseDocument, node: &Node, local: &[Url]) -> Value {
     let mut out = Map::new();
     for property in PROPERTIES {
         let mut value = local_urls(doc.resolved_style_value(node.id, property), local);
-        if *property == "translate" && value.contains("calc(") {
+        if *property == "translate" {
             value = translate_in_pixels(node).unwrap_or(value);
         }
         // Stylo answers a property it does not implement with an empty value.

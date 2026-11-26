@@ -3,6 +3,7 @@ import type { DesignElement, DesignStyleDeclaration } from '#dom-css/types'
 import { decorates, DECORATION_PROPERTIES } from '.'
 import { mergedStyle, pickStyle } from '../css-values'
 import { elementDisplay } from '../flow'
+import { isGrid } from '../grid'
 
 /** Boxes CSS does not draw the decoration of what contains them through. */
 function isolatesDecoration(
@@ -14,7 +15,9 @@ function isolatesDecoration(
   if (position === 'absolute' || position === 'fixed') return true
   // A flex or grid item does not float.
   const float = pickStyle(style, 'float') ?? 'none'
-  if (float !== 'none' && !/flex|grid/.test(pickStyle(around, 'display') ?? '')) return true
+  const display = pickStyle(around, 'display') ?? ''
+  const laysOutItems = display === 'flex' || display === 'inline-flex' || isGrid(display)
+  if (float !== 'none' && !laysOutItems) return true
   return elementDisplay(element, style).startsWith('inline-')
 }
 
