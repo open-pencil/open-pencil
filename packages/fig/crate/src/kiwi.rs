@@ -110,10 +110,39 @@ impl Schema {
             }
         }
         let schema = Schema { definitions };
-        if schema.has_struct_cycle() {
+        if schema.has_struct_cycle() || schema.has_empty_struct() {
             return Err(Malformed);
         }
         Ok(schema)
+    }
+
+    /// Whether a struct encodes to no bytes: it is empty, or holds only such structs. Every
+    /// other value takes at least a byte, which bounds skipping by the message's length.
+    fn has_empty_struct(&self) -> bool {
+        let is_struct = |ty: i32| {
+            usize::try_from(ty).is_ok_and(|ty| self.definitions[ty].kind == DefinitionKind::Struct)
+        };
+        let mut empty: Vec<bool> = self
+            .definitions
+            .iter()
+            .map(|definition| definition.kind == DefinitionKind::Struct)
+            .collect();
+        // Structs hold no cycles, so this settles within one pass per definition.
+        let mut changed = true;
+        while changed {
+            changed = false;
+            for (at, definition) in self.definitions.iter().enumerate() {
+                if empty[at]
+                    && !definition.fields.iter().all(|field| {
+                        !field.is_array && is_struct(field.ty) && empty[field.ty as usize]
+                    })
+                {
+                    empty[at] = false;
+                    changed = true;
+                }
+            }
+        }
+        empty.contains(&true)
     }
 
     /// Whether a struct holds itself by value, which no message could encode and skipping
@@ -366,7 +395,12 @@ impl<'a> Reader<'a> {
             self.position = end;
             return Ok(());
         }
-        for _ in 0..self.varuint()? {
+        // Each element takes at least a byte, so a count past the bytes left is damaged.
+        let count = self.varuint()? as usize;
+        if count > self.data.len() - self.position {
+            return Err(Malformed);
+        }
+        for _ in 0..count {
             self.skip(schema, field.ty)?;
         }
         Ok(())
@@ -526,5 +560,26 @@ mod tests {
         let mut reader = Reader::new(&shallow);
         assert_eq!(reader.skip(&schema, 0), Ok(()));
         assert_eq!(reader.position, shallow.len());
+    }
+
+    #[test]
+    fn bounds_skipping_by_the_bytes_left() {
+        // struct E {}: a value of no bytes, which arrays could repeat without end.
+        assert_eq!(Schema::parse(&[1, b'E', 0, 1, 0]).unwrap_err(), Malformed);
+        // struct A { E e; }: holds only an empty struct.
+        assert_eq!(
+            Schema::parse(&[2, b'E', 0, 1, 0, b'A', 0, 1, 1, b'e', 0, 0, 0, 0]).unwrap_err(),
+            Malformed
+        );
+        // message M { byte[] list = 1; uint[] numbers = 2; } with a count past the bytes left.
+        let schema =
+            Schema::parse(&[1, b'M', 0, 2, 2, b'l', 0, 3, 1, 1, b'n', 0, 7, 1, 2]).unwrap();
+        assert_eq!(
+            Reader::new(&[2, 0xff, 0xff, 0x03, 1, 0]).skip(&schema, 0),
+            Err(Malformed)
+        );
+        let mut reader = Reader::new(&[2, 2, 5, 6, 0]);
+        assert_eq!(reader.skip(&schema, 0), Ok(()));
+        assert_eq!(reader.position, 5);
     }
 }
