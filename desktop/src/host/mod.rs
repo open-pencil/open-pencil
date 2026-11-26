@@ -599,7 +599,9 @@ fn ask_about_tool<R: Runtime>(
         let Gate::Acp(gate) = &mut process.gate else {
             return;
         };
+        // A Stop while the person answered ends the question: the agent hears it cancelled.
         let option = match &reply {
+            _ if gate.turn(&ask.session_id) != ask.turn => None,
             Reply::Chose(option) => Some(option.as_str()),
             Reply::Refused => reject.as_deref(),
             Reply::Cancelled => None,

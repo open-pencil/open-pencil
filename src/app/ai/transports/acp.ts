@@ -42,7 +42,7 @@ import {
   sessionRequests
 } from '@/app/ai/agents/acp/session'
 import { noteSubagents } from '@/app/ai/agents/acp/subagents'
-import { linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
+import { linkOwnTools, stopWhenLinked, toolsUnreachableError } from '@/app/ai/agents/acp/tools'
 import { createSubagentTranscripts } from '@/app/ai/agents/acp/transcripts'
 import type { AgentChild } from '@/app/ai/agents/process'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
@@ -125,19 +125,6 @@ export function agentTurnUsage(usage: Usage, model: string | null): AgentTurnUsa
 }
 
 const usageMetaSchema = v.object({ '_claude/model': v.string() })
-
-/** The agent never opened its session with OpenPencil's MCP server, so it has no design tools. */
-function toolsUnreachableError(agentDef: ACPAgentDef, reason: string | null): Error {
-  return new Error(
-    `${agentDef.name} couldn't reach OpenPencil's tools, so your message wasn't sent.` +
-      (reason ? ` ${agentDef.name} reported: ${reason}` : '')
-  )
-}
-
-/** Closes a tools link that opens after the startup gave up, so it does not stay open. */
-function stopWhenLinked(linking: Promise<OwnToolsLink>): void {
-  linking.then((late) => late.stop()).catch(() => undefined)
-}
 
 function startupError(
   error: unknown,
@@ -405,7 +392,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         value
       })
       // Unknown until the agent answers, which it may do after a Stop: the next send asks again.
-      session.choices[category] = { ...choice, current: '' }
+      const unknown = { ...choice, current: '' }
+      session.choices[category] = unknown
       request
         .then((offered) => {
           if (this.session === session) this.noteChoices(session, sessionChoices(offered))
@@ -421,7 +409,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         if (signal?.aborted)
           void session.connection.agent.notify(methods.agent.session.cancel, { sessionId })
         if (!isModeRefusal(error)) throw error
-        // Kept asking: the turn goes on in the mode it had, which the composer shows again.
+        // Kept asking: the turn goes on in the mode it had, which the composer shows again, unless
+        // the agent reported a newer one meanwhile.
+        if (session.choices[category] !== unknown) continue
         session.choices[category] = choice
         this.onAgentChoices?.({ [category]: choice.current })
       }
@@ -591,8 +581,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
 
     sessionRef = session
-    // The person kept the agent asking, or it opened in the mode that asks; a change the agent
-    // reported while the tools were checked comes after, so the chat ends on the latest.
+    // Kept asking, or opened asking; a change reported during the tools check comes after it.
     const kept = choicesKept(this.choices(), opened.choices)
     if (!isEmptyObject(kept)) this.onAgentChoices?.(kept)
     this.noteChoices(session, openedChoices)

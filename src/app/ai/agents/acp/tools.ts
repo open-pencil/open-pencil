@@ -1,6 +1,6 @@
 import type { McpServer, SessionUpdate } from '@agentclientprotocol/sdk/unstable'
 
-import { OPEN_PENCIL_MCP_SERVER } from '@open-pencil/core/constants'
+import { OPEN_PENCIL_MCP_SERVER, type ACPAgentDef } from '@open-pencil/core/constants'
 
 import { buildACPMCPServers } from '@/app/integrations/mcp'
 import { linkChatAgent } from '@/app/integrations/mcp/link'
@@ -52,4 +52,17 @@ export async function linkOwnTools(
     },
     stop: () => link.stop()
   }
+}
+
+/** The agent never opened its session with OpenPencil's MCP server, so it has no design tools. */
+export function toolsUnreachableError(agentDef: ACPAgentDef, reason: string | null): Error {
+  return new Error(
+    `${agentDef.name} couldn't reach OpenPencil's tools, so your message wasn't sent.` +
+      (reason ? ` ${agentDef.name} reported: ${reason}` : '')
+  )
+}
+
+/** Closes a tools link that opens after the startup gave up, so it does not stay open. */
+export function stopWhenLinked(linking: Promise<OwnToolsLink>): void {
+  linking.then((late) => late.stop()).catch(() => undefined)
 }
