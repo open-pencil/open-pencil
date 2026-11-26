@@ -9,6 +9,7 @@ import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/co
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
+import { isPathTextWithStrokeGeometry } from '#core/canvas/strokes/dispatch'
 import { normalizeDashPattern } from '#core/canvas/strokes/draw'
 import { lineStrokePath } from '#core/canvas/strokes/line'
 import { fittedDashPattern } from '#core/canvas/strokes/sides'
@@ -25,7 +26,6 @@ import {
 import { layerEffects, withLayerEffects, type ExportEffectWarning } from './effects'
 import {
   round,
-  geometryBlobToSVGPath,
   makePolygonPoints,
   roundedPolygonPath,
   boxOutlinePath,
@@ -57,7 +57,13 @@ import { renderMaskedChildren } from './masks'
 import { svg, svgElement, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
-import { alignedStroke, alignedStrokeElement, shapeWithTextDetailElements } from './strokes'
+import {
+  alignedStroke,
+  alignedStrokeElement,
+  shapeWithTextDetailElements,
+  strokeGeometryElements,
+  textStrokeElements
+} from './strokes'
 import { renderTextNode } from './text/export'
 import type { SVGTextLayout } from './text/lines'
 
@@ -98,21 +104,7 @@ function vectorShapeElements(
   // Traced regions leave the open segments, which the canvas strokes, to add here.
   else if (network && filled?.traced && looseSegments(network).length > 0)
     appendAll(elements, openPathElements(node, network, common, looseSegments))
-  if (stroked) {
-    for (const geo of node.strokeGeometry) {
-      const d = geometryBlobToSVGPath(geo.commandsBlob)
-      if (d) {
-        elements.push(
-          svg('path', {
-            d,
-            fill: strokeAttrs.stroke,
-            'fill-opacity': strokeAttrs['stroke-opacity'],
-            stroke: 'none'
-          })
-        )
-      }
-    }
-  }
+  if (stroked) appendAll(elements, strokeGeometryElements(node, strokeAttrs))
   if (node.vectorNetwork)
     appendAll(elements, vectorArrowHeads(node, node.vectorNetwork, strokeAttrs))
   return elements.length > 0
@@ -409,6 +401,8 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   const effects = layerEffects(node, ctx)
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
+  const visibleStrokes = node.strokes.filter((s) => s.visible)
+
   if (node.type === 'TEXT') {
     const fill = exportedFill(
       node.fills.find((f) => f.visible),
@@ -416,11 +410,12 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
       ctx
     )
     const text = renderTextNode(node, fill.color, ctx, fill.opacity)
-    return svgElement('g', groupAttrs, withLayerEffects([text], effects, groupAttrs))
+    const strokes = textStrokeElements(node, visibleStrokes, ctx)
+    const drawn = isPathTextWithStrokeGeometry(node) ? [...strokes, text] : [text, ...strokes]
+    return svgElement('g', groupAttrs, withLayerEffects(drawn, effects, groupAttrs))
   }
 
   const visibleFills = node.fills.filter((f) => f.visible)
-  const visibleStrokes = node.strokes.filter((s) => s.visible)
   const tint = ctx.tint?.(node) ?? []
   const ownFill = visibleFills.length > 0 && !hasPathLevelFills(node) ? visibleFills[0] : undefined
   const fill = exportedFill(ownFill, node, ctx)
@@ -429,11 +424,12 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   // `currentColor` has no alpha. Display P3 normally bakes solid opacity into the color, which a
   // tint throws away, so a tinted solid keeps `fill-opacity` in every color space.
   const fillOpacity = ownFill ? solidFillOpacity(ownFill, ctx.colors, tintedFill) : fill.opacity
-  const ownStrokes = svgStrokeAttrs(visibleStrokes, ctx.colors, node.strokeCap)
+  const ownStrokes = svgStrokeAttrs(visibleStrokes, node, ctx)
   const strokeAttrs =
     ownStrokes.stroke && tint.includes('stroke')
       ? { ...ownStrokes, stroke: CURRENT_COLOR }
       : ownStrokes
+  const drawnStrokes = ownStrokes.stroke ? visibleStrokes : []
 
   const children: (SVGNode | null)[] = buildShapeChildren(
     node,
@@ -441,7 +437,7 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     fillAttr,
     fillOpacity,
     strokeAttrs,
-    visibleStrokes,
+    drawnStrokes,
     ctx
   )
 

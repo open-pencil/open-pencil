@@ -2,10 +2,11 @@ import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 
 import { booleanOutlines } from './boolean/outline'
 import type { SVGExportContext } from './defs'
-import { nextDefId } from './defs'
+import { nextDefId, svgStrokeAttrs } from './defs'
 import { svg, svgElement, type SVGNode } from './node'
 import {
   boxOutlinePath,
+  geometryBlobToSVGPath,
   nodeOutlinePath,
   round,
   shapeWithTextDetailsPath,
@@ -131,4 +132,44 @@ export function shapeWithTextDetailElements(
   const clipId = nextDefId(ctx, 'clip')
   ctx.defs.push(svg('clipPath', { id: clipId }, svg('path', { d: shapeWithTextOutlinePath(node) })))
   return [svg('path', { d: details, fill: 'none', ...strokeAttrs, 'clip-path': `url(#${clipId})` })]
+}
+
+/** A layer's saved stroke outlines, filled in its stroke's paint as the canvas fills them. */
+export function strokeGeometryElements(
+  node: SceneNode,
+  strokeAttrs: Attrs,
+  attrs: Attrs = {}
+): SVGNode[] {
+  return node.strokeGeometry.flatMap(({ commandsBlob }) => {
+    const d = geometryBlobToSVGPath(commandsBlob)
+    if (!d) {
+      return []
+    }
+    const fill = { fill: strokeAttrs.stroke, 'fill-opacity': strokeAttrs['stroke-opacity'] }
+    return [svg('path', { d, ...fill, stroke: 'none', ...attrs })]
+  })
+}
+
+/**
+ * A text's saved stroke outlines as the canvas draws them over its glyphs, an inside stroke kept to
+ * the text box.
+ */
+export function textStrokeElements(
+  node: SceneNode,
+  visibleStrokes: Stroke[],
+  ctx: SVGExportContext
+): SVGNode[] {
+  if (node.strokeGeometry.length === 0) {
+    return []
+  }
+  const strokeAttrs = svgStrokeAttrs(visibleStrokes, node, ctx)
+  if (!strokeAttrs.stroke) {
+    return []
+  }
+  if (visibleStrokes[0].align !== 'INSIDE') {
+    return strokeGeometryElements(node, strokeAttrs)
+  }
+  const clipId = nextDefId(ctx, 'clip')
+  ctx.defs.push(svg('clipPath', { id: clipId }, svg('path', { d: boxOutlinePath(node) })))
+  return strokeGeometryElements(node, strokeAttrs, { 'clip-path': `url(#${clipId})` })
 }
