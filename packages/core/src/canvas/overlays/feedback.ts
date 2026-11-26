@@ -192,7 +192,7 @@ export function drawEditingText(
   inNodeSpace(r, canvas, createSceneGeometry(graph, overlays.rotationPreview), node, () => {
     if (placeholder) {
       paintFills(r, placeholder.fills, placeholder, graph, (fill) =>
-        r.renderText(canvas, placeholder, graph, fill)
+        r.renderText(canvas, placeholder, fill)
       )
     }
     drawTextEditOverlay(r, canvas, node, editor, outset)

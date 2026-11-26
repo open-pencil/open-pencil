@@ -95,14 +95,8 @@ function markShaded(r: SkiaRenderer, paint: Paint): void {
   else if (paint === r.strokePaint) r.strokePaintShaded = true
 }
 
-export function drawNodeFill(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  node: SceneNode,
-  graph: SceneGraph,
-  fill?: Fill
-): void {
-  if (node.type === 'TEXT') r.renderText(canvas, node, graph, fill)
+export function drawNodeFill(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
+  if (node.type === 'TEXT') r.renderText(canvas, node, fill)
   else if (node.type !== 'LINE') {
     withNodeOutline(r, node, (outline) => drawOutline(canvas, outline, r.fillPaint))
   }
@@ -194,9 +188,10 @@ function recordPatternSource(
         source.fills,
         source,
         graph,
-        (sourceFill) => drawNodeFill(r, canvas, source, graph, sourceFill),
+        (sourceFill) => drawNodeFill(r, canvas, source, sourceFill),
         { patternStack }
       )
+      if (source.type === 'TEXT') r.drawTextRangeFills(canvas, source, graph)
     }
     canvas.restore()
   }

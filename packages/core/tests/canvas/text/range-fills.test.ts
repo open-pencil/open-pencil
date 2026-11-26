@@ -46,6 +46,14 @@ function gradient(opacity = 1): Fill {
   }
 }
 
+/** An image fill whose image the graph does not hold, so it draws nothing. */
+const missingImage: Fill = {
+  ...black,
+  type: 'IMAGE',
+  imageHash: '0'.repeat(40),
+  imageScaleMode: 'FILL'
+}
+
 /** The text drawn on a transparent canvas, as unpremultiplied RGBA. */
 function draw(fills: Fill[], rangeFills?: Fill[]): ArrayLike<number> {
   const graph = new SceneGraph()
@@ -146,6 +154,15 @@ describe('style runs with fills of their own', () => {
 
   test('a translucent range is painted once, whatever fills the layer has', () => {
     expectRangeDrawnAsLayer([black, solid(1, 0, 0, 0.5)], [solid(0, 0, 1, 0.5)])
+  })
+
+  test('a range whose fills are empty or hidden draws nothing', () => {
+    expectRangeDrawnAsLayer([black], [])
+    expectRangeDrawnAsLayer([black], [{ ...green, visible: false }])
+  })
+
+  test("a range draws when the layer's first fill has nothing to draw yet", () => {
+    expectRangeDrawnAsLayer([missingImage, black], [gradient()])
   })
 
   test('a range of one solid fill on a solid layer takes its colour', () => {

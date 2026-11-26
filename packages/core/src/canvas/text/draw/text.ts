@@ -26,10 +26,12 @@ function hasComplexTextFill(fill?: Fill): boolean {
   return fill !== undefined && fill.type !== 'SOLID'
 }
 
-/** A style run's own visible fills, which its characters draw in place of the layer's. */
+/**
+ * A style run's own visible fills, which its characters draw in place of the layer's: none when
+ * they are empty or all hidden, as Figma draws such a range, and undefined when it has no fills.
+ */
 function ownFills(style: CharacterStyleOverride): Fill[] | undefined {
-  const fills = style.fills?.filter((fill) => fill.visible)
-  return fills?.length ? fills : undefined
+  return style.fills?.filter((fill) => fill.visible)
 }
 
 function isPlainSolid(fill: Fill): boolean {
@@ -46,7 +48,7 @@ function drawsRangesApart(node: SceneNode): boolean {
   for (const run of node.styleRuns) {
     const fills = ownFills(run.style)
     if (!fills) continue
-    if (fills.length > 1 || !fills.every(isPlainSolid)) return true
+    if (fills.length !== 1 || !fills.every(isPlainSolid)) return true
     ownsFills = true
   }
   if (!ownsFills) return false
@@ -100,14 +102,11 @@ function drawRangeFills(r: SkiaRenderer, canvas: Canvas, node: SceneNode, graph:
 
 /**
  * Draws the text in one fill of the layer: all of it, or, when its ranges draw apart, the
- * characters without fills of their own, then those ranges once, with the first fill.
+ * characters without fills of their own, which leaves those ranges to `drawTextRangeFills`.
  */
 function drawLaidOutText(
   r: SkiaRenderer,
-  canvas: Canvas,
   node: SceneNode,
-  graph: SceneGraph,
-  fill: Fill | undefined,
   draw: (options: ParagraphBuildOptions) => void
 ): void {
   if (!drawsRangesApart(node)) {
@@ -119,9 +118,6 @@ function drawLaidOutText(
     draw({ rangePaint: (style) => (ownFills(style) ? clear : undefined) })
   } finally {
     clear.delete()
-  }
-  if (fill === undefined || fill === node.fills.find((layerFill) => layerFill.visible)) {
-    drawRangeFills(r, canvas, node, graph)
   }
 }
 
@@ -181,13 +177,35 @@ function drawResolvedPathText(
   )
 }
 
-/** Whether the text is drawn from the editor's own layout, which leaves its emoji to be drawn. */
-function drawsLaidOutText(r: SkiaRenderer, node: SceneNode): boolean {
+/** Whether the text can be drawn from the editor's own layout rather than its saved glyphs. */
+function laysOutText(r: SkiaRenderer, node: SceneNode): boolean {
   if (!r.fontsLoaded || !r.fontProvider || node.textPathData !== null) return false
   const readiness = r.nodeFontReadiness(node)
   // Edited text draws its paragraph even after its fonts gave up, so its emoji draw over it too.
-  const laidOut = readiness !== 'pending' && (readiness !== 'exhausted' || !drawsSaved(r, node))
-  return laidOut && mayHoldEmoji(shownText(node))
+  return readiness !== 'pending' && (readiness !== 'exhausted' || !drawsSaved(r, node))
+}
+
+/** Whether the text is drawn from the editor's own layout, which leaves its emoji to be drawn. */
+function drawsLaidOutText(r: SkiaRenderer, node: SceneNode): boolean {
+  return laysOutText(r, node) && mayHoldEmoji(shownText(node))
+}
+
+/**
+ * The ranges of a text with fills of their own, once whatever fills of the layer could draw: the
+ * layer's passes leave them out. Text without a visible fill draws nothing, ranges included, and
+ * text drawn from its saved glyphs draws its ranges' colours with them.
+ */
+export function drawTextRangeFills(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph
+): void {
+  if (!drawsRangesApart(node) || !node.fills.some((fill) => fill.visible)) return
+  if ((drawsSaved(r, node) && drawsSavedText(node)) || !laysOutText(r, node)) return
+  canvas.save()
+  drawRangeFills(r, canvas, node, graph)
+  canvas.restore()
 }
 
 /**
@@ -245,13 +263,7 @@ function drawSavedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: 
   )
 }
 
-export function renderText(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  node: SceneNode,
-  graph: SceneGraph,
-  fill?: Fill
-): void {
+export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
   const text = node.text
   if (!text) return
 
@@ -289,7 +301,7 @@ export function renderText(
   }
   if (r.fontsLoaded && r.fontProvider) {
     const painted = hasComplexTextFill(fill)
-    drawLaidOutText(r, canvas, node, graph, fill, (options) =>
+    drawLaidOutText(r, node, (options) =>
       painted
         ? drawPaintedText(r, canvas, node, options)
         : drawColoredText(r, canvas, node, options)

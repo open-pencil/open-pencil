@@ -834,16 +834,20 @@ export class SkiaRenderer {
     renderShadowEffects(this, canvas, node, graph, pass)
   }
 
-  renderText(canvas: Canvas, node: SceneNode, graph: SceneGraph, fill?: Fill): void {
-    TextRender.renderText(this, canvas, node, graph, fill)
+  renderText(canvas: Canvas, node: SceneNode, fill?: Fill): void {
+    TextRender.renderText(this, canvas, node, fill)
+  }
+
+  drawTextRangeFills(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {
+    TextRender.drawTextRangeFills(this, canvas, node, graph)
   }
 
   applyFill(fill: Fill, node: SceneNode, graph: SceneGraph): boolean {
     return Fills.applyFill(this, fill, node, graph)
   }
 
-  drawNodeFill(canvas: Canvas, node: SceneNode, graph: SceneGraph, fill?: Fill): void {
-    Fills.drawNodeFill(this, canvas, node, graph, fill)
+  drawNodeFill(canvas: Canvas, node: SceneNode, fill?: Fill): void {
+    Fills.drawNodeFill(this, canvas, node, fill)
   }
 
   drawNodeStroke(canvas: Canvas, node: SceneNode): void {

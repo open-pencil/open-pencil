@@ -112,7 +112,7 @@ describe('canvas corner smoothing', () => {
     const { renderer } = createRenderer()
     const canvas = createCanvas()
 
-    drawNodeFill(renderer, asCanvas(canvas), node, graph)
+    drawNodeFill(renderer, asCanvas(canvas), node)
 
     expect(canvas.drawPath).toHaveBeenCalled()
     expect(canvas.drawRRect).not.toHaveBeenCalled()

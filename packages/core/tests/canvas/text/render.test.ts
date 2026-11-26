@@ -53,9 +53,6 @@ function createMockPicture() {
   return { delete: mock(() => undefined) }
 }
 
-/** The graph the mocked renderer draws from: its texts have no images to look up. */
-const mockGraph = new SceneGraph()
-
 function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
   const paragraph = createMockParagraph()
   return asDouble<SkiaRenderer & { _paragraph: ReturnType<typeof createMockParagraph> }>({
@@ -152,7 +149,7 @@ describe('renderText', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
 
-    renderText(r, canvas as never, textNode(), mockGraph)
+    renderText(r, canvas as never, textNode())
 
     expect(r.buildParagraph).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
       halfLeading: true
@@ -166,7 +163,7 @@ describe('renderText', () => {
     const r = createMockRenderer({ nodeFontReadiness: mock(() => 'pending') })
     const canvas = createMockCanvas()
 
-    renderText(r, canvas as never, textNode(), mockGraph)
+    renderText(r, canvas as never, textNode())
 
     expect(r.buildParagraph).not.toHaveBeenCalled()
     expect(canvas.drawParagraph).not.toHaveBeenCalled()
@@ -177,7 +174,7 @@ describe('renderText', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
 
-    renderText(r, canvas as never, textNode(), mockGraph, {
+    renderText(r, canvas as never, textNode(), {
       type: 'GRADIENT_LINEAR',
       visible: true,
       opacity: 1,
@@ -208,7 +205,6 @@ describe('renderText', () => {
       r,
       canvas as never,
       textNode({ text: 'OPEN', fontFamily: 'Inter', width: 120, height: 40 }),
-      mockGraph,
       {
         type: 'GRADIENT_LINEAR',
         visible: true,
@@ -232,7 +228,7 @@ describe('renderText', () => {
     })
     const ready = createMockRenderer()
     const readyCanvas = createMockCanvas()
-    renderText(ready, readyCanvas as never, node, mockGraph)
+    renderText(ready, readyCanvas as never, node)
     expect(ready.buildParagraph).toHaveBeenCalledTimes(1)
     expect(readyCanvas.drawPath).not.toHaveBeenCalled()
 
@@ -242,7 +238,7 @@ describe('renderText', () => {
       ck: { ...base.ck, FillType: { EvenOdd: 0, Winding: 1 } }
     })
     const substitutedCanvas = createMockCanvas()
-    renderText(substituted, substitutedCanvas as never, node, mockGraph)
+    renderText(substituted, substitutedCanvas as never, node)
     expect(substituted.buildParagraph).not.toHaveBeenCalled()
     expect(substitutedCanvas.drawPath).toHaveBeenCalled()
   })
@@ -255,7 +251,7 @@ describe('renderText', () => {
     })
     const edited = createMockRenderer({ editingTextId: node.id })
     const editedCanvas = createMockCanvas()
-    renderText(edited, editedCanvas as never, node, mockGraph)
+    renderText(edited, editedCanvas as never, node)
     expect(edited.buildParagraph).toHaveBeenCalledTimes(1)
     expect(editedCanvas.drawPath).not.toHaveBeenCalled()
 
@@ -266,7 +262,7 @@ describe('renderText', () => {
       ck: { ...base.ck, FillType: { EvenOdd: 0, Winding: 1 } }
     })
     const otherCanvas = createMockCanvas()
-    renderText(other, otherCanvas as never, node, mockGraph)
+    renderText(other, otherCanvas as never, node)
     expect(other.buildParagraph).not.toHaveBeenCalled()
     expect(otherCanvas.drawPath).toHaveBeenCalled()
   })
@@ -276,7 +272,7 @@ describe('renderText', () => {
     const canvas = createMockCanvas()
     const node = textNode({ textPicture: new Uint8Array([1, 2, 3]) })
 
-    renderText(r, canvas as never, node, mockGraph)
+    renderText(r, canvas as never, node)
 
     expect(canvas.drawPicture).not.toHaveBeenCalled()
     expect(r.buildParagraph).toHaveBeenCalledTimes(1)
@@ -292,7 +288,7 @@ describe('renderText', () => {
       derivedTextGlyphs: null
     })
 
-    renderText(r, canvas as never, node, mockGraph)
+    renderText(r, canvas as never, node)
 
     expect(r.buildParagraph).toHaveBeenCalledTimes(1)
     expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
@@ -326,7 +322,7 @@ describe('renderText', () => {
         ]
       })
 
-      renderText(r, canvas as never, node, mockGraph)
+      renderText(r, canvas as never, node)
 
       expect(r.buildParagraph).not.toHaveBeenCalled()
     }
@@ -336,7 +332,7 @@ describe('renderText', () => {
     const canvas = createMockCanvas()
     const node = textNode({ textPicture: new Uint8Array([1, 2, 3]) })
 
-    renderText(r, canvas as never, node, mockGraph)
+    renderText(r, canvas as never, node)
 
     expect(canvas.drawPicture).toHaveBeenCalledTimes(1)
     expect(r.buildParagraph).not.toHaveBeenCalled()
@@ -346,7 +342,7 @@ describe('renderText', () => {
     const r = createMockRenderer({ fontsLoaded: false, fontProvider: null })
     const canvas = createMockCanvas()
 
-    renderText(r, canvas as never, textNode(), mockGraph)
+    renderText(r, canvas as never, textNode())
 
     expect(canvas.drawText).toHaveBeenCalledTimes(1)
     expect(r.buildParagraph).not.toHaveBeenCalled()
@@ -356,7 +352,7 @@ describe('renderText', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
 
-    renderText(r, canvas as never, textNode({ text: '' }), mockGraph)
+    renderText(r, canvas as never, textNode({ text: '' }))
 
     expect(r.buildParagraph).not.toHaveBeenCalled()
     expect(canvas.drawText).not.toHaveBeenCalled()
@@ -545,7 +541,7 @@ describe('renderText headless visual', () => {
 
     const canvas = surface.getCanvas()
     canvas.clear(ck.WHITE)
-    renderText(renderer, canvas, expectDefined(graph.getNode(node.id), 'text node'), graph)
+    renderText(renderer, canvas, expectDefined(graph.getNode(node.id), 'text node'))
     surface.flush()
 
     const image = surface.makeImageSnapshot()
@@ -697,7 +693,7 @@ describe('renderText headless visual', () => {
 
     const canvas = surface.getCanvas()
     canvas.clear(ck.WHITE)
-    renderText(renderer, canvas, expectDefined(graph.getNode(node.id), 'text node'), graph)
+    renderText(renderer, canvas, expectDefined(graph.getNode(node.id), 'text node'))
     surface.flush()
 
     const image = surface.makeImageSnapshot()
