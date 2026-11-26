@@ -289,6 +289,36 @@ function styleFromSceneNode(
   return style
 }
 
+/** Whether a frame around the node flows right to left, which exports as a `direction` it inherits. */
+function insideRightToLeftFrame(graph: SceneGraph, node: SceneNode): boolean {
+  for (let id = node.parentId; id;) {
+    const ancestor = graph.getNode(id)
+    if (!ancestor) return false
+    if (ancestor.layoutDirection === 'RTL') return true
+    id = ancestor.parentId
+  }
+  return false
+}
+
+/** The box text lines up in: its display, direction, and the side it aligns to. */
+function addTextBox(
+  style: DesignStyleDeclaration,
+  node: SceneNode,
+  parent: SceneNode | undefined,
+  inheritsRightToLeft: boolean
+): void {
+  // Nothing lays out text on the canvas, and an inline box would ignore its width and alignment.
+  if (!parent || parent.type === 'CANVAS') style.display = 'inline-block'
+  const rtl = resolveNodeTextDirection(node) === 'RTL'
+  // Text says its own direction where a frame around it flows right to left, which it inherits.
+  if (rtl) style.direction = 'rtl'
+  else if (inheritsRightToLeft) style.direction = 'ltr'
+  // Alignment names a side whatever the direction; right-to-left text starts at the right.
+  if (node.textAlignHorizontal !== 'LEFT' || rtl)
+    style['text-align'] =
+      node.textAlignHorizontal === 'JUSTIFIED' ? 'justify' : node.textAlignHorizontal.toLowerCase()
+}
+
 function textColor(node: SceneNode, css: FieldCSS, profile: ColorProfile): string {
   const colorIndex = node.fills.findIndex(isDrawnPaint)
   if (colorIndex === -1) {
@@ -303,13 +333,14 @@ function styleFromTextNode(
   parent: SceneNode | undefined,
   css: FieldCSS,
   profile: ColorProfile,
-  metrics: CanvasMetrics | undefined
+  metrics: CanvasMetrics | undefined,
+  inheritsRightToLeft: boolean
 ): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
   addSize(style, node, parent, css)
   addPositioning(style, node, parent)
   addLayoutChild(style, node, parent)
-  if (resolveNodeTextDirection(node) === 'RTL') style.direction = 'rtl'
+  addTextBox(style, node, parent, inheritsRightToLeft)
   style.color = textColor(node, css, profile)
   style['font-family'] = node.fontFamily
   style['font-size'] = css('fontSize', px(node.fontSize))
@@ -329,8 +360,6 @@ function styleFromTextNode(
     const written = isEqual(ending, node.letterSpacing) ? spacing : letterSpacingToCSS(ending)
     Object.assign(style, letterSpacingRoomCSS(ending, written, style.width))
   }
-  if (node.textAlignHorizontal !== 'LEFT')
-    style['text-align'] = node.textAlignHorizontal.toLowerCase()
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
   Object.assign(style, textEffectsToCSS(node.effects, css, profile))
   if (node.textDecoration !== 'NONE') {
@@ -425,7 +454,7 @@ function sceneNodeToDesignNode(
   if (node.type === 'TEXT') {
     const content = textElementContent(
       node,
-      styleFromTextNode(node, parent, css, profile, metrics),
+      styleFromTextNode(node, parent, css, profile, metrics, insideRightToLeftFrame(graph, node)),
       profile
     )
     return {
