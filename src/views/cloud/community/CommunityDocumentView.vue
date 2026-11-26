@@ -146,68 +146,70 @@ useHead({ title: () => document.value?.name ?? communityMessages.value.community
         <img :src="document.thumbnailPath" :alt="document.name" class="size-full object-contain" />
       </div>
 
-      <div class="mt-10 grid gap-10 border-t border-border pt-8 lg:grid-cols-[minmax(0,1fr)_16rem]">
-        <div class="flex min-w-0 flex-col gap-8">
-          <p v-if="document.description" class="max-w-2xl text-sm/relaxed text-pretty">
-            {{ document.description }}
-          </p>
-          <section v-if="document.versions.length > 0">
-            <h2 class="mb-3 text-sm font-semibold">{{ cloud.versionHistory }}</h2>
-            <div class="overflow-hidden rounded-lg border border-border bg-panel">
-              <ul :class="versions.list()" :aria-label="cloud.versionHistory">
-                <CloudVersionListItem
-                  v-if="!document.versions[0]?.current"
-                  :label="cloud.currentVersion"
-                  current
-                  :selected="versionId === null"
-                  @select="versionId = null"
-                />
-                <CloudVersionListItem
-                  v-for="(version, index) in document.versions"
-                  :key="version.id"
-                  :label="
-                    index === 0
-                      ? communityMessages.communityLatestVersion({ name: version.name })
-                      : version.name
-                  "
-                  :description="version.description"
-                  :at="version.createdAt"
-                  named
-                  :selected="versionId === version.id || (versionId === null && version.current)"
-                  :last="index === document.versions.length - 1"
-                  @select="versionId = version.id"
-                />
-              </ul>
-            </div>
-          </section>
+      <div class="@container/details mt-10 border-t border-border pt-8">
+        <div class="grid gap-10 @3xl/details:grid-cols-[minmax(0,1fr)_16rem]">
+          <div class="flex min-w-0 flex-col gap-8">
+            <p v-if="document.description" class="max-w-2xl text-sm/relaxed text-pretty">
+              {{ document.description }}
+            </p>
+            <section v-if="document.versions.length > 0">
+              <h2 class="mb-3 text-sm font-semibold">{{ cloud.versionHistory }}</h2>
+              <div class="overflow-hidden rounded-lg border border-border bg-panel">
+                <ul :class="versions.list()" :aria-label="cloud.versionHistory">
+                  <CloudVersionListItem
+                    v-if="!document.versions[0]?.current"
+                    :label="cloud.currentVersion"
+                    current
+                    :selected="versionId === null"
+                    @select="versionId = null"
+                  />
+                  <CloudVersionListItem
+                    v-for="(version, index) in document.versions"
+                    :key="version.id"
+                    :label="
+                      index === 0
+                        ? communityMessages.communityLatestVersion({ name: version.name })
+                        : version.name
+                    "
+                    :description="version.description"
+                    :at="version.createdAt"
+                    named
+                    :selected="versionId === version.id || (versionId === null && version.current)"
+                    :last="index === document.versions.length - 1"
+                    @select="versionId = version.id"
+                  />
+                </ul>
+              </div>
+            </section>
+          </div>
+          <aside class="flex flex-col gap-6 text-xs">
+            <section class="max-sm:hidden">
+              <AppButton
+                variant="outline"
+                size="md"
+                @click="openCommunityInDesktop({ documentId: document.id, versionId })"
+              >
+                <template #leading><icon-lucide-monitor /></template>
+                {{ communityMessages.communityOpenInDesktop }}
+              </AppButton>
+            </section>
+            <section>
+              <h2 class="mb-3 text-sm font-semibold">{{ cloud.share }}</h2>
+              <AppCopyButton
+                :value="pageURL"
+                :label="cloud.shareCopyLink"
+                :copied-label="cloud.shareLinkCopied"
+                size="md"
+                variant="outline"
+              >
+                <template #icon><icon-lucide-link /></template>
+              </AppCopyButton>
+            </section>
+            <p class="border-t border-border pt-6 text-muted">
+              {{ communityMessages.communityOpenNote }}
+            </p>
+          </aside>
         </div>
-        <aside class="flex flex-col gap-6 text-xs">
-          <section class="max-sm:hidden">
-            <AppButton
-              variant="outline"
-              size="md"
-              @click="openCommunityInDesktop({ documentId: document.id, versionId })"
-            >
-              <template #leading><icon-lucide-monitor /></template>
-              {{ communityMessages.communityOpenInDesktop }}
-            </AppButton>
-          </section>
-          <section>
-            <h2 class="mb-3 text-sm font-semibold">{{ cloud.share }}</h2>
-            <AppCopyButton
-              :value="pageURL"
-              :label="cloud.shareCopyLink"
-              :copied-label="cloud.shareLinkCopied"
-              size="md"
-              variant="outline"
-            >
-              <template #icon><icon-lucide-link /></template>
-            </AppCopyButton>
-          </section>
-          <p class="border-t border-border pt-6 text-muted">
-            {{ communityMessages.communityOpenNote }}
-          </p>
-        </aside>
       </div>
 
       <section v-if="more.length > 0" class="mt-12">
