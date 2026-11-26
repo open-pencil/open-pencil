@@ -73,12 +73,11 @@ export function exportBounds(
   if (!useAbsoluteBounds) {
     for (const id of nodeIds) {
       const node = graph.getNode(id)
-      if (!node) continue
+      // Null for a layer that draws nothing, hidden or transparent itself or in what holds it.
+      const drawn = node ? absoluteRenderBounds(graph, node) : null
+      if (!node || !drawn) continue
       // A slide is its own page: the shadows that set it apart in the grid fall outside it.
-      bounds = unionVisualBounds(
-        bounds,
-        node.type === 'SLIDE' ? boxBounds(graph, node) : absoluteRenderBounds(graph, node)
-      )
+      bounds = unionVisualBounds(bounds, node.type === 'SLIDE' ? boxBounds(graph, node) : drawn)
     }
     return bounds
   }

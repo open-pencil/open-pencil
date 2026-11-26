@@ -244,7 +244,7 @@ export function createEditor(options?: EditorOptions) {
   const shaders = createShaderActions(ctx, nodes)
   const alignment = createAlignmentActions(ctx)
   const canvasViews = createCanvasViewActions(ctx)
-  const clipboardBridge = createClipboardBridge(clipboard, selection, slides)
+  const clipboardBridge = createClipboardBridge(clipboard, selection, slides, () => ctx.graph)
   const componentBridge = createComponentBridge(components, selection, structure, pages)
   const structureBridge = createStructureBridge(structure, selection)
   const frameNavigation = createFrameNavigationBridge(ctx, selection, viewport)

@@ -148,6 +148,16 @@ watch(
   },
   { immediate: true }
 )
+// The notes strip comes and goes with a deck, not only with the panels, so its handle waits too.
+const notesHandleReady = ref(false)
+watch(
+  notesShown,
+  (shown) => {
+    notesHandleReady.value = false
+    if (shown) void nextTick(() => (notesHandleReady.value = true))
+  },
+  { immediate: true }
+)
 const editor = useMessages('editor')
 // Until a room's document arrives there is nothing to edit, so its screen replaces the editor.
 const { pending: roomPending } = useRoomActions()
@@ -223,6 +233,7 @@ const { pending: roomPending } = useRoomActions()
         <template v-if="notesShown">
           <SplitterResizeHandle
             data-test-id="slide-notes-splitter-handle"
+            :disabled="!notesHandleReady"
             :class="verticalSplitterStyles.handle()"
           >
             <div :class="verticalSplitterStyles.divider()" />

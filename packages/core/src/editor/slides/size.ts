@@ -95,11 +95,13 @@ export function createSlideSizeActions(ctx: EditorContext, zoomToFit: () => void
       if (grid) ctx.runLayoutForNode(grid)
       ctx.requestRender()
     }
-    // The slide on the stage fills it again after the resize, and after its undo and redo.
-    const staged = slides.some(({ id }) => id === ctx.state.focusedSlideId)
+    // The slide on the stage fills it again after the resize, and after its undo and redo, when
+    // it is one of those resized then.
+    const resized = new Set(slides.map(({ id }) => id))
     const settle = () => {
       relayout()
-      if (staged && ctx.state.focusedSlideId !== null) zoomToFit()
+      const staged = ctx.state.focusedSlideId
+      if (staged !== null && resized.has(staged)) zoomToFit()
     }
     ctx.undo.runBatch('Resize slides', () => {
       // Undo replays the batch backwards, so this entry settles the deck once the sizes are back.

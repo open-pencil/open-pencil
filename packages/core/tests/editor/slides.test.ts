@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
 
 import {
   createSlide,
@@ -11,11 +11,25 @@ import {
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { canvasRootId, createEditor } from '#core/editor'
+import { sourcePasteTarget } from '#core/editor/clipboard/paste/target'
 import { createDocumentGraph } from '#core/editor/document-settings'
+
+const opened: Editor[] = []
+
+afterEach(() => {
+  for (const editor of opened.splice(0)) editor.dispose()
+})
+
+/** An editor this file disposes after each test. */
+function open(...args: Parameters<typeof createEditor>): Editor {
+  const editor = createEditor(...args)
+  opened.push(editor)
+  return editor
+}
 
 /** A deck of three slides in two sections: A and B, then C. */
 function setup() {
-  const editor = createEditor()
+  const editor = open()
   editor.replaceGraph(createDocumentGraph('slides', 'light'))
   const a = expectDefined(slides(editor)[0]?.[0])
   const b = expectDefined(editor.addSlide(a))
@@ -167,8 +181,23 @@ function rowOf(editor: Editor, id: string): string | null | undefined {
 test('arrow keys leave slides where the deck lays them out', () => {
   const { editor, a, b, c } = setup()
   editor.select([a])
+  const before = editor.graph.getAbsolutePosition(a)
   editor.nudgeSelected(1, 0)
   expect(slides(editor)).toEqual([[a, b], [c]])
+  expect(editor.graph.getAbsolutePosition(a)).toEqual(before)
+})
+
+test('undoing a move puts back only the slides it moved, keeping a collaborator’s reorder', () => {
+  const { editor, a, b } = setup()
+  const d = expectDefined(editor.addSlide(b))
+  editor.moveSlides([a], { type: 'beside', slideId: b, side: 'after' })
+  expect(slides(editor)[0]).toEqual([b, a, d])
+  // A collaborator moves D to the front of the section meanwhile.
+  editor.graph.insertChildAt(d, expectDefined(editor.graph.getNode(d)?.parentId), 0)
+  editor.undo.undo()
+  expect(slides(editor)[0]).toEqual([a, d, b])
+  editor.undo.redo()
+  expect(slides(editor)[0]).toEqual([d, b, a])
 })
 
 test('clicks and new layers on the stage belong to the slide it shows', () => {
@@ -180,14 +209,14 @@ test('clicks and new layers on the stage belong to the slide it shows', () => {
 })
 
 test('a deck opens on its first slide, and a design on the whole page', () => {
-  const editor = createEditor()
+  const editor = open()
   editor.replaceGraph(createDocumentGraph('slides', 'light'))
   expect(editor.state.focusedSlideId).toBe(expectDefined(slides(editor)[0]?.[0]))
   editor.replaceGraph(createDocumentGraph('design', 'light'))
   expect(editor.state.focusedSlideId).toBeNull()
-  const opened = createEditor({ graph: createDocumentGraph('slides', 'light') })
-  expect(names(opened)).toEqual(['1'])
-  expect(opened.state.focusedSlideId).toBe(expectDefined(slides(opened)[0]?.[0]))
+  const fresh = open({ graph: createDocumentGraph('slides', 'light') })
+  expect(names(fresh)).toEqual(['1'])
+  expect(fresh.state.focusedSlideId).toBe(expectDefined(slides(fresh)[0]?.[0]))
 })
 
 test('a drop on the grid lands beside the nearest slide, or between sections as a new one', () => {
@@ -277,4 +306,33 @@ describe('slide size', () => {
     editor.undo.undo()
     expect(editor.state.zoom).toBeCloseTo(fitted)
   })
+})
+
+test('deleting the slide on the stage and undoing it comes back to Slide view', () => {
+  const editor = open()
+  editor.replaceGraph(createDocumentGraph('slides', 'light'))
+  const only = expectDefined(editor.state.focusedSlideId)
+  editor.deleteSlides([only])
+  expect(editor.state.focusedSlideId).toBeNull()
+  editor.undo.undo()
+  expect(editor.state.focusedSlideId).toBe(only)
+})
+
+test('putting another slide on the stage drops the layers of the one before from the selection', () => {
+  const { editor, a, b } = setup()
+  const box = editor.graph.createNode('RECTANGLE', a, { width: 10, height: 10 }).id
+  editor.focusSlide(a)
+  editor.select([box, b])
+  editor.focusSlide(b)
+  expect(selected(editor)).toEqual([b])
+})
+
+test('a paste with nothing selected goes back to its frame only while that frame is on the stage', () => {
+  const { editor, a, b } = setup()
+  const frame = editor.graph.createNode('FRAME', a, { width: 200, height: 200 }).id
+  editor.focusSlide(a)
+  editor.select([])
+  expect(sourcePasteTarget(editor, [frame])).toBe(frame)
+  editor.focusSlide(b)
+  expect(sourcePasteTarget(editor, [frame])).toBeNull()
 })

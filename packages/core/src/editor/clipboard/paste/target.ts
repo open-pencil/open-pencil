@@ -40,6 +40,11 @@ export function sourcePasteTarget(
   if (!id || rest.some((other) => other !== id)) return null
   if (ctx.state.selectedIds.size > 0 || ctx.state.enteredContainerId) return null
   if (!ctx.graph.getNode(id) || ctx.graph.pageOf(id) !== ctx.state.currentPageId) return null
+  // With a slide on the stage, layers go back only to a place on it, where they can be seen.
+  const root = canvasRootId(ctx.graph, ctx.state)
+  if (root !== ctx.state.currentPageId && id !== root && !ctx.graph.isDescendant(id, root)) {
+    return null
+  }
   return acceptingParent(ctx, id) === id ? id : null
 }
 

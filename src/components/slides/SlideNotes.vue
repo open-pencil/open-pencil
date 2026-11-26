@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 import { resolveEditorProfile } from '@open-pencil/core'
 import { slideSettings } from '@open-pencil/scene-graph/slides'
@@ -47,6 +47,11 @@ function commit(id: string | null) {
 watch(slideId, (_, previous) => {
   if (typing.value) commit(previous)
   draft.value = saved.value
+})
+
+// Hiding the panels can take the field away without a blur: what was typed is kept even so.
+onBeforeUnmount(() => {
+  if (typing.value) commit(slideId.value)
 })
 
 function revert(event: KeyboardEvent) {

@@ -1,5 +1,3 @@
-import { uniq } from 'es-toolkit'
-
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { slideRows } from '@open-pencil/scene-graph/slides'
 
@@ -80,8 +78,12 @@ export function resolveExportSlides(request: ExportRequest): ExportSlide[] | nul
     const ids = target.scope === 'node' ? [target.nodeId] : target.nodeIds
     if (ids.length === 0 || !ids.every((id) => graph.getNode(id)?.type === 'SLIDE')) return null
     const named = new Set(ids)
-    const pages = uniq(ids.flatMap((id) => findPageId(graph, id) ?? []))
-    slides = pages.flatMap((pageId) => ofPage(pageId).filter(({ slide }) => named.has(slide.id)))
+    // The pages in the document's order, whatever order the slides were picked in.
+    const holding = new Set(ids.flatMap((id) => findPageId(graph, id) ?? []))
+    slides = graph
+      .getPages()
+      .filter((page) => holding.has(page.id))
+      .flatMap((page) => ofPage(page.id).filter(({ slide }) => named.has(slide.id)))
   }
   return slides.length > 0 ? slides : null
 }

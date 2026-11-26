@@ -70,15 +70,24 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
     ctx.requestRender()
   }
 
+  /** Puts `id` in `parentId` right after `anchor`, or first when there is none. */
+  function placeAfter(id: string, parentId: string, anchor: string | undefined): void {
+    const others = (ctx.graph.getNode(parentId)?.childIds ?? []).filter((child) => child !== id)
+    ctx.graph.insertChildAt(id, parentId, anchor ? others.indexOf(anchor) + 1 : 0)
+  }
+
   /**
-   * Puts the deck in `target`'s order, bringing back what is missing and dropping what `from` has
-   * beyond it. Slides in neither, such as ones a collaborator added meanwhile, stay.
+   * Puts what an edit `touched` where `target` has it, bringing back what is missing and dropping
+   * what `from` has beyond it. Each touched section or slide goes after the nearest one before it
+   * in `target` that is still in place; nothing else moves, so slides a collaborator added or moved
+   * meanwhile stay where they are.
    */
   function arrange(
     gridId: string,
     from: readonly DeckSection[],
     target: readonly DeckSection[],
-    kept: Map<string, Map<string, SceneNode>>
+    kept: Map<string, Map<string, SceneNode>>,
+    touched: ReadonlySet<string>
   ): void {
     const bring = (id: string, parentId: string) => {
       const subtree = kept.get(id)
@@ -87,13 +96,22 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
         restoreSubtree(ctx.graph, root, parentId, subtree)
       }
     }
+    const holds = (parentId: string, id: string) => ctx.graph.getNode(id)?.parentId === parentId
     const keep = new Set(target.flatMap(({ id, slides }) => [id, ...slides]))
     for (const [index, section] of target.entries()) {
-      bring(section.id, gridId)
-      ctx.graph.insertChildAt(section.id, gridId, index)
+      if (touched.has(section.id) || !holds(gridId, section.id)) {
+        bring(section.id, gridId)
+        const before = target.slice(0, index).findLast(({ id }) => holds(gridId, id))
+        placeAfter(section.id, gridId, before?.id)
+      }
       for (const [column, id] of section.slides.entries()) {
+        if (!touched.has(id) && holds(section.id, id)) continue
         bring(id, section.id)
-        ctx.graph.insertChildAt(id, section.id, column)
+        placeAfter(
+          id,
+          section.id,
+          section.slides.slice(0, column).findLast((slide) => holds(section.id, slide))
+        )
       }
     }
     const drop = (id: string, subtree: Map<string, SceneNode>) => {
@@ -115,22 +133,31 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
   function editDeck(
     label: string,
     gridId: string,
-    change: () => { target: DeckSection[]; select: readonly string[] },
+    change: () => { target: DeckSection[]; select: readonly string[]; touched: readonly string[] },
     prior: DeckSection[] = sections()
   ): void {
     const selectionBefore = new Set(ctx.state.selectedIds)
     const focusBefore = ctx.state.focusedSlideId
     const kept = new Map<string, Map<string, SceneNode>>()
-    const { target, select } = change()
+    const { target, select, touched: slides } = change()
     const after = target.filter((section) => section.slides.length > 0)
+    // Undo and redo come back to the view the edit was made in: Slide view, even after the edit
+    // emptied the stage, or Grid view.
+    const staged = focusBefore !== null
     const show = (ids: Iterable<string>, focus: string | null) => {
       ctx.setSelectedIds(new Set(ids))
       ctx.state.enteredContainerId = null
-      if (ctx.state.focusedSlideId !== null) setFocus(focus)
+      if (staged) setFocus(focus)
     }
     const changed = target.filter((section) => !prior.some(({ id }) => id === section.id))
+    // The slides the edit adds, removes, or moves, and the sections it adds or empties.
+    const touched = new Set([
+      ...slides,
+      ...changed.map(({ id }) => id),
+      ...prior.filter(({ id }) => !after.some((section) => section.id === id)).map(({ id }) => id)
+    ])
     const apply = () => {
-      arrange(gridId, [...prior, ...changed], after, kept)
+      arrange(gridId, [...prior, ...changed], after, kept, touched)
       show(select, select.at(0) ?? null)
     }
     apply()
@@ -138,7 +165,7 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
       label,
       forward: apply,
       inverse: () => {
-        arrange(gridId, after, prior, kept)
+        arrange(gridId, after, prior, kept, touched)
         show(selectionBefore, focusBefore)
       }
     })
@@ -208,7 +235,8 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
               ? { ...section, slides: withAfter(section.slides, afterId, [slide.id]) }
               : section
           ),
-          select: [slide.id]
+          select: [slide.id],
+          touched: [slide.id]
         }
       },
       prior
@@ -235,7 +263,8 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
               ? { ...section, slides: withAfter(section.slides, last, copies) }
               : section
           ),
-          select: copies
+          select: copies,
+          touched: copies
         }
       },
       prior
@@ -257,7 +286,8 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
         id,
         slides: slides.filter((slide) => !doomed.has(slide))
       })),
-      select: next ? [next] : []
+      select: next ? [next] : [],
+      touched: [...doomed]
     }))
   }
 
@@ -274,7 +304,8 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
       gridId,
       () => ({
         target: placed(prior, moving, placement, () => createSlideRow(ctx.graph, gridId).id),
-        select: moving
+        select: moving,
+        touched: moving
       }),
       prior
     )
@@ -329,6 +360,12 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
     if (id === ctx.state.focusedSlideId) return
     setFocus(id)
     ctx.state.enteredContainerId = null
+    if (id === null) return
+    // Layers of another slide leave the selection with the stage, so no key acts on what is hidden.
+    const shown = [...ctx.state.selectedIds].filter(
+      (selected) => isSlide(selected) || ctx.graph.isDescendant(selected, id)
+    )
+    if (shown.length !== ctx.state.selectedIds.size) ctx.setSelectedIds(new Set(shown))
   }
 
   /** Shows the slide `step` away from the one on the stage, stopping at the ends. */

@@ -60,7 +60,10 @@ export function pageContentBounds(
     .getChildren(pageId)
     .flatMap((node) =>
       node.type === 'SLIDE_GRID'
-        ? graph.getChildren(node.id).flatMap((row) => graph.getChildren(row.id))
+        ? graph
+            .getChildren(node.id)
+            .filter((row) => node.visible && row.visible)
+            .flatMap((row) => graph.getChildren(row.id))
         : [node]
     )
     .filter((node) => node.visible)

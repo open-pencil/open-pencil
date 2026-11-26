@@ -3,7 +3,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { LAYER_HIT_PAD } from '#core/constants'
 import type { EditorContext } from '#core/editor/types'
-import { canvasRootId, resolveEditorProfile } from '#core/editor/views'
+import { canvasRootId, resolveEditorProfile, stagedSlide } from '#core/editor/views'
 
 export function createSelectionHitTestActions(
   ctx: EditorContext,
@@ -43,6 +43,8 @@ export function createSelectionHitTestActions(
    * title, then a frame title. A right-click hits a locked layer's name as it hits its body.
    */
   function labelAt(renderer: SkiaRenderer, cx: number, cy: number): SceneNode | null {
+    // A slide on the stage hides every name around it, as the canvas draws none there.
+    if (stagedSlide(ctx.graph, ctx.state)) return null
     const preview = ctx.state.rotationPreview
     const graph = ctx.graph
     const filter = { locked: true }

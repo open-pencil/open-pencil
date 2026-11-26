@@ -103,6 +103,14 @@ function setupRow(value: Element | ComponentPublicInstance | null, slide: SceneN
   }
 }
 
+/**
+ * The one slide Tab reaches: the first selected or staged one, else the first slide, so the
+ * filmstrip can always be entered from the keyboard.
+ */
+const tabStop = computed(
+  () => slides.value.find((slide) => isSelected(slide.id))?.id ?? slides.value.at(0)?.id
+)
+
 function isSelected(id: string): boolean {
   return store.state.selectedIds.has(id) || store.state.focusedSlideId === id
 }
@@ -226,7 +234,7 @@ function label(slide: SceneNode): string {
               <div
                 :ref="(value) => setupRow(value, slide)"
                 role="treeitem"
-                :tabindex="isSelected(slide.id) ? 0 : -1"
+                :tabindex="slide.id === tabStop ? 0 : -1"
                 :aria-selected="isSelected(slide.id)"
                 :aria-label="label(slide)"
                 :data-slide-id="slide.id"

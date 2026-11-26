@@ -1,3 +1,5 @@
+import type { SceneGraph } from '@open-pencil/scene-graph'
+
 import type { createClipboardActions } from '#core/editor/clipboard'
 import type { CopyOptions } from '#core/editor/clipboard/copy'
 import type { createSelectionActions } from '#core/editor/selection'
@@ -10,13 +12,19 @@ type SlideActions = ReturnType<typeof createSlideActions>
 export function createClipboardBridge(
   clipboard: ClipboardActions,
   selection: SelectionActions,
-  slides: SlideActions
+  slides: SlideActions,
+  graph: () => SceneGraph
 ) {
-  /** The selected slides, when slides are all that is selected: a deck keeps them in order. */
+  /**
+   * The selected slides, when the deck's slides are all that is selected: the deck keeps them in
+   * order. A slide outside a deck's rows, such as one pasted onto the page, is a layer like any.
+   */
   function selectedSlides(): string[] | null {
     const nodes = selection.getSelectedNodes()
-    const onlySlides = nodes.length > 0 && nodes.every((node) => node.type === 'SLIDE')
-    return onlySlides ? nodes.map((node) => node.id) : null
+    const inDeck = nodes.every(
+      (node) => node.type === 'SLIDE' && graph().getNode(node.parentId ?? '')?.type === 'SLIDE_ROW'
+    )
+    return nodes.length > 0 && inDeck ? nodes.map((node) => node.id) : null
   }
 
   return {

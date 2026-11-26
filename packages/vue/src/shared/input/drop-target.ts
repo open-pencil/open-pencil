@@ -111,6 +111,8 @@ export function findEnclosingDrawParent(
   let target = editor.graph.getNode(findDrawParent(start.x, start.y, type, editor))
   while (target && target.type !== 'CANVAS') {
     if (holdsPoints(target, points, editor)) return target.id
+    // The slide on the stage is as far up as a stroke on it goes: its row and grid are the deck's.
+    if (target.id === pageId) return pageId
     let parent = target.parentId ? editor.graph.getNode(target.parentId) : undefined
     while (parent && parent.type !== 'CANVAS' && !takesDrawnLayer(parent, type)) {
       parent = parent.parentId ? editor.graph.getNode(parent.parentId) : undefined
