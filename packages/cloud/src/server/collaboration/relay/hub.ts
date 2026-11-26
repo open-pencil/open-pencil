@@ -321,9 +321,11 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     }
     if (updatesDocument(namespace)) {
       if (!content || !applyToRoom(content, peer, namespace, payload, maximumRoomBytes)) return
-      // Editors get the update before any request for a copy that counts it.
+      // The room took the update, so it is saved whatever forwarding meets; editors get it
+      // before any request for a copy that counts it.
+      schedulePersist(room)
       forward(room, peer, namespace, target, forwarded)
-      changed(room, content)
+      askForCompaction(room, content)
       return
     }
     forward(room, peer, namespace, target, forwarded)
