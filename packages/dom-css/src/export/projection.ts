@@ -255,6 +255,20 @@ function addBoxSizing(style: DesignStyleDeclaration): void {
   if (sized && boxed) style['box-sizing'] = 'border-box'
 }
 
+/** A layer's size, its limits, and where it is placed: what every layer's style starts from. */
+function layerBox(
+  graph: SceneGraph,
+  node: SceneNode,
+  parent: SceneNode | undefined,
+  css: FieldCSS
+): DesignStyleDeclaration {
+  const style: DesignStyleDeclaration = {}
+  addSize(style, graph, node, parent, css)
+  addPositioning(style, node, parent)
+  addSizeConstraints(style, node, css)
+  return style
+}
+
 function styleFromSceneNode(
   graph: SceneGraph,
   node: SceneNode,
@@ -263,10 +277,7 @@ function styleFromSceneNode(
   profile: ColorProfile,
   metrics: CanvasMetrics | undefined
 ): DesignStyleDeclaration {
-  const style: DesignStyleDeclaration = {}
-  addSize(style, graph, node, parent, css)
-  addPositioning(style, node, parent)
-  addSizeConstraints(style, node, css)
+  const style = layerBox(graph, node, parent, css)
   addBackground(style, node, css, profile)
   addImageStyle(style, node)
   const shadows = metrics ? strokeShadows(node, css, profile) : undefined
@@ -313,10 +324,7 @@ function styleFromTextNode(
   profile: ColorProfile,
   metrics: CanvasMetrics | undefined
 ): DesignStyleDeclaration {
-  const style: DesignStyleDeclaration = {}
-  addSize(style, graph, node, parent, css)
-  addPositioning(style, node, parent)
-  addSizeConstraints(style, node, css)
+  const style = layerBox(graph, node, parent, css)
   addLayoutChild(style, graph, node, parent)
   if (resolveNodeTextDirection(node) === 'RTL') style.direction = 'rtl'
   const color = fillToCSS(node.fills.at(0), profile)
