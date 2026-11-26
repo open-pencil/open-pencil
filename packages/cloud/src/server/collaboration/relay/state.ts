@@ -2,9 +2,6 @@ import * as Y from 'yjs'
 
 import { encodeSyncReplyFromUpdate } from '@open-pencil/collab'
 
-/** A document with nothing in it, as a V2 update. */
-const EMPTY_STATE = Y.encodeStateAsUpdateV2(new Y.Doc())
-
 /**
  * A room's document as the relay holds it: encoded V2 updates, never a `Y.Doc`. A document's
  * structures take about ten times its encoded size in memory, so a room of a few megabytes would
@@ -42,7 +39,8 @@ export type RoomState = {
 /** The room's state from its saved V1 snapshot and the V1 updates logged after it. */
 export function roomStateFromSaved(snapshot: Uint8Array | null, updates: Uint8Array[]): RoomState {
   const [first, ...rest] = snapshot ? [snapshot, ...updates] : updates
-  if (!first) return createRoomState(EMPTY_STATE)
+  // A document with nothing in it, made here: a Worker may not make one while its module loads.
+  if (!first) return createRoomState(Y.encodeStateAsUpdateV2(new Y.Doc()))
   // One merge first, so the conversion holds one copy of the room beside its result.
   const merged = rest.length === 0 ? first : Y.mergeUpdates([first, ...rest])
   return createRoomState(Y.convertUpdateFormatV1ToV2(merged))
@@ -53,7 +51,10 @@ export function createRoomState(initial: Uint8Array): RoomState {
   let base = initial
   let recent: Uint8Array[] = []
   let bytes = initial.byteLength
-  /** How far the room holds each client's updates, kept as updates arrive. */
+  /**
+   * How far the room holds each client's updates without a gap, as a state vector counts them,
+   * kept as updates arrive; an update past a gap leaves it until a compaction measures again.
+   */
   let held = heldClocks(initial)
 
   function encode(): Uint8Array {
@@ -72,7 +73,12 @@ export function createRoomState(initial: Uint8Array): RoomState {
     read(update) {
       try {
         const { from, to } = Y.parseUpdateMetaV2(update)
-        if ([...to].some(([client, clock]) => from.get(client) !== clock)) return { adds: true }
+        if ([...to].some(([client, clock]) => from.get(client) !== clock)) {
+          // Reading an update's structures stops short of its deletions, which the room's later
+          // merges read, so the whole update is read once here and a cut-off one turned away.
+          Y.convertUpdateFormatV2ToV1(update)
+          return { adds: true }
+        }
         const { ds } = Y.decodeUpdateV2(update)
         const known = [...ds.clients].every(([client, deletions]) =>
           deletions.every((deletion) => deletion.clock + deletion.len <= (held.get(client) ?? 0))
@@ -85,8 +91,10 @@ export function createRoomState(initial: Uint8Array): RoomState {
     add(update) {
       recent.push(update)
       bytes += update.byteLength
-      for (const [client, clock] of Y.parseUpdateMetaV2(update).to) {
-        if (clock > (held.get(client) ?? 0)) held.set(client, clock)
+      const { from, to } = Y.parseUpdateMetaV2(update)
+      for (const [client, clock] of to) {
+        const known = held.get(client) ?? 0
+        if ((from.get(client) ?? 0) <= known && clock > known) held.set(client, clock)
       }
     },
     encode,

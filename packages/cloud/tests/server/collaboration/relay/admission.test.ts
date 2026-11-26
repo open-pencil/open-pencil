@@ -227,6 +227,19 @@ describe('collaboration relay admission', () => {
     expect(alice.closed?.code).toBe(RELAY_CLOSE.messageTooLarge)
   })
 
+  test('closes a peer whose update is cut short before its deletions', async () => {
+    const { relay: hub } = startTestRelay()
+    const alice = await join(hub)
+    const update = textUpdate('hello')
+    alice.send({
+      type: 'message',
+      namespace: COLLAB_ACTIONS.yjsUpdate,
+      target: null,
+      payload: update.subarray(0, -1)
+    })
+    expect(alice.closed?.code).toBe(RELAY_CLOSE.protocol)
+  })
+
   test('closes peers that send malformed document updates', async () => {
     const { relay: hub } = startTestRelay()
     const alice = await join(hub)

@@ -15,10 +15,17 @@ export type RoomContent = {
   log: RoomLog
   /** The room's size when it was loaded or last compacted, which its growth is measured from. */
   compactedBytes: number
-  /** The editor asked for its copy of the document to compact the room with, until it answers. */
-  compaction: string | null
-  /** Sync requests the relay sent each editor whose answers are edits to take, not a compaction. */
-  asked: Map<string, number>
+  /**
+   * When the relay last asked an editor for its copy of the document, until one answers; past
+   * `COMPACTION_ANSWER_MS` another editor may be asked, so a tab that stopped answering does not
+   * hold the room's compaction.
+   */
+  compactionAskedAt: number | null
+  /**
+   * What each editor's next sync replies to the relay answer, in order: what it holds that the
+   * room lacks, asked as it joined, or its whole copy, asked for a compaction.
+   */
+  asked: Map<string, ('join' | 'copy')[]>
 }
 
 export type Room = {
@@ -63,8 +70,8 @@ export function needsDocument(namespace: string, target: string | null): boolean
 /**
  * Applies a peer's V2 update to the room, inflated first for a sync reply, closing the peer's
  * socket when it is malformed or would grow the room past `limit`. An update that only deletes
- * always fits, so a full room can still be cleared; what it deletes is let go once the room is
- * compacted. Whether the room took it.
+ * what the room holds always fits, so a full room can still be cleared; what it deletes is let go
+ * once the room is compacted. Whether the room took it.
  */
 export function applyToRoom(
   content: RoomContent,
@@ -150,13 +157,11 @@ export function answerAsServer(
     return false
   }
   if (namespace !== COLLAB_ACTIONS.syncReply) return false
-  const asked = content.asked.get(peer.id) ?? 0
-  if (asked > 0 || content.compaction !== peer.id) {
-    if (asked > 1) content.asked.set(peer.id, asked - 1)
-    else content.asked.delete(peer.id)
-    return applyToRoom(content, peer, namespace, payload, limit)
-  }
-  content.compaction = null
+  const asked = content.asked.get(peer.id)
+  const answers = asked?.shift()
+  if (asked?.length === 0) content.asked.delete(peer.id)
+  if (answers !== 'copy') return applyToRoom(content, peer, namespace, payload, limit)
+  content.compactionAskedAt = null
   const compacted = compactWithCopy(content, payload, limit)
   // A copy that did not shrink the room counts too, so the relay asks again only once it grew.
   content.compactedBytes = content.state.bytes
