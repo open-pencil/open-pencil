@@ -1,20 +1,28 @@
+import bidiFactory from 'bidi-js'
+
 import type { LayoutDirection, SceneNode, TextDirection } from '../types'
 
 const RTL_CHAR_RE =
   /\p{Script=Arabic}|\p{Script=Hebrew}|\p{Script=Syriac}|\p{Script=Thaana}|\p{Script=Nko}|\p{Script=Adlam}/u
-const LTR_CHAR_RE = /\p{Script=Latin}|\p{Script=Cyrillic}|\p{Script=Greek}/u
-// Arabic-Indic digits and their numeric signs are weak bidi characters (UAX #9).
-const ARABIC_NUMERIC_RE = /[\u0660-\u066c\u06f0-\u06f9]/u
 
 /** Whether the text has a letter of a right-to-left script, such as Arabic or Hebrew. */
 export function containsRTLText(text: string): boolean {
   return RTL_CHAR_RE.test(text)
 }
 
+let bidi: ReturnType<typeof bidiFactory> | undefined
+
+/**
+ * The direction of the text's first strongly directional character, as the Unicode bidi
+ * algorithm and Figma pick a paragraph's: digits, number signs, marks, and punctuation before
+ * it do not count.
+ */
 export function detectTextDirection(text: string): Exclude<TextDirection, 'AUTO'> {
+  bidi ??= bidiFactory()
   for (const char of text) {
-    if (RTL_CHAR_RE.test(char) && !ARABIC_NUMERIC_RE.test(char)) return 'RTL'
-    if (LTR_CHAR_RE.test(char)) return 'LTR'
+    const type = bidi.getBidiCharTypeName(char)
+    if (type === 'L') return 'LTR'
+    if (type === 'R' || type === 'AL') return 'RTL'
   }
   return 'LTR'
 }
