@@ -1,3 +1,4 @@
+import { omit } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
 import type { SceneGraph } from '../graph'
@@ -36,36 +37,35 @@ export function createStyleBindingLookup(graph: SceneGraph): TextStyleLookup {
   }
 }
 
-function notOverridden(styleBound: VariableBindings, own: VariableBindings): VariableBindings {
-  let overridden = false
-  for (const field in styleBound) {
-    if (field in own) {
-      overridden = true
+/**
+ * The layer's own bindings its text style does not take over. While the style is attached, a
+ * field the style binds follows the style's variable, as in Figma; the layer keeps its own
+ * binding stored, so a document saves it back unchanged.
+ */
+export function bindingsNotTakenOver(
+  own: VariableBindings,
+  styleBound: VariableBindings
+): VariableBindings {
+  if (styleBound === NO_BINDINGS) {
+    return own
+  }
+  let takenOver = false
+  for (const field in own) {
+    if (field in styleBound) {
+      takenOver = true
       break
     }
   }
-  if (!overridden) {
-    return styleBound
-  }
-  const inherited = Object.fromEntries(
-    Object.entries(styleBound).filter(([field]) => !(field in own))
-  )
-  return Object.keys(inherited).length > 0 ? inherited : NO_BINDINGS
+  return takenOver ? omit(own, Object.keys(styleBound)) : own
 }
 
-function bindingsInheritedFrom(
-  styleId: string | null | undefined,
-  own: VariableBindings,
-  styles: TextStyleLookup
-): VariableBindings {
-  if (!styleId) {
-    return NO_BINDINGS
-  }
-  return notOverridden(styles(styleId), own)
+function bindingsOf(styleId: string | null | undefined, styles: TextStyleLookup): VariableBindings {
+  return styleId ? styles(styleId) : NO_BINDINGS
 }
 
 type StyledLayer = Pick<SceneNode, 'type' | 'textStyleId' | 'boundVariables'>
 
+/** What a text's style binds, which wins over the text's own bindings of the same fields. */
 export function inheritedTextStyleBindings(
   node: StyledLayer,
   styles: TextStyleLookup
@@ -73,22 +73,22 @@ export function inheritedTextStyleBindings(
   if (node.type !== 'TEXT') {
     return NO_BINDINGS
   }
-  return bindingsInheritedFrom(node.textStyleId, node.boundVariables, styles)
+  return bindingsOf(node.textStyleId, styles)
 }
 
+/** What the style of a range of characters binds, which wins over the range's own bindings. */
 export function inheritedRunStyleBindings(
   run: StyleRun,
   styles: TextStyleLookup
 ): VariableBindings {
-  const own = run.style.boundVariables ?? NO_BINDINGS
-  return bindingsInheritedFrom(run.style.textStyleId, own, styles)
+  return bindingsOf(run.style.textStyleId, styles)
 }
 
 function withInherited(own: VariableBindings, inherited: VariableBindings): VariableBindings {
   if (inherited === NO_BINDINGS) {
     return own
   }
-  return isEmptyObject(own) ? inherited : { ...inherited, ...own }
+  return isEmptyObject(own) ? inherited : { ...own, ...inherited }
 }
 
 export function effectiveBoundVariables(

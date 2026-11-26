@@ -56,16 +56,34 @@ describe('text style bindings', () => {
     expect(text.textStyleId).toBe('style:body')
   })
 
-  test('a text binding the same field itself keeps its own variable', () => {
-    const { graph, collection, roomy, text } = styledText()
+  // Figma draws the style's variable and saves the text's own binding beside it.
+  test("a style's binding wins over the text's own, which the text keeps", () => {
+    const { graph, collection, roomy, size, text } = styledText()
     const own = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
     own.valuesByMode[roomy] = 12
     graph.updateNode(text.id, { boundVariables: { fontSize: own.id } })
 
     reconcileVariableBindings(graph, { subtrees: [text.id] })
 
-    expect([text.fontSize, text.lineHeight]).toEqual([12, px(26)])
-    expect(effectiveBoundVariables(text, createStyleBindingLookup(graph)).fontSize).toBe(own.id)
+    expect([text.fontSize, text.lineHeight]).toEqual([20, px(26)])
+    expect(effectiveBoundVariables(text, createStyleBindingLookup(graph)).fontSize).toBe(size.id)
+    expect(text.boundVariables.fontSize).toBe(own.id)
+  })
+
+  test('a text that starts using a style lets go of its own bindings of the style fields', () => {
+    const { graph, collection, style, text } = styledText()
+    const own = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
+    const opacity = graph.createVariable('Fade', 'FLOAT', collection.id, 0.5)
+    graph.updateNode(text.id, {
+      textStyleId: null,
+      boundVariables: { fontSize: own.id, opacity: opacity.id },
+      variableBindingScales: { fontSize: 2 }
+    })
+
+    const patch = sharedStylePatch('text', text, 'style:body', style)
+
+    expect(patch.boundVariables).toEqual({ opacity: opacity.id })
+    expect(patch.variableBindingScales).toEqual({})
   })
 
   test('resolving what a style binds keeps the text on the style without recording an edit', () => {
@@ -204,7 +222,7 @@ describe('text style bindings in a scaled occurrence', () => {
     expect([text.fontSize, text.lineHeight]).toEqual([60, px(78)])
   })
 
-  test('a text binding the size itself keeps its own scaled variable over the style', () => {
+  test("a text binding the size itself takes the style's size at the occurrence's scale", () => {
     const { graph, collection, roomy, text } = styledText('INSTANCE')
     const own = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
     own.valuesByMode[roomy] = 12
@@ -216,7 +234,7 @@ describe('text style bindings in a scaled occurrence', () => {
 
     reconcileVariableBindings(graph, { subtrees: [text.id] })
 
-    expect([text.fontSize, text.lineHeight]).toEqual([24, px(78)])
+    expect([text.fontSize, text.lineHeight]).toEqual([60, px(78)])
   })
 
   test('characters using a style take its bound size at the scale of their occurrence', () => {
@@ -442,13 +460,13 @@ describe('text style values in a scaled instance', () => {
     })
   })
 
-  test('a component text dropping its own size binding gives the copy the size its style binds', () => {
+  test("a component text's own size binding leaves the copy at its style's size", () => {
     const { graph, collection, component, source, text, toRoomy } = scaledInstance()
     const own = graph.createVariable('Own size', 'FLOAT', collection.id, 10)
     graph.bindVariable(source.id, 'fontSize', own.id)
     graph.syncInstances(component.id)
     toRoomy()
-    expect(text().fontSize).toBe(30)
+    expect(text().fontSize).toBe(60)
 
     graph.unbindVariable(source.id, 'fontSize')
     graph.syncInstances(component.id)

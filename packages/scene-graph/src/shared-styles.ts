@@ -229,8 +229,19 @@ export function sharedStylePatch(
   else {
     const fields = structuredClone(pick(style, SHARED_STYLE_FIELDS.text))
     Object.assign(patch, scaledTextStyleLengths(fields, target.componentScale))
+    if (target.textStyleId !== styleId) Object.assign(patch, ownTextBindingsDropped(target))
   }
   return patch
+}
+
+/** A text that starts using a text style lets go of its own bindings of the style's fields. */
+function ownTextBindingsDropped(target: SceneNode): Partial<SceneNode> {
+  const fields = SHARED_STYLE_FIELDS.text.filter((field) => field in target.boundVariables)
+  if (fields.length === 0) return {}
+  return {
+    boundVariables: omit(target.boundVariables, fields),
+    variableBindingScales: omit(target.variableBindingScales, fields)
+  }
 }
 
 /** A layer leaving a shared style: it keeps the style's values, without the reference. */

@@ -451,7 +451,8 @@ test('a text in a scaled instance keeps the scale when its mode changes', () => 
   expect(tripled.lineHeight).toEqual({ value: 72, unit: 'PIXELS' })
 })
 
-test('a loaded text binding its own size keeps it over the size its style binds', () => {
+// Figma saves a styled text's own binding beside the style and draws the style's variable.
+test("a loaded text binding its own size takes its style's size and keeps its binding", () => {
   const { graph } = materializeDocument([
     ...records(),
     {
@@ -475,5 +476,7 @@ test('a loaded text binding its own size keeps it over the size its style binds'
     }
   ] as NodeChange[])
 
-  expect(graph.getNode(guidToString(ownSized))?.fontSize).toBe(12)
+  const label = graph.getNode(guidToString(ownSized))
+  expect(label?.fontSize).toBe(20)
+  expect(label?.boundVariables.fontSize).toBe(guidToString(caption))
 })
