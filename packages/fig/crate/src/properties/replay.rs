@@ -29,12 +29,7 @@ impl<'a> Replay<'a> {
         }
     }
 
-    pub fn layer(
-        &mut self,
-        properties: &Properties<'a>,
-        occurrence: u32,
-        layer: Layer,
-    ) -> crate::Result<()> {
+    pub fn layer(&mut self, properties: &Properties<'a>, layer: Layer) -> crate::Result<()> {
         match layer.source {
             Source::Bound(at) => self.bind(properties, properties.expansion.bound[at as usize]),
             Source::DefaultName(record) => {
@@ -56,7 +51,7 @@ impl<'a> Replay<'a> {
                 let assignments = properties.assignments(list)?;
                 self.props.set("componentPropAssignments", assignments);
             }
-            source => self.entry(properties, occurrence, layer, source)?,
+            source => self.entry(properties, layer, source)?,
         }
         Ok(())
     }
@@ -84,7 +79,6 @@ impl<'a> Replay<'a> {
     fn entry(
         &mut self,
         properties: &Properties<'a>,
-        occurrence: u32,
         layer: Layer,
         source: Source,
     ) -> crate::Result<()> {
@@ -103,7 +97,7 @@ impl<'a> Replay<'a> {
             if !keeps(&layer, name) || bound.is_some_and(|bound| supersedes(bound, &layer, name)) {
                 return Ok(false);
             }
-            patch.set(name, properties.decode(reader, name)?);
+            patch.set(name, reader.value()?);
             Ok(true)
         })?;
         if !matches!(source, Source::Derived(_)) {
@@ -121,9 +115,8 @@ impl<'a> Replay<'a> {
             if matches!(&patch, Value::Fields(fields) if fields.is_empty()) {
                 return Ok(());
             }
-            let record = properties.expansion.occurrences[occurrence as usize].record;
             cleared::complete(&mut patch, &mut self.props, |field| {
-                properties.record_field(record, field).ok().flatten()
+                properties.record_field(layer.record, field).ok().flatten()
             });
         }
         // Variable maps merge with the ones below rather than replace them.

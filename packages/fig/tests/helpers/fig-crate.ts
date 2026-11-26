@@ -261,11 +261,12 @@ export async function readFieldsWithBoth(file: Uint8Array, limit = 5): Promise<F
   const read = readPagesWithoutStyles(file)
   return crate.pageIds.map((id, page): FieldComparison => {
     const layers = flatten(read(id)).map(({ layer }) => layer)
-    const values = crate.properties(page, 0, layers.length)
+    const count = crate.expand(page).occurrences.length
+    const values = crate.properties(page, 0, count)
     const differences: string[] = []
     let compared = 0
-    if (values.length !== layers.length)
-      differences.push(`crate has ${values.length} layers, reader ${layers.length}`)
+    if (count !== layers.length)
+      differences.push(`crate has ${count} layers, reader ${layers.length}`)
     for (const [at, layer] of layers.entries()) {
       const expected = asCrateWrites(layer.properties)
       const actual = values[at]

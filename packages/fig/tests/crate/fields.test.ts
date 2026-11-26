@@ -142,6 +142,29 @@ describe('field values from the Rust reader', () => {
     expectSameFields(pages)
   })
 
+  test('complete a claim clearing a style from the record of the instance that claims it', async () => {
+    const pages = await fieldsAfter('gold-preview.fig', (records) => {
+      const { componentOf } = documentOf(records)
+      const placed = records.filter((record) => record.type === 'INSTANCE' && !componentOf(record))
+      const [outer, inner] = placed
+      const innerData = inner && symbolDataOf(inner)
+      if (!outer?.symbolData || !inner?.guid || !innerData?.symbolID)
+        throw new Error('gold-preview.fig places fewer than two instances')
+      // The outer instance expands the inner one, whose root claim clears its fill style.
+      outer.symbolData.symbolID = inner.guid
+      outer.fillPaints = undefined
+      outer.styleIdForFill = undefined
+      inner.fillPaints = [
+        { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+      ]
+      innerData.symbolOverrides = [
+        ...(innerData.symbolOverrides ?? []),
+        { guidPath: { guids: [innerData.symbolID] }, styleIdForFill: { guid: UNSET } }
+      ]
+    })
+    expectSameFields(pages)
+  })
+
   test("complete a claim clearing a text style with the layer's own text fields", async () => {
     const pages = await fieldsAfter('gold-preview.fig', (records) => {
       const { componentOf, instancesOf, addOverride } = documentOf(records)

@@ -114,23 +114,23 @@ impl Properties<'_> {
                             return Ok(false);
                         }
                         match name {
-                            "size" => shape.size = vector(&self.decode(reader, name)?),
-                            "transform" => shape.transform = matrix(&self.decode(reader, name)?),
+                            "size" => shape.size = vector(&reader.value()?),
+                            "transform" => shape.transform = matrix(&reader.value()?),
                             "stackMode" => {
-                                let mode = self.decode(reader, name)?;
+                                let mode = reader.value()?;
                                 place.auto_layout =
                                     mode.as_str().is_some_and(|mode| mode != "NONE");
                             }
                             "stackPositioning" => {
-                                let mode = self.decode(reader, name)?;
+                                let mode = reader.value()?;
                                 place.absolute = mode.as_str() == Some("ABSOLUTE");
                             }
                             "horizontalConstraint" => {
-                                let value = self.decode(reader, name)?;
+                                let value = reader.value()?;
                                 place.horizontal = value.as_str().and_then(Constraint::named);
                             }
                             "verticalConstraint" => {
-                                let value = self.decode(reader, name)?;
+                                let value = reader.value()?;
                                 place.vertical = value.as_str().and_then(Constraint::named);
                             }
                             _ => return Ok(false),

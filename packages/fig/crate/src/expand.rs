@@ -71,6 +71,9 @@ pub const MODES: u8 = 16;
 #[derive(Debug, Clone, Copy)]
 pub struct Layer {
     pub target: u32,
+    /// The record the target stands for where the layer lands: a component it expanded, while
+    /// that component's own layers apply, else its own.
+    pub record: u32,
     /// The depth of the owner that applied it: deeper owners are inner ones.
     pub rank: u32,
     pub source: Source,
@@ -184,9 +187,10 @@ impl<'a> Expansion<'a> {
         expansion
     }
 
-    fn layer(&mut self, target: u32, rank: u32, source: Source, only: u8) {
+    fn layer(&mut self, target: u32, record: u32, rank: u32, source: Source, only: u8) {
         self.steps.push(Step::Layer(Layer {
             target,
+            record,
             rank,
             source,
             only,
@@ -503,26 +507,39 @@ impl<'a> Expansion<'a> {
         let swapped_root = has_base && r.component != effective && r.ty == ids.instance;
         self.layer(
             me,
+            record,
             rank,
             Source::Record(record),
             inherited | if swapped_root { SWAPPED_PAINT } else { 0 },
         );
         if merge.is_none() && (bound.visible.is_some() || bound.text.is_some()) {
             self.bound.push(bound);
-            self.layer(me, rank, Source::Bound(self.bound.len() as u32 - 1), 0);
+            self.layer(
+                me,
+                record,
+                rank,
+                Source::Bound(self.bound.len() as u32 - 1),
+                0,
+            );
         }
         if merge.is_none() && r.ty == ids.instance {
             self.assignment_lists
                 .push(groups.iter().map(|group| group.entry).collect());
             let list = self.assignment_lists.len() as u32 - 1;
-            self.layer(me, rank, Source::Assignments(list), 0);
+            self.layer(me, record, rank, Source::Assignments(list), 0);
         }
         // A swapped instance without a name of its own takes its replacement's default name.
         if has_base && replaced {
             let base = index.find(effective).unwrap_or(NONE);
             let set = index.find(index.records[base as usize].parent);
             let named = set.filter(|&set| index.records[set as usize].flags & STATE_GROUP != 0);
-            self.layer(me, rank, Source::DefaultName(named.unwrap_or(NONE)), 0);
+            self.layer(
+                me,
+                record,
+                rank,
+                Source::DefaultName(named.unwrap_or(NONE)),
+                0,
+            );
         }
 
         // Property layers and saved derived data, placed onto the built subtree.
@@ -536,7 +553,7 @@ impl<'a> Expansion<'a> {
         }
         // The modes an instance record sets are its claim on its own root.
         if r.ty == ids.instance && r.component != NO_GUID {
-            self.layer(me, rank, Source::Record(record), inherited | MODES);
+            self.layer(me, record, rank, Source::Record(record), inherited | MODES);
         }
         for at in r.overrides.range() {
             let entry = &index.overrides[at];
@@ -550,12 +567,13 @@ impl<'a> Expansion<'a> {
             }
             match self.resolve(me, path, &root_keys) {
                 // What a component's own layers set on its root is part of the component.
-                Some(target) => self.layer(
-                    target,
-                    rank,
-                    Source::Override(at as u32),
-                    if target == me { inherited } else { 0 },
-                ),
+                Some(target) if target == me => {
+                    self.layer(me, record, rank, Source::Override(at as u32), inherited);
+                }
+                Some(target) => {
+                    let lands_on = self.occurrences[target as usize].record;
+                    self.layer(target, lands_on, rank, Source::Override(at as u32), 0);
+                }
                 None => self.unresolved.properties += 1,
             }
         }
@@ -565,14 +583,14 @@ impl<'a> Expansion<'a> {
                 owner: me,
                 factor: f64::from(r.scale),
             });
-            self.layer(me, rank, Source::Record(record), inherited | SCALED);
+            self.layer(me, record, rank, Source::Record(record), inherited | SCALED);
         }
         if has_base {
             self.steps.push(Step::Resize { owner: me, record });
         }
         // The size the file keeps for an instance is its own content laid out.
         if r.ty == ids.instance {
-            self.layer(me, rank, Source::Record(record), inherited | SIZE);
+            self.layer(me, record, rank, Source::Record(record), inherited | SIZE);
         }
         if !dangling {
             for at in r.derived.range() {
@@ -580,7 +598,10 @@ impl<'a> Expansion<'a> {
                 match self.resolve(me, path, &root_keys) {
                     // The placed root's bounds belong to the record itself.
                     Some(target) if target == me => {}
-                    Some(target) => self.layer(target, rank, Source::Derived(at as u32), 0),
+                    Some(target) => {
+                        let lands_on = self.occurrences[target as usize].record;
+                        self.layer(target, lands_on, rank, Source::Derived(at as u32), 0);
+                    }
                     None => self.unresolved.derived += 1,
                 }
             }

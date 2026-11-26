@@ -19,7 +19,7 @@ use crate::expand::{
     Expansion, INHERITED, Layer, MODES, SCALED, SIZE, SWAPPED_PAINT, Source, Step,
 };
 use crate::index::{Index, NO_GUID, NONE};
-use crate::kiwi::{Reader, Schema, Span, Value};
+use crate::kiwi::{Field, Reader, Schema, Span, Value};
 pub use geometry::Geometry;
 use replay::Replay;
 use scale::scale;
@@ -192,40 +192,36 @@ impl<'a> Properties<'a> {
         }
     }
 
-    /// Visits the fields of an entry that a layer applies.
+    /// Visits the fields of an entry, by name, with a reader at each value: `visit` returns
+    /// whether it read the value, which `Visit::value` decodes.
     fn fields(
         &self,
         span: Span,
-        mut visit: impl FnMut(&'a str, &mut Reader<'a>) -> crate::Result<bool>,
+        mut visit: impl FnMut(&'a str, &mut Visit<'_, 'a>) -> crate::Result<bool>,
     ) -> crate::Result<()> {
         let schema = self.schema;
         let definition = &schema.definitions[self.index.ids.node_change];
         Reader::at(self.message, span.start as usize)
             .message(schema, self.index.ids.node_change, |reader, at| {
-                visit(definition.fields[at].name.as_str(), reader)
-                    .map_err(|_| crate::kiwi::Malformed)
+                let field = &definition.fields[at];
+                let mut at_value = Visit {
+                    reader,
+                    field,
+                    schema,
+                };
+                visit(field.name.as_str(), &mut at_value).map_err(|_| crate::kiwi::Malformed)
             })
             .map_err(|_| Error::Message)
     }
 
-    fn decode(&self, reader: &mut Reader<'a>, name: &str) -> crate::Result<Value<'a>> {
-        let definition = &self.schema.definitions[self.index.ids.node_change];
-        let field = definition
-            .fields
-            .iter()
-            .find(|field| field.name == name)
-            .ok_or(Error::Message)?;
-        reader.value(self.schema, field).map_err(|_| Error::Message)
-    }
-
     /// One field of a record.
-    fn record_field(&self, record: u32, field: &str) -> crate::Result<Option<Value<'a>>> {
+    fn record_field(&self, record: u32, wanted: &str) -> crate::Result<Option<Value<'a>>> {
         let mut value = None;
         self.fields(self.index.records[record as usize].span, |name, reader| {
-            if name != field {
+            if name != wanted {
                 return Ok(false);
             }
-            value = Some(self.decode(reader, name)?);
+            value = Some(reader.value()?);
             Ok(true)
         })?;
         Ok(value)
@@ -243,7 +239,7 @@ impl<'a> Properties<'a> {
                 if name != "componentPropAssignments" {
                     return Ok(false);
                 }
-                if let Value::Array(values) = self.decode(reader, name)? {
+                if let Value::Array(values) = reader.value()? {
                     assignments.extend(values.into_iter().filter(|assignment| {
                         let content = assignment
                             .get("varValue")
@@ -282,7 +278,7 @@ impl<'a> Properties<'a> {
                     if name != "componentPropDefs" {
                         return Ok(false);
                     }
-                    let mut holder = Value::Fields(vec![(name, self.decode(reader, name)?)]);
+                    let mut holder = Value::Fields(vec![(name, reader.value()?)]);
                     records::normalize(&mut holder);
                     if let Some(value) = holder.get("componentPropDefs") {
                         definitions = value.clone();
@@ -318,7 +314,7 @@ impl<'a> Properties<'a> {
         let mut replay = Replay::new();
         for step in steps {
             match expansion.steps[step as usize] {
-                Step::Layer(layer) => replay.layer(self, occurrence, layer)?,
+                Step::Layer(layer) => replay.layer(self, layer)?,
                 Step::Scale { factor, .. } => scale(&mut replay.props, factor),
                 Step::Resize { .. } => {}
             }
@@ -363,6 +359,22 @@ impl<'a> Properties<'a> {
             );
         }
         Ok(props)
+    }
+}
+
+/// A field's value, where `Properties::fields` visits it.
+pub(crate) struct Visit<'r, 'a> {
+    reader: &'r mut Reader<'a>,
+    field: &'a Field,
+    schema: &'a Schema,
+}
+
+impl<'a> Visit<'_, 'a> {
+    /// Decodes the value whole.
+    fn value(&mut self) -> crate::Result<Value<'a>> {
+        self.reader
+            .value(self.schema, self.field)
+            .map_err(|_| Error::Message)
     }
 }
 
