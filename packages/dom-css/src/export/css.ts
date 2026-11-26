@@ -29,6 +29,10 @@ export function fillToCSS(fill: Fill | undefined, profile: ColorProfile): string
   return cssColor({ ...fill.color, a: fill.opacity }, profile)
 }
 
+export function showsOnlyShaders(fills: readonly Fill[]): boolean {
+  return !fills.some(isDrawnPaint) && fills.some((fill) => fill.visible)
+}
+
 export type BorderSide = 'top' | 'right' | 'bottom' | 'left'
 
 /**

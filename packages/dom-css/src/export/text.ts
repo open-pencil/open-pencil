@@ -8,6 +8,7 @@ import type {
   SceneNode,
   TextLength
 } from '@open-pencil/scene-graph'
+import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import {
   hasTextList,
   listNumberFormat,
@@ -23,7 +24,7 @@ import {
 } from '@open-pencil/scene-graph/text'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
-import { fillToCSS, letterSpacingToCSS, lineHeightToCSS } from './css'
+import { fillToCSS, letterSpacingToCSS, lineHeightToCSS, showsOnlyShaders } from './css'
 
 /** The character styles CSS writes, as a text layer and its runs hold them. */
 type CharacterStyle = Pick<
@@ -178,7 +179,9 @@ function characterCSS(
   profile: ColorProfile
 ): DesignStyleDeclaration {
   return {
-    color: fillToCSS(style.fills.at(0), profile) ?? '',
+    color: showsOnlyShaders(style.fills)
+      ? 'transparent'
+      : (fillToCSS(style.fills.find(isDrawnPaint), profile) ?? ''),
     'font-family': style.fontFamily,
     'font-size': px(style.fontSize),
     'font-weight': String(style.fontWeight),

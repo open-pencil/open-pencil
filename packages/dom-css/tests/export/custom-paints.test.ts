@@ -17,6 +17,7 @@ const SHADER: Fill = {
 }
 const SHADER_STROKE: Stroke = { ...SHADER, weight: 3, align: 'INSIDE' }
 const RED: Fill = { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+const BLUE: Fill = { ...RED, color: { r: 0, g: 0, b: 1, a: 1 } }
 
 function exported(type: SceneNode['type'], layer: Partial<SceneNode>) {
   const graph = new SceneGraph()
@@ -39,6 +40,23 @@ describe('Figma shader paints in HTML and Tailwind', () => {
     expect(html).toContain('color: #FF0000')
     expect(tailwind).toContain('text-[#FF0000]')
   })
+  test('a text whose only visible fill is a shader writes transparent glyphs', () => {
+    const { html, tailwind } = exported('TEXT', { text: 'Hi', fills: [SHADER] })
+    expect(html).toContain('color: transparent')
+    expect(tailwind).toContain('text-transparent')
+  })
+
+  test('a text run takes its colour from its first drawn fill', () => {
+    const run = (fills: Fill[]) =>
+      exported('TEXT', {
+        text: 'Hi there',
+        fills: [RED],
+        styleRuns: [{ start: 3, length: 5, style: { fills } }]
+      })
+    expect(run([SHADER, BLUE])).toEqual(run([BLUE]))
+    expect(run([SHADER]).html).toContain('<span style="color: transparent">there</span>')
+  })
+
   test("a text's colour binding is the one on its first drawn fill", () => {
     const colour = (boundVariables: Record<string, string>) => {
       const graph = designSystem()

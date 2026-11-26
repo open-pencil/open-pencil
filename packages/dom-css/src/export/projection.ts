@@ -15,6 +15,7 @@ import {
   cssColor,
   effectsToCSS,
   fillToCSS,
+  showsOnlyShaders,
   letterSpacingRoomCSS,
   letterSpacingToCSS,
   lineHeightToCSS,
@@ -288,6 +289,15 @@ function styleFromSceneNode(
   return style
 }
 
+function textColor(node: SceneNode, css: FieldCSS, profile: ColorProfile): string {
+  const colorIndex = node.fills.findIndex(isDrawnPaint)
+  if (colorIndex === -1) {
+    return showsOnlyShaders(node.fills) ? 'transparent' : cssColor(BLACK, profile)
+  }
+  const color = fillToCSS(node.fills[colorIndex], profile)
+  return color ? css(`fills/${colorIndex}/color`, color) : cssColor(BLACK, profile)
+}
+
 function styleFromTextNode(
   node: SceneNode,
   parent: SceneNode | undefined,
@@ -300,9 +310,7 @@ function styleFromTextNode(
   addPositioning(style, node, parent)
   addLayoutChild(style, node, parent)
   if (resolveNodeTextDirection(node) === 'RTL') style.direction = 'rtl'
-  const colorIndex = node.fills.findIndex(isDrawnPaint)
-  const color = colorIndex === -1 ? undefined : fillToCSS(node.fills[colorIndex], profile)
-  style.color = color ? css(`fills/${colorIndex}/color`, color) : cssColor(BLACK, profile)
+  style.color = textColor(node, css, profile)
   style['font-family'] = node.fontFamily
   style['font-size'] = css('fontSize', px(node.fontSize))
   style['font-weight'] = String(node.fontWeight)
