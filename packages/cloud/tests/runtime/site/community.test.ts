@@ -178,6 +178,21 @@ describe('community pages', () => {
     })
   })
 
+  test('name each page’s structured data by its own address', async () => {
+    const html = await (await visit(server(true), `/community/${DOCUMENT_ID}`)).text()
+    const gallery = await (await visit(server(true), '/community')).text()
+    expect(structuredData(html).graph).toMatchObject({
+      '@graph': expect.arrayContaining([
+        expect.objectContaining({ '@id': `https://cloud.example/community/${DOCUMENT_ID}#webpage` })
+      ])
+    })
+    expect(structuredData(gallery).graph).toMatchObject({
+      '@graph': expect.arrayContaining([
+        expect.objectContaining({ '@id': 'https://cloud.example/community#webpage' })
+      ])
+    })
+  })
+
   test('let only the structured data carrying this response’s nonce run inline', async () => {
     const app = server(true)
     const nonces = []

@@ -172,7 +172,9 @@ export async function renderCommunityPage(
           ]
         : [])
     ],
-    link: [{ rel: 'canonical', href: meta.url }]
+    link: [{ rel: 'canonical', href: meta.url }],
+    // The graph names its nodes by the page's address; left unsaid, every page would be `/`.
+    templateParams: { schemaOrg: { host: page.origin, path: new URL(meta.url).pathname } }
   })
   // The policy lets this response's nonce alone run inline, so the graph's block carries it.
   useSchemaOrg(head, {
