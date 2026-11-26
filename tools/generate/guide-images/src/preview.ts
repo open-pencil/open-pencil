@@ -28,7 +28,8 @@ interface Findings {
   overflow: number
 }
 
-const FRONT_MATTER = /^---\n([\s\S]*?)\n---/
+/** A page's front matter, with either line ending, as Git for Windows may check files out. */
+const FRONT_MATTER = /^---\r?\n([\s\S]*?)\r?\n---/
 
 async function isGuidePage(file: string): Promise<boolean> {
   const block = FRONT_MATTER.exec(await readFile(file, 'utf8'))?.[1]
@@ -73,8 +74,11 @@ async function capture(
     colorScheme: view.scheme
   })
   try {
-    await page.goto(`${ORIGIN}${route}`)
+    const response = await page.goto(`${ORIGIN}${route}`)
+    if (!response?.ok()) throw new Error(`${route} answered ${response?.status() ?? 'nothing'}`)
     await page.waitForTimeout(LOAD_MS)
+    // The dev server answers an unknown address with 200 and VitePress's not found page.
+    if (await page.locator('.NotFound').count()) throw new Error(`${route} is not a page`)
     // The site keeps the reader's theme in its own class, whatever the system says.
     await page.evaluate(
       (dark) => document.documentElement.classList.toggle('dark', dark),
@@ -107,6 +111,7 @@ async function main(): Promise<void> {
   const root = await resolveWorkspaceRoot(fileURLToPath(import.meta.url))
   const named = process.argv.slice(2)
   const routes = named.length > 0 ? named : await guideRoutes(join(root, DOCS))
+  if (routes.length === 0) throw new Error(`No guide pages in ${DOCS}`)
   const out = join(root, OUT)
   await mkdir(out, { recursive: true })
 
