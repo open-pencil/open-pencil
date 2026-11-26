@@ -145,7 +145,10 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
     // Undo and redo come back to the view the edit was made in: Slide view, even after the edit
     // emptied the stage, or Grid view.
     const staged = focusBefore !== null
+    // Undone or redone from another page, the deck changes there; what is shown stays put.
+    const deckPage = ctx.graph.getNode(gridId)?.parentId
     const show = (ids: Iterable<string>, focus: string | null) => {
+      if (ctx.state.currentPageId !== deckPage) return
       ctx.setSelectedIds(new Set(ids))
       ctx.state.enteredContainerId = null
       if (staged) setFocus(focus)

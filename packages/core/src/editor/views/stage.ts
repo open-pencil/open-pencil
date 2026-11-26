@@ -2,13 +2,13 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { EditorState } from '#core/editor/types'
 
-/** The slide on the canvas's stage, or null while the whole page shows. */
+/** The slide on the canvas's stage, or null while the whole page shows. Only a slide of the page shown is staged. */
 export function stagedSlide(
   graph: SceneGraph,
-  state: Pick<EditorState, 'focusedSlideId'>
+  state: Pick<EditorState, 'focusedSlideId' | 'currentPageId'>
 ): SceneNode | null {
   const slide = state.focusedSlideId ? graph.getNode(state.focusedSlideId) : undefined
-  return slide?.type === 'SLIDE' ? slide : null
+  return slide?.type === 'SLIDE' && graph.pageOf(slide.id) === state.currentPageId ? slide : null
 }
 
 /**

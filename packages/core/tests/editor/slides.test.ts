@@ -365,3 +365,18 @@ test('a paste with a slide selected off the stage goes onto the slide on the sta
   editor.select([b])
   expect(resolvePasteTarget(editor)).toBe(a)
 })
+
+test('undoing a Slide view edit from another page leaves the page shown as it is', async () => {
+  const { editor, a } = setup()
+  editor.focusSlide(a)
+  const added = expectDefined(editor.addSlide(a))
+  const deckPage = editor.state.currentPageId
+  const other = editor.graph.addPage('Notes').id
+  await editor.switchPage(other)
+  editor.undo.undo()
+  expect(editor.graph.getNode(added)).toBeUndefined()
+  expect(editor.state.currentPageId).toBe(other)
+  expect(canvasRootId(editor.graph, editor.state)).toBe(other)
+  expect(selected(editor)).toEqual([])
+  await editor.switchPage(deckPage)
+})
