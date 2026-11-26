@@ -1,4 +1,5 @@
 import { symbolOverridesOf, type SymbolOverride } from '#fig/instance-overrides/types'
+import { motionVariableAliases } from '#fig/node-change/slides/motion'
 import { variableConsumptionEntries } from '#fig/node-change/variable/bindings'
 import { effectVariableAliases } from '#fig/node-change/variable/effects'
 import { visitVariableReferences } from '#fig/node-change/variable/expression'
@@ -65,6 +66,8 @@ function createRecordNormalizer(resolve: ReturnType<typeof createResourceResolve
       for (const effect of node.effects ?? []) {
         for (const alias of effectVariableAliases(effect)) normalize(alias, 'effects', path)
       }
+      for (const alias of motionVariableAliases(node))
+        normalize(alias, 'prototypeInteractions', path)
       const modeMap = node.variableModeBySetMap as
         | {
             entries?: Array<{ variableSetID?: NodeChange['variableSetID']; variableModeID?: GUID }>

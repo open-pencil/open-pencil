@@ -2,24 +2,23 @@ import { parseCSSEasing } from '../css/motion'
 import type { SceneGraph } from '../graph'
 import { EASING_CURVES, type Easing, type EasingCurve, type Variable } from '../types'
 import { easingPreset, isEasing } from '../variables/easing'
+import {
+  liveVariable,
+  mapMotionVariables,
+  motionVariableIds,
+  resolveMotion,
+  type ResolvedMotion
+} from '../variables/motion'
 import type { Behaviour, BehaviourSpec, BehaviourTransition } from './schema'
 
 type TransitionSpec = NonNullable<BehaviourSpec['transition']>
 
 /** What a control's state change plays: a duration in seconds and an easing. */
-export interface ResolvedTransition {
-  duration: number
-  easing: Easing
-}
+export type ResolvedTransition = ResolvedMotion
 
 /** The transition a behaviour starts with when one is added: Figma's Smart animate default. */
 export function defaultTransition(): BehaviourTransition {
   return { duration: 0.3, easing: easingPreset('OUT_CUBIC') }
-}
-
-function liveVariable(graph: SceneGraph, id: string | undefined, type: Variable['type']) {
-  const variable = id ? graph.variables.get(id) : undefined
-  return variable?.type === type ? variable : undefined
 }
 
 /**
@@ -31,25 +30,12 @@ export function resolveTransition(
   behaviour: Behaviour,
   nodeId: string
 ): ResolvedTransition | undefined {
-  const transition = behaviour.transition
-  if (!transition) return undefined
-  const timing = liveVariable(graph, transition.durationVariableId, 'TIMING')
-  const easing = liveVariable(graph, transition.easingVariableId, 'EASING')
-  const duration = timing && graph.resolveVariableForNode(nodeId, timing.id)
-  const curve = easing && graph.resolveVariableForNode(nodeId, easing.id)
-  return {
-    duration: typeof duration === 'number' && duration >= 0 ? duration : transition.duration,
-    easing: isEasing(curve) ? curve : transition.easing
-  }
+  return behaviour.transition && resolveMotion(graph, behaviour.transition, nodeId)
 }
 
 /** The variables a behaviour's transition follows. */
 export function transitionVariableIds(behaviour: Behaviour): string[] {
-  const transition = behaviour.transition
-  if (!transition) return []
-  return [transition.durationVariableId, transition.easingVariableId].filter(
-    (id): id is string => id !== undefined
-  )
+  return behaviour.transition ? motionVariableIds(behaviour.transition) : []
 }
 
 /**
@@ -61,13 +47,7 @@ export function mapTransitionVariables(
   map: (variableId: string) => string | undefined
 ): Behaviour {
   if (!behaviour.transition) return behaviour
-  const { durationVariableId, easingVariableId, ...values } = behaviour.transition
-  const transition: BehaviourTransition = values
-  const duration = durationVariableId === undefined ? undefined : map(durationVariableId)
-  const easing = easingVariableId === undefined ? undefined : map(easingVariableId)
-  if (duration !== undefined) transition.durationVariableId = duration
-  if (easing !== undefined) transition.easingVariableId = easing
-  return { ...behaviour, transition }
+  return { ...behaviour, transition: mapMotionVariables(behaviour.transition, map) }
 }
 
 /** A live variable of `type`, by its ID or its name; a spec names one either way. */
