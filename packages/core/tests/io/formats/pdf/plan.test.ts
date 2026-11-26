@@ -143,9 +143,12 @@ describe('a deck', () => {
   }
 
   test('a whole deck makes a page for each slide in order, leaving out skipped ones', () => {
-    const { graph, ids } = deck()
+    const { graph, page: deckPage, ids } = deck()
     const pages = planExportPDFPages({ graph, target: { scope: 'document' } })
     expect(pages?.map((spec) => spec.nodeIds)).toEqual([[ids[0]], [ids[2]]])
+    // The Export section exports the page it shows when nothing is selected.
+    const page = planExportPDFPages({ graph, target: { scope: 'page', pageId: deckPage } })
+    expect(page?.map((spec) => spec.nodeIds)).toEqual([[ids[0]], [ids[2]]])
   })
 
   test('slides picked keep the deck’s order, skipped ones included', () => {

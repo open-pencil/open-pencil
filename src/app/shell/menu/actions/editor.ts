@@ -65,12 +65,7 @@ export function createSharedEditorMenuActions(
   setTheme: (theme: 'light' | 'dark' | 'auto') => void,
   isMobile: Ref<boolean>
 ) {
-  // A deck exports whole, every slide in its order, whatever is selected.
-  const exportDeck = (formatId: 'pdf' | 'pptx') =>
-    void store.exportTargets([{ target: { scope: 'document' }, formatId }])
   return {
-    'export-deck-pdf': () => exportDeck('pdf'),
-    'export-deck-pptx': () => exportDeck('pptx'),
     'copy-properties': onCanvasSelection(() => void copySelectionProperties(store)),
     'paste-properties': onCanvasSelection(() => void pasteClipboardProperties(store)),
     'zoom-in': () => store.applyZoom(-100, window.innerWidth / 2, window.innerHeight / 2),

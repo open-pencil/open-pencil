@@ -1,8 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { getExportBaseName, saveExportedFile } from '@/app/document/export/files'
+import { saveExportedFile } from '@/app/document/export/files'
 import { watchTauriFile } from '@/app/document/io/watch/targets'
 import { chooseTauriOpenPaths, readTauriDesignFile } from '@/app/shell/menu/files'
 
@@ -160,11 +158,4 @@ describe('Tauri file actions', () => {
 
     unwatch()
   })
-})
-
-test('a whole document exports under its name, or as Export when it has none', () => {
-  const graph = new SceneGraph()
-  const document = { scope: 'document' as const }
-  expect(getExportBaseName(graph, document, 'Quarterly review')).toBe('Quarterly review')
-  expect(getExportBaseName(graph, document, '  ')).toBe('Export')
 })

@@ -120,7 +120,6 @@ export function useAppMenu() {
     'save-version': 'saveToVersionHistory',
     'version-history': 'showVersionHistory',
     'export-selection': 'exportSelection',
-    'export-deck': 'exportDeck',
     autosave: 'autosave',
     close: 'closeTab',
     'previous-tab': 'selectPreviousTab',

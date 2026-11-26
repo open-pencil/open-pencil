@@ -65,24 +65,6 @@ export const FILE_MENU: AppMenuGroupSchema = {
         }
       ]
     },
-    {
-      id: 'export-deck',
-      feature: 'deck',
-      label: 'Export Deck',
-      palette: { icon: 'download' },
-      sub: [
-        {
-          id: 'export-deck-pdf',
-          label: 'PDF',
-          palette: { icon: 'download', label: 'exportDeckAsPDF' }
-        },
-        {
-          id: 'export-deck-pptx',
-          label: 'PowerPoint',
-          palette: { icon: 'download', label: 'exportDeckAsPPTX' }
-        }
-      ]
-    },
     { type: 'separator' },
     { id: 'autosave', label: 'Autosave', checkbox: true, feature: 'local-file' },
     { id: 'close', feature: 'document', label: 'Close Tab', shortcut: 'Mod+W' },
