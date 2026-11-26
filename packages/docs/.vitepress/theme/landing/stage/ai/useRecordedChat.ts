@@ -24,21 +24,24 @@ const UP_NEXT = [
 
 /**
  * The card the turn adds. Its colors and radius are the tour's Theme variables, as the player's
- * are, so it switches between dark and light with the player and the docs site. The hero spaces
- * its row by nothing, so the card keeps its distance from the player with padding of its own.
+ * are, so it switches between dark and light with the player and the docs site. The tour's App
+ * chrome collection has variables of the same names, so each reference names the Theme
+ * collection. The hero spaces its row by nothing, so the card keeps its distance from the player
+ * with padding of its own.
  */
+const themeVar = (name: string) => `designVar('Theme', '${name}')`
 const UP_NEXT_JSX = [
   `<Frame name="${RESULT_NAME}" w="hug" h="hug" pl={24}>`,
-  `  <Frame name="Queue" w={280} h="hug" flex="col" gap={14} p={20} bg={designVar('Surface')} rounded={designVar('Radius')}>`,
-  `    <Text name="Heading" size={14} weight={600} color={designVar('Text')}>${RESULT_NAME}</Text>`,
+  `  <Frame name="Queue" w={280} h="hug" flex="col" gap={14} p={20} bg={${themeVar('Surface')}} rounded={${themeVar('Radius')}}>`,
+  `    <Text name="Heading" size={14} weight={600} color={${themeVar('Text')}}>${RESULT_NAME}</Text>`,
   ...UP_NEXT.flatMap(({ title, artist, length }) => [
     '    <Frame name="Track" w="fill" h="hug" flex="row" gap={12} items="center">',
-    `      <Frame name="Cover" w={40} h={40} rounded={designVar('Radius/Control')} bg={designVar('Surface/Raised')} />`,
+    `      <Frame name="Cover" w={40} h={40} rounded={${themeVar('Radius/Control')}} bg={${themeVar('Surface/Raised')}} />`,
     '      <Frame name="Names" grow={1} h="hug" flex="col" gap={2}>',
-    `        <Text name="Title" size={13} weight={500} color={designVar('Text')}>${title}</Text>`,
-    `        <Text name="Artist" size={12} color={designVar('Text/Muted')}>${artist}</Text>`,
+    `        <Text name="Title" size={13} weight={500} color={${themeVar('Text')}}>${title}</Text>`,
+    `        <Text name="Artist" size={12} color={${themeVar('Text/Muted')}}>${artist}</Text>`,
     '      </Frame>',
-    `      <Text name="Length" size={12} color={designVar('Text/Muted')}>${length}</Text>`,
+    `      <Text name="Length" size={12} color={${themeVar('Text/Muted')}}>${length}</Text>`,
     '    </Frame>'
   ]),
   '  </Frame>',
