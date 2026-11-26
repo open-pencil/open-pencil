@@ -16,15 +16,19 @@ const RING = 'background:white;width:60px;height:30px;box-shadow:0 0 0 3px red'
 describe('what CSS draws', () => {
   test('a ring around a box without a border is its outside stroke', async () => {
     const layer = await layers(
-      `<div id="ring" style="${RING}, 0 2px 4px black"></div>
+      `<div id="ring" style="${RING}"></div>
+       <div id="shadowed" style="${RING}, 0 2px 4px black"></div>
        <div id="bordered" style="${RING};border:1px solid blue"></div>
        <div id="rings" style="${RING}, 0 0 0 6px blue"></div>`
     )
     expect(layer('ring')).toMatchObject({
       clipsContent: false,
       strokes: [{ color: { r: 1, g: 0, b: 0 }, weight: 3, align: 'OUTSIDE' }],
-      effects: [{ type: 'DROP_SHADOW', offset: { x: 0, y: 2 } }]
+      effects: []
     })
+    // An outside stroke would grow the other shadow, which CSS casts from the box alone.
+    expect(layer('shadowed').strokes).toEqual([])
+    expect(layer('shadowed').effects).toHaveLength(2)
     expect(layer('bordered').strokes).toMatchObject([{ align: 'INSIDE' }])
     expect(layer('bordered').effects).toMatchObject([{ spread: 3 }])
     expect(layer('rings').strokes).toEqual([])

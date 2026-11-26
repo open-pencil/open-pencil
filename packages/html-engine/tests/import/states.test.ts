@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { htmlToDesignDocument } from '@open-pencil/dom-css'
 
-import { engineRuntime } from '../helpers/engine'
+import { engineRuntime, engineWithInter } from '../helpers/engine'
 
 async function opacities(html: string, fetchedCSS?: string) {
   const document = await htmlToDesignDocument(html, {
@@ -53,6 +53,26 @@ describe('forced states', () => {
     expect(await styled('hover')).toEqual(['0.2', 'rgb(0, 0, 0)'])
     expect(await styled('focus-visible')).toEqual(['0.3', 'rgb(255, 0, 0)'])
     expect(await styled('')).toEqual(['1', 'rgb(0, 0, 0)'])
+  })
+
+  test('leave the states a later mode no longer names', async () => {
+    const engine = await engineWithInter()
+    const capture = await engine.layout(
+      '<!doctype html><html><head><style>html:hover i{opacity:.2} html:focus-visible i{opacity:.3}</style></head><body><i>x</i></body></html>',
+      {
+        viewport: { width: 100, height: 100 },
+        rootAttributes: { 'data-force-state': 'hover' },
+        modes: [{}, { 'data-force-state': 'focus-visible' }, { 'data-force-state': 'focus' }]
+      }
+    )
+    const opacity = (nodes: typeof capture.nodes) =>
+      nodes.find((node) => node.tag === 'i')?.style?.opacity ?? '1'
+    expect([capture, ...capture.modes].map(({ nodes }) => opacity(nodes))).toEqual([
+      '0.2',
+      '1',
+      '0.3',
+      '1'
+    ])
   })
 
   test('reach nested rules, media queries, :has(), and linked stylesheets', async () => {

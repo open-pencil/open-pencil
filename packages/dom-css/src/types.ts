@@ -42,6 +42,8 @@ export interface DesignDocument {
    * The root element's custom properties, by name, when the runtime was asked for references.
    */
   customProperties?: Record<string, DesignCustomProperty>
+  /** The root or body element whose background `background` is, with its styles in each mode. */
+  canvas?: DesignElement
   /** The root's custom properties in each further mode `CSSComputeOptions.modes` names. */
   modes?: { customProperties?: Record<string, DesignCustomProperty> }[]
   sourceGraph?: SceneGraph

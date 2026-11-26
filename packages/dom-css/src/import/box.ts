@@ -142,6 +142,16 @@ export function isRing(effect: Effect): boolean {
 }
 
 /**
+ * The shadow of a box that is only a ring, which becomes its outside stroke when the box has no
+ * border; none when it has other shadows, which an outside stroke would grow, as Figma casts a
+ * shadow from the strokes too.
+ */
+export function ringOf(style: DesignStyleDeclaration, shadows: readonly Effect[]): Effect | null {
+  const [ring] = shadows
+  return shadows.length === 1 && isRing(ring) && !hasBorder(style) ? ring : null
+}
+
+/**
  * Makes the one ring around a box without a border, as a focus ring is, its outside stroke,
  * since Figma spreads a shadow only on a filled frame that clips; returns the shadows left.
  */
@@ -150,9 +160,8 @@ export function applyRing(
   style: DesignStyleDeclaration,
   shadows: Effect[]
 ): Effect[] {
-  const rings = hasBorder(style) ? [] : shadows.filter(isRing)
-  if (rings.length !== 1) return shadows
-  const [ring] = rings
+  const ring = ringOf(style, shadows)
+  if (!ring) return shadows
   const { color, spread: weight } = ring
   node.strokes = [
     { type: 'SOLID', color, weight, opacity: color.a, visible: true, align: 'OUTSIDE' }

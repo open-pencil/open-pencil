@@ -6,7 +6,7 @@ import { parseCSSNumber, parseCSSShadows, splitCSSLayers } from '@open-pencil/sc
 import { ICON_PAINTS, type IconPaint } from '@open-pencil/scene-graph/icons'
 import { effectBindingField } from '@open-pencil/scene-graph/variables'
 
-import { firstStrokeProperty, hasBorder, isRing } from '../box'
+import { firstStrokeProperty, ringOf } from '../box'
 import { anyCSSColor, mergedStyle } from '../css-values'
 import { maskSVG } from '../pictures'
 import { colorPart, referencedProperty } from './expression'
@@ -30,34 +30,47 @@ function inModes(element: DesignElement, count: number): ModeStyle[] | null {
   return styled
 }
 
-/** Where a layer's number comes from: the field that binds, and the properties that all set it. */
-function numberSlots(node: SceneNode): [field: string, property: string][] {
+const CORNERS = [
+  ['topLeftRadius', 'border-top-left-radius'],
+  ['topRightRadius', 'border-top-right-radius'],
+  ['bottomRightRadius', 'border-bottom-right-radius'],
+  ['bottomLeftRadius', 'border-bottom-left-radius']
+] as const
+
+/** A number a layer's field takes, and the properties that all set it. */
+interface NumberSlot {
+  field: string
+  properties: readonly string[]
+}
+
+const slot = (field: string, ...properties: string[]): NumberSlot => ({ field, properties })
+
+/** Where a layer's numbers come from. */
+function numberSlots(node: SceneNode): NumberSlot[] {
   if (node.type === 'TEXT') {
     return [
-      ['fontSize', 'font-size'],
-      ['lineHeight', 'line-height'],
-      ['letterSpacing', 'letter-spacing'],
-      ['opacity', 'opacity']
+      slot('fontSize', 'font-size'),
+      slot('lineHeight', 'line-height'),
+      slot('letterSpacing', 'letter-spacing'),
+      slot('opacity', 'opacity')
     ]
   }
-  const slots: [string, string][] = [
-    ['opacity', 'opacity'],
-    ['topLeftRadius', 'border-top-left-radius'],
-    ['topRightRadius', 'border-top-right-radius'],
-    ['bottomRightRadius', 'border-bottom-right-radius'],
-    ['bottomLeftRadius', 'border-bottom-left-radius']
-  ]
+  // A layer whose corners are not independent draws its one radius, which all four set.
+  const corners = node.independentCorners
+    ? CORNERS.map(([field, property]) => slot(field, property))
+    : [slot('cornerRadius', ...CORNERS.map(([, property]) => property))]
+  const slots = [slot('opacity', 'opacity'), ...corners]
   if (node.layoutMode !== 'HORIZONTAL' && node.layoutMode !== 'VERTICAL') return slots
   const horizontal = node.layoutMode === 'HORIZONTAL'
   slots.push(
-    ['paddingTop', 'padding-top'],
-    ['paddingRight', 'padding-right'],
-    ['paddingBottom', 'padding-bottom'],
-    ['paddingLeft', 'padding-left'],
-    ['itemSpacing', horizontal ? 'column-gap' : 'row-gap']
+    slot('paddingTop', 'padding-top'),
+    slot('paddingRight', 'padding-right'),
+    slot('paddingBottom', 'padding-bottom'),
+    slot('paddingLeft', 'padding-left'),
+    slot('itemSpacing', horizontal ? 'column-gap' : 'row-gap')
   )
   if (node.layoutWrap === 'WRAP')
-    slots.push(['counterAxisSpacing', horizontal ? 'row-gap' : 'column-gap'])
+    slots.push(slot('counterAxisSpacing', horizontal ? 'row-gap' : 'column-gap'))
   return slots
 }
 
@@ -129,9 +142,12 @@ class Binder {
 
   /** Binds numbers a single property gives, where its variable holds the layer's in every mode. */
   #bindNumbers(node: SceneNode, element: DesignElement): void {
-    for (const [field, property] of numberSlots(node)) {
+    for (const { field, properties } of numberSlots(node)) {
+      const [property = ''] = properties
       const modes = inModes(element, this.#theme.modes.length) ?? []
-      const names = modes.map((other) => referencedProperty(other.references[property]))
+      const names = modes.flatMap((other) =>
+        properties.map((each) => referencedProperty(other.references[each]))
+      )
       const variable = this.#variables.named(names.at(0) ?? null)
       if (variable?.type !== 'FLOAT' || names.some((name) => name !== names[0])) continue
       const others = modes.slice(1).map((other) => parseCSSNumber(other.computedStyle[property]))
@@ -157,9 +173,8 @@ class Binder {
       written: splitCSSLayers(other.references[property] ?? '')
     }))
     const first = lists[0].computed.map((layer) => parseCSSShadows(layer, 'srgb').at(0))
-    const rings = first.filter((shadow) => shadow !== undefined && isRing(shadow))
-    const stroked =
-      property === 'box-shadow' && rings.length === 1 && !hasBorder(modes[0].computedStyle)
+    const drawn = first.filter((shadow) => shadow !== undefined)
+    const ring = property === 'box-shadow' ? ringOf(modes[0].computedStyle, drawn) : null
     let effect = 0
     for (const [index, initial] of first.entries()) {
       if (!initial) continue
@@ -168,8 +183,7 @@ class Binder {
         const own = written.length === computed.length ? written[index] : ''
         return shadow && { expression: colorPart(own, this.#isColor), color: shadow.color }
       })
-      const field =
-        stroked && initial === rings[0] ? 'strokes/0/color' : effectBindingField(effect++, 'color')
+      const field = initial === ring ? 'strokes/0/color' : effectBindingField(effect++, 'color')
       const colors = shadows.filter((shadow) => shadow !== undefined)
       if (colors.length === shadows.length && this.#worthBinding(colors))
         this.#bindColor(node, field, colors)
@@ -221,10 +235,13 @@ class Binder {
   }
 }
 
+/** Binds a layer made after the others were bound, such as a page's window, to its element. */
+export type ThemeLayerBinder = (node: SceneNode, element: DesignElement) => void
+
 /**
  * Imports a page's custom properties as variables, and binds each layer's colors and numbers to
  * the ones its styles name, in the modes the page was styled in. Call it once the layers are laid
- * out and their artwork is drawn.
+ * out and their artwork is drawn; it returns a binder for layers made later.
  */
 export function bindThemeVariables(
   graph: SceneGraph,
@@ -232,11 +249,12 @@ export function bindThemeVariables(
   sources: LayerSources,
   svgs: ReadonlyMap<string, DesignElement>,
   tinted: ReadonlyMap<string, readonly IconPaint[]>
-): void {
+): ThemeLayerBinder {
   const binder = new Binder(graph, theme)
   for (const [nodeId, element] of sources) {
     const node = graph.getNode(nodeId)
     if (node) binder.bindLayer(node, element)
   }
   for (const [frameId, element] of svgs) binder.bindArtwork(frameId, element, tinted)
+  return (node, element) => binder.bindLayer(node, element)
 }

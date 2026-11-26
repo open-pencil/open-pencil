@@ -24,7 +24,7 @@ describe('variables from custom properties', () => {
     const graph = await kit()
     const rest = named(graph, 'State=Rest')
     expect(bound(graph, rest, 'fills/0/color')).toBe('primary')
-    expect(bound(graph, rest, 'topLeftRadius')).toBe('radius')
+    expect(bound(graph, rest, 'cornerRadius')).toBe('radius')
     const [label] = graph.getChildren(rest.id)
     expect(bound(graph, label, 'fills/0/color')).toBe('surface')
     const focus = named(graph, 'State=Focus')
@@ -216,6 +216,44 @@ describe('variables from custom properties', () => {
       { cssText: ':root { --ring: #112233 } .dark { --ring: white }', variables: VARIABLES }
     )
     expect(bound(graph, named(graph, 'ring'), 'strokes/0/color')).toBe('ring')
+  })
+
+  test('bind one radius for four equal corners, and each corner when they differ', async () => {
+    const { graph } = await readHTMLDocument(
+      `<div id="round" style="width:9px;height:9px;border-radius:var(--radius)"></div>
+       <div id="corners" style="width:9px;height:9px;border-top-left-radius:var(--radius)"></div>`,
+      { cssText: ':root { --radius: 4px } .dark { --radius: 12px }', variables: VARIABLES }
+    )
+    expect(bound(graph, named(graph, 'round'), 'cornerRadius')).toBe('radius')
+    expect(bound(graph, named(graph, 'corners'), 'topLeftRadius')).toBe('radius')
+  })
+
+  test('bind generated content, and the window of a framed page, in every mode', async () => {
+    const { graph } = await readHTMLDocument('<div class="tag"></div>', {
+      cssText:
+        ':root { --surface: #ffffff; --ink: #112233 } .dark { --surface: #000000; --ink: #eeeeee } body { background: var(--surface) } .tag::before { content: ""; display: block; width: 9px; height: 9px; background: var(--ink) }',
+      variables: VARIABLES,
+      framed: true
+    })
+    const [page] = graph.getPages()
+    const [window] = graph.getChildren(page.id)
+    expect(bound(graph, window, 'fills/0/color')).toBe('surface')
+    const before = [...graph.getAllNodes()].find((node) => node.name === '::before')
+    expect(before && bound(graph, before, 'fills/0/color')).toBe('ink')
+  })
+
+  test('leave an SVG child that sets the artwork color itself unbound', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div style="color:var(--ink)"><svg id="art" width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M0 0h9v9z"/><path class="fixed" fill="currentColor" d="M9 9h9v9z"/></svg></div>',
+      {
+        cssText: ':root { --ink: #112233 } .dark { --ink: white } .fixed { color: #112233 }',
+        variables: VARIABLES
+      }
+    )
+    const paints = graph
+      .getChildren(named(graph, 'art').id)
+      .map((layer) => bound(graph, layer, 'fills/0/color'))
+    expect(paints).toEqual(['ink', undefined])
   })
 
   test('bind letter spacing, and inline SVG only where it follows the color', async () => {

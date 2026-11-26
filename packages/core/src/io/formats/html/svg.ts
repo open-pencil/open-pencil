@@ -107,9 +107,20 @@ const SVG_STYLE_PROPERTIES = [...Object.keys(INITIAL_PAINT), ...TEXT_PROPERTIES]
 /** A paint's computed value when it is the element's color, as the HTML engine reports it. */
 const CURRENT_COLOR_KEYWORD = 'currentcolor'
 
-/** `currentColor` where an element has the artwork's color, which tints it, or its own color. */
-function currentPaint(color: string | undefined, rootColor: string | undefined) {
-  return color === rootColor ? 'currentColor' : color
+/** The color an SVG's artwork is drawn in, and the declaration it comes from when it names one. */
+interface ArtworkColor {
+  color: string | undefined
+  reference: string | undefined
+}
+
+function artworkColor(element: DesignElement): ArtworkColor {
+  return { color: element.computedStyle?.color, reference: element.references?.color }
+}
+
+/** Whether an element takes the artwork's color, from the same declaration, so it tints it. */
+function takesArtworkColor(element: DesignElement, artwork: ArtworkColor): boolean {
+  const own = artworkColor(element)
+  return own.color === artwork.color && own.reference === artwork.reference
 }
 
 /**
@@ -117,31 +128,33 @@ function currentPaint(color: string | undefined, rootColor: string | undefined) 
  * children likewise. A runtime computes the CSS cascade, which may leave out presentation
  * attributes such as `fill="green"`, as the HTML engine does; so only a value that differs from
  * what the element inherits is CSS's own, and the markup draws the rest. A paint the runtime
- * computes to `currentcolor`, as the HTML engine reports it, stays `currentColor` where the
- * element has the artwork's color, so the artwork follows it, and is that color elsewhere.
+ * computes to `currentcolor`, as the HTML engine reports it, stays `currentColor`, and an element
+ * whose color is not the artwork's has that color written, so only the artwork's tints it.
  */
 function withComputedPaint(
   element: DesignElement,
   inherited: Readonly<Partial<Record<string, string>>>,
-  rootColor: string | undefined
+  artwork: ArtworkColor
 ): DesignElement {
   const style = element.computedStyle
-  const color = style?.color
   const own: Partial<Record<string, string>> = {}
   const paint: Record<string, string> = {}
   for (const property of SVG_STYLE_PROPERTIES) {
     const computed = style?.[property]?.trim()
     const current = computed === CURRENT_COLOR_KEYWORD
-    const value = current ? currentPaint(color, rootColor) : computed
+    const value = current ? 'currentColor' : computed
     const parent = inherited[property]
     own[property] = value ?? parent
     if (value === undefined || value === parent) continue
     paint[property] = value
   }
+  // An element with a color of its own, even one of the same value, paints `currentColor` in it,
+  // which the markup's `color` says, so only the artwork's color tints the artwork.
+  if (style?.color && !takesArtworkColor(element, artwork)) paint.color = style.color
   return {
     ...withStyle(element, paint),
     children: element.children.map((child) =>
-      child.type === 'element' ? withComputedPaint(child, own, rootColor) : child
+      child.type === 'element' ? withComputedPaint(child, own, artwork) : child
     )
   }
 }
@@ -165,9 +178,9 @@ function svgMarkup(
   byId: ReadonlyMap<string, DesignElement>,
   box: { width: number; height: number }
 ): string {
-  const color = element.computedStyle?.color
+  const artwork = artworkColor(element)
   const outside = outsideReferences(element, byId).map((target) =>
-    withComputedPaint(target, INITIAL_PAINT, color)
+    withComputedPaint(target, INITIAL_PAINT, artwork)
   )
   const defs: DesignElement = { type: 'element', tagName: 'defs', attrs: {}, children: outside }
   // A shape nothing paints is black, as in a browser, rather than in the icon's color. The
@@ -186,7 +199,7 @@ function svgMarkup(
     inlineStyle: element.inlineStyle && omit(element.inlineStyle, ['opacity']),
     computedStyle: element.computedStyle && omit(element.computedStyle, ['opacity'])
   }
-  const painted = withComputedPaint(root, INITIAL_PAINT, color)
+  const painted = withComputedPaint(root, INITIAL_PAINT, artwork)
   const children = outside.length > 0 ? [defs, ...painted.children] : painted.children
   return serializeNode({ ...painted, children })
 }

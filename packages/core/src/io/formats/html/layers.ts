@@ -92,11 +92,15 @@ export async function sceneGraphFromStyledHTML(
   placeBackgroundPictures(graph, backgroundPictures)
   applyStacking(graph, stackings)
   const tinted = await drawInlineSVGs(graph, svgs, styled, options.matchIcon)
-  if (options.theme) bindThemeVariables(graph, options.theme, sources, svgs, tinted)
+  const bindLayer = options.theme && bindThemeVariables(graph, options.theme, sources, svgs, tinted)
   applyCSSTransforms(graph, transforms)
   options.createComponents?.(graph, sources, styled)
   if (options.pageWindow) {
-    for (const page of graph.getPages()) frameAsWindow(graph, page, options.pageWindow, background)
+    for (const page of graph.getPages()) {
+      const frame = frameAsWindow(graph, page, options.pageWindow, background)
+      // The window shows the page's background, which a theme may change.
+      if (frame && bindLayer && styled.canvas) bindLayer(frame, styled.canvas)
+    }
   }
   return graph
 }
@@ -110,9 +114,9 @@ function frameAsWindow(
   page: SceneNode,
   pageWindow: DesignViewport,
   background: Color
-): void {
+): SceneNode | null {
   const layers = graph.getChildren(page.id)
-  if (layers.length === 0) return
+  if (layers.length === 0) return null
   // Down to what the page draws, a box's children overflowing it included, as the page scrolls to.
   const bottom = maxOf(
     layers.map(
@@ -131,6 +135,7 @@ function frameAsWindow(
     fills: [{ type: 'SOLID', color: { ...background, a: 1 }, opacity: background.a, visible: true }]
   })
   for (const layer of layers) graph.reparentNode(layer.id, frame.id)
+  return frame
 }
 
 export { loadPageFontFaces } from './page-fonts'
