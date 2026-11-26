@@ -22,5 +22,9 @@
   "sizeSquare": "Quadrat",
   "sizePortrait": "Hochformat",
   "sizeCustom": "Benutzerdefiniert",
-  "scaleContent": "Inhalt skalieren"
+  "scaleContent": "Inhalt skalieren",
+  "present": "Präsentieren",
+  "presentFromStart": "Von Anfang an präsentieren",
+  "exitPresentation": "Präsentation beenden",
+  "presentedSlide": "{number} von {total}"
 }

@@ -22,5 +22,9 @@
   "sizeSquare": "Cuadrado",
   "sizePortrait": "Vertical",
   "sizeCustom": "Personalizado",
-  "scaleContent": "Escalar contenido"
+  "scaleContent": "Escalar contenido",
+  "present": "Presentar",
+  "presentFromStart": "Presentar desde el principio",
+  "exitPresentation": "Salir de la presentación",
+  "presentedSlide": "{number} de {total}"
 }

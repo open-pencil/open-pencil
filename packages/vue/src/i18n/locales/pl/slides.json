@@ -22,5 +22,9 @@
   "sizeSquare": "Kwadrat",
   "sizePortrait": "Pionowy",
   "sizeCustom": "Niestandardowy",
-  "scaleContent": "Skaluj zawartość"
+  "scaleContent": "Skaluj zawartość",
+  "present": "Prezentuj",
+  "presentFromStart": "Prezentuj od początku",
+  "exitPresentation": "Zakończ prezentację",
+  "presentedSlide": "{number} z {total}"
 }

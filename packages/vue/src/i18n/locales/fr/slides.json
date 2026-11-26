@@ -22,5 +22,9 @@
   "sizeSquare": "Carré",
   "sizePortrait": "Portrait",
   "sizeCustom": "Personnalisée",
-  "scaleContent": "Mettre le contenu à l’échelle"
+  "scaleContent": "Mettre le contenu à l’échelle",
+  "present": "Présenter",
+  "presentFromStart": "Présenter depuis le début",
+  "exitPresentation": "Quitter la présentation",
+  "presentedSlide": "{number} sur {total}"
 }

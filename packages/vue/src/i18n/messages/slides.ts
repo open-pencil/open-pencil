@@ -25,5 +25,9 @@ export const slideMessageDefaults = {
   sizeSquare: 'Square',
   sizePortrait: 'Portrait',
   sizeCustom: 'Custom',
-  scaleContent: 'Scale content'
+  scaleContent: 'Scale content',
+  present: 'Present',
+  presentFromStart: 'Present from start',
+  exitPresentation: 'Exit presentation',
+  presentedSlide: params('{number} of {total}')
 } as const

@@ -22,5 +22,9 @@
   "sizeSquare": "مربع",
   "sizePortrait": "عمودي",
   "sizeCustom": "مخصص",
-  "scaleContent": "تحجيم المحتوى"
+  "scaleContent": "تحجيم المحتوى",
+  "present": "عرض",
+  "presentFromStart": "العرض من البداية",
+  "exitPresentation": "إنهاء العرض",
+  "presentedSlide": "{number} من {total}"
 }

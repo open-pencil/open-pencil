@@ -22,5 +22,9 @@
   "sizeSquare": "Квадрат",
   "sizePortrait": "Вертикальный",
   "sizeCustom": "Свой",
-  "scaleContent": "Масштабировать содержимое"
+  "scaleContent": "Масштабировать содержимое",
+  "present": "Показать",
+  "presentFromStart": "Показать с начала",
+  "exitPresentation": "Завершить показ",
+  "presentedSlide": "{number} из {total}"
 }

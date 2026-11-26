@@ -45,6 +45,7 @@ import { createLineEndActions } from './line-ends'
 import { createMovePolicy } from './move-policy'
 import { createNodeActions } from './nodes/actions'
 import { createPageActions } from './pages'
+import { createPresentActions } from './present'
 import { createReadOnlyActions, guardEdits, guardUndo } from './read-only'
 import { createCanvasRenderers } from './renderers'
 import { createSelectionActions } from './selection'
@@ -246,6 +247,7 @@ export function createEditor(options?: EditorOptions) {
   const shaders = createShaderActions(ctx, nodes)
   const alignment = createAlignmentActions(ctx)
   const canvasViews = createCanvasViewActions(ctx)
+  const presenting = createPresentActions(ctx)
   const clipboardBridge = createClipboardBridge(clipboard, selection, slides, () => ctx.graph)
   const componentBridge = createComponentBridge(components, selection, structure, pages)
   const structureBridge = createStructureBridge(structure, selection)
@@ -446,6 +448,7 @@ export function createEditor(options?: EditorOptions) {
 
     // Canvas views: editing, or a preview where instances with a behaviour respond to the pointer
     ...canvasViews,
+    ...presenting,
 
     // Bitmap-to-vector replacement
     ...vectorize,

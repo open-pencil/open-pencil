@@ -22,5 +22,9 @@
   "sizeSquare": "正方形",
   "sizePortrait": "縦向き",
   "sizeCustom": "カスタム",
-  "scaleContent": "コンテンツを拡大縮小"
+  "scaleContent": "コンテンツを拡大縮小",
+  "present": "プレゼンテーション",
+  "presentFromStart": "最初からプレゼンテーション",
+  "exitPresentation": "プレゼンテーションを終了",
+  "presentedSlide": "{number} / {total}"
 }
