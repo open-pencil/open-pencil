@@ -3,7 +3,7 @@ import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
@@ -31,7 +31,7 @@ const choice = defineModel<ConflictChoice>('choice', { default: 'keep-both' })
 const emit = defineEmits<{ confirm: [choice: ConflictChoice]; later: [] }>()
 
 const ui = cloudConflict()
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const options = computed(() => [
   {
     value: 'keep-both' as const,

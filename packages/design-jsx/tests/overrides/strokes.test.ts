@@ -6,7 +6,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 
 function strokeOverrides(props: Record<string, unknown>): Partial<SceneNode> {
   const overrides: Partial<SceneNode> = {}
-  applyStrokeOverrides(props, overrides)
+  applyStrokeOverrides(props, overrides, 'srgb')
   return overrides
 }
 

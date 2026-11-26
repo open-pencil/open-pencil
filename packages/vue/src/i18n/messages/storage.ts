@@ -1,5 +1,3 @@
-import { i18n } from '#vue/i18n/create'
-
 export const storageMessageDefaults = {
   workspace: 'Storage workspace',
   openWorkspace: 'Open workspace',
@@ -35,5 +33,3 @@ export const storageMessageDefaults = {
   waitlistUnavailable: 'You can’t join from here. Join on openpencil.dev instead.',
   waitlistOpenWebsite: 'Join on openpencil.dev'
 } as const
-
-export const storageMessages = i18n('storage', storageMessageDefaults)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useModelRoleAssignments } from '@/app/ai/models/settings/assignments'
 import { AI_MODEL_ROLES, isModelRoleInUse } from '@/app/ai/models/types'
@@ -12,7 +12,7 @@ import { SETTINGS_SELECT_WIDTH } from '@/theme/settings/controls'
 
 import { useModelRoleLabels } from './role-labels'
 
-const { ai } = useI18n()
+const ai = useMessages('ai')
 
 const roleLabel = useModelRoleLabels()
 const roleDefinitions = computed(() =>

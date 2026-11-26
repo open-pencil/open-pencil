@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useStatusMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openStatusesDialog } from '@/app/editor/statuses/dialog'
@@ -13,7 +13,7 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 /** The status of the selected sections, frames, components, sets and instances. */
 const store = useEditorStore()
-const messages = useStatusMessages()
+const messages = useMessages('statuses')
 const { targets, eligible, workflow, state, stateId, mixed, hidden, setState, remove } =
   useSelectedStatuses()
 

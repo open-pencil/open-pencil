@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 import { computed, ref, watch } from 'vue'
 
 import type { DocumentKind } from '@open-pencil/scene-graph'
-import { useCloudPortalMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
 import { useInlineSide } from '@/components/ui/direction/inline-side'
@@ -32,14 +32,19 @@ const {
   badge?: string | null
 }>()
 
-const messages = useCloudPortalMessages()
-const { files } = useI18n()
+const messages = useMessages('cloud/portal')
+const files = useMessages('files')
 const endSide = useInlineSide('end')
 const table = portalTable()
 const documentCell = tv(documentCellTheme)
 const ui = computed(() => documentCell({ kind }))
 const kindLabel = computed(
-  () => ({ design: files.value.createDesign, board: files.value.createBoard })[kind]
+  () =>
+    ({
+      design: files.value.createDesign,
+      board: files.value.createBoard,
+      slides: files.value.createSlides
+    })[kind]
 )
 const failed = ref(false)
 watch(

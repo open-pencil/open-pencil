@@ -1,5 +1,3 @@
-import { i18n } from '#vue/i18n/create'
-
 /** FigJam's text sizes, typefaces, board palette and selection toolbar menus. */
 export const figJamMessageDefaults = {
   textSize: 'Text size',
@@ -42,5 +40,3 @@ export const figJamMessageDefaults = {
   renameSection: 'Rename section',
   addText: 'Add text'
 } as const
-
-export const figJamMessages = i18n('figjam', figJamMessageDefaults)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { downloadBlob } from '@/app/document/io/browser'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -18,7 +18,7 @@ import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 const { codes } = defineProps<{ codes: string[] }>()
 const open = defineModel<boolean>('open', { default: false })
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const saved = ref(false)
 
 function downloadCodes() {

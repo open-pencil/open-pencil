@@ -12,11 +12,6 @@ export type EnrollmentEmailOptions = {
   publicURL: string
   adminRecipients: string[]
   email?: TransactionalEmailService
-  /**
-   * Whether an approval may carry the founder's letter (`enrollment-invited`) instead of the
-   * plain approval: only on the official deployment, whose letter it is.
-   */
-  invitations?: boolean
 }
 
 export async function enqueueEnrollmentRequested(
@@ -61,17 +56,10 @@ export async function enqueueEnrollmentReview(
     name: string
     status: Exclude<EnrollmentStatus, 'pending'>
     reviewedAt: Date
-    /** An approval that sends the letter instead of the plain approval. */
-    invite?: boolean
-    /** The person joined openpencil.dev's waitlist rather than asking here; the letter says so. */
-    waitlist?: boolean
   }
 ): Promise<void> {
   if (!options.email) return
-  const kind =
-    input.status === 'approved' && input.invite
-      ? ('enrollment-invited' as const)
-      : (`enrollment-${input.status}` as const)
+  const kind = `enrollment-${input.status}` as const
   await options.email.enqueue(
     {
       idempotencyKey: `${kind}/${input.enrollmentId}/${input.reviewedAt.toISOString()}`,
@@ -82,8 +70,7 @@ export async function enqueueEnrollmentReview(
         actionURL:
           input.status === 'approved'
             ? options.publicURL
-            : new URL('/auth/sign-in', options.publicURL).href,
-        ...(kind === 'enrollment-invited' && input.waitlist && { waitlist: true as const })
+            : new URL('/auth/sign-in', options.publicURL).href
       }
     },
     transaction

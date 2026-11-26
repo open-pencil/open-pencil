@@ -86,7 +86,10 @@ describe('import CLI from a web address', () => {
       name: figPath,
       data: new Uint8Array(await readFile(figPath))
     })
-    const [box, image] = graph.getPages()[0].childIds.map((id) => graph.getNode(id))
+    // A web page imports in a frame the size of the window it was laid out in.
+    const [window] = graph.getChildren(graph.getPages()[0].id)
+    expect(window).toMatchObject({ type: 'FRAME', width: 1440, clipsContent: true })
+    const [box, image] = graph.getChildren(window?.id ?? '')
     expect(box).toMatchObject({ width: 120, height: 40 })
     expect(image?.fills[0]?.type).toBe('IMAGE')
   })

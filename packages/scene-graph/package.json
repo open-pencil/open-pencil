@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/scene-graph",
-  "version": "0.17.0-beta.6",
+  "version": "0.17.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -243,6 +243,12 @@
       "import": "./dist/order-keys.js",
       "default": "./dist/order-keys.js"
     },
+    "./slides": {
+      "types": "./dist/slides/index.d.ts",
+      "bun": "./src/slides/index.ts",
+      "import": "./dist/slides/index.js",
+      "default": "./dist/slides/index.js"
+    },
     "./outline": {
       "types": "./dist/outline/index.d.ts",
       "bun": "./src/outline/index.ts",
@@ -426,6 +432,7 @@
   "dependencies": {
     "@noble/hashes": "^2.4.0",
     "@open-pencil/std": "workspace:*",
+    "bidi-js": "^1.1.0",
     "culori": "^4.0.2",
     "es-toolkit": "^1.52.0",
     "image-size": "^2.0.4",

@@ -1,7 +1,7 @@
 import type { CloudLegalDiscovery } from '@open-pencil/cloud/contract'
-import type { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import type { MessagesOf } from '@open-pencil/vue/i18n'
 
-type CloudPortalMessages = ReturnType<typeof useCloudPortalMessages>['value']
+type CloudPortalMessages = MessagesOf<'cloud/portal'>
 
 /** The links a legal sentence's `{terms}` and `{privacy}` placeholders become. */
 export function legalLinks(messages: CloudPortalMessages, legal: CloudLegalDiscovery | undefined) {

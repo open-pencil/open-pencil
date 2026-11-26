@@ -1,18 +1,28 @@
+import bidiFactory from 'bidi-js'
+
 import type { LayoutDirection, SceneNode, TextDirection } from '../types'
 
 const RTL_CHAR_RE =
   /\p{Script=Arabic}|\p{Script=Hebrew}|\p{Script=Syriac}|\p{Script=Thaana}|\p{Script=Nko}|\p{Script=Adlam}/u
-const LTR_CHAR_RE = /\p{Script=Latin}|\p{Script=Cyrillic}|\p{Script=Greek}/u
 
 /** Whether the text has a letter of a right-to-left script, such as Arabic or Hebrew. */
 export function containsRTLText(text: string): boolean {
   return RTL_CHAR_RE.test(text)
 }
 
+let bidi: ReturnType<typeof bidiFactory> | undefined
+
+/**
+ * The direction of the text's first strongly directional character, as the Unicode bidi
+ * algorithm and Figma pick a paragraph's: digits, number signs, marks, and punctuation before
+ * it do not count.
+ */
 export function detectTextDirection(text: string): Exclude<TextDirection, 'AUTO'> {
+  bidi ??= bidiFactory()
   for (const char of text) {
-    if (RTL_CHAR_RE.test(char)) return 'RTL'
-    if (LTR_CHAR_RE.test(char)) return 'LTR'
+    const type = bidi.getBidiCharTypeName(char)
+    if (type === 'L') return 'LTR'
+    if (type === 'R' || type === 'AL') return 'RTL'
   }
   return 'LTR'
 }
@@ -37,24 +47,4 @@ export function resolveNodeLayoutDirection(
   return !node.layoutDirection || node.layoutDirection === 'AUTO'
     ? inheritedDirection
     : node.layoutDirection
-}
-
-export function isLogicalTextAlignStart(
-  node: Pick<SceneNode, 'textAlignHorizontal' | 'textDirection' | 'text'>
-): boolean {
-  const direction = resolveNodeTextDirection(node)
-  return (
-    (direction === 'LTR' && node.textAlignHorizontal === 'LEFT') ||
-    (direction === 'RTL' && node.textAlignHorizontal === 'RIGHT')
-  )
-}
-
-export function isLogicalTextAlignEnd(
-  node: Pick<SceneNode, 'textAlignHorizontal' | 'textDirection' | 'text'>
-): boolean {
-  const direction = resolveNodeTextDirection(node)
-  return (
-    (direction === 'LTR' && node.textAlignHorizontal === 'RIGHT') ||
-    (direction === 'RTL' && node.textAlignHorizontal === 'LEFT')
-  )
 }

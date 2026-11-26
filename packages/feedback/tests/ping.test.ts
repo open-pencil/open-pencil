@@ -184,4 +184,17 @@ describe('ping', () => {
 
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('tauri://localhost')
   })
+
+  test('answers the web app on the official Cloud site, where it moves', async () => {
+    const response = await service.request('/ping', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'https://cloud.openpencil.dev',
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'Content-Type'
+      }
+    })
+
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://cloud.openpencil.dev')
+  })
 })

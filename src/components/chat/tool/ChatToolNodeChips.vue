@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useToolNodes } from '@/components/chat/tool/useToolNodes'
 
 import { chatToolNodesTheme } from './ui'
 
 const { ids } = defineProps<{ ids: string[] }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const ui = chatToolNodesTheme()
 const { nodes, show } = useToolNodes(() => ids)
 </script>

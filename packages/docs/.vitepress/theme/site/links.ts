@@ -5,7 +5,7 @@ export type FooterLink = { label: string; href: string }
 export type FooterColumn = { title: string; links: FooterLink[] }
 
 /** The editor on the web. */
-export const APP_URL = 'https://app.openpencil.dev'
+export const APP_URL = 'https://cloud.openpencil.dev'
 
 const SECURITY_POLICY = 'https://github.com/open-pencil/open-pencil/security/policy'
 const DISCORD = 'https://discord.gg/4wXc9fuZfm'
@@ -28,7 +28,8 @@ export function footerColumns(messages: SiteMessages, localeIndex: string): Foot
     {
       title: messages.resources,
       links: [
-        { label: messages.docs, href: translated(LINKS.docs) },
+        // Getting Started is English only until it is translated.
+        { label: messages.docs, href: LINKS.docs },
         { label: messages.sdk, href: translated('/developers/sdk/') },
         { label: 'GitHub', href: LINKS.github },
         { label: 'Discord', href: DISCORD }

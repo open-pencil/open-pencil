@@ -80,7 +80,7 @@ function layerModes(figma: FigmaAPI, id: string) {
   const graph = graphOf(figma)
   const node = graph.getNode(id)
   if (!node) return null
-  return [...graph.variableCollections.values()].map((collection) => {
+  return graph.getLiveCollections().map((collection) => {
     const own = node.variableModes[collection.id]
     const modeId = graph.getNodeVariableModeId(id, collection.id)
     return {

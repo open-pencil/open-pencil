@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
@@ -24,7 +24,7 @@ const {
   cloudReady?: boolean
 }>()
 const emit = defineEmits<{ tour: [] }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const styles = tv(theme)()
 </script>
 

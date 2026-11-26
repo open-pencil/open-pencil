@@ -10,7 +10,7 @@ import {
   until,
   user
 } from '#cloud-tests/helpers/relay'
-import { COLLAB_ACTIONS, RELAY_CLOSE, RELAY_SERVER_PEER } from '#cloud/contract'
+import { RELAY_CLOSE } from '#cloud/contract'
 import {
   createCollaborationRelay,
   type CollaborationRelay,
@@ -19,6 +19,8 @@ import {
 import { readRelayPeerState, type RelayPeerState } from '#cloud/server/collaboration/relay/resume'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
+
+import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
 
 const documentId = crypto.randomUUID()
 

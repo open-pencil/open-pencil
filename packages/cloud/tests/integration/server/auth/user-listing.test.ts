@@ -5,11 +5,9 @@ import {
   createVerifiedCredentialAccount,
   withCookie
 } from '#cloud-tests/helpers/account-authentication'
-import { responseJSON } from '#cloud-tests/helpers/response'
-import * as v from 'valibot'
+import { adminContractClient } from '#cloud-tests/helpers/contract'
 
 const PASSWORD = 'a sufficiently long password'
-const usersSchema = v.object({ users: v.array(v.object({ email: v.string() })), total: v.number() })
 
 describe('deployment user listing', () => {
   test('pages through people in the order their accounts were created', async () => {
@@ -42,13 +40,9 @@ describe('deployment user listing', () => {
         .execute()
       const page = async (offset: number) =>
         (
-          await responseJSON(
-            await fixture.client.api.admin.users.$get(
-              { query: { limit: '2', offset: String(offset) } },
-              withCookie(cookie)
-            ),
-            usersSchema
-          )
+          await adminContractClient(fixture.app, withCookie(cookie).headers).users({
+            query: { limit: '2', offset: String(offset) }
+          })
         ).users.map((user) => user.email)
 
       expect([...(await page(0)), ...(await page(2))]).toEqual(emails)

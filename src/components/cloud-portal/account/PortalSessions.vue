@@ -5,7 +5,7 @@ import IconAppWindow from '~icons/lucide/app-window'
 import IconGlobe from '~icons/lucide/globe'
 import IconLogIn from '~icons/lucide/log-in'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortalDeviceLabels } from '@/app/cloud-portal/devices'
 import {
@@ -45,7 +45,8 @@ const {
 }>()
 const emit = defineEmits<{ revoke: [sessionId: string]; revokeOthers: [] }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const personMessages = useMessages('cloud/portal/person')
 const labels = usePortalDeviceLabels()
 const others = computed(() => sessions.filter((session) => !session.current))
 const confirming = ref<{ kind: 'one'; session: PortalSession } | { kind: 'others' } | null>(null)
@@ -175,7 +176,7 @@ function confirm() {
         :hidden="manage ? [] : ['actions']"
       >
         <template #empty>
-          <p class="text-center text-xs text-muted">{{ messages.noSessions }}</p>
+          <p class="text-center text-xs text-muted">{{ personMessages.noSessions }}</p>
         </template>
       </AppDataTable>
     </SettingsSection>

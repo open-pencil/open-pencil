@@ -4,7 +4,7 @@ import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { formatStorageBytes } from '@/app/storage/format-bytes'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -36,7 +36,7 @@ const destination = defineModel<string>('destination', { default: '' })
 const emit = defineEmits<{ save: [] }>()
 
 const ui = saveTo()
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const saving = computed(() => state.kind === 'saving')
 const progress = computed(() =>
   state.kind === 'saving' && state.totalBytes > 0

@@ -13,6 +13,7 @@ import type {
   InstanceOccurrence,
   InterpretInstanceOptions
 } from '../instance-overrides/occurrence/types'
+import { slotContentLayers } from '../instance-overrides/slot-records'
 import {
   reconcileOccurrenceStructure,
   linkInstanceSourceChildren,
@@ -47,6 +48,11 @@ export interface DocumentAssemblyOptions extends InterpretInstanceOptions {
   onUnsupportedResource?: (resource: NodeChange) => void
   /** Explicitly preserve expression-valued variables without evaluating them. */
   onUnsupportedVariableExpression?: (diagnostic: UnsupportedVariableExpressionDiagnostic) => void
+  /**
+   * A variable of a type OpenPencil does not model, such as PAINT: left out, and kept in the file
+   * by a save that has the archive. Without it, such a variable refuses the file.
+   */
+  onUnsupportedVariableType?: (resource: NodeChange) => void
   onUnresolvedBinding?: (diagnostic: BindingReferenceDiagnostic) => void
 }
 
@@ -176,12 +182,11 @@ function createAssemblyState(
   }
   graph.applyImportedStateDuring(
     () =>
-      materializeVariableResources(
-        graph,
-        reader.resources,
-        options.onUnsupportedResource,
-        options.onUnsupportedVariableExpression
-      ),
+      materializeVariableResources(graph, reader.resources, {
+        onUnsupported: options.onUnsupportedResource,
+        onUnsupportedExpression: options.onUnsupportedVariableExpression,
+        onUnsupportedType: options.onUnsupportedVariableType
+      }),
     () => mintImportedId(state)
   )
   for (const page of graph.getPages()) graph.deleteNode(page.id)
@@ -314,6 +319,21 @@ function materializeReaderInto(
    * component would copy its sizes over the sizes Figma derived for instances placed earlier.
    */
   const resync = new Set<string>()
+  /**
+   * Slot content keeps the records it came from: the first layer built for one keeps it, and
+   * copies get their own. An instance keeps the slot assignments none of its layers shows.
+   */
+  const keepSlotContentRecords = (
+    occurrence: InstanceOccurrence,
+    nodes: ReadonlyMap<InstanceOccurrence, SceneNode>
+  ): void => {
+    const { records, hidden } = slotContentLayers(occurrence, nodes)
+    for (const [record, layer] of records) if (!sources.has(record)) sources.set(record, layer)
+    for (const [layer, assignments] of hidden) {
+      const node = graph.getNode(layer)
+      if (node) node.source.fig.hiddenSlotAssignments = structuredClone(assignments)
+    }
+  }
   const buildComponent = (item: ComponentConstruction): void => {
     if (edited) reconcileOccurrenceStructure(item.occurrence, graph, components)
     const parentId = sources.get(item.parentSourceId)
@@ -351,6 +371,7 @@ function materializeReaderInto(
       }
     }
     const materialized = { root: built.root, nodes }
+    keepSlotContentRecords(item.occurrence, built.nodes)
     linkInstanceSourceChildren(item.occurrence, materialized, components)
     components.set(item.sourceId, { occurrence: item.occurrence, materialized })
     componentIds.set(item.sourceId, materialized.root.id)
@@ -375,6 +396,7 @@ function materializeReaderInto(
           recordId
         })
         rememberDerivedSizes(materialized.nodes)
+        keepSlotContentRecords(child, materialized.nodes)
         linkInstanceSourceChildren(child, materialized, components)
         if (edited) {
           reconcileLiveComponentEdits(graph, materialized)

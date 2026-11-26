@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalFailureMessages } from '@/app/cloud-portal/failure'
@@ -14,7 +14,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 const portal = usePortal()
 const route = useRoute()
 const router = useRouter()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const { failure } = usePortalFailureMessages()
 const code = computed(() =>
   typeof route.query.user_code === 'string' ? route.query.user_code.trim().toUpperCase() : ''

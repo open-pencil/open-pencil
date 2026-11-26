@@ -2,7 +2,7 @@ import type { Editor } from '@open-pencil/core'
 import { isSVGMarkup } from '@open-pencil/core/io/formats/svg'
 import { detectMermaidDiagram } from '@open-pencil/mermaid'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
-import { filesMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { toast } from '@/app/shell/ui'
 
@@ -61,7 +61,7 @@ export async function pasteMermaidText(
     return await editor.pasteMermaid(text, x, y)
   } catch (error) {
     const reason = error instanceof Error ? (error.message.split('\n')[0] ?? '') : ''
-    toast.error(filesMessages.get().mermaidPasteFailed({ error: reason }))
+    toast.error(messageStores.files.get().mermaidPasteFailed({ error: reason }))
     return true
   }
 }

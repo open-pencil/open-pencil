@@ -1,1 +1,0 @@
-- Image fills and strokes draw their exposure, contrast, saturation, temperature, tint, highlights, and shadows adjustments on the canvas and in exports, matching Figma's output, and the image fill picker sets them with sliders, as Figma's does.

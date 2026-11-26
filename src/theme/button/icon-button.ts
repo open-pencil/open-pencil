@@ -1,4 +1,4 @@
-import { focusStyles } from '../focus/styles'
+import { focusStyles } from '@open-pencil/theme'
 
 export default {
   // The icon passes the pointer to the button: Reka's Splitter only sees that a control covers

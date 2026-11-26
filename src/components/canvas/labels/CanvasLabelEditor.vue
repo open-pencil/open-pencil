@@ -13,8 +13,8 @@ import {
   SECTION_TITLE_PADDING_X,
   SECTION_TITLE_RADIUS
 } from '@open-pencil/core/constants'
-import { colorToCSS } from '@open-pencil/scene-graph/color'
 import type { CanvasLabelEdit } from '@open-pencil/vue/canvas/labels'
+import { useColorCSS } from '@open-pencil/vue/controls/color-model'
 
 import type { CanvasLabelPresentation } from '@/components/canvas/labels/presentation'
 import InlineLabelEditor, {
@@ -70,8 +70,10 @@ const metrics = computed<InlineLabelMetrics>(() =>
       }
 )
 
+const colorCSS = useColorCSS()
+
 const box = computed(() => ({
-  backgroundColor: colorToCSS(presentation.background),
+  backgroundColor: colorCSS(presentation.background),
   height: `${metrics.value.lineHeight}px`,
   borderRadius: `${compact.value ? NAME_FIELD_RADIUS : SECTION_TITLE_RADIUS}px`
 }))

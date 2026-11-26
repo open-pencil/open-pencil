@@ -1,3 +1,4 @@
+import { joinAdjacentText } from '#dom-css/import/adjacent-text'
 import { INLINE_TAGS } from '#dom-css/import/flow'
 import { parseStyleAttribute } from '#dom-css/import/style-attribute'
 import type { DesignDocument, DesignElement, DesignNode } from '#dom-css/types'
@@ -42,9 +43,11 @@ function childrenToDesignNodes(
   nodes: readonly DefaultTreeAdapterTypes.ChildNode[],
   inInline: boolean
 ): DesignNode[] {
-  return nodes
-    .map((node, index) => childToDesignNode(node, index, nodes, inInline))
-    .filter((child): child is DesignNode => child !== null)
+  return joinAdjacentText(
+    nodes
+      .map((node, index) => childToDesignNode(node, index, nodes, inInline))
+      .filter((child): child is DesignNode => child !== null)
+  )
 }
 
 function childToDesignNode(

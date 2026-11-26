@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { CloudLinkPolicy } from '@/app/cloud/sharing/document'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
@@ -35,6 +35,8 @@ const {
   inviting = false,
   copied = false,
   sendsLink = false,
+  embeddable = false,
+  embedCopied = false,
   links = { allowed: true, guestView: true, guestEdit: true }
 } = defineProps<{
   documentName: string
@@ -47,6 +49,9 @@ const {
   copied?: boolean
   /** Whether the link goes out through the system share sheet rather than the clipboard. */
   sendsLink?: boolean
+  /** Whether other sites may show the document in a frame, as the server allows. */
+  embeddable?: boolean
+  embedCopied?: boolean
   /** What the workspace's plan allows for links, and whether guests may follow them. */
   links?: CloudLinkPolicy
 }>()
@@ -57,12 +62,13 @@ const emit = defineEmits<{
   changeMember: [id: string, permission: SharePermission | 'remove']
   changeLink: [state: ShareLinkState]
   copyLink: []
+  copyEmbed: []
   resetLink: []
 }>()
 
 const ui = cloudShare()
-const t = useCloudMessages()
-const common = useCommonMessages()
+const t = useMessages('cloud/editor')
+const common = useMessages('common')
 const email = ref('')
 const invitePermission = ref<SharePermission>('edit')
 const permissionOptions = computed(() => [
@@ -88,6 +94,12 @@ const linkDetail = computed(() => {
   if (link.permission === 'edit' && links.guestView) return t.value.shareLinkGuestViewDetail
   return t.value.shareLinkSignInDetail
 })
+/** An embed opens the link without signing in, so it works only where guests may open it. */
+const guestsOpenLink = computed(
+  () =>
+    link.access === 'link' &&
+    (link.permission === 'edit' ? links.guestEdit || links.guestView : links.guestView)
+)
 const permissionLabel = (permission: SharePermission | 'owner') =>
   ({ owner: t.value.shareOwner, edit: t.value.canEdit, view: t.value.canView })[permission]
 
@@ -257,6 +269,18 @@ function submitInvite() {
           </template>
           {{ sendsLink ? t.shareSendLink : copied ? t.shareLinkCopied : t.shareCopyLink }}
         </AppButton>
+        <Tip
+          v-if="link.access === 'link' && link.copyable && embeddable && guestsOpenLink"
+          :label="t.shareEmbedTip"
+        >
+          <AppButton variant="outline" @click="emit('copyEmbed')">
+            <template #leading>
+              <icon-lucide-check v-if="embedCopied" class="size-3.5" />
+              <icon-lucide-code v-else class="size-3.5" />
+            </template>
+            {{ embedCopied ? t.shareEmbedCopied : t.shareCopyEmbed }}
+          </AppButton>
+        </Tip>
       </template>
       <AppButton color="primary" variant="solid" @click="open = false">{{ common.done }}</AppButton>
     </AppDialogFooter>

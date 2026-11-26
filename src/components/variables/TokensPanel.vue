@@ -15,7 +15,7 @@ import {
   parseVariableFormula,
   variableFormulaReference
 } from '@open-pencil/scene-graph/variables'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 import { useVariables } from '@open-pencil/vue/variables'
 
@@ -54,7 +54,8 @@ import panelTheme, {
 
 const emit = defineEmits<{ copy: [format: TokenStylesheetFormat]; export: [] }>()
 
-const { variables: messages, common } = useI18n()
+const messages = useMessages('variables/panel')
+const common = useMessages('common')
 const ui = tv(panelTheme)()
 
 /**

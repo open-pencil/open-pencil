@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { contractClient } from '#cloud-tests/helpers/contract'
 import { createCloudAPIRouter, type CloudActor, type CloudAPIEnvironment } from '#cloud/server'
 import { Hono } from 'hono'
-import { testClient } from 'hono/testing'
 
 const actor: CloudActor = {
   userId: 'alice',
@@ -44,6 +44,7 @@ function services() {
       download: async () => {
         throw new Error('not used')
       },
+      update: async () => undefined,
       remove: async () => undefined,
       create: async () => {
         throw new Error('not used')
@@ -99,6 +100,7 @@ function services() {
       list: notUsed,
       download: notUsed,
       imageLinks: notUsed,
+      object: notUsed,
       thumbnail: notUsed
     },
     reports: { file: notUsed },
@@ -174,13 +176,9 @@ describe('createCloudAPIRouter', () => {
       })
       .route('/', router)
 
-    const client = testClient(app)
-    const session = await client.session.$get()
-    expect(session.status).toBe(200)
-    expect(await session.json()).toEqual({ user: actor })
-
-    const workspaces = await client.workspaces.$get()
-    expect(workspaces.status).toBe(200)
-    expect(await workspaces.json()).toEqual({ workspaces: [] })
+    // Mounted at the root, so the contract's paths start there too.
+    const api = contractClient(app, {}, 'http://localhost')
+    expect(await api.session.session()).toEqual({ user: { ...actor, scopes: undefined } })
+    expect(await api.workspaces.list()).toEqual({ workspaces: [] })
   })
 })

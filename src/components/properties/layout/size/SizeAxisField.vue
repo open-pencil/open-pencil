@@ -4,7 +4,7 @@ import { SelectSeparator } from 'reka-ui'
 import { panelNumber } from '@open-pencil/core/geometry'
 import type { LayoutSizing } from '@open-pencil/scene-graph'
 import type { SizeLimitProp } from '@open-pencil/vue/controls/layout'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
@@ -23,7 +23,7 @@ const { axis, icon, label } = defineProps<SizeAxisFieldProps>()
 
 const ctx = useLayoutControlsContext()
 const { open: popupOpen, portalActive } = useRetainedPopup()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const selectUI = useSelectUI()
 
 const sizing = () => (axis === 'width' ? ctx.widthSizing : ctx.heightSizing)

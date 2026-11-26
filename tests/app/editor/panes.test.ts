@@ -80,4 +80,38 @@ describe('canvas pane registry', () => {
     }
     expect(registry.splitPane(registry.activePaneId.value, 'vertical')).toBeNull()
   })
+
+  test('shifts the active view through the editor state and others through their own records', () => {
+    const state = createDefaultEditorState('page')
+    const registry = createCanvasPaneRegistry(state)
+    const first = registry.getActivePane()
+    const second = registry.splitPane(first.id, 'horizontal')
+    if (!second) throw new Error('Expected a second pane')
+    registry.setActivePane(first.id)
+    Object.assign(state, { panX: 40, panY: 30 })
+    const inactive = { panX: second.panX, panY: second.panY }
+    const renderVersion = state.renderVersion
+
+    registry.shiftPane(first.id, 230, 0)
+    expect(state).toMatchObject({ panX: 270, panY: 30 })
+    registry.shiftPane(second.id, -12, 8)
+    expect(registry.getPaneView(second.id)).toMatchObject({
+      panX: inactive.panX - 12,
+      panY: inactive.panY + 8
+    })
+    expect(state).toMatchObject({ panX: 270, panY: 30 })
+    expect(state.renderVersion).toBe(renderVersion + 2)
+  })
+
+  test('shifts nothing for a pane that closed', () => {
+    const state = createDefaultEditorState('page')
+    const registry = createCanvasPaneRegistry(state)
+    const second = registry.splitPane(registry.activePaneId.value, 'horizontal')
+    if (!second) throw new Error('Expected a second pane')
+    registry.closePane(second.id)
+    const before = { panX: state.panX, panY: state.panY }
+
+    registry.shiftPane(second.id, 230, 0)
+    expect(state).toMatchObject(before)
+  })
 })

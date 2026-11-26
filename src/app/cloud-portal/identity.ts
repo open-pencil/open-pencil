@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { DOCS_URL } from '@/constants'
 
@@ -16,7 +16,7 @@ export type SiteLinkTarget = { label: string; href: string; external?: boolean }
  */
 export function useSiteIdentity() {
   const portal = usePortal()
-  const messages = useCloudPortalMessages()
+  const messages = useMessages('cloud/portal')
   const { deployment, branding, legal } = portal.discovery
   const official = deployment === 'official'
 

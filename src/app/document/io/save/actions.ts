@@ -1,4 +1,4 @@
-import { filesMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { downloadBlob } from '@/app/document/io/browser'
 import { isFileWriteRefused } from '@/app/document/io/capability'
@@ -140,7 +140,7 @@ export function createSaveActions({
     }
 
     const filename = prompt(
-      filesMessages.get().saveAsPrompt,
+      messageStores.files.get().saveAsPrompt,
       getDownloadName() ?? documentFileName('Untitled', state.documentKind)
     )
     if (!filename) return false

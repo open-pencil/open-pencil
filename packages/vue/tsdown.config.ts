@@ -159,8 +159,6 @@ export default defineConfig({
   hash: false,
   clean: true,
   outDir: './dist',
-  // The theme's tokens ship as they are, for a consumer's own Tailwind build to import.
-  copy: [{ from: 'src/theme/tokens.css', to: 'dist/theme' }],
   treeshake: {
     moduleSideEffects: false
   },

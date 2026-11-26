@@ -5,7 +5,7 @@ import { computed, h, onDeactivated, ref } from 'vue'
 import IconLayers from '~icons/lucide/layers'
 
 import type { WorkspaceRole } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortalRows, type PortalTableFeatures } from '@/app/cloud-portal/list'
 import { usePortalSignInMethodLabel } from '@/app/cloud-portal/methods'
@@ -38,7 +38,8 @@ const emit = defineEmits<{
 }>()
 
 const ui = portalTable()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const personMessages = useMessages('cloud/portal/person')
 const person = computed(() => detail.person)
 
 const methodLabel = usePortalSignInMethodLabel()
@@ -58,15 +59,15 @@ const twoStep = computed(() => {
   const words = messages.value
   const parts = compact([
     detail.authenticator ? words.authenticatorApp : null,
-    detail.passkeyCount ? words.passkeyCount(detail.passkeyCount) : null
+    detail.passkeyCount ? personMessages.value.passkeyCount(detail.passkeyCount) : null
   ])
-  return parts.length ? parts.join(' · ') : words.twoStepNone
+  return parts.length ? parts.join(' · ') : personMessages.value.twoStepNone
 })
 const roleLabel = (role: WorkspaceRole) =>
   ({
-    admin: messages.value.workspaceRoleAdmin,
-    editor: messages.value.workspaceRoleEditor,
-    viewer: messages.value.workspaceRoleViewer
+    admin: personMessages.value.workspaceRoleAdmin,
+    editor: personMessages.value.workspaceRoleEditor,
+    viewer: personMessages.value.workspaceRoleViewer
   })[role]
 
 const column = createColumnHelper<PortalTableFeatures, PortalPersonDetail['workspaces'][number]>()
@@ -100,7 +101,7 @@ const workspaces = usePortalRows(() => detail.workspaces, {
       <template #leading
         ><icon-lucide-arrow-left data-direction="reading" class="size-3.5"
       /></template>
-      {{ messages.backToPeople }}
+      {{ personMessages.backToPeople }}
     </AppButton>
 
     <div class="flex items-center gap-3">
@@ -130,28 +131,28 @@ const workspaces = usePortalRows(() => detail.workspaces, {
     </div>
 
     <SettingsSection>
-      <template #title>{{ messages.personAccount }}</template>
+      <template #title>{{ personMessages.personAccount }}</template>
       <SettingsGroup>
         <SettingsRow
           :label="messages.email"
           :description="
             compact([
               person.email,
-              detail.emailVerified ? messages.emailVerified : messages.emailNotVerified
+              detail.emailVerified ? personMessages.emailVerified : personMessages.emailNotVerified
             ]).join(' · ')
           "
         />
-        <SettingsRow :label="messages.joinedRow" :description="person.joinedOn" />
+        <SettingsRow :label="personMessages.joinedRow" :description="person.joinedOn" />
         <SettingsRow
-          :label="messages.lastActiveRow"
+          :label="personMessages.lastActiveRow"
           :description="person.lastActive ?? messages.notSignedIn"
         />
-        <SettingsRow :label="messages.twoStepRow" :description="twoStep" />
+        <SettingsRow :label="personMessages.twoStepRow" :description="twoStep" />
       </SettingsGroup>
     </SettingsSection>
 
     <SettingsSection>
-      <template #title>{{ messages.signInMethods }}</template>
+      <template #title>{{ personMessages.signInMethods }}</template>
       <SettingsGroup>
         <SettingsRow
           v-for="method in detail.methods"
@@ -167,22 +168,22 @@ const workspaces = usePortalRows(() => detail.workspaces, {
             :disabled="busy"
             @click="removing = method"
           >
-            {{ messages.removeSignInMethod }}
+            {{ personMessages.removeSignInMethod }}
           </AppButton>
         </SettingsRow>
-        <SettingsRow v-if="!detail.methods.length" :description="messages.twoStepNone" />
+        <SettingsRow v-if="!detail.methods.length" :description="personMessages.twoStepNone" />
       </SettingsGroup>
     </SettingsSection>
 
     <SettingsSection>
-      <template #title>{{ messages.personWorkspaces }}</template>
+      <template #title>{{ personMessages.personWorkspaces }}</template>
       <AppDataTable
         :table="workspaces"
         :column-meta="portalColumnMeta"
-        :label="messages.personWorkspaces"
+        :label="personMessages.personWorkspaces"
       >
         <template #empty>
-          <p class="text-center text-xs text-muted">{{ messages.personWorkspacesEmpty }}</p>
+          <p class="text-center text-xs text-muted">{{ personMessages.personWorkspacesEmpty }}</p>
         </template>
       </AppDataTable>
     </SettingsSection>
@@ -194,14 +195,14 @@ const workspaces = usePortalRows(() => detail.workspaces, {
       tone="danger"
       :heading="
         removingShown
-          ? messages.removeSignInMethodHeading({
+          ? personMessages.removeSignInMethodHeading({
               provider: methodLabel(removingShown.provider),
               name: person.name
             })
           : ''
       "
-      :description="messages.removeSignInMethodDescription"
-      :confirm-label="messages.removeSignInMethod"
+      :description="personMessages.removeSignInMethodDescription"
+      :confirm-label="personMessages.removeSignInMethod"
       @update:open="(open) => !open && (removing = null)"
       @confirm="removeMethod"
     />

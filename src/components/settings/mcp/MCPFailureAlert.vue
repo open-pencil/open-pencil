@@ -2,7 +2,7 @@
 import { compact } from 'es-toolkit/array'
 import { computed, ref } from 'vue'
 
-import { useAutomationMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { mcpServerSetupView, type MCPServerSetupState } from '@/app/ai/agents/setup/view'
 import {
@@ -50,8 +50,9 @@ const {
 const emit = defineEmits<{ install: []; restart: []; check: [] }>()
 const restartFixes = computed(() => restartFixesMCPFailure(failure))
 
-const automation = useAutomationMessages()
-const { ai, common } = useI18n()
+const automation = useMessages('automation')
+const ai = useMessages('ai')
+const common = useMessages('common')
 const setupProblemMessage = useSetupProblemMessage()
 const detailsOpen = ref(false)
 

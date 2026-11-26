@@ -2,7 +2,7 @@
 import { compact } from 'es-toolkit'
 import { computed, onDeactivated, ref } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import AppFormField from '@/components/ui/input/AppFormField.vue'
@@ -28,7 +28,8 @@ const {
 }>()
 const emit = defineEmits<{ act: [action: PortalPersonAction, reason?: string] }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const personMessages = useMessages('cloud/portal/person')
 const confirming = ref<PortalPersonAction | null>(null)
 const reason = ref('')
 
@@ -89,9 +90,9 @@ const confirmation = computed(() => {
       tone: 'primary'
     },
     delete: {
-      heading: words.deletePersonAccountHeading({ name }),
-      description: words.deletePersonAccountDescription,
-      confirm: words.deletePersonAccount,
+      heading: personMessages.value.deletePersonAccountHeading({ name }),
+      description: personMessages.value.deletePersonAccountDescription,
+      confirm: personMessages.value.deletePersonAccount,
       tone: 'danger'
     }
   }
@@ -114,7 +115,7 @@ const items = computed(() => {
     !person.admin &&
       (person.access === 'waiting' || person.access === 'declined') && {
         action: 'delete' as const,
-        label: words.deletePersonAccount
+        label: personMessages.value.deletePersonAccount
       }
   ])
 })

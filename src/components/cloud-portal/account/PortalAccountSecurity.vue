@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortalSignInMethodLabel } from '@/app/cloud-portal/methods'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
@@ -49,7 +49,7 @@ const emit = defineEmits<{
   removePasskey: [id: string]
 }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const providerLabel = usePortalSignInMethodLabel()
 const social = computed(() =>
   methods.flatMap((method) =>

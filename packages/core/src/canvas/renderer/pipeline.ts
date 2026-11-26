@@ -1,5 +1,6 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 
 import { needsImagePreviews } from '#core/canvas/images/previews'
 import { paintPageBackground } from '#core/canvas/page/background'
@@ -8,12 +9,36 @@ import { warmUpEffectPrograms } from '#core/canvas/warm-up'
 import { playIslandRoots } from '#core/editor/play/islands'
 import type { EditorState } from '#core/editor/types'
 import { resolveEditorProfile } from '#core/editor/views/profile'
+import { stagedSlide } from '#core/editor/views/stage'
 import type { EditorProfile } from '#core/editor/views/types'
+import { worldRectToScreen } from '#core/geometry'
 import { emitNavigationTrace } from '#core/profiler'
 
+import { documentSurfaceFor, presentDocumentSurface } from './document-surface'
 import { drawChromePass, drawLabelPass, drawOverlayPass } from './overlay-pass'
 import { hasTransientPreviews, renderPageWithPreviews } from './transient-previews'
 import { computeContentBounds } from './visual-bounds'
+
+/**
+ * Runs `fn` as an export or thumbnail sees the document: saved glyphs included, whatever is being
+ * edited. Its bounds and its drawing both take the text as it is saved, so neither crops the other;
+ * the edited text's picture is of its live layout, so it is dropped on the way in and out.
+ */
+export function withoutTextEdit<T>(
+  r: Pick<SkiaRenderer, 'editingTextId' | 'invalidateNodePicture'>,
+  fn: () => T
+): T {
+  const editing = r.editingTextId
+  if (!editing) return fn()
+  r.editingTextId = null
+  r.invalidateNodePicture(editing)
+  try {
+    return fn()
+  } finally {
+    r.editingTextId = editing
+    r.invalidateNodePicture(editing)
+  }
+}
 
 export function renderSceneToCanvas(
   r: Pick<
@@ -24,6 +49,8 @@ export function renderSceneToCanvas(
     | 'nodePaths'
     | 'editingTextId'
     | 'invalidateNodePicture'
+    | 'documentColorSpace'
+    | 'useDocumentColorSpace'
   >,
   canvas: Canvas,
   graph: SceneGraph,
@@ -32,23 +59,21 @@ export function renderSceneToCanvas(
   r.nodePaths.releaseUncached()
   const prevViewport = r.worldViewport
   const previewMode = r.viewportImageRendering
-  const editing = r.editingTextId
+  const colorSpace = r.documentColorSpace
+  r.useDocumentColorSpace(graph.documentColorSpace)
   r.viewportImageRendering = false
-  // An export or thumbnail shows the document, saved glyphs included, whatever is being edited;
-  // the edited text's picture is of its live layout, so it is dropped on the way in and out.
-  r.editingTextId = null
-  if (editing) r.invalidateNodePicture(editing)
   r.worldViewport = { x: -1e9, y: -1e9, w: 2e9, h: 2e9 }
   try {
-    const pageNode = graph.getNode(pageId)
-    if (pageNode) {
-      for (const childId of pageNode.childIds) r.renderNode(canvas, graph, childId, {})
-    }
+    withoutTextEdit(r, () => {
+      const pageNode = graph.getNode(pageId)
+      if (pageNode) {
+        for (const childId of pageNode.childIds) r.renderNode(canvas, graph, childId, {})
+      }
+    })
   } finally {
     r.worldViewport = prevViewport
     r.viewportImageRendering = previewMode
-    r.editingTextId = editing
-    if (editing) r.invalidateNodePicture(editing)
+    r.useDocumentColorSpace(colorSpace)
   }
 }
 
@@ -71,6 +96,8 @@ export function renderFromEditorState(
   layer: RenderLayer = 'full',
   interactive = false
 ): void {
+  r.useDocumentColorSpace(graph.documentColorSpace)
+  r.recordPicturesIn(graph.documentColorSpace)
   const previewMode = r.images.previews.enabled && needsImagePreviews(graph)
   if (
     r.images.memoryGraph !== graph ||
@@ -100,6 +127,7 @@ export function renderFromEditorState(
   r.setRulerTheme(state.rulerTheme ?? null)
   r.setSelectionTheme(state.selectionTheme)
   r.pageId = state.currentPageId
+  stageSlide(r, state, graph)
   r.navigationPhase = state.navigation.phase
   r.navigationGeneration = state.navigation.generation
   const profile = resolveEditorProfile(state)
@@ -244,6 +272,7 @@ function drawAboveScene(
 ): void {
   canvas.save()
   canvas.scale(r.dpr, r.dpr)
+  clipToStage(r, canvas, graph)
   r.labelCache.update(graph, r.pageId, sceneVersion, graph.positionPreviewVersion)
   r.statusLabels = []
   if (!overlays.playing) drawLabelPass(r, canvas, graph, selectedIds, overlays)
@@ -265,6 +294,9 @@ export function render(
   layer: RenderLayer = 'full',
   interactive = false
 ): void {
+  // Every entry point draws in the profile of the graph it is given.
+  r.useDocumentColorSpace(graph.documentColorSpace)
+  r.recordPicturesIn(graph.documentColorSpace)
   r.editingTextId = overlays.editingTextId ?? null
   emitNavigationTrace('render:start', {
     layer,
@@ -286,10 +318,13 @@ export function render(
   graph.clearAbsPosCache()
 
   const canvas = r.surface.getCanvas()
+  // The scene draws in the document's color space, on the screen or on a surface shown on it.
+  const documentSurface = layer === 'overlays' ? null : documentSurfaceFor(r)
+  const sceneCanvas = documentSurface?.getCanvas() ?? canvas
   if (layer === 'overlays') {
     canvas.clear(r.ck.Color4f(0, 0, 0, 0))
   } else {
-    paintPageBackground(r, canvas, { x: r.panX * r.dpr, y: r.panY * r.dpr }, r.zoom * r.dpr)
+    paintPageBackground(r, sceneCanvas, { x: r.panX * r.dpr, y: r.panY * r.dpr }, r.zoom * r.dpr)
   }
 
   r.worldViewport = {
@@ -315,23 +350,30 @@ export function render(
       r.tiledScenePending = false
       r.tiledSceneCovered = true
     }
-    canvas.save()
-    canvas.scale(r.dpr, r.dpr)
+    sceneCanvas.save()
+    sceneCanvas.scale(r.dpr, r.dpr)
+    clipToStage(r, sceneCanvas, graph)
 
     p.beginPhase('render:scene')
     if (layer === 'scene' && !requiresUncachedSceneRender) {
       // The scene layer is tiles, idle or moving; the whole-scene picture serves one canvas.
-      const tiled = r.tiledScene.renderFrame(r, canvas, graph, sceneVersion, r.navigationGeneration)
+      const tiled = r.tiledScene.renderFrame(
+        r,
+        sceneCanvas,
+        graph,
+        sceneVersion,
+        r.navigationGeneration
+      )
       r.tiledScenePending = tiled.pending
       r.tiledSceneBackgroundPending = tiled.backgroundPending
       r.tiledSceneCovered = tiled.covered
       p.setScenePictureMode('hit', tiled.covered ? 'tiled' : 'tiled-fallback')
     } else {
-      canvas.translate(r.panX, r.panY)
-      canvas.scale(r.zoom, r.zoom)
+      sceneCanvas.translate(r.panX, r.panY)
+      sceneCanvas.scale(r.zoom, r.zoom)
       renderSceneContent(
         r,
-        canvas,
+        sceneCanvas,
         graph,
         overlays,
         sceneVersion,
@@ -342,7 +384,8 @@ export function render(
     }
     p.endPhase('render:scene')
 
-    canvas.restore()
+    sceneCanvas.restore()
+    if (documentSurface) presentDocumentSurface(canvas, documentSurface)
   }
 
   if (layer !== 'scene') drawAboveScene(r, canvas, graph, selectedIds, overlays, sceneVersion)
@@ -364,6 +407,19 @@ export function render(
     nodes: r.drawCounts.nodes,
     culledNodes: r.drawCounts.culled
   })
+}
+
+/** Takes the slide on the stage for the frame about to be drawn. */
+function stageSlide(r: SkiaRenderer, state: EditorState, graph: SceneGraph): void {
+  r.stagedSlideId = stagedSlide(graph, state)?.id ?? null
+}
+
+/** Leaves only the slide on the stage, if there is one, to what is drawn next. */
+function clipToStage(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph): void {
+  const slide = r.stagedSlideId ? graph.getNode(r.stagedSlideId) : undefined
+  if (!slide) return
+  const { x, y, width, height } = worldRectToScreen(r, getAxisAlignedWorldBounds(slide, graph))
+  canvas.clipRect(r.ck.XYWHRect(x, y, width, height), r.ck.ClipOp.Intersect, true)
 }
 
 function renderSceneContent(

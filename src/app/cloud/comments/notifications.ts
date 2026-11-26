@@ -1,5 +1,5 @@
 import type { CloudComment, CloudCommentThread } from '@open-pencil/cloud/contract'
-import { commentMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { commentPreview } from '@/app/comments/format'
 import { useComments } from '@/app/comments/use'
@@ -45,7 +45,7 @@ export function commentNotice(
 export function notifyComment(store: EditorStore, threadId: string, notice: CommentNotice): void {
   const tabId = getTabForStore(store)?.id
   if (!tabId) return
-  const messages = commentMessages.get()
+  const messages = messageStores.comments.get()
   notify({
     event: notice.event,
     title: messages.notifyTitle({

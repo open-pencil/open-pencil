@@ -9,7 +9,7 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -65,7 +65,7 @@ const emit = defineEmits<{
 
 const ui = sideList()
 const menuUI = menu()
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const isActive = (location: HomeLocation) =>
   active.kind === location.kind && active.id === location.id
 const workspaceLocations = computed(() =>

@@ -21,7 +21,7 @@ await mockTauriIPC((cmd, body, options) => {
       `x-fig-schema-length ${schemaLength} does not split a ${body.byteLength} byte body`
     )
   }
-  if (headers.get('x-fig-board') !== 'false') throw new Error('a new design is no board')
+  if (headers.get('x-fig-kind') !== 'design') throw new Error('a new document is a design')
   return CANVAS.buffer
 })
 

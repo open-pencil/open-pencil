@@ -1,12 +1,13 @@
 import { params } from '@nanostores/i18n'
 
-/** Messages of the `cloudPortal` namespace for the server's community gallery pages. */
+/** Messages of the Cloud server's pages for the server's community gallery pages. */
 export const communityPortalMessageDefaults = {
   communityTitle: 'Community',
   communityDescription: 'Files to open, explore, and copy into your own workspace.',
   communityEmpty: 'Nothing has been published here yet.',
   communityNoDesigns: 'No designs here yet.',
   communityNoBoards: 'No boards here yet.',
+  communityNoSlides: 'No slides here yet.',
   communityAllFiles: 'All files',
   communityOpenInBrowser: 'Open in browser',
   communityOpenInDesktop: 'Open in desktop app',

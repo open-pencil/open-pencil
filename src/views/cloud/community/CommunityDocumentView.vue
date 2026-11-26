@@ -10,7 +10,7 @@ import {
   CLOUD_COMMUNITY_PATH,
   type CommunityDocument
 } from '@open-pencil/cloud/contract'
-import { useCloudMessages, useCloudPortalMessages, useFileMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   openCommunityInBrowser,
@@ -41,9 +41,9 @@ const documentEntry = tv(documentEntryTheme)
 const portal = usePortal()
 const route = useRoute()
 const router = useRouter()
-const messages = useCloudPortalMessages()
-const cloud = useCloudMessages()
-const files = useFileMessages()
+const communityMessages = useMessages('cloud/portal/community')
+const cloud = useMessages('cloud/editor')
+const files = useMessages('files')
 const dates = useDateFormat()
 const versions = cloudVersions()
 const { state, reload } = useCommunityDocuments(portal.discovery)
@@ -76,7 +76,7 @@ function openPage(entry: CommunityDocument) {
   void router.push(cloudCommunityPagePath(entry.id))
 }
 
-useHead({ title: () => document.value?.name ?? messages.value.communityTitle })
+useHead({ title: () => document.value?.name ?? communityMessages.value.communityTitle })
 </script>
 
 <template>
@@ -97,12 +97,12 @@ useHead({ title: () => document.value?.name ?? messages.value.communityTitle })
     <AppPlaceholder
       v-else-if="!document"
       label-as="h1"
-      :label="messages.communityNotFoundTitle"
-      :description="messages.communityNotFoundDescription"
+      :label="communityMessages.communityNotFoundTitle"
+      :description="communityMessages.communityNotFoundDescription"
     >
       <template #action>
         <AppButton variant="outline" @click="router.push(CLOUD_COMMUNITY_PATH)">
-          {{ messages.communityAllFiles }}
+          {{ communityMessages.communityAllFiles }}
         </AppButton>
       </template>
     </AppPlaceholder>
@@ -122,7 +122,14 @@ useHead({ title: () => document.value?.name ?? messages.value.communityTitle })
               <span class="truncate">{{ document.name }}</span>
             </h1>
             <p class="mt-0.5 text-xs text-muted">
-              {{ document.kind === 'board' ? files.createBoard : files.createDesign }} ·
+              {{
+                {
+                  design: files.createDesign,
+                  board: files.createBoard,
+                  slides: files.createSlides
+                }[document.kind ?? 'design']
+              }}
+              ·
               {{ dates.format(document.updatedAt, 'date') }}
             </p>
           </div>
@@ -132,14 +139,14 @@ useHead({ title: () => document.value?.name ?? messages.value.communityTitle })
               variant="solid"
               @click="openCommunityInBrowser({ documentId: document.id, versionId })"
             >
-              {{ messages.communityOpenInBrowser }}
+              {{ communityMessages.communityOpenInBrowser }}
             </AppButton>
             <AppButton
               variant="outline"
               class="max-sm:hidden"
               @click="openCommunityInDesktop({ documentId: document.id, versionId })"
             >
-              {{ messages.communityOpenInDesktop }}
+              {{ communityMessages.communityOpenInDesktop }}
             </AppButton>
             <AppButton variant="outline" @click="copy(pageURL)">
               <template #leading>
@@ -148,7 +155,7 @@ useHead({ title: () => document.value?.name ?? messages.value.communityTitle })
               </template>
               {{ copied ? cloud.shareLinkCopied : cloud.shareCopyLink }}
             </AppButton>
-            <p class="text-xs text-muted">{{ messages.communityOpenNote }}</p>
+            <p class="text-xs text-muted">{{ communityMessages.communityOpenNote }}</p>
           </div>
           <div
             v-if="document.versions.length > 0"
@@ -167,7 +174,7 @@ useHead({ title: () => document.value?.name ?? messages.value.communityTitle })
                 :key="version.id"
                 :label="
                   index === 0
-                    ? messages.communityLatestVersion({ name: version.name })
+                    ? communityMessages.communityLatestVersion({ name: version.name })
                     : version.name
                 "
                 :description="version.description"
@@ -183,7 +190,7 @@ useHead({ title: () => document.value?.name ?? messages.value.communityTitle })
       </div>
 
       <section v-if="more.length > 0" class="mt-10">
-        <h2 class="mb-3 text-base font-semibold">{{ messages.communityMore }}</h2>
+        <h2 class="mb-3 text-base font-semibold">{{ communityMessages.communityMore }}</h2>
         <div
           class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))]"
         >

@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { Primitive } from 'reka-ui'
+import { tv } from 'tailwind-variants'
+
+import { settingsTheme } from '@open-pencil/theme'
 
 import SettingsResetButton from './SettingsResetButton.vue'
+
+const ui = tv(settingsTheme)()
 
 /**
  * One line of a `SettingsGroup`: a label, an optional description, and its control on the right.
@@ -27,21 +32,15 @@ const emit = defineEmits<{ reset: [] }>()
 </script>
 
 <template>
-  <Primitive
-    :as="as"
-    class="flex items-center justify-between gap-4 px-3 py-2.5"
-    data-slot="settings-row"
-  >
-    <span class="block min-w-0 flex-1">
-      <span class="block text-xs font-medium text-surface"
+  <Primitive :as="as" :class="ui.row()" data-slot="settings-row">
+    <span :class="ui.rowText()">
+      <span :class="ui.rowLabel()"
         ><slot name="label">{{ label }}</slot></span
       >
-      <span v-if="description" class="mt-1 block text-2xs leading-relaxed text-muted">{{
-        description
-      }}</span>
+      <span v-if="description" :class="ui.rowDescription()">{{ description }}</span>
       <slot name="description" />
     </span>
-    <span class="flex shrink-0 items-center gap-1">
+    <span :class="ui.rowControl()">
       <slot />
       <!-- After the control, so a label row's control is the setting's own, its first labelable
            element, and Reset reads after the setting it resets; shown before the control. -->

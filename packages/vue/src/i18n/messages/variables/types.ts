@@ -1,5 +1,3 @@
-import { i18n } from '#vue/i18n/create'
-
 export const variableTypeMessageDefaults = {
   color: 'Color',
   colorHint: 'Paint values',
@@ -8,7 +6,9 @@ export const variableTypeMessageDefaults = {
   text: 'Text',
   textHint: 'Copy and labels',
   boolean: 'Boolean',
-  booleanHint: 'True or false'
+  booleanHint: 'True or false',
+  easing: 'Easing',
+  easingHint: 'Curves and springs',
+  timing: 'Timing',
+  timingHint: 'Durations and delays'
 } as const
-
-export const variableTypeMessages = i18n('variableTypes', variableTypeMessageDefaults)

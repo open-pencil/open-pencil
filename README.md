@@ -10,7 +10,7 @@ Open-source design editor. Opens `.fig` and `.pen` design files, includes built-
 
 > **Status:** Active development. Usable today, with some rough edges as features evolve.
 
-**[Try it online →](https://app.openpencil.dev/demo)** · [Download](https://github.com/open-pencil/open-pencil/releases/latest) · [Documentation](https://openpencil.dev) · [Roadmap](https://openpencil.dev/development/roadmap) · [llms.txt](https://openpencil.dev/llms.txt)
+**[Try it online →](https://cloud.openpencil.dev/demo)** · [Download](https://github.com/open-pencil/open-pencil/releases/latest) · [Documentation](https://openpencil.dev) · [Roadmap](https://openpencil.dev/development/roadmap) · [llms.txt](https://openpencil.dev/llms.txt)
 
 ![OpenPencil](packages/docs/public/screenshot.png)
 
@@ -22,7 +22,7 @@ Open-source design editor. Opens `.fig` and `.pen` design files, includes built-
 brew install --cask openpencil
 ```
 
-Or download from the [releases page](https://github.com/open-pencil/open-pencil/releases/latest), or [use the web app](https://app.openpencil.dev) — no install needed.
+Or download from the [releases page](https://github.com/open-pencil/open-pencil/releases/latest), or [use the web app](https://cloud.openpencil.dev) — no install needed.
 
 Requires macOS 13 or later with current Safari updates, Windows 10 or later, or Linux with WebKitGTK 2.40+; the web app needs Chrome 111, Edge 111, Firefox 128, or Safari 16.4 or later. See [system requirements](https://openpencil.dev/getting-started#system-requirements).
 
@@ -40,7 +40,7 @@ Official builds send one anonymous ping a day and share usage stats only if you 
 - **Design-to-code export** — export selections as JSX/Tailwind, generate token outputs, and map designs into component-oriented code workflows
 - **Vue SDK for custom editors** — headless components and composables for embedding OpenPencil into other apps or building workflow-specific editing surfaces. [Read the SDK docs →](https://openpencil.dev/programmable/sdk/)
 - **Real-time collaboration** — share a peer-to-peer room over WebRTC with no server or account, or edit Cloud documents together. Cursors, presence, follow mode, voice calls
-- **Optional Cloud** — keep documents on your team's own [OpenPencil Cloud](https://openpencil.dev/cloud/) server, or on the hosted service once it opens, and share them by invitation
+- **Optional Cloud** — keep documents on your team's own [OpenPencil Cloud](https://openpencil.dev/cloud/) server or on the [hosted service](https://cloud.openpencil.dev), and share them by invitation
 - **Auto layout & CSS Grid** — flex and grid layout via Taffy WASM, with gap, padding, alignment, track sizing
 - **~15 MB desktop app** — Tauri v2 for macOS, Windows, Linux. Also runs in the browser as a PWA
 
@@ -195,7 +195,7 @@ For documentation-aware agents, the docs site publishes [llms.txt](https://openp
 Share a link to co-edit in real time. No server, no account — peers connect directly via WebRTC.
 
 1. Click the share button in the top-right panel
-2. Share the generated link (`app.openpencil.dev/rooms/<room-id>`)
+2. Share the generated link (`cloud.openpencil.dev/rooms/<room-id>`)
 3. Collaborators see your cursor, selection, and edits in real time
 4. Click a peer's avatar to follow their viewport
 5. Click the headphones beside the avatars to start or join the room's voice call

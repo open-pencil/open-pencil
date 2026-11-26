@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const renameMessageDefaults = {
   title: 'Rename',
   layers: params('Rename {count} layers'),
@@ -16,5 +14,3 @@ export const renameMessageDefaults = {
   stopDescendingAt: 'Stop descending at',
   invalidPattern: 'Invalid regular expression'
 } as const
-
-export const renameMessages = i18n('rename', renameMessageDefaults)

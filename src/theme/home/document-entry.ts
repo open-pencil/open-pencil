@@ -1,4 +1,4 @@
-import { focusStyles } from '../focus/styles'
+import { focusStyles } from '@open-pencil/theme'
 
 export default {
   slots: {
@@ -26,7 +26,8 @@ export default {
   variants: {
     kind: {
       design: { kind: 'text-primary' },
-      board: { kind: 'text-board', icon: 'text-board' }
+      board: { kind: 'text-board', icon: 'text-board' },
+      slides: { kind: 'text-slides', icon: 'text-slides' }
     },
     view: {
       grid: {

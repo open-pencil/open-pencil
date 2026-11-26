@@ -40,8 +40,10 @@ export function renderPagesToPDF(
 ): PDFExportResult | null {
   const doc = new renderer.ck.PDFDocument(options.title ?? '', 'OpenPencil', PDF_RASTER_DPI)
   try {
-    const pages = drawingExport(renderer.images, null, () =>
-      specs.flatMap((spec) => drawPage(doc, renderer, graph, spec) ?? [])
+    const pages = renderer.withoutTextEdit(() =>
+      drawingExport(renderer.images, null, () =>
+        specs.flatMap((spec) => drawPage(doc, renderer, graph, spec) ?? [])
+      )
     )
     if (pages.length === 0) {
       doc.abort()

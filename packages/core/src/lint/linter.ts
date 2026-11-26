@@ -1,6 +1,6 @@
 import { uniq } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode, SharedStyleType } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, SharedStyleType, VariableType } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { GENERATED_FRAME_TYPES, generatedFrameOwner } from '@open-pencil/scene-graph/generated'
 import { sharedStyleLayers, sharedStyleTypeForKind } from '@open-pencil/scene-graph/shared-styles'
@@ -64,7 +64,7 @@ export class Linter {
   private checks: { rule: Rule; context: RuleContext }[] = []
   private nodes = new Map<string, LintNode>()
   private variables: LintVariables = {
-    counts: { COLOR: 0, FLOAT: 0, STRING: 0, BOOLEAN: 0 },
+    counts: emptyVariableCounts(),
     colorsByHex: new Map()
   }
   private sharedStyleTypes: ReadonlyMap<string, SharedStyleType> = new Map()
@@ -197,6 +197,7 @@ export class Linter {
         rule,
         context: {
           variables: this.variables,
+          colorProfile: this.graph?.documentColorSpace ?? 'srgb',
           isSharedStyle: (kind, id) =>
             id !== null && this.sharedStyleTypes.get(id) === sharedStyleTypeForKind(kind),
           report: ({ node, message, suggest, data, fix, suggestions }) => {
@@ -265,10 +266,14 @@ function sharedStyleTypes(graph: SceneGraph): ReadonlyMap<string, SharedStyleTyp
   return types
 }
 
+function emptyVariableCounts(): Record<VariableType, number> {
+  return { COLOR: 0, FLOAT: 0, STRING: 0, BOOLEAN: 0, EASING: 0, TIMING: 0 }
+}
+
 function describeVariables(graph: SceneGraph): LintVariables {
-  const counts = { COLOR: 0, FLOAT: 0, STRING: 0, BOOLEAN: 0 }
+  const counts = emptyVariableCounts()
   const colorsByHex = new Map<string, { id: string; name: string }>()
-  for (const variable of graph.variables.values()) {
+  for (const variable of graph.getLiveVariables()) {
     counts[variable.type]++
     if (variable.type !== 'COLOR') continue
     const color = graph.resolveColorVariable(variable.id)

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { portalPublic } from '@/components/cloud-portal/ui'
 import { CLOUD_DOCS_URL } from '@/constants'
@@ -11,7 +11,7 @@ import PortalLanguageSelect from './PortalLanguageSelect.vue'
 const { host } = defineProps<{ host: string }>()
 
 const ui = portalPublic()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const legal = usePortalLegal()
 </script>
 

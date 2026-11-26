@@ -217,8 +217,23 @@ return __h(Frame, { fill: t.Page, mode: dark }, __h(Button.Root, null), 'Hi', fa
   })
 
   test('refuses a frame script that would close its own script element', () => {
-    expect(sandboxDocument('run()')).toContain('<script>run()</script>')
-    expect(() => sandboxDocument('"</script><script>alert(1)"')).toThrow('cannot be inlined')
-    expect(() => sandboxDocument('"</SCRIPT><script>alert(1)"')).toThrow('cannot be inlined')
+    const base = 'tauri://localhost/'
+    expect(sandboxDocument({ text: 'run()' }, base)).toContain('<script>run()</script>')
+    expect(() => sandboxDocument({ text: '"</script><script>alert(1)"' }, base)).toThrow(
+      'cannot be inlined'
+    )
+    expect(() => sandboxDocument({ text: '"</SCRIPT><script>alert(1)"' }, base)).toThrow(
+      'cannot be inlined'
+    )
+  })
+
+  test('loads a built frame script from its file, the only script its policy allows', () => {
+    const document = sandboxDocument(
+      { src: '/assets/frame-1a2b.js' },
+      'tauri://localhost/index.html'
+    )
+    expect(document).toContain('<script src="tauri://localhost/assets/frame-1a2b.js"></script>')
+    expect(document).toContain("script-src tauri://localhost/assets/frame-1a2b.js 'unsafe-eval'")
+    expect(document).not.toContain('unsafe-inline')
   })
 })

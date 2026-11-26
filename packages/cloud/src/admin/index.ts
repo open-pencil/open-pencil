@@ -1,9 +1,5 @@
-export { adminErrorStatus, AdminDomainError, type AdminErrorCode } from './errors'
-export {
-  createCloudAdminRoutes,
-  type CloudAdminRoutes,
-  type CloudAdminServices
-} from './api/routes'
+export { AdminDomainError, type AdminErrorCode } from './errors'
+export { createCloudAdminRoutes, type CloudAdminServices } from './api/routes'
 export { approveEnrollmentByEmail, grantDeploymentAdminByEmail } from './bootstrap'
 export { createAdminAuditService, type AdminAuditService } from './audit/service'
 export { createAdminEmailService, type AdminEmailService } from './email/service'

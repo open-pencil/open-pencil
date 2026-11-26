@@ -3,7 +3,12 @@ import { pickBy } from 'es-toolkit'
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
 import { BOARD_GRID } from '#core/constants'
-import { BOARD_TOOL_SHORTCUTS, BOARD_TOOLS, TOOL_SHORTCUTS } from '#core/editor/tool-registry'
+import {
+  BOARD_TOOL_SHORTCUTS,
+  BOARD_TOOLS,
+  DECK_TOOL_SHORTCUTS,
+  TOOL_SHORTCUTS
+} from '#core/editor/tool-registry'
 import type { Tool } from '#core/editor/types'
 
 import {
@@ -43,28 +48,34 @@ type DocumentBehaviour = Pick<
   | 'sectionTitles'
   | 'lint'
   | 'rulers'
+  | 'filmstrip'
   | 'panelsOpen'
 >
 
 /** What the canvas's view decides: how the pointer, keys, chrome, and panels behave. */
 type ViewBehaviour = Omit<EditorProfile, keyof DocumentBehaviour>
 
+const DESIGN_BEHAVIOUR: DocumentBehaviour = {
+  edits: true,
+  tools: null,
+  pathEdits: 'all',
+  layerEdits: 'all',
+  toolKeys: TOOL_SHORTCUTS,
+  snapGrid: 1,
+  dotGrid: null,
+  pixelGrid: true,
+  framesOpen: true,
+  sectionTitles: 'fill',
+  lint: true,
+  rulers: true,
+  filmstrip: false,
+  panelsOpen: true
+}
+
 const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
-  design: {
-    edits: true,
-    tools: null,
-    pathEdits: 'all',
-    layerEdits: 'all',
-    toolKeys: TOOL_SHORTCUTS,
-    snapGrid: 1,
-    dotGrid: null,
-    pixelGrid: true,
-    framesOpen: true,
-    sectionTitles: 'fill',
-    lint: true,
-    rulers: true,
-    panelsOpen: true
-  },
+  design: DESIGN_BEHAVIOUR,
+  // A slide is drawn with everything a design is.
+  slides: { ...DESIGN_BEHAVIOUR, toolKeys: DECK_TOOL_SHORTCUTS, filmstrip: true },
   board: {
     edits: true,
     tools: BOARD_TOOLS,
@@ -78,6 +89,7 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
     sectionTitles: 'outline',
     lint: false,
     rulers: false,
+    filmstrip: false,
     panelsOpen: false
   }
 }

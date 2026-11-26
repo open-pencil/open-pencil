@@ -1,7 +1,8 @@
 import { variableUnit } from '@open-pencil/dom-css/export'
-import type { TokenUnit, Variable } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
+import type { ColorProfile, Easing, TokenUnit, Variable } from '@open-pencil/scene-graph'
+import { colorToSRGBHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { easingBezier, isEasing } from '@open-pencil/scene-graph/variables'
 
 import type { DesignTokenType } from './types'
 
@@ -18,11 +19,13 @@ function namesFontFamily(variable: Variable): boolean {
 
 /**
  * The DTCG type a variable is written as, chosen so Figma can import it: lengths are
- * `dimension` in px, times `duration` in s, other numbers and booleans `number`, and text that
- * names fonts `fontFamily`, other text `string`.
+ * `dimension` in px, times and timings `duration` in s, easings `cubicBezier`, other numbers and
+ * booleans `number`, and text that names fonts `fontFamily`, other text `string`.
  */
 export function variableTokenType(variable: Variable): DesignTokenType {
   if (variable.type === 'COLOR') return 'color'
+  if (variable.type === 'TIMING') return 'duration'
+  if (variable.type === 'EASING') return 'cubicBezier'
   if (variable.type === 'BOOLEAN') return 'number'
   if (variable.type === 'STRING') return namesFontFamily(variable) ? 'fontFamily' : 'string'
   const unit = variableUnit(variable)
@@ -31,13 +34,16 @@ export function variableTokenType(variable: Variable): DesignTokenType {
   return 'number'
 }
 
-/** A color as DTCG 2025.10 writes it: sRGB components, alpha, and the hex code tools display. */
-export function colorTokenValue(color: Color) {
+/**
+ * A color as DTCG 2025.10 writes it: the components in the document's profile, named as DTCG
+ * names it, alpha, and the sRGB hex code tools display, brought inside sRGB where it lies outside.
+ */
+export function colorTokenValue(color: Color, profile: ColorProfile) {
   return {
-    colorSpace: 'srgb',
+    colorSpace: profile,
     components: [trimNumber(color.r), trimNumber(color.g), trimNumber(color.b)],
     alpha: trimNumber(color.a),
-    hex: colorToHex(color).toLowerCase()
+    hex: colorToSRGBHex(color, profile).toLowerCase()
   }
 }
 
@@ -51,16 +57,25 @@ function durationTokenValue(value: number, unit: TokenUnit) {
   return { value: trimNumber(unit === 'ms' ? value / 1000 : value), unit: 's' }
 }
 
-/** A variable's own value in the shape its token type takes. */
+/** An easing's curve as DTCG's four numbers, or nothing for a spring or a hold, which it lacks. */
+export function cubicBezierTokenValue(easing: Easing): number[] | undefined {
+  const bezier = easingBezier(easing)
+  return bezier && [bezier.x1, bezier.y1, bezier.x2, bezier.y2].map(trimNumber)
+}
+
+/** A variable's own value in the shape its token type takes; a timing is held in seconds. */
 export function literalTokenValue(
   variable: Variable,
-  value: Color | number | string | boolean
+  value: Color | number | string | boolean | Easing,
+  profile: ColorProfile
 ): unknown {
-  if (typeof value === 'object') return colorTokenValue(value)
+  if (isEasing(value)) return cubicBezierTokenValue(value)
+  if (typeof value === 'object') return colorTokenValue(value, profile)
   if (typeof value === 'boolean') return value ? 1 : 0
   if (typeof value === 'string') return value
   const type = variableTokenType(variable)
   if (type === 'dimension') return dimensionTokenValue(value)
-  if (type === 'duration') return durationTokenValue(value, variableUnit(variable))
+  if (type === 'duration')
+    return durationTokenValue(value, variable.type === 'TIMING' ? 's' : variableUnit(variable))
   return trimNumber(value)
 }

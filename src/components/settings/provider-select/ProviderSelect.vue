@@ -12,7 +12,7 @@ import {
   providerKind
 } from '@open-pencil/core/constants'
 import { DEADLINE_MS } from '@open-pencil/std/timing'
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { cloudAIAvailable } from '@/app/cloud/integration'
@@ -20,7 +20,7 @@ import { canRunHostProcesses } from '@/app/tauri/capabilities'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import type { AppSelectGroup } from '@/components/ui/select/select'
 
-const ai = useAIMessages()
+const ai = useMessages('ai')
 const mcpAvailable = ref(false)
 
 async function checkMCPHealth(retries = 3, delayMs = 1000) {

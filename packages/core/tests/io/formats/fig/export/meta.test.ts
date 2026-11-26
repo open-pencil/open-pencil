@@ -4,6 +4,8 @@ import { omit } from 'es-toolkit'
 import { unzipSync } from 'fflate'
 import * as v from 'valibot'
 
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer, readFigArchiveMeta } from '@open-pencil/fig'
@@ -73,6 +75,40 @@ describe('.fig meta.json', () => {
     expect(meta.file_name).toBe('Untitled')
     expect(meta.client_meta.thumbnail_size).toEqual(thumbnailSize)
     expect(meta.client_meta.render_coordinates).toEqual({ x: 0, y: 0, width: 0, height: 0 })
+  })
+
+  test('keeps the edited layer when drawing the file preview throws', async () => {
+    const { graph, pageId } = landingPage()
+
+    const [card] = graph.getChildren(pageId)
+
+    graph.updateNode(card.id, { name: 'Edited card' })
+
+    const ck = await getCanvasKit()
+
+    const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1), 'surface'))
+
+    renderer.renderSceneToCanvas = () => {
+      throw new Error('Preview renderer unavailable')
+    }
+
+    try {
+      const saved = await exportFigFile(graph, { ck, renderer, pageId })
+
+      const reopened = await parseFigFile(saved.slice().buffer, { populate: 'first-page' })
+
+      const [page] = reopened.getPages()
+
+      expect(reopened.getChildren(page.id).map((node) => node.name)).toEqual(['Edited card'])
+
+      const { meta, thumbnailSize } = readArchive(saved)
+
+      expect(thumbnailSize).toEqual({ width: 1, height: 1 })
+
+      expect(meta.client_meta.thumbnail_size).toEqual(thumbnailSize)
+    } finally {
+      renderer.destroy()
+    }
   })
 
   test('a reopened file keeps its meta.json until an edit writes a new one', async () => {

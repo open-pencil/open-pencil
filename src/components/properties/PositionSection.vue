@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { PositionControlsRoot } from '@open-pencil/vue/primitives/PositionControls'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -11,7 +11,7 @@ import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const store = useEditorStore()
 const { getCommand } = useEditorCommands()
 const canTidy = getCommand('selection.tidyUp').enabled

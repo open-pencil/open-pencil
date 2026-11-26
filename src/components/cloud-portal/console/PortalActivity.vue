@@ -3,7 +3,7 @@ import { createColumnHelper } from '@tanstack/vue-table'
 import { computed, h } from 'vue'
 
 import type { CloudAdminAuditFilter } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   usePortalList,
@@ -24,7 +24,7 @@ const { load } = defineProps<{
   ) => Promise<PortalListPage<CloudAdminAuditFilter, PortalActivityEntry>>
 }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const actions = computed<Record<string, string>>(() => ({
   'enrollment.approved': messages.value.activityApproved,
   'enrollment.rejected': messages.value.activityRejected,

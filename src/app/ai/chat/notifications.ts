@@ -1,7 +1,7 @@
 import type { UIMessage } from 'ai'
 import type { RootContent } from 'mdast'
 
-import { aiMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { showChatPanel } from '@/app/ai/chat/panel'
 import type { EditorStore } from '@/app/editor/session'
@@ -58,7 +58,7 @@ function notifyChat(
   if (!tabId) return
   notify({
     event,
-    title: aiMessages.get().notifyTitle({ agent, document: store.state.documentName }),
+    title: messageStores.ai.get().notifyTitle({ agent, document: store.state.documentName }),
     body,
     tabId,
     // One per tab, so an agent that keeps working replaces its last notification.
@@ -77,7 +77,7 @@ export async function notifyReplyEnded(
   agent: string,
   message: UIMessage | null
 ): Promise<void> {
-  const messages = aiMessages.get()
+  const messages = messageStores.ai.get()
   if (!message) {
     notifyChat('agentFailed', store, agent, messages.notifyReplyFailed)
     return
@@ -91,7 +91,7 @@ export async function notifyReplyEnded(
 
 /** An agent's permission request is still waiting for an answer. */
 export function notifyPermissionWaiting(store: EditorStore, agent: string, action: string): void {
-  const messages = aiMessages.get()
+  const messages = messageStores.ai.get()
   notifyChat(
     'agentNeedsInput',
     store,

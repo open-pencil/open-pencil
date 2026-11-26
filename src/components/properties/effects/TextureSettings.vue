@@ -8,7 +8,7 @@ import {
   grainSizeChange,
   textureChange
 } from '@open-pencil/vue/controls/effects'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
@@ -26,7 +26,7 @@ const emit = defineEmits<{
   commit: [changes: EffectChange]
 }>()
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const texture = computed(() => effect.texture ?? UNSET_TEXTURE)
 
 /** Figma keeps a texture's radius within 0 to 100. */

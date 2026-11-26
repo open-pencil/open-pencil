@@ -50,41 +50,23 @@ export interface LandingMessages {
     now: { label: string; entries: RoadmapEntryMessages[] }
     next: {
       label: string
-      /** The entry presented as a feature block of its own. */
-      lead: TitledDetail & { features: TitledDetail[] }
+      /** The entries presented as feature blocks of their own, first. */
+      leads: Array<TitledDetail & { features: TitledDetail[] }>
       entries: RoadmapEntryMessages[]
-      /** OpenPencil Cloud, after self-hosting, with the waitlist form under it. */
-      cloud: TitledDetail
     }
     later: { label: string; entries: RoadmapEntryMessages[] }
   }
-  /** The hosted product, with its waitlist. */
+  /** The hosted product, with the way in and its plans. */
   cloud: {
     badge: string
     title: string
     lede: string
+    /** Opens the official server's editor, where a visitor signs up. */
+    signUp: string
+    plans: string
+    /** Opens the official Cloud's community gallery. */
+    community: string
     features: TitledDetail[]
-  }
-  /** The OpenPencil Cloud waitlist form, in the Cloud section and the roadmap. */
-  waitlist: {
-    /** Accessible name of the email field. */
-    label: string
-    placeholder: string
-    submit: string
-    /** The button while a sign-up waits on the visitor to tick Turnstile's check. */
-    confirmHuman: string
-    invalid: string
-    joined: string
-    joinedDetail: string
-    /** The service could not be reached, or failed. */
-    failed: string
-    privacy: string
-    /** Turnstile did not confirm a person. */
-    refused: string
-    /** Too many sign-ups from one place in a minute. */
-    limited: string
-    /** Turnstile cannot run on this page, such as a preview or local build. */
-    unavailable: string
   }
   closing: {
     title: string
@@ -153,13 +135,14 @@ export interface LandingMessages {
       cli: TitledDetail
       source: TitledDetail & { action: string }
     }
-    beta: {
+    nightly: {
       badge: string
       title: string
       lede: string
-      /** What to know before installing a beta. */
+      /** What to know before installing a nightly. */
       caveats: string[]
-      notes: string
+      /** Links to the nightly release, with its commit, version, and checksums. */
+      onGitHub: string
     }
   }
 }

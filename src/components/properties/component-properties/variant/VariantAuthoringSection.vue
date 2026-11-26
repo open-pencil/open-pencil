@@ -2,7 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 
 import { useVariantAuthoring } from '@open-pencil/vue/controls/variants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppInput from '@/components/ui/input/AppInput.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
@@ -13,7 +13,7 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
  * in the Properties list, and Add variant sits in the panel header.
  */
 const { variant, definitions, diagnostics, setVariantValue } = useVariantAuthoring()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const selectedValues = reactive<Record<string, string>>({})
 const mutationConflictIds = ref<string[]>([])
 const selectedHasConflict = computed(() => {

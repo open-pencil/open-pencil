@@ -13,7 +13,7 @@ import {
   type TokenImportOptions
 } from '@open-pencil/core/io/formats/design-tokens'
 import { isLibraryCollection } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -31,7 +31,8 @@ const emit = defineEmits<{ imported: [result: TokenImportResult] }>()
 const open = defineModel<boolean>('open', { default: false })
 
 const store = useEditorStore()
-const { variables, common } = useI18n()
+const variables = useMessages('variables/panel')
+const common = useMessages('common')
 
 const options = ref<TokenImportOptions | null>(null)
 watch(
@@ -78,9 +79,7 @@ const livePlan = computed(() => {
 const plan = useHeldContent(livePlan, open)
 const liveCollections = computed(() => {
   void store.state.sceneVersion
-  return [...store.graph.variableCollections.values()].filter(
-    (collection) => !isLibraryCollection(collection)
-  )
+  return store.graph.getLiveCollections().filter((collection) => !isLibraryCollection(collection))
 })
 const existingCollections = useHeldContent(liveCollections, open)
 const styleCount = computed(

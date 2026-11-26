@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -31,7 +31,7 @@ const emit = defineEmits<{
 }>()
 
 const ui = portalForm({ size: 'lg' })
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const code = ref('')
 // Nothing to check until a code is typed: an empty one would only come back as an error.
 const entered = computed(() => code.value.trim() !== '')

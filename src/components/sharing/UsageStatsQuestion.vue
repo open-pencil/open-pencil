@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { setUsageStatsConsent, usageStatsConsent } from '@/app/telemetry'
 import ExternalLink from '@/components/links/ExternalLink.vue'
@@ -14,7 +14,7 @@ const { source, headingId } = defineProps<{
   source: 'welcome' | 'prompt'
   headingId?: string
 }>()
-const { diagnostics } = useI18n()
+const diagnostics = useMessages('diagnostics')
 const styles = tv(theme)()
 </script>
 

@@ -77,6 +77,7 @@ heavy('text measurement', () => {
           derivedSymbolData: [],
           symbolOverrides: [],
           componentPropAssignments: [],
+          hiddenSlotAssignments: [],
           uniformScaleFactor: null
         }
       }

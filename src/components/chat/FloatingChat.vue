@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import ChatPanel from '@/components/chat/ChatPanel.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -9,7 +9,8 @@ import IconButton from '@/components/ui/button/IconButton.vue'
  * panel holds once the panels are open.
  */
 const emit = defineEmits<{ close: [] }>()
-const { editor, panels } = useI18n()
+const editor = useMessages('editor')
+const panels = useMessages('panels')
 </script>
 
 <template>

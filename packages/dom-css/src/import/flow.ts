@@ -16,8 +16,8 @@ import {
   textAutoResizeFor
 } from '@open-pencil/scene-graph/layout'
 
-import type { DesignElement, DesignStyleDeclaration } from '../types'
-import { pickStyle } from './css-values'
+import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
+import { mergedStyle, pickStyle } from './css-values'
 import { isTableRow } from './table'
 
 /**
@@ -58,6 +58,7 @@ const CENTERED_TAGS = new Set(['button'])
 /** What a run of text takes from its element: the properties CSS inherits, and decoration. */
 const TEXT_PROPERTIES = [
   'color',
+  'direction',
   'font-family',
   'font-size',
   'font-style',
@@ -119,15 +120,58 @@ const LEGACY_TEXT_ALIGN: Partial<Record<string, 'left' | 'center' | 'right'>> = 
 }
 
 /** The element's `text-align`, lowercase, with a legacy value read as the side it aligns to. */
-export function textAlignOf(style: DesignStyleDeclaration): string | undefined {
+function textAlignOf(style: DesignStyleDeclaration): string | undefined {
   const align = pickStyle(style, 'text-align')?.trim().toLowerCase()
   return align === undefined ? undefined : (LEGACY_TEXT_ALIGN[align] ?? align)
 }
 
-function textAlignAxis(style: DesignStyleDeclaration) {
+/** Whether the element reads right to left. */
+export function isRightToLeft(style: DesignStyleDeclaration): boolean {
+  return pickStyle(style, 'direction')?.trim().toLowerCase() === 'rtl'
+}
+
+/**
+ * The side `text-align` puts lines against, with `start` and `end` read in the element's
+ * direction; `justify` for justified lines.
+ */
+function textAlignSide(
+  style: DesignStyleDeclaration
+): 'left' | 'center' | 'right' | 'justify' | undefined {
   const align = textAlignOf(style)
-  if (align === 'center') return 'CENTER'
-  return align === 'right' || align === 'end' ? 'MAX' : 'MIN'
+  switch (align) {
+    case 'left':
+    case 'center':
+    case 'right':
+    case 'justify':
+      return align
+    case 'start':
+      return isRightToLeft(style) ? 'right' : 'left'
+    case 'end':
+      return isRightToLeft(style) ? 'left' : 'right'
+    default:
+      return undefined
+  }
+}
+
+/** The alignment of a text layer by the side `text-align` puts its lines against. */
+const TEXT_LAYER_ALIGN = {
+  left: 'LEFT',
+  center: 'CENTER',
+  right: 'RIGHT',
+  justify: 'JUSTIFIED'
+} as const satisfies Record<string, SceneNode['textAlignHorizontal']>
+
+export function textLayerAlign(
+  style: DesignStyleDeclaration
+): SceneNode['textAlignHorizontal'] | undefined {
+  const side = textAlignSide(style)
+  return side && TEXT_LAYER_ALIGN[side]
+}
+
+function textAlignAxis(style: DesignStyleDeclaration) {
+  const side = textAlignSide(style)
+  if (side === 'center') return 'CENTER'
+  return side === 'right' ? 'MAX' : 'MIN'
 }
 
 /** Where a block can go across its container besides its start. */
@@ -382,4 +426,58 @@ export function applyFlowSizing(
   }
   applyParentFill(graph, node, style, display, parentFlow, size)
   if (node.type === 'TEXT') applyTextSizing(graph, node, style, size)
+}
+
+/** Whether a box is out of the flow, placed by its own position rather than in the lines. */
+function isOutOfFlow(node: DesignNode): boolean {
+  if (node.type !== 'element') return false
+  const position = pickStyle(mergedStyle(node), 'position')?.trim()
+  return position === 'absolute' || position === 'fixed'
+}
+
+/**
+ * An element's content as its lines lay it out, and the boxes out of the flow inside it, such as a
+ * link's `::before` stretched over the card it is in, which take no part in the lines.
+ */
+export function splitOutOfFlow(element: DesignElement): {
+  inFlow: DesignElement
+  outOfFlow: DesignElement[]
+} {
+  const outOfFlow: DesignElement[] = []
+  const keep = (node: DesignElement): DesignElement => ({
+    ...node,
+    children: node.children.flatMap((child): DesignNode[] => {
+      if (child.type !== 'element') return [child]
+      if (isOutOfFlow(child)) {
+        outOfFlow.push(child)
+        return []
+      }
+      return [keep(child)]
+    })
+  })
+  return { inFlow: keep(element), outOfFlow }
+}
+
+/** Whether a box's `visibility` hides what it paints and the text it holds. */
+export function hiddenByVisibility(style: DesignStyleDeclaration): boolean {
+  const visibility = pickStyle(style, 'visibility')?.trim()
+  return visibility === 'hidden' || visibility === 'collapse'
+}
+
+function hidesByVisibility(node: DesignElement): boolean {
+  return hiddenByVisibility(mergedStyle(node))
+}
+
+/**
+ * How much of a box CSS hides with `visibility`: `all` of it, `own` paint only when a descendant
+ * sets `visibility: visible` and shows inside it, which a hidden layer would hide with it, or
+ * `none`.
+ */
+export function hiddenPart(element: DesignElement): 'all' | 'own' | 'none' {
+  if (!hidesByVisibility(element)) return 'none'
+  const showsAgain = (node: DesignElement): boolean =>
+    node.children.some(
+      (child) => child.type === 'element' && (!hidesByVisibility(child) || showsAgain(child))
+    )
+  return showsAgain(element) ? 'own' : 'all'
 }

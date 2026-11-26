@@ -3,7 +3,7 @@ import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { codingAgentGuideURL, codingAgentSetupPrompt } from '@/app/ai/agents/setup/prompt'
 import { agentSetupView, type AgentSetupState } from '@/app/ai/agents/setup/view'
@@ -28,7 +28,8 @@ const emit = defineEmits<{
   cancelSignIn: []
   submitSignInCode: [code: string]
 }>()
-const { ai, common } = useI18n()
+const ai = useMessages('ai')
+const common = useMessages('common')
 const styles = tv(theme)()
 const setupProblemMessage = useSetupProblemMessage()
 

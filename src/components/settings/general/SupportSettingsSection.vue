@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { donate, DONATION_URL } from '@/app/donation'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
 /** Donating from Settings, for builds whose repository names a donation page. */
-const { diagnostics } = useI18n()
+const diagnostics = useMessages('diagnostics')
 </script>
 
 <template>

@@ -12,7 +12,12 @@ import { createHTMLEngineRuntime, loadHTMLEngine } from '@open-pencil/html-engin
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { IconMatcher } from '#core/icons/match'
-import { mediaTypeOfName, networkResourceFetch, pageResourceFetch } from '#core/io/remote'
+import {
+  MAX_PAGE_FILE_BYTES,
+  mediaTypeOfName,
+  networkResourceFetch,
+  pageResourceFetch
+} from '#core/io/remote'
 import type { IOFormatAdapter } from '#core/io/types'
 
 import {
@@ -40,6 +45,11 @@ export interface ReadHTMLOptions {
   viewport?: DesignViewport
   /** Names the icons inline SVG draws without the page naming them, as `createHeadlessIconMatcher`. */
   matchIcon?: IconMatcher
+  /**
+   * Puts the page's layers in one frame the size of the window it was laid out in, as a page
+   * opened as a document shows; see `sceneGraphFromStyledHTML`.
+   */
+  framed?: boolean
 }
 
 export interface ReadHTMLResult {
@@ -59,9 +69,6 @@ function resource(
   return { url, bytes: bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), contentType }
 }
 
-/** The most one stylesheet, font, or image may hold, so one huge file cannot exhaust memory. */
-const MAX_RESOURCE_BYTES = 64 * 1024 * 1024
-
 async function readAssetAt(
   url: string,
   readAsset: ReadHTMLOptions['readAsset']
@@ -69,7 +76,7 @@ async function readAssetAt(
   try {
     const path = decodeURIComponent(new URL(url).pathname.replace(/^\//, ''))
     const bytes = await readAsset?.(path)
-    return bytes && bytes.byteLength <= MAX_RESOURCE_BYTES ? resource(url, bytes) : null
+    return bytes && bytes.byteLength <= MAX_PAGE_FILE_BYTES ? resource(url, bytes) : null
   } catch {
     // A malformed escape in the URL, or a host that could not read the file.
     return null
@@ -79,7 +86,7 @@ async function readAssetAt(
 async function readFileAt(url: string, signal: AbortSignal): Promise<DesignResource | null> {
   const { readFile, stat } = await import(/* @vite-ignore */ 'node:fs/promises')
   const info = await stat(new URL(url)).catch(() => null)
-  if (!info?.isFile() || info.size > MAX_RESOURCE_BYTES) return null
+  if (!info?.isFile() || info.size > MAX_PAGE_FILE_BYTES) return null
   const bytes = await readFile(new URL(url), { signal }).catch(() => null)
   return bytes ? resource(url, bytes) : null
 }
@@ -94,11 +101,11 @@ function isWebPage(baseURL: string | undefined): boolean {
 }
 
 /** The network part of a page's fetch, such as `https:` and `data:` URLs. */
-const fetchFromNetwork = networkResourceFetch(globalThis.fetch, MAX_RESOURCE_BYTES)
+const fetchFromNetwork = networkResourceFetch(globalThis.fetch)
 
 /**
  * Fetches what a page asks for: its own files through `readAsset`, `file:` URLs from disk, and
- * the rest, such as `https:` and `data:`, over the network, each up to `MAX_RESOURCE_BYTES`. A
+ * the rest, such as `https:` and `data:`, over the network, each up to `MAX_PAGE_FILE_BYTES`. A
  * page from the web reads nothing from disk, whatever its stylesheets and images name.
  */
 function pageFetch(readAsset: ReadHTMLOptions['readAsset'], fromWeb: boolean): DesignResourceFetch {
@@ -158,7 +165,8 @@ export async function readHTMLDocument(
   if (await registerLayerFonts(engine, designDocumentToLayers(styled).graph)) styled = await style()
   const graph = await sceneGraphFromStyledHTML(styled, {
     pageName: options.pageName,
-    matchIcon: options.matchIcon
+    matchIcon: options.matchIcon,
+    pageWindow: options.framed ? (options.viewport ?? HTML_IMPORT_VIEWPORT) : undefined
   })
   return { styled, graph }
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { activeTab } from '@/app/tabs'
 import ExternalLink from '@/components/links/ExternalLink.vue'
@@ -10,7 +10,8 @@ import AppBanner from '@/components/ui/feedback/AppBanner.vue'
 /** Neutral capability reference: the floating-point drawing buffer support table. */
 const supportURL = 'https://caniuse.com/mdn-api_webglrenderingcontext_drawingbufferstorage'
 
-const { editor, common } = useI18n()
+const editor = useMessages('editor')
+const common = useMessages('common')
 
 // The surface reports what it actually presents, so this notice appears only when a
 // Display-P3 document really is being shown in sRGB.

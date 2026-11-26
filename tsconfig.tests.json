@@ -75,5 +75,5 @@
     "packages/*/tests/**/*.tsx",
     "tests/helpers/tauri/native-global.d.ts"
   ],
-  "exclude": ["tests/e2e/native/**", "packages/feedback/**"]
+  "exclude": ["tests/e2e/native/**", "packages/feedback/**", "src/service-worker/sw.ts"]
 }

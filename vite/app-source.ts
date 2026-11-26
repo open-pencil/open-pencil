@@ -11,6 +11,7 @@ import { openPencil } from '@open-pencil/core/node/vite'
 import rootManifest from '../package.json' with { type: 'json' }
 import { createOpenPencilAliases } from './aliases.ts'
 import { donationDefine } from './funding.ts'
+import { aiIconCollection } from './icons.ts'
 import { inlineScriptPlugin } from './inline-script.ts'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -73,7 +74,8 @@ export function appSourceConfig(): AppSourceConfig {
       inlineScriptPlugin(),
       // The app's canvas module imports the module that points Core at the engine's files.
       openPencil({ inject: false }),
-      Icons({ compiler: 'vue3' }),
+      // The app's own logos, `~icons/ai/*`, such as Cloud's sign-in providers.
+      Icons({ compiler: 'vue3', customCollections: { ai: aiIconCollection() } }),
       Components({ dirs: [], dts: false, resolvers: [IconsResolver({ prefix: 'icon' })] })
     ]
   }

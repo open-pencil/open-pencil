@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudMessages, useCommonMessages, useFileMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { formatStorageBytes } from '@/app/storage/format-bytes'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
@@ -54,9 +54,9 @@ const emit = defineEmits<{
   reviewConflicts: []
 }>()
 
-const t = useCloudMessages()
-const common = useCommonMessages()
-const files = useFileMessages()
+const t = useMessages('cloud/editor')
+const common = useMessages('common')
+const files = useMessages('files')
 const menu = (document: CloudDocumentRow) =>
   canDelete
     ? {

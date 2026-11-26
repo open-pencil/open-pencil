@@ -10,7 +10,7 @@ import { computed } from 'vue'
 
 import { resolveEditorProfile } from '@open-pencil/core'
 import { formatShortcut } from '@open-pencil/vue/editor/commands'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import type { SplitDirection } from '@/app/editor/panes/split-tree'
@@ -27,7 +27,8 @@ const { paneId } = defineProps<{
 }>()
 
 const store = useEditorStore()
-const { menu: menuText, editor } = useI18n()
+const menuText = useMessages('menu')
+const editor = useMessages('editor')
 const view = computed(() => store.getPaneView(paneId))
 const isActive = computed(() => store.activePaneId.value === paneId)
 // Split view keeps the panels, so the canvas-only preview pill never shows; the header says it.

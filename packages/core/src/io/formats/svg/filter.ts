@@ -9,8 +9,8 @@ import { round } from './paths'
  * A flood's colour, opaque: its alpha goes in `flood-opacity`, which a Display P3 colour would
  * otherwise carry a second time.
  */
-export function floodColor(color: Color, colorSpace: SVGExportContext['colorSpace']): string {
-  return formatColor({ ...color, a: 1 }, 1, colorSpace)
+export function floodColor(color: Color, colors: SVGExportContext['colors']): string {
+  return formatColor({ ...color, a: 1 }, 1, colors)
 }
 
 /** Every pixel the layer covers at full strength, which Figma casts its shadows from. */
@@ -35,9 +35,9 @@ export class FilterBuilder {
     this.primitives.push(svgElement(tag, attrs, children))
   }
 
-  /** The colour space the export writes colours in. */
-  get colorSpace(): SVGExportContext['colorSpace'] {
-    return this.ctx.colorSpace
+  /** The profiles the export's colours are stored and written in. */
+  get colors(): SVGExportContext['colors'] {
+    return this.ctx.colors
   }
 
   /** A new result name, unique in this filter. */
@@ -87,7 +87,7 @@ export class FilterBuilder {
   shadowColor(effect: Effect, alpha: string, result: string): void {
     const color = this.result('color')
     this.push('feFlood', {
-      'flood-color': floodColor(effect.color, this.ctx.colorSpace),
+      'flood-color': floodColor(effect.color, this.ctx.colors),
       'flood-opacity': round(effect.color.a),
       result: color
     })

@@ -15,7 +15,7 @@ import {
   type EffectChange,
   useEffectsControls
 } from '@open-pencil/vue/controls/effects'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import {
   BindableValueRoot,
   type BindableValueActions
@@ -54,7 +54,8 @@ import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
 const effectsCtx = useEffectsControls()
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 // An effect's preview toggles its settings; it is a swatch for shadows and an icon otherwise.
 const effectPreviewButton = fillSwatchTrigger({ size: 'md', framed: true }).root()
 useBlurRampEditing(effectsCtx.expandedIndex)

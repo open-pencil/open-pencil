@@ -1,7 +1,7 @@
 import { ref, shallowRef } from 'vue'
 
 import type { ReportErrorSource, ReportException } from '@open-pencil/feedback/contract'
-import { diagnosticsMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import type { ToastAction } from '@/app/shell/ui'
 import { FEEDBACK_ENABLED } from '@/app/telemetry/config'
@@ -42,7 +42,7 @@ export function openReportDialog(
 /** A toast action that opens the report dialog for `exceptions`. */
 export function reportAction(exceptions: ReportException[]): ToastAction {
   const action: ToastAction = {
-    label: diagnosticsMessages.get().reportError,
+    label: messageStores.diagnostics.get().reportError,
     run: (toastId) => openReportDialog(exceptions, { toastId, action })
   }
   return action

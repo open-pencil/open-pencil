@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import { usePanelMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
@@ -21,7 +21,7 @@ import { usePropertyBinding, type BindableField } from './usePropertyBinding'
 /** Section action that links an unbound field of a component layer to a property. */
 const { field } = defineProps<{ field: BindableField }>()
 const binding = usePropertyBinding(field)
-const panels = usePanelMessages()
+const panels = useMessages('panels')
 const menu = useMenuUI({ content: 'min-w-44' })
 const item = menuItem({ justify: 'start' })
 </script>

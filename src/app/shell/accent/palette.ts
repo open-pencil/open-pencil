@@ -82,7 +82,7 @@ const LIGHTNESS_SHIFTS = Array.from({ length: 121 }, (_, index) =>
 const INK = parseColor('#1F2328')
 
 /**
- * The surfaces primary text such as a link sits on in each theme, from `packages/vue/src/theme/tokens.css`:
+ * The surfaces primary text such as a link sits on in each theme, from `packages/theme/src/tokens.css`:
  * the panel, the secondary panel, a hovered row or table header, and a field.
  */
 const TEXT_SURFACES: Readonly<Record<AccentTheme, readonly Color[]>> = {

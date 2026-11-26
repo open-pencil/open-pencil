@@ -4,7 +4,7 @@ import IconPanelLeft from '~icons/lucide/panel-left'
 import IconPanelRight from '~icons/lucide/panel-right'
 import IconPanelTop from '~icons/lucide/panel-top'
 
-import { useSettingsMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { TOOLBAR_ALIGNS, toolbarOrientation } from '@open-pencil/vue/primitives/Toolbar'
 import type { ToolbarAlign, ToolbarSide } from '@open-pencil/vue/primitives/Toolbar'
 
@@ -26,7 +26,7 @@ const SIDE_ICONS: Record<ToolbarSide, Component> = {
 
 /** The edges the toolbar docks to, labelled for the Settings page and the toolbar's menu. */
 export function useToolbarSideOptions() {
-  const settings = useSettingsMessages()
+  const settings = useMessages('settings')
   return computed<ToolbarDockOption<ToolbarSide>[]>(() => {
     const labels: Record<ToolbarSide, string> = {
       bottom: settings.value.toolbarPositionBottom,
@@ -40,7 +40,7 @@ export function useToolbarSideOptions() {
 
 /** The places along an edge, named for its direction: Left/Right on a row, Top/Bottom on a column. */
 export function useToolbarAlignOptions(side: MaybeRefOrGetter<ToolbarSide>) {
-  const settings = useSettingsMessages()
+  const settings = useMessages('settings')
   return computed<ToolbarDockOption<ToolbarAlign>[]>(() => {
     const s = settings.value
     const labels: Record<ToolbarAlign, string> =

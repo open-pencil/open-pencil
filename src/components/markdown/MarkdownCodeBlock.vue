@@ -3,7 +3,7 @@ import type { ElementNode } from 'comark'
 import { textContent } from 'comark/utils'
 import { computed } from 'vue'
 
-import { useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 
@@ -20,7 +20,7 @@ const { __node: node, language } = defineProps<{
   language?: string
 }>()
 
-const common = useCommonMessages()
+const common = useMessages('common')
 const code = computed(() => (node ? textContent(node) : ''))
 </script>
 

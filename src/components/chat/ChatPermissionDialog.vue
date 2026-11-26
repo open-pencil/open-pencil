@@ -3,7 +3,7 @@ import { AlertDialogAction, AlertDialogCancel } from 'reka-ui'
 import * as v from 'valibot'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { acpPermissionOptionTestId, vTestId } from '@open-pencil/vue/testing'
 
 import {
@@ -19,7 +19,7 @@ import { useHeldContent } from '@/components/ui/overlay/held'
 const open = computed(() => currentPermission.value !== null)
 // Answering clears the request; the dialog keeps showing it while it animates closed.
 const permission = useHeldContent(currentPermission)
-const { ai } = useI18n()
+const ai = useMessages('ai')
 interface ToolCallInfo {
   title?: string
   rawInput?: unknown

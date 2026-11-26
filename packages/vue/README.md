@@ -177,7 +177,8 @@ These are the main APIs most SDK consumers should start with.
 #### Variables, navigation, and localization
 
 - `usePageList()`
-- `useI18n()`
+- `useMessages()`
+- `useLocale()`
 
 #### Headless primitives
 

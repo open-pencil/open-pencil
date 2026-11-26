@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { OnboardingConnectionState } from '@/app/ai/models/settings/onboarding/connections'
 import type {
@@ -29,7 +29,8 @@ const {
   disabled?: boolean
 }>()
 const emit = defineEmits<{ signIn: []; reopen: []; cancel: []; signOut: [] }>()
-const { ai, common } = useI18n()
+const ai = useMessages('ai')
+const common = useMessages('common')
 const styles = tv(theme)()
 
 const text = computed(() =>

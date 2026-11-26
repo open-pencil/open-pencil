@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 import { useDesignProfiles } from './input/useDesignProfiles'
 import { chatProfileTheme } from './ui'
 
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const ui = chatProfileTheme()
 const selectUI = { content: ui.content(), item: ui.item() }
 

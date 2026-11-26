@@ -2,7 +2,7 @@ import { afterEach, describe, expect, jest, test } from 'bun:test'
 
 import { nextTick, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { toast } from '@/app/shell/ui'
 import {
@@ -12,7 +12,7 @@ import {
   watchNewVersions
 } from '@/app/shell/updater/web'
 
-const { updates: messages } = useI18n()
+const messages = useMessages('updates')
 
 afterEach(() => {
   for (const entry of toast.toasts.value) toast.remove(entry.id)

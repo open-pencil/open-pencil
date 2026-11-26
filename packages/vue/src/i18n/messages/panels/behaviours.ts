@@ -1,8 +1,8 @@
 import { params } from '@nanostores/i18n'
 
 /**
- * Messages of the `panels` namespace for the behaviour section, which turns a component into a
- * control previewed as a real one.
+ * Messages for the behaviour section, which turns a component into a control previewed as a real
+ * one.
  */
 export const behaviourPanelMessageDefaults = {
   behaviour: 'Behaviour',
@@ -82,6 +82,11 @@ export const behaviourPanelMessageDefaults = {
   behaviourButton: 'Button',
   behaviourButtonDescription: 'Shows hover, pressed, focus, and disabled states',
   behaviourStates: 'States',
+  transition: 'Transition',
+  addTransition: 'Animate state changes',
+  removeTransition: 'Change state at once',
+  transitionDuration: 'Duration',
+  transitionEasing: 'Easing',
   behaviourStateRest: 'Default',
   behaviourStateHover: 'Hover',
   behaviourStatePressed: 'Pressed',

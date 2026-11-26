@@ -1,5 +1,6 @@
-import type { Canvas } from '@open-pencil/canvaskit'
+import type { Canvas, ImageFilter, Shader } from '@open-pencil/canvaskit'
 import type { Effect, SceneNode } from '@open-pencil/scene-graph'
+import { linearSRGBMatrix } from '@open-pencil/scene-graph/color'
 import { UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 
@@ -18,6 +19,49 @@ const TEXTURE_OCTAVES = 3
 /** The texture a layer draws with: the first visible one, as Figma keeps one per layer. */
 export function visibleTexture(node: SceneNode): Effect | undefined {
   return node.effects.find((effect) => effect.visible && effect.type === 'TEXTURE')
+}
+
+/**
+ * The noise as the displacement reads it. Skia takes the noise for sRGB colors and converts it
+ * into the document's space, which would move its channels and the content they displace; in
+ * another space this converts it back: decoded, through that space's primaries into sRGB, and
+ * encoded again, as the two share a transfer function.
+ */
+function displacementMap(r: SkiaRenderer, noise: Shader): ImageFilter {
+  const map = r.ck.ImageFilter.MakeShader(noise)
+  if (r.documentColorSpace === 'srgb') return map
+  const [rr, rg, rb, gr, gg, gb, br, bg, bb] = linearSRGBMatrix(r.documentColorSpace)
+  const { ColorFilter } = r.ck
+  const decode = ColorFilter.MakeSRGBToLinearGamma()
+  // Rows of red, green, blue, and alpha out, each over red, green, blue, alpha in and an offset.
+  const primaries = ColorFilter.MakeMatrix([
+    rr,
+    rg,
+    rb,
+    0,
+    0,
+    gr,
+    gg,
+    gb,
+    0,
+    0,
+    br,
+    bg,
+    bb,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0
+  ])
+  const encode = ColorFilter.MakeLinearToSRGBGamma()
+  const linear = ColorFilter.MakeCompose(primaries, decode)
+  const back = ColorFilter.MakeCompose(encode, linear)
+  const filter = r.ck.ImageFilter.MakeColorFilter(back, map)
+  for (const made of [back, linear, encode, primaries, decode, map]) made.delete()
+  return filter
 }
 
 /**
@@ -45,7 +89,7 @@ export function beginTexture(
     0,
     0
   )
-  const map = r.ck.ImageFilter.MakeShader(noise)
+  const map = displacementMap(r, noise)
   const displaced = r.ck.ImageFilter.MakeDisplacementMap(
     r.ck.ColorChannel.Red,
     r.ck.ColorChannel.Green,

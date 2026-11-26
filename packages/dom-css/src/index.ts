@@ -2,6 +2,7 @@ import type * as DesignTypes from './types'
 
 export { exportStorybook, STORY_MODES, STORYBOOK_FRAMEWORKS } from './export/storybook/export'
 export { createBrowserCSSRuntime, createCSSRuntime } from './runtime'
+export { attachImages, backgroundImageURLs } from './runtime/resources'
 export { parseHTMLDocument } from './import/markup'
 export {
   htmlToDesignDocument,

@@ -1,0 +1,34 @@
+{
+  "backToPeople": "Toutes les personnes",
+  "personAccount": "Compte",
+  "emailVerified": "Vérifiée",
+  "emailNotVerified": "Non vérifiée",
+  "joinedRow": "Inscription",
+  "lastActiveRow": "Dernière activité",
+  "signInMethods": "Moyens de connexion",
+  "twoStepRow": "Connexion en deux étapes",
+  "twoStepNone": "Non configurée",
+  "passkeyCount": {
+    "one": "{count} clé d’accès",
+    "many": "{count} clés d’accès"
+  },
+  "personWorkspaces": "Espaces de travail",
+  "personWorkspacesEmpty": "Membre d’aucun espace de travail.",
+  "workspaceMembers": {
+    "one": "{count} membre",
+    "many": "{count} membres"
+  },
+  "workspaceRoleAdmin": "Administrateur",
+  "workspaceRoleEditor": "Éditeur",
+  "workspaceRoleViewer": "Lecteur",
+  "personSessions": "Sessions",
+  "noSessions": "Connecté nulle part.",
+  "personNotFound": "Ce compte n’existe pas",
+  "personNotFoundDescription": "Il a peut-être été supprimé. Revenez à la liste des personnes.",
+  "removeSignInMethod": "Retirer",
+  "removeSignInMethodHeading": "Retirer {provider} des moyens de connexion de {name} ?",
+  "removeSignInMethodDescription": "Cette personne ne pourra plus se connecter avec ce moyen tant qu’elle ne l’aura pas ajouté à nouveau, et elle recevra un e-mail à ce sujet. Les appareils déjà connectés le restent jusqu’à ce que vous la déconnectiez partout.",
+  "deletePersonAccount": "Supprimer le compte",
+  "deletePersonAccountHeading": "Supprimer le compte de {name} ?",
+  "deletePersonAccountDescription": "Sa demande d’accès n’a jamais été approuvée, donc le compte, ses méthodes de connexion et sa demande sont supprimés. Le journal d’activité conserve son nom et son e-mail. Cette personne peut se réinscrire."
+}

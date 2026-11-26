@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import type { CloudLegalDiscovery } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { portalForm, portalPublic } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -34,7 +34,7 @@ const emit = defineEmits<{ accept: []; decline: []; leave: [] }>()
 const ui = portalPublic()
 // The aside's action, styled as signing in's own "Sign in" link.
 const form = portalForm({ size: 'lg' })
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const description = computed(() => termsDescription(messages.value, legal, host))
 const links = computed(() => legalLinks(messages.value, legal))
 </script>

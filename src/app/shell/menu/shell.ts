@@ -1,4 +1,4 @@
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { requestAppExit } from '@/app/document/close/exit'
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'
@@ -53,7 +53,7 @@ export function useShellMenu() {
   followNativeCanvasViewMenu(useActiveEditorStoreRef())
 
   const { setTheme } = useAppTheme()
-  const { updates } = useI18n()
+  const updates = useMessages('updates')
   const actions: Partial<Record<string, () => void>> = {
     settings: openSettingsDialog,
     ...createHelpMenuActions(updates),

@@ -3,7 +3,7 @@ import { isReasoningUIPart, isTextUIPart } from 'ai'
 import type { UIMessage } from 'ai'
 import { computed, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { vTestId } from '@open-pencil/vue/testing'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
@@ -57,7 +57,7 @@ const {
 }>()
 const emit = defineEmits<{ regenerate: []; revert: []; restore: []; edit: [text: string] }>()
 const editing = ref(false)
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const markdownMode = computed(() => (streaming ? 'streaming' : 'static'))
 const storedAttachments = attachmentsForMessage(message.id)
 const attachments = computed(() => presentation?.attachments ?? storedAttachments.value)

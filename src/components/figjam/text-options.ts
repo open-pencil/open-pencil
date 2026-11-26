@@ -5,11 +5,11 @@ import {
   type FigJamTextSize,
   type FigJamTypeface
 } from '@open-pencil/scene-graph/figjam'
-import { useFigJamMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 /** FigJam's text sizes and typefaces as select options, shared by sticky notes and shapes. */
 export function useFigJamTextOptions() {
-  const figjam = useFigJamMessages()
+  const figjam = useMessages('figjam')
   const sizeOptions = computed<Array<{ value: FigJamTextSize; label: string }>>(() => [
     { value: 'small', label: figjam.value.textSmall },
     { value: 'medium', label: figjam.value.textMedium },

@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 
 import { cloudCommunityPagePath, type CommunityDocument } from '@open-pencil/cloud/contract'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useCloudPortalMessages, useFileMessages, usePanelMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useCommunityDocuments } from '@/app/cloud-portal/community'
 import { usePortal } from '@/app/cloud-portal/context'
@@ -25,9 +25,10 @@ import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
  */
 const portal = usePortal()
 const router = useRouter()
-const messages = useCloudPortalMessages()
-const files = useFileMessages()
-const panels = usePanelMessages()
+const messages = useMessages('cloud/portal')
+const communityMessages = useMessages('cloud/portal/community')
+const files = useMessages('files')
+const libraryMessages = useMessages('panels/libraries')
 const dates = useDateFormat()
 const { isTouch } = useViewportKind()
 const { state, reload } = useCommunityDocuments(portal.discovery)
@@ -38,7 +39,8 @@ const view = ref<'grid' | 'list'>('grid')
 const kindOptions = computed(() => [
   { value: 'all', label: files.value.allFiles },
   { value: 'design', label: files.value.createDesign },
-  { value: 'board', label: files.value.createBoard }
+  { value: 'board', label: files.value.createBoard },
+  { value: 'slides', label: files.value.createSlides }
 ])
 
 const documents = computed(() => (state.value.status === 'ready' ? state.value.documents : []))
@@ -61,7 +63,13 @@ function open(document: CommunityDocument) {
   void router.push(cloudCommunityPagePath(document.id))
 }
 
-useHead({ title: () => messages.value.communityTitle })
+const emptyKind = computed(() => {
+  if (kind.value === 'board') return communityMessages.value.communityNoBoards
+  if (kind.value === 'slides') return communityMessages.value.communityNoSlides
+  return communityMessages.value.communityNoDesigns
+})
+
+useHead({ title: () => communityMessages.value.communityTitle })
 </script>
 
 <template>
@@ -83,19 +91,19 @@ useHead({ title: () => messages.value.communityTitle })
     <section>
       <div class="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2">
         <div class="col-span-2 min-w-0 sm:col-span-1">
-          <h1 class="text-base font-semibold">{{ messages.communityTitle }}</h1>
-          <p class="mt-0.5 text-xs text-muted">{{ messages.communityDescription }}</p>
+          <h1 class="text-base font-semibold">{{ communityMessages.communityTitle }}</h1>
+          <p class="mt-0.5 text-xs text-muted">{{ communityMessages.communityDescription }}</p>
         </div>
         <div class="col-span-2 flex items-center justify-end gap-1 sm:col-span-1">
           <AppSelect v-model="kind" :label="files.fileKind" :options="kindOptions" class="w-28" />
           <SegmentedControl
             v-model="view"
             required
-            :label="messages.communityTitle"
+            :label="communityMessages.communityTitle"
             :size="isTouch ? 'touch' : 'md'"
             :options="[
-              { value: 'grid', label: panels.gridView },
-              { value: 'list', label: panels.listView }
+              { value: 'grid', label: libraryMessages.gridView },
+              { value: 'list', label: libraryMessages.listView }
             ]"
           >
             <template #option="{ option }">
@@ -155,10 +163,8 @@ useHead({ title: () => messages.value.communityTitle })
           query.trim()
             ? files.noMatchingFiles({ query: query.trim() })
             : documents.length === 0
-              ? messages.communityEmpty
-              : kind === 'board'
-                ? messages.communityNoBoards
-                : messages.communityNoDesigns
+              ? communityMessages.communityEmpty
+              : emptyKind
         }}
       </p>
     </section>

@@ -1,8 +1,4 @@
-import type { Hono } from 'hono'
-import type { BlankEnv, BlankInput } from 'hono/types'
 import * as v from 'valibot'
-
-import type { JSONRoute } from './routes'
 
 /**
  * The contract between Cloud, its editors, and the billing service a deployment advertises: what
@@ -28,6 +24,13 @@ export const CLOUD_ACCOUNT_PLAN_PATH = '/account/plan' as const
  * session there ended, so Cloud signs them in to billing again.
  */
 export const CLOUD_ACCOUNT_BILLING_PATH = `${CLOUD_ACCOUNT_PLAN_PATH}?open=billing` as const
+
+/**
+ * Where a Cloud server signs a billing token for whoever is signed in. Billing's own pages, at the
+ * discovered `endpoint`'s origin, may ask for one with the visitor's Cloud session, so a visitor
+ * already signed in to Cloud is signed in to billing as its pages open; no other page may.
+ */
+export const CLOUD_BILLING_TOKEN_PATH = '/api/billing/token' as const
 
 /**
  * The billing service's own pages, below the discovered `endpoint`: where Cloud's plan page sends
@@ -215,21 +218,3 @@ export const billingErrorSchema = v.object({
   error: v.object({ code: billingErrorCodeSchema, message: v.optional(v.string()) })
 })
 export type BillingError = v.InferOutput<typeof billingErrorSchema>
-
-/** The billing service's routes, for a typed Hono client (`hc<CloudBillingAPI>`). */
-export type CloudBillingSchema = JSONRoute<
-  'get',
-  typeof CLOUD_BILLING_API_PATHS.catalog,
-  BlankInput,
-  BillingCatalog
-> &
-  JSONRoute<'get', typeof CLOUD_BILLING_API_PATHS.account, BlankInput, BillingAccount> &
-  JSONRoute<
-    'post',
-    typeof CLOUD_BILLING_API_PATHS.checkout,
-    { json: CheckoutRequest },
-    BillingRedirect
-  > &
-  JSONRoute<'post', typeof CLOUD_BILLING_API_PATHS.portal, BlankInput, BillingRedirect>
-
-export type CloudBillingAPI = Hono<BlankEnv, CloudBillingSchema>

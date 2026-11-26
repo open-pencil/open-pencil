@@ -14,6 +14,8 @@ export type EditorPreparationKind = (typeof EDITOR_PREPARATION_KINDS)[number]
 
 export const EDITOR_PREPARATION_PHASES = [
   'reading',
+  'rendering-page',
+  'loading-files',
   'decoding',
   'styling',
   'naming-icons',
@@ -31,7 +33,7 @@ export type EditorPreparationPhase = (typeof EDITOR_PREPARATION_PHASES)[number]
 export interface EditorPreparationProgress {
   completed: number
   total: number
-  unit: 'bytes' | 'nodes' | 'fonts' | 'pages' | 'shaders'
+  unit: 'bytes' | 'nodes' | 'fonts' | 'pages' | 'shaders' | 'files'
 }
 
 export interface EditorPreparation {

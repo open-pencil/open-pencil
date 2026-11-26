@@ -5,7 +5,7 @@ import type {
   LocalFontAccessState,
   WebFontProviderId
 } from '@open-pencil/core/text'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   clearDownloadedFontCache,
@@ -45,7 +45,8 @@ const defaultActions: FontSettingsActions = {
 }
 
 export function useFontSettings(actions: FontSettingsActions = defaultActions) {
-  const { common, fonts } = useI18n()
+  const common = useMessages('common')
+  const fonts = useMessages('fonts')
   const dates = useDateFormat()
   const cacheCount = ref(0)
   const cacheByteLength = ref(0)

@@ -2,7 +2,7 @@
 @import 'tw-animate-css';
 @import './theme/markdown/markdown.css';
 
-@import '../packages/vue/src/theme/tokens.css';
+@import '../packages/theme/src/tokens.css';
 
 /*
  * Every scroll container in the app takes the thin scrollbar; `scrollbar-none` still hides one,
@@ -75,6 +75,12 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+/* A sideways two-finger swipe on a Mac trackpad would go back in the browser's history. */
+html,
+body {
+  overscroll-behavior-x: none;
 }
 
 body {

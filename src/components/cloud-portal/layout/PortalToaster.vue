@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ToastProvider, ToastViewport } from 'reka-ui'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { portalToast } from '@/app/cloud-portal/toast'
 import AppToast from '@/components/ui/feedback/AppToast.vue'
 
-const { common } = useI18n()
+const common = useMessages('common')
 </script>
 
 <template>

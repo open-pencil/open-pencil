@@ -1,26 +1,16 @@
-import {
-  commentPeopleSchema,
-  commentThreadResponseSchema,
-  notificationSettingsSchema,
-  commentThreadsSchema,
-  type CloudCommentThread,
-  type CommentPerson,
-  type NotificationSettings,
-  type CommentThreads,
-  type CreateCommentInput,
-  type CreateCommentThreadInput,
-  type ImportCommentThreadsInput,
-  type UpdateCommentInput,
-  type UpdateCommentThreadInput
+import type {
+  CloudCommentThread,
+  CommentPerson,
+  CommentThreads,
+  CreateCommentInput,
+  CreateCommentThreadInput,
+  ImportCommentThreadsInput,
+  NotificationSettings,
+  UpdateCommentInput,
+  UpdateCommentThreadInput
 } from '#cloud/contract'
-import type { CloudAPI, PublicCloudAPI } from '#cloud/server/api'
-import type { hc } from 'hono/client'
-import * as v from 'valibot'
 
-import { parseResponse, type CloudClientDiagnostic, type CloudResponse } from './response'
-
-/** A thread after deleting one of its comments; null once the thread went with its first. */
-const threadOrGoneSchema = v.nullable(commentThreadResponseSchema)
+import type { CloudContractClient } from './contract'
 
 /**
  * What every way of reaching a document's comments does, through membership or a link: the app
@@ -43,161 +33,101 @@ export type CloudCommentRequests = {
   markRead(threadId: string): Promise<void>
 }
 
-async function thread(request: Promise<CloudResponse>, onDiagnostic?: CloudClientDiagnostic) {
-  return (await parseResponse(request, commentThreadResponseSchema, onDiagnostic)).thread
-}
-
-async function threadOrGone(request: Promise<CloudResponse>, onDiagnostic?: CloudClientDiagnostic) {
-  return (await parseResponse(request, threadOrGoneSchema, onDiagnostic))?.thread ?? null
+/** The thread a delete left, or null once the thread went with its first comment. */
+function remaining(
+  answer: { status: 200; body: { thread: CloudCommentThread } } | { status: 204 }
+) {
+  return answer.status === 200 ? answer.body.thread : null
 }
 
 /** Comment requests for documents people reach through membership or a direct grant. */
-export function createCommentRequests(
-  client: ReturnType<typeof hc<CloudAPI>>,
-  onDiagnostic?: CloudClientDiagnostic
-) {
+export function createCommentRequests(contract: CloudContractClient['comments']) {
   return {
     /** The comments of a document the signed-in account can open. */
     documentComments(documentId: string): CloudCommentRequests {
-      const threads = client.documents[':documentId'].threads
-      const one = threads[':threadId']
-      const comment = one.comments[':commentId']
+      const thread = (threadId: string) => ({ documentId, threadId })
       return {
-        list: () =>
-          parseResponse(
-            threads.$get({ param: { documentId } }),
-            commentThreadsSchema,
-            onDiagnostic
-          ),
-        get: (threadId) => thread(one.$get({ param: { documentId, threadId } }), onDiagnostic),
-        createThread: (json) =>
-          thread(threads.$post({ param: { documentId }, json }), onDiagnostic),
-        updateThread: (threadId, json) =>
-          thread(one.$patch({ param: { documentId, threadId }, json }), onDiagnostic),
+        list: () => contract.list({ params: { documentId } }),
+        get: async (threadId) => (await contract.get({ params: thread(threadId) })).thread,
+        createThread: async (body) =>
+          (await contract.createThread({ params: { documentId }, body })).thread,
+        updateThread: async (threadId, body) =>
+          (await contract.updateThread({ params: thread(threadId), body })).thread,
         deleteThread: async (threadId) => {
-          await parseResponse(
-            one.$delete({ param: { documentId, threadId } }),
-            v.null(),
-            onDiagnostic
-          )
+          await contract.deleteThread({ params: thread(threadId) })
         },
-        reply: (threadId, json) =>
-          thread(one.comments.$post({ param: { documentId, threadId }, json }), onDiagnostic),
-        updateComment: (threadId, commentId, json) =>
-          thread(
-            comment.$patch({ param: { documentId, threadId, commentId }, json }),
-            onDiagnostic
-          ),
-        deleteComment: (threadId, commentId) =>
-          threadOrGone(
-            comment.$delete({ param: { documentId, threadId, commentId } }),
-            onDiagnostic
-          ),
+        reply: async (threadId, body) =>
+          (await contract.reply({ params: thread(threadId), body })).thread,
+        updateComment: async (threadId, commentId, body) =>
+          (await contract.updateComment({ params: { ...thread(threadId), commentId }, body }))
+            .thread,
+        deleteComment: async (threadId, commentId) =>
+          remaining(await contract.deleteComment({ params: { ...thread(threadId), commentId } })),
         markRead: async (threadId) => {
-          await parseResponse(
-            one.read.$post({ param: { documentId, threadId } }),
-            v.null(),
-            onDiagnostic
-          )
+          await contract.markRead({ params: thread(threadId) })
         }
       }
     },
 
     /** Whom the signed-in account may name in a document's comments. */
     async commentPeople(documentId: string): Promise<CommentPerson[]> {
-      const response = await parseResponse(
-        client.documents[':documentId'].threads.people.$get({ param: { documentId } }),
-        commentPeopleSchema,
-        onDiagnostic
-      )
-      return response.people
+      return (await contract.people({ params: { documentId } })).people
     },
 
     /** Which comments the signed-in account hears about by email. */
     notificationSettings(): Promise<NotificationSettings> {
-      return parseResponse(
-        client.account.notifications.$get(),
-        notificationSettingsSchema,
-        onDiagnostic
-      )
+      return contract.notificationSettings()
     },
-    setNotificationSettings(json: NotificationSettings): Promise<NotificationSettings> {
-      return parseResponse(
-        client.account.notifications.$put({ json }),
-        notificationSettingsSchema,
-        onDiagnostic
-      )
+    setNotificationSettings(body: NotificationSettings): Promise<NotificationSettings> {
+      return contract.setNotificationSettings({ body })
     },
 
     /** Brings a file's threads into a document that just moved to Cloud. */
-    async importCommentThreads(
+    importCommentThreads(
       documentId: string,
-      json: ImportCommentThreadsInput
+      body: ImportCommentThreadsInput
     ): Promise<CommentThreads> {
-      return parseResponse(
-        client.documents[':documentId'].threads.import.$post({ param: { documentId }, json }),
-        commentThreadsSchema,
-        onDiagnostic
-      )
+      return contract.importThreads({ params: { documentId }, body })
     }
   }
 }
 
 /** Comment requests through a share link, whose secret every request carries in its body. */
-export function createSharedCommentRequests(
-  publicClient: ReturnType<typeof hc<PublicCloudAPI>>,
-  onDiagnostic?: CloudClientDiagnostic
-) {
+export function createSharedCommentRequests(contract: CloudContractClient['sharedComments']) {
   return {
     sharedComments(shareId: string, secret: string): CloudCommentRequests {
       const share = { secret }
-      const threads = publicClient.shares[':shareId'].threads
-      const one = threads[':threadId']
-      const comment = one.comments[':commentId']
+      const thread = (threadId: string) => ({ shareId, threadId })
       return {
-        list: () =>
-          parseResponse(
-            threads.list.$post({ param: { shareId }, json: { share } }),
-            commentThreadsSchema,
-            onDiagnostic
-          ),
-        get: (threadId) =>
-          thread(one.get.$post({ param: { shareId, threadId }, json: { share } }), onDiagnostic),
-        createThread: (input) =>
-          thread(threads.$post({ param: { shareId }, json: { share, ...input } }), onDiagnostic),
-        updateThread: (threadId, input) =>
-          thread(
-            one.$patch({ param: { shareId, threadId }, json: { share, ...input } }),
-            onDiagnostic
-          ),
+        list: () => contract.list({ params: { shareId }, body: { share } }),
+        get: async (threadId) =>
+          (await contract.get({ params: thread(threadId), body: { share } })).thread,
+        createThread: async (input) =>
+          (await contract.createThread({ params: { shareId }, body: { share, ...input } })).thread,
+        updateThread: async (threadId, input) =>
+          (await contract.updateThread({ params: thread(threadId), body: { share, ...input } }))
+            .thread,
         deleteThread: async (threadId) => {
-          await parseResponse(
-            one.$delete({ param: { shareId, threadId }, json: { share } }),
-            v.null(),
-            onDiagnostic
-          )
+          await contract.deleteThread({ params: thread(threadId), body: { share } })
         },
-        reply: (threadId, input) =>
-          thread(
-            one.comments.$post({ param: { shareId, threadId }, json: { share, ...input } }),
-            onDiagnostic
-          ),
-        updateComment: (threadId, commentId, input) =>
-          thread(
-            comment.$patch({ param: { shareId, threadId, commentId }, json: { share, ...input } }),
-            onDiagnostic
-          ),
-        deleteComment: (threadId, commentId) =>
-          threadOrGone(
-            comment.$delete({ param: { shareId, threadId, commentId }, json: { share } }),
-            onDiagnostic
+        reply: async (threadId, input) =>
+          (await contract.reply({ params: thread(threadId), body: { share, ...input } })).thread,
+        updateComment: async (threadId, commentId, input) =>
+          (
+            await contract.updateComment({
+              params: { ...thread(threadId), commentId },
+              body: { share, ...input }
+            })
+          ).thread,
+        deleteComment: async (threadId, commentId) =>
+          remaining(
+            await contract.deleteComment({
+              params: { ...thread(threadId), commentId },
+              body: { share }
+            })
           ),
         markRead: async (threadId) => {
-          await parseResponse(
-            one.read.$post({ param: { shareId, threadId }, json: { share } }),
-            v.null(),
-            onDiagnostic
-          )
+          await contract.markRead({ params: thread(threadId), body: { share } })
         }
       }
     }

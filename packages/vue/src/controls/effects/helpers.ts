@@ -18,7 +18,7 @@ import {
 import { copyEffects } from '@open-pencil/scene-graph/copy'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { panelMessages } from '#vue/i18n/messages'
+import { messageStores } from '#vue/i18n'
 
 type EffectType = Effect['type']
 
@@ -35,7 +35,7 @@ export const EFFECT_TYPES = [
 
 /** Read when asked, so the labels follow the language once its translations load. */
 function effectLabels(): Record<(typeof EFFECT_TYPES)[number], string> {
-  const panels = panelMessages.get()
+  const panels = messageStores.panels.get()
   return {
     DROP_SHADOW: panels.dropShadow,
     INNER_SHADOW: panels.innerShadow,

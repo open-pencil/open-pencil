@@ -2,7 +2,7 @@
 import { isEqual } from 'es-toolkit'
 import { computed } from 'vue'
 
-import { type Locale, useI18n } from '@open-pencil/vue/i18n'
+import { type Locale, useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { recoveryEnabled, setRecoveryEnabled } from '@/app/document/recovery/preferences'
 import { isRightToLeftLocale, mirrorInterfacePreference } from '@/app/i18n/direction'
@@ -33,7 +33,10 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import { settingsSelectUI } from '@/theme/settings/controls'
 
-const { availableLocales, locale, localeLabels, menu, recovery, setLocale, settings } = useI18n()
+const menu = useMessages('menu')
+const recovery = useMessages('recovery')
+const settings = useMessages('settings')
+const { availableLocales, locale, localeLabels, setLocale } = useLocale()
 
 const showRecentFiles = recentFilesAvailable()
 const recentFilesPresets = [10, 25, 50, 100]

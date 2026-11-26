@@ -5,11 +5,12 @@ import type * as Y from 'yjs'
 import type {
   CommentReply,
   CommentThread,
-  DocumentColorSpace,
+  ColorProfile,
   DocumentKind,
   EnabledLibraryBinding,
   PluginDataEntry
 } from '@open-pencil/scene-graph'
+import { colorProfileSchema } from '@open-pencil/scene-graph/color'
 import { commentThreadsSchema } from '@open-pencil/scene-graph/comments'
 import {
   isPluginDataEntry,
@@ -42,8 +43,7 @@ const bindingSchema = v.object({
   revisionId: v.string(),
   enabled: v.boolean()
 })
-const colorSpaceSchema = v.picklist(['srgb', 'display-p3'] satisfies DocumentColorSpace[])
-const kindSchema = v.picklist(['design', 'board'] satisfies DocumentKind[])
+const kindSchema = v.picklist(['design', 'board', 'slides'] satisfies DocumentKind[])
 
 /**
  * The room's maps for what the document holds outside its layers: the document node's plugin
@@ -68,7 +68,7 @@ export function roomDocumentData(ydoc: Y.Doc): YDocumentData {
 
 type DocumentData = DocumentNodeData & {
   libraries: Map<string, EnabledLibraryBinding>
-  colorSpace: DocumentColorSpace | undefined
+  colorSpace: ColorProfile | undefined
   kind: DocumentKind | undefined
 }
 
@@ -233,7 +233,7 @@ export function bindDocumentSync({
       takeRecords(data.libraries, next.libraries, readBinding, ids?.libraries)
     }
     if (!ids || ids.settings) {
-      const colorSpace = v.safeParse(colorSpaceSchema, data.settings.get(COLOR_SPACE_KEY))
+      const colorSpace = v.safeParse(colorProfileSchema, data.settings.get(COLOR_SPACE_KEY))
       if (colorSpace.success) next.colorSpace = colorSpace.output
       const kind = v.safeParse(kindSchema, data.settings.get(KIND_KEY))
       if (kind.success) next.kind = kind.output

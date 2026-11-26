@@ -20,17 +20,6 @@ const LOCALES_DIR = 'packages/vue/src/i18n/locales'
 /** Cloud's email, translated apart from the app because the server can't load the app's files. */
 const EMAIL_LOCALES_DIR = 'packages/cloud/src/email/locales'
 const EMAIL_NAMESPACE = 'email'
-/**
- * Where a namespace's translations live under each locale, when not at `<namespace>.json`.
- * Namespaces of one domain share a folder (`cloud/editor`, `cloud/portal`), not a file prefix.
- */
-const LOCALE_FILE_NAMES: Record<string, string> = {
-  cloud: 'cloud/editor',
-  cloudPortal: 'cloud/portal',
-  designCheck: 'design-check',
-  variables: 'variables/panel',
-  variableTypes: 'variables/types'
-}
 const REQUIRED_INDEX_FILE = 'index.ts'
 const TRANSLATION_BASELINE_PATH = 'tools/checks/i18n/translation-baseline.txt'
 const MIXED_SCRIPT_BASELINE_PATH = 'tools/checks/i18n/mixed-script-baseline.txt'
@@ -46,10 +35,6 @@ function sourceMessage(value: unknown): string | null {
 
 function normalized(value: string): string {
   return value.normalize('NFKC').replaceAll(/\s+/g, ' ').trim()
-}
-
-function localeFileName(namespace: string) {
-  return LOCALE_FILE_NAMES[namespace] ?? namespace
 }
 
 const jsonObjectTextSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
@@ -83,7 +68,7 @@ const expectedLocaleDirs = new Map<TranslatedLocale, string>(
   TRANSLATED_LOCALES.map((locale) => [locale, LOCALE_DIR_NAMES[locale]])
 )
 const baselineLocaleId = (locale: TranslatedLocale): string => LOCALE_DIR_NAMES[locale]
-const expectedLocaleFiles = new Set(namespaces.map(localeFileName))
+const expectedLocaleFiles = new Set(namespaces)
 const translationBaseline = new Set(
   compact(
     readFileSync(TRANSLATION_BASELINE_PATH, 'utf8')
@@ -215,7 +200,7 @@ for (const [locale, dir] of expectedLocaleDirs) {
   for (const file of fileDiff.extra) extra.push(`${file}.*`)
 
   for (const namespace of namespaces) {
-    const path = join(localeDir, `${localeFileName(namespace)}.json`)
+    const path = join(localeDir, `${namespace}.json`)
     if (!existsSync(path)) continue
 
     const expected = expectedKeys.get(namespace)

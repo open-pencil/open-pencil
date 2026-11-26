@@ -98,7 +98,7 @@ La connessione peer-to-peer WebRTC non richiede un server centrale. Condividi un
 
 **Desktop:** Tauri v2, circa 7 MB, per macOS, Windows e Linux, con menu nativi, uso senza rete e salvataggio automatico.
 
-**Web:** [app.openpencil.dev](https://app.openpencil.dev), installabile come PWA e adattato agli schermi touch.
+**Web:** [cloud.openpencil.dev](https://cloud.openpencil.dev), installabile come PWA e adattato agli schermi touch.
 
 ## Caricamento alternativo da Google Fonts
 

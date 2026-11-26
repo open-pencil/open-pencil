@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted } from 'vue'
 
-import { useSettingsMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { mcpToolAccessOpen } from '@/app/automation/tool-access/settings/use'
 import { webmcpMode } from '@/app/automation/webmcp/preferences'
@@ -16,7 +16,7 @@ import MCPSettingsPanel from './MCPSettingsPanel.vue'
 import WebMCPSettingsPanel from './WebMCPSettingsPanel.vue'
 
 /** The MCP page, with the local server's tool list opening over it as Tool access does for the AI. */
-const settings = useSettingsMessages()
+const settings = useMessages('settings')
 
 useSettingsFormGuard(
   {

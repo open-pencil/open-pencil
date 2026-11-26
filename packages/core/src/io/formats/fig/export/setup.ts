@@ -1,8 +1,6 @@
 import { deflateSync, inflateSync } from 'fflate'
-import { toUint8Array } from 'js-base64'
 
-import type { CanvasKit } from '@open-pencil/canvaskit'
-import { figArchiveMetaJSON } from '@open-pencil/fig'
+import { figArchiveMetaJSON, type FigUnreadVariable } from '@open-pencil/fig'
 import {
   applyVariableModes,
   buildComponentPropIndex,
@@ -16,36 +14,28 @@ import {
   savedPropertyCopyIds
 } from '@open-pencil/fig/node-change'
 import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { PluginDataEntry, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
+  mapTransitionVariables,
   readBehaviour,
   renameBehaviourProperties,
   withBehaviour
 } from '@open-pencil/scene-graph/behaviours'
 import { orderKeyBetween, siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
-import type { GUID, Rect, Size } from '@open-pencil/scene-graph/primitives'
+import type { GUID } from '@open-pencil/scene-graph/primitives'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
 import { appendAll } from '@open-pencil/std/arrays'
 
-import type { SkiaRenderer } from '#core/canvas'
-import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
+import { CANVAS_BG_COLOR } from '#core/constants'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { applyDocumentPluginData } from '#core/io/formats/fig/document-metadata'
 import { figThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
-import { renderThumbnail, thumbnailFrame } from '#core/io/formats/raster'
 import { settleFontDigestMap } from '#core/kiwi/fig/node-change/serialize'
 
+import { renderFigThumbnail, type FigThumbnailOptions } from './thumbnail'
 import { assignVariableGuid, assignVariableGuids } from './variables'
-
-/**
- * What a `.fig` write shares however many records it writes: the GUID maps, caches and
- * canvases, the schema, and the thumbnail and images beside the records.
- */
-const THUMBNAIL_1X1 = toUint8Array(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
-)
 
 export type KiwiNodeChange = NodeChange & Record<string, unknown>
 
@@ -57,56 +47,8 @@ export interface CanvasExportEntry {
   canvasNc: KiwiNodeChange
 }
 
-const THUMBNAIL_WIDTH = 512
-const THUMBNAIL_HEIGHT = 512
 /** The name Figma gives a file it was not told the name of. */
 const UNTITLED_FILE_NAME = 'Untitled'
-
-interface FigThumbnail {
-  png: Uint8Array
-  size: Size
-  /** The page-space rectangle the thumbnail shows; empty for the 1×1 placeholder. */
-  region: Rect
-}
-
-function placeholderThumbnail(): FigThumbnail {
-  return {
-    png: THUMBNAIL_1X1,
-    size: { width: 1, height: 1 },
-    region: { x: 0, y: 0, width: 0, height: 0 }
-  }
-}
-
-async function renderFigThumbnailPNG(
-  graph: SceneGraph,
-  pageId: string,
-  options: FigFileExtrasOptions
-): Promise<Uint8Array | null> {
-  const { ck, renderer } = options
-  if (ck && renderer) {
-    return renderThumbnail(ck, renderer, graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)
-  }
-  if (!options.renderHeadlessThumbnail || IS_BROWSER || IS_TAURI) return null
-  const { headlessRenderThumbnail } = await import('#core/io/formats/raster')
-  return headlessRenderThumbnail(graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)
-}
-
-async function renderFigThumbnail(
-  graph: SceneGraph,
-  pageId: string | undefined,
-  options: FigFileExtrasOptions
-): Promise<FigThumbnail> {
-  const frame = pageId ? thumbnailFrame(graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT) : null
-  if (!pageId || !frame) return placeholderThumbnail()
-  const png = await renderFigThumbnailPNG(graph, pageId, options)
-  if (!png) return placeholderThumbnail()
-  const { minX, minY, maxX, maxY } = frame.bounds
-  return {
-    png,
-    size: { width: frame.width, height: frame.height },
-    region: { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
-  }
-}
 
 /**
  * The GUID a layer without a `source.id` is saved under: its graph ID, which has Figma's
@@ -152,17 +94,15 @@ function assignOwnLayerGuids(
 }
 
 /**
- * The first local ID the counter can mint in sessions 0 and 1: past every saved GUID and every
- * ID that layers, collections, modes, variables, component properties, and variants' copies of
- * their sets' properties are saved under.
+ * The first local ID the counter can mint in sessions 0 and 1: past every reserved ID and every
+ * ID that layers, collections, modes, variables (deleted ones too), component properties, and
+ * variants' copies of their sets' properties are saved under.
  */
-export function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly string[]): number {
-  const ids = [...propertyIds, ...savedPropertyCopyIds(graph)]
+export function firstUnclaimedLocalId(graph: SceneGraph, reservedIds: Iterable<string>): number {
+  const ids = [...reservedIds, ...savedPropertyCopyIds(graph), ...graph.variables.keys()]
   for (const node of graph.nodes.values()) ids.push(node.source.id || node.id)
-  for (const [collectionId, collection] of graph.variableCollections) {
+  for (const [collectionId, collection] of graph.variableCollections)
     appendAll(ids, [collectionId, ...collection.modes.map((mode) => mode.modeId)])
-    appendAll(ids, collection.variableIds)
-  }
   let last = 0
   for (const id of ids) {
     const guid = parseGuidOrNull(id)
@@ -229,22 +169,28 @@ function assignComponentPropertyGuids(
 }
 
 /**
- * Behaviours bind component properties by id, so they follow the ids' new GUIDs. The renamed
- * plugin data is written in place of the node's own; the document keeps its ids.
+ * Behaviours bind component properties and, for a transition, variables by id, so they follow the
+ * ids' new GUIDs. The renamed plugin data is written in place of the node's own; the document
+ * keeps its ids.
  */
 function renamedBehaviourPluginData(
   graph: SceneGraph,
-  propertyIdToGuid: Map<string, GUID>
+  propertyIdToGuid: Map<string, GUID>,
+  varIdToGuid: Map<string, GUID>
 ): Map<string, PluginDataEntry[]> {
-  const rename = (propertyId: string) => {
-    const guid = propertyIdToGuid.get(propertyId)
-    return guid ? `${guid.sessionID}:${guid.localID}` : propertyId
+  const renameBy = (guids: Map<string, GUID>) => (id: string) => {
+    const guid = guids.get(id)
+    return guid ? guidToString(guid) : id
   }
   const renamed = new Map<string, PluginDataEntry[]>()
   for (const node of graph.getAllNodes()) {
     const behaviour = readBehaviour(node)
-    if (behaviour)
-      renamed.set(node.id, withBehaviour(node, renameBehaviourProperties(behaviour, rename)))
+    if (!behaviour) continue
+    const properties = renameBehaviourProperties(behaviour, renameBy(propertyIdToGuid))
+    renamed.set(
+      node.id,
+      withBehaviour(node, mapTransitionVariables(properties, renameBy(varIdToGuid)))
+    )
   }
   return renamed
 }
@@ -282,7 +228,7 @@ function buildCanvasEntries(
   nodeIdToGuid: Map<string, GUID>,
   assignedGuidValues: Set<string>,
   sourceOwners: ReadonlyMap<string, string>,
-  ownGuids = true
+  keepsUnreadRecords: boolean
 ): { canvasEntries: CanvasExportEntry[]; internalCanvasGuid: GUID | null } {
   const canvasEntries: CanvasExportEntry[] = []
   let internalCanvasGuid: GUID | null = null
@@ -294,7 +240,7 @@ function buildCanvasEntries(
     const canvasGuid = (() => {
       if (!page.source.id) {
         return (
-          (ownGuids ? ownGuid(page.id, sourceOwners, assignedGuidValues) : null) ?? {
+          ownGuid(page.id, sourceOwners, assignedGuidValues) ?? {
             sessionID: 0,
             localID: localIdCounter.value++
           }
@@ -329,10 +275,8 @@ function buildCanvasEntries(
 
   const hasSharedStyles = [...graph.nodes.values()].some((node) => node.sharedStyleType !== null)
   const hasSlotContent = [...graph.nodes.values()].some((node) => ownsSlotContent(graph, node))
-  if (
-    (graph.variableCollections.size > 0 || hasSharedStyles || hasSlotContent) &&
-    internalCanvasGuid === null
-  ) {
+  const hasVariables = graph.variableCollections.size > 0 || keepsUnreadRecords
+  if ((hasVariables || hasSharedStyles || hasSlotContent) && internalCanvasGuid === null) {
     internalCanvasGuid = { sessionID: 0, localID: localIdCounter.value++ }
     assignedGuidValues.add(`${internalCanvasGuid.sessionID}:${internalCanvasGuid.localID}`)
     canvasEntries.push({
@@ -412,6 +356,8 @@ export interface FigExportSetupOptions {
   recordOwners?: ReadonlyMap<string, string>
   /** Writing into an archive: the variables, collections and modes it holds keep their GUIDs. */
   archiveResourceIds?: ReadonlySet<string>
+  /** Records the document never read, which the write keeps, so nothing new takes their GUIDs. */
+  unreadVariables?: readonly FigUnreadVariable[]
   /** Leaves the document's comments out of its record. */
   withoutComments?: boolean
 }
@@ -437,9 +383,12 @@ export async function prepareFigExport(
   const pages = graph.getPages(true)
   const nodeIdToGuid = new Map<string, GUID>()
   const assignedGuidValues = new Set<string>()
-  // Reserve the document GUID to prevent imported nodes with source.id "0:0"
-  // from reusing the document's own GUID slot.
+  // No layer takes the document's GUID, which an imported "0:0" would, or an unread record's.
   assignedGuidValues.add(`${docGuid.sessionID}:${docGuid.localID}`)
+  for (const {
+    record: { guid }
+  } of options.unreadVariables ?? [])
+    if (guid) assignedGuidValues.add(guidToString(guid))
   const varIdToGuid = new Map<string, GUID>()
   const modeIdToGuid = new Map<string, GUID>()
   const propertyIdToGuid = new Map<string, GUID>()
@@ -448,10 +397,10 @@ export async function prepareFigExport(
   const sourceOwners = layerSourceOwners(graph)
   const archiveRecordIds = new Set(options.archiveRecordIds)
   const propertyIds = collectComponentPropertyIds(graph)
-  // Before any canvas, variable or layer takes a counter GUID, so none collides.
+  // Before any canvas, variable or layer takes a counter GUID, so none collides with a reserved one.
   localIdCounter.value = Math.max(
     localIdCounter.value,
-    firstUnclaimedLocalId(graph, propertyIds),
+    firstUnclaimedLocalId(graph, [...propertyIds, ...assignedGuidValues]),
     options.nextLocalId ?? 0
   )
 
@@ -463,7 +412,7 @@ export async function prepareFigExport(
     nodeIdToGuid,
     assignedGuidValues,
     sourceOwners,
-    true
+    !!options.unreadVariables?.length
   )
   // Archive records keep their GUIDs: claim them before any copy that kept one can.
   for (const [guid, nodeId] of options.recordOwners ?? []) {
@@ -502,7 +451,7 @@ export async function prepareFigExport(
     const node = graph.getNode(page.id)
     if (node) applyVariableModes({ graph, varIdToGuid, modeIdToGuid }, node, canvasNc)
   }
-  const pluginDataOverrides = renamedBehaviourPluginData(graph, propertyIdToGuid)
+  const pluginDataOverrides = renamedBehaviourPluginData(graph, propertyIdToGuid, varIdToGuid)
   assignOwnLayerGuids(graph, sourceOwners, nodeIdToGuid, assignedGuidValues)
 
   return {
@@ -555,12 +504,9 @@ export interface FigFileExtras {
   images: Array<{ name: string; data: Uint8Array }>
 }
 
-export interface FigFileExtrasOptions {
-  ck?: CanvasKit
-  renderer?: SkiaRenderer
+export interface FigFileExtrasOptions extends FigThumbnailOptions {
   /** The page the thumbnail shows; the cover page when absent. */
   pageId?: string
-  renderHeadlessThumbnail?: boolean
   /** The name `meta.json` records for the file. */
   documentName?: string
   /**

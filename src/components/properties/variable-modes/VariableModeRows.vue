@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { MIXED } from '@open-pencil/vue/controls/node-props'
 import type { VariableModeChoice } from '@open-pencil/vue/controls/variable-modes'
-import { usePanelMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import type { AppSelectGroup } from '@/components/ui/select/select'
@@ -16,7 +16,7 @@ import { AUTO_MODE, autoModeLabel } from './labels'
 const { choices } = defineProps<{ choices: VariableModeChoice[] }>()
 const emit = defineEmits<{ set: [collectionId: string, modeId: string | null] }>()
 
-const panels = usePanelMessages()
+const panels = useMessages('panels')
 const MIXED_MODE = ':mixed'
 
 function groups(choice: VariableModeChoice): AppSelectGroup<string>[] {

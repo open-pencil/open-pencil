@@ -9,7 +9,7 @@ import {
 import { computed, nextTick, ref, watch } from 'vue'
 
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import {
@@ -29,7 +29,9 @@ const { paneId } = defineProps<{ paneId?: string }>()
 
 const store = useEditorStore()
 const { getCommand } = useEditorCommands()
-const { menu: menuText, commands, panels } = useI18n()
+const menuText = useMessages('menu')
+const commands = useMessages('commands')
+const panels = useMessages('panels')
 
 const open = ref(false)
 const editing = ref(false)

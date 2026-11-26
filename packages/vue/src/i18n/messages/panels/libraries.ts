@@ -1,9 +1,6 @@
 import { params } from '@nanostores/i18n'
 
-/**
- * Messages of the `panels` namespace for the assets panel and the library manager, update review,
- * and publish dialogs.
- */
+/** Messages for the assets panel and the library manager, update review, and publish dialogs. */
 export const libraryPanelMessageDefaults = {
   searchLocalComponents: 'Search local components',
   assetView: 'Asset view',

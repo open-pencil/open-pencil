@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
@@ -41,7 +41,7 @@ const emit = defineEmits<{
   closeAutoFocus: [event: Event]
 }>()
 
-const { common } = useI18n()
+const common = useMessages('common')
 const creating = ref(false)
 const createName = ref('')
 const createInput = ref<HTMLInputElement | null>(null)
@@ -129,7 +129,7 @@ defineOptions({ inheritAttrs: false })
       <template #trailing="{ item }">
         <span
           v-if="items.find((entry) => entry.id === item.value)?.text"
-          class="shrink-0 text-muted tabular-nums"
+          class="shrink-0 text-2xs text-muted tabular-nums"
         >
           {{ items.find((entry) => entry.id === item.value)?.text }}
         </span>

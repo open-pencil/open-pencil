@@ -17,7 +17,7 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { AgentChoiceCategory } from '@/app/ai/agents/acp/options'
 import {
@@ -40,7 +40,7 @@ import { useDesignProfiles } from './useDesignProfiles'
  */
 const { access = null } = defineProps<{ access?: AgentChoiceCategory | null }>()
 
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const ui = chatAgentTheme()
 const profile = chatProfileTheme()
 const menuCls = useMenuUI({ content: 'w-64 max-w-[calc(100vw-1rem)]' })

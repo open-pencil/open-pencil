@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { useConnector } from '@open-pencil/vue/controls/connector'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 import ConnectorControls from './ConnectorControls.vue'
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const {
   active,
   lineType,

@@ -10,8 +10,8 @@ OpenPencil è un editor di design locale e open source, compatibile con Figma, c
 
 ## Primi passi
 
-- [Navigazione nell’area di lavoro](./canvas-navigation) — spostare la vista, usare lo zoom e lo strumento Mano;
-- [Selezionare e trasformare](./selection-and-manipulation) — selezionare, spostare, ridimensionare, ruotare e ordinare gli oggetti.
+- [Navigazione nell’area di lavoro](/user-guide/canvas-navigation) — spostare la vista, usare lo zoom e lo strumento Mano;
+- [Selezionare e trasformare](/user-guide/selection-and-manipulation) — selezionare, spostare, ridimensionare, ruotare e ordinare gli oggetti.
 
 ## Creare contenuti
 
@@ -22,13 +22,14 @@ OpenPencil è un editor di design locale e open source, compatibile con Figma, c
 
 ## Organizzare il documento
 
-- [Livelli e pagine](./layers-and-pages) — albero dei livelli, pagine e proprietà;
+- [Livelli e pagine](/user-guide/layers-and-pages) — albero dei livelli, pagine e proprietà;
 - [Menu contestuale](./context-menu) — appunti, gruppi, componenti e altre azioni;
-- [Esportare](./exporting) — immagini, SVG e file `.fig`.
+- [Aprire e salvare](/user-guide/files) — documenti e pagine web.
+- [Esportare](/user-guide/exporting) — immagini e SVG.
 
 ## Funzioni avanzate
 
-- [Disposizione automatica](./auto-layout) — distribuzione con Flexbox e CSS Grid;
+- [Disposizione automatica](/user-guide/auto-layout) — distribuzione con Flexbox e CSS Grid;
 - [Componenti](./components) — componenti riutilizzabili, istanze e sostituzioni;
 - [Variabili](./variables) — raccolte, modalità, valori e collegamenti;
 - [Controllare i design](/user-guide/checking-designs) — pannello Verifica, indicatori dei problemi nell’area di lavoro e regole di lint.

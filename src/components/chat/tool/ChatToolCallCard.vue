@@ -2,7 +2,7 @@
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   displayedToolOutput,
@@ -31,7 +31,7 @@ import { chatToolCardTheme } from './ui'
 
 /** `undone`: the user undid the call's edit, by Undo or the chat's Revert. */
 const { part, undone = false } = defineProps<{ part: ToolCallPart; undone?: boolean }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const ui = chatToolCardTheme()
 
 const state = computed(() => toolCallState(part))

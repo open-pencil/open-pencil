@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import VariableBoundRow from '@/components/properties/binding/VariableBoundRow.vue'
 import PropertyBoundField from '@/components/properties/component-properties/PropertyBoundField.vue'
@@ -11,7 +11,7 @@ import PropertyBoundField from '@/components/properties/component-properties/Pro
  */
 const { nodeId } = defineProps<{ nodeId: string }>()
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 </script>
 
 <template>

@@ -5,7 +5,13 @@ import { fetchStub } from '@open-pencil/test-support/fetch'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
-import { fetchRemoteFile, remoteFileKind, remoteFileTitle } from '#core/io/remote'
+import {
+  fetchRemoteFile,
+  MAX_REMOTE_FILE_BYTES,
+  RefusedPageError,
+  remoteFileKind,
+  remoteFileTitle
+} from '#core/io/remote'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const text = (value: string) => new TextEncoder().encode(value)
@@ -109,6 +115,27 @@ describe('fetchRemoteFile', () => {
     await expect(fetchRemoteFile(url, { fetch: empty, io })).rejects.toThrow('carried no body')
   })
 
+  test('tells a page refusing a bot apart from other failures', async () => {
+    const url = new URL('https://example.com/')
+    const answer = (status: number, type: string) =>
+      fetchStub(
+        async () => new Response('Just a moment...', { status, headers: { 'content-type': type } })
+      )
+    const failure = (status: number, type = 'text/html; charset=utf-8') =>
+      fetchRemoteFile(url, { fetch: answer(status, type), io }).catch((e: unknown) => e)
+
+    for (const status of [403, 429, 503]) {
+      const refusal = await failure(status)
+      expect(refusal).toBeInstanceOf(RefusedPageError)
+      expect(refusal instanceof RefusedPageError && refusal.status).toBe(status)
+    }
+    expect(await failure(403, 'application/xhtml+xml')).toBeInstanceOf(RefusedPageError)
+    // A missing page, a server failure, or a refusal that is no page stay plain failures.
+    expect(await failure(404)).not.toBeInstanceOf(RefusedPageError)
+    expect(await failure(500)).not.toBeInstanceOf(RefusedPageError)
+    expect(await failure(403, 'application/json')).not.toBeInstanceOf(RefusedPageError)
+  })
+
   test('ends the body of a response it refuses', async () => {
     let cancelled = false
     const fetch = fetchStub(async (_input, init) => {
@@ -128,5 +155,38 @@ describe('fetchRemoteFile', () => {
       fetchRemoteFile(new URL('https://example.com/page'), { fetch, io })
     ).rejects.toThrow('500')
     expect(cancelled).toBe(true)
+  })
+
+  test('fetches a file over the old 64 MiB cap', async () => {
+    const fetch = fetchStub(async () => {
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new Uint8Array(65 * 1024 * 1024))
+          controller.close()
+        }
+      })
+      return new Response(body, { headers: { 'content-type': 'application/octet-stream' } })
+    })
+
+    const file = await fetchRemoteFile(new URL('https://example.com/large.fig'), { fetch, io })
+
+    expect(file.bytes.byteLength).toBe(65 * 1024 * 1024)
+    expect(file.kind).toBe('document')
+  })
+
+  test('refuses a file that declares itself over the cap without reading it', async () => {
+    const fetch = fetchStub(
+      async () =>
+        new Response(new ReadableStream<Uint8Array>(), {
+          headers: {
+            'content-type': 'application/octet-stream',
+            'content-length': String(MAX_REMOTE_FILE_BYTES + 1)
+          }
+        })
+    )
+
+    await expect(
+      fetchRemoteFile(new URL('https://example.com/huge.fig'), { fetch, io })
+    ).rejects.toThrow('exceeds 256 MiB')
   })
 })

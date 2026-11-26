@@ -10,7 +10,6 @@ import { applySolidStrokeColor, applyStrokePaint } from '@open-pencil/vue/contro
 import { MIXED, useNodeProps } from '@open-pencil/vue/controls/node-props'
 import { useOkHCL } from '@open-pencil/vue/controls/okhcl'
 import { useStrokeControls } from '@open-pencil/vue/controls/stroke'
-import { useI18n } from '@open-pencil/vue/i18n'
 import {
   BindableValueRoot,
   type BindableValueActions
@@ -27,6 +26,7 @@ import {
   commitPaintMutation,
   paintBindingTargets
 } from '@/components/properties/paint/binding'
+import DeletedVariableMark from '@/components/properties/paint/DeletedVariableMark.vue'
 import { useGradientEditing } from '@/components/properties/paint/gradient-edit'
 import { createStrokeOkhclAdapter } from '@/components/properties/paint/okhcl'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
@@ -43,6 +43,8 @@ const {
   options: styleOptions,
   update: updateStyle
 } = useSharedStylePicker('stroke')
+
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import StrokeSettingsPopover from './StrokeSettingsPopover.vue'
 
@@ -68,7 +70,8 @@ function onPickerOpenChange(
   gradients.setOpen(gradients.target(nodeIds, 'strokes', index), open)
   if (!open) commitPaintMutation(binding)
 }
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 const expandedSides = ref(false)
 /** Figma strokes each side apart only on rectangles, frames, components, and instances. */
 const sidesOffered = computed(
@@ -171,7 +174,12 @@ function onToggleSides(nodes: readonly SceneNode[]) {
             @update:opacity="actions.patch(index, { opacity: $event })"
           >
             <template #preview>
+              <DeletedVariableMark
+                v-if="binding.variable?.deleted"
+                :label="panels.variableDeleted"
+              />
               <FillPicker
+                v-else
                 :label="panels.stroke"
                 :fill="displayStroke(stroke, binding.resolvedValue)"
                 :okhcl="

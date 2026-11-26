@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useCloudPortalMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalFailureMessages } from '@/app/cloud-portal/failure'
@@ -22,8 +22,8 @@ import type { PortalSignInMethod } from '../types'
 
 /** The signed-in person's sign-in methods and second steps, with every change they can make. */
 const portal = usePortal()
-const messages = useCloudPortalMessages()
-const { locale } = useI18n()
+const messages = useMessages('cloud/portal')
+const { locale } = useLocale()
 const failures = usePortalFailureMessages()
 
 const security = usePortalLoad(async () => {

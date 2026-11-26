@@ -9,7 +9,7 @@ export const listCollections = defineTool({
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({}),
   execute: (figma) => {
-    const collections = [...graphOf(figma).variableCollections.values()]
+    const collections = graphOf(figma).getLiveCollections()
     return { count: collections.length, collections }
   }
 })

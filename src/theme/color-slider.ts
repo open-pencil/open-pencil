@@ -1,4 +1,5 @@
-import { focusStyles } from '@/theme/focus/styles'
+import { focusStyles } from '@open-pencil/theme'
+
 import { CHECKERBOARD_BACKGROUND } from '@/theme/paint/checkerboard'
 
 export default {

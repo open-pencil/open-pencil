@@ -17,12 +17,12 @@ import { bodyLimit } from 'hono/body-limit'
 import { createRequestChecks, createRequestResolvers } from './checks'
 import { createCloudCORS } from './cors'
 import { requireMinimumEditor } from './editors'
-import { robotsText, shouldPreventIndexing } from './indexing'
+import { preventIndexing, robotsText } from './indexing'
 import { createAppRateLimiters } from './limiters'
 import { createAppRouters } from './routes'
 import { createAppServices, type CloudServices } from './services'
 
-export { shouldPreventIndexing, withIndexingPolicy } from './indexing'
+export { preventIndexing, type IndexingPolicy } from './indexing'
 export type { CloudServices } from './services'
 
 /** Where administration is mounted. */
@@ -39,7 +39,9 @@ export function createCloudApp(services: CloudServices) {
   const allowedOrigins = new Set(
     [config.publicURL, ...config.trustedOrigins].map((origin) => new URL(origin).origin)
   )
-  const cloudCORS = createCloudCORS(allowedOrigins)
+  // Billing's pages sign a visitor in with their Cloud session as they open (`CLOUD_BILLING_TOKEN_PATH`).
+  const billingOrigin = config.billingEndpoint && new URL(config.billingEndpoint).origin
+  const cloudCORS = createCloudCORS(allowedOrigins, billingOrigin || undefined)
   const app = createAppServices(services)
   const resolvers = createRequestResolvers(services)
   const checks = createRequestChecks(services, resolvers)
@@ -62,15 +64,12 @@ export function createCloudApp(services: CloudServices) {
           onError: (context) => context.json({ error: { code: 'invalid_request' as const } }, 413)
         })
       )
-      .use('*', async (context, next) => {
-        await next()
-        if (shouldPreventIndexing(context.req.path, config.indexingPolicy)) {
-          context.header('X-Robots-Tag', 'noindex, nofollow, noarchive')
-        }
-      })
+      .use('*', preventIndexing(config.indexingPolicy))
       .get('/robots.txt', (context) => {
         context.header('Content-Type', 'text/plain; charset=utf-8')
-        return context.body(robotsText(config.indexingPolicy))
+        return context.body(
+          robotsText(config.indexingPolicy, app.community.enabled ? config.publicURL : null)
+        )
       })
       .get('/health', (context) =>
         context.json({
@@ -108,6 +107,7 @@ export function createCloudApp(services: CloudServices) {
       )
       .route('/', routers.account)
       .route('/', routers.accessTokens)
+      .route('/', routers.appConnections)
       .route('/', createPictureRoutes(app.pictures))
       .use('/api/shares/:shareId/collaboration-ticket', limiters.publicCollaborationLimiter)
       .use('/api/public/*', limiters.publicRateLimiter)

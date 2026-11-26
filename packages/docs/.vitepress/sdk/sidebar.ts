@@ -59,7 +59,7 @@ const SDK_COMPOSABLE_PAGES = [
   { text: 'useVariableModes', slug: 'use-variable-modes', canonical: true },
   { text: 'useDocumentWorkspace', slug: 'use-document-workspace', canonical: true },
   { text: 'usePageList', slug: 'use-page-list' },
-  { text: 'useI18n', slug: 'use-i18n' }
+  { text: 'useMessages', slug: 'use-messages', canonical: true }
 ] as const
 
 const SDK_ADVANCED_PAGES = [

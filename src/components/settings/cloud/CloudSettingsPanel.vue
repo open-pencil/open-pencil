@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
@@ -51,7 +51,7 @@ const hasSession = (server: CloudServerEntry) =>
   server.session === 'two-step' ||
   server.session === 'terms'
 const menuUI = menu()
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const title = (server: CloudServerEntry) =>
   server.kind === 'official' ? t.value.productName : server.host
 </script>

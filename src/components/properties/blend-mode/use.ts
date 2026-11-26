@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 
 import type { BlendMode } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { AppSelectGroup } from '@/components/ui/select/select'
 
@@ -12,7 +12,7 @@ export function commitDiscretePropertyListChange(flush: () => void, update: () =
 
 /** Blend modes by what they do: darken, lighten, contrast, compare, and the component modes. */
 export function useBlendModeGroups(includePassThrough = false) {
-  const { panels } = useI18n()
+  const panels = useMessages('panels')
   return computed<AppSelectGroup<BlendMode>[]>(() => [
     {
       options: [

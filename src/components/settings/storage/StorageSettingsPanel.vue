@@ -2,12 +2,7 @@
 import { computed, ref, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
 
-import {
-  useCommonMessages,
-  useCredentialMessages,
-  useSettingsMessages,
-  useStorageMessages
-} from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { homeLocation } from '@/app/home/location'
 import { useNotificationMessages } from '@/app/i18n/notifications'
@@ -26,10 +21,10 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
 import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 
-const storage = useStorageMessages()
-const settings = useSettingsMessages()
-const credentials = useCredentialMessages()
-const common = useCommonMessages()
+const storage = useMessages('storage')
+const settings = useMessages('settings')
+const credentials = useMessages('credentials')
+const common = useMessages('common')
 const notifications = useNotificationMessages()
 const router = useRouter()
 const editing = ref(false)

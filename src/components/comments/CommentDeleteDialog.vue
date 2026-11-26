@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCommentMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useComments } from '@/app/comments/use'
 import { useActionToast } from '@/app/shell/toast/action'
@@ -9,7 +9,7 @@ import { AppConfirmationDialog } from '@/components/ui/dialog'
 
 /** Asks before a comment is deleted for everyone, wherever the deletion was asked for. */
 const comments = useComments()
-const messages = useCommentMessages()
+const messages = useMessages('comments')
 const { showActionToast } = useActionToast()
 
 // The dialog closes itself before it confirms, so it keeps which comment it was asked about.

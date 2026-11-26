@@ -2,7 +2,7 @@
 import * as v from 'valibot'
 
 import type { CloudAdminAuditFilter } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import type { PortalListRequest } from '@/app/cloud-portal/list'
@@ -18,8 +18,8 @@ function eventReason(metadata: unknown): string | null {
 }
 
 const portal = usePortal()
-const messages = useCloudPortalMessages()
-const { locale } = useI18n()
+const messages = useMessages('cloud/portal')
+const { locale } = useLocale()
 
 async function load(request: PortalListRequest<CloudAdminAuditFilter>) {
   const { events, total, counts } = await portal.api.audit(request)

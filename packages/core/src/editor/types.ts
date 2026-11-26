@@ -1,6 +1,6 @@
 import type { CanvasKit } from '@open-pencil/canvaskit'
 import type {
-  DocumentColorSpace,
+  ColorProfile,
   DocumentKind,
   SceneGraph,
   SceneGraphEvents,
@@ -219,6 +219,8 @@ export interface EditorViewState {
   nodeEditState: NodeEditState | null
   cursorCanvasX?: number | null
   cursorCanvasY?: number | null
+  /** The slide on the stage in a deck's Slide view, or null while the whole deck shows. */
+  focusedSlideId: string | null
   /** What this canvas shows: the design being edited, or running as a preview. */
   canvasView: CanvasView
 }
@@ -268,7 +270,7 @@ export interface EditorEvents extends SceneGraphEvents {
    */
   'render:progressed': (versions: RenderVersions) => void
   'graph:replaced': (graph: SceneGraph) => void
-  'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
+  'document:color-space-changed': (colorSpace: ColorProfile) => void
   'document:libraries-changed': () => void
   'document:read-only-changed': (readOnly: boolean) => void
   /** The host's restrictions changed (`setHostRestrictions`); read them from the profile. */

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from 'bun:test'
 
 import { createDeferred } from '@open-pencil/std/async'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   appPreferences,
@@ -20,7 +20,7 @@ import { UPDATER_WINDOW_LABEL, UPDATER_WINDOW_URL } from '@/app/shell/updater/wi
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
-const { updates: messages } = useI18n()
+const messages = useMessages('updates')
 
 const AVAILABLE_UPDATE = {
   rid: 9,

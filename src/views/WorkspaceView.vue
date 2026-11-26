@@ -2,12 +2,12 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { useHead } from '@unhead/vue'
-import { useEventListener, whenever } from '@vueuse/core'
+import { whenever } from '@vueuse/core'
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { errorMessage } from '@open-pencil/std/errors'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   aiSetupDialogOpen,
@@ -34,6 +34,7 @@ import { useDocumentDrop } from '@/app/shell/document-drop'
 import { useKeyboard } from '@/app/shell/keyboard/use'
 import { useEditorMenu } from '@/app/shell/menu/use'
 import { toast } from '@/app/shell/ui'
+import { useEditorWheelGuard } from '@/app/shell/wheel/use'
 import {
   activeTab,
   createHomeTab,
@@ -50,10 +51,10 @@ import { isTauri } from '@/app/tauri/env'
 import { offerUsageStatsPrompt, startSharing, usageStatsPrompt } from '@/app/telemetry'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
 import {
-  CloudBetaBanner,
   CloudCreditsBanner,
   CloudCommunityBanner,
   CloudEditorUpdateBanner,
+  CloudMovingBanner,
   CloudVersionDialog
 } from '@/components/cloud/integration'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
@@ -106,7 +107,7 @@ watch(
 const opensCloudLink = ['documentId', 'shareId', 'invitationId'].some(
   (param) => typeof route.params[param] === 'string'
 )
-const { collaboration } = useI18n()
+const collaboration = useMessages('collaboration')
 const joinRoomFromInput = useJoinRoom()
 
 /**
@@ -186,14 +187,7 @@ exposeCollaborationActions(collab, joinRoomFromInput)
 exposeAutomationTestRequests()
 syncTabAddress(router, route)
 
-useEventListener(
-  document,
-  'wheel',
-  (event: WheelEvent) => {
-    if (event.ctrlKey || event.metaKey) event.preventDefault()
-  },
-  { passive: false }
-)
+useEditorWheelGuard()
 
 const fileAssociationCleanup = ref<(() => void) | null>(null)
 const roomLinksCleanup = ref<(() => void) | null>(null)
@@ -309,10 +303,10 @@ onUnmounted(() => {
 
 <template>
   <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
+    <CloudMovingBanner />
     <FileApiBanner />
     <ColorSpaceBanner />
     <FontStatusBanner />
-    <CloudBetaBanner />
     <CloudCreditsBanner />
     <CloudEditorUpdateBanner />
     <CloudCommunityBanner />

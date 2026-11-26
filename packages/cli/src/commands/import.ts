@@ -37,6 +37,11 @@ interface ImportInput {
   baseURL: string
   /** What the imported document is called, which names the output by default. */
   title: string
+  /**
+   * Whether the HTML is a web page, which imports in a frame the size of the window it was laid
+   * out in, as the app opens one; a file stays loose layers, as a snippet would.
+   */
+  webPage: boolean
 }
 
 async function readTextFile(path: string): Promise<string> {
@@ -82,7 +87,8 @@ async function fetchPage(url: URL): Promise<ImportInput> {
     html: new TextDecoder().decode(file.bytes),
     source: url.href,
     baseURL: file.url,
-    title: file.title
+    title: file.title,
+    webPage: true
   }
 }
 
@@ -95,20 +101,22 @@ async function readInput(args: ImportArgs): Promise<ImportInput> {
     source: file,
     // Relative stylesheets, fonts, and images resolve beside the file, as a browser opening it.
     baseURL: pathToFileURL(resolve(file)).href,
-    title: basename(file, extname(file))
+    title: basename(file, extname(file)),
+    webPage: false
   }
 }
 
 async function importHTML(
   args: ImportArgs,
-  { html, baseURL }: ImportInput
+  { html, baseURL, webPage }: ImportInput
 ): Promise<ReadHTMLResult> {
   return readHTMLDocument(html, {
     baseURL,
     cssText: await cssTextForArgs(args),
     tailwind: await tailwindCandidatesForArgs(args),
     pageName: args.pageName,
-    matchIcon: args['icon-names'] ? createHeadlessIconMatcher() : undefined
+    matchIcon: args['icon-names'] ? createHeadlessIconMatcher() : undefined,
+    framed: webPage
   })
 }
 

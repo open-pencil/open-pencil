@@ -1,4 +1,4 @@
-import { focusStyles } from '@/theme/focus/styles'
+import { focusStyles } from '@open-pencil/theme'
 
 const bannerTheme = {
   slots: {

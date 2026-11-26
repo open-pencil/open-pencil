@@ -6,6 +6,7 @@ import type {
   CloudSocialProvider
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth/session'
+import type { OAuthProviderSteps } from '#cloud/server/oauth/service'
 
 export type CloudMFAStatus = {
   required: boolean
@@ -46,6 +47,13 @@ export type CloudAuthenticationMethodRecord = {
  */
 export type SocialLinkStart = { url: string; headers: Headers }
 
+/** What Cloud's approval routes need from the OAuth provider inside Better Auth. */
+export type CloudOAuthAuthentication = {
+  steps: OAuthProviderSteps
+  /** The authorization server's metadata (RFC 8414). */
+  serverMetadata: () => Promise<unknown>
+}
+
 export interface CloudAuthAdapter {
   handler(request: Request): Promise<Response>
   resolveIdentity(headers: Headers): Promise<CloudIdentity | null>
@@ -66,6 +74,13 @@ export interface CloudAuthAdapter {
    * to what a session would be. Only the document API reads tokens.
    */
   resolveAccessToken(headers: Headers): Promise<CloudActor | null>
+  /**
+   * The account, app, and workspace an app's OAuth access token stands for, held like a personal
+   * access token to what a session would be; null where the server accepts no apps.
+   */
+  resolveAppToken(headers: Headers): Promise<CloudActor | null>
+  /** The OAuth provider's side of connecting apps, where the server accepts them. */
+  oauth?: CloudOAuthAuthentication
   listAccessTokens(headers: Headers): Promise<CloudAccessToken[] | null>
   /** Makes a token for the signed-in account; answers the whole token, shown this once. */
   createAccessToken(

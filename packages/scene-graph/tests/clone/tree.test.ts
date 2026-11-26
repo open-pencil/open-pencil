@@ -174,6 +174,7 @@ describe('SceneGraph.cloneTree', () => {
           layout: null,
           symbolOverrides: [],
           componentPropAssignments: [],
+          hiddenSlotAssignments: [],
           derivedSymbolData: [],
           derivedSymbolDataLayoutVersion: null,
           uniformScaleFactor: null

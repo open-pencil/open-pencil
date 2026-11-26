@@ -2,6 +2,7 @@
 export const FEATURE_KINDS = [
   'figma',
   'design',
+  'board',
   'interactive',
   'tokens',
   'shaders',

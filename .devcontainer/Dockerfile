@@ -22,6 +22,7 @@ RUN apt-get update \
         /workspace/open-pencil/node_modules \
         /workspace/open-pencil/packages/scene-graph/node_modules \
         /workspace/open-pencil/packages/std/node_modules \
+        /workspace/open-pencil/packages/theme/node_modules \
         /workspace/open-pencil/packages/pen/node_modules \
         /workspace/open-pencil/packages/collab/node_modules \
         /workspace/open-pencil/packages/kiwi/node_modules \

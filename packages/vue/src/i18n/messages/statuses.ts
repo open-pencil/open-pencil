@@ -1,7 +1,5 @@
 import { count, params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const statusMessageDefaults = {
   status: 'Status',
   statuses: 'Statuses',
@@ -35,5 +33,3 @@ export const statusMessageDefaults = {
   discardDescription: 'The changes you made here have not been applied.',
   discard: 'Discard'
 } as const
-
-export const statusMessages = i18n('statuses', statusMessageDefaults)

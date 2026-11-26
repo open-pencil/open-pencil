@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed, useTemplateRef } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { SubagentTranscript } from '@/app/ai/chat/subagents'
 import { chatSubagentTheme } from '@/components/chat/ui'
@@ -20,7 +20,8 @@ import { useSubagentFollow } from './useSubagentFollow'
 const { transcript } = defineProps<{ transcript: SubagentTranscript }>()
 const emit = defineEmits<{ back: [] }>()
 
-const { ai, common } = useI18n()
+const ai = useMessages('ai')
+const common = useMessages('common')
 const styles = tv(historyTheme)()
 const ui = chatSubagentTheme()
 const names = computed(() => subagentNames(transcript, ai.value.subagent))

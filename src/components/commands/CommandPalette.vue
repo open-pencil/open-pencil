@@ -6,7 +6,7 @@ import { computed } from 'vue'
 import Search from '~icons/lucide/search'
 import X from '~icons/lucide/x'
 
-import { useCommandMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { CommandPaletteRoot } from '@open-pencil/vue/primitives/CommandPalette'
 
 import { usePagePaletteGroup } from '@/app/editor/pages/palette'
@@ -24,8 +24,8 @@ const pageGroup = usePagePaletteGroup()
 const groups = computed(() =>
   pageGroup.value ? [pageGroup.value, ...commandGroups.value] : commandGroups.value
 )
-const commands = useCommandMessages()
-const common = useCommonMessages()
+const commands = useMessages('commands')
+const common = useMessages('common')
 const paletteUI = useCommandPaletteUI()
 const labels = computed(() => ({
   searchPlaceholder: commands.value.paletteSearchPlaceholder,

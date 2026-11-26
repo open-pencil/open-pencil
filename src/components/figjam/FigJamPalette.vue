@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { colorToHex } from '@open-pencil/scene-graph/color'
 import {
   FIGJAM_COLOR_NAMES,
   figJamColor,
   type FigJamColorName
 } from '@open-pencil/scene-graph/figjam'
-import { useFigJamMessages } from '@open-pencil/vue/i18n'
+import { useColorCSS } from '@open-pencil/vue/controls/color-model'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import FigJamSwatches from './FigJamSwatches.vue'
 
@@ -31,7 +31,8 @@ const {
   keepsMenuOpen?: boolean
 }>()
 const emit = defineEmits<{ select: [name: FigJamColorName]; none: [] }>()
-const figjam = useFigJamMessages()
+const figjam = useMessages('figjam')
+const colorCSS = useColorCSS()
 
 type FigJamMessages = (typeof figjam)['value']
 
@@ -62,7 +63,7 @@ const COLOR_LABEL_KEYS = {
 const swatches = computed(() =>
   FIGJAM_COLOR_NAMES.map((name) => ({
     value: name,
-    hex: colorToHex(figJamColor(name)),
+    css: colorCSS(figJamColor(name)),
     label: figjam.value[COLOR_LABEL_KEYS[name]]
   }))
 )

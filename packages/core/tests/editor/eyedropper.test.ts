@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
+import { buildP3BlendCells } from '#core-tests/helpers/display-p3'
+
 import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -94,6 +96,20 @@ describe('sampleSceneColor', () => {
     expect(Math.abs(r - 128)).toBeLessThanOrEqual(1)
     expect(g).toBe(0)
     expect(Math.abs(b - 128)).toBeLessThanOrEqual(1)
+  })
+
+  test('reads a Display P3 document in its own components, blended as Figma blends them', () => {
+    const editor = createEditor()
+    editor.graph.documentColorSpace = 'display-p3'
+    const pageId = editor.graph.getPages()[0].id
+    for (const { x, y, expected } of buildP3BlendCells(editor.graph, pageId)) {
+      const [r, g, b] = bytes(sampleSceneColor(ck, renderer, editor.graph, pageId, x, y))
+      // Color burn divides, so a level of rounding in what it reads moves it by two.
+      ;[r, g, b].forEach((channel, index) =>
+        expect(Math.abs(channel - expected[index])).toBeLessThanOrEqual(2)
+      )
+    }
+    expect(renderer.documentColorSpace).toBe('srgb')
   })
 
   test('restores the renderer viewport it borrowed', () => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useStatusMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -10,7 +10,7 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 /** The document's statuses at a glance, with nothing selected, and the way to edit them. */
 const store = useEditorStore()
-const messages = useStatusMessages()
+const messages = useMessages('statuses')
 const states = useSceneComputed(() => store.statusWorkflow().states)
 </script>
 

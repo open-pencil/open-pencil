@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const commentMessageDefaults = {
   comment: 'Comment',
   comments: 'Comments',
@@ -38,5 +36,3 @@ export const commentMessageDefaults = {
   notifyReplyHint: 'Someone replies in a comment thread you wrote in.',
   notifyTitle: params('{author} · {document}')
 } as const
-
-export const commentMessages = i18n('comments', commentMessageDefaults)

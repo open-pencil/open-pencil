@@ -1,4 +1,4 @@
-import { fetchCommunityTour } from '@open-pencil/cloud/client'
+import { fetchCommunityExample, fetchCommunityTour } from '@open-pencil/cloud/client'
 
 import { APP_VERSION } from '@/app/runtime/version'
 import { OFFICIAL_CLOUD_URL } from '@/constants'
@@ -17,4 +17,17 @@ export async function fetchOfficialTour(): Promise<Uint8Array | null> {
     fetch: cloudFetch
   })
   return tour?.bytes ?? null
+}
+
+/**
+ * A document of the official Cloud server's gallery by its name, such as the board the docs
+ * landing shows, as `fetchOfficialTour` gives the tour: the version named for this release when
+ * the gallery has one, else as it is now. Null when the gallery holds no such document.
+ */
+export async function fetchOfficialExample(name: string): Promise<Uint8Array | null> {
+  const example = await fetchCommunityExample(OFFICIAL_CLOUD_URL, name, {
+    version: APP_VERSION,
+    fetch: cloudFetch
+  })
+  return example?.bytes ?? null
 }

@@ -69,3 +69,41 @@ describe('.fig round trip of behaviours', () => {
     expect(readBehaviour(editor.graph.getNode(set.id) ?? set)?.texts.value.propertyId).toBe('value')
   })
 })
+
+test('a transition follows its variables to the GUIDs the save gives them', async () => {
+  await initCodec()
+  const editor = createEditor()
+  const pageId = editor.state.currentPageId
+  const motion = editor.graph.createCollection('Motion')
+  // The variables dialog names a new variable `var:…`, which no file can keep as its GUID.
+  editor.graph.addVariable({
+    id: 'var:fast',
+    name: 'Duration/Fast',
+    type: 'TIMING',
+    collectionId: motion.id,
+    valuesByMode: { [motion.defaultModeId]: 0.15 },
+    description: '',
+    hiddenFromPublishing: false
+  })
+  const set = editor.graph.createNode('COMPONENT_SET', pageId, { name: 'Button' })
+  editor.graph.createNode('COMPONENT', set.id, { name: 'State=Default' })
+  editor.setBehaviour(set.id, {
+    ...emptyBehaviour('button'),
+    transition: {
+      duration: 0.15,
+      easing: { easing: 'OUT_CUBIC' },
+      durationVariableId: 'var:fast'
+    }
+  })
+
+  const reopened = await parseFigFile((await exportFigFile(editor.graph)).slice().buffer)
+  const owner = [...reopened.nodes.values()].find((node) => node.name === 'Button')
+  const transition = owner && readBehaviour(owner)?.transition
+  const fast = [...reopened.variables.values()].find((item) => item.name === 'Duration/Fast')
+  expect(fast?.id).not.toBe('var:fast')
+  expect(transition).toEqual({
+    duration: 0.15,
+    easing: { easing: 'OUT_CUBIC' },
+    durationVariableId: fast?.id
+  })
+})

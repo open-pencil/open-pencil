@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCollaborationMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useCollabIdentity } from '@/app/collab/identity'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
@@ -9,7 +9,7 @@ import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 
 /** The one name others see in every shared room; while empty, rooms use a generated one. */
-const messages = useCollaborationMessages()
+const messages = useMessages('collaboration')
 const identity = useCollabIdentity()
 const draft = ref(identity.hasChosenName.value ? identity.name.value : '')
 

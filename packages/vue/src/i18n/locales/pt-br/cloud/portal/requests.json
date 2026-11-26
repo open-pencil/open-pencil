@@ -1,0 +1,13 @@
+{
+  "decline": "Recusar",
+  "removeAccess": "Remover acesso",
+  "declineHeading": "Recusar {name}?",
+  "declineDescription": "A pessoa recebe um e-mail informando isso e pode pedir novamente depois.",
+  "removeAccessHeading": "Remover o acesso de {name}?",
+  "removeAccessDescription": "A pessoa não poderá mais entrar e recebe um e-mail informando isso.",
+  "reviewNote": "Observação para os administradores (opcional)",
+  "noteDetail": "Observação: {note}",
+  "noOneWaiting": "Ninguém está aguardando",
+  "nothingHere": "Nada aqui ainda",
+  "requestsEmptyDescription": "As novas solicitações aparecem aqui, e os administradores recebem um e-mail para cada uma."
+}

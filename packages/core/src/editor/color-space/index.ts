@@ -1,0 +1,94 @@
+import type { ColorProfile, SceneGraph } from '@open-pencil/scene-graph'
+import { convertColor } from '@open-pencil/scene-graph/color'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
+import type { EditorContext } from '#core/editor/types'
+
+/**
+ * How a document takes another color profile, as Figma's File color profile dialog offers it:
+ * `assign` keeps every stored number and reads it in the new profile, so colors change; `convert`
+ * rewrites the numbers so colors look the same, mapping those the new profile cannot show to the
+ * nearest it can.
+ */
+export type DocumentColorProfileMode = 'assign' | 'convert'
+
+interface ColorSpaceHost {
+  loadPageNodes: (pageId: string) => Promise<void>
+  /**
+   * Runs writes without syncing instances: converting gives every instance layer its own
+   * converted colors, which syncing from the converted components would only write again.
+   */
+  withoutComponentSync: <T>(fn: () => T) => T
+  /** Why `setDocumentColorSpace` would be refused now, checked again after pages load. */
+  refusal: (colorSpace: ColorProfile, mode: DocumentColorProfileMode) => Error | null
+}
+
+export function createColorSpaceActions(
+  ctx: EditorContext,
+  { loadPageNodes, withoutComponentSync, refusal }: ColorSpaceHost
+) {
+  /**
+   * Gives `graph` the profile `space`. An undo step changes the document that recorded it, even
+   * after another replaced it in the editor, so its profile and colors always change together.
+   */
+  function setProfile(graph: SceneGraph, space: ColorProfile) {
+    graph.documentColorSpace = space
+    if (ctx.graph !== graph) return
+    ctx.emitEditorEvent('document:color-space-changed', space)
+    ctx.requestRender()
+  }
+
+  /**
+   * Gives the document `colorSpace` as one undo step. Assigning keeps every value; converting
+   * rewrites every stored color so it looks the same: layers' paints, effects, text runs, layout
+   * grids, and vector regions, page backgrounds, and color variables, on every page, loading
+   * the pages not opened yet first, internal ones too, so none keeps values in the old profile.
+   */
+  async function setDocumentColorSpace(
+    colorSpace: ColorProfile,
+    mode: DocumentColorProfileMode = 'assign'
+  ): Promise<void> {
+    const graph = ctx.graph
+    const previous = graph.documentColorSpace
+    if (previous === colorSpace) return
+    if (mode === 'assign') {
+      setProfile(graph, colorSpace)
+      ctx.undo.push({
+        label: 'Assign color profile',
+        forward: () => setProfile(graph, colorSpace),
+        inverse: () => setProfile(graph, previous)
+      })
+      return
+    }
+
+    // Converting walks every stored color, which most sessions never need at startup.
+    const [{ convertColors, replayConversion }] = await Promise.all([
+      import('./convert'),
+      ...graph.getPages(true).map((page) => loadPageNodes(page.id))
+    ])
+    // The document may have been closed, replaced, converted, or made read-only while its pages
+    // loaded; the editor's guard only checked the call as it started.
+    if (ctx.graph !== graph || graph.documentColorSpace !== previous) return
+    const refused = refusal(colorSpace, mode)
+    if (refused) throw refused
+    const conversion = withoutComponentSync(() =>
+      convertColors(graph, (color: Color) => convertColor(color, previous, colorSpace, 'map'))
+    )
+    setProfile(graph, colorSpace)
+    ctx.undo.push({
+      label: 'Convert color profile',
+      forward: () => {
+        withoutComponentSync(() => replayConversion(graph, conversion, true))
+        setProfile(graph, colorSpace)
+      },
+      inverse: () => {
+        withoutComponentSync(() => replayConversion(graph, conversion, false))
+        setProfile(graph, previous)
+      }
+    })
+  }
+
+  return {
+    setDocumentColorSpace
+  }
+}

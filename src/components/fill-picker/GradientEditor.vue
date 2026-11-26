@@ -2,8 +2,8 @@
 import { tv } from 'tailwind-variants'
 
 import type { Fill } from '@open-pencil/scene-graph'
-import { colorToCSS } from '@open-pencil/scene-graph/color'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useColorCSS } from '@open-pencil/vue/controls/color-model'
+import { useMessages } from '@open-pencil/vue/i18n'
 import {
   GradientEditorRoot,
   GradientEditorBar,
@@ -21,8 +21,10 @@ import fillPickerTheme from '@/theme/fill-picker'
 const { fill } = defineProps<{ fill: Fill }>()
 const emit = defineEmits<{ update: [fill: Fill] }>()
 const activeStop = defineModel<number>('activeStop')
-const { panels, editor } = useI18n()
+const panels = useMessages('panels')
+const editor = useMessages('editor')
 const fillPicker = tv(fillPickerTheme)
+const colorCSS = useColorCSS()
 
 function barStopClass(active: boolean, dragging: boolean) {
   return fillPicker({ active, dragging }).barStop()
@@ -69,7 +71,7 @@ function listStopClass(active: boolean) {
           :dragging="idx === bar.draggingIndex"
           :removable="bar.stops.length > 2"
           :class="barStopClass(idx === bar.activeStopIndex, idx === bar.draggingIndex)"
-          :style="{ left: `${stop.position * 100}%`, background: colorToCSS(stop.color) }"
+          :style="{ left: `${stop.position * 100}%`, background: colorCSS(stop.color) }"
           @select="root.actions.selectStop"
           @update-position="root.actions.updateStopPosition"
           @remove="root.actions.removeStop"
