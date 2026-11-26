@@ -10,6 +10,7 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessors/utils'
 import { graphOf } from '#core/figma-api/graph'
+import { getTextStyle } from '#core/figma-api/text/style'
 import {
   type FigmaBindableField,
   assertBindableField,
@@ -17,11 +18,15 @@ import {
   figmaBoundVariables,
   hasBindableField,
   isTextBindableField,
-  setEmptyTextBinding,
+  isLayerTextField,
+  setLayerTextBinding,
   setLayerBinding
 } from '#core/figma-api/variables/bindings'
 import type { FigmaVariableAlias } from '#core/figma-api/variables/values'
 import { reconcileVariableLayouts } from '#core/layout/variables'
+
+/** Characters on more than one text style, which `getTextStyle` reads as mixed. */
+const MIXED_STYLE = Symbol('mixed text style')
 
 type CollectionRef = { readonly id: string } | string
 
@@ -122,9 +127,12 @@ export function installVariableModeNodeProxyAccessors(
         if (!hasBindableField(node, name)) return
         assertProxyEditable(this, internals)
         if (isTextBindableField(name)) {
-          // A text style field binds every character, as setting it on the whole text does;
-          // text with none yet keeps it on the layer, which its characters then take.
-          if (node.text === '') setEmptyTextBinding(sceneGraph, node, name, bound)
+          // A text style field binds every character, as setting it on the whole text does.
+          // Text with none yet keeps it on the layer, which its characters then take, and so
+          // does text one style covers: Figma keeps the style, which wins while attached.
+          const style = getTextStyle(node, 'textStyleId', MIXED_STYLE)
+          const styled = typeof style === 'string' && style !== '' && isLayerTextField(name)
+          if (node.text === '' || styled) setLayerTextBinding(sceneGraph, node, name, bound)
           else this.setRangeBoundVariable(0, node.text.length, name, bound)
           return
         }

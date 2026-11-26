@@ -12,6 +12,7 @@ import {
 } from '@open-pencil/scene-graph'
 import {
   FACE_KEYS,
+  isTextStyleField,
   rangeFontStyle,
   SHARED_TEXT_STYLE_FIELDS,
   styleDetachmentChanges
@@ -169,12 +170,17 @@ function detachedStyles(
   const styled = { ...node, ...current }
   const changes = pick(style, [...TEXT_STYLE_KEYS, 'fills', 'textStyleId', 'fillStyleId'])
   const detached = styleDetachmentChanges(styled, changes)
-  return pick(
+  const left = pick(
     detached,
     (['textStyleId', 'fillStyleId', 'fontStyle'] as const).filter(
       (key) => !Object.hasOwn(changes, key) && Object.hasOwn(detached, key)
     )
   )
+  // Characters starting to use a text style let go of their own bindings of its fields.
+  const bound = current.boundVariables
+  const restyled = style.textStyleId && style.textStyleId !== current.textStyleId
+  if (!restyled || !bound || !Object.keys(bound).some(isTextStyleField)) return left
+  return { ...left, boundVariables: omitBy(bound, (_value, field) => isTextStyleField(field)) }
 }
 
 /** Style runs with `patch` over `text[start, end)`, as Figma restyles a range. */
