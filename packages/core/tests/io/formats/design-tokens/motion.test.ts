@@ -45,6 +45,32 @@ test('timings are durations in seconds and curves are cubicBezier; springs and a
   ])
 })
 
+test('an alias into another collection is left out when any mode of its target is a spring', () => {
+  const graph = new SceneGraph()
+  const motion = graph.createCollection('Motion')
+  const springy = graph.createMode(motion.id, 'Springy') ?? ''
+  const curve = graph.createVariable('Standard', 'EASING', motion.id, {
+    easing: 'CUSTOM_CUBIC',
+    bezier: CURVE
+  })
+  const moving = graph.createVariable('Moving', 'EASING', motion.id, easingPreset('OUT_CUBIC'))
+  moving.valuesByMode[springy] = easingPreset('GENTLE_SPRING')
+  const theme = graph.createCollection('Theme')
+  graph.createVariable('Card', 'EASING', theme.id, { aliasId: curve.id })
+  graph.createVariable('Sheet', 'EASING', theme.id, { aliasId: moving.id })
+
+  const { files, issues } = exportDesignTokens(graph)
+  const tokens = files.find((file) => file.path === 'Theme/Mode 1.tokens.json')?.content
+  expect(tokens).toHaveProperty('Card.$value', '{Standard}')
+  expect(tokens).not.toHaveProperty('Sheet')
+  expect(issues).toContainEqual({
+    kind: 'unsupported-easing',
+    collection: 'Theme',
+    mode: 'Mode 1',
+    token: 'Sheet'
+  })
+})
+
 test('durations and curves read back as timings and easings, a preset’s curve as the preset', () => {
   const graph = new SceneGraph()
   const bundle = readDesignTokens(

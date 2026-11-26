@@ -109,6 +109,24 @@ test('easing variables read as their curve or spring and the numbers saved with 
   })
 })
 
+test('a spring saved without its mass has the mass Figma gives every spring', () => {
+  const massless = variable(
+    8,
+    'massless',
+    'EASING',
+    easing({
+      easingType: 'CUSTOM_SPRING',
+      easingValue: { springEasing: { stiffness: 100, damping: 12 } }
+    }),
+    easing({ easingType: 'HOLD' })
+  )
+  const { graph } = materializeDocument([...records(), massless])
+  expect(graph.variables.get('1:8')?.valuesByMode['1:10']).toEqual({
+    easing: 'CUSTOM_SPRING',
+    spring: { stiffness: 100, damping: 12, mass: 1 }
+  })
+})
+
 test('an easing of a kind OpenPencil does not know is reported, not invented', () => {
   const reported: NodeChange[] = []
   const unknown = variable(
