@@ -1,6 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 
-import { layerAtRest, layerFrame, transitionFrames } from '@open-pencil/scene-graph/slides'
+import {
+  layerAnimationDirection,
+  layerAnimationStyle,
+  layerAtRest,
+  layerFrame,
+  SLIDE_TRANSITION_STYLES,
+  transitionDirection,
+  transitionFrames,
+  transitionKind,
+  transitionStyle
+} from '@open-pencil/scene-graph/slides'
 import {
   bezierPosition,
   easingPosition,
@@ -87,5 +97,24 @@ describe('easings over time', () => {
     const slow = easingPreset('SPRING_PRESET_THREE')
     expect(springPeak(easingSpring(slow) ?? { stiffness: 0, damping: 0, mass: 1 })).toBeUndefined()
     expect(easingPosition(slow, 0.2, 1)).toBe(easingPosition(slow, 0.2, 5))
+  })
+})
+
+describe("Figma's panel names for transitions", () => {
+  test('a kind and an arrow name a style, the out styles mirrored as Figma names them', () => {
+    expect(transitionStyle('SLIDE_IN', 'LEFT')).toBe('SLIDE_FROM_RIGHT')
+    expect(transitionStyle('SLIDE_OUT', 'RIGHT')).toBe('SLIDE_OUT_TO_LEFT')
+    expect(transitionStyle('MOVE_OUT', 'DOWN')).toBe('MOVE_OUT_TO_TOP')
+    expect(transitionStyle('DISSOLVE', 'UP')).toBe('DISSOLVE')
+    for (const style of SLIDE_TRANSITION_STYLES) {
+      const direction = transitionDirection(style) ?? 'LEFT'
+      expect(transitionStyle(transitionKind(style), direction)).toBe(style)
+    }
+  })
+
+  test('a layer slides the way its arrow points', () => {
+    expect(layerAnimationStyle('RIGHT')).toBe('SLIDE_FROM_LEFT')
+    expect(layerAnimationDirection('SLIDE_FROM_BOTTOM')).toBe('UP')
+    expect(layerAnimationStyle(null)).toBe('FADE')
   })
 })

@@ -59,6 +59,11 @@
       "import": "./dist/controls/appearance/index.js",
       "default": "./dist/controls/appearance/index.js"
     },
+    "./controls/motion": {
+      "types": "./dist/controls/motion/index.d.ts",
+      "import": "./dist/controls/motion/index.js",
+      "default": "./dist/controls/motion/index.js"
+    },
     "./controls/behaviour": {
       "types": "./dist/controls/behaviour/index.d.ts",
       "import": "./dist/controls/behaviour/index.js",

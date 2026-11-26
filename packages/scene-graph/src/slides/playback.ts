@@ -124,3 +124,77 @@ export function layerAtRest(animation: Pick<LayerAnimation, 'phase'>, played: bo
   const shown = animation.phase === 'IN' ? played : !played
   return { x: 0, y: 0, opacity: shown ? 1 : 0 }
 }
+
+/** The transitions Figma's panel offers, each but the first three in four directions. */
+export const SLIDE_TRANSITION_KINDS = [
+  'NONE',
+  'SMART_ANIMATE',
+  'DISSOLVE',
+  'PUSH',
+  'SLIDE_IN',
+  'SLIDE_OUT',
+  'MOVE_IN',
+  'MOVE_OUT'
+] as const
+export type SlideTransitionKind = (typeof SLIDE_TRANSITION_KINDS)[number]
+
+/** Which way a transition or a layer moves, as Figma's arrows show it. */
+export const MOTION_DIRECTIONS = ['LEFT', 'RIGHT', 'DOWN', 'UP'] as const
+export type MotionDirection = (typeof MOTION_DIRECTIONS)[number]
+
+/** The record names' prefix for each kind that moves. */
+const KIND_PREFIXES = {
+  PUSH: 'PUSH_FROM_',
+  SLIDE_IN: 'SLIDE_FROM_',
+  SLIDE_OUT: 'SLIDE_OUT_TO_',
+  MOVE_IN: 'MOVE_FROM_',
+  MOVE_OUT: 'MOVE_OUT_TO_'
+} as const
+
+/**
+ * The side a record names for a way of moving: what moves rightwards comes from the left, and,
+ * as Figma names them, an `OUT_TO_LEFT` moves rightwards too.
+ */
+const SIDES: Record<MotionDirection, 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM'> = {
+  RIGHT: 'LEFT',
+  LEFT: 'RIGHT',
+  DOWN: 'TOP',
+  UP: 'BOTTOM'
+}
+
+function directionName(direction: Direction): MotionDirection {
+  if (direction[0] > 0) return 'RIGHT'
+  if (direction[0] < 0) return 'LEFT'
+  return direction[1] > 0 ? 'DOWN' : 'UP'
+}
+
+/** A style's kind, as Figma's panel lists it. */
+export function transitionKind(style: SlideTransitionStyle): SlideTransitionKind {
+  for (const [kind, prefix] of Object.entries(KIND_PREFIXES))
+    if (style.startsWith(prefix)) return kind as SlideTransitionKind
+  return style === 'NONE' || style === 'SMART_ANIMATE' ? style : 'DISSOLVE'
+}
+
+/** Which way a style moves its slides, or null for one that does not move them. */
+export function transitionDirection(style: SlideTransitionStyle): MotionDirection | null {
+  return transitionKind(style) in KIND_PREFIXES ? directionName(directionOf(style)) : null
+}
+
+/** The style of a kind moving `direction`; a kind that does not move ignores it. */
+export function transitionStyle(
+  kind: SlideTransitionKind,
+  direction: MotionDirection
+): SlideTransitionStyle {
+  if (kind === 'NONE' || kind === 'SMART_ANIMATE' || kind === 'DISSOLVE') return kind
+  return `${KIND_PREFIXES[kind]}${SIDES[direction]}` as SlideTransitionStyle
+}
+
+/** Which way a layer animation moves its layer, or null for a fade. */
+export function layerAnimationDirection(style: LayerAnimation['style']): MotionDirection | null {
+  return style === 'FADE' ? null : directionName(LAYER_DIRECTIONS[style])
+}
+
+/** The layer animation that slides its layer `direction`, or fades it with null. */
+export function layerAnimationStyle(direction: MotionDirection | null): LayerAnimation['style'] {
+  return direction ? `SLIDE_FROM_${SIDES[direction]}` : 'FADE'
+}

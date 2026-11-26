@@ -12,6 +12,7 @@ import {
 import { restoreSubtree, snapshotSubtree } from '#core/editor/history/subtree'
 import type { EditorContext } from '#core/editor/types'
 
+import { createSlideAnimateActions } from './animate'
 import { createSlideSizeActions } from './size'
 
 /** A section of the deck and its slides, in order. */
@@ -408,6 +409,7 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
 
   return {
     ...createSlideSizeActions(ctx, zoomToFit),
+    ...createSlideAnimateActions(ctx),
     addSlide,
     duplicateSlides,
     deleteSlides,

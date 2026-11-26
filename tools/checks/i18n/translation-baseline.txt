@@ -777,6 +777,10 @@ es:slides.sizeStandard
 fr:slides.sizeWide
 fr:slides.sizeStandard
 fr:slides.sizePortrait
+de:slides.easing
+fr:slides.transitionStyle
+fr:slides.direction
+fr:slides.animations
 it:slides.sizeWide
 it:slides.sizeStandard
 ja:slides.sizeWide
