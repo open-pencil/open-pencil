@@ -1,7 +1,7 @@
 import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { serializeHTML } from '../export/html'
-import { joinAdjacentText } from '../import/adjacent-text'
+import { joinAdjacentText } from '../import/text/adjacent'
 import type {
   CSSComputeOptions,
   CSSRuntime,
@@ -84,6 +84,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'color',
   'column-gap',
   'content',
+  'direction',
   'display',
   'fill',
   'fill-opacity',

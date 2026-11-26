@@ -470,3 +470,40 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(roundTripAbsolute.inlineStyle?.['align-self']).toBe('center')
   })
 })
+
+describe('text alignment import', () => {
+  function importedText(computedStyle: Record<string, string>) {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'p',
+          attrs: {},
+          computedStyle: { 'font-size': '16px', width: '200px', ...computedStyle },
+          children: [{ type: 'text', text: 'مرحبا' }]
+        }
+      ]
+    })
+    const texts = [...graph.getAllNodes()].filter((node) => node.type === 'TEXT')
+    expect(texts).toHaveLength(1)
+    return expectText(texts[0])
+  }
+
+  // A layer's alignment names a side, so `start` and `end` are read in the element's direction.
+  it.each([
+    [{ 'text-align': 'start' }, 'LEFT'],
+    [{ 'text-align': 'end' }, 'RIGHT'],
+    [{ 'text-align': 'start', direction: 'rtl' }, 'RIGHT'],
+    [{ 'text-align': 'end', direction: 'rtl' }, 'LEFT'],
+    [{ 'text-align': 'left', direction: 'rtl' }, 'LEFT'],
+    [{ 'text-align': 'justify' }, 'JUSTIFIED']
+  ] as const)('imports %o as %s', (style, align) => {
+    expect(importedText(style).textAlignHorizontal).toBe(align)
+  })
+
+  it('keeps a right-to-left direction', () => {
+    expect(importedText({ direction: 'rtl' }).textDirection).toBe('RTL')
+    expect(importedText({}).textDirection).toBe('AUTO')
+  })
+})

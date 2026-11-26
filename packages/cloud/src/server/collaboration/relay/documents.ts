@@ -4,7 +4,7 @@ import type { CloudPolicy } from '#cloud/server/policy/policy'
 import { workspacePolicyContext } from '#cloud/server/policy/workspace'
 import type { Kysely } from 'kysely'
 
-import type { CollaborationRelayOptions } from './hub'
+import type { CollaborationRelayOptions } from './options'
 
 /**
  * The relay's lookups of a document: its participant limit under `policy`, none while it is taken

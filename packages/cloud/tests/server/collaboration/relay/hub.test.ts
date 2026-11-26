@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, setSystemTime, test } from 'bun:test'
 
 import {
   guest,
@@ -79,6 +79,77 @@ describe('collaboration relay', () => {
       RELAY_SERVER_PEER
     ])
     expect(viewer.messages(COLLAB_ACTIONS.syncStep1)).toEqual([])
+  })
+
+  test('asks an editor that answered its join, never a viewer, for its copy once the room grows', async () => {
+    const { relay: hub } = startTestRelay({ maximumRoomBytes: 8_192 })
+    const viewer = await join(hub, { permission: 'view' })
+    const late = await join(hub)
+    const alice = await join(hub)
+    // Alice answers the relay's request on joining; the other editor has not yet.
+    alice.send({
+      type: 'message',
+      namespace: COLLAB_ACTIONS.syncReply,
+      target: RELAY_SERVER_PEER,
+      payload: syncReply('')
+    })
+    // Filling three quarters of the room makes it ask for a compaction.
+    alice.send({
+      type: 'message',
+      namespace: COLLAB_ACTIONS.yjsUpdate,
+      target: null,
+      payload: textUpdate('x'.repeat(6_500))
+    })
+    const requests = (client: typeof alice) =>
+      client.messages(COLLAB_ACTIONS.syncStep1).filter((frame) => frame.from === RELAY_SERVER_PEER)
+    expect(requests(alice).map((frame) => [...frame.payload])).toEqual([expect.any(Array), [0]])
+    expect(requests(late)).toHaveLength(1)
+    expect(requests(viewer)).toEqual([])
+    // The relay asked for the copy, so one it cannot read is dropped, never held against Alice.
+    alice.send({
+      type: 'message',
+      namespace: COLLAB_ACTIONS.syncReply,
+      target: RELAY_SERVER_PEER,
+      payload: new Uint8Array([1, 2, 3])
+    })
+    expect(alice.closed).toBeNull()
+  })
+
+  test('asks another editor once the one asked for its copy stops answering', async () => {
+    const { relay: hub } = startTestRelay({ maximumRoomBytes: 8_192 })
+    const editors = [await join(hub), await join(hub)]
+    for (const editor of editors) {
+      editor.send({
+        type: 'message',
+        namespace: COLLAB_ACTIONS.syncReply,
+        target: RELAY_SERVER_PEER,
+        payload: syncReply('')
+      })
+    }
+    const [alice, bob] = editors
+    // Each was asked once on joining; any request after that is for its copy.
+    const copyRequests = (client: typeof alice) =>
+      (client?.messages(COLLAB_ACTIONS.syncStep1) ?? []).slice(1)
+    const fill = (text: string) =>
+      alice?.send({
+        type: 'message',
+        namespace: COLLAB_ACTIONS.yjsUpdate,
+        target: null,
+        payload: textUpdate(text)
+      })
+    fill('x'.repeat(6_500))
+    expect(copyRequests(alice)).toHaveLength(1)
+    // Alice's tab never answers; until her request lapses, nobody else is asked.
+    fill('y')
+    expect(copyRequests(bob)).toHaveLength(0)
+    try {
+      setSystemTime(Date.now() + 31_000)
+      fill('z')
+      expect(copyRequests(bob)).toHaveLength(1)
+      expect(copyRequests(alice)).toHaveLength(1)
+    } finally {
+      setSystemTime()
+    }
   })
 
   test('takes an editor’s compressed answer into the room', async () => {

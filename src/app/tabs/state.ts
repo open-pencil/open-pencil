@@ -7,6 +7,7 @@ import { setOpenPencilStore } from '@/app/browser-bridge'
 import { confirmAllDocuments } from '@/app/document/close/all'
 import { confirmDocumentClose, holdsUnkeptEdits } from '@/app/document/close/controller'
 import { requestDocumentClose } from '@/app/document/close/prompt'
+import { fitPageToViewport } from '@/app/document/io/browser'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { createEditorStore } from '@/app/editor/session'
 import type { EditorStore } from '@/app/editor/session'
@@ -88,24 +89,37 @@ export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
   return tab
 }
 
+/** An empty document of this kind, its page in the interface's current theme. */
+export function emptyDocumentGraph(kind: DocumentKind): SceneGraph {
+  return createDocumentGraph(kind, resolvedAppTheme.value)
+}
+
 /**
  * Opens an empty document of this kind: a design or a board. Picked in a New file tab, it takes
  * that tab's place; otherwise it gets a tab of its own.
  */
 export function createDocumentTab(kind: DocumentKind): Tab {
   const picker = activeTab.value?.kind === 'new-file' ? activeTab.value : undefined
-  const tab = createTab(undefined, createDocumentGraph(kind, resolvedAppTheme.value))
+  const tab = createTab(undefined, emptyDocumentGraph(kind))
   if (picker) {
     const rest = tabsRef.value.filter((entry) => entry !== tab)
     tabsRef.value = rest.map((entry) => (entry === picker ? tab : entry))
     disposeTabStore(picker.store)
+  }
+  // A deck opens on its first slide, fitted as an opened file is once its canvas has a size.
+  if (tab.store.state.focusedSlideId !== null) {
+    void tab.store.canvasReady.then(() => fitPageToViewport(tab.store))
   }
   return tab
 }
 
 /** Opens a New file tab, as Figma's + and ⌘T do. */
 export function openNewFileTab(): Tab {
-  const tab: Tab = { id: generateTabId(), store: createEditorStore(), kind: 'new-file' }
+  const tab: Tab = {
+    id: generateTabId(),
+    store: createEditorStore(),
+    kind: 'new-file'
+  }
   tabsRef.value = [...tabsRef.value, tab]
   activateTab(tab)
   return tab
@@ -121,7 +135,11 @@ export function createHomeTab(): Tab {
     activateTab(existing)
     return existing
   }
-  const tab: Tab = { id: generateTabId(), store: createEditorStore(), kind: 'home' }
+  const tab: Tab = {
+    id: generateTabId(),
+    store: createEditorStore(),
+    kind: 'home'
+  }
   tabsRef.value = [tab, ...tabsRef.value]
   activateTab(tab)
   return tab

@@ -570,16 +570,13 @@ export function renderNodeSVGElement(
   graph: SceneGraph,
   node: SceneNode,
   {
-    idPrefix,
     colorSpace = graph.documentColorSpace,
-    tint
+    ...services
   }: Pick<SVGExportOptions, 'colorSpace'> &
-    Partial<Pick<SVGExportContext, 'tint'>> & {
-      idPrefix: string
-    }
+    Pick<SVGExportContext, 'idPrefix' | 'tint' | 'booleanOutlines'>
 ): SVGNode | null {
   const colors = { from: graph.documentColorSpace, to: colorSpace }
-  const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colors, idPrefix, tint }
+  const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colors, ...services }
   const drawn = renderNode({ ...node, x: 0, y: 0, rotation: 0, opacity: 1 }, ctx)
   if (!drawn) return null
   // A straight line has no height or width, but its stroke still needs a viewport to draw in.

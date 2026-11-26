@@ -254,10 +254,18 @@ sequenceDiagram
 
 The relay joins every room as a peer named `server`. It holds the room's Yjs document, saved by
 document and collaboration epoch, so a newcomer gets the document even when nobody else is online.
+It holds the document encoded, as V2 updates it merges and diffs, never as a `Y.Doc`: a document's
+structures take about ten times its encoded size in memory, which a room of a few megabytes would
+not have on Cloudflare. Encoded updates keep the content of what the document deleted, so once a
+room has grown by a quarter, at least 1 MiB, since it was last compacted, or is three quarters
+full, the relay asks the editor longest in it for its whole copy, with the sync request every peer
+already answers. An editor's copy has what it deleted collected; the relay adds whatever it holds
+that the copy lacks, deletions included, and takes the result when it is smaller.
 A save logs what changed since the last one in PostgreSQL as a single update, a few bytes for a
 typical edit, rather than rewriting the room. Once the log reaches 500 updates, or both 4 MiB and a
-quarter of the snapshot, a fresh snapshot replaces it; a closing room writes one only when at least
-a quarter of its snapshot changed, since encoding a large document takes memory it may not have. Snapshots are files in the object store beside the
+quarter of the snapshot, or a compaction shrank the room, a fresh snapshot replaces it; a closing
+room writes one only when at least a quarter of its snapshot changed. Rooms are saved as V1
+updates, as they always were. Snapshots are files in the object store beside the
 documents' revisions, which a room's row names, so the database holds only the updates since the
 last one. A compaction records its file before writing it and points the room at it last, so a
 replaced or abandoned snapshot is one nothing refers to, which the object sweep removes once it is
@@ -274,8 +282,9 @@ which may not be lower. A larger frame, such as a big paste, the first editor's 
 document, or a newcomer's sync reply, travels as fragments in a row that the receiver joins again.
 The relay joins an editor's fragments up to the room's limit and holds viewers and peers not yet
 admitted to one message, so only an editor can make it buffer more. A room's document may hold at
-most 256 MiB, or 32 MiB on Cloudflare, where a Durable Object has 128 MB of memory; an editor's
-update that would grow it past that is refused, while one that only deletes always goes through. A peer the relay turns away for good, for a
+most 256 MiB encoded, or 24 MiB on Cloudflare, where a Durable Object has 128 MB of memory; an
+editor's update that would grow it past that is refused, while one that only deletes what the room
+holds always goes through, and frees the room once it is compacted. A peer the relay turns away for good, for a
 ticket, a full room, or a frame past those limits, leaves the room: the document's status says it
 is not editing live and offers to rejoin, a viewer stays read-only, and an editor saves on its own,
 since a tab that was not the room's saver had its edits counted as saved by the room.
@@ -768,6 +777,12 @@ and the same check serves the official service and self-hosted ones. Entitlement
 token is signed, so a plan change reaches the service within one token lifetime; asking Cloud on
 every request would have made model calls depend on Cloud's database. Entitlements are pushed to
 Cloud rather than read from billing, so documents keep opening when billing is down.
+
+**2026-11 · The relay holds rooms encoded.** A relay holding each room as a `Y.Doc` ran out of a
+Durable Object's 128 MB at rooms of about 15 MB, and was reset each time an editor rejoined. It
+merges and diffs encoded updates instead, which take about the memory of their result, and leaves
+collecting what a room deleted to an editor, whose copy of the document already did. Turning large
+rooms away was ruled out: some documents' only copy was their room.
 
 **2026-10 · On Cloudflare, a Durable Object per document runs the relay.** The relay holds a room's
 Yjs document and its peers in memory, which a stateless Worker can't, and keeping every epoch of a

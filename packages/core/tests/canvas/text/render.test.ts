@@ -9,7 +9,6 @@ import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { pixelLength, textVerticalOffset } from '@open-pencil/scene-graph/text'
-import { detectTextDirection, resolveTextDirection } from '@open-pencil/scene-graph/text/direction'
 import { appendAll } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
@@ -416,13 +415,6 @@ describe('paragraph font weights', () => {
 })
 
 describe('renderText headless visual', () => {
-  test('detects base direction for Arabic and mixed text', () => {
-    expect(detectTextDirection('مرحبا')).toBe('RTL')
-    expect(resolveTextDirection('AUTO', 'مرحبا world')).toBe('RTL')
-    expect(resolveTextDirection('AUTO', 'Hello مرحبا')).toBe('LTR')
-    expect(resolveTextDirection('RTL', 'Hello')).toBe('RTL')
-  })
-
   test('observes CanvasKit notdef glyphs for unsupported CJK text', async () => {
     const ck = await getCanvasKit()
     const fontProvider = attachFontProvider(ck)
