@@ -1,4 +1,9 @@
-import { startHostProgram, type HostChild, type HostProgram, type PermissionNotice } from '@/app/tauri/host'
+import {
+  startHostProgram,
+  type HostChild,
+  type HostProgram,
+  type PermissionNotice
+} from '@/app/tauri/host'
 
 /** A running agent process: its end. */
 export type AgentChild = Pick<HostChild, 'kill'>

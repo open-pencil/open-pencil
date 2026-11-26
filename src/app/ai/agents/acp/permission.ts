@@ -13,6 +13,10 @@ export function permissionNotifier(notify: ((title: string) => void) | null) {
     if (!notify) return
     clearTimeout(timers.get(id))
     timers.delete(id)
-    if (waiting) timers.set(id, setTimeout(() => notify(title), AGENT_INPUT_NOTIFY_DELAY_MS))
+    if (waiting)
+      timers.set(
+        id,
+        setTimeout(() => notify(title), AGENT_INPUT_NOTIFY_DELAY_MS)
+      )
   }
 }

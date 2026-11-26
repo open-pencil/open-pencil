@@ -1,7 +1,7 @@
 import type { ACPAgentID } from '@open-pencil/core/constants'
 
-import type { PermissionNotice } from '@/app/tauri/host'
 import { spawnAgentProcess, type AgentChild } from '@/app/ai/agents/process'
+import type { PermissionNotice } from '@/app/tauri/host'
 
 /** A started agent: its process, and the pipes the ACP connection reads and writes. */
 export interface ACPProcess {

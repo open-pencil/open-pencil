@@ -6,7 +6,6 @@ import {
   type SessionNotification
 } from '@agentclientprotocol/sdk/unstable'
 
-import type { PermissionNotice } from '@/app/tauri/host'
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 import { createDeferred } from '@open-pencil/std/async'
 import { isDeadline, withDeadline } from '@open-pencil/std/timing'
@@ -19,6 +18,7 @@ import {
 import { spawnACPProcess, type ACPProcess } from '@/app/ai/agents/acp/process'
 import type { AgentChild } from '@/app/ai/agents/process'
 import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
+import type { PermissionNotice } from '@/app/tauri/host'
 
 /**
  * How long an agent may take to answer one request while it starts; resuming starts the agent's
