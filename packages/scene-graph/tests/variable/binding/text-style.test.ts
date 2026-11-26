@@ -440,6 +440,20 @@ describe('text style values in a scaled instance', () => {
       letterSpacing: px(6)
     })
   })
+
+  test('a component text dropping its own size binding gives the copy the size its style binds', () => {
+    const { graph, collection, component, source, text, toRoomy } = scaledInstance()
+    const own = graph.createVariable('Own size', 'FLOAT', collection.id, 10)
+    graph.bindVariable(source.id, 'fontSize', own.id)
+    graph.syncInstances(component.id)
+    toRoomy()
+    expect(text().fontSize).toBe(30)
+
+    graph.unbindVariable(source.id, 'fontSize')
+    graph.syncInstances(component.id)
+
+    expect(text().fontSize).toBe(60)
+  })
 })
 
 describe('a text duplicated out of a scaled instance', () => {

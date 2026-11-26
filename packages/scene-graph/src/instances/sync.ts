@@ -231,11 +231,9 @@ function resolveBoundNumbersInPlace(
   kept: (field: string) => boolean
 ): void {
   const own = updates.boundVariables ?? target.boundVariables
-  // The fields the sync writes, and the ones it binds anew, which keep an equal value only in
-  // the component's mode.
-  const rebound = updates.boundVariables
-    ? Object.keys(own).filter((field) => own[field] !== target.boundVariables[field])
-    : []
+  // The fields the sync writes, and the ones whose binding it changes, which keep an equal value
+  // only in the component's mode.
+  const rebound = updates.boundVariables ? changedBindings(target.boundVariables, own) : []
   const styles = styleBindingsOf(graph)
   const textStyleId = updates.textStyleId === undefined ? target.textStyleId : updates.textStyleId
   const bound = effectiveBoundVariables(
@@ -251,6 +249,12 @@ function resolveBoundNumbersInPlace(
   applySyncedModes(graph, target, updates)
   const resolved = resolvedNumericBindings(graph, { ...target, ...updates }, styles)
   Object.assign(updates, pick(resolved, synced as (keyof SceneNode)[]))
+}
+
+function changedBindings(before: Record<string, string>, after: Record<string, string>): string[] {
+  return uniq([...Object.keys(before), ...Object.keys(after)]).filter(
+    (field) => before[field] !== after[field]
+  )
 }
 
 function resolveSyncedRunsInPlace(
