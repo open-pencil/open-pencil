@@ -1,4 +1,4 @@
-import type { DesignNode } from '../types'
+import type { DesignNode } from '#dom-css/types'
 
 /**
  * Joins text that ends up side by side once what lies between it is dropped, such as a comment a

@@ -481,3 +481,7 @@ export function hiddenPart(element: DesignElement): 'all' | 'own' | 'none' {
     )
   return showsAgain(element) ? 'own' : 'all'
 }
+
+export function hasContent(element: DesignElement): boolean {
+  return element.children.some((child) => child.type !== 'text' || child.text.trim().length > 0)
+}

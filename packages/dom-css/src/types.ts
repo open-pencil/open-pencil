@@ -7,6 +7,23 @@ import type { DesignTokens } from './tokens/references'
 
 export type DesignNode = DesignElement | DesignText
 
+/**
+ * A root custom property: as declared, such as `var(--primary)` for an alias, and what it computes
+ * to where that is a color, a length in pixels, or a number.
+ */
+export interface DesignCustomProperty {
+  declared: string
+  color?: string
+  length?: number
+  number?: number
+}
+
+/** An element as another mode of a theme styles it. */
+export interface DesignElementMode {
+  computedStyle?: DesignStyleDeclaration
+  references?: DesignStyleDeclaration
+}
+
 export interface DesignDocument {
   type: 'document'
   children: DesignNode[]
@@ -21,6 +38,14 @@ export interface DesignDocument {
    * root has none, as CSS paints it; none when neither has one, which a browser shows as white.
    */
   background?: string
+  /**
+   * The root element's custom properties, by name, when the runtime was asked for references.
+   */
+  customProperties?: Record<string, DesignCustomProperty>
+  /** The root or body element whose background `background` is, with its styles in each mode. */
+  canvas?: DesignElement
+  /** The root's custom properties in each further mode `CSSComputeOptions.modes` names. */
+  modes?: { customProperties?: Record<string, DesignCustomProperty> }[]
   sourceGraph?: SceneGraph
   /** Variable references the projection wrote, for Tailwind names and the token stylesheet. */
   tokens?: DesignTokens
@@ -35,6 +60,13 @@ export interface DesignElement {
   computedStyle?: DesignStyleDeclaration
   /** Where the engine that computed the styles laid the element out, when it was asked to. */
   layout?: DesignLayout
+  /**
+   * Properties whose values come from the root's custom properties, as the winning declaration
+   * writes them, when the runtime was asked for references.
+   */
+  references?: DesignStyleDeclaration
+  /** Its computed styles and references in each further mode `CSSComputeOptions.modes` names. */
+  modes?: DesignElementMode[]
   /** The picture an `<img>` shows, as the runtime that styled the page loaded it. */
   image?: DesignResource
   /**
@@ -105,6 +137,15 @@ export interface CSSComputeOptions {
   /** Record where each element is laid out as well as its computed style. */
   layout?: boolean
   viewport?: DesignViewport
+  /** Report which of the root's custom properties styles come from; the HTML engine does. */
+  references?: boolean
+  /** Attributes of the root element, such as the class a theme is switched with. */
+  rootAttributes?: Record<string, string>
+  /**
+   * The root attributes of further modes of a theme, such as `{ class: 'dark' }`, to style the
+   * same elements in; each element records what it computes to in them (`DesignElement.modes`).
+   */
+  modes?: Record<string, string>[]
 }
 
 export interface CSSRuntime {
