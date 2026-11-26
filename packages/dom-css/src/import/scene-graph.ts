@@ -35,6 +35,7 @@ import {
   hiddenPart,
   splitOutOfFlow,
   isRightToLeft,
+  isUnseen,
   textLayerAlign,
   type FlowKind,
   type ParentFlow
@@ -289,7 +290,7 @@ function createElementNode(
 ): SceneNode | null {
   const style = decoratedStyle(element, around)
   const display = elementDisplay(element, style)
-  if (display === 'none' || isTableColumn(display)) return null
+  if (display === 'none' || isTableColumn(display) || isUnseen(element, style)) return null
   if (isInlineSVG(element) || isSVGArtwork(element))
     return createSVGFrame(graph, parentId, element, parentFlow, recorded)
   if (

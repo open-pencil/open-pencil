@@ -436,6 +436,14 @@ function isOutOfFlow(node: DesignNode): boolean {
 }
 
 /**
+ * Whether a box shows nothing and takes no room: out of the flow, at zero opacity, which hides
+ * all it holds. A page keeps such a box for what it does rather than for how it looks.
+ */
+export function isUnseen(element: DesignElement, style: DesignStyleDeclaration): boolean {
+  return isOutOfFlow(element) && parseCSSNumber(pickStyle(style, 'opacity')) === 0
+}
+
+/**
  * An element's content as its lines lay it out, and the boxes out of the flow inside it, such as a
  * link's `::before` stretched over the card it is in, which take no part in the lines.
  */
