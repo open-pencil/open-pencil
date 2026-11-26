@@ -1,8 +1,7 @@
+import { type CollabRoomTransport, createActionRegistry } from '@open-pencil/collab'
+
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { COLLAB_APP_ID, IS_BROWSER } from '@/constants'
-
-import { createActionRegistry } from './actions'
-import type { CollabRoomTransport } from './types'
 
 const MAX_TEST_MESSAGE_BYTES = 8 * 1024 * 1024
 /** The relay introduces peers as soon as they say hello. */

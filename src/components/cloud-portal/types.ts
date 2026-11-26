@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 
 import type {
+  CloudAccessTokenAccess,
   CloudAdminDocument,
   CloudAdminReportStatus,
   CloudSignInMethod,
@@ -92,6 +93,20 @@ export type PortalAccessToken = {
   lastUsed: string | null
   expires: string
   expired: boolean
+  /** Whether it only reads documents, or also changes them. */
+  access: CloudAccessTokenAccess
+}
+
+/** An app connected to the account through OAuth, and the workspace it reaches. */
+export type PortalAppConnection = {
+  id: string
+  name: string
+  /** The host of the address the app gave for itself, or null when it gave none. */
+  host: string | null
+  workspace: string
+  /** Whether it only reads documents, or also changes them. */
+  access: CloudAccessTokenAccess
+  connected: string
 }
 
 export type PortalSignIn = PortalDevice & {

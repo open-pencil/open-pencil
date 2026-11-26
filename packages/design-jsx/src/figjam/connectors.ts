@@ -2,7 +2,7 @@ import { compact, countBy } from 'es-toolkit'
 import type * as v from 'valibot'
 
 import type { ConnectorEndpoint, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
+import { colorToHex8 } from '@open-pencil/scene-graph/color'
 import {
   boundEndpoint,
   CONNECTOR_COLOR,
@@ -307,8 +307,8 @@ export function connectorProps(
   ]
   const line = connectorSublayers(graph, node)?.line
   const stroke = line?.strokes[0]
-  if (stroke && colorToHex(stroke.color) !== colorToHex(CONNECTOR_COLOR)) {
-    props.push(['stroke', colorToHex(stroke.color)])
+  if (stroke && colorToHex8(stroke.color) !== colorToHex8(CONNECTOR_COLOR)) {
+    props.push(['stroke', colorToHex8(stroke.color)])
   }
   if (stroke && stroke.weight !== CONNECTOR_STROKE_WEIGHT)
     props.push(['strokeWidth', stroke.weight])

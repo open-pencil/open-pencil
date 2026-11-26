@@ -37,6 +37,7 @@ if (import.meta.main) {
       cloud,
       workspaceId: values.workspace,
       name: example.name,
+      description: example.description,
       bytes: await example.build(),
       release,
       objectFetch: (input, init) => fetch(input, init)

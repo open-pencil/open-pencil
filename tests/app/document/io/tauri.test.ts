@@ -214,6 +214,20 @@ describe('Tauri document IO helpers', () => {
     await expect(chooseTauriFigSavePath('design')).resolves.toBe('/tmp/Untitled.fig')
   })
 
+  test('saves slides as a Figma Slides .deck', async () => {
+    await mockTauriIPC((_cmd, args) => {
+      expect(args).toEqual({
+        options: {
+          defaultPath: 'Untitled.deck',
+          filters: [{ name: 'Figma Slides deck', extensions: ['deck'] }]
+        }
+      })
+      return '/tmp/Untitled.deck'
+    })
+
+    expect(await chooseTauriFigSavePath('slides')).toBe('/tmp/Untitled.deck')
+  })
+
   test('saves a board as a FigJam .jam', async () => {
     await mockTauriIPC((cmd, args) => {
       expect(cmd).toBe('plugin:dialog|save')

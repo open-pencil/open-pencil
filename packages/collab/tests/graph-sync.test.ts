@@ -4,6 +4,7 @@ import { createYjsGraphSync, registerYjsObservers, type CollabEditor } from '#co
 import * as Y from 'yjs'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { createSlide, createSlideGrid, createSlideRow } from '@open-pencil/scene-graph/slides'
 
 /** An editor with nothing to redraw and no edits of its own, as a server reading a room has. */
 function headlessEditor(graph: SceneGraph): CollabEditor {
@@ -27,7 +28,51 @@ function graphSync(ydoc: Y.Doc, editor: CollabEditor) {
   })
 }
 
+/** What a guest's graph holds once it reads a room as a relay stores it. */
+function readRoom(room: Y.Doc): SceneGraph {
+  const ydoc = new Y.Doc()
+  const graph = new SceneGraph()
+  const editor = headlessEditor(graph)
+  const sync = graphSync(ydoc, editor)
+  registerYjsObservers({
+    editor,
+    ynodes: ydoc.getMap<Y.Map<unknown>>('nodes'),
+    yimages: ydoc.getMap('images'),
+    getSuppressYjsEvents: () => false,
+    setSuppressGraphSync: () => undefined,
+    applyYjsToGraph: sync.applyYjsToGraph
+  })
+  Y.applyUpdate(ydoc, Y.encodeStateAsUpdate(room))
+  return graph
+}
+
 describe('room document to graph', () => {
+  test('carries slides with their notes and transitions', () => {
+    const source = new SceneGraph()
+    const row = createSlideRow(source, createSlideGrid(source, source.getPages()[0].id).id)
+    const slide = createSlide(source, row.id)
+    const settings = {
+      skipped: true,
+      notes: 'Say hello',
+      transition: {
+        style: 'DISSOLVE',
+        duration: 0.5,
+        curve: 'QUICK',
+        timing: { type: 'AFTER_DELAY', delay: 2 }
+      }
+    } as const
+    source.updateNode(slide.id, { slide: settings })
+    const room = new Y.Doc()
+    graphSync(room, headlessEditor(source)).syncAllNodesToYjs()
+
+    const graph = readRoom(room)
+    expect(graph.getNode(slide.id)).toMatchObject({
+      type: 'SLIDE',
+      parentId: row.id,
+      slide: settings
+    })
+  })
+
   test('reads a room saved as a Yjs update into a graph without an editor', () => {
     const source = new SceneGraph()
     const page = source.addPage('Cover')
@@ -37,20 +82,7 @@ describe('room document to graph', () => {
     graphSync(room, headlessEditor(source)).syncAllNodesToYjs()
 
     // What a relay stores, read back by something that never saw the editor.
-    const saved = Y.encodeStateAsUpdate(room)
-    const ydoc = new Y.Doc()
-    const graph = new SceneGraph()
-    const editor = headlessEditor(graph)
-    const sync = graphSync(ydoc, editor)
-    registerYjsObservers({
-      editor,
-      ynodes: ydoc.getMap<Y.Map<unknown>>('nodes'),
-      yimages: ydoc.getMap('images'),
-      getSuppressYjsEvents: () => false,
-      setSuppressGraphSync: () => undefined,
-      applyYjsToGraph: sync.applyYjsToGraph
-    })
-    Y.applyUpdate(ydoc, saved)
+    const graph = readRoom(room)
 
     const cover = graph.getPages().find((candidate) => candidate.name === 'Cover')
     expect(cover?.id).toBe(page.id)

@@ -1,0 +1,54 @@
+{
+  "auto-layout/after": {
+    "width": 290,
+    "height": 186
+  },
+  "auto-layout/before": {
+    "width": 290,
+    "height": 137
+  },
+  "auto-layout/drag": {
+    "width": 290,
+    "height": 186
+  },
+  "auto-layout/drop": {
+    "width": 290,
+    "height": 186
+  },
+  "auto-layout/grid": {
+    "width": 428,
+    "height": 284
+  },
+  "auto-layout/grid-panel": {
+    "width": 284,
+    "height": 256
+  },
+  "auto-layout/panel": {
+    "width": 348,
+    "height": 380
+  },
+  "auto-layout/sizing": {
+    "width": 284,
+    "height": 244
+  },
+  "auto-layout/wrap": {
+    "width": 452,
+    "height": 216
+  },
+  "exporting/copy-as": {
+    "width": 194,
+    "height": 263
+  },
+  "exporting/copy-as-other": {
+    "width": 217,
+    "height": 263
+  },
+  "exporting/panel": {
+    "width": 348,
+    "height": 329
+  },
+  "files/open-url": {
+    "width": 414,
+    "height": 176
+  }
+}

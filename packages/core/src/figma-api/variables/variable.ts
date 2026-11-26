@@ -17,7 +17,12 @@ import { updateTokenExpression } from '@open-pencil/scene-graph/variables'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
-import { figmaVariableValue, storedVariableValue, type FigmaVariableValue } from './values'
+import {
+  figmaLiteral,
+  figmaVariableValue,
+  storedVariableValue,
+  type FigmaVariableValue
+} from './values'
 
 /** Scopes as Figma's plugin API names them; the file calls a stroke colour scope `STROKE`. */
 export type FigmaVariableScope =
@@ -205,7 +210,7 @@ export class FigmaVariable {
     const value = this.#graph.resolveVariableForNode(consumer.id, variable.id)
     if (value !== undefined) {
       return {
-        value: typeof value === 'object' ? { ...value } : value,
+        value: figmaLiteral(value),
         resolvedType: variable.type
       }
     }

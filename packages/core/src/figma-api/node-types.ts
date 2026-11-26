@@ -12,6 +12,8 @@ import type {
   RectangleNode,
   SectionNode,
   ShapeWithTextNode,
+  SlideNode,
+  SlideRowNode,
   SlotNode,
   StarNode,
   StickyNode,
@@ -37,5 +39,7 @@ export type FigmaSlotNode = FigmaNodeProxy & SlotNode
 export type FigmaSectionNode = FigmaNodeProxy & SectionNode
 export type FigmaGroupNode = FigmaNodeProxy & GroupNode
 export type FigmaBooleanOperationNode = FigmaNodeProxy & BooleanOperationNode
+export type FigmaSlideNode = FigmaNodeProxy & SlideNode
+export type FigmaSlideRowNode = FigmaNodeProxy & SlideRowNode
 export type FigmaStickyNode = FigmaNodeProxy & StickyNode
 export type FigmaConnectorNode = FigmaNodeProxy & ConnectorNode

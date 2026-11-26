@@ -2,6 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { sceneNodeAttributes, sceneNodeToJSX, selectionToJSX } from '#design-jsx/index'
 
+import { createSticky } from '@open-pencil/scene-graph/generated'
+
+import { createPlainRenderer } from '../renderer'
 import { makeGraph, pageId } from './helpers'
 
 describe('sceneNodeToJSX', () => {
@@ -389,5 +392,59 @@ describe('selectionToJSX', () => {
     })
     const jsx = selectionToJSX([a.id, b.id], graph)
     expect(jsx).toMatch(/^<>\n  <Rectangle [^\n]*\/>\n  <Ellipse [^\n]*\/>\n<\/>$/)
+  })
+})
+
+describe('FigJam export color alpha', () => {
+  const renderer = createPlainRenderer()
+
+  test('preserves alpha on translucent colors and reserves palette names for opaque matches', async () => {
+    const graph = makeGraph()
+    const page = pageId(graph)
+
+    const translucentCustom = createSticky(graph, page, {
+      text: 'Translucent note',
+      color: { r: 0x12 / 255, g: 0x34 / 255, b: 0x56 / 255, a: 128 / 255 }
+    })
+    const translucentWhite = createSticky(graph, page, {
+      text: 'Translucent white',
+      color: { r: 1, g: 1, b: 1, a: 128 / 255 }
+    })
+    const opaqueWhite = createSticky(graph, page, {
+      text: 'Opaque white',
+      color: { r: 1, g: 1, b: 1, a: 1 }
+    })
+    const opaqueCustom = createSticky(graph, page, {
+      text: 'Opaque custom',
+      color: { r: 0x12 / 255, g: 0x34 / 255, b: 0x56 / 255, a: 1 }
+    })
+
+    const customJSX = sceneNodeToJSX(translucentCustom.id, graph)
+    const whiteAlphaJSX = sceneNodeToJSX(translucentWhite.id, graph)
+    expect(customJSX).toContain('color="#12345680"')
+    expect(whiteAlphaJSX).toContain('color="#FFFFFF80"')
+    expect(sceneNodeToJSX(opaqueWhite.id, graph)).toContain('color="white"')
+    expect(sceneNodeToJSX(opaqueCustom.id, graph)).toContain('color="#123456"')
+
+    const reimported = makeGraph()
+    const [customResult] = await renderer.renderJSX(reimported, customJSX)
+    const roundTrippedFill = reimported.getNode(customResult.id)?.fills.at(0)
+    expect(roundTrippedFill?.color.a).toBeCloseTo(128 / 255, 4)
+
+    const [whiteResult] = await renderer.renderJSX(reimported, whiteAlphaJSX)
+    const roundTrippedWhiteFill = reimported.getNode(whiteResult.id)?.fills.at(0)
+    expect(roundTrippedWhiteFill?.color.a).toBeCloseTo(128 / 255, 4)
+  })
+
+  test('keeps alpha on a translucent connector stroke', async () => {
+    const graph = makeGraph()
+    await renderer.renderJSX(
+      graph,
+      '<Frame><Rectangle name="A" /><Rectangle name="B" /><Connector from="A" to="B" stroke="#12345680" /></Frame>'
+    )
+    const connector = [...graph.getAllNodes()].find((node) => node.type === 'CONNECTOR')
+    if (!connector) throw new Error('The connector is missing')
+    const jsx = sceneNodeToJSX(connector.id, graph)
+    expect(jsx).toContain('stroke="#12345680"')
   })
 })

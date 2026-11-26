@@ -16,6 +16,7 @@ export {
 } from './interpreter'
 export { decodeBinarySchema, encodeBinarySchema } from './binary'
 export { parseSchema } from './parser'
+export { prettyPrintSchema } from './printer'
 export {
   validateSchema,
   expectFieldNumber,

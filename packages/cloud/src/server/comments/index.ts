@@ -1,4 +1,4 @@
-export { createCommentRoutes, createSharedCommentRoutes } from './routes'
+export { createCommentProcedures, createSharedCommentProcedures } from './procedures'
 export {
   CommentConflictError,
   CommentLimitError,

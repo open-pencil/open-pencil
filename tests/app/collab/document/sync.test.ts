@@ -3,11 +3,10 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph, type CommentReply, type CommentThread } from '@open-pencil/scene-graph'
 import { readComments, writeComments } from '@open-pencil/scene-graph/comments'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { createMemoryRooms } from '@open-pencil/test-support/collab/memory-transport'
 
 import { openRoomSession, type RoomSession } from '@/app/collab/session'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
-
-import { createMemoryRooms } from '#tests/helpers/collab/memory-transport'
 
 const ROOM = 'dddddddddddddddddddddddddddddddd'
 
@@ -189,6 +188,14 @@ describe('document data in a room', () => {
       guest.setReadOnly(false)
       guest.setTool('RECTANGLE')
       expect(guest.state.activeTool).toBe('SELECT')
+    })
+  })
+
+  test('a deck reaches the other peer as slides', async () => {
+    await withRoom(async ({ host, guest, settle }) => {
+      host.setDocumentKind('slides')
+      await settle()
+      expect([guest.graph.documentKind, guest.state.documentKind]).toEqual(['slides', 'slides'])
     })
   })
 

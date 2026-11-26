@@ -8,7 +8,7 @@ import { guid } from '@open-pencil/test-support/fig/guid'
 
 import { appendVariableNodeChanges } from '#core/io/formats/fig/export/variables'
 
-/** A PAINT variable as Figma writes it; the pinned schema has no PAINT type or paint values. */
+/** A PAINT variable as Figma writes it; the codec's types have no PAINT type or paint values. */
 function paintVariable(localID: number, extra: Partial<NodeChange> = {}): NodeChange {
   const value = { paintValue: { type: 'SOLID' } }
   return {

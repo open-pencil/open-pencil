@@ -1,0 +1,1 @@
+- Cloud pages also send `Cross-Origin-Resource-Policy`, `Origin-Agent-Cluster`, `X-Download-Options`, `X-Permitted-Cross-Domain-Policies`, and `X-XSS-Protection: 0`.

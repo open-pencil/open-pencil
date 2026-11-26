@@ -43,6 +43,6 @@ Sombra exterior e interior y desenfoque de capa, fondo o primer plano.
 
 ## Marcos y secciones
 
-Un marco es un contenedor. Los objetos arrastrados dentro pasan a ser secundarios. El recorte está desactivado de forma predeterminada. Los marcos admiten [disposición automática](./auto-layout).
+Un marco es un contenedor. Los objetos arrastrados dentro pasan a ser secundarios. El recorte está desactivado de forma predeterminada. Los marcos admiten [disposición automática](/user-guide/auto-layout).
 
 Una sección es un contenedor de nivel superior que adopta los objetos superpuestos al dibujarla.
