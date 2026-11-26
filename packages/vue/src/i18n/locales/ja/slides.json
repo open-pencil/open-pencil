@@ -13,5 +13,12 @@
   "delete": "削除",
   "notes": "スピーカーノート",
   "notesPlaceholder": "スピーカーノートを追加",
-  "notesPickSlide": "スライドを1枚選択するとスピーカーノートが表示されます"
+  "notesPickSlide": "スライドを1枚選択するとスピーカーノートが表示されます",
+  "slideSize": "スライドのサイズ",
+  "sizeWide": "16:9",
+  "sizeStandard": "4:3",
+  "sizeSquare": "正方形",
+  "sizePortrait": "縦向き",
+  "sizeCustom": "カスタム",
+  "scaleContent": "コンテンツを拡大縮小"
 }

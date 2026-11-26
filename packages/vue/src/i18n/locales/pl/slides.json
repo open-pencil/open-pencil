@@ -13,5 +13,12 @@
   "delete": "Usuń",
   "notes": "Notatki prelegenta",
   "notesPlaceholder": "Dodaj notatki prelegenta",
-  "notesPickSlide": "Zaznacz jeden slajd, aby zobaczyć jego notatki prelegenta"
+  "notesPickSlide": "Zaznacz jeden slajd, aby zobaczyć jego notatki prelegenta",
+  "slideSize": "Rozmiar slajdu",
+  "sizeWide": "16:9",
+  "sizeStandard": "4:3",
+  "sizeSquare": "Kwadrat",
+  "sizePortrait": "Pionowy",
+  "sizeCustom": "Niestandardowy",
+  "scaleContent": "Skaluj zawartość"
 }

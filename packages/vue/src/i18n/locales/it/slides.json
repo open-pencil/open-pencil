@@ -13,5 +13,12 @@
   "delete": "Elimina",
   "notes": "Note del relatore",
   "notesPlaceholder": "Aggiungi note del relatore",
-  "notesPickSlide": "Seleziona una diapositiva per vederne le note del relatore"
+  "notesPickSlide": "Seleziona una diapositiva per vederne le note del relatore",
+  "slideSize": "Dimensioni diapositiva",
+  "sizeWide": "16:9",
+  "sizeStandard": "4:3",
+  "sizeSquare": "Quadrato",
+  "sizePortrait": "Verticale",
+  "sizeCustom": "Personalizzate",
+  "scaleContent": "Ridimensiona contenuto"
 }

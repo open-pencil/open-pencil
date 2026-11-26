@@ -13,5 +13,12 @@
   "delete": "Eliminar",
   "notes": "Notas del orador",
   "notesPlaceholder": "Añadir notas del orador",
-  "notesPickSlide": "Selecciona una diapositiva para ver sus notas del orador"
+  "notesPickSlide": "Selecciona una diapositiva para ver sus notas del orador",
+  "slideSize": "Tamaño de diapositiva",
+  "sizeWide": "16:9",
+  "sizeStandard": "4:3",
+  "sizeSquare": "Cuadrado",
+  "sizePortrait": "Vertical",
+  "sizeCustom": "Personalizado",
+  "scaleContent": "Escalar contenido"
 }

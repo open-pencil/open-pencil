@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { getNodeEditCapability } from '@open-pencil/core'
+import { getNodeEditCapability, resolveEditorProfile } from '@open-pencil/core'
 import { isGeneratedFrame, layerMoves, layerResizes } from '@open-pencil/scene-graph/generated'
 import { readIcon } from '@open-pencil/scene-graph/icons'
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
@@ -56,6 +56,7 @@ import TextContentControl from './properties/text-content/TextContentControl.vue
 import TextContentSection from './properties/text-content/TextContentSection.vue'
 import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
+import SlideSizeSection from './slides/SlideSizeSection.vue'
 
 const store = useEditorStore()
 const libraryService = useLibraryService()
@@ -100,6 +101,7 @@ const supportsLayoutGuides = useSceneComputed(() => {
 const freeStyle = useSceneComputed(() =>
   store.getSelectedNodes().every((selected) => !isGeneratedFrame(selected))
 )
+const filmstrip = computed(() => resolveEditorProfile(store.state).filmstrip)
 const selectionMoves = useSceneComputed(() => store.getSelectedNodes().every(layerMoves))
 const panels = useMessages('panels')
 </script>
@@ -264,6 +266,7 @@ const panels = useMessages('panels')
     class="flex-1 overflow-x-hidden overflow-y-auto pb-4"
   >
     <PageSection />
+    <SlideSizeSection v-if="filmstrip" />
     <VariablesSection @open-dialog="openVariablesDialog(store)" />
     <StatusesSection />
     <DocumentSection />

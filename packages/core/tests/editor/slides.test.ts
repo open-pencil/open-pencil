@@ -225,3 +225,56 @@ test('notes change as one undo step, and the same text adds none', () => {
   editor.undo.redo()
   expect(notes()).toBe('Open with the numbers\nThen the plan')
 })
+
+describe('slide size', () => {
+  function withBox(editor: Editor, slideId: string) {
+    return editor.graph.createNode('RECTANGLE', slideId, {
+      x: 910,
+      y: 490,
+      width: 100,
+      height: 100,
+      horizontalConstraint: 'CENTER',
+      verticalConstraint: 'CENTER'
+    }).id
+  }
+  const rect = (editor: Editor, id: string) => {
+    const { x, y, width, height } = expectDefined(editor.graph.getNode(id))
+    return { x, y, width, height }
+  }
+
+  test('keeping the content moves each layer by its constraints, as one undo step', () => {
+    const { editor, a, b } = setup()
+    const box = withBox(editor, a)
+    editor.setSlideSize([a, b], { width: 1080, height: 1080 }, 'constraints')
+    expect(rect(editor, a)).toMatchObject({ width: 1080, height: 1080 })
+    expect(rect(editor, b)).toMatchObject({ width: 1080, height: 1080 })
+    expect(rect(editor, box)).toEqual({ x: 490, y: 490, width: 100, height: 100 })
+    editor.undo.undo()
+    expect(rect(editor, a)).toMatchObject({ width: 1920, height: 1080 })
+    expect(rect(editor, b)).toMatchObject({ width: 1920, height: 1080 })
+    expect(rect(editor, box)).toEqual({ x: 910, y: 490, width: 100, height: 100 })
+  })
+
+  test('scaling the content fits it evenly and centres it', () => {
+    const { editor, a } = setup()
+    const box = withBox(editor, a)
+    editor.setSlideSize([a], { width: 1440, height: 1080 }, 'scale')
+    expect(rect(editor, box)).toEqual({ x: 682.5, y: 502.5, width: 75, height: 75 })
+    editor.undo.undo()
+    expect(rect(editor, a)).toMatchObject({ width: 1920, height: 1080 })
+    expect(rect(editor, box)).toEqual({ x: 910, y: 490, width: 100, height: 100 })
+    editor.undo.redo()
+    expect(rect(editor, box)).toEqual({ x: 682.5, y: 502.5, width: 75, height: 75 })
+  })
+
+  test('the slide on the stage fills it again after a resize and its undo', () => {
+    const { editor, a } = setup()
+    editor.setViewportSize(1000, 800)
+    editor.focusSlide(a)
+    const fitted = editor.state.zoom
+    editor.setSlideSize([a], { width: 1080, height: 1080 }, 'constraints')
+    expect(editor.state.zoom).toBeGreaterThan(fitted)
+    editor.undo.undo()
+    expect(editor.state.zoom).toBeCloseTo(fitted)
+  })
+})

@@ -13,5 +13,12 @@
   "delete": "حذف",
   "notes": "ملاحظات المتحدث",
   "notesPlaceholder": "أضف ملاحظات المتحدث",
-  "notesPickSlide": "حدّد شريحة واحدة لعرض ملاحظات المتحدث الخاصة بها"
+  "notesPickSlide": "حدّد شريحة واحدة لعرض ملاحظات المتحدث الخاصة بها",
+  "slideSize": "حجم الشريحة",
+  "sizeWide": "16:9",
+  "sizeStandard": "4:3",
+  "sizeSquare": "مربع",
+  "sizePortrait": "عمودي",
+  "sizeCustom": "مخصص",
+  "scaleContent": "تحجيم المحتوى"
 }

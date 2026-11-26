@@ -32,11 +32,7 @@ function distanceTo(box: Rect, point: Vector): number {
 }
 
 /** Beside the slide of `row` nearest the point, on the side of its middle the point is on. */
-function besideNearest(
-  graph: SceneGraph,
-  row: SceneNode,
-  point: Vector
-): SlideDrop | null {
+function besideNearest(graph: SceneGraph, row: SceneNode, point: Vector): SlideDrop | null {
   const slides = graph
     .getChildren(row.id)
     .filter((node) => node.type === 'SLIDE')
@@ -67,11 +63,7 @@ function besideNearest(
  * beside its nearest slide; between sections, above the first, or below the last, as a new section
  * there. Null on a page without a deck.
  */
-export function slideDropAt(
-  graph: SceneGraph,
-  pageId: string,
-  point: Vector
-): SlideDrop | null {
+export function slideDropAt(graph: SceneGraph, pageId: string, point: Vector): SlideDrop | null {
   const grid = graph.getChildren(pageId).find((node) => node.type === 'SLIDE_GRID')
   if (!grid) return null
   const rows = graph

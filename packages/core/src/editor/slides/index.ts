@@ -9,8 +9,10 @@ import {
   type SlidePlacement
 } from '@open-pencil/scene-graph/slides'
 
-import { restoreSubtree, snapshotSubtree } from './history/subtree'
-import type { EditorContext } from './types'
+import { restoreSubtree, snapshotSubtree } from '#core/editor/history/subtree'
+import type { EditorContext } from '#core/editor/types'
+
+import { createSlideSizeActions } from './size'
 
 /** A section of the deck and its slides, in order. */
 interface DeckSection {
@@ -362,6 +364,7 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
   ctx.state.focusedSlideId = slideOrder().at(0) ?? null
 
   return {
+    ...createSlideSizeActions(ctx, zoomToFit),
     addSlide,
     duplicateSlides,
     deleteSlides,

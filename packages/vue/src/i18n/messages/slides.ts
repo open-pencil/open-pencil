@@ -16,5 +16,12 @@ export const slideMessageDefaults = {
   delete: 'Delete',
   notes: 'Speaker notes',
   notesPlaceholder: 'Add speaker notes',
-  notesPickSlide: 'Select one slide to see its speaker notes'
+  notesPickSlide: 'Select one slide to see its speaker notes',
+  slideSize: 'Slide size',
+  sizeWide: '16:9',
+  sizeStandard: '4:3',
+  sizeSquare: 'Square',
+  sizePortrait: 'Portrait',
+  sizeCustom: 'Custom',
+  scaleContent: 'Scale content'
 } as const

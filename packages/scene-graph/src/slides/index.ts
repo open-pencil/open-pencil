@@ -7,6 +7,15 @@ export * from './types'
 
 /** Figma's slide: 1920 by 1080, with 240 between slides and 600 between the rows of a grid. */
 export const DEFAULT_SLIDE_SIZE = { width: 1920, height: 1080 } as const
+
+/** The sizes a deck offers its slides, by shape; any other size is a custom one. */
+export const SLIDE_SIZE_PRESETS = [
+  { id: 'wide', width: 1920, height: 1080 },
+  { id: 'standard', width: 1440, height: 1080 },
+  { id: 'square', width: 1080, height: 1080 },
+  { id: 'portrait', width: 1080, height: 1920 }
+] as const
+export type SlideSizePreset = (typeof SLIDE_SIZE_PRESETS)[number]
 const SLIDE_GAP = 240
 const ROW_GAP = 600
 const SLIDES_PER_LINE = 20

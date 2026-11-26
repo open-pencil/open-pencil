@@ -13,5 +13,12 @@
   "delete": "Excluir",
   "notes": "Anotações do apresentador",
   "notesPlaceholder": "Adicionar anotações do apresentador",
-  "notesPickSlide": "Selecione um slide para ver as anotações do apresentador"
+  "notesPickSlide": "Selecione um slide para ver as anotações do apresentador",
+  "slideSize": "Tamanho do slide",
+  "sizeWide": "16:9",
+  "sizeStandard": "4:3",
+  "sizeSquare": "Quadrado",
+  "sizePortrait": "Retrato",
+  "sizeCustom": "Personalizado",
+  "scaleContent": "Redimensionar conteúdo"
 }
