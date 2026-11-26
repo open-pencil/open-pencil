@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useHead } from '@unhead/vue'
 import { tv } from 'tailwind-variants'
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
@@ -20,8 +20,6 @@ import { usePortal } from '@/app/cloud-portal/context'
 import { useDateFormat } from '@/app/i18n/date'
 import CommunityLayout from '@/components/cloud-portal/community/CommunityLayout.vue'
 import PortalLoadAlert from '@/components/cloud-portal/layout/PortalLoadAlert.vue'
-import CloudVersionListItem from '@/components/cloud/versions/CloudVersionListItem.vue'
-import { cloudVersions } from '@/components/cloud/versions/ui'
 import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -45,7 +43,6 @@ const communityMessages = useMessages('cloud/portal/community')
 const cloud = useMessages('cloud/editor')
 const files = useMessages('files')
 const dates = useDateFormat()
-const versions = cloudVersions()
 const { state, reload } = useCommunityDocuments(portal.discovery)
 const origin = globalThis.location.origin
 
@@ -67,16 +64,6 @@ const kindLabel = computed(
 )
 const pageURL = computed(() =>
   document.value ? new URL(cloudCommunityPagePath(document.value.id), origin).href : ''
-)
-
-/** The named version to open, or null for the file as it is now. */
-const versionId = ref<string | null>(null)
-// Another file's page starts from its current state.
-watch(
-  () => route.params.documentId,
-  () => {
-    versionId.value = null
-  }
 )
 
 function openPage(entry: CommunityDocument) {
@@ -134,7 +121,7 @@ useHead({ title: () => document.value?.name ?? communityMessages.value.community
           variant="solid"
           size="lg"
           class="mt-6 shrink-0"
-          @click="openCommunityInBrowser({ documentId: document.id, versionId })"
+          @click="openCommunityInBrowser({ documentId: document.id, versionId: null })"
         >
           {{ communityMessages.communityOpenInBrowser }}
         </AppButton>
@@ -153,40 +140,44 @@ useHead({ title: () => document.value?.name ?? communityMessages.value.community
               {{ document.description }}
             </p>
             <section v-if="document.versions.length > 0">
-              <h2 class="mb-3 text-sm font-semibold">{{ cloud.versionHistory }}</h2>
-              <div class="overflow-hidden rounded-lg border border-border bg-panel">
-                <ul :class="versions.list()" :aria-label="cloud.versionHistory">
-                  <CloudVersionListItem
-                    v-if="!document.versions[0]?.current"
-                    :label="cloud.currentVersion"
-                    current
-                    :selected="versionId === null"
-                    @select="versionId = null"
-                  />
-                  <CloudVersionListItem
-                    v-for="(version, index) in document.versions"
-                    :key="version.id"
-                    :label="
-                      index === 0
-                        ? communityMessages.communityLatestVersion({ name: version.name })
-                        : version.name
+              <h2 class="mb-2 text-sm font-semibold">{{ cloud.versionHistory }}</h2>
+              <ul class="divide-y divide-border border-y border-border">
+                <li
+                  v-for="version in document.versions"
+                  :key="version.id"
+                  class="flex items-center gap-4 py-3"
+                >
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm">
+                      <span class="font-medium">{{ version.name }}</span>
+                      <span class="ms-2 text-muted">
+                        {{ dates.format(version.createdAt, 'date') }}
+                      </span>
+                    </p>
+                    <p v-if="version.description" class="mt-0.5 text-xs text-muted">
+                      {{ version.description }}
+                    </p>
+                  </div>
+                  <AppButton
+                    size="md"
+                    class="gap-1.5 font-normal"
+                    :aria-label="communityMessages.communityOpenVersion({ name: version.name })"
+                    @click="
+                      openCommunityInBrowser({ documentId: document.id, versionId: version.id })
                     "
-                    :description="version.description"
-                    :at="version.createdAt"
-                    named
-                    :selected="versionId === version.id || (versionId === null && version.current)"
-                    :last="index === document.versions.length - 1"
-                    @select="versionId = version.id"
-                  />
-                </ul>
-              </div>
+                  >
+                    <template #leading><icon-lucide-external-link /></template>
+                    {{ communityMessages.communityOpen }}
+                  </AppButton>
+                </li>
+              </ul>
             </section>
           </div>
           <aside class="flex flex-col gap-1">
             <AppButton
               size="lg"
               class="justify-start gap-2 font-normal max-sm:hidden"
-              @click="openCommunityInDesktop({ documentId: document.id, versionId })"
+              @click="openCommunityInDesktop({ documentId: document.id, versionId: null })"
             >
               <template #leading><icon-lucide-monitor /></template>
               {{ communityMessages.communityOpenInDesktop }}
@@ -200,9 +191,6 @@ useHead({ title: () => document.value?.name ?? communityMessages.value.community
             >
               <template #icon><icon-lucide-link /></template>
             </AppCopyButton>
-            <p class="mt-4 border-t border-border px-3.5 pt-4 text-xs text-muted">
-              {{ communityMessages.communityOpenNote }}
-            </p>
           </aside>
         </div>
       </div>
