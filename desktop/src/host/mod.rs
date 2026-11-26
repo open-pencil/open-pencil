@@ -570,7 +570,7 @@ fn confirm_mode<R: Runtime>(app: &AppHandle<R>, id: u32, agent: &'static str, ch
         if reply == Reply::Chose(ALLOW_MODE.to_owned()) {
             let _ = write_line(&mut process.child, &change.line);
         } else if let Some(request) = &change.id {
-            let answer = acp::error_response(request, "The mode was not allowed.");
+            let answer = acp::mode_refused(request);
             let _ = process.events.send(HostEvent::Stdout { data: answer + "\n" });
         }
     });

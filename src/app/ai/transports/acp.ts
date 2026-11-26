@@ -22,6 +22,7 @@ import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import {
   AGENT_CHOICE_CATEGORIES,
   choicesMoved,
+  isModeRefusal,
   sessionChoices,
   sessionOptionRequests,
   shownChoices,
@@ -29,6 +30,7 @@ import {
   type AgentModelChoices,
   type SessionChoices
 } from '@/app/ai/agents/acp/options'
+import { permissionNotifier } from '@/app/ai/agents/acp/permission'
 import {
   AgentSessionResumeError,
   AgentSessionRetryError,
@@ -39,7 +41,6 @@ import {
   sessionRequests
 } from '@/app/ai/agents/acp/session'
 import { noteSubagents } from '@/app/ai/agents/acp/subagents'
-import { permissionNotifier } from '@/app/ai/agents/acp/permission'
 import { linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
 import { createSubagentTranscripts } from '@/app/ai/agents/acp/transcripts'
 import type { AgentChild } from '@/app/ai/agents/process'
@@ -411,7 +412,15 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         })
         // The turn's own wait reports a refusal.
         .catch(() => undefined)
-      await session.connection.forTurn(request, signal)
+      try {
+        await session.connection.forTurn(request, signal)
+      } catch (error) {
+        if (!isModeRefusal(error)) throw error
+        // The person kept the agent asking: the turn goes on in the mode it had, and the
+        // composer shows that mode again.
+        session.choices[category] = choice
+        this.onAgentChoices?.({ [category]: choice.current })
+      }
     }
   }
 

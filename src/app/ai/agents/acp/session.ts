@@ -22,6 +22,7 @@ import {
   type AgentChoiceCategory,
   type AgentChoices,
   type OfferedSessionOptions,
+  isModeRefusal,
   type SessionChoices,
   type SessionOptionRequests
 } from './options'
@@ -126,7 +127,15 @@ async function startingSettings(
   for (const category of AGENT_CHOICE_CATEGORIES) {
     const value = wanted.choices[category]
     if (!value) continue
-    const chosen = await chooseSessionOption(connection, sessionId, current, category, value)
+    const before = current
+    let chosen: OfferedSessionOptions | null
+    try {
+      chosen = await chooseSessionOption(connection, sessionId, before, category, value)
+    } catch (error) {
+      // The person kept the agent asking: the session opens on the mode it had.
+      if (!isModeRefusal(error)) throw error
+      chosen = before
+    }
     if (!chosen) throw new AgentOptionChoiceError(agentDef, category)
     current = chosen
   }

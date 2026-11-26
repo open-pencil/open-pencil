@@ -13,6 +13,7 @@ import {
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { isModeRefusal } from '@/app/ai/agents/acp/options'
 import {
   AgentOptionChoiceError,
   AgentModelChoiceError,
@@ -394,3 +395,40 @@ async function expectRetry(opening: Promise<unknown>, error: unknown) {
   expect(failure instanceof Error && failure.cause).toBe(error)
   expect(failure instanceof Error && failure.message).toContain('Try again, or start a new chat.')
 }
+
+test('a session opens on the mode it had when the person keeps the agent asking', async () => {
+  const mode: SessionConfigOption = {
+    id: 'mode',
+    name: 'Mode',
+    category: 'mode',
+    type: 'select',
+    currentValue: 'auto',
+    options: [
+      { value: 'auto', name: 'Auto' },
+      { value: 'bypassPermissions', name: 'Bypass permissions' }
+    ]
+  }
+  const fake = connection({ configOptions: [mode] })
+  // What the desktop app answers when the person presses Keep asking in its permission window.
+  const refusal = {
+    code: -32602,
+    message: 'The mode was not allowed.',
+    data: { openpencil: 'mode-refused' }
+  }
+  const refusing = {
+    ...fake,
+    async setConfigOption(): Promise<never> {
+      throw refusal
+    }
+  }
+
+  const opened = await openAgentSession(refusing, claude, resumes, {
+    ...request,
+    resume: null,
+    choices: { mode: 'bypassPermissions' }
+  })
+
+  expect(isModeRefusal(refusal)).toBe(true)
+  expect(isModeRefusal({ code: -32602, message: 'Invalid value' })).toBe(false)
+  expect(opened.choices.mode?.current).toBe('auto')
+})

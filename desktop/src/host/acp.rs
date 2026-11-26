@@ -271,6 +271,21 @@ fn refuse(id: Option<Value>, reason: &str) -> FromEditor {
     FromEditor::Refuse(id.map(|id| error_response(&id, reason)))
 }
 
+/// The error a mode change gets when the person keeps the agent asking, which the chat tells
+/// apart from a failure (`isModeRefusal` in `src/app/ai/agents/acp/options.ts`).
+pub fn mode_refused(id: &Value) -> String {
+    json!({
+        "jsonrpc": "2.0",
+        "id": id,
+        "error": {
+            "code": -32602,
+            "message": "The mode was not allowed.",
+            "data": { "openpencil": "mode-refused" }
+        }
+    })
+    .to_string()
+}
+
 /// A JSON-RPC error answering the editor's request `id`.
 pub fn error_response(id: &Value, reason: &str) -> String {
     json!({
