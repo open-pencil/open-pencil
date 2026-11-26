@@ -14,8 +14,8 @@ W podręczniku używane są oznaczenia z macOS: <kbd>⌘</kbd> oznacza <kbd>Comm
 
 ## Nawigacja i zaznaczanie
 
-- [Nawigacja po obszarze roboczym](./canvas-navigation) — przesuwanie widoku, powiększenie i narzędzie Rączka;
-- [Zaznaczanie i przekształcanie](./selection-and-manipulation) — wybieranie, przesuwanie, zmiana rozmiaru, obracanie i porządkowanie obiektów.
+- [Nawigacja po obszarze roboczym](/user-guide/canvas-navigation) — przesuwanie widoku, powiększenie i narzędzie Rączka;
+- [Zaznaczanie i przekształcanie](/user-guide/selection-and-manipulation) — wybieranie, przesuwanie, zmiana rozmiaru, obracanie i porządkowanie obiektów.
 
 ## Tworzenie obiektów
 
@@ -26,7 +26,7 @@ W podręczniku używane są oznaczenia z macOS: <kbd>⌘</kbd> oznacza <kbd>Comm
 
 ## Struktura dokumentu i pliki
 
-- [Warstwy i strony](./layers-and-pages) — drzewo warstw, strony i panel właściwości;
+- [Warstwy i strony](/user-guide/layers-and-pages) — drzewo warstw, strony i panel właściwości;
 - [Menu kontekstowe](./context-menu) — schowek, grupowanie, komponenty i inne operacje;
 - [Otwieranie i zapisywanie](/user-guide/files) — dokumenty i strony internetowe.
 - [Eksport](/user-guide/exporting) — eksport obrazów.
@@ -34,6 +34,6 @@ W podręczniku używane są oznaczenia z macOS: <kbd>⌘</kbd> oznacza <kbd>Comm
 ## Funkcje zaawansowane
 
 - [Automatyczny układ](/user-guide/auto-layout) — rozmieszczanie obiektów za pomocą Flexbox i CSS Grid;
-- [Komponenty](./components) — komponenty, egzemplarze i nadpisania przeznaczone do ponownego użycia;
-- [Zmienne](./variables) — zmienne projektu, kolekcje, tryby i powiązania z zalewami;
+- [Komponenty](/user-guide/components) — komponenty, egzemplarze i nadpisania przeznaczone do ponownego użycia;
+- [Zmienne](/user-guide/variables) — zmienne projektu, kolekcje, tryby i powiązania z zalewami;
 - [Checking Designs](/user-guide/checking-designs) — panel Sprawdź, znaczniki problemów na obszarze roboczym i reguły lintu.

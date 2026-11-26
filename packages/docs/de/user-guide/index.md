@@ -14,8 +14,8 @@ Die Dokumentation verwendet die macOS-Schreibweise: <kbd>⌘</kbd> entspricht <k
 
 ## Einstieg
 
-- [Navigation auf der Arbeitsfläche](./canvas-navigation) — Ansicht verschieben, zoomen und das Handwerkzeug verwenden;
-- [Auswählen und Bearbeiten](./selection-and-manipulation) — Objekte auswählen, verschieben, skalieren, drehen und anordnen.
+- [Navigation auf der Arbeitsfläche](/user-guide/canvas-navigation) — Ansicht verschieben, zoomen und das Handwerkzeug verwenden;
+- [Auswählen und Bearbeiten](/user-guide/selection-and-manipulation) — Objekte auswählen, verschieben, skalieren, drehen und anordnen.
 
 ## Inhalte erstellen
 
@@ -26,7 +26,7 @@ Die Dokumentation verwendet die macOS-Schreibweise: <kbd>⌘</kbd> entspricht <k
 
 ## Dokument organisieren
 
-- [Ebenen und Seiten](./layers-and-pages) — Ebenenbaum, Seiten und Eigenschaften;
+- [Ebenen und Seiten](/user-guide/layers-and-pages) — Ebenenbaum, Seiten und Eigenschaften;
 - [Kontextmenü](./context-menu) — Zwischenablage, Gruppen, Komponenten und weitere Aktionen;
 - [Öffnen und speichern](/user-guide/files) — Dokumente und Webseiten.
 - [Export](/user-guide/exporting) — Bilder und SVG exportieren.
@@ -34,6 +34,6 @@ Die Dokumentation verwendet die macOS-Schreibweise: <kbd>⌘</kbd> entspricht <k
 ## Erweiterte Funktionen
 
 - [Automatische Anordnung](/user-guide/auto-layout) — Anordnung mit Flexbox und CSS Grid;
-- [Komponenten](./components) — wiederverwendbare Komponenten, Instanzen und Überschreibungen;
-- [Variablen](./variables) — Designvariablen, Sammlungen, Modi und Bindungen.
+- [Komponenten](/user-guide/components) — wiederverwendbare Komponenten, Instanzen und Überschreibungen;
+- [Variablen](/user-guide/variables) — Designvariablen, Sammlungen, Modi und Bindungen.
 - [Designs prüfen](/user-guide/checking-designs) — das Prüfen-Panel, Problemmarkierungen auf der Arbeitsfläche und Lint-Regeln.

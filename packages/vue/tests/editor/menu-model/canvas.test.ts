@@ -21,7 +21,8 @@ function menuIds(isIcon: boolean) {
       canCreateComponentSet: ref(false),
       canCreateSlot: ref(false),
       canUngroup: ref(false),
-      canAutoArrange: ref(false)
+      canAutoArrange: ref(false),
+      thumbnailAction: ref<'set' | 'restore' | null>(null)
     } as CanvasMenuOptions['selection'],
     t: { moveToPage: 'Move to page', autoArrange: 'Auto arrange' }
   })
@@ -46,6 +47,7 @@ function selection(overrides: Partial<CanvasMenuOptions['selection']> = {}) {
     canCreateSlot: ref(false),
     canUngroup: ref(false),
     canAutoArrange: ref(false),
+    thumbnailAction: ref<'set' | 'restore' | null>(null),
     ...overrides
   } as CanvasMenuOptions['selection']
 }
@@ -124,6 +126,21 @@ describe('buildCanvasContextMenu', () => {
     )
     expect(ids).toContain('selection.createSlot')
     expect(itemIds(buildCanvasContextMenu(options()))).not.toContain('selection.createSlot')
+  })
+
+  test('offers Set as thumbnail for a layer that can be one, and Restore on the chosen one', () => {
+    const idsFor = (action: 'set' | 'restore' | null) =>
+      itemIds(
+        buildCanvasContextMenu(
+          options({ selection: selection({ thumbnailAction: computed(() => action) }) })
+        )
+      )
+    expect(idsFor('set')).toContain('selection.setAsThumbnail')
+    expect(idsFor('set')).not.toContain('selection.restoreDefaultThumbnail')
+    expect(idsFor('restore')).toContain('selection.restoreDefaultThumbnail')
+    expect(idsFor('restore')).not.toContain('selection.setAsThumbnail')
+    expect(idsFor(null)).not.toContain('selection.setAsThumbnail')
+    expect(idsFor(null)).not.toContain('selection.restoreDefaultThumbnail')
   })
 
   test('offers Auto arrange for layers that can be arranged', () => {

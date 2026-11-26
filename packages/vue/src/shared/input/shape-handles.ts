@@ -1,4 +1,5 @@
 import type { Editor, ShapeHandleHover } from '@open-pencil/core'
+import { HANDLE_HALF_SIZE } from '@open-pencil/core/constants'
 import {
   arcChanges,
   cornerRadiusAtPoint,
@@ -71,8 +72,15 @@ export function resolveShapeHandleHover(
   const handle = hitTestShapeHandles(handles, pointer)
   if (!handle) {
     const local = geometry.screenToLocal(node, pointer, state)
+    // As far as a selection handle reaches, so the pointer left on a corner by drawing or
+    // resizing counts at any zoom, where the size it lands on rounds a fraction inside it.
+    const reach = HANDLE_HALF_SIZE / state.zoom
     const inside =
-      local && local.x >= 0 && local.y >= 0 && local.x <= node.width && local.y <= node.height
+      local &&
+      local.x >= -reach &&
+      local.y >= -reach &&
+      local.x <= node.width + reach &&
+      local.y <= node.height + reach
     if (!inside) return null
   }
   return {

@@ -195,6 +195,15 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
     'bookkeeping',
     sourceLibraryPublicationSchema
   ),
+  /**
+   * The layer chosen as the document's thumbnail, on the DOCUMENT node. Figma keeps its own
+   * choice outside the file, so a `.fig` carries only this one.
+   */
+  thumbnail: jsonPluginDataField(
+    'thumbnail',
+    'bookkeeping',
+    v.pipe(v.string(), v.nonEmpty(), v.maxLength(64))
+  ),
   /** Canvas comment threads, deleted ones included, on the DOCUMENT node. */
   comments: jsonPluginDataField('comments', 'bookkeeping', commentThreadsSchema),
   /** The statuses layers can be in, on the DOCUMENT node. */

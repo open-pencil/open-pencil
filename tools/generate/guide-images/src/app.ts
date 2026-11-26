@@ -12,7 +12,14 @@ export const settle = (page: Page) => page.waitForTimeout(SETTLE_MS)
 
 async function loadApp(page: Page, origin: string) {
   await page.goto(`${origin}/?test`)
-  await page.waitForFunction(() => Boolean(window.openPencil?.getStore?.()))
+  // `getStore` throws until the editor has a document.
+  await page.waitForFunction(() => {
+    try {
+      return Boolean(window.openPencil?.getStore?.())
+    } catch {
+      return false
+    }
+  })
   await settle(page)
 }
 

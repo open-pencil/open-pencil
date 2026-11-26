@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core'
+import { canvasRootId, stagedSlide, type Editor } from '@open-pencil/core'
 import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
@@ -31,9 +31,15 @@ export function findMoveDropTarget(
   const componentSetIds = components
     ? new Set(moving.flatMap((node) => (node?.parentId ? [node.parentId] : [])))
     : undefined
-  let dropTarget = editor.graph.hitTestDropTarget(cx, cy, excludeIds, editor.state.currentPageId, {
-    componentSetIds
-  })
+  let dropTarget = editor.graph.hitTestDropTarget(
+    cx,
+    cy,
+    excludeIds,
+    canvasRootId(editor.graph, editor.state),
+    { componentSetIds }
+  )
+  // Beside the stage a drop stays on the slide it shows.
+  dropTarget ??= stagedSlide(editor.graph, editor.state)
   const movingSection = moving.some((node) => node?.type === 'SECTION')
   if (movingSection && dropTarget && dropTarget.type !== 'SECTION') {
     dropTarget = null
@@ -63,11 +69,16 @@ function takesDrawnLayer(target: SceneNode, type: NodeType) {
 
 /** The parent a new layer drawn from this point goes into. */
 export function findDrawParent(cx: number, cy: number, type: NodeType, editor: Editor): string {
-  let target = editor.graph.hitTestDropTarget(cx, cy, new Set(), editor.state.currentPageId)
+  let target = editor.graph.hitTestDropTarget(
+    cx,
+    cy,
+    new Set(),
+    canvasRootId(editor.graph, editor.state)
+  )
   while (target && target.type !== 'CANVAS' && !takesDrawnLayer(target, type)) {
     target = target.parentId ? (editor.graph.getNode(target.parentId) ?? null) : null
   }
-  return acceptingTarget(target, editor)?.id ?? editor.state.currentPageId
+  return acceptingTarget(target, editor)?.id ?? canvasRootId(editor.graph, editor.state)
 }
 
 /** Whether every canvas point lies inside the container's own box, rotated or flipped with it. */
@@ -94,12 +105,14 @@ export function findEnclosingDrawParent(
   type: NodeType,
   editor: Editor
 ): string {
-  const pageId = editor.state.currentPageId
+  const pageId = canvasRootId(editor.graph, editor.state)
   const start = points.at(0)
   if (!start) return pageId
   let target = editor.graph.getNode(findDrawParent(start.x, start.y, type, editor))
   while (target && target.type !== 'CANVAS') {
     if (holdsPoints(target, points, editor)) return target.id
+    // The slide on the stage is as far up as a stroke on it goes: its row and grid are the deck's.
+    if (target.id === pageId) return pageId
     let parent = target.parentId ? editor.graph.getNode(target.parentId) : undefined
     while (parent && parent.type !== 'CANVAS' && !takesDrawnLayer(parent, type)) {
       parent = parent.parentId ? editor.graph.getNode(parent.parentId) : undefined

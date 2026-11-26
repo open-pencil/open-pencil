@@ -275,15 +275,12 @@ jobs:
       - name: Compile native-test Tauri feature
         run: cargo check --manifest-path desktop/Cargo.toml --features native-test
 
-  html-engine:
+  rust-crates:
     name: Rust crates
     needs: changes
     if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
     timeout-minutes: 30
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/html-engine
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -301,17 +298,37 @@ jobs:
         with:
           tool: cargo-deny@0.20.2
 
-      - name: Check Rust formatting and lints
+      - name: Check the HTML engine's formatting and lints
+        working-directory: packages/html-engine
         run: bun run check:rust
 
+      - name: Check the .fig reader's formatting, lints, and tests
+        working-directory: packages/fig
+        run: bun run check:rust
+
+      - name: Check the open-pencil crate's formatting and lints
+        run: cargo fmt -p open-pencil --check && cargo clippy -p open-pencil --all-targets -- -D warnings
+
+      - name: Check the crates published to crates.io package and build from their contents
+        run: cargo package -p open-pencil-fig -p open-pencil
+
       - name: Check the HTML engine's dependency licenses
+        working-directory: packages/html-engine
+        run: bun run check:licenses
+
+      - name: Check the .fig reader's dependency licenses
+        working-directory: packages/fig
         run: bun run check:licenses
 
       - name: Check the desktop app's dependency licenses
-        working-directory: .
         run: bun run check:licenses:desktop
 
-      - name: Build the WebAssembly module
+      - name: Build the HTML engine's WebAssembly module
+        working-directory: packages/html-engine
+        run: bun run build:wasm
+
+      - name: Build the .fig reader's WebAssembly module
+        working-directory: packages/fig
         run: bun run build:wasm
 
   unit-tests:
@@ -422,7 +439,7 @@ jobs:
 
   result:
     name: CI result
-    needs: [changes, commit-messages, documentation, source-quality, package-quality, repository-quality, storybook, native-test-contracts, html-engine, unit-tests, feedback-tests, cloud-tests, cloud-storage]
+    needs: [changes, commit-messages, documentation, source-quality, package-quality, repository-quality, storybook, native-test-contracts, rust-crates, unit-tests, feedback-tests, cloud-tests, cloud-storage]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 3

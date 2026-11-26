@@ -73,17 +73,24 @@ export function exportBounds(
   if (!useAbsoluteBounds) {
     for (const id of nodeIds) {
       const node = graph.getNode(id)
-      if (node) bounds = unionVisualBounds(bounds, absoluteRenderBounds(graph, node))
+      // Null for a layer that draws nothing, hidden or transparent itself or in what holds it.
+      const drawn = node ? absoluteRenderBounds(graph, node) : null
+      if (!node || !drawn) continue
+      // A slide is its own page: the shadows that set it apart in the grid fall outside it.
+      bounds = unionVisualBounds(bounds, node.type === 'SLIDE' ? boxBounds(graph, node) : drawn)
     }
     return bounds
   }
   for (const id of nodeIds) {
     const node = graph.getNode(id)
-    if (!node?.visible) continue
-    const { x, y, width, height } = getAxisAlignedWorldBounds(node, graph)
-    bounds = unionVisualBounds(bounds, { minX: x, minY: y, maxX: x + width, maxY: y + height })
+    if (node?.visible) bounds = unionVisualBounds(bounds, boxBounds(graph, node))
   }
   return bounds
+}
+
+function boxBounds(graph: SceneGraph, node: SceneNode): VisualBounds {
+  const { x, y, width, height } = getAxisAlignedWorldBounds(node, graph)
+  return { minX: x, minY: y, maxX: x + width, maxY: y + height }
 }
 
 /** The scale at which these layers' export bounds fit a square of `size` pixels. */
@@ -287,6 +294,17 @@ function inPaintOrder(source: SceneGraph, pageId: string, nodeIds: readonly stri
   return ordered
 }
 
+/** A copy of `graph` whose page holds only `nodeIds`, placed where they are, to draw them alone. */
+function selectionRenderGraph(
+  graph: SceneGraph,
+  nodeIds: readonly string[]
+): { graph: SceneGraph; pageId: string } | null {
+  const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds: [...nodeIds] })
+  if (!extracted.pageId) return null
+  prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, [...nodeIds])
+  return { graph: extracted.graph, pageId: extracted.pageId }
+}
+
 export function prepareSelectionRenderGraph(
   source: SceneGraph,
   renderGraph: SceneGraph,
@@ -383,6 +401,19 @@ export function renderNodesToImage(
   nodeIds: string[],
   options: RenderOptions
 ): Uint8Array<ArrayBuffer> | null {
+  return renderer.withoutTextEdit(() =>
+    drawNodesToImage(ck, renderer, graph, pageId, nodeIds, options)
+  )
+}
+
+function drawNodesToImage(
+  ck: CanvasKit,
+  renderer: SkiaRenderer,
+  graph: SceneGraph,
+  pageId: string,
+  nodeIds: string[],
+  options: RenderOptions
+): Uint8Array<ArrayBuffer> | null {
   if (!ensureSinglePageSelection(graph, pageId, nodeIds)) {
     throw new Error('Raster export selection must stay on a single page')
   }
@@ -436,18 +467,23 @@ export interface ThumbnailFrame {
  */
 export type ThumbnailFit = 'contain' | 'letterbox'
 
-/** The page region a thumbnail of `width` by `height` pixels shows, and its size. */
+/**
+ * The page region a thumbnail of `width` by `height` pixels shows, and its size: `nodeIds` whole,
+ * by default everything on the page. `renderThumbnail` then draws only those layers.
+ */
 export function thumbnailFrame(
   graph: SceneGraph,
   pageId: string,
   width: number,
   height: number,
-  fit: ThumbnailFit = 'contain'
+  fit: ThumbnailFit = 'contain',
+  nodeIds?: readonly string[]
 ): ThumbnailFrame | null {
   const page = graph.getNode(pageId)
-  if (!page || page.childIds.length === 0) return null
+  const content = nodeIds ?? page?.childIds ?? []
+  if (!page || content.length === 0) return null
 
-  const bounds = computeContentBounds(graph, page.childIds)
+  const bounds = computeContentBounds(graph, content)
   if (!bounds) return null
 
   const contentW = bounds.maxX - bounds.minX
@@ -488,17 +524,37 @@ export function renderThumbnail(
   pageId: string,
   width: number,
   height: number,
-  fit: ThumbnailFit = 'contain'
+  fit: ThumbnailFit = 'contain',
+  nodeIds?: readonly string[]
 ): Uint8Array<ArrayBuffer> | null {
-  const frame = thumbnailFrame(graph, pageId, width, height, fit)
+  return renderer.withoutTextEdit(() =>
+    drawThumbnail(ck, renderer, graph, pageId, width, height, fit, nodeIds)
+  )
+}
+
+function drawThumbnail(
+  ck: CanvasKit,
+  renderer: SkiaRenderer,
+  graph: SceneGraph,
+  pageId: string,
+  width: number,
+  height: number,
+  fit: ThumbnailFit,
+  nodeIds: readonly string[] | undefined
+): Uint8Array<ArrayBuffer> | null {
+  const frame = thumbnailFrame(graph, pageId, width, height, fit, nodeIds)
   if (!frame) return null
   const { bounds, scale, width: pixelW, height: pixelH } = frame
   // The page's own background, which the editor's page colour matches only while it is open.
   const background = toExtendedSRGB(getPageColor(graph.getNode(pageId)), graph.documentColorSpace)
+  // Given layers are drawn alone, as Figma draws a frame set as thumbnail, without the layers
+  // around or over it that its bounds also cover.
+  const drawn = nodeIds ? selectionRenderGraph(graph, nodeIds) : { graph, pageId }
+  if (!drawn) return null
 
   return renderToSurface(ck, renderer, {
-    graph,
-    pageId,
+    graph: drawn.graph,
+    pageId: drawn.pageId,
     width: pixelW,
     height: pixelH,
     format: 'PNG',
