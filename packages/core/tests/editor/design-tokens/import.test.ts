@@ -1,73 +1,21 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { SceneGraph, type Variable } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
 
+import { exportDesignTokens, type DesignTokenSourceFile } from '#core/io/formats/design-tokens'
+
 import {
-  defaultTokenImportOptions,
-  exportDesignTokens,
-  planTokenImport,
-  readDesignTokens,
-  type DesignTokenSourceFile
-} from '#core/io/formats/design-tokens'
-
-const blue = { r: 0, g: 0.4, b: 0.8, a: 1 }
-const white = { r: 1, g: 1, b: 1, a: 1 }
-
-function designSystem() {
-  const graph = new SceneGraph()
-  const page = graph.getPages()[0].id
-  const primitives = graph.createCollection('Primitives')
-  const brand = graph.createVariable('Blue/500', 'COLOR', primitives.id, blue)
-  const theme = graph.createCollection('Theme')
-  graph.renameMode(theme.id, theme.defaultModeId, 'Light')
-  const dark = graph.createMode(theme.id, 'Dark') ?? ''
-  const accent = graph.createVariable('Accent', 'COLOR', theme.id, { aliasId: brand.id })
-  accent.valuesByMode[dark] = white
-  const gutter = graph.createVariable('Space/Gutter', 'FLOAT', theme.id, 24)
-  gutter.unit = 'rem'
-  gutter.expressions = { [theme.defaultModeId]: { css: 'clamp(1rem, 4vw, 1.5rem)', resolved: 24 } }
-  graph.createVariable('Flags/Rounded', 'BOOLEAN', theme.id, true)
-  const fast = graph.createVariable('Motion/Fast', 'FLOAT', theme.id, 150)
-  fast.unit = 'ms'
-  const family = graph.createVariable('Font/Body', 'STRING', theme.id, 'Inter')
-  family.scopes = ['FONT_FAMILY']
-  const heading = graph.createNode('TEXT', page, {
-    name: 'Heading/H1',
-    fontFamily: 'Inter',
-    fontWeight: 700,
-    fontSize: 32,
-    lineHeight: pixelLength(40),
-    sharedStyleType: 'TEXT',
-    internalOnly: true,
-    boundVariables: { fontFamily: family.id }
-  })
-  heading.source.id = 'style:heading'
-  return graph
-}
-
-function exported(graph: SceneGraph): DesignTokenSourceFile[] {
-  return exportDesignTokens(graph).files.map((file) => ({
-    path: file.path,
-    text: JSON.stringify(file.content)
-  }))
-}
-
-function importInto(graph: SceneGraph, files: DesignTokenSourceFile[]) {
-  const editor = createEditor({ graph })
-  const bundle = readDesignTokens(files)
-  const plan = planTokenImport(graph, bundle, defaultTokenImportOptions(graph, bundle))
-  return { editor, plan, result: editor.importDesignTokens(plan) }
-}
-
-function variableNamed(graph: SceneGraph, name: string): Variable {
-  const found = [...graph.variables.values()].find((variable) => variable.name === name)
-  if (!found) throw new Error(`missing ${name}`)
-  return found
-}
+  blue,
+  designSystem,
+  editorImporting,
+  exported,
+  importInto,
+  variableNamed,
+  white
+} from './helpers'
 
 describe('design token import', () => {
   test('an export reads back into an empty document as it was', () => {
@@ -109,13 +57,17 @@ describe('design token import', () => {
 
   test('the whole import undoes in one step', () => {
     const graph = new SceneGraph()
-    const { editor } = importInto(graph, exported(designSystem()))
+    const { editor } = editorImporting(graph, exported(designSystem()))
 
-    editor.undo.undo()
+    try {
+      editor.undo.undo()
 
-    expect(graph.variableCollections.size).toBe(0)
-    expect(graph.variables.size).toBe(0)
-    expect(getSharedStyles(graph, 'text')).toEqual([])
+      expect(graph.variableCollections.size).toBe(0)
+      expect(graph.variables.size).toBe(0)
+      expect(getSharedStyles(graph, 'text')).toEqual([])
+    } finally {
+      editor.dispose()
+    }
   })
 
   test('importing into a document updates variables by name and adds the rest', () => {
@@ -197,6 +149,39 @@ describe('design token import', () => {
     )
 
     importInto(graph, files)
+
+    expect(graph.getNode(layer.id)).toMatchObject({ fontSize: 40, textStyleId: style.id })
+  })
+
+  test('a variable an import binds on a text style reaches the layers using the style', () => {
+    function withHeadingSize(graph: SceneGraph) {
+      const theme = [...graph.variableCollections.values()].find((item) => item.name === 'Theme')
+      const dark = theme?.modes.find((mode) => mode.name === 'Dark')
+      if (!theme || !dark) {
+        throw new Error('missing Theme/Dark')
+      }
+      const size = graph.createVariable('Type/H1', 'FLOAT', theme.id, 32)
+      size.valuesByMode[dark.modeId] = 40
+      return { theme, dark, size }
+    }
+    const source = designSystem()
+    const { size } = withHeadingSize(source)
+    const [sourceStyle] = getSharedStyles(source, 'text')
+    source.bindVariable(sourceStyle.nodeId, 'fontSize', size.id)
+    const graph = designSystem()
+    const { theme, dark } = withHeadingSize(graph)
+    const [style] = getSharedStyles(graph, 'text')
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      variableModes: { [theme.id]: dark.modeId }
+    })
+    const layer = graph.createNode('TEXT', frame.id, {
+      text: 'Title',
+      fontFamily: 'Inter',
+      fontSize: 32,
+      textStyleId: style.id
+    })
+
+    importInto(graph, exported(source))
 
     expect(graph.getNode(layer.id)).toMatchObject({ fontSize: 40, textStyleId: style.id })
   })

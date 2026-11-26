@@ -110,29 +110,60 @@ export function applyFill(
   patternStack = new Set<string>()
 ): boolean {
   clearFillShader(r)
-
-  if (fill.type === 'SOLID') {
-    const c = drawnColor(fill.color, graph)
-    r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
-    return true
-  }
-
-  if (fill.type.startsWith('GRADIENT') && fill.gradientStops && fill.gradientTransform) {
-    return applyGradientFill(r, fill, node, graph)
-  }
-
-  if (drawnImageHash(fill)) {
-    return applyImageFill(r, fill, node, graph)
-  }
-
   if (fill.type === 'PATTERN' && applyPatternFill(r, fill, node, graph, patternStack)) return true
+  return setFillPaint(r, fill, node, graph, r.fillPaint)
+}
 
-  if (fill.type === 'PATTERN' || fill.type === 'NOISE' || fill.type === 'CUSTOM') {
+/**
+ * A paint of its own for `fill` on `node`, set as `paintFills` sets the shared fill paint, or null
+ * when the fill has nothing to draw yet. A pattern takes its colour, as `applyFill` draws one
+ * whose source is missing. The caller deletes it.
+ */
+export function makeFillPaint(
+  r: SkiaRenderer,
+  fill: Fill,
+  node: SceneNode,
+  graph: SceneGraph
+): Paint | null {
+  const paint = new r.ck.Paint()
+  paint.setStyle(r.ck.PaintStyle.Fill)
+  paint.setAntiAlias(true)
+  if (!setFillPaint(r, fill, node, graph, paint)) {
+    paint.delete()
+    return null
+  }
+  paint.setAlphaf(fill.opacity)
+  if (fill.blendMode !== undefined && fill.blendMode !== 'NORMAL') {
+    setPaintBlendMode(r, paint, fill.blendMode)
+  }
+  return paint
+}
+
+/**
+ * Sets `paint` to `fill` on `node`, a pattern's tiles aside, and returns whether there is
+ * anything to draw.
+ */
+function setFillPaint(
+  r: SkiaRenderer,
+  fill: Fill,
+  node: SceneNode,
+  graph: SceneGraph,
+  paint: Paint
+): boolean {
+  if (fill.type.startsWith('GRADIENT') && fill.gradientStops && fill.gradientTransform) {
+    return applyGradientFill(r, fill, node, graph, paint)
+  }
+  if (drawnImageHash(fill)) return applyImageFill(r, fill, node, graph, paint)
+  if (
+    fill.type === 'SOLID' ||
+    fill.type === 'PATTERN' ||
+    fill.type === 'NOISE' ||
+    fill.type === 'CUSTOM'
+  ) {
     const c = drawnColor(fill.color, graph)
-    r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
+    paint.setColorComponents(c.r, c.g, c.b, c.a)
     return true
   }
-
   return false
 }
 
@@ -160,6 +191,7 @@ function recordPatternSource(
         (sourceFill) => drawNodeFill(r, canvas, source, sourceFill),
         { patternStack }
       )
+      if (source.type === 'TEXT') r.drawTextRangeFills(canvas, source, graph)
     }
     canvas.restore()
   }

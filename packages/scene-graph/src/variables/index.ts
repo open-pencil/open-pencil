@@ -429,6 +429,7 @@ function markBoundVariablesOverrideOnInstance(
 }
 
 export * from './bindings'
+export * from './style-bindings'
 export * from './corners'
 export * from './easing'
 export * from './formula'
