@@ -1,7 +1,7 @@
 import type { IncomingMessage, Server } from 'node:http'
 import type { Duplex } from 'node:stream'
 
-import { AGENT_PAIRING_PATH, RELAY_HEARTBEAT, RELAY_PATH } from '#cloud/contract'
+import { AGENT_PAIRING_RELAY_PATH, RELAY_HEARTBEAT, RELAY_PATH } from '#cloud/contract'
 import type { AgentPairingHub, CollaborationRelay, RelayConnection } from '#cloud/server'
 import { WebSocketServer, type RawData } from 'ws'
 
@@ -26,8 +26,8 @@ export function attachCollaborationRelay(
 
   function upgrade(request: IncomingMessage, socket: Duplex, head: Buffer) {
     const path = new URL(request.url ?? '/', 'http://relay').pathname
-    const hubs = { [RELAY_PATH]: relay, [AGENT_PAIRING_PATH]: pairing }
-    const hub = path === RELAY_PATH || path === AGENT_PAIRING_PATH ? hubs[path] : undefined
+    const hubs = { [RELAY_PATH]: relay, [AGENT_PAIRING_RELAY_PATH]: pairing }
+    const hub = path === RELAY_PATH || path === AGENT_PAIRING_RELAY_PATH ? hubs[path] : undefined
     if (!hub) {
       socket.destroy()
       return

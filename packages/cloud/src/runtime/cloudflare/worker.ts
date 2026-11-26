@@ -1,4 +1,4 @@
-import { AGENT_PAIRING_PATH, defaultRelayURL, RELAY_PATH } from '#cloud/contract'
+import { AGENT_PAIRING_RELAY_PATH, defaultRelayURL, RELAY_PATH } from '#cloud/contract'
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import { createCloudServer } from '#cloud/runtime/site/server'
@@ -184,7 +184,7 @@ export function createCloudflareCloud(
     .use('*', cloudRequestId(cloudflareRayId))
     .get(RELAY_PATH, relayRoute(relayJurisdiction))
     .get(
-      AGENT_PAIRING_PATH,
+      AGENT_PAIRING_RELAY_PATH,
       pairingRoute(async (env) => (await prepare(env)).config.agentPairing, relayJurisdiction)
     )
     .all('*', async (c) => {

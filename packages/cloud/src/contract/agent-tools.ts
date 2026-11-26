@@ -131,7 +131,7 @@ export const CLOUD_AGENT_PAIRING_TOKEN_PREFIX = 'opg_'
 export const agentPairingTokenSchema = v.pipe(v.string(), v.regex(/^opg_[0-9a-f]{64}$/))
 
 /** Where a paired tab connects, on the API origin, with its pairing's ID as `pairing`. */
-export const AGENT_PAIRING_PATH = '/api/agent-pairing'
+export const AGENT_PAIRING_RELAY_PATH = '/api/agent-pairing/relay'
 export const AGENT_PAIRING_PARAM = 'pairing'
 
 /** Whether a bearer token is a pairing token rather than an account's. */
@@ -150,7 +150,7 @@ export async function agentPairingId(token: string): Promise<string> {
 
 /** The WebSocket address a tab of pairing `pairingId` connects to on the server at `publicURL`. */
 export function agentPairingURL(publicURL: string, pairingId: string): string {
-  const url = new URL(AGENT_PAIRING_PATH, publicURL)
+  const url = new URL(AGENT_PAIRING_RELAY_PATH, publicURL)
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
   url.searchParams.set(AGENT_PAIRING_PARAM, pairingId)
   return url.href

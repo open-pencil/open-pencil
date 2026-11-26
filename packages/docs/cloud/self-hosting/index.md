@@ -114,7 +114,7 @@ Versions compare in SemVer order, where a pre-release comes before its release: 
 ## Reverse proxy
 
 - Terminate TLS in front of the server and the object store, on stable hostnames.
-- Forward WebSocket upgrades for `/api/collaboration/relay`, and for `/api/agent-pairing` where `deployment.agent_pairing` is on. Collaboration tickets name the relay at `public_url` with a `ws:` or `wss:` scheme; set `[collaboration] relay_url` when clients reach it elsewhere.
+- Forward WebSocket upgrades for `/api/collaboration/relay`, and for `/api/agent-pairing/relay` where `deployment.agent_pairing` is on. Collaboration tickets name the relay at `public_url` with a `ws:` or `wss:` scheme; set `[collaboration] relay_url` when clients reach it elsewhere.
 - The object store must accept presigned uploads from the editor's origins: allow `PUT` and `GET` from `public_url` and any `trusted_origins` in its CORS rules, with the `Range` request header, which Home uses to read a document's preview without downloading the whole file.
 
 ## The first administrator

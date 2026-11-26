@@ -1,6 +1,6 @@
 import {
   AGENT_PAIRING_PARAM,
-  AGENT_PAIRING_PATH,
+  AGENT_PAIRING_RELAY_PATH,
   agentPairingIdSchema,
   RELAY_DOCUMENT_PARAM,
   RELAY_HEARTBEAT,
@@ -207,7 +207,7 @@ export function createCloudflareRelayObject(
       if (inMaintenance(this.env)) return maintenanceResponse(request)
       const url = new URL(request.url)
       // Only `pairingRoute` sends the pairing path, and only where the deployment pairs tabs.
-      if (url.pathname === AGENT_PAIRING_PATH) {
+      if (url.pathname === AGENT_PAIRING_RELAY_PATH) {
         const pairing = url.searchParams.get(AGENT_PAIRING_PARAM)
         if (!v.is(agentPairingIdSchema, pairing)) return new Response(null, { status: 400 })
         const hub = await this.#pairing.open(pairing)
