@@ -15,10 +15,17 @@ const OUT = 'scratch/guide-pages'
 /** VitePress renders a page once its scripts load; pictures load as they scroll into view. */
 const LOAD_MS = 3000
 
+/** VitePress's theme setting, so a page loads in the view's theme instead of the site's dark default. */
+const APPEARANCE_SETTING = 'vitepress-theme-appearance'
+/** The docs' own setting for whose keyboard shortcuts and pictures show (`theme/guide/keys.ts`). */
+const KEYS_SETTING = 'open-pencil-docs:keys'
+
+/** Each view sets the keyboard, so pictures for both keyboards are checked on any system. */
 const VIEWS = [
-  { name: 'light', width: 1280, scheme: 'light' },
-  { name: 'dark', width: 1280, scheme: 'dark' },
-  { name: 'phone', width: 390, scheme: 'light' }
+  { name: 'light', width: 1280, scheme: 'light', keys: 'mac' },
+  { name: 'dark', width: 1280, scheme: 'dark', keys: 'mac' },
+  { name: 'phone', width: 390, scheme: 'light', keys: 'mac' },
+  { name: 'windows', width: 1280, scheme: 'light', keys: 'other' }
 ] as const
 
 interface Findings {
@@ -74,16 +81,20 @@ async function capture(
     colorScheme: view.scheme
   })
   try {
+    await page.addInitScript(
+      (settings) => {
+        for (const [key, value] of Object.entries(settings)) localStorage.setItem(key, value)
+      },
+      {
+        [APPEARANCE_SETTING]: view.scheme,
+        [KEYS_SETTING]: view.keys
+      }
+    )
     const response = await page.goto(`${ORIGIN}${route}`)
     if (!response?.ok()) throw new Error(`${route} answered ${response?.status() ?? 'nothing'}`)
     await page.waitForTimeout(LOAD_MS)
     // The dev server answers an unknown address with 200 and VitePress's not found page.
     if (await page.locator('.NotFound').count()) throw new Error(`${route} is not a page`)
-    // The site keeps the reader's theme in its own class, whatever the system says.
-    await page.evaluate(
-      (dark) => document.documentElement.classList.toggle('dark', dark),
-      view.scheme === 'dark'
-    )
     const broken = await page.evaluate(async () => {
       const images = [...document.images]
       for (const image of images) image.loading = 'eager'
@@ -103,7 +114,7 @@ async function capture(
 }
 
 /**
- * Opens the guide pages of a running docs site in light, dark, and at a phone's width, saves a
+ * Opens the guide pages of a running docs site in light, dark, at a phone's width, and with Windows keys, saves a
  * screenshot of each to read, and fails on a picture that doesn't load or a page that scrolls
  * sideways. Addresses on the command line, such as `/user-guide/auto-layout`, open only those.
  */
