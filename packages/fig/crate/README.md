@@ -27,12 +27,12 @@ Expansion follows instances, swaps, component property assignments, and slot con
 an instance whose component would contain itself, and places each override on the layer it
 addresses. A layer's fields are its component's under its own record, the values its component
 properties bind, and the overrides its owners place, with instances' uniform scale, resize
-constraints, saved sizes, and saved derived data applied in order.
+constraints, saved sizes, and saved derived data applied in order. Each record is read as the
+reader prepares it: references to library variables and styles name the records they resolve to,
+and a record takes the fields of the styles it names.
 
-Not yet ported: styles, which give a layer the fields of the styles it names and which a text's
-claimed fields give way to; references to library variables and styles, which stay as saved; and
-the document-wide repair of component loops, which decides in saved order which instance of a
-loop is left out.
+Not yet ported: the document-wide repair of component loops, which decides in saved order which
+instance of a loop is left out.
 
 The `exports` feature adds the raw functions a WebAssembly host calls; leave it off when
 depending on the crate.

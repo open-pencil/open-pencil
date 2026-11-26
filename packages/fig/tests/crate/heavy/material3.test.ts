@@ -20,7 +20,7 @@ test.if(runsHeavyTests)(
 )
 
 test.if(runsHeavyTests)(
-  'the Rust reader reads every field of every layer of material3.fig as the TypeScript reader does without styles',
+  'the Rust reader reads every field of every layer of material3.fig as the TypeScript reader does',
   async () => {
     for (const { id, differences } of await readFieldsWithBoth(readFixtureBytes('material3.fig')))
       expect({ id, differences }).toEqual({ id, differences: [] })

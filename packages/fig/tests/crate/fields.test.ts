@@ -72,7 +72,7 @@ function boundDefinition(record: NodeChange, field: string): GUID | undefined {
 
 describe('field values from the Rust reader', () => {
   for (const name of FIXTURES) {
-    test(`match the TypeScript reader's without styles on every layer of ${name}`, async () => {
+    test(`match the TypeScript reader's on every layer of ${name}`, async () => {
       expectSameFields(await readFieldsWithBoth(readFixtureBytes(name)))
     })
   }
@@ -138,6 +138,43 @@ describe('field values from the Rust reader', () => {
           }
         ]
       }
+    })
+    expectSameFields(pages)
+  })
+
+  test("give a text's ranges, a vector's regions, and a text style's left-out decoration their styles", async () => {
+    const pages = await fieldsAfter('gold-preview.fig', (records) => {
+      const { componentOf } = documentOf(records)
+      const style = (kind: string) =>
+        records.find(
+          (record) => record.styleType === kind && (kind !== 'TEXT' || record.type === 'TEXT')
+        )
+      const fill = style('FILL')
+      const text = style('TEXT')
+      const placed = (type: string) =>
+        records.find(
+          (record) =>
+            record.type === type && !record.styleType && !componentOf(record) && record.guid
+        )
+      const label = placed('TEXT')
+      const vector = placed('VECTOR')
+      if (
+        !fill?.guid ||
+        !text?.guid ||
+        text.textDecoration ||
+        !label?.textData ||
+        !vector?.vectorData
+      )
+        throw new Error(
+          'gold-preview.fig lacks a fill style, a plain text style, a text, or a vector'
+        )
+      // A range and a region naming the fill style, and a decorated text taking the text style.
+      label.textData.styleOverrideTable = [{ styleID: 1, styleIdForFill: { guid: fill.guid } }]
+      label.textDecoration = 'UNDERLINE'
+      label.styleIdForText = { guid: text.guid }
+      Object.assign(vector.vectorData, {
+        styleOverrideTable: [{ styleID: 1, styleIdForFill: { guid: fill.guid } }]
+      })
     })
     expectSameFields(pages)
   })

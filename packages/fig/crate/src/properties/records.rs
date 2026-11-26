@@ -68,22 +68,8 @@ pub fn normalize(node: &mut Value) {
     if !references.is_empty() {
         node.set("componentPropRefs", Value::Array(references));
     }
-    // A text's ranges, a vector's regions, and an instance's overrides are records of their own.
-    let nested: [(&str, &str); 4] = [
-        ("textData", "styleOverrideTable"),
-        ("vectorData", "styleOverrideTable"),
-        ("symbolData", "symbolOverrides"),
-        ("", "derivedSymbolData"),
-    ];
-    for (outer, list) in nested {
-        let holder = if outer.is_empty() {
-            Some(&mut *node)
-        } else {
-            node.get_mut(outer)
-        };
-        if let Some(Value::Array(entries)) = holder.and_then(|holder| holder.get_mut(list)) {
-            entries.iter_mut().for_each(normalize);
-        }
+    for entry in super::references::nested(node) {
+        normalize(entry);
     }
 }
 

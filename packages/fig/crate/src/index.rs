@@ -90,6 +90,10 @@ pub struct Record {
     pub flags: u8,
     /// The uniform scale an instance is placed at (`symbolData.uniformScaleFactor`), else 1.
     pub scale: f32,
+    /// The library key and version a variable, collection, or style is published under, which
+    /// references from other files name it by.
+    pub key: Option<Span>,
+    pub version: Option<Span>,
     pub overrides: Run,
     pub assignments: Run,
     pub definitions: Run,
@@ -224,6 +228,8 @@ pub struct Ids {
     nc_swap: usize,
     nc_slot_content: usize,
     nc_state_group: usize,
+    nc_key: usize,
+    nc_version: usize,
     symbol_data: usize,
     sd_symbol: usize,
     sd_overrides: usize,
@@ -328,6 +334,8 @@ impl Ids {
             nc_swap: field(node_change, "overriddenSymbolID")?,
             nc_slot_content: field(node_change, "isSlotContent")?,
             nc_state_group: field(node_change, "isStateGroup")?,
+            nc_key: field(node_change, "key")?,
+            nc_version: field(node_change, "version")?,
             symbol_data,
             sd_symbol: field(symbol_data, "symbolID")?,
             sd_overrides: field(symbol_data, "symbolOverrides")?,
@@ -456,6 +464,8 @@ struct Parsed {
     slot_content: bool,
     state_group: bool,
     scale: f32,
+    key: Option<Span>,
+    version: Option<Span>,
     overrides: Run,
     assignments: Run,
     definitions: Run,
@@ -725,6 +735,8 @@ impl<'a> Walk<'a> {
             slot_content: false,
             state_group: false,
             scale: 1.0,
+            key: None,
+            version: None,
             overrides: Run::default(),
             assignments: Run::default(),
             definitions: Run::default(),
@@ -748,6 +760,10 @@ impl<'a> Walk<'a> {
                 out.slot_content = reader.bool()?;
             } else if field == ids.nc_state_group {
                 out.state_group = reader.bool()?;
+            } else if field == ids.nc_key {
+                out.key = Some(reader.span()?);
+            } else if field == ids.nc_version {
+                out.version = Some(reader.span()?);
             } else if field == ids.nc_symbol_data {
                 reader.message(self.schema, ids.symbol_data, |reader, field| {
                     if field == ids.sd_symbol {
@@ -866,6 +882,8 @@ impl Index {
                         flags: if parsed.slot_content { SLOT_CONTENT } else { 0 }
                             | if parsed.state_group { STATE_GROUP } else { 0 },
                         scale: parsed.scale,
+                        key: parsed.key,
+                        version: parsed.version,
                         overrides: parsed.overrides,
                         assignments: parsed.assignments,
                         definitions: parsed.definitions,

@@ -1,7 +1,9 @@
 //! An expanded page's field values, following how the TypeScript reader builds an occurrence's
 //! properties (`packages/fig/src/instance-overrides/occurrence/create.ts`, `occurrence/claims.ts`,
 //! `scale/`, `resize.ts`, and `derived-symbol-data.ts`): the expansion's steps replayed in order,
-//! each layer's fields over the ones before it.
+//! each layer's fields over the ones before it. Each entry is read as the reader prepares a
+//! record (`packages/fig/src/document/read.ts`): property records normalized, library references
+//! resolved, and the fields of the styles it names copied in.
 //!
 //! Sizes and positions are replayed for the whole page at once, since an instance's resize
 //! moves its layers by their own constraints and sizes. Every other field is replayed for one
@@ -11,8 +13,14 @@ mod cleared;
 mod geometry;
 mod maps;
 mod records;
+mod references;
 mod replay;
 mod scale;
+mod styles;
+
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 use crate::Error;
 use crate::expand::{
@@ -125,6 +133,12 @@ pub struct Properties<'a> {
     scale_start: Vec<u32>,
     scales: Vec<u32>,
     pub geometry: Vec<Geometry>,
+    assets: references::Assets<'a>,
+    /// Whole records prepared as the reader prepares them, by record: styles, and the records
+    /// a claim clearing a style is completed from.
+    prepared: RefCell<HashMap<u32, Rc<Value<'a>>>>,
+    /// Records being prepared, so a style that names itself names nothing.
+    preparing: RefCell<Vec<u32>>,
 }
 
 impl<'a> Properties<'a> {
@@ -173,6 +187,9 @@ impl<'a> Properties<'a> {
             scale_start,
             scales,
             geometry: Vec::new(),
+            assets: references::Assets::new(index, message),
+            prepared: RefCell::new(HashMap::new()),
+            preparing: RefCell::new(Vec::new()),
         };
         properties.geometry = properties.replay_geometry()?;
         Ok(properties)
@@ -214,7 +231,7 @@ impl<'a> Properties<'a> {
             .map_err(|_| Error::Message)
     }
 
-    /// One field of a record.
+    /// One field of a record, unprepared.
     fn record_field(&self, record: u32, wanted: &str) -> crate::Result<Option<Value<'a>>> {
         let mut value = None;
         self.fields(self.index.records[record as usize].span, |name, reader| {
@@ -225,6 +242,52 @@ impl<'a> Properties<'a> {
             Ok(true)
         })?;
         Ok(value)
+    }
+
+    /// Readies an entry's fields as the reader readies a record it reads whole: property records
+    /// normalized, library references resolved, and, outside saved derived data, the fields of
+    /// the styles it names. `top` marks a layer, whose cleared fields clear the ones below.
+    fn prepare(&self, entry: &mut Value<'a>, derived: bool, top: bool) {
+        if !derived {
+            records::normalize(entry);
+        }
+        references::resolve(entry, &self.assets, self.index);
+        if !derived {
+            styles::resolve(entry, &|reference| self.style(reference), top);
+        }
+    }
+
+    /// A record whole and prepared, once per record.
+    fn prepared(&self, record: u32) -> Option<Rc<Value<'a>>> {
+        if let Some(value) = self.prepared.borrow().get(&record) {
+            return Some(value.clone());
+        }
+        if self.preparing.borrow().contains(&record) {
+            return None;
+        }
+        self.preparing.borrow_mut().push(record);
+        let mut value = Value::Fields(Vec::new());
+        let read = self.fields(self.index.records[record as usize].span, |name, reader| {
+            value.set(name, reader.value()?);
+            Ok(true)
+        });
+        if read.is_ok() {
+            self.prepare(&mut value, false, false);
+        }
+        self.preparing.borrow_mut().pop();
+        read.ok()?;
+        let value = Rc::new(value);
+        self.prepared.borrow_mut().insert(record, value.clone());
+        Some(value)
+    }
+
+    /// The style a reference names, by its GUID or its library key, prepared.
+    fn style(&self, reference: &Value<'a>) -> Option<Value<'a>> {
+        let record = match reference.get("guid") {
+            Some(guid) => self.index.find(guid_of(guid)?)?,
+            None => self.assets.style(reference.get("assetRef")?)?,
+        };
+        self.prepared(record).map(|style| (*style).clone())
     }
 
     /// An instance's complete assignment list, leaving out assignments of slot content the file

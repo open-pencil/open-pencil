@@ -1,14 +1,8 @@
-import { parseFigBuffer } from '#fig/archive/index'
-import { createBindingNormalizer } from '#fig/document/bindings/references'
-import { inheritComponentPropertyDefinitions } from '#fig/document/property-inheritance'
 import { createArchiveDocumentReader } from '#fig/document/read'
-import { createDocumentVariables } from '#fig/document/variables'
-import { createIndexedOccurrenceInterpreter } from '#fig/instance-overrides/interpret'
 import type {
   InstanceOccurrence,
   InterpretInstanceOptions
 } from '#fig/instance-overrides/occurrence/types'
-import { createSourceIndex, isActiveRecord } from '#fig/instance-overrides/source-index'
 import { compact, isEqual, isPlainObject } from 'es-toolkit'
 
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
@@ -205,32 +199,6 @@ export async function expandWithBoth(file: Uint8Array): Promise<{
   return { pageIds: { crate: crate.pageIds, reader: readerPages }, pages }
 }
 
-/**
- * The TypeScript reader's pages over records prepared as the crate prepares them: property
- * bindings and definitions normalized, but styles and library references left as saved and no
- * text style for a claim to give way to, which the crate does not read yet.
- */
-function readPagesWithoutStyles(file: Uint8Array): (id: string) => InstanceOccurrence {
-  const records = parseFigBuffer(new Uint8Array(file).buffer).nodeChanges.filter(isActiveRecord)
-  // No resources, so no library reference resolves.
-  const normalize = createBindingNormalizer([])
-  for (const record of records) normalize(record)
-  inheritComponentPropertyDefinitions(records, createSourceIndex(records).sources)
-  const scene = records.filter(
-    (record) => record.type !== 'VARIABLE' && record.type !== 'VARIABLE_SET'
-  )
-  const interpreter = createIndexedOccurrenceInterpreter({
-    ...createSourceIndex(scene),
-    variables: createDocumentVariables(scene),
-    textStyle: () => undefined
-  })
-  return (id) => {
-    const page = interpreter.page(id, LENIENT)
-    page.children = page.children.filter((child) => child.properties.isSlotContent !== true)
-    return page
-  }
-}
-
 /** A reader's value as the crate writes it: 64-bit integers as strings, bytes as numbers. */
 function asCrateWrites(value: unknown): unknown {
   const text = JSON.stringify(value, (_, inner: unknown) => {
@@ -253,14 +221,15 @@ export interface FieldComparison {
 }
 
 /**
- * Every field of every layer of a file's pages, from the crate and from the TypeScript reader
- * without styles. Each page's comparison keeps its first `limit` differences.
+ * Every field of every layer of a file's pages, from the crate and from the TypeScript reader.
+ * Each page's comparison keeps its first `limit` differences.
  */
 export async function readFieldsWithBoth(file: Uint8Array, limit = 5): Promise<FieldComparison[]> {
   const crate = await openWithCrate(file)
-  const read = readPagesWithoutStyles(file)
+  const { reader } = createArchiveDocumentReader(new Uint8Array(file).buffer, new Set())
   return crate.pageIds.map((id, page): FieldComparison => {
-    const layers = flatten(read(id)).map(({ layer }) => layer)
+    const read = reader.selectPages(new Set([id])).readPage(id, LENIENT)
+    const layers = flatten(read).map(({ layer }) => layer)
     const count = crate.expand(page).occurrences.length
     const values = crate.properties(page, 0, count)
     const differences: string[] = []

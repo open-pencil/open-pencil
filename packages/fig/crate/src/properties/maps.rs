@@ -12,7 +12,7 @@ fn entries<'v, 'a>(node: &'v Value<'a>, map: &str) -> &'v [Value<'a>] {
 
 /// A layer's variable bindings: its legacy map's entries, then its parameter map's, one per
 /// bound field, the later winning in the earlier one's place (`variableConsumptionEntries`).
-fn consumption<'v, 'a>(node: &'v Value<'a>) -> Vec<&'v Value<'a>> {
+pub(super) fn consumption<'v, 'a>(node: &'v Value<'a>) -> Vec<&'v Value<'a>> {
     let mut unkeyed = Vec::new();
     let mut keyed: Vec<(&Value, &Value)> = Vec::new();
     let all = entries(node, "variableConsumptionMap")

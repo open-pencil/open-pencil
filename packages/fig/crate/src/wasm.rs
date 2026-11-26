@@ -223,7 +223,7 @@ fn write_json(value: &Value, out: &mut String) {
         Value::Int(value) => _ = write!(out, "{value}"),
         Value::Uint(value) => _ = write!(out, "{value}"),
         Value::Float(value) if value.is_finite() => _ = write!(out, "{value}"),
-        Value::Float(_) | Value::Enum(None) => out.push_str("null"),
+        Value::Float(_) | Value::Enum(None) | Value::Undefined => out.push_str("null"),
         Value::Int64(value) => _ = write!(out, "\"{value}\""),
         Value::Uint64(value) => _ = write!(out, "\"{value}\""),
         Value::String(text) => write_string(text, out),
@@ -250,7 +250,11 @@ fn write_json(value: &Value, out: &mut String) {
         }
         Value::Fields(fields) => {
             out.push('{');
-            for (at, (name, value)) in fields.iter().enumerate() {
+            // A field set to nothing is left out, as `JSON.stringify` leaves out `undefined`.
+            let present = fields
+                .iter()
+                .filter(|(_, value)| !matches!(value, Value::Undefined));
+            for (at, (name, value)) in present.enumerate() {
                 if at > 0 {
                     out.push(',');
                 }

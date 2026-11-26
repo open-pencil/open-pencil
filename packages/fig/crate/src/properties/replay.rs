@@ -1,7 +1,7 @@
 //! One occurrence's fields, its layers applied in order (`occurrence/create.ts` and
 //! `occurrence/claims.ts` in `packages/fig/src/instance-overrides/`).
 
-use super::{Properties, cleared, keeps, maps, records, remove};
+use super::{Properties, cleared, keeps, maps, records, remove, styles};
 use crate::expand::{Bound, Layer, MODES, SCALED, SIZE, Source};
 use crate::index::NONE;
 use crate::kiwi::Value;
@@ -100,9 +100,7 @@ impl<'a> Replay<'a> {
             patch.set(name, reader.value()?);
             Ok(true)
         })?;
-        if !matches!(source, Source::Derived(_)) {
-            records::normalize(&mut patch);
-        }
+        properties.prepare(&mut patch, matches!(source, Source::Derived(_)), true);
         if let (true, Source::Record(record)) = (own, source)
             && let Some(definitions) = patch.get_mut("componentPropDefs")
         {
@@ -112,11 +110,19 @@ impl<'a> Replay<'a> {
             self.own_text = patch.get("textData").cloned();
         }
         if claim {
+            styles::yield_to_text_style(&mut self.props, &mut patch, |reference| {
+                properties.style(reference)
+            });
             if matches!(&patch, Value::Fields(fields) if fields.is_empty()) {
                 return Ok(());
             }
+            // The record the claim lands on, as the reader prepares it.
+            let source = properties.prepared(layer.record);
             cleared::complete(&mut patch, &mut self.props, |field| {
-                properties.record_field(layer.record, field).ok().flatten()
+                source
+                    .as_ref()
+                    .and_then(|record| record.get(field))
+                    .cloned()
             });
         }
         // Variable maps merge with the ones below rather than replace them.
@@ -134,7 +140,10 @@ impl<'a> Replay<'a> {
             self.has_own_name |= fields.iter().any(|(name, _)| *name == "name");
         }
         for (name, value) in fields {
-            self.props.set(name, value);
+            match value {
+                Value::Undefined => remove(&mut self.props, name),
+                value => self.props.set(name, value),
+            }
         }
         if let Some(map) = consumption {
             self.props.set("parameterConsumptionMap", map);
@@ -194,9 +203,10 @@ fn invalidate_text(props: &mut Value, patch: &[(&str, Value)]) {
             .any(|(field, value)| current.and_then(|current| current.get(field)) != Some(value)),
         _ => false,
     });
-    let changed_shape = SHAPING_FIELDS
-        .iter()
-        .any(|&name| set(name).is_some_and(|value| props.get(name) != Some(value)));
+    let changed_shape = SHAPING_FIELDS.iter().any(|&name| {
+        // A field set to nothing is the same as one left out.
+        set(name).is_some_and(|value| props.get(name).unwrap_or(&Value::Undefined) != value)
+    });
     if changed_text || changed_shape {
         remove(props, "derivedTextData");
     }

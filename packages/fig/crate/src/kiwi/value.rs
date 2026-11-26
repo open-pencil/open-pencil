@@ -27,6 +27,9 @@ pub enum Value<'a> {
     Array(Vec<Value<'a>>),
     /// A struct's or message's fields by name, in the order they were read.
     Fields(Vec<(&'a str, Value<'a>)>),
+    /// A field a layer sets to nothing, which clears the one below it, as a TypeScript record
+    /// holds `undefined`. Never decoded, only written by the reader's own rules.
+    Undefined,
 }
 
 impl<'a> Value<'a> {
