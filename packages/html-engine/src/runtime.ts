@@ -21,7 +21,7 @@ import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { insertAll, maxOf, minOf } from '@open-pencil/std/arrays'
 
-import type { HTMLEngine } from './engine'
+import type { HTMLEngine, HTMLEngineLayout } from './engine'
 import { loadHTMLEngine } from './load'
 import type { HTMLEngineCapture, HTMLEngineLine, HTMLEngineNode } from './schema'
 
@@ -347,19 +347,27 @@ function canvasNode(capture: HTMLEngineCapture): HTMLEngineNode | undefined {
   return painting('html') ?? painting('body')
 }
 
-/** The element whose background is the page's canvas, with its styles in every mode. */
-function canvasElement(capture: HTMLEngineCapture, modes: ModeCaptures): DesignElement | undefined {
-  const node = canvasNode(capture)
-  if (!node) return undefined
+/**
+ * The element whose background is the page's canvas, with its styles in every mode, each mode
+ * picking its own as CSS does: the root's where it paints one, otherwise the body's. A mode where
+ * neither paints takes the root's transparent background. None when no mode paints the canvas.
+ */
+function canvasElement(capture: HTMLEngineLayout): DesignElement | undefined {
+  const captures = [capture, ...capture.modes]
+  if (!captures.some((each) => canvasNode(each))) return undefined
+  const [base, ...modes] = captures.map((each) => {
+    const node = canvasNode(each) ?? each.nodes.find((candidate) => candidate.tag === 'html')
+    return node && { computedStyle: capturedStyle(each, node), references: node.references }
+  })
   const element: DesignElement = {
     type: 'element',
-    tagName: node.tag ?? 'html',
+    tagName: 'html',
     attrs: {},
     children: [],
-    computedStyle: capturedStyle(capture, node)
+    computedStyle: base?.computedStyle
   }
-  if (node.references) element.references = node.references
-  modes.apply(element, node)
+  if (base?.references) element.references = base.references
+  if (modes.length > 0) element.modes = modes.map((mode) => mode ?? {})
   return element
 }
 
@@ -443,7 +451,7 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       )
       await attachImages([], loadedFirst(answered, options.fetch), backgrounds)
       styled.background = canvasBackground(capture)
-      styled.canvas = canvasElement(capture, modes)
+      styled.canvas = canvasElement(capture)
       styled.customProperties = capture.variables
       if (capture.modes.length > 0) {
         styled.modes = capture.modes.map((other) => ({ customProperties: other.variables }))

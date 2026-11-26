@@ -242,6 +242,18 @@ describe('variables from custom properties', () => {
     expect(before && bound(graph, before, 'fills/0/color')).toBe('ink')
   })
 
+  test('take the window of a framed page from the root in a mode where only it paints', async () => {
+    const { graph } = await readHTMLDocument('<div>Text</div>', {
+      cssText:
+        ':root { --canvas: #ffffff } .dark { --canvas: #000000 } html.dark { background: var(--canvas) } body { background: #ffffff }',
+      variables: VARIABLES,
+      framed: true
+    })
+    const [page] = graph.getPages()
+    const [window] = graph.getChildren(page.id)
+    expect(bound(graph, window, 'fills/0/color')).toBe('#FFFFFF | canvas')
+  })
+
   test('leave an SVG child that sets the artwork color itself unbound', async () => {
     const { graph } = await readHTMLDocument(
       '<div style="color:var(--ink)"><svg id="art" width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M0 0h9v9z"/><path class="fixed" fill="currentColor" d="M9 9h9v9z"/></svg></div>',
@@ -254,6 +266,21 @@ describe('variables from custom properties', () => {
       .getChildren(named(graph, 'art').id)
       .map((layer) => bound(graph, layer, 'fills/0/color'))
     expect(paints).toEqual(['ink', undefined])
+  })
+
+  test('draw an SVG child in the artwork color inside a group of another color', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div style="color:var(--ink)"><svg id="art" width="20" height="20" viewBox="0 0 20 20"><g class="group"><path class="reset" fill="currentColor" d="M0 0h9v9z"/></g></svg></div>',
+      {
+        cssText:
+          ':root { --ink: #112233 } .dark { --ink: white } .group { color: red } .reset { color: var(--ink) }',
+        variables: VARIABLES
+      }
+    )
+    const path = [...graph.getAllNodes()].find(
+      (node) => node.type === 'VECTOR' && node.fills.length > 0
+    )
+    expect(path?.fills[0]).toMatchObject({ color: { r: 0x11 / 255, g: 0x22 / 255, b: 0x33 / 255 } })
   })
 
   test('keep a border transparent in one mode that another colors', async () => {

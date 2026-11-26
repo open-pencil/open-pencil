@@ -129,7 +129,8 @@ function takesArtworkColor(element: DesignElement, artwork: ArtworkColor): boole
  * attributes such as `fill="green"`, as the HTML engine does; so only a value that differs from
  * what the element inherits is CSS's own, and the markup draws the rest. A paint the runtime
  * computes to `currentcolor`, as the HTML engine reports it, stays `currentColor`, and an element
- * whose color is not the artwork's has that color written, so only the artwork's tints it.
+ * whose color is not the color the markup gives it has that color written, so only the
+ * artwork's tints it. `inherited.color` is the color the markup gives, unset for the artwork's.
  */
 function withComputedPaint(
   element: DesignElement,
@@ -149,8 +150,13 @@ function withComputedPaint(
     paint[property] = value
   }
   // An element with a color of its own, even one of the same value, paints `currentColor` in it,
-  // which the markup's `color` says, so only the artwork's color tints the artwork.
-  if (style?.color && !takesArtworkColor(element, artwork)) paint.color = style.color
+  // which the markup's `color` says, so only the artwork's color tints the artwork. Inside an
+  // element the markup gives another color, the artwork's color is written too, as the markup
+  // cannot hand the artwork's back; such a paint no longer tints. `own.color` is the color the
+  // markup gives the element, unset while that is the artwork's.
+  const tints = takesArtworkColor(element, artwork) && inherited.color === undefined
+  own.color = tints ? undefined : (style?.color ?? inherited.color)
+  if (!tints && style?.color && style.color !== inherited.color) paint.color = style.color
   return {
     ...withStyle(element, paint),
     children: element.children.map((child) =>
