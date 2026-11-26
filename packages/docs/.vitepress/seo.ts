@@ -33,6 +33,14 @@ const SOFTWARE_APPLICATION = {
   license: 'https://opensource.org/licenses/MIT',
   screenshot: `${BASE}/screenshot.png`,
   downloadUrl: `${BASE}/download`,
+  // Another, unrelated project is also named OpenPencil; these profiles say which one this is.
+  sameAs: [
+    'https://github.com/open-pencil/open-pencil',
+    'https://www.npmjs.com/package/@open-pencil/cli',
+    'https://x.com/openpencildev',
+    'https://alternativeto.net/software/open-pencil/about/',
+    'https://openalternative.co/openpencil'
+  ],
   featureList: [
     'Opens and saves Figma .fig files',
     'AI agents that design on the canvas with your own provider keys',

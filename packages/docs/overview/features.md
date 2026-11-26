@@ -69,7 +69,7 @@ CLI: `openpencil export design.fig -f jsx --style tailwind`
 
 ## AI Chat
 
-Press <kbd>⌘</kbd><kbd>J</kbd> to open the AI assistant. 90+ tools that can create shapes, set styles, manage layout, work with components and variables, run boolean operations, analyze design tokens, and export assets. Connect Anthropic, OpenAI, Google AI, OpenRouter, any compatible endpoint, or the AI your [OpenPencil Cloud](/cloud/ai) plan includes.
+Press <kbd>⌘</kbd><kbd>J</kbd> to open the AI assistant. It has 100+ tools that can create shapes, set styles, manage layout, work with components and variables, run boolean operations, analyze design tokens, and export assets. Connect Anthropic, OpenAI, Google AI, OpenRouter, any compatible endpoint, or the AI your [OpenPencil Cloud](/cloud/ai) plan includes. A core set of tools is on by default; turn on the rest in **Settings → Tool access**.
 
 Tool calls display as collapsible timeline entries. Visual verification — the assistant renders its work and checks it against your request. Full undo support for all AI mutations.
 
@@ -77,7 +77,7 @@ See [AI Chat](/user-guide/ai-chat) for setup and provider details.
 
 ## MCP Server
 
-Connect Claude Code, Cursor, Windsurf, or any MCP client to read and write `.fig` files headlessly. 90+ tools. Two transports: stdio and HTTP.
+Connect Claude Code, Cursor, Windsurf, or any MCP client to the running app to read and change the open document. 100+ tools. Two transports: stdio and HTTP. To work on `.fig` files without the app, use the [CLI](/developers/cli/inspecting).
 
 ```sh
 npm install -g @open-pencil/mcp
@@ -130,7 +130,7 @@ P2P via WebRTC — no server required. Share a link and edit together.
 
 ## Desktop & Web
 
-**Desktop** — Tauri v2, ~7 MB. macOS (signed & notarized), Windows, Linux. Native menus, offline, autosave.
+**Desktop** — Tauri v2, with installers around 20 MB (the Linux AppImage bundles more and is larger). macOS (signed & notarized), Windows, Linux. Native menus, offline, autosave.
 
 **Web** — runs at [cloud.openpencil.dev](https://cloud.openpencil.dev), installable as a PWA on mobile with touch-optimized UI.
 

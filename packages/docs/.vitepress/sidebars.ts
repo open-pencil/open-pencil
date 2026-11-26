@@ -8,7 +8,16 @@ export const guideSidebar = (prefix: string, labels: SidebarLabels): DefaultThem
     items: [
       { text: labels.gettingStarted, link: `${prefix}/getting-started` },
       { text: labels.features, link: `${prefix}/overview/features` },
-      { text: labels.comparison, link: `${prefix}/overview/comparison` },
+      {
+        text: labels.comparison,
+        link: `${prefix}/overview/comparison/`,
+        collapsed: true,
+        // Product names read the same in every locale.
+        items: ['Figma', 'Penpot', 'Pencil', 'Lunacy', 'Paper'].map((product) => ({
+          text: product,
+          link: `${prefix}/overview/comparison/${product.toLowerCase()}`
+        }))
+      },
       // English only until translated; locales link to the canonical page.
       { text: labels.privacy, link: '/overview/privacy' }
     ]

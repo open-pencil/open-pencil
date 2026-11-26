@@ -1,6 +1,6 @@
 ---
 title: AI Chat
-description: Built-in AI assistant with 90+ tools for creating and modifying designs.
+description: Built-in AI assistant with 100+ tools for creating and modifying designs.
 ---
 
 # AI Chat
