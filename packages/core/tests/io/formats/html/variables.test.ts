@@ -241,6 +241,16 @@ describe('variables from custom properties', () => {
     expect(named(graph, 'bomb').boundVariables).toEqual({})
   })
 
+  test('name a color only by the property it is or fades', async () => {
+    const { graph } = await readHTMLDocument(
+      `<div id="mix" style="width:9px;height:9px;background:color-mix(in srgb, var(--a), var(--b))"></div>
+       <div id="fade" style="width:9px;height:9px;background:color-mix(in srgb, var(--a) 40%, transparent)"></div>`,
+      { cssText: ':root { --a: red; --b: blue }', variables: {} }
+    )
+    expect(bound(graph, named(graph, 'mix'), 'fills/0/color')).toBe('Color 1')
+    expect(bound(graph, named(graph, 'fade'), 'fills/0/color')).toBe('a 40%')
+  })
+
   test('tell apart properties that hold one color', async () => {
     const { graph } = await readHTMLDocument(
       '<div id="a" style="width:9px;height:9px;background:var(--a)"></div><div id="b" style="width:9px;height:9px;background:var(--b)"></div>',

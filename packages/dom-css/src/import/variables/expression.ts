@@ -37,28 +37,50 @@ export function colorPart(text: string, isColor: (property: string) => boolean):
   return parts.length === 1 ? parts[0] : null
 }
 
-/** `color-mix(in oklab, var(--primary) 80%, transparent)`, how CSS writes a color's opacity. */
+/** A function's arguments, the nodes between its commas, spaces and comments left out. */
+function argumentsOf(node: Node & { type: 'function' }): Node[][] {
+  const parts: Node[][] = [[]]
+  for (const child of node.nodes) {
+    if (child.type === 'div' && child.value === ',') parts.push([])
+    else if (child.type !== 'space' && child.type !== 'comment') parts[parts.length - 1].push(child)
+  }
+  return parts
+}
+
+/**
+ * `color-mix(in oklab, var(--primary) 80%, transparent)`, how CSS writes a color's opacity: the
+ * property and its percentage.
+ */
 function transparentMix(text: string): { property: string; percentage: string } | null {
   const nodes = nodesOf(text)
   const [mix] = nodes
   if (nodes.length !== 1 || mix.type !== 'function' || mix.value.toLowerCase() !== 'color-mix')
     return null
-  const words = mix.nodes.filter((node) => node.type !== 'space' && node.type !== 'comment')
-  // `in`, the color space, a comma, the color, its percentage, a comma, and the other color.
-  if (words.length !== 7) return null
-  const [, , , color, percentage, , other] = words
+  // `in <space>`, then the color and its percentage, then `transparent`.
+  const parts = argumentsOf(mix)
+  if (parts.length !== 3) return null
+  const [, mixed, other] = parts
+  if (mixed.length !== 2 || other.length !== 1) return null
+  const [color, percentage] = mixed
   const property = nameIn(color)
-  if (!property || percentage.type !== 'word' || other.type !== 'word') return null
-  if (!percentage.value.endsWith('%') || other.value.toLowerCase() !== 'transparent') return null
+  const share = percentage.type === 'word' ? valueParser.unit(percentage.value) : false
+  const transparent = other[0].type === 'word' && other[0].value.toLowerCase() === 'transparent'
+  if (!property || !share || share.unit !== '%' || !transparent) return null
   return { property, percentage: percentage.value }
 }
 
-/** How a value reads as a variable's name: `--primary` is `primary`, at 80% `primary 80%`. */
-export function expressionLabel(text: string): string {
+/**
+ * How a value reads as a variable's name: `var(--primary)` is `primary`, and at 80% opacity
+ * `primary 80%`; any other value has no name of its own.
+ */
+export function expressionLabel(text: string): string | null {
   const mix = transparentMix(text)
-  if (mix) return `${mix.property.replace(/^--/, '')} ${mix.percentage}`
+  if (mix) return `${propertyName(mix.property)} ${mix.percentage}`
   const property = referencedProperty(text)
-  if (property) return property.replace(/^--/, '')
-  // Figma takes neither braces nor dots in a variable's name.
-  return text.replaceAll(/var\(\s*--([^),]+)\)/g, '$1').replaceAll('.', '_')
+  return property ? propertyName(property) : null
+}
+
+/** A custom property's name without its dashes, as its variable is named. */
+export function propertyName(property: string): string {
+  return property.slice(2)
 }

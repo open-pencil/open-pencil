@@ -6,7 +6,7 @@ import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { anyCSSColor } from '../css-values'
-import { expressionLabel, referencedProperty } from './expression'
+import { expressionLabel, propertyName, referencedProperty } from './expression'
 
 /** One mode of an imported theme: its name, and its root's custom properties. */
 export interface ThemeMode {
@@ -46,6 +46,15 @@ export interface ModeColor {
   expression: string | null
   color: Color
 }
+
+/** One label for a color in every mode, `a | b` where they differ; none where one has none. */
+function joinedLabel(labels: readonly (string | null)[]): string | null {
+  if (labels.some((label) => label === null)) return null
+  return labels.every((label) => label === labels[0]) ? labels[0] : labels.join(' | ')
+}
+
+/** The name of a color no property names. */
+const UNNAMED = 'Color'
 
 function literalLabel(color: Color): string {
   return color.a === 0 ? 'transparent' : colorToHex(color)
@@ -89,7 +98,7 @@ export class ThemeVariables {
       const value = valueIn(modes[0], property)
       if (!value) continue
       const variable = this.#graph.createVariable(
-        property.replace(/^--/, ''),
+        propertyName(property),
         value.type,
         this.#collectionId
       )
@@ -134,12 +143,14 @@ export class ThemeVariables {
     })
   }
 
-  #unusedName(label: string): string {
+  #unusedName(label: string, numbered = false): string {
     const taken = new Set(
       [...this.#byProperty.values(), ...this.#combined.values()].map(({ name }) => name)
     )
-    let name = label
-    for (let index = 2; taken.has(name); index++) name = `${label} ${index}`
+    // A color no property names is numbered from one, as `Color 1`; a named one from its second.
+    let index = numbered ? 1 : 2
+    let name = numbered ? `${label} ${index++}` : label
+    while (taken.has(name)) name = `${label} ${index++}`
     return name
   }
 
@@ -159,13 +170,14 @@ export class ThemeVariables {
     const labels = colors.map(({ expression, color }) =>
       expression ? expressionLabel(expression) : literalLabel(color)
     )
-    const label = labels.every((each) => each === labels[0]) ? labels[0] : labels.join(' | ')
+    const named = joinedLabel(labels)
+    const label = named ?? UNNAMED
     // One expression can give different colors, as one holding `currentcolor` does.
     const key = JSON.stringify([label, colors])
     const known = this.#combined.get(key)
     if (known) return known
     const variable = this.#graph.createVariable(
-      this.#unusedName(label),
+      this.#unusedName(label, named === null),
       'COLOR',
       this.#collectionId
     )
