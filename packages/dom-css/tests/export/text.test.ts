@@ -293,4 +293,28 @@ describe('text alignment export', () => {
       else expect(html).not.toContain('text-align')
     }
   )
+
+  // A frame that flows right to left exports `direction: rtl`, which its text would inherit.
+  test('keeps left-to-right text in a right-to-left frame left to right', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      width: 300,
+      height: 100,
+      layoutMode: 'HORIZONTAL',
+      layoutDirection: 'RTL'
+    })
+    graph.createNode('TEXT', frame.id, {
+      text: 'Hello',
+      fontFamily: 'Inter',
+      fontSize: 16,
+      width: 200,
+      height: 40
+    })
+    const html = serializeHTML(
+      sceneNodeToDesignDocument(graph, frame.id, { includeSourceIds: false })
+    )
+    expect(html).toContain('direction: rtl')
+    expect(html).toContain('direction: ltr')
+    expect(html).not.toContain('text-align')
+  })
 })

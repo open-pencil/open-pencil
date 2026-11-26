@@ -287,19 +287,33 @@ function styleFromSceneNode(
   return style
 }
 
+/** Whether a frame around the node flows right to left, which exports as a `direction` it inherits. */
+function insideRightToLeftFrame(graph: SceneGraph, node: SceneNode): boolean {
+  for (let id = node.parentId; id;) {
+    const ancestor = graph.getNode(id)
+    if (!ancestor) return false
+    if (ancestor.layoutDirection === 'RTL') return true
+    id = ancestor.parentId
+  }
+  return false
+}
+
 function styleFromTextNode(
   node: SceneNode,
   parent: SceneNode | undefined,
   css: FieldCSS,
   profile: ColorProfile,
-  metrics: CanvasMetrics | undefined
+  metrics: CanvasMetrics | undefined,
+  inheritsRightToLeft: boolean
 ): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
   addSize(style, node, parent, css)
   addPositioning(style, node, parent)
   addLayoutChild(style, node, parent)
   const rtl = resolveNodeTextDirection(node) === 'RTL'
+  // Text says its own direction where a frame around it flows right to left, which it inherits.
   if (rtl) style.direction = 'rtl'
+  else if (inheritsRightToLeft) style.direction = 'ltr'
   const color = fillToCSS(node.fills.at(0), profile)
   style.color = color ? css('fills/0/color', color) : cssColor(BLACK, profile)
   style['font-family'] = node.fontFamily
@@ -418,7 +432,7 @@ function sceneNodeToDesignNode(
   if (node.type === 'TEXT') {
     const content = textElementContent(
       node,
-      styleFromTextNode(node, parent, css, profile, metrics),
+      styleFromTextNode(node, parent, css, profile, metrics, insideRightToLeftFrame(graph, node)),
       profile
     )
     return {
