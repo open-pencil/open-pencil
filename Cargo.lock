@@ -408,7 +408,7 @@ dependencies = [
 [[package]]
 name = "blitz-dom"
 version = "0.3.0-beta.4"
-source = "git+https://github.com/open-pencil/blitz?rev=50678c1e95aaad834abbcbd2987416adf49f4ce9#50678c1e95aaad834abbcbd2987416adf49f4ce9"
+source = "git+https://github.com/open-pencil/blitz?rev=a33bb061bd2e92bfd128e74f8fc7619629d82df3#a33bb061bd2e92bfd128e74f8fc7619629d82df3"
 dependencies = [
  "app_units",
  "atomic_refcell",
@@ -454,7 +454,7 @@ dependencies = [
 [[package]]
 name = "blitz-html"
 version = "0.3.0-beta.4"
-source = "git+https://github.com/open-pencil/blitz?rev=50678c1e95aaad834abbcbd2987416adf49f4ce9#50678c1e95aaad834abbcbd2987416adf49f4ce9"
+source = "git+https://github.com/open-pencil/blitz?rev=a33bb061bd2e92bfd128e74f8fc7619629d82df3#a33bb061bd2e92bfd128e74f8fc7619629d82df3"
 dependencies = [
  "blitz-dom",
  "blitz-traits",
@@ -465,7 +465,7 @@ dependencies = [
 [[package]]
 name = "blitz-traits"
 version = "0.3.0-beta.4"
-source = "git+https://github.com/open-pencil/blitz?rev=50678c1e95aaad834abbcbd2987416adf49f4ce9#50678c1e95aaad834abbcbd2987416adf49f4ce9"
+source = "git+https://github.com/open-pencil/blitz?rev=a33bb061bd2e92bfd128e74f8fc7619629d82df3#a33bb061bd2e92bfd128e74f8fc7619629d82df3"
 dependencies = [
  "atomic_refcell",
  "bitflags 2.13.2",
@@ -1128,7 +1128,7 @@ dependencies = [
 [[package]]
 name = "debug_timer"
 version = "0.1.3"
-source = "git+https://github.com/open-pencil/blitz?rev=50678c1e95aaad834abbcbd2987416adf49f4ce9#50678c1e95aaad834abbcbd2987416adf49f4ce9"
+source = "git+https://github.com/open-pencil/blitz?rev=a33bb061bd2e92bfd128e74f8fc7619629d82df3#a33bb061bd2e92bfd128e74f8fc7619629d82df3"
 
 [[package]]
 name = "defmt"
@@ -5608,7 +5608,7 @@ dependencies = [
 [[package]]
 name = "stylo_taffy"
 version = "0.3.0-beta.4"
-source = "git+https://github.com/open-pencil/blitz?rev=50678c1e95aaad834abbcbd2987416adf49f4ce9#50678c1e95aaad834abbcbd2987416adf49f4ce9"
+source = "git+https://github.com/open-pencil/blitz?rev=a33bb061bd2e92bfd128e74f8fc7619629d82df3#a33bb061bd2e92bfd128e74f8fc7619629d82df3"
 dependencies = [
  "bitflags 2.13.2",
  "stylo",

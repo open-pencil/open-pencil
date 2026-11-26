@@ -14,9 +14,9 @@ crate-type = ["cdylib", "rlib"]
 # URL), #1396 (the table `border` attribute) and part of #799 (`:focus-visible`) until they merge
 # upstream.
 [dependencies]
-blitz-dom = { git = "https://github.com/open-pencil/blitz", rev = "50678c1e95aaad834abbcbd2987416adf49f4ce9", default-features = false, features = ["svg", "woff", "floats"] }
-blitz-html = { git = "https://github.com/open-pencil/blitz", rev = "50678c1e95aaad834abbcbd2987416adf49f4ce9" }
-blitz-traits = { git = "https://github.com/open-pencil/blitz", rev = "50678c1e95aaad834abbcbd2987416adf49f4ce9" }
+blitz-dom = { git = "https://github.com/open-pencil/blitz", rev = "a33bb061bd2e92bfd128e74f8fc7619629d82df3", default-features = false, features = ["svg", "woff", "floats"] }
+blitz-html = { git = "https://github.com/open-pencil/blitz", rev = "a33bb061bd2e92bfd128e74f8fc7619629d82df3" }
+blitz-traits = { git = "https://github.com/open-pencil/blitz", rev = "a33bb061bd2e92bfd128e74f8fc7619629d82df3" }
 # Stylo as Blitz builds it, for computed values Blitz resolves to used ones; keep it at Blitz's version.
 style = { version = "0.24.0", package = "stylo" }
 style_traits = { version = "0.24.0", package = "stylo_traits" }
