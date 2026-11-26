@@ -82,5 +82,10 @@
   "behaviourStateDisabled": "معطّل",
   "behaviourStateInvalid": "غير صالح",
   "behaviourStateUnset": "بلا",
-  "behaviourStateField": "حالة {state}"
+  "behaviourStateField": "حالة {state}",
+  "transition": "الانتقال",
+  "addTransition": "حرّك تغيّرات الحالة",
+  "removeTransition": "غيّر الحالة فورًا",
+  "transitionDuration": "المدة",
+  "transitionEasing": "التسهيل"
 }

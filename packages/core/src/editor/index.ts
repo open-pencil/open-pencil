@@ -52,7 +52,13 @@ export { pastedPropertyChanges } from './clipboard/paste/properties'
 export { resolvePasteTarget } from './clipboard/paste/target'
 export { playIslandRoots } from './play/islands'
 export { resolvePlayState, type InstanceState } from './play/states'
-export { EDIT_VIEW, NO_HOST_RESTRICTIONS, resolveEditorProfile } from './views'
+export {
+  canvasRootId,
+  EDIT_VIEW,
+  NO_HOST_RESTRICTIONS,
+  resolveEditorProfile,
+  stagedSlide
+} from './views'
 export type {
   CanvasView,
   EditorProfile,
@@ -84,7 +90,13 @@ export { resizedPathTextGlyphs } from './text/path-edit'
 export { opacityFromBuffer } from './nodes/actions'
 export { layerTypeOptions, type LayerType } from './structure/layer-type'
 export type { NodePreview } from './nodes/preview'
-export { BOARD_TOOL_SHORTCUTS, BOARD_TOOLS, EDITOR_TOOLS, TOOL_SHORTCUTS } from './tool-registry'
+export {
+  BOARD_TOOL_SHORTCUTS,
+  BOARD_TOOLS,
+  DECK_TOOL_SHORTCUTS,
+  EDITOR_TOOLS,
+  TOOL_SHORTCUTS
+} from './tool-registry'
 export {
   applySampledColor,
   eyedropperChanges,

@@ -32,10 +32,12 @@ export interface LabelLayout {
 const FRAME_TITLE_PARENT_TYPES = new Set(['CANVAS', 'SECTION'])
 
 /**
- * Whether a frame shows its name above it: a frame on the page or in a section, as Figma titles
- * them. An icon is a glyph rather than an artboard, so it goes untitled like a vector.
+ * Whether a frame shows its name above it: a frame on the page or in a section, or a slide, as
+ * Figma titles them. An icon is a glyph rather than an artboard, so it goes untitled like a vector.
  */
 export function hasFrameTitle(node: SceneNode, parentType: string | undefined): boolean {
+  // A slide's name is its number, shown above it as its handle in the deck.
+  if (node.type === 'SLIDE') return true
   return (
     node.type === 'FRAME' &&
     (parentType === undefined || FRAME_TITLE_PARENT_TYPES.has(parentType)) &&

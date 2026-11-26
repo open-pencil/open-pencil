@@ -3,9 +3,11 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import { useMessages } from '@open-pencil/vue/i18n'
 import { vTestId } from '@open-pencil/vue/testing'
 
+import { useEditorStore } from '@/app/editor/active-store'
 import AppMenu from '@/components/shell/AppMenu.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import splitterTheme from '@/theme/splitter'
@@ -13,7 +15,10 @@ import splitterTheme from '@/theme/splitter'
 import AssetsPanel from './assets-panel/AssetsPanel.vue'
 import LayerTree from './LayerTree/LayerTree.vue'
 import PagesPanel from './PagesPanel.vue'
+import SlidesPanel from './slides/SlidesPanel.vue'
 
+const store = useEditorStore()
+const filmstrip = computed(() => resolveEditorProfile(store.state).filmstrip)
 const menu = useMessages('menu')
 const panels = useMessages('panels')
 const activePanel = ref<'file' | 'assets'>('file')
@@ -59,21 +64,27 @@ const splitterStyles = tv(splitterTheme)({ direction: 'vertical' })
     <SplitterGroup
       v-else
       direction="vertical"
-      auto-save-id="layers-layout"
+      :key="filmstrip ? 'slides' : 'pages'"
+      :auto-save-id="filmstrip ? 'slides-layout' : 'layers-layout'"
       class="flex-1 overflow-hidden"
     >
       <SplitterPanel
-        :default-size="30"
+        :default-size="filmstrip ? 55 : 30"
         :min-size="10"
-        :max-size="60"
+        :max-size="filmstrip ? 80 : 60"
         class="flex flex-col overflow-hidden"
       >
-        <PagesPanel />
+        <SlidesPanel v-if="filmstrip" />
+        <PagesPanel v-else />
       </SplitterPanel>
       <SplitterResizeHandle :class="splitterStyles.handle()">
         <div :class="splitterStyles.divider()" />
       </SplitterResizeHandle>
-      <SplitterPanel :default-size="70" :min-size="20" class="flex flex-col overflow-hidden">
+      <SplitterPanel
+        :default-size="filmstrip ? 45 : 70"
+        :min-size="20"
+        class="flex flex-col overflow-hidden"
+      >
         <header
           data-test-id="layers-header"
           class="shrink-0 px-3 py-2 text-2xs font-semibold text-surface"

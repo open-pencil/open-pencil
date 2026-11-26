@@ -5,6 +5,7 @@ import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type {
   SceneGraph,
+  VariableFormula,
   VariableFormulaNode,
   VariableType,
   VariableValue,
@@ -14,11 +15,13 @@ import {
   variableFormulaSchema,
   variableColorExpressionSchema,
   inferFormulaType,
+  isEasing,
   MAX_FORMULA_DEPTH
 } from '@open-pencil/scene-graph/variables'
 import { appendAll } from '@open-pencil/std/arrays'
 
 import { extractPluginData } from '../node-change/plugin-data'
+import { easingFromKiwi } from '../node-change/variable/easing'
 import { visitVariableReferences } from '../node-change/variable/expression'
 import { formulaOperatorOfFigmaFunction } from '../node-change/variable/formula'
 import { readVariableMetadata } from '../node-change/variable/metadata'
@@ -61,6 +64,7 @@ function valueOf(
   if (type === 'BOOLEAN' && value.boolValue !== undefined) return value.boolValue
   if (type === 'STRING' && value.textValue !== undefined) return value.textValue
   if (type === 'FLOAT' && value.floatValue !== undefined) return value.floatValue
+  if (type === 'EASING' && value.easingValue) return easingFromKiwi(value.easingValue)
   if (type === 'EXPRESSION') return expressionValue(entry, resolve, depth)
   throw new Error(`Unsupported variable value ${type}`)
 }
@@ -112,8 +116,9 @@ function inferredType(node: VariableFormulaNode) {
   }
 }
 
-/** An operand as a formula holds it; a color expression inside a formula is not one it can. */
+/** An operand as a formula holds it; a color expression or an easing is not one it can. */
 function formulaOperand(operand: VariableValue): VariableFormulaNode {
+  if (isEasing(operand)) throw new UnsupportedExpressionError('Formulas do not use easings')
   if (typeof operand !== 'object' || !('expression' in operand)) return operand
   if (operand.expression === 'FORMULA') return operand.value
   throw new UnsupportedExpressionError(`Unsupported nested ${operand.expression} expression`)
@@ -152,6 +157,13 @@ function modeValues(
     let value: VariableValue
     try {
       value = valueOf(entry.variableData, resolve)
+      // Formulas compute colors, numbers, text and booleans; one held by a timing or an easing is
+      // kept as the file wrote it.
+      const type = resource.variableResolvedType
+      if (isFormula(value) && (type === 'TIMING' || type === 'EASING'))
+        throw new UnsupportedExpressionError(
+          `A formula cannot give ${resource.variableResolvedType}`
+        )
     } catch (error) {
       if (!(error instanceof UnsupportedExpressionError) || !onUnsupportedExpression) throw error
       const data = structuredClone(entry.variableData)
@@ -181,16 +193,15 @@ function modeValues(
         reason: 'unsupported-variable-expression'
       })
     }
-    if (
-      typeof value === 'object' &&
-      'expression' in value &&
-      value.expression === 'FORMULA' &&
-      value.type !== resource.variableResolvedType
-    )
+    if (isFormula(value) && value.type !== resource.variableResolvedType)
       throw new Error(`Expression result type does not match ${resource.variableResolvedType}`)
     values[modeId] = value
   }
   return values
+}
+
+function isFormula(value: VariableValue): value is VariableFormula {
+  return typeof value === 'object' && 'expression' in value && value.expression === 'FORMULA'
 }
 
 type SavedMode = NonNullable<NodeChange['variableSetModes']>[number]
@@ -377,11 +388,20 @@ export function materializeVariableResources(
   addVariables(graph, resources, { report, onUnsupportedExpression, onUnsupportedType })
 }
 
+const MODELED_VARIABLE_TYPES = new Set<string>([
+  'COLOR',
+  'BOOLEAN',
+  'STRING',
+  'FLOAT',
+  'EASING',
+  'TIMING'
+] satisfies VariableType[])
+
 /** Whether OpenPencil models variables of this type; one it does not, such as PAINT, is not read. */
 export function isModeledVariableType(
   type: NodeChange['variableResolvedType']
 ): type is VariableType {
-  return type === 'COLOR' || type === 'BOOLEAN' || type === 'STRING' || type === 'FLOAT'
+  return type !== undefined && MODELED_VARIABLE_TYPES.has(type)
 }
 
 function addVariables(

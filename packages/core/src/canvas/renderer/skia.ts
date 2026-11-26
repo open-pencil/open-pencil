@@ -145,6 +145,8 @@ export class SkiaRenderer {
   viewportHeight = 0
   worldViewport = { x: 0, y: 0, w: 0, h: 0 }
   pageId: string | null = null
+  /** The slide on the stage, outside which nothing of the page is drawn; null shows the page. */
+  stagedSlideId: string | null = null
   pageColor = CANVAS_BG_COLOR
   /** The board grid the page's dots follow, in canvas units, or null for a page without dots. */
   pageDotGrid: number | null = null

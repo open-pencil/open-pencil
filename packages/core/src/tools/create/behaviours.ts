@@ -11,8 +11,10 @@ export const setBehaviour = defineTool({
     'Make a main component or set behave as a Reka UI control in preview and code, by its own ' +
     'property and slot names: e.g. { kind: "switch", values: { value: "State" }, parts: { thumb: ' +
     '"Thumb" }, states: "Interaction" }. On/off variant values are guessed from names like On and ' +
-    'Off unless given as { property, on, off }. null removes it. Returns the behaviour and what ' +
-    'it still misses; get_behaviour lists every kind.',
+    'Off unless given as { property, on, off }. transition: { duration, easing } eases state ' +
+    'changes in preview and code: seconds or { variable: "Duration/Fast" }, a CSS easing such ' +
+    'as "ease-out" or { variable: "Easing/Standard" }. null removes it. Returns the behaviour ' +
+    'and what it still misses; get_behaviour lists every kind.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     id: v.pipe(

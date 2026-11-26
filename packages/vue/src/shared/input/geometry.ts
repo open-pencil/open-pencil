@@ -1,4 +1,4 @@
-import { resolveEditorProfile, type Editor } from '@open-pencil/core'
+import { canvasRootId, resolveEditorProfile, type Editor } from '@open-pencil/core'
 import {
   HANDLE_HIT_RADIUS,
   LAYER_HIT_PAD,
@@ -68,7 +68,7 @@ export function hitTestLayerAt(
   const renderer = editor.renderer
   if (!renderer) return null
   const pad = LAYER_HIT_PAD / renderer.zoom
-  const scope = editor.state.currentPageId
+  const scope = canvasRootId(editor.graph, editor.state)
   if (editor.state.enteredContainerId && !editor.graph.getNode(editor.state.enteredContainerId)) {
     editor.state.enteredContainerId = null
   }
