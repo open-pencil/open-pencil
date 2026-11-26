@@ -13,5 +13,8 @@ export const slideMessageDefaults = {
   skip: 'Skip slide',
   unskip: 'Include slide',
   moveToNewSection: 'Move to new section',
-  delete: 'Delete'
+  delete: 'Delete',
+  notes: 'Speaker notes',
+  notesPlaceholder: 'Add speaker notes',
+  notesPickSlide: 'Select one slide to see its speaker notes'
 } as const

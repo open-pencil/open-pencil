@@ -23,6 +23,7 @@ import {
   selectionIsLocked
 } from '#vue/shared/input/select/move'
 import { tryStartShapeHandleDrag } from '#vue/shared/input/shape-handles'
+import { createSlidesDrag, selectionIsSlides } from '#vue/shared/input/slides/drag'
 import { tryStartStickyScale } from '#vue/shared/input/sticky/scale'
 import type { DragState } from '#vue/shared/input/types'
 import { handleNodeEditDown } from '#vue/shared/input/vector'
@@ -170,6 +171,12 @@ function pressLayers(
     if (shiftPressedSelectedId) {
       editor.select([shiftPressedSelectedId], true)
     }
+    return
+  }
+
+  // Slides keep the deck's layout, so dragging them picks a new place in it.
+  if (selectionIsSlides(editor)) {
+    setDrag(createSlidesDrag(editor, sx, sy, shiftPressedSelectedId))
     return
   }
 

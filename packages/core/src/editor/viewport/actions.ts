@@ -55,7 +55,15 @@ export function pageContentBounds(
   graph: Pick<SceneGraph, 'getChildren' | 'getNode'>,
   pageId: string
 ): Rect | null {
-  const nodes = graph.getChildren(pageId).filter((node) => node.visible)
+  // A deck's rows are as wide as twenty slides, so its grid counts by the slides it holds.
+  const nodes = graph
+    .getChildren(pageId)
+    .flatMap((node) =>
+      node.type === 'SLIDE_GRID'
+        ? graph.getChildren(node.id).flatMap((row) => graph.getChildren(row.id))
+        : [node]
+    )
+    .filter((node) => node.visible)
   if (nodes.length === 0) return null
   return computeBounds(nodes.map((node) => getAxisAlignedWorldBounds(node, graph)))
 }

@@ -2,6 +2,7 @@ import type { SceneGraph } from '../graph'
 import type { SceneNode } from '../types'
 import type { SlideSettings } from './types'
 
+export * from './drop'
 export * from './types'
 
 /** Figma's slide: 1920 by 1080, with 240 between slides and 600 between the rows of a grid. */

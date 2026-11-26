@@ -10,5 +10,8 @@
   "skip": "Salta diapositiva",
   "unskip": "Includi diapositiva",
   "moveToNewSection": "Sposta in una nuova sezione",
-  "delete": "Elimina"
+  "delete": "Elimina",
+  "notes": "Note del relatore",
+  "notesPlaceholder": "Aggiungi note del relatore",
+  "notesPickSlide": "Seleziona una diapositiva per vederne le note del relatore"
 }

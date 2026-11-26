@@ -4,6 +4,7 @@ import {
   createSlide,
   createSlideRow,
   slideGrid,
+  slideDropAt,
   slideRows,
   slideSettings
 } from '@open-pencil/scene-graph/slides'
@@ -172,7 +173,55 @@ test('arrow keys leave slides where the deck lays them out', () => {
 
 test('clicks and new layers on the stage belong to the slide it shows', () => {
   const { editor, a } = setup()
+  editor.focusSlide(null)
   expect(canvasRootId(editor.graph, editor.state)).toBe(editor.state.currentPageId)
   editor.focusSlide(a)
   expect(canvasRootId(editor.graph, editor.state)).toBe(a)
+})
+
+test('a deck opens on its first slide, and a design on the whole page', () => {
+  const editor = createEditor()
+  editor.replaceGraph(createDocumentGraph('slides', 'light'))
+  expect(editor.state.focusedSlideId).toBe(expectDefined(slides(editor)[0]?.[0]))
+  editor.replaceGraph(createDocumentGraph('design', 'light'))
+  expect(editor.state.focusedSlideId).toBeNull()
+  const opened = createEditor({ graph: createDocumentGraph('slides', 'light') })
+  expect(names(opened)).toEqual(['1'])
+  expect(opened.state.focusedSlideId).toBe(expectDefined(slides(opened)[0]?.[0]))
+})
+
+test('a drop on the grid lands beside the nearest slide, or between sections as a new one', () => {
+  const { editor, a, b, c } = setup()
+  const page = editor.state.currentPageId
+  const box = (id: string) => {
+    const node = expectDefined(editor.graph.getNode(id))
+    return { ...editor.graph.getAbsolutePosition(id), width: node.width, height: node.height }
+  }
+  const at = (x: number, y: number) => slideDropAt(editor.graph, page, { x, y })?.placement
+  const slideB = box(b)
+  const middle = slideB.y + slideB.height / 2
+  expect(at(slideB.x + 10, middle)).toEqual({ type: 'beside', slideId: b, side: 'before' })
+  expect(at(slideB.x + slideB.width + 50, middle)).toEqual({
+    type: 'beside',
+    slideId: b,
+    side: 'after'
+  })
+  const first = expectDefined(editor.graph.getNode(a)).parentId
+  const second = expectDefined(editor.graph.getNode(c)).parentId
+  const slideC = box(c)
+  expect(at(slideC.x, slideB.y + slideB.height + 10)).toEqual({ type: 'section', before: second })
+  expect(at(slideC.x, slideC.y + slideC.height + 10)).toEqual({ type: 'section', before: null })
+  expect(at(slideC.x, box(a).y - 10)).toEqual({ type: 'section', before: first })
+})
+
+test('notes change as one undo step, and the same text adds none', () => {
+  const { editor, a } = setup()
+  const notes = () => slideSettings(expectDefined(editor.graph.getNode(a)))?.notes
+  editor.setSlideNotes(a, 'Open with the numbers\nThen the plan')
+  editor.setSlideNotes(a, 'Open with the numbers\nThen the plan')
+  expect(notes()).toBe('Open with the numbers\nThen the plan')
+  editor.undo.undo()
+  expect(notes()).toBe('')
+  editor.undo.redo()
+  expect(notes()).toBe('Open with the numbers\nThen the plan')
 })

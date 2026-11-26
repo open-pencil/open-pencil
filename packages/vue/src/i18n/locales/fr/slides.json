@@ -10,5 +10,8 @@
   "skip": "Ignorer la diapositive",
   "unskip": "Inclure la diapositive",
   "moveToNewSection": "Déplacer vers une nouvelle section",
-  "delete": "Supprimer"
+  "delete": "Supprimer",
+  "notes": "Notes de l’orateur",
+  "notesPlaceholder": "Ajouter des notes de l’orateur",
+  "notesPickSlide": "Sélectionnez une diapositive pour voir ses notes de l’orateur"
 }

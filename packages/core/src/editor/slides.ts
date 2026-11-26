@@ -5,7 +5,8 @@ import {
   createSlideRow,
   slideGrid,
   slideNumbers,
-  slideSettings
+  slideSettings,
+  type SlidePlacement
 } from '@open-pencil/scene-graph/slides'
 
 import { restoreSubtree, snapshotSubtree } from './history/subtree'
@@ -16,14 +17,6 @@ interface DeckSection {
   id: string
   slides: string[]
 }
-
-/**
- * Where slides go: beside a slide, or into a new section of their own, before another section or,
- * with null, after the last.
- */
-export type SlidePlacement =
-  | { type: 'beside'; slideId: string; side: 'before' | 'after' }
-  | { type: 'section'; before: string | null }
 
 /**
  * Commands on a deck's slides. Each is one undo step that puts the deck's sections and slides back
@@ -310,6 +303,24 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
     })
   }
 
+  /** Sets a slide's speaker notes, plain text with a paragraph per line, as one undo step. */
+  function setSlideNotes(id: string, notes: string): void {
+    const node = ctx.graph.getNode(id)
+    const before = node ? slideSettings(node)?.notes : undefined
+    if (before === undefined || before === notes) return
+    const write = (value: string) => {
+      const current = ctx.graph.getNode(id)
+      const kept = current ? slideSettings(current) : null
+      if (kept) ctx.graph.updateNode(id, { slide: { ...kept, notes: value } })
+    }
+    write(notes)
+    ctx.undo.push({
+      label: 'Edit notes',
+      forward: () => write(notes),
+      inverse: () => write(before)
+    })
+  }
+
   /** Puts one slide on the stage, alone, or with null shows the whole deck. */
   function focusSlide(id: string | null): void {
     if (id !== null && !isSlide(id)) return
@@ -337,11 +348,18 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
       }
     })
   })
-  const leaveStage = () => {
-    ctx.state.focusedSlideId = null
+  // A deck opens on its first slide, as Figma's does; a page without slides shows whole.
+  const openOnFirstSlide = () => {
+    ctx.state.focusedSlideId = slideOrder().at(0) ?? null
+    if (ctx.state.focusedSlideId === null) return
+    const { width, height } = ctx.getViewportSize()
+    // A canvas not yet measured is fitted by its host once it has a size.
+    if (width > 0 && height > 0) zoomToFit()
   }
-  ctx.onEditorEvent('graph:replaced', leaveStage)
-  ctx.onEditorEvent('page:changed', leaveStage)
+  ctx.onEditorEvent('graph:replaced', openOnFirstSlide)
+  ctx.onEditorEvent('page:changed', openOnFirstSlide)
+  // A new editor's canvas has no size of its own yet, so its host fits the slide once shown.
+  ctx.state.focusedSlideId = slideOrder().at(0) ?? null
 
   return {
     addSlide,
@@ -349,6 +367,7 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
     deleteSlides,
     moveSlides,
     setSlidesSkipped,
+    setSlideNotes,
     focusSlide,
     focusAdjacentSlide
   }

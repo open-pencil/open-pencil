@@ -10,5 +10,8 @@
   "skip": "Ignorar slide",
   "unskip": "Incluir slide",
   "moveToNewSection": "Mover para uma nova seção",
-  "delete": "Excluir"
+  "delete": "Excluir",
+  "notes": "Anotações do apresentador",
+  "notesPlaceholder": "Adicionar anotações do apresentador",
+  "notesPickSlide": "Selecione um slide para ver as anotações do apresentador"
 }

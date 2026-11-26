@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { getNodeEditCapability } from '@open-pencil/core'
-import { isGeneratedFrame, layerResizes } from '@open-pencil/scene-graph/generated'
+import { isGeneratedFrame, layerMoves, layerResizes } from '@open-pencil/scene-graph/generated'
 import { readIcon } from '@open-pencil/scene-graph/icons'
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
@@ -100,6 +100,7 @@ const supportsLayoutGuides = useSceneComputed(() => {
 const freeStyle = useSceneComputed(() =>
   store.getSelectedNodes().every((selected) => !isGeneratedFrame(selected))
 )
+const selectionMoves = useSceneComputed(() => store.getSelectedNodes().every(layerMoves))
 const panels = useMessages('panels')
 </script>
 
@@ -128,9 +129,12 @@ const panels = useMessages('panels')
     </PanelHeader>
     <StatusSection />
     <ComponentPropertiesSection />
-    <PositionSection />
-    <ConstraintsSection />
-    <SelectionLayoutSection />
+    <!-- A deck places and sizes its slides. -->
+    <template v-if="selectionMoves">
+      <PositionSection />
+      <ConstraintsSection />
+      <SelectionLayoutSection />
+    </template>
     <ScaleSection v-if="activeTool === 'SCALE'" />
     <template v-if="freeStyle">
       <AppearanceSection />
@@ -231,8 +235,8 @@ const panels = useMessages('panels')
       <StickySection />
       <ShapeWithTextSection />
       <ConnectorSection />
-      <!-- A connector is placed and shaped by its ends, and styled by its line. -->
-      <template v-if="node.type !== 'CONNECTOR'">
+      <!-- A connector is placed and shaped by its ends, and styled by its line; a deck places its slides. -->
+      <template v-if="node.type !== 'CONNECTOR' && layerMoves(node)">
         <PositionSection />
         <ConstraintsSection />
         <!-- A sticky note's size follows its text and its scale; Figma leaves W and H read-only. -->
