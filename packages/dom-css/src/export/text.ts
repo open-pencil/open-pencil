@@ -5,6 +5,7 @@ import type {
   CharacterStyleOverride,
   ColorProfile,
   HyperlinkTarget,
+  SceneGraph,
   SceneNode,
   TextLength
 } from '@open-pencil/scene-graph'
@@ -21,6 +22,7 @@ import {
   type TextListItem,
   type TextParagraphRange
 } from '@open-pencil/scene-graph/text'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { fillToCSS, letterSpacingToCSS, lineHeightToCSS } from './css'
@@ -488,4 +490,34 @@ export function addTextLines(style: DesignStyleDeclaration, node: SceneNode): vo
     style['white-space'] = limit === 1 ? 'nowrap' : 'pre-wrap'
   }
   if (node.leadingTrim === 'CAP_HEIGHT') style['text-box'] = 'trim-both cap alphabetic'
+}
+
+/** Whether a frame around the node flows right to left, which exports as a `direction` it inherits. */
+export function insideRightToLeftFrame(graph: SceneGraph, node: SceneNode): boolean {
+  for (let id = node.parentId; id;) {
+    const ancestor = graph.getNode(id)
+    if (!ancestor) return false
+    if (ancestor.layoutDirection === 'RTL') return true
+    id = ancestor.parentId
+  }
+  return false
+}
+
+/** The box text lines up in: its display, direction, and the side it aligns to. */
+export function addTextBox(
+  style: DesignStyleDeclaration,
+  node: SceneNode,
+  parent: SceneNode | undefined,
+  inheritsRightToLeft: boolean
+): void {
+  // Nothing lays out text on the canvas, and an inline box would ignore its width and alignment.
+  if (!parent || parent.type === 'CANVAS') style.display = 'inline-block'
+  const rtl = resolveNodeTextDirection(node) === 'RTL'
+  // Text says its own direction where a frame around it flows right to left, which it inherits.
+  if (rtl) style.direction = 'rtl'
+  else if (inheritsRightToLeft) style.direction = 'ltr'
+  // Alignment names a side whatever the direction; right-to-left text starts at the right.
+  if (node.textAlignHorizontal !== 'LEFT' || rtl)
+    style['text-align'] =
+      node.textAlignHorizontal === 'JUSTIFIED' ? 'justify' : node.textAlignHorizontal.toLowerCase()
 }

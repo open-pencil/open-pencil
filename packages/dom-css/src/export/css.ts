@@ -305,3 +305,11 @@ export function gradientToCSS(
   }
   return undefined
 }
+
+/** Two CSS lengths added: in pixels where both are, else in `calc()`. */
+export function sumLengths(a: string, b: string): string {
+  const pixels = /^-?[\d.]+px$/
+  return pixels.test(a) && pixels.test(b)
+    ? `${Number.parseFloat(a) + Number.parseFloat(b)}px`
+    : `calc(${a} + ${b})`
+}

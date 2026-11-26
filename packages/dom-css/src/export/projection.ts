@@ -7,7 +7,6 @@ import { readIcon } from '@open-pencil/scene-graph/icons'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
 import { heldHugAxes, layoutSizingInParent } from '@open-pencil/scene-graph/layout'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { DesignTokens, type CSSModes } from '../tokens/references'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
@@ -18,6 +17,7 @@ import {
   letterSpacingRoomCSS,
   letterSpacingToCSS,
   lineHeightToCSS,
+  sumLengths,
   textEffectsToCSS
 } from './css'
 import { addGridContainer, addGridPlacement } from './grid'
@@ -37,7 +37,14 @@ import {
   flowDirection,
   paddingExtra
 } from './spacing'
-import { addTextLines, textCaseToCSS, textElementContent, uniformLetterSpacing } from './text'
+import {
+  addTextBox,
+  addTextLines,
+  insideRightToLeftFrame,
+  textCaseToCSS,
+  textElementContent,
+  uniformLetterSpacing
+} from './text'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
 const IMAGE_SOURCE_URL_KEY = 'image-source-url'
@@ -262,14 +269,6 @@ function addBoxSizing(style: DesignStyleDeclaration): void {
   if (sized && boxed) style['box-sizing'] = 'border-box'
 }
 
-/** Two CSS lengths added: in pixels where both are, else in `calc()`. */
-function sumLengths(a: string, b: string): string {
-  const pixels = /^-?[\d.]+px$/
-  return pixels.test(a) && pixels.test(b)
-    ? px(Number.parseFloat(a) + Number.parseFloat(b))
-    : `calc(${a} + ${b})`
-}
-
 /** A layer's size, its limits, and where it is placed: what every layer's style starts from. */
 function layerBox(
   graph: SceneGraph,
@@ -342,11 +341,12 @@ function styleFromTextNode(
   parent: SceneNode | undefined,
   css: FieldCSS,
   profile: ColorProfile,
-  metrics: CanvasMetrics | undefined
+  metrics: CanvasMetrics | undefined,
+  inheritsRightToLeft: boolean
 ): DesignStyleDeclaration {
   const style = layerBox(graph, node, parent, css)
   addLayoutChild(style, graph, node, parent)
-  if (resolveNodeTextDirection(node) === 'RTL') style.direction = 'rtl'
+  addTextBox(style, node, parent, inheritsRightToLeft)
   const color = fillToCSS(node.fills.at(0), profile)
   style.color = color ? css('fills/0/color', color) : cssColor(BLACK, profile)
   style['font-family'] = node.fontFamily
@@ -370,8 +370,6 @@ function styleFromTextNode(
     Object.assign(style, letterSpacingRoomCSS(ending, written, style))
     if (overlap !== undefined) style['margin-right'] = sumLengths(overlap, style['margin-right'])
   }
-  if (node.textAlignHorizontal !== 'LEFT')
-    style['text-align'] = node.textAlignHorizontal.toLowerCase()
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
   Object.assign(style, textEffectsToCSS(node.effects, css, profile))
   if (node.textDecoration !== 'NONE') {
@@ -466,7 +464,15 @@ function sceneNodeToDesignNode(
   if (node.type === 'TEXT') {
     const content = textElementContent(
       node,
-      styleFromTextNode(graph, node, parent, css, profile, metrics),
+      styleFromTextNode(
+        graph,
+        node,
+        parent,
+        css,
+        profile,
+        metrics,
+        insideRightToLeftFrame(graph, node)
+      ),
       profile
     )
     return {
