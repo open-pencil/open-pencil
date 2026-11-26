@@ -92,6 +92,20 @@ describe('agent pairing hub', () => {
     expect(other.closed?.code).toBe(RELAY_CLOSE.unauthorized)
   })
 
+  test('hands a call to the tab that offered to run tools last, not the one that came last', async () => {
+    const pairing = hub()
+    const first = connectTestClient((socket) => pairing.connect(pairingSocket(socket)))
+    first.send({ type: 'auth', token })
+    await until(() => first.peerId() !== undefined)
+    const second = await pairedTab(pairing)
+    say(first, { type: 'host' })
+    const outcome = pairing.call(await agentPairingId(token), call)
+    const handed = await nextCall(first)
+    say(first, { type: 'result', id: handed.id, ok: true, result: 'first' })
+    expect(await outcome).toEqual({ ok: true, result: 'first' })
+    expect(second.messages(COLLAB_ACTIONS.agentTools)).toHaveLength(0)
+  })
+
   test('takes a resumed tab back as the host it was', async () => {
     const pairing = hub()
     const id = await agentPairingId(token)

@@ -73,6 +73,8 @@ export function createAgentPairingHub(options: AgentPairingHubOptions) {
   const authTimeoutMs = options.authTimeoutMs ?? DEADLINE_MS.request
 
   function remember(tab: PairedTab) {
+    // The tab that offered last comes last, where a call looks for its host.
+    if (tab.toolHost && tabs.delete(tab)) tabs.add(tab)
     tab.socket.remember?.({ pairing: tab.pairing, peerId: tab.id, toolHost: tab.toolHost })
   }
 
